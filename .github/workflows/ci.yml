@@ -47,11 +47,15 @@ jobs:
         run: dotnet build NetPrints.sln -c Release --no-restore
 
       # Core, reflection, view-model and headless Avalonia UI tests (no display server needed).
-      # The desktop E2E tests are skipped here (NETPRINTS_E2E unset) and run in the e2e job.
+      # The desktop E2E tests are skipped here (NETPRINTS_E2E unset), which is a "zero tests ran"
+      # exit code (8) only for that project; ignoring it here (and only here, not in the e2e job
+      # below) is what makes the skip expected instead of a silent hole in that job's coverage.
       - name: Test
         env:
           NETPRINTS_UI_ARTIFACTS: ${{ github.workspace }}/TestResults/ui
-        run: dotnet test --solution NetPrints.sln -c Release --no-build --report-xunit-trx --results-directory TestResults
+        run: >
+          dotnet test --solution NetPrints.sln -c Release --no-build
+          --report-xunit-trx --results-directory TestResults -- --ignore-exit-code:8
 
       # The CLI returns exit code 1 for --version until the P2 redesign and prints it to stderr,
       # so only the combined output is checked.
@@ -112,11 +116,17 @@ jobs:
         run: dotnet build NetPrints.Desktop.E2ETests -c Release
 
       # The tests start their own Xvfb on a free display (like xvfb-run -a) plus openbox.
+      # --fail-skips turns any skipped test (e.g. NETPRINTS_E2E not reaching the test host, or a
+      # skip condition that fires unexpectedly) into a failure, so this job cannot go green with
+      # zero real coverage: neither "zero tests ran" (exit code 8, not ignored here) nor "every
+      # test skipped" can pass silently.
       - name: E2E tests
         env:
           NETPRINTS_E2E: 1
           NETPRINTS_UI_ARTIFACTS: ${{ github.workspace }}/TestResults/ui
-        run: dotnet test --project NetPrints.Desktop.E2ETests -c Release --no-build --report-xunit-trx --results-directory TestResults
+        run: >
+          dotnet test --project NetPrints.Desktop.E2ETests -c Release --no-build
+          --report-xunit-trx --results-directory TestResults -- --fail-skips on
 
       - name: Upload E2E artifacts
         if: always()

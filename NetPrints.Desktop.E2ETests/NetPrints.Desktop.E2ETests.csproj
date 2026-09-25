@@ -10,8 +10,10 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <WarningsAsErrors>$(WarningsAsErrors);xUnit1051</WarningsAsErrors>
-    <!-- Without NETPRINTS_E2E=1 every test is skipped; that is not a failed run (exit code 8). -->
-    <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --ignore-exit-code 8</TestingPlatformCommandLineArguments>
+    <!-- Without NETPRINTS_E2E=1 every test is skipped, which is exit code 8 ("zero tests ran").
+         That is only expected in the build test job, which passes the ignore exit code option
+         itself on its dotnet test command line; it must not be baked into this project, or the
+         e2e job (where a skip means the automation pipe is broken) would go green too. -->
   </PropertyGroup>
 
   <ItemGroup>
