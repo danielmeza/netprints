@@ -31,10 +31,13 @@ public sealed class EditorComposition
         Context = customize?.Invoke(context) ?? context;
     }
 
+    /// <summary>The composed host services, possibly customized by the constructor's <c>customize</c> hook.</summary>
     public EditorContext Context { get; }
 
+    /// <summary>The concrete window service (not just <see cref="IWindowService"/>, for callers that need <see cref="WindowService.ClassEditorWindows"/> or <see cref="WindowService.MainWindow"/>).</summary>
     public WindowService Windows { get; }
 
+    /// <summary>The main window's view model, created by <see cref="CreateMainWindow"/>, or <see langword="null"/> before it is called.</summary>
     public MainEditorVM? MainEditor { get; private set; }
 
     /// <summary>
