@@ -73,12 +73,12 @@ namespace NetPrints.Tests.Samples
         }
 
         /// <summary>
-        /// Finds the repository root (the directory containing <c>NetPrints.sln</c>).
+        /// Finds the repository root (the directory containing <c>NetPrints.slnx</c>).
         /// </summary>
         public static string FindRepositoryRoot()
         {
             var dir = new DirectoryInfo(AppContext.BaseDirectory);
-            while (dir != null && !File.Exists(Path.Combine(dir.FullName, "NetPrints.sln")))
+            while (dir != null && !File.Exists(Path.Combine(dir.FullName, "NetPrints.slnx")))
             {
                 dir = dir.Parent;
             }

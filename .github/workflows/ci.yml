@@ -37,14 +37,14 @@ jobs:
       - uses: actions/cache@v6
         with:
           path: ~/.nuget/packages
-          key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', 'Directory.Build.props', 'global.json', '**/*.csproj') }}
+          key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', 'Directory.Build.props', 'src/Directory.Build.props', 'tests/Directory.Build.props', 'global.json', '**/*.csproj') }}
           restore-keys: nuget-${{ runner.os }}-
 
       - name: Restore
-        run: dotnet restore NetPrints.sln
+        run: dotnet restore NetPrints.slnx
 
       - name: Build
-        run: dotnet build NetPrints.sln -c Release --no-restore
+        run: dotnet build NetPrints.slnx -c Release --no-restore
 
       # Core, reflection, view-model and headless Avalonia UI tests (no display server needed).
       # The desktop E2E tests are skipped here (NETPRINTS_E2E unset), which is a "zero tests ran"
@@ -54,20 +54,20 @@ jobs:
         env:
           NETPRINTS_UI_ARTIFACTS: ${{ github.workspace }}/TestResults/ui
         run: >
-          dotnet test --solution NetPrints.sln -c Release --no-build
+          dotnet test --solution NetPrints.slnx -c Release --no-build
           --report-xunit-trx --results-directory TestResults -- --ignore-exit-code 8
 
       # The CLI returns exit code 1 for --version until the P2 redesign and prints it to stderr,
       # so only the combined output is checked.
       - name: CLI smoke
         run: |
-          output=$(dotnet run --project NetPrintsCLI -c Release --no-build -- --version 2>&1 || true)
+          output=$(dotnet run --project src/NetPrints.Cli -c Release --no-build -- --version 2>&1 || true)
           echo "$output"
-          echo "$output" | grep -q "NetPrintsCLI"
+          echo "$output" | grep -q "NetPrints.Cli"
 
       - name: CLI sample compile and run
         run: |
-          output=$(dotnet run --project NetPrintsCLI -c Release --no-build -- -p samples/HelloWorld/HelloWorld.netpp -r 2>&1 || true)
+          output=$(dotnet run --project src/NetPrints.Cli -c Release --no-build -- -p samples/HelloWorld/HelloWorld.netpp -r 2>&1 || true)
           echo "$output"
           echo "$output" | grep -q "Hello, World!"
 
@@ -102,7 +102,7 @@ jobs:
       - uses: actions/cache@v6
         with:
           path: ~/.nuget/packages
-          key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', 'Directory.Build.props', 'global.json', '**/*.csproj') }}
+          key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', 'Directory.Build.props', 'src/Directory.Build.props', 'tests/Directory.Build.props', 'global.json', '**/*.csproj') }}
           restore-keys: nuget-${{ runner.os }}-
 
       # X server, window manager, input and screenshots, window state (xprop, xwininfo), GTK 3 for
@@ -113,7 +113,7 @@ jobs:
           sudo apt-get install -y --no-install-recommends xvfb openbox xdotool imagemagick x11-utils libgtk-3-0t64 adwaita-icon-theme
 
       - name: Build
-        run: dotnet build NetPrints.Desktop.E2ETests -c Release
+        run: dotnet build tests/NetPrints.Desktop.E2ETests -c Release
 
       # The tests start their own Xvfb on a free display (like xvfb-run -a) plus openbox.
       # --fail-skips turns any skipped test (e.g. NETPRINTS_E2E not reaching the test host, or a
@@ -125,7 +125,7 @@ jobs:
           NETPRINTS_E2E: 1
           NETPRINTS_UI_ARTIFACTS: ${{ github.workspace }}/TestResults/ui
         run: >
-          dotnet test --project NetPrints.Desktop.E2ETests -c Release --no-build
+          dotnet test --project tests/NetPrints.Desktop.E2ETests -c Release --no-build
           --report-xunit-trx --results-directory TestResults -- --fail-skips on
 
       - name: Upload E2E artifacts

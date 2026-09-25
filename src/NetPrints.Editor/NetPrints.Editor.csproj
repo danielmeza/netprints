@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\NetPrints\NetPrints.csproj" />
+    <ProjectReference Include="..\NetPrints.Core\NetPrints.Core.csproj" />
     <ProjectReference Include="..\NetPrints.Reflection\NetPrints.Reflection.csproj" />
   </ItemGroup>
 

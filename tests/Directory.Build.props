@@ -1,0 +1,8 @@
+<Project>
+  <Import Project="../Directory.Build.props" />
+
+  <!-- Test-only settings shared by every project under tests/. -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+</Project>

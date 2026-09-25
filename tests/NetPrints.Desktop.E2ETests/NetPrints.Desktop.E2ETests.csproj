@@ -5,7 +5,6 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <OutputType>Exe</OutputType>
-    <IsPackable>false</IsPackable>
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
@@ -28,17 +27,17 @@
   <ItemGroup>
     <ProjectReference Include="..\NetPrints.Testing.Ui\NetPrints.Testing.Ui.csproj" />
     <!-- Built first; started as a separate process from its own output folder. -->
-    <ProjectReference Include="..\NetPrints.Desktop\NetPrints.Desktop.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\..\src\NetPrints.Desktop\NetPrints.Desktop.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>
     <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
       <_Parameter1>DesktopAssembly</_Parameter1>
-      <_Parameter2>$(MSBuildProjectDirectory)/../NetPrints.Desktop/bin/$(Configuration)/$(TargetFramework)/NetPrints.Desktop.dll</_Parameter2>
+      <_Parameter2>$(MSBuildProjectDirectory)/../../src/NetPrints.Desktop/bin/$(Configuration)/$(TargetFramework)/NetPrints.Desktop.dll</_Parameter2>
     </AssemblyAttribute>
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="../samples/**" CopyToOutputDirectory="PreserveNewest" LinkBase="samples" />
+    <None Include="../../samples/**" CopyToOutputDirectory="PreserveNewest" LinkBase="samples" />
   </ItemGroup>
 </Project>

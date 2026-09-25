@@ -8,6 +8,6 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\NetPrints\NetPrints.csproj" />
+    <ProjectReference Include="..\NetPrints.Core\NetPrints.Core.csproj" />
   </ItemGroup>
 </Project>

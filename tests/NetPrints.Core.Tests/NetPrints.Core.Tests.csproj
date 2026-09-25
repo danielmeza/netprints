@@ -2,9 +2,9 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <OutputType>Exe</OutputType>
-    <IsPackable>false</IsPackable>
     <Nullable>disable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AssemblyName>NetPrints.Core.Tests</AssemblyName>
     <!-- Every async call in a test must observe TestContext.Current.CancellationToken. -->
     <WarningsAsErrors>$(WarningsAsErrors);xUnit1051</WarningsAsErrors>
   </PropertyGroup>
@@ -14,11 +14,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="../samples/**" CopyToOutputDirectory="PreserveNewest" LinkBase="samples" />
+    <None Include="../../samples/**" CopyToOutputDirectory="PreserveNewest" LinkBase="samples" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\NetPrints\NetPrints.csproj" />
+    <ProjectReference Include="..\..\src\NetPrints.Core\NetPrints.Core.csproj" />
   </ItemGroup>
 
 </Project>
