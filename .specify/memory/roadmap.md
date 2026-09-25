@@ -27,7 +27,7 @@ when it is started.
 | ID | Name | Est. | Depends on | Status |
 |----|------|------|------------|--------|
 | P0 | Modernize build + Avalonia editor at parity | ~6 w (manual est.) | — | **merged** 2026-09-25 (PR #1, e24ebec) |
-| P0.1 | Grid rendering (shader + pixel-identical fallback) | ~3–5 d | P0 | in progress (`specs/002-grid-rendering`) |
+| P0.1 | Grid rendering (shader + pixel-identical fallback) | ~3–5 d | P0 | **merged** 2026-09-25 (PR #2, 0e1add1) |
 | P1 | Core refactor + extension points | ~3.5 w | P0 | not started |
 | P2 | Catalog tooling + Spectre CLI | ~2.5 w | P1 | not started |
 | P3a | Editor shell | ~2–3 w | P0, P1 | not started |

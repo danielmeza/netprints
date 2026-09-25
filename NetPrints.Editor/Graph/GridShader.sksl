@@ -21,9 +21,17 @@ float2 hits(float c, float o) {
 }
 
 half4 main(float2 p) {
+
     float2 hx = hits(p.x, phase.x);
     float2 hy = hits(p.y, phase.y);
-    if (max(hx.y, hy.y) > 0.5) { return half4(majorColor); }
-    if (minorColor.a > 0.0 && max(hx.x, hy.x) > 0.5) { return half4(minorColor); }
+
+    if (max(hx.y, hy.y) > 0.5) {
+        return half4(majorColor);
+    }
+
+    if (minorColor.a > 0.0 && max(hx.x, hy.x) > 0.5) {
+        return half4(minorColor);
+    }
+
     return half4(backgroundColor);
 }
