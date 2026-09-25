@@ -26,6 +26,15 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NetPrints.Editor\NetPrints.Editor.csproj" />
+    <ProjectReference Include="..\NetPrints.Testing.Ui\NetPrints.Testing.Ui.csproj" />
+  </ItemGroup>
+
+  <!-- Committed snapshot baselines are read from (and, when updating, written to) the source tree. -->
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>SnapshotBaselines</_Parameter1>
+      <_Parameter2>$(MSBuildProjectDirectory)/Snapshots/Baselines</_Parameter2>
+    </AssemblyAttribute>
   </ItemGroup>
 
   <ItemGroup>

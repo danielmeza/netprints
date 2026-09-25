@@ -37,6 +37,8 @@
     <!-- xUnit v3 3.2.2: Avalonia.Headless.XUnit 12.1.3 (the latest) is built against
          xunit.v3.extensibility.core 3.2.2 and fails discovery under xUnit 4.x. -->
     <PackageVersion Include="xunit.v3" Version="3.2.2" />
+    <!-- Assertions for the shared UI scenarios in NetPrints.Testing.Ui (same version as xunit.v3). -->
+    <PackageVersion Include="xunit.v3.assert" Version="3.2.2" />
     <PackageVersion Include="Avalonia.Headless.XUnit" Version="12.1.3" />
     <!-- 11.x is the xUnit v3 3.x line (12.x requires xUnit 4). Not used in the UI test
          assembly: its test framework replaces Avalonia's and every [AvaloniaFact] fails. -->
@@ -44,6 +46,7 @@
     <PackageVersion Include="Microsoft.Reactive.Testing" Version="6.1.0" />
     <!-- Headless UI tests: Skia without the libfontconfig dependency, so the tests run on a
          machine with only the .NET SDK (SC-001). Must match the SkiaSharp version of Avalonia. -->
+    <PackageVersion Include="SkiaSharp" Version="3.119.4" />
     <PackageVersion Include="SkiaSharp.NativeAssets.Linux" Version="3.119.4" />
     <PackageVersion Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="3.119.4" />
   </ItemGroup>

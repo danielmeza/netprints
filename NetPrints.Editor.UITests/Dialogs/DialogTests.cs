@@ -1,10 +1,11 @@
-using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using NetPrints.Core;
 using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.References;
 using NetPrints.Editor.UITests.Hosting;
+using NetPrints.Testing.Ui.Dialogs;
+using NetPrints.Testing.Ui.References;
 
 namespace NetPrints.Editor.UITests.Dialogs;
 
@@ -12,21 +13,22 @@ public class DialogTests
 {
     private static readonly TypeSpecifier[] Types = [TypeSpecifier.FromType<object>(), TypeSpecifier.FromType<string>(), TypeSpecifier.FromType<int>()];
 
+    private static CancellationToken Token => TestContext.Current.CancellationToken;
+
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task SelectTypeDefaultsToObjectAndResolvesText()
     {
-        var dialog = new SelectTypeDialog(Types, TypeSpecifier.FromType<object>());
-        dialog.Show();
-        HeadlessInput.Pump();
-        var page = new SelectTypeDialogPage(dialog);
+        using var ui = HeadlessUi.Create();
+        var dialog = ui.Show(new SelectTypeDialog(Types, TypeSpecifier.FromType<object>()));
+        var page = new SelectTypeDialogPage(ui.Driver);
 
         Assert.Equal(TypeSpecifier.FromType<object>(), dialog.ResolveSelection()); // PAR-58
+        Assert.Equal("System.Object", await page.TypeBox.TextAsync(Token));
 
-        page.TypeBox.SelectedItem = null;
-        page.TypeBox.Text = "System.String";
+        await page.TypeBox.ClickAsync(Token);
+        await ui.Driver.PressAsync("Ctrl+A", Token);
+        await ui.Driver.TypeAsync("System.String", Token);
         Assert.Equal(TypeSpecifier.FromType<string>(), dialog.ResolveSelection()); // editable chooser
-        dialog.Close();
-        await Task.CompletedTask;
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
@@ -38,32 +40,28 @@ public class DialogTests
             new("Trim", [], [stringType], MethodModifiers.None, MemberVisibility.Public, stringType, []),
             new("ToUpper", [], [stringType], MethodModifiers.None, MemberVisibility.Public, stringType, []),
         ];
-        var dialog = new SelectMethodDialog(methods);
-        dialog.Show();
-        HeadlessInput.Pump();
+        using var ui = HeadlessUi.Create();
+        ui.Show(new SelectMethodDialog(methods));
+        var page = new SelectMethodDialogPage(ui.Driver);
 
-        Assert.Equal(methods[0], new SelectMethodDialogPage(dialog).MethodBox.SelectedItem); // PAR-59
-        Assert.NotNull(dialog.CaptureRenderedFrame());
-        dialog.Close();
-        await Task.CompletedTask;
+        Assert.Equal(methods[0].ToString(), await page.MethodBox.PropertyAsync("SelectedItem", Token)); // PAR-59
+        Assert.True(await page.SelectButton.IsEnabledAsync(Token));
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task ErrorDialogShowsCopyableMessage()
     {
-        var dialog = new ErrorDialog("Failed", "details\nline 2");
-        dialog.Show();
-        HeadlessInput.Pump();
-        var page = new ErrorDialogPage(dialog);
+        using var ui = HeadlessUi.Create();
+        var dialog = ui.Show(new ErrorDialog("Failed", "details\nline 2"));
+        var page = new ErrorDialogPage(ui.Driver);
         bool closed = false;
         dialog.Closed += (_, _) => closed = true;
 
-        Assert.Equal("Failed", dialog.Title);
-        Assert.True(page.Message.IsReadOnly);
-        Assert.Equal("details\nline 2", page.Message.Text);
-        page.ClickOk();
+        Assert.Equal("Failed", await page.TextAsync(Token));
+        Assert.Equal("True", await page.Message.PropertyAsync("IsReadOnly", Token));
+        Assert.Equal("details\nline 2", await page.Message.TextAsync(Token));
+        await page.OkButton.ClickAsync(Token);
         Assert.True(closed);
-        await Task.CompletedTask;
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
@@ -71,30 +69,25 @@ public class DialogTests
     {
         var project = Project.CreateNew("P", "N");
         project.References.Add(new SourceDirectoryReference("/tmp/src"));
-        var context = new EditorContext(new NoFilePicker(), new RecordingDialogs(), new NoClipboard(),
-            new NetPrints.Editor.Hosting.Avalonia.AvaloniaUiDispatcher(), new ReflectionHost(new NetPrints.Editor.Hosting.Avalonia.AvaloniaUiDispatcher()),
-            new NetPrints.Editor.Hosting.Avalonia.WindowService(), new RecordingProcessLauncher(),
+        var dispatcher = new NetPrints.Editor.Hosting.Avalonia.AvaloniaUiDispatcher();
+        var context = new EditorContext(new QueuedFilePicker(), new RecordingDialogs(), new NoClipboard(), dispatcher, new ReflectionHost(dispatcher),
+            new NetPrints.Editor.Hosting.Avalonia.WindowService(), new CapturingProcessLauncher(),
             System.Reactive.Concurrency.DefaultScheduler.Instance, () => new CommunityToolkit.Mvvm.Messaging.WeakReferenceMessenger());
-        var dialog = new ReferencesDialog { DataContext = new ReferenceListVM(project, context) };
-        dialog.Show();
-        HeadlessInput.Pump();
-        var page = new ReferencesDialogPage(dialog);
-        bool closed = false;
-        dialog.Closed += (_, _) => closed = true;
+        using var ui = HeadlessUi.Create();
+        ui.Show(new ReferencesDialog { DataContext = new ReferenceListVM(project, context) });
+        var page = new ReferencesDialogPage(ui.Driver);
 
-        Assert.Equal(4, page.IncludeSwitches.Count); // PAR-16
-        Assert.Single(page.IncludeSwitches, s => s.IsEffectivelyEnabled); // PAR-19
-        Assert.Contains(page.RowTexts, t => t.Contains("System.dll"));
-        page.ClickClose(); // PAR-21
-        Assert.True(closed);
-        await Task.CompletedTask;
-    }
+        var rows = await page.RowNamesAsync(Token);
+        Assert.Equal(4, rows.Count); // PAR-16
+        int enabled = 0;
+        foreach (string row in rows)
+        {
+            enabled += await page.IncludeSwitch(row).IsEnabledAsync(Token) ? 1 : 0;
+        }
 
-    private sealed class NoFilePicker : IFilePickerService
-    {
-        public Task<string?> OpenFileAsync(string title, IReadOnlyList<FileFilter> filters) => Task.FromResult<string?>(null);
-        public Task<string?> SaveFileAsync(string title, string suggestedName, string defaultExtension, IReadOnlyList<FileFilter> filters) => Task.FromResult<string?>(null);
-        public Task<string?> OpenFolderAsync(string title) => Task.FromResult<string?>(null);
+        Assert.Equal(1, enabled); // PAR-19
+        Assert.Contains(rows, r => r.Contains("System.dll"));
+        await page.CloseAsync(Token); // PAR-21
     }
 
     private sealed class NoClipboard : IClipboardService

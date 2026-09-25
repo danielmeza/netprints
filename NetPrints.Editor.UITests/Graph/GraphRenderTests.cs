@@ -1,42 +1,41 @@
-using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.UITests.ClassEditor;
+using NetPrints.Editor.UITests.Hosting;
 
 namespace NetPrints.Editor.UITests.Graph;
 
 public class GraphRenderTests
 {
+    private static CancellationToken Token => TestContext.Current.CancellationToken;
+
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task RendersSampleMainGraph()
     {
-        using var session = await EditorSession.OpenSampleMainAsync();
-        var graph = session.Graph;
+        using var session = await EditorSession.OpenSampleMainAsync(Token);
 
-        Assert.Equal("Program", session.ClassEditor.Window.Title); // PAR-22
-        foreach (var node in graph.ViewModel.Nodes)
+        Assert.Equal("Program", await session.ClassEditor.TextAsync(Token)); // PAR-22
+        foreach (var node in session.GraphVM.Nodes)
         {
-            var container = graph.ContainerOf(node);
-            Assert.Equal(node.Location.X, container.Location.X);
-            Assert.Equal(node.Location.Y, container.Location.Y);
+            Assert.Equal((node.Location.X, node.Location.Y), await session.Graph.Node(node.Node.Name).LocationAsync(Token));
         }
 
-        Assert.Equal(2, graph.ViewModel.Connections.Count); // entry -> WriteLine -> return
-        Assert.All(graph.ViewModel.Nodes.SelectMany(n => n.AllPins).Where(p => p.IsConnected),
+        Assert.Equal(["CallMethodNode.Exec->ReturnNode.Exec", "MethodEntryNode.Exec->CallMethodNode.Exec"],
+            (await session.Graph.ConnectionNamesAsync(Token)).Order()); // entry -> WriteLine -> return
+        Assert.All(session.GraphVM.Nodes.SelectMany(n => n.AllPins).Where(p => p.IsConnected),
             p => Assert.NotEqual(GraphPoint.Zero, p.Anchor)); // anchors pushed to the view models
-        Assert.Equal("Main", graph.Watermark); // PAR-38
-        Assert.NotNull(session.ClassEditor.Window.CaptureRenderedFrame());
+        Assert.Equal("Main", await session.Graph.Watermark.TextAsync(Token)); // PAR-38
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task ClassWindowsOpenMaximized()
     {
-        using var sample = new Hosting.SampleCopy();
-        using var main = Main.MainWindowPage.Start();
-        await main.OpenStartupProjectAsync(sample.ProjectPath);
+        using var sample = new SampleCopy();
+        using var app = HeadlessApp.Start();
+        await app.OpenStartupProjectAsync(sample.ProjectPath, Token);
 
-        var page = await main.OpenClassAsync("HelloWorld.Program");
+        var page = await app.Main.OpenClassAsync("HelloWorld.Program", Token);
 
-        Assert.Equal(Avalonia.Controls.WindowState.Maximized, page.Window.WindowState); // PAR-22
+        Assert.Equal("Maximized", await page.WindowStateAsync(Token)); // PAR-22
     }
 }
