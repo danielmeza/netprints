@@ -47,9 +47,11 @@ jobs:
         run: dotnet build NetPrints.slnx -c Release --no-restore
 
       # Fails if any file would be reformatted by `dotnet format` (whitespace, style and analyzer
-      # fixes from .editorconfig); run `dotnet format NetPrints.slnx` locally to fix.
+      # fixes from .editorconfig); run the same command locally to fix. RS1024 is excluded: its
+      # code fix (== -> SymbolEqualityComparer.Default) is a behavior change in
+      # NetPrints.Reflection, not a formatting one (see P1 T013), and must not be auto-applied.
       - name: Format check
-        run: dotnet format NetPrints.slnx --verify-no-changes --no-restore
+        run: dotnet format NetPrints.slnx --verify-no-changes --no-restore --exclude-diagnostics RS1024
 
       # Core, reflection, view-model and headless Avalonia UI tests (no display server needed).
       # The desktop E2E tests are skipped here (NETPRINTS_E2E unset), which is a "zero tests ran"
