@@ -56,6 +56,10 @@ over `NetPrints.Reflection` (moved in P0); extension points (node
 libraries, class/member emitters, type catalogs, project/target profiles, `IHostChannel`,
 per-extension settings, plugin manifest/loading via AssemblyLoadContext); event graphs
 (multiple entry points); model INPC from Fody to CommunityToolkit.Mvvm.
+C# code view: replace the plain read-only generated-C# preview (parity item PAR-34) with
+AvaloniaEdit (TextMate C# highlighting, folding, line numbers) showing live Roslyn diagnostics
+(squiggles + error list linked to the originating node); evaluate RoslynPad.Editor.Avalonia for
+Roslyn-backed hover/quick info. Read-only in P1; editable C# ("code nodes") is a later idea.
 Done when: old sample loads, saves as JSON, generates identical C#.
 
 ### P2 — Catalog tooling + Spectre CLI
@@ -88,3 +92,14 @@ U1: `[UClass] partial` emitters, `unreal-blueprint` catalog profile, CLI loop in
 async/await, delegates, components, containers. U3: `UnrealSharpNetPrints` C++ plugin
 launcher, Unreal `IHostChannel` pipe, `unreal` project profile, upstream PR implementing
 `CSAssetTypeAction_CSBlueprint::OpenAssetEditor` as an external-editor hook.
+
+## Backlog (later phases, not yet scheduled)
+- **Structured code generation**: emit `if/else`, `for/foreach/while`, `Sequence` blocks and
+  `return` from the exec graph (dominator/post-dominator analysis), keeping today's
+  goto + jump-stack translator as fallback for irregular graphs; snapshot + execution-equivalence
+  tests. Deferred by owner (2026-09-24): current output works.
+- **Usability ("Blueprint-level" ease of use)**: context-sensitive node menu with strong
+  filtering, curated/favorite catalogs, high-level nodes, class templates, pin-type colors and
+  auto-conversion nodes, per-node error markers, collapse to function/macro, comment boxes,
+  live C# side-by-side view, visual debugging (execution highlighting, breakpoints, watches via
+  the host channel), natural-language/AI assist that generates nodes.
