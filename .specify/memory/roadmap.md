@@ -32,6 +32,8 @@ when it is started.
 | P3 | Editor extension host | ~2.5 w | P0, P1 | not started |
 | P4 | VSIX (WpfAvaloniaHost) | ~2 w | P3 | **deferred** by owner (2026-09-24) |
 | P5 | VS Code extension + browser build + sidecar | ~2.5–3 w | P3 | not started |
+| P6 | Usability (Blueprint-level ease of use) | ~4–5 w | P2, P3 | not started |
+| P7 | Structured code generation | ~2–3 w | P1 | not started |
 | U1 | UnrealSharp codegen + catalog (NetPrintsUnreal) | ~2 w | P2 | not started |
 | U2 | Unreal nodes | ~2–3 w | U1 | not started |
 | U3 | UE plugin, launcher, upstream PR | ~1.5 w | U1, P3 | not started |
@@ -93,13 +95,25 @@ async/await, delegates, components, containers. U3: `UnrealSharpNetPrints` C++ p
 launcher, Unreal `IHostChannel` pipe, `unreal` project profile, upstream PR implementing
 `CSAssetTypeAction_CSBlueprint::OpenAssetEditor` as an external-editor hook.
 
-## Backlog (later phases, not yet scheduled)
-- **Structured code generation**: emit `if/else`, `for/foreach/while`, `Sequence` blocks and
-  `return` from the exec graph (dominator/post-dominator analysis), keeping today's
-  goto + jump-stack translator as fallback for irregular graphs; snapshot + execution-equivalence
-  tests. Deferred by owner (2026-09-24): current output works.
-- **Usability ("Blueprint-level" ease of use)**: context-sensitive node menu with strong
-  filtering, curated/favorite catalogs, high-level nodes, class templates, pin-type colors and
-  auto-conversion nodes, per-node error markers, collapse to function/macro, comment boxes,
-  live C# side-by-side view, visual debugging (execution highlighting, breakpoints, watches via
-  the host channel), natural-language/AI assist that generates nodes.
+### P6 — Usability (Blueprint-level ease of use)
+Goal: someone who does not know C# can build complete classes comfortably; the C# stays visible
+for those who want to learn it.
+- Context-sensitive node menu: drag from a pin → only compatible nodes, ranked; strong filtering
+  of the ~119k raw suggestions; categories, favorites, recent nodes.
+- Curated catalogs per profile (builds on P2 catalog profiles), high-level nodes, class
+  templates (e.g. a new class comes with its lifecycle/event entry points ready).
+- Pin-type colors, automatic conversion nodes when linking compatible types.
+- Per-node error markers (from P1 diagnostics mapping), collapse selection to function/macro,
+  comment boxes/regions.
+- Live C# side-by-side view synced with the graph selection (builds on the P1 AvaloniaEdit view).
+- Visual debugging: execution highlighting, breakpoints and watch values, via `IHostChannel`
+  (desktop runner first; Unreal via NetPrintsUnreal afterwards).
+- Natural-language/AI assist that proposes nodes from a description (opt-in, reviewable diff).
+
+### P7 — Structured code generation
+Emit `if/else`, `for/foreach/while`, `Sequence` blocks and `return` from the exec graph using
+dominator/post-dominator analysis; keep the goto + jump-stack translator as fallback for
+irregular graphs; snapshot tests plus execution-equivalence tests between both translators.
+Scheduled after the owner deferred it on 2026-09-24 (current output works). Can run in
+parallel with P3–P6.
+
