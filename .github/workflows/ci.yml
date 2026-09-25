@@ -47,7 +47,10 @@ jobs:
         run: dotnet build NetPrints.sln -c Release --no-restore
 
       # Core, reflection, view-model and headless Avalonia UI tests (no display server needed).
+      # The desktop E2E tests are skipped here (NETPRINTS_E2E unset) and run in the e2e job.
       - name: Test
+        env:
+          NETPRINTS_UI_ARTIFACTS: ${{ github.workspace }}/TestResults/ui
         run: dotnet test --solution NetPrints.sln -c Release --no-build --report-xunit-trx --results-directory TestResults
 
       # The CLI returns exit code 1 for --version until the P2 redesign and prints it to stderr,
@@ -70,4 +73,57 @@ jobs:
         with:
           name: test-results
           path: TestResults/**/*.trx
+          if-no-files-found: warn
+
+      # Snapshot actual/diff images, flow screenshots and per-test diagnostics (tree dump + screenshots).
+      - name: Upload UI artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ui-headless
+          path: TestResults/ui/**
+          if-no-files-found: warn
+
+  e2e:
+    name: Desktop E2E (Linux, Xvfb)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', 'Directory.Build.props', 'global.json', '**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      # X server, window manager, input and screenshots, window state (xprop, xwininfo), GTK 3 for
+      # the native file pickers and a cursor theme for named cursors.
+      - name: Install X11 tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xvfb openbox xdotool imagemagick x11-utils libgtk-3-0t64 adwaita-icon-theme
+
+      - name: Build
+        run: dotnet build NetPrints.Desktop.E2ETests -c Release
+
+      # The tests start their own Xvfb on a free display (like xvfb-run -a) plus openbox.
+      - name: E2E tests
+        env:
+          NETPRINTS_E2E: 1
+          NETPRINTS_UI_ARTIFACTS: ${{ github.workspace }}/TestResults/ui
+        run: dotnet test --project NetPrints.Desktop.E2ETests -c Release --no-build --report-xunit-trx --results-directory TestResults
+
+      - name: Upload E2E artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-results
+          path: |
+            TestResults/**/*.trx
+            TestResults/ui/**
           if-no-files-found: warn

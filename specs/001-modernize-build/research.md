@@ -518,6 +518,55 @@ checkout v7, setup-dotnet v6, upload-artifact v7 (latest majors on 2026-09-24).
 | R3 | ~~Headless `Dispatch` hangs on exceptions~~ | Obsolete: Avalonia.Headless.XUnit `[AvaloniaFact]` with real timeouts (review follow-up) |
 | R4 | 119k suggestion entries over the runtime set | DynamicData filter + throttle + virtualized list; SC-005 test |
 | R5 | Runtime-assembly fallback changes compile semantics on Linux (net10 instead of netfx) | Documented; P1 adds explicit target/ref-pack selection |
-| R6 | Parity items with pointer gestures (XButton1, middle-click, right-drag vs right-click) are hard to automate headless | VM-level tests + manual walkthrough (quickstart §5) |
+| R6 | ~~Parity items with pointer gestures (XButton1, middle-click, right-drag vs right-click) are hard to automate headless~~ | Automated: headless input through page objects, plus desktop E2E on Xvfb for OS drag and drop, the window manager, GTK pickers and the real cursor (§r) |
 | R7 | Governance: constitution/roadmap amendments pending user approval | plan.md → Pending governance amendments |
 | R8 | VSIX source no longer compiles against the new editor | Marked pending P4; excluded from build and CI |
+
+## r. UI test automation (replaces the manual walkthrough, T076)
+
+**Decision**: one set of page objects over a driver abstraction, a thin hand-rolled Screenplay layer
+on top, and two drivers: headless (Avalonia.Headless) and X11 (real desktop editor on Xvfb).
+
+- **Projects**: `NetPrints.Testing.Ui` (`IUiDriver`, `UiElement`, `UiWait`, screen and component
+  objects, snapshot comparison, Screenplay, shared smoke scenarios);
+  `NetPrints.Editor.UITests` (`HeadlessDriver`, headless tests, snapshot baselines);
+  `NetPrints.Desktop.E2ETests` (`X11Driver`, GTK file dialogs, XFixes cursor reader, E2E tests).
+- **Locating**: only by `AutomationIds`, through `AutomationTree` (NetPrints.Editor), which both
+  drivers use, so headless and desktop see the same elements and properties (bounds, screen bounds,
+  text, enabled/visible, pseudo-classes, cursor, text overflow, viewport, window state).
+- **Desktop agent**: with `NETPRINTS_AUTOMATION=1` the desktop editor serves a read-only local pipe
+  (a Unix domain socket): `status` (ready signal: window shown, project and types loaded), `find`,
+  `dump`, `settle`. Input stays real: xdotool through the X server and openbox.
+- **Anti-flakiness**: no sleeps (condition waits; headless `RunJobs` + forced render tick; desktop
+  `settle` round trips); transitions disabled; invariant culture and UTC; fixed window sizes
+  (headless class windows get the 1600x1000 E2E screen size); a fresh editor, temp folder and (E2E)
+  private home per test; one private Xvfb per run on a free display ≥ 100, never the user's
+  desktop, and no D-Bus session, so pickers are GTK dialogs on that display; the desktop driver
+  moves the pointer through intermediate points (a jump onto a pin's tooltip window swallowed the
+  next click); per-test diagnostics (screenshots, tree dump, editor stdout/stderr, xdotool log) as CI
+  artifacts; no retries except infrastructure waits (X socket, window manager).
+- **Snapshots**: per-pixel threshold 32/255, at most 0.5 % differing pixels, masks for carets.
+  Baselines are committed in `NetPrints.Editor.UITests/Snapshots/Baselines` and regenerated with
+  `NETPRINTS_UPDATE_SNAPSHOTS=1`; new baselines are reviewed before acceptance.
+
+### Screenplay library: Boa.Constrictor evaluated, hand-rolled instead
+
+Timeboxed evaluation of `Boa.Constrictor.Screenplay` 4.0.0 (the core package):
+
+| Criterion | Result |
+|---|---|
+| Builds on net10.0 | Yes (netstandard2.0) |
+| Maintained | Core package last released 2023-06 (the umbrella `boa.constrictor` 4.2.0 is 2026-05) |
+| Async with cancellation | No: `ITaskAsync.PerformAsAsync(IActor)` and `IQuestionAsync<T>.RequestAsAsync(IActor)` take no `CancellationToken`, so xUnit's `TestContext.Current.CancellationToken` (required, xUnit1051 is an error) cannot flow |
+| Waiting | `AbstractWait` is a synchronous Stopwatch busy loop and `Retries.RetryOnException` uses `Thread.Sleep`: both block the headless UI thread and break the no-sleep rule |
+
+**Decision**: hand-roll the core (`Actor`, `IAbility`, `ITask`, `IQuestion<T>`, about 150 lines) in
+`NetPrints.Testing.Ui/Screenplay`, with cancellation tokens and a journal for diagnostics. Tasks
+and questions only call page objects; the ability `UseNetPrints` wraps the root page object over
+`IUiDriver`, so the same tasks run on both drivers.
+
+### What stays manual
+
+Nothing functional. Visual judgement (colors, icons, layout) is covered by the snapshot baselines
+and the E2E screenshots, which the coordinator reviews; a Windows or macOS run is outside the
+Linux-only CI (constitution).

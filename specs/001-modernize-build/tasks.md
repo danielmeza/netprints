@@ -198,7 +198,7 @@ build can be green on Linux from here on.
 - [X] T073 [US2] Add `NetPrints.Editor.Tests/Ui/AppStartupTests.cs`. Start `EditorApp` headless, show `MainWindow`, assert a rendered frame and that the startup time is under 5 s (SC-006). Open `samples/HelloWorld/HelloWorld.netpp` via the startup-argument path and assert that the class list shows `HelloWorld.Program` (PAR-05, PAR-11)
 - [X] T074 [US2] Add `NetPrints.Editor.Tests/Ui/EditFlowTests.cs`: open the sample; open the class window via `WindowService`; open `Main`; create an `If Else` node through `SuggestionListVM` at a point, and assert that a new `ItemContainer` is realized; connect the entry exec output to the If input via `NodePinVM.ConnectTo`, and assert that a connection is realized; save to a temporary copy, reload, and assert that the node and connection are present (FR-017 flow; PAR-46, 52, 53, 06)
 - [X] T075 [US2] Add `NetPrints.Editor.Tests/Ui/SearchPopupTests.cs`: open the popup on the `Main` graph; type "write line"; assert the visible items contain `Console WriteLine`; select → node created; Literal → the fake `SelectTypeAsync` is called (PAR-52, 54, 58)
-- [ ] T076 [US2] Run the quickstart §5 parity walkthrough on Linux (and Windows if available). Record PAR-01..60 pass/fail with the verification method in the PR description (SC-004). File follow-ups for anything deferred — **partially done by the implementer (no display available)**: every PAR item is mapped to its automated tests in the PR description; the manual-only aspects are listed there as an unchecked checklist for a human walkthrough
+- [X] T076 [US2] ~~Manual parity walkthrough~~ replaced by automated tests (owner decision 2026-09-25; T101–T110). Every PAR item is mapped to automated tests in the PR description; visual review of the snapshot baselines and E2E screenshots by the coordinator replaces the hand check
 
 **Checkpoint**: US2 done — editor at parity, verified.
 
@@ -255,6 +255,19 @@ reproduced by a failing test (owner rule `conformance-gates` §5).
 - [X] T099 NuGet cache in CI (review 1)
 - [X] T100 Update the research, plan, quickstart, contracts, data model, spec and README for these changes
 
+## Phase 14: Automate the parity walkthrough (2026-09-25, replaces T076)
+
+- [X] T101 `NetPrints.Editor/Hosting/Automation`: `AutomationTree` (elements by automation id with bounds, screen bounds and properties), contracts, `EditorCursors`; automation ids for references rows, search icons and inline pin editors
+- [X] T102 `NetPrints.Testing.Ui`: `IUiDriver` with capabilities and cancellation tokens, `UiElement`, `UiWait`, screen and component objects, tolerant snapshot comparison
+- [X] T103 Hand-rolled Screenplay (`Actor`, `IAbility`, `ITask`, `IQuestion<T>`, `UseNetPrints`), smoke tasks and questions; Boa.Constrictor evaluation recorded in research.md §r
+- [X] T104 `HeadlessDriver` and `HeadlessApp`; port the UI tests to the page objects; invariant culture and UTC
+- [X] T105 New headless coverage: hover (pseudo-classes and pixels), Get/Set pointer exit, splitters, canvas drops, window reuse/restore, pan cursor, label fit, file-picker flows, error list, tooltips
+- [X] T106 Snapshot baselines (17), generated and pending coordinator review
+- [X] T107 Bugs found by the automation, each reproduced by a failing test first: boolean literals ("True"), culture-dependent number literals, unescaped string/char literals, translation errors compiled as C# text, clipped "References" label, no pan cursor, stale class-window automation name after rename
+- [X] T108 In-app read-only automation agent (`NETPRINTS_AUTOMATION=1`, local pipe: status/find/dump/settle) and its client, with a headless test
+- [X] T109 `NetPrints.Desktop.E2ETests`: private Xvfb + openbox, `X11Driver` (xdotool, import, xprop/xwininfo, XFixes), GTK file dialogs; the shared smoke scenarios (edit/compile/run with real output, create project, references, minimize/restore, pan cursor, drags from the lists)
+- [X] T110 CI `e2e` job; UI artifacts (snapshots, diagnostics, E2E screenshots); quickstart, research, contract and PR description updated
+
 Deferred to P1 (recorded by the owner in `.specify/memory/roadmap.md`):
 - the child-VM → parent callback refactor;
 - a Roslyn architecture gate for "no UI types in view models";
@@ -279,7 +292,7 @@ Deferred to P1 (recorded by the owner in `.specify/memory/roadmap.md`):
 - **US5 (P3)**: depends on US1 (the resolver and test infrastructure).
 - **US2 (P1)**: depends on US1 (resolver, sample) and US5 (reflection library).
 - **US3 (P2)**: depends on US1; it is final once US2's tests exist.
-- **US4 (P3)**: depends on US2 sign-off (T076) before the WPF sources are deleted.
+- **US4 (P3)**: depends on US2 sign-off (T076, now automated) before the WPF sources are deleted.
 
 ### Within phases
 
@@ -329,7 +342,7 @@ Task: "T050 MemberVariableView.axaml in NetPrints.Editor/Views/"
 | — | — | 58–59 | T069, T070, T075 |
 | — | — | 60 | T040, T041 |
 
-Every PAR item is also checked by hand in T076.
+Every PAR item is also exercised through the UI by the headless or E2E tests (Phase 14).
 
 ## Implementation Strategy
 
