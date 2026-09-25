@@ -23,6 +23,8 @@ public partial class EditorApp : Application
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             var composition = new EditorComposition();
+            var exceptionHandler = composition.InstallUnhandledExceptionHandler();
+            desktop.Exit += (_, _) => exceptionHandler.Dispose();
             var window = composition.CreateMainWindow();
             desktop.MainWindow = window;
             desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;

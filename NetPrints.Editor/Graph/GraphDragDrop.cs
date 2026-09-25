@@ -51,6 +51,9 @@ public sealed class DragSourceHelper
         }
     }
 
+    // async void because it is an event handler. An exception from the drag reaches
+    // Dispatcher.UIThread.UnhandledException, where UnhandledExceptionHandler shows it in the error
+    // dialog (covered by UnhandledExceptionTests.AsyncVoidHandlerExceptionIsReported).
     public async void Moved(PointerEventArgs e, Visual relativeTo)
     {
         if (pressed is null || payload is null)

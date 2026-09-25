@@ -36,6 +36,12 @@ public sealed class EditorComposition
 
     public MainEditorVM? MainEditor { get; private set; }
 
+    /// <summary>
+    /// Shows exceptions that escape to the UI thread in the error dialog instead of crashing
+    /// (dispose to uninstall).
+    /// </summary>
+    public IDisposable InstallUnhandledExceptionHandler() => new UnhandledExceptionHandler(Context.Dialogs, Context.Dispatcher);
+
     /// <summary>Creates the main window and its view model.</summary>
     public MainWindow CreateMainWindow()
     {

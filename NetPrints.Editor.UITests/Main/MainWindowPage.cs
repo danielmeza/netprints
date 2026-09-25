@@ -10,8 +10,12 @@ namespace NetPrints.Editor.UITests.Main;
 /// <summary>Page object of the main window, started with recording dialogs and process launcher.</summary>
 public sealed class MainWindowPage : IDisposable
 {
-    private MainWindowPage(EditorComposition composition, MainWindow window, RecordingDialogs dialogs, RecordingProcessLauncher processes)
+    private readonly IDisposable exceptionHandler;
+
+    private MainWindowPage(EditorComposition composition, MainWindow window, RecordingDialogs dialogs, RecordingProcessLauncher processes,
+        IDisposable exceptionHandler)
     {
+        this.exceptionHandler = exceptionHandler;
         Composition = composition;
         Window = window;
         Dialogs = dialogs;
@@ -29,10 +33,11 @@ public sealed class MainWindowPage : IDisposable
         var dialogs = new RecordingDialogs();
         var processes = new RecordingProcessLauncher();
         var composition = new EditorComposition(c => c with { Dialogs = dialogs, Processes = processes });
+        var exceptionHandler = composition.InstallUnhandledExceptionHandler(); // as EditorApp does on the desktop
         var window = composition.CreateMainWindow();
         window.Show();
         HeadlessInput.Pump();
-        return new MainWindowPage(composition, window, dialogs, processes);
+        return new MainWindowPage(composition, window, dialogs, processes, exceptionHandler);
     }
 
     public Button ProjectButton => Window.ById<Button>(AutomationIds.MainProjectButton);
@@ -68,5 +73,9 @@ public sealed class MainWindowPage : IDisposable
         return new ClassEditorPage(Composition.Windows.ClassEditorWindows.Single());
     }
 
-    public void Dispose() => Window.Close();
+    public void Dispose()
+    {
+        Window.Close();
+        exceptionHandler.Dispose();
+    }
 }
