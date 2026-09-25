@@ -4,8 +4,9 @@ using System.Globalization;
 namespace NetPrints.Desktop.E2ETests.Hosting;
 
 /// <summary>
-/// A private X server for the E2E run: Xvfb on a free display number (100 and up, never the
-/// user's desktop) at 1600x1000x24, 96 DPI, with the openbox window manager. Started once per
+/// A private X server for the E2E run: Xvfb on a free display number (100 and up, or from
+/// <c>NETPRINTS_E2E_DISPLAY_START</c>; never the user's desktop) at 1600x1000x24, 96 DPI, with
+/// the openbox window manager. Started once per
 /// run (collection fixture), like <c>xvfb-run -a</c>, plus a window manager.
 /// </summary>
 public sealed class XServer : IAsyncLifetime
@@ -21,6 +22,9 @@ public sealed class XServer : IAsyncLifetime
 
     /// <summary>Whether E2E tests run in this environment; otherwise they are skipped.</summary>
     public static bool IsEnabled => Environment.GetEnvironmentVariable(EnableVariable) == "1";
+
+    /// <summary>The variable with the first display number to try (default 100), to keep clear of displays other sessions use.</summary>
+    public const string DisplayStartVariable = "NETPRINTS_E2E_DISPLAY_START";
 
     public int Display { get; private set; }
 
@@ -64,7 +68,9 @@ public sealed class XServer : IAsyncLifetime
 
     private static int FreeDisplay()
     {
-        for (int display = 100; display < 200; display++)
+        int start = int.TryParse(Environment.GetEnvironmentVariable(DisplayStartVariable), CultureInfo.InvariantCulture, out int configured)
+            && configured is >= 100 and < 200 ? configured : 100;
+        for (int display = start; display < 200; display++)
         {
             if (!File.Exists($"/tmp/.X{display}-lock") && !File.Exists($"/tmp/.X11-unix/X{display}"))
             {
@@ -72,7 +78,7 @@ public sealed class XServer : IAsyncLifetime
             }
         }
 
-        throw new InvalidOperationException("No free X display number between 100 and 199.");
+        throw new InvalidOperationException($"No free X display number between {start} and 199.");
     }
 
     public async ValueTask InitializeAsync()
