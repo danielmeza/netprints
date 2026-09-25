@@ -7,6 +7,7 @@ namespace NetPrints.Editor.ClassEditor;
 /// <summary>Class editor window (PAR-22..37).</summary>
 public partial class ClassEditorWindow : Window
 {
+    /// <summary>Loads the window's XAML.</summary>
     public ClassEditorWindow()
     {
         InitializeComponent();
