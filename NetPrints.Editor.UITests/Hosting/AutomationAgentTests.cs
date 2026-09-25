@@ -107,7 +107,22 @@ public class AutomationAgentTests
     }
 
     /// <summary>
-    /// Runs <paramref name="actAsync"/>, then forces pending finalizers to run, and asserts none of
+    /// A faulted task left unobserved by earlier work (another test) must not be blamed on the
+    /// code under test: the check used to catch it when the GC finalized it during the check.
+    /// </summary>
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task TheUnobservedExceptionCheckIgnoresEarlierFaultedTasks()
+    {
+        LeaveAnUnobservedFaultedTask();
+
+        await AssertNoUnobservedExceptionsAsync(() => Task.CompletedTask);
+    }
+
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    private static void LeaveAnUnobservedFaultedTask() => _ = Task.FromException(new InvalidOperationException("from earlier work"));
+
+    /// <summary>
+    /// Drains finalizers left by earlier work, runs <paramref name="actAsync"/>, then forces pending finalizers to run, and asserts none of
     /// it produced an unobserved task exception. An exception this test itself already awaited is
     /// not "unobserved" (TaskScheduler.UnobservedTaskException never fires for it), so this only
     /// catches exactly the class of bug these dispose-race tests guard against.
@@ -121,17 +136,12 @@ public class AutomationAgentTests
             unobserved ??= e.Exception.Flatten().InnerExceptions.FirstOrDefault();
         }
 
+        HeadlessDriver.DrainFinalizers(); // faulted tasks of earlier tests surface now, before the handler is attached
         TaskScheduler.UnobservedTaskException += OnUnobserved;
         try
         {
             await actAsync();
-
-            for (int i = 0; i < 3; i++)
-            {
-                GC.Collect();
-                GC.WaitForPendingFinalizers();
-                HeadlessDriver.Pump();
-            }
+            HeadlessDriver.DrainFinalizers();
         }
         finally
         {
