@@ -35,7 +35,7 @@ namespace NetPrints.Reflection
             }
 
             var members = new List<ISymbol>();
-            var overridenMethods = new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default);
+            var overridenMethods = new HashSet<IMethodSymbol>();
 
             var startSymbol = symbol;
 
@@ -113,7 +113,7 @@ namespace NetPrints.Reflection
             ITypeSymbol candidateBaseType = symbol;
             while (candidateBaseType != null)
             {
-                if (SymbolEqualityComparer.Default.Equals(candidateBaseType, cls))
+                if (candidateBaseType == cls)
                 {
                     return true;
                 }
@@ -563,7 +563,7 @@ namespace NetPrints.Reflection
                 methodSymbols = methodSymbols
                     .Where(m => m.Parameters
                         .Select(p => p.Type)
-                        .Any(t => SymbolEqualityComparer.Default.Equals(t, searchType)
+                        .Any(t => t == searchType
                                     || searchType.IsSubclassOf(t)
                                     || t.TypeKind == TypeKind.TypeParameter));
             }
@@ -574,7 +574,7 @@ namespace NetPrints.Reflection
                 var searchType = GetTypeFromSpecifier(query.ReturnType);
 
                 methodSymbols = methodSymbols
-                    .Where(m => SymbolEqualityComparer.Default.Equals(m.ReturnType, searchType)
+                    .Where(m => m.ReturnType == searchType
                                 || m.ReturnType.IsSubclassOf(searchType)
                                 || m.ReturnType.TypeKind == TypeKind.TypeParameter);
             }
