@@ -100,6 +100,11 @@ legacy/NetPrintsVSIX/NetPrintsVSIXUtil.cs -text
 legacy/NetPrintsVSIX/Properties/AssemblyInfo.cs -text
 legacy/NetPrintsVSIX/source.extension.vsixmanifest -text
 
+# Golden C# recorded from ClassTranslator (Roslyn Formatter.NormalizeWhitespace(), whose default
+# `eol` is "\r\n" regardless of OS): keep the exact bytes the translator produces so
+# GoldenCSharpTests's byte comparison is not broken by checkout-time line-ending conversion.
+tests/NetPrints.Core.Tests/Fixtures/Golden/*.cs -text
+
 # Binary files: never diff, never convert line endings.
 *.png binary
 *.ico binary
