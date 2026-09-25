@@ -50,19 +50,14 @@
     <PackageVersion Include="SkiaSharp.NativeAssets.Linux" Version="3.119.4" />
     <PackageVersion Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="3.119.4" />
     <!-- CI coverage (build-test job's `dotnet test` run passes the coverage flag), referenced by
-         every project under tests/ via tests/Directory.Build.props. -->
-    <!-- Pinned to the MTP 2.0.x line (matches this solution's xunit.v3 3.2.2 transitive MTP
-         version, below); newer CodeCoverage releases pull a newer Microsoft.Testing.Platform
-         than xunit.v3's own Microsoft.Testing.Platform.MSBuild integration is built against,
-         which throws a TypeLoadException for IDataConsumer at test-host startup. -->
-    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="18.1.0" />
-    <!-- Exact versions xunit.v3 3.2.2 depends on (its xunit.v3.core.mtp-v2 dependency group);
-         pinned explicitly so CPM's transitive pinning cannot bump one Microsoft.Testing.* package
-         without the others — a skew between them throws a TypeLoadException at test-host startup
-         (IDataConsumer, then AppInsightsProvider.LogEventAsync, depending on which is behind). -->
-    <PackageVersion Include="Microsoft.Testing.Platform" Version="2.0.2" />
-    <PackageVersion Include="Microsoft.Testing.Platform.MSBuild" Version="2.0.2" />
-    <PackageVersion Include="Microsoft.Testing.Extensions.Telemetry" Version="2.0.2" />
-    <PackageVersion Include="Microsoft.Testing.Extensions.TrxReport.Abstractions" Version="2.0.2" />
+         every project under tests/ via tests/Directory.Build.props. Pinned to the 17.14.x line
+         (MTP 1.6.2 floor): it is the newest CodeCoverage release whose own Microsoft.Testing.Platform
+         floor stays in the 1.x line that xunit.v3 3.2.2 (package group xunit.v3.core.mtp-v1,
+         Microsoft.Testing.Platform 1.9.1) already resolves to. Newer CodeCoverage releases have a
+         2.x floor, which flips NuGet onto xunit.v3's xunit.v3.core.mtp-v2 group instead; that group
+         throws at test-host startup the moment a coverage/output-device extension is registered
+         (IOutputDevice.DisplayAsync: MissingMethodException) — a known xunit.v3 3.2.2/MTP-v2 gap,
+         not something fixable from this repo's package references alone. -->
+    <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="17.14.2" />
   </ItemGroup>
 </Project>
