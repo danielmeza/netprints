@@ -15,9 +15,11 @@ namespace NetPrints.Core
     /// <list type="bullet">
     /// <item>A reference whose file exists is used as-is (unchanged behavior on Windows with
     /// .NET Framework targeting packs).</item>
-    /// <item>A <see cref="FrameworkAssemblyReference"/> whose file is missing (for example the
-    /// .NET Framework reference assemblies on Linux) expands, once, to the managed assemblies of
-    /// the running .NET runtime.</item>
+    /// <item>If any <see cref="FrameworkAssemblyReference"/> is missing (for example the .NET
+    /// Framework reference assemblies on Linux), <em>all</em> framework references are replaced,
+    /// once, by the managed assemblies of the running .NET runtime. It is all-or-nothing: mixing an
+    /// installed .NET Framework pack with the runtime set gives the compiler two corlibs. Framework
+    /// references that did exist are reported as warnings.</item>
     /// <item>Any other missing file is skipped and reported as a warning instead of throwing.</item>
     /// </list>
     /// Real reference-pack resolution and target selection are P1 work.
@@ -58,29 +60,36 @@ namespace NetPrints.Core
                 }
             }
 
-            foreach (var reference in references)
+            var referenceList = references.ToList();
+            static bool Exists(AssemblyReference reference) =>
+                !string.IsNullOrEmpty(reference.AssemblyPath) && File.Exists(reference.AssemblyPath);
+
+            UsesRuntimeAssemblies = referenceList.OfType<FrameworkAssemblyReference>().Any(r => !Exists(r));
+
+            if (UsesRuntimeAssemblies)
             {
-                string path = reference.AssemblyPath;
-
-                if (!string.IsNullOrEmpty(path) && File.Exists(path))
+                foreach (var runtimePath in GetRuntimeAssemblyPaths())
                 {
-                    Add(path);
+                    Add(runtimePath);
                 }
-                else if (reference is FrameworkAssemblyReference)
-                {
-                    if (!UsesRuntimeAssemblies)
-                    {
-                        UsesRuntimeAssemblies = true;
+            }
 
-                        foreach (var runtimePath in GetRuntimeAssemblyPaths())
-                        {
-                            Add(runtimePath);
-                        }
+            foreach (var reference in referenceList)
+            {
+                if (reference is FrameworkAssemblyReference framework && UsesRuntimeAssemblies)
+                {
+                    if (Exists(framework))
+                    {
+                        warnings.Add($"Warning: framework reference {framework.FrameworkRelativePath} was replaced by the .NET runtime assemblies, because other framework references are missing.");
                     }
+                }
+                else if (Exists(reference))
+                {
+                    Add(reference.AssemblyPath);
                 }
                 else
                 {
-                    warnings.Add($"Warning: referenced assembly not found and skipped: {path}");
+                    warnings.Add($"Warning: referenced assembly not found and skipped: {reference.AssemblyPath}");
                 }
             }
 

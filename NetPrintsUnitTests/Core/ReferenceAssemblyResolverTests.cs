@@ -74,5 +74,42 @@ namespace NetPrints.Tests
                 System.Reflection.AssemblyName.GetAssemblyName(path);
             }
         }
+
+        [Fact]
+        public void MissingFrameworkReferenceReplacesAllFrameworkReferences()
+        {
+            // A project whose v4.5 packs are missing but which also references an installed
+            // framework pack: mixing both sets gives Roslyn two corlibs, so the fallback is
+            // all-or-nothing for framework references.
+            string existing = typeof(object).Assembly.Location;
+            var installed = new FrameworkAssemblyReference(".NETFramework/v4.7.2/mscorlib.dll") { AssemblyPath = existing };
+            var missing = new FrameworkAssemblyReference("DoesNotExist/v4.5/System.dll");
+            var resolver = new ReferenceAssemblyResolver();
+            var warnings = new List<string>();
+
+            var paths = resolver.ResolveAssemblyPaths(new AssemblyReference[] { installed, missing }, warnings);
+
+            Assert.True(resolver.UsesRuntimeAssemblies);
+            Assert.Equal(ReferenceAssemblyResolver.GetRuntimeAssemblyPaths(), paths);
+            string warning = Assert.Single(warnings);
+            Assert.Contains(".NETFramework/v4.7.2/mscorlib.dll", warning);
+        }
+
+        [Fact]
+        public void PlainAssembliesAreKeptNextToTheRuntimeFallback()
+        {
+            string library = typeof(ReferenceAssemblyResolverTests).Assembly.Location;
+            var resolver = new ReferenceAssemblyResolver();
+            var warnings = new List<string>();
+
+            var paths = resolver.ResolveAssemblyPaths(new AssemblyReference[]
+            {
+                new FrameworkAssemblyReference("DoesNotExist/v4.5/System.dll"),
+                new AssemblyReference(library),
+            }, warnings);
+
+            Assert.Contains(library, paths);
+            Assert.Empty(warnings);
+        }
     }
 }
