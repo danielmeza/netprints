@@ -249,7 +249,15 @@ public sealed class AutomationAgent : IDisposable
     {
         stop.Cancel();
         stop.Dispose();
-        connectionSlots.Dispose();
+
+        // Whatever server is sitting unconsumed (the accept loop's cancellation check runs before
+        // it picks up the next one) would otherwise leak its socket.
+        nextServer.Dispose();
+
+        // Deliberately not connectionSlots.Dispose(): nothing here reads AvailableWaitHandle, so
+        // it has no wait handle to release, and disposing it only made a racing
+        // ServeConnectionAsync's finally -> Release() fault with an ObjectDisposedException that
+        // went unobserved (fire-and-forget), reported later against an unrelated test.
     }
 }
 

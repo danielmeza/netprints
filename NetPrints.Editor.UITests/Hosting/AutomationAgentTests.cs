@@ -51,34 +51,94 @@ public class AutomationAgentTests
     {
         using var app = HeadlessApp.Start();
 
-        for (int i = 0; i < 20; i++)
+        await AssertNoUnobservedExceptionsAsync(async () =>
         {
-            string pipe = NewPipeName();
-            using var agent = new AutomationAgent(pipe, app.Tree, () => new AutomationStatus(true, false, false, null, Environment.ProcessId));
-            var client = await AutomationClient.ConnectAsync(pipe, TimeSpan.FromSeconds(10), Token);
-
-            // Started but not awaited before disposing, to race SendAsync's gate against
-            // DisposeAsync as closely as this process can arrange without a sleep.
-            var pending = client.StatusAsync(Token);
-            await client.DisposeAsync();
-
-            try
+            for (int i = 0; i < 20; i++)
             {
-                await pending;
+                string pipe = NewPipeName();
+                using var agent = new AutomationAgent(pipe, app.Tree, () => new AutomationStatus(true, false, false, null, Environment.ProcessId));
+                var client = await AutomationClient.ConnectAsync(pipe, TimeSpan.FromSeconds(10), Token);
+
+                // Started but not awaited before disposing, to race SendAsync's gate against
+                // DisposeAsync as closely as this process can arrange without a sleep.
+                var pending = client.StatusAsync(Token);
+                await client.DisposeAsync();
+
+                try
+                {
+                    await pending;
+                }
+                catch (Exception ex) when (ex is IOException or ObjectDisposedException or OperationCanceledException)
+                {
+                    // Expected: the pipe closed under it. Must not be the gate (see DisposeAsync).
+                    Assert.DoesNotContain("SemaphoreSlim", ex.Message);
+                }
             }
-            catch (Exception ex) when (ex is IOException or ObjectDisposedException or OperationCanceledException)
+        });
+    }
+
+    /// <summary>
+    /// Disposing the <see cref="AutomationAgent"/> itself while a connection is being served must
+    /// not leave an unobserved task exception behind either: Dispose() used to dispose
+    /// connectionSlots synchronously while ServeConnectionAsync's finally, running asynchronously
+    /// on the connection's own task, was still going to call connectionSlots.Release() — an
+    /// ObjectDisposedException("SemaphoreSlim") from a fire-and-forget task nobody awaited.
+    /// Reproduced 300/300 by the reviewer against the built assembly.
+    /// </summary>
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task DisposingTheAgentWhileAConnectionIsServedDoesNotFaultItsRelease()
+    {
+        using var app = HeadlessApp.Start();
+
+        await AssertNoUnobservedExceptionsAsync(async () =>
+        {
+            for (int i = 0; i < 20; i++)
             {
-                // Expected: the pipe closed under it. Must not be the gate (see DisposeAsync).
-                Assert.DoesNotContain("SemaphoreSlim", ex.Message);
+                string pipe = NewPipeName();
+                var agent = new AutomationAgent(pipe, app.Tree, () => new AutomationStatus(true, false, false, null, Environment.ProcessId));
+                await using var client = await AutomationClient.ConnectAsync(pipe, TimeSpan.FromSeconds(10), Token);
+
+                // A round trip proves the connection is actually being served (its slot held,
+                // ServeAsync now blocked reading the next line) before racing it against Dispose.
+                await client.StatusAsync(Token);
+                agent.Dispose();
             }
+        });
+    }
+
+    /// <summary>
+    /// Runs <paramref name="actAsync"/>, then forces pending finalizers to run, and asserts none of
+    /// it produced an unobserved task exception. An exception this test itself already awaited is
+    /// not "unobserved" (TaskScheduler.UnobservedTaskException never fires for it), so this only
+    /// catches exactly the class of bug these dispose-race tests guard against.
+    /// </summary>
+    private static async Task AssertNoUnobservedExceptionsAsync(Func<Task> actAsync)
+    {
+        Exception? unobserved = null;
+        void OnUnobserved(object? sender, UnobservedTaskExceptionEventArgs e)
+        {
+            e.SetObserved();
+            unobserved ??= e.Exception.Flatten().InnerExceptions.FirstOrDefault();
         }
 
-        for (int i = 0; i < 3; i++)
+        TaskScheduler.UnobservedTaskException += OnUnobserved;
+        try
         {
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-            HeadlessDriver.Pump();
+            await actAsync();
+
+            for (int i = 0; i < 3; i++)
+            {
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                HeadlessDriver.Pump();
+            }
         }
+        finally
+        {
+            TaskScheduler.UnobservedTaskException -= OnUnobserved;
+        }
+
+        Assert.Null(unobserved);
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
