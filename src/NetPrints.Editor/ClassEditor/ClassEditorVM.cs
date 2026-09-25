@@ -1,19 +1,19 @@
-using System.Reactive.Linq;
-using System.Reactive.Subjects;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using NetPrints.Core;
-using NetPrints.Graph;
-using NetPrints.Translator;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Main;
 using NetPrints.Editor.ModelSync;
 using NetPrints.Editor.UndoRedo;
 using NetPrints.Editor.Variables;
+using NetPrints.Graph;
+using NetPrints.Translator;
 
 namespace NetPrints.Editor.ClassEditor;
 

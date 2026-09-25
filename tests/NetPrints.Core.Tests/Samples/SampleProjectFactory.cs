@@ -1,8 +1,8 @@
-using NetPrints.Core;
-using NetPrints.Graph;
 using System;
 using System.IO;
 using System.Linq;
+using NetPrints.Core;
+using NetPrints.Graph;
 
 namespace NetPrints.Tests.Samples
 {

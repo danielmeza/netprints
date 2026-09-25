@@ -1,9 +1,9 @@
-﻿using Xunit;
+﻿using System.Collections.Generic;
+using System.Linq;
 using NetPrints.Core;
 using NetPrints.Graph;
 using NetPrints.Translator;
-using System.Collections.Generic;
-using System.Linq;
+using Xunit;
 
 namespace NetPrintsUnitTests
 {
@@ -69,7 +69,7 @@ namespace NetPrintsUnitTests
             // Translate the classes
 
             ClassTranslator translator = new ClassTranslator();
-            
+
             string openClassTranslated = translator.TranslateClass(openClass);
 
             string closedClassTranslated = translator.TranslateClass(closedClass);

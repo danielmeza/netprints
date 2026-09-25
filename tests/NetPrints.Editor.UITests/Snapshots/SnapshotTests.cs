@@ -1,10 +1,10 @@
 using Avalonia.Headless.XUnit;
 using NetPrints.Core;
-using NetPrints.Graph;
 using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.UITests.ClassEditor;
 using NetPrints.Editor.UITests.Hosting;
+using NetPrints.Graph;
 using NetPrints.Testing.Ui.Dialogs;
 using NetPrints.Testing.Ui.Driving;
 using NetPrints.Testing.Ui.Snapshots;

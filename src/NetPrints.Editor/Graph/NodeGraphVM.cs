@@ -3,7 +3,6 @@ using System.Collections.Specialized;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using NetPrints.Core;
-using NetPrints.Graph;
 using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.Graph.GetSet;
 using NetPrints.Editor.Graph.Nodes;
@@ -13,6 +12,7 @@ using NetPrints.Editor.ModelSync;
 using NetPrints.Editor.Search;
 using NetPrints.Editor.UndoRedo;
 using NetPrints.Editor.Variables;
+using NetPrints.Graph;
 
 namespace NetPrints.Editor.Graph;
 

@@ -1,6 +1,6 @@
 using NetPrints.Core;
-using NetPrints.Editor.Tests.Hosting;
 using NetPrints.Editor.Hosting;
+using NetPrints.Editor.Tests.Hosting;
 
 namespace NetPrints.Editor.Tests.Hosting;
 

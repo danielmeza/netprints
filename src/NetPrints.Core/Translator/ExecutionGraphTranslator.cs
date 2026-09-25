@@ -1,11 +1,11 @@
-﻿using NetPrints.Core;
-using NetPrints.Graph;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using NetPrints.Core;
+using NetPrints.Graph;
 
 namespace NetPrints.Translator
 {
@@ -149,7 +149,7 @@ namespace NetPrints.Translator
 
         private void CreateStates()
         {
-            foreach(Node node in execNodes)
+            foreach (Node node in execNodes)
             {
                 if (!(node is MethodEntryNode))
                 {
@@ -165,7 +165,7 @@ namespace NetPrints.Translator
 
         private void CreateVariables()
         {
-            foreach(Node node in nodes)
+            foreach (Node node in nodes)
             {
                 var v = GetOrCreatePinNames(node.OutputDataPins);
             }
@@ -461,7 +461,7 @@ namespace NetPrints.Translator
         public void TranslateDependentPureNodes(Node node)
         {
             var sortedPureNodes = TranslatorUtil.GetSortedPureNodes(node);
-            foreach(Node depNode in sortedPureNodes)
+            foreach (Node depNode in sortedPureNodes)
             {
                 TranslateNode(depNode, 0);
             }
@@ -618,9 +618,9 @@ namespace NetPrints.Translator
             if (node.ReturnValuePins.Count > 1)
             {
                 var returnNames = GetOrCreatePinNames(node.ReturnValuePins);
-                for(int i = 0; i < returnNames.Count(); i++)
+                for (int i = 0; i < returnNames.Count(); i++)
                 {
-                    builder.AppendLine($"{returnNames.ElementAt(i)} = {temporaryReturnName}.Item{i+1};");
+                    builder.AppendLine($"{returnNames.ElementAt(i)} = {temporaryReturnName}.Item{i + 1};");
                 }
             }
 

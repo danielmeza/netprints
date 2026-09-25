@@ -5,10 +5,10 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DynamicData;
 using NetPrints.Core;
-using NetPrints.Graph;
-using NetPrints.Reflection;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Hosting;
+using NetPrints.Graph;
+using NetPrints.Reflection;
 
 namespace NetPrints.Editor.Search;
 
@@ -374,17 +374,17 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
                     break;
 
                 case MakeDelegateTypeInfo makeDelegate:
-                {
-                    var methods = provider.GetMethods(new ReflectionProviderMethodQuery()
-                        .WithType(makeDelegate.Type)
-                        .WithVisibleFrom(makeDelegate.FromType));
-
-                    if (await context.Dialogs.SelectMethodAsync(methods) is { } chosen)
                     {
-                        AddNode<MakeDelegateNode>(chosen);
+                        var methods = provider.GetMethods(new ReflectionProviderMethodQuery()
+                            .WithType(makeDelegate.Type)
+                            .WithVisibleFrom(makeDelegate.FromType));
+
+                        if (await context.Dialogs.SelectMethodAsync(methods) is { } chosen)
+                        {
+                            AddNode<MakeDelegateNode>(chosen);
+                        }
+                        break;
                     }
-                    break;
-                }
 
                 case TypeSpecifier t when t == TypeSpecifier.FromType<ConstructorNode>():
                     if (await SelectTypeAsync() is { } constructedType
@@ -408,17 +408,39 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
                     }
                     break;
 
-                case TypeSpecifier t when t == TypeSpecifier.FromType<ForLoopNode>(): AddNode<ForLoopNode>(); break;
-                case TypeSpecifier t when t == TypeSpecifier.FromType<IfElseNode>(): AddNode<IfElseNode>(); break;
-                case TypeSpecifier t when t == TypeSpecifier.FromType<TypeOfNode>(): AddNode<TypeOfNode>(); break;
-                case TypeSpecifier t when t == TypeSpecifier.FromType<ExplicitCastNode>(): AddNode<ExplicitCastNode>(); break;
-                case TypeSpecifier t when t == TypeSpecifier.FromType<ReturnNode>(): AddNode<ReturnNode>(); break;
-                case TypeSpecifier t when t == TypeSpecifier.FromType<MakeArrayNode>(): AddNode<MakeArrayNode>(); break;
-                case TypeSpecifier t when t == TypeSpecifier.FromType<ThrowNode>(): AddNode<ThrowNode>(); break;
-                case TypeSpecifier t when t == TypeSpecifier.FromType<TernaryNode>(): AddNode<TernaryNode>(); break;
-                case TypeSpecifier t when t == TypeSpecifier.FromType<MakeArrayTypeNode>(): AddNode<MakeArrayTypeNode>(); break;
-                case TypeSpecifier t when t == TypeSpecifier.FromType<AwaitNode>(): AddNode<AwaitNode>(); break;
-                case TypeSpecifier t when t == TypeSpecifier.FromType<DefaultNode>(): AddNode<DefaultNode>(); break;
+                case TypeSpecifier t when t == TypeSpecifier.FromType<ForLoopNode>():
+                    AddNode<ForLoopNode>();
+                    break;
+                case TypeSpecifier t when t == TypeSpecifier.FromType<IfElseNode>():
+                    AddNode<IfElseNode>();
+                    break;
+                case TypeSpecifier t when t == TypeSpecifier.FromType<TypeOfNode>():
+                    AddNode<TypeOfNode>();
+                    break;
+                case TypeSpecifier t when t == TypeSpecifier.FromType<ExplicitCastNode>():
+                    AddNode<ExplicitCastNode>();
+                    break;
+                case TypeSpecifier t when t == TypeSpecifier.FromType<ReturnNode>():
+                    AddNode<ReturnNode>();
+                    break;
+                case TypeSpecifier t when t == TypeSpecifier.FromType<MakeArrayNode>():
+                    AddNode<MakeArrayNode>();
+                    break;
+                case TypeSpecifier t when t == TypeSpecifier.FromType<ThrowNode>():
+                    AddNode<ThrowNode>();
+                    break;
+                case TypeSpecifier t when t == TypeSpecifier.FromType<TernaryNode>():
+                    AddNode<TernaryNode>();
+                    break;
+                case TypeSpecifier t when t == TypeSpecifier.FromType<MakeArrayTypeNode>():
+                    AddNode<MakeArrayTypeNode>();
+                    break;
+                case TypeSpecifier t when t == TypeSpecifier.FromType<AwaitNode>():
+                    AddNode<AwaitNode>();
+                    break;
+                case TypeSpecifier t when t == TypeSpecifier.FromType<DefaultNode>():
+                    AddNode<DefaultNode>();
+                    break;
 
                 case TypeSpecifier type:
                     AddNode<TypeNode>(type);

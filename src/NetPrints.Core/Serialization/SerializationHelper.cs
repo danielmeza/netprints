@@ -1,6 +1,6 @@
-﻿using NetPrints.Core;
-using System.IO;
+﻿using System.IO;
 using System.Runtime.Serialization;
+using NetPrints.Core;
 
 namespace NetPrints.Serialization
 {

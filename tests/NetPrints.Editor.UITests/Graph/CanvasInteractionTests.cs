@@ -1,8 +1,8 @@
 using Avalonia.Headless.XUnit;
 using NetPrints.Core;
-using NetPrints.Graph;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.UITests.ClassEditor;
+using NetPrints.Graph;
 using NetPrints.Testing.Ui.Driving;
 
 namespace NetPrints.Editor.UITests.Graph;

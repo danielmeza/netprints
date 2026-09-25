@@ -1,11 +1,11 @@
-using Avalonia.Headless.XUnit;
 using Avalonia.Controls;
+using Avalonia.Headless.XUnit;
 using NetPrints.Core;
-using NetPrints.Graph;
 using NetPrints.Editor.ClassEditor;
-using NetPrints.Editor.UITests.Driving;
-using NetPrints.Testing.Ui.Driving;
 using NetPrints.Editor.Hosting.Automation;
+using NetPrints.Editor.UITests.Driving;
+using NetPrints.Graph;
+using NetPrints.Testing.Ui.Driving;
 
 namespace NetPrints.Editor.UITests.ClassEditor;
 

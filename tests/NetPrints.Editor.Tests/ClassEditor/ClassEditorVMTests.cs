@@ -1,7 +1,7 @@
 using NetPrints.Core;
-using NetPrints.Graph;
-using NetPrints.Editor.Tests.Hosting;
 using NetPrints.Editor.ClassEditor;
+using NetPrints.Editor.Tests.Hosting;
+using NetPrints.Graph;
 
 namespace NetPrints.Editor.Tests.ClassEditor;
 

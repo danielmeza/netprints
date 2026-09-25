@@ -1,5 +1,5 @@
-﻿using NetPrints.Graph;
-using System.Runtime.Serialization;
+﻿using System.Runtime.Serialization;
+using NetPrints.Graph;
 
 namespace NetPrints.Core
 {

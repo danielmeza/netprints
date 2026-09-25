@@ -1,5 +1,5 @@
-using NetPrints.Testing.Ui.Driving;
 using NetPrints.Editor.Hosting.Automation;
+using NetPrints.Testing.Ui.Driving;
 
 namespace NetPrints.Testing.Ui.Screenplay;
 

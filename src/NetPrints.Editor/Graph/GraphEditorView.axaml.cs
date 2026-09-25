@@ -4,11 +4,11 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.VisualTree;
+using NetPrints.Editor.Graph.Nodes;
+using NetPrints.Editor.Graph.Pins;
+using NetPrints.Editor.Hosting.Automation;
 using Nodify.Avalonia.Connections;
 using Nodify.Avalonia.Events;
-using NetPrints.Editor.Graph.Nodes;
-using NetPrints.Editor.Hosting.Automation;
-using NetPrints.Editor.Graph.Pins;
 
 namespace NetPrints.Editor.Graph;
 

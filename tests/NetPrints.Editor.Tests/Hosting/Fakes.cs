@@ -1,5 +1,5 @@
-using Microsoft.Reactive.Testing;
 using CommunityToolkit.Mvvm.Messaging;
+using Microsoft.Reactive.Testing;
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.Hosting;

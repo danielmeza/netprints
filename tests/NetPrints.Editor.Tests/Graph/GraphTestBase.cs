@@ -1,10 +1,10 @@
 using NetPrints.Core;
-using NetPrints.Graph;
-using NetPrints.Editor.Tests.Hosting;
 using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Graph.Nodes;
 using NetPrints.Editor.Graph.Pins;
+using NetPrints.Editor.Tests.Hosting;
+using NetPrints.Graph;
 
 namespace NetPrints.Editor.Tests.Graph;
 

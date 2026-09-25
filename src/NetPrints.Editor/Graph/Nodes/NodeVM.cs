@@ -4,11 +4,11 @@ using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using NetPrints.Core;
-using NetPrints.Graph;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Graph.Pins;
 using NetPrints.Editor.ModelSync;
 using NetPrints.Editor.UndoRedo;
+using NetPrints.Graph;
 
 namespace NetPrints.Editor.Graph.Nodes;
 
@@ -255,10 +255,18 @@ public sealed partial class NodeVM : ObservableObject, IDisposable
     {
         switch (Node)
         {
-            case MakeArrayNode makeArrayNode: makeArrayNode.AddElementPin(); break;
-            case MethodEntryNode entryNode: entryNode.AddArgument(); break;
-            case ReturnNode returnNode: returnNode.AddReturnType(); break;
-            case ClassReturnNode classReturnNode: classReturnNode.AddInterfacePin(); break;
+            case MakeArrayNode makeArrayNode:
+                makeArrayNode.AddElementPin();
+                break;
+            case MethodEntryNode entryNode:
+                entryNode.AddArgument();
+                break;
+            case ReturnNode returnNode:
+                returnNode.AddReturnType();
+                break;
+            case ClassReturnNode classReturnNode:
+                classReturnNode.AddInterfacePin();
+                break;
         }
     }
 
@@ -267,10 +275,18 @@ public sealed partial class NodeVM : ObservableObject, IDisposable
     {
         switch (Node)
         {
-            case MakeArrayNode makeArrayNode: makeArrayNode.RemoveElementPin(); break;
-            case MethodEntryNode entryNode: entryNode.RemoveArgument(); break;
-            case ReturnNode returnNode: returnNode.RemoveReturnType(); break;
-            case ClassReturnNode classReturnNode: classReturnNode.RemoveInterfacePin(); break;
+            case MakeArrayNode makeArrayNode:
+                makeArrayNode.RemoveElementPin();
+                break;
+            case MethodEntryNode entryNode:
+                entryNode.RemoveArgument();
+                break;
+            case ReturnNode returnNode:
+                returnNode.RemoveReturnType();
+                break;
+            case ClassReturnNode classReturnNode:
+                classReturnNode.RemoveInterfacePin();
+                break;
         }
     }
 

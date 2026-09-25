@@ -2,10 +2,10 @@ using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using NetPrints.Core;
-using NetPrints.Graph;
-using NetPrints.Translator;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Graph.Nodes;
+using NetPrints.Graph;
+using NetPrints.Translator;
 
 namespace NetPrints.Editor.Graph.Pins;
 
@@ -346,31 +346,31 @@ public sealed partial class NodePinVM : ObservableObject, IDisposable
         switch (Pin)
         {
             case NodeInputDataPin { IncomingPin: not null } dataPin:
-            {
-                // AddRerouteNode reconnects the pin, so remember the source first.
-                var source = dataPin.IncomingPin;
-                var reroute = GraphUtil.AddRerouteNode(dataPin);
-                reroute.PositionX = (Pin.Node.PositionX + source.Node.PositionX) / 2;
-                reroute.PositionY = (Pin.Node.PositionY + source.Node.PositionY) / 2;
-                break;
-            }
+                {
+                    // AddRerouteNode reconnects the pin, so remember the source first.
+                    var source = dataPin.IncomingPin;
+                    var reroute = GraphUtil.AddRerouteNode(dataPin);
+                    reroute.PositionX = (Pin.Node.PositionX + source.Node.PositionX) / 2;
+                    reroute.PositionY = (Pin.Node.PositionY + source.Node.PositionY) / 2;
+                    break;
+                }
             case NodeOutputExecPin { OutgoingPin: not null } execPin:
-            {
-                // AddRerouteNode reconnects the pin, so remember the target first.
-                var target = execPin.OutgoingPin;
-                var reroute = GraphUtil.AddRerouteNode(execPin);
-                reroute.PositionX = (Pin.Node.PositionX + target.Node.PositionX) / 2;
-                reroute.PositionY = (Pin.Node.PositionY + target.Node.PositionY) / 2;
-                break;
-            }
+                {
+                    // AddRerouteNode reconnects the pin, so remember the target first.
+                    var target = execPin.OutgoingPin;
+                    var reroute = GraphUtil.AddRerouteNode(execPin);
+                    reroute.PositionX = (Pin.Node.PositionX + target.Node.PositionX) / 2;
+                    reroute.PositionY = (Pin.Node.PositionY + target.Node.PositionY) / 2;
+                    break;
+                }
             case NodeInputTypePin { IncomingPin: not null } typePin:
-            {
-                var source = typePin.IncomingPin;
-                var reroute = GraphUtil.AddRerouteNode(typePin);
-                reroute.PositionX = (Pin.Node.PositionX + source.Node.PositionX) / 2;
-                reroute.PositionY = (Pin.Node.PositionY + source.Node.PositionY) / 2;
-                break;
-            }
+                {
+                    var source = typePin.IncomingPin;
+                    var reroute = GraphUtil.AddRerouteNode(typePin);
+                    reroute.PositionX = (Pin.Node.PositionX + source.Node.PositionX) / 2;
+                    reroute.PositionY = (Pin.Node.PositionY + source.Node.PositionY) / 2;
+                    break;
+                }
             default:
                 throw new InvalidOperationException("Can't add a reroute node for this pin.");
         }

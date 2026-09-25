@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
-using Xunit;
 using NetPrints.Core;
+using Xunit;
 
 namespace NetPrintsUnitTests
 {

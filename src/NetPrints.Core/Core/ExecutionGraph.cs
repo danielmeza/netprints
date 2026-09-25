@@ -1,7 +1,7 @@
-﻿using NetPrints.Graph;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
+using NetPrints.Graph;
 
 namespace NetPrints.Core
 {

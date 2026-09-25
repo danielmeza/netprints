@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using NetPrints.Core;
-using System.IO;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Emit;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Emit;
+using NetPrints.Core;
 
 namespace NetPrints.Reflection
 {
@@ -35,7 +35,7 @@ namespace NetPrints.Reflection
             }
 
             var members = new List<ISymbol>();
-            var overridenMethods = new HashSet<IMethodSymbol>();
+            var overridenMethods = new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default);
 
             var startSymbol = symbol;
 
@@ -113,7 +113,7 @@ namespace NetPrints.Reflection
             ITypeSymbol candidateBaseType = symbol;
             while (candidateBaseType != null)
             {
-                if (candidateBaseType == cls)
+                if (SymbolEqualityComparer.Default.Equals(candidateBaseType, cls))
                 {
                     return true;
                 }
@@ -259,7 +259,8 @@ namespace NetPrints.Reflection
         {
             return compilation.SourceModule.ReferencedAssemblySymbols.Select(module =>
             {
-                try { return module.GetTypeByMetadataName(name); }
+                try
+                { return module.GetTypeByMetadataName(name); }
                 catch { return null; }
             })
             .Where(t => t != null)
@@ -562,7 +563,7 @@ namespace NetPrints.Reflection
                 methodSymbols = methodSymbols
                     .Where(m => m.Parameters
                         .Select(p => p.Type)
-                        .Any(t => t == searchType
+                        .Any(t => SymbolEqualityComparer.Default.Equals(t, searchType)
                                     || searchType.IsSubclassOf(t)
                                     || t.TypeKind == TypeKind.TypeParameter));
             }
@@ -573,7 +574,7 @@ namespace NetPrints.Reflection
                 var searchType = GetTypeFromSpecifier(query.ReturnType);
 
                 methodSymbols = methodSymbols
-                    .Where(m => m.ReturnType == searchType
+                    .Where(m => SymbolEqualityComparer.Default.Equals(m.ReturnType, searchType)
                                 || m.ReturnType.IsSubclassOf(searchType)
                                 || m.ReturnType.TypeKind == TypeKind.TypeParameter);
             }

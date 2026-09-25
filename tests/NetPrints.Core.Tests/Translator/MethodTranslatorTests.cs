@@ -1,9 +1,9 @@
-﻿using Xunit;
+﻿using System.Collections.Generic;
+using System.Linq;
 using NetPrints.Core;
 using NetPrints.Graph;
 using NetPrints.Translator;
-using System.Collections.Generic;
-using System.Linq;
+using Xunit;
 
 namespace NetPrints.Tests
 {
@@ -15,7 +15,7 @@ namespace NetPrints.Tests
 
         private ExecutionGraphTranslator methodTranslator;
 
-                public MethodTranslatorTests()
+        public MethodTranslatorTests()
         {
             methodTranslator = new ExecutionGraphTranslator();
             CreateStringLengthMethod();
@@ -62,7 +62,7 @@ namespace NetPrints.Tests
 
             // Create nodes
             var getLengthNode = new VariableGetterNode(stringLengthMethod, new VariableSpecifier("Length", TypeSpecifier.FromType<int>(),
-                MemberVisibility.Public,MemberVisibility.Public, TypeSpecifier.FromType<string>(), VariableModifiers.None));
+                MemberVisibility.Public, MemberVisibility.Public, TypeSpecifier.FromType<string>(), VariableModifiers.None));
 
             // Connect node execs
             GraphUtil.ConnectExecPins(stringLengthMethod.EntryNode.InitialExecutionPin, stringLengthMethod.ReturnNodes.First().ReturnPin);
@@ -71,7 +71,7 @@ namespace NetPrints.Tests
             GraphUtil.ConnectDataPins(stringLengthMethod.EntryNode.OutputDataPins[0], getLengthNode.InputDataPins[0]);
             GraphUtil.ConnectDataPins(getLengthNode.OutputDataPins[0], stringLengthMethod.ReturnNodes.First().InputDataPins[0]);
         }
-        
+
         private void CreateIfElseMethod()
         {
             // Create method
@@ -131,7 +131,7 @@ namespace NetPrints.Tests
             // Create nodes
             LiteralNode maxIndexLiteralNode = LiteralNode.WithValue(forLoopMethod, 10);
             ForLoopNode forLoopNode = new ForLoopNode(forLoopMethod);
-            
+
             // Connect exec nodes
             GraphUtil.ConnectExecPins(forLoopMethod.EntryNode.InitialExecutionPin, forLoopNode.ExecutionPin);
             GraphUtil.ConnectExecPins(forLoopNode.CompletedPin, forLoopMethod.ReturnNodes.First().ReturnPin);

@@ -1,6 +1,6 @@
 using NetPrints.Core;
-using NetPrints.Graph;
 using NetPrints.Editor.UndoRedo;
+using NetPrints.Graph;
 
 namespace NetPrints.Editor.Tests.UndoRedo;
 

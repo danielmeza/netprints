@@ -1,8 +1,8 @@
-﻿using NetPrints.Graph;
-using PropertyChanged;
-using System;
+﻿using System;
 using System.Linq;
 using System.Runtime.Serialization;
+using NetPrints.Graph;
+using PropertyChanged;
 
 namespace NetPrints.Core
 {
@@ -61,7 +61,7 @@ namespace NetPrints.Core
         /// </summary>
         public TypeSpecifier Type => TypeGraph.ReturnType;
 
-        [DataMember(Name="Type", EmitDefaultValue = false, IsRequired = false)]
+        [DataMember(Name = "Type", EmitDefaultValue = false, IsRequired = false)]
         private TypeSpecifier OldType
         {
             get => null;

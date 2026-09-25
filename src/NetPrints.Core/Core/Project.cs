@@ -1,19 +1,19 @@
-﻿using NetPrints.Core;
-using System;
-using System.IO;
-using System.Runtime.Serialization;
-using System.Reflection;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Collections.Concurrent;
-using NetPrints.Translator;
-using System.Diagnostics;
-using NetPrints.Serialization;
 using NetPrints.Compilation;
+using NetPrints.Core;
+using NetPrints.Serialization;
+using NetPrints.Translator;
 using PropertyChanged;
 
 namespace NetPrints.Core
@@ -184,8 +184,8 @@ namespace NetPrints.Core
         /// <param name="defaultNamespace">Default namespace of the project.</param>
         /// <param name="addDefaultReferences">Whether to add default references to the project.</param>
         /// <returns>The created project.</returns>
-        public static Project CreateNew(string name, string defaultNamespace, bool addDefaultReferences=true,
-            ProjectCompilationOutput compilationOutput=ProjectCompilationOutput.All)
+        public static Project CreateNew(string name, string defaultNamespace, bool addDefaultReferences = true,
+            ProjectCompilationOutput compilationOutput = ProjectCompilationOutput.All)
         {
             Project project = new Project()
             {

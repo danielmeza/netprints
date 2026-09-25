@@ -1,6 +1,6 @@
-﻿using NetPrints.Core;
-using System;
+﻿using System;
 using System.Collections.Generic;
+using NetPrints.Core;
 
 namespace NetPrints.Reflection
 {

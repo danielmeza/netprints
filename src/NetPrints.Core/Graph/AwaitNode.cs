@@ -1,7 +1,7 @@
-﻿using NetPrints.Core;
-using System.Linq;
+﻿using System.Linq;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
+using NetPrints.Core;
 
 namespace NetPrints.Graph
 {

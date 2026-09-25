@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using Avalonia.Headless.XUnit;
-using NetPrints.Editor.UITests.Hosting;
 using NetPrints.Editor.Hosting.Automation;
+using NetPrints.Editor.UITests.Hosting;
 
 namespace NetPrints.Editor.UITests.Main;
 

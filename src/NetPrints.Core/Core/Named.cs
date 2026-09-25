@@ -23,7 +23,7 @@ namespace NetPrints.Core
             Value = type;
         }
 
-        public static implicit operator T (Named<T> namedValue) => namedValue.Value;
+        public static implicit operator T(Named<T> namedValue) => namedValue.Value;
 
         public override string ToString()
         {

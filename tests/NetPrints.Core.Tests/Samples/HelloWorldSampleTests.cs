@@ -1,10 +1,10 @@
-using Xunit;
-using NetPrints.Core;
 using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using NetPrints.Core;
+using Xunit;
 
 namespace NetPrints.Tests.Samples
 {
@@ -20,7 +20,9 @@ namespace NetPrints.Tests.Samples
 
         public void Dispose()
         {
-            try { Directory.Delete(tempDir, true); } catch (IOException) { }
+            try
+            { Directory.Delete(tempDir, true); }
+            catch (IOException) { }
         }
 
         /// <summary>

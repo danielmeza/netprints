@@ -1,8 +1,8 @@
 using NetPrints.Core;
-using NetPrints.Graph;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Graph.Pins;
 using NetPrints.Editor.Tests.Hosting;
+using NetPrints.Graph;
 
 namespace NetPrints.Editor.Tests.Graph;
 

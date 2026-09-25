@@ -214,7 +214,7 @@ namespace NetPrints.Core
             return HashCode.Combine(Name, Modifiers, string.Join(",", GenericArguments), string.Join(",", ReturnTypes), string.Join(",", Parameters), Visibility, DeclaringType);
         }
 
-        public static bool operator==(MethodSpecifier a, MethodSpecifier b)
+        public static bool operator ==(MethodSpecifier a, MethodSpecifier b)
         {
             if (a is null)
             {

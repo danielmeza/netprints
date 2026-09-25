@@ -1,10 +1,10 @@
 using System.Diagnostics;
 using NetPrints.Core;
-using NetPrints.Graph;
 using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Search;
 using NetPrints.Editor.Tests.Hosting;
+using NetPrints.Graph;
 
 namespace NetPrints.Editor.Tests.Search;
 

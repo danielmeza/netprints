@@ -1,8 +1,8 @@
-﻿using NetPrints.Core;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using NetPrints.Core;
 
 namespace NetPrints.Graph
 {
@@ -26,7 +26,7 @@ namespace NetPrints.Graph
         /// <param name="isSubclassOf">Function for determining whether one type is the subclass of another type.</param>
         /// <param name="swapped">Whether we want pinB to be the first pin and vice versa.</param>
         /// <returns></returns>
-        public static bool CanConnectNodePins(NodePin pinA, NodePin pinB, Func<TypeSpecifier, TypeSpecifier, bool> isSubclassOf, Func<TypeSpecifier, TypeSpecifier, bool> hasImplicitCast, bool swapped=false)
+        public static bool CanConnectNodePins(NodePin pinA, NodePin pinB, Func<TypeSpecifier, TypeSpecifier, bool> isSubclassOf, Func<TypeSpecifier, TypeSpecifier, bool> hasImplicitCast, bool swapped = false)
         {
             if (pinA is NodeInputExecPin && pinB is NodeOutputExecPin)
             {
@@ -92,7 +92,7 @@ namespace NetPrints.Graph
         /// <param name="pinA">First pin.</param>
         /// <param name="pinB">Second pin.</param>
         /// <param name="swapped">Whether we want pinB to be the first pin and vice versa.</param>
-        public static void ConnectNodePins(NodePin pinA, NodePin pinB, bool swapped=false)
+        public static void ConnectNodePins(NodePin pinA, NodePin pinB, bool swapped = false)
         {
             if (pinA is NodeInputExecPin exA && pinB is NodeOutputExecPin exB)
             {
@@ -244,7 +244,7 @@ namespace NetPrints.Graph
 
         public static void DisconnectOutputDataPin(NodeOutputDataPin pin)
         {
-            foreach(NodeInputDataPin outgoingPin in pin.OutgoingPins)
+            foreach (NodeInputDataPin outgoingPin in pin.OutgoingPins)
             {
                 outgoingPin.IncomingPin = null;
             }
@@ -435,7 +435,7 @@ namespace NetPrints.Graph
             for (int i = 0; i < methodSpecifier.Parameters.Count; i++)
             {
                 BaseType argType = methodSpecifier.Parameters[i].Value;
-                TypeNode argTypeNode = CreateNestedTypeNode(newMethod, argType, newMethod.EntryNode.PositionX + offsetX, newMethod.EntryNode.PositionY + offsetY * (i+1));
+                TypeNode argTypeNode = CreateNestedTypeNode(newMethod, argType, newMethod.EntryNode.PositionX + offsetX, newMethod.EntryNode.PositionY + offsetY * (i + 1));
 
                 newMethod.MethodEntryNode.AddArgument();
 
@@ -446,7 +446,7 @@ namespace NetPrints.Graph
             for (int i = 0; i < methodSpecifier.ReturnTypes.Count; i++)
             {
                 BaseType returnType = methodSpecifier.ReturnTypes[i];
-                TypeNode returnTypeNode = CreateNestedTypeNode(newMethod, returnType, newMethod.MainReturnNode.PositionX + offsetX, newMethod.MainReturnNode.PositionY + offsetY * (i+1));
+                TypeNode returnTypeNode = CreateNestedTypeNode(newMethod, returnType, newMethod.MainReturnNode.PositionX + offsetX, newMethod.MainReturnNode.PositionY + offsetY * (i + 1));
 
                 newMethod.MainReturnNode.AddReturnType();
 
@@ -478,7 +478,7 @@ namespace NetPrints.Graph
             {
                 foreach (var otherOtp in node.OutputDataPins)
                 {
-                    if (GraphUtil.CanConnectNodePins(otherOtp, idp,isSubclassOf, hasImplicitCast))
+                    if (GraphUtil.CanConnectNodePins(otherOtp, idp, isSubclassOf, hasImplicitCast))
                     {
                         GraphUtil.ConnectDataPins(otherOtp, idp);
 

@@ -1,7 +1,7 @@
-﻿using CommandLine;
-using NetPrints.Core;
-using System;
+﻿using System;
 using System.Threading;
+using CommandLine;
+using NetPrints.Core;
 
 namespace NetPrintsCLI
 {

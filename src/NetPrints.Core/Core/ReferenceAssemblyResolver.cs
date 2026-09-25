@@ -44,8 +44,10 @@ namespace NetPrints.Core
         /// <returns>Distinct paths of existing assembly files.</returns>
         public IReadOnlyList<string> ResolveAssemblyPaths(IEnumerable<AssemblyReference> references, ICollection<string> warnings)
         {
-            if (references is null) throw new ArgumentNullException(nameof(references));
-            if (warnings is null) throw new ArgumentNullException(nameof(warnings));
+            if (references is null)
+                throw new ArgumentNullException(nameof(references));
+            if (warnings is null)
+                throw new ArgumentNullException(nameof(warnings));
 
             UsesRuntimeAssemblies = false;
 

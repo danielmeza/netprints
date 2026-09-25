@@ -1,9 +1,9 @@
-﻿using NetPrints.Core;
-using PropertyChanged;
-using System;
+﻿using System;
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.Serialization;
+using NetPrints.Core;
+using PropertyChanged;
 
 namespace NetPrints.Graph
 {
@@ -35,7 +35,7 @@ namespace NetPrints.Graph
         public event PropertyChangedEventHandler PropertyChanged;
         public event ObservableValueChangedEventHandler OnValueChanged;
 
-        public static implicit operator T (ObservableValue<T> observableValue)
+        public static implicit operator T(ObservableValue<T> observableValue)
         {
             return observableValue.Value;
         }

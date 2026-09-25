@@ -1,6 +1,6 @@
 using System.Reactive.Concurrency;
-using CommunityToolkit.Mvvm.Messaging;
 using Avalonia.Controls;
+using CommunityToolkit.Mvvm.Messaging;
 using NetPrints.Editor.Hosting.Avalonia;
 using NetPrints.Editor.Main;
 

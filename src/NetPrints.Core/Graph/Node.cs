@@ -1,9 +1,9 @@
-﻿using NetPrints.Core;
-using PropertyChanged;
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.Serialization;
+using NetPrints.Core;
+using PropertyChanged;
 
 namespace NetPrints.Graph
 {

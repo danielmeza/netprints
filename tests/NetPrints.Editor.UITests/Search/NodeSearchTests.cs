@@ -1,8 +1,8 @@
 using Avalonia.Headless.XUnit;
 using NetPrints.Core;
-using NetPrints.Graph;
-using NetPrints.Editor.UITests.ClassEditor;
 using NetPrints.Editor.Hosting.Automation;
+using NetPrints.Editor.UITests.ClassEditor;
+using NetPrints.Graph;
 
 namespace NetPrints.Editor.UITests.Search;
 

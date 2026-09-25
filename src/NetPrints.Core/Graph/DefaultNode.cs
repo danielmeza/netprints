@@ -1,6 +1,6 @@
-﻿using NetPrints.Core;
-using System;
+﻿using System;
 using System.Runtime.Serialization;
+using NetPrints.Core;
 
 namespace NetPrints.Graph
 {

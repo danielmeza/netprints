@@ -1,9 +1,9 @@
-using Xunit;
-using NetPrints.Core;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using NetPrints.Core;
+using Xunit;
 
 namespace NetPrints.Tests
 {

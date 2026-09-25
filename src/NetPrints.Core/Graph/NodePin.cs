@@ -1,5 +1,5 @@
-﻿using PropertyChanged;
-using System.Runtime.Serialization;
+﻿using System.Runtime.Serialization;
+using PropertyChanged;
 
 namespace NetPrints.Graph
 {

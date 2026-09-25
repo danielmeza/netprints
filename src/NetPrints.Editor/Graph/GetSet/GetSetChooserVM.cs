@@ -1,8 +1,8 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using NetPrints.Core;
-using NetPrints.Graph;
 using NetPrints.Editor.Graph;
+using NetPrints.Graph;
 
 namespace NetPrints.Editor.Graph.GetSet;
 

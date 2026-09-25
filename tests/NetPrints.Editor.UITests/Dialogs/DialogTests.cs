@@ -2,11 +2,11 @@ using Avalonia.Headless.XUnit;
 using NetPrints.Core;
 using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Hosting;
+using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Editor.References;
 using NetPrints.Editor.UITests.Hosting;
 using NetPrints.Testing.Ui.Dialogs;
 using NetPrints.Testing.Ui.References;
-using NetPrints.Editor.Hosting.Automation;
 
 namespace NetPrints.Editor.UITests.Dialogs;
 

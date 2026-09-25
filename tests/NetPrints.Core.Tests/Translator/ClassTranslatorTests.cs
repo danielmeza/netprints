@@ -1,10 +1,10 @@
-﻿using Xunit;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using NetPrints.Core;
 using NetPrints.Graph;
 using NetPrints.Translator;
-using System;
-using System.Collections.Generic;
-using System.Linq;
+using Xunit;
 
 namespace NetPrints.Tests
 {
@@ -83,7 +83,7 @@ namespace NetPrints.Tests
             GraphUtil.ConnectDataPins(getStringLengthNode.OutputDataPins[0], writeConsoleNode.ArgumentPins[0]);
         }
 
-                public ClassTranslatorTests()
+        public ClassTranslatorTests()
         {
             classTranslator = new ClassTranslator();
 
