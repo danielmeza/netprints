@@ -16,7 +16,7 @@ dotnet test --solution NetPrints.sln -c Release --no-build
 
 Expected:
 - The build finishes with **0 errors**. Known warnings: Fody `OnInputTypeChanged` (Core, until
-  P1), `RS1024` (Reflection), `MSTEST0017`.
+  P1), Roslyn analyzer warnings in the moved reflection code, `MSTEST0017`.
 - Tests report `failed: 0` for both test projects: `NetPrintsUnitTests` (11 tests) and
   `NetPrints.Editor.Tests` (reflection, view-model and headless UI tests).
 - `--report-trx --results-directory TestResults` writes `.trx` files, as CI does.

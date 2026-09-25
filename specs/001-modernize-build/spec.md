@@ -12,6 +12,11 @@
 editor with an Avalonia editor at feature parity, so that the whole solution builds and all tests
 pass on Linux. CI is Linux-only. The legacy VSIX leaves the solution build until P4.
 
+**Scope update (2026-09-24, constitution 1.2.0)**: Visual Studio / .NET Framework hosting is out
+of scope. Every project targets `net10.0` only and uses the latest stable dependencies (Roslyn 5.x,
+Avalonia 12 + Nodify.Avalonia 2.0). Statements below about `netstandard2.0`, compiler services 4.x
+and Avalonia 11 are superseded; see research.md "Scope update".
+
 **Roadmap phase**: P0. **Done when**: the whole solution builds and every test (11 existing core
 tests + new reflection/editor tests) passes on Linux in CI, and every item of the Editor Parity
 Inventory below is verified.
@@ -24,7 +29,7 @@ No interactive user was available for the questions; each was resolved with the 
 consistent with the constitution, the roadmap and the coordinator's instructions.
 
 - Q: Which operating systems does CI run on? → A: Main CI runs on Linux only (`ubuntu-latest`), in a workflow named `CI` (`.github/workflows/ci.yml`). The Visual Studio extension will get its own Windows workflow chained after `CI` (`workflow_run`), created in P4, not P0.
-- Q: Which Avalonia major version does the editor use? → A: Avalonia 11.x (11.3.22). Avalonia 12 ships only `net8.0`/`net10.0` assemblies; the P4 Visual Studio host runs on .NET Framework and needs `netstandard2.0` assemblies.
+- Q: Which Avalonia major version does the editor use? → A: (superseded by the 1.2.0 scope update: Avalonia 12.1.3 + Nodify.Avalonia 2.0.0) Avalonia 11.x (11.3.22). Avalonia 12 ships only `net8.0`/`net10.0` assemblies; the P4 Visual Studio host runs on .NET Framework and needs `netstandard2.0` assemblies.
 - Q: Which graph-canvas control provides pan/zoom, selection, dragging and connections? → A: Nodify.Avalonia 1.0.2, the last release built for Avalonia 11. It was verified on Linux in a headless test harness. Its risks are recorded in research.md.
 - Q: How are the editor's user-interface tests run on Linux? → A: With the same test framework as the core tests (MSTest 4 on Microsoft.Testing.Platform), using Avalonia's headless platform with the Skia renderer. No display server is needed.
 - Q: How do compile, run and type reflection work on Linux, where the .NET Framework reference assemblies used by existing projects do not exist? → A: Framework references that cannot be found fall back to the running .NET 10 runtime's assemblies. Executables built this way are launched through the `dotnet` host. The project file format does not change. Full reference-pack resolution stays in P1.
@@ -107,7 +112,7 @@ in built projects, and no Fody in any project except the core library (which P1 
 
 1. **Given** the repository, **When** SDK-style project files are searched for version numbers, **Then** none are found.
 2. **Given** the repository, **When** the solution is inspected, **Then** no built project references WPF, WinForms, MahApps, MvvmLight, Gapotchenko.FX or System.Management.
-3. **Given** the core library, **When** it is built, **Then** it produces `netstandard2.0` and `net10.0` outputs using compiler services 4.x.
+3. **Given** the core library, **When** it is built, **Then** it produces a `net10.0` output using the latest compiler services (5.x).
 
 ---
 
@@ -150,9 +155,9 @@ the .NET runtime's assemblies on Linux.
 - **FR-001**: The repository MUST pin the .NET 10 SDK with `rollForward: latestFeature`.
 - **FR-002**: Shared build settings (language version, deterministic build, CI build flag, nullable default, warnings policy) MUST be declared once.
 - **FR-003**: Package versions for all SDK-style projects MUST be declared once centrally, with transitive pinning enabled so known-vulnerable transitive packages are lifted.
-- **FR-004**: The core library MUST build for `netstandard2.0` and `net10.0`, using compiler services 4.x.
+- **FR-004**: The core library MUST build for `net10.0`, using the latest stable compiler services (5.x).
 - **FR-005**: The CLI MUST target `net10.0` only and keep its current command-line behavior.
-- **FR-006**: Unused or replaced dependencies MUST be removed: Gapotchenko.FX (replaced by the official `HashCode` polyfill), System.Management, the WinForms reference, MahApps, MvvmLight, PropertyChanged.Fody in the editor, and the MSTest 1.x and preview test SDK packages.
+- **FR-006**: Unused or replaced dependencies MUST be removed: Gapotchenko.FX (its `HashCode` polyfill is built into net10.0), System.Management, the WinForms reference, MahApps, MvvmLight, PropertyChanged.Fody in the editor, and the MSTest 1.x and preview test SDK packages.
 - **FR-007**: The core library MUST keep building with Fody at a version that works on the .NET 10 SDK, with no change in behavior. Fody is removed in P1.
 
 **Cross-platform compile and reflection (minimal; full resolution in P1)**
@@ -163,11 +168,11 @@ the .NET runtime's assemblies on Linux.
 
 **Reflection library**
 
-- **FR-011**: The reflection provider, its interface, its memoizing wrapper, the documentation helper, the operator specifiers and the converters MUST move from the editor into a UI-free library targeting `netstandard2.0` and `net10.0`. The move changes behavior only where compiler services 4.x require it (for example, `ref readonly` parameters).
+- **FR-011**: The reflection provider, its interface, its memoizing wrapper, the documentation helper, the operator specifiers and the converters MUST move from the editor into a UI-free library targeting `net10.0`. The move changes behavior only where compiler services 4.x require it (for example, `ref readonly` parameters).
 
 **Avalonia editor**
 
-- **FR-012**: The WPF editor MUST be replaced by an Avalonia 11.x editor split into an editor library (views and view models) and a desktop application targeting `net10.0`. The WPF editor and its test project are removed from the repository.
+- **FR-012**: The WPF editor MUST be replaced by an Avalonia 12.x editor split into an editor library (views and view models) and a desktop application targeting `net10.0`. The WPF editor and its test project are removed from the repository.
 - **FR-013**: View models MUST NOT use UI-toolkit types (brushes, dispatchers, UI points). They use plain value types and injected services for dialogs, file and folder pickers, clipboard, UI-thread dispatch, the reflection host and messaging.
 - **FR-014**: Every item in the Editor Parity Inventory MUST be implemented. Where the WPF behavior was defective (PAR-11), the intended behavior MUST be implemented instead.
 - **FR-015**: The editor MUST use a dark Fluent theme with an emerald accent, Material icons, and platform file and folder pickers.
@@ -276,5 +281,5 @@ acceptance scenario of User Story 2.
 - Contributors and CI use the .NET 10 SDK (10.0.100+). Users of the desktop app on Linux need the .NET 10 runtime, and the usual X11 or Wayland desktop libraries to run the UI.
 - Compiling on Linux targets the .NET 10 runtime's assemblies. Windows users with .NET Framework reference assemblies keep the old targets. Proper reference-pack and target selection is P1.
 - The VSIX is not built in P0. Its source stays, marked pending P4, and it will not compile against the new editor until P4.
-- Out of scope, kept in later phases: serialization abstraction and JSON (P1), extension points, plugin loading, profiles and UI contributions (P1/P3), event graphs (P1), catalog tooling and the Spectre CLI (P2), the VSIX and its chained Windows workflow (P4), VS Code, browser and sidecar (P5). P0 must not block them: view models stay UI-agnostic, and reflection stays UI-free and `netstandard2.0`-capable.
+- Out of scope, kept in later phases: serialization abstraction and JSON (P1), extension points, plugin loading, profiles and UI contributions (P1/P3), event graphs (P1), catalog tooling and the Spectre CLI (P2), the VSIX and its chained Windows workflow (P4), VS Code, browser and sidecar (P5). P0 must not block them: view models stay UI-agnostic, and reflection stays UI-free.
 - Governance: the roadmap currently places the Avalonia editor in P3, and constitution 1.0.0 predates the Linux-only CI rule and the VSIX-workflow exception. The amendments the user requested could not be applied by the spec agent, because governance files are protected. They are listed in plan.md → "Pending governance amendments" and need the user's approval before implementation starts.

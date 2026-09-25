@@ -12,9 +12,9 @@ description: "Task list for P0 — Modernize build and migrate editor to Avaloni
 end-to-end tests. Write each test task before or together with the code it covers; every
 checkpoint requires `dotnet test --solution NetPrints.sln` to be green.
 
-**Governance gate**: before starting, the user must approve and apply the constitution/roadmap
-amendments listed in plan.md → "Pending governance amendments" (the spec agent could not edit
-those files).
+**Governance gate**: satisfied — constitution 1.1.0 and 1.2.0 were applied by the owner.
+**Scope update (constitution 1.2.0)**: every project targets `net10.0` only with the latest stable
+dependencies; tasks below were adjusted accordingly (research.md "Scope update").
 
 **Organization**: phases follow the dependency order build foundation → reflection library →
 Avalonia shell → class editor → graph canvas → search/dialogs/drag & drop → UI tests → CI →
@@ -34,12 +34,12 @@ checkpoint.
 **Purpose**: repository-wide build files; take the Windows-only projects out of the solution so the
 build can be green on Linux from here on.
 
-- [ ] T001 Create `global.json`: `{"sdk":{"version":"10.0.100","rollForward":"latestFeature","allowPrerelease":false},"test":{"runner":"Microsoft.Testing.Platform"}}` (research e, p)
-- [ ] T002 [P] Create `Directory.Build.props` with `LangVersion=latest`, `Deterministic=true`, `ContinuousIntegrationBuild` when `$(CI)=='true'`, `Nullable=enable`, `TreatWarningsAsErrors=false`, `AvaloniaUseCompiledBindingsByDefault=true`, and `ManagePackageVersionsCentrally=false` when `$(MSBuildProjectName)=='NetPrintsVSIX'` (research d, f)
-- [ ] T003 [P] Create `Directory.Packages.props`: `ManagePackageVersionsCentrally` defaults to true (only if empty), `CentralPackageTransitivePinningEnabled=true`, and every `PackageVersion` from research §p (Roslyn 4.14.0, Fody 6.9.3, PropertyChanged.Fody 3.4.1, Microsoft.Bcl.HashCode 6.0.0, CommandLineParser 2.9.1, MSTest 4.4.1, Avalonia* 11.3.22, Nodify.Avalonia 1.0.2, CommunityToolkit.Mvvm 8.4.2, DynamicData 9.4.33, Avalonia.Xaml.Behaviors 11.3.0.6, Material.Icons.Avalonia 2.4.1)
-- [ ] T004 Remove the `NetPrintsEditor`, `NetPrintsEditorUnitTests` and `NetPrintsVSIX` projects (and their configuration entries) from `NetPrints.sln`. Keep the folders on disk for now: they are the porting reference (FR-020)
-- [ ] T005 [P] Add `NetPrintsVSIX/README.md` stating "Pending P4 rework: not in NetPrints.sln, does not build, not in CI; P4 adds a Windows workflow chained after CI" (FR-020)
-- [ ] T006 [P] Add `TestResults/` and `samples/**/Compiled_*/` to `.gitignore`
+- [X] T001 Create `global.json`: `{"sdk":{"version":"10.0.100","rollForward":"latestFeature","allowPrerelease":false},"test":{"runner":"Microsoft.Testing.Platform"}}` (research e, p)
+- [X] T002 [P] Create `Directory.Build.props` with `LangVersion=latest`, `Deterministic=true`, `ContinuousIntegrationBuild` when `$(CI)=='true'`, `Nullable=enable`, `TreatWarningsAsErrors=false`, `AvaloniaUseCompiledBindingsByDefault=true`, and `ManagePackageVersionsCentrally=false` when `$(MSBuildProjectName)=='NetPrintsVSIX'` (research d, f)
+- [X] T003 [P] Create `Directory.Packages.props`: `ManagePackageVersionsCentrally` defaults to true (only if empty), `CentralPackageTransitivePinningEnabled=true`, and every `PackageVersion` from research "Scope update" (Roslyn 5.9.0, Fody 6.9.3, PropertyChanged.Fody 4.1.0, CommandLineParser 2.9.1, MSTest 4.4.1, Avalonia* 12.1.3, Nodify.Avalonia 2.0.0, CommunityToolkit.Mvvm 8.4.2, DynamicData 9.4.33, Xaml.Behaviors.Avalonia 12.0.7, Material.Icons.Avalonia 3.0.2)
+- [X] T004 Remove the `NetPrintsEditor`, `NetPrintsEditorUnitTests` and `NetPrintsVSIX` projects (and their configuration entries) from `NetPrints.sln`. Keep the folders on disk for now: they are the porting reference (FR-020)
+- [X] T005 [P] Add `NetPrintsVSIX/README.md` stating "Pending P4 rework: not in NetPrints.sln, does not build, not in CI; P4 adds a Windows workflow chained after CI" (FR-020)
+- [X] T006 [P] Add `TestResults/` and `samples/**/Compiled_*/` to `.gitignore`
 
 ---
 
@@ -47,10 +47,10 @@ build can be green on Linux from here on.
 
 **Purpose**: Core builds on the .NET 10 SDK for both targets. Everything depends on this.
 
-- [ ] T007 Rewrite `NetPrints/NetPrints.csproj`: `TargetFrameworks=netstandard2.0;net10.0`, remove `LangVersion`, remove Gapotchenko.FX, versionless `PackageReference`s for Roslyn, `Fody` and `PropertyChanged.Fody` (both `PrivateAssets="all"`), add `Microsoft.Bcl.HashCode` only when `'$(TargetFramework)'=='netstandard2.0'`, set `Nullable=disable` (research a, b, c.3, h)
-- [ ] T008 Build `NetPrints/NetPrints.csproj` on Linux. Expect 0 errors and only the known Fody `OnInputTypeChanged` and analyzer warnings. No source changes should be needed. If a `HashCode` error appears, check that T007's conditional reference is present
+- [X] T007 Rewrite `NetPrints/NetPrints.csproj`: `TargetFramework=net10.0` (constitution 1.2.0), remove `LangVersion`, remove Gapotchenko.FX (no polyfill needed), versionless `PackageReference`s for Roslyn, `Fody` and `PropertyChanged.Fody` (both `PrivateAssets="all"`), set `Nullable=disable` (research a, b, h, Scope update)
+- [X] T008 Build `NetPrints/NetPrints.csproj` on Linux. Expect 0 errors and only the known Fody `OnInputTypeChanged` and analyzer warnings. No source changes should be needed
 
-**Checkpoint**: Core builds for `netstandard2.0` and `net10.0` on Linux.
+**Checkpoint**: Core builds for `net10.0` on Linux.
 
 ---
 
@@ -62,15 +62,15 @@ build can be green on Linux from here on.
 
 ### Retarget
 
-- [ ] T009 [P] [US1] Rewrite `NetPrintsCLI/NetPrintsCLI.csproj` to target `net10.0` with a versionless CommandLineParser reference. In `NetPrintsCLI/Program.cs`, make `ProjectPath` `string?` for nullable. Keep the exit codes unchanged (FR-005, research g)
-- [ ] T010 [P] [US1] Rewrite `NetPrintsUnitTests/NetPrintsUnitTests.csproj`: `net10.0`, `OutputType=Exe`, `EnableMSTestRunner=true`, versionless `MSTest` reference, `Nullable=disable`. Remove `Microsoft.NET.Test.Sdk`, `MSTest.TestAdapter`, `MSTest.TestFramework` and the `Properties` folder item (FR-006)
-- [ ] T011 [US1] Change `Assert.AreEqual(typeA, genType1/2)` to `Assert.AreEqual<BaseType>(…)` in `NetPrintsUnitTests/TypeTests.cs` lines 29–30 (research c.4)
-- [ ] T012 [US1] Run `dotnet build NetPrints.sln` and `dotnet test --solution NetPrints.sln`. Expect 11/11 passed on Linux (checkpoint for SC-002, partial)
+- [X] T009 [P] [US1] Rewrite `NetPrintsCLI/NetPrintsCLI.csproj` to target `net10.0` with a versionless CommandLineParser reference. In `NetPrintsCLI/Program.cs`, make `ProjectPath` `string?` for nullable. Keep the exit codes unchanged (FR-005, research g)
+- [X] T010 [P] [US1] Rewrite `NetPrintsUnitTests/NetPrintsUnitTests.csproj`: `net10.0`, `OutputType=Exe`, `EnableMSTestRunner=true`, versionless `MSTest` reference, `Nullable=disable`. Remove `Microsoft.NET.Test.Sdk`, `MSTest.TestAdapter`, `MSTest.TestFramework` and the `Properties` folder item (FR-006)
+- [X] T011 [US1] Change `Assert.AreEqual(typeA, genType1/2)` to `Assert.AreEqual<BaseType>(…)` in `NetPrintsUnitTests/TypeTests.cs` lines 29–30 (research c.4)
+- [X] T012 [US1] Run `dotnet build NetPrints.sln` and `dotnet test --solution NetPrints.sln`. Expect 11/11 passed on Linux (checkpoint for SC-002, partial)
 
 ### Cross-platform reference fallback (FR-008..010)
 
 - [ ] T013 [US1] Write failing tests in `NetPrintsUnitTests/ReferenceAssemblyResolverTests.cs`: an existing path is kept; a missing `FrameworkAssemblyReference` expands once to the managed dlls of `RuntimeEnvironment.GetRuntimeDirectory()` (contains `System.Private.CoreLib.dll` and `mscorlib.dll`); a missing plain `AssemblyReference` is skipped with a warning; the `UsesRuntimeAssemblies` flag is set
-- [ ] T014 [US1] Implement `NetPrints/Core/ReferenceAssemblyResolver.cs` (`ResolveAssemblyPaths(IEnumerable<AssemblyReference>, ICollection<string> warnings)`, `UsesRuntimeAssemblies`), netstandard2.0-compatible. Filter out native dlls with `AssemblyName.GetAssemblyName` in try/catch (research c)
+- [ ] T014 [US1] Implement `NetPrints/Core/ReferenceAssemblyResolver.cs` (`ResolveAssemblyPaths(IEnumerable<AssemblyReference>, ICollection<string> warnings)`, `UsesRuntimeAssemblies`). Filter out native dlls with `AssemblyName.GetAssemblyName` in try/catch (research c)
 - [ ] T015 [US1] In `NetPrints/Core/Project.cs` `CompileProject`: resolve assembly paths through the resolver, prepend its warnings to the compile errors, and write `{Name}.runtimeconfig.json` (framework `Microsoft.NETCore.App`, the running `major.minor.0`) next to the output when runtime assemblies were used (FR-008, FR-009)
 - [ ] T016 [US1] In `NetPrints/Core/Project.cs`: add `public (string FileName, string Arguments) GetRunCommand()`, which returns `dotnet "<exe>"` when the runtimeconfig exists and otherwise `(<exe>, "")`. `RunProject()` starts that command (FR-010). Leave the Windows `ProgramFilesX86` logic in `FrameworkAssemblyReference.cs` untouched (P1)
 - [ ] T017 [US1] Add a sample generator in `NetPrintsUnitTests/Samples/SampleProjectFactory.cs`. It builds `HelloWorld` through the Core API: project `HelloWorld` with the default references and an executable binary type; class `HelloWorld.Program` with a public static `Main` whose exec chain calls `System.Console.WriteLine(string)` with the unconnected value `"Hello, World!"`. It writes the files only when `NETPRINTS_REGENERATE_SAMPLES=1`. Use it once to create `samples/HelloWorld/HelloWorld.netpp` and `samples/HelloWorld/HelloWorld.Program.netpc`, then commit them (FR-018)
@@ -83,11 +83,11 @@ build can be green on Linux from here on.
 
 ## Phase 4: User Story 5 — Headless-testable reflection library (Priority: P3, prerequisite for US2)
 
-**Goal**: move reflection out of the WPF editor into the UI-free `NetPrints.Reflection` (ns2.0 + net10.0).
+**Goal**: move reflection out of the WPF editor into the UI-free `NetPrints.Reflection` (net10.0).
 
 **Independent Test**: `NetPrints.Editor.Tests` reflection tests pass without starting any UI session.
 
-- [ ] T020 [US5] Create `NetPrints.Reflection/NetPrints.Reflection.csproj`: `netstandard2.0;net10.0`, `Nullable=disable`, a reference to `NetPrints`, versionless Roslyn, and `Microsoft.Bcl.HashCode` for ns2.0. Add it to `NetPrints.sln`
+- [ ] T020 [US5] Create `NetPrints.Reflection/NetPrints.Reflection.csproj`: `net10.0`, `Nullable=disable`, a reference to `NetPrints` and versionless Roslyn. Add it to `NetPrints.sln`
 - [ ] T021 [US5] `git mv` `NetPrintsEditor/Reflection/{IReflectionProvider,ReflectionProvider,MemoizedReflectionProvider,Memoization,ReflectionConverter,DocumentationUtil,DefaultOperatorSpecifiers}.cs` to `NetPrints.Reflection/`, and change the namespace `NetPrintsEditor.Reflection` → `NetPrints.Reflection` (FR-011)
 - [ ] T022 [US5] Add `[RefKind.RefReadOnlyParameter] = MethodParameterPassType.In` to `refKindToPassType` in `NetPrints.Reflection/ReflectionConverter.cs` (research a)
 - [ ] T023 [US5] Harden `NetPrints.Reflection/ReflectionProvider.cs` and `DocumentationUtil.cs`: skip assembly paths that do not exist, instead of letting `MetadataReference.CreateFromFile` throw, and treat a missing Windows documentation path as "no docs". The caller passes paths that the resolver has already expanded (FR-009)
@@ -104,14 +104,14 @@ build can be green on Linux from here on.
 
 **Independent Test**: `MainEditorVMTests` and `ReferenceListVMTests` pass; the desktop app starts on Linux and opens the sample from the command line.
 
-- [ ] T026 [US2] Create `NetPrints.Editor/NetPrints.Editor.csproj` (`net10.0` library; Avalonia, Themes.Fluent, Fonts.Inter, Nodify.Avalonia, CommunityToolkit.Mvvm, DynamicData, Avalonia.Xaml.Behaviors, Material.Icons.Avalonia; references to NetPrints and NetPrints.Reflection; `AvaloniaResource Include="Assets/**"`). Add it to `NetPrints.sln`
+- [ ] T026 [US2] Create `NetPrints.Editor/NetPrints.Editor.csproj` (`net10.0` library; Avalonia, Themes.Fluent, Fonts.Inter, Nodify.Avalonia, CommunityToolkit.Mvvm, DynamicData, Xaml.Behaviors.Avalonia, Material.Icons.Avalonia; references to NetPrints and NetPrints.Reflection; `AvaloniaResource Include="Assets/**"`). Add it to `NetPrints.sln`
 - [ ] T027 [P] [US2] Create `NetPrints.Desktop/NetPrints.Desktop.csproj` (`net10.0`, `WinExe`, Avalonia.Desktop, reference to NetPrints.Editor, `ApplicationIcon`) and `NetPrints.Desktop/Program.cs` (`[STAThread] Main` → `BuildAvaloniaApp().StartWithClassicDesktopLifetime(args)`, `AppBuilder.Configure<EditorApp>().UsePlatformDetect().WithInterFont().LogToTrace()`). Add it to `NetPrints.sln`
 - [ ] T028 [P] [US2] Copy `NetPrintsEditor/Resources/*.png` (16 files) and `NetPrintsLogo.ico` to `NetPrints.Editor/Assets/`, and the icon to `NetPrints.Desktop/` (PAR-01, PAR-52 icons)
 - [ ] T029 [P] [US2] Create the service contracts and plain value types in `NetPrints.Editor/Services/` (`IFilePickerService.cs`, `IEditorDialogs.cs`, `IClipboardService.cs`, `IUiDispatcher.cs`, `IReflectionHost.cs`, `IWindowService.cs`, `IProcessLauncher.cs`, `FileFilter.cs`) and in `NetPrints.Editor/ViewModels/` (`GraphPoint.cs`, `NodeVisualKind.cs`, `PinKind.cs`), following contracts/editor-services.md
 - [ ] T030 [US2] Add the `NetPrints.Editor` project reference to the test project. Create the test fakes in `NetPrints.Editor.Tests/Fakes/` (`FakeFilePicker.cs`, `FakeDialogs.cs`, `FakeClipboard.cs`, `InlineDispatcher.cs`, `FakeWindowService.cs`, `FakeProcessLauncher.cs`)
 - [ ] T031 [US2] Implement `NetPrints.Editor/Services/ReflectionHost.cs`. It builds `MemoizedReflectionProvider(new ReflectionProvider(resolvedPaths, sourcePaths, generatedSources))` off the UI thread using `ReferenceAssemblyResolver`, publishes `NonStaticTypes` via `IUiDispatcher`, and raises `Reloaded` (PAR-15). Test it in `NetPrints.Editor.Tests/ViewModels/ReflectionHostTests.cs`
 - [ ] T032 [P] [US2] Implement the Avalonia services in `NetPrints.Editor/Services/Avalonia/`: `StorageFilePickerService.cs` (open, save and folder pickers via `TopLevel.StorageProvider`, `TryGetLocalPath`), `AvaloniaClipboardService.cs`, `AvaloniaUiDispatcher.cs`, `WindowService.cs` (a registry keyed by `ClassGraph` that activates, restores from minimized and closes windows), `ProcessLauncher.cs`
-- [ ] T033 [US2] Create `NetPrints.Editor/EditorApp.axaml(.cs)`: `FluentTheme` with `RequestedThemeVariant=Dark` and emerald accent `#FF008A00`; Nodify `Themes/Controls.xaml` StyleInclude plus `Themes/Dark.xaml` ResourceInclude; `MaterialIconStyles`. Add a composition root (`EditorServices`) that creates the Avalonia services and `MainEditorVM`, reads the startup arguments and opens `MainWindow` (research m, n; PAR-05; FR-015, FR-016) Then add the headless harness `NetPrints.Editor.Tests/Ui/UiTest.cs`: `TestAppBuilder` (`AppBuilder.Configure<EditorApp>().UseSkia().UseHeadless(new(){UseHeadlessDrawing=false})`), a shared `HeadlessUnitTestSession`, and `RunAsync(Action|Func<Task>)` that captures exceptions inside `Dispatch` and rethrows outside (research e gotcha)
+- [ ] T033 [US2] Create `NetPrints.Editor/EditorApp.axaml(.cs)`: `FluentTheme` with `RequestedThemeVariant=Dark` and emerald accent `#FF008A00`; Nodify `Themes/Controls.xaml` StyleInclude plus `Themes/Dark.xaml` ResourceInclude; `MaterialIconStyles`. Add a composition root (`EditorServices`) that creates the Avalonia services and `MainEditorVM`, reads the startup arguments and opens `MainWindow` (research m, n; PAR-05; FR-015, FR-016) Then add the headless harness `NetPrints.Editor.Tests/Ui/UiTest.cs`: `TestAppBuilder` (`AppBuilder.Configure<EditorApp>().UseSkia().UseHeadless(new(){UseHeadlessDrawing=false})`), a shared `HeadlessUnitTestSession` that is never disposed (disposal hangs on Avalonia 12.1.3, research "Scope update"), and `RunAsync(Action|Func<Task>)` that captures exceptions inside `Dispatch` and rethrows outside (research e gotcha)
 - [ ] T034 [US2] Write `NetPrints.Editor.Tests/ViewModels/MainEditorVMTests.cs` (initially failing) with the fakes. Cover: create project with cancel → previous project restored, and with a path → name taken from the file (PAR-03); open failure → error dialog + clipboard (PAR-04); startup argument opens the project (PAR-05); save prompts only when there is no path (PAR-06); Settings choosers disabled without a project (PAR-07); compile/run enablement and run via `IProcessLauncher` after success (PAR-09, PAR-10); unique `MyClass#` (PAR-12); existing class plus error path (PAR-13); remove class closes its window (PAR-11); close-all (PAR-14); reflection reload on open, references change and compile end (PAR-15)
 - [ ] T035 [US2] Port `NetPrints.Editor/ViewModels/MainEditorVM.cs`: `ObservableObject`, `[ObservableProperty] Project`, `partial void OnProjectChanged` (the former Fody hook), `[NotifyPropertyChangedFor]` for `IsProjectOpen`/`CanCompile`/`CanCompileAndRun`, and `[RelayCommand]`s for PAR-02..14 through the services. Make T034 pass
 - [ ] T036 [US2] Create `NetPrints.Editor/Views/MainWindow.axaml(.cs)`: title bound to the project name, icon, 800×600; five round buttons (Project, References, Settings, Compile, Run) with tooltips shown even when disabled; a `SplitView` for the Project and Settings panes (mutually exclusive); a Classes list with open/remove buttons (Material `Minus` icon); an indeterminate progress overlay. On close, call `CloseAllClassEditors` (PAR-01, 02, 07, 08, 09, 10, 11, 12, 13, 14)
@@ -162,7 +162,7 @@ build can be green on Linux from here on.
 - [ ] T059 [US2] Create `NetPrints.Editor/Views/Graph/GraphEditorView.axaml(.cs)`: `NodifyEditor` bound to `Nodes`/`Connections`/`SelectedItems`, `GridCellSize=28` with a 28-px grid background, `MinViewportZoom=0.3`, `MaxViewportZoom=1.0`, zoom step 1.3 around the pointer, right-drag pan with a move cursor (right-click without drag opens search in T072), `ItemsDragCompletedCommand` snaps to the grid, viewport reset when the graph changes, graph-name watermark, and the `ItemContainer` `Location` binding style (PAR-38, 49, 50, 51)
 - [ ] T060 [US2] Create `NetPrints.Editor/Views/Graph/NodeView.axaml(.cs)`: header color by kind, shadow, label, documentation tooltip, overload `ComboBox` (16 px) that goes through the undo stack, Pure `CheckBox`, left and right `+`/`-` buttons (Material icons, tooltips), six pin lists (inputs left, outputs right), and a compact reroute template (PAR-39..42)
 - [ ] T061 [US2] Create `NetPrints.Editor/Views/Graph/PinView.axaml(.cs)`: a Nodify `NodeInput`/`NodeOutput` with a custom connector template (square, circle or triangle, 14 px, hover outline); default-value indicator; unconnected editors (TextBox with watermark, enum ComboBox, CheckBox) where middle-click clears; editable name TextBox or a label; alignment by direction; push the connector `Anchor` to `NodePinVM.Anchor`. Middle-click on the pin → `DisconnectAll`, XButton1 → `ToggleFaint` (PAR-43, 44, 45, 48)
-- [ ] T062 [US2] Create the connection template in `GraphEditorView.axaml`: Nodify `Connection` bezier from source to target anchors, colored by `PinKind`, full opacity on hover (0.7 otherwise, 0.1 when faint), thickness 4 (2 when faint). Middle-click → `Disconnect`, double click → `InsertReroute`, XButton1 → `ToggleFaint`. Implement the gestures with Avalonia.Xaml.Behaviors `EventTriggerBehavior` or view code-behind (PAR-48)
+- [ ] T062 [US2] Create the connection template in `GraphEditorView.axaml`: Nodify `Connection` bezier from source to target anchors, colored by `PinKind`, full opacity on hover (0.7 otherwise, 0.1 when faint), thickness 4 (2 when faint). Middle-click → `Disconnect`, double click → `InsertReroute`, XButton1 → `ToggleFaint`. Implement the gestures with Xaml.Behaviors.Avalonia `EventTriggerBehavior` or view code-behind (PAR-48)
 - [ ] T063 [US2] Wire pin linking in `GraphEditorView.axaml(.cs)`: `PendingConnectionTemplate` preview; `ConnectionCompletedCommand` → `NodePinVM.ConnectTo` when compatible (`GraphUtil.CanConnectNodePins` with subclass and implicit-cast rules). A completion with no target opens node search at the drop point with `SuggestionPin` set (PAR-46, 47)
 - [ ] T064 [US2] Add the headless render test `NetPrints.Editor.Tests/Ui/GraphRenderTests.cs`. Open the sample `Main` graph in a `GraphEditorView` inside a headless `Window`. Assert that every `NodeVM` has a realized `ItemContainer` at its `Location`, that connections are realized, and that `CaptureRenderedFrame()` is not null (PAR-38..45 smoke)
 
@@ -224,15 +224,15 @@ build can be green on Linux from here on.
 
 - [ ] T080 [US4] `git rm -r NetPrintsEditor/ NetPrintsEditorUnitTests/` (after T076 sign-off). Make sure nothing in `NetPrints.sln` or in the remaining projects references them
 - [ ] T081 [US4] Run the hygiene checks and fix any hit. Search SDK-style `*.csproj` for `Version=` on `PackageReference` → none. Search for `Gapotchenko|System.Management|MahApps|MvvmLight|UseWPF|System.Windows.Forms|PresentationFramework` outside `NetPrintsVSIX/` and `specs/` → none. `Fody` should appear only in `NetPrints/NetPrints.csproj`, `NetPrints/FodyWeavers.*` and `Directory.Packages.props` (SC-007)
-- [ ] T082 [US4] Update the `README.md` sections "Target Frameworks" (new table: Core ns2.0+net10.0, Reflection ns2.0+net10.0, Editor/Desktop/CLI/tests net10.0), "Download/Build" (quickstart commands), "Standalone Editor Guide" (Avalonia, Linux/macOS/Windows, runtime-assembly fallback note) and "Visual Studio Extension" (pending P4) (FR-021)
+- [ ] T082 [US4] Update the `README.md` sections "Target Frameworks" (new table: every project net10.0), "Download/Build" (quickstart commands), "Standalone Editor Guide" (Avalonia, Linux/macOS/Windows, runtime-assembly fallback note) and "Visual Studio Extension" (pending P4) (FR-021)
 
 ---
 
 ## Phase 12: Polish & cross-cutting concerns
 
-- [ ] T083 [P] Check deterministic output: clean-build `NetPrints/NetPrints.csproj -c Release` twice and compare the `sha256sum` of both TFM outputs (SC-009)
+- [ ] T083 [P] Check deterministic output: clean-build `NetPrints/NetPrints.csproj -c Release` twice and compare the `sha256sum` of the outputs (SC-009)
 - [ ] T084 Run quickstart.md §2–4 from a fresh clone in a clean Linux container (only the .NET 10 SDK installed). Confirm the two-command build/test (SC-001)
-- [ ] T085 In the PR description, list the follow-ups: P1 (ref-pack resolution and target selection, Fody removal, nullable in Core/Reflection, RS1024, MSTEST0017, `LanguageVersion.Preview` constant), P2 (CLI exit codes), P4 (Nodify ns2.0/R1, VSIX workflow chained after `CI`), and the pending governance amendments
+- [ ] T085 In the PR description, list the follow-ups: P1 (ref-pack resolution and target selection, Fody removal, nullable in Core/Reflection, RS1024, MSTEST0017, `LanguageVersion.Preview` constant), P2 (CLI exit codes), P4 (VSIX workflow chained after `CI`; VS hosting is out of scope per constitution 1.2.0), and the net10.0-only scope update
 
 ---
 

@@ -16,7 +16,46 @@ Every decision below was checked by building and running code, not only by readi
 - Versions were queried with `dotnet package search --exact-match`, the nuget.org flat-container
   API (nuspec dependency groups) and the GitHub API (action releases, repository history).
 
-## Summary of verified results
+## Scope update 2026-09-24 (constitution 1.2.0): net10.0 everywhere, latest dependencies
+
+The project owner put Visual Studio / .NET Framework hosting out of scope. Constitution 1.2.0
+(principle IV) makes `net10.0` the only target framework and allows the latest stable dependency
+versions. This section **supersedes** every `netstandard2.0`, Roslyn-4.x, Avalonia-11 and
+Nodify-1.0.2 statement below; those sections are kept as the record of the original analysis.
+
+Re-verified by the implementer on Linux (SDK 10.0.400):
+
+| Area | Before (sections a, b, c.3, h, j, m, n, p) | Now |
+|------|---------------------------------------------|-----|
+| Target frameworks | Core, Reflection `netstandard2.0;net10.0` | **every project `net10.0` only** |
+| Roslyn | 4.14.0 (last line with ns2.0) | **Microsoft.CodeAnalysis.CSharp.Workspaces 5.9.0**; Core compiles unchanged, 11/11 core tests pass |
+| HashCode polyfill | Microsoft.Bcl.HashCode 6.0.0 for ns2.0 | **dropped**; `System.HashCode` is built in |
+| PropertyChanged.Fody | 3.4.1 | **4.1.0** (Fody 6.9.3); 11/11 tests pass; same `OnInputTypeChanged` warnings |
+| Avalonia | 11.3.22 | **12.1.3** (Avalonia, Desktop, Themes.Fluent, Fonts.Inter, Skia, Headless) |
+| Canvas | Nodify.Avalonia 1.0.2 (net7.0, unmaintained, Feb 2024) | **Nodify.Avalonia 2.0.0** (July 2026, MIT, a port of Nodify v7 to Avalonia 12, `lib/net8.0`) |
+| Icons | Material.Icons.Avalonia 2.4.1 | **3.0.2** |
+| Behaviors | Avalonia.Xaml.Behaviors 11.3.0.6 | **Xaml.Behaviors.Avalonia 12.0.7** (the package was renamed for Avalonia 12) |
+| MVVM / search | CommunityToolkit.Mvvm 8.4.2, DynamicData 9.4.33 | unchanged (already latest) |
+| Tests | MSTest 4.4.1 | unchanged (already latest) |
+
+**Spike (Avalonia 12.1.3 + Nodify.Avalonia 2.0.0, MSTest 4.4.1, headless Skia, Linux)**: a window
+with a `NodifyEditor` (2 nodes, 1 connection, `ItemContainerTheme` binding `Location`,
+`NodeInput.Anchor` bound `OneWayToSource`) realizes 2 `ItemContainer`s at the bound locations and
+1 `Connection`; anchors are pushed to the view model; `CaptureRenderedFrame()` returns a frame.
+Theme registration is unchanged: `<StyleInclude Source="avares://Nodify.Avalonia/Themes/Controls.xaml"/>`.
+`Node.Input`/`Node.Output` are item collections with `InputConnectorTemplate`/`OutputConnectorTemplate`.
+
+**New headless gotcha (verified)**: `HeadlessUnitTestSession.Dispose()` hangs with Avalonia
+12.1.3, even after every window is closed. The shared session is therefore **never disposed**;
+process exit tears it down. The catch-and-rethrow `UiTest.RunAsync` helper and `[Timeout]` rules
+from section e still apply.
+
+**Consequences**: risks R1 (ns2.0 editor for a VS host) and R3 (Avalonia 11.0.4 floor pulling
+vulnerable transitive packages) no longer apply. R2 changes from "unmaintained 1.0.x" to "young
+2.0.0 port" (mitigation unchanged: Nodify types stay in views). `RefKind.RefReadOnlyParameter`
+still needs the mapping in `ReflectionConverter` (section a).
+
+## Summary of verified results (original analysis)
 
 | Check | Result |
 |-------|--------|
@@ -384,8 +423,8 @@ checkout v7, setup-dotnet v6, upload-artifact v7 (latest majors on 2026-09-24).
 
 | ID | Risk | Mitigation / owner |
 |----|------|--------------------|
-| R1 | Nodify.Avalonia 1.0.2 is net7.0-only, which blocks a ns2.0 editor for the VS host | Isolate in views; resolve in P4 (see m) |
-| R2 | Nodify.Avalonia 1.0.x unmaintained, source gone | Fallback custom canvas; pin version |
+| R1 | ~~Nodify.Avalonia 1.0.2 is net7.0-only, which blocks a ns2.0 editor for the VS host~~ | Obsolete since constitution 1.2.0 (VS hosting out of scope) |
+| R2 | Nodify.Avalonia 2.0.0 is a young port (single release) | Nodify types only in views; pin version; fallback custom canvas |
 | R3 | Headless `Dispatch` hangs on exceptions | `UiTest.RunAsync` helper + `[Timeout]` (verified) |
 | R4 | 119k suggestion entries over the runtime set | DynamicData filter + throttle + virtualized list; SC-005 test |
 | R5 | Runtime-assembly fallback changes compile semantics on Linux (net10 instead of netfx) | Documented; P1 adds explicit target/ref-pack selection |

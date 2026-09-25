@@ -26,8 +26,8 @@ namespace NetPrintsUnitTests
             GenericType genType1 = new GenericType("T1");
             GenericType genType2 = new GenericType("T2");
 
-            Assert.AreEqual(typeA, genType1);
-            Assert.AreEqual(typeA, genType2);
+            Assert.AreEqual<BaseType>(typeA, genType1);
+            Assert.AreEqual<BaseType>(typeA, genType2);
             Assert.AreNotEqual(genType1, genType2);
         }
 

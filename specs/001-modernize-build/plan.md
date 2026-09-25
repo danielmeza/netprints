@@ -7,13 +7,13 @@
 ## Summary
 
 Make the whole solution build and test on Linux with the .NET 10 SDK, and replace the WPF editor
-with an Avalonia 11 editor at feature parity (60-item inventory). The build moves to `global.json`,
-Central Package Management (with transitive pinning) and `Directory.Build.props`. Core
-multi-targets `netstandard2.0;net10.0` on Roslyn 4.14. Fody is upgraded in Core only, so it builds.
-Gapotchenko.FX is replaced by `Microsoft.Bcl.HashCode`. A minimal `ReferenceAssemblyResolver`
+with an Avalonia 12 editor at feature parity (60-item inventory). The build moves to `global.json`,
+Central Package Management (with transitive pinning) and `Directory.Build.props`. Every project
+targets `net10.0` only (constitution 1.2.0); Core uses Roslyn 5.9. Fody is upgraded in Core only, so
+it builds. Gapotchenko.FX is removed (`System.HashCode` is built in). A minimal `ReferenceAssemblyResolver`
 falls back to the running .NET runtime's assemblies, so compile/run and reflection work on Linux.
 The reflection code moves into a UI-free `NetPrints.Reflection`. A new `NetPrints.Editor`
-(Avalonia 11.3.22 + Nodify.Avalonia 1.0.2 + CommunityToolkit.Mvvm + DynamicData) and a thin
+(Avalonia 12.1.3 + Nodify.Avalonia 2.0.0 + CommunityToolkit.Mvvm + DynamicData) and a thin
 `NetPrints.Desktop` replace the WPF editor. All tests run on MSTest 4 / Microsoft.Testing.Platform,
 UI tests included (Avalonia.Headless), and a single Linux GitHub Actions workflow `CI` gates
 merges. The legacy VSIX leaves the solution until P4. All technical decisions and their evidence
@@ -22,13 +22,13 @@ are in [research.md](./research.md).
 ## Technical Context
 
 **Language/Version**: C# `latest` (C# 14) on the .NET 10 SDK (`global.json` 10.0.100,
-`latestFeature`). Libraries target `netstandard2.0;net10.0`; apps and tests target `net10.0`.
+`latestFeature`). Every project targets `net10.0` only (constitution 1.2.0, scope update 2026-09-24).
 
-**Primary Dependencies**: Microsoft.CodeAnalysis.CSharp.Workspaces 4.14.0; Avalonia 11.3.22
-(Desktop, Themes.Fluent, Fonts.Inter, Skia, Headless); Nodify.Avalonia 1.0.2;
-CommunityToolkit.Mvvm 8.4.2; DynamicData 9.4.33; Avalonia.Xaml.Behaviors 11.3.0.6;
-Material.Icons.Avalonia 2.4.1; CommandLineParser 2.9.1; Fody 6.9.3 + PropertyChanged.Fody 3.4.1
-(Core only, until P1); Microsoft.Bcl.HashCode 6.0.0 (ns2.0 only).
+**Primary Dependencies** (latest stable for net10.0, see research "Scope update"):
+Microsoft.CodeAnalysis.CSharp.Workspaces 5.9.0; Avalonia 12.1.3 (Desktop, Themes.Fluent,
+Fonts.Inter, Skia, Headless); Nodify.Avalonia 2.0.0; CommunityToolkit.Mvvm 8.4.2; DynamicData
+9.4.33; Xaml.Behaviors.Avalonia 12.0.7; Material.Icons.Avalonia 3.0.2; CommandLineParser 2.9.1;
+Fody 6.9.3 + PropertyChanged.Fody 4.1.0 (Core only, until P1).
 
 **Storage**: files — `.netpp`/`.netpc` DataContract XML, unchanged format.
 
@@ -43,28 +43,27 @@ Avalonia.Headless + Skia for UI tests through a `UiTest.RunAsync` exception-capt
 **Performance Goals**: node search opens in < 2 s and filters in < 300 ms per keystroke over about
 119k entries (SC-005); editor start < 5 s (SC-006); CI < 15 min (SC-003).
 
-**Constraints**: view models free of UI types (principle II); reflection stays UI-free and
-ns2.0-capable (P4); no persisted-format change (principle VI); no Windows CI jobs.
+**Constraints**: view models free of UI types (principle II); reflection stays UI-free; no persisted-format change (principle VI); no Windows CI jobs.
 
 **Scale/Scope**: about 9.2k LOC WPF editor ported (16 XAML files, 10 VMs, 7 converters,
 3 dialogs, 60 parity items); 7 projects in the solution after P0.
 
 ## Constitution Check
 
-*GATE: checked before Phase 0 and re-checked after Phase 1. Checked against constitution **1.0.0**
-(the committed version).*
+*GATE: checked before Phase 0 and re-checked after Phase 1 against constitution 1.0.0; re-checked
+during implementation against constitution **1.2.0** (net10.0 everywhere).*
 
 | Principle | Status | Notes |
 |-----------|--------|-------|
 | I. Cross-platform, Linux-first | ✅ improves | The WPF editor is removed. Every project in the solution builds and tests on Linux. The VSIX is the documented exception (outside the solution until P4). The Windows `ProgramFilesX86` path stays but gets a cross-platform fallback; full removal is P1 (tracked below). |
 | II. UI-agnostic core | ✅ | New `NetPrints.Reflection` has no UI reference. VMs use `GraphPoint`, visual-kind enums and service interfaces instead of `Brush`, `Dispatcher` or `Point` (contracts/editor-services.md). |
 | III. Extension-first | ✅ n/a | No target-specific code. Services and VMs are shaped so P3 can add UI contributions. |
-| IV. Host compatibility | ⚠️ justified | Core and Reflection target `netstandard2.0;net10.0`, and apps target `net10.0`. `NetPrints.Editor` is `net10.0`-only because Nodify.Avalonia 1.0.2 ships only net7.0. P4 needs a ns2.0 editor for the VS host: see Complexity Tracking and research R1. |
+| IV. Single target framework (1.2.0) | ✅ | Every project targets `net10.0` only; latest stable dependencies. No analyzers or generators in P0. |
 | V. Tests gate every change | ✅ | 11 core tests kept green; new reflection, VM, headless-UI and sample end-to-end tests; Linux CI gate. |
 | VI. Readable, deterministic output | ✅ | Deterministic builds verified. Generated C# is unchanged (Core translator untouched; core tests plus a sample compile/run test). No format change. |
 | VII. Abstractions for I/O | ✅ | File and folder pickers, dialogs, clipboard, dispatcher, reflection host and process launching go through interfaces. Document stores and formats are P1. |
 | VIII. Simplicity, incremental delivery | ✅ (amended, constitution 1.1.0) | Roadmap 1.0 puts the Avalonia editor in P3. The user moved it into P0 (via the coordinator), but the roadmap and constitution edits were **blocked for the spec agent** (protected governance files). They need the user's approval: see "Pending governance amendments". Dead dependencies are removed. |
-| Tech constraints | ✅ | .NET 10 SDK, CPM, Directory.Build.props, Roslyn 4.x, CommunityToolkit.Mvvm, Avalonia 11.x + Nodify.Avalonia. Nullable is enabled for new projects; the moved and legacy projects are justified below. No Fody in new code. |
+| Tech constraints | ✅ | .NET 10 SDK, CPM, Directory.Build.props, Roslyn (latest, 5.9), CommunityToolkit.Mvvm, Avalonia 12 + Nodify.Avalonia 2.0 (the canvas now allows Avalonia 12). Nullable is enabled for new projects; the moved and legacy projects are justified below. No Fody in new code. |
 | Workflow: CI | ✅ | Linux-only main CI named `CI`. The constitution 1.0.0 wording ("Windows jobs are added where a host requires them") is satisfied: no host requires Windows in P0. The P4 VSIX workflow chains after `CI`. |
 
 **Post-design re-check (after Phase 1)**: unchanged. No new violations; the data model and
@@ -98,7 +97,7 @@ NetPrints.sln                    # updated: 7 Linux-buildable projects
 .travis.yml                      # deleted
 README.md                        # updated
 samples/HelloWorld/              # new: HelloWorld.netpp, HelloWorld.Program.netpc
-NetPrints/                       # Core: ns2.0;net10.0 (+ Core/ReferenceAssemblyResolver.cs)
+NetPrints/                       # Core: net10.0 (+ Core/ReferenceAssemblyResolver.cs)
 NetPrints.Reflection/            # new: moved from NetPrintsEditor/Reflection
 NetPrints.Editor/                # new: EditorApp, ViewModels, Views, Services(+Avalonia impls), Converters, Commands, Messages, Assets
 NetPrints.Desktop/               # new: Program.cs, icon
@@ -117,7 +116,7 @@ pull in Avalonia. See data-model.md §1.
 ## Implementation phases (drives tasks.md)
 
 1. **Build foundation** (US1/US4): global.json, props files, Core multi-target and Roslyn/Fody/
-   HashCode, CLI and core tests retarget, 11 tests green. The WPF editor and VSIX are removed from
+   CLI and core tests retarget, 11 tests green. The WPF editor and VSIX are removed from
    the solution first, so the build is green on Linux from the first commit.
 2. **Cross-platform references** (FR-008..010): `ReferenceAssemblyResolver` in Core, compile and
    run on Linux, sample project + end-to-end test.
@@ -136,7 +135,6 @@ pull in Avalonia. See data-model.md §1.
 
 | Violation / deviation | Why needed | Simpler alternative rejected because |
 |-----------------------|------------|-------------------------------------|
-| `NetPrints.Editor` is `net10.0`-only (principle IV expects ns2.0 for VS-host libraries) | Nodify.Avalonia 1.0.2 (the only Avalonia-11 Nodify) ships only `lib/net7.0` | Avalonia 12 / Nodify 2.0 drop ns2.0 entirely, which is worse for P4. A custom canvas contradicts the agreed stack. Resolution is deferred to P4 (research R1), with Nodify isolated in views. |
 | Windows `ProgramFilesX86` framework-path logic kept (principle I) | Changing reference semantics or format is P1 scope; P0 needs Linux to work now | Replacing it now means designing the P1 ref-pack/target model early. The fallback is additive and format-neutral. |
 | `Nullable=disable` in Core, NetPrintsUnitTests and NetPrints.Reflection | ~100 unique warnings in Core; the reflection code is a pure move | Enabling it would bury P0 in unrelated churn. P1 enables it when those projects are refactored. |
 | `TreatWarningsAsErrors=false` | Fody/RS1024/MSTEST0017 warnings in legacy code | Fixing them is P1 work; errors still fail the build. |
@@ -147,6 +145,10 @@ pull in Avalonia. See data-model.md §1.
 Applied as constitution 1.1.0 and the updated roadmap. The owner also **deferred Visual Studio
 integration (P4)**, so the Nodify.Avalonia net7.0-only limitation (R1) no longer constrains P0;
 the editor stack targets net10.0.
+
+**Constitution 1.2.0 (applied by the owner, 2026-09-24)**: Visual Studio / .NET Framework hosting is
+out of scope; every project targets `net10.0` only and uses the latest stable dependencies. The
+implementation follows 1.2.0 (see research.md "Scope update").
 
 Original proposal, kept for the record:
 

@@ -8,9 +8,9 @@ satisfies constitution VI. The "entities" here are (1) the projects that make up
 
 | Project | Path | SDK / TFMs | References | In `NetPrints.sln` | CI coverage |
 |---------|------|-----------|------------|--------------------|-------------|
-| NetPrints (Core) | `NetPrints/` | Microsoft.NET.Sdk; `netstandard2.0;net10.0` | Roslyn 4.14, Fody 6.9.3 + PropertyChanged.Fody 3.4.1 (P1 removes), Microsoft.Bcl.HashCode (ns2.0) | yes | build + NetPrintsUnitTests + Editor.Tests |
-| NetPrints.Reflection | `NetPrints.Reflection/` (new) | `netstandard2.0;net10.0` | Core, Roslyn 4.14, Microsoft.Bcl.HashCode (ns2.0) | yes | Editor.Tests/Reflection |
-| NetPrints.Editor | `NetPrints.Editor/` (new) | `net10.0` (ns2.0 blocked by Nodify, R1) | Core, Reflection, Avalonia 11.3.22 (+Themes.Fluent, Fonts.Inter), Nodify.Avalonia 1.0.2, CommunityToolkit.Mvvm, DynamicData, Avalonia.Xaml.Behaviors, Material.Icons.Avalonia; contains `EditorApp` (App.axaml), views, VMs and the Avalonia service implementations | yes | Editor.Tests/ViewModels + Ui |
+| NetPrints (Core) | `NetPrints/` | Microsoft.NET.Sdk; `net10.0` | Roslyn 5.9, Fody 6.9.3 + PropertyChanged.Fody 4.1.0 (P1 removes) | yes | build + NetPrintsUnitTests + Editor.Tests |
+| NetPrints.Reflection | `NetPrints.Reflection/` (new) | `net10.0` | Core, Roslyn 5.9 | yes | Editor.Tests/Reflection |
+| NetPrints.Editor | `NetPrints.Editor/` (new) | `net10.0` | Core, Reflection, Avalonia 12.1.3 (+Themes.Fluent, Fonts.Inter), Nodify.Avalonia 2.0.0, CommunityToolkit.Mvvm, DynamicData, Xaml.Behaviors.Avalonia, Material.Icons.Avalonia; contains `EditorApp` (App.axaml), views, VMs and the Avalonia service implementations | yes | Editor.Tests/ViewModels + Ui |
 | NetPrints.Desktop | `NetPrints.Desktop/` (new) | `net10.0`, `WinExe` | Editor, Avalonia.Desktop (only `Program.cs`: `BuildAvaloniaApp()` → `EditorApp`, args, icon) | yes | build (+ `--help`-free startup is covered by the headless `EditorApp` tests) |
 | NetPrintsCLI | `NetPrintsCLI/` | `net10.0`, `Exe` | Core, CommandLineParser 2.9.1 | yes | build + `--version` smoke |
 | NetPrintsUnitTests | `NetPrintsUnitTests/` | `net10.0`, MTP exe | Core, MSTest 4.4.1 | yes | 11 tests |

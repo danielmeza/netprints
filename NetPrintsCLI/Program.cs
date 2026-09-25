@@ -10,7 +10,7 @@ namespace NetPrintsCLI
         public class CompileOptions
         {
             [Option('p', "project-path", Required = false, HelpText = "Path to the project file (.netpp).")]
-            public string ProjectPath { get; set; }
+            public string? ProjectPath { get; set; }
 
             [Option('r', "run", Required = false, HelpText = "Whether to run the executable on success.")]
             public bool Run { get; set; }
@@ -20,7 +20,7 @@ namespace NetPrintsCLI
         {
             Console.WriteLine("Compiling {0}", options.ProjectPath);
 
-            Project project = Project.LoadFromPath(options.ProjectPath);
+            Project project = Project.LoadFromPath(options.ProjectPath!);
             project.CompileProject();
 
             while (project.IsCompiling)

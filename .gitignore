@@ -253,3 +253,7 @@ paket-files/
 
 # Claude Code local settings
 .claude/settings.local.json
+
+# NetPrints modernization
+TestResults/
+samples/**/Compiled_*/
