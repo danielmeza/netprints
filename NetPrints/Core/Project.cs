@@ -314,7 +314,7 @@ namespace NetPrints.Core
             var references = References.ToArray();
 
             // Compile in another thread
-            var results = await Task.Run(() =>
+            var compileTask = Task.Run(() =>
             {
                 string projectDir = System.IO.Path.GetDirectoryName(Path);
                 string compiledDir = System.IO.Path.Combine(projectDir, $"Compiled_{Name}");
@@ -386,7 +386,12 @@ namespace NetPrints.Core
 
                 bool deleteBinaries = !CompilationOutput.HasFlag(ProjectCompilationOutput.Binaries) && !File.Exists(outputPath);
 
-                var assemblyPaths = references.OfType<AssemblyReference>().Select(a => a.AssemblyPath);
+                // Resolve references to existing files. Missing .NET Framework reference
+                // assemblies (e.g. on Linux) fall back to the running runtime's assemblies,
+                // other missing files are skipped and reported (FR-008, FR-009).
+                var resolver = new ReferenceAssemblyResolver();
+                var referenceWarnings = new List<string>();
+                var assemblyPaths = resolver.ResolveAssemblyPaths(references.OfType<AssemblyReference>(), referenceWarnings);
 
                 var sources = classSources
                     .Concat(references
@@ -399,6 +404,21 @@ namespace NetPrints.Core
 
                 CodeCompileResults compilationResults = codeCompiler.CompileSources(
                     outputPath, assemblyPaths, sources, generateExecutable);
+
+                if (referenceWarnings.Count > 0)
+                {
+                    compilationResults = new CodeCompileResults(compilationResults.Success,
+                        referenceWarnings.Concat(compilationResults.Errors).ToArray(),
+                        compilationResults.PathToAssembly);
+                }
+
+                // Executables built against the runtime assemblies are started through the
+                // dotnet host, which needs a runtime configuration file (FR-010).
+                if (compilationResults.Success && generateExecutable && resolver.UsesRuntimeAssemblies
+                    && CompilationOutput.HasFlag(ProjectCompilationOutput.Binaries))
+                {
+                    File.WriteAllText(GetRuntimeConfigPath(compiledDir), CreateRuntimeConfigJson());
+                }
 
                 // Delete the output binary if we don't want it.
                 // TODO: Don't generate it in the first place.
@@ -419,6 +439,17 @@ namespace NetPrints.Core
 
                 return compilationResults;
             });
+
+            CodeCompileResults results;
+            try
+            {
+                results = await compileTask;
+            }
+            catch (Exception ex)
+            {
+                // Report unexpected failures as a failed build instead of crashing the host.
+                results = new CodeCompileResults(false, new[] { ex.ToString() }, null);
+            }
 
             LastCompilationSucceeded = results.Success;
             LastCompileErrors = new ObservableRangeCollection<string>(results.Errors);
@@ -467,22 +498,59 @@ namespace NetPrints.Core
             return classSources;
         }
 
-        public void RunProject()
+        /// <summary>
+        /// Gets the command that runs the compiled executable. Executables compiled against the
+        /// running .NET runtime's assemblies (see <see cref="ReferenceAssemblyResolver"/>) have a
+        /// runtime configuration file and are started through the <c>dotnet</c> host.
+        /// </summary>
+        /// <returns>File name and arguments of the process to start.</returns>
+        public (string FileName, string Arguments) GetRunCommand()
         {
             if (OutputBinaryType != BinaryType.Executable || !CompilationOutput.HasFlag(ProjectCompilationOutput.Binaries))
             {
                 throw new InvalidOperationException("Can only run executable projects which output their binaries.");
             }
 
-            string projectDir = System.IO.Path.GetDirectoryName(Path);
-            string exePath = System.IO.Path.GetFullPath(System.IO.Path.Combine(projectDir, $"Compiled_{Name}", $"{Name}.exe"));
+            string compiledDir = GetCompiledDirectory();
+            string exePath = System.IO.Path.GetFullPath(System.IO.Path.Combine(compiledDir, $"{Name}.exe"));
 
             if (!File.Exists(exePath))
             {
                 throw new Exception($"The executable does not exist at {exePath}");
             }
 
-            Process.Start(exePath);
+            if (File.Exists(GetRuntimeConfigPath(compiledDir)))
+            {
+                return (ReferenceAssemblyResolver.GetDotNetHostPath(), $"\"{exePath}\"");
+            }
+
+            return (exePath, "");
+        }
+
+        public void RunProject()
+        {
+            var (fileName, arguments) = GetRunCommand();
+            Process.Start(new ProcessStartInfo(fileName, arguments) { UseShellExecute = false });
+        }
+
+        private string GetCompiledDirectory() =>
+            System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Path), $"Compiled_{Name}");
+
+        private string GetRuntimeConfigPath(string compiledDir) =>
+            System.IO.Path.Combine(compiledDir, $"{Name}.runtimeconfig.json");
+
+        private static string CreateRuntimeConfigJson()
+        {
+            Version version = Environment.Version;
+            return "{\n" +
+                "  \"runtimeOptions\": {\n" +
+                $"    \"tfm\": \"net{version.Major}.{version.Minor}\",\n" +
+                "    \"framework\": {\n" +
+                "      \"name\": \"Microsoft.NETCore.App\",\n" +
+                $"      \"version\": \"{version.Major}.{version.Minor}.0\"\n" +
+                "    }\n" +
+                "  }\n" +
+                "}\n";
         }
 
         private void FixReferencePaths()

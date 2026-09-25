@@ -12,6 +12,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Include="../samples/**" CopyToOutputDirectory="PreserveNewest" LinkBase="samples" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\NetPrints\NetPrints.csproj" />
   </ItemGroup>
 
