@@ -12,8 +12,10 @@ namespace NetPrints.Editor.ClassEditor;
 /// </remarks>
 public sealed class MethodVM(ExecutionGraph graph) : ObservableObject
 {
+    /// <summary>The wrapped model graph.</summary>
     public ExecutionGraph Graph { get; } = graph;
 
+    /// <summary>Whether the wrapped graph is a <see cref="ConstructorGraph"/>.</summary>
     public bool IsConstructor => Graph is ConstructorGraph;
 
     /// <summary>Name; read-only for constructors.</summary>
@@ -30,6 +32,7 @@ public sealed class MethodVM(ExecutionGraph graph) : ObservableObject
         }
     }
 
+    /// <summary>The graph's visibility.</summary>
     public MemberVisibility Visibility
     {
         get => Graph.Visibility;
@@ -43,8 +46,10 @@ public sealed class MethodVM(ExecutionGraph graph) : ObservableObject
         }
     }
 
+    /// <summary>The visibility values offered by the method's visibility chooser.</summary>
     public IReadOnlyList<MemberVisibility> PossibleVisibilities => ClassEditorVM.Visibilities;
 
+    /// <summary>The graph's modifiers, or <see cref="MethodModifiers.None"/> for a constructor (which has none).</summary>
     public MethodModifiers Modifiers
     {
         get => Graph is MethodGraph method ? method.Modifiers : MethodModifiers.None;
@@ -64,16 +69,22 @@ public sealed class MethodVM(ExecutionGraph graph) : ObservableObject
         }
     }
 
+    /// <summary>Whether <see cref="MethodModifiers.Sealed"/> is set. Always <see langword="false"/> for a constructor.</summary>
     public bool IsSealed { get => Has(MethodModifiers.Sealed); set => Set(MethodModifiers.Sealed, value); }
 
+    /// <summary>Whether <see cref="MethodModifiers.Abstract"/> is set. Always <see langword="false"/> for a constructor.</summary>
     public bool IsAbstract { get => Has(MethodModifiers.Abstract); set => Set(MethodModifiers.Abstract, value); }
 
+    /// <summary>Whether <see cref="MethodModifiers.Static"/> is set. Always <see langword="false"/> for a constructor.</summary>
     public bool IsStatic { get => Has(MethodModifiers.Static); set => Set(MethodModifiers.Static, value); }
 
+    /// <summary>Whether <see cref="MethodModifiers.Virtual"/> is set. Always <see langword="false"/> for a constructor.</summary>
     public bool IsVirtual { get => Has(MethodModifiers.Virtual); set => Set(MethodModifiers.Virtual, value); }
 
+    /// <summary>Whether <see cref="MethodModifiers.Override"/> is set. Always <see langword="false"/> for a constructor.</summary>
     public bool IsOverride { get => Has(MethodModifiers.Override); set => Set(MethodModifiers.Override, value); }
 
+    /// <summary>Whether <see cref="MethodModifiers.Async"/> is set. Always <see langword="false"/> for a constructor.</summary>
     public bool IsAsync { get => Has(MethodModifiers.Async); set => Set(MethodModifiers.Async, value); }
 
     private bool Has(MethodModifiers flag) => Modifiers.HasFlag(flag);
