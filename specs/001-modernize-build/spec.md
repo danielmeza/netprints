@@ -270,7 +270,10 @@ acceptance scenario of User Story 2.
 - **SC-002**: 100% of tests pass in Linux CI (11 existing core tests + all new tests), with 0 skipped without a documented reason.
 - **SC-003**: Linux CI completes in under 15 minutes on a standard hosted runner.
 - **SC-004**: 60 of 60 parity items are verified (auto or manual), and the result is recorded in the PR.
-- **SC-005**: With the full runtime assembly set, the node search opens in under 2 s after a project is loaded, and narrowing results by typing updates in under 300 ms per keystroke on a typical developer machine.
+- **SC-005**: On a typical developer machine, with the full runtime assembly set, the node search opens in under 2 s after a project is loaded (cold path: the first search of a graph), and narrowing results by typing updates in under 300 ms per keystroke.
+  - Measured (owner-accepted target, 2026-09-25): 1.46–1.59 s first search and 11–25 ms per keystroke (Release, developer machine).
+  - The CI shared runner takes 3.4 s. The CI test asserts only a 3× regression bound (6 s / 900 ms).
+  - Meeting 2 s on slower machines such as the CI runner is scheduled for the performance phase P8 (roadmap).
 - **SC-006**: The desktop editor starts to its main window in under 5 s on a typical developer machine.
 - **SC-007**: 0 package version numbers in SDK-style project files. 0 references to WPF, WinForms, MahApps, MvvmLight, Gapotchenko.FX or System.Management in built projects.
 - **SC-008**: The sample project compiles and prints `Hello, World!` on Linux, both in the editor (Run) and in an automated test.
