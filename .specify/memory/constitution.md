@@ -1,10 +1,14 @@
 <!--
 Sync Impact Report
-- Version change: template → 1.0.0 (initial ratification)
-- Principles added: I–VIII (all new)
-- Sections added: Technology Constraints, Development Workflow, Governance
+- Version change: 1.0.0 → 1.1.0 (MINOR: principles I and IV redefined in scope, workflow rules added)
+- Modified principles: I (WPF/WinForms forbidden everywhere; VSIX out of the build), IV (VS host
+  deferred; editor stack targets net10.0)
+- Modified sections: Technology Constraints (Avalonia 11.x pin, DynamicData/ReactiveUI usage),
+  Development Workflow (Linux-only main CI `CI`; VSIX chained workflow when resumed)
+- Reason: P0 now migrates the editor from WPF to Avalonia; Visual Studio integration deferred
+  by the project owner (2026-09-24)
 - Templates: plan/spec/tasks templates read this file at runtime; no template edits required
-- Deferred TODOs: none
+- Deferred TODOs: VS host compatibility (netstandard2.0 editor / Nodify) revisited when P4 resumes
 -->
 # NetPrints Constitution
 
@@ -16,10 +20,11 @@ The phased roadmap lives in `.specify/memory/roadmap.md`.
 ## Core Principles
 
 ### I. Cross-Platform, Linux-First
-Every project except the Visual Studio extension MUST build, test and run on Linux, Windows
-and macOS. Linux is the primary development and CI platform. Windows-only APIs
-(WinForms, `Microsoft.Win32`, registry, `Program Files` paths, WPF) are forbidden outside
-`NetPrints.VisualStudio`. Hard-coded filesystem paths MUST be replaced by SDK/ref-pack
+Every project in the solution MUST build, test and run on Linux, Windows and macOS. Linux is
+the primary development and CI platform. WPF and WinForms are forbidden in every project;
+other Windows-only APIs (`Microsoft.Win32`, registry, `Program Files` paths) are forbidden too.
+The legacy Visual Studio extension is kept in the repo but out of the solution build and CI
+until P4 is resumed; any future VS host is a thin shim and the only place Windows APIs may appear. Hard-coded filesystem paths MUST be replaced by SDK/ref-pack
 resolution or configuration.
 
 ### II. UI-Agnostic Core
@@ -36,10 +41,12 @@ express, the fix is a new extension point in NetPrints — never a fork or a tar
 `if` in core code.
 
 ### IV. Host Compatibility Targets
-Libraries loadable by a host MUST respect that host's runtime: libraries used by the VSIX
-multi-target `netstandard2.0` (or `net48`) alongside `net10.0`; libraries used by the browser
-build MUST be WASM-safe (no blocking file-system or process access outside abstractions).
-Roslyn analyzers/generators target `netstandard2.0`. Applications target `net10.0`.
+Libraries loadable by a host MUST respect that host's runtime. Applications and the Avalonia
+editor stack target `net10.0`. UI-free libraries (Core, Reflection, serialization, catalog)
+keep `netstandard2.0` alongside `net10.0`. Libraries used by the browser build MUST be WASM-safe
+(no blocking file-system or process access outside abstractions). Roslyn analyzers/generators
+target `netstandard2.0`. Visual Studio (.NET Framework) hosting is deferred and does not
+constrain the editor stack until P4 is resumed.
 
 ### V. Tests Gate Every Change (NON-NEGOTIABLE)
 Every phase ships with automated tests that run on Linux in CI. Behavior-preserving
@@ -68,8 +75,10 @@ dead dependencies rather than carrying them forward.
 - SDK: .NET 10 (`global.json`, `rollForward: latestFeature`); SDK-style projects only.
 - Central Package Management (`Directory.Packages.props`) and shared `Directory.Build.props`;
   nullable reference types and deterministic builds enabled for new/modernized projects.
-- Compiler services: Roslyn 4.x. MVVM: CommunityToolkit.Mvvm, with ReactiveUI/DynamicData for
-  high-throughput UI paths. UI: Avalonia 11.x + Nodify.Avalonia. CLI: Spectre.Console.Cli.
+- Compiler services: Roslyn 4.x (4.14.x, last line supporting netstandard2.0). MVVM:
+  CommunityToolkit.Mvvm; DynamicData for search/filtering and large collections; ReactiveUI
+  only where it clearly helps. UI: Avalonia 11.x (pinned while Nodify.Avalonia requires it) +
+  Nodify.Avalonia. CLI: Spectre.Console.Cli.
 - Default document format: System.Text.Json with source-generated contexts, behind the
   serialization abstraction. Legacy DataContract XML is import-only once JSON lands.
 - No IL weaving (Fody) in new code; prefer source generators.
@@ -83,7 +92,10 @@ dead dependencies rather than carrying them forward.
 - Every PR is reviewed by a reviewer other than its implementer. The implementer addresses
   each review comment in code and replies on that comment describing the resolution before
   the PR is merged.
-- CI (GitHub Actions) MUST pass on Linux; Windows jobs are added where a host requires them.
+- Main CI is the Linux-only GitHub Actions workflow named `CI` (`.github/workflows/ci.yml`,
+  ubuntu-latest). It builds the whole solution and runs all tests headless, and MUST pass
+  before merge. The single exception is the VS extension: when P4 resumes it gets its own
+  Windows workflow chained after `CI` via `workflow_run`, path-filtered.
 
 ## Governance
 
@@ -93,4 +105,4 @@ principle/section added; PATCH: clarifications) and notes affected specs. Review
 check PRs against these principles; any deviation MUST be justified in the plan's
 Complexity Tracking section.
 
-**Version**: 1.0.0 | **Ratified**: 2026-09-24 | **Last Amended**: 2026-09-24
+**Version**: 1.1.0 | **Ratified**: 2026-09-24 | **Last Amended**: 2026-09-24

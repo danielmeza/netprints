@@ -63,7 +63,7 @@ ns2.0-capable (P4); no persisted-format change (principle VI); no Windows CI job
 | V. Tests gate every change | ✅ | 11 core tests kept green; new reflection, VM, headless-UI and sample end-to-end tests; Linux CI gate. |
 | VI. Readable, deterministic output | ✅ | Deterministic builds verified. Generated C# is unchanged (Core translator untouched; core tests plus a sample compile/run test). No format change. |
 | VII. Abstractions for I/O | ✅ | File and folder pickers, dialogs, clipboard, dispatcher, reflection host and process launching go through interfaces. Document stores and formats are P1. |
-| VIII. Simplicity, incremental delivery | ⚠️ pending governance | Roadmap 1.0 puts the Avalonia editor in P3. The user moved it into P0 (via the coordinator), but the roadmap and constitution edits were **blocked for the spec agent** (protected governance files). They need the user's approval: see "Pending governance amendments". Dead dependencies are removed. |
+| VIII. Simplicity, incremental delivery | ✅ (amended, constitution 1.1.0) | Roadmap 1.0 puts the Avalonia editor in P3. The user moved it into P0 (via the coordinator), but the roadmap and constitution edits were **blocked for the spec agent** (protected governance files). They need the user's approval: see "Pending governance amendments". Dead dependencies are removed. |
 | Tech constraints | ✅ | .NET 10 SDK, CPM, Directory.Build.props, Roslyn 4.x, CommunityToolkit.Mvvm, Avalonia 11.x + Nodify.Avalonia. Nullable is enabled for new projects; the moved and legacy projects are justified below. No Fody in new code. |
 | Workflow: CI | ✅ | Linux-only main CI named `CI`. The constitution 1.0.0 wording ("Windows jobs are added where a host requires them") is satisfied: no host requires Windows in P0. The P4 VSIX workflow chains after `CI`. |
 
@@ -142,7 +142,13 @@ pull in Avalonia. See data-model.md §1.
 | `TreatWarningsAsErrors=false` | Fody/RS1024/MSTEST0017 warnings in legacy code | Fixing them is P1 work; errors still fail the build. |
 | Editor scope (P3 work) in P0 (principle VIII vs roadmap 1.0) | Explicit user decision relayed by the coordinator | Needs roadmap re-scoping; see below. |
 
-## Pending governance amendments (user approval required, NOT applied)
+## Governance amendments (approved by the owner and applied 2026-09-24)
+
+Applied as constitution 1.1.0 and the updated roadmap. The owner also **deferred Visual Studio
+integration (P4)**, so the Nodify.Avalonia net7.0-only limitation (R1) no longer constrains P0;
+the editor stack targets net10.0.
+
+Original proposal, kept for the record:
 
 The spec agent tried to apply the following edits as the coordinator asked. The environment's
 safety classifier **denied** the edits to `.specify/memory/constitution.md` and

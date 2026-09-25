@@ -26,29 +26,33 @@ when it is started.
 
 | ID | Name | Est. | Depends on | Status |
 |----|------|------|------------|--------|
-| P0 | Modernize the build | ~1 w | — | in progress (`specs/001-*`) |
+| P0 | Modernize build + Avalonia editor at parity | ~6 w (manual est.) | — | in progress (`specs/001-modernize-build`) |
 | P1 | Core refactor + extension points | ~3.5 w | P0 | not started |
 | P2 | Catalog tooling + Spectre CLI | ~2.5 w | P1 | not started |
-| P3 | Avalonia editor (extension host) | ~5.5 w | P1 | not started |
-| P4 | VSIX (WpfAvaloniaHost) | ~2 w | P3 | not started |
+| P3 | Editor extension host | ~2.5 w | P0, P1 | not started |
+| P4 | VSIX (WpfAvaloniaHost) | ~2 w | P3 | **deferred** by owner (2026-09-24) |
 | P5 | VS Code extension + browser build + sidecar | ~2.5–3 w | P3 | not started |
 | U1 | UnrealSharp codegen + catalog (NetPrintsUnreal) | ~2 w | P2 | not started |
 | U2 | Unreal nodes | ~2–3 w | U1 | not started |
 | U3 | UE plugin, launcher, upstream PR | ~1.5 w | U1, P3 | not started |
 
-### P0 — Modernize the build
-- Central Package Management + `Directory.Build.props`; `global.json` pinning .NET 10 SDK.
-- Core multi-targets `netstandard2.0` + `net10.0`; CLI and tests move to `net10.0`.
-- Roslyn 2.10 → 4.x; drop Gapotchenko.FX, System.Management, WinForms reference.
-- Tests on a modern framework (MSTest 3 or xUnit v3); GitHub Actions CI on Linux (+ Windows).
-- WPF editor and VSIX stay as-is (Windows-only, excluded from the Linux build) until P3/P4.
-- **Done when:** the 11 existing core tests pass on Linux in CI.
-- Linux-first go/no-go spike for UnrealSharp on Linux is scheduled during P1–P2 (not P0).
+### P0 — Modernize build + Avalonia editor at parity
+- `global.json` (.NET 10 SDK), Central Package Management, `Directory.Build.props`.
+- Core and a new UI-free `NetPrints.Reflection` (moved out of the editor) multi-target
+  `netstandard2.0` + `net10.0`; Roslyn 4.14; drop dead deps; minimal reference-assembly fallback.
+- Replace the WPF editor with `NetPrints.Editor` (Avalonia 11 + Nodify.Avalonia,
+  CommunityToolkit.Mvvm, DynamicData search) + `NetPrints.Desktop`, at feature parity (60-item
+  parity inventory in `specs/001-modernize-build/spec.md`).
+- Tests on MSTest 4 (Microsoft.Testing.Platform) + Avalonia.Headless UI tests.
+- Linux-only CI workflow `CI` (`.github/workflows/ci.yml`). Legacy VSIX removed from the
+  solution build (source kept, pending P4).
+- **Done when:** the whole solution builds and all tests pass on Linux CI and the parity
+  checklist is verified.
 
 ### P1 — Core refactor and extension points
 Reference-assembly resolution (ref packs / configured paths); serialization layer (versioned
-DTOs, `IDocumentFormat`/`IDocumentStore`, JSON, legacy XML importer, migrations); move
-`ReflectionProvider` to `NetPrints.Reflection` + composite provider; extension points (node
+DTOs, `IDocumentFormat`/`IDocumentStore`, JSON, legacy XML importer, migrations); composite provider
+over `NetPrints.Reflection` (moved in P0); extension points (node
 libraries, class/member emitters, type catalogs, project/target profiles, `IHostChannel`,
 per-extension settings, plugin manifest/loading via AssemblyLoadContext); event graphs
 (multiple entry points); model INPC from Fody to CommunityToolkit.Mvvm.
@@ -60,15 +64,18 @@ Done when: old sample loads, saves as JSON, generates identical C#.
 (`NetPrints.Annotations` + source generator), cross-flavor snapshot tests; `NetPrints.Cli` on
 Spectre.Console.Cli (`build`, `generate`, `run`, `catalog`, `migrate`).
 
-### P3 — Avalonia editor
-CommunityToolkit.Mvvm VMs without WPF types; Nodify canvas; DynamicData collections and
-search; Fluent shell, Material icons, StorageProvider dialogs; triggers → style classes /
-Xaml.Behaviors; `NetPrints.Desktop --profile`; UI contributions from extensions; sample
-non-Unreal extension. Done when: all samples edit + compile on Linux.
+### P3 — Editor extension host
+`NetPrints.Desktop --profile`, plugin-loaded editor extensions, UI contributions (commands,
+inspector sections, panels, settings pages), DynamicData/ReactiveUI performance work beyond
+parity, sample non-Unreal extension, anything left beyond P0 parity.
 
-### P4 — VSIX
+### P4 — VSIX (deferred)
+Deferred by the project owner on 2026-09-24; revisit after P3/P5. When resumed:
 Spike WpfAvaloniaHost in VS 2022/2026 (assembly conflicts); editor factory for `.netpc.json`
-with VS project `IDocumentStore`; Community.VisualStudio.Toolkit, SDK-style.
+with VS project `IDocumentStore`; Community.VisualStudio.Toolkit, SDK-style. Separate VSIX CI
+workflow chained after `CI` (`workflow_run`, windows-latest, path-filtered). Resolve the
+Nodify.Avalonia 1.0.2 net7.0-only limitation (editor cannot target netstandard2.0) — e.g.
+out-of-process editor window or a maintained/forked canvas.
 
 ### P5 — VS Code extension + browser build
 Spike Avalonia.Browser + Nodify in a webview (CSP `wasm-unsafe-eval`, size, startup);
