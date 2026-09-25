@@ -15,10 +15,13 @@ public sealed class NodeObject(IUiDriver driver, AutomationQuery query) : UiElem
     public UiElement LeftMinus => Find(AutomationIds.NodeLeftMinus);
 
     /// <summary>An input pin by name.</summary>
-    public PinObject Input(string pin) => new(Driver, new AutomationQuery(AutomationIds.Pin) { Within = Query, Name = "in:" + pin });
+    public PinObject Input(string pin) => Pin("in:" + pin);
 
     /// <summary>An output pin by name.</summary>
-    public PinObject Output(string pin) => new(Driver, new AutomationQuery(AutomationIds.Pin) { Within = Query, Name = "out:" + pin });
+    public PinObject Output(string pin) => Pin("out:" + pin);
+
+    /// <summary>A pin by its full automation name, as <see cref="PinNamesAsync"/> returns it ("in:Exec", "out:Exec", …).</summary>
+    public PinObject Pin(string fullName) => new(Driver, new AutomationQuery(AutomationIds.Pin) { Within = Query, Name = fullName });
 
     public async Task<IReadOnlyList<string>> PinNamesAsync(CancellationToken cancellationToken) =>
         (await Driver.FindAllAsync(new AutomationQuery(AutomationIds.Pin) { Within = Query }, cancellationToken)).Select(e => e.Name ?? "").ToList();

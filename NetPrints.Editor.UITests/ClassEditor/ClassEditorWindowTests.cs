@@ -116,7 +116,7 @@ public class ClassEditorWindowTests
 
         foreach (string pin in await write.PinNamesAsync(Token))
         {
-            var element = await session.Graph.Node("CallMethodNode").Find(NetPrints.Editor.AutomationIds.Pin, name: pin).GetAsync(Token);
+            var element = await write.Pin(pin).GetAsync(Token);
             Assert.False(string.IsNullOrWhiteSpace(element["ToolTip"]), $"pin {pin} has a tool tip (PAR-39, PAR-43)");
         }
     }
