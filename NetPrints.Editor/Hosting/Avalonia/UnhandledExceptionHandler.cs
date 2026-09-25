@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Avalonia.Threading;
 
 namespace NetPrints.Editor.Hosting.Avalonia;
@@ -9,6 +10,11 @@ namespace NetPrints.Editor.Hosting.Avalonia;
 /// </summary>
 public sealed class UnhandledExceptionHandler : IDisposable
 {
+    // An exception from an async void handler reaches the dispatcher (reported there) and also
+    // faults the dispatcher operation's task. When that task is finalized, the same exception
+    // arrives again as an unobserved task exception; it must not be reported twice.
+    private static readonly ConditionalWeakTable<Exception, object> Reported = [];
+
     private readonly IEditorDialogs dialogs;
     private readonly IUiDispatcher dispatcher;
     private bool reporting;
@@ -27,12 +33,18 @@ public sealed class UnhandledExceptionHandler : IDisposable
     private void OnDispatcherUnhandledException(object? sender, DispatcherUnhandledExceptionEventArgs e)
     {
         e.Handled = true;
+        Reported.AddOrUpdate(e.Exception, Reported);
         _ = ReportAsync(e.Exception);
     }
 
     private void OnUnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
     {
         e.SetObserved();
+        if (e.Exception.Flatten().InnerExceptions.All(inner => Reported.TryGetValue(inner, out _)))
+        {
+            return;
+        }
+
         dispatcher.Post(() => _ = ReportAsync(e.Exception));
     }
 

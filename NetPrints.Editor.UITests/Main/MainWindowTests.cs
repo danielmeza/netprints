@@ -27,7 +27,7 @@ public class MainWindowTests
 
         Assert.Equal("HelloWorld", main.Window.Title); // PAR-01
         Assert.Equal(["HelloWorld.Program"], main.ClassNames); // PAR-05, PAR-11
-        Assert.Empty(main.Dialogs.Errors);
+        Assert.True(main.Dialogs.Errors.Count == 0, string.Join("\n---\n", main.Dialogs.Errors.Select(e => e.Message)));
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]

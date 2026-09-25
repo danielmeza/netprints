@@ -38,4 +38,30 @@ public class UnhandledExceptionTests
 
         Assert.Contains("boom from async void", main.Dialogs.Errors[0].Message);
     }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task AsyncVoidHandlerExceptionIsReportedOnlyOnce()
+    {
+        using var main = MainWindowPage.Start();
+
+        async void Handler()
+        {
+            await Task.Yield();
+            throw new InvalidOperationException("boom once");
+        }
+
+        Dispatcher.UIThread.Post(Handler);
+        await HeadlessInput.WaitUntilAsync(() => main.Dialogs.Errors.Count == 1, "error reported");
+
+        // The dispatcher operation that carried the exception is finalized later; its unobserved
+        // task must not report the same exception a second time.
+        for (int i = 0; i < 3; i++)
+        {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            HeadlessInput.Pump();
+        }
+
+        Assert.True(main.Dialogs.Errors.Count == 1, string.Join("\n---\n", main.Dialogs.Errors.Select(e => e.Message)));
+    }
 }
