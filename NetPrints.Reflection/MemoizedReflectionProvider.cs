@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using NetPrints.Core;
 
-namespace NetPrintsEditor.Reflection
+namespace NetPrints.Reflection
 {
     public class MemoizedReflectionProvider : IReflectionProvider
     {

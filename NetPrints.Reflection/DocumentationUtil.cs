@@ -5,7 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Xml;
 
-namespace NetPrintsEditor.Reflection
+namespace NetPrints.Reflection
 {
     public class DocumentationUtil
     {
@@ -58,14 +58,16 @@ namespace NetPrintsEditor.Reflection
 
             if (assemblyPath != null)
             {
-                // Try to find the documentation in the framework doc path
-                string docPath = Path.Combine(
-                        Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
+                // Try to find the documentation in the framework doc path (Windows only; the
+                // folder does not exist on Linux/macOS, which then simply has no documentation).
+                string programFilesX86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
+                string docPath = string.IsNullOrEmpty(programFilesX86) ? null : Path.Combine(
+                        programFilesX86,
                         "Reference Assemblies/Microsoft/Framework/.NETFramework/v4.X",
                         $"{Path.GetFileNameWithoutExtension(assemblyPath)}.xml");
 
                 // Try to find the documentation in the assembly's path
-                if (!File.Exists(docPath))
+                if (docPath == null || !File.Exists(docPath))
                 {
                     docPath = Path.ChangeExtension(assemblyPath, ".xml");
                 }
@@ -97,17 +99,23 @@ namespace NetPrintsEditor.Reflection
                 try
                 {
                     string docPath = GetAssemblyDocumentationPath(assembly);
-                    if (docPath != null)
+                    if (docPath != null && File.Exists(docPath))
                     {
                         XmlDocument doc = new XmlDocument();
-                        doc.Load(File.OpenRead(docPath));
+                        using (var stream = File.OpenRead(docPath))
+                        {
+                            doc.Load(stream);
+                        }
 
-                        cachedDocuments.Add(key, doc);
+                        cachedDocuments[key] = doc;
 
                         return doc;
                     }
                 }
                 catch { }
+
+                // Remember that there is no documentation so that the lookup is not repeated.
+                cachedDocuments[key] = null;
             }
 
             return null;

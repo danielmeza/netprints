@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace NetPrintsEditor.Reflection
+namespace NetPrints.Reflection
 {
     public interface IReflectionProviderQuery
     {

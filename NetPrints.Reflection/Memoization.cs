@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace NetPrintsEditor.Reflection
+namespace NetPrints.Reflection
 {
     public static class Memoization
     {

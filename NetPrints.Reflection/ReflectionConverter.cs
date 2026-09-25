@@ -4,7 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace NetPrintsEditor.Reflection
+namespace NetPrints.Reflection
 {
     /// <summary>
     /// Helper class for converting from Roslyn symbols to NetPrints specifiers.
@@ -118,6 +118,8 @@ namespace NetPrintsEditor.Reflection
             [RefKind.Ref] = MethodParameterPassType.Reference,
             [RefKind.Out] = MethodParameterPassType.Out,
             [RefKind.In] = MethodParameterPassType.In,
+            // C# 12 `ref readonly` parameters (used across the .NET BCL) accept `in` arguments.
+            [RefKind.RefReadOnlyParameter] = MethodParameterPassType.In,
         };
 
         public static MethodParameter MethodParameterFromSymbol(in IParameterSymbol paramSymbol)

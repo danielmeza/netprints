@@ -2,7 +2,7 @@
 using System.Linq;
 using NetPrints.Core;
 
-namespace NetPrintsEditor.Reflection
+namespace NetPrints.Reflection
 {
     public static class DefaultOperatorSpecifiers
     {

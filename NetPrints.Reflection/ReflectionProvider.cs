@@ -8,7 +8,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace NetPrintsEditor.Reflection
+namespace NetPrints.Reflection
 {
     public static class ISymbolExtensions
     {
@@ -160,17 +160,19 @@ namespace NetPrintsEditor.Reflection
         {
             var compilationOptions = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
 
-            // Create assembly metadata references
-            var assemblyReferences = assemblyPaths.Select(path =>
+            // Create assembly metadata references. Paths that do not exist are skipped instead of
+            // throwing; callers resolve references with ReferenceAssemblyResolver first (FR-009).
+            var assemblyReferences = assemblyPaths.Where(File.Exists).Select(path =>
             {
                 DocumentationProvider documentationProvider = DocumentationProvider.Default;
 
                 // Try to find the documentation in the framework doc path
                 string docPath = Path.ChangeExtension(path, ".xml");
-                if (!File.Exists(docPath))
+                string programFilesX86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
+                if (!File.Exists(docPath) && !string.IsNullOrEmpty(programFilesX86))
                 {
                     docPath = Path.Combine(
-                        Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
+                        programFilesX86,
                         "Reference Assemblies/Microsoft/Framework/.NETFramework/v4.X",
                         $"{Path.GetFileNameWithoutExtension(path)}.xml");
                 }
@@ -180,11 +182,11 @@ namespace NetPrintsEditor.Reflection
                     documentationProvider = XmlDocumentationProvider.CreateFromFile(docPath);
                 }
 
-                return MetadataReference.CreateFromFile(path, documentation: documentationProvider);
-            });
+                return (MetadataReference)MetadataReference.CreateFromFile(path, documentation: documentationProvider);
+            }).ToList();
 
             // Create syntax trees from sources
-            sources = sources.Concat(sourcePaths.Select(path => File.ReadAllText(path))).Distinct();
+            sources = sources.Concat(sourcePaths.Where(File.Exists).Select(path => File.ReadAllText(path))).Distinct();
             var syntaxTrees = sources.Select(source => ParseSyntaxTree(source));
 
             compilation = CSharpCompilation.Create("C", syntaxTrees, assemblyReferences, new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
@@ -195,7 +197,7 @@ namespace NetPrintsEditor.Reflection
 
             if (compilationResults.Success)
             {
-                assemblyReferences = assemblyReferences.Concat(new[] { MetadataReference.CreateFromStream(stream) });
+                assemblyReferences.Add(MetadataReference.CreateFromStream(stream));
                 compilation = CSharpCompilation.Create("C", references: assemblyReferences);
             }
 
