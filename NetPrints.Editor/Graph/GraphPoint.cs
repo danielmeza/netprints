@@ -16,10 +16,6 @@ public readonly record struct GraphPoint(double X, double Y)
     /// <summary>Linear interpolation between two points.</summary>
     public static GraphPoint Lerp(GraphPoint a, GraphPoint b, double t) => new(a.X + (b.X - a.X) * t, a.Y + (b.Y - a.Y) * t);
 
-    /// <summary>Snaps the point down to the grid.</summary>
-    public GraphPoint SnapToGrid(double cellSize) => new(X - Mod(X, cellSize), Y - Mod(Y, cellSize));
-
-    private static double Mod(double v, double m) => ((v % m) + m) % m;
 
     public override string ToString() => $"{X}, {Y}";
 }

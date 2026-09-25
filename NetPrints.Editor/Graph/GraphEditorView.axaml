@@ -33,7 +33,6 @@
                          GridCellSize="28"
                          MinViewportZoom="0.3"
                          MaxViewportZoom="1"
-                         ItemsDragCompletedCommand="{Binding SnapSelectedToGridCommand}"
                          DragDrop.AllowDrop="True">
       <nodify:NodifyEditor.ItemContainerTheme>
         <ControlTheme TargetType="nodify:ItemContainer" BasedOn="{StaticResource {x:Type nodify:ItemContainer}}" x:DataType="ednodes:NodeVM">

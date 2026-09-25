@@ -86,7 +86,7 @@ public sealed partial class NodeVM : ObservableObject, IDisposable
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ZIndex))]
-    private bool isSelected;
+    public partial bool IsSelected { get; set; }
 
     /// <summary>Selected nodes are drawn above the others.</summary>
     public int ZIndex => IsSelected ? 1 : 0;
@@ -132,13 +132,13 @@ public sealed partial class NodeVM : ObservableObject, IDisposable
     /// <summary>Other overloads of call/constructor nodes, or the other size mode of make-array nodes.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowOverloads))]
-    private IReadOnlyList<object> overloads = [];
+    public partial IReadOnlyList<object> Overloads { get; set; } = [];
 
     public bool ShowOverloads => Overloads.Count > 0;
 
     /// <summary>Chooser selection; choosing an overload changes it through the undo stack.</summary>
     [ObservableProperty]
-    private object? selectedOverload;
+    public partial object? SelectedOverload { get; set; }
 
     partial void OnSelectedOverloadChanged(object? value)
     {

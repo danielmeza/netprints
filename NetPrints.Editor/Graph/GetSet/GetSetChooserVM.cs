@@ -12,22 +12,22 @@ namespace NetPrints.Editor.Graph.GetSet;
 public sealed partial class GetSetChooserVM(NodeGraphVM graph) : ObservableObject
 {
     [ObservableProperty]
-    private bool isOpen;
+    public partial bool IsOpen { get; set; }
 
     /// <summary>Where the node is created (graph coordinates).</summary>
     [ObservableProperty]
-    private GraphPoint position;
+    public partial GraphPoint Position { get; set; }
 
     [ObservableProperty]
-    private VariableSpecifier? variable;
+    public partial VariableSpecifier? Variable { get; set; }
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(GetCommand))]
-    private bool canGet;
+    public partial bool CanGet { get; set; }
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(SetCommand))]
-    private bool canSet;
+    public partial bool CanSet { get; set; }
 
     /// <summary>Opens the chooser; Get and Set are enabled according to the accessor visibility.</summary>
     public void Open(VariableSpecifier variable, GraphPoint position)

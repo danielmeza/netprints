@@ -70,7 +70,7 @@ public sealed partial class NodePinVM : ObservableObject, IDisposable
 
     /// <summary>Connector position in graph coordinates, pushed by the view.</summary>
     [ObservableProperty]
-    private GraphPoint anchor;
+    public partial GraphPoint Anchor { get; set; }
 
     /// <summary>Whether the model pin has at least one connection.</summary>
     public bool IsConnected => Pin switch

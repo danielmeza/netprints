@@ -17,7 +17,7 @@ public sealed partial class ConnectionVM(NodePinVM source, NodePinVM target) : O
 
     /// <summary>Faint cables are thinner and more transparent (toggled with the mouse back button).</summary>
     [ObservableProperty]
-    private bool isFaint;
+    public partial bool IsFaint { get; set; }
 
     /// <summary>
     /// The pin that owns the connection in the model (input data, output exec or input type pin).

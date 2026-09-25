@@ -99,21 +99,21 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
     public TimeSpan FilterThrottle { get; set; } = TimeSpan.FromMilliseconds(100);
 
     [ObservableProperty]
-    private bool isOpen;
+    public partial bool IsOpen { get; set; }
 
     [ObservableProperty]
-    private bool isLoading;
+    public partial bool IsLoading { get; set; }
 
     /// <summary>Where the chosen node is created (graph coordinates).</summary>
     [ObservableProperty]
-    private GraphPoint position;
+    public partial GraphPoint Position { get; set; }
 
     /// <summary>Pin that was dragged to open the search, or null.</summary>
     [ObservableProperty]
-    private NodePin? suggestionPin;
+    public partial NodePin? SuggestionPin { get; set; }
 
     [ObservableProperty]
-    private string searchText = "";
+    public partial string SearchText { get; set; } = "";
 
     partial void OnSearchTextChanged(string value) => searchTextSubject.OnNext(value ?? "");
 

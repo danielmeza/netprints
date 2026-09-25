@@ -198,20 +198,9 @@ public sealed partial class NodeGraphVM : ObservableObject, IDisposable
         }
     }
 
-    public void Handle(NodeSelectionMessage message) => SelectNodes(message.Nodes, message.DeselectPrevious);
 
     [RelayCommand]
     public void DeselectNodes() => SelectNodes([], deselectPrevious: true);
-
-    /// <summary>Snaps the selected nodes to the grid (end of a drag, PAR-50).</summary>
-    [RelayCommand]
-    public void SnapSelectedToGrid()
-    {
-        foreach (var node in SelectedNodes)
-        {
-            node.Location = node.Location.SnapToGrid(GridCellSize);
-        }
-    }
 
     /// <summary>
     /// Deletes the selected nodes except method entry, class return and the main return node (PAR-37).
@@ -237,25 +226,25 @@ public sealed partial class NodeGraphVM : ObservableObject, IDisposable
     // Node creation (PAR-47, 52..57)
 
     /// <summary>
-    /// Creates a node. Negative positions are clamped to the canvas; when the message has a
+    /// Creates a node. Negative positions are clamped to the canvas; when the request has a
     /// suggestion pin, the new node is connected to it (PAR-47).
     /// </summary>
-    public Node AddNode(AddNodeMessage message)
+    public Node AddNode(AddNodeRequest request)
     {
-        if (message.Graph != Graph)
+        if (request.Graph != Graph)
         {
-            throw new ArgumentException("The message targets another graph.", nameof(message));
+            throw new ArgumentException("The request targets another graph.", nameof(request));
         }
 
-        object[] parameters = [Graph, .. message.ConstructorParameters];
-        var node = (Node)Activator.CreateInstance(message.NodeType, parameters)!;
-        node.PositionX = Math.Max(0, message.Position.X);
-        node.PositionY = Math.Max(0, message.Position.Y);
+        object[] parameters = [Graph, .. request.ConstructorParameters];
+        var node = (Node)Activator.CreateInstance(request.NodeType, parameters)!;
+        node.PositionX = Math.Max(0, request.Position.X);
+        node.PositionY = Math.Max(0, request.Position.Y);
 
-        if (message.SuggestionPin is not null)
+        if (request.SuggestionPin is not null)
         {
             var provider = Context.Reflection.Provider;
-            GraphUtil.ConnectRelevantPins(message.SuggestionPin, node, provider.TypeSpecifierIsSubclassOf, provider.HasImplicitCast);
+            GraphUtil.ConnectRelevantPins(request.SuggestionPin, node, provider.TypeSpecifierIsSubclassOf, provider.HasImplicitCast);
         }
 
         return node;
@@ -263,7 +252,7 @@ public sealed partial class NodeGraphVM : ObservableObject, IDisposable
 
     /// <summary>Creates a node of type <typeparamref name="T"/> at a position.</summary>
     public Node AddNode<T>(GraphPoint position, NodePin? suggestionPin = null, params object[] arguments) where T : Node =>
-        AddNode(new AddNodeMessage(typeof(T), Graph, position, suggestionPin, arguments));
+        AddNode(new AddNodeRequest(typeof(T), Graph, position, suggestionPin, arguments));
 
     /// <summary>
     /// Opens the node search at a position. With a pin, the suggestions are filtered for it and the

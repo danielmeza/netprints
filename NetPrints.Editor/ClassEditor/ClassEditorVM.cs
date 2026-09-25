@@ -89,11 +89,11 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
 
     /// <summary>The graph shown in the canvas, or null.</summary>
     [ObservableProperty]
-    private NodeGraphVM? openedGraph;
+    public partial NodeGraphVM? OpenedGraph { get; set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowClassInspector), nameof(ShowVariableInspector), nameof(ShowMethodInspector))]
-    private InspectorKind inspector = InspectorKind.Class;
+    public partial InspectorKind Inspector { get; set; } = InspectorKind.Class;
 
     public bool ShowClassInspector => Inspector == InspectorKind.Class;
 
@@ -103,23 +103,23 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowVariableInspector))]
-    private MemberVariableVM? selectedVariable;
+    public partial MemberVariableVM? SelectedVariable { get; set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowMethodInspector))]
-    private MethodVM? selectedMethod;
+    public partial MethodVM? SelectedMethod { get; set; }
 
     /// <summary>Generated C# of the class, refreshed about every second (PAR-34).</summary>
     [ObservableProperty]
-    private string generatedCode = "";
+    public partial string GeneratedCode { get; set; } = "";
 
     /// <summary>Methods of the base types that can be overridden (PAR-26).</summary>
     [ObservableProperty]
-    private IReadOnlyList<MethodSpecifier> overridableMethods = [];
+    public partial IReadOnlyList<MethodSpecifier> OverridableMethods { get; set; } = [];
 
     /// <summary>Selection of the "Override a method" chooser; resets after use (PAR-26).</summary>
     [ObservableProperty]
-    private MethodSpecifier? selectedOverride;
+    public partial MethodSpecifier? SelectedOverride { get; set; }
 
     /// <summary>Window title (PAR-22).</summary>
     public string Title => Class.Name ?? "";

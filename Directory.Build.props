@@ -4,6 +4,8 @@
     <LangVersion>latest</LangVersion>
     <Deterministic>true</Deterministic>
     <Nullable>enable</Nullable>
+    <!-- Off by default for the legacy projects (Core, Reflection: Fody and RS1024 warnings until
+         P1). The new projects (Editor, Desktop and all test projects) opt in and are warning-free. -->
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
   </PropertyGroup>

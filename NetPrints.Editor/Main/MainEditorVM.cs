@@ -31,30 +31,30 @@ public sealed partial class MainEditorVM : ObservableObject
     [NotifyPropertyChangedFor(nameof(IsProjectOpen), nameof(CanCompile), nameof(CanCompileAndRun), nameof(Title))]
     [NotifyCanExecuteChangedFor(nameof(SaveProjectCommand), nameof(CompileCommand), nameof(RunCommand),
         nameof(ShowReferencesCommand), nameof(NewClassCommand), nameof(AddExistingClassCommand), nameof(ToggleSettingsPaneCommand))]
-    private Project? project;
+    public partial Project? Project { get; set; }
 
     /// <summary>Whether the Project pane (Create/Open/Save) is open.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsPaneOpen))]
-    private bool isProjectPaneOpen;
+    public partial bool IsProjectPaneOpen { get; set; }
 
     /// <summary>Whether the Settings pane (output, binary type) is open.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsPaneOpen))]
-    private bool isSettingsPaneOpen;
+    public partial bool IsSettingsPaneOpen { get; set; }
 
     /// <summary>Whether one of the side panes is open.</summary>
     public bool IsPaneOpen => IsProjectPaneOpen || IsSettingsPaneOpen;
 
     /// <summary>Whether a background operation shows the progress overlay.</summary>
     [ObservableProperty]
-    private bool isBusy;
+    public partial bool IsBusy { get; set; }
 
     [ObservableProperty]
-    private string busyTitle = "";
+    public partial string BusyTitle { get; set; } = "";
 
     [ObservableProperty]
-    private string busyMessage = "";
+    public partial string BusyMessage { get; set; } = "";
 
     public bool IsProjectOpen => Project is not null;
 

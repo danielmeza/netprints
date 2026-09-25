@@ -68,7 +68,7 @@ public class NodeGraphVMTests(TestEditor editor) : GraphTestBase(editor)
         entry.Select();
         Assert.Equal(new[] { entry }, Graph.SelectedNodes.ToArray());
 
-        Graph.Handle(new NodeSelectionMessage([ret], DeselectPrevious: false));
+        Graph.SelectNodes([ret], deselectPrevious: false);
         Assert.Equal(2, Graph.SelectedNodes.ToList().Count());
 
         Graph.SelectNodes([ret], deselectPrevious: true);
@@ -76,21 +76,6 @@ public class NodeGraphVMTests(TestEditor editor) : GraphTestBase(editor)
 
         Graph.DeselectNodesCommand.Execute(null);
         Assert.False(Graph.SelectedNodes.Any());
-    }
-
-    [Fact]
-    public void SnapSelectedToGrid()
-    {
-        var entry = VmOf(Method.EntryNode);
-        var ret = VmOf(Method.MainReturnNode);
-        entry.Location = new GraphPoint(30, 59);
-        ret.Location = new GraphPoint(100, 3);
-        Graph.SelectNodes([entry, ret], deselectPrevious: true);
-
-        Graph.SnapSelectedToGrid();
-
-        Assert.Equal(new GraphPoint(28, 56), entry.Location);
-        Assert.Equal(new GraphPoint(84, 0), ret.Location);
     }
 
     [Fact]
