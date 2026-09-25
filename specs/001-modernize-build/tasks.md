@@ -210,8 +210,8 @@ build can be green on Linux from here on.
 
 **Independent Test**: push the branch → `CI` is green; a deliberately failing test turns it red (then revert).
 
-- [ ] T077 [US3] Create `.github/workflows/ci.yml` exactly per contracts/ci-workflow.md: `name: CI`; triggers push/PR to `master` + `workflow_dispatch`; `permissions: contents: read`; concurrency; job `build-test` on `ubuntu-latest`; checkout@v7; setup-dotnet@v6 `10.0.x`; restore, build and test with `--report-trx --results-directory TestResults`; the CLI `--version` smoke tolerating exit code 1; upload-artifact@v7 `test-results` `if: always()`. No Windows jobs and no VSIX workflow
-- [ ] T078 [P] [US3] Delete `.travis.yml` and replace the Travis badges in `README.md` with the `CI` workflow badge (FR-021)
+- [X] T077 [US3] Create `.github/workflows/ci.yml` exactly per contracts/ci-workflow.md: `name: CI`; triggers push/PR to `master` + `workflow_dispatch`; `permissions: contents: read`; concurrency; job `build-test` on `ubuntu-latest`; checkout@v7; setup-dotnet@v6 `10.0.x`; restore, build and test with `--report-trx --results-directory TestResults`; the CLI `--version` smoke tolerating exit code 1; upload-artifact@v7 `test-results` `if: always()`. No Windows jobs and no VSIX workflow
+- [X] T078 [P] [US3] Delete `.travis.yml` and replace the Travis badges in `README.md` with the `CI` workflow badge (FR-021)
 - [ ] T079 [US3] Push the branch and confirm `CI` is green with every test passing and the TRX artifact uploaded. Record the run URL in the PR (SC-002, SC-003)
 
 ---
