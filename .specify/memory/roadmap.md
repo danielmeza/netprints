@@ -138,6 +138,19 @@ Graph-format follow-ups from P1: `format --check` and `regen --check`, `netprint
   floatable and tabbed panes (project tree, graphs, inspector, Errors/Output/C#) with serialized layouts, which
   also covers L2. Verify Avalonia 12 compatibility, MVVM integration (CommunityToolkit.Mvvm) and headless and E2E
   testability before committing to it.
+- **Start dashboard** (owner idea, 2026-09-25; moved here from P6 onboarding because it replaces the launcher):
+  recent projects (pin, search, remove), "Open folder or `.csproj`", **New project from templates** (console,
+  library, UnrealSharp; Unity later) driven by the P1 project profiles, samples, and what's new in this
+  version (an update notice later, with Velopack).
+- **Internal contribution points** (owner idea, 2026-09-25): commands, panels, dashboard tiles, project
+  templates, context-menu items, tooltip providers and go-to providers are registered through one registry,
+  and the built-in editor uses it. P3 then opens the same points to plugins.
+- **Navigation basics** (owner ideas, 2026-09-25):
+  - a command palette and "go to anything" (Ctrl+P / Ctrl+Shift+P: graphs, nodes, variables, methods, commands);
+  - go to the source or target of a connection with Ctrl+click or the context menu, with a navigation
+    history (Alt+← / Alt+→);
+  - a tooltip on hover over a connection: `Node.pin → Node.pin`, the type and the member documentation;
+  - breadcrumbs (Project › Class › Method).
 
 ### P3 — Editor extension host
 `NetPrints.Desktop --profile`, plugin-loaded editor extensions, UI contributions (commands,
@@ -227,8 +240,21 @@ for those who want to learn it.
     so browsing with the mouse is easy;
   - a second tab with **Favorites / Most used / Recent** (per user, persisted), also collapsible;
   - keyboard navigation stays first-class.
-- Onboarding (the audit found none): a start page with recent projects, create-from-template and open-sample;
-  a first-run guided tour of the canvas (create node, connect pins, compile, run); hints in empty areas.
+- Onboarding (the audit found none; the start dashboard is in P3a): a first-run guided tour of the canvas (create node, connect pins, compile, run); hints in empty areas.
+- Connection and canvas navigation (owner ideas, 2026-09-25):
+  - the connection tooltip shows a **live thumbnail of the other end** when it is off screen, and the live
+    value once visual debugging exists;
+  - edge-of-screen indicators pointing to connected nodes that are off screen;
+  - hovering a pin highlights all its connections; for a pin with many connections, a context-menu list
+    to jump to any of them;
+  - bookmarks (Ctrl+1…9, as in Unreal) and **find references** of a variable or method across all graphs.
+- Canvas editing (2026-09-25):
+  - reroute nodes ("knots") and straightening connections;
+  - auto-layout of a selection, align and distribute;
+  - **copy/paste as text**: a canonical JSON fragment that can be pasted into another instance, an issue or
+    an AI chat;
+  - a keyboard-only flow: type on the canvas to create a node, Tab to move between pins;
+  - an undo history panel, and F8 to jump between errors.
 - UX audit additions (2026-09-25, IDs from `docs/research/2026-09-25-ux-audit/`):
   - H5–H9, M1, M2, M4–M15, M17–M21, L7;
   - discoverable node creation, context menus, rich error list, search ranking with doc preview;
@@ -250,6 +276,9 @@ Block-scoped local variables (owner idea, 2026-09-25): variables owned by for/fo
   irregular graphs where a node belongs to several scopes.
 
 ### Candidates (unscheduled)
+- **Visual graph diff** (2026-09-25): compare two versions of a graph (from git) with added nodes and
+  connections in green, removed in red and moved in grey. The stable ids of P1 make it feasible; it serves
+  PR review and is the base for the `netprints merge` driver.
 - **Release follow-ups after P1**: installers and auto-update (Velopack), code signing (Windows
   signing, Apple Developer ID and notarization), a Windows smoke test of the win-x64 archive,
   `PackageValidationBaselineVersion` after the first stable release.
