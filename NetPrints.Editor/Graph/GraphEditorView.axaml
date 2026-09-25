@@ -35,10 +35,16 @@
                          MaxViewportZoom="1"
                          DragDrop.AllowDrop="True">
       <nodify:NodifyEditor.ItemContainerTheme>
+        <!-- Nodify's own container chrome (a blue border, orange when selected) is turned off:
+             NodeView already draws the single border WPF had, green when selected. -->
         <ControlTheme TargetType="nodify:ItemContainer" BasedOn="{StaticResource {x:Type nodify:ItemContainer}}" x:DataType="ednodes:NodeVM">
           <Setter Property="Location" Value="{Binding Location, Mode=TwoWay, Converter={x:Static edgraph:GraphPointConverter.Instance}}" />
           <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
           <Setter Property="ZIndex" Value="{Binding ZIndex}" />
+          <Setter Property="BorderBrush" Value="Transparent" />
+          <Setter Property="BorderThickness" Value="0" />
+          <Setter Property="HighlightBrush" Value="Transparent" />
+          <Setter Property="SelectedBrush" Value="Transparent" />
         </ControlTheme>
       </nodify:NodifyEditor.ItemContainerTheme>
 
