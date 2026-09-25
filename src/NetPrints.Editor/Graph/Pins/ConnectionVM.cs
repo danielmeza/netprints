@@ -9,10 +9,13 @@ namespace NetPrints.Editor.Graph.Pins;
 /// </summary>
 public sealed partial class ConnectionVM(NodePinVM source, NodePinVM target) : ObservableObject
 {
+    /// <summary>The output-side pin (exec pin: the outgoing pin; data/type pin: the source of the value).</summary>
     public NodePinVM Source { get; } = source;
 
+    /// <summary>The input-side pin (exec pin: the incoming pin; data/type pin: the consumer of the value).</summary>
     public NodePinVM Target { get; } = target;
 
+    /// <summary>The kind of pin this connects (exec, data or type), taken from <see cref="Source"/>.</summary>
     public PinKind Kind => Source.Kind;
 
     /// <summary>Stable identity of the cable for UI automation: "&lt;node&gt;.&lt;pin&gt;-&gt;&lt;node&gt;.&lt;pin&gt;".</summary>
@@ -35,6 +38,7 @@ public sealed partial class ConnectionVM(NodePinVM source, NodePinVM target) : O
     [RelayCommand]
     public void InsertReroute() => OwningPin.AddRerouteNode();
 
+    /// <summary>Mouse back button: toggles <see cref="IsFaint"/>.</summary>
     [RelayCommand]
     public void ToggleFaint() => IsFaint = !IsFaint;
 }
