@@ -32,7 +32,7 @@ snapshot, regenerated canvas baselines); E2E suite once on a private Xvfb
 
 **Constraints**: Pixel-identical paths; comment density per AGENTS.md
 
-**Scale/Scope**: 3–4 new source files in `NetPrints.Editor/Graph`, view/XAML/theme edits, tests
+**Scale/Scope**: 3–4 new source files in `src/NetPrints.Editor/Graph`, view/XAML/theme edits, tests
 
 ## Constitution Check
 
@@ -61,7 +61,7 @@ specs/002-grid-rendering/
 ### Source Code (repository root)
 
 ```text
-NetPrints.Editor/
+src/NetPrints.Editor/
 ├── NetPrints.Editor.csproj          # + Avalonia.Skia
 ├── EditorStyles.axaml               # + GraphGrid.* theme dictionaries
 ├── AutomationIds.cs                 # + GraphGrid
@@ -72,11 +72,11 @@ NetPrints.Editor/
     ├── GridBackground.cs            # control, draw operation, mode selection
     ├── GraphEditorView.axaml        # grid behind a transparent editor
     └── GraphEditorView.axaml.cs     # viewport sync, old brush removed
-NetPrints.Testing.Ui/Graph/GraphCanvas.cs          # + grid page-object members
-NetPrints.Desktop.E2ETests/Hosting/XServer.cs      # + NETPRINTS_E2E_DISPLAY_START
-NetPrints.Editor.Tests/Graph/GridFrameTests.cs
-NetPrints.Editor.UITests/Graph/GridRenderTests.cs
-NetPrints.Editor.UITests/Snapshots/Baselines/*.png   # grid-background + regenerated canvas baselines
+tests/NetPrints.Testing.Ui/Graph/GraphCanvas.cs          # + grid page-object members
+tests/NetPrints.Desktop.E2ETests/Hosting/XServer.cs      # + NETPRINTS_E2E_DISPLAY_START
+tests/NetPrints.Editor.Tests/Graph/GridFrameTests.cs
+tests/NetPrints.Editor.UITests/Graph/GridRenderTests.cs
+tests/NetPrints.Editor.UITests/Snapshots/Baselines/*.png   # grid-background + regenerated canvas baselines
 ```
 
 **Structure Decision**: Everything lives in the existing editor and test projects; no new projects.

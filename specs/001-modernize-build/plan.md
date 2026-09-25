@@ -94,21 +94,21 @@ specs/001-modernize-build/
 global.json                      # new: SDK 10.0.100 latestFeature; test runner MTP
 Directory.Build.props            # new: shared settings
 Directory.Packages.props         # new: CPM + transitive pinning
-NetPrints.sln                    # updated: 7 Linux-buildable projects
+NetPrints.slnx                    # updated: 7 Linux-buildable projects
 .github/workflows/ci.yml         # new: name "CI"
 .travis.yml                      # deleted
 README.md                        # updated
 samples/HelloWorld/              # new: HelloWorld.netpp, HelloWorld.Program.netpc
-NetPrints/                       # Core: net10.0 (+ Core/ReferenceAssemblyResolver.cs)
-NetPrints.Reflection/            # new: moved from NetPrintsEditor/Reflection
-NetPrints.Editor/                # new: EditorApp + feature folders (Main, ClassEditor, Graph, Search, Variables, References,
+src/NetPrints.Core/                       # Core: net10.0 (+ Core/ReferenceAssemblyResolver.cs)
+src/NetPrints.Reflection/            # new: moved from NetPrintsEditor/Reflection
+src/NetPrints.Editor/                # new: EditorApp + feature folders (Main, ClassEditor, Graph, Search, Variables, References,
                                  #      Inspectors, Dialogs, UndoRedo, ModelSync, Hosting/Avalonia), Assets
-NetPrints.Desktop/               # new: Program.cs, icon
-NetPrintsCLI/                    # net10.0
-NetPrintsUnitTests/              # net10.0, xUnit v3 (Core/, Translator/, Compilation/, Samples/)
-NetPrints.Editor.Tests/          # new: xUnit + DI; feature folders mirroring the editor
-NetPrints.Editor.UITests/        # new: Avalonia.Headless.XUnit; page objects per feature
-NetPrintsVSIX/                   # kept, out of the solution, README "pending P4"
+src/NetPrints.Desktop/               # new: Program.cs, icon
+src/NetPrints.Cli/                    # net10.0
+tests/NetPrints.Core.Tests/              # net10.0, xUnit v3 (Core/, Translator/, Compilation/, Samples/)
+tests/NetPrints.Editor.Tests/          # new: xUnit + DI; feature folders mirroring the editor
+tests/NetPrints.Editor.UITests/        # new: Avalonia.Headless.XUnit; page objects per feature
+legacy/NetPrintsVSIX/                   # kept, out of the solution, README "pending P4"
 NetPrintsEditor/                 # deleted (WPF)
 NetPrintsEditorUnitTests/        # deleted
 ```
@@ -140,7 +140,7 @@ pull in Avalonia. See data-model.md §1.
 | Violation / deviation | Why needed | Simpler alternative rejected because |
 |-----------------------|------------|-------------------------------------|
 | Windows `ProgramFilesX86` framework-path logic kept (principle I) | Changing reference semantics or format is P1 scope; P0 needs Linux to work now | Replacing it now means designing the P1 ref-pack/target model early. The fallback is additive and format-neutral. |
-| `Nullable=disable` in Core, NetPrintsUnitTests and NetPrints.Reflection | ~100 unique warnings in Core; the reflection code is a pure move | Enabling it would bury P0 in unrelated churn. P1 enables it when those projects are refactored. |
+| `Nullable=disable` in Core, NetPrints.Core.Tests and NetPrints.Reflection | ~100 unique warnings in Core; the reflection code is a pure move | Enabling it would bury P0 in unrelated churn. P1 enables it when those projects are refactored. |
 | `TreatWarningsAsErrors=false` for Core and Reflection only | Fody and RS1024 warnings in legacy code | Fixing them is P1 work. The editor, the desktop app and all test projects have it on (review follow-up). |
 | Editor scope (P3 work) in P0 (principle VIII vs roadmap 1.0) | Explicit user decision relayed by the coordinator | Needs roadmap re-scoping; see below. |
 

@@ -6,27 +6,27 @@ satisfies constitution VI. The "entities" here are (1) the projects that make up
 
 ## 1. Build topology (after P0)
 
-| Project | Path | SDK / TFMs | References | In `NetPrints.sln` | CI coverage |
+| Project | Path | SDK / TFMs | References | In `NetPrints.slnx` | CI coverage |
 |---------|------|-----------|------------|--------------------|-------------|
-| NetPrints (Core) | `NetPrints/` | Microsoft.NET.Sdk; `net10.0` | Roslyn 5.9, Fody 6.9.3 + PropertyChanged.Fody 4.1.0 (P1 removes) | yes | build + NetPrintsUnitTests + Editor.Tests |
-| NetPrints.Reflection | `NetPrints.Reflection/` (new) | `net10.0` | Core, Roslyn 5.9 | yes | Editor.Tests/Reflection |
-| NetPrints.Editor | `NetPrints.Editor/` (new) | `net10.0` | Core, Reflection, Avalonia 12.1.3 (+Themes.Fluent, Fonts.Inter), Nodify.Avalonia 2.0.0, CommunityToolkit.Mvvm, DynamicData, Xaml.Behaviors.Avalonia, Material.Icons.Avalonia; contains `EditorApp` (App.axaml), views, VMs and the Avalonia service implementations | yes | Editor.Tests/ViewModels + Ui |
-| NetPrints.Desktop | `NetPrints.Desktop/` (new) | `net10.0`, `WinExe` | Editor, Avalonia.Desktop (only `Program.cs`: `BuildAvaloniaApp()` → `EditorApp`, args, icon) | yes | build (+ `--help`-free startup is covered by the headless `EditorApp` tests) |
-| NetPrintsCLI | `NetPrintsCLI/` | `net10.0`, `Exe` | Core, CommandLineParser 2.9.1 | yes | build + `--version` smoke |
-| NetPrintsUnitTests | `NetPrintsUnitTests/` | `net10.0`, MTP exe | Core, xunit.v3 3.2.2 | yes | 11 original + resolver, sample, determinism tests |
-| NetPrints.Editor.Tests | `NetPrints.Editor.Tests/` (new) | `net10.0`, MTP exe | Editor, Reflection, xunit.v3 3.2.2, Xunit.DependencyInjection, Microsoft.Reactive.Testing | yes | reflection, view-model, host tests |
-| NetPrints.Editor.UITests | `NetPrints.Editor.UITests/` (new) | `net10.0`, MTP exe | Editor, xunit.v3 3.2.2, Avalonia.Headless.XUnit, Avalonia.Skia | yes | headless UI tests (page objects) |
+| NetPrints (Core) | `src/NetPrints.Core/` | Microsoft.NET.Sdk; `net10.0` | Roslyn 5.9, Fody 6.9.3 + PropertyChanged.Fody 4.1.0 (P1 removes) | yes | build + NetPrints.Core.Tests + Editor.Tests |
+| NetPrints.Reflection | `src/NetPrints.Reflection/` (new) | `net10.0` | Core, Roslyn 5.9 | yes | Editor.Tests/Reflection |
+| NetPrints.Editor | `src/NetPrints.Editor/` (new) | `net10.0` | Core, Reflection, Avalonia 12.1.3 (+Themes.Fluent, Fonts.Inter), Nodify.Avalonia 2.0.0, CommunityToolkit.Mvvm, DynamicData, Xaml.Behaviors.Avalonia, Material.Icons.Avalonia; contains `EditorApp` (App.axaml), views, VMs and the Avalonia service implementations | yes | Editor.Tests/ViewModels + Ui |
+| NetPrints.Desktop | `src/NetPrints.Desktop/` (new) | `net10.0`, `WinExe` | Editor, Avalonia.Desktop (only `Program.cs`: `BuildAvaloniaApp()` → `EditorApp`, args, icon) | yes | build (+ `--help`-free startup is covered by the headless `EditorApp` tests) |
+| NetPrints.Cli | `src/NetPrints.Cli/` | `net10.0`, `Exe` | Core, CommandLineParser 2.9.1 | yes | build + `--version` smoke |
+| NetPrints.Core.Tests | `tests/NetPrints.Core.Tests/` | `net10.0`, MTP exe | Core, xunit.v3 3.2.2 | yes | 11 original + resolver, sample, determinism tests |
+| NetPrints.Editor.Tests | `tests/NetPrints.Editor.Tests/` (new) | `net10.0`, MTP exe | Editor, Reflection, xunit.v3 3.2.2, Xunit.DependencyInjection, Microsoft.Reactive.Testing | yes | reflection, view-model, host tests |
+| NetPrints.Editor.UITests | `tests/NetPrints.Editor.UITests/` (new) | `net10.0`, MTP exe | Editor, xunit.v3 3.2.2, Avalonia.Headless.XUnit, Avalonia.Skia | yes | headless UI tests (page objects) |
 | ~~NetPrintsEditor~~ | deleted | — | — | removed | — |
 | ~~NetPrintsEditorUnitTests~~ | deleted | — | — | removed | — |
-| NetPrintsVSIX | `NetPrintsVSIX/` (kept, `README.md` "pending P4") | legacy csproj, v4.6.1 | stale refs to the deleted editor | **removed** | none (P4 adds a chained Windows workflow) |
+| NetPrintsVSIX | `legacy/NetPrintsVSIX/` (kept, `README.md` "pending P4") | legacy csproj, v4.6.1 | stale refs to the deleted editor | **removed** | none (P4 adds a chained Windows workflow) |
 
 Dependency direction (no cycles; UI only in Editor/Desktop):
 `Core ← Reflection ← Editor ← Desktop`; `Core ← CLI`; tests reference what they test.
 
 Shared build files: `global.json`, `Directory.Build.props`, `Directory.Packages.props`
-(CPM + transitive pinning), `NetPrints.sln`, `.github/workflows/ci.yml`.
+(CPM + transitive pinning), `NetPrints.slnx`, `.github/workflows/ci.yml`.
 
-## 2. Editor view-model graph (NetPrints.Editor/ViewModels)
+## 2. Editor view-model graph (src/NetPrints.Editor/ViewModels)
 
 The names are kept from the WPF editor to make the port traceable. Every VM derives from
 `ObservableObject` (CommunityToolkit). Services come from `contracts/editor-services.md`.

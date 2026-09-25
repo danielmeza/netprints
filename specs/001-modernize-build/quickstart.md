@@ -11,15 +11,15 @@
 ## 2. Build and test (SC-001: two commands)
 
 ```bash
-dotnet build NetPrints.sln -c Release
-dotnet test --solution NetPrints.sln -c Release --no-build
+dotnet build NetPrints.slnx -c Release
+dotnet test --solution NetPrints.slnx -c Release --no-build
 ```
 
 Expected:
 - The build finishes with **0 errors**. Known warnings: Fody `OnInputTypeChanged` (Core, until
   P1) and Roslyn analyzer warnings in the moved reflection code. The editor, the desktop app and the
   test projects build with warnings as errors.
-- Tests report `failed: 0` for both test projects: `NetPrintsUnitTests` (11 tests) and
+- Tests report `failed: 0` for both test projects: `NetPrints.Core.Tests` (11 tests) and
   `NetPrints.Editor.Tests` (reflection, view-model and host tests) and `NetPrints.Editor.UITests`
   (headless UI tests). All three use xUnit v3.
 - `--report-xunit-trx --results-directory TestResults` writes `.trx` files, as CI does.
@@ -27,16 +27,16 @@ Expected:
 Individual projects:
 
 ```bash
-dotnet test --project NetPrintsUnitTests -c Release
-dotnet test --project NetPrints.Editor.Tests -c Release
-dotnet test --project NetPrints.Editor.UITests -c Release
+dotnet test --project tests/NetPrints.Core.Tests -c Release
+dotnet test --project tests/NetPrints.Editor.Tests -c Release
+dotnet test --project tests/NetPrints.Editor.UITests -c Release
 ```
 
 ## 3. CLI smoke
 
 ```bash
-dotnet run --project NetPrintsCLI -c Release -- --version     # prints "NetPrintsCLI <version>" (exit code 1 is expected until P2)
-dotnet run --project NetPrintsCLI -c Release -- -p samples/HelloWorld/HelloWorld.netpp -r
+dotnet run --project src/NetPrints.Cli -c Release -- --version     # prints "NetPrints.Cli <version>" (exit code 1 is expected until P2)
+dotnet run --project src/NetPrints.Cli -c Release -- -p samples/HelloWorld/HelloWorld.netpp -r
 # → "Compilation succeeded." then the program prints "Hello, World!" (uses the runtime-assembly fallback on Linux)
 ```
 
@@ -45,7 +45,7 @@ The compiled output goes to `samples/HelloWorld/Compiled_HelloWorld/`, which is 
 ## 4. Run the editor
 
 ```bash
-dotnet run --project NetPrints.Desktop -c Release -- samples/HelloWorld/HelloWorld.netpp
+dotnet run --project src/NetPrints.Desktop -c Release -- samples/HelloWorld/HelloWorld.netpp
 ```
 
 The main window opens with project "HelloWorld" loaded (PAR-05).
@@ -57,12 +57,12 @@ Every PAR item is exercised through the UI by automated tests; nothing needs a h
 **Headless** (no display server; part of section 2):
 
 ```bash
-dotnet test --project NetPrints.Editor.UITests
+dotnet test --project tests/NetPrints.Editor.UITests
 ```
 
-- Snapshots compare with `NetPrints.Editor.UITests/Snapshots/Baselines/*.png`. After an
+- Snapshots compare with `tests/NetPrints.Editor.UITests/Snapshots/Baselines/*.png`. After an
   intended visual change, regenerate them and review the images before committing:
-  `NETPRINTS_UPDATE_SNAPSHOTS=1 dotnet test --project NetPrints.Editor.UITests -- --filter-class "*SnapshotTests"`.
+  `NETPRINTS_UPDATE_SNAPSHOTS=1 dotnet test --project tests/NetPrints.Editor.UITests -- --filter-class "*SnapshotTests"`.
 - Artifacts (actual and diff images, flow screenshots, per-test tree dumps and screenshots) go to
   `NETPRINTS_UI_ARTIFACTS` (default: `ui-artifacts/` in the test output folder).
 
@@ -70,14 +70,14 @@ dotnet test --project NetPrints.Editor.UITests
 
 ```bash
 sudo apt-get install xvfb openbox xdotool imagemagick x11-utils libgtk-3-0t64 adwaita-icon-theme
-NETPRINTS_E2E=1 dotnet test --project NetPrints.Desktop.E2ETests
+NETPRINTS_E2E=1 dotnet test --project tests/NetPrints.Desktop.E2ETests
 ```
 
 - The tests start their own Xvfb on a free display (100 and up) with openbox, and run the editor
   there with `NETPRINTS_AUTOMATION=1` (read-only automation pipe), no D-Bus session (GTK file
   dialogs on that display) and a private home. They never touch your desktop display.
 - Without `NETPRINTS_E2E=1` the E2E tests are skipped (as in the `build-test` CI job).
-- The automation agent (`AutomationAgent`, `NetPrints.Editor/Hosting/Automation`) ships in every
+- The automation agent (`AutomationAgent`, `src/NetPrints.Editor/Hosting/Automation`) ships in every
   build, including Release: it is inert until `NETPRINTS_AUTOMATION=1` is set, and the E2E suite
   needs to drive the real Desktop build, so there is no separate "test" configuration to keep in
   sync. When enabled, the pipe is current-user-only (`PipeOptions.CurrentUserOnly` on both ends,

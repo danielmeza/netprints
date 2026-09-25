@@ -18,8 +18,8 @@ Version 0.0.7 of the original WPF editor can be found [here](https://github.com/
 Requirements: the [.NET 10 SDK](https://dotnet.microsoft.com/download) (10.0.100 or later; `global.json` rolls forward to newer feature bands). Two commands build and test everything, on Linux too, without a display server:
 
 ```bash
-dotnet build NetPrints.sln -c Release
-dotnet test --solution NetPrints.sln -c Release --no-build
+dotnet build NetPrints.slnx -c Release
+dotnet test --solution NetPrints.slnx -c Release --no-build
 ```
 
 Package versions live in `Directory.Packages.props` (Central Package Management) and shared build settings in `Directory.Build.props`. The [CI](.github/workflows/ci.yml) workflow runs the same commands on every push and pull request.
@@ -27,14 +27,14 @@ Package versions live in `Directory.Packages.props` (Central Package Management)
 Command line:
 
 ```bash
-dotnet run --project NetPrintsCLI -c Release -- --version
-dotnet run --project NetPrintsCLI -c Release -- -p samples/HelloWorld/HelloWorld.netpp -r   # prints "Hello, World!"
+dotnet run --project src/NetPrints.Cli -c Release -- --version
+dotnet run --project src/NetPrints.Cli -c Release -- -p samples/HelloWorld/HelloWorld.netpp -r   # prints "Hello, World!"
 ```
 
 Editor:
 
 ```bash
-dotnet run --project NetPrints.Desktop -c Release -- samples/HelloWorld/HelloWorld.netpp
+dotnet run --project src/NetPrints.Desktop -c Release -- samples/HelloWorld/HelloWorld.netpp
 ```
 
 # Target Frameworks
@@ -46,12 +46,12 @@ Every project targets .NET 10.
 | NetPrints.Reflection | net10.0 | UI-free type reflection used by the editor |
 | NetPrints.Editor | net10.0 | Avalonia 12 editor library (views, view models, services) |
 | NetPrints.Desktop | net10.0 | Desktop application hosting the editor |
-| NetPrintsCLI | net10.0 | Command line compiler |
-| NetPrintsUnitTests, NetPrints.Editor.Tests, NetPrints.Editor.UITests | net10.0 | xUnit v3 on Microsoft.Testing.Platform; headless Avalonia UI tests (Avalonia.Headless.XUnit) |
+| NetPrints.Cli | net10.0 | Command line compiler |
+| NetPrints.Core.Tests, NetPrints.Editor.Tests, NetPrints.Editor.UITests | net10.0 | xUnit v3 on Microsoft.Testing.Platform; headless Avalonia UI tests (Avalonia.Headless.XUnit) |
 | NetPrintsVSIX | .NET Framework 4.6.1 | Legacy, not built (see below) |
 
 # Visual Studio Extension
-The legacy Visual Studio extension (`NetPrintsVSIX`) is kept in the repository for reference but is not part of `NetPrints.sln`, does not build and is not tested in CI; Visual Studio integration is out of scope for now (see `NetPrintsVSIX/README.md`). The published extension on the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=NawTora.NetPrints) is the old version.
+The legacy Visual Studio extension (`NetPrintsVSIX`) is kept in the repository for reference but is not part of `NetPrints.slnx`, does not build and is not tested in CI; Visual Studio integration is out of scope for now (see `legacy/NetPrintsVSIX/README.md`). The published extension on the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=NawTora.NetPrints) is the old version.
 
 # Standalone Editor Guide
 The editor runs on Linux (X11 or Wayland), Windows and macOS with the .NET 10 runtime. Any .NET binaries can be used with this editor. The recommended way to add new assembly references is installing them with NuGet and referencing their reference assemblies in the NuGet package folder (`~/.nuget/packages` or `%UserProfile%/.nuget/packages`). The hints for the included references should then appear within the editor. You can also add C# source directories which can either be used for reflection only (useful when you want to use NetPrints within Unity to access your existing scripts) or compiled into the output.

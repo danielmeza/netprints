@@ -2,7 +2,7 @@
 
 View models in `NetPrints.Editor` depend only on these interfaces (namespace
 `NetPrints.Editor.Services`), never on Avalonia or Nodify types. The Avalonia implementations live in
-`NetPrints.Editor/Services/Avalonia` (so the headless tests can run the real app) and are wired by
+`src/NetPrints.Editor/Services/Avalonia` (so the headless tests can run the real app) and are wired by
 `EditorComposition`; view models receive them bundled in an `EditorContext` record. Tests provide fakes.
 
 **As implemented (P0)**: `IEditorDialogs` has `ShowReferencesAsync(ReferenceListVM)` instead of
