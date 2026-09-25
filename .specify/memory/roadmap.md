@@ -42,10 +42,12 @@ when it is started.
 - `global.json` (.NET 10 SDK), Central Package Management, `Directory.Build.props`.
 - Core and a new UI-free `NetPrints.Reflection` (moved out of the editor) target `net10.0` only
   (no netstandard2.0); latest Roslyn and dependencies; drop dead deps; minimal reference-assembly fallback.
-- Replace the WPF editor with `NetPrints.Editor` (Avalonia 11 + Nodify.Avalonia,
+- Replace the WPF editor with `NetPrints.Editor` (Avalonia 12 + Nodify.Avalonia 2,
   CommunityToolkit.Mvvm, DynamicData search) + `NetPrints.Desktop`, at feature parity (60-item
   parity inventory in `specs/001-modernize-build/spec.md`).
-- Tests on MSTest 4 (Microsoft.Testing.Platform) + Avalonia.Headless UI tests.
+- Tests on xUnit v3 (xunit.v3 3.2.2, pinned: Avalonia.Headless.XUnit 12.1.3 is incompatible with
+  xUnit 4.x) + Avalonia.Headless.XUnit UI tests in their own assembly; Xunit.DependencyInjection in
+  non-UI test projects; the test's CancellationToken everywhere (xUnit1051 as error).
 - Linux-only CI workflow `CI` (`.github/workflows/ci.yml`). Legacy VSIX removed from the
   solution build (source kept, pending P4).
 - **Done when:** the whole solution builds and all tests pass on Linux CI and the parity
@@ -68,7 +70,8 @@ architecture gate (no Avalonia types in view models, dependency direction); Nodi
 command-based gestures instead of code-behind (split, disconnect, connection completed) and
 binding the grid to `ViewportTransform`; replace the `SetProperty(model, …)` wrappers when
 Fody is removed; `MetadataReference` caching together with the reference-pack work; remove the
-`EditorComposition` test hook in favour of explicit DI.
+`EditorComposition` test hook in favour of explicit DI; `[LoggerMessage]` source-generated
+logging for the app-level error handler (and new logging generally).
 Done when: old sample loads, saves as JSON, generates identical C#.
 
 ### P2 — Catalog tooling + Spectre CLI
@@ -80,7 +83,9 @@ Spectre.Console.Cli (`build`, `generate`, `run`, `catalog`, `migrate`).
 ### P3 — Editor extension host
 `NetPrints.Desktop --profile`, plugin-loaded editor extensions, UI contributions (commands,
 inspector sections, panels, settings pages), DynamicData/ReactiveUI performance work beyond
-parity, sample non-Unreal extension, anything left beyond P0 parity.
+parity, sample non-Unreal extension, anything left beyond P0 parity. Performance items from the
+P0 review: translate the generated-code preview off the UI thread; bring node-search cold start
+(SC-005) within the 2 s budget on slower machines (3.4 s on the CI runner at P0).
 
 ### P4 — VSIX (deferred)
 Deferred by the project owner on 2026-09-24; revisit after P3/P5. When resumed:
