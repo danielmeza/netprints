@@ -35,6 +35,10 @@ namespace NetPrints.Graph
             get => TypePin.InferredType?.Value ?? TypeSpecifier.FromType<object>();
         }
 
+        /// <summary>
+        /// Adds this node to <paramref name="graph"/> and gives it its type and default-value pins.
+        /// </summary>
+        /// <param name="graph">Graph the node belongs to.</param>
         public DefaultNode(NodeGraph graph)
             : base(graph)
         {
@@ -42,6 +46,11 @@ namespace NetPrints.Graph
             AddOutputDataPin("Default", Type);
         }
 
+        /// <summary>
+        /// Propagates <see cref="Type"/> (the inferred type) to <see cref="DefaultValuePin"/>.
+        /// </summary>
+        /// <param name="sender">The node whose input type changed.</param>
+        /// <param name="eventArgs">Unused; forwarded to the base implementation.</param>
         protected override void HandleInputTypeChanged(object? sender, EventArgs? eventArgs)
         {
             base.HandleInputTypeChanged(sender, eventArgs);
@@ -49,6 +58,10 @@ namespace NetPrints.Graph
             DefaultValuePin.PinType.Value = Type;
         }
 
+        /// <summary>
+        /// Returns "Default " followed by the type's short name.
+        /// </summary>
+        /// <returns>"Default " followed by the type's short name.</returns>
         public override string ToString()
         {
             return $"Default {Type.ShortName}";

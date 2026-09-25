@@ -38,6 +38,17 @@ namespace NetPrints.Graph
             get => MethodSpecifier.Modifiers.HasFlag(MethodModifiers.Static);
         }
 
+        /// <summary>
+        /// Adds this node to <paramref name="graph"/> and gives it a target pin (unless the method is
+        /// static) and its delegate-value output pin, typed <see cref="Action"/> or <see cref="Func{TResult}"/>
+        /// (with the method's parameter and return types as generic arguments) as appropriate.
+        /// </summary>
+        /// <param name="graph">Graph the node belongs to.</param>
+        /// <param name="methodSpecifier">Specifier for the method the delegate is created for.</param>
+        /// <exception cref="NotImplementedException">
+        /// <paramref name="methodSpecifier"/> has more than one return type (multiple return values
+        /// have no <see cref="Func{TResult}"/> equivalent).
+        /// </exception>
         public MakeDelegateNode(NodeGraph graph, MethodSpecifier methodSpecifier)
             : base(graph)
         {
@@ -66,6 +77,11 @@ namespace NetPrints.Graph
             AddOutputDataPin(delegateType.ShortName, delegateType);
         }
 
+        /// <summary>
+        /// Returns "Make Delegate from " followed by the declaring type and method name (for a static
+        /// method) or just the method name.
+        /// </summary>
+        /// <returns>The node's display string.</returns>
         public override string ToString()
         {
             if (IsFromStaticMethod)
