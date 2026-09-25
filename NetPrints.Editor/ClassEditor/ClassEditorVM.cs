@@ -125,6 +125,9 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     /// <summary>Window title (PAR-22).</summary>
     public string Title => Class.Name ?? "";
 
+    /// <summary>The class name with its namespace (the window's automation name).</summary>
+    public string FullName => Class.FullName ?? "";
+
     public IReadOnlyList<MemberVisibility> PossibleVisibilities => Visibilities;
 
     public string Name
@@ -137,6 +140,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
                 Class.Name = value;
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(Title));
+                OnPropertyChanged(nameof(FullName));
             }
         }
     }
@@ -150,6 +154,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
             {
                 Class.Namespace = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(FullName));
             }
         }
     }

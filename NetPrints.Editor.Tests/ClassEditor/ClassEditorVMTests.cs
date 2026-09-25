@@ -36,6 +36,19 @@ public class ClassEditorVMTests : IDisposable
     }
 
     [Fact]
+    public void RenamingUpdatesTheFullName()
+    {
+        var changed = new List<string?>();
+        vm.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+        vm.Name = "Renamed";
+        vm.Namespace = "Other";
+
+        Assert.Equal(2, changed.Count(p => p == nameof(ClassEditorVM.FullName)));
+        Assert.Equal("Other.Renamed", vm.FullName);
+    }
+
+    [Fact]
     public void CreateMethodConnectsEntryAndReturnAndOpensGraph()
     {
         vm.CreateMethodCommand.Execute(null);

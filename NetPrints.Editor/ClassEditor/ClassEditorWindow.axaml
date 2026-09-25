@@ -11,7 +11,7 @@
         x:DataType="edclasseditor:ClassEditorVM"
         Title="{Binding Title}"
         Icon="avares://NetPrints.Editor/Assets/NetPrintsLogo.ico"
-        Width="1280" Height="720" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorWindow}" AutomationProperties.Name="{Binding Class.FullName}">
+        Width="1280" Height="720" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorWindow}" AutomationProperties.Name="{Binding FullName}">
   <!-- Keyboard (PAR-37) -->
   <Window.KeyBindings>
     <KeyBinding Gesture="Delete" Command="{Binding DeleteSelectedNodesCommand}" />

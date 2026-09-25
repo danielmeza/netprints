@@ -54,6 +54,8 @@ public static class AutomationIds
     public const string NodeLeftPlus = "Graph.Node.LeftPlus";
     public const string NodeLeftMinus = "Graph.Node.LeftMinus";
     public const string PinValueText = "Graph.Pin.ValueText";
+    public const string PinValueCheck = "Graph.Pin.ValueCheck";
+    public const string PinValueEnum = "Graph.Pin.ValueEnum";
     public const string GetButton = "Graph.GetSet.Get";
     public const string SetButton = "Graph.GetSet.Set";
 
@@ -61,6 +63,7 @@ public static class AutomationIds
     public const string SearchBox = "Search.Box";
     public const string SearchResults = "Search.Results";
     public const string SearchRowText = "Search.RowText";
+    public const string SearchRowIcon = "Search.RowIcon";            // Name = the row text
 
     // Dialogs
     public const string ErrorMessage = "Dialogs.Error.Message";
@@ -112,4 +115,11 @@ public static class AutomationIds
     public const string Connection = "Graph.Connection";           // Name = "<node>.<pin>-><node>.<pin>"
     public const string GetSetChooser = "Graph.GetSetChooser";
     public const string NodeSearch = "Search.View";
+
+    // References dialog rows (AutomationProperties.Name carries the reference's display text)
+    public const string ReferencesAddAssemblyButton = "References.AddAssembly";
+    public const string ReferencesAddSourceButton = "References.AddSource";
+    public const string ReferenceRow = "References.Row";
+    public const string ReferenceInclude = "References.Include";
+    public const string ReferenceRemove = "References.Remove";
 }

@@ -24,7 +24,7 @@
               <TextBlock Text="{Binding Category}" IsVisible="{Binding IsHeader}" FontWeight="Bold"
                          Foreground="{DynamicResource SystemAccentColor}" />
               <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding !IsHeader}" Margin="12,0,0,0">
-                <Image Width="16" Height="16" Source="{Binding IconKey, Converter={x:Static edsearch:IconConverter.Instance}}" />
+                <Image Width="16" Height="16" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SearchRowIcon}" AutomationProperties.Name="{Binding Text}" Source="{Binding IconKey, Converter={x:Static edsearch:IconConverter.Instance}}" />
                 <TextBlock Text="{Binding Text}" VerticalAlignment="Center" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SearchRowText}" />
               </StackPanel>
             </Panel>

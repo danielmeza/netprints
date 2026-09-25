@@ -49,9 +49,9 @@
       <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
         <TextBox Classes="pinValue" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PinValueText}" MinWidth="60" Text="{Binding UnconnectedText}" PlaceholderText="{Binding UnconnectedTextWatermark}"
                  IsVisible="{Binding ShowUnconnectedValue}" />
-        <ComboBox Classes="pinValue" ItemsSource="{Binding PossibleEnumNames}" SelectedItem="{Binding UnconnectedEnumName}"
+        <ComboBox Classes="pinValue" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PinValueEnum}" ItemsSource="{Binding PossibleEnumNames}" SelectedItem="{Binding UnconnectedEnumName}"
                   IsVisible="{Binding ShowEnumValue}" />
-        <CheckBox Classes="pinValue" IsChecked="{Binding UnconnectedBool}" IsVisible="{Binding ShowBooleanValue}" />
+        <CheckBox Classes="pinValue" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PinValueCheck}" IsChecked="{Binding UnconnectedBool}" IsVisible="{Binding ShowBooleanValue}" />
         <TextBlock Text="{Binding DisplayName}" IsVisible="{Binding ShowLabel}" FontSize="14" FontWeight="SemiBold"
                    Foreground="#FFEEEEEE" VerticalAlignment="Center" />
         <TextBox Text="{Binding Name}" IsVisible="{Binding ShowEditableName}" FontSize="14" FontWeight="SemiBold" MinWidth="60" />

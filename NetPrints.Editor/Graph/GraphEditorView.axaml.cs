@@ -7,6 +7,7 @@ using Avalonia.VisualTree;
 using Nodify.Avalonia.Connections;
 using Nodify.Avalonia.Events;
 using NetPrints.Editor.Graph.Nodes;
+using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Editor.Graph.Pins;
 
 namespace NetPrints.Editor.Graph;
@@ -47,6 +48,8 @@ public partial class GraphEditorView : UserControl
 
         Editor.AddHandler(PointerPressedEvent, OnEditorPointerPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
         Editor.AddHandler(PointerReleasedEvent, OnEditorPointerReleased, RoutingStrategies.Tunnel, handledEventsToo: true);
+        Editor.AddHandler(PointerMovedEvent, OnEditorPointerMoved, RoutingStrategies.Tunnel, handledEventsToo: true);
+        Editor.AddHandler(PointerCaptureLostEvent, (_, _) => Editor.Cursor = null, RoutingStrategies.Bubble, handledEventsToo: true);
         Editor.AddHandler(Connector.PendingConnectionCompletedEvent, new PendingConnectionEventHandler(OnPendingConnectionCompleted),
             RoutingStrategies.Bubble, handledEventsToo: true);
         Editor.AddHandler(DragDrop.DragOverEvent, OnDragOver);
@@ -171,6 +174,19 @@ public partial class GraphEditorView : UserControl
         }
     }
 
+    private void OnEditorPointerMoved(object? sender, PointerEventArgs e)
+    {
+        // A right drag past the click threshold pans: show the move cursor (PAR-51).
+        if (rightPressPosition is { } pressed && e.GetCurrentPoint(Editor).Properties.IsRightButtonPressed)
+        {
+            var position = e.GetPosition(Editor);
+            if (Math.Abs(position.X - pressed.X) >= ClickThreshold || Math.Abs(position.Y - pressed.Y) >= ClickThreshold)
+            {
+                Editor.Cursor = EditorCursors.Move;
+            }
+        }
+    }
+
     private void OnEditorPointerReleased(object? sender, PointerReleasedEventArgs e)
     {
         if (e.InitialPressMouseButton == MouseButton.XButton1)
@@ -190,6 +206,11 @@ public partial class GraphEditorView : UserControl
 
             backButtonTarget = null;
             return;
+        }
+
+        if (e.InitialPressMouseButton == MouseButton.Right)
+        {
+            Editor.Cursor = null;
         }
 
         if (e.InitialPressMouseButton == MouseButton.Right && rightPressPosition is { } pressed)
