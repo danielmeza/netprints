@@ -7,6 +7,13 @@ namespace NetPrints.Editor.Hosting;
 /// The services a view model can use. Hosts (desktop, tests, future VS/browser hosts) provide
 /// their own implementations; every member is required (no defaults).
 /// </summary>
+/// <param name="FilePicker">Opens native file/save pickers.</param>
+/// <param name="Dialogs">Shows modal dialogs (errors, references).</param>
+/// <param name="Clipboard">Reads and writes the system clipboard.</param>
+/// <param name="Dispatcher">Posts and invokes work on the UI thread.</param>
+/// <param name="Reflection">Owns the reflection provider for the open project.</param>
+/// <param name="Windows">Opens, activates and closes class editor windows.</param>
+/// <param name="Processes">Starts external processes and reports their output.</param>
 /// <param name="Scheduler">Scheduler for time-based work such as the search throttle (virtual time in tests).</param>
 /// <param name="CodeRefreshScheduler">
 /// Scheduler for the class editor's generated-code preview loop (PAR-34), separate from
