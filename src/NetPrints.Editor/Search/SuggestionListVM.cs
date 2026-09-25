@@ -68,6 +68,12 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
     private IReadOnlyList<SuggestionItem> allItems = [];
     private int openVersion;
 
+    /// <summary>
+    /// Creates the search popup's view model and wires its filter pipeline: search text is throttled
+    /// on <paramref name="graph"/>'s context scheduler, then re-applied as a DynamicData filter,
+    /// observed back on the UI thread.
+    /// </summary>
+    /// <param name="graph">Graph view model the search is opened for.</param>
     public SuggestionListVM(NodeGraphVM graph)
     {
         this.graph = graph;
@@ -454,6 +460,7 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
         }
     }
 
+    /// <summary>Disposes the filter pipeline and its subjects.</summary>
     public void Dispose()
     {
         pipeline.Dispose();
