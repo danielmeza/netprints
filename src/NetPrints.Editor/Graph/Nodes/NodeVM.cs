@@ -27,6 +27,12 @@ public sealed partial class NodeVM : ObservableObject, IDisposable
     private readonly ObservableViewModelCollection<NodePinVM, NodeOutputTypePin> outputTypePins;
     private bool suppressOverloadSelection;
 
+    /// <summary>
+    /// Wraps <paramref name="node"/>: builds its pin view models, subscribes to its position, input
+    /// type and property-changed events, and computes its initial overloads.
+    /// </summary>
+    /// <param name="node">Node to wrap.</param>
+    /// <param name="graph">View model of the graph the node belongs to.</param>
     public NodeVM(Node node, NodeGraphVM graph)
     {
         Node = node;
@@ -51,8 +57,10 @@ public sealed partial class NodeVM : ObservableObject, IDisposable
     /// <summary>Raised when a pin was added/removed or a pin connection changed.</summary>
     public event EventHandler? PinsChanged;
 
+    /// <summary>The wrapped model node.</summary>
     public Node Node { get; }
 
+    /// <summary>View model of the graph this node belongs to.</summary>
     public NodeGraphVM Graph { get; }
 
     /// <summary>Input pins in display order: exec, data, type (left column).</summary>
@@ -61,13 +69,25 @@ public sealed partial class NodeVM : ObservableObject, IDisposable
     /// <summary>Output pins in display order: exec, data, type (right column).</summary>
     public ObservableCollection<NodePinVM> Outputs { get; } = [];
 
+    /// <summary>Every pin of this node, inputs then outputs.</summary>
     public IEnumerable<NodePinVM> AllPins => Inputs.Concat(Outputs);
 
+    /// <summary>View models for the wrapped node's <c>InputExecPins</c>.</summary>
     public IReadOnlyList<NodePinVM> InputExecPins => inputExecPins;
+
+    /// <summary>View models for the wrapped node's <c>InputDataPins</c>.</summary>
     public IReadOnlyList<NodePinVM> InputDataPins => inputDataPins;
+
+    /// <summary>View models for the wrapped node's <c>InputTypePins</c>.</summary>
     public IReadOnlyList<NodePinVM> InputTypePins => inputTypePins;
+
+    /// <summary>View models for the wrapped node's <c>OutputExecPins</c>.</summary>
     public IReadOnlyList<NodePinVM> OutputExecPins => outputExecPins;
+
+    /// <summary>View models for the wrapped node's <c>OutputDataPins</c>.</summary>
     public IReadOnlyList<NodePinVM> OutputDataPins => outputDataPins;
+
+    /// <summary>View models for the wrapped node's <c>OutputTypePins</c>.</summary>
     public IReadOnlyList<NodePinVM> OutputTypePins => outputTypePins;
 
     /// <summary>Location on the canvas, synchronized with the model position.</summary>
@@ -91,10 +111,13 @@ public sealed partial class NodeVM : ObservableObject, IDisposable
     /// <summary>Selected nodes are drawn above the others.</summary>
     public int ZIndex => IsSelected ? 1 : 0;
 
+    /// <summary>The wrapped node's name.</summary>
     public string Name => Node.Name;
 
+    /// <summary>The wrapped node's display string (<c>Node.ToString()</c>).</summary>
     public string Label => Node.ToString();
 
+    /// <summary>Whether the wrapped node is a <see cref="RerouteNode"/> (drawn without a body).</summary>
     public bool IsRerouteNode => Node is RerouteNode;
 
     /// <summary>Header color category (PAR-39).</summary>
@@ -134,6 +157,7 @@ public sealed partial class NodeVM : ObservableObject, IDisposable
     [NotifyPropertyChangedFor(nameof(ShowOverloads))]
     public partial IReadOnlyList<object> Overloads { get; set; } = [];
 
+    /// <summary>Whether the overload chooser should be shown (there is at least one entry in <see cref="Overloads"/>).</summary>
     public bool ShowOverloads => Overloads.Count > 0;
 
     /// <summary>Chooser selection; choosing an overload changes it through the undo stack.</summary>
@@ -160,6 +184,11 @@ public sealed partial class NodeVM : ObservableObject, IDisposable
         }
     }
 
+    /// <summary>
+    /// The node's current overload: its <see cref="MethodSpecifier"/> or <see cref="ConstructorSpecifier"/>
+    /// for a call/constructor node, its size-mode marker for a <see cref="MakeArrayNode"/>, or
+    /// <see langword="null"/> for any other node type.
+    /// </summary>
     public object? CurrentOverload => ModelOperations.GetCurrentOverload(Node);
 
     internal void UpdateOverloads()
@@ -205,8 +234,13 @@ public sealed partial class NodeVM : ObservableObject, IDisposable
 
     // Purity (PAR-41)
 
+    /// <summary>Whether the wrapped node's purity can be toggled from the UI.</summary>
     public bool CanSetPure => Node.CanSetPure;
 
+    /// <summary>
+    /// Whether the wrapped node is pure. Setting it only takes effect if <see cref="CanSetPure"/> is
+    /// <see langword="true"/>; the setter does not go through the undo stack.
+    /// </summary>
     public bool IsPure
     {
         get => Node.IsPure;
@@ -222,12 +256,18 @@ public sealed partial class NodeVM : ObservableObject, IDisposable
 
     // +/- pin buttons (PAR-42)
 
+    /// <summary>
+    /// Whether to show the left +/- pin buttons: a <see cref="MakeArrayNode"/>, <see cref="MethodEntryNode"/>,
+    /// <see cref="ClassReturnNode"/>, or the graph's main <see cref="ReturnNode"/>.
+    /// </summary>
     public bool ShowLeftPinButtons =>
         Node is MakeArrayNode or MethodEntryNode or ClassReturnNode
         || (Node is ReturnNode && Node == Node.MethodGraph?.MainReturnNode);
 
+    /// <summary>Whether to show the right +/- pin buttons: a <see cref="MethodEntryNode"/> (generic parameters).</summary>
     public bool ShowRightPinButtons => Node is MethodEntryNode;
 
+    /// <summary>Tooltip for the left "+" button, describing what it adds for this node type, or "" if <see cref="ShowLeftPinButtons"/> is <see langword="false"/>.</summary>
     public string LeftPlusToolTip => Node switch
     {
         MakeArrayNode => "Add array element",
@@ -237,6 +277,7 @@ public sealed partial class NodeVM : ObservableObject, IDisposable
         _ => "",
     };
 
+    /// <summary>Tooltip for the left "-" button, describing what it removes for this node type, or "" if <see cref="ShowLeftPinButtons"/> is <see langword="false"/>.</summary>
     public string LeftMinusToolTip => Node switch
     {
         MakeArrayNode => "Remove array element",
@@ -246,8 +287,10 @@ public sealed partial class NodeVM : ObservableObject, IDisposable
         _ => "",
     };
 
+    /// <summary>Tooltip for the right "+" button, or "" if <see cref="ShowRightPinButtons"/> is <see langword="false"/>.</summary>
     public string RightPlusToolTip => Node is MethodEntryNode ? "Add method generic type parameter" : "";
 
+    /// <summary>Tooltip for the right "-" button, or "" if <see cref="ShowRightPinButtons"/> is <see langword="false"/>.</summary>
     public string RightMinusToolTip => Node is MethodEntryNode ? "Remove method generic type parameter" : "";
 
     [RelayCommand]
@@ -392,6 +435,10 @@ public sealed partial class NodeVM : ObservableObject, IDisposable
         }
     }
 
+    /// <summary>
+    /// Unsubscribes from the wrapped node's events and disposes every pin view model and pin
+    /// collection.
+    /// </summary>
     public void Dispose()
     {
         Node.OnPositionChanged -= OnNodePositionChanged;
