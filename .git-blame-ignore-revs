@@ -1,19 +1,21 @@
 # Mechanical commits to skip with `git blame --ignore-revs-file .git-blame-ignore-revs`
-# (or `git config blame.ignoreRevsFile .git-blame-ignore-revs`). Each one is a pure
-# rename/reference/path change with no logic changes.
+# (or `git config blame.ignoreRevsFile .git-blame-ignore-revs`). Each one is a pure move or a
+# pure reference/path update -- no logic changes. (3d493ab, "Apply dotnet format", is
+# deliberately not listed: it also applied the RS1024 SymbolEqualityComparer auto-fix, a real
+# behavior change reverted in 2de1d4c, so it is not purely mechanical.)
 
-# Reorganize project layout into src/, tests/, legacy/ (pure git mv, no content changes).
+# Reorganize project layout into src/, tests/, legacy/: git mv plus docs/adr/ (README + the
+# ADR recording the move itself). No existing file's content changed.
 7d3cc5143ec988a48652cbf2b923c4a0c9fc7abf
 
-# Fix references after the layout move; migrate to NetPrints.slnx.
+# Fix references after the layout move: ProjectReference paths, the src/NetPrints.Core,
+# NetPrints.Cli and NetPrints.Core.Tests assembly-name renames and their dependents (XAML
+# assembly= qualifiers, the CI CLI-smoke grep), and the NetPrints.sln -> NetPrints.slnx migration.
 5187ebf4a13f04d7ff90c97595b187e145f203d3
 
-# Update docs and specs for the new src/tests/legacy layout.
+# Update docs and specs for the new src/tests/legacy layout: path and project-name references only.
 75dcd2cdadc14558dd3b7bc1bcd08597ce7fead0
 
 # docs: fix avares:// URI paths mangled by the layout doc update (still purely mechanical:
 # corrects an over-eager find/replace from the previous commit, no logic change).
 efcd05fbcbe91bdba178d4450867fa715f868999
-
-# Apply dotnet format (mechanical whitespace/using-order output of the new .editorconfig).
-3d493abf4214614b4666f4334c5be942fea3c064
