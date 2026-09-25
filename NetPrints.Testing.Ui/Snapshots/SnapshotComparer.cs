@@ -13,8 +13,14 @@ public sealed record SnapshotOptions
 {
     public static readonly SnapshotOptions Default = new();
 
-    /// <summary>Largest per-channel difference (0..255) of a pixel that still counts as equal (anti-aliasing).</summary>
-    public int PixelThreshold { get; init; } = 32;
+    /// <summary>
+    /// Largest per-channel difference (0..255) of a pixel that still counts as equal
+    /// (anti-aliasing noise between runs). 32 was loose enough to miss a real theme/colour
+    /// regression (a grid-tint change with a max delta of 7 still matched); raise this per
+    /// snapshot, via <see cref="SnapshotOptions"/>, only where a specific baseline needs more
+    /// (e.g. text-heavy renders), rather than loosening the default back up.
+    /// </summary>
+    public int PixelThreshold { get; init; } = 4;
 
     /// <summary>Largest share of differing pixels, in percent, for images that still match.</summary>
     public double MaxDiffPercent { get; init; } = 0.5;
