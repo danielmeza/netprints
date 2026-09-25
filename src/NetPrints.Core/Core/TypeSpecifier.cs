@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -124,7 +125,7 @@ namespace NetPrints.Core
         /// <param name="isEnum">Whether the type is an enum.</param>
         /// <param name="isInterface">Whether the type is an interface.</param>
         /// <param name="genericArguments">Generic arguments the type takes.</param>
-        public TypeSpecifier(string typeName, bool isEnum = false, bool isInterface = false, IEnumerable<BaseType> genericArguments = null)
+        public TypeSpecifier(string typeName, bool isEnum = false, bool isInterface = false, IEnumerable<BaseType>? genericArguments = null)
             : base(typeName)
         {
             IsEnum = isEnum;
@@ -188,7 +189,7 @@ namespace NetPrints.Core
             return typeSpecifier;
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj is TypeSpecifier t)
             {
@@ -260,7 +261,7 @@ namespace NetPrints.Core
             for (int i = 0; i < newGenericArgs.Count; i++)
             {
                 if (newGenericArgs[i] is GenericType oldGenericType
-                    && typeSpecifiers.TryGetValue(oldGenericType, out BaseType newType))
+                    && typeSpecifiers.TryGetValue(oldGenericType, out BaseType? newType))
                 {
                     newGenericArgs[i] = newType;
                 }
@@ -271,7 +272,7 @@ namespace NetPrints.Core
             return new TypeSpecifier(Name, IsEnum, IsInterface, newGenericArgs);
         }
 
-        public static bool operator ==(TypeSpecifier a, TypeSpecifier b)
+        public static bool operator ==(TypeSpecifier? a, TypeSpecifier? b)
         {
             if (a is null)
             {
@@ -281,7 +282,7 @@ namespace NetPrints.Core
             return a.Equals(b);
         }
 
-        public static bool operator !=(TypeSpecifier a, TypeSpecifier b)
+        public static bool operator !=(TypeSpecifier? a, TypeSpecifier? b)
         {
             if (a is null)
             {
@@ -291,7 +292,7 @@ namespace NetPrints.Core
             return !a.Equals(b);
         }
 
-        public static bool operator ==(TypeSpecifier a, GenericType b)
+        public static bool operator ==(TypeSpecifier? a, GenericType? b)
         {
             if (a is null)
             {
@@ -301,7 +302,7 @@ namespace NetPrints.Core
             return a.Equals(b);
         }
 
-        public static bool operator !=(TypeSpecifier a, GenericType b)
+        public static bool operator !=(TypeSpecifier? a, GenericType? b)
         {
             if (a is null)
             {
@@ -311,7 +312,7 @@ namespace NetPrints.Core
             return !a.Equals(b);
         }
 
-        public static bool operator ==(TypeSpecifier a, BaseType b)
+        public static bool operator ==(TypeSpecifier? a, BaseType? b)
         {
             if (a is null)
             {
@@ -321,7 +322,7 @@ namespace NetPrints.Core
             return a.Equals(b);
         }
 
-        public static bool operator !=(TypeSpecifier a, BaseType b)
+        public static bool operator !=(TypeSpecifier? a, BaseType? b)
         {
             if (a is null)
             {
@@ -331,7 +332,7 @@ namespace NetPrints.Core
             return !a.Equals(b);
         }
 
-        public static bool operator ==(BaseType a, TypeSpecifier b)
+        public static bool operator ==(BaseType? a, TypeSpecifier? b)
         {
             if (a is null)
             {
@@ -341,7 +342,7 @@ namespace NetPrints.Core
             return a.Equals(b);
         }
 
-        public static bool operator !=(BaseType a, TypeSpecifier b)
+        public static bool operator !=(BaseType? a, TypeSpecifier? b)
         {
             if (a is null)
             {

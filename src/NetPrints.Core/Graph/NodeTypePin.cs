@@ -1,4 +1,5 @@
-﻿using System.Runtime.Serialization;
+﻿#nullable enable
+using System.Runtime.Serialization;
 using NetPrints.Core;
 
 namespace NetPrints.Graph
@@ -9,7 +10,7 @@ namespace NetPrints.Graph
     [DataContract]
     public abstract class NodeTypePin : NodePin
     {
-        public abstract ObservableValue<BaseType> InferredType
+        public abstract ObservableValue<BaseType>? InferredType
         {
             get;
         }

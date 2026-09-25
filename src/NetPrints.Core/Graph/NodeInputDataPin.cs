@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Runtime.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Core;
@@ -6,7 +7,7 @@ using NetPrints.Core;
 namespace NetPrints.Graph
 {
     public delegate void InputDataPinIncomingPinChangedDelegate(
-        NodeInputDataPin pin, NodeOutputDataPin oldPin, NodeOutputDataPin newPin);
+        NodeInputDataPin pin, NodeOutputDataPin? oldPin, NodeOutputDataPin? newPin);
 
     /// <summary>
     /// Input data pin which can be connected to up to one output data pin to receive a value.
@@ -17,7 +18,7 @@ namespace NetPrints.Graph
         /// <summary>
         /// Called when the node's incoming pin changed.
         /// </summary>
-        public event InputDataPinIncomingPinChangedDelegate IncomingPinChanged;
+        public event InputDataPinIncomingPinChangedDelegate? IncomingPinChanged;
 
         /// <summary>
         /// Incoming data pin for this pin. Null when not connected.
@@ -25,9 +26,9 @@ namespace NetPrints.Graph
         /// </summary>
         [ObservableProperty]
         [DataMember]
-        public partial NodeOutputDataPin IncomingPin { get; set; }
+        public partial NodeOutputDataPin? IncomingPin { get; set; }
 
-        partial void OnIncomingPinChanged(NodeOutputDataPin oldValue, NodeOutputDataPin newValue) =>
+        partial void OnIncomingPinChanged(NodeOutputDataPin? oldValue, NodeOutputDataPin? newValue) =>
             IncomingPinChanged?.Invoke(this, oldValue, newValue);
 
         /// <summary>
@@ -46,9 +47,9 @@ namespace NetPrints.Graph
         /// </summary>
         [ObservableProperty]
         [DataMember]
-        public partial object UnconnectedValue { get; set; }
+        public partial object? UnconnectedValue { get; set; }
 
-        partial void OnUnconnectedValueChanging(object oldValue, object newValue)
+        partial void OnUnconnectedValueChanging(object? oldValue, object? newValue)
         {
             // Check that:
             // this pin uses the unconnected value
@@ -65,7 +66,7 @@ namespace NetPrints.Graph
 
         [ObservableProperty]
         [DataMember]
-        public partial object ExplicitDefaultValue { get; set; }
+        public partial object? ExplicitDefaultValue { get; set; }
 
         [ObservableProperty]
         [DataMember]

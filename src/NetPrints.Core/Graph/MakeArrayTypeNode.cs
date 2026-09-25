@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Runtime.Serialization;
 using NetPrints.Core;
 
@@ -20,7 +21,7 @@ namespace NetPrints.Graph
             AddOutputTypePin("ArrayType", arrayType);
         }
 
-        protected override void HandleInputTypeChanged(object sender, EventArgs eventArgs)
+        protected override void HandleInputTypeChanged(object? sender, EventArgs? eventArgs)
         {
             base.HandleInputTypeChanged(sender, eventArgs);
 
@@ -37,7 +38,8 @@ namespace NetPrints.Graph
 
         public override string ToString()
         {
-            return arrayType.Value.ShortName;
+            // Always assigned from GetArrayType(), which never returns null.
+            return arrayType.Value!.ShortName;
         }
     }
 }

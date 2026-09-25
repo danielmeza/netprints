@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -51,7 +52,10 @@ namespace NetPrints.Core
         /// </summary>
         public ReturnNode MainReturnNode
         {
-            get => Nodes?.OfType<ReturnNode>()?.FirstOrDefault();
+            // Every MethodGraph is constructed with exactly one ReturnNode (below) and nothing removes
+            // the last one (RemoveReturnType only removes return *values*, not the node); First() turns
+            // a violation of that invariant into a clear exception instead of a null MainReturnNode.
+            get => Nodes.OfType<ReturnNode>().First();
         }
 
         /// <summary>
@@ -59,7 +63,7 @@ namespace NetPrints.Core
         /// </summary>
         public IEnumerable<BaseType> ReturnTypes
         {
-            get => MainReturnNode?.InputTypePins?.Select(pin => pin.InferredType?.Value ?? TypeSpecifier.FromType<object>())?.ToList() ?? new List<BaseType>();
+            get => MainReturnNode.InputTypePins.Select(pin => pin.InferredType?.Value ?? TypeSpecifier.FromType<object>()).ToList();
         }
 
         /// <summary>
@@ -67,7 +71,8 @@ namespace NetPrints.Core
         /// </summary>
         public IEnumerable<GenericType> GenericArgumentTypes
         {
-            get => EntryNode != null ? EntryNode.OutputTypePins.Select(pin => pin.InferredType.Value).Cast<GenericType>().ToList() : new List<GenericType>();
+            // NodeOutputTypePin.InferredType is non-nullable (its inferred type is never absent).
+            get => EntryNode.OutputTypePins.Select(pin => pin.InferredType.Value).Cast<GenericType>().ToList();
         }
 
         /// <summary>
@@ -119,7 +124,7 @@ namespace NetPrints.Core
 
             int iterations = 0;
             bool anyTypeChanged = true;
-            Dictionary<NodeTypePin, BaseType> pinTypes = new Dictionary<NodeTypePin, BaseType>();
+            Dictionary<NodeTypePin, BaseType?> pinTypes = new Dictionary<NodeTypePin, BaseType?>();
 
             while (anyTypeChanged && iterations < 20)
             {

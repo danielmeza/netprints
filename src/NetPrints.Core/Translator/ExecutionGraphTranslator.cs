@@ -516,7 +516,7 @@ namespace NetPrints.Translator
 
             // Check whether the method is an operator and we need to translate its name
             // into operator symbols. Otherwise just call the method normally.
-            if (OperatorUtil.TryGetOperatorInfo(node.MethodSpecifier, out OperatorInfo operatorInfo))
+            if (OperatorUtil.TryGetOperatorInfo(node.MethodSpecifier, out var operatorInfo))
             {
                 Debug.Assert(!argumentNames.Any(a => a is null));
 

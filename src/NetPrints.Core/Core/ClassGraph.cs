@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -83,7 +84,7 @@ namespace NetPrints.Core
         /// </summary>
         public TypeSpecifier SuperType
         {
-            get => (TypeSpecifier)ReturnNode.SuperTypePin.InferredType?.Value ?? TypeSpecifier.FromType<object>();
+            get => (TypeSpecifier?)ReturnNode.SuperTypePin.InferredType?.Value ?? TypeSpecifier.FromType<object>();
         }
 
         /// <summary>
@@ -91,20 +92,20 @@ namespace NetPrints.Core
         /// </summary>
         public IEnumerable<TypeSpecifier> AllBaseTypes
         {
-            get => new[] { SuperType }.Concat(ReturnNode.InterfacePins.Select(pin => (TypeSpecifier)pin.InferredType?.Value ?? TypeSpecifier.FromType<object>()));
+            get => new[] { SuperType }.Concat(ReturnNode.InterfacePins.Select(pin => (TypeSpecifier?)pin.InferredType?.Value ?? TypeSpecifier.FromType<object>()));
         }
 
         /// <summary>
         /// Namespace this class is in.
         /// </summary>
         [DataMember]
-        public string Namespace { get; set; }
+        public string Namespace { get; set; } = string.Empty;
 
         /// <summary>
         /// Name of the class without namespace.
         /// </summary>
         [DataMember]
-        public string Name { get; set; }
+        public string Name { get; set; } = string.Empty;
 
         /// <summary>
         /// Name of the class with namespace if any.

@@ -1,3 +1,4 @@
+#nullable enable
 using System.Runtime.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
 

@@ -61,7 +61,7 @@ public sealed class SuggestionItem
     /// <summary>Text shown for a method: declaring type, name (operators by display name), parameters and return types.</summary>
     public static string FormatMethod(MethodSpecifier methodSpecifier)
     {
-        string name = OperatorUtil.TryGetOperatorInfo(methodSpecifier, out OperatorInfo operatorInfo)
+        string name = OperatorUtil.TryGetOperatorInfo(methodSpecifier, out var operatorInfo)
             ? $"Operator {operatorInfo.DisplayName}"
             : methodSpecifier.Name;
 

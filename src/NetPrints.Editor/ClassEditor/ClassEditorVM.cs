@@ -300,8 +300,8 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     /// <summary>Graphs that belong to the class: its own graph, methods, constructors and variable graphs.</summary>
     private bool BelongsToClass(NodeGraph graph) =>
         graph == Class
-        || Class.Methods.Contains(graph as MethodGraph)
-        || Class.Constructors.Contains(graph as ConstructorGraph)
+        || (graph is MethodGraph method && Class.Methods.Contains(method))
+        || (graph is ConstructorGraph constructor && Class.Constructors.Contains(constructor))
         || Class.Variables.Any(v => v.GetterMethod == graph || v.SetterMethod == graph || v.TypeGraph == graph);
 
     private void DropDetachedState()

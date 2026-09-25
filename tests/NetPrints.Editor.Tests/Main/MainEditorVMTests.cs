@@ -158,7 +158,9 @@ public class MainEditorVMTests(TestEditor testEditor) : IDisposable
     {
         var editor = testEditor;
         string path = Track(TestPaths.CopyHelloWorldSample());
-        var vm = new MainEditorVM(editor.Context, Project.LoadFromPath(path));
+        var project = Project.LoadFromPath(path);
+        Assert.NotNull(project);
+        var vm = new MainEditorVM(editor.Context, project);
 
         Assert.True(vm.CanCompileAndRun);
         await vm.RunCommand.ExecuteAsync(null);
@@ -241,6 +243,7 @@ public class MainEditorVMTests(TestEditor testEditor) : IDisposable
     {
         var editor = testEditor;
         var project = Project.LoadFromPath(Track(TestPaths.CopyHelloWorldSample()));
+        Assert.NotNull(project);
         var vm = new MainEditorVM(editor.Context, project);
         var cls = project.Classes.Single();
 
@@ -263,6 +266,7 @@ public class MainEditorVMTests(TestEditor testEditor) : IDisposable
     {
         var editor = testEditor;
         var project = Project.LoadFromPath(Track(TestPaths.CopyHelloWorldSample()));
+        Assert.NotNull(project);
         var vm = new MainEditorVM(editor.Context, project);
         vm.OpenClassCommand.Execute(project.Classes.Single());
 

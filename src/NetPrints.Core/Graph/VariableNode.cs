@@ -1,4 +1,5 @@
-﻿using System.Runtime.Serialization;
+﻿#nullable enable
+using System.Runtime.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Core;
 
@@ -16,7 +17,7 @@ namespace NetPrints.Graph
         /// Target object of this variable node.
         /// Can be null for local variables.
         /// </summary>
-        public NodeInputDataPin TargetPin
+        public NodeInputDataPin? TargetPin
         {
             get { return !IsLocalVariable && !IsStatic ? InputDataPins[0] : null; }
         }
@@ -63,7 +64,7 @@ namespace NetPrints.Graph
         /// <summary>
         /// Specifier for the type of the index.
         /// </summary>
-        public BaseType IndexType
+        public BaseType? IndexType
         {
             // TODO: Get indexer type
             get => IsIndexer ? TypeSpecifier.FromType<object>() : null;
@@ -72,7 +73,7 @@ namespace NetPrints.Graph
         /// <summary>
         /// Data pin for the indexer.
         /// </summary>
-        public NodeInputDataPin IndexPin
+        public NodeInputDataPin? IndexPin
         {
             get => IsIndexer ? InputDataPins[1] : null;
         }
@@ -97,7 +98,8 @@ namespace NetPrints.Graph
 
             if (IsIndexer)
             {
-                AddInputDataPin("Index", IndexType);
+                // TODO: Get indexer type (matches IndexType's own placeholder above).
+                AddInputDataPin("Index", TypeSpecifier.FromType<object>());
             }
 
             AddOutputDataPin(Variable.Type.ShortName, Variable.Type);

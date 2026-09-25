@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -25,7 +26,7 @@ namespace NetPrints.Core
         /// </summary>
         public TypeSpecifier ReturnType
         {
-            get => (TypeSpecifier)ReturnNode.TypePin.InferredType?.Value ?? TypeSpecifier.FromType<object>();
+            get => (TypeSpecifier?)ReturnNode.TypePin.InferredType?.Value ?? TypeSpecifier.FromType<object>();
         }
 
         public TypeGraph()

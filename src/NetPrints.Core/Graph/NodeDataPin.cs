@@ -1,4 +1,5 @@
-﻿using System.Runtime.Serialization;
+﻿#nullable enable
+using System.Runtime.Serialization;
 using NetPrints.Core;
 
 namespace NetPrints.Graph
@@ -23,7 +24,7 @@ namespace NetPrints.Graph
 
         public override string ToString()
         {
-            return $"{Name}: {PinType.Value.ShortName}";
+            return $"{Name}: {PinType.Value?.ShortName ?? "?"}";
         }
     }
 }

@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿#nullable enable
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace NetPrints.Core
 {
@@ -72,7 +74,7 @@ namespace NetPrints.Core
         /// <param name="methodSpecifier">Method specifier to find operator info for.</param>
         /// <param name="operatorInfo">Operator info for the method specifier if found.</param>
         /// <returns></returns>
-        public static bool TryGetOperatorInfo(MethodSpecifier methodSpecifier, out OperatorInfo operatorInfo) =>
+        public static bool TryGetOperatorInfo(MethodSpecifier methodSpecifier, [MaybeNullWhen(false)] out OperatorInfo operatorInfo) =>
             operatorSymbols.TryGetValue(methodSpecifier.Name, out operatorInfo);
     }
 }

@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -30,7 +31,9 @@ namespace NetPrints.Graph
         /// </summary>
         public BaseType ClassType
         {
-            get => OutputDataPins[0].PinType.Value;
+            // Set from ConstructorSpecifier.DeclaringType when the output pin is created (below) and
+            // never cleared, so it is never null.
+            get => OutputDataPins[0].PinType.Value!;
         }
 
         /// <summary>
@@ -38,7 +41,9 @@ namespace NetPrints.Graph
         /// </summary>
         public IReadOnlyList<BaseType> ArgumentTypes
         {
-            get => ArgumentPins.Select(p => p.PinType.Value).ToList();
+            // PinType.Value is set from ConstructorSpecifier.Arguments when the pin is created (below)
+            // and never cleared, so it is never null for this node's own argument pins.
+            get => ArgumentPins.Select(p => p.PinType.Value!).ToList();
         }
 
         /// <summary>
@@ -71,7 +76,7 @@ namespace NetPrints.Graph
             UpdateTypes();
         }
 
-        protected override void HandleInputTypeChanged(object sender, EventArgs eventArgs)
+        protected override void HandleInputTypeChanged(object? sender, EventArgs? eventArgs)
         {
             base.HandleInputTypeChanged(sender, eventArgs);
             UpdateTypes();

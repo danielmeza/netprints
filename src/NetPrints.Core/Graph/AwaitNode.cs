@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿#nullable enable
+using System.Linq;
 using System.Runtime.Serialization;
 using System.Threading.Tasks;
 using NetPrints.Core;
@@ -15,7 +16,7 @@ namespace NetPrints.Graph
 
         public NodeInputDataPin TaskPin => InputDataPins[0];
 
-        public NodeOutputDataPin ResultPin => OutputDataPins.FirstOrDefault();
+        public NodeOutputDataPin? ResultPin => OutputDataPins.FirstOrDefault();
 
         public AwaitNode(NodeGraph graph)
             : base(graph)

@@ -301,6 +301,7 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
                 break;
 
             case NodeOutputTypePin otp:
+                // NodeOutputTypePin.InferredType is non-nullable (its inferred type is never absent).
                 if (nodeGraph is ExecutionGraph && otp.InferredType.Value is TypeSpecifier typeSpecifier)
                 {
                     Add("Pin Static Methods", provider.GetMethods(MethodQuery().WithType(typeSpecifier).WithStatic(true)));

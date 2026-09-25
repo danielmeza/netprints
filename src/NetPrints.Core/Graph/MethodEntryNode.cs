@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Linq;
 using System.Runtime.Serialization;
 using NetPrints.Core;
@@ -11,13 +12,23 @@ namespace NetPrints.Graph
     [DataContract]
     public class MethodEntryNode : ExecutionEntryNode
     {
+        /// <summary>
+        /// Same as the base <see cref="Node.MethodGraph"/>, but non-nullable: the constructor only
+        /// accepts a <see cref="Core.MethodGraph"/>, so <see cref="Node.Graph"/> is always one for a
+        /// <see cref="MethodEntryNode"/>. Computed from <see cref="Node.Graph"/> on every access
+        /// instead of cached in a field set by the constructor: DataContract deserialization bypasses
+        /// constructors entirely and sets <see cref="Node.Graph"/> directly, so a cached field would
+        /// stay null after loading a saved project.
+        /// </summary>
+        private MethodGraph methodGraph => (MethodGraph)Graph;
+
         public MethodEntryNode(MethodGraph graph)
             : base(graph)
         {
             AddOutputExecPin("Exec");
         }
 
-        protected override void HandleInputTypeChanged(object sender, EventArgs eventArgs)
+        protected override void HandleInputTypeChanged(object? sender, EventArgs? eventArgs)
         {
             base.HandleInputTypeChanged(sender, eventArgs);
 
@@ -29,7 +40,7 @@ namespace NetPrints.Graph
 
         public override string ToString()
         {
-            return $"{MethodGraph.Name} Entry";
+            return $"{methodGraph.Name} Entry";
         }
 
         public void AddArgument()

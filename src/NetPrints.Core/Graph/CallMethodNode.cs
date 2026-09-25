@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -76,7 +77,9 @@ namespace NetPrints.Graph
         /// </summary>
         public IReadOnlyList<BaseType> ArgumentTypes
         {
-            get => InputDataPins.Select(p => p.PinType.Value).ToList();
+            // PinType.Value is set from MethodSpecifier.Parameters when the pin is created (below) and
+            // never cleared, so it is never null for this node's own argument pins.
+            get => InputDataPins.Select(p => p.PinType.Value!).ToList();
         }
 
         /// <summary>
@@ -84,7 +87,8 @@ namespace NetPrints.Graph
         /// </summary>
         public IReadOnlyList<Named<BaseType>> Arguments
         {
-            get => InputDataPins.Select(p => new Named<BaseType>(p.Name, p.PinType.Value)).ToList();
+            // Same invariant as ArgumentTypes above: PinType.Value is never null for these pins.
+            get => InputDataPins.Select(p => new Named<BaseType>(p.Name, p.PinType.Value!)).ToList();
         }
 
         /// <summary>
@@ -92,7 +96,9 @@ namespace NetPrints.Graph
         /// </summary>
         public IReadOnlyList<BaseType> ReturnTypes
         {
-            get => OutputDataPins.Select(p => p.PinType.Value).ToList();
+            // PinType.Value is set from MethodSpecifier.ReturnTypes when the pin is created (below) and
+            // never cleared, so it is never null for this node's own return pins.
+            get => OutputDataPins.Select(p => p.PinType.Value!).ToList();
         }
 
         /// <summary>
@@ -106,7 +112,7 @@ namespace NetPrints.Graph
         /// <summary>
         /// Pin that holds the exception when catch is executed.
         /// </summary>
-        public NodeOutputDataPin ExceptionPin
+        public NodeOutputDataPin? ExceptionPin
         {
             get { return OutputDataPins.SingleOrDefault(p => p.Name == ExceptionPinName); }
         }
@@ -114,7 +120,7 @@ namespace NetPrints.Graph
         /// <summary>
         /// Pin that gets executed when an exception is caught.
         /// </summary>
-        public NodeOutputExecPin CatchPin
+        public NodeOutputExecPin? CatchPin
         {
             get { return OutputExecPins.SingleOrDefault(p => p.Name == CatchPinName); }
         }
@@ -124,7 +130,7 @@ namespace NetPrints.Graph
         /// </summary>
         public bool HandlesExceptions
         {
-            get => !IsPure && OutputExecPins.Any(p => p.Name == CatchPinName) && CatchPin.OutgoingPin != null;
+            get => !IsPure && CatchPin?.OutgoingPin != null;
         }
 
         /// <summary>
@@ -155,7 +161,7 @@ namespace NetPrints.Graph
         }
 
         public CallMethodNode(NodeGraph graph, MethodSpecifier methodSpecifier,
-            IList<BaseType> genericArgumentTypes = null)
+            IList<BaseType>? genericArgumentTypes = null)
             : base(graph)
         {
             MethodSpecifier = methodSpecifier;
@@ -238,12 +244,12 @@ namespace NetPrints.Graph
         {
             base.SetPurity(pure);
 
-            if (pure)
+            if (pure && CatchPin is { } catchPin)
             {
                 // Remove catch pin. Exception pin gets automatically removed because
                 // of its pin changed ev ent.
-                GraphUtil.DisconnectOutputExecPin(CatchPin);
-                OutputExecPins.Remove(CatchPin);
+                GraphUtil.DisconnectOutputExecPin(catchPin);
+                OutputExecPins.Remove(catchPin);
             }
             else
             {
@@ -251,7 +257,7 @@ namespace NetPrints.Graph
             }
         }
 
-        protected override void HandleInputTypeChanged(object sender, EventArgs eventArgs)
+        protected override void HandleInputTypeChanged(object? sender, EventArgs? eventArgs)
         {
             base.HandleInputTypeChanged(sender, eventArgs);
 
@@ -290,7 +296,7 @@ namespace NetPrints.Graph
 
         public override string ToString()
         {
-            if (OperatorUtil.TryGetOperatorInfo(MethodSpecifier, out OperatorInfo operatorInfo))
+            if (OperatorUtil.TryGetOperatorInfo(MethodSpecifier, out var operatorInfo))
             {
                 return $"Operator {operatorInfo.DisplayName}";
             }

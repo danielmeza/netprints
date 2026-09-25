@@ -1,4 +1,5 @@
-﻿using System.Runtime.Serialization;
+﻿#nullable enable
+using System.Runtime.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Core;
 

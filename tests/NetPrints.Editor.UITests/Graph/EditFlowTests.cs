@@ -33,6 +33,7 @@ public class EditFlowTests
         await Testing.Ui.Driving.UiWait.UntilAsync(session.Driver, () => Task.FromResult(LastWrite(session.Sample.Directory) > before), "saved", Token);
 
         var reloaded = Project.LoadFromPath(session.Sample.ProjectPath);
+        Assert.NotNull(reloaded);
         var reloadedMain = reloaded.Classes.Single().Methods.Single();
         var reloadedIf = reloadedMain.Nodes.OfType<IfElseNode>().Single();
         Assert.Same(reloadedIf.InputExecPins[0], reloadedMain.EntryNode.InitialExecutionPin.OutgoingPin);

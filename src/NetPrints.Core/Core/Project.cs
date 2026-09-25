@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -132,6 +133,14 @@ namespace NetPrints.Core
         }
 
         /// <summary>
+        /// Directory of a project file. Throws if <paramref name="projectPath"/> has no directory
+        /// (a root or relative path) instead of returning a value from a null-directory silently.
+        /// </summary>
+        private static string GetProjectDirectory(string projectPath) =>
+            System.IO.Path.GetDirectoryName(projectPath)
+                ?? throw new InvalidOperationException($"Project path '{projectPath}' has no directory.");
+
+        /// <summary>
         /// Saves the project to its path.
         /// </summary>
         public void Save()
@@ -145,7 +154,7 @@ namespace NetPrints.Core
             // Set class paths from class storage paths
             ClassPaths = new ObservableRangeCollection<string>(Classes.Select(c => GetClassStoragePath(c)));
 
-            SaveVersion = Assembly.GetExecutingAssembly().GetName().Version;
+            SaveVersion = Assembly.GetExecutingAssembly().GetName().Version ?? new Version(0, 0);
 
             using FileStream fileStream = File.Open(Path, FileMode.Create);
             ProjectSerializer.WriteObject(fileStream, this);
@@ -181,7 +190,7 @@ namespace NetPrints.Core
         /// </summary>
         /// <param name="path">Path to the project file.</param>
         /// <returns>Loaded project or null if unsuccessful</returns>
-        public static Project LoadFromPath(string path)
+        public static Project? LoadFromPath(string path)
         {
             using FileStream fileStream = File.OpenRead(path);
 
@@ -194,7 +203,7 @@ namespace NetPrints.Core
 
                 Parallel.ForEach(project.ClassPaths, classPath =>
                 {
-                    ClassGraph cls = SerializationHelper.LoadClass(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(project.Path), classPath));
+                    ClassGraph cls = SerializationHelper.LoadClass(System.IO.Path.Combine(GetProjectDirectory(project.Path), classPath));
                     cls.Project = project;
                     classes.Add(cls);
                 });
@@ -246,7 +255,7 @@ namespace NetPrints.Core
             // Compile in another thread
             var compileTask = Task.Run(() =>
             {
-                string projectDir = System.IO.Path.GetDirectoryName(Path);
+                string projectDir = GetProjectDirectory(Path);
                 string compiledDir = System.IO.Path.Combine(projectDir, $"Compiled_{Name}");
 
                 DirectoryInfo compiledDirInfo = new DirectoryInfo(compiledDir);
@@ -480,7 +489,7 @@ namespace NetPrints.Core
         }
 
         private string GetCompiledDirectory() =>
-            System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Path), $"Compiled_{Name}");
+            System.IO.Path.Combine(GetProjectDirectory(Path), $"Compiled_{Name}");
 
         private string GetRuntimeConfigPath(string compiledDir) =>
             System.IO.Path.Combine(compiledDir, $"{Name}.runtimeconfig.json");
@@ -552,7 +561,7 @@ namespace NetPrints.Core
         /// <param name="cls">Class to save.</param>
         public void SaveClassInProjectDirectory(ClassGraph cls)
         {
-            string outputPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Path), GetClassStoragePath(cls));
+            string outputPath = System.IO.Path.Combine(GetProjectDirectory(Path), GetClassStoragePath(cls));
 
             // Save in same directory as project
             SerializationHelper.SaveClass(cls, outputPath);
@@ -566,7 +575,7 @@ namespace NetPrints.Core
             // Make a class name that isn't already a file and isn't
             // already a class in the project.
 
-            IList<string> existingFiles = System.IO.Directory.GetFiles(System.IO.Path.GetDirectoryName(Path))
+            IList<string> existingFiles = System.IO.Directory.GetFiles(GetProjectDirectory(Path))
                 .Select(f => System.IO.Path.GetFileNameWithoutExtension(f))
                 .Concat(Classes.Select(c => System.IO.Path.GetFileNameWithoutExtension(GetClassStoragePath(c))))
                 .ToList();
@@ -596,7 +605,7 @@ namespace NetPrints.Core
         {
             // Check if a class with the same storage name is already loaded
             string fileName = System.IO.Path.GetFileName(path);
-            ClassGraph cls = Classes.FirstOrDefault(c => string.Equals(GetClassStoragePath(c), fileName, StringComparison.OrdinalIgnoreCase));
+            ClassGraph? cls = Classes.FirstOrDefault(c => string.Equals(GetClassStoragePath(c), fileName, StringComparison.OrdinalIgnoreCase));
 
             bool loadAndSave = false;
 
@@ -631,7 +640,8 @@ namespace NetPrints.Core
                 Classes.Add(cls);
             }
 
-            return cls;
+            // cls is set here: either found above, or just loaded and assigned in the loadAndSave branch.
+            return cls ?? throw new InvalidOperationException($"AddExistingClass: no class was loaded or found for '{path}'.");
         }
         #endregion
 

@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -83,7 +84,7 @@ namespace NetPrints.Graph
         /// <summary>
         /// Called when this node's position changes.
         /// </summary>
-        public event NodePositionChangedDelegate OnPositionChanged;
+        public event NodePositionChangedDelegate? OnPositionChanged;
 
         /// <summary>
         /// Visual position x of this node.
@@ -152,7 +153,7 @@ namespace NetPrints.Graph
         /// Method graph this node is contained in.
         /// Null if the graph is not a MethodGraph.
         /// </summary>
-        public MethodGraph MethodGraph
+        public MethodGraph? MethodGraph
         {
             get => Graph as MethodGraph;
         }
@@ -239,7 +240,7 @@ namespace NetPrints.Graph
             OutputTypePins.Add(new NodeOutputTypePin(this, pinName, outputType));
         }
 
-        private void OnIncomingTypePinChanged(NodeInputTypePin pin, NodeOutputTypePin oldPin, NodeOutputTypePin newPin)
+        private void OnIncomingTypePinChanged(NodeInputTypePin pin, NodeOutputTypePin? oldPin, NodeOutputTypePin? newPin)
         {
             if (oldPin?.InferredType != null)
                 oldPin.InferredType.OnValueChanged -= EventInputTypeChanged;
@@ -253,17 +254,17 @@ namespace NetPrints.Graph
         /// <summary>
         /// Called when anything about the input type arguments changes.
         /// </summary>
-        public event EventHandler InputTypeChanged;
+        public event EventHandler? InputTypeChanged;
 
-        private void EventInputTypeChanged(object sender, EventArgs eventArgs)
+        private void EventInputTypeChanged(object? sender, EventArgs? eventArgs)
         {
             HandleInputTypeChanged(sender, eventArgs);
 
             // Notify others afterwards, since the above call might have updated something
-            InputTypeChanged?.Invoke(sender, eventArgs);
+            InputTypeChanged?.Invoke(sender, eventArgs ?? EventArgs.Empty);
         }
 
-        protected virtual void HandleInputTypeChanged(object sender, EventArgs eventArgs)
+        protected virtual void HandleInputTypeChanged(object? sender, EventArgs? eventArgs)
         {
         }
 

@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -296,9 +297,11 @@ namespace NetPrints.Graph
                 throw new ArgumentException("Pin or its connected pin were null");
             }
 
+            // Both pins are already connected to each other (checked above), so their inferred types
+            // are resolved.
             var rerouteNode = RerouteNode.MakeData(pin.Node.Graph, new Tuple<BaseType, BaseType>[]
             {
-                new Tuple<BaseType, BaseType>(pin.PinType, pin.IncomingPin.PinType)
+                new Tuple<BaseType, BaseType>(pin.PinType.Value!, pin.IncomingPin.PinType.Value!)
             });
 
             GraphUtil.ConnectDataPins(pin.IncomingPin, rerouteNode.InputDataPins[0]);
@@ -390,7 +393,7 @@ namespace NetPrints.Graph
         /// <param name="cls">Class to add the method to.</param>
         /// <param name="methodSpecifier">Method specifier for the method to override.</param>
         /// <returns>Method in the class that represents the overriding method.</returns>
-        public static MethodGraph AddOverrideMethod(ClassGraph cls, MethodSpecifier methodSpecifier)
+        public static MethodGraph? AddOverrideMethod(ClassGraph cls, MethodSpecifier methodSpecifier)
         {
             if (cls.Methods.Any(m => m.Name == methodSpecifier.Name)
                 || !(methodSpecifier.Modifiers.HasFlag(MethodModifiers.Virtual)

@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Linq;
 using System.Runtime.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -59,11 +60,17 @@ namespace NetPrints.Core
         public TypeSpecifier Type => TypeGraph.ReturnType;
 
         [DataMember(Name = "Type", EmitDefaultValue = false, IsRequired = false)]
-        private TypeSpecifier OldType
+        private TypeSpecifier? OldType
         {
             get => null;
             set
             {
+                if (value is null)
+                {
+                    // EmitDefaultValue = false: DataContract never round-trips a null Type value.
+                    return;
+                }
+
                 TypeGraph = new TypeGraph();
                 GraphUtil.CreateNestedTypeNode(TypeGraph, value, 500, 500);
             }
@@ -78,7 +85,7 @@ namespace NetPrints.Core
         [NotifyPropertyChangedFor(nameof(HasPublicSetter))]
         [NotifyPropertyChangedFor(nameof(Specifier))]
         [DataMember]
-        public partial MethodGraph GetterMethod { get; set; }
+        public partial MethodGraph? GetterMethod { get; set; }
 
         /// <summary>
         /// Set method for this variable. Can be null.
@@ -89,7 +96,7 @@ namespace NetPrints.Core
         [NotifyPropertyChangedFor(nameof(HasPublicGetter))]
         [NotifyPropertyChangedFor(nameof(Specifier))]
         [DataMember]
-        public partial MethodGraph SetterMethod { get; set; }
+        public partial MethodGraph? SetterMethod { get; set; }
 
         /// <summary>
         /// Graph specifying the type of this variable.
@@ -171,8 +178,8 @@ namespace NetPrints.Core
         /// <param name="getter">Get method for the property. Can be null if there is none.</param>
         /// <param name="setter">Set method for the property. Can be null if there is none.</param>
         /// <param name="modifiers">Modifiers of the variable.</param>
-        public Variable(ClassGraph cls, string name, TypeSpecifier type, MethodGraph getter,
-            MethodGraph setter, VariableModifiers modifiers)
+        public Variable(ClassGraph cls, string name, TypeSpecifier type, MethodGraph? getter,
+            MethodGraph? setter, VariableModifiers modifiers)
         {
             Class = cls;
             Name = name;

@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -109,7 +110,7 @@ namespace NetPrints.Core
         /// </summary>
         public static string GetDotNetHostPath()
         {
-            string hostPath = Environment.GetEnvironmentVariable("DOTNET_HOST_PATH");
+            string? hostPath = Environment.GetEnvironmentVariable("DOTNET_HOST_PATH");
             if (!string.IsNullOrEmpty(hostPath) && File.Exists(hostPath))
             {
                 return hostPath;
@@ -118,7 +119,7 @@ namespace NetPrints.Core
             // <root>/shared/Microsoft.NETCore.App/<version>/ -> <root>/dotnet
             string hostName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "dotnet.exe" : "dotnet";
             var runtimeDir = new DirectoryInfo(RuntimeEnvironment.GetRuntimeDirectory());
-            string root = runtimeDir.Parent?.Parent?.Parent?.FullName;
+            string? root = runtimeDir.Parent?.Parent?.Parent?.FullName;
             if (root != null)
             {
                 string candidate = Path.Combine(root, hostName);

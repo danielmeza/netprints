@@ -411,13 +411,13 @@ public sealed partial class NodePinVM : ObservableObject, IDisposable
         OnPropertyChanged(nameof(ToolTip));
     }
 
-    private void OnInputDataPinIncomingPinChanged(NodeInputDataPin pin, NodeOutputDataPin oldPin, NodeOutputDataPin newPin) =>
+    private void OnInputDataPinIncomingPinChanged(NodeInputDataPin pin, NodeOutputDataPin? oldPin, NodeOutputDataPin? newPin) =>
         ConnectionChanged?.Invoke(this, EventArgs.Empty);
 
-    private void OnOutputExecPinOutgoingPinChanged(NodeOutputExecPin pin, NodeInputExecPin oldPin, NodeInputExecPin newPin) =>
+    private void OnOutputExecPinOutgoingPinChanged(NodeOutputExecPin pin, NodeInputExecPin? oldPin, NodeInputExecPin? newPin) =>
         ConnectionChanged?.Invoke(this, EventArgs.Empty);
 
-    private void OnInputTypePinIncomingPinChanged(NodeInputTypePin pin, NodeOutputTypePin oldPin, NodeOutputTypePin newPin) =>
+    private void OnInputTypePinIncomingPinChanged(NodeInputTypePin pin, NodeOutputTypePin? oldPin, NodeOutputTypePin? newPin) =>
         ConnectionChanged?.Invoke(this, EventArgs.Empty);
 
     public void Dispose()

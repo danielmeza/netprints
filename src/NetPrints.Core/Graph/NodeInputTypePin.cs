@@ -1,11 +1,12 @@
-﻿using System.Runtime.Serialization;
+﻿#nullable enable
+using System.Runtime.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Core;
 
 namespace NetPrints.Graph
 {
     public delegate void InputTypePinIncomingPinChangedDelegate(
-        NodeInputTypePin pin, NodeOutputTypePin oldPin, NodeOutputTypePin newPin);
+        NodeInputTypePin pin, NodeOutputTypePin? oldPin, NodeOutputTypePin? newPin);
 
     /// <summary>
     /// Pin which can receive types.
@@ -16,7 +17,7 @@ namespace NetPrints.Graph
         /// <summary>
         /// Called when the node's incoming pin changed.
         /// </summary>
-        public event InputTypePinIncomingPinChangedDelegate IncomingPinChanged;
+        public event InputTypePinIncomingPinChangedDelegate? IncomingPinChanged;
 
         /// <summary>
         /// Incoming type pin for this pin. Null when not connected.
@@ -25,12 +26,12 @@ namespace NetPrints.Graph
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(InferredType))]
         [DataMember]
-        public partial NodeOutputTypePin IncomingPin { get; set; }
+        public partial NodeOutputTypePin? IncomingPin { get; set; }
 
-        partial void OnIncomingPinChanged(NodeOutputTypePin oldValue, NodeOutputTypePin newValue) =>
+        partial void OnIncomingPinChanged(NodeOutputTypePin? oldValue, NodeOutputTypePin? newValue) =>
             IncomingPinChanged?.Invoke(this, oldValue, newValue);
 
-        public override ObservableValue<BaseType> InferredType
+        public override ObservableValue<BaseType>? InferredType
         {
             get => IncomingPin?.InferredType;
         }

@@ -25,7 +25,12 @@ public static class TestPaths
         return Path.Combine(target, "HelloWorld.netpp");
     }
 
-    public static Project LoadHelloWorldCopy() => Project.LoadFromPath(CopyHelloWorldSample());
+    public static Project LoadHelloWorldCopy()
+    {
+        var project = Project.LoadFromPath(CopyHelloWorldSample());
+        Assert.NotNull(project);
+        return project;
+    }
 
     public static void TryDelete(string? path)
     {

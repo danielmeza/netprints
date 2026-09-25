@@ -1,5 +1,7 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -7,12 +9,20 @@ using NetPrints.Core;
 
 namespace NetPrints.Graph
 {
+    /// <summary>
+    /// A settable, observable value of (usually reference) type <typeparamref name="T"/>. Used for
+    /// pin/node inferred and literal types, which can genuinely be unset (nothing connected yet), so
+    /// <see cref="Value"/> is annotated as nullable for reference types via <see cref="AllowNullAttribute"/>/
+    /// <see cref="MaybeNullAttribute"/> (an unconstrained type parameter has no nullable annotation of its
+    /// own to express that directly).
+    /// </summary>
     [DataContract]
     public class ObservableValue<T> : INotifyPropertyChanged
     {
         public delegate void ObservableValueChangedEventHandler(object sender, EventArgs eventArgs);
 
         [DataMember]
+        [AllowNull, MaybeNull]
         public T Value
         {
             get => value;
@@ -24,22 +34,24 @@ namespace NetPrints.Graph
             }
         }
 
+        [AllowNull, MaybeNull]
         private T value;
 
-        public ObservableValue(T value)
+        public ObservableValue([AllowNull] T value)
         {
             this.value = value;
         }
 
-        public event PropertyChangedEventHandler PropertyChanged;
-        public event ObservableValueChangedEventHandler OnValueChanged;
+        public event PropertyChangedEventHandler? PropertyChanged;
+        public event ObservableValueChangedEventHandler? OnValueChanged;
 
+        [return: MaybeNull]
         public static implicit operator T(ObservableValue<T> observableValue)
         {
             return observableValue.Value;
         }
 
-        public static implicit operator ObservableValue<T>(T value)
+        public static implicit operator ObservableValue<T>([AllowNull] T value)
         {
             return new ObservableValue<T>(value);
         }
@@ -74,7 +86,7 @@ namespace NetPrints.Graph
             AddOutputTypePin("OutputType", constructedType);
         }
 
-        protected override void HandleInputTypeChanged(object sender, EventArgs eventArgs)
+        protected override void HandleInputTypeChanged(object? sender, EventArgs? eventArgs)
         {
             base.HandleInputTypeChanged(sender, eventArgs);
 

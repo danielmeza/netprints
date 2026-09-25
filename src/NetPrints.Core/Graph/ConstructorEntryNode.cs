@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Linq;
 using System.Runtime.Serialization;
 using NetPrints.Core;
@@ -26,7 +27,7 @@ namespace NetPrints.Graph
 
         public override string ToString()
         {
-            return $"{ConstructorGraph.Class.Name} Constructor Entry";
+            return $"{ConstructorGraph.Class?.Name ?? "?"} Constructor Entry";
         }
     }
 }

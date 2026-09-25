@@ -267,7 +267,8 @@ public sealed partial class NodeGraphVM : ObservableObject, IDisposable
     /// <summary>A method or constructor was dropped from the class lists (PAR-56).</summary>
     public Node Drop(MethodVM method, GraphPoint position)
     {
-        var declaringType = Graph.Class.Type;
+        var declaringClass = Graph.Class ?? throw new InvalidOperationException("The open graph has no class.");
+        var declaringType = declaringClass.Type;
         return method.IsConstructor
             ? AddNode<ConstructorNode>(position, null, method.ToConstructorSpecifier(declaringType))
             : AddNode<CallMethodNode>(position, null, method.ToMethodSpecifier(declaringType), new List<BaseType>());

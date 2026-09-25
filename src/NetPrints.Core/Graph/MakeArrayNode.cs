@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Runtime.Serialization;
 using NetPrints.Core;
 
@@ -119,7 +120,7 @@ namespace NetPrints.Graph
             ArrayPin.PinType.Value = ArrayType;
         }
 
-        protected override void HandleInputTypeChanged(object sender, EventArgs eventArgs)
+        protected override void HandleInputTypeChanged(object? sender, EventArgs? eventArgs)
         {
             base.HandleInputTypeChanged(sender, eventArgs);
             UpdateOutputType();

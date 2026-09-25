@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 
@@ -29,7 +30,7 @@ namespace NetPrints.Core
             private set;
         }
 
-        public GenericType(string name, IEnumerable<GenericTypeConstraint> constraints = null)
+        public GenericType(string name, IEnumerable<GenericTypeConstraint>? constraints = null)
             : base(name)
         {
             if (constraints == null)
@@ -78,7 +79,7 @@ namespace NetPrints.Core
             return genericType;
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj is TypeSpecifier t)
             {

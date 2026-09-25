@@ -1,4 +1,5 @@
-﻿using System.Runtime.Serialization;
+﻿#nullable enable
+using System.Runtime.Serialization;
 using NetPrints.Core;
 
 namespace NetPrints.Graph
@@ -16,6 +17,8 @@ namespace NetPrints.Graph
         public ObservableRangeCollection<NodeInputTypePin> OutgoingPins { get; private set; }
             = new ObservableRangeCollection<NodeInputTypePin>();
 
+        // Always set by the constructor: narrower than the base NodeTypePin.InferredType (an output
+        // type pin's inferred type is never absent, unlike an unconnected input type pin's).
         public override ObservableValue<BaseType> InferredType
         {
             get => outputType;

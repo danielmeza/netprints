@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -20,6 +21,16 @@ namespace NetPrints.Graph
             get { return InputExecPins[0]; }
         }
 
+        /// <summary>
+        /// Same as the base <see cref="Node.MethodGraph"/>, but non-nullable: the constructor only
+        /// accepts a <see cref="Core.MethodGraph"/>, so <see cref="Node.Graph"/> is always one for a
+        /// <see cref="ReturnNode"/>. Computed from <see cref="Node.Graph"/> on every access instead of
+        /// cached in a field set by the constructor: DataContract deserialization bypasses
+        /// constructors entirely and sets <see cref="Node.Graph"/> directly, so a cached field would
+        /// stay null after loading a saved project.
+        /// </summary>
+        private MethodGraph methodGraph => (MethodGraph)Graph;
+
         public ReturnNode(MethodGraph graph)
             : base(graph)
         {
@@ -33,13 +44,13 @@ namespace NetPrints.Graph
         /// </summary>
         private void ReplicateMainNodeInputTypes()
         {
-            if (this == MethodGraph.MainReturnNode)
+            if (this == methodGraph.MainReturnNode)
             {
                 return;
             }
 
             // Get new return types
-            NodeInputDataPin[] mainInputPins = MethodGraph.MainReturnNode.InputDataPins.ToArray();
+            NodeInputDataPin[] mainInputPins = methodGraph.MainReturnNode.InputDataPins.ToArray();
 
             var oldConnections = new Dictionary<int, NodeOutputDataPin>();
 
@@ -74,7 +85,7 @@ namespace NetPrints.Graph
         /// </summary>
         private void UpdateMainNodeInputTypes()
         {
-            if (this != MethodGraph.MainReturnNode)
+            if (this != methodGraph.MainReturnNode)
             {
                 return;
             }
@@ -85,7 +96,7 @@ namespace NetPrints.Graph
             }
         }
 
-        protected override void HandleInputTypeChanged(object sender, EventArgs eventArgs)
+        protected override void HandleInputTypeChanged(object? sender, EventArgs? eventArgs)
         {
             base.HandleInputTypeChanged(sender, eventArgs);
             UpdateMainNodeInputTypes();
@@ -93,7 +104,7 @@ namespace NetPrints.Graph
 
         public void AddReturnType()
         {
-            if (this != MethodGraph.MainReturnNode)
+            if (this != methodGraph.MainReturnNode)
             {
                 throw new InvalidOperationException("Can only add return types on the main return node.");
             }
@@ -106,7 +117,7 @@ namespace NetPrints.Graph
 
         public void RemoveReturnType()
         {
-            if (this != MethodGraph.MainReturnNode)
+            if (this != methodGraph.MainReturnNode)
             {
                 throw new InvalidOperationException("Can only remove return types on the main return node.");
             }
@@ -126,18 +137,15 @@ namespace NetPrints.Graph
 
         private void SetupSecondaryNodeEvents()
         {
-            if (MethodGraph.MainReturnNode != null)
+            if (this == methodGraph.MainReturnNode)
             {
-                if (this == MethodGraph.MainReturnNode)
-                {
-                    UpdateMainNodeInputTypes();
-                }
-                else
-                {
-                    MethodGraph.MainReturnNode.InputDataPins.CollectionChanged += (sender, e) => ReplicateMainNodeInputTypes();
-                    MethodGraph.MainReturnNode.InputTypeChanged += (sender, e) => ReplicateMainNodeInputTypes();
-                    ReplicateMainNodeInputTypes();
-                }
+                UpdateMainNodeInputTypes();
+            }
+            else
+            {
+                methodGraph.MainReturnNode.InputDataPins.CollectionChanged += (sender, e) => ReplicateMainNodeInputTypes();
+                methodGraph.MainReturnNode.InputTypeChanged += (sender, e) => ReplicateMainNodeInputTypes();
+                ReplicateMainNodeInputTypes();
             }
         }
 

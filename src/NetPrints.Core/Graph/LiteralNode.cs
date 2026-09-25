@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Linq;
 using System.Runtime.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -53,7 +54,7 @@ namespace NetPrints.Graph
             UpdatePinTypes();
         }
 
-        protected override void HandleInputTypeChanged(object sender, EventArgs eventArgs)
+        protected override void HandleInputTypeChanged(object? sender, EventArgs? eventArgs)
         {
             base.HandleInputTypeChanged(sender, eventArgs);
 
@@ -97,7 +98,7 @@ namespace NetPrints.Graph
 
         public override string ToString()
         {
-            return $"Literal - {ValuePin.PinType.Value.ShortName}";
+            return $"Literal - {ValuePin.PinType.Value?.ShortName ?? "?"}";
         }
     }
 }

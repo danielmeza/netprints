@@ -1,4 +1,5 @@
-﻿using System.Runtime.Serialization;
+﻿#nullable enable
+using System.Runtime.Serialization;
 using NetPrints.Graph;
 
 namespace NetPrints.Core
@@ -24,7 +25,7 @@ namespace NetPrints.Core
         /// Class this graph is contained in.
         /// </summary>
         [DataMember]
-        public ClassGraph Class
+        public ClassGraph? Class
         {
             get;
             set;
@@ -33,7 +34,7 @@ namespace NetPrints.Core
         /// <summary>
         /// Project the graph is part of.
         /// </summary>
-        public Project Project
+        public Project? Project
         {
             get;
             set;

@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -38,14 +39,14 @@ namespace NetPrints.Core
         /// Only valid when HasExplicitDefaultValue is true.
         /// </summary>
         [DataMember]
-        public object ExplicitDefaultValue
+        public object? ExplicitDefaultValue
         {
             get;
             private set;
         }
 
         public MethodParameter(string name, BaseType type, MethodParameterPassType passType,
-            bool hasExplicitDefaultValue, object explicitDefaultValue)
+            bool hasExplicitDefaultValue, object? explicitDefaultValue)
             : base(name, type)
         {
             PassType = passType;
@@ -191,7 +192,7 @@ namespace NetPrints.Core
             return methodString;
         }
 
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             if (obj is MethodSpecifier methodSpec)
             {

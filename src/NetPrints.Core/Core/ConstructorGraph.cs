@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -22,7 +23,7 @@ namespace NetPrints.Core
 
         public override string ToString()
         {
-            return Class.Name;
+            return Class?.Name ?? "?";
         }
     }
 }
