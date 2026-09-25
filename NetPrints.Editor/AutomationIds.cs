@@ -30,6 +30,9 @@ public static class AutomationIds
     public const string ClassEditorVariableList = "ClassEditor.VariableList";
     public const string ClassEditorOverrideChooser = "ClassEditor.OverrideChooser";
     public const string ClassEditorErrorList = "ClassEditor.ErrorList";
+    public const string ClassEditorOutputTab = "ClassEditor.OutputTab";
+    public const string ClassEditorOutputText = "ClassEditor.OutputText";
+    public const string ClassEditorClearOutputButton = "ClassEditor.ClearOutputButton";
     public const string ClassEditorStatusText = "ClassEditor.StatusText";
     public const string ClassEditorGraph = "ClassEditor.Graph";
 

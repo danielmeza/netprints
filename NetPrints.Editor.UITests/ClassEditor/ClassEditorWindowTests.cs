@@ -95,8 +95,7 @@ public class ClassEditorWindowTests
         await session.ClassEditor.RunButton.ClickAsync(Token);
 
         Assert.Equal("Build succeeded", await session.ClassEditor.WaitForBuildResultAsync(Token)); // PAR-10, PAR-32
-        await UiWait.UntilAsync(session.Driver, async () => (await session.Driver.ProgramOutputAsync(Token)).Contains("Hello, World!"),
-            "program output", Token, TimeSpan.FromSeconds(60));
+        Assert.Contains("Hello, World!", await session.ClassEditor.WaitForOutputContainingAsync("Hello, World!", Token)); // through the Output pane, not the editor's own terminal (D3)
         Assert.Single(session.App.Processes.Started);
     }
 

@@ -35,17 +35,16 @@ public sealed class TheNodeCount(string classFullName) : IQuestion<int>
         await actor.Using<UseNetPrints>().ClassEditor(classFullName).Graph.NodeCountAsync(cancellationToken);
 }
 
-/// <summary>What the started program wrote, once it contains <paramref name="expected"/> (or the wait times out).</summary>
-public sealed class TheProgramOutput(string expected) : IQuestion<string>
+/// <summary>
+/// What the started program wrote, once the class window's Output tab contains
+/// <paramref name="expected"/> (or the wait times out).
+/// </summary>
+public sealed class TheProgramOutput(string classFullName, string expected) : IQuestion<string>
 {
     public string Description => "the program's output";
 
-    public static TheProgramOutput Containing(string expected) => new(expected);
+    public static TheProgramOutput In(string classFullName, string expected) => new(classFullName, expected);
 
-    public async Task<string> AnsweredByAsync(Actor actor, CancellationToken cancellationToken)
-    {
-        var driver = actor.Using<UseNetPrints>().Driver;
-        return await UiWait.ForAsync(driver, () => driver.ProgramOutputAsync(cancellationToken), o => o.Contains(expected, StringComparison.Ordinal),
-            $"program output containing '{expected}'", cancellationToken, TimeSpan.FromSeconds(60));
-    }
+    public async Task<string> AnsweredByAsync(Actor actor, CancellationToken cancellationToken) =>
+        await actor.Using<UseNetPrints>().ClassEditor(classFullName).WaitForOutputContainingAsync(expected, cancellationToken);
 }

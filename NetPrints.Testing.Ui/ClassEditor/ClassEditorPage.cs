@@ -23,6 +23,9 @@ public sealed class ClassEditorPage(IUiDriver driver, string classFullName)
     public UiElement CreateConstructorButton => Find(AutomationIds.ClassEditorCreateConstructorButton);
     public UiElement CreateVariableButton => Find(AutomationIds.ClassEditorCreateVariableButton);
     public UiElement ErrorList => Find(AutomationIds.ClassEditorErrorList);
+    public UiElement OutputTab => Find(AutomationIds.ClassEditorOutputTab);
+    public UiElement OutputText => Find(AutomationIds.ClassEditorOutputText);
+    public UiElement ClearOutputButton => Find(AutomationIds.ClassEditorClearOutputButton);
     public UiElement StatusText => Find(AutomationIds.ClassEditorStatusText);
     public UiElement LeftColumn => Find(AutomationIds.ClassEditorLeftColumn);
     public UiElement InspectorColumn => Find(AutomationIds.ClassEditorInspectorColumn);
@@ -80,6 +83,14 @@ public sealed class ClassEditorPage(IUiDriver driver, string classFullName)
         await StatusText.WaitUntilAsync(e => e.Text?.StartsWith("Build ", StringComparison.Ordinal) == true, "a build result",
             cancellationToken, TimeSpan.FromSeconds(120));
         return (await StatusText.TextAsync(cancellationToken))!;
+    }
+
+    /// <summary>Waits until Run's Output tab shows <paramref name="expected"/> (the program's console output).</summary>
+    public async Task<string> WaitForOutputContainingAsync(string expected, CancellationToken cancellationToken)
+    {
+        await OutputText.WaitUntilAsync(e => (e.Text ?? "").Contains(expected, StringComparison.Ordinal),
+            $"output containing '{expected}'", cancellationToken, TimeSpan.FromSeconds(60));
+        return (await OutputText.TextAsync(cancellationToken))!;
     }
 
     public Task PressUndoAsync(CancellationToken cancellationToken) => Driver.PressAsync("Ctrl+Z", cancellationToken);

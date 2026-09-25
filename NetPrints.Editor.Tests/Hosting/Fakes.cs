@@ -139,7 +139,12 @@ public sealed class FakeProcessLauncher : IProcessLauncher
 {
     public List<(string FileName, string? Arguments)> Started { get; } = [];
 
+    public event Action<string>? OutputReceived;
+
     public void Start(string fileName, string? arguments) => Started.Add((fileName, arguments));
+
+    /// <summary>Simulates a line of output, for tests of the Output pane wiring.</summary>
+    public void Raise(string line) => OutputReceived?.Invoke(line);
 }
 
 /// <summary>

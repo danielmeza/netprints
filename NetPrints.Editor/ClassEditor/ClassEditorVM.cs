@@ -66,6 +66,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         };
 
         context.Reflection.Reloaded += OnReflectionReloaded;
+        context.Processes.OutputReceived += OnProcessOutputReceived;
         RefreshOverridableMethods();
         RefreshGeneratedCode();
     }
@@ -113,6 +114,18 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     /// <summary>Generated C# of the class, refreshed about every second (PAR-34).</summary>
     [ObservableProperty]
     public partial string GeneratedCode { get; set; } = "";
+
+    /// <summary>
+    /// stdout/stderr of every program Run has started (PAR-10), across every open class window
+    /// (they all show the same log): the Output tab, so the console output is visible on every
+    /// platform instead of only on the editor's own terminal.
+    /// </summary>
+    [ObservableProperty]
+    public partial string Output { get; set; } = "";
+
+    /// <summary>Index of the selected tab in the errors/output panel; switches to Output when a run starts.</summary>
+    [ObservableProperty]
+    public partial int SelectedBottomTab { get; set; }
 
     /// <summary>Methods of the base types that can be overridden (PAR-26).</summary>
     [ObservableProperty]
@@ -370,6 +383,16 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     private Task RunAsync() =>
         Project is { CanCompileAndRun: true } ? MainEditorVM.CompileAndRunAsync(Project, Context) : Task.CompletedTask;
 
+    [RelayCommand]
+    private void ClearOutput() => Output = "";
+
+    /// <summary>Appends a line from any process Run started, and switches to the Output tab.</summary>
+    private void OnProcessOutputReceived(string line) => Context.Dispatcher.Post(() =>
+    {
+        Output += line + Environment.NewLine;
+        SelectedBottomTab = 1;
+    });
+
     // Lists (PAR-24..30)
 
     /// <summary>Creates a method named Method, Method1, ... with connected entry and return nodes and opens it.</summary>
@@ -496,6 +519,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         generatedCodeLoop?.Dispose();
 
         Context.Reflection.Reloaded -= OnReflectionReloaded;
+        Context.Processes.OutputReceived -= OnProcessOutputReceived;
         Class.Variables.CollectionChanged -= OnMembersChanged;
         Class.Methods.CollectionChanged -= OnMembersChanged;
         Class.Constructors.CollectionChanged -= OnMembersChanged;

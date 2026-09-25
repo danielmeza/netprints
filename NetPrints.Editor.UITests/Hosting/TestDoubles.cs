@@ -55,6 +55,8 @@ public sealed class CapturingProcessLauncher : IProcessLauncher, IDisposable
 
     public List<(string FileName, string? Arguments)> Started { get; } = [];
 
+    public event Action<string>? OutputReceived;
+
     public string Output
     {
         get
@@ -77,9 +79,11 @@ public sealed class CapturingProcessLauncher : IProcessLauncher, IDisposable
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
             },
+            EnableRaisingEvents = true,
         };
         process.OutputDataReceived += (_, e) => Append(e.Data);
         process.ErrorDataReceived += (_, e) => Append(e.Data);
+        process.Exited += (_, _) => OutputReceived?.Invoke($"Process exited (code {process.ExitCode}).");
         process.Start();
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
@@ -94,6 +98,8 @@ public sealed class CapturingProcessLauncher : IProcessLauncher, IDisposable
             {
                 output.AppendLine(line);
             }
+
+            OutputReceived?.Invoke(line);
         }
     }
 

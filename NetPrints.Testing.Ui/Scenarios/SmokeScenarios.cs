@@ -61,9 +61,8 @@ public abstract class SmokeScenarios
         await actor.AttemptsToAsync(CompileTheProject.From(ClassName), cancellationToken);
         Assert.Equal("Build succeeded", await actor.AsksForAsync(TheBuildStatus.In(ClassName), cancellationToken));
 
-        Require(context, UiCapabilities.ProcessOutput);
         await actor.AttemptsToAsync(RunTheProgram.From(ClassName), cancellationToken);
-        Assert.Contains("Hello, World!", await actor.AsksForAsync(TheProgramOutput.Containing("Hello, World!"), cancellationToken));
+        Assert.Contains("Hello, World!", await actor.AsksForAsync(TheProgramOutput.In(ClassName, "Hello, World!"), cancellationToken));
         await CheckpointAsync(context, "03-ran", cancellationToken);
     }
 
