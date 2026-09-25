@@ -55,14 +55,14 @@ public sealed record AutomationElement(
     public string? this[string property] => Properties.TryGetValue(property, out var value) ? value : null;
 
     [JsonIgnore]
-    public string? Text => this["Text"];
+    public string? Text => this[AutomationPropertyNames.Text];
 
     [JsonIgnore]
-    public bool IsEnabled => this["IsEnabled"] == "True";
+    public bool IsEnabled => this[AutomationPropertyNames.IsEnabled] == "True";
 
     [JsonIgnore]
-    public bool IsVisible => this["IsVisible"] == "True";
+    public bool IsVisible => this[AutomationPropertyNames.IsVisible] == "True";
 
     /// <summary>Whether a pseudo-class such as ":pointerover" or ":pressed" is set.</summary>
-    public bool Has(string pseudoClass) => (this["PseudoClasses"] ?? "").Split(' ').Contains(pseudoClass);
+    public bool Has(string pseudoClass) => (this[AutomationPropertyNames.PseudoClasses] ?? "").Split(' ').Contains(pseudoClass);
 }

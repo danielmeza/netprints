@@ -6,6 +6,7 @@ using NetPrints.Editor.References;
 using NetPrints.Editor.UITests.Hosting;
 using NetPrints.Testing.Ui.Dialogs;
 using NetPrints.Testing.Ui.References;
+using NetPrints.Editor.Hosting.Automation;
 
 namespace NetPrints.Editor.UITests.Dialogs;
 
@@ -44,7 +45,7 @@ public class DialogTests
         ui.Show(new SelectMethodDialog(methods));
         var page = new SelectMethodDialogPage(ui.Driver);
 
-        Assert.Equal(methods[0].ToString(), await page.MethodBox.PropertyAsync("SelectedItem", Token)); // PAR-59
+        Assert.Equal(methods[0].ToString(), await page.MethodBox.PropertyAsync(AutomationPropertyNames.SelectedItem, Token)); // PAR-59
         Assert.True(await page.SelectButton.IsEnabledAsync(Token));
     }
 
@@ -58,7 +59,7 @@ public class DialogTests
         dialog.Closed += (_, _) => closed = true;
 
         Assert.Equal("Failed", await page.TextAsync(Token));
-        Assert.Equal("True", await page.Message.PropertyAsync("IsReadOnly", Token));
+        Assert.Equal("True", await page.Message.PropertyAsync(AutomationPropertyNames.IsReadOnly, Token));
         Assert.Equal("details\nline 2", await page.Message.TextAsync(Token));
         await page.OkButton.ClickAsync(Token);
         Assert.True(closed);

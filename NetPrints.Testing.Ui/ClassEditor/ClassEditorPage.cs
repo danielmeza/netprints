@@ -99,7 +99,7 @@ public sealed class ClassEditorPage(IUiDriver driver, string classFullName)
 
     public Task PressDeleteAsync(CancellationToken cancellationToken) => Driver.PressAsync("Delete", cancellationToken);
 
-    public async Task<string?> WindowStateAsync(CancellationToken cancellationToken) => await PropertyAsync("WindowState", cancellationToken);
+    public async Task<string?> WindowStateAsync(CancellationToken cancellationToken) => await PropertyAsync(AutomationPropertyNames.WindowState, cancellationToken);
 }
 
 /// <summary>Component object of an inspector in the right column.</summary>

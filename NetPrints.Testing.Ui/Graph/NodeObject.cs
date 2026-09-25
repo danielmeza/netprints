@@ -32,12 +32,12 @@ public sealed class NodeObject(IUiDriver driver, AutomationQuery query) : UiElem
     /// <summary>Drags the node by its title.</summary>
     public Task MoveByAsync(double dx, double dy, CancellationToken cancellationToken) => Label.DragByAsync(dx, dy, cancellationToken);
 
-    public async Task<bool> IsSelectedAsync(CancellationToken cancellationToken) => await PropertyAsync("IsSelected", cancellationToken) == "True";
+    public async Task<bool> IsSelectedAsync(CancellationToken cancellationToken) => await PropertyAsync(AutomationPropertyNames.IsSelected, cancellationToken) == "True";
 
     public async Task<(double X, double Y)> LocationAsync(CancellationToken cancellationToken)
     {
         var e = await GetAsync(cancellationToken);
-        return (double.Parse(e["LocationX"]!, CultureInfo.InvariantCulture), double.Parse(e["LocationY"]!, CultureInfo.InvariantCulture));
+        return (double.Parse(e[AutomationPropertyNames.LocationX]!, CultureInfo.InvariantCulture), double.Parse(e[AutomationPropertyNames.LocationY]!, CultureInfo.InvariantCulture));
     }
 }
 

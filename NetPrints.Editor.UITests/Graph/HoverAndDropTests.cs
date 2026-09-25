@@ -7,6 +7,7 @@ using NetPrints.Editor.Graph;
 using NetPrints.Editor.UITests.ClassEditor;
 using NetPrints.Testing.Ui.Driving;
 using NetPrints.Testing.Ui.Snapshots;
+using NetPrints.Editor.Hosting.Automation;
 
 namespace NetPrints.Editor.UITests.Graph;
 
@@ -38,7 +39,7 @@ public class HoverAndDropTests
         Assert.False(SnapshotComparer.Compare(after, before, new SnapshotOptions { PixelThreshold = 4, MaxDiffPercent = 0 }).Matches,
             "the cable is drawn fully opaque under the pointer (PAR-48)");
         Assert.True((await cable.GetAsync(Token)).Has(":pointerover"));
-        Assert.Equal("1", await cable.PropertyAsync("Opacity", Token));
+        Assert.Equal("1", await cable.PropertyAsync(AutomationPropertyNames.Opacity, Token));
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]

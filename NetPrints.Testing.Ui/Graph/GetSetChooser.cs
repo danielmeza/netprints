@@ -12,9 +12,9 @@ public sealed class GetSetChooser(IUiDriver driver, AutomationQuery window)
     public UiElement GetButton => new(Driver, new AutomationQuery(AutomationIds.GetButton) { Within = Query });
     public UiElement SetButton => new(Driver, new AutomationQuery(AutomationIds.SetButton) { Within = Query });
 
-    public async Task<bool> IsOpenAsync(CancellationToken cancellationToken) => await PropertyAsync("IsOpen", cancellationToken) == "True";
+    public async Task<bool> IsOpenAsync(CancellationToken cancellationToken) => await PropertyAsync(AutomationPropertyNames.IsOpen, cancellationToken) == "True";
 
-    public Task WaitOpenAsync(CancellationToken cancellationToken) => WaitUntilAsync(e => e["IsOpen"] == "True", "open", cancellationToken);
+    public Task WaitOpenAsync(CancellationToken cancellationToken) => WaitUntilAsync(e => e[AutomationPropertyNames.IsOpen] == "True", "open", cancellationToken);
 
-    public Task WaitClosedAsync(CancellationToken cancellationToken) => WaitUntilAsync(e => e["IsOpen"] == "False", "closed", cancellationToken);
+    public Task WaitClosedAsync(CancellationToken cancellationToken) => WaitUntilAsync(e => e[AutomationPropertyNames.IsOpen] == "False", "closed", cancellationToken);
 }

@@ -1,4 +1,5 @@
 using NetPrints.Testing.Ui.Driving;
+using NetPrints.Editor.Hosting.Automation;
 
 namespace NetPrints.Testing.Ui.Screenplay;
 
@@ -94,7 +95,7 @@ public sealed class TickThePin(string classFullName, string node, string pin) : 
     {
         var check = actor.Using<UseNetPrints>().ClassEditor(classFullName).Graph.Node(node).Input(pin).ValueCheck;
         await check.ClickAsync(cancellationToken);
-        await check.WaitUntilAsync(e => e["IsChecked"] == "True", "ticked", cancellationToken);
+        await check.WaitUntilAsync(e => e[AutomationPropertyNames.IsChecked] == "True", "ticked", cancellationToken);
     }
 }
 

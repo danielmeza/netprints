@@ -2,6 +2,7 @@ using Avalonia.Headless.XUnit;
 using NetPrints.Core;
 using NetPrints.Graph;
 using NetPrints.Editor.UITests.ClassEditor;
+using NetPrints.Editor.Hosting.Automation;
 
 namespace NetPrints.Editor.UITests.Search;
 
@@ -16,10 +17,10 @@ public class NodeSearchTests
 
         var search = await (await session.Graph.RightClickEmptyAsync(Token)).WaitOpenAsync(Token); // PAR-52
         Assert.Null(session.GraphVM.Search.SuggestionPin);
-        await search.SearchBox.WaitUntilAsync(e => e["IsFocused"] == "True", "search box focused", Token);
+        await search.SearchBox.WaitUntilAsync(e => e[AutomationPropertyNames.IsFocused] == "True", "search box focused", Token);
         Assert.Equal("", await search.SearchBox.TextAsync(Token) ?? "");
-        Assert.Equal(700, await search.View.GetAsync<double>("Width", Token));
-        Assert.Equal(300, await search.View.GetAsync<double>("Height", Token));
+        Assert.Equal(700, await search.View.GetAsync<double>(AutomationPropertyNames.Width, Token));
+        Assert.Equal(300, await search.View.GetAsync<double>(AutomationPropertyNames.Height, Token));
 
         await search.FilterAsync("write line", r => r.Contains(" WriteLine ", StringComparison.Ordinal), Token);
         Assert.All(session.GraphVM.Search.Items.Where(i => !i.IsHeader), i => Assert.Contains("line", i.SearchText, StringComparison.OrdinalIgnoreCase));
@@ -60,7 +61,7 @@ public class NodeSearchTests
         var search = await (await session.Graph.RightClickEmptyAsync(Token)).WaitOpenAsync(Token);
         await search.FilterAsync("literal", "Literal", Token);
         var icon = await search.RowIcon("Literal").GetAsync(Token); // 16-px icons
-        Assert.Equal("True", icon["HasSource"]);
+        Assert.Equal("True", icon[AutomationPropertyNames.HasSource]);
         Assert.Equal(16, icon.Bounds.Width);
         await search.ChooseAsync("Literal", Token);
         await session.WaitForRenderedAsync(Token);
