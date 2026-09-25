@@ -36,3 +36,6 @@
   Library and package choices stay in plan.md and research.md.
 - Clarifications resolved with source-consistent defaults (no interactive user); see spec.md
   "Clarifications".
+- Revision 2026-09-25 (owner decision: SDK-style `.csproj` projects, MSBuild-only generation): spec
+  re-validated against every item above; all pass. Build hosts (Visual Studio, Rider) are named because
+  they are the product requirement, not an implementation choice.

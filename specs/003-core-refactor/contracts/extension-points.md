@@ -8,7 +8,7 @@ the major. Test obligations (`EX-Txx`) at the end.
 |---|---|---|
 | `INodeTranslator`, `IExecutionTranslationContext`, `NodeTranslatorRegistry`, `TranslationEnvironment` | `src/NetPrints.Core/Translator/Extensibility/*.cs` | `ExecutionGraphTranslator`, `ClassTranslator` |
 | `IClassEmitter`, `IMemberEmitter`, contexts | `src/NetPrints.Core/Translator/Extensibility/Emitters.cs` | `ClassTranslator` |
-| `IProjectProfile`, `ClassTemplate`, `DefaultProjectProfile` | `src/NetPrints.Core/Profiles/*.cs` | `ProjectCompiler`, editor (new project/class) |
+| `IProjectProfile`, `ClassTemplate`, `DefaultProjectProfile` | `src/NetPrints.Core/Profiles/*.cs` | `IProjectSystem.CreateAsync`, editor (new project/class) |
 | `ITypeCatalog`, `CatalogInfo`, `CompositeReflectionProvider`, `InMemoryTypeCatalog` | `src/NetPrints.Reflection/Catalogs/*.cs` | `ReflectionHost` |
 | `INodeDocumentConverter` | `src/NetPrints.Serialization/Mapping/` (document-format.md §2.6) | `DocumentMapper` |
 | `INetPrintsExtension`, `IExtensionBuilder`, `INodeLibrary`, `NodeKindDescriptor`, manifest, loader, registry, `IHostChannel`, settings | `src/NetPrints.Extensibility/**` | Desktop, Editor, CLI |
@@ -41,6 +41,7 @@ public interface IExtensionBuilder
     IExtensionBuilder AddHostChannel(IHostChannelFactory factory);
     IExtensionBuilder AddSettings(ExtensionSettingsDescriptor descriptor);
     IExtensionBuilder AddJsonTypeInfoResolver(IJsonTypeInfoResolver resolver);
+    IExtensionBuilder AddProjectProperty(string msbuildPropertyName);   // captured into ProjectSnapshot.Properties
 }
 ```
 
@@ -244,9 +245,7 @@ public interface IProjectProfile
     string Id { get; }                                  // reverse-DNS, e.g. "netprints.default", "netprints.unreal"
     string DisplayName { get; }
     string DefaultTargetFramework { get; }              // "net10.0"
-    IReadOnlyList<string> DefaultFrameworkReferences { get; }
-    string SourceOutputDirectory { get; }               // relative to the project dir; "{ProjectName}" placeholder
-    string BinaryOutputDirectory { get; }
+    string ProjectTemplate { get; }                     // .csproj text; placeholders {ProjectName} {RootNamespace} {TargetFramework} {NetPrintsSdkVersion} {ProfileId}
     IReadOnlyList<TypeSpecifier> BaseTypes { get; }     // offered for new classes; first = default
     IReadOnlyList<ClassTemplate> ClassTemplates { get; }
     string? CatalogProfileId { get; }                   // used by P2 catalog tooling; unused in P1
@@ -256,16 +255,16 @@ public sealed class DefaultProjectProfile : IProjectProfile
 {
     public const string ProfileId = "netprints.default";
     public static DefaultProjectProfile Instance { get; }
-    // net10.0, [Microsoft.NETCore.App], "Compiled_{ProjectName}" for sources and binaries (P0 layout),
+    // net10.0, ProjectTemplate = project-system.md §1 (OutputType Exe),
     // BaseTypes [System.Object], ClassTemplates [ "netprints.empty-class" ], CatalogProfileId null
 }
 ```
 
 | Rule | Contract |
 |---|---|
-| Lookup | `ExtensionRegistry.FindProfile(id)`; unknown id on load → project uses `DefaultProjectProfile` for this session, issue `NPD005`, the stored id is kept (not rewritten). |
+| Lookup | `ExtensionRegistry.FindProfile(id)` with `id = $(NetPrintsProfile)`; unknown id on load → `DefaultProjectProfile` for this session, issue `NPD005`, the `.csproj` is not rewritten. |
 | Conflicts | Duplicate `Id` → later rejected (`NPX006`). `netprints.default` cannot be replaced. |
-| Use in P1 | `Project.CreateNew(name, ns, profile)` takes target framework and references from the profile; `ProjectCompiler` takes output directories from it. Templates and base types are exposed to the editor's New Class command (default template only in the P1 UI). |
+| Use in P1 | `IProjectSystem.CreateAsync(dir, name, profile, ns)` writes `ProjectTemplate`; the editor's New Class uses the first `ClassTemplates` entry and `BaseTypes[0]` (choice UI is P6). Output layout is standard MSBuild (`bin/`, `obj/`). |
 
 ## 6. Host channel — `src/NetPrints.Extensibility/Hosting/*.cs`
 
@@ -330,19 +329,18 @@ public interface ISettingsStore
 public sealed class JsonFileSettingsStore : ISettingsStore
 {
     public JsonFileSettingsStore(string filePath, ILogger<JsonFileSettingsStore> logger);
-    public static string DefaultFilePath(DotNetEnvironment environment); // $XDG_CONFIG_HOME/NetPrints/settings.json, or ~/.config/…; %APPDATA%\NetPrints\settings.json; ~/Library/Application Support/NetPrints/settings.json
+    public static string DefaultFilePath();   // Path.Combine(Environment.GetFolderPath(SpecialFolder.ApplicationData), "NetPrints", "settings.json") ($XDG_CONFIG_HOME or ~/.config on Linux/macOS, %APPDATA% on Windows)
 }
 
-public static class ProjectExtensionSettings
-{
-    public static T Get<T>(Project project, ExtensionSettingsDescriptor<T> descriptor);
-    public static void Set<T>(Project project, ExtensionSettingsDescriptor<T> descriptor, T value); // marks nothing dirty in P1
-}
+// Project-scope extension settings are MSBuild properties: extensions list the property names they need in
+// ExtensionSettingsDescriptor-independent form through IExtensionBuilder.AddProjectProperty(name), and read them with
+// ProjectSnapshot.GetProperty(name) (project-system.md §4). No NetPrints-specific project settings file exists.
 ```
 
-File layout: `{ "schemaVersion": 1, "netprints": { "references": { "packRoots": [] }, "extensionPaths": [] }, "extensions": { "<id>": { … } } }`
+File layout: `{ "schemaVersion": 1, "netprints": { "extensionPaths": [], "trustedProjects": [] }, "extensions": { "<id>": { … } } }`
 (ordinal-sorted, canonical writing rules of document-format.md §1.1). `netprints` is the built-in
-section (`NetPrintsSettings` record: `ReferencePackRoots`, `ExtensionPaths`).
+section (`NetPrintsSettings` record: `ExtensionPaths`, `TrustedProjects` = full `.csproj` paths whose
+`NetPrintsExtension` items the user allowed).
 
 | Rule | Contract |
 |---|---|
@@ -381,8 +379,18 @@ public abstract record ExtensionLoadResult(string Id, string? ManifestPath)
 }
 
 public sealed record ExtensionLoaderOptions(
-    IReadOnlyList<string> SearchDirectories,                 // settings "netprints.extensionPaths" then NETPRINTS_EXTENSION_PATH entries
+    IReadOnlyList<string> SearchDirectories,                 // settings "netprints.extensionPaths" then NETPRINTS_EXTENSION_PATH entries (editor); empty in the generator
+    IReadOnlyList<string> ExtensionFolders,                  // explicit folders containing netprints-extension.json: trusted NetPrintsExtension items (editor) / request "extension=" lines (generator)
     IReadOnlyList<(ExtensionManifest Manifest, INetPrintsExtension Extension)> InProcess); // built-in + tests; loaded without an ALC
+
+/// Editor-side holder: rebuilds the registry when a trusted project adds extension folders. Load contexts
+/// are cached by manifest path (non-collectible), so re-loading never loads an assembly twice.
+public interface IExtensionHost
+{
+    ExtensionRegistry Current { get; }
+    ExtensionRegistry LoadForProject(IReadOnlyList<string> projectExtensionFolders, CancellationToken cancellationToken);
+    event EventHandler<ExtensionRegistry>? RegistryChanged;
+}
 
 public sealed class ExtensionLoader
 {
@@ -416,7 +424,8 @@ public sealed class ExtensionRegistry : IDisposable
 ### 8.1 Discovery and order
 
 1. In-process extensions (`BuiltInExtension` with id `netprints`, then test/in-process ones) in list order.
-2. For each search directory in order: each **immediate** subdirectory (ordinal order) containing
+2. `ExtensionFolders` in order (each must contain `netprints-extension.json`, else `NPX001`), then for each
+   search directory in order: each **immediate** subdirectory (ordinal order) containing
    `netprints-extension.json`. Non-existent directories are skipped (Debug log).
 3. Duplicate id → first wins; later → `Failed(NPX004)`.
 4. Validation: manifest schema (`NPX001`); `netprintsApi` major ≠ `ExtensionApi.Version.Major` or
@@ -434,6 +443,7 @@ public sealed class ExtensionRegistry : IDisposable
 | Assembly requested by an extension | Resolved from |
 |---|---|
 | Name starts with `NetPrints` | Default context (host copy) |
+| `Microsoft.Build*` | Default context (Locator-registered SDK copy) |
 | `Microsoft.CodeAnalysis*`, `CommunityToolkit.Mvvm`, `System.Reactive`, `DynamicData`, `Avalonia*`, `Microsoft.Extensions.*.Abstractions` | Default context |
 | Framework assemblies (in `TRUSTED_PLATFORM_ASSEMBLIES`) | Default context |
 | Anything else | `AssemblyDependencyResolver` of the extension (its folder / `.deps.json`); unresolved → `null` (runtime fails → `NPX007`) |
@@ -446,23 +456,27 @@ manifest copied (`CopyToOutputDirectory`).
 
 ### 8.3 Security
 
-Only directories from user settings and `NETPRINTS_EXTENSION_PATH` are searched. `Project.ExtensionIds`
-are never used to locate code; ids listed by a project but not loaded → issue `NPD006` on open.
+Editor: directories from user settings and `NETPRINTS_EXTENSION_PATH`, plus a project's `NetPrintsExtension`
+folders **only** if the `.csproj` full path is in `netprints.trustedProjects`. Otherwise the editor asks once
+(`IEditorDialogs.ConfirmTrustAsync(projectPath, folders)`); "Trust" appends to `trustedProjects` and loads,
+"Don't load" opens the project with those extension nodes preserved but inactive and issue `NPD006`.
+Generator (build): exactly the request's `extension=` folders (building a project already trusts it);
+user directories are not used, so builds are reproducible.
 
 ## 9. Test obligations
 
 | ID | Case |
 |---|---|
 | EX-T01 | Test extension loads from a temp search dir via ALC; `typeof(Node)` seen by the extension == host `typeof(Node)`; its `Assembly` is in its own `AssemblyLoadContext` |
-| EX-T02 | Extension node kind: appears in `NodeKinds` and editor search for allowed graph kinds only; saved, reloaded and translated with the extension's C# |
+| EX-T02 | Extension node kind: appears in `NodeKinds` and editor search for allowed graph kinds only; saved, reloaded and translated with the extension's C# (build path: PS-T14) |
 | EX-T03 | Missing extension: document with its node loads without it (DF-T08) and translation reports `NPT003` |
 | EX-T04 | Class/member emitters: attribute, `partial` modifier, using and `DeclarePartial` property appear in order; with no emitters output equals golden |
 | EX-T05 | Emitter throws → `NPT005` for that class only |
 | EX-T06 | Catalog: composite returns catalog types first, distinct; `CoveredAssemblyNames` excluded from live enumeration; `HasImplicitCast` any-true |
-| EX-T07 | Profile: `CreateNew` uses profile defaults; unknown profile id → default + `NPD005`, id preserved on save |
+| EX-T07 | Profile: `IProjectSystem.CreateAsync` writes the profile's template; unknown `NetPrintsProfile` → default profile + `NPD005`, `.csproj` untouched |
 | EX-T08 | Host channel: `TypesChanged` via `InMemoryHostChannel` triggers `IReflectionHost.ReloadAsync` once; unknown type ignored; `SendAsync` after dispose → `InvalidOperationException` |
 | EX-T09 | Settings: set/get round trip; unknown section preserved byte-identically; invalid section → default + log 2006 |
 | EX-T10 | Failures, each with the editor/registry still usable and the other extension loaded: invalid manifest (`NPX001`), API 2.0 (`NPX002`), missing dependency (`NPX003`), duplicate id (`NPX004`), `Register` throws (`NPX005`), kind conflict (`NPX006`), missing assembly (`NPX007`) |
 | EX-T11 | Order: two extensions with `dependsOn` load dependency first; ties by id; emitters applied in that order |
 | EX-T12 | Built-in node kinds are registered through `BuiltInNodeLibrary` (registry contains 24 kinds; removing it from `InProcess` makes built-in nodes unknown) |
-| EX-T13 | Security: a project folder containing a `netprints-extension.json` is not loaded; listed-but-missing id → `NPD006` |
+| EX-T13 | Security: a project with a `NetPrintsExtension` item is not loaded until trusted (dialog fake answers "Don't load" → `NPD006`, nodes preserved; "Trust" → loaded and recorded in settings); a stray `netprints-extension.json` in the project folder without an item is never loaded |

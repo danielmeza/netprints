@@ -22,10 +22,10 @@ public sealed record EditorContext(
     Func<IMessenger> CreateMessenger,
     // new in P1 (all required, no defaults):
     ILoggerFactory LoggerFactory,
-    ExtensionRegistry Extensions,
+    IExtensionHost Extensions,
     ProjectPersistence Persistence,
-    ProjectCompiler Compiler,
-    IReferenceResolver References,
+    IProjectSystem Projects,
+    ProjectConverter Converter,
     IHostChannel HostChannel,
     ISettingsStore Settings,
     ICodeAnalysisHost CodeAnalysis);
@@ -38,15 +38,15 @@ namespace NetPrints.Editor.Hosting;
 
 public interface IReflectionHost   // P0 members unchanged, plus:
 {
-    IReadOnlyList<ResolvedAssembly> Assemblies { get; }       // last resolution (for CodeAnalysisSession)
-    ReferenceResolution? LastResolution { get; }
-    // ReloadAsync(Project, CancellationToken) now resolves via IReferenceResolver and composes
-    // CompositeReflectionProvider(catalogs…, live) — see extension-points.md §4
+    ProjectSnapshot? Snapshot { get; }                        // last loaded snapshot (references, other sources, options)
+    // ReloadAsync(Project, CancellationToken) now takes references and other sources from Project.Snapshot
+    // (IProjectSystem.LoadAsync, project-system.md §4), adds the in-memory translations of the project's graphs,
+    // and composes CompositeReflectionProvider(catalogs…, live) — extension-points.md §4
 }
 
 public sealed class ReflectionHost : IReflectionHost
 {
-    public ReflectionHost(IUiDispatcher dispatcher, IReferenceResolver references, IReadOnlyList<ITypeCatalog> catalogs, ILogger<ReflectionHost> logger);
+    public ReflectionHost(IUiDispatcher dispatcher, IExtensionHost extensions, ILogger<ReflectionHost> logger); // catalogs from extensions.Current
 }
 
 namespace NetPrints.Editor.Diagnostics;
@@ -63,7 +63,7 @@ public sealed record CodeAnalysisSnapshot(IReadOnlyDictionary<string, Translated
 
 public sealed class CodeAnalysisHost : ICodeAnalysisHost
 {
-    public CodeAnalysisHost(IReflectionHost reflection, TranslationEnvironment translation, IScheduler scheduler, IUiDispatcher dispatcher, ILogger<CodeAnalysisHost> logger);
+    public CodeAnalysisHost(IReflectionHost reflection, IExtensionHost extensions, IScheduler scheduler, IUiDispatcher dispatcher, ILogger<CodeAnalysisHost> logger); // translation = extensions.Current.Translation
 }
 ```
 
@@ -72,7 +72,18 @@ public sealed class CodeAnalysisHost : ICodeAnalysisHost
 | Threading | Translation of the model runs on the UI thread (model is not thread-safe; moving it off is P8); `CodeAnalysisSession.AnalyzeAsync` runs via `Task.Run`; results marshalled with `IUiDispatcher`. |
 | Latency | ≤ 2 s after the last edit for the sample classes (SC-006): debounce 500 ms + analysis. |
 | Failure | Analysis exceptions → no snapshot change, log `CodeAnalysisFailed` (1030). |
-| Session | Recreated on `IReflectionHost.Reloaded`. |
+| Session | Recreated on `IReflectionHost.Reloaded` from `Snapshot.References`, `Snapshot.OtherSources`, `Snapshot.CompilationOptionsJson`. |
+
+`IEditorDialogs` gains (desktop: modal Avalonia dialogs; tests: recorded canned answers):
+
+```csharp
+Task<bool> ConfirmConversionAsync(string legacyProjectPath, IReadOnlyList<string> filesToWrite);   // false → nothing happens
+Task<bool> ConfirmTrustAsync(string projectPath, IReadOnlyList<string> extensionFolders);         // true → added to netprints.trustedProjects
+Task ShowIssuesAsync(string title, IReadOnlyList<CodeDiagnostic> issues);
+```
+
+Create Project (PAR-03) uses `IFilePickerService.SaveFileAsync("Create Project", "MyProject.csproj", "csproj", …)`;
+the chosen path gives the directory and project name, then `IProjectSystem.CreateAsync`.
 
 ## 3. View models (new/changed) — feature folders of `src/NetPrints.Editor`
 
@@ -116,10 +127,10 @@ namespace NetPrints.Editor.Hosting;
 
 public sealed record EditorHostServices(
     ILoggerFactory LoggerFactory,
-    ExtensionRegistry Extensions,
+    IExtensionHost Extensions,
     ISettingsStore Settings,
     IHostChannel HostChannel,
-    DotNetEnvironment Environment);
+    bool MsBuildAvailable);    // result of MsBuildRegistration.EnsureRegistered() in Desktop Main
 
 public sealed class EditorComposition
 {
@@ -137,30 +148,36 @@ public sealed class EditorComposition
 | `ILoggerFactory` | Desktop `Program` (`LoggerFactory.Create(b => b.AddSimpleConsole(...).SetMinimumLevel(Information))`; `NETPRINTS_LOG_LEVEL` overrides) | process; disposed on exit | — |
 | Avalonia log sink `AvaloniaLogSink : ILogSink` | Desktop `Program` (`.LogToTrace()` replaced by `Logger.Sink = new AvaloniaLogSink(loggerFactory)`) | process | `ILoggerFactory` |
 | `ISettingsStore` (`JsonFileSettingsStore`) | Desktop | process | path from `JsonFileSettingsStore.DefaultFilePath` |
-| `ExtensionRegistry` | Desktop via `ExtensionLoader.Load` before `EditorApp` starts | process; disposed on exit | settings (`ExtensionPaths`), `NETPRINTS_EXTENSION_PATH`, `ILoggerFactory` |
+| MSBuild registration | Desktop `Main` first statement: `MsBuildRegistration.EnsureRegistered()` (project-system.md §4) | process | — |
+| `IExtensionHost` (`ExtensionHost`) | Desktop: `ExtensionLoader` over settings `ExtensionPaths` + `NETPRINTS_EXTENSION_PATH`; `LoadForProject` on open of a trusted project | process; disposed on exit | `ILoggerFactory`, settings |
 | `IHostChannel` | Desktop (`NETPRINTS_HOST_CHANNEL`, extension-points.md §6) | process; `DisposeAsync` on exit | registry |
 | `EditorHostServices` | Desktop, passed to `EditorApp` (`EditorApp.HostServices` static init property set before `StartWithClassicDesktopLifetime`; `InvalidOperationException` if unset) | process | above |
-| `IReferenceResolver` (`ReferencePackResolver`) | `EditorComposition` | editor | settings `ReferencePackRoots` + `NETPRINTS_REFERENCE_PACKS`, `DotNetEnvironment` |
-| `ReflectionHost` | `EditorComposition` | editor | dispatcher, resolver, `registry.TypeCatalogs`, logger |
-| `DocumentFormatRegistry`, `DocumentMapper`, `ProjectPersistence` | `EditorComposition` | editor | `registry.NodeConverters`, logger |
-| `ProjectCompiler` | `EditorComposition` | editor | `registry.Translation`, resolver, `CodeCompiler` |
-| `CodeAnalysisHost` | `EditorComposition` | editor; disposed with the main window | reflection, `registry.Translation`, scheduler, dispatcher, logger |
+| `IProjectSystem` (`MsBuildProjectSystem`) | `EditorComposition` | editor | `ProjectSystemOptions` (properties requested by extensions), `ProcessRunner`, logger; if `MsBuildAvailable` is false a `NoSdkProjectSystem` whose members throw `ProjectSystemException(NPW001)` |
+| `ProjectConverter` | `EditorComposition` | editor | legacy + JSON formats, `DefaultProjectProfile`, SDK version |
+| `ReflectionHost` | `EditorComposition` | editor | dispatcher, extension host (catalogs), logger |
+| `DocumentFormatRegistry`, `DocumentMapper`, `ProjectPersistence` | `EditorComposition`; mapper rebuilt on `RegistryChanged` | editor | `IProjectSystem`, `Current.NodeConverters`, `FileSystemDocumentStore` factory, logger |
+| `CodeAnalysisHost` | `EditorComposition` | editor; disposed with the main window | reflection, extension host, scheduler, dispatcher, logger |
 | P0 services (pickers, dialogs, clipboard, dispatcher, windows, processes, schedulers, messenger factory) | `EditorComposition` (unchanged) | as in P0 | — |
 | `IMessenger` | `Context.CreateMessenger()` per class editor | class editor | — |
 | `UndoRedoStack`, `ClassEditorServices` | `ClassEditorVM` | class editor | — |
 
-CLI (`src/NetPrints.Cli/Program.cs`): builds `ExtensionLoader` (settings + env paths),
-`ProjectPersistence`, `ReferencePackResolver`, `ProjectCompiler` explicitly; console logger;
-`-p` accepts `.netpp.json` and `.netpp`. Command set and exit codes unchanged (P2).
+CLI (`src/NetPrints.Cli/Program.cs`, P0 behavior until P2): `MsBuildRegistration.EnsureRegistered()`, then
+`-p <file>`: a `.csproj` is built with `IProjectSystem.BuildAsync` (and run with `GetRunCommand` for `-r`); a
+`.netpp` is converted with `ProjectConverter` first (prints the created files). Console logger. Exit codes unchanged.
+
+Generator (`src/NetPrints.Generator`, project-system.md §3): `ExtensionLoader` (request folders only),
+`DocumentFormatRegistry`, `DocumentMapper`, `GraphCodeGenerator`; console logger at Warning; no MSBuild.
 
 ## 5. Error model and UI mapping
 
 | Source | Type | Where it shows |
 |---|---|---|
 | Document load/save | `DocumentIssue` (`NPD001–006`), `DocumentFormatException`, `DocumentVersionException` | Error dialog on open (issues listed, project stays open unless the project file itself failed); log 1040 |
-| References | `ReferenceWarning` (`NPR001–006`) | Error list rows (Warning) after reflection reload and compile |
+| Project system | `ProjectMessage` (`NPW001–005`, MSBuild `MSB*`, NuGet `NU*`), `ProjectSystemException` | Error list rows after load/build; `NPW001` (no SDK) and `NPW003` (evaluation failed) as a dialog |
+| Conversion | `NPM001–004`, `ProjectConversionException` | Confirmation dialog before, issues dialog after |
 | Translation | `TranslationException` → `CodeDiagnostic` (`NPT001–007`) | Error list rows with node link; squiggle when a span exists |
-| Compiler | Roslyn → `CodeDiagnostic` (`CSxxxx`) | Squiggles in the code view + error list rows with node link |
+| Compiler (live) | Roslyn → `CodeDiagnostic` (`CSxxxx`) via `DiagnosticMapper.FromRoslyn` | Squiggles in the code view + error list rows with node link |
+| Build | `BuildResult.Messages` → `DiagnosticMapper.FromBuild` | Error list rows with node link (generated-file spans mapped through the in-memory source map) |
 | Extensions | `ExtensionLoadResult.Failed` (`NPX001–007`) | One dialog at startup listing failures (`AutomationIds.ExtensionLoadErrors`); log 2003 |
 | Unhandled | exceptions on the UI thread / unobserved tasks | Error dialog (P0); log 1001/1002 |
 
@@ -172,15 +189,15 @@ without `NodeId` open the graph only; rows without `GraphKey` do nothing.
 ## 6. Logging — `[LoggerMessage]` event ids
 
 One `internal static partial class Log` per feature folder (`…/Log.cs`). `CA1848` and `CA2254` are
-errors in Editor, Desktop, Extensibility and Serialization. Categories = the owning type.
+errors in Editor, Desktop, Extensibility, Serialization, Workspace and Generator. Categories = the owning type.
 
 | Id | Name | Level | Project / class | Message template |
 |---|---|---|---|---|
 | 1001 | `UnhandledUiException` | Error | Editor / `UnhandledExceptionHandler` | `Unhandled exception on the UI thread` (exception attached) |
 | 1002 | `UnobservedTaskException` | Error | same | `Unobserved task exception` |
 | 1010 | `ReflectionReloadStarted` | Debug | Editor / `ReflectionHost` | `Reloading types for {ProjectName}` |
-| 1011 | `ReflectionReloadCompleted` | Information | same | `Types loaded for {ProjectName} from {Source} in {ElapsedMs} ms ({AssemblyCount} assemblies)` |
-| 1012 | `ReferenceWarning` | Warning | same | `{Code}: {Message}` |
+| 1011 | `ReflectionReloadCompleted` | Information | same | `Types loaded for {ProjectName} in {ElapsedMs} ms ({AssemblyCount} assemblies)` |
+| 1012 | `ProjectMessage` | Warning | same | `{Code}: {Message}` |
 | 1013 | `ReflectionReloadFailed` | Error | same | `Loading types for {ProjectName} failed` |
 | 1020 | `HostMessageReceived` | Debug | Editor / `HostChannelBridge` | `Host message {Type}` |
 | 1021 | `HostChannelUnknown` | Error | Desktop / `Program` | `Host channel {Id} is not provided by any extension` |
@@ -199,6 +216,12 @@ errors in Editor, Desktop, Extensibility and Serialization. Categories = the own
 | 3003 | `ConnectionDropped` | Warning | same | `Connection {From} -> {To} in {Document} dropped: {Reason}` |
 | 3004 | `LegacyImported` | Information | Serialization / `ProjectPersistence` | `Imported legacy {Document}` |
 | 3005 | `ExternalChange` | Debug | Serialization / `FileSystemDocumentStore` | `{Kind} {Document}` |
+| 3006 | `ProjectConverted` | Information | Serialization / `ProjectConverter` | `Converted {LegacyProject} to {Project} ({GraphCount} graphs)` |
+| 4001 | `RestoreStarted` | Debug | Workspace / `MsBuildProjectSystem` | `Restoring {Project}` |
+| 4002 | `ProjectLoaded` | Information | same | `Loaded {Project} in {ElapsedMs} ms ({ReferenceCount} references, {GraphCount} graphs)` |
+| 4003 | `WorkspaceDiagnostic` | Warning | same | `{Message}` |
+| 4004 | `BuildFinished` | Information | same | `Build of {Project} {Result} in {ElapsedMs} ms ({ErrorCount} errors)` |
+| 4005 | `MsBuildNotFound` | Error | Workspace / `MsBuildRegistration` | `No .NET SDK found; projects cannot be opened` |
 
 `GridBackground` keeps Avalonia's `Logger` (controls have no DI); `AvaloniaLogSink` forwards Avalonia
 log areas to `ILogger` categories `Avalonia.<Area>` so it reaches the console (FR-042).
@@ -225,7 +248,7 @@ then asserts zero violations for the real sources and a non-empty set of scanned
 | ED-T01 | Code view (headless): highlighted tokens (pixel check or TextMate token color), line numbers visible, no wrap (horizontal scroll extent > viewport), folding markers for type and method; snapshot `class-inspector-code-view` regenerated and reviewed |
 | ED-T02 | Live diagnostics: a type error introduced via the model yields a squiggle and an error row within virtual-time debounce; fixing it clears both |
 | ED-T03 | Navigation: double-click on a row with `NodeId` opens the graph, selects that node and brings it into view |
-| ED-T04 | Compile errors appear as structured rows (severity, id, message, location) |
+| ED-T04 | Build errors (a CS error in a generated file and an NPT generator error) appear as structured rows linked to the node |
 | ED-T05 | Hover over `WriteLine` shows signature and summary |
 | ED-T06 | Variables panel groups "Class" and "Method: Main"; create/rename/retype/remove local, undo/redo each; drag local → Get/Set chooser |
 | ED-T07 | Event graphs: create, open, add custom event via search, remove (undoable) |
@@ -234,5 +257,5 @@ then asserts zero violations for the real sources and a non-empty set of scanned
 | ED-T10 | Architecture gate demonstrated to fail on the fixture and pass on the sources |
 | ED-T11 | Extension load failure dialog lists failures; editor usable |
 | ED-T12 | `UnhandledExceptionHandler` logs 1001/1002 through a collecting logger and still shows the dialog |
-| ED-T13 | Opening a legacy project shows its classes; Save writes JSON and the title/project path switch to `.netpp.json` |
+| ED-T13 | Opening a legacy `.netpp` asks for conversion, writes `.csproj` + `.netpc.json`, then opens the `.csproj`; Save writes changed graphs and their `.netpc.g.cs`; the References dialog and binary-type chooser edit the `.csproj` (PS-T09 at VM level) |
 | ED-T14 | No production type has an optional `customize`/test hook parameter (`EditorComposition` ctor takes `EditorHostServices` only) |

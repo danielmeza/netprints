@@ -2,6 +2,11 @@
 
 **Date**: 2026-09-25 | **Spec**: [spec.md](./spec.md) | **Plan**: [plan.md](./plan.md)
 
+> **Revision 2026-09-25 (owner decision): a NetPrints project is an SDK-style `.csproj`.** §4 (R11–R16)
+> records the new research. It supersedes R1 (custom reference-pack resolver), the project half of U1
+> (`ProjectDocument`), the ProjectCompiler part of the plan, and the project-document parts of R10.
+> Everything else below still holds.
+
 Owner rule for this phase: **reuse, don't reinvent**. §1 lists every decision taken from existing
 sources. §2 records the research done only for questions those sources left open. Spikes ran on Linux
 with SDK 10.0.400 in the session scratchpad (`p1spike/`, `aespike/`), outside the repository. Package
@@ -25,8 +30,8 @@ Abbreviations: **Plan** = the plan page (`.agent-archive/2026-09-25-session-c18f
 | U7 | Event graphs: one graph, several entry points, each entry its own method; lives in core | Plan "Extension points"; RM P1 |
 | U8 | Model INPC moves from PropertyChanged.Fody to CommunityToolkit.Mvvm (source generated, no weaving) | Plan "MVVM split"; RM P1; C "No IL weaving"; P0-R §b |
 | U9 | Nullable and analyzer warnings cleaned up in Core and Reflection (RS1024 ×10, Fody warnings, ~100 nullable) | Plan P1; P0-R §a, §f; P0 plan Complexity Tracking |
-| U10 | Reference resolution: ref packs or configured paths; replaces the P0 all-or-nothing runtime fallback, which stays as the last resort; `{Name}.runtimeconfig.json` + `dotnet` host for runs | RM P1; P0-R §c, review follow-up |
-| U11 | D5 fix: probe `packs/Microsoft.NETCore.App.Ref/<ver>/ref/net*/<name>.xml` | UX D5 |
+| U10 | Reference resolution: ref packs or configured paths; replaces the P0 all-or-nothing runtime fallback, which stays as the last resort; `{Name}.runtimeconfig.json` + `dotnet` host for runs *Superseded by R14: MSBuild resolves references; no custom resolver.* | RM P1; P0-R §c, review follow-up |
+| U11 | D5 fix: probe `packs/Microsoft.NETCore.App.Ref/<ver>/ref/net*/<name>.xml` *Superseded by R14: docs sit next to MSBuild-resolved pack references (verified).* | UX D5 |
 | U12 | Code view: AvaloniaEdit, TextMate C# highlighting, folding, line numbers, live Roslyn diagnostics (squiggles + error list linked to the node); read-only; evaluate RoslynPad.Editor.Avalonia for hover | RM P1; UX D4, H7, L6 |
 | U13 | Method-local variables: per `MethodGraph`/`ConstructorGraph`, getter/setter nodes, declared at the top of the method (fits the goto translator), Variables panel groups *Class* and *Method: <name>* | RM P1 (owner idea 2026-09-25) |
 | U14 | P0 review follow-ups: narrow child-VM dependencies; Roslyn architecture gate demonstrated to fail on a fixture; Nodify command gestures; replace `SetProperty(model, …)` wrappers; remove the `EditorComposition` test hook (explicit DI, no fallbacks); `[LoggerMessage]` logging | RM P1; P0-Rev "Defer to P1" |
@@ -41,7 +46,7 @@ Abbreviations: **Plan** = the plan page (`.agent-archive/2026-09-25-session-c18f
 
 ## 2. Research on open questions
 
-### R1. Reference packs and XML documentation
+### R1. Reference packs and XML documentation — *superseded by R14 (MSBuild resolves references)*
 
 **Decision**: a `ReferencePackResolver` (behind `IReferenceResolver` in Core) resolves a project's
 target framework (`net<major>.<minor>`) and framework references (`Microsoft.NETCore.App`, optionally
@@ -225,7 +230,7 @@ methods live in one `static partial class Log` per feature folder; event ids in 
   Serialization; `INodeLibrary` in Extensibility bundles them for authors.
 - `tests/NetPrints.TestExtension` (new, test asset, not packed).
 
-## 3. Package version summary (additions to `Directory.Packages.props`)
+## 3. Package version summary (additions to `Directory.Packages.props`; see also §4 R16)
 
 | Package | Version | Used by |
 |---|---|---|
@@ -248,5 +253,126 @@ RoslynPad.Editor.Avalonia 5.0.0 (R4), McMaster.NETCore.Plugins 2.0.0 (R8).
 | K4 | Plugin type identity broken by duplicated contract assemblies | Shared-assembly rule + identity test (R8) |
 | K5 | Scope: ~3.5 w manual estimate, 7 stories | Sub-phases independently green; split recommendation in plan.md |
 | K6 | TextMate native dependency in the future browser build | Plain-text fallback; revisit in P5 (R2) |
-| K7 | Compile semantics change for old .NET Framework projects on Windows | One warning per project; documented (spec clarification) |
+| K7 | Compile semantics change for old .NET Framework projects on Windows | Converted to net10.0 with `NPM001`; documented (spec clarification) |
 | K8 | Rebase onto the reorganization PR | P1 starts after it merges; all paths already use the new layout |
+| K9 | Exec'd generator not verified inside Visual Studio (Windows) and Rider in CI (Linux only) | Uses only `Exec` + `DOTNET_HOST_PATH` (set by the .NET SDK in every host); one manual check per IDE recorded in the PR (R12) |
+| K10 | In-process MSBuild (Locator) assembly conflicts | `Microsoft.Build*` with `ExcludeAssets=runtime` (verified MSBL001 guard), registration before any MSBuild type loads, MSBuildWorkspace build host is out of process (R14) |
+| K11 | Editor now needs the .NET SDK, not only the runtime | Clear message when none is found; documented |
+| K12 | Opening a project evaluates MSBuild code from it (as every IDE does); project-referenced extensions run code | Trust prompt before loading project-referenced extensions (FR-019) |
+
+
+## 4. Revision: the project is an SDK-style `.csproj` (research R11–R16)
+
+Spikes in the session scratchpad: `sdkspike/` (props/targets + an `Exec`'d net10.0 generator, built
+with SDK 10.0.400) and `wsspike/` (Microsoft.Build.Locator + MSBuildWorkspace opening that project).
+
+### R11. Package shape: PackageReference with `build/` props+targets
+
+**Decision**: `NetPrints.Sdk` is a normal NuGet package consumed as
+`<PackageReference Include="NetPrints.Sdk" Version="…" PrivateAssets="all" />`, with
+`build/NetPrints.Sdk.props`, `build/NetPrints.Sdk.targets` and the generator under `tools/net10.0/`
+(`DevelopmentDependency=true`, `IncludeBuildOutput=false`). Only `build/` (not `buildTransitive/`),
+so consuming a NetPrints-built library does not pull code generation into its consumers.
+
+**Rationale**: works with Central Package Management, `dotnet restore`, Dependabot/Renovate and the
+`dotnet add package` flow; it is the one-line change NetPrintsUnreal needs in UnrealSharp's existing
+Script `.csproj`. An additive MSBuild SDK (`<Sdk Name="NetPrints.Sdk" Version="…" />`) is not managed
+by CPM (versions go inline or into `global.json` `msbuild-sdks`) and resolves before restore, which
+gains nothing here (no property must be set before `Microsoft.NET.Sdk`). The same package could add an
+`Sdk/` folder later if ever needed.
+
+### R12. How the build runs the net10.0 translator: `Exec` a bundled generator
+
+**Decision**: the `NetPrintsGenerate` target runs `"$(DOTNET_HOST_PATH)" exec "<package>/tools/net10.0/NetPrints.Generator.dll" generate "<request.rsp>"`
+(fallbacks: `$(NetCoreRoot)dotnet`, then `dotnet` on `PATH`) once per build with the out-of-date graphs
+only, `BeforeTargets="CoreCompile"`. No MSBuild task assembly.
+
+**Evidence**:
+- `TaskHostFactory` with `Runtime="NET"` (a .NET task hosted out of process by .NET Framework
+  MSBuild) exists only from **MSBuild 18.0 / .NET SDK 10 / Visual Studio 2026**, and only for
+  `Microsoft.NET.Sdk` projects (learn.microsoft.com "What's new in the SDK and tooling for .NET 10";
+  "Configure targets and tasks": `Runtime="NET"` starting in MSBuild 18.0). VS 2022 (MSBuild 17.x) would
+  fail to load it. dotnet/msbuild#12514 (open): the .NET task host fails for tasks with non-trivial
+  dependencies (MSB4062 while MSBuild.exe inspects the task assembly); our task would carry Roslyn
+  and extension assemblies.
+- `Exec` only spawns a process, so it behaves the same in `dotnet build`, `msbuild.exe` (VS 2022/2026)
+  and Rider. `DOTNET_HOST_PATH` is set by the .NET SDK for every SDK-style build (verified:
+  `/home/…/.dotnet/dotnet` from `dotnet msbuild -getProperty:DOTNET_HOST_PATH`).
+- Spike results (`sdkspike/`): first build generates both graphs and compiles them; second build logs
+  *Skipping target "NetPrintsGenerate" because all output files are up-to-date*; touching one graph logs
+  *Building target "NetPrintsGenerate" partially* and regenerates only that file. Found during the spike:
+  the generator skips rewriting identical content (no churn in git/IDEs), so the target must `Touch`
+  the outputs afterwards, otherwise unchanged-content outputs stay older than their inputs and the
+  target never becomes up to date.
+- Cost: one process start (~0.1 s) plus Roslyn formatting, only when a graph changed.
+
+**Revisit** when VS 2022 support can be dropped and #12514 is fixed: the same library can then be
+wrapped in a `Runtime="NET"` task without changing the targets' contract.
+
+**Entry point**: `src/NetPrints.Generator` (Exe, net10.0; references Core, Serialization,
+Extensibility) with `generate <request.rsp>` and `convert <legacy.netpp>` commands. It is an
+internal build tool, not the P2 user CLI; P2's `netprints generate` calls the same
+`GraphCodeGenerator` library class.
+
+### R13. No source-generator mode (owner decision)
+
+A Roslyn generator would need a `netstandard2.0` build of the translator (Core targets net10.0 only,
+constitution IV) and cannot feed UnrealSharp's generator: generators don't see each other's output and
+cannot be ordered (dotnet/roslyn#57239 "Allow for a way to ensure some source generators run before /
+after others", open; #85239 "Sharing pipeline values between incremental generators", open). This
+matches the plan page ("Why NetPrints can't be a source generator"). Future note only.
+
+### R14. Project model and references: MSBuild via Microsoft.Build.Locator + MSBuildWorkspace
+
+**Decision**: mirror UnrealSharp (`UnrealSharp.Plugins/Main.cs`: `MSBuildLocator.QueryVisualStudioInstances()`
+ordered by version, `RegisterInstance(highest)`, else `RegisterDefaults()`; `UnrealSharp.Editor/SolutionManager.cs`:
+`MSBuildWorkspace.Create()` + `OpenProjectAsync`). A new `src/NetPrints.Workspace` project implements
+`IProjectSystem` (interface in Core) with:
+- **Evaluation** (properties, `NetPrintsGraph` and `NetPrintsExtension` items): in-process
+  `Microsoft.Build.Evaluation.Project` after Locator registration;
+- **References, compilation options and other sources**: `MSBuildWorkspace.OpenProjectAsync`
+  (Roslyn 5.9.0; its design-time build runs in Roslyn's out-of-process build host);
+- **Edits** (`OutputType`, `NetPrintsProfile`, `Reference`, source directories):
+  `Microsoft.Build.Construction.ProjectRootElement` (preserves formatting);
+- **Restore**: `dotnet restore <csproj>` out of process when `obj/project.assets.json` is missing or
+  older than the project file (MSBuildWorkspace does not restore);
+- **Build/Run**: `dotnet build <csproj> -nologo -tl:off -v:quiet` and `dotnet run --project <csproj> --no-build`
+  out of process; messages parsed from MSBuild's canonical format (`file(line,col): error ID: text [project]`).
+
+**Evidence** (`wsspike/`, SDK 10.0.400, Microsoft.Build.Locator 1.11.2, Workspaces.MSBuild 5.9.0):
+Locator registered ".NET Core SDK 10.0.400"; `OpenProjectAsync` took **0.8 s** and returned 167
+metadata references with `System.Console.dll` from `packs/Microsoft.NETCore.App.Ref/10.0.11/ref/net10.0/`;
+`GetDocumentationCommentXml()` for `Console.WriteLine(string)` returned the pack summary (**D5 solved
+without custom probing**); the generated `A.netpc.g.cs`/`B.netpc.g.cs` were project documents and the
+compilation had 0 errors; in-process evaluation read `OutputType=Exe` and 2 `NetPrintsGraph` items.
+Gotcha: Workspaces.MSBuild brings `Microsoft.Build.Framework` transitively; Locator's MSBL001 check
+fails the build unless `Microsoft.Build` **and** `Microsoft.Build.Framework` are referenced with
+`ExcludeAssets="runtime" PrivateAssets="all"`.
+
+**Consequences**: `ReferencePackResolver`, `DotNetEnvironment` probing, `ProjectCompiler`, runtimeconfig
+writing and `ProjectDocument` are dropped (R1 superseded). The editor needs the .NET SDK (K11).
+Locator registers one MSBuild per process, before any `Microsoft.Build` type is touched (Desktop `Main`,
+test module initializers). Not WASM-safe: behind `IProjectSystem`, hosted by the P5 sidecar.
+
+### R15. Incremental generation, nesting and "never compile twice"
+
+Verified in `sdkspike/` (`dotnet msbuild -getItem:Compile`): the targets file (evaluated after the
+SDK's default `Compile` glob) does `<Compile Remove="**/*.netpc.g.cs" />` and then
+`<Compile Include="@(NetPrintsGraph->'%(GeneratedFile)')" />`, so each generated file is in `Compile`
+exactly once whether or not it existed at evaluation time. `GeneratedFile` and `DependentUpon`
+metadata are set with `<NetPrintsGraph Update="@(NetPrintsGraph)" GeneratedFile="%(RootDir)%(Directory)%(Filename).g.cs" DependentUpon="%(Filename)%(Extension)" />`
+(an `ItemDefinitionGroup` does **not** expand `%(Filename)` — verified, it stays literal); the item
+transform copies `DependentUpon` onto the `Compile` items (`B.netpc.g.cs → B.netpc.json`). Inputs =
+graphs + generator + `@(NetPrintsExtension)` assemblies + the project file; Outputs = the transform, so
+MSBuild's partial builds pass only out-of-date graphs. VS Code nesting:
+`"explorer.fileNesting.patterns": { "*.netpc.json": "${capture}.netpc.g.cs" }`.
+
+### R16. Packages added by the revision
+
+| Package | Version | Used by |
+|---|---|---|
+| Microsoft.Build.Locator | 1.11.2 | Workspace, Desktop, test projects (registration) |
+| Microsoft.CodeAnalysis.Workspaces.MSBuild | 5.9.0 | Workspace |
+| Microsoft.Build, Microsoft.Build.Framework | 18.0.2 (`ExcludeAssets=runtime`, `PrivateAssets=all`) | Workspace (compile-time only; runtime comes from the SDK via Locator) |
+
+UnrealSharp pins Locator 1.9.1 and Workspaces.MSBuild 5.6.0; NetPrints uses the latest stable (C IV).

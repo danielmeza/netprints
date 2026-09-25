@@ -4,9 +4,10 @@ Paths use the post-reorganization layout (plan.md). Where to find the rest:
 
 | Area | Contract |
 |---|---|
-| Documents (JSON schema v1, DTO records, formats, stores, mapper, persistence, legacy rules) | [contracts/document-format.md](./contracts/document-format.md) |
+| Project file (`.csproj`), `NetPrints.Sdk` targets, generator, `IProjectSystem`, legacy conversion | [contracts/project-system.md](./contracts/project-system.md) |
+| Graph documents (JSON schema v1, DTO records, formats, stores, mapper, persistence, legacy graph rules) | [contracts/document-format.md](./contracts/document-format.md) |
 | Extension points, manifest, loader, registry, host channel, settings, profiles, catalogs | [contracts/extension-points.md](./contracts/extension-points.md) |
-| Reference packs, compiler, diagnostics, source map, quick info | [contracts/references-and-compilation.md](./contracts/references-and-compilation.md) |
+| Diagnostics, source map, translator output, quick info | [contracts/compilation-and-diagnostics.md](./contracts/compilation-and-diagnostics.md) |
 | Editor context, VMs, composition/DI, error model, logging ids, architecture gate | [contracts/editor-services.md](./contracts/editor-services.md) |
 
 This file defines the **runtime model changes** in `src/NetPrints.Core` and the **old → new mapping**.
@@ -30,7 +31,7 @@ public abstract partial class ModelObject;
 | `NetPrints.Graph.Node` | `ModelObject` | `Name`, `PositionX`, `PositionY` (+ the existing `OnPositionChanged` event kept), `IsPure` (computed, raised by `SetPurity` callers), subclass state properties (e.g. `MakeArrayNode.UsePredefinedSize`) |
 | `NetPrints.Graph.NodePin` | `ModelObject` | `Name`; data pins `UnconnectedValue`, `IncomingPin`; exec/type pins `IncomingPin`/`OutgoingPin` |
 | `NetPrints.Core.Variable` | `ModelObject` | `Name`, `Visibility`, `Modifiers`, `GetterMethod`, `SetterMethod`, `Type` (computed from the type graph) |
-| `NetPrints.Core.Project` | `ModelObject` | `Name`, `DefaultNamespace`, `Path`, `CompilationOutput`, `OutputBinaryType`, `IsCompiling`, `CompilationMessage`, `LastCompilationSucceeded`, `LastDiagnostics`, `LastCompiledAssemblyPath`, `CanCompile`, `CanCompileAndRun`, `TargetFramework`, `ProfileId` |
+| `NetPrints.Core.Project` | `ModelObject` | `Name`, `DefaultNamespace`, `Path`, `OutputBinaryType`, `IsCompiling`, `CompilationMessage`, `LastCompilationSucceeded`, `LastDiagnostics`, `CanCompile`, `CanCompileAndRun`, `TargetFramework`, `ProfileId`, `Snapshot` |
 | `NetPrints.Core.LocalVariable` (new) | `ModelObject` | `Name`, `Type` |
 
 Rules:
@@ -42,8 +43,9 @@ Rules:
 - `Node.OnInputTypeChanged` (protected virtual) is renamed `HandleInputTypeChanged` so no Fody-style
   `On<Name>Changed` convention method remains.
 - DataContract deserialization runs no constructors or initializers: every **new** collection or
-  defaulted member is initialized in an `[OnDeserializing]` method (`LocalVariables`, `EventGraphs`,
-  `TargetFramework`, `FrameworkReferences`, `ProfileId`, `ExtensionIds`, `ExtensionSettings`).
+  defaulted member of a *graph-side* type is initialized in an `[OnDeserializing]` method (`LocalVariables`,
+  `EventGraphs`, `Node.Id` stays null until `AssignLegacyNodeIds`). The legacy `Project` DataContract is
+  read only by `ProjectConverter` (project-system.md §5).
 
 ## 2. Identity and graph keys
 
@@ -146,25 +148,42 @@ public sealed partial class EventEntryNode : Node
 | Allowed nodes | Method-graph built-ins except `return`; extension kinds with `GraphKinds.Event`. |
 | Method graphs | `Translate(MethodGraph)` output unchanged (it still declares variables for all nodes of the graph, as today). |
 
-## 5. Project and references
+## 5. Project (backed by the `.csproj`)
 
 ```csharp
 namespace NetPrints.Core;
 
 public partial class Project : ModelObject
 {
-    [ObservableProperty, DataMember] public partial string TargetFramework { get; set; }                 // "net10.0"
-    [DataMember] public ObservableRangeCollection<string> FrameworkReferences { get; private set; }       // ["Microsoft.NETCore.App"]
-    [ObservableProperty, DataMember] public partial string ProfileId { get; set; }                        // "netprints.default"
-    [DataMember] public ObservableRangeCollection<string> ExtensionIds { get; private set; }
-    public SortedDictionary<string, JsonElement> ExtensionSettings { get; }                               // StringComparer.Ordinal
-    public ObservableRangeCollection<CodeDiagnostic> LastDiagnostics { get; }                             // replaces LastCompileErrors
-    public static Project CreateNew(string name, string defaultNamespace, IProjectProfile profile,
-        ProjectCompilationOutput compilationOutput = ProjectCompilationOutput.All);
-    public string GetClassStoragePath(ClassGraph cls);                                                    // "<FullName>.netpc.json"
-    // removed: LoadFromPath, Save, SaveClassInProjectDirectory, AddExistingClass, CompileProject, DefaultReferences
+    public static Project FromSnapshot(ProjectSnapshot snapshot);      // Name, DefaultNamespace (RootNamespace), OutputBinaryType, TargetFramework, ProfileId, Path (= ProjectFilePath)
+    [ObservableProperty] public partial ProjectSnapshot Snapshot { get; set; }   // replaced after LoadAsync/ApplyAsync; derived properties re-raised
+    public string Path { get; }                                         // full .csproj path
+    public string Name { get; }                                         // from snapshot (read-only; rename = rename file, not in P1)
+    public string DefaultNamespace { get; }                             // RootNamespace
+    public BinaryType OutputBinaryType { get; }                         // OutputType; change via IProjectSystem.ApplyAsync(SetOutputType)
+    public string TargetFramework { get; }
+    public string ProfileId { get; }
+    public ObservableRangeCollection<ClassGraph> Classes { get; }
+    public ObservableRangeCollection<CodeDiagnostic> LastDiagnostics { get; }   // replaces LastCompileErrors
+    [ObservableProperty] public partial bool IsCompiling { get; set; }
+    [ObservableProperty] public partial string CompilationMessage { get; set; } // "Ready" | "Compiling..." | "Build succeeded" | "Build failed with N error(s)"
+    [ObservableProperty] public partial bool LastCompilationSucceeded { get; set; }
+    public bool CanCompile { get; }                                     // !IsCompiling && Snapshot.ReferencesNetPrintsSdk
+    public bool CanCompileAndRun { get; }                               // CanCompile && OutputBinaryType == Executable
+    public string GetGraphFilePath(ClassGraph cls);                     // loaded path, or <project dir>/<FullName>.netpc.json for new classes
+    public ClassGraph CreateNewClass(IProjectProfile profile);          // unique name MyClass, MyClass2… (PAR-12), namespace = DefaultNamespace
+    // removed: CreateNew, LoadFromPath, Save, SaveClassInProjectDirectory, AddExistingClass, CompileProject, RunProject,
+    //          GetRunCommand, References, ClassPaths, CompilationOutput, SaveVersion, LastCompiledAssemblyPath, DefaultReferences
 }
 ```
+
+`Project` no longer has `[DataContract]` members used for writing. The legacy DataContract shapes are
+re-declared in `src/NetPrints.Serialization/Legacy/` as `LegacyProject` (`[DataContract(Name = "Project",
+Namespace = "http://schemas.datacontract.org/2004/07/NetPrints.Core")]`) and `LegacyCompilationReference`,
+`LegacyAssemblyReference`, `LegacyFrameworkAssemblyReference`, `LegacySourceDirectoryReference` (each with
+the original contract `Name`/`Namespace` and `[KnownType]`s), read only by `ProjectConverter`; Core's
+original reference classes are deleted.
+The References dialog (PAR-16…20) works on `ProjectSnapshot.DeclaredReferences` + `ProjectEdit`s.
 
 ## 6. Old → new mapping (whole phase)
 
@@ -173,12 +192,15 @@ public partial class Project : ModelObject
 | `PropertyChanged.Fody` `[AddINotifyPropertyChangedInterface]` on `Node`, `NodePin`, `Variable`, `Project` | `ModelObject` + CTK `[ObservableProperty]` (`src/NetPrints.Core/Core/ModelObject.cs`) | `FodyWeavers.xml/.xsd` deleted; `Fody`, `PropertyChanged.Fody` removed from `Directory.Packages.props` |
 | `[DoNotNotify]` in `Graph/TypeNode.cs` (`ObservableValue<T>`) | removed (manual INPC class unchanged) | |
 | `NetPrints/Serialization/SerializationHelper.cs` | `src/NetPrints.Serialization/Legacy/LegacyXmlDocumentFormat.cs`, `…/Json/JsonDocumentFormat.cs` | document-format.md §4 |
-| `Project.LoadFromPath/Save/SaveClassInProjectDirectory/AddExistingClass` | `ProjectPersistence` + `ProjectFiles` | async; editor, CLI, tests updated |
-| `Project.CompileProject()` | `ProjectCompiler.CompileAsync` (`src/NetPrints.Core/Compilation/ProjectCompiler.cs`) | |
+| `Project.LoadFromPath/Save/SaveClassInProjectDirectory/AddExistingClass` | `ProjectPersistence` (graphs) + `IProjectSystem` (`.csproj`) | async; editor, CLI, tests updated |
+| `.netpp` project file (DataContract XML) | `.csproj` + `NetPrints.Sdk`; legacy → `ProjectConverter` | project-system.md |
+| `Project.References`, `CompilationReference` hierarchy | MSBuild items via `ProjectSnapshot.DeclaredReferences`/`ProjectEdit`; legacy classes moved to `Serialization/Legacy/` | |
+| `ProjectCompilationOutput` setting | removed | spec clarification |
+| `Project.CompileProject()`, `RunProject()`, `CodeCompiler` (Roslyn emit), runtimeconfig writing | `IProjectSystem.BuildAsync` / `GetRunCommand` (`dotnet build` / `dotnet run`) | |
 | `Project.LastCompileErrors` (`string`) | `Project.LastDiagnostics` (`CodeDiagnostic`) | error list rows |
-| `Core/ReferenceAssemblyResolver.cs` | `src/NetPrints.Core/References/ReferencePackResolver.cs`, `DotNetHost.cs` | references-and-compilation.md §2.3 |
+| `Core/ReferenceAssemblyResolver.cs` | deleted; references from MSBuild (`ProjectSnapshot.References`) | project-system.md §4 |
 | `Core/FrameworkAssemblyReference.cs` `ProgramFilesX86` path | legacy marker only | |
-| `NetPrints.Reflection/DocumentationUtil.cs` path probing | `ResolvedAssembly.DocumentationPath` | D5 |
+| `NetPrints.Reflection/DocumentationUtil.cs` path probing | `ResolvedAssembly.DocumentationPath` (sibling `.xml` of the MSBuild-resolved reference) | D5 |
 | `ReflectionProvider(assemblyPaths, sourcePaths, sources)` | `ReflectionProvider(IReadOnlyList<ResolvedAssembly>, …, IReadOnlySet<string> excludedAssemblyNames)` | |
 | `ExecutionGraphTranslator` static `nodeTypeHandlers` table, public `Translate*Node` methods | `NodeTranslatorRegistry.BuiltIn` (internal built-in translators), `INodeTranslator` | |
 | `new ClassTranslator()` / `new ExecutionGraphTranslator()` | `new ClassTranslator(TranslationEnvironment)` | callers pass `registry.Translation` or `TranslationEnvironment.BuiltIn` |
@@ -189,5 +211,6 @@ public partial class Project : ModelObject
 | `GraphEditorView.axaml.cs` pointer handlers for disconnect/reroute/connection completed | `NodeGraphVM` commands bound to Nodify command properties | |
 | `EditorComposition(Func<EditorContext, EditorContext>? customize)` | `EditorComposition(EditorHostServices)`; test compositions in test projects | |
 | `Desktop` `.LogToTrace()` | `AvaloniaLogSink` + console `ILoggerFactory` | |
-| `samples/HelloWorld/*.netpp`, `*.netpc` | `*.netpp.json`, `*.netpc.json`; legacy copies in `tests/NetPrints.Core.Tests/Fixtures/Legacy/HelloWorld/` | |
+| `samples/HelloWorld/*.netpp`, `*.netpc` | `HelloWorld.csproj`, `HelloWorld.Program.netpc.json`, `HelloWorld.Program.netpc.g.cs` (+ `samples/Directory.Build.props` for in-repo SDK import); legacy copies in `tests/NetPrints.Core.Tests/Fixtures/Legacy/HelloWorld/` | |
+| (none) | `src/NetPrints.Sdk`, `src/NetPrints.Generator`, `src/NetPrints.Workspace` | new projects |
 | `Nullable=disable`, `TreatWarningsAsErrors=false` in Core/Reflection/Core.Tests | enabled everywhere | `Directory.Build.props` default applies |
