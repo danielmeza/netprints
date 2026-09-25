@@ -187,7 +187,7 @@ names are omitted.
 
 ```json
 {
-  "$schema": "https://raw.githubusercontent.com/danielmeza/netprints/master/schemas/netpc.v1.schema.json",
+  "$schema": "https://danielmeza.github.io/netprints/schemas/netpc.v1.schema.json",
   "schemaVersion": 1,
   "namespace": "HelloWorld",
   "name": "Program",
@@ -376,7 +376,7 @@ public static class CanonicalJsonWriter
 
 public static class NetPrintsSchema
 {
-    public const string V1Url = "https://raw.githubusercontent.com/danielmeza/netprints/master/schemas/netpc.v1.schema.json";
+    public const string V1Url = "https://danielmeza.github.io/netprints/schemas/netpc.v1.schema.json";
 }
 ```
 
@@ -683,7 +683,8 @@ public static class NetPrintsJsonSchema
 | Transform | Root: add `"$schema": "https://json-schema.org/draft/2020-12/schema"`, `"$id": NetPrintsSchema.V1Url`, `"title": "NetPrints class graph (schema v1)"`, and a root property `"$schema": { "type": "string" }`; `schemaVersion` gets `"const": 1`; every layout position array gets `"minItems": 2, "maxItems": 2`; the `NodeDocument` schema gets one more `anyOf` branch for extension kinds: `{ "type": "object", "required": ["$kind", "id"], "properties": { "$kind": { "type": "string", "pattern": "/" } } }`; `required` lists exactly the Req. = yes members of §1.4–§1.6 (fix what the exporter emits). No `additionalProperties: false` anywhere (the reader is tolerant). |
 | Output | `JsonNode.ToJsonString` with `WriteIndented = true`, `IndentSize = 2`, `NewLine = "\n"`, plus a final `\n`. Committed at `schemas/netpc.v1.schema.json`; `NETPRINTS_UPDATE_SNAPSHOTS=1` rewrites it (DF-T24). |
 | Versioning | A schema version bump adds `schemas/netpc.v2.schema.json` and a new `V2Url`; old files stay published. |
-| Editors | VS Code and Rider validate and complete through the `$schema` URL once the file is on `master`. SchemaStore registration (`fileMatch: ["*.netpc.json"]`) is a follow-up after P1. |
+| Publication | The docs workflow copies `schemas/*.schema.json` to `/schemas/` of the GitHub Pages site (release-and-docs.md §8, §10), so `V1Url` resolves once the owner has enabled Pages and the first deployment ran; the committed file stays the source. The reader never fetches the URL. |
+| Editors | VS Code and Rider validate and complete through the `$schema` URL once it resolves. SchemaStore registration (`fileMatch: ["*.netpc.json"]`) is a follow-up after P1. |
 | Open item | How the exporter renders STJ polymorphism (`anyOf` with `$kind` `const`) is verified in T041; any gap is fixed in `TransformSchemaNode` and recorded in research.md R17. Validating documents against the schema with a validator library is not part of P1. |
 
 ## 7. Test obligations

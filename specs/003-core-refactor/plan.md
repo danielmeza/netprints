@@ -32,6 +32,17 @@ positions, `$schema` first with a JSON Schema generated from the DTOs, a toleran
 saves, a `.gitattributes` LF template and tests that keep the committed schema, sample graphs and
 `.netpc.g.cs` files up to date. A `netprints merge` git driver is a follow-up after P1.
 
+**Release, packages and docs (owner-approved research `docs/research/2026-09-25-release-and-docs/`,
+research R18–R19, sub-phase L):** MinVer versions everything from `v*` tags; `NetPrints.Core`,
+`NetPrints.Reflection`, `NetPrints.Sdk` and the `netprints` tool (`NetPrints.Cli`) pack with full metadata;
+a git-ignored `local-packages/` feed and scripts prove the tool and the SDK package work from it; a
+`release.yml` (kicad-sharp shape) publishes through Trusted Publishing and creates a GitHub Release with
+self-contained editor archives, checksums and attestations, and runs as a dry run on the PR; a Docusaurus
+site with a DocFX API reference and the graph schema goes to GitHub Pages, and the wiki points to it. The
+editor keeps compiling against MSBuild-resolved references only (R19: no `Basic.Reference.Assemblies`), and a
+CI job publishes it self-contained and runs a headless `--check-project` on HelloWorld. Nothing is published
+during P1.
+
 Reused unchanged (research.md §1): the versioned, cycle-free JSON graph documents behind
 `IDocumentFormat`/`IDocumentStore`/`IDocumentMapper` with legacy import and migrations; the extension
 points of the plan page (node libraries, emitters, type catalogs with a composite reflection provider,
@@ -49,7 +60,9 @@ first tasks record golden C# from the unmodified code so "identical C#" is check
 CommunityToolkit.Mvvm 8.4.2, DynamicData 9.4.33); added Avalonia.AvaloniaEdit 12.0.0,
 AvaloniaEdit.TextMate 12.0.0, Microsoft.Extensions.Logging(.Abstractions/.Console) 10.0.12,
 Microsoft.Build.Locator 1.11.2, Microsoft.CodeAnalysis.Workspaces.MSBuild 5.9.0, Microsoft.Build(.Framework)
-18.0.2 compile-only; removed Fody/PropertyChanged.Fody (research.md §3, R16).
+18.0.2 compile-only; MinVer 8.0.0 (`GlobalPackageReference`); removed Fody/PropertyChanged.Fody (research.md §3,
+R16, R19). Docs toolchain (not part of the solution build): DocFX 2.81.0 as a local dotnet tool, Node 24 with
+Docusaurus 3.10.2 in `website/`.
 
 **Storage**: `<Name>.csproj` (MSBuild, [contracts/project-system.md](./contracts/project-system.md));
 graph files `*.netpc.json` through `IDocumentStore` (schema v1, [contracts/document-format.md](./contracts/document-format.md));
@@ -64,7 +77,8 @@ documents, regenerated with `NETPRINTS_UPDATE_SNAPSHOTS=1` and reviewed.
 
 **Target Platform**: Linux first (CI `ubuntu-latest`); Windows and macOS supported.
 
-**Project Type**: libraries + desktop app + CLI + NuGet package with MSBuild targets and a build-time tool.
+**Project Type**: libraries + desktop app + CLI + NuGet package with MSBuild targets and a build-time tool;
+released as four NuGet packages and three editor archives, documented by a static site (sub-phase L).
 
 **Hosts that must build NetPrints projects**: `dotnet build` (CI, CLI), Visual Studio 2022/2026 (.NET Framework MSBuild), Rider — hence `Exec` rather than a .NET task (research R12). The editor needs the .NET 10 SDK.
 
@@ -91,6 +105,7 @@ extensions load in the editor only after trust (FR-019); the generator never ref
 | V. Tests gate | ✅ | Golden C# + notification-map characterization before refactor; round-trip, determinism, loader failure, UI tests. |
 | VI. Deterministic, versioned output | ✅ | `SchemaVersion` + migrations; canonical JSON (one line per leaf record, sorted sets, integer positions); ids are document data, so the same document still gives the same bytes; seeded ids in tests; emitter ordering; `SaveVersion` timestamp-like field dropped from documents. |
 | VII. Abstractions for I/O | ✅ | `IDocumentFormat`, `IDocumentStore`, `IProjectSystem` (MSBuild behind it; P5 sidecar can host it), `ITypeCatalog`, `IHostChannel`. |
+| Development workflow: CI Linux-only | ✅ | `CI` stays on `ubuntu-latest` (new jobs `packages`, `desktop-publish`); only `release.yml` uses `macos-latest`, for the `osx-arm64` archive (research R18; PATCH clarification proposed below). |
 | VIII. Simplicity, one PR | ⚠️ size | One spec/branch/PR as required; see "PR size" below. One Serialization project instead of three (research R10). |
 | Tech: no Fody in new code | ✅ | Fody removed entirely. |
 | Tech: STJ source-gen default format | ✅ | `NetPrintsJsonContext`; legacy XML import-only. |
@@ -110,7 +125,8 @@ specs/003-core-refactor/
     ├── extension-points.md      # INodeLibrary, emitters, ITypeCatalog, IProjectProfile, IHostChannel, settings, manifest, loader
     ├── project-system.md        # .csproj, NetPrints.Sdk props/targets, generator, IProjectSystem, conversion
     ├── compilation-and-diagnostics.md  # diagnostics, DiagnosticMapper, SourceMap, quick info
-    └── editor-services.md       # delta to P0: EditorContext, VMs, composition/DI, error model, logging ids, architecture gate
+    ├── editor-services.md       # delta to P0: EditorContext, VMs, composition/DI, error model, logging ids, architecture gate
+    └── release-and-docs.md      # MinVer, package metadata, local feed, --check-project, release/docs/wiki workflows, owner steps
 ```
 
 ### Source Code (after the reorganization PR; new = added by P1)
@@ -137,6 +153,16 @@ tests/NetPrints.Editor.UITests/# + CodeView/, Events/, Variables/ page objects a
 tests/NetPrints.TestExtension/ # new: test asset extension
 samples/HelloWorld/            # HelloWorld.csproj + .netpc.json + .netpc.g.cs + .gitattributes; samples/Directory.Build.* for in-repo SDK import
 schemas/                       # new: netpc.v1.schema.json (generated from the DTOs, committed, golden-tested)
+Directory.Build.targets        # new (L): icon + package README for packable projects
+NuGet.config, local-packages/  # new (L): local feed (.gitkeep tracked, contents ignored)
+eng/PackageReadme.targets      # new (L): nuget.org-safe README generated at pack time
+assets/icons/netprints-icon.png# new (L): package and site icon
+scripts/                       # new (L): pack-local, verify-packages, smoke-desktop, archive-desktop, build-docs
+.config/dotnet-tools.json      # new (L): docfx
+website/                       # new (L): Docusaurus 3 site reading ../docs
+docs/                          # + index.md, guide/, contributing/, api/ (DocFX), _category_.json files, adr/0002
+.github/                       # + workflows/release.yml, docs.yml, wiki.yml; release.yml (notes categories),
+                               #   release-notes.md, wiki/Home.md, wiki/_Sidebar.md; dependabot npm entry
 ```
 
 **Structure Decision**: dependency direction `Core ← Reflection`, `Core ← Serialization`,
@@ -160,11 +186,12 @@ Each sub-phase ends green (`dotnet test --solution NetPrints.slnx`) and is a nat
 | H | Method-local variables | US5 | translator snapshot + build/run test |
 | I | Code view + diagnostics + navigation + hover | US6 | UI tests + baselines reviewed |
 | J | VM/editor follow-ups: narrow deps, wrappers, gate, Nodify commands, explicit composition, logging call sites | US7 | gate demonstrated; SC-007, SC-008 |
-| K | Polish: README, full suite, E2E once, IDE checks, PR | — | CI green |
+| K | Polish: README, full suite, E2E once, IDE checks | — | CI green |
+| L | Release, packages and docs: MinVer, package metadata, packable projects, local feed + verification, `--check-project` + self-contained smoke, release workflow (dry run), DocFX + Docusaurus + docs workflow, wiki, README install, ADR 0002; then the PR is marked ready (T108) | US8 | SC-011…SC-015; RL-T01…T12; release dry run green on the PR |
 
 **PR size (owner decision: one PR).** One branch and one PR, opened as a **draft after sub-phase E**
 so the reviewer reviews A–E (model, graph format, build pipeline, project system; the roadmap "done
-when") early, then F–K as they land. Each sub-phase is a separate, reviewable commit range.
+when") early, then F–L as they land. Each sub-phase is a separate, reviewable commit range.
 
 ## Complexity Tracking
 
@@ -178,6 +205,9 @@ when") early, then F–K as they land. Each sub-phase is a separate, reviewable 
 | Generated `.netpc.g.cs` committed to the repo | Owner requirement: reviews show the C# | Generating into `obj/` hides the C# from reviews |
 | Editor requires the .NET SDK | MSBuild evaluation/build of the `.csproj` | A custom project format (the previous design) — rejected by the owner |
 | Custom canonical JSON writer (~200 lines) on top of STJ | STJ `WriteIndented` puts every scalar on its own line, so a position or connection spans 4 lines and neighbouring edits conflict (graph-format research §3) | STJ indentation alone; `WriteRawValue` in converters (indentation interaction unverified) |
+| Node.js toolchain (Docusaurus) next to the .NET build | Owner-approved docs stack (research R18): the look the owner liked on nuke.build, used by Avalonia, Silk.NET, Fallout | DocFX alone (no Node): weaker site; kept for the API reference only |
+| A headless `--check-project` mode in the desktop app | The only way to test the published editor's own MSBuild/Roslyn layout headless (R19, RL-T06) | Smoke through the CLI: a different application with a different publish layout |
+| Release workflow uses a macOS runner | `osx-arm64` apphost must be signed ad hoc on macOS (research release §6) | Cross-publishing from Linux produces an unsigned apphost that macOS kills |
 | Ambient id generator (`IdGeneration.Current`, `AsyncLocal`) | Node and member constructors have no services; tests need seeded ids | Passing a generator to every `Node` constructor changes every node type and extension author code |
 
 ## Governance proposals
@@ -186,4 +216,6 @@ Applied by the coordinator with the owner's approval on 2026-09-25 (roadmap P1 t
 the superseded `ViewportTransform` follow-up and `MetadataReference` caching in P8; the csproj model and
 the restated "done when"; the SDK requirement and "no source-generator mode"; AvaloniaEdit and
 Microsoft.Extensions.Logging in the tech constraints; the narrowed `netstandard2.0` exception; the graph
-format for version control. Also applied later the same day: U1 adds `NetPrints.Sdk` to UnrealSharp's Script `.csproj`; the graph-format follow-ups are in P2; the release and docs stack is in P1. No other open proposals.
+format for version control. Also applied later the same day: U1 adds `NetPrints.Sdk` to UnrealSharp's Script `.csproj`; the graph-format follow-ups are in P2; the release and docs stack is in P1. **Open proposal (sub-phase L, research R18)**: a constitution PATCH
+clarification that release packaging workflows may use macOS or Windows runners (the main `CI` workflow stays
+Linux-only).

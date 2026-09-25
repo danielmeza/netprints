@@ -43,3 +43,7 @@
   `docs/research/2026-09-25-graph-format/`): FR-043…FR-050, SC-009, SC-010, US1 scenarios 7–10 and three
   edge cases added; spec re-validated against every item above; all pass. JSON, git and JSON Schema are
   named because the file format and its merge behaviour are the product requirement.
+- Revision 2026-09-25 (owner-approved release and docs stack, `docs/research/2026-09-25-release-and-docs/`):
+  US8, FR-051…FR-063, SC-011…SC-015, four clarifications, five edge cases and three key entities added;
+  spec re-validated against every item above; all pass. NuGet, GitHub Releases, GitHub Pages and the .NET SDK
+  are named because the distribution channels and the install requirement are the product requirement.

@@ -10,6 +10,10 @@
 > **Revision 2026-09-25 (owner-approved graph-format research):** §6 (R17) folds the version-control
 > changes of `docs/research/2026-09-25-graph-format/` §5–§6 into schema v1. It amends U2 and R5
 > (canonical writer, tolerant reader) and nothing else.
+>
+> **Revision 2026-09-25 (owner-approved release and docs research):** §7 (R18, R19) folds
+> `docs/research/2026-09-25-release-and-docs/` into sub-phase L. It changes the `$schema` URL of R17 and
+> drops the version from the generated-file header (project-system.md §3); nothing else above changes.
 
 Owner rule for this phase: **reuse, don't reinvent**. §1 lists every decision taken from existing
 sources. §2 records the research done only for questions those sources left open. Spikes ran on Linux
@@ -413,7 +417,7 @@ Details the research left open, decided here:
 | Auto-placement | Next to the first placed neighbour (upstream +300 px, downstream −300 px), else a column right of the graph; collisions push down by 120 px (data-model.md §2) |
 | Inline records | Chosen by property name in the `JsonNode` tree (document-format.md §2.3.1), not by CLR type, so the writer needs no type information and extension documents follow the same rule; `Utf8JsonWriter.WriteRawValue` was not used because its interaction with indentation is unverified |
 | String escaping | `JavaScriptEncoder.UnsafeRelaxedJsonEscaping` (readable generic names and non-ASCII text) |
-| `$schema` value | `https://raw.githubusercontent.com/danielmeza/netprints/master/schemas/netpc.v1.schema.json`, a URL that resolves once the file is on `master`; ignored on read |
+| `$schema` value | `https://danielmeza.github.io/netprints/schemas/netpc.v1.schema.json` (revised by R18: the GitHub Pages site publishes `schemas/` under `/schemas/`; previously a `raw.githubusercontent.com` URL); ignored on read |
 | Unknown properties on read | Ignored; dropped on the next save of that class |
 | Missing or duplicate ids on read | `DocumentFormatException` (nodes and members alike) |
 | Dirty tracking | Explicit `ClassGraph.IsDirty`, set by the editor on every undoable command, node move and inspector edit; `SaveAsync` maps and writes only dirty classes, so no ripple saves (research §5.2 rule 12) |
@@ -423,3 +427,80 @@ Details the research left open, decided here:
 | Merge driver | `netprints merge` / `git-install` / `textconv` diff: follow-up after P1 (research §3, §5.4) |
 
 Findings to record here during implementation: the exporter's polymorphism output (K14, T041).
+
+## 7. Revision: release, packages and docs (research R18–R19)
+
+### R18. Release and docs stack (reused from the owner-approved research)
+
+**Source**: `docs/research/2026-09-25-release-and-docs/README.md` (approved 2026-09-25), §10 summary; the
+owner's `kicad-sharp` repository for the concrete shapes (release jobs, `NuGet.config` + git-ignored
+`local-packages/` + `.gitkeep`, a pack script with a `0.1.0-local.<timestamp>` version, README packed from
+`Directory.Build.targets`). Normative text: contracts/release-and-docs.md.
+
+| Topic | Decision (runner-up in the research) | Detail decided here |
+|---|---|---|
+| Versioning | MinVer 8.0.0, `v` prefix, minimum 0.1, `GlobalPackageReference` (tag → `-p:Version`) | local packs use `MinVerVersionOverride` because a global `Version` does not stop MinVer from setting `PackageVersion`; `MINVER1001` (no `.git`, source archives) is not an error; the version is read with `-t:MinVer -getProperty:MinVerVersion` |
+| Generated header | — | no NetPrints version in `.netpc.g.cs` headers: every commit has its own MinVer version, and committed generated files would otherwise change on each update and make DF-T26 depend on git height |
+| Pipeline | plain GitHub Actions + `scripts/*.sh` (Cake.Sdk `build.cs`) | same scripts in CI and locally: `pack-local.sh`, `verify-packages.sh`, `smoke-desktop.sh`, `archive-desktop.sh`, `build-docs.sh` |
+| Packages | Core, Reflection, Sdk, Cli (`netprints` tool) | id `NetPrints.Cli` for the tool (kicad-sharp: `KiCadSharp.Cli` → `kicadsharp`), all under one `NetPrints.` prefix; the SDK package has no symbol package (NU5017 without build output); package validation on the two libraries only |
+| Package README | root README, packed | generated at pack time from the root README (HTML → Markdown, relative links pinned to the commit; readme-craft `PackageReadme.targets`), because nuget.org drops HTML and relative links |
+| Publishing | Trusted Publishing, environment `release` | kicad-sharp job shape; a first step names the missing `NUGET_USER` secret |
+| Desktop | self-contained folder archives, SHA256SUMS, `actions/attest` (Velopack next) | `osx-arm64` on `macos-latest` for the ad-hoc signed apphost; win-x64 cross-published on Linux and not smoke-tested (no Windows runner in P1) |
+| Dry runs | `workflow_dispatch` | plus a path-filtered `pull_request` trigger, because `workflow_dispatch` works only once the file is on the default branch, and the P1 PR must show a green dry run |
+| Docs | Docusaurus 3 in `website/` reading `../docs` (DocFX only) | `numberPrefixParser: false` so `adr/0002-…` and `research/2026-09-25-…` keep their names; a small remark plugin rewrites links that leave `docs/` to GitHub URLs; `specs/` is not published |
+| API reference | DocFX `modern` at `/api/` (DefaultDocumentation) | DocFX 2.81.0 as a local tool (`.config/dotnet-tools.json`); packable libraries only |
+| Research notes | — | published as a "Research notes" category with a generated index that says they are dated and not updated; prototypes excluded |
+| Wiki | two-page pointer via github-wiki-action (curated mirror) | `strategy: init`, gated by `vars.PUBLISH_WIKI` and a `git ls-remote` check; no PR trigger |
+| Publishing gates | — | Pages deploy gated by `vars.PUBLISH_DOCS`, wiki by `vars.PUBLISH_WIKI`, nuget.org and the GitHub Release by `v*` tags; nothing publishes from P1 |
+| `$schema` URL | — | `https://danielmeza.github.io/netprints/schemas/netpc.v1.schema.json`, copied from `schemas/` by `build-docs.sh`; replaces the `raw.githubusercontent.com` URL of R17 (a Pages URL survives a repository layout change and serves `application/json`) |
+
+**Constitution note**: the release workflow uses a macOS runner for the `osx-arm64` archive. The main CI
+workflow (`CI`) stays Linux-only as the constitution requires; its two new jobs (`packages`,
+`desktop-publish`) run on `ubuntu-latest`. Proposed PATCH clarification for the coordinator: "release
+packaging workflows may use macOS or Windows runners; they are not the main CI".
+
+### R19. Reference assemblies in a self-contained editor
+
+**Question** (owner): `ReferenceAssemblyResolver.FindRuntimeAssemblyPaths()` enumerates `*.dll` in
+`RuntimeEnvironment.GetRuntimeDirectory()`, which is empty in a single-file bundle and is the editor's own
+folder in a self-contained publish. Should the editor use `Basic.Reference.Assemblies.Net100` or the
+reference-pack approach already in the spec?
+
+**Decision**: the approach already in the spec, R14: references are what MSBuild resolves for the open
+project, which for the framework means the installed SDK's `packs/Microsoft.NETCore.App.Ref/<ver>/ref/net10.0/`.
+`Basic.Reference.Assemblies.Net100` is not added. Release archives are self-contained folders, never
+single-file or trimmed.
+
+**Rationale**:
+- The old fallback is gone after P1: T063 deletes `ReferenceAssemblyResolver` and `CodeCompiler`; live
+  analysis (`CodeAnalysisSession`) takes `ProjectSnapshot.References` and builds run `dotnet build`. Neither
+  depends on the editor's install layout, so the self-contained publish does not change what a graph compiles
+  against. RL-T07 keeps it that way.
+- The editor needs the .NET 10 SDK anyway (FR-011, FR-015, K11): to evaluate, restore and build the `.csproj`.
+  A bundled reference set would only help a "no project" case that no longer exists.
+- It would make analysis disagree with the build: `Basic.Reference.Assemblies.Net100` 1.8.12 is one fixed
+  `net10.0` BCL set (a 2.2 MB package with one 6.3 MB assembly that embeds the reference DLLs as resources;
+  checked 2026-09-25), with no packages, project references, other shared frameworks or future TFMs. FR-011
+  and FR-032 require the same references as `dotnet build`.
+- It ships no XML documentation (the package holds the assembly only), so tooltips (FR-014, D5) would need a
+  second source; the pack references come with their `.xml` files (R14 evidence).
+
+**Constraints found**:
+- Microsoft.Build.Locator skips SDKs whose major.minor is newer than the running runtime
+  (`DotNetSdkLocationHelper`; microsoft/MSBuildLocator#320, maintainer answer). The self-contained editor runs
+  on its bundled 10.0 runtime, so it needs a **10.0** SDK; with only a newer SDK installed it shows NPW001.
+  Documented on the install page; a framework-dependent build with roll-forward is a later option.
+- `MSBuildWorkspace` starts its build host from `BuildHost-netcore/` next to the application; the folder is
+  copied only for a direct `Microsoft.CodeAnalysis.Workspaces.MSBuild` reference (dotnet/roslyn#80127, open).
+  Desktop and Cli reference the package directly; RL-T03 and RL-T06 check the folder.
+- Running a compiled graph needs a .NET runtime; the required SDK provides it. Stated in the README, the
+  install page, the release notes and the archive's `README.txt` (FR-058).
+
+**Evidence in CI**: the `desktop-publish` job publishes the editor self-contained for linux-x64 and runs
+`NetPrints.Desktop --check-project samples/HelloWorld/HelloWorld.csproj --run` without a display: MSBuild
+registration, evaluation, `MSBuildWorkspace` references, in-process Roslyn analysis of the translated graphs,
+`dotnet build` and the run (RL-T06). The release workflow repeats it for linux-x64 and osx-arm64.
+
+**Packages** (additions to `Directory.Packages.props`): `MinVer` 8.0.0 (`GlobalPackageReference`). Tools:
+`docfx` 2.81.0 (local tool). Node packages: `website/package.json` (Docusaurus 3.10.2, React 19.3).
+

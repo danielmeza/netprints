@@ -2,6 +2,7 @@
 
 Prerequisites: .NET 10 SDK (brings `packs/Microsoft.NETCore.App.Ref`), `git` on `PATH` (DF-T23), and for E2E the P0 tools (Xvfb, openbox, xdotool; see
 `specs/001-modernize-build/quickstart.md` §5).
+For §7 also `unzip`, `zip` and Node 24 (`website/.nvmrc`); `actionlint` 1.7.x for the workflow check.
 
 ## 1. Build and test (two commands, unchanged)
 
@@ -91,3 +92,66 @@ class shows the test emitter's attribute; no error dialog. Rename the manifest's
 
 `NETPRINTS_E2E=1 dotnet test --project tests/NetPrints.Desktop.E2ETests -c Release` on a private Xvfb
 display (≥ :140, `NETPRINTS_E2E_DISPLAY_START`), as in P0.1.
+
+## 7. US8 — release, packages and docs (sub-phase L; nothing is published)
+
+Versions (a full clone is needed; a shallow one falls back to the default version):
+
+```bash
+dotnet restore src/NetPrints.Core
+dotnet msbuild src/NetPrints.Core/NetPrints.Core.csproj -t:MinVer -getProperty:MinVerVersion -p:Configuration=Release
+#   → 0.1.0-alpha.0.<commits since the start> (no tag yet)
+```
+
+Packages, the tool and the SDK from the local feed (RL-T01…T05):
+
+```bash
+ver=$(scripts/pack-local.sh --print-version)     # → 0.1.0-local.<yyyyMMddHHmmss>, packages in local-packages/
+ls local-packages                                 # 4 .nupkg + 3 .snupkg for $ver
+scripts/verify-packages.sh local-packages "$ver"  # metadata, tool install, fresh HelloWorld from NetPrints.Sdk
+unzip -p local-packages/NetPrints.Core.$ver.nupkg README.md | head   # plain Markdown, absolute links
+```
+
+The self-contained editor (RL-T06, research R19):
+
+```bash
+dotnet publish src/NetPrints.Desktop -c Release -r linux-x64 --self-contained \
+  -p:PublishSingleFile=false -p:PublishTrimmed=false -o /tmp/np-desktop
+scripts/smoke-desktop.sh /tmp/np-desktop
+# or by hand, no display needed:
+env -u DISPLAY /tmp/np-desktop/NetPrints.Desktop --check-project samples/HelloWorld/HelloWorld.csproj --run
+#   references: 167 (System.Console: …/packs/Microsoft.NETCore.App.Ref/10.0.x/ref/net10.0/System.Console.dll)
+#   analysis: 0 errors, 0 warnings / build: succeeded / Hello, World! / run: exit 0
+scripts/archive-desktop.sh /tmp/np-desktop 0.0.0-test linux-x64 && tar -tzf artifacts/desktop/NetPrints-0.0.0-test-linux-x64.tar.gz | head -3
+```
+
+Docs site (RL-T08, RL-T09):
+
+```bash
+scripts/build-docs.sh                         # DocFX → docs/api/_site, Docusaurus → website/build, + api/ and schemas/
+(cd website && npx docusaurus serve --dir build)   # http://localhost:3000/netprints/ ; API at /netprints/api/
+```
+
+Workflows (RL-T10, RL-T11): `actionlint .github/workflows/*.yml` reports nothing. On the PR, the **Release**
+workflow runs as a dry run (its `pull_request` trigger): `pack`, `desktop` ×3 and `assets` green,
+`publish-nuget` and `github-release` skipped; download the `release-assets` artifact and run
+`sha256sum -c SHA256SUMS.txt`. **Docs** builds; its `deploy` job is skipped. **Wiki** does not run.
+
+Do **not** push a `v*` tag, run `dotnet nuget push`, or set `PUBLISH_DOCS`/`PUBLISH_WIKI` during P1.
+
+## 8. Owner one-time steps (after merge; the P1 PR needs none)
+
+Exact steps in [contracts/release-and-docs.md](./contracts/release-and-docs.md) §11, copied to
+`docs/contributing/releasing.md`:
+
+1. nuget.org Trusted Publishing policy (`danielmeza`/`netprints`, `release.yml`, environment `release`) and the
+   `NUGET_USER` secret (profile name, not the email).
+2. Environment `release` (optional reviewers, tag rule `v*`).
+3. Pages source "GitHub Actions", then variable `PUBLISH_DOCS=true`.
+4. Wiki on, first page created in the web UI, then variable `PUBLISH_WIKI=true`.
+5. Labels `breaking-change` and `ignore-for-release`.
+6. First release: `git tag v0.1.0 && git push origin v0.1.0`.
+
+Until each step is done, the job that needs it is skipped (`PUBLISH_*`) or fails with a message naming the
+step (`NUGET_USER` on a tag); pull requests and dry runs never depend on them.
+

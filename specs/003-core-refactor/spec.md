@@ -3,7 +3,8 @@
 **Feature Branch**: `003-core-refactor`
 
 **Created**: 2026-09-25 | **Revised**: 2026-09-25 (owner decision: projects are SDK-style `.csproj`;
-owner-approved graph format for version control, `docs/research/2026-09-25-graph-format/`)
+owner-approved graph format for version control, `docs/research/2026-09-25-graph-format/`;
+owner-approved release and docs stack, `docs/research/2026-09-25-release-and-docs/`)
 
 **Status**: Draft
 
@@ -24,7 +25,7 @@ roadmap P1; constitution 1.2.1; the plan page (archive
 `.agent-archive/2026-09-25-session-c18f4e98/netprints-unreal-plan.html`, sections "Serialization",
 "Extension points NetPrints must expose", "Catalog tooling", "MVVM split", and "Why NetPrints can't be
 a source generator"); `specs/001-modernize-build/` (research §c, §k, §r; PR #1 review follow-ups);
-`specs/002-grid-rendering/research.md` (D8); `docs/research/2026-09-25-ux-audit/` (D4, D5, H7, L6); `docs/research/2026-09-25-graph-format/` (§5, §6, owner-approved);
+`specs/002-grid-rendering/research.md` (D8); `docs/research/2026-09-25-ux-audit/` (D4, D5, H7, L6); `docs/research/2026-09-25-graph-format/` (§5, §6, owner-approved); `docs/research/2026-09-25-release-and-docs/` (owner-approved; the owner's `kicad-sharp` release workflow and local feed);
 UnrealSharp's MSBuild integration (`UnrealSharp.Plugins/Main.cs`, `UnrealSharp.Editor/SolutionManager.cs`).
 
 ## Clarifications
@@ -44,6 +45,10 @@ the sources above; the owner can overturn any of them before implementation.
 - Q: Which extensions are loaded? → A: Extensions from user-configured extension directories (settings or `NETPRINTS_EXTENSION_PATH`), plus extensions the opened project references with `NetPrintsExtension` items once the user trusts that project (asked once, remembered in user settings). The build always uses the project's `NetPrintsExtension` items (building is already trusting the project). Nodes of a missing or untrusted extension are kept as-is and reported.
 - Q: What does a project compile against, and where do documentation tooltips come from? → A: Whatever MSBuild resolves for the project (reference packs, NuGet packages, project references). Documentation comes from the XML files next to the resolved reference assemblies, which fixes D5 without any custom probing. Old projects' .NET Framework references are dropped on conversion with one warning; the converted project targets `net10.0`.
 - Q: What does the editor need installed? → A: The .NET 10 SDK (to evaluate and build projects). Without an SDK the editor starts and explains that projects cannot be opened.
+- Q: How are NetPrints versions numbered? → A: (owner-approved research) From git tags: tag `v1.2.3` releases 1.2.3; commits between tags get a prerelease version (`0.1.0-alpha.0.<n>` before the first release). No version is written by hand anywhere, and generated `.netpc.g.cs` files carry no version.
+- Q: What gets published, and when? → A: The `NetPrints.Core` and `NetPrints.Reflection` libraries, the `NetPrints.Sdk` build package and the `netprints` command-line tool (package `NetPrints.Cli`) on nuget.org, plus editor downloads for Linux x64, Windows x64 and macOS Apple silicon on a GitHub Release, only when the owner pushes a `v*` tag. Nothing is published during P1.
+- Q: Does the downloadable editor need .NET installed? → A: The editor runs on its own bundled runtime, but opening, building and running projects needs the .NET 10 SDK (which includes the runtime a compiled program needs). The editor compiles only against the references MSBuild resolves for the project (research R19), so it works the same from a download as from source.
+- Q: Where is the documentation? → A: On a GitHub Pages site built from `docs/`: user guide, decision records, dated research notes and an API reference for the libraries. Specs stay in the repository and are linked, not published. The wiki only points to the site.
 - Q: How is a method-local variable's type chosen? → A: With the existing type chooser (a single type, generic types included); local variables have no type graph. Names are unique within the method, including its parameters.
 
 ## User Scenarios & Testing *(mandatory)*
@@ -217,6 +222,32 @@ tests stay green.
 
 ---
 
+### User Story 8 - Install NetPrints from a release and read its docs (Priority: P3)
+
+A developer who has never built NetPrints downloads the editor for their OS from a GitHub Release, installs
+the `netprints` tool with `dotnet tool install`, or adds `NetPrints.Sdk` to a project, and finds install
+steps, a guide and the API reference on the NetPrints website. The maintainer releases by pushing one tag
+and can check everything with a dry run that publishes nothing.
+
+**Why this priority**: The `NetPrints.Sdk` package is how every NetPrints project builds (US1), and U1 needs
+it on nuget.org; the approved release research adds the rest. It changes no editor behaviour, so it comes
+last.
+
+**Independent Test**: Pack everything into the local feed, install the tool and build a fresh HelloWorld
+from it; publish the editor self-contained and let it open, analyse and build HelloWorld without a display;
+build the docs site; run the release workflow as a dry run.
+
+**Acceptance Scenarios**:
+
+1. **Given** a tag `v0.1.0` on `master`, **When** the release workflow runs, **Then** four packages (plus symbol packages) are published to nuget.org without a stored API key, and a GitHub Release holds the packages, three editor archives, a checksum file and provenance attestations, with notes that say the builds are unsigned and list the changes by category.
+2. **Given** a manual or pull-request run of the release workflow, **When** it finishes, **Then** every package and archive was built and checked, and nothing was published or required a secret.
+3. **Given** the packages in the local feed, **When** a developer installs the tool from it and builds a new project that references `NetPrints.Sdk` from it, **Then** the project generates its C# and prints `Hello, World!`.
+4. **Given** the downloaded Linux or macOS archive on a machine with the .NET 10 SDK, **When** the editor opens HelloWorld, **Then** it shows no analysis errors and builds and runs it; **Given** a machine without a 10.0 SDK, **Then** it explains that the SDK is required.
+5. **Given** a pull request, **When** the docs are built, **Then** a broken link fails the build; **Given** `master` after the owner enabled Pages, **Then** the site, its API reference and the graph JSON Schema (at the `$schema` URL) are deployed.
+6. **Given** the README, **Then** it shows how to install the editor, the tool and the package, and links the website.
+
+---
+
 ### Edge Cases
 
 - A JSON graph file is truncated or invalid: the user sees an error with the file and position; nothing is overwritten; the rest of the project still loads; the build reports the same error for that file.
@@ -235,6 +266,11 @@ tests stay green.
 - An event graph with no entries, or an entry with nothing connected: an empty method is generated (same as an empty method graph).
 - A local variable is removed while getter/setter nodes use it: the nodes are removed with it, undoably (same as class variables).
 - The code view is shown for a class with no diagnostics: no squiggles; the error list shows only build errors.
+- A build from a source archive without `.git`: it builds with the default prerelease version and a warning, not an error.
+- A tag without the `v` prefix, or a tag whose version differs from what the version tool computes: nothing is released; the pack job fails with the two versions.
+- A release is re-run after a partial publish: packages already on nuget.org are skipped, the GitHub Release is updated.
+- The owner's one-time setup is missing (nuget.org policy or `NUGET_USER`, Pages, wiki): pull requests and dry runs are unaffected; the job that needs it is skipped or fails with a message naming the step.
+- Only a newer SDK than 10.0 is installed: the self-contained editor cannot use it and shows the SDK message.
 
 ## Requirements *(mandatory)*
 
@@ -314,6 +350,22 @@ tests stay green.
 - **FR-041**: The editor composition MUST take all services explicitly, with no test-only hooks in production code.
 - **FR-042**: Logging MUST use source-generated log methods (the app-level error handler, extension loading, reflection reload and all new logging); UI-framework log output (e.g. the grid shader fallback) MUST be forwarded to the same logging pipeline, and the desktop app MUST write logs to the console.
 
+**Release, packages and docs (US8; owner-approved research `docs/research/2026-09-25-release-and-docs/`)**
+
+- **FR-051**: Every package, assembly and editor archive version MUST come from the git tag `v<version>` (prerelease versions between tags, minimum 0.1); no version is hard-coded, and a build without git history MUST still succeed.
+- **FR-052**: Exactly four projects MUST be packable: `NetPrints.Core` and `NetPrints.Reflection` (libraries with XML documentation and package validation), `NetPrints.Sdk`, and `NetPrints.Cli` as the dotnet tool `netprints`; every other project MUST NOT pack.
+- **FR-053**: Every package MUST carry authors, project and repository URLs, the MIT licence expression, an icon, a README that renders on nuget.org, symbols where it has build output, Source Link, and an attribution to the original NetPrints project (RobinKa/netprints).
+- **FR-054**: A git-ignored local feed (`local-packages/`, registered next to nuget.org) and a script that packs every package into it with a distinct local version MUST exist; a script MUST prove that the tool installs from that feed and that a fresh SDK-style project restores `NetPrints.Sdk` from it, builds and runs; CI MUST run both.
+- **FR-055**: A release workflow MUST run on `v*` tags and as a dry run (manual, and on pull requests that change release inputs); only a tag MAY publish, dry runs MUST need no secrets, and nothing is published unless every package and archive was built and checked.
+- **FR-056**: Tagged releases MUST publish the packages to nuget.org through Trusted Publishing (no stored API key, environment `release`) and create a GitHub Release with the packages, the editor archives, `SHA256SUMS.txt`, provenance attestations and release notes that state the builds are unsigned and list generated notes by category.
+- **FR-057**: Editor archives MUST be self-contained folders (not single-file, not trimmed) for linux-x64 (`.tar.gz`), win-x64 (`.zip`) and osx-arm64 (`.tar.gz`, built on macOS), each with one top-level folder and executable bits preserved.
+- **FR-058**: A self-contained editor MUST analyse and build a project using only the references MSBuild resolves for it (no enumeration of the runtime or application directory, no bundled reference set); a headless check command MUST exercise this, and CI MUST publish the editor self-contained and run it on HelloWorld. The README, the install page, the release notes and the archives MUST state that opening and building projects needs the .NET 10 SDK and that running a compiled graph needs the .NET runtime it includes.
+- **FR-059**: A documentation site MUST be built from `docs/` on every pull request (broken links fail the build) and deployed to GitHub Pages from `master` once enabled; it MUST contain the guide, the decision records, the research notes and an API reference for the packable libraries at `/api/`, and MUST NOT publish `specs/` (links to specs point to GitHub).
+- **FR-060**: The graph `$schema` URL MUST be the site's `/schemas/netpc.v1.schema.json`, published from the committed `schemas/` by the docs build; the reader keeps ignoring `$schema`.
+- **FR-061**: The wiki MUST be a two-page pointer to the site, synced from the repository only on `master` once enabled, never from a pull request.
+- **FR-062**: The README MUST have an install section (editor downloads, dotnet tool, NuGet package) and badges; the decision MUST be recorded as ADR 0002.
+- **FR-063**: The owner's one-time steps (nuget.org Trusted Publishing policy and `NUGET_USER`, the `release` environment, Pages source, wiki enablement, labels) MUST be documented, and every workflow MUST tolerate them not being done (skip or fail with a message naming the step).
+
 ### Key Entities
 
 - **Project (`.csproj`)**: MSBuild project referencing `NetPrints.Sdk`; properties and items are the project settings and references.
@@ -325,6 +377,9 @@ tests stay green.
 - **Event graph / entry point**: a graph with several entry nodes, each producing one method.
 - **Local variable**: name and type owned by a method or constructor graph.
 - **Code diagnostic**: severity, id, message, source span, and the class, graph and node it maps to.
+- **Package**: one of the four NuGet packages (id, version from the tag, metadata, symbols).
+- **Release**: a GitHub Release for a `v*` tag with packages, editor archives, checksums, attestations and notes.
+- **Docs site**: the GitHub Pages site built from `docs/`, with the API reference at `/api/` and schemas at `/schemas/`.
 
 ## Success Criteria *(mandatory)*
 
@@ -340,6 +395,11 @@ tests stay green.
 - **SC-008**: All existing tests (P0, P0.1) stay green or are migrated to the csproj model with the same coverage; the architecture gate is demonstrated to fail on its fixture.
 - **SC-009**: In an automated plain-git merge test, two branches that each add nodes, connections and layout entries into different places of the same graph merge with exactly one conflict, at the end of the `nodes` array; reordering methods or inserting a parameter into a called method's signature changes no layout entry and no unrelated connection.
 - **SC-010**: The committed JSON Schema, every committed sample graph (canonical form) and every committed `.netpc.g.cs` match what the code generates; the tests that check this run in CI.
+- **SC-011**: A release dry run on the P1 pull request is green without any secret, publishes nothing, and produces 7 package files, 3 editor archives and a `SHA256SUMS.txt` whose every line verifies.
+- **SC-012**: In CI, with an empty package cache, the tool installed from the local feed and a fresh project restoring `NetPrints.Sdk` from it both build HelloWorld and print `Hello, World!`; the generated file equals the committed one.
+- **SC-013**: In CI, the self-contained linux-x64 editor opens HelloWorld with no display, reports 0 analysis errors with framework references from the SDK's reference packs, builds and runs it; 0 source files enumerate the runtime directory for references.
+- **SC-014**: The docs site builds on every pull request with 0 broken links and contains the API reference of both libraries and `schemas/netpc.v1.schema.json` byte-identical to the committed file at the `$schema` URL path.
+- **SC-015**: 0 hard-coded versions in project files; an untagged commit packs `0.1.0-alpha.0.<n>` (or the next patch after a tag), a local pack `0.1.0-local.<timestamp>`, and a tag its own version.
 
 ## Assumptions
 
@@ -354,4 +414,6 @@ tests stay green.
 - A source-generator mode is out of scope for good (owner decision, research R13); Roslyn issues dotnet/roslyn#57239 and #85239 are recorded as a future note.
 - NetPrintsUnreal (U1) can add `NetPrints.Sdk` to UnrealSharp's existing Script `.csproj` instead of a parallel project format; the generated `.netpc.g.cs` files are then ordinary sources that UnrealSharp's generator sees.
 - Out of scope, deferred per roadmap: catalog generation tooling, the annotations generator and the Spectre CLI including `migrate` and `generate` commands (P2; P1 ships only the internal generator entry point the build uses); editor shell, docking, dirty-state UX (P3a); plugin UI contributions, settings pages, a package-manager UI and `--profile` (P3); structured codegen and block scopes (P7); performance work including `MetadataReference` caching and moving translation off the UI thread (P8).
+- Release follow-ups after P1: installers and auto-update (Velopack), code signing (Windows Authenticode, Apple Developer ID and notarization), `PackageValidationBaselineVersion` after the first stable release, a Windows smoke test of the win-x64 archive, packages for `NetPrints.Serialization`/`NetPrints.Extensibility` if extension authors need them, SchemaStore registration.
+- The P1 PR only runs dry runs: the first `v0.1.0` tag, the Pages and wiki enablement and the nuget.org policy are owner actions after merge (contracts/release-and-docs.md §11).
 - Superseded follow-up: "bind the grid to `ViewportTransform`" is dropped; P0.1 replaced the grid and chose typed property sync instead (P0.1 research D8).

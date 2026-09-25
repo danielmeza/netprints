@@ -14,9 +14,12 @@ editing them.
 **Revision 2026-09-25 (csproj model)**: the old custom project file, reference resolver and
 `ProjectCompiler` tasks are gone. **Revision 2026-09-25 (graph format, research R17)**: tasks renumbered
 from T015 on; new tasks T015, T017, T018, T019, T027, T041 and T060; see "Test-ID map" at the end.
+**Revision 2026-09-25 (release and docs, research R18–R19)**: sub-phase L appended as T109–T122 (US8,
+`contracts/release-and-docs.md`, `RL-Txx`); T104, T106 and T108 amended; T108 now runs after Checkpoint L.
+Nothing is published during P1: no `v*` tag, no `dotnet nuget push`, no `PUBLISH_DOCS`/`PUBLISH_WIKI` variable.
 
 **Tests**: REQUIRED (constitution V). Test-obligation ids (`DF-`, `PS-`, `EX-`, `RC-`, `ED-Txx`) refer to
-the tables at the end of each contract; a task that names an id must implement exactly that case. Every
+the tables at the end of each contract (`RL-` = release-and-docs.md); a task that names an id must implement exactly that case. Every
 test uses xUnit v3 and passes `TestContext.Current.CancellationToken`; UI tests use page objects and
 `AutomationIds`, no sleeps (research U17). Tests that create nodes or members and compare ids or
 documents run inside `using var _ = IdGeneration.Use(new SeededIdGenerator(<seed>));`. Tests that run
@@ -33,7 +36,7 @@ Checkpoint E (plan.md). Out of scope (follow-ups, do not implement): `netprints 
 ## Format: `[ID] [P?] [Story] Description`
 
 - **[P]**: parallelizable (different files, no dependency on an unfinished task)
-- **[Story]**: US1…US7 (spec.md). Setup, Foundational and Polish tasks have no story label.
+- **[Story]**: US1…US8 (spec.md). Setup, Foundational and Polish tasks have no story label.
 
 ---
 
@@ -178,23 +181,46 @@ Checkpoint E (plan.md). Out of scope (follow-ups, do not implement): `netprints 
 
 ## Phase 11: Polish (sub-phase K)
 
-- [ ] T104 [P] README: `.csproj` + `NetPrints.Sdk`, committed `.netpc.g.cs` (regenerate, never hand-merge; keep visible in PRs), the graph file format for version control (link document-format.md §1; `$schema`, `.gitattributes`, what a node move or add looks like in a diff), VS Code nesting pattern, SDK requirement, `NETPRINTS_EXTENSION_PATH`/`NETPRINTS_HOST_CHANNEL`/`NETPRINTS_LOG_LEVEL`, extension project requirements, `NetPrintsExtension` items (short; link contracts)
+- [ ] T104 [P] User docs as site pages (release-and-docs.md §8 content layout), each with a one-line summary in the README that links it: `docs/guide/projects.md` (`.csproj` + `NetPrints.Sdk`, committed `.netpc.g.cs`: regenerate, never hand-merge, keep visible in PRs; VS Code nesting pattern; SDK requirement), `docs/guide/graph-format.md` (the graph file format for version control: `$schema`, `.gitattributes`, what a node move or add looks like in a diff; links to the document-format contract on GitHub), `docs/guide/extensions.md` (`NETPRINTS_EXTENSION_PATH`/`NETPRINTS_HOST_CHANNEL`/`NETPRINTS_LOG_LEVEL`, extension project requirements, `NetPrintsExtension` items). Plain CommonMark (the site renders `.md` without MDX); no HTML
 - [ ] T105 [P] SC-005 measurement (open HelloWorld restored: evaluation + workspace + extensions + types), recorded in the PR; 3× regression bound only
-- [ ] T106 Manual IDE check (research K9): build and nesting of the converted HelloWorld in Visual Studio 2022, Visual Studio 2026 and Rider; VS Code shows schema validation for `HelloWorld.Program.netpc.json` once the schema is on `master` (else note it); record results in the PR
+- [ ] T106 Manual IDE check (research K9): build and nesting of the converted HelloWorld in Visual Studio 2022, Visual Studio 2026 and Rider; VS Code shows schema validation for `HelloWorld.Program.netpc.json` once the `$schema` URL resolves (after the owner enabled Pages; else note it); record results in the PR
 - [ ] T107 `dotnet format --verify-no-changes`, full suite, E2E once on a private Xvfb (quickstart §6)
-- [ ] T108 Update checkboxes and research notes with findings (R17 open items K13, K14); mark the PR ready; CI green; independent review per AGENTS.md
+- [ ] T108 **After Checkpoint L (T122).** Update checkboxes and research notes with findings (R17 open items K13, K14; R18/R19 findings); mark the PR ready; CI, Docs and the Release dry run green; independent review per AGENTS.md
+
+---
+
+## Phase 12: User Story 8 — release, packages and docs (P3) (sub-phase L)
+
+Normative: `contracts/release-and-docs.md` (§ numbers below). Each task ends with its acceptance commands
+passing locally; T122 checks them in CI. Never push a tag, push packages or set `PUBLISH_DOCS`/`PUBLISH_WIKI`.
+
+- [ ] T109 [US8] Versioning (§1): `MinVer` 8.0.0 as `GlobalPackageReference` in `Directory.Packages.props`; `MinVerTagPrefix`, `MinVerMinimumMajorMinor`, `MSBuildWarningsNotAsErrors` `MINVER1001` in `Directory.Build.props`; delete `<Version>` and `<Copyright>` from `src/NetPrints.Core/NetPrints.Core.csproj`; `fetch-depth: 0` on the `build-test` checkout in `.github/workflows/ci.yml`. Accept: `dotnet msbuild src/NetPrints.Core/NetPrints.Core.csproj -t:MinVer -getProperty:MinVerVersion -p:Configuration=Release` prints `0.1.0-alpha.0.<n>`; `dotnet pack src/NetPrints.Core -c Release -p:MinVerVersionOverride=9.9.9 -o /tmp/p` writes `NetPrints.Core.9.9.9.nupkg`; a copy of the repository without `.git` (`git archive HEAD | tar -x -C /tmp/src`) builds with a `MINVER1001` warning and 0 errors; `grep -rn "<Version>" src tests` finds nothing; DF-T26 and the golden tests stay green (the generated header has no version, project-system.md §3)
+- [ ] T110 [US8] Package metadata (§2): `IsPackable=false` and the "Package metadata" group in `Directory.Build.props`; new `Directory.Build.targets`; `eng/PackageReadme.targets`; `assets/icons/netprints-icon.png` = `convert 'src/NetPrints.Desktop/NetPrintsLogo.ico[4]' assets/icons/netprints-icon.png` (the 256×256 frame). Accept: `dotnet pack NetPrints.slnx -c Release -o /tmp/p0` packs nothing yet except projects already marked packable (none before T111); `dotnet build NetPrints.slnx -c Release` 0 warnings
+- [ ] T111 [US8] Packable projects (§3): `IsPackable`, descriptions with the attribution sentence, `GenerateDocumentationFile`, scoped `NoWarn CS1591` (Core, Reflection only), `EnablePackageValidation` (libraries) in `src/NetPrints.Core`, `src/NetPrints.Reflection`; `IsPackable` + `IncludeSymbols=false` in `src/NetPrints.Sdk`; `PackAsTool`/`ToolCommandName=netprints`/`PackageId=NetPrints.Cli` in `src/NetPrints.Cli`; direct `Microsoft.CodeAnalysis.Workspaces.MSBuild` reference in `src/NetPrints.Cli` and `src/NetPrints.Desktop` (roslyn#80127). Accept RL-T01: `dotnet pack NetPrints.slnx -c Release -o /tmp/p1` writes exactly the seven files of §3; `unzip -l` of the Cli package lists `tools/net10.0/any/BuildHost-netcore/`; 0 warnings (warnings as errors)
+- [ ] T112 [US8] Local feed (§4): `NuGet.config`, `local-packages/.gitkeep`, the `.gitignore` block, `scripts/pack-local.sh` (executable). Accept: with an empty `local-packages/`, `dotnet restore NetPrints.slnx` succeeds (no NU1301); `scripts/pack-local.sh --print-version` prints only a version matching `^0\.1\.0-local\.[0-9]{14}$` and fills `local-packages/`; `git status --porcelain` shows no file under `local-packages/`
+- [ ] T113 [US8] `scripts/verify-packages.sh` (§4 steps 1–4) and the `packages` job in `.github/workflows/ci.yml` (§6). Accept RL-T02…RL-T05: `scripts/verify-packages.sh local-packages "$(scripts/pack-local.sh --print-version)"` exits 0; it exits non-zero with a message naming the check when a package is removed from the feed, and when `README.md` is replaced by one containing `<p>` (both shown once in the commit message)
+- [ ] T114 [US8] Self-contained editor (§5, research R19): publish properties in `src/NetPrints.Desktop/NetPrints.Desktop.csproj`; `src/NetPrints.Desktop/ProjectCheck.cs` and the `--check-project` branch in `Program.Main` (exit codes of §5); `scripts/smoke-desktop.sh`; the `desktop-publish` job in `.github/workflows/ci.yml` (§6); RL-T07 grep test `tests/NetPrints.Core.Tests/Architecture/NoRuntimeDirectoryReferencesTests.cs` (locates the repository with `SampleProjectFactory.FindRepositoryRoot()`); `ProjectCheck` unit tests in `tests/NetPrints.Editor.Tests/Hosting/ProjectCheckTests.cs` for exit codes 1 (a copy of HelloWorld with a broken connection → `analysis: 1 errors` and the canonical error line), 2 (no argument) and 3 (fake registration without SDK → `NPW001`). Accept RL-T06: the §6 publish command then `scripts/smoke-desktop.sh out/linux-x64` exits 0 with no `DISPLAY`
+- [ ] T115 [US8] Release workflow (§7): `.github/workflows/release.yml`, `.github/release.yml`, `.github/release-notes.md`, `scripts/archive-desktop.sh`. Accept: `actionlint` clean; locally `scripts/archive-desktop.sh out/linux-x64 0.0.0-test linux-x64` gives a `.tar.gz` whose first entry is `NetPrints-0.0.0-test-linux-x64/` and whose apphost keeps mode `755`, and the `win-x64` form gives a `.zip` with the same top folder; RL-T12 by inspection; RL-T10 in T122
+- [ ] T116 [P] [US8] API reference (§9): `.config/dotnet-tools.json` (docfx 2.81.0), `docs/api/docfx.json`, `docs/api/index.md`, `docs/api/toc.yml`. Accept: `dotnet tool restore && dotnet docfx docs/api/docfx.json` exits 0; `docs/api/_site/index.html` and the `NetPrints.Graph.Node` page exist; `git status` shows no generated file (ignored by §4)
+- [ ] T117 [US8] Docs site (§8): `website/` (`package.json` + `package-lock.json` from `npm install`, `.nvmrc`, `docusaurus.config.ts`, `tsconfig.json`, `src/css/custom.css`, `src/remark/repo-links.mjs`), `docs/index.md`, `docs/guide/_category_.json`, `docs/contributing/_category_.json` + `releasing.md` (local feed, release process, the owner steps of §11), `docs/adr/_category_.json`, `docs/research/_category_.json`; `scripts/build-docs.sh`; fix whatever the first build reports in existing `docs/**` pages (only links, headings and raw HTML; content unchanged). Accept RL-T08, RL-T09: `scripts/build-docs.sh` exits 0; the files RL-T08 lists exist; `grep -r "/specs/" website/build --include=*.html -l` lists only pages whose links point to `github.com/danielmeza/netprints/blob/`; adding `[x](./missing.md)` to `docs/index.md` makes the build fail (revert; note in the commit message)
+- [ ] T118 [US8] `.github/workflows/docs.yml` (§10) and the `npm` entry in `.github/dependabot.yml`. Accept: `actionlint` clean; on the PR the `build` job is green and uploads the Pages artifact, `deploy` is skipped
+- [ ] T119 [P] [US8] Wiki (§10): `.github/wiki/Home.md`, `.github/wiki/_Sidebar.md`, `.github/workflows/wiki.yml`. Accept: `actionlint` clean; every link in both pages is absolute; the workflow has no `pull_request` trigger and its job is gated by `vars.PUBLISH_WIKI` (RL-T11)
+- [ ] T120 [US8] README (§12): badges (CI, Release, NuGet `NetPrints.Sdk`, Docs, License); "Install" section (editor download table, `dotnet tool install -g NetPrints.Cli`, `dotnet add package NetPrints.Sdk`, the .NET 10 SDK requirement and "running a compiled graph needs the .NET runtime the SDK includes"); link to the site; shortened build-from-source part under "Contributing". `docs/guide/install.md`: the same three routes in full, the SDK and runtime requirement (10.0 SDK specifically, research R19), unsigned-build steps (SmartScreen, macOS *Open Anyway*/`xattr`), checksum and attestation verification, `--check-project`. Accept: every README link and anchor resolves (relative links on GitHub; `scripts/build-docs.sh` for the page); the packed README of `NetPrints.Core` passes `verify-packages.sh` step 2
+- [ ] T121 [P] [US8] `docs/adr/0002-release-and-docs-stack.md` (§12, format of ADR 0001). Accept: shows in the site's Decisions category after `scripts/build-docs.sh`
+- [ ] T122 [US8] **Checkpoint L**: full suite, `dotnet format --verify-no-changes`, `scripts/verify-packages.sh`, `scripts/smoke-desktop.sh`, `scripts/build-docs.sh`, `actionlint` locally; push; on the PR: `CI` (incl. `packages`, `desktop-publish`), `Docs` and the `Release` dry run green (RL-T10: download `release-assets`, `sha256sum -c SHA256SUMS.txt`, 7 package files and 3 archives); list the owner steps of §11 in the PR description (SC-011…SC-015)
 
 ---
 
 ## Dependencies & Execution Order
 
-- A (T001–T006) → B (T007–T023) → C (T024–T043) → D (T044–T049) → E (T050–T064) → F (T065–T077) → G (T078–T083), H (T084–T088) (independent of each other) → I (T089–T097) → J (T098–T103) → K (T104–T108).
-- Hard edges: T004/T005 before T007; T015 before T016, T017; T016–T019 before T035; T025 before T026, T027; T027 before T037, T041; T030 before T031–T034; T044 before T045–T048; T046 before T047, T057, T081; T050 before T053, T054, T056; T052 before T053 and T054; T054 before T057; T055 before T056, T059; T059 before T060; T059–T062 before T063; T065 before T067, T074, T079; T068 before T075; T089 before T090, T096.
+- A (T001–T006) → B (T007–T023) → C (T024–T043) → D (T044–T049) → E (T050–T064) → F (T065–T077) → G (T078–T083), H (T084–T088) (independent of each other) → I (T089–T097) → J (T098–T103) → K (T104–T107) → L (T109–T122) → T108.
+- Hard edges: T004/T005 before T007; T015 before T016, T017; T016–T019 before T035; T025 before T026, T027; T027 before T037, T041; T030 before T031–T034; T044 before T045–T048; T046 before T047, T057, T081; T050 before T053, T054, T056; T052 before T053 and T054; T054 before T057; T055 before T056, T059; T059 before T060; T059–T062 before T063; T065 before T067, T074, T079; T068 before T075; T089 before T090, T096; T041, T057, T062, T063 before L; T109 before T110; T110 before T111; T111 before T112, T113, T114; T112 before T113; T114 before T115; T116 before T117; T117 before T118, T120, T121; T104 before T117 (its pages are in the site).
 
 ## Parallel examples
 
 - B: T011 ∥ T012 ∥ T013 ∥ T014; T018 ∥ T019 once T016 exists. C: T024 ∥ T025; T031 ∥ T032 ∥ T033 ∥ T034; T040 alongside T035–T039.
 - E: T051 ∥ T053 once T050 exists. F: T066 ∥ T069 ∥ T070 once T067 exists.
+- L: T116 ∥ T113 once T111 exists; T119 ∥ T121 any time after T117.
 
 ## Implementation strategy
 
@@ -216,6 +242,29 @@ the same PR.
 | FR-050 `.gitattributes`; committed-file checks in CI | T050, T053, T054, T057 |
 | SC-009 merge and reorder behaviour | T017, T035, T042 |
 | SC-010 committed schema, graphs, `.netpc.g.cs` up to date | T041, T057 |
+
+## Requirement coverage (release, packages and docs)
+
+| Requirement | Tasks |
+|---|---|
+| FR-051 versions from `v*` tags, none hard-coded | T109, T112, T113, T115 |
+| FR-052 exactly four packable projects | T110, T111 |
+| FR-053 package metadata, icon, README, symbols, attribution | T110, T111, T113 |
+| FR-054 local feed, pack and verify scripts in CI | T112, T113 |
+| FR-055 release workflow: tags publish, dry runs never | T115, T122 |
+| FR-056 Trusted Publishing, GitHub Release, checksums, attestations, notes | T115 |
+| FR-057 self-contained folder archives for three RIDs | T114, T115 |
+| FR-058 MSBuild-resolved references only; `--check-project`; SDK/runtime requirement stated | T063, T114, T115, T120 |
+| FR-059 docs site, API reference, research in, specs out | T104, T116, T117, T118 |
+| FR-060 `$schema` URL on the site | T041, T117, T118 |
+| FR-061 wiki pointer | T119 |
+| FR-062 README install section, badges; ADR 0002 | T120, T121 |
+| FR-063 owner steps documented and tolerated | T113, T115, T117, T118, T119, T122 |
+| SC-011 dry run green, publishes nothing | T115, T122 |
+| SC-012 tool and SDK from the local feed | T113 |
+| SC-013 self-contained editor analyses and builds HelloWorld | T114 |
+| SC-014 docs site builds with 0 broken links, API and schema | T116, T117, T118 |
+| SC-015 no hard-coded versions; version patterns | T109, T112, T113 |
 
 ## Test-ID map (revisions 2026-09-25)
 
@@ -244,3 +293,4 @@ the same PR.
 | EX-T13 | changed (trust flow) | T075 |
 | ED-T01…T14 | kept (ED-T04, ED-T13 reworded for builds, conversion and edited-only saves) | T022, T059, T075, T083, T088, T092, T096–T102 |
 | ED-T15 | new (dirty tracking) | T060 |
+| RL-T01…T12 | new (release, packages, docs) | T111 (T01), T113 (T02–T05), T114 (T06, T07), T117 (T08, T09), T122 (T10), T115/T118/T119 (T11), T115 (T12) |
