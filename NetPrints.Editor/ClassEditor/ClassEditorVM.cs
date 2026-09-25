@@ -1,4 +1,5 @@
 using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -42,6 +43,18 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     private readonly HashSet<Variable> subscribedVariables = [];
     private IDisposable? generatedCodeLoop;
 
+    /// <summary>Longest retained Output text, in characters (roughly 1 MB): older lines are
+    /// dropped, oldest first, once exceeded.</summary>
+    private const int MaxOutputChars = 1_000_000;
+
+    private const string OutputTruncatedMarker = "… earlier output truncated …";
+
+    private readonly Queue<string> outputLines = new();
+    private readonly Subject<string> outputReceived = new();
+    private int outputCharCount;
+    private bool outputTruncated;
+    private IDisposable? outputFlush;
+
     public ClassEditorVM(ClassGraph cls, EditorContext context)
     {
         Class = cls;
@@ -67,6 +80,15 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
 
         context.Reflection.Reloaded += OnReflectionReloaded;
         context.Processes.OutputReceived += OnProcessOutputReceived;
+
+        // Coalesced: a chatty program (e.g. Console.WriteLine in a loop) would otherwise post one
+        // dispatcher operation and rebuild the whole Output string per line, which is O(n^2) in the
+        // total output and floods the UI thread.
+        outputFlush = outputReceived
+            .Buffer(TimeSpan.FromMilliseconds(50), Context.Scheduler)
+            .Where(batch => batch.Count > 0)
+            .Subscribe(batch => Context.Dispatcher.Post(() => AppendOutput(batch)));
+
         RefreshOverridableMethods();
         RefreshGeneratedCode();
     }
@@ -380,18 +402,51 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     }
 
     [RelayCommand]
-    private Task RunAsync() =>
-        Project is { CanCompileAndRun: true } ? MainEditorVM.CompileAndRunAsync(Project, Context) : Task.CompletedTask;
+    private Task RunAsync()
+    {
+        if (Project is not { CanCompileAndRun: true })
+        {
+            return Task.CompletedTask;
+        }
+
+        SelectedBottomTab = 1; // Output, once per run (not re-forced on every line after it).
+        return MainEditorVM.CompileAndRunAsync(Project, Context);
+    }
 
     [RelayCommand]
-    private void ClearOutput() => Output = "";
-
-    /// <summary>Appends a line from any process Run started, and switches to the Output tab.</summary>
-    private void OnProcessOutputReceived(string line) => Context.Dispatcher.Post(() =>
+    private void ClearOutput()
     {
-        Output += line + Environment.NewLine;
-        SelectedBottomTab = 1;
-    });
+        outputLines.Clear();
+        outputCharCount = 0;
+        outputTruncated = false;
+        Output = "";
+    }
+
+    private void OnProcessOutputReceived(string line) => outputReceived.OnNext(line);
+
+    /// <summary>
+    /// Appends a batch of output lines and rebuilds <see cref="Output"/> once (not per line: O(n)
+    /// in the batch, not O(n^2) in the total output), dropping the oldest lines past
+    /// <see cref="MaxOutputChars"/>.
+    /// </summary>
+    private void AppendOutput(IList<string> lines)
+    {
+        foreach (string line in lines)
+        {
+            outputLines.Enqueue(line);
+            outputCharCount += line.Length + 1;
+        }
+
+        while (outputCharCount > MaxOutputChars && outputLines.Count > 1)
+        {
+            outputCharCount -= outputLines.Dequeue().Length + 1;
+            outputTruncated = true;
+        }
+
+        Output = outputTruncated
+            ? OutputTruncatedMarker + Environment.NewLine + string.Join(Environment.NewLine, outputLines)
+            : string.Join(Environment.NewLine, outputLines);
+    }
 
     // Lists (PAR-24..30)
 
@@ -517,6 +572,8 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     public void Dispose()
     {
         generatedCodeLoop?.Dispose();
+        outputFlush?.Dispose();
+        outputReceived.Dispose();
 
         Context.Reflection.Reloaded -= OnReflectionReloaded;
         Context.Processes.OutputReceived -= OnProcessOutputReceived;

@@ -239,6 +239,40 @@ public class ClassEditorVMTests : IDisposable
         Assert.Equal(1, editor.Processes.Started.Count());
     }
 
+    [Fact(Timeout = 120000)]
+    public async Task RunSwitchesToOutputOnceNotOnEveryLine()
+    {
+        vm.SelectedBottomTab = 0;
+        var run = vm.RunCommand.ExecuteAsync(null);
+        Assert.Equal(1, vm.SelectedBottomTab); // switched synchronously, when the run starts
+
+        vm.SelectedBottomTab = 0; // the user goes back to Errors while the program keeps printing
+        editor.Processes.Raise("still printing");
+        editor.Scheduler.AdvanceBy(TimeSpan.FromMilliseconds(50).Ticks);
+        Assert.Equal(0, vm.SelectedBottomTab); // a later line must not snap the tab back
+
+        await run;
+    }
+
+    [Fact(Timeout = 60000)]
+    public void OutputIsBatchedAndCapsRetainedLines()
+    {
+        for (int i = 0; i < 100_000; i++)
+        {
+            editor.Processes.Raise($"line {i:D6} 1234567890");
+        }
+
+        // Buffered, not rebuilt per line: nothing is flushed until the scheduler advances.
+        Assert.Equal("", vm.Output);
+
+        editor.Scheduler.AdvanceBy(TimeSpan.FromMilliseconds(50).Ticks);
+
+        Assert.DoesNotContain("line 000000 ", vm.Output); // the oldest lines were dropped
+        Assert.Contains("line 099999 ", vm.Output); // the newest line is retained
+        Assert.StartsWith("… earlier output truncated …", vm.Output);
+        Assert.True(vm.Output.Length < 1_100_000, $"Output length {vm.Output.Length} was not capped.");
+    }
+
     [Fact]
     public void UndoRedoCommandsFollowStack()
     {
