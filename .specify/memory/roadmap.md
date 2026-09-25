@@ -96,6 +96,21 @@ Spike Avalonia.Browser + Nodify in a webview (CSP `wasm-unsafe-eval`, size, star
 bundled self-contained binaries as fallback); TS `CustomEditorProvider`; standalone browser build.
 
 ### U1–U3 (NetPrintsUnreal repo)
+UnrealSharp Blueprint interop findings (code read of the fork, 2026-09-25): C# `[UClass]` types
+are `UBlueprintGeneratedClass` and Blueprints can subclass them; Blueprint-callable/pure functions,
+Read/Write/Edit property flags, metadata attributes (`[Category]`, `[DisplayName]`, `[ToolTip]` —
+the `Category=` named argument does NOT work), BlueprintNativeEvent-style events
+(`partial X` + `partial X_Implementation`), engine event overrides via `override`,
+BlueprintAssignable multicast delegates, interfaces, structs/enums, async Blueprint nodes and
+hot reload of Blueprint children are supported. Not supported: body-less
+BlueprintImplementableEvent, C# classes deriving from Blueprint classes, by-name calls into
+Blueprint functions/variables. Emitters: U1 = ClassFlags (no "Blueprintable" flag; Blueprint-ability
+is inherited metadata, override with `[IsBlueprintBase]`), FunctionFlags BlueprintCallable/Pure,
+PropertyFlags on `partial` properties, metadata attributes, `override` for engine events, `partial`
+classes. U2 = BlueprintEvent pairs, `[UMultiDelegate]` + `TMulticastDelegate` + BlueprintAssignable,
+`[UInterface]`/`[UStruct]`/`[UEnum]`, replication flags/`ReplicatedUsing`,
+DefaultComponent/RootComponent, `[UMetaData]` fallback; never emit Blueprint-derived C# classes or
+by-name Blueprint calls.
 U1: `[UClass] partial` emitters, `unreal-blueprint` catalog profile, CLI loop into UnrealSharp
 `Script/` with hot reload (first live loop ~week 8). U2: event entry points, latent nodes as
 async/await, delegates, components, containers. U3: `UnrealSharpNetPrints` C++ plugin
