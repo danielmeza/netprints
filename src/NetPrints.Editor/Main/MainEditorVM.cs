@@ -18,12 +18,18 @@ public sealed partial class MainEditorVM : ObservableObject
     private readonly EditorContext context;
     private Project? subscribedProject;
 
+    /// <summary>
+    /// Creates the main window's view model, optionally with a project already open.
+    /// </summary>
+    /// <param name="context">Host services shared across the editor.</param>
+    /// <param name="project">Initially open project, or <see langword="null"/>.</param>
     public MainEditorVM(EditorContext context, Project? project = null)
     {
         this.context = context;
         Project = project;
     }
 
+    /// <summary>Host services shared across the editor.</summary>
     public EditorContext Context => context;
 
     /// <summary>The open project, or null.</summary>
@@ -56,19 +62,25 @@ public sealed partial class MainEditorVM : ObservableObject
     [ObservableProperty]
     public partial string BusyMessage { get; set; } = "";
 
+    /// <summary>Whether a project is open.</summary>
     public bool IsProjectOpen => Project is not null;
 
+    /// <summary>Whether the open project can currently be compiled; <see langword="false"/> with no project open.</summary>
     public bool CanCompile => Project?.CanCompile ?? false;
 
+    /// <summary>Whether the open project can currently be compiled and run; <see langword="false"/> with no project open.</summary>
     public bool CanCompileAndRun => Project?.CanCompileAndRun ?? false;
 
     /// <summary>Window title: the project name (PAR-01).</summary>
     public string Title => Project?.Name is { Length: > 0 } name ? name : "NetPrints";
 
+    /// <summary>The values offered by the compilation-output chooser.</summary>
     public IReadOnlyList<ProjectCompilationOutput> CompilationOutputs { get; } = Enum.GetValues<ProjectCompilationOutput>();
 
+    /// <summary>The values offered by the binary-type chooser.</summary>
     public IReadOnlyList<BinaryType> BinaryTypes { get; } = Enum.GetValues<BinaryType>();
 
+    /// <summary>The open project's compilation output setting, or <see cref="ProjectCompilationOutput.Nothing"/> with no project open.</summary>
     public ProjectCompilationOutput CompilationOutput
     {
         get => Project?.CompilationOutput ?? ProjectCompilationOutput.Nothing;
@@ -82,6 +94,7 @@ public sealed partial class MainEditorVM : ObservableObject
         }
     }
 
+    /// <summary>The open project's output binary type, or <see cref="BinaryType.SharedLibrary"/> with no project open.</summary>
     public BinaryType OutputBinaryType
     {
         get => Project?.OutputBinaryType ?? BinaryType.SharedLibrary;
