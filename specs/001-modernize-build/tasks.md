@@ -222,9 +222,9 @@ build can be green on Linux from here on.
 
 **Independent Test**: the grep checks in T081 return nothing; the solution still builds and tests green.
 
-- [ ] T080 [US4] `git rm -r NetPrintsEditor/ NetPrintsEditorUnitTests/` (after T076 sign-off). Make sure nothing in `NetPrints.sln` or in the remaining projects references them
-- [ ] T081 [US4] Run the hygiene checks and fix any hit. Search SDK-style `*.csproj` for `Version=` on `PackageReference` → none. Search for `Gapotchenko|System.Management|MahApps|MvvmLight|UseWPF|System.Windows.Forms|PresentationFramework` outside `NetPrintsVSIX/` and `specs/` → none. `Fody` should appear only in `NetPrints/NetPrints.csproj`, `NetPrints/FodyWeavers.*` and `Directory.Packages.props` (SC-007)
-- [ ] T082 [US4] Update the `README.md` sections "Target Frameworks" (new table: every project net10.0), "Download/Build" (quickstart commands), "Standalone Editor Guide" (Avalonia, Linux/macOS/Windows, runtime-assembly fallback note) and "Visual Studio Extension" (pending P4) (FR-021)
+- [X] T080 [US4] `git rm -r NetPrintsEditor/ NetPrintsEditorUnitTests/` (after T076 sign-off). Make sure nothing in `NetPrints.sln` or in the remaining projects references them
+- [X] T081 [US4] Run the hygiene checks and fix any hit. Search SDK-style `*.csproj` for `Version=` on `PackageReference` → none. Search for `Gapotchenko|System.Management|MahApps|MvvmLight|UseWPF|System.Windows.Forms|PresentationFramework` outside `NetPrintsVSIX/` and `specs/` → none. `Fody` should appear only in `NetPrints/NetPrints.csproj`, `NetPrints/FodyWeavers.*` and `Directory.Packages.props` (SC-007)
+- [X] T082 [US4] Update the `README.md` sections "Target Frameworks" (new table: every project net10.0), "Download/Build" (quickstart commands), "Standalone Editor Guide" (Avalonia, Linux/macOS/Windows, runtime-assembly fallback note) and "Visual Studio Extension" (pending P4) (FR-021)
 
 ---
 

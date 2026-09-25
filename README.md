@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/danielmeza/netprints/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/danielmeza/netprints/actions/workflows/ci.yml)
 
-NetPrints is a visual programming language inspired by Unreal Engine 4's Blueprints which compiles into .NET binaries or alternatively C# source code. These can be used from any other .NET language (eg. C#) or used as standalone programs. Furthermore any .NET binaries (both .NET Framework and .NET Core, and ideally .NET Standard) can be referenced and used. Its goal is to support using anything that is made in C#. Furthermore it can be used directly within Visual Studio in any C# projects (experimental).
+NetPrints is a visual programming language inspired by Unreal Engine 4's Blueprints which compiles into .NET binaries or alternatively C# source code. These can be used from any other .NET language (eg. C#) or used as standalone programs. Furthermore any .NET binaries (both .NET Framework and .NET Core, and ideally .NET Standard) can be referenced and used. Its goal is to support using anything that is made in C#. 
 [Overview](https://github.com/RobinKa/netprints/wiki/Overview)
 
 [Use cases](https://github.com/RobinKa/netprints/wiki/Use-cases)
@@ -12,23 +12,51 @@ NetPrints is a visual programming language inspired by Unreal Engine 4's Bluepri
 [Unity tutorial](https://github.com/RobinKa/NetPrintsUnityTutorial)
 
 # Download
-Version 0.0.7 of the standalone editor can be found [here](https://github.com/RobinKa/netprints/releases/tag/0.0.7). You can also download the source code and compile the solution yourself. There also exists a Visual Studio (2017 / 15.3+) extension which can be found [here](https://marketplace.visualstudio.com/items?itemName=NawTora.NetPrints) or from within Visual Studio by searching for NetPrints. It allows to add NetPrints classes to C# projects, edit them and add any assemblies referenced in the project as well as any C# source code in it.
+Version 0.0.7 of the original WPF editor can be found [here](https://github.com/RobinKa/netprints/releases/tag/0.0.7). The editor has since been rebuilt on [Avalonia](https://avaloniaui.net/) and runs on Linux, Windows and macOS; build it from source as described below.
+
+# Build and Test
+Requirements: the [.NET 10 SDK](https://dotnet.microsoft.com/download) (10.0.100 or later; `global.json` rolls forward to newer feature bands). Two commands build and test everything, on Linux too, without a display server:
+
+```bash
+dotnet build NetPrints.sln -c Release
+dotnet test --solution NetPrints.sln -c Release --no-build
+```
+
+Package versions live in `Directory.Packages.props` (Central Package Management) and shared build settings in `Directory.Build.props`. The [CI](.github/workflows/ci.yml) workflow runs the same commands on every push and pull request.
+
+Command line:
+
+```bash
+dotnet run --project NetPrintsCLI -c Release -- --version
+dotnet run --project NetPrintsCLI -c Release -- -p samples/HelloWorld/HelloWorld.netpp -r   # prints "Hello, World!"
+```
+
+Editor:
+
+```bash
+dotnet run --project NetPrints.Desktop -c Release -- samples/HelloWorld/HelloWorld.netpp
+```
 
 # Target Frameworks
-Until version 0.0.7 .NET Core 3.0 was required. Since then the projects target the frameworks in the table below.
+Every project targets .NET 10.
 
-| Project | Target |
-|--|--|
-| NetPrints | .NET Standard 2.0 |
-| NetPrintsCLI | .NET Core 2.0, .NET Framework 4.6.1 |
-| NetPrintsEditor | .NET Framework 4.6.1 (targeting .NET Core 3.0 works too, but was disabled because of an issue with the VSIX) |
-| NetPrintsVSIX | .NET Framework 4.6.1 |
+| Project | Target | Notes |
+|--|--|--|
+| NetPrints (core) | net10.0 | Node graphs, C# translation, compilation (Roslyn) |
+| NetPrints.Reflection | net10.0 | UI-free type reflection used by the editor |
+| NetPrints.Editor | net10.0 | Avalonia 12 editor library (views, view models, services) |
+| NetPrints.Desktop | net10.0 | Desktop application hosting the editor |
+| NetPrintsCLI | net10.0 | Command line compiler |
+| NetPrintsUnitTests, NetPrints.Editor.Tests | net10.0 | MSTest 4 on Microsoft.Testing.Platform, headless Avalonia UI tests |
+| NetPrintsVSIX | .NET Framework 4.6.1 | Legacy, not built (see below) |
 
-# Visual Studio Extension Guide
-The Visual Studio extension is currently experimental and supports versions 2017 and 2019. New classes can be created within C# projects by adding a new item and selecting NetPrints class. This will add a `.netpc` file to the project. Currently it can be opened with the editor by right clicking the `.netpc` file, selecting open with and selecting `NetPrintsEditorFactory`. If you know how to make it the default editor for this extension please let me know in https://github.com/RobinKa/netprints/issues/77.
+# Visual Studio Extension
+The legacy Visual Studio extension (`NetPrintsVSIX`) is kept in the repository for reference but is not part of `NetPrints.sln`, does not build and is not tested in CI; Visual Studio integration is out of scope for now (see `NetPrintsVSIX/README.md`). The published extension on the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=NawTora.NetPrints) is the old version.
 
 # Standalone Editor Guide
-Any .NET binaries can be used with this editor. The recommended way to add new assembly references is installing them with NuGet (eg. from within Visual Studio or the command line) and referencing their .NET Standard reference libraries at `%UserProfile%/.nuget`. The hints for the included references should then appear within the editor. You can also add C# source directories which can either be used for reflection only (useful when you want to use NetPrints within Unity to access your existing scripts) or compiled into the output.
+The editor runs on Linux (X11 or Wayland), Windows and macOS with the .NET 10 runtime. Any .NET binaries can be used with this editor. The recommended way to add new assembly references is installing them with NuGet and referencing their reference assemblies in the NuGet package folder (`~/.nuget/packages` or `%UserProfile%/.nuget/packages`). The hints for the included references should then appear within the editor. You can also add C# source directories which can either be used for reflection only (useful when you want to use NetPrints within Unity to access your existing scripts) or compiled into the output.
+
+Projects created by the old editor reference the .NET Framework 4.5 reference assemblies. When those are not installed (for example on Linux), NetPrints falls back to the assemblies of the running .NET runtime for reflection and compilation, and compiled executables are started through the `dotnet` host. Proper reference-pack and target selection is planned.
 
 # Contributions
 Any contributions are welcome. If you notice bugs or have feature suggestions just create an issue for it. You can also contact me by email at `tora@warlock.ai`.
