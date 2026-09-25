@@ -52,6 +52,8 @@ instead of retrying blindly.
   at most a short one-line comment where something is genuinely non-obvious.
 - Put rationale, background and design discussion in commit messages, PR descriptions or
   `specs/` docs, not in the code. This matters most in repositories we contribute to upstream.
+- Exception: XML documentation comments (`///` on types and members, or the equivalent doc
+  comments in C++) may be as detailed and precise as needed. Don't shorten them for brevity.
 
 ## Commits and tests
 - End commit messages with the attribution line(s) your session is configured with; PR bodies
