@@ -85,6 +85,13 @@ namespace NetPrints.Graph
         [DataMember(Name = "FieldOrProperty")]
         public partial VariableSpecifier Variable { get; private set; }
 
+        /// <summary>
+        /// Adds this node to <paramref name="graph"/> and builds its pins from
+        /// <paramref name="variable"/>: a target input pin unless it is local or static, an index
+        /// input pin if it is an indexer, and the output data pin for its value.
+        /// </summary>
+        /// <param name="graph">Graph the node belongs to.</param>
+        /// <param name="variable">Specifier for the variable this node accesses.</param>
         protected VariableNode(NodeGraph graph, VariableSpecifier variable)
             : base(graph)
         {

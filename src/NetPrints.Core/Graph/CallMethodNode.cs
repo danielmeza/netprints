@@ -18,6 +18,10 @@ namespace NetPrints.Graph
         private const string ExceptionPinName = "Exception";
         private const string CatchPinName = "Catch";
 
+        /// <summary>
+        /// Always <see langword="true"/>: a call-method node can become pure (no exec pins) when the
+        /// called method has no observable side effects worth sequencing, and impure otherwise.
+        /// </summary>
         public override bool CanSetPure
         {
             get => true;
@@ -162,6 +166,16 @@ namespace NetPrints.Graph
             get => (OutputDataPins.Where(p => p.Name != ExceptionPinName)).ToList();
         }
 
+        /// <summary>
+        /// Adds this node to <paramref name="graph"/> and builds its pins from
+        /// <paramref name="methodSpecifier"/>: a generic-argument input type pin per method type
+        /// parameter, a target pin unless the method is static, the catch/exception pins, one input
+        /// data pin per parameter (pre-filled with its explicit default value if it has one) and one
+        /// output data pin per return value.
+        /// </summary>
+        /// <param name="graph">Graph the node belongs to.</param>
+        /// <param name="methodSpecifier">Specifier for the method to call.</param>
+        /// <param name="genericArgumentTypes">Unused; accepted for source compatibility.</param>
         public CallMethodNode(NodeGraph graph, MethodSpecifier methodSpecifier,
             IList<BaseType>? genericArgumentTypes = null)
             : base(graph)
@@ -235,6 +249,11 @@ namespace NetPrints.Graph
             }
         }
 
+        /// <summary>
+        /// Re-subscribes to <see cref="NodeOutputExecPin.OutgoingPinChanged"/> on the catch pin (event
+        /// subscriptions are not serialized) and reconciles the exception output pin with whether the
+        /// catch pin is connected.
+        /// </summary>
         public override void OnMethodDeserialized()
         {
             base.OnMethodDeserialized();
@@ -242,6 +261,11 @@ namespace NetPrints.Graph
             UpdateExceptionPin();
         }
 
+        /// <summary>
+        /// Removes the catch exec pin (and, through its pin-changed event, the exception data pin)
+        /// when turned pure; restores the catch and exception pins when turned impure.
+        /// </summary>
+        /// <param name="pure">The new purity value.</param>
         protected override void SetPurity(bool pure)
         {
             base.SetPurity(pure);
@@ -259,6 +283,12 @@ namespace NetPrints.Graph
             }
         }
 
+        /// <summary>
+        /// Reconstructs every argument and return pin's type from <see cref="MethodSpecifier"/> with
+        /// its generic parameters substituted by this node's input type pins (<see cref="UpdateTypes"/>).
+        /// </summary>
+        /// <param name="sender">The node whose input type changed.</param>
+        /// <param name="eventArgs">Unused; forwarded to the base implementation.</param>
         protected override void HandleInputTypeChanged(object? sender, EventArgs? eventArgs)
         {
             base.HandleInputTypeChanged(sender, eventArgs);
@@ -296,6 +326,11 @@ namespace NetPrints.Graph
             }
         }
 
+        /// <summary>
+        /// Returns "Operator &lt;display name&gt;" for an operator method, or the (possibly
+        /// declaring-type-qualified, for a static method) method name otherwise.
+        /// </summary>
+        /// <returns>The node's display string.</returns>
         public override string ToString()
         {
             if (OperatorUtil.TryGetOperatorInfo(MethodSpecifier, out var operatorInfo))

@@ -14,6 +14,10 @@ namespace NetPrints.Graph
     [DataContract]
     public partial class ConstructorNode : ExecNode
     {
+        /// <summary>
+        /// Always <see langword="true"/>: a constructor node can become pure (no exec pins) since
+        /// construction alone is not considered a side effect worth sequencing.
+        /// </summary>
         public override bool CanSetPure
         {
             get => true;
@@ -54,6 +58,14 @@ namespace NetPrints.Graph
             get { return InputDataPins; }
         }
 
+        /// <summary>
+        /// Adds this node to <paramref name="graph"/> and builds its pins from
+        /// <paramref name="specifier"/>: a generic-argument input type pin per generic argument of the
+        /// constructed type, one input data pin per constructor argument, and the single output data
+        /// pin for the constructed instance.
+        /// </summary>
+        /// <param name="graph">Graph the node belongs to.</param>
+        /// <param name="specifier">Specifier for the constructor to call.</param>
         public ConstructorNode(NodeGraph graph, ConstructorSpecifier specifier)
             : base(graph)
         {
@@ -76,6 +88,13 @@ namespace NetPrints.Graph
             UpdateTypes();
         }
 
+        /// <summary>
+        /// Reconstructs every argument pin's type and the constructed-instance output pin's type from
+        /// <see cref="ConstructorSpecifier"/> with its generic parameters substituted by this node's
+        /// input type pins (<see cref="UpdateTypes"/>).
+        /// </summary>
+        /// <param name="sender">The node whose input type changed.</param>
+        /// <param name="eventArgs">Unused; forwarded to the base implementation.</param>
         protected override void HandleInputTypeChanged(object? sender, EventArgs? eventArgs)
         {
             base.HandleInputTypeChanged(sender, eventArgs);
@@ -105,6 +124,10 @@ namespace NetPrints.Graph
             }
         }
 
+        /// <summary>
+        /// Returns "Construct " followed by the constructed type's short name.
+        /// </summary>
+        /// <returns>"Construct " followed by the constructed type's short name.</returns>
         public override string ToString()
         {
             return $"Construct {ClassType.ShortName}";
