@@ -10,11 +10,15 @@ public partial class SelectTypeDialog : Window, IDialogResult<TypeSpecifier>
 {
     private readonly List<TypeSpecifier> types = [];
 
+    /// <summary>Loads the dialog's XAML, with no choices set.</summary>
     public SelectTypeDialog()
     {
         InitializeComponent();
     }
 
+    /// <summary>Loads the dialog's XAML with the offered types and an initial selection.</summary>
+    /// <param name="types">Types offered by the chooser.</param>
+    /// <param name="initial">Initially selected type.</param>
     public SelectTypeDialog(IEnumerable<TypeSpecifier> types, TypeSpecifier initial) : this()
     {
         this.types = types.ToList();
@@ -23,6 +27,7 @@ public partial class SelectTypeDialog : Window, IDialogResult<TypeSpecifier>
         TypeBox.Text = initial.ToString();
     }
 
+    /// <summary>The dialog's result once closed via <see cref="OnSelectClicked"/>, or <see langword="null"/> before then.</summary>
     public TypeSpecifier? Result { get; private set; }
 
     /// <summary>Resolves the selected item or the typed text to a type.</summary>
