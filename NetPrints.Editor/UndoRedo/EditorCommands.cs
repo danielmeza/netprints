@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using NetPrints.Core;
 using NetPrints.Graph;
 
@@ -79,22 +80,43 @@ public static class EditorCommands
             () => variable.SetterMethod = old);
     }
 
-    /// <summary>Changes the overload of a node; undo restores the previous overload.</summary>
+    /// <summary>
+    /// A node that survives overload changes. Changing the overload of a call or constructor node
+    /// replaces the node, so every overload command of that node goes through one shared handle
+    /// that follows the replacements; otherwise undoing two changes in a row would act on a node
+    /// that is no longer in the graph.
+    /// </summary>
+    private sealed class NodeHandle(Node node)
+    {
+        public Node Node { get; set; } = node;
+    }
+
+    private static readonly ConditionalWeakTable<Node, NodeHandle> NodeHandles = [];
+
+    /// <summary>Changes the overload of a node; undo restores the previous overload (PAR-40, PAR-60).</summary>
     public static IUndoableCommand ChangeOverload(Node node, object newOverload)
     {
-        Node current = node;
+        var handle = NodeHandles.GetValue(node, n => new NodeHandle(n));
         object? previous = null;
+
+        void Apply(object overload)
+        {
+            var replacement = ModelOperations.ChangeOverload(handle.Node, overload);
+            NodeHandles.AddOrUpdate(replacement, handle);
+            handle.Node = replacement;
+        }
+
         return new DelegateUndoableCommand("Change overload",
             () =>
             {
-                previous = ModelOperations.GetCurrentOverload(current);
-                current = ModelOperations.ChangeOverload(current, newOverload);
+                previous = ModelOperations.GetCurrentOverload(handle.Node);
+                Apply(newOverload);
             },
             () =>
             {
                 if (previous is not null)
                 {
-                    current = ModelOperations.ChangeOverload(current, previous);
+                    Apply(previous);
                 }
             });
     }

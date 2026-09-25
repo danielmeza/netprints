@@ -124,4 +124,87 @@ public class UndoRedoStackTests
         Assert.False(stack.Redo());
         Assert.Equal(new[] { "B" }, cls.Variables.Select(v => v.Name).ToArray());
     }
+
+    [Fact]
+    public void ChainedOverloadChangesUndoAndRedoInOrder()
+    {
+        // PAR-60: two overload changes of the same node, undone and redone step by step.
+        var cls = NewClass();
+        var method = new MethodGraph("M") { Class = cls };
+        cls.Methods.Add(method);
+        var console = TypeSpecifier.FromType(typeof(Console));
+        MethodSpecifier WriteLine(params TypeSpecifier[] parameters) =>
+            new("WriteLine", parameters.Select(p => new MethodParameter("value", p, MethodParameterPassType.Default, false, null)),
+                [], MethodModifiers.Static, MemberVisibility.Public, console, []);
+        var writeString = WriteLine(TypeSpecifier.FromType<string>());
+        var writeInt = WriteLine(TypeSpecifier.FromType<int>());
+        var writeNothing = WriteLine();
+        var call = new CallMethodNode(method, writeString);
+        GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, call.InputExecPins[0]);
+        var stack = new UndoRedoStack();
+
+        CallMethodNode Current()
+        {
+            var node = Assert.Single(method.Nodes.OfType<CallMethodNode>());
+            Assert.Same(node.InputExecPins[0], method.EntryNode.InitialExecutionPin.OutgoingPin);
+            return node;
+        }
+
+        stack.Do(EditorCommands.ChangeOverload(Current(), writeInt));
+        stack.Do(EditorCommands.ChangeOverload(Current(), writeNothing));
+        Assert.Equal(writeNothing, Current().MethodSpecifier);
+
+        stack.Undo();
+        Assert.Equal(writeInt, Current().MethodSpecifier);
+        stack.Undo();
+        Assert.Equal(writeString, Current().MethodSpecifier);
+
+        stack.Redo();
+        Assert.Equal(writeInt, Current().MethodSpecifier);
+        stack.Redo();
+        Assert.Equal(writeNothing, Current().MethodSpecifier);
+
+        stack.Undo();
+        stack.Undo();
+        Assert.Equal(writeString, Current().MethodSpecifier);
+    }
+
+    [Fact]
+    public void MultiStepUndoRedoAcrossCommandKinds()
+    {
+        // PAR-60: a mixed history is undone in reverse order and redone in order.
+        var cls = NewClass();
+        var stack = new UndoRedoStack();
+
+        stack.Do(EditorCommands.AddVariable(cls, "A"));
+        var a = cls.Variables.Single();
+        stack.Do(EditorCommands.AddGetter(a));
+        stack.Do(EditorCommands.AddSetter(a));
+        stack.Do(EditorCommands.AddVariable(cls, "B"));
+        stack.Do(EditorCommands.RemoveGetter(a));
+
+        Assert.Null(a.GetterMethod);
+        stack.Undo(); // getter back
+        Assert.NotNull(a.GetterMethod);
+        stack.Undo(); // B removed
+        Assert.Equal(["A"], cls.Variables.Select(v => v.Name));
+        stack.Undo(); // setter removed
+        Assert.Null(a.SetterMethod);
+        stack.Undo(); // getter removed
+        Assert.Null(a.GetterMethod);
+        stack.Undo(); // A removed
+        Assert.Empty(cls.Variables);
+        Assert.False(stack.Undo());
+
+        for (int i = 0; i < 5; i++)
+        {
+            Assert.True(stack.Redo());
+        }
+
+        Assert.Equal(["A", "B"], cls.Variables.Select(v => v.Name));
+        Assert.Same(a, cls.Variables[0]);
+        Assert.Null(a.GetterMethod);
+        Assert.NotNull(a.SetterMethod);
+        Assert.False(stack.Redo());
+    }
 }
