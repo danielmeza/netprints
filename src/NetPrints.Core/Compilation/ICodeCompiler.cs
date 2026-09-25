@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 
 namespace NetPrints.Compilation
@@ -26,14 +27,14 @@ namespace NetPrints.Compilation
         }
 
         /// <summary>
-        /// Path to the generated assembly.
+        /// Path to the generated assembly. Null when the compilation did not succeed.
         /// </summary>
-        public string PathToAssembly
+        public string? PathToAssembly
         {
             get;
         }
 
-        public CodeCompileResults(bool success, IEnumerable<string> errors, string pathToAssembly)
+        public CodeCompileResults(bool success, IEnumerable<string> errors, string? pathToAssembly)
         {
             Success = success;
             Errors = errors;

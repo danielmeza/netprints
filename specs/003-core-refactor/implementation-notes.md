@@ -208,6 +208,55 @@ T012 later needs to touch `Translator/`/`Compilation/`/`Serialization/` incremen
 warning it isn't ready to fix yet, this line can be removed again until T014 without affecting T011's
 own scope — noted here so that isn't mistaken for a T011 regression.
 
+### T012 — Nullable rollout for `Translator/`, `Compilation/`, `Serialization/`
+
+Same rule as T011, applied to the remaining `src/NetPrints.Core` folders. Notable points:
+
+- `CodeCompileResults.PathToAssembly` and `Project.LastCompiledAssemblyPath` made nullable
+  (`string?`): the legacy XML sample files already round-trip `<LastCompiledAssemblyPath
+  i:nil="true"/>`, confirming this was already a real optional value, not an oversight.
+- `ExecutionGraphTranslator`'s `graph`/`random` fields are set once, as the first statement of
+  `Translate()`, and read by every other method on the class — but never in a constructor
+  (the translator instance is created once and `Translate()` is called on it repeatedly, once per
+  method/constructor, by `ClassTranslator`). Same guard-exception pattern as
+  `ExecutionGraph.EntryNode` (T011): a nullable backing field, a non-nullable property that throws
+  `InvalidOperationException` if read before `Translate()` ran.
+- `nodeTypeHandlers`' dispatch table cast each node with `node as SomeNodeType` before calling the
+  type-specific `TranslateXNode(SomeNodeType node)` overload; since the dictionary is keyed by
+  `node.GetType()` (`TranslateNode`), the cast is always exact. Changed to a hard cast
+  (`(SomeNodeType)node`) instead of `as` + `!`: same runtime behavior when the invariant holds, but
+  throws a clear `InvalidCastException` instead of an `!`-asserted null if it is ever violated.
+  `CallMethodNode.HandlesExceptions` gained `[MemberNotNullWhen(true, nameof(CatchPin))]` instead of
+  a `!` at its one call site (`WriteGotoOutputPinIfNecessary(node.CatchPin, ...)` under
+  `if (node.HandlesExceptions)`), since the property's own getter (`!IsPure && CatchPin?.OutgoingPin
+  != null`) already encodes exactly that postcondition.
+- `GetPinIncomingValue` (an input pin's C# expression) genuinely returns null for one case: an
+  unconnected pin using `UsesExplicitDefaultValue` (omit the call argument, let the C# default
+  parameter value apply — a `CallMethodNode`/`ConstructorNode`-only concept). Its return type is now
+  `string?`, and callers either already branch on `is null` (call-argument lists, which is why this
+  was correct all along) or are for a pin flavor that never sets that flag (a condition, a value
+  being assigned, an array size, ...) — those keep a commented `!`.
+- `TranslatorUtil.ObjectToLiteral`'s `obj` parameter is `object?` (it already handled `obj is null`
+  explicitly, returning the `"null"` literal, so this was a pre-existing gap between the annotation
+  and the real behavior, not a new one; found because `NodePinVM.cs`'s call site passes
+  `MethodParameter.ExplicitDefaultValue`, nullable since T011).
+- The recurring `pin.PinType.Value!.FullCodeName` (7 sites in this file, plus the pre-existing 7 from
+  T011's `CallMethodNode`/`ConstructorNode`/`GraphUtil`/`MakeArrayTypeNode`) is the same
+  translator-only invariant: the translator runs solely on graphs that already went through
+  `GraphTypeInference.Relax` (via `[OnDeserialized]`, T020 extracts this call explicitly), so every
+  pin's inferred/assigned type is resolved by the time any `Translate*` method runs. No flow
+  attribute expresses "resolved because a whole separate pass ran earlier," so this remains the one
+  recurring, commented `!` pattern for the entire translator.
+- Two `NodeGraph.Class` dereferences (`VariableSetterNode`/`VariableGetterNode` translating a static
+  member with no explicit target type) now guard with `?? throw new InvalidOperationException(...)`
+  instead of a bare `!`, since an untethered graph reaching code generation is a genuine bug worth a
+  clear message, not just a locally-obvious invariant.
+
+Verified: `dotnet build NetPrints.slnx -c Release` 0 warnings/0 errors (Reflection's 4 pre-existing
+RS1024 and Cli's 2 pre-existing CS8600/CS8602 are T013/T014 scope, untouched); full
+`dotnet test --solution` 268 total, 0 failed, 259 succeeded, 9 skipped — identical counts to the
+T011 checkpoint, including `GoldenCSharpTests` (the translator's actual output is unchanged).
+
 ### T009/T010 — new AGENTS.md "MVVM (CommunityToolkit.Mvvm)" rules (owner, commit a863e7e)
 
 While migrating, the owner added an explicit MVVM section to `AGENTS.md`: `[ObservableProperty]`

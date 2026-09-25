@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -48,10 +49,10 @@ namespace NetPrints.Translator
         /// <summary>
         /// Translates an object into a literal value (eg. a float 32.32 -> "32.32f")
         /// </summary>
-        /// <param name="obj">Object value to translate.</param>
+        /// <param name="obj">Object value to translate. Null translates to the "null" literal.</param>
         /// <param name="type">Specifier for the type of the literal.</param>
         /// <returns></returns>
-        public static string ObjectToLiteral(object obj, TypeSpecifier type)
+        public static string ObjectToLiteral(object? obj, TypeSpecifier type)
         {
             // Interpret object string as enum field
             if (type.IsEnum)
@@ -65,14 +66,16 @@ namespace NetPrints.Translator
                 return "null";
             }
 
-            // Numbers are culture-invariant.
+            // Numbers are culture-invariant. obj is a boxed built-in value type here (int, double,
+            // ...); none of their ToString() overrides ever return null.
             string invariant = obj is System.IFormattable formattable
                 ? formattable.ToString(null, System.Globalization.CultureInfo.InvariantCulture)
-                : obj.ToString();
+                : obj.ToString()!;
 
             if (type == TypeSpecifier.FromType<string>())
             {
-                return Microsoft.CodeAnalysis.CSharp.SymbolDisplay.FormatLiteral(obj.ToString(), quote: true);
+                // type == string means obj is the literal's own boxed string value.
+                return Microsoft.CodeAnalysis.CSharp.SymbolDisplay.FormatLiteral((string)obj, quote: true);
             }
             else if (type == TypeSpecifier.FromType<char>() && obj is char c)
             {
@@ -118,7 +121,7 @@ namespace NetPrints.Translator
         /// numeric literal in C#, so <see cref="ObjectToLiteral"/> must not emit them as a suffixed
         /// number ("NaND", "InfinityD"), which fails to compile.
         /// </summary>
-        private static string NonFiniteLiteral(double value, string typeName) => value switch
+        private static string? NonFiniteLiteral(double value, string typeName) => value switch
         {
             double.NaN => $"{typeName}.NaN",
             double.PositiveInfinity => $"{typeName}.PositiveInfinity",

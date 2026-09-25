@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -28,37 +29,56 @@ namespace NetPrints.Translator
 
         private readonly StringBuilder builder = new StringBuilder();
 
-        private ExecutionGraph graph;
+        // Set as the first statement of Translate(), which every other method here is only ever
+        // called from (directly or indirectly), never before. Backed by a nullable field instead of
+        // asserted with `!` so a genuine misuse (calling a Translate*Node method without going
+        // through Translate() first) throws a clear exception instead of a NullReferenceException.
+        private ExecutionGraph? graphField;
+        private ExecutionGraph graph
+        {
+            get => graphField ?? throw new InvalidOperationException(
+                $"{nameof(ExecutionGraphTranslator)}.{nameof(graph)} was read before {nameof(Translate)}() was called.");
+            set => graphField = value;
+        }
 
-        private Random random;
+        private Random? randomField;
+        private Random random
+        {
+            get => randomField ?? throw new InvalidOperationException(
+                $"{nameof(ExecutionGraphTranslator)}.{nameof(random)} was read before {nameof(Translate)}() was called.");
+            set => randomField = value;
+        }
 
         private delegate void NodeTypeHandler(ExecutionGraphTranslator translator, Node node);
 
+        // Each closure below casts to the exact type it is registered under (keyed by
+        // node.GetType() in TranslateNode), so the cast always succeeds; a hard cast is used
+        // instead of `as` + `!` so a violated invariant throws a clear InvalidCastException.
         private readonly Dictionary<Type, List<NodeTypeHandler>> nodeTypeHandlers = new Dictionary<Type, List<NodeTypeHandler>>()
         {
-            { typeof(CallMethodNode), new List<NodeTypeHandler> { (translator, node) => translator.TranslateCallMethodNode(node as CallMethodNode) } },
-            { typeof(VariableSetterNode), new List<NodeTypeHandler> { (translator, node) => translator.TranslateVariableSetterNode(node as VariableSetterNode) } },
-            { typeof(ReturnNode), new List<NodeTypeHandler> { (translator, node) => translator.TranslateReturnNode(node as ReturnNode) } },
-            { typeof(MethodEntryNode), new List<NodeTypeHandler> { (translator, node) => translator.TranslateMethodEntry(node as MethodEntryNode) } },
-            { typeof(IfElseNode), new List<NodeTypeHandler> { (translator, node) => translator.TranslateIfElseNode(node as IfElseNode) } },
-            { typeof(ConstructorNode), new List<NodeTypeHandler> { (translator, node) => translator.TranslateConstructorNode(node as ConstructorNode) } },
-            { typeof(ExplicitCastNode), new List<NodeTypeHandler> { (translator, node) => translator.TranslateExplicitCastNode(node as ExplicitCastNode) } },
-            { typeof(ThrowNode), new List<NodeTypeHandler> { (translator, node) => translator.TranslateThrowNode(node as ThrowNode) } },
-            { typeof(AwaitNode), new List<NodeTypeHandler> { (translator, node) => translator.TranslateAwaitNode(node as AwaitNode) } },
-            { typeof(TernaryNode), new List<NodeTypeHandler> { (translator, node) => translator.TranslateTernaryNode(node as TernaryNode) } },
+            { typeof(CallMethodNode), new List<NodeTypeHandler> { (translator, node) => translator.TranslateCallMethodNode((CallMethodNode)node) } },
+            { typeof(VariableSetterNode), new List<NodeTypeHandler> { (translator, node) => translator.TranslateVariableSetterNode((VariableSetterNode)node) } },
+            { typeof(ReturnNode), new List<NodeTypeHandler> { (translator, node) => translator.TranslateReturnNode((ReturnNode)node) } },
+            { typeof(MethodEntryNode), new List<NodeTypeHandler> { (translator, node) => translator.TranslateMethodEntry((MethodEntryNode)node) } },
+            { typeof(IfElseNode), new List<NodeTypeHandler> { (translator, node) => translator.TranslateIfElseNode((IfElseNode)node) } },
+            { typeof(ConstructorNode), new List<NodeTypeHandler> { (translator, node) => translator.TranslateConstructorNode((ConstructorNode)node) } },
+            { typeof(ExplicitCastNode), new List<NodeTypeHandler> { (translator, node) => translator.TranslateExplicitCastNode((ExplicitCastNode)node) } },
+            { typeof(ThrowNode), new List<NodeTypeHandler> { (translator, node) => translator.TranslateThrowNode((ThrowNode)node) } },
+            { typeof(AwaitNode), new List<NodeTypeHandler> { (translator, node) => translator.TranslateAwaitNode((AwaitNode)node) } },
+            { typeof(TernaryNode), new List<NodeTypeHandler> { (translator, node) => translator.TranslateTernaryNode((TernaryNode)node) } },
 
             { typeof(ForLoopNode), new List<NodeTypeHandler> {
-                (translator, node) => translator.TranslateStartForLoopNode(node as ForLoopNode),
-                (translator, node) => translator.TranslateContinueForLoopNode(node as ForLoopNode)} },
+                (translator, node) => translator.TranslateStartForLoopNode((ForLoopNode)node),
+                (translator, node) => translator.TranslateContinueForLoopNode((ForLoopNode)node)} },
 
-            { typeof(RerouteNode), new List<NodeTypeHandler> { (translator, node) => translator.TranslateRerouteNode(node as RerouteNode) } },
+            { typeof(RerouteNode), new List<NodeTypeHandler> { (translator, node) => translator.TranslateRerouteNode((RerouteNode)node) } },
 
-            { typeof(VariableGetterNode), new List<NodeTypeHandler> { (translator, node) => translator.PureTranslateVariableGetterNode(node as VariableGetterNode) } },
-            { typeof(LiteralNode), new List<NodeTypeHandler> { (translator, node) => translator.PureTranslateLiteralNode(node as LiteralNode) } },
-            { typeof(MakeDelegateNode), new List<NodeTypeHandler> { (translator, node) => translator.PureTranslateMakeDelegateNode(node as MakeDelegateNode) } },
-            { typeof(TypeOfNode), new List<NodeTypeHandler> { (translator, node) => translator.PureTranslateTypeOfNode(node as TypeOfNode) } },
-            { typeof(MakeArrayNode), new List<NodeTypeHandler> { (translator, node) => translator.PureTranslateMakeArrayNode(node as MakeArrayNode) } },
-            { typeof(DefaultNode), new List<NodeTypeHandler> { (translator, node) => translator.PureTranslateDefaultNode(node as DefaultNode) } },
+            { typeof(VariableGetterNode), new List<NodeTypeHandler> { (translator, node) => translator.PureTranslateVariableGetterNode((VariableGetterNode)node) } },
+            { typeof(LiteralNode), new List<NodeTypeHandler> { (translator, node) => translator.PureTranslateLiteralNode((LiteralNode)node) } },
+            { typeof(MakeDelegateNode), new List<NodeTypeHandler> { (translator, node) => translator.PureTranslateMakeDelegateNode((MakeDelegateNode)node) } },
+            { typeof(TypeOfNode), new List<NodeTypeHandler> { (translator, node) => translator.PureTranslateTypeOfNode((TypeOfNode)node) } },
+            { typeof(MakeArrayNode), new List<NodeTypeHandler> { (translator, node) => translator.PureTranslateMakeArrayNode((MakeArrayNode)node) } },
+            { typeof(DefaultNode), new List<NodeTypeHandler> { (translator, node) => translator.PureTranslateDefaultNode((DefaultNode)node) } },
         };
 
         private int GetNextStateId()
@@ -71,7 +91,7 @@ namespace NetPrints.Translator
             return nodeStateIds[pin.Node][pin.Node.InputExecPins.IndexOf(pin)];
         }
 
-        private string GetOrCreatePinName(NodeOutputDataPin pin)
+        private string GetOrCreatePinName(NodeOutputDataPin? pin)
         {
             // Return the default value of the pin type if nothing is connected
             if (pin == null)
@@ -102,13 +122,21 @@ namespace NetPrints.Translator
             return pinName;
         }
 
-        private string GetPinIncomingValue(NodeInputDataPin pin)
+        /// <summary>
+        /// The C# expression for a pin's incoming value, or null to mean "omit the argument, use the
+        /// parameter's own default value" (<see cref="NodeInputDataPin.UsesExplicitDefaultValue"/>).
+        /// Callers check the result for null (e.g. <see cref="TranslateCallMethodNode"/>'s
+        /// `prependArgumentName`), they do not simply emit it.
+        /// </summary>
+        private string? GetPinIncomingValue(NodeInputDataPin pin)
         {
             if (pin.IncomingPin == null)
             {
                 if (pin.UsesUnconnectedValue && pin.UnconnectedValue != null)
                 {
-                    return TranslatorUtil.ObjectToLiteral(pin.UnconnectedValue, (TypeSpecifier)pin.PinType.Value);
+                    // The translator only ever runs on a fully type-resolved graph (GraphTypeInference
+                    // already ran during deserialization), so PinType.Value is set here.
+                    return TranslatorUtil.ObjectToLiteral(pin.UnconnectedValue, (TypeSpecifier)pin.PinType.Value!);
                 }
                 else if (pin.UsesExplicitDefaultValue)
                 {
@@ -131,7 +159,7 @@ namespace NetPrints.Translator
             return pins.Select(pin => GetOrCreatePinName(pin)).ToList();
         }
 
-        private IEnumerable<string> GetPinIncomingValues(IEnumerable<NodeInputDataPin> pins)
+        private IEnumerable<string?> GetPinIncomingValues(IEnumerable<NodeInputDataPin> pins)
         {
             return pins.Select(pin => GetPinIncomingValue(pin)).ToList();
         }
@@ -139,7 +167,8 @@ namespace NetPrints.Translator
         private string GetOrCreateTypedPinName(NodeOutputDataPin pin)
         {
             string pinName = GetOrCreatePinName(pin);
-            return $"{pin.PinType.Value.FullCodeName} {pinName}";
+            // Same resolved-graph invariant as GetPinIncomingValue above.
+            return $"{pin.PinType.Value!.FullCodeName} {pinName}";
         }
 
         private IEnumerable<string> GetOrCreateTypedPinNames(IEnumerable<NodeOutputDataPin> pins)
@@ -182,7 +211,9 @@ namespace NetPrints.Translator
 
                 if (!(pin.Node is MethodEntryNode))
                 {
-                    builder.AppendLine($"{pin.PinType.Value.FullCodeName} {variableName} = default({pin.PinType.Value.FullCodeName});");
+                    // Same resolved-graph invariant as GetPinIncomingValue above.
+                    string typeName = pin.PinType.Value!.FullCodeName;
+                    builder.AppendLine($"{typeName} {variableName} = default({typeName});");
                 }
             }
         }
@@ -194,7 +225,7 @@ namespace NetPrints.Translator
             // Write visibility
             builder.Append($"{TranslatorUtil.VisibilityTokens[graph.Visibility]} ");
 
-            MethodGraph methodGraph = graph as MethodGraph;
+            MethodGraph? methodGraph = graph as MethodGraph;
 
             if (methodGraph != null)
             {
@@ -332,7 +363,8 @@ namespace NetPrints.Translator
             builder.AppendLine();
 
             // Start at node after method entry if necessary (id!=0)
-            if (graph.EntryNode.OutputExecPins[0].OutgoingPin != null && GetExecPinStateId(graph.EntryNode.OutputExecPins[0].OutgoingPin) != 0)
+            NodeInputExecPin? initialOutgoingPin = graph.EntryNode.OutputExecPins[0].OutgoingPin;
+            if (initialOutgoingPin != null && GetExecPinStateId(initialOutgoingPin) != 0)
             {
                 WriteGotoOutputPin(graph.EntryNode.OutputExecPins[0]);
             }
@@ -486,7 +518,7 @@ namespace NetPrints.Translator
                 builder.AppendLine("{");
             }
 
-            string temporaryReturnName = null;
+            string? temporaryReturnName = null;
 
             if (!node.IsPure)
             {
@@ -506,7 +538,8 @@ namespace NetPrints.Translator
             {
                 temporaryReturnName = TranslatorUtil.GetTemporaryVariableName(random);
 
-                var returnTypeNames = string.Join(", ", node.ReturnValuePins.Select(pin => pin.PinType.Value.FullCodeName));
+                // Same resolved-graph invariant as GetPinIncomingValue above.
+                var returnTypeNames = string.Join(", ", node.ReturnValuePins.Select(pin => pin.PinType.Value!.FullCodeName));
 
                 builder.Append($"{typeof(Tuple).FullName}<{returnTypeNames}> {temporaryReturnName} = ");
             }
@@ -569,7 +602,7 @@ namespace NetPrints.Translator
                     }
                 }
 
-                string[] argNameArray = argumentNames.ToArray();
+                string?[] argNameArray = argumentNames.ToArray();
                 Debug.Assert(argNameArray.Length == node.MethodSpecifier.Parameters.Count);
 
                 bool prependArgumentName = argNameArray.Any(a => a is null);
@@ -649,7 +682,8 @@ namespace NetPrints.Translator
                 foreach (var returnValuePin in node.ReturnValuePins)
                 {
                     string returnName = GetOrCreatePinName(returnValuePin);
-                    builder.AppendLine($"{returnName} = default({returnValuePin.PinType.Value.FullCodeName});");
+                    // Same resolved-graph invariant as GetPinIncomingValue above.
+                    builder.AppendLine($"{returnName} = default({returnValuePin.PinType.Value!.FullCodeName});");
                 }
 
                 if (!node.IsPure)
@@ -678,7 +712,7 @@ namespace NetPrints.Translator
             var argumentNames = GetPinIncomingValues(node.ArgumentPins);
             //builder.AppendLine($"({string.Join(", ", argumentNames)});");
 
-            string[] argNameArray = argumentNames.ToArray();
+            string?[] argNameArray = argumentNames.ToArray();
             Debug.Assert(argNameArray.Length == node.ConstructorSpecifier.Arguments.Count);
 
             bool prependArgumentName = argNameArray.Any(a => a is null);
@@ -741,7 +775,9 @@ namespace NetPrints.Translator
             // Try to cast the incoming object and go to next states.
             if (node.ObjectToCast.IncomingPin != null)
             {
-                string pinToCastName = GetPinIncomingValue(node.ObjectToCast);
+                // GetPinIncomingValue only returns null for an unconnected pin using its parameter's
+                // default value; IncomingPin != null above rules that out here.
+                string pinToCastName = GetPinIncomingValue(node.ObjectToCast)!;
                 string outputName = GetOrCreatePinName(node.CastPin);
 
                 // If failure pin is not connected write explicit cast that throws.
@@ -825,7 +861,9 @@ namespace NetPrints.Translator
             // the correct order
             TranslateDependentPureNodes(node);
 
-            string valueName = GetPinIncomingValue(node.NewValuePin);
+            // The value pin does not use the explicit-default-value convention (that is only set on
+            // CallMethodNode's argument pins), so this is never null.
+            string valueName = GetPinIncomingValue(node.NewValuePin)!;
 
             // Add target name if there is a target (null for local and static variables)
             if (node.IsStatic)
@@ -836,7 +874,9 @@ namespace NetPrints.Translator
                 }
                 else
                 {
-                    builder.Append(node.Graph.Class.Name);
+                    var declaringClass = node.Graph.Class
+                        ?? throw new InvalidOperationException("A static variable setter's graph has no class.");
+                    builder.Append(declaringClass.Name);
                 }
             }
             if (node.TargetPin != null)
@@ -855,7 +895,8 @@ namespace NetPrints.Translator
             // Add index if needed
             if (node.IsIndexer)
             {
-                builder.Append($"[{GetPinIncomingValue(node.IndexPin)}]");
+                // IsIndexer implies IndexPin is not null (VariableNode.IndexPin).
+                builder.Append($"[{GetPinIncomingValue(node.IndexPin!)}]");
             }
             else
             {
@@ -902,7 +943,8 @@ namespace NetPrints.Translator
                 var returnValues = node.InputDataPins.Select(pin => GetPinIncomingValue(pin));
 
                 // Tuple<Types..> (won't be needed in the future)
-                string returnType = typeof(Tuple).FullName + "<" + string.Join(", ", node.InputDataPins.Select(pin => pin.PinType.Value.FullCodeName)) + ">";
+                // Same resolved-graph invariant as GetPinIncomingValue above.
+                string returnType = typeof(Tuple).FullName + "<" + string.Join(", ", node.InputDataPins.Select(pin => pin.PinType.Value!.FullCodeName)) + ">";
                 builder.AppendLine($"return new {returnType}({string.Join(", ", returnValues)});");
             }
         }
@@ -913,7 +955,9 @@ namespace NetPrints.Translator
             // the correct order
             TranslateDependentPureNodes(node);
 
-            string conditionVar = GetPinIncomingValue(node.ConditionPin);
+            // The condition pin does not use the explicit-default-value convention, so this is never
+            // null (see GetPinIncomingValue).
+            string conditionVar = GetPinIncomingValue(node.ConditionPin)!;
 
             builder.AppendLine($"if ({conditionVar})");
             builder.AppendLine("{");
@@ -988,7 +1032,9 @@ namespace NetPrints.Translator
                 }
                 else
                 {
-                    builder.Append(node.Graph.Class.Name);
+                    var declaringClass = node.Graph.Class
+                        ?? throw new InvalidOperationException("A static variable getter's graph has no class.");
+                    builder.Append(declaringClass.Name);
                 }
             }
             else
@@ -1008,7 +1054,8 @@ namespace NetPrints.Translator
             // Add index if needed
             if (node.IsIndexer)
             {
-                builder.Append($"[{GetPinIncomingValue(node.IndexPin)}]");
+                // IsIndexer implies IndexPin is not null (VariableNode.IndexPin).
+                builder.Append($"[{GetPinIncomingValue(node.IndexPin!)}]");
             }
             else
             {

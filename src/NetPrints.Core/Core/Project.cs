@@ -74,11 +74,12 @@ namespace NetPrints.Core
         public partial Version SaveVersion { get; set; }
 
         /// <summary>
-        /// Path to the last successfully compiled assembly.
+        /// Path to the last successfully compiled assembly. Null before the first successful
+        /// compilation, or when the last compilation failed.
         /// </summary>
         [ObservableProperty]
         [DataMember]
-        public partial string LastCompiledAssemblyPath { get; set; }
+        public partial string? LastCompiledAssemblyPath { get; set; }
 
         /// <summary>
         /// Path to the project file.

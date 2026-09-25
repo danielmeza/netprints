@@ -1,6 +1,7 @@
 ﻿#nullable enable
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -128,6 +129,7 @@ namespace NetPrints.Graph
         /// <summary>
         /// Whether this node has exception handling (try/catch).
         /// </summary>
+        [MemberNotNullWhen(true, nameof(CatchPin))]
         public bool HandlesExceptions
         {
             get => !IsPure && CatchPin?.OutgoingPin != null;
