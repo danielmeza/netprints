@@ -109,6 +109,14 @@ time; memory profile of reflection caches. Benchmarks (BenchmarkDotNet) + perfor
 enforced in CI.
 
 ### U1–U3 (NetPrintsUnreal repo)
+Linux go/no-go spike (2026-09-25, UE 5.8.3 prebuilt): **go with caveats**. Build, editor start,
+.NET 10 hosting, GenerateProject, a `[UClass]` actor, hot reload (0.93 s), a Blueprint subclass
+and PIE all work on Linux after 5 small fixes on `danielmeza/UnrealSharp` branch `spike/linux`
+(UE 5.8 version detection, dotnet host discovery, clang 20 fixes, POD array view for hot-reload
+assembly names across native→managed, native path separators via `FPaths::MakePlatformFilename`).
+Caveats: visible editor UI not yet exercised on Linux; error dialogs freeze headless editors; audit
+other by-value struct interop; rely on the fork until fixes are upstreamed (est. 2–5 dev-days incl.
+audit, UI pass and upstream PR). Hot reload is disabled with `-unattended`.
 UnrealSharp Blueprint interop findings (code read of the fork, 2026-09-25): C# `[UClass]` types
 are `UBlueprintGeneratedClass` and Blueprints can subclass them; Blueprint-callable/pure functions,
 Read/Write/Edit property flags, metadata attributes (`[Category]`, `[DisplayName]`, `[ToolTip]` —
