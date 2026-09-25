@@ -1,0 +1,83 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:edgetset="clr-namespace:NetPrints.Editor.Graph.GetSet"
+             xmlns:edgraph="clr-namespace:NetPrints.Editor.Graph"
+             xmlns:ednodes="clr-namespace:NetPrints.Editor.Graph.Nodes"
+             xmlns:edpins="clr-namespace:NetPrints.Editor.Graph.Pins"
+             xmlns:edsearch="clr-namespace:NetPrints.Editor.Search"
+             xmlns:nodify="clr-namespace:Nodify.Avalonia;assembly=Nodify.Avalonia"
+             xmlns:nc="clr-namespace:Nodify.Avalonia.Connections;assembly=Nodify.Avalonia"
+             x:Class="NetPrints.Editor.Graph.GraphEditorView"
+             x:DataType="edgraph:NodeGraphVM"
+             ClipToBounds="True">
+  <UserControl.Styles>
+    <!-- Cables: 0.7 opacity, full on hover; faint cables are thin and transparent (PAR-48). -->
+    <Style Selector="nc|Connection">
+      <Setter Property="Opacity" Value="0.7" />
+      <Setter Property="StrokeThickness" Value="4" />
+    </Style>
+    <Style Selector="nc|Connection:pointerover">
+      <Setter Property="Opacity" Value="1" />
+    </Style>
+    <Style Selector="nc|Connection.faint">
+      <Setter Property="Opacity" Value="0.1" />
+      <Setter Property="StrokeThickness" Value="2" />
+    </Style>
+  </UserControl.Styles>
+
+  <Panel>
+    <nodify:NodifyEditor x:Name="Editor"
+                         ItemsSource="{Binding Nodes}"
+                         Connections="{Binding Connections}"
+                         GridCellSize="28"
+                         MinViewportZoom="0.3"
+                         MaxViewportZoom="1"
+                         ItemsDragCompletedCommand="{Binding SnapSelectedToGridCommand}"
+                         DragDrop.AllowDrop="True">
+      <nodify:NodifyEditor.ItemContainerTheme>
+        <ControlTheme TargetType="nodify:ItemContainer" BasedOn="{StaticResource {x:Type nodify:ItemContainer}}" x:DataType="ednodes:NodeVM">
+          <Setter Property="Location" Value="{Binding Location, Mode=TwoWay, Converter={x:Static edgraph:GraphPointConverter.Instance}}" />
+          <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
+          <Setter Property="ZIndex" Value="{Binding ZIndex}" />
+        </ControlTheme>
+      </nodify:NodifyEditor.ItemContainerTheme>
+
+      <nodify:NodifyEditor.ItemTemplate>
+        <DataTemplate x:DataType="ednodes:NodeVM">
+          <ednodes:NodeView />
+        </DataTemplate>
+      </nodify:NodifyEditor.ItemTemplate>
+
+      <nodify:NodifyEditor.ConnectionTemplate>
+        <DataTemplate x:DataType="edpins:ConnectionVM">
+          <nc:Connection Source="{Binding Source.Anchor, Converter={x:Static edgraph:GraphPointConverter.Instance}}"
+                         Target="{Binding Target.Anchor, Converter={x:Static edgraph:GraphPointConverter.Instance}}"
+                         Stroke="{Binding Kind, Converter={x:Static edgraph:PinKindBrushConverter.Instance}}"
+                         Classes.faint="{Binding IsFaint}"
+                         StrokeLineCap="Round" />
+        </DataTemplate>
+      </nodify:NodifyEditor.ConnectionTemplate>
+
+      <!-- Live preview cable while dragging from a pin (PAR-46). -->
+      <nodify:NodifyEditor.PendingConnection>
+        <nc:PendingConnection EnablePreview="True" EnableSnapping="True" AllowOnlyConnectors="True" StrokeThickness="3" />
+      </nodify:NodifyEditor.PendingConnection>
+    </nodify:NodifyEditor>
+
+    <!-- Graph name watermark (PAR-38) -->
+    <TextBlock x:Name="Watermark" Text="{Binding Name}" FontWeight="Bold" FontSize="32" Foreground="#CCEEEEEE"
+               VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="8" IsHitTestVisible="False" />
+
+    <!-- Node search (PAR-52) -->
+    <Popup x:Name="SearchPopup" IsOpen="{Binding Search.IsOpen, Mode=TwoWay}" Placement="Pointer"
+           IsLightDismissEnabled="True" PlacementTarget="{Binding #Editor}">
+      <edsearch:NodeSearchView x:Name="SearchView" DataContext="{Binding Search}" />
+    </Popup>
+
+    <!-- Get/Set chooser (PAR-55) -->
+    <Popup x:Name="GetSetPopup" IsOpen="{Binding GetSetChooser.IsOpen, Mode=TwoWay}" Placement="Pointer"
+           IsLightDismissEnabled="True" PlacementTarget="{Binding #Editor}">
+      <edgetset:GetSetChooserView DataContext="{Binding GetSetChooser}" />
+    </Popup>
+  </Panel>
+</UserControl>

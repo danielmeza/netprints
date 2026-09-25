@@ -2,6 +2,8 @@ using Nodify.Avalonia;
 using Nodify.Avalonia.Connections;
 using NetPrints.Core;
 using NetPrints.Graph;
+using NetPrints.Editor.Graph;
+using NetPrints.Editor.Graph.Pins;
 
 namespace NetPrints.Editor.Tests.Ui;
 
@@ -18,7 +20,7 @@ public class EditFlowTests
         int containers = ctx.Window.Descendants<ItemContainer>().Count();
 
         // Create an If Else node through the node search.
-        await ctx.Graph.OpenSearchAsync(new NetPrints.Editor.ViewModels.GraphPoint(280, 420));
+        await ctx.Graph.OpenSearchAsync(new NetPrints.Editor.Graph.GraphPoint(280, 420));
         await UiTest.WaitUntilAsync(() => ctx.Graph.Search.Items.Any(i => i.Text == "If Else"));
         var ifElseItem = ctx.Graph.Search.Items.First(i => i.Text == "If Else");
         await ctx.Graph.Search.SelectCommand.ExecuteAsync(ifElseItem);
@@ -30,7 +32,7 @@ public class EditFlowTests
         var ifNode = ctx.Graph.Nodes.Single(n => n.Node is IfElseNode);
         Assert.IsTrue(entryExec.ConnectTo(ifNode.InputExecPins.Single()));
         await ctx.WaitForGraphAsync();
-        Assert.IsTrue(ctx.Window.Descendants<Connection>().Any(c => c.DataContext is NetPrints.Editor.ViewModels.ConnectionVM vm && vm.Target == ifNode.InputExecPins.Single()));
+        Assert.IsTrue(ctx.Window.Descendants<Connection>().Any(c => c.DataContext is NetPrints.Editor.Graph.Pins.ConnectionVM vm && vm.Target == ifNode.InputExecPins.Single()));
 
         // Save the project and reload it from disk.
         await ctx.Editor.SaveCommand.ExecuteAsync(null);

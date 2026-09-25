@@ -15,6 +15,6 @@
     <!-- Nodify control templates; without them no graph item is realized. -->
     <StyleInclude Source="avares://Nodify.Avalonia/Themes/Controls.xaml" />
     <mi:MaterialIconStyles />
-    <StyleInclude Source="avares://NetPrints.Editor/Views/EditorStyles.axaml" />
+    <StyleInclude Source="avares://NetPrints.Editor/EditorStyles.axaml" />
   </Application.Styles>
 </Application>

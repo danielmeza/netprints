@@ -1,6 +1,6 @@
 using NetPrints.Core;
 using NetPrints.Editor.Tests.Fakes;
-using NetPrints.Editor.ViewModels;
+using NetPrints.Editor.References;
 
 namespace NetPrints.Editor.Tests.ViewModels;
 

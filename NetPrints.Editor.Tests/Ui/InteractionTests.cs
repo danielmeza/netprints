@@ -3,7 +3,8 @@ using Avalonia.Headless;
 using Avalonia.Input;
 using NetPrints.Core;
 using NetPrints.Graph;
-using NetPrints.Editor.ViewModels;
+using NetPrints.Editor.Graph;
+using NetPrints.Editor.Search;
 
 namespace NetPrints.Editor.Tests.Ui;
 
@@ -85,7 +86,7 @@ public class InteractionTests
         await UiTest.WaitUntilAsync(() => ctx.Graph.Search.IsOpen && !ctx.Graph.Search.IsLoading);
         Assert.IsNull(ctx.Graph.Search.SuggestionPin);
 
-        var searchView = ctx.View.Find<Views.Graph.NodeSearchView>("SearchView");
+        var searchView = ctx.View.Find<NetPrints.Editor.Search.NodeSearchView>("SearchView");
         var box = searchView.Find<Avalonia.Controls.TextBox>("SearchBox");
         await UiTest.WaitUntilAsync(() => box.IsFocused, 5000, "the search box is focused on open (PAR-52)");
         Assert.AreEqual("", box.Text ?? "", "the search box is cleared on open");

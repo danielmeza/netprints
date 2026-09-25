@@ -1,7 +1,8 @@
 using System.Diagnostics;
 using NetPrints.Core;
 using NetPrints.Graph;
-using NetPrints.Editor.ViewModels;
+using NetPrints.Editor.Graph;
+using NetPrints.Editor.Search;
 
 namespace NetPrints.Editor.Tests.ViewModels;
 

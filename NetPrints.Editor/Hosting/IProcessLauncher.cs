@@ -1,0 +1,9 @@
+namespace NetPrints.Editor.Hosting;
+
+/// <summary>
+/// Starts external processes (running compiled projects).
+/// </summary>
+public interface IProcessLauncher
+{
+    void Start(string fileName, string? arguments);
+}

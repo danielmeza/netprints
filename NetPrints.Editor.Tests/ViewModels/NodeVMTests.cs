@@ -1,7 +1,9 @@
 using NetPrints.Core;
 using NetPrints.Graph;
-using NetPrints.Editor.Commands;
-using NetPrints.Editor.ViewModels;
+using NetPrints.Editor.Graph;
+using NetPrints.Editor.Graph.Nodes;
+using NetPrints.Editor.Graph.Pins;
+using NetPrints.Editor.UndoRedo;
 
 namespace NetPrints.Editor.Tests.ViewModels;
 

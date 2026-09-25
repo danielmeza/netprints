@@ -1,0 +1,28 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:edclasseditor="clr-namespace:NetPrints.Editor.ClassEditor"
+             x:Class="NetPrints.Editor.Inspectors.ClassInspectorView"
+             x:DataType="edclasseditor:ClassEditorVM">
+  <!-- Class inspector (PAR-34) -->
+  <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,*" ColumnDefinitions="0.5*,*" Margin="4">
+    <TextBlock Grid.ColumnSpan="2" Classes="header" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+    <TextBlock Grid.Row="1" Text="Name" VerticalAlignment="Center" />
+    <TextBox x:Name="NameBox" Grid.Row="1" Grid.Column="1" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" />
+    <TextBlock Grid.Row="2" Text="Namespace" VerticalAlignment="Center" />
+    <TextBox x:Name="NamespaceBox" Grid.Row="2" Grid.Column="1" Text="{Binding Namespace, UpdateSourceTrigger=PropertyChanged}" />
+    <TextBlock Grid.Row="3" Text="Visibility" VerticalAlignment="Center" />
+    <ComboBox Grid.Row="3" Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding PossibleVisibilities}" SelectedItem="{Binding Visibility}" />
+    <TextBlock Grid.Row="4" Text="Sealed" VerticalAlignment="Center" />
+    <CheckBox Grid.Row="4" Grid.Column="1" IsChecked="{Binding IsSealed}" />
+    <TextBlock Grid.Row="5" Text="Abstract" VerticalAlignment="Center" />
+    <CheckBox Grid.Row="5" Grid.Column="1" IsChecked="{Binding IsAbstract}" />
+    <TextBlock Grid.Row="6" Text="Static" VerticalAlignment="Center" />
+    <CheckBox Grid.Row="6" Grid.Column="1" IsChecked="{Binding IsStatic}" />
+    <TextBlock Grid.Row="7" Text="Partial" VerticalAlignment="Center" />
+    <CheckBox Grid.Row="7" Grid.Column="1" IsChecked="{Binding IsPartial}" />
+    <!-- Generated C# preview, refreshed about every second -->
+    <TextBox x:Name="GeneratedCodeBox" Grid.Row="8" Grid.ColumnSpan="2" Margin="0,4,0,0" Text="{Binding GeneratedCode}" IsReadOnly="True"
+             TextWrapping="NoWrap" AcceptsReturn="True" FontFamily="monospace" VerticalContentAlignment="Top"
+             ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto" />
+  </Grid>
+</UserControl>

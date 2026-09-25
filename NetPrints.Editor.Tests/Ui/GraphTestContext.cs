@@ -3,9 +3,12 @@ using Avalonia.Controls;
 using Nodify.Avalonia;
 using Nodify.Avalonia.Connections;
 using NetPrints.Editor.Tests.Fakes;
-using NetPrints.Editor.ViewModels;
-using NetPrints.Editor.Views;
-using NetPrints.Editor.Views.Graph;
+using NetPrints.Editor.ClassEditor;
+using NetPrints.Editor.Graph;
+using NetPrints.Editor.Graph.Nodes;
+using NetPrints.Editor.Graph.Pins;
+using NetPrints.Editor.Hosting;
+using NetPrints.Editor.Main;
 
 namespace NetPrints.Editor.Tests.Ui;
 
@@ -16,7 +19,7 @@ public sealed class GraphTestContext : IDisposable
 
     public string ProjectPath { get; private init; } = "";
     public EditorComposition Composition { get; private init; } = null!;
-    public Views.MainWindow MainWindow { get; private init; } = null!;
+    public MainWindow MainWindow { get; private init; } = null!;
     public ClassEditorWindow Window { get; private init; } = null!;
     public ClassEditorVM Editor { get; private init; } = null!;
     public FakeDialogs Dialogs { get; private init; } = null!;

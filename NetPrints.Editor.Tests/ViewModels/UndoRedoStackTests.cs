@@ -1,6 +1,6 @@
 using NetPrints.Core;
 using NetPrints.Graph;
-using NetPrints.Editor.Commands;
+using NetPrints.Editor.UndoRedo;
 
 namespace NetPrints.Editor.Tests.ViewModels;
 

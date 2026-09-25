@@ -1,8 +1,8 @@
 using Avalonia.Headless;
 using Nodify.Avalonia;
 using Nodify.Avalonia.Connections;
-using NetPrints.Editor.ViewModels;
-using NetPrints.Editor.Views.Graph;
+using NetPrints.Editor.Graph;
+using NetPrints.Editor.Graph.Nodes;
 
 namespace NetPrints.Editor.Tests.Ui;
 

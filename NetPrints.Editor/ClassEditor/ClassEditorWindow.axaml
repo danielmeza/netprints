@@ -1,0 +1,131 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:edclasseditor="clr-namespace:NetPrints.Editor.ClassEditor"
+        xmlns:edgraph="clr-namespace:NetPrints.Editor.Graph"
+        xmlns:edinspectors="clr-namespace:NetPrints.Editor.Inspectors"
+        xmlns:edsearch="clr-namespace:NetPrints.Editor.Search"
+        xmlns:edvariables="clr-namespace:NetPrints.Editor.Variables"
+        xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+        x:Class="NetPrints.Editor.ClassEditor.ClassEditorWindow"
+        x:DataType="edclasseditor:ClassEditorVM"
+        Title="{Binding Title}"
+        Icon="avares://NetPrints.Editor/Assets/NetPrintsLogo.ico"
+        Width="1280" Height="720">
+  <!-- Keyboard (PAR-37) -->
+  <Window.KeyBindings>
+    <KeyBinding Gesture="Delete" Command="{Binding DeleteSelectedNodesCommand}" />
+    <KeyBinding Gesture="Ctrl+Z" Command="{Binding UndoCommand}" />
+    <KeyBinding Gesture="Ctrl+Y" Command="{Binding RedoCommand}" />
+  </Window.KeyBindings>
+
+  <Grid RowDefinitions="100,*">
+    <!-- Toolbar (PAR-23) -->
+    <StackPanel Orientation="Horizontal">
+      <Button x:Name="CompileButton" Classes="round" Content="Compile" Margin="5"
+              IsEnabled="{Binding Project.CanCompile, FallbackValue=False}" Command="{Binding CompileCommand}"
+              ToolTip.Tip="Compiles the project and outputs the source code if chosen." />
+      <Button x:Name="RunButton" Classes="round" Content="Run" Margin="5"
+              IsEnabled="{Binding Project.CanCompileAndRun, FallbackValue=False}" Command="{Binding RunCommand}"
+              ToolTip.Tip="Compile and run the project. Only enabled for executable projects that output binaries. Requires a static Main method." />
+      <Button x:Name="ClassButton" Classes="round" Content="Class" Margin="5" Command="{Binding ShowClassCommand}"
+              ToolTip.Tip="Edit the properties of this class." />
+      <Button x:Name="SaveButton" Classes="round" Content="Save" Margin="5" Command="{Binding SaveCommand}"
+              ToolTip.Tip="Saves the project and all its classes." />
+    </StackPanel>
+
+    <!-- Resizable columns and rows (PAR-31) -->
+    <Grid Grid.Row="1" ColumnDefinitions="250,5,*,5,250">
+      <Grid RowDefinitions="*,5,*,5,*">
+        <!-- Methods (PAR-24..26) -->
+        <Grid RowDefinitions="Auto,*,Auto,Auto">
+          <TextBlock Classes="header" Text="Methods" />
+          <ListBox x:Name="MethodList" Grid.Row="1" ItemsSource="{Binding Methods}">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="edclasseditor:MethodVM">
+                <Grid ColumnDefinitions="Auto,*">
+                  <Button Classes="icon" ToolTip.Tip="Remove method"
+                          Command="{Binding $parent[Window].((edclasseditor:ClassEditorVM)DataContext).RemoveMethodCommand}"
+                          CommandParameter="{Binding}">
+                    <mi:MaterialIcon Kind="Minus" />
+                  </Button>
+                  <TextBlock Grid.Column="1" Text="{Binding Name}" TextTrimming="CharacterEllipsis" FontSize="14" FontWeight="SemiBold"
+                             VerticalAlignment="Center" Background="Transparent"
+                             Tapped="OnMethodTapped" DoubleTapped="OnMethodDoubleTapped" PointerPressed="OnMethodPointerPressed" PointerMoved="OnMethodPointerMoved" PointerReleased="OnMethodPointerReleased" />
+                </Grid>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+          <Button Grid.Row="2" Classes="flat" Content="Create Method" Command="{Binding CreateMethodCommand}" FontSize="16" />
+          <ComboBox x:Name="OverrideBox" Grid.Row="3" HorizontalAlignment="Stretch" FontSize="16" Margin="4"
+                    PlaceholderText="Override a method"
+                    ItemsSource="{Binding OverridableMethods}"
+                    SelectedItem="{Binding SelectedOverride}">
+            <ComboBox.ItemTemplate>
+              <DataTemplate>
+                <TextBlock Text="{Binding Converter={x:Static edsearch:MethodSpecifierConverter.Instance}}" x:CompileBindings="False" />
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+        </Grid>
+
+        <GridSplitter Grid.Row="1" ResizeDirection="Rows" />
+
+        <!-- Constructors (PAR-27, 28) -->
+        <Grid Grid.Row="2" RowDefinitions="Auto,*,Auto">
+          <TextBlock Classes="header" Text="Constructors" />
+          <ListBox x:Name="ConstructorList" Grid.Row="1" ItemsSource="{Binding Constructors}">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="edclasseditor:MethodVM">
+                <Grid ColumnDefinitions="Auto,*">
+                  <Button Classes="icon" ToolTip.Tip="Remove constructor"
+                          Command="{Binding $parent[Window].((edclasseditor:ClassEditorVM)DataContext).RemoveMethodCommand}"
+                          CommandParameter="{Binding}">
+                    <mi:MaterialIcon Kind="Minus" />
+                  </Button>
+                  <TextBlock Grid.Column="1" Text="{Binding Name}" TextTrimming="CharacterEllipsis" FontSize="14" FontWeight="SemiBold"
+                             VerticalAlignment="Center" Background="Transparent"
+                             Tapped="OnMethodTapped" DoubleTapped="OnMethodDoubleTapped" PointerPressed="OnMethodPointerPressed" PointerMoved="OnMethodPointerMoved" PointerReleased="OnMethodPointerReleased" />
+                </Grid>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+          <Button Grid.Row="2" Classes="flat" Content="Create Constructor" Command="{Binding CreateConstructorCommand}" FontSize="16" />
+        </Grid>
+
+        <GridSplitter Grid.Row="3" ResizeDirection="Rows" />
+
+        <!-- Variables (PAR-29, 30) -->
+        <Grid Grid.Row="4" RowDefinitions="Auto,*,Auto">
+          <TextBlock Classes="header" Text="Variables" />
+          <ListBox x:Name="VariableList" Grid.Row="1" ItemsSource="{Binding Variables}">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="edvariables:MemberVariableVM">
+                <edvariables:MemberVariableView />
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+          <Button Grid.Row="2" Classes="flat" Content="Create Variable" Command="{Binding CreateVariableCommand}" FontSize="16" />
+        </Grid>
+      </Grid>
+
+      <GridSplitter Grid.Column="1" ResizeDirection="Columns" />
+
+      <!-- Graph, compile errors and status (PAR-32) -->
+      <Grid Grid.Column="2" RowDefinitions="*,5,150,24">
+        <edgraph:GraphEditorView x:Name="GraphEditor" DataContext="{Binding OpenedGraph}" IsVisible="{Binding $self.DataContext, Converter={x:Static ObjectConverters.IsNotNull}}" />
+        <GridSplitter Grid.Row="1" ResizeDirection="Rows" />
+        <ListBox x:Name="ErrorList" Grid.Row="2" ItemsSource="{Binding Project.LastCompileErrors, FallbackValue={x:Null}}" />
+        <TextBlock x:Name="StatusText" Grid.Row="3" Margin="4,2" Text="{Binding Project.CompilationMessage, FallbackValue=''}" />
+      </Grid>
+
+      <GridSplitter Grid.Column="3" ResizeDirection="Columns" />
+
+      <!-- Inspectors (PAR-33..36) -->
+      <Panel Grid.Column="4">
+        <edinspectors:ClassInspectorView x:Name="ClassInspector" IsVisible="{Binding ShowClassInspector}" />
+        <edinspectors:VariableInspectorView x:Name="VariableInspector" DataContext="{Binding SelectedVariable}" IsVisible="{Binding $parent[Window].((edclasseditor:ClassEditorVM)DataContext).ShowVariableInspector}" />
+        <edinspectors:MethodInspectorView x:Name="MethodInspector" DataContext="{Binding SelectedMethod}" IsVisible="{Binding $parent[Window].((edclasseditor:ClassEditorVM)DataContext).ShowMethodInspector}" />
+      </Panel>
+    </Grid>
+  </Grid>
+</Window>

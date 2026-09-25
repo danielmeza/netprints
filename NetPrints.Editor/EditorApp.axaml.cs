@@ -2,6 +2,8 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using NetPrints.Editor.Hosting;
+using NetPrints.Editor.Main;
 
 namespace NetPrints.Editor;
 

@@ -2,9 +2,8 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using NetPrints.Core;
 using NetPrints.Editor.Tests.Fakes;
-using NetPrints.Editor.ViewModels;
-using NetPrints.Editor.Views;
-using NetPrints.Editor.Views.Dialogs;
+using NetPrints.Editor.Dialogs;
+using NetPrints.Editor.References;
 
 namespace NetPrints.Editor.Tests.Ui;
 

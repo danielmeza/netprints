@@ -3,8 +3,10 @@ using Avalonia.Headless;
 using Avalonia.Input;
 using NetPrints.Core;
 using NetPrints.Graph;
-using NetPrints.Editor.ViewModels;
-using NetPrints.Editor.Views.Inspectors;
+using NetPrints.Editor.ClassEditor;
+using NetPrints.Editor.Graph;
+using NetPrints.Editor.Inspectors;
+using NetPrints.Editor.Search;
 
 namespace NetPrints.Editor.Tests.Ui;
 
@@ -134,7 +136,7 @@ public class ClassWindowTests
         ctx.Window.KeyTextInput("literal");
         await UiTest.WaitUntilAsync(() => ctx.Graph.Search.Items.Any(i => i.Text == "Literal") && ctx.Graph.Search.Items.Count < 50);
 
-        var list = ctx.View.Find<Views.Graph.NodeSearchView>("SearchView").Find<ListBox>("ResultList");
+        var list = ctx.View.Find<NetPrints.Editor.Search.NodeSearchView>("SearchView").Find<ListBox>("ResultList");
         var literalRow = list.Descendants<TextBlock>().First(t => t.Text == "Literal");
         var image = ((Avalonia.Visual)literalRow.Parent!).GetVisualChildrenOfType<Image>().FirstOrDefault();
         Assert.IsNotNull(image?.Source, "rows have 16-px icons");

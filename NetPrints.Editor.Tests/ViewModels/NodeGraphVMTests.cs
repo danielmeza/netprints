@@ -1,7 +1,7 @@
 using NetPrints.Core;
 using NetPrints.Graph;
-using NetPrints.Editor.Messages;
-using NetPrints.Editor.ViewModels;
+using NetPrints.Editor.Graph;
+using NetPrints.Editor.Graph.Pins;
 
 namespace NetPrints.Editor.Tests.ViewModels;
 

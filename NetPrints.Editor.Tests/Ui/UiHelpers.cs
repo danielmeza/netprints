@@ -4,10 +4,10 @@ using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.LogicalTree;
 using Avalonia.VisualTree;
-using NetPrints.Editor.Services;
 using NetPrints.Editor.Tests.Fakes;
-using NetPrints.Editor.ViewModels;
-using NetPrints.Editor.Views;
+using NetPrints.Editor.ClassEditor;
+using NetPrints.Editor.Hosting;
+using NetPrints.Editor.Main;
 
 namespace NetPrints.Editor.Tests.Ui;
 

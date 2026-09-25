@@ -1,6 +1,7 @@
 using NetPrints.Core;
-using NetPrints.Editor.Services;
-using NetPrints.Editor.ViewModels;
+using NetPrints.Editor.ClassEditor;
+using NetPrints.Editor.Hosting;
+using NetPrints.Editor.References;
 
 namespace NetPrints.Editor.Tests.Fakes;
 

@@ -3,6 +3,7 @@ using Avalonia;
 using Avalonia.Headless;
 using Avalonia.Media;
 using Avalonia.Threading;
+using NetPrints.Editor;
 
 namespace NetPrints.Editor.Tests.Ui;
 
