@@ -4,28 +4,28 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Threading;
+using System.Threading.Tasks;
 
 namespace NetPrints.Tests.Samples
 {
     public class HelloWorldSampleTests : IDisposable
     {
-        private string tempDir;
+        private readonly string tempDir;
 
-                public HelloWorldSampleTests()
+        public HelloWorldSampleTests()
         {
             tempDir = Path.Combine(Path.GetTempPath(), "netprints-sample-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(tempDir);
         }
 
-                public void Dispose()
+        public void Dispose()
         {
             try { Directory.Delete(tempDir, true); } catch (IOException) { }
         }
 
         /// <summary>
-        /// Regenerates samples/HelloWorld when NETPRINTS_REGENERATE_SAMPLES=1; otherwise checks
-        /// that the factory still produces a project equivalent to the checked-in one.
+        /// The checked-in sample is exactly what <see cref="SampleProjectFactory"/> produces.
+        /// Set NETPRINTS_REGENERATE_SAMPLES=1 to rewrite samples/HelloWorld from the factory.
         /// </summary>
         [Fact]
         public void FactoryMatchesCheckedInSample()
@@ -38,17 +38,24 @@ namespace NetPrints.Tests.Samples
                 SampleProjectFactory.CreateHelloWorld(Path.Combine(sampleDir, "HelloWorld.netpp")).Save();
             }
 
-            Project project = Project.LoadFromPath(Path.Combine(sampleDir, "HelloWorld.netpp"));
-            Assert.Equal("HelloWorld", project.Name);
-            Assert.Equal(BinaryType.Executable, project.OutputBinaryType);
-            ClassGraph cls = project.Classes.Single();
-            Assert.Equal("HelloWorld.Program", cls.FullName);
-            Assert.Equal("Main", cls.Methods.Single().Name);
+            SampleProjectFactory.CreateHelloWorld(Path.Combine(tempDir, "HelloWorld.netpp")).Save();
+
+            var generated = Directory.GetFiles(tempDir).Select(Path.GetFileName).OrderBy(f => f, StringComparer.Ordinal).ToList();
+            var checkedIn = Directory.GetFiles(sampleDir).Select(Path.GetFileName).OrderBy(f => f, StringComparer.Ordinal).ToList();
+            Assert.Equal(checkedIn, generated);
+
+            foreach (string file in generated)
+            {
+                Assert.True(File.ReadAllBytes(Path.Combine(sampleDir, file)).SequenceEqual(File.ReadAllBytes(Path.Combine(tempDir, file))),
+                    $"{file} differs from the factory output; regenerate with {SampleProjectFactory.RegenerateVariable}=1");
+            }
         }
 
         [Fact(Timeout = 120000)]
-        public void SampleLoadsCompilesAndPrintsHelloWorld()
+        public async Task SampleLoadsCompilesAndPrintsHelloWorld()
         {
+            var cancellationToken = TestContext.Current.CancellationToken;
+
             // The sample is linked into the test output (samples/**) by the test project.
             string source = Path.Combine(AppContext.BaseDirectory, "samples", "HelloWorld");
             foreach (string file in Directory.GetFiles(source))
@@ -59,12 +66,7 @@ namespace NetPrints.Tests.Samples
             Project project = Project.LoadFromPath(Path.Combine(tempDir, "HelloWorld.netpp"));
             Assert.Single(project.Classes);
 
-            project.CompileProject();
-            var sw = Stopwatch.StartNew();
-            while (project.IsCompiling && sw.Elapsed < TimeSpan.FromSeconds(90))
-            {
-                Thread.Sleep(50);
-            }
+            await CompileAsync(project, cancellationToken);
 
             Assert.True(project.LastCompilationSucceeded, string.Join(Environment.NewLine, project.LastCompileErrors ?? new ObservableRangeCollection<string>()));
             Assert.Equal("Build succeeded", project.CompilationMessage);
@@ -78,12 +80,23 @@ namespace NetPrints.Tests.Samples
             };
 
             using Process process = Process.Start(psi);
-            string output = process.StandardOutput.ReadToEnd();
-            string error = process.StandardError.ReadToEnd();
-            Assert.True(process.WaitForExit(60000));
+            string output = await process.StandardOutput.ReadToEndAsync(cancellationToken);
+            string error = await process.StandardError.ReadToEndAsync(cancellationToken);
+            await process.WaitForExitAsync(cancellationToken);
 
             Assert.Equal(0, process.ExitCode);
+            Assert.True(error.Length == 0, error);
             Assert.Equal("Hello, World!", output.Trim());
+        }
+
+        /// <summary>Compiles and waits until the background compilation finished.</summary>
+        internal static async Task CompileAsync(Project project, System.Threading.CancellationToken cancellationToken)
+        {
+            project.CompileProject();
+            while (project.IsCompiling)
+            {
+                await Task.Delay(50, cancellationToken);
+            }
         }
     }
 }
