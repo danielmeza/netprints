@@ -1,0 +1,29 @@
+// Canvas grid shader (GridRenderer.DrawShader). Must draw the same pixels as GridRenderer.DrawCpu.
+// p is the device pixel centre; hits() returns (minor, major) coverage along one axis.
+uniform float2 phase;
+uniform float cell;
+uniform float majorEvery;
+uniform float minorWidth;
+uniform float majorWidth;
+uniform float4 backgroundColor;
+uniform float4 minorColor;
+uniform float4 majorColor;
+
+float2 hits(float c, float o) {
+    float column = floor(c);
+    float k = floor((c - o) / cell + 0.5);
+    float m = k - majorEvery * floor(k / majorEvery);
+    bool isMajor = m < 0.5 || m > majorEvery - 0.5;
+    float w = isMajor ? majorWidth : minorWidth;
+    float start = floor(o + k * cell + 0.5 - 0.5 * w);
+    float hit = (column >= start && column < start + w) ? 1.0 : 0.0;
+    return isMajor ? float2(0.0, hit) : float2(hit, 0.0);
+}
+
+half4 main(float2 p) {
+    float2 hx = hits(p.x, phase.x);
+    float2 hy = hits(p.y, phase.y);
+    if (max(hx.y, hy.y) > 0.5) { return half4(majorColor); }
+    if (minorColor.a > 0.0 && max(hx.x, hy.x) > 0.5) { return half4(minorColor); }
+    return half4(backgroundColor);
+}

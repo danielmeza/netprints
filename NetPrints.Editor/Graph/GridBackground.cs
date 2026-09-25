@@ -32,6 +32,9 @@ public enum GridRenderPath
     Cpu,
 }
 
+/// <summary>What drew a grid frame, and where: the control's device-pixel origin and device pixels per DIP.</summary>
+public sealed record GridRenderInfo(GridRenderPath Path, double OriginX, double OriginY, double Scale);
+
 /// <summary>
 /// The infinite background grid of the graph canvas: minor lines every <see cref="CellSize"/>
 /// graph units and major lines every <see cref="MajorEvery"/> cells, following
@@ -53,6 +56,10 @@ public enum GridRenderPath
 /// <see cref="GridRenderMode.Auto"/>, the environment variable <c>NETPRINTS_GRID</c>
 /// (<c>auto</c>, <c>cpu</c> or <c>shader</c>) overrides the choice. See
 /// <c>docs/research/2026-09-25-grid-rendering/</c>.
+/// </para>
+/// <para>
+/// The control assumes its ancestors apply only translation and a uniform scale (as in the editor):
+/// the device scale is read from the canvas matrix's x scale.
 /// </para>
 /// </remarks>
 public sealed class GridBackground : Control
@@ -88,7 +95,7 @@ public sealed class GridBackground : Control
     private static int shaderFailureLogged;
 
     private GridStyle? style;
-    private volatile GridRenderPath lastRenderPath;
+    private volatile GridRenderInfo? lastFrame;
 
     static GridBackground()
     {
@@ -124,7 +131,10 @@ public sealed class GridBackground : Control
         set => SetValue(MajorEveryProperty, value);
     }
 
-    /// <summary>Canvas background color, painted by the grid (usually the <c>GraphGrid.BackgroundColor</c> theme resource).</summary>
+    /// <summary>
+    /// Canvas background color, painted by the grid (the theme's <c>SystemRegionColor</c>, like the
+    /// window region). Always drawn opaque: its alpha is ignored.
+    /// </summary>
     public Color BackgroundColor
     {
         get => GetValue(BackgroundColorProperty);
@@ -153,7 +163,10 @@ public sealed class GridBackground : Control
     }
 
     /// <summary>The path that drew the latest frame (written on the render thread), for diagnostics and tests.</summary>
-    public GridRenderPath LastRenderPath => lastRenderPath;
+    public GridRenderPath LastRenderPath => lastFrame?.Path ?? GridRenderPath.None;
+
+    /// <summary>The latest frame's path, device origin and scale (written on the render thread), for diagnostics and tests.</summary>
+    public GridRenderInfo? LastFrame => lastFrame;
 
     /// <summary>
     /// The mode after the <c>NETPRINTS_GRID</c> override: an explicit <see cref="GridRenderMode.Shader"/>
@@ -171,11 +184,12 @@ public sealed class GridBackground : Control
     };
 
     /// <summary>Whether a frame is drawn by the shader, given the resolved mode, the renderer and the effect.</summary>
-    public static bool UsesShader(GridRenderMode resolvedMode, bool hasGpuContext, bool shaderAvailable) => resolvedMode switch
+    /// <remarks><paramref name="shaderAvailable"/> is only called when the shader could be used, so <see cref="GridRenderMode.Cpu"/> never compiles it.</remarks>
+    public static bool UsesShader(GridRenderMode resolvedMode, bool hasGpuContext, Func<bool> shaderAvailable) => resolvedMode switch
     {
         GridRenderMode.Cpu => false,
-        GridRenderMode.Shader => shaderAvailable,
-        _ => hasGpuContext && shaderAvailable,
+        GridRenderMode.Shader => shaderAvailable(),
+        _ => hasGpuContext && shaderAvailable(),
     };
 
     public override void Render(DrawingContext context)
@@ -224,7 +238,7 @@ public sealed class GridBackground : Control
         {
             if (context.TryGetFeature<ISkiaSharpApiLeaseFeature>() is not { } feature)
             {
-                owner.lastRenderPath = GridRenderPath.None;
+                owner.lastFrame = new GridRenderInfo(GridRenderPath.None, 0, 0, 0);
                 return;
             }
 
@@ -233,29 +247,35 @@ public sealed class GridBackground : Control
             var matrix = canvas.TotalMatrix;
             var deviceRect = matrix.MapRect(new SKRect(0, 0, (float)bounds.Width, (float)bounds.Height));
             var frame = GridFrame.Compute(style, location.X, location.Y, zoom, matrix.ScaleX, matrix.TransX, matrix.TransY);
-            bool shader = UsesShader(mode, lease.GrContext is not null, GridRenderer.ShaderAvailable);
-            if (mode != GridRenderMode.Cpu && !GridRenderer.ShaderAvailable)
+            bool shader = UsesShader(mode, lease.GrContext is not null, () => GridRenderer.ShaderAvailable);
+            if (!shader && UsesShader(mode, lease.GrContext is not null, () => true))
             {
                 LogShaderFailureOnce(owner);
             }
 
             int saved = canvas.Save();
-            canvas.ResetMatrix();
-            canvas.ClipRect(deviceRect);
-            if (lease.CurrentOpacity < 1)
+            try
             {
-                using var layerPaint = new SKPaint { Color = SKColors.White.WithAlpha((byte)Math.Round(lease.CurrentOpacity * 255)) };
-                canvas.SaveLayer(deviceRect, layerPaint);
+                canvas.ResetMatrix();
+                canvas.ClipRect(deviceRect);
+                if (lease.CurrentOpacity < 1)
+                {
+                    using var layerPaint = new SKPaint { Color = SKColors.White.WithAlpha((byte)Math.Round(lease.CurrentOpacity * 255)) };
+                    canvas.SaveLayer(deviceRect, layerPaint);
+                }
+
+                if (!(shader && GridRenderer.DrawShader(canvas, deviceRect, frame)))
+                {
+                    shader = false;
+                    GridRenderer.DrawCpu(canvas, deviceRect, frame);
+                }
+            }
+            finally
+            {
+                canvas.RestoreToCount(saved);
             }
 
-            if (!(shader && GridRenderer.DrawShader(canvas, deviceRect, frame)))
-            {
-                shader = false;
-                GridRenderer.DrawCpu(canvas, deviceRect, frame);
-            }
-
-            canvas.RestoreToCount(saved);
-            owner.lastRenderPath = shader ? GridRenderPath.Shader : GridRenderPath.Cpu;
+            owner.lastFrame = new GridRenderInfo(shader ? GridRenderPath.Shader : GridRenderPath.Cpu, matrix.TransX, matrix.TransY, matrix.ScaleX);
         }
     }
 }

@@ -2,15 +2,14 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
   <Styles.Resources>
     <ResourceDictionary>
-      <!-- Graph canvas background and grid (spec 002): lines white on dark, black on light; minor 8% and major 18% alpha. -->
+      <!-- Graph canvas grid (spec 002): lines white on dark, black on light; minor 8% and major 18% alpha.
+           The canvas background is SystemRegionColor (EditorApp.axaml palette). -->
       <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Dark">
-          <Color x:Key="GraphGrid.BackgroundColor">#FF252525</Color>
           <Color x:Key="GraphGrid.MinorColor">#14FFFFFF</Color>
           <Color x:Key="GraphGrid.MajorColor">#2EFFFFFF</Color>
         </ResourceDictionary>
         <ResourceDictionary x:Key="Light">
-          <Color x:Key="GraphGrid.BackgroundColor">#FFF3F3F3</Color>
           <Color x:Key="GraphGrid.MinorColor">#14000000</Color>
           <Color x:Key="GraphGrid.MajorColor">#2E000000</Color>
         </ResourceDictionary>

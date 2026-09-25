@@ -11,46 +11,46 @@ namespace NetPrints.Editor.Graph;
 /// </summary>
 internal static class GridRenderer
 {
-    // p is the device pixel centre; hits() returns (minor, major) coverage along one axis.
-    private const string ShaderSource = """
-        uniform float2 phase;
-        uniform float cell;
-        uniform float majorEvery;
-        uniform float minorWidth;
-        uniform float majorWidth;
-        uniform float4 backgroundColor;
-        uniform float4 minorColor;
-        uniform float4 majorColor;
 
-        float2 hits(float c, float o) {
-            float column = floor(c);
-            float k = floor((c - o) / cell + 0.5);
-            float m = k - majorEvery * floor(k / majorEvery);
-            bool isMajor = m < 0.5 || m > majorEvery - 0.5;
-            float w = isMajor ? majorWidth : minorWidth;
-            float start = floor(o + k * cell + 0.5 - 0.5 * w);
-            float hit = (column >= start && column < start + w) ? 1.0 : 0.0;
-            return isMajor ? float2(0.0, hit) : float2(hit, 0.0);
-        }
+    private static readonly Lazy<(SKRuntimeEffect? Effect, string? Errors)> Effect = new(() => Compile(SKRuntimeEffect.CreateShader));
 
-        half4 main(float2 p) {
-            float2 hx = hits(p.x, phase.x);
-            float2 hy = hits(p.y, phase.y);
-            if (max(hx.y, hy.y) > 0.5) { return half4(majorColor); }
-            if (minorColor.a > 0.0 && max(hx.x, hy.x) > 0.5) { return half4(minorColor); }
-            return half4(backgroundColor);
-        }
-        """;
+    /// <summary>Compiles an SkSL shader source (<see cref="SKRuntimeEffect.CreateShader"/> by default).</summary>
+    internal delegate SKRuntimeEffect? EffectCompiler(string source, out string errors);
 
-    private static readonly Lazy<(SKRuntimeEffect? Effect, string? Errors)> Effect = new(() =>
+    /// <summary>
+    /// Compiles the grid shader; null with the errors when it does not compile.
+    /// </summary>
+    /// <remarks>
+    /// Any exception (for example a native libSkiaSharp that does not match the managed package)
+    /// also means "unavailable", so the CPU path takes over instead of the exception being cached
+    /// and rethrown on every frame.
+    /// </remarks>
+    internal static (SKRuntimeEffect? Effect, string? Errors) Compile(EffectCompiler compiler)
     {
-        var effect = SKRuntimeEffect.CreateShader(ShaderSource, out string errors);
-        return (effect, effect is null ? errors : null);
-    });
+        try
+        {
+            var effect = compiler(LoadShaderSource(), out string errors);
+            return (effect, effect is null ? errors : null);
+        }
+        catch (Exception e)
+        {
+            return (null, e.ToString());
+        }
+    }
+
+    private static string LoadShaderSource()
+    {
+        using var stream = typeof(GridRenderer).Assembly.GetManifestResourceStream("NetPrints.Editor.Graph.GridShader.sksl")
+            ?? throw new InvalidOperationException("The grid shader resource is missing.");
+        using var reader = new StreamReader(stream);
+        return reader.ReadToEnd();
+    }
 
     [ThreadStatic] private static SKPath? minorPath;
     [ThreadStatic] private static SKPath? majorPath;
     [ThreadStatic] private static SKPaint? fillPaint;
+    [ThreadStatic] private static SKPaint? shaderPaint;
+    [ThreadStatic] private static SKRuntimeEffectUniforms? shaderUniforms;
 
     /// <summary>Whether the SkSL effect compiled; compiled once, on first use.</summary>
     public static bool ShaderAvailable => Effect.Value.Effect is not null;
@@ -59,7 +59,8 @@ internal static class GridRenderer
     public static string? ShaderErrors => Effect.Value.Errors;
 
     /// <summary>
-    /// Draws the grid with the SkSL shader on one rectangle: constant CPU work per frame. Returns
+    /// Draws the grid with the SkSL shader on one rectangle: constant CPU work per frame (the paint
+    /// and uniforms are reused per render thread; only the shader object is per frame). Returns
     /// false (drawing nothing) when the effect is unavailable, so the caller can fall back.
     /// </summary>
     /// <remarks>Only fast on a GPU canvas; on the raster backend it is about 100 times slower than <see cref="DrawCpu"/>.</remarks>
@@ -70,25 +71,25 @@ internal static class GridRenderer
             return false;
         }
 
-        using var uniforms = new SKRuntimeEffectUniforms(effect)
-        {
-            ["phase"] = new SKPoint(frame.PhaseX, frame.PhaseY),
-            ["cell"] = frame.Cell,
-            ["majorEvery"] = (float)frame.MajorEvery,
-            ["minorWidth"] = (float)frame.MinorWidth,
-            ["majorWidth"] = (float)frame.MajorWidth,
-            ["backgroundColor"] = Premultiplied(frame.BackgroundColor),
-            ["minorColor"] = frame.MinorAlpha == 0 ? default : Premultiplied(frame.MinorColor),
-            ["majorColor"] = Premultiplied(frame.MajorColor),
-        };
+        var uniforms = shaderUniforms ??= new SKRuntimeEffectUniforms(effect);
+        uniforms["phase"] = new SKPoint(frame.PhaseX, frame.PhaseY);
+        uniforms["cell"] = frame.Cell;
+        uniforms["majorEvery"] = (float)frame.MajorEvery;
+        uniforms["minorWidth"] = (float)frame.MinorWidth;
+        uniforms["majorWidth"] = (float)frame.MajorWidth;
+        uniforms["backgroundColor"] = Premultiplied(frame.BackgroundColor);
+        uniforms["minorColor"] = frame.MinorAlpha == 0 ? default : Premultiplied(frame.MinorColor);
+        uniforms["majorColor"] = Premultiplied(frame.MajorColor);
         using var shader = effect.ToShader(uniforms);
         if (shader is null)
         {
             return false;
         }
 
-        using var paint = new SKPaint { Shader = shader, IsAntialias = false, BlendMode = SKBlendMode.Src };
+        var paint = shaderPaint ??= new SKPaint { IsAntialias = false, BlendMode = SKBlendMode.Src };
+        paint.Shader = shader;
         canvas.DrawRect(deviceRect, paint);
+        paint.Shader = null;
         return true;
     }
 

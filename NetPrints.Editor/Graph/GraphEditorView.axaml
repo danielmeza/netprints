@@ -29,7 +29,7 @@
   <Panel>
     <!-- The grid paints the canvas background behind a transparent editor (spec 002). -->
     <edgraph:GridBackground x:Name="Grid" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GraphGrid}" IsHitTestVisible="False"
-                            BackgroundColor="{DynamicResource GraphGrid.BackgroundColor}" MinorColor="{DynamicResource GraphGrid.MinorColor}" MajorColor="{DynamicResource GraphGrid.MajorColor}" />
+                            BackgroundColor="{DynamicResource SystemRegionColor}" MinorColor="{DynamicResource GraphGrid.MinorColor}" MajorColor="{DynamicResource GraphGrid.MajorColor}" />
     <nodify:NodifyEditor x:Name="Editor" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GraphEditor}"
                          Background="Transparent"
                          ItemsSource="{Binding Nodes}"

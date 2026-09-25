@@ -10,7 +10,7 @@ namespace NetPrints.Editor.Graph;
 /// <param name="MajorEvery">A major line every this many cells.</param>
 /// <param name="MinorWidth">Minor line width in DIPs; rounded to whole device pixels, at least one.</param>
 /// <param name="MajorWidth">Major line width in DIPs; rounded to whole device pixels, at least one.</param>
-/// <param name="BackgroundColor">Canvas background color, painted by the grid.</param>
+/// <param name="BackgroundColor">Canvas background color, painted by the grid; always opaque (its alpha is ignored), because both render paths write pixels without blending.</param>
 /// <param name="MinorColor">Minor line color (straight alpha), composited over the background.</param>
 /// <param name="MajorColor">Major line color (straight alpha), composited over the background.</param>
 /// <param name="MinorFadeOut">On-screen cell size in DIPs at and below which minor lines are hidden.</param>
@@ -79,6 +79,7 @@ public readonly record struct GridFrame(
         double period = cell * style.MajorEvery;
         byte minorAlpha = (byte)Math.Round(style.MinorColor.A * SmoothStep(style.MinorFadeOut, style.MinorFadeIn, cellDip));
         var minor = Color.FromArgb(minorAlpha, style.MinorColor.R, style.MinorColor.G, style.MinorColor.B);
+        var background = Color.FromRgb(style.BackgroundColor.R, style.BackgroundColor.G, style.BackgroundColor.B);
 
         return new GridFrame(
             (float)Mod(originX - locationX * zoom * scale, period),
@@ -88,9 +89,9 @@ public readonly record struct GridFrame(
             DeviceWidth(style.MinorWidth, scale),
             DeviceWidth(style.MajorWidth, scale),
             minorAlpha,
-            style.BackgroundColor,
-            Over(minor, style.BackgroundColor),
-            Over(style.MajorColor, style.BackgroundColor));
+            background,
+            Over(minor, background),
+            Over(style.MajorColor, background));
     }
 
     /// <summary>The first device column (or row) covered by a line centered at <paramref name="center"/>.</summary>

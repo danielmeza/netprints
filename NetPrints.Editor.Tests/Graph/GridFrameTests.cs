@@ -116,6 +116,15 @@ public class GridFrameTests
     }
 
     [Fact]
+    public void TheBackgroundIsAlwaysOpaque()
+    {
+        var frame = Compute(style: Style with { BackgroundColor = Color.FromArgb(0x40, 0x25, 0x25, 0x25) });
+
+        Assert.Equal(Color.FromRgb(0x25, 0x25, 0x25), frame.BackgroundColor);
+        Assert.Equal(Color.FromRgb(0x36, 0x36, 0x36), frame.MinorColor);
+    }
+
+    [Fact]
     public void OverHandlesTranslucentBackgrounds()
     {
         Assert.Equal(Color.FromArgb(0x80, 0xFF, 0x00, 0x00), GridFrame.Over(Color.FromArgb(0x80, 0xFF, 0, 0), Colors.Transparent));
@@ -154,7 +163,33 @@ public class GridFrameTests
     [InlineData(GridRenderMode.Cpu, true, true, false)]
     public void ChoosesThePath(GridRenderMode mode, bool gpu, bool compiled, bool shader)
     {
-        Assert.Equal(shader, GridBackground.UsesShader(mode, gpu, compiled));
+        Assert.Equal(shader, GridBackground.UsesShader(mode, gpu, () => compiled));
+    }
+
+    [Fact]
+    public void TheCpuModeNeverProbesTheShader()
+    {
+        Assert.False(GridBackground.UsesShader(GridRenderMode.Cpu, hasGpuContext: true,
+            () => throw new InvalidOperationException("the shader must not be compiled in Cpu mode")));
+    }
+
+    [Fact]
+    public void AShaderCompilerThatThrowsMeansTheShaderIsUnavailable()
+    {
+        var (effect, errors) = GridRenderer.Compile((string source, out string errors) =>
+            throw new DllNotFoundException("libSkiaSharp mismatch"));
+
+        Assert.Null(effect);
+        Assert.Contains("libSkiaSharp mismatch", errors);
+    }
+
+    [Fact]
+    public void TheGridShaderCompiles()
+    {
+        var (effect, errors) = GridRenderer.Compile(SkiaSharp.SKRuntimeEffect.CreateShader);
+
+        Assert.True(effect is not null, errors);
+        effect.Dispose();
     }
 
     private static double Remainder(double value, double modulus)
