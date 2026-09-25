@@ -21,6 +21,10 @@ namespace NetPrints.Reflection
         internal ConditionalWeakTable<ITypeSymbol, List<ISymbol>> Members { get; } = new ConditionalWeakTable<ITypeSymbol, List<ISymbol>>();
     }
 
+    /// <summary>
+    /// Roslyn symbol helpers used by <see cref="ReflectionProvider"/>: member enumeration (cached
+    /// per <see cref="MemberCache"/>), accessibility and subclass checks, and full type names.
+    /// </summary>
     public static class ISymbolExtensions
     {
 
@@ -67,16 +71,35 @@ namespace NetPrints.Reflection
             return members;
         }
 
+        /// <summary>
+        /// Returns whether <paramref name="symbol"/> is declared <c>public</c>.
+        /// </summary>
+        /// <param name="symbol">Symbol to check.</param>
+        /// <returns><see langword="true"/> if the symbol's declared accessibility is public.</returns>
         public static bool IsPublic(this ISymbol symbol)
         {
             return symbol.DeclaredAccessibility == Microsoft.CodeAnalysis.Accessibility.Public;
         }
 
+        /// <summary>
+        /// Returns whether <paramref name="symbol"/> is declared <c>protected</c> (exactly; not
+        /// <c>protected internal</c> or <c>private protected</c>).
+        /// </summary>
+        /// <param name="symbol">Symbol to check.</param>
+        /// <returns><see langword="true"/> if the symbol's declared accessibility is protected.</returns>
         public static bool IsProtected(this ISymbol symbol)
         {
             return symbol.DeclaredAccessibility == Microsoft.CodeAnalysis.Accessibility.Protected;
         }
 
+        /// <summary>
+        /// Returns <paramref name="symbol"/>'s ordinary and operator methods (see
+        /// <see cref="GetAllMembers"/> for what "all" includes), excluding conversion operators (see
+        /// <see cref="GetConverters"/>).
+        /// </summary>
+        /// <param name="symbol">Type to get methods for.</param>
+        /// <param name="cache">Member cache to resolve <paramref name="symbol"/>'s members through.</param>
+        /// <returns>The type's ordinary and operator methods.</returns>
         public static IEnumerable<IMethodSymbol> GetMethods(this ITypeSymbol symbol, MemberCache cache)
         {
             return symbol.GetAllMembers(cache)
@@ -85,6 +108,12 @@ namespace NetPrints.Reflection
                     .Where(method => method.MethodKind == MethodKind.Ordinary || method.MethodKind == MethodKind.BuiltinOperator || method.MethodKind == MethodKind.UserDefinedOperator);
         }
 
+        /// <summary>
+        /// Returns <paramref name="symbol"/>'s user-defined conversion operators (implicit and explicit).
+        /// </summary>
+        /// <param name="symbol">Type to get conversion operators for.</param>
+        /// <param name="cache">Member cache to resolve <paramref name="symbol"/>'s members through.</param>
+        /// <returns>The type's conversion operators.</returns>
         public static IEnumerable<IMethodSymbol> GetConverters(this ITypeSymbol symbol, MemberCache cache)
         {
             return symbol.GetAllMembers(cache)
@@ -93,6 +122,13 @@ namespace NetPrints.Reflection
                     .Where(method => method.MethodKind == MethodKind.Conversion);
         }
 
+        /// <summary>
+        /// Returns whether <paramref name="symbol"/> derives from, or (when <paramref name="cls"/> is
+        /// an interface) implements, <paramref name="cls"/>.
+        /// </summary>
+        /// <param name="symbol">Candidate subclass.</param>
+        /// <param name="cls">Candidate base class or interface.</param>
+        /// <returns><see langword="true"/> if <paramref name="symbol"/> derives from or implements <paramref name="cls"/>.</returns>
         public static bool IsSubclassOf(this ITypeSymbol symbol, ITypeSymbol cls)
         {
             // If cls is an interface type, check if the interface is implemented
@@ -124,6 +160,12 @@ namespace NetPrints.Reflection
             return false;
         }
 
+        /// <summary>
+        /// Returns <paramref name="typeSymbol"/>'s metadata name, prefixed with its containing
+        /// namespace's metadata name (dot-separated) unless it is in the global namespace.
+        /// </summary>
+        /// <param name="typeSymbol">Type to get the full name of.</param>
+        /// <returns>The type's namespace-qualified metadata name.</returns>
         public static string GetFullName(this ITypeSymbol typeSymbol)
         {
             string fullName = typeSymbol.MetadataName;
@@ -135,6 +177,11 @@ namespace NetPrints.Reflection
         }
     }
 
+    /// <summary>
+    /// <see cref="IReflectionProvider"/> backed by a Roslyn <see cref="CSharpCompilation"/> built from
+    /// the given assemblies, source files and in-memory sources. See <see cref="MemoizedReflectionProvider"/>
+    /// for a caching wrapper around repeated queries.
+    /// </summary>
     public class ReflectionProvider : IReflectionProvider
     {
         private readonly MemberCache memberCache = new MemberCache();
@@ -167,6 +214,7 @@ namespace NetPrints.Reflection
         /// </summary>
         /// <param name="assemblyPaths">Paths to assemblies.</param>
         /// <param name="sourcePaths">Paths to source files.</param>
+        /// <param name="sources">Additional in-memory C# sources to compile alongside <paramref name="sourcePaths"/>.</param>
         public ReflectionProvider(IEnumerable<string> assemblyPaths, IEnumerable<string> sourcePaths, IEnumerable<string> sources)
         {
             var compilationOptions = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
@@ -268,6 +316,7 @@ namespace NetPrints.Reflection
         }
 
         #region IReflectionProvider
+        /// <inheritdoc/>
         public IEnumerable<TypeSpecifier> GetNonStaticTypes()
         {
             return GetValidTypes().Where(
@@ -277,6 +326,7 @@ namespace NetPrints.Reflection
                 .Select(t => ReflectionConverter.TypeSpecifierFromSymbol(t));
         }
 
+        /// <inheritdoc/>
         public IEnumerable<MethodSpecifier> GetOverridableMethodsForType(TypeSpecifier typeSpecifier)
         {
             ITypeSymbol type = GetTypeFromSpecifier(typeSpecifier);
@@ -300,6 +350,7 @@ namespace NetPrints.Reflection
             }
         }
 
+        /// <inheritdoc/>
         public IEnumerable<MethodSpecifier> GetPublicMethodOverloads(MethodSpecifier methodSpecifier)
         {
             ITypeSymbol type = GetTypeFromSpecifier(methodSpecifier.DeclaringType);
@@ -328,6 +379,7 @@ namespace NetPrints.Reflection
             }
         }
 
+        /// <inheritdoc/>
         public IEnumerable<ConstructorSpecifier> GetConstructors(TypeSpecifier typeSpecifier)
         {
             var symbol = GetTypeFromSpecifier<INamedTypeSymbol>(typeSpecifier);
@@ -340,6 +392,7 @@ namespace NetPrints.Reflection
             return new ConstructorSpecifier[0];
         }
 
+        /// <inheritdoc/>
         public IEnumerable<string> GetEnumNames(TypeSpecifier typeSpecifier)
         {
             var symbol = GetTypeFromSpecifier(typeSpecifier);
@@ -354,6 +407,7 @@ namespace NetPrints.Reflection
             return new string[0];
         }
 
+        /// <inheritdoc/>
         public bool TypeSpecifierIsSubclassOf(TypeSpecifier a, TypeSpecifier b)
         {
             ITypeSymbol typeA = GetTypeFromSpecifier(a);
@@ -455,6 +509,7 @@ namespace NetPrints.Reflection
 
         // Documentation
 
+        /// <inheritdoc/>
         public string GetMethodDocumentation(MethodSpecifier methodSpecifier)
         {
             IMethodSymbol methodInfo = GetMethodInfoFromSpecifier(methodSpecifier);
@@ -467,6 +522,7 @@ namespace NetPrints.Reflection
             return documentationUtil.GetMethodSummary(methodInfo);
         }
 
+        /// <inheritdoc/>
         public string GetMethodParameterDocumentation(MethodSpecifier methodSpecifier, int parameterIndex)
         {
             IMethodSymbol methodInfo = GetMethodInfoFromSpecifier(methodSpecifier);
@@ -479,6 +535,7 @@ namespace NetPrints.Reflection
             return documentationUtil.GetMethodParameterInfo(methodInfo.Parameters[parameterIndex]);
         }
 
+        /// <inheritdoc/>
         public string GetMethodReturnDocumentation(MethodSpecifier methodSpecifier, int returnIndex)
         {
             IMethodSymbol methodInfo = GetMethodInfoFromSpecifier(methodSpecifier);
@@ -491,6 +548,7 @@ namespace NetPrints.Reflection
             return documentationUtil.GetMethodReturnInfo(methodInfo);
         }
 
+        /// <inheritdoc/>
         public bool HasImplicitCast(TypeSpecifier fromType, TypeSpecifier toType)
         {
             // Check if there exists a conversion that is implicit between the types.
@@ -502,6 +560,7 @@ namespace NetPrints.Reflection
                 && compilation.ClassifyConversion(fromSymbol, toSymbol).IsImplicit;
         }
 
+        /// <inheritdoc/>
         public IEnumerable<MethodSpecifier> GetMethods(ReflectionProviderMethodQuery query)
         {
             IEnumerable<IMethodSymbol> methodSymbols;
@@ -612,6 +671,7 @@ namespace NetPrints.Reflection
             return methodSpecifiers;
         }
 
+        /// <inheritdoc/>
         public IEnumerable<VariableSpecifier> GetVariables(ReflectionProviderVariableQuery query)
         {
             // Note: Currently we handle fields and properties in this function
