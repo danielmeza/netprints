@@ -23,15 +23,19 @@ public sealed class EditorDialogs(Func<Window?> owner) : IEditorDialogs
         return await closed.Task;
     }
 
+    /// <inheritdoc/>
     public Task ShowErrorAsync(string title, string message) =>
         ShowAsync<object>(new ErrorDialog(title, message));
 
+    /// <inheritdoc/>
     public Task<TypeSpecifier?> SelectTypeAsync(IEnumerable<TypeSpecifier> types, TypeSpecifier initial) =>
         ShowAsync<TypeSpecifier>(new SelectTypeDialog(types, initial));
 
+    /// <inheritdoc/>
     public Task<MethodSpecifier?> SelectMethodAsync(IEnumerable<MethodSpecifier> methods) =>
         ShowAsync<MethodSpecifier>(new SelectMethodDialog(methods));
 
+    /// <inheritdoc/>
     public async Task ShowReferencesAsync(ReferenceListVM references)
     {
         try
@@ -48,5 +52,6 @@ public sealed class EditorDialogs(Func<Window?> owner) : IEditorDialogs
 /// <summary>Result of a dialog shown without an owner.</summary>
 public interface IDialogResult<out T>
 {
+    /// <summary>The dialog's result once it has closed, or <see langword="null"/> if cancelled.</summary>
     T? Result { get; }
 }
