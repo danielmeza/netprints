@@ -17,25 +17,47 @@ public sealed class ReflectionHost : IReflectionHost
     private IReflectionProvider? provider;
     private int reloadVersion;
 
+    /// <summary>
+    /// Creates a reflection host that publishes reloaded providers through <paramref name="dispatcher"/>.
+    /// </summary>
+    /// <param name="dispatcher">Dispatcher used to publish a reloaded provider on the UI thread.</param>
     public ReflectionHost(IUiDispatcher dispatcher)
     {
         this.dispatcher = dispatcher;
         NonStaticTypes = new ReadOnlyObservableCollection<TypeSpecifier>(nonStaticTypes);
     }
 
+    /// <inheritdoc/>
     public bool IsLoaded => provider is not null;
 
+    /// <inheritdoc/>
     public Task Loaded => loaded.Task;
 
+    /// <inheritdoc/>
     public IReflectionProvider Provider =>
         provider ?? throw new InvalidOperationException("The reflection provider has not been loaded yet; check IsLoaded or await Loaded.");
 
+    /// <inheritdoc/>
     public ReadOnlyObservableCollection<TypeSpecifier> NonStaticTypes { get; }
 
+    /// <inheritdoc/>
     public IReadOnlyList<string> LastWarnings { get; private set; } = [];
 
+    /// <inheritdoc/>
     public event EventHandler? Reloaded;
 
+    /// <summary>
+    /// Snapshots the project's references and generated class sources on the calling thread, then
+    /// rebuilds and warms up a <see cref="MemoizedReflectionProvider"/>-wrapped <see cref="ReflectionProvider"/>
+    /// on a background thread (resolving assembly paths with a fresh <see cref="ReferenceAssemblyResolver"/>,
+    /// skipping an unreadable source directory with a warning instead of throwing), and publishes it
+    /// on the UI thread via the constructor's dispatcher. If another <see cref="ReloadAsync"/> call
+    /// started after this one, this call's result is silently dropped instead of published.
+    /// </summary>
+    /// <param name="project">Project to build a reflection provider for.</param>
+    /// <param name="cancellationToken">Cancels the background build.</param>
+    /// <returns>A task that completes once this reload has either published its result or been superseded.</returns>
+    /// <exception cref="ArgumentNullException"><paramref name="project"/> is <see langword="null"/>.</exception>
     public async Task ReloadAsync(Project project, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(project);
