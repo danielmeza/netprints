@@ -29,7 +29,8 @@ when it is started.
 | P0 | Modernize build + Avalonia editor at parity | ~6 w (manual est.) | — | in progress (`specs/001-modernize-build`) |
 | P1 | Core refactor + extension points | ~3.5 w | P0 | not started |
 | P2 | Catalog tooling + Spectre CLI | ~2.5 w | P1 | not started |
-| P3 | Editor extension host | ~2.5 w | P0, P1 | not started |
+| P3a | Editor shell | ~2–3 w | P0, P1 | not started |
+| P3 | Editor extension host | ~2.5 w | P0, P1, P3a | not started |
 | P4 | VSIX (WpfAvaloniaHost) | ~2 w | P3 | **deferred** by owner (2026-09-24) |
 | P5 | VS Code extension + browser build + sidecar | ~2.5–3 w | P3 | not started |
 | P6 | Usability (Blueprint-level ease of use) | ~4–5 w | P2, P3 | not started |
@@ -51,6 +52,20 @@ when it is started.
   non-UI test projects; the test's CancellationToken everywhere (xUnit1051 as error).
 - Linux-only CI workflow `CI` (`.github/workflows/ci.yml`). Legacy VSIX removed from the
   solution build (source kept, pending P4).
+- Additions approved 2026-09-25 (in the same PR):
+  - UX audit defects D1–D4 (see `docs/research/2026-09-25-ux-audit/`):
+    - D1: dark grey background like WPF, not pure black;
+    - D2: a single green selection border (override Nodify's defaults);
+    - D3: an in-editor Output pane for Run on every platform;
+    - D4: C# preview with no wrapping, horizontal scroll and a monospace font.
+    - D5 (documentation tooltips on Linux) moves to P1.
+  - Background grid rewrite per `docs/research/2026-09-25-grid-rendering/`: a `GridBackground` control behind a
+    transparent NodifyEditor, drawing via ICustomDrawOperation + SKCanvas in device pixels. Two paths share one
+    `GridStyle`/`GridFrame` definition:
+    - an SkSL shader when a GPU context exists and the effect compiles;
+    - a pixel-identical fallback with two SKPaths, used for raster/headless or when the shader fails.
+    Owner decisions: major line every 8 cells, lines (not dots), no origin line, minor fade 6–14 DIP, theme resources.
+    Still open: verify the shader on Windows (ANGLE) and macOS (Metal).
 - **Done when:** the whole solution builds and all tests pass on Linux CI and the parity
   checklist is verified.
 
@@ -81,6 +96,16 @@ Done when: old sample loads, saves as JSON, generates identical C#.
 (`NetPrints.Annotations` + source generator), cross-flavor snapshot tests; `NetPrints.Cli` on
 Spectre.Console.Cli (`build`, `generate`, `run`, `catalog`, `migrate`).
 
+### P3a — Editor shell (owner-approved 2026-09-25; source: `docs/research/2026-09-25-ux-audit/`)
+- **Layout:** a single window with a project tree, tabbed graphs, an inspector and a bottom panel (Errors / Output / C#).
+  Replaces the separate launcher and per-class windows (H2).
+- **Commands:** a command registry feeding a command bar, a menu and keyboard shortcuts (H3, H4). This is also the P3
+  contribution point.
+- **Document lifecycle** (H1): dirty flag and "*" in the title, a prompt on close, autosave/backup.
+- **Visual system** (M3, L1): design tokens (type ramp, spacing, colors) and theme overrides for Nodify.
+- **Persistence** (L2): layout, open tabs, per-graph zoom and window position.
+- **Undo feedback** (M16, shared with P6).
+
 ### P3 — Editor extension host
 `NetPrints.Desktop --profile`, plugin-loaded editor extensions, UI contributions (commands,
 inspector sections, panels, settings pages), sample non-Unreal extension, anything functional
@@ -105,7 +130,7 @@ phases). SC-005 target: P0 accepts "typical developer machine" (node search cold
 1.5–1.6 s dev, 3.4 s on the CI runner); P8 brings it within 2 s on slower machines including
 the CI runner. Also: translate the generated-code preview off the UI thread; DynamicData /
 ReactiveUI throughput for large graphs and catalogs; `MetadataReference` caching; startup
-time; memory profile of reflection caches. Benchmarks (BenchmarkDotNet) + performance budgets
+time; memory profile of reflection caches. UX audit items L3 (search cold start) and L4. Benchmarks (BenchmarkDotNet) + performance budgets
 enforced in CI.
 
 ### U1–U3 (NetPrintsUnreal repo)
@@ -157,6 +182,11 @@ for those who want to learn it.
   UnrealEditor hosting CoreCLR via UnrealSharp). Do B first, then A; a first cut of B belongs in
   the U1 prototype.
 - Natural-language/AI assist that proposes nodes from a description (opt-in, reviewable diff).
+- UX audit additions (2026-09-25, IDs from `docs/research/2026-09-25-ux-audit/`):
+  - H5–H9, M1, M2, M4–M15, M17–M21, L7;
+  - discoverable node creation, context menus, rich error list, search ranking with doc preview;
+  - start page and samples, accessibility (names for icon buttons, contrast ≥ 4.5:1, keyboard navigation);
+  - Nodify built-ins not used yet (minimap, fit to view, groups/comments, alignment, keyboard navigation).
 
 ### P7 — Structured code generation
 Emit `if/else`, `for/foreach/while`, `Sequence` blocks and `return` from the exec graph using
