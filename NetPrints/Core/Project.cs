@@ -338,7 +338,7 @@ namespace NetPrints.Core
                     Directory.CreateDirectory(compiledDir);
                 }
 
-                ConcurrentBag<string> classSources = new ConcurrentBag<string>();
+                var translatedClasses = new ConcurrentBag<(string FullName, string Code)>();
 
                 // Translate classes in parallel
                 Parallel.ForEach(Classes, cls =>
@@ -372,8 +372,13 @@ namespace NetPrints.Core
                         File.WriteAllText(System.IO.Path.Combine(outputDirectory, $"{cls.Name}.cs"), code);
                     }
 
-                    classSources.Add(code);
+                    translatedClasses.Add((cls.FullName, code));
                 });
+
+                // Deterministic output (constitution VI): the compiler sees the sources in a stable order.
+                var classSources = translatedClasses
+                    .OrderBy(c => c.FullName, StringComparer.Ordinal)
+                    .Select(c => c.Code);
 
                 bool generateExecutable = OutputBinaryType == BinaryType.Executable;
                 string ext = generateExecutable ? "exe" : "dll";
@@ -397,7 +402,7 @@ namespace NetPrints.Core
                     .Concat(references
                         .OfType<SourceDirectoryReference>()
                         .Where(sourceRef => sourceRef.IncludeInCompilation)
-                        .SelectMany(sourceRef => sourceRef.SourceFilePaths)
+                        .SelectMany(sourceRef => sourceRef.SourceFilePaths.OrderBy(p => p, StringComparer.Ordinal))
                         .Select(sourcePath => File.ReadAllText(sourcePath)))
                     .Distinct()
                     .ToArray();

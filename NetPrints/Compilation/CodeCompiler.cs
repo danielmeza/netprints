@@ -24,7 +24,8 @@ namespace NetPrints.Compilation
         {
             IEnumerable<SyntaxTree> syntaxTrees = sources.Select(source => SyntaxFactory.ParseSyntaxTree(source));
             IEnumerable<MetadataReference> references = assemblyPaths.Select(path => MetadataReference.CreateFromFile(path));
-            var compilationOptions = new CSharpCompilationOptions(generateExecutable ? OutputKind.ConsoleApplication : OutputKind.DynamicallyLinkedLibrary);
+            var compilationOptions = new CSharpCompilationOptions(generateExecutable ? OutputKind.ConsoleApplication : OutputKind.DynamicallyLinkedLibrary)
+                .WithDeterministic(true);
 
             CSharpCompilation compilation = CSharpCompilation.Create("NetPrintsOutput")
                 .WithOptions(compilationOptions)
