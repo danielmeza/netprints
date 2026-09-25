@@ -19,19 +19,52 @@ using NetPrints.Translator;
 
 namespace NetPrints.Core
 {
+    /// <summary>
+    /// What <see cref="Project.CompileProject"/> writes to the compiled output directory.
+    /// </summary>
     [Flags]
     public enum ProjectCompilationOutput
     {
+        /// <summary>
+        /// Nothing is written; <see cref="Project.CompileProject"/> returns immediately without compiling.
+        /// </summary>
         Nothing = 0,
+
+        /// <summary>
+        /// The translated C# source for each class is written to the compiled directory.
+        /// </summary>
         SourceCode = 1,
+
+        /// <summary>
+        /// The compiled assembly (and, for an executable, its runtime config) is kept; without this
+        /// flag the binary is deleted again after compiling (see <see cref="Project.CompileProject"/>).
+        /// </summary>
         Binaries = 2,
+
+        /// <summary>
+        /// Compilation errors are written to a "&lt;ProjectName&gt;_errors.txt" file.
+        /// </summary>
         Errors = 4,
+
+        /// <summary>
+        /// <see cref="SourceCode"/>, <see cref="Binaries"/> and <see cref="Errors"/> combined.
+        /// </summary>
         All = SourceCode | Binaries | Errors,
     }
 
+    /// <summary>
+    /// The kind of binary a project compiles to.
+    /// </summary>
     public enum BinaryType
     {
+        /// <summary>
+        /// A library with no entry point (a .dll with no runnable command).
+        /// </summary>
         SharedLibrary,
+
+        /// <summary>
+        /// A runnable executable (see <see cref="Project.GetRunCommand"/>).
+        /// </summary>
         Executable,
     }
 
@@ -82,7 +115,8 @@ namespace NetPrints.Core
         public partial string? LastCompiledAssemblyPath { get; set; }
 
         /// <summary>
-        /// Path to the project file.
+        /// Path to the project file. Set by <see cref="LoadFromPath"/>; not itself part of the
+        /// serialized project data (no <see cref="DataMemberAttribute"/>).
         /// </summary>
         [ObservableProperty]
         public partial string Path { get; set; }
@@ -128,6 +162,12 @@ namespace NetPrints.Core
         {
         }
 
+        /// <summary>
+        /// The relative file name <paramref name="cls"/> is (or would be) saved under, in the project
+        /// directory: its full name (namespace and class name) with a ".netpc" extension.
+        /// </summary>
+        /// <param name="cls">Class to get the storage path for.</param>
+        /// <returns>The class's relative storage file name.</returns>
         public string GetClassStoragePath(ClassGraph cls)
         {
             return $"{cls.FullName}.netpc";
@@ -167,6 +207,7 @@ namespace NetPrints.Core
         /// <param name="name">Name of the project.</param>
         /// <param name="defaultNamespace">Default namespace of the project.</param>
         /// <param name="addDefaultReferences">Whether to add default references to the project.</param>
+        /// <param name="compilationOutput">What compilation writes to the compiled output directory.</param>
         /// <returns>The created project.</returns>
         public static Project CreateNew(string name, string defaultNamespace, bool addDefaultReferences = true,
             ProjectCompilationOutput compilationOutput = ProjectCompilationOutput.All)
@@ -217,29 +258,63 @@ namespace NetPrints.Core
             return null;
         }
 
+        /// <summary>
+        /// Whether the project can currently be compiled and run: not already compiling, output type
+        /// is <see cref="BinaryType.Executable"/>, and <see cref="CompilationOutput"/> includes
+        /// <see cref="ProjectCompilationOutput.Binaries"/>.
+        /// </summary>
         public bool CanCompileAndRun
         {
             get => CanCompile && OutputBinaryType == BinaryType.Executable
                 && CompilationOutput.HasFlag(ProjectCompilationOutput.Binaries);
         }
 
+        /// <summary>
+        /// Whether the project can currently be compiled: not already compiling (see <see cref="IsCompiling"/>).
+        /// </summary>
         public bool CanCompile
         {
             get => !IsCompiling;
         }
 
+        /// <summary>
+        /// Human-readable status shown while and after compiling (eg. "Ready", "Compiling...",
+        /// "Build succeeded", "Build failed with N error(s)").
+        /// </summary>
         [ObservableProperty]
         public partial string CompilationMessage { get; set; } = "Ready";
 
+        /// <summary>
+        /// Whether <see cref="CompileProject"/> is currently running.
+        /// </summary>
         [ObservableProperty]
         public partial bool IsCompiling { get; set; }
 
+        /// <summary>
+        /// Whether the last call to <see cref="CompileProject"/> succeeded.
+        /// </summary>
         [ObservableProperty]
         public partial bool LastCompilationSucceeded { get; set; }
 
+        /// <summary>
+        /// Errors from the last call to <see cref="CompileProject"/>, empty on success.
+        /// </summary>
         [ObservableProperty]
         public partial ObservableRangeCollection<string> LastCompileErrors { get; set; }
 
+        /// <summary>
+        /// Compiles the project: translates every class to C# on a background thread, compiles the
+        /// translated sources (plus any referenced source directories) with the project's references,
+        /// and writes source/binaries/errors to the "Compiled_&lt;ProjectName&gt;" directory next to the
+        /// project file, according to <see cref="CompilationOutput"/>. Does nothing if already
+        /// compiling (<see cref="CanCompile"/>) or if <see cref="CompilationOutput"/> is
+        /// <see cref="ProjectCompilationOutput.Nothing"/>. Sets <see cref="IsCompiling"/>,
+        /// <see cref="CompilationMessage"/>, <see cref="LastCompilationSucceeded"/>,
+        /// <see cref="LastCompileErrors"/> and, on success, <see cref="LastCompiledAssemblyPath"/>.
+        /// An unexpected exception during compilation is caught and reported as a failed build rather
+        /// than propagated. This is an async void method: callers cannot await its completion and must
+        /// observe it through the properties above instead.
+        /// </summary>
         public async void CompileProject()
         {
             // Check if we are already compiling
@@ -483,6 +558,13 @@ namespace NetPrints.Core
             return (exePath, "");
         }
 
+        /// <summary>
+        /// Starts the compiled executable, via <see cref="GetRunCommand"/>, without a shell.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">
+        /// The project does not output a runnable executable binary (see <see cref="GetRunCommand"/>).
+        /// </exception>
+        /// <exception cref="Exception">The compiled executable does not exist.</exception>
         public void RunProject()
         {
             var (fileName, arguments) = GetRunCommand();
@@ -571,6 +653,13 @@ namespace NetPrints.Core
         #endregion
 
         #region Creating and loading classes
+        /// <summary>
+        /// Adds and returns a new, empty class to the project, named "MyClass" (made unique against
+        /// existing files in the project directory and existing classes) in
+        /// <see cref="DefaultNamespace"/>. The class is added to <see cref="Classes"/> but not yet
+        /// saved to disk.
+        /// </summary>
+        /// <returns>The newly created class.</returns>
         public ClassGraph CreateNewClass()
         {
             // Make a class name that isn't already a file and isn't
@@ -602,6 +691,18 @@ namespace NetPrints.Core
             return cls;
         }
 
+        /// <summary>
+        /// Adds a class from a saved .netpc file at <paramref name="path"/> to the project: if a class
+        /// with the same storage file name is already loaded, returns it as-is (the overwrite-prompt
+        /// path is a TODO, not yet implemented); otherwise loads the class, assigns this project to
+        /// it, saves it into the project directory, and adds it to <see cref="Classes"/>.
+        /// </summary>
+        /// <param name="path">Path to the .netpc file to load.</param>
+        /// <returns>The added or already-loaded class.</returns>
+        /// <exception cref="InvalidOperationException">
+        /// No class was loaded or found for <paramref name="path"/> (should not happen; every code
+        /// path either finds an existing class or loads a new one).
+        /// </exception>
         public ClassGraph AddExistingClass(string path)
         {
             // Check if a class with the same storage name is already loaded
