@@ -46,6 +46,25 @@ jobs:
       - name: Build
         run: dotnet build NetPrints.sln -c Release --no-restore
 
+      # Bundles the Release output the e2e job needs: the E2E test host (a Microsoft.Testing.Platform
+      # executable, with its bin-copied samples) and the NetPrints.Desktop build it launches by an
+      # absolute path baked in at compile time (EditorProcess.DesktopAssembly). Tarring preserves the
+      # executable bit that upload/download-artifact would otherwise drop. Each build also carries
+      # every other RID's native assets (e.g. win-x64, osx); only linux-x64 ever runs here.
+      - name: Package E2E build output
+        run: |
+          for runtimes in NetPrints.Desktop.E2ETests/bin/Release/net10.0/runtimes NetPrints.Desktop/bin/Release/net10.0/runtimes; do
+            find "$runtimes" -mindepth 1 -maxdepth 1 ! -name linux-x64 -exec rm -rf {} +
+          done
+          tar -czf e2e-build.tar.gz NetPrints.Desktop.E2ETests/bin/Release NetPrints.Desktop/bin/Release
+
+      - name: Upload E2E build output
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-build
+          path: e2e-build.tar.gz
+          if-no-files-found: error
+
       # Core, reflection, view-model and headless Avalonia UI tests (no display server needed).
       # The desktop E2E tests are skipped here (NETPRINTS_E2E unset), which is a "zero tests ran"
       # exit code (8) only for that project; ignoring it here (and only here, not in the e2e job
@@ -90,20 +109,17 @@ jobs:
 
   e2e:
     name: Desktop E2E (Linux, Xvfb)
+    needs: build-test
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
 
+      # Only for the .NET runtime that hosts the prebuilt test executable below; no restore or
+      # build happens in this job.
       - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
-
-      - uses: actions/cache@v6
-        with:
-          path: ~/.nuget/packages
-          key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', 'Directory.Build.props', 'global.json', '**/*.csproj') }}
-          restore-keys: nuget-${{ runner.os }}-
 
       # X server, window manager, input and screenshots, window state (xprop, xwininfo), GTK 3 for
       # the native file pickers and a cursor theme for named cursors.
@@ -112,11 +128,21 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends xvfb openbox xdotool imagemagick x11-utils libgtk-3-0t64 adwaita-icon-theme
 
-      - name: Build
-        run: dotnet build NetPrints.Desktop.E2ETests -c Release
+      - name: Download E2E build output
+        uses: actions/download-artifact@v7
+        with:
+          name: e2e-build
 
-      # The tests start their own Xvfb on a free display (like xvfb-run -a) plus openbox.
-      # --fail-skips turns any skipped test (e.g. NETPRINTS_E2E not reaching the test host, or a
+      # Restores build-test's Release bin/ layout (including the executable bit) at the same
+      # checkout path it was built at, which is what the baked-in DesktopAssembly path relies on.
+      - name: Extract E2E build output
+        run: tar -xzf e2e-build.tar.gz
+
+      # Runs the prebuilt test host directly (no `dotnet test`/MSBuild: nothing was restored here),
+      # so this uses the xunit.v3 in-process runner's own CLI (-trx, -failSkips) rather than the
+      # `--report-xunit-trx`/`--results-directory`/`--` forwarding that `dotnet test` translates.
+      # It starts its own Xvfb on a free display (like xvfb-run -a) plus openbox.
+      # -failSkips turns any skipped test (e.g. NETPRINTS_E2E not reaching the test host, or a
       # skip condition that fires unexpectedly) into a failure, so this job cannot go green with
       # zero real coverage: neither "zero tests ran" (exit code 8, not ignored here) nor "every
       # test skipped" can pass silently.
@@ -124,9 +150,10 @@ jobs:
         env:
           NETPRINTS_E2E: 1
           NETPRINTS_UI_ARTIFACTS: ${{ github.workspace }}/TestResults/ui
-        run: >
-          dotnet test --project NetPrints.Desktop.E2ETests -c Release --no-build
-          --report-xunit-trx --results-directory TestResults -- --fail-skips on
+        run: |
+          mkdir -p TestResults
+          ./NetPrints.Desktop.E2ETests/bin/Release/net10.0/NetPrints.Desktop.E2ETests \
+            -trx TestResults/NetPrints.Desktop.E2ETests.trx -failSkips
 
       - name: Upload E2E artifacts
         if: always()

@@ -92,6 +92,7 @@ NETPRINTS_E2E=1 dotnet test --project NetPrints.Desktop.E2ETests
 
 Push the branch or open a PR against `master`: the **CI** workflow (`.github/workflows/ci.yml`,
 see `contracts/ci-workflow.md`) runs on `ubuntu-latest`: the `build-test` job (build, all tests
-without a display, CLI smoke; artifacts `test-results` and `ui-headless`) and the `e2e` job
-(desktop E2E on Xvfb; artifact `e2e-results`). There are no Windows jobs. The VS extension
-workflow arrives in P4.
+without a display, CLI smoke; artifacts `test-results`, `ui-headless` and `e2e-build`) and the
+`e2e` job (desktop E2E on Xvfb; artifact `e2e-results`), which depends on `build-test` and reuses
+its Release build instead of building again. There are no Windows jobs. The VS extension workflow
+arrives in P4.
