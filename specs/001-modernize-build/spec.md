@@ -136,7 +136,7 @@ the .NET runtime's assemblies on Linux.
 
 ### Edge Cases
 
-- A bare `dotnet build` at the repository root builds `NetPrints.sln`, which contains only Linux-buildable projects. The legacy VSIX is not in the solution.
+- A bare `dotnet build` at the repository root builds `NetPrints.slnx`, which contains only Linux-buildable projects. The legacy VSIX is not in the solution.
 - A project saved by the WPF editor, with default `.NETFramework/v4.5` references, is opened on Linux: it loads, reflection and compile use the runtime-assembly fallback, and the file is not rewritten unless the user saves.
 - The same project is opened on Windows with .NET Framework reference assemblies installed: the original reference paths are used, so behavior is unchanged.
 - An assembly reference points to a missing file: reflection and compile skip it and report it in the compile errors. The editor must not crash. (The WPF editor threw.)

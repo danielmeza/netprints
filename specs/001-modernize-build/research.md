@@ -26,7 +26,7 @@ Microsoft.Testing.Platform:
 
 | Project | Framework | Notes |
 |--|--|--|
-| NetPrintsUnitTests (core) | xunit.v3 3.2.2 | no DI: nothing to inject |
+| NetPrints.Core.Tests (core) | xunit.v3 3.2.2 | no DI: nothing to inject |
 | NetPrints.Editor.Tests (reflection, view models, hosts) | xunit.v3 3.2.2 + Xunit.DependencyInjection 11.3.2 | a `Startup` shares one loaded `IReflectionHost`; `TestEditor` is resolved per test class |
 | NetPrints.Editor.UITests (new, headless UI) | xunit.v3 3.2.2 + Avalonia.Headless.XUnit 12.1.3 | `[AvaloniaFact(Timeout = …)]`; no DI |
 
@@ -149,7 +149,7 @@ still needs the mapping in `ReflectionConverter` (section a).
 
 | Check | Result |
 |-------|--------|
-| Baseline `dotnet build NetPrints/NetPrints.csproj` (unmodified, SDK 10.0.400) | **fails**: Fody 5.0.3 `Could not load file or assembly 'Mono.Cecil, Version=0.11.0.0'` + `AD0001` analyzer crashes (Roslyn 2.10) |
+| Baseline `dotnet build src/NetPrints.Core/NetPrints.Core.csproj` (unmodified, SDK 10.0.400) | **fails**: Fody 5.0.3 `Could not load file or assembly 'Mono.Cecil, Version=0.11.0.0'` + `AD0001` analyzer crashes (Roslyn 2.10) |
 | Core + CLI + core tests with proposed build changes | build OK; **11/11 tests pass** on net10.0 (~0.7 s); TRX written |
 | Core rebuilt twice from clean | `NetPrints.dll` bit-identical for both TFMs (deterministic) |
 | Roslyn compile of C# against the 172 runtime assemblies + run via `dotnet X.exe` + generated `X.runtimeconfig.json` | success; prints expected output |
@@ -211,7 +211,7 @@ The editor no longer uses Fody (CommunityToolkit.Mvvm source generators). P1 rem
    `netstandard2.0`: **Gapotchenko.FX was not unused** — it supplied the `System.HashCode` polyfill.
    Replace it with `Microsoft.Bcl.HashCode` **6.0.0**, conditional on `netstandard2.0`, in Core and
    NetPrints.Reflection (`IReflectionProvider.cs` also uses `HashCode.Combine`).
-4. `CS0411` in `NetPrintsUnitTests/TypeTests.cs:29-30`: MSTest 4 removed
+4. `CS0411` in `tests/NetPrints.Core.Tests/TypeTests.cs:29-30`: MSTest 4 removed
    `Assert.AreEqual(object, object)`. Use `Assert.AreEqual<BaseType>(…)`; the semantics are identical.
 
 **Reference assemblies**: the tests do not touch the hard-coded `ProgramFilesX86 … .NETFramework\v4.5`
@@ -247,7 +247,7 @@ fails. Compile/Run (PAR-09/10) needs references too. A minimal P0 fix is therefo
 
 ## d. Solution layout while Windows-only projects exist
 
-**Decision**: `NetPrints.sln` stays the single entry point and contains only Linux-buildable
+**Decision**: `NetPrints.slnx` stays the single entry point and contains only Linux-buildable
 projects, so `dotnet build`/`dotnet test` at the root work everywhere:
 
 - `NetPrintsEditor` (WPF) and `NetPrintsEditorUnitTests` are **deleted**; git history keeps them.
@@ -292,7 +292,7 @@ test project: `OutputType=Exe`, `EnableMSTestRunner=true`, and `global.json`
 | Setting | Value | Notes |
 |---------|-------|-------|
 | `LangVersion` | `latest` | Replaces `preview`; C# 14 on SDK 10; verified on both Core targets |
-| `Nullable` | `enable` default | `disable` in Core, NetPrintsUnitTests and NetPrints.Reflection (moved code; measured ~100 unique warnings in Core); new editor, desktop and test code enables it |
+| `Nullable` | `enable` default | `disable` in Core, NetPrints.Core.Tests and NetPrints.Reflection (moved code; measured ~100 unique warnings in Core); new editor, desktop and test code enables it |
 | `Deterministic` | `true` | verified bit-identical |
 | `ContinuousIntegrationBuild` | `true` when `$(CI)=='true'` | set on GitHub Actions |
 | `TreatWarningsAsErrors` | `false` | Fody, RS1024 and MSTEST0017 warnings exist; ratchet per project later |
@@ -302,10 +302,10 @@ test project: `OutputType=Exe`, `EnableMSTestRunner=true`, and `global.json`
 
 ## g. CLI
 
-**Decision**: `NetPrintsCLI` targets `net10.0` only. CommandLineParser 2.5.0 → **2.9.1**, with the
+**Decision**: `NetPrints.Cli` targets `net10.0` only. CommandLineParser 2.5.0 → **2.9.1**, with the
 same API. There is no parser migration (Spectre is P2). The existing exit codes are unchanged:
 `--help` and `--version` return 1, and compile returns 1 on success. The P2 redesign fixes them.
-With the reference resolver (c), `NetPrintsCLI -p x.netpp` now compiles on Linux too.
+With the reference resolver (c), `NetPrints.Cli -p x.netpp` now compiles on Linux too.
 
 ## h. Dependencies removed or replaced
 
@@ -330,11 +330,11 @@ contents: read`. Environment: `DOTNET_NOLOGO=1`, `DOTNET_CLI_TELEMETRY_OPTOUT=1`
 Steps:
 1. `actions/checkout@v7`
 2. `actions/setup-dotnet@v6` with `dotnet-version: 10.0.x`
-3. `dotnet restore NetPrints.sln`
-4. `dotnet build NetPrints.sln -c Release --no-restore`
-5. `dotnet test --solution NetPrints.sln -c Release --no-build --report-trx --results-directory TestResults`
+3. `dotnet restore NetPrints.slnx`
+4. `dotnet build NetPrints.slnx -c Release --no-restore`
+5. `dotnet test --solution NetPrints.slnx -c Release --no-build --report-trx --results-directory TestResults`
    (core + editor tests; headless Avalonia needs no display server)
-6. CLI smoke: `dotnet run --project NetPrintsCLI -c Release --no-build -- --version | grep NetPrintsCLI`
+6. CLI smoke: `dotnet run --project src/NetPrints.Cli -c Release --no-build -- --version | grep NetPrints.Cli`
    (tolerates exit code 1)
 7. `actions/upload-artifact@v7` with `TestResults/**/*.trx`, `if: always()`
 
@@ -401,7 +401,7 @@ Incremental filtering plus a virtualized list is needed for SC-005.
 ## m. Graph canvas: Nodify.Avalonia 1.0.2
 
 **Decision**: **Nodify.Avalonia 1.0.2** (MIT). Nodify's types are used only in views
-(`NetPrints.Editor/Views/Graph/*`); VMs stay framework-free.
+(`src/NetPrints.Editor/Views/Graph/*`); VMs stay framework-free.
 
 **Verified in the spike (Linux, headless, net10.0, Avalonia 11.3.22)**
 - Namespaces: `Nodify.Avalonia` (`NodifyEditor`, `ItemContainer`, `NodifyCanvas`,
@@ -463,31 +463,31 @@ Nodify.Avalonia 2.0.0 (requires Avalonia 12).
 - **Theme**: `FluentTheme` with `RequestedThemeVariant="Dark"` and an emerald accent
   (`SystemAccentColor` `#FF008A00`, MahApps "Emerald"). Fonts come from `Avalonia.Fonts.Inter`
   (`.WithInterFont()`), for consistent headless rendering on CI.
-- **Resources**: the 16 PNG icons move to `NetPrints.Editor/Assets/` as `AvaloniaResource`, with
+- **Resources**: the 16 PNG icons move to `src/NetPrints.Editor/Assets/` as `AvaloniaResource`, with
   `avares://NetPrints.Editor/Assets/{icon}` replacing `pack://application:,,,/…`.
 
 ## o. Project structure for the editor
 
 **Decision**
-- `NetPrints.Reflection/` (new, `netstandard2.0;net10.0`, `Nullable=disable`): moved
+- `src/NetPrints.Reflection/` (new, `netstandard2.0;net10.0`, `Nullable=disable`): moved
   `IReflectionProvider`, `ReflectionProvider`, `MemoizedReflectionProvider`, `Memoization`,
   `ReflectionConverter`, `DocumentationUtil` and `DefaultOperatorSpecifiers`. The namespace changes
   `NetPrintsEditor.Reflection` → `NetPrints.Reflection`. The only behavioral change is the
   `RefReadOnlyParameter` mapping plus the resolver-based reference loading (missing files skipped).
-- `NetPrints.Editor/` (new, `net10.0`, library): `EditorApp` (`App.axaml`, theme, composition
+- `src/NetPrints.Editor/` (new, `net10.0`, library): `EditorApp` (`App.axaml`, theme, composition
   root: manual wiring, no DI container), `ViewModels/`, `Services/` (interfaces) and
   `Services/Avalonia/` (the `TopLevel`-based implementations), `Messages/`, `Commands/` (undo/redo),
   `Views/` (axaml), `Converters/`, `Assets/`. It is net10.0-only in P0 because of risk R1.
   Keeping `EditorApp` here lets the headless tests start the real app without referencing an exe.
-- `NetPrints.Desktop/` (new, `net10.0`, `WinExe`): `Program.cs` only (`BuildAvaloniaApp()` →
+- `src/NetPrints.Desktop/` (new, `net10.0`, `WinExe`): `Program.cs` only (`BuildAvaloniaApp()` →
   `AppBuilder.Configure<EditorApp>().UsePlatformDetect().WithInterFont()`, command-line argument
   hand-off) and the app icon.
-- `NetPrints.Editor.Tests/` (new, `net10.0`, MSTest 4 + Avalonia.Headless + Avalonia.Skia):
+- `tests/NetPrints.Editor.Tests/` (new, `net10.0`, MSTest 4 + Avalonia.Headless + Avalonia.Skia):
   `Reflection/`, `ViewModels/`, `Ui/` (headless, `TestAppBuilder` → `EditorApp`), `Samples/`.
 - `samples/HelloWorld/` (new): `HelloWorld.netpp` + `HelloWorld.Program.netpc` (a static `Main`
   that calls `Console.WriteLine("Hello, World!")`), produced once by a test helper through the Core
   API and checked in. A test asserts that it loads, compiles and runs.
-- Existing names (`NetPrints`, `NetPrintsCLI`, `NetPrintsUnitTests`) are kept to limit churn.
+- Existing names (`NetPrints`, `NetPrints.Cli`, `NetPrints.Core.Tests`) are kept to limit churn.
   Renames are P1/P2.
 
 ## p. Package version summary (Directory.Packages.props)
@@ -554,7 +554,7 @@ on top, and two drivers: headless (Avalonia.Headless) and X11 (real desktop edit
   next click); per-test diagnostics (screenshots, tree dump, editor stdout/stderr, xdotool log) as CI
   artifacts; no retries except infrastructure waits (X socket, window manager).
 - **Snapshots**: per-pixel threshold 32/255, at most 0.5 % differing pixels, masks for carets.
-  Baselines are committed in `NetPrints.Editor.UITests/Snapshots/Baselines` and regenerated with
+  Baselines are committed in `tests/NetPrints.Editor.UITests/Snapshots/Baselines` and regenerated with
   `NETPRINTS_UPDATE_SNAPSHOTS=1`; new baselines are reviewed before acceptance.
 
 ### Screenplay library: Boa.Constrictor evaluated, hand-rolled instead
@@ -569,7 +569,7 @@ Timeboxed evaluation of `Boa.Constrictor.Screenplay` 4.0.0 (the core package):
 | Waiting | `AbstractWait` is a synchronous Stopwatch busy loop and `Retries.RetryOnException` uses `Thread.Sleep`: both block the headless UI thread and break the no-sleep rule |
 
 **Decision**: hand-roll the core (`Actor`, `IAbility`, `ITask`, `IQuestion<T>`, about 150 lines) in
-`NetPrints.Testing.Ui/Screenplay`, with cancellation tokens and a journal for diagnostics. Tasks
+`tests/NetPrints.Testing.Ui/Screenplay`, with cancellation tokens and a journal for diagnostics. Tasks
 and questions only call page objects; the ability `UseNetPrints` wraps the root page object over
 `IUiDriver`, so the same tasks run on both drivers.
 

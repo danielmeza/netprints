@@ -1,0 +1,106 @@
+# Auto-detect text files and normalize line endings to LF for anything not listed below.
+# The paths below predate the Linux port and are still Windows CRLF; they are marked
+# `-text` (opaque to Git line-ending/content normalization) so their bytes are preserved
+# exactly, byte for byte, on every checkout, add and diff.
+* text=auto
+
+# Files that still use CRLF from the original Windows/WPF codebase (Core,
+# Reflection, and the handful of original Core tests). Left as-is rather than
+# renormalized, so this commit does not touch their content.
+src/NetPrints.Core/Compilation/CodeCompiler.cs -text
+src/NetPrints.Core/Compilation/ICodeCompiler.cs -text
+src/NetPrints.Core/Core/AssemblyReference.cs -text
+src/NetPrints.Core/Core/BaseType.cs -text
+src/NetPrints.Core/Core/ClassGraph.cs -text
+src/NetPrints.Core/Core/CompilationReference.cs -text
+src/NetPrints.Core/Core/ConstructorGraph.cs -text
+src/NetPrints.Core/Core/ConstructorSpecifier.cs -text
+src/NetPrints.Core/Core/ExecutionGraph.cs -text
+src/NetPrints.Core/Core/FrameworkAssemblyReference.cs -text
+src/NetPrints.Core/Core/GenericType.cs -text
+src/NetPrints.Core/Core/ICompilationReference.cs -text
+src/NetPrints.Core/Core/MethodGraph.cs -text
+src/NetPrints.Core/Core/MethodSpecifier.cs -text
+src/NetPrints.Core/Core/Named.cs -text
+src/NetPrints.Core/Core/NetPrintsUtil.cs -text
+src/NetPrints.Core/Core/NodeGraph.cs -text
+src/NetPrints.Core/Core/OperatorUtil.cs -text
+src/NetPrints.Core/Core/Project.cs -text
+src/NetPrints.Core/Core/SourceDirectoryReference.cs -text
+src/NetPrints.Core/Core/TypeGraph.cs -text
+src/NetPrints.Core/Core/TypeSpecifier.cs -text
+src/NetPrints.Core/Core/Variable.cs -text
+src/NetPrints.Core/Core/VariableSpecifier.cs -text
+src/NetPrints.Core/FodyWeavers.xml -text
+src/NetPrints.Core/Graph/CallMethodNode.cs -text
+src/NetPrints.Core/Graph/ClassReturnNode.cs -text
+src/NetPrints.Core/Graph/ConstructorEntryNode.cs -text
+src/NetPrints.Core/Graph/ConstructorNode.cs -text
+src/NetPrints.Core/Graph/DefaultNode.cs -text
+src/NetPrints.Core/Graph/ExecNode.cs -text
+src/NetPrints.Core/Graph/ExecutionEntryNode.cs -text
+src/NetPrints.Core/Graph/ExplicitCastNode.cs -text
+src/NetPrints.Core/Graph/ForLoopNode.cs -text
+src/NetPrints.Core/Graph/GenericsHelper.cs -text
+src/NetPrints.Core/Graph/GraphUtil.cs -text
+src/NetPrints.Core/Graph/IfElseNode.cs -text
+src/NetPrints.Core/Graph/LiteralNode.cs -text
+src/NetPrints.Core/Graph/MakeArrayNode.cs -text
+src/NetPrints.Core/Graph/MakeArrayTypeNode.cs -text
+src/NetPrints.Core/Graph/MakeDelegateNode.cs -text
+src/NetPrints.Core/Graph/MethodEntryNode.cs -text
+src/NetPrints.Core/Graph/Node.cs -text
+src/NetPrints.Core/Graph/NodeDataPin.cs -text
+src/NetPrints.Core/Graph/NodeExecPin.cs -text
+src/NetPrints.Core/Graph/NodeInputDataPin.cs -text
+src/NetPrints.Core/Graph/NodeInputExecPin.cs -text
+src/NetPrints.Core/Graph/NodeInputTypePin.cs -text
+src/NetPrints.Core/Graph/NodeOutputDataPin.cs -text
+src/NetPrints.Core/Graph/NodeOutputExecPin.cs -text
+src/NetPrints.Core/Graph/NodeOutputTypePin.cs -text
+src/NetPrints.Core/Graph/NodePin.cs -text
+src/NetPrints.Core/Graph/NodeTypePin.cs -text
+src/NetPrints.Core/Graph/RerouteNode.cs -text
+src/NetPrints.Core/Graph/ReturnNode.cs -text
+src/NetPrints.Core/Graph/TernaryNode.cs -text
+src/NetPrints.Core/Graph/ThrowNode.cs -text
+src/NetPrints.Core/Graph/TypeNode.cs -text
+src/NetPrints.Core/Graph/TypeOfNode.cs -text
+src/NetPrints.Core/Graph/TypeReturnNode.cs -text
+src/NetPrints.Core/Graph/VariableGetterNode.cs -text
+src/NetPrints.Core/Graph/VariableNode.cs -text
+src/NetPrints.Core/Graph/VariableSetterNode.cs -text
+src/NetPrints.Core/Serialization/SerializationHelper.cs -text
+src/NetPrints.Core/Translator/ClassTranslator.cs -text
+src/NetPrints.Core/Translator/ExecutionGraphTranslator.cs -text
+src/NetPrints.Core/Translator/TranslatorUtil.cs -text
+src/NetPrints.Reflection/DefaultOperatorSpecifiers.cs -text
+src/NetPrints.Reflection/DocumentationUtil.cs -text
+src/NetPrints.Reflection/IReflectionProvider.cs -text
+src/NetPrints.Reflection/Memoization.cs -text
+src/NetPrints.Reflection/MemoizedReflectionProvider.cs -text
+src/NetPrints.Reflection/ReflectionConverter.cs -text
+src/NetPrints.Reflection/ReflectionProvider.cs -text
+tests/NetPrints.Core.Tests/Core/TypeTests.cs -text
+tests/NetPrints.Core.Tests/Translator/ClassTranslatorTests.cs -text
+tests/NetPrints.Core.Tests/Translator/DelegateTranslatorTests.cs -text
+tests/NetPrints.Core.Tests/Translator/GenericsTests.cs -text
+tests/NetPrints.Core.Tests/Translator/MethodTranslatorTests.cs -text
+
+# The legacy VSIX (pre-P0, kept for reference, not built) is CRLF throughout except
+# LICENSE.txt and README.md, which were edited more recently as plain LF text.
+legacy/NetPrintsVSIX/ClassEditorView.xaml -text
+legacy/NetPrintsVSIX/ClassEditorView.xaml.cs -text
+legacy/NetPrintsVSIX/FodyWeavers.xml -text
+legacy/NetPrintsVSIX/FodyWeavers.xsd -text
+legacy/NetPrintsVSIX/NetPrintsEditorFactory.cs -text
+legacy/NetPrintsVSIX/NetPrintsVSIX.csproj -text
+legacy/NetPrintsVSIX/NetPrintsVSIXPackage.cs -text
+legacy/NetPrintsVSIX/NetPrintsVSIXUtil.cs -text
+legacy/NetPrintsVSIX/Properties/AssemblyInfo.cs -text
+legacy/NetPrintsVSIX/source.extension.vsixmanifest -text
+
+# Binary files: never diff, never convert line endings.
+*.png binary
+*.ico binary
+*.zip binary

@@ -1,0 +1,16 @@
+<Project>
+  <Import Project="../Directory.Build.props" />
+
+  <!-- Test-only settings shared by every project under tests/. -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <!-- CI code coverage (build-test job's `dotnet test` run, via its coverage flag).
+       Auto-registered by MTP; no code changes needed. Only test hosts (OutputType Exe) need it:
+       NetPrints.Testing.Ui is a class library (shared page objects/Screenplay helpers), not a
+       test host, and gains nothing from pulling in Microsoft.Testing.Platform for itself. -->
+  <ItemGroup Condition="'$(OutputType)' == 'Exe'">
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
+  </ItemGroup>
+</Project>

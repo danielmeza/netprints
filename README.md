@@ -1,69 +1,118 @@
-![](https://raw.githubusercontent.com/RobinKa/RobinKa.github.io/master/NetPrintsBanner.png)
+![NetPrints](https://raw.githubusercontent.com/RobinKa/RobinKa.github.io/master/NetPrintsBanner.png)
 
 [![CI](https://github.com/danielmeza/netprints/actions/workflows/ci.yml/badge.svg?branch=master)](https://github.com/danielmeza/netprints/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-NetPrints is a visual programming language inspired by Unreal Engine 4's Blueprints which compiles into .NET binaries or alternatively C# source code. These can be used from any other .NET language (eg. C#) or used as standalone programs. Furthermore any .NET binaries (both .NET Framework and .NET Core, and ideally .NET Standard) can be referenced and used. Its goal is to support using anything that is made in C#. 
-[Overview](https://github.com/RobinKa/netprints/wiki/Overview)
+NetPrints is a visual, node-based programming language for .NET, in the spirit of Unreal Engine's
+Blueprints. You wire up nodes instead of writing C# by hand, and NetPrints compiles the graph into
+a .NET binary or into C# source you can read, keep and build on. Any .NET assembly — Framework,
+Core or Standard — can be referenced and used from a graph, so the goal is: if it's made in C#, you
+can call it from NetPrints.
 
-[Use cases](https://github.com/RobinKa/netprints/wiki/Use-cases)
+This fork continues the [original NetPrints](https://github.com/RobinKa/netprints) by
+[Robin Kahlow](https://github.com/RobinKa) (WPF, Windows-only) as a cross-platform, Linux-first
+rewrite on [Avalonia](https://avaloniaui.net/): the same editor and language on Linux, Windows and
+macOS, on the current .NET 10, with an automated test suite (headless UI tests plus end-to-end
+tests against the real desktop app) instead of manual verification.
 
-[Hello world (video)](https://youtu.be/s4M-WOlGEFk)
+<p align="center">
+  <img src="tests/NetPrints.Editor.UITests/Snapshots/Baselines/class-editor-main.png" width="720" alt="The NetPrints class editor on Avalonia: a node graph wiring up a method, with the class inspector, generated C# preview and node search visible." />
+</p>
 
-[Unity tutorial](https://github.com/RobinKa/NetPrintsUnityTutorial)
+## Getting started
 
-# Download
-Version 0.0.7 of the original WPF editor can be found [here](https://github.com/RobinKa/netprints/releases/tag/0.0.7). The editor has since been rebuilt on [Avalonia](https://avaloniaui.net/) and runs on Linux, Windows and macOS; build it from source as described below.
+Requirements: the [.NET 10 SDK](https://dotnet.microsoft.com/download) (10.0.100 or later —
+`global.json` rolls forward to newer feature bands). Everything below runs on Linux, Windows and
+macOS; the commands are identical.
 
-# Build and Test
-Requirements: the [.NET 10 SDK](https://dotnet.microsoft.com/download) (10.0.100 or later; `global.json` rolls forward to newer feature bands). Two commands build and test everything, on Linux too, without a display server:
-
-```bash
-dotnet build NetPrints.sln -c Release
-dotnet test --solution NetPrints.sln -c Release --no-build
-```
-
-Package versions live in `Directory.Packages.props` (Central Package Management) and shared build settings in `Directory.Build.props`. The [CI](.github/workflows/ci.yml) workflow runs the same commands on every push and pull request.
-
-Command line:
-
-```bash
-dotnet run --project NetPrintsCLI -c Release -- --version
-dotnet run --project NetPrintsCLI -c Release -- -p samples/HelloWorld/HelloWorld.netpp -r   # prints "Hello, World!"
-```
-
-Editor:
+Build and test (no display server needed):
 
 ```bash
-dotnet run --project NetPrints.Desktop -c Release -- samples/HelloWorld/HelloWorld.netpp
+dotnet build NetPrints.slnx -c Release
+dotnet test --solution NetPrints.slnx -c Release --no-build -- --ignore-exit-code 8
 ```
 
-# Target Frameworks
-Every project targets .NET 10.
+`--ignore-exit-code 8` is what CI passes too: with `NETPRINTS_E2E` unset, the desktop E2E project
+runs zero tests and would otherwise exit non-zero on an otherwise-green tree.
 
-| Project | Target | Notes |
-|--|--|--|
-| NetPrints (core) | net10.0 | Node graphs, C# translation, compilation (Roslyn) |
-| NetPrints.Reflection | net10.0 | UI-free type reflection used by the editor |
-| NetPrints.Editor | net10.0 | Avalonia 12 editor library (views, view models, services) |
-| NetPrints.Desktop | net10.0 | Desktop application hosting the editor |
-| NetPrintsCLI | net10.0 | Command line compiler |
-| NetPrintsUnitTests, NetPrints.Editor.Tests, NetPrints.Editor.UITests | net10.0 | xUnit v3 on Microsoft.Testing.Platform; headless Avalonia UI tests (Avalonia.Headless.XUnit) |
-| NetPrintsVSIX | .NET Framework 4.6.1 | Legacy, not built (see below) |
+Run the editor:
 
-# Visual Studio Extension
-The legacy Visual Studio extension (`NetPrintsVSIX`) is kept in the repository for reference but is not part of `NetPrints.sln`, does not build and is not tested in CI; Visual Studio integration is out of scope for now (see `NetPrintsVSIX/README.md`). The published extension on the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=NawTora.NetPrints) is the old version.
+```bash
+dotnet run --project src/NetPrints.Desktop -c Release -- samples/HelloWorld/HelloWorld.netpp
+```
 
-# Standalone Editor Guide
-The editor runs on Linux (X11 or Wayland), Windows and macOS with the .NET 10 runtime. Any .NET binaries can be used with this editor. The recommended way to add new assembly references is installing them with NuGet and referencing their reference assemblies in the NuGet package folder (`~/.nuget/packages` or `%UserProfile%/.nuget/packages`). The hints for the included references should then appear within the editor. You can also add C# source directories which can either be used for reflection only (useful when you want to use NetPrints within Unity to access your existing scripts) or compiled into the output.
+Compile and run a project from the command line:
 
-Projects created by the old editor reference the .NET Framework 4.5 reference assemblies. When those are not installed (for example on Linux), NetPrints falls back to the assemblies of the running .NET runtime for reflection and compilation, and compiled executables are started through the `dotnet` host. Proper reference-pack and target selection is planned.
+```bash
+dotnet run --project src/NetPrints.Cli -c Release -- -p samples/HelloWorld/HelloWorld.netpp -r
+# → "Compilation succeeded." then the program prints "Hello, World!"
+```
 
-# Contributions
-Any contributions are welcome. If you notice bugs or have feature suggestions just create an issue for it. You can also contact me by email at `tora@warlock.ai`.
+Run the desktop end-to-end suite (Linux, drives the real editor over X11 with a private Xvfb
+display — installs `xvfb openbox xdotool imagemagick x11-utils libgtk-3-0t64 adwaita-icon-theme`
+first):
 
-# Screenshots
-| | |
-|:-------------------------:|:-------------------------:|
-|<img src="https://i.imgur.com/ld32kuo.png" />|<img src="https://i.imgur.com/qHF1cmq.png" />|
-|<img src="https://i.imgur.com/NahX6AM.png" />|<img src="https://i.imgur.com/wekGSFs.png" />|
-|<img src="https://i.imgur.com/qdYBLni.png" />|<img src="https://i.imgur.com/bq0vECa.png" />|
+```bash
+NETPRINTS_E2E=1 dotnet test --project tests/NetPrints.Desktop.E2ETests
+```
+
+See [`specs/001-modernize-build/quickstart.md`](specs/001-modernize-build/quickstart.md) for the
+full walkthrough (individual test projects, snapshot baselines, CI artifacts, troubleshooting).
+
+## Using the editor
+
+Add references from **References → Add Assembly**: any NuGet package installed to
+`~/.nuget/packages` (or `%UserProfile%/.nuget/packages` on Windows) works, and its documentation
+shows up as tooltips in the node search. You can also add a C# source directory, either for
+reflection only (handy for using NetPrints inside Unity against your existing scripts) or compiled
+straight into the output.
+
+Projects created by the original WPF editor reference .NET Framework 4.5 reference assemblies.
+When those aren't installed (for example on Linux), NetPrints falls back to the currently running
+.NET runtime's own assemblies for reflection and compilation, and starts compiled executables
+through the `dotnet` host. Proper reference-pack and target selection is tracked on the roadmap
+(P1).
+
+## Project layout
+
+| Path | Contents |
+|---|---|
+| `src/NetPrints.Core` | The node graph model, C# translation and Roslyn compilation. No UI. |
+| `src/NetPrints.Reflection` | UI-free type reflection used by the editor. |
+| `src/NetPrints.Editor` | The Avalonia 12 editor library: views, view models, services. |
+| `src/NetPrints.Desktop` | The desktop application hosting the editor. |
+| `src/NetPrints.Cli` | The command-line compiler. |
+| `tests/` | `NetPrints.Core.Tests`, `NetPrints.Editor.Tests` and `NetPrints.Editor.UITests` (xUnit v3 on Microsoft.Testing.Platform; the UI tests are headless Avalonia), `NetPrints.Desktop.E2ETests` (real editor over X11) and `NetPrints.Testing.Ui` (shared page objects). |
+| `samples/` | Sample `.netpp`/`.netpc` projects used as test fixtures and quick-start material. |
+| `legacy/NetPrintsVSIX` | The old Visual Studio extension, kept for reference. Not built, not tested, not in the solution (see [its README](legacy/NetPrintsVSIX/README.md)). |
+| `specs/`, `docs/`, `.specify/` | [Spec Kit](https://github.com/github/spec-kit) feature specs, research notes and architecture decision records ([`docs/adr`](docs/adr)). |
+
+Every `src/`/`tests/` project targets `net10.0`. Package versions are centrally managed in
+[`Directory.Packages.props`](Directory.Packages.props); shared build settings are in
+[`Directory.Build.props`](Directory.Build.props) (and the `src/`/`tests/`-scoped copies). The
+[CI workflow](.github/workflows/ci.yml) builds, format-checks, tests and runs the E2E suite on
+every push and pull request.
+
+## Status and roadmap
+
+Under active, phased modernization — see
+[`.specify/memory/roadmap.md`](.specify/memory/roadmap.md) for what's shipped and what's next.
+The Avalonia editor rebuild (P0) and its GPU/CPU grid rendering (P0.1) are merged; core refactor
+and extension points, a catalog/CLI redesign, and editor usability are the phases ahead.
+
+## Contributing
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md) for the Spec Kit workflow, agent rules, PR process and
+test conventions. Bug reports and feature ideas are welcome as issues.
+
+## Credits and license
+
+Originally created by [Robin Kahlow](https://github.com/RobinKa)
+([`RobinKa/netprints`](https://github.com/RobinKa/netprints)). The 0.0.7 WPF editor release is
+archived [here](https://github.com/RobinKa/netprints/releases/tag/0.0.7); see also the
+[overview](https://github.com/RobinKa/netprints/wiki/Overview),
+[use cases](https://github.com/RobinKa/netprints/wiki/Use-cases) and
+[hello-world video](https://youtu.be/s4M-WOlGEFk) from the original project, and the
+[Unity tutorial](https://github.com/RobinKa/NetPrintsUnityTutorial).
+
+Licensed under the [MIT License](LICENSE), Copyright (c) 2018 Robin Kahlow.

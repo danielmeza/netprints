@@ -11,7 +11,7 @@ when it is started.
   extension points. Phases U1–U3.
 
 ## Baseline findings (code read, 2026-09-24)
-- Core `NetPrints/`: netstandard2.0, ~7.8k LOC, no WPF. Custom name-based type specifiers,
+- Core `src/NetPrints.Core/`: netstandard2.0, ~7.8k LOC, no WPF. Custom name-based type specifiers,
   string-built codegen (`Translator/ExecutionGraphTranslator.cs`, goto state machine), Roslyn
   2.10 `CSharpCompilation.Emit`, DataContract XML (`.netpc`/`.netpp`), PropertyChanged.Fody.
 - .NET Framework assumptions: `Core/Project.cs:46-48`, `Core/FrameworkAssemblyReference.cs:34`,

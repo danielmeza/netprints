@@ -119,7 +119,7 @@ All of the following were checked by reflection against the NuGet packages in `~
 
 **Headless**
 
-- `UseSkia()` plus `UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false })`, which is what `NetPrints.Editor.UITests/TestAppBuilder.cs` already does. It provides `ISkiaSharpApiLeaseFeature` with `GrContext == null`, and `CaptureRenderedFrame()` returns real pixels ([docs](https://docs.avaloniaui.net/docs/testing/setting-up-the-headless-platform)).
+- `UseSkia()` plus `UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false })`, which is what `tests/NetPrints.Editor.UITests/TestAppBuilder.cs` already does. It provides `ISkiaSharpApiLeaseFeature` with `GrContext == null`, and `CaptureRenderedFrame()` returns real pixels ([docs](https://docs.avaloniaui.net/docs/testing/setting-up-the-headless-platform)).
 - With `UseHeadlessDrawing = true` there is no Skia feature at all, and `TryGetFeature` returns null.
 
 ---

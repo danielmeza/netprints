@@ -1,0 +1,21 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/src/">
+    <Project Path="src/NetPrints.Cli/NetPrints.Cli.csproj" />
+    <Project Path="src/NetPrints.Core/NetPrints.Core.csproj" />
+    <Project Path="src/NetPrints.Desktop/NetPrints.Desktop.csproj" />
+    <Project Path="src/NetPrints.Editor/NetPrints.Editor.csproj" />
+    <Project Path="src/NetPrints.Reflection/NetPrints.Reflection.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/NetPrints.Core.Tests/NetPrints.Core.Tests.csproj" />
+    <Project Path="tests/NetPrints.Desktop.E2ETests/NetPrints.Desktop.E2ETests.csproj" />
+    <Project Path="tests/NetPrints.Editor.Tests/NetPrints.Editor.Tests.csproj" />
+    <Project Path="tests/NetPrints.Editor.UITests/NetPrints.Editor.UITests.csproj" />
+    <Project Path="tests/NetPrints.Testing.Ui/NetPrints.Testing.Ui.csproj" />
+  </Folder>
+</Solution>

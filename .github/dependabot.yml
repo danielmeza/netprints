@@ -1,0 +1,30 @@
+version: 2
+updates:
+  # Central Package Management: Directory.Packages.props lives at the repo root, so this one
+  # entry covers every project's package versions.
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      nuget:
+        patterns:
+          - "*"
+    # Both floors are documented in Directory.Packages.props: CodeCoverage >=18 has an MTP 2.x
+    # floor, which flips xunit.v3 onto its mtp-v2 dependency group and throws at test-host
+    # startup; xunit.v3 4.x "fails discovery" against Avalonia.Headless.XUnit 12.1.3. A single
+    # `*` group must not bundle either into a routine weekly bump.
+    ignore:
+      - dependency-name: "Microsoft.Testing.Extensions.CodeCoverage"
+        versions: [">=18"]
+      - dependency-name: "xunit.v3*"
+        versions: [">=4"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
