@@ -12,7 +12,6 @@
     <PackageReference Include="Nodify.Avalonia" />
     <PackageReference Include="CommunityToolkit.Mvvm" />
     <PackageReference Include="DynamicData" />
-    <PackageReference Include="Xaml.Behaviors.Avalonia" />
     <PackageReference Include="Material.Icons.Avalonia" />
   </ItemGroup>
 

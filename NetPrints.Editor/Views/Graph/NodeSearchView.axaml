@@ -1,0 +1,36 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:NetPrints.Editor.ViewModels"
+             xmlns:conv="clr-namespace:NetPrints.Editor.Converters"
+             x:Class="NetPrints.Editor.Views.Graph.NodeSearchView"
+             x:DataType="vm:SuggestionListVM"
+             Width="700" Height="300">
+  <!-- Node search popup (PAR-52): search box, virtualized grouped list with 16-px icons. -->
+  <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" BorderBrush="{DynamicResource SystemAccentColor}" BorderThickness="1">
+    <Grid RowDefinitions="Auto,*">
+      <TextBox x:Name="SearchBox" Text="{Binding SearchText}" PlaceholderText="Search" Margin="4" KeyDown="OnSearchKeyDown" />
+      <TextBlock Grid.Row="1" Text="Loading..." IsVisible="{Binding IsLoading}" Margin="8" />
+      <ListBox x:Name="ResultList" Grid.Row="1" ItemsSource="{Binding Items}" IsVisible="{Binding !IsLoading}"
+               SelectionMode="Single" KeyDown="OnListKeyDown">
+        <ListBox.Styles>
+          <Style Selector="ListBoxItem">
+            <Setter Property="Padding" Value="4,1" />
+            <Setter Property="MinHeight" Value="20" />
+          </Style>
+        </ListBox.Styles>
+        <ListBox.ItemTemplate>
+          <DataTemplate x:DataType="vm:SuggestionItem">
+            <Panel Background="Transparent" Tapped="OnItemTapped">
+              <TextBlock Text="{Binding Category}" IsVisible="{Binding IsHeader}" FontWeight="Bold"
+                         Foreground="{DynamicResource SystemAccentColor}" />
+              <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding !IsHeader}" Margin="12,0,0,0">
+                <Image Width="16" Height="16" Source="{Binding IconKey, Converter={x:Static conv:IconConverter.Instance}}" />
+                <TextBlock Text="{Binding Text}" VerticalAlignment="Center" />
+              </StackPanel>
+            </Panel>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+    </Grid>
+  </Border>
+</UserControl>

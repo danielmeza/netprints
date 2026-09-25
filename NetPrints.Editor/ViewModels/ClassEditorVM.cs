@@ -81,12 +81,21 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     private NodeGraphVM? openedGraph;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowClassInspector), nameof(ShowVariableInspector), nameof(ShowMethodInspector))]
     private InspectorKind inspector = InspectorKind.Class;
 
+    public bool ShowClassInspector => Inspector == InspectorKind.Class;
+
+    public bool ShowVariableInspector => Inspector == InspectorKind.Variable && SelectedVariable is not null;
+
+    public bool ShowMethodInspector => Inspector == InspectorKind.Method && SelectedMethod is not null;
+
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowVariableInspector))]
     private MemberVariableVM? selectedVariable;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ShowMethodInspector))]
     private MethodVM? selectedMethod;
 
     /// <summary>Generated C# of the class, refreshed about every second (PAR-34).</summary>

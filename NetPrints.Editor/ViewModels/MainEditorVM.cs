@@ -33,11 +33,27 @@ public sealed partial class MainEditorVM : ObservableObject
 
     /// <summary>Whether the Project pane (Create/Open/Save) is open.</summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsPaneOpen))]
     private bool isProjectPaneOpen;
 
     /// <summary>Whether the Settings pane (output, binary type) is open.</summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsPaneOpen))]
     private bool isSettingsPaneOpen;
+
+    /// <summary>Whether one of the side panes is open; setting false closes both (light dismiss).</summary>
+    public bool IsPaneOpen
+    {
+        get => IsProjectPaneOpen || IsSettingsPaneOpen;
+        set
+        {
+            if (!value)
+            {
+                IsProjectPaneOpen = false;
+                IsSettingsPaneOpen = false;
+            }
+        }
+    }
 
     /// <summary>Whether a background operation shows the progress overlay.</summary>
     [ObservableProperty]

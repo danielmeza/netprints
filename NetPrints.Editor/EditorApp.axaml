@@ -1,0 +1,20 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             x:Class="NetPrints.Editor.EditorApp"
+             Name="NetPrints"
+             RequestedThemeVariant="Dark">
+  <Application.Styles>
+    <FluentTheme>
+      <FluentTheme.Palettes>
+        <!-- Emerald accent (MahApps "Emerald" of the WPF editor). -->
+        <ColorPaletteResources x:Key="Dark" Accent="#FF008A00" />
+        <ColorPaletteResources x:Key="Light" Accent="#FF008A00" />
+      </FluentTheme.Palettes>
+    </FluentTheme>
+    <!-- Nodify control templates; without them no graph item is realized. -->
+    <StyleInclude Source="avares://Nodify.Avalonia/Themes/Controls.xaml" />
+    <mi:MaterialIconStyles />
+    <StyleInclude Source="avares://NetPrints.Editor/Views/EditorStyles.axaml" />
+  </Application.Styles>
+</Application>
