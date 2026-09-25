@@ -232,7 +232,7 @@ build can be green on Linux from here on.
 
 - [X] T083 [P] Check deterministic output: clean-build `NetPrints/NetPrints.csproj -c Release` twice and compare the `sha256sum` of the outputs (SC-009)
 - [X] T084 Run quickstart.md §2–4 from a fresh clone in a clean Linux container (only the .NET 10 SDK installed). Confirm the two-command build/test (SC-001)
-- [ ] T085 In the PR description, list the follow-ups: P1 (ref-pack resolution and target selection, Fody removal, nullable in Core/Reflection, RS1024, MSTEST0017, `LanguageVersion.Preview` constant), P2 (CLI exit codes), P4 (VSIX workflow chained after `CI`; VS hosting is out of scope per constitution 1.2.0), and the net10.0-only scope update
+- [X] T085 In the PR description, list the follow-ups: P1 (ref-pack resolution and target selection, Fody removal, nullable in Core/Reflection, RS1024, MSTEST0017, `LanguageVersion.Preview` constant), P2 (CLI exit codes), P4 (VSIX workflow chained after `CI`; VS hosting is out of scope per constitution 1.2.0), and the net10.0-only scope update
 
 ---
 

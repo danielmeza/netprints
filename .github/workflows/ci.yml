@@ -42,16 +42,17 @@ jobs:
       - name: Test
         run: dotnet test --solution NetPrints.sln -c Release --no-build --report-trx --results-directory TestResults
 
-      # The CLI returns exit code 1 for --version until the P2 redesign, so only the output is checked.
+      # The CLI returns exit code 1 for --version until the P2 redesign and prints it to stderr,
+      # so only the combined output is checked.
       - name: CLI smoke
         run: |
-          output=$(dotnet run --project NetPrintsCLI -c Release --no-build -- --version || true)
+          output=$(dotnet run --project NetPrintsCLI -c Release --no-build -- --version 2>&1 || true)
           echo "$output"
           echo "$output" | grep -q "NetPrintsCLI"
 
       - name: CLI sample compile and run
         run: |
-          output=$(dotnet run --project NetPrintsCLI -c Release --no-build -- -p samples/HelloWorld/HelloWorld.netpp -r || true)
+          output=$(dotnet run --project NetPrintsCLI -c Release --no-build -- -p samples/HelloWorld/HelloWorld.netpp -r 2>&1 || true)
           echo "$output"
           echo "$output" | grep -q "Hello, World!"
 
