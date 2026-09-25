@@ -89,6 +89,53 @@ namespace NetPrints.Tests.Samples
             Assert.Equal("Hello, World!", output.Trim());
         }
 
+        /// <summary>
+        /// An If Else between the entry and WriteLine, WriteLine on the True branch (the editor's
+        /// smoke flow graph). The condition is set, or left unset.
+        /// </summary>
+        private Project HelloWorldWithIfElse(bool? condition)
+        {
+            string source = Path.Combine(AppContext.BaseDirectory, "samples", "HelloWorld");
+            foreach (string file in Directory.GetFiles(source))
+            {
+                File.Copy(file, Path.Combine(tempDir, Path.GetFileName(file)));
+            }
+
+            Project project = Project.LoadFromPath(Path.Combine(tempDir, "HelloWorld.netpp"));
+            var main = project.Classes.Single().Methods.Single();
+            var write = main.Nodes.OfType<NetPrints.Graph.CallMethodNode>().Single();
+            var ifElse = new NetPrints.Graph.IfElseNode(main) { PositionX = 280, PositionY = 392 };
+            ifElse.ConditionPin.UnconnectedValue = condition;
+            NetPrints.Graph.GraphUtil.ConnectExecPins(main.EntryNode.InitialExecutionPin, ifElse.ExecutionPin);
+            NetPrints.Graph.GraphUtil.ConnectExecPins(ifElse.TruePin, write.InputExecPins[0]);
+            return project;
+        }
+
+        [Fact(Timeout = 120000)]
+        public async Task IfElseWithConditionCompiles()
+        {
+            var project = HelloWorldWithIfElse(true);
+
+            await CompileAsync(project, TestContext.Current.CancellationToken);
+
+            Assert.True(project.LastCompilationSucceeded, string.Join(Environment.NewLine, project.LastCompileErrors ?? new ObservableRangeCollection<string>()));
+        }
+
+        /// <summary>A graph that cannot be translated fails the build with the translator's message, not with C# syntax errors.</summary>
+        [Fact(Timeout = 120000)]
+        public async Task UntranslatableGraphReportsTheReason()
+        {
+            var project = HelloWorldWithIfElse(null);
+
+            await CompileAsync(project, TestContext.Current.CancellationToken);
+
+            Assert.False(project.LastCompilationSucceeded);
+            string error = Assert.Single(project.LastCompileErrors);
+            Assert.Contains("HelloWorld.Program", error);
+            Assert.Contains("Condition", error);
+            Assert.Equal("Build failed with 1 error(s)", project.CompilationMessage);
+        }
+
         /// <summary>Compiles and waits until the background compilation finished.</summary>
         internal static async Task CompileAsync(Project project, System.Threading.CancellationToken cancellationToken)
         {

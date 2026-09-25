@@ -339,6 +339,7 @@ namespace NetPrints.Core
                 }
 
                 var translatedClasses = new ConcurrentBag<(string FullName, string Code)>();
+                var translationErrors = new ConcurrentBag<string>();
 
                 // Translate classes in parallel
                 Parallel.ForEach(Classes, cls =>
@@ -353,7 +354,10 @@ namespace NetPrints.Core
                     }
                     catch (Exception ex)
                     {
-                        code = ex.ToString();
+                        // Report why the class cannot be translated instead of compiling the
+                        // exception text as C# (which only yields syntax errors).
+                        translationErrors.Add($"{cls.FullName}: {ex.Message}");
+                        code = $"// {cls.FullName} could not be translated: {ex.Message}";
                     }
 
                     string[] directories = cls.FullName.Split('.');
@@ -374,6 +378,11 @@ namespace NetPrints.Core
 
                     translatedClasses.Add((cls.FullName, code));
                 });
+
+                if (!translationErrors.IsEmpty)
+                {
+                    return new CodeCompileResults(false, translationErrors.OrderBy(e => e, StringComparer.Ordinal).ToArray(), null);
+                }
 
                 // Deterministic output (constitution VI): the compiler sees the sources in a stable order.
                 var classSources = translatedClasses
