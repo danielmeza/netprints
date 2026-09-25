@@ -139,9 +139,31 @@ public abstract class SmokeScenarios
             "the cursor to change", cancellationToken);
         await context.Driver.ReleaseAsync(at, UiButton.Right, cancellationToken);
 
-        Assert.Contains(panning ?? "", new[] { "fleur", "move", "all-scroll", "size_all" });
+        Assert.True(IsMoveCursor(panning), $"a move cursor while panning, not {panning} (idle: {idle})");
         await UiWait.UntilAsync(context.Driver, async () => await context.Driver.CursorNameAsync(cancellationToken) == idle, "the cursor to reset",
             cancellationToken);
+    }
+
+    /// <summary>
+    /// Whether a cursor is the four-way move cursor: by name, or, for an image cursor
+    /// ("image:WxH:XHOT,YHOT:SERIAL"), by its hotspot in the middle (arrows point to the hotspot
+    /// at the top-left).
+    /// </summary>
+    public static bool IsMoveCursor(string? cursor)
+    {
+        if (cursor is "fleur" or "move" or "all-scroll" or "size_all")
+        {
+            return true;
+        }
+
+        if (cursor?.Split(':') is ["image", var size, var hot, _])
+        {
+            var wh = size.Split('x').Select(int.Parse).ToArray();
+            var xy = hot.Split(',').Select(int.Parse).ToArray();
+            return Math.Abs(xy[0] - wh[0] / 2) <= wh[0] / 8 + 1 && Math.Abs(xy[1] - wh[1] / 2) <= wh[1] / 8 + 1;
+        }
+
+        return false;
     }
 
     /// <summary>Real drags from the method, constructor and variable lists onto the canvas (PAR-56, 57).</summary>
@@ -159,12 +181,13 @@ public abstract class SmokeScenarios
         await UiWait.UntilAsync(context.Driver, async () => await graph.NodeCountAsync(cancellationToken) == nodes + 1, "call node dropped", cancellationToken);
 
         // Constructor list -> constructor call node.
-        await page.CreateConstructorButton.ClickAsync(cancellationToken);
+        await page.CreateConstructorButton.ClickAsync(cancellationToken); // opens the new constructor's graph
+        await page.OpenMethodAsync("Main", cancellationToken);
         await page.Constructor(0).DragToAsync(await graph.EmptyPointAsync(cancellationToken, -400, -150), cancellationToken);
-        await UiWait.UntilAsync(context.Driver, async () => await graph.NodeCountAsync(cancellationToken) >= nodes + 2, "constructor node dropped",
+        await UiWait.UntilAsync(context.Driver, async () => await graph.NodeCountAsync(cancellationToken) == nodes + 2, "constructor node dropped",
             cancellationToken);
-        await graph.Watermark.WaitUntilAsync(e => e.Text == "Main", "still on Main", cancellationToken);
-        int afterConstructor = await graph.NodeCountAsync(cancellationToken);
+        Assert.Contains("ConstructorNode", await graph.NodeNamesAsync(cancellationToken));
+        int afterConstructor = nodes + 2;
 
         // Variable list -> Get/Set chooser -> getter.
         await page.CreateVariableButton.ClickAsync(cancellationToken);

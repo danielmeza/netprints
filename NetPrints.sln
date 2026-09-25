@@ -26,6 +26,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetPrints.Editor.UITests", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetPrints.Testing.Ui", "NetPrints.Testing.Ui\NetPrints.Testing.Ui.csproj", "{4E9FD2CF-A6F8-4C93-BDFC-1610188B26B3}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetPrints.Desktop.E2ETests", "NetPrints.Desktop.E2ETests\NetPrints.Desktop.E2ETests.csproj", "{A0A0FBBF-9EE8-423F-AC66-71C8C0D05798}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -144,6 +146,18 @@ Global
 		{4E9FD2CF-A6F8-4C93-BDFC-1610188B26B3}.Release|x64.Build.0 = Release|Any CPU
 		{4E9FD2CF-A6F8-4C93-BDFC-1610188B26B3}.Release|x86.ActiveCfg = Release|Any CPU
 		{4E9FD2CF-A6F8-4C93-BDFC-1610188B26B3}.Release|x86.Build.0 = Release|Any CPU
+		{A0A0FBBF-9EE8-423F-AC66-71C8C0D05798}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A0A0FBBF-9EE8-423F-AC66-71C8C0D05798}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A0A0FBBF-9EE8-423F-AC66-71C8C0D05798}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{A0A0FBBF-9EE8-423F-AC66-71C8C0D05798}.Debug|x64.Build.0 = Debug|Any CPU
+		{A0A0FBBF-9EE8-423F-AC66-71C8C0D05798}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{A0A0FBBF-9EE8-423F-AC66-71C8C0D05798}.Debug|x86.Build.0 = Debug|Any CPU
+		{A0A0FBBF-9EE8-423F-AC66-71C8C0D05798}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A0A0FBBF-9EE8-423F-AC66-71C8C0D05798}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A0A0FBBF-9EE8-423F-AC66-71C8C0D05798}.Release|x64.ActiveCfg = Release|Any CPU
+		{A0A0FBBF-9EE8-423F-AC66-71C8C0D05798}.Release|x64.Build.0 = Release|Any CPU
+		{A0A0FBBF-9EE8-423F-AC66-71C8C0D05798}.Release|x86.ActiveCfg = Release|Any CPU
+		{A0A0FBBF-9EE8-423F-AC66-71C8C0D05798}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

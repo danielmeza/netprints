@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- End-to-end tests of the real desktop editor on X11 (Linux): a private Xvfb display with
+       openbox, real input with xdotool, the in-app automation agent for element bounds, GTK
+       file pickers, XFixes cursor shapes and the program's real output. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <WarningsAsErrors>$(WarningsAsErrors);xUnit1051</WarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NetPrints.Testing.Ui\NetPrints.Testing.Ui.csproj" />
+    <!-- Built first; started as a separate process from its own output folder. -->
+    <ProjectReference Include="..\NetPrints.Desktop\NetPrints.Desktop.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>DesktopAssembly</_Parameter1>
+      <_Parameter2>$(MSBuildProjectDirectory)/../NetPrints.Desktop/bin/$(Configuration)/$(TargetFramework)/NetPrints.Desktop.dll</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../samples/**" CopyToOutputDirectory="PreserveNewest" LinkBase="samples" />
+  </ItemGroup>
+</Project>

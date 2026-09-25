@@ -96,6 +96,32 @@ public class ClassEditorWindowTests
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task BrokenGraphFillsTheErrorList()
+    {
+        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        var valuePin = session.GraphVM.Nodes.Single(n => n.Node is CallMethodNode).InputDataPins.Single();
+        await session.Graph.Node("CallMethodNode").Input(valuePin.Pin.Name).ValueBox.ClickAsync(UiButton.Middle, Token); // clear "Hello, World!"
+
+        string status = await session.ClassEditor.CompileAsync(Token); // PAR-10, PAR-32
+
+        Assert.Equal("Build failed with 1 error(s)", status);
+        await session.ClassEditor.ErrorList.WaitUntilAsync(e => e["ItemCount"] == "1", "one error listed", Token);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task NodesAndPinsHaveToolTips()
+    {
+        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        var write = session.Graph.Node("CallMethodNode");
+
+        foreach (string pin in await write.PinNamesAsync(Token))
+        {
+            var element = await session.Graph.Node("CallMethodNode").Find(NetPrints.Editor.AutomationIds.Pin, name: pin).GetAsync(Token);
+            Assert.False(string.IsNullOrWhiteSpace(element["ToolTip"]), $"pin {pin} has a tool tip (PAR-39, PAR-43)");
+        }
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task SplittersResizeTheirNeighbours()
     {
         using var session = await EditorSession.OpenSampleMainAsync(Token);
