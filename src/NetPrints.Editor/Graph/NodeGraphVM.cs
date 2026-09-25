@@ -25,6 +25,12 @@ public sealed partial class NodeGraphVM : ObservableObject, IDisposable
     private readonly HashSet<NodeVM> subscribedNodes = [];
     private readonly Dictionary<(NodePin Source, NodePin Target), ConnectionVM> connectionsByPins = [];
 
+    /// <summary>
+    /// Wraps <paramref name="graph"/>: builds its node view models, subscribes to reflection reload,
+    /// creates its search and Get/Set chooser view models, and builds the initial connections.
+    /// </summary>
+    /// <param name="graph">Graph to wrap.</param>
+    /// <param name="owner">Class editor view model that owns this graph.</param>
     public NodeGraphVM(NodeGraph graph, ClassEditorVM owner)
     {
         Graph = graph;
@@ -42,17 +48,22 @@ public sealed partial class NodeGraphVM : ObservableObject, IDisposable
         RebuildConnections();
     }
 
+    /// <summary>The wrapped model graph.</summary>
     public NodeGraph Graph { get; }
 
+    /// <summary>The class editor view model that owns this graph.</summary>
     public ClassEditorVM Owner { get; }
 
+    /// <summary>Host services shared across the editor.</summary>
     public EditorContext Context => Owner.Context;
 
+    /// <summary>View models for <see cref="Graph"/>'s nodes.</summary>
     public ObservableViewModelCollection<NodeVM, Node> Nodes { get; }
 
     /// <summary>Cables derived from the model's pin connections.</summary>
     public ObservableCollection<ConnectionVM> Connections { get; } = [];
 
+    /// <summary>The currently selected nodes.</summary>
     public IEnumerable<NodeVM> SelectedNodes => Nodes.Where(n => n.IsSelected);
 
     /// <summary>Node search popup (PAR-52..54).</summary>
@@ -69,8 +80,10 @@ public sealed partial class NodeGraphVM : ObservableObject, IDisposable
         _ => Graph.ToString() ?? "",
     };
 
+    /// <summary>Whether the wrapped graph is a <see cref="ConstructorGraph"/>.</summary>
     public bool IsConstructor => Graph is ConstructorGraph;
 
+    /// <summary>Grid cell size in graph units, for bindings that need it without a <see cref="GraphConstants"/> reference.</summary>
     public double GridCellSize => GraphConstants.GridCellSize;
 
     // Connections
@@ -180,6 +193,11 @@ public sealed partial class NodeGraphVM : ObservableObject, IDisposable
 
     // Selection (PAR-49)
 
+    /// <summary>
+    /// Selects <paramref name="nodes"/>, optionally deselecting every other node first.
+    /// </summary>
+    /// <param name="nodes">Nodes to select.</param>
+    /// <param name="deselectPrevious">Whether to deselect every node not in <paramref name="nodes"/> first.</param>
     public void SelectNodes(IEnumerable<NodeVM> nodes, bool deselectPrevious)
     {
         var toSelect = nodes.ToHashSet();
@@ -199,6 +217,7 @@ public sealed partial class NodeGraphVM : ObservableObject, IDisposable
     }
 
 
+    /// <summary>Deselects every node.</summary>
     [RelayCommand]
     public void DeselectNodes() => SelectNodes([], deselectPrevious: true);
 
@@ -285,6 +304,10 @@ public sealed partial class NodeGraphVM : ObservableObject, IDisposable
         }
     }
 
+    /// <summary>
+    /// Unsubscribes from reflection reload and node events, disposes the search view model, and
+    /// disposes every node view model and the node collection.
+    /// </summary>
     public void Dispose()
     {
         Context.Reflection.Reloaded -= OnReflectionReloaded;
