@@ -27,7 +27,7 @@ namespace NetPrints.Serialization
         /// <summary>
         /// Loads a class from a path.
         /// </summary>
-        /// <param name="outputPath">Path to load the class from. Throws a FileLoadException if the read object was not a class.</param>
+        /// <param name="path">Path to load the class from. Throws a FileLoadException if the read object was not a class.</param>
         public static ClassGraph LoadClass(string path)
         {
             using (FileStream fileStream = File.OpenRead(path))

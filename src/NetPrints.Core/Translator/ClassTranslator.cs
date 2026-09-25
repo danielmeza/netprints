@@ -187,6 +187,11 @@ namespace NetPrints.Translator
             return methodTranslator.Translate(m, true);
         }
 
+        /// <summary>
+        /// Translates a constructor to C#.
+        /// </summary>
+        /// <param name="m">Constructor to translate.</param>
+        /// <returns>C# code for the constructor.</returns>
         public string TranslateConstructor(ConstructorGraph m)
         {
             return methodTranslator.Translate(m, true);

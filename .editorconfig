@@ -123,3 +123,40 @@ csharp_space_around_binary_operators = before_and_after
 
 # Wrapping
 csharp_preserve_single_line_statements = false
+
+# ---------------------------------------------------------------------------
+# XML documentation (owner decision 2026-09-25, specs/003-core-refactor/contracts/release-and-docs.md
+# §"XML documentation"): every public API in src/ has an XML doc comment.
+# src/Directory.Build.props sets GenerateDocumentationFile for every src/ project, and these four
+# diagnostics are promoted to errors here, independently of TreatWarningsAsErrors (which stays
+# project-by-project, per the comment above): a missing or malformed doc comment fails
+# `dotnet build` even for the src/ projects not on warnings-as-errors (NetPrints.Reflection,
+# NetPrints.Cli). tests/ is untouched: this section is scoped to src/**.cs.
+# ---------------------------------------------------------------------------
+[src/**.cs]
+dotnet_diagnostic.CS1591.severity = error # Missing XML comment for publicly visible type or member
+dotnet_diagnostic.CS1572.severity = error # <param> tag names a parameter that does not exist
+dotnet_diagnostic.CS1573.severity = error # Parameter has no matching <param> tag in the XML comment
+dotnet_diagnostic.CS1574.severity = error # cref/name attribute in an XML comment could not be resolved
+
+# ---------------------------------------------------------------------------
+# Temporary XML-documentation exemptions: only files a P1 task deletes outright, so documenting
+# them now would be wasted work. Each task removes its section when it deletes the file
+# (specs/003-core-refactor/tasks.md).
+# ---------------------------------------------------------------------------
+
+# T063 deletes this file (superseded by IProjectSystem/ProjectPersistence).
+[src/NetPrints.Core/Serialization/SerializationHelper.cs]
+dotnet_diagnostic.CS1591.severity = none
+
+# T063 deletes this file (superseded by IProjectSystem.BuildAsync).
+[src/NetPrints.Core/Compilation/CodeCompiler.cs]
+dotnet_diagnostic.CS1591.severity = none
+
+# T063 deletes this file (superseded by IProjectSystem.BuildAsync).
+[src/NetPrints.Core/Compilation/ICodeCompiler.cs]
+dotnet_diagnostic.CS1591.severity = none
+
+# T063 deletes this file (superseded by MsBuildProjectSystem's MSBuild-resolved references).
+[src/NetPrints.Core/Core/ReferenceAssemblyResolver.cs]
+dotnet_diagnostic.CS1591.severity = none

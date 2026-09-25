@@ -36,7 +36,7 @@ namespace NetPrints.Core
 
         /// <summary>
         /// Same as <see cref="FullCodeName"/> but with unbound generic arguments replaced
-        /// by blank (eg. List<T> -> List<>). Needed when referring to unbound types in code.
+        /// by blank (eg. <c>List&lt;T&gt;</c> -> <c>List&lt;&gt;</c>). Needed when referring to unbound types in code.
         /// </summary>
         public virtual string FullCodeNameUnbound
         {

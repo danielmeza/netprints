@@ -1,3 +1,13 @@
 <Project>
   <Import Project="../Directory.Build.props" />
+
+  <!-- Owner decision 2026-09-25 (specs/003-core-refactor/contracts/release-and-docs.md §"XML
+       documentation"): every public API in src/ has an XML doc comment. Generating the doc file
+       makes the compiler emit CS1591/CS1572/CS1573/CS1574 for anything missing or malformed;
+       the root .editorconfig promotes those to errors under [src/**.cs] so a missing doc fails
+       the build regardless of a project's TreatWarningsAsErrors setting. tests/ is not affected
+       (tests/Directory.Build.props does not import this file). -->
+  <PropertyGroup>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+  </PropertyGroup>
 </Project>

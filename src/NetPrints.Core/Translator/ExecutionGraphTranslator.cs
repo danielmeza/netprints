@@ -416,6 +416,20 @@ namespace NetPrints.Translator
             return code;
         }
 
+        /// <summary>
+        /// Translates a single node into C# by dispatching to the handler registered for
+        /// <paramref name="node"/>'s runtime type (see the type-to-handler table built in the
+        /// constructor field initializer). Writes a `// {node}` comment first unless
+        /// <paramref name="node"/> is a <see cref="RerouteNode"/>. Does nothing beyond logging via
+        /// <see cref="Debug.WriteLine(string)"/> if the type has no registered handler.
+        /// </summary>
+        /// <param name="node">Node to translate.</param>
+        /// <param name="pinIndex">
+        /// Index into the handlers registered for <paramref name="node"/>'s type; most node types
+        /// register exactly one handler (index 0), but a type that emits code for more than one of
+        /// its input exec pins (<see cref="ForLoopNode"/>: start vs. continue) registers one handler
+        /// per pin and this selects which one runs.
+        /// </param>
         public void TranslateNode(Node node, int pinIndex)
         {
             if (!(node is RerouteNode))
@@ -490,6 +504,13 @@ namespace NetPrints.Translator
             }
         }
 
+        /// <summary>
+        /// Translates every pure node <paramref name="node"/> depends on (transitively, through data
+        /// pins), in the dependency order computed by <see cref="TranslatorUtil.GetSortedPureNodes"/>,
+        /// before <paramref name="node"/> itself is translated. Each dependent node is translated with
+        /// pin index 0 (pure nodes register a single handler).
+        /// </summary>
+        /// <param name="node">Impure or pure node whose pure dependencies are translated.</param>
         public void TranslateDependentPureNodes(Node node)
         {
             var sortedPureNodes = TranslatorUtil.GetSortedPureNodes(node);
@@ -499,6 +520,12 @@ namespace NetPrints.Translator
             }
         }
 
+        /// <summary>
+        /// Registered handler for <see cref="MethodEntryNode"/>. Currently a no-op: the entry node's
+        /// own state is never jumped to by anything but the implicit fallthrough <see cref="Translate"/>
+        /// already writes before the first state label, so there is nothing left to emit here.
+        /// </summary>
+        /// <param name="node">Entry node of the graph being translated.</param>
         public void TranslateMethodEntry(MethodEntryNode node)
         {
             /*// Go to the next state.
@@ -509,6 +536,18 @@ namespace NetPrints.Translator
             }*/
         }
 
+        /// <summary>
+        /// Translates a call to the method (or, if <see cref="OperatorUtil.TryGetOperatorInfo"/>
+        /// recognizes it, operator) described by <paramref name="node"/>. Emits its pure dependencies
+        /// first, wraps the call in a try/catch when <see cref="CallMethodNode.HandlesExceptions"/> is
+        /// set (assigning the caught exception to <see cref="CallMethodNode.ExceptionPin"/> and the
+        /// return values to their defaults on the exception path), assigns single or tuple-wrapped
+        /// return values, and advances execution to the next state unless the node is pure.
+        /// </summary>
+        /// <param name="node">Call-method node to translate.</param>
+        /// <exception cref="Exception">
+        /// The resolved operator does not have exactly the argument count its arity requires.
+        /// </exception>
         public void TranslateCallMethodNode(CallMethodNode node)
         {
             // Wrap in try / catch
@@ -695,6 +734,13 @@ namespace NetPrints.Translator
             }
         }
 
+        /// <summary>
+        /// Translates <paramref name="node"/> into a `new` expression: emits its pure dependencies,
+        /// assigns the constructed instance to the node's output pin, and writes the constructor
+        /// arguments (named and/or `out`/`ref`-prefixed as <see cref="TranslateCallMethodNode"/> does
+        /// for method arguments). Advances execution to the next state unless the node is pure.
+        /// </summary>
+        /// <param name="node">Constructor node to translate.</param>
         public void TranslateConstructorNode(ConstructorNode node)
         {
             if (!node.IsPure)
@@ -763,6 +809,13 @@ namespace NetPrints.Translator
             }
         }
 
+        /// <summary>
+        /// Translates <paramref name="node"/> into either a hard cast (`(T)x`, throwing on failure) or
+        /// an `as` cast with a null check branching to <see cref="ExplicitCastNode.CastFailedPin"/> /
+        /// <see cref="ExplicitCastNode.CastSuccessPin"/>, depending on whether the failure pin is
+        /// connected. Does nothing if <see cref="ExplicitCastNode.ObjectToCast"/> is unconnected.
+        /// </summary>
+        /// <param name="node">Cast node to translate.</param>
         public void TranslateExplicitCastNode(ExplicitCastNode node)
         {
             if (!node.IsPure)
@@ -811,12 +864,23 @@ namespace NetPrints.Translator
             }
         }
 
+        /// <summary>
+        /// Translates <paramref name="node"/> into a `throw &lt;expression&gt;;` statement, after
+        /// emitting its pure dependencies.
+        /// </summary>
+        /// <param name="node">Throw node to translate.</param>
         public void TranslateThrowNode(ThrowNode node)
         {
             TranslateDependentPureNodes(node);
             builder.AppendLine($"throw {GetPinIncomingValue(node.ExceptionPin)};");
         }
 
+        /// <summary>
+        /// Translates <paramref name="node"/> into an `await &lt;task&gt;;` statement, after emitting
+        /// its pure dependencies. Assigns the awaited result to <see cref="AwaitNode.ResultPin"/>'s
+        /// variable first if the awaited task has one.
+        /// </summary>
+        /// <param name="node">Await node to translate.</param>
         public void TranslateAwaitNode(AwaitNode node)
         {
             if (!node.IsPure)
@@ -835,6 +899,12 @@ namespace NetPrints.Translator
             builder.AppendLine($"await {GetPinIncomingValue(node.TaskPin)};");
         }
 
+        /// <summary>
+        /// Translates <paramref name="node"/> into a `condition ? trueValue : falseValue` assignment,
+        /// after emitting its pure dependencies, and advances execution to the next state unless the
+        /// node is pure.
+        /// </summary>
+        /// <param name="node">Ternary node to translate.</param>
         public void TranslateTernaryNode(TernaryNode node)
         {
             if (!node.IsPure)
@@ -855,6 +925,17 @@ namespace NetPrints.Translator
             }
         }
 
+        /// <summary>
+        /// Translates <paramref name="node"/> into an assignment to the target variable, property or
+        /// indexer (instance, static, or indexed by <see cref="VariableNode.IndexPin"/> when
+        /// <see cref="VariableNode.IsIndexer"/> is set), after emitting its pure dependencies. Also
+        /// assigns the same value to the node's output pin, and advances execution to the next state.
+        /// </summary>
+        /// <param name="node">Variable-setter node to translate.</param>
+        /// <exception cref="InvalidOperationException">
+        /// <paramref name="node"/> is a static setter with no explicit target type and its graph has
+        /// no declaring class.
+        /// </exception>
         public void TranslateVariableSetterNode(VariableSetterNode node)
         {
             // Translate all the pure nodes this node depends on in
@@ -912,6 +993,14 @@ namespace NetPrints.Translator
             WriteGotoOutputPinIfNecessary(node.OutputExecPins[0], node.InputExecPins[0]);
         }
 
+        /// <summary>
+        /// Translates <paramref name="node"/> into a `return` statement, after emitting its pure
+        /// dependencies: no value for a void or <see cref="Task"/>-returning method, the single input
+        /// pin's value for one return value, or a tuple construction for more than one. Omits the
+        /// bare `return;` entirely when the node has no return values and is the graph's last state
+        /// (fallthrough already reaches the end of the method body).
+        /// </summary>
+        /// <param name="node">Return node to translate.</param>
         public void TranslateReturnNode(ReturnNode node)
         {
             // Translate all the pure nodes this node depends on in
@@ -949,6 +1038,12 @@ namespace NetPrints.Translator
             }
         }
 
+        /// <summary>
+        /// Translates <paramref name="node"/> into an `if (condition) { ... } else { ... }` statement,
+        /// after emitting its pure dependencies. Each branch either advances execution to the outgoing
+        /// pin's target state or, when a branch's exec pin is unconnected, emits a bare `return;`.
+        /// </summary>
+        /// <param name="node">If/else node to translate.</param>
         public void TranslateIfElseNode(IfElseNode node)
         {
             // Translate all the pure nodes this node depends on in
@@ -988,6 +1083,14 @@ namespace NetPrints.Translator
             builder.AppendLine("}");
         }
 
+        /// <summary>
+        /// Registered handler for the "start" input exec pin of <paramref name="node"/> (see
+        /// <see cref="TranslateNode"/>'s pin-index dispatch). Initializes the loop index from
+        /// <see cref="ForLoopNode.InitialIndexPin"/>, and, while it is below
+        /// <see cref="ForLoopNode.MaxIndexPin"/>, pushes the continue state onto the jump stack and
+        /// enters the loop body, after emitting the node's pure dependencies.
+        /// </summary>
+        /// <param name="node">For-loop node to translate.</param>
         public void TranslateStartForLoopNode(ForLoopNode node)
         {
             // Translate all the pure nodes this node depends on in
@@ -1002,6 +1105,14 @@ namespace NetPrints.Translator
             builder.AppendLine("}");
         }
 
+        /// <summary>
+        /// Registered handler for the "continue" input exec pin of <paramref name="node"/> (see
+        /// <see cref="TranslateNode"/>'s pin-index dispatch). Increments the loop index and, while it
+        /// is below <see cref="ForLoopNode.MaxIndexPin"/>, pushes the continue state onto the jump
+        /// stack and re-enters the loop body; otherwise advances to
+        /// <see cref="ForLoopNode.CompletedPin"/>. Emits the node's pure dependencies first.
+        /// </summary>
+        /// <param name="node">For-loop node to translate.</param>
         public void TranslateContinueForLoopNode(ForLoopNode node)
         {
             // Translate all the pure nodes this node depends on in
@@ -1018,6 +1129,16 @@ namespace NetPrints.Translator
             WriteGotoOutputPinIfNecessary(node.CompletedPin, node.ContinuePin);
         }
 
+        /// <summary>
+        /// Translates <paramref name="node"/> into a read of the target variable, property or indexer
+        /// (instance, static, or indexed by <see cref="VariableNode.IndexPin"/> when
+        /// <see cref="VariableNode.IsIndexer"/> is set), assigned to the node's output pin.
+        /// </summary>
+        /// <param name="node">Variable-getter node to translate.</param>
+        /// <exception cref="InvalidOperationException">
+        /// <paramref name="node"/> is a static getter with no explicit target type and its graph has
+        /// no declaring class.
+        /// </exception>
         public void PureTranslateVariableGetterNode(VariableGetterNode node)
         {
             string valueName = GetOrCreatePinName(node.OutputDataPins[0]);
@@ -1065,11 +1186,21 @@ namespace NetPrints.Translator
             builder.AppendLine(";");
         }
 
+        /// <summary>
+        /// Translates <paramref name="node"/> by assigning its single input pin's value (its literal,
+        /// or an incoming expression if connected) to the node's output pin.
+        /// </summary>
+        /// <param name="node">Literal node to translate.</param>
         public void PureTranslateLiteralNode(LiteralNode node)
         {
             builder.AppendLine($"{GetOrCreatePinName(node.ValuePin)} = {GetPinIncomingValue(node.InputDataPins[0])};");
         }
 
+        /// <summary>
+        /// Translates <paramref name="node"/> by assigning a method-group expression (a delegate
+        /// bound to a static or instance method) to the node's output pin.
+        /// </summary>
+        /// <param name="node">Make-delegate node to translate.</param>
         public void PureTranslateMakeDelegateNode(MakeDelegateNode node)
         {
             // Write assignment of return value
@@ -1101,11 +1232,24 @@ namespace NetPrints.Translator
             builder.AppendLine($"{node.MethodSpecifier.Name};");
         }
 
+        /// <summary>
+        /// Translates <paramref name="node"/> by assigning `typeof(&lt;type&gt;)` to the node's output
+        /// pin, using <see cref="object"/> as the type when the node's input type pin has not
+        /// inferred a type.
+        /// </summary>
+        /// <param name="node">Type-of node to translate.</param>
         public void PureTranslateTypeOfNode(TypeOfNode node)
         {
             builder.AppendLine($"{GetOrCreatePinName(node.TypePin)} = typeof({node.InputTypePin.InferredType?.Value?.FullCodeNameUnbound ?? "System.Object"});");
         }
 
+        /// <summary>
+        /// Translates <paramref name="node"/> into an array-creation expression assigned to the node's
+        /// output pin: a predefined-size allocation (`new T[size]`) when
+        /// <see cref="MakeArrayNode.UsePredefinedSize"/> is set, otherwise an initializer list built
+        /// from the node's input data pins.
+        /// </summary>
+        /// <param name="node">Make-array node to translate.</param>
         public void PureTranslateMakeArrayNode(MakeArrayNode node)
         {
             builder.Append($"{GetOrCreatePinName(node.OutputDataPins[0])} = new {node.ArrayType.FullCodeName}");
@@ -1130,11 +1274,28 @@ namespace NetPrints.Translator
                 builder.AppendLine("};");
             }
         }
+        /// <summary>
+        /// Translates <paramref name="node"/> by assigning `default(&lt;type&gt;)` to the node's
+        /// output pin.
+        /// </summary>
+        /// <param name="node">Default node to translate.</param>
         public void PureTranslateDefaultNode(DefaultNode node)
         {
             builder.AppendLine($"{GetOrCreatePinName(node.DefaultValuePin)} = default({node.Type.FullCodeName});");
         }
 
+        /// <summary>
+        /// Translates <paramref name="node"/> by passing its single connection through: assigns the
+        /// incoming value to the output data pin for a data reroute, or advances execution to the next
+        /// state for an exec reroute. A type reroute has no runtime representation and is a no-op here
+        /// (type reroutes only affect type inference).
+        /// </summary>
+        /// <param name="node">Reroute node to translate.</param>
+        /// <exception cref="NotImplementedException">
+        /// <paramref name="node"/> does not reroute exactly one pin: exactly one of
+        /// <see cref="RerouteNode.ExecRerouteCount"/>, <see cref="RerouteNode.TypeRerouteCount"/> and
+        /// <see cref="RerouteNode.DataRerouteCount"/> must be 1 and the others 0.
+        /// </exception>
         public void TranslateRerouteNode(RerouteNode node)
         {
             if (node.ExecRerouteCount + node.TypeRerouteCount + node.DataRerouteCount != 1)
