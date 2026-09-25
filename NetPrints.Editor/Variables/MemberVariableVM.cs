@@ -131,7 +131,6 @@ public sealed partial class MemberVariableVM : ObservableObject, IDisposable
     [RelayCommand]
     private void RemoveGetter()
     {
-        owner.CloseGraphIfOpen(Getter);
         owner.UndoRedo.Do(EditorCommands.RemoveGetter(Variable));
     }
 
@@ -141,7 +140,6 @@ public sealed partial class MemberVariableVM : ObservableObject, IDisposable
     [RelayCommand]
     private void RemoveSetter()
     {
-        owner.CloseGraphIfOpen(Setter);
         owner.UndoRedo.Do(EditorCommands.RemoveSetter(Variable));
     }
 

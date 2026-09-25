@@ -1,3 +1,5 @@
+using System.Collections.Specialized;
+using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
@@ -36,6 +38,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
 
     private readonly ClassTranslator classTranslator = new();
     private readonly CancellationTokenSource lifetime = new();
+    private readonly HashSet<Variable> subscribedVariables = [];
     private bool generatedCodeLoopStarted;
 
     public ClassEditorVM(ClassGraph cls, EditorContext context)
@@ -49,6 +52,11 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         Constructors = new ObservableViewModelCollection<MethodVM, ConstructorGraph>(cls.Constructors, c => new MethodVM(c));
         Variables = new ObservableViewModelCollection<MemberVariableVM, Variable>(cls.Variables,
             v => new MemberVariableVM(v, this), v => v.Dispose());
+
+        cls.Variables.CollectionChanged += OnMembersChanged;
+        cls.Methods.CollectionChanged += OnMembersChanged;
+        cls.Constructors.CollectionChanged += OnMembersChanged;
+        SyncVariableSubscriptions();
 
         UndoRedo.Changed += (_, _) =>
         {
@@ -215,9 +223,67 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
 
     void IRecipient<OpenGraphMessage>.Receive(OpenGraphMessage message) => OpenGraph(message.Graph);
 
-    internal void CloseGraphIfOpen(NodeGraph? graph)
+    // Model changes, including undo and redo, can remove what the inspector or the canvas shows.
+    // The editor reacts to the model instead of each command cleaning up after itself.
+
+    private void OnMembersChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
-        if (graph is not null && OpenedGraph?.Graph == graph)
+        SyncVariableSubscriptions();
+        DropDetachedState();
+    }
+
+    private void OnVariablePropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(Variable.GetterMethod) or nameof(Variable.SetterMethod))
+        {
+            DropDetachedState();
+        }
+    }
+
+    private void SyncVariableSubscriptions()
+    {
+        var current = Class.Variables.ToHashSet();
+        foreach (var removed in subscribedVariables.Where(v => !current.Contains(v)).ToList())
+        {
+            ((INotifyPropertyChanged)removed).PropertyChanged -= OnVariablePropertyChanged;
+            subscribedVariables.Remove(removed);
+        }
+
+        foreach (var added in current.Where(v => !subscribedVariables.Contains(v)))
+        {
+            ((INotifyPropertyChanged)added).PropertyChanged += OnVariablePropertyChanged;
+            subscribedVariables.Add(added);
+        }
+    }
+
+    /// <summary>Graphs that belong to the class: its own graph, methods, constructors and variable graphs.</summary>
+    private bool BelongsToClass(NodeGraph graph) =>
+        graph == Class
+        || Class.Methods.Contains(graph as MethodGraph)
+        || Class.Constructors.Contains(graph as ConstructorGraph)
+        || Class.Variables.Any(v => v.GetterMethod == graph || v.SetterMethod == graph || v.TypeGraph == graph);
+
+    private void DropDetachedState()
+    {
+        if (SelectedVariable is not null && !Class.Variables.Contains(SelectedVariable.Variable))
+        {
+            SelectedVariable = null;
+            if (Inspector == InspectorKind.Variable)
+            {
+                Inspector = InspectorKind.Class;
+            }
+        }
+
+        if (SelectedMethod is not null && !BelongsToClass(SelectedMethod.Graph))
+        {
+            SelectedMethod = null;
+            if (Inspector == InspectorKind.Method)
+            {
+                Inspector = InspectorKind.Class;
+            }
+        }
+
+        if (OpenedGraph is not null && !BelongsToClass(OpenedGraph.Graph))
         {
             OpenedGraph = null;
         }
@@ -374,20 +440,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     }
 
     /// <summary>Removes a variable (undoable); clears the inspector and canvas when they show it.</summary>
-    public void RemoveVariable(MemberVariableVM variable)
-    {
-        if (SelectedVariable == variable)
-        {
-            SelectedVariable = null;
-            Inspector = InspectorKind.Class;
-        }
-
-        CloseGraphIfOpen(variable.Getter);
-        CloseGraphIfOpen(variable.Setter);
-        CloseGraphIfOpen(variable.Variable.TypeGraph);
-
-        UndoRedo.Do(EditorCommands.RemoveVariable(Class, variable.Variable));
-    }
+    public void RemoveVariable(MemberVariableVM variable) => UndoRedo.Do(EditorCommands.RemoveVariable(Class, variable.Variable));
 
     /// <summary>Shows the variable inspector (PAR-29).</summary>
     public void SelectVariable(MemberVariableVM variable)
@@ -428,13 +481,6 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
             return;
         }
 
-        if (SelectedMethod?.Graph == method.Graph)
-        {
-            SelectedMethod = null;
-            Inspector = InspectorKind.Class;
-        }
-
-        CloseGraphIfOpen(method.Graph);
         UndoRedo.Do(EditorCommands.RemoveMethod(Class, method.Graph));
     }
 
@@ -462,6 +508,15 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         }
 
         Context.Reflection.Reloaded -= OnReflectionReloaded;
+        Class.Variables.CollectionChanged -= OnMembersChanged;
+        Class.Methods.CollectionChanged -= OnMembersChanged;
+        Class.Constructors.CollectionChanged -= OnMembersChanged;
+        foreach (var variable in subscribedVariables)
+        {
+            ((INotifyPropertyChanged)variable).PropertyChanged -= OnVariablePropertyChanged;
+        }
+
+        subscribedVariables.Clear();
         Messenger.UnregisterAll(this);
         OpenedGraph = null;
         Methods.Dispose();

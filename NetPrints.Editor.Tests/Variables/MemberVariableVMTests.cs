@@ -119,4 +119,52 @@ public class MemberVariableVMTests : IDisposable
         Assert.Contains(nameof(MemberVariableVM.Name), changed);
         Assert.Contains(nameof(MemberVariableVM.IsStatic), changed);
     }
+
+    [Fact]
+    public void UndoOfAddVariableClearsItsInspector()
+    {
+        vm.CreateVariableCommand.Execute(null);
+        vm.Variables.Single().SelectCommand.Execute(null);
+        Assert.True(vm.ShowVariableInspector);
+
+        vm.UndoCommand.Execute(null);
+
+        Assert.Empty(cls.Variables);
+        Assert.Null(vm.SelectedVariable);
+        Assert.False(vm.ShowVariableInspector);
+        Assert.Equal(InspectorKind.Class, vm.Inspector);
+    }
+
+    [Fact]
+    public void UndoOfAddVariableClosesItsGraphs()
+    {
+        vm.CreateVariableCommand.Execute(null);
+        vm.Variables.Single().OpenTypeGraphCommand.Execute(null);
+        Assert.NotNull(vm.OpenedGraph);
+
+        vm.UndoCommand.Execute(null);
+
+        Assert.Null(vm.OpenedGraph);
+    }
+
+    [Fact]
+    public void UndoOfAddGetterOrSetterClosesTheAccessorGraph()
+    {
+        vm.CreateVariableCommand.Execute(null);
+        var variable = vm.Variables.Single();
+
+        variable.AddGetterCommand.Execute(null);
+        variable.OpenGetterCommand.Execute(null);
+        Assert.Same(variable.Getter, vm.OpenedGraph?.Graph);
+        vm.UndoCommand.Execute(null);
+        Assert.Null(variable.Getter);
+        Assert.Null(vm.OpenedGraph);
+
+        variable.AddSetterCommand.Execute(null);
+        variable.OpenSetterCommand.Execute(null);
+        Assert.Same(variable.Setter, vm.OpenedGraph?.Graph);
+        vm.UndoCommand.Execute(null);
+        Assert.Null(variable.Setter);
+        Assert.Null(vm.OpenedGraph);
+    }
 }
