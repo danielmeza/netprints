@@ -89,6 +89,13 @@ System.Text.Json output designed for version control: random stable node ids, a 
 every method/constructor/variable/event graph (layout keyed by it), pins referenced by name,
 one line per connection/layout entry, integer positions, `$schema` first, tolerant read and
 canonical write, only edited graphs rewritten. A `netprints merge` git driver is a later, optional idea.
+Release and docs (owner-approved 2026-09-25, `docs/research/2026-09-25-release-and-docs/`): packages
+via MinVer (`v*` tags), NuGet libraries with symbols/icon/README/package validation published by
+Trusted Publishing, the CLI as the `netprints` dotnet tool, self-contained editor archives
+(linux-x64, win-x64, osx-arm64; no single-file or trimming) with SHA256SUMS and provenance
+attestations, a GitHub Release per tag, a local `local-packages/` feed, a Docusaurus site with a
+DocFX API reference on GitHub Pages, and a two-page wiki that points to the site. Plain GitHub
+Actions plus small scripts (no NUKE/Cake). Installers, auto-update (Velopack) and code signing come later.
 C# code view: replace the plain read-only generated-C# preview (parity item PAR-34) with
 AvaloniaEdit (TextMate C# highlighting, folding, line numbers) showing live Roslyn diagnostics
 (squiggles + error list linked to the originating node); evaluate RoslynPad.Editor.Avalonia for
@@ -114,6 +121,9 @@ SDK-style project, and `dotnet build` generates identical C# (the committed `.ne
 (`netprints.catalog.json` + CLI overrides, dotnet tool), annotations flavor
 (`NetPrints.Annotations` + source generator), cross-flavor snapshot tests; `NetPrints.Cli` on
 Spectre.Console.Cli (`build`, `generate`, `run`, `catalog`, `migrate`).
+Graph-format follow-ups from P1: `format --check` and `regen --check`, `netprints git-install`
+(a `textconv` diff and the optional `netprints merge` driver), and SchemaStore registration of the
+`.netpc.json` schema.
 
 ### P3a — Editor shell (owner-approved 2026-09-25; source: `docs/research/2026-09-25-ux-audit/`)
 - **Layout:** a single window with a project tree, tabbed graphs, an inspector and a bottom panel (Errors / Output / C#).
@@ -181,7 +191,8 @@ classes. U2 = BlueprintEvent pairs, `[UMultiDelegate]` + `TMulticastDelegate` + 
 DefaultComponent/RootComponent, `[UMetaData]` fallback; never emit Blueprint-derived C# classes or
 by-name Blueprint calls.
 U1: `[UClass] partial` emitters, `unreal-blueprint` catalog profile, CLI loop into UnrealSharp
-`Script/` with hot reload (first live loop ~week 8). U2: event entry points, latent nodes as
+`Script/` with hot reload (first live loop ~week 8); graphs live in UnrealSharp's Script `.csproj`
+through a `NetPrints.Sdk` PackageReference, so UnrealSharp's own generators see the committed `.g.cs`. U2: event entry points, latent nodes as
 async/await, delegates, components, containers. U3: `UnrealSharpNetPrints` C++ plugin
 launcher, Unreal `IHostChannel` pipe, `unreal` project profile, upstream PR implementing
 `CSAssetTypeAction_CSBlueprint::OpenAssetEditor` as an external-editor hook.

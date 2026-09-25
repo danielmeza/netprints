@@ -186,7 +186,4 @@ Applied by the coordinator with the owner's approval on 2026-09-25 (roadmap P1 t
 the superseded `ViewportTransform` follow-up and `MetadataReference` caching in P8; the csproj model and
 the restated "done when"; the SDK requirement and "no source-generator mode"; AvaloniaEdit and
 Microsoft.Extensions.Logging in the tech constraints; the narrowed `netstandard2.0` exception; the graph
-format for version control. Not yet recorded in the roadmap: that U1 adds `NetPrints.Sdk` to UnrealSharp's
-Script `.csproj`, and a phase for the graph-format follow-ups (the roadmap lists `netprints merge` as a
-later idea; `git-install`, the `textconv` diff, `format --check`, `regen --check` and SchemaStore
-registration are proposed for P2). No other open proposals.
+format for version control. Also applied later the same day: U1 adds `NetPrints.Sdk` to UnrealSharp's Script `.csproj`; the graph-format follow-ups are in P2; the release and docs stack is in P1. No other open proposals.
