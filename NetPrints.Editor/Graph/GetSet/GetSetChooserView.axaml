@@ -1,0 +1,18 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:edgetset="clr-namespace:NetPrints.Editor.Graph.GetSet"
+             x:Class="NetPrints.Editor.Graph.GetSet.GetSetChooserView"
+             x:DataType="edgetset:GetSetChooserVM"
+             Width="200" Height="60">
+  <!-- Get/Set chooser (PAR-55): closes when the pointer leaves. -->
+  <Border AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GetSetChooser}" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" BorderBrush="{DynamicResource SystemAccentColor}"
+          BorderThickness="1" PointerExited="OnPointerExited">
+    <Grid ColumnDefinitions="*,*">
+      <Button x:Name="GetButton" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GetButton}" Content="Get" Margin="4" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+              HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Command="{Binding GetCommand}" />
+      <Button x:Name="SetButton" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SetButton}" Grid.Column="1" Content="Set" Margin="4" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+              HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Command="{Binding SetCommand}" />
+    </Grid>
+  </Border>
+</UserControl>

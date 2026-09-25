@@ -1,0 +1,22 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:edvariables="clr-namespace:NetPrints.Editor.Variables"
+             x:Class="NetPrints.Editor.Inspectors.VariableInspectorView"
+             x:DataType="edvariables:MemberVariableVM">
+  <!-- Variable inspector (PAR-36) -->
+  <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="Auto,*" Margin="4">
+    <TextBlock Grid.ColumnSpan="2" Classes="header" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+    <TextBlock Grid.Row="1" Text="Name" VerticalAlignment="Center" Margin="0,0,8,0" />
+    <TextBox x:Name="NameBox" Grid.Row="1" Grid.Column="1" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" />
+    <TextBlock Grid.Row="2" Text="Visibility" VerticalAlignment="Center" Margin="0,0,8,0" />
+    <ComboBox Grid.Row="2" Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding PossibleVisibilities}" SelectedItem="{Binding Visibility}" />
+    <TextBlock Grid.Row="3" Text="Read-only" VerticalAlignment="Center" Margin="0,0,8,0" />
+    <CheckBox Grid.Row="3" Grid.Column="1" IsChecked="{Binding IsReadOnly}" />
+    <TextBlock Grid.Row="4" Text="Const" VerticalAlignment="Center" Margin="0,0,8,0" />
+    <CheckBox Grid.Row="4" Grid.Column="1" IsChecked="{Binding IsConst}" />
+    <TextBlock Grid.Row="5" Text="Static" VerticalAlignment="Center" Margin="0,0,8,0" />
+    <CheckBox Grid.Row="5" Grid.Column="1" IsChecked="{Binding IsStatic}" />
+    <TextBlock Grid.Row="6" Text="New" VerticalAlignment="Center" Margin="0,0,8,0" />
+    <CheckBox Grid.Row="6" Grid.Column="1" IsChecked="{Binding IsNew}" />
+  </Grid>
+</UserControl>

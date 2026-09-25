@@ -1,0 +1,43 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:edvariables="clr-namespace:NetPrints.Editor.Variables"
+             xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             x:Class="NetPrints.Editor.Variables.MemberVariableView"
+             x:DataType="edvariables:MemberVariableVM">
+  <!-- A variable row (PAR-29) -->
+  <StackPanel AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableRow}" AutomationProperties.Name="{Binding Name}">
+    <Grid ColumnDefinitions="Auto,*">
+      <Button Classes="icon" ToolTip.Tip="Remove variable" Command="{Binding RemoveCommand}">
+        <mi:MaterialIcon Kind="Minus" />
+      </Button>
+      <TextBlock x:Name="NameText" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableName}" Grid.Column="1" Text="{Binding Name}" TextTrimming="CharacterEllipsis" FontSize="14" FontWeight="SemiBold"
+                 VerticalAlignment="Center" Background="Transparent"
+                 Tapped="OnNameTapped" PointerPressed="OnNamePointerPressed" PointerMoved="OnNamePointerMoved" PointerReleased="OnNamePointerReleased" />
+    </Grid>
+
+    <Panel Margin="20,0,0,0">
+      <Button Classes="flat" Content="Add getter" IsVisible="{Binding !HasGetter}" Command="{Binding AddGetterCommand}" />
+      <Grid ColumnDefinitions="Auto,*" IsVisible="{Binding HasGetter}">
+        <Button Classes="icon" ToolTip.Tip="Remove getter" Command="{Binding RemoveGetterCommand}">
+          <mi:MaterialIcon Kind="Minus" />
+        </Button>
+        <TextBlock Grid.Column="1" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableGetter}" Text="Get" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" Background="Transparent"
+                   DoubleTapped="OnGetterDoubleTapped" />
+      </Grid>
+    </Panel>
+
+    <Panel Margin="20,0,0,0">
+      <Button Classes="flat" Content="Add setter" IsVisible="{Binding !HasSetter}" Command="{Binding AddSetterCommand}" />
+      <Grid ColumnDefinitions="Auto,*" IsVisible="{Binding HasSetter}">
+        <Button Classes="icon" ToolTip.Tip="Remove setter" Command="{Binding RemoveSetterCommand}">
+          <mi:MaterialIcon Kind="Minus" />
+        </Button>
+        <TextBlock Grid.Column="1" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableSetter}" Text="Set" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" Background="Transparent"
+                   DoubleTapped="OnSetterDoubleTapped" />
+      </Grid>
+    </Panel>
+
+    <Button Classes="flat" Margin="20,0,0,0" Content="Open type graph" Command="{Binding OpenTypeGraphCommand}" />
+  </StackPanel>
+</UserControl>

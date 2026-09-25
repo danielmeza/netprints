@@ -1,0 +1,21 @@
+<Project>
+  <!-- Shared build settings for every project in the repository (FR-002). -->
+  <PropertyGroup>
+    <LangVersion>latest</LangVersion>
+    <Deterministic>true</Deterministic>
+    <Nullable>enable</Nullable>
+    <!-- Off by default for the legacy projects (Core, Reflection: Fody and RS1024 warnings until
+         P1). The new projects (Editor, Desktop and all test projects) opt in and are warning-free. -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(CI)' == 'true' Or '$(GITHUB_ACTIONS)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+  <!-- The legacy VSIX (pending P4) is not SDK-style and keeps its inline package versions. -->
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'NetPrintsVSIX'">
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+</Project>

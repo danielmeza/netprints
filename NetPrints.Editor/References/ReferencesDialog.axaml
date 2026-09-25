@@ -1,0 +1,46 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ed="clr-namespace:NetPrints.Editor"
+        xmlns:edreferences="clr-namespace:NetPrints.Editor.References"
+        xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+        x:Class="NetPrints.Editor.References.ReferencesDialog"
+        x:DataType="edreferences:ReferenceListVM"
+        Title="References"
+        Icon="avares://NetPrints.Editor/Assets/NetPrintsLogo.ico"
+        Width="700" Height="450"
+        WindowStartupLocation="CenterOwner" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ReferencesDialog}">
+  <Grid RowDefinitions="Auto,*,Auto" Margin="8">
+    <Grid ColumnDefinitions="*,*">
+      <Button Classes="flat" Content="Assembly" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ReferencesAddAssemblyButton}" Command="{Binding AddAssemblyCommand}"
+              ToolTip.Tip="Add an assembly reference" />
+      <Button Grid.Column="1" Classes="flat" Content="Source code" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ReferencesAddSourceButton}" Command="{Binding AddSourceDirectoryCommand}"
+              ToolTip.Tip="Add a source code directory reference which searches for .cs files" />
+    </Grid>
+
+    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+      <ItemsControl x:Name="ReferenceList" ItemsSource="{Binding References}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="edreferences:CompilationReferenceVM">
+            <Grid ColumnDefinitions="*,150,Auto" Margin="2" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ReferenceRow}" AutomationProperties.Name="{Binding DisplayText}">
+              <TextBlock Text="{Binding DisplayText}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
+                         FontSize="14" ToolTip.Tip="{Binding DisplayText}" />
+              <ToggleSwitch Grid.Column="1" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ReferenceInclude}" IsChecked="{Binding IncludeInCompilation}"
+                            IsEnabled="{Binding ShowIncludeInCompilation}"
+                            OnContent="Include" OffContent="Exclude"
+                            ToolTip.Tip="Whether to include the reference as a source in the compilation process."
+                            ToolTip.ShowOnDisabled="True" VerticalAlignment="Center" />
+              <Button Grid.Column="2" Classes="icon" Width="32" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ReferenceRemove}" Height="32" CornerRadius="16"
+                      ToolTip.Tip="Remove this reference"
+                      Command="{Binding $parent[ItemsControl].((edreferences:ReferenceListVM)DataContext).RemoveCommand}"
+                      CommandParameter="{Binding}">
+                <mi:MaterialIcon Kind="Minus" />
+              </Button>
+            </Grid>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </ScrollViewer>
+
+    <Button Grid.Row="2" x:Name="CloseButton" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ReferencesCloseButton}" Classes="flat" Content="Close" Margin="5,5,5,10" Click="OnCloseClicked" />
+  </Grid>
+</Window>

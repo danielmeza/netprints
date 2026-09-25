@@ -65,45 +65,66 @@ namespace NetPrints.Translator
                 return "null";
             }
 
-            // Put quotes around string literals
+            // Numbers are culture-invariant.
+            string invariant = obj is System.IFormattable formattable
+                ? formattable.ToString(null, System.Globalization.CultureInfo.InvariantCulture)
+                : obj.ToString();
+
             if (type == TypeSpecifier.FromType<string>())
             {
-                return $"\"{obj}\"";
+                return Microsoft.CodeAnalysis.CSharp.SymbolDisplay.FormatLiteral(obj.ToString(), quote: true);
+            }
+            else if (type == TypeSpecifier.FromType<char>() && obj is char c)
+            {
+                return Microsoft.CodeAnalysis.CSharp.SymbolDisplay.FormatLiteral(c, quote: true);
+            }
+            else if (type == TypeSpecifier.FromType<bool>() && obj is bool b)
+            {
+                return b ? "true" : "false";
             }
             else if (type == TypeSpecifier.FromType<float>())
             {
-                return $"{obj}F";
+                return obj is float f && NonFiniteLiteral(f, "float") is { } floatLiteral ? floatLiteral : $"{invariant}F";
             }
             else if (type == TypeSpecifier.FromType<double>())
             {
-                return $"{obj}D";
+                return obj is double d && NonFiniteLiteral(d, "double") is { } doubleLiteral ? doubleLiteral : $"{invariant}D";
             }
             else if (type == TypeSpecifier.FromType<uint>())
             {
-                return $"{obj}U";
-            }
-            // Put single quotes around char literals
-            else if (type == TypeSpecifier.FromType<char>())
-            {
-                return $"'{obj}'";
+                return $"{invariant}U";
             }
             else if (type == TypeSpecifier.FromType<long>())
             {
-                return $"{obj}L";
+                return $"{invariant}L";
             }
             else if (type == TypeSpecifier.FromType<ulong>())
             {
-                return $"{obj}UL";
+                return $"{invariant}UL";
             }
             else if (type == TypeSpecifier.FromType<decimal>())
             {
-                return $"{obj}M";
+                return $"{invariant}M";
             }
             else
             {
-                return obj.ToString();
+                return invariant;
             }
         }
+
+        /// <summary>
+        /// The static-field spelling of a non-finite float or double ("float.NaN",
+        /// "double.PositiveInfinity", …), or null for a finite value. NaN and Infinity have no
+        /// numeric literal in C#, so <see cref="ObjectToLiteral"/> must not emit them as a suffixed
+        /// number ("NaND", "InfinityD"), which fails to compile.
+        /// </summary>
+        private static string NonFiniteLiteral(double value, string typeName) => value switch
+        {
+            double.NaN => $"{typeName}.NaN",
+            double.PositiveInfinity => $"{typeName}.PositiveInfinity",
+            double.NegativeInfinity => $"{typeName}.NegativeInfinity",
+            _ => null,
+        };
 
         /// <summary>
         /// Returns the first name not already contained in a list of names by

@@ -1,0 +1,53 @@
+<Project>
+  <!-- Central Package Management: every package version lives here (FR-003).
+       All projects target net10.0 only (constitution 1.2.0), so these are the latest stable
+       versions that support net10.0. -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally Condition="'$(ManagePackageVersionsCentrally)' == ''">true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+
+  <ItemGroup Label="Core and reflection">
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.9.0" />
+    <!-- Core only; removed in P1. -->
+    <PackageVersion Include="Fody" Version="6.9.3" />
+    <PackageVersion Include="PropertyChanged.Fody" Version="4.1.0" />
+  </ItemGroup>
+
+  <ItemGroup Label="CLI">
+    <PackageVersion Include="CommandLineParser" Version="2.9.1" />
+  </ItemGroup>
+
+  <ItemGroup Label="Editor">
+    <PackageVersion Include="Avalonia" Version="12.1.3" />
+    <PackageVersion Include="Avalonia.Desktop" Version="12.1.3" />
+    <PackageVersion Include="Avalonia.Themes.Fluent" Version="12.1.3" />
+    <PackageVersion Include="Avalonia.Fonts.Inter" Version="12.1.3" />
+    <PackageVersion Include="Avalonia.Skia" Version="12.1.3" />
+    <PackageVersion Include="Avalonia.Headless" Version="12.1.3" />
+    <PackageVersion Include="Nodify.Avalonia" Version="2.0.0" />
+    <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageVersion Include="DynamicData" Version="9.4.33" />
+    <!-- Used directly by the search list; the version DynamicData 9.4.33 is built against. -->
+    <PackageVersion Include="System.Reactive" Version="6.1.0" />
+    <PackageVersion Include="Material.Icons.Avalonia" Version="3.0.2" />
+  </ItemGroup>
+
+  <ItemGroup Label="Tests">
+    <!-- xUnit v3 3.2.2: Avalonia.Headless.XUnit 12.1.3 (the latest) is built against
+         xunit.v3.extensibility.core 3.2.2 and fails discovery under xUnit 4.x. -->
+    <PackageVersion Include="xunit.v3" Version="3.2.2" />
+    <!-- Assertions for the shared UI scenarios in NetPrints.Testing.Ui (same version as xunit.v3). -->
+    <PackageVersion Include="xunit.v3.assert" Version="3.2.2" />
+    <PackageVersion Include="Avalonia.Headless.XUnit" Version="12.1.3" />
+    <!-- 11.x is the xUnit v3 3.x line (12.x requires xUnit 4). Not used in the UI test
+         assembly: its test framework replaces Avalonia's and every [AvaloniaFact] fails. -->
+    <PackageVersion Include="Xunit.DependencyInjection" Version="11.3.2" />
+    <PackageVersion Include="Microsoft.Reactive.Testing" Version="6.1.0" />
+    <!-- Headless UI tests: Skia without the libfontconfig dependency, so the tests run on a
+         machine with only the .NET SDK (SC-001). Must match the SkiaSharp version of Avalonia. -->
+    <PackageVersion Include="SkiaSharp" Version="3.119.4" />
+    <PackageVersion Include="SkiaSharp.NativeAssets.Linux" Version="3.119.4" />
+    <PackageVersion Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="3.119.4" />
+  </ItemGroup>
+</Project>

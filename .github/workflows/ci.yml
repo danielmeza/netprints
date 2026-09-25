@@ -1,0 +1,139 @@
+# Main CI (contract: specs/001-modernize-build/contracts/ci-workflow.md).
+# The file name and `name: CI` are stable: the future VS extension workflow (P4) chains after it.
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: 1
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+
+jobs:
+  build-test:
+    name: Build and test (Linux)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      # NuGet cache keyed on the central package versions and the project graph (CPM pins every
+      # direct and transitive version, so lock files are not needed for a stable key).
+      - uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', 'Directory.Build.props', 'global.json', '**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Restore
+        run: dotnet restore NetPrints.sln
+
+      - name: Build
+        run: dotnet build NetPrints.sln -c Release --no-restore
+
+      # Core, reflection, view-model and headless Avalonia UI tests (no display server needed).
+      # The desktop E2E tests are skipped here (NETPRINTS_E2E unset), which is a "zero tests ran"
+      # exit code (8) only for that project; ignoring it here (and only here, not in the e2e job
+      # below) is what makes the skip expected instead of a silent hole in that job's coverage.
+      - name: Test
+        env:
+          NETPRINTS_UI_ARTIFACTS: ${{ github.workspace }}/TestResults/ui
+        run: >
+          dotnet test --solution NetPrints.sln -c Release --no-build
+          --report-xunit-trx --results-directory TestResults -- --ignore-exit-code 8
+
+      # The CLI returns exit code 1 for --version until the P2 redesign and prints it to stderr,
+      # so only the combined output is checked.
+      - name: CLI smoke
+        run: |
+          output=$(dotnet run --project NetPrintsCLI -c Release --no-build -- --version 2>&1 || true)
+          echo "$output"
+          echo "$output" | grep -q "NetPrintsCLI"
+
+      - name: CLI sample compile and run
+        run: |
+          output=$(dotnet run --project NetPrintsCLI -c Release --no-build -- -p samples/HelloWorld/HelloWorld.netpp -r 2>&1 || true)
+          echo "$output"
+          echo "$output" | grep -q "Hello, World!"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results
+          path: TestResults/**/*.trx
+          if-no-files-found: warn
+
+      # Snapshot actual/diff images, flow screenshots and per-test diagnostics (tree dump + screenshots).
+      - name: Upload UI artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: ui-headless
+          path: TestResults/ui/**
+          if-no-files-found: warn
+
+  e2e:
+    name: Desktop E2E (Linux, Xvfb)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', 'Directory.Build.props', 'global.json', '**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      # X server, window manager, input and screenshots, window state (xprop, xwininfo), GTK 3 for
+      # the native file pickers and a cursor theme for named cursors.
+      - name: Install X11 tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends xvfb openbox xdotool imagemagick x11-utils libgtk-3-0t64 adwaita-icon-theme
+
+      - name: Build
+        run: dotnet build NetPrints.Desktop.E2ETests -c Release
+
+      # The tests start their own Xvfb on a free display (like xvfb-run -a) plus openbox.
+      # --fail-skips turns any skipped test (e.g. NETPRINTS_E2E not reaching the test host, or a
+      # skip condition that fires unexpectedly) into a failure, so this job cannot go green with
+      # zero real coverage: neither "zero tests ran" (exit code 8, not ignored here) nor "every
+      # test skipped" can pass silently.
+      - name: E2E tests
+        env:
+          NETPRINTS_E2E: 1
+          NETPRINTS_UI_ARTIFACTS: ${{ github.workspace }}/TestResults/ui
+        run: >
+          dotnet test --project NetPrints.Desktop.E2ETests -c Release --no-build
+          --report-xunit-trx --results-directory TestResults -- --fail-skips on
+
+      - name: Upload E2E artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-results
+          path: |
+            TestResults/**/*.trx
+            TestResults/ui/**
+          if-no-files-found: warn

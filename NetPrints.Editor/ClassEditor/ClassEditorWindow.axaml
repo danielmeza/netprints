@@ -1,0 +1,155 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ed="clr-namespace:NetPrints.Editor"
+        xmlns:edclasseditor="clr-namespace:NetPrints.Editor.ClassEditor"
+        xmlns:edgraph="clr-namespace:NetPrints.Editor.Graph"
+        xmlns:edinspectors="clr-namespace:NetPrints.Editor.Inspectors"
+        xmlns:edsearch="clr-namespace:NetPrints.Editor.Search"
+        xmlns:edvariables="clr-namespace:NetPrints.Editor.Variables"
+        xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+        x:Class="NetPrints.Editor.ClassEditor.ClassEditorWindow"
+        x:DataType="edclasseditor:ClassEditorVM"
+        Title="{Binding Title}"
+        Icon="avares://NetPrints.Editor/Assets/NetPrintsLogo.ico"
+        Width="1280" Height="720" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorWindow}" AutomationProperties.Name="{Binding FullName}">
+  <!-- Keyboard (PAR-37) -->
+  <Window.KeyBindings>
+    <KeyBinding Gesture="Delete" Command="{Binding DeleteSelectedNodesCommand}" />
+    <KeyBinding Gesture="Ctrl+Z" Command="{Binding UndoCommand}" />
+    <KeyBinding Gesture="Ctrl+Y" Command="{Binding RedoCommand}" />
+  </Window.KeyBindings>
+
+  <Grid RowDefinitions="100,*">
+    <!-- Toolbar (PAR-23) -->
+    <StackPanel Orientation="Horizontal">
+      <Button x:Name="CompileButton" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorCompileButton}" Classes="round" Content="Compile" Margin="5"
+              IsEnabled="{Binding Project.CanCompile, FallbackValue=False}" Command="{Binding CompileCommand}"
+              ToolTip.Tip="Compiles the project and outputs the source code if chosen." />
+      <Button x:Name="RunButton" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorRunButton}" Classes="round" Content="Run" Margin="5"
+              IsEnabled="{Binding Project.CanCompileAndRun, FallbackValue=False}" Command="{Binding RunCommand}"
+              ToolTip.Tip="Compile and run the project. Only enabled for executable projects that output binaries. Requires a static Main method." />
+      <Button x:Name="ClassButton" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorClassButton}" Classes="round" Content="Class" Margin="5" Command="{Binding ShowClassCommand}"
+              ToolTip.Tip="Edit the properties of this class." />
+      <Button x:Name="SaveButton" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorSaveButton}" Classes="round" Content="Save" Margin="5" Command="{Binding SaveCommand}"
+              ToolTip.Tip="Saves the project and all its classes." />
+    </StackPanel>
+
+    <!-- Resizable columns and rows (PAR-31). The inspector column keeps a sensible minimum
+         width so labels, checkboxes and the generated-code preview never clip while dragging
+         the splitter (matches the 250-px inspector column of the original WPF layout). -->
+    <Grid Grid.Row="1">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="250" MinWidth="150" />
+        <ColumnDefinition Width="5" />
+        <ColumnDefinition Width="*" MinWidth="150" />
+        <ColumnDefinition Width="5" />
+        <ColumnDefinition Width="250" MinWidth="220" />
+      </Grid.ColumnDefinitions>
+      <Grid RowDefinitions="*,5,*,5,*" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorLeftColumn}">
+        <!-- Methods (PAR-24..26) -->
+        <Grid RowDefinitions="Auto,*,Auto,Auto">
+          <TextBlock Classes="header" Text="Methods" />
+          <ListBox x:Name="MethodList" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorMethodList}" Grid.Row="1" ItemsSource="{Binding Methods}">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="edclasseditor:MethodVM">
+                <Grid ColumnDefinitions="Auto,*">
+                  <Button Classes="icon" ToolTip.Tip="Remove method"
+                          Command="{Binding $parent[Window].((edclasseditor:ClassEditorVM)DataContext).RemoveMethodCommand}"
+                          CommandParameter="{Binding}">
+                    <mi:MaterialIcon Kind="Minus" />
+                  </Button>
+                  <TextBlock Grid.Column="1" Text="{Binding Name}" TextTrimming="CharacterEllipsis" FontSize="14" FontWeight="SemiBold" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorMethodName}"
+                             VerticalAlignment="Center" Background="Transparent"
+                             Tapped="OnMethodTapped" DoubleTapped="OnMethodDoubleTapped" PointerPressed="OnMethodPointerPressed" PointerMoved="OnMethodPointerMoved" PointerReleased="OnMethodPointerReleased" />
+                </Grid>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+          <Button Grid.Row="2" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorCreateMethodButton}" Classes="flat" Content="Create Method" Command="{Binding CreateMethodCommand}" FontSize="16" />
+          <ComboBox x:Name="OverrideBox" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorOverrideChooser}" Grid.Row="3" HorizontalAlignment="Stretch" FontSize="16" Margin="4"
+                    PlaceholderText="Override a method"
+                    ItemsSource="{Binding OverridableMethods}"
+                    SelectedItem="{Binding SelectedOverride}">
+            <ComboBox.ItemTemplate>
+              <DataTemplate>
+                <TextBlock Text="{Binding Converter={x:Static edsearch:MethodSpecifierConverter.Instance}}" x:CompileBindings="False" />
+              </DataTemplate>
+            </ComboBox.ItemTemplate>
+          </ComboBox>
+        </Grid>
+
+        <GridSplitter Grid.Row="1" ResizeDirection="Rows" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorMethodsSplitter}" />
+
+        <!-- Constructors (PAR-27, 28) -->
+        <Grid Grid.Row="2" RowDefinitions="Auto,*,Auto">
+          <TextBlock Classes="header" Text="Constructors" />
+          <ListBox x:Name="ConstructorList" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorConstructorList}" Grid.Row="1" ItemsSource="{Binding Constructors}">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="edclasseditor:MethodVM">
+                <Grid ColumnDefinitions="Auto,*">
+                  <Button Classes="icon" ToolTip.Tip="Remove constructor"
+                          Command="{Binding $parent[Window].((edclasseditor:ClassEditorVM)DataContext).RemoveMethodCommand}"
+                          CommandParameter="{Binding}">
+                    <mi:MaterialIcon Kind="Minus" />
+                  </Button>
+                  <TextBlock Grid.Column="1" Text="{Binding Name}" TextTrimming="CharacterEllipsis" FontSize="14" FontWeight="SemiBold" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorMethodName}"
+                             VerticalAlignment="Center" Background="Transparent"
+                             Tapped="OnMethodTapped" DoubleTapped="OnMethodDoubleTapped" PointerPressed="OnMethodPointerPressed" PointerMoved="OnMethodPointerMoved" PointerReleased="OnMethodPointerReleased" />
+                </Grid>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+          <Button Grid.Row="2" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorCreateConstructorButton}" Classes="flat" Content="Create Constructor" Command="{Binding CreateConstructorCommand}" FontSize="16" />
+        </Grid>
+
+        <GridSplitter Grid.Row="3" ResizeDirection="Rows" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorConstructorsSplitter}" />
+
+        <!-- Variables (PAR-29, 30) -->
+        <Grid Grid.Row="4" RowDefinitions="Auto,*,Auto">
+          <TextBlock Classes="header" Text="Variables" />
+          <ListBox x:Name="VariableList" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorVariableList}" Grid.Row="1" ItemsSource="{Binding Variables}">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="edvariables:MemberVariableVM">
+                <edvariables:MemberVariableView />
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+          <Button Grid.Row="2" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorCreateVariableButton}" Classes="flat" Content="Create Variable" Command="{Binding CreateVariableCommand}" FontSize="16" />
+        </Grid>
+      </Grid>
+
+      <GridSplitter Grid.Column="1" ResizeDirection="Columns" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorLeftSplitter}" />
+
+      <!-- Graph, compile errors, program output and status (PAR-32) -->
+      <Grid Grid.Column="2" RowDefinitions="*,5,150,24">
+        <edgraph:GraphEditorView x:Name="GraphEditor" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorGraph}" DataContext="{Binding OpenedGraph}" IsVisible="{Binding $self.DataContext, Converter={x:Static ObjectConverters.IsNotNull}}" />
+        <GridSplitter Grid.Row="1" ResizeDirection="Rows" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorErrorsSplitter}" />
+        <TabControl Grid.Row="2" SelectedIndex="{Binding SelectedBottomTab}">
+          <TabItem Header="Errors">
+            <ListBox x:Name="ErrorList" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorErrorList}" ItemsSource="{Binding Project.LastCompileErrors, FallbackValue={x:Null}}" />
+          </TabItem>
+          <!-- Run's program output (stdout/stderr), captured on every platform instead of only going to the editor's own terminal. -->
+          <TabItem Header="Output" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorOutputTab}">
+            <DockPanel>
+              <Button DockPanel.Dock="Top" HorizontalAlignment="Right" Classes="flat" Content="Clear" Margin="2"
+                      AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorClearOutputButton}" Command="{Binding ClearOutputCommand}" />
+              <TextBox x:Name="OutputText" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorOutputText}" Text="{Binding Output}" IsReadOnly="True"
+                       TextWrapping="NoWrap" AcceptsReturn="True" FontFamily="monospace" VerticalContentAlignment="Top"
+                       ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.VerticalScrollBarVisibility="Auto" />
+            </DockPanel>
+          </TabItem>
+        </TabControl>
+        <TextBlock x:Name="StatusText" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorStatusText}" Grid.Row="3" Margin="4,2" Text="{Binding Project.CompilationMessage, FallbackValue=''}" />
+      </Grid>
+
+      <GridSplitter Grid.Column="3" ResizeDirection="Columns" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorInspectorSplitter}" />
+
+      <!-- Inspectors (PAR-33..36) -->
+      <Panel Grid.Column="4" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorInspectorColumn}">
+        <edinspectors:ClassInspectorView x:Name="ClassInspector" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassInspector}" IsVisible="{Binding ShowClassInspector}" />
+        <edinspectors:VariableInspectorView x:Name="VariableInspector" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableInspector}" DataContext="{Binding SelectedVariable}" IsVisible="{Binding $parent[Window].((edclasseditor:ClassEditorVM)DataContext).ShowVariableInspector}" />
+        <edinspectors:MethodInspectorView x:Name="MethodInspector" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MethodInspector}" DataContext="{Binding SelectedMethod}" IsVisible="{Binding $parent[Window].((edclasseditor:ClassEditorVM)DataContext).ShowMethodInspector}" />
+      </Panel>
+    </Grid>
+  </Grid>
+</Window>

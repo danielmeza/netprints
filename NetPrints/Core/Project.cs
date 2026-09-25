@@ -314,7 +314,7 @@ namespace NetPrints.Core
             var references = References.ToArray();
 
             // Compile in another thread
-            var results = await Task.Run(() =>
+            var compileTask = Task.Run(() =>
             {
                 string projectDir = System.IO.Path.GetDirectoryName(Path);
                 string compiledDir = System.IO.Path.Combine(projectDir, $"Compiled_{Name}");
@@ -338,7 +338,8 @@ namespace NetPrints.Core
                     Directory.CreateDirectory(compiledDir);
                 }
 
-                ConcurrentBag<string> classSources = new ConcurrentBag<string>();
+                var translatedClasses = new ConcurrentBag<(string FullName, string Code)>();
+                var translationErrors = new ConcurrentBag<string>();
 
                 // Translate classes in parallel
                 Parallel.ForEach(Classes, cls =>
@@ -353,7 +354,9 @@ namespace NetPrints.Core
                     }
                     catch (Exception ex)
                     {
-                        code = ex.ToString();
+                        // Report the reason instead of compiling the exception text.
+                        translationErrors.Add($"{cls.FullName}: {ex.Message}");
+                        code = $"// {cls.FullName} could not be translated: {ex.Message}";
                     }
 
                     string[] directories = cls.FullName.Split('.');
@@ -372,8 +375,18 @@ namespace NetPrints.Core
                         File.WriteAllText(System.IO.Path.Combine(outputDirectory, $"{cls.Name}.cs"), code);
                     }
 
-                    classSources.Add(code);
+                    translatedClasses.Add((cls.FullName, code));
                 });
+
+                if (!translationErrors.IsEmpty)
+                {
+                    return new CodeCompileResults(false, translationErrors.OrderBy(e => e, StringComparer.Ordinal).ToArray(), null);
+                }
+
+                // Deterministic output (constitution VI): the compiler sees the sources in a stable order.
+                var classSources = translatedClasses
+                    .OrderBy(c => c.FullName, StringComparer.Ordinal)
+                    .Select(c => c.Code);
 
                 bool generateExecutable = OutputBinaryType == BinaryType.Executable;
                 string ext = generateExecutable ? "exe" : "dll";
@@ -386,19 +399,36 @@ namespace NetPrints.Core
 
                 bool deleteBinaries = !CompilationOutput.HasFlag(ProjectCompilationOutput.Binaries) && !File.Exists(outputPath);
 
-                var assemblyPaths = references.OfType<AssemblyReference>().Select(a => a.AssemblyPath);
+                // Missing framework reference assemblies fall back to the runtime's (FR-008, FR-009).
+                var resolver = new ReferenceAssemblyResolver();
+                var referenceWarnings = new List<string>();
+                var assemblyPaths = resolver.ResolveAssemblyPaths(references.OfType<AssemblyReference>(), referenceWarnings);
 
                 var sources = classSources
                     .Concat(references
                         .OfType<SourceDirectoryReference>()
                         .Where(sourceRef => sourceRef.IncludeInCompilation)
-                        .SelectMany(sourceRef => sourceRef.SourceFilePaths)
+                        .SelectMany(sourceRef => sourceRef.SourceFilePaths.OrderBy(p => p, StringComparer.Ordinal))
                         .Select(sourcePath => File.ReadAllText(sourcePath)))
                     .Distinct()
                     .ToArray();
 
                 CodeCompileResults compilationResults = codeCompiler.CompileSources(
                     outputPath, assemblyPaths, sources, generateExecutable);
+
+                if (referenceWarnings.Count > 0)
+                {
+                    compilationResults = new CodeCompileResults(compilationResults.Success,
+                        referenceWarnings.Concat(compilationResults.Errors).ToArray(),
+                        compilationResults.PathToAssembly);
+                }
+
+                // Started through the dotnet host, which needs a runtime config (FR-010).
+                if (compilationResults.Success && generateExecutable && resolver.UsesRuntimeAssemblies
+                    && CompilationOutput.HasFlag(ProjectCompilationOutput.Binaries))
+                {
+                    File.WriteAllText(GetRuntimeConfigPath(compiledDir), CreateRuntimeConfigJson());
+                }
 
                 // Delete the output binary if we don't want it.
                 // TODO: Don't generate it in the first place.
@@ -420,6 +450,17 @@ namespace NetPrints.Core
                 return compilationResults;
             });
 
+            CodeCompileResults results;
+            try
+            {
+                results = await compileTask;
+            }
+            catch (Exception ex)
+            {
+                // Report unexpected failures as a failed build instead of crashing the host.
+                results = new CodeCompileResults(false, new[] { ex.ToString() }, null);
+            }
+
             LastCompilationSucceeded = results.Success;
             LastCompileErrors = new ObservableRangeCollection<string>(results.Errors);
 
@@ -436,14 +477,21 @@ namespace NetPrints.Core
             IsCompiling = false;
         }
 
-        public IEnumerable<string> GenerateClassSources()
+        /// <summary>
+        /// Translates every class to C#, for the reflection host. A class that fails to translate
+        /// (e.g. an unconnected node) is skipped instead of compiling its exception text as source;
+        /// the reason is reported through <paramref name="warnings"/> instead.
+        /// </summary>
+        public IEnumerable<string> GenerateClassSources(out IReadOnlyList<string> warnings)
         {
             if (Classes is null)
             {
+                warnings = Array.Empty<string>();
                 return new string[0];
             }
 
             ConcurrentBag<string> classSources = new ConcurrentBag<string>();
+            ConcurrentBag<string> translationWarnings = new ConcurrentBag<string>();
 
             // Translate classes in parallel
             Parallel.ForEach(Classes, cls =>
@@ -451,38 +499,74 @@ namespace NetPrints.Core
                 // Translate the class to C#
                 ClassTranslator classTranslator = new ClassTranslator();
 
-                string code;
                 try
                 {
-                    code = classTranslator.TranslateClass(cls);
+                    classSources.Add(classTranslator.TranslateClass(cls));
                 }
                 catch (Exception ex)
                 {
-                    code = ex.ToString();
+                    translationWarnings.Add($"{cls.FullName}: {ex.Message}");
                 }
-
-                classSources.Add(code);
             });
+
+            warnings = translationWarnings.OrderBy(w => w, StringComparer.Ordinal).ToArray();
 
             return classSources;
         }
 
-        public void RunProject()
+        /// <summary>
+        /// Gets the command that runs the compiled executable. Executables compiled against the
+        /// running .NET runtime's assemblies (see <see cref="ReferenceAssemblyResolver"/>) have a
+        /// runtime configuration file and are started through the <c>dotnet</c> host.
+        /// </summary>
+        /// <returns>File name and arguments of the process to start.</returns>
+        public (string FileName, string Arguments) GetRunCommand()
         {
             if (OutputBinaryType != BinaryType.Executable || !CompilationOutput.HasFlag(ProjectCompilationOutput.Binaries))
             {
                 throw new InvalidOperationException("Can only run executable projects which output their binaries.");
             }
 
-            string projectDir = System.IO.Path.GetDirectoryName(Path);
-            string exePath = System.IO.Path.GetFullPath(System.IO.Path.Combine(projectDir, $"Compiled_{Name}", $"{Name}.exe"));
+            string compiledDir = GetCompiledDirectory();
+            string exePath = System.IO.Path.GetFullPath(System.IO.Path.Combine(compiledDir, $"{Name}.exe"));
 
             if (!File.Exists(exePath))
             {
                 throw new Exception($"The executable does not exist at {exePath}");
             }
 
-            Process.Start(exePath);
+            if (File.Exists(GetRuntimeConfigPath(compiledDir)))
+            {
+                return (ReferenceAssemblyResolver.GetDotNetHostPath(), $"\"{exePath}\"");
+            }
+
+            return (exePath, "");
+        }
+
+        public void RunProject()
+        {
+            var (fileName, arguments) = GetRunCommand();
+            Process.Start(new ProcessStartInfo(fileName, arguments) { UseShellExecute = false });
+        }
+
+        private string GetCompiledDirectory() =>
+            System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Path), $"Compiled_{Name}");
+
+        private string GetRuntimeConfigPath(string compiledDir) =>
+            System.IO.Path.Combine(compiledDir, $"{Name}.runtimeconfig.json");
+
+        private static string CreateRuntimeConfigJson()
+        {
+            Version version = Environment.Version;
+            return "{\n" +
+                "  \"runtimeOptions\": {\n" +
+                $"    \"tfm\": \"net{version.Major}.{version.Minor}\",\n" +
+                "    \"framework\": {\n" +
+                "      \"name\": \"Microsoft.NETCore.App\",\n" +
+                $"      \"version\": \"{version.Major}.{version.Minor}.0\"\n" +
+                "    }\n" +
+                "  }\n" +
+                "}\n";
         }
 
         private void FixReferencePaths()
