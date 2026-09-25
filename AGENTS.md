@@ -58,6 +58,17 @@ instead of retrying blindly.
 - Exception: XML documentation comments (`///` on types and members, or the equivalent doc
   comments in C++) may be as detailed and precise as needed. Don't shorten them for brevity.
 
+## MVVM (CommunityToolkit.Mvvm)
+- Use `[ObservableProperty]` (partial properties) for any property with its own backing value; don't write
+  `SetProperty`/`OnPropertyChanged` setters by hand.
+- Setter side effects go in the generated `partial void On<Name>Changed(oldValue, newValue)` (or
+  `On<Name>Changing`) hook, not in a hand-written setter.
+- Dependent properties use `[NotifyPropertyChangedFor(nameof(Other))]`; commands that depend on a property use
+  `[NotifyCanExecuteChangedFor]`.
+- Call `OnPropertyChanged(nameof(X))` manually only when the change doesn't go through an observable setter (a
+  model event, a collection change, a value computed from another object). Always `nameof`, never a string.
+- No Fody or other IL weaving (`[AlsoNotifyFor]`, `[DependsOn]`, …).
+
 ## Commits and tests
 - End commit messages with the attribution line(s) your session is configured with; PR bodies
   end with the "Generated with Claude Code" footer when produced by Claude Code.
