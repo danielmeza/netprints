@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- Every async call in a test must observe TestContext.Current.CancellationToken. -->
+    <WarningsAsErrors>$(WarningsAsErrors);xUnit1051</WarningsAsErrors>
+  </PropertyGroup>
+
+  <!-- No Xunit.DependencyInjection here: its test framework replaces Avalonia's and every
+       [AvaloniaFact] fails. -->
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="Avalonia.Headless.XUnit" />
+    <PackageReference Include="Avalonia.Skia" />
+    <!-- Use the dependency-free Linux Skia build (no libfontconfig) instead of the default one. -->
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" ExcludeAssets="all" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NetPrints.Editor\NetPrints.Editor.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../samples/**" CopyToOutputDirectory="PreserveNewest" LinkBase="samples" />
+  </ItemGroup>
+</Project>

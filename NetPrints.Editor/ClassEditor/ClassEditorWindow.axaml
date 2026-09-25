@@ -1,5 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ed="clr-namespace:NetPrints.Editor"
         xmlns:edclasseditor="clr-namespace:NetPrints.Editor.ClassEditor"
         xmlns:edgraph="clr-namespace:NetPrints.Editor.Graph"
         xmlns:edinspectors="clr-namespace:NetPrints.Editor.Inspectors"
@@ -21,15 +22,15 @@
   <Grid RowDefinitions="100,*">
     <!-- Toolbar (PAR-23) -->
     <StackPanel Orientation="Horizontal">
-      <Button x:Name="CompileButton" Classes="round" Content="Compile" Margin="5"
+      <Button x:Name="CompileButton" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorCompileButton}" Classes="round" Content="Compile" Margin="5"
               IsEnabled="{Binding Project.CanCompile, FallbackValue=False}" Command="{Binding CompileCommand}"
               ToolTip.Tip="Compiles the project and outputs the source code if chosen." />
-      <Button x:Name="RunButton" Classes="round" Content="Run" Margin="5"
+      <Button x:Name="RunButton" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorRunButton}" Classes="round" Content="Run" Margin="5"
               IsEnabled="{Binding Project.CanCompileAndRun, FallbackValue=False}" Command="{Binding RunCommand}"
               ToolTip.Tip="Compile and run the project. Only enabled for executable projects that output binaries. Requires a static Main method." />
-      <Button x:Name="ClassButton" Classes="round" Content="Class" Margin="5" Command="{Binding ShowClassCommand}"
+      <Button x:Name="ClassButton" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorClassButton}" Classes="round" Content="Class" Margin="5" Command="{Binding ShowClassCommand}"
               ToolTip.Tip="Edit the properties of this class." />
-      <Button x:Name="SaveButton" Classes="round" Content="Save" Margin="5" Command="{Binding SaveCommand}"
+      <Button x:Name="SaveButton" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorSaveButton}" Classes="round" Content="Save" Margin="5" Command="{Binding SaveCommand}"
               ToolTip.Tip="Saves the project and all its classes." />
     </StackPanel>
 
@@ -39,7 +40,7 @@
         <!-- Methods (PAR-24..26) -->
         <Grid RowDefinitions="Auto,*,Auto,Auto">
           <TextBlock Classes="header" Text="Methods" />
-          <ListBox x:Name="MethodList" Grid.Row="1" ItemsSource="{Binding Methods}">
+          <ListBox x:Name="MethodList" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorMethodList}" Grid.Row="1" ItemsSource="{Binding Methods}">
             <ListBox.ItemTemplate>
               <DataTemplate x:DataType="edclasseditor:MethodVM">
                 <Grid ColumnDefinitions="Auto,*">
@@ -48,7 +49,7 @@
                           CommandParameter="{Binding}">
                     <mi:MaterialIcon Kind="Minus" />
                   </Button>
-                  <TextBlock Grid.Column="1" Text="{Binding Name}" TextTrimming="CharacterEllipsis" FontSize="14" FontWeight="SemiBold"
+                  <TextBlock Grid.Column="1" Text="{Binding Name}" TextTrimming="CharacterEllipsis" FontSize="14" FontWeight="SemiBold" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorMethodName}"
                              VerticalAlignment="Center" Background="Transparent"
                              Tapped="OnMethodTapped" DoubleTapped="OnMethodDoubleTapped" PointerPressed="OnMethodPointerPressed" PointerMoved="OnMethodPointerMoved" PointerReleased="OnMethodPointerReleased" />
                 </Grid>
@@ -56,7 +57,7 @@
             </ListBox.ItemTemplate>
           </ListBox>
           <Button Grid.Row="2" Classes="flat" Content="Create Method" Command="{Binding CreateMethodCommand}" FontSize="16" />
-          <ComboBox x:Name="OverrideBox" Grid.Row="3" HorizontalAlignment="Stretch" FontSize="16" Margin="4"
+          <ComboBox x:Name="OverrideBox" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorOverrideChooser}" Grid.Row="3" HorizontalAlignment="Stretch" FontSize="16" Margin="4"
                     PlaceholderText="Override a method"
                     ItemsSource="{Binding OverridableMethods}"
                     SelectedItem="{Binding SelectedOverride}">
@@ -82,7 +83,7 @@
                           CommandParameter="{Binding}">
                     <mi:MaterialIcon Kind="Minus" />
                   </Button>
-                  <TextBlock Grid.Column="1" Text="{Binding Name}" TextTrimming="CharacterEllipsis" FontSize="14" FontWeight="SemiBold"
+                  <TextBlock Grid.Column="1" Text="{Binding Name}" TextTrimming="CharacterEllipsis" FontSize="14" FontWeight="SemiBold" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorMethodName}"
                              VerticalAlignment="Center" Background="Transparent"
                              Tapped="OnMethodTapped" DoubleTapped="OnMethodDoubleTapped" PointerPressed="OnMethodPointerPressed" PointerMoved="OnMethodPointerMoved" PointerReleased="OnMethodPointerReleased" />
                 </Grid>
@@ -97,7 +98,7 @@
         <!-- Variables (PAR-29, 30) -->
         <Grid Grid.Row="4" RowDefinitions="Auto,*,Auto">
           <TextBlock Classes="header" Text="Variables" />
-          <ListBox x:Name="VariableList" Grid.Row="1" ItemsSource="{Binding Variables}">
+          <ListBox x:Name="VariableList" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorVariableList}" Grid.Row="1" ItemsSource="{Binding Variables}">
             <ListBox.ItemTemplate>
               <DataTemplate x:DataType="edvariables:MemberVariableVM">
                 <edvariables:MemberVariableView />
@@ -112,19 +113,19 @@
 
       <!-- Graph, compile errors and status (PAR-32) -->
       <Grid Grid.Column="2" RowDefinitions="*,5,150,24">
-        <edgraph:GraphEditorView x:Name="GraphEditor" DataContext="{Binding OpenedGraph}" IsVisible="{Binding $self.DataContext, Converter={x:Static ObjectConverters.IsNotNull}}" />
+        <edgraph:GraphEditorView x:Name="GraphEditor" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorGraph}" DataContext="{Binding OpenedGraph}" IsVisible="{Binding $self.DataContext, Converter={x:Static ObjectConverters.IsNotNull}}" />
         <GridSplitter Grid.Row="1" ResizeDirection="Rows" />
-        <ListBox x:Name="ErrorList" Grid.Row="2" ItemsSource="{Binding Project.LastCompileErrors, FallbackValue={x:Null}}" />
-        <TextBlock x:Name="StatusText" Grid.Row="3" Margin="4,2" Text="{Binding Project.CompilationMessage, FallbackValue=''}" />
+        <ListBox x:Name="ErrorList" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorErrorList}" Grid.Row="2" ItemsSource="{Binding Project.LastCompileErrors, FallbackValue={x:Null}}" />
+        <TextBlock x:Name="StatusText" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorStatusText}" Grid.Row="3" Margin="4,2" Text="{Binding Project.CompilationMessage, FallbackValue=''}" />
       </Grid>
 
       <GridSplitter Grid.Column="3" ResizeDirection="Columns" />
 
       <!-- Inspectors (PAR-33..36) -->
       <Panel Grid.Column="4">
-        <edinspectors:ClassInspectorView x:Name="ClassInspector" IsVisible="{Binding ShowClassInspector}" />
-        <edinspectors:VariableInspectorView x:Name="VariableInspector" DataContext="{Binding SelectedVariable}" IsVisible="{Binding $parent[Window].((edclasseditor:ClassEditorVM)DataContext).ShowVariableInspector}" />
-        <edinspectors:MethodInspectorView x:Name="MethodInspector" DataContext="{Binding SelectedMethod}" IsVisible="{Binding $parent[Window].((edclasseditor:ClassEditorVM)DataContext).ShowMethodInspector}" />
+        <edinspectors:ClassInspectorView x:Name="ClassInspector" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassInspector}" IsVisible="{Binding ShowClassInspector}" />
+        <edinspectors:VariableInspectorView x:Name="VariableInspector" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableInspector}" DataContext="{Binding SelectedVariable}" IsVisible="{Binding $parent[Window].((edclasseditor:ClassEditorVM)DataContext).ShowVariableInspector}" />
+        <edinspectors:MethodInspectorView x:Name="MethodInspector" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MethodInspector}" DataContext="{Binding SelectedMethod}" IsVisible="{Binding $parent[Window].((edclasseditor:ClassEditorVM)DataContext).ShowMethodInspector}" />
       </Panel>
     </Grid>
   </Grid>

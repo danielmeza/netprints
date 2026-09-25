@@ -1,5 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ed="clr-namespace:NetPrints.Editor"
         x:Class="NetPrints.Editor.Dialogs.SelectTypeDialog"
         Title="Select Type"
         Icon="avares://NetPrints.Editor/Assets/NetPrintsLogo.ico"
@@ -7,7 +8,7 @@
         WindowStartupLocation="CenterOwner">
   <StackPanel Margin="12" Spacing="8">
     <!-- Editable chooser over the non-static types (PAR-58). -->
-    <AutoCompleteBox x:Name="TypeBox" FilterMode="ContainsOrdinal" MinimumPrefixLength="1" MaxDropDownHeight="300"
+    <AutoCompleteBox x:Name="TypeBox" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SelectTypeBox}" FilterMode="ContainsOrdinal" MinimumPrefixLength="1" MaxDropDownHeight="300"
                      PlaceholderText="Type name" />
     <Button x:Name="SelectButton" Content="Select" HorizontalAlignment="Right" MinWidth="80" IsDefault="True"
             Click="OnSelectClicked" />

@@ -2,18 +2,21 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <OutputType>Exe</OutputType>
-    <EnableMSTestRunner>true</EnableMSTestRunner>
     <IsPackable>false</IsPackable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- Every async call in a test must observe TestContext.Current.CancellationToken. -->
+    <WarningsAsErrors>$(WarningsAsErrors);xUnit1051</WarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MSTest" />
-    <PackageReference Include="Avalonia.Headless" />
-    <PackageReference Include="Avalonia.Skia" />
-    <!-- Use the dependency-free Linux Skia build (no libfontconfig) instead of the default one. -->
-    <PackageReference Include="SkiaSharp.NativeAssets.Linux" ExcludeAssets="all" />
-    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="Xunit.DependencyInjection" />
+    <PackageReference Include="Microsoft.Reactive.Testing" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
   </ItemGroup>
 
   <ItemGroup>

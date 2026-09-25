@@ -40,7 +40,7 @@ jobs:
 
       # Core, reflection, view-model and headless Avalonia UI tests (no display server needed).
       - name: Test
-        run: dotnet test --solution NetPrints.sln -c Release --no-build --report-trx --results-directory TestResults
+        run: dotnet test --solution NetPrints.sln -c Release --no-build --report-xunit-trx --results-directory TestResults
 
       # The CLI returns exit code 1 for --version until the P2 redesign and prints it to stderr,
       # so only the combined output is checked.

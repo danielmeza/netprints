@@ -1,4 +1,4 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 
-// Headless Avalonia UI tests share a single UI thread; run everything sequentially.
-[assembly: DoNotParallelize]
+// Tests share the preloaded reflection host and write to temp folders; keep them sequential.
+[assembly: CollectionBehavior(DisableTestParallelization = true)]

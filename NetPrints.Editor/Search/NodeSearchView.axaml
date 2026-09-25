@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ed="clr-namespace:NetPrints.Editor"
              xmlns:edsearch="clr-namespace:NetPrints.Editor.Search"
              x:Class="NetPrints.Editor.Search.NodeSearchView"
              x:DataType="edsearch:SuggestionListVM"
@@ -7,9 +8,9 @@
   <!-- Node search popup (PAR-52): search box, virtualized grouped list with 16-px icons. -->
   <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" BorderBrush="{DynamicResource SystemAccentColor}" BorderThickness="1">
     <Grid RowDefinitions="Auto,*">
-      <TextBox x:Name="SearchBox" Text="{Binding SearchText}" PlaceholderText="Search" Margin="4" KeyDown="OnSearchKeyDown" />
+      <TextBox x:Name="SearchBox" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SearchBox}" Text="{Binding SearchText}" PlaceholderText="Search" Margin="4" KeyDown="OnSearchKeyDown" />
       <TextBlock Grid.Row="1" Text="Loading..." IsVisible="{Binding IsLoading}" Margin="8" />
-      <ListBox x:Name="ResultList" Grid.Row="1" ItemsSource="{Binding Items}" IsVisible="{Binding !IsLoading}"
+      <ListBox x:Name="ResultList" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SearchResults}" Grid.Row="1" ItemsSource="{Binding Items}" IsVisible="{Binding !IsLoading}"
                SelectionMode="Single" KeyDown="OnListKeyDown">
         <ListBox.Styles>
           <Style Selector="ListBoxItem">
@@ -24,7 +25,7 @@
                          Foreground="{DynamicResource SystemAccentColor}" />
               <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding !IsHeader}" Margin="12,0,0,0">
                 <Image Width="16" Height="16" Source="{Binding IconKey, Converter={x:Static edsearch:IconConverter.Instance}}" />
-                <TextBlock Text="{Binding Text}" VerticalAlignment="Center" />
+                <TextBlock Text="{Binding Text}" VerticalAlignment="Center" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SearchRowText}" />
               </StackPanel>
             </Panel>
           </DataTemplate>

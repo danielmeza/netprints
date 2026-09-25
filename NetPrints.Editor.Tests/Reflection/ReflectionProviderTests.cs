@@ -3,40 +3,49 @@ using NetPrints.Reflection;
 
 namespace NetPrints.Editor.Tests.Reflection;
 
-[TestClass]
-public class ReflectionProviderTests
+/// <summary>A reflection provider over the runtime assembly set, shared by the tests of a class.</summary>
+public sealed class RuntimeReflectionFixture
 {
-    private static IReflectionProvider provider = null!;
-
-    [ClassInitialize]
-    public static void Init(TestContext _)
+    public RuntimeReflectionFixture()
     {
         // Same resolution as the editor: a default project references the .NET Framework
         // reference assemblies, which fall back to the runtime assemblies on Linux.
         var project = Project.CreateNew("Test", "Test");
-        var warnings = new List<string>();
-        var paths = new ReferenceAssemblyResolver().ResolveAssemblyPaths(project.References.OfType<AssemblyReference>(), warnings);
-        Assert.IsEmpty(warnings);
-        provider = new ReflectionProvider(paths, [], []);
+        Paths = new ReferenceAssemblyResolver().ResolveAssemblyPaths(project.References.OfType<AssemblyReference>(), Warnings);
+        Provider = new ReflectionProvider(Paths, [], []);
     }
 
-    [TestMethod]
+    public List<string> Warnings { get; } = [];
+
+    public IReadOnlyList<string> Paths { get; }
+
+    public IReflectionProvider Provider { get; }
+}
+
+public class ReflectionProviderTests(RuntimeReflectionFixture fixture) : IClassFixture<RuntimeReflectionFixture>
+{
+    private readonly IReflectionProvider provider = fixture.Provider;
+
+    [Fact]
+    public void RuntimeReferencesResolveWithoutWarnings() => Assert.Empty(fixture.Warnings);
+
+    [Fact]
     public void ReturnsNonStaticTypes()
     {
         var types = provider.GetNonStaticTypes().ToList();
-        Assert.IsGreaterThan(4000, types.Count);
+        Assert.True(types.Count > 4000);
         Assert.Contains(TypeSpecifier.FromType<string>(), types);
     }
 
-    [TestMethod]
+    [Fact]
     public void EnumeratesStaticMethodsIncludingRefReadonlyParameters()
     {
         // Threw KeyNotFoundException (RefKind.RefReadOnlyParameter) before the mapping was added.
         var methods = provider.GetMethods(new ReflectionProviderMethodQuery() { Static = true }).ToList();
-        Assert.IsGreaterThan(10000, methods.Count);
+        Assert.True(methods.Count > 10000);
     }
 
-    [TestMethod]
+    [Fact]
     public void StringHasInstanceMethods()
     {
         var methods = provider.GetMethods(new ReflectionProviderMethodQuery()
@@ -44,10 +53,10 @@ public class ReflectionProviderTests
             Type = TypeSpecifier.FromType<string>(),
             Static = false,
         }).ToList();
-        Assert.IsGreaterThan(100, methods.Count);
+        Assert.True(methods.Count > 100);
     }
 
-    [TestMethod]
+    [Fact]
     public void FindsConsoleWriteLineOverloads()
     {
         var writeLine = provider.GetMethods(new ReflectionProviderMethodQuery()
@@ -57,18 +66,18 @@ public class ReflectionProviderTests
         }).First(m => m.Name == "WriteLine");
 
         var overloads = provider.GetPublicMethodOverloads(writeLine).ToList();
-        Assert.IsGreaterThan(10, overloads.Count);
-        Assert.IsTrue(overloads.Any(o => o.Parameters.Count == 1 && o.Parameters[0].Value == TypeSpecifier.FromType<string>()));
+        Assert.True(overloads.Count > 10);
+        Assert.True(overloads.Any(o => o.Parameters.Count == 1 && o.Parameters[0].Value == TypeSpecifier.FromType<string>()));
     }
 
-    [TestMethod]
+    [Fact]
     public void FindsConstructors()
     {
         var constructors = provider.GetConstructors(TypeSpecifier.FromType<List<int>>()).ToList();
-        Assert.IsNotEmpty(constructors);
+        Assert.NotEmpty(constructors);
     }
 
-    [TestMethod]
+    [Fact]
     public void MemoizedProviderReturnsEqualResults()
     {
         var memoized = new MemoizedReflectionProvider(provider);
@@ -76,26 +85,25 @@ public class ReflectionProviderTests
         static List<string> Signatures(IEnumerable<ConstructorSpecifier> ctors) =>
             ctors.Select(c => string.Join(",", c.Arguments.Select(a => a.Value.ToString()))).ToList();
 
-        CollectionAssert.AreEqual(Signatures(provider.GetConstructors(type)), Signatures(memoized.GetConstructors(type)));
+        Assert.Equal(Signatures(provider.GetConstructors(type)), Signatures(memoized.GetConstructors(type)));
         // Second call is served from the memoization cache.
-        CollectionAssert.AreEqual(Signatures(provider.GetConstructors(type)), Signatures(memoized.GetConstructors(type)));
-        Assert.AreEqual(provider.TypeSpecifierIsSubclassOf(TypeSpecifier.FromType<string>(), TypeSpecifier.FromType<object>()),
-            memoized.TypeSpecifierIsSubclassOf(TypeSpecifier.FromType<string>(), TypeSpecifier.FromType<object>()));
+        Assert.Equal(Signatures(provider.GetConstructors(type)), Signatures(memoized.GetConstructors(type)));
+        Assert.Equal(provider.TypeSpecifierIsSubclassOf(TypeSpecifier.FromType<string>(), TypeSpecifier.FromType<object>()), memoized.TypeSpecifierIsSubclassOf(TypeSpecifier.FromType<string>(), TypeSpecifier.FromType<object>()));
     }
 
-    [TestMethod]
+    [Fact]
     public void MissingAssemblyPathsAreSkipped()
     {
         string missing = Path.Combine(Path.GetTempPath(), "netprints-missing-" + Guid.NewGuid() + ".dll");
         var p = new ReflectionProvider([typeof(object).Assembly.Location, missing], [], []);
-        Assert.IsNotNull(p.GetNonStaticTypes().FirstOrDefault());
+        Assert.NotNull(p.GetNonStaticTypes().FirstOrDefault());
     }
 
-    [TestMethod]
+    [Fact]
     public void ReflectionLibraryReferencesNoUiFramework()
     {
         var referenced = typeof(ReflectionProvider).Assembly.GetReferencedAssemblies().Select(a => a.Name!).ToList();
-        Assert.IsFalse(referenced.Any(n => n.StartsWith("Avalonia", StringComparison.Ordinal)
+        Assert.False(referenced.Any(n => n.StartsWith("Avalonia", StringComparison.Ordinal)
             || n == "PresentationFramework" || n == "PresentationCore" || n == "WindowsBase"
             || n.StartsWith("System.Windows", StringComparison.Ordinal)), string.Join(", ", referenced));
     }

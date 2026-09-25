@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ed="clr-namespace:NetPrints.Editor"
              xmlns:edgraph="clr-namespace:NetPrints.Editor.Graph"
              xmlns:ednodes="clr-namespace:NetPrints.Editor.Graph.Nodes"
              xmlns:edpins="clr-namespace:NetPrints.Editor.Graph.Pins"
@@ -46,7 +47,7 @@
     <!-- Pin header: inline editors for unconnected inputs (PAR-44) and the (editable) name (PAR-45). -->
     <DataTemplate x:Key="PinHeaderTemplate" x:DataType="edpins:NodePinVM">
       <StackPanel Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
-        <TextBox Classes="pinValue" MinWidth="60" Text="{Binding UnconnectedText}" PlaceholderText="{Binding UnconnectedTextWatermark}"
+        <TextBox Classes="pinValue" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PinValueText}" MinWidth="60" Text="{Binding UnconnectedText}" PlaceholderText="{Binding UnconnectedTextWatermark}"
                  IsVisible="{Binding ShowUnconnectedValue}" />
         <ComboBox Classes="pinValue" ItemsSource="{Binding PossibleEnumNames}" SelectedItem="{Binding UnconnectedEnumName}"
                   IsVisible="{Binding ShowEnumValue}" />
@@ -85,7 +86,7 @@
               Background="{Binding VisualKind, Converter={x:Static edgraph:NodeKindBrushConverter.Instance}}">
         <Grid ColumnDefinitions="Auto,Auto,*">
           <!-- Overload chooser (PAR-40) -->
-          <ComboBox x:Name="Overloads" Margin="2" Width="24" ToolTip.Tip="Overloads" IsVisible="{Binding ShowOverloads}"
+          <ComboBox x:Name="Overloads" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NodeOverloads}" Margin="2" Width="24" ToolTip.Tip="Overloads" IsVisible="{Binding ShowOverloads}"
                     ItemsSource="{Binding Overloads}" SelectedItem="{Binding SelectedOverload}" MaxDropDownHeight="400">
             <ComboBox.ItemTemplate>
               <DataTemplate>
@@ -93,12 +94,12 @@
               </DataTemplate>
             </ComboBox.ItemTemplate>
           </ComboBox>
-          <TextBlock x:Name="NodeLabel" Grid.Column="1" Text="{Binding Label}" Margin="10" FontWeight="SemiBold" FontSize="18"
+          <TextBlock x:Name="NodeLabel" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NodeLabel}" Grid.Column="1" Text="{Binding Label}" Margin="10" FontWeight="SemiBold" FontSize="18"
                      Foreground="#FFEEEEEE" VerticalAlignment="Center" />
           <!-- Pure (PAR-41) -->
           <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="10,0" HorizontalAlignment="Right" IsVisible="{Binding CanSetPure}">
             <TextBlock Text="Pure" VerticalAlignment="Center" Margin="0,0,4,0" />
-            <CheckBox IsChecked="{Binding IsPure}" VerticalAlignment="Center" />
+            <CheckBox IsChecked="{Binding IsPure}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NodePure}" VerticalAlignment="Center" />
           </StackPanel>
         </Grid>
       </Border>
@@ -118,10 +119,10 @@
           </ItemsControl>
           <!-- Left +/- (PAR-42) -->
           <StackPanel Orientation="Horizontal" IsVisible="{Binding ShowLeftPinButtons}">
-            <Button Classes="icon" ToolTip.Tip="{Binding LeftPlusToolTip}" Command="{Binding LeftPinsPlusCommand}">
+            <Button Classes="icon" ToolTip.Tip="{Binding LeftPlusToolTip}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NodeLeftPlus}" Command="{Binding LeftPinsPlusCommand}">
               <mi:MaterialIcon Kind="Plus" />
             </Button>
-            <Button Classes="icon" ToolTip.Tip="{Binding LeftMinusToolTip}" Command="{Binding LeftPinsMinusCommand}">
+            <Button Classes="icon" ToolTip.Tip="{Binding LeftMinusToolTip}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NodeLeftMinus}" Command="{Binding LeftPinsMinusCommand}">
               <mi:MaterialIcon Kind="Minus" />
             </Button>
           </StackPanel>

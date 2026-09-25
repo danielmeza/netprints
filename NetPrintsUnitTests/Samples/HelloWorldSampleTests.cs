@@ -1,4 +1,4 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using Xunit;
 using NetPrints.Core;
 using System;
 using System.Diagnostics;
@@ -8,20 +8,17 @@ using System.Threading;
 
 namespace NetPrints.Tests.Samples
 {
-    [TestClass]
-    public class HelloWorldSampleTests
+    public class HelloWorldSampleTests : IDisposable
     {
         private string tempDir;
 
-        [TestInitialize]
-        public void Setup()
+                public HelloWorldSampleTests()
         {
             tempDir = Path.Combine(Path.GetTempPath(), "netprints-sample-" + Guid.NewGuid().ToString("N"));
             Directory.CreateDirectory(tempDir);
         }
 
-        [TestCleanup]
-        public void Cleanup()
+                public void Dispose()
         {
             try { Directory.Delete(tempDir, true); } catch (IOException) { }
         }
@@ -30,7 +27,7 @@ namespace NetPrints.Tests.Samples
         /// Regenerates samples/HelloWorld when NETPRINTS_REGENERATE_SAMPLES=1; otherwise checks
         /// that the factory still produces a project equivalent to the checked-in one.
         /// </summary>
-        [TestMethod]
+        [Fact]
         public void FactoryMatchesCheckedInSample()
         {
             string sampleDir = Path.Combine(SampleProjectFactory.FindRepositoryRoot(), "samples", "HelloWorld");
@@ -42,15 +39,14 @@ namespace NetPrints.Tests.Samples
             }
 
             Project project = Project.LoadFromPath(Path.Combine(sampleDir, "HelloWorld.netpp"));
-            Assert.AreEqual("HelloWorld", project.Name);
-            Assert.AreEqual(BinaryType.Executable, project.OutputBinaryType);
+            Assert.Equal("HelloWorld", project.Name);
+            Assert.Equal(BinaryType.Executable, project.OutputBinaryType);
             ClassGraph cls = project.Classes.Single();
-            Assert.AreEqual("HelloWorld.Program", cls.FullName);
-            Assert.AreEqual("Main", cls.Methods.Single().Name);
+            Assert.Equal("HelloWorld.Program", cls.FullName);
+            Assert.Equal("Main", cls.Methods.Single().Name);
         }
 
-        [TestMethod]
-        [Timeout(120000, CooperativeCancellation = true)]
+        [Fact(Timeout = 120000)]
         public void SampleLoadsCompilesAndPrintsHelloWorld()
         {
             // The sample is linked into the test output (samples/**) by the test project.
@@ -61,7 +57,7 @@ namespace NetPrints.Tests.Samples
             }
 
             Project project = Project.LoadFromPath(Path.Combine(tempDir, "HelloWorld.netpp"));
-            Assert.AreEqual(1, project.Classes.Count);
+            Assert.Single(project.Classes);
 
             project.CompileProject();
             var sw = Stopwatch.StartNew();
@@ -70,8 +66,8 @@ namespace NetPrints.Tests.Samples
                 Thread.Sleep(50);
             }
 
-            Assert.IsTrue(project.LastCompilationSucceeded, string.Join(Environment.NewLine, project.LastCompileErrors ?? new ObservableRangeCollection<string>()));
-            Assert.AreEqual("Build succeeded", project.CompilationMessage);
+            Assert.True(project.LastCompilationSucceeded, string.Join(Environment.NewLine, project.LastCompileErrors ?? new ObservableRangeCollection<string>()));
+            Assert.Equal("Build succeeded", project.CompilationMessage);
 
             var (fileName, arguments) = project.GetRunCommand();
             var psi = new ProcessStartInfo(fileName, arguments)
@@ -84,10 +80,10 @@ namespace NetPrints.Tests.Samples
             using Process process = Process.Start(psi);
             string output = process.StandardOutput.ReadToEnd();
             string error = process.StandardError.ReadToEnd();
-            Assert.IsTrue(process.WaitForExit(60000));
+            Assert.True(process.WaitForExit(60000));
 
-            Assert.AreEqual(0, process.ExitCode, error);
-            Assert.AreEqual("Hello, World!", output.Trim());
+            Assert.Equal(0, process.ExitCode);
+            Assert.Equal("Hello, World!", output.Trim());
         }
     }
 }

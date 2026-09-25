@@ -1,5 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ed="clr-namespace:NetPrints.Editor"
         xmlns:edreferences="clr-namespace:NetPrints.Editor.References"
         xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
         x:Class="NetPrints.Editor.References.ReferencesDialog"
@@ -40,6 +41,6 @@
       </ItemsControl>
     </ScrollViewer>
 
-    <Button Grid.Row="2" x:Name="CloseButton" Classes="flat" Content="Close" Margin="5,5,5,10" Click="OnCloseClicked" />
+    <Button Grid.Row="2" x:Name="CloseButton" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ReferencesCloseButton}" Classes="flat" Content="Close" Margin="5,5,5,10" Click="OnCloseClicked" />
   </Grid>
 </Window>
