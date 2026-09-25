@@ -26,15 +26,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-dotnet@v6
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: 10.0.x
 
       # NuGet cache keyed on the central package versions and the project graph (CPM pins every
       # direct and transitive version, so lock files are not needed for a stable key).
-      - uses: actions/cache@v6
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.nuget/packages
           key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', 'Directory.Build.props', 'src/Directory.Build.props', 'tests/Directory.Build.props', 'global.json', '**/*.csproj') }}
@@ -46,16 +46,24 @@ jobs:
       - name: Build
         run: dotnet build NetPrints.slnx -c Release --no-restore
 
+      # Fails if any file would be reformatted by `dotnet format` (whitespace, style and analyzer
+      # fixes from .editorconfig); run `dotnet format NetPrints.slnx` locally to fix.
+      - name: Format check
+        run: dotnet format NetPrints.slnx --verify-no-changes --no-restore
+
       # Core, reflection, view-model and headless Avalonia UI tests (no display server needed).
       # The desktop E2E tests are skipped here (NETPRINTS_E2E unset), which is a "zero tests ran"
       # exit code (8) only for that project; ignoring it here (and only here, not in the e2e job
       # below) is what makes the skip expected instead of a silent hole in that job's coverage.
+      # --coverage runs every test module under Microsoft.Testing.Extensions.CodeCoverage
+      # (referenced by every project under tests/, via tests/Directory.Build.props).
       - name: Test
         env:
           NETPRINTS_UI_ARTIFACTS: ${{ github.workspace }}/TestResults/ui
         run: >
           dotnet test --solution NetPrints.slnx -c Release --no-build
-          --report-xunit-trx --results-directory TestResults -- --ignore-exit-code 8
+          --report-xunit-trx --results-directory TestResults
+          -- --ignore-exit-code 8 --coverage --coverage-output-format cobertura
 
       # The CLI returns exit code 1 for --version until the P2 redesign and prints it to stderr,
       # so only the combined output is checked.
@@ -73,7 +81,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: test-results
           path: TestResults/**/*.trx
@@ -82,10 +90,19 @@ jobs:
       # Snapshot actual/diff images, flow screenshots and per-test diagnostics (tree dump + screenshots).
       - name: Upload UI artifacts
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ui-headless
           path: TestResults/ui/**
+          if-no-files-found: warn
+
+      # Cobertura coverage from Microsoft.Testing.Extensions.CodeCoverage (--coverage above).
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: coverage
+          path: TestResults/**/*.cobertura.xml
           if-no-files-found: warn
 
   e2e:
@@ -93,13 +110,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-dotnet@v6
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: 10.0.x
 
-      - uses: actions/cache@v6
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.nuget/packages
           key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', 'Directory.Build.props', 'src/Directory.Build.props', 'tests/Directory.Build.props', 'global.json', '**/*.csproj') }}
@@ -130,7 +147,7 @@ jobs:
 
       - name: Upload E2E artifacts
         if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: e2e-results
           path: |

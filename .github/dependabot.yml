@@ -1,0 +1,21 @@
+version: 2
+updates:
+  # Central Package Management: Directory.Packages.props lives at the repo root, so this one
+  # entry covers every project's package versions.
+  - package-ecosystem: "nuget"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      nuget:
+        patterns:
+          - "*"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      github-actions:
+        patterns:
+          - "*"

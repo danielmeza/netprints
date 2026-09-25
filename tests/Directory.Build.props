@@ -5,4 +5,10 @@
   <PropertyGroup>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
+
+  <!-- CI code coverage (build-test job's `dotnet test` run, via its coverage flag).
+       Auto-registered by MTP; no code changes needed. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
+  </ItemGroup>
 </Project>

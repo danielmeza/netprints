@@ -1,0 +1,12 @@
+# Mechanical commits to skip with `git blame --ignore-revs-file .git-blame-ignore-revs`
+# (or `git config blame.ignoreRevsFile .git-blame-ignore-revs`). Each one is a pure
+# rename/reference/path change with no logic changes.
+
+# Reorganize project layout into src/, tests/, legacy/ (pure git mv, no content changes).
+7d3cc5143ec988a48652cbf2b923c4a0c9fc7abf
+
+# Fix references after the layout move; migrate to NetPrints.slnx.
+5187ebf4a13f04d7ff90c97595b187e145f203d3
+
+# Update docs and specs for the new src/tests/legacy layout.
+75dcd2cdadc14558dd3b7bc1bcd08597ce7fead0

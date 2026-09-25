@@ -5,7 +5,6 @@
     <Version>0.0.7</Version>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Copyright>Robin Kahlow 2018</Copyright>
-    <CodeAnalysisRuleSet>../../CSharpRuleSet.ruleset</CodeAnalysisRuleSet>
     <!-- Legacy code: nullable annotations are enabled in P1 when Core is refactored. -->
     <Nullable>disable</Nullable>
   </PropertyGroup>
