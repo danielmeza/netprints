@@ -81,6 +81,10 @@ public sealed class AutomationClient : IAsyncDisposable
         }
 
         await pipe.DisposeAsync();
-        gate.Dispose();
+
+        // Deliberately not gate.Dispose(): nothing here reads AvailableWaitHandle, so it has no
+        // wait handle to release, and disposing it only made a racing SendAsync fault with an
+        // ObjectDisposedException that could go unobserved (reported later, on an unrelated test).
+        // The pipe close above already ends any in-flight call with an IOException.
     }
 }

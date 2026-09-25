@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using Avalonia.Headless.XUnit;
 using NetPrints.Editor.Hosting.Automation;
+using NetPrints.Editor.UITests.Driving;
 using NetPrints.Testing.Ui.Driving;
 
 namespace NetPrints.Editor.UITests.Hosting;
@@ -36,6 +37,48 @@ public class AutomationAgentTests
         await client.SettleAsync(Token);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => client.SendAsync(new AutomationRequest("click"), Token)); // read-only
+    }
+
+    /// <summary>
+    /// Disposing an <see cref="AutomationClient"/> while a request is still in flight must not
+    /// leave an unobserved task exception behind (it used to: DisposeAsync's gate.Dispose() could
+    /// fault a racing SendAsync with ObjectDisposedException("SemaphoreSlim"), and nothing awaited
+    /// that particular call, so the GC finalizer thread reported it minutes later, on whatever
+    /// unrelated test happened to be running then — the flake this test guards against).
+    /// </summary>
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task DisposingWhileARequestIsInFlightFaultsOnlyThatRequest()
+    {
+        using var app = HeadlessApp.Start();
+
+        for (int i = 0; i < 20; i++)
+        {
+            string pipe = NewPipeName();
+            using var agent = new AutomationAgent(pipe, app.Tree, () => new AutomationStatus(true, false, false, null, Environment.ProcessId));
+            var client = await AutomationClient.ConnectAsync(pipe, TimeSpan.FromSeconds(10), Token);
+
+            // Started but not awaited before disposing, to race SendAsync's gate against
+            // DisposeAsync as closely as this process can arrange without a sleep.
+            var pending = client.StatusAsync(Token);
+            await client.DisposeAsync();
+
+            try
+            {
+                await pending;
+            }
+            catch (Exception ex) when (ex is IOException or ObjectDisposedException or OperationCanceledException)
+            {
+                // Expected: the pipe closed under it. Must not be the gate (see DisposeAsync).
+                Assert.DoesNotContain("SemaphoreSlim", ex.Message);
+            }
+        }
+
+        for (int i = 0; i < 3; i++)
+        {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            HeadlessDriver.Pump();
+        }
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
