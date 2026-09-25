@@ -132,11 +132,11 @@ behaviour is implemented as a `RoslynCodeTaskFactory` inline task of about 60 li
 The root README already credits the original project; the package descriptions (§3) repeat it in one
 sentence so it shows on nuget.org without scrolling.
 
-**XML documentation**: `GenerateDocumentationFile=true` is set in each packable project file (not in
-`Directory.Build.targets`: the SDK reads it before `Directory.Build.targets` is imported). `NetPrints.Core`
-and `NetPrints.Reflection` add `<NoWarn>$(NoWarn);CS1591</NoWarn>` with the comment `Legacy public API
-without XML docs; remove when documented.`, so a missing doc comment is not an error under
-warnings-as-errors. No other project suppresses CS1591.
+**XML documentation** (owner decision 2026-09-25): XML docs are required for every public API in `src/`.
+`src/Directory.Build.props` sets `GenerateDocumentationFile=true` for all `src/` projects, and the root
+`.editorconfig` makes CS1591 (missing doc), CS1572/CS1573 (param docs) and CS1574 (bad `cref`) errors under
+`[src/**.cs]`. Tests are exempt. No project suppresses CS1591. The only exception is an `.editorconfig`
+section per file for files that a P1 task deletes, each naming that task; the deleting task removes the section.
 
 ## 3. Packable projects
 

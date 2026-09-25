@@ -57,6 +57,12 @@ instead of retrying blindly.
   `specs/` docs, not in the code. This matters most in repositories we contribute to upstream.
 - Exception: XML documentation comments (`///` on types and members, or the equivalent doc
   comments in C++) may be as detailed and precise as needed. Don't shorten them for brevity.
+- Every public type and member in `src/` has an XML doc comment (`<summary>`, plus `<param>`,
+  `<typeparam>`, `<returns>`, `<exception>` where they apply). The build enforces it (CS1591 and the
+  related diagnostics are errors in `.editorconfig`). A doc says what the member does and its contract
+  (nulls, units, side effects, thrown exceptions), not a restatement of its name. Don't describe a
+  member with a plain `//` comment; use `///`. Use `<inheritdoc/>` for overrides and interface
+  implementations that add nothing.
 
 ## MVVM (CommunityToolkit.Mvvm)
 - Use `[ObservableProperty]` (partial properties) for any property with its own backing value; don't write
