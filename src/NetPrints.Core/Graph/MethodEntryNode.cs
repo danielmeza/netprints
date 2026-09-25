@@ -22,12 +22,23 @@ namespace NetPrints.Graph
         /// </summary>
         private MethodGraph methodGraph => (MethodGraph)Graph;
 
+        /// <summary>
+        /// Adds this node to <paramref name="graph"/> and gives it its single output execution pin.
+        /// </summary>
+        /// <param name="graph">Method graph the node belongs to.</param>
         public MethodEntryNode(MethodGraph graph)
             : base(graph)
         {
             AddOutputExecPin("Exec");
         }
 
+        /// <summary>
+        /// Propagates each input type pin's inferred type (or <see cref="object"/> if none has been
+        /// inferred) to the corresponding output data pin, so a generic method's parameter pins
+        /// reflect the resolved generic argument types.
+        /// </summary>
+        /// <param name="sender">The node whose input type changed.</param>
+        /// <param name="eventArgs">Unused; forwarded to the base implementation.</param>
         protected override void HandleInputTypeChanged(object? sender, EventArgs? eventArgs)
         {
             base.HandleInputTypeChanged(sender, eventArgs);
@@ -38,11 +49,19 @@ namespace NetPrints.Graph
             }
         }
 
+        /// <summary>
+        /// Returns the declaring method's name followed by " Entry".
+        /// </summary>
+        /// <returns>The declaring method's name followed by " Entry".</returns>
         public override string ToString()
         {
             return $"{methodGraph.Name} Entry";
         }
 
+        /// <summary>
+        /// Adds one more parameter: an output data pin typed <see cref="object"/> by default, and the
+        /// matching input type pin used to resolve its actual type from a generic argument.
+        /// </summary>
         public void AddArgument()
         {
             int argIndex = OutputDataPins.Count;
@@ -50,6 +69,10 @@ namespace NetPrints.Graph
             AddInputTypePin($"Input{argIndex}Type");
         }
 
+        /// <summary>
+        /// Removes the last parameter added by <see cref="AddArgument"/> (its output data pin and
+        /// input type pin), disconnecting them first. Does nothing if there are no parameters.
+        /// </summary>
         public void RemoveArgument()
         {
             if (OutputDataPins.Count > 0)
@@ -65,12 +88,20 @@ namespace NetPrints.Graph
             }
         }
 
+        /// <summary>
+        /// Adds one more generic type parameter to the method: an output type pin named "T0", "T1",
+        /// etc. and carrying a fresh <see cref="GenericType"/>.
+        /// </summary>
         public void AddGenericArgument()
         {
             string name = $"T{OutputTypePins.Count}";
             AddOutputTypePin(name, new GenericType(name));
         }
 
+        /// <summary>
+        /// Removes the last generic type parameter added by <see cref="AddGenericArgument"/>,
+        /// disconnecting its output type pin first. Does nothing if there are none.
+        /// </summary>
         public void RemoveGenericArgument()
         {
             if (OutputTypePins.Count > 0)

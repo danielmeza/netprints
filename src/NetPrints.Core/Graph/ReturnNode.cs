@@ -31,6 +31,12 @@ namespace NetPrints.Graph
         /// </summary>
         private MethodGraph methodGraph => (MethodGraph)Graph;
 
+        /// <summary>
+        /// Adds this node to <paramref name="graph"/>, gives it its single input execution pin, and
+        /// synchronizes its return-value pins with the graph's main return node (see
+        /// <see cref="MethodGraph.MainReturnNode"/>).
+        /// </summary>
+        /// <param name="graph">Method graph the node belongs to.</param>
         public ReturnNode(MethodGraph graph)
             : base(graph)
         {
@@ -96,12 +102,26 @@ namespace NetPrints.Graph
             }
         }
 
+        /// <summary>
+        /// Updates this node's return-value pin types: for the main return node, from its own input
+        /// type pins (<see cref="UpdateMainNodeInputTypes"/>); other return nodes replicate the main
+        /// node's pins instead and are not affected directly by their own input type changes.
+        /// </summary>
+        /// <param name="sender">The node whose input type changed.</param>
+        /// <param name="eventArgs">Unused; forwarded to the base implementation.</param>
         protected override void HandleInputTypeChanged(object? sender, EventArgs? eventArgs)
         {
             base.HandleInputTypeChanged(sender, eventArgs);
             UpdateMainNodeInputTypes();
         }
 
+        /// <summary>
+        /// Adds one more return value: an input data pin typed <see cref="object"/> by default, and
+        /// the matching input type pin used to resolve its actual type from a generic argument.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">
+        /// This node is not the graph's <see cref="MethodGraph.MainReturnNode"/>.
+        /// </exception>
         public void AddReturnType()
         {
             if (this != methodGraph.MainReturnNode)
@@ -115,6 +135,13 @@ namespace NetPrints.Graph
             AddInputTypePin($"Output{returnIndex}Type");
         }
 
+        /// <summary>
+        /// Removes the last return value added by <see cref="AddReturnType"/> (its input data pin and
+        /// input type pin), disconnecting them first. Does nothing if there are no return values.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">
+        /// This node is not the graph's <see cref="MethodGraph.MainReturnNode"/>.
+        /// </exception>
         public void RemoveReturnType()
         {
             if (this != methodGraph.MainReturnNode)
@@ -149,6 +176,10 @@ namespace NetPrints.Graph
             }
         }
 
+        /// <summary>
+        /// Returns "Return".
+        /// </summary>
+        /// <returns>"Return".</returns>
         public override string ToString()
         {
             return "Return";
