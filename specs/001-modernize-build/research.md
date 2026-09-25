@@ -464,7 +464,7 @@ Nodify.Avalonia 2.0.0 (requires Avalonia 12).
   (`SystemAccentColor` `#FF008A00`, MahApps "Emerald"). Fonts come from `Avalonia.Fonts.Inter`
   (`.WithInterFont()`), for consistent headless rendering on CI.
 - **Resources**: the 16 PNG icons move to `src/NetPrints.Editor/Assets/` as `AvaloniaResource`, with
-  `avares://src/NetPrints.Editor/Assets/{icon}` replacing `pack://application:,,,/…`.
+  `avares://NetPrints.Editor/Assets/{icon}` replacing `pack://application:,,,/…`.
 
 ## o. Project structure for the editor
 
