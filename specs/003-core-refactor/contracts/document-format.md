@@ -639,6 +639,24 @@ Project-level conversion (`.netpp` → `.csproj`) is in project-system.md §5.
 | `NodePin.PinType`, `InferredType` | not stored; recomputed by constructors + `GraphTypeInference.Relax` |
 | (absent) locals, event graphs, `VariableSpecifier.Scope` | empty / `Member` (initialized in `[OnDeserializing]`, because DataContract skips constructors) |
 
+### 3.1 DataContract `[OnDeserialized]` hooks
+
+The JSON path never runs these hooks: `ClassDocumentMapper.FromDocument` builds the model through the normal
+constructors, which already do what each hook repairs after DataContract (which skips constructors). The legacy
+importer (`LegacyXmlDocumentFormat`) still deserializes with DataContract, so the hooks stay, reduced to the
+lines listed, until the importer is the only caller.
+
+| Hook (on `master`) | What it does | JSON path | Legacy import path |
+|---|---|---|---|
+| `Node.OnDeserializing` (`[OnDeserialized]`, `Graph/Node.cs`) | Re-subscribes `InferredType.OnValueChanged` and `IncomingPinChanged` on every input type pin | Constructors subscribe (`AddInputTypePin`); nothing extra | Kept |
+| `MethodGraph.OnDeserialized` | Relaxation loop calling `Node.OnMethodDeserialized` until inferred types settle (max 20 iterations) | `GraphTypeInference.Relax(graph)` at the end of each graph in `FromDocument`, for method, constructor and event graphs, same loop and limit | Hook body replaced by a call to `GraphTypeInference.Relax(this)` |
+| `Variable.OnDeserialized` | Creates `TypeGraph` when it is null | The mapper always builds the type graph from the document | Kept |
+| `Project.FixDefaults` | Resets `Classes` (not serialized) | Not applicable: projects are `.csproj` (project-system.md) | Kept for `.netpp` conversion only |
+
+New members that DataContract would leave null (`LocalVariables`, `EventGraphs`, `VariableSpecifier.Scope`, ids) are
+initialized in an `[OnDeserializing]` method on the legacy path (data-model.md §1). The JSON path gets them from the
+constructors or the document. Test **DF-T27** covers this.
+
 ## 4. Mapping old → new
 
 | Old (`master`) | New |
@@ -717,3 +735,4 @@ public static class NetPrintsJsonSchema
 | DF-T24 | Schema: `NetPrintsJsonSchema.GenerateV1()` equals `schemas/netpc.v1.schema.json` (rewritten with `NETPRINTS_UPDATE_SNAPSHOTS=1`); structural asserts: root `$id` = `V1Url`, one `anyOf` branch per built-in `$kind` (`const`) plus the extension branch, `schemaVersion` `const` 1, layout arrays `minItems`/`maxItems` 2, `required` of `MethodDocument` = `["id", "name", "visibility", "graph"]` |
 | DF-T25 | Default node names: a node named `CallMethodNode` is written without `name` and reads back as `CallMethodNode`; a node named `CallMethodNode2` or `Greeting` is written with `name` |
 | DF-T26 | Committed samples: every `samples/**/*.netpc.json` is canonical (load → mark dirty → write equals the file bytes) and every `samples/**/*.netpc.g.cs` equals `GraphCodeGenerator.RenderFile` of its graph (stale-file guard; runs in CI with the rest of the suite) |
+| DF-T27 | Post-load wiring on both paths: load the HelloWorld sample from JSON and from the legacy fixture; on each result, change a type-pin input of a generic node (e.g. connect a different type to a `MakeArray` type pin) and assert the dependent pins' inferred types update and the generated C# changes accordingly; assert `Variable.TypeGraph` is non-null for every variable, and that the inferred types after load equal the ones before save (relaxation ran) |
