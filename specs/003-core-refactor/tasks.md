@@ -178,6 +178,13 @@ Checkpoint E (plan.md). Out of scope (follow-ups, do not implement): `netprints 
 - [ ] T101 [US7] Nodify commands in `NodeGraphVM`, bound in `src/NetPrints.Editor/Graph/GraphEditorView.axaml`; remove handlers from `GraphEditorView.axaml.cs`; disable Alt+click disconnect; ED-T09
 - [ ] T102 [US7] Architecture gate ED-T10 + fixture `tests/NetPrints.Editor.Tests/Architecture/Fixtures/ViolatingVM.cs.txt` (fails on the fixture first); rule A3 includes Workspace/Generator/Sdk never referencing Avalonia and Generator never referencing `Microsoft.Build*`
 - [ ] T103 [US7] Serialization log call sites (3001–3006) with a collecting logger in `tests/NetPrints.Core.Tests/Serialization/LoggingTests.cs`; **Checkpoint J** (SC-007, SC-008)
+- [ ] T103a [US7] Findings from the XML-doc pass (2026-09-25). Each gets a failing test first, where it is a bug:
+  - `GenericType.Equals(object)` returns `true` for any `TypeSpecifier`, and `TypeSpecifier.Equals(object)` has the mirror placeholder for `GenericType` and throws `ArgumentException` when only `IsEnum` differs. Define the intended equality (with `GetHashCode`) and test it.
+  - The `genericArgumentTypes` constructor parameter of `CallMethodNode` is unused: use it or remove it.
+  - Remove the unreferenced `[Obsolete]` visibility values in `VariableModifiers`, `MethodModifiers` and `ClassModifiers`. Legacy import must still read old files: check with the legacy fixture and map them if old files use them.
+  - Remove the marker interface `ICompilationReference`, or make `Project.References` use it.
+  - Remove the dead `ExecutionGraphTranslator.TranslateMethodEntry` body, or restore its intent. Golden tests must stay unchanged.
+  - Add tests for the null guards added in T011/T012 that are not covered yet: the `Graph.Class` guard in `NodeGraphVM.Drop` and the two `ExecutionGraphTranslator` guards.
 
 ## Phase 11: Polish (sub-phase K)
 
