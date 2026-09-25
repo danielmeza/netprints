@@ -13,18 +13,56 @@ namespace NetPrints.Core
     [Flags]
     public enum VariableModifiers
     {
+        /// <summary>
+        /// No modifiers.
+        /// </summary>
         None = 0,
+
+        /// <summary>
+        /// The variable is read-only (a C# <c>readonly</c> field or a get-only property).
+        /// </summary>
         ReadOnly = 8,
+
+        /// <summary>
+        /// The variable is a compile-time constant (C# <c>const</c>).
+        /// </summary>
         Const = 16,
+
+        /// <summary>
+        /// The variable is static rather than an instance member.
+        /// </summary>
         Static = 32,
+
+        /// <summary>
+        /// The variable hides an inherited member of the same name (C# <c>new</c>).
+        /// </summary>
         New = 64,
 
+        /// <summary>
+        /// Obsolete: visibility moved to <see cref="Variable.Visibility"/> (<see cref="MemberVisibility"/>).
+        /// Kept at value 0; not referenced anywhere in this codebase.
+        /// </summary>
         [Obsolete]
         Private = 0,
+
+        /// <summary>
+        /// Obsolete: visibility moved to <see cref="Variable.Visibility"/> (<see cref="MemberVisibility"/>).
+        /// Kept at value 1; not referenced anywhere in this codebase.
+        /// </summary>
         [Obsolete]
         Public = 1,
+
+        /// <summary>
+        /// Obsolete: visibility moved to <see cref="Variable.Visibility"/> (<see cref="MemberVisibility"/>).
+        /// Kept at value 2; not referenced anywhere in this codebase.
+        /// </summary>
         [Obsolete]
         Protected = 2,
+
+        /// <summary>
+        /// Obsolete: visibility moved to <see cref="Variable.Visibility"/> (<see cref="MemberVisibility"/>).
+        /// Kept at value 4; not referenced anywhere in this codebase.
+        /// </summary>
         [Obsolete]
         Internal = 4,
     }
@@ -164,6 +202,11 @@ namespace NetPrints.Core
         [DataMember]
         public partial VariableModifiers Modifiers { get; set; }
 
+        /// <summary>
+        /// A fresh <see cref="VariableSpecifier"/> snapshotting this variable's current name, type,
+        /// getter/setter visibility (the accessor method's own visibility if it has one, otherwise
+        /// <see cref="Visibility"/>) and modifiers. Recomputed on every access; not cached.
+        /// </summary>
         public VariableSpecifier Specifier
         {
             get => new VariableSpecifier(Name, Type, GetterMethod?.Visibility ?? Visibility, SetterMethod?.Visibility ?? Visibility, Class.Type, Modifiers);
