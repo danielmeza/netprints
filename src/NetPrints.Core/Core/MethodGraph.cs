@@ -13,22 +13,69 @@ namespace NetPrints.Core
     [Flags]
     public enum MethodModifiers
     {
+        /// <summary>
+        /// No modifiers.
+        /// </summary>
         None = 0,
+
+        /// <summary>
+        /// The method is sealed: an override that cannot be further overridden (C# <c>sealed</c>).
+        /// </summary>
         Sealed = 8,
+
+        /// <summary>
+        /// The method has no body and must be overridden (C# <c>abstract</c>).
+        /// </summary>
         Abstract = 16,
+
+        /// <summary>
+        /// The method is static rather than an instance member.
+        /// </summary>
         Static = 32,
+
+        /// <summary>
+        /// The method can be overridden by a derived class (C# <c>virtual</c>).
+        /// </summary>
         Virtual = 64,
+
+        /// <summary>
+        /// The method overrides a virtual or abstract base member (C# <c>override</c>).
+        /// </summary>
         Override = 128,
+
+        /// <summary>
+        /// The method is asynchronous (C# <c>async</c>): the translator emits an <c>async</c> method
+        /// and its <see cref="Graph.AwaitNode"/>s emit <c>await</c> expressions.
+        /// </summary>
         Async = 256,
 
         // DEPRECATED
         // Moved to MethodVisibility
+        /// <summary>
+        /// Obsolete: visibility moved to <see cref="ExecutionGraph.Visibility"/> (<see cref="MemberVisibility"/>).
+        /// Kept at value 0; not referenced anywhere in this codebase.
+        /// </summary>
         [Obsolete]
         Private = 0,
+
+        /// <summary>
+        /// Obsolete: visibility moved to <see cref="ExecutionGraph.Visibility"/> (<see cref="MemberVisibility"/>).
+        /// Kept at value 1; not referenced anywhere in this codebase.
+        /// </summary>
         [Obsolete]
         Public = 1,
+
+        /// <summary>
+        /// Obsolete: visibility moved to <see cref="ExecutionGraph.Visibility"/> (<see cref="MemberVisibility"/>).
+        /// Kept at value 2; not referenced anywhere in this codebase.
+        /// </summary>
         [Obsolete]
         Protected = 2,
+
+        /// <summary>
+        /// Obsolete: visibility moved to <see cref="ExecutionGraph.Visibility"/> (<see cref="MemberVisibility"/>).
+        /// Kept at value 4; not referenced anywhere in this codebase.
+        /// </summary>
         [Obsolete]
         Internal = 4,
     }
@@ -147,6 +194,10 @@ namespace NetPrints.Core
             }
         }
 
+        /// <summary>
+        /// Returns <see cref="Name"/>.
+        /// </summary>
+        /// <returns><see cref="Name"/>.</returns>
         public override string ToString()
         {
             return Name;
