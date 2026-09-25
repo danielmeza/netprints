@@ -69,6 +69,28 @@ instead of retrying blindly.
   model event, a collection change, a value computed from another object). Always `nameof`, never a string.
 - No Fody or other IL weaving (`[AlsoNotifyFor]`, `[DependsOn]`, …).
 
+## Nullable reference types
+The goal is to model and handle null correctly, not to silence warnings. A green build with `!` sprinkled
+around only hides future `NullReferenceException`s.
+- Don't use the null-forgiving operator (`!`, `null!`, `default!`) to make a warning go away. Fix the cause:
+  - a value that can be null gets a nullable type, and callers handle it;
+  - a value that can't be null gets a non-nullable type and is guaranteed by construction (constructor,
+    `required`, an initializer);
+  - an invalid state throws a clear exception at the boundary (`ArgumentNullException.ThrowIfNull`,
+    `InvalidOperationException` with a message), instead of failing later with a `NullReferenceException`.
+- Use the flow attributes (`[NotNullWhen]`, `[MemberNotNull]`, `[NotNullIfNotNull]`, `[MaybeNullWhen]`) so the
+  compiler can see invariants, instead of asserting them with `!`.
+- Common cases:
+  - `Path.GetDirectoryName(x)!`: handle the null (root or relative path) or validate the path first.
+  - `FirstOrDefault()!`: use `First()`, or return a nullable type and handle it.
+  - `= null!` on a property: make it nullable, `required`, or set it in the constructor.
+  - `Version!` / `Location!`: use a fallback (`?? new Version(0, 0)`).
+- `!` is acceptable only where the compiler cannot express a real, local invariant (for example right after a
+  check it doesn't track). Then add a short comment saying why, or prefer a `Debug.Assert`/guard. In tests,
+  prefer `Assert.NotNull(x)` (xUnit annotates it) to `x!`.
+- Serializer-populated members (legacy DataContract) are nullable, or initialized in `[OnDeserializing]`.
+- Reviewers list every `!` added in a PR and check each one.
+
 ## Commits and tests
 - End commit messages with the attribution line(s) your session is configured with; PR bodies
   end with the "Generated with Claude Code" footer when produced by Claude Code.
