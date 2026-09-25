@@ -5,6 +5,7 @@ using NetPrints.Graph;
 using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.UITests.Driving;
 using NetPrints.Testing.Ui.Driving;
+using NetPrints.Editor.Hosting.Automation;
 
 namespace NetPrints.Editor.UITests.ClassEditor;
 
@@ -23,7 +24,7 @@ public class ClassEditorWindowTests
         {
             Assert.True(await splitter.ExistsAsync(Token), $"{splitter} exists"); // PAR-31
         }
-        Assert.Equal("True", await page.CompileButton.PropertyAsync("ShowToolTipOnDisabled", Token));
+        Assert.Equal("True", await page.CompileButton.PropertyAsync(AutomationPropertyNames.ShowToolTipOnDisabled, Token));
 
         // Opening Main by double click: the first click already showed the method inspector (PAR-24, 33).
         Assert.True(await page.MethodInspector.IsVisibleAsync(Token));
@@ -49,7 +50,7 @@ public class ClassEditorWindowTests
         session.App.CodeRefreshScheduler.AdvanceBy(TimeSpan.FromSeconds(1).Ticks);
         HeadlessDriver.Pump();
         Assert.Contains("class Renamed", (await page.ClassInspector.GeneratedCode.GetAsync(Token)).Text);
-        Assert.Equal("True", await page.ClassInspector.GeneratedCode.PropertyAsync("IsReadOnly", Token));
+        Assert.Equal("True", await page.ClassInspector.GeneratedCode.PropertyAsync(AutomationPropertyNames.IsReadOnly, Token));
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
@@ -59,7 +60,7 @@ public class ClassEditorWindowTests
         var toString = session.ClassVM.OverridableMethods.First(m => m.Name == "ToString"); // PAR-26
 
         session.ClassWindow.FindControl<ComboBox>("OverrideBox")!.SelectedItem = toString; // choosing a combo box item
-        await session.ClassEditor.OverrideChooser.WaitUntilAsync(e => e["SelectedItem"] is null, "chooser reset", Token);
+        await session.ClassEditor.OverrideChooser.WaitUntilAsync(e => e[AutomationPropertyNames.SelectedItem] is null, "chooser reset", Token);
 
         Assert.Contains("ToString", await session.ClassEditor.MethodNamesAsync(Token));
         await session.Graph.Watermark.WaitUntilAsync(e => e.Text == "ToString", "ToString opened", Token);
@@ -109,7 +110,7 @@ public class ClassEditorWindowTests
         string status = await session.ClassEditor.CompileAsync(Token); // PAR-10, PAR-32
 
         Assert.Equal("Build failed with 1 error(s)", status);
-        await session.ClassEditor.ErrorList.WaitUntilAsync(e => e["ItemCount"] == "1", "one error listed", Token);
+        await session.ClassEditor.ErrorList.WaitUntilAsync(e => e[AutomationPropertyNames.ItemCount] == "1", "one error listed", Token);
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
@@ -121,7 +122,7 @@ public class ClassEditorWindowTests
         foreach (string pin in await write.PinNamesAsync(Token))
         {
             var element = await write.Pin(pin).GetAsync(Token);
-            Assert.False(string.IsNullOrWhiteSpace(element["ToolTip"]), $"pin {pin} has a tool tip (PAR-39, PAR-43)");
+            Assert.False(string.IsNullOrWhiteSpace(element[AutomationPropertyNames.ToolTip]), $"pin {pin} has a tool tip (PAR-39, PAR-43)");
         }
     }
 

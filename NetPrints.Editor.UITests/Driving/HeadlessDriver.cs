@@ -34,6 +34,21 @@ public sealed class HeadlessDriver(AutomationTree tree, Func<string> programOutp
         Dispatcher.UIThread.RunJobs();
     }
 
+    /// <summary>
+    /// Collects garbage and runs pending finalizers (three rounds, pumping in between), so faulted
+    /// tasks nobody observed raise <see cref="TaskScheduler.UnobservedTaskException"/> now instead
+    /// of during a later test.
+    /// </summary>
+    public static void DrainFinalizers()
+    {
+        for (int i = 0; i < 3; i++)
+        {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            Pump();
+        }
+    }
+
     public Task<IReadOnlyList<AutomationElement>> FindAllAsync(AutomationQuery query, CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();

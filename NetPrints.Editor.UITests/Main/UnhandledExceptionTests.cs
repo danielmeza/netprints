@@ -28,6 +28,7 @@ public class UnhandledExceptionTests
         Assert.Contains("boom from the dispatcher", app.Dialogs.Errors[0].Message);
         await app.Main.ProjectButton.ClickAsync(Token);
         Assert.True(await app.Main.ProjectPane.IsVisibleAsync(Token)); // still usable
+        HeadlessDriver.DrainFinalizers();
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
@@ -45,6 +46,7 @@ public class UnhandledExceptionTests
         await WaitForErrorsAsync(app, 1);
 
         Assert.Contains("boom from async void", app.Dialogs.Errors[0].Message);
+        HeadlessDriver.DrainFinalizers(); // the carrying dispatcher task is finalized here, not in a later test
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
@@ -63,12 +65,7 @@ public class UnhandledExceptionTests
 
         // The dispatcher operation that carried the exception is finalized later; its unobserved
         // task must not report the same exception a second time.
-        for (int i = 0; i < 3; i++)
-        {
-            GC.Collect();
-            GC.WaitForPendingFinalizers();
-            HeadlessDriver.Pump();
-        }
+        HeadlessDriver.DrainFinalizers();
 
         Assert.True(app.Dialogs.Errors.Count == 1, string.Join("\n---\n", app.Dialogs.Errors.Select(e => e.Message)));
     }

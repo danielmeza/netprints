@@ -7,6 +7,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
 using Avalonia.VisualTree;
+using NetPrints.Editor.Graph;
 using Nodify.Avalonia;
 
 namespace NetPrints.Editor.Hosting.Automation;
@@ -159,60 +160,70 @@ public sealed class AutomationTree : IDisposable
     {
         var p = new Dictionary<string, string?>
         {
-            ["Type"] = control.GetType().Name,
-            ["Text"] = TextOf(control),
-            ["IsEnabled"] = control.IsEffectivelyEnabled.ToString(),
-            ["IsVisible"] = control.IsEffectivelyVisible.ToString(),
-            ["IsFocused"] = control.IsFocused.ToString(),
-            ["IsKeyboardFocusWithin"] = control.IsKeyboardFocusWithin.ToString(),
-            ["PseudoClasses"] = string.Join(' ', control.Classes),
-            ["ToolTip"] = ToolTip.GetTip(control) as string,
-            ["ShowToolTipOnDisabled"] = ToolTip.GetShowOnDisabled(control).ToString(),
-            ["Cursor"] = EditorCursors.NameOf(control.Cursor),
-            ["TextOverflows"] = TextOverflows(control)?.ToString(),
-            ["Opacity"] = Invariant(control.Opacity),
-            ["Width"] = Invariant(control.Bounds.Width),
-            ["Height"] = Invariant(control.Bounds.Height),
-            ["WindowTitle"] = window.Title,
-            ["WindowState"] = window.WindowState.ToString(),
-            ["WindowIsActive"] = window.IsActive.ToString(),
-            ["X11Window"] = window.TryGetPlatformHandle()?.Handle.ToString(CultureInfo.InvariantCulture),
+            [AutomationPropertyNames.Type] = control.GetType().Name,
+            [AutomationPropertyNames.Text] = TextOf(control),
+            [AutomationPropertyNames.IsEnabled] = control.IsEffectivelyEnabled.ToString(),
+            [AutomationPropertyNames.IsVisible] = control.IsEffectivelyVisible.ToString(),
+            [AutomationPropertyNames.IsFocused] = control.IsFocused.ToString(),
+            [AutomationPropertyNames.IsKeyboardFocusWithin] = control.IsKeyboardFocusWithin.ToString(),
+            [AutomationPropertyNames.PseudoClasses] = string.Join(' ', control.Classes),
+            [AutomationPropertyNames.ToolTip] = ToolTip.GetTip(control) as string,
+            [AutomationPropertyNames.ShowToolTipOnDisabled] = ToolTip.GetShowOnDisabled(control).ToString(),
+            [AutomationPropertyNames.Cursor] = EditorCursors.NameOf(control.Cursor),
+            [AutomationPropertyNames.TextOverflows] = TextOverflows(control)?.ToString(),
+            [AutomationPropertyNames.Opacity] = Invariant(control.Opacity),
+            [AutomationPropertyNames.Width] = Invariant(control.Bounds.Width),
+            [AutomationPropertyNames.Height] = Invariant(control.Bounds.Height),
+            [AutomationPropertyNames.WindowTitle] = window.Title,
+            [AutomationPropertyNames.WindowState] = window.WindowState.ToString(),
+            [AutomationPropertyNames.WindowIsActive] = window.IsActive.ToString(),
+            [AutomationPropertyNames.X11Window] = window.TryGetPlatformHandle()?.Handle.ToString(CultureInfo.InvariantCulture),
         };
 
         switch (control)
         {
             case ToggleButton toggle:
-                p["IsChecked"] = toggle.IsChecked?.ToString();
+                p[AutomationPropertyNames.IsChecked] = toggle.IsChecked?.ToString();
                 break;
             case TextBox textBox:
-                p["IsReadOnly"] = textBox.IsReadOnly.ToString();
-                p["Placeholder"] = textBox.PlaceholderText;
+                p[AutomationPropertyNames.IsReadOnly] = textBox.IsReadOnly.ToString();
+                p[AutomationPropertyNames.Placeholder] = textBox.PlaceholderText;
                 break;
             case NodifyEditor editor:
-                p["ViewportZoom"] = Invariant(editor.ViewportZoom);
-                p["ViewportX"] = Invariant(editor.ViewportLocation.X);
-                p["ViewportY"] = Invariant(editor.ViewportLocation.Y);
-                p["MinViewportZoom"] = Invariant(editor.MinViewportZoom);
-                p["MaxViewportZoom"] = Invariant(editor.MaxViewportZoom);
-                p["GridCellSize"] = Invariant(editor.GridCellSize);
+                p[AutomationPropertyNames.ViewportZoom] = Invariant(editor.ViewportZoom);
+                p[AutomationPropertyNames.ViewportX] = Invariant(editor.ViewportLocation.X);
+                p[AutomationPropertyNames.ViewportY] = Invariant(editor.ViewportLocation.Y);
+                p[AutomationPropertyNames.MinViewportZoom] = Invariant(editor.MinViewportZoom);
+                p[AutomationPropertyNames.MaxViewportZoom] = Invariant(editor.MaxViewportZoom);
+                p[AutomationPropertyNames.GridCellSize] = Invariant(editor.GridCellSize);
+                break;
+            case GridBackground grid:
+                p[AutomationPropertyNames.GridRenderPath] = grid.LastRenderPath.ToString();
+                p[AutomationPropertyNames.GridRenderMode] = grid.Mode.ToString();
+                p[AutomationPropertyNames.ViewportZoom] = Invariant(grid.ViewportZoom);
+                p[AutomationPropertyNames.ViewportX] = Invariant(grid.ViewportLocation.X);
+                p[AutomationPropertyNames.ViewportY] = Invariant(grid.ViewportLocation.Y);
+                p[AutomationPropertyNames.BackgroundColor] = grid.BackgroundColor.ToString();
+                p[AutomationPropertyNames.MinorColor] = grid.MinorColor.ToString();
+                p[AutomationPropertyNames.MajorColor] = grid.MajorColor.ToString();
                 break;
             case Image image:
-                p["HasSource"] = (image.Source is not null).ToString();
+                p[AutomationPropertyNames.HasSource] = (image.Source is not null).ToString();
                 break;
             case Popup popup:
-                p["IsOpen"] = popup.IsOpen.ToString();
+                p[AutomationPropertyNames.IsOpen] = popup.IsOpen.ToString();
                 break;
             case SelectingItemsControl selecting:
-                p["SelectedItem"] = selecting.SelectedItem?.ToString();
-                p["ItemCount"] = selecting.ItemCount.ToString(CultureInfo.InvariantCulture);
+                p[AutomationPropertyNames.SelectedItem] = selecting.SelectedItem?.ToString();
+                p[AutomationPropertyNames.ItemCount] = selecting.ItemCount.ToString(CultureInfo.InvariantCulture);
                 break;
         }
 
         if (control.FindAncestorOfType<ItemContainer>(includeSelf: true) is { } container)
         {
-            p["IsSelected"] = container.IsSelected.ToString();
-            p["LocationX"] = Invariant(container.Location.X);
-            p["LocationY"] = Invariant(container.Location.Y);
+            p[AutomationPropertyNames.IsSelected] = container.IsSelected.ToString();
+            p[AutomationPropertyNames.LocationX] = Invariant(container.Location.X);
+            p[AutomationPropertyNames.LocationY] = Invariant(container.Location.Y);
         }
 
         return p;
@@ -270,7 +281,7 @@ public sealed class AutomationTree : IDisposable
             {
                 var e = Describe(control, window);
                 sb.AppendLine(CultureInfo.InvariantCulture,
-                    $"  {e.AutomationId}{(e.Name is null ? "" : $"[{e.Name}]")} {e["Type"]} text='{e.Text}' visible={e.IsVisible} enabled={e.IsEnabled} bounds=({e.Bounds.X:0},{e.Bounds.Y:0},{e.Bounds.Width:0},{e.Bounds.Height:0}) {e["PseudoClasses"]}");
+                    $"  {e.AutomationId}{(e.Name is null ? "" : $"[{e.Name}]")} {e[AutomationPropertyNames.Type]} text='{e.Text}' visible={e.IsVisible} enabled={e.IsEnabled} bounds=({e.Bounds.X:0},{e.Bounds.Y:0},{e.Bounds.Width:0},{e.Bounds.Height:0}) {e[AutomationPropertyNames.PseudoClasses]}");
             }
         }
 

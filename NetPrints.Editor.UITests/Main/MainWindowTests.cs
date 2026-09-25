@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Avalonia.Headless.XUnit;
 using NetPrints.Editor.UITests.Hosting;
+using NetPrints.Editor.Hosting.Automation;
 
 namespace NetPrints.Editor.UITests.Main;
 
@@ -19,8 +20,8 @@ public class MainWindowTests
 
         Assert.True(frame.Width > 0);
         Assert.True(sw.ElapsedMilliseconds < 5000, $"SC-006: main window in {sw.ElapsedMilliseconds} ms");
-        Assert.Equal(800, await app.Main.GetAsync<double>("Width", Token));
-        Assert.Equal(600, await app.Main.GetAsync<double>("Height", Token));
+        Assert.Equal(800, await app.Main.GetAsync<double>(AutomationPropertyNames.Width, Token));
+        Assert.Equal(600, await app.Main.GetAsync<double>(AutomationPropertyNames.Height, Token));
         Assert.Equal("NetPrints", await app.Main.TitleAsync(Token));
 
         await app.OpenStartupProjectAsync(sample.ProjectPath, Token);
@@ -40,7 +41,7 @@ public class MainWindowTests
         Assert.False(await main.SettingsButton.IsEnabledAsync(Token)); // PAR-07
         Assert.False(await main.ReferencesButton.IsEnabledAsync(Token)); // PAR-08
         Assert.False(await main.CompileButton.IsEnabledAsync(Token));
-        Assert.Equal("True", await main.CompileButton.PropertyAsync("ShowToolTipOnDisabled", Token)); // PAR-09
+        Assert.Equal("True", await main.CompileButton.PropertyAsync(AutomationPropertyNames.ShowToolTipOnDisabled, Token)); // PAR-09
 
         await main.ProjectButton.ClickAsync(Token);
         Assert.True(await main.ProjectPane.IsVisibleAsync(Token));
@@ -70,7 +71,7 @@ public class MainWindowTests
         foreach (var button in app.Main.ToolbarButtons)
         {
             var element = await button.GetAsync(Token);
-            Assert.True(element["TextOverflows"] == "False", $"'{element.Text}' does not fit its {element["Width"]}-DIP round button");
+            Assert.True(element[AutomationPropertyNames.TextOverflows] == "False", $"'{element.Text}' does not fit its {element[AutomationPropertyNames.Width]}-DIP round button");
         }
     }
 

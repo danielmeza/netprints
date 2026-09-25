@@ -12,6 +12,9 @@ public sealed class GraphCanvas(IUiDriver driver, AutomationQuery window)
 {
     public AutomationQuery WindowQuery { get; } = window;
 
+    /// <summary>The background grid behind the canvas.</summary>
+    public UiElement Grid => new(Driver, new AutomationQuery(AutomationIds.GraphGrid) { Within = WindowQuery });
+
     public UiElement Watermark => new(Driver, new AutomationQuery(AutomationIds.GraphWatermark) { Within = WindowQuery });
 
     public SearchPopup Search => new(Driver, WindowQuery);
@@ -54,12 +57,12 @@ public sealed class GraphCanvas(IUiDriver driver, AutomationQuery window)
         }, "nodes and cables rendered", cancellationToken);
     }
 
-    public async Task<double> ZoomAsync(CancellationToken cancellationToken) => await GetAsync<double>("ViewportZoom", cancellationToken);
+    public async Task<double> ZoomAsync(CancellationToken cancellationToken) => await GetAsync<double>(AutomationPropertyNames.ViewportZoom, cancellationToken);
 
     public async Task<(double X, double Y)> ViewportAsync(CancellationToken cancellationToken)
     {
         var e = await GetAsync(cancellationToken);
-        return (double.Parse(e["ViewportX"]!, CultureInfo.InvariantCulture), double.Parse(e["ViewportY"]!, CultureInfo.InvariantCulture));
+        return (double.Parse(e[AutomationPropertyNames.ViewportX]!, CultureInfo.InvariantCulture), double.Parse(e[AutomationPropertyNames.ViewportY]!, CultureInfo.InvariantCulture));
     }
 
     /// <summary>Converts a point on the canvas to graph coordinates.</summary>
@@ -71,10 +74,28 @@ public sealed class GraphCanvas(IUiDriver driver, AutomationQuery window)
         return (x + (at.X - origin.X) / zoom, y + (at.Y - origin.Y) / zoom);
     }
 
-    public async Task<double> GridCellSizeAsync(CancellationToken cancellationToken) => await GetAsync<double>("GridCellSize", cancellationToken);
+    public async Task<double> GridCellSizeAsync(CancellationToken cancellationToken) => await GetAsync<double>(AutomationPropertyNames.GridCellSize, cancellationToken);
+
+    /// <summary>The render path ("Shader", "Cpu" or "None") that drew the grid's latest frame.</summary>
+    public async Task<string?> GridRenderPathAsync(CancellationToken cancellationToken) => await Grid.PropertyAsync(AutomationPropertyNames.GridRenderPath, cancellationToken);
+
+    /// <summary>The viewport the grid draws (it must follow the canvas's).</summary>
+    public async Task<(double X, double Y, double Zoom)> GridViewportAsync(CancellationToken cancellationToken)
+    {
+        var e = await Grid.GetAsync(cancellationToken);
+        return (double.Parse(e[AutomationPropertyNames.ViewportX]!, CultureInfo.InvariantCulture), double.Parse(e[AutomationPropertyNames.ViewportY]!, CultureInfo.InvariantCulture),
+            double.Parse(e[AutomationPropertyNames.ViewportZoom]!, CultureInfo.InvariantCulture));
+    }
+
+    /// <summary>The grid's background, minor and major line colors, as #aarrggbb.</summary>
+    public async Task<(string? Background, string? Minor, string? Major)> GridColorsAsync(CancellationToken cancellationToken)
+    {
+        var e = await Grid.GetAsync(cancellationToken);
+        return (e[AutomationPropertyNames.BackgroundColor], e[AutomationPropertyNames.MinorColor], e[AutomationPropertyNames.MajorColor]);
+    }
 
     /// <summary>The cursor the canvas shows (null: the default arrow).</summary>
-    public async Task<string?> CursorAsync(CancellationToken cancellationToken) => await PropertyAsync("Cursor", cancellationToken);
+    public async Task<string?> CursorAsync(CancellationToken cancellationToken) => await PropertyAsync(AutomationPropertyNames.Cursor, cancellationToken);
 
     /// <summary>A point on the canvas away from the nodes: <c>150</c> DIPs in from the bottom-right corner, moved by (dx, dy).</summary>
     public async Task<UiTarget> EmptyPointAsync(CancellationToken cancellationToken, double dx = 0, double dy = 0)

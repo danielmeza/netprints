@@ -26,8 +26,8 @@ when it is started.
 
 | ID | Name | Est. | Depends on | Status |
 |----|------|------|------------|--------|
-| P0 | Modernize build + Avalonia editor at parity | ~6 w (manual est.) | — | in progress (`specs/001-modernize-build`) |
-| P0.1 | Grid rendering (shader + pixel-identical fallback) | ~3–5 d | P0 | next after P0 merge |
+| P0 | Modernize build + Avalonia editor at parity | ~6 w (manual est.) | — | **merged** 2026-09-25 (PR #1, e24ebec) |
+| P0.1 | Grid rendering (shader + pixel-identical fallback) | ~3–5 d | P0 | in progress (`specs/002-grid-rendering`) |
 | P1 | Core refactor + extension points | ~3.5 w | P0 | not started |
 | P2 | Catalog tooling + Spectre CLI | ~2.5 w | P1 | not started |
 | P3a | Editor shell | ~2–3 w | P0, P1 | not started |
@@ -81,6 +81,10 @@ C# code view: replace the plain read-only generated-C# preview (parity item PAR-
 AvaloniaEdit (TextMate C# highlighting, folding, line numbers) showing live Roslyn diagnostics
 (squiggles + error list linked to the originating node); evaluate RoslynPad.Editor.Avalonia for
 Roslyn-backed hover/quick info. Read-only in P1; editable C# ("code nodes") is a later idea.
+Method-local variables (owner idea, 2026-09-25): each `MethodGraph`/`ConstructorGraph` owns local
+variables with getter/setter nodes like class variables. They are declared at the top of the generated
+method, which fits the current goto translator. The Variables panel shows two groups: *Class* and
+*Method: <name>*.
 Follow-ups deferred from the P0 reviews (PR #1): child view models stop calling back into the
 parent `ClassEditorVM` (dependency direction; P0 only fixes the undo cleanup); a Roslyn-based
 architecture gate (no Avalonia types in view models, dependency direction); Nodify
@@ -187,6 +191,11 @@ for those who want to learn it.
   UnrealEditor hosting CoreCLR via UnrealSharp). Do B first, then A; a first cut of B belongs in
   the U1 prototype.
 - Natural-language/AI assist that proposes nodes from a description (opt-in, reviewable diff).
+- Scope UI for block-scoped variables (with P7):
+  - blocks shown as nested, softly tinted regions on the canvas, with their local variables listed in the
+    region header (building on Nodify grouping containers);
+  - a synchronized tree in the Variables panel (Class → Method → For → If) for overview, rename, drag and
+    keyboard access; selecting in one highlights the other.
 - Node search (owner ideas, 2026-09-25):
   - results grouped into **collapsible categories** (tree/expanders, collapsed by default when not filtering),
     so browsing with the mouse is easy;
@@ -206,4 +215,11 @@ dominator/post-dominator analysis; keep the goto + jump-stack translator as fall
 irregular graphs; snapshot tests plus execution-equivalence tests between both translators.
 Scheduled after the owner deferred it on 2026-09-24 (current output works). Can run in
 parallel with P3–P6.
+Block-scoped local variables (owner idea, 2026-09-25): variables owned by for/foreach/while/if bodies.
+- Scope is inferred from the structured graph (e.g. the body of a For is what's reachable from its Loop Body
+  pin, bounded by dominator analysis), and optionally declared with explicit scope regions.
+- Generated C# declares each variable inside its own `{ }`.
+- Using a variable outside its scope is an error shown on the node.
+- Semantics to define in the spec: per-iteration reset (C# semantics), capture by async/latent nodes, and
+  irregular graphs where a node belongs to several scopes.
 

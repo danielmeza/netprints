@@ -17,17 +17,17 @@ public sealed class SearchPopup(IUiDriver driver, AutomationQuery window)
     /// <summary>The 16-px icon of a row.</summary>
     public UiElement RowIcon(string text) => Results.Find(AutomationIds.SearchRowIcon, name: text, index: 0);
 
-    public async Task<bool> IsOpenAsync(CancellationToken cancellationToken) => await PropertyAsync("IsOpen", cancellationToken) == "True";
+    public async Task<bool> IsOpenAsync(CancellationToken cancellationToken) => await PropertyAsync(AutomationPropertyNames.IsOpen, cancellationToken) == "True";
 
     /// <summary>Waits until the popup is open with its suggestions listed.</summary>
     public async Task<SearchPopup> WaitOpenAsync(CancellationToken cancellationToken)
     {
-        await WaitUntilAsync(e => e["IsOpen"] == "True", "open", cancellationToken);
-        await Results.WaitUntilAsync(e => int.TryParse(e["ItemCount"], out int n) && n > 0, "suggestions listed", cancellationToken, TimeSpan.FromSeconds(60));
+        await WaitUntilAsync(e => e[AutomationPropertyNames.IsOpen] == "True", "open", cancellationToken);
+        await Results.WaitUntilAsync(e => int.TryParse(e[AutomationPropertyNames.ItemCount], out int n) && n > 0, "suggestions listed", cancellationToken, TimeSpan.FromSeconds(60));
         return this;
     }
 
-    public Task WaitClosedAsync(CancellationToken cancellationToken) => WaitUntilAsync(e => e["IsOpen"] == "False", "closed", cancellationToken);
+    public Task WaitClosedAsync(CancellationToken cancellationToken) => WaitUntilAsync(e => e[AutomationPropertyNames.IsOpen] == "False", "closed", cancellationToken);
 
     public async Task<IReadOnlyList<string>> RowTextsAsync(CancellationToken cancellationToken) =>
         (await Driver.FindAllAsync(new AutomationQuery(AutomationIds.SearchRowText) { Within = Results.Query }, cancellationToken))

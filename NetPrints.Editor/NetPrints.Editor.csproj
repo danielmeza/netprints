@@ -9,6 +9,8 @@
   <ItemGroup>
     <PackageReference Include="Avalonia" />
     <PackageReference Include="Avalonia.Themes.Fluent" />
+    <!-- The graph grid draws on the leased SKCanvas (GridBackground). -->
+    <PackageReference Include="Avalonia.Skia" />
     <PackageReference Include="Avalonia.Fonts.Inter" />
     <PackageReference Include="Nodify.Avalonia" />
     <PackageReference Include="CommunityToolkit.Mvvm" />
@@ -25,6 +27,7 @@
 
   <ItemGroup>
     <AvaloniaResource Include="Assets\**" />
+    <EmbeddedResource Include="Graph\GridShader.sksl" LogicalName="NetPrints.Editor.Graph.GridShader.sksl" />
   </ItemGroup>
 
   <ItemGroup>

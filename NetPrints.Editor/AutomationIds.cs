@@ -48,6 +48,7 @@ public static class AutomationIds
 
     // Graph canvas
     public const string GraphEditor = "Graph.Editor";
+    public const string GraphGrid = "Graph.Grid";
     public const string GraphWatermark = "Graph.Watermark";
     public const string GraphSearchPopup = "Graph.SearchPopup";
     public const string GraphGetSetPopup = "Graph.GetSetPopup";

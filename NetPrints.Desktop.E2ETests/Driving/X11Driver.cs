@@ -30,7 +30,7 @@ public sealed class X11Driver(XServer server, EditorProcess editor, Tool tool) :
         var elements = await editor.Client.FindAsync(query, cancellationToken);
         foreach (var element in elements)
         {
-            if (element["X11Window"] is { Length: > 0 } id)
+            if (element[AutomationPropertyNames.X11Window] is { Length: > 0 } id)
             {
                 x11Windows[element.Window] = id;
             }
