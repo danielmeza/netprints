@@ -27,11 +27,17 @@ public partial class GraphEditorView : UserControl
     {
         InitializeComponent();
 
-        // 28-px grid that follows panning and zooming (PAR-38).
+        // 28-px grid that follows panning and zooming (PAR-38), lines tinted from the theme.
+        IBrush gridLineBrush = Brushes.Gray;
+        if (Application.Current?.TryGetResource("SystemControlForegroundBaseMediumLowBrush", Application.Current.ActualThemeVariant, out var resource) == true
+            && resource is IBrush themeBrush)
+        {
+            gridLineBrush = themeBrush;
+        }
         gridBrush = new DrawingBrush(new GeometryDrawing
         {
             Geometry = new RectangleGeometry(new Rect(0, 0, GraphConstants.GridCellSize, GraphConstants.GridCellSize)),
-            Pen = new Pen(Brushes.Gray, 0.5),
+            Pen = new Pen(gridLineBrush, 0.5),
         })
         {
             TileMode = TileMode.Tile,
