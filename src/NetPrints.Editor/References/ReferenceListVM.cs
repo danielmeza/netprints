@@ -13,6 +13,11 @@ public sealed partial class ReferenceListVM : ObservableObject, IDisposable
 {
     private readonly EditorContext context;
 
+    /// <summary>
+    /// Wraps <paramref name="project"/>'s references.
+    /// </summary>
+    /// <param name="project">Project whose references are shown and edited.</param>
+    /// <param name="context">Host services shared across the editor.</param>
     public ReferenceListVM(Project project, EditorContext context)
     {
         Project = project;
@@ -21,8 +26,10 @@ public sealed partial class ReferenceListVM : ObservableObject, IDisposable
             project.References, r => new CompilationReferenceVM(r));
     }
 
+    /// <summary>The project whose references are shown and edited.</summary>
     public Project Project { get; }
 
+    /// <summary>View models for <see cref="Project"/>'s references.</summary>
     public ObservableViewModelCollection<CompilationReferenceVM, CompilationReference> References { get; }
 
     /// <summary>Adds an assembly; duplicates (full path, case-insensitive) are ignored (PAR-17).</summary>
@@ -96,5 +103,6 @@ public sealed partial class ReferenceListVM : ObservableObject, IDisposable
         }
     }
 
+    /// <summary>Disposes <see cref="References"/> and every reference view model.</summary>
     public void Dispose() => References.Dispose();
 }
