@@ -4,7 +4,7 @@
         x:Class="NetPrints.Editor.Dialogs.ErrorDialog"
         Icon="avares://NetPrints.Editor/Assets/NetPrintsLogo.ico"
         Width="700" Height="400"
-        WindowStartupLocation="CenterOwner">
+        WindowStartupLocation="CenterOwner" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ErrorDialog}">
   <Grid RowDefinitions="*,Auto" Margin="8">
     <!-- Read-only but selectable so the error can be copied. -->
     <TextBox x:Name="MessageBox" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ErrorMessage}" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True"

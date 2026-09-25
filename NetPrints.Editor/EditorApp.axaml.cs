@@ -1,4 +1,6 @@
 using Avalonia;
+using Avalonia.Animation;
+using Avalonia.Styling;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
@@ -17,6 +19,16 @@ public partial class EditorApp : Application
     public const string DefaultFontFamily = "avares://Avalonia.Fonts.Inter/Assets#Inter";
 
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
+
+    /// <summary>
+    /// Removes all transitions (theme animations), so screenshots and pixel checks are taken in a
+    /// settled state. Used by the UI tests and by the desktop host in automation mode.
+    /// </summary>
+    public void DisableTransitions() =>
+        Styles.Add(new Style(x => x.Is<Control>())
+        {
+            Setters = { new Setter(Animatable.TransitionsProperty, null) },
+        });
 
     public override void OnFrameworkInitializationCompleted()
     {

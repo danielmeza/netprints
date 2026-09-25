@@ -59,6 +59,9 @@ public sealed partial class NodePinVM : ObservableObject, IDisposable
 
     public bool IsOutput => !IsInput;
 
+    /// <summary>Stable identity of the pin within its node for UI automation: "in:&lt;name&gt;" or "out:&lt;name&gt;".</summary>
+    public string AutomationName => $"{(IsInput ? "in" : "out")}:{Pin.Name}";
+
     /// <summary>Exec pins are squares (PAR-43).</summary>
     public bool ShowRectangle => Kind == PinKind.Exec;
 

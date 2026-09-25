@@ -50,7 +50,7 @@
 
       <nodify:NodifyEditor.ConnectionTemplate>
         <DataTemplate x:DataType="edpins:ConnectionVM">
-          <nc:Connection Source="{Binding Source.Anchor, Converter={x:Static edgraph:GraphPointConverter.Instance}}"
+          <nc:Connection AutomationProperties.AutomationId="{x:Static ed:AutomationIds.Connection}" AutomationProperties.Name="{Binding AutomationName}" Source="{Binding Source.Anchor, Converter={x:Static edgraph:GraphPointConverter.Instance}}"
                          Target="{Binding Target.Anchor, Converter={x:Static edgraph:GraphPointConverter.Instance}}"
                          Stroke="{Binding Kind, Converter={x:Static edgraph:PinKindBrushConverter.Instance}}"
                          Classes.faint="{Binding IsFaint}"

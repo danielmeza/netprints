@@ -4,7 +4,7 @@
              xmlns:edsearch="clr-namespace:NetPrints.Editor.Search"
              x:Class="NetPrints.Editor.Search.NodeSearchView"
              x:DataType="edsearch:SuggestionListVM"
-             Width="700" Height="300">
+             Width="700" Height="300" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NodeSearch}">
   <!-- Node search popup (PAR-52): search box, virtualized grouped list with 16-px icons. -->
   <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" BorderBrush="{DynamicResource SystemAccentColor}" BorderThickness="1">
     <Grid RowDefinitions="Auto,*">

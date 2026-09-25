@@ -6,7 +6,7 @@
              x:DataType="edgetset:GetSetChooserVM"
              Width="200" Height="60">
   <!-- Get/Set chooser (PAR-55): closes when the pointer leaves. -->
-  <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" BorderBrush="{DynamicResource SystemAccentColor}"
+  <Border AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GetSetChooser}" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" BorderBrush="{DynamicResource SystemAccentColor}"
           BorderThickness="1" PointerExited="OnPointerExited">
     <Grid ColumnDefinitions="*,*">
       <Button x:Name="GetButton" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GetButton}" Content="Get" Margin="4" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"

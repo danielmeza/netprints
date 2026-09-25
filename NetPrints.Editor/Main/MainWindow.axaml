@@ -8,7 +8,7 @@
         x:DataType="edmain:MainEditorVM"
         Title="{Binding Title}"
         Icon="avares://NetPrints.Editor/Assets/NetPrintsLogo.ico"
-        Width="800" Height="600">
+        Width="800" Height="600" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MainWindow}">
   <Panel>
     <Grid RowDefinitions="Auto,Auto,Auto,*" Margin="5">
       <StackPanel Orientation="Horizontal">
@@ -25,7 +25,7 @@
 
       <Grid Grid.Row="2" ColumnDefinitions="*,*">
         <Button x:Name="NewClassButton" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MainNewClassButton}" Classes="flat" Content="New Class" Command="{Binding NewClassCommand}" FontSize="16" />
-        <Button Grid.Column="1" Classes="flat" Content="Existing Class" Command="{Binding AddExistingClassCommand}" FontSize="16" />
+        <Button Grid.Column="1" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MainExistingClassButton}" Classes="flat" Content="Existing Class" Command="{Binding AddExistingClassCommand}" FontSize="16" />
       </Grid>
 
       <ScrollViewer Grid.Row="3" Margin="5,0,5,5" VerticalScrollBarVisibility="Auto">
@@ -36,7 +36,7 @@
                 <Button Classes="flat" Content="{Binding FullName}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MainOpenClassButton}"
                         Command="{Binding $parent[ItemsControl].((edmain:MainEditorVM)DataContext).OpenClassCommand}"
                         CommandParameter="{Binding}" />
-                <Button Grid.Column="1" Classes="icon" Width="30" Height="30" CornerRadius="15" ToolTip.Tip="Remove class"
+                <Button Grid.Column="1" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MainRemoveClassButton}" AutomationProperties.Name="{Binding FullName}" Classes="icon" Width="30" Height="30" CornerRadius="15" ToolTip.Tip="Remove class"
                         Command="{Binding $parent[ItemsControl].((edmain:MainEditorVM)DataContext).RemoveClassCommand}"
                         CommandParameter="{Binding}">
                   <mi:MaterialIcon Kind="Minus" />
@@ -57,8 +57,8 @@
         <!-- Project pane (PAR-02..06) -->
         <StackPanel x:Name="ProjectPane" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MainProjectPane}" IsVisible="{Binding IsProjectPaneOpen}" Spacing="4">
           <TextBlock Classes="header" Text="Project" />
-          <Button Classes="flat" Content="Create Project" Command="{Binding CreateProjectCommand}" />
-          <Button Classes="flat" Content="Open Project" Command="{Binding OpenProjectCommand}" />
+          <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MainCreateProjectButton}" Classes="flat" Content="Create Project" Command="{Binding CreateProjectCommand}" />
+          <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MainOpenProjectButton}" Classes="flat" Content="Open Project" Command="{Binding OpenProjectCommand}" />
           <Button Classes="flat" Content="Save Project" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MainSaveProjectButton}" Command="{Binding SaveProjectCommand}" />
         </StackPanel>
 
@@ -67,14 +67,14 @@
           <TextBlock Classes="header" Text="Settings" />
           <Grid ColumnDefinitions="Auto,*" ToolTip.Tip="What to output on compilation.">
             <TextBlock Text="Output" VerticalAlignment="Center" Margin="4" />
-            <ComboBox Grid.Column="1" Margin="4" HorizontalAlignment="Stretch"
+            <ComboBox AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MainOutputChooser}" Grid.Column="1" Margin="4" HorizontalAlignment="Stretch"
                       IsEnabled="{Binding IsProjectOpen}"
                       ItemsSource="{Binding CompilationOutputs}"
                       SelectedItem="{Binding CompilationOutput}" />
           </Grid>
           <Grid ColumnDefinitions="Auto,*" ToolTip.Tip="Type of binary to output.">
             <TextBlock Text="Binary type" VerticalAlignment="Center" Margin="4" />
-            <ComboBox Grid.Column="1" Margin="4" HorizontalAlignment="Stretch"
+            <ComboBox AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MainBinaryTypeChooser}" Grid.Column="1" Margin="4" HorizontalAlignment="Stretch"
                       IsEnabled="{Binding IsProjectOpen}"
                       ItemsSource="{Binding BinaryTypes}"
                       SelectedItem="{Binding OutputBinaryType}" />

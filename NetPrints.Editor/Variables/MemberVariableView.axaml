@@ -6,7 +6,7 @@
              x:Class="NetPrints.Editor.Variables.MemberVariableView"
              x:DataType="edvariables:MemberVariableVM">
   <!-- A variable row (PAR-29) -->
-  <StackPanel>
+  <StackPanel AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableRow}" AutomationProperties.Name="{Binding Name}">
     <Grid ColumnDefinitions="Auto,*">
       <Button Classes="icon" ToolTip.Tip="Remove variable" Command="{Binding RemoveCommand}">
         <mi:MaterialIcon Kind="Minus" />
@@ -22,7 +22,7 @@
         <Button Classes="icon" ToolTip.Tip="Remove getter" Command="{Binding RemoveGetterCommand}">
           <mi:MaterialIcon Kind="Minus" />
         </Button>
-        <TextBlock Grid.Column="1" Text="Get" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" Background="Transparent"
+        <TextBlock Grid.Column="1" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableGetter}" Text="Get" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" Background="Transparent"
                    DoubleTapped="OnGetterDoubleTapped" />
       </Grid>
     </Panel>
@@ -33,7 +33,7 @@
         <Button Classes="icon" ToolTip.Tip="Remove setter" Command="{Binding RemoveSetterCommand}">
           <mi:MaterialIcon Kind="Minus" />
         </Button>
-        <TextBlock Grid.Column="1" Text="Set" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" Background="Transparent"
+        <TextBlock Grid.Column="1" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableSetter}" Text="Set" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" Background="Transparent"
                    DoubleTapped="OnSetterDoubleTapped" />
       </Grid>
     </Panel>

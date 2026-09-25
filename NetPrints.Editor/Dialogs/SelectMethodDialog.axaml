@@ -7,7 +7,7 @@
         Title="Select Method"
         Icon="avares://NetPrints.Editor/Assets/NetPrintsLogo.ico"
         Width="700" Height="160"
-        WindowStartupLocation="CenterOwner">
+        WindowStartupLocation="CenterOwner" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SelectMethodDialog}">
   <StackPanel Margin="12" Spacing="8">
     <!-- Method chooser; the first method is preselected (PAR-59). -->
     <ComboBox x:Name="MethodBox" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SelectMethodBox}" HorizontalAlignment="Stretch" MaxDropDownHeight="400">
@@ -17,7 +17,7 @@
         </DataTemplate>
       </ComboBox.ItemTemplate>
     </ComboBox>
-    <Button x:Name="SelectButton" Content="Select" HorizontalAlignment="Right" MinWidth="80" IsDefault="True"
+    <Button x:Name="SelectButton" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SelectMethodButton}" Content="Select" HorizontalAlignment="Right" MinWidth="80" IsDefault="True"
             Click="OnSelectClicked" />
   </StackPanel>
 </Window>

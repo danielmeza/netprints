@@ -142,19 +142,21 @@ public class ClassEditorVMTests : IDisposable
         Assert.Contains("namespace Other", vm.GeneratedCode);
     }
 
-    [Fact(Timeout = 30000)]
-    public async Task GeneratedCodeLoopRefreshesWithinTwoSeconds()
+    [Fact]
+    public void GeneratedCodeRefreshesEverySecondInVirtualTime()
     {
         vm.StartGeneratedCodeLoop();
         vm.Name = "Looped";
 
-        var deadline = DateTime.UtcNow.AddSeconds(2);
-        while (!vm.GeneratedCode.Contains("class Looped") && DateTime.UtcNow < deadline)
-        {
-            await Task.Delay(50, TestContext.Current.CancellationToken);
-        }
+        editor.Scheduler.AdvanceBy(TimeSpan.FromMilliseconds(999).Ticks);
+        Assert.DoesNotContain("class Looped", vm.GeneratedCode);
 
+        editor.Scheduler.AdvanceBy(TimeSpan.FromMilliseconds(1).Ticks);
         Assert.Contains("class Looped", vm.GeneratedCode);
+
+        vm.Name = "LoopedAgain";
+        editor.Scheduler.AdvanceBy(TimeSpan.FromSeconds(1).Ticks);
+        Assert.Contains("class LoopedAgain", vm.GeneratedCode);
     }
 
     [Fact]

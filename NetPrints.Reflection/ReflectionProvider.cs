@@ -11,18 +11,25 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace NetPrints.Reflection
 {
+    /// <summary>
+    /// Per-provider cache of the members of type symbols. Owned by one <see cref="ReflectionProvider"/>,
+    /// so it lives and dies with that provider's compilation and nothing is shared between providers
+    /// (the earlier static cache was process-wide state).
+    /// </summary>
+    public sealed class MemberCache
+    {
+        internal ConditionalWeakTable<ITypeSymbol, List<ISymbol>> Members { get; } = new ConditionalWeakTable<ITypeSymbol, List<ISymbol>>();
+    }
+
     public static class ISymbolExtensions
     {
-        // Weak, thread-safe cache: entries die with their compilation (the static Dictionary used
-        // before kept every compilation alive and was not safe for concurrent use).
-        private static readonly ConditionalWeakTable<ITypeSymbol, List<ISymbol>> allMembersCache = new ConditionalWeakTable<ITypeSymbol, List<ISymbol>>();
 
         /// <summary>
         /// Gets all members of a symbol including inherited ones, but not overriden ones.
         /// </summary>
-        public static IEnumerable<ISymbol> GetAllMembers(this ITypeSymbol symbol)
+        public static IEnumerable<ISymbol> GetAllMembers(this ITypeSymbol symbol, MemberCache cache)
         {
-            if (allMembersCache.TryGetValue(symbol, out var allMembers))
+            if (cache.Members.TryGetValue(symbol, out var allMembers))
             {
                 return allMembers;
             }
@@ -55,7 +62,7 @@ namespace NetPrints.Reflection
                 symbol = symbol.BaseType;
             }
 
-            allMembersCache.AddOrUpdate(startSymbol, members.ToList());
+            cache.Members.AddOrUpdate(startSymbol, members.ToList());
 
             return members;
         }
@@ -70,17 +77,17 @@ namespace NetPrints.Reflection
             return symbol.DeclaredAccessibility == Microsoft.CodeAnalysis.Accessibility.Protected;
         }
 
-        public static IEnumerable<IMethodSymbol> GetMethods(this ITypeSymbol symbol)
+        public static IEnumerable<IMethodSymbol> GetMethods(this ITypeSymbol symbol, MemberCache cache)
         {
-            return symbol.GetAllMembers()
+            return symbol.GetAllMembers(cache)
                     .Where(member => member.Kind == SymbolKind.Method)
                     .Cast<IMethodSymbol>()
                     .Where(method => method.MethodKind == MethodKind.Ordinary || method.MethodKind == MethodKind.BuiltinOperator || method.MethodKind == MethodKind.UserDefinedOperator);
         }
 
-        public static IEnumerable<IMethodSymbol> GetConverters(this ITypeSymbol symbol)
+        public static IEnumerable<IMethodSymbol> GetConverters(this ITypeSymbol symbol, MemberCache cache)
         {
-            return symbol.GetAllMembers()
+            return symbol.GetAllMembers(cache)
                     .Where(member => member.Kind == SymbolKind.Method)
                     .Cast<IMethodSymbol>()
                     .Where(method => method.MethodKind == MethodKind.Conversion);
@@ -130,6 +137,7 @@ namespace NetPrints.Reflection
 
     public class ReflectionProvider : IReflectionProvider
     {
+        private readonly MemberCache memberCache = new MemberCache();
         private readonly CSharpCompilation compilation;
         private readonly DocumentationUtil documentationUtil;
         private readonly List<IMethodSymbol> extensionMethods;
@@ -204,7 +212,7 @@ namespace NetPrints.Reflection
                 compilation = CSharpCompilation.Create("C", references: assemblyReferences);
             }
 
-            extensionMethods = new List<IMethodSymbol>(GetValidTypes().SelectMany(t => t.GetMethods().Where(m => m.IsExtensionMethod)));
+            extensionMethods = new List<IMethodSymbol>(GetValidTypes().SelectMany(t => t.GetMethods(memberCache).Where(m => m.IsExtensionMethod)));
 
             documentationUtil = new DocumentationUtil(compilation);
         }
@@ -276,7 +284,7 @@ namespace NetPrints.Reflection
             {
                 // Get all overridable methods, ignore special ones (properties / events)
 
-                return type.GetMethods()
+                return type.GetMethods(memberCache)
                     .Where(m =>
                         (m.IsVirtual || m.IsOverride || m.IsAbstract)
                         && m.MethodKind == MethodKind.Ordinary)
@@ -300,7 +308,7 @@ namespace NetPrints.Reflection
 
             if (type != null)
             {
-                return type.GetMethods()
+                return type.GetMethods(memberCache)
                         .Where(m =>
                             m.Name == methodSpecifier.Name
                             && m.IsPublic()
@@ -337,7 +345,7 @@ namespace NetPrints.Reflection
 
             if (symbol != null)
             {
-                return symbol.GetAllMembers()
+                return symbol.GetAllMembers(memberCache)
                     .Where(member => member.Kind == SymbolKind.Field)
                     .Select(member => member.Name);
             }
@@ -439,7 +447,7 @@ namespace NetPrints.Reflection
         private IMethodSymbol GetMethodInfoFromSpecifier(MethodSpecifier specifier)
         {
             INamedTypeSymbol declaringType = GetTypeFromSpecifier<INamedTypeSymbol>(specifier.DeclaringType);
-            return declaringType?.GetMethods().FirstOrDefault(
+            return declaringType?.GetMethods(memberCache).FirstOrDefault(
                     m => m.Name == specifier.Name
                     && m.Parameters.Select(p => ReflectionConverter.BaseTypeSpecifierFromSymbol(p.Type)).SequenceEqual(specifier.ArgumentTypes));
         }
@@ -508,7 +516,7 @@ namespace NetPrints.Reflection
                     return new MethodSpecifier[0];
                 }
 
-                methodSymbols = type.GetMethods();
+                methodSymbols = type.GetMethods(memberCache);
 
                 var extensions = extensionMethods.Where(m => type.IsSubclassOf(m.Parameters[0].Type)).ToList();
 
@@ -520,7 +528,7 @@ namespace NetPrints.Reflection
                 // Get all methods of all public types
                 methodSymbols = GetValidTypes()
                                 .Where(t => t.IsPublic())
-                                .SelectMany(t => t.GetMethods());
+                                .SelectMany(t => t.GetMethods(memberCache));
             }
 
             // Check static
@@ -636,14 +644,14 @@ namespace NetPrints.Reflection
                     return new VariableSpecifier[0];
                 }
 
-                propertySymbols = type.GetAllMembers()
+                propertySymbols = type.GetAllMembers(memberCache)
                     .Where(m => m.Kind == SymbolKind.Property || m.Kind == SymbolKind.Field);
             }
             else
             {
                 // Get all properties of all public types
                 propertySymbols = GetValidTypes()
-                    .SelectMany(t => t.GetAllMembers()
+                    .SelectMany(t => t.GetAllMembers(memberCache)
                         .Where(m => m.Kind == SymbolKind.Property || m.Kind == SymbolKind.Field));
             }
 

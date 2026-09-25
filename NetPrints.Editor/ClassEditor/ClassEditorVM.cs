@@ -1,3 +1,4 @@
+using System.Reactive.Linq;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -37,9 +38,9 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     ];
 
     private readonly ClassTranslator classTranslator = new();
-    private readonly CancellationTokenSource lifetime = new();
+
     private readonly HashSet<Variable> subscribedVariables = [];
-    private bool generatedCodeLoopStarted;
+    private IDisposable? generatedCodeLoop;
 
     public ClassEditorVM(ClassGraph cls, EditorContext context)
     {
@@ -314,32 +315,11 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     /// editor's background translation raced with edits. On very large classes this can stutter
     /// about once a second; translating a snapshot off the UI thread is a P3 performance item.
     /// </remarks>
-    public void StartGeneratedCodeLoop(TimeSpan? interval = null)
+    public void StartGeneratedCodeLoop()
     {
-        if (generatedCodeLoopStarted)
-        {
-            return;
-        }
-
-        generatedCodeLoopStarted = true;
-        var delay = interval ?? TimeSpan.FromSeconds(1);
-        var token = lifetime.Token;
-
-        _ = Task.Run(async () =>
-        {
-            while (!token.IsCancellationRequested)
-            {
-                try
-                {
-                    await Task.Delay(delay, token).ConfigureAwait(false);
-                    await Context.Dispatcher.InvokeAsync(RefreshGeneratedCode).ConfigureAwait(false);
-                }
-                catch (OperationCanceledException)
-                {
-                    break;
-                }
-            }
-        }, token);
+        // On the context's scheduler, so tests drive it in virtual time.
+        generatedCodeLoop ??= Observable.Interval(TimeSpan.FromSeconds(1), Context.Scheduler)
+            .Subscribe(_ => Context.Dispatcher.Post(RefreshGeneratedCode));
     }
 
     // Toolbar (PAR-23)
@@ -507,10 +487,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
 
     public void Dispose()
     {
-        if (!lifetime.IsCancellationRequested)
-        {
-            lifetime.Cancel();
-        }
+        generatedCodeLoop?.Dispose();
 
         Context.Reflection.Reloaded -= OnReflectionReloaded;
         Class.Variables.CollectionChanged -= OnMembersChanged;

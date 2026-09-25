@@ -15,6 +15,9 @@ public sealed partial class ConnectionVM(NodePinVM source, NodePinVM target) : O
 
     public PinKind Kind => Source.Kind;
 
+    /// <summary>Stable identity of the cable for UI automation: "&lt;node&gt;.&lt;pin&gt;-&gt;&lt;node&gt;.&lt;pin&gt;".</summary>
+    public string AutomationName => $"{Source.Pin.Node.Name}.{Source.Pin.Name}->{Target.Pin.Node.Name}.{Target.Pin.Name}";
+
     /// <summary>Faint cables are thinner and more transparent (toggled with the mouse back button).</summary>
     [ObservableProperty]
     public partial bool IsFaint { get; set; }

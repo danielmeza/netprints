@@ -13,7 +13,7 @@
   <UserControl.Resources>
     <!-- Pin connector: exec = square, data = circle, type = triangle; dimmed when unconnected (PAR-43). -->
     <ControlTemplate x:Key="PinConnectorTemplate">
-      <Panel Width="14" Height="14" x:DataType="edpins:NodePinVM" Background="Transparent">
+      <Panel Width="14" Height="14" x:DataType="edpins:NodePinVM" Background="Transparent" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PinConnector}">
         <Rectangle Classes="pin" Width="14" Height="14" StrokeThickness="3" IsVisible="{Binding ShowRectangle}">
           <Rectangle.Fill>
             <MultiBinding Converter="{x:Static edgraph:PinFillConverter.Instance}">
@@ -78,7 +78,7 @@
   </UserControl.Styles>
 
   <!-- Node (PAR-39..42): header colored by kind, selected border, shadow, label. -->
-  <Border x:Name="NodeBorder" Classes.reroute="{Binding IsRerouteNode}"
+  <Border x:Name="NodeBorder" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.Node}" AutomationProperties.Name="{Binding Name}" Classes.reroute="{Binding IsRerouteNode}"
           BorderThickness="2" Background="#AA202020" BoxShadow="4 4 8 0 #80000000"
           BorderBrush="{Binding IsSelected, Converter={x:Static edgraph:SelectedBorderConverter.Instance}}">
     <StackPanel>
@@ -109,7 +109,7 @@
           <ItemsControl x:Name="InputPins" ItemsSource="{Binding Inputs}">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="edpins:NodePinVM">
-                <nn:NodeInput Height="28" Header="{Binding}" ToolTip.Tip="{Binding ToolTip}"
+                <nn:NodeInput Height="28" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.Pin}" AutomationProperties.Name="{Binding AutomationName}" Header="{Binding}" ToolTip.Tip="{Binding ToolTip}"
                               HeaderTemplate="{StaticResource PinHeaderTemplate}"
                               ConnectorTemplate="{StaticResource PinConnectorTemplate}"
                               IsConnected="{Binding IsConnected}"
@@ -132,7 +132,7 @@
           <ItemsControl x:Name="OutputPins" ItemsSource="{Binding Outputs}">
             <ItemsControl.ItemTemplate>
               <DataTemplate x:DataType="edpins:NodePinVM">
-                <nn:NodeOutput Height="28" Header="{Binding}" ToolTip.Tip="{Binding ToolTip}"
+                <nn:NodeOutput Height="28" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.Pin}" AutomationProperties.Name="{Binding AutomationName}" Header="{Binding}" ToolTip.Tip="{Binding ToolTip}"
                                HeaderTemplate="{StaticResource PinHeaderTemplate}"
                                ConnectorTemplate="{StaticResource PinConnectorTemplate}"
                                IsConnected="{Binding IsConnected}"

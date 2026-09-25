@@ -68,4 +68,48 @@ public static class AutomationIds
     public const string SelectTypeBox = "Dialogs.SelectType.Box";
     public const string SelectMethodBox = "Dialogs.SelectMethod.Box";
     public const string ReferencesCloseButton = "References.Close";
+
+    // Windows (AutomationProperties.Name carries the class full name for class windows)
+    public const string MainWindow = "Main.Window";
+    public const string ClassEditorWindow = "ClassEditor.Window";
+    public const string ReferencesDialog = "References.Dialog";
+    public const string ErrorDialog = "Dialogs.Error";
+    public const string SelectTypeDialog = "Dialogs.SelectType";
+    public const string SelectMethodDialog = "Dialogs.SelectMethod";
+    public const string SelectTypeButton = "Dialogs.SelectType.Select";
+    public const string SelectMethodButton = "Dialogs.SelectMethod.Select";
+
+    // Main window panes
+    public const string MainCreateProjectButton = "Main.CreateProjectButton";
+    public const string MainOpenProjectButton = "Main.OpenProjectButton";
+    public const string MainExistingClassButton = "Main.ExistingClassButton";
+    public const string MainRemoveClassButton = "Main.RemoveClassButton";
+    public const string MainOutputChooser = "Main.OutputChooser";
+    public const string MainBinaryTypeChooser = "Main.BinaryTypeChooser";
+
+    // Class editor lists and splitters
+    public const string ClassEditorConstructorList = "ClassEditor.ConstructorList";
+    public const string ClassEditorCreateMethodButton = "ClassEditor.CreateMethodButton";
+    public const string ClassEditorCreateConstructorButton = "ClassEditor.CreateConstructorButton";
+    public const string ClassEditorCreateVariableButton = "ClassEditor.CreateVariableButton";
+    public const string ClassEditorLeftColumn = "ClassEditor.LeftColumn";
+    public const string ClassEditorInspectorColumn = "ClassEditor.InspectorColumn";
+    public const string ClassEditorMethodsSplitter = "ClassEditor.Splitter.Methods";
+    public const string ClassEditorConstructorsSplitter = "ClassEditor.Splitter.Constructors";
+    public const string ClassEditorLeftSplitter = "ClassEditor.Splitter.Left";
+    public const string ClassEditorErrorsSplitter = "ClassEditor.Splitter.Errors";
+    public const string ClassEditorInspectorSplitter = "ClassEditor.Splitter.Inspector";
+
+    // Variables list rows (AutomationProperties.Name carries the variable name)
+    public const string VariableRow = "Variables.Row";
+    public const string VariableGetter = "Variables.Getter";
+    public const string VariableSetter = "Variables.Setter";
+
+    // Graph items (AutomationProperties.Name carries a stable identity)
+    public const string Node = "Graph.Node";                       // Name = Node.Name, e.g. "CallMethodNode"
+    public const string Pin = "Graph.Pin";                         // Name = "in:<pin>" or "out:<pin>"
+    public const string PinConnector = "Graph.PinConnector";
+    public const string Connection = "Graph.Connection";           // Name = "<node>.<pin>-><node>.<pin>"
+    public const string GetSetChooser = "Graph.GetSetChooser";
+    public const string NodeSearch = "Search.View";
 }

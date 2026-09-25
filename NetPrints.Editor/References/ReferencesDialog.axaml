@@ -8,7 +8,7 @@
         Title="References"
         Icon="avares://NetPrints.Editor/Assets/NetPrintsLogo.ico"
         Width="700" Height="450"
-        WindowStartupLocation="CenterOwner">
+        WindowStartupLocation="CenterOwner" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ReferencesDialog}">
   <Grid RowDefinitions="Auto,*,Auto" Margin="8">
     <Grid ColumnDefinitions="*,*">
       <Button Classes="flat" Content="Assembly" Command="{Binding AddAssemblyCommand}"

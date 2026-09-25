@@ -11,7 +11,7 @@
         x:DataType="edclasseditor:ClassEditorVM"
         Title="{Binding Title}"
         Icon="avares://NetPrints.Editor/Assets/NetPrintsLogo.ico"
-        Width="1280" Height="720">
+        Width="1280" Height="720" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorWindow}" AutomationProperties.Name="{Binding Class.FullName}">
   <!-- Keyboard (PAR-37) -->
   <Window.KeyBindings>
     <KeyBinding Gesture="Delete" Command="{Binding DeleteSelectedNodesCommand}" />
@@ -36,7 +36,7 @@
 
     <!-- Resizable columns and rows (PAR-31) -->
     <Grid Grid.Row="1" ColumnDefinitions="250,5,*,5,250">
-      <Grid RowDefinitions="*,5,*,5,*">
+      <Grid RowDefinitions="*,5,*,5,*" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorLeftColumn}">
         <!-- Methods (PAR-24..26) -->
         <Grid RowDefinitions="Auto,*,Auto,Auto">
           <TextBlock Classes="header" Text="Methods" />
@@ -56,7 +56,7 @@
               </DataTemplate>
             </ListBox.ItemTemplate>
           </ListBox>
-          <Button Grid.Row="2" Classes="flat" Content="Create Method" Command="{Binding CreateMethodCommand}" FontSize="16" />
+          <Button Grid.Row="2" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorCreateMethodButton}" Classes="flat" Content="Create Method" Command="{Binding CreateMethodCommand}" FontSize="16" />
           <ComboBox x:Name="OverrideBox" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorOverrideChooser}" Grid.Row="3" HorizontalAlignment="Stretch" FontSize="16" Margin="4"
                     PlaceholderText="Override a method"
                     ItemsSource="{Binding OverridableMethods}"
@@ -69,12 +69,12 @@
           </ComboBox>
         </Grid>
 
-        <GridSplitter Grid.Row="1" ResizeDirection="Rows" />
+        <GridSplitter Grid.Row="1" ResizeDirection="Rows" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorMethodsSplitter}" />
 
         <!-- Constructors (PAR-27, 28) -->
         <Grid Grid.Row="2" RowDefinitions="Auto,*,Auto">
           <TextBlock Classes="header" Text="Constructors" />
-          <ListBox x:Name="ConstructorList" Grid.Row="1" ItemsSource="{Binding Constructors}">
+          <ListBox x:Name="ConstructorList" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorConstructorList}" Grid.Row="1" ItemsSource="{Binding Constructors}">
             <ListBox.ItemTemplate>
               <DataTemplate x:DataType="edclasseditor:MethodVM">
                 <Grid ColumnDefinitions="Auto,*">
@@ -90,10 +90,10 @@
               </DataTemplate>
             </ListBox.ItemTemplate>
           </ListBox>
-          <Button Grid.Row="2" Classes="flat" Content="Create Constructor" Command="{Binding CreateConstructorCommand}" FontSize="16" />
+          <Button Grid.Row="2" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorCreateConstructorButton}" Classes="flat" Content="Create Constructor" Command="{Binding CreateConstructorCommand}" FontSize="16" />
         </Grid>
 
-        <GridSplitter Grid.Row="3" ResizeDirection="Rows" />
+        <GridSplitter Grid.Row="3" ResizeDirection="Rows" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorConstructorsSplitter}" />
 
         <!-- Variables (PAR-29, 30) -->
         <Grid Grid.Row="4" RowDefinitions="Auto,*,Auto">
@@ -105,24 +105,24 @@
               </DataTemplate>
             </ListBox.ItemTemplate>
           </ListBox>
-          <Button Grid.Row="2" Classes="flat" Content="Create Variable" Command="{Binding CreateVariableCommand}" FontSize="16" />
+          <Button Grid.Row="2" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorCreateVariableButton}" Classes="flat" Content="Create Variable" Command="{Binding CreateVariableCommand}" FontSize="16" />
         </Grid>
       </Grid>
 
-      <GridSplitter Grid.Column="1" ResizeDirection="Columns" />
+      <GridSplitter Grid.Column="1" ResizeDirection="Columns" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorLeftSplitter}" />
 
       <!-- Graph, compile errors and status (PAR-32) -->
       <Grid Grid.Column="2" RowDefinitions="*,5,150,24">
         <edgraph:GraphEditorView x:Name="GraphEditor" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorGraph}" DataContext="{Binding OpenedGraph}" IsVisible="{Binding $self.DataContext, Converter={x:Static ObjectConverters.IsNotNull}}" />
-        <GridSplitter Grid.Row="1" ResizeDirection="Rows" />
+        <GridSplitter Grid.Row="1" ResizeDirection="Rows" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorErrorsSplitter}" />
         <ListBox x:Name="ErrorList" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorErrorList}" Grid.Row="2" ItemsSource="{Binding Project.LastCompileErrors, FallbackValue={x:Null}}" />
         <TextBlock x:Name="StatusText" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorStatusText}" Grid.Row="3" Margin="4,2" Text="{Binding Project.CompilationMessage, FallbackValue=''}" />
       </Grid>
 
-      <GridSplitter Grid.Column="3" ResizeDirection="Columns" />
+      <GridSplitter Grid.Column="3" ResizeDirection="Columns" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorInspectorSplitter}" />
 
       <!-- Inspectors (PAR-33..36) -->
-      <Panel Grid.Column="4">
+      <Panel Grid.Column="4" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorInspectorColumn}">
         <edinspectors:ClassInspectorView x:Name="ClassInspector" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassInspector}" IsVisible="{Binding ShowClassInspector}" />
         <edinspectors:VariableInspectorView x:Name="VariableInspector" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableInspector}" DataContext="{Binding SelectedVariable}" IsVisible="{Binding $parent[Window].((edclasseditor:ClassEditorVM)DataContext).ShowVariableInspector}" />
         <edinspectors:MethodInspectorView x:Name="MethodInspector" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MethodInspector}" DataContext="{Binding SelectedMethod}" IsVisible="{Binding $parent[Window].((edclasseditor:ClassEditorVM)DataContext).ShowMethodInspector}" />
