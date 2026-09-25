@@ -7,8 +7,11 @@
   <Application.Styles>
     <FluentTheme>
       <FluentTheme.Palettes>
-        <!-- Emerald accent (MahApps "Emerald" of the WPF editor). -->
-        <ColorPaletteResources x:Key="Dark" Accent="#FF008A00" />
+        <!-- Emerald accent and dark grey surfaces (MahApps Dark.Emerald of the WPF editor: #252525
+             window, #2B2B2B panels), instead of Fluent's default near-black. -->
+        <ColorPaletteResources x:Key="Dark" Accent="#FF008A00"
+                                RegionColor="#FF252525" AltHigh="#FF252525" AltMediumHigh="#FF2B2B2B" AltMedium="#FF2B2B2B" AltMediumLow="#FF333333"
+                                ChromeLow="#FF2B2B2B" ChromeMedium="#FF333333" ChromeMediumLow="#FF3A3A3A" ChromeHigh="#FF454545" />
         <ColorPaletteResources x:Key="Light" Accent="#FF008A00" />
       </FluentTheme.Palettes>
     </FluentTheme>
