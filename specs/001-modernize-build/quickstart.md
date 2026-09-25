@@ -5,7 +5,8 @@
 - .NET 10 SDK 10.0.100 or later (`dotnet --version`). `global.json` rolls forward to the newest
   installed 10.0 feature band.
 - To run the desktop editor (not needed for tests): a Linux desktop session (X11 or Wayland with
-  XWayland) and fontconfig. Headless tests need no display.
+  XWayland) and fontconfig. Headless tests need no display, no fonts and no fontconfig (verified in a
+  clean `mcr.microsoft.com/dotnet/sdk:10.0` container).
 
 ## 2. Build and test (SC-001: two commands)
 

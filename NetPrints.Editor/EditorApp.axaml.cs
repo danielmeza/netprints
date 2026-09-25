@@ -11,6 +11,9 @@ namespace NetPrints.Editor;
 /// </summary>
 public partial class EditorApp : Application
 {
+    /// <summary>The embedded Inter font (Avalonia.Fonts.Inter), used as the default font family.</summary>
+    public const string DefaultFontFamily = "avares://Avalonia.Fonts.Inter/Assets#Inter";
+
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
 
     public override void OnFrameworkInitializationCompleted()

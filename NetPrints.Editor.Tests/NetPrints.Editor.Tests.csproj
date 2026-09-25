@@ -11,6 +11,9 @@
     <PackageReference Include="MSTest" />
     <PackageReference Include="Avalonia.Headless" />
     <PackageReference Include="Avalonia.Skia" />
+    <!-- Use the dependency-free Linux Skia build (no libfontconfig) instead of the default one. -->
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux" ExcludeAssets="all" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" />
   </ItemGroup>
 
   <ItemGroup>

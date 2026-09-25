@@ -1,6 +1,7 @@
 using System.Runtime.ExceptionServices;
 using Avalonia;
 using Avalonia.Headless;
+using Avalonia.Media;
 using Avalonia.Threading;
 
 namespace NetPrints.Editor.Tests.Ui;
@@ -12,7 +13,9 @@ public static class TestAppBuilder
         AppBuilder.Configure<EditorApp>()
             .UseSkia()
             .UseHeadless(new AvaloniaHeadlessPlatformOptions { UseHeadlessDrawing = false })
-            .WithInterFont();
+            .WithInterFont()
+            // No system fonts are needed (clean CI images and containers have none).
+            .With(new FontManagerOptions { DefaultFamilyName = EditorApp.DefaultFontFamily });
 }
 
 /// <summary>

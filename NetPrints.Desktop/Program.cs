@@ -1,5 +1,6 @@
 using System;
 using Avalonia;
+using Avalonia.Media;
 using NetPrints.Editor;
 
 namespace NetPrints.Desktop;
@@ -19,5 +20,6 @@ internal static class Program
         AppBuilder.Configure<EditorApp>()
             .UsePlatformDetect()
             .WithInterFont()
+            .With(new FontManagerOptions { DefaultFamilyName = EditorApp.DefaultFontFamily })
             .LogToTrace();
 }

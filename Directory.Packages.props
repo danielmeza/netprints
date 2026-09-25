@@ -33,5 +33,9 @@
 
   <ItemGroup Label="Tests">
     <PackageVersion Include="MSTest" Version="4.4.1" />
+    <!-- Headless UI tests: Skia without the libfontconfig dependency, so the tests run on a
+         machine with only the .NET SDK (SC-001). Must match the SkiaSharp version of Avalonia. -->
+    <PackageVersion Include="SkiaSharp.NativeAssets.Linux" Version="3.119.4" />
+    <PackageVersion Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="3.119.4" />
   </ItemGroup>
 </Project>

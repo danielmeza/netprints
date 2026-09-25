@@ -50,6 +50,22 @@ Theme registration is unchanged: `<StyleInclude Source="avares://Nodify.Avalonia
 process exit tears it down. The catch-and-rethrow `UiTest.RunAsync` helper and `[Timeout]` rules
 from section e still apply.
 
+**Implementation findings (headless UI tests)**:
+- `HeadlessUnitTestSession.Dispatch` must be called with a `Func<Task<T>>`; with a plain async lambda
+  the compiler binds an overload that does not await the body and the test passes vacuously
+  (found by mutation-testing the UI tests).
+- Avalonia 12 hit-tests the render scene, so after changing the layout the tests force a render
+  tick (`AvaloniaHeadlessPlatform.ForceRenderTimerTick()`) before sending pointer input.
+- Nodify captures the pointer on press; gesture targets (back button, right click, double click on
+  a cable) are therefore resolved on press, not from the released event's source.
+- A clean `mcr.microsoft.com/dotnet/sdk:10.0` container has no `libfontconfig` and no fonts. The
+  test project uses `SkiaSharp.NativeAssets.Linux.NoDependencies` (3.119.4, matching Avalonia 12.1.3)
+  instead of the default native assets, and the app sets the embedded Inter font as the default
+  family. With that, all tests pass in the container with only the SDK (T084).
+- SC-005 measured: the no-pin suggestion list is ~42k rows (public static members visible from the
+  class; the "~119k" above counts all static methods), built and bound in ~0.85 s; worst keystroke
+  filter step ~7 ms.
+
 **Consequences**: risks R1 (ns2.0 editor for a VS host) and R3 (Avalonia 11.0.4 floor pulling
 vulnerable transitive packages) no longer apply. R2 changes from "unmaintained 1.0.x" to "young
 2.0.0 port" (mitigation unchanged: Nodify types stay in views). `RefKind.RefReadOnlyParameter`
