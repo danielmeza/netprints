@@ -34,6 +34,7 @@ when it is started.
 | P5 | VS Code extension + browser build + sidecar | ~2.5–3 w | P3 | not started |
 | P6 | Usability (Blueprint-level ease of use) | ~4–5 w | P2, P3 | not started |
 | P7 | Structured code generation | ~2–3 w | P1 | not started |
+| P8 | Performance | ~1.5–2 w | P1 | not started |
 | U1 | UnrealSharp codegen + catalog (NetPrintsUnreal) | ~2 w | P2 | not started |
 | U2 | Unreal nodes | ~2–3 w | U1 | not started |
 | U3 | UE plugin, launcher, upstream PR | ~1.5 w | U1, P3 | not started |
@@ -69,7 +70,7 @@ parent `ClassEditorVM` (dependency direction; P0 only fixes the undo cleanup); a
 architecture gate (no Avalonia types in view models, dependency direction); Nodify
 command-based gestures instead of code-behind (split, disconnect, connection completed) and
 binding the grid to `ViewportTransform`; replace the `SetProperty(model, …)` wrappers when
-Fody is removed; `MetadataReference` caching together with the reference-pack work; remove the
+Fody is removed; remove the
 `EditorComposition` test hook in favour of explicit DI; `[LoggerMessage]` source-generated
 logging for the app-level error handler (and new logging generally).
 Done when: old sample loads, saves as JSON, generates identical C#.
@@ -82,10 +83,8 @@ Spectre.Console.Cli (`build`, `generate`, `run`, `catalog`, `migrate`).
 
 ### P3 — Editor extension host
 `NetPrints.Desktop --profile`, plugin-loaded editor extensions, UI contributions (commands,
-inspector sections, panels, settings pages), DynamicData/ReactiveUI performance work beyond
-parity, sample non-Unreal extension, anything left beyond P0 parity. Performance items from the
-P0 review: translate the generated-code preview off the UI thread; bring node-search cold start
-(SC-005) within the 2 s budget on slower machines (3.4 s on the CI runner at P0).
+inspector sections, panels, settings pages), sample non-Unreal extension, anything functional
+left beyond P0 parity. No performance work here (owner decision 2026-09-25: see P8).
 
 ### P4 — VSIX (deferred)
 Deferred by the project owner on 2026-09-24; revisit after P3/P5. When resumed:
@@ -99,6 +98,15 @@ out-of-process editor window or a maintained/forked canvas.
 Spike Avalonia.Browser + Nodify in a webview (CSP `wasm-unsafe-eval`, size, startup);
 `NetPrints.Sidecar` (Roslyn/codegen, JSON-RPC `IHostChannel`, shipped as dotnet tool with
 bundled self-contained binaries as fallback); TS `CustomEditorProvider`; standalone browser build.
+
+### P8 — Performance
+Dedicated optimization phase (owner decision 2026-09-25: performance is kept out of feature
+phases). SC-005 target: P0 accepts "typical developer machine" (node search cold start
+1.5–1.6 s dev, 3.4 s on the CI runner); P8 brings it within 2 s on slower machines including
+the CI runner. Also: translate the generated-code preview off the UI thread; DynamicData /
+ReactiveUI throughput for large graphs and catalogs; `MetadataReference` caching; startup
+time; memory profile of reflection caches. Benchmarks (BenchmarkDotNet) + performance budgets
+enforced in CI.
 
 ### U1–U3 (NetPrintsUnreal repo)
 UnrealSharp Blueprint interop findings (code read of the fork, 2026-09-25): C# `[UClass]` types
