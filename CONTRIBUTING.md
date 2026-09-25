@@ -53,12 +53,17 @@ Before opening a PR:
 
 ```bash
 dotnet build NetPrints.slnx -c Release
-dotnet test --solution NetPrints.slnx -c Release --no-build
-dotnet format NetPrints.slnx --verify-no-changes
+dotnet test --solution NetPrints.slnx -c Release --no-build -- --ignore-exit-code 8
+dotnet format NetPrints.slnx --verify-no-changes --exclude-diagnostics RS1024
 ```
 
-`dotnet format` fixes itself: run `dotnet format NetPrints.slnx` (no `--verify-no-changes`) to
-apply whatever it would otherwise flag in CI.
+`--ignore-exit-code 8` matches CI: with `NETPRINTS_E2E` unset, the desktop E2E project runs zero
+tests and would otherwise exit non-zero on an otherwise-green tree. `--exclude-diagnostics RS1024`
+also matches CI: that analyzer's code fix is a real behavior change (see P1 T013), not a
+formatting one, so it must not be auto-applied by `dotnet format`.
+
+`dotnet format` fixes itself: run `dotnet format NetPrints.slnx --exclude-diagnostics RS1024` (no
+`--verify-no-changes`) to apply whatever it would otherwise flag in CI.
 
 ## Test conventions
 

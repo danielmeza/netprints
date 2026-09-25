@@ -29,8 +29,11 @@ Build and test (no display server needed):
 
 ```bash
 dotnet build NetPrints.slnx -c Release
-dotnet test --solution NetPrints.slnx -c Release --no-build
+dotnet test --solution NetPrints.slnx -c Release --no-build -- --ignore-exit-code 8
 ```
+
+`--ignore-exit-code 8` is what CI passes too: with `NETPRINTS_E2E` unset, the desktop E2E project
+runs zero tests and would otherwise exit non-zero on an otherwise-green tree.
 
 Run the editor:
 
@@ -87,7 +90,7 @@ through the `dotnet` host. Proper reference-pack and target selection is tracked
 Every `src/`/`tests/` project targets `net10.0`. Package versions are centrally managed in
 [`Directory.Packages.props`](Directory.Packages.props); shared build settings are in
 [`Directory.Build.props`](Directory.Build.props) (and the `src/`/`tests/`-scoped copies). The
-[CI workflow](.github/workflows/ci.yml) builds, formats-checks, tests and runs the E2E suite on
+[CI workflow](.github/workflows/ci.yml) builds, format-checks, tests and runs the E2E suite on
 every push and pull request.
 
 ## Status and roadmap
