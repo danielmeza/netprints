@@ -22,6 +22,10 @@ public partial class GraphEditorView : UserControl
     private Point? rightPressPosition;
     private object? backButtonTarget;
 
+    /// <summary>
+    /// Loads the control's XAML and wires the pointer, drag/drop and connection-completed handlers
+    /// Nodify does not provide, plus keeping the background grid's viewport synced to the editor's.
+    /// </summary>
     public GraphEditorView()
     {
         InitializeComponent();
@@ -47,6 +51,7 @@ public partial class GraphEditorView : UserControl
         SearchPopup.Opened += (_, _) => SearchView.FocusSearchBox();
     }
 
+    /// <summary>The bound graph view model, or <see langword="null"/> if the data context is not one.</summary>
     public NodeGraphVM? ViewModel => DataContext as NodeGraphVM;
 
     /// <summary>Converts a point relative to the editor control to graph coordinates.</summary>
@@ -60,6 +65,8 @@ public partial class GraphEditorView : UserControl
     /// <summary>Current pointer position in graph coordinates.</summary>
     public GraphPoint PointerGraphPosition => new(Editor.MouseLocation.X, Editor.MouseLocation.Y);
 
+    /// <summary>Resets the viewport to zoom 1 and the origin when a new graph is opened (PAR-51).</summary>
+    /// <param name="e">Unused; forwarded to the base implementation.</param>
     protected override void OnDataContextChanged(EventArgs e)
     {
         base.OnDataContextChanged(e);
