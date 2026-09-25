@@ -75,16 +75,16 @@ restarting.
 
 - No Skia renderer (headless drawing without pixels): nothing is drawn, no error.
 - The shader fails to compile: a warning is logged once and the CPU path is used.
-- Control opacity below 1: both paths apply the same opacity.
+- Control opacity below 1: both paths apply the same opacity (one layer around the grid).
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
 - **FR-001**: The graph canvas background MUST draw minor lines every grid cell (28 graph units) and major lines every 8 cells, with no origin line.
-- **FR-002**: Lines MUST be snapped to whole device pixels, with a width of `max(1, round(width DIP × display scale))` device pixels; each line MUST be drawn once, and crossings blend once.
+- **FR-002**: Lines MUST be snapped to whole device pixels, with a width of `max(1, round(width DIP × display scale))` device pixels; each line MUST be drawn once (major lines win where they cross minor lines).
 - **FR-003**: Minor lines MUST fade continuously (smoothstep) from full at a cell size of 14 DIP to hidden at 6 DIP.
-- **FR-004**: Line colors MUST come from theme resources in theme dictionaries (dark and light).
+- **FR-004**: The canvas background and line colors MUST come from theme resources in theme dictionaries (dark and light).
 - **FR-005**: The grid MUST follow the canvas viewport location and zoom without allocating transforms per viewport change.
 - **FR-006**: A shader path and a CPU path MUST share one definition of the grid (style and per-frame parameters) and produce pixel-identical output.
 - **FR-007**: The path MUST be selectable with a `Mode` property (Auto, Shader, Cpu); in Auto the shader is used only with a GPU context and a compiled effect; `NETPRINTS_GRID` (`auto`, `cpu`, `shader`) overrides Auto.

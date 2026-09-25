@@ -9,7 +9,7 @@
 Replace the tiled DrawingBrush grid of the graph canvas with a `GridBackground` control that draws a
 pixel-snapped major/minor grid with LOD fading, through an SkSL shader on GPU renderers and an
 identical CPU `SKPath` path otherwise, both driven by one `GridStyle`/`GridFrame` definition
-(research.md D1–D8).
+(research.md D1–D9).
 
 ## Technical Context
 
@@ -72,6 +72,8 @@ NetPrints.Editor/
     ├── GridBackground.cs            # control, draw operation, mode selection
     ├── GraphEditorView.axaml        # grid behind a transparent editor
     └── GraphEditorView.axaml.cs     # viewport sync, old brush removed
+NetPrints.Testing.Ui/Graph/GraphCanvas.cs          # + grid page-object members
+NetPrints.Desktop.E2ETests/Hosting/XServer.cs      # + NETPRINTS_E2E_DISPLAY_START
 NetPrints.Editor.Tests/Graph/GridFrameTests.cs
 NetPrints.Editor.UITests/Graph/GridRenderTests.cs
 NetPrints.Editor.UITests/Snapshots/Baselines/*.png   # grid-background + regenerated canvas baselines
