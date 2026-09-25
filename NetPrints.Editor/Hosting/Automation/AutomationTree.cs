@@ -7,6 +7,7 @@ using Avalonia.Controls.Primitives;
 using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
 using Avalonia.VisualTree;
+using NetPrints.Editor.Graph;
 using Nodify.Avalonia;
 
 namespace NetPrints.Editor.Hosting.Automation;
@@ -195,6 +196,16 @@ public sealed class AutomationTree : IDisposable
                 p["MinViewportZoom"] = Invariant(editor.MinViewportZoom);
                 p["MaxViewportZoom"] = Invariant(editor.MaxViewportZoom);
                 p["GridCellSize"] = Invariant(editor.GridCellSize);
+                break;
+            case GridBackground grid:
+                p["GridRenderPath"] = grid.LastRenderPath.ToString();
+                p["GridRenderMode"] = grid.Mode.ToString();
+                p["ViewportZoom"] = Invariant(grid.ViewportZoom);
+                p["ViewportX"] = Invariant(grid.ViewportLocation.X);
+                p["ViewportY"] = Invariant(grid.ViewportLocation.Y);
+                p["BackgroundColor"] = grid.BackgroundColor.ToString();
+                p["MinorColor"] = grid.MinorColor.ToString();
+                p["MajorColor"] = grid.MajorColor.ToString();
                 break;
             case Image image:
                 p["HasSource"] = (image.Source is not null).ToString();

@@ -21,34 +21,17 @@ public partial class GraphEditorView : UserControl
     private const double ClickThreshold = 4;
     private Point? rightPressPosition;
     private object? backButtonTarget;
-    private readonly DrawingBrush gridBrush;
 
     public GraphEditorView()
     {
         InitializeComponent();
 
-        // 28-px grid that follows panning and zooming (PAR-38), lines tinted from the theme.
-        IBrush gridLineBrush = Brushes.Gray;
-        if (Application.Current?.TryGetResource("SystemControlForegroundBaseMediumLowBrush", Application.Current.ActualThemeVariant, out var resource) == true
-            && resource is IBrush themeBrush)
-        {
-            gridLineBrush = themeBrush;
-        }
-        gridBrush = new DrawingBrush(new GeometryDrawing
-        {
-            Geometry = new RectangleGeometry(new Rect(0, 0, GraphConstants.GridCellSize, GraphConstants.GridCellSize)),
-            Pen = new Pen(gridLineBrush, 0.5),
-        })
-        {
-            TileMode = TileMode.Tile,
-            DestinationRect = new RelativeRect(0, 0, GraphConstants.GridCellSize, GraphConstants.GridCellSize, RelativeUnit.Absolute),
-        };
-        Editor.Background = gridBrush;
+        SyncGrid();
         Editor.PropertyChanged += (_, e) =>
         {
             if (e.Property == Nodify.Avalonia.NodifyEditor.ViewportLocationProperty || e.Property == Nodify.Avalonia.NodifyEditor.ViewportZoomProperty)
             {
-                UpdateGridTransform();
+                SyncGrid();
             }
         };
 
@@ -84,14 +67,12 @@ public partial class GraphEditorView : UserControl
         // Opening another graph resets the view (PAR-51).
         Editor.ViewportZoom = 1;
         Editor.ViewportLocation = new Point(0, 0);
-        UpdateGridTransform();
     }
 
-    private void UpdateGridTransform()
+    private void SyncGrid()
     {
-        var location = Editor.ViewportLocation;
-        double zoom = Editor.ViewportZoom;
-        gridBrush.Transform = new MatrixTransform(Matrix.CreateTranslation(-location.X, -location.Y) * Matrix.CreateScale(zoom, zoom));
+        Grid.ViewportLocation = Editor.ViewportLocation;
+        Grid.ViewportZoom = Editor.ViewportZoom;
     }
 
     private static T? FindContext<T>(object? source) where T : class
