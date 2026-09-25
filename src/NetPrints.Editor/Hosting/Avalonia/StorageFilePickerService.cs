@@ -13,6 +13,8 @@ public sealed class StorageFilePickerService(Func<TopLevel?> topLevel) : IFilePi
     private static List<FilePickerFileType> ToFileTypes(IReadOnlyList<FileFilter> filters) =>
         filters.Select(f => new FilePickerFileType(f.Name) { Patterns = f.Patterns.ToList() }).ToList();
 
+    /// <inheritdoc/>
+    /// <exception cref="InvalidOperationException">No window is available to own the picker.</exception>
     public async Task<string?> OpenFileAsync(string title, IReadOnlyList<FileFilter> filters)
     {
         var files = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
@@ -25,6 +27,8 @@ public sealed class StorageFilePickerService(Func<TopLevel?> topLevel) : IFilePi
         return files.FirstOrDefault()?.TryGetLocalPath();
     }
 
+    /// <inheritdoc/>
+    /// <exception cref="InvalidOperationException">No window is available to own the picker.</exception>
     public async Task<string?> SaveFileAsync(string title, string suggestedName, string defaultExtension, IReadOnlyList<FileFilter> filters)
     {
         var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
@@ -39,6 +43,8 @@ public sealed class StorageFilePickerService(Func<TopLevel?> topLevel) : IFilePi
         return file?.TryGetLocalPath();
     }
 
+    /// <inheritdoc/>
+    /// <exception cref="InvalidOperationException">No window is available to own the picker.</exception>
     public async Task<string?> OpenFolderAsync(string title)
     {
         var folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions

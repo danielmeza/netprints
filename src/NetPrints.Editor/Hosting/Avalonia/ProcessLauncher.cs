@@ -7,8 +7,10 @@ namespace NetPrints.Editor.Hosting.Avalonia;
 /// (the editor's Output pane) instead of the editor's own terminal.</summary>
 public sealed class ProcessLauncher : IProcessLauncher
 {
+    /// <inheritdoc/>
     public event Action<string>? OutputReceived;
 
+    /// <inheritdoc/>
     public void Start(string fileName, string? arguments)
     {
         var process = new Process

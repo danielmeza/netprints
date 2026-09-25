@@ -19,6 +19,13 @@ public sealed class UnhandledExceptionHandler : IDisposable
     private readonly IUiDispatcher dispatcher;
     private bool reporting;
 
+    /// <summary>
+    /// Subscribes to <see cref="Dispatcher.UIThread"/>'s unhandled-exception event and to
+    /// <see cref="TaskScheduler.UnobservedTaskException"/>.
+    /// </summary>
+    /// <param name="dialogs">Used to show the error dialog.</param>
+    /// <param name="dispatcher">Used to marshal an unobserved task exception's report to the UI thread.</param>
+    /// <exception cref="ArgumentNullException"><paramref name="dialogs"/> or <paramref name="dispatcher"/> is <see langword="null"/>.</exception>
     public UnhandledExceptionHandler(IEditorDialogs dialogs, IUiDispatcher dispatcher)
     {
         ArgumentNullException.ThrowIfNull(dialogs);
@@ -67,6 +74,7 @@ public sealed class UnhandledExceptionHandler : IDisposable
         }
     }
 
+    /// <summary>Unsubscribes from both exception events.</summary>
     public void Dispose()
     {
         Dispatcher.UIThread.UnhandledException -= OnDispatcherUnhandledException;
