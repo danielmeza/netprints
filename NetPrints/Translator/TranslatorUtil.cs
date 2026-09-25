@@ -84,11 +84,11 @@ namespace NetPrints.Translator
             }
             else if (type == TypeSpecifier.FromType<float>())
             {
-                return $"{invariant}F";
+                return obj is float f && NonFiniteLiteral(f, "float") is { } floatLiteral ? floatLiteral : $"{invariant}F";
             }
             else if (type == TypeSpecifier.FromType<double>())
             {
-                return $"{invariant}D";
+                return obj is double d && NonFiniteLiteral(d, "double") is { } doubleLiteral ? doubleLiteral : $"{invariant}D";
             }
             else if (type == TypeSpecifier.FromType<uint>())
             {
@@ -111,6 +111,20 @@ namespace NetPrints.Translator
                 return invariant;
             }
         }
+
+        /// <summary>
+        /// The static-field spelling of a non-finite float or double ("float.NaN",
+        /// "double.PositiveInfinity", …), or null for a finite value. NaN and Infinity have no
+        /// numeric literal in C#, so <see cref="ObjectToLiteral"/> must not emit them as a suffixed
+        /// number ("NaND", "InfinityD"), which fails to compile.
+        /// </summary>
+        private static string NonFiniteLiteral(double value, string typeName) => value switch
+        {
+            double.NaN => $"{typeName}.NaN",
+            double.PositiveInfinity => $"{typeName}.PositiveInfinity",
+            double.NegativeInfinity => $"{typeName}.NegativeInfinity",
+            _ => null,
+        };
 
         /// <summary>
         /// Returns the first name not already contained in a list of names by

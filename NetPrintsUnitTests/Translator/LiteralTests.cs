@@ -1,3 +1,4 @@
+using System;
 using System.Globalization;
 using NetPrints.Core;
 using NetPrints.Translator;
@@ -38,6 +39,35 @@ namespace NetPrints.Tests
         {
             Assert.Equal("\"C:\\\\temp \\\"quoted\\\"\\n\"", TranslatorUtil.ObjectToLiteral("C:\\temp \"quoted\"\n", TypeSpecifier.FromType<string>()));
             Assert.Equal("'\\''", TranslatorUtil.ObjectToLiteral('\'', TypeSpecifier.FromType<char>()));
+        }
+
+        /// <summary>
+        /// NaN and the infinities have no C# numeric literal ("NaND", "InfinityD" do not compile);
+        /// they must come out as the static field instead. Convert.ChangeType (NodePinVM's pin
+        /// editor path) accepts all three from user text, including an overflowing value like
+        /// "1e400", which double.Parse clamps to PositiveInfinity rather than throwing.
+        /// </summary>
+        [Theory]
+        [InlineData(double.NaN, "double.NaN")]
+        [InlineData(double.PositiveInfinity, "double.PositiveInfinity")]
+        [InlineData(double.NegativeInfinity, "double.NegativeInfinity")]
+        public void NonFiniteDoublesUseTheStaticField(double value, string expected) =>
+            Assert.Equal(expected, TranslatorUtil.ObjectToLiteral(value, TypeSpecifier.FromType<double>()));
+
+        [Theory]
+        [InlineData(float.NaN, "float.NaN")]
+        [InlineData(float.PositiveInfinity, "float.PositiveInfinity")]
+        [InlineData(float.NegativeInfinity, "float.NegativeInfinity")]
+        public void NonFiniteFloatsUseTheStaticField(float value, string expected) =>
+            Assert.Equal(expected, TranslatorUtil.ObjectToLiteral(value, TypeSpecifier.FromType<float>()));
+
+        [Fact]
+        public void PinEditorTextForNonFiniteAndOverflowingDoublesTranslates()
+        {
+            Assert.Equal("double.NaN", TranslatorUtil.ObjectToLiteral(
+                Convert.ChangeType("NaN", typeof(double), CultureInfo.InvariantCulture), TypeSpecifier.FromType<double>()));
+            Assert.Equal("double.PositiveInfinity", TranslatorUtil.ObjectToLiteral(
+                Convert.ChangeType("1e400", typeof(double), CultureInfo.InvariantCulture), TypeSpecifier.FromType<double>()));
         }
     }
 }
