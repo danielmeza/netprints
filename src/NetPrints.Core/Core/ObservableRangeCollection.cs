@@ -81,7 +81,7 @@ namespace NetPrints.Core
 
         /// <summary>
         /// Removes every item one at a time (rather than the base implementation's single clear), so
-        /// each removal still goes through <see cref="ObservableCollection{T}.RemoveAt"/>.
+        /// each removal still goes through <see cref="Collection{T}.RemoveAt(int)"/>.
         /// </summary>
         protected override void ClearItems()
         {
