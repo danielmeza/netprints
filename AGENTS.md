@@ -33,6 +33,9 @@ If a Sonnet implementer is stuck on a hard problem, escalate that specific probl
 instead of retrying blindly.
 
 ## Working alongside other agents
+- **Prefer sequential work.** Keep one phase and one PR moving at a time, and put follow-up work
+  into the current PR rather than splitting it into extra branches or PRs. Use a `git worktree`
+  only when parallel work is truly needed. This keeps usage within session limits.
 - **One agent per working tree and branch.** Before starting, check for other agents already
   working here: `git status`, running processes (`pgrep -af 'opencode|claude|UnrealEditor|dotnet'`),
   and files that changed recently. For parallel work use a separate `git worktree` (and branch).
