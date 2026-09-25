@@ -1,78 +1,91 @@
 # Contributing to NetPrints
 
-This project (and any AI coding session working in it) follows the rules in
-[`AGENTS.md`](AGENTS.md), which sit on top of
-[`.specify/memory/constitution.md`](.specify/memory/constitution.md) and
-[`.specify/memory/roadmap.md`](.specify/memory/roadmap.md); where they conflict, the constitution
-wins. This document is the human-facing summary; `AGENTS.md` is authoritative.
+This is a fork of [RobinKa/netprints](https://github.com/RobinKa/netprints) under active
+modernization (Avalonia editor, .NET 10, Linux-first). It follows a phased roadmap driven by
+[Spec Kit](https://github.com/github/spec-kit) and the rules in [`AGENTS.md`](AGENTS.md), which
+every contributor — human or AI agent — follows.
 
-## Spec Kit flow
+## Before you start
 
-Work is planned and tracked with [Spec Kit](https://github.com/github/spec-kit) under `specs/`.
-Each roadmap phase (`.specify/memory/roadmap.md`) becomes one feature, worked through five
-commands in order:
+- Read [`AGENTS.md`](AGENTS.md), the [constitution](.specify/memory/constitution.md) and the
+  [roadmap](.specify/memory/roadmap.md). The constitution's principles (Linux-first, UI-agnostic
+  core, extension points instead of forks, `net10.0` only, tests gate every change) are
+  non-negotiable; the roadmap says what phase is next.
+- For anything beyond a small fix, open an issue or check the roadmap first — phases are
+  sequenced on purpose, and work belonging to a later phase is deferred rather than folded in.
 
-1. `speckit-specify` — write the feature spec (`specs/NNN-short-name/spec.md`): user stories,
-   functional requirements, success criteria.
-2. `speckit-clarify` — resolve open questions before planning.
-3. `speckit-plan` — the implementation plan and `research.md` (design decisions, alternatives
-   rejected, and why).
-4. `speckit-tasks` — break the plan into concrete, independently testable tasks
-   (`tasks.md`).
-5. `speckit-analyze` — cross-check spec, plan and tasks for gaps before implementing.
-6. `speckit-implement` — write the code and tests, one task at a time.
+## Spec Kit workflow
 
-One phase = one spec = one branch (`NNN-short-name`) = one pull request. Governance files
-(`.specify/memory/*`) are changed only by the coordinating session with the owner's approval;
-propose changes in a PR description or report instead of editing them directly.
+Every roadmap phase is one Spec Kit feature, one branch, one PR:
 
-## Opening a pull request
+```
+speckit-specify → speckit-clarify → speckit-plan (+ research.md) → speckit-tasks → speckit-analyze → speckit-implement
+```
 
-- PRs target this fork, `danielmeza/netprints`, against `master`:
-  `gh pr create --repo danielmeza/netprints --base master`. `master` is protected; merges go
-  through a PR with required checks **Build and test (Linux)** and **Desktop E2E (Linux,
-  Xvfb)** (the CI workflow's job names — do not rename them).
-- Never open a PR against an upstream repository without the owner's explicit approval.
-- CI (the `CI` workflow, Linux-only) must be green before merge.
-- Every PR is reviewed by someone who did not implement it. The implementer addresses each
-  finding, replies on the review thread with how it was resolved (commit SHA) or why it's
-  deferred, keeps CI green, and does not merge their own PR — the owner or the coordinating
-  session does.
+- Branches follow `NNN-short-name`; the spec, plan, research and tasks live in
+  `specs/NNN-short-name/`.
+- `speckit-implement` is where code is written, against the acceptance criteria `speckit-tasks`
+  produced.
+- Governance files (`.specify/memory/constitution.md`, `.specify/memory/roadmap.md`) are edited
+  only by the coordinating session with the owner's approval; everyone else proposes changes to
+  them in a PR description instead of editing directly.
+
+## Pull requests and review
+
+- PRs target `danielmeza/netprints:master` — never the upstream `RobinKa/netprints` repository,
+  and never without the owner's explicit approval for anything upstream-facing.
+- Every PR is reviewed by someone other than its author (or, for AI agents, a separate review
+  session that did not implement it). The author addresses each finding in code and replies on
+  the thread with the resolving commit SHA, or a reasoned "deferred" with a follow-up.
+- CI (the `CI` workflow, Linux-only, `ubuntu-latest`) must be green before merge: build, every
+  test suite headless, and the `Desktop E2E (Linux, Xvfb)` job. Neither job is skipped or made
+  non-required to get a PR through.
+- The PR author does not merge their own PR; the owner or coordinating session does, once review
+  and CI are both clear.
+
+## Building, testing and running
+
+See the [README](README.md#build-and-test) for the day-to-day commands
+(`dotnet build`/`test`/`run`) and the [P0 quickstart](specs/001-modernize-build/quickstart.md)
+for the full walkthrough, including headless UI tests and the desktop E2E suite.
+
+Before opening a PR:
+
+```bash
+dotnet build NetPrints.slnx -c Release
+dotnet test --solution NetPrints.slnx -c Release --no-build
+dotnet format NetPrints.slnx --verify-no-changes
+```
+
+`dotnet format` fixes itself: run `dotnet format NetPrints.slnx` (no `--verify-no-changes`) to
+apply whatever it would otherwise flag in CI.
+
+## Test conventions
+
+- Reproduce a bug with a test that fails before fixing it.
+- Tests use xUnit v3 on Microsoft.Testing.Platform. Every async test method takes and passes
+  `TestContext.Current.CancellationToken` (enforced as an error, `xUnit1051`).
+- UI tests (`NetPrints.Editor.UITests`, `NetPrints.Desktop.E2ETests`) drive the app through page
+  objects and `AutomationIds`, never raw coordinates, and never `Thread.Sleep`/fixed delays —
+  wait on a condition instead.
+- A behavior-preserving refactor keeps existing tests green; where generated code or a
+  serialized document could silently drift, add a characterization or snapshot test.
+- New code that isn't UI or a thin host shim needs coverage; the `build-test` CI job publishes a
+  Cobertura report as the `coverage` artifact.
 
 ## Code style
 
-- An [`.editorconfig`](.editorconfig) defines formatting and style; CI runs
-  `dotnet format NetPrints.slnx --verify-no-changes` as part of the build-test job. Run
-  `dotnet format NetPrints.slnx` locally before pushing if it fails.
-- Match the surrounding code's comment density: no long explanatory blocks between lines of
-  code, at most a short one-line comment where something is genuinely non-obvious. Put
-  rationale, background and design discussion in commit messages, PR descriptions or `specs/`
-  docs instead — this matters most because parts of this repo are read by contributors upstream.
-  XML doc comments (`///`) are the exception: they can be as detailed as needed.
+- `.editorconfig` plus `dotnet format` is the source of truth for formatting; don't hand-tune
+  whitespace the formatter would change.
+- Comment density matches the surrounding code: a short one-line comment only where something is
+  genuinely non-obvious, no explanatory blocks between lines. Rationale and design discussion
+  belong in the commit message, the PR description or `specs/`, not in code comments — this
+  matters most here, since this repo is contributed back upstream. XML doc comments (`///`) are
+  the exception and may be as detailed as needed.
+- Commit messages end with the attribution line(s) your session is configured with; PR
+  descriptions end with the "Generated with Claude Code" footer when written by Claude Code.
 
-## Tests
+## Getting help
 
-- Reproduce a bug with a test that fails before fixing it.
-- Tests use xUnit v3 on Microsoft.Testing.Platform and always pass
-  `TestContext.Current.CancellationToken` for cancellable async calls (`xUnit1051` is an error).
-- UI tests go through page objects and `AutomationIds`, never raw control lookups, and never use
-  sleeps — wait on real signals (rendered frames, dispatcher idle, the automation agent's
-  `status`/`find`/`settle` calls for E2E).
-- `dotnet test --solution NetPrints.slnx` covers `tests/NetPrints.Core.Tests`,
-  `tests/NetPrints.Editor.Tests` and the headless `tests/NetPrints.Editor.UITests`, none of
-  which need a display server. `tests/NetPrints.Desktop.E2ETests` drives the real desktop app
-  over X11 and needs `NETPRINTS_E2E=1` plus the X11 tools listed in the README; it's skipped
-  (not failed) otherwise.
-- See [`specs/001-modernize-build/quickstart.md`](specs/001-modernize-build/quickstart.md) for
-  individual test-project commands, snapshot baseline regeneration and CI artifacts.
-
-## Working alongside other sessions
-
-If you're running an AI coding session here, read `AGENTS.md` in full — it covers model
-selection per kind of work, one-agent-per-working-tree-and-branch, `git worktree` usage for
-parallel work, and cleaning up processes and displays (Xvfb, Unreal Editor) you started.
-
-## Commits
-
-End commit messages with the attribution line(s) your session is configured with; PR bodies end
-with the "Generated with Claude Code" footer when produced by Claude Code.
+Open an issue for bugs or feature suggestions. For anything else, see the
+[credits](README.md#credits-and-license) in the README.
