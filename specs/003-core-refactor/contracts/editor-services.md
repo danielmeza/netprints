@@ -1,0 +1,238 @@
+# Contract: Editor services, composition, error model and logging (delta to P0)
+
+Base contract: `specs/001-modernize-build/contracts/editor-services.md` (unchanged unless listed here).
+Projects: `src/NetPrints.Editor`, `src/NetPrints.Desktop`. Tests: `tests/NetPrints.Editor.Tests`,
+`tests/NetPrints.Editor.UITests`. Test obligations (`ED-Txx`) at the end.
+
+## 1. `EditorContext` — `src/NetPrints.Editor/Hosting/EditorContext.cs`
+
+```csharp
+namespace NetPrints.Editor.Hosting;
+
+public sealed record EditorContext(
+    IFilePickerService FilePicker,
+    IEditorDialogs Dialogs,
+    IClipboardService Clipboard,
+    IUiDispatcher Dispatcher,
+    IReflectionHost Reflection,
+    IWindowService Windows,
+    IProcessLauncher Processes,
+    IScheduler Scheduler,
+    IScheduler CodeRefreshScheduler,
+    Func<IMessenger> CreateMessenger,
+    // new in P1 (all required, no defaults):
+    ILoggerFactory LoggerFactory,
+    ExtensionRegistry Extensions,
+    ProjectPersistence Persistence,
+    ProjectCompiler Compiler,
+    IReferenceResolver References,
+    IHostChannel HostChannel,
+    ISettingsStore Settings,
+    ICodeAnalysisHost CodeAnalysis);
+```
+
+## 2. New editor services — `src/NetPrints.Editor/Hosting/*.cs`, `…/Diagnostics/*.cs`
+
+```csharp
+namespace NetPrints.Editor.Hosting;
+
+public interface IReflectionHost   // P0 members unchanged, plus:
+{
+    IReadOnlyList<ResolvedAssembly> Assemblies { get; }       // last resolution (for CodeAnalysisSession)
+    ReferenceResolution? LastResolution { get; }
+    // ReloadAsync(Project, CancellationToken) now resolves via IReferenceResolver and composes
+    // CompositeReflectionProvider(catalogs…, live) — see extension-points.md §4
+}
+
+public sealed class ReflectionHost : IReflectionHost
+{
+    public ReflectionHost(IUiDispatcher dispatcher, IReferenceResolver references, IReadOnlyList<ITypeCatalog> catalogs, ILogger<ReflectionHost> logger);
+}
+
+namespace NetPrints.Editor.Diagnostics;
+
+/// Debounced background analysis of the open project's generated code.
+public interface ICodeAnalysisHost : IDisposable
+{
+    IObservable<CodeAnalysisSnapshot> Snapshots { get; }       // emitted on the UI thread
+    void RequestAnalysis(Project project);                      // debounced 500 ms on EditorContext.Scheduler; cancels the running one
+    Task<QuickInfo?> GetQuickInfoAsync(string classFullName, int position, CancellationToken cancellationToken);
+}
+
+public sealed record CodeAnalysisSnapshot(IReadOnlyDictionary<string, TranslatedClass> Classes, IReadOnlyList<CodeDiagnostic> Diagnostics);
+
+public sealed class CodeAnalysisHost : ICodeAnalysisHost
+{
+    public CodeAnalysisHost(IReflectionHost reflection, TranslationEnvironment translation, IScheduler scheduler, IUiDispatcher dispatcher, ILogger<CodeAnalysisHost> logger);
+}
+```
+
+| Rule | Contract |
+|---|---|
+| Threading | Translation of the model runs on the UI thread (model is not thread-safe; moving it off is P8); `CodeAnalysisSession.AnalyzeAsync` runs via `Task.Run`; results marshalled with `IUiDispatcher`. |
+| Latency | ≤ 2 s after the last edit for the sample classes (SC-006): debounce 500 ms + analysis. |
+| Failure | Analysis exceptions → no snapshot change, log `CodeAnalysisFailed` (1030). |
+| Session | Recreated on `IReflectionHost.Reloaded`. |
+
+## 3. View models (new/changed) — feature folders of `src/NetPrints.Editor`
+
+| VM / type | File | Members (condensed) | Replaces |
+|---|---|---|---|
+| `CodeViewVM` | `CodeView/CodeViewVM.cs` | `string Code`, `IReadOnlyList<CodeDiagnostic> Diagnostics`, `IReadOnlyList<FoldingRange> Foldings` (`record FoldingRange(int Start, int End, string Title)`), `Task<QuickInfo?> GetQuickInfoAsync(int position, CancellationToken)` | `ClassEditorVM.GeneratedCode` + TextBox |
+| `CodeView` (control) | `CodeView/CodeView.axaml(.cs)` | AvaloniaEdit `TextEditor` (`IsReadOnly`, `ShowLineNumbers`, `WordWrap=false`), TextMate `source.cs` (DarkPlus/LightPlus by theme variant), `FoldingManager`, `SquiggleRenderer : IBackgroundRenderer`, hover → `ToolTip` with `QuickInfo`; font `avares://NetPrints.Editor/Assets/Fonts#Cascadia Mono` | `ClassInspectorView` TextBox |
+| `DiagnosticRowVM` | `Diagnostics/DiagnosticRowVM.cs` | `Severity`, `Id`, `Message`, `Location` (`"Class.Method"` or `"Class"`), `GraphKey?`, `NodeId?`, `IRelayCommand NavigateCommand` | strings in `Project.LastCompileErrors` |
+| `ErrorListVM` | `Diagnostics/ErrorListVM.cs` | `ReadOnlyObservableCollection<DiagnosticRowVM> Rows` = compile diagnostics ∪ live diagnostics (live replaced per snapshot), sorted Error > Warning > Info, then class, line | `ListBox` of strings |
+| `NavigateToNodeMessage` | `Diagnostics/NavigateToNodeMessage.cs` | `record NavigateToNodeMessage(string ClassFullName, string GraphKey, string NodeId)` | — |
+| `EventGraphVM` | `Events/EventGraphVM.cs` | `Name` (validated, `NPT002`), `Open`, `Remove` | — |
+| `LocalVariableVM` | `Variables/LocalVariableVM.cs` | `Name` (validated, `NPT004`), `Type`, `ChangeTypeCommand` (Select Type dialog), `Remove` (undoable), drag source | — |
+| `VariablesPanelVM` | `Variables/VariablesPanelVM.cs` | `ClassVariables`, `MethodVariables` (for `OpenedGraph` if method/ctor), `MethodGroupTitle` (`"Method: <name>"`), `CreateLocalCommand` | lists in `ClassEditorVM` |
+| `MemberVariableVM` | `Variables/MemberVariableVM.cs` | ctor `(Variable variable, ClassEditorServices services)` — no `ClassEditorVM` | ctor with `ClassEditorVM owner` |
+| `NodeGraphVM` | `Graph/NodeGraphVM.cs` | ctor `(NodeGraph graph, ClassEditorServices services)`; Nodify commands `ConnectionCompletedCommand`, `DisconnectConnectorCommand`, `RemoveConnectionCommand`, `InsertRerouteCommand`, `ToggleFaintCommand` | ctor with `ClassEditorVM owner`; code-behind gestures |
+| `ClassEditorServices` | `ClassEditor/ClassEditorServices.cs` | `sealed record ClassEditorServices(EditorContext Context, UndoRedoStack UndoRedo, IMessenger Messenger)` | the owner reference |
+
+Messages replacing parent calls (all via the per-class-editor `IMessenger`): `OpenGraphMessage`
+(existing), `SelectInspectorMessage(object Target)`, `NavigateToNodeMessage`. Removal goes through
+`UndoRedo.Do(EditorCommands.Remove…)`; `ClassEditorVM` observes `ClassGraph.Variables/Methods/Constructors/EventGraphs`
+and `ExecutionGraph.LocalVariables` `CollectionChanged` to close graphs and clear the inspector (so undo
+and redo get the same cleanup, P0 review).
+
+Model wrapper setters (`MethodVM.Name/Visibility/Modifiers`, `MemberVariableVM` pass-throughs) assign
+the model only; the VM re-raises from the model's `PropertyChanged` (now CTK-generated). No
+`OnPropertyChanged()` after a model assignment.
+
+New `AutomationIds` (constants in `src/NetPrints.Editor/AutomationIds.cs`): `ClassInspectorCodeView`
+(replaces `ClassInspectorGeneratedCode`), `ErrorListRow`, `VariablesClassGroup`,
+`VariablesMethodGroup`, `CreateLocalVariableButton`, `EventGraphList`, `CreateEventGraphButton`,
+`ExtensionLoadErrors`.
+
+## 4. Composition and DI wiring (explicit, no fallbacks, no container)
+
+`EditorComposition(EditorHostServices host)` replaces `EditorComposition(Func<EditorContext, EditorContext>? customize = null)`.
+Tests build their own `EditorContext` in the test project (`tests/NetPrints.Editor.UITests/Hosting/TestComposition.cs`,
+`tests/NetPrints.Editor.Tests/Hosting/TestEditor.cs`), never through a hook in production code.
+
+```csharp
+namespace NetPrints.Editor.Hosting;
+
+public sealed record EditorHostServices(
+    ILoggerFactory LoggerFactory,
+    ExtensionRegistry Extensions,
+    ISettingsStore Settings,
+    IHostChannel HostChannel,
+    DotNetEnvironment Environment);
+
+public sealed class EditorComposition
+{
+    public EditorComposition(EditorHostServices host);
+    public EditorContext Context { get; }
+    public WindowService Windows { get; }
+    public MainEditorVM? MainEditor { get; }
+    public IDisposable InstallUnhandledExceptionHandler();
+    public MainWindow CreateMainWindow();
+}
+```
+
+| Service | Created by | Lifetime | Depends on |
+|---|---|---|---|
+| `ILoggerFactory` | Desktop `Program` (`LoggerFactory.Create(b => b.AddSimpleConsole(...).SetMinimumLevel(Information))`; `NETPRINTS_LOG_LEVEL` overrides) | process; disposed on exit | — |
+| Avalonia log sink `AvaloniaLogSink : ILogSink` | Desktop `Program` (`.LogToTrace()` replaced by `Logger.Sink = new AvaloniaLogSink(loggerFactory)`) | process | `ILoggerFactory` |
+| `ISettingsStore` (`JsonFileSettingsStore`) | Desktop | process | path from `JsonFileSettingsStore.DefaultFilePath` |
+| `ExtensionRegistry` | Desktop via `ExtensionLoader.Load` before `EditorApp` starts | process; disposed on exit | settings (`ExtensionPaths`), `NETPRINTS_EXTENSION_PATH`, `ILoggerFactory` |
+| `IHostChannel` | Desktop (`NETPRINTS_HOST_CHANNEL`, extension-points.md §6) | process; `DisposeAsync` on exit | registry |
+| `EditorHostServices` | Desktop, passed to `EditorApp` (`EditorApp.HostServices` static init property set before `StartWithClassicDesktopLifetime`; `InvalidOperationException` if unset) | process | above |
+| `IReferenceResolver` (`ReferencePackResolver`) | `EditorComposition` | editor | settings `ReferencePackRoots` + `NETPRINTS_REFERENCE_PACKS`, `DotNetEnvironment` |
+| `ReflectionHost` | `EditorComposition` | editor | dispatcher, resolver, `registry.TypeCatalogs`, logger |
+| `DocumentFormatRegistry`, `DocumentMapper`, `ProjectPersistence` | `EditorComposition` | editor | `registry.NodeConverters`, logger |
+| `ProjectCompiler` | `EditorComposition` | editor | `registry.Translation`, resolver, `CodeCompiler` |
+| `CodeAnalysisHost` | `EditorComposition` | editor; disposed with the main window | reflection, `registry.Translation`, scheduler, dispatcher, logger |
+| P0 services (pickers, dialogs, clipboard, dispatcher, windows, processes, schedulers, messenger factory) | `EditorComposition` (unchanged) | as in P0 | — |
+| `IMessenger` | `Context.CreateMessenger()` per class editor | class editor | — |
+| `UndoRedoStack`, `ClassEditorServices` | `ClassEditorVM` | class editor | — |
+
+CLI (`src/NetPrints.Cli/Program.cs`): builds `ExtensionLoader` (settings + env paths),
+`ProjectPersistence`, `ReferencePackResolver`, `ProjectCompiler` explicitly; console logger;
+`-p` accepts `.netpp.json` and `.netpp`. Command set and exit codes unchanged (P2).
+
+## 5. Error model and UI mapping
+
+| Source | Type | Where it shows |
+|---|---|---|
+| Document load/save | `DocumentIssue` (`NPD001–006`), `DocumentFormatException`, `DocumentVersionException` | Error dialog on open (issues listed, project stays open unless the project file itself failed); log 1040 |
+| References | `ReferenceWarning` (`NPR001–006`) | Error list rows (Warning) after reflection reload and compile |
+| Translation | `TranslationException` → `CodeDiagnostic` (`NPT001–007`) | Error list rows with node link; squiggle when a span exists |
+| Compiler | Roslyn → `CodeDiagnostic` (`CSxxxx`) | Squiggles in the code view + error list rows with node link |
+| Extensions | `ExtensionLoadResult.Failed` (`NPX001–007`) | One dialog at startup listing failures (`AutomationIds.ExtensionLoadErrors`); log 2003 |
+| Unhandled | exceptions on the UI thread / unobserved tasks | Error dialog (P0); log 1001/1002 |
+
+Navigation: `DiagnosticRowVM.NavigateCommand` (double-click) sends `NavigateToNodeMessage`;
+`ClassEditorVM` opens `GraphKeys.Resolve(cls, key)`, selects the node with `NodeId`, and asks the view
+to bring it into view (`NodeGraphVM.RevealNode(string nodeId)` → view centers the viewport). Rows
+without `NodeId` open the graph only; rows without `GraphKey` do nothing.
+
+## 6. Logging — `[LoggerMessage]` event ids
+
+One `internal static partial class Log` per feature folder (`…/Log.cs`). `CA1848` and `CA2254` are
+errors in Editor, Desktop, Extensibility and Serialization. Categories = the owning type.
+
+| Id | Name | Level | Project / class | Message template |
+|---|---|---|---|---|
+| 1001 | `UnhandledUiException` | Error | Editor / `UnhandledExceptionHandler` | `Unhandled exception on the UI thread` (exception attached) |
+| 1002 | `UnobservedTaskException` | Error | same | `Unobserved task exception` |
+| 1010 | `ReflectionReloadStarted` | Debug | Editor / `ReflectionHost` | `Reloading types for {ProjectName}` |
+| 1011 | `ReflectionReloadCompleted` | Information | same | `Types loaded for {ProjectName} from {Source} in {ElapsedMs} ms ({AssemblyCount} assemblies)` |
+| 1012 | `ReferenceWarning` | Warning | same | `{Code}: {Message}` |
+| 1013 | `ReflectionReloadFailed` | Error | same | `Loading types for {ProjectName} failed` |
+| 1020 | `HostMessageReceived` | Debug | Editor / `HostChannelBridge` | `Host message {Type}` |
+| 1021 | `HostChannelUnknown` | Error | Desktop / `Program` | `Host channel {Id} is not provided by any extension` |
+| 1022 | `HostMessageIgnored` | Debug | Editor / `HostChannelBridge` | `Ignoring host message {Type}` |
+| 1030 | `CodeAnalysisFailed` | Warning | Editor / `CodeAnalysisHost` | `Code analysis failed for {ProjectName}` |
+| 1040 | `ProjectLoadIssue` | Warning | Editor / `MainEditorVM` | `{Code}: {Message} ({Document})` |
+| 1050 | `GridShaderUnavailable` | Warning | Editor / `GridBackground` (via Avalonia sink) | existing text (P0.1), forwarded by `AvaloniaLogSink` |
+| 2001 | `ExtensionDiscovered` | Debug | Extensibility / `ExtensionLoader` | `Found extension {Id} at {ManifestPath}` |
+| 2002 | `ExtensionLoaded` | Information | same | `Loaded extension {Id} {Version}` |
+| 2003 | `ExtensionLoadFailed` | Error | same | `Extension {Id} failed: {Code} {Reason}` |
+| 2004 | `ExtensionDuplicate` | Warning | same | `Extension {Id} at {ManifestPath} ignored: already loaded` |
+| 2005 | `NodeKindConflict` | Error | same | `Node kind {Kind} from {Id} rejected: {Reason}` |
+| 2006 | `SettingsSectionInvalid` | Warning | Extensibility / `JsonFileSettingsStore` | `Settings section {Section} is invalid; using defaults` |
+| 3001 | `DocumentMigrated` | Information | Serialization / `DocumentMigrator` | `Migrated {Document} from schema {From} to {To}` |
+| 3002 | `UnknownNodeKindPreserved` | Warning | Serialization / `DocumentMapper` | `Node {NodeId} of unknown kind {Kind} in {Document} is preserved` |
+| 3003 | `ConnectionDropped` | Warning | same | `Connection {From} -> {To} in {Document} dropped: {Reason}` |
+| 3004 | `LegacyImported` | Information | Serialization / `ProjectPersistence` | `Imported legacy {Document}` |
+| 3005 | `ExternalChange` | Debug | Serialization / `FileSystemDocumentStore` | `{Kind} {Document}` |
+
+`GridBackground` keeps Avalonia's `Logger` (controls have no DI); `AvaloniaLogSink` forwards Avalonia
+log areas to `ILogger` categories `Avalonia.<Area>` so it reaches the console (FR-042).
+
+## 7. Architecture gate — `tests/NetPrints.Editor.Tests/Architecture/ArchitectureGateTests.cs`
+
+Roslyn syntax/semantic scan of `src/NetPrints.Editor/**/*VM.cs` and `src/NetPrints.Editor/**/*ViewModel*.cs`
+(compiled against the editor's references):
+
+| Rule | Violation |
+|---|---|
+| A1 | a VM file uses a type from namespaces `Avalonia*` or `Nodify*` |
+| A2 | a VM constructor or field has type `ClassEditorVM` or `MainEditorVM` unless the file is that VM itself |
+| A3 | `src/NetPrints.Core`, `NetPrints.Reflection`, `NetPrints.Serialization`, `NetPrints.Extensibility` reference an assembly named `Avalonia*` (project-reference/package scan) |
+
+Fixture `tests/NetPrints.Editor.Tests/Architecture/Fixtures/ViolatingVM.cs.txt` (not compiled into the
+editor) contains one violation of A1 and A2; the test asserts the scanner reports exactly those two,
+then asserts zero violations for the real sources and a non-empty set of scanned files.
+
+## 8. Test obligations
+
+| ID | Case |
+|---|---|
+| ED-T01 | Code view (headless): highlighted tokens (pixel check or TextMate token color), line numbers visible, no wrap (horizontal scroll extent > viewport), folding markers for type and method; snapshot `class-inspector-code-view` regenerated and reviewed |
+| ED-T02 | Live diagnostics: a type error introduced via the model yields a squiggle and an error row within virtual-time debounce; fixing it clears both |
+| ED-T03 | Navigation: double-click on a row with `NodeId` opens the graph, selects that node and brings it into view |
+| ED-T04 | Compile errors appear as structured rows (severity, id, message, location) |
+| ED-T05 | Hover over `WriteLine` shows signature and summary |
+| ED-T06 | Variables panel groups "Class" and "Method: Main"; create/rename/retype/remove local, undo/redo each; drag local → Get/Set chooser |
+| ED-T07 | Event graphs: create, open, add custom event via search, remove (undoable) |
+| ED-T08 | Undo of a removed variable/method closes and restores graphs and inspector exactly like the command path (no parent call) |
+| ED-T09 | Nodify commands: connection completed on empty canvas opens search; disconnect (middle click) and insert reroute (double click) go through `NodeGraphVM` commands (VM-level tests + one headless gesture each) |
+| ED-T10 | Architecture gate demonstrated to fail on the fixture and pass on the sources |
+| ED-T11 | Extension load failure dialog lists failures; editor usable |
+| ED-T12 | `UnhandledExceptionHandler` logs 1001/1002 through a collecting logger and still shows the dialog |
+| ED-T13 | Opening a legacy project shows its classes; Save writes JSON and the title/project path switch to `.netpp.json` |
+| ED-T14 | No production type has an optional `customize`/test hook parameter (`EditorComposition` ctor takes `EditorHostServices` only) |
