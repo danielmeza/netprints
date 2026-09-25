@@ -1,3 +1,4 @@
+using Microsoft.Reactive.Testing;
 using CommunityToolkit.Mvvm.Messaging;
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
@@ -151,10 +152,8 @@ public sealed class TestEditor
     {
         ArgumentNullException.ThrowIfNull(reflection);
         Reflection = reflection;
-        Context = new EditorContext(FilePicker, Dialogs, Clipboard, Dispatcher, Reflection, Windows, Processes)
-        {
-            CreateMessenger = () => new StrongReferenceMessenger(),
-        };
+        Context = new EditorContext(FilePicker, Dialogs, Clipboard, Dispatcher, Reflection, Windows, Processes,
+            Scheduler, () => new StrongReferenceMessenger());
     }
 
     public FakeFilePicker FilePicker { get; } = new();
@@ -164,5 +163,8 @@ public sealed class TestEditor
     public FakeWindowService Windows { get; } = new();
     public FakeProcessLauncher Processes { get; } = new();
     public IReflectionHost Reflection { get; }
+
+    /// <summary>Virtual time for throttled work (the search box).</summary>
+    public TestScheduler Scheduler { get; } = new();
     public EditorContext Context { get; }
 }

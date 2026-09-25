@@ -73,7 +73,8 @@ public class DialogTests
         project.References.Add(new SourceDirectoryReference("/tmp/src"));
         var context = new EditorContext(new NoFilePicker(), new RecordingDialogs(), new NoClipboard(),
             new NetPrints.Editor.Hosting.Avalonia.AvaloniaUiDispatcher(), new ReflectionHost(new NetPrints.Editor.Hosting.Avalonia.AvaloniaUiDispatcher()),
-            new NetPrints.Editor.Hosting.Avalonia.WindowService(), new RecordingProcessLauncher());
+            new NetPrints.Editor.Hosting.Avalonia.WindowService(), new RecordingProcessLauncher(),
+            System.Reactive.Concurrency.DefaultScheduler.Instance, () => new CommunityToolkit.Mvvm.Messaging.WeakReferenceMessenger());
         var dialog = new ReferencesDialog { DataContext = new ReferenceListVM(project, context) };
         dialog.Show();
         HeadlessInput.Pump();

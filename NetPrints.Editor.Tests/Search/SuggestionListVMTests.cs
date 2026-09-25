@@ -12,7 +12,13 @@ public class SuggestionListVMTests : GraphTestBase
 {
     public SuggestionListVMTests(TestEditor editor) : base(editor)
     {
-        Graph.Search.FilterThrottle = TimeSpan.Zero;
+    }
+
+    /// <summary>Types into the search box and lets the throttle window pass in virtual time.</summary>
+    private void Type(SuggestionListVM search, string text)
+    {
+        search.SearchText = text;
+        Editor.Scheduler.AdvanceBy(search.FilterThrottle.Ticks);
     }
 
     private static List<string> Categories(IEnumerable<SuggestionItem> rows) =>
@@ -75,7 +81,7 @@ public class SuggestionListVMTests : GraphTestBase
         Assert.False(search.IsLoading);
         int all = search.Items.Count;
 
-        search.SearchText = "WRITE line console";
+        Type(search, "WRITE line console");
 
         Assert.True(search.Items.Count < all);
         Assert.True(search.Items.Where(i => !i.IsHeader).All(i =>
@@ -85,7 +91,7 @@ public class SuggestionListVMTests : GraphTestBase
         Assert.True(search.Items[0].IsHeader, "rows are grouped under category headers");
         Assert.True(search.Items.Where(i => i.IsHeader).All(h => search.Items.Any(i => !i.IsHeader && i.Category == h.Category)), "empty categories are hidden");
 
-        search.SearchText = "";
+        Type(search, "");
         Assert.Equal(all, search.Items.Count);
     }
 
@@ -93,7 +99,7 @@ public class SuggestionListVMTests : GraphTestBase
     public async Task SelectingMethodCreatesNodeAtPositionAndCloses()
     {
         await Graph.OpenSearchAsync(new GraphPoint(140, 84), null, TestContext.Current.CancellationToken);
-        Graph.Search.SearchText = "Console WriteLine";
+        Type(Graph.Search, "Console WriteLine");
         var item = Graph.Search.Items.First(i => i.Value is MethodSpecifier { Name: "WriteLine" } m && m.Parameters.Count == 1);
 
         await Graph.Search.SelectCommand.ExecuteAsync(item);
@@ -178,26 +184,25 @@ public class SuggestionListVMTests : GraphTestBase
         Assert.Equal("Method_16x.png", rows.First(r => r.Value is MethodSpecifier { Name: "WriteLine" }).IconKey);
     }
 
-    [Fact(Timeout = 60000)]
-    public async Task ThrottledFilterAppliesAfterDelay()
+    [Fact]
+    public async Task TypingIsThrottledInVirtualTime()
     {
         var search = Graph.Search;
-        search.FilterThrottle = TimeSpan.FromMilliseconds(100);
         await Graph.OpenSearchAsync(new GraphPoint(0, 0), null, TestContext.Current.CancellationToken);
-        await Task.Delay(300, TestContext.Current.CancellationToken);
         int all = search.Items.Count;
 
         search.SearchText = "c";
+        Editor.Scheduler.AdvanceBy(TimeSpan.FromMilliseconds(50).Ticks);
         search.SearchText = "co";
+        Editor.Scheduler.AdvanceBy(TimeSpan.FromMilliseconds(50).Ticks);
         search.SearchText = "console writeline";
+        Assert.Equal(all, search.Items.Count); // each keystroke restarts the throttle window
+
+        Editor.Scheduler.AdvanceBy(search.FilterThrottle.Ticks - 1);
         Assert.Equal(all, search.Items.Count);
 
-        var deadline = DateTime.UtcNow.AddSeconds(10);
-        while (search.Items.Count == all && DateTime.UtcNow < deadline)
-        {
-            await Task.Delay(20, TestContext.Current.CancellationToken);
-        }
-
+        Editor.Scheduler.AdvanceBy(1);
         Assert.True(search.Items.Count < all);
+        Assert.Contains(search.Items, i => i.Value is MethodSpecifier { Name: "WriteLine" });
     }
 }

@@ -61,7 +61,8 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
 
     private readonly NodeGraphVM graph;
     private readonly SourceList<SuggestionItem> source = new();
-    private readonly BehaviorSubject<string> searchTextSubject = new("");
+    private readonly Subject<string> textChanges = new();
+    private readonly Subject<string> refreshes = new();
     private readonly IDisposable pipeline;
     private readonly ReadOnlyObservableCollection<SuggestionItem> items;
     private IReadOnlyList<SuggestionItem> allItems = [];
@@ -71,13 +72,13 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
     {
         this.graph = graph;
 
-        // Debounce: every new text cancels the pending one (Switch), so typing a word filters once.
-        var predicates = searchTextSubject
-            .Select(text => FilterThrottle <= TimeSpan.Zero
-                ? Observable.Return(text)
-                : Observable.Return(text).Delay(FilterThrottle))
-            .Switch()
-            .Select(BuildPredicate);
+        // Typing is throttled on the context's scheduler (virtual time in tests); new items
+        // re-apply the current text immediately.
+        var predicates = textChanges
+            .Throttle(FilterThrottle, graph.Context.Scheduler)
+            .Merge(refreshes)
+            .Select(BuildPredicate)
+            .StartWith(_ => true);
 
         pipeline = source.Connect()
             .Filter(predicates, ListFilterPolicy.ClearAndReplace)
@@ -95,8 +96,8 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
     /// <summary>All suggestions of the last build (without headers).</summary>
     public IReadOnlyList<SuggestionItem> AllSuggestions => allItems.Where(i => !i.IsHeader).ToList();
 
-    /// <summary>Debounce time for the search box (0 filters synchronously, used by tests).</summary>
-    public TimeSpan FilterThrottle { get; set; } = TimeSpan.FromMilliseconds(100);
+    /// <summary>Throttle window of the search box.</summary>
+    public TimeSpan FilterThrottle { get; } = TimeSpan.FromMilliseconds(100);
 
     [ObservableProperty]
     public partial bool IsOpen { get; set; }
@@ -115,7 +116,7 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
     [ObservableProperty]
     public partial string SearchText { get; set; } = "";
 
-    partial void OnSearchTextChanged(string value) => searchTextSubject.OnNext(value ?? "");
+    partial void OnSearchTextChanged(string value) => textChanges.OnNext(value ?? "");
 
     /// <summary>Opens the popup: clears the search text and builds the suggestions for a pin (or none).</summary>
     public async Task OpenAsync(GraphPoint position, NodePin? pin, CancellationToken cancellationToken = default)
@@ -169,7 +170,7 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
         });
 
         // Re-evaluate the header visibility for the current text.
-        searchTextSubject.OnNext(SearchText ?? "");
+        refreshes.OnNext(SearchText ?? "");
     }
 
     [RelayCommand]
@@ -434,6 +435,7 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
     {
         pipeline.Dispose();
         source.Dispose();
-        searchTextSubject.Dispose();
+        textChanges.Dispose();
+        refreshes.Dispose();
     }
 }

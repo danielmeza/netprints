@@ -1,3 +1,5 @@
+using System.Reactive.Concurrency;
+using CommunityToolkit.Mvvm.Messaging;
 using Avalonia.Controls;
 using NetPrints.Editor.Hosting.Avalonia;
 using NetPrints.Editor.Main;
@@ -22,7 +24,9 @@ public sealed class EditorComposition
             dispatcher,
             new ReflectionHost(dispatcher),
             Windows,
-            new ProcessLauncher());
+            new ProcessLauncher(),
+            DefaultScheduler.Instance,
+            () => new WeakReferenceMessenger());
         Context = customize?.Invoke(context) ?? context;
     }
 

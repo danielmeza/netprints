@@ -32,10 +32,10 @@ public class SearchPerformanceTests
         load.Stop();
 
         var cls = new ClassGraph { Name = "Cold", Namespace = "N" };
-        using var classEditor = new ClassEditorVM(cls, new TestEditor(host).Context);
+        var editor = new TestEditor(host);
+        using var classEditor = new ClassEditorVM(cls, editor.Context);
         classEditor.CreateMethodCommand.Execute(null);
         var search = classEditor.OpenedGraph!.Search;
-        search.FilterThrottle = TimeSpan.Zero;
 
         var open = Stopwatch.StartNew();
         List<SuggestionItem> rows = search.BuildItems(null);
@@ -49,6 +49,7 @@ public class SearchPerformanceTests
         {
             keystroke.Restart();
             search.SearchText = text;
+            editor.Scheduler.AdvanceBy(search.FilterThrottle.Ticks); // the throttle window, in virtual time
             worstMs = Math.Max(worstMs, keystroke.Elapsed.TotalMilliseconds);
         }
 
