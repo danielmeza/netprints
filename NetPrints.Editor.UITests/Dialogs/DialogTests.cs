@@ -72,7 +72,8 @@ public class DialogTests
         var dispatcher = new NetPrints.Editor.Hosting.Avalonia.AvaloniaUiDispatcher();
         var context = new EditorContext(new QueuedFilePicker(), new RecordingDialogs(), new NoClipboard(), dispatcher, new ReflectionHost(dispatcher),
             new NetPrints.Editor.Hosting.Avalonia.WindowService(), new CapturingProcessLauncher(),
-            System.Reactive.Concurrency.DefaultScheduler.Instance, () => new CommunityToolkit.Mvvm.Messaging.WeakReferenceMessenger());
+            System.Reactive.Concurrency.DefaultScheduler.Instance, System.Reactive.Concurrency.DefaultScheduler.Instance,
+            () => new CommunityToolkit.Mvvm.Messaging.WeakReferenceMessenger());
         using var ui = HeadlessUi.Create();
         ui.Show(new ReferencesDialog { DataContext = new ReferenceListVM(project, context) });
         var page = new ReferencesDialogPage(ui.Driver);

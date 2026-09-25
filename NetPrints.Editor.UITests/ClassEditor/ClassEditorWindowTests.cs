@@ -3,6 +3,7 @@ using Avalonia.Controls;
 using NetPrints.Core;
 using NetPrints.Graph;
 using NetPrints.Editor.ClassEditor;
+using NetPrints.Editor.UITests.Driving;
 using NetPrints.Testing.Ui.Driving;
 
 namespace NetPrints.Editor.UITests.ClassEditor;
@@ -42,8 +43,12 @@ public class ClassEditorWindowTests
         Assert.Equal("Renamed", vm.Class.Name); // updates as typed
         page = new NetPrints.Testing.Ui.ClassEditor.ClassEditorPage(session.Driver, vm.Class.FullName);
         Assert.Equal("Renamed", await page.TextAsync(Token)); // window title
-        await page.ClassInspector.GeneratedCode.WaitUntilAsync(e => (e.Text ?? "").Contains("class Renamed"), "generated code refreshed", Token,
-            TimeSpan.FromSeconds(5));
+
+        // The preview refreshes on a 1-second loop; advance its virtual clock instead of waiting
+        // on the wall clock (HeadlessApp gives it a TestScheduler so nothing advances it on its own).
+        session.App.CodeRefreshScheduler.AdvanceBy(TimeSpan.FromSeconds(1).Ticks);
+        HeadlessDriver.Pump();
+        Assert.Contains("class Renamed", (await page.ClassInspector.GeneratedCode.GetAsync(Token)).Text);
         Assert.Equal("True", await page.ClassInspector.GeneratedCode.PropertyAsync("IsReadOnly", Token));
     }
 

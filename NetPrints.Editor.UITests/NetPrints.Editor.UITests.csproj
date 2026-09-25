@@ -18,6 +18,9 @@
     <!-- Use the dependency-free Linux Skia build (no libfontconfig) instead of the default one. -->
     <PackageReference Include="SkiaSharp.NativeAssets.Linux" ExcludeAssets="all" />
     <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" />
+    <!-- A never-advanced virtual clock for the class editor's generated-code refresh loop, so it
+         cannot race a snapshot capture. -->
+    <PackageReference Include="Microsoft.Reactive.Testing" />
   </ItemGroup>
 
   <ItemGroup>

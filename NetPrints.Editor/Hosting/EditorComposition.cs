@@ -26,6 +26,7 @@ public sealed class EditorComposition
             Windows,
             new ProcessLauncher(),
             DefaultScheduler.Instance,
+            DefaultScheduler.Instance,
             () => new WeakReferenceMessenger());
         Context = customize?.Invoke(context) ?? context;
     }

@@ -322,8 +322,9 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     /// </remarks>
     public void StartGeneratedCodeLoop()
     {
-        // On the context's scheduler, so tests drive it in virtual time.
-        generatedCodeLoop ??= Observable.Interval(TimeSpan.FromSeconds(1), Context.Scheduler)
+        // On the context's code-refresh scheduler, so tests drive it in virtual time (or silence
+        // it entirely, e.g. a snapshot test capturing the preview it would otherwise race).
+        generatedCodeLoop ??= Observable.Interval(TimeSpan.FromSeconds(1), Context.CodeRefreshScheduler)
             .Subscribe(_ => Context.Dispatcher.Post(RefreshGeneratedCode));
     }
 

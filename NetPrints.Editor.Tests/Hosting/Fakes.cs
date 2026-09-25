@@ -153,7 +153,7 @@ public sealed class TestEditor
         ArgumentNullException.ThrowIfNull(reflection);
         Reflection = reflection;
         Context = new EditorContext(FilePicker, Dialogs, Clipboard, Dispatcher, Reflection, Windows, Processes,
-            Scheduler, () => new StrongReferenceMessenger());
+            Scheduler, Scheduler, () => new StrongReferenceMessenger());
     }
 
     public FakeFilePicker FilePicker { get; } = new();
@@ -164,7 +164,7 @@ public sealed class TestEditor
     public FakeProcessLauncher Processes { get; } = new();
     public IReflectionHost Reflection { get; }
 
-    /// <summary>Virtual time for throttled work (the search box).</summary>
+    /// <summary>Virtual time for throttled work (the search box) and the generated-code loop.</summary>
     public TestScheduler Scheduler { get; } = new();
     public EditorContext Context { get; }
 }
