@@ -250,6 +250,13 @@ Block-scoped local variables (owner idea, 2026-09-25): variables owned by for/fo
   irregular graphs where a node belongs to several scopes.
 
 ### Candidates (unscheduled)
+- **Release follow-ups after P1**: installers and auto-update (Velopack), code signing (Windows
+  signing, Apple Developer ID and notarization), a Windows smoke test of the win-x64 archive,
+  `PackageValidationBaselineVersion` after the first stable release.
+- **Name and NuGet prefix**: keep the NetPrints name (free on nuget.org, 2026-09-25). Before
+  reserving the `NetPrints.*` prefix, the owner contacts Robin Kahlow (RobinKa/netprints).
+- **CI build-artifact reuse** (draft PR #4): the E2E job reuses the build job's output. Kept as a
+  draft because total wall time rose from 7m02s to 9m49s; revisit together with P8 CI budgets.
 - **NetPrintsUnity** (owner-approved as a candidate, 2026-09-25). A UPM package whose
   ScriptedImporter/AssetPostprocessor generates the `.g.cs` next to each `.netpc.json` (Unity
   doesn't compile through a csproj, so `NetPrints.Sdk` doesn't apply); a `unity` catalog profile over
