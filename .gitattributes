@@ -31,7 +31,6 @@ src/NetPrints.Core/Core/TypeGraph.cs -text
 src/NetPrints.Core/Core/TypeSpecifier.cs -text
 src/NetPrints.Core/Core/Variable.cs -text
 src/NetPrints.Core/Core/VariableSpecifier.cs -text
-src/NetPrints.Core/FodyWeavers.xml -text
 src/NetPrints.Core/Graph/CallMethodNode.cs -text
 src/NetPrints.Core/Graph/ClassReturnNode.cs -text
 src/NetPrints.Core/Graph/ConstructorEntryNode.cs -text

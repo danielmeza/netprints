@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Runtime.Serialization;
+using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Core;
 
 namespace NetPrints.Graph
@@ -9,17 +10,14 @@ namespace NetPrints.Graph
     /// Node representing the creation of a delegate (method pointer).
     /// </summary>
     [DataContract]
-    public class MakeDelegateNode : Node
+    public partial class MakeDelegateNode : Node
     {
         /// <summary>
         /// Specifier describing the method the delegate is created for.
         /// </summary>
+        [ObservableProperty]
         [DataMember]
-        public MethodSpecifier MethodSpecifier
-        {
-            get;
-            private set;
-        }
+        public partial MethodSpecifier MethodSpecifier { get; private set; }
 
         /// <summary>
         /// The target this delegate is for ("this").

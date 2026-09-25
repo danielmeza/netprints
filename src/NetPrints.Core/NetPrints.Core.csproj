@@ -10,8 +10,6 @@
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
-    <!-- Fody is kept in Core only until P1 moves the model to CommunityToolkit.Mvvm. -->
-    <PackageReference Include="Fody" PrivateAssets="all" />
-    <PackageReference Include="PropertyChanged.Fody" PrivateAssets="all" />
+    <PackageReference Include="CommunityToolkit.Mvvm" />
   </ItemGroup>
 </Project>

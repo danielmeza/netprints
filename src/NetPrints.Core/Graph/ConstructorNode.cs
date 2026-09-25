@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
+using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Core;
 
 namespace NetPrints.Graph
@@ -10,7 +11,7 @@ namespace NetPrints.Graph
     /// Node representing a constructor call.
     /// </summary>
     [DataContract]
-    public class ConstructorNode : ExecNode
+    public partial class ConstructorNode : ExecNode
     {
         public override bool CanSetPure
         {
@@ -20,12 +21,9 @@ namespace NetPrints.Graph
         /// <summary>
         /// Specifier for the constructor.
         /// </summary>
+        [ObservableProperty]
         [DataMember]
-        public ConstructorSpecifier ConstructorSpecifier
-        {
-            get;
-            private set;
-        }
+        public partial ConstructorSpecifier ConstructorSpecifier { get; private set; }
 
         /// <summary>
         /// Specifier for the type this constructor creates.
@@ -73,9 +71,9 @@ namespace NetPrints.Graph
             UpdateTypes();
         }
 
-        protected override void OnInputTypeChanged(object sender, EventArgs eventArgs)
+        protected override void HandleInputTypeChanged(object sender, EventArgs eventArgs)
         {
-            base.OnInputTypeChanged(sender, eventArgs);
+            base.HandleInputTypeChanged(sender, eventArgs);
             UpdateTypes();
         }
 

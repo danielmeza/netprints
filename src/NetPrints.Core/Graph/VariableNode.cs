@@ -1,4 +1,5 @@
 ﻿using System.Runtime.Serialization;
+using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Core;
 
 namespace NetPrints.Graph
@@ -79,8 +80,9 @@ namespace NetPrints.Graph
         /// <summary>
         /// Specifier for the underlying variable.
         /// </summary>
+        [ObservableProperty]
         [DataMember(Name = "FieldOrProperty")]
-        public VariableSpecifier Variable { get; private set; }
+        public partial VariableSpecifier Variable { get; private set; }
 
         protected VariableNode(NodeGraph graph, VariableSpecifier variable)
             : base(graph)

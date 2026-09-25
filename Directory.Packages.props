@@ -9,9 +9,6 @@
 
   <ItemGroup Label="Core and reflection">
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.9.0" />
-    <!-- Core only; removed in P1. -->
-    <PackageVersion Include="Fody" Version="6.9.3" />
-    <PackageVersion Include="PropertyChanged.Fody" Version="4.1.0" />
   </ItemGroup>
 
   <ItemGroup Label="CLI">

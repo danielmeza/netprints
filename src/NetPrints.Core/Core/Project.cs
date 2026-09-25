@@ -10,11 +10,11 @@ using System.Reflection;
 using System.Runtime.Serialization;
 using System.Threading;
 using System.Threading.Tasks;
+using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Serialization;
 using NetPrints.Translator;
-using PropertyChanged;
 
 namespace NetPrints.Core
 {
@@ -38,8 +38,7 @@ namespace NetPrints.Core
     /// Project model.
     /// </summary>
     [DataContract]
-    [AddINotifyPropertyChangedInterface]
-    public class Project
+    public partial class Project : ModelObject
     {
         private static readonly IEnumerable<FrameworkAssemblyReference> DefaultReferences = new FrameworkAssemblyReference[]
         {
@@ -62,91 +61,66 @@ namespace NetPrints.Core
         /// <summary>
         /// Name of the project.
         /// </summary>
+        [ObservableProperty]
         [DataMember]
-        public string Name
-        {
-            get;
-            set;
-        }
+        public partial string Name { get; set; }
 
         /// <summary>
         /// Version of the editor that the project was saved in.
         /// </summary>
+        [ObservableProperty]
         [DataMember]
-        public Version SaveVersion
-        {
-            get;
-            set;
-        }
+        public partial Version SaveVersion { get; set; }
 
         /// <summary>
         /// Path to the last successfully compiled assembly.
         /// </summary>
+        [ObservableProperty]
         [DataMember]
-        public string LastCompiledAssemblyPath
-        {
-            get;
-            set;
-        }
+        public partial string LastCompiledAssemblyPath { get; set; }
 
         /// <summary>
         /// Path to the project file.
         /// </summary>
-        public string Path
-        {
-            get;
-            set;
-        }
+        [ObservableProperty]
+        public partial string Path { get; set; }
 
         /// <summary>
         /// Default namespace of newly created classes.
         /// </summary>
+        [ObservableProperty]
         [DataMember]
-        public string DefaultNamespace
-        {
-            get;
-            set;
-        }
+        public partial string DefaultNamespace { get; set; }
 
         /// <summary>
         /// Paths to files for the class models within this project.
         /// </summary>
+        [ObservableProperty]
         [DataMember]
-        public ObservableRangeCollection<string> ClassPaths
-        {
-            get;
-            set;
-        } = new ObservableRangeCollection<string>();
+        public partial ObservableRangeCollection<string> ClassPaths { get; set; } = new ObservableRangeCollection<string>();
 
         /// <summary>
         /// References of this project.
         /// </summary>
+        [ObservableProperty]
         [DataMember]
-        public ObservableRangeCollection<CompilationReference> References
-        {
-            get;
-            set;
-        } = new ObservableRangeCollection<CompilationReference>();
+        public partial ObservableRangeCollection<CompilationReference> References { get; set; } = new ObservableRangeCollection<CompilationReference>();
 
         /// <summary>
         /// Determines what gets output during compilation.
         /// </summary>
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(CanCompileAndRun))]
         [DataMember]
-        public ProjectCompilationOutput CompilationOutput
-        {
-            get;
-            set;
-        }
+        public partial ProjectCompilationOutput CompilationOutput { get; set; }
 
         /// <summary>
         /// Type of the binary that we want to output.
         /// </summary>
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(CanCompileAndRun))]
         [DataMember]
-        public BinaryType OutputBinaryType
-        {
-            get;
-            set;
-        }
+        public partial BinaryType OutputBinaryType { get; set; }
 
         private Project()
         {
@@ -241,64 +215,20 @@ namespace NetPrints.Core
 
         public bool CanCompile
         {
-            get => !isCompiling;
+            get => !IsCompiling;
         }
 
-        public string CompilationMessage
-        {
-            get => compilationMessage;
-            set
-            {
-                if (compilationMessage != value)
-                {
-                    compilationMessage = value;
-                }
-            }
-        }
+        [ObservableProperty]
+        public partial string CompilationMessage { get; set; } = "Ready";
 
-        private string compilationMessage = "Ready";
+        [ObservableProperty]
+        public partial bool IsCompiling { get; set; }
 
-        public bool IsCompiling
-        {
-            get => isCompiling;
-            set
-            {
-                if (isCompiling != value)
-                {
-                    isCompiling = value;
-                }
-            }
-        }
+        [ObservableProperty]
+        public partial bool LastCompilationSucceeded { get; set; }
 
-        private bool isCompiling;
-
-        public bool LastCompilationSucceeded
-        {
-            get => lastCompilationSucceeded;
-            set
-            {
-                if (lastCompilationSucceeded != value)
-                {
-                    lastCompilationSucceeded = value;
-                }
-            }
-        }
-
-        private bool lastCompilationSucceeded = false;
-
-        public ObservableRangeCollection<string> LastCompileErrors
-        {
-            get => lastCompileErrors;
-            set
-            {
-                if (lastCompileErrors != value)
-                {
-                    lastCompileErrors = value;
-                }
-            }
-        }
-
-        private ObservableRangeCollection<string> lastCompileErrors;
+        [ObservableProperty]
+        public partial ObservableRangeCollection<string> LastCompileErrors { get; set; }
 
         public async void CompileProject()
         {

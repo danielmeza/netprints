@@ -1,5 +1,6 @@
 ﻿using System.Runtime.Serialization;
-using PropertyChanged;
+using CommunityToolkit.Mvvm.ComponentModel;
+using NetPrints.Core;
 
 namespace NetPrints.Graph
 {
@@ -13,18 +14,14 @@ namespace NetPrints.Graph
     [KnownType(typeof(NodeOutputExecPin))]
     [KnownType(typeof(NodeInputTypePin))]
     [KnownType(typeof(NodeOutputTypePin))]
-    [AddINotifyPropertyChangedInterface]
-    public abstract class NodePin
+    public abstract partial class NodePin : ModelObject
     {
         /// <summary>
         /// Name of the pin.
         /// </summary>
+        [ObservableProperty]
         [DataMember]
-        public string Name
-        {
-            get;
-            set;
-        }
+        public partial string Name { get; set; }
 
         /// <summary>
         /// Node this pin is contained in.

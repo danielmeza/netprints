@@ -85,9 +85,9 @@ namespace NetPrints.Graph
             }
         }
 
-        protected override void OnInputTypeChanged(object sender, EventArgs eventArgs)
+        protected override void HandleInputTypeChanged(object sender, EventArgs eventArgs)
         {
-            base.OnInputTypeChanged(sender, eventArgs);
+            base.HandleInputTypeChanged(sender, eventArgs);
             UpdateMainNodeInputTypes();
         }
 

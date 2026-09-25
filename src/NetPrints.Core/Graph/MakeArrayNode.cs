@@ -23,6 +23,7 @@ namespace NetPrints.Graph
                 {
                     usePredefinedSize = value;
                     UpdateInputDataPins();
+                    OnPropertyChanged(nameof(UsePredefinedSize));
                 }
             }
         }
@@ -118,9 +119,9 @@ namespace NetPrints.Graph
             ArrayPin.PinType.Value = ArrayType;
         }
 
-        protected override void OnInputTypeChanged(object sender, EventArgs eventArgs)
+        protected override void HandleInputTypeChanged(object sender, EventArgs eventArgs)
         {
-            base.OnInputTypeChanged(sender, eventArgs);
+            base.HandleInputTypeChanged(sender, eventArgs);
             UpdateOutputType();
         }
 

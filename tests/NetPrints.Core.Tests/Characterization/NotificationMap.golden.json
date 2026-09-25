@@ -44,30 +44,30 @@
   },
   "NetPrints.Core.Variable": {
     "GetterMethod": [
-      "HasPublicGetter",
+      "GetterMethod",
       "HasAccessors",
+      "HasPublicGetter",
       "HasPublicSetter",
-      "Specifier",
-      "GetterMethod"
+      "Specifier"
     ],
     "Modifiers": [
-      "Specifier",
-      "Modifiers"
+      "Modifiers",
+      "Specifier"
     ],
     "Name": [
-      "Specifier",
-      "Name"
+      "Name",
+      "Specifier"
     ],
     "SetterMethod": [
-      "HasPublicSetter",
       "HasAccessors",
       "HasPublicGetter",
-      "Specifier",
-      "SetterMethod"
+      "HasPublicSetter",
+      "SetterMethod",
+      "Specifier"
     ],
     "TypeGraph": [
-      "Type",
       "Specifier",
+      "Type",
       "TypeGraph"
     ],
     "Visibility": [
@@ -278,8 +278,8 @@
   },
   "NetPrints.Graph.NodeInputTypePin": {
     "IncomingPin": [
-      "InferredType",
-      "IncomingPin"
+      "IncomingPin",
+      "InferredType"
     ],
     "Name": [
       "Name"

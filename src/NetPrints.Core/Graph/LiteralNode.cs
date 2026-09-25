@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Runtime.Serialization;
+using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Core;
 
 namespace NetPrints.Graph
@@ -9,7 +10,7 @@ namespace NetPrints.Graph
     /// Node representing a literal value.
     /// </summary>
     [DataContract]
-    public class LiteralNode : Node
+    public partial class LiteralNode : Node
     {
         /// <summary>
         /// Output data pin for the value of this literal.
@@ -30,8 +31,9 @@ namespace NetPrints.Graph
         /// <summary>
         /// Specifier for the type of this literal.
         /// </summary>
+        [ObservableProperty]
         [DataMember]
-        public TypeSpecifier LiteralType { get; private set; }
+        public partial TypeSpecifier LiteralType { get; private set; }
 
         public LiteralNode(NodeGraph graph, TypeSpecifier literalType)
             : base(graph)
@@ -51,9 +53,9 @@ namespace NetPrints.Graph
             UpdatePinTypes();
         }
 
-        protected override void OnInputTypeChanged(object sender, EventArgs eventArgs)
+        protected override void HandleInputTypeChanged(object sender, EventArgs eventArgs)
         {
-            base.OnInputTypeChanged(sender, eventArgs);
+            base.HandleInputTypeChanged(sender, eventArgs);
 
             UpdatePinTypes();
         }

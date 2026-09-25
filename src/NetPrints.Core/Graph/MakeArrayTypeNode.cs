@@ -20,9 +20,9 @@ namespace NetPrints.Graph
             AddOutputTypePin("ArrayType", arrayType);
         }
 
-        protected override void OnInputTypeChanged(object sender, EventArgs eventArgs)
+        protected override void HandleInputTypeChanged(object sender, EventArgs eventArgs)
         {
-            base.OnInputTypeChanged(sender, eventArgs);
+            base.HandleInputTypeChanged(sender, eventArgs);
 
             // Set the type of the output type pin by constructing
             // the type of this node with the input type pins.

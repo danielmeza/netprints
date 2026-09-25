@@ -1,4 +1,5 @@
 ﻿using System.Runtime.Serialization;
+using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Core;
 
 namespace NetPrints.Graph
@@ -10,7 +11,7 @@ namespace NetPrints.Graph
     /// Pin which can receive types.
     /// </summary>
     [DataContract]
-    public class NodeInputTypePin : NodeTypePin
+    public partial class NodeInputTypePin : NodeTypePin
     {
         /// <summary>
         /// Called when the node's incoming pin changed.
@@ -21,29 +22,18 @@ namespace NetPrints.Graph
         /// Incoming type pin for this pin. Null when not connected.
         /// Can trigger IncomingPinChanged when set.
         /// </summary>
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(InferredType))]
         [DataMember]
-        public NodeOutputTypePin IncomingPin
-        {
-            get => incomingPin;
-            set
-            {
-                if (incomingPin != value)
-                {
-                    var oldPin = incomingPin;
+        public partial NodeOutputTypePin IncomingPin { get; set; }
 
-                    incomingPin = value;
-
-                    IncomingPinChanged?.Invoke(this, oldPin, incomingPin);
-                }
-            }
-        }
+        partial void OnIncomingPinChanged(NodeOutputTypePin oldValue, NodeOutputTypePin newValue) =>
+            IncomingPinChanged?.Invoke(this, oldValue, newValue);
 
         public override ObservableValue<BaseType> InferredType
         {
             get => IncomingPin?.InferredType;
         }
-
-        private NodeOutputTypePin incomingPin;
 
         public NodeInputTypePin(Node node, string name)
             : base(node, name)

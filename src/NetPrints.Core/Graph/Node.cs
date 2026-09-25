@@ -2,8 +2,8 @@
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.Serialization;
+using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Core;
-using PropertyChanged;
 
 namespace NetPrints.Graph
 {
@@ -34,8 +34,7 @@ namespace NetPrints.Graph
     [KnownType(typeof(TernaryNode))]
     [KnownType(typeof(TypeReturnNode))]
     [KnownType(typeof(DefaultNode))]
-    [AddINotifyPropertyChangedInterface]
-    public abstract class Node
+    public abstract partial class Node : ModelObject
     {
         /// <summary>
         /// Input data pins of this node.
@@ -90,40 +89,27 @@ namespace NetPrints.Graph
         /// Visual position x of this node.
         /// Triggers a call to OnPositionChange when set.
         /// </summary>
+        [ObservableProperty]
         [DataMember]
-        public double PositionX
-        {
-            get => positionX;
-            set
-            {
-                positionX = value;
-                OnPositionChanged?.Invoke(this, positionX, positionY);
-            }
-        }
+        public partial double PositionX { get; set; }
 
         /// <summary>
         /// Visual position y of this node.
         /// Triggers a call to OnPositionChange when set.
         /// </summary>
+        [ObservableProperty]
         [DataMember]
-        public double PositionY
-        {
-            get => positionY;
-            set
-            {
-                positionY = value;
-                OnPositionChanged?.Invoke(this, positionX, positionY);
-            }
-        }
+        public partial double PositionY { get; set; }
 
-        private double positionX;
-        private double positionY;
+        partial void OnPositionXChanged(double oldValue, double newValue) => OnPositionChanged?.Invoke(this, PositionX, PositionY);
+        partial void OnPositionYChanged(double oldValue, double newValue) => OnPositionChanged?.Invoke(this, PositionX, PositionY);
 
         /// <summary>
         /// Name of this node.
         /// </summary>
+        [ObservableProperty]
         [DataMember]
-        public string Name { get; set; }
+        public partial string Name { get; set; }
 
         /// <summary>
         /// Whether this is a pure node (ie. one without any execution pins).
@@ -146,6 +132,7 @@ namespace NetPrints.Graph
                 if (IsPure != value)
                 {
                     SetPurity(value);
+                    OnPropertyChanged(nameof(IsPure));
                 }
 
                 Debug.Assert(value == IsPure, "Purity could not be set correctly.");
@@ -270,13 +257,13 @@ namespace NetPrints.Graph
 
         private void EventInputTypeChanged(object sender, EventArgs eventArgs)
         {
-            OnInputTypeChanged(sender, eventArgs);
+            HandleInputTypeChanged(sender, eventArgs);
 
             // Notify others afterwards, since the above call might have updated something
             InputTypeChanged?.Invoke(sender, eventArgs);
         }
 
-        protected virtual void OnInputTypeChanged(object sender, EventArgs eventArgs)
+        protected virtual void HandleInputTypeChanged(object sender, EventArgs eventArgs)
         {
         }
 
@@ -296,8 +283,8 @@ namespace NetPrints.Graph
         /// </summary>
         public virtual void OnMethodDeserialized()
         {
-            // Call OnInputTypeChanged to update the types of all nodes correctly.
-            OnInputTypeChanged(this, null);
+            // Call HandleInputTypeChanged to update the types of all nodes correctly.
+            HandleInputTypeChanged(this, null);
         }
     }
 }

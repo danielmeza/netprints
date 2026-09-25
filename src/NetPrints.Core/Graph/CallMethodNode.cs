@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
+using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Core;
 
 namespace NetPrints.Graph
@@ -10,7 +11,7 @@ namespace NetPrints.Graph
     /// Node representing a method call.
     /// </summary>
     [DataContract]
-    public class CallMethodNode : ExecNode
+    public partial class CallMethodNode : ExecNode
     {
         private const string ExceptionPinName = "Exception";
         private const string CatchPinName = "Catch";
@@ -23,12 +24,9 @@ namespace NetPrints.Graph
         /// <summary>
         /// Specifier for the method to call.
         /// </summary>
+        [ObservableProperty]
         [DataMember]
-        public MethodSpecifier MethodSpecifier
-        {
-            get;
-            private set;
-        }
+        public partial MethodSpecifier MethodSpecifier { get; private set; }
 
         /// <summary>
         /// Name of the method without any prefixes.
@@ -253,9 +251,9 @@ namespace NetPrints.Graph
             }
         }
 
-        protected override void OnInputTypeChanged(object sender, EventArgs eventArgs)
+        protected override void HandleInputTypeChanged(object sender, EventArgs eventArgs)
         {
-            base.OnInputTypeChanged(sender, eventArgs);
+            base.HandleInputTypeChanged(sender, eventArgs);
 
             UpdateTypes();
         }

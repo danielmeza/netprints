@@ -74,9 +74,9 @@ namespace NetPrints.Graph
             AddOutputDataPin("Output", Type);
         }
 
-        protected override void OnInputTypeChanged(object sender, EventArgs eventArgs)
+        protected override void HandleInputTypeChanged(object sender, EventArgs eventArgs)
         {
-            base.OnInputTypeChanged(sender, eventArgs);
+            base.HandleInputTypeChanged(sender, eventArgs);
 
             TrueObjectPin.PinType.Value = Type;
             FalseObjectPin.PinType.Value = Type;

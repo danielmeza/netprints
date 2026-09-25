@@ -2,8 +2,8 @@
 using System.ComponentModel;
 using System.Linq;
 using System.Runtime.Serialization;
+using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Core;
-using PropertyChanged;
 
 namespace NetPrints.Graph
 {
@@ -13,7 +13,6 @@ namespace NetPrints.Graph
         public delegate void ObservableValueChangedEventHandler(object sender, EventArgs eventArgs);
 
         [DataMember]
-        [DoNotNotify]
         public T Value
         {
             get => value;
@@ -47,14 +46,11 @@ namespace NetPrints.Graph
     }
 
     [DataContract]
-    public class TypeNode : Node
+    public partial class TypeNode : Node
     {
+        [ObservableProperty]
         [DataMember]
-        public BaseType Type
-        {
-            get;
-            private set;
-        }
+        public partial BaseType Type { get; private set; }
 
         [DataMember]
         private ObservableValue<BaseType> constructedType;
@@ -78,9 +74,9 @@ namespace NetPrints.Graph
             AddOutputTypePin("OutputType", constructedType);
         }
 
-        protected override void OnInputTypeChanged(object sender, EventArgs eventArgs)
+        protected override void HandleInputTypeChanged(object sender, EventArgs eventArgs)
         {
-            base.OnInputTypeChanged(sender, eventArgs);
+            base.HandleInputTypeChanged(sender, eventArgs);
 
             // Set the type of the output type pin by constructing
             // the type of this node with the input type pins.

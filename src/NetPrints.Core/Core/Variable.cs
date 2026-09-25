@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Linq;
 using System.Runtime.Serialization;
+using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Graph;
-using PropertyChanged;
 
 namespace NetPrints.Core
 {
@@ -33,18 +33,15 @@ namespace NetPrints.Core
     /// </summary>
     [Serializable]
     [DataContract(Name = "PropertySpecifier")]
-    [AddINotifyPropertyChangedInterface]
-    public class Variable
+    public partial class Variable : ModelObject
     {
         /// <summary>
         /// Name of the variable without any prefixes.
         /// </summary>
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(Specifier))]
         [DataMember]
-        public string Name
-        {
-            get;
-            set;
-        }
+        public partial string Name { get; set; }
 
         /// <summary>
         /// Class this variable is contained in.
@@ -75,32 +72,33 @@ namespace NetPrints.Core
         /// <summary>
         /// Get method for this variable. Can be null.
         /// </summary>
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(HasPublicGetter))]
+        [NotifyPropertyChangedFor(nameof(HasAccessors))]
+        [NotifyPropertyChangedFor(nameof(HasPublicSetter))]
+        [NotifyPropertyChangedFor(nameof(Specifier))]
         [DataMember]
-        public MethodGraph GetterMethod
-        {
-            get;
-            set;
-        }
+        public partial MethodGraph GetterMethod { get; set; }
 
         /// <summary>
         /// Set method for this variable. Can be null.
         /// </summary>
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(HasPublicSetter))]
+        [NotifyPropertyChangedFor(nameof(HasAccessors))]
+        [NotifyPropertyChangedFor(nameof(HasPublicGetter))]
+        [NotifyPropertyChangedFor(nameof(Specifier))]
         [DataMember]
-        public MethodGraph SetterMethod
-        {
-            get;
-            set;
-        }
+        public partial MethodGraph SetterMethod { get; set; }
 
         /// <summary>
         /// Graph specifying the type of this variable.
         /// </summary>
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(Type))]
+        [NotifyPropertyChangedFor(nameof(Specifier))]
         [DataMember]
-        public TypeGraph TypeGraph
-        {
-            get;
-            set;
-        }
+        public partial TypeGraph TypeGraph { get; set; }
 
         /// <summary>
         /// Whether this variable has a public getter.
@@ -144,22 +142,20 @@ namespace NetPrints.Core
         /// <summary>
         /// Visibility of this property.
         /// </summary>
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(HasPublicGetter))]
+        [NotifyPropertyChangedFor(nameof(HasPublicSetter))]
+        [NotifyPropertyChangedFor(nameof(Specifier))]
         [DataMember]
-        public MemberVisibility Visibility
-        {
-            get;
-            set;
-        } = MemberVisibility.Private;
+        public partial MemberVisibility Visibility { get; set; } = MemberVisibility.Private;
 
         /// <summary>
         /// Modifiers of this variable.
         /// </summary>
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(Specifier))]
         [DataMember]
-        public VariableModifiers Modifiers
-        {
-            get;
-            set;
-        }
+        public partial VariableModifiers Modifiers { get; set; }
 
         public VariableSpecifier Specifier
         {

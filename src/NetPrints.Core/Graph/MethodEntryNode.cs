@@ -17,9 +17,9 @@ namespace NetPrints.Graph
             AddOutputExecPin("Exec");
         }
 
-        protected override void OnInputTypeChanged(object sender, EventArgs eventArgs)
+        protected override void HandleInputTypeChanged(object sender, EventArgs eventArgs)
         {
-            base.OnInputTypeChanged(sender, eventArgs);
+            base.HandleInputTypeChanged(sender, eventArgs);
 
             for (int i = 0; i < InputTypePins.Count; i++)
             {

@@ -62,7 +62,11 @@ namespace NetPrints.Tests.Characterization
                     try
                     {
                         property.SetValue(instance, candidate);
-                        properties[property.Name] = raised;
+                        // Sorted, not raise order: CommunityToolkit.Mvvm's [ObservableProperty] raises the
+                        // property's own change before its [NotifyPropertyChangedFor] dependents, the
+                        // opposite of Fody's dependents-then-self order: T010 keeps the same notifications
+                        // firing, not Fody's specific ordering.
+                        properties[property.Name] = raised.OrderBy(n => n, StringComparer.Ordinal).ToList();
                     }
                     catch (TargetInvocationException)
                     {
