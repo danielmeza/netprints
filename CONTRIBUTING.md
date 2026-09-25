@@ -45,7 +45,7 @@ speckit-specify → speckit-clarify → speckit-plan (+ research.md) → speckit
 
 ## Building, testing and running
 
-See the [README](README.md#build-and-test) for the day-to-day commands
+See the [README](README.md#getting-started) for the day-to-day commands
 (`dotnet build`/`test`/`run`) and the [P0 quickstart](specs/001-modernize-build/quickstart.md)
 for the full walkthrough, including headless UI tests and the desktop E2E suite.
 
