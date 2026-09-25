@@ -1,6 +1,8 @@
 <!--
 Sync Impact Report
-- Version change: 1.2.0 → 1.2.1 (PATCH: clarifications, owner-approved 2026-09-25)
+- Version change: 1.2.1 → 1.2.2 (PATCH, owner-approved 2026-09-25): release packaging workflows may
+  use macOS/Windows runners; main CI stays Linux-only.
+- Previous: 1.2.0 → 1.2.1 (PATCH: clarifications, owner-approved 2026-09-25)
   - IV: the netstandard2.0 exception covers only analyzers/generators NetPrints ships, not
     generators it consumes.
   - Technology Constraints: Avalonia 12.x (current pin), AvaloniaEdit, Microsoft.Extensions.Logging,
@@ -106,6 +108,9 @@ dead dependencies rather than carrying them forward.
   ubuntu-latest). It builds the whole solution and runs all tests headless, and MUST pass
   before merge. The single exception is the VS extension: when P4 resumes it gets its own
   Windows workflow chained after `CI` via `workflow_run`, path-filtered.
+- Release packaging workflows (e.g. `release.yml`) may use macOS or Windows runners where a
+  platform build needs them (macOS app bundles, Windows smoke tests). They are not a substitute for
+  the Linux `CI` gate.
 
 ## Governance
 
@@ -115,4 +120,4 @@ principle/section added; PATCH: clarifications) and notes affected specs. Review
 check PRs against these principles; any deviation MUST be justified in the plan's
 Complexity Tracking section.
 
-**Version**: 1.2.1 | **Ratified**: 2026-09-24 | **Last Amended**: 2026-09-25
+**Version**: 1.2.2 | **Ratified**: 2026-09-24 | **Last Amended**: 2026-09-25

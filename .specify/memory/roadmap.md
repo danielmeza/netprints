@@ -142,7 +142,8 @@ Graph-format follow-ups from P1: `format --check` and `regen --check`, `netprint
 ### P3 — Editor extension host
 `NetPrints.Desktop --profile`, plugin-loaded editor extensions, UI contributions (commands,
 inspector sections, panels, settings pages), sample non-Unreal extension, anything functional
-left beyond P0 parity. No performance work here (owner decision 2026-09-25: see P8).
+left beyond P0 parity. Publishes the `NetPrints.Serialization` and `NetPrints.Extensibility`
+packages for extension authors. No performance work here (owner decision 2026-09-25: see P8).
 
 ### P4 — VSIX (deferred)
 Deferred by the project owner on 2026-09-24; revisit after P3/P5. When resumed:

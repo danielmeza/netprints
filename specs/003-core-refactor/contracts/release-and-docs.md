@@ -88,8 +88,9 @@ depend on git height.
 
 <PropertyGroup Label="Package metadata">
   <Authors>Daniel Meza, Robin Kahlow</Authors>
+  <Company>Gasoleo Technology</Company>
   <Product>NetPrints</Product>
-  <Copyright>Copyright (c) 2018 Robin Kahlow and NetPrints contributors</Copyright>
+  <Copyright>Copyright (c) 2018 Robin Kahlow; Copyright (c) 2026 Daniel Meza / Gasoleo Technology and contributors</Copyright>
   <PackageProjectUrl>https://danielmeza.github.io/netprints/</PackageProjectUrl>
   <RepositoryUrl>https://github.com/danielmeza/netprints</RepositoryUrl>
   <RepositoryType>git</RepositoryType>
@@ -1046,3 +1047,13 @@ follow-ups (Velopack installers and auto-update, code signing, package validatio
 | RL-T10 | The release workflow's pull-request run on the P1 PR is green for `pack`, `desktop` (3 legs), `assets`, with `publish-nuget` and `github-release` skipped, no secrets read; the `release-assets` artifact holds 7 package files, 3 archives and a `SHA256SUMS.txt` that verifies |
 | RL-T11 | `actionlint` (v1.7.x, run locally) reports nothing for all workflows; `docs.yml` `deploy` and `wiki.yml` `sync` are skipped on the PR and on `master` while their variables are unset |
 | RL-T12 | `.github/release-notes.md` states that builds are unsigned, the SmartScreen and macOS *Open Anyway* steps, the .NET 10 SDK requirement and the checksum/attestation commands; `.github/release.yml` has the six categories of §7 |
+
+## Owner decisions (2026-09-25)
+- Package metadata follows KiCadSharp: `Company` Gasoleo Technology, copyright lines for Robin Kahlow and
+  Daniel Meza / Gasoleo Technology. The packages and the Trusted Publishing policy belong to the
+  `GasoleoTechnology` nuget.org account.
+- The tool package id stays `NetPrints.Cli` with command `netprints`.
+- `NetPrints.Serialization` and `NetPrints.Extensibility` packages are not part of P1; they ship with the
+  P3 extension host.
+- Release packaging workflows may use macOS and Windows runners (constitution 1.2.2); the main `CI`
+  workflow stays Linux-only.
