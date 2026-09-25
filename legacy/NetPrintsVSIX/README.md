@@ -1,6 +1,6 @@
 # NetPrintsVSIX (pending P4 rework)
 
-This legacy Visual Studio extension is **not part of `NetPrints.sln`**, does **not build**, and is
+This legacy Visual Studio extension is **not part of `NetPrints.slnx`**, does **not build**, and is
 **not built or tested in CI**. It still references the removed WPF editor (`NetPrintsEditor`) and is
 kept only as a reference for the P4 phase of the modernization roadmap
 (`.specify/memory/roadmap.md`), which has been deferred by the project owner.
