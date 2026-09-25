@@ -16,6 +16,80 @@ Every decision below was checked by building and running code, not only by readi
 - Versions were queried with `dotnet package search --exact-match`, the nuget.org flat-container
   API (nuspec dependency groups) and the GitHub API (action releases, repository history).
 
+## Review follow-up 2026-09-25 (PR #1 reviews, owner decisions)
+
+This section **supersedes** the MSTest-based test design in sections e and p, the `UiTest.RunAsync`
+harness and the warm SC-005 figure below.
+
+**Test framework: xUnit v3** (owner decision). All tests moved from MSTest 4 to xUnit v3 on
+Microsoft.Testing.Platform:
+
+| Project | Framework | Notes |
+|--|--|--|
+| NetPrintsUnitTests (core) | xunit.v3 3.2.2 | no DI: nothing to inject |
+| NetPrints.Editor.Tests (reflection, view models, hosts) | xunit.v3 3.2.2 + Xunit.DependencyInjection 11.3.2 | a `Startup` shares one loaded `IReflectionHost`; `TestEditor` is resolved per test class |
+| NetPrints.Editor.UITests (new, headless UI) | xunit.v3 3.2.2 + Avalonia.Headless.XUnit 12.1.3 | `[AvaloniaFact(Timeout = …)]`; no DI |
+
+Verified:
+- **xUnit 4.x is not usable yet.** Avalonia.Headless.XUnit 12.1.3, the latest adapter, is built
+  against `xunit.v3.extensibility.core` 3.2.2 and fails discovery under 4.0.1 (reviewer probe). No
+  newer adapter exists, so xUnit stays on 3.2.2.
+- **Xunit.DependencyInjection must stay out of the UI assembly.** Its build targets register its
+  own test framework, and then every `[AvaloniaFact]` fails.
+- **Timeouts really cancel.** Probe: `[AvaloniaFact(Timeout = 1000)]` around an 8 s
+  `Task.Delay(…, TestContext.Current.CancellationToken)`, and around a condition wait, fails as
+  "canceled" after 1.0 s. The MSTest `[Timeout(…, CooperativeCancellation = true)]` was a no-op,
+  because nothing observed its token.
+- `xUnit1051` is an error in every test project: every awaited call passes
+  `TestContext.Current.CancellationToken`.
+- TRX: `dotnet test … --report-xunit-trx --results-directory TestResults`.
+- The custom `HeadlessUnitTestSession`/`UiTest.RunAsync` harness is deleted. `[AvaloniaFact]` runs
+  the body on the UI thread and awaits it. `[assembly: AvaloniaTestApplication]` points at the real
+  `EditorApp`.
+
+**UI test structure** (owner rule `maui-ui-testing`):
+- Page objects per feature (`MainWindowPage`, `ClassEditorPage`, `GraphCanvasPage`,
+  `NodeSearchPage`, dialog pages) own every locator.
+- Controls are found by `AutomationIds` constants that the XAML also uses (`x:Static`).
+- Waits poll a condition; there are no sleeps.
+- Before a pointer event, the driver forces a render tick, because Avalonia 12 hit-tests the render
+  scene.
+
+**Code layout** (owner rule `code-organisation`): `NetPrints.Editor` and all test projects are
+organized by feature (`Main/ ClassEditor/ Graph/{Nodes,Pins,GetSet}/ Search/ Variables/ References/
+Inspectors/ Dialogs/ UndoRedo/ ModelSync/ Hosting/{Avalonia}/`). The tests mirror these folders.
+
+**SC-005, measured on the cold path.** The earlier "~0.85 s" was measured on warm caches.
+
+- `SearchPerformanceTests` uses a fresh host, loads it, and times the first search of a new graph.
+- Without a warm-up, the first search took 2.4 s on this machine (the reviewer measured 2.2–2.4 s),
+  over the 2 s budget. Roslyn binds member symbols lazily, and the first enumeration of about 120k
+  static methods pays for that binding.
+- `ReflectionHost.ReloadAsync` now does that enumeration once, in the background load, right after
+  a project opens. The search waits for `IReflectionHost.Loaded`.
+- Measured (Release, this machine):
+
+  | | Without warm-up | With warm-up |
+  |--|--|--|
+  | First search | 2.4 s | 1.46–1.59 s |
+  | Background load | 1.7 s | 2.4–2.9 s |
+  | Worst keystroke | 11–25 ms | 11–25 ms |
+
+- The test asserts only a 3× regression bound (6 s / 900 ms), so a busy CI runner doesn't flake;
+  the measured values go to the test output (TRX).
+
+**Other changes:**
+- `IReflectionHost` has an explicit loaded state (`IsLoaded`, `Loaded`); `Provider` throws before
+  the first load (no silent empty provider).
+- Graph view models refresh overloads, enum names and documentation on `Reloaded`.
+- `EditorContext` has required `IScheduler Scheduler` and `Func<IMessenger> CreateMessenger` (no
+  defaults). The search box uses Rx `Throttle` on that scheduler, and the tests use `TestScheduler`
+  (virtual time).
+- The reference resolver's runtime fallback is all-or-nothing for framework references.
+- Compiled output is deterministic: class sources are ordered, and emit is deterministic.
+- `UnhandledExceptionHandler` reports exceptions that escape to the UI thread.
+- `TreatWarningsAsErrors` is on for the editor, the desktop app and every test project.
+
 ## Scope update 2026-09-24 (constitution 1.2.0): net10.0 everywhere, latest dependencies
 
 The project owner put Visual Studio / .NET Framework hosting out of scope. Constitution 1.2.0
@@ -441,7 +515,7 @@ checkout v7, setup-dotnet v6, upload-artifact v7 (latest majors on 2026-09-24).
 |----|------|--------------------|
 | R1 | ~~Nodify.Avalonia 1.0.2 is net7.0-only, which blocks a ns2.0 editor for the VS host~~ | Obsolete since constitution 1.2.0 (VS hosting out of scope) |
 | R2 | Nodify.Avalonia 2.0.0 is a young port (single release) | Nodify types only in views; pin version; fallback custom canvas |
-| R3 | Headless `Dispatch` hangs on exceptions | `UiTest.RunAsync` helper + `[Timeout]` (verified) |
+| R3 | ~~Headless `Dispatch` hangs on exceptions~~ | Obsolete: Avalonia.Headless.XUnit `[AvaloniaFact]` with real timeouts (review follow-up) |
 | R4 | 119k suggestion entries over the runtime set | DynamicData filter + throttle + virtualized list; SC-005 test |
 | R5 | Runtime-assembly fallback changes compile semantics on Linux (net10 instead of netfx) | Documented; P1 adds explicit target/ref-pack selection |
 | R6 | Parity items with pointer gestures (XButton1, middle-click, right-drag vs right-click) are hard to automate headless | VM-level tests + manual walkthrough (quickstart §5) |

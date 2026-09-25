@@ -14,7 +14,7 @@ it builds. Gapotchenko.FX is removed (`System.HashCode` is built in). A minimal 
 falls back to the running .NET runtime's assemblies, so compile/run and reflection work on Linux.
 The reflection code moves into a UI-free `NetPrints.Reflection`. A new `NetPrints.Editor`
 (Avalonia 12.1.3 + Nodify.Avalonia 2.0.0 + CommunityToolkit.Mvvm + DynamicData) and a thin
-`NetPrints.Desktop` replace the WPF editor. All tests run on MSTest 4 / Microsoft.Testing.Platform,
+`NetPrints.Desktop` replace the WPF editor. All tests run on xUnit v3 / Microsoft.Testing.Platform,
 UI tests included (Avalonia.Headless), and a single Linux GitHub Actions workflow `CI` gates
 merges. The legacy VSIX leaves the solution until P4. All technical decisions and their evidence
 are in [research.md](./research.md).
@@ -32,9 +32,11 @@ Fody 6.9.3 + PropertyChanged.Fody 4.1.0 (Core only, until P1).
 
 **Storage**: files — `.netpp`/`.netpc` DataContract XML, unchanged format.
 
-**Testing**: MSTest 4.4.1 (metapackage) on Microsoft.Testing.Platform (`global.json` test runner);
-Avalonia.Headless + Skia for UI tests through a `UiTest.RunAsync` exception-capturing helper and
-`[Timeout]`; TRX reports.
+**Testing** (review follow-up, research.md): xUnit v3 3.2.2 on Microsoft.Testing.Platform
+(`global.json` test runner). Xunit.DependencyInjection is used for the non-UI editor tests.
+Avalonia.Headless.XUnit `[AvaloniaFact(Timeout)]` + Skia runs the UI tests in their own assembly,
+with page objects and shared `AutomationIds`. `xUnit1051` is an error, and TRX comes from
+`--report-xunit-trx`.
 
 **Target Platform**: Linux first (CI: `ubuntu-latest`); the editor also runs on Windows and macOS.
 
@@ -99,11 +101,13 @@ README.md                        # updated
 samples/HelloWorld/              # new: HelloWorld.netpp, HelloWorld.Program.netpc
 NetPrints/                       # Core: net10.0 (+ Core/ReferenceAssemblyResolver.cs)
 NetPrints.Reflection/            # new: moved from NetPrintsEditor/Reflection
-NetPrints.Editor/                # new: EditorApp, ViewModels, Views, Services(+Avalonia impls), Converters, Commands, Messages, Assets
+NetPrints.Editor/                # new: EditorApp + feature folders (Main, ClassEditor, Graph, Search, Variables, References,
+                                 #      Inspectors, Dialogs, UndoRedo, ModelSync, Hosting/Avalonia), Assets
 NetPrints.Desktop/               # new: Program.cs, icon
 NetPrintsCLI/                    # net10.0
-NetPrintsUnitTests/              # net10.0, MSTest 4
-NetPrints.Editor.Tests/          # new: Reflection/, ViewModels/, Ui/, Samples/
+NetPrintsUnitTests/              # net10.0, xUnit v3 (Core/, Translator/, Compilation/, Samples/)
+NetPrints.Editor.Tests/          # new: xUnit + DI; feature folders mirroring the editor
+NetPrints.Editor.UITests/        # new: Avalonia.Headless.XUnit; page objects per feature
 NetPrintsVSIX/                   # kept, out of the solution, README "pending P4"
 NetPrintsEditor/                 # deleted (WPF)
 NetPrintsEditorUnitTests/        # deleted
@@ -137,7 +141,7 @@ pull in Avalonia. See data-model.md §1.
 |-----------------------|------------|-------------------------------------|
 | Windows `ProgramFilesX86` framework-path logic kept (principle I) | Changing reference semantics or format is P1 scope; P0 needs Linux to work now | Replacing it now means designing the P1 ref-pack/target model early. The fallback is additive and format-neutral. |
 | `Nullable=disable` in Core, NetPrintsUnitTests and NetPrints.Reflection | ~100 unique warnings in Core; the reflection code is a pure move | Enabling it would bury P0 in unrelated churn. P1 enables it when those projects are refactored. |
-| `TreatWarningsAsErrors=false` | Fody/RS1024/MSTEST0017 warnings in legacy code | Fixing them is P1 work; errors still fail the build. |
+| `TreatWarningsAsErrors=false` for Core and Reflection only | Fody and RS1024 warnings in legacy code | Fixing them is P1 work. The editor, the desktop app and all test projects have it on (review follow-up). |
 | Editor scope (P3 work) in P0 (principle VIII vs roadmap 1.0) | Explicit user decision relayed by the coordinator | Needs roadmap re-scoping; see below. |
 
 ## Governance amendments (approved by the owner and applied 2026-09-24)

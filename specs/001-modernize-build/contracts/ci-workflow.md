@@ -13,7 +13,8 @@ and this contract.
 | Job id | `build-test` | stable |
 | SDK | `actions/setup-dotnet@v6`, `dotnet-version: 10.0.x`; `global.json` governs the feature band | may change |
 | Build | `dotnet build NetPrints.sln -c Release` | may change |
-| Tests | `dotnet test --solution NetPrints.sln -c Release --no-build --report-trx --results-directory TestResults` (Microsoft.Testing.Platform mode from `global.json`) | may change |
+| NuGet cache | `actions/cache@v6` on `~/.nuget/packages`, key = hash of `Directory.Packages.props`, `Directory.Build.props`, `global.json`, `**/*.csproj` | may change |
+| Tests | `dotnet test --solution NetPrints.sln -c Release --no-build --report-xunit-trx --results-directory TestResults` (Microsoft.Testing.Platform mode from `global.json`) | may change |
 | CLI smoke | `NetPrintsCLI --version` output contains `NetPrintsCLI` | may change |
 | Artifact | `test-results` (`TestResults/**/*.trx`), uploaded `if: always()` | stable name |
 | Permissions | `contents: read` | stable |

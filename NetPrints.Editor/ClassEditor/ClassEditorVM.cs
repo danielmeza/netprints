@@ -309,6 +309,11 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     /// Starts refreshing <see cref="GeneratedCode"/> about every second until the editor is disposed.
     /// Replaces the WPF editor's timer thread + dispatcher.
     /// </summary>
+    /// <remarks>
+    /// The translation runs on the UI thread on purpose: the model is not thread-safe, and the WPF
+    /// editor's background translation raced with edits. On very large classes this can stutter
+    /// about once a second; translating a snapshot off the UI thread is a P3 performance item.
+    /// </remarks>
     public void StartGeneratedCodeLoop(TimeSpan? interval = null)
     {
         if (generatedCodeLoopStarted)

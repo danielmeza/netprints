@@ -31,7 +31,7 @@ consistent with the constitution, the roadmap and the coordinator's instructions
 - Q: Which operating systems does CI run on? → A: Main CI runs on Linux only (`ubuntu-latest`), in a workflow named `CI` (`.github/workflows/ci.yml`). The Visual Studio extension will get its own Windows workflow chained after `CI` (`workflow_run`), created in P4, not P0.
 - Q: Which Avalonia major version does the editor use? → A: (superseded by the 1.2.0 scope update: Avalonia 12.1.3 + Nodify.Avalonia 2.0.0) Avalonia 11.x (11.3.22). Avalonia 12 ships only `net8.0`/`net10.0` assemblies; the P4 Visual Studio host runs on .NET Framework and needs `netstandard2.0` assemblies.
 - Q: Which graph-canvas control provides pan/zoom, selection, dragging and connections? → A: Nodify.Avalonia 1.0.2, the last release built for Avalonia 11. It was verified on Linux in a headless test harness. Its risks are recorded in research.md.
-- Q: How are the editor's user-interface tests run on Linux? → A: With the same test framework as the core tests (MSTest 4 on Microsoft.Testing.Platform), using Avalonia's headless platform with the Skia renderer. No display server is needed.
+- Q: How are the editor's user-interface tests run on Linux? → A: (superseded in the PR #1 review follow-up: xUnit v3 + Avalonia.Headless.XUnit in a separate UI test assembly) With the same test framework as the core tests (MSTest 4 on Microsoft.Testing.Platform), using Avalonia's headless platform with the Skia renderer. No display server is needed.
 - Q: How do compile, run and type reflection work on Linux, where the .NET Framework reference assemblies used by existing projects do not exist? → A: Framework references that cannot be found fall back to the running .NET 10 runtime's assemblies. Executables built this way are launched through the `dotnet` host. The project file format does not change. Full reference-pack resolution stays in P1.
 
 ## User Scenarios & Testing *(mandatory)*
@@ -180,7 +180,7 @@ the .NET runtime's assemblies on Linux.
 
 **Tests and CI**
 
-- **FR-017**: All tests MUST use MSTest 4 on Microsoft.Testing.Platform. The editor test project MUST contain reflection tests, view-model tests and headless UI smoke tests (start the app, open the sample project, open a method graph, create a node via search, connect pins, save and reload). All of these MUST run on Linux without a display.
+- **FR-017**: All tests MUST use xUnit v3 on Microsoft.Testing.Platform (owner decision in the PR #1 review follow-up; originally MSTest 4). The editor test project MUST contain reflection tests, view-model tests and headless UI smoke tests (start the app, open the sample project, open a method graph, create a node via search, connect pins, save and reload). All of these MUST run on Linux without a display.
 - **FR-018**: A sample project (`samples/HelloWorld`) MUST be checked in. Tests MUST verify that it loads, compiles on Linux and prints `Hello, World!` when run.
 - **FR-019**: Main CI MUST be a single Linux workflow named `CI` in `.github/workflows/ci.yml`. It runs on push and pull request to `master`, builds the solution, runs all tests, smoke-runs the CLI and uploads test results. P0 MUST NOT add Windows jobs or the VSIX workflow.
 - **FR-020**: The legacy VSIX project MUST be removed from the solution build. Its source MUST stay in the repository, marked as pending P4 rework.

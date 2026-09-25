@@ -234,6 +234,35 @@ build can be green on Linux from here on.
 - [X] T084 Run quickstart.md §2–4 from a fresh clone in a clean Linux container (only the .NET 10 SDK installed). Confirm the two-command build/test (SC-001)
 - [X] T085 In the PR description, list the follow-ups: P1 (ref-pack resolution and target selection, Fody removal, nullable in Core/Reflection, RS1024, MSTEST0017, `LanguageVersion.Preview` constant), P2 (CLI exit codes), P4 (VSIX workflow chained after `CI`; VS hosting is out of scope per constitution 1.2.0), and the net10.0-only scope update
 
+## Phase 13: PR #1 review follow-ups (2026-09-25)
+
+**Purpose**: address the two reviews of PR #1 and the owner's decisions. Every defect is first
+reproduced by a failing test (owner rule `conformance-gates` §5).
+
+- [X] T086 Reorganize `NetPrints.Editor` by feature (`Main/ ClassEditor/ Graph/{Nodes,Pins,GetSet}/ Search/ Variables/ References/ Inspectors/ Dialogs/ UndoRedo/ ModelSync/ Hosting/{Avalonia}/`); namespaces follow folders (review 2, `code-organisation`)
+- [X] T087 Migrate every test project to xUnit v3 3.2.2 on MTP. Use Xunit.DependencyInjection for `NetPrints.Editor.Tests`. Move the UI tests to `NetPrints.Editor.UITests` with Avalonia.Headless.XUnit `[AvaloniaFact(Timeout)]`, and verify with a probe that the timeouts cancel. Make `xUnit1051` an error and pass the test token everywhere. Mirror the feature folders in the tests. CI uses `--report-xunit-trx` (owner decision)
+- [X] T088 UI page objects per feature and shared `AutomationIds` referenced from XAML; condition waits instead of sleeps; a PAR-51 test that really zooms with the wheel (review 2, `maui-ui-testing`)
+- [X] T089 Fix chained overload undo/redo (stable node handle); multi-step PAR-60 undo/redo tests (review 1)
+- [X] T090 Refresh overloads, enum names and tooltips on `IReflectionHost.Reloaded`; explicit `IsLoaded`/`Loaded` state instead of a silent empty provider; remove the swallowing `catch (Exception)` blocks (reviews 1 and 2)
+- [X] T091 All-or-nothing runtime fallback for framework references in `ReferenceAssemblyResolver` (review 1)
+- [X] T092 Undo and redo keep the inspector and canvas consistent: `ClassEditorVM` observes the model (review 1)
+- [X] T093 `FactoryMatchesCheckedInSample` compares the factory output with the checked-in sample byte for byte (review 1)
+- [X] T094 Deterministic compiled output: ordered class sources and `WithDeterministic(true)` (review 1, constitution VI)
+- [X] T095 SC-005 on the cold path: a background warm-up in `ReflectionHost` and a generous CI bound, with the timings in the test output (review 1)
+- [X] T096 `TreatWarningsAsErrors` for the new projects; partial-property `[ObservableProperty]`; explicit `System.Reactive`; delete `NodeSelectionMessage`; rename `AddNodeMessage` to `AddNodeRequest`; remove the redundant snap command (review 2)
+- [X] T097 Rx `Throttle` on an injected `IScheduler`, with a virtual-time test; required `EditorContext.Scheduler`/`CreateMessenger` (review 2, `explicit-di-no-fallbacks`)
+- [X] T098 App-level `UnhandledExceptionHandler` for dispatcher and unobserved-task exceptions, with tests for a dispatcher exception and an async void handler (review 2)
+- [X] T099 NuGet cache in CI (review 1)
+- [X] T100 Update the research, plan, quickstart, contracts, data model, spec and README for these changes
+
+Deferred to P1 (recorded by the owner in `.specify/memory/roadmap.md`):
+- the child-VM → parent callback refactor;
+- a Roslyn architecture gate for "no UI types in view models";
+- Nodify command-based gestures and a `ViewportTransform`-bound grid;
+- `SetProperty(model, …)` wrappers;
+- `MetadataReference` caching;
+- the `EditorComposition` test hook.
+
 ---
 
 ## Dependencies & Execution Order
@@ -321,4 +350,4 @@ Every PAR item is also checked by hand in T076.
 - Keep the persisted format unchanged: no edits to DataContract attributes in Core.
 - Do not implement P1–P5 items (serialization, extension points, Spectre CLI, VSIX workflow).
 - The known WPF defect (remove-class button, PAR-11) is intentionally fixed.
-- UI tests must use `UiTest.RunAsync`, never raw `session.Dispatch` with assertions inside, and need `[Timeout]`.
+- UI tests use `[AvaloniaFact(Timeout = …)]` and page objects; every awaited call passes `TestContext.Current.CancellationToken` (`xUnit1051` is an error). The earlier `UiTest.RunAsync` harness is gone (Phase 13).

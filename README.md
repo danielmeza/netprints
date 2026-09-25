@@ -47,7 +47,7 @@ Every project targets .NET 10.
 | NetPrints.Editor | net10.0 | Avalonia 12 editor library (views, view models, services) |
 | NetPrints.Desktop | net10.0 | Desktop application hosting the editor |
 | NetPrintsCLI | net10.0 | Command line compiler |
-| NetPrintsUnitTests, NetPrints.Editor.Tests | net10.0 | MSTest 4 on Microsoft.Testing.Platform, headless Avalonia UI tests |
+| NetPrintsUnitTests, NetPrints.Editor.Tests, NetPrints.Editor.UITests | net10.0 | xUnit v3 on Microsoft.Testing.Platform; headless Avalonia UI tests (Avalonia.Headless.XUnit) |
 | NetPrintsVSIX | .NET Framework 4.6.1 | Legacy, not built (see below) |
 
 # Visual Studio Extension

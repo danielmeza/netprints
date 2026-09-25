@@ -17,16 +17,19 @@ dotnet test --solution NetPrints.sln -c Release --no-build
 
 Expected:
 - The build finishes with **0 errors**. Known warnings: Fody `OnInputTypeChanged` (Core, until
-  P1), Roslyn analyzer warnings in the moved reflection code, `MSTEST0017`.
+  P1) and Roslyn analyzer warnings in the moved reflection code. The editor, the desktop app and the
+  test projects build with warnings as errors.
 - Tests report `failed: 0` for both test projects: `NetPrintsUnitTests` (11 tests) and
-  `NetPrints.Editor.Tests` (reflection, view-model and headless UI tests).
-- `--report-trx --results-directory TestResults` writes `.trx` files, as CI does.
+  `NetPrints.Editor.Tests` (reflection, view-model and host tests) and `NetPrints.Editor.UITests`
+  (headless UI tests). All three use xUnit v3.
+- `--report-xunit-trx --results-directory TestResults` writes `.trx` files, as CI does.
 
 Individual projects:
 
 ```bash
 dotnet test --project NetPrintsUnitTests -c Release
 dotnet test --project NetPrints.Editor.Tests -c Release
+dotnet test --project NetPrints.Editor.UITests -c Release
 ```
 
 ## 3. CLI smoke
