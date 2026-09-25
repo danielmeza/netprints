@@ -7,6 +7,11 @@ using Microsoft.CodeAnalysis;
 
 namespace NetPrints.Reflection
 {
+    /// <summary>
+    /// Reads XML documentation summary/param/returns text for reflected methods from each
+    /// assembly's .xml documentation file (found next to the assembly, or under the framework
+    /// reference-assemblies folder), caching lookups per assembly, method and parameter.
+    /// </summary>
     public class DocumentationUtil
     {
         private readonly Dictionary<string, XmlDocument> cachedDocuments =
@@ -23,6 +28,11 @@ namespace NetPrints.Reflection
 
         private readonly Microsoft.CodeAnalysis.Compilation compilation;
 
+        /// <summary>
+        /// Creates a documentation util resolving assembly documentation files through
+        /// <paramref name="compilation"/>'s metadata references.
+        /// </summary>
+        /// <param name="compilation">Compilation to resolve assembly paths through.</param>
         public DocumentationUtil(Microsoft.CodeAnalysis.Compilation compilation)
         {
             this.compilation = compilation;

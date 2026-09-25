@@ -4,8 +4,17 @@ using NetPrints.Core;
 
 namespace NetPrints.Reflection
 {
+    /// <summary>
+    /// Synthesized <see cref="MethodSpecifier"/>s for C#'s built-in operators (on <see cref="bool"/>,
+    /// numeric types, etc.), so they can be searched and translated the same way as a reflected
+    /// <c>op_*</c> method (see <see cref="OperatorUtil"/>) even though the compiler does not expose
+    /// them as ordinary methods.
+    /// </summary>
     public static class DefaultOperatorSpecifiers
     {
+        /// <summary>
+        /// Every synthesized built-in operator specifier. Computed once and cached on first access.
+        /// </summary>
         public static IEnumerable<MethodSpecifier> All
         {
             get
