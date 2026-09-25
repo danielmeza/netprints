@@ -354,8 +354,7 @@ namespace NetPrints.Core
                     }
                     catch (Exception ex)
                     {
-                        // Report why the class cannot be translated instead of compiling the
-                        // exception text as C# (which only yields syntax errors).
+                        // Report the reason instead of compiling the exception text.
                         translationErrors.Add($"{cls.FullName}: {ex.Message}");
                         code = $"// {cls.FullName} could not be translated: {ex.Message}";
                     }
@@ -400,9 +399,7 @@ namespace NetPrints.Core
 
                 bool deleteBinaries = !CompilationOutput.HasFlag(ProjectCompilationOutput.Binaries) && !File.Exists(outputPath);
 
-                // Resolve references to existing files. Missing .NET Framework reference
-                // assemblies (e.g. on Linux) fall back to the running runtime's assemblies,
-                // other missing files are skipped and reported (FR-008, FR-009).
+                // Missing framework reference assemblies fall back to the runtime's (FR-008, FR-009).
                 var resolver = new ReferenceAssemblyResolver();
                 var referenceWarnings = new List<string>();
                 var assemblyPaths = resolver.ResolveAssemblyPaths(references.OfType<AssemblyReference>(), referenceWarnings);
@@ -426,8 +423,7 @@ namespace NetPrints.Core
                         compilationResults.PathToAssembly);
                 }
 
-                // Executables built against the runtime assemblies are started through the
-                // dotnet host, which needs a runtime configuration file (FR-010).
+                // Started through the dotnet host, which needs a runtime config (FR-010).
                 if (compilationResults.Success && generateExecutable && resolver.UsesRuntimeAssemblies
                     && CompilationOutput.HasFlag(ProjectCompilationOutput.Binaries))
                 {

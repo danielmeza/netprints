@@ -27,13 +27,7 @@ public sealed record AutomationResponse(bool Ok)
     public string? Text { get; init; }
 }
 
-/// <summary>
-/// Read-only automation endpoint of the desktop editor, enabled only with
-/// <c>NETPRINTS_AUTOMATION=1</c>: a local pipe (a Unix domain socket on Linux) that answers
-/// line-delimited JSON requests — <c>status</c> (the ready signal), <c>find</c> (elements by
-/// automation id with screen bounds and properties), <c>dump</c> and <c>settle</c>. It never
-/// changes the UI: tests send real input through the operating system (xdotool).
-/// </summary>
+/// <summary>Read-only automation pipe of the desktop editor (<c>NETPRINTS_AUTOMATION=1</c>): status, find, dump, settle.</summary>
 public sealed class AutomationAgent : IDisposable
 {
     public const string EnableVariable = "NETPRINTS_AUTOMATION";

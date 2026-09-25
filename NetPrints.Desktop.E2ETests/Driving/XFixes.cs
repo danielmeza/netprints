@@ -17,15 +17,11 @@ public static partial class XFixes
     [LibraryImport("libXfixes.so.3")]
     private static partial IntPtr XFixesGetCursorImage(IntPtr display);
 
-    // XFixesCursorImage (64-bit): short x, y; unsigned short width, height, xhot, yhot;
-    // unsigned long cursor_serial; unsigned long *pixels; Atom atom; const char *name.
+    // XFixesCursorImage offsets on 64-bit.
     private const int SerialOffset = 16;
     private const int NameOffset = 40;
 
-    /// <summary>
-    /// The cursor's name (e.g. "left_ptr", "fleur"), or, for a cursor created from an image
-    /// (Avalonia loads theme images), "image:WxH:XHOT,YHOT:SERIAL".
-    /// </summary>
+    /// <summary>The cursor's name, or "image:WxH:XHOT,YHOT:SERIAL" for an unnamed image cursor.</summary>
     public static string CursorName(string displayName)
     {
         IntPtr display = XOpenDisplay(displayName);

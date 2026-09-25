@@ -7,12 +7,7 @@ using NetPrints.Testing.Ui.Snapshots;
 
 namespace NetPrints.Desktop.E2ETests.Driving;
 
-/// <summary>
-/// <see cref="IUiDriver"/> for the real editor on X11: elements and their screen bounds come
-/// from the in-app automation agent; input is real (xdotool, through the X server and the
-/// window manager); screenshots are taken with ImageMagick's import; window state is read with
-/// xprop; the cursor with XFixes.
-/// </summary>
+/// <summary><see cref="IUiDriver"/> for the desktop editor on X11 (agent for elements, xdotool for input).</summary>
 public sealed class X11Driver(XServer server, EditorProcess editor, Tool tool) : IUiDriver
 {
     private const int DragSteps = 12;
@@ -58,11 +53,7 @@ public sealed class X11Driver(XServer server, EditorProcess editor, Tool tool) :
     private Task JumpToAsync(double x, double y, CancellationToken cancellationToken) =>
         tool.XdotoolAsync(cancellationToken, "mousemove", "--sync", I(x), I(y));
 
-    /// <summary>
-    /// Moves the pointer the way a hand does, through intermediate points, so the editor sees it
-    /// leave controls (tooltips close, hover states end) instead of jumping onto whatever window
-    /// is under the target, such as a pin's tooltip.
-    /// </summary>
+    /// <summary>Moves the pointer through intermediate points, so hover and tooltips follow it.</summary>
     private async Task MoveToAsync(double x, double y, CancellationToken cancellationToken)
     {
         string location = await tool.XdotoolAsync(cancellationToken, "getmouselocation", "--shell");

@@ -3,11 +3,7 @@ using System.Globalization;
 
 namespace NetPrints.Desktop.E2ETests.Hosting;
 
-/// <summary>
-/// A private X server for the E2E run: Xvfb on a free display number (100 and up, never the
-/// user's desktop) at 1600x1000x24, 96 DPI, with the openbox window manager. Started once per
-/// run (collection fixture), like <c>xvfb-run -a</c>, plus a window manager.
-/// </summary>
+/// <summary>A private Xvfb (display 100 and up) with openbox, one per test run.</summary>
 public sealed class XServer : IAsyncLifetime
 {
     public const int Width = 1600;
@@ -29,11 +25,7 @@ public sealed class XServer : IAsyncLifetime
     /// <summary>A private home for the editor and GTK (settings, recent files), deleted at the end.</summary>
     public string Home { get; } = Directory.CreateTempSubdirectory("netprints-e2e-home-").FullName;
 
-    /// <summary>
-    /// The environment of every process on this display: the private DISPLAY, no D-Bus session
-    /// (so file pickers are GTK dialogs on this display, not portals on the user's desktop), a
-    /// private home, UTC and the invariant culture.
-    /// </summary>
+    /// <summary>Environment for processes on this display: private DISPLAY and home, no D-Bus, UTC, invariant culture.</summary>
     public void Apply(IDictionary<string, string?> environment)
     {
         environment["DISPLAY"] = DisplayName;
@@ -42,7 +34,7 @@ public sealed class XServer : IAsyncLifetime
         environment.Remove("XAUTHORITY");
         environment["NO_AT_BRIDGE"] = "1";
 
-        // A named cursor theme, so XFixes reports cursor names ("fleur", "left_ptr").
+        // A named cursor theme.
         environment["XCURSOR_THEME"] = "Adwaita";
         environment["XCURSOR_SIZE"] = "24";
         environment["GTK_USE_PORTAL"] = "0";
@@ -52,6 +44,8 @@ public sealed class XServer : IAsyncLifetime
         environment["XDG_DATA_HOME"] = Path.Combine(Home, ".local", "share");
         environment["XDG_CACHE_HOME"] = Path.Combine(Home, ".cache");
         environment["XDG_RUNTIME_DIR"] = Path.Combine(Home, "run");
+        // No dconf without D-Bus: the file chooser settings come from a key file.
+        environment["GSETTINGS_BACKEND"] = "keyfile";
         environment["TZ"] = "UTC";
         environment["LANG"] = "C.UTF-8";
         environment["LC_ALL"] = "C.UTF-8";
@@ -81,6 +75,9 @@ public sealed class XServer : IAsyncLifetime
         }
 
         Directory.CreateDirectory(Path.Combine(Home, "run"));
+        string settings = Directory.CreateDirectory(Path.Combine(Home, ".config", "glib-2.0", "settings")).FullName;
+        await File.WriteAllTextAsync(Path.Combine(settings, "keyfile"),
+            "[org/gtk/settings/file-chooser]\nstartup-mode='cwd'\nlocation-mode='filename-entry'\nshow-hidden=false\n");
         File.SetUnixFileMode(Path.Combine(Home, "run"), UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
 
         for (int attempt = 0; attempt < 5 && xvfb is null; attempt++)

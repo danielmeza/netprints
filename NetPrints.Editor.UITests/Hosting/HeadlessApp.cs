@@ -11,12 +11,7 @@ using NetPrints.Testing.Ui.Snapshots;
 
 namespace NetPrints.Editor.UITests.Hosting;
 
-/// <summary>
-/// A fresh editor on the headless platform for one test: the real composition with recording
-/// dialogs, a primed file picker and a capturing process launcher, the automation tree, the
-/// headless driver, the root page object and a Screenplay actor. The test arranges through the
-/// API (<see cref="Composition"/>) and acts through the page objects.
-/// </summary>
+/// <summary>A fresh headless editor per test, with recording dialogs, a primed file picker and a Screenplay actor.</summary>
 public sealed class HeadlessApp : IDisposable
 {
     /// <summary>The E2E screen size (Xvfb), used as the size of maximized windows.</summary>
@@ -45,8 +40,7 @@ public sealed class HeadlessApp : IDisposable
         exceptionHandler = Composition.InstallUnhandledExceptionHandler(); // as EditorApp does on the desktop
         Tree = new AutomationTree();
 
-        // Headless windows do not grow when maximized: give class windows the size a maximized
-        // window has on the E2E screen (1600x1000), so layouts and coordinates match.
+        // Headless maximized windows keep their size: use the E2E screen size.
         classWindowSizer = Avalonia.Controls.Window.WindowOpenedEvent.AddClassHandler(typeof(ClassEditorWindow), (sender, _) =>
         {
             var window = (ClassEditorWindow)sender!;

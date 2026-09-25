@@ -15,11 +15,7 @@ public sealed record SmokeContext(Actor Actor, string SampleProject, string Work
     public IUiDriver Driver => Editor.Driver;
 }
 
-/// <summary>
-/// The smoke flows shared by every driver (headless and X11): the same Screenplay tasks and page
-/// objects, one subclass per driver. Scenarios that need a capability the driver lacks are
-/// skipped with <see cref="Assert.Skip(string)"/>.
-/// </summary>
+/// <summary>Smoke flows shared by every driver; one subclass per driver.</summary>
 public abstract class SmokeScenarios
 {
     protected const string ClassName = "HelloWorld.Program";
@@ -144,11 +140,7 @@ public abstract class SmokeScenarios
             cancellationToken);
     }
 
-    /// <summary>
-    /// Whether a cursor is the four-way move cursor: by name, or, for an image cursor
-    /// ("image:WxH:XHOT,YHOT:SERIAL"), by its hotspot in the middle (arrows point to the hotspot
-    /// at the top-left).
-    /// </summary>
+    /// <summary>Whether a cursor is the move cursor: by name, or by a centered hotspot for an image cursor.</summary>
     public static bool IsMoveCursor(string? cursor)
     {
         if (cursor is "fleur" or "move" or "all-scroll" or "size_all")

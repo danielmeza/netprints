@@ -128,8 +128,7 @@ public partial class GraphEditorView : UserControl
     {
         var properties = e.GetCurrentPoint(Editor).Properties;
 
-        // The editor captures the pointer, so released events come from the editor itself:
-        // gesture targets are resolved here, on press.
+        // The editor captures the pointer, so gesture targets are resolved on press.
         if (properties.IsRightButtonPressed)
         {
             rightPressPosition = FindContext<NodeVM>(e.Source) is null ? e.GetPosition(Editor) : null;

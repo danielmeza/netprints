@@ -10,6 +10,8 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <WarningsAsErrors>$(WarningsAsErrors);xUnit1051</WarningsAsErrors>
+    <!-- Without NETPRINTS_E2E=1 every test is skipped; that is not a failed run (exit code 8). -->
+    <TestingPlatformCommandLineArguments>$(TestingPlatformCommandLineArguments) --ignore-exit-code 8</TestingPlatformCommandLineArguments>
   </PropertyGroup>
 
   <ItemGroup>

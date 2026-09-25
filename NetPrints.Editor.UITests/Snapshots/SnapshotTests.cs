@@ -11,11 +11,7 @@ using NetPrints.Testing.Ui.Snapshots;
 
 namespace NetPrints.Editor.UITests.Snapshots;
 
-/// <summary>
-/// Pixel snapshots of the key states, compared with the committed baselines in
-/// Snapshots/Baselines (tolerant: per-pixel threshold, maximum differing share, masks).
-/// Regenerate with NETPRINTS_UPDATE_SNAPSHOTS=1; new baselines are reviewed before acceptance.
-/// </summary>
+/// <summary>Pixel snapshots of key states against Snapshots/Baselines.</summary>
 public class SnapshotTests
 {
     private static CancellationToken Token => TestContext.Current.CancellationToken;

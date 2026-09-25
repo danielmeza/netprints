@@ -10,11 +10,7 @@ using NetPrints.Testing.Ui.Snapshots;
 
 namespace NetPrints.Editor.UITests.Driving;
 
-/// <summary>
-/// <see cref="IUiDriver"/> on Avalonia's headless platform: elements come from the same
-/// <see cref="AutomationTree"/> the in-app agent uses, input is raw headless mouse and keyboard
-/// input, screenshots are rendered frames. Runs on the headless UI thread.
-/// </summary>
+/// <summary><see cref="IUiDriver"/> on Avalonia's headless platform.</summary>
 public sealed class HeadlessDriver(AutomationTree tree, Func<string> programOutput) : IUiDriver
 {
     private Window? keyboardWindow;

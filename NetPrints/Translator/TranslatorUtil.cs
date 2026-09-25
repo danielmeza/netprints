@@ -65,8 +65,7 @@ namespace NetPrints.Translator
                 return "null";
             }
 
-            // Escaped string and char literals; numbers in the invariant culture (a German
-            // machine must not write 1,5D); lower-case booleans.
+            // Numbers are culture-invariant.
             string invariant = obj is System.IFormattable formattable
                 ? formattable.ToString(null, System.Globalization.CultureInfo.InvariantCulture)
                 : obj.ToString();
