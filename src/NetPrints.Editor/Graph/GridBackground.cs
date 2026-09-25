@@ -27,8 +27,10 @@ public enum GridRenderPath
     /// <summary>Nothing drawn yet, or the renderer is not Skia.</summary>
     None,
 
+    /// <summary>The frame was drawn with the SkSL shader.</summary>
     Shader,
 
+    /// <summary>The frame was drawn with the CPU path.</summary>
     Cpu,
 }
 
@@ -67,27 +69,35 @@ public sealed class GridBackground : Control
     /// <summary>The environment variable that overrides <see cref="GridRenderMode.Auto"/>.</summary>
     public const string ModeVariable = "NETPRINTS_GRID";
 
+    /// <summary>Registers <see cref="ViewportLocation"/>.</summary>
     public static readonly StyledProperty<Point> ViewportLocationProperty =
         AvaloniaProperty.Register<GridBackground, Point>(nameof(ViewportLocation));
 
+    /// <summary>Registers <see cref="ViewportZoom"/>.</summary>
     public static readonly StyledProperty<double> ViewportZoomProperty =
         AvaloniaProperty.Register<GridBackground, double>(nameof(ViewportZoom), 1.0);
 
+    /// <summary>Registers <see cref="CellSize"/>.</summary>
     public static readonly StyledProperty<double> CellSizeProperty =
         AvaloniaProperty.Register<GridBackground, double>(nameof(CellSize), GraphConstants.GridCellSize);
 
+    /// <summary>Registers <see cref="MajorEvery"/>.</summary>
     public static readonly StyledProperty<int> MajorEveryProperty =
         AvaloniaProperty.Register<GridBackground, int>(nameof(MajorEvery), 8, validate: v => v > 0);
 
+    /// <summary>Registers <see cref="BackgroundColor"/>.</summary>
     public static readonly StyledProperty<Color> BackgroundColorProperty =
         AvaloniaProperty.Register<GridBackground, Color>(nameof(BackgroundColor), Color.FromRgb(0x25, 0x25, 0x25));
 
+    /// <summary>Registers <see cref="MinorColor"/>.</summary>
     public static readonly StyledProperty<Color> MinorColorProperty =
         AvaloniaProperty.Register<GridBackground, Color>(nameof(MinorColor), Color.FromArgb(0x14, 0xFF, 0xFF, 0xFF));
 
+    /// <summary>Registers <see cref="MajorColor"/>.</summary>
     public static readonly StyledProperty<Color> MajorColorProperty =
         AvaloniaProperty.Register<GridBackground, Color>(nameof(MajorColor), Color.FromArgb(0x2E, 0xFF, 0xFF, 0xFF));
 
+    /// <summary>Registers <see cref="Mode"/>.</summary>
     public static readonly StyledProperty<GridRenderMode> ModeProperty =
         AvaloniaProperty.Register<GridBackground, GridRenderMode>(nameof(Mode));
 
@@ -192,6 +202,11 @@ public sealed class GridBackground : Control
         _ => hasGpuContext && shaderAvailable(),
     };
 
+    /// <summary>
+    /// Queues an immutable draw operation (a <see cref="GridStyle"/> snapshot plus the current
+    /// viewport and resolved mode) for the render thread; see <see cref="GridDrawOperation"/>.
+    /// </summary>
+    /// <param name="context">Drawing context to queue the custom draw operation on.</param>
     public override void Render(DrawingContext context)
     {
         style ??= new GridStyle(CellSize, MajorEvery, MinorWidth: 1, MajorWidth: 1, BackgroundColor, MinorColor, MajorColor);
@@ -199,6 +214,11 @@ public sealed class GridBackground : Control
             ResolveMode(Mode, EnvironmentMode)));
     }
 
+    /// <summary>
+    /// Invalidates the cached <see cref="GridStyle"/> when a style-affecting property (cell size,
+    /// major-every, or any of the three colors) changes, so <see cref="Render"/> rebuilds it.
+    /// </summary>
+    /// <param name="change">The property that changed.</param>
     protected override void OnPropertyChanged(AvaloniaPropertyChangedEventArgs change)
     {
         base.OnPropertyChanged(change);
