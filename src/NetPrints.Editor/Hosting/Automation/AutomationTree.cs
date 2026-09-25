@@ -25,6 +25,9 @@ public sealed class AutomationTree : IDisposable
     private readonly IDisposable closedHandler;
     private int nextKey;
 
+    /// <summary>
+    /// Starts tracking every window opened from now on.
+    /// </summary>
     public AutomationTree()
     {
         openedHandler = Window.WindowOpenedEvent.AddClassHandler(typeof(Window), (sender, _) => Track((Window)sender!));
@@ -50,8 +53,21 @@ public sealed class AutomationTree : IDisposable
         keys.Remove(window);
     }
 
+    /// <summary>
+    /// The stable key this tree assigned to a tracked window (eg. "w1", "w2", assigned in the order
+    /// windows opened).
+    /// </summary>
+    /// <param name="window">Tracked window to get the key for.</param>
+    /// <returns>The window's key.</returns>
+    /// <exception cref="KeyNotFoundException"><paramref name="window"/> is not tracked.</exception>
     public string KeyOf(Window window) => keys[window];
 
+    /// <summary>
+    /// The tracked window with the given key (see <see cref="KeyOf"/>).
+    /// </summary>
+    /// <param name="key">Key of the window to find.</param>
+    /// <returns>The window with that key.</returns>
+    /// <exception cref="InvalidOperationException">No tracked window has that key.</exception>
     public Window WindowByKey(string key) =>
         keys.FirstOrDefault(p => p.Value == key).Key ?? throw new InvalidOperationException($"No open window with key {key}.");
 
@@ -288,6 +304,9 @@ public sealed class AutomationTree : IDisposable
         return sb.ToString();
     }
 
+    /// <summary>
+    /// Stops tracking window open/close events. Already-tracked windows are not untracked.
+    /// </summary>
     public void Dispose()
     {
         openedHandler.Dispose();
