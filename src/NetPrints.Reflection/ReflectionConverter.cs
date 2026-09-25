@@ -19,6 +19,14 @@ namespace NetPrints.Reflection
             [Microsoft.CodeAnalysis.Accessibility.Internal] = MemberVisibility.Internal,
         };
 
+        /// <summary>
+        /// Converts a Roslyn accessibility to the closest <see cref="MemberVisibility"/>. Combined
+        /// accessibilities without a direct equivalent (eg. <c>internal protected</c>,
+        /// <c>private protected</c>) fall back to <see cref="MemberVisibility.Public"/> (a TODO in the
+        /// code notes this is not yet done correctly).
+        /// </summary>
+        /// <param name="accessibility">Roslyn accessibility to convert.</param>
+        /// <returns>The closest <see cref="MemberVisibility"/>.</returns>
         public static MemberVisibility VisibilityFromAccessibility(Microsoft.CodeAnalysis.Accessibility accessibility)
         {
             if (roslynToNetprintsVisibility.TryGetValue(accessibility, out var visibility))
@@ -31,6 +39,16 @@ namespace NetPrints.Reflection
             return MemberVisibility.Public;
         }
 
+        /// <summary>
+        /// Converts a Roslyn type symbol to a <see cref="TypeSpecifier"/>: its namespace-qualified,
+        /// nested-class ("+"-separated) name, whether it is an enum or interface, and its generic
+        /// arguments (recursively converted; a generic argument that is itself a type parameter
+        /// becomes a <see cref="GenericType"/> via <see cref="GenericTypeSpecifierFromSymbol"/>). An
+        /// array type is represented as <see cref="Array"/> (a TODO notes this loses the element type).
+        /// </summary>
+        /// <param name="type">Type symbol to convert.</param>
+        /// <returns>The equivalent type specifier.</returns>
+        /// <exception cref="ArgumentException"><paramref name="type"/> is an unbound generic type (eg. <c>List&lt;&gt;</c>).</exception>
         public static TypeSpecifier TypeSpecifierFromSymbol(ITypeSymbol type)
         {
             string typeName;
@@ -87,6 +105,12 @@ namespace NetPrints.Reflection
             return typeSpecifier;
         }
 
+        /// <summary>
+        /// Converts a Roslyn type parameter symbol to a <see cref="GenericType"/>, by name. Constraints
+        /// are not yet converted (a TODO in the code), so the result always has none.
+        /// </summary>
+        /// <param name="type">Type parameter symbol to convert.</param>
+        /// <returns>The equivalent generic type, with no constraints.</returns>
         public static GenericType GenericTypeSpecifierFromSymbol(ITypeParameterSymbol type)
         {
             // TODO: Convert constraints
@@ -95,6 +119,13 @@ namespace NetPrints.Reflection
             return genericType;
         }
 
+        /// <summary>
+        /// Converts a Roslyn type symbol to a <see cref="BaseType"/>: a <see cref="GenericType"/> (via
+        /// <see cref="GenericTypeSpecifierFromSymbol"/>) if it is a type parameter, otherwise a
+        /// <see cref="TypeSpecifier"/> (via <see cref="TypeSpecifierFromSymbol"/>).
+        /// </summary>
+        /// <param name="type">Type symbol to convert.</param>
+        /// <returns>The equivalent base type.</returns>
         public static BaseType BaseTypeSpecifierFromSymbol(ITypeSymbol type)
         {
             if (type is ITypeParameterSymbol typeParam)
@@ -107,6 +138,12 @@ namespace NetPrints.Reflection
             }
         }
 
+        /// <summary>
+        /// Converts a Roslyn parameter symbol to its name and <see cref="BaseType"/>, via
+        /// <see cref="BaseTypeSpecifierFromSymbol"/>.
+        /// </summary>
+        /// <param name="paramSymbol">Parameter symbol to convert.</param>
+        /// <returns>The parameter's name and type.</returns>
         public static Named<BaseType> NamedBaseTypeSpecifierFromSymbol(IParameterSymbol paramSymbol)
         {
             return new Named<BaseType>(paramSymbol.Name, BaseTypeSpecifierFromSymbol(paramSymbol.Type));
@@ -122,12 +159,27 @@ namespace NetPrints.Reflection
             [RefKind.RefReadOnlyParameter] = MethodParameterPassType.In,
         };
 
+        /// <summary>
+        /// Converts a Roslyn parameter symbol to a <see cref="MethodParameter"/>: its name, type (via
+        /// <see cref="BaseTypeSpecifierFromSymbol"/>), pass type (mapped from <see cref="RefKind"/>,
+        /// with <see cref="RefKind.RefReadOnlyParameter"/> treated as <see cref="MethodParameterPassType.In"/>),
+        /// and explicit default value if it has one.
+        /// </summary>
+        /// <param name="paramSymbol">Parameter symbol to convert.</param>
+        /// <returns>The equivalent method parameter.</returns>
         public static MethodParameter MethodParameterFromSymbol(in IParameterSymbol paramSymbol)
         {
             return new MethodParameter(paramSymbol.Name, BaseTypeSpecifierFromSymbol(paramSymbol.Type), refKindToPassType[paramSymbol.RefKind],
                 paramSymbol.HasExplicitDefaultValue, paramSymbol.HasExplicitDefaultValue ? paramSymbol.ExplicitDefaultValue : null);
         }
 
+        /// <summary>
+        /// Converts a Roslyn method symbol to a <see cref="MethodSpecifier"/>: its name, visibility,
+        /// modifiers (virtual, sealed, abstract, static, override, async), parameters, return type (or
+        /// none for a <see langword="void"/> method) and generic arguments.
+        /// </summary>
+        /// <param name="method">Method symbol to convert.</param>
+        /// <returns>The equivalent method specifier.</returns>
         public static MethodSpecifier MethodSpecifierFromSymbol(IMethodSymbol method)
         {
             MemberVisibility visibility = VisibilityFromAccessibility(method.DeclaredAccessibility);
@@ -184,6 +236,14 @@ namespace NetPrints.Reflection
                 genericArgs);
         }
 
+        /// <summary>
+        /// Converts a Roslyn property symbol to a <see cref="VariableSpecifier"/>: its name, type,
+        /// getter/setter visibility (each <see cref="MemberVisibility.Private"/> if that accessor does
+        /// not exist), and modifiers (static, read-only; other modifiers are not yet converted, a TODO
+        /// in the code).
+        /// </summary>
+        /// <param name="property">Property symbol to convert.</param>
+        /// <returns>The equivalent variable specifier.</returns>
         public static VariableSpecifier VariableSpecifierFromSymbol(IPropertySymbol property)
         {
             var getterAccessibility = property.GetMethod?.DeclaredAccessibility;
@@ -212,6 +272,13 @@ namespace NetPrints.Reflection
                 modifiers);
         }
 
+        /// <summary>
+        /// Converts a Roslyn field symbol to a <see cref="VariableSpecifier"/>: its name, type,
+        /// visibility (used for both getter and setter, since a field has one), and modifiers (static,
+        /// const, read-only; other modifiers are not yet converted, a TODO in the code).
+        /// </summary>
+        /// <param name="field">Field symbol to convert.</param>
+        /// <returns>The equivalent variable specifier.</returns>
         public static VariableSpecifier VariableSpecifierFromField(IFieldSymbol field)
         {
             var visibility = VisibilityFromAccessibility(field.DeclaredAccessibility);
@@ -244,6 +311,12 @@ namespace NetPrints.Reflection
                 modifiers);
         }
 
+        /// <summary>
+        /// Converts a Roslyn constructor method symbol to a <see cref="ConstructorSpecifier"/>: its
+        /// parameters and declaring type.
+        /// </summary>
+        /// <param name="constructorMethodSymbol">Constructor method symbol to convert.</param>
+        /// <returns>The equivalent constructor specifier.</returns>
         public static ConstructorSpecifier ConstructorSpecifierFromSymbol(IMethodSymbol constructorMethodSymbol)
         {
             return new ConstructorSpecifier(
