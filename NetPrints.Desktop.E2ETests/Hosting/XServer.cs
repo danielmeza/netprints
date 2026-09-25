@@ -3,7 +3,11 @@ using System.Globalization;
 
 namespace NetPrints.Desktop.E2ETests.Hosting;
 
-/// <summary>A private Xvfb (display 100 and up) with openbox, one per test run.</summary>
+/// <summary>
+/// A private X server for the E2E run: Xvfb on a free display number (100 and up, never the
+/// user's desktop) at 1600x1000x24, 96 DPI, with the openbox window manager. Started once per
+/// run (collection fixture), like <c>xvfb-run -a</c>, plus a window manager.
+/// </summary>
 public sealed class XServer : IAsyncLifetime
 {
     public const int Width = 1600;
@@ -25,7 +29,11 @@ public sealed class XServer : IAsyncLifetime
     /// <summary>A private home for the editor and GTK (settings, recent files), deleted at the end.</summary>
     public string Home { get; } = Directory.CreateTempSubdirectory("netprints-e2e-home-").FullName;
 
-    /// <summary>Environment for processes on this display: private DISPLAY and home, no D-Bus, UTC, invariant culture.</summary>
+    /// <summary>
+    /// The environment of every process on this display: the private DISPLAY, no D-Bus session
+    /// (so file pickers are GTK dialogs on this display, not portals on the user's desktop), a
+    /// private home, UTC and the invariant culture.
+    /// </summary>
     public void Apply(IDictionary<string, string?> environment)
     {
         environment["DISPLAY"] = DisplayName;

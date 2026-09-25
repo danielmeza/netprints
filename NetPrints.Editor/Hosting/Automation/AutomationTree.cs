@@ -11,7 +11,11 @@ using Nodify.Avalonia;
 
 namespace NetPrints.Editor.Hosting.Automation;
 
-/// <summary>Finds UI elements by automation id in the open windows. UI thread only.</summary>
+/// <summary>
+/// Read-only view of the editor's UI for automation: tracks open windows and finds elements by
+/// automation id. Used by the in-app automation agent and by the headless UI test driver, so both
+/// see exactly the same elements and properties. Must be used on the UI thread.
+/// </summary>
 public sealed class AutomationTree : IDisposable
 {
     private readonly List<Window> windows = [];

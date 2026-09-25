@@ -21,7 +21,10 @@ public static partial class XFixes
     private const int SerialOffset = 16;
     private const int NameOffset = 40;
 
-    /// <summary>The cursor's name, or "image:WxH:XHOT,YHOT:SERIAL" for an unnamed image cursor.</summary>
+    /// <summary>
+    /// The cursor's name (e.g. "left_ptr", "fleur"), or, for a cursor created from an image
+    /// (Avalonia loads theme images), "image:WxH:XHOT,YHOT:SERIAL".
+    /// </summary>
     public static string CursorName(string displayName)
     {
         IntPtr display = XOpenDisplay(displayName);

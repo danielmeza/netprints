@@ -22,7 +22,11 @@ public interface IQuestion<T>
     Task<T> AnsweredByAsync(Actor actor, CancellationToken cancellationToken);
 }
 
-/// <summary>The Screenplay actor: abilities, tasks, questions and a journal for diagnostics.</summary>
+/// <summary>
+/// The Screenplay actor: holds abilities, performs tasks and asks questions, and keeps a journal
+/// of what it did for failure diagnostics. Hand-rolled (see research.md: Boa.Constrictor's
+/// interactions take no cancellation token and wait with Thread.Sleep).
+/// </summary>
 public sealed class Actor(string name)
 {
     private readonly Dictionary<Type, IAbility> abilities = [];

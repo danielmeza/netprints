@@ -11,7 +11,12 @@ using NetPrints.Testing.Ui.Snapshots;
 
 namespace NetPrints.Editor.UITests.Hosting;
 
-/// <summary>A fresh headless editor per test, with recording dialogs, a primed file picker and a Screenplay actor.</summary>
+/// <summary>
+/// A fresh editor on the headless platform for one test: the real composition with recording
+/// dialogs, a primed file picker and a capturing process launcher, the automation tree, the
+/// headless driver, the root page object and a Screenplay actor. The test arranges through the
+/// API (<see cref="Composition"/>) and acts through the page objects.
+/// </summary>
 public sealed class HeadlessApp : IDisposable
 {
     /// <summary>The E2E screen size (Xvfb), used as the size of maximized windows.</summary>

@@ -1,6 +1,10 @@
 namespace NetPrints.Testing.Ui.Snapshots;
 
-/// <summary>Compares screenshots with baseline PNGs; <c>NETPRINTS_UPDATE_SNAPSHOTS=1</c> rewrites the baselines.</summary>
+/// <summary>
+/// Compares screenshots with committed baseline PNGs. Every actual image is written to the output
+/// folder (a CI artifact), with a diff image when it does not match. With
+/// <c>NETPRINTS_UPDATE_SNAPSHOTS=1</c> the actual images become the new baselines.
+/// </summary>
 public sealed class SnapshotStore(string baselineDirectory, string outputDirectory)
 {
     public const string UpdateVariable = "NETPRINTS_UPDATE_SNAPSHOTS";
