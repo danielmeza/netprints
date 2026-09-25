@@ -20,8 +20,13 @@ namespace NetPrints.Editor.ClassEditor;
 /// <summary>Which inspector the class editor shows on the right (PAR-33).</summary>
 public enum InspectorKind
 {
+    /// <summary>The class inspector (name, namespace, visibility, modifiers).</summary>
     Class,
+
+    /// <summary>The variable inspector, for <see cref="ClassEditorVM.SelectedVariable"/>.</summary>
     Variable,
+
+    /// <summary>The method inspector, for <see cref="ClassEditorVM.SelectedMethod"/>.</summary>
     Method,
 }
 
@@ -55,6 +60,13 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     private bool outputTruncated;
     private IDisposable? outputFlush;
 
+    /// <summary>
+    /// Wraps <paramref name="cls"/>: builds its method/constructor/variable collections, subscribes
+    /// to model and reflection-reload events, starts buffering process output, and computes the
+    /// initial overridable methods and generated-code preview.
+    /// </summary>
+    /// <param name="cls">Class to edit.</param>
+    /// <param name="context">Host services shared across the editor.</param>
     public ClassEditorVM(ClassGraph cls, EditorContext context)
     {
         Class = cls;
@@ -93,8 +105,10 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         RefreshGeneratedCode();
     }
 
+    /// <summary>The wrapped model class.</summary>
     public ClassGraph Class { get; }
 
+    /// <summary>Host services shared across the editor.</summary>
     public EditorContext Context { get; }
 
     /// <summary>Messenger scoped to this class editor.</summary>
@@ -103,12 +117,16 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     /// <summary>Undo/redo history of this class editor.</summary>
     public UndoRedoStack UndoRedo { get; } = new();
 
+    /// <summary>The project the class belongs to, or <see langword="null"/> if it has not been added to one.</summary>
     public Project? Project => Class.Project;
 
+    /// <summary>View models for <see cref="Class"/>'s methods.</summary>
     public ObservableViewModelCollection<MethodVM, MethodGraph> Methods { get; }
 
+    /// <summary>View models for <see cref="Class"/>'s constructors.</summary>
     public ObservableViewModelCollection<MethodVM, ConstructorGraph> Constructors { get; }
 
+    /// <summary>View models for <see cref="Class"/>'s variables.</summary>
     public ObservableViewModelCollection<MemberVariableVM, Variable> Variables { get; }
 
     /// <summary>The graph shown in the canvas, or null.</summary>
@@ -119,10 +137,13 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     [NotifyPropertyChangedFor(nameof(ShowClassInspector), nameof(ShowVariableInspector), nameof(ShowMethodInspector))]
     public partial InspectorKind Inspector { get; set; } = InspectorKind.Class;
 
+    /// <summary>Whether the class inspector should be shown.</summary>
     public bool ShowClassInspector => Inspector == InspectorKind.Class;
 
+    /// <summary>Whether the variable inspector should be shown (a variable is also selected).</summary>
     public bool ShowVariableInspector => Inspector == InspectorKind.Variable && SelectedVariable is not null;
 
+    /// <summary>Whether the method inspector should be shown (a method is also selected).</summary>
     public bool ShowMethodInspector => Inspector == InspectorKind.Method && SelectedMethod is not null;
 
     [ObservableProperty]
@@ -163,8 +184,10 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     /// <summary>The class name with its namespace (the window's automation name).</summary>
     public string FullName => Class.FullName ?? "";
 
+    /// <summary>The visibility values offered by the class's visibility chooser.</summary>
     public IReadOnlyList<MemberVisibility> PossibleVisibilities => Visibilities;
 
+    /// <summary>The class's name, without namespace. Setting it also refreshes <see cref="Title"/> and <see cref="FullName"/>.</summary>
     public string Name
     {
         get => Class.Name;
@@ -180,6 +203,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         }
     }
 
+    /// <summary>The class's namespace. Setting it also refreshes <see cref="FullName"/>.</summary>
     public string Namespace
     {
         get => Class.Namespace;
@@ -194,6 +218,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         }
     }
 
+    /// <summary>The class's visibility.</summary>
     public MemberVisibility Visibility
     {
         get => Class.Visibility;
@@ -207,6 +232,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         }
     }
 
+    /// <summary>The class's modifiers.</summary>
     public ClassModifiers Modifiers
     {
         get => Class.Modifiers;
@@ -224,12 +250,16 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         }
     }
 
+    /// <summary>Whether <see cref="ClassModifiers.Sealed"/> is set.</summary>
     public bool IsSealed { get => Modifiers.HasFlag(ClassModifiers.Sealed); set => SetModifier(ClassModifiers.Sealed, value); }
 
+    /// <summary>Whether <see cref="ClassModifiers.Abstract"/> is set.</summary>
     public bool IsAbstract { get => Modifiers.HasFlag(ClassModifiers.Abstract); set => SetModifier(ClassModifiers.Abstract, value); }
 
+    /// <summary>Whether <see cref="ClassModifiers.Static"/> is set.</summary>
     public bool IsStatic { get => Modifiers.HasFlag(ClassModifiers.Static); set => SetModifier(ClassModifiers.Static, value); }
 
+    /// <summary>Whether <see cref="ClassModifiers.Partial"/> is set.</summary>
     public bool IsPartial { get => Modifiers.HasFlag(ClassModifiers.Partial); set => SetModifier(ClassModifiers.Partial, value); }
 
     private void SetModifier(ClassModifiers flag, bool value) => Modifiers = value ? Modifiers | flag : Modifiers & ~flag;
@@ -569,6 +599,11 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
 
     private bool CanRedo() => UndoRedo.CanRedo;
 
+    /// <summary>
+    /// Stops the generated-code loop and output buffering, unsubscribes from every model and host
+    /// event, clears <see cref="OpenedGraph"/>, and disposes the method/constructor/variable
+    /// collections (and, through them, every member view model).
+    /// </summary>
     public void Dispose()
     {
         generatedCodeLoop?.Dispose();
