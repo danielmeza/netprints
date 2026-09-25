@@ -27,6 +27,7 @@ when it is started.
 | ID | Name | Est. | Depends on | Status |
 |----|------|------|------------|--------|
 | P0 | Modernize build + Avalonia editor at parity | ~6 w (manual est.) | — | in progress (`specs/001-modernize-build`) |
+| P0.1 | Grid rendering (shader + pixel-identical fallback) | ~3–5 d | P0 | next after P0 merge |
 | P1 | Core refactor + extension points | ~3.5 w | P0 | not started |
 | P2 | Catalog tooling + Spectre CLI | ~2.5 w | P1 | not started |
 | P3a | Editor shell | ~2–3 w | P0, P1 | not started |
@@ -59,7 +60,7 @@ when it is started.
     - D3: an in-editor Output pane for Run on every platform;
     - D4: C# preview with no wrapping, horizontal scroll and a monospace font.
     - D5 (documentation tooltips on Linux) moves to P1.
-  - Background grid rewrite per `docs/research/2026-09-25-grid-rendering/`: a `GridBackground` control behind a
+  - (Moved out of P0 on 2026-09-25: it becomes a small follow-up PR, "P0.1 Grid rendering", right after the P0 merge and before P1, with its own review.) Background grid rewrite per `docs/research/2026-09-25-grid-rendering/`: a `GridBackground` control behind a
     transparent NodifyEditor, drawing via ICustomDrawOperation + SKCanvas in device pixels. Two paths share one
     `GridStyle`/`GridFrame` definition:
     - an SkSL shader when a GPU context exists and the effect compiles;
