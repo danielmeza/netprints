@@ -136,6 +136,24 @@ namespace NetPrints.Tests.Samples
             Assert.Equal("Build failed with 1 error(s)", project.CompilationMessage);
         }
 
+        /// <summary>
+        /// An untranslatable class is skipped instead of compiled as its own exception text (which
+        /// used to drop every type in the project from search and type pickers, with no
+        /// indication why); the reason comes back through the warnings instead.
+        /// </summary>
+        [Fact(Timeout = 120000)]
+        public void UntranslatableGraphIsSkippedNotEmittedAsSource()
+        {
+            var project = HelloWorldWithIfElse(null);
+
+            var sources = project.GenerateClassSources(out var warnings).ToList();
+
+            Assert.Empty(sources);
+            string warning = Assert.Single(warnings);
+            Assert.Contains("HelloWorld.Program", warning);
+            Assert.Contains("Condition", warning);
+        }
+
         /// <summary>Compiles and waits until the background compilation finished.</summary>
         internal static async Task CompileAsync(Project project, System.Threading.CancellationToken cancellationToken)
         {

@@ -44,11 +44,11 @@ public sealed class ReflectionHost : IReflectionHost
 
         // Snapshot the model on the calling (UI) thread; everything else runs in the background.
         var references = project.References.ToList();
-        var sources = project.GenerateClassSources().ToList();
+        var sources = project.GenerateClassSources(out var translationWarnings).ToList();
 
         var (newProvider, types, warnings) = await Task.Run(() =>
         {
-            var warnings = new List<string>();
+            var warnings = new List<string>(translationWarnings);
             var assemblyPaths = new ReferenceAssemblyResolver()
                 .ResolveAssemblyPaths(references.OfType<AssemblyReference>(), warnings);
 

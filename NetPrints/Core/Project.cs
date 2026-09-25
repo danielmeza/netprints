@@ -477,14 +477,21 @@ namespace NetPrints.Core
             IsCompiling = false;
         }
 
-        public IEnumerable<string> GenerateClassSources()
+        /// <summary>
+        /// Translates every class to C#, for the reflection host. A class that fails to translate
+        /// (e.g. an unconnected node) is skipped instead of compiling its exception text as source;
+        /// the reason is reported through <paramref name="warnings"/> instead.
+        /// </summary>
+        public IEnumerable<string> GenerateClassSources(out IReadOnlyList<string> warnings)
         {
             if (Classes is null)
             {
+                warnings = Array.Empty<string>();
                 return new string[0];
             }
 
             ConcurrentBag<string> classSources = new ConcurrentBag<string>();
+            ConcurrentBag<string> translationWarnings = new ConcurrentBag<string>();
 
             // Translate classes in parallel
             Parallel.ForEach(Classes, cls =>
@@ -492,18 +499,17 @@ namespace NetPrints.Core
                 // Translate the class to C#
                 ClassTranslator classTranslator = new ClassTranslator();
 
-                string code;
                 try
                 {
-                    code = classTranslator.TranslateClass(cls);
+                    classSources.Add(classTranslator.TranslateClass(cls));
                 }
                 catch (Exception ex)
                 {
-                    code = ex.ToString();
+                    translationWarnings.Add($"{cls.FullName}: {ex.Message}");
                 }
-
-                classSources.Add(code);
             });
+
+            warnings = translationWarnings.OrderBy(w => w, StringComparer.Ordinal).ToArray();
 
             return classSources;
         }
