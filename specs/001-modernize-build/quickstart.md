@@ -77,6 +77,14 @@ NETPRINTS_E2E=1 dotnet test --project NetPrints.Desktop.E2ETests
   there with `NETPRINTS_AUTOMATION=1` (read-only automation pipe), no D-Bus session (GTK file
   dialogs on that display) and a private home. They never touch your desktop display.
 - Without `NETPRINTS_E2E=1` the E2E tests are skipped (as in the `build-test` CI job).
+- The automation agent (`AutomationAgent`, `NetPrints.Editor/Hosting/Automation`) ships in every
+  build, including Release: it is inert until `NETPRINTS_AUTOMATION=1` is set, and the E2E suite
+  needs to drive the real Desktop build, so there is no separate "test" configuration to keep in
+  sync. When enabled, the pipe is current-user-only (`PipeOptions.CurrentUserOnly` on both ends,
+  checked against the connecting process's credentials) and, by default, per-user and per-process
+  (`$XDG_RUNTIME_DIR/netprints-automation-<pid>.sock` on Linux; `NETPRINTS_AUTOMATION_PIPE`
+  overrides it, as the E2E harness does). The protocol itself is read-only (`status`, `find`,
+  `dump`, `settle`); it never changes the UI.
 - Screenshots of each flow step and diagnostics are written to `NETPRINTS_UI_ARTIFACTS/e2e/<test>/`.
 - A run takes about 5 minutes.
 

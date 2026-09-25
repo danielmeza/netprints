@@ -23,7 +23,7 @@ public sealed class AutomationClient : IAsyncDisposable
     /// <summary>Connects, retrying until the agent listens or the timeout ends.</summary>
     public static async Task<AutomationClient> ConnectAsync(string pipeName, TimeSpan timeout, CancellationToken cancellationToken)
     {
-        var pipe = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
+        var pipe = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
         try
         {
             await pipe.ConnectAsync(timeout, cancellationToken);

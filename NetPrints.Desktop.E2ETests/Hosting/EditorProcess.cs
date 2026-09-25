@@ -12,6 +12,9 @@ namespace NetPrints.Desktop.E2ETests.Hosting;
 /// </summary>
 public sealed class EditorProcess : IAsyncDisposable
 {
+    /// <summary>The <c>sockaddr_un</c> path length limit on Linux; a longer path fails to bind.</summary>
+    private const int UnixSocketPathLimit = 108;
+
     private readonly Process process;
     private readonly StringBuilder output = new();
     private readonly StringBuilder errors = new();
@@ -54,7 +57,14 @@ public sealed class EditorProcess : IAsyncDisposable
     /// <summary>Starts the editor (optionally with a project) and waits until it reports ready.</summary>
     public static async Task<EditorProcess> StartAsync(XServer server, string workDirectory, string? project, CancellationToken cancellationToken)
     {
-        string pipe = Path.Combine(workDirectory, "agent.sock");
+        // Short and outside workDirectory (whose scratchpad-derived path can itself run long): a
+        // long-TMPDIR workDirectory pushed this over the 108-character Unix socket limit before.
+        string pipe = Path.Combine(Path.GetTempPath(), $"np-e2e-{Guid.NewGuid():N}.sock");
+        if (Encoding.UTF8.GetByteCount(pipe) >= UnixSocketPathLimit)
+        {
+            throw new InvalidOperationException($"Automation pipe path is too long for a Unix socket ({Encoding.UTF8.GetByteCount(pipe)} bytes): {pipe}");
+        }
+
         var info = new ProcessStartInfo("dotnet")
         {
             ArgumentList = { DesktopAssembly },
@@ -83,7 +93,7 @@ public sealed class EditorProcess : IAsyncDisposable
 
         try
         {
-            var client = await AutomationClient.ConnectAsync(pipe, TimeSpan.FromSeconds(60), cancellationToken);
+            var client = await ConnectOrFailFastAsync(process, pipe, TimeSpan.FromSeconds(60), errors, cancellationToken);
             editor = new EditorProcess(process, client, output, errors);
 
             // Ready: the main window is shown and, with a project, the project and its types are loaded.
@@ -126,6 +136,37 @@ public sealed class EditorProcess : IAsyncDisposable
     {
         this.output = output;
         this.errors = errors;
+    }
+
+    /// <summary>
+    /// Connects, but does not wait out the full timeout if the editor process exits first (e.g.
+    /// the automation agent failed to bind its pipe and the process crashed on startup): polls for
+    /// exit and throws immediately with the exit code and captured stderr, instead of leaving the
+    /// caller to a 60-second timeout with no indication of what went wrong.
+    /// </summary>
+    private static async Task<AutomationClient> ConnectOrFailFastAsync(
+        Process process, string pipe, TimeSpan timeout, StringBuilder errors, CancellationToken cancellationToken)
+    {
+        var connecting = AutomationClient.ConnectAsync(pipe, timeout, cancellationToken);
+        while (true)
+        {
+            if (await Task.WhenAny(connecting, Task.Delay(200, cancellationToken)) == connecting)
+            {
+                return await connecting;
+            }
+
+            if (process.HasExited)
+            {
+                string capturedErrors;
+                lock (errors)
+                {
+                    capturedErrors = errors.ToString();
+                }
+
+                throw new InvalidOperationException(
+                    $"The editor process exited (code {process.ExitCode}) before the automation agent came up.\nStderr:\n{capturedErrors}");
+            }
+        }
     }
 
     private static void Append(StringBuilder builder, string? line)

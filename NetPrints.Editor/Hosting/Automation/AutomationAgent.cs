@@ -27,17 +27,31 @@ public sealed record AutomationResponse(bool Ok)
     public string? Text { get; init; }
 }
 
+/// <summary>A client sent a request line the agent will not read further (too long).</summary>
+public sealed class AutomationProtocolException(string message) : IOException(message);
+
 /// <summary>
 /// Read-only automation endpoint of the desktop editor, enabled only with
 /// <c>NETPRINTS_AUTOMATION=1</c>: a local pipe (a Unix domain socket on Linux) that answers
 /// line-delimited JSON requests — <c>status</c> (the ready signal), <c>find</c> (elements by
 /// automation id with screen bounds and properties), <c>dump</c> and <c>settle</c>. It never
 /// changes the UI: tests send real input through the operating system (xdotool).
+///
+/// The pipe is current-user-only (<see cref="PipeOptions.CurrentUserOnly"/> on both ends) and, by
+/// default, per-user and per-process: under <c>XDG_RUNTIME_DIR</c> (a 0700 directory) on Unix, or
+/// a name that includes the user and process id on Windows. <see cref="PipeVariable"/> overrides
+/// the default for callers that need a known path (the E2E test harness).
 /// </summary>
 public sealed class AutomationAgent : IDisposable
 {
     public const string EnableVariable = "NETPRINTS_AUTOMATION";
     public const string PipeVariable = "NETPRINTS_AUTOMATION_PIPE";
+
+    /// <summary>Longest request line the agent reads before dropping the connection.</summary>
+    private const int MaxLineChars = 64 * 1024;
+
+    /// <summary>Most automation connections served at once; the rest are refused immediately.</summary>
+    private const int MaxConcurrentConnections = 8;
 
     public static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
     {
@@ -48,28 +62,56 @@ public sealed class AutomationAgent : IDisposable
     private readonly AutomationTree tree;
     private readonly Func<AutomationStatus> status;
     private readonly CancellationTokenSource stop = new();
+    private readonly SemaphoreSlim connectionSlots = new(MaxConcurrentConnections, MaxConcurrentConnections);
+    private NamedPipeServerStream nextServer;
 
+    /// <summary>
+    /// Binds the pipe. Failures (a socket path over the Unix 108-character limit, another process
+    /// already owning the name, …) throw synchronously from here, so the caller can log them and
+    /// fail fast instead of the bind happening inside a background task nobody observes.
+    /// </summary>
     public AutomationAgent(string pipeName, AutomationTree tree, Func<AutomationStatus> status)
     {
         this.pipeName = pipeName;
         this.tree = tree;
         this.status = status;
+        nextServer = CreateServer();
         _ = Task.Run(AcceptLoopAsync);
     }
 
     /// <summary>Whether the environment asks for automation, and the pipe name to use.</summary>
     public static bool IsEnabled(out string pipeName)
     {
-        pipeName = Environment.GetEnvironmentVariable(PipeVariable) is { Length: > 0 } name ? name : "netprints-automation";
+        pipeName = Environment.GetEnvironmentVariable(PipeVariable) is { Length: > 0 } name ? name : DefaultPipeName();
         return Environment.GetEnvironmentVariable(EnableVariable) == "1";
     }
+
+    /// <summary>
+    /// A per-user, per-process default that nobody else can guess ahead of time or squat: on
+    /// Unix, a path under <c>XDG_RUNTIME_DIR</c> (a 0700 directory owned by the user, falling back
+    /// to the shared temp directory only if that variable is unset); on Windows, a name that
+    /// includes the user and process id (named pipes there are already namespaced per session).
+    /// </summary>
+    private static string DefaultPipeName()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return $"netprints-automation-{Environment.UserName}-{Environment.ProcessId}";
+        }
+
+        string dir = Environment.GetEnvironmentVariable("XDG_RUNTIME_DIR") is { Length: > 0 } xdg ? xdg : Path.GetTempPath();
+        return Path.Combine(dir, $"netprints-automation-{Environment.ProcessId}.sock");
+    }
+
+    private NamedPipeServerStream CreateServer() =>
+        new(pipeName, PipeDirection.InOut, NamedPipeServerStream.MaxAllowedServerInstances,
+            PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
 
     private async Task AcceptLoopAsync()
     {
         while (!stop.IsCancellationRequested)
         {
-            var server = new NamedPipeServerStream(pipeName, PipeDirection.InOut, NamedPipeServerStream.MaxAllowedServerInstances,
-                PipeTransmissionMode.Byte, PipeOptions.Asynchronous);
+            var server = nextServer;
             try
             {
                 await server.WaitForConnectionAsync(stop.Token);
@@ -79,8 +121,54 @@ public sealed class AutomationAgent : IDisposable
                 await server.DisposeAsync();
                 return;
             }
+            catch (Exception e)
+            {
+                await server.DisposeAsync();
+                LogError("stopped accepting connections", e);
+                return;
+            }
 
-            _ = Task.Run(() => ServeAsync(server));
+            if (connectionSlots.Wait(0))
+            {
+                _ = ServeConnectionAsync(server);
+            }
+            else
+            {
+                await server.DisposeAsync();
+            }
+
+            try
+            {
+                nextServer = CreateServer();
+            }
+            catch (Exception e)
+            {
+                LogError("stopped accepting connections", e);
+                return;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Runs one connection to completion and releases its slot. <see cref="ServeAsync"/> already
+    /// turns every request-handling exception into a response and every I/O exception into a
+    /// quiet disconnect, so nothing should reach the catch below; it exists so that if something
+    /// unforeseen does, it is logged instead of becoming an unobserved task exception (and the
+    /// modal error dialog that comes with one).
+    /// </summary>
+    private async Task ServeConnectionAsync(NamedPipeServerStream stream)
+    {
+        try
+        {
+            await ServeAsync(stream);
+        }
+        catch (Exception e)
+        {
+            LogError("connection error", e);
+        }
+        finally
+        {
+            connectionSlots.Release();
         }
     }
 
@@ -89,10 +177,11 @@ public sealed class AutomationAgent : IDisposable
         await using var _ = stream;
         using var reader = new StreamReader(stream, Encoding.UTF8);
         await using var writer = new StreamWriter(stream, new UTF8Encoding(false)) { AutoFlush = true };
+        var lines = new BoundedLineReader(reader, MaxLineChars);
 
         try
         {
-            while (!stop.IsCancellationRequested && await reader.ReadLineAsync(stop.Token) is { } line)
+            while (!stop.IsCancellationRequested && await lines.ReadLineAsync(stop.Token) is { } line)
             {
                 AutomationResponse response;
                 try
@@ -100,7 +189,7 @@ public sealed class AutomationAgent : IDisposable
                     var request = JsonSerializer.Deserialize<AutomationRequest>(line, Json) ?? throw new InvalidOperationException("Empty request.");
                     response = await HandleAsync(request);
                 }
-                catch (Exception e) when (e is JsonException or InvalidOperationException or ArgumentException)
+                catch (Exception e)
                 {
                     response = new AutomationResponse(false) { Error = e.Message };
                 }
@@ -110,7 +199,8 @@ public sealed class AutomationAgent : IDisposable
         }
         catch (Exception e) when (e is IOException or OperationCanceledException or ObjectDisposedException)
         {
-            // The client went away or the editor is closing.
+            // The client went away, the editor is closing, or it sent an oversized request line
+            // (AutomationProtocolException derives from IOException).
         }
     }
 
@@ -122,6 +212,7 @@ public sealed class AutomationAgent : IDisposable
                 return new AutomationResponse(true) { Status = await Dispatcher.UIThread.InvokeAsync(status) };
             case "find":
                 var query = request.Query ?? throw new ArgumentException("find needs a query.");
+                ValidateQuery(query);
                 return new AutomationResponse(true) { Elements = await Dispatcher.UIThread.InvokeAsync(() => tree.Find(query)) };
             case "dump":
                 return new AutomationResponse(true) { Text = await Dispatcher.UIThread.InvokeAsync(tree.Dump) };
@@ -135,9 +226,78 @@ public sealed class AutomationAgent : IDisposable
         }
     }
 
+    /// <summary>
+    /// Rejects a query (or an enclosing one) with no automation id: unset, it matches every
+    /// unnamed control, and each match is then described and measured for text overflow.
+    /// </summary>
+    private static void ValidateQuery(AutomationQuery query)
+    {
+        if (string.IsNullOrEmpty(query.AutomationId))
+        {
+            throw new ArgumentException("A query needs a non-empty automation id.");
+        }
+
+        if (query.Within is { } within)
+        {
+            ValidateQuery(within);
+        }
+    }
+
+    private void LogError(string what, Exception e) => Console.Error.WriteLine($"[NetPrints automation '{pipeName}'] {what}: {e}");
+
     public void Dispose()
     {
         stop.Cancel();
         stop.Dispose();
+        connectionSlots.Dispose();
+    }
+}
+
+/// <summary>
+/// Reads lines from a <see cref="TextReader"/>, capping the characters read before a newline so a
+/// client that never sends one cannot grow the buffer without bound.
+/// </summary>
+file sealed class BoundedLineReader(TextReader reader, int maxChars)
+{
+    private readonly char[] buffer = new char[4096];
+    private int start;
+    private int length;
+
+    public async Task<string?> ReadLineAsync(CancellationToken cancellationToken)
+    {
+        var line = new StringBuilder();
+        while (true)
+        {
+            if (start >= length)
+            {
+                length = await reader.ReadAsync(buffer, cancellationToken);
+                start = 0;
+                if (length == 0)
+                {
+                    return line.Length == 0 ? null : line.ToString();
+                }
+            }
+
+            int newline = Array.IndexOf(buffer, '\n', start, length - start);
+            int end = newline == -1 ? length : newline;
+            int count = end - start;
+            if (line.Length + count > maxChars)
+            {
+                throw new AutomationProtocolException($"Request line exceeds {maxChars} characters.");
+            }
+
+            line.Append(buffer, start, count);
+            start = newline == -1 ? length : newline + 1;
+
+            if (newline != -1)
+            {
+                if (line.Length > 0 && line[^1] == '\r')
+                {
+                    line.Length--;
+                }
+
+                return line.ToString();
+            }
+        }
     }
 }

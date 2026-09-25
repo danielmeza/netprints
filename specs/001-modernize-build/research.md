@@ -537,6 +537,14 @@ on top, and two drivers: headless (Avalonia.Headless) and X11 (real desktop edit
 - **Desktop agent**: with `NETPRINTS_AUTOMATION=1` the desktop editor serves a read-only local pipe
   (a Unix domain socket): `status` (ready signal: window shown, project and types loaded), `find`,
   `dump`, `settle`. Input stays real: xdotool through the X server and openbox.
+  - **Decision (review round 3)**: the agent ships in every configuration, including the Release
+    `NetPrints.Desktop` build, rather than being compiled out or moved to a separate assembly.
+    Reasons: the E2E suite must exercise the real Desktop build, not a test-only variant, so a
+    build-time split would either duplicate the composition root or make E2E test a binary nobody
+    ships; and with `PipeOptions.CurrentUserOnly` on both ends plus a per-user, per-process default
+    path (`$XDG_RUNTIME_DIR/netprints-automation-<pid>.sock` on Linux), an idle listener gated by
+    an environment variable that defaults unset is low-risk. Revisit if the P4 VS extension host
+    turns out to need a narrower surface than the desktop app does.
 - **Anti-flakiness**: no sleeps (condition waits; headless `RunJobs` + forced render tick; desktop
   `settle` round trips); transitions disabled; invariant culture and UTC; fixed window sizes
   (headless class windows get the 1600x1000 E2E screen size); a fresh editor, temp folder and (E2E)

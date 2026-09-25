@@ -49,12 +49,26 @@ public partial class EditorApp : Application
                 var tree = new AutomationTree();
                 tree.Track(window);
                 string? startupProject = desktop.Args is [var single] ? single : null;
-                var agent = new AutomationAgent(pipeName, tree, () => new AutomationStatus(
-                    window.IsVisible,
-                    composition.MainEditor!.Project is not null && !composition.MainEditor.IsBusy,
-                    composition.Context.Reflection.IsLoaded,
-                    startupProject,
-                    Environment.ProcessId));
+                AutomationAgent agent;
+                try
+                {
+                    agent = new AutomationAgent(pipeName, tree, () => new AutomationStatus(
+                        window.IsVisible,
+                        composition.MainEditor!.Project is not null && !composition.MainEditor.IsBusy,
+                        composition.Context.Reflection.IsLoaded,
+                        startupProject,
+                        Environment.ProcessId));
+                }
+                catch (Exception e)
+                {
+                    // NETPRINTS_AUTOMATION was asked for and could not be honored: fail loudly and
+                    // fast (stderr, non-zero exit) instead of leaving a caller waiting on a pipe
+                    // that will never accept a connection. This runs before the dispatcher loop
+                    // starts, so it never reaches the unhandled-exception dialog.
+                    Console.Error.WriteLine($"[NetPrints automation] Could not start the automation agent on '{pipeName}': {e}");
+                    throw;
+                }
+
                 desktop.Exit += (_, _) =>
                 {
                     agent.Dispose();
