@@ -19,6 +19,7 @@ public partial class EditorApp : Application
     /// <summary>The embedded Inter font (Avalonia.Fonts.Inter), used as the default font family.</summary>
     public const string DefaultFontFamily = "avares://Avalonia.Fonts.Inter/Assets#Inter";
 
+    /// <summary>Loads the application's XAML (styles, resources).</summary>
     public override void Initialize() => AvaloniaXamlLoader.Load(this);
 
     /// <summary>
@@ -31,6 +32,12 @@ public partial class EditorApp : Application
             Setters = { new Setter(Animatable.TransitionsProperty, null) },
         });
 
+    /// <summary>
+    /// On a classic desktop lifetime: composes the editor's services, creates and shows the main
+    /// window, installs the unhandled-exception handler, and, when <c>NETPRINTS_AUTOMATION=1</c>,
+    /// starts the automation agent (disabling UI transitions first, for settled screenshots) and
+    /// exits loudly if it fails to start. Opens the project named on the command line, if any.
+    /// </summary>
     public override void OnFrameworkInitializationCompleted()
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
