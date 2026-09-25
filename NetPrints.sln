@@ -18,6 +18,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetPrints.Reflection", "Net
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetPrints.Editor.Tests", "NetPrints.Editor.Tests\NetPrints.Editor.Tests.csproj", "{80A6DFEE-DE6E-4F72-AD2C-BCB7A66DD113}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NetPrints.Editor", "NetPrints.Editor\NetPrints.Editor.csproj", "{71851DD2-10B6-4A17-BC7C-C2C035DEF892}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -88,6 +90,18 @@ Global
 		{80A6DFEE-DE6E-4F72-AD2C-BCB7A66DD113}.Release|x64.Build.0 = Release|Any CPU
 		{80A6DFEE-DE6E-4F72-AD2C-BCB7A66DD113}.Release|x86.ActiveCfg = Release|Any CPU
 		{80A6DFEE-DE6E-4F72-AD2C-BCB7A66DD113}.Release|x86.Build.0 = Release|Any CPU
+		{71851DD2-10B6-4A17-BC7C-C2C035DEF892}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{71851DD2-10B6-4A17-BC7C-C2C035DEF892}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{71851DD2-10B6-4A17-BC7C-C2C035DEF892}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{71851DD2-10B6-4A17-BC7C-C2C035DEF892}.Debug|x64.Build.0 = Debug|Any CPU
+		{71851DD2-10B6-4A17-BC7C-C2C035DEF892}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{71851DD2-10B6-4A17-BC7C-C2C035DEF892}.Debug|x86.Build.0 = Debug|Any CPU
+		{71851DD2-10B6-4A17-BC7C-C2C035DEF892}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{71851DD2-10B6-4A17-BC7C-C2C035DEF892}.Release|Any CPU.Build.0 = Release|Any CPU
+		{71851DD2-10B6-4A17-BC7C-C2C035DEF892}.Release|x64.ActiveCfg = Release|Any CPU
+		{71851DD2-10B6-4A17-BC7C-C2C035DEF892}.Release|x64.Build.0 = Release|Any CPU
+		{71851DD2-10B6-4A17-BC7C-C2C035DEF892}.Release|x86.ActiveCfg = Release|Any CPU
+		{71851DD2-10B6-4A17-BC7C-C2C035DEF892}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

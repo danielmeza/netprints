@@ -212,7 +212,7 @@ acceptance scenario of User Story 2.
 | PAR-09 | Compile | Compile button, enabled when the project can compile (tooltip even when disabled). Compiles in the background; errors list and status message update | auto |
 | PAR-10 | Run | Run button, enabled for executable projects that output binaries: compile, then run on success (on Linux through the `dotnet` host) | auto |
 | PAR-11 | Classes | Class list: each entry opens its class editor window, reusing an open window (brought to front, restored if minimized). The remove button closes that window and removes the class (fixes the WPF defect) | auto |
-| PAR-12 | Classes | New Class creates a uniquely named class (`MyClass`, `MyClass1`, …) in the default namespace | auto |
+| PAR-12 | Classes | New Class creates a uniquely named class (`MyClass`, `MyClass2`, … — Core `NetPrintsUtil.GetUniqueName` numbering) in the default namespace | auto |
 | PAR-13 | Classes | Existing Class adds a `*.netpc` file (copied into the project folder); an error dialog appears on failure | auto |
 | PAR-14 | Main window | Closing the main window closes all class editor windows | auto |
 | PAR-15 | Reflection | The reflection provider reloads when a project opens, when references change, and after a compilation finishes; the type list for type pickers is refreshed | auto |

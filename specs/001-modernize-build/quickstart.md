@@ -59,7 +59,7 @@ Record the result for each PAR ID in the PR description (SC-004). Suggested orde
    Open a corrupt `.netpp` → an error dialog appears and the exception is on the clipboard.
 3. **References** (PAR-16..20): add an assembly (for example any `.dll` from `~/.dotnet/shared`). Add
    the same one again → no duplicate. Add a source folder → toggle Include/Exclude. Remove both.
-4. **Classes** (PAR-11..13): New Class twice (`MyClass`, `MyClass1`). Open one, minimize it, click it
+4. **Classes** (PAR-11..13): New Class twice (`MyClass`, `MyClass2`). Open one, minimize it, click it
    again → it is restored and activated. Remove it → its window closes. Existing Class → pick a
    `.netpc` file.
 5. **Class window** (PAR-22..37): the window is maximized and titled with the class name. Create a

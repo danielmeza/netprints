@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NetPrints.Reflection\NetPrints.Reflection.csproj" />
+    <ProjectReference Include="..\NetPrints.Editor\NetPrints.Editor.csproj" />
   </ItemGroup>
 
   <ItemGroup>

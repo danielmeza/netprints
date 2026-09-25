@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 
 namespace NetPrints.Reflection
@@ -7,35 +8,20 @@ namespace NetPrints.Reflection
     {
         // https://stackoverflow.com/a/2852595/4332314
 
+        // Memoized functions are thread-safe: the editor queries the provider from the UI thread
+        // and from background tasks (suggestion lists, reflection reloads).
+
         public static Func<R> Memoize<R>(this Func<R> f)
         {
-            R r = default;
-
-            return () =>
-            {
-                if (r == null)
-                {
-                    r = f();
-                }
-
-                return r;
-            };
+            var lazy = new Lazy<R>(f, System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
+            return () => lazy.Value;
         }
 
         public static Func<A, R> Memoize<A, R>(this Func<A, R> f)
         {
-            var d = new Dictionary<A, R>();
+            var d = new ConcurrentDictionary<A, R>();
 
-            return a =>
-            {
-                if (!d.TryGetValue(a, out R r))
-                {
-                    r = f(a);
-                    d.Add(a, r);
-                }
-
-                return r;
-            };
+            return a => d.GetOrAdd(a, f);
         }
 
         public static Func<A, B, R> Memoize<A, B, R>(this Func<A, B, R> f)

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using NetPrints.Core;
 using System.IO;
 using Microsoft.CodeAnalysis;
@@ -12,7 +13,9 @@ namespace NetPrints.Reflection
 {
     public static class ISymbolExtensions
     {
-        private static readonly Dictionary<ITypeSymbol, List<ISymbol>> allMembersCache = new Dictionary<ITypeSymbol, List<ISymbol>>();
+        // Weak, thread-safe cache: entries die with their compilation (the static Dictionary used
+        // before kept every compilation alive and was not safe for concurrent use).
+        private static readonly ConditionalWeakTable<ITypeSymbol, List<ISymbol>> allMembersCache = new ConditionalWeakTable<ITypeSymbol, List<ISymbol>>();
 
         /// <summary>
         /// Gets all members of a symbol including inherited ones, but not overriden ones.
@@ -52,7 +55,7 @@ namespace NetPrints.Reflection
                 symbol = symbol.BaseType;
             }
 
-            allMembersCache.Add(startSymbol, members.ToList());
+            allMembersCache.AddOrUpdate(startSymbol, members.ToList());
 
             return members;
         }

@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>NetPrints.Editor</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" />
+    <PackageReference Include="Avalonia.Themes.Fluent" />
+    <PackageReference Include="Avalonia.Fonts.Inter" />
+    <PackageReference Include="Nodify.Avalonia" />
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+    <PackageReference Include="DynamicData" />
+    <PackageReference Include="Xaml.Behaviors.Avalonia" />
+    <PackageReference Include="Material.Icons.Avalonia" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NetPrints\NetPrints.csproj" />
+    <ProjectReference Include="..\NetPrints.Reflection\NetPrints.Reflection.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="NetPrints.Editor.Tests" />
+  </ItemGroup>
+</Project>
