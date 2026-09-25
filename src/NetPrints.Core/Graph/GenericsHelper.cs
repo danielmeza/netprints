@@ -5,6 +5,9 @@ using NetPrints.Core;
 
 namespace NetPrints.Graph
 {
+    /// <summary>
+    /// Helper for resolving a node's generic type/method against its input type pins.
+    /// </summary>
     public static class GenericsHelper
     {
         /*public static TypeSpecifier DetermineTypeNodeType(TypeNode node)
@@ -24,6 +27,17 @@ namespace NetPrints.Graph
             return node.Type;
         }*/
 
+        /// <summary>
+        /// Constructs <paramref name="type"/> with its generic arguments replaced by the inferred
+        /// types of <paramref name="inputTypePins"/> whose name matches a generic argument's name.
+        /// If <paramref name="type"/> is itself a <see cref="GenericType"/>, returns the matching
+        /// input type pin's inferred type directly. Returns <paramref name="type"/> unchanged if no
+        /// pin matches, or if <see cref="TypeSpecifier.Construct"/> throws (eg. a mismatched generic
+        /// arity).
+        /// </summary>
+        /// <param name="type">Type to construct, generic or not.</param>
+        /// <param name="inputTypePins">Input type pins to resolve generic arguments from, matched by name.</param>
+        /// <returns>The constructed type, or <paramref name="type"/> unchanged.</returns>
         public static BaseType ConstructWithTypePins(BaseType type, IEnumerable<NodeInputTypePin> inputTypePins)
         {
             if (type is TypeSpecifier typeSpecifier)

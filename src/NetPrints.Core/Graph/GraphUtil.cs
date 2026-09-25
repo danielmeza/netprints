@@ -7,13 +7,19 @@ using NetPrints.Core;
 
 namespace NetPrints.Graph
 {
+    /// <summary>
+    /// Free functions for connecting, disconnecting and rewiring <see cref="NodePin"/>s, and a handful
+    /// of higher-level graph-editing helpers (adding reroute nodes, nested type nodes, override
+    /// methods). Used by the editor's connection/drag-drop logic and by graph construction helpers.
+    /// </summary>
     public static class GraphUtil
     {
         /// <summary>
-        /// Splits camel-case names into words seperated by spaces.
+        /// Splits camel-case names into words seperated by spaces (eg. "CallMethodNode" ->
+        /// "Call Method Node"), by inserting a space before every uppercase letter.
         /// </summary>
-        /// <param name="input"></param>
-        /// <returns></returns>
+        /// <param name="input">Camel-case name to split.</param>
+        /// <returns><paramref name="input"/> with a space inserted before each uppercase letter, trimmed.</returns>
         public static string SplitCamelCase(string input)
         {
             return Regex.Replace(input, "([A-Z])", " $1", System.Text.RegularExpressions.RegexOptions.Compiled).Trim();
@@ -25,8 +31,9 @@ namespace NetPrints.Graph
         /// <param name="pinA">First pin.</param>
         /// <param name="pinB">Second pin.</param>
         /// <param name="isSubclassOf">Function for determining whether one type is the subclass of another type.</param>
+        /// <param name="hasImplicitCast">Function for determining whether one type has an implicit cast to another type.</param>
         /// <param name="swapped">Whether we want pinB to be the first pin and vice versa.</param>
-        /// <returns></returns>
+        /// <returns><see langword="true"/> if the two pins can be connected to each other.</returns>
         public static bool CanConnectNodePins(NodePin pinA, NodePin pinB, Func<TypeSpecifier, TypeSpecifier, bool> isSubclassOf, Func<TypeSpecifier, TypeSpecifier, bool> hasImplicitCast, bool swapped = false)
         {
             if (pinA is NodeInputExecPin && pinB is NodeOutputExecPin)
@@ -205,6 +212,14 @@ namespace NetPrints.Graph
             }
         }
 
+        /// <summary>
+        /// Disconnects <paramref name="nodePin"/> from whatever it is connected to, dispatching to the
+        /// <c>Disconnect*Pin</c> overload matching its runtime type.
+        /// </summary>
+        /// <param name="nodePin">Pin to disconnect.</param>
+        /// <exception cref="NotImplementedException">
+        /// <paramref name="nodePin"/> is not one of the six concrete pin types.
+        /// </exception>
         public static void DisconnectPin(NodePin nodePin)
         {
             if (nodePin is NodeInputDataPin idp)
@@ -237,12 +252,22 @@ namespace NetPrints.Graph
             }
         }
 
+        /// <summary>
+        /// Disconnects <paramref name="pin"/> from its incoming pin, if any, removing it from that
+        /// pin's outgoing collection too. Does nothing if unconnected.
+        /// </summary>
+        /// <param name="pin">Pin to disconnect.</param>
         public static void DisconnectInputDataPin(NodeInputDataPin pin)
         {
             pin.IncomingPin?.OutgoingPins.Remove(pin);
             pin.IncomingPin = null;
         }
 
+        /// <summary>
+        /// Disconnects <paramref name="pin"/> from every pin connected to it, clearing each connected
+        /// pin's incoming pin too. Does nothing if unconnected.
+        /// </summary>
+        /// <param name="pin">Pin to disconnect.</param>
         public static void DisconnectOutputDataPin(NodeOutputDataPin pin)
         {
             foreach (NodeInputDataPin outgoingPin in pin.OutgoingPins)
@@ -253,12 +278,22 @@ namespace NetPrints.Graph
             pin.OutgoingPins.Clear();
         }
 
+        /// <summary>
+        /// Disconnects <paramref name="pin"/> from its incoming pin, if any, removing it from that
+        /// pin's outgoing collection too. Does nothing if unconnected.
+        /// </summary>
+        /// <param name="pin">Pin to disconnect.</param>
         public static void DisconnectInputTypePin(NodeInputTypePin pin)
         {
             pin.IncomingPin?.OutgoingPins.Remove(pin);
             pin.IncomingPin = null;
         }
 
+        /// <summary>
+        /// Disconnects <paramref name="pin"/> from every pin connected to it, clearing each connected
+        /// pin's incoming pin too. Does nothing if unconnected.
+        /// </summary>
+        /// <param name="pin">Pin to disconnect.</param>
         public static void DisconnectOutputTypePin(NodeOutputTypePin pin)
         {
             foreach (NodeInputTypePin outgoingPin in pin.OutgoingPins)
@@ -269,12 +304,22 @@ namespace NetPrints.Graph
             pin.OutgoingPins.Clear();
         }
 
+        /// <summary>
+        /// Disconnects <paramref name="pin"/> from its outgoing pin, if any, removing it from that
+        /// pin's incoming collection too. Does nothing if unconnected.
+        /// </summary>
+        /// <param name="pin">Pin to disconnect.</param>
         public static void DisconnectOutputExecPin(NodeOutputExecPin pin)
         {
             pin.OutgoingPin?.IncomingPins.Remove(pin);
             pin.OutgoingPin = null;
         }
 
+        /// <summary>
+        /// Disconnects <paramref name="pin"/> from every pin connected to it, clearing each connected
+        /// pin's outgoing pin too. Does nothing if unconnected.
+        /// </summary>
+        /// <param name="pin">Pin to disconnect.</param>
         public static void DisconnectInputExecPin(NodeInputExecPin pin)
         {
             foreach (NodeOutputExecPin incomingPin in pin.IncomingPins)
@@ -466,6 +511,8 @@ namespace NetPrints.Graph
         /// </summary>
         /// <param name="pin">Pin to connect</param>
         /// <param name="node">Node to connect the pin to.</param>
+        /// <param name="isSubclassOf">Function for determining whether one type is the subclass of another type.</param>
+        /// <param name="hasImplicitCast">Function for determining whether one type has an implicit cast to another type.</param>
         public static void ConnectRelevantPins(NodePin pin, Node node, Func<TypeSpecifier, TypeSpecifier, bool> isSubclassOf,
             Func<TypeSpecifier, TypeSpecifier, bool> hasImplicitCast)
         {
