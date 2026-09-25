@@ -10,20 +10,30 @@ namespace NetPrints.Editor.Hosting.Automation;
 /// <param name="MainWindowShown">The main window is open and visible.</param>
 /// <param name="ProjectLoaded">A project is open and no project is loading.</param>
 /// <param name="ReflectionLoaded">The types of the project's references are loaded.</param>
+/// <param name="ProjectPath">Path to the open project, or <see langword="null"/> if none is open.</param>
+/// <param name="ProcessId">The editor process's id.</param>
 public sealed record AutomationStatus(bool MainWindowShown, bool ProjectLoaded, bool ReflectionLoaded, string? ProjectPath, int ProcessId);
 
 /// <summary>One request line of the automation protocol.</summary>
 public sealed record AutomationRequest(string Op)
 {
+    /// <summary>The query for a <c>find</c> request; required for that operation, unused otherwise.</summary>
     public AutomationQuery? Query { get; init; }
 }
 
 /// <summary>One response line of the automation protocol.</summary>
 public sealed record AutomationResponse(bool Ok)
 {
+    /// <summary>The exception message, when <see cref="Ok"/> is <see langword="false"/>.</summary>
     public string? Error { get; init; }
+
+    /// <summary>The matched elements, for a <c>find</c> request.</summary>
     public IReadOnlyList<AutomationElement>? Elements { get; init; }
+
+    /// <summary>The editor's ready-signal snapshot, for a <c>status</c> request.</summary>
     public AutomationStatus? Status { get; init; }
+
+    /// <summary>The window/element tree dump, for a <c>dump</c> request.</summary>
     public string? Text { get; init; }
 }
 
@@ -44,7 +54,15 @@ public sealed class AutomationProtocolException(string message) : IOException(me
 /// </summary>
 public sealed class AutomationAgent : IDisposable
 {
+    /// <summary>
+    /// Environment variable that enables the automation agent when set to "1".
+    /// </summary>
     public const string EnableVariable = "NETPRINTS_AUTOMATION";
+
+    /// <summary>
+    /// Environment variable that overrides the automation pipe's name/path (see
+    /// <see cref="DefaultPipeName"/> for the default), for callers that need a known path.
+    /// </summary>
     public const string PipeVariable = "NETPRINTS_AUTOMATION_PIPE";
 
     /// <summary>Longest request line the agent reads before dropping the connection.</summary>
@@ -53,6 +71,10 @@ public sealed class AutomationAgent : IDisposable
     /// <summary>Most automation connections served at once; the rest are refused immediately.</summary>
     private const int MaxConcurrentConnections = 8;
 
+    /// <summary>
+    /// Serializer options for the automation protocol's line-delimited JSON: web defaults
+    /// (camelCase), omitting <see langword="null"/> properties.
+    /// </summary>
     public static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
     {
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
@@ -245,6 +267,10 @@ public sealed class AutomationAgent : IDisposable
 
     private void LogError(string what, Exception e) => Console.Error.WriteLine($"[NetPrints automation '{pipeName}'] {what}: {e}");
 
+    /// <summary>
+    /// Stops accepting connections and releases the pipe. In-flight connections are not forcibly
+    /// closed; they end on their own once the client disconnects or the process exits.
+    /// </summary>
     public void Dispose()
     {
         stop.Cancel();
