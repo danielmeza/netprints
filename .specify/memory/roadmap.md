@@ -62,6 +62,13 @@ C# code view: replace the plain read-only generated-C# preview (parity item PAR-
 AvaloniaEdit (TextMate C# highlighting, folding, line numbers) showing live Roslyn diagnostics
 (squiggles + error list linked to the originating node); evaluate RoslynPad.Editor.Avalonia for
 Roslyn-backed hover/quick info. Read-only in P1; editable C# ("code nodes") is a later idea.
+Follow-ups deferred from the P0 reviews (PR #1): child view models stop calling back into the
+parent `ClassEditorVM` (dependency direction; P0 only fixes the undo cleanup); a Roslyn-based
+architecture gate (no Avalonia types in view models, dependency direction); Nodify
+command-based gestures instead of code-behind (split, disconnect, connection completed) and
+binding the grid to `ViewportTransform`; replace the `SetProperty(model, …)` wrappers when
+Fody is removed; `MetadataReference` caching together with the reference-pack work; remove the
+`EditorComposition` test hook in favour of explicit DI.
 Done when: old sample loads, saves as JSON, generates identical C#.
 
 ### P2 — Catalog tooling + Spectre CLI
