@@ -47,6 +47,12 @@ instead of retrying blindly.
   headless (`-nullrhi` on your own Xvfb) unless the owner asks otherwise.
 - **Clean up** the processes you started (editors, Xvfb, watchers) when you finish or stop.
 
+## Code comments
+- Match the surrounding code's comment density. No long explanatory blocks between lines of code;
+  at most a short one-line comment where something is genuinely non-obvious.
+- Put rationale, background and design discussion in commit messages, PR descriptions or
+  `specs/` docs, not in the code. This matters most in repositories we contribute to upstream.
+
 ## Commits and tests
 - End commit messages with the attribution line(s) your session is configured with; PR bodies
   end with the "Generated with Claude Code" footer when produced by Claude Code.
