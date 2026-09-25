@@ -55,7 +55,7 @@ jobs:
           NETPRINTS_UI_ARTIFACTS: ${{ github.workspace }}/TestResults/ui
         run: >
           dotnet test --solution NetPrints.sln -c Release --no-build
-          --report-xunit-trx --results-directory TestResults -- --ignore-exit-code:8
+          --report-xunit-trx --results-directory TestResults -- --ignore-exit-code 8
 
       # The CLI returns exit code 1 for --version until the P2 redesign and prints it to stderr,
       # so only the combined output is checked.
