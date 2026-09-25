@@ -38,8 +38,8 @@ when it is started.
 
 ### P0 — Modernize build + Avalonia editor at parity
 - `global.json` (.NET 10 SDK), Central Package Management, `Directory.Build.props`.
-- Core and a new UI-free `NetPrints.Reflection` (moved out of the editor) multi-target
-  `netstandard2.0` + `net10.0`; Roslyn 4.14; drop dead deps; minimal reference-assembly fallback.
+- Core and a new UI-free `NetPrints.Reflection` (moved out of the editor) target `net10.0` only
+  (no netstandard2.0); latest Roslyn and dependencies; drop dead deps; minimal reference-assembly fallback.
 - Replace the WPF editor with `NetPrints.Editor` (Avalonia 11 + Nodify.Avalonia,
   CommunityToolkit.Mvvm, DynamicData search) + `NetPrints.Desktop`, at feature parity (60-item
   parity inventory in `specs/001-modernize-build/spec.md`).

@@ -1,6 +1,9 @@
 <!--
 Sync Impact Report
-- Version change: 1.0.0 → 1.1.0 (MINOR: principles I and IV redefined in scope, workflow rules added)
+- Version change: 1.1.0 → 1.2.0 (MINOR: principle IV redefined — net10.0 everywhere)
+- Reason: Visual Studio/.NET Framework hosting is out of scope; owner approved net10.0 for all
+  projects and dependencies (2026-09-24)
+- Previous: 1.0.0 → 1.1.0 (MINOR: principles I and IV redefined in scope, workflow rules added)
 - Modified principles: I (WPF/WinForms forbidden everywhere; VSIX out of the build), IV (VS host
   deferred; editor stack targets net10.0)
 - Modified sections: Technology Constraints (Avalonia 11.x pin, DynamicData/ReactiveUI usage),
@@ -40,13 +43,12 @@ document stores, UI contributions, settings). If a target needs a behavior NetPr
 express, the fix is a new extension point in NetPrints — never a fork or a target-specific
 `if` in core code.
 
-### IV. Host Compatibility Targets
-Libraries loadable by a host MUST respect that host's runtime. Applications and the Avalonia
-editor stack target `net10.0`. UI-free libraries (Core, Reflection, serialization, catalog)
-keep `netstandard2.0` alongside `net10.0`. Libraries used by the browser build MUST be WASM-safe
-(no blocking file-system or process access outside abstractions). Roslyn analyzers/generators
-target `netstandard2.0`. Visual Studio (.NET Framework) hosting is deferred and does not
-constrain the editor stack until P4 is resumed.
+### IV. Single Target Framework
+All projects target `net10.0` and may use the latest dependency versions that support it; no
+`netstandard2.0` or .NET Framework multi-targeting. The only exception is Roslyn analyzers and
+source generators, which MUST target `netstandard2.0` because the compiler requires it.
+Libraries used by the browser build MUST be WASM-safe (no blocking file-system or process
+access outside abstractions). Visual Studio (.NET Framework) hosting is out of scope.
 
 ### V. Tests Gate Every Change (NON-NEGOTIABLE)
 Every phase ships with automated tests that run on Linux in CI. Behavior-preserving
@@ -75,9 +77,9 @@ dead dependencies rather than carrying them forward.
 - SDK: .NET 10 (`global.json`, `rollForward: latestFeature`); SDK-style projects only.
 - Central Package Management (`Directory.Packages.props`) and shared `Directory.Build.props`;
   nullable reference types and deterministic builds enabled for new/modernized projects.
-- Compiler services: Roslyn 4.x (4.14.x, last line supporting netstandard2.0). MVVM:
+- Compiler services: Roslyn (latest stable). MVVM:
   CommunityToolkit.Mvvm; DynamicData for search/filtering and large collections; ReactiveUI
-  only where it clearly helps. UI: Avalonia 11.x (pinned while Nodify.Avalonia requires it) +
+  only where it clearly helps. UI: Avalonia (11.x while Nodify.Avalonia requires it; move to newer when the canvas allows) +
   Nodify.Avalonia. CLI: Spectre.Console.Cli.
 - Default document format: System.Text.Json with source-generated contexts, behind the
   serialization abstraction. Legacy DataContract XML is import-only once JSON lands.
@@ -105,4 +107,4 @@ principle/section added; PATCH: clarifications) and notes affected specs. Review
 check PRs against these principles; any deviation MUST be justified in the plan's
 Complexity Tracking section.
 
-**Version**: 1.1.0 | **Ratified**: 2026-09-24 | **Last Amended**: 2026-09-24
+**Version**: 1.2.0 | **Ratified**: 2026-09-24 | **Last Amended**: 2026-09-24
