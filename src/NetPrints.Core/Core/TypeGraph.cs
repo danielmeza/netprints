@@ -29,6 +29,9 @@ namespace NetPrints.Core
             get => (TypeSpecifier?)ReturnNode.TypePin.InferredType?.Value ?? TypeSpecifier.FromType<object>();
         }
 
+        /// <summary>
+        /// Creates a type graph and its <see cref="TypeReturnNode"/>.
+        /// </summary>
         public TypeGraph()
         {
             _ = new TypeReturnNode(this);

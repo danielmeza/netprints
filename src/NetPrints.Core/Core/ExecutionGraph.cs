@@ -7,6 +7,11 @@ using NetPrints.Graph;
 
 namespace NetPrints.Core
 {
+    /// <summary>
+    /// Abstract base class for graphs with a body of executable nodes: <see cref="MethodGraph"/> and
+    /// <see cref="ConstructorGraph"/>. Holds the single <see cref="EntryNode"/> execution starts from,
+    /// the graph's argument types (derived from the entry node's pins) and its visibility.
+    /// </summary>
     [DataContract]
     public abstract class ExecutionGraph : NodeGraph
     {

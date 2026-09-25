@@ -3,6 +3,10 @@ using System.Runtime.Serialization;
 
 namespace NetPrints.Core
 {
+    /// <summary>
+    /// Specifier describing a discovered field or property: its name, declaring and value types,
+    /// getter/setter/overall visibility, and modifiers (static, indexer, etc.).
+    /// </summary>
     [DataContract]
     public class VariableSpecifier
     {
@@ -37,7 +41,7 @@ namespace NetPrints.Core
         }
 
         /// <summary>
-        /// Whether this property has a public getter.
+        /// Visibility of this property's getter.
         /// </summary>
         [DataMember]
         public MemberVisibility GetterVisibility
@@ -47,7 +51,7 @@ namespace NetPrints.Core
         }
 
         /// <summary>
-        /// Whether this property has a public setter.
+        /// Visibility of this property's setter.
         /// </summary>
         [DataMember]
         public MemberVisibility SetterVisibility
@@ -76,6 +80,15 @@ namespace NetPrints.Core
             set;
         }
 
+        /// <summary>
+        /// Creates a variable specifier from its discovered name, type and modifiers.
+        /// </summary>
+        /// <param name="name">Name of the variable, without any prefixes.</param>
+        /// <param name="type">Specifier for the variable's value type.</param>
+        /// <param name="getterVisibility">Visibility of the getter.</param>
+        /// <param name="setterVisibility">Visibility of the setter.</param>
+        /// <param name="declaringType">Specifier for the type the variable is declared in.</param>
+        /// <param name="modifiers">Modifiers of the variable (static, indexer, etc.).</param>
         public VariableSpecifier(string name, TypeSpecifier type, MemberVisibility getterVisibility, MemberVisibility setterVisibility,
             TypeSpecifier declaringType, VariableModifiers modifiers)
         {

@@ -4,6 +4,10 @@ using System.Collections.Generic;
 
 namespace NetPrints.Core
 {
+    /// <summary>
+    /// Small standalone helpers used across the graph model: unique-name generation and
+    /// visibility-from-another-type checks.
+    /// </summary>
     public static class NetPrintsUtil
     {
         /// <summary>
@@ -36,7 +40,8 @@ namespace NetPrints.Core
         /// <param name="fromType">Type that we are seeing from.</param>
         /// <param name="type">Type that we are looking at.</param>
         /// <param name="visibility">Visibility of the member on type.</param>
-        /// <returns></returns>
+        /// <param name="isSubclassOf">Function for determining whether one type is the subclass of another type.</param>
+        /// <returns><see langword="true"/> if a member with <paramref name="visibility"/> on <paramref name="type"/> is visible from <paramref name="fromType"/>.</returns>
         public static bool IsVisible(TypeSpecifier fromType, TypeSpecifier type, MemberVisibility visibility, Func<TypeSpecifier, TypeSpecifier, bool> isSubclassOf)
         {
             // TODO: Internal

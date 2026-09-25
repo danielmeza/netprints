@@ -79,6 +79,10 @@ namespace NetPrints.Core
             OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
         }
 
+        /// <summary>
+        /// Removes every item one at a time (rather than the base implementation's single clear), so
+        /// each removal still goes through <see cref="ObservableCollection{T}.RemoveAt"/>.
+        /// </summary>
         protected override void ClearItems()
         {
             while (Count > 0)

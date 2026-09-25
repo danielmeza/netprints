@@ -4,6 +4,11 @@ using NetPrints.Graph;
 
 namespace NetPrints.Core
 {
+    /// <summary>
+    /// Abstract base class for every kind of node graph: <see cref="MethodGraph"/>,
+    /// <see cref="ConstructorGraph"/>, <see cref="ClassGraph"/> and <see cref="TypeGraph"/>. Holds the
+    /// graph's node collection and its owning class and project.
+    /// </summary>
     [DataContract]
     [KnownType(typeof(MethodGraph))]
     [KnownType(typeof(ConstructorGraph))]

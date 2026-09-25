@@ -44,6 +44,11 @@ namespace NetPrints.Core
             Arguments = arguments.ToList();
         }
 
+        /// <summary>
+        /// Returns the declaring type's name followed by the argument list in parentheses (eg.
+        /// "MyClass(System.Int32, System.String)").
+        /// </summary>
+        /// <returns>The declaring type's name followed by the argument list in parentheses.</returns>
         public override string ToString()
         {
             string constructorString = "";
