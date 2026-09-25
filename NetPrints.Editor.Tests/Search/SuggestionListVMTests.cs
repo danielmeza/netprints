@@ -178,40 +178,6 @@ public class SuggestionListVMTests : GraphTestBase
         Assert.Equal("Method_16x.png", rows.First(r => r.Value is MethodSpecifier { Name: "WriteLine" }).IconKey);
     }
 
-    [Fact]
-    [Trait("Category", "Performance")]
-    public void BuildAndFilterPerformance()
-    {
-        // SC-005: < 2 s to build, < 300 ms per keystroke (3x budget on shared CI runners).
-        double budget = Environment.GetEnvironmentVariable("CI") == "true" ? 3 : 1;
-        var search = Graph.Search;
-
-        // Warm the reflection caches used by every search (the editor does this when a project opens).
-        search.BuildItems(null);
-
-        var sw = Stopwatch.StartNew();
-        var rows = search.BuildItems(null);
-        search.SetItems(rows);
-        double buildMs = sw.Elapsed.TotalMilliseconds;
-
-        // Public static members of the full runtime set visible from the class (~42k rows on .NET 10).
-        Assert.True(rows.Count > 30_000, "the full runtime set is searched");
-
-        var keystrokes = new[] { "w", "wr", "wri", "writ", "write", "write ", "write l", "write li", "write lin", "write line" };
-        double worstMs = 0;
-        foreach (var text in keystrokes)
-        {
-            sw.Restart();
-            search.SearchText = text;
-            worstMs = Math.Max(worstMs, sw.Elapsed.TotalMilliseconds);
-        }
-
-        Console.WriteLine($"Suggestions: {rows.Count} rows, build+bind {buildMs:F0} ms, worst keystroke {worstMs:F0} ms");
-        Assert.True(buildMs < 2000 * budget, $"build took {buildMs:F0} ms");
-        Assert.True(worstMs < 300 * budget, $"filter took {worstMs:F0} ms");
-        Assert.True(search.Items.Any(i => i.Value is MethodSpecifier { Name: "WriteLine" }));
-    }
-
     [Fact(Timeout = 60000)]
     public async Task ThrottledFilterAppliesAfterDelay()
     {

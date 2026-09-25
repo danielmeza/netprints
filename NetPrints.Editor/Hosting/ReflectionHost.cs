@@ -68,6 +68,13 @@ public sealed class ReflectionHost : IReflectionHost
             cancellationToken.ThrowIfCancellationRequested();
             IReflectionProvider built = new MemoizedReflectionProvider(new ReflectionProvider(assemblyPaths, sourcePaths, sources));
             var types = built.GetNonStaticTypes().ToList();
+
+            // Warm-up (SC-005): Roslyn binds member symbols lazily, and the first enumeration of all
+            // static members (~120k methods on .NET 10) costs about 1.5 s. Doing it here, in the
+            // background load, keeps the first node search after a project opens well under 2 s.
+            cancellationToken.ThrowIfCancellationRequested();
+            _ = built.GetMethods(new ReflectionProviderMethodQuery().WithStatic(true)).Count();
+            _ = built.GetVariables(new ReflectionProviderVariableQuery().WithStatic(true)).Count();
             return (built, types, warnings);
         }, cancellationToken).ConfigureAwait(false);
 
