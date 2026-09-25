@@ -5,6 +5,9 @@ namespace NetPrints.Editor.Hosting;
 /// </summary>
 public interface IProcessLauncher
 {
+    /// <summary>Starts an external process. Its stdout/stderr are reported through <see cref="OutputReceived"/>.</summary>
+    /// <param name="fileName">Executable to start.</param>
+    /// <param name="arguments">Command-line arguments, or <see langword="null"/> for none.</param>
     void Start(string fileName, string? arguments);
 
     /// <summary>
