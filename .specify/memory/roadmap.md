@@ -105,6 +105,10 @@ Spectre.Console.Cli (`build`, `generate`, `run`, `catalog`, `migrate`).
 - **Visual system** (M3, L1): design tokens (type ramp, spacing, colors) and theme overrides for Nodify.
 - **Persistence** (L2): layout, open tabs, per-graph zoom and window position.
 - **Undo feedback** (M16, shared with P6).
+- **Docking** (owner idea, 2026-09-25): build the layout on Dock.Avalonia (wieslawsoltes/Dock): dockable,
+  floatable and tabbed panes (project tree, graphs, inspector, Errors/Output/C#) with serialized layouts, which
+  also covers L2. Verify Avalonia 12 compatibility, MVVM integration (CommunityToolkit.Mvvm) and headless and E2E
+  testability before committing to it.
 
 ### P3 — Editor extension host
 `NetPrints.Desktop --profile`, plugin-loaded editor extensions, UI contributions (commands,
@@ -182,6 +186,13 @@ for those who want to learn it.
   UnrealEditor hosting CoreCLR via UnrealSharp). Do B first, then A; a first cut of B belongs in
   the U1 prototype.
 - Natural-language/AI assist that proposes nodes from a description (opt-in, reviewable diff).
+- Node search (owner ideas, 2026-09-25):
+  - results grouped into **collapsible categories** (tree/expanders, collapsed by default when not filtering),
+    so browsing with the mouse is easy;
+  - a second tab with **Favorites / Most used / Recent** (per user, persisted), also collapsible;
+  - keyboard navigation stays first-class.
+- Onboarding (the audit found none): a start page with recent projects, create-from-template and open-sample;
+  a first-run guided tour of the canvas (create node, connect pins, compile, run); hints in empty areas.
 - UX audit additions (2026-09-25, IDs from `docs/research/2026-09-25-ux-audit/`):
   - H5–H9, M1, M2, M4–M15, M17–M21, L7;
   - discoverable node creation, context menus, rich error list, search ranking with doc preview;
