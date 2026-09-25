@@ -107,6 +107,13 @@ Messages replacing parent calls (all via the per-class-editor `IMessenger`): `Op
 and `ExecutionGraph.LocalVariables` `CollectionChanged` to close graphs and clear the inspector (so undo
 and redo get the same cleanup, P0 review).
 
+Dirty tracking (document-format.md §2.8, data-model.md §2): `ClassEditorVM` calls `ClassGraph.MarkDirty()`
+when its `UndoRedoStack` applies a command (`Do`, `Undo`, `Redo`; a new `UndoRedoStack.Applied` event,
+not raised by `Clear`), when a node of the class raises `Node.OnPositionChanged`, and in every model
+setter that bypasses the undo stack (inspector and wrapper setters below). Opening, viewing, selecting,
+panning or zooming never marks a class dirty. Save / Save All / Compile call `ProjectPersistence.SaveAsync`,
+which writes only dirty classes.
+
 Model wrapper setters (`MethodVM.Name/Visibility/Modifiers`, `MemberVariableVM` pass-throughs) assign
 the model only; the VM re-raises from the model's `PropertyChanged` (now CTK-generated). No
 `OnPropertyChanged()` after a model assignment.
@@ -257,5 +264,6 @@ then asserts zero violations for the real sources and a non-empty set of scanned
 | ED-T10 | Architecture gate demonstrated to fail on the fixture and pass on the sources |
 | ED-T11 | Extension load failure dialog lists failures; editor usable |
 | ED-T12 | `UnhandledExceptionHandler` logs 1001/1002 through a collecting logger and still shows the dialog |
-| ED-T13 | Opening a legacy `.netpp` asks for conversion, writes `.csproj` + `.netpc.json`, then opens the `.csproj`; Save writes changed graphs and their `.netpc.g.cs`; the References dialog and binary-type chooser edit the `.csproj` (PS-T09 at VM level) |
+| ED-T13 | Opening a legacy `.netpp` asks for conversion, writes `.csproj` + `.netpc.json`, then opens the `.csproj`; Save writes edited graphs and their `.netpc.g.cs`; the References dialog and binary-type chooser edit the `.csproj` (PS-T09 at VM level) |
 | ED-T14 | No production type has an optional `customize`/test hook parameter (`EditorComposition` ctor takes `EditorHostServices` only) |
+| ED-T15 | Dirty tracking: open a project with two classes, open both editors, pan, zoom and select → Save writes 0 files; move one node of class A → A dirty, Save writes A's graph and `.netpc.g.cs` only; add a node then undo → A dirty (the file is rewritten only if bytes differ); rename a method in the inspector → dirty; after Save both classes are clean |

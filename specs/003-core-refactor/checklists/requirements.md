@@ -39,3 +39,7 @@
 - Revision 2026-09-25 (owner decision: SDK-style `.csproj` projects, MSBuild-only generation): spec
   re-validated against every item above; all pass. Build hosts (Visual Studio, Rider) are named because
   they are the product requirement, not an implementation choice.
+- Revision 2026-09-25 (owner-approved graph format for version control,
+  `docs/research/2026-09-25-graph-format/`): FR-043…FR-050, SC-009, SC-010, US1 scenarios 7–10 and three
+  edge cases added; spec re-validated against every item above; all pass. JSON, git and JSON Schema are
+  named because the file format and its merge behaviour are the product requirement.

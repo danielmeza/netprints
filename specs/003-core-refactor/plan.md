@@ -4,13 +4,16 @@
 
 **Input**: Feature specification from `/specs/003-core-refactor/spec.md`
 
-> **Start condition.** An owner-approved repository reorganization PR lands **before** P1
-> implementation: projects move to `src/` and `tests/` (`NetPrints/` → `src/NetPrints.Core`,
-> `NetPrintsCLI` → `src/NetPrints.Cli`, `NetPrintsUnitTests` → `tests/NetPrints.Core.Tests`, the VSIX
-> to `legacy/NetPrintsVSIX`), the solution becomes `NetPrints.slnx`, `.editorconfig`/`.gitattributes`
-> are added and `dotnet format` is enforced in CI. Namespaces do not change. **All paths in these
-> documents use the new layout.** The implementer rebases `003-core-refactor` onto `master` after that
-> PR merges and starts with T001.
+> **Start condition (met).** The repository reorganization (PR #5, `docs/adr/0001-repo-layout.md`)
+> is merged and `003-core-refactor` is rebased on it: projects live in `src/` and `tests/`
+> (`src/NetPrints.Core`, `src/NetPrints.Reflection`, `src/NetPrints.Editor`, `src/NetPrints.Desktop`,
+> `src/NetPrints.Cli`; `tests/NetPrints.Core.Tests`, `tests/NetPrints.Editor.Tests`,
+> `tests/NetPrints.Editor.UITests`, `tests/NetPrints.Testing.Ui`, `tests/NetPrints.Desktop.E2ETests`),
+> the VSIX is in `legacy/NetPrintsVSIX` (not in the solution), the solution is `NetPrints.slnx`, and
+> `.editorconfig`, `.gitattributes` and a `dotnet format --verify-no-changes` CI step exist. Namespaces
+> did not change. The original Core/Reflection sources are CRLF and marked `-text` in `.gitattributes`;
+> edits keep their line endings. All paths in these documents use this layout. The implementer starts
+> with T001.
 
 ## Summary
 
@@ -21,6 +24,13 @@ translator out of process (`Exec` of the bundled `NetPrints.Generator`, research
 `.csproj` through MSBuild (Microsoft.Build.Locator + MSBuildWorkspace, as UnrealSharp does, research
 R14), so references, documentation (D5) and builds come from MSBuild; the custom reference resolver and
 `ProjectCompiler` are gone. Legacy `.netpp`/`.netpc` projects are converted read-only.
+
+**Graph format (owner-approved research `docs/research/2026-09-25-graph-format/`, research R17):** schema
+v1 is designed for git: random node ids, stable member ids that key the layout, pins referenced by name,
+a canonical writer with one line per connection/layout entry/pin value/type reference, integer
+positions, `$schema` first with a JSON Schema generated from the DTOs, a tolerant reader, edited-only
+saves, a `.gitattributes` LF template and tests that keep the committed schema, sample graphs and
+`.netpc.g.cs` files up to date. A `netprints merge` git driver is a follow-up after P1.
 
 Reused unchanged (research.md §1): the versioned, cycle-free JSON graph documents behind
 `IDocumentFormat`/`IDocumentStore`/`IDocumentMapper` with legacy import and migrations; the extension
@@ -61,7 +71,7 @@ documents, regenerated with `NETPRINTS_UPDATE_SNAPSHOTS=1` and reviewed.
 **Performance Goals**: no new work (P8). Guard rails only: project open ≤ 3 s when restored (SC-005; MSBuildWorkspace open measured 0.8 s);
 diagnostics ≤ 2 s after the last edit (SC-006); existing SC-005 search budget test unchanged.
 
-**Constraints**: byte-identical C# for legacy fixtures (FR-008); deterministic documents (C VI); core,
+**Constraints**: byte-identical C# for legacy fixtures (FR-008); deterministic, merge-friendly documents (C VI, FR-043…FR-050); core,
 serialization, reflection, extensibility, workspace and generator stay UI-free (C II); project-referenced
 extensions load in the editor only after trust (FR-019); the generator never references MSBuild or UI.
 
@@ -79,7 +89,7 @@ extensions load in the editor only after trust (FR-019); the generator never ref
 | III. Extension-first | ✅ core of the phase | All seven seams of the plan page; built-ins registered through the same node library (FR-021). |
 | IV. Single TFM | ✅ | All `net10.0`; no Roslyn generator mode (R13), so no `netstandard2.0` translator; the net10 generator runs out of process from any MSBuild. |
 | V. Tests gate | ✅ | Golden C# + notification-map characterization before refactor; round-trip, determinism, loader failure, UI tests. |
-| VI. Deterministic, versioned output | ✅ | `SchemaVersion` + migrations; canonical JSON; emitter ordering; `SaveVersion` timestamp-like field dropped from documents. |
+| VI. Deterministic, versioned output | ✅ | `SchemaVersion` + migrations; canonical JSON (one line per leaf record, sorted sets, integer positions); ids are document data, so the same document still gives the same bytes; seeded ids in tests; emitter ordering; `SaveVersion` timestamp-like field dropped from documents. |
 | VII. Abstractions for I/O | ✅ | `IDocumentFormat`, `IDocumentStore`, `IProjectSystem` (MSBuild behind it; P5 sidecar can host it), `ITypeCatalog`, `IHostChannel`. |
 | VIII. Simplicity, one PR | ⚠️ size | One spec/branch/PR as required; see "PR size" below. One Serialization project instead of three (research R10). |
 | Tech: no Fody in new code | ✅ | Fody removed entirely. |
@@ -125,7 +135,8 @@ tests/NetPrints.Core.Tests/    # + Characterization/, Serialization/, Projects/ 
 tests/NetPrints.Editor.Tests/  # + CodeView/, Diagnostics/, Architecture/ (gate + violating fixture)
 tests/NetPrints.Editor.UITests/# + CodeView/, Events/, Variables/ page objects and baselines
 tests/NetPrints.TestExtension/ # new: test asset extension
-samples/HelloWorld/            # HelloWorld.csproj + .netpc.json + .netpc.g.cs; samples/Directory.Build.* for in-repo SDK import
+samples/HelloWorld/            # HelloWorld.csproj + .netpc.json + .netpc.g.cs + .gitattributes; samples/Directory.Build.* for in-repo SDK import
+schemas/                       # new: netpc.v1.schema.json (generated from the DTOs, committed, golden-tested)
 ```
 
 **Structure Decision**: dependency direction `Core ← Reflection`, `Core ← Serialization`,
@@ -140,11 +151,11 @@ Each sub-phase ends green (`dotnet test --solution NetPrints.slnx`) and is a nat
 | # | Sub-phase | Stories | Gate at the end |
 |---|---|---|---|
 | A | Setup + characterization (golden C#, legacy fixtures, notification map) on unmodified code | — | golden tests pass on the current code |
-| B | Core foundations: Fody → CTK, nullable + warnings-as-errors, `Node.Id`, `GraphTypeInference`, logging infrastructure, new project shells | US7 (part) | 0 warnings; A-gates unchanged |
-| C | Graph serialization: DTOs, JSON, legacy graph import, mappers, migrations, stores | US1 | DF-T01…T14, T16–T18 |
+| B | Core foundations: Fody → CTK, nullable + warnings-as-errors, id generation, node and member ids, graph keys, pin keys, auto-placement, dirty flag, `GraphTypeInference`, logging infrastructure, new project shells | US7 (part), US1 (part) | 0 warnings; A-gates unchanged; DF-T18…T20, T22 (model part) |
+| C | Graph serialization: DTOs, canonical writer, tolerant reader, JSON Schema, legacy graph import, mappers, migrations, stores | US1 | DF-T01…T10, T12–T14, T16, T18–T25 (DF-T11, T15, T26 in E; DF-T17 needs the test extension, F) |
 | D | Build pipeline: `GraphCodeGenerator`, generator entry point, `NetPrints.Sdk` props/targets, in-repo dev mode, package test | US1 | PS-T01…T06 |
-| E | Project system + conversion: `IProjectSystem`/MSBuild, `ProjectConverter`, `ProjectPersistence`, Project model from snapshot, sample conversion, editor/CLI switch-over, docs (D5) | US1, US2 | SC-001…SC-003; PS-T07…T13 |
-| F | Extension points + loader + trust + test extension, composition | US3 | SC-004; PS-T14 |
+| E | Project system + conversion: `IProjectSystem`/MSBuild, `ProjectConverter`, `.gitattributes`, `ProjectPersistence` (edited-only saves), Project model from snapshot, sample conversion, editor dirty tracking, editor/CLI switch-over, docs (D5) | US1, US2 | SC-001…SC-003, SC-009, SC-010; PS-T07…T13, PS-T15; DF-T11, DF-T15, DF-T26 |
+| F | Extension points + loader + trust + test extension, composition | US3 | SC-004; PS-T14; DF-T17 |
 | G | Event graphs | US4 | translator snapshot + build/run test |
 | H | Method-local variables | US5 | translator snapshot + build/run test |
 | I | Code view + diagnostics + navigation + hover | US6 | UI tests + baselines reviewed |
@@ -166,16 +177,16 @@ when") early, then F–K as they land. Each sub-phase is a separate, reviewable 
 | Build-time code generation by `Exec` of a tool instead of an MSBuild task | VS 2022 cannot host .NET tasks; `Runtime="NET"` needs MSBuild 18 and has dotnet/msbuild#12514 (research R12) | A `netstandard2.0`/`net472` task would need a second build of the translator (C IV) |
 | Generated `.netpc.g.cs` committed to the repo | Owner requirement: reviews show the C# | Generating into `obj/` hides the C# from reviews |
 | Editor requires the .NET SDK | MSBuild evaluation/build of the `.csproj` | A custom project format (the previous design) — rejected by the owner |
+| Custom canonical JSON writer (~200 lines) on top of STJ | STJ `WriteIndented` puts every scalar on its own line, so a position or connection spans 4 lines and neighbouring edits conflict (graph-format research §3) | STJ indentation alone; `WriteRawValue` in converters (indentation interaction unverified) |
+| Ambient id generator (`IdGeneration.Current`, `AsyncLocal`) | Node and member constructors have no services; tests need seeded ids | Passing a generator to every `Node` constructor changes every node type and extension author code |
 
-## Pending governance proposals (not applied; coordinator/owner decision)
+## Governance proposals
 
-1. Roadmap P1 text: mention that the grid `ViewportTransform` follow-up is superseded by P0.1 D8, and
-   that `MetadataReference` caching stays in P8.
-2. Roadmap P1: record the csproj model (`NetPrints.Sdk`, `.netpc.json` + committed `.netpc.g.cs`,
-   `Exec`'d generator, MSBuild project system, legacy conversion leaving old files untouched) and restate
-   "done when" as in spec.md; note that U1 adds `NetPrints.Sdk` to UnrealSharp's Script `.csproj`.
-3. Roadmap/constitution tech constraints: the editor requires the .NET SDK; record "no source-generator mode" with dotnet/roslyn#57239 and #85239 as a future note.
-4. Constitution tech constraints: add AvaloniaEdit as the code-view component and
-   Microsoft.Extensions.Logging (`[LoggerMessage]`) as the logging stack (PATCH/MINOR).
-5. Constitution IV wording: CTK/STJ/logging source generators are consumed from packages; the
-   `netstandard2.0` exception applies only to generators NetPrints authors (clarification, PATCH).
+Applied by the coordinator with the owner's approval on 2026-09-25 (roadmap P1 text, constitution 1.2.1):
+the superseded `ViewportTransform` follow-up and `MetadataReference` caching in P8; the csproj model and
+the restated "done when"; the SDK requirement and "no source-generator mode"; AvaloniaEdit and
+Microsoft.Extensions.Logging in the tech constraints; the narrowed `netstandard2.0` exception; the graph
+format for version control. Not yet recorded in the roadmap: that U1 adds `NetPrints.Sdk` to UnrealSharp's
+Script `.csproj`, and a phase for the graph-format follow-ups (the roadmap lists `netprints merge` as a
+later idea; `git-install`, the `textconv` diff, `format --check`, `regen --check` and SchemaStore
+registration are proposed for P2). No other open proposals.

@@ -22,7 +22,7 @@ public sealed record CodeDiagnostic(
     string Id,                         // "CS0103", "NPT001", "NPD002", "NU1101", "MSB3073", …
     string Message,
     string? ClassFullName,
-    string? GraphKey,                  // GraphKeys.For(graph) (document-format.md §1.4)
+    string? GraphKey,                  // GraphKeys.For(graph) (document-format.md §1.4.1): "class", "<memberId>", "<variableId>/get", …
     string? NodeId,
     string? SourcePath,
     LinePositionSpan? Span);           // Microsoft.CodeAnalysis.Text; 0-based
@@ -93,7 +93,7 @@ without events/locals/emitters (DF-T01) and identical whether or not the map is 
 written to disk is `GraphCodeGenerator.RenderFile(translated)` (header + `Code` with `\n` endings, project-system.md §3).
 
 `GraphKeys` (`src/NetPrints.Core/Core/GraphKeys.cs`): `public static string For(NodeGraph graph)`
-(document-format.md §1.4; `InvalidOperationException` if the graph is not attached to a class) and
+(document-format.md §1.4.1, data-model.md §2; `InvalidOperationException` if the graph is not attached to a class) and
 `public static NodeGraph? Resolve(ClassGraph cls, string key)`.
 
 ## 3. Live analysis and quick info — `src/NetPrints.Core/Compilation/CodeAnalysisSession.cs`

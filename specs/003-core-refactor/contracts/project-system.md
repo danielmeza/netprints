@@ -46,6 +46,23 @@ New projects (profile template of `DefaultProjectProfile`, extension-points.md �
 | Extensions used by the project | `<NetPrintsExtension Include="<folder containing netprints-extension.json>" />` | usually added by the extension package's `build/*.props` |
 | Project-scope extension settings | MSBuild properties named by the extension (convention `<ExtensionPascalName>*`) | read via `ProjectSnapshot.GetProperty` |
 
+### 1.1 `.gitattributes` next to the project
+
+`IProjectSystem.CreateAsync` and `ProjectConverter` write `<project dir>/.gitattributes` with exactly these
+lines (constant `ProjectFiles.GitAttributesLines` in `src/NetPrints.Core/Projects/ProjectFiles.cs`):
+
+```gitattributes
+*.netpc.json text eol=lf
+*.netpc.g.cs text eol=lf
+```
+
+If the file exists, each missing line is appended (with a `\n` first if the file does not end with one);
+existing lines are never changed or reordered; a line counts as present when the trimmed line equals it.
+The same file is written whether or not the folder is a git repository.
+`ProjectFiles.EnsureGitAttributesAsync(string directory, CancellationToken)` implements this rule and
+returns the file's previous bytes (`null` if it did not exist) so a failed conversion can restore it. Merge and diff drivers
+(`merge=netprints`, `diff=netprints`) are not added in P1; they belong to the `netprints merge` follow-up.
+
 ## 2. `NetPrints.Sdk` package
 
 Package: `DevelopmentDependency=true`, `IncludeBuildOutput=false`, `SuppressDependenciesWhenPacking=true`,
@@ -237,7 +254,7 @@ public sealed record ProcessStartRequest(string FileName, IReadOnlyList<string> 
 |---|---|
 | `LoadAsync` | 1) `ProjectSystemException(NPW001)` if no .NET SDK was registered. 2) Restore out of process when `obj/project.assets.json` is missing or older than the project file or any imported `Directory.*.props/targets` (restore failure → `Error` message `NPW002`, continue). 3) In-process evaluation (properties, items; evaluation failure → `ProjectSystemException(NPW003)` with MSBuild's message). 4) `MSBuildWorkspace.OpenProjectAsync` for references, documents and options; `WorkspaceFailed` diagnostics → `Warning` messages `NPW005`. `DocumentationPath` = sibling `.xml` of each reference if it exists. Idempotent; no files written except by restore. |
 | `ApplyAsync` | Edits with `ProjectRootElement.Open(path, ProjectCollection, preserveFormatting: true)`, saves once (atomic temp + move), then returns `LoadAsync`. Unknown/duplicate items: `AddAssemblyReference` of an existing HintPath (case-insensitive) is a no-op (PAR-17). `RemoveReference` of a non-editable (package/project) reference → `ArgumentException`. |
-| `CreateAsync` | Writes `<directory>/<projectName>.csproj` from `profile.ProjectTemplate` (placeholders `{ProjectName}`, `{RootNamespace}`, `{TargetFramework}`, `{NetPrintsSdkVersion}`, `{ProfileId}`); `IOException` if it exists. |
+| `CreateAsync` | Writes `<directory>/<projectName>.csproj` from `profile.ProjectTemplate` (placeholders `{ProjectName}`, `{RootNamespace}`, `{TargetFramework}`, `{NetPrintsSdkVersion}`, `{ProfileId}`) and the `.gitattributes` of §1.1; `IOException` if the `.csproj` exists (nothing written). |
 | `BuildAsync` | `dotnet build "<p>" -nologo -tl:off -v:quiet -clp:NoSummary` out of process (environment `DOTNET_CLI_UI_LANGUAGE=en`, `MSBUILDTERMINALLOGGER=off`); stdout/stderr collected into `Log`; `Messages` parsed by `MsBuildMessageParser` (§4.1), de-duplicated, ordered by file, line, code. Cancellation kills the process tree. `OutputAssemblyPath` from `-getProperty:TargetPath` in the same invocation. |
 | Threading | All members are thread-safe; evaluation calls are serialized internally (one `ProjectCollection` per call, disposed). |
 | Registration | `MsBuildRegistration.EnsureRegistered()` (`src/NetPrints.Workspace/MsBuildRegistration.cs`): exactly the UnrealSharp logic (`QueryVisualStudioInstances().OrderByDescending(Version)` → `RegisterInstance`, else `RegisterDefaults`); idempotent; must run before any `Microsoft.Build` type is loaded (Desktop `Main`, CLI `Main`, `[ModuleInitializer]` in test projects that touch MSBuild). Returns `false` when no SDK is found. |
@@ -282,7 +299,8 @@ public sealed class ProjectConverter
 | `Compiled_<Name>/` folder present | `<DefaultItemExcludes>$(DefaultItemExcludes);Compiled_*/**</DefaultItemExcludes>` in the new project |
 | each `ClassPaths` entry `X.netpc` | `X.netpc.json` in the same folder (legacy import → mapper → JSON, document-format.md §3); an existing `X.netpc.json` → `NPM002` |
 | `.netpc` files not listed in `ClassPaths` | ignored, issue `NPM004` |
-| order of writes | all graph files first, then the `.csproj`; any exception deletes files written by this conversion |
+| (none) | `<Dir>/.gitattributes` per §1.1 (created, or missing lines appended) |
+| order of writes | all graph files first, then `.gitattributes`, then the `.csproj`; any exception deletes files written by this conversion and restores a `.gitattributes` that existed before to its previous bytes |
 
 Legacy files are opened read-only and never written, moved or deleted (FR-007). After conversion the
 caller opens the new `.csproj`. Generated `.g.cs` files appear on the first build (or immediately when the
@@ -293,8 +311,9 @@ editor saves, §6).
 - Open accepts `*.csproj` and `*.netpp`; a `.netpp` is converted first (confirmation dialog listing the
   files to be written), then the `.csproj` opens.
 - Graphs are loaded from `ProjectSnapshot.GraphFiles` through `ProjectPersistence` (document-format.md §2.8).
-- Save writes changed graph files **and** their `.netpc.g.cs` via `GraphCodeGenerator.RenderFile` (same
-  output as the build), so the working tree is consistent without a build.
+- Save writes the graph files of edited (dirty) classes **and** their `.netpc.g.cs` via
+  `GraphCodeGenerator.RenderFile` (same output as the build), so the working tree is consistent without a
+  build; classes the user did not edit are never rewritten (document-format.md §2.8).
 - Compile = save all → `IProjectSystem.BuildAsync`; Run = Compile → `GetRunCommand` via `IProcessLauncher`
   with captured output (P0 D3 Output pane).
 - New Project = folder picker + name → `CreateAsync` → open.
@@ -316,6 +335,7 @@ editor saves, §6).
 | PS-T09 | `ApplyAsync`: each `ProjectEdit`; untouched parts of the file byte-identical (comments, formatting); duplicate assembly no-op |
 | PS-T10 | `MsBuildMessageParser`: csc error with path/line/col/code, MSB/NU warnings, generator line with graph/node suffix, non-matching lines ignored |
 | PS-T11 | `BuildAsync`/run: converted HelloWorld builds and prints `Hello, World!` via `GetRunCommand` |
-| PS-T12 | Conversion: HelloWorld and AllNodes fixtures → `.csproj` + `.netpc.json`; legacy files byte-identical and timestamps unchanged; existing `.csproj` → `NPM002` and nothing written; `Compiled_*` excluded; `NPM001` issued |
+| PS-T12 | Conversion: HelloWorld and AllNodes fixtures → `.csproj` + `.netpc.json` + `.gitattributes`; converting the same fixture twice (fresh copies) gives byte-identical output (deterministic node and member ids); legacy files byte-identical and timestamps unchanged; existing `.csproj` → `NPM002` and nothing written; `Compiled_*` excluded; `NPM001` issued |
 | PS-T13 | No SDK (Locator registration returns false, simulated through `ProjectSystemOptions`/fake registration) → `NPW001` message path in the editor (VM test) |
 | PS-T14 | Extensions in the build: a project with a `NetPrintsExtension` item to the test extension generates code for the extension node; without the item → `NPT003` error |
+| PS-T15 | `.gitattributes` (§1.1): `CreateAsync` writes exactly the two lines; conversion into a folder without one creates it; a folder whose `.gitattributes` has `*.netpc.json text eol=lf` and other lines (no final newline) gets only `*.netpc.g.cs text eol=lf` appended; running twice appends nothing; a failed conversion restores the previous bytes |

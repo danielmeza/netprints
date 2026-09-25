@@ -91,6 +91,7 @@ public static class BuiltInNodeLibrary
 | Consistency | `Kind != Converter.Kind` or `NodeType != Converter.NodeType` or `NodeType` not assignable to `Node` → rejected, `NPX006`. |
 | Search | Editor shows `Suggestions` of kinds whose `AllowedIn` contains the open graph's kind, grouped by `Category`, after the built-in categories (PAR-52 order unchanged). |
 | Rendering | Extension nodes use the generic `NodeVM`/`NodeView` (`NodeVisualKind.Default`); custom visuals are P3. |
+| File format | Extension node types follow document-format.md §5: pin keys from `Node.GetPinKeyName` (override it for user-renamable pins; keys must stay stable across extension versions, a rename needs a migration of the extension's documents), `DefaultName`, and the inline rules by property name. |
 
 ### 2.1 Translation — `src/NetPrints.Core/Translator/Extensibility/INodeTranslator.cs`
 
@@ -338,7 +339,8 @@ public sealed class JsonFileSettingsStore : ISettingsStore
 ```
 
 File layout: `{ "schemaVersion": 1, "netprints": { "extensionPaths": [], "trustedProjects": [] }, "extensions": { "<id>": { … } } }`
-(ordinal-sorted, canonical writing rules of document-format.md §1.1). `netprints` is the built-in
+(ordinal-sorted; UTF-8 without BOM, 2-space STJ `WriteIndented`, `\n` line endings and a final `\n` as in
+document-format.md §1.1; the graph-only rules — `$schema`, inline records, ids — do not apply). `netprints` is the built-in
 section (`NetPrintsSettings` record: `ExtensionPaths`, `TrustedProjects` = full `.csproj` paths whose
 `NetPrintsExtension` items the user allowed).
 

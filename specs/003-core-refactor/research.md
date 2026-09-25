@@ -2,10 +2,14 @@
 
 **Date**: 2026-09-25 | **Spec**: [spec.md](./spec.md) | **Plan**: [plan.md](./plan.md)
 
-> **Revision 2026-09-25 (owner decision): a NetPrints project is an SDK-style `.csproj`.** §4 (R11–R16)
+> **Revision 2026-09-25 (owner decision): a NetPrints project is an SDK-style `.csproj`.** §5 (R11–R16)
 > records the new research. It supersedes R1 (custom reference-pack resolver), the project half of U1
 > (`ProjectDocument`), the ProjectCompiler part of the plan, and the project-document parts of R10.
 > Everything else below still holds.
+>
+> **Revision 2026-09-25 (owner-approved graph-format research):** §6 (R17) folds the version-control
+> changes of `docs/research/2026-09-25-graph-format/` §5–§6 into schema v1. It amends U2 and R5
+> (canonical writer, tolerant reader) and nothing else.
 
 Owner rule for this phase: **reuse, don't reinvent**. §1 lists every decision taken from existing
 sources. §2 records the research done only for questions those sources left open. Spikes ran on Linux
@@ -13,7 +17,7 @@ with SDK 10.0.400 in the session scratchpad (`p1spike/`, `aespike/`), outside th
 versions were checked against the nuget.org flat-container and registration APIs on 2026-09-25.
 
 Abbreviations: **Plan** = the plan page (`.agent-archive/2026-09-25-session-c18f4e98/netprints-unreal-plan.html`);
-**RM** = `.specify/memory/roadmap.md`; **C** = constitution 1.2.0; **P0-R** = `specs/001-modernize-build/research.md`;
+**RM** = `.specify/memory/roadmap.md`; **C** = constitution 1.2.1; **P0-R** = `specs/001-modernize-build/research.md`;
 **P0-Rev** = PR #1 review follow-ups (archive `reviews.md`, `comments.md`); **UX** = `docs/research/2026-09-25-ux-audit/`;
 **Grid** = `specs/002-grid-rendering/research.md`.
 
@@ -147,7 +151,9 @@ written back verbatim (FR-006). Discriminators of extension kinds are namespaced
 **Evidence** (`p1spike/`): (1) a derived type from a second source-generated context registered at
 runtime round-trips; (2) without a fallback, an unknown discriminator throws `JsonException: Read
 unrecognized type discriminator id` (so the converter is required); (3) with the converter, unknown
-nodes round-trip byte-identically and known kinds are unaffected.
+nodes round-trip byte-identically and known kinds are unaffected. *Amended by R17: unknown nodes are
+re-emitted through the canonical writer (byte-identical for canonical input), and `$kind` may appear
+anywhere in the object on read (`AllowOutOfOrderMetadataProperties`).*
 
 **Alternatives**: an envelope `{kind, data: JsonElement}` per node (always two-phase, less readable
 files); a single hand-written converter for all nodes (loses source-gen metadata).
@@ -230,7 +236,7 @@ methods live in one `static partial class Log` per feature folder; event ids in 
   Serialization; `INodeLibrary` in Extensibility bundles them for authors.
 - `tests/NetPrints.TestExtension` (new, test asset, not packed).
 
-## 3. Package version summary (additions to `Directory.Packages.props`; see also §4 R16)
+## 3. Package version summary (additions to `Directory.Packages.props`; see also §5 R16)
 
 | Package | Version | Used by |
 |---|---|---|
@@ -251,7 +257,7 @@ RoslynPad.Editor.Avalonia 5.0.0 (R4), McMaster.NETCore.Plugins 2.0.0 (R8).
 | K2 | Fody wove notifications the editor relies on implicitly | Notification-map characterization test recorded before removal (R6) |
 | K3 | Formatting changes spans; source map wrong | Annotation-based mapping + byte-identity invariant test (R3) |
 | K4 | Plugin type identity broken by duplicated contract assemblies | Shared-assembly rule + identity test (R8) |
-| K5 | Scope: ~3.5 w manual estimate, 7 stories | Sub-phases independently green; split recommendation in plan.md |
+| K5 | Scope: ~3.5 w manual estimate, 7 stories (the graph-format changes add ~3 d) | Sub-phases independently green; one PR, opened as a draft after sub-phase E (plan.md) |
 | K6 | TextMate native dependency in the future browser build | Plain-text fallback; revisit in P5 (R2) |
 | K7 | Compile semantics change for old .NET Framework projects on Windows | Converted to net10.0 with `NPM001`; documented (spec clarification) |
 | K8 | Rebase onto the reorganization PR | P1 starts after it merges; all paths already use the new layout |
@@ -259,9 +265,14 @@ RoslynPad.Editor.Avalonia 5.0.0 (R4), McMaster.NETCore.Plugins 2.0.0 (R8).
 | K10 | In-process MSBuild (Locator) assembly conflicts | `Microsoft.Build*` with `ExcludeAssets=runtime` (verified MSBL001 guard), registration before any MSBuild type loads, MSBuildWorkspace build host is out of process (R14) |
 | K11 | Editor now needs the .NET SDK, not only the runtime | Clear message when none is found; documented |
 | K12 | Opening a project evaluates MSBuild code from it (as every IDE does); project-referenced extensions run code | Trust prompt before loading project-referenced extensions (FR-019) |
+| K13 | **Open item.** Event methods are emitted in `EventGraph.Entries` node order, so `nodes` order stays semantic: two branches that each append an entry conflict at the `nodes` tail, and the resolved order decides method order in the C# | Kept for P1 (graph-format research §5.4, §7); a test pins the current order (T079). Later: translation order independent of storage order, then `nodes` sorted by id |
+| K14 | **Open item.** `JsonSchemaExporter` output for STJ polymorphism (`anyOf`/`const` for `$kind`) and for extension kinds from other `JsonSerializerContext`s was not verified | T041 inspects the output and fixes it in `TransformSchemaNode`; extension kinds are accepted by a generic `$kind`-contains-`/` branch; findings recorded here in R17 |
+| K15 | Pin keys come from constructor-assigned pin names, so renaming a built-in pin (or an extension's) breaks existing files | Golden list of every built-in pin reference (DF-T19); a rename requires a schema migration |
+| K16 | The custom canonical writer could emit invalid or nondeterministic JSON | Every test re-parses written bytes (DF-T03, DF-T04); the writer only formats a `JsonNode` tree STJ produced |
+| K17 | Random ids make fixtures nondeterministic | `IdGeneration.Use(new SeededIdGenerator(seed))` in tests; legacy import is deterministic (`n<index>`, seeded member ids) |
 
 
-## 4. Revision: the project is an SDK-style `.csproj` (research R11–R16)
+## 5. Revision: the project is an SDK-style `.csproj` (research R11–R16)
 
 Spikes in the session scratchpad: `sdkspike/` (props/targets + an `Exec`'d net10.0 generator, built
 with SDK 10.0.400) and `wsspike/` (Microsoft.Build.Locator + MSBuildWorkspace opening that project).
@@ -376,3 +387,39 @@ MSBuild's partial builds pass only out-of-date graphs. VS Code nesting:
 | Microsoft.Build, Microsoft.Build.Framework | 18.0.2 (`ExcludeAssets=runtime`, `PrivateAssets=all`) | Workspace (compile-time only; runtime comes from the SDK via Locator) |
 
 UnrealSharp pins Locator 1.9.1 and Workspaces.MSBuild 5.6.0; NetPrints uses the latest stable (C IV).
+
+## 6. Revision: graph format for version control (research R17)
+
+### R17. Canonical JSON with stable identity
+
+**Source**: `docs/research/2026-09-25-graph-format/README.md` (owner-approved 2026-09-25): §5 lists the
+rules, §6 the spec changes, §7 the risks. **Decision**: keep System.Text.Json and schema v1, and fix the
+four identity and line-layout hazards before any v1 file exists: sequential node ids, index-based pin
+references, index-based graph keys, and STJ's one-scalar-per-line indentation. Custom DSL, YAML, TOML and
+KDL are rejected (research §1, §5.1). Normative text: document-format.md §1.1, §1.4.1, §1.4.2, §2.3.1,
+§2.6, §2.8, §6; data-model.md §2; project-system.md §1.1.
+
+Details the research left open, decided here:
+
+| Question | Decision |
+|---|---|
+| Id alphabet and length | `n`/`m` + 6 characters of lowercase Crockford base32 (`0123456789abcdefghjkmnpqrstvwxyz`), about 30 bits; uniqueness checked in the graph (nodes) or class (members) |
+| How node constructors get a generator | Ambient `IdGeneration.Current` (`AsyncLocal`, default `Random.Shared`), scoped with `IdGeneration.Use` in tests; no constructor changes |
+| Legacy member ids | Deterministic: `SeededIdGenerator(FNV-1a-32(class full name))`, variables, then methods, then constructors. Nodes stay `n<index>` |
+| Accessor graphs | No id of their own; keys `<variableId>/get`, `/set`, `/type` |
+| Pin key for user-renamable pins | Positional name `Input<i>` / `Output<i>` (entry argument and return pins), the pin `Name` for all others; `~n` for duplicates; implemented by `Node.GetPinKeyName`, overridable by extensions |
+| Old index form `in.data.0` on read | Rejected (treated as an unknown key, `NPD002`/`NPD003`): no v1 files exist, and one grammar avoids ambiguity |
+| Layout value type | `int[2]`; model doubles rounded `MidpointRounding.AwayFromZero` on write; a non-integer or wrong-length position → `DocumentFormatException` |
+| Auto-placement | Next to the first placed neighbour (upstream +300 px, downstream −300 px), else a column right of the graph; collisions push down by 120 px (data-model.md §2) |
+| Inline records | Chosen by property name in the `JsonNode` tree (document-format.md §2.3.1), not by CLR type, so the writer needs no type information and extension documents follow the same rule; `Utf8JsonWriter.WriteRawValue` was not used because its interaction with indentation is unverified |
+| String escaping | `JavaScriptEncoder.UnsafeRelaxedJsonEscaping` (readable generic names and non-ASCII text) |
+| `$schema` value | `https://raw.githubusercontent.com/danielmeza/netprints/master/schemas/netpc.v1.schema.json`, a URL that resolves once the file is on `master`; ignored on read |
+| Unknown properties on read | Ignored; dropped on the next save of that class |
+| Missing or duplicate ids on read | `DocumentFormatException` (nodes and members alike) |
+| Dirty tracking | Explicit `ClassGraph.IsDirty`, set by the editor on every undoable command, node move and inspector edit; `SaveAsync` maps and writes only dirty classes, so no ripple saves (research §5.2 rule 12) |
+| Missing layout / NPD codes | New issue codes `NPD003` (pin state dropped) and `NPD004` (layout entry ignored) |
+| `.gitattributes` | Per project folder, two `eol=lf` lines, created or appended by `CreateAsync` and `ProjectConverter`; no `linguist-generated`, so `.netpc.g.cs` diffs stay visible in PRs |
+| Stale checks | Tests (run by CI): committed schema = generated (DF-T24); committed sample graphs canonical and `.netpc.g.cs` = regenerated (DF-T26). CLI `format --check` / `regen --check` are P2 |
+| Merge driver | `netprints merge` / `git-install` / `textconv` diff: follow-up after P1 (research §3, §5.4) |
+
+Findings to record here during implementation: the exporter's polymorphism output (K14, T041).
