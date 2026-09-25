@@ -13,6 +13,7 @@ public sealed class ReflectionHost : IReflectionHost
 {
     private readonly IUiDispatcher dispatcher;
     private readonly ObservableRangeCollection<TypeSpecifier> nonStaticTypes = [];
+    private readonly TaskCompletionSource loaded = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private IReflectionProvider? provider;
     private int reloadVersion;
 
@@ -22,7 +23,12 @@ public sealed class ReflectionHost : IReflectionHost
         NonStaticTypes = new ReadOnlyObservableCollection<TypeSpecifier>(nonStaticTypes);
     }
 
-    public IReflectionProvider Provider => provider ??= new MemoizedReflectionProvider(new ReflectionProvider([], [], []));
+    public bool IsLoaded => provider is not null;
+
+    public Task Loaded => loaded.Task;
+
+    public IReflectionProvider Provider =>
+        provider ?? throw new InvalidOperationException("The reflection provider has not been loaded yet; check IsLoaded or await Loaded.");
 
     public ReadOnlyObservableCollection<TypeSpecifier> NonStaticTypes { get; }
 
@@ -30,7 +36,7 @@ public sealed class ReflectionHost : IReflectionHost
 
     public event EventHandler? Reloaded;
 
-    public async Task ReloadAsync(Project project)
+    public async Task ReloadAsync(Project project, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(project);
 
@@ -59,10 +65,11 @@ public sealed class ReflectionHost : IReflectionHost
                 }
             }
 
+            cancellationToken.ThrowIfCancellationRequested();
             IReflectionProvider built = new MemoizedReflectionProvider(new ReflectionProvider(assemblyPaths, sourcePaths, sources));
             var types = built.GetNonStaticTypes().ToList();
             return (built, types, warnings);
-        }).ConfigureAwait(false);
+        }, cancellationToken).ConfigureAwait(false);
 
         await dispatcher.InvokeAsync(() =>
         {
@@ -75,6 +82,7 @@ public sealed class ReflectionHost : IReflectionHost
             provider = newProvider;
             LastWarnings = warnings;
             nonStaticTypes.ReplaceRange(types);
+            loaded.TrySetResult();
             Reloaded?.Invoke(this, EventArgs.Empty);
         }).ConfigureAwait(false);
     }

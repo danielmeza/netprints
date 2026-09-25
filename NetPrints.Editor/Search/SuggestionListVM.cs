@@ -118,7 +118,7 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
     partial void OnSearchTextChanged(string value) => searchTextSubject.OnNext(value ?? "");
 
     /// <summary>Opens the popup: clears the search text and builds the suggestions for a pin (or none).</summary>
-    public async Task OpenAsync(GraphPoint position, NodePin? pin)
+    public async Task OpenAsync(GraphPoint position, NodePin? pin, CancellationToken cancellationToken = default)
     {
         int version = Interlocked.Increment(ref openVersion);
 
@@ -137,7 +137,9 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
         List<SuggestionItem> built;
         try
         {
-            built = await Task.Run(() => BuildItems(pin));
+            // Suggestions come from reflection: wait for the first load instead of showing nothing.
+            await graph.Context.Reflection.Loaded.WaitAsync(cancellationToken);
+            built = await Task.Run(() => BuildItems(pin), cancellationToken);
         }
         catch (Exception ex)
         {

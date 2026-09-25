@@ -189,17 +189,10 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
 
     private void RefreshOverridableMethods()
     {
-        try
-        {
-            var provider = Context.Reflection.Provider;
-            OverridableMethods = Class.AllBaseTypes
-                .SelectMany(provider.GetOverridableMethodsForType)
-                .ToList();
-        }
-        catch (Exception)
-        {
-            OverridableMethods = [];
-        }
+        // Filled on Reloaded once the host has loaded.
+        OverridableMethods = Context.Reflection.IsLoaded
+            ? Class.AllBaseTypes.SelectMany(Context.Reflection.Provider.GetOverridableMethodsForType).ToList()
+            : [];
     }
 
     partial void OnSelectedOverrideChanged(MethodSpecifier? value)

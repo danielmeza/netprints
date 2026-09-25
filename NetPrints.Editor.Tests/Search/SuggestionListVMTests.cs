@@ -69,7 +69,7 @@ public class SuggestionListVMTests : GraphTestBase
     [Fact(Timeout = 60000)]
     public async Task MultiTermCaseInsensitiveFilterWithHeaders()
     {
-        await Graph.OpenSearchAsync(new GraphPoint(10, 10));
+        await Graph.OpenSearchAsync(new GraphPoint(10, 10), null, TestContext.Current.CancellationToken);
         var search = Graph.Search;
         Assert.True(search.IsOpen);
         Assert.False(search.IsLoading);
@@ -92,7 +92,7 @@ public class SuggestionListVMTests : GraphTestBase
     [Fact(Timeout = 60000)]
     public async Task SelectingMethodCreatesNodeAtPositionAndCloses()
     {
-        await Graph.OpenSearchAsync(new GraphPoint(140, 84));
+        await Graph.OpenSearchAsync(new GraphPoint(140, 84), null, TestContext.Current.CancellationToken);
         Graph.Search.SearchText = "Console WriteLine";
         var item = Graph.Search.Items.First(i => i.Value is MethodSpecifier { Name: "WriteLine" } m && m.Parameters.Count == 1);
 
@@ -108,7 +108,7 @@ public class SuggestionListVMTests : GraphTestBase
     public async Task PinSearchConnectsNewNode()
     {
         var entryExec = Method.EntryNode.InitialExecutionPin;
-        await Graph.OpenSearchAsync(new GraphPoint(0, 0), entryExec);
+        await Graph.OpenSearchAsync(new GraphPoint(0, 0), entryExec, TestContext.Current.CancellationToken);
         Assert.Null(entryExec.OutgoingPin);
 
         var ifElse = Graph.Search.Items.First(i => i.Text == "If Else");
@@ -121,7 +121,7 @@ public class SuggestionListVMTests : GraphTestBase
     [Fact(Timeout = 60000)]
     public async Task SpecialItemsAskForTypeOrMethod()
     {
-        await Graph.OpenSearchAsync(new GraphPoint(0, 0));
+        await Graph.OpenSearchAsync(new GraphPoint(0, 0), null, TestContext.Current.CancellationToken);
         SuggestionItem Item(string text) => Graph.Search.AllSuggestions.First(i => i.Text == text);
 
         Editor.Dialogs.TypeAnswer = TypeSpecifier.FromType<List<int>>();
@@ -144,7 +144,7 @@ public class SuggestionListVMTests : GraphTestBase
 
         // Make Delegate asks for a method.
         var upper = new CallMethodNode(Method, FindMethod(typeof(string), "ToUpperInvariant"));
-        await Graph.OpenSearchAsync(new GraphPoint(0, 0), upper.OutputDataPins.First(p => p.Name != "Exception"));
+        await Graph.OpenSearchAsync(new GraphPoint(0, 0), upper.OutputDataPins.First(p => p.Name != "Exception"), TestContext.Current.CancellationToken);
         var makeDelegate = Graph.Search.AllSuggestions.First(i => i.Value is MakeDelegateTypeInfo);
         Assert.StartsWith("Make Delegate For A Method Of", makeDelegate.Text);
         await Graph.Search.SelectCommand.ExecuteAsync(makeDelegate);
@@ -156,7 +156,7 @@ public class SuggestionListVMTests : GraphTestBase
     [Fact(Timeout = 60000)]
     public async Task VariableOpensGetSetChooser()
     {
-        await Graph.OpenSearchAsync(new GraphPoint(42, 42));
+        await Graph.OpenSearchAsync(new GraphPoint(42, 42), null, TestContext.Current.CancellationToken);
         var property = Graph.Search.AllSuggestions.First(i => i.Value is VariableSpecifier);
         Assert.Equal("Property_16x.png", property.IconKey);
 
@@ -217,7 +217,7 @@ public class SuggestionListVMTests : GraphTestBase
     {
         var search = Graph.Search;
         search.FilterThrottle = TimeSpan.FromMilliseconds(100);
-        await Graph.OpenSearchAsync(new GraphPoint(0, 0));
+        await Graph.OpenSearchAsync(new GraphPoint(0, 0), null, TestContext.Current.CancellationToken);
         await Task.Delay(300, TestContext.Current.CancellationToken);
         int all = search.Items.Count;
 

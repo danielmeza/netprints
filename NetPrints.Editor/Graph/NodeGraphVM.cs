@@ -34,6 +34,8 @@ public sealed partial class NodeGraphVM : ObservableObject, IDisposable
         Nodes.CollectionChanged += OnNodesChanged;
         SyncNodeSubscriptions();
 
+        Context.Reflection.Reloaded += OnReflectionReloaded;
+
         Search = new SuggestionListVM(this);
         GetSetChooser = new GetSetChooserVM(this);
 
@@ -267,7 +269,8 @@ public sealed partial class NodeGraphVM : ObservableObject, IDisposable
     /// Opens the node search at a position. With a pin, the suggestions are filtered for it and the
     /// chosen node is connected to it (PAR-47, 52).
     /// </summary>
-    public Task OpenSearchAsync(GraphPoint position, NodePin? suggestionPin = null) => Search.OpenAsync(position, suggestionPin);
+    public Task OpenSearchAsync(GraphPoint position, NodePin? suggestionPin = null, CancellationToken cancellationToken = default) =>
+        Search.OpenAsync(position, suggestionPin, cancellationToken);
 
     /// <summary>Changes the overload of a node through the undo stack (PAR-40).</summary>
     public void ChangeOverload(NodeVM node, object overload) => Owner.UndoRedo.Do(EditorCommands.ChangeOverload(node.Node, overload));
@@ -284,8 +287,17 @@ public sealed partial class NodeGraphVM : ObservableObject, IDisposable
     /// <summary>A variable was dropped from the class list: opens the Get/Set chooser (PAR-57).</summary>
     public void Drop(MemberVariableVM variable, GraphPoint position) => GetSetChooser.Open(variable.Specifier, position);
 
+    private void OnReflectionReloaded(object? sender, EventArgs e)
+    {
+        foreach (var node in Nodes)
+        {
+            node.OnReflectionReloaded();
+        }
+    }
+
     public void Dispose()
     {
+        Context.Reflection.Reloaded -= OnReflectionReloaded;
         Nodes.CollectionChanged -= OnNodesChanged;
         foreach (var node in subscribedNodes)
         {

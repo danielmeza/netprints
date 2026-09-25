@@ -120,19 +120,10 @@ public sealed partial class NodeVM : ObservableObject, IDisposable
     {
         get
         {
-            if (Node is CallMethodNode callMethodNode)
-            {
-                try
-                {
-                    return Graph.Context.Reflection.Provider.GetMethodDocumentation(callMethodNode.MethodSpecifier);
-                }
-                catch (Exception)
-                {
-                    return null;
-                }
-            }
-
-            return null;
+            var reflection = Graph.Context.Reflection;
+            return Node is CallMethodNode callMethodNode && reflection.IsLoaded
+                ? reflection.Provider.GetMethodDocumentation(callMethodNode.MethodSpecifier)
+                : null;
         }
     }
 
@@ -173,24 +164,38 @@ public sealed partial class NodeVM : ObservableObject, IDisposable
 
     internal void UpdateOverloads()
     {
-        try
+        var reflection = Graph.Context.Reflection;
+        if (!reflection.IsLoaded)
         {
-            var provider = Graph.Context.Reflection.Provider;
-            Overloads = Node switch
-            {
-                CallMethodNode { MethodSpecifier: not null } call =>
-                    provider.GetPublicMethodOverloads(call.MethodSpecifier).Where(m => m != call.MethodSpecifier).Cast<object>().ToList(),
-                ConstructorNode { ConstructorSpecifier: not null } ctor =>
-                    provider.GetConstructors(ctor.ConstructorSpecifier.DeclaringType)
-                        .Where(c => !SameConstructor(c, ctor.ConstructorSpecifier)).Cast<object>().ToList(),
-                MakeArrayNode makeArray =>
-                    [makeArray.UsePredefinedSize ? ModelOperations.UseInitializerList : ModelOperations.UsePredefinedSize],
-                _ => [],
-            };
+            // Refreshed by OnReflectionReloaded once the host has loaded.
+            Overloads = Node is MakeArrayNode makeArrayNode ? [OtherSizeMode(makeArrayNode)] : [];
+            return;
         }
-        catch (Exception)
+
+        var provider = reflection.Provider;
+        Overloads = Node switch
         {
-            Overloads = [];
+            CallMethodNode { MethodSpecifier: not null } call =>
+                provider.GetPublicMethodOverloads(call.MethodSpecifier).Where(m => m != call.MethodSpecifier).Cast<object>().ToList(),
+            ConstructorNode { ConstructorSpecifier: not null } ctor =>
+                provider.GetConstructors(ctor.ConstructorSpecifier.DeclaringType)
+                    .Where(c => !SameConstructor(c, ctor.ConstructorSpecifier)).Cast<object>().ToList(),
+            MakeArrayNode makeArray => [OtherSizeMode(makeArray)],
+            _ => [],
+        };
+    }
+
+    private static object OtherSizeMode(MakeArrayNode node) =>
+        node.UsePredefinedSize ? ModelOperations.UseInitializerList : ModelOperations.UsePredefinedSize;
+
+    /// <summary>Refreshes everything that comes from reflection after the host (re)loaded.</summary>
+    internal void OnReflectionReloaded()
+    {
+        UpdateOverloads();
+        OnPropertyChanged(nameof(ToolTip));
+        foreach (var pin in AllPins)
+        {
+            pin.OnReflectionReloaded();
         }
     }
 

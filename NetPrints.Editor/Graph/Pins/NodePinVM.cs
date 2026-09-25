@@ -124,40 +124,36 @@ public sealed partial class NodePinVM : ObservableObject, IDisposable
             {
                 toolTip = $"{dataPin.PinType.Value}: {dataPin.Name}";
                 string? documentation = null;
-                var provider = Node.Graph.Context.Reflection.Provider;
+                var reflection = Node.Graph.Context.Reflection;
 
-                try
+                if (dataPin.Node is CallMethodNode callMethodNode)
                 {
-                    if (dataPin.Node is CallMethodNode callMethodNode)
+                    if (dataPin is NodeInputDataPin inputDataPin)
                     {
-                        if (dataPin is NodeInputDataPin inputDataPin)
+                        int paramIndex = callMethodNode.ArgumentPins.IndexOf(inputDataPin);
+                        if (paramIndex >= 0)
                         {
-                            int paramIndex = callMethodNode.ArgumentPins.IndexOf(inputDataPin);
-                            if (paramIndex >= 0)
+                            var parameter = callMethodNode.MethodSpecifier.Parameters[paramIndex];
+
+                            if (parameter.HasExplicitDefaultValue)
                             {
-                                var parameter = callMethodNode.MethodSpecifier.Parameters[paramIndex];
-
-                                if (parameter.HasExplicitDefaultValue)
-                                {
-                                    toolTip += $"{Environment.NewLine}Default: {TranslatorUtil.ObjectToLiteral(parameter.ExplicitDefaultValue, TypeSpecifier.FromType(parameter.ExplicitDefaultValue?.GetType() ?? typeof(object)))}";
-                                }
-
-                                documentation = provider.GetMethodParameterDocumentation(callMethodNode.MethodSpecifier, paramIndex);
+                                toolTip += $"{Environment.NewLine}Default: {TranslatorUtil.ObjectToLiteral(parameter.ExplicitDefaultValue, TypeSpecifier.FromType(parameter.ExplicitDefaultValue?.GetType() ?? typeof(object)))}";
                             }
-                        }
-                        else if (dataPin is NodeOutputDataPin outputDataPin)
-                        {
-                            int returnIndex = callMethodNode.OutputDataPins.IndexOf(outputDataPin);
-                            if (returnIndex >= 0)
+
+                            if (reflection.IsLoaded)
                             {
-                                documentation = provider.GetMethodReturnDocumentation(callMethodNode.MethodSpecifier, returnIndex);
+                                documentation = reflection.Provider.GetMethodParameterDocumentation(callMethodNode.MethodSpecifier, paramIndex);
                             }
                         }
                     }
-                }
-                catch (Exception)
-                {
-                    documentation = null;
+                    else if (dataPin is NodeOutputDataPin outputDataPin && reflection.IsLoaded)
+                    {
+                        int returnIndex = callMethodNode.OutputDataPins.IndexOf(outputDataPin);
+                        if (returnIndex >= 0)
+                        {
+                            documentation = reflection.Provider.GetMethodReturnDocumentation(callMethodNode.MethodSpecifier, returnIndex);
+                        }
+                    }
                 }
 
                 if (!string.IsNullOrWhiteSpace(documentation))
@@ -202,9 +198,16 @@ public sealed partial class NodePinVM : ObservableObject, IDisposable
     public bool ShowBooleanValue => UsesUnconnectedValue && PinTypeSpecifier == TypeSpecifier.FromType<bool>();
 
     public IEnumerable<string>? PossibleEnumNames =>
-        Pin is NodeInputDataPin && PinTypeSpecifier is { IsEnum: true } typeSpecifier
+        Pin is NodeInputDataPin && PinTypeSpecifier is { IsEnum: true } typeSpecifier && Node.Graph.Context.Reflection.IsLoaded
             ? Node.Graph.Context.Reflection.Provider.GetEnumNames(typeSpecifier)
             : null;
+
+    /// <summary>Refreshes the values that come from reflection after the host (re)loaded.</summary>
+    internal void OnReflectionReloaded()
+    {
+        OnPropertyChanged(nameof(PossibleEnumNames));
+        OnPropertyChanged(nameof(ToolTip));
+    }
 
     public object? UnconnectedValue
     {
@@ -301,15 +304,15 @@ public sealed partial class NodePinVM : ObservableObject, IDisposable
             return false;
         }
 
-        var provider = Node.Graph.Context.Reflection.Provider;
-        try
+        var reflection = Node.Graph.Context.Reflection;
+        if (!reflection.IsLoaded)
         {
-            return GraphUtil.CanConnectNodePins(Pin, other.Pin, provider.TypeSpecifierIsSubclassOf, provider.HasImplicitCast);
-        }
-        catch (Exception)
-        {
+            // Type compatibility needs the provider; nothing connects until the types are loaded.
             return false;
         }
+
+        var provider = reflection.Provider;
+        return GraphUtil.CanConnectNodePins(Pin, other.Pin, provider.TypeSpecifierIsSubclassOf, provider.HasImplicitCast);
     }
 
     /// <summary>Connects this pin to another pin if they are compatible. Returns whether it connected.</summary>

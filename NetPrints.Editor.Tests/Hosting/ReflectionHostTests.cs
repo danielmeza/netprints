@@ -14,11 +14,15 @@ public class ReflectionHostTests
         host.Reloaded += (_, _) => reloaded++;
 
         Assert.Empty(host.NonStaticTypes);
-        Assert.NotNull(host.Provider);
+        Assert.False(host.IsLoaded);
+        Assert.False(host.Loaded.IsCompleted);
+        Assert.Throws<InvalidOperationException>(() => host.Provider); // no silent empty provider
 
-        await host.ReloadAsync(Project.CreateNew("P", "N"));
+        await host.ReloadAsync(Project.CreateNew("P", "N"), TestContext.Current.CancellationToken);
 
         Assert.Equal(1, reloaded);
+        Assert.True(host.IsLoaded);
+        Assert.True(host.Loaded.IsCompletedSuccessfully);
         Assert.True(host.NonStaticTypes.Count > 4000);
         Assert.Empty(host.LastWarnings);
         Assert.True(host.Provider.GetNonStaticTypes().Contains(TypeSpecifier.FromType<string>()));
@@ -32,7 +36,7 @@ public class ReflectionHostTests
         project.References.Add(new AssemblyReference("/does/not/exist.dll"));
         project.References.Add(new SourceDirectoryReference("/does/not/exist"));
 
-        await host.ReloadAsync(project);
+        await host.ReloadAsync(project, TestContext.Current.CancellationToken);
 
         Assert.Equal(2, host.LastWarnings.Count());
         Assert.True(host.NonStaticTypes.Count > 4000);
@@ -45,7 +49,7 @@ public class ReflectionHostTests
         var project = TestPaths.LoadHelloWorldCopy();
         try
         {
-            await host.ReloadAsync(project);
+            await host.ReloadAsync(project, TestContext.Current.CancellationToken);
             Assert.True(host.NonStaticTypes.Any(t => t.Name == "HelloWorld.Program"));
         }
         finally

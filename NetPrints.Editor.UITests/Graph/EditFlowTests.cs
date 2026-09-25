@@ -17,7 +17,7 @@ public class EditFlowTests
         var method = (MethodGraph)graph.ViewModel.Graph;
         int containers = graph.RealizedNodeCount;
 
-        await graph.ViewModel.OpenSearchAsync(new GraphPoint(280, 420));
+        await graph.ViewModel.OpenSearchAsync(new GraphPoint(280, 420), null, TestContext.Current.CancellationToken);
         await graph.Search.WaitReadyAsync();
         await graph.ViewModel.Search.SelectCommand.ExecuteAsync(graph.ViewModel.Search.Items.First(i => i.Text == "If Else"));
         await graph.WaitForRenderedAsync();
