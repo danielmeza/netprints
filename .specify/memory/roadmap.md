@@ -128,8 +128,13 @@ for those who want to learn it.
 - Per-node error markers (from P1 diagnostics mapping), collapse selection to function/macro,
   comment boxes/regions.
 - Live C# side-by-side view synced with the graph selection (builds on the P1 AvaloniaEdit view).
-- Visual debugging: execution highlighting, breakpoints and watch values, via `IHostChannel`
-  (desktop runner first; Unreal via NetPrintsUnreal afterwards).
+- Visual debugging of compiled C# (potential strongest differentiator vs Blueprint, whose debugger
+  only covers VM-interpreted graphs): (B) instrumented debug builds report node execution + pin
+  values through `IHostChannel` for live flow highlighting and watches; (A) real breakpoints and
+  stepping: the translator emits C# `#line` span directives mapping statements to node IDs, and
+  NetPrints acts as a DAP client of `netcoredbg` attached to the host (desktop runner, or
+  UnrealEditor hosting CoreCLR via UnrealSharp). Do B first, then A; a first cut of B belongs in
+  the U1 prototype.
 - Natural-language/AI assist that proposes nodes from a description (opt-in, reviewable diff).
 
 ### P7 — Structured code generation
