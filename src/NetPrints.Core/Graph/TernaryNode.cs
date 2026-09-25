@@ -12,6 +12,10 @@ namespace NetPrints.Graph
     [DataContract]
     public class TernaryNode : ExecNode
     {
+        /// <summary>
+        /// Always <see langword="true"/>: selecting between two already-computed values has no side
+        /// effects worth sequencing.
+        /// </summary>
         public override bool CanSetPure
         {
             get => true;
@@ -65,6 +69,11 @@ namespace NetPrints.Graph
             get => TypePin.InferredType?.Value ?? TypeSpecifier.FromType<object>();
         }
 
+        /// <summary>
+        /// Adds this node to <paramref name="graph"/> and gives it its type, true/false/condition and
+        /// output pins.
+        /// </summary>
+        /// <param name="graph">Graph the node belongs to.</param>
         public TernaryNode(NodeGraph graph)
             : base(graph)
         {
@@ -75,6 +84,12 @@ namespace NetPrints.Graph
             AddOutputDataPin("Output", Type);
         }
 
+        /// <summary>
+        /// Propagates <see cref="Type"/> (the inferred selection type) to the true, false and output
+        /// data pins.
+        /// </summary>
+        /// <param name="sender">The node whose input type changed.</param>
+        /// <param name="eventArgs">Unused; forwarded to the base implementation.</param>
         protected override void HandleInputTypeChanged(object? sender, EventArgs? eventArgs)
         {
             base.HandleInputTypeChanged(sender, eventArgs);
@@ -84,6 +99,10 @@ namespace NetPrints.Graph
             OutputObjectPin.PinType.Value = Type;
         }
 
+        /// <summary>
+        /// Returns "Ternary " followed by the selection type's short name.
+        /// </summary>
+        /// <returns>"Ternary " followed by the selection type's short name.</returns>
         public override string ToString()
         {
             return $"Ternary {Type.ShortName}";

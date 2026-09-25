@@ -12,6 +12,11 @@ namespace NetPrints.Graph
     [DataContract]
     public class ExplicitCastNode : Node
     {
+        /// <summary>
+        /// Always <see langword="true"/>: casting alone is not considered a side effect worth
+        /// sequencing, provided its failure/success branching is not needed (a pure cast node has no
+        /// <see cref="CastSuccessPin"/>/<see cref="CastFailedPin"/> and throws on a failed cast).
+        /// </summary>
         public override bool CanSetPure
         {
             get => true;
@@ -65,6 +70,11 @@ namespace NetPrints.Graph
             get => CastTypePin.InferredType?.Value ?? TypeSpecifier.FromType<object>();
         }
 
+        /// <summary>
+        /// Adds this node to <paramref name="graph"/> and gives it its type, object, cast-result and
+        /// exec pins.
+        /// </summary>
+        /// <param name="graph">Graph the node belongs to.</param>
         public ExplicitCastNode(NodeGraph graph)
             : base(graph)
         {
@@ -81,6 +91,11 @@ namespace NetPrints.Graph
             AddOutputExecPin("Failure");
         }
 
+        /// <summary>
+        /// Removes the success/failure exec pins and input exec pin when turned pure (disconnecting
+        /// them first); restores them when turned impure.
+        /// </summary>
+        /// <param name="pure">The new purity value.</param>
         protected override void SetPurity(bool pure)
         {
             base.SetPurity(pure);
@@ -109,6 +124,11 @@ namespace NetPrints.Graph
             }
         }
 
+        /// <summary>
+        /// Propagates <see cref="CastType"/> (the inferred target type) to <see cref="CastPin"/>.
+        /// </summary>
+        /// <param name="sender">The node whose input type changed.</param>
+        /// <param name="eventArgs">Unused; forwarded to the base implementation.</param>
         protected override void HandleInputTypeChanged(object? sender, EventArgs? eventArgs)
         {
             base.HandleInputTypeChanged(sender, eventArgs);
@@ -116,6 +136,10 @@ namespace NetPrints.Graph
             CastPin.PinType.Value = CastType;
         }
 
+        /// <summary>
+        /// Returns "Explicit Cast to " followed by the target type's short name.
+        /// </summary>
+        /// <returns>"Explicit Cast to " followed by the target type's short name.</returns>
         public override string ToString()
         {
             return $"Explicit Cast to {CastType.ShortName}";

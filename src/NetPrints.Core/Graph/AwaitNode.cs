@@ -12,12 +12,28 @@ namespace NetPrints.Graph
     [DataContract]
     public class AwaitNode : ExecNode
     {
+        /// <summary>
+        /// Always <see langword="true"/>: awaiting is not itself considered a side effect worth
+        /// sequencing (the connected exec pins already order the surrounding statements).
+        /// </summary>
         public override bool CanSetPure => true;
 
+        /// <summary>
+        /// Input data pin for the <see cref="Task"/> (or <see cref="Task{TResult}"/>) to await.
+        /// </summary>
         public NodeInputDataPin TaskPin => InputDataPins[0];
 
+        /// <summary>
+        /// Output data pin for the awaited result, or <see langword="null"/> if the connected task has
+        /// no result (a non-generic <see cref="Task"/>).
+        /// </summary>
         public NodeOutputDataPin? ResultPin => OutputDataPins.FirstOrDefault();
 
+        /// <summary>
+        /// Adds this node to <paramref name="graph"/> and gives it its task pin, adding a result pin
+        /// if the (initially unconnected) task type has one.
+        /// </summary>
+        /// <param name="graph">Graph the node belongs to.</param>
         public AwaitNode(NodeGraph graph)
             : base(graph)
         {
@@ -26,6 +42,11 @@ namespace NetPrints.Graph
             UpdateResultPin();
         }
 
+        /// <summary>
+        /// Re-subscribes <see cref="UpdateResultPin"/> to <see cref="TaskPin"/>'s
+        /// <see cref="NodeInputDataPin.IncomingPinChanged"/> event (event subscriptions are not
+        /// serialized).
+        /// </summary>
         public override void OnMethodDeserialized()
         {
             base.OnMethodDeserialized();

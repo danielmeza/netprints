@@ -43,6 +43,11 @@ namespace NetPrints.Graph
             get { return InputDataPins[0]; }
         }
 
+        /// <summary>
+        /// Adds this node to <paramref name="graph"/> and gives it its execution, condition and
+        /// true/false pins.
+        /// </summary>
+        /// <param name="graph">Graph the node belongs to.</param>
         public IfElseNode(NodeGraph graph)
             : base(graph)
         {
@@ -54,6 +59,10 @@ namespace NetPrints.Graph
             AddOutputExecPin("False");
         }
 
+        /// <summary>
+        /// Returns "If Else".
+        /// </summary>
+        /// <returns>"If Else".</returns>
         public override string ToString()
         {
             return "If Else";

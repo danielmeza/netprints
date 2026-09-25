@@ -69,6 +69,11 @@ namespace NetPrints.Graph
             get { return OutputDataPins[0]; }
         }
 
+        /// <summary>
+        /// Adds this node to <paramref name="graph"/> and gives it its execution, continue, index-range
+        /// and index pins. Defaults <see cref="InitialIndexPin"/>'s unconnected value to 0.
+        /// </summary>
+        /// <param name="graph">Graph the node belongs to.</param>
         public ForLoopNode(NodeGraph graph)
             : base(graph)
         {
@@ -87,6 +92,10 @@ namespace NetPrints.Graph
             InitialIndexPin.ExplicitDefaultValue = 0;
         }
 
+        /// <summary>
+        /// Returns "For Loop".
+        /// </summary>
+        /// <returns>"For Loop".</returns>
         public override string ToString()
         {
             return "For Loop";
