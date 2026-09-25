@@ -17,6 +17,12 @@ namespace NetPrints.Graph
         public ObservableRangeCollection<NodeInputDataPin> OutgoingPins { get; private set; }
             = new ObservableRangeCollection<NodeInputDataPin>();
 
+        /// <summary>
+        /// Creates an output data pin with no connected input pins yet.
+        /// </summary>
+        /// <param name="node">Node the pin belongs to.</param>
+        /// <param name="name">Name of the pin.</param>
+        /// <param name="pinType">Observable value carrying the pin's type.</param>
         public NodeOutputDataPin(Node node, string name, ObservableValue<BaseType> pinType)
             : base(node, name, pinType)
         {

@@ -6,6 +6,13 @@ using NetPrints.Core;
 
 namespace NetPrints.Graph
 {
+    /// <summary>
+    /// Raised by <see cref="NodeInputDataPin.IncomingPinChanged"/> after
+    /// <see cref="NodeInputDataPin.IncomingPin"/> is set.
+    /// </summary>
+    /// <param name="pin">Pin whose incoming connection changed.</param>
+    /// <param name="oldPin">Previously connected output data pin, or <see langword="null"/>.</param>
+    /// <param name="newPin">Newly connected output data pin, or <see langword="null"/>.</param>
     public delegate void InputDataPinIncomingPinChangedDelegate(
         NodeInputDataPin pin, NodeOutputDataPin? oldPin, NodeOutputDataPin? newPin);
 
@@ -64,14 +71,32 @@ namespace NetPrints.Graph
             }
         }
 
+        /// <summary>
+        /// The literal C# used as the argument's default value when this pin is unconnected and
+        /// <see cref="UsesExplicitDefaultValue"/> is <see langword="false"/> and omitting the
+        /// argument (relying on the parameter's own C# default) is not being used instead. Only
+        /// meaningful for a <see cref="CallMethodNode"/> argument pin.
+        /// </summary>
         [ObservableProperty]
         [DataMember]
         public partial object? ExplicitDefaultValue { get; set; }
 
+        /// <summary>
+        /// Whether this pin, when unconnected, omits the argument so the callee's own C# default
+        /// value is used instead of emitting <see cref="ExplicitDefaultValue"/> or
+        /// <see cref="UsesUnconnectedValue"/>'s value. Only meaningful for a
+        /// <see cref="CallMethodNode"/> argument pin.
+        /// </summary>
         [ObservableProperty]
         [DataMember]
         public partial bool UsesExplicitDefaultValue { get; set; }
 
+        /// <summary>
+        /// Creates an unconnected input data pin with no unconnected/default value set.
+        /// </summary>
+        /// <param name="node">Node the pin belongs to.</param>
+        /// <param name="name">Name of the pin.</param>
+        /// <param name="pinType">Observable value carrying the pin's type.</param>
         public NodeInputDataPin(Node node, string name, ObservableValue<BaseType> pinType)
             : base(node, name, pinType)
         {

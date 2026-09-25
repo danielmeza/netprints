@@ -51,11 +51,19 @@ namespace NetPrints.Core
             get => Name;
         }
 
+        /// <summary>
+        /// Sets <see cref="Name"/>.
+        /// </summary>
+        /// <param name="name">Full name of the type (ie. Namespace.TypeName).</param>
         protected BaseType(string name)
         {
             Name = name;
         }
 
+        /// <summary>
+        /// Returns <see cref="Name"/>.
+        /// </summary>
+        /// <returns><see cref="Name"/>.</returns>
         public override string ToString()
         {
             return Name;

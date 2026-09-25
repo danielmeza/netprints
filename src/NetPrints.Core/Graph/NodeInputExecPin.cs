@@ -17,6 +17,11 @@ namespace NetPrints.Graph
         public ObservableRangeCollection<NodeOutputExecPin> IncomingPins { get; private set; } =
             new ObservableRangeCollection<NodeOutputExecPin>();
 
+        /// <summary>
+        /// Creates an input execution pin with no incoming connections.
+        /// </summary>
+        /// <param name="node">Node the pin belongs to.</param>
+        /// <param name="name">Name of the pin.</param>
         public NodeInputExecPin(Node node, string name)
             : base(node, name)
         {

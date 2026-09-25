@@ -140,11 +140,22 @@ namespace NetPrints.Graph
             }
         }
 
+        /// <summary>
+        /// Whether <see cref="IsPure"/> can be set on this node type. <see langword="false"/> by
+        /// default; a node type that can toggle purity (adding or removing its exec pins) overrides
+        /// this to <see langword="true"/> together with <see cref="SetPurity"/>.
+        /// </summary>
         public virtual bool CanSetPure
         {
             get => false;
         }
 
+        /// <summary>
+        /// Applies a purity change requested through <see cref="IsPure"/>'s setter (adds or removes
+        /// this node's exec pins as needed). The base implementation does nothing; override together
+        /// with <see cref="CanSetPure"/> returning <see langword="true"/>.
+        /// </summary>
+        /// <param name="pure">The new purity value.</param>
         protected virtual void SetPurity(bool pure)
         {
         }
@@ -168,6 +179,11 @@ namespace NetPrints.Graph
             private set;
         }
 
+        /// <summary>
+        /// Adds the new node to <paramref name="graph"/>'s <see cref="NodeGraph.Nodes"/> and assigns it
+        /// a name unique among the graph's existing nodes, derived from the concrete node type name.
+        /// </summary>
+        /// <param name="graph">Graph the node belongs to.</param>
         protected Node(NodeGraph graph)
         {
             Graph = graph;
@@ -176,6 +192,12 @@ namespace NetPrints.Graph
             Name = NetPrintsUtil.GetUniqueName(GetType().Name, Graph.Nodes.Select(n => n.Name).ToList());
         }
 
+        /// <summary>
+        /// The node type's display name: its concrete type name split on capitalization boundaries
+        /// (eg. <c>CallMethodNode</c> -> <c>"Call Method Node"</c>), via
+        /// <see cref="GraphUtil.SplitCamelCase"/>.
+        /// </summary>
+        /// <returns>The split type name.</returns>
         public override string ToString()
         {
             return GraphUtil.SplitCamelCase(GetType().Name);
@@ -220,7 +242,7 @@ namespace NetPrints.Graph
         }
 
         /// <summary>
-        /// Adds an input data pin to this node.
+        /// Adds an input type pin to this node.
         /// </summary>
         /// <param name="pinName">Name of the pin.</param>
         protected void AddInputTypePin(string pinName)
@@ -231,10 +253,10 @@ namespace NetPrints.Graph
         }
 
         /// <summary>
-        /// Adds an output data pin to this node.
+        /// Adds an output type pin to this node.
         /// </summary>
         /// <param name="pinName">Name of the pin.</param>
-        /// <param name="getOutputTypeFunc">Function that generates the output type.</param>
+        /// <param name="outputType">Observable value carrying the pin's output type.</param>
         protected void AddOutputTypePin(string pinName, ObservableValue<BaseType> outputType)
         {
             OutputTypePins.Add(new NodeOutputTypePin(this, pinName, outputType));
@@ -264,6 +286,13 @@ namespace NetPrints.Graph
             InputTypeChanged?.Invoke(sender, eventArgs ?? EventArgs.Empty);
         }
 
+        /// <summary>
+        /// Called whenever an input type pin's inferred type changes (before <see cref="InputTypeChanged"/>
+        /// is raised), so a derived node type can recompute its own pin types. The base implementation
+        /// does nothing.
+        /// </summary>
+        /// <param name="sender">The node whose input type changed.</param>
+        /// <param name="eventArgs">Unused; always <see cref="EventArgs.Empty"/> or <see langword="null"/>.</param>
         protected virtual void HandleInputTypeChanged(object? sender, EventArgs? eventArgs)
         {
         }
