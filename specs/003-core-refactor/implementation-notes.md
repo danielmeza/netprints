@@ -275,3 +275,98 @@ Fody's dependents-before-self order recorded in the sub-phase A golden
 raised names as a sorted set instead of an exact sequence (T010's "T004 and T005 pass unchanged" is
 about the same notifications firing, not Fody's specific order); the golden file's per-property
 *sets* are otherwise unchanged from the sub-phase A baseline.
+
+### T013 — RS1024 site count, and which site actually changes behaviour
+
+The task text's "10 `RS1024` sites" does not match current code: a clean `dotnet build` of
+`src/NetPrints.Reflection` (Nullable still `disable` at the start of this task) reports exactly
+**4** RS1024 warnings, all in `ReflectionProvider.cs`: the `HashSet<IMethodSymbol>` in
+`GetAllMembers` (line 42 pre-edit), `IsSubclassOf`'s base-type walk (`candidateBaseType == cls`),
+and two argument/return-type filters in `GetMethods` (`t == searchType`, `m.ReturnType ==
+searchType`). No other file in the project compares a Roslyn symbol type with `==`/`.Equals`/an
+unguarded collection (`ReflectionConverter.cs`, `DocumentationUtil.cs`, `IReflectionProvider.cs`'s
+query classes compare NetPrints' own `TypeSpecifier`, not Roslyn symbols). Recorded here so a later
+phase does not go looking for six more sites that do not exist; the count in the task was likely
+written against an earlier draft of the file.
+
+Applying `SymbolEqualityComparer.Default` to all four sites mechanically reproduces exactly the PR
+#5 regression the task warns about: `SuggestionListVMTests.CategoriesPerPinKind` fails (a
+`stringOutCategories` assertion gains an unexpected `"This Methods"` entry). Bisected by reverting
+one site at a time and re-running the single test (`dotnet <Editor.Tests.dll> -method
+"*CategoriesPerPinKind*"`, ~5s): reverting only `IsSubclassOf`'s `candidateBaseType == cls` makes
+the test pass again with the other three sites still on `SymbolEqualityComparer.Default`; the other
+three are safe with the comparer (full suite green, 268/259/9/0 unchanged from the T012 checkpoint).
+
+Root cause understood well enough to be confident this is a real behaviour change, not a red
+herring: `GetTypeFromSpecifier` (used to resolve `query.Type` into the `baseType` that `IsSubclassOf`
+is ultimately called on/with) resolves a metadata name by scanning *every* referenced assembly and
+keeping the first match (`GetValidTypes(string)`), independently for the search type and for the
+type whose base chain is walked. For a common type like `object`, when more than one referenced
+assembly can produce a same-named symbol (ref-pack facades and the runtime assembly both exposing
+`System.Object`, for instance), that scan and Roslyn's own `.BaseType`/`.Parameters[].Type`
+resolution can land on different-but-structurally-equal `INamedTypeSymbol` instances.
+`SymbolEqualityComparer.Default` treats those as equal (correctly, in the abstract); plain `==`
+(reference equality, since `ITypeSymbol` has no operator overload) does not. That difference changes
+which methods `IsSubclassOf`-gated queries return — here, a same-class instance method landing in
+the wrong "This Methods" vs "Static Methods" bucket in the search list.
+
+Choice: keep identity comparison at this one site, explicit rather than the bare `==` RS1024 flags
+(`ReferenceEqualityComparer.Instance.Equals(candidateBaseType, cls)`, one-line comment pointing back
+to this entry), instead of "fixing" the reference-equality gap as a side effect of a warnings task.
+Fixing `GetValidTypes` to return one canonical symbol per name (which would make
+`SymbolEqualityComparer` and identity agree everywhere, and arguably belongs with T058's
+`ReflectionProvider` constructor rework) is left as a follow-up, not part of P1's critical path —
+noted here so it is not rediscovered from scratch. The other three sites use
+`SymbolEqualityComparer.Default` with no behaviour change (verified by the full suite).
+
+Nullable rollout for the rest of `src/NetPrints.Reflection` (bundled into T013 by its "Same for..."
+phrasing) followed the same patterns as T011/T012, plus two new ones this project needed:
+- `IEqualityComparer<T>.Equals(T?, T?)`'s nullable-parameter annotation applies to
+  `ReflectionProviderMethodQuery`/`ReflectionProviderVariableQuery` (`IReflectionProvider.cs`): both
+  query classes' `Type`/`VisibleFrom`/`ReturnType`/`ArgumentType`/`VariableType` fields are
+  documented as "or null for no filter" but were typed non-nullable pre-P1 (Nullable was off); made
+  `TypeSpecifier?`, `Equals(T?, T?)` and `override Equals(object?)` follow, with an explicit
+  both-null-or-neither guard added (the fields being null-safe was implicit before, now explicit).
+- `MemoizedReflectionProvider`'s eleven `Func<...>` fields are all assigned unconditionally in
+  `Reset()`, called from the constructor, so they are never actually null after construction — but a
+  field assigned only by a method the constructor calls (not the constructor body itself) is exactly
+  what CS8618 flags. `[MemberNotNull(nameof(field), ...)]` on `Reset()` (a method attribute; the
+  attribute is not valid on a constructor per its `AttributeUsage`, so the ctor keeps no attribute and
+  relies on the compiler seeing the `Reset()` call inside it) resolves this without a nullable field
+  type and without touching the ten call sites that assume the fields are always set.
+- `Memoization.Memoize<A, R>` builds a `ConcurrentDictionary<A, R>`, which requires `A : notnull`;
+  an unconstrained `A` doesn't satisfy that once nullable is on. Added `where A : notnull` to the
+  single-argument overload only (the two-argument overload's `Tuple<A, B>` key is a reference type
+  and already satisfies `notnull` regardless of `A`/`B`, so it needs no constraint of its own).
+- `DefaultOperatorSpecifiers.all`: a lazily-built `static List<MethodSpecifier>` field, filled by a
+  private `AddOperator` helper that closed over the field directly. Nullable-typed the field and
+  changed `AddOperator` to take the target list as a parameter instead, building into a local
+  `built` list and assigning `all = built` only once construction is complete — avoids both a null
+  check inside `AddOperator` on every call and any window where the field is non-null but partially
+  built.
+- `DocumentationUtil`'s four caches use `null` itself as a cached value (see `cachedDocuments[key] =
+  null;`, "remember that there is no documentation"), so every cache dictionary's value type and
+  every method that reads/writes them is nullable (`string?`, `XmlDocument?`), not just the ones that
+  looked null-returning from the method signature alone. `XmlNode.SelectNodes` and
+  `XmlNodeList.Item` are also nullable per current `System.Xml` annotations; added the corresponding
+  null checks (`nodes != null && nodes.Count > 0`, `nodes.Item(0)?.InnerText`) rather than asserting.
+- `ISymbolExtensions.IsSubclassOf` gained a real, previously-latent null path: its `cls` parameter
+  was dereferenced (`cls.TypeKind`) with no null guard, while `symbol` was already guarded
+  (`symbol != null && ...`). Since `GetMethods`' return-type filter calls
+  `m.ReturnType.IsSubclassOf(searchType)` where `searchType` comes from `GetTypeFromSpecifier` (now
+  visibly nullable), an unresolvable return-type query would have been a live
+  `NullReferenceException` risk (nothing currently reaches it, or the pre-nullable code would already
+  be crashing). Changed the signature to `(this ITypeSymbol? symbol, ITypeSymbol? cls)` and return
+  `false` when either is null, matching the behaviour the `symbol`-null path already had — a real
+  null-handling fix the rollout surfaced, not a new behaviour on any currently-tested path.
+- One `!`-shaped case decided the other way: `typeof(Array).FullName` in
+  `ReflectionConverter.TypeSpecifierFromSymbol` (`Type.FullName` is `string?` in general, but never
+  null for a concrete, non-generic, non-array-element runtime type like `Array` itself) uses `!` with
+  a one-line comment — the one `!` this task adds to `src/NetPrints.Reflection`.
+
+Verified: `dotnet build NetPrints.slnx -c Release` 0 warnings/0 errors (Cli's 2 pre-existing
+CS8600/CS8602 are T014 scope, untouched); `dotnet format NetPrints.slnx --verify-no-changes`
+(no `--exclude-diagnostics`) passes; full suite 268 total, 0 failed, 259 succeeded, 9 skipped
+(unchanged from T012). One file (`IReflectionProvider.cs`) was accidentally rewritten with LF line
+endings mid-task despite being `-text`/CRLF in `.gitattributes`; caught by `git ls-files --eol`
+before committing and restored to CRLF.

@@ -56,14 +56,14 @@ namespace NetPrints.Reflection
             if (type is IArrayTypeSymbol)
             {
                 // TODO: Get more interesting type?
-                typeName = typeof(Array).FullName;
+                typeName = typeof(Array).FullName!; // Non-generic BCL type: FullName is never null.
             }
             else
             {
                 // Get the nested name (represented by + between classes)
                 // See https://stackoverflow.com/questions/2443244/having-a-in-the-class-name
                 string nestedPrefix = "";
-                ITypeSymbol containingType = type.ContainingType;
+                ITypeSymbol? containingType = type.ContainingType;
                 while (containingType != null)
                 {
                     nestedPrefix = $"{containingType.Name}+{nestedPrefix}";

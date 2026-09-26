@@ -23,7 +23,7 @@ namespace NetPrints.Reflection
         /// <summary>
         /// Declaring type to search methods on, or <see langword="null"/> for any type.
         /// </summary>
-        public TypeSpecifier Type { get; set; }
+        public TypeSpecifier? Type { get; set; }
 
         /// <summary>
         /// Whether to match only static (<see langword="true"/>) or only instance
@@ -34,18 +34,18 @@ namespace NetPrints.Reflection
         /// <summary>
         /// Type the method must be visible from, or <see langword="null"/> for no visibility filter.
         /// </summary>
-        public TypeSpecifier VisibleFrom { get; set; }
+        public TypeSpecifier? VisibleFrom { get; set; }
 
         /// <summary>
         /// Return type to match, or <see langword="null"/> for any return type.
         /// </summary>
-        public TypeSpecifier ReturnType { get; set; }
+        public TypeSpecifier? ReturnType { get; set; }
 
         /// <summary>
         /// A type at least one of the method's arguments must match, or <see langword="null"/> for no
         /// argument-type filter.
         /// </summary>
-        public TypeSpecifier ArgumentType { get; set; }
+        public TypeSpecifier? ArgumentType { get; set; }
 
         /// <summary>
         /// Whether to match only generic (<see langword="true"/>) or only non-generic
@@ -122,11 +122,16 @@ namespace NetPrints.Reflection
         /// <summary>
         /// Compares two queries field by field.
         /// </summary>
-        /// <param name="x">First query.</param>
-        /// <param name="y">Second query.</param>
-        /// <returns><see langword="true"/> if every field of the two queries is equal.</returns>
-        public bool Equals(ReflectionProviderMethodQuery x, ReflectionProviderMethodQuery y)
+        /// <param name="x">First query, or <see langword="null"/>.</param>
+        /// <param name="y">Second query, or <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> if both are <see langword="null"/>, or neither is and every field is equal.</returns>
+        public bool Equals(ReflectionProviderMethodQuery? x, ReflectionProviderMethodQuery? y)
         {
+            if (x is null || y is null)
+            {
+                return x is null && y is null;
+            }
+
             return x.Type == y.Type && x.Static == y.Static && x.VisibleFrom == y.VisibleFrom
                 && x.ReturnType == y.ReturnType && x.ArgumentType == y.ArgumentType && x.HasGenericArguments == y.HasGenericArguments;
         }
@@ -147,7 +152,7 @@ namespace NetPrints.Reflection
         /// </summary>
         /// <param name="obj">Object to compare to.</param>
         /// <returns><see langword="true"/> if <paramref name="obj"/> is the same instance, or a query with every field equal.</returns>
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return ReferenceEquals(this, obj)
                 || (obj is ReflectionProviderMethodQuery query && Equals(this, query));
@@ -173,7 +178,7 @@ namespace NetPrints.Reflection
         /// <summary>
         /// Declaring type to search variables on, or <see langword="null"/> for any type.
         /// </summary>
-        public TypeSpecifier Type { get; set; }
+        public TypeSpecifier? Type { get; set; }
 
         /// <summary>
         /// Whether to match only static (<see langword="true"/>) or only instance
@@ -184,12 +189,12 @@ namespace NetPrints.Reflection
         /// <summary>
         /// Type the variable must be visible from, or <see langword="null"/> for no visibility filter.
         /// </summary>
-        public TypeSpecifier VisibleFrom { get; set; }
+        public TypeSpecifier? VisibleFrom { get; set; }
 
         /// <summary>
         /// Type to match the variable's own type against, or <see langword="null"/> for no type filter.
         /// </summary>
-        public TypeSpecifier VariableType { get; set; }
+        public TypeSpecifier? VariableType { get; set; }
 
         /// <summary>
         /// When <see cref="VariableType"/> is set, whether the variable's type must derive from it
@@ -246,11 +251,16 @@ namespace NetPrints.Reflection
         /// <summary>
         /// Compares two queries field by field.
         /// </summary>
-        /// <param name="x">First query.</param>
-        /// <param name="y">Second query.</param>
-        /// <returns><see langword="true"/> if every field of the two queries is equal.</returns>
-        public bool Equals(ReflectionProviderVariableQuery x, ReflectionProviderVariableQuery y)
+        /// <param name="x">First query, or <see langword="null"/>.</param>
+        /// <param name="y">Second query, or <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> if both are <see langword="null"/>, or neither is and every field is equal.</returns>
+        public bool Equals(ReflectionProviderVariableQuery? x, ReflectionProviderVariableQuery? y)
         {
+            if (x is null || y is null)
+            {
+                return x is null && y is null;
+            }
+
             return x.Type == y.Type && x.Static == y.Static && x.VisibleFrom == y.VisibleFrom
                 && x.VariableType == y.VariableType && x.VariableTypeDerivesFrom == y.VariableTypeDerivesFrom;
         }
@@ -271,7 +281,7 @@ namespace NetPrints.Reflection
         /// </summary>
         /// <param name="obj">Object to compare to.</param>
         /// <returns><see langword="true"/> if <paramref name="obj"/> is the same instance, or a query with every field equal.</returns>
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             return ReferenceEquals(this, obj)
                 || (obj is ReflectionProviderVariableQuery query && Equals(this, query));
@@ -367,7 +377,7 @@ namespace NetPrints.Reflection
         /// </summary>
         /// <param name="methodSpecifier">Method to get documentation for.</param>
         /// <returns>The method's documentation summary text, or <see langword="null"/>.</returns>
-        string GetMethodDocumentation(MethodSpecifier methodSpecifier);
+        string? GetMethodDocumentation(MethodSpecifier methodSpecifier);
 
         /// <summary>
         /// Returns the XML documentation <c>&lt;param&gt;</c> text for one of
@@ -378,7 +388,7 @@ namespace NetPrints.Reflection
         /// <param name="methodSpecifier">Method the parameter belongs to.</param>
         /// <param name="parameterIndex">Index of the parameter into <see cref="MethodSpecifier.Parameters"/>.</param>
         /// <returns>The parameter's documentation text, or <see langword="null"/>.</returns>
-        string GetMethodParameterDocumentation(MethodSpecifier methodSpecifier, int parameterIndex);
+        string? GetMethodParameterDocumentation(MethodSpecifier methodSpecifier, int parameterIndex);
 
         /// <summary>
         /// Returns the XML documentation <c>&lt;returns&gt;</c> text for one of
@@ -389,6 +399,6 @@ namespace NetPrints.Reflection
         /// <param name="methodSpecifier">Method the return value belongs to.</param>
         /// <param name="returnIndex">Index of the return value into <see cref="MethodSpecifier.ReturnTypes"/>.</param>
         /// <returns>The return value's documentation text, or <see langword="null"/>.</returns>
-        string GetMethodReturnDocumentation(MethodSpecifier methodSpecifier, int returnIndex);
+        string? GetMethodReturnDocumentation(MethodSpecifier methodSpecifier, int returnIndex);
     }
 }

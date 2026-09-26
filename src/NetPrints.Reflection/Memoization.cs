@@ -38,6 +38,7 @@ namespace NetPrints.Reflection
         /// <param name="f">Function to memoize.</param>
         /// <returns>A memoized wrapper around <paramref name="f"/>.</returns>
         public static Func<A, R> Memoize<A, R>(this Func<A, R> f)
+            where A : notnull
         {
             var d = new ConcurrentDictionary<A, R>();
 

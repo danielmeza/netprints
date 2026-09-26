@@ -39,13 +39,14 @@ namespace NetPrints.Reflection
             }
 
             var members = new List<ISymbol>();
-            var overridenMethods = new HashSet<IMethodSymbol>();
+            var overridenMethods = new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default);
 
             var startSymbol = symbol;
+            ITypeSymbol? current = symbol;
 
-            while (symbol != null)
+            while (current != null)
             {
-                var symbolMembers = symbol.GetMembers();
+                var symbolMembers = current.GetMembers();
 
                 // Add symbols which weren't overriden yet
                 List<ISymbol> newMembers = symbolMembers.Where(m => !(m is IMethodSymbol methodSymbol) || !overridenMethods.Contains(methodSymbol)).ToList();
@@ -58,12 +59,12 @@ namespace NetPrints.Reflection
                 {
                     newOverridenMethods.ForEach(m => overridenMethods.Add(m));
                     newOverridenMethods = newOverridenMethods
-                        .Where(m => m.OverriddenMethod != null)
                         .Select(m => m.OverriddenMethod)
+                        .OfType<IMethodSymbol>()
                         .ToList();
                 }
 
-                symbol = symbol.BaseType;
+                current = current.BaseType;
             }
 
             cache.Members.AddOrUpdate(startSymbol, members.ToList());
@@ -126,14 +127,19 @@ namespace NetPrints.Reflection
         /// Returns whether <paramref name="symbol"/> derives from, or (when <paramref name="cls"/> is
         /// an interface) implements, <paramref name="cls"/>.
         /// </summary>
-        /// <param name="symbol">Candidate subclass.</param>
-        /// <param name="cls">Candidate base class or interface.</param>
+        /// <param name="symbol">Candidate subclass, or <see langword="null"/> (returns <see langword="false"/>).</param>
+        /// <param name="cls">Candidate base class or interface, or <see langword="null"/> (returns <see langword="false"/>).</param>
         /// <returns><see langword="true"/> if <paramref name="symbol"/> derives from or implements <paramref name="cls"/>.</returns>
-        public static bool IsSubclassOf(this ITypeSymbol symbol, ITypeSymbol cls)
+        public static bool IsSubclassOf(this ITypeSymbol? symbol, ITypeSymbol? cls)
         {
+            if (symbol is null || cls is null)
+            {
+                return false;
+            }
+
             // If cls is an interface type, check if the interface is implemented
             // TODO: Currently only checking full name and type parameter count for interfaces.
-            if (symbol != null && cls.TypeKind == TypeKind.Interface && cls is INamedTypeSymbol namedCls)
+            if (cls.TypeKind == TypeKind.Interface && cls is INamedTypeSymbol namedCls)
             {
                 bool IsSameInterface(INamedTypeSymbol a, INamedTypeSymbol b)
                 {
@@ -146,10 +152,11 @@ namespace NetPrints.Reflection
             }
 
             // Traverse base types to find out if symbol inherits from cls
-            ITypeSymbol candidateBaseType = symbol;
+            ITypeSymbol? candidateBaseType = symbol;
             while (candidateBaseType != null)
             {
-                if (candidateBaseType == cls)
+                // Identity, not SymbolEqualityComparer: see implementation-notes.md "T013" (changes search results).
+                if (ReferenceEqualityComparer.Instance.Equals(candidateBaseType, cls))
                 {
                     return true;
                 }
@@ -276,7 +283,8 @@ namespace NetPrints.Reflection
             {
                 var model = compilation.GetSemanticModel(syntaxTree, true);
                 var classSyntaxes = syntaxTree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>();
-                var classes = classSyntaxes.Select(syntax => model.GetDeclaredSymbol(syntax));
+                // OfType also drops the (unexpected, for a class syntax node of this model) null case.
+                var classes = classSyntaxes.Select(syntax => model.GetDeclaredSymbol(syntax)).OfType<INamedTypeSymbol>();
                 foreach (var cls in classes)
                 {
                     yield return cls;
@@ -311,7 +319,7 @@ namespace NetPrints.Reflection
                 { return module.GetTypeByMetadataName(name); }
                 catch { return null; }
             })
-            .Where(t => t != null)
+            .OfType<INamedTypeSymbol>()
             .Concat(GetSyntaxTreeTypes().Where(t => t.GetFullName() == name)); // TODO: Correct full name
         }
 
@@ -329,7 +337,7 @@ namespace NetPrints.Reflection
         /// <inheritdoc/>
         public IEnumerable<MethodSpecifier> GetOverridableMethodsForType(TypeSpecifier typeSpecifier)
         {
-            ITypeSymbol type = GetTypeFromSpecifier(typeSpecifier);
+            ITypeSymbol? type = GetTypeFromSpecifier(typeSpecifier);
 
             if (type != null)
             {
@@ -353,7 +361,7 @@ namespace NetPrints.Reflection
         /// <inheritdoc/>
         public IEnumerable<MethodSpecifier> GetPublicMethodOverloads(MethodSpecifier methodSpecifier)
         {
-            ITypeSymbol type = GetTypeFromSpecifier(methodSpecifier.DeclaringType);
+            ITypeSymbol? type = GetTypeFromSpecifier(methodSpecifier.DeclaringType);
 
             // TODO: Get a better way to determine is a method specifier is an operator.
             bool isOperator = methodSpecifier.Name.StartsWith("op_");
@@ -410,20 +418,21 @@ namespace NetPrints.Reflection
         /// <inheritdoc/>
         public bool TypeSpecifierIsSubclassOf(TypeSpecifier a, TypeSpecifier b)
         {
-            ITypeSymbol typeA = GetTypeFromSpecifier(a);
-            ITypeSymbol typeB = GetTypeFromSpecifier(b);
+            ITypeSymbol? typeA = GetTypeFromSpecifier(a);
+            ITypeSymbol? typeB = GetTypeFromSpecifier(b);
 
             return typeA != null && typeB != null && typeA.IsSubclassOf(typeB);
         }
 
-        private T GetTypeFromSpecifier<T>(TypeSpecifier specifier)
+        private T? GetTypeFromSpecifier<T>(TypeSpecifier specifier)
+            where T : class, ITypeSymbol
         {
-            return (T)GetTypeFromSpecifier(specifier);
+            return (T?)GetTypeFromSpecifier(specifier);
         }
 
-        private readonly Dictionary<TypeSpecifier, ITypeSymbol> cachedTypeSpecifierSymbols = new Dictionary<TypeSpecifier, ITypeSymbol>();
+        private readonly Dictionary<TypeSpecifier, ITypeSymbol?> cachedTypeSpecifierSymbols = new Dictionary<TypeSpecifier, ITypeSymbol?>();
 
-        private ITypeSymbol GetTypeFromSpecifier(TypeSpecifier specifier)
+        private ITypeSymbol? GetTypeFromSpecifier(TypeSpecifier specifier)
         {
             if (cachedTypeSpecifierSymbols.TryGetValue(specifier, out var symbol))
             {
@@ -459,7 +468,7 @@ namespace NetPrints.Reflection
 
             IEnumerable<INamedTypeSymbol> types = GetValidTypes(lookupName);
 
-            ITypeSymbol foundType = null;
+            ITypeSymbol? foundType = null;
 
             foreach (INamedTypeSymbol t in types)
             {
@@ -469,7 +478,7 @@ namespace NetPrints.Reflection
                     {
                         var typeArguments = specifier.GenericArguments
                             .Select(baseType => baseType is TypeSpecifier typeSpec ?
-                                GetTypeFromSpecifier(typeSpec) :
+                                GetTypeFromSpecifier(typeSpec) ?? throw new InvalidOperationException($"Could not resolve generic argument type '{typeSpec}'.") :
                                 t.TypeArguments[specifier.GenericArguments.IndexOf(baseType)])
                             .ToArray();
                         foundType = t.Construct(typeArguments);
@@ -499,9 +508,9 @@ namespace NetPrints.Reflection
             return foundType;
         }
 
-        private IMethodSymbol GetMethodInfoFromSpecifier(MethodSpecifier specifier)
+        private IMethodSymbol? GetMethodInfoFromSpecifier(MethodSpecifier specifier)
         {
-            INamedTypeSymbol declaringType = GetTypeFromSpecifier<INamedTypeSymbol>(specifier.DeclaringType);
+            INamedTypeSymbol? declaringType = GetTypeFromSpecifier<INamedTypeSymbol>(specifier.DeclaringType);
             return declaringType?.GetMethods(memberCache).FirstOrDefault(
                     m => m.Name == specifier.Name
                     && m.Parameters.Select(p => ReflectionConverter.BaseTypeSpecifierFromSymbol(p.Type)).SequenceEqual(specifier.ArgumentTypes));
@@ -510,9 +519,9 @@ namespace NetPrints.Reflection
         // Documentation
 
         /// <inheritdoc/>
-        public string GetMethodDocumentation(MethodSpecifier methodSpecifier)
+        public string? GetMethodDocumentation(MethodSpecifier methodSpecifier)
         {
-            IMethodSymbol methodInfo = GetMethodInfoFromSpecifier(methodSpecifier);
+            IMethodSymbol? methodInfo = GetMethodInfoFromSpecifier(methodSpecifier);
 
             if (methodInfo == null)
             {
@@ -523,9 +532,9 @@ namespace NetPrints.Reflection
         }
 
         /// <inheritdoc/>
-        public string GetMethodParameterDocumentation(MethodSpecifier methodSpecifier, int parameterIndex)
+        public string? GetMethodParameterDocumentation(MethodSpecifier methodSpecifier, int parameterIndex)
         {
-            IMethodSymbol methodInfo = GetMethodInfoFromSpecifier(methodSpecifier);
+            IMethodSymbol? methodInfo = GetMethodInfoFromSpecifier(methodSpecifier);
 
             if (methodInfo == null)
             {
@@ -536,9 +545,9 @@ namespace NetPrints.Reflection
         }
 
         /// <inheritdoc/>
-        public string GetMethodReturnDocumentation(MethodSpecifier methodSpecifier, int returnIndex)
+        public string? GetMethodReturnDocumentation(MethodSpecifier methodSpecifier, int returnIndex)
         {
-            IMethodSymbol methodInfo = GetMethodInfoFromSpecifier(methodSpecifier);
+            IMethodSymbol? methodInfo = GetMethodInfoFromSpecifier(methodSpecifier);
 
             if (methodInfo == null)
             {
@@ -553,8 +562,8 @@ namespace NetPrints.Reflection
         {
             // Check if there exists a conversion that is implicit between the types.
 
-            ITypeSymbol fromSymbol = GetTypeFromSpecifier(fromType);
-            ITypeSymbol toSymbol = GetTypeFromSpecifier(toType);
+            ITypeSymbol? fromSymbol = GetTypeFromSpecifier(fromType);
+            ITypeSymbol? toSymbol = GetTypeFromSpecifier(toType);
 
             return fromSymbol != null && toSymbol != null
                 && compilation.ClassifyConversion(fromSymbol, toSymbol).IsImplicit;
@@ -569,7 +578,7 @@ namespace NetPrints.Reflection
             if (!(query.Type is null))
             {
                 // Get all methods of the type
-                ITypeSymbol type = GetTypeFromSpecifier(query.Type);
+                ITypeSymbol? type = GetTypeFromSpecifier(query.Type);
 
                 if (type == null)
                 {
@@ -622,7 +631,7 @@ namespace NetPrints.Reflection
                 methodSymbols = methodSymbols
                     .Where(m => m.Parameters
                         .Select(p => p.Type)
-                        .Any(t => t == searchType
+                        .Any(t => SymbolEqualityComparer.Default.Equals(t, searchType)
                                     || searchType.IsSubclassOf(t)
                                     || t.TypeKind == TypeKind.TypeParameter));
             }
@@ -633,7 +642,7 @@ namespace NetPrints.Reflection
                 var searchType = GetTypeFromSpecifier(query.ReturnType);
 
                 methodSymbols = methodSymbols
-                    .Where(m => m.ReturnType == searchType
+                    .Where(m => SymbolEqualityComparer.Default.Equals(m.ReturnType, searchType)
                                 || m.ReturnType.IsSubclassOf(searchType)
                                 || m.ReturnType.TypeKind == TypeKind.TypeParameter);
             }
@@ -698,7 +707,7 @@ namespace NetPrints.Reflection
             if (!(query.Type is null))
             {
                 // Get all properties of the type
-                ITypeSymbol type = GetTypeFromSpecifier(query.Type);
+                ITypeSymbol? type = GetTypeFromSpecifier(query.Type);
 
                 if (type == null)
                 {

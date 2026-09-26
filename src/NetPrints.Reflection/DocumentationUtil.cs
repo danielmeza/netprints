@@ -14,17 +14,17 @@ namespace NetPrints.Reflection
     /// </summary>
     public class DocumentationUtil
     {
-        private readonly Dictionary<string, XmlDocument> cachedDocuments =
-            new Dictionary<string, XmlDocument>();
+        private readonly Dictionary<string, XmlDocument?> cachedDocuments =
+            new Dictionary<string, XmlDocument?>();
 
-        private readonly Dictionary<string, string> cachedMethodSummaries =
-            new Dictionary<string, string>();
+        private readonly Dictionary<string, string?> cachedMethodSummaries =
+            new Dictionary<string, string?>();
 
-        private readonly Dictionary<Tuple<string, string>, string> cachedMethodParameterInfos =
-            new Dictionary<Tuple<string, string>, string>();
+        private readonly Dictionary<Tuple<string, string>, string?> cachedMethodParameterInfos =
+            new Dictionary<Tuple<string, string>, string?>();
 
-        private readonly Dictionary<string, string> cachedMethodReturnInfo =
-            new Dictionary<string, string>();
+        private readonly Dictionary<string, string?> cachedMethodReturnInfo =
+            new Dictionary<string, string?>();
 
         private readonly Microsoft.CodeAnalysis.Compilation compilation;
 
@@ -38,9 +38,9 @@ namespace NetPrints.Reflection
             this.compilation = compilation;
         }
 
-        private string GetAssemblyPath(IAssemblySymbol assembly)
+        private string? GetAssemblyPath(IAssemblySymbol assembly)
         {
-            MetadataReference reference = compilation.GetMetadataReference(assembly);
+            MetadataReference? reference = compilation.GetMetadataReference(assembly);
             if (reference is PortableExecutableReference peReference)
             {
                 return peReference.FilePath;
@@ -62,16 +62,16 @@ namespace NetPrints.Reflection
             return key;
         }
 
-        private string GetAssemblyDocumentationPath(IAssemblySymbol assembly)
+        private string? GetAssemblyDocumentationPath(IAssemblySymbol assembly)
         {
-            string assemblyPath = GetAssemblyPath(assembly);
+            string? assemblyPath = GetAssemblyPath(assembly);
 
             if (assemblyPath != null)
             {
                 // Try to find the documentation in the framework doc path (Windows only; the
                 // folder does not exist on Linux/macOS, which then simply has no documentation).
                 string programFilesX86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
-                string docPath = string.IsNullOrEmpty(programFilesX86) ? null : Path.Combine(
+                string? docPath = string.IsNullOrEmpty(programFilesX86) ? null : Path.Combine(
                         programFilesX86,
                         "Reference Assemblies/Microsoft/Framework/.NETFramework/v4.X",
                         $"{Path.GetFileNameWithoutExtension(assemblyPath)}.xml");
@@ -94,9 +94,9 @@ namespace NetPrints.Reflection
             return null;
         }
 
-        private XmlDocument GetAssemblyDocumentationDocument(IAssemblySymbol assembly)
+        private XmlDocument? GetAssemblyDocumentationDocument(IAssemblySymbol assembly)
         {
-            string assemblyPath = GetAssemblyPath(assembly);
+            string? assemblyPath = GetAssemblyPath(assembly);
             if (assemblyPath != null)
             {
                 string key = Path.GetFileNameWithoutExtension(assemblyPath);
@@ -108,7 +108,7 @@ namespace NetPrints.Reflection
 
                 try
                 {
-                    string docPath = GetAssemblyDocumentationPath(assembly);
+                    string? docPath = GetAssemblyDocumentationPath(assembly);
                     if (docPath != null && File.Exists(docPath))
                     {
                         XmlDocument doc = new XmlDocument();
@@ -136,7 +136,7 @@ namespace NetPrints.Reflection
         /// </summary>
         /// <param name="methodInfo">Method to get summary text for.</param>
         /// <returns>Summary text for a method.</returns>
-        public string GetMethodSummary(IMethodSymbol methodInfo)
+        public string? GetMethodSummary(IMethodSymbol methodInfo)
         {
             string methodKey = GetMethodInfoKey(methodInfo);
 
@@ -145,16 +145,16 @@ namespace NetPrints.Reflection
                 return cachedMethodSummaries[methodKey];
             }
 
-            string documentation = null;
+            string? documentation = null;
 
-            XmlDocument doc = GetAssemblyDocumentationDocument(methodInfo.ContainingAssembly);
+            XmlDocument? doc = GetAssemblyDocumentationDocument(methodInfo.ContainingAssembly);
             if (doc != null)
             {
-                XmlNodeList nodes = doc.SelectNodes($"doc/members/member[@name='{methodKey}']/summary");
+                XmlNodeList? nodes = doc.SelectNodes($"doc/members/member[@name='{methodKey}']/summary");
 
-                if (nodes.Count > 0)
+                if (nodes != null && nodes.Count > 0)
                 {
-                    documentation = nodes.Item(0).InnerText;
+                    documentation = nodes.Item(0)?.InnerText;
                 }
 
                 cachedMethodSummaries.Add(methodKey, documentation);
@@ -168,7 +168,7 @@ namespace NetPrints.Reflection
         /// </summary>
         /// <param name="parameterSymbol">Parameter to get the summary text for.</param>
         /// <returns>Summary text of a method's parameter.</returns>
-        public string GetMethodParameterInfo(IParameterSymbol parameterSymbol)
+        public string? GetMethodParameterInfo(IParameterSymbol parameterSymbol)
         {
             IMethodSymbol methodSymbol = (IMethodSymbol)parameterSymbol.ContainingSymbol;
             string methodKey = GetMethodInfoKey(methodSymbol);
@@ -178,9 +178,9 @@ namespace NetPrints.Reflection
                 return cachedMethodParameterInfos[cacheKey];
             }
 
-            string documentation = null;
+            string? documentation = null;
 
-            XmlDocument doc = GetAssemblyDocumentationDocument(methodSymbol.ContainingAssembly);
+            XmlDocument? doc = GetAssemblyDocumentationDocument(methodSymbol.ContainingAssembly);
             if (doc != null)
             {
                 string searchName = $"M:{methodSymbol.ContainingType.GetFullName()}.{methodSymbol.Name}";
@@ -191,11 +191,11 @@ namespace NetPrints.Reflection
                     searchName += ")";
                 }
 
-                XmlNodeList nodes = doc.SelectNodes($"doc/members/member[@name='{searchName}']/param[@name='{parameterSymbol.Name}']");
+                XmlNodeList? nodes = doc.SelectNodes($"doc/members/member[@name='{searchName}']/param[@name='{parameterSymbol.Name}']");
 
-                if (nodes.Count > 0)
+                if (nodes != null && nodes.Count > 0)
                 {
-                    documentation = nodes.Item(0).InnerText;
+                    documentation = nodes.Item(0)?.InnerText;
                 }
 
                 cachedMethodParameterInfos.Add(cacheKey, documentation);
@@ -209,7 +209,7 @@ namespace NetPrints.Reflection
         /// </summary>
         /// <param name="methodSymbol">Method to get return information for.</param>
         /// <returns>Return information for the method.</returns>
-        public string GetMethodReturnInfo(IMethodSymbol methodSymbol)
+        public string? GetMethodReturnInfo(IMethodSymbol methodSymbol)
         {
             string methodKey = GetMethodInfoKey(methodSymbol);
 
@@ -218,9 +218,9 @@ namespace NetPrints.Reflection
                 return cachedMethodReturnInfo[methodKey];
             }
 
-            string documentation = null;
+            string? documentation = null;
 
-            XmlDocument doc = GetAssemblyDocumentationDocument(methodSymbol.ContainingType.ContainingAssembly);
+            XmlDocument? doc = GetAssemblyDocumentationDocument(methodSymbol.ContainingType.ContainingAssembly);
 
             if (doc != null)
             {
@@ -232,11 +232,11 @@ namespace NetPrints.Reflection
                     searchName += ")";
                 }
 
-                XmlNodeList nodes = doc.SelectNodes($"doc/members/member[@name='{searchName}']/returns");
+                XmlNodeList? nodes = doc.SelectNodes($"doc/members/member[@name='{searchName}']/returns");
 
-                if (nodes.Count > 0)
+                if (nodes != null && nodes.Count > 0)
                 {
-                    documentation = nodes.Item(0).InnerText;
+                    documentation = nodes.Item(0)?.InnerText;
                 }
 
                 cachedMethodReturnInfo.Add(methodKey, documentation);

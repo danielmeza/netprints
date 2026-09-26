@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using NetPrints.Core;
 
 namespace NetPrints.Reflection
@@ -17,9 +18,9 @@ namespace NetPrints.Reflection
 
         private Func<TypeSpecifier, IEnumerable<ConstructorSpecifier>> memoizedGetConstructors;
         private Func<TypeSpecifier, IEnumerable<string>> memoizedGetEnumNames;
-        private Func<MethodSpecifier, string> memoizedGetMethodDocumentation;
-        private Func<MethodSpecifier, int, string> memoizedGetMethodParameterDocumentation;
-        private Func<MethodSpecifier, int, string> memoizedGetMethodReturnDocumentation;
+        private Func<MethodSpecifier, string?> memoizedGetMethodDocumentation;
+        private Func<MethodSpecifier, int, string?> memoizedGetMethodParameterDocumentation;
+        private Func<MethodSpecifier, int, string?> memoizedGetMethodReturnDocumentation;
         private Func<IEnumerable<TypeSpecifier>> memoizedGetNonStaticTypes;
         private Func<TypeSpecifier, IEnumerable<MethodSpecifier>> memoizedGetOverridableMethodsForType;
         private Func<MethodSpecifier, IEnumerable<MethodSpecifier>> memoizedGetPublicMethodOverloads;
@@ -42,6 +43,12 @@ namespace NetPrints.Reflection
         /// <summary>
         /// Resets the memoization.
         /// </summary>
+        [MemberNotNull(
+            nameof(memoizedGetConstructors), nameof(memoizedGetEnumNames), nameof(memoizedGetMethodDocumentation),
+            nameof(memoizedGetMethodParameterDocumentation), nameof(memoizedGetMethodReturnDocumentation),
+            nameof(memoizedGetNonStaticTypes), nameof(memoizedGetOverridableMethodsForType),
+            nameof(memoizedGetPublicMethodOverloads), nameof(memoizedHasImplicitCast),
+            nameof(memoizedTypeSpecifierIsSubclassOf), nameof(memoizedGetMethods), nameof(memoizedGetVariables))]
         public void Reset()
         {
             memoizedGetConstructors = provider.GetConstructors;
@@ -90,15 +97,15 @@ namespace NetPrints.Reflection
             => memoizedGetEnumNames(typeSpecifier);
 
         /// <inheritdoc/>
-        public string GetMethodDocumentation(MethodSpecifier methodSpecifier)
+        public string? GetMethodDocumentation(MethodSpecifier methodSpecifier)
             => memoizedGetMethodDocumentation(methodSpecifier);
 
         /// <inheritdoc/>
-        public string GetMethodParameterDocumentation(MethodSpecifier methodSpecifier, int parameterIndex)
+        public string? GetMethodParameterDocumentation(MethodSpecifier methodSpecifier, int parameterIndex)
             => memoizedGetMethodParameterDocumentation(methodSpecifier, parameterIndex);
 
         /// <inheritdoc/>
-        public string GetMethodReturnDocumentation(MethodSpecifier methodSpecifier, int returnIndex)
+        public string? GetMethodReturnDocumentation(MethodSpecifier methodSpecifier, int returnIndex)
             => memoizedGetMethodReturnDocumentation(methodSpecifier, returnIndex);
 
         /// <inheritdoc/>
