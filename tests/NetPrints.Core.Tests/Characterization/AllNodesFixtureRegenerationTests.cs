@@ -50,8 +50,8 @@ namespace NetPrints.Tests.Characterization
 
             AllNodesFixtureFactory.CreateAllNodes(Path.Combine(tempDir, "AllNodes.netpp")).Save();
 
-            var generated = Directory.GetFiles(tempDir).Select(Path.GetFileName).OrderBy(f => f, StringComparer.Ordinal).ToList();
-            var checkedIn = Directory.GetFiles(fixtureDir).Select(Path.GetFileName).OrderBy(f => f, StringComparer.Ordinal).ToList();
+            var generated = Directory.GetFiles(tempDir).Select(Path.GetFileName).OfType<string>().OrderBy(f => f, StringComparer.Ordinal).ToList();
+            var checkedIn = Directory.GetFiles(fixtureDir).Select(Path.GetFileName).OfType<string>().OrderBy(f => f, StringComparer.Ordinal).ToList();
             Assert.Equal(checkedIn, generated);
 
             foreach (string file in generated)

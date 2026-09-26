@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using NetPrints.Core;
 using NetPrints.Graph;
@@ -16,6 +17,7 @@ namespace NetPrints.Tests
 
         private ClassGraph cls;
 
+        [MemberNotNull(nameof(stringLengthMethod))]
         private void CreateStringLengthMethod()
         {
             // Create method
@@ -47,10 +49,13 @@ namespace NetPrints.Tests
             GraphUtil.ConnectExecPins(stringLengthMethod.EntryNode.InitialExecutionPin, stringLengthMethod.ReturnNodes.First().ReturnPin);
 
             // Connect node data
-            GraphUtil.ConnectDataPins(getStringNode.ValuePin, getLengthNode.TargetPin);
+            NodeInputDataPin? getLengthTargetPin = getLengthNode.TargetPin;
+            Assert.NotNull(getLengthTargetPin);
+            GraphUtil.ConnectDataPins(getStringNode.ValuePin, getLengthTargetPin);
             GraphUtil.ConnectDataPins(getLengthNode.ValuePin, stringLengthMethod.ReturnNodes.First().InputDataPins[0]);
         }
 
+        [MemberNotNull(nameof(mainMethod))]
         private void CreateMainMethod()
         {
             mainMethod = new MethodGraph("Main")

@@ -370,3 +370,93 @@ CS8600/CS8602 are T014 scope, untouched); `dotnet format NetPrints.slnx --verify
 (unchanged from T012). One file (`IReflectionProvider.cs`) was accidentally rewritten with LF line
 endings mid-task despite being `-text`/CRLF in `.gitattributes`; caught by `git ls-files --eol`
 before committing and restored to CRLF.
+
+### T014 — root `TreatWarningsAsErrors` flip, `Core.Tests` and `Cli` nullable rollout
+
+Flipped `Directory.Build.props`'s `TreatWarningsAsErrors` default to `true` and dropped its
+"legacy projects" comment; removed the now-redundant per-project override from `src/NetPrints.Core`,
+`src/NetPrints.Reflection` (added ahead of T014 by T011/T013), `src/NetPrints.Editor`,
+`src/NetPrints.Desktop` and every `tests/*` project that had one (`NetPrints.Editor.Tests`,
+`NetPrints.Testing.Ui`, `NetPrints.Editor.UITests`, `NetPrints.Desktop.E2ETests`). `Core` and
+`Reflection` also dropped their `<Nullable>disable</Nullable>` override: every `.cs` file in `Core`
+already carries a per-file `#nullable enable` pragma from T007–T012 (verified: none of its non-`obj/`
+sources lack it), so the project default becoming `enable` changes nothing; `Reflection` had no
+pragmas at all (T013 fixed the whole project), so removing the override is likewise a no-op once its
+own line goes too. `tests/NetPrints.Core.Tests` had no per-file pragmas anywhere (18/18 files), so
+its project-level `<Nullable>disable</Nullable>` was removed outright rather than migrated to
+pragmas, matching how `Editor.Tests`/`Testing.Ui`/etc. already work (no override, project-wide
+nullable, no pragmas).
+
+This surfaced 34 new errors, all in `tests/NetPrints.Core.Tests` (Cli's own 2 pre-existing warnings
+became errors as expected but needed no further fix beyond what's below):
+- `src/NetPrints.Cli/Program.cs`: `Project.LoadFromPath` returns `Project?` (T011); the CLI's
+  `Compile` path had no null handling at all (an unloadable project would previously have thrown a
+  raw `NullReferenceException` after printing "Compiling ..."). Added an explicit null check that
+  prints a message and returns the same failure code (`0`) the "compilation failed" branch already
+  uses — the existing `options.ProjectPath!` two lines above predates this branch (present in
+  `origin/master`) and was left alone. This file is fully replaced by T062's CLI rewrite, so the fix
+  is intentionally minimal rather than a redesign.
+- Test-only "load a project, assume it's there" pattern (`GoldenCSharpTests`,
+  `HelloWorldSampleTests` ×2, `AllNodesFixtureRegenerationTests`' sibling pattern via
+  `Directory.GetFiles`): `Assert.NotNull(project)` before use, per the established test-code
+  preference over `!`. `Process.Start(psi)` (also `Process?`) in `HelloWorldSampleTests` needed the
+  same treatment split out of the `using` declaration (`Process? startedProcess = Process.Start(psi);
+  Assert.NotNull(startedProcess); using Process process = startedProcess;`).
+- `Directory.GetFiles(...).Select(Path.GetFileName)` (`HelloWorldSampleTests`,
+  `AllNodesFixtureRegenerationTests`): `Path.GetFileName` is `string?` in general, but never null for
+  a real path returned by `Directory.GetFiles`. Rather than asserting that per element, added
+  `.OfType<string>()` after the `Select` (same idiom as T013's `ReflectionProvider.GetValidTypes`):
+  narrows to `IEnumerable<string>` and defensively drops any (never-expected) null instead of
+  asserting it away, so the subsequent explicit-type `foreach (string file in ...)` has nothing left
+  to warn about.
+- `ClassTranslatorTests`: `VariableNode.TargetPin` is genuinely nullable (null for a static
+  variable's getter/setter, per T011's own modeling) but the test's `getLengthNode` is a known
+  instance-target node; narrowed through a local (`NodeInputDataPin? targetPin = ...;
+  Assert.NotNull(targetPin);`) rather than asserting the property access directly, since a property
+  access isn't as reliably narrowed by `Assert.NotNull` as a local.
+- `ClassTranslatorTests`/`MethodTranslatorTests`: fields set only by a private `CreateXyz()` helper
+  the constructor calls (not by the constructor body itself) are exactly the CS8618 shape
+  `MemberNotNull` exists for (same pattern as this task's `MemoizedReflectionProvider` fix, T013):
+  `[MemberNotNull(nameof(field))]` on each helper method.
+- `GenericsTests`: `NodeTypePin.InferredType` is nullable when the pin is disconnected; the test
+  connects it first, so `Assert.NotNull` on a local before reading `.Value`.
+- `NotificationMapTests` (the largest single file, exercising reflection over arbitrary
+  `INotifyPropertyChanged` types): this test's whole job is comparing "before" and "after" property
+  values for types it does not know ahead of time, so `object` was never really non-nullable here —
+  `TryMakeDifferentValue`'s `current`/`candidate` and the `AddOne`/enum-branch locals are now
+  `object?` throughout (a property's reflected value, and the value being written back via
+  `PropertyInfo.SetValue`, are both legitimately null for reference-typed properties; `candidate` was
+  already explicitly set to `null` on two paths before this task, just not typed to say so). Also:
+  - `PropertyChangedEventHandler`'s actual delegate signature is `(object? sender,
+    PropertyChangedEventArgs e)`; the test's local `Handler` had a non-nullable `sender` (CS8622).
+  - `e.PropertyName` is `string?` per `PropertyChangedEventArgs`'s general contract, but every INPC
+    implementation in this codebase raises it with a real name (`nameof(X)`), never null or "all
+    properties changed" (`null` conventionally means the latter, which nothing here does) — a guard
+    exception (`?? throw new InvalidOperationException(...)`) instead of `!`, so a future violation
+    fails loudly in this characterization test rather than silently sorting an empty string.
+  - `IReadOnlyDictionary<Type, object>.TryGetValue`'s `[MaybeNullWhen(false)] out TValue` annotation
+    applies even though this dictionary's `TValue` (`object`) is itself non-nullable; `out object?`
+    at both call sites (the outer `instancesByType` lookup, and `pool` inside
+    `TryMakeDifferentValue`), with an `Assert.NotNull`/`!= null` check consistent with how the method
+    already used the result.
+  - `Type.FullName` is `string?` in general (null for generic parameters, or types with incomplete
+    reflection metadata) but never null for the closed, non-abstract, non-generic-definition public
+    types this test enumerates; `type.FullName!` with a one-line comment (same shape as T013's
+    `typeof(Array).FullName!`).
+  - Two sites needed `!` specifically because reflection's `PropertyInfo.GetValue` result is
+    statically `object?` but is provably non-null for a `bool`- or numeric-typed property
+    (`!(bool)current!`, `AddOne(propertyType, current!)`): unboxing a possibly-null `object` to a
+    value type is its own diagnostic (CS8605), separate from reference-nullability CS86xx codes, and
+    fires even though the unbox only executes when `propertyType` guarantees a non-null boxed value.
+  - `RegisterGraph`'s `NodeGraph` parameter is called with `Variable.GetterMethod`/`SetterMethod`
+    (nullable since T011); made the local function's parameter `NodeGraph?` — the existing
+    `if (graph == null) return;` guard already handled it correctly, it just wasn't typed to say so.
+
+`!` added by this task (all in test code, all reflection-over-unknown-types invariants a
+per-property-type check establishes but the compiler cannot correlate to the `object` it reflected):
+`NotificationMapTests.cs` — `(bool)current!`, `AddOne(propertyType, current!)`, `type.FullName!`.
+
+Verified: `dotnet build NetPrints.slnx -c Release` 0 warnings/0 errors across every project;
+`dotnet format NetPrints.slnx --verify-no-changes` passes; full suite unchanged, 268 total,
+259 succeeded, 9 skipped, 0 failed. **Checkpoint B reached**: 0 warnings solution-wide, sub-phase A
+gates (golden/notification-map characterization) unchanged, Fody gone since T010.

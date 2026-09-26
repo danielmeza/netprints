@@ -42,8 +42,8 @@ namespace NetPrints.Tests.Samples
 
             SampleProjectFactory.CreateHelloWorld(Path.Combine(tempDir, "HelloWorld.netpp")).Save();
 
-            var generated = Directory.GetFiles(tempDir).Select(Path.GetFileName).OrderBy(f => f, StringComparer.Ordinal).ToList();
-            var checkedIn = Directory.GetFiles(sampleDir).Select(Path.GetFileName).OrderBy(f => f, StringComparer.Ordinal).ToList();
+            var generated = Directory.GetFiles(tempDir).Select(Path.GetFileName).OfType<string>().OrderBy(f => f, StringComparer.Ordinal).ToList();
+            var checkedIn = Directory.GetFiles(sampleDir).Select(Path.GetFileName).OfType<string>().OrderBy(f => f, StringComparer.Ordinal).ToList();
             Assert.Equal(checkedIn, generated);
 
             foreach (string file in generated)
@@ -65,7 +65,8 @@ namespace NetPrints.Tests.Samples
                 File.Copy(file, Path.Combine(tempDir, Path.GetFileName(file)));
             }
 
-            Project project = Project.LoadFromPath(Path.Combine(tempDir, "HelloWorld.netpp"));
+            Project? project = Project.LoadFromPath(Path.Combine(tempDir, "HelloWorld.netpp"));
+            Assert.NotNull(project);
             Assert.Single(project.Classes);
 
             await CompileAsync(project, cancellationToken);
@@ -81,7 +82,9 @@ namespace NetPrints.Tests.Samples
                 UseShellExecute = false,
             };
 
-            using Process process = Process.Start(psi);
+            Process? startedProcess = Process.Start(psi);
+            Assert.NotNull(startedProcess);
+            using Process process = startedProcess;
             string output = await process.StandardOutput.ReadToEndAsync(cancellationToken);
             string error = await process.StandardError.ReadToEndAsync(cancellationToken);
             await process.WaitForExitAsync(cancellationToken);
@@ -103,7 +106,8 @@ namespace NetPrints.Tests.Samples
                 File.Copy(file, Path.Combine(tempDir, Path.GetFileName(file)));
             }
 
-            Project project = Project.LoadFromPath(Path.Combine(tempDir, "HelloWorld.netpp"));
+            Project? project = Project.LoadFromPath(Path.Combine(tempDir, "HelloWorld.netpp"));
+            Assert.NotNull(project);
             var main = project.Classes.Single().Methods.Single();
             var write = main.Nodes.OfType<NetPrints.Graph.CallMethodNode>().Single();
             var ifElse = new NetPrints.Graph.IfElseNode(main) { PositionX = 280, PositionY = 392 };

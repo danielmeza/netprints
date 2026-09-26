@@ -31,10 +31,11 @@ namespace NetPrints.Tests.Characterization
             string fixtureDir = Path.Combine(SampleProjectFactory.FindRepositoryRoot(), "tests", "NetPrints.Core.Tests", "Fixtures", "Legacy", fixtureName);
             string goldenDir = Path.Combine(SampleProjectFactory.FindRepositoryRoot(), "tests", "NetPrints.Core.Tests", "Fixtures", "Golden");
 
-            Project project = Project.LoadFromPath(Path.Combine(fixtureDir, projectFileName));
+            Project? project = Project.LoadFromPath(Path.Combine(fixtureDir, projectFileName));
             var translator = new ClassTranslator();
             bool update = Environment.GetEnvironmentVariable(UpdateSnapshotsVariable) == "1";
 
+            Assert.NotNull(project);
             Assert.NotEmpty(project.Classes);
 
             foreach (ClassGraph cls in project.Classes.OrderBy(c => c.FullName, StringComparer.Ordinal))

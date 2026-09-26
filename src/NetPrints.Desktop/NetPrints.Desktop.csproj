@@ -4,7 +4,6 @@
     <TargetFramework>net10.0</TargetFramework>
     <ApplicationIcon>NetPrintsLogo.ico</ApplicationIcon>
     <AssemblyName>NetPrints.Desktop</AssemblyName>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>

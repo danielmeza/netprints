@@ -20,7 +20,14 @@ namespace NetPrintsCLI
         {
             Console.WriteLine("Compiling {0}", options.ProjectPath);
 
-            Project project = Project.LoadFromPath(options.ProjectPath!);
+            Project? project = Project.LoadFromPath(options.ProjectPath!);
+
+            if (project is null)
+            {
+                Console.WriteLine("Could not load project.");
+                return 0;
+            }
+
             project.CompileProject();
 
             while (project.IsCompiling)

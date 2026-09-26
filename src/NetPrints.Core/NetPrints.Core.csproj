@@ -5,12 +5,6 @@
     <Version>0.0.7</Version>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Copyright>Robin Kahlow 2018</Copyright>
-    <!-- Legacy code: nullable annotations are enabled in P1 when Core is refactored (per-file
-         `#nullable enable`, T011/T012; the project default flips in T014 with everything else). -->
-    <Nullable>disable</Nullable>
-    <!-- T011: Core/ and Graph/ are fully nullable-annotated and warning-free; enforce it now
-         instead of waiting for T014's project-wide default flip. -->
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />

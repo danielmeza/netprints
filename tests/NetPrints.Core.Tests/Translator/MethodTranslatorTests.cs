@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using NetPrints.Core;
 using NetPrints.Graph;
@@ -23,6 +24,7 @@ namespace NetPrints.Tests
             CreateForLoopMethod();
         }
 
+        [MemberNotNull(nameof(stringLengthMethod))]
         private void CreateStringLengthMethod()
         {
             List<TypeSpecifier> argumentTypes = new List<TypeSpecifier>()
@@ -72,6 +74,7 @@ namespace NetPrints.Tests
             GraphUtil.ConnectDataPins(getLengthNode.OutputDataPins[0], stringLengthMethod.ReturnNodes.First().InputDataPins[0]);
         }
 
+        [MemberNotNull(nameof(ifElseMethod))]
         private void CreateIfElseMethod()
         {
             // Create method
@@ -120,6 +123,7 @@ namespace NetPrints.Tests
             GraphUtil.ConnectDataPins(literalNode.ValuePin, ifElseMethod.ReturnNodes.First().InputDataPins[0]);
         }
 
+        [MemberNotNull(nameof(forLoopMethod))]
         private void CreateForLoopMethod()
         {
             // Create method

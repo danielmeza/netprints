@@ -6,7 +6,6 @@
     <TargetFramework>net10.0</TargetFramework>
     <OutputType>Exe</OutputType>
     <ImplicitUsings>enable</ImplicitUsings>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <WarningsAsErrors>$(WarningsAsErrors);xUnit1051</WarningsAsErrors>
     <!-- Without NETPRINTS_E2E=1 every test is skipped, which is exit code 8 ("zero tests ran").

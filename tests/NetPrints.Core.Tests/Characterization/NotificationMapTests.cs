@@ -40,22 +40,24 @@ namespace NetPrints.Tests.Characterization
 
             foreach (Type type in notifyingTypes)
             {
-                Assert.True(instancesByType.TryGetValue(type, out object instance),
-                    $"The AllNodes fixture has no instance of {type.FullName}; extend AllNodesFixtureFactory.");
+                bool found = instancesByType.TryGetValue(type, out object? instance);
+                Assert.True(found, $"The AllNodes fixture has no instance of {type.FullName}; extend AllNodesFixtureFactory.");
+                Assert.NotNull(instance);
 
                 var properties = new SortedDictionary<string, object>(StringComparer.Ordinal);
 
                 foreach (PropertyInfo property in SettableProperties(type))
                 {
-                    object current = property.GetValue(instance);
+                    object? current = property.GetValue(instance);
 
-                    if (!TryMakeDifferentValue(property.PropertyType, current, instancesByType, out object candidate))
+                    if (!TryMakeDifferentValue(property.PropertyType, current, instancesByType, out object? candidate))
                     {
                         continue;
                     }
 
                     var raised = new List<string>();
-                    void Handler(object sender, PropertyChangedEventArgs e) => raised.Add(e.PropertyName);
+                    void Handler(object? sender, PropertyChangedEventArgs e) =>
+                        raised.Add(e.PropertyName ?? throw new InvalidOperationException("PropertyChanged raised with a null property name."));
 
                     var inpc = (INotifyPropertyChanged)instance;
                     inpc.PropertyChanged += Handler;
@@ -86,7 +88,8 @@ namespace NetPrints.Tests.Characterization
                     }
                 }
 
-                map[type.FullName] = properties;
+                // Concrete, non-generic, non-array public type: FullName is never null.
+                map[type.FullName!] = properties;
             }
 
             string goldenPath = Path.Combine(SampleProjectFactory.FindRepositoryRoot(), "tests", "NetPrints.Core.Tests", "Characterization", "NotificationMap.golden.json");
@@ -119,11 +122,12 @@ namespace NetPrints.Tests.Characterization
         /// rejects (e.g. an incompatible <c>object</c> value, or <c>IsPure</c> when the node cannot be
         /// made pure) is expected and recorded as "&lt;throws&gt;" by the caller.
         /// </summary>
-        private static bool TryMakeDifferentValue(Type propertyType, object current, IReadOnlyDictionary<Type, object> pool, out object candidate)
+        private static bool TryMakeDifferentValue(Type propertyType, object? current, IReadOnlyDictionary<Type, object> pool, out object? candidate)
         {
             if (propertyType == typeof(bool))
             {
-                candidate = !(bool)current;
+                // A bool-typed property's reflected value is never null.
+                candidate = !(bool)current!;
                 return true;
             }
 
@@ -135,14 +139,15 @@ namespace NetPrints.Tests.Characterization
 
             if (propertyType.IsEnum)
             {
-                object different = Enum.GetValues(propertyType).Cast<object>().FirstOrDefault(v => !v.Equals(current));
+                object? different = Enum.GetValues(propertyType).Cast<object>().FirstOrDefault(v => !v.Equals(current));
                 candidate = different;
                 return different != null;
             }
 
             if (IsNumeric(propertyType))
             {
-                candidate = AddOne(propertyType, current);
+                // A numeric-typed property's reflected value is never null.
+                candidate = AddOne(propertyType, current!);
                 return true;
             }
 
@@ -160,7 +165,7 @@ namespace NetPrints.Tests.Characterization
                     return true;
                 }
 
-                if (pool.TryGetValue(propertyType, out object alternate) && alternate != null)
+                if (pool.TryGetValue(propertyType, out object? alternate) && alternate != null)
                 {
                     candidate = alternate;
                     return true;
@@ -234,7 +239,7 @@ namespace NetPrints.Tests.Characterization
                     Register(pin);
             }
 
-            void RegisterGraph(NodeGraph graph)
+            void RegisterGraph(NodeGraph? graph)
             {
                 if (graph == null)
                 {
