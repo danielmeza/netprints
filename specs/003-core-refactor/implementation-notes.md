@@ -184,6 +184,35 @@ AGENTS.md). Both were written as plain `<c>` text instead. Revisit `DocumentId`'
 `IDocumentStore` (a real `cref` will then resolve); `CodeDiagnostic`'s stays `<c>` permanently (the
 dependency direction never reverses).
 
+### T025 — `VariableRef.Scope`'s enum has no home in `NetPrints.Core` yet
+
+data-model.md §3 (sub-phase H, US5) adds a `VariableScope` enum to `NetPrints.Core` and a matching
+`Scope` member to `VariableSpecifier`; document-format.md §1.6's `VariableRef` record already carries
+a `Scope` field (`Member`\|`Local`, omit `Member`) because the *document* contract is written for the
+whole phase, not just sub-phase C. Since sub-phase C must not implement locals (that is T084-T088) and
+`VariableSpecifier` has no `Scope` of its own yet, added `NetPrints.Serialization.Documents.VariableScope`
+(a document-only enum, `Member`/`Local`) instead of reaching into Core ahead of its own task. T029's
+`NodeMappingContext.ToRef(VariableSpecifier)` always produces `Scope = VariableScope.Member` (omitted,
+since every variable in sub-phase C is a class member); `FromRef` does not read it back onto the model
+at all (nothing to set it on yet). T086 (sub-phase H, "`locals` (inline records) + `VariableRef.scope`
+mapping") is where this enum's home and the mapping both need revisiting — most likely moving (or
+duplicating, if `Serialization` should not depend on that shape of `Core`) this enum to `NetPrints.Core`
+alongside the new `VariableSpecifier.Scope`, and updating `ToRef`/`FromRef` to round-trip a real local
+scope instead of a constant.
+
+### T025 — kind fields modeled without STJ enum types where the format uses lowercase literals
+
+document-format.md §1.1 shows enum values (`MemberVisibility`, `MethodModifiers`, …) writing their C#
+member name verbatim and PascalCased (`"Public"`, `"Static, Async"` — confirmed against the worked
+`HelloWorld.Program.netpc.json` example in §1.7), which is `JsonStringEnumConverter`'s default behavior
+(the camelCase naming policy applies to *property names*, not enum member names, unless a converter is
+built with an explicit naming policy — nothing in §2.3's serializer options does that). `RerouteNodeDocument.PinKind`
+is documented with lowercase literals instead (`"exec"|"data"|"type"`, matching the lowercase `kind`
+segment of a pin reference, §1.4.2), so it is modeled as a plain `string`, not a C# enum — inventing an
+enum here would either serialize PascalCase (wrong) or need a bespoke per-property naming override
+(more machinery than a hand-checked string constant needs). `Mapping/BuiltIn/FlowConverters.cs` (T034)
+must write/compare exactly `"exec"`/`"data"`/`"type"`, matching `PinKeys`' own kind strings.
+
 ### T017 — `TypeGraph` needs a non-serialized back-reference to its class
 
 Extending T016's finding: `GraphKeys.For(NodeGraph)` needs to find a variable's type graph's owning
