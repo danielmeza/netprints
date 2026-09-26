@@ -1213,3 +1213,45 @@ No `!` added. Verified: `dotnet test tests/NetPrints.Core.Tests -c Release` gree
 244 before this task group: +14 `SnowflakeIdGeneratorTests`, +2 `IdGenerationTests`/`NodeIdTests`, +1 net
 in `DocumentMapperTests` — one throw-test rewritten to an issue-reporting test, one new node-duplicate
 test added).
+
+### T041 — `Json/NetPrintsJsonSchema.cs`; the exporter's `required` bug (K14)
+
+`NetPrintsJsonSchema.GenerateV1()` calls `JsonSchemaExporter.GetJsonSchemaAsNode` on
+`NetPrintsJsonContext.Default.Options` (built-in kinds only, per document-format.md §6) over
+`ClassDocument`, then does four things `TransformSchemaNode` cannot express as a pure per-node callback
+plus a small amount of root-level `JsonObject` surgery in `GenerateV1` itself: inserts `$schema`/`$id`/
+`title` ahead of the exporter's own `type`/`properties`/`required`, and adds a `$schema` property (a
+plain string) to the root's `properties`, since `$schema` is a writer-added header (document-format.md
+§2.2), never a member of `ClassDocument`, so the exporter never sees it. `TransformSchemaNode` itself
+does three things: pins `schemaVersion` to `"const": 1`; adds `"minItems": 2, "maxItems": 2` to every
+`int[]` schema (the layout leaf type, matched by `context.TypeInfo.Type`, not by property name — there is
+only one `int[]`-typed member in the whole graph); and appends the extension-kind `anyOf` branch (the
+exact literal document-format.md §6 gives) once, when `context.TypeInfo.Type == typeof(NodeDocument)`.
+
+**Full write-up of the K14 investigation (exporter's polymorphism output, and the `required` bug it
+uncovered) is in research.md §6 (R17), not repeated here** — the short version: polymorphism needed no
+fix (the exporter already unrolls all 24 `[JsonDerivedType]`s into their own `anyOf` branches, ignoring
+`GraphDocument.Nodes`'s custom `NodeListConverter` entirely and describing `NodeDocument`'s own declared
+contract instead); `required` needed a real fix, since the exporter marks a member required from "no C#
+default value on the record parameter," independent of nullability or of
+`[JsonIgnore(Condition=Never)]`, which silently over-included dozens of fields the model actually omits
+on write. `NetPrintsJsonSchema.FixRequired` recomputes it per object schema: exhaustively from
+`[JsonIgnore(Never)]` for a type that uses that convention anywhere (every `ClassDocument`/member/
+`NodeDocument`-common type), or by subtracting nullable members (checked with `NullabilityInfoContext`
+against the real `PropertyInfo`, since a repeated shape like `TypeRef` is written once and `$ref`'d
+everywhere else, with no `type` keyword on the `$ref` node to sniff nullability from) from the exporter's
+own list otherwise (the §1.6 reference/value DTOs, none of which use `[Never]` at all).
+
+One `!` fixed before commit, not added: a first draft read `schema["properties"]!` in `GenerateV1`
+(`JsonObject`'s indexer returns `JsonNode?`); replaced with `schema["properties"] as JsonObject ?? throw
+new InvalidOperationException(...)`, per AGENTS.md (throw a clear exception at the boundary instead of
+asserting with `!`). `SchemaTests.cs` avoids `!` the same way `CanonicalJsonTests.Parse` does
+(`Assert.NotNull` then use the narrowed value), factored into small `Child`/`Array`/`Value<T>` navigation
+helpers so the DF-T24 structural assertions (root `$id`, one `anyOf` branch per built-in kind plus the
+extension branch, `schemaVersion` `const`, layout array bounds, `MethodDocument`'s `required`) stay
+readable.
+
+Verified: `dotnet build NetPrints.slnx -c Release` 0 warnings; `dotnet test tests/NetPrints.Core.Tests -c
+Release` green, 266 tests (+6 `SchemaTests`); `dotnet format NetPrints.slnx --verify-no-changes` clean;
+`schemas/netpc.v1.schema.json` committed (`NETPRINTS_UPDATE_SNAPSHOTS=1`), no BOM, single trailing `\n`,
+2-space indent; DF-T24's `GeneratedSchemaMatchesCommittedFile` fails the build the moment the two drift.

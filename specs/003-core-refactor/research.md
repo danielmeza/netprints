@@ -274,7 +274,7 @@ RoslynPad.Editor.Avalonia 5.0.0 (R4), McMaster.NETCore.Plugins 2.0.0 (R8).
 | K11 | Editor now needs the .NET SDK, not only the runtime | Clear message when none is found; documented |
 | K12 | Opening a project evaluates MSBuild code from it (as every IDE does); project-referenced extensions run code | Trust prompt before loading project-referenced extensions (FR-019) |
 | K13 | **Open item.** Event methods are emitted in `EventGraph.Entries` node order, so `nodes` order stays semantic: two branches that each append an entry conflict at the `nodes` tail, and the resolved order decides method order in the C# | Kept for P1 (graph-format research §5.4, §7); a test pins the current order (T079). Later: translation order independent of storage order, then `nodes` sorted by id |
-| K14 | **Open item.** `JsonSchemaExporter` output for STJ polymorphism (`anyOf`/`const` for `$kind`) and for extension kinds from other `JsonSerializerContext`s was not verified | T041 inspects the output and fixes it in `TransformSchemaNode`; extension kinds are accepted by a generic `$kind`-contains-`/` branch; findings recorded here in R17 |
+| K14 | **Resolved (T041).** `JsonSchemaExporter` output for STJ polymorphism (`anyOf`/`const` for `$kind`), for extension kinds, and for `required` was verified and fixed where wrong | See findings in §6 (R17) below |
 | K15 | Pin keys come from constructor-assigned pin names, so renaming a built-in pin (or an extension's) breaks existing files | Golden list of every built-in pin reference (DF-T19); a rename requires a schema migration |
 | K16 | The custom canonical writer could emit invalid or nondeterministic JSON | Every test re-parses written bytes (DF-T03, DF-T04); the writer only formats a `JsonNode` tree STJ produced |
 | K17 | Random ids make fixtures nondeterministic | `IdGeneration.Use(new SeededIdGenerator(seed))` in tests; legacy import is deterministic (`n<index>`, seeded member ids) |
@@ -430,7 +430,61 @@ Details the research left open, decided here:
 | Stale checks | Tests (run by CI): committed schema = generated (DF-T24); committed sample graphs canonical and `.netpc.g.cs` = regenerated (DF-T26). CLI `format --check` / `regen --check` are P2 |
 | Merge driver | `netprints merge` / `git-install` / `textconv` diff: follow-up after P1 (research §3, §5.4) |
 
-Findings to record here during implementation: the exporter's polymorphism output (K14, T041).
+**Findings recorded during implementation (T041, K14).** `JsonSchemaExporter.GetJsonSchemaAsNode` over
+`ClassDocument`, given `NetPrintsJsonContext.Default.Options` (built-in kinds only), already produces the
+right *shape* for polymorphism with no help: the `NodeDocument` schema is `{"type":"object","required":
+["$kind"],"anyOf":[...]}`, one branch per `[JsonDerivedType]` (24), each an inline object with its own
+`properties`/`required` (id/name/pins duplicated into every branch rather than shared via `$ref`/`allOf`
+with a base) and `"$kind":{"const":"<kind>"}`. `GraphDocument.Nodes`'s custom
+`[JsonConverter(typeof(NodeListConverter))]` does not change this: the exporter never asks a converter
+how it reads/writes and simply describes `NodeDocument`'s own declared contract, so the schema for
+`nodes[]` is exactly as if no custom converter were registered. The one addition `TransformSchemaNode`
+makes is the extension branch: when `context.TypeInfo.Type == typeof(NodeDocument)`, append `{"type":
+"object","required":["$kind","id"],"properties":{"$kind":{"type":"string","pattern":"/"}}}` to that
+`anyOf` array (document-format.md §6's exact literal) — a generic "`$kind` contains `/`" branch, since
+loaded extensions never contribute to this committed file (only `NetPrintsJsonContext`'s built-in types
+are exported).
+
+`required` needed a real fix. The exporter marks a member required purely from whether its record's
+positional constructor parameter has a C# default value — independent of nullability and of
+`[JsonIgnore(Condition=…)]`. This over-includes two families: every `ClassDocument`/`MethodDocument`/
+`ConstructorDocument`/`VariableDocument`/`EventGraphDocument`/`NodeDocument`-common member that has no
+C# default (which is all of them, since this codebase relies on the class-wide `DefaultIgnoreCondition =
+WhenWritingDefault` plus a per-member `[JsonIgnore(Condition = Never)]` opt-in for Req. = yes, document-
+format.md §1.1 — not on C# default parameter values), so e.g. `namespace`, `modifiers`, `pins` and
+`layout` all came out required; and several §1.6 DTO members that are nullable but were never given an
+explicit `= null` (`VariableRef.DeclaringType`, `MethodRef.Parameters`/`ReturnTypes`/`GenericArgs`,
+`ConstructorRef.Parameters`, `PinStateDocument.Name`/`Value`), which came out required even though the
+model omits them whenever unset. Fix, in `NetPrintsJsonSchema.FixRequired`: for a type where at least one
+member carries `[JsonIgnore(Condition = Never)]` (every graph/member/node-common type above), `required`
+is recomputed from exactly that attribute, discarding the exporter's own list entirely; for a type with
+no such member anywhere (the §1.6 reference/value DTOs, which rely on nullability and real C# defaults
+instead), the exporter's own list is kept minus any member that is nullable — checked with
+`NullabilityInfoContext` against the member's underlying `PropertyInfo` (`JsonPropertyInfo.AttributeProvider`),
+**not** by inspecting the already-generated child schema node for a `"null"` in its `"type"`: a shape that
+repeats (e.g. `TypeRef`, `MethodRef.parameters`) is rendered once and every later occurrence is a bare
+`{"$ref": "..."}` with no `type` keyword at all, so a schema-based nullability check silently failed to
+fire for exactly the repeated, over-included members it needed to fix. Verified against
+`MethodDocument` (DF-T24: `required` = `["id","name","visibility","graph"]`, `modifiers` excluded) and,
+manually, against every §1.6 DTO (`TypeRef` → `["name"]`, `MethodRef` → `["name","declaringType",
+"modifiers","visibility"]`, `ParameterRef` → `["name","type"]`, `ConstructorRef` → `["declaringType"]`,
+`VariableRef` → `["name","type","getterVisibility","setterVisibility","visibility","modifiers"]`,
+`ConnectionDocument` → `["from","to"]`, `PinStateDocument` → `["pin"]`, `LocalVariableDocument` →
+`["name","type"]`).
+
+Two accepted, documented limitations of this fix, neither exercised by a test: (1) because only
+`NodeDocument.Id` carries `[Never]`, every node-kind branch falls into the "recompute exhaustively from
+`[Never]`" case and ends up with `required: ["id"]` only — a kind-specific field that is, in practice,
+always present (`callMethod.method`, `eventEntry.eventName`) is not marked required, since no individual
+kind field opts into `[Never]`. This underclaims rather than overclaims (a conservative schema, not a
+wrong one); marking these `[Never]` later, if a validator needs the stronger guarantee, would also force
+them to always be written (bigger file diffs) and is left as a follow-up, not done here. (2)
+`TypedValue.Value` (`string?`, no `[Never]`) is excluded from `required` by the same nullability rule,
+even though document-format.md §1.6 describes it as "string or JSON null" (implying always-present); in
+fact the model's own `DefaultIgnoreCondition = WhenWritingDefault` would omit the `value` property
+entirely when it is null (no override forces it), so the generated schema matches the model's actual
+runtime behavior — the prose's "always present" framing is the part that is arguably imprecise, not the
+generated schema.
 
 ## 7. Revision: release, packages and docs (research R18–R19)
 

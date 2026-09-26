@@ -1,0 +1,1614 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://danielmeza.github.io/netprints/schemas/netpc.v1.schema.json",
+  "title": "NetPrints class graph (schema v1)",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "namespace": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "name": {
+      "type": "string"
+    },
+    "visibility": {
+      "type": "string"
+    },
+    "modifiers": {
+      "type": "string"
+    },
+    "genericArguments": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "string"
+      }
+    },
+    "classGraph": {
+      "type": "object",
+      "properties": {
+        "nodes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "$kind"
+            ],
+            "anyOf": [
+              {
+                "properties": {
+                  "$kind": {
+                    "const": "methodEntry"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "pins": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "pin": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": [
+                            "string",
+                            "null"
+                          ]
+                        },
+                        "value": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "type": {
+                              "type": "string"
+                            },
+                            "value": {
+                              "type": [
+                                "string",
+                                "null"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "type"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "pin"
+                      ]
+                    }
+                  },
+                  "argumentCount": {
+                    "type": "integer"
+                  },
+                  "genericArguments": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              },
+              {
+                "properties": {
+                  "$kind": {
+                    "const": "constructorEntry"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "pins": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "items": {
+                      "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
+                    }
+                  },
+                  "argumentCount": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              },
+              {
+                "properties": {
+                  "$kind": {
+                    "const": "return"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "pins": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "items": {
+                      "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
+                    }
+                  },
+                  "returnCount": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              },
+              {
+                "properties": {
+                  "$kind": {
+                    "const": "classReturn"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "pins": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "items": {
+                      "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
+                    }
+                  },
+                  "interfaceCount": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              },
+              {
+                "properties": {
+                  "$kind": {
+                    "const": "typeReturn"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "pins": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "items": {
+                      "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
+                    }
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              },
+              {
+                "properties": {
+                  "$kind": {
+                    "const": "eventEntry"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "pins": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "items": {
+                      "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
+                    }
+                  },
+                  "eventName": {
+                    "type": "string"
+                  },
+                  "visibility": {
+                    "type": "string"
+                  },
+                  "modifiers": {
+                    "type": "string"
+                  },
+                  "overrides": {
+                    "type": [
+                      "object",
+                      "null"
+                    ],
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "declaringType": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "generic": {
+                            "type": "boolean",
+                            "default": false
+                          },
+                          "isEnum": {
+                            "type": "boolean",
+                            "default": false
+                          },
+                          "isInterface": {
+                            "type": "boolean",
+                            "default": false
+                          },
+                          "args": {
+                            "type": [
+                              "array",
+                              "null"
+                            ],
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "name": {
+                                  "type": "string"
+                                },
+                                "generic": {
+                                  "type": "boolean",
+                                  "default": false
+                                },
+                                "isEnum": {
+                                  "type": "boolean",
+                                  "default": false
+                                },
+                                "isInterface": {
+                                  "type": "boolean",
+                                  "default": false
+                                },
+                                "args": {
+                                  "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/5/properties/overrides/properties/declaringType/properties/args",
+                                  "default": null
+                                }
+                              },
+                              "required": [
+                                "name"
+                              ]
+                            },
+                            "default": null
+                          }
+                        },
+                        "required": [
+                          "name"
+                        ]
+                      },
+                      "parameters": {
+                        "type": [
+                          "array",
+                          "null"
+                        ],
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "type": {
+                              "type": "object",
+                              "properties": {
+                                "name": {
+                                  "type": "string"
+                                },
+                                "generic": {
+                                  "type": "boolean",
+                                  "default": false
+                                },
+                                "isEnum": {
+                                  "type": "boolean",
+                                  "default": false
+                                },
+                                "isInterface": {
+                                  "type": "boolean",
+                                  "default": false
+                                },
+                                "args": {
+                                  "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/5/properties/overrides/properties/declaringType/properties/args",
+                                  "default": null
+                                }
+                              },
+                              "required": [
+                                "name"
+                              ]
+                            },
+                            "passType": {
+                              "enum": [
+                                "Default",
+                                "Reference",
+                                "Out",
+                                "In"
+                              ],
+                              "default": "Default"
+                            },
+                            "default": {
+                              "type": [
+                                "object",
+                                "null"
+                              ],
+                              "properties": {
+                                "type": {
+                                  "type": "string"
+                                },
+                                "value": {
+                                  "type": [
+                                    "string",
+                                    "null"
+                                  ]
+                                }
+                              },
+                              "required": [
+                                "type"
+                              ],
+                              "default": null
+                            }
+                          },
+                          "required": [
+                            "name",
+                            "type"
+                          ]
+                        }
+                      },
+                      "returnTypes": {
+                        "type": [
+                          "array",
+                          "null"
+                        ],
+                        "items": {
+                          "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/5/properties/overrides/properties/declaringType/properties/args/items"
+                        }
+                      },
+                      "modifiers": {
+                        "type": "string"
+                      },
+                      "visibility": {
+                        "type": "string"
+                      },
+                      "genericArgs": {
+                        "type": [
+                          "array",
+                          "null"
+                        ],
+                        "items": {
+                          "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/5/properties/overrides/properties/declaringType/properties/args/items"
+                        }
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "declaringType",
+                      "modifiers",
+                      "visibility"
+                    ]
+                  },
+                  "argumentCount": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              },
+              {
+                "properties": {
+                  "$kind": {
+                    "const": "callMethod"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "pins": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "items": {
+                      "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
+                    }
+                  },
+                  "method": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "declaringType": {
+                        "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/5/properties/overrides/properties/declaringType"
+                      },
+                      "parameters": {
+                        "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/5/properties/overrides/properties/parameters"
+                      },
+                      "returnTypes": {
+                        "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/5/properties/overrides/properties/returnTypes"
+                      },
+                      "modifiers": {
+                        "type": "string"
+                      },
+                      "visibility": {
+                        "type": "string"
+                      },
+                      "genericArgs": {
+                        "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/5/properties/overrides/properties/genericArgs"
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "declaringType",
+                      "modifiers",
+                      "visibility"
+                    ]
+                  },
+                  "genericArgumentCount": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              },
+              {
+                "properties": {
+                  "$kind": {
+                    "const": "constructor"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "pins": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "items": {
+                      "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
+                    }
+                  },
+                  "constructor": {
+                    "type": "object",
+                    "properties": {
+                      "declaringType": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "generic": {
+                            "type": "boolean",
+                            "default": false
+                          },
+                          "isEnum": {
+                            "type": "boolean",
+                            "default": false
+                          },
+                          "isInterface": {
+                            "type": "boolean",
+                            "default": false
+                          },
+                          "args": {
+                            "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/5/properties/overrides/properties/declaringType/properties/args",
+                            "default": null
+                          }
+                        },
+                        "required": [
+                          "name"
+                        ]
+                      },
+                      "parameters": {
+                        "type": [
+                          "array",
+                          "null"
+                        ],
+                        "items": {
+                          "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/5/properties/overrides/properties/parameters/items"
+                        }
+                      }
+                    },
+                    "required": [
+                      "declaringType"
+                    ]
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              },
+              {
+                "properties": {
+                  "$kind": {
+                    "const": "makeDelegate"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "pins": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "items": {
+                      "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
+                    }
+                  },
+                  "method": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "declaringType": {
+                        "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/5/properties/overrides/properties/declaringType"
+                      },
+                      "parameters": {
+                        "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/5/properties/overrides/properties/parameters"
+                      },
+                      "returnTypes": {
+                        "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/5/properties/overrides/properties/returnTypes"
+                      },
+                      "modifiers": {
+                        "type": "string"
+                      },
+                      "visibility": {
+                        "type": "string"
+                      },
+                      "genericArgs": {
+                        "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/5/properties/overrides/properties/genericArgs"
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "declaringType",
+                      "modifiers",
+                      "visibility"
+                    ]
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              },
+              {
+                "properties": {
+                  "$kind": {
+                    "const": "variableGetter"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "pins": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "items": {
+                      "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
+                    }
+                  },
+                  "variable": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "type": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "generic": {
+                            "type": "boolean",
+                            "default": false
+                          },
+                          "isEnum": {
+                            "type": "boolean",
+                            "default": false
+                          },
+                          "isInterface": {
+                            "type": "boolean",
+                            "default": false
+                          },
+                          "args": {
+                            "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/5/properties/overrides/properties/declaringType/properties/args",
+                            "default": null
+                          }
+                        },
+                        "required": [
+                          "name"
+                        ]
+                      },
+                      "declaringType": {
+                        "type": [
+                          "object",
+                          "null"
+                        ],
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "generic": {
+                            "type": "boolean",
+                            "default": false
+                          },
+                          "isEnum": {
+                            "type": "boolean",
+                            "default": false
+                          },
+                          "isInterface": {
+                            "type": "boolean",
+                            "default": false
+                          },
+                          "args": {
+                            "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/5/properties/overrides/properties/declaringType/properties/args",
+                            "default": null
+                          }
+                        },
+                        "required": [
+                          "name"
+                        ]
+                      },
+                      "getterVisibility": {
+                        "type": "string"
+                      },
+                      "setterVisibility": {
+                        "type": "string"
+                      },
+                      "visibility": {
+                        "type": "string"
+                      },
+                      "modifiers": {
+                        "type": "string"
+                      },
+                      "scope": {
+                        "enum": [
+                          "Member",
+                          "Local"
+                        ],
+                        "default": "Member"
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "type",
+                      "getterVisibility",
+                      "setterVisibility",
+                      "visibility",
+                      "modifiers"
+                    ]
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              },
+              {
+                "properties": {
+                  "$kind": {
+                    "const": "variableSetter"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "pins": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "items": {
+                      "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
+                    }
+                  },
+                  "variable": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "type": {
+                        "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/9/properties/variable/properties/type"
+                      },
+                      "declaringType": {
+                        "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/9/properties/variable/properties/declaringType"
+                      },
+                      "getterVisibility": {
+                        "type": "string"
+                      },
+                      "setterVisibility": {
+                        "type": "string"
+                      },
+                      "visibility": {
+                        "type": "string"
+                      },
+                      "modifiers": {
+                        "type": "string"
+                      },
+                      "scope": {
+                        "enum": [
+                          "Member",
+                          "Local"
+                        ],
+                        "default": "Member"
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "type",
+                      "getterVisibility",
+                      "setterVisibility",
+                      "visibility",
+                      "modifiers"
+                    ]
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              },
+              {
+                "properties": {
+                  "$kind": {
+                    "const": "literal"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "pins": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "items": {
+                      "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
+                    }
+                  },
+                  "literalType": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "generic": {
+                        "type": "boolean",
+                        "default": false
+                      },
+                      "isEnum": {
+                        "type": "boolean",
+                        "default": false
+                      },
+                      "isInterface": {
+                        "type": "boolean",
+                        "default": false
+                      },
+                      "args": {
+                        "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/5/properties/overrides/properties/declaringType/properties/args",
+                        "default": null
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              },
+              {
+                "properties": {
+                  "$kind": {
+                    "const": "type"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "pins": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "items": {
+                      "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
+                    }
+                  },
+                  "type": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "generic": {
+                        "type": "boolean",
+                        "default": false
+                      },
+                      "isEnum": {
+                        "type": "boolean",
+                        "default": false
+                      },
+                      "isInterface": {
+                        "type": "boolean",
+                        "default": false
+                      },
+                      "args": {
+                        "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/5/properties/overrides/properties/declaringType/properties/args",
+                        "default": null
+                      }
+                    },
+                    "required": [
+                      "name"
+                    ]
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              },
+              {
+                "properties": {
+                  "$kind": {
+                    "const": "makeArrayType"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "pins": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "items": {
+                      "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
+                    }
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              },
+              {
+                "properties": {
+                  "$kind": {
+                    "const": "makeArray"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "pins": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "items": {
+                      "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
+                    }
+                  },
+                  "usePredefinedSize": {
+                    "type": "boolean"
+                  },
+                  "elementCount": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              },
+              {
+                "properties": {
+                  "$kind": {
+                    "const": "explicitCast"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "pins": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "items": {
+                      "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
+                    }
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              },
+              {
+                "properties": {
+                  "$kind": {
+                    "const": "typeOf"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "pins": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "items": {
+                      "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
+                    }
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              },
+              {
+                "properties": {
+                  "$kind": {
+                    "const": "ifElse"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "pins": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "items": {
+                      "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
+                    }
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              },
+              {
+                "properties": {
+                  "$kind": {
+                    "const": "forLoop"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "pins": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "items": {
+                      "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
+                    }
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              },
+              {
+                "properties": {
+                  "$kind": {
+                    "const": "ternary"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "pins": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "items": {
+                      "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
+                    }
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              },
+              {
+                "properties": {
+                  "$kind": {
+                    "const": "await"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "pins": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "items": {
+                      "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
+                    }
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              },
+              {
+                "properties": {
+                  "$kind": {
+                    "const": "throw"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "pins": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "items": {
+                      "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
+                    }
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              },
+              {
+                "properties": {
+                  "$kind": {
+                    "const": "default"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "pins": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "items": {
+                      "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
+                    }
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              },
+              {
+                "properties": {
+                  "$kind": {
+                    "const": "reroute"
+                  },
+                  "id": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "pins": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "items": {
+                      "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
+                    }
+                  },
+                  "pinKind": {
+                    "type": "string"
+                  },
+                  "count": {
+                    "type": "integer"
+                  },
+                  "dataTypes": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "items": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/5/properties/overrides/properties/declaringType/properties/args/items"
+                      }
+                    }
+                  }
+                },
+                "required": [
+                  "id"
+                ]
+              },
+              {
+                "type": "object",
+                "required": [
+                  "$kind",
+                  "id"
+                ],
+                "properties": {
+                  "$kind": {
+                    "type": "string",
+                    "pattern": "/"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "connections": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "from": {
+                "type": "string"
+              },
+              "to": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "from",
+              "to"
+            ]
+          }
+        },
+        "locals": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "type": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "generic": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "isEnum": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "isInterface": {
+                    "type": "boolean",
+                    "default": false
+                  },
+                  "args": {
+                    "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/5/properties/overrides/properties/declaringType/properties/args",
+                    "default": null
+                  }
+                },
+                "required": [
+                  "name"
+                ]
+              }
+            },
+            "required": [
+              "name",
+              "type"
+            ]
+          }
+        }
+      },
+      "required": [
+        "nodes"
+      ]
+    },
+    "variables": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "visibility": {
+            "type": "string"
+          },
+          "modifiers": {
+            "type": "string"
+          },
+          "typeGraph": {
+            "type": "object",
+            "properties": {
+              "nodes": {
+                "$ref": "#/properties/classGraph/properties/nodes"
+              },
+              "connections": {
+                "$ref": "#/properties/classGraph/properties/connections"
+              },
+              "locals": {
+                "$ref": "#/properties/classGraph/properties/locals"
+              }
+            },
+            "required": [
+              "nodes"
+            ]
+          },
+          "getter": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "visibility": {
+                "type": "string"
+              },
+              "graph": {
+                "type": "object",
+                "properties": {
+                  "nodes": {
+                    "$ref": "#/properties/classGraph/properties/nodes"
+                  },
+                  "connections": {
+                    "$ref": "#/properties/classGraph/properties/connections"
+                  },
+                  "locals": {
+                    "$ref": "#/properties/classGraph/properties/locals"
+                  }
+                },
+                "required": [
+                  "nodes"
+                ]
+              }
+            },
+            "required": [
+              "visibility",
+              "graph"
+            ]
+          },
+          "setter": {
+            "type": [
+              "object",
+              "null"
+            ],
+            "properties": {
+              "visibility": {
+                "type": "string"
+              },
+              "graph": {
+                "$ref": "#/properties/variables/items/properties/getter/properties/graph"
+              }
+            },
+            "required": [
+              "visibility",
+              "graph"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "visibility",
+          "typeGraph"
+        ]
+      }
+    },
+    "methods": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "visibility": {
+            "type": "string"
+          },
+          "modifiers": {
+            "type": "string"
+          },
+          "graph": {
+            "type": "object",
+            "properties": {
+              "nodes": {
+                "$ref": "#/properties/classGraph/properties/nodes"
+              },
+              "connections": {
+                "$ref": "#/properties/classGraph/properties/connections"
+              },
+              "locals": {
+                "$ref": "#/properties/classGraph/properties/locals"
+              }
+            },
+            "required": [
+              "nodes"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "visibility",
+          "graph"
+        ]
+      }
+    },
+    "constructors": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "visibility": {
+            "type": "string"
+          },
+          "graph": {
+            "type": "object",
+            "properties": {
+              "nodes": {
+                "$ref": "#/properties/classGraph/properties/nodes"
+              },
+              "connections": {
+                "$ref": "#/properties/classGraph/properties/connections"
+              },
+              "locals": {
+                "$ref": "#/properties/classGraph/properties/locals"
+              }
+            },
+            "required": [
+              "nodes"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "visibility",
+          "graph"
+        ]
+      }
+    },
+    "eventGraphs": {
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "graph": {
+            "type": "object",
+            "properties": {
+              "nodes": {
+                "$ref": "#/properties/classGraph/properties/nodes"
+              },
+              "connections": {
+                "$ref": "#/properties/classGraph/properties/connections"
+              },
+              "locals": {
+                "$ref": "#/properties/classGraph/properties/locals"
+              }
+            },
+            "required": [
+              "nodes"
+            ]
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "graph"
+        ]
+      }
+    },
+    "layout": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        }
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "name",
+    "visibility",
+    "classGraph"
+  ]
+}
