@@ -930,3 +930,32 @@ the project's referenced assemblies, which `NetPrints.Serialization` does not ha
 DF-Txx test set exercises this path (AllNodes' only enum literal is `System.DayOfWeek`, going through
 the pin special case above, not a method default value), so it is left as a follow-up rather than
 solved here.
+
+### T037 — `IDocumentFormat.cs`, `Json/JsonDocumentFormat.cs`
+
+`IDocumentFormat` (document-format.md §2.2) was not created by an earlier task, so it is added here as
+its first consumer: a plain interface at the `NetPrints.Serialization` namespace root, matching the
+contract's member list exactly (`Id`, `ClassExtensions`, `CanWrite`, `ReadClassAsync`, `WriteClassAsync`).
+`JsonDocumentFormat` implements it mechanically, as anticipated: read is `JsonNode.Parse` (the
+synchronous stream overload the contract names, not `ParseAsync`) → require an object root → validate
+and strip a `$schema` property if present → `DocumentMigrator.Upgrade` → `JsonSerializer.Deserialize<ClassDocument>`;
+write is `JsonSerializer.SerializeToNode` into a fresh `JsonObject` with `$schema` first (each property
+node is `Remove`d from the serialized object before being assigned into the new one — a `JsonNode` can
+only have one parent, so it must be detached before being re-parented) → `CanonicalJsonWriter.Write`.
+
+One design point not spelled out in the contract: syntax errors (caught around `JsonNode.Parse`) carry
+`DocumentFormatException.Line`/`BytePosition` (`JsonException.LineNumber` is 0-based; `Line` is declared
+1-based, so `+ 1`); errors found after parsing (caught around `JsonSerializer.Deserialize`) do not set
+those — `JsonException.Message` already has the JSON path appended by `System.Text.Json`'s own
+`ReThrowWithPath` machinery by the time it reaches this catch, so passing `ex.Message` through
+verbatim satisfies "carry the JSON path in the message" without reconstructing it.
+
+Test coverage (`tests/NetPrints.Core.Tests/Serialization/JsonDocumentFormatTests.cs`): DF-T09 (a syntax
+error gets `Line`/`BytePosition`; a structurally invalid but syntactically valid document, built by
+string-corrupting a canonical write, gets neither but does get the JSON path in the message), DF-T21
+(comments, trailing commas, a `$kind` after other properties, no `$schema`, reordered top-level
+properties and arbitrary whitespace load to the same model as the canonical form via
+`JsonNode.DeepEquals`, and writing the tolerantly-read result reproduces the canonical bytes exactly; a
+non-string `$schema` throws). The "load → edit → save" half of DF-T21 (an edit through `DocumentMapper`
+between load and save) is exercised at the `DocumentMapper` level already (T035) and again end-to-end at
+T042; this task's tests stay at the format layer (no model edit, just tolerant-read-then-write).
