@@ -218,9 +218,9 @@ Applied by the coordinator with the owner's approval on 2026-09-25 (roadmap P1 t
 the superseded `ViewportTransform` follow-up and `MetadataReference` caching in P8; the csproj model and
 the restated "done when"; the SDK requirement and "no source-generator mode"; AvaloniaEdit and
 Microsoft.Extensions.Logging in the tech constraints; the narrowed `netstandard2.0` exception; the graph
-format for version control. Also applied later the same day: U1 adds `NetPrints.Sdk` to UnrealSharp's Script `.csproj`; the graph-format follow-ups are in P2; the release and docs stack is in P1. **Open proposal (sub-phase L, research R18)**: a constitution PATCH
+format for version control. Also applied later the same day: U1 adds `NetPrints.Sdk` to UnrealSharp's Script `.csproj`; the graph-format follow-ups are in P2; the release and docs stack is in P1. **Applied (sub-phase L, research R18; constitution 1.2.2)**: a constitution PATCH
 clarification that release packaging workflows may use macOS or Windows runners (the main `CI` workflow stays
-Linux-only). **Open proposal (2026-09-26, research R21)**: the constitution's "Legacy DataContract XML is
+Linux-only). **Applied (2026-09-26, research R21; constitution 1.2.3, roadmap cd424da)**: the constitution's "Legacy DataContract XML is
 import-only once JSON lands" and the roadmap P1 text ("legacy XML importer", "Legacy `.netpp`/XML files are
 import-only", and the "done when" "the old sample imports without modifying the legacy file") change to: legacy
 XML is not read; the repository's own files are migrated once in P1.
