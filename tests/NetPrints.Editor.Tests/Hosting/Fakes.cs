@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.Messaging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Reactive.Testing;
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
@@ -158,7 +159,7 @@ public sealed class TestEditor
         ArgumentNullException.ThrowIfNull(reflection);
         Reflection = reflection;
         Context = new EditorContext(FilePicker, Dialogs, Clipboard, Dispatcher, Reflection, Windows, Processes,
-            Scheduler, Scheduler, () => new StrongReferenceMessenger());
+            Scheduler, Scheduler, () => new StrongReferenceMessenger(), NullLoggerFactory.Instance);
     }
 
     public FakeFilePicker FilePicker { get; } = new();

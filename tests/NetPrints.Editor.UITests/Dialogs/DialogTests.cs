@@ -1,4 +1,5 @@
 using Avalonia.Headless.XUnit;
+using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Core;
 using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Hosting;
@@ -74,7 +75,7 @@ public class DialogTests
         var context = new EditorContext(new QueuedFilePicker(), new RecordingDialogs(), new NoClipboard(), dispatcher, new ReflectionHost(dispatcher),
             new NetPrints.Editor.Hosting.Avalonia.WindowService(), new CapturingProcessLauncher(),
             System.Reactive.Concurrency.DefaultScheduler.Instance, System.Reactive.Concurrency.DefaultScheduler.Instance,
-            () => new CommunityToolkit.Mvvm.Messaging.WeakReferenceMessenger());
+            () => new CommunityToolkit.Mvvm.Messaging.WeakReferenceMessenger(), NullLoggerFactory.Instance);
         using var ui = HeadlessUi.Create();
         ui.Show(new ReferencesDialog { DataContext = new ReferenceListVM(project, context) });
         var page = new ReferencesDialogPage(ui.Driver);

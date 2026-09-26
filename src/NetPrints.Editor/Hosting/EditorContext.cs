@@ -1,5 +1,6 @@
 using System.Reactive.Concurrency;
 using CommunityToolkit.Mvvm.Messaging;
+using Microsoft.Extensions.Logging;
 
 namespace NetPrints.Editor.Hosting;
 
@@ -21,6 +22,7 @@ namespace NetPrints.Editor.Hosting;
 /// snapshot test capturing that preview) without also virtualizing the search throttle.
 /// </param>
 /// <param name="CreateMessenger">Creates a messenger for one editor scope (a class editor window).</param>
+/// <param name="LoggerFactory">Creates the loggers editor-scope services log through (P1).</param>
 public sealed record EditorContext(
     IFilePickerService FilePicker,
     IEditorDialogs Dialogs,
@@ -31,4 +33,5 @@ public sealed record EditorContext(
     IProcessLauncher Processes,
     IScheduler Scheduler,
     IScheduler CodeRefreshScheduler,
-    Func<IMessenger> CreateMessenger);
+    Func<IMessenger> CreateMessenger,
+    ILoggerFactory LoggerFactory);

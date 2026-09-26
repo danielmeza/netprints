@@ -179,6 +179,45 @@ tests. General lesson carried into T021+: any new in-memory-only navigation this
 or repurpose an existing `[DataMember]` property for it, even when the existing property's static
 type already fits, because doing so silently changes what legacy XML serializes.
 
+### T022 — `UnhandledExceptionHandler`'s two `internal` reporting methods
+
+ED-T12 ("logs 1001/1002 through a collecting logger and still shows the dialog") lives in
+`tests/NetPrints.Editor.Tests` — the non-UI, non-headless test project (no Avalonia platform, no
+running dispatcher loop). Triggering the real `Dispatcher.UIThread.UnhandledException` event needs a
+running dispatcher; triggering a real `TaskScheduler.UnobservedTaskException` needs a GC-forced,
+finalizer-driven wait, which is slow and not the kind of thing this project's fast unit tests do
+elsewhere. Choice: split each event handler into a thin subscriber (marks the event handled/observed)
+and an `internal` method with the actual logging + dialog + duplicate-suppression logic
+(`ReportUnhandledUiException`, `ReportUnobservedTaskException`), reachable directly from
+`NetPrints.Editor.Tests` via the existing `InternalsVisibleTo`. Production wiring (the constructor's
+event subscriptions) is unchanged; the test calls exactly the code a real event would run.
+
+### T022 — `EditorHostServices`/`EditorContext.LoggerFactory` call-site inventory
+
+Three places construct `EditorContext` positionally and two construct `EditorComposition`; all five
+needed updating for the new required `LoggerFactory` parameter (record) / `EditorHostServices` first
+parameter (composition): `EditorComposition.cs` itself, `EditorApp.axaml.cs` (`HostServices` static
+gate, `InvalidOperationException` if read unset — set by Desktop `Program.Main` before
+`StartWithClassicDesktopLifetime`), `HeadlessApp.cs` (`new EditorHostServices(NullLoggerFactory.Instance)`
+alongside the existing `customize` hook — P0's hook stays until T098 as the task says),
+`tests/NetPrints.Editor.Tests/Hosting/Fakes.cs`'s `TestEditor` and one direct `EditorContext` call in
+`tests/NetPrints.Editor.UITests/Dialogs/DialogTests.cs`, both `NullLoggerFactory.Instance`. Grepped
+for `new EditorContext(`/`new EditorComposition(` (not just "EditorContext"/"EditorComposition"
+mentions) to be sure nothing else constructs either positionally; `with` expressions elsewhere
+(`HeadlessApp`'s customize hook) don't need touching, since record `with` works by property name.
+
+`AvaloniaLogSink`/`CA1848`: forwarding an arbitrary, runtime-supplied Avalonia message template
+through a single `[LoggerMessage]`-generated method isn't expressible as a compile-time template (the
+message *is* one of the dynamic values here), so the generated method takes `LogLevel level` as an
+ordinary parameter (omitting `Level` from the attribute enables this) and the two `ILogSink.Log`
+overloads pre-format Avalonia's `propertyValues` into a plain string before logging, keeping the
+`[LoggerMessage]` template itself static ("{Source}: {Message}") — satisfies CA1848 and CA2254
+without losing the forwarded content. Verified end to end (not just unit tests): ran the built
+`NetPrints.Desktop.dll` under a throwaway `Xvfb :171` — it started, `EditorApp.HostServices` was set
+correctly (no `InvalidOperationException`), and Avalonia's own GLX-blacklist warning and layout/binding
+messages appeared on the console with `Avalonia.<Area>` categories through the new sink, confirming the
+whole logging pipeline (not just that it compiles).
+
 ### T019 — `GraphAutoLayout`: which connection counts for a multi-connection pin
 
 data-model.md §2's neighbour rule ("the first connected input pin ... that is already placed") is

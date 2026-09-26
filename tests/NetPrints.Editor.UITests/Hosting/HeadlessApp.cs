@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Reactive.Testing;
 using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.Hosting;
@@ -47,7 +48,7 @@ public sealed class HeadlessApp : IDisposable
         // so under load. Tests that need a refresh advance CodeRefreshScheduler explicitly instead
         // of waiting on the wall clock.
         CodeRefreshScheduler = new TestScheduler();
-        Composition = new EditorComposition(c => c with
+        Composition = new EditorComposition(new EditorHostServices(NullLoggerFactory.Instance), c => c with
         {
             Dialogs = Dialogs,
             Processes = Processes,

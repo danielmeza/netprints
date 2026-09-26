@@ -1,6 +1,7 @@
 using System.Reactive.Concurrency;
 using Avalonia.Controls;
 using CommunityToolkit.Mvvm.Messaging;
+using Microsoft.Extensions.Logging;
 using NetPrints.Editor.Hosting.Avalonia;
 using NetPrints.Editor.Main;
 
@@ -12,8 +13,9 @@ namespace NetPrints.Editor.Hosting;
 /// </summary>
 public sealed class EditorComposition
 {
+    /// <param name="host">Process-wide services created once by the host (desktop, headless tests).</param>
     /// <param name="customize">Optional hook to replace services (used by the headless UI tests).</param>
-    public EditorComposition(Func<EditorContext, EditorContext>? customize = null)
+    public EditorComposition(EditorHostServices host, Func<EditorContext, EditorContext>? customize = null)
     {
         var dispatcher = new AvaloniaUiDispatcher();
         Windows = new WindowService();
@@ -27,7 +29,8 @@ public sealed class EditorComposition
             new ProcessLauncher(),
             DefaultScheduler.Instance,
             DefaultScheduler.Instance,
-            () => new WeakReferenceMessenger());
+            () => new WeakReferenceMessenger(),
+            host.LoggerFactory);
         Context = customize?.Invoke(context) ?? context;
     }
 
@@ -44,7 +47,8 @@ public sealed class EditorComposition
     /// Shows exceptions that escape to the UI thread in the error dialog instead of crashing
     /// (dispose to uninstall).
     /// </summary>
-    public IDisposable InstallUnhandledExceptionHandler() => new UnhandledExceptionHandler(Context.Dialogs, Context.Dispatcher);
+    public IDisposable InstallUnhandledExceptionHandler() =>
+        new UnhandledExceptionHandler(Context.Dialogs, Context.Dispatcher, Context.LoggerFactory.CreateLogger<UnhandledExceptionHandler>());
 
     /// <summary>Creates the main window and its view model.</summary>
     public MainWindow CreateMainWindow()
