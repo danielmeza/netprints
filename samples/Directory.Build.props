@@ -1,0 +1,12 @@
+<!-- In-repo NetPrints.Sdk development mode (project-system.md §2.1): the package is not published
+     during P1, so samples import the generator and its targets directly from the repository instead
+     of a PackageReference. Deliberately does not import the repository root Directory.Build.props:
+     samples are user-style projects, not part of this repo's own build. -->
+<Project>
+  <PropertyGroup>
+    <NetPrintsUseLocalSdk>true</NetPrintsUseLocalSdk>
+    <NetPrintsGeneratorPath>$(MSBuildThisFileDirectory)../src/NetPrints.Generator/bin/$(Configuration)/net10.0/NetPrints.Generator.dll</NetPrintsGeneratorPath>
+  </PropertyGroup>
+
+  <Import Project="../src/NetPrints.Sdk/build/NetPrints.Sdk.props" />
+</Project>

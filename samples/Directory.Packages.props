@@ -1,0 +1,7 @@
+<!-- Samples are user-style projects (project-system.md §2.1): not managed by the repository's own
+     central package management. -->
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+</Project>

@@ -1482,3 +1482,42 @@ does not run on `Build`); `dotnet test tests/NetPrints.Core.Tests -c Release -- 
 green, 276 (unchanged, T045 adds no new test — PS-T01–T04 are T047's, against these same files through
 the in-repo dev mode T046 sets up); `dotnet format NetPrints.slnx --verify-no-changes` clean. No
 `!`/`null!`/`default!` added.
+
+### T046 — `samples/Directory.*`; `LocalSdkLayout`; the "reference with `ReferenceOutputAssembly=false`" step is already covered
+
+`samples/Directory.Build.props`/`.targets`/`Directory.Packages.props` copied from project-system.md
+§2.1 verbatim. `samples/Directory.Packages.props`'s existence is itself what isolates samples from the
+repository's own central package management: NuGet's CPM discovery walks up from a project directory
+and stops at the *first* `Directory.Packages.props` it finds, so `samples/HelloWorld/*.csproj` (added in
+T057) picks up this one, not the repository root's, without needing any `Condition`.
+
+`LocalSdkLayout.Write(string directory)` (`tests/NetPrints.Core.Tests/Projects/LocalSdkLayout.cs`) writes
+the same three files with absolute paths: `NetPrintsGeneratorPath` and the two `<Import Project="…">`
+targets resolve `SampleProjectFactory.FindRepositoryRoot()` once and bake in full paths, since a temp
+directory used by a test (unlike a real sample under `samples/`) has no fixed relationship to the
+repository the relative `../src/...` forms depend on. `NetPrintsGeneratorPath`'s configuration segment
+is *detected*, not hard-coded to `"Release"`: it reads the running test binaries' own
+`bin/<configuration>/net10.0/` output path (`AppContext.BaseDirectory`) so the generator path this
+writes always matches whichever configuration actually built it (this repo's checkpoints run
+`-c Release`, but a contributor running plain `dotnet test` locally gets `Debug` and it still resolves
+correctly).
+
+The task line's last item, "test projects reference `src/NetPrints.Generator` with
+`ReferenceOutputAssembly=false` so it is built first," needs no new reference:
+`NetPrints.Core.Tests.csproj` already references `NetPrints.Generator.csproj` (T044, default
+`ReferenceOutputAssembly=true`) because `GraphCodeGeneratorTests.cs` calls `GraphCodeGenerator`'s C# API
+directly — a stronger reason than build ordering, and one `ReferenceOutputAssembly=false` would break
+(the compile-time reference `GraphCodeGeneratorTests.cs` needs would be gone). A `ProjectReference`
+always builds its target first regardless of `ReferenceOutputAssembly` (that flag only controls whether
+the *output assembly* becomes a compile-time reference, not build order), and MSBuild does not allow a
+second `<ProjectReference>` item at the same project path with different metadata, so the "built first"
+property this line asks for is already satisfied by the one reference that exists; adding another would
+either be rejected or redundant. Noted here so T047/T048 (which rely on `NetPrints.Generator.dll`
+existing under `bin/<Configuration>/net10.0/` before their MSBuild-driven tests run) don't go looking for
+a reference that was never meant to be added twice.
+
+No dedicated test for this task (project-system.md's test table has no id for it); `LocalSdkLayout` is
+exercised for the first time, against a real `dotnet build`, by T047's `SdkTargetsTests.cs`. Verified:
+`dotnet build NetPrints.slnx -c Release` 0 warnings/0 errors; `dotnet test tests/NetPrints.Core.Tests -c
+Release -- --ignore-exit-code 8` green, 276 (unchanged); `dotnet format NetPrints.slnx --verify-no-changes`
+clean. No `!`/`null!`/`default!` added.
