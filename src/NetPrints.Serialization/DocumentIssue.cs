@@ -65,4 +65,13 @@ public sealed record DocumentIssue(DocumentIssueSeverity Severity, string Code, 
     /// document order) was reassigned a fresh id; the document still loaded.
     /// </summary>
     public const string DuplicateIdReassigned = "NPD007";
+
+    /// <summary>
+    /// A graph document could not be read at all: malformed JSON or XML, an unsupported extension, or a
+    /// deserialization failure (<see cref="DocumentFormatException"/>). Unlike the other codes in this
+    /// class, this one is <see cref="DocumentIssueSeverity.Error"/>: the document did not load, and a
+    /// caller that keeps working after skipping it (<c>GraphCodeGenerator</c>, <c>ProjectPersistence</c>)
+    /// reports it as an issue instead of propagating the exception.
+    /// </summary>
+    public const string DocumentUnreadable = "NPD008";
 }

@@ -1348,3 +1348,90 @@ immediately after the run. The four sub-phase A characterization gates
 `GoldenCSharpTests` itself changed under T042 (it now goes through the new importer instead of
 `Project.LoadFromPath`), but the golden files it checks against, and the "translated C# never changes"
 guarantee they encode, did not.
+
+## Phase 4: User Story 1b — build pipeline (P1) (sub-phase D)
+
+### T044 — `GraphCodeGenerator`, `GenerateRequestFile`, `Program.cs` (`generate`); two contract types don't exist yet
+
+project-system.md §3's `GraphCodeGenerator` constructor, `RenderFile` signature and `Program`'s
+`generate`/`convert` split describe the state after **all** of P1, not after T044. Two of its cited
+types are built by tasks that come later than this one, in the phase order tasks.md itself lays out
+(D → E → F → … → I):
+
+- **`ExtensionRegistry`** (the constructor's first parameter) is added in T068 (sub-phase F); the whole
+  `src/NetPrints.Extensibility` project is still empty of code. Building even a minimal stand-in now
+  would mean re-doing it under the real contract (`IClassEmitter`, `ITypeCatalog`, `IProjectProfile`,
+  `TranslationEnvironment`, `NodeDocumentConverterRegistry`, none of which exist either) three sub-phases
+  early, for no test this task needs (PS-T14, the only test that exercises extensions in the generator,
+  is explicitly T074's). **Deviation**: `GraphCodeGenerator`'s constructor takes only
+  `(DocumentFormatRegistry formats, IDocumentMapper mapper)` today. `GenerateRequest.Extensions` (the
+  request's `extension=` lines) is still parsed and carried on the record — the request file format
+  itself does not need to change later — but nothing reads it yet. T065's task line already says
+  "update call sites (generator, editor)" for exactly this reason (`ClassTranslator(TranslationEnvironment)`
+  replacing today's parameterless `ClassTranslator()`); **T068 should add the `ExtensionRegistry`
+  parameter to `GraphCodeGenerator`'s constructor at the same time**, wiring it through to whatever T065
+  ends up needing for extension node translation.
+- **`TranslatedClass`** (`RenderFile`'s parameter type, with a `SourceMap`) is added in T089
+  (`ClassTranslator.Translate`, sub-phase I) — today `ClassTranslator.TranslateClass(ClassGraph)` returns
+  a plain `string`. **Deviation**: `RenderFile(string translatedCode, string graphFileName)` takes the
+  translated code as a `string`. T089 changes this to `RenderFile(TranslatedClass translated, string
+  graphFileName)` (reading `translated.Code`) as part of adding the source map, alongside whatever else
+  in `GraphCodeGenerator` needs a class's `SourceMap` at that point (compilation-and-diagnostics.md §1's
+  `classesByGeneratedPath`).
+
+Both deviations are pure narrowings of the eventual contract (same behavior for the part that already
+exists), not new design, so neither should need rework beyond adding the missing parameter/type once its
+own task lands — flagged here instead of guessed at now so T065/T068/T089 don't have to rediscover it.
+
+`DocumentId` doesn't fit either, for a different reason: it models a path relative to an `IDocumentStore`
+root (document-format.md §2.1: no `..` segments, never rooted), but a `GraphJob`'s `Input`/`Output` are
+full paths from MSBuild (`%(FullPath)`), and PS-T03 requires a graph *outside* the project folder to
+work — making it relative to the project directory would produce a rejected `..` segment for exactly
+that case. `GenerateOneAsync` builds the `DocumentId` passed to `ReadClassAsync`/`FromDocument` from the
+bare file name only (`Path.GetFileName(job.Input)`, always relative and never containing `..`); it is
+used only for format resolution and exception/issue attribution (both documented as such), never as a
+lookup key across jobs, so same-named files in different directories within one request don't collide.
+All diagnostics and canonical error lines use the job's real, full `Input`/`Output` paths instead of the
+`DocumentId`.
+
+A generator-only document-read failure needed a `DocumentIssue`-style code that isn't one of the seven
+already named in document-format.md's table: `NPD001`–`NPD007` are all issues attached to an otherwise
+*successful* load (`DocumentMapper.FromDocument`'s `issues` collection never contains one — every one of
+today's fatal cases throws `DocumentFormatException`/`DocumentVersionException` instead). Minted
+`DocumentIssue.DocumentUnreadable = "NPD008"` (`Error` severity, documented in both `DocumentIssue.cs`
+and document-format.md's table) for exactly this case: `GraphCodeGenerator` catches
+`DocumentFormatException` from `ReadClassAsync`/`FromDocument`, converts it to a `CodeDiagnostic` with
+this code (line/column from the exception's `Line`/`BytePosition` when present, matching
+document-format.md §2.8's "a malformed graph → issue (Error, with line/position)" for `ProjectPersistence`),
+and keeps going — the previous `.g.cs`, if any, is left on disk untouched, per project-system.md §3's
+"a graph with errors keeps its previous `.g.cs`". T056 (`ProjectPersistence.LoadAsync`, DF-T11) should
+reuse the same constant rather than minting another one for the same situation.
+
+`Program.Main`'s canonical-line formatter (`FormatCanonical`) implements the full rule from
+project-system.md §3 (span → `path(line,col)`; no span but a `GraphKey`/`NodeId` → `path: … (graph
+<key>, node <id>)`; neither → bare `path: …`) even though only the bare-path and span branches are
+reachable today (no diagnostic carries a `GraphKey`/`NodeId` until `TranslationException` exists,
+T065) — so T065 only needs to make `ExecutionGraphTranslator`/emitters populate those fields, not touch
+`Program.cs` again.
+
+`Program.cs` implements only the `generate` command; `convert` is added in T054 together with
+`ProjectConverter` (tasks.md already assigns them to the same task). An unrecognized first argument (or
+missing request path) exits `2` with a usage line on stderr, matching the "bad arguments" exit code.
+
+Write path: a small self-contained atomic-write helper (temp file next to the target, `File.Move(...,
+overwrite: true)`, matching `FileSystemDocumentStore.WriteAsync`'s idiom) rather than reusing
+`IDocumentStore`: the generator writes arbitrary absolute paths outside any store root, needs no
+watcher/lock/debounce, and runs once per `dotnet exec` process.
+
+Tests (PS-T06 only; PS-T01–T04 are T047's job against the real MSBuild targets, not built yet):
+`GraphCodeGeneratorTests.cs`. One test converts the HelloWorld legacy fixture to canonical JSON (same
+`ConvertLegacyToJsonAsync` pattern as `RoundTripTests`) into a temp directory, runs `GenerateAsync` twice
+and checks the header, absence of `\r`, a single trailing `\n`, and byte-identical output and `Written
+== false` on the second run; then separately loads the same graph and translates it directly
+(`ClassTranslator().TranslateClass`) to check the file equals `RenderFile` of that translation, literally
+covering "content equals `RenderFile` of the editor translation". A second, pure-function test pins
+`RenderFile`'s header/newline normalization without any I/O. Verified: `dotnet build NetPrints.slnx -c
+Release` 0 warnings/0 errors; `dotnet test tests/NetPrints.Core.Tests -c Release -- --ignore-exit-code 8`
+green, 276 tests (274 → 276, both new); `dotnet format NetPrints.slnx --verify-no-changes` clean. Added
+`ProjectReference` to `NetPrints.Generator` from `NetPrints.Core.Tests.csproj` (its first: no test project
+referenced the generator before this task). No `!`/`null!`/`default!` added.

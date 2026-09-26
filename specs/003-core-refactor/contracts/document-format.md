@@ -307,6 +307,7 @@ Document issue codes (`DocumentIssue.Code`):
 | `NPD005` | Warning | unknown `NetPrintsProfile`; default profile used (extension-points.md §5) |
 | `NPD006` | Warning | project extension not trusted; its nodes preserved but inactive (extension-points.md §8.3) |
 | `NPD007` | Warning | a node id (within its graph) or member id (within its class) was duplicated — a merge, or a hand-edited or copy-pasted file; the later occurrence (document order) was reassigned a fresh id and the document still loaded |
+| `NPD008` | Error | a graph document could not be read at all (malformed content, or a deserialization failure); a caller that keeps working after skipping it reports this instead of propagating the `DocumentFormatException` (added T044, `GraphCodeGenerator`) |
 
 ### 2.2 Formats — `IDocumentFormat.cs`, `DocumentFormatRegistry.cs`
 
