@@ -14,6 +14,7 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Compilation;
 using NetPrints.Core;
+using NetPrints.Projects;
 using NetPrints.Serialization;
 using NetPrints.Translator;
 
@@ -161,6 +162,103 @@ namespace NetPrints.Core
         private Project()
         {
         }
+
+        #region Snapshot-based model (data-model.md §5, T055)
+
+        /// <summary>
+        /// The project's most recently loaded or applied snapshot (project-system.md §4,
+        /// <c>IProjectSystem.LoadAsync</c>/<c>ApplyAsync</c>): <see langword="null"/> for a project
+        /// still constructed through the old <see cref="CreateNew"/>/<see cref="LoadFromPath"/> path
+        /// (removed in T063); always set for one created through <see cref="FromSnapshot"/>.
+        /// <see cref="TargetFramework"/> and <see cref="ProfileId"/> are derived from it and re-raise
+        /// their own change notification whenever it is replaced.
+        /// </summary>
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(TargetFramework))]
+        [NotifyPropertyChangedFor(nameof(ProfileId))]
+        public partial ProjectSnapshot? Snapshot { get; set; }
+
+        /// <summary>Target framework moniker of <see cref="Snapshot"/> (e.g. <c>"net10.0"</c>).</summary>
+        /// <exception cref="InvalidOperationException"><see cref="Snapshot"/> is <see langword="null"/>
+        /// (this project was not created through <see cref="FromSnapshot"/>).</exception>
+        public string TargetFramework => Snapshot?.TargetFramework
+            ?? throw new InvalidOperationException($"'{nameof(Project)}.{nameof(TargetFramework)}' has no value without a snapshot (see {nameof(FromSnapshot)}).");
+
+        /// <summary>Reverse-DNS id of <see cref="Snapshot"/>'s <c>NetPrintsProfile</c>.</summary>
+        /// <exception cref="InvalidOperationException"><see cref="Snapshot"/> is <see langword="null"/>
+        /// (this project was not created through <see cref="FromSnapshot"/>).</exception>
+        public string ProfileId => Snapshot?.ProfileId
+            ?? throw new InvalidOperationException($"'{nameof(Project)}.{nameof(ProfileId)}' has no value without a snapshot (see {nameof(FromSnapshot)}).");
+
+        /// <summary>
+        /// Diagnostics from the project's last build (project-system.md §4,
+        /// <c>IProjectSystem.BuildAsync</c>'s <c>BuildResult.Messages</c> mapped to
+        /// <see cref="CodeDiagnostic"/>), replacing <see cref="LastCompileErrors"/> for the new build
+        /// pipeline. Empty on success or before the first build.
+        /// </summary>
+        [ObservableProperty]
+        public partial ObservableRangeCollection<CodeDiagnostic> LastDiagnostics { get; set; } = new ObservableRangeCollection<CodeDiagnostic>();
+
+        /// <summary>
+        /// Creates a project from <paramref name="snapshot"/> (project-system.md §4):
+        /// <see cref="Name"/>, <see cref="DefaultNamespace"/> (<see cref="ProjectSnapshot.RootNamespace"/>),
+        /// <see cref="OutputBinaryType"/> and <see cref="Path"/>
+        /// (<see cref="ProjectSnapshot.ProjectFilePath"/>) are set from it. <see cref="Classes"/> starts
+        /// empty; the caller adds classes loaded through <c>ProjectPersistence</c> (T056).
+        /// </summary>
+        /// <param name="snapshot">Snapshot to build the project from.</param>
+        /// <returns>The new project.</returns>
+        public static Project FromSnapshot(ProjectSnapshot snapshot)
+        {
+            ArgumentNullException.ThrowIfNull(snapshot);
+
+            return new Project
+            {
+                Snapshot = snapshot,
+                Name = snapshot.Name,
+                DefaultNamespace = snapshot.RootNamespace,
+                OutputBinaryType = snapshot.OutputType,
+                Path = snapshot.ProjectFilePath,
+            };
+        }
+
+        /// <summary>
+        /// Returns the file <paramref name="cls"/> is (or would be) saved to (data-model.md §5): the
+        /// path it was loaded from (<see cref="ClassGraph.LoadedGraphFilePath"/>), or, for a class
+        /// created in memory and never yet saved,
+        /// <c>&lt;project directory&gt;/&lt;cls.FullName&gt;.netpc.json</c>.
+        /// </summary>
+        /// <param name="cls">Class to get the graph file path for.</param>
+        /// <returns>The class's graph file path.</returns>
+        public string GetGraphFilePath(ClassGraph cls)
+        {
+            ArgumentNullException.ThrowIfNull(cls);
+            return cls.LoadedGraphFilePath ?? System.IO.Path.Combine(GetProjectDirectory(Path), $"{cls.FullName}.netpc.json");
+        }
+
+        /// <summary>
+        /// Adds and returns a new, empty class built from <paramref name="profile"/>'s first class
+        /// template (extension-points.md §5), named uniquely ("MyClass", "MyClass2", … — PAR-12) in
+        /// <see cref="DefaultNamespace"/>. Starts dirty (<see cref="ClassGraph.IsDirty"/>): nothing has
+        /// been saved for it yet.
+        /// </summary>
+        /// <param name="profile">Profile whose first class template builds the new class.</param>
+        /// <returns>The newly created class.</returns>
+        public ClassGraph CreateNewClass(IProjectProfile profile)
+        {
+            ArgumentNullException.ThrowIfNull(profile);
+
+            string qualifiedName = NetPrintsUtil.GetUniqueName($"{DefaultNamespace}.MyClass", Classes.Select(c => c.FullName).ToList());
+            string name = qualifiedName.Split('.').Last();
+
+            ClassGraph cls = profile.ClassTemplates[0].Create(this, name);
+            cls.MarkDirty();
+            Classes.Add(cls);
+
+            return cls;
+        }
+
+        #endregion
 
         /// <summary>
         /// The relative file name <paramref name="cls"/> is (or would be) saved under, in the project

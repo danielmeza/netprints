@@ -245,6 +245,14 @@ namespace NetPrints.Core
         /// </summary>
         public void MarkClean() => IsDirty = false;
 
+        /// <summary>
+        /// Full path of the graph file this class was loaded from, or <see langword="null"/> for a
+        /// class created in memory and never yet saved. Set by <c>ProjectPersistence.LoadAsync</c>
+        /// (project-system.md, T056); read by <see cref="Project.GetGraphFilePath"/>. Not serialized.
+        /// </summary>
+        [IgnoreDataMember]
+        public string? LoadedGraphFilePath { get; internal set; }
+
         private static string? GetMemberId(object member) => member switch
         {
             Variable variable => variable.Id,

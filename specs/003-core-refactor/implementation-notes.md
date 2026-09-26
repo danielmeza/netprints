@@ -2043,28 +2043,83 @@ tests were replaced 3-for-4 with `IsValid*` tests); `schemas/netpc.v1.schema.jso
 `dotnet build NetPrints.slnx -c Release` 0 warnings; `dotnet format NetPrints.slnx --verify-no-changes`
 clean.
 
-## Notes for the next batch (T054–T058)
+### T055 — `Project.FromSnapshot`, `Snapshot`, `GetGraphFilePath`, `CreateNewClass(IProjectProfile)`, `LastDiagnostics`
 
-- **T054 (`ProjectConverter`)** can reuse `ProjectFiles.EnsureGitAttributesAsync` (T050) directly, and
-  should reuse `DefaultProjectProfile.ProjectTemplate` for the converted `.csproj` exactly the way
-  `MsBuildProjectSystem.CreateAsync` (T053) does its own placeholder substitution — the substitution
-  logic itself is currently private to `MsBuildProjectSystem`; consider whether it belongs on a shared,
-  public helper (e.g. on `IProjectProfile` or a small static utility in `NetPrints.Core.Projects`) now
-  that a second caller needs it, rather than duplicating the five-placeholder `Replace` chain a third
-  time.
-- **`ProjectSystemOptions.NetPrintsSdkVersion`** (T053's own addition) is the version `ProjectConverter`
-  should also use for the converted project's `NetPrints.Sdk` `PackageReference` — check whether
-  `ProjectConverter`'s constructor (project-system.md §5: `ProjectConverter(LegacyXmlDocumentFormat
-  legacy, JsonDocumentFormat json, IProjectProfile defaultProfile, string netPrintsSdkVersion,
-  ILogger<ProjectConverter> logger)`) already takes its own `netPrintsSdkVersion` parameter directly
-  (it does) — so no dependency on `ProjectSystemOptions` there, but worth keeping the two version strings
-  supplied consistently by whatever composes both types in the editor/CLI.
-- **`MsBuildProjectSystem`'s private placeholder-substitution helper** and **`ExternalProcess`'s "read
-  both streams concurrently" pattern** are both now duplicated or nearly so in more than one place; T054
-  is a natural point to notice if a third occurrence of either shows up and, if so, factor it out then
-  (same reasoning as this task's own `ExternalProcess` extraction).
+Task text names exactly these five members ("next to the old members ... so the solution keeps
+building"), not the rest of data-model.md §5's future shape (`CanCompile`/`CanCompileAndRun`/
+`IsCompiling`/`CompilationMessage`/`LastCompilationSucceeded`/`LastCompileErrors` all already exist,
+tied to the old `CompilationOutput`/`OutputBinaryType` model, and keep their current meaning — they
+cannot be redefined against `Snapshot` without a name collision, so that redefinition waits for T063 to
+delete the old ones first). `Name`/`DefaultNamespace`/`OutputBinaryType`/`Path` also already exist as
+writable `[ObservableProperty]`s from the legacy `[DataContract]` path; `FromSnapshot` just assigns them
+from the snapshot rather than declaring new read-only equivalents (same reasoning: no name collision to
+create).
+
+**`Snapshot` is nullable, not the non-nullable `ProjectSnapshot` data-model.md §5's snippet shows.** A
+project built through the still-live `CreateNew`/`LoadFromPath` path never sets it (and can't: neither
+factory takes a snapshot), so a non-nullable property would either need `null!` at construction (the
+project's own "no null-forgiving" rule) or a fabricated placeholder `ProjectSnapshot` with 15 dummy
+required fields, both worse than modeling the real, temporary state honestly. `TargetFramework`/
+`ProfileId` (the two new members data-model.md §5 lists as coming from the snapshot, alongside the ones
+already covered above) are thin derived properties that throw `InvalidOperationException` — not return
+null — when `Snapshot` is null: they are conceptually always-present data on a real project, so a caller
+reading one on a not-yet-migrated `Project` is a programming error to surface immediately (AGENTS.md
+nullable rules), not a normal empty case to propagate as `null`.
+
+**`GetGraphFilePath` needed a place to remember "the file this class was loaded from," which nothing on
+`ClassGraph` tracked before this task.** Added `ClassGraph.LoadedGraphFilePath` (`string?`,
+`internal set`, `[IgnoreDataMember]`) next to `IsDirty` — unset (null) for every class today, since
+nothing yet loads through the new path (T056); `GetGraphFilePath` therefore always takes the
+`<project dir>/<FullName>.netpc.json` branch in every current caller, and `ProjectPersistence.LoadAsync`
+(T056) is the one real caller that will ever set it, once each loaded class's own file is known.
+
+**`CreateNewClass(IProjectProfile profile)`** reuses the exact uniqueness algorithm the old, no-arg
+`CreateNewClass()` already had (`NetPrintsUtil.GetUniqueName` against existing classes' full names, base
+name literally `"MyClass"`, `.Split('.').Last()` to get the bare name back — same TODO-flagged fragility
+the old method already carried, not fixed here since it is unrelated to this task), but builds the
+`ClassGraph` through `profile.ClassTemplates[0].Create(this, name)` instead of a hand-built `new
+ClassGraph{...}` — the profile's *first* class template is used unconditionally (no template picker
+parameter exists on this overload; `DefaultProjectProfile` only ever has the one, "empty class",
+template). Unlike the old method, this one checks uniqueness only against `Classes` already in memory,
+not against files on disk in the project directory: with the new model there is exactly one file per
+class (no separate metadata files to scan for), and a real on-disk collision is `ProjectPersistence`'s
+problem at save time (T056), not class-creation time.
+
+No `!`/`null!`/`default!` added. `NotificationMapTests`'s golden map picked up one new entry,
+`LastDiagnostics` (a new public settable property) — regenerated with `NETPRINTS_UPDATE_SNAPSHOTS=1`;
+`Snapshot` does not appear in it at all (nullable reference type with no default constructor and no
+`ProjectSnapshot` instance in the `AllNodes` fixture pool, so `TryMakeDifferentValue` skips it — expected,
+not a gap, since the whole point of the test is only properties it *can* safely exercise). Verified:
+`dotnet test tests/NetPrints.Core.Tests -c Release -- --ignore-exit-code 8` green, 309 tests (305 → 309,
++4 `ProjectFromSnapshotTests`); `git diff --exit-code tests/NetPrints.Core.Tests/Fixtures/Golden/` empty;
+`dotnet build NetPrints.slnx -c Release` 0 warnings; `dotnet format NetPrints.slnx --verify-no-changes`
+clean; whole-solution suite on a session-owned `Xvfb :171` (checked `pgrep -af Xvfb` first, nothing
+running) — **540 total, 531 succeeded, 9 skipped** (same Desktop E2E / headless-driver capability skips
+as every previous checkpoint), **0 failed**; Xvfb killed immediately after.
+
+## Notes for the next batch (T056–T058)
+
+- **T056 (`ProjectPersistence.cs`)** is the first real caller of `ClassGraph.LoadedGraphFilePath`
+  (T055): `LoadAsync` should set it (internal setter, same assembly family via `InternalsVisibleTo`) on
+  each class as it loads it from `Snapshot.GraphFiles`, so `GetGraphFilePath` (T055) returns the loaded
+  path instead of falling to the `<FullName>.netpc.json` default — and so a *second* save of an
+  already-loaded class writes back to the same file it came from, not a freshly computed one that may
+  not match (e.g. a file whose name doesn't follow the `<FullName>.netpc.json` convention, or one in a
+  subdirectory). `SaveAsync` should presumably set/refresh it too, for a newly-created class's first
+  save. `EnsureUniqueMemberIds` (data-model.md §2) needs calling before `ToDocument` per class, per the
+  contract in document-format.md §2.8.
+- **`Project.FromSnapshot` leaves `Classes` empty on purpose** (T055's own doc comment says so): T056's
+  `ProjectPersistence.LoadAsync` is what populates it, in "class order = ordinal by file path"
+  (document-format.md §2.8) — `snapshot.GraphFiles` is already ordinal-sorted (project-system.md §4), so
+  this should just be "load each in that order," no extra sort needed.
+- **`CanCompile`/`CanCompileAndRun`/`IsCompiling`/`CompilationMessage`/`LastCompilationSucceeded`/
+  `LastCompileErrors` still have their old, `CompilationOutput`/`OutputBinaryType`-based meaning** (T055
+  note above) — T056/T057/T058 should not need to touch them; whichever task first makes the *new*
+  build pipeline (`IProjectSystem.BuildAsync`, `LastDiagnostics`) the one driving these will run into the
+  same name-collision reasoning T055 hit for `Name`/`Path`/`DefaultNamespace`, and most likely has to
+  wait for T063 too, same as those.
 - **`ReflectionProvider` (T058)** takes `IReadOnlyList<SourceFile>` directly — `SourceFile` already
   exists (pulled forward at T050) and needs no changes for T058 to consume it.
-- Nothing in T054–T058 is blocked on anything left open by this batch; `ExtensionRegistry` (T068) and
+- Nothing in T056–T058 is blocked on anything left open by this batch; `ExtensionRegistry` (T068) and
   `GraphCodeGenerator`'s narrower constructor (T068/T089) remain the only two documented, deliberate
   narrowings still outstanding from earlier sub-phases.
