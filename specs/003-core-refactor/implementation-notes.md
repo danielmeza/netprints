@@ -1584,3 +1584,35 @@ exceeds the pipe buffer.
 Verified: `dotnet build NetPrints.slnx -c Release` 0 warnings/0 errors; `dotnet test tests/NetPrints.Core.Tests
 -c Release -- --ignore-exit-code 8` green, 280 (276 → 280, all four new); `dotnet format NetPrints.slnx
 --verify-no-changes` clean. No `!`/`null!`/`default!` added.
+
+### T048 — `SdkPackageTests.cs` (PS-T05); MinVer is not wired up yet, so `-p:Version=` (not `MinVerVersionOverride`)
+
+release-and-docs.md §1 documents local packs as `-p:MinVerVersionOverride=<version>` ("not `-p:Version`:
+MinVer would still set `PackageVersion`") — but that only applies once `MinVer` is actually a
+`GlobalPackageReference`, which is added in sub-phase L (T109+), not yet. Right now `NetPrints.Sdk.csproj`
+has no versioning package at all, so a plain `-p:Version={TestVersion}` on the `dotnet pack` invocation is
+both correct and the only option today; a comment in the test says so, so nobody "fixes" it to
+`MinVerVersionOverride` before T109 lands (at which point it would silently stop working, since MinVer
+would override `-p:Version`).
+
+Package mode is deliberately the mirror image of T047's in-repo dev mode: no `LocalSdkLayout`, no
+`NetPrintsUseLocalSdk`; the temp project's only connection to the SDK is an ordinary
+`<PackageReference Include="NetPrints.Sdk" Version="…" PrivateAssets="all" />`, exactly the shape a real
+consumer would write (project-system.md §1). Isolation has two independent layers, both required: the temp
+`nuget.config`'s `<clear/>` removes every inherited package source (this machine's, and any user config)
+so restore cannot resolve `NetPrints.Sdk` from anywhere but the just-packed local feed; `NUGET_PACKAGES` is
+overridden to a fresh temp directory (via `ProcessStartInfo.Environment`, which starts as a copy of the
+current process's environment and so overrides cleanly regardless of what the outer test process's own
+environment happens to have) so a stale extracted copy of the exact same test version from a previous
+run — or from a developer's own manual `dotnet pack` spike while working on T045 — can never be what the
+build actually uses. Framework/reference-pack resolution (`Microsoft.NETCore.App.Ref`) is unaffected by
+either: it comes from the SDK's own installed packs, never from a configured NuGet source (confirmed in
+T047's spikes, where a project with zero `PackageReference`s still restored offline).
+
+`Assert.True(exitCode == 0, output)` (rather than `Assert.Equal`) on both the pack and the build step: a
+failure here is a real, exercise-critical MSBuild/NuGet failure a future reader needs the actual log for,
+not just "0 != 1".
+
+Verified: `dotnet build NetPrints.slnx -c Release` 0 warnings/0 errors; `dotnet test tests/NetPrints.Core.Tests
+-c Release -- --ignore-exit-code 8` green, 281 (280 → 281); `dotnet format NetPrints.slnx --verify-no-changes`
+clean. No `!`/`null!`/`default!` added.
