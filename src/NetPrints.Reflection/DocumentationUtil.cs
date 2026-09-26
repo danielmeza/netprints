@@ -8,9 +8,10 @@ using Microsoft.CodeAnalysis;
 namespace NetPrints.Reflection
 {
     /// <summary>
-    /// Reads XML documentation summary/param/returns text for reflected methods from each
-    /// assembly's .xml documentation file (found next to the assembly, or under the framework
-    /// reference-assemblies folder), caching lookups per assembly, method and parameter.
+    /// Reads XML documentation summary/param/returns text for reflected methods from each assembly's
+    /// documentation file, given directly (<see cref="NetPrints.Projects.ResolvedAssembly.DocumentationPath"/>,
+    /// resolved by <c>IProjectSystem.LoadAsync</c>, project-system.md §4) rather than guessed, caching
+    /// lookups per assembly, method and parameter.
     /// </summary>
     public class DocumentationUtil
     {
@@ -27,15 +28,20 @@ namespace NetPrints.Reflection
             new Dictionary<string, string?>();
 
         private readonly Microsoft.CodeAnalysis.Compilation compilation;
+        private readonly IReadOnlyDictionary<string, string> documentationPaths;
 
         /// <summary>
         /// Creates a documentation util resolving assembly documentation files through
-        /// <paramref name="compilation"/>'s metadata references.
+        /// <paramref name="documentationPaths"/>.
         /// </summary>
-        /// <param name="compilation">Compilation to resolve assembly paths through.</param>
-        public DocumentationUtil(Microsoft.CodeAnalysis.Compilation compilation)
+        /// <param name="compilation">Compilation to resolve an assembly symbol's file path through.</param>
+        /// <param name="documentationPaths">Each referenced assembly's file path mapped to its
+        /// documentation file path; an assembly missing from this map, or whose path does not exist,
+        /// has no documentation.</param>
+        public DocumentationUtil(Microsoft.CodeAnalysis.Compilation compilation, IReadOnlyDictionary<string, string> documentationPaths)
         {
             this.compilation = compilation;
+            this.documentationPaths = documentationPaths;
         }
 
         private string? GetAssemblyPath(IAssemblySymbol assembly)
@@ -62,73 +68,37 @@ namespace NetPrints.Reflection
             return key;
         }
 
-        private string? GetAssemblyDocumentationPath(IAssemblySymbol assembly)
-        {
-            string? assemblyPath = GetAssemblyPath(assembly);
-
-            if (assemblyPath != null)
-            {
-                // Try to find the documentation in the framework doc path (Windows only; the
-                // folder does not exist on Linux/macOS, which then simply has no documentation).
-                string programFilesX86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
-                string? docPath = string.IsNullOrEmpty(programFilesX86) ? null : Path.Combine(
-                        programFilesX86,
-                        "Reference Assemblies/Microsoft/Framework/.NETFramework/v4.X",
-                        $"{Path.GetFileNameWithoutExtension(assemblyPath)}.xml");
-
-                // Try to find the documentation in the assembly's path
-                if (docPath == null || !File.Exists(docPath))
-                {
-                    docPath = Path.ChangeExtension(assemblyPath, ".xml");
-                }
-
-                // Try to find the documentation in the current path
-                if (!File.Exists(docPath))
-                {
-                    docPath = $"{Path.GetFileNameWithoutExtension(assemblyPath)}.xml";
-                }
-
-                return docPath;
-            }
-
-            return null;
-        }
-
         private XmlDocument? GetAssemblyDocumentationDocument(IAssemblySymbol assembly)
         {
             string? assemblyPath = GetAssemblyPath(assembly);
-            if (assemblyPath != null)
+            if (assemblyPath == null)
             {
-                string key = Path.GetFileNameWithoutExtension(assemblyPath);
-
-                if (cachedDocuments.ContainsKey(key))
-                {
-                    return cachedDocuments[key];
-                }
-
-                try
-                {
-                    string? docPath = GetAssemblyDocumentationPath(assembly);
-                    if (docPath != null && File.Exists(docPath))
-                    {
-                        XmlDocument doc = new XmlDocument();
-                        using (var stream = File.OpenRead(docPath))
-                        {
-                            doc.Load(stream);
-                        }
-
-                        cachedDocuments[key] = doc;
-
-                        return doc;
-                    }
-                }
-                catch { }
-
-                // Remember that there is no documentation so that the lookup is not repeated.
-                cachedDocuments[key] = null;
+                return null;
             }
 
-            return null;
+            if (cachedDocuments.TryGetValue(assemblyPath, out XmlDocument? cached))
+            {
+                return cached;
+            }
+
+            XmlDocument? doc = null;
+            if (documentationPaths.TryGetValue(assemblyPath, out string? docPath) && File.Exists(docPath))
+            {
+                try
+                {
+                    doc = new XmlDocument();
+                    using var stream = File.OpenRead(docPath);
+                    doc.Load(stream);
+                }
+                catch
+                {
+                    doc = null;
+                }
+            }
+
+            // Cached whether or not documentation was found, so the lookup is not repeated.
+            cachedDocuments[assemblyPath] = doc;
+            return doc;
         }
 
         /// <summary>

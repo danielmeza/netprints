@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
+using NetPrints.Compilation;
 using NetPrints.Core;
+using NetPrints.Projects;
 using NetPrints.Reflection;
 
 namespace NetPrints.Editor.Hosting;
@@ -11,6 +13,8 @@ namespace NetPrints.Editor.Hosting;
 /// </summary>
 public sealed class ReflectionHost : IReflectionHost
 {
+    private static readonly IReadOnlySet<string> NoExcludedAssemblyNames = new HashSet<string>();
+
     private readonly IUiDispatcher dispatcher;
     private readonly ObservableRangeCollection<TypeSpecifier> nonStaticTypes = [];
     private readonly TaskCompletionSource loaded = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -73,13 +77,23 @@ public sealed class ReflectionHost : IReflectionHost
             var warnings = new List<string>(translationWarnings);
             var assemblyPaths = new ReferenceAssemblyResolver()
                 .ResolveAssemblyPaths(references.OfType<AssemblyReference>(), warnings);
+            // T058 moved documentation-path resolution out of ReflectionProvider, onto whatever
+            // resolves its assemblies; a real IProjectSystem does this properly (project-system.md
+            // §4). This pre-T059 path only tries a sibling .xml, the one case the deleted probe
+            // usefully covered outside of Windows .NET Framework packs.
+            var resolvedAssemblies = assemblyPaths
+                .Select(path => new ResolvedAssembly(path, FindSiblingDocumentationPath(path)))
+                .ToList();
 
-            var sourcePaths = new List<string>();
+            var sourceFiles = new List<SourceFile>();
             foreach (var sourceReference in references.OfType<SourceDirectoryReference>())
             {
                 try
                 {
-                    sourcePaths.AddRange(sourceReference.SourceFilePaths);
+                    foreach (string sourcePath in sourceReference.SourceFilePaths)
+                    {
+                        sourceFiles.Add(new SourceFile(sourcePath, File.ReadAllText(sourcePath)));
+                    }
                 }
                 catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
                 {
@@ -87,8 +101,15 @@ public sealed class ReflectionHost : IReflectionHost
                 }
             }
 
+            int generatedIndex = 0;
+            foreach (string generated in sources)
+            {
+                sourceFiles.Add(new SourceFile($"<generated>/{generatedIndex++}.cs", generated));
+            }
+
             cancellationToken.ThrowIfCancellationRequested();
-            IReflectionProvider built = new MemoizedReflectionProvider(new ReflectionProvider(assemblyPaths, sourcePaths, sources));
+            // No type catalog exists yet (extension-points.md §4, T076): nothing is excluded.
+            IReflectionProvider built = new MemoizedReflectionProvider(new ReflectionProvider(resolvedAssemblies, sourceFiles, NoExcludedAssemblyNames));
             var types = built.GetNonStaticTypes().ToList();
 
             // Warm-up (SC-005): Roslyn binds member symbols lazily, and the first enumeration of all
@@ -114,5 +135,17 @@ public sealed class ReflectionHost : IReflectionHost
             loaded.TrySetResult();
             Reloaded?.Invoke(this, EventArgs.Empty);
         }).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// A documentation file next to <paramref name="assemblyPath"/> with the same name and a
+    /// <c>.xml</c> extension, or <see langword="null"/> if there is none.
+    /// </summary>
+    /// <param name="assemblyPath">Path of the assembly to find a sibling documentation file for.</param>
+    /// <returns>The sibling documentation file's path, or <see langword="null"/>.</returns>
+    private static string? FindSiblingDocumentationPath(string assemblyPath)
+    {
+        string candidate = Path.ChangeExtension(assemblyPath, ".xml");
+        return File.Exists(candidate) ? candidate : null;
     }
 }

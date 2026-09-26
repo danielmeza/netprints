@@ -7,7 +7,9 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Emit;
+using NetPrints.Compilation;
 using NetPrints.Core;
+using NetPrints.Projects;
 
 namespace NetPrints.Reflection
 {
@@ -195,6 +197,7 @@ namespace NetPrints.Reflection
         private readonly CSharpCompilation compilation;
         private readonly DocumentationUtil documentationUtil;
         private readonly List<IMethodSymbol> extensionMethods;
+        private readonly IReadOnlySet<string> excludedAssemblyNames;
 
         private static (EmitResult, Stream) CompileInMemory(CSharpCompilation compilation)
         {
@@ -217,43 +220,43 @@ namespace NetPrints.Reflection
         }
 
         /// <summary>
-        /// Creates a ReflectionProvider given paths to assemblies and source files.
+        /// Creates a ReflectionProvider from resolved assemblies and source files.
         /// </summary>
-        /// <param name="assemblyPaths">Paths to assemblies.</param>
-        /// <param name="sourcePaths">Paths to source files.</param>
-        /// <param name="sources">Additional in-memory C# sources to compile alongside <paramref name="sourcePaths"/>.</param>
-        public ReflectionProvider(IEnumerable<string> assemblyPaths, IEnumerable<string> sourcePaths, IEnumerable<string> sources)
+        /// <param name="assemblies">Assemblies to reference, resolved by <c>IProjectSystem.LoadAsync</c>
+        /// (project-system.md §4), each carrying its own documentation file path if one exists. A path
+        /// that does not exist is skipped instead of throwing; callers resolve references with
+        /// <see cref="ReferenceAssemblyResolver"/> or <c>IProjectSystem</c> first (FR-009).</param>
+        /// <param name="sources">C# source files to compile alongside <paramref name="assemblies"/>
+        /// (a project's generated classes and other <c>Compile</c> items).</param>
+        /// <param name="excludedAssemblyNames">Simple names of assemblies (typically ones a type
+        /// catalog already covers, extension-points.md §4) whose types are skipped by every
+        /// enumeration (<see cref="GetNonStaticTypes"/>, the untyped queries of <see cref="GetMethods"/>
+        /// and <see cref="GetVariables"/>); the assemblies stay referenced so user sources still bind
+        /// against their types.</param>
+        public ReflectionProvider(IReadOnlyList<ResolvedAssembly> assemblies, IReadOnlyList<SourceFile> sources, IReadOnlySet<string> excludedAssemblyNames)
         {
-            var compilationOptions = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
+            ArgumentNullException.ThrowIfNull(assemblies);
+            ArgumentNullException.ThrowIfNull(sources);
+            this.excludedAssemblyNames = excludedAssemblyNames ?? throw new ArgumentNullException(nameof(excludedAssemblyNames));
 
-            // Create assembly metadata references. Paths that do not exist are skipped instead of
-            // throwing; callers resolve references with ReferenceAssemblyResolver first (FR-009).
-            var assemblyReferences = assemblyPaths.Where(File.Exists).Select(path =>
+            // Assemblies whose file does not exist are skipped instead of throwing; callers resolve
+            // references with ReferenceAssemblyResolver or IProjectSystem first (FR-009).
+            List<ResolvedAssembly> existingAssemblies = assemblies.Where(a => File.Exists(a.Path)).ToList();
+            var documentationPaths = new Dictionary<string, string>();
+            foreach (ResolvedAssembly assembly in existingAssemblies)
             {
-                DocumentationProvider documentationProvider = DocumentationProvider.Default;
-
-                // Try to find the documentation in the framework doc path
-                string docPath = Path.ChangeExtension(path, ".xml");
-                string programFilesX86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
-                if (!File.Exists(docPath) && !string.IsNullOrEmpty(programFilesX86))
+                if (assembly.DocumentationPath is { } docPath)
                 {
-                    docPath = Path.Combine(
-                        programFilesX86,
-                        "Reference Assemblies/Microsoft/Framework/.NETFramework/v4.X",
-                        $"{Path.GetFileNameWithoutExtension(path)}.xml");
+                    documentationPaths[assembly.Path] = docPath;
                 }
+            }
 
-                if (File.Exists(docPath))
-                {
-                    documentationProvider = XmlDocumentationProvider.CreateFromFile(docPath);
-                }
-
-                return (MetadataReference)MetadataReference.CreateFromFile(path, documentation: documentationProvider);
-            }).ToList();
+            var assemblyReferences = existingAssemblies
+                .Select(a => (MetadataReference)MetadataReference.CreateFromFile(a.Path))
+                .ToList();
 
             // Create syntax trees from sources
-            sources = sources.Concat(sourcePaths.Where(File.Exists).Select(path => File.ReadAllText(path))).Distinct();
-            var syntaxTrees = sources.Select(source => ParseSyntaxTree(source));
+            var syntaxTrees = sources.Select(source => source.Text).Distinct().Select(text => ParseSyntaxTree(text));
 
             compilation = CSharpCompilation.Create("C", syntaxTrees, assemblyReferences, new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
@@ -269,7 +272,7 @@ namespace NetPrints.Reflection
 
             extensionMethods = new List<IMethodSymbol>(GetValidTypes().SelectMany(t => t.GetMethods(memberCache).Where(m => m.IsExtensionMethod)));
 
-            documentationUtil = new DocumentationUtil(compilation);
+            documentationUtil = new DocumentationUtil(compilation, documentationPaths);
         }
 
         /// <summary>
@@ -305,9 +308,18 @@ namespace NetPrints.Reflection
             return types.Concat(namespaceSymbol.GetNamespaceMembers().SelectMany(ns => GetNamespaceTypes(ns)));
         }
 
+        /// <summary>
+        /// Types offered by every enumeration query, excluding the excluded assemblies' (the
+        /// constructor's own doc comment): a specific, already-known type is still resolved by name
+        /// (<see cref="GetValidTypes(string)"/>, via <see cref="GetTypeFromSpecifier(TypeSpecifier)"/>)
+        /// regardless of exclusion, so its members bind correctly even when it does not show up in a
+        /// search.
+        /// </summary>
         private IEnumerable<INamedTypeSymbol> GetValidTypes()
         {
-            return compilation.SourceModule.ReferencedAssemblySymbols.SelectMany(module => GetNamespaceTypes(module.GlobalNamespace))
+            return compilation.SourceModule.ReferencedAssemblySymbols
+                .Where(module => !excludedAssemblyNames.Contains(module.Name))
+                .SelectMany(module => GetNamespaceTypes(module.GlobalNamespace))
                 .Concat(GetSyntaxTreeTypes());
         }
 
