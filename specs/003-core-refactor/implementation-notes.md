@@ -1005,3 +1005,29 @@ values) in `tests/NetPrints.Core.Tests/Serialization/LegacyProjectTests.cs`; `Le
 (DF-T18 legacy part: both fixtures' `.netpc` import through `ReadClassAsync` and then round-trip through
 `DocumentMapper.FromDocument` with zero issues; importing the same fixture twice gives
 `JsonNode.DeepEquals`-identical documents) in `.../LegacyXmlDocumentFormatTests.cs`.
+
+### T039 — `DocumentFormatRegistry.cs`
+
+Mechanical, per document-format.md §2.2/§2.6. One judgment call the contract's own "Find" row does not
+spell out: `Find(DocumentId, DocumentKind)` takes a `kind`, but `IDocumentFormat` has no property saying
+which `DocumentKind` it handles, and `ProjectDocument`/the `.netpp.json` file are already "(removed)"
+(§1.3) — every registered format in P1 only ever claims `.netpc`/`.netpc.json`-style *class* extensions.
+Read `Find` as: only `DocumentKind.Class` is resolved through this registry at all (returns `null`
+immediately for `DocumentKind.Project`); project files are `IProjectSystem`'s job (project-system.md),
+not this registry's, so there is nothing for a `Project`-kind lookup to ever match. `kind` stays a real
+parameter (not removed) because the contract's `IDocumentFormat.ReadClassAsync`/`WriteClassAsync` and
+`ProjectPersistence.LoadAsync` (§2.8) both frame this as "class" documents specifically, and a future
+document kind could add its own extension list without changing this signature.
+
+The "exactly one `json` format" ctor check and the "duplicate `Id`" check both run in P1, but never
+together on the same failure: two formats sharing `Id == "json"` already throws on the duplicate-id
+check (which runs first, in the same loop as the duplicate-extension check), so the "more than one
+json-id format" half of the later `jsonFormats.Length != 1` check is presently unreachable — only its
+"zero json formats" half is. Both halves are still worth keeping: they document the invariant
+literally, and "duplicate id" stops being the only way to end up with two `json`s if `Id` is ever
+compared case-insensitively or similar in a future change.
+
+Test coverage (`tests/NetPrints.Core.Tests/Serialization/DocumentFormatRegistryTests.cs`, DF-T16): a
+duplicate `Id` throws, a duplicate extension throws, a missing `json` format throws, `Default` returns
+the registered `json` format, `Find` prefers `.netpc.json` over `.netpc` for a name ending in both, and
+`Find` returns `null` for an unmatched extension or a `Project`-kind lookup.
