@@ -157,6 +157,28 @@ node-specific invariant — established in that node's own constructor and never
 guarantees it is set. No flow attribute expresses "null only until this specific constructor runs on
 this specific pin," so `!` with a comment is the sanctioned choice for these.
 
+### T017 — `TypeGraph` needs a non-serialized back-reference to its class
+
+Extending T016's finding: `GraphKeys.For(NodeGraph)` needs to find a variable's type graph's owning
+class to key it `<variableId>/type` (document-format.md §1.4.1), but nothing before this task ever
+sets `NodeGraph.Class` (the inherited, `[DataMember]` property) on a `Variable.TypeGraph` — unlike
+method/constructor graphs, which the editor and `AllNodesFixtureFactory` already set `.Class` on
+today. Setting it (`TypeGraph = new TypeGraph { Class = cls }` in `Variable`'s constructor) was the
+first attempt; it broke `AllNodesFixtureRegenerationTests.FactoryMatchesCheckedInFixture` the same
+way T016's literal `[DataMember] Id` did, because `Class` is a real, already-serialized DataContract
+member and every variable's type graph in the checked-in `AllNodes.netpp`/`.netpc` fixture had always
+serialized it as absent.
+
+Choice: a second, `[IgnoreDataMember]` property on `TypeGraph`, `OwningClass`, set by `Variable`'s
+constructor and `[OnDeserialized]` hook, distinct from the inherited `Class`. `GraphKeys.For` uses
+`OwningClass` for a `TypeGraph` and the inherited `Class` for everything else (which already carries
+real values in existing code paths, so no fixture is affected). Verified: full `Core.Tests` suite
+green both before and after (65/65, up from 59 after T016), including both fixture-regeneration
+tests. General lesson carried into T021+: any new in-memory-only navigation this project needs on a
+`[DataContract]` graph-side type must be a distinct, `[IgnoreDataMember]`-marked member — never reuse
+or repurpose an existing `[DataMember]` property for it, even when the existing property's static
+type already fits, because doing so silently changes what legacy XML serializes.
+
 **Regression found and fixed by the full test suite, not by the build**: the *first* attempt at
 removing `MethodGraph!.` in `ReturnNode.cs`/`MethodEntryNode.cs` (see "Current Work" above) cached the
 containing `MethodGraph` in a `private readonly MethodGraph methodGraph;` field set from the

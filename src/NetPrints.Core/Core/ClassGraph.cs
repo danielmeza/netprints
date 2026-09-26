@@ -215,5 +215,135 @@ namespace NetPrints.Core
         {
             _ = new ClassReturnNode(this);
         }
+
+        /// <summary>
+        /// This class's members that carry their own member id (data-model.md §2):
+        /// <see cref="Variables"/>, then <see cref="Methods"/>, then <see cref="Constructors"/>, in
+        /// that order. Each element is a <see cref="Variable"/>, <see cref="MethodGraph"/> or
+        /// <see cref="ConstructorGraph"/>.
+        /// </summary>
+        public IEnumerable<object> Members
+        {
+            get => Variables.Cast<object>().Concat(Methods).Concat(Constructors);
+        }
+
+        /// <summary>
+        /// Whether this class has unsaved changes: set by <see cref="MarkDirty"/> (a user edit, or a
+        /// class newly created in memory), cleared by <see cref="MarkClean"/> (after a successful
+        /// save or a fresh load). Not serialized; not observable in P1 (dirty-state UX is P3a).
+        /// </summary>
+        [IgnoreDataMember]
+        public bool IsDirty { get; private set; }
+
+        /// <summary>
+        /// Marks this class dirty (it will be saved next time the project is saved).
+        /// </summary>
+        public void MarkDirty() => IsDirty = true;
+
+        /// <summary>
+        /// Marks this class clean (nothing to save).
+        /// </summary>
+        public void MarkClean() => IsDirty = false;
+
+        private static string? GetMemberId(object member) => member switch
+        {
+            Variable variable => variable.Id,
+            MethodGraph method => method.Id,
+            ConstructorGraph constructor => constructor.Id,
+            _ => throw new InvalidOperationException($"Unknown member type '{member.GetType()}'."),
+        };
+
+        private static void SetMemberId(object member, string id)
+        {
+            switch (member)
+            {
+                case Variable variable:
+                    variable.Id = id;
+                    break;
+                case MethodGraph method:
+                    method.Id = id;
+                    break;
+                case ConstructorGraph constructor:
+                    constructor.Id = id;
+                    break;
+                default:
+                    throw new InvalidOperationException($"Unknown member type '{member.GetType()}'.");
+            }
+        }
+
+        private static string AllocateUniqueMemberId(ICollection<string> existingIds)
+        {
+            const int maxAttempts = 100;
+
+            for (int attempt = 0; attempt < maxAttempts; attempt++)
+            {
+                string candidate = IdGeneration.Current.NewId('m');
+                if (!existingIds.Contains(candidate))
+                {
+                    return candidate;
+                }
+            }
+
+            throw new InvalidOperationException($"Could not allocate a unique member id in {maxAttempts} attempts.");
+        }
+
+        /// <summary>
+        /// Gives every member of <see cref="Members"/> a unique id: a later duplicate (in member
+        /// order) is assigned a fresh, unused id. A collision of two randomly-allocated ids is
+        /// improbable but not impossible (data-model.md §2); callers run this before mapping a class
+        /// to a document.
+        /// </summary>
+        /// <returns><see langword="true"/> if any member's id was changed.</returns>
+        public bool EnsureUniqueMemberIds()
+        {
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            bool changed = false;
+
+            foreach (object member in Members)
+            {
+                string? id = GetMemberId(member);
+                if (id is not null && seen.Add(id))
+                {
+                    continue;
+                }
+
+                string newId = AllocateUniqueMemberId(seen);
+                SetMemberId(member, newId);
+                seen.Add(newId);
+                changed = true;
+            }
+
+            return changed;
+        }
+
+        /// <summary>
+        /// Assigns every member of <see cref="Members"/> a member id, deterministically seeded from
+        /// this class's <see cref="FullName"/> (<see cref="StableIds.SeedFor"/>), for a legacy class
+        /// whose members had no ids of their own. Converting the same legacy class twice gives the
+        /// same ids. Only valid immediately after
+        /// <see cref="System.Runtime.Serialization.DataContractSerializer"/> deserialization, before
+        /// anything reads a member's id.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">A member of this class already has an id.</exception>
+        public void AssignLegacyMemberIds()
+        {
+            foreach (object member in Members)
+            {
+                if (GetMemberId(member) is not null)
+                {
+                    throw new InvalidOperationException("A member of this class already has an id.");
+                }
+            }
+
+            using var scope = IdGeneration.Use(new SeededIdGenerator(StableIds.SeedFor(FullName)));
+            var assigned = new HashSet<string>(StringComparer.Ordinal);
+
+            foreach (object member in Members)
+            {
+                string id = AllocateUniqueMemberId(assigned);
+                SetMemberId(member, id);
+                assigned.Add(id);
+            }
+        }
     }
 }

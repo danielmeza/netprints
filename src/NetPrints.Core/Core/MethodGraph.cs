@@ -151,11 +151,21 @@ namespace NetPrints.Core
         }
 
         /// <summary>
+        /// This method's member id (data-model.md §2), used as its graph key. Assigned once, in the
+        /// constructor, from <see cref="IdGeneration.Current"/>; the mapper overwrites it from the
+        /// document, and legacy import assigns it via <see cref="ClassGraph.AssignLegacyMemberIds"/>
+        /// (<see cref="System.Runtime.Serialization.DataContractSerializer"/> skips constructors, so
+        /// it stays <see langword="null"/> until then). Not <c>[DataMember]</c>.
+        /// </summary>
+        public string Id { get; internal set; }
+
+        /// <summary>
         /// Creates a method given its name.
         /// </summary>
         /// <param name="name">Name for the method.</param>
         public MethodGraph(string name)
         {
+            Id = IdGeneration.Current.NewId('m');
             Name = name;
             EntryNode = new MethodEntryNode(this);
             new ReturnNode(this);

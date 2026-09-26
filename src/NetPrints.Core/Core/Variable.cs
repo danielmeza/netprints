@@ -213,6 +213,16 @@ namespace NetPrints.Core
         }
 
         /// <summary>
+        /// This variable's member id (data-model.md §2), used as its type graph's and accessors' graph
+        /// keys (<c>&lt;Id&gt;/type</c>, <c>/get</c>, <c>/set</c>). Assigned once, in the constructor,
+        /// from <see cref="IdGeneration.Current"/>; the mapper overwrites it from the document, and
+        /// legacy import assigns it via <see cref="ClassGraph.AssignLegacyMemberIds"/>
+        /// (<see cref="System.Runtime.Serialization.DataContractSerializer"/> skips constructors, so
+        /// it stays <see langword="null"/> until then). Not <c>[DataMember]</c>.
+        /// </summary>
+        public string Id { get; internal set; }
+
+        /// <summary>
         /// Creates a PropertySpecifier.
         /// </summary>
         /// <param name="cls">Graph the variable is a part of.</param>
@@ -224,14 +234,16 @@ namespace NetPrints.Core
         public Variable(ClassGraph cls, string name, TypeSpecifier type, MethodGraph? getter,
             MethodGraph? setter, VariableModifiers modifiers)
         {
+            Id = IdGeneration.Current.NewId('m');
             Class = cls;
             Name = name;
             GetterMethod = getter;
             SetterMethod = setter;
             Modifiers = modifiers;
 
-            // Create a type graph with the type as its return type.
-            TypeGraph = new TypeGraph();
+            // Create a type graph with the type as its return type. OwningClass (not the serialized
+            // Class) lets GraphKeys.For key it as "<variable id>/type" (document-format.md §1.4.1).
+            TypeGraph = new TypeGraph { OwningClass = cls };
             NodeOutputTypePin typePin = GraphUtil.CreateNestedTypeNode(TypeGraph, type, 500, 300).OutputTypePins[0];
             TypeGraph.ReturnNode.PositionX = 800;
             TypeGraph.ReturnNode.PositionY = 300;
@@ -243,7 +255,7 @@ namespace NetPrints.Core
         {
             if (TypeGraph is null)
             {
-                TypeGraph = new TypeGraph();
+                TypeGraph = new TypeGraph { OwningClass = Class };
             }
         }
     }
