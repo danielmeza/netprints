@@ -14,6 +14,10 @@
 > **Revision 2026-09-25 (owner-approved release and docs research):** §7 (R18, R19) folds
 > `docs/research/2026-09-25-release-and-docs/` into sub-phase L. It changes the `$schema` URL of R17 and
 > drops the version from the generated-file header (project-system.md §3); nothing else above changes.
+>
+> **Revision 2026-09-25 (owner decision): Snowflake-style ids.** §8 (R20) replaces R17's random-30-bit
+> id value and "duplicate → `DocumentFormatException`" rule with a monotonic 63-bit value and load-time
+> duplicate repair. R17's alphabet, prefix, graph-key and pin-key decisions are unchanged.
 
 Owner rule for this phase: **reuse, don't reinvent**. §1 lists every decision taken from existing
 sources. §2 records the research done only for questions those sources left open. Spikes ran on Linux
@@ -407,7 +411,7 @@ Details the research left open, decided here:
 
 | Question | Decision |
 |---|---|
-| Id alphabet and length | `n`/`m` + 6 characters of lowercase Crockford base32 (`0123456789abcdefghjkmnpqrstvwxyz`), about 30 bits; uniqueness checked in the graph (nodes) or class (members) |
+| Id alphabet and length | `n`/`m` + 6 characters of lowercase Crockford base32 (`0123456789abcdefghjkmnpqrstvwxyz`), about 30 bits; uniqueness checked in the graph (nodes) or class (members) (revised by R19: Snowflake ids, no allocation-time check) |
 | How node constructors get a generator | Ambient `IdGeneration.Current` (`AsyncLocal`, default `Random.Shared`), scoped with `IdGeneration.Use` in tests; no constructor changes |
 | Legacy member ids | Deterministic: `SeededIdGenerator(FNV-1a-32(class full name))`, variables, then methods, then constructors. Nodes stay `n<index>` |
 | Accessor graphs | No id of their own; keys `<variableId>/get`, `/set`, `/type` |
@@ -419,7 +423,7 @@ Details the research left open, decided here:
 | String escaping | `JavaScriptEncoder.UnsafeRelaxedJsonEscaping` (readable generic names and non-ASCII text) |
 | `$schema` value | `https://danielmeza.github.io/netprints/schemas/netpc.v1.schema.json` (revised by R18: the GitHub Pages site publishes `schemas/` under `/schemas/`; previously a `raw.githubusercontent.com` URL); ignored on read |
 | Unknown properties on read | Ignored; dropped on the next save of that class |
-| Missing or duplicate ids on read | `DocumentFormatException` (nodes and members alike) |
+| Missing or duplicate ids on read | `DocumentFormatException` (nodes and members alike) (revised by R19: missing still throws; duplicate is repaired — the later occurrence gets a fresh id and an `NPD007` warning — instead of failing the whole load) |
 | Dirty tracking | Explicit `ClassGraph.IsDirty`, set by the editor on every undoable command, node move and inspector edit; `SaveAsync` maps and writes only dirty classes, so no ripple saves (research §5.2 rule 12) |
 | Missing layout / NPD codes | New issue codes `NPD003` (pin state dropped) and `NPD004` (layout entry ignored) |
 | `.gitattributes` | Per project folder, two `eol=lf` lines, created or appended by `CreateAsync` and `ProjectConverter`; no `linguist-generated`, so `.netpc.g.cs` diffs stay visible in PRs |
@@ -503,4 +507,54 @@ registration, evaluation, `MSBuildWorkspace` references, in-process Roslyn analy
 
 **Packages** (additions to `Directory.Packages.props`): `MinVer` 8.0.0 (`GlobalPackageReference`). Tools:
 `docfx` 2.81.0 (local tool). Node packages: `website/package.json` (Docusaurus 3.10.2, React 19.3).
+
+## 8. Revision: Snowflake ids (research R20)
+
+### R20. Node/member id format: Snowflake-style ids replace random Crockford32 (owner decision 2026-09-25)
+
+**Decision**: the id *value* is a 63-bit non-negative `long` — 41 bits of milliseconds since
+`2026-01-01T00:00:00Z`, 16 bits of session id, 6 bits of per-millisecond sequence — generated
+monotonically per `IIdGenerator` instance (ULID-style: a sequence overflow or a clock that reads at or
+before the last-used time advances a logical millisecond instead of reusing or going back). The text
+form is unchanged in shape (a one-character prefix, `IdFormat.Alphabet`) but longer: 13 digits instead
+of 6, zero-padded so string order equals numeric order — 14 characters total, `IdFormat.Pattern`
+(`^[nm][0-9a-hjkmnp-tv-z]{13}$`). Normative text: data-model.md §2 (full rationale), contracts/document-format.md
+§1.4.1, §2.6, §6. Implemented in tasks.md T040a–T040c, between T040 and T041.
+
+**Rationale**: a random 30-bit id (the original R17 choice) already made an allocation-time collision
+astronomically unlikely, so this is not a correctness fix; it is a size/ordering upgrade the owner asked
+for once ids might also need to work as a database key: sortable (string order and numeric order agree,
+so ids sort correctly in a directory listing, `git log`, or a SQL `ORDER BY` without a separate sequence
+column), fits a bigint column directly (no encoding round trip), and remains unique by construction (a
+real clock plus a per-instance session make a same-millisecond, same-sequence collision across two
+generator instances need both to share a session, which does not happen by default). Because it stays
+unique by construction, `NodeGraph.AllocateNodeId` drops the retry loop entirely (T040b) — the loop
+existed only to guard against the vanishingly small chance a 30-bit random draw repeats, and a
+monotonic 63-bit value removes even that.
+
+**Alternatives considered**: keeping the 30-bit random id (rejected — the owner specifically wants
+sortability and a bigint-sized value, neither of which a random id gives); a UUID/GUID (rejected — 128
+bits is more than the owner asked for and is not sortable without a variant like UUIDv7, which is
+strictly more complex than a purpose-built Snowflake for a single-process, single-repository id space);
+a plain incrementing counter (rejected — the entire point of R17 was to remove sequential/positional
+ids as a merge hazard, §5.2 hazard 1; a counter reintroduces exactly that).
+
+**Constraint found**: the id format's own "accepted on read" rule (document-format.md §1.4.1) — any
+non-empty string without `/` or whitespace — already permits ids that don't match the *creation* shape,
+which legacy-imported node ids (`AssignLegacyNodeIds`'s `n0`, `n1`, …) rely on and keep forever once
+converted to v1 JSON. `IdFormat.Pattern` describes only what a freshly generated id looks like; T041's
+JSON Schema must not turn it into a read-time `pattern` constraint on `id` fields, or it would reject
+already-shipped, legitimately-imported documents (document-format.md §6, flagged there for T041).
+
+**Load-time duplicate ids**: R17's original "duplicate → `DocumentFormatException`" (research.md §6
+table) is also revised: a merge or a hand-edited/copy-pasted file can still produce two nodes (in one
+graph) or two members (in one class) sharing an id even with Snowflake ids. Failing the whole load over
+one duplicate is worse than necessary now that repairing it is cheap and safe: the later occurrence
+(document order) is reassigned a fresh id (`StableIds.AllocateUnique`, a bounded retry against the ids
+already seen in *this* document — the one place a search is still correct, since the generator cannot
+know about ids it did not itself allocate) and reported as a `DocumentIssue.DuplicateIdReassigned`
+(`NPD007`) warning instead. A duplicate's own connections and layout entries that reference the
+now-stale (shared) id text resolve to whichever occurrence still holds that text (the first one seen,
+deterministically) — an accepted, documented limitation (implementation-notes.md, this task group's
+entry) rather than an attempt to reconstruct ambiguous merge intent from id text alone.
 

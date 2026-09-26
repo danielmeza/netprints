@@ -50,7 +50,27 @@ Rules:
 ## 2. Identity, graph keys, pin keys, layout and dirty state
 
 Graph-format research (`docs/research/2026-09-25-graph-format/` §5.2, owner-approved; research.md R17).
-File-level rules are in document-format.md §1.4.1–§1.4.2.
+File-level rules are in document-format.md §1.4.1–§1.4.2. Id format revised 2026-09-25 (owner decision):
+Snowflake-style ids replace the original random-6-character scheme, implemented in T040a–T040c.
+
+Id value: a 63-bit non-negative `long`, packed most-significant-first as 41 bits of milliseconds since
+`SnowflakeIdGenerator.Epoch` (2026-01-01T00:00:00Z) | 16 bits of session id | 6 bits of per-millisecond
+sequence. A generator is monotonic per instance, like ULID's monotonic mode: if the sequence would
+overflow (more than 64 ids requested in the same millisecond) or the clock reads a time at or before
+the last one used, a logical millisecond is advanced instead — an id is never reused and the sequence
+never goes backwards. Text form (`IdFormat`): a one-character prefix (`n` node, `m` member) followed by
+the value encoded as 13 lowercase Crockford base32 digits (alphabet
+`0123456789abcdefghjkmnpqrstvwxyz`), most-significant digit first, zero-padded, so ordinal string order
+equals numeric value order; 14 characters total. `IdFormat.Pattern` (`^[nm][0-9a-hjkmnp-tv-z]{13}$`) is
+the single source of this shape: the DataContract-adjacent validators and the generated JSON Schema
+(T041) both read it from there instead of duplicating the regular expression. Parsing
+(`IdFormat.TryParse`) is case-insensitive and also accepts Crockford's own transcription aliases in the
+value digits (`i`/`I`/`l`/`L` → 1, `o`/`O` → 0); the prefix itself must still be `n` or `m`. Rationale:
+sortable (string and numeric order agree, so ids sort correctly in a directory listing, a `git log`, or
+a SQL `ORDER BY`), fit a database bigint column without a lossy or oversized alternate representation,
+unique by construction (a real clock and a per-instance session make a same-millisecond collision
+require both the same session *and* the same sequence, which one generator instance never produces),
+and — because they are unique by construction — allocation never needs an uniqueness search.
 
 `src/NetPrints.Core/Core/Ids.cs`:
 
@@ -59,17 +79,33 @@ namespace NetPrints.Core;
 
 public interface IIdGenerator
 {
-    string NewId(char prefix);                                 // prefix + 6 chars of "0123456789abcdefghjkmnpqrstvwxyz"
+    string NewId(char prefix);                                 // prefix + IdFormat's 13-digit encoding of a fresh value
 }
 
-public sealed class RandomIdGenerator : IIdGenerator            // Random.Shared; thread-safe
+public static class IdFormat
+{
+    public const string Alphabet = "0123456789abcdefghjkmnpqrstvwxyz";
+    public const int ValueDigits = 13;
+    public const string Pattern = "^[nm][0-9a-hjkmnp-tv-z]{13}$"; // the schema regex (T041) reads this
+    public static string Format(char prefix, long value);        // throws ArgumentOutOfRangeException if value < 0
+    public static bool TryParse(ReadOnlySpan<char> text, out char prefix, out long value); // case-insensitive; i/l->1, o->0
+}
+
+public sealed class SnowflakeIdGenerator : IIdGenerator         // the engine; thread-safe (internal lock)
+{
+    public static readonly DateTimeOffset Epoch;                // 2026-01-01T00:00:00Z
+    public SnowflakeIdGenerator(TimeProvider timeProvider);      // random 16-bit session, chosen once per instance
+    public SnowflakeIdGenerator(TimeProvider timeProvider, ushort sessionId);
+}
+
+public sealed class RandomIdGenerator : IIdGenerator            // SnowflakeIdGenerator(TimeProvider.System); one shared instance
 {
     public static RandomIdGenerator Instance { get; }
 }
 
-public sealed class SeededIdGenerator : IIdGenerator            // new Random(seed); not thread-safe; tests and legacy import
+public sealed class SeededIdGenerator : IIdGenerator            // SnowflakeIdGenerator(fixed clock at Epoch, session derived from seed)
 {
-    public SeededIdGenerator(int seed);
+    public SeededIdGenerator(int seed);                         // deterministic: same seed -> same id sequence; tests and legacy import
 }
 
 public static class IdGeneration
@@ -81,7 +117,8 @@ public static class IdGeneration
 public static class StableIds
 {
     public static int SeedFor(string text);                    // FNV-1a 32-bit over UTF-8 (offset 2166136261, prime 16777619), cast to int
-    public static bool IsValidDocumentId(string? id);          // non-empty, no '/', no whitespace
+    public static bool IsValidDocumentId(string? id);          // non-empty, no '/', no whitespace (looser than IdFormat.Pattern: also accepts legacy "n0" ids)
+    public static string AllocateUnique(char prefix, ICollection<string> existingIds); // retried allocation against a concrete, finite id set (load-time duplicate repair, ClassGraph.EnsureUniqueMemberIds); ordinary allocation (below) never retries
 }
 ```
 
@@ -114,11 +151,14 @@ public static class GraphAutoLayout                            // src/NetPrints.
 namespace NetPrints.Core;
 public abstract class NodeGraph
 {
-    public string AllocateNodeId();                            // IdGeneration.Current.NewId('n') until FindNode(id) == null; InvalidOperationException after 100 tries
-    public Node? FindNode(string id);
+    public string AllocateNodeId();                            // IdGeneration.Current.NewId('n'); not retried — the generator guarantees uniqueness
+    public Node? FindNode(string id);                          // O(1): an id -> node Dictionary index, [IgnoreDataMember], built lazily (§3.1)
     public void AssignLegacyNodeIds();                         // sets Id = "n<index>" for every node (legacy import only); InvalidOperationException if any Id is already set
     [IgnoreDataMember] public object? PreservedDocumentState { get; set; } // owned by NetPrints.Serialization (unknown nodes); opaque to Core
 }
+// internal ReindexNode(Node, string? previousId) keeps the index current whenever code sets Node.Id
+// after the node was added (the mapper's document-id overwrite, AssignLegacyNodeIds, duplicate-id
+// repair, document-format.md §2.6); a no-op before the index has been built (FindNode not yet called).
 
 // Member ids ("m" + 6 chars): MethodGraph.Id, ConstructorGraph.Id, Variable.Id, EventGraph.Id (§4),
 // each { get; internal set; }, not [DataMember], assigned in the constructor from IdGeneration.Current.NewId('m').
@@ -138,8 +178,8 @@ public static class GraphKeys { public static string For(NodeGraph graph); publi
 
 | Rule | Contract |
 |---|---|
-| Node ids | `Node` constructors call `graph.AllocateNodeId()` **before** `Graph.Nodes.Add(this)`; the mapper overwrites `Id` from the document; legacy import calls `AssignLegacyNodeIds`. An undo that re-adds a removed node re-adds the same instance, so it keeps its id. |
-| Member ids | Assigned in the constructors (random, from `IdGeneration.Current`); the mapper overwrites them from the document; legacy import calls `AssignLegacyMemberIds` (DataContract skips constructors, so the ids are null until then). `ProjectPersistence.SaveAsync` calls `EnsureUniqueMemberIds` before mapping (a collision of two random ids is improbable, not impossible). |
+| Node ids | `Node` constructors call `graph.AllocateNodeId()` **before** `Graph.Nodes.Add(this)`; the mapper overwrites `Id` from the document (or a freshly repaired id, document-format.md §2.6) and calls `graph.ReindexNode`; legacy import calls `AssignLegacyNodeIds`. An undo that re-adds a removed node re-adds the same instance, so it keeps its id. A document with two nodes sharing an id does not fail the load: the later one (document order) is reassigned a fresh id and reported as a `DocumentIssue.DuplicateIdReassigned` warning. |
+| Member ids | Assigned in the constructors (from `IdGeneration.Current`); the mapper overwrites them from the document (or a freshly repaired id, same as node ids); legacy import calls `AssignLegacyMemberIds` (DataContract skips constructors, so the ids are null until then). `ProjectPersistence.SaveAsync` calls `EnsureUniqueMemberIds` before mapping (a collision from two independently-created generator instances is improbable, not impossible). |
 | Graph keys | `For`: `class` for the class graph; `<memberId>` for a method, constructor or event graph; `<variableId>/type`, `/get`, `/set` for a variable's graphs; `InvalidOperationException` if the graph is not attached to a class. `Resolve` is the inverse; `null` for an unknown key. |
 | Pin keys | `PinKeys.For` and `Find` implement document-format.md §1.4.2 from `Node.GetPinKeyName`; the translator does not use them. |
 | Auto-placement | `PlaceUnpositioned` processes `unpositioned` in graph node order. Neighbour = the node on the other end of the first connected input pin (exec, then data, then type, each in collection order) that is already placed → candidate `(neighbour.X + ColumnSpacing, neighbour.Y)`; else the first connected output pin's placed neighbour → `(neighbour.X − ColumnSpacing, neighbour.Y)`; else the fallback column `(maxX + ColumnSpacing, minY + k × RowSpacing)`, where `maxX`/`minY` are computed once, before the call, over the nodes that already had positions (`(0, k × RowSpacing)` if there are none) and `k` = 0, 1, … counts the nodes placed in the fallback column. While a placed node lies within `CollisionWidth` × `CollisionHeight` of the candidate (`|dx| < 200 && |dy| < 100`), add `RowSpacing` to its Y. A node placed by this call counts as placed (as a neighbour and for collisions) for the nodes after it. Deterministic. |
