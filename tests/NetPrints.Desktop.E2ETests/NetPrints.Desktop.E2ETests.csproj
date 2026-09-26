@@ -38,5 +38,7 @@
 
   <ItemGroup>
     <None Include="../../samples/**" CopyToOutputDirectory="PreserveNewest" LinkBase="samples" />
+    <!-- The editor still opens .netpp/.netpc (T059/T062a switches it to samples/HelloWorld/HelloWorld.csproj). -->
+    <None Include="../NetPrints.Core.Tests/Fixtures/Legacy/HelloWorld/**" CopyToOutputDirectory="PreserveNewest" LinkBase="legacy-helloworld" />
   </ItemGroup>
 </Project>

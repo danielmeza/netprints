@@ -175,12 +175,15 @@ public sealed class QueuedFilePicker : IFilePickerService, IFileDialogs
     }
 }
 
-/// <summary>Copies the checked-in HelloWorld sample to a temporary folder.</summary>
+/// <summary>
+/// Copies the legacy HelloWorld fixture to a temporary folder. The editor still opens <c>.netpp</c>
+/// (T059/T062a switches it to <c>samples/HelloWorld/HelloWorld.csproj</c>, research.md R21).
+/// </summary>
 public sealed class SampleCopy : IDisposable
 {
     public SampleCopy()
     {
-        string source = Path.Combine(AppContext.BaseDirectory, "samples", "HelloWorld");
+        string source = Path.Combine(AppContext.BaseDirectory, "legacy-helloworld");
         Directory = Path.Combine(Path.GetTempPath(), "netprints-ui-" + Guid.NewGuid().ToString("N"));
         System.IO.Directory.CreateDirectory(Directory);
         foreach (string file in System.IO.Directory.GetFiles(source))

@@ -1,13 +1,30 @@
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reactive.Concurrency;
+using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Core;
+using NetPrints.Projects;
+using NetPrints.Serialization;
+using NetPrints.Serialization.Json;
+using NetPrints.Serialization.Mapping;
+using NetPrints.Serialization.Migrations;
+using NetPrints.Serialization.Stores;
+using NetPrints.Tests.Projects;
+using NetPrints.Workspace;
 using Xunit;
 
 namespace NetPrints.Tests.Samples
 {
+    /// <summary>
+    /// The checked-in <c>samples/HelloWorld</c> project (FR-010): loads through
+    /// <see cref="ProjectPersistence"/> and builds/runs through <see cref="IProjectSystem"/>
+    /// (project-system.md §4). The canonical-graph and up-to-date-<c>.g.cs</c> checks that used to live
+    /// here (DF-T26) moved to <c>CommittedSampleTests</c>; the temp-copy build of AllNodes moved to
+    /// <c>MigratedFixtureBuildTests</c>.
+    /// </summary>
     public class HelloWorldSampleTests : IDisposable
     {
         private readonly string tempDir;
@@ -25,41 +42,20 @@ namespace NetPrints.Tests.Samples
             catch (IOException) { }
         }
 
-        /// <summary>
-        /// The checked-in sample is exactly what <see cref="SampleProjectFactory"/> produces.
-        /// Set NETPRINTS_REGENERATE_SAMPLES=1 to rewrite samples/HelloWorld from the factory.
-        /// </summary>
-        [Fact]
-        public void FactoryMatchesCheckedInSample()
+        private static ProjectPersistence NewPersistence(IProjectSystem projects)
         {
-            string sampleDir = Path.Combine(SampleProjectFactory.FindRepositoryRoot(), "samples", "HelloWorld");
-
-            if (Environment.GetEnvironmentVariable(SampleProjectFactory.RegenerateVariable) == "1")
-            {
-                Directory.CreateDirectory(sampleDir);
-                SampleProjectFactory.CreateHelloWorld(Path.Combine(sampleDir, "HelloWorld.netpp")).Save();
-            }
-
-            SampleProjectFactory.CreateHelloWorld(Path.Combine(tempDir, "HelloWorld.netpp")).Save();
-
-            var generated = Directory.GetFiles(tempDir).Select(Path.GetFileName).OfType<string>().OrderBy(f => f, StringComparer.Ordinal).ToList();
-
-            // samples/HelloWorld also carries the migrated JSON graph, its .csproj and .gitattributes
-            // (T054a, research.md R21), none of which this legacy factory produces; only the files it
-            // does produce are compared here (T057 replaces this whole test with the .csproj layout).
-            foreach (string file in generated)
-            {
-                string checkedInPath = Path.Combine(sampleDir, file);
-                Assert.True(File.Exists(checkedInPath), $"{file} is missing from {sampleDir}.");
-                Assert.True(File.ReadAllBytes(checkedInPath).SequenceEqual(File.ReadAllBytes(Path.Combine(tempDir, file))),
-                    $"{file} differs from the factory output; regenerate with {SampleProjectFactory.RegenerateVariable}=1");
-            }
+            var registry = new NodeDocumentConverterRegistry(NodeDocumentConverterRegistry.BuiltIn, []);
+            var mapper = new DocumentMapper(registry);
+            var formats = new DocumentFormatRegistry([new JsonDocumentFormat(new NetPrintsJsonOptions(registry), new DocumentMigrator([]))]);
+            return new ProjectPersistence(projects, formats, mapper,
+                dir => new FileSystemDocumentStore(dir, Scheduler.Default, NullLogger<FileSystemDocumentStore>.Instance),
+                NullLogger<ProjectPersistence>.Instance);
         }
 
         [Fact(Timeout = 120000)]
         public async Task SampleLoadsCompilesAndPrintsHelloWorld()
         {
-            var cancellationToken = TestContext.Current.CancellationToken;
+            CancellationToken cancellationToken = TestContext.Current.CancellationToken;
 
             // The sample is linked into the test output (samples/**) by the test project.
             string source = Path.Combine(AppContext.BaseDirectory, "samples", "HelloWorld");
@@ -68,49 +64,36 @@ namespace NetPrints.Tests.Samples
                 File.Copy(file, Path.Combine(tempDir, Path.GetFileName(file)));
             }
 
-            Project? project = Project.LoadFromPath(Path.Combine(tempDir, "HelloWorld.netpp"));
-            Assert.NotNull(project);
-            Assert.Single(project.Classes);
+            LocalSdkLayout.Write(tempDir);
 
-            await CompileAsync(project, cancellationToken);
+            var projectSystem = new MsBuildProjectSystem(new ProjectSystemOptions([], "1.0.0-test"), new ProcessRunner(), NullLogger<MsBuildProjectSystem>.Instance);
+            ProjectPersistence persistence = NewPersistence(projectSystem);
 
-            Assert.True(project.LastCompilationSucceeded, string.Join(Environment.NewLine, project.LastCompileErrors ?? new ObservableRangeCollection<string>()));
-            Assert.Equal("Build succeeded", project.CompilationMessage);
+            string csprojPath = Path.Combine(tempDir, "HelloWorld.csproj");
+            ProjectLoadResult loaded = await persistence.LoadAsync(csprojPath, cancellationToken);
+            Assert.Empty(loaded.Issues);
+            Assert.Single(loaded.Project.Classes);
 
-            var (fileName, arguments) = project.GetRunCommand();
-            var psi = new ProcessStartInfo(fileName, arguments)
-            {
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-            };
+            BuildResult build = await projectSystem.BuildAsync(csprojPath, cancellationToken);
+            Assert.True(build.Success, build.Log);
 
-            Process? startedProcess = Process.Start(psi);
-            Assert.NotNull(startedProcess);
-            using Process process = startedProcess;
-            string output = await process.StandardOutput.ReadToEndAsync(cancellationToken);
-            string error = await process.StandardError.ReadToEndAsync(cancellationToken);
-            await process.WaitForExitAsync(cancellationToken);
+            ProcessStartRequest run = projectSystem.GetRunCommand(csprojPath);
+            ProcessResult result = await new ProcessRunner().RunAsync(run, cancellationToken);
 
-            Assert.Equal(0, process.ExitCode);
-            Assert.True(error.Length == 0, error);
-            Assert.Equal("Hello, World!", output.Trim());
+            Assert.Equal(0, result.ExitCode);
+            Assert.True(result.StandardError.Length == 0, result.StandardError);
+            Assert.Equal("Hello, World!", result.StandardOutput.Trim());
         }
 
         /// <summary>
         /// An If Else between the entry and WriteLine, WriteLine on the True branch (the editor's
-        /// smoke flow graph). The condition is set, or left unset.
+        /// smoke flow graph). The condition is set, or left unset. Built directly through
+        /// <see cref="SampleProjectFactory"/> (same graph shape as the sample): these tests are about
+        /// the translator's behavior, not about loading the checked-in files.
         /// </summary>
         private Project HelloWorldWithIfElse(bool? condition)
         {
-            string source = Path.Combine(AppContext.BaseDirectory, "samples", "HelloWorld");
-            foreach (string file in Directory.GetFiles(source))
-            {
-                File.Copy(file, Path.Combine(tempDir, Path.GetFileName(file)));
-            }
-
-            Project? project = Project.LoadFromPath(Path.Combine(tempDir, "HelloWorld.netpp"));
-            Assert.NotNull(project);
+            Project project = SampleProjectFactory.CreateHelloWorld(Path.Combine(tempDir, "HelloWorld.netpp"));
             var main = project.Classes.Single().Methods.Single();
             var write = main.Nodes.OfType<NetPrints.Graph.CallMethodNode>().Single();
             var ifElse = new NetPrints.Graph.IfElseNode(main) { PositionX = 280, PositionY = 392 };

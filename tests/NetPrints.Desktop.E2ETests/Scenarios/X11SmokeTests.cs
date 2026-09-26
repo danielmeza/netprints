@@ -28,9 +28,11 @@ public sealed class X11SmokeTests(XServer server) : SmokeScenarios, IAsyncDispos
             Assert.Skip($"Desktop E2E tests run with {XServer.EnableVariable}=1 (Linux with Xvfb, openbox, xdotool, ImageMagick and GTK 3).");
         }
 
-        // Arrange: a private copy of the sample; the editor starts without a project.
+        // Arrange: a private copy of the legacy HelloWorld fixture; the editor still opens .netpp
+        // (T059/T062a switches it to samples/HelloWorld/HelloWorld.csproj, research.md R21). The
+        // editor starts without a project.
         string sample = Directory.CreateDirectory(Path.Combine(work, "HelloWorld")).FullName;
-        foreach (string file in Directory.GetFiles(Path.Combine(AppContext.BaseDirectory, "samples", "HelloWorld")))
+        foreach (string file in Directory.GetFiles(Path.Combine(AppContext.BaseDirectory, "legacy-helloworld")))
         {
             File.Copy(file, Path.Combine(sample, Path.GetFileName(file)));
         }

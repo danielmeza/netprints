@@ -11,6 +11,12 @@
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="Xunit.DependencyInjection" />
     <PackageReference Include="Microsoft.Reactive.Testing" />
+    <!-- RC-T09 (DocumentationTests): NetPrints.Workspace pulls in Microsoft.CodeAnalysis.Workspaces.MSBuild,
+         whose own dependency on Microsoft.Build.Framework carries no asset exclusion of its own
+         (MSBuildLocator's MSBL001, research K10): pin and exclude both here too, exactly like
+         NetPrints.Workspace.csproj and NetPrints.Core.Tests.csproj. -->
+    <PackageReference Include="Microsoft.Build" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Build.Framework" ExcludeAssets="runtime" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
@@ -20,9 +26,12 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\NetPrints.Reflection\NetPrints.Reflection.csproj" />
     <ProjectReference Include="..\..\src\NetPrints.Editor\NetPrints.Editor.csproj" />
+    <ProjectReference Include="..\..\src\NetPrints.Workspace\NetPrints.Workspace.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="../../samples/**" CopyToOutputDirectory="PreserveNewest" LinkBase="samples" />
+    <!-- The editor still opens .netpp/.netpc (T059/T062a switches it to samples/HelloWorld/HelloWorld.csproj). -->
+    <None Include="../NetPrints.Core.Tests/Fixtures/Legacy/HelloWorld/**" CopyToOutputDirectory="PreserveNewest" LinkBase="legacy-helloworld" />
   </ItemGroup>
 </Project>

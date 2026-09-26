@@ -12,10 +12,14 @@ public static class TestPaths
         return dir;
     }
 
-    /// <summary>Copies samples/HelloWorld (linked into the test output) to a new temp directory.</summary>
+    /// <summary>
+    /// Copies the legacy HelloWorld fixture (<c>tests/NetPrints.Core.Tests/Fixtures/Legacy/HelloWorld</c>,
+    /// linked into the test output) to a new temp directory. The editor still opens <c>.netpp</c>
+    /// (T059/T062a switches it to <c>samples/HelloWorld/HelloWorld.csproj</c>, research.md R21).
+    /// </summary>
     public static string CopyHelloWorldSample()
     {
-        string source = Path.Combine(AppContext.BaseDirectory, "samples", "HelloWorld");
+        string source = Path.Combine(AppContext.BaseDirectory, "legacy-helloworld");
         string target = CreateTempDirectory();
         foreach (string file in Directory.GetFiles(source))
         {

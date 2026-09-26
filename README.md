@@ -38,13 +38,15 @@ runs zero tests and would otherwise exit non-zero on an otherwise-green tree.
 Run the editor:
 
 ```bash
-dotnet run --project src/NetPrints.Desktop -c Release -- samples/HelloWorld/HelloWorld.netpp
+# The editor and CLI still open the legacy .netpp/.netpc format (P1 sub-phase G, T059/T062a switches
+# them to samples/HelloWorld/HelloWorld.csproj); this is a copy kept for that purpose, not the sample.
+dotnet run --project src/NetPrints.Desktop -c Release -- tests/NetPrints.Core.Tests/Fixtures/Legacy/HelloWorld/HelloWorld.netpp
 ```
 
 Compile and run a project from the command line:
 
 ```bash
-dotnet run --project src/NetPrints.Cli -c Release -- -p samples/HelloWorld/HelloWorld.netpp -r
+dotnet run --project src/NetPrints.Cli -c Release -- -p tests/NetPrints.Core.Tests/Fixtures/Legacy/HelloWorld/HelloWorld.netpp -r
 # → "Compilation succeeded." then the program prints "Hello, World!"
 ```
 
@@ -83,7 +85,7 @@ through the `dotnet` host. Proper reference-pack and target selection is tracked
 | `src/NetPrints.Desktop` | The desktop application hosting the editor. |
 | `src/NetPrints.Cli` | The command-line compiler. |
 | `tests/` | `NetPrints.Core.Tests`, `NetPrints.Editor.Tests` and `NetPrints.Editor.UITests` (xUnit v3 on Microsoft.Testing.Platform; the UI tests are headless Avalonia), `NetPrints.Desktop.E2ETests` (real editor over X11) and `NetPrints.Testing.Ui` (shared page objects). |
-| `samples/` | Sample `.netpp`/`.netpc` projects used as test fixtures and quick-start material. |
+| `samples/` | Sample `.csproj`/`.netpc.json` projects (FR-010) used as test fixtures and quick-start material. |
 | `legacy/NetPrintsVSIX` | The old Visual Studio extension, kept for reference. Not built, not tested, not in the solution (see [its README](legacy/NetPrintsVSIX/README.md)). |
 | `specs/`, `docs/`, `.specify/` | [Spec Kit](https://github.com/github/spec-kit) feature specs, research notes and architecture decision records ([`docs/adr`](docs/adr)). |
 
