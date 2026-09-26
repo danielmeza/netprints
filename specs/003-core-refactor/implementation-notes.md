@@ -1616,3 +1616,69 @@ not just "0 != 1".
 Verified: `dotnet build NetPrints.slnx -c Release` 0 warnings/0 errors; `dotnet test tests/NetPrints.Core.Tests
 -c Release -- --ignore-exit-code 8` green, 281 (280 → 281); `dotnet format NetPrints.slnx --verify-no-changes`
 clean. No `!`/`null!`/`default!` added.
+
+### T049 — Checkpoint D reached
+
+All of sub-phase D (T044–T048) is done: `GraphCodeGenerator`/`GenerateRequestFile`/`Program.cs`'s `generate`
+command (T044), `NetPrints.Sdk.props`/`.targets` and the pack layout (T045), in-repo development mode for
+`samples/` and tests (T046), and the full PS-T01…T06 test coverage the contract's test table assigns to
+this sub-phase (PS-T06 in T044, PS-T01…T04 in T047, PS-T05 in T048).
+
+Two deliberate, documented narrowings of the eventual project-system.md §3 contract remain open for later
+sub-phases to widen — flagged in T044's notes so neither is rediscovered from scratch: `GraphCodeGenerator`'s
+constructor takes no `ExtensionRegistry` yet (added T068, sub-phase F, once that type exists);
+`RenderFile` takes a plain `string` instead of `TranslatedClass` (added T089, sub-phase I, once that
+record exists). One real MSBuild bug was found and fixed along the way, only once a real project actually
+imported the file (T047's notes): nesting a single-quoted string literal inside an already single-quoted
+MSBuild condition operand (`'$([MSBuild]::IsOSPlatform('Windows'))'`) is not valid syntax on this MSBuild
+version (`MSB4092`); fixed with the `%27` escape. T045's own "verified" pack dry run had not caught this,
+since packing copies `NetPrints.Sdk.props` without ever evaluating it — a lesson for validating MSBuild
+`.props`/`.targets` files generally: packing (or copying) is not the same as importing, and only the
+latter actually executes the file's conditions/logic.
+
+Verified end to end: own session-owned `Xvfb :171` (`pgrep -af Xvfb` checked first, nothing running; no
+other agent's `DISPLAY`, never `:1`) — `DISPLAY=:171 dotnet test --solution NetPrints.slnx -c Release --
+--ignore-exit-code 8`: **512 total, 503 succeeded, 9 skipped** (the same Desktop E2E / headless-driver
+capability skips as every previous checkpoint, unchanged and expected), **0 failed** — 496 → 503 succeeded
+across sub-phase D (T044 +2, T047 +4, T048 +1 = +7, matching exactly). Xvfb killed immediately after the
+run. `dotnet build NetPrints.slnx -c Release` 0 warnings/0 errors; `dotnet format NetPrints.slnx
+--verify-no-changes` clean. No processes left running; `src/NetPrints.Sdk/obj/generator-publish/` and every
+scratch pack/feed/project temp directory created while verifying T045/T047/T048 by hand were removed
+(none were ever tracked; the tests themselves clean up their own temp directories in a `finally`).
+
+## Notes for sub-phase E (T050–T064)
+
+- **`ExtensionRegistry` still doesn't exist going into E either** (it's T068, sub-phase F). `MsBuildProjectSystem`
+  (T053) and the rest of sub-phase E's `IProjectSystem` work don't need it per project-system.md §4's own
+  API surface, so this shouldn't block anything there — noted only so it isn't assumed already available.
+- **`GraphCodeGenerator`'s narrower constructor and `RenderFile` signature (T044) are unaffected by sub-phase
+  E.** Nothing in T050–T064 changes `GraphCodeGenerator`; the two follow-ups stay pinned to T068 and T089
+  as documented.
+- **`ProjectFiles.GitAttributesLines`/`EnsureGitAttributesAsync` (T050) and `DocumentIssue.DocumentUnreadable`
+  = `NPD008` (T044) are natural neighbors**: T056 (`ProjectPersistence.LoadAsync`, DF-T11) should reuse the
+  `NPD008` constant already minted in `DocumentIssue.cs` for "a graph document could not be read at all"
+  rather than inventing a second code for the same situation (flagged in T044's notes too).
+- **`LocalSdkLayout` (T046) and the external-process test pattern in `SdkTargetsTests.cs`/`SdkPackageTests.cs`
+  (T047/T048)** — `RunDotnetAsync`'s "read both `StandardOutput`/`StandardError` concurrently via
+  `Task.WhenAll`, then `WaitForExitAsync`" pattern is worth reusing verbatim (or factoring into a shared
+  test helper if a third test needs it) rather than copying `MergeTests`' simpler single-stream form, which
+  only works because `git merge-file -p`'s output is small and it never reads stderr.
+  `MsBuildProjectSystem`'s own production `IProcessRunner` (T050, T053) is a different, non-test concern
+  (project-system.md §4: `RunAsync(ProcessStartRequest, CancellationToken)` returning a `ProcessResult`
+  with both streams captured), but the same "read both streams concurrently, don't call `ReadToEndAsync`
+  then `WaitForExitAsync`" lesson applies there too — worth a look when implementing it, since a large
+  enough `dotnet build -v:quiet` log on `stderr` while a naive `IProcessRunner` implementation is busy only
+  draining `stdout` would deadlock exactly the way `MergeTests`' pattern would have here.
+- **`samples/HelloWorld` is still the legacy `.netpp`/`.netpc` pair** (untouched by sub-phase D); T057 is
+  what converts it to `.csproj` + `.netpc.json` + `.gitattributes` and deletes the legacy files. Until
+  then, `samples/Directory.Build.props`/`.targets`/`Directory.Packages.props` (T046) sit unused by any
+  real project — they're only exercised today by `LocalSdkLayout`'s equivalent, absolute-path copies in
+  temp test directories.
+- **Package version discipline**: sub-phase D's tests all pass an explicit `-p:Version=` on `dotnet pack`
+  because MinVer isn't wired up until T109 (sub-phase L). Any *new* pack-and-consume test added between now
+  and T109 should follow the same pattern (`SdkPackageTests.cs`'s comment explains why); after T109 lands,
+  every one of these (T045's manual verification is not code, but T048's `SdkPackageTests.cs` is) should be
+  revisited to use `-p:MinVerVersionOverride=` instead, per release-and-docs.md §1 — `-p:Version=` would
+  silently stop mattering once `MinVer` is a `GlobalPackageReference` (it still sets `PackageVersion`
+  itself, ignoring a plain `Version` property), so this is a real one-time migration to do deliberately,
+  not something that happens to keep working.

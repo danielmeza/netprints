@@ -106,7 +106,7 @@ Checkpoint E (plan.md). Out of scope (follow-ups, do not implement): `netprints 
 - [x] T046 [US1] In-repo development mode (project-system.md §2.1): `samples/Directory.Build.props`, `samples/Directory.Build.targets`, `samples/Directory.Packages.props`; `tests/NetPrints.Core.Tests/Projects/LocalSdkLayout.cs` helper; test projects reference `src/NetPrints.Generator` with `ReferenceOutputAssembly=false`
 - [x] T047 [US1] Targets tests PS-T01, PS-T02, PS-T03, PS-T04 in `tests/NetPrints.Core.Tests/Projects/SdkTargetsTests.cs` (temp projects via `LocalSdkLayout`, `dotnet build -v n` log assertions, `-getItem:Compile`)
 - [x] T048 [US1] Package test PS-T05 in `tests/NetPrints.Core.Tests/Projects/SdkPackageTests.cs` (`dotnet pack src/NetPrints.Sdk` into a temp feed, temp `nuget.config`, isolated `NUGET_PACKAGES`)
-- [ ] T049 [US1] **Checkpoint D**; commit
+- [x] T049 [US1] **Checkpoint D**; commit
 
 ## Phase 5: User Stories 1c + 2 — project system, conversion, references (P1) (sub-phase E)
 
