@@ -109,25 +109,46 @@ namespace NetPrints.Tests.Core
             Assert.Equal(expected, StableIds.SeedFor(text));
         }
 
+        // DF-T28 / T054b (research.md R21): IdFormat.IsValid replaces StableIds.IsValidDocumentId as
+        // the reader's id check, and is strict rather than merely non-empty/slash/whitespace-free.
+        [Fact]
+        public void IsValidAcceptsAGeneratedIdForItsOwnPrefixOnly()
+        {
+            string id = new SeededIdGenerator(7).NewId('n');
+
+            Assert.True(IdFormat.IsValid(id, 'n'));
+            Assert.False(IdFormat.IsValid(id, 'm'));
+        }
+
         [Theory]
-        [InlineData("")]
-        [InlineData("a/b")]
-        [InlineData("a b")]
-        public void IsValidDocumentIdRejectsMalformedIds(string id)
+        [InlineData("n0")]
+        [InlineData("start")]
+        public void IsValidRejectsMalformedIds(string id)
         {
-            Assert.False(StableIds.IsValidDocumentId(id));
+            Assert.False(IdFormat.IsValid(id, 'n'));
         }
 
         [Fact]
-        public void IsValidDocumentIdAcceptsAnOrdinaryId()
+        public void IsValidRejectsUpperCase()
         {
-            Assert.True(StableIds.IsValidDocumentId("n1a2b3c"));
+            string id = new SeededIdGenerator(7).NewId('n');
+
+            Assert.False(IdFormat.IsValid(id.ToUpperInvariant(), 'n'));
         }
 
         [Fact]
-        public void IsValidDocumentIdRejectsNull()
+        public void IsValidRejectsTwelveOrFourteenDigits()
         {
-            Assert.False(StableIds.IsValidDocumentId(null));
+            string id = new SeededIdGenerator(7).NewId('n');
+
+            Assert.False(IdFormat.IsValid(id[..^1], 'n'));
+            Assert.False(IdFormat.IsValid(id + "0", 'n'));
+        }
+
+        [Fact]
+        public void IsValidRejectsNull()
+        {
+            Assert.False(IdFormat.IsValid(null, 'n'));
         }
     }
 }

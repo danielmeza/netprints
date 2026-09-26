@@ -36,7 +36,7 @@ public enum DocumentIssueSeverity
 /// instead.
 /// </summary>
 /// <param name="Severity">How serious the issue is.</param>
-/// <param name="Code">Stable machine-readable code (<c>NPD001</c>–<c>NPD007</c>).</param>
+/// <param name="Code">Stable machine-readable code (<c>NPD001</c>–<c>NPD009</c>).</param>
 /// <param name="Message">Human-readable description.</param>
 /// <param name="Document">Document the issue was found in, if known.</param>
 public sealed record DocumentIssue(DocumentIssueSeverity Severity, string Code, string Message, DocumentId? Document)
@@ -74,4 +74,12 @@ public sealed record DocumentIssue(DocumentIssueSeverity Severity, string Code, 
     /// reports it as an issue instead of propagating the exception.
     /// </summary>
     public const string DocumentUnreadable = "NPD008";
+
+    /// <summary>
+    /// A node or member id did not match <c>IdFormat</c> for its prefix (a hand or AI edit, e.g.
+    /// <c>"n0"</c> or <c>"start"</c>) — ids are strict on read (research.md R21). It was replaced by a
+    /// fresh id; every connection endpoint and <c>layout</c> key in the same document that named the old
+    /// text now names the new one, and the document still loaded.
+    /// </summary>
+    public const string InvalidIdReassigned = "NPD009";
 }

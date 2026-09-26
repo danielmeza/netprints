@@ -16,7 +16,10 @@ namespace NetPrints.Tests.Serialization
 {
     /// <summary>
     /// <see cref="LegacyXmlDocumentFormat"/>: both fixtures import without issues, and importing the
-    /// same fixture twice gives byte-identical documents (DF-T18, legacy part).
+    /// same fixture twice gives byte-identical documents (DF-T18, legacy part). Ids are strict on read
+    /// since T054b (research.md R21); the legacy importer's own positional node ids ("n0", "n1", …)
+    /// never match <see cref="IdFormat.Pattern"/> by design, so every node is expected to be repaired
+    /// (<see cref="DocumentIssue.InvalidIdReassigned"/>) — the gate is that nothing *else* goes wrong.
     /// </summary>
     public class LegacyXmlDocumentFormatTests
     {
@@ -59,7 +62,7 @@ namespace NetPrints.Tests.Serialization
             var issues = new List<DocumentIssue>();
             mapper.FromDocument(document, Project.CreateNew("P", "P"), issues, new DocumentId(Path.GetFileName(path) + ".json"));
 
-            Assert.Empty(issues);
+            Assert.All(issues, issue => Assert.Equal(DocumentIssue.InvalidIdReassigned, issue.Code));
         }
 
         [Theory]

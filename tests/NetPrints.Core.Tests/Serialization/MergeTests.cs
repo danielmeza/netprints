@@ -25,15 +25,24 @@ namespace NetPrints.Tests.Serialization
     {
         private static readonly NodeDocumentConverterRegistry Registry = new(NodeDocumentConverterRegistry.BuiltIn, []);
 
+        // T054b (research.md R21): FromDocument is strict now, so every hand-assigned id here needs to
+        // be IdFormat-shaped. Values are spaced out (0, 1000, 2000, 3000, …) so a branch's insertions
+        // (small offsets from a base value) land in the same ordinal gap between base nodes that the
+        // original short ids ("nd00000" between "nb00000" and "nk00000", etc.) did — IdFormat.Format's
+        // zero-padding keeps ordinal string order equal to numeric order, so this is exact, not just
+        // approximate.
+        private static string NodeId(long value) => IdFormat.Format('n', value);
+        private static string MemberId(long value) => IdFormat.Format('m', value);
+
         private static (Project Project, ClassGraph Class, MethodGraph Method) BuildBase()
         {
             Project project = Project.CreateNew("M", "M");
             var cls = new ClassGraph { Name = "C", Namespace = "M", Visibility = MemberVisibility.Public, Project = project };
             project.Classes.Add(cls);
-            SetNodeId(cls, cls.ReturnNode, "n0000000class");
+            SetNodeId(cls, cls.ReturnNode, NodeId(9000));
 
             var method = new MethodGraph("Main") { Class = cls, Visibility = MemberVisibility.Public };
-            method.Id = "mbase0000000";
+            method.Id = MemberId(1);
             cls.Methods.Add(method);
 
             Node entry = method.EntryNode;
@@ -41,10 +50,10 @@ namespace NetPrints.Tests.Serialization
             var call1 = new CallMethodNode(method, ArbitraryCall("Call1"));
             var call2 = new CallMethodNode(method, ArbitraryCall("Call2"));
 
-            SetNodeId(method, entry, "nb00000");
-            SetNodeId(method, call1, "nk00000");
-            SetNodeId(method, call2, "nr00000");
-            SetNodeId(method, ret, "nz00000");
+            SetNodeId(method, entry, NodeId(0));
+            SetNodeId(method, call1, NodeId(1000));
+            SetNodeId(method, call2, NodeId(2000));
+            SetNodeId(method, ret, NodeId(3000));
 
             Position(entry, 0);
             Position(call1, 1);
@@ -173,11 +182,11 @@ namespace NetPrints.Tests.Serialization
             byte[] baseBytes = await ToJsonBytesAsync(baseCls);
 
             (_, ClassGraph aCls, MethodGraph aMethod) = BuildBase();
-            AddLiteralAndCall(aMethod, "nd00000", "nf00000", 10, useStringOverload: true);
+            AddLiteralAndCall(aMethod, NodeId(10), NodeId(20), 10, useStringOverload: true);
             byte[] currentBytes = await ToJsonBytesAsync(aCls);
 
             (_, ClassGraph bCls, MethodGraph bMethod) = BuildBase();
-            AddLiteralAndCall(bMethod, "nm00000", "np00000", 20, useStringOverload: false);
+            AddLiteralAndCall(bMethod, NodeId(1010), NodeId(1020), 20, useStringOverload: false);
             byte[] otherBytes = await ToJsonBytesAsync(bCls);
 
             string tempDir = Directory.CreateTempSubdirectory("netprints-merge-").FullName;
@@ -200,10 +209,10 @@ namespace NetPrints.Tests.Serialization
                 int conflictStart = merged.IndexOf("<<<<<<<", StringComparison.Ordinal);
                 int connectionsStart = merged.IndexOf("\"connections\"", StringComparison.Ordinal);
                 Assert.True(conflictStart < connectionsStart, "The conflict must be inside 'nodes', before 'connections' starts.");
-                Assert.Contains("nd00000", merged);
-                Assert.Contains("nf00000", merged);
-                Assert.Contains("nm00000", merged);
-                Assert.Contains("np00000", merged);
+                Assert.Contains(NodeId(10), merged);
+                Assert.Contains(NodeId(20), merged);
+                Assert.Contains(NodeId(1010), merged);
+                Assert.Contains(NodeId(1020), merged);
 
                 // Connections and layout came from disjoint, already-sorted gaps (document-format.md
                 // §2.3.1): both branches' additions are present, outside the single conflict hunk.
@@ -261,11 +270,13 @@ namespace NetPrints.Tests.Serialization
             byte[] baseBytes = await ToJsonBytesAsync(baseCls);
 
             (_, ClassGraph aCls, MethodGraph aMethod) = BuildBase();
-            AddLiteralAndCall(aMethod, "ne00001", "ne00002", 10, useStringOverload: true);
+            AddLiteralAndCall(aMethod, NodeId(10), NodeId(11), 10, useStringOverload: true);
             byte[] currentBytes = await ToJsonBytesAsync(aCls);
 
+            // Deliberately the same gap as branch A (both between the base's entry and call1 nodes),
+            // unlike the first test's disjoint gaps: this is what forces the extra conflict.
             (_, ClassGraph bCls, MethodGraph bMethod) = BuildBase();
-            AddLiteralAndCall(bMethod, "ne00003", "ne00004", 20, useStringOverload: true);
+            AddLiteralAndCall(bMethod, NodeId(12), NodeId(13), 20, useStringOverload: true);
             byte[] otherBytes = await ToJsonBytesAsync(bCls);
 
             string tempDir = Directory.CreateTempSubdirectory("netprints-merge-gap-").FullName;

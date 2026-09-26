@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Threading;
 
@@ -47,13 +48,70 @@ public static class IdFormat
     public const int ValueDigits = 13;
 
     /// <summary>
+    /// The <see cref="Alphabet"/> as a regular-expression character class, shared by <see cref="Pattern"/>
+    /// and <see cref="PatternFor"/> so the two never duplicate it.
+    /// </summary>
+    private const string ValueDigitsPattern = "[0-9a-hjkmnp-tv-z]{13}";
+
+    /// <summary>
     /// Regular expression every id created by <see cref="SnowflakeIdGenerator"/> matches: a
     /// <c>'n'</c> (node) or <c>'m'</c> (member) prefix followed by <see cref="ValueDigits"/> lowercase
-    /// alphabet characters. Ids accepted when reading a document are less strict
-    /// (<see cref="StableIds.IsValidDocumentId"/>): a legacy or hand-edited id only has to be
-    /// non-empty and free of <c>/</c> and whitespace.
+    /// alphabet characters. A document's ids are strict on read (research.md R21): a present id that
+    /// does not match <see cref="PatternFor"/> for its prefix is replaced by a fresh one
+    /// (<see cref="IsValid"/> is the exact check).
     /// </summary>
-    public const string Pattern = "^[nm][0-9a-hjkmnp-tv-z]{13}$";
+    public const string Pattern = "^[nm]" + ValueDigitsPattern + "$";
+
+    /// <summary>
+    /// Returns the regular expression every id of <paramref name="prefix"/> matches: <see cref="Pattern"/>
+    /// narrowed to one prefix (<c>"^n[0-9a-hjkmnp-tv-z]{13}$"</c> for <c>'n'</c>). Used to build the
+    /// generated JSON Schema's id patterns (document-format.md §6) and by <see cref="IsValid"/>.
+    /// </summary>
+    /// <param name="prefix">Id kind prefix.</param>
+    /// <returns>The prefix-specific pattern.</returns>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="prefix"/> is not <c>'n'</c> or
+    /// <c>'m'</c>.</exception>
+    public static string PatternFor(char prefix) => prefix switch
+    {
+        'n' or 'm' => $"^{prefix}{ValueDigitsPattern}$",
+        _ => throw new ArgumentOutOfRangeException(nameof(prefix), prefix, "Prefix must be 'n' or 'm'."),
+    };
+
+    /// <summary>
+    /// Returns whether <paramref name="id"/> is exactly <paramref name="prefix"/> followed by
+    /// <see cref="ValueDigits"/> lowercase <see cref="Alphabet"/> characters (an exact, case-sensitive
+    /// match of <see cref="PatternFor"/> — unlike <see cref="TryParse"/>, upper case and the Crockford
+    /// transcription aliases are not accepted). This is the reader's strict id check
+    /// (document-format.md §1.4.1, §2.6): a present id that fails it is replaced by a fresh one.
+    /// </summary>
+    /// <param name="id">Candidate id, or <see langword="null"/>.</param>
+    /// <param name="prefix">Id kind prefix the id must have.</param>
+    /// <returns><see langword="true"/> if <paramref name="id"/> matches <see cref="PatternFor"/> for
+    /// <paramref name="prefix"/>.</returns>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="prefix"/> is not <c>'n'</c> or
+    /// <c>'m'</c>.</exception>
+    public static bool IsValid([NotNullWhen(true)] string? id, char prefix)
+    {
+        if (prefix is not ('n' or 'm'))
+        {
+            throw new ArgumentOutOfRangeException(nameof(prefix), prefix, "Prefix must be 'n' or 'm'.");
+        }
+
+        if (id is null || id.Length != ValueDigits + 1 || id[0] != prefix)
+        {
+            return false;
+        }
+
+        for (int i = 1; i < id.Length; i++)
+        {
+            if (Alphabet.IndexOf(id[i]) < 0)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
 
     /// <summary>
     /// Returns <paramref name="prefix"/> followed by <paramref name="value"/> encoded as
@@ -381,32 +439,6 @@ public static class StableIds
         }
 
         return unchecked((int)hash);
-    }
-
-    /// <summary>
-    /// Returns whether <paramref name="id"/> is a well-formed document id: non-null, non-empty, and
-    /// containing neither <c>'/'</c> nor any whitespace character. Deliberately looser than
-    /// <see cref="IdFormat.Pattern"/>: a legacy (<c>"n0"</c>) or hand-edited id only has to satisfy
-    /// this check to be accepted on read.
-    /// </summary>
-    /// <param name="id">Candidate id, or <see langword="null"/>.</param>
-    /// <returns><see langword="true"/> if <paramref name="id"/> is a well-formed document id.</returns>
-    public static bool IsValidDocumentId(string? id)
-    {
-        if (string.IsNullOrEmpty(id))
-        {
-            return false;
-        }
-
-        foreach (char c in id)
-        {
-            if (c == '/' || char.IsWhiteSpace(c))
-            {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     /// <summary>

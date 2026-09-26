@@ -52,7 +52,8 @@
                     "const": "methodEntry"
                   },
                   "id": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^n[0-9a-hjkmnp-tv-z]{13}$"
                   },
                   "name": {
                     "type": [
@@ -126,7 +127,8 @@
                     "const": "constructorEntry"
                   },
                   "id": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^n[0-9a-hjkmnp-tv-z]{13}$"
                   },
                   "name": {
                     "type": [
@@ -157,7 +159,8 @@
                     "const": "return"
                   },
                   "id": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^n[0-9a-hjkmnp-tv-z]{13}$"
                   },
                   "name": {
                     "type": [
@@ -188,7 +191,8 @@
                     "const": "classReturn"
                   },
                   "id": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^n[0-9a-hjkmnp-tv-z]{13}$"
                   },
                   "name": {
                     "type": [
@@ -219,7 +223,8 @@
                     "const": "typeReturn"
                   },
                   "id": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^n[0-9a-hjkmnp-tv-z]{13}$"
                   },
                   "name": {
                     "type": [
@@ -247,7 +252,8 @@
                     "const": "eventEntry"
                   },
                   "id": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^n[0-9a-hjkmnp-tv-z]{13}$"
                   },
                   "name": {
                     "type": [
@@ -460,7 +466,8 @@
                     "const": "callMethod"
                   },
                   "id": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^n[0-9a-hjkmnp-tv-z]{13}$"
                   },
                   "name": {
                     "type": [
@@ -523,7 +530,8 @@
                     "const": "constructor"
                   },
                   "id": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^n[0-9a-hjkmnp-tv-z]{13}$"
                   },
                   "name": {
                     "type": [
@@ -595,7 +603,8 @@
                     "const": "makeDelegate"
                   },
                   "id": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^n[0-9a-hjkmnp-tv-z]{13}$"
                   },
                   "name": {
                     "type": [
@@ -655,7 +664,8 @@
                     "const": "variableGetter"
                   },
                   "id": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^n[0-9a-hjkmnp-tv-z]{13}$"
                   },
                   "name": {
                     "type": [
@@ -775,7 +785,8 @@
                     "const": "variableSetter"
                   },
                   "id": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^n[0-9a-hjkmnp-tv-z]{13}$"
                   },
                   "name": {
                     "type": [
@@ -844,7 +855,8 @@
                     "const": "literal"
                   },
                   "id": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^n[0-9a-hjkmnp-tv-z]{13}$"
                   },
                   "name": {
                     "type": [
@@ -899,7 +911,8 @@
                     "const": "type"
                   },
                   "id": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^n[0-9a-hjkmnp-tv-z]{13}$"
                   },
                   "name": {
                     "type": [
@@ -954,7 +967,8 @@
                     "const": "makeArrayType"
                   },
                   "id": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^n[0-9a-hjkmnp-tv-z]{13}$"
                   },
                   "name": {
                     "type": [
@@ -982,7 +996,8 @@
                     "const": "makeArray"
                   },
                   "id": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^n[0-9a-hjkmnp-tv-z]{13}$"
                   },
                   "name": {
                     "type": [
@@ -1016,7 +1031,8 @@
                     "const": "explicitCast"
                   },
                   "id": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^n[0-9a-hjkmnp-tv-z]{13}$"
                   },
                   "name": {
                     "type": [
@@ -1044,7 +1060,8 @@
                     "const": "typeOf"
                   },
                   "id": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^n[0-9a-hjkmnp-tv-z]{13}$"
                   },
                   "name": {
                     "type": [
@@ -1072,7 +1089,8 @@
                     "const": "ifElse"
                   },
                   "id": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^n[0-9a-hjkmnp-tv-z]{13}$"
                   },
                   "name": {
                     "type": [
@@ -1100,7 +1118,8 @@
                     "const": "forLoop"
                   },
                   "id": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^n[0-9a-hjkmnp-tv-z]{13}$"
                   },
                   "name": {
                     "type": [
@@ -1128,7 +1147,8 @@
                     "const": "ternary"
                   },
                   "id": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^n[0-9a-hjkmnp-tv-z]{13}$"
                   },
                   "name": {
                     "type": [
@@ -1156,7 +1176,8 @@
                     "const": "await"
                   },
                   "id": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^n[0-9a-hjkmnp-tv-z]{13}$"
                   },
                   "name": {
                     "type": [
@@ -1184,7 +1205,8 @@
                     "const": "throw"
                   },
                   "id": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^n[0-9a-hjkmnp-tv-z]{13}$"
                   },
                   "name": {
                     "type": [
@@ -1212,7 +1234,8 @@
                     "const": "default"
                   },
                   "id": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^n[0-9a-hjkmnp-tv-z]{13}$"
                   },
                   "name": {
                     "type": [
@@ -1240,7 +1263,8 @@
                     "const": "reroute"
                   },
                   "id": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^n[0-9a-hjkmnp-tv-z]{13}$"
                   },
                   "name": {
                     "type": [
@@ -1290,6 +1314,10 @@
                   "$kind": {
                     "type": "string",
                     "pattern": "/"
+                  },
+                  "id": {
+                    "type": "string",
+                    "pattern": "^n[0-9a-hjkmnp-tv-z]{13}$"
                   }
                 }
               }
@@ -1305,10 +1333,12 @@
             "type": "object",
             "properties": {
               "from": {
-                "type": "string"
+                "type": "string",
+                "pattern": "^n[0-9a-hjkmnp-tv-z]{13}/(in|out)\\.(exec|data|type)\\..+$"
               },
               "to": {
-                "type": "string"
+                "type": "string",
+                "pattern": "^n[0-9a-hjkmnp-tv-z]{13}/(in|out)\\.(exec|data|type)\\..+$"
               }
             },
             "required": [
@@ -1376,7 +1406,8 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "pattern": "^m[0-9a-hjkmnp-tv-z]{13}$"
           },
           "name": {
             "type": "string"
@@ -1472,7 +1503,8 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "pattern": "^m[0-9a-hjkmnp-tv-z]{13}$"
           },
           "name": {
             "type": "string"
@@ -1518,7 +1550,8 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "pattern": "^m[0-9a-hjkmnp-tv-z]{13}$"
           },
           "visibility": {
             "type": "string"
@@ -1557,7 +1590,8 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "pattern": "^m[0-9a-hjkmnp-tv-z]{13}$"
           },
           "name": {
             "type": "string"
@@ -1601,7 +1635,13 @@
           },
           "minItems": 2,
           "maxItems": 2
+        },
+        "propertyNames": {
+          "pattern": "^n[0-9a-hjkmnp-tv-z]{13}$"
         }
+      },
+      "propertyNames": {
+        "pattern": "^(class|m[0-9a-hjkmnp-tv-z]{13}(/(type|get|set))?)$"
       }
     }
   },

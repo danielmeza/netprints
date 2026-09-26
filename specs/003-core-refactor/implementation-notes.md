@@ -1942,6 +1942,107 @@ No `!`/`null!`/`default!` added. Verified: `dotnet test tests/NetPrints.Core.Tes
 `dotnet build NetPrints.slnx -c Release` 0 warnings; `dotnet format NetPrints.slnx --verify-no-changes`
 clean.
 
+### T054b — Strict ids: `IdFormat.PatternFor`/`IsValid`, `DocumentMapper`'s invalid-id repair, schema patterns
+
+`IdFormat.Pattern`/`PatternFor` now share one `private const string ValueDigitsPattern` (the alphabet
+character class) instead of the two being independently hand-typed; `IsValid` is a small manual
+character-by-character check (length, prefix, then each digit against `Alphabet.IndexOf`), not
+`Regex.IsMatch` — matches the file's existing style (`TryParse`/`Format` are hand-rolled too) and sidesteps
+a real .NET regex quirk found while writing `NetPrintsJsonSchema`'s own patterns (below): `$` in a .NET
+regex matches at the end of the string *or before a trailing `\n`*, unlike JSON Schema's ECMA-262 `$`,
+which does not have that carve-out — irrelevant for in-memory id strings (never contain `\n`), but a
+reason not to reach for `Regex` out of habit here. `StableIds.IsValidDocumentId` is deleted, per the task
+("`IdFormat.IsValid` ... replace `StableIds.IsValidDocumentId`"); its three tests became `IdFormat.IsValid`
+tests in `IdGenerationTests.cs` (generated id accepted for its own prefix only, `"n0"`/`"start"` rejected,
+upper-cased-real-id rejected, 12/14-digit variants rejected, `null` rejected) — built from a real
+`SeededIdGenerator` id plus small mutations (`ToUpperInvariant()`, drop/append one character) rather than
+hand-typed strings, so the length arithmetic can't be typo'd.
+
+**`DocumentMapper`'s invalid-id repair is a distinct step from duplicate repair, and needs its own
+reference-rewriting — unlike duplicates, which get this for free.** T040c's duplicate-id repair never
+needed to rewrite `layout`/`connections` text because the *first* occurrence of a duplicated id keeps its
+original text (a document literally cannot have two different `layout` entries with the same key), so any
+reference to that text still resolves. An invalid id has no such anchor: *every* occurrence of the invalid
+text is replaced, so a connection endpoint or `layout` key still naming the old text would otherwise
+resolve to nothing (`NPD002`/`NPD004`) instead of following the repair, which is exactly what DF-T28 (and
+document-format.md §2.6's own wording, "references... follow") rules out. Two different fixes for the two
+id kinds, reflecting where each one's references live:
+- **Node ids**: `ResolveInvalidNodeId` records `oldId -> newId` in a per-graph `Dictionary` as it repairs
+  each node (first occurrence wins for a repeated raw text, mirroring `ResolveDuplicateId`'s own
+  convention). `graphDocument.Connections` is remapped through it *before* `ApplyConnections` runs
+  (`RemapConnectionEndpoints`, a pure function returning the input unchanged when the dictionary is
+  empty — the common case costs nothing). For `layout`, rather than threading the same dictionary through
+  the position-restore loop and the "unknown node" loop separately, `layout[graphKey]`'s keys are remapped
+  *once* into a new `Dictionary<string, int[]>` (`positionsByCurrentId`) up front; every existing line of
+  code after that point (the restore loop, the unknown-key `Info` loop) is unchanged, since it already
+  read from `positions` — reassigning that local's declared type to
+  `IReadOnlyDictionary<string, int[]>?` was the only structural change needed downstream.
+- **Member ids**: nothing downstream needs a dictionary at all, because there is exactly one place a
+  member id is ever named by text (`layout`'s own outer key, plus a variable's `/type`, `/get`, `/set`
+  suffixes) and it is known and fixed *before* that member's own graph gets mapped
+  (`MapVariableFromDocument`/`MapMethodFromDocument`/`MapConstructorFromDocument` all resolve the member id
+  first, then call `MapGraphFromDocument`). So `ResolveMemberId` just renames `layout`'s relevant key(s) in
+  place, synchronously, the moment it detects the id needed repair — `RenameLayoutGraphKeys`/
+  `RenameLayoutGraphKey`, using `TryGetValue` + `Remove` + re-`Add` rather than the two-argument
+  `Remove(key, out value)` overload (works for both `Dictionary` and `SortedDictionary` without checking
+  which overloads each type actually has).
+
+**`ValidateMemberIdShapes` narrowed to "missing" as the task says, but node ids needed a *new* missing-id
+check that did not exist before this task.** Re-reading the pre-T054b code: no path ever rejected an empty
+*node* id — `StableIds.IsValidDocumentId` was only ever called for member ids. document-format.md §1.4.1's
+"missing → `DocumentFormatException`" row for node id was therefore unimplemented, not just loosened, until
+now; added as a plain `string.IsNullOrEmpty(nodeDocument.Id)` check in `MapGraphFromDocument`'s node loop
+(unknown/preserved nodes are exempt, matching that they are exempt from shape repair too: an opaque node's
+internal id references are not something the mapper can safely rewrite without understanding its
+structure — not exercised by a test, a deliberate, narrow scope decision recorded here rather than in a
+test comment).
+
+**Fallout from ids becoming strict: `LegacyXmlDocumentFormatTests.FixtureImportsWithoutIssues`.** The legacy
+importer's own positional ids (`AssignLegacyNodeIds`'s `"n0"`, `"n1"`, …) can never match `IdFormat` by
+construction — they exist *because* `AssignLegacyNodeIds` was written before Snowflake ids existed. Running
+that path through the now-strict `FromDocument` therefore always reports one `NPD009` per node, forever,
+until T062a deletes the whole legacy path. Narrowed the assertion from `Assert.Empty(issues)` to "every
+issue is `NPD009`" — the same kind of narrow, test-local accommodation as T054a's
+`HelloWorldSampleTests.FactoryMatchesCheckedInSample` fix, not a relaxation of what the test actually
+guards (nothing *else* is allowed to go wrong).
+
+**Schema patterns (`NetPrintsJsonSchema.cs`)**: `TransformSchemaNode` tells a node id from a member id by
+`context.PropertyInfo.DeclaringType` — every concrete node-document record passes its `Id` constructor
+parameter straight to the shared `NodeDocument(Id, Name, Pins)` base instead of redeclaring the property, so
+`DeclaringType` is `typeof(NodeDocument)` for all 24 built-in kinds plus `UnknownNodeDocument`; the four
+member-document types each declare their own `Id`, covered by a small `MemberDocumentTypes` lookup array.
+One real bug, caught by reading the regenerated file rather than by a failing test: a first attempt at the
+connection-endpoint pattern stripped *both* anchors off `IdFormat.PatternFor('n')` before splicing in the
+pin-reference suffix, silently dropping the leading `^` — added `StripTrailingAnchor` (one character off
+the end only) alongside the existing `StripAnchors` (both ends, still used for the `layout` graph-key
+pattern, which wraps the stripped body in a *new* `^(...)$`). Separately, the default `JavaScriptEncoder`
+escapes `+` as `+` — this pattern is the first thing in the whole schema file to ever contain a
+literal `+` — fixed by setting `Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping` on `GenerateV1`'s
+writer options, matching the canonical document writer's own relaxed escaping. Full write-up in
+research.md's new "Findings recorded during T054b" paragraph (§6, next to the T041/K14 one).
+
+**`MergeTests.cs`'s ids (DF-T23) needed spaced-out numeric values, not just longer strings.** The test's
+whole point is which *gap* in a sorted array a branch's insertion lands in, so the replacement ids need to
+preserve the original short ids' relative order exactly, not merely satisfy the length/alphabet check.
+`IdFormat.Format(prefix, value)` already zero-pads so ordinal string order equals numeric value order (by
+design, data-model.md §2), so the fix was to assign the base's four nodes far-apart values (`0`, `1000`,
+`2000`, `3000`) and give each branch's insertions small offsets from the base value on either side of
+their intended gap (`10`/`20` between `0` and `1000` for one test's branch A, `1010`/`1020` between `1000`
+and `2000` for its branch B; `10`/`11` and `12`/`13`, both between `0` and `1000`, for the second test's
+two branches sharing one gap on purpose) — no hand-counting of alphabet characters, and the relationship
+between a value and its gap is legible from the numbers themselves.
+
+No `!`/`null!`/`default!` added (the two pre-existing `method.FindNode(...)!` calls in
+`DocumentMapperTests.NodeWithoutLayoutEntryIsAutoPlacedDeterministically`, from an earlier batch, only had
+their string-literal argument changed, not the `!` itself — left as found, out of this task's scope).
+Verified: `dotnet test tests/NetPrints.Core.Tests -c Release -- --ignore-exit-code 8` green, 305 tests
+(299 → 305: +6 `StrictIdTests`, net unchanged elsewhere since `IdGenerationTests`' `IsValidDocumentId*`
+tests were replaced 3-for-4 with `IsValid*` tests); `schemas/netpc.v1.schema.json` regenerated
+(`NETPRINTS_UPDATE_SNAPSHOTS=1`) — diff adds only `pattern`/`propertyNames` keys, confirmed by inspection;
+`git diff --exit-code tests/NetPrints.Core.Tests/Fixtures/Golden/` empty (T054b touches no fixture);
+`dotnet build NetPrints.slnx -c Release` 0 warnings; `dotnet format NetPrints.slnx --verify-no-changes`
+clean.
+
 ## Notes for the next batch (T054–T058)
 
 - **T054 (`ProjectConverter`)** can reuse `ProjectFiles.EnsureGitAttributesAsync` (T050) directly, and

@@ -493,6 +493,33 @@ entirely when it is null (no override forces it), so the generated schema matche
 runtime behavior — the prose's "always present" framing is the part that is arguably imprecise, not the
 generated schema.
 
+**Findings recorded during T054b (id patterns, research R21).** `TransformSchemaNode` distinguishes a
+node id from a member id purely by `context.PropertyInfo.DeclaringType`: every concrete node-document
+record (`MethodEntryNodeDocument`, `CallMethodNodeDocument`, …) passes its `Id` constructor parameter
+straight to the shared base (`NodeDocument(Id, Name, Pins)`) rather than redeclaring the property, so
+`DeclaringType` is `typeof(NodeDocument)` for all 24 of them plus `UnknownNodeDocument` — one check
+covers every built-in kind, no per-kind branch needed. The four member-document types
+(`VariableDocument`, `MethodDocument`, `ConstructorDocument`, `EventGraphDocument`) each declare their own
+`Id`, so their `DeclaringType` is the type itself; a small lookup table (`MemberDocumentTypes`) covers all
+four. `ConnectionDocument.From`/`.To` are matched by `Name is "from" or "to"` plus `DeclaringType ==
+typeof(ConnectionDocument)` (the only type with properties of those names). The extension `anyOf` branch
+(added in T041) had no `id` property schema at all before this task — only `required: ["$kind","id"]` —
+because nothing needed one until ids became strict; T054b adds `"id": {"type":"string","pattern":
+IdFormat.PatternFor('n')}` to it. `layout`'s own two nesting levels are matched by `context.TypeInfo.Type`
+alone (`SortedDictionary<string, SortedDictionary<string, int[]>>` for the root, `SortedDictionary<string,
+int[]>` for a per-graph position map): each type is used in exactly one place in the whole document model,
+so no property-name check is needed to disambiguate. One real bug caught by inspecting the regenerated
+file, not by a failing test: a first attempt built the connection-endpoint pattern with a helper that
+stripped *both* anchors from `IdFormat.PatternFor('n')` before splicing in the pin-reference suffix,
+silently dropping the leading `^` (`"n[0-9a-hjkmnp-tv-z]{13}/(in|out)\.(exec|data|type)\..+$"` instead of
+`"^n…"`) — a JSON Schema `pattern` is an unanchored substring search, so the missing `^` would still have
+passed every real id but is a real, if subtle, weakening of the constraint; fixed with a second helper
+(`StripTrailingAnchor`, one character off the end only) so the leading anchor survives. Separately, the
+default `JavaScriptEncoder` escapes `+` as `+` (the connection pattern's own "one or more" quantifier
+is the first `+` this file has ever contained); `GenerateV1`'s writer options now set
+`JavaScriptEncoder.UnsafeRelaxedJsonEscaping`, matching the canonical document writer's own relaxed
+escaping (document-format.md §2.3) and keeping the committed schema's diff readable.
+
 ## 7. Revision: release, packages and docs (research R18–R19)
 
 ### R18. Release and docs stack (reused from the owner-approved research)

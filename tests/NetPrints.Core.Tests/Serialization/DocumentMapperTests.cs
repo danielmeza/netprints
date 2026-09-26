@@ -30,6 +30,11 @@ namespace NetPrints.Tests.Serialization
         private static GraphDocument SimpleMethodGraph(string entryId, string returnId) =>
             new([new MethodEntryNodeDocument(entryId, null, null, 0, null), new ReturnNodeDocument(returnId, null, null, 0)], null, null);
 
+        // T054b (research.md R21): FromDocument is strict now, so every handcrafted document it reads
+        // needs IdFormat-shaped ids or the mapper repairs them out from under the test (NPD009).
+        private static string NodeId(long value) => IdFormat.Format('n', value);
+        private static string MemberId(long value) => IdFormat.Format('m', value);
+
         // DF-T06: every built-in kind round-trips, including dynamic pin counts and renamed pins.
         [Fact]
         public void AllNodesRoundTripsThroughToDocumentAndFromDocument()
@@ -77,11 +82,13 @@ namespace NetPrints.Tests.Serialization
         [Fact]
         public void UnknownNodeAndItsConnectionArePreservedRoundTrip()
         {
+            // "n9" (the unknown node) is exempt from strict-id repair: it is opaque, preserved state,
+            // never mapped to a real Node.
             JsonElement raw = JsonDocument.Parse("""{"$kind":"test.ext/widget","id":"n9","extra":1}""").RootElement;
             var unknownNode = new UnknownNodeDocument("n9", "test.ext/widget", raw);
-            var classReturn = new ClassReturnNodeDocument("n0", null, null, 0);
+            var classReturn = new ClassReturnNodeDocument(NodeId(0), null, null, 0);
             var classGraph = new GraphDocument([classReturn, unknownNode],
-                [new ConnectionDocument("n9/out.type.Whatever", "n0/in.type.BaseType")], null);
+                [new ConnectionDocument($"n9/out.type.Whatever", $"{NodeId(0)}/in.type.BaseType")], null);
             var classDocument = new ClassDocument(1, null, "C", MemberVisibility.Public, ClassModifiers.None, null,
                 classGraph, null, null, null, null, null);
 
@@ -97,7 +104,7 @@ namespace NetPrints.Tests.Serialization
             Assert.Equal("test.ext/widget", preservedNode.Kind);
             ConnectionDocument preservedConnection = Assert.Single(roundTripped.ClassGraph.Connections!);
             Assert.Equal("n9/out.type.Whatever", preservedConnection.From);
-            Assert.Equal("n0/in.type.BaseType", preservedConnection.To);
+            Assert.Equal($"{NodeId(0)}/in.type.BaseType", preservedConnection.To);
         }
 
         // DF-T19 (document part): inserting a parameter keeps the connection on the unmoved parameter
@@ -119,23 +126,23 @@ namespace NetPrints.Tests.Serialization
             // bug, which used to disconnect a literal's value pins on every GraphTypeInference.Relax
             // pass even with no generic arguments involved, is fixed; see implementation-notes.md,
             // "T035 - LiteralNode.UpdatePinTypes...").
-            var entry = new MethodEntryNodeDocument("n3", null, null, 0, null);
-            var call = new CallMethodNodeDocument("n2", null, null, editedMethod, 0);
-            var literalA = new LiteralNodeDocument("n6", null, null, intRef);
-            var literalB = new LiteralNodeDocument("n7", null, null, intRef);
+            var entry = new MethodEntryNodeDocument(NodeId(3), null, null, 0, null);
+            var call = new CallMethodNodeDocument(NodeId(2), null, null, editedMethod, 0);
+            var literalA = new LiteralNodeDocument(NodeId(6), null, null, intRef);
+            var literalB = new LiteralNodeDocument(NodeId(7), null, null, intRef);
 
             var connections = new List<ConnectionDocument>
             {
-                new("n6/out.data.Value", "n2/in.data.a"),
-                new("n7/out.data.Value", "n2/in.data.b"),
+                new($"{NodeId(6)}/out.data.Value", $"{NodeId(2)}/in.data.a"),
+                new($"{NodeId(7)}/out.data.Value", $"{NodeId(2)}/in.data.b"),
             };
 
             var methodGraph = new GraphDocument(
-                [entry, new ReturnNodeDocument("n4", null, null, 0), call, literalA, literalB],
+                [entry, new ReturnNodeDocument(NodeId(4), null, null, 0), call, literalA, literalB],
                 connections, null);
-            var methodDocument = new MethodDocument("m000001", "Caller", MemberVisibility.Public, MethodModifiers.None, methodGraph);
+            var methodDocument = new MethodDocument(MemberId(1), "Caller", MemberVisibility.Public, MethodModifiers.None, methodGraph);
             var classDocument = new ClassDocument(1, null, "C", MemberVisibility.Public, ClassModifiers.None, null,
-                new GraphDocument([new ClassReturnNodeDocument("n5", null, null, 0)], null, null),
+                new GraphDocument([new ClassReturnNodeDocument(NodeId(5), null, null, 0)], null, null),
                 null, [methodDocument], null, null, null);
 
             DocumentMapper mapper = NewMapper();
@@ -156,24 +163,24 @@ namespace NetPrints.Tests.Serialization
         [Fact]
         public void NodeWithoutLayoutEntryIsAutoPlacedDeterministically()
         {
-            var literal = new LiteralNodeDocument("n2", null, null, new TypeRef("System.Int32"));
+            var literal = new LiteralNodeDocument(NodeId(2), null, null, new TypeRef("System.Int32"));
             var methodGraph = new GraphDocument(
-                [new MethodEntryNodeDocument("n0", null, null, 0, null), new ReturnNodeDocument("n1", null, null, 0), literal],
-                [new ConnectionDocument("n0/out.exec.Exec", "n1/in.exec.Exec")], null);
-            var methodDocument = new MethodDocument("m000001", "M", MemberVisibility.Public, MethodModifiers.None, methodGraph);
+                [new MethodEntryNodeDocument(NodeId(0), null, null, 0, null), new ReturnNodeDocument(NodeId(1), null, null, 0), literal],
+                [new ConnectionDocument($"{NodeId(0)}/out.exec.Exec", $"{NodeId(1)}/in.exec.Exec")], null);
+            var methodDocument = new MethodDocument(MemberId(1), "M", MemberVisibility.Public, MethodModifiers.None, methodGraph);
 
             var layout = new SortedDictionary<string, SortedDictionary<string, int[]>>(System.StringComparer.Ordinal)
             {
-                ["m000001"] = new SortedDictionary<string, int[]>(System.StringComparer.Ordinal)
+                [MemberId(1)] = new SortedDictionary<string, int[]>(System.StringComparer.Ordinal)
                 {
-                    ["n0"] = [100, 50],
-                    ["n1"] = [400, 50],
-                    // n2 (the literal) intentionally has no entry: it must be auto-placed.
+                    [NodeId(0)] = [100, 50],
+                    [NodeId(1)] = [400, 50],
+                    // The literal intentionally has no entry: it must be auto-placed.
                 },
             };
 
             var classDocument = new ClassDocument(1, null, "C", MemberVisibility.Public, ClassModifiers.None, null,
-                new GraphDocument([new ClassReturnNodeDocument("n3", null, null, 0)], null, null),
+                new GraphDocument([new ClassReturnNodeDocument(NodeId(3), null, null, 0)], null, null),
                 null, [methodDocument], null, null, layout);
 
             DocumentMapper mapper = NewMapper();
@@ -181,8 +188,8 @@ namespace NetPrints.Tests.Serialization
             ClassGraph cls = mapper.FromDocument(classDocument, Project.CreateNew("P", "P"), issues, new DocumentId("C.netpc.json"));
 
             MethodGraph method = cls.Methods.Single();
-            Node n0 = method.FindNode("n0")!;
-            Node n1 = method.FindNode("n1")!;
+            Node n0 = method.FindNode(NodeId(0))!;
+            Node n1 = method.FindNode(NodeId(1))!;
             Node literalNode = method.Nodes.OfType<LiteralNode>().Single();
 
             Assert.Equal(100, n0.PositionX);
@@ -218,10 +225,10 @@ namespace NetPrints.Tests.Serialization
         [Fact]
         public void DuplicateMemberIdIsReassignedAndReported()
         {
-            var methodA = new MethodDocument("m000001", "A", MemberVisibility.Public, MethodModifiers.None, SimpleMethodGraph("n0", "n1"));
-            var methodB = new MethodDocument("m000001", "B", MemberVisibility.Public, MethodModifiers.None, SimpleMethodGraph("n2", "n3"));
+            var methodA = new MethodDocument(MemberId(1), "A", MemberVisibility.Public, MethodModifiers.None, SimpleMethodGraph(NodeId(0), NodeId(1)));
+            var methodB = new MethodDocument(MemberId(1), "B", MemberVisibility.Public, MethodModifiers.None, SimpleMethodGraph(NodeId(2), NodeId(3)));
             var classDocument = new ClassDocument(1, null, "C", MemberVisibility.Public, ClassModifiers.None, null,
-                new GraphDocument([new ClassReturnNodeDocument("n4", null, null, 0)], null, null),
+                new GraphDocument([new ClassReturnNodeDocument(NodeId(4), null, null, 0)], null, null),
                 null, [methodA, methodB], null, null, null);
 
             DocumentMapper mapper = NewMapper();
@@ -232,7 +239,7 @@ namespace NetPrints.Tests.Serialization
 
             MethodGraph first = cls.Methods.Single(m => m.Name == "A");
             MethodGraph second = cls.Methods.Single(m => m.Name == "B");
-            Assert.Equal("m000001", first.Id);
+            Assert.Equal(MemberId(1), first.Id);
             Assert.NotEqual(first.Id, second.Id);
         }
 
@@ -242,13 +249,13 @@ namespace NetPrints.Tests.Serialization
         [Fact]
         public void DuplicateNodeIdIsReassignedAndReported()
         {
-            var entry = new MethodEntryNodeDocument("n0", null, null, 0, null);
-            var literalA = new LiteralNodeDocument("n1", null, null, new TypeRef("System.Int32"));
-            var literalB = new LiteralNodeDocument("n1", null, null, new TypeRef("System.Int32"));
-            var methodGraph = new GraphDocument([entry, new ReturnNodeDocument("n2", null, null, 0), literalA, literalB], null, null);
-            var methodDocument = new MethodDocument("m000001", "M", MemberVisibility.Public, MethodModifiers.None, methodGraph);
+            var entry = new MethodEntryNodeDocument(NodeId(0), null, null, 0, null);
+            var literalA = new LiteralNodeDocument(NodeId(1), null, null, new TypeRef("System.Int32"));
+            var literalB = new LiteralNodeDocument(NodeId(1), null, null, new TypeRef("System.Int32"));
+            var methodGraph = new GraphDocument([entry, new ReturnNodeDocument(NodeId(2), null, null, 0), literalA, literalB], null, null);
+            var methodDocument = new MethodDocument(MemberId(1), "M", MemberVisibility.Public, MethodModifiers.None, methodGraph);
             var classDocument = new ClassDocument(1, null, "C", MemberVisibility.Public, ClassModifiers.None, null,
-                new GraphDocument([new ClassReturnNodeDocument("n3", null, null, 0)], null, null),
+                new GraphDocument([new ClassReturnNodeDocument(NodeId(3), null, null, 0)], null, null),
                 null, [methodDocument], null, null, null);
 
             DocumentMapper mapper = NewMapper();
@@ -261,8 +268,8 @@ namespace NetPrints.Tests.Serialization
             List<LiteralNode> literals = method.Nodes.OfType<LiteralNode>().ToList();
             Assert.Equal(2, literals.Count);
             Assert.NotEqual(literals[0].Id, literals[1].Id);
-            Assert.Contains(literals, l => l.Id == "n1");
-            Assert.Same(literals.Single(l => l.Id == "n1"), method.FindNode("n1"));
+            Assert.Contains(literals, l => l.Id == NodeId(1));
+            Assert.Same(literals.Single(l => l.Id == NodeId(1)), method.FindNode(NodeId(1)));
         }
 
         // DF-T22 (document part): layout keys use member ids, unaffected by model member order.

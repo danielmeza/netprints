@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text.Json;
@@ -7,6 +8,7 @@ using System.Text.Json.Nodes;
 using System.Text.Json.Schema;
 using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
+using NetPrints.Core;
 using NetPrints.Serialization.Documents;
 
 namespace NetPrints.Serialization.Json;
@@ -21,6 +23,35 @@ public static class NetPrintsJsonSchema
 {
     /// <summary>Draft the schema declares itself against.</summary>
     private const string MetaSchemaUri = "https://json-schema.org/draft/2020-12/schema";
+
+    /// <summary>Document types whose <c>id</c> property is a member id (document-format.md §1.4).</summary>
+    private static readonly Type[] MemberDocumentTypes =
+        [typeof(VariableDocument), typeof(MethodDocument), typeof(ConstructorDocument), typeof(EventGraphDocument)];
+
+    /// <summary>
+    /// <see cref="ConnectionDocument.From"/>/<see cref="ConnectionDocument.To"/>'s pattern
+    /// (document-format.md §6): a node id followed by a pin reference (document-format.md §1.4.2),
+    /// built from <see cref="IdFormat.PatternFor"/>'s node pattern so the id shape is never typed
+    /// twice.
+    /// </summary>
+    private static readonly string ConnectionEndpointPattern =
+        $"{StripTrailingAnchor(IdFormat.PatternFor('n'))}/(in|out)\\.(exec|data|type)\\..+$";
+
+    /// <summary>
+    /// The root <c>layout</c> object's graph-key pattern (document-format.md §1.4.1, §6): <c>class</c>,
+    /// a member id, or a member id with <c>/type</c>, <c>/get</c> or <c>/set</c>; built from
+    /// <see cref="IdFormat.PatternFor"/>'s member pattern.
+    /// </summary>
+    private static readonly string LayoutGraphKeyPattern =
+        $"^(class|{StripAnchors(IdFormat.PatternFor('m'))}(/(type|get|set))?)$";
+
+    /// <summary>Removes the leading <c>^</c> and trailing <c>$</c> anchors so a pattern's body can be
+    /// embedded inside a larger one.</summary>
+    private static string StripAnchors(string anchoredPattern) => anchoredPattern[1..^1];
+
+    /// <summary>Removes only the trailing <c>$</c> anchor, so a pattern can be extended with more text
+    /// before a new one is added at the end.</summary>
+    private static string StripTrailingAnchor(string anchoredPattern) => anchoredPattern[..^1];
 
     /// <summary>
     /// Generates the schema v1 document: <see cref="JsonSchemaExporter"/> over <see cref="ClassDocument"/>,
@@ -60,6 +91,9 @@ public static class NetPrintsJsonSchema
             WriteIndented = true,
             IndentSize = 2,
             NewLine = "\n",
+            // Relaxed escaping (matching the canonical document writer, document-format.md §2.3): the
+            // default encoder escapes '+' (the connection-endpoint pattern's "one or more") as +.
+            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
         };
 
         return schema.ToJsonString(writeOptions) + "\n";
@@ -92,8 +126,35 @@ public static class NetPrintsJsonSchema
                 ["properties"] = new JsonObject
                 {
                     ["$kind"] = new JsonObject { ["type"] = "string", ["pattern"] = "/" },
+                    ["id"] = new JsonObject { ["type"] = "string", ["pattern"] = IdFormat.PatternFor('n') },
                 },
             });
+        }
+
+        // Id patterns (research.md R21, T054b): every node/member id and connection endpoint, plus the
+        // layout maps' own keys, built from IdFormat so the shape is never typed twice.
+        if (context.PropertyInfo is { Name: "id" } idProperty)
+        {
+            if (idProperty.DeclaringType == typeof(NodeDocument))
+            {
+                obj["pattern"] = IdFormat.PatternFor('n');
+            }
+            else if (Array.IndexOf(MemberDocumentTypes, idProperty.DeclaringType) >= 0)
+            {
+                obj["pattern"] = IdFormat.PatternFor('m');
+            }
+        }
+        else if (context.PropertyInfo is { Name: "from" or "to", DeclaringType: var declaringType } && declaringType == typeof(ConnectionDocument))
+        {
+            obj["pattern"] = ConnectionEndpointPattern;
+        }
+        else if (context.TypeInfo.Type == typeof(SortedDictionary<string, SortedDictionary<string, int[]>>))
+        {
+            obj["propertyNames"] = new JsonObject { ["pattern"] = LayoutGraphKeyPattern };
+        }
+        else if (context.TypeInfo.Type == typeof(SortedDictionary<string, int[]>))
+        {
+            obj["propertyNames"] = new JsonObject { ["pattern"] = IdFormat.PatternFor('n') };
         }
 
         FixRequired(context, obj);

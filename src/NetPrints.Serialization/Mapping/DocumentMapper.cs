@@ -84,11 +84,12 @@ public sealed class DocumentMapper : IDocumentMapper
     }
 
     /// <inheritdoc/>
-    /// <exception cref="DocumentFormatException">A member id is missing, contains <c>/</c> or
-    /// whitespace, or equals <c>"class"</c>; or a layout position array does not have exactly 2
-    /// elements. A member or node id duplicated within its scope of uniqueness does not throw: the
-    /// later occurrence is reassigned a fresh id and reported as a <see cref="DocumentIssue"/> warning
-    /// (<see cref="DocumentIssue.DuplicateIdReassigned"/>, document-format.md §2.6).</exception>
+    /// <exception cref="DocumentFormatException">A member or node id is missing; or a layout position
+    /// array does not have exactly 2 elements. A present id that does not match <see cref="IdFormat"/>
+    /// for its prefix, or one duplicated within its scope of uniqueness, does not throw: it is
+    /// reassigned a fresh id and reported as a <see cref="DocumentIssue"/> warning
+    /// (<see cref="DocumentIssue.InvalidIdReassigned"/> or <see cref="DocumentIssue.DuplicateIdReassigned"/>,
+    /// document-format.md §1.4.1, §2.6, research.md R21).</exception>
     /// <exception cref="InvalidOperationException">A node document's runtime type has no registered
     /// converter (a genuine registry gap, not a document problem — an unrecognized <c>$kind</c> never
     /// reaches this far as anything but an <see cref="UnknownNodeDocument"/>).</exception>
@@ -370,16 +371,16 @@ public sealed class DocumentMapper : IDocumentMapper
     }
 
     /// <summary>
-    /// Checks every member id's shape (non-empty, no <c>/</c> or whitespace, not <c>"class"</c>).
-    /// Duplicates are not an error here: <see cref="ResolveDuplicateId"/> repairs them once each
-    /// member is actually created, since the fix (a fresh id) only needs to be unique among ids
-    /// created so far, not the whole document up front.
+    /// Checks that every member id is present. A malformed shape is not an error here any more
+    /// (research.md R21): <see cref="ResolveMemberId"/> repairs it (a fresh id, <c>NPD009</c>) once
+    /// the member is actually created, the same way <see cref="ResolveDuplicateId"/> repairs a
+    /// duplicate (<c>NPD007</c>) — this only guards the one case neither repair path can recover from.
     /// </summary>
     private static void ValidateMemberIdShapes(ClassDocument document, DocumentId id)
     {
         void Check(string memberId)
         {
-            if (!StableIds.IsValidDocumentId(memberId) || memberId == "class")
+            if (string.IsNullOrEmpty(memberId))
             {
                 throw new DocumentFormatException($"Invalid member id '{memberId}'.", id);
             }
@@ -422,6 +423,105 @@ public sealed class DocumentMapper : IDocumentMapper
         return reassigned;
     }
 
+    /// <summary>
+    /// Resolves a member id: a shape not matching <see cref="IdFormat.PatternFor"/> is replaced by a
+    /// fresh one first (<see cref="DocumentIssue.InvalidIdReassigned"/>, <c>NPD009</c>, research.md R21),
+    /// renaming <paramref name="layout"/>'s graph-key entry (or entries, for a variable) that named the
+    /// old text so the member's own graphs — mapped right after this call — still find their positions;
+    /// then <see cref="ResolveDuplicateId"/> repairs a duplicate the same as before (<c>NPD007</c>).
+    /// </summary>
+    private static string ResolveMemberId(char prefix, string documentId, string what, HashSet<string> seenIds,
+        SortedDictionary<string, SortedDictionary<string, int[]>>? layout, bool isVariable,
+        DocumentId id, ICollection<DocumentIssue> issues)
+    {
+        string resolvedId = documentId;
+
+        if (!IdFormat.IsValid(documentId, prefix))
+        {
+            resolvedId = IdGeneration.Current.NewId(prefix);
+            issues.Add(new DocumentIssue(DocumentIssueSeverity.Warning, DocumentIssue.InvalidIdReassigned,
+                $"{what} '{documentId}' does not match the id format; reassigned to '{resolvedId}'.", id));
+            RenameLayoutGraphKeys(layout, documentId, resolvedId, isVariable);
+        }
+
+        return ResolveDuplicateId(prefix, resolvedId, seenIds, what, id, issues);
+    }
+
+    /// <summary>Renames <paramref name="layout"/>'s entry for a repaired member id (and, for a
+    /// variable, its <c>/type</c>, <c>/get</c> and <c>/set</c> graph keys), leaving any entry not
+    /// present untouched.</summary>
+    private static void RenameLayoutGraphKeys(SortedDictionary<string, SortedDictionary<string, int[]>>? layout,
+        string oldMemberId, string newMemberId, bool isVariable)
+    {
+        if (layout is null)
+        {
+            return;
+        }
+
+        RenameLayoutGraphKey(layout, oldMemberId, newMemberId);
+
+        if (isVariable)
+        {
+            RenameLayoutGraphKey(layout, $"{oldMemberId}/type", $"{newMemberId}/type");
+            RenameLayoutGraphKey(layout, $"{oldMemberId}/get", $"{newMemberId}/get");
+            RenameLayoutGraphKey(layout, $"{oldMemberId}/set", $"{newMemberId}/set");
+        }
+    }
+
+    private static void RenameLayoutGraphKey(SortedDictionary<string, SortedDictionary<string, int[]>> layout, string oldKey, string newKey)
+    {
+        if (layout.TryGetValue(oldKey, out SortedDictionary<string, int[]>? positions))
+        {
+            layout.Remove(oldKey);
+            layout[newKey] = positions;
+        }
+    }
+
+    /// <summary>
+    /// Resolves a node id's shape: a document id not matching <see cref="IdFormat.PatternFor"/> for
+    /// <c>'n'</c> is replaced by a fresh one, recorded in <paramref name="oldToNewNodeId"/> (first
+    /// occurrence wins, matching <see cref="ResolveDuplicateId"/>'s own convention for a repeated raw
+    /// text) so the caller can rewrite this graph's connections and layout entries that name the old
+    /// text, and reported as <see cref="DocumentIssue.InvalidIdReassigned"/> (<c>NPD009</c>) — before
+    /// <see cref="ResolveDuplicateId"/> repairs a duplicate of the result.
+    /// </summary>
+    private static string ResolveInvalidNodeId(string documentId, string what, Dictionary<string, string> oldToNewNodeId,
+        DocumentId id, ICollection<DocumentIssue> issues)
+    {
+        if (IdFormat.IsValid(documentId, 'n'))
+        {
+            return documentId;
+        }
+
+        string reassigned = IdGeneration.Current.NewId('n');
+        oldToNewNodeId.TryAdd(documentId, reassigned);
+        issues.Add(new DocumentIssue(DocumentIssueSeverity.Warning, DocumentIssue.InvalidIdReassigned,
+            $"{what} '{documentId}' does not match the id format; reassigned to '{reassigned}'.", id));
+        return reassigned;
+    }
+
+    /// <summary>Remaps every connection endpoint whose node id was repaired by
+    /// <see cref="ResolveInvalidNodeId"/>; returns <paramref name="connections"/> unchanged if nothing
+    /// needed repair.</summary>
+    private static IReadOnlyList<ConnectionDocument>? RemapConnectionEndpoints(IReadOnlyList<ConnectionDocument>? connections,
+        IReadOnlyDictionary<string, string> oldToNewNodeId)
+    {
+        if (connections is null || oldToNewNodeId.Count == 0)
+        {
+            return connections;
+        }
+
+        return connections
+            .Select(connection => new ConnectionDocument(RemapEndpoint(connection.From, oldToNewNodeId), RemapEndpoint(connection.To, oldToNewNodeId)))
+            .ToList();
+    }
+
+    private static string RemapEndpoint(string endpoint, IReadOnlyDictionary<string, string> oldToNewNodeId)
+    {
+        (string nodeId, string pinRef) = SplitEndpoint(endpoint);
+        return oldToNewNodeId.TryGetValue(nodeId, out string? replacement) ? $"{replacement}/{pinRef}" : endpoint;
+    }
+
     private void MapVariableFromDocument(VariableDocument document, ClassGraph cls, NodeMappingContext context,
         SortedDictionary<string, SortedDictionary<string, int[]>>? layout, HashSet<string> knownGraphKeys,
         HashSet<string> seenMemberIds, DocumentId id, ICollection<DocumentIssue> issues)
@@ -430,7 +530,7 @@ public sealed class DocumentMapper : IDocumentMapper
         {
             Visibility = document.Visibility,
         };
-        variable.Id = ResolveDuplicateId('m', document.Id, seenMemberIds, "Member", id, issues);
+        variable.Id = ResolveMemberId('m', document.Id, "Member", seenMemberIds, layout, isVariable: true, id, issues);
 
         // Variable's constructor always builds a placeholder type-node tree for its TypeSpecifier
         // argument (GraphUtil.CreateNestedTypeNode), unlike every other graph kind's constructor,
@@ -478,7 +578,7 @@ public sealed class DocumentMapper : IDocumentMapper
             Visibility = document.Visibility,
             Modifiers = document.Modifiers,
         };
-        method.Id = ResolveDuplicateId('m', document.Id, seenMemberIds, "Member", id, issues);
+        method.Id = ResolveMemberId('m', document.Id, "Member", seenMemberIds, layout, isVariable: false, id, issues);
         cls.Methods.Add(method);
 
         MapGraphFromDocument(document.Graph, method, context, layout, knownGraphKeys, id, issues);
@@ -489,7 +589,7 @@ public sealed class DocumentMapper : IDocumentMapper
         HashSet<string> seenMemberIds, DocumentId id, ICollection<DocumentIssue> issues)
     {
         var constructor = new ConstructorGraph { Class = cls, Project = cls.Project, Visibility = document.Visibility };
-        constructor.Id = ResolveDuplicateId('m', document.Id, seenMemberIds, "Member", id, issues);
+        constructor.Id = ResolveMemberId('m', document.Id, "Member", seenMemberIds, layout, isVariable: false, id, issues);
         cls.Constructors.Add(constructor);
 
         MapGraphFromDocument(document.Graph, constructor, context, layout, knownGraphKeys, id, issues);
@@ -506,6 +606,12 @@ public sealed class DocumentMapper : IDocumentMapper
         var seenNodeIds = new HashSet<string>(StringComparer.Ordinal);
         var createdNodes = new List<(Node Node, NodeDocument Document)>();
 
+        // A node id not matching IdFormat is replaced first (research.md R21, NPD009); oldToNewNodeId
+        // records the replacement (first occurrence wins for a repeated raw text, matching
+        // ResolveDuplicateId's own convention) so the connections and layout entries below — which
+        // still name the old text — can be found under the new one.
+        var oldToNewNodeId = new Dictionary<string, string>(StringComparer.Ordinal);
+
         foreach (NodeDocument nodeDocument in graphDocument.Nodes)
         {
             if (nodeDocument is UnknownNodeDocument unknown)
@@ -516,13 +622,19 @@ public sealed class DocumentMapper : IDocumentMapper
                 continue;
             }
 
+            if (string.IsNullOrEmpty(nodeDocument.Id))
+            {
+                throw new DocumentFormatException($"Invalid node id '{nodeDocument.Id}' in graph '{graphKey}'.", id);
+            }
+
             INodeDocumentConverter converter = nodes.FindByDocumentType(nodeDocument.GetType())
                 ?? throw new InvalidOperationException($"No node document converter registered for document type '{nodeDocument.GetType()}'.");
 
             Node node = converter.CreateNode(nodeDocument, graph, context);
             string previousId = node.Id;
 
-            node.Id = ResolveDuplicateId('n', nodeDocument.Id, seenNodeIds, $"Node in graph '{graphKey}'", id, issues);
+            string documentNodeId = ResolveInvalidNodeId(nodeDocument.Id, $"Node in graph '{graphKey}'", oldToNewNodeId, id, issues);
+            node.Id = ResolveDuplicateId('n', documentNodeId, seenNodeIds, $"Node in graph '{graphKey}'", id, issues);
             graph.ReindexNode(node, previousId);
             node.Name = nodeDocument.Name ?? node.DefaultName;
             createdNodes.Add((node, nodeDocument));
@@ -530,7 +642,7 @@ public sealed class DocumentMapper : IDocumentMapper
 
         var preservedNodeIds = new HashSet<string>(preservedNodes.Select(n => n.Id), StringComparer.Ordinal);
         var preservedConnections = new List<ConnectionDocument>();
-        ApplyConnections(graphDocument.Connections, graph, id, issues, preservedNodeIds, preservedConnections);
+        ApplyConnections(RemapConnectionEndpoints(graphDocument.Connections, oldToNewNodeId), graph, id, issues, preservedNodeIds, preservedConnections);
 
         if (preservedNodes.Count > 0 || preservedConnections.Count > 0)
         {
@@ -549,11 +661,26 @@ public sealed class DocumentMapper : IDocumentMapper
         }
 
         SortedDictionary<string, int[]>? positions = layout?.GetValueOrDefault(graphKey);
+        IReadOnlyDictionary<string, int[]>? positionsByCurrentId = positions;
+
+        if (positions is not null && oldToNewNodeId.Count > 0)
+        {
+            // positions' own keys still name the pre-repair text; re-key by each node's current id so
+            // the lookups below (and the "unknown node" check) find a repaired node under it.
+            var remapped = new Dictionary<string, int[]>(positions.Count, StringComparer.Ordinal);
+            foreach ((string rawNodeId, int[] xy) in positions)
+            {
+                remapped.TryAdd(oldToNewNodeId.GetValueOrDefault(rawNodeId, rawNodeId), xy);
+            }
+
+            positionsByCurrentId = remapped;
+        }
+
         var unpositioned = new List<Node>();
 
         foreach (Node node in graph.Nodes)
         {
-            if (positions is not null && positions.TryGetValue(node.Id, out int[]? xy))
+            if (positionsByCurrentId is not null && positionsByCurrentId.TryGetValue(node.Id, out int[]? xy))
             {
                 if (xy.Length != 2)
                 {
@@ -570,9 +697,9 @@ public sealed class DocumentMapper : IDocumentMapper
             }
         }
 
-        if (positions is not null)
+        if (positionsByCurrentId is not null)
         {
-            foreach (string nodeId in positions.Keys)
+            foreach (string nodeId in positionsByCurrentId.Keys)
             {
                 if (graph.FindNode(nodeId) is null)
                 {
