@@ -69,7 +69,9 @@ namespace NetPrints.Tests.Serialization
             JsonObject upgraded = migrator.Upgrade(document, DocumentKind.Class, new DocumentId("a.netpc.json"));
 
             Assert.Same(document, upgraded);
-            Assert.Equal(2, (int)upgraded["schemaVersion"]!);
+            JsonNode? schemaVersion = upgraded["schemaVersion"];
+            Assert.NotNull(schemaVersion);
+            Assert.Equal(2, (int)schemaVersion);
             Assert.Equal("value", (string?)upgraded["renamed"]);
             Assert.False(upgraded.ContainsKey("old"));
         }

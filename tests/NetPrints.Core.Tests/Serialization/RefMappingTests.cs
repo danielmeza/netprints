@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using NetPrints.Core;
 using NetPrints.Serialization.Documents;
@@ -62,9 +63,10 @@ namespace NetPrints.Tests.Serialization
 
             TypeRef typeRef = context.ToRef(listOfString);
 
-            Assert.NotNull(typeRef.Args);
-            Assert.Single(typeRef.Args!);
-            Assert.Equal("System.String", typeRef.Args![0].Name);
+            IReadOnlyList<TypeRef>? args = typeRef.Args;
+            Assert.NotNull(args);
+            Assert.Single(args);
+            Assert.Equal("System.String", args[0].Name);
 
             var roundTripped = (TypeSpecifier)context.FromRef(typeRef);
             Assert.Equal(listOfString, roundTripped);
@@ -83,8 +85,9 @@ namespace NetPrints.Tests.Serialization
 
             Assert.Equal("WriteLine", methodRef.Name);
             Assert.Equal("System.Console", methodRef.DeclaringType.Name);
-            Assert.NotNull(methodRef.Parameters);
-            Assert.Single(methodRef.Parameters!);
+            IReadOnlyList<ParameterRef>? parameters = methodRef.Parameters;
+            Assert.NotNull(parameters);
+            Assert.Single(parameters);
             Assert.Null(methodRef.ReturnTypes);
             Assert.Null(methodRef.GenericArgs);
 
@@ -101,9 +104,10 @@ namespace NetPrints.Tests.Serialization
                 new TypeSpecifier("C"), []);
 
             MethodRef methodRef = context.ToRef(method);
-            Assert.NotNull(methodRef.Parameters![0].Default);
-            Assert.Equal("System.Int32", methodRef.Parameters![0].Default!.Type);
-            Assert.Equal("5", methodRef.Parameters![0].Default!.Value);
+            TypedValue? defaultValue = methodRef.Parameters?[0].Default;
+            Assert.NotNull(defaultValue);
+            Assert.Equal("System.Int32", defaultValue.Type);
+            Assert.Equal("5", defaultValue.Value);
 
             MethodSpecifier roundTripped = context.FromRef(methodRef);
             Assert.True(roundTripped.Parameters[0].HasExplicitDefaultValue);
@@ -119,8 +123,9 @@ namespace NetPrints.Tests.Serialization
                 new TypeSpecifier("C"), []);
 
             MethodRef methodRef = context.ToRef(method);
-            Assert.NotNull(methodRef.Parameters![0].Default);
-            Assert.Null(methodRef.Parameters![0].Default!.Value);
+            TypedValue? defaultValue = methodRef.Parameters?[0].Default;
+            Assert.NotNull(defaultValue);
+            Assert.Null(defaultValue.Value);
 
             MethodSpecifier roundTripped = context.FromRef(methodRef);
             Assert.True(roundTripped.Parameters[0].HasExplicitDefaultValue);
@@ -192,7 +197,7 @@ namespace NetPrints.Tests.Serialization
             TypedValue? value = context.ToValue(42, "n0/in.data.value");
 
             Assert.NotNull(value);
-            Assert.Equal("System.Int32", value!.Type);
+            Assert.Equal("System.Int32", value.Type);
             Assert.Equal("42", value.Value);
             Assert.Equal(42, context.FromValue(value));
         }

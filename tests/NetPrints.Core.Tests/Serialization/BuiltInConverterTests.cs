@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using NetPrints.Core;
 using NetPrints.Graph;
@@ -306,7 +307,9 @@ namespace NetPrints.Tests.Serialization
             var method = new MethodGraph("M") { Class = cls };
             var context = new NodeMappingContext(cls);
             var converter = Converter(kind);
-            var node = (Node)Activator.CreateInstance(expectedType, method)!;
+            object? instance = Activator.CreateInstance(expectedType, method);
+            Assert.NotNull(instance);
+            var node = (Node)instance;
 
             var doc = converter.ToDocument(node, context);
             var created = converter.CreateNode(doc, method, context);
@@ -362,9 +365,10 @@ namespace NetPrints.Tests.Serialization
             var doc = (RerouteNodeDocument)converter.ToDocument(node, context);
             Assert.Equal("data", doc.PinKind);
             Assert.Equal(0, doc.Count);
-            Assert.NotNull(doc.DataTypes);
-            Assert.Single(doc.DataTypes!);
-            Assert.Equal("System.Int32", doc.DataTypes![0][0].Name);
+            IReadOnlyList<TypeRef[]>? dataTypes = doc.DataTypes;
+            Assert.NotNull(dataTypes);
+            Assert.Single(dataTypes);
+            Assert.Equal("System.Int32", dataTypes[0][0].Name);
 
             var created = (RerouteNode)converter.CreateNode(doc, method, context);
             Assert.Equal(1, created.DataRerouteCount);

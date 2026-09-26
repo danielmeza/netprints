@@ -72,7 +72,9 @@ namespace NetPrints.Tests.Serialization
             TypedValue typed = TypedValueConverter.ToTypedValue(-0.0, "n0/in.data.value");
             Assert.Equal("-0", typed.Value);
 
-            var result = (double)TypedValueConverter.FromTypedValue(typed)!;
+            object? parsed = TypedValueConverter.FromTypedValue(typed);
+            Assert.NotNull(parsed);
+            var result = (double)parsed;
             Assert.Equal(0.0, result);
             Assert.True(double.IsNegative(result));
         }
@@ -113,7 +115,9 @@ namespace NetPrints.Tests.Serialization
             TypedValue typed = TypedValueConverter.ToTypedValue(value, "n0/in.data.value");
             Assert.Equal(expectedType, typed.Type);
             Assert.Equal(expectedValue, typed.Value);
-            var parsed = (double)TypedValueConverter.FromTypedValue(typed)!;
+            object? converted = TypedValueConverter.FromTypedValue(typed);
+            Assert.NotNull(converted);
+            var parsed = (double)converted;
             Assert.True(double.IsNaN(parsed));
         }
     }

@@ -236,7 +236,7 @@ public static class CanonicalJsonWriter
 
     private static void WritePropertyName(TextWriter w, string name)
     {
-        w.Write(JsonValue.Create(name)!.ToJsonString(ScalarOptions));
+        w.Write(JsonSerializer.Serialize(name, ScalarOptions));
         w.Write(": ");
     }
 

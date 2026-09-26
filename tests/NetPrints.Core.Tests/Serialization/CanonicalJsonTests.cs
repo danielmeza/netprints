@@ -18,7 +18,12 @@ namespace NetPrints.Tests.Serialization
             return Encoding.UTF8.GetString(stream.ToArray());
         }
 
-        private static JsonObject Parse(string json) => JsonNode.Parse(json)!.AsObject();
+        private static JsonObject Parse(string json)
+        {
+            JsonNode? node = JsonNode.Parse(json);
+            Assert.NotNull(node);
+            return node.AsObject();
+        }
 
         [Fact]
         public void HandcraftedDocumentMatchesExpectedCanonicalForm()
