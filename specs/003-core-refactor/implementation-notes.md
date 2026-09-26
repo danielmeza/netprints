@@ -1334,3 +1334,17 @@ Release` green, 274 tests (266 → 274: +6 `RoundTripTests`, +2 `MergeTests`; `G
 unchanged at 2, now against the new importer); `dotnet format NetPrints.slnx --verify-no-changes` clean.
 `MergeTests` needs `git` on `PATH` (present here and in CI) and skips with a reason otherwise
 (`Assert.Skip`, matching `Desktop.E2ETests`' and `GridRenderTests`' existing pattern).
+
+### T043 — Checkpoint C reached
+
+All of sub-phase C (T024–T042) is done. Verified: `dotnet build NetPrints.slnx -c Release` 0
+warnings/0 errors solution-wide; `dotnet format NetPrints.slnx --verify-no-changes` clean; full suite
+green under a session-owned `Xvfb :171` (`DISPLAY=:171 dotnet test --solution NetPrints.slnx -c Release
+-- --ignore-exit-code 8`, no other agent's display touched), 505 total, 496 succeeded, 9 skipped
+(Desktop E2E and headless-driver capability skips, both expected and unchanged), 0 failed; Xvfb killed
+immediately after the run. The four sub-phase A characterization gates
+(`GoldenCSharpTests`, `NotificationMapTests`, `AllNodesFixtureRegenerationTests`,
+`HelloWorldSampleTests`) and sub-phase B's own gate (no Fody, 0 warnings) all still pass —
+`GoldenCSharpTests` itself changed under T042 (it now goes through the new importer instead of
+`Project.LoadFromPath`), but the golden files it checks against, and the "translated C# never changes"
+guarantee they encode, did not.
