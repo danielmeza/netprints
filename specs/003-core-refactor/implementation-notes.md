@@ -767,49 +767,51 @@ and T103 ("Serialization log call sites (3001-3006)") is the task that wires log
 serialization layer generally. `Upgrade` does the migration but does not yet log it; T103's implementer
 should add the log call there (and to every other 3001-3006 site) rather than assume it already exists.
 
-### Design notes for the next agent: T026, T035-T043 remaining
+### T026 — a source-generated `JsonTypeInfo` reused through a different `JsonSerializerOptions` does not keep the context's naming policy or default-ignore condition
 
-**T026** (`Json/NetPrintsJsonContext.cs`, `NetPrintsJsonOptions.cs`, `NodeListConverter.cs`) was
-deliberately deferred past T027-T034 because `NetPrintsJsonOptions`'s contract constructor takes a
-`NodeDocumentConverterRegistry`, which did not exist until T030. It now does (committed). Before
-starting T026:
-- `NetPrintsJsonContext`: exactly the code block in document-format.md §2.3 (`[JsonSourceGenerationOptions(...,
-  UseStringEnumConverter = true, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault)]`,
-  `[JsonSerializable(typeof(Documents.ClassDocument))]`, `internal sealed partial class : JsonSerializerContext`).
-- `NodeListConverter`: a `JsonConverter<IReadOnlyList<NodeDocument>>`. On write: for each element, if it
-  is `UnknownNodeDocument`, write `$kind`/`id` first then `Raw`'s other properties via
-  `JsonElement.WriteTo` in source order (no direct field on `UnknownNodeDocument` needs re-deriving this
-  — its own `Raw` already holds everything); otherwise `JsonSerializer.Serialize(writer, node, typeof(NodeDocument), options)`
-  (declared type `NodeDocument`, not the runtime type, so STJ's polymorphism/discriminator machinery
-  fires). On read: buffer each array element as a `JsonElement` (`JsonElement.ParseValue(ref reader)`),
-  find `$kind`/`id` by scanning ALL properties (not assuming order — `AllowOutOfOrderMetadataProperties`
-  only affects normal polymorphic dispatch, not this hand-written converter); missing either →
-  `DocumentFormatException`. Look up whether `$kind` matches a derived type registered on `NodeDocument`
-  via `options.GetTypeInfo(typeof(NodeDocument)).PolymorphismOptions!.DerivedTypes` (covers built-ins,
-  compile-time `[JsonDerivedType]`, AND any extension kinds added at runtime by
-  `NetPrintsJsonOptions`'s resolver modifier) — if found, `element.Deserialize(derivedType, options)`;
-  if not, `new UnknownNodeDocument(id, kind, element)` (+ track that an `NPD001` issue is warranted —
-  the converter itself has no issue-collection channel, so it likely needs to either throw a lightweight
-  marker the caller catches, or (simpler) `DocumentMapper`/`JsonDocumentFormat` re-scans the deserialized
-  `Nodes` list afterward for `UnknownNodeDocument` instances and raises `NPD001` for each — prefer that;
-  it keeps `NodeListConverter` a pure format-level concern with no issue-reporting responsibility).
-- `NetPrintsJsonOptions(NodeDocumentConverterRegistry nodes)`: resolver =
-  `JsonTypeInfoResolver.Combine(NetPrintsJsonContext.Default, ...nodes.ExtensionResolvers)` then
-  `.WithAddedModifier(typeInfo => { if (typeInfo.Type == typeof(NodeDocument)) foreach (extension
-  converter in nodes.Converters where Kind contains '/') typeInfo.PolymorphismOptions!.DerivedTypes.Add(new
-  JsonDerivedType(converter.DocumentType, converter.Kind)); })`. `SerializerOptions` built from that
-  resolver plus `AllowOutOfOrderMetadataProperties = true`, `ReadCommentHandling = Skip`,
-  `AllowTrailingCommas = true`, `Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping`,
-  `WriteIndented = false`, then `.MakeReadOnly()`. Do NOT also set `PropertyNamingPolicy`/enum
-  converters/`DefaultIgnoreCondition` at the options level — those come from the source-gen context
-  already baked into its `JsonTypeInfo`s; re-setting them at the options level only affects
-  reflection-based (non-source-gen) type resolution, which this resolver chain never falls back to.
-  `NetPrintsSchema.V1Url` (the const string) belongs in this file too, per the contract's code block.
-  `NetPrintsJsonOptions.DocumentOptions` (static `JsonDocumentOptions`): `CommentHandling = Skip`,
-  `AllowTrailingCommas = true`.
-- Once T026 lands, go back and add `[property: JsonConverter(typeof(NodeListConverter))]` to
-  `GraphDocument.Nodes` in `Documents/GraphDocuments.cs` (left off deliberately in T025 to keep that
-  commit buildable before `NodeListConverter` existed — see the T025 note above).
+The design sketch below (written before T026 was implemented) assumed `[JsonSourceGenerationOptions(PropertyNamingPolicy
+= CamelCase, DefaultIgnoreCondition = WhenWritingDefault, ...)]` on `NetPrintsJsonContext` bakes those
+two settings into the generated `JsonTypeInfo`/`JsonPropertyInfo` objects themselves, so `NetPrintsJsonOptions`
+would only need to set `TypeInfoResolver` (plus the reader/writer flags document-format.md §2.3 lists)
+and never repeat them. Verified empirically wrong: a debug harness comparing
+`JsonSerializer.Serialize(doc, NetPrintsJsonContext.Default.Options)` (camelCase, defaults omitted) against
+`JsonSerializer.Serialize(doc, new JsonSerializerOptions { TypeInfoResolver = NetPrintsJsonContext.Default })`
+(a *different*, freshly-constructed options instance — exactly `NetPrintsJsonOptions`'s situation, since it must
+combine the context with extension resolvers) showed the second form serializes with **PascalCase property names
+and every default value written** (`{"Nodes":[...],"Id":"n0","Name":null,"Pins":null,"InterfaceCount":0}` instead
+of `{"nodes":[{"$kind":"classReturn","id":"n0"}]}`). Per-property state (converters, e.g. the enum-as-string
+converter and `NodeListConverter` on `GraphDocument.Nodes`; `[JsonPropertyOrder]`; the node DTOs' own
+`[JsonIgnore(Condition = Never)]` overrides) *is* preserved across options instances, but the two options-level
+blanket settings are not. Fix: `NetPrintsJsonOptions.SerializerOptions` explicitly repeats
+`PropertyNamingPolicy = JsonNamingPolicy.CamelCase` and `DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault`
+alongside the reader/writer flags the contract already lists; `UseStringEnumConverter` needed no such repeat
+(confirmed with the same harness — enum properties still serialized as strings without it), matching that
+converters are attached per `JsonPropertyInfo` rather than looked up from the options at resolution time.
+Recorded here so a future schema/options change does not "clean up" these two lines as redundant with
+`NetPrintsJsonContext`'s attribute — they are not, for any consumer other than the context's own `.Options`.
+
+### T026 — `NodeListConverter.Read`'s array loop needs an explicit `reader.Read()` after `JsonElement.ParseValue`
+
+First draft called `reader.Read()` once before the loop (to enter the array) and then, inside the loop,
+only `JsonElement.ParseValue(ref reader)` per element, assuming `ParseValue` leaves the reader positioned
+on the *next* token the way `Utf8JsonReader.Read()` normally advances. It does not: `ParseValue` (like
+`TrySkip`) leaves the reader positioned on the parsed value's own *last* token (`EndObject`/`EndArray`, or
+the scalar token itself), so the un-advanced loop condition re-entered the loop and tried to parse a new
+value starting at `}`, throwing `'}' is an invalid start of a value.` for any node past the first (and, for
+a single-node array, the reader never reached `EndArray` at all — deserialization silently produced a
+`null` `Nodes` list instead of throwing, since the exception surfaced one level up as `ReadAndCacheConstructorArgument`
+swallowing the per-property read failure into a missing constructor argument, not a visible error).
+Fixed by calling `reader.Read()` again after `nodes.Add(...)`, before the loop condition is re-checked, so
+the reader advances to the next element's start token (or `EndArray`) — the same pattern as the two-clause
+`while (reader.Read() && ...)` form shown in Microsoft's own custom-list-converter samples, split into a
+loop-body statement here since the array's own `StartArray` token is already consumed by an explicit
+`reader.Read()` before the loop (matching this file's `derivedTypes` lookup happening once, outside the
+loop, rather than being folded into the condition).
+
+### Design notes for the next agent: T035-T043 remaining
+
+T026 landed (see the two entries above); `GraphDocument.Nodes` now carries
+`[property: JsonConverter(typeof(NodeListConverter))]`.
 
 **T035 (`Mapping/DocumentMapper.cs`)** — design worked out but not yet written; a full design is below
 so it does not need re-deriving:

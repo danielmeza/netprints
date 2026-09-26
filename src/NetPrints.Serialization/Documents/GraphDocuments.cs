@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text.Json.Serialization;
 using NetPrints.Core;
+using NetPrints.Serialization.Json;
 
 namespace NetPrints.Serialization.Documents;
 
@@ -15,7 +16,7 @@ namespace NetPrints.Serialization.Documents;
 /// <param name="Locals">The graph's local variables (method/constructor graphs only), or
 /// <see langword="null"/> if it has none.</param>
 public sealed record GraphDocument(
-    IReadOnlyList<NodeDocument> Nodes,
+    [property: JsonConverter(typeof(NodeListConverter))] IReadOnlyList<NodeDocument> Nodes,
     IReadOnlyList<ConnectionDocument>? Connections,
     IReadOnlyList<LocalVariableDocument>? Locals);
 
