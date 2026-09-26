@@ -221,6 +221,7 @@ errors in Editor, Desktop, Extensibility, Serialization, Workspace and Generator
 | 3004 | *(retired 2026-09-26, research R21: no legacy import; the id is not reused)* | | | |
 | 3005 | `ExternalChange` | Debug | Serialization / `FileSystemDocumentStore` | `{Kind} {Document}` |
 | 3006 | *(retired 2026-09-26, research R21: no `ProjectConverter`; the id is not reused)* | | | |
+| 3007 | `ClassLoadFailed` | Warning | Serialization / `ProjectPersistence` | `Class graph {Document} could not be loaded: {Reason}` |
 | 4001 | `RestoreStarted` | Debug | Workspace / `MsBuildProjectSystem` | `Restoring {Project}` |
 | 4002 | `ProjectLoaded` | Information | same | `Loaded {Project} in {ElapsedMs} ms ({ReferenceCount} references, {GraphCount} graphs)` |
 | 4003 | `WorkspaceDiagnostic` | Warning | same | `{Message}` |
