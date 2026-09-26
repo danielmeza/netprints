@@ -30,6 +30,7 @@ public sealed class NodeDocumentConverterRegistry
 
     private readonly Dictionary<string, INodeDocumentConverter> byKind;
     private readonly Dictionary<Type, INodeDocumentConverter> byNodeType;
+    private readonly Dictionary<Type, INodeDocumentConverter> byDocumentType;
 
     /// <summary>
     /// Creates a registry from an explicit list of converters and extension resolvers.
@@ -48,6 +49,7 @@ public sealed class NodeDocumentConverterRegistry
 
         byKind = new Dictionary<string, INodeDocumentConverter>(StringComparer.Ordinal);
         byNodeType = new Dictionary<Type, INodeDocumentConverter>();
+        byDocumentType = new Dictionary<Type, INodeDocumentConverter>();
 
         foreach (INodeDocumentConverter converter in converters)
         {
@@ -67,6 +69,11 @@ public sealed class NodeDocumentConverterRegistry
             if (!byNodeType.TryAdd(converter.NodeType, converter))
             {
                 throw new ArgumentException($"Duplicate node document converter node type '{converter.NodeType}'.", nameof(converters));
+            }
+
+            if (!byDocumentType.TryAdd(converter.DocumentType, converter))
+            {
+                throw new ArgumentException($"Duplicate node document converter document type '{converter.DocumentType}'.", nameof(converters));
             }
         }
     }
@@ -100,6 +107,16 @@ public sealed class NodeDocumentConverterRegistry
     /// <param name="nodeType">The node's exact runtime type.</param>
     /// <returns>The matching converter, or <see langword="null"/> if none is registered.</returns>
     public INodeDocumentConverter? FindByNodeType(Type nodeType) => byNodeType.GetValueOrDefault(nodeType);
+
+    /// <summary>
+    /// Returns the converter registered for <paramref name="documentType"/>. Used when only the
+    /// document side is known (a deserialized <see cref="Documents.NodeDocument"/> instance has no
+    /// <c>$kind</c> string of its own to look up by; <see cref="FindByKind"/> and
+    /// <see cref="FindByNodeType"/> cannot help here).
+    /// </summary>
+    /// <param name="documentType">The node document's exact runtime type.</param>
+    /// <returns>The matching converter, or <see langword="null"/> if none is registered.</returns>
+    public INodeDocumentConverter? FindByDocumentType(Type documentType) => byDocumentType.GetValueOrDefault(documentType);
 
     private static IReadOnlyList<INodeDocumentConverter> BuildBuiltIn()
     {

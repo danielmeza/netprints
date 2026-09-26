@@ -808,136 +808,82 @@ loop-body statement here since the array's own `StartArray` token is already con
 `reader.Read()` before the loop (matching this file's `derivedTypes` lookup happening once, outside the
 loop, rather than being folded into the condition).
 
-### Design notes for the next agent: T035-T043 remaining
+### T035 — `Mapping/DocumentMapper.cs` and `IDocumentMapper.cs`; `NodeDocumentConverterRegistry.FindByDocumentType`
 
-T026 landed (see the two entries above); `GraphDocument.Nodes` now carries
-`[property: JsonConverter(typeof(NodeListConverter))]`.
+Implemented per the design sketched by the previous agent (member id checks, `MapGraph`/`BuildPinStates`/
+`BuildConnections`/`BuildLayout` on the write side; header → member-id validation → per-member-graph
+construction → connections → positions/auto-placement → relax on the read side), with `Mapping/IDocumentMapper.cs`
+added alongside it (document-format.md §2.6 names it as this section's third file; `LegacyXmlDocumentFormat`,
+`ProjectPersistence` and `GraphCodeGenerator` all take it as a constructor parameter, so it has to exist as
+its own public interface, not just `DocumentMapper`'s implicit contract) and `NodeDocumentConverterRegistry.FindByDocumentType(Type)`
+added (third dictionary, same duplicate-check pattern as `FindByKind`/`FindByNodeType`) — both exactly as the
+previous agent's notes anticipated. Two real deviations from that plan, found by running `DocumentMapperTests`
+against `AllNodesFixtureFactory` and a set of hand-built documents:
 
-**T035 (`Mapping/DocumentMapper.cs`)** — design worked out but not yet written; a full design is below
-so it does not need re-deriving:
-- Constructor: `DocumentMapper(NodeDocumentConverterRegistry nodes)`, store `nodes` in a field.
-- `ToDocument(ClassGraph cls)`: `var context = new NodeMappingContext(cls);` then:
-  - Duplicate member id check up front: iterate `cls.Members`, collect ids into a `HashSet<string>`
-    (ordinal), `InvalidOperationException` on a repeat (callers run `EnsureUniqueMemberIds()` first per
-    §2.8, so this is a "should never happen" guard, not graceful handling).
-  - `MapGraph(NodeGraph graph, NodeMappingContext context) -> GraphDocument`: for each `Node` in
-    `graph.Nodes`, `INodeDocumentConverter converter = nodes.FindByNodeType(node.GetType()) ??
-    throw new InvalidOperationException($"No document converter registered for node type '{node.GetType()}'.");`,
-    `NodeDocument raw = converter.ToDocument(node, context);`, then
-    `raw with { Id = node.Id, Name = node.Name == node.DefaultName ? null : node.Name, Pins = BuildPinStates(node, context) }`
-    (record `with` works across the base/derived boundary for `Id`/`Name`/`Pins` — verified in a spike
-    while writing the BuiltIn converters, which all pass placeholder `node.Id, null, null` for exactly
-    this reason). Append `graph.PreservedDocumentState`'s unknown nodes (if any — see below) after the
-    known ones. Connections: `BuildConnections(graph)` (enumerate every node's *output* pins only —
-    `OutputExecPins`/`OutputDataPins`/`OutputTypePins` — building `"<nodeId>/<PinKeys.For(pin)>"` →
-    `"<targetNodeId>/<PinKeys.For(targetPin)>"`, plus any preserved connections referencing an unknown
-    node id, then ordinal-sort by `From` then `To`). Locals: `null` (sub-phase H). Return
-    `new GraphDocument(nodeDocs, connections.Count > 0 ? connections : null, null)`.
-  - `BuildPinStates(Node node, NodeMappingContext context) -> List<PinStateDocument>?`: for every pin of
-    every direction/kind (`InputDataPins`, `OutputDataPins`, `InputExecPins`, `OutputExecPins`,
-    `InputTypePins`, `OutputTypePins`), compute `keyName = node.GetPinKeyName(pin)`; `name = pin.Name ==
-    keyName ? null : pin.Name`; for `NodeInputDataPin` only, `value`: if `pin.UnconnectedValue is not
-    null`, and `pin.PinType.Value is TypeSpecifier { IsEnum: true } enumType` (the model quirk from the
-    T028/T029 note — `UnconnectedValue` is already a `string` for an enum pin), `new
-    TypedValue(enumType.Name, (string)pin.UnconnectedValue)`; else
-    `context.ToValue(pin.UnconnectedValue, $"{node.Id}/{PinKeys.For(pin)}")`. Only add a
-    `PinStateDocument` when `name is not null || value is not null` (skip pins with nothing to record);
-    return `null` if nothing was added for the whole node (never an empty list — matches "omit if
-    empty" and avoids ever needing `JsonIgnore` gymnastics on `NodeDocument.Pins`).
-  - `MapMethod`/`MapConstructor`/`MapVariable`: thin wrappers building `MethodDocument`/`ConstructorDocument`/
-    `VariableDocument` from the model member plus `MapGraph` of its own graph(s) (variable → `TypeGraph`
-    + optional `GetterMethod`/`SetterMethod` as `AccessorDocument`s).
-  - `BuildLayout(ClassGraph cls) -> SortedDictionary<string, SortedDictionary<string, int[]>>?`: for
-    every graph of the class (`cls` itself, each variable's `TypeGraph`/`GetterMethod`/`SetterMethod`,
-    each method, each constructor), `GraphKeys.For(graph)` → inner `SortedDictionary<string, int[]>`
-    (ordinal) of `node.Id` → `[Round(PositionX), Round(PositionY)]`, `Round = (int)Math.Round(x,
-    MidpointRounding.AwayFromZero)`; omit an inner map only if a graph genuinely has zero nodes
-    (shouldn't happen given model invariants, but cheap to guard); omit the whole `Layout` only if
-    there is not one graph with a node (i.e., never in practice, but keep the `null`-when-empty shape
-    for symmetry with every other optional field).
-  - Assemble `ClassDocument` with `SchemaVersion: NetPrints.Serialization.Migrations.DocumentMigrator.CurrentSchemaVersion`
-    (now available; **do not** hardcode `1` a second time), `Namespace: string.IsNullOrEmpty(cls.Namespace)
-    ? null : cls.Namespace`, `GenericArguments` from `cls.DeclaredGenericArguments`, `EventGraphs: null`
-    (sub-phase G — `ClassGraph.EventGraphs` does not exist until T078; T080 must come back and populate
-    this instead of leaving it `null`), and the rest as above.
-- `FromDocument(ClassDocument document, Project project, ICollection<DocumentIssue> issues, DocumentId id)`:
-  order per the contract table — header (`new ClassGraph { Namespace = ..., Name = ..., Visibility =
-  ..., Modifiers = ..., DeclaredGenericArguments = ... }`, `Project = project` and set on every graph
-  created below) → validate every member id up front (missing/contains `/`or whitespace (`!StableIds.IsValidDocumentId`)/equal to `"class"`/duplicate → `DocumentFormatException`) → build each
-  member's graph. Building a method/constructor/variable graph: construct via the model's own
-  constructor (`new MethodGraph(document.Name)`, `new ConstructorGraph()`, `new Variable(cls, name,
-  <placeholder type — see below>, null, null, modifiers)`) — remember the constructor already
-  auto-creates that graph's one fixed node (T031's whole "reuse, don't recreate" design exists
-  precisely so `FromDocument` can rely on this) — then set `.Id = document.Id` (an `internal set`,
-  accessible via `InternalsVisibleTo`), then process `graph.Nodes` from the `GraphDocument`: for each
-  `NodeDocument`, `INodeDocumentConverter? converter = nodes.FindByKind(nodeDoc is UnknownNodeDocument u
-  ? u.Kind : GetKindOf(nodeDoc))` — actually simplest: iterate `document.Graph.Nodes`; if the element is
-  `UnknownNodeDocument`, collect it into a `preservedNodes` list and raise `issues.Add(new
-  DocumentIssue(Warning, NPD001, ..., id))`, do NOT call any converter; otherwise `nodes.FindByNodeType`
-  won't work here (we only have the *document* type, not a node type) — need
-  `NodeDocumentConverterRegistry` to also support **kind → converter** lookup by the `$kind` the
-  `NodeListConverter` already resolved into a *concrete document type* (there is no `$kind` string left
-  on a strongly-typed `MethodEntryNodeDocument` instance at this point!). Resolve this by adding (or
-  reusing) `FindByDocumentType(Type)` type lookup — `NodeDocumentConverterRegistry` currently only
-  exposes `FindByKind(string)`/`FindByNodeType(Type)`; add a third dictionary
-  keyed by `converter.DocumentType` (mirrors the two existing ones exactly, same duplicate-check
-  pattern) so `FromDocument` can do `nodes.FindByDocumentType(nodeDoc.GetType())`. Node with unresolved
-  document type → this should not happen for a known `NodeDocument` subtype (every built-in is
-  registered), so treat as an `InvalidOperationException` (a real gap in the registry, not a document
-  problem) — only genuinely-unknown `$kind` values become `UnknownNodeDocument` upstream in
-  `NodeListConverter`/`JsonDocumentFormat`, never reach here as a "known type but no converter" case.
-  `converter.CreateNode(nodeDoc, graph, context)` → returned node already has the graph's default id (or,
-  for the four "fixed" kinds, its pre-existing id) — set `.Id = nodeDoc.Id` (internal set) — duplicate
-  node id within the graph → `DocumentFormatException`; `.Name = nodeDoc.Name ?? node.DefaultName`; apply
-  `nodeDoc.Pins` (for each, `PinKeys.Find(node, pinRef)` — unknown → `issues.Add(NPD003)`, drop;
-  found → set `.Name` if present, set `.UnconnectedValue` if `Value` present (mirror the enum special
-  case in `BuildPinStates`, in reverse: if `pin.PinType.Value is TypeSpecifier { IsEnum: true }`, assign
-  the raw `Value.Value` string directly; else `context.FromValue(value)`)). After all nodes exist,
-  process `document.Graph.Connections`: for each, split `"<nodeId>/<pinRef>"` on the *first* `/`
-  (`DocumentId`-style split is wrong here — use `endpoint.IndexOf('/')` directly, node ids never
-  contain `/` per `StableIds.IsValidDocumentId`), `graph.FindNode(nodeId)` (missing → `NPD002`, drop),
-  `PinKeys.Find(node, pinRef)` (missing → `NPD002`, drop), then dispatch to the right
-  `GraphUtil.Connect*Pins` overload by the resolved pins' concrete pin types (a `switch` on
-  `(fromPin, toPin)` pattern matching `NodeOutputExecPin`/`NodeInputExecPin`,
-  `NodeOutputDataPin`/`NodeInputDataPin`, `NodeOutputTypePin`/`NodeInputTypePin` — anything else is
-  "incompatible pins", `NPD002`, drop; wrap `GraphUtil.Connect*Pins`'s own possible exceptions, if any,
-  as the same drop+issue rather than letting them propagate, since a hand-edited file could reference
-  two pins of the wrong direction pairing that still resolve individually). Connections whose `From` or
-  `To` node id resolves to nothing AND that id matches a *preserved* unknown node's id: keep as a
-  preserved connection (store alongside the preserved nodes) rather than an `NPD002` drop — this is the
-  "connections to it preserved" requirement (DF-T08) — check preserved-node ids first, before treating a
-  missing node as an error. Positions: for each node with a `Layout[graphKey][nodeId]` entry, set
-  `PositionX/Y` directly from the two ints; collect nodes with NO entry and call
-  `GraphAutoLayout.PlaceUnpositioned(graph, unpositioned)` once per graph, at the end (after connections
-  are wired — auto-placement's neighbour rule needs connections already in place); layout entries for an
-  unknown graph key or node id → `issues.Add(NPD004)` (info), ignore. Finally
-  `GraphTypeInference.Relax(graph)` per graph (document-format.md §3.1). Set `NodeGraph.Class`/`Project`
-  back-references throughout. At the very end, `cls.MarkClean()`-equivalent: the contract says "the
-  returned class has `IsDirty == false`" — since `MarkDirty`/`IsDirty` default to `false` already on a
-  freshly-constructed `ClassGraph` and nothing here calls `MarkDirty()`, this should already hold
-  without extra code; add an explicit assertion/test for it rather than trusting that by omission.
-  `Variable`'s type: its constructor requires a `TypeSpecifier` up front to build the *initial* type
-  graph, which `FromDocument` immediately discards/rebuilds from `VariableDocument.TypeGraph` — likely
-  cleanest to pass a cheap placeholder (`TypeSpecifier.FromType<object>()`) then immediately overwrite
-  `variable.TypeGraph` with the mapped one (`MapGraphFromDocument` populating a *fresh* `TypeGraph`,
-  setting `OwningClass = cls`, then replacing `variable.TypeGraph` wholesale) rather than trying to graft
-  document nodes onto the constructor's auto-built placeholder type graph (that placeholder's own
-  `TypeReturnNode` would otherwise conflict with the document's own, similarly to the "fixed node" story
-  above, so a variable's type graph is one place where the "reuse the constructor's node" trick does
-  apply too, exactly like `ClassGraph`/`TypeGraph`/`MethodGraph`/`ConstructorGraph` — do NOT construct a
-  second, throwaway `TypeGraph`; build the DOCUMENT's nodes into the constructor-provided
-  `variable.TypeGraph` the same way every other graph kind is handled, changing only the constructor
-  call to something minimal like `new Variable(cls, name, TypeSpecifier.FromType<object>(), null, null,
-  modifiers)` purely to get a real `TypeGraph`+`TypeReturnNode` to populate, then overwrite `Name`/
-  `Visibility`/`Modifiers`/`Id` from the document as normal).
-- Round trip (DF-T03): `ToDocument(FromDocument(d))` must equal `d`'s bytes for a canonical `d` with a
-  layout entry for every node — this mostly falls out of the above if `BuildPinStates`/`BuildConnections`/
-  `BuildLayout` are exact inverses of the `FromDocument` pin/connection/position application, which is
-  why the design above tries hard to keep each pair (`ToValue`/`FromValue`, pin key encode/decode,
-  connection encode/decode) symmetric.
-- Needed registry addition before starting: `NodeDocumentConverterRegistry.FindByDocumentType(Type)`
-  (mirrors `FindByKind`/`FindByNodeType`, same duplicate-check in the constructor extended to a third
-  dictionary). Do this as part of T035's own commit (it is only needed by `FromDocument`).
+**Pin states must be applied after connections (and a `GraphTypeInference.Relax` pass), not interleaved with
+node creation.** The original plan applied `nodeDoc.Pins` (renames, `UnconnectedValue`) to each node immediately
+after creating it, before any connections existed. This throws `ArgumentException` from
+`NodeInputDataPin.OnUnconnectedValueChanging` for any pin whose *eligibility* for an unconnected value depends
+on a type-pin connection rather than on its node's constructor — `TernaryNode.TrueObjectPin`/`FalseObjectPin`
+are `System.Object` (not primitive, so `UsesUnconnectedValue` is `false`) until `TypePin`'s incoming connection
+resolves a concrete type via `TernaryNode.HandleInputTypeChanged`, which only happens once `GraphUtil.ConnectTypePins`
+has run. `MapGraphFromDocument` now: creates every node (collecting `(Node, NodeDocument)` pairs, no pin
+application yet) → applies connections → `GraphTypeInference.Relax(graph)` (settles any type-pin chain the
+direct connections did not immediately resolve) → *then* applies pin states → positions/auto-placement →
+a second `GraphTypeInference.Relax(graph)` (matches the task line's "at the end of each graph" literally; a
+no-op in every case exercised so far, since neither a rename nor an `UnconnectedValue` change feeds back into
+type inference, but cheap to keep for whatever a future node kind does). Verified with
+`AllNodesRoundTripsThroughToDocumentAndFromDocument`/`VariableTypeGraphSurvivesRoundTripWithSettledTypes`, which
+both failed with exactly this exception (on `TrueObjectPin`) before the reorder and pass after it.
+
+**Discovered, pre-existing model bug: `LiteralNode.UpdatePinTypes()` disconnects the node's value pins on
+*every* `GraphTypeInference.Relax` pass, even with no generic arguments involved.** Its `if (constructedType
+!= InputValuePin.PinType.Value)` (`Graph/LiteralNode.cs`) compares two `BaseType`-typed operands; `BaseType`
+itself declares no `==`/`!=` (only `TypeSpecifier` does, for `(TypeSpecifier, TypeSpecifier)` and two
+`(TypeSpecifier, BaseType)` overloads — none of which C#'s overload resolution picks when *both* operands are
+statically `BaseType`), so the comparison falls back to reference equality; `GenericsHelper.ConstructWithTypePins`
+returns a new `TypeSpecifier` instance on every call regardless of whether anything actually changed, so the
+condition is `true` unconditionally and `GraphUtil.DisconnectInputDataPin`/`DisconnectOutputDataPin` run every
+time, silently dropping any connection into or out of a `LiteralNode`'s value pins. `AllNodesFixtureFactory`
+already discovered this independently while writing the sub-phase A characterization fixture (its own comment,
+`tests/NetPrints.Core.Tests/Characterization/AllNodesFixtureFactory.cs` lines ~205-210, deliberately gives the
+`ifElse` condition an *unconnected* value instead of a connected literal, citing "see implementation-notes.md" —
+but no entry existed yet; this is that entry) — `LegacyXmlDocumentFormat` (T038) and `JsonDocumentFormat`
+(T037) both call `GraphTypeInference.Relax` too, so **any real class whose C# used a literal passed directly
+into a call or return (`Foo(5)`, `return 5;` — extremely common) will lose that connection the moment it is
+loaded**, on both paths, not just through `DocumentMapper`. `DocumentMapperTests.CallMethodParameterInsertionKeepsConnectionsByName`
+(DF-T19) uses a caller method's own entry-node argument pins instead of literal nodes as its connection source
+to avoid the bug (entry-node argument pins reassign `PinType.Value` unconditionally too, but never call
+`Disconnect*Pin`, so they do not lose their connections). Not fixed here: it is a `NetPrints.Core` model change
+(`LiteralNode.cs`), out of scope for the two serialization tasks assigned this session, and any fix must keep
+the sub-phase A/B golden-output tests green. **Flagging for whoever picks up T037/T042 next: this will very
+likely surface in the `HelloWorld`/converted-sample golden round trips (DF-T02/DF-T03) the moment a sample
+connects a literal to something instead of only using unconnected values** — worth a fix (likely: compare
+`BaseType.Name`/structural equality instead of `!=`, or skip the disconnect when the constructed type has not
+actually changed) before or alongside T042, not discovered mid-golden-test.
+
+Also implemented, per the plan and without incident: the `Variable.TypeGraph` special case (`new Variable(cls,
+name, TypeSpecifier.FromType<object>(), null, null, modifiers)` for a real `TypeGraph`+`TypeReturnNode` to
+populate, then — because unlike every other graph kind's constructor, `Variable`'s *also* builds a placeholder
+`TypeNode` tree via `GraphUtil.CreateNestedTypeNode` for that placeholder type — stripping every node but the
+`TypeReturnNode` and resetting `ReturnNode.TypePin.IncomingPin = null` before mapping the document's own
+type-graph nodes into the now-empty-except-for-its-fixed-node graph); a variable (and its getter/setter method
+graphs) must be added to `cls.Variables`/`variable.GetterMethod`/`SetterMethod` *before* their own graphs are
+mapped, since `GraphKeys.For` resolves a variable's type/accessor graph keys by scanning `cls.Variables` for a
+`ReferenceEquals` match, which only succeeds once that back-reference is wired; `FindByDocumentType(Type)` on
+the registry, mirroring `FindByKind`/`FindByNodeType` exactly.
+
+Test coverage (`tests/NetPrints.Core.Tests/Serialization/DocumentMapperTests.cs`): DF-T06 (full
+`AllNodesFixtureFactory` round trip compared via `JsonNode.DeepEquals` of two `ToDocument` calls either side of
+a `FromDocument`), DF-T08 (a hand-built unknown node plus a connection into it, preserved through `FromDocument`
+→ `ToDocument`), DF-T19 (parameter insertion keeps the connection on the unmoved parameter names), DF-T20 (an
+unpositioned node is auto-placed, positioned ones keep their exact coordinates, two loads of the same document
+place it identically), DF-T22 (missing/duplicate member id → `DocumentFormatException`; layout keys are member
+ids, unaffected by reordering `cls.Methods`), DF-T25 (default-named vs. renamed node), DF-T27 JSON-path half
+(`Variable.TypeGraph` non-null and the variable's resolved type unchanged after a round trip). DF-T02/T03/T05
+(golden-byte round trips against committed samples) and DF-T27's legacy-import half are T042/T020, not this task.
+
+### Design notes for the next agent: T037-T043 remaining
 
 **T037-T043**: not designed in detail yet. `JsonDocumentFormat` (T037) is the read/write pipeline around
 `DocumentMapper`+`DocumentMigrator`+`NetPrintsJsonOptions`+`CanonicalJsonWriter`, per document-format.md

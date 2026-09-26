@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json.Serialization.Metadata;
 using NetPrints.Core;
 using NetPrints.Graph;
@@ -70,12 +71,35 @@ namespace NetPrints.Tests.Serialization
         }
 
         [Fact]
+        public void DuplicateDocumentTypeIsRejected()
+        {
+            // Both FakeConverters report DocumentType = TypeReturnNodeDocument.
+            var converters = new INodeDocumentConverter[]
+            {
+                new FakeConverter("literal", typeof(LiteralNode)),
+                new FakeConverter("type", typeof(TypeNode)),
+            };
+
+            Assert.Throws<ArgumentException>(() => new NodeDocumentConverterRegistry(converters, NoResolvers));
+        }
+
+        [Fact]
         public void FindByKindAndNodeTypeReturnNullForUnknowns()
         {
             var registry = new NodeDocumentConverterRegistry([new FakeConverter("literal", typeof(LiteralNode))], NoResolvers);
 
             Assert.Null(registry.FindByKind("type"));
             Assert.Null(registry.FindByNodeType(typeof(TypeNode)));
+            Assert.Null(registry.FindByDocumentType(typeof(LiteralNodeDocument)));
+        }
+
+        [Fact]
+        public void FindByDocumentTypeReturnsRegisteredConverter()
+        {
+            INodeDocumentConverter converter = NodeDocumentConverterRegistry.BuiltIn.Single(c => c.Kind == "literal");
+            var registry = new NodeDocumentConverterRegistry(NodeDocumentConverterRegistry.BuiltIn, NoResolvers);
+
+            Assert.Same(converter, registry.FindByDocumentType(typeof(LiteralNodeDocument)));
         }
 
         [Fact]
