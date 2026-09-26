@@ -4,8 +4,8 @@ Paths use the post-reorganization layout (plan.md). Where to find the rest:
 
 | Area | Contract |
 |---|---|
-| Project file (`.csproj`), `NetPrints.Sdk` targets, generator, `IProjectSystem`, legacy conversion | [contracts/project-system.md](./contracts/project-system.md) |
-| Graph documents (JSON schema v1, DTO records, formats, stores, mapper, persistence, legacy graph rules) | [contracts/document-format.md](./contracts/document-format.md) |
+| Project file (`.csproj`), `NetPrints.Sdk` targets, generator, `IProjectSystem` | [contracts/project-system.md](./contracts/project-system.md) |
+| Graph documents (JSON schema v1, DTO records, formats, stores, mapper, persistence) | [contracts/document-format.md](./contracts/document-format.md) |
 | Extension points, manifest, loader, registry, host channel, settings, profiles, catalogs | [contracts/extension-points.md](./contracts/extension-points.md) |
 | Diagnostics, source map, translator output, quick info | [contracts/compilation-and-diagnostics.md](./contracts/compilation-and-diagnostics.md) |
 | Editor context, VMs, composition/DI, error model, logging ids, architecture gate | [contracts/editor-services.md](./contracts/editor-services.md) |
@@ -19,7 +19,7 @@ This file defines the **runtime model changes** in `src/NetPrints.Core` and the 
 ```csharp
 namespace NetPrints.Core;
 
-[DataContract]
+[DataContract]                                  // removed in T063 with the rest of the model's DataContract persistence (research R21)
 [INotifyPropertyChanged]                        // CommunityToolkit.Mvvm; MVVMTK0032 suppressed here only
 #pragma warning disable MVVMTK0032
 public abstract partial class ModelObject;
@@ -36,16 +36,18 @@ public abstract partial class ModelObject;
 
 Rules:
 - Auto-properties become `[ObservableProperty] public partial T X { get; set; }`; `[DataMember]` stays on
-  the partial declaration (verified in `p1spike`). Computed properties use `[NotifyPropertyChangedFor]`
+  the partial declaration (verified in `p1spike`) until T063 removes it. Computed properties use `[NotifyPropertyChangedFor]`
   on their sources or explicit `OnPropertyChanged(nameof(X))`.
 - The table is indicative; the **golden notification map** recorded from the Fody build (T005,
   `tests/NetPrints.Core.Tests/Characterization/NotificationMap.golden.json`) is authoritative.
 - `Node.OnInputTypeChanged` (protected virtual) is renamed `HandleInputTypeChanged` so no Fody-style
   `On<Name>Changed` convention method remains.
-- DataContract deserialization runs no constructors or initializers: every **new** collection or
-  defaulted member of a *graph-side* type is initialized in an `[OnDeserializing]` method (`LocalVariables`,
-  `EventGraphs`; `Node.Id` stays null until `AssignLegacyNodeIds`, member ids until `AssignLegacyMemberIds`). The legacy `Project` DataContract is
-  read only by `ProjectConverter` (project-system.md §5).
+- DataContract deserialization runs no constructors or initializers: while anything still deserializes the
+  model with DataContract (the one-time migration's importer until T062a, `Project.LoadFromPath` until
+  T063), every **new** collection or defaulted member of a *graph-side* type is initialized in an
+  `[OnDeserializing]` method (`LocalVariables`, `EventGraphs`). T063 deletes these methods, the
+  `[OnDeserialized]` hooks (document-format.md §3.1) and the DataContract attributes (research R21). No
+  `.netpp` is converted (project-system.md §5, removed).
 
 ## 2. Identity, graph keys, pin keys, layout and dirty state
 
@@ -62,8 +64,8 @@ never goes backwards. Text form (`IdFormat`): a one-character prefix (`n` node, 
 the value encoded as 13 lowercase Crockford base32 digits (alphabet
 `0123456789abcdefghjkmnpqrstvwxyz`), most-significant digit first, zero-padded, so ordinal string order
 equals numeric value order; 14 characters total. `IdFormat.Pattern` (`^[nm][0-9a-hjkmnp-tv-z]{13}$`) is
-the single source of this shape: the DataContract-adjacent validators and the generated JSON Schema
-(T041) both read it from there instead of duplicating the regular expression. Parsing
+the single source of this shape: the reader's id check (T054b, `IdFormat.IsValid`) and the generated JSON
+Schema's id patterns (T054b, `IdFormat.PatternFor`) both read it from there instead of duplicating the regular expression. Parsing
 (`IdFormat.TryParse`) is case-insensitive and also accepts Crockford's own transcription aliases in the
 value digits (`i`/`I`/`l`/`L` → 1, `o`/`O` → 0); the prefix itself must still be `n` or `m`. Rationale:
 sortable (string and numeric order agree, so ids sort correctly in a directory listing, a `git log`, or
@@ -86,7 +88,9 @@ public static class IdFormat
 {
     public const string Alphabet = "0123456789abcdefghjkmnpqrstvwxyz";
     public const int ValueDigits = 13;
-    public const string Pattern = "^[nm][0-9a-hjkmnp-tv-z]{13}$"; // the schema regex (T041) reads this
+    public const string Pattern = "^[nm][0-9a-hjkmnp-tv-z]{13}$"; // either prefix
+    public static string PatternFor(char prefix);                 // "^n[0-9a-hjkmnp-tv-z]{13}$" for 'n'; the schema's id patterns (T054b)
+    public static bool IsValid(string? id, char prefix);          // exact ordinal match of PatternFor(prefix); the reader's check (T054b)
     public static string Format(char prefix, long value);        // throws ArgumentOutOfRangeException if value < 0
     public static bool TryParse(ReadOnlySpan<char> text, out char prefix, out long value); // case-insensitive; i/l->1, o->0
 }
@@ -105,7 +109,7 @@ public sealed class RandomIdGenerator : IIdGenerator            // SnowflakeIdGe
 
 public sealed class SeededIdGenerator : IIdGenerator            // SnowflakeIdGenerator(fixed clock at Epoch, session derived from seed)
 {
-    public SeededIdGenerator(int seed);                         // deterministic: same seed -> same id sequence; tests and legacy import
+    public SeededIdGenerator(int seed);                         // deterministic: same seed -> same id sequence; tests and the one-time migration (T054a)
 }
 
 public static class IdGeneration
@@ -116,8 +120,8 @@ public static class IdGeneration
 
 public static class StableIds
 {
-    public static int SeedFor(string text);                    // FNV-1a 32-bit over UTF-8 (offset 2166136261, prime 16777619), cast to int
-    public static bool IsValidDocumentId(string? id);          // non-empty, no '/', no whitespace (looser than IdFormat.Pattern: also accepts legacy "n0" ids)
+    public static int SeedFor(string text);                    // FNV-1a 32-bit over UTF-8 (offset 2166136261, prime 16777619), cast to int; deleted in T062a with its callers
+    public static bool IsValidDocumentId(string? id);          // non-empty, no '/', no whitespace; replaced by IdFormat.IsValid in T054b (it existed for legacy "n0" ids)
     public static string AllocateUnique(char prefix, ICollection<string> existingIds); // retried allocation against a concrete, finite id set (load-time duplicate repair, ClassGraph.EnsureUniqueMemberIds); ordinary allocation (below) never retries
 }
 ```
@@ -153,21 +157,21 @@ public abstract class NodeGraph
 {
     public string AllocateNodeId();                            // IdGeneration.Current.NewId('n'); not retried — the generator guarantees uniqueness
     public Node? FindNode(string id);                          // O(1): an id -> node Dictionary index, [IgnoreDataMember], built lazily (§3.1)
-    public void AssignLegacyNodeIds();                         // sets Id = "n<index>" for every node (legacy import only); InvalidOperationException if any Id is already set
+    public void AssignLegacyNodeIds();                         // sets Id = "n<index>" for every node (legacy import only); deleted in T062a (research R21)
     [IgnoreDataMember] public object? PreservedDocumentState { get; set; } // owned by NetPrints.Serialization (unknown nodes); opaque to Core
 }
 // internal ReindexNode(Node, string? previousId) keeps the index current whenever code sets Node.Id
-// after the node was added (the mapper's document-id overwrite, AssignLegacyNodeIds, duplicate-id
+// after the node was added (the mapper's document-id overwrite, invalid-id and duplicate-id
 // repair, document-format.md §2.6); a no-op before the index has been built (FindNode not yet called).
 
-// Member ids ("m" + 6 chars): MethodGraph.Id, ConstructorGraph.Id, Variable.Id, EventGraph.Id (§4),
+// Member ids ("m" + 13 digits, IdFormat): MethodGraph.Id, ConstructorGraph.Id, Variable.Id, EventGraph.Id (§4),
 // each { get; internal set; }, not [DataMember], assigned in the constructor from IdGeneration.Current.NewId('m').
 // Accessor MethodGraphs (Variable.GetterMethod/SetterMethod) also get one; it is never written (keys use the variable id).
 public partial class ClassGraph
 {
     public IEnumerable<object> Members { get; }                // Variables, Methods, Constructors, EventGraphs, in that order
     public bool EnsureUniqueMemberIds();                       // gives a later duplicate (member order) a fresh unique id; true if anything changed
-    public void AssignLegacyMemberIds();                       // SeededIdGenerator(StableIds.SeedFor(FullName)): variables, methods, constructors; unique; InvalidOperationException if any member id is already set
+    public void AssignLegacyMemberIds();                       // SeededIdGenerator(StableIds.SeedFor(FullName)): variables, methods, constructors; deleted in T062a (research R21)
     [IgnoreDataMember] public bool IsDirty { get; private set; }
     public void MarkDirty();
     public void MarkClean();
@@ -178,8 +182,8 @@ public static class GraphKeys { public static string For(NodeGraph graph); publi
 
 | Rule | Contract |
 |---|---|
-| Node ids | `Node` constructors call `graph.AllocateNodeId()` **before** `Graph.Nodes.Add(this)`; the mapper overwrites `Id` from the document (or a freshly repaired id, document-format.md §2.6) and calls `graph.ReindexNode`; legacy import calls `AssignLegacyNodeIds`. An undo that re-adds a removed node re-adds the same instance, so it keeps its id. A document with two nodes sharing an id does not fail the load: the later one (document order) is reassigned a fresh id and reported as a `DocumentIssue.DuplicateIdReassigned` warning. |
-| Member ids | Assigned in the constructors (from `IdGeneration.Current`); the mapper overwrites them from the document (or a freshly repaired id, same as node ids); legacy import calls `AssignLegacyMemberIds` (DataContract skips constructors, so the ids are null until then). `ProjectPersistence.SaveAsync` calls `EnsureUniqueMemberIds` before mapping (a collision from two independently-created generator instances is improbable, not impossible). |
+| Node ids | `Node` constructors call `graph.AllocateNodeId()` **before** `Graph.Nodes.Add(this)`; the mapper overwrites `Id` from the document (or a freshly repaired id, document-format.md §2.6) and calls `graph.ReindexNode`; an id in the document that does not match `IdFormat.PatternFor('n')` is replaced by a fresh id first (`NPD009`, research R21). An undo that re-adds a removed node re-adds the same instance, so it keeps its id. A document with two nodes sharing an id does not fail the load: the later one (document order) is reassigned a fresh id and reported as a `DocumentIssue.DuplicateIdReassigned` warning. |
+| Member ids | Assigned in the constructors (from `IdGeneration.Current`); the mapper overwrites them from the document (or a freshly repaired id for an invalid or duplicate one, same as node ids). `ProjectPersistence.SaveAsync` calls `EnsureUniqueMemberIds` before mapping (a collision from two independently-created generator instances is improbable, not impossible). |
 | Graph keys | `For`: `class` for the class graph; `<memberId>` for a method, constructor or event graph; `<variableId>/type`, `/get`, `/set` for a variable's graphs; `InvalidOperationException` if the graph is not attached to a class. `Resolve` is the inverse; `null` for an unknown key. |
 | Pin keys | `PinKeys.For` and `Find` implement document-format.md §1.4.2 from `Node.GetPinKeyName`; the translator does not use them. |
 | Auto-placement | `PlaceUnpositioned` processes `unpositioned` in graph node order. Neighbour = the node on the other end of the first connected input pin (exec, then data, then type, each in collection order) that is already placed → candidate `(neighbour.X + ColumnSpacing, neighbour.Y)`; else the first connected output pin's placed neighbour → `(neighbour.X − ColumnSpacing, neighbour.Y)`; else the fallback column `(maxX + ColumnSpacing, minY + k × RowSpacing)`, where `maxX`/`minY` are computed once, before the call, over the nodes that already had positions (`(0, k × RowSpacing)` if there are none) and `k` = 0, 1, … counts the nodes placed in the fallback column. While a placed node lies within `CollisionWidth` × `CollisionHeight` of the candidate (`|dx| < 200 && |dy| < 100`), add `RowSpacing` to its Y. A node placed by this call counts as placed (as a neighbour and for collisions) for the nodes after it. Deterministic. |
@@ -210,7 +214,7 @@ public abstract class ExecutionGraph : NodeGraph
 
 public class VariableSpecifier   // existing type, one member added
 {
-    [DataMember] public VariableScope Scope { get; set; }      // new; Member by default (legacy files)
+    [DataMember] public VariableScope Scope { get; set; }      // new; Member by default
 }
 ```
 
@@ -293,12 +297,11 @@ public partial class Project : ModelObject
 }
 ```
 
-`Project` no longer has `[DataContract]` members used for writing. The legacy DataContract shapes are
-re-declared in `src/NetPrints.Serialization/Legacy/` as `LegacyProject` (`[DataContract(Name = "Project",
-Namespace = "http://schemas.datacontract.org/2004/07/NetPrints.Core")]`) and `LegacyCompilationReference`,
-`LegacyAssemblyReference`, `LegacyFrameworkAssemblyReference`, `LegacySourceDirectoryReference` (each with
-the original contract `Name`/`Namespace` and `[KnownType]`s), read only by `ProjectConverter`; Core's
-original reference classes are deleted.
+`Project` no longer has `[DataContract]` members (T063). The legacy DataContract shapes that T038
+re-declared in `src/NetPrints.Serialization/Legacy/` (`LegacyProject`, `LegacyCompilationReference`,
+`LegacyAssemblyReference`, `LegacyFrameworkAssemblyReference`, `LegacySourceDirectoryReference`) served
+only the one-time migration and are deleted in T062a; Core's original reference classes are deleted in
+T063 (research R21).
 The References dialog (PAR-16…20) works on `ProjectSnapshot.DeclaredReferences` + `ProjectEdit`s.
 
 ## 6. Old → new mapping (whole phase)
@@ -307,20 +310,20 @@ The References dialog (PAR-16…20) works on `ProjectSnapshot.DeclaredReferences
 |---|---|---|
 | `PropertyChanged.Fody` `[AddINotifyPropertyChangedInterface]` on `Node`, `NodePin`, `Variable`, `Project` | `ModelObject` + CTK `[ObservableProperty]` (`src/NetPrints.Core/Core/ModelObject.cs`) | `FodyWeavers.xml/.xsd` deleted; `Fody`, `PropertyChanged.Fody` removed from `Directory.Packages.props` |
 | `[DoNotNotify]` in `src/NetPrints.Core/Graph/TypeNode.cs` (`ObservableValue<T>`) | removed (manual INPC class unchanged) | |
-| `src/NetPrints.Core/Serialization/SerializationHelper.cs` | `src/NetPrints.Serialization/Legacy/LegacyXmlDocumentFormat.cs`, `…/Json/JsonDocumentFormat.cs` | document-format.md §4 |
+| `src/NetPrints.Core/Serialization/SerializationHelper.cs` | `src/NetPrints.Serialization/Json/JsonDocumentFormat.cs`; DataContract XML is not read | document-format.md §4; research R21 |
 | `Project.LoadFromPath/Save/SaveClassInProjectDirectory/AddExistingClass` | `ProjectPersistence` (graphs) + `IProjectSystem` (`.csproj`) | async; editor, CLI, tests updated |
-| `.netpp` project file (DataContract XML) | `.csproj` + `NetPrints.Sdk`; legacy → `ProjectConverter` | project-system.md |
-| `Project.References`, `CompilationReference` hierarchy | MSBuild items via `ProjectSnapshot.DeclaredReferences`/`ProjectEdit`; legacy classes moved to `Serialization/Legacy/` | |
+| `.netpp` project file (DataContract XML) | `.csproj` + `NetPrints.Sdk`; not converted (research R21) | project-system.md |
+| `Project.References`, `CompilationReference` hierarchy | MSBuild items via `ProjectSnapshot.DeclaredReferences`/`ProjectEdit`; the classes are deleted (T063) | |
 | `ProjectCompilationOutput` setting | removed | spec clarification |
 | `Project.CompileProject()`, `RunProject()`, `CodeCompiler` (Roslyn emit), runtimeconfig writing | `IProjectSystem.BuildAsync` / `GetRunCommand` (`dotnet build` / `dotnet run`) | |
 | `Project.LastCompileErrors` (`string`) | `Project.LastDiagnostics` (`CodeDiagnostic`) | error list rows |
 | `src/NetPrints.Core/Core/ReferenceAssemblyResolver.cs` | deleted; references from MSBuild (`ProjectSnapshot.References`) | project-system.md §4 |
-| `src/NetPrints.Core/Core/FrameworkAssemblyReference.cs` `ProgramFilesX86` path | legacy marker only | |
+| `src/NetPrints.Core/Core/FrameworkAssemblyReference.cs` `ProgramFilesX86` path | deleted with the class (T063) | |
 | `src/NetPrints.Reflection/DocumentationUtil.cs` path probing | `ResolvedAssembly.DocumentationPath` (sibling `.xml` of the MSBuild-resolved reference) | D5 |
 | `ReflectionProvider(assemblyPaths, sourcePaths, sources)` | `ReflectionProvider(IReadOnlyList<ResolvedAssembly>, …, IReadOnlySet<string> excludedAssemblyNames)` | |
 | `ExecutionGraphTranslator` static `nodeTypeHandlers` table, public `Translate*Node` methods | `NodeTranslatorRegistry.BuiltIn` (internal built-in translators), `INodeTranslator` | |
 | `new ClassTranslator()` / `new ExecutionGraphTranslator()` | `new ClassTranslator(TranslationEnvironment)` | callers pass `registry.Translation` or `TranslationEnvironment.BuiltIn` |
-| (none) node ids, member ids | `Node.Id` (random `n…`, legacy `n<index>`), member ids (`m…`), `IdGeneration` (§2) | graph-format research |
+| (none) node ids, member ids | `Node.Id` (`n…`), member ids (`m…`), both Snowflake ids (`IdFormat`), `IdGeneration` (§2) | graph-format research; R20, R21 |
 | `Node.PositionX/Y` default `(0,0)` for nodes without a stored position | `GraphAutoLayout.PlaceUnpositioned` on load | |
 | `MethodGraph.OnDeserialized` relaxation | `GraphTypeInference.Relax(NodeGraph)` (`src/NetPrints.Core/Graph/GraphTypeInference.cs`) | |
 | Editor `ClassInspectorView` TextBox (`GeneratedCode`) | `CodeView` + `CodeViewVM` | editor-services.md §3 |
@@ -329,6 +332,6 @@ The References dialog (PAR-16…20) works on `ProjectSnapshot.DeclaredReferences
 | `GraphEditorView.axaml.cs` pointer handlers for disconnect/reroute/connection completed | `NodeGraphVM` commands bound to Nodify command properties | |
 | `EditorComposition(Func<EditorContext, EditorContext>? customize)` | `EditorComposition(EditorHostServices)`; test compositions in test projects | |
 | `Desktop` `.LogToTrace()` | `AvaloniaLogSink` + console `ILoggerFactory` | |
-| `samples/HelloWorld/*.netpp`, `*.netpc` | `HelloWorld.csproj`, `HelloWorld.Program.netpc.json`, `HelloWorld.Program.netpc.g.cs` (+ `samples/Directory.Build.props` for in-repo SDK import); legacy copies in `tests/NetPrints.Core.Tests/Fixtures/Legacy/HelloWorld/` | |
+| `samples/HelloWorld/*.netpp`, `*.netpc` | `HelloWorld.csproj`, `HelloWorld.Program.netpc.json`, `HelloWorld.Program.netpc.g.cs` (+ `samples/Directory.Build.props` for in-repo SDK import), migrated once (T054a); no legacy copies remain after T062a | |
 | (none) | `src/NetPrints.Sdk`, `src/NetPrints.Generator`, `src/NetPrints.Workspace` | new projects |
 | `Nullable=disable`, `TreatWarningsAsErrors=false` in Core/Reflection/Core.Tests | enabled everywhere | `Directory.Build.props` default applies |

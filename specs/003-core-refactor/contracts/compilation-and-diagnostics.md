@@ -123,7 +123,7 @@ public sealed class CodeAnalysisSession
 
 | ID | Case |
 |---|---|
-| RC-T01…T05 | *Retired* (custom reference resolver removed). Replaced by PS-T07 (references and docs from MSBuild), PS-T08 (packages, project references), PS-T12 (`NPM001` for legacy framework references) |
+| RC-T01…T05 | *Retired* (custom reference resolver removed). Replaced by PS-T07 (references and docs from MSBuild), PS-T08 (packages, project references); the third replacement, PS-T12 (`NPM001` for legacy framework references), was retired with legacy conversion (research R21) |
 | RC-T06 | Source map: building it does not change `Code` (byte compare on all fixtures); a `CS` error in a call-node argument maps to that node's id |
 | RC-T07 | *Retired* → PS-T11 (build and run through the SDK) |
 | RC-T08 | Quick info for `Console.WriteLine` returns the signature and the pack summary text on Linux (references from `IProjectSystem.LoadAsync`) |

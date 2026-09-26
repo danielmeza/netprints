@@ -18,6 +18,11 @@
 > **Revision 2026-09-25 (owner decision): Snowflake-style ids.** §8 (R20) replaces R17's random-30-bit
 > id value and "duplicate → `DocumentFormatException`" rule with a monotonic 63-bit value and load-time
 > duplicate repair. R17's alphabet, prefix, graph-key and pin-key decisions are unchanged.
+>
+> **Revision 2026-09-26 (owner decision): no legacy conversion, strict ids.** §9 (R21) drops the
+> user-facing legacy import and conversion, migrates the repository's own legacy files once, and makes
+> the id shape strict on read and in the schema. It supersedes U3, R7, K7 and parts of R12, R17, R20
+> (marked inline).
 
 Owner rule for this phase: **reuse, don't reinvent**. §1 lists every decision taken from existing
 sources. §2 records the research done only for questions those sources left open. Spikes ran on Linux
@@ -35,7 +40,7 @@ Abbreviations: **Plan** = the plan page (`.agent-archive/2026-09-25-session-c18f
 |---|---|---|
 | U1 | Three serialization layers: versioned cycle-free DTOs (`ClassDocument(SchemaVersion, Header, Graphs, Variables)`), `IDocumentFormat` (Id, Extensions, Read/Write), `IDocumentStore` (OpenRead/OpenWrite/List + `IObservable<DocumentChange> Changes`), `IDocumentMapper` (ToDocument/FromDocument); migrations upgrade old `SchemaVersion`s before mapping | Plan "Serialization"; C VI, VII |
 | U2 | JSON via System.Text.Json source-generated `JsonSerializerContext`; polymorphic nodes with `[JsonDerivedType]` or a resolver extensions add to; positions stored separately from logic | Plan "Serialization"; C tech constraints |
-| U3 | Legacy DataContract XML becomes import-only | C tech constraints; RM P1 |
+| U3 | Legacy DataContract XML becomes import-only *Superseded by R21: no legacy import; the repository's own files are migrated once.* | C tech constraints; RM P1 |
 | U4 | Extension points: `INodeLibrary` (node types, VMs, translators), `IClassEmitter`/`IMemberEmitter` (attributes, partial members, base classes, usings), `ITypeCatalog`, `IProjectProfile` (layout, output dir, base classes, templates, default catalog profile), `IHostChannel`, per-extension settings, plugins via AssemblyLoadContext selected by manifest | Plan "Extension points"; RM P1; C III |
 | U5 | Editor-side UI contributions are P3, not P1 (commands, inspector sections, panels, settings pages, `--profile`) | Plan; RM P3 |
 | U6 | `CompositeReflectionProvider(precomputed catalog, live Roslyn provider)` behind `IReflectionProvider`; generator/tool flavors are P2 | Plan "Catalog tooling"; RM P1/P2 |
@@ -188,7 +193,7 @@ contributes no members), and `PropertyChanged` fires after deserialization.
 The editor subscribes to model INPC in `NodeVM`, `NodePinVM`, `MemberVariableVM`, `ClassEditorVM`,
 `MainEditorVM` and `GraphEditorView` (casts to `INotifyPropertyChanged`); these keep working unchanged.
 
-### R7. Legacy XML importer and mapping
+### R7. Legacy XML importer and mapping — *superseded by R21 (no user-facing import; the importer only serves the one-time migration, then is deleted)*
 
 **Decision**: `LegacyXmlDocumentFormat` (read-only) keeps the existing `DataContractSerializer` path
 (`PreserveObjectReferences`, known types) to build the model, then `ClassDocumentMapper.ToDocument`
@@ -232,7 +237,8 @@ methods live in one `static partial class Log` per feature folder; event ids in 
 ### R10. Project layout for new code
 
 **Decision** (paths per the reorganization PR that lands before P1, see plan.md):
-- `src/NetPrints.Serialization` (new): DTOs, `NetPrintsJsonContext`, JSON and legacy XML formats,
+- `src/NetPrints.Serialization` (new): DTOs, `NetPrintsJsonContext`, JSON and legacy XML formats (the
+  legacy XML format is removed by R21),
   mappers, migrations, stores, `ProjectPersistence`. One project instead of the Plan's three
   (`.Serialization`, `.Json`, `.LegacyXml`): JSON and DataContract are both in the BCL, so separate
   packages would add projects without isolating any dependency (C VIII). A format with a third-party
@@ -267,7 +273,7 @@ RoslynPad.Editor.Avalonia 5.0.0 (R4), McMaster.NETCore.Plugins 2.0.0 (R8).
 | K4 | Plugin type identity broken by duplicated contract assemblies | Shared-assembly rule + identity test (R8) |
 | K5 | Scope: ~3.5 w manual estimate, 7 stories (the graph-format changes add ~3 d) | Sub-phases independently green; one PR, opened as a draft after sub-phase E (plan.md) |
 | K6 | TextMate native dependency in the future browser build | Plain-text fallback; revisit in P5 (R2) |
-| K7 | Compile semantics change for old .NET Framework projects on Windows | Converted to net10.0 with `NPM001`; documented (spec clarification) |
+| K7 | Compile semantics change for old .NET Framework projects on Windows | *Retired by R21: old projects are not converted.* (Was: converted to net10.0 with `NPM001`) |
 | K8 | Rebase onto the reorganization PR | P1 starts after it merges; all paths already use the new layout |
 | K9 | Exec'd generator not verified inside Visual Studio (Windows) and Rider in CI (Linux only) | Uses only `Exec` + `DOTNET_HOST_PATH` (set by the .NET SDK in every host); one manual check per IDE recorded in the PR (R12) |
 | K10 | In-process MSBuild (Locator) assembly conflicts | `Microsoft.Build*` with `ExcludeAssets=runtime` (verified MSBL001 guard), registration before any MSBuild type loads, MSBuildWorkspace build host is out of process (R14) |
@@ -277,7 +283,7 @@ RoslynPad.Editor.Avalonia 5.0.0 (R4), McMaster.NETCore.Plugins 2.0.0 (R8).
 | K14 | **Resolved (T041).** `JsonSchemaExporter` output for STJ polymorphism (`anyOf`/`const` for `$kind`), for extension kinds, and for `required` was verified and fixed where wrong | See findings in §6 (R17) below |
 | K15 | Pin keys come from constructor-assigned pin names, so renaming a built-in pin (or an extension's) breaks existing files | Golden list of every built-in pin reference (DF-T19); a rename requires a schema migration |
 | K16 | The custom canonical writer could emit invalid or nondeterministic JSON | Every test re-parses written bytes (DF-T03, DF-T04); the writer only formats a `JsonNode` tree STJ produced |
-| K17 | Random ids make fixtures nondeterministic | `IdGeneration.Use(new SeededIdGenerator(seed))` in tests; legacy import is deterministic (`n<index>`, seeded member ids) |
+| K17 | Random ids make fixtures nondeterministic | `IdGeneration.Use(new SeededIdGenerator(seed))` in tests; the one-time migration is deterministic (seeded node and member ids, R21) |
 
 
 ## 5. Revision: the project is an SDK-style `.csproj` (research R11–R16)
@@ -329,7 +335,8 @@ only, `BeforeTargets="CoreCompile"`. No MSBuild task assembly.
 wrapped in a `Runtime="NET"` task without changing the targets' contract.
 
 **Entry point**: `src/NetPrints.Generator` (Exe, net10.0; references Core, Serialization,
-Extensibility) with `generate <request.rsp>` and `convert <legacy.netpp>` commands. It is an
+Extensibility) with a `generate <request.rsp>` command (a `convert <legacy.netpp>` command was dropped by
+R21). It is an
 internal build tool, not the P2 user CLI; P2's `netprints generate` calls the same
 `GraphCodeGenerator` library class.
 
@@ -413,7 +420,7 @@ Details the research left open, decided here:
 |---|---|
 | Id alphabet and length | `n`/`m` + 6 characters of lowercase Crockford base32 (`0123456789abcdefghjkmnpqrstvwxyz`), about 30 bits; uniqueness checked in the graph (nodes) or class (members) (revised by R19: Snowflake ids, no allocation-time check) |
 | How node constructors get a generator | Ambient `IdGeneration.Current` (`AsyncLocal`, default `Random.Shared`), scoped with `IdGeneration.Use` in tests; no constructor changes |
-| Legacy member ids | Deterministic: `SeededIdGenerator(FNV-1a-32(class full name))`, variables, then methods, then constructors. Nodes stay `n<index>` |
+| Legacy member ids | Deterministic: `SeededIdGenerator(FNV-1a-32(class full name))`, variables, then methods, then constructors. Nodes stay `n<index>` (revised by R21: used only by the one-time migration, which also rewrites node ids to seeded Snowflake ids; then removed) |
 | Accessor graphs | No id of their own; keys `<variableId>/get`, `/set`, `/type` |
 | Pin key for user-renamable pins | Positional name `Input<i>` / `Output<i>` (entry argument and return pins), the pin `Name` for all others; `~n` for duplicates; implemented by `Node.GetPinKeyName`, overridable by extensions |
 | Old index form `in.data.0` on read | Rejected (treated as an unknown key, `NPD002`/`NPD003`): no v1 files exist, and one grammar avoids ambiguity |
@@ -423,10 +430,10 @@ Details the research left open, decided here:
 | String escaping | `JavaScriptEncoder.UnsafeRelaxedJsonEscaping` (readable generic names and non-ASCII text) |
 | `$schema` value | `https://danielmeza.github.io/netprints/schemas/netpc.v1.schema.json` (revised by R18: the GitHub Pages site publishes `schemas/` under `/schemas/`; previously a `raw.githubusercontent.com` URL); ignored on read |
 | Unknown properties on read | Ignored; dropped on the next save of that class |
-| Missing or duplicate ids on read | `DocumentFormatException` (nodes and members alike) (revised by R19: missing still throws; duplicate is repaired — the later occurrence gets a fresh id and an `NPD007` warning — instead of failing the whole load) |
+| Missing or duplicate ids on read | `DocumentFormatException` (nodes and members alike) (revised by R19: missing still throws; duplicate is repaired — the later occurrence gets a fresh id and an `NPD007` warning — instead of failing the whole load; revised by R21: a present id that does not match `IdFormat` is replaced the same way and reported as `NPD009`) |
 | Dirty tracking | Explicit `ClassGraph.IsDirty`, set by the editor on every undoable command, node move and inspector edit; `SaveAsync` maps and writes only dirty classes, so no ripple saves (research §5.2 rule 12) |
 | Missing layout / NPD codes | New issue codes `NPD003` (pin state dropped) and `NPD004` (layout entry ignored) |
-| `.gitattributes` | Per project folder, two `eol=lf` lines, created or appended by `CreateAsync` and `ProjectConverter`; no `linguist-generated`, so `.netpc.g.cs` diffs stay visible in PRs |
+| `.gitattributes` | Per project folder, two `eol=lf` lines, created or appended by `CreateAsync` (and `ProjectConverter`, dropped by R21); no `linguist-generated`, so `.netpc.g.cs` diffs stay visible in PRs |
 | Stale checks | Tests (run by CI): committed schema = generated (DF-T24); committed sample graphs canonical and `.netpc.g.cs` = regenerated (DF-T26). CLI `format --check` / `regen --check` are P2 |
 | Merge driver | `netprints merge` / `git-install` / `textconv` diff: follow-up after P1 (research §3, §5.4) |
 
@@ -593,7 +600,7 @@ strictly more complex than a purpose-built Snowflake for a single-process, singl
 a plain incrementing counter (rejected — the entire point of R17 was to remove sequential/positional
 ids as a merge hazard, §5.2 hazard 1; a counter reintroduces exactly that).
 
-**Constraint found**: the id format's own "accepted on read" rule (document-format.md §1.4.1) — any
+**Constraint found** (*superseded by R21: ids are strict on read and in the schema; no legacy ids remain*): the id format's own "accepted on read" rule (document-format.md §1.4.1) — any
 non-empty string without `/` or whitespace — already permits ids that don't match the *creation* shape,
 which legacy-imported node ids (`AssignLegacyNodeIds`'s `n0`, `n1`, …) rely on and keep forever once
 converted to v1 JSON. `IdFormat.Pattern` describes only what a freshly generated id looks like; T041's
@@ -612,3 +619,53 @@ now-stale (shared) id text resolve to whichever occurrence still holds that text
 deterministically) — an accepted, documented limitation (implementation-notes.md, this task group's
 entry) rather than an attempt to reconstruct ambiguous merge intent from id text alone.
 
+## 9. Revision: no legacy conversion, strict ids (research R21)
+
+### R21. Legacy `.netpp`/`.netpc` conversion is not a feature; ids are always Snowflake ids (owner decision 2026-09-26)
+
+**Decision**: NetPrints never had enough users for real projects in the old format to exist, so P1 ships
+no user-facing way to read or convert DataContract XML projects: no `ProjectConverter`, no generator or CLI
+`convert` command, no "open legacy project" in the editor, no `LegacyXmlDocumentFormat` in any
+`DocumentFormatRegistry` a user reaches, no `NPM` codes. Opening a `.netpp` is rejected like any other
+file that is not a `.csproj`. The repository's own legacy files (`samples/HelloWorld`, the characterization
+fixtures `AllNodes` and `HelloWorld` under `tests/NetPrints.Core.Tests/Fixtures/Legacy/`) are migrated
+**once**, inside P1 (tasks.md T054a), by a throwaway test-scoped converter built on the code that already
+exists (`LegacyXmlDocumentFormat` + `DocumentMapper` + `JsonDocumentFormat`); the results are committed and
+every test and golden reads them. Then the legacy code goes (T062a: `LegacyXmlDocumentFormat`, the
+`Legacy/` DataContract copies, `AssignLegacyNodeIds`/`AssignLegacyMemberIds`, `StableIds.SeedFor`, the
+legacy fixtures and their tests; T063: the DataContract persistence of the model itself).
+
+Ids become strict (T054b): every node and member id in a document must match `IdFormat` for its prefix
+(`^n[0-9a-hjkmnp-tv-z]{13}$` for nodes, `^m…` for members). The generated JSON Schema carries these
+patterns on `id` fields and on the places that reference ids (connection endpoints, `layout` keys). The
+reader does not accept other shapes any more: a present id that does not match is replaced by a fresh id,
+references to it in the same document (connections, `layout`) follow the replacement, and the load reports
+`NPD009` (Warning), the same repair-and-report approach as duplicate ids (`NPD007`, R20). A missing id is
+still a `DocumentFormatException`.
+
+**Rationale**: the legacy path cost more than it bought: a second read pipeline (DataContract with
+reference preservation, `[OnDeserialized]` hooks, `[OnDeserializing]` initializers for every new member),
+DataContract copies of the old project classes, positional legacy ids (`n0`, `n1`, …) that forced the
+reader to accept any non-slash, non-whitespace id forever, a converter with rollback, four `NPM` codes, two
+log events, an editor dialog and a CLI command, all for files nobody has. Without it, ids have one shape,
+the schema can check it, and the model can drop DataContract entirely.
+
+**Migration details (T054a)**: the characterization intent of sub-phase A holds: the C# generated from
+the migrated JSON must equal the goldens recorded from the pre-P1 code byte for byte; the golden files are
+not regenerated during the migration (a golden diff means the migration is wrong). Legacy node ids are
+rewritten to Snowflake ids from `SeededIdGenerator(StableIds.SeedFor(<class full name> + "/nodes"))` in
+graph order (a seed distinct from the member-id seed),
+so re-running the converter gives the same bytes; member ids already come from the seeded generator
+(`AssignLegacyMemberIds`) and match `IdFormat`. Project files are written by hand from the `.netpp`
+settings (they are two small `.csproj` files, not worth converter code). `AllNodes.csproj` drops the
+reference to `ExternalLibrary.dll` (the file never existed; the item only exercised reference conversion)
+and the `.NETFramework` references, like the dropped conversion would have.
+
+**Alternatives considered**: keep the importer but hide it (still forces loose ids and DataContract on
+the model); keep `ProjectConverter` as an internal tool (same cost, no user); regenerate the fixtures from
+the factories straight to JSON (loses the "same files the pre-P1 code read" link that makes the goldens a
+proof; `AllNodesFixtureFactory` stays only as an in-memory model builder for tests).
+
+**Superseded by this revision**: U3 (import-only legacy XML), R7 (legacy importer), K7, K17's legacy half,
+the R17 rows "Legacy member ids" and the `.gitattributes` writer list, the `convert` command of R12, and
+R20's "Constraint found" paragraph (the looser "accepted on read" id rule it protected is gone).

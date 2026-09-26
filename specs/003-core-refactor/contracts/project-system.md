@@ -1,7 +1,8 @@
-# Contract: Project system — `NetPrints.Sdk`, generator, MSBuild project model, conversion
+# Contract: Project system — `NetPrints.Sdk`, generator, MSBuild project model
 
 Owner decision (2026-09-25): a NetPrints project is an SDK-style `.csproj`. One generation mechanism:
 MSBuild → `Exec` → `NetPrints.Generator` (research R11–R15). Test obligations (`PS-Txx`) at the end.
+Revised 2026-09-26 (owner decision, research R21): legacy `.netpp` projects are not converted; §5 is removed.
 
 | Artifact | Project / path |
 |---|---|
@@ -48,7 +49,7 @@ New projects (profile template of `DefaultProjectProfile`, extension-points.md �
 
 ### 1.1 `.gitattributes` next to the project
 
-`IProjectSystem.CreateAsync` and `ProjectConverter` write `<project dir>/.gitattributes` with exactly these
+`IProjectSystem.CreateAsync` writes `<project dir>/.gitattributes` with exactly these
 lines (constant `ProjectFiles.GitAttributesLines` in `src/NetPrints.Core/Projects/ProjectFiles.cs`):
 
 ```gitattributes
@@ -60,7 +61,8 @@ If the file exists, each missing line is appended (with a `\n` first if the file
 existing lines are never changed or reordered; a line counts as present when the trimmed line equals it.
 The same file is written whether or not the folder is a git repository.
 `ProjectFiles.EnsureGitAttributesAsync(string directory, CancellationToken)` implements this rule and
-returns the file's previous bytes (`null` if it did not exist) so a failed conversion can restore it. Merge and diff drivers
+returns the file's previous bytes (`null` if it did not exist); they were for rolling back a failed conversion,
+which was dropped (research R21), so no caller needs them and T062a may drop the return value. Merge and diff drivers
 (`merge=netprints`, `diff=netprints`) are not added in P1; they belong to the `netprints merge` follow-up.
 
 ## 2. `NetPrints.Sdk` package
@@ -175,7 +177,7 @@ public static class GenerateRequestFile
     public static GenerateRequest Parse(string path);   // FormatException (exit code 2) on unknown key, missing project/profile, or a graph line without "|"
 }
 
-internal static class Program   // "generate <request.rsp>" | "convert <legacy.netpp>"
+internal static class Program   // "generate <request.rsp>"
 {
     public static Task<int> Main(string[] args);
 }
@@ -188,7 +190,6 @@ internal static class Program   // "generate <request.rsp>" | "convert <legacy.n
 | Errors | One line per diagnostic on stdout in MSBuild canonical format: `<graph path>: error NPT001: <message> (graph <key>, node <id>)`; document errors as `<graph path>(<line>,<col>): error NPD…: …`. A graph with errors keeps its previous `.g.cs` (not deleted). |
 | Exit codes | `0` success (warnings allowed); `1` at least one error; `2` bad arguments / request; `3` internal exception (stack trace on stderr). |
 | Extensions | `ExtensionLoader` with `SearchDirectories = []` and the request's `Extensions` as explicit extension folders (build = trusted); user extension dirs are **not** used, for reproducible builds. |
-| `convert` | Runs `ProjectConverter.ConvertAsync` (§5) and prints the created files; exit 1 on `NPM` errors. Used by tests and the CLI; the editor calls the library directly. |
 | Dependencies | Never references `Microsoft.Build*` or Avalonia. |
 
 ## 4. `IProjectSystem` — `src/NetPrints.Core/Projects/*.cs`
@@ -273,43 +274,16 @@ in `src/NetPrints.Workspace/MsBuildProjectSystem.cs`; `ProjectSystemOptions(IRea
 (culture-invariant, `RegexOptions.Multiline`). NetPrints generator messages keep the `(graph <key>, node <id>)`
 suffix inside `msg`; `DiagnosticMapper` (editor) extracts it. Lines that don't match are ignored.
 
-## 5. Conversion of legacy projects — `src/NetPrints.Serialization/Legacy/ProjectConverter.cs`
+## 5. (removed 2026-09-26) Conversion of legacy projects
 
-```csharp
-namespace NetPrints.Serialization.Legacy;
-
-public sealed record ConversionResult(string ProjectFilePath, IReadOnlyList<string> GraphFiles, IReadOnlyList<DocumentIssue> Issues);
-
-public sealed class ProjectConverter
-{
-    public ProjectConverter(LegacyXmlDocumentFormat legacy, JsonDocumentFormat json, IProjectProfile defaultProfile, string netPrintsSdkVersion, ILogger<ProjectConverter> logger);
-    public Task<ConversionResult> ConvertAsync(string legacyProjectPath, CancellationToken cancellationToken);
-}
-```
-
-| Legacy (`.netpp` / `.netpc`, DataContract) | Converted |
-|---|---|
-| file `<Dir>/<Name>.netpp` | `<Dir>/<Name>.csproj` from `DefaultProjectProfile.ProjectTemplate`; exists → `ProjectConversionException(NPM002)`, nothing written |
-| `DefaultNamespace` | `RootNamespace` |
-| `OutputBinaryType` | `OutputType` |
-| `CompilationOutput`, `SaveVersion`, `LastCompiledAssemblyPath` | dropped |
-| `FrameworkAssemblyReference(".NETFramework/…")` | dropped; one issue `NPM001` ("legacy .NET Framework references replaced by net10.0") |
-| `AssemblyReference(path)` | `<Reference Include="<file name>"><HintPath>…</HintPath></Reference>` (relative if under `<Dir>`); missing file → still written + issue `NPM003` |
-| `SourceDirectoryReference(dir, include)` | `Compile`/`None` item with `NetPrintsSourceDirectory="true"` (§1) |
-| `Compiled_<Name>/` folder present | `<DefaultItemExcludes>$(DefaultItemExcludes);Compiled_*/**</DefaultItemExcludes>` in the new project |
-| each `ClassPaths` entry `X.netpc` | `X.netpc.json` in the same folder (legacy import → mapper → JSON, document-format.md §3); an existing `X.netpc.json` → `NPM002` |
-| `.netpc` files not listed in `ClassPaths` | ignored, issue `NPM004` |
-| (none) | `<Dir>/.gitattributes` per §1.1 (created, or missing lines appended) |
-| order of writes | all graph files first, then `.gitattributes`, then the `.csproj`; any exception deletes files written by this conversion and restores a `.gitattributes` that existed before to its previous bytes |
-
-Legacy files are opened read-only and never written, moved or deleted (FR-007). After conversion the
-caller opens the new `.csproj`. Generated `.g.cs` files appear on the first build (or immediately when the
-editor saves, §6).
+There is no `ProjectConverter`, no `convert` command and no `NPM` code (research R21). The repository's own
+legacy files are migrated once by a throwaway test-scoped converter (tasks.md T054a) and the legacy code is
+deleted (T062a). A `.netpp` is not a project NetPrints opens (§6).
 
 ## 6. Editor integration (summary; details in editor-services.md)
 
-- Open accepts `*.csproj` and `*.netpp`; a `.netpp` is converted first (confirmation dialog listing the
-  files to be written), then the `.csproj` opens.
+- Open accepts `*.csproj` only; any other file (e.g. an old `.netpp`) is rejected with a message and
+  nothing is written (research R21).
 - Graphs are loaded from `ProjectSnapshot.GraphFiles` through `ProjectPersistence` (document-format.md §2.8).
 - Save writes the graph files of edited (dirty) classes **and** their `.netpc.g.cs` via
   `GraphCodeGenerator.RenderFile` (same output as the build), so the working tree is consistent without a
@@ -334,8 +308,8 @@ editor saves, §6).
 | PS-T08 | `LoadAsync` with a `PackageReference` (local test package) and a `ProjectReference`: both resolved |
 | PS-T09 | `ApplyAsync`: each `ProjectEdit`; untouched parts of the file byte-identical (comments, formatting); duplicate assembly no-op |
 | PS-T10 | `MsBuildMessageParser`: csc error with path/line/col/code, MSB/NU warnings, generator line with graph/node suffix, non-matching lines ignored |
-| PS-T11 | `BuildAsync`/run: converted HelloWorld builds and prints `Hello, World!` via `GetRunCommand` |
-| PS-T12 | Conversion: HelloWorld and AllNodes fixtures → `.csproj` + `.netpc.json` + `.gitattributes`; converting the same fixture twice (fresh copies) gives byte-identical output (deterministic node and member ids); legacy files byte-identical and timestamps unchanged; existing `.csproj` → `NPM002` and nothing written; `Compiled_*` excluded; `NPM001` issued |
+| PS-T11 | `BuildAsync`/run: the HelloWorld sample builds and prints `Hello, World!` via `GetRunCommand` |
+| PS-T12 | *Retired 2026-09-26* (no legacy conversion, research R21). The migrated fixtures are checked by DF-T01 and DF-T28 instead |
 | PS-T13 | No SDK (Locator registration returns false, simulated through `ProjectSystemOptions`/fake registration) → `NPW001` message path in the editor (VM test) |
 | PS-T14 | Extensions in the build: a project with a `NetPrintsExtension` item to the test extension generates code for the extension node; without the item → `NPT003` error |
-| PS-T15 | `.gitattributes` (§1.1): `CreateAsync` writes exactly the two lines; conversion into a folder without one creates it; a folder whose `.gitattributes` has `*.netpc.json text eol=lf` and other lines (no final newline) gets only `*.netpc.g.cs text eol=lf` appended; running twice appends nothing; a failed conversion restores the previous bytes |
+| PS-T15 | `.gitattributes` (§1.1): `CreateAsync` writes exactly the two lines; `EnsureGitAttributesAsync` creates the file when missing, appends only `*.netpc.g.cs text eol=lf` to a file that has `*.netpc.json text eol=lf` and other lines (no final newline), and appends nothing when run twice (revised 2026-09-26: the conversion and rollback cases are gone) |

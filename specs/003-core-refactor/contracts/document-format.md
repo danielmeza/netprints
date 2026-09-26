@@ -7,6 +7,11 @@
 > §5–§6, research.md R17): random node ids, member ids, graph keys by member id, pins by name,
 > a canonical writer with one-line leaf records, integer positions, `$schema`, a tolerant reader,
 > edited-only saves and a generated JSON Schema. A `netprints merge` git driver is a follow-up after P1.
+>
+> Revised 2026-09-26 (owner decision, research.md R21): legacy DataContract XML is not read. The
+> repository's own legacy files are migrated once (tasks.md T054a) and the importer is deleted (T062a).
+> Ids are strict: the reader replaces an id that does not match `IdFormat` and reports `NPD009`, and the
+> schema carries the id patterns (§1.4.1, §2.6, §6).
 
 Project: `src/NetPrints.Serialization` (new, references `src/NetPrints.Core`; `InternalsVisibleTo`
 from Core so the mapper can set `Node.Id` and member ids). Tests: `tests/NetPrints.Core.Tests/Serialization/`.
@@ -20,7 +25,7 @@ Test obligations (`DF-Txx`) are listed at the end; `tasks.md` references them.
 | Rule | Value |
 |---|---|
 | Encoding | UTF-8, no BOM |
-| Line endings | `\n` only; the file ends with exactly one `\n`. New and converted projects get a `.gitattributes` with `*.netpc.json text eol=lf` and `*.netpc.g.cs text eol=lf` (project-system.md §1.1) |
+| Line endings | `\n` only; the file ends with exactly one `\n`. New projects (and the migrated sample) get a `.gitattributes` with `*.netpc.json text eol=lf` and `*.netpc.g.cs text eol=lf` (project-system.md §1.1) |
 | Writer | `CanonicalJsonWriter` (§2.3.1), a custom pass over the `JsonNode` tree STJ produces. STJ `WriteIndented` alone cannot write inline records, so it is not used for graph files |
 | Indentation | 2 spaces per level for block values |
 | Line layout | **Inline records** are written on one line each, whatever their length: connections, layout positions, pin states, typed values, type references, parameter references, local variables, and nodes that have only common fields. Everything else is block-indented, one property or element per line. The rule depends on the property name (§2.3.1), never on line width |
@@ -44,7 +49,6 @@ Test obligations (`DF-Txx`) are listed at the end; `tasks.md` references them.
 | Generated C# | `<same name without .json>.g.cs`, i.e. `<…>.netpc.g.cs` | next to the graph; committed, visible in PR diffs (not `linguist-generated`); regenerated, never hand-merged |
 | JSON Schema | `netpc.v1.schema.json` | `schemas/` at the repository root (§6) |
 | Project | `<Name>.csproj` | project-system.md §1 |
-| Legacy (read-only) | `*.netpp`, `*.netpc` | unchanged, never written |
 
 ### 1.3 (removed) `ProjectDocument`
 
@@ -79,10 +83,14 @@ Superseded by the `.csproj` (project-system.md §1). Project settings are MSBuil
 
 #### 1.4.1 Identifiers and graph keys
 
-| Id | Shape when created | Scope of uniqueness | Legacy import | Accepted on read |
-|---|---|---|---|---|
-| Node id | `n` + 13 lowercase Crockford base32 digits (`IdFormat`, data-model.md §2: a 63-bit Snowflake-style value, zero-padded so string order equals numeric order), from `IdGeneration.Current` — not retried, the generator guarantees uniqueness within its session | one graph | `n<index>` by position in `NodeGraph.Nodes` (`n0`, `n1`, …) | any non-empty string without `/` or whitespace; missing → `DocumentFormatException`; duplicate in a graph → the later one is reassigned a fresh id and reported as `NPD007` (§2.6) |
-| Member id | `m` + 13 digits of the same alphabet | the class (methods, constructors, variables and event graphs share one namespace) | `SeededIdGenerator(StableIds.SeedFor(<class full name>))`, assigned to variables, then methods, then constructors, in class order, so conversion is deterministic | any non-empty string without `/` or whitespace, other than `class`; missing → `DocumentFormatException`; duplicate in a class → the later one is reassigned a fresh id and reported as `NPD007` (§2.6) |
+| Id | Shape | Scope of uniqueness | On read |
+|---|---|---|---|
+| Node id | `n` + 13 lowercase Crockford base32 digits (`IdFormat`, data-model.md §2: a 63-bit Snowflake-style value, zero-padded so string order equals numeric order), from `IdGeneration.Current` — not retried, the generator guarantees uniqueness within its session | one graph | must match `IdFormat.PatternFor('n')` (`^n[0-9a-hjkmnp-tv-z]{13}$`, exact ordinal match, lowercase); missing → `DocumentFormatException`; any other shape → replaced by a fresh id, the graph's connections and layout entries that name it follow, `NPD009` (§2.6); duplicate in a graph → the later one is reassigned a fresh id and reported as `NPD007` (§2.6) |
+| Member id | `m` + 13 digits of the same alphabet | the class (methods, constructors, variables and event graphs share one namespace) | must match `IdFormat.PatternFor('m')`; missing → `DocumentFormatException`; any other shape → replaced by a fresh id, its `layout` keys follow, `NPD009`; duplicate in a class → the later one is reassigned a fresh id and reported as `NPD007` (§2.6) |
+
+Revised 2026-09-26 (research.md R21): the former "Legacy import" column (`n<index>` node ids, seeded
+member ids at conversion) and the looser "accepted on read" rule (any string without `/` or whitespace)
+are gone; every id in a v1 file has the shape above.
 
 Ids never change once assigned: renaming a member or node, reordering members, or changing a node's
 kind data keeps its id. Removing a node or member drops its id; a new one never reuses it on purpose
@@ -118,8 +126,9 @@ endpoint  = nodeId "/" pin                 ; used by ConnectionDocument.from/to
 - The index form of earlier drafts (`in.data.0`) is **not** accepted: it resolves like any unknown key
   (a connection is dropped with `NPD002`, a pin state with `NPD003`). No v1 file uses it, and a second
   grammar would make a pin named with digits only ambiguous.
-- Examples: `n2/in.exec.Exec`, `n2/in.data.value` (the `value` parameter of `Console.WriteLine`),
-  `n0/out.data.Input0` (first method argument, whatever its display name), `n5/out.exec.Catch`.
+- Examples (ids of §1.7): `n00000000057k3/in.exec.Exec`, `n00000000057k3/in.data.value` (the `value`
+  parameter of `Console.WriteLine`), `n00000000057k1/out.data.Input0` (first method argument, whatever its
+  display name), `n0c7hx3kq2m4a0/out.exec.Catch`.
 
 ### 1.5 `NodeDocument` (polymorphic, `"$kind"`)
 
@@ -177,13 +186,13 @@ integral types → `ToString(CultureInfo.InvariantCulture)`; `System.Single`/`Do
 `System.String` → the string; enum values → member name (flags: `"A, B"`); any other runtime type →
 `DocumentFormatException("Unsupported value type <T> in <node>/<pin>")`.
 
-### 1.7 Complete example: `HelloWorld.Program.netpc.json` (converted legacy sample)
+### 1.7 Complete example: `HelloWorld.Program.netpc.json` (the sample)
 
-This is the exact canonical output (no whitespace is compacted). Node ids come from legacy import (graph
-order): `n0` `MethodEntryNode`, `n1` `ReturnNode`, `n2` `CallMethodNode`. The member id `m4kq7tz`
-stands for the value the seeded legacy generator produces (§1.4.1); the committed sample file is the
-reviewed golden output. A node added later in the editor would get an id like `n7hx3kq`. Default node
-names are omitted.
+This is the exact canonical output (no whitespace is compacted). The ids stand for the seeded values the
+one-time migration writes (tasks.md T054a, research.md R21): `n0000000004g00` `ClassReturnNode`,
+`m00000000057k0` method `Main`, `n00000000057k1` `MethodEntryNode`, `n00000000057k2` `ReturnNode`,
+`n00000000057k3` `CallMethodNode`; the committed sample file is the reviewed golden output. A node added
+later in the editor gets an id like `n0c7hx3kq2m4a0`. Default node names are omitted.
 
 ```json
 {
@@ -194,22 +203,22 @@ names are omitted.
   "visibility": "Public",
   "classGraph": {
     "nodes": [
-      { "$kind": "classReturn", "id": "n0" }
+      { "$kind": "classReturn", "id": "n0000000004g00" }
     ]
   },
   "methods": [
     {
-      "id": "m4kq7tz",
+      "id": "m00000000057k0",
       "name": "Main",
       "visibility": "Public",
       "modifiers": "Static",
       "graph": {
         "nodes": [
-          { "$kind": "methodEntry", "id": "n0" },
-          { "$kind": "return", "id": "n1" },
+          { "$kind": "methodEntry", "id": "n00000000057k1" },
+          { "$kind": "return", "id": "n00000000057k2" },
           {
             "$kind": "callMethod",
-            "id": "n2",
+            "id": "n00000000057k3",
             "pins": [
               { "pin": "in.data.value", "value": { "type": "System.String", "value": "Hello, World!" } }
             ],
@@ -225,31 +234,31 @@ names are omitted.
           }
         ],
         "connections": [
-          { "from": "n0/out.exec.Exec", "to": "n2/in.exec.Exec" },
-          { "from": "n2/out.exec.Exec", "to": "n1/in.exec.Exec" }
+          { "from": "n00000000057k1/out.exec.Exec", "to": "n00000000057k3/in.exec.Exec" },
+          { "from": "n00000000057k3/out.exec.Exec", "to": "n00000000057k2/in.exec.Exec" }
         ]
       }
     }
   ],
   "layout": {
     "class": {
-      "n0": [112, 112]
+      "n0000000004g00": [112, 112]
     },
-    "m4kq7tz": {
-      "n0": [112, 112],
-      "n1": [840, 112],
-      "n2": [420, 112]
+    "m00000000057k0": {
+      "n00000000057k1": [112, 112],
+      "n00000000057k2": [840, 112],
+      "n00000000057k3": [420, 112]
     }
   }
 }
 ```
 
-What review diffs look like: moving `n2` changes one line (`"n2": [420, 112]` → `"n2": [460, 140]`);
+What review diffs look like: moving `n00000000057k3` changes one line (`"n00000000057k3": [420, 112]` →
+`"n00000000057k3": [460, 140]`);
 adding a node adds one node block (or one line), one line per new connection and one layout line.
 
 The matching `HelloWorld.csproj` is shown in project-system.md §1 (with `OutputType` `Exe` and
-`RootNamespace` `HelloWorld`); the converted project has no legacy references (they are dropped with
-`NPM001`).
+`RootNamespace` `HelloWorld`); it has no references beyond the SDK's defaults.
 
 ## 2. C# API
 
@@ -308,6 +317,7 @@ Document issue codes (`DocumentIssue.Code`):
 | `NPD006` | Warning | project extension not trusted; its nodes preserved but inactive (extension-points.md §8.3) |
 | `NPD007` | Warning | a node id (within its graph) or member id (within its class) was duplicated — a merge, or a hand-edited or copy-pasted file; the later occurrence (document order) was reassigned a fresh id and the document still loaded |
 | `NPD008` | Error | a graph document could not be read at all (malformed content, or a deserialization failure); a caller that keeps working after skipping it reports this instead of propagating the `DocumentFormatException` (added T044, `GraphCodeGenerator`) |
+| `NPD009` | Warning | a node id or member id does not match `IdFormat` for its prefix (a hand or AI edit, e.g. `"n0"` or `"start"`); it was replaced by a fresh id, references to it in the same document (connection endpoints, `layout` keys) follow, and the document still loaded (added T054b, research.md R21) |
 
 ### 2.2 Formats — `IDocumentFormat.cs`, `DocumentFormatRegistry.cs`
 
@@ -316,8 +326,8 @@ namespace NetPrints.Serialization;
 
 public interface IDocumentFormat
 {
-    string Id { get; }                              // "json" | "legacy-xml"
-    IReadOnlyList<string> ClassExtensions { get; }   // ".netpc.json" | ".netpc"
+    string Id { get; }                              // "json"
+    IReadOnlyList<string> ClassExtensions { get; }   // ".netpc.json"
     bool CanWrite { get; }
 
     ValueTask<ClassDocument> ReadClassAsync(Stream input, DocumentId id, CancellationToken cancellationToken);
@@ -338,7 +348,7 @@ public sealed class DocumentFormatRegistry
 | `Read*Async` | Does not dispose `input`. Throws `DocumentFormatException` (with line/position from `JsonException`) on malformed content, `DocumentVersionException` when `schemaVersion` > supported. Migrates older versions first (§2.5). Honors cancellation between reads. |
 | `Write*Async` | Writes the canonical form (§1.1). Does not dispose `output`. `NotSupportedException` when `CanWrite` is false. Deterministic: same document → same bytes. |
 | Registry ctor | `ArgumentException` on duplicate `Id` or an extension claimed by two formats; exactly one format with `Id == "json"` must exist (`Default`). |
-| `Find` | Longest matching suffix, `OrdinalIgnoreCase` (so `.netpc.json` wins over `.netpc`); `null` if none. |
+| `Find` | Longest matching suffix, `OrdinalIgnoreCase`; `null` if none. P1 registers only the JSON format; the registry stays the seam for later formats (constitution VII). |
 | Thread-safety | Formats and the registry are immutable and thread-safe. |
 
 `JsonDocumentFormat` (`Json/JsonDocumentFormat.cs`): `public JsonDocumentFormat(NetPrintsJsonOptions options, DocumentMigrator migrator)`.
@@ -350,7 +360,9 @@ public sealed class DocumentFormatRegistry
   (`JsonException.Path`) in the message.
 - Write: `JsonSerializer.SerializeToNode(document, …)`, a new root `JsonObject` with `$schema` first
   followed by the serialized properties in order, then `CanonicalJsonWriter.Write(root, output)` (§2.3.1).
-`LegacyXmlDocumentFormat` (`Legacy/LegacyXmlDocumentFormat.cs`): `public LegacyXmlDocumentFormat(IDocumentMapper mapper)`; `CanWrite = false`; reads with the existing `DataContractSerializer` settings (`PreserveObjectReferences = true`, `MaxItemsInObjectGraph = int.MaxValue`), calls `NodeGraph.AssignLegacyNodeIds()` on every graph, runs `GraphTypeInference.Relax`, then `mapper.ToDocument`.
+`LegacyXmlDocumentFormat` (`Legacy/LegacyXmlDocumentFormat.cs`, T038) is never registered in a registry a
+user reaches (editor, generator, CLI). It exists only for the one-time migration of the repository's own
+files (tasks.md T054a) and is deleted in T062a (research.md R21).
 
 ### 2.3 JSON options, node polymorphism and the canonical writer — `Json/NetPrintsJsonContext.cs`, `Json/NetPrintsJsonOptions.cs`, `Json/NodeListConverter.cs`, `Json/CanonicalJsonWriter.cs`
 
@@ -497,8 +509,8 @@ public sealed class DocumentMigrator
 
 Rules: missing `schemaVersion` → `DocumentFormatException`; `schemaVersion` > `Supported` →
 `DocumentVersionException`; < 1 → `DocumentFormatException`; otherwise apply migrations in order and
-log `DocumentMigrated` (3001). P1 ships no migration (v1 is the first JSON schema); the legacy XML is
-"version 0" handled by the importer, not by migrations.
+log `DocumentMigrated` (3001). P1 ships no migration (v1 is the first JSON schema); there is no
+"version 0": DataContract XML is not read (research.md R21).
 
 ### 2.6 Mapping — `Mapping/IDocumentMapper.cs`, `Mapping/INodeDocumentConverter.cs`, `Mapping/NodeDocumentConverterRegistry.cs`
 
@@ -555,7 +567,7 @@ public sealed class DocumentMapper : IDocumentMapper
 |---|---|
 | Registry ctor | `ArgumentException` on duplicate `Kind` or `NodeType`; extension kinds must contain `/`, built-ins must not. |
 | `ToDocument(ClassGraph)` | Pure (no model mutation). Node without converter → `InvalidOperationException` naming the type. `NodeGraph.PreservedDocumentState` (unknown nodes and their connections) appended after known nodes. Pin references and pin states use `PinKeys` (§1.4.2); `name` omitted when `Node.Name == Node.DefaultName`; `pins[].name` only for pins whose `Name` differs from their `keyName`. Member ids from the model; duplicate member ids → `InvalidOperationException` (callers run `ClassGraph.EnsureUniqueMemberIds()` first, §2.8). Connections enumerated from output pins, sorted (§1.4). Positions only in `Layout`: one entry per node of every graph, coordinates rounded to integers (`MidpointRounding.AwayFromZero`). Deterministic. |
-| `FromDocument(ClassDocument, …)` | Order: header → members (member id shape checked: missing, containing `/` or whitespace, or equal to `class` → `DocumentFormatException`) → graphs; per graph: create nodes via converters (constructor allocates an id, then `Node.Id = document.Id` and `graph.ReindexNode`; `Name = document.Name ?? node.DefaultName`), apply `pins` by key (unknown key → drop + `NPD003`), connect edges by key with `GraphUtil.Connect*Pins` (missing node, unknown key or incompatible pins → drop + `NPD002`), restore positions from `Layout`, auto-place nodes that have no entry (`GraphAutoLayout.PlaceUnpositioned`, data-model.md §2; never `(0,0)` by default), ignore layout entries for unknown graph keys or node ids (`NPD004`), then `GraphTypeInference.Relax(graph)`. A duplicate node id (within its graph) or member id (within the class) does not throw: the later occurrence (document order) is reassigned a fresh id (`StableIds.AllocateUnique`) and reported as `NPD007` (merge safety) — the fix is local, so an id that was unique in the original document is never disturbed. Unknown node documents → kept in `PreservedDocumentState` + issue `NPD001`. Sets `Class`/`Project` back-references. The returned class has `IsDirty == false`. |
+| `FromDocument(ClassDocument, …)` | Order: header → members (member id missing → `DocumentFormatException`; present but not matching `IdFormat.PatternFor('m')` → replaced by a fresh id, the `layout` keys that name it follow, `NPD009`) → graphs; per graph: node ids not matching `IdFormat.PatternFor('n')` are replaced first (a fresh id per distinct invalid text; every connection endpoint and layout entry of that graph naming it is rewritten; `NPD009`), then create nodes via converters (constructor allocates an id, then `Node.Id = document.Id` and `graph.ReindexNode`; `Name = document.Name ?? node.DefaultName`), apply `pins` by key (unknown key → drop + `NPD003`), connect edges by key with `GraphUtil.Connect*Pins` (missing node, unknown key or incompatible pins → drop + `NPD002`), restore positions from `Layout`, auto-place nodes that have no entry (`GraphAutoLayout.PlaceUnpositioned`, data-model.md §2; never `(0,0)` by default), ignore layout entries for unknown graph keys or node ids (`NPD004`), then `GraphTypeInference.Relax(graph)`. A duplicate node id (within its graph) or member id (within the class) does not throw: the later occurrence (document order) is reassigned a fresh id (`StableIds.AllocateUnique`) and reported as `NPD007` (merge safety) — the fix is local, so an id that was unique in the original document is never disturbed. Unknown node documents → kept in `PreservedDocumentState` + issue `NPD001`. Sets `Class`/`Project` back-references. The returned class has `IsDirty == false`. |
 | Round trip | `ToDocument(FromDocument(d))` serializes to the same bytes as `d` for every valid canonical `d` with a layout entry for every node (DF-T03). |
 
 ### 2.7 Stores — `Stores/IDocumentStore.cs`, `Stores/FileSystemDocumentStore.cs`, `Stores/InMemoryDocumentStore.cs`
@@ -623,55 +635,48 @@ public sealed class ProjectPersistence
 |---|---|
 | `LoadAsync` | `IProjectSystem.LoadAsync`, then each `Snapshot.GraphFiles` entry through the JSON format; a malformed graph → issue (Error, with line/position) and the project opens without it. `Project` is built from the snapshot (data-model.md §5); class order = ordinal by file path. |
 | `SaveAsync` | For each class in project order with `ClassGraph.IsDirty` (data-model.md §2): `EnsureUniqueMemberIds()`, `ToDocument`, write the graph to `Project.GetGraphFilePath(cls)` and, next to it, `renderGenerated(cls)` (the `.netpc.g.cs`, `GraphCodeGenerator.RenderFile`), each only when its bytes differ from the file on disk; then `MarkClean()`. A clean class is neither mapped nor written, even if mapping it would now give different bytes (auto-placed nodes, a non-canonical hand edit, re-resolved references): no ripple saves. Never writes the `.csproj` (settings go through `IProjectSystem.ApplyAsync`). Returns written files in write order. |
-| `AddGraphAsync` | Copies a `.netpc.json` byte for byte (or imports a legacy `.netpc`, writing `<name>.netpc.json` in canonical form) into the project folder, loads and adds it clean (PAR-13). |
+| `AddGraphAsync` | Copies a `.netpc.json` byte for byte into the project folder, loads and adds it clean (PAR-13). A legacy `.netpc` is not accepted (research.md R21). |
 | Thread-safety | Stateless; safe to share. The returned model is owned by the UI thread. |
 
-## 3. Legacy XML → v1 rules (graphs)
+## 3. (removed 2026-09-26) Legacy XML → v1 rules
 
-Project-level conversion (`.netpp` → `.csproj`) is in project-system.md §5.
-
-| Legacy `.netpc` (DataContract) | v1 graph document |
-|---|---|
-| Node without id | `n<index>` by position in `NodeGraph.Nodes` (`NodeGraph.AssignLegacyNodeIds`) |
-| Member without id | seeded member ids (§1.4.1, `ClassGraph.AssignLegacyMemberIds`) |
-| `Node.PositionX/Y` (double) | `layout[graphKey][id]`, rounded to integers |
-| Node `Name` equal to the type name | omitted |
-| Pin object references (`IncomingPin`, `OutgoingPin(s)`) | `connections` |
-| `NodeInputDataPin.UnconnectedValue` (object) | `pins[].value` (`TypedValue`); unsupported runtime type → conversion error |
-| `NodePin.PinType`, `InferredType` | not stored; recomputed by constructors + `GraphTypeInference.Relax` |
-| (absent) locals, event graphs, `VariableSpecifier.Scope` | empty / `Member` (initialized in `[OnDeserializing]`, because DataContract skips constructors) |
+Legacy `.netpp`/`.netpc` files are not read (research.md R21), so there is no project conversion
+(project-system.md §5, removed) and no graph import. The one-time migration of the repository's own files
+(tasks.md T054a) reuses the T038 importer as it stands and then rewrites its positional `n<index>` node
+ids to seeded Snowflake ids; the importer is deleted afterwards (T062a).
 
 ### 3.1 DataContract `[OnDeserialized]` hooks
 
-The JSON path never runs these hooks: `ClassDocumentMapper.FromDocument` builds the model through the normal
-constructors, which already do what each hook repairs after DataContract (which skips constructors). The legacy
-importer (`LegacyXmlDocumentFormat`) still deserializes with DataContract, so the hooks stay, reduced to the
-lines listed, until the importer is the only caller.
+The JSON path never runs these hooks: `DocumentMapper.FromDocument` builds the model through the normal
+constructors, which already do what each hook repairs after DataContract (which skips constructors). The
+hooks stay only while something still deserializes the model with DataContract: `LegacyXmlDocumentFormat`
+(until T062a) and `Project.LoadFromPath`/`SerializationHelper` (until T063). T063 deletes them together
+with the model's `[DataContract]`/`[DataMember]` attributes.
 
-| Hook (on `master`) | What it does | JSON path | Legacy import path |
+| Hook (on `master`) | What it does | JSON path | Until T063 |
 |---|---|---|---|
 | `Node.OnDeserializing` (`[OnDeserialized]`, `Graph/Node.cs`) | Re-subscribes `InferredType.OnValueChanged` and `IncomingPinChanged` on every input type pin | Constructors subscribe (`AddInputTypePin`); nothing extra | Kept |
-| `MethodGraph.OnDeserialized` | Relaxation loop calling `Node.OnMethodDeserialized` until inferred types settle (max 20 iterations) | `GraphTypeInference.Relax(graph)` at the end of each graph in `FromDocument`, for method, constructor and event graphs, same loop and limit | Hook body replaced by a call to `GraphTypeInference.Relax(this)` |
+| `MethodGraph.OnDeserialized` | Relaxation loop calling `Node.OnMethodDeserialized` until inferred types settle (max 20 iterations) | `GraphTypeInference.Relax(graph)` at the end of each graph in `FromDocument`, for method, constructor and event graphs, same loop and limit | Hook body replaced by a call to `GraphTypeInference.Relax(this)` (T020) |
 | `Variable.OnDeserialized` | Creates `TypeGraph` when it is null | The mapper always builds the type graph from the document | Kept |
-| `Project.FixDefaults` | Resets `Classes` (not serialized) | Not applicable: projects are `.csproj` (project-system.md) | Kept for `.netpp` conversion only |
+| `Project.FixDefaults` | Resets `Classes` (not serialized) | Not applicable: projects are `.csproj` (project-system.md) | Kept for `Project.LoadFromPath` |
 
-New members that DataContract would leave null (`LocalVariables`, `EventGraphs`, `VariableSpecifier.Scope`, ids) are
-initialized in an `[OnDeserializing]` method on the legacy path (data-model.md §1). The JSON path gets them from the
-constructors or the document. Test **DF-T27** covers this.
+New members that DataContract would leave null (`LocalVariables`, `EventGraphs`, `VariableSpecifier.Scope`, ids)
+are initialized in an `[OnDeserializing]` method until T063 (data-model.md §1). The JSON path gets them from
+the constructors or the document. Test **DF-T27** covers the JSON path.
 
 ## 4. Mapping old → new
 
 | Old (`master`) | New |
 |---|---|
-| `src/NetPrints.Core/Serialization/SerializationHelper.cs` (`SaveClass`, `LoadClass`) | deleted → `LegacyXmlDocumentFormat` (read), `JsonDocumentFormat` (read/write) |
-| `Project.LoadFromPath(path)` (`.netpp`) | `ProjectPersistence.LoadAsync(csprojPath, ct)`; `.netpp` → `ProjectConverter.ConvertAsync` first |
+| `src/NetPrints.Core/Serialization/SerializationHelper.cs` (`SaveClass`, `LoadClass`) | deleted (T063) → `JsonDocumentFormat` (read/write); DataContract XML is not read (research.md R21) |
+| `Project.LoadFromPath(path)` (`.netpp`) | `ProjectPersistence.LoadAsync(csprojPath, ct)`; a `.netpp` is not opened |
 | `Project.Save()`, `SaveClassInProjectDirectory(cls)` | `ProjectPersistence.SaveAsync(project, render, ct)` (edited graphs + their `.g.cs`) |
 | project `DataContract` XML (`.netpp`) | `.csproj` via `IProjectSystem` (project-system.md) |
 | `Project.AddExistingClass(path)` | `ProjectPersistence.AddGraphAsync` |
 | `Project.GetClassStoragePath(cls)` → `X.netpc` | `Project.GetGraphFilePath(cls)` → `<project dir>/X.netpc.json` (existing path kept for loaded classes) |
 | `MethodGraph.OnDeserialized` relaxation loop | `GraphTypeInference.Relax(NodeGraph)` (Core, `Graph/GraphTypeInference.cs`) |
-| `FileFilter.ProjectFiles` `["*.netpp"]` | `["*.csproj", "*.netpp"]`; `ClassFiles` `["*.netpc.json", "*.netpc"]` |
-| `samples/HelloWorld/*.netpp`, `*.netpc` | `samples/HelloWorld/HelloWorld.csproj`, `HelloWorld.Program.netpc.json`, `HelloWorld.Program.netpc.g.cs`; legacy copies → `tests/NetPrints.Core.Tests/Fixtures/Legacy/HelloWorld/` |
+| `FileFilter.ProjectFiles` `["*.netpp"]` | `["*.csproj"]`; `ClassFiles` `["*.netpc.json"]` |
+| `samples/HelloWorld/*.netpp`, `*.netpc` | `samples/HelloWorld/HelloWorld.csproj`, `HelloWorld.Program.netpc.json`, `HelloWorld.Program.netpc.g.cs`, migrated once (T054a); the legacy files are deleted (T057 in `samples/`, T062a in `tests/NetPrints.Core.Tests/Fixtures/Legacy/`) |
 
 ## 5. Extension node kinds
 
@@ -700,7 +705,7 @@ public static class NetPrintsJsonSchema
 | Rule | Contract |
 |---|---|
 | Source | `JsonSchemaExporter.GetJsonSchemaAsNode` over `ClassDocument` with serializer options built from `NetPrintsJsonContext.Default` only (built-in kinds; loaded extensions never change the file), `JsonSchemaExporterOptions { TreatNullObliviousAsNonNullable = true, TransformSchemaNode = … }`. |
-| Transform | Root: add `"$schema": "https://json-schema.org/draft/2020-12/schema"`, `"$id": NetPrintsSchema.V1Url`, `"title": "NetPrints class graph (schema v1)"`, and a root property `"$schema": { "type": "string" }`; `schemaVersion` gets `"const": 1`; every layout position array gets `"minItems": 2, "maxItems": 2`; the `NodeDocument` schema gets one more `anyOf` branch for extension kinds: `{ "type": "object", "required": ["$kind", "id"], "properties": { "$kind": { "type": "string", "pattern": "/" } } }`; `required` lists exactly the Req. = yes members of §1.4–§1.6 (fix what the exporter emits). No `additionalProperties: false` anywhere (the reader is tolerant). **Id fields do not get `"pattern": IdFormat.Pattern`**: `IdFormat.Pattern` (`^[nm][0-9a-hjkmnp-tv-z]{13}$`, data-model.md §2) describes only what a freshly *created* id looks like (useful for `IdFormat`'s own tests) — a legacy-imported class keeps its `AssignLegacyNodeIds`/`AssignLegacyMemberIds` ids (`n0`, `n1`, …) forever once converted to v1 JSON (§1.4.1's "accepted on read" column is deliberately looser than the creation shape, and legacy ids are never rewritten just because the file round-trips), so a strict id pattern in the published schema would reject legitimate, already-shipped documents. If T041 wants any schema-level id shape check, it must match `StableIds.IsValidDocumentId` (non-empty, no `/`, no whitespace), not `IdFormat.Pattern`. |
+| Transform | Root: add `"$schema": "https://json-schema.org/draft/2020-12/schema"`, `"$id": NetPrintsSchema.V1Url`, `"title": "NetPrints class graph (schema v1)"`, and a root property `"$schema": { "type": "string" }`; `schemaVersion` gets `"const": 1`; every layout position array gets `"minItems": 2, "maxItems": 2`; the `NodeDocument` schema gets one more `anyOf` branch for extension kinds: `{ "type": "object", "required": ["$kind", "id"], "properties": { "$kind": { "type": "string", "pattern": "/" } } }`; `required` lists exactly the Req. = yes members of §1.4–§1.6 (fix what the exporter emits). No `additionalProperties: false` anywhere (the reader is tolerant). **Id patterns** (revised 2026-09-26, research.md R21, T054b): every node `id` (each built-in branch and the extension branch) gets `"pattern": IdFormat.PatternFor('n')`, every member `id` `IdFormat.PatternFor('m')`; `ConnectionDocument.from`/`to` get `^n[0-9a-hjkmnp-tv-z]{13}/(in|out)\.(exec|data|type)\..+$`; the root `layout` object gets `"propertyNames": { "pattern": "^(class|m[0-9a-hjkmnp-tv-z]{13}(/(type|get|set))?)$" }` and each inner map `"propertyNames"` with the node pattern. All of these are built from `IdFormat.Alphabet`/`ValueDigits`/`PatternFor`, never typed twice. (Until T054b the schema had no id patterns, because legacy-imported `n0`-style ids were accepted on read.) |
 | Output | `JsonNode.ToJsonString` with `WriteIndented = true`, `IndentSize = 2`, `NewLine = "\n"`, plus a final `\n`. Committed at `schemas/netpc.v1.schema.json`; `NETPRINTS_UPDATE_SNAPSHOTS=1` rewrites it (DF-T24). |
 | Versioning | A schema version bump adds `schemas/netpc.v2.schema.json` and a new `V2Url`; old files stay published. |
 | Publication | The docs workflow copies `schemas/*.schema.json` to `/schemas/` of the GitHub Pages site (release-and-docs.md §8, §10), so `V1Url` resolves once the owner has enabled Pages and the first deployment ran; the committed file stays the source. The reader never fetches the URL. |
@@ -711,9 +716,9 @@ public static class NetPrintsJsonSchema
 
 | ID | Case |
 |---|---|
-| DF-T01 | Golden C#: each class of the legacy fixtures (`HelloWorld`, `AllNodes`) imported → C# equals the golden file recorded before P1 (T004) |
-| DF-T02 | Legacy → JSON → load → C# equals golden (byte-identical) |
-| DF-T03 | JSON round trip: load → mark dirty → save → bytes identical, for every fixture and the converted sample; the written bytes re-parse |
+| DF-T01 | Golden C#: each class of the characterization fixtures (`HelloWorld`, `AllNodes`), read from its migrated `.netpc.json` (T054a; before that, imported from the legacy XML) → C# equals the golden file recorded before P1 (T004); the goldens are never regenerated by the migration |
+| DF-T02 | JSON fixture → load → mark dirty → save → load → C# equals golden (byte-identical) (revised 2026-09-26: was legacy → JSON → load) |
+| DF-T03 | JSON round trip: load → mark dirty → save → bytes identical, for every fixture and the sample; the written bytes re-parse |
 | DF-T04 | Canonical form on a small handcrafted document, compared with an expected text literal: `$schema` first, 2-space indent, `\n`, final newline, no BOM, `$kind` then `id` first, sorted maps and connections, omitted defaults and default node names, each inline record kind of §2.3.1 on one line (connection, layout position, pin state, typed value, type ref, parameter ref, local variable, common-fields-only node), integer coordinates (a model position of 420.5 is written as 421), relaxed escaping (`List<T>`, `é` literal; `"` and newline escaped) |
 | DF-T05 | Moving one node changes exactly one line, inside `layout` (line diff of two saves) |
 | DF-T06 | Every built-in kind of §1.5 round-trips, including dynamic pin counts and renamed pins |
@@ -725,16 +730,17 @@ public static class NetPrintsJsonSchema
 | DF-T12 | `FileSystemDocumentStore.WriteAsync`: exception inside `write` leaves the old file intact and no temp file; cancellation likewise |
 | DF-T13 | `Changes`: external edit raises one `Changed` (virtual time); own write raises none; `Dispose` completes the stream |
 | DF-T14 | `InMemoryDocumentStore` passes the same store tests (shared abstract test class) |
-| DF-T15 | `ProjectPersistence.SaveAsync` writes only dirty classes' graphs and their `.netpc.g.cs`: a project of three classes with one edited → exactly 2 files written; a clean class whose file is non-canonical (comments, other order) or has an unpositioned node is not written; never the `.csproj`; unchanged project → 0 files; all classes clean afterwards (legacy conversion: PS-T12) |
-| DF-T16 | Registry: duplicate format id / extension → `ArgumentException`; `Find` prefers `.netpc.json` over `.netpc` |
+| DF-T15 | `ProjectPersistence.SaveAsync` writes only dirty classes' graphs and their `.netpc.g.cs`: a project of three classes with one edited → exactly 2 files written; a clean class whose file is non-canonical (comments, other order) or has an unpositioned node is not written; never the `.csproj`; unchanged project → 0 files; all classes clean afterwards |
+| DF-T16 | Registry: duplicate format id / extension → `ArgumentException`; `Find` prefers the longest matching suffix (a fake second format claiming a shorter suffix of `.netpc.json`; it is not a legacy format) |
 | DF-T17 | Extension node kind from a second `JsonSerializerContext` round-trips (in-process test extension) |
-| DF-T18 | Ids: new nodes get ids matching `IdFormat.Pattern` (`^n[0-9a-hjkmnp-tv-z]{13}$`), unique in the graph; `AllocateNodeId` is not retried (a generator stub that returns an already-used id is trusted, not searched around — `NodeIdTests.AllocateNodeIdDoesNotRetryOrSearch`); `IdGeneration.Use(new SeededIdGenerator(42))` gives the same ids on every run; legacy import assigns `n0…nK` and the same member ids on every conversion; node and member ids survive round trips, renames and reordering; a document with two nodes sharing an id loads (not a `DocumentFormatException`), the later one gets a fresh id, is indexed under it (`FindNode` resolves it), and an `NPD007` issue is reported |
+| DF-T18 | Ids: new nodes get ids matching `IdFormat.Pattern` (`^n[0-9a-hjkmnp-tv-z]{13}$`), unique in the graph; `AllocateNodeId` is not retried (a generator stub that returns an already-used id is trusted, not searched around — `NodeIdTests.AllocateNodeIdDoesNotRetryOrSearch`); `IdGeneration.Use(new SeededIdGenerator(42))` gives the same ids on every run; node and member ids survive round trips, renames and reordering; a document with two nodes sharing an id loads (not a `DocumentFormatException`), the later one gets a fresh id, is indexed under it (`FindNode` resolves it), and an `NPD007` issue is reported |
 | DF-T19 | Pin references by name: golden list `Fixtures/Golden/PinKeys.golden.txt` of every pin reference of every node of AllNodes (an accidental built-in pin rename fails it); two same-named pins get `~2`; a renamed method argument keeps key `out.data.Input0` and writes `name`; hand-editing a `callMethod`'s `MethodRef` from `M(int a, int b)` to `M(int a, string inserted, int b)` keeps the connection on `in.data.b` and drops nothing else; an index-form reference (`in.data.0`) → `NPD002` / `NPD003` |
 | DF-T20 | Auto-placement: a node without a layout entry is placed per data-model.md §2 (expected coordinates asserted for an upstream neighbour, a downstream neighbour, no neighbour, and a collision); a document with no `layout` loads with no node at `(0,0)` unless computed there; placement is deterministic |
 | DF-T21 | Tolerant read: a document with `//` and `/* */` comments, trailing commas, `$kind` after other properties, `$schema` missing or present, members and properties in another order, and arbitrary whitespace loads to the same model as its canonical form; saving it after an edit writes the canonical form; `$schema` that is not a string → `DocumentFormatException` |
-| DF-T22 | Member ids: layout and diagnostics keys use member ids; reordering two methods in the model keeps each method's layout entries; a document with a missing member id → `DocumentFormatException`; a document with a duplicate member id loads, the later one is reassigned a fresh id, and an `NPD007` issue is reported; `EnsureUniqueMemberIds` renames only the later duplicate |
+| DF-T22 | Member ids: layout and diagnostics keys use member ids; reordering two methods in the model keeps each method's layout entries; a document with a missing member id → `DocumentFormatException`; a malformed member id is covered by DF-T28; a document with a duplicate member id loads, the later one is reassigned a fresh id, and an `NPD007` issue is reported; `EnsureUniqueMemberIds` renames only the later duplicate |
 | DF-T23 | Merge (plain git), ids from a queue generator stub: base = a method graph with exec chain `nb00000` (entry) → `nk00000` (call) → `nr00000` (call) → `nz00000` (return) and layout entries for all four; branch A adds a `literal` `nd00000` connected to a new `callMethod` `nf00000` (`Console.WriteLine(string)`), branch B adds `nm00000` → `np00000` the same way, each with layout entries (their connection and layout lines fall into different interior gaps of the sorted sets); `git merge-file` of the three saved files reports exactly one conflict hunk, at the tail of `nodes`; connections and layout merge cleanly; resolving the hunk by keeping both sides (plus the missing `,`) loads with 8 nodes and 5 connections. Skipped with a reason when `git` is not on `PATH` (CI has it). The test documents the limit too: appends at the end of a sorted set, or two inserts into the same gap, still conflict until the P2 merge driver |
-| DF-T24 | Schema: `NetPrintsJsonSchema.GenerateV1()` equals `schemas/netpc.v1.schema.json` (rewritten with `NETPRINTS_UPDATE_SNAPSHOTS=1`); structural asserts: root `$id` = `V1Url`, one `anyOf` branch per built-in `$kind` (`const`) plus the extension branch, `schemaVersion` `const` 1, layout arrays `minItems`/`maxItems` 2, `required` of `MethodDocument` = `["id", "name", "visibility", "graph"]` |
+| DF-T24 | Schema: `NetPrintsJsonSchema.GenerateV1()` equals `schemas/netpc.v1.schema.json` (rewritten with `NETPRINTS_UPDATE_SNAPSHOTS=1`); structural asserts: root `$id` = `V1Url`, one `anyOf` branch per built-in `$kind` (`const`) plus the extension branch, `schemaVersion` `const` 1, layout arrays `minItems`/`maxItems` 2, `required` of `MethodDocument` = `["id", "name", "visibility", "graph"]`; the id patterns of §6 on a node `id`, a member `id`, `from`/`to` and both `layout` levels, and each equals the text built from `IdFormat` |
 | DF-T25 | Default node names: a node named `CallMethodNode` is written without `name` and reads back as `CallMethodNode`; a node named `CallMethodNode2` or `Greeting` is written with `name` |
 | DF-T26 | Committed samples: every `samples/**/*.netpc.json` is canonical (load → mark dirty → write equals the file bytes) and every `samples/**/*.netpc.g.cs` equals `GraphCodeGenerator.RenderFile` of its graph (stale-file guard; runs in CI with the rest of the suite) |
-| DF-T27 | Post-load wiring on both paths: load the HelloWorld sample from JSON and from the legacy fixture; on each result, change a type-pin input of a generic node (e.g. connect a different type to a `MakeArray` type pin) and assert the dependent pins' inferred types update and the generated C# changes accordingly; assert `Variable.TypeGraph` is non-null for every variable, and that the inferred types after load equal the ones before save (relaxation ran) |
+| DF-T27 | Post-load wiring (JSON path; the legacy-import half is deleted with the importer in T062a): load the HelloWorld sample from JSON; on the result, change a type-pin input of a generic node (e.g. connect a different type to a `MakeArray` type pin) and assert the dependent pins' inferred types update and the generated C# changes accordingly; assert `Variable.TypeGraph` is non-null for every variable, and that the inferred types after load equal the ones before save (relaxation ran) |
+| DF-T28 | Strict ids (§1.4.1, §2.6): a document whose node ids are `n0`, `start` and `N00000000057K3` (upper case) and whose method id is `m1` loads; each gets a fresh id matching `IdFormat.PatternFor`, one `NPD009` per replaced id names the old text, every connection and layout entry that named it now names the new id (C# unchanged, no `NPD002`/`NPD004`); an invalid id that also appears twice ends with two distinct valid ids (`NPD009` then `NPD007`); a missing id still throws `DocumentFormatException`; the migrated fixtures and the sample load with no `NPD009` |

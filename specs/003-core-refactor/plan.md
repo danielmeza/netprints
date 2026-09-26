@@ -23,7 +23,9 @@ translator out of process (`Exec` of the bundled `NetPrints.Generator`, research
 `CoreCompile`, writing committed `<name>.netpc.g.cs` files nested under their graphs. The editor opens the
 `.csproj` through MSBuild (Microsoft.Build.Locator + MSBuildWorkspace, as UnrealSharp does, research
 R14), so references, documentation (D5) and builds come from MSBuild; the custom reference resolver and
-`ProjectCompiler` are gone. Legacy `.netpp`/`.netpc` projects are converted read-only.
+`ProjectCompiler` are gone. **Revised 2026-09-26 (owner decision, research R21):** legacy `.netpp`/`.netpc`
+projects are not read or converted; the repository's own sample and fixtures are migrated once (T054a)
+and the legacy code is deleted (T062a, T063). Ids are strict Snowflake ids on read and in the schema (T054b).
 
 **Graph format (owner-approved research `docs/research/2026-09-25-graph-format/`, research R17):** schema
 v1 is designed for git: random node ids, stable member ids that key the layout, pins referenced by name,
@@ -44,7 +46,7 @@ CI job publishes it self-contained and runs a headless `--check-project` on Hell
 during P1.
 
 Reused unchanged (research.md §1): the versioned, cycle-free JSON graph documents behind
-`IDocumentFormat`/`IDocumentStore`/`IDocumentMapper` with legacy import and migrations; the extension
+`IDocumentFormat`/`IDocumentStore`/`IDocumentMapper` with schema migrations (the legacy import is dropped, R21); the extension
 points of the plan page (node libraries, emitters, type catalogs with a composite reflection provider,
 project profiles, host channel, per-extension settings) loaded in isolated AssemblyLoadContexts; event
 graphs; method-local variables; the AvaloniaEdit C# code view with diagnostics mapped to nodes; and the
@@ -66,7 +68,7 @@ Docusaurus 3.10.2 in `website/`.
 
 **Storage**: `<Name>.csproj` (MSBuild, [contracts/project-system.md](./contracts/project-system.md));
 graph files `*.netpc.json` through `IDocumentStore` (schema v1, [contracts/document-format.md](./contracts/document-format.md));
-generated `*.netpc.g.cs` (committed); legacy `*.netpp`/`*.netpc` read-only. User settings:
+generated `*.netpc.g.cs` (committed); legacy `*.netpp`/`*.netpc` are not read (R21). User settings:
 `ApplicationData/NetPrints/settings.json`.
 
 **Testing**: xUnit v3 3.2.2 on MTP (research U17). Core, serialization and extensibility tests in
@@ -85,7 +87,7 @@ released as four NuGet packages and three editor archives, documented by a stati
 **Performance Goals**: no new work (P8). Guard rails only: project open ≤ 3 s when restored (SC-005; MSBuildWorkspace open measured 0.8 s);
 diagnostics ≤ 2 s after the last edit (SC-006); existing SC-005 search budget test unchanged.
 
-**Constraints**: byte-identical C# for legacy fixtures (FR-008); deterministic, merge-friendly documents (C VI, FR-043…FR-050); core,
+**Constraints**: byte-identical C# for the characterization fixtures across their one-time migration (FR-008); deterministic, merge-friendly documents (C VI, FR-043…FR-050); core,
 serialization, reflection, extensibility, workspace and generator stay UI-free (C II); project-referenced
 extensions load in the editor only after trust (FR-019); the generator never references MSBuild or UI.
 
@@ -108,7 +110,7 @@ extensions load in the editor only after trust (FR-019); the generator never ref
 | Development workflow: CI Linux-only | ✅ | `CI` stays on `ubuntu-latest` (new jobs `packages`, `desktop-publish`); only `release.yml` uses `macos-latest`, for the `osx-arm64` archive (research R18; PATCH clarification proposed below). |
 | VIII. Simplicity, one PR | ⚠️ size | One spec/branch/PR as required; see "PR size" below. One Serialization project instead of three (research R10). |
 | Tech: no Fody in new code | ✅ | Fody removed entirely. |
-| Tech: STJ source-gen default format | ✅ | `NetPrintsJsonContext`; legacy XML import-only. |
+| Tech: STJ source-gen default format | ✅ | `NetPrintsJsonContext`; legacy XML is not read at all (R21), stricter than "import-only" (see Governance proposals). |
 
 **Post-design re-check**: unchanged; no violations beyond Complexity Tracking.
 
@@ -123,7 +125,7 @@ specs/003-core-refactor/
 └── contracts/
     ├── document-format.md       # graph JSON schema v1, IDocumentFormat/Store/Mapper, migrations, ProjectPersistence
     ├── extension-points.md      # INodeLibrary, emitters, ITypeCatalog, IProjectProfile, IHostChannel, settings, manifest, loader
-    ├── project-system.md        # .csproj, NetPrints.Sdk props/targets, generator, IProjectSystem, conversion
+    ├── project-system.md        # .csproj, NetPrints.Sdk props/targets, generator, IProjectSystem
     ├── compilation-and-diagnostics.md  # diagnostics, DiagnosticMapper, SourceMap, quick info
     ├── editor-services.md       # delta to P0: EditorContext, VMs, composition/DI, error model, logging ids, architecture gate
     └── release-and-docs.md      # MinVer, package metadata, local feed, --check-project, release/docs/wiki workflows, owner steps
@@ -135,18 +137,18 @@ specs/003-core-refactor/
 src/NetPrints.Core/            # model (ModelObject, Node.Id, EventGraph, LocalVariable, Project from snapshot), translator
                                # (+node translator registry, emitters, SourceMap), Compilation/ (diagnostics, CodeAnalysisSession),
                                # Projects/ (IProjectSystem, ProjectSnapshot, ProjectEdit, IProcessRunner), Profiles/
-src/NetPrints.Serialization/   # new: Documents/, Json/, Legacy/ (XML importer, LegacyProject, ProjectConverter), Mapping/,
+src/NetPrints.Serialization/   # new: Documents/, Json/, Legacy/ (T038 importer + DataContract copies, one-time migration only, deleted in T062a), Mapping/,
                                # Migrations/, Stores/, ProjectPersistence
 src/NetPrints.Reflection/      # + ITypeCatalog, CompositeReflectionProvider, InMemoryTypeCatalog; docs from ResolvedAssembly
 src/NetPrints.Extensibility/   # new: extension API, registry, loader/ALC, IExtensionHost, host channel, settings
 src/NetPrints.Workspace/       # new: MsBuildRegistration (Locator), MsBuildProjectSystem (evaluation, MSBuildWorkspace,
                                # ProjectRootElement edits, restore/build/run), MsBuildMessageParser
-src/NetPrints.Generator/       # new: GraphCodeGenerator + "generate"/"convert" entry point (build-time tool)
+src/NetPrints.Generator/       # new: GraphCodeGenerator + "generate" entry point (build-time tool)
 src/NetPrints.Sdk/             # new: pack-only; build/NetPrints.Sdk.props/.targets, tools/net10.0 = Generator
 src/NetPrints.Editor/          # + CodeView/, Diagnostics/, Events/, Variables/ locals, Logging, Assets/Fonts, project trust
 src/NetPrints.Desktop/         # + MSBuild registration, console logging, extension host startup
-src/NetPrints.Cli/             # builds .csproj / converts .netpp via the new services (no redesign, P2)
-tests/NetPrints.Core.Tests/    # + Characterization/, Serialization/, Projects/ (targets, generator, conversion, project system),
+src/NetPrints.Cli/             # builds and runs .csproj via the new services (no redesign, P2)
+tests/NetPrints.Core.Tests/    # + Characterization/, Serialization/, Projects/ (targets, generator, project system),
                                # Extensibility/, Translator/Events, Locals
 tests/NetPrints.Editor.Tests/  # + CodeView/, Diagnostics/, Architecture/ (gate + violating fixture)
 tests/NetPrints.Editor.UITests/# + CodeView/, Events/, Variables/ page objects and baselines
@@ -176,11 +178,11 @@ Each sub-phase ends green (`dotnet test --solution NetPrints.slnx`) and is a nat
 
 | # | Sub-phase | Stories | Gate at the end |
 |---|---|---|---|
-| A | Setup + characterization (golden C#, legacy fixtures, notification map) on unmodified code | — | golden tests pass on the current code |
+| A | Setup + characterization (golden C#, legacy fixtures — migrated to JSON in E, notification map) on unmodified code | — | golden tests pass on the current code |
 | B | Core foundations: Fody → CTK, nullable + warnings-as-errors, id generation, node and member ids, graph keys, pin keys, auto-placement, dirty flag, `GraphTypeInference`, logging infrastructure, new project shells | US7 (part), US1 (part) | 0 warnings; A-gates unchanged; DF-T18…T20, T22 (model part) |
-| C | Graph serialization: DTOs, canonical writer, tolerant reader, JSON Schema, legacy graph import, mappers, migrations, stores | US1 | DF-T01…T10, T12–T14, T16, T18–T25 (DF-T11, T15, T26 in E; DF-T17 needs the test extension, F) |
+| C | Graph serialization: DTOs, canonical writer, tolerant reader, JSON Schema, legacy graph import (T038; only for the one-time migration in E, R21), mappers, migrations, stores | US1 | DF-T01…T10, T12–T14, T16, T18–T25 (DF-T11, T15, T26 in E; DF-T17 needs the test extension, F) |
 | D | Build pipeline: `GraphCodeGenerator`, generator entry point, `NetPrints.Sdk` props/targets, in-repo dev mode, package test | US1 | PS-T01…T06 |
-| E | Project system + conversion: `IProjectSystem`/MSBuild, `ProjectConverter`, `.gitattributes`, `ProjectPersistence` (edited-only saves), Project model from snapshot, sample conversion, editor dirty tracking, editor/CLI switch-over, docs (D5) | US1, US2 | SC-001…SC-003, SC-009, SC-010; PS-T07…T13, PS-T15; DF-T11, DF-T15, DF-T26 |
+| E | Project system: `IProjectSystem`/MSBuild, `.gitattributes`, one-time migration of the repository's legacy files and strict ids (R21), `ProjectPersistence` (edited-only saves), Project model from snapshot, sample switch-over, editor dirty tracking, editor/CLI switch-over, legacy and DataContract code removal, docs (D5) | US1, US2 | SC-001…SC-003, SC-009, SC-010; PS-T07…T11, PS-T13, PS-T15; DF-T11, DF-T15, DF-T26, DF-T28 |
 | F | Extension points + loader + trust + test extension, composition | US3 | SC-004; PS-T14; DF-T17 |
 | G | Event graphs | US4 | translator snapshot + build/run test |
 | H | Method-local variables | US5 | translator snapshot + build/run test |
@@ -197,8 +199,8 @@ when") early, then F–L as they land. Each sub-phase is a separate, reviewable 
 
 | Violation / deviation | Why needed | Simpler alternative rejected because |
 |---|---|---|
-| Model keeps `[DataContract]` attributes although the format is JSON | Legacy import reuses the existing, proven DataContract loader (research R7) | Mirror XML DTOs would duplicate the reference-preserving graph format |
-| `MVVMTK0032` suppressed once on `ModelObject` | `ObservableObject` breaks DataContract import (research R6) | Hand-written INPC loses `[ObservableProperty]` generation |
+| Model keeps `[DataContract]` attributes although the format is JSON — *until T063 (revised 2026-09-26, R21)* | The T038 importer reuses the existing DataContract loader (research R7), now only for the one-time migration (T054a); T063 removes the attributes and hooks | Mirror XML DTOs would duplicate the reference-preserving graph format |
+| `MVVMTK0032` suppressed once on `ModelObject` | `ObservableObject` breaks DataContract import (research R6); can be revisited once T063 removes DataContract | Hand-written INPC loses `[ObservableProperty]` generation |
 | One `NetPrints.Serialization` project instead of the plan page's three | No dependency to isolate (research R10) | Three projects add build graph and packaging cost for nothing |
 | Plan page (Mar) listed Core as `netstandard2.0 + net10.0` | Superseded by C 1.2.0 | — |
 | Build-time code generation by `Exec` of a tool instead of an MSBuild task | VS 2022 cannot host .NET tasks; `Runtime="NET"` needs MSBuild 18 and has dotnet/msbuild#12514 (research R12) | A `netstandard2.0`/`net472` task would need a second build of the translator (C IV) |
@@ -218,4 +220,7 @@ the restated "done when"; the SDK requirement and "no source-generator mode"; Av
 Microsoft.Extensions.Logging in the tech constraints; the narrowed `netstandard2.0` exception; the graph
 format for version control. Also applied later the same day: U1 adds `NetPrints.Sdk` to UnrealSharp's Script `.csproj`; the graph-format follow-ups are in P2; the release and docs stack is in P1. **Open proposal (sub-phase L, research R18)**: a constitution PATCH
 clarification that release packaging workflows may use macOS or Windows runners (the main `CI` workflow stays
-Linux-only).
+Linux-only). **Open proposal (2026-09-26, research R21)**: the constitution's "Legacy DataContract XML is
+import-only once JSON lands" and the roadmap P1 text ("legacy XML importer", "Legacy `.netpp`/XML files are
+import-only", and the "done when" "the old sample imports without modifying the legacy file") change to: legacy
+XML is not read; the repository's own files are migrated once in P1.

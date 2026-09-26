@@ -70,7 +70,7 @@ Actions are pinned by commit SHA with the version in a comment, as in `ci.yml`. 
 | Checkout | `fetch-depth: 0` in every job that packs or publishes (`ci.yml` `build-test`, `packages`, `desktop-publish`; `release.yml` `pack`, `desktop`). Shallow clones fall back to the default version without a warning |
 | Reading the version in scripts | `dotnet msbuild src/NetPrints.Core/NetPrints.Core.csproj -t:MinVer -getProperty:MinVerVersion -p:Configuration=Release` (after restore) |
 | Repository scope | `samples/` (own `Directory.*` files, no CPM) and `legacy/NetPrintsVSIX` (CPM off) do not get MinVer |
-| Editor version | the editor's `{NetPrintsSdkVersion}` for new/converted projects is its own `AssemblyInformationalVersion` without the `+<sha>` suffix (project-system.md §1) |
+| Editor version | the editor's `{NetPrintsSdkVersion}` for new projects is its own `AssemblyInformationalVersion` without the `+<sha>` suffix (project-system.md §1) |
 
 The generated-file header no longer carries a version (project-system.md §3): with MinVer every commit has
 a different version, which would rewrite every committed `.netpc.g.cs` on each SDK update and make DF-T26
@@ -153,7 +153,7 @@ Descriptions (one paragraph each, ending with the attribution sentence
 - Core: `The NetPrints graph model and C# translator: classes, methods and node graphs that NetPrints turns into readable C#.`
 - Reflection: `Type and member discovery for NetPrints graphs, built on Roslyn.`
 - Sdk: `Build-time code generation for NetPrints projects: add this package to an SDK-style .csproj and every *.netpc.json graph is translated into a committed *.netpc.g.cs file before compilation.`
-- Cli: `The netprints command-line tool: builds and runs NetPrints projects and converts legacy .netpp projects. Installs as `netprints`.`
+- Cli: `The netprints command-line tool: builds and runs NetPrints projects. Installs as `netprints`.`
 
 `src/NetPrints.Cli/NetPrints.Cli.csproj` gains (kicad-sharp pattern; no explicit `PackageType`, `PackAsTool` sets `DotnetTool`):
 

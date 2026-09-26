@@ -14,9 +14,9 @@ dotnet test --solution NetPrints.slnx -c Release --no-build
 Focused suites:
 
 ```bash
-dotnet test --project tests/NetPrints.Core.Tests -c Release -- --filter-namespace "*Serialization*"   # DF-T01…T26
+dotnet test --project tests/NetPrints.Core.Tests -c Release -- --filter-namespace "*Serialization*"   # DF-T01…T28
 dotnet test --project tests/NetPrints.Core.Tests -c Release -- --filter-namespace "*Extensibility*"   # EX-T01…T13
-dotnet test --project tests/NetPrints.Core.Tests -c Release -- --filter-namespace "*Projects*"        # PS-T01…T15
+dotnet test --project tests/NetPrints.Core.Tests -c Release -- --filter-namespace "*Projects*"        # PS-T01…T15 (PS-T12 retired)
 dotnet test --project tests/NetPrints.Editor.Tests -c Release                                          # ED-T02…T15 (VM level)
 dotnet test --project tests/NetPrints.Editor.UITests -c Release                                        # ED-T01, T03, T05–T07, T09 (headless)
 ```
@@ -26,13 +26,14 @@ are regenerated only on purpose: `NETPRINTS_UPDATE_SNAPSHOTS=1 dotnet test …`,
 before committing. The normal suite fails when the committed schema, a sample graph (canonical form) or a
 sample `.netpc.g.cs` is out of date (DF-T24, DF-T26).
 
-## 2. US1 — legacy project → `.csproj`, identical C#, builds everywhere
+## 2. US1 — HelloWorld as a `.csproj`, identical C#, builds everywhere
+
+Legacy `.netpp` projects are not converted (research R21); the sample was migrated once (T054a).
 
 ```bash
 dotnet build src/NetPrints.Generator -c Release
-cp -r tests/NetPrints.Core.Tests/Fixtures/Legacy/HelloWorld /tmp/hw
-dotnet exec src/NetPrints.Generator/bin/Release/net10.0/NetPrints.Generator.dll convert /tmp/hw/HelloWorld.netpp
-#   → /tmp/hw/HelloWorld.csproj, /tmp/hw/HelloWorld.Program.netpc.json, /tmp/hw/.gitattributes (legacy files untouched)
+cp -r samples/HelloWorld /tmp/hw
+rm /tmp/hw/HelloWorld.Program.netpc.g.cs     # let the build generate it
 # outside the repo the package is needed: pack it into a local feed
 dotnet pack src/NetPrints.Sdk -c Release -o /tmp/np-feed
 printf '<configuration><packageSources><add key="np" value="/tmp/np-feed"/></packageSources></configuration>' > /tmp/hw/nuget.config
@@ -41,18 +42,17 @@ dotnet run --project /tmp/hw --no-build      # Hello, World!
 dotnet build /tmp/hw/HelloWorld.csproj -v n | grep NetPrintsGenerate   # "Skipping target … up-to-date"
 ```
 
-Expected: the graph JSON matches `contracts/document-format.md` §1.7 byte for byte except the member id
-value, and equals the committed `samples/HelloWorld/HelloWorld.Program.netpc.json` (conversion is
-deterministic); the
-`.netpc.g.cs` equals the golden C# plus the auto-generated header; in VS Code with
+Expected: the graph JSON matches `contracts/document-format.md` §1.7 byte for byte except the id values;
+the generated `.netpc.g.cs` equals the committed `samples/HelloWorld/HelloWorld.Program.netpc.g.cs`, which is
+the golden C# plus the auto-generated header; in VS Code with
 `"explorer.fileNesting.patterns": { "*.netpc.json": "${capture}.netpc.g.cs" }` the generated file nests
 under the graph. Manual once per release: open `/tmp/hw/HelloWorld.csproj` in Visual Studio 2022/2026 and
 Rider, build, and check nesting (research K9).
 
-Editor: `dotnet run --project src/NetPrints.Desktop -c Release -- /tmp/hw/HelloWorld.netpp` asks to
-convert, then opens the `.csproj`.
+Editor: `dotnet run --project src/NetPrints.Desktop -c Release -- /tmp/hw/HelloWorld.csproj` opens the
+project; a `.netpp` path is rejected with a message.
 
-Version control (US1, graph format): in a git repository with the converted sample, open it in the
+Version control (US1, graph format): in a git repository with a copy of the sample, open it in the
 editor, move one node and save: `git diff` shows one changed line in `layout` and no change to the
 `.netpc.g.cs`; save again without changes: nothing is written.
 

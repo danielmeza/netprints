@@ -25,7 +25,6 @@ public sealed record EditorContext(
     IExtensionHost Extensions,
     ProjectPersistence Persistence,
     IProjectSystem Projects,
-    ProjectConverter Converter,
     IHostChannel HostChannel,
     ISettingsStore Settings,
     ICodeAnalysisHost CodeAnalysis);
@@ -77,7 +76,6 @@ public sealed class CodeAnalysisHost : ICodeAnalysisHost
 `IEditorDialogs` gains (desktop: modal Avalonia dialogs; tests: recorded canned answers):
 
 ```csharp
-Task<bool> ConfirmConversionAsync(string legacyProjectPath, IReadOnlyList<string> filesToWrite);   // false → nothing happens
 Task<bool> ConfirmTrustAsync(string projectPath, IReadOnlyList<string> extensionFolders);         // true → added to netprints.trustedProjects
 Task ShowIssuesAsync(string title, IReadOnlyList<CodeDiagnostic> issues);
 ```
@@ -160,7 +158,6 @@ public sealed class EditorComposition
 | `IHostChannel` | Desktop (`NETPRINTS_HOST_CHANNEL`, extension-points.md §6) | process; `DisposeAsync` on exit | registry |
 | `EditorHostServices` | Desktop, passed to `EditorApp` (`EditorApp.HostServices` static init property set before `StartWithClassicDesktopLifetime`; `InvalidOperationException` if unset) | process | above |
 | `IProjectSystem` (`MsBuildProjectSystem`) | `EditorComposition` | editor | `ProjectSystemOptions` (properties requested by extensions), `ProcessRunner`, logger; if `MsBuildAvailable` is false a `NoSdkProjectSystem` whose members throw `ProjectSystemException(NPW001)` |
-| `ProjectConverter` | `EditorComposition` | editor | legacy + JSON formats, `DefaultProjectProfile`, SDK version |
 | `ReflectionHost` | `EditorComposition` | editor | dispatcher, extension host (catalogs), logger |
 | `DocumentFormatRegistry`, `DocumentMapper`, `ProjectPersistence` | `EditorComposition`; mapper rebuilt on `RegistryChanged` | editor | `IProjectSystem`, `Current.NodeConverters`, `FileSystemDocumentStore` factory, logger |
 | `CodeAnalysisHost` | `EditorComposition` | editor; disposed with the main window | reflection, extension host, scheduler, dispatcher, logger |
@@ -170,7 +167,8 @@ public sealed class EditorComposition
 
 CLI (`src/NetPrints.Cli/Program.cs`, P0 behavior until P2): `MsBuildRegistration.EnsureRegistered()`, then
 `-p <file>`: a `.csproj` is built with `IProjectSystem.BuildAsync` (and run with `GetRunCommand` for `-r`); a
-`.netpp` is converted with `ProjectConverter` first (prints the created files). Console logger. Exit codes unchanged.
+`.netpp` or any other file is rejected with a message that only `.csproj` projects are supported (no conversion,
+research R21). Console logger. Exit codes unchanged (the rejection uses the bad-arguments code).
 
 Generator (`src/NetPrints.Generator`, project-system.md §3): `ExtensionLoader` (request folders only),
 `DocumentFormatRegistry`, `DocumentMapper`, `GraphCodeGenerator`; console logger at Warning; no MSBuild.
@@ -179,9 +177,8 @@ Generator (`src/NetPrints.Generator`, project-system.md §3): `ExtensionLoader` 
 
 | Source | Type | Where it shows |
 |---|---|---|
-| Document load/save | `DocumentIssue` (`NPD001–006`), `DocumentFormatException`, `DocumentVersionException` | Error dialog on open (issues listed, project stays open unless the project file itself failed); log 1040 |
+| Document load/save | `DocumentIssue` (`NPD001–009`), `DocumentFormatException`, `DocumentVersionException` | Error dialog on open (issues listed, project stays open unless the project file itself failed); log 1040 |
 | Project system | `ProjectMessage` (`NPW001–005`, MSBuild `MSB*`, NuGet `NU*`), `ProjectSystemException` | Error list rows after load/build; `NPW001` (no SDK) and `NPW003` (evaluation failed) as a dialog |
-| Conversion | `NPM001–004`, `ProjectConversionException` | Confirmation dialog before, issues dialog after |
 | Translation | `TranslationException` → `CodeDiagnostic` (`NPT001–007`) | Error list rows with node link; squiggle when a span exists |
 | Compiler (live) | Roslyn → `CodeDiagnostic` (`CSxxxx`) via `DiagnosticMapper.FromRoslyn` | Squiggles in the code view + error list rows with node link |
 | Build | `BuildResult.Messages` → `DiagnosticMapper.FromBuild` | Error list rows with node link (generated-file spans mapped through the in-memory source map) |
@@ -221,9 +218,9 @@ errors in Editor, Desktop, Extensibility, Serialization, Workspace and Generator
 | 3001 | `DocumentMigrated` | Information | Serialization / `DocumentMigrator` | `Migrated {Document} from schema {From} to {To}` |
 | 3002 | `UnknownNodeKindPreserved` | Warning | Serialization / `DocumentMapper` | `Node {NodeId} of unknown kind {Kind} in {Document} is preserved` |
 | 3003 | `ConnectionDropped` | Warning | same | `Connection {From} -> {To} in {Document} dropped: {Reason}` |
-| 3004 | `LegacyImported` | Information | Serialization / `ProjectPersistence` | `Imported legacy {Document}` |
+| 3004 | *(retired 2026-09-26, research R21: no legacy import; the id is not reused)* | | | |
 | 3005 | `ExternalChange` | Debug | Serialization / `FileSystemDocumentStore` | `{Kind} {Document}` |
-| 3006 | `ProjectConverted` | Information | Serialization / `ProjectConverter` | `Converted {LegacyProject} to {Project} ({GraphCount} graphs)` |
+| 3006 | *(retired 2026-09-26, research R21: no `ProjectConverter`; the id is not reused)* | | | |
 | 4001 | `RestoreStarted` | Debug | Workspace / `MsBuildProjectSystem` | `Restoring {Project}` |
 | 4002 | `ProjectLoaded` | Information | same | `Loaded {Project} in {ElapsedMs} ms ({ReferenceCount} references, {GraphCount} graphs)` |
 | 4003 | `WorkspaceDiagnostic` | Warning | same | `{Message}` |
@@ -264,6 +261,6 @@ then asserts zero violations for the real sources and a non-empty set of scanned
 | ED-T10 | Architecture gate demonstrated to fail on the fixture and pass on the sources |
 | ED-T11 | Extension load failure dialog lists failures; editor usable |
 | ED-T12 | `UnhandledExceptionHandler` logs 1001/1002 through a collecting logger and still shows the dialog |
-| ED-T13 | Opening a legacy `.netpp` asks for conversion, writes `.csproj` + `.netpc.json`, then opens the `.csproj`; Save writes edited graphs and their `.netpc.g.cs`; the References dialog and binary-type chooser edit the `.csproj` (PS-T09 at VM level) |
+| ED-T13 | Open offers `*.csproj` only; opening a `.netpp` shows a message and writes nothing; Save writes edited graphs and their `.netpc.g.cs`; the References dialog and binary-type chooser edit the `.csproj` (PS-T09 at VM level) (revised 2026-09-26: the conversion flow is gone) |
 | ED-T14 | No production type has an optional `customize`/test hook parameter (`EditorComposition` ctor takes `EditorHostServices` only) |
 | ED-T15 | Dirty tracking: open a project with two classes, open both editors, pan, zoom and select → Save writes 0 files; move one node of class A → A dirty, Save writes A's graph and `.netpc.g.cs` only; add a node then undo → A dirty (the file is rewritten only if bytes differ); rename a method in the inspector → dirty; after Save both classes are clean |
