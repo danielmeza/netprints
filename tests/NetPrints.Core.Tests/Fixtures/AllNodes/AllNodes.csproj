@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>AllNodes</RootNamespace>
+    <NetPrintsProfile>netprints.default</NetPrintsProfile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NetPrints.Sdk" Version="1.0.0" Condition="'$(NetPrintsUseLocalSdk)' != 'true'" PrivateAssets="all" />
+    <None Include="ExternalSources/**/*.cs" NetPrintsSourceDirectory="true" />
+  </ItemGroup>
+
+</Project>

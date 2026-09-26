@@ -7,7 +7,6 @@ using NetPrints.Generator;
 using NetPrints.Serialization;
 using NetPrints.Serialization.Documents;
 using NetPrints.Serialization.Json;
-using NetPrints.Serialization.Legacy;
 using NetPrints.Serialization.Mapping;
 using NetPrints.Serialization.Migrations;
 using NetPrints.Tests.Samples;
@@ -30,23 +29,12 @@ namespace NetPrints.Tests.Projects
 
         private static async Task<string> WriteCanonicalGraphAsync(string directory)
         {
-            string legacyPath = Path.Combine(SampleProjectFactory.FindRepositoryRoot(), "samples", "HelloWorld", "HelloWorld.Program.netpc");
-            var id = new DocumentId("HelloWorld.Program.netpc.json");
-
-            var mapper = new DocumentMapper(NewRegistry());
-            var legacyFormat = new LegacyXmlDocumentFormat(mapper);
-
-            ClassDocument document;
-            using (FileStream input = File.OpenRead(legacyPath))
-            {
-                document = await legacyFormat.ReadClassAsync(input, id, TestContext.Current.CancellationToken);
-            }
-
+            string sourcePath = Path.Combine(SampleProjectFactory.FindRepositoryRoot(), "samples", "HelloWorld", "HelloWorld.Program.netpc.json");
             string graphPath = Path.Combine(directory, "HelloWorld.Program.netpc.json");
-            JsonDocumentFormat jsonFormat = NewJsonFormat(NewRegistry());
+            await using (FileStream input = File.OpenRead(sourcePath))
             await using (FileStream output = File.Create(graphPath))
             {
-                await jsonFormat.WriteClassAsync(document, output, TestContext.Current.CancellationToken);
+                await input.CopyToAsync(output, TestContext.Current.CancellationToken);
             }
 
             return graphPath;

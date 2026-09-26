@@ -26,6 +26,13 @@
     <Compile Remove="Fixtures/Golden/**/*.cs" />
     <None Include="Fixtures/Golden/**/*.cs" CopyToOutputDirectory="PreserveNewest" />
     <None Update="Fixtures/**" CopyToOutputDirectory="PreserveNewest" />
+    <!-- The migrated AllNodes/HelloWorld fixtures' own .csproj files (T054a): excluded from the
+         default None glob above by $(DefaultExcludesInProjectFolder) ("**/*.*proj"), so each needs
+         its own explicit item; kept out of Compile like every other fixture .cs file (none exist yet,
+         but ExternalSources/**/*.cs never should either, research.md R21). -->
+    <Compile Remove="Fixtures/**/*.cs" />
+    <None Include="Fixtures/AllNodes/AllNodes.csproj" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Fixtures/HelloWorld/HelloWorld.csproj" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

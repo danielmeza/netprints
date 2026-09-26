@@ -104,6 +104,11 @@ legacy/NetPrintsVSIX/source.extension.vsixmanifest -text
 # GoldenCSharpTests's byte comparison is not broken by checkout-time line-ending conversion.
 tests/NetPrints.Core.Tests/Fixtures/Golden/*.cs -text
 
+# NetPrints graph documents and their generated C# (project-system.md §1.1): LF always, so a
+# generated diff stays visible in PRs (deliberately not marked linguist-generated).
+*.netpc.json text eol=lf
+*.netpc.g.cs text eol=lf
+
 # Binary files: never diff, never convert line endings.
 *.png binary
 *.ico binary

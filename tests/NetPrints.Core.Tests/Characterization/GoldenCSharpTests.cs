@@ -5,8 +5,9 @@ using System.Threading.Tasks;
 using NetPrints.Core;
 using NetPrints.Serialization;
 using NetPrints.Serialization.Documents;
-using NetPrints.Serialization.Legacy;
+using NetPrints.Serialization.Json;
 using NetPrints.Serialization.Mapping;
+using NetPrints.Serialization.Migrations;
 using NetPrints.Tests.Samples;
 using NetPrints.Translator;
 using Xunit;
@@ -14,32 +15,34 @@ using Xunit;
 namespace NetPrints.Tests.Characterization
 {
     /// <summary>
-    /// DF-T01: the C# the new importer (<see cref="LegacyXmlDocumentFormat"/> + <see cref="DocumentMapper"/>)
-    /// produces for the legacy fixtures, compared to the golden files recorded before P1 (T004) from the
-    /// unmodified (pre-P1) <see cref="ClassTranslator"/>/<c>Project.LoadFromPath</c> pipeline. Set
-    /// NETPRINTS_UPDATE_SNAPSHOTS=1 to (re)write them.
+    /// DF-T01: the C# the JSON importer (<see cref="JsonDocumentFormat"/> + <see cref="DocumentMapper"/>)
+    /// produces for the migrated fixtures (T054a, research.md R21), compared to the golden files
+    /// recorded before P1 (T004) from the unmodified (pre-P1) <see cref="ClassTranslator"/>/
+    /// <c>Project.LoadFromPath</c> pipeline. The migration never regenerates these goldens; set
+    /// NETPRINTS_UPDATE_SNAPSHOTS=1 to (re)write them for a real translator change.
     /// </summary>
     public class GoldenCSharpTests
     {
         public const string UpdateSnapshotsVariable = "NETPRINTS_UPDATE_SNAPSHOTS";
 
-        public static IEnumerable<object[]> LegacyFixtures()
+        public static IEnumerable<object[]> Fixtures()
         {
-            yield return new object[] { "HelloWorld", "HelloWorld.Program.netpc" };
-            yield return new object[] { "AllNodes", "AllNodes.Everything.netpc" };
+            yield return new object[] { "HelloWorld", "HelloWorld.Program.netpc.json" };
+            yield return new object[] { "AllNodes", "AllNodes.Everything.netpc.json" };
         }
 
         [Theory]
-        [MemberData(nameof(LegacyFixtures))]
+        [MemberData(nameof(Fixtures))]
         public async Task TranslatedClassesMatchGoldenFiles(string fixtureName, string classFileName)
         {
-            string fixtureDir = Path.Combine(SampleProjectFactory.FindRepositoryRoot(), "tests", "NetPrints.Core.Tests", "Fixtures", "Legacy", fixtureName);
+            string fixtureDir = Path.Combine(SampleProjectFactory.FindRepositoryRoot(), "tests", "NetPrints.Core.Tests", "Fixtures", fixtureName);
             string goldenDir = Path.Combine(SampleProjectFactory.FindRepositoryRoot(), "tests", "NetPrints.Core.Tests", "Fixtures", "Golden");
             string classPath = Path.Combine(fixtureDir, classFileName);
-            var id = new DocumentId(classFileName + ".json");
+            var id = new DocumentId(classFileName);
 
-            var mapper = new DocumentMapper(new NodeDocumentConverterRegistry(NodeDocumentConverterRegistry.BuiltIn, []));
-            var format = new LegacyXmlDocumentFormat(mapper);
+            var registry = new NodeDocumentConverterRegistry(NodeDocumentConverterRegistry.BuiltIn, []);
+            var mapper = new DocumentMapper(registry);
+            var format = new JsonDocumentFormat(new NetPrintsJsonOptions(registry), new DocumentMigrator([]));
 
             ClassDocument document;
             using (FileStream stream = File.OpenRead(classPath))

@@ -1,0 +1,489 @@
+{
+  "$schema": "https://danielmeza.github.io/netprints/schemas/netpc.v1.schema.json",
+  "schemaVersion": 1,
+  "namespace": "AllNodes",
+  "name": "Everything",
+  "visibility": "Public",
+  "genericArguments": [
+    "T"
+  ],
+  "classGraph": {
+    "nodes": [
+      {
+        "$kind": "classReturn",
+        "id": "n000000001pxr0",
+        "interfaceCount": 1
+      }
+    ]
+  },
+  "variables": [
+    {
+      "id": "m0000000021t60",
+      "name": "Items",
+      "visibility": "Private",
+      "modifiers": "Static",
+      "typeGraph": {
+        "nodes": [
+          { "$kind": "typeReturn", "id": "n000000001pxr1" },
+          {
+            "$kind": "type",
+            "id": "n000000001pxr2",
+            "type": { "name": "System.Collections.Generic.List", "args": [{ "name": "T", "generic": true }] }
+          },
+          {
+            "$kind": "type",
+            "id": "n000000001pxr3",
+            "name": "TypeNode2",
+            "type": { "name": "T", "generic": true }
+          }
+        ],
+        "connections": [
+          { "from": "n000000001pxr2/out.type.OutputType", "to": "n000000001pxr1/in.type.Type" },
+          { "from": "n000000001pxr3/out.type.OutputType", "to": "n000000001pxr2/in.type.T" }
+        ]
+      },
+      "getter": {
+        "visibility": "Public",
+        "graph": {
+          "nodes": [
+            { "$kind": "methodEntry", "id": "n000000001pxr4" },
+            {
+              "$kind": "return",
+              "id": "n000000001pxr5",
+              "returnCount": 1
+            },
+            {
+              "$kind": "type",
+              "id": "n000000001pxr6",
+              "type": { "name": "System.Collections.Generic.List", "args": [{ "name": "T", "generic": true }] }
+            },
+            {
+              "$kind": "variableGetter",
+              "id": "n000000001pxr7",
+              "variable": {
+                "name": "Items",
+                "type": { "name": "System.Collections.Generic.List", "args": [{ "name": "T", "generic": true }] },
+                "declaringType": { "name": "AllNodes.Everything", "args": [{ "name": "T", "generic": true }] },
+                "getterVisibility": "Private",
+                "setterVisibility": "Private",
+                "visibility": "Private",
+                "modifiers": "Static"
+              }
+            }
+          ],
+          "connections": [
+            { "from": "n000000001pxr4/out.exec.Exec", "to": "n000000001pxr5/in.exec.Exec" },
+            { "from": "n000000001pxr6/out.type.OutputType", "to": "n000000001pxr5/in.type.Output0Type" },
+            { "from": "n000000001pxr7/out.data.List<T>", "to": "n000000001pxr5/in.data.Output0" }
+          ]
+        }
+      },
+      "setter": {
+        "visibility": "Public",
+        "graph": {
+          "nodes": [
+            {
+              "$kind": "methodEntry",
+              "id": "n000000001pxr8",
+              "argumentCount": 1
+            },
+            { "$kind": "return", "id": "n000000001pxr9" },
+            {
+              "$kind": "type",
+              "id": "n000000001pxra",
+              "type": { "name": "System.Collections.Generic.List", "args": [{ "name": "T", "generic": true }] }
+            },
+            {
+              "$kind": "variableSetter",
+              "id": "n000000001pxrb",
+              "variable": {
+                "name": "Items",
+                "type": { "name": "System.Collections.Generic.List", "args": [{ "name": "T", "generic": true }] },
+                "declaringType": { "name": "AllNodes.Everything", "args": [{ "name": "T", "generic": true }] },
+                "getterVisibility": "Private",
+                "setterVisibility": "Private",
+                "visibility": "Private",
+                "modifiers": "Static"
+              }
+            }
+          ],
+          "connections": [
+            { "from": "n000000001pxr8/out.data.Input0", "to": "n000000001pxrb/in.data.NewValue" },
+            { "from": "n000000001pxr8/out.exec.Exec", "to": "n000000001pxrb/in.exec.Exec" },
+            { "from": "n000000001pxra/out.type.OutputType", "to": "n000000001pxr8/in.type.Input0Type" },
+            { "from": "n000000001pxrb/out.exec.Exec", "to": "n000000001pxr9/in.exec.Exec" }
+          ]
+        }
+      }
+    }
+  ],
+  "methods": [
+    {
+      "id": "m0000000021t61",
+      "name": "Main",
+      "visibility": "Public",
+      "modifiers": "Static",
+      "graph": {
+        "nodes": [
+          {
+            "$kind": "methodEntry",
+            "id": "n000000001pxrc",
+            "pins": [
+              { "pin": "out.data.Input0", "name": "first" }
+            ],
+            "argumentCount": 2,
+            "genericArguments": [
+              "T0"
+            ]
+          },
+          {
+            "$kind": "return",
+            "id": "n000000001pxrd",
+            "pins": [
+              { "pin": "in.data.Output0", "name": "resultCode", "value": { "type": "System.Int32", "value": "0" } },
+              { "pin": "in.data.Output1", "value": { "type": "System.String", "value": "" } }
+            ],
+            "returnCount": 2
+          },
+          {
+            "$kind": "type",
+            "id": "n000000001pxre",
+            "type": { "name": "System.Int32" }
+          },
+          {
+            "$kind": "type",
+            "id": "n000000001pxrf",
+            "name": "TypeNode2",
+            "type": { "name": "System.String" }
+          },
+          {
+            "$kind": "type",
+            "id": "n000000001pxrg",
+            "name": "TypeNode3",
+            "type": { "name": "System.Int32" }
+          },
+          {
+            "$kind": "type",
+            "id": "n000000001pxrh",
+            "name": "TypeNode4",
+            "type": { "name": "System.String" }
+          },
+          {
+            "$kind": "literal",
+            "id": "n000000001pxrj",
+            "pins": [
+              { "pin": "in.data.Value", "value": { "type": "System.Boolean", "value": "true" } }
+            ],
+            "literalType": { "name": "System.Boolean" }
+          },
+          { "$kind": "ifElse", "id": "n000000001pxrk" },
+          {
+            "$kind": "forLoop",
+            "id": "n000000001pxrm",
+            "pins": [
+              { "pin": "in.data.MaxIndex", "value": { "type": "System.Int32", "value": "10" } }
+            ]
+          },
+          { "$kind": "await", "id": "n000000001pxrn" },
+          { "$kind": "throw", "id": "n000000001pxrp" },
+          {
+            "$kind": "constructor",
+            "id": "n000000001pxrq",
+            "constructor": {
+              "declaringType": { "name": "System.Exception" }
+            }
+          },
+          {
+            "$kind": "ternary",
+            "id": "n000000001pxrr",
+            "pins": [
+              { "pin": "in.data.True", "value": { "type": "System.Int32", "value": "1" } },
+              { "pin": "in.data.False", "value": { "type": "System.Int32", "value": "2" } },
+              { "pin": "in.data.Condition", "value": { "type": "System.Boolean", "value": "true" } }
+            ]
+          },
+          {
+            "$kind": "type",
+            "id": "n000000001pxrs",
+            "name": "TypeNode5",
+            "type": { "name": "System.Int32" }
+          },
+          { "$kind": "explicitCast", "id": "n000000001pxrt" },
+          {
+            "$kind": "type",
+            "id": "n000000001pxrv",
+            "name": "TypeNode6",
+            "type": { "name": "System.String" }
+          },
+          {
+            "$kind": "callMethod",
+            "id": "n000000001pxrw",
+            "method": {
+              "name": "WriteLine",
+              "declaringType": { "name": "System.Console" },
+              "parameters": [
+                { "name": "value", "type": { "name": "System.String" } }
+              ],
+              "modifiers": "Static",
+              "visibility": "Public"
+            }
+          },
+          {
+            "$kind": "makeDelegate",
+            "id": "n000000001pxrx",
+            "method": {
+              "name": "WriteLine",
+              "declaringType": { "name": "System.Console" },
+              "parameters": [
+                { "name": "value", "type": { "name": "System.String" } }
+              ],
+              "modifiers": "Static",
+              "visibility": "Public"
+            }
+          },
+          {
+            "$kind": "type",
+            "id": "n000000001pxry",
+            "name": "TypeNode7",
+            "type": { "name": "System.Collections.Generic.List", "args": [{ "name": "System.Int32" }] }
+          },
+          { "$kind": "makeArrayType", "id": "n000000001pxrz" },
+          {
+            "$kind": "type",
+            "id": "n000000001pxs0",
+            "name": "TypeNode8",
+            "type": { "name": "System.Double" }
+          },
+          {
+            "$kind": "makeArray",
+            "id": "n000000001pxs1",
+            "pins": [
+              { "pin": "in.data.Size", "value": { "type": "System.Int32", "value": "3" } }
+            ],
+            "usePredefinedSize": true
+          },
+          {
+            "$kind": "type",
+            "id": "n000000001pxs2",
+            "name": "TypeNode9",
+            "type": { "name": "System.Int32" }
+          },
+          {
+            "$kind": "makeArray",
+            "id": "n000000001pxs3",
+            "name": "MakeArrayNode2",
+            "elementCount": 3
+          },
+          {
+            "$kind": "type",
+            "id": "n000000001pxs4",
+            "name": "TypeNode10",
+            "type": { "name": "System.Int32" }
+          },
+          { "$kind": "typeOf", "id": "n000000001pxs5" },
+          {
+            "$kind": "type",
+            "id": "n000000001pxs6",
+            "name": "TypeNode11",
+            "type": { "name": "System.Int32" }
+          },
+          { "$kind": "default", "id": "n000000001pxs7" },
+          {
+            "$kind": "type",
+            "id": "n000000001pxs8",
+            "name": "TypeNode12",
+            "type": { "name": "System.Int32" }
+          },
+          {
+            "$kind": "reroute",
+            "id": "n000000001pxs9",
+            "pinKind": "data",
+            "dataTypes": [
+              [{ "name": "System.Int32" }, { "name": "System.Int32" }]
+            ]
+          },
+          {
+            "$kind": "reroute",
+            "id": "n000000001pxsa",
+            "name": "RerouteNode2",
+            "pinKind": "exec",
+            "count": 1
+          },
+          {
+            "$kind": "reroute",
+            "id": "n000000001pxsb",
+            "name": "RerouteNode3",
+            "pinKind": "type",
+            "count": 1
+          },
+          {
+            "$kind": "literal",
+            "id": "n000000001pxsc",
+            "name": "LiteralNode2",
+            "pins": [
+              { "pin": "in.data.Value", "value": { "type": "System.Boolean", "value": "true" } }
+            ],
+            "literalType": { "name": "System.Boolean" }
+          },
+          {
+            "$kind": "literal",
+            "id": "n000000001pxsd",
+            "name": "LiteralNode3",
+            "pins": [
+              { "pin": "in.data.Value", "value": { "type": "System.Int32", "value": "42" } }
+            ],
+            "literalType": { "name": "System.Int32" }
+          },
+          {
+            "$kind": "literal",
+            "id": "n000000001pxse",
+            "name": "LiteralNode4",
+            "pins": [
+              { "pin": "in.data.Value", "value": { "type": "System.Int64", "value": "42" } }
+            ],
+            "literalType": { "name": "System.Int64" }
+          },
+          {
+            "$kind": "literal",
+            "id": "n000000001pxsf",
+            "name": "LiteralNode5",
+            "pins": [
+              { "pin": "in.data.Value", "value": { "type": "System.Double", "value": "NaN" } }
+            ],
+            "literalType": { "name": "System.Double" }
+          },
+          {
+            "$kind": "literal",
+            "id": "n000000001pxsg",
+            "name": "LiteralNode6",
+            "pins": [
+              { "pin": "in.data.Value", "value": { "type": "System.Char", "value": "x" } }
+            ],
+            "literalType": { "name": "System.Char" }
+          },
+          {
+            "$kind": "literal",
+            "id": "n000000001pxsh",
+            "name": "LiteralNode7",
+            "pins": [
+              { "pin": "in.data.Value", "value": { "type": "System.String", "value": "Quotes \" and a\nnewline" } }
+            ],
+            "literalType": { "name": "System.String" }
+          },
+          {
+            "$kind": "literal",
+            "id": "n000000001pxsj",
+            "name": "LiteralNode8",
+            "literalType": { "name": "System.Decimal" }
+          },
+          {
+            "$kind": "literal",
+            "id": "n000000001pxsk",
+            "name": "LiteralNode9",
+            "pins": [
+              { "pin": "in.data.Value", "value": { "type": "System.DayOfWeek", "value": "Monday" } }
+            ],
+            "literalType": { "name": "System.DayOfWeek", "isEnum": true }
+          }
+        ],
+        "connections": [
+          { "from": "n000000001pxrc/out.exec.Exec", "to": "n000000001pxrk/in.exec.Exec" },
+          { "from": "n000000001pxre/out.type.OutputType", "to": "n000000001pxrc/in.type.Input0Type" },
+          { "from": "n000000001pxrf/out.type.OutputType", "to": "n000000001pxrc/in.type.Input1Type" },
+          { "from": "n000000001pxrg/out.type.OutputType", "to": "n000000001pxrd/in.type.Output0Type" },
+          { "from": "n000000001pxrh/out.type.OutputType", "to": "n000000001pxrd/in.type.Output1Type" },
+          { "from": "n000000001pxrj/out.data.Value", "to": "n000000001pxrk/in.data.Condition" },
+          { "from": "n000000001pxrk/out.exec.False", "to": "n000000001pxrp/in.exec.Exec" },
+          { "from": "n000000001pxrk/out.exec.True", "to": "n000000001pxrm/in.exec.Exec" },
+          { "from": "n000000001pxrm/out.exec.Completed", "to": "n000000001pxrd/in.exec.Exec" },
+          { "from": "n000000001pxrq/out.data.Exception", "to": "n000000001pxrp/in.data.Exception" },
+          { "from": "n000000001pxrs/out.type.OutputType", "to": "n000000001pxrr/in.type.Type" },
+          { "from": "n000000001pxrv/out.type.OutputType", "to": "n000000001pxrt/in.type.Type" },
+          { "from": "n000000001pxs0/out.type.OutputType", "to": "n000000001pxrz/in.type.ElementType" },
+          { "from": "n000000001pxs2/out.type.OutputType", "to": "n000000001pxs1/in.type.ElementType" },
+          { "from": "n000000001pxs4/out.type.OutputType", "to": "n000000001pxs3/in.type.ElementType" },
+          { "from": "n000000001pxs6/out.type.OutputType", "to": "n000000001pxs5/in.type.Type" },
+          { "from": "n000000001pxs8/out.type.OutputType", "to": "n000000001pxs7/in.type.Type" }
+        ]
+      }
+    }
+  ],
+  "constructors": [
+    {
+      "id": "m0000000021t62",
+      "visibility": "Public",
+      "graph": {
+        "nodes": [
+          { "$kind": "constructorEntry", "id": "n000000001pxsm" }
+        ]
+      }
+    }
+  ],
+  "layout": {
+    "class": {
+      "n000000001pxr0": [56, 56]
+    },
+    "m0000000021t60/get": {
+      "n000000001pxr4": [280, 56],
+      "n000000001pxr5": [504, 56],
+      "n000000001pxr6": [728, 56],
+      "n000000001pxr7": [952, 56]
+    },
+    "m0000000021t60/set": {
+      "n000000001pxr8": [1176, 56],
+      "n000000001pxr9": [1400, 56],
+      "n000000001pxra": [1624, 56],
+      "n000000001pxrb": [1848, 56]
+    },
+    "m0000000021t60/type": {
+      "n000000001pxr1": [800, 300],
+      "n000000001pxr2": [500, 300],
+      "n000000001pxr3": [192, 188]
+    },
+    "m0000000021t61": {
+      "n000000001pxrc": [56, 280],
+      "n000000001pxrd": [280, 280],
+      "n000000001pxre": [504, 280],
+      "n000000001pxrf": [728, 280],
+      "n000000001pxrg": [952, 280],
+      "n000000001pxrh": [1176, 280],
+      "n000000001pxrj": [1400, 280],
+      "n000000001pxrk": [1624, 280],
+      "n000000001pxrm": [1848, 280],
+      "n000000001pxrn": [2072, 280],
+      "n000000001pxrp": [56, 504],
+      "n000000001pxrq": [280, 504],
+      "n000000001pxrr": [504, 504],
+      "n000000001pxrs": [728, 504],
+      "n000000001pxrt": [952, 504],
+      "n000000001pxrv": [1176, 504],
+      "n000000001pxrw": [1400, 504],
+      "n000000001pxrx": [1624, 504],
+      "n000000001pxry": [1848, 504],
+      "n000000001pxrz": [2072, 504],
+      "n000000001pxs0": [56, 728],
+      "n000000001pxs1": [280, 728],
+      "n000000001pxs2": [504, 728],
+      "n000000001pxs3": [728, 728],
+      "n000000001pxs4": [952, 728],
+      "n000000001pxs5": [1176, 728],
+      "n000000001pxs6": [1400, 728],
+      "n000000001pxs7": [1624, 728],
+      "n000000001pxs8": [1848, 728],
+      "n000000001pxs9": [2072, 728],
+      "n000000001pxsa": [56, 952],
+      "n000000001pxsb": [280, 952],
+      "n000000001pxsc": [504, 952],
+      "n000000001pxsd": [728, 952],
+      "n000000001pxse": [952, 952],
+      "n000000001pxsf": [1176, 952],
+      "n000000001pxsg": [1400, 952],
+      "n000000001pxsh": [1624, 952],
+      "n000000001pxsj": [1848, 952],
+      "n000000001pxsk": [2072, 952]
+    },
+    "m0000000021t62": {
+      "n000000001pxsm": [2072, 56]
+    }
+  }
+}

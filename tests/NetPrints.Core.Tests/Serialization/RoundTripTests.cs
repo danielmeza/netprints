@@ -10,7 +10,6 @@ using NetPrints.Graph;
 using NetPrints.Serialization;
 using NetPrints.Serialization.Documents;
 using NetPrints.Serialization.Json;
-using NetPrints.Serialization.Legacy;
 using NetPrints.Serialization.Mapping;
 using NetPrints.Serialization.Migrations;
 using NetPrints.Tests.Characterization;
@@ -21,9 +20,10 @@ using Xunit;
 namespace NetPrints.Tests.Serialization
 {
     /// <summary>
-    /// Graph-level golden-byte round trips (document-format.md §2.6): DF-T02 (legacy → JSON → load → C#),
-    /// DF-T03 (load → mark dirty → save is byte-identical) and DF-T05 (moving one node changes exactly
-    /// one <c>layout</c> line).
+    /// Graph-level golden-byte round trips (document-format.md §2.6, §7): DF-T02 (JSON fixture → load →
+    /// mark dirty → save → load → C# equals golden), DF-T03 (load → mark dirty → save is byte-identical)
+    /// and DF-T05 (moving one node changes exactly one <c>layout</c> line). Revised 2026-09-26
+    /// (research.md R21): no legacy step; every source here is already-migrated JSON (T054a).
     /// </summary>
     public class RoundTripTests
     {
@@ -32,21 +32,15 @@ namespace NetPrints.Tests.Serialization
         private static JsonDocumentFormat NewJsonFormat(NodeDocumentConverterRegistry registry) =>
             new(new NetPrintsJsonOptions(registry), new DocumentMigrator([]));
 
-        private static async Task<byte[]> ConvertLegacyToJsonAsync(string legacyPath, DocumentId id)
+        private static async Task<byte[]> ReadFileAsync(string path)
         {
-            var mapper = new DocumentMapper(NewRegistry());
-            var legacyFormat = new LegacyXmlDocumentFormat(mapper);
-
-            ClassDocument document;
-            using (FileStream input = File.OpenRead(legacyPath))
+            using var stream = new MemoryStream();
+            await using (FileStream input = File.OpenRead(path))
             {
-                document = await legacyFormat.ReadClassAsync(input, id, TestContext.Current.CancellationToken);
+                await input.CopyToAsync(stream, TestContext.Current.CancellationToken);
             }
 
-            JsonDocumentFormat jsonFormat = NewJsonFormat(NewRegistry());
-            using var output = new MemoryStream();
-            await jsonFormat.WriteClassAsync(document, output, TestContext.Current.CancellationToken);
-            return output.ToArray();
+            return stream.ToArray();
         }
 
         private static async Task<ClassGraph> LoadJsonAsync(byte[] json, DocumentId id, string projectName)
@@ -68,43 +62,8 @@ namespace NetPrints.Tests.Serialization
             return cls;
         }
 
-        // DF-T02: Legacy -> JSON -> load -> C# equals the golden file recorded before P1 (T004), the
-        // same golden GoldenCSharpTests (DF-T01) checks the direct legacy import against.
-        [Theory]
-        [MemberData(nameof(GoldenCSharpTests.LegacyFixtures), MemberType = typeof(GoldenCSharpTests))]
-        public async Task LegacyThroughJsonProducesGoldenCSharp(string fixtureName, string classFileName)
+        private static async Task<byte[]> SaveAsync(ClassGraph cls)
         {
-            string root = SampleProjectFactory.FindRepositoryRoot();
-            string legacyPath = Path.Combine(root, "tests", "NetPrints.Core.Tests", "Fixtures", "Legacy", fixtureName, classFileName);
-            string goldenDir = Path.Combine(root, "tests", "NetPrints.Core.Tests", "Fixtures", "Golden");
-            var id = new DocumentId(classFileName + ".json");
-
-            byte[] json = await ConvertLegacyToJsonAsync(legacyPath, id);
-            ClassGraph cls = await LoadJsonAsync(json, id, fixtureName);
-
-            var translator = new ClassTranslator();
-            string translated = translator.TranslateClass(cls);
-            string golden = File.ReadAllText(Path.Combine(goldenDir, $"{cls.FullName}.cs"));
-            Assert.Equal(golden, translated);
-        }
-
-        public static IEnumerable<object[]> RoundTripSources()
-        {
-            string root = SampleProjectFactory.FindRepositoryRoot();
-            yield return new object[] { Path.Combine(root, "tests", "NetPrints.Core.Tests", "Fixtures", "Legacy", "HelloWorld", "HelloWorld.Program.netpc") };
-            yield return new object[] { Path.Combine(root, "tests", "NetPrints.Core.Tests", "Fixtures", "Legacy", "AllNodes", "AllNodes.Everything.netpc") };
-            yield return new object[] { Path.Combine(root, "samples", "HelloWorld", "HelloWorld.Program.netpc") };
-        }
-
-        // DF-T03: load -> mark dirty -> save reproduces the same canonical bytes, for every legacy
-        // fixture and the (in-memory) converted sample; the written bytes re-parse.
-        [Theory]
-        [MemberData(nameof(RoundTripSources))]
-        public async Task JsonRoundTripIsByteIdentical(string legacyPath)
-        {
-            var id = new DocumentId(Path.GetFileName(legacyPath) + ".json");
-            byte[] canonical = await ConvertLegacyToJsonAsync(legacyPath, id);
-            ClassGraph cls = await LoadJsonAsync(canonical, id, "P");
             cls.MarkDirty();
 
             NodeDocumentConverterRegistry registry = NewRegistry();
@@ -113,7 +72,49 @@ namespace NetPrints.Tests.Serialization
             ClassDocument saved = mapper.ToDocument(cls);
             using var output = new MemoryStream();
             await jsonFormat.WriteClassAsync(saved, output, TestContext.Current.CancellationToken);
-            byte[] rewritten = output.ToArray();
+            return output.ToArray();
+        }
+
+        // DF-T02: JSON fixture -> load -> mark dirty -> save -> load -> C# equals the golden file
+        // recorded before P1 (T004), the same golden GoldenCSharpTests (DF-T01) checks directly.
+        [Theory]
+        [MemberData(nameof(GoldenCSharpTests.Fixtures), MemberType = typeof(GoldenCSharpTests))]
+        public async Task JsonFixtureThroughSaveAndReloadProducesGoldenCSharp(string fixtureName, string classFileName)
+        {
+            string root = SampleProjectFactory.FindRepositoryRoot();
+            string goldenDir = Path.Combine(root, "tests", "NetPrints.Core.Tests", "Fixtures", "Golden");
+            string fixturePath = Path.Combine(root, "tests", "NetPrints.Core.Tests", "Fixtures", fixtureName, classFileName);
+            var id = new DocumentId(classFileName);
+
+            byte[] original = await ReadFileAsync(fixturePath);
+            ClassGraph cls = await LoadJsonAsync(original, id, fixtureName);
+            byte[] saved = await SaveAsync(cls);
+            ClassGraph reloaded = await LoadJsonAsync(saved, id, fixtureName);
+
+            var translator = new ClassTranslator();
+            string translated = translator.TranslateClass(reloaded);
+            string golden = File.ReadAllText(Path.Combine(goldenDir, $"{reloaded.FullName}.cs"));
+            Assert.Equal(golden, translated);
+        }
+
+        public static IEnumerable<object[]> RoundTripSources()
+        {
+            string root = SampleProjectFactory.FindRepositoryRoot();
+            yield return new object[] { Path.Combine(root, "tests", "NetPrints.Core.Tests", "Fixtures", "HelloWorld", "HelloWorld.Program.netpc.json") };
+            yield return new object[] { Path.Combine(root, "tests", "NetPrints.Core.Tests", "Fixtures", "AllNodes", "AllNodes.Everything.netpc.json") };
+            yield return new object[] { Path.Combine(root, "samples", "HelloWorld", "HelloWorld.Program.netpc.json") };
+        }
+
+        // DF-T03: load -> mark dirty -> save reproduces the same canonical bytes, for every fixture and
+        // the committed sample; the written bytes re-parse.
+        [Theory]
+        [MemberData(nameof(RoundTripSources))]
+        public async Task JsonRoundTripIsByteIdentical(string jsonPath)
+        {
+            var id = new DocumentId(Path.GetFileName(jsonPath));
+            byte[] canonical = await ReadFileAsync(jsonPath);
+            ClassGraph cls = await LoadJsonAsync(canonical, id, "P");
+            byte[] rewritten = await SaveAsync(cls);
 
             Assert.Equal(canonical, rewritten);
             Assert.NotNull(JsonNode.Parse(rewritten));
@@ -124,25 +125,18 @@ namespace NetPrints.Tests.Serialization
         public async Task MovingOneNodeChangesExactlyOneLayoutLine()
         {
             string root = SampleProjectFactory.FindRepositoryRoot();
-            string legacyPath = Path.Combine(root, "tests", "NetPrints.Core.Tests", "Fixtures", "Legacy", "HelloWorld", "HelloWorld.Program.netpc");
+            string jsonPath = Path.Combine(root, "tests", "NetPrints.Core.Tests", "Fixtures", "HelloWorld", "HelloWorld.Program.netpc.json");
             var id = new DocumentId("HelloWorld.Program.netpc.json");
 
-            byte[] original = await ConvertLegacyToJsonAsync(legacyPath, id);
+            byte[] original = await ReadFileAsync(jsonPath);
             ClassGraph cls = await LoadJsonAsync(original, id, "HelloWorld");
 
             MethodGraph main = cls.Methods.Single();
             CallMethodNode moved = main.Nodes.OfType<CallMethodNode>().Single();
             moved.PositionX += 40;
             moved.PositionY += 20;
-            cls.MarkDirty();
 
-            NodeDocumentConverterRegistry registry = NewRegistry();
-            var mapper = new DocumentMapper(registry);
-            JsonDocumentFormat jsonFormat = NewJsonFormat(registry);
-            ClassDocument saved = mapper.ToDocument(cls);
-            using var output = new MemoryStream();
-            await jsonFormat.WriteClassAsync(saved, output, TestContext.Current.CancellationToken);
-            byte[] updated = output.ToArray();
+            byte[] updated = await SaveAsync(cls);
 
             string[] originalLines = Encoding.UTF8.GetString(original).Split('\n');
             string[] updatedLines = Encoding.UTF8.GetString(updated).Split('\n');

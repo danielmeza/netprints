@@ -43,12 +43,15 @@ namespace NetPrints.Tests.Samples
             SampleProjectFactory.CreateHelloWorld(Path.Combine(tempDir, "HelloWorld.netpp")).Save();
 
             var generated = Directory.GetFiles(tempDir).Select(Path.GetFileName).OfType<string>().OrderBy(f => f, StringComparer.Ordinal).ToList();
-            var checkedIn = Directory.GetFiles(sampleDir).Select(Path.GetFileName).OfType<string>().OrderBy(f => f, StringComparer.Ordinal).ToList();
-            Assert.Equal(checkedIn, generated);
 
+            // samples/HelloWorld also carries the migrated JSON graph, its .csproj and .gitattributes
+            // (T054a, research.md R21), none of which this legacy factory produces; only the files it
+            // does produce are compared here (T057 replaces this whole test with the .csproj layout).
             foreach (string file in generated)
             {
-                Assert.True(File.ReadAllBytes(Path.Combine(sampleDir, file)).SequenceEqual(File.ReadAllBytes(Path.Combine(tempDir, file))),
+                string checkedInPath = Path.Combine(sampleDir, file);
+                Assert.True(File.Exists(checkedInPath), $"{file} is missing from {sampleDir}.");
+                Assert.True(File.ReadAllBytes(checkedInPath).SequenceEqual(File.ReadAllBytes(Path.Combine(tempDir, file))),
                     $"{file} differs from the factory output; regenerate with {SampleProjectFactory.RegenerateVariable}=1");
             }
         }
