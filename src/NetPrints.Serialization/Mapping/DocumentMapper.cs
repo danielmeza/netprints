@@ -85,8 +85,10 @@ public sealed class DocumentMapper : IDocumentMapper
 
     /// <inheritdoc/>
     /// <exception cref="DocumentFormatException">A member id is missing, contains <c>/</c> or
-    /// whitespace, equals <c>"class"</c>, or is duplicated; or a node id is duplicated within a graph;
-    /// or a layout position array does not have exactly 2 elements.</exception>
+    /// whitespace, or equals <c>"class"</c>; or a layout position array does not have exactly 2
+    /// elements. A member or node id duplicated within its scope of uniqueness does not throw: the
+    /// later occurrence is reassigned a fresh id and reported as a <see cref="DocumentIssue"/> warning
+    /// (<see cref="DocumentIssue.DuplicateIdReassigned"/>, document-format.md §2.6).</exception>
     /// <exception cref="InvalidOperationException">A node document's runtime type has no registered
     /// converter (a genuine registry gap, not a document problem — an unrecognized <c>$kind</c> never
     /// reaches this far as anything but an <see cref="UnknownNodeDocument"/>).</exception>
@@ -96,7 +98,7 @@ public sealed class DocumentMapper : IDocumentMapper
         ArgumentNullException.ThrowIfNull(project);
         ArgumentNullException.ThrowIfNull(issues);
 
-        ValidateMemberIds(document, id);
+        ValidateMemberIdShapes(document, id);
 
         var cls = new ClassGraph
         {
@@ -114,22 +116,23 @@ public sealed class DocumentMapper : IDocumentMapper
 
         var context = new NodeMappingContext(cls);
         var knownGraphKeys = new HashSet<string>(StringComparer.Ordinal);
+        var seenMemberIds = new HashSet<string>(StringComparer.Ordinal);
 
         MapGraphFromDocument(document.ClassGraph, cls, context, document.Layout, knownGraphKeys, id, issues);
 
         foreach (VariableDocument variableDocument in document.Variables ?? [])
         {
-            MapVariableFromDocument(variableDocument, cls, context, document.Layout, knownGraphKeys, id, issues);
+            MapVariableFromDocument(variableDocument, cls, context, document.Layout, knownGraphKeys, seenMemberIds, id, issues);
         }
 
         foreach (MethodDocument methodDocument in document.Methods ?? [])
         {
-            MapMethodFromDocument(methodDocument, cls, context, document.Layout, knownGraphKeys, id, issues);
+            MapMethodFromDocument(methodDocument, cls, context, document.Layout, knownGraphKeys, seenMemberIds, id, issues);
         }
 
         foreach (ConstructorDocument constructorDocument in document.Constructors ?? [])
         {
-            MapConstructorFromDocument(constructorDocument, cls, context, document.Layout, knownGraphKeys, id, issues);
+            MapConstructorFromDocument(constructorDocument, cls, context, document.Layout, knownGraphKeys, seenMemberIds, id, issues);
         }
 
         // EventGraphs: sub-phase G (T080) adds ClassGraph.EventGraphs and must come back here.
@@ -366,20 +369,19 @@ public sealed class DocumentMapper : IDocumentMapper
         }
     }
 
-    private static void ValidateMemberIds(ClassDocument document, DocumentId id)
+    /// <summary>
+    /// Checks every member id's shape (non-empty, no <c>/</c> or whitespace, not <c>"class"</c>).
+    /// Duplicates are not an error here: <see cref="ResolveDuplicateId"/> repairs them once each
+    /// member is actually created, since the fix (a fresh id) only needs to be unique among ids
+    /// created so far, not the whole document up front.
+    /// </summary>
+    private static void ValidateMemberIdShapes(ClassDocument document, DocumentId id)
     {
-        var seen = new HashSet<string>(StringComparer.Ordinal);
-
         void Check(string memberId)
         {
             if (!StableIds.IsValidDocumentId(memberId) || memberId == "class")
             {
                 throw new DocumentFormatException($"Invalid member id '{memberId}'.", id);
-            }
-
-            if (!seen.Add(memberId))
-            {
-                throw new DocumentFormatException($"Duplicate member id '{memberId}'.", id);
             }
         }
 
@@ -399,15 +401,36 @@ public sealed class DocumentMapper : IDocumentMapper
         }
     }
 
+    /// <summary>
+    /// Returns <paramref name="documentId"/> if it is not already in <paramref name="seenIds"/>
+    /// (adding it); otherwise allocates a fresh id (<see cref="StableIds.AllocateUnique"/>), adds
+    /// that instead, and reports a <see cref="DocumentIssue.DuplicateIdReassigned"/> warning
+    /// (document-format.md §2.6: merge safety — the document still loads).
+    /// </summary>
+    private static string ResolveDuplicateId(char prefix, string documentId, HashSet<string> seenIds, string what,
+        DocumentId id, ICollection<DocumentIssue> issues)
+    {
+        if (seenIds.Add(documentId))
+        {
+            return documentId;
+        }
+
+        string reassigned = StableIds.AllocateUnique(prefix, seenIds);
+        seenIds.Add(reassigned);
+        issues.Add(new DocumentIssue(DocumentIssueSeverity.Warning, DocumentIssue.DuplicateIdReassigned,
+            $"{what} '{documentId}' is duplicated; reassigned to '{reassigned}'.", id));
+        return reassigned;
+    }
+
     private void MapVariableFromDocument(VariableDocument document, ClassGraph cls, NodeMappingContext context,
         SortedDictionary<string, SortedDictionary<string, int[]>>? layout, HashSet<string> knownGraphKeys,
-        DocumentId id, ICollection<DocumentIssue> issues)
+        HashSet<string> seenMemberIds, DocumentId id, ICollection<DocumentIssue> issues)
     {
         var variable = new Variable(cls, document.Name, TypeSpecifier.FromType<object>(), null, null, document.Modifiers)
         {
             Visibility = document.Visibility,
         };
-        variable.Id = document.Id;
+        variable.Id = ResolveDuplicateId('m', document.Id, seenMemberIds, "Member", id, issues);
 
         // Variable's constructor always builds a placeholder type-node tree for its TypeSpecifier
         // argument (GraphUtil.CreateNestedTypeNode), unlike every other graph kind's constructor,
@@ -446,7 +469,7 @@ public sealed class DocumentMapper : IDocumentMapper
 
     private void MapMethodFromDocument(MethodDocument document, ClassGraph cls, NodeMappingContext context,
         SortedDictionary<string, SortedDictionary<string, int[]>>? layout, HashSet<string> knownGraphKeys,
-        DocumentId id, ICollection<DocumentIssue> issues)
+        HashSet<string> seenMemberIds, DocumentId id, ICollection<DocumentIssue> issues)
     {
         var method = new MethodGraph(document.Name)
         {
@@ -455,7 +478,7 @@ public sealed class DocumentMapper : IDocumentMapper
             Visibility = document.Visibility,
             Modifiers = document.Modifiers,
         };
-        method.Id = document.Id;
+        method.Id = ResolveDuplicateId('m', document.Id, seenMemberIds, "Member", id, issues);
         cls.Methods.Add(method);
 
         MapGraphFromDocument(document.Graph, method, context, layout, knownGraphKeys, id, issues);
@@ -463,10 +486,10 @@ public sealed class DocumentMapper : IDocumentMapper
 
     private void MapConstructorFromDocument(ConstructorDocument document, ClassGraph cls, NodeMappingContext context,
         SortedDictionary<string, SortedDictionary<string, int[]>>? layout, HashSet<string> knownGraphKeys,
-        DocumentId id, ICollection<DocumentIssue> issues)
+        HashSet<string> seenMemberIds, DocumentId id, ICollection<DocumentIssue> issues)
     {
         var constructor = new ConstructorGraph { Class = cls, Project = cls.Project, Visibility = document.Visibility };
-        constructor.Id = document.Id;
+        constructor.Id = ResolveDuplicateId('m', document.Id, seenMemberIds, "Member", id, issues);
         cls.Constructors.Add(constructor);
 
         MapGraphFromDocument(document.Graph, constructor, context, layout, knownGraphKeys, id, issues);
@@ -497,13 +520,10 @@ public sealed class DocumentMapper : IDocumentMapper
                 ?? throw new InvalidOperationException($"No node document converter registered for document type '{nodeDocument.GetType()}'.");
 
             Node node = converter.CreateNode(nodeDocument, graph, context);
+            string previousId = node.Id;
 
-            if (!seenNodeIds.Add(nodeDocument.Id))
-            {
-                throw new DocumentFormatException($"Duplicate node id '{nodeDocument.Id}' in graph '{graphKey}'.", id);
-            }
-
-            node.Id = nodeDocument.Id;
+            node.Id = ResolveDuplicateId('n', nodeDocument.Id, seenNodeIds, $"Node in graph '{graphKey}'", id, issues);
+            graph.ReindexNode(node, previousId);
             node.Name = nodeDocument.Name ?? node.DefaultName;
             createdNodes.Add((node, nodeDocument));
         }

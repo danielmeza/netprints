@@ -36,7 +36,7 @@ public enum DocumentIssueSeverity
 /// instead.
 /// </summary>
 /// <param name="Severity">How serious the issue is.</param>
-/// <param name="Code">Stable machine-readable code (<c>NPD001</c>–<c>NPD006</c>).</param>
+/// <param name="Code">Stable machine-readable code (<c>NPD001</c>–<c>NPD007</c>).</param>
 /// <param name="Message">Human-readable description.</param>
 /// <param name="Document">Document the issue was found in, if known.</param>
 public sealed record DocumentIssue(DocumentIssueSeverity Severity, string Code, string Message, DocumentId? Document)
@@ -58,4 +58,11 @@ public sealed record DocumentIssue(DocumentIssueSeverity Severity, string Code, 
 
     /// <summary>Project extension not trusted; its nodes were preserved but are inactive.</summary>
     public const string ExtensionNotTrusted = "NPD006";
+
+    /// <summary>
+    /// A node or member id was duplicated within its scope of uniqueness (a graph for node ids, the
+    /// class for member ids) — a merge, or a hand-edited or copy-pasted file. The later occurrence (in
+    /// document order) was reassigned a fresh id; the document still loaded.
+    /// </summary>
+    public const string DuplicateIdReassigned = "NPD007";
 }

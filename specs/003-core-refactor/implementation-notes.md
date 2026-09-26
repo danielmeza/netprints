@@ -1164,3 +1164,52 @@ already-used id is trusted as-is).
 No `!` added. Verified: `dotnet test tests/NetPrints.Core.Tests` green throughout (existing `FindNode`/
 `RemovingAndReAddingANodeKeepsItsId`/legacy-import tests unchanged and still passing against the new
 index).
+
+### T040c — Duplicate node/member ids repair instead of failing the load; the repair cannot always rewire a duplicate's own connections
+
+Owner decision 2026-09-25 (research.md R20): `DocumentMapper.FromDocument` no longer throws
+`DocumentFormatException` for a duplicate node id (within a graph) or member id (within a class) — it
+reassigns the later occurrence (document order) a fresh id via `StableIds.AllocateUnique` and reports
+`DocumentIssue.DuplicateIdReassigned` (new code `NPD007`) at `Warning`. `ValidateMemberIds` (renamed
+`ValidateMemberIdShapes`) keeps only the shape checks (empty, `/`, whitespace, `== "class"`); the
+duplicate check moved into the per-member creation loop (`ResolveDuplicateId`, shared by
+`MapVariableFromDocument`/`MapMethodFromDocument`/`MapConstructorFromDocument` via a `seenMemberIds` set
+threaded through all three) because the fix only needs uniqueness against ids *already assigned so far*,
+not the whole document up front — check-then-fix-then-continue in one pass, rather than a separate
+validation pass followed by a second pass that would need to re-derive which ids were the duplicates.
+The node-id equivalent lives in `MapGraphFromDocument`'s node-creation loop, calling `graph.ReindexNode`
+after the (possibly reassigned) id is set — see T040b.
+
+**What "consistent" means here, precisely, and its one real limit.** For member ids: nothing in a
+document refers to a member id by text except the member's own `id` field — `GraphKeys.For` always
+derives a graph key from the *live* `Variable`/`MethodGraph`/`ConstructorGraph.Id` at the moment it is
+called (already true before this task), so reassigning a duplicate's id and only then building its
+graph(s) is automatically consistent everywhere; no separate rewrite step exists or is needed. For node
+ids, layout is a map (`nodeId -> [x, y]`) — a source document literally cannot have two *different*
+entries with the same key, so a reassigned duplicate simply has no matching layout entry and is
+auto-placed like any other unpositioned node (already-existing behavior, no new code). Connections are
+the one place a real limit remains: `connections` is an array, so a document *can* contain two edges
+that both cite the same (duplicated) id text, one meant for each occurrence — and there is no reliable
+way to tell them apart from the text alone once the source id has been duplicated. The repair resolves
+`FindNode(thatId)` to whichever occurrence still holds the text after reassignment (deterministically
+the first one seen, since only later duplicates are ever reassigned); an edge that was meant for the
+reassigned occurrence attaches to the first one instead of failing to resolve. This is an accepted,
+deliberate trade-off (documented in data-model.md §2/research.md R20, not silently swallowed): the
+owner's ask was "the document still loads" (merge safety) for what is already a rare, out-of-band
+condition (a real collision from two live Snowflake generators, or a hand-edited/copy-pasted file), not
+"perfectly reconstruct an inherently ambiguous merge's intent" — `NPD007` surfaces the situation so a
+person can look at the diff.
+
+Fixture regeneration: `tests/NetPrints.Core.Tests/Fixtures/Golden/PinKeys.golden.txt` (`AllNodesFixtureFactory`
+via `SeededIdGenerator(42)`, `NETPRINTS_UPDATE_SNAPSHOTS=1`) — diffed with every id and id-shaped graph
+key replaced by a placeholder before comparing old vs. new; the placeholder-normalized multisets are
+identical line-for-line (same pin references, same counts, under the same graphs), confirming only ids
+changed. No other checked-in fixture contains a node or member id: `Node.Id`/`MethodGraph.Id`/
+`ConstructorGraph.Id`/`Variable.Id` are excluded from (or never annotated as) `[DataMember]`s (T016), so
+neither legacy `.netpp`/`.netpc` fixture nor the two `Fixtures/Golden/*.cs` generated-C# goldens ever
+contained one.
+
+No `!` added. Verified: `dotnet test tests/NetPrints.Core.Tests -c Release` green (260 tests, up from
+244 before this task group: +14 `SnowflakeIdGeneratorTests`, +2 `IdGenerationTests`/`NodeIdTests`, +1 net
+in `DocumentMapperTests` — one throw-test rewritten to an issue-reporting test, one new node-duplicate
+test added).

@@ -213,8 +213,10 @@ namespace NetPrints.Tests.Serialization
                 classDocument, Project.CreateNew("P", "P"), new List<DocumentIssue>(), new DocumentId("C.netpc.json")));
         }
 
+        // DF-T22 (document part): a duplicate member id does not fail the load (merge safety); the
+        // later duplicate is reassigned a fresh id and reported as a DuplicateIdReassigned warning.
         [Fact]
-        public void DuplicateMemberIdThrowsDocumentFormatException()
+        public void DuplicateMemberIdIsReassignedAndReported()
         {
             var methodA = new MethodDocument("m000001", "A", MemberVisibility.Public, MethodModifiers.None, SimpleMethodGraph("n0", "n1"));
             var methodB = new MethodDocument("m000001", "B", MemberVisibility.Public, MethodModifiers.None, SimpleMethodGraph("n2", "n3"));
@@ -223,8 +225,44 @@ namespace NetPrints.Tests.Serialization
                 null, [methodA, methodB], null, null, null);
 
             DocumentMapper mapper = NewMapper();
-            Assert.Throws<DocumentFormatException>(() => mapper.FromDocument(
-                classDocument, Project.CreateNew("P", "P"), new List<DocumentIssue>(), new DocumentId("C.netpc.json")));
+            var issues = new List<DocumentIssue>();
+            ClassGraph cls = mapper.FromDocument(classDocument, Project.CreateNew("P", "P"), issues, new DocumentId("C.netpc.json"));
+
+            Assert.Contains(issues, i => i.Code == DocumentIssue.DuplicateIdReassigned && i.Severity == DocumentIssueSeverity.Warning);
+
+            MethodGraph first = cls.Methods.Single(m => m.Name == "A");
+            MethodGraph second = cls.Methods.Single(m => m.Name == "B");
+            Assert.Equal("m000001", first.Id);
+            Assert.NotEqual(first.Id, second.Id);
+        }
+
+        // DF-T18 (document part): a duplicate node id within a graph does not fail the load; the later
+        // duplicate is reassigned a fresh id and reported as a DuplicateIdReassigned warning, indexed
+        // consistently (FindNode resolves the id it now actually holds).
+        [Fact]
+        public void DuplicateNodeIdIsReassignedAndReported()
+        {
+            var entry = new MethodEntryNodeDocument("n0", null, null, 0, null);
+            var literalA = new LiteralNodeDocument("n1", null, null, new TypeRef("System.Int32"));
+            var literalB = new LiteralNodeDocument("n1", null, null, new TypeRef("System.Int32"));
+            var methodGraph = new GraphDocument([entry, new ReturnNodeDocument("n2", null, null, 0), literalA, literalB], null, null);
+            var methodDocument = new MethodDocument("m000001", "M", MemberVisibility.Public, MethodModifiers.None, methodGraph);
+            var classDocument = new ClassDocument(1, null, "C", MemberVisibility.Public, ClassModifiers.None, null,
+                new GraphDocument([new ClassReturnNodeDocument("n3", null, null, 0)], null, null),
+                null, [methodDocument], null, null, null);
+
+            DocumentMapper mapper = NewMapper();
+            var issues = new List<DocumentIssue>();
+            ClassGraph cls = mapper.FromDocument(classDocument, Project.CreateNew("P", "P"), issues, new DocumentId("C.netpc.json"));
+
+            Assert.Contains(issues, i => i.Code == DocumentIssue.DuplicateIdReassigned && i.Severity == DocumentIssueSeverity.Warning);
+
+            MethodGraph method = cls.Methods.Single();
+            List<LiteralNode> literals = method.Nodes.OfType<LiteralNode>().ToList();
+            Assert.Equal(2, literals.Count);
+            Assert.NotEqual(literals[0].Id, literals[1].Id);
+            Assert.Contains(literals, l => l.Id == "n1");
+            Assert.Same(literals.Single(l => l.Id == "n1"), method.FindNode("n1"));
         }
 
         // DF-T22 (document part): layout keys use member ids, unaffected by model member order.
