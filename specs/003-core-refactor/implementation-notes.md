@@ -1255,3 +1255,82 @@ Verified: `dotnet build NetPrints.slnx -c Release` 0 warnings; `dotnet test test
 Release` green, 266 tests (+6 `SchemaTests`); `dotnet format NetPrints.slnx --verify-no-changes` clean;
 `schemas/netpc.v1.schema.json` committed (`NETPRINTS_UPDATE_SNAPSHOTS=1`), no BOM, single trailing `\n`,
 2-space indent; DF-T24's `GeneratedSchemaMatchesCommittedFile` fails the build the moment the two drift.
+
+### T042 — `GoldenCSharpTests` switched to the new importer; `RoundTripTests.cs`, `MergeTests.cs`
+
+`GoldenCSharpTests` (DF-T01, sub-phase A's own gate) no longer loads a fixture with `Project.LoadFromPath`
+and the pre-P1 `ClassTranslator` pipeline directly: it now reads the fixture's `.netpc` through
+`LegacyXmlDocumentFormat.ReadClassAsync` and `DocumentMapper.FromDocument`, then translates the resulting
+`ClassGraph` — the same golden files (`Fixtures/Golden/*.cs`), now proving the *new* importer reproduces
+them, not the old one. This is what the task explicitly asked for ("switch `GoldenCSharpTests` to the new
+importer (DF-T01)"), and it does not weaken sub-phase A's own regression gate: `Project.LoadFromPath` and
+the original `DataContractSerializer` path stay exercised elsewhere (`LegacyProjectTests`,
+`AllNodesFixtureRegenerationTests`, `HelloWorldSampleTests`, all unchanged) — Core's original
+`Project`/`ClassGraph` DataContract types are untouched until T063, per T038's note. Both fixtures have
+exactly one class each (`AllNodesFixtureFactory`/`SampleProjectFactory` each add a single `ClassGraph`), so
+the theory needs no loop over `project.Classes`, just the one `.netpc` named per fixture.
+
+`RoundTripTests.cs`: DF-T02 (`LegacyThroughJsonProducesGoldenCSharp`, reusing
+`GoldenCSharpTests.LegacyFixtures()` as `[MemberData]`) converts each legacy fixture to canonical JSON
+first (`LegacyXmlDocumentFormat` → `JsonDocumentFormat.WriteClassAsync`), then loads *that* and translates
+— proving the JSON path alone reproduces the same golden C#, not just the legacy path. DF-T03
+(`JsonRoundTripIsByteIdentical`) runs load → `MarkDirty()` → `ToDocument` → write on three sources — both
+legacy fixtures (converted to JSON in memory the same way) and `samples/HelloWorld/HelloWorld.Program.netpc`
+(also converted in memory: the sample isn't `.netpc.json` yet — that conversion is T057) — and asserts the
+rewritten bytes equal the ones just read, and that they re-parse. DF-T05
+(`MovingOneNodeChangesExactlyOneLayoutLine`) moves HelloWorld's one `CallMethodNode`, saves twice, and
+diffs the two byte arrays line by line: exactly one line differs, it is inside `layout`, and both versions
+of that line match the `"<id>": [x, y]` inline-position shape (document-format.md §2.3.1 rule 3).
+
+`MergeTests.cs` (DF-T23) builds the base/branch-A/branch-B `ClassGraph`s directly through the model API
+(not by loading a fixture), overwriting the four base nodes' and the class's own `ClassReturnNode`'s ids
+via `Node.Id`'s `internal set` (`NetPrints.Core.Tests` has `InternalsVisibleTo`) plus `NodeGraph.ReindexNode`,
+instead of a queue-stub `IIdGenerator`: the ids the ambient generator would allocate during construction
+are placeholders immediately overwritten anyway (`DocumentMapper.FromDocument`'s own pattern, T035), so
+there's no need to reverse-engineer the exact number and order of `IdGeneration.Current.NewId` calls a
+real build makes. **Two findings from actually running `git merge-file`, not assumed from the contract's
+prose:**
+
+1. **The class graph's own node needs a fixed id too.** All three builds (`base`, `branchA`, `branchB`)
+   call `BuildBase()` independently; each construction allocates a fresh, real (`Snowflake`/random) id for
+   `ClassGraph.ReturnNode` since only the *method's* four nodes were being overridden at first. That
+   produced a spurious, unrelated conflict on the class graph's one node (and its `layout["class"]` entry)
+   in every run, before the intended one — fixed by overriding `cls.ReturnNode`'s id too, identically
+   across all three builds, the same way as the method's nodes.
+2. **`git merge-file` does not treat "two branches insert N new lines at the same point" as one
+   opaque conflict.** It further diffs the two inserted regions against *each other* (zealous/refine-style
+   conflict minimization, not textbook diff3), so if both branches' additions are line-for-line similar —
+   e.g. both call `Console.WriteLine(string)` with the same literal value, differing only in `id` — git
+   reports several small pinpoint conflicts (one per differing line) instead of the single hunk
+   document-format.md §7/DF-T23 describes, and can even use an unrelated shared line (like a matching
+   method `name` inside two otherwise-different `method` objects) as a false anchor that splits one
+   conflict into two. `TwoBranchesAddingUnrelatedNodesMergeWithOneConflictAtTheNodesTail` makes branch A's
+   addition call `Console.WriteLine(string)` on a string literal and branch B's call `Console.Beep(int)`
+   on an int literal — sharing no text at all — which reproduces the exactly-one-conflict-at-the-tail
+   shape reliably. `TwoBranchesInsertingIntoTheSameGapStillConflict` (document-format.md §7's "documents
+   the limit too") keeps both branches' additions identical in shape and colliding ids, and only asserts
+   the loose, always-true-for-a-real-conflict shape (exit code > 0, at least one `<<<<<<<`), since exactly
+   how many hunks a same-gap collision produces is exactly the kind of git-internal detail finding 1 shows
+   isn't worth pinning down precisely.
+
+Resolving "by keeping both sides" is done by a JSON-structural merge of the two *pre-conflict* documents
+(`MergeBothSides`: union nodes by id, connections by `from`/`to`, layout entries by node id), not by
+patching git's raw conflict-marker text: the observed conflict (finding 2) splits mid-object, so the
+"missing `,`" the contract mentions is really a missing **duplicate of the shared closing lines** each
+side's fragment is missing (`],\n"modifiers":...}\n}`) — reconstructing that correctly from plain text
+would need brace-depth tracking, not line splicing, for no real benefit over reusing the two documents
+already sitting in memory. The test still asserts everything the raw git output must show first (exit
+code, hunk count and location, both branches' ids present, connections/layout outside the conflict)
+before falling back to the structural merge to prove the *result* loads with the right node and
+connection counts.
+
+No `!` added: `SchemaTests.cs`'s `Child`/`Array`/`Value<T>` pattern is repeated here too
+(`RequireObject`/`RequireArray`/`RequireString` in `MergeTests.cs`), and `RoundTripTests.cs` never
+navigates a `JsonNode` tree by hand at all (it only re-parses to check the written bytes are valid JSON,
+via `Assert.NotNull(JsonNode.Parse(...))`).
+
+Verified: `dotnet build NetPrints.slnx -c Release` 0 warnings; `dotnet test tests/NetPrints.Core.Tests -c
+Release` green, 274 tests (266 → 274: +6 `RoundTripTests`, +2 `MergeTests`; `GoldenCSharpTests`' own count
+unchanged at 2, now against the new importer); `dotnet format NetPrints.slnx --verify-no-changes` clean.
+`MergeTests` needs `git` on `PATH` (present here and in CI) and skips with a reason otherwise
+(`Assert.Skip`, matching `Desktop.E2ETests`' and `GridRenderTests`' existing pattern).
