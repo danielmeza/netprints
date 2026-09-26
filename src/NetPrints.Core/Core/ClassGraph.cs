@@ -271,21 +271,7 @@ namespace NetPrints.Core
             }
         }
 
-        private static string AllocateUniqueMemberId(ICollection<string> existingIds)
-        {
-            const int maxAttempts = 100;
-
-            for (int attempt = 0; attempt < maxAttempts; attempt++)
-            {
-                string candidate = IdGeneration.Current.NewId('m');
-                if (!existingIds.Contains(candidate))
-                {
-                    return candidate;
-                }
-            }
-
-            throw new InvalidOperationException($"Could not allocate a unique member id in {maxAttempts} attempts.");
-        }
+        private static string AllocateUniqueMemberId(ICollection<string> existingIds) => StableIds.AllocateUnique('m', existingIds);
 
         /// <summary>
         /// Gives every member of <see cref="Members"/> a unique id: a later duplicate (in member

@@ -57,6 +57,8 @@
          assembly: its test framework replaces Avalonia's and every [AvaloniaFact] fails. -->
     <PackageVersion Include="Xunit.DependencyInjection" Version="11.3.2" />
     <PackageVersion Include="Microsoft.Reactive.Testing" Version="6.1.0" />
+    <!-- FakeTimeProvider: deterministic clock for SnowflakeIdGenerator tests (data-model.md §2). -->
+    <PackageVersion Include="Microsoft.Extensions.TimeProvider.Testing" Version="10.10.0" />
     <!-- Headless UI tests: Skia without the libfontconfig dependency, so the tests run on a
          machine with only the .NET SDK (SC-001). Must match the SkiaSharp version of Avalonia. -->
     <PackageVersion Include="SkiaSharp" Version="3.119.4" />

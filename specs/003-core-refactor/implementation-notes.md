@@ -1092,3 +1092,42 @@ that follows it runs on a `TestScheduler` — so the test repeatedly interleaves
 `Task.Delay` with a `TestScheduler.AdvanceBy` in a loop, which needs no hook into the store's internals:
 whenever the real event does arrive and gets scheduled, the next few loop iterations' cumulative virtual
 advances eventually pass its due time and fire it).
+
+### T040a — `RandomIdGenerator`/`SeededIdGenerator` keep their public API; `SnowflakeIdGenerator` is the new engine underneath
+
+Owner decision 2026-09-25 (research.md R20, data-model.md §2): the id *value* becomes a monotonic 63-bit
+Snowflake-style long (41-bit ms since `2026-01-01T00:00:00Z` | 16-bit session | 6-bit sequence), the text
+form 13 Crockford32 digits instead of 6. Rather than replace `RandomIdGenerator`/`SeededIdGenerator` (used
+at dozens of call sites across `Core`, `Serialization` and both test assemblies), both keep their exact
+name, constructor signature and (for `RandomIdGenerator`) `.Instance` shape, now implemented as a thin
+wrapper over a `SnowflakeIdGenerator`: `RandomIdGenerator` = `TimeProvider.System` + a random session
+chosen once at first use (mirrors the old `Random.Shared` "thread-safe, one shared instance" contract);
+`SeededIdGenerator(seed)` = a fixed clock pinned at `SnowflakeIdGenerator.Epoch` (so it never advances on
+its own) + a session derived from the seed (`(seed ^ (seed >> 16)) & 0xFFFF`). A fixed, non-advancing
+clock still produces a distinct id per call: the monotonic "sequence increments within the same
+millisecond" path (meant for the overflow/backwards-clock case) is what runs on *every* call here, since
+the clock never reports a later millisecond on its own — this is exactly what determinism needs (two
+`SeededIdGenerator(42)` instances, each starting fresh at sequence 0, produce the identical sequence of
+values call-for-call) and was not a special case to build.
+
+`IdFormat` (new, public) is the single source of the shape: `Alphabet`, `ValueDigits` (13),
+`Pattern` (`^[nm][0-9a-hjkmnp-tv-z]{13}$`), `Format`/`TryParse`. `TryParse` is case-insensitive and also
+accepts Crockford's own `i`/`l` → 1, `o` → 0 transcription aliases in the value digits (trivial: one
+extra branch each in the digit-decode `switch`) — the prefix character itself must still be exactly `n`
+or `m`, case-insensitive, no alias. `StableIds.IsValidDocumentId` (non-empty, no `/` or whitespace) is
+deliberately kept looser than `IdFormat.Pattern` and is not changed: it is what "accepted on read" checks
+(document-format.md §1.4.1), and a legacy `n0`/`n1` id must keep passing it forever.
+
+`StableIds.AllocateUnique(prefix, existingIds)` is `ClassGraph`'s private `AllocateUniqueMemberId` moved
+up and generalized (same 100-attempt bounded retry against a caller-supplied set), so T040c's node-id
+duplicate repair does not duplicate it. This is a **different** operation from ordinary allocation
+(`NodeGraph.AllocateNodeId`, a member constructor's `IdGeneration.Current.NewId('m')`): ordinary
+allocation trusts the generator and never retries (T040b); `AllocateUnique` exists specifically for
+repairing a concrete, already-loaded document against ids the generator could not have known about.
+
+No `!` added. Verified: `dotnet build src/NetPrints.Core -c Release` 0 warnings; new
+`tests/NetPrints.Core.Tests/Core/SnowflakeIdGeneratorTests.cs` (bit layout via `IdFormat.Pattern`,
+sequence increment and overflow, a backwards clock via a small `TimeProvider` test double — `FakeTimeProvider.SetUtcNow`
+refuses to go backwards, so the "clock goes backwards" case needs its own settable-either-way double,
+not the package's fake — format/parse round trip, alias parsing, malformed input); `IdGenerationTests`/
+`NodeIdTests` regexes updated to the 13-digit pattern.

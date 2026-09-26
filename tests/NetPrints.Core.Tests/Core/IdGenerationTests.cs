@@ -10,12 +10,17 @@ namespace NetPrints.Tests.Core
         [Fact]
         public void RandomIdsMatchShapeAndAlphabet()
         {
-            var regex = new Regex("^m[0-9a-hjkmnp-tv-z]{6}$");
+            var regex = new Regex(IdFormat.Pattern);
+            string previous = "";
 
             for (int i = 0; i < 10_000; i++)
             {
                 string id = RandomIdGenerator.Instance.NewId('m');
                 Assert.Matches(regex, id);
+
+                // SnowflakeIdGenerator is monotonic: string order must equal generation order.
+                Assert.True(string.CompareOrdinal(previous, id) < 0);
+                previous = id;
             }
         }
 
@@ -29,6 +34,15 @@ namespace NetPrints.Tests.Core
             {
                 Assert.Equal(first.NewId('n'), second.NewId('n'));
             }
+        }
+
+        [Fact]
+        public void DifferentSeedsUsuallyGiveDifferentIds()
+        {
+            var a = new SeededIdGenerator(1);
+            var b = new SeededIdGenerator(2);
+
+            Assert.NotEqual(a.NewId('n'), b.NewId('n'));
         }
 
         [Fact]
