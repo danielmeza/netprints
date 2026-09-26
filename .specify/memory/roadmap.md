@@ -276,6 +276,27 @@ Block-scoped local variables (owner idea, 2026-09-25): variables owned by for/fo
   irregular graphs where a node belongs to several scopes.
 
 ### Candidates (unscheduled)
+- **Parameter modifiers** (owner-approved as a candidate, 2026-09-26; not in P1). Today, arguments of a
+  user-defined method are always by value; `ref`/`out`/`in` and optional values work only when calling
+  existing .NET methods, and `params` is not detected (callers pass the array).
+  - An extensible **modifier registry**. Each descriptor has:
+    - an id and the C# it emits;
+    - where it applies: method, constructor, delegate or event;
+    - an **exclusivity group**;
+    - constraints: last parameter only, array or collection type, needs a default value, first parameter of
+      a static class, minimum C# version from the profile;
+    - its pins and data.
+  - Built-in descriptors: the pass modes `ref`/`out`/`in`/`ref readonly` (one exclusive group), `params`
+    (excludes the pass modes, last parameter), an optional default value (excludes `out`/`ref`/`params`),
+    `scoped`, and `this` for extension methods.
+  - Profiles and P3 extensions can register more, for example UnrealSharp specifiers.
+  - Stored as optional fields on the argument in the graph document, so older files stay valid.
+  - Per-parameter editing: selecting a parameter pin on the entry node shows its modifiers.
+    - Exclusive groups show as radio options and the rest as checkboxes.
+    - Invalid combinations are disabled, with the reason in a tooltip.
+    - The same model feeds both the pin's context menu and a parameter section in the P3a inspector, so
+      schedule it after the P3a inspector/docking; a context-menu-only version before it would be rework.
+  - The call side: a `params` method shows one pin per element, plus "add pin".
 - **Visual graph diff** (2026-09-25): compare two versions of a graph (from git) with added nodes and
   connections in green, removed in red and moved in grey. The stable ids of P1 make it feasible; it serves
   PR review and is the base for the `netprints merge` driver.
