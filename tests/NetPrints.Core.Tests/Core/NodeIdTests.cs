@@ -27,7 +27,7 @@ namespace NetPrints.Tests.Core
         [Fact]
         public void NewNodesGetUniqueRandomIdsMatchingTheAlphabet()
         {
-            var regex = new Regex("^n[0-9a-hjkmnp-tv-z]{6}$");
+            var regex = new Regex("^n[0-9a-hjkmnp-tv-z]{13}$");
             var graph = new MethodGraph("Main");
 
             for (int i = 0; i < 50; i++)
@@ -40,16 +40,18 @@ namespace NetPrints.Tests.Core
             Assert.Equal(ids.Count, ids.Distinct().Count());
         }
 
+        /// <summary>DF-T18: <see cref="NodeGraph.AllocateNodeId"/> trusts the generator's own
+        /// uniqueness guarantee and does not retry or search — unlike <see cref="StableIds.AllocateUnique"/>,
+        /// which load-time duplicate repair uses instead (data-model.md §2).</summary>
         [Fact]
-        public void AllocateNodeIdRetriesAnAlreadyUsedId()
+        public void AllocateNodeIdDoesNotRetryOrSearch()
         {
             var graph = new MethodGraph("Main");
             string used = graph.EntryNode.Id;
 
-            using (IdGeneration.Use(new QueueIdGenerator(used, "nabcdef")))
+            using (IdGeneration.Use(new QueueIdGenerator(used)))
             {
-                var literal = new LiteralNode(graph, TypeSpecifier.FromType<int>());
-                Assert.Equal("nabcdef", literal.Id);
+                Assert.Equal(used, graph.AllocateNodeId());
             }
         }
 

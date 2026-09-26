@@ -1131,3 +1131,36 @@ sequence increment and overflow, a backwards clock via a small `TimeProvider` te
 refuses to go backwards, so the "clock goes backwards" case needs its own settable-either-way double,
 not the package's fake — format/parse round trip, alias parsing, malformed input); `IdGenerationTests`/
 `NodeIdTests` regexes updated to the 13-digit pattern.
+
+### T040b — `NodeGraph`'s id index can't be built eagerly, and can't be kept current by `CollectionChanged` alone
+
+`FindNode` needed an id → `Node` `Dictionary` to become O(1) (data-model.md §2). Two problems, both from
+the same root cause (document-format.md §3.1: `DataContractSerializer` never runs field initializers,
+constructors, or property setters it wasn't told to call):
+
+1. A field initializer (`private Dictionary<...> nodeIndex = new();`) would stay unset on a legacy-import
+   `NodeGraph`, since DataContract-constructed instances skip it exactly like they skip `Node.Id`'s
+   `[IgnoreDataMember]` narrow null window (T016). Fixed the same way data-model.md §2 suggests: lazily.
+   `nodeIndex` starts `null` regardless of how the graph was constructed; the first `FindNode` call scans
+   `Nodes` once (by then, whatever process built the graph — normal construction or `AssignLegacyNodeIds`
+   — has already finished, so every node's `Id` is already final) and subscribes to `Nodes.CollectionChanged`
+   for everything after that.
+2. `CollectionChanged` alone is not enough: `AssignLegacyNodeIds` and `DocumentMapper`'s "constructor gives
+   a placeholder id, then overwrite it from the document" both change `Node.Id` on a node **already**
+   sitting in `Nodes` — no collection event fires for a property change. Rather than turn `Node.Id` into a
+   full property with a callback (touching a widely-used auto-property's shape for a change only three
+   call sites need), the three call sites that reassign an existing node's id call a new
+   `internal NodeGraph.ReindexNode(Node, string? previousId)` themselves, right after the assignment. It
+   is a deliberate no-op while `nodeIndex` is still `null` (nothing to keep in sync yet — the eventual
+   first scan already reflects the final id), so call sites never need to guard "has anything looked this
+   graph up yet."
+
+`AllocateNodeId` lost its retry loop and `MaxAllocateAttempts`: it is now exactly
+`IdGeneration.Current.NewId('n')` (research.md R20 — the generator's own monotonic uniqueness makes the
+search pointless). `NodeIdTests.AllocateNodeIdRetriesAnAlreadyUsedId` (asserted the search) was replaced
+by `AllocateNodeIdDoesNotRetryOrSearch` (asserts the opposite: a generator stub that returns an
+already-used id is trusted as-is).
+
+No `!` added. Verified: `dotnet test tests/NetPrints.Core.Tests` green throughout (existing `FindNode`/
+`RemovingAndReAddingANodeKeepsItsId`/legacy-import tests unchanged and still passing against the new
+index).
