@@ -184,5 +184,27 @@ namespace NetPrints.Graph
         {
             return "Return";
         }
+
+        /// <summary>
+        /// For a return-value pin (an input data pin of this node), returns <c>"Output&lt;i&gt;"</c>
+        /// (<paramref name="pin"/>'s position among <see cref="Node.InputDataPins"/>), so a user
+        /// rename of the return value does not change its pin key (document-format.md §1.4.2). Every
+        /// other pin uses the base <see cref="Node.GetPinKeyName"/>.
+        /// </summary>
+        /// <param name="pin">Pin of this node to get the key name of.</param>
+        /// <returns>The pin's keyName.</returns>
+        public override string GetPinKeyName(NodePin pin)
+        {
+            if (pin is NodeInputDataPin inputDataPin)
+            {
+                int index = InputDataPins.IndexOf(inputDataPin);
+                if (index >= 0)
+                {
+                    return $"Output{index}";
+                }
+            }
+
+            return base.GetPinKeyName(pin);
+        }
     }
 }

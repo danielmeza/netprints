@@ -202,6 +202,18 @@ namespace NetPrints.Graph
         public virtual string DefaultName => GetType().Name;
 
         /// <summary>
+        /// Returns <paramref name="pin"/>'s stable "keyName" component of its pin reference
+        /// (document-format.md §1.4.2, <see cref="PinKeys"/>): a positional name for a pin whose
+        /// display <see cref="NodePin.Name"/> the user can rename (an entry node's argument pins, a
+        /// return node's return-value pins), the pin's own <see cref="NodePin.Name"/> otherwise. The
+        /// base implementation returns <paramref name="pin"/>'s <see cref="NodePin.Name"/>; override
+        /// together with a node kind that has user-renamable pins.
+        /// </summary>
+        /// <param name="pin">Pin of this node to get the key name of.</param>
+        /// <returns>The pin's keyName.</returns>
+        public virtual string GetPinKeyName(NodePin pin) => pin.Name;
+
+        /// <summary>
         /// Adds the new node to <paramref name="graph"/>'s <see cref="NodeGraph.Nodes"/>, allocates its
         /// <see cref="Id"/> and assigns it a name unique among the graph's existing nodes, derived from
         /// the concrete node type name.
