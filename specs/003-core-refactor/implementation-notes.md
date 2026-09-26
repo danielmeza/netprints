@@ -1892,6 +1892,56 @@ across this T050–T053 batch (+6, +2, +3, +5 = +16, matching exactly). Xvfb kil
 run; no processes or temp directories left behind (every new test cleans up its own temp directory in a
 `finally`).
 
+## Phase 5 (continued): revision — no legacy conversion, strict ids (research R21)
+
+### T054a — `Characterization/LegacyMigration.cs`; the repo's own legacy fixtures migrated to JSON
+
+Mechanical, per the task's own recipe: read each legacy `.netpc` through the existing
+`LegacyXmlDocumentFormat` + `DocumentMapper.FromDocument`, walk every graph of the resulting `ClassGraph`
+in the same order `DocumentMapper.EnumerateGraphs` uses (class graph, then each variable's
+type/getter/setter graphs, then methods, then constructors — that internal method is not visible from
+`NetPrints.Core.Tests`, no `InternalsVisibleTo` for `NetPrints.Serialization` exists or was worth adding
+for one throwaway test, so `LegacyMigration.cs` keeps a private copy of the same enumeration), reassign
+every node's id from `SeededIdGenerator(StableIds.SeedFor(cls.FullName + "/nodes"))` and
+`NodeGraph.ReindexNode`, `ToDocument` again, and write with `JsonDocumentFormat`. Connections and layout
+never needed manual rewriting: both are built by `ToDocument` from each node's *current* `Id` at mapping
+time, so reassigning `Node.Id` first and mapping back is already consistent everywhere — exactly what the
+task's parenthetical ("set each `Node.Id` with `ReindexNode`, map back") implies but does not spell out.
+
+**One real regression, expected and narrowly fixed, not deferred to T057.** Adding
+`samples/HelloWorld/HelloWorld.csproj`, `.gitattributes` and `HelloWorld.Program.netpc.json` alongside the
+legacy `.netpp`/`.netpc` broke `HelloWorldSampleTests.FactoryMatchesCheckedInSample`, which asserted the
+checked-in directory's file list was *exactly* what `SampleProjectFactory`'s legacy `Project.Save()`
+produces. tasks.md's own T057 entry says "T054a added its `.csproj`, graph and `.gitattributes`" as an
+established fact, not something T057 must retroactively create — so the test's over-strict "nothing else
+in the directory" half was narrowed to "every factory-produced file matches its checked-in copy" (the
+forward direction, still a real regression gate), leaving the full switch-over (delete `.netpp`/`.netpc`,
+load through `ProjectPersistence`, rewrite this test around the `.csproj` layout entirely) to T057 as
+tasks.md already assigns it.
+
+**Fixture `.csproj` files needed their own explicit `<None Include>` in `NetPrints.Core.Tests.csproj`**:
+the existing `<None Update="Fixtures/**" .../>` line only adds metadata to items the SDK's *default* item
+glob already produced, and that default glob excludes `**/*.*proj` (`$(DefaultExcludesInProjectFolder)`)
+so a nested `.csproj` under `Fixtures/AllNodes/`/`Fixtures/HelloWorld/` was never an item at all until
+added explicitly — confirmed by the fact that `Update` silently did nothing for these two files (no build
+error, just absent from the output directory) before the explicit `<None Include>` lines were added. The
+`.netpc.json` fixture files needed no such addition (not a project extension, so not excluded).
+
+**Version placeholder in the checked-in `.csproj` files**: each `NetPrints.Sdk` `PackageReference` is
+`Condition="'$(NetPrintsUseLocalSdk)' != 'true'"` per project-system.md §2.1, so it is never evaluated
+under `samples/Directory.Build.props`' (or `LocalSdkLayout`'s) local-SDK dev mode; its `Version="1.0.0"`
+is an inert placeholder, not a real published version (MinVer is not wired up until T109, same gap
+sub-phase D/E's notes already flagged).
+
+No `!`/`null!`/`default!` added. Verified: `dotnet test tests/NetPrints.Core.Tests -c Release --
+--ignore-exit-code 8` green, 298 tests (297 → 298, +1: `LegacyMigration` itself, a no-op unless
+`NETPRINTS_MIGRATE_LEGACY=1`); `git diff --exit-code tests/NetPrints.Core.Tests/Fixtures/Golden/` empty;
+`NETPRINTS_MIGRATE_LEGACY=1 dotnet run --project tests/NetPrints.Core.Tests -c Release --no-build --
+-class NetPrints.Tests.Characterization.LegacyMigration` re-run clean (both fixtures load with zero
+`DocumentIssue`s and every node/member id matches `IdFormat.Pattern`, asserted inside the test itself);
+`dotnet build NetPrints.slnx -c Release` 0 warnings; `dotnet format NetPrints.slnx --verify-no-changes`
+clean.
+
 ## Notes for the next batch (T054–T058)
 
 - **T054 (`ProjectConverter`)** can reuse `ProjectFiles.EnsureGitAttributesAsync` (T050) directly, and
