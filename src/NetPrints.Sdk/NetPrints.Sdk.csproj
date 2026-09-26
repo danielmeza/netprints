@@ -3,10 +3,47 @@
     <TargetFramework>net10.0</TargetFramework>
     <AssemblyName>NetPrints.Sdk</AssemblyName>
     <!-- Pack-only project: its own build produces no assembly worth loading (its content is the
-         build/ props+targets and the generator's published output, added in T045); it exists only
+         build/ props+targets and the generator's published output, added in T044+); it exists only
          to be packed and referenced as a PackageReference from a NetPrints project. -->
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <DevelopmentDependency>true</DevelopmentDependency>
     <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <!-- Adds tools/net10.0/** (the generator's framework-dependent publish, T045) to the package at
+         pack time, computed dynamically since it does not exist at project-evaluation time
+         (project-system.md §2). -->
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);_NetPrintsAddGeneratorToPackage</TargetsForTfmSpecificContentInPackage>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Not a compile-time dependency (this project has no code): only so the generator builds before
+         this one packs, and so its project file is easy to find below. -->
+    <ProjectReference Include="..\NetPrints.Generator\NetPrints.Generator.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="build\NetPrints.Sdk.props" Pack="true" PackagePath="build\" />
+    <None Include="build\NetPrints.Sdk.targets" Pack="true" PackagePath="build\" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <_NetPrintsGeneratorProject>$(MSBuildThisFileDirectory)..\NetPrints.Generator\NetPrints.Generator.csproj</_NetPrintsGeneratorProject>
+    <_NetPrintsGeneratorPublishDir>$(MSBuildThisFileDirectory)obj/generator-publish/</_NetPrintsGeneratorPublishDir>
+  </PropertyGroup>
+
+  <!-- dotnet publish (framework-dependent: no RuntimeIdentifier, no self-contained runtime) of
+       NetPrints.Generator into _NetPrintsGeneratorPublishDir, then packed under tools/net10.0/,
+       keeping any subfolders (satellite resource assemblies) via %(RecursiveDir). -->
+  <Target Name="_NetPrintsAddGeneratorToPackage" DependsOnTargets="_NetPrintsPublishGenerator">
+    <ItemGroup>
+      <TfmSpecificPackageFile Include="$(_NetPrintsGeneratorPublishDir)**">
+        <PackagePath>tools/net10.0/%(RecursiveDir)%(Filename)%(Extension)</PackagePath>
+      </TfmSpecificPackageFile>
+    </ItemGroup>
+  </Target>
+
+  <Target Name="_NetPrintsPublishGenerator">
+    <RemoveDir Directories="$(_NetPrintsGeneratorPublishDir)" />
+    <MSBuild Projects="$(_NetPrintsGeneratorProject)" Targets="Publish"
+             Properties="Configuration=$(Configuration);TargetFramework=net10.0;SelfContained=false;UseAppHost=false;PublishDir=$(_NetPrintsGeneratorPublishDir)" />
+  </Target>
 </Project>

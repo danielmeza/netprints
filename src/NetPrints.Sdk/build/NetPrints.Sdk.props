@@ -1,0 +1,9 @@
+<!-- NetPrints.Sdk: default properties (project-system.md §2). Imported by the package's own
+     build/NetPrints.Sdk.props (published) and, in-repo, by samples/Directory.Build.props (§2.1). -->
+<Project>
+  <PropertyGroup>
+    <EnableDefaultNetPrintsGraphItems Condition="'$(EnableDefaultNetPrintsGraphItems)' == ''">true</EnableDefaultNetPrintsGraphItems>
+    <NetPrintsGeneratorPath Condition="'$(NetPrintsGeneratorPath)' == ''">$(MSBuildThisFileDirectory)../tools/net10.0/NetPrints.Generator.dll</NetPrintsGeneratorPath>
+    <_NetPrintsExeExtension Condition="'$([MSBuild]::IsOSPlatform('Windows'))' == 'true'">.exe</_NetPrintsExeExtension>
+  </PropertyGroup>
+</Project>

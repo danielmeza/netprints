@@ -1435,3 +1435,50 @@ Release` 0 warnings/0 errors; `dotnet test tests/NetPrints.Core.Tests -c Release
 green, 276 tests (274 → 276, both new); `dotnet format NetPrints.slnx --verify-no-changes` clean. Added
 `ProjectReference` to `NetPrints.Generator` from `NetPrints.Core.Tests.csproj` (its first: no test project
 referenced the generator before this task). No `!`/`null!`/`default!` added.
+
+### T045 — `NetPrints.Sdk.props`/`.targets` (copied verbatim); packing the generator's publish output dynamically
+
+`build/NetPrints.Sdk.props` and `build/NetPrints.Sdk.targets` are copied from project-system.md §2
+verbatim (the targets file is explicitly marked normative there); the props file's code sample doesn't
+show `_NetPrintsExeExtension`, but the prose right after the targets block does ("set in the props"), so
+it's added there as a third property, condition matching the prose exactly
+(`$([MSBuild]::IsOSPlatform('Windows'))`).
+
+`NetPrints.Sdk.csproj`'s pack layout needed `tools/net10.0/**` = a framework-dependent `dotnet publish`
+of `NetPrints.Generator`, which does not exist at project-evaluation time (nothing to glob yet) and must
+not run on every `dotnet build` of the solution (T045's own checkpoint requires the solution build to
+stay fast and warning-free, and this project has no source of its own to justify a publish on every
+build). Used NuGet's documented extension point for exactly this — `TargetsForTfmSpecificContentInPackage`
+naming a target that emits `TfmSpecificPackageFile` items with `PackagePath` metadata — so the publish
+(and the glob over its output) only runs when `dotnet pack` actually asks for the package's per-TFM
+content, never on a plain build. `_NetPrintsPublishGenerator` invokes `<MSBuild Targets="Publish">`
+against `NetPrints.Generator.csproj` (no `RuntimeIdentifier`, `SelfContained=false`, `UseAppHost=false`:
+framework-dependent, matching `dotnet exec` in the targets) into `obj/generator-publish/` (removed first,
+so a stale file from a previous TFM/config never survives into the package); `_NetPrintsAddGeneratorToPackage`
+then globs that directory with `%(RecursiveDir)` in `PackagePath` so the generator's satellite resource
+assemblies (`cs/`, `de/`, `ja/`, … — pulled in transitively by `Microsoft.CodeAnalysis.CSharp.Workspaces`)
+land under their own `tools/net10.0/<culture>/` subfolders instead of colliding at the top level. A
+`ProjectReference` to `NetPrints.Generator.csproj` with `ReferenceOutputAssembly="false"` establishes the
+build-order edge (and gives IDEs a real link) without adding a compile-time dependency this project (no
+source of its own) has no use for.
+
+**Deviation caught by manually running the pack, not by an automated test** (PS-T05, the pack test, is
+T048's): the first attempt wrote both `_NetPrintsGeneratorPublishDir` and `PackagePath`'s literal prefix
+with backslashes (`obj\generator-publish\`, `tools\net10.0\...`) to match a Windows-flavored MSBuild
+style; on Linux this produced a doubled separator in every packed path (`tools/net10.0//NetPrints.Generator.dll`,
+`tools/net10.0//cs/….dll`) because the glob's base directory already ended in a literal backslash MSBuild
+does not treat as a path separator on this OS, so `%(RecursiveDir)` came back prefixed with an extra
+separator on top of it. Fixed by using forward slashes throughout (matching this repo's own props/targets
+style, e.g. `../tools/net10.0/...` in `NetPrints.Sdk.props`), verified with a scratch
+`dotnet pack src/NetPrints.Sdk -o /tmp/... /p:Version=0.0.1-packtest` and `unzip -l` on the result:
+`build/NetPrints.Sdk.props`, `build/NetPrints.Sdk.targets`, `tools/net10.0/NetPrints.Generator.dll` and
+its dependencies, `tools/net10.0/cs/…resources.dll` etc., no `lib/` folder (`IncludeBuildOutput=false`),
+no `<dependencies>` in the nuspec (`SuppressDependenciesWhenPacking=true`), `<developmentDependency>true</developmentDependency>`
+present. Scratch pack output and `src/NetPrints.Sdk/obj/generator-publish/` are not tracked (`obj/` is
+already in `.gitignore`).
+
+Verified: `dotnet build NetPrints.slnx -c Release` 0 warnings/0 errors (unaffected: the new pack target
+does not run on `Build`); `dotnet test tests/NetPrints.Core.Tests -c Release -- --ignore-exit-code 8`
+green, 276 (unchanged, T045 adds no new test — PS-T01–T04 are T047's, against these same files through
+the in-repo dev mode T046 sets up); `dotnet format NetPrints.slnx --verify-no-changes` clean. No
+`!`/`null!`/`default!` added.

@@ -1,0 +1,37 @@
+<!-- NetPrints.Sdk: the NetPrintsGenerate target (project-system.md §2). Imported by the package's own
+     build/NetPrints.Sdk.targets (published) and, in-repo, by samples/Directory.Build.targets (§2.1). -->
+<Project>
+  <ItemGroup Condition="'$(EnableDefaultNetPrintsGraphItems)' == 'true'">
+    <NetPrintsGraph Include="**/*.netpc.json" Exclude="$(DefaultItemExcludes);$(DefaultExcludesInProjectFolder)" />
+  </ItemGroup>
+  <ItemGroup>
+    <NetPrintsGraph Update="@(NetPrintsGraph)" GeneratedFile="%(RootDir)%(Directory)%(Filename).g.cs" DependentUpon="%(Filename)%(Extension)" />
+    <Compile Remove="**/*.netpc.g.cs" />
+    <Compile Include="@(NetPrintsGraph->'%(GeneratedFile)')" />
+    <UpToDateCheckInput Include="@(NetPrintsGraph)" />
+  </ItemGroup>
+
+  <Target Name="NetPrintsGenerate"
+          BeforeTargets="CoreCompile"
+          Condition="'@(NetPrintsGraph)' != ''"
+          Inputs="@(NetPrintsGraph);$(NetPrintsGeneratorPath);$(MSBuildProjectFullPath);@(NetPrintsExtension->'%(FullPath)/netprints-extension.json')"
+          Outputs="@(NetPrintsGraph->'%(GeneratedFile)')">
+    <PropertyGroup>
+      <_NetPrintsHost>$(DOTNET_HOST_PATH)</_NetPrintsHost>
+      <_NetPrintsHost Condition="'$(_NetPrintsHost)' == '' and '$(NetCoreRoot)' != ''">$(NetCoreRoot)dotnet$(_NetPrintsExeExtension)</_NetPrintsHost>
+      <_NetPrintsHost Condition="'$(_NetPrintsHost)' == ''">dotnet</_NetPrintsHost>
+      <_NetPrintsRequest>$(IntermediateOutputPath)netprints.generate.rsp</_NetPrintsRequest>
+    </PropertyGroup>
+    <ItemGroup>
+      <_NetPrintsRequestLine Include="project=$(MSBuildProjectFullPath)" />
+      <_NetPrintsRequestLine Include="rootNamespace=$(RootNamespace)" />
+      <_NetPrintsRequestLine Include="profile=$(NetPrintsProfile)" />
+      <_NetPrintsRequestLine Include="@(NetPrintsExtension->'extension=%(FullPath)')" />
+      <_NetPrintsRequestLine Include="@(NetPrintsGraph->'graph=%(FullPath)|%(GeneratedFile)')" />
+    </ItemGroup>
+    <WriteLinesToFile File="$(_NetPrintsRequest)" Lines="@(_NetPrintsRequestLine)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+    <Exec Command="&quot;$(_NetPrintsHost)&quot; exec &quot;$(NetPrintsGeneratorPath)&quot; generate &quot;$(_NetPrintsRequest)&quot;"
+          WorkingDirectory="$(MSBuildProjectDirectory)" />
+    <Touch Files="@(NetPrintsGraph->'%(GeneratedFile)')" />
+  </Target>
+</Project>
