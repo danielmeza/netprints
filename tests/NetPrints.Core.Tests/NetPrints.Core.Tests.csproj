@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\NetPrints.Core\NetPrints.Core.csproj" />
+    <ProjectReference Include="..\..\src\NetPrints.Serialization\NetPrints.Serialization.csproj" />
   </ItemGroup>
 
 </Project>

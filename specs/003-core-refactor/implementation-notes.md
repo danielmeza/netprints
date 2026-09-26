@@ -157,6 +157,33 @@ node-specific invariant — established in that node's own constructor and never
 guarantees it is set. No flow attribute expresses "null only until this specific constructor runs on
 this specific pin," so `!` with a comment is the sanctioned choice for these.
 
+## Sub-phase C
+
+### T024 — `CodeDiagnostic` added early, in `src/NetPrints.Core/Compilation/CodeDiagnostic.cs`
+
+`DiagnosticExtensions.ToDiagnostic(this DocumentIssue)` (compilation-and-diagnostics.md §1) returns
+`NetPrints.Compilation.CodeDiagnostic`, but that type's own contract entry is normatively part of
+sub-phase I (T090, alongside `DiagnosticMapper`/`SourceFile`/`CodeDiagnosticSeverity`), which the
+dependency chart runs long after sub-phase C. Rather than stub or duplicate the type, added just the
+record (`CodeDiagnosticSeverity` enum + `CodeDiagnostic` record, exactly as compilation-and-diagnostics.md
+§1 specifies, using `Microsoft.CodeAnalysis.Text.LinePositionSpan`, already available transitively
+through Core's existing `Microsoft.CodeAnalysis.CSharp.Workspaces` reference) now, with no other
+members of that section (`SourceFile`, `DiagnosticMapper`, `SourceMap`, `TranslationException`,
+`ClassTranslator(TranslationEnvironment)` overload). `ToDiagnostic` maps `Severity`/`Code`/`Message`
+one-to-one and `Document?.Path` to `SourcePath`; `ClassFullName`/`GraphKey`/`NodeId`/`Span` are left
+null (a `DocumentIssue` does not carry them). T090's implementer should extend this file, not recreate
+it, and should not be surprised to find `CodeDiagnostic` already present when starting sub-phase I.
+
+### T024 — doc-comment `cref` direction
+
+`DocumentId`'s XML doc referred to `IDocumentStore` (T040, not yet added) and `CodeDiagnostic`'s
+referred to `NetPrints.Serialization.DiagnosticExtensions.ToDiagnostic` — Core cannot `cref` into
+Serialization (wrong dependency direction: Serialization references Core, not the reverse) and a
+`cref` to a type that does not exist yet fails the build (`CS1574`, XML docs are required and checked,
+AGENTS.md). Both were written as plain `<c>` text instead. Revisit `DocumentId`'s once T040 lands
+`IDocumentStore` (a real `cref` will then resolve); `CodeDiagnostic`'s stays `<c>` permanently (the
+dependency direction never reverses).
+
 ### T017 — `TypeGraph` needs a non-serialized back-reference to its class
 
 Extending T016's finding: `GraphKeys.For(NodeGraph)` needs to find a variable's type graph's owning
