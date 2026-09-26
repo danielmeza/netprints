@@ -462,3 +462,34 @@ Verified: `dotnet build NetPrints.slnx -c Release` 0 warnings/0 errors across ev
 needs, but T015–T022 (ids, node/member identity, pin keys, auto-placement, `GraphTypeInference`
 extraction, the new project shells, logging foundation) are still open, so Checkpoint B itself is
 not reached yet; T023 stays unchecked until they are.
+
+### T016 — `Node.Id` must be `[IgnoreDataMember]`, not `[DataMember]`
+
+data-model.md §2's code block shows `[DataMember] public string Id { get; internal set; }`. Taken
+literally, this breaks two sub-phase A characterization gates the moment it's added:
+`AllNodesFixtureRegenerationTests.FactoryMatchesCheckedInFixture` and
+`HelloWorldSampleTests.FactoryMatchesCheckedInSample` both fail immediately, because both fixtures
+are still produced by `AllNodesFixtureFactory`/`SampleProjectFactory` calling `Project.Save()` (the
+legacy `DataContractSerializer` path, unchanged until T063) — with `Id` as a real `[DataMember]`, the
+factory's freshly-built graphs (whose nodes now have real random ids from T016) serialize those ids
+into the `.netpp`/`.netpc` XML, which no longer matches the checked-in copies from T003.
+
+Regenerating the two fixtures (`NETPRINTS_REGENERATE_SAMPLES=1`) is not a safe fix here, unlike a
+`NETPRINTS_UPDATE_SNAPSHOTS=1` golden refresh: these are *the* legacy fixtures document-format.md and
+T038 describe throughout ("both fixtures' classes import without issues" via
+`LegacyXmlDocumentFormat`, which document-format.md §2.2 says "calls `NodeGraph.AssignLegacyNodeIds()`
+on every graph" **unconditionally**). `AssignLegacyNodeIds` throws `InvalidOperationException` if any
+node already has an id (data-model.md §2, and T016's own contract). A regenerated fixture with real
+ids baked in would make every future import of these exact files throw during T038 — the opposite of
+"legacy files never have ids of their own", which is the whole reason `AssignLegacyNodeIds` exists.
+
+Choice: `[IgnoreDataMember]` instead of `[DataMember]` on `Node.Id`. `Id` is never read from or
+written to the legacy DataContract XML in either direction; the legacy path is unaffected (still
+null until `AssignLegacyNodeIds` runs), and the two sub-phase A fixtures need no changes. This also
+matches the constitution's non-negotiable "keep old tests green" and T023's own "A-gates unchanged"
+requirement, which are unambiguous where a single illustrative code snippet is not. Verified: full
+`NetPrints.Core.Tests` suite green (59/59, up from 46 before T015's `IdGenerationTests` and T016's
+`NodeIdTests`) with `[IgnoreDataMember]`; failed with exactly the two fixture mismatches above under
+`[DataMember]`. The same reasoning will apply to member ids (T017) and any other new random-id field
+added to a `[DataContract]` graph-side type for the rest of P1 — recorded here so it isn't
+rediscovered per field.

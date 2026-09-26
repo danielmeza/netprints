@@ -180,13 +180,37 @@ namespace NetPrints.Graph
         }
 
         /// <summary>
-        /// Adds the new node to <paramref name="graph"/>'s <see cref="NodeGraph.Nodes"/> and assigns it
-        /// a name unique among the graph's existing nodes, derived from the concrete node type name.
+        /// This node's id, unique within <see cref="Graph"/> (document-format.md §1.4.1). Never null
+        /// after construction or after legacy import (<see cref="NodeGraph.AssignLegacyNodeIds"/>); a
+        /// node just deserialized from legacy XML has not run either yet, so it is <see langword="null"/>
+        /// only in that narrow window (<see cref="System.Runtime.Serialization.DataContractSerializer"/>
+        /// does not run constructors). <see cref="IgnoreDataMemberAttribute"/>, not
+        /// <c>[DataMember]</c>: a legacy <c>.netpp</c>/<c>.netpc</c> file never has ids of its own
+        /// (<see cref="NodeGraph.AssignLegacyNodeIds"/> always assigns them on that path, and would
+        /// throw if the file already had one), so this must never round-trip through the legacy XML
+        /// serializer in either direction.
+        /// </summary>
+        [IgnoreDataMember]
+        public string Id { get; internal set; }
+
+        /// <summary>
+        /// This node type's default name: its concrete runtime type name (e.g. <c>"CallMethodNode"</c>).
+        /// A node whose <see cref="Name"/> equals its <see cref="DefaultName"/> is written without an
+        /// explicit <c>name</c> (document-format.md §1.5); reading one back with no stored name gives
+        /// it this default.
+        /// </summary>
+        public virtual string DefaultName => GetType().Name;
+
+        /// <summary>
+        /// Adds the new node to <paramref name="graph"/>'s <see cref="NodeGraph.Nodes"/>, allocates its
+        /// <see cref="Id"/> and assigns it a name unique among the graph's existing nodes, derived from
+        /// the concrete node type name.
         /// </summary>
         /// <param name="graph">Graph the node belongs to.</param>
         protected Node(NodeGraph graph)
         {
             Graph = graph;
+            Id = graph.AllocateNodeId();
             Graph.Nodes.Add(this);
 
             Name = NetPrintsUtil.GetUniqueName(GetType().Name, Graph.Nodes.Select(n => n.Name).ToList());
