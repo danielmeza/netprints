@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>NetPrints.Extensibility</AssemblyName>
+    <!-- Ahead of using it (T067+): keep the logging-usage rules an error once logging is added here. -->
+    <WarningsAsErrors>$(WarningsAsErrors);CA1848;CA2254</WarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NetPrints.Core\NetPrints.Core.csproj" />
+  </ItemGroup>
+</Project>

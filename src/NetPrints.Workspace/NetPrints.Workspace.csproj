@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>NetPrints.Workspace</AssemblyName>
+    <!-- Ahead of using it (T051+): keep the logging-usage rules an error once logging is added here. -->
+    <WarningsAsErrors>$(WarningsAsErrors);CA1848;CA2254</WarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- In-process MSBuild evaluation and MSBuildWorkspace (research R14). ExcludeAssets="runtime"
+         keeps this project's own build from loading a second, conflicting copy of the Microsoft.Build*
+         assemblies MSBuildLocator registers at startup (verified MSBL001 guard, research K10);
+         PrivateAssets="all" keeps them out of anything that references this project in turn. -->
+    <PackageReference Include="Microsoft.Build.Locator" />
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" />
+    <PackageReference Include="Microsoft.Build" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Build.Framework" ExcludeAssets="runtime" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\NetPrints.Core\NetPrints.Core.csproj" />
+  </ItemGroup>
+</Project>

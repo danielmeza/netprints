@@ -10,4 +10,9 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
     <PackageReference Include="CommunityToolkit.Mvvm" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- The document mapper sets Node.Id and member ids (internal set) from a loaded document. -->
+    <InternalsVisibleTo Include="NetPrints.Serialization" />
+    <InternalsVisibleTo Include="NetPrints.Core.Tests" />
+  </ItemGroup>
 </Project>

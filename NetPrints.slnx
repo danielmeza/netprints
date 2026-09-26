@@ -9,7 +9,12 @@
     <Project Path="src/NetPrints.Core/NetPrints.Core.csproj" />
     <Project Path="src/NetPrints.Desktop/NetPrints.Desktop.csproj" />
     <Project Path="src/NetPrints.Editor/NetPrints.Editor.csproj" />
+    <Project Path="src/NetPrints.Extensibility/NetPrints.Extensibility.csproj" />
+    <Project Path="src/NetPrints.Generator/NetPrints.Generator.csproj" />
     <Project Path="src/NetPrints.Reflection/NetPrints.Reflection.csproj" />
+    <Project Path="src/NetPrints.Sdk/NetPrints.Sdk.csproj" />
+    <Project Path="src/NetPrints.Serialization/NetPrints.Serialization.csproj" />
+    <Project Path="src/NetPrints.Workspace/NetPrints.Workspace.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/NetPrints.Core.Tests/NetPrints.Core.Tests.csproj" />

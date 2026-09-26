@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>NetPrints.Sdk</AssemblyName>
+    <!-- Pack-only project: its own build produces no assembly worth loading (its content is the
+         build/ props+targets and the generator's published output, added in T045); it exists only
+         to be packed and referenced as a PackageReference from a NetPrints project. -->
+    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <DevelopmentDependency>true</DevelopmentDependency>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+  </PropertyGroup>
+</Project>
