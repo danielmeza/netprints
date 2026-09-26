@@ -253,10 +253,12 @@ namespace NetPrints.Core
         [OnDeserialized]
         private void OnDeserialized(StreamingContext context)
         {
-            if (TypeGraph is null)
-            {
-                TypeGraph = new TypeGraph { OwningClass = Class };
-            }
+            // OwningClass is [IgnoreDataMember] (T017): a legacy class always deserializes a real,
+            // non-null TypeGraph (it is a [DataMember] with actual content), so the null check only
+            // covers the never-serialized case; OwningClass must be (re)set unconditionally, or
+            // GraphKeys.For(variable.TypeGraph) throws for every legacy import.
+            TypeGraph ??= new TypeGraph();
+            TypeGraph.OwningClass = Class;
         }
     }
 }

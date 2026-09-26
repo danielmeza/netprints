@@ -959,3 +959,49 @@ properties and arbitrary whitespace load to the same model as the canonical form
 non-string `$schema` throws). The "load → edit → save" half of DF-T21 (an edit through `DocumentMapper`
 between load and save) is exercised at the `DocumentMapper` level already (T035) and again end-to-end at
 T042; this task's tests stay at the format layer (no model edit, just tolerant-read-then-write).
+
+### T038 — `Legacy/LegacyProject.cs`, `Legacy/LegacyXmlDocumentFormat.cs`
+
+Read the real legacy classes first, as the design notes flagged: `Project`, `CompilationReference`,
+`AssemblyReference`, `FrameworkAssemblyReference`, `SourceDirectoryReference` in `src/NetPrints.Core/Core/`.
+None declares an explicit `[DataContract(Name=…, Namespace=…)]`, so each relies on the CLR default (Name
+= the type name, Namespace = `http://schemas.datacontract.org/2004/07/<CLR namespace>` =
+`.../NetPrints.Core`), confirmed against the checked-in `AllNodes.netpp` fixture's raw XML (root element
+`<Project xmlns="http://schemas.datacontract.org/2004/07/NetPrints.Core">`, `<CompilationReference
+i:type="FrameworkAssemblyReference">`). The legacy copies (`Legacy/LegacyProject.cs`) declare those same
+Name/Namespace explicitly on plain DTO classes (`List<T>` instead of `ObservableRangeCollection<T>`,
+plain auto-properties instead of `ModelObject`/CTK) — DataContractSerializer only cares about the
+contract shape, not the concrete collection or property-change-notification type. One non-obvious detail:
+`FrameworkAssemblyReference`'s `[DataMember]` is on its *private field* `frameworkRelativePath`, not a
+property, so the legacy copy's `FrameworkRelativePath` property needs `[DataMember(Name =
+"frameworkRelativePath")]` to match the original element name (lowercase) instead of defaulting to the
+property's own name.
+
+`LegacyXmlDocumentFormat` (`Legacy/`) is mechanical per document-format.md §2.2/§3, using
+`DocumentMapper.EnumerateGraphs` (made `internal` — it was `private`; shared rather than duplicated,
+since both this and `DocumentMapper.BuildLayout` need "every graph of a class" and it is 15 lines):
+`AssignLegacyMemberIds()` on the class, `AssignLegacyNodeIds()` then `GraphTypeInference.Relax` on every
+graph, then `mapper.ToDocument`.
+
+**Found while running this against the real `AllNodes.Everything.netpc` fixture (not exercised by any
+sub-phase A/B/C test until now, since T035's tests only ever built `Variable`s through its constructor,
+never through `DataContractSerializer`): `Variable.OnDeserialized`'s `if (TypeGraph is null)` guard never
+runs its `OwningClass = Class` assignment for a legacy class, because a legacy `Variable` always
+deserializes a real, non-null `TypeGraph` (a `[DataMember]` with actual content) — only a
+never-before-serialized `Variable` would hit the null branch.** `TypeGraph.OwningClass` (`[IgnoreDataMember]`,
+T017) therefore stayed at its default (`null`) for every legacy-imported variable, and
+`GraphKeys.For(variable.TypeGraph)` (called from `DocumentMapper.BuildLayout`, itself called from
+`ToDocument`) threw `InvalidOperationException` the moment the fixture had even one variable. Fixed at
+the root, in `Variable.OnDeserialized` (`src/NetPrints.Core/Core/Variable.cs`): `TypeGraph ??= new
+TypeGraph();` then `TypeGraph.OwningClass = Class;` unconditionally, instead of only inside the null
+branch — `Class` (a real `[DataMember]`) is already populated by the time this hook runs, matching the
+assumption the original fallback line already made. Verified: full `Core.Tests` suite green before and
+after (215 → 221, the six new legacy tests), including both fixture-regeneration characterization tests;
+whole-solution `dotnet build -c Release` still 0 warnings/0 errors.
+
+Test coverage: `LegacyProjectTests` (both fixtures' `.netpp` deserialize; `AllNodes.netpp` exercises all
+three reference kinds — framework, plain assembly, source directory — and both fixture-specific field
+values) in `tests/NetPrints.Core.Tests/Serialization/LegacyProjectTests.cs`; `LegacyXmlDocumentFormatTests`
+(DF-T18 legacy part: both fixtures' `.netpc` import through `ReadClassAsync` and then round-trip through
+`DocumentMapper.FromDocument` with zero issues; importing the same fixture twice gives
+`JsonNode.DeepEquals`-identical documents) in `.../LegacyXmlDocumentFormatTests.cs`.
