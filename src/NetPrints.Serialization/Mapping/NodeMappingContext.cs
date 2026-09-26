@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using NetPrints.Core;
+using NetPrints.Graph;
 using NetPrints.Serialization.Documents;
 
 namespace NetPrints.Serialization.Mapping;
@@ -186,6 +187,20 @@ public sealed class NodeMappingContext
     /// <param name="value">Value to convert, or <see langword="null"/>.</param>
     /// <returns>The converted value, or <see langword="null"/>.</returns>
     public object? FromValue(TypedValue? value) => value is null ? null : TypedValueConverter.FromTypedValue(value);
+
+    private readonly HashSet<MethodGraph> claimedMainReturnNodes = new();
+
+    /// <summary>
+    /// Returns <paramref name="graph"/>'s already-existing <see cref="MethodGraph.MainReturnNode"/> the
+    /// first time it is called for <paramref name="graph"/> in this context's lifetime, and
+    /// <see langword="null"/> on every later call for the same graph. Used by the <c>return</c> node
+    /// converter (<c>Mapping/BuiltIn/EntryReturnConverters.cs</c>) to tell the method graph's one
+    /// constructor-created main return node (reconfigured in place) apart from any additional return
+    /// node a document lists (created fresh; its pins replicate the main node's automatically).
+    /// </summary>
+    /// <param name="graph">Method graph to claim the main return node of.</param>
+    /// <returns>The graph's main return node, or <see langword="null"/> if already claimed.</returns>
+    internal ReturnNode? ClaimMainReturnNode(MethodGraph graph) => claimedMainReturnNodes.Add(graph) ? graph.MainReturnNode : null;
 
     private ParameterRef ToParameterRef(MethodParameter parameter)
     {

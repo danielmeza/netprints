@@ -691,6 +691,64 @@ read: `FromValue`/`FromTypedValue` return a *string* regardless of whether `Type
 or an enum name, which is exactly what an enum pin's `UnconnectedValue` setter requires — so no special
 casing is needed on the read side, only on write.
 
+### T030-T034 — a converter's `Id`/`Name`/`Pins` are placeholders; the "fixed node" pattern; enums vs. genericArgumentCount
+
+Grouped into one commit: `NodeDocumentConverterRegistry.BuiltIn` (T030) is only meaningful once its 23
+converters exist (T031-T034), and the "reuse the graph's constructor-created node" pattern below needed
+one small addition to `NodeMappingContext` (`ClaimMainReturnNode`, T029's file) shared by only one of
+them — splitting these five tasks into five commits would have left several individually non-buildable.
+
+**Every `INodeDocumentConverter.ToDocument` passes `node.Id, null, null` for the base `Id`/`Name`/`Pins`
+positional parameters.** The values are placeholders: document-format.md §2.6's `FromDocument`/`ToDocument`
+description assigns `Id` (from the model or the document), `Name` (omitted when it equals `DefaultName`)
+and `Pins` (renames/unconnected values, via `PinKeys`) **uniformly across every node kind** — that is
+`DocumentMapper`'s job (T035), not each converter's; duplicating pin/name logic in 23 places would be both
+wasteful and an easy place to drift. `DocumentMapper` is expected to build the final document with a
+record `with` expression (`converter.ToDocument(node, context) with { Id = ..., Name = ..., Pins = ... }`),
+which works across the base/derived boundary since C# records expose inherited positional members as
+ordinary settable-via-`with` properties. Symmetrically, `CreateNode`'s contract (`INodeDocumentConverter.cs`'s
+own XML doc) says the id/name/pins the *document* names are applied by the caller after `CreateNode`
+returns — converters only need to give the node the right kind-specific pins.
+
+**The five "fixed" node kinds (`methodEntry`, `constructorEntry`, `return`, `classReturn`, `typeReturn`)
+never call `new` for the node their graph's own constructor already created.** `MethodGraph`'s constructor
+unconditionally builds its `MethodEntryNode` + main `ReturnNode`; `ConstructorGraph`'s builds its
+`ConstructorEntryNode`; `ClassGraph`'s and `TypeGraph`'s build their one `ClassReturnNode`/`TypeReturnNode`
+— none of these constructors can be changed (sub-phase B model, used throughout the pre-P1 codebase too;
+changing them risks the "keep old tests green" gate) and none expose a way to skip that step. So
+`CreateNode` for these four singleton kinds fetches the graph's already-existing node
+(`((MethodGraph)graph).EntryNode`, `((ClassGraph)graph).ReturnNode`, …) and reconfigures it in place
+(`AddArgument()`/`AddInterfacePin()`/…) rather than constructing a new instance — by the time any node
+document is processed, the graph (built via its normal constructor before the mapper starts placing
+nodes) already has it. `return` is the one non-singleton case (a method can have extra early-return
+nodes beyond the main one): `NodeMappingContext.ClaimMainReturnNode(MethodGraph)` (internal, added to
+`NodeMappingContext.cs`) hands back the graph's pre-existing `MainReturnNode` the first time it's asked
+for a given graph and `null` afterward, so the converter reconfigures the main node once and constructs
+a fresh `ReturnNode` (whose constructor already replicates the main node's pins) for every one after
+that. `ConstructorEntryNode` has no argument mechanism yet (a pre-P1 `// TODO`, T103a); its converter
+throws `DocumentFormatException` if a document ever claims a nonzero `argumentCount`, since nothing can
+honor it.
+
+**Known format gap, not fixed here:** `CanSetPure`-capable node kinds (`CallMethodNode`, `ConstructorNode`,
+`ExplicitCastNode`, `TernaryNode`, `AwaitNode`) have no document field recording whether they were toggled
+pure — document-format.md §1.5's tables for these kinds list no such field, and their model constructors
+always build the impure (with exec pins) pin shape. A pure instance of one of these, if ever saved, loads
+back impure. Not exercised by AllNodes or any DF-Txx test (none toggles purity), so left as a discovered
+gap for the contract owner rather than an invented field.
+
+**`callMethod`'s `genericArgumentCount` is redundant with `method.genericArgs.Count`, kept for schema
+completeness only.** `CallMethodNode`'s constructor derives every pin — target, catch/exception, generic
+input type pins, arguments (with explicit defaults), returns — from the `MethodSpecifier` alone, so
+`CreateNode` is just `new CallMethodNode(graph, context.FromRef(doc.Method))`; the separate
+`GenericArgumentCount` field written by `ToDocument` (`node.InputTypePins.Count`) is not read back.
+
+**Registry validation for "a kind must contain `/` (extension) or be a known built-in name"** needed a
+concrete list to check the "known built-in" half against, since `INodeDocumentConverter` carries no
+separate "this is built-in" flag — added a private `KnownBuiltInKinds` `HashSet<string>` (the same 23
+strings `NodeDocumentConverterRegistry.BuiltIn` registers) to `NodeDocumentConverterRegistry`'s
+constructor. `eventEntry` (sub-phase G, T080) must be added to both `KnownBuiltInKinds` and `BuiltIn`
+together, or a hand-built eventEntry converter would fail registry construction.
+
 Known limitation carried into T035/T042: `TypedValueConverter.FromTypedValue`'s enum branch resolves
 the type name with `Type.GetType(typeName, throwOnError: false)`, which only succeeds for BCL enums
 (`System.DayOfWeek`, `System.IO.FileAccess`, …) and enums declared in the calling assembly — an enum

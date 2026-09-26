@@ -81,11 +81,11 @@ Checkpoint E (plan.md). Out of scope (follow-ups, do not implement): `netprints 
 - [x] T027 [US1] `Json/CanonicalJsonWriter.cs` exactly per document-format.md §2.3.1 + DF-T04 in `tests/NetPrints.Core.Tests/Serialization/CanonicalJsonTests.cs` (expected text literal), plus: every inline rule 1–5 and both block forms asserted separately; output re-parses; empty `{}`/`[]` inline; `NaN` number → `ArgumentException`
 - [x] T028 [US1] `Mapping/TypedValueConverter.cs` + DF-T07
 - [x] T029 [US1] `Mapping/NodeMappingContext.cs` + `ToRef`/`FromRef` tests in `…/Serialization/RefMappingTests.cs`
-- [ ] T030 [US1] `Mapping/INodeDocumentConverter.cs`, `NodeDocumentConverterRegistry.cs` + registry tests
-- [ ] T031 [P] [US1] Built-in converters `methodEntry`, `constructorEntry`, `return`, `classReturn`, `typeReturn` in `Mapping/BuiltIn/EntryReturnConverters.cs`
-- [ ] T032 [P] [US1] `callMethod`, `constructor`, `makeDelegate`, `variableGetter`, `variableSetter` in `Mapping/BuiltIn/MemberConverters.cs`
-- [ ] T033 [P] [US1] `literal`, `type`, `makeArrayType`, `makeArray`, `explicitCast`, `typeOf`, `default` in `Mapping/BuiltIn/ValueConverters.cs`
-- [ ] T034 [P] [US1] `ifElse`, `forLoop`, `ternary`, `await`, `throw`, `reroute` in `Mapping/BuiltIn/FlowConverters.cs`
+- [x] T030 [US1] `Mapping/INodeDocumentConverter.cs`, `NodeDocumentConverterRegistry.cs` + registry tests
+- [x] T031 [P] [US1] Built-in converters `methodEntry`, `constructorEntry`, `return`, `classReturn`, `typeReturn` in `Mapping/BuiltIn/EntryReturnConverters.cs`
+- [x] T032 [P] [US1] `callMethod`, `constructor`, `makeDelegate`, `variableGetter`, `variableSetter` in `Mapping/BuiltIn/MemberConverters.cs`
+- [x] T033 [P] [US1] `literal`, `type`, `makeArrayType`, `makeArray`, `explicitCast`, `typeOf`, `default` in `Mapping/BuiltIn/ValueConverters.cs`
+- [x] T034 [P] [US1] `ifElse`, `forLoop`, `ternary`, `await`, `throw`, `reroute` in `Mapping/BuiltIn/FlowConverters.cs`
 - [ ] T035 [US1] `Mapping/DocumentMapper.cs` (class mapping, member ids, pins by key via `PinKeys`, default names, edges, integer layout, auto-placement, preserved unknown nodes, issues `NPD001–004`, `GraphTypeInference.Relax` at the end of each graph per document-format.md §3.1) + DF-T06, DF-T08, DF-T19 (document part, incl. the `M(int a, int b)` → `M(int a, string inserted, int b)` hand edit), DF-T20 (document part), DF-T22 (document part), DF-T25, DF-T27 (JSON-path half) in `tests/NetPrints.Core.Tests/Serialization/DocumentMapperTests.cs`
 - [ ] T036 [US1] `Migrations/IDocumentMigration.cs`, `DocumentMigrator.cs` + DF-T10
 - [ ] T037 [US1] `Json/JsonDocumentFormat.cs` (read pipeline with `$schema` stripping, write pipeline with `$schema` first, document-format.md §2.2) + DF-T09, DF-T21 in `tests/NetPrints.Core.Tests/Serialization/JsonDocumentFormatTests.cs`
