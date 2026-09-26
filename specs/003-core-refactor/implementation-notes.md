@@ -179,6 +179,21 @@ tests. General lesson carried into T021+: any new in-memory-only navigation this
 or repurpose an existing `[DataMember]` property for it, even when the existing property's static
 type already fits, because doing so silently changes what legacy XML serializes.
 
+### T023 — Checkpoint B reached
+
+All of sub-phase B (T007–T022) is done. Verified: `dotnet build NetPrints.slnx -c Release` 0
+warnings/0 errors solution-wide (11 new projects since T021 included); full suite 310 total, 301
+succeeded, 9 skipped, 0 failed (`dotnet test --solution NetPrints.slnx -c Release --no-build --
+--ignore-exit-code 8`), including the full headless UI suite; `dotnet format NetPrints.slnx
+--verify-no-changes` clean with no `--exclude-diagnostics` (T013 already dropped the RS1024
+exclusion from CI; this run confirms `CONTRIBUTING.md`'s own command, corrected in this commit to
+match, is clean too); the four sub-phase A characterization gates (`GoldenCSharpTests`,
+`NotificationMapTests`, `AllNodesFixtureRegenerationTests`, `HelloWorldSampleTests`) all still pass;
+no reference to Fody remains outside the legacy VSIX (`.gitattributes`' `FodyWeavers.xml/.xsd`
+lines, kept for the out-of-scope VS extension per the constitution). `CONTRIBUTING.md`'s own
+"before you open a PR" commands still had the RS1024 exclusion T013 removed from CI; corrected here
+so contributors' local checks match CI (T013 only updated `ci.yml`, not this file).
+
 ### T022 — `UnhandledExceptionHandler`'s two `internal` reporting methods
 
 ED-T12 ("logs 1001/1002 through a collecting logger and still shows the dialog") lives in
