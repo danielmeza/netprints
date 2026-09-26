@@ -1799,3 +1799,121 @@ No `!`/`null!`/`default!` added. Verified: `dotnet test --project tests/NetPrint
 -- --ignore-exit-code 8` — 292 total (289 → 292, +3: `DefaultProjectProfileTests`), 0 failed; `dotnet
 build NetPrints.slnx -c Release` 0 warnings/0 errors solution-wide; `dotnet format NetPrints.slnx
 --verify-no-changes` clean.
+
+### T053 — `MsBuildProjectSystem.cs`; two spikes changed the plan, two records widened beyond §4's snippet
+
+**`-getProperty:TargetPath` alone does not build** — found by spiking real `dotnet build` invocations
+(a fresh temp dir each time) before writing `BuildAsync`: `dotnet build t.csproj -v:quiet
+-getProperty:TargetPath` exits `0` and prints the target path even when `Program.cs` is not valid C#, and
+never writes `bin/`. `-getProperty`/`-getItem`/`-getTargetResult` put the whole invocation into
+evaluate-only mode unless a target is *also* requested explicitly; `dotnet build`'s own default `Build`
+target apparently does not count for this purpose. Fixed by adding `-t:Build` to the fixed argument list
+project-system.md §4 gives verbatim (`-t:Build -getProperty:TargetPath`) — re-spiked with invalid C# and
+got the expected `exit 1` plus a `CS1002` on stderr; a warning-only build still exits `0` with the
+warning on stderr and the target path on stdout. Same category of gap as T047's MSB4092: the contract's
+literal command line doesn't do what its own row says ("`BuildAsync` | ... Cancellation kills the process
+tree. `OutputAssemblyPath` from `-getProperty:TargetPath` in the same invocation.") without this addition.
+Also confirmed by spiking: at `-v:quiet`, csc errors/warnings go to **stderr** and the bare
+`-getProperty` value to **stdout**, cleanly separated — `BuildAsync` parses `MsBuildMessageParser` over
+the concatenation of both for `Messages`, but reads `OutputAssemblyPath` from stdout alone (trimmed,
+single line; `null` if empty, e.g. evaluation itself failed before a target path could be produced).
+
+**`ProjectStartRequest` widened with an optional `EnvironmentVariables` property** (project-system.md
+§4's own code block has only `FileName`/`Arguments`/`WorkingDirectory`): `BuildAsync`'s row explicitly
+needs `DOTNET_CLI_UI_LANGUAGE=en`/`MSBUILDTERMINALLOGGER=off` on the `dotnet build` invocation, and
+`IProcessRunner` is the only execution path there is — mutating `Environment.SetEnvironmentVariable` on
+the current process before calling `RunAsync` was rejected outright (races under "all members are
+thread-safe", project-system.md §4). Added as the 4th, optional (default `null`) constructor parameter,
+so T050's `ProcessRunnerTests.cs` call sites needed no changes; `ProcessRunner.RunAsync` applies each pair
+via `ProcessStartInfo.Environment`.
+
+**`ProjectSystemOptions` widened with `NetPrintsSdkVersion`** (project-system.md §4 only documents
+`ExtraProperties`): `CreateAsync`'s own fixed signature (T050, `IProjectSystem.CreateAsync(string
+directory, string projectName, IProjectProfile profile, string rootNamespace, CancellationToken)`) has
+nowhere to receive a version for the `{NetPrintsSdkVersion}` placeholder, and there is still no
+authoritative source for it — MinVer isn't wired up until T109 (the exact gap sub-phase D's notes already
+flagged for pack-and-consume tests). Added to `ProjectSystemOptions` as a second, required constructor
+parameter so a caller supplies it explicitly until T109; that task's implementer should look here as well
+as at `SdkPackageTests.cs`'s `-p:Version=` comment when doing the "real one-time migration" the D notes
+describe.
+
+**`LoadAsync`'s `MSBuildWorkspace` needs `LoadMetadataForReferencedProjects = true`** for a
+`ProjectReference` to show up in `ProjectSnapshot.References` at all: by default `MSBuildWorkspace` opens
+a referenced project as a second project in the same workspace (a Roslyn `ProjectReference`, not a
+`MetadataReference`), which `ProjectSnapshot` — flat, single-project, no concept of a solution — has
+nowhere to put. First attempt at PS-T08 failed exactly this way (assertion dump showed every framework
+assembly and the packaged reference, but no `OtherLib.dll`) until this was set; the referenced project
+must already be built (its output DLL on disk) for the metadata fallback to find it, which PS-T08's own
+test setup does before calling `LoadAsync`.
+
+**`ProjectSnapshot.DeclaredReferences` (and `ApplyAsync`'s edits) work off `Project.Xml` (the
+unevaluated `ProjectRootElement`), not `Project.GetItems`**: `evaluated.GetItems("Compile")` returns one
+*expanded* `ProjectItem` per matched file, so a single `<Compile Include="Extra/**/*.cs"
+NetPrintsSourceDirectory="true" />` declaration would otherwise turn into one `ProjectReferenceInfo` per
+file under `Extra/` instead of one entry for the directory. `Project.Xml.Items` keeps the literal,
+unexpanded `Include` string, which also makes it the same representation `ApplyAsync`'s
+`SourceDirectoryGlob`/`StripSourceDirectoryGlob` helpers already need to find and rewrite a specific
+declared item — one glob helper, shared by both directions (load and edit) instead of two.
+
+**`CompilationOptionsJson`'s shape is a narrow, documented placeholder**: project-system.md §4 gives only
+a comment ("serialized language version, nullable, usings; consumed by `CodeAnalysisSession`"), and
+`CodeAnalysisSession` itself doesn't exist until T089/T092+ (sub-phase I) to say more. Implemented as
+`{"LanguageVersion": "...", "Nullable": "...", "ImplicitUsings": true|false}` from the Roslyn project's
+`ParseOptions`/`CompilationOptions` plus the evaluated `ImplicitUsings` MSBuild property — a reasonable,
+revisitable guess, not a contract. T089's implementer should treat this as a placeholder to replace, not
+a shape to preserve.
+
+**Multi-targeting (`TargetFrameworks`, NPW004) is implemented but has no dedicated test in this batch**:
+`Evaluate` retargets to the first declared framework and adds an `Info` message when `TargetFramework` is
+empty but `TargetFrameworks` is not, per project-system.md §1's settings table row. None of PS-T07/T08/T09
+/T11 exercise a multi-targeted fixture, so this path is covered only by inspection, not a test — worth a
+dedicated test whenever multi-targeting first matters to a caller (the References dialog, T059+).
+
+**`ExternalProcess.RunDotnetAsync`** (`tests/NetPrints.Core.Tests/Projects/ExternalProcess.cs`): factored
+out of `SdkTargetsTests.cs`'s and `SdkPackageTests.cs`'s private, near-identical copies once
+`MsBuildProjectSystemTests.cs` became the third test file needing the exact same "read both streams
+concurrently, then wait for exit" pattern — exactly the threshold sub-phase D/E's own notes called out
+("or factoring into a shared test helper if a third test needs it"). Both existing files now call it
+instead of keeping their own copy; neither test's behavior changed.
+
+A `[ModuleInitializer]` (`MsBuildTestInitializer.cs`) registers MSBuild once for the whole
+`NetPrints.Core.Tests` assembly, before any test can trigger a `Microsoft.Build`-namespace type load —
+the mechanism project-system.md §4's own `MsBuildRegistration` doc names for test projects.
+
+No `!`/`null!`/`default!` added. Verified: `dotnet test --project tests/NetPrints.Core.Tests -c Release
+-- --ignore-exit-code 8` — 297 total (292 → 297, +5: PS-T07, PS-T08, PS-T09, the `CreateAsync` part of
+PS-T15, PS-T11), run twice to check for flakiness around real restore/build/pack, 0 failed both times;
+`dotnet build NetPrints.slnx -c Release` 0 warnings/0 errors solution-wide; `dotnet format NetPrints.slnx
+--verify-no-changes` clean. Full solution suite, own session-owned `Xvfb :171` (`pgrep -af Xvfb` checked
+first, nothing running; no other agent's `DISPLAY`, never `:1`) — `DISPLAY=:171 dotnet test --solution
+NetPrints.slnx -c Release -- --ignore-exit-code 8`: **528 total, 519 succeeded, 9 skipped** (the same
+Desktop E2E / headless-driver capability skips as every previous checkpoint), **0 failed** — 512 → 528
+across this T050–T053 batch (+6, +2, +3, +5 = +16, matching exactly). Xvfb killed immediately after the
+run; no processes or temp directories left behind (every new test cleans up its own temp directory in a
+`finally`).
+
+## Notes for the next batch (T054–T058)
+
+- **T054 (`ProjectConverter`)** can reuse `ProjectFiles.EnsureGitAttributesAsync` (T050) directly, and
+  should reuse `DefaultProjectProfile.ProjectTemplate` for the converted `.csproj` exactly the way
+  `MsBuildProjectSystem.CreateAsync` (T053) does its own placeholder substitution — the substitution
+  logic itself is currently private to `MsBuildProjectSystem`; consider whether it belongs on a shared,
+  public helper (e.g. on `IProjectProfile` or a small static utility in `NetPrints.Core.Projects`) now
+  that a second caller needs it, rather than duplicating the five-placeholder `Replace` chain a third
+  time.
+- **`ProjectSystemOptions.NetPrintsSdkVersion`** (T053's own addition) is the version `ProjectConverter`
+  should also use for the converted project's `NetPrints.Sdk` `PackageReference` — check whether
+  `ProjectConverter`'s constructor (project-system.md §5: `ProjectConverter(LegacyXmlDocumentFormat
+  legacy, JsonDocumentFormat json, IProjectProfile defaultProfile, string netPrintsSdkVersion,
+  ILogger<ProjectConverter> logger)`) already takes its own `netPrintsSdkVersion` parameter directly
+  (it does) — so no dependency on `ProjectSystemOptions` there, but worth keeping the two version strings
+  supplied consistently by whatever composes both types in the editor/CLI.
+- **`MsBuildProjectSystem`'s private placeholder-substitution helper** and **`ExternalProcess`'s "read
+  both streams concurrently" pattern** are both now duplicated or nearly so in more than one place; T054
+  is a natural point to notice if a third occurrence of either shows up and, if so, factor it out then
+  (same reasoning as this task's own `ExternalProcess` extraction).
+- **`ReflectionProvider` (T058)** takes `IReadOnlyList<SourceFile>` directly — `SourceFile` already
+  exists (pulled forward at T050) and needs no changes for T058 to consume it.
+- Nothing in T054–T058 is blocked on anything left open by this batch; `ExtensionRegistry` (T068) and
+  `GraphCodeGenerator`'s narrower constructor (T068/T089) remain the only two documented, deliberate
+  narrowings still outstanding from earlier sub-phases.

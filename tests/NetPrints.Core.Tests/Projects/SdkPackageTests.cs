@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using NetPrints.Core;
@@ -27,35 +25,9 @@ namespace NetPrints.Tests.Projects
 
         private static readonly NodeDocumentConverterRegistry Registry = new(NodeDocumentConverterRegistry.BuiltIn, []);
 
-        private static async Task<(int ExitCode, string Output)> RunDotnetAsync(string workingDirectory,
-            IReadOnlyDictionary<string, string>? environment, params string[] args)
-        {
-            var startInfo = new ProcessStartInfo("dotnet")
-            {
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                WorkingDirectory = workingDirectory,
-            };
-            foreach (string arg in args)
-            {
-                startInfo.ArgumentList.Add(arg);
-            }
-
-            if (environment is not null)
-            {
-                foreach ((string key, string value) in environment)
-                {
-                    startInfo.Environment[key] = value;
-                }
-            }
-
-            using Process process = Process.Start(startInfo) ?? throw new InvalidOperationException("dotnet did not start.");
-            Task<string> stdOutTask = process.StandardOutput.ReadToEndAsync(TestContext.Current.CancellationToken);
-            Task<string> stdErrTask = process.StandardError.ReadToEndAsync(TestContext.Current.CancellationToken);
-            await Task.WhenAll(stdOutTask, stdErrTask, process.WaitForExitAsync(TestContext.Current.CancellationToken));
-            return (process.ExitCode, stdOutTask.Result + stdErrTask.Result);
-        }
+        private static Task<(int ExitCode, string Output)> RunDotnetAsync(string workingDirectory,
+            IReadOnlyDictionary<string, string>? environment, params string[] args) =>
+            ExternalProcess.RunDotnetAsync(workingDirectory, environment, args);
 
         private static async Task WriteEmptyClassGraphAsync(string path, string ns, string name)
         {

@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -52,26 +51,8 @@ namespace NetPrints.Tests.Projects
                 """);
         }
 
-        private static async Task<(int ExitCode, string Output)> RunDotnetAsync(string workingDirectory, params string[] args)
-        {
-            var startInfo = new ProcessStartInfo("dotnet")
-            {
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                WorkingDirectory = workingDirectory,
-            };
-            foreach (string arg in args)
-            {
-                startInfo.ArgumentList.Add(arg);
-            }
-
-            using Process process = Process.Start(startInfo) ?? throw new InvalidOperationException("dotnet did not start.");
-            Task<string> stdOutTask = process.StandardOutput.ReadToEndAsync(TestContext.Current.CancellationToken);
-            Task<string> stdErrTask = process.StandardError.ReadToEndAsync(TestContext.Current.CancellationToken);
-            await Task.WhenAll(stdOutTask, stdErrTask, process.WaitForExitAsync(TestContext.Current.CancellationToken));
-            return (process.ExitCode, stdOutTask.Result + stdErrTask.Result);
-        }
+        private static Task<(int ExitCode, string Output)> RunDotnetAsync(string workingDirectory, params string[] args) =>
+            ExternalProcess.RunDotnetAsync(workingDirectory, environment: null, args);
 
         // PS-T01: first build generates all graphs and compiles; second build logs "Skipping target
         // NetPrintsGenerate"; touching one graph regenerates only it.

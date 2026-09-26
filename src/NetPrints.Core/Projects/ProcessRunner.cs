@@ -28,6 +28,14 @@ public sealed class ProcessRunner : IProcessRunner
             startInfo.ArgumentList.Add(argument);
         }
 
+        if (request.EnvironmentVariables is not null)
+        {
+            foreach ((string key, string value) in request.EnvironmentVariables)
+            {
+                startInfo.Environment[key] = value;
+            }
+        }
+
         using var process = new Process { StartInfo = startInfo };
         process.Start();
 

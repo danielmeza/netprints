@@ -11,4 +11,12 @@ namespace NetPrints.Projects;
 /// <param name="Arguments">Command-line arguments, one per element (never a single, shell-quoted
 /// string).</param>
 /// <param name="WorkingDirectory">Working directory the process is started in.</param>
-public sealed record ProcessStartRequest(string FileName, IReadOnlyList<string> Arguments, string WorkingDirectory);
+/// <param name="EnvironmentVariables">Environment variables to set (or override) on top of the
+/// current process's own environment, or <see langword="null"/> to inherit it unchanged
+/// (<see cref="IProjectSystem.BuildAsync"/> uses this for <c>DOTNET_CLI_UI_LANGUAGE</c> and
+/// <c>MSBUILDTERMINALLOGGER</c>, project-system.md §4).</param>
+public sealed record ProcessStartRequest(
+    string FileName,
+    IReadOnlyList<string> Arguments,
+    string WorkingDirectory,
+    IReadOnlyDictionary<string, string>? EnvironmentVariables = null);
