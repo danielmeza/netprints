@@ -1724,3 +1724,46 @@ failed; `dotnet build NetPrints.slnx -c Release` 0 warnings/0 errors solution-wi
 already existed as an empty stub project referencing Core and the MSBuild/Locator/Workspaces packages
 from sub-phase D's `Directory.Packages.props` wiring, so nothing there needed to change for T050 to
 compile); `dotnet format NetPrints.slnx --verify-no-changes` clean.
+
+### T051 — `MsBuildRegistration.cs`, `MsBuildMessageParser.cs`; MSBL001 also needs fixing in `Core.Tests`
+
+`MsBuildRegistration.EnsureRegistered(ILogger)` is exactly the UnrealSharp logic
+(`UnrealSharp.Plugins.Main.TryRegisterMSBuild`, verified by decompiling the checked-out
+`UnrealSharp/Managed/UnrealSharp/UnrealSharp.Plugins/Main.cs` read-only): newest
+`QueryVisualStudioInstances()` result → `RegisterInstance`, else `RegisterDefaults()`. Idempotency uses
+`MSBuildLocator.IsRegistered` (decompiled `Microsoft.Build.Locator.dll` 1.11.2 to confirm: it is a plain
+`s_registeredHandler != null` check, and `Unregister()` is a public-but-no-op stub — once registered,
+always registered for the process, so a second call must short-circuit rather than try to switch
+instances). "Returns `false` when no SDK is found" (project-system.md §4) is implemented as a
+`try`/`catch (InvalidOperationException)` around `RegisterDefaults()`: decompiling confirmed that's
+exactly what it throws (message "No instances of MSBuild could be detected…") when
+`GetInstances(Default).FirstOrDefault()` is null internally — the same query `QueryVisualStudioInstances()`
+already ran, so the two calls agreeing is not a race, just the same discovery logic run twice. Logs 4005
+on that path only.
+
+`MsBuildMessageParser.Parse` implements project-system.md §4.1's regex verbatim as a
+`[GeneratedRegex]`. PS-T10 (`MsBuildMessageParserTests.cs`) covers a csc error with path/line/col/code, a
+csc warning with the trailing `[project path]` suffix real invocations add (confirmed stripped from
+`Message`, per the regex's own optional `(\s+\[[^\]]+\])?` group), MSB/NU warnings with no line/column,
+a generator error keeping its `(graph …, node …)` suffix inside `Message` (§4.1: "`DiagnosticMapper`
+(editor) extracts it" — not this parser's job), and three non-matching lines from a real `dotnet build`
+tail (`Build FAILED.`, `1 Warning(s)`, `1 Error(s)`) confirmed ignored.
+
+Referencing `NetPrints.Workspace` from `tests/NetPrints.Core.Tests` (needed for both files) hit
+`MSBL001` in `Core.Tests` itself, even though `NetPrints.Workspace.csproj` builds clean alone:
+`Microsoft.Build.Locator`'s `buildTransitive` check inspects each project's own resolved
+`RuntimeCopyLocalItems`, and `PrivateAssets="all"` on `Microsoft.Build`/`Microsoft.Build.Framework`
+inside `NetPrints.Workspace.csproj` only suppresses the edge *from that exact `PackageReference`*— it
+does not suppress `Microsoft.CodeAnalysis.Workspaces.MSBuild`'s own (unexcluded) transitive dependency
+on `Microsoft.Build.Framework`, which flows to any project referencing `NetPrints.Workspace` normally,
+`Core.Tests` included. Fix: add the identical pair of `PackageReference`s (`ExcludeAssets="runtime"
+PrivateAssets="all"`, same versions via central package management) directly to
+`NetPrints.Core.Tests.csproj` too — the same override-wins-locally behavior that already makes
+`NetPrints.Workspace.csproj` build clean now also applies within `Core.Tests`. T053's implementer should
+expect to need the same pair in any other test project that references `NetPrints.Workspace` (or
+transitively depends on `Microsoft.CodeAnalysis.Workspaces.MSBuild`) for the first time.
+
+No `!`/`null!`/`default!` added. Verified: `dotnet test --project tests/NetPrints.Core.Tests -c Release
+-- --ignore-exit-code 8` — 289 total (287 → 289, +2: `MsBuildMessageParserTests`), 0 failed; `dotnet
+build NetPrints.slnx -c Release` 0 warnings/0 errors solution-wide; `dotnet format NetPrints.slnx
+--verify-no-changes` clean.
