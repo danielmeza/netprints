@@ -1767,3 +1767,35 @@ No `!`/`null!`/`default!` added. Verified: `dotnet test --project tests/NetPrint
 -- --ignore-exit-code 8` — 289 total (287 → 289, +2: `MsBuildMessageParserTests`), 0 failed; `dotnet
 build NetPrints.slnx -c Release` 0 warnings/0 errors solution-wide; `dotnet format NetPrints.slnx
 --verify-no-changes` clean.
+
+### T052 — `DefaultProjectProfile.cs` only; `IProjectProfile.cs`/`ClassTemplate.cs` were already there (T050)
+
+As flagged in T050's own notes: `IProjectProfile.cs` and `ClassTemplate.cs` already exist (pulled
+forward there because `IProjectSystem.CreateAsync` needed `IProjectProfile` before this task). Confirmed
+both match extension-points.md §5/data-model.md §5 exactly, unchanged; this task adds only
+`DefaultProjectProfile.cs`.
+
+`ProjectTemplate` uses four of the interface's five documented placeholders
+(`{TargetFramework}`, `{RootNamespace}`, `{ProfileId}`, `{NetPrintsSdkVersion}`) — not `{ProjectName}`:
+project-system.md §1's own settings table says `Project.Name` is `$(MSBuildProjectName)`, the file name
+without `.csproj`, never a value written *inside* the file, so the default template has nowhere to put
+it. `{ProjectName}` stays available to a profile that does want it (e.g. in a comment or a
+profile-specific property); `IProjectSystem.CreateAsync` (T053) still substitutes all five before
+writing, it's just a no-op for this one on this particular template. Substitution itself is
+`CreateAsync`'s job, not `IProjectProfile`'s (project-system.md §4's own table entry: "Writes
+`<directory>/<projectName>.csproj` from `profile.ProjectTemplate`"), so `ProjectTemplate` here is the raw
+template text with literal `{…}` tokens, not a substituted string.
+
+The empty-class factory (`CreateEmptyClass`) defaults `Visibility` to `Public`, not the legacy
+`Project.CreateNewClass()`'s `Internal` (`ClassGraph.Visibility`'s own default): the legacy method is
+unaffected (still defaults to `Internal`, unchanged) and this factory is only wired up once T055 adds
+`Project.CreateNewClass(IProjectProfile)`, so there is no behavior change yet to any caller — `Public` was
+simply judged the more useful default for a brand-new class through the New Class dialog. `SuperType`
+needs no explicit wiring: a fresh `ClassGraph`'s `ReturnNode.SuperTypePin` has no inferred type yet, so
+`SuperType` already falls back to `TypeSpecifier.FromType<object>()` (`ClassGraph.cs`), matching
+`BaseTypes[0]`.
+
+No `!`/`null!`/`default!` added. Verified: `dotnet test --project tests/NetPrints.Core.Tests -c Release
+-- --ignore-exit-code 8` — 292 total (289 → 292, +3: `DefaultProjectProfileTests`), 0 failed; `dotnet
+build NetPrints.slnx -c Release` 0 warnings/0 errors solution-wide; `dotnet format NetPrints.slnx
+--verify-no-changes` clean.
