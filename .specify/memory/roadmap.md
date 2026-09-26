@@ -32,13 +32,14 @@ when it is started.
 | P2 | Catalog tooling + Spectre CLI | ~2.5 w | P1 | not started |
 | P3a | Editor shell | ~2–3 w | P0, P1 | not started |
 | P3 | Editor extension host | ~2.5 w | P0, P1, P3a | not started |
+| P3b | Declarations and code style | ~3–4 w | P1, P3a, P3 | not started (owner-approved 2026-09-26) |
 | P4 | VSIX (WpfAvaloniaHost) | ~2 w | P3 | **deferred** by owner (2026-09-24) |
 | P5 | VS Code extension + browser build + sidecar | ~2.5–3 w | P3 | not started |
 | P6 | Usability (Blueprint-level ease of use) | ~4–5 w | P2, P3 | not started |
 | P7 | Structured code generation | ~2–3 w | P1 | not started |
 | P8 | Performance | ~1.5–2 w | P1 | not started |
 | U1 | UnrealSharp codegen + catalog (NetPrintsUnreal) | ~2 w | P2 | not started |
-| U2 | Unreal nodes | ~2–3 w | U1 | not started |
+| U2 | Unreal nodes | ~2–3 w | U1, P3b | not started |
 | U3 | UE plugin, launcher, upstream PR | ~1.5 w | U1, P3 | not started |
 
 ### P0 — Modernize build + Avalonia editor at parity
@@ -163,6 +164,54 @@ inspector sections, panels, settings pages), sample non-Unreal extension, anythi
 left beyond P0 parity. Publishes the `NetPrints.Serialization` and `NetPrints.Extensibility`
 packages for extension authors. No performance work here (owner decision 2026-09-25: see P8).
 
+### P3b — Declarations and code style (owner-approved 2026-09-26)
+One extensible engine for what NetPrints can declare and how it writes C#. It is **extensible from the
+start**: the built-in kinds, styles and modifiers are registered through the same public API that
+profiles and P3 extensions use, so custom emitters need no core changes.
+- **Declaration kinds registry.** Each kind's descriptor has:
+  - its creation template;
+  - the members, graphs and modifiers it allows;
+  - its inspector sections and editor UI (through the P3 contribution points);
+  - its emission styles.
+
+  The built-in kinds are `class` (today's only kind), `interface`, `struct`/`readonly struct`/`record struct`,
+  `record`, `enum` (underlying type, members with values, `[Flags]`) and `delegate`. The class document gets a
+  `kind` field (default `class`); the schema stays v1 until the version cut, so no migration is needed.
+- **Emission styles.** A feature can have several C# forms. This phase ships **one default style per kind**;
+  the other forms are registered in later phases without changing the model. Examples:
+  - extension methods (`this` or C# 14 `extension` blocks);
+  - the `field` keyword or a backing field;
+  - primary constructors;
+  - collection expressions;
+  - file-scoped or block namespaces.
+
+  A style declares its minimum `LangVersion`. Reading referenced code recognizes every form; today only
+  classic `this` extension methods are recognized.
+- **Code style from `.editorconfig`, natively.** The project system already loads the project with
+  `MSBuildWorkspace`, so Roslyn resolves the project's or solution's `.editorconfig` per document.
+  - Formatting: the generated C# goes through `Formatter.FormatAsync` with the document's options.
+  - Code-style options are read from `AnalyzerConfigOptions` and followed by the emitters: modifier order
+    (`csharp_preferred_modifier_order`), namespace style (`csharp_style_namespace_declarations`), primary
+    constructors, collection expressions, `var` and braces.
+  - The default style comes from, in order: an `.editorconfig` preference, then the profile, then a per-class
+    override (stored only when it differs).
+- **Parameter modifiers** (moved here from the candidates). Today, arguments of a user-defined method are by
+  value only; `ref`/`out`/`in` and optional values work only when calling existing .NET methods; `params` is
+  not detected.
+  - The modifier registry uses the same descriptor style. Each descriptor has the C# it emits, where it
+    applies, an **exclusivity group** and its constraints: last parameter, array or collection type, needs a
+    default, first parameter of a static class, minimum C# version.
+  - Built-in: `ref`/`out`/`in`/`ref readonly` (one exclusive group), `params`, a default value, `scoped`, `this`.
+  - Per-parameter editing: selecting a parameter pin shows its modifiers. Exclusive groups are radio options,
+    and invalid combinations are disabled with the reason. The pin context menu and the inspector share one
+    model.
+  - On the call side, a `params` method shows one pin per element plus "add pin".
+- **Custom kinds from libraries.** Example and P3 sample extension: an Ardalis **SmartEnum** kind, edited like
+  an enum's member list and emitted as `sealed class X : SmartEnum<X>` with `static readonly` fields.
+  UnrealSharp's `[UStruct]`/`[UEnum]`/`[UInterface]` (U2) build on the built-in kinds.
+- **P1 guard:** P1's translation seams and class/member emitters (sub-phase F, T065) must not assume every
+  declaration is a class. The P1 Opus review checks this; nothing of this phase is built in P1.
+
 ### P4 — VSIX (deferred)
 Deferred by the project owner on 2026-09-24; revisit after P3/P5. When resumed:
 Spike WpfAvaloniaHost in VS 2022/2026 (assembly conflicts); editor factory for `.netpc.json`
@@ -281,44 +330,7 @@ Block-scoped local variables (owner idea, 2026-09-25): variables owned by for/fo
   irregular graphs where a node belongs to several scopes.
 
 ### Candidates (unscheduled)
-- **Parameter modifiers** (owner-approved as a candidate, 2026-09-26; not in P1). Today, arguments of a
-  user-defined method are always by value; `ref`/`out`/`in` and optional values work only when calling
-  existing .NET methods, and `params` is not detected (callers pass the array).
-  - An extensible **modifier registry**. Each descriptor has:
-    - an id and the C# it emits;
-    - where it applies: method, constructor, delegate or event;
-    - an **exclusivity group**;
-    - constraints: last parameter only, array or collection type, needs a default value, first parameter of
-      a static class, minimum C# version from the profile;
-    - its pins and data.
-  - Built-in descriptors: the pass modes `ref`/`out`/`in`/`ref readonly` (one exclusive group), `params`
-    (excludes the pass modes, last parameter), an optional default value (excludes `out`/`ref`/`params`),
-    `scoped`, and `this` for extension methods.
-  - Profiles and P3 extensions can register more, for example UnrealSharp specifiers.
-  - Stored as optional fields on the argument in the graph document, so older files stay valid.
-  - Per-parameter editing: selecting a parameter pin on the entry node shows its modifiers.
-    - Exclusive groups show as radio options and the rest as checkboxes.
-    - Invalid combinations are disabled, with the reason in a tooltip.
-    - The same model feeds both the pin's context menu and a parameter section in the P3a inspector, so
-      schedule it after the P3a inspector/docking; a context-menu-only version before it would be rework.
-  - The call side: a `params` method shows one pin per element, plus "add pin".
-- **C# syntax variants** (owner idea, 2026-09-26; planned with P7 because it is emission work). Some features
-  have an old and a new C# form, and NetPrints must both **emit** and **recognize** either one.
-  - Today, classic `this` extension methods are recognized in referenced code (`ReflectionProvider`), but
-    C# 14 extension members (`extension(T x) { … }` blocks, extension properties) are not. NetPrints graphs
-    can't define extensions in either form.
-  - A **syntax-variant registry** in the translator: per feature, the forms, the minimum C# version from the
-    project's `LangVersion`, and an emitter per form. Examples:
-    - extension methods: `this` parameter or `extension` block;
-    - an auto property with the `field` keyword, or a backing field;
-    - primary constructors;
-    - collection expressions;
-    - file-scoped namespaces.
-  - The choice comes from the profile, with a per-class override: for example, an extension class chooses
-    classic or block syntax. The class document stores it only when it differs from the default.
-  - Reading referenced code recognizes every form, so the catalog shows one "extension method" node either way.
-  - Profiles and P3 extensions can add variants. It shares the descriptor style and the `this` modifier with
-    Parameter modifiers.
+- Parameter modifiers and C# syntax variants: moved into **P3b** (2026-09-26).
 - **Visual graph diff** (2026-09-25): compare two versions of a graph (from git) with added nodes and
   connections in green, removed in red and moved in grey. The stable ids of P1 make it feasible; it serves
   PR review and is the base for the `netprints merge` driver.
