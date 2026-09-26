@@ -1,6 +1,8 @@
 <!--
 Sync Impact Report
-- Version change: 1.2.1 → 1.2.2 (PATCH, owner-approved 2026-09-25): release packaging workflows may
+- Version change: 1.2.2 → 1.2.3 (PATCH, owner-approved 2026-09-26): legacy DataContract XML is no longer
+  read at all; the repo's own legacy files are migrated once in P1 and the legacy code is removed.
+- Previous: 1.2.1 → 1.2.2 (PATCH, owner-approved 2026-09-25): release packaging workflows may
   use macOS/Windows runners; main CI stays Linux-only.
 - Previous: 1.2.0 → 1.2.1 (PATCH: clarifications, owner-approved 2026-09-25)
   - IV: the netstandard2.0 exception covers only analyzers/generators NetPrints ships, not
@@ -92,7 +94,7 @@ dead dependencies rather than carrying them forward.
 - Project model: NetPrints projects are SDK-style `.csproj` files using the `NetPrints.Sdk`
   package; generated C# is written next to each graph by an MSBuild step, not a source generator.
 - Default document format: System.Text.Json with source-generated contexts, behind the
-  serialization abstraction. Legacy DataContract XML is import-only once JSON lands.
+  serialization abstraction. Legacy DataContract XML (`.netpp`/`.netpc`) is not read or converted.
 - No IL weaving (Fody) in new code; prefer source generators.
 
 ## Development Workflow
@@ -120,4 +122,4 @@ principle/section added; PATCH: clarifications) and notes affected specs. Review
 check PRs against these principles; any deviation MUST be justified in the plan's
 Complexity Tracking section.
 
-**Version**: 1.2.2 | **Ratified**: 2026-09-24 | **Last Amended**: 2026-09-25
+**Version**: 1.2.3 | **Ratified**: 2026-09-24 | **Last Amended**: 2026-09-26
