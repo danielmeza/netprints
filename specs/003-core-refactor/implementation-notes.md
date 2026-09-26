@@ -1477,6 +1477,11 @@ no `<dependencies>` in the nuspec (`SuppressDependenciesWhenPacking=true`), `<de
 present. Scratch pack output and `src/NetPrints.Sdk/obj/generator-publish/` are not tracked (`obj/` is
 already in `.gitignore`).
 
+**Correction (found in T047):** `dotnet pack` copies `NetPrints.Sdk.props` into the package without
+ever importing/evaluating it, so its one piece of real MSBuild logic (`_NetPrintsExeExtension`'s
+condition) went untested here despite the "verified" pack dry run above. T047's first real project
+import of this file failed evaluation outright (`MSB4092`) — see its notes below.
+
 Verified: `dotnet build NetPrints.slnx -c Release` 0 warnings/0 errors (unaffected: the new pack target
 does not run on `Build`); `dotnet test tests/NetPrints.Core.Tests -c Release -- --ignore-exit-code 8`
 green, 276 (unchanged, T045 adds no new test — PS-T01–T04 are T047's, against these same files through
@@ -1521,3 +1526,61 @@ exercised for the first time, against a real `dotnet build`, by T047's `SdkTarge
 `dotnet build NetPrints.slnx -c Release` 0 warnings/0 errors; `dotnet test tests/NetPrints.Core.Tests -c
 Release -- --ignore-exit-code 8` green, 276 (unchanged); `dotnet format NetPrints.slnx --verify-no-changes`
 clean. No `!`/`null!`/`default!` added.
+
+### T047 — `SdkTargetsTests.cs` (PS-T01…T04); a real bug in `NetPrints.Sdk.props`'s condition syntax; manual spikes before every assertion
+
+**Bug found and fixed**: the very first real `dotnet build` through `LocalSdkLayout` (i.e. the first time
+anything actually *imports* `NetPrints.Sdk.props`, since T045's own verification only packed the file,
+never evaluated it) failed immediately with `MSB4092: An unexpected token "Windows" was found …` on
+`_NetPrintsExeExtension`'s condition. T045's `'$([MSBuild]::IsOSPlatform('Windows'))' == 'true'` —
+nesting a single-quoted string literal inside an already single-quoted condition operand — is *not*
+valid MSBuild condition syntax on this MSBuild version, despite looking like a pattern real-world SDK
+targets use; MSBuild's condition grammar does not support that nesting. Fixed with the `%27`
+URL-style escape for the inner quotes instead: `'$([MSBuild]::IsOSPlatform(%27Windows%27))' == 'true'`
+— verified directly (not just through the test suite) with a hand-built temp project before writing any
+of this task's tests, both for the fixed condition alone and then for the whole build pipeline end to
+end.
+
+**Approach**: rather than writing assertions against a guess of MSBuild's exact log wording, every one of
+PS-T01…T04's behaviors was reproduced first by hand — a scratch temp directory, `LocalSdkLayout`-equivalent
+files written directly, two minimal graph documents (an empty class each: `ClassGraph`'s `SuperType`
+always falls back to `System.Object` when unset, so even a class with no members translates to valid C#,
+`public class X : System.Object { }` — no method/nodes needed for any of these tests, only whether the
+*pipeline* runs, not what it emits, which T044's `GraphCodeGeneratorTests.cs` already covers) — and
+`dotnet build`/`dotnet msbuild -getItem:Compile` run directly in the shell to see the actual log text and
+JSON shape before encoding assertions against them:
+- PS-T01: first build creates both `.g.cs` files; second build's log contains exactly
+  `Skipping target "NetPrintsGenerate" because all output files are up-to-date…`; setting one graph's
+  `LastWriteTimeUtc` 5 seconds into the future (instead of sleeping — AGENTS.md's UI-test "no sleeps"
+  rule generalizes to any timestamp-dependent assertion) and rebuilding logs
+  `Building target "NetPrintsGenerate" partially, because some output files are out of date…` and updates
+  only that graph's `.g.cs` (`File.GetLastWriteTimeUtc` before/after, asserting one changed and the other
+  is `Equal`, not just "not the same instant" — this is MSBuild's own target Inputs/Outputs batching,
+  confirmed by hand first, not something the `.targets` file's `Exec`/`WriteLinesToFile` do themselves).
+- PS-T02: `dotnet msbuild <proj> -getItem:Compile -nologo` prints `{"Items":{"Compile":[{…every default
+  metadata key, "DependentUpon": "<graph file name>", …}]}}` directly (no extra flag needed to see
+  `DependentUpon`); asserted exactly one `Compile` item whose `Identity` ends with the generated file
+  name, and that its `DependentUpon` is the graph's own file name; separately asserted the build log
+  contains neither `CS2002` nor `CS0101`.
+- PS-T03: `EnableDefaultNetPrintsGraphItems=false` plus one explicit `<NetPrintsGraph Include="../Shared/Outside.netpc.json" />`
+  builds cleanly and writes `Outside.netpc.g.cs` next to the graph file in `Shared/` (`%(RootDir)%(Directory)%(Filename).g.cs`
+  is computed from the *item's own* path metadata, so an outside-the-project graph's generated file lands
+  outside the project folder too — confirmed by hand, then asserted with `File.Exists`).
+- PS-T04: corrupting a graph's JSON and rebuilding fails (`Assert.NotEqual(0, exitCode)`), the log
+  contains `<full graph path>(` (the line/column form) and matches `error NPD\d{3}`, and the previous
+  `.g.cs`'s content (read before corrupting the graph) is byte-for-byte unchanged afterward — the
+  generator's own "keep the previous output on error" rule (T044), exercised here through a real failed
+  MSBuild build instead of a unit test.
+
+Every build/msbuild invocation passes `-tl:off` (matching `IProjectSystem.BuildAsync`'s own contract,
+project-system.md §4) so assertions target the classic, line-oriented console logger's exact wording
+regardless of whether the process happens to run attached to a terminal (the new Terminal Logger's output
+does not contain these strings at all). Process output is read by awaiting both `StandardOutput` and
+`StandardError` readers concurrently with `WaitForExitAsync` (`Task.WhenAll`), matching `MergeTests`'
+existing external-process pattern in this repo but avoiding its two-step (`ReadToEndAsync` then
+`WaitForExitAsync`) form, which only reads one stream and would deadlock here once MSBuild's `-v:n` output
+exceeds the pipe buffer.
+
+Verified: `dotnet build NetPrints.slnx -c Release` 0 warnings/0 errors; `dotnet test tests/NetPrints.Core.Tests
+-c Release -- --ignore-exit-code 8` green, 280 (276 → 280, all four new); `dotnet format NetPrints.slnx
+--verify-no-changes` clean. No `!`/`null!`/`default!` added.

@@ -104,7 +104,7 @@ Checkpoint E (plan.md). Out of scope (follow-ups, do not implement): `netprints 
 - [x] T044 [US1] `src/NetPrints.Generator/GraphCodeGenerator.cs` (`GenerateAsync`, `RenderFile`; project-system.md §3), `GenerateRequestFile.cs`, `Program.cs` (`generate` command, exit codes, canonical error lines with member-id graph keys) + unit tests PS-T06 (header, `\n`, determinism) in `tests/NetPrints.Core.Tests/Projects/GraphCodeGeneratorTests.cs`
 - [x] T045 [US1] `src/NetPrints.Sdk/build/NetPrints.Sdk.props` and `NetPrints.Sdk.targets` exactly per project-system.md §2 (items, `Update` metadata, `Compile Remove`/`Include`, request file, `Exec`, `Touch`, `UpToDateCheckInput`); pack layout `tools/net10.0/` = framework-dependent publish of the generator
 - [x] T046 [US1] In-repo development mode (project-system.md §2.1): `samples/Directory.Build.props`, `samples/Directory.Build.targets`, `samples/Directory.Packages.props`; `tests/NetPrints.Core.Tests/Projects/LocalSdkLayout.cs` helper; test projects reference `src/NetPrints.Generator` with `ReferenceOutputAssembly=false`
-- [ ] T047 [US1] Targets tests PS-T01, PS-T02, PS-T03, PS-T04 in `tests/NetPrints.Core.Tests/Projects/SdkTargetsTests.cs` (temp projects via `LocalSdkLayout`, `dotnet build -v n` log assertions, `-getItem:Compile`)
+- [x] T047 [US1] Targets tests PS-T01, PS-T02, PS-T03, PS-T04 in `tests/NetPrints.Core.Tests/Projects/SdkTargetsTests.cs` (temp projects via `LocalSdkLayout`, `dotnet build -v n` log assertions, `-getItem:Compile`)
 - [ ] T048 [US1] Package test PS-T05 in `tests/NetPrints.Core.Tests/Projects/SdkPackageTests.cs` (`dotnet pack src/NetPrints.Sdk` into a temp feed, temp `nuget.config`, isolated `NUGET_PACKAGES`)
 - [ ] T049 [US1] **Checkpoint D**; commit
 
