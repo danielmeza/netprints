@@ -179,6 +179,19 @@ tests. General lesson carried into T021+: any new in-memory-only navigation this
 or repurpose an existing `[DataMember]` property for it, even when the existing property's static
 type already fits, because doing so silently changes what legacy XML serializes.
 
+### T019 — `GraphAutoLayout`: which connection counts for a multi-connection pin
+
+data-model.md §2's neighbour rule ("the first connected input pin ... that is already placed") is
+unambiguous for data/type pins (`IncomingPin`, singular) but `NodeInputExecPin.IncomingPins` and
+`NodeOutputDataPin`/`NodeOutputTypePin.OutgoingPins` are collections (an exec pin can have several
+incoming branches; a data/type output can fan out). Choice: for a pin with more than one connection,
+check its own connections in their collection order and take the first that leads to an
+already-placed node, rather than only ever looking at the first connection regardless of whether it
+is placed. None of DF-T20's required scenarios exercise a multi-connection pin, so this is
+unobserved by the current test suite; recorded so a later phase does not need to re-derive it, and so
+a future test can pin it down explicitly if it turns out to matter (e.g. once the editor lets branch
+merges happen before layout is settled).
+
 **Regression found and fixed by the full test suite, not by the build**: the *first* attempt at
 removing `MethodGraph!.` in `ReturnNode.cs`/`MethodEntryNode.cs` (see "Current Work" above) cached the
 containing `MethodGraph` in a `private readonly MethodGraph methodGraph;` field set from the
