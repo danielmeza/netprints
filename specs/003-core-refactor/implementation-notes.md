@@ -638,3 +638,30 @@ requirement, which are unambiguous where a single illustrative code snippet is n
 `[DataMember]`. The same reasoning will apply to member ids (T017) and any other new random-id field
 added to a `[DataContract]` graph-side type for the rest of P1 — recorded here so it isn't
 rediscovered per field.
+
+### T027 — layout position inlining needs a 4-state machine, not 3
+
+First attempt at `CanonicalJsonWriter`'s layout-position rule (§2.3.1 rule 3, "the inner maps of the
+root `layout` object") tracked only a 3-value `LayoutContext` (`None`/`LayoutMap`/`GraphMap`) and
+marked a node inline as soon as its OWN context was `GraphMap` — which made the *per-graph position
+map itself* (`"class": { "n0": [...] }`) inline as `"class": { "n0": [112, 112] }`, contradicting the
+worked example in document-format.md §1.7, where that map is block (`"class": {\n  "n0": [112, 112]\n}`)
+and only the leaf `[x, y]` array is inline. Fixed by adding a fourth state (`PositionValue`) so
+inline-ness is checked one level later than the state that names it: `None → LayoutRoot` (the `layout`
+property's own value, block) `→ GraphMap` (a per-graph map, still block) `→ PositionValue` (the `[x, y]`
+array, inline). Caught by `HandcraftedDocumentMatchesExpectedCanonicalForm`, written to mirror the
+exact §1.7 `HelloWorld.Program.netpc.json` example's line breaks (not just an ad hoc small case),
+which is what surfaced this: the smaller per-rule tests (`ElementsOfNamedArraysAreInline`, etc.) would
+not have caught it since none of them exercise a two-level nested map.
+
+### T027 — the "inline array" rules only ever apply to elements, never to the array node itself
+
+Re-reading §1.7's own example settled an ambiguity in §2.3.1's wording: a property named `connections`
+(etc.) makes each *element* of that array inline (one connection per line), but the array itself is
+still written as a normal block array (`"connections": [\n  { ... },\n  { ... }\n]`), never collapsed
+to one line even when it has a single element (`"pins": [\n  { ... }\n]` in the worked example, not
+`"pins": [ { ... } ]`). The first draft of the DF-T04 handcrafted-document test got this wrong (assumed
+single-element `pins`/`method` collapsed to one line) and was corrected to match the block form once
+the mismatch surfaced against the real writer output; `CanonicalJsonWriter` itself needed no change for
+this one (the bug was in the test's expectation, not the code) — noted here in case a future reader
+compares this test against §1.7 and is tempted to "fix" the writer instead of the (now correct) test.
