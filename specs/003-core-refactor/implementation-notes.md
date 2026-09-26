@@ -862,6 +862,29 @@ connects a literal to something instead of only using unconnected values** — w
 `BaseType.Name`/structural equality instead of `!=`, or skip the disconnect when the constructed type has not
 actually changed) before or alongside T042, not discovered mid-golden-test.
 
+**Fixed** (start of the T037-T040 batch, own commit before T037): both comparisons in
+`LiteralNode.UpdatePinTypes()` now use `constructedType.Equals(...)` (negated) instead of `!=`, so they dispatch
+to `TypeSpecifier.Equals(object?)` — the concrete type's own value equality (name, generic arguments, `IsEnum`)
+— regardless of the operands' `BaseType`-typed declaration. No new operator was added to `BaseType`: the existing
+`TypeSpecifier`/`GenericType` equality already covers every value that reaches this method (`LiteralType` is
+always a `TypeSpecifier`, never a bare `GenericType`, so `ConstructWithTypePins` always returns a `TypeSpecifier`
+at runtime here). Regression test: `NetPrints.Tests.Graph.LiteralNodeTests.ConnectedLiteralKeepsItsConnectionAfterRelax`
+connects a literal's value pin to a `CallMethodNode` argument pin and asserts the connection survives
+`GraphTypeInference.Relax`. Fixing this changed two checked-in fixtures, both expected and regenerated:
+`AllNodesFixtureRegenerationTests`' checked-in `AllNodes.Everything.netpc` (the object-identity/`z:Ref` shape of
+the legacy XML changes — `LiteralType`, `InputValuePin.PinType.Value` and `ValuePin.PinType.Value` are now one
+shared reference instead of two — even though every literal in the fixture was already non-generic and
+value-unchanged; regenerated with `NETPRINTS_REGENERATE_SAMPLES=1`, no logical difference). The
+`AllNodesFixtureFactory` `ifElse` workaround (unconnected condition) and the `DocumentMapperTests.
+CallMethodParameterInsertionKeepsConnectionsByName` (DF-T19) workaround (entry-node argument pins instead of
+literal nodes as connection sources) are both removed now that a connected literal survives `Relax`; all four
+sub-phase A characterization gates (`GoldenCSharpTests`, `NotificationMapTests`,
+`AllNodesFixtureRegenerationTests`, `HelloWorldSampleTests`) still pass after regenerating
+`AllNodes.Everything.netpc`, `AllNodes.Everything.cs` and `PinKeys.golden.txt` (`NETPRINTS_REGENERATE_SAMPLES=1`
++ `NETPRINTS_UPDATE_SNAPSHOTS=1`): the `ifElse` condition's generated C# changes from inlining `true` directly
+to materializing it through a local variable (`System.Boolean varValue = true; if (varValue)`), which is the
+translator's normal, correct handling of a connected literal, not a regression.
+
 Also implemented, per the plan and without incident: the `Variable.TypeGraph` special case (`new Variable(cls,
 name, TypeSpecifier.FromType<object>(), null, null, modifiers)` for a real `TypeGraph`+`TypeReturnNode` to
 populate, then — because unlike every other graph kind's constructor, `Variable`'s *also* builds a placeholder

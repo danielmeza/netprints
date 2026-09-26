@@ -38,8 +38,11 @@ namespace AllNodes
             // Variables
             System.Int32 varIndex = default(System.Int32);
             System.Exception varException = default(System.Exception);
+            System.Boolean varValue = default(System.Boolean);
             // If Else
-            if (true)
+            // Literal - Boolean
+            varValue = true;
+            if (varValue)
             {
             }
             else

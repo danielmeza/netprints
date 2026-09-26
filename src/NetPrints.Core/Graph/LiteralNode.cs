@@ -83,13 +83,17 @@ namespace NetPrints.Graph
             // Set pin types
             // TODO: Check if we can leave the pins connected
 
-            if (constructedType != InputValuePin.PinType.Value)
+            // GenericsHelper.ConstructWithTypePins returns a new TypeSpecifier instance on every call,
+            // even when nothing actually changed, so compare by value (TypeSpecifier.Equals) instead of
+            // by reference: otherwise this disconnects both value pins on every GraphTypeInference.Relax
+            // pass, silently dropping connections into or out of the literal.
+            if (!constructedType.Equals(InputValuePin.PinType.Value))
             {
                 GraphUtil.DisconnectInputDataPin(InputValuePin);
                 InputValuePin.PinType.Value = constructedType;
             }
 
-            if (constructedType != ValuePin.PinType.Value)
+            if (!constructedType.Equals(ValuePin.PinType.Value))
             {
                 GraphUtil.DisconnectOutputDataPin(ValuePin);
                 ValuePin.PinType.Value = constructedType;

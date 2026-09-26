@@ -115,23 +115,23 @@ namespace NetPrints.Tests.Serialization
             MethodRef editedMethod = Method(
                 new ParameterRef("a", intRef), new ParameterRef("inserted", stringRef), new ParameterRef("b", intRef));
 
-            // The connection sources are the caller's own two int arguments (MethodEntryNode's
-            // "Input0"/"Input1" output data pins), not literal nodes: a LiteralNode's output pin is
-            // unconditionally disconnected and retyped by every GraphTypeInference.Relax pass, even
-            // with no generic arguments involved (LiteralNode.UpdatePinTypes compares by reference; see
-            // implementation-notes.md, "T035 - LiteralNode.UpdatePinTypes..."), so a connected literal
-            // would not survive FromDocument regardless of this test's own logic.
-            var entry = new MethodEntryNodeDocument("n3", null, null, 2, null);
+            // The connection sources are literal nodes (LiteralNode.UpdatePinTypes' reference-equality
+            // bug, which used to disconnect a literal's value pins on every GraphTypeInference.Relax
+            // pass even with no generic arguments involved, is fixed; see implementation-notes.md,
+            // "T035 - LiteralNode.UpdatePinTypes...").
+            var entry = new MethodEntryNodeDocument("n3", null, null, 0, null);
             var call = new CallMethodNodeDocument("n2", null, null, editedMethod, 0);
+            var literalA = new LiteralNodeDocument("n6", null, null, intRef);
+            var literalB = new LiteralNodeDocument("n7", null, null, intRef);
 
             var connections = new List<ConnectionDocument>
             {
-                new("n3/out.data.Input0", "n2/in.data.a"),
-                new("n3/out.data.Input1", "n2/in.data.b"),
+                new("n6/out.data.Value", "n2/in.data.a"),
+                new("n7/out.data.Value", "n2/in.data.b"),
             };
 
             var methodGraph = new GraphDocument(
-                [entry, new ReturnNodeDocument("n4", null, null, 0), call],
+                [entry, new ReturnNodeDocument("n4", null, null, 0), call, literalA, literalB],
                 connections, null);
             var methodDocument = new MethodDocument("m000001", "Caller", MemberVisibility.Public, MethodModifiers.None, methodGraph);
             var classDocument = new ClassDocument(1, null, "C", MemberVisibility.Public, ClassModifiers.None, null,

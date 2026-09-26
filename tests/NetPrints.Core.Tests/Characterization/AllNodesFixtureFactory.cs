@@ -202,15 +202,14 @@ namespace NetPrints.Tests.Characterization
             main.MainReturnNode.InputDataPins[0].UnconnectedValue = 0;
             main.MainReturnNode.InputDataPins[1].UnconnectedValue = "";
 
-            // ifElse, driving the reachable exec chain to the return node. The condition is an
-            // unconnected value (not a connected literal node): LiteralNode.OnInputTypeChanged
-            // (unmodified) disconnects its value pin whenever the method-graph relaxation pass
-            // recomputes its constructed type, which happens on every load, including one with no
-            // generic arguments (GenericsHelper.ConstructWithTypePins always returns a new
-            // TypeSpecifier instance, compared by reference); see implementation-notes.md.
+            // ifElse, driving the reachable exec chain to the return node. The condition is a
+            // connected literal node (LiteralNode.UpdatePinTypes' reference-equality bug that used to
+            // disconnect it on every GraphTypeInference.Relax pass is fixed; see implementation-notes.md).
+            var ifElseConditionLiteral = LiteralNode.WithValue(main, true);
+            cursor.Place(ifElseConditionLiteral);
             var ifElse = new IfElseNode(main);
             cursor.Place(ifElse);
-            ifElse.ConditionPin.UnconnectedValue = true;
+            GraphUtil.ConnectDataPins(ifElseConditionLiteral.ValuePin, ifElse.ConditionPin);
             GraphUtil.ConnectExecPins(main.EntryNode.InitialExecutionPin, ifElse.ExecutionPin);
 
             // forLoop on the true branch, straight back to the return node.
