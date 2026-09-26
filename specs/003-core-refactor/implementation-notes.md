@@ -665,3 +665,38 @@ single-element `pins`/`method` collapsed to one line) and was corrected to match
 the mismatch surfaced against the real writer output; `CanonicalJsonWriter` itself needed no change for
 this one (the bug was in the test's expectation, not the code) — noted here in case a future reader
 compares this test against §1.7 and is tempted to "fix" the writer instead of the (now correct) test.
+
+### T028/T029 — enum-typed pin unconnected values are pre-stringified by the model, unlike everything else `TypedValueConverter` handles
+
+`NodeMappingContext.ToValue(object? value, string where)`'s contract signature has no declared-type
+parameter, which works for every supported type except one: `NodeInputDataPin.UnconnectedValue`'s
+setter (`OnUnconnectedValueChanging`, unmodified pre-P1 code) requires the **stored value itself** to
+already be a `string` for an enum-typed pin (`newValue.GetType() != typeof(string)` throws) — so
+`pin.UnconnectedValue` for e.g. a `System.DayOfWeek` pin is the *string* `"Monday"`, never a boxed
+`DayOfWeek.Monday`. Calling `TypedValueConverter.ToTypedValue("Monday", where)` on that value would
+(correctly, per its own contract) produce `TypedValue("System.String", "Monday")` — the wrong `Type`,
+since the pin's declared type is the enum, not `string`.
+
+`TypedValueConverter`/`NodeMappingContext.ToValue`/`FromValue` are otherwise used for **genuine**
+runtime-typed values that reveal their own type via `value.GetType()` — a real boxed enum from
+`MethodParameter.ExplicitDefaultValue` (a reflected method's default parameter value can legitimately
+be an enum instance), for instance — where `value.GetType()` is exactly right. So `TypedValueConverter`
+keeps the literal 2-argument contract signature and handles `Enum` instances directly (`value switch { ...,
+Enum v => v.ToString(), ... }`) for that genuine case. The one pin-unconnected-value quirk is handled
+where the pin's declared type is already in scope: T035's `DocumentMapper` (the uniform, per-node "build
+`pins: PinStateDocument[]`" step) checks `pin.PinType.Value is TypeSpecifier { IsEnum: true } t` and
+`pin.UnconnectedValue is string s` first, building `new TypedValue(t.Name, s)` directly for that one
+case, and calling `context.ToValue`/`TypedValueConverter.ToTypedValue` for every other pin. Symmetric on
+read: `FromValue`/`FromTypedValue` return a *string* regardless of whether `Type` says `"System.String"`
+or an enum name, which is exactly what an enum pin's `UnconnectedValue` setter requires — so no special
+casing is needed on the read side, only on write.
+
+Known limitation carried into T035/T042: `TypedValueConverter.FromTypedValue`'s enum branch resolves
+the type name with `Type.GetType(typeName, throwOnError: false)`, which only succeeds for BCL enums
+(`System.DayOfWeek`, `System.IO.FileAccess`, …) and enums declared in the calling assembly — an enum
+from a *referenced* project or NuGet package (a real `ParameterRef.Default` for such a method) will not
+resolve and raises `DocumentFormatException`. Full type resolution needs a reflection provider aware of
+the project's referenced assemblies, which `NetPrints.Serialization` does not have; nothing in the P1
+DF-Txx test set exercises this path (AllNodes' only enum literal is `System.DayOfWeek`, going through
+the pin special case above, not a method default value), so it is left as a follow-up rather than
+solved here.
