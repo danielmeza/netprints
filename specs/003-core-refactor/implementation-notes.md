@@ -1031,3 +1031,64 @@ Test coverage (`tests/NetPrints.Core.Tests/Serialization/DocumentFormatRegistryT
 duplicate `Id` throws, a duplicate extension throws, a missing `json` format throws, `Default` returns
 the registered `json` format, `Find` prefers `.netpc.json` over `.netpc` for a name ending in both, and
 `Find` returns `null` for an unmatched extension or a `Project`-kind lookup.
+
+### T040 — `Stores/IDocumentStore.cs`, `InMemoryDocumentStore.cs`, `FileSystemDocumentStore.cs`
+
+Added `System.Reactive` and `Microsoft.Extensions.Logging.Abstractions` package references to
+`NetPrints.Serialization.csproj` (both already centrally versioned in `Directory.Packages.props`, unused
+here until now) and `Microsoft.Reactive.Testing` to `NetPrints.Core.Tests.csproj` (for `TestScheduler`,
+DF-T13). `InMemoryDocumentStore` is mechanical: a `ConcurrentDictionary<DocumentId, byte[]>`, a per-id
+`SemaphoreSlim` for `WriteAsync`, and a `Subject<DocumentChange>` `Set` pushes into directly (synchronous,
+per the contract); `WriteAsync` never raises `Changes` (this is the "own write" side of DF-T13 for this
+store — nothing suppresses it because nothing needs to: it just never emits).
+
+`FileSystemDocumentStore.Changes` is a `FileSystemWatcher` (recursive, `LastWrite`/`FileName` only — no
+`DirectoryName`, so bare directory create/delete/rename is not itself a "document change") whose raw
+events are debounced per id: each new raw event for an id cancels that id's pending
+`IScheduler.Schedule(TimeSpan, Action)` timer and starts a fresh one at `ThrottleWindow` (200 ms), so a
+burst of events on the same id coalesces into one emission using the last event's kind — this is a plain
+`ConcurrentDictionary<DocumentId, IDisposable>` of pending timers, not an Rx `GroupBy`/`Throttle` pipeline
+(simpler to reason about and to test). Own-write suppression: `WriteAsync` records
+`ownWriteAt[id] = scheduler.Now` right before the atomic `File.Move` (which is what actually fires the
+raw event — a *rename*, from the temp path to the target path, not a `Changed`/`Created` event, since
+that is how `File.Move` surfaces through `FileSystemWatcher`); the very next raw event for that id, if
+it arrives within `ThrottleWindow`, is recognized as self-caused and dropped immediately (before it ever
+reaches the debounce timer), consuming the marker so a genuinely later external change still surfaces
+normally. Temp files (`*.tmp-<guid>`) are filtered out of every raw event and out of `ListAsync` by name.
+`ToDocumentId`/`GetFullPath` round-trip through `Path.GetRelativePath`, normalizing `/`; a path outside
+the root (`GetRelativePath` returning `..`-prefixed or rooted) throws `ArgumentException`.
+
+Event 3005 (`ExternalChange`, editor-services.md §6) is logged here even though it is in the "3001-3006"
+range T036's note flagged as T103's job (`Log.cs` added under `Stores/`) — unlike `DocumentMigrator.Upgrade`
+(no `ILogger` reachable from its signature at all), `FileSystemDocumentStore`'s constructor *does* take an
+`ILogger<FileSystemDocumentStore>`, and 3005 is precisely the `Changes` mechanism this task builds; taking
+a logger parameter and never calling it would be strange. The other five (3001-3004, 3006, on
+`DocumentMigrator`/`DocumentMapper`/`ProjectPersistence`/`ProjectConverter`) are still T103's: none of
+those types have a logger to call from yet.
+
+**Found by running the new `Changes` test five times in a row (it passed once, then crashed the test
+host with `ObjectDisposedException` on two of the next four runs — not a test flake, a real bug):**
+`Dispose()` unsubscribed and disposed the `FileSystemWatcher`, disposed every pending debounce timer,
+then completed and disposed the `changes` `Subject` — but a raw file system event already queued on a
+background thread (received before `EnableRaisingEvents = false` took effect, or a rename event for a
+write that was already in flight) can still reach `TryHandleRawChange` afterward, scheduling a *new*
+timer that later calls `changes.OnNext` on an already-disposed `Subject`. Fixed with a `lock (disposeLock)`
+around both the "check `disposed`, then `OnNext`" step (inside the debounce callback) and the
+disposed-flag-plus-`OnCompleted`/`Dispose` step, so the two can never interleave; applied the same fix to
+`InMemoryDocumentStore.Set`/`Dispose` for the same reason (the contract's own "all members may be called
+concurrently" applies to `Set` and `Dispose` too, even though `InMemoryDocumentStore` has no background
+thread of its own to race with — a caller-supplied one can still call `Set` concurrently with `Dispose`).
+Verified: the `Changes` test run 5 times in a row, then the whole `Core.Tests` suite run twice in a row,
+both clean.
+
+Test coverage: `Stores/DocumentStoreTestBase.cs` (abstract, DF-T14: write/read round trip, a missing
+document, overwrite, directory auto-creation, `ListAsync` ordinal-sorted and prefix-filtered), inherited
+by `InMemoryDocumentStoreTests` (+ DF-T13's memory half: `Set` raises `Created` then `Changed`
+synchronously, `WriteAsync` raises nothing, `Dispose` completes the observable) and
+`FileSystemDocumentStoreTests` (+ DF-T12: an exception or an `OperationCanceledException` from `write`
+leaves the original file untouched and no temp file behind; + DF-T13's file half, the trickiest test in
+this batch: a real `FileSystemWatcher` event arrives at an unpredictable *real* time, but the debounce
+that follows it runs on a `TestScheduler` — so the test repeatedly interleaves a short real
+`Task.Delay` with a `TestScheduler.AdvanceBy` in a loop, which needs no hook into the store's internals:
+whenever the real event does arrive and gets scheduled, the next few loop iterations' cumulative virtual
+advances eventually pass its due time and fire it).

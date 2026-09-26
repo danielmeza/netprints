@@ -9,6 +9,8 @@
 
   <ItemGroup>
     <PackageReference Include="xunit.v3" />
+    <!-- FileSystemDocumentStoreTests: a TestScheduler to drive Changes' debounce deterministically. -->
+    <PackageReference Include="Microsoft.Reactive.Testing" />
   </ItemGroup>
 
   <ItemGroup>

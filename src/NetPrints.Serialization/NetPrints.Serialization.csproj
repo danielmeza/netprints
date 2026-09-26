@@ -6,6 +6,11 @@
     <WarningsAsErrors>$(WarningsAsErrors);CA1848;CA2254</WarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <!-- FileSystemDocumentStore.Changes: per-id debounce/throttle and the IObservable<DocumentChange> it exposes. -->
+    <PackageReference Include="System.Reactive" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\NetPrints.Core\NetPrints.Core.csproj" />
   </ItemGroup>
 </Project>
