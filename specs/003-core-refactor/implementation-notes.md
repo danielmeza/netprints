@@ -458,5 +458,7 @@ per-property-type check establishes but the compiler cannot correlate to the `ob
 
 Verified: `dotnet build NetPrints.slnx -c Release` 0 warnings/0 errors across every project;
 `dotnet format NetPrints.slnx --verify-no-changes` passes; full suite unchanged, 268 total,
-259 succeeded, 9 skipped, 0 failed. **Checkpoint B reached**: 0 warnings solution-wide, sub-phase A
-gates (golden/notification-map characterization) unchanged, Fody gone since T010.
+259 succeeded, 9 skipped, 0 failed. This is the project-wide 0-warnings gate T023 (Checkpoint B)
+needs, but T015–T022 (ids, node/member identity, pin keys, auto-placement, `GraphTypeInference`
+extraction, the new project shells, logging foundation) are still open, so Checkpoint B itself is
+not reached yet; T023 stays unchecked until they are.
