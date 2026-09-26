@@ -80,7 +80,7 @@ Checkpoint E (plan.md). Out of scope (follow-ups, do not implement): `netprints 
 - [ ] T026 [US1] `Json/NetPrintsJsonContext.cs`, `NetPrintsJsonOptions.cs` (serializer options and `DocumentOptions` per §2.3), `NodeListConverter.cs` (`$kind`/`id` anywhere in the object; unknown kinds kept) + converter tests in `tests/NetPrints.Core.Tests/Serialization/NodeListConverterTests.cs`: `$kind` after `id` and after kind fields deserializes; unknown kind → `UnknownNodeDocument`; missing `$kind`/`id` → `DocumentFormatException`
 - [x] T027 [US1] `Json/CanonicalJsonWriter.cs` exactly per document-format.md §2.3.1 + DF-T04 in `tests/NetPrints.Core.Tests/Serialization/CanonicalJsonTests.cs` (expected text literal), plus: every inline rule 1–5 and both block forms asserted separately; output re-parses; empty `{}`/`[]` inline; `NaN` number → `ArgumentException`
 - [x] T028 [US1] `Mapping/TypedValueConverter.cs` + DF-T07
-- [ ] T029 [US1] `Mapping/NodeMappingContext.cs` + `ToRef`/`FromRef` tests in `…/Serialization/RefMappingTests.cs`
+- [x] T029 [US1] `Mapping/NodeMappingContext.cs` + `ToRef`/`FromRef` tests in `…/Serialization/RefMappingTests.cs`
 - [ ] T030 [US1] `Mapping/INodeDocumentConverter.cs`, `NodeDocumentConverterRegistry.cs` + registry tests
 - [ ] T031 [P] [US1] Built-in converters `methodEntry`, `constructorEntry`, `return`, `classReturn`, `typeReturn` in `Mapping/BuiltIn/EntryReturnConverters.cs`
 - [ ] T032 [P] [US1] `callMethod`, `constructor`, `makeDelegate`, `variableGetter`, `variableSetter` in `Mapping/BuiltIn/MemberConverters.cs`
