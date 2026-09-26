@@ -749,6 +749,207 @@ strings `NodeDocumentConverterRegistry.BuiltIn` registers) to `NodeDocumentConve
 constructor. `eventEntry` (sub-phase G, T080) must be added to both `KnownBuiltInKinds` and `BuiltIn`
 together, or a hand-built eventEntry converter would fail registry construction.
 
+### T036 — `DocumentMigrator.Supported` is computed from the actual migration chain, not hardcoded to `CurrentSchemaVersion`
+
+DF-T10 requires "a synthetic test migration v1→v2 registered in a test migrator is applied" without
+implying the real, production `CurrentSchemaVersion` const changes. So `Supported` is computed in the
+constructor: for each `DocumentKind` with any registered migrations, walk the chain from version 1
+(`1, 2, 3, …` while a migration exists for that `(kind, version)`) and take `chain length + 1`; the
+overall `Supported` is the max of that across every kind and `CurrentSchemaVersion` itself (so with zero
+migrations — P1's real, shipped configuration — `Supported == CurrentSchemaVersion == 1`, unaffected by
+this generality). The constructor also verifies each kind's migrations form a contiguous chain starting
+at version 1 (no gaps), matching the "gaps" half of its own contract line, which a hand-built
+`GapMigration` (`FromVersion = 2` with nothing registered for `FromVersion = 1`) exercises.
+
+Not implemented yet: the log call for `DocumentMigrated` (code 3001, document-format.md §2.5) — the
+`DocumentMigrator` contract's constructor takes only `IReadOnlyList<IDocumentMigration>`, no `ILogger`,
+and T103 ("Serialization log call sites (3001-3006)") is the task that wires logging through the
+serialization layer generally. `Upgrade` does the migration but does not yet log it; T103's implementer
+should add the log call there (and to every other 3001-3006 site) rather than assume it already exists.
+
+### Design notes for the next agent: T026, T035-T043 remaining
+
+**T026** (`Json/NetPrintsJsonContext.cs`, `NetPrintsJsonOptions.cs`, `NodeListConverter.cs`) was
+deliberately deferred past T027-T034 because `NetPrintsJsonOptions`'s contract constructor takes a
+`NodeDocumentConverterRegistry`, which did not exist until T030. It now does (committed). Before
+starting T026:
+- `NetPrintsJsonContext`: exactly the code block in document-format.md §2.3 (`[JsonSourceGenerationOptions(...,
+  UseStringEnumConverter = true, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault)]`,
+  `[JsonSerializable(typeof(Documents.ClassDocument))]`, `internal sealed partial class : JsonSerializerContext`).
+- `NodeListConverter`: a `JsonConverter<IReadOnlyList<NodeDocument>>`. On write: for each element, if it
+  is `UnknownNodeDocument`, write `$kind`/`id` first then `Raw`'s other properties via
+  `JsonElement.WriteTo` in source order (no direct field on `UnknownNodeDocument` needs re-deriving this
+  — its own `Raw` already holds everything); otherwise `JsonSerializer.Serialize(writer, node, typeof(NodeDocument), options)`
+  (declared type `NodeDocument`, not the runtime type, so STJ's polymorphism/discriminator machinery
+  fires). On read: buffer each array element as a `JsonElement` (`JsonElement.ParseValue(ref reader)`),
+  find `$kind`/`id` by scanning ALL properties (not assuming order — `AllowOutOfOrderMetadataProperties`
+  only affects normal polymorphic dispatch, not this hand-written converter); missing either →
+  `DocumentFormatException`. Look up whether `$kind` matches a derived type registered on `NodeDocument`
+  via `options.GetTypeInfo(typeof(NodeDocument)).PolymorphismOptions!.DerivedTypes` (covers built-ins,
+  compile-time `[JsonDerivedType]`, AND any extension kinds added at runtime by
+  `NetPrintsJsonOptions`'s resolver modifier) — if found, `element.Deserialize(derivedType, options)`;
+  if not, `new UnknownNodeDocument(id, kind, element)` (+ track that an `NPD001` issue is warranted —
+  the converter itself has no issue-collection channel, so it likely needs to either throw a lightweight
+  marker the caller catches, or (simpler) `DocumentMapper`/`JsonDocumentFormat` re-scans the deserialized
+  `Nodes` list afterward for `UnknownNodeDocument` instances and raises `NPD001` for each — prefer that;
+  it keeps `NodeListConverter` a pure format-level concern with no issue-reporting responsibility).
+- `NetPrintsJsonOptions(NodeDocumentConverterRegistry nodes)`: resolver =
+  `JsonTypeInfoResolver.Combine(NetPrintsJsonContext.Default, ...nodes.ExtensionResolvers)` then
+  `.WithAddedModifier(typeInfo => { if (typeInfo.Type == typeof(NodeDocument)) foreach (extension
+  converter in nodes.Converters where Kind contains '/') typeInfo.PolymorphismOptions!.DerivedTypes.Add(new
+  JsonDerivedType(converter.DocumentType, converter.Kind)); })`. `SerializerOptions` built from that
+  resolver plus `AllowOutOfOrderMetadataProperties = true`, `ReadCommentHandling = Skip`,
+  `AllowTrailingCommas = true`, `Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping`,
+  `WriteIndented = false`, then `.MakeReadOnly()`. Do NOT also set `PropertyNamingPolicy`/enum
+  converters/`DefaultIgnoreCondition` at the options level — those come from the source-gen context
+  already baked into its `JsonTypeInfo`s; re-setting them at the options level only affects
+  reflection-based (non-source-gen) type resolution, which this resolver chain never falls back to.
+  `NetPrintsSchema.V1Url` (the const string) belongs in this file too, per the contract's code block.
+  `NetPrintsJsonOptions.DocumentOptions` (static `JsonDocumentOptions`): `CommentHandling = Skip`,
+  `AllowTrailingCommas = true`.
+- Once T026 lands, go back and add `[property: JsonConverter(typeof(NodeListConverter))]` to
+  `GraphDocument.Nodes` in `Documents/GraphDocuments.cs` (left off deliberately in T025 to keep that
+  commit buildable before `NodeListConverter` existed — see the T025 note above).
+
+**T035 (`Mapping/DocumentMapper.cs`)** — design worked out but not yet written; a full design is below
+so it does not need re-deriving:
+- Constructor: `DocumentMapper(NodeDocumentConverterRegistry nodes)`, store `nodes` in a field.
+- `ToDocument(ClassGraph cls)`: `var context = new NodeMappingContext(cls);` then:
+  - Duplicate member id check up front: iterate `cls.Members`, collect ids into a `HashSet<string>`
+    (ordinal), `InvalidOperationException` on a repeat (callers run `EnsureUniqueMemberIds()` first per
+    §2.8, so this is a "should never happen" guard, not graceful handling).
+  - `MapGraph(NodeGraph graph, NodeMappingContext context) -> GraphDocument`: for each `Node` in
+    `graph.Nodes`, `INodeDocumentConverter converter = nodes.FindByNodeType(node.GetType()) ??
+    throw new InvalidOperationException($"No document converter registered for node type '{node.GetType()}'.");`,
+    `NodeDocument raw = converter.ToDocument(node, context);`, then
+    `raw with { Id = node.Id, Name = node.Name == node.DefaultName ? null : node.Name, Pins = BuildPinStates(node, context) }`
+    (record `with` works across the base/derived boundary for `Id`/`Name`/`Pins` — verified in a spike
+    while writing the BuiltIn converters, which all pass placeholder `node.Id, null, null` for exactly
+    this reason). Append `graph.PreservedDocumentState`'s unknown nodes (if any — see below) after the
+    known ones. Connections: `BuildConnections(graph)` (enumerate every node's *output* pins only —
+    `OutputExecPins`/`OutputDataPins`/`OutputTypePins` — building `"<nodeId>/<PinKeys.For(pin)>"` →
+    `"<targetNodeId>/<PinKeys.For(targetPin)>"`, plus any preserved connections referencing an unknown
+    node id, then ordinal-sort by `From` then `To`). Locals: `null` (sub-phase H). Return
+    `new GraphDocument(nodeDocs, connections.Count > 0 ? connections : null, null)`.
+  - `BuildPinStates(Node node, NodeMappingContext context) -> List<PinStateDocument>?`: for every pin of
+    every direction/kind (`InputDataPins`, `OutputDataPins`, `InputExecPins`, `OutputExecPins`,
+    `InputTypePins`, `OutputTypePins`), compute `keyName = node.GetPinKeyName(pin)`; `name = pin.Name ==
+    keyName ? null : pin.Name`; for `NodeInputDataPin` only, `value`: if `pin.UnconnectedValue is not
+    null`, and `pin.PinType.Value is TypeSpecifier { IsEnum: true } enumType` (the model quirk from the
+    T028/T029 note — `UnconnectedValue` is already a `string` for an enum pin), `new
+    TypedValue(enumType.Name, (string)pin.UnconnectedValue)`; else
+    `context.ToValue(pin.UnconnectedValue, $"{node.Id}/{PinKeys.For(pin)}")`. Only add a
+    `PinStateDocument` when `name is not null || value is not null` (skip pins with nothing to record);
+    return `null` if nothing was added for the whole node (never an empty list — matches "omit if
+    empty" and avoids ever needing `JsonIgnore` gymnastics on `NodeDocument.Pins`).
+  - `MapMethod`/`MapConstructor`/`MapVariable`: thin wrappers building `MethodDocument`/`ConstructorDocument`/
+    `VariableDocument` from the model member plus `MapGraph` of its own graph(s) (variable → `TypeGraph`
+    + optional `GetterMethod`/`SetterMethod` as `AccessorDocument`s).
+  - `BuildLayout(ClassGraph cls) -> SortedDictionary<string, SortedDictionary<string, int[]>>?`: for
+    every graph of the class (`cls` itself, each variable's `TypeGraph`/`GetterMethod`/`SetterMethod`,
+    each method, each constructor), `GraphKeys.For(graph)` → inner `SortedDictionary<string, int[]>`
+    (ordinal) of `node.Id` → `[Round(PositionX), Round(PositionY)]`, `Round = (int)Math.Round(x,
+    MidpointRounding.AwayFromZero)`; omit an inner map only if a graph genuinely has zero nodes
+    (shouldn't happen given model invariants, but cheap to guard); omit the whole `Layout` only if
+    there is not one graph with a node (i.e., never in practice, but keep the `null`-when-empty shape
+    for symmetry with every other optional field).
+  - Assemble `ClassDocument` with `SchemaVersion: NetPrints.Serialization.Migrations.DocumentMigrator.CurrentSchemaVersion`
+    (now available; **do not** hardcode `1` a second time), `Namespace: string.IsNullOrEmpty(cls.Namespace)
+    ? null : cls.Namespace`, `GenericArguments` from `cls.DeclaredGenericArguments`, `EventGraphs: null`
+    (sub-phase G — `ClassGraph.EventGraphs` does not exist until T078; T080 must come back and populate
+    this instead of leaving it `null`), and the rest as above.
+- `FromDocument(ClassDocument document, Project project, ICollection<DocumentIssue> issues, DocumentId id)`:
+  order per the contract table — header (`new ClassGraph { Namespace = ..., Name = ..., Visibility =
+  ..., Modifiers = ..., DeclaredGenericArguments = ... }`, `Project = project` and set on every graph
+  created below) → validate every member id up front (missing/contains `/`or whitespace (`!StableIds.IsValidDocumentId`)/equal to `"class"`/duplicate → `DocumentFormatException`) → build each
+  member's graph. Building a method/constructor/variable graph: construct via the model's own
+  constructor (`new MethodGraph(document.Name)`, `new ConstructorGraph()`, `new Variable(cls, name,
+  <placeholder type — see below>, null, null, modifiers)`) — remember the constructor already
+  auto-creates that graph's one fixed node (T031's whole "reuse, don't recreate" design exists
+  precisely so `FromDocument` can rely on this) — then set `.Id = document.Id` (an `internal set`,
+  accessible via `InternalsVisibleTo`), then process `graph.Nodes` from the `GraphDocument`: for each
+  `NodeDocument`, `INodeDocumentConverter? converter = nodes.FindByKind(nodeDoc is UnknownNodeDocument u
+  ? u.Kind : GetKindOf(nodeDoc))` — actually simplest: iterate `document.Graph.Nodes`; if the element is
+  `UnknownNodeDocument`, collect it into a `preservedNodes` list and raise `issues.Add(new
+  DocumentIssue(Warning, NPD001, ..., id))`, do NOT call any converter; otherwise `nodes.FindByNodeType`
+  won't work here (we only have the *document* type, not a node type) — need
+  `NodeDocumentConverterRegistry` to also support **kind → converter** lookup by the `$kind` the
+  `NodeListConverter` already resolved into a *concrete document type* (there is no `$kind` string left
+  on a strongly-typed `MethodEntryNodeDocument` instance at this point!). Resolve this by adding (or
+  reusing) `FindByDocumentType(Type)` type lookup — `NodeDocumentConverterRegistry` currently only
+  exposes `FindByKind(string)`/`FindByNodeType(Type)`; add a third dictionary
+  keyed by `converter.DocumentType` (mirrors the two existing ones exactly, same duplicate-check
+  pattern) so `FromDocument` can do `nodes.FindByDocumentType(nodeDoc.GetType())`. Node with unresolved
+  document type → this should not happen for a known `NodeDocument` subtype (every built-in is
+  registered), so treat as an `InvalidOperationException` (a real gap in the registry, not a document
+  problem) — only genuinely-unknown `$kind` values become `UnknownNodeDocument` upstream in
+  `NodeListConverter`/`JsonDocumentFormat`, never reach here as a "known type but no converter" case.
+  `converter.CreateNode(nodeDoc, graph, context)` → returned node already has the graph's default id (or,
+  for the four "fixed" kinds, its pre-existing id) — set `.Id = nodeDoc.Id` (internal set) — duplicate
+  node id within the graph → `DocumentFormatException`; `.Name = nodeDoc.Name ?? node.DefaultName`; apply
+  `nodeDoc.Pins` (for each, `PinKeys.Find(node, pinRef)` — unknown → `issues.Add(NPD003)`, drop;
+  found → set `.Name` if present, set `.UnconnectedValue` if `Value` present (mirror the enum special
+  case in `BuildPinStates`, in reverse: if `pin.PinType.Value is TypeSpecifier { IsEnum: true }`, assign
+  the raw `Value.Value` string directly; else `context.FromValue(value)`)). After all nodes exist,
+  process `document.Graph.Connections`: for each, split `"<nodeId>/<pinRef>"` on the *first* `/`
+  (`DocumentId`-style split is wrong here — use `endpoint.IndexOf('/')` directly, node ids never
+  contain `/` per `StableIds.IsValidDocumentId`), `graph.FindNode(nodeId)` (missing → `NPD002`, drop),
+  `PinKeys.Find(node, pinRef)` (missing → `NPD002`, drop), then dispatch to the right
+  `GraphUtil.Connect*Pins` overload by the resolved pins' concrete pin types (a `switch` on
+  `(fromPin, toPin)` pattern matching `NodeOutputExecPin`/`NodeInputExecPin`,
+  `NodeOutputDataPin`/`NodeInputDataPin`, `NodeOutputTypePin`/`NodeInputTypePin` — anything else is
+  "incompatible pins", `NPD002`, drop; wrap `GraphUtil.Connect*Pins`'s own possible exceptions, if any,
+  as the same drop+issue rather than letting them propagate, since a hand-edited file could reference
+  two pins of the wrong direction pairing that still resolve individually). Connections whose `From` or
+  `To` node id resolves to nothing AND that id matches a *preserved* unknown node's id: keep as a
+  preserved connection (store alongside the preserved nodes) rather than an `NPD002` drop — this is the
+  "connections to it preserved" requirement (DF-T08) — check preserved-node ids first, before treating a
+  missing node as an error. Positions: for each node with a `Layout[graphKey][nodeId]` entry, set
+  `PositionX/Y` directly from the two ints; collect nodes with NO entry and call
+  `GraphAutoLayout.PlaceUnpositioned(graph, unpositioned)` once per graph, at the end (after connections
+  are wired — auto-placement's neighbour rule needs connections already in place); layout entries for an
+  unknown graph key or node id → `issues.Add(NPD004)` (info), ignore. Finally
+  `GraphTypeInference.Relax(graph)` per graph (document-format.md §3.1). Set `NodeGraph.Class`/`Project`
+  back-references throughout. At the very end, `cls.MarkClean()`-equivalent: the contract says "the
+  returned class has `IsDirty == false`" — since `MarkDirty`/`IsDirty` default to `false` already on a
+  freshly-constructed `ClassGraph` and nothing here calls `MarkDirty()`, this should already hold
+  without extra code; add an explicit assertion/test for it rather than trusting that by omission.
+  `Variable`'s type: its constructor requires a `TypeSpecifier` up front to build the *initial* type
+  graph, which `FromDocument` immediately discards/rebuilds from `VariableDocument.TypeGraph` — likely
+  cleanest to pass a cheap placeholder (`TypeSpecifier.FromType<object>()`) then immediately overwrite
+  `variable.TypeGraph` with the mapped one (`MapGraphFromDocument` populating a *fresh* `TypeGraph`,
+  setting `OwningClass = cls`, then replacing `variable.TypeGraph` wholesale) rather than trying to graft
+  document nodes onto the constructor's auto-built placeholder type graph (that placeholder's own
+  `TypeReturnNode` would otherwise conflict with the document's own, similarly to the "fixed node" story
+  above, so a variable's type graph is one place where the "reuse the constructor's node" trick does
+  apply too, exactly like `ClassGraph`/`TypeGraph`/`MethodGraph`/`ConstructorGraph` — do NOT construct a
+  second, throwaway `TypeGraph`; build the DOCUMENT's nodes into the constructor-provided
+  `variable.TypeGraph` the same way every other graph kind is handled, changing only the constructor
+  call to something minimal like `new Variable(cls, name, TypeSpecifier.FromType<object>(), null, null,
+  modifiers)` purely to get a real `TypeGraph`+`TypeReturnNode` to populate, then overwrite `Name`/
+  `Visibility`/`Modifiers`/`Id` from the document as normal).
+- Round trip (DF-T03): `ToDocument(FromDocument(d))` must equal `d`'s bytes for a canonical `d` with a
+  layout entry for every node — this mostly falls out of the above if `BuildPinStates`/`BuildConnections`/
+  `BuildLayout` are exact inverses of the `FromDocument` pin/connection/position application, which is
+  why the design above tries hard to keep each pair (`ToValue`/`FromValue`, pin key encode/decode,
+  connection encode/decode) symmetric.
+- Needed registry addition before starting: `NodeDocumentConverterRegistry.FindByDocumentType(Type)`
+  (mirrors `FindByKind`/`FindByNodeType`, same duplicate-check in the constructor extended to a third
+  dictionary). Do this as part of T035's own commit (it is only needed by `FromDocument`).
+
+**T037-T043**: not designed in detail yet. `JsonDocumentFormat` (T037) is the read/write pipeline around
+`DocumentMapper`+`DocumentMigrator`+`NetPrintsJsonOptions`+`CanonicalJsonWriter`, per document-format.md
+§2.2 — should be mechanical once T026/T035 exist. `LegacyXmlDocumentFormat`/the `Legacy*` DataContract
+copies (T038) need `AssignLegacyNodeIds`/`AssignLegacyMemberIds` (both already exist, sub-phase B) plus
+copies of the legacy `Project`/reference classes with matching `[DataContract(Name=…, Namespace=…)]` —
+read the *actual* legacy classes in `src/NetPrints.Core/Core/{Project,AssemblyReference,FrameworkAssemblyReference,
+SourceDirectoryReference,CompilationReference}.cs` (not yet read this session) before writing the copies,
+since the contract/namespace attributes must match byte-for-byte for `DataContractSerializer` to accept
+old files. `DocumentFormatRegistry` (T039) and the stores (T040) are small and match their contract code
+blocks closely. Schema generation (T041) needs `JsonSchemaExporter` (new in STJ) — read up on
+`JsonSchemaExporterOptions.TransformSchemaNode` before starting; the contract flags this as genuinely
+uncertain ("Open item" row, §6) and asks for findings to go in research.md R17 K14, not just this file.
+
 Known limitation carried into T035/T042: `TypedValueConverter.FromTypedValue`'s enum branch resolves
 the type name with `Type.GetType(typeName, throwOnError: false)`, which only succeeds for BCL enums
 (`System.DayOfWeek`, `System.IO.FileAccess`, …) and enums declared in the calling assembly — an enum
