@@ -4,6 +4,17 @@ using Microsoft.CodeAnalysis.Text;
 namespace NetPrints.Compilation;
 
 /// <summary>
+/// The text of one source file passed to Roslyn analysis alongside a project's references
+/// (compilation-and-diagnostics.md §1): a generated <c>.netpc.g.cs</c>, another <c>Compile</c> item, or
+/// an <c>obj/</c>-generated file such as a global usings file. Pulled forward from sub-phase I's
+/// <c>DiagnosticMapper</c>/<c>SourceMap</c> section (T090) because <c>NetPrints.Projects.ProjectSnapshot</c>
+/// (project-system.md §4, T050) already needs it for <c>OtherSources</c> — see implementation-notes.md.
+/// </summary>
+/// <param name="Path">Full path of the source file.</param>
+/// <param name="Text">The file's full text.</param>
+public sealed record SourceFile(string Path, string Text);
+
+/// <summary>
 /// Severity of a <see cref="CodeDiagnostic"/>.
 /// </summary>
 public enum CodeDiagnosticSeverity

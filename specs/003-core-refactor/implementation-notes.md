@@ -1682,3 +1682,45 @@ scratch pack/feed/project temp directory created while verifying T045/T047/T048 
   silently stop mattering once `MinVer` is a `GlobalPackageReference` (it still sets `PackageVersion`
   itself, ignoring a plain `Version` property), so this is a real one-time migration to do deliberately,
   not something that happens to keep working.
+
+## Phase 5: User Stories 1c + 2 — project system, conversion, references (P1) (sub-phase E)
+
+### T050 — `src/NetPrints.Core/Projects/*.cs`; three types pulled forward from later contract sections
+
+project-system.md §4's `IProjectSystem.CreateAsync(..., IProjectProfile profile, ...)` and
+`ProjectSnapshot.OtherSources` (`IReadOnlyList<SourceFile>`) each need a type this task's own contract
+section does not define: `IProjectProfile`/`ClassTemplate` (extension-points.md §5 / data-model.md §5,
+normatively T052) and `SourceFile` (compilation-and-diagnostics.md §1, normatively T090). Same situation
+as T024's `CodeDiagnostic` (sub-phase C notes above): rather than stub or duplicate, added the real,
+final shape of all three now instead — `SourceFile` in `src/NetPrints.Core/Compilation/CodeDiagnostic.cs`
+(alongside `CodeDiagnostic` itself, already pulled forward there for the same reason), and
+`IProjectProfile.cs`/`ClassTemplate.cs` in `src/NetPrints.Core/Profiles/`. This is safe because every
+type they reference (`TypeSpecifier`, `Project`, `ClassGraph`) already exists; nothing about their shape
+depends on anything sub-phase E or I still has to build. T052's implementer should find
+`IProjectProfile.cs` and `ClassTemplate.cs` already present and add only `DefaultProjectProfile.cs`;
+T090's implementer should extend `CodeDiagnostic.cs`, not recreate `SourceFile`.
+
+`NPW001`–`NPW005` (project-system.md §4): split by which type actually carries the code, mirroring
+`DocumentIssue`'s centralization of `NPD001`–`NPD008` into one place. `NPW001` (no SDK) and `NPW003`
+(evaluation failed) are the only two ever used as a `ProjectSystemException.Code` — `LoadAsync` throws
+for both, it never continues past them — so they live as consts on `ProjectSystemException`; `NPW002`
+(restore failed), `NPW004` (multi-targeting) and `NPW005` (workspace diagnostic) are always
+`ProjectMessage.Code` values (`LoadAsync` continues after each), so they live as consts on
+`ProjectMessage` instead. T053's `MsBuildProjectSystem` should reuse these constants rather than
+re-typing the code strings.
+
+Added `ProjectFilesTests.cs` and `ProcessRunnerTests.cs` under `tests/NetPrints.Core.Tests/Projects/`
+even though neither carries a `PS-Txx` id of its own: PS-T15's own cases are attributed to T053/T054
+(through `CreateAsync`/`ProjectConverter`), but the low-level `ProjectFiles.EnsureGitAttributesAsync`
+helper (missing-line append, no-trailing-newline source file, idempotent second run) and the production
+`IProcessRunner` (exit code plus both streams captured, and — the specific risk sub-phase D's notes
+flagged for this type — no deadlock when both stdout and stderr carry more than a pipe buffer's worth of
+output) are new, non-trivial code with no other coverage; PS-T07/T08/T09/T11/T12/T15 (T053/T054) only
+exercise them indirectly, through the higher-level APIs.
+
+No `!`/`null!`/`default!` added. Verified: `dotnet test --project tests/NetPrints.Core.Tests -c Release
+-- --ignore-exit-code 8` — 287 total (281 → 287, +6: 3 `ProjectFilesTests` + 3 `ProcessRunnerTests`), 0
+failed; `dotnet build NetPrints.slnx -c Release` 0 warnings/0 errors solution-wide (`NetPrints.Workspace`
+already existed as an empty stub project referencing Core and the MSBuild/Locator/Workspaces packages
+from sub-phase D's `Directory.Packages.props` wiring, so nothing there needed to change for T050 to
+compile); `dotnet format NetPrints.slnx --verify-no-changes` clean.
