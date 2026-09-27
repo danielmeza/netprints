@@ -71,10 +71,10 @@ internal static class BuiltInNodeTranslators
         }
     }
 
-    private static IEnumerable<string> PinNames(IExecutionTranslationContext context, IEnumerable<NodeOutputDataPin> pins) =>
+    private static IReadOnlyList<string> PinNames(IExecutionTranslationContext context, IEnumerable<NodeOutputDataPin> pins) =>
         pins.Select(pin => context.GetOrCreatePinName(pin)).ToList();
 
-    private static IEnumerable<string?> IncomingValues(IExecutionTranslationContext context, IEnumerable<NodeInputDataPin> pins) =>
+    private static IReadOnlyList<string?> IncomingValues(IExecutionTranslationContext context, IEnumerable<NodeInputDataPin> pins) =>
         pins.Select(pin => context.GetPinIncomingValue(pin)).ToList();
 
     private static string RequiredIncomingValue(IExecutionTranslationContext context, NodeInputDataPin pin) =>
@@ -151,7 +151,7 @@ internal static class BuiltInNodeTranslators
         }
 
         // Get arguments for method call
-        var argumentNames = IncomingValues(context, node.ArgumentPins).ToList();
+        var argumentNames = IncomingValues(context, node.ArgumentPins);
 
         // Check whether the method is an operator and we need to translate its name
         // into operator symbols. Otherwise just call the method normally.
@@ -256,7 +256,7 @@ internal static class BuiltInNodeTranslators
         // Assign the real variables from the temporary tuple
         if (node.ReturnValuePins.Count > 1)
         {
-            var returnNames = PinNames(context, node.ReturnValuePins).ToList();
+            var returnNames = PinNames(context, node.ReturnValuePins);
             for (int i = 0; i < returnNames.Count; i++)
             {
                 context.AppendLine($"{returnNames[i]} = {temporaryReturnName}.Item{i + 1};");

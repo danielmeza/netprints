@@ -34,19 +34,11 @@ public sealed class AutomationTree : IDisposable
     public AutomationTree()
     {
         openedHandler = Window.WindowOpenedEvent.AddClassHandler(typeof(Window), (sender, _) =>
-        {
-            if (sender is Window window)
-            {
-                Track(window);
-            }
-        });
+            Track(sender as Window ?? throw new InvalidOperationException(
+                $"{nameof(Window.WindowOpenedEvent)}'s sender was a {sender?.GetType().Name ?? "null"}, not a {nameof(Window)}.")));
         closedHandler = Window.WindowClosedEvent.AddClassHandler(typeof(Window), (sender, _) =>
-        {
-            if (sender is Window window)
-            {
-                Untrack(window);
-            }
-        });
+            Untrack(sender as Window ?? throw new InvalidOperationException(
+                $"{nameof(Window.WindowClosedEvent)}'s sender was a {sender?.GetType().Name ?? "null"}, not a {nameof(Window)}.")));
     }
 
     /// <summary>Open windows, in the order they opened.</summary>

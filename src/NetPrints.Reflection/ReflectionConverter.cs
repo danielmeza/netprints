@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using NetPrints.Core;
@@ -56,7 +57,7 @@ namespace NetPrints.Reflection
             if (type is IArrayTypeSymbol)
             {
                 // TODO: Get more interesting type?
-                typeName = typeof(Array).FullName ?? nameof(Array); // Non-generic BCL type: FullName is never null.
+                typeName = typeof(Array).FullName ?? throw new UnreachableException($"{nameof(Array)}.{nameof(Type.FullName)} is never null for a non-generic BCL type.");
             }
             else
             {

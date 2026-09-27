@@ -21,5 +21,7 @@ M:Avalonia.Threading.Dispatcher.Invoke``1(System.Func{``0},Avalonia.Threading.Di
 M:Avalonia.Threading.Dispatcher.Invoke``1(System.Func{``0},Avalonia.Threading.DispatcherPriority,System.Threading.CancellationToken,System.TimeSpan);Use await Dispatcher.UIThread.InvokeAsync
 P:System.DateTime.Now;Inject TimeProvider
 P:System.DateTime.UtcNow;Inject TimeProvider
+P:System.DateTimeOffset.Now;Inject TimeProvider
+P:System.DateTimeOffset.UtcNow;Inject TimeProvider
 M:System.Threading.Thread.Sleep(System.Int32);Use await Task.Delay(..., cancellationToken)
 M:System.Threading.Thread.Sleep(System.TimeSpan);Use await Task.Delay(..., cancellationToken)
