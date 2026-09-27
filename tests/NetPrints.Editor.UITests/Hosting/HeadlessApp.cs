@@ -48,7 +48,7 @@ public sealed class HeadlessApp : IDisposable
         // so under load. Tests that need a refresh advance CodeRefreshScheduler explicitly instead
         // of waiting on the wall clock.
         CodeRefreshScheduler = new TestScheduler();
-        Composition = new EditorComposition(new EditorHostServices(NullLoggerFactory.Instance), c => c with
+        Composition = new EditorComposition(new EditorHostServices(NullLoggerFactory.Instance, MsBuildAvailable: true), c => c with
         {
             Dialogs = Dialogs,
             Processes = Processes,

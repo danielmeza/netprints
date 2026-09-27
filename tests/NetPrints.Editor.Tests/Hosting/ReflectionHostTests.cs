@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Core;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Tests.Hosting;
@@ -9,44 +10,42 @@ public class ReflectionHostTests
     [Fact(Timeout = 120000)]
     public async Task ReloadPublishesTypesAndRaisesReloaded()
     {
-        var host = new ReflectionHost(new InlineDispatcher());
+        var host = new ReflectionHost(new InlineDispatcher(), NullLogger<ReflectionHost>.Instance);
         int reloaded = 0;
         host.Reloaded += (_, _) => reloaded++;
 
         Assert.Empty(host.NonStaticTypes);
         Assert.False(host.IsLoaded);
         Assert.False(host.Loaded.IsCompleted);
+        Assert.Null(host.Snapshot);
         Assert.Throws<InvalidOperationException>(() => host.Provider); // no silent empty provider
 
-        await host.ReloadAsync(Project.CreateNew("P", "N"), TestContext.Current.CancellationToken);
+        var project = Project.FromSnapshot(TestSnapshots.WithRuntimeAssemblies("P", "N"));
+        await host.ReloadAsync(project, TestContext.Current.CancellationToken);
 
         Assert.Equal(1, reloaded);
         Assert.True(host.IsLoaded);
         Assert.True(host.Loaded.IsCompletedSuccessfully);
+        Assert.Same(project.Snapshot, host.Snapshot);
         Assert.True(host.NonStaticTypes.Count > 4000);
         Assert.Empty(host.LastWarnings);
         Assert.True(host.Provider.GetNonStaticTypes().Contains(TypeSpecifier.FromType<string>()));
     }
 
-    [Fact(Timeout = 120000)]
-    public async Task MissingReferencesAreReportedNotThrown()
+    [Fact]
+    public async Task ReloadRequiresASnapshot()
     {
-        var host = new ReflectionHost(new InlineDispatcher());
-        var project = Project.CreateNew("P", "N");
-        project.References.Add(new AssemblyReference("/does/not/exist.dll"));
-        project.References.Add(new SourceDirectoryReference("/does/not/exist"));
+        var host = new ReflectionHost(new InlineDispatcher(), NullLogger<ReflectionHost>.Instance);
 
-        await host.ReloadAsync(project, TestContext.Current.CancellationToken);
-
-        Assert.Equal(2, host.LastWarnings.Count());
-        Assert.True(host.NonStaticTypes.Count > 4000);
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => host.ReloadAsync(Project.CreateNew("P", "N"), TestContext.Current.CancellationToken));
     }
 
     [Fact(Timeout = 120000)]
     public async Task ProjectClassesAreVisibleToReflection()
     {
-        var host = new ReflectionHost(new InlineDispatcher());
-        var project = TestPaths.LoadHelloWorldCopy();
+        var host = new ReflectionHost(new InlineDispatcher(), NullLogger<ReflectionHost>.Instance);
+        var project = await TestPaths.LoadHelloWorldCopyAsync(TestContext.Current.CancellationToken);
         try
         {
             await host.ReloadAsync(project, TestContext.Current.CancellationToken);

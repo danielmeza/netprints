@@ -46,6 +46,8 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     private readonly ClassTranslator classTranslator = new();
 
     private readonly HashSet<Variable> subscribedVariables = [];
+    private readonly HashSet<NodeGraph> dirtyTrackedGraphs = [];
+    private readonly HashSet<Node> dirtyTrackedNodes = [];
     private IDisposable? generatedCodeLoop;
 
     /// <summary>Longest retained Output text, in characters (roughly 1 MB): older lines are
@@ -74,8 +76,8 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         Messenger = context.CreateMessenger();
         Messenger.Register(this);
 
-        Methods = new ObservableViewModelCollection<MethodVM, MethodGraph>(cls.Methods, m => new MethodVM(m));
-        Constructors = new ObservableViewModelCollection<MethodVM, ConstructorGraph>(cls.Constructors, c => new MethodVM(c));
+        Methods = new ObservableViewModelCollection<MethodVM, MethodGraph>(cls.Methods, m => new MethodVM(m, cls));
+        Constructors = new ObservableViewModelCollection<MethodVM, ConstructorGraph>(cls.Constructors, c => new MethodVM(c, cls));
         Variables = new ObservableViewModelCollection<MemberVariableVM, Variable>(cls.Variables,
             v => new MemberVariableVM(v, this), v => v.Dispose());
 
@@ -83,12 +85,17 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         cls.Methods.CollectionChanged += OnMembersChanged;
         cls.Constructors.CollectionChanged += OnMembersChanged;
         SyncVariableSubscriptions();
+        SyncDirtyTrackingGraphs();
 
         UndoRedo.Changed += (_, _) =>
         {
             UndoCommand.NotifyCanExecuteChanged();
             RedoCommand.NotifyCanExecuteChanged();
         };
+
+        // Dirty tracking (editor-services.md §3, data-model.md §2): every applied undo/redo command
+        // edits the model.
+        UndoRedo.Applied += (_, _) => Class.MarkDirty();
 
         context.Reflection.Reloaded += OnReflectionReloaded;
         context.Processes.OutputReceived += OnProcessOutputReceived;
@@ -196,6 +203,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
             if (Class.Name != value)
             {
                 Class.Name = value;
+                Class.MarkDirty();
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(Title));
                 OnPropertyChanged(nameof(FullName));
@@ -212,6 +220,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
             if (Class.Namespace != value)
             {
                 Class.Namespace = value;
+                Class.MarkDirty();
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(FullName));
             }
@@ -227,6 +236,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
             if (Class.Visibility != value)
             {
                 Class.Visibility = value;
+                Class.MarkDirty();
                 OnPropertyChanged();
             }
         }
@@ -241,6 +251,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
             if (Class.Modifiers != value)
             {
                 Class.Modifiers = value;
+                Class.MarkDirty();
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(IsSealed));
                 OnPropertyChanged(nameof(IsAbstract));
@@ -300,6 +311,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     private void OnMembersChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         SyncVariableSubscriptions();
+        SyncDirtyTrackingGraphs();
         DropDetachedState();
     }
 
@@ -307,6 +319,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     {
         if (e.PropertyName is nameof(Variable.GetterMethod) or nameof(Variable.SetterMethod))
         {
+            SyncDirtyTrackingGraphs();
             DropDetachedState();
         }
     }
@@ -360,6 +373,86 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         }
     }
 
+    /// <summary>
+    /// Every graph that currently belongs to <see cref="Class"/> (data-model.md §2): the class graph
+    /// itself, its methods and constructors, and each variable's getter, setter and type graph.
+    /// </summary>
+    private IEnumerable<NodeGraph> ClassGraphs()
+    {
+        yield return Class;
+
+        foreach (var method in Class.Methods)
+        {
+            yield return method;
+        }
+
+        foreach (var constructor in Class.Constructors)
+        {
+            yield return constructor;
+        }
+
+        foreach (var variable in Class.Variables)
+        {
+            if (variable.GetterMethod is { } getter)
+            {
+                yield return getter;
+            }
+
+            if (variable.SetterMethod is { } setter)
+            {
+                yield return setter;
+            }
+
+            yield return variable.TypeGraph;
+        }
+    }
+
+    /// <summary>
+    /// Dirty tracking (editor-services.md §3): resyncs which graphs' <c>Nodes</c> collections (and,
+    /// through <see cref="SyncDirtyTrackingNodes"/>, which nodes' <see cref="Node.OnPositionChanged"/>)
+    /// are subscribed, following <see cref="ClassGraphs"/> as members and getter/setter graphs come
+    /// and go.
+    /// </summary>
+    private void SyncDirtyTrackingGraphs()
+    {
+        var current = ClassGraphs().ToHashSet();
+
+        foreach (var removed in dirtyTrackedGraphs.Where(g => !current.Contains(g)).ToList())
+        {
+            removed.Nodes.CollectionChanged -= OnDirtyTrackedGraphNodesChanged;
+            dirtyTrackedGraphs.Remove(removed);
+        }
+
+        foreach (var added in current.Where(g => !dirtyTrackedGraphs.Contains(g)))
+        {
+            added.Nodes.CollectionChanged += OnDirtyTrackedGraphNodesChanged;
+            dirtyTrackedGraphs.Add(added);
+        }
+
+        SyncDirtyTrackingNodes();
+    }
+
+    private void OnDirtyTrackedGraphNodesChanged(object? sender, NotifyCollectionChangedEventArgs e) => SyncDirtyTrackingNodes();
+
+    private void SyncDirtyTrackingNodes()
+    {
+        var current = dirtyTrackedGraphs.SelectMany(g => g.Nodes).ToHashSet();
+
+        foreach (var removed in dirtyTrackedNodes.Where(n => !current.Contains(n)).ToList())
+        {
+            removed.OnPositionChanged -= OnDirtyTrackedNodePositionChanged;
+            dirtyTrackedNodes.Remove(removed);
+        }
+
+        foreach (var added in current.Where(n => !dirtyTrackedNodes.Contains(n)))
+        {
+            added.OnPositionChanged += OnDirtyTrackedNodePositionChanged;
+            dirtyTrackedNodes.Add(added);
+        }
+    }
+
+    private void OnDirtyTrackedNodePositionChanged(Node node, double positionX, double positionY) => Class.MarkDirty();
+
     /// <summary>Translates the class to C# now (the loop calls this about every second).</summary>
     public void RefreshGeneratedCode()
     {
@@ -403,24 +496,28 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         OpenGraph(Class);
     }
 
-    /// <summary>Saves the whole project (not just the class).</summary>
+    /// <summary>Saves every edited class of the whole project (not just this one) (document-format.md §2.8).</summary>
     [RelayCommand]
     private async Task SaveAsync()
     {
-        if (Project is null)
+        if (Project is not { } project)
         {
             return;
         }
 
         try
         {
-            Project.Save();
+            await Context.Persistence.SaveAsync(project, cls => RenderGenerated(project, cls), CancellationToken.None);
         }
         catch (Exception ex)
         {
             await Context.Dialogs.ShowErrorAsync("Failed to save project", ex.ToString());
         }
     }
+
+    /// <summary>Renders a class's generated C# file the same way a build would (project-system.md §3).</summary>
+    private string RenderGenerated(Project project, ClassGraph cls) =>
+        NetPrints.Generator.GraphCodeGenerator.RenderFile(classTranslator.TranslateClass(cls), Path.GetFileName(project.GetGraphFilePath(cls)));
 
     [RelayCommand]
     private void Compile()
@@ -621,6 +718,20 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         }
 
         subscribedVariables.Clear();
+
+        foreach (var graph in dirtyTrackedGraphs)
+        {
+            graph.Nodes.CollectionChanged -= OnDirtyTrackedGraphNodesChanged;
+        }
+
+        dirtyTrackedGraphs.Clear();
+
+        foreach (var node in dirtyTrackedNodes)
+        {
+            node.OnPositionChanged -= OnDirtyTrackedNodePositionChanged;
+        }
+
+        dirtyTrackedNodes.Clear();
         Messenger.UnregisterAll(this);
         OpenedGraph = null;
         Methods.Dispose();

@@ -32,6 +32,13 @@ public sealed class UndoRedoStack
     /// <summary>Raised after <see cref="Do"/>, <see cref="Undo"/>, <see cref="Redo"/> or <see cref="Clear"/> changes the history.</summary>
     public event EventHandler? Changed;
 
+    /// <summary>
+    /// Raised after <see cref="Do"/>, <see cref="Undo"/> or <see cref="Redo"/> applies a command to
+    /// the model, not after <see cref="Clear"/> (editor-services.md §3): a class editor marks its
+    /// class dirty on this event, since <see cref="Clear"/> itself changes no model state.
+    /// </summary>
+    public event EventHandler? Applied;
+
     /// <summary>Executes a command and records it. Clears the redo history (PAR-60).</summary>
     public void Do(IUndoableCommand command)
     {
@@ -39,6 +46,7 @@ public sealed class UndoRedoStack
         undoStack.Push(command);
         redoStack.Clear();
         Changed?.Invoke(this, EventArgs.Empty);
+        Applied?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>Undoes the last command. Returns whether a command was undone.</summary>
@@ -52,6 +60,7 @@ public sealed class UndoRedoStack
         command.Undo();
         redoStack.Push(command);
         Changed?.Invoke(this, EventArgs.Empty);
+        Applied?.Invoke(this, EventArgs.Empty);
         return true;
     }
 
@@ -66,6 +75,7 @@ public sealed class UndoRedoStack
         command.Execute();
         undoStack.Push(command);
         Changed?.Invoke(this, EventArgs.Empty);
+        Applied?.Invoke(this, EventArgs.Empty);
         return true;
     }
 

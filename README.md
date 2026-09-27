@@ -38,14 +38,14 @@ runs zero tests and would otherwise exit non-zero on an otherwise-green tree.
 Run the editor:
 
 ```bash
-# The editor and CLI still open the legacy .netpp/.netpc format (P1 sub-phase G, T059/T062a switches
-# them to samples/HelloWorld/HelloWorld.csproj); this is a copy kept for that purpose, not the sample.
-dotnet run --project src/NetPrints.Desktop -c Release -- tests/NetPrints.Core.Tests/Fixtures/Legacy/HelloWorld/HelloWorld.netpp
+dotnet run --project src/NetPrints.Desktop -c Release -- samples/HelloWorld/HelloWorld.csproj
 ```
 
 Compile and run a project from the command line:
 
 ```bash
+# The CLI still opens the legacy .netpp/.netpc format (P1 sub-phase G, T062 switches it to
+# samples/HelloWorld/HelloWorld.csproj); this is a copy kept for that purpose, not the sample.
 dotnet run --project src/NetPrints.Cli -c Release -- -p tests/NetPrints.Core.Tests/Fixtures/Legacy/HelloWorld/HelloWorld.netpp -r
 # → "Compilation succeeded." then the program prints "Hello, World!"
 ```

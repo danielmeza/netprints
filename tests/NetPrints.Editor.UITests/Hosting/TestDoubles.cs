@@ -176,25 +176,28 @@ public sealed class QueuedFilePicker : IFilePickerService, IFileDialogs
 }
 
 /// <summary>
-/// Copies the legacy HelloWorld fixture to a temporary folder. The editor still opens <c>.netpp</c>
-/// (T059/T062a switches it to <c>samples/HelloWorld/HelloWorld.csproj</c>, research.md R21).
+/// Copies the checked-in <c>samples/HelloWorld</c> to a temporary folder, with a local-SDK layout
+/// (project-system.md §2.1) so the copy builds against this repository's own generator instead of
+/// the (unpublished) <c>NetPrints.Sdk</c> NuGet package (T059/T062a, research.md R21).
 /// </summary>
 public sealed class SampleCopy : IDisposable
 {
     public SampleCopy()
     {
-        string source = Path.Combine(AppContext.BaseDirectory, "legacy-helloworld");
+        string source = Path.Combine(AppContext.BaseDirectory, "samples", "HelloWorld");
         Directory = Path.Combine(Path.GetTempPath(), "netprints-ui-" + Guid.NewGuid().ToString("N"));
         System.IO.Directory.CreateDirectory(Directory);
         foreach (string file in System.IO.Directory.GetFiles(source))
         {
             File.Copy(file, Path.Combine(Directory, Path.GetFileName(file)));
         }
+
+        NetPrints.Testing.Ui.Hosting.LocalSdkLayout.Write(Directory);
     }
 
     public string Directory { get; }
 
-    public string ProjectPath => Path.Combine(Directory, "HelloWorld.netpp");
+    public string ProjectPath => Path.Combine(Directory, "HelloWorld.csproj");
 
     public void Dispose()
     {

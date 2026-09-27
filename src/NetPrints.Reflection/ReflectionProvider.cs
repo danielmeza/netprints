@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -442,15 +443,17 @@ namespace NetPrints.Reflection
             return (T?)GetTypeFromSpecifier(specifier);
         }
 
-        private readonly Dictionary<TypeSpecifier, ITypeSymbol?> cachedTypeSpecifierSymbols = new Dictionary<TypeSpecifier, ITypeSymbol?>();
+        // A ConcurrentDictionary (not a plain Dictionary): queried from the UI thread and from
+        // background tasks (suggestion lists, reflection reloads), same as the memoized queries in
+        // MemoizedReflectionProvider. GetOrAdd may run the (pure, idempotent) lookup more than once
+        // under a race; it never corrupts the dictionary itself.
+        private readonly ConcurrentDictionary<TypeSpecifier, ITypeSymbol?> cachedTypeSpecifierSymbols = new ConcurrentDictionary<TypeSpecifier, ITypeSymbol?>();
 
-        private ITypeSymbol? GetTypeFromSpecifier(TypeSpecifier specifier)
+        private ITypeSymbol? GetTypeFromSpecifier(TypeSpecifier specifier) =>
+            cachedTypeSpecifierSymbols.GetOrAdd(specifier, ComputeTypeFromSpecifier);
+
+        private ITypeSymbol? ComputeTypeFromSpecifier(TypeSpecifier specifier)
         {
-            if (cachedTypeSpecifierSymbols.TryGetValue(specifier, out var symbol))
-            {
-                return symbol;
-            }
-
             string lookupName = specifier.Name;
 
             // Find array ranks and remove them from the lookup name.
@@ -514,8 +517,6 @@ namespace NetPrints.Reflection
                     foundType = compilation.CreateArrayTypeSymbol(foundType, arrayRank);
                 }
             }
-
-            cachedTypeSpecifierSymbols.Add(specifier, foundType);
 
             return foundType;
         }

@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using NetPrints.Core;
+using NetPrints.Projects;
 using NetPrints.Reflection;
 
 namespace NetPrints.Editor.Hosting;
@@ -21,6 +22,12 @@ public interface IReflectionHost
 
     /// <summary>The current provider. Throws <see cref="InvalidOperationException"/> before the first load.</summary>
     IReflectionProvider Provider { get; }
+
+    /// <summary>
+    /// The snapshot the current provider was built from (references, other sources, options), or
+    /// <see langword="null"/> before the first load.
+    /// </summary>
+    ProjectSnapshot? Snapshot { get; }
 
     /// <summary>Non-static types for type pickers, refreshed on reload (on the UI thread).</summary>
     ReadOnlyObservableCollection<TypeSpecifier> NonStaticTypes { get; }

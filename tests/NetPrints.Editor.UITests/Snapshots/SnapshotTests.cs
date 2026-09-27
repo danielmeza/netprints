@@ -172,7 +172,9 @@ public class SnapshotTests
         await app.OpenStartupProjectAsync(sample.ProjectPath, Token);
 
         var references = await app.Main.OpenReferencesAsync(Token);
-        await references.WaitForRowAsync("System.dll", Token);
+        // The SDK-style sample declares no explicit references (research.md R21): wait for the
+        // dialog itself to settle instead of a specific row.
+        await references.AddAssemblyButton.GetAsync(Token);
 
         await MatchWindowAsync(app.Driver, references, "dialog-references");
     }

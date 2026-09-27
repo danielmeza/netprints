@@ -2347,3 +2347,42 @@ that were written and then removed).
   in this batch (pre-existing code, opt-in, never runs in CI) but worth fixing before T062a rather than
   after, since T062a is what finally deletes this whole regeneration path along with the legacy importer.
 - Nothing in T059–T062 is blocked on anything left open by this batch.
+
+## T059 — Editor switch-over
+
+Resumed from a prior agent's uncommitted working tree (it OOM'd running the full UITests suite
+unfiltered under Xvfb, not while writing code). Audited the diff against T059's task text and the
+notes above: `EditorContext.Projects`/`Persistence`, `MsBuildRegistration` in Desktop `Main` with
+`NoSdkProjectSystem` for PS-T13, `ReflectionHost.ReloadAsync` reading straight off
+`Project.Snapshot` (the old `ReferenceAssemblyResolver`/`FindSiblingDocumentationPath` shim gone),
+`MainEditorVM` create/open/save/add-existing via `ProjectPersistence`, the binary-type-only
+Settings pane, `ReferenceListVM`/`DeclaredReferenceVM` on `DeclaredReferences` + `ProjectEdit`s,
+`FileFilter.ProjectFiles`/`ClassFiles`, ED-T13/PS-T13 in `MainEditorVMTests`, and the editor test
+paths moved back to `samples/HelloWorld/HelloWorld.csproj` were all present and matched the task
+text; nothing was missing or half-done. The diff also carried forward part of T060 (see below).
+
+Fixed the one open item the prior batch's note flagged: `AllNodesFixtureRegenerationTests`'
+`NETPRINTS_REGENERATE_SAMPLES=1` branch no longer copies `samples/HelloWorld` (now `.csproj`-based)
+over `Fixtures/Legacy/HelloWorld` (still `.netpp`/`.netpc`) — that copy is dropped, and the legacy
+HelloWorld fixture is documented as frozen until T062a deletes the whole regeneration path.
+
+No `!`/`null!`/`default!` anywhere in the diff (grepped the added lines and every new file).
+
+Verified: `dotnet build -v q -tl:off --nologo` 0 errors/0 warnings (16 projects). Filtered xUnit v3
+run (`NetPrints.Editor.Tests`, `-class` on `MainEditorVMTests`, `ReflectionHostTests`,
+`ReferenceListVMTests`, `ClassEditorVMTests`, `ReflectionReloadTests`): 45 total, 41 passed, 4
+skipped (the T061-gated Run/Compile tests), 0 failed. `NetPrints.Core.Tests`'
+`AllNodesFixtureRegenerationTests` (default, non-regenerating path): green. The six changed
+Snapshot baseline PNGs were inspected: `main-window-settings-pane.png` shows only the Binary type
+row (Output-flags chooser removed, matches the `.axaml` diff); `dialog-references.png` shows a
+single `NetPrints.Sdk 1.0.0` package reference (the SDK-style sample's only declared reference,
+`Exclude` toggle correctly disabled for a non-source-directory reference) — an intentional
+regeneration, not stale. Found and killed one orphaned `Xvfb :173` (PPID reparented to
+`systemd --user`) left over from the OOM-killed agent before running anything under X.
+
+**Deviation:** the working tree already contained most of T060's production wiring
+(`UndoRedoStack.Applied`, `ClassEditorVM` dirty-tracking subscriptions on graphs/nodes, the
+`MethodVM`/`MemberVariableVM`/class-inspector `MarkDirty()` calls) mixed into this same diff — it
+was not separable file-by-file from T059's changes, so it is committed here rather than split
+across two commits. T060's own commit below only adds the dedicated ED-T15 test file and confirms
+the wiring.

@@ -9,8 +9,10 @@ namespace NetPrints.Tests.Characterization
     /// <summary>
     /// The checked-in <c>AllNodes</c> legacy fixture (<see cref="AllNodesFixtureFactory"/>) is exactly
     /// what the factory produces. Set NETPRINTS_REGENERATE_SAMPLES=1 to rewrite
-    /// tests/NetPrints.Core.Tests/Fixtures/Legacy/AllNodes from the factory, and to refresh the
-    /// tracked copy of the HelloWorld legacy fixture from samples/HelloWorld.
+    /// tests/NetPrints.Core.Tests/Fixtures/Legacy/AllNodes from the factory. The legacy
+    /// <c>Fixtures/Legacy/HelloWorld</c> copy is frozen (T059/T062a switched
+    /// <c>samples/HelloWorld</c> to the <c>.csproj</c> layout, so it no longer holds a
+    /// <c>.netpp</c>/<c>.netpc</c> to refresh from) and is not touched by this regeneration path.
     /// </summary>
     public class AllNodesFixtureRegenerationTests : IDisposable
     {
@@ -39,13 +41,8 @@ namespace NetPrints.Tests.Characterization
                 Directory.CreateDirectory(fixtureDir);
                 AllNodesFixtureFactory.CreateAllNodes(Path.Combine(fixtureDir, "AllNodes.netpp")).Save();
 
-                string helloWorldSource = Path.Combine(SampleProjectFactory.FindRepositoryRoot(), "samples", "HelloWorld");
-                string helloWorldFixtureDir = Path.Combine(SampleProjectFactory.FindRepositoryRoot(), "tests", "NetPrints.Core.Tests", "Fixtures", "Legacy", "HelloWorld");
-                Directory.CreateDirectory(helloWorldFixtureDir);
-                foreach (string file in Directory.GetFiles(helloWorldSource))
-                {
-                    File.Copy(file, Path.Combine(helloWorldFixtureDir, Path.GetFileName(file)), overwrite: true);
-                }
+                // Fixtures/Legacy/HelloWorld is frozen: samples/HelloWorld is .csproj-based now (T059),
+                // so it has no .netpp/.netpc left to refresh this legacy copy from.
             }
 
             AllNodesFixtureFactory.CreateAllNodes(Path.Combine(tempDir, "AllNodes.netpp")).Save();

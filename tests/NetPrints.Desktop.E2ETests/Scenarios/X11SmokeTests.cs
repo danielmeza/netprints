@@ -28,21 +28,23 @@ public sealed class X11SmokeTests(XServer server) : SmokeScenarios, IAsyncDispos
             Assert.Skip($"Desktop E2E tests run with {XServer.EnableVariable}=1 (Linux with Xvfb, openbox, xdotool, ImageMagick and GTK 3).");
         }
 
-        // Arrange: a private copy of the legacy HelloWorld fixture; the editor still opens .netpp
-        // (T059/T062a switches it to samples/HelloWorld/HelloWorld.csproj, research.md R21). The
-        // editor starts without a project.
+        // Arrange: a private copy of the checked-in sample, with a local-SDK layout so it builds
+        // against this repository's own generator (T059/T062a, research.md R21). The editor starts
+        // without a project.
         string sample = Directory.CreateDirectory(Path.Combine(work, "HelloWorld")).FullName;
-        foreach (string file in Directory.GetFiles(Path.Combine(AppContext.BaseDirectory, "legacy-helloworld")))
+        foreach (string file in Directory.GetFiles(Path.Combine(AppContext.BaseDirectory, "samples", "HelloWorld")))
         {
             File.Copy(file, Path.Combine(sample, Path.GetFileName(file)));
         }
+
+        NetPrints.Testing.Ui.Hosting.LocalSdkLayout.Write(sample);
 
         editor = await EditorProcess.StartAsync(server, work, project: null, cancellationToken);
         driver = new X11Driver(server, editor, new Tool(server));
         var actor = Actor.Named("Ada").WhoCan(UseNetPrints.With(driver, new GtkFileDialogs(driver, editor)));
         await actor.Using<UseNetPrints>().MainWindow.GetAsync(cancellationToken);
         await CheckpointAsync(new SmokeContext(actor, "", work), "00-started", cancellationToken);
-        return new SmokeContext(actor, Path.Combine(sample, "HelloWorld.netpp"), Directory.CreateDirectory(Path.Combine(work, "out")).FullName);
+        return new SmokeContext(actor, Path.Combine(sample, "HelloWorld.csproj"), Directory.CreateDirectory(Path.Combine(work, "out")).FullName);
     }
 
     protected override async Task CheckpointAsync(SmokeContext context, string name, CancellationToken cancellationToken)

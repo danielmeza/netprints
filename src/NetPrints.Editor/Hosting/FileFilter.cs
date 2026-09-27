@@ -5,11 +5,11 @@ namespace NetPrints.Editor.Hosting;
 /// </summary>
 public sealed record FileFilter(string Name, IReadOnlyList<string> Patterns)
 {
-    /// <summary>Filter for NetPrints project files (<c>*.netpp</c>).</summary>
-    public static readonly FileFilter ProjectFiles = new("Project Files", ["*.netpp"]);
+    /// <summary>Filter for NetPrints project files (<c>*.csproj</c>; research.md R21, no legacy <c>.netpp</c>).</summary>
+    public static readonly FileFilter ProjectFiles = new("Project Files", ["*.csproj"]);
 
-    /// <summary>Filter for NetPrints class files (<c>*.netpc</c>).</summary>
-    public static readonly FileFilter ClassFiles = new("Class Files", ["*.netpc"]);
+    /// <summary>Filter for NetPrints class files (<c>*.netpc.json</c>).</summary>
+    public static readonly FileFilter ClassFiles = new("Class Files", ["*.netpc.json"]);
 
     /// <summary>Filter for .NET assemblies (<c>*.dll</c>, <c>*.exe</c>).</summary>
     public static readonly FileFilter Assemblies = new("Assemblies", ["*.dll", "*.exe"]);

@@ -9,6 +9,10 @@
   <ItemGroup>
     <PackageReference Include="SkiaSharp" />
     <PackageReference Include="xunit.v3.assert" />
+    <!-- Transitively pulled in by the NetPrints.Editor -> NetPrints.Workspace project reference;
+         ExcludeAssets/PrivateAssets satisfies MSBuildLocator's own MSBL001 guard (research K10) here too. -->
+    <PackageReference Include="Microsoft.Build" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Build.Framework" ExcludeAssets="runtime" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>

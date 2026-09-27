@@ -1,20 +1,22 @@
+using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using NetPrints.Core;
 using NetPrints.Editor.Hosting;
-using NetPrints.Editor.ModelSync;
+using NetPrints.Projects;
 
 namespace NetPrints.Editor.References;
 
 /// <summary>
-/// View model of the References dialog (PAR-16..21).
+/// View model of the References dialog (PAR-16..21), working on <see cref="ProjectSnapshot.DeclaredReferences"/>
+/// and applying every change through <see cref="IProjectSystem.ApplyAsync"/> (project-system.md §4).
 /// </summary>
 public sealed partial class ReferenceListVM : ObservableObject, IDisposable
 {
     private readonly EditorContext context;
 
     /// <summary>
-    /// Wraps <paramref name="project"/>'s references.
+    /// Wraps <paramref name="project"/>'s declared references.
     /// </summary>
     /// <param name="project">Project whose references are shown and edited.</param>
     /// <param name="context">Host services shared across the editor.</param>
@@ -22,17 +24,31 @@ public sealed partial class ReferenceListVM : ObservableObject, IDisposable
     {
         Project = project;
         this.context = context;
-        References = new ObservableViewModelCollection<CompilationReferenceVM, CompilationReference>(
-            project.References, r => new CompilationReferenceVM(r));
+        RebuildReferences();
+        ((INotifyPropertyChanged)project).PropertyChanged += OnProjectPropertyChanged;
     }
 
     /// <summary>The project whose references are shown and edited.</summary>
     public Project Project { get; }
 
-    /// <summary>View models for <see cref="Project"/>'s references.</summary>
-    public ObservableViewModelCollection<CompilationReferenceVM, CompilationReference> References { get; }
+    /// <summary>View models for <see cref="Project"/>'s declared references.</summary>
+    [ObservableProperty]
+    public partial IReadOnlyList<DeclaredReferenceVM> References { get; set; } = [];
 
-    /// <summary>Adds an assembly; duplicates (full path, case-insensitive) are ignored (PAR-17).</summary>
+    private void OnProjectPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(Core.Project.Snapshot))
+        {
+            RebuildReferences();
+        }
+    }
+
+    private void RebuildReferences() =>
+        References = (Project.Snapshot?.DeclaredReferences ?? [])
+            .Select(reference => new DeclaredReferenceVM(reference, this))
+            .ToList();
+
+    /// <summary>Adds an assembly; a duplicate <c>HintPath</c> is a no-op (PAR-17, project-system.md §4).</summary>
     [RelayCommand]
     private async Task AddAssemblyAsync()
     {
@@ -47,15 +63,7 @@ public sealed partial class ReferenceListVM : ObservableObject, IDisposable
     {
         try
         {
-            string fullPath = Path.GetFullPath(path);
-            bool exists = Project.References.OfType<AssemblyReference>().Any(r =>
-                r.AssemblyPath is not null
-                && string.Equals(Path.GetFullPath(r.AssemblyPath), fullPath, StringComparison.OrdinalIgnoreCase));
-
-            if (!exists)
-            {
-                Project.References.Add(new AssemblyReference(path));
-            }
+            await ApplyAsync([new ProjectEdit.AddAssemblyReference(path)]);
         }
         catch (Exception ex)
         {
@@ -78,14 +86,7 @@ public sealed partial class ReferenceListVM : ObservableObject, IDisposable
     {
         try
         {
-            string fullPath = Path.GetFullPath(path);
-            bool exists = Project.References.OfType<SourceDirectoryReference>().Any(r =>
-                string.Equals(Path.GetFullPath(r.SourceDirectory), fullPath, StringComparison.OrdinalIgnoreCase));
-
-            if (!exists)
-            {
-                Project.References.Add(new SourceDirectoryReference(path));
-            }
+            await ApplyAsync([new ProjectEdit.AddSourceDirectory(path)]);
         }
         catch (Exception ex)
         {
@@ -93,16 +94,45 @@ public sealed partial class ReferenceListVM : ObservableObject, IDisposable
         }
     }
 
-    /// <summary>Removes a reference (PAR-20).</summary>
-    [RelayCommand]
-    private void Remove(CompilationReferenceVM? reference)
+    /// <summary>Toggles a source directory reference between included (<c>Compile</c>) and excluded (<c>None</c>).</summary>
+    internal async Task SetSourceDirectoryIncludedAsync(string directoryPath, bool included)
     {
-        if (reference is not null)
+        try
         {
-            Project.References.Remove(reference.Reference);
+            await ApplyAsync([new ProjectEdit.SetSourceDirectoryIncluded(directoryPath, included)]);
+        }
+        catch (Exception ex)
+        {
+            await context.Dialogs.ShowErrorAsync("Failed to change the source directory", ex.ToString());
         }
     }
 
-    /// <summary>Disposes <see cref="References"/> and every reference view model.</summary>
-    public void Dispose() => References.Dispose();
+    /// <summary>Removes a reference (PAR-20).</summary>
+    [RelayCommand]
+    private async Task Remove(DeclaredReferenceVM? reference)
+    {
+        if (reference is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await ApplyAsync([new ProjectEdit.RemoveReference(reference.Info.Kind, reference.Info.Include)]);
+        }
+        catch (Exception ex)
+        {
+            await context.Dialogs.ShowErrorAsync("Failed to remove the reference", ex.ToString());
+        }
+    }
+
+    private async Task ApplyAsync(IReadOnlyList<ProjectEdit> edits)
+    {
+        ProjectSnapshot snapshot = await context.Projects.ApplyAsync(Project.Path, edits, CancellationToken.None);
+        Project.Snapshot = snapshot;
+        RebuildReferences();
+    }
+
+    /// <summary>Unsubscribes from <see cref="Project"/>.</summary>
+    public void Dispose() => ((INotifyPropertyChanged)Project).PropertyChanged -= OnProjectPropertyChanged;
 }

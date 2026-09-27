@@ -5,20 +5,24 @@ using Avalonia.Media;
 using Microsoft.Extensions.Logging;
 using NetPrints.Editor;
 using NetPrints.Editor.Hosting;
+using NetPrints.Workspace;
 
 namespace NetPrints.Desktop;
 
 internal static class Program
 {
     /// <summary>
-    /// Starts the NetPrints editor. A single argument is the path of a project (.netpp) to open.
+    /// Starts the NetPrints editor. A single argument is the path of a project (.csproj) to open.
     /// </summary>
     [STAThread]
     public static int Main(string[] args)
     {
         ILoggerFactory loggerFactory = CreateLoggerFactory();
         Logger.Sink = new AvaloniaLogSink(loggerFactory);
-        EditorApp.HostServices = new EditorHostServices(loggerFactory);
+
+        // Must run before any Microsoft.Build-namespace type is loaded (project-system.md §4).
+        bool msBuildAvailable = MsBuildRegistration.EnsureRegistered(loggerFactory.CreateLogger(nameof(MsBuildRegistration)));
+        EditorApp.HostServices = new EditorHostServices(loggerFactory, msBuildAvailable);
 
         try
         {

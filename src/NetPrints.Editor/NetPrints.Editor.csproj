@@ -19,11 +19,19 @@
     <!-- Used directly by the search list (Throttle, schedulers), not only through DynamicData. -->
     <PackageReference Include="System.Reactive" />
     <PackageReference Include="Material.Icons.Avalonia" />
+    <!-- Transitively pulled in by the NetPrints.Workspace project reference (MsBuildProjectSystem);
+         ExcludeAssets/PrivateAssets satisfies MSBuildLocator's own MSBL001 guard (research K10) here
+         too, since NuGet surfaces them as PackageReference items of this project as well. -->
+    <PackageReference Include="Microsoft.Build" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Build.Framework" ExcludeAssets="runtime" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\NetPrints.Core\NetPrints.Core.csproj" />
     <ProjectReference Include="..\NetPrints.Reflection\NetPrints.Reflection.csproj" />
+    <ProjectReference Include="..\NetPrints.Serialization\NetPrints.Serialization.csproj" />
+    <ProjectReference Include="..\NetPrints.Workspace\NetPrints.Workspace.csproj" />
+    <ProjectReference Include="..\NetPrints.Generator\NetPrints.Generator.csproj" />
   </ItemGroup>
 
   <ItemGroup>

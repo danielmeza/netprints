@@ -4,6 +4,13 @@ using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Logging;
 using NetPrints.Editor.Hosting.Avalonia;
 using NetPrints.Editor.Main;
+using NetPrints.Projects;
+using NetPrints.Serialization;
+using NetPrints.Serialization.Json;
+using NetPrints.Serialization.Mapping;
+using NetPrints.Serialization.Migrations;
+using NetPrints.Serialization.Stores;
+using NetPrints.Workspace;
 
 namespace NetPrints.Editor.Hosting;
 
@@ -19,20 +26,41 @@ public sealed class EditorComposition
     {
         var dispatcher = new AvaloniaUiDispatcher();
         Windows = new WindowService();
+
+        IProjectSystem projects = host.MsBuildAvailable
+            ? new MsBuildProjectSystem(new ProjectSystemOptions([], NetPrintsSdkVersion), new ProcessRunner(),
+                host.LoggerFactory.CreateLogger<MsBuildProjectSystem>())
+            : new NoSdkProjectSystem();
+
+        var nodeConverters = new NodeDocumentConverterRegistry(NodeDocumentConverterRegistry.BuiltIn, []);
+        var mapper = new DocumentMapper(nodeConverters);
+        var formats = new DocumentFormatRegistry([new JsonDocumentFormat(new NetPrintsJsonOptions(nodeConverters), new DocumentMigrator([]))]);
+        var persistence = new ProjectPersistence(projects, formats, mapper,
+            directory => new FileSystemDocumentStore(directory, DefaultScheduler.Instance, host.LoggerFactory.CreateLogger<FileSystemDocumentStore>()),
+            host.LoggerFactory.CreateLogger<ProjectPersistence>());
+
         var context = new EditorContext(
             new StorageFilePickerService(() => Windows.ActiveWindow),
             new EditorDialogs(() => Windows.ActiveWindow),
             new AvaloniaClipboardService(() => Windows.ActiveWindow),
             dispatcher,
-            new ReflectionHost(dispatcher),
+            new ReflectionHost(dispatcher, host.LoggerFactory.CreateLogger<ReflectionHost>()),
             Windows,
             new ProcessLauncher(),
             DefaultScheduler.Instance,
             DefaultScheduler.Instance,
             () => new WeakReferenceMessenger(),
-            host.LoggerFactory);
+            host.LoggerFactory,
+            projects,
+            persistence);
         Context = customize?.Invoke(context) ?? context;
     }
+
+    /// <summary>
+    /// Placeholder <c>NetPrints.Sdk</c> version substituted into a new project's template
+    /// (project-system.md §4): MinVer is not wired up until sub-phase L (T109).
+    /// </summary>
+    private const string NetPrintsSdkVersion = "1.0.0-dev";
 
     /// <summary>The composed host services, possibly customized by the constructor's <c>customize</c> hook.</summary>
     public EditorContext Context { get; }

@@ -40,7 +40,11 @@ public sealed partial class MemberVariableVM : ObservableObject, IDisposable
     public string Name
     {
         get => Variable.Name;
-        set => Variable.Name = value;
+        set
+        {
+            Variable.Name = value;
+            owner.Class.MarkDirty();
+        }
     }
 
     /// <summary>
@@ -69,6 +73,7 @@ public sealed partial class MemberVariableVM : ObservableObject, IDisposable
             }
 
             Variable.Visibility = value;
+            owner.Class.MarkDirty();
         }
     }
 
@@ -79,7 +84,11 @@ public sealed partial class MemberVariableVM : ObservableObject, IDisposable
     public VariableModifiers Modifiers
     {
         get => Variable.Modifiers;
-        set => Variable.Modifiers = value;
+        set
+        {
+            Variable.Modifiers = value;
+            owner.Class.MarkDirty();
+        }
     }
 
     /// <summary>Whether <see cref="VariableModifiers.ReadOnly"/> is set.</summary>

@@ -11,9 +11,14 @@
     <PackageReference Include="Avalonia.Desktop" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" />
+    <!-- Transitively pulled in by the NetPrints.Workspace project reference; ExcludeAssets/PrivateAssets
+         satisfies MSBuildLocator's own MSBL001 guard (research K10) here too. -->
+    <PackageReference Include="Microsoft.Build" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Build.Framework" ExcludeAssets="runtime" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\NetPrints.Editor\NetPrints.Editor.csproj" />
+    <ProjectReference Include="..\NetPrints.Workspace\NetPrints.Workspace.csproj" />
   </ItemGroup>
 </Project>

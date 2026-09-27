@@ -1,4 +1,6 @@
 using NetPrints.Core;
+using NetPrints.Editor.Tests.Hosting;
+using NetPrints.Serialization;
 
 namespace NetPrints.Editor.Tests;
 
@@ -13,27 +15,35 @@ public static class TestPaths
     }
 
     /// <summary>
-    /// Copies the legacy HelloWorld fixture (<c>tests/NetPrints.Core.Tests/Fixtures/Legacy/HelloWorld</c>,
-    /// linked into the test output) to a new temp directory. The editor still opens <c>.netpp</c>
-    /// (T059/T062a switches it to <c>samples/HelloWorld/HelloWorld.csproj</c>, research.md R21).
+    /// Copies the checked-in <c>samples/HelloWorld</c> (linked into the test output) to a new temp
+    /// directory (T059/T062a switched the editor to <c>.csproj</c>, research.md R21).
     /// </summary>
+    /// <returns>The copied project's <c>.csproj</c> path.</returns>
     public static string CopyHelloWorldSample()
     {
-        string source = Path.Combine(AppContext.BaseDirectory, "legacy-helloworld");
+        string source = Path.Combine(AppContext.BaseDirectory, "samples", "HelloWorld");
         string target = CreateTempDirectory();
         foreach (string file in Directory.GetFiles(source))
         {
             File.Copy(file, Path.Combine(target, Path.GetFileName(file)));
         }
 
-        return Path.Combine(target, "HelloWorld.netpp");
+        return Path.Combine(target, "HelloWorld.csproj");
     }
 
-    public static Project LoadHelloWorldCopy()
+    /// <summary>
+    /// Copies <see cref="CopyHelloWorldSample"/> and loads it through a real
+    /// <see cref="ProjectPersistence"/> (a <see cref="FakeProjectSystem"/> supplies the snapshot by
+    /// scanning the copied files, no real MSBuild involved).
+    /// </summary>
+    public static async Task<Project> LoadHelloWorldCopyAsync(CancellationToken cancellationToken)
     {
-        var project = Project.LoadFromPath(CopyHelloWorldSample());
-        Assert.NotNull(project);
-        return project;
+        string csprojPath = CopyHelloWorldSample();
+        ProjectPersistence persistence = TestEditor.CreatePersistence(new FakeProjectSystem());
+
+        ProjectLoadResult loaded = await persistence.LoadAsync(csprojPath, cancellationToken);
+        Assert.Empty(loaded.Issues);
+        return loaded.Project;
     }
 
     public static void TryDelete(string? path)
@@ -45,7 +55,7 @@ public static class TestPaths
 
         try
         {
-            string dir = Directory.Exists(path) ? path : Path.GetDirectoryName(path)!;
+            string dir = Directory.Exists(path) ? path : Path.GetDirectoryName(path) ?? path;
             Directory.Delete(dir, true);
         }
         catch (IOException)

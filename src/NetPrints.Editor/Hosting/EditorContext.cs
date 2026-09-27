@@ -1,6 +1,8 @@
 using System.Reactive.Concurrency;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Logging;
+using NetPrints.Projects;
+using NetPrints.Serialization;
 
 namespace NetPrints.Editor.Hosting;
 
@@ -23,6 +25,10 @@ namespace NetPrints.Editor.Hosting;
 /// </param>
 /// <param name="CreateMessenger">Creates a messenger for one editor scope (a class editor window).</param>
 /// <param name="LoggerFactory">Creates the loggers editor-scope services log through (P1).</param>
+/// <param name="Projects">Loads, edits, creates and builds the open project's <c>.csproj</c>
+/// (project-system.md §4).</param>
+/// <param name="Persistence">Loads, saves and adds class graphs of the open project
+/// (document-format.md §2.8).</param>
 public sealed record EditorContext(
     IFilePickerService FilePicker,
     IEditorDialogs Dialogs,
@@ -34,4 +40,6 @@ public sealed record EditorContext(
     IScheduler Scheduler,
     IScheduler CodeRefreshScheduler,
     Func<IMessenger> CreateMessenger,
-    ILoggerFactory LoggerFactory);
+    ILoggerFactory LoggerFactory,
+    IProjectSystem Projects,
+    ProjectPersistence Persistence);

@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Core;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Tests.Hosting;
@@ -15,8 +16,9 @@ public sealed class Startup
         // Loading the runtime assembly set takes seconds, so one loaded host is shared by all tests.
         services.AddSingleton<IReflectionHost>(_ =>
         {
-            var host = new ReflectionHost(new InlineDispatcher());
-            host.ReloadAsync(Project.CreateNew("Shared", "Shared")).GetAwaiter().GetResult();
+            var host = new ReflectionHost(new InlineDispatcher(), NullLogger<ReflectionHost>.Instance);
+            var project = Project.FromSnapshot(TestSnapshots.WithRuntimeAssemblies("Shared", "Shared"));
+            host.ReloadAsync(project).GetAwaiter().GetResult();
             return host;
         });
 

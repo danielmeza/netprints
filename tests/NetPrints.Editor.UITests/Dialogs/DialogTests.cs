@@ -69,13 +69,24 @@ public class DialogTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task ReferencesDialogListsAndCloses()
     {
-        var project = Project.CreateNew("P", "N");
-        project.References.Add(new SourceDirectoryReference("/tmp/src"));
+        var snapshot = new NetPrints.Projects.ProjectSnapshot("/tmp/P.csproj", "P", "N", "P",
+            BinaryType.SharedLibrary, "net10.0", DefaultProjectProfile.ProfileId, true, [], [], [],
+            [
+                new NetPrints.Projects.ProjectReferenceInfo(NetPrints.Projects.DeclaredReferenceKind.Assembly, "System.dll", null, true, true),
+                new NetPrints.Projects.ProjectReferenceInfo(NetPrints.Projects.DeclaredReferenceKind.Assembly, "System.Core", null, true, true),
+                new NetPrints.Projects.ProjectReferenceInfo(NetPrints.Projects.DeclaredReferenceKind.Assembly, "mscorlib", null, true, true),
+                new NetPrints.Projects.ProjectReferenceInfo(NetPrints.Projects.DeclaredReferenceKind.SourceDirectory, "/tmp/src", null, false, true),
+            ],
+            [], "{}", new Dictionary<string, string>(), []);
+        var project = Project.FromSnapshot(snapshot);
         var dispatcher = new NetPrints.Editor.Hosting.Avalonia.AvaloniaUiDispatcher();
-        var context = new EditorContext(new QueuedFilePicker(), new RecordingDialogs(), new NoClipboard(), dispatcher, new ReflectionHost(dispatcher),
+        var noSdkProjects = new NoSdkProjectSystem();
+        var context = new EditorContext(new QueuedFilePicker(), new RecordingDialogs(), new NoClipboard(), dispatcher,
+            new ReflectionHost(dispatcher, NullLogger<ReflectionHost>.Instance),
             new NetPrints.Editor.Hosting.Avalonia.WindowService(), new CapturingProcessLauncher(),
             System.Reactive.Concurrency.DefaultScheduler.Instance, System.Reactive.Concurrency.DefaultScheduler.Instance,
-            () => new CommunityToolkit.Mvvm.Messaging.WeakReferenceMessenger(), NullLoggerFactory.Instance);
+            () => new CommunityToolkit.Mvvm.Messaging.WeakReferenceMessenger(), NullLoggerFactory.Instance,
+            noSdkProjects, TestPersistence.Create(noSdkProjects));
         using var ui = HeadlessUi.Create();
         ui.Show(new ReferencesDialog { DataContext = new ReferenceListVM(project, context) });
         var page = new ReferencesDialogPage(ui.Driver);
@@ -96,5 +107,23 @@ public class DialogTests
     private sealed class NoClipboard : IClipboardService
     {
         public Task SetTextAsync(string text) => Task.CompletedTask;
+    }
+
+    /// <summary>A real, JSON-backed persistence over a project system this test never calls.</summary>
+    private static class TestPersistence
+    {
+        public static NetPrints.Serialization.ProjectPersistence Create(NetPrints.Projects.IProjectSystem projects)
+        {
+            var nodeConverters = new NetPrints.Serialization.Mapping.NodeDocumentConverterRegistry(NetPrints.Serialization.Mapping.NodeDocumentConverterRegistry.BuiltIn, []);
+            var mapper = new NetPrints.Serialization.Mapping.DocumentMapper(nodeConverters);
+            var formats = new NetPrints.Serialization.DocumentFormatRegistry([
+                new NetPrints.Serialization.Json.JsonDocumentFormat(
+                    new NetPrints.Serialization.Json.NetPrintsJsonOptions(nodeConverters),
+                    new NetPrints.Serialization.Migrations.DocumentMigrator([]))]);
+            return new NetPrints.Serialization.ProjectPersistence(projects, formats, mapper,
+                directory => new NetPrints.Serialization.Stores.FileSystemDocumentStore(directory,
+                    System.Reactive.Concurrency.DefaultScheduler.Instance, NullLogger<NetPrints.Serialization.Stores.FileSystemDocumentStore>.Instance),
+                NullLogger<NetPrints.Serialization.ProjectPersistence>.Instance);
+        }
     }
 }

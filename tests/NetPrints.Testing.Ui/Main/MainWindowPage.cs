@@ -21,7 +21,6 @@ public sealed class MainWindowPage(IUiDriver driver) : UiElement(driver, new Aut
     public UiElement SaveProjectButton => Find(AutomationIds.MainSaveProjectButton);
     public UiElement NewClassButton => Find(AutomationIds.MainNewClassButton);
     public UiElement ExistingClassButton => Find(AutomationIds.MainExistingClassButton);
-    public UiElement OutputChooser => Find(AutomationIds.MainOutputChooser);
     public UiElement BinaryTypeChooser => Find(AutomationIds.MainBinaryTypeChooser);
     public UiElement BusyOverlay => Find(AutomationIds.MainBusyOverlay);
 

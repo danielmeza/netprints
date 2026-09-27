@@ -65,13 +65,6 @@
         <!-- Settings pane (PAR-07) -->
         <StackPanel x:Name="SettingsPane" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MainSettingsPane}" IsVisible="{Binding IsSettingsPaneOpen}" Spacing="4">
           <TextBlock Classes="header" Text="Settings" />
-          <Grid ColumnDefinitions="Auto,*" ToolTip.Tip="What to output on compilation.">
-            <TextBlock Text="Output" VerticalAlignment="Center" Margin="4" />
-            <ComboBox AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MainOutputChooser}" Grid.Column="1" Margin="4" HorizontalAlignment="Stretch"
-                      IsEnabled="{Binding IsProjectOpen}"
-                      ItemsSource="{Binding CompilationOutputs}"
-                      SelectedItem="{Binding CompilationOutput}" />
-          </Grid>
           <Grid ColumnDefinitions="Auto,*" ToolTip.Tip="Type of binary to output.">
             <TextBlock Text="Binary type" VerticalAlignment="Center" Margin="4" />
             <ComboBox AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MainBinaryTypeChooser}" Grid.Column="1" Margin="4" HorizontalAlignment="Stretch"

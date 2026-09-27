@@ -296,10 +296,6 @@ public static class AutomationIds
     /// </summary>
     public const string MainRemoveClassButton = "Main.RemoveClassButton";
     /// <summary>
-    /// Automation id for the main window's compilation-output chooser.
-    /// </summary>
-    public const string MainOutputChooser = "Main.OutputChooser";
-    /// <summary>
     /// Automation id for the main window's binary-type chooser.
     /// </summary>
     public const string MainBinaryTypeChooser = "Main.BinaryTypeChooser";

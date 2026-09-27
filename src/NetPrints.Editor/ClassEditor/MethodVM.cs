@@ -10,7 +10,7 @@ namespace NetPrints.Editor.ClassEditor;
 /// The WPF editor used a full graph view model per list entry; a light wrapper avoids building
 /// node view models for graphs that are not open.
 /// </remarks>
-public sealed class MethodVM(ExecutionGraph graph) : ObservableObject
+public sealed class MethodVM(ExecutionGraph graph, ClassGraph cls) : ObservableObject
 {
     /// <summary>The wrapped model graph.</summary>
     public ExecutionGraph Graph { get; } = graph;
@@ -27,6 +27,7 @@ public sealed class MethodVM(ExecutionGraph graph) : ObservableObject
             if (Graph is MethodGraph method && method.Name != value)
             {
                 method.Name = value;
+                cls.MarkDirty();
                 OnPropertyChanged();
             }
         }
@@ -41,6 +42,7 @@ public sealed class MethodVM(ExecutionGraph graph) : ObservableObject
             if (Graph.Visibility != value)
             {
                 Graph.Visibility = value;
+                cls.MarkDirty();
                 OnPropertyChanged();
             }
         }
@@ -58,6 +60,7 @@ public sealed class MethodVM(ExecutionGraph graph) : ObservableObject
             if (Graph is MethodGraph method && method.Modifiers != value)
             {
                 method.Modifiers = value;
+                cls.MarkDirty();
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(IsSealed));
                 OnPropertyChanged(nameof(IsAbstract));

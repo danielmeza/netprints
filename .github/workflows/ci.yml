@@ -75,7 +75,7 @@ jobs:
           echo "$output"
           echo "$output" | grep -q "NetPrints.Cli"
 
-      # The CLI still opens .netpp/.netpc (T059/T062a switches it to samples/HelloWorld/HelloWorld.csproj,
+      # The CLI still opens .netpp/.netpc (T062 switches it to samples/HelloWorld/HelloWorld.csproj,
       # research.md R21); this is the legacy fixture kept for that purpose, not the sample itself.
       - name: CLI sample compile and run
         run: |

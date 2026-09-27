@@ -20,7 +20,7 @@
     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
       <ItemsControl x:Name="ReferenceList" ItemsSource="{Binding References}">
         <ItemsControl.ItemTemplate>
-          <DataTemplate x:DataType="edreferences:CompilationReferenceVM">
+          <DataTemplate x:DataType="edreferences:DeclaredReferenceVM">
             <Grid ColumnDefinitions="*,150,Auto" Margin="2" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ReferenceRow}" AutomationProperties.Name="{Binding DisplayText}">
               <TextBlock Text="{Binding DisplayText}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
                          FontSize="14" ToolTip.Tip="{Binding DisplayText}" />

@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.Graph.Pins;
@@ -13,7 +14,7 @@ namespace NetPrints.Editor.Tests.Graph;
 /// </summary>
 public sealed class ReflectionReloadTests : IDisposable
 {
-    private readonly ReflectionHost host = new(new InlineDispatcher());
+    private readonly ReflectionHost host = new(new InlineDispatcher(), NullLogger<ReflectionHost>.Instance);
     private readonly ClassEditorVM classEditor;
     private readonly MethodGraph method;
 
@@ -38,7 +39,7 @@ public sealed class ReflectionReloadTests : IDisposable
         var node = classEditor.OpenedGraph!.Nodes.Single(n => n.Node == call);
         Assert.Empty(node.Overloads);
 
-        await host.ReloadAsync(Project.CreateNew("P", "N"), TestContext.Current.CancellationToken);
+        await host.ReloadAsync(Project.FromSnapshot(TestSnapshots.WithRuntimeAssemblies("P", "N")), TestContext.Current.CancellationToken);
 
         Assert.True(node.Overloads.Count > 10, $"overloads after load: {node.Overloads.Count}");
         Assert.True(node.ShowOverloads);
@@ -55,7 +56,7 @@ public sealed class ReflectionReloadTests : IDisposable
         pin.PropertyChanged += (_, e) => pinChanges.Add(e.PropertyName);
         node.PropertyChanged += (_, e) => nodeChanges.Add(e.PropertyName);
 
-        await host.ReloadAsync(Project.CreateNew("P", "N"), TestContext.Current.CancellationToken);
+        await host.ReloadAsync(Project.FromSnapshot(TestSnapshots.WithRuntimeAssemblies("P", "N")), TestContext.Current.CancellationToken);
 
         Assert.Contains(nameof(NodePinVM.PossibleEnumNames), pinChanges);
         Assert.Contains("Monday", pin.PossibleEnumNames!);

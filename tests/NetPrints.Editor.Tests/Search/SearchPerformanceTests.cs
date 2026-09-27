@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.Hosting;
@@ -25,10 +26,10 @@ public class SearchPerformanceTests
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var output = TestContext.Current.TestOutputHelper!;
-        var host = new ReflectionHost(new InlineDispatcher());
+        var host = new ReflectionHost(new InlineDispatcher(), NullLogger<ReflectionHost>.Instance);
 
         var load = Stopwatch.StartNew();
-        await host.ReloadAsync(Project.CreateNew("P", "N"), cancellationToken);
+        await host.ReloadAsync(Project.FromSnapshot(TestSnapshots.WithRuntimeAssemblies("P", "N")), cancellationToken);
         load.Stop();
 
         var cls = new ClassGraph { Name = "Cold", Namespace = "N" };

@@ -19,6 +19,10 @@
     <!-- A never-advanced virtual clock for the class editor's generated-code refresh loop, so it
          cannot race a snapshot capture. -->
     <PackageReference Include="Microsoft.Reactive.Testing" />
+    <!-- Transitively pulled in by the NetPrints.Editor -> NetPrints.Workspace project reference;
+         ExcludeAssets/PrivateAssets satisfies MSBuildLocator's own MSBL001 guard (research K10) here too. -->
+    <PackageReference Include="Microsoft.Build" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Build.Framework" ExcludeAssets="runtime" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
@@ -40,7 +44,5 @@
 
   <ItemGroup>
     <None Include="../../samples/**" CopyToOutputDirectory="PreserveNewest" LinkBase="samples" />
-    <!-- The editor still opens .netpp/.netpc (T059/T062a switches it to samples/HelloWorld/HelloWorld.csproj). -->
-    <None Include="../NetPrints.Core.Tests/Fixtures/Legacy/HelloWorld/**" CopyToOutputDirectory="PreserveNewest" LinkBase="legacy-helloworld" />
   </ItemGroup>
 </Project>

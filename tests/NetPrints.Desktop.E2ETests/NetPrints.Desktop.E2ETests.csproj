@@ -17,6 +17,10 @@
   <ItemGroup>
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" />
+    <!-- Transitively pulled in via NetPrints.Testing.Ui -> NetPrints.Editor -> NetPrints.Workspace;
+         ExcludeAssets/PrivateAssets satisfies MSBuildLocator's own MSBL001 guard (research K10) here too. -->
+    <PackageReference Include="Microsoft.Build" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Build.Framework" ExcludeAssets="runtime" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
@@ -38,7 +42,5 @@
 
   <ItemGroup>
     <None Include="../../samples/**" CopyToOutputDirectory="PreserveNewest" LinkBase="samples" />
-    <!-- The editor still opens .netpp/.netpc (T059/T062a switches it to samples/HelloWorld/HelloWorld.csproj). -->
-    <None Include="../NetPrints.Core.Tests/Fixtures/Legacy/HelloWorld/**" CopyToOutputDirectory="PreserveNewest" LinkBase="legacy-helloworld" />
   </ItemGroup>
 </Project>
