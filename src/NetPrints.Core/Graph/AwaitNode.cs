@@ -41,17 +41,6 @@ namespace NetPrints.Graph
         }
 
         /// <summary>
-        /// Re-subscribes <see cref="UpdateResultPin"/> to <see cref="TaskPin"/>'s
-        /// <see cref="NodeInputDataPin.IncomingPinChanged"/> event (event subscriptions are not
-        /// serialized).
-        /// </summary>
-        public override void OnMethodDeserialized()
-        {
-            base.OnMethodDeserialized();
-            SetupEvents();
-        }
-
-        /// <summary>
         /// Sets up the task connection changed event which updates
         /// the result type.
         /// </summary>

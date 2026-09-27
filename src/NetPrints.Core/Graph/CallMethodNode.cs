@@ -247,18 +247,6 @@ namespace NetPrints.Graph
         }
 
         /// <summary>
-        /// Re-subscribes to <see cref="NodeOutputExecPin.OutgoingPinChanged"/> on the catch pin (event
-        /// subscriptions are not serialized) and reconciles the exception output pin with whether the
-        /// catch pin is connected.
-        /// </summary>
-        public override void OnMethodDeserialized()
-        {
-            base.OnMethodDeserialized();
-            AddCatchPinChangedEvent();
-            UpdateExceptionPin();
-        }
-
-        /// <summary>
         /// Removes the catch exec pin (and, through its pin-changed event, the exception data pin)
         /// when turned pure; restores the catch and exception pins when turned impure.
         /// </summary>
