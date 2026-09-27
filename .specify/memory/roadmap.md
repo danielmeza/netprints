@@ -211,14 +211,27 @@ profiles and P3 extensions use, so custom emitters need no core changes.
   UnrealSharp's `[UStruct]`/`[UEnum]`/`[UInterface]` (U2) build on the built-in kinds.
 - **P1 guard:** P1's translation seams and class/member emitters (sub-phase F, T065) must not assume every
   declaration is a class. The P1 Opus review checks this; nothing of this phase is built in P1.
-- **Designer-authored comments as XML docs** (owner idea, 2026-09-27; ADR-0002). A designer writes a comment
-  that the C#-side developer can read without opening the graph:
-  - a `Comment` field on a node, shown as a note on the canvas (builds on P6's comment boxes/regions) and
-    emitted as a `//` line above the generated statement;
-  - a `Summary` field on a method/constructor/event graph and on the class itself, emitted as `/// <summary>`
-    on the generated declaration;
-  - plain text in the model (no new node kind); whether XML docs are required or optional, and their exact
-    shape, follows the `.editorconfig`-driven style this phase already builds.
+- **Designer-authored comments as XML docs** (owner idea, 2026-09-27; ADR-0002, widened same day). A designer
+  writes prose that the C#-side developer can read without opening the graph, and that NetPrints itself
+  reuses in its own UI. Plain text fields, no new node kind; each reuses an existing UI slot rather than
+  adding one:
+  - **Node** `Comment`: canvas note (builds on P6's comment boxes/regions), the node's hover tooltip (reuses
+    the T063 built-in-doc tooltip); emitted as `//` above the generated statement.
+  - **Connection** `Comment`: shown in P6's planned connection tooltip, alongside the live thumbnail/value;
+    emission into code as a trailing `//` on the consuming statement rides on sub-phase I's `SourceMap`, so it
+    may land a release later than the rest.
+  - **Parameter/return pin** `Description`: pin tooltip and inspector; emitted as `<param>`/`<returns>` on the
+    owning method's XML doc.
+  - **Method/constructor/event graph** `Summary` + `Remarks`: shown in node search results (extends the P6 UX
+    audit's doc-preview item to a designer's own methods, not just built-ins) and the method tooltip; emitted
+    as `/// <summary>`/`/// <remarks>`.
+  - **Class** `Summary` + `Remarks`: class inspector; emitted the same way on the class declaration.
+  - **Variable/field** `Summary`: variable list and tooltip; emitted as `/// <summary>` on the field.
+  - **Local variable** (sub-phase H, P5) `Comment`: inspector; emitted as an inline `//` (locals get no XML
+    doc in C#).
+
+  Whether XML docs are required or optional, and their exact shape, follows the `.editorconfig`-driven style
+  this phase already builds.
 
 ### P4 — VSIX (deferred)
 Deferred by the project owner on 2026-09-24; revisit after P3/P5. When resumed:
@@ -305,7 +318,8 @@ for those who want to learn it.
 - Onboarding (the audit found none; the start dashboard is in P3a): a first-run guided tour of the canvas (create node, connect pins, compile, run); hints in empty areas.
 - Connection and canvas navigation (owner ideas, 2026-09-25):
   - the connection tooltip shows a **live thumbnail of the other end** when it is off screen, and the live
-    value once visual debugging exists;
+    value once visual debugging exists (the wire's `Comment` from P3b's designer-comments item joins the
+    same tooltip);
   - edge-of-screen indicators pointing to connected nodes that are off screen;
   - hovering a pin highlights all its connections; for a pin with many connections, a context-menu list
     to jump to any of them;
@@ -319,7 +333,8 @@ for those who want to learn it.
   - an undo history panel, and F8 to jump between errors.
 - UX audit additions (2026-09-25, IDs from `docs/research/2026-09-25-ux-audit/`):
   - H5–H9, M1, M2, M4–M15, M17–M21, L7;
-  - discoverable node creation, context menus, rich error list, search ranking with doc preview;
+  - discoverable node creation, context menus, rich error list, search ranking with doc preview (extended
+    by P3b's designer comments to preview a designer's own method `Summary`, not just built-in doc);
   - start page and samples, accessibility (names for icon buttons, contrast ≥ 4.5:1, keyboard navigation);
   - Nodify built-ins not used yet (minimap, fit to view, groups/comments, alignment, keyboard navigation).
 
