@@ -117,7 +117,8 @@ public sealed class ContributionTests : IDisposable
         Assert.NotNull(withoutExtension.Methods.Single().PreservedDocumentState);
 
         ClassDocument saved = new DocumentMapper(builtIn.NodeConverters).ToDocument(withoutExtension);
-        UnknownNodeDocument preserved = Assert.IsType<UnknownNodeDocument>(saved.Methods!.Single().Graph.Nodes.Single(n => n.Id == log.Id));
+        Assert.NotNull(saved.Methods);
+        UnknownNodeDocument preserved = Assert.IsType<UnknownNodeDocument>(saved.Methods.Single().Graph.Nodes.Single(n => n.Id == log.Id));
         Assert.Equal("netprints.test/Log", preserved.Kind);
 
         string output = Path.Combine(directory, "Logs.netpc.g.cs");
