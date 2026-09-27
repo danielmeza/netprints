@@ -159,21 +159,25 @@ namespace NetPrints.Tests.Core
 
         /// <summary>
         /// ADR-0003 "Real fixes vs. suppression": every suppression mechanism in <c>src/</c> — a
-        /// <c>#pragma warning disable</c> or <c>[SuppressMessage]</c> in a <c>.cs</c> file, or a
-        /// <c>&lt;NoWarn&gt;</c> in a <c>.csproj</c> — must match a row in ADR-0003's suppression
-        /// ledger (by file and rule id) and its justification must reference "ADR-0003". Tighter than
-        /// <c>S1309</c>: per rule and per site, not per file.
+        /// <c>#pragma warning disable</c>, <c>[SuppressMessage]</c> (short or <c>Attribute</c>-suffixed,
+        /// qualified or not) or a nullable-context escape (<c>#nullable disable</c>/<c>restore</c>) in a
+        /// <c>.cs</c> file — must match a row in ADR-0003's suppression ledger. A <c>[SuppressMessage]</c>
+        /// is keyed by its file, containing member and rule id (not file and rule alone), so a second
+        /// suppression of the same rule on a different member of the same file is still unlisted.
+        /// Tighter than <c>S1309</c>: per rule and per site, not per file. <c>&lt;NoWarn&gt;</c> and the
+        /// rest of a project's warning configuration are covered by
+        /// <see cref="NoUnlistedBuildWarningSuppressions"/> instead, since those live in
+        /// <c>.csproj</c>/<c>.props</c>/<c>.targets</c> files, not <c>.cs</c> ones.
         /// </summary>
-        private static readonly HashSet<(string File, string Rule)> SuppressionAllowlist = new()
+        private static readonly HashSet<(string File, string Member, string Rule)> SuppressionAllowlist = new()
         {
-            ("NetPrints.Editor/ClassEditor/ClassEditorVM.cs", "IDISP003"),
-            ("NetPrints.Editor/Graph/GraphDragDrop.cs", "VSTHRD100"),
-            ("NetPrints.Editor/Graph/GridBackground.cs", "IDISP004"),
-            ("NetPrints.Editor/Hosting/Automation/AutomationAgent.cs", "IDISP007"),
+            ("NetPrints.Editor/ClassEditor/ClassEditorVM.cs", "OpenGraph", "IDISP003"),
+            ("NetPrints.Editor/ClassEditor/ClassEditorVM.cs", "DropDetachedState", "IDISP003"),
+            ("NetPrints.Editor/ClassEditor/ClassEditorVM.cs", "Dispose", "IDISP003"),
+            ("NetPrints.Editor/Graph/GraphDragDrop.cs", "Moved", "VSTHRD100"),
+            ("NetPrints.Editor/Graph/GridBackground.cs", "Render", "IDISP004"),
+            ("NetPrints.Editor/Hosting/Automation/AutomationAgent.cs", "ServeAsync", "IDISP007"),
         };
-
-        [GeneratedRegex(@"<NoWarn>")]
-        private static partial Regex NoWarnPattern();
 
         [Fact]
         public void NoUnlistedSuppressions()
@@ -193,16 +197,26 @@ namespace NetPrints.Tests.Core
                     offenders.Add($"{relativePath}: unlisted #pragma warning ({trivia})");
                 }
 
+                foreach (var trivia in root.DescendantTrivia().Where(t => t.IsKind(SyntaxKind.NullableDirectiveTrivia)))
+                {
+                    if (trivia.GetStructure() is NullableDirectiveTriviaSyntax { SettingToken: var setting }
+                        && (setting.IsKind(SyntaxKind.DisableKeyword) || setting.IsKind(SyntaxKind.RestoreKeyword)))
+                    {
+                        offenders.Add($"{relativePath}: unlisted #nullable {setting.Text}");
+                    }
+                }
+
                 foreach (AttributeSyntax attribute in root.DescendantNodes().OfType<AttributeSyntax>()
-                    .Where(a => a.Name.ToString().EndsWith("SuppressMessage", StringComparison.Ordinal)))
+                    .Where(a => IsSuppressMessageAttribute(a)))
                 {
                     var arguments = attribute.ArgumentList?.Arguments ?? default;
                     string? ruleId = arguments.Count > 1 ? arguments[1].Expression.ToString().Trim('"') : null;
+                    string? member = ContainingMemberName(attribute);
                     string justification = attribute.ToString();
 
-                    if (ruleId is null || !SuppressionAllowlist.Contains((relativePath, ruleId)))
+                    if (ruleId is null || member is null || !SuppressionAllowlist.Contains((relativePath, member, ruleId)))
                     {
-                        offenders.Add($"{relativePath}: unlisted [SuppressMessage] for {ruleId ?? "?"}");
+                        offenders.Add($"{relativePath}: unlisted [SuppressMessage] for {ruleId ?? "?"} on {member ?? "?"}");
                     }
                     else if (!justification.Contains("ADR-0003", StringComparison.Ordinal))
                     {
@@ -211,17 +225,198 @@ namespace NetPrints.Tests.Core
                 }
             }
 
-            foreach (string path in EnumerateSourceFiles(src, "*.csproj"))
+            Assert.True(parsedFileCount > 0, "Expected to scan at least one src/ file.");
+            Assert.Empty(offenders);
+        }
+
+        /// <summary>
+        /// Matches <c>[SuppressMessage(...)]</c> and <c>[SuppressMessageAttribute(...)]</c>, with or
+        /// without a namespace qualifier: <see cref="AttributeSyntax.Name"/> renders the qualifier too
+        /// (e.g. <c>System.Diagnostics.CodeAnalysis.SuppressMessageAttribute</c>), so only the suffix
+        /// after stripping a trailing "Attribute" is compared.
+        /// </summary>
+        private static bool IsSuppressMessageAttribute(AttributeSyntax attribute)
+        {
+            string name = attribute.Name.ToString();
+            if (name.EndsWith("Attribute", StringComparison.Ordinal))
             {
-                parsedFileCount++;
-                string relativePath = Path.GetRelativePath(src, path).Replace('\\', '/');
-                if (NoWarnPattern().IsMatch(File.ReadAllText(path)))
+                name = name[..^"Attribute".Length];
+            }
+
+            return name.EndsWith("SuppressMessage", StringComparison.Ordinal);
+        }
+
+        /// <summary>The name of the method, property or constructor <paramref name="attribute"/> is declared on, or null.</summary>
+        private static string? ContainingMemberName(AttributeSyntax attribute)
+        {
+            for (SyntaxNode? node = attribute.Parent; node is not null; node = node.Parent)
+            {
+                switch (node)
                 {
-                    offenders.Add($"{relativePath}: unlisted <NoWarn>");
+                    case MethodDeclarationSyntax method:
+                        return method.Identifier.Text;
+                    case PropertyDeclarationSyntax property:
+                        return property.Identifier.Text;
+                    case ConstructorDeclarationSyntax constructor:
+                        return constructor.Identifier.Text;
                 }
             }
 
-            Assert.True(parsedFileCount > 0, "Expected to scan at least one src/ file.");
+            return null;
+        }
+
+        [GeneratedRegex(@"<NoWarn>")]
+        private static partial Regex NoWarnPattern();
+
+        [GeneratedRegex(@"<WarningsNotAsErrors>")]
+        private static partial Regex WarningsNotAsErrorsPattern();
+
+        [GeneratedRegex(@"<TreatWarningsAsErrors>\s*false\s*</TreatWarningsAsErrors>", RegexOptions.IgnoreCase)]
+        private static partial Regex TreatWarningsAsErrorsFalsePattern();
+
+        [GeneratedRegex(@"<WarningLevel>")]
+        private static partial Regex WarningLevelPattern();
+
+        /// <summary>
+        /// No <c>.props</c>, <c>.targets</c> or <c>.csproj</c> file anywhere in the repository (except
+        /// <c>legacy/</c>, kept for reference and not built) lowers the warning bar the root
+        /// <c>Directory.Build.props</c> sets (<c>TreatWarningsAsErrors</c>) or the curated analyzer
+        /// severities in <c>.editorconfig</c> establish: a <c>&lt;NoWarn&gt;</c>/<c>&lt;WarningsNotAsErrors&gt;</c>
+        /// entry, <c>&lt;TreatWarningsAsErrors&gt;false&lt;/TreatWarningsAsErrors&gt;</c>, or an explicit
+        /// <c>&lt;WarningLevel&gt;</c> override would each silently do that project-wide, bypassing
+        /// <see cref="NoUnlistedSuppressions"/>'s per-site ledger entirely.
+        /// </summary>
+        [Fact]
+        public void NoUnlistedBuildWarningSuppressions()
+        {
+            string root = SampleProjectFactory.FindRepositoryRoot();
+            var offenders = new List<string>();
+            int parsedFileCount = 0;
+
+            IEnumerable<string> files = new[] { "*.props", "*.targets", "*.csproj" }
+                .SelectMany(pattern => Directory.EnumerateFiles(root, pattern, SearchOption.AllDirectories))
+                .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+                    && !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+                    && !path.Contains($"{Path.DirectorySeparatorChar}legacy{Path.DirectorySeparatorChar}", StringComparison.Ordinal));
+
+            foreach (string path in files)
+            {
+                parsedFileCount++;
+                string relativePath = Path.GetRelativePath(root, path).Replace('\\', '/');
+                string text = File.ReadAllText(path);
+
+                if (NoWarnPattern().IsMatch(text))
+                {
+                    offenders.Add($"{relativePath}: <NoWarn>");
+                }
+
+                if (WarningsNotAsErrorsPattern().IsMatch(text))
+                {
+                    offenders.Add($"{relativePath}: <WarningsNotAsErrors>");
+                }
+
+                if (TreatWarningsAsErrorsFalsePattern().IsMatch(text))
+                {
+                    offenders.Add($"{relativePath}: <TreatWarningsAsErrors>false</TreatWarningsAsErrors>");
+                }
+
+                if (WarningLevelPattern().IsMatch(text))
+                {
+                    offenders.Add($"{relativePath}: <WarningLevel>");
+                }
+            }
+
+            Assert.True(parsedFileCount > 0, "Expected to scan at least one .props/.targets/.csproj file.");
+            Assert.Empty(offenders);
+        }
+
+        [GeneratedRegex(@"^\[(?<section>.+)\]$")]
+        private static partial Regex EditorConfigSectionPattern();
+
+        [GeneratedRegex(@"^dotnet_diagnostic\.(?<rule>[A-Za-z0-9_-]+)\.severity\s*=\s*(?<severity>\S+)")]
+        private static partial Regex EditorConfigSeverityPattern();
+
+        /// <summary>
+        /// Every <c>dotnet_diagnostic.&lt;rule&gt;.severity</c> entry below <c>error</c> in a
+        /// <c>[src/...]</c>-headed <c>.editorconfig</c> section must be in this explicit allowlist,
+        /// which mirrors ADR-0003's severity-policy table: the "warning"-tier researched rule set and
+        /// the locale-sensitive/collection-exposure rules that stay below <c>error</c> in
+        /// <c>src/**.cs</c>, the legacy-model carve-out for <c>CA1002</c>/<c>CA2227</c>, and the layered
+        /// <c>VSTHRD111 = none</c> entries for UI-thread-affine paths. A repo-wide <c>[*.cs]</c> section
+        /// (the <c>suggestion</c>-by-default rule set every non-curated Sonar/IDISP/VSTHRD rule ships
+        /// at, including in <c>tests/</c>) is out of scope: only a section whose glob starts with
+        /// <c>src/</c> is checked.
+        /// </summary>
+        private static readonly HashSet<(string Section, string Rule, string Severity)> EditorConfigNonErrorSeverityAllowlist = new()
+        {
+            ("src/**.cs", "CA1068", "warning"),
+            ("src/**.cs", "CA1861", "warning"),
+            ("src/**.cs", "CA1510", "warning"),
+            ("src/**.cs", "CA1511", "warning"),
+            ("src/**.cs", "CA1512", "warning"),
+            ("src/**.cs", "CA1513", "warning"),
+            ("src/**.cs", "S2139", "warning"),
+            ("src/**.cs", "CA1065", "warning"),
+            ("src/**.cs", "CA1307", "warning"),
+            ("src/**.cs", "CA1309", "warning"),
+            ("src/**.cs", "CA1851", "warning"),
+            ("src/**.cs", "CA1827", "warning"),
+            ("src/**.cs", "CA1829", "warning"),
+            ("src/**.cs", "CA1860", "warning"),
+            ("src/**.cs", "CA1852", "warning"),
+            ("src/**.cs", "S2933", "warning"),
+            ("src/**.cs", "CA1848", "warning"),
+            ("src/**.cs", "CA1727", "warning"),
+            ("src/**.cs", "CA1305", "warning"),
+            ("src/**.cs", "CA1310", "warning"),
+            ("src/**.cs", "CA1311", "warning"),
+            ("src/{NetPrints.Core,NetPrints.Reflection}/**.cs", "CA1002", "suggestion"),
+            ("src/{NetPrints.Core,NetPrints.Reflection}/**.cs", "CA2227", "suggestion"),
+            ("src/NetPrints.Editor/**VM.cs", "VSTHRD111", "none"),
+            ("src/NetPrints.Editor/**.axaml.cs", "VSTHRD111", "none"),
+            ("src/NetPrints.Editor/ModelSync/*.cs", "VSTHRD111", "none"),
+            ("src/NetPrints.Editor/Hosting/EditorComposition.cs", "VSTHRD111", "none"),
+            ("src/NetPrints.Editor/Hosting/ShutdownCoordinator.cs", "VSTHRD111", "none"),
+            ("src/NetPrints.Editor/Hosting/Avalonia/**.cs", "VSTHRD111", "none"),
+            ("src/NetPrints.Editor/Graph/GraphDragDrop.cs", "VSTHRD111", "none"),
+            ("src/NetPrints.Desktop/**.cs", "VSTHRD111", "none"),
+        };
+
+        [Fact]
+        public void EveryNonErrorSrcSeverityInEditorConfigIsAllowlisted()
+        {
+            string editorConfigPath = Path.Combine(SampleProjectFactory.FindRepositoryRoot(), ".editorconfig");
+            string? section = null;
+            var offenders = new List<string>();
+            int checkedCount = 0;
+
+            foreach (string line in File.ReadAllLines(editorConfigPath))
+            {
+                string trimmed = line.Trim();
+                Match header = EditorConfigSectionPattern().Match(trimmed);
+                if (header.Success)
+                {
+                    section = header.Groups["section"].Value;
+                    continue;
+                }
+
+                Match severityMatch = EditorConfigSeverityPattern().Match(trimmed);
+                if (!severityMatch.Success || section is null || !section.StartsWith("src/", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                string rule = severityMatch.Groups["rule"].Value;
+                string severity = severityMatch.Groups["severity"].Value;
+                checkedCount++;
+
+                if (severity != "error" && !EditorConfigNonErrorSeverityAllowlist.Contains((section, rule, severity)))
+                {
+                    offenders.Add($"[{section}] dotnet_diagnostic.{rule}.severity = {severity}");
+                }
+            }
+
+            Assert.True(checkedCount > 0, "Expected to check at least one src/... severity entry in .editorconfig.");
             Assert.Empty(offenders);
         }
     }

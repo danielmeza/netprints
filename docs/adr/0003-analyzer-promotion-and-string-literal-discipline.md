@@ -159,6 +159,7 @@ specify it), `none` for code that resumes on the UI thread deliberately (owner-a
 | `src/NetPrints.Editor/**.axaml.cs` | `none` | Views (code-behind). |
 | `src/NetPrints.Editor/ModelSync/*.cs` | `none` | `ObservableViewModelCollection`, shown directly in views. |
 | `src/NetPrints.Editor/Hosting/EditorComposition.cs` | `none` | Composition root: `StartAsync` drives dialogs and view-model calls in sequence on the UI thread. |
+| `src/NetPrints.Editor/Hosting/ShutdownCoordinator.cs` | `none` | Resumes on the UI thread deliberately to call the desktop lifetime's `Shutdown()` after cleanup. |
 | `src/NetPrints.Editor/Hosting/Avalonia/**.cs` | `none` | Adapters over UI-thread-affine Avalonia APIs (dialogs, clipboard, storage pickers, the dispatcher itself): the continuation after each `await` touches those APIs again. |
 | `src/NetPrints.Editor/Graph/GraphDragDrop.cs` | `none` | Drag-and-drop gesture handling: `Avalonia.Input.DragDrop.DoDragDropAsync`'s continuation is UI work. |
 | `src/NetPrints.Desktop/**.cs` | `none` | Desktop's `Program`/`EditorApp` bootstrap, same reason. |
