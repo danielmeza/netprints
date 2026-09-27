@@ -1,8 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Threading;
-using Microsoft.Extensions.Logging;
-using NetPrints.Editor.Hosting;
 
 namespace NetPrints.Editor.Search;
 
@@ -28,7 +26,9 @@ public partial class NodeSearchView : UserControl
     {
         if ((sender as Control)?.DataContext is SuggestionItem { IsHeader: false } item && ViewModel is { } viewModel)
         {
-            viewModel.SelectCommand.ExecuteAsync(item).Forget(viewModel.Context.LoggerFactory.CreateLogger<NodeSearchView>());
+            // Execute (not ExecuteAsync().Forget(...)) so a fault rethrows on the UI dispatcher and
+            // reaches the error dialog, the same as every other command invocation.
+            viewModel.SelectCommand.Execute(item);
         }
     }
 
@@ -40,7 +40,7 @@ public partial class NodeSearchView : UserControl
                 // Enter picks the first suggestion.
                 if (ViewModel is { } viewModel && viewModel.Items.FirstOrDefault(i => !i.IsHeader) is { } first)
                 {
-                    viewModel.SelectCommand.ExecuteAsync(first).Forget(viewModel.Context.LoggerFactory.CreateLogger<NodeSearchView>());
+                    viewModel.SelectCommand.Execute(first);
                 }
                 e.Handled = true;
                 break;
@@ -60,7 +60,7 @@ public partial class NodeSearchView : UserControl
     {
         if (e.Key == Key.Enter && ResultList.SelectedItem is SuggestionItem { IsHeader: false } item && ViewModel is { } viewModel)
         {
-            viewModel.SelectCommand.ExecuteAsync(item).Forget(viewModel.Context.LoggerFactory.CreateLogger<NodeSearchView>());
+            viewModel.SelectCommand.Execute(item);
             e.Handled = true;
         }
     }

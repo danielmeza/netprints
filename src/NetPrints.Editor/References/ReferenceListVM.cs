@@ -25,13 +25,9 @@ public sealed partial class ReferenceListVM : ObservableObject, IDisposable
     {
         Project = project;
         this.context = context;
-        Logger = context.LoggerFactory.CreateLogger<ReferenceListVM>();
         RebuildReferences();
         ((INotifyPropertyChanged)project).PropertyChanged += OnProjectPropertyChanged;
     }
-
-    /// <summary>Logger for a <see cref="DeclaredReferenceVM"/> entry's fire-and-forget edits.</summary>
-    public ILogger Logger { get; }
 
     /// <summary>The project whose references are shown and edited.</summary>
     public Project Project { get; }
@@ -111,6 +107,16 @@ public sealed partial class ReferenceListVM : ObservableObject, IDisposable
             await context.Dialogs.ShowErrorAsync("Failed to change the source directory", ex.ToString());
         }
     }
+
+    /// <summary>
+    /// Starts <see cref="SetSourceDirectoryIncludedAsync"/> without awaiting it, for
+    /// <see cref="DeclaredReferenceVM.IncludeInCompilation"/>'s property setter. Already reports its
+    /// own failures through the error dialog, so a fault here is only ever a defensive log (1030).
+    /// </summary>
+    /// <param name="directoryPath">Source directory to toggle.</param>
+    /// <param name="included">Whether the directory should be a <c>Compile</c> item.</param>
+    internal void SetSourceDirectoryIncluded(string directoryPath, bool included) =>
+        SetSourceDirectoryIncludedAsync(directoryPath, included).Forget(context.LoggerFactory.CreateLogger<ReferenceListVM>());
 
     /// <summary>Removes a reference (PAR-20).</summary>
     [RelayCommand]

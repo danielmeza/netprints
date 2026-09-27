@@ -4,7 +4,6 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.VisualTree;
-using Microsoft.Extensions.Logging;
 using NetPrints.Editor.Graph.Nodes;
 using NetPrints.Editor.Graph.Pins;
 using NetPrints.Editor.Hosting;
@@ -218,7 +217,8 @@ public partial class GraphEditorView : UserControl
             if (Math.Abs(released.X - pressed.X) < ClickThreshold && Math.Abs(released.Y - pressed.Y) < ClickThreshold
                 && ViewModel is { } graph)
             {
-                graph.OpenSearchAsync(ToGraph(released)).Forget(graph.Context.LoggerFactory.CreateLogger<GraphEditorView>());
+                // Not a command, and OpenSearchAsync has no catch of its own: route a fault to the error dialog too.
+                graph.OpenSearchAsync(ToGraph(released)).Forget(graph.Context, "Failed to open the node search");
                 e.Handled = true;
             }
         }
@@ -239,7 +239,8 @@ public partial class GraphEditorView : UserControl
         else
         {
             // Released on empty canvas: search filtered for the pin, then auto-connect (PAR-47).
-            graph.OpenSearchAsync(PointerGraphPosition, source.Pin).Forget(graph.Context.LoggerFactory.CreateLogger<GraphEditorView>());
+            // Not a command, and OpenSearchAsync has no catch of its own: route a fault to the error dialog too.
+            graph.OpenSearchAsync(PointerGraphPosition, source.Pin).Forget(graph.Context, "Failed to open the node search");
         }
     }
 

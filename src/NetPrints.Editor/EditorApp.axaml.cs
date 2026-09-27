@@ -115,7 +115,8 @@ public partial class EditorApp : Application
             }
 
             // Startup problems first, then a single command-line argument is a project to open (FR-016, PAR-05).
-            composition.StartAsync(desktop.Args ?? []).Forget(HostServices.LoggerFactory.CreateLogger(nameof(EditorApp)));
+            // Not a command, and StartAsync has no catch of its own: route a fault to the error dialog too.
+            composition.StartAsync(desktop.Args ?? []).Forget(composition.Context, "Failed to start the editor");
         }
 
         base.OnFrameworkInitializationCompleted();

@@ -22,12 +22,34 @@ public static class TaskExtensions
     }
 
     /// <summary>
-    /// Runs <paramref name="task"/> to completion without awaiting it, invoking
-    /// <paramref name="onFaulted"/> if it faults. For a caller that reports faults its own way
-    /// instead of through an <see cref="ILogger"/>.
+    /// Runs <paramref name="task"/> to completion without awaiting it. If it faults, logs the
+    /// exception (1030) and shows it in the error dialog on the UI thread through
+    /// <paramref name="context"/> — the same report path a command reaches when invoked through
+    /// <c>Execute</c> (CommunityToolkit.Mvvm's default await-and-rethrow-on-the-calling-context
+    /// behavior). For a fire-and-forget call that is not a command, so nothing else would observe
+    /// its fault otherwise.
     /// </summary>
     /// <param name="task">Task to run to completion without awaiting.</param>
-    /// <param name="onFaulted">Called with the task's (unwrapped) exception if it faults.</param>
+    /// <param name="context">Used to log the fault and show the error dialog.</param>
+    /// <param name="failureTitle">Error dialog title.</param>
+    public static void Forget(this Task task, EditorContext context, string failureTitle)
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        var logger = context.LoggerFactory.CreateLogger(typeof(TaskExtensions).FullName ?? nameof(TaskExtensions));
+        task.Forget(exception =>
+        {
+            Log.TaskFaulted(logger, exception);
+            context.Dispatcher.Post(() => context.Dialogs.ShowErrorAsync(failureTitle, exception.ToString()).Forget(logger));
+        });
+    }
+
+    /// <summary>
+    /// Runs <paramref name="task"/> to completion without awaiting it, invoking
+    /// <paramref name="onFaulted"/> once per inner exception if it faults. For a caller that reports
+    /// faults its own way instead of through an <see cref="ILogger"/>.
+    /// </summary>
+    /// <param name="task">Task to run to completion without awaiting.</param>
+    /// <param name="onFaulted">Called with each of the task's (unwrapped) inner exceptions if it faults.</param>
     public static void Forget(this Task task, Action<Exception> onFaulted)
     {
         ArgumentNullException.ThrowIfNull(task);
@@ -52,9 +74,21 @@ public static class TaskExtensions
 
     private static void ReportIfFaulted(Task task, Action<Exception> onFaulted)
     {
-        if (task.IsFaulted && task.Exception is { } exception)
+        if (!task.IsFaulted || task.Exception is not { } exception)
         {
-            onFaulted(exception.Flatten().InnerException ?? exception);
+            return;
+        }
+
+        var innerExceptions = exception.Flatten().InnerExceptions;
+        if (innerExceptions.Count == 0)
+        {
+            onFaulted(exception);
+            return;
+        }
+
+        foreach (var innerException in innerExceptions)
+        {
+            onFaulted(innerException);
         }
     }
 }

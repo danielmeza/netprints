@@ -52,4 +52,33 @@ public class TaskExtensionsTests
         await reported.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
         Assert.Same(exception, observed);
     }
+
+    [Fact]
+    public void ForgetLogsEveryInnerExceptionOfAnAggregateException()
+    {
+        var logger = new CollectingLogger<TaskExtensionsTests>();
+        var first = new InvalidOperationException("first");
+        var second = new InvalidOperationException("second");
+        var tcs = new TaskCompletionSource();
+        tcs.SetException([first, second]);
+
+        tcs.Task.Forget(logger);
+
+        Assert.Equal(2, logger.Entries.Count);
+        Assert.Contains(logger.Entries, e => ReferenceEquals(e.Exception, first));
+        Assert.Contains(logger.Entries, e => ReferenceEquals(e.Exception, second));
+    }
+
+    [Fact]
+    public void ForgetWithEditorContextLogsAndShowsTheErrorDialog()
+    {
+        var editor = TestEditor.Create(TestEditor.CreateReflectionHost);
+        var exception = new InvalidOperationException("boom");
+
+        Task.FromException(exception).Forget(editor.Context, "Something failed");
+
+        var error = Assert.Single(editor.Dialogs.Errors);
+        Assert.Equal("Something failed", error.Title);
+        Assert.Contains("boom", error.Message, StringComparison.Ordinal);
+    }
 }

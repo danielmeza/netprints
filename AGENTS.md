@@ -106,10 +106,15 @@ is on); `[review]` means only the reviewer catches it (not promoted to `error` y
   root (`static async Task<int> Main`, `[RelayCommand] async Task`, xUnit `async Task`). [VSTHRD103]
 - Never block on async: no `.Result`, `.Wait()`, `.GetAwaiter().GetResult()`, with or without a `Task.Run`
   wrapper. Change the caller to async instead. [VSTHRD002, RS0030]
-- No `async void`, and no bare `_ = SomethingAsync(...)` discard: task discards only through
-  `.Forget(logger)` (`NetPrints.Editor.Hosting.TaskExtensions`), which observes the fault and logs it
-  (1030) instead of an unobserved task exception. UI async work goes through `[RelayCommand] async Task`.
-  [VSTHRD100, VSTHRD101, review]
+- No `async void`, and no bare `_ = SomethingAsync(...)` discard. A view invokes a `[RelayCommand]
+  async Task` through its generated command's `Execute` (never `ExecuteAsync(...).Forget(...)`):
+  CommunityToolkit.Mvvm's default `AsyncRelayCommandOptions` await and rethrow a fault on the calling
+  (UI) context, reaching the error dialog the same way a synchronous command's exception would. Every
+  other fire-and-forget task discard goes through `NetPrints.Editor.Hosting.TaskExtensions.Forget`
+  (13 sites in `src/NetPrints.Editor` as of this batch): `Forget(logger)` for a task whose own method
+  already reports its failure through the error dialog (a log-only 1030 is then just a safety net), and
+  `Forget(EditorContext, title)` for one with no catch of its own, which additionally shows the error
+  dialog on the UI thread. [VSTHRD100, VSTHRD101, review]
 - Observe every task: await it or return it. Await a `ValueTask` exactly once. [VSTHRD110, CA2012]
 - Async methods take `CancellationToken cancellationToken` as the last parameter and forward it to every
   call that accepts one. [CA2016, CA1068]
