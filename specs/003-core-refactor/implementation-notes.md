@@ -2578,3 +2578,40 @@ Findings for B2:
 - The `Node` hook is misnamed (`OnDeserializing` carrying `[OnDeserialized]`).
 - No guarantee was hard to test on the JSON path. The `FixDefaults` reset is vacuous there: `Classes` has a
   field initializer and `Project.FromSnapshot` is the only factory, so that test pins the initializer.
+
+## T063 part B: attributes and hooks removed (B2)
+
+Step 2, `scripts/remove-datacontract.sh` (commit eee4477, one-line fix da82353), run once: a5d8979 removes
+236 lines from 53 files, all of them attribute lines (83 `[DataMember]`, 55 `[DataContract]`, 6
+`[IgnoreDataMember]`, 48 `[KnownType]`) plus the 49 `using System.Runtime.Serialization;` that nothing used any
+more. Every attribute lived under `src/NetPrints.Core` (37 files in `Graph`, 16 in `Core`), so the script's glob
+stays `src/NetPrints.Core/**/*.cs`. It kept the four files that still had a hook (`StreamingContext`). Rerunning
+it changes nothing. The build needed no follow-up. The first version of the script had a Perl list-assignment
+bug that mangled every file; that output was reverted and never committed.
+
+Step 3, hooks. The old persistence went in part A, so nothing on the JSON path ever fired a hook: removing one
+turns no test red, and there was no logic left to move into a constructor or `DocumentMapper`. Each removal
+was made on its own, the ten `DeserializationGuaranteeTests` run, then the commit:
+
+| Hook | Removed in | Tests red after removal | Where the logic already lives |
+| --- | --- | --- | --- |
+| `MethodGraph.OnDeserialized` (`Relax`) | e2b44c9 | none | `DocumentMapper.MapGraphFromDocument` (the two `Relax` calls, now pinned by `MapperRunsTypeInferenceAfterWiringConnections`) |
+| `Project.FixDefaults` | d0bc732 | none | `Classes` field initializer; the property is now get-only and the dead null check in `GenerateClassSources` is gone |
+| `Variable.OnDeserialized` | 3f84c2e | none | constructor (`Class`, `TypeGraph { OwningClass = cls }`); the unreferenced legacy `OldType` shim went too |
+| `Node.OnDeserializing` (`[OnDeserialized]`) | 98cdd7e | none | `Node.AddInputTypePin` (`IncomingPinChanged`) and `OnIncomingTypePinChanged` (source `InferredType`) |
+| `AwaitNode`/`CallMethodNode` `OnMethodDeserialized` overrides | 6e0a32d | none | constructors (`SetupEvents`, `AddExceptionPins`/`AddCatchPinChangedEvent`). They only added duplicate handlers on each `Relax` pass; the handlers are idempotent and goldens are unchanged |
+| `NodeGraph` lazy id index | 14c7404 | none | constructor subscribes the index to `Nodes`; built eagerly |
+
+`Node.OnMethodDeserialized` itself stays: `GraphTypeInference.Relax` calls it (name kept; it is public and now
+only a settle entry point, no serializer callback).
+
+`git grep -nE 'DataContract|DataMember|KnownType|OnDeserializ|\.netpp' -- src` is empty (comment wording was
+reworded in d54c44f; `ModelObject` keeps `[INotifyPropertyChanged]` because inheriting `ObservableObject` would add
+`INotifyPropertyChanging`).
+
+Loose end from B1: the intermittent `NetPrints.Editor.Tests` failures were a test-isolation race, not a product
+bug. `MainEditorVM` reloads the reflection host fire-and-forget whenever a project is set, and `MainEditorVMTests`
+shared the preloaded host, so a late reload replaced the runtime-assembly provider with an empty-reference one
+during later Node/Pin/Search tests (7 to 11 failures, 2 of 3 standalone runs, "Sequence contains no matching
+element" and empty collections). 20a11bb gives that class its own host; four standalone runs and the full suite
+are clean.
