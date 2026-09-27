@@ -334,9 +334,7 @@ public sealed class DocumentMapper : IDocumentMapper
 
     /// <summary>
     /// Enumerates every graph of <paramref name="cls"/>: the class graph itself, each variable's type
-    /// graph and getter/setter method graphs, and each method and constructor graph. Shared with
-    /// <see cref="Legacy.LegacyXmlDocumentFormat"/>, which runs <see cref="GraphTypeInference.Relax"/>
-    /// over the same set after assigning legacy node ids.
+    /// graph and getter/setter method graphs, and each method and constructor graph.
     /// </summary>
     /// <param name="cls">Class to enumerate the graphs of.</param>
     /// <returns>Every graph of <paramref name="cls"/>.</returns>

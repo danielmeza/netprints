@@ -87,31 +87,9 @@ namespace NetPrints.Core
         public Node? FindNode(string id) => Index.TryGetValue(id, out Node? node) ? node : null;
 
         /// <summary>
-        /// Assigns every node of this graph an id derived from its position in <see cref="Nodes"/>
-        /// (<c>"n0"</c>, <c>"n1"</c>, …), for a legacy document that had no ids of its own. Only valid
-        /// immediately after <see cref="System.Runtime.Serialization.DataContractSerializer"/>
-        /// deserialization, before anything reads a node's <see cref="Node.Id"/>.
-        /// </summary>
-        /// <exception cref="InvalidOperationException">A node of this graph already has an id.</exception>
-        public void AssignLegacyNodeIds()
-        {
-            for (int i = 0; i < Nodes.Count; i++)
-            {
-                if (Nodes[i].Id is not null)
-                {
-                    throw new InvalidOperationException($"Node at index {i} already has an id ('{Nodes[i].Id}').");
-                }
-
-                Nodes[i].Id = $"n{i}";
-                ReindexNode(Nodes[i], previousId: null);
-            }
-        }
-
-        /// <summary>
         /// Updates <see cref="nodeIndex"/> after <paramref name="node"/>'s <see cref="Node.Id"/>
-        /// changes: a mapper overwriting the constructor-assigned id with a document's id, legacy
-        /// import assigning one for the first time, or load-time duplicate-id repair reassigning a
-        /// fresh one (document-format.md §2.6). A no-op while the index has not been built yet
+        /// changes: a mapper overwriting the constructor-assigned id with a document's id, or
+        /// load-time duplicate-id repair reassigning a fresh one (document-format.md §2.6). A no-op while the index has not been built yet
         /// (<see cref="FindNode"/> not yet called): it is built lazily from <see cref="Nodes"/>' then-
         /// current contents on first use, which already reflects the final id.
         /// </summary>

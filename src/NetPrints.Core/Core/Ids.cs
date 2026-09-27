@@ -324,8 +324,7 @@ public sealed class RandomIdGenerator : IIdGenerator
 /// <summary>
 /// <see cref="IIdGenerator"/> backed by a <see cref="SnowflakeIdGenerator"/> fixed to
 /// <see cref="SnowflakeIdGenerator.Epoch"/> and a session id derived from an integer seed, so the same
-/// seed always produces the same sequence of ids. Used by tests (deterministic fixtures) and legacy
-/// import (<see cref="NetPrints.Core.StableIds"/>).
+/// seed always produces the same sequence of ids. Used by tests (deterministic fixtures).
 /// </summary>
 public sealed class SeededIdGenerator : IIdGenerator
 {
@@ -412,34 +411,11 @@ public static class IdGeneration
 }
 
 /// <summary>
-/// Deterministic seeds and validation shared by id generation and legacy import.
+/// Deterministic seeds and validation shared by id generation and document loading.
 /// </summary>
 public static class StableIds
 {
     private const int MaxAllocateAttempts = 100;
-
-    /// <summary>
-    /// Returns the FNV-1a 32-bit hash of <paramref name="text"/>'s UTF-8 bytes (offset basis
-    /// 2166136261, prime 16777619), cast to <see cref="int"/>. Used to seed a
-    /// <see cref="SeededIdGenerator"/> deterministically from a class's full name, so converting the
-    /// same legacy class twice assigns the same member ids.
-    /// </summary>
-    /// <param name="text">Text to hash.</param>
-    /// <returns>The hash, as a signed 32-bit integer.</returns>
-    public static int SeedFor(string text)
-    {
-        const uint OffsetBasis = 2166136261;
-        const uint Prime = 16777619;
-
-        uint hash = OffsetBasis;
-        foreach (byte b in Encoding.UTF8.GetBytes(text))
-        {
-            hash ^= b;
-            hash *= Prime;
-        }
-
-        return unchecked((int)hash);
-    }
 
     /// <summary>
     /// Returns a new id from <see cref="IdGeneration.Current"/>, retried until it is not already in

@@ -101,14 +101,6 @@ namespace NetPrints.Tests.Core
             }
         }
 
-        [Theory]
-        [InlineData("", unchecked((int)2166136261))]
-        [InlineData("a", unchecked((int)0xE40C292C))]
-        public void SeedForMatchesFnv1a(string text, int expected)
-        {
-            Assert.Equal(expected, StableIds.SeedFor(text));
-        }
-
         // DF-T28 / T054b (research.md R21): IdFormat.IsValid replaces StableIds.IsValidDocumentId as
         // the reader's id check, and is strict rather than merely non-empty/slash/whitespace-free.
         [Fact]

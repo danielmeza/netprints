@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using NetPrints.Core;
 using NetPrints.Graph;
@@ -9,7 +8,7 @@ using Xunit;
 
 namespace NetPrints.Tests.Core
 {
-    /// <summary>DF-T18, node part: <see cref="Node.Id"/> allocation, uniqueness and legacy import.</summary>
+    /// <summary>DF-T18, node part: <see cref="Node.Id"/> allocation and uniqueness.</summary>
     public class NodeIdTests
     {
         private sealed class QueueIdGenerator : IIdGenerator
@@ -68,31 +67,6 @@ namespace NetPrints.Tests.Core
         public void SeededGeneratorGivesTheSameIdsOnEveryRun()
         {
             Assert.Equal(NodeIdsWithSeed(42), NodeIdsWithSeed(42));
-        }
-
-        [Fact]
-        public void AssignLegacyNodeIdsGivesPositionalIds()
-        {
-            var graph = new MethodGraph("Main");
-            graph.Nodes.Clear();
-
-            var first = (LiteralNode)RuntimeHelpers.GetUninitializedObject(typeof(LiteralNode));
-            var second = (LiteralNode)RuntimeHelpers.GetUninitializedObject(typeof(LiteralNode));
-            graph.Nodes.Add(first);
-            graph.Nodes.Add(second);
-
-            graph.AssignLegacyNodeIds();
-
-            Assert.Equal("n0", first.Id);
-            Assert.Equal("n1", second.Id);
-        }
-
-        [Fact]
-        public void AssignLegacyNodeIdsThrowsWhenAnyIdIsAlreadySet()
-        {
-            var graph = new MethodGraph("Main");
-
-            Assert.Throws<InvalidOperationException>(() => graph.AssignLegacyNodeIds());
         }
 
         [Fact]

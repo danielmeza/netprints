@@ -34,33 +34,33 @@ namespace NetPrints.Tests.Serialization
         }
 
         private static FakeFormat JsonFormat() => new("json", ".netpc.json");
-        private static FakeFormat LegacyFormat() => new("legacy-xml", ".netpc");
+        private static FakeFormat OtherFormat() => new("other", ".netpc");
 
         [Fact]
         public void DuplicateIdThrows()
         {
             Assert.Throws<ArgumentException>(() =>
-                new DocumentFormatRegistry([JsonFormat(), new FakeFormat("legacy-xml", ".a"), new FakeFormat("legacy-xml", ".b")]));
+                new DocumentFormatRegistry([JsonFormat(), new FakeFormat("other", ".a"), new FakeFormat("other", ".b")]));
         }
 
         [Fact]
         public void DuplicateExtensionThrows()
         {
             Assert.Throws<ArgumentException>(() =>
-                new DocumentFormatRegistry([JsonFormat(), new FakeFormat("legacy-xml", ".netpc.json")]));
+                new DocumentFormatRegistry([JsonFormat(), new FakeFormat("other", ".netpc.json")]));
         }
 
         [Fact]
         public void MissingJsonFormatThrows()
         {
-            Assert.Throws<ArgumentException>(() => new DocumentFormatRegistry([LegacyFormat()]));
+            Assert.Throws<ArgumentException>(() => new DocumentFormatRegistry([OtherFormat()]));
         }
 
         [Fact]
         public void DefaultIsTheJsonFormat()
         {
             FakeFormat json = JsonFormat();
-            var registry = new DocumentFormatRegistry([json, LegacyFormat()]);
+            var registry = new DocumentFormatRegistry([json, OtherFormat()]);
 
             Assert.Same(json, registry.Default);
         }
@@ -69,7 +69,7 @@ namespace NetPrints.Tests.Serialization
         public void FindPrefersTheLongestMatchingExtension()
         {
             FakeFormat json = JsonFormat();
-            FakeFormat legacy = LegacyFormat();
+            FakeFormat legacy = OtherFormat();
             var registry = new DocumentFormatRegistry([json, legacy]);
 
             Assert.Same(json, registry.Find(new DocumentId("C.netpc.json"), DocumentKind.Class));
@@ -79,7 +79,7 @@ namespace NetPrints.Tests.Serialization
         [Fact]
         public void FindReturnsNullForAnUnmatchedExtensionOrNonClassKind()
         {
-            var registry = new DocumentFormatRegistry([JsonFormat(), LegacyFormat()]);
+            var registry = new DocumentFormatRegistry([JsonFormat(), OtherFormat()]);
 
             Assert.Null(registry.Find(new DocumentId("C.txt"), DocumentKind.Class));
             Assert.Null(registry.Find(new DocumentId("C.netpc.json"), DocumentKind.Project));

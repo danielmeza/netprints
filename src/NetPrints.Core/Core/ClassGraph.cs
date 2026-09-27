@@ -309,35 +309,5 @@ namespace NetPrints.Core
 
             return changed;
         }
-
-        /// <summary>
-        /// Assigns every member of <see cref="Members"/> a member id, deterministically seeded from
-        /// this class's <see cref="FullName"/> (<see cref="StableIds.SeedFor"/>), for a legacy class
-        /// whose members had no ids of their own. Converting the same legacy class twice gives the
-        /// same ids. Only valid immediately after
-        /// <see cref="System.Runtime.Serialization.DataContractSerializer"/> deserialization, before
-        /// anything reads a member's id.
-        /// </summary>
-        /// <exception cref="InvalidOperationException">A member of this class already has an id.</exception>
-        public void AssignLegacyMemberIds()
-        {
-            foreach (object member in Members)
-            {
-                if (GetMemberId(member) is not null)
-                {
-                    throw new InvalidOperationException("A member of this class already has an id.");
-                }
-            }
-
-            using var scope = IdGeneration.Use(new SeededIdGenerator(StableIds.SeedFor(FullName)));
-            var assigned = new HashSet<string>(StringComparer.Ordinal);
-
-            foreach (object member in Members)
-            {
-                string id = AllocateUniqueMemberId(assigned);
-                SetMemberId(member, id);
-                assigned.Add(id);
-            }
-        }
     }
 }

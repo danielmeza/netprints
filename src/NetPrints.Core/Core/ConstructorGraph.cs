@@ -17,9 +17,7 @@ namespace NetPrints.Core
         /// <summary>
         /// This constructor's member id (data-model.md §2), used as its graph key. Assigned once, in
         /// the constructor, from <see cref="IdGeneration.Current"/>; the mapper overwrites it from the
-        /// document, and legacy import assigns it via <see cref="ClassGraph.AssignLegacyMemberIds"/>
-        /// (<see cref="System.Runtime.Serialization.DataContractSerializer"/> skips constructors, so
-        /// it stays <see langword="null"/> until then). Not <c>[DataMember]</c>.
+        /// document. Not <c>[DataMember]</c>.
         /// </summary>
         public string Id { get; internal set; }
 

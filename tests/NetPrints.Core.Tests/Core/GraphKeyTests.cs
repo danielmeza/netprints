@@ -4,13 +4,11 @@ using System.IO;
 using System.Linq;
 using NetPrints.Core;
 using NetPrints.Tests.Characterization;
-using NetPrints.Tests.Samples;
 using Xunit;
 
 namespace NetPrints.Tests.Core
 {
-    /// <summary>DF-T22, model part: <see cref="GraphKeys"/>, <see cref="ClassGraph.EnsureUniqueMemberIds"/>
-    /// and <see cref="ClassGraph.AssignLegacyMemberIds"/>.</summary>
+    /// <summary>DF-T22, model part: <see cref="GraphKeys"/> and <see cref="ClassGraph.EnsureUniqueMemberIds"/>.</summary>
     public class GraphKeyTests
     {
         /// <summary>Returns a fixed member id for every 'm'-prefixed request (so several members can be
@@ -91,37 +89,6 @@ namespace NetPrints.Tests.Core
             Assert.Equal(firstKeyBefore, GraphKeys.For(first));
             Assert.Equal(secondKeyBefore, GraphKeys.For(second));
         }
-
-        [Fact]
-        public void AssignLegacyMemberIdsGivesTheSameIdsForTwoLoadsOfTheSameLegacyClass()
-        {
-            string fixturePath = Path.Combine(SampleProjectFactory.FindRepositoryRoot(),
-                "tests", "NetPrints.Core.Tests", "Fixtures", "Legacy", "AllNodes", "AllNodes.netpp");
-
-            Project? firstLoad = Project.LoadFromPath(fixturePath);
-            Project? secondLoad = Project.LoadFromPath(fixturePath);
-            Assert.NotNull(firstLoad);
-            Assert.NotNull(secondLoad);
-
-            ClassGraph firstClass = firstLoad.Classes.Single();
-            ClassGraph secondClass = secondLoad.Classes.Single();
-
-            firstClass.AssignLegacyMemberIds();
-            secondClass.AssignLegacyMemberIds();
-
-            var firstIds = firstClass.Members.Select(m => GetId(m)).ToList();
-            var secondIds = secondClass.Members.Select(m => GetId(m)).ToList();
-
-            Assert.Equal(firstIds, secondIds);
-        }
-
-        private static string GetId(object member) => member switch
-        {
-            Variable v => v.Id,
-            MethodGraph m => m.Id,
-            ConstructorGraph c => c.Id,
-            _ => throw new InvalidOperationException($"Unknown member type '{member.GetType()}'."),
-        };
 
         [Fact]
         public void EnsureUniqueMemberIdsRenamesOnlyTheLaterDuplicate()

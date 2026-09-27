@@ -180,15 +180,10 @@ namespace NetPrints.Graph
         }
 
         /// <summary>
-        /// This node's id, unique within <see cref="Graph"/> (document-format.md §1.4.1). Never null
-        /// after construction or after legacy import (<see cref="NodeGraph.AssignLegacyNodeIds"/>); a
-        /// node just deserialized from legacy XML has not run either yet, so it is <see langword="null"/>
-        /// only in that narrow window (<see cref="System.Runtime.Serialization.DataContractSerializer"/>
-        /// does not run constructors). <see cref="IgnoreDataMemberAttribute"/>, not
-        /// <c>[DataMember]</c>: a legacy <c>.netpp</c>/<c>.netpc</c> file never has ids of its own
-        /// (<see cref="NodeGraph.AssignLegacyNodeIds"/> always assigns them on that path, and would
-        /// throw if the file already had one), so this must never round-trip through the legacy XML
-        /// serializer in either direction.
+        /// This node's id, unique within <see cref="Graph"/> (document-format.md §1.4.1). Assigned
+        /// on construction and overwritten from the document by the mapper.
+        /// <see cref="IgnoreDataMemberAttribute"/>, not <c>[DataMember]</c>: ids belong to the JSON
+        /// document, not to the DataContract serializer.
         /// </summary>
         [IgnoreDataMember]
         public string Id { get; internal set; }

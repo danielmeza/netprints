@@ -10,7 +10,7 @@ public enum DocumentKind
     /// <summary>The project file (<c>.csproj</c>).</summary>
     Project,
 
-    /// <summary>A class graph document (<c>.netpc.json</c>, or legacy <c>.netpc</c>).</summary>
+    /// <summary>A class graph document (<c>.netpc.json</c>).</summary>
     Class,
 }
 

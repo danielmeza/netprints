@@ -10,17 +10,16 @@ namespace NetPrints.Serialization;
 
 /// <summary>
 /// Reads and writes class graph documents in one on-disk representation: the canonical JSON form
-/// (<c>.netpc.json</c>) or the legacy DataContract XML (<c>.netpc</c>, read-only). Implementations are
+/// (<c>.netpc.json</c> for the built-in JSON format). Implementations are
 /// immutable and safe to use concurrently (document-format.md §2.2).
 /// </summary>
 public interface IDocumentFormat
 {
-    /// <summary>Stable identifier (<c>"json"</c> or <c>"legacy-xml"</c>).</summary>
+    /// <summary>Stable identifier (<c>"json"</c> for the built-in format).</summary>
     string Id { get; }
 
     /// <summary>
-    /// File extensions this format claims (<c>".netpc.json"</c> for the JSON format,
-    /// <c>".netpc"</c> for the legacy XML format), longest first so a registry matching by suffix can
+    /// File extensions this format claims (<c>".netpc.json"</c> for the JSON format), longest first so a registry matching by suffix can
     /// prefer the more specific match.
     /// </summary>
     IReadOnlyList<string> ClassExtensions { get; }

@@ -8,7 +8,7 @@ namespace NetPrints.Serialization.Mapping;
 /// <summary>
 /// Maps a <see cref="ClassGraph"/> to and from its <see cref="ClassDocument"/> form (document-format.md
 /// §2.6). Implemented by <see cref="DocumentMapper"/>; consumed by <c>JsonDocumentFormat</c>,
-/// <c>LegacyXmlDocumentFormat</c>, <c>ProjectPersistence</c> and <c>GraphCodeGenerator</c>.
+/// <c>ProjectPersistence</c> and <c>GraphCodeGenerator</c>.
 /// </summary>
 public interface IDocumentMapper
 {

@@ -39,9 +39,8 @@ public static class ProjectFiles
     /// <param name="directory">Directory the <c>.gitattributes</c> file lives, or will be created,
     /// in.</param>
     /// <param name="cancellationToken">Cancels the operation.</param>
-    /// <returns>The file's previous content, or <see langword="null"/> if it did not exist yet — a
-    /// caller that fails partway through a larger operation can restore this to roll the file back.</returns>
-    public static async Task<byte[]?> EnsureGitAttributesAsync(string directory, CancellationToken cancellationToken)
+    /// <returns>A task that completes when the file is up to date.</returns>
+    public static async Task EnsureGitAttributesAsync(string directory, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrEmpty(directory);
 
@@ -68,7 +67,7 @@ public static class ProjectFiles
 
         if (missingLines.Count == 0 && previousBytes is not null)
         {
-            return previousBytes;
+            return;
         }
 
         var builder = new StringBuilder(existingText);
@@ -83,7 +82,6 @@ public static class ProjectFiles
         }
 
         await WriteAtomicAsync(path, builder.ToString(), cancellationToken).ConfigureAwait(false);
-        return previousBytes;
     }
 
     private static async Task WriteAtomicAsync(string path, string content, CancellationToken cancellationToken)
