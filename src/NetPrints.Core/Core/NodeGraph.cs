@@ -14,14 +14,11 @@ namespace NetPrints.Core
     public abstract class NodeGraph
     {
         /// <summary>
-        /// Id → node index backing <see cref="FindNode"/>. <see langword="null"/> until first needed:
-        /// a graph deserialized by <see cref="System.Runtime.Serialization.DataContractSerializer"/>
-        /// never runs this type's field initializers (document-format.md §3.1), so the index is built
-        /// lazily instead, from whatever <see cref="Nodes"/> holds at that point, and kept current
-        /// afterwards by <see cref="OnNodesChanged"/> (structural changes) and <see cref="ReindexNode"/>
-        /// (a node's <see cref="Node.Id"/> changing after it was added).
+        /// Id → node index backing <see cref="FindNode"/>, kept current by <see cref="OnNodesChanged"/>
+        /// (structural changes) and <see cref="ReindexNode"/> (a node's <see cref="Node.Id"/> changing
+        /// after it was added).
         /// </summary>
-        private Dictionary<string, Node>? nodeIndex;
+        private readonly Dictionary<string, Node> nodeIndex = new(StringComparer.Ordinal);
 
         /// <summary>
         /// Collection of nodes in this graph.
@@ -31,6 +28,14 @@ namespace NetPrints.Core
             get;
             private set;
         } = new ObservableRangeCollection<Node>();
+
+        /// <summary>
+        /// Starts tracking <see cref="Nodes"/> in the id index.
+        /// </summary>
+        protected NodeGraph()
+        {
+            Nodes.CollectionChanged += OnNodesChanged;
+        }
 
         /// <summary>
         /// Class this graph is contained in.
@@ -53,8 +58,7 @@ namespace NetPrints.Core
         /// <summary>
         /// Opaque state for nodes this graph's document contained but that no converter could
         /// recreate (an unknown or untrusted extension node kind). Owned and interpreted by
-        /// <c>NetPrints.Serialization</c>; not serialized by <see cref="System.Runtime.Serialization.DataContractSerializer"/>
-        /// and not otherwise inspected by <c>NetPrints.Core</c>.
+        /// <c>NetPrints.Serialization</c>; not otherwise inspected by <c>NetPrints.Core</c>.
         /// </summary>
         public object? PreservedDocumentState { get; set; }
 
@@ -74,74 +78,34 @@ namespace NetPrints.Core
         /// </summary>
         /// <param name="id">Node id to look up.</param>
         /// <returns>The matching node, or <see langword="null"/> if none has that id.</returns>
-        public Node? FindNode(string id) => Index.TryGetValue(id, out Node? node) ? node : null;
+        public Node? FindNode(string id) => nodeIndex.TryGetValue(id, out Node? node) ? node : null;
 
         /// <summary>
         /// Updates <see cref="nodeIndex"/> after <paramref name="node"/>'s <see cref="Node.Id"/>
         /// changes: a mapper overwriting the constructor-assigned id with a document's id, or
-        /// load-time duplicate-id repair reassigning a fresh one (document-format.md §2.6). A no-op while the index has not been built yet
-        /// (<see cref="FindNode"/> not yet called): it is built lazily from <see cref="Nodes"/>' then-
-        /// current contents on first use, which already reflects the final id.
+        /// load-time duplicate-id repair reassigning a fresh one (document-format.md §2.6).
         /// </summary>
         /// <param name="node">Node whose id changed. Must belong to this graph.</param>
         /// <param name="previousId">The node's id before the change, or <see langword="null"/> if it
         /// had none yet.</param>
         internal void ReindexNode(Node node, string? previousId)
         {
-            if (nodeIndex is null)
-            {
-                return;
-            }
-
             if (previousId is not null && nodeIndex.TryGetValue(previousId, out Node? existing) && ReferenceEquals(existing, node))
             {
                 nodeIndex.Remove(previousId);
             }
 
-            if (node.Id is not null)
-            {
-                nodeIndex[node.Id] = node;
-            }
-        }
-
-        private Dictionary<string, Node> Index
-        {
-            get
-            {
-                if (nodeIndex is null)
-                {
-                    var index = new Dictionary<string, Node>(StringComparer.Ordinal);
-                    foreach (Node node in Nodes)
-                    {
-                        if (node.Id is not null)
-                        {
-                            index[node.Id] = node;
-                        }
-                    }
-
-                    nodeIndex = index;
-                    Nodes.CollectionChanged += OnNodesChanged;
-                }
-
-                return nodeIndex;
-            }
+            nodeIndex[node.Id] = node;
         }
 
         private void OnNodesChanged(object? sender, NotifyCollectionChangedEventArgs e)
         {
-            // Index, not the nodeIndex field directly: this handler only runs after Index's getter has
-            // already built the dictionary and subscribed it, but the field's own type is nullable.
-            Dictionary<string, Node> index = Index;
-
             switch (e.Action)
             {
                 case NotifyCollectionChangedAction.Add when e.NewItems is not null:
                     foreach (Node node in e.NewItems)
                     {
-                        if (node.Id is not null)
-                        {
-                            index[node.Id] = node;
-                        }
+                        nodeIndex[node.Id] = node;
                     }
 
                     break;
@@ -149,9 +113,9 @@ namespace NetPrints.Core
                 case NotifyCollectionChangedAction.Remove when e.OldItems is not null:
                     foreach (Node node in e.OldItems)
                     {
-                        if (node.Id is not null && index.TryGetValue(node.Id, out Node? existing) && ReferenceEquals(existing, node))
+                        if (nodeIndex.TryGetValue(node.Id, out Node? existing) && ReferenceEquals(existing, node))
                         {
-                            index.Remove(node.Id);
+                            nodeIndex.Remove(node.Id);
                         }
                     }
 
@@ -159,13 +123,10 @@ namespace NetPrints.Core
 
                 default:
                     // Move/Replace/Reset (AddRange, RemoveRange, ReplaceRange): rebuild from scratch.
-                    index.Clear();
+                    nodeIndex.Clear();
                     foreach (Node node in Nodes)
                     {
-                        if (node.Id is not null)
-                        {
-                            index[node.Id] = node;
-                        }
+                        nodeIndex[node.Id] = node;
                     }
 
                     break;
