@@ -1,0 +1,161 @@
+{
+  "$schema": "https://danielmeza.github.io/netprints/schemas/netpc.v1.schema.json",
+  "schemaVersion": 1,
+  "name": "Locals",
+  "visibility": "Public",
+  "classGraph": {
+    "nodes": [
+      { "$kind": "classReturn", "id": "n00000000cnt00" }
+    ]
+  },
+  "methods": [
+    {
+      "id": "m00000000cnt00",
+      "name": "Main",
+      "visibility": "Public",
+      "modifiers": "Static",
+      "graph": {
+        "nodes": [
+          { "$kind": "methodEntry", "id": "n00000000cnt01" },
+          { "$kind": "return", "id": "n00000000cnt10" },
+          {
+            "$kind": "variableGetter",
+            "id": "n00000000cnt02",
+            "variable": {
+              "name": "count",
+              "type": { "name": "System.Int32" },
+              "getterVisibility": "Private",
+              "setterVisibility": "Private",
+              "visibility": "Private",
+              "scope": "Local"
+            }
+          },
+          {
+            "$kind": "callMethod",
+            "id": "n00000000cnt03",
+            "pins": [
+              { "pin": "in.data.b", "value": { "type": "System.Int32", "value": "5" } }
+            ],
+            "method": {
+              "name": "op_LessThan",
+              "declaringType": { "name": "System.Boolean" },
+              "parameters": [
+                { "name": "a", "type": { "name": "System.Int32" } },
+                { "name": "b", "type": { "name": "System.Int32" } }
+              ],
+              "returnTypes": [
+                { "name": "System.Boolean" }
+              ],
+              "modifiers": "Static",
+              "visibility": "Public"
+            }
+          },
+          { "$kind": "ifElse", "id": "n00000000cnt04" },
+          {
+            "$kind": "variableGetter",
+            "id": "n00000000cnt05",
+            "variable": {
+              "name": "count",
+              "type": { "name": "System.Int32" },
+              "getterVisibility": "Private",
+              "setterVisibility": "Private",
+              "visibility": "Private",
+              "scope": "Local"
+            }
+          },
+          {
+            "$kind": "callMethod",
+            "id": "n00000000cnt06",
+            "pins": [
+              { "pin": "in.data.b", "value": { "type": "System.Int32", "value": "1" } }
+            ],
+            "method": {
+              "name": "op_Addition",
+              "declaringType": { "name": "System.Int32" },
+              "parameters": [
+                { "name": "a", "type": { "name": "System.Int32" } },
+                { "name": "b", "type": { "name": "System.Int32" } }
+              ],
+              "returnTypes": [
+                { "name": "System.Int32" }
+              ],
+              "modifiers": "Static",
+              "visibility": "Public"
+            }
+          },
+          {
+            "$kind": "variableSetter",
+            "id": "n00000000cnt07",
+            "variable": {
+              "name": "count",
+              "type": { "name": "System.Int32" },
+              "getterVisibility": "Private",
+              "setterVisibility": "Private",
+              "visibility": "Private",
+              "scope": "Local"
+            }
+          },
+          {
+            "$kind": "variableGetter",
+            "id": "n00000000cnt08",
+            "variable": {
+              "name": "count",
+              "type": { "name": "System.Int32" },
+              "getterVisibility": "Private",
+              "setterVisibility": "Private",
+              "visibility": "Private",
+              "scope": "Local"
+            }
+          },
+          {
+            "$kind": "callMethod",
+            "id": "n00000000cnt09",
+            "method": {
+              "name": "WriteLine",
+              "declaringType": { "name": "System.Console" },
+              "parameters": [
+                { "name": "value", "type": { "name": "System.Int32" } }
+              ],
+              "modifiers": "Static",
+              "visibility": "Public"
+            }
+          }
+        ],
+        "connections": [
+          { "from": "n00000000cnt01/out.exec.Exec", "to": "n00000000cnt03/in.exec.Exec" },
+          { "from": "n00000000cnt02/out.data.Int32", "to": "n00000000cnt03/in.data.a" },
+          { "from": "n00000000cnt03/out.data.Boolean", "to": "n00000000cnt04/in.data.Condition" },
+          { "from": "n00000000cnt03/out.exec.Exec", "to": "n00000000cnt04/in.exec.Exec" },
+          { "from": "n00000000cnt04/out.exec.False", "to": "n00000000cnt09/in.exec.Exec" },
+          { "from": "n00000000cnt04/out.exec.True", "to": "n00000000cnt06/in.exec.Exec" },
+          { "from": "n00000000cnt05/out.data.Int32", "to": "n00000000cnt06/in.data.a" },
+          { "from": "n00000000cnt06/out.data.Int32", "to": "n00000000cnt07/in.data.NewValue" },
+          { "from": "n00000000cnt06/out.exec.Exec", "to": "n00000000cnt07/in.exec.Exec" },
+          { "from": "n00000000cnt07/out.exec.Exec", "to": "n00000000cnt03/in.exec.Exec" },
+          { "from": "n00000000cnt08/out.data.Int32", "to": "n00000000cnt09/in.data.value" },
+          { "from": "n00000000cnt09/out.exec.Exec", "to": "n00000000cnt10/in.exec.Exec" }
+        ],
+        "locals": [
+          { "name": "count", "type": { "name": "System.Int32" } }
+        ]
+      }
+    }
+  ],
+  "layout": {
+    "class": {
+      "n00000000cnt00": [112, 112]
+    },
+    "m00000000cnt00": {
+      "n00000000cnt01": [112, 112],
+      "n00000000cnt02": [112, 260],
+      "n00000000cnt03": [420, 112],
+      "n00000000cnt04": [740, 112],
+      "n00000000cnt05": [740, 320],
+      "n00000000cnt06": [1060, 320],
+      "n00000000cnt07": [1380, 320],
+      "n00000000cnt08": [1060, 60],
+      "n00000000cnt09": [1380, 60],
+      "n00000000cnt10": [1700, 60]
+    }
+  }
+}
