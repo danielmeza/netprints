@@ -6,6 +6,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis.CSharp;
 using NetPrints.Core;
 using NetPrints.Graph;
 
@@ -25,6 +26,7 @@ namespace NetPrints.Translator
         private const string JumpStackPlaceholder = "%JUMPSTACKPLACEHOLDER%";
 
         private readonly Dictionary<NodeOutputDataPin, string> variableNames = new Dictionary<NodeOutputDataPin, string>();
+        private readonly HashSet<string> reservedLocalNames = new HashSet<string>(StringComparer.Ordinal);
         private readonly Dictionary<Node, List<int>> nodeStateIds = new Dictionary<Node, List<int>>();
         private int nextStateId = 0;
         private IEnumerable<Node> execNodes = new List<Node>();
@@ -119,7 +121,11 @@ namespace NetPrints.Translator
             }
             else
             {
-                pinName = TranslatorUtil.GetUniqueVariableName(pin.Name.Replace("<", "_", StringComparison.Ordinal).Replace(">", "_", StringComparison.Ordinal), variableNames.Values.ToList());
+                // Local variable names (declared first, TranslateVariables) are reserved before a pin
+                // ever gets one of its own, so a generated pin name can never shadow a user-declared
+                // local (data-model.md §3).
+                List<string> reservedNames = variableNames.Values.Concat(reservedLocalNames).ToList();
+                pinName = TranslatorUtil.GetUniqueVariableName(pin.Name.Replace("<", "_", StringComparison.Ordinal).Replace(">", "_", StringComparison.Ordinal), reservedNames);
             }
 
             variableNames.Add(pin, pinName);
@@ -208,9 +214,51 @@ namespace NetPrints.Translator
             }
         }
 
+        /// <summary>
+        /// Validates and reserves <paramref name="execGraph"/>'s local variable names (data-model.md
+        /// §3), before any pin gets its own generated name (<see cref="GetOrCreatePinName"/>): each
+        /// name must be a valid, non-keyword C# identifier, distinct from every parameter name and from
+        /// every other local of the same graph. <see cref="ExecutionGraph.IsLocalNameAvailable"/> keeps
+        /// the editor from creating a conflicting local in the first place; this re-checks a graph built
+        /// or edited outside that gate.
+        /// </summary>
+        /// <param name="execGraph">Graph whose local variable names to reserve.</param>
+        /// <exception cref="TranslationException">
+        /// A local's name is not a valid C# identifier, matches a parameter name, or matches another
+        /// local's name (<c>NPT004</c>).
+        /// </exception>
+        private void ReserveLocalVariableNames(ExecutionGraph execGraph)
+        {
+            var parameterNames = new HashSet<string>(execGraph.NamedArgumentTypes.Select(argument => argument.Name), StringComparer.Ordinal);
+
+            foreach (string name in execGraph.LocalVariables.Select(local => local.Name))
+            {
+                bool conflicts = !SyntaxFacts.IsValidIdentifier(name)
+                    || SyntaxFacts.GetKeywordKind(name) != SyntaxKind.None
+                    || parameterNames.Contains(name)
+                    || !reservedLocalNames.Add(name);
+
+                if (conflicts)
+                {
+                    throw new TranslationException(TranslationDiagnosticCodes.LocalVariableNameConflict,
+                        $"Local variable '{name}' conflicts with a parameter, another local, or is not a valid identifier.",
+                        TranslatorUtil.TryGetGraphKey(execGraph));
+                }
+            }
+        }
+
         private void TranslateVariables()
         {
             builder.AppendLine("// Variables");
+
+            if (graph is ExecutionGraph execGraph)
+            {
+                foreach (LocalVariable local in execGraph.LocalVariables)
+                {
+                    string typeName = local.Type.FullCodeName;
+                    builder.AppendLine(CultureInfo.InvariantCulture, $"{typeName} {local.Name} = default({typeName});");
+                }
+            }
 
             foreach (var v in variableNames)
             {
@@ -375,6 +423,7 @@ namespace NetPrints.Translator
 
             // Reset state
             variableNames.Clear();
+            reservedLocalNames.Clear();
             nodeStateIds.Clear();
             pinsJumpedTo.Clear();
             nextStateId = 0;
@@ -390,6 +439,9 @@ namespace NetPrints.Translator
             // Assign jump stack state id
             // Write it later once we know which states get jumped to
             jumpStackStateId = GetNextStateId();
+
+            // Reserve local variable names before any pin gets its own generated name (data-model.md §3)
+            ReserveLocalVariableNames(graph);
 
             // Create variables for all output pins for every node
             CreateVariables();
@@ -487,6 +539,7 @@ namespace NetPrints.Translator
 
             // Reset state
             variableNames.Clear();
+            reservedLocalNames.Clear();
             nodeStateIds.Clear();
             pinsJumpedTo.Clear();
             nextStateId = 0;

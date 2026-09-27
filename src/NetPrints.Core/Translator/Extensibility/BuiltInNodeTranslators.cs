@@ -518,42 +518,50 @@ internal static class BuiltInNodeTranslators
         // CallMethodNode's argument pins), so this is never null.
         string valueName = RequiredIncomingValue(context, node.NewValuePin);
 
-        // Add target name if there is a target (null for local and static variables)
-        if (node.IsStatic)
+        if (node.IsLocalVariable)
         {
-            if (!(node.TargetType is null))
-            {
-                context.Append(node.TargetType.FullCodeName);
-            }
-            else
-            {
-                var declaringClass = node.Graph.Class
-                    ?? throw new InvalidOperationException("A static variable setter's graph has no class.");
-                context.Append(declaringClass.Name);
-            }
-        }
-        if (node.TargetPin != null)
-        {
-            if (node.TargetPin.IncomingPin != null)
-            {
-                string targetName = context.GetOrCreatePinName(node.TargetPin.IncomingPin);
-                context.Append(targetName);
-            }
-            else
-            {
-                context.Append("this");
-            }
-        }
-
-        // Add index if needed
-        if (node.IsIndexer)
-        {
-            // IsIndexer implies IndexPin is not null (VariableNode.IndexPin).
-            context.Append($"[{context.GetPinIncomingValue(node.IndexPin ?? throw new InvalidOperationException("An indexer node has no index pin."))}]");
+            // A method-local variable has no target and no "this."/dot prefix (data-model.md §3).
+            context.Append(node.VariableName);
         }
         else
         {
-            context.Append($".{node.VariableName}");
+            // Add target name if there is a target (null for a static variable without an explicit type)
+            if (node.IsStatic)
+            {
+                if (!(node.TargetType is null))
+                {
+                    context.Append(node.TargetType.FullCodeName);
+                }
+                else
+                {
+                    var declaringClass = node.Graph.Class
+                        ?? throw new InvalidOperationException("A static variable setter's graph has no class.");
+                    context.Append(declaringClass.Name);
+                }
+            }
+            if (node.TargetPin != null)
+            {
+                if (node.TargetPin.IncomingPin != null)
+                {
+                    string targetName = context.GetOrCreatePinName(node.TargetPin.IncomingPin);
+                    context.Append(targetName);
+                }
+                else
+                {
+                    context.Append("this");
+                }
+            }
+
+            // Add index if needed
+            if (node.IsIndexer)
+            {
+                // IsIndexer implies IndexPin is not null (VariableNode.IndexPin).
+                context.Append($"[{context.GetPinIncomingValue(node.IndexPin ?? throw new InvalidOperationException("An indexer node has no index pin."))}]");
+            }
+            else
+            {
+                context.Append($".{node.VariableName}");
+            }
         }
 
         context.AppendLine($" = {valueName};");
@@ -721,42 +729,50 @@ internal static class BuiltInNodeTranslators
 
         context.Append($"{valueName} = ");
 
-        if (node.IsStatic)
+        if (node.IsLocalVariable)
         {
-            if (!(node.TargetType is null))
-            {
-                context.Append(node.TargetType.FullCodeName);
-            }
-            else
-            {
-                var declaringClass = node.Graph.Class
-                    ?? throw new InvalidOperationException("A static variable getter's graph has no class.");
-                context.Append(declaringClass.Name);
-            }
+            // A method-local variable has no target and no "this."/dot prefix (data-model.md §3).
+            context.Append(node.VariableName);
         }
         else
         {
-            if (node.TargetPin?.IncomingPin != null)
+            if (node.IsStatic)
             {
-                string targetName = context.GetOrCreatePinName(node.TargetPin.IncomingPin);
-                context.Append(targetName);
+                if (!(node.TargetType is null))
+                {
+                    context.Append(node.TargetType.FullCodeName);
+                }
+                else
+                {
+                    var declaringClass = node.Graph.Class
+                        ?? throw new InvalidOperationException("A static variable getter's graph has no class.");
+                    context.Append(declaringClass.Name);
+                }
             }
             else
             {
-                // Default to this
-                context.Append("this");
+                if (node.TargetPin?.IncomingPin != null)
+                {
+                    string targetName = context.GetOrCreatePinName(node.TargetPin.IncomingPin);
+                    context.Append(targetName);
+                }
+                else
+                {
+                    // Default to this
+                    context.Append("this");
+                }
             }
-        }
 
-        // Add index if needed
-        if (node.IsIndexer)
-        {
-            // IsIndexer implies IndexPin is not null (VariableNode.IndexPin).
-            context.Append($"[{context.GetPinIncomingValue(node.IndexPin ?? throw new InvalidOperationException("An indexer node has no index pin."))}]");
-        }
-        else
-        {
-            context.Append($".{node.VariableName}");
+            // Add index if needed
+            if (node.IsIndexer)
+            {
+                // IsIndexer implies IndexPin is not null (VariableNode.IndexPin).
+                context.Append($"[{context.GetPinIncomingValue(node.IndexPin ?? throw new InvalidOperationException("An indexer node has no index pin."))}]");
+            }
+            else
+            {
+                context.Append($".{node.VariableName}");
+            }
         }
 
         context.AppendLine(";");

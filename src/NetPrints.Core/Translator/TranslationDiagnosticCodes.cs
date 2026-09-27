@@ -3,8 +3,7 @@ namespace NetPrints.Translator;
 /// <summary>
 /// The stable <c>NPT</c> codes a <see cref="TranslationException"/> carries (compilation-and-diagnostics.md §2).
 /// <c>NPT003</c> is a code generator diagnostic, declared as <c>GraphCodeGenerator.MissingExtensionCode</c> in
-/// <c>NetPrints.Generator</c> instead of here; <c>NPT004</c> is reserved for local-variable translation
-/// (T085), not yet thrown.
+/// <c>NetPrints.Generator</c> instead of here.
 /// </summary>
 public static class TranslationDiagnosticCodes
 {
@@ -22,6 +21,13 @@ public static class TranslationDiagnosticCodes
     /// <summary>An event and a method on the same class share a name; they share one member-name
     /// namespace on the generated class.</summary>
     public const string DuplicateMemberName = "NPT002";
+
+    /// <summary>A method-local variable's name (US5, sub-phase H) conflicts with a parameter name,
+    /// another local of the same graph, or a reserved C# keyword.
+    /// <see cref="NetPrints.Core.ExecutionGraph.IsLocalNameAvailable"/> keeps the editor from creating
+    /// one; this is the translator's own defensive re-check, for a graph built or edited outside the
+    /// editor's gate.</summary>
+    public const string LocalVariableNameConflict = "NPT004";
 
     /// <summary>An <see cref="IMemberEmitter"/> threw while emitting a member.</summary>
     public const string EmitterFailed = "NPT005";
