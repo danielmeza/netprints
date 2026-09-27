@@ -2857,3 +2857,38 @@ its output folder in its own load context with every contribution present; T072 
 - Decision: the asset is not referenced by any test project yet; T072 adds a build-only `ProjectReference` (`ReferenceOutputAssembly=false`).
 - Class-ness leaks added: none beyond the seam names already listed (`IClassEmitter`, `IMemberEmitter`, `Declaration.Name` use).
 
+
+### T072 to T074: loader and contribution tests, generator extensions
+
+`NetPrints.Core.Tests` builds the T071 asset first (build-only `ProjectReference`, `ReferenceOutputAssembly=false`); `TestExtensionLocation`
+finds `tests/NetPrints.TestExtension/bin/<cfg>/extensions/netprints.test/` and copies it to temp folders. New in `ExtensionLoaderTests` (T072):
+EX-T01 with the real asset (search directory, own `AssemblyLoadContext` named `netprints.test`, `NodeType.BaseType` is the host's `typeof(Node)`,
+every contribution of §8 present, log 2002), explicit-folder load with the translator in `Translation`, EX-T10 with a failing sibling
+(`NPX002`, `NPX007`) beside the loaded asset, EX-T11 with an in-process dependent of the asset (dependency first, emitters in load order). The
+in-memory NPX001 to NPX007 and ordering tests from T068 are untouched. `ContributionTests` (T073): EX-T02 (kind in `NodeKinds`, offered only where
+`AllowedIn` matches `NodeGraphKinds.Of`, saved, reloaded, translated with the extension's C#), EX-T03, EX-T07 (`CreateAsync` half), DF-T17.
+`GeneratorExtensionTests` (T074): PS-T14 with the real generator process and with `dotnet build` through `LocalSdkLayout`.
+
+- Decision: `GraphCodeGenerator` takes the registry as the spec's first constructor parameter, and the loading lives in two public statics,
+  `GraphCodeGenerator.LoadExtensions(request, ct)` (built-in extension plus the request's folders, never user directories) and
+  `Create(registry)` (mapper, JSON options and formats from `registry.NodeConverters`). `Program` calls both; `CreateGenerator` is gone.
+  Translation uses `extensions.Translation`; `TranslationEnvironment.BuiltIn` is no longer used by the generator.
+- Decision: a failed extension (`NPX001` to `NPX007`) or a rejected contribution (`NPX006`) is an `error` line
+  `<manifest path or folder>: error NPX00n: Extension '<id>' was not loaded: <reason>`, exit code 1, and no graph is generated (a build is
+  trusted and reproducible; generating around a broken extension would only add NPT003 noise). Exit code 1, not 3.
+- Decision: `NPT003` (spec: "graph contains nodes of a missing extension") had no producer. The generator raises it from the mapper's `NPD001`
+  issues (a preserved node of unknown kind): the issue becomes an `NPT003` error whose message is the issue's plus "Its extension is not loaded:
+  add a NetPrintsExtension item for it.", and the class is not translated, so its previous `.netpc.g.cs` stays. It is not in `ClassTranslator`
+  because `NodeGraph.PreservedDocumentState` is an `internal` Serialization type that Core cannot inspect; the editor's own path (T075/T076) has to
+  report the same when it translates a class loaded without the extension (today it would silently drop the preserved node). The diagnostic has no
+  graph key or node id (the message names the node id and kind).
+- Decision: the T071 asset gained `LogNode.Note` (stored only, written as the object property `default` of `LogNodeDocument`), so DF-T17 can assert
+  that an extension property named `default` is inline while the node is a block; nothing else uses it.
+- Decision: DF-T17's "pins by key" is asserted through connection endpoints (`<id>/out.exec.Then`, `in.data.Value`) because a pin whose name equals
+  `Node.GetPinKeyName` writes no pin state, and the asset's data pin is `object`-typed (no unconnected value); the `pins` array itself is covered by
+  the built-in literal in the same file. `name` omitted by default (inline node with only `$kind` and `id`), present for a custom name (block).
+- Open: EX-T07's second half (unknown `NetPrintsProfile` gives the default profile and `NPD005`, `.csproj` untouched) has no producer either; it
+  belongs to the editor load path (T075/T076, "New Class uses the project's profile"). T073 covers `CreateAsync` with the real profile and that
+  `FindProfile` returns `null` for an unknown id.
+- Class-ness leaks added: none. The generator request is unchanged (`GenerateRequest` still has no class-only shape); `GraphCodeGenerator` itself is
+  class-specific (`ClassDocument`, `ClassTranslator`), as before.

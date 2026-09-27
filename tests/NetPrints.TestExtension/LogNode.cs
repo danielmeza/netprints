@@ -23,13 +23,17 @@ public sealed class LogNode : Node
 
     /// <summary>The value written.</summary>
     public NodeInputDataPin ValuePin => InputDataPins[0];
+
+    /// <summary>A stored-only note, kept in the document as <c>default</c> (an object property the canonical writer writes inline); <see langword="null"/> when unset.</summary>
+    public string? Note { get; set; }
 }
 
 /// <summary>The document form of <see cref="LogNode"/>.</summary>
 /// <param name="Id">The node id.</param>
 /// <param name="Name">The node name.</param>
 /// <param name="Pins">The stored pin states.</param>
-public sealed record LogNodeDocument(string Id, string? Name, IReadOnlyList<PinStateDocument>? Pins) : NodeDocument(Id, Name, Pins);
+/// <param name="Default">The node's note, as a typed value.</param>
+public sealed record LogNodeDocument(string Id, string? Name, IReadOnlyList<PinStateDocument>? Pins, TypedValue? Default = null) : NodeDocument(Id, Name, Pins);
 
 /// <summary>Converts <see cref="LogNode"/>.</summary>
 public sealed class LogNodeConverter : INodeDocumentConverter
@@ -47,10 +51,11 @@ public sealed class LogNodeConverter : INodeDocumentConverter
     public Type DocumentType => typeof(LogNodeDocument);
 
     /// <inheritdoc />
-    public NodeDocument ToDocument(Node node, NodeMappingContext context) => new LogNodeDocument(node.Id, null, null);
+    public NodeDocument ToDocument(Node node, NodeMappingContext context) => new LogNodeDocument(node.Id, null, null, ((LogNode)node).Note is { } note ? new TypedValue("System.String", note) : null);
 
     /// <inheritdoc />
-    public Node CreateNode(NodeDocument document, NodeGraph graph, NodeMappingContext context) => new LogNode(graph);
+    public Node CreateNode(NodeDocument document, NodeGraph graph, NodeMappingContext context) =>
+        new LogNode(graph) { Note = (document as LogNodeDocument)?.Default?.Value };
 }
 
 /// <summary>Translates <see cref="LogNode"/> to <c>System.Console.WriteLine(&lt;in&gt;)</c>.</summary>

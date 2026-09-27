@@ -28,7 +28,6 @@ internal static class ExtensionGraphs
 
         NodeKindDescriptor kind = registry.NodeKinds.Single(k => k.Kind == "netprints.test/Log");
         var log = (Node)(Activator.CreateInstance(kind.NodeType, method) ?? throw new InvalidOperationException("Log node not created."));
-        method.Nodes.Add(log);
         LiteralNode literal = LiteralNode.WithValue(method, "hello");
 
         GraphUtil.ConnectExecPins(((MethodEntryNode)method.EntryNode).InitialExecutionPin, log.InputExecPins[0]);
