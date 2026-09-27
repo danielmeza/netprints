@@ -16,7 +16,7 @@ public sealed class Startup
         // Loading the runtime assembly set takes seconds, so one loaded host is shared by all tests.
         services.AddSingleton<IReflectionHost>(_ =>
         {
-            var host = new ReflectionHost(new InlineDispatcher(), NullLogger<ReflectionHost>.Instance);
+            var host = new ReflectionHost(new InlineDispatcher(), TestExtensions.CreateBuiltIn(), NullLogger<ReflectionHost>.Instance);
             var project = Project.FromSnapshot(TestSnapshots.WithRuntimeAssemblies("Shared", "Shared"));
             host.ReloadAsync(project).GetAwaiter().GetResult();
             return host;

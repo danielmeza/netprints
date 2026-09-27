@@ -14,7 +14,7 @@ namespace NetPrints.Editor.Tests.Graph;
 /// </summary>
 public sealed class ReflectionReloadTests : IDisposable
 {
-    private readonly ReflectionHost host = new(new InlineDispatcher(), NullLogger<ReflectionHost>.Instance);
+    private readonly ReflectionHost host = new(new InlineDispatcher(), TestExtensions.CreateBuiltIn(), NullLogger<ReflectionHost>.Instance);
     private readonly ClassEditorVM classEditor;
     private readonly MethodGraph method;
 

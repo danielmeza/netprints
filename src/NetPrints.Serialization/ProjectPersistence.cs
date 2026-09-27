@@ -41,8 +41,7 @@ public sealed record ProjectSaveResult(IReadOnlyList<string> WrittenFiles);
 public sealed class ProjectPersistence
 {
     private readonly IProjectSystem projects;
-    private readonly DocumentFormatRegistry formats;
-    private readonly IDocumentMapper mapper;
+    private volatile Serializers serializers;
     private readonly Func<string, IDocumentStore> createStore;
     private readonly ILogger<ProjectPersistence> logger;
 
@@ -59,11 +58,25 @@ public sealed class ProjectPersistence
         Func<string, IDocumentStore> createStore, ILogger<ProjectPersistence> logger)
     {
         this.projects = projects ?? throw new ArgumentNullException(nameof(projects));
-        this.formats = formats ?? throw new ArgumentNullException(nameof(formats));
-        this.mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
+        serializers = new Serializers(
+            formats ?? throw new ArgumentNullException(nameof(formats)),
+            mapper ?? throw new ArgumentNullException(nameof(mapper)));
         this.createStore = createStore ?? throw new ArgumentNullException(nameof(createStore));
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
+
+    /// <summary>
+    /// Replaces the document formats and the mapper, for the next load, save or add: the node converters of a
+    /// newly loaded extension registry (editor-services.md §4). An operation already running keeps the pair it started with.
+    /// </summary>
+    /// <param name="formats">Document formats a graph file's format is resolved against.</param>
+    /// <param name="mapper">Mapper used to convert classes to and from their document form.</param>
+    public void Rebind(DocumentFormatRegistry formats, IDocumentMapper mapper) =>
+        serializers = new Serializers(
+            formats ?? throw new ArgumentNullException(nameof(formats)),
+            mapper ?? throw new ArgumentNullException(nameof(mapper)));
+
+    private sealed record Serializers(DocumentFormatRegistry Formats, IDocumentMapper Mapper);
 
     /// <summary>
     /// Loads a project: <see cref="IProjectSystem.LoadAsync"/>, then each of its
@@ -98,6 +111,7 @@ public sealed class ProjectPersistence
         Project project = Project.FromSnapshot(snapshot);
         string projectDirectory = GetDirectoryOrThrow(snapshot.ProjectFilePath);
 
+        Serializers current = serializers;
         IDocumentStore store = createStore(projectDirectory);
         try
         {
@@ -109,7 +123,7 @@ public sealed class ProjectPersistence
                 cancellationToken.ThrowIfCancellationRequested();
 
                 DocumentId id = FileSystemDocumentStore.ToDocumentId(projectDirectory, graphFilePath);
-                ClassGraph? cls = await TryLoadClassAsync(store, id, project, issues, cancellationToken).ConfigureAwait(false);
+                ClassGraph? cls = await TryLoadClassAsync(current, store, id, project, issues, cancellationToken).ConfigureAwait(false);
                 if (cls is not null)
                 {
                     cls.LoadedGraphFilePath = graphFilePath;
@@ -126,10 +140,10 @@ public sealed class ProjectPersistence
         }
     }
 
-    private async Task<ClassGraph?> TryLoadClassAsync(IDocumentStore store, DocumentId id, Project project,
+    private async Task<ClassGraph?> TryLoadClassAsync(Serializers current, IDocumentStore store, DocumentId id, Project project,
         List<DocumentIssue> issues, CancellationToken cancellationToken)
     {
-        IDocumentFormat? format = formats.Find(id, DocumentKind.Class);
+        IDocumentFormat? format = current.Formats.Find(id, DocumentKind.Class);
         if (format is null)
         {
             ReportUnreadable(id, $"No document format recognizes '{id}'.", issues);
@@ -144,7 +158,7 @@ public sealed class ProjectPersistence
                 document = await format.ReadClassAsync(input, id, cancellationToken).ConfigureAwait(false);
             }
 
-            return mapper.FromDocument(document, project, issues, id);
+            return current.Mapper.FromDocument(document, project, issues, id);
         }
         catch (DocumentFormatException ex)
         {
@@ -177,6 +191,7 @@ public sealed class ProjectPersistence
         ArgumentNullException.ThrowIfNull(renderGenerated);
 
         string projectDirectory = GetDirectoryOrThrow(project.Path);
+        Serializers current = serializers;
         IDocumentStore store = createStore(projectDirectory);
         try
         {
@@ -194,9 +209,9 @@ public sealed class ProjectPersistence
                 cls.EnsureUniqueMemberIds();
 
                 string graphPath = project.GetGraphFilePath(cls);
-                ClassDocument document = mapper.ToDocument(cls);
+                ClassDocument document = current.Mapper.ToDocument(cls);
                 byte[] graphBytes = await RenderAsync(
-                    (stream, ct) => formats.Default.WriteClassAsync(document, stream, ct), cancellationToken).ConfigureAwait(false);
+                    (stream, ct) => current.Formats.Default.WriteClassAsync(document, stream, ct), cancellationToken).ConfigureAwait(false);
 
                 DocumentId graphId = FileSystemDocumentStore.ToDocumentId(projectDirectory, graphPath);
                 if (await WriteIfDifferentAsync(store, graphId, graphBytes, cancellationToken).ConfigureAwait(false))
@@ -252,6 +267,7 @@ public sealed class ProjectPersistence
         string targetPath = Path.Combine(projectDirectory, Path.GetFileName(sourceGraphPath));
         byte[] bytes = await File.ReadAllBytesAsync(sourceGraphPath, cancellationToken).ConfigureAwait(false);
 
+        Serializers current = serializers;
         IDocumentStore store = createStore(projectDirectory);
         try
         {
@@ -261,11 +277,11 @@ public sealed class ProjectPersistence
             ClassDocument document;
             await using (Stream input = await store.OpenReadAsync(id, cancellationToken).ConfigureAwait(false))
             {
-                document = await formats.Default.ReadClassAsync(input, id, cancellationToken).ConfigureAwait(false);
+                document = await current.Formats.Default.ReadClassAsync(input, id, cancellationToken).ConfigureAwait(false);
             }
 
             var issues = new List<DocumentIssue>();
-            ClassGraph cls = mapper.FromDocument(document, project, issues, id);
+            ClassGraph cls = current.Mapper.FromDocument(document, project, issues, id);
             cls.LoadedGraphFilePath = targetPath;
             project.Classes.Add(cls);
             return cls;

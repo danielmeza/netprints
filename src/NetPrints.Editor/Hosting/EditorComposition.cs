@@ -6,9 +6,7 @@ using NetPrints.Editor.Hosting.Avalonia;
 using NetPrints.Editor.Main;
 using NetPrints.Projects;
 using NetPrints.Serialization;
-using NetPrints.Serialization.Json;
 using NetPrints.Serialization.Mapping;
-using NetPrints.Serialization.Migrations;
 using NetPrints.Serialization.Stores;
 using NetPrints.Workspace;
 
@@ -29,23 +27,22 @@ public sealed class EditorComposition
         Windows = new WindowService();
 
         IProjectSystem projects = host.MsBuildAvailable
-            ? new MsBuildProjectSystem(new ProjectSystemOptions([], NetPrintsSdkVersion), new ProcessRunner(),
+            ? new MsBuildProjectSystem(new ProjectSystemOptions(new ExtensionProjectProperties(host.Extensions), NetPrintsSdkVersion), new ProcessRunner(),
                 host.LoggerFactory.CreateLogger<MsBuildProjectSystem>())
             : new NoSdkProjectSystem();
 
-        var nodeConverters = new NodeDocumentConverterRegistry(NodeDocumentConverterRegistry.BuiltIn, []);
-        var mapper = new DocumentMapper(nodeConverters);
-        var formats = new DocumentFormatRegistry([new JsonDocumentFormat(new NetPrintsJsonOptions(nodeConverters), new DocumentMigrator([]))]);
+        (DocumentFormatRegistry formats, IDocumentMapper mapper) = PersistenceBinding.CreateSerializers(host.Extensions.Current);
         var persistence = new ProjectPersistence(projects, formats, mapper,
             directory => new FileSystemDocumentStore(directory, DefaultScheduler.Instance, host.LoggerFactory.CreateLogger<FileSystemDocumentStore>()),
             host.LoggerFactory.CreateLogger<ProjectPersistence>());
+        _ = PersistenceBinding.Bind(persistence, host.Extensions);
 
         var context = new EditorContext(
             new StorageFilePickerService(() => Windows.ActiveWindow),
             new EditorDialogs(() => Windows.ActiveWindow),
             new AvaloniaClipboardService(() => Windows.ActiveWindow),
             dispatcher,
-            new ReflectionHost(dispatcher, host.LoggerFactory.CreateLogger<ReflectionHost>()),
+            new ReflectionHost(dispatcher, host.Extensions, host.LoggerFactory.CreateLogger<ReflectionHost>()),
             Windows,
             new ProcessLauncher(),
             DefaultScheduler.Instance,

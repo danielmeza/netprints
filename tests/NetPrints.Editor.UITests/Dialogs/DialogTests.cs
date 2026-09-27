@@ -81,13 +81,14 @@ public class DialogTests
         var project = Project.FromSnapshot(snapshot);
         var dispatcher = new NetPrints.Editor.Hosting.Avalonia.AvaloniaUiDispatcher();
         var noSdkProjects = new NoSdkProjectSystem();
+        var extensions = new NetPrints.Extensibility.Loading.ExtensionHost(NetPrints.Extensibility.Loading.ExtensionLoaderOptions.BuiltInOnly, NullLoggerFactory.Instance);
         var context = new EditorContext(new QueuedFilePicker(), new RecordingDialogs(), new NoClipboard(), dispatcher,
-            new ReflectionHost(dispatcher, NullLogger<ReflectionHost>.Instance),
+            new ReflectionHost(dispatcher, extensions, NullLogger<ReflectionHost>.Instance),
             new NetPrints.Editor.Hosting.Avalonia.WindowService(), new CapturingProcessLauncher(),
             System.Reactive.Concurrency.DefaultScheduler.Instance, System.Reactive.Concurrency.DefaultScheduler.Instance,
             () => new CommunityToolkit.Mvvm.Messaging.WeakReferenceMessenger(), NullLoggerFactory.Instance,
             noSdkProjects, TestPersistence.Create(noSdkProjects),
-            new NetPrints.Extensibility.Loading.ExtensionHost(NetPrints.Extensibility.Loading.ExtensionLoaderOptions.BuiltInOnly, NullLoggerFactory.Instance),
+            extensions,
             NetPrints.Extensibility.Hosting.NullHostChannel.Instance,
             new NetPrints.Extensibility.Settings.JsonFileSettingsStore(Path.Combine(Path.GetTempPath(), "netprints-unused", "settings.json"),
                 NullLogger<NetPrints.Extensibility.Settings.JsonFileSettingsStore>.Instance));

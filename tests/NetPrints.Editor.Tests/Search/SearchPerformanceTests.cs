@@ -26,7 +26,7 @@ public class SearchPerformanceTests
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var output = TestContext.Current.TestOutputHelper!;
-        var host = new ReflectionHost(new InlineDispatcher(), NullLogger<ReflectionHost>.Instance);
+        var host = new ReflectionHost(new InlineDispatcher(), TestExtensions.CreateBuiltIn(), NullLogger<ReflectionHost>.Instance);
 
         var load = Stopwatch.StartNew();
         await host.ReloadAsync(Project.FromSnapshot(TestSnapshots.WithRuntimeAssemblies("P", "N")), cancellationToken);

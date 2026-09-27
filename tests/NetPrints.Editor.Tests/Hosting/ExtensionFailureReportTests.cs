@@ -10,7 +10,7 @@ namespace NetPrints.Editor.Tests.Hosting;
 /// <summary>ED-T11 at view-model level: extension load failures are listed once and the editor stays usable.</summary>
 public class ExtensionFailureReportTests : IDisposable
 {
-    private readonly TestEditor testEditor = new(new ReflectionHost(new InlineDispatcher(), NullLogger<ReflectionHost>.Instance));
+    private readonly TestEditor testEditor = TestEditor.Create(TestEditor.CreateReflectionHost);
     private readonly List<string> cleanup = [];
 
     public void Dispose() => cleanup.ForEach(TestPaths.TryDelete);

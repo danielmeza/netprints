@@ -18,7 +18,7 @@ public class ProjectTrustTests : IDisposable
 {
     private const string UnknownNode = """{ "$kind": "test.ext/widget", "id": "n000000000vny9" },""";
 
-    private readonly TestEditor testEditor = new(new ReflectionHost(new InlineDispatcher(), NullLogger<ReflectionHost>.Instance));
+    private readonly TestEditor testEditor = TestEditor.Create(TestEditor.CreateReflectionHost);
     private readonly List<string> cleanup = [];
 
     public void Dispose() => cleanup.ForEach(TestPaths.TryDelete);

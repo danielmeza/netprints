@@ -13,6 +13,7 @@ using NetPrints.Serialization.Mapping;
 using NetPrints.Serialization.Migrations;
 using NetPrints.Serialization.Stores;
 using NetPrints.Tests.Projects;
+using NetPrints.Translator;
 using NetPrints.Workspace;
 using Xunit;
 
@@ -119,7 +120,7 @@ namespace NetPrints.Tests.Samples
         {
             (_, Project project) = await HelloWorldWithIfElseAsync(null);
 
-            var sources = project.GenerateClassSources(out var warnings).ToList();
+            var sources = project.GenerateClassSources(TranslationEnvironment.BuiltIn, out var warnings).ToList();
 
             Assert.Empty(sources);
             string warning = Assert.Single(warnings);

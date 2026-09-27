@@ -354,16 +354,36 @@ public sealed class FakeProjectSystem : IProjectSystem
 public sealed class TestEditor
 {
     public TestEditor(IReflectionHost reflection)
+        : this(reflection, TestExtensions.CreateBuiltIn(), NullHostChannel.Instance)
+    {
+    }
+
+    private TestEditor(IReflectionHost reflection, ExtensionHost extensions, IHostChannel hostChannel)
     {
         ArgumentNullException.ThrowIfNull(reflection);
         Reflection = reflection;
         Persistence = CreatePersistence(Projects);
-        Extensions = new ExtensionHost(ExtensionLoaderOptions.BuiltInOnly, NullLoggerFactory.Instance);
+        Extensions = extensions;
+        _ = PersistenceBinding.Bind(Persistence, Extensions);
 
         Context = new EditorContext(FilePicker, Dialogs, Clipboard, Dispatcher, Reflection, Windows, Processes,
             Scheduler, Scheduler, () => new StrongReferenceMessenger(), NullLoggerFactory.Instance, Projects, Persistence,
-            Extensions, NullHostChannel.Instance, Settings);
+            Extensions, hostChannel, Settings);
     }
+
+    /// <summary>
+    /// Creates an editor whose reflection host is built over the editor's own extension host, so a project's extensions
+    /// (catalogs, translators) reach it; <paramref name="hostChannel"/> defaults to the null channel.
+    /// </summary>
+    public static TestEditor Create(Func<IExtensionHost, IReflectionHost> createReflection, ExtensionHost? extensions = null, IHostChannel? hostChannel = null)
+    {
+        ExtensionHost host = extensions ?? TestExtensions.CreateBuiltIn();
+        return new TestEditor(createReflection(host), host, hostChannel ?? NullHostChannel.Instance);
+    }
+
+    /// <summary>A real reflection host over <paramref name="extensions"/> that publishes inline.</summary>
+    public static ReflectionHost CreateReflectionHost(IExtensionHost extensions) =>
+        new(new InlineDispatcher(), extensions, NullLogger<ReflectionHost>.Instance);
 
     /// <summary>Builds a real, JSON-backed <see cref="ProjectPersistence"/> over any <see cref="IProjectSystem"/>.</summary>
     public static ProjectPersistence CreatePersistence(IProjectSystem projects)
@@ -394,4 +414,55 @@ public sealed class TestEditor
     /// <summary>Virtual time for throttled work (the search box) and the generated-code loop.</summary>
     public TestScheduler Scheduler { get; } = new();
     public EditorContext Context { get; }
+}
+
+/// <summary>Extension hosts for tests.</summary>
+public static class TestExtensions
+{
+    /// <summary>A real extension host with only the built-in extension.</summary>
+    public static ExtensionHost CreateBuiltIn() => new(ExtensionLoaderOptions.BuiltInOnly, NullLoggerFactory.Instance);
+}
+
+/// <summary>Where the built <c>NetPrints.TestExtension</c> asset (T071) lands for the running configuration.</summary>
+public static class TestExtensionFolder
+{
+    /// <summary>The extension's output folder: its dll, its manifest and nothing the host already supplies.</summary>
+    public static string Folder { get; } = Path.Combine(FindRepositoryRoot(), "tests", "NetPrints.TestExtension", "bin", DetectConfiguration(), "extensions", "netprints.test");
+
+    /// <summary>Copies <see cref="Folder"/> into <paramref name="destinationRoot"/>/ext and returns the copy.</summary>
+    public static string CopyTo(string destinationRoot)
+    {
+        string destination = Path.Combine(destinationRoot, "ext");
+        Directory.CreateDirectory(destination);
+        foreach (string file in Directory.GetFiles(Folder))
+        {
+            File.Copy(file, Path.Combine(destination, Path.GetFileName(file)));
+        }
+
+        return destination;
+    }
+
+    /// <summary>A real extension host with the built-in extension and the test extension loaded from its output folder.</summary>
+    public static ExtensionHost CreateHost() =>
+        new(ExtensionLoaderOptions.BuiltInOnly with { ExtensionFolders = [Folder] }, NullLoggerFactory.Instance);
+
+    private static string FindRepositoryRoot()
+    {
+        for (var directory = new DirectoryInfo(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
+        {
+            if (File.Exists(Path.Combine(directory.FullName, "NetPrints.slnx")))
+            {
+                return directory.FullName;
+            }
+        }
+
+        throw new InvalidOperationException("NetPrints.slnx was not found above the test output.");
+    }
+
+    private static string DetectConfiguration()
+    {
+        string[] segments = AppContext.BaseDirectory.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        int frameworkIndex = Array.LastIndexOf(segments, "net10.0");
+        return frameworkIndex > 0 ? segments[frameworkIndex - 1] : "Release";
+    }
 }

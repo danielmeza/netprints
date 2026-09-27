@@ -13,7 +13,7 @@ public class MainEditorVMTests : IDisposable
 {
     // MainEditorVM reloads the reflection host fire-and-forget whenever a project is set; a private
     // host keeps those reloads from replacing the provider the shared host serves to other tests.
-    private readonly TestEditor testEditor = new(new ReflectionHost(new InlineDispatcher(), NullLogger<ReflectionHost>.Instance));
+    private readonly TestEditor testEditor = TestEditor.Create(TestEditor.CreateReflectionHost);
     private readonly List<string> cleanup = [];
 
     public void Dispose() => cleanup.ForEach(TestPaths.TryDelete);
@@ -352,7 +352,7 @@ public class MainEditorVMTests : IDisposable
     [Fact(Timeout = 120000)]
     public async Task ReflectionReloadsOnOpenAndOnReferencesChange()
     {
-        var editor = new TestEditor(new ReflectionHost(new InlineDispatcher(), NullLogger<ReflectionHost>.Instance));
+        var editor = TestEditor.Create(TestEditor.CreateReflectionHost);
         int reloads = 0;
         editor.Reflection.Reloaded += (_, _) => reloads++;
 

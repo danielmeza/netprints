@@ -2931,3 +2931,38 @@ one `ProjectPersistenceTests` case.
   for T076 ("New Class uses the project's profile"), which is where the editor first reads the profile.
 - Deferred to T076 as specified: `ProjectSystemOptions.ExtraProperties`, `ReflectionHost` catalogs, mapper rebuild, `TranslationEnvironment.BuiltIn` call sites,
   `HostChannelBridge` (1020, 1022).
+
+### T076: editor use of contributions
+
+Added in `src/NetPrints.Editor/Hosting/`: `HostChannelBridge` (logs 1020 and 1022), `PersistenceBinding` (rebuilds the mapper and JSON options from
+the registry, `ProjectPersistence.Rebind`), `ExtensionProjectProperties` (live `ExtraProperties`). `ReflectionHost` is now
+`(IUiDispatcher, IExtensionHost, ILogger)`: it composes `CompositeReflectionProvider(catalogs..., live)` over the current registry, excludes the
+catalogs' covered assemblies from the live provider and translates with `registry.Translation` (`Project.GenerateClassSources` takes the
+`TranslationEnvironment`). `MainEditorVM`, `ClassEditorVM` and `RenderGenerated` translate with `Extensions.Current.Translation`, so
+`TranslationEnvironment.BuiltIn` is gone from `src`. Node search takes its built-in rows from the registry (`AllowedIn` against `NodeGraphKinds.Of`
+replaces the `BuiltInNodes` table; row order unchanged) and appends an extension's `NodeSuggestion`s last, for exec pins and no pin.
+Tests: `ProjectPropertyTests` (FR-025), `HostChannelBridgeTests` (EX-T08), `ProjectProfileTests` (EX-T07 second half), `ExtensionPersistenceTests`,
+`ExtensionSuggestionTests`, one `ReflectionHostTests` case; `TestEditor.Create`, `TestExtensions`, `TestExtensionFolder` in `Fakes.cs`.
+
+- Decision: `ProjectPersistence.Rebind(formats, mapper)` swaps one immutable pair; a load, save or add already running keeps the pair it started
+  with. Serialization cannot reference Extensibility, so the registry-to-serializers step lives in the editor (`PersistenceBinding.CreateSerializers`).
+  `RegistryChanged` handlers run on the UI thread (`LoadForProject` is called there), so no lock is needed beyond the volatile field.
+- Decision: `ProjectSystemOptions.ExtraProperties` is a live view (`ExtensionProjectProperties`) over `Extensions.Current.ProjectProperties`, because the
+  project system is created once and a project's own extensions load after its first evaluation. `LoadProjectAsync` compares the registry's names
+  before and after `LoadExtensionsForProjectAsync` and evaluates the project a second time only when a name was added, so
+  `ProjectSnapshot.GetProperty` sees the properties of project-scope extensions; a project without such an extension is evaluated once.
+- Decision: an unknown `NetPrintsProfile` gives `NPD005` (warning, document = the `.csproj` file name) in the "Project loaded with issues" dialog, produced
+  in `MainEditorVM.LoadProjectAsync` after the extensions are loaded (so a profile from a declined extension is also `NPD005`); New Class then falls back
+  to `DefaultProjectProfile` silently. Nothing writes the `.csproj`. Create Project still uses the default profile (no profile chooser is scheduled).
+- Decision: `MainEditorVM` owns the `HostChannelBridge` (created in its constructor, disposed by `OnMainWindowClosed`); the channel itself stays owned
+  by the composition root. Messages are marshalled with `IUiDispatcher.Post`. Every message logs 1020; an unknown type, a focus-document message with no
+  usable `path`, or a path that is not a class of the open project logs 1022. Types-changed with no project open does nothing (`ReloadReflectionAsync` returns).
+- Decision: focus-document resolves `path` (project-relative or absolute) against the classes' graph file paths and opens or activates the class window.
+  `nodeId` is parsed and handed to the callback but not used: the navigate-to-node seam (`NavigateToNodeMessage`) belongs to sub-phase I.
+- Decision: an extension `NodeSuggestion` is created with its own `Create` and positioned and connected like a built-in node (`NodeGraphVM.AddNode(position, pin, suggestion)`);
+  its icon defaults to `None_16x.png` because extension icon keys are not editor assets (P3).
+- Decision (F5a leftover): `RenderGenerated` still drops a preserved unknown node silently. The mapper has no logger (3002 is not emitted) and the persistence
+  rebuild does not change that, so no warning was added; the error list of sub-phase I is still where NPT003 surfaces. The `NPD001` row on open is the only signal.
+- Class-ness leaks added: none. `HostChannelBridge`, `PersistenceBinding`, `ExtensionProjectProperties` and `NodeGraphVM.AddNode(NodeSuggestion)` are
+  graph-generic; `NewClassCommand` and `CreateNewClass(IProjectProfile)` were class-only already.
+- `git grep` for `!` before `.`, `;`, `,`, `)` or a space in `src` finds only the two in `ObservableViewModelCollection.cs`.

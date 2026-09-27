@@ -3,6 +3,7 @@ using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using NetPrints.Compilation;
 using NetPrints.Core;
+using NetPrints.Extensibility.Loading;
 using NetPrints.Projects;
 using NetPrints.Reflection;
 
@@ -16,9 +17,8 @@ namespace NetPrints.Editor.Hosting;
 /// </summary>
 public sealed class ReflectionHost : IReflectionHost
 {
-    private static readonly IReadOnlySet<string> NoExcludedAssemblyNames = new HashSet<string>();
-
     private readonly IUiDispatcher dispatcher;
+    private readonly IExtensionHost extensions;
     private readonly ILogger<ReflectionHost> logger;
     private readonly ObservableRangeCollection<TypeSpecifier> nonStaticTypes = [];
     private readonly TaskCompletionSource loaded = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -29,10 +29,12 @@ public sealed class ReflectionHost : IReflectionHost
     /// Creates a reflection host that publishes reloaded providers through <paramref name="dispatcher"/>.
     /// </summary>
     /// <param name="dispatcher">Dispatcher used to publish a reloaded provider on the UI thread.</param>
+    /// <param name="extensions">Source of the type catalogs and the translation environment of the loaded extensions.</param>
     /// <param name="logger">Logger for reload start/completion/failure (events 1010-1013).</param>
-    public ReflectionHost(IUiDispatcher dispatcher, ILogger<ReflectionHost> logger)
+    public ReflectionHost(IUiDispatcher dispatcher, IExtensionHost extensions, ILogger<ReflectionHost> logger)
     {
         this.dispatcher = dispatcher;
+        this.extensions = extensions;
         this.logger = logger;
         NonStaticTypes = new ReadOnlyObservableCollection<TypeSpecifier>(nonStaticTypes);
     }
@@ -90,7 +92,10 @@ public sealed class ReflectionHost : IReflectionHost
             // Snapshot the model on the calling (UI) thread; everything else runs in the background.
             var references = snapshot.References;
             var otherSources = snapshot.OtherSources;
-            var generatedSources = project.GenerateClassSources(out var translationWarnings).ToList();
+            ExtensionRegistry registry = extensions.Current;
+            var generatedSources = project.GenerateClassSources(registry.Translation, out var translationWarnings).ToList();
+            IReadOnlyList<ITypeCatalog> catalogs = registry.TypeCatalogs;
+            IReadOnlySet<string> excludedAssemblyNames = catalogs.SelectMany(catalog => catalog.Info.CoveredAssemblyNames).ToHashSet(StringComparer.Ordinal);
 
             var (newProvider, types) = await Task.Run(() =>
             {
@@ -102,8 +107,9 @@ public sealed class ReflectionHost : IReflectionHost
                 }
 
                 cancellationToken.ThrowIfCancellationRequested();
-                // No type catalog exists yet (extension-points.md §4, T076): nothing is excluded.
-                IReflectionProvider built = new MemoizedReflectionProvider(new ReflectionProvider(references, sourceFiles, NoExcludedAssemblyNames));
+                IReflectionProvider live = new ReflectionProvider(references, sourceFiles, excludedAssemblyNames);
+                IReflectionProvider composed = catalogs.Count == 0 ? live : new CompositeReflectionProvider([.. catalogs, live]);
+                IReflectionProvider built = new MemoizedReflectionProvider(composed);
                 var types = built.GetNonStaticTypes().ToList();
 
                 // Warm-up (SC-005): Roslyn binds member symbols lazily, and the first enumeration of

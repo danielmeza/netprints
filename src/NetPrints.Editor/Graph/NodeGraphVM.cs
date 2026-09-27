@@ -12,6 +12,7 @@ using NetPrints.Editor.ModelSync;
 using NetPrints.Editor.Search;
 using NetPrints.Editor.UndoRedo;
 using NetPrints.Editor.Variables;
+using NetPrints.Extensibility.Nodes;
 using NetPrints.Graph;
 
 namespace NetPrints.Editor.Graph;
@@ -264,6 +265,29 @@ public sealed partial class NodeGraphVM : ObservableObject, IDisposable
         {
             var provider = Context.Reflection.Provider;
             GraphUtil.ConnectRelevantPins(request.SuggestionPin, node, provider.TypeSpecifierIsSubclassOf, provider.HasImplicitCast);
+        }
+
+        return node;
+    }
+
+    /// <summary>
+    /// Creates the node an extension's <see cref="NodeSuggestion"/> offers, positioned and connected like
+    /// <see cref="AddNode(AddNodeRequest)"/> (a node constructor adds the node to its graph).
+    /// </summary>
+    /// <param name="position">Where the node is created (graph coordinates).</param>
+    /// <param name="suggestionPin">Pin the search was opened for, or <see langword="null"/>.</param>
+    /// <param name="suggestion">The chosen suggestion.</param>
+    /// <returns>The new node.</returns>
+    public Node AddNode(GraphPoint position, NodePin? suggestionPin, NodeSuggestion suggestion)
+    {
+        Node node = suggestion.Create(Graph);
+        node.PositionX = Math.Max(0, position.X);
+        node.PositionY = Math.Max(0, position.Y);
+
+        if (suggestionPin is not null)
+        {
+            var provider = Context.Reflection.Provider;
+            GraphUtil.ConnectRelevantPins(suggestionPin, node, provider.TypeSpecifierIsSubclassOf, provider.HasImplicitCast);
         }
 
         return node;

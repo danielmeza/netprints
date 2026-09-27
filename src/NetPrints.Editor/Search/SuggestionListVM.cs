@@ -7,6 +7,7 @@ using DynamicData;
 using NetPrints.Core;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Hosting;
+using NetPrints.Extensibility.Nodes;
 using NetPrints.Graph;
 using NetPrints.Reflection;
 
@@ -18,47 +19,6 @@ namespace NetPrints.Editor.Search;
 /// </summary>
 public sealed partial class SuggestionListVM : ObservableObject, IDisposable
 {
-    private static readonly IReadOnlyDictionary<Type, TypeSpecifier[]> BuiltInNodes = new Dictionary<Type, TypeSpecifier[]>
-    {
-        [typeof(MethodGraph)] =
-        [
-            TypeSpecifier.FromType<ForLoopNode>(),
-            TypeSpecifier.FromType<IfElseNode>(),
-            TypeSpecifier.FromType<ConstructorNode>(),
-            TypeSpecifier.FromType<TypeOfNode>(),
-            TypeSpecifier.FromType<ExplicitCastNode>(),
-            TypeSpecifier.FromType<ReturnNode>(),
-            TypeSpecifier.FromType<MakeArrayNode>(),
-            TypeSpecifier.FromType<LiteralNode>(),
-            TypeSpecifier.FromType<TypeNode>(),
-            TypeSpecifier.FromType<MakeArrayTypeNode>(),
-            TypeSpecifier.FromType<ThrowNode>(),
-            TypeSpecifier.FromType<AwaitNode>(),
-            TypeSpecifier.FromType<TernaryNode>(),
-            TypeSpecifier.FromType<DefaultNode>(),
-        ],
-        [typeof(ConstructorGraph)] =
-        [
-            TypeSpecifier.FromType<ForLoopNode>(),
-            TypeSpecifier.FromType<IfElseNode>(),
-            TypeSpecifier.FromType<ConstructorNode>(),
-            TypeSpecifier.FromType<TypeOfNode>(),
-            TypeSpecifier.FromType<ExplicitCastNode>(),
-            TypeSpecifier.FromType<MakeArrayNode>(),
-            TypeSpecifier.FromType<LiteralNode>(),
-            TypeSpecifier.FromType<TypeNode>(),
-            TypeSpecifier.FromType<MakeArrayTypeNode>(),
-            TypeSpecifier.FromType<ThrowNode>(),
-            TypeSpecifier.FromType<TernaryNode>(),
-            TypeSpecifier.FromType<DefaultNode>(),
-        ],
-        [typeof(ClassGraph)] =
-        [
-            TypeSpecifier.FromType<TypeNode>(),
-            TypeSpecifier.FromType<MakeArrayTypeNode>(),
-        ],
-    };
-
     private readonly NodeGraphVM graph;
     private readonly SourceList<SuggestionItem> source = new();
     private readonly Subject<string> textChanges = new();
@@ -257,7 +217,18 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
 
         void Add(string category, IEnumerable<object> values) => result.AddRange(values.Select(v => (category, v)));
 
-        IEnumerable<object> BuiltIns() => BuiltInNodes.TryGetValue(nodeGraph.GetType(), out var nodes) ? nodes : [];
+        GraphKinds graphKind = NodeGraphKinds.Of(nodeGraph);
+        var suggestedKinds = graphKind == GraphKinds.None
+            ? []
+            : graph.Context.Extensions.Current.NodeKinds.Where(kind => kind.Suggestions.Count > 0 && kind.AllowedIn.HasFlag(graphKind)).ToList();
+
+        // Built-in kinds are offered as their node type (SelectAsync asks a dialog where a kind needs one); an extension's
+        // suggestions come last, after every built-in category (extension-points.md §2).
+        IEnumerable<object> BuiltIns() => suggestedKinds.Where(kind => !kind.Kind.Contains('/')).Select(kind => (object)TypeSpecifier.FromType(kind.NodeType));
+
+        IEnumerable<(string Category, object Value)> ExtensionNodes() => suggestedKinds
+            .Where(kind => kind.Kind.Contains('/'))
+            .SelectMany(kind => kind.Suggestions.Select(suggestion => (suggestion.Category, (object)suggestion)));
 
         ReflectionProviderMethodQuery MethodQuery() => classType is null ? new() : new ReflectionProviderMethodQuery().WithVisibleFrom(classType);
 
@@ -342,6 +313,11 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
                 break;
         }
 
+        if (pin is null or NodeOutputExecPin or NodeInputExecPin)
+        {
+            result.AddRange(ExtensionNodes());
+        }
+
         return result;
     }
 
@@ -372,6 +348,10 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
         {
             switch (item.Value)
             {
+                case NodeSuggestion suggestion:
+                    graph.AddNode(Position, pin, suggestion);
+                    break;
+
                 case MethodSpecifier method:
                     AddNode<CallMethodNode>(method, method.GenericArguments.Select(a => (BaseType)new GenericType(a.Name)).ToList());
                     break;

@@ -43,8 +43,6 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         MemberVisibility.Public,
     ];
 
-    private readonly ClassTranslator classTranslator = new(TranslationEnvironment.BuiltIn);
-
     private readonly HashSet<Variable> subscribedVariables = [];
     private readonly HashSet<NodeGraph> dirtyTrackedGraphs = [];
     private readonly HashSet<Node> dirtyTrackedNodes = [];
@@ -506,13 +504,15 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
 
     private void OnDirtyTrackedNodePositionChanged(Node node, double positionX, double positionY) => Class.MarkDirty();
 
+    private ClassTranslator NewTranslator() => new(Context.Extensions.Current.Translation);
+
     /// <summary>Translates the class to C# now (the loop calls this about every second).</summary>
     public void RefreshGeneratedCode()
     {
         string code;
         try
         {
-            code = classTranslator.TranslateClass(Class);
+            code = NewTranslator().TranslateClass(Class);
         }
         catch (Exception ex)
         {
@@ -570,7 +570,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
 
     /// <summary>Renders a class's generated C# file the same way a build would (project-system.md §3).</summary>
     private string RenderGenerated(Project project, ClassGraph cls) =>
-        NetPrints.Generator.GraphCodeGenerator.RenderFile(classTranslator.TranslateClass(cls), Path.GetFileName(project.GetGraphFilePath(cls)));
+        NetPrints.Generator.GraphCodeGenerator.RenderFile(NewTranslator().TranslateClass(cls), Path.GetFileName(project.GetGraphFilePath(cls)));
 
     /// <summary>Compiles the whole project through <see cref="MainEditorVM.CompileAsync(Project, EditorContext)"/> (PAR-09).</summary>
     [RelayCommand]

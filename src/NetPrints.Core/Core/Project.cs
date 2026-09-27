@@ -218,8 +218,11 @@ namespace NetPrints.Core
         /// (e.g. an unconnected node) is skipped instead of compiling its exception text as source;
         /// the reason is reported through <paramref name="warnings"/> instead.
         /// </summary>
-        public IEnumerable<string> GenerateClassSources(out IReadOnlyList<string> warnings)
+        /// <param name="environment">Node translators and emitters of the loaded extensions.</param>
+        /// <param name="warnings">Why each skipped class failed, ordered.</param>
+        public IEnumerable<string> GenerateClassSources(TranslationEnvironment environment, out IReadOnlyList<string> warnings)
         {
+            ArgumentNullException.ThrowIfNull(environment);
             ConcurrentBag<string> classSources = new ConcurrentBag<string>();
             ConcurrentBag<string> translationWarnings = new ConcurrentBag<string>();
 
@@ -227,7 +230,7 @@ namespace NetPrints.Core
             Parallel.ForEach(Classes, cls =>
             {
                 // Translate the class to C#
-                ClassTranslator classTranslator = new ClassTranslator(TranslationEnvironment.BuiltIn);
+                ClassTranslator classTranslator = new ClassTranslator(environment);
 
                 try
                 {

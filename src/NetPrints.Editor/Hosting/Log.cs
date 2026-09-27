@@ -47,11 +47,23 @@ internal static partial class Log
     [LoggerMessage(EventId = 1013, Level = LogLevel.Error, Message = "Loading types for {ProjectName} failed")]
     public static partial void ReflectionReloadFailed(ILogger logger, string projectName, Exception exception);
 
+    /// <summary>Logs 1020: a message arrived on the host channel.</summary>
+    /// <param name="logger">Logger to write to.</param>
+    /// <param name="type">The message type.</param>
+    [LoggerMessage(EventId = 1020, Level = LogLevel.Debug, Message = "Host message {Type}")]
+    public static partial void HostMessageReceived(ILogger logger, string type);
+
     /// <summary>Logs 1021: <c>NETPRINTS_HOST_CHANNEL</c> names a factory no loaded extension provides.</summary>
     /// <param name="logger">Logger to write to.</param>
     /// <param name="id">The requested factory id.</param>
     [LoggerMessage(EventId = 1021, Level = LogLevel.Error, Message = "Host channel {Id} is not provided by any extension")]
     public static partial void HostChannelUnknown(ILogger logger, string id);
+
+    /// <summary>Logs 1022: a host channel message the editor does not understand, or cannot act on, was ignored.</summary>
+    /// <param name="logger">Logger to write to.</param>
+    /// <param name="type">The message type.</param>
+    [LoggerMessage(EventId = 1022, Level = LogLevel.Debug, Message = "Ignoring host message {Type}")]
+    public static partial void HostMessageIgnored(ILogger logger, string type);
 
     /// <summary>Logs 1023: the factory of the requested host channel threw.</summary>
     /// <param name="logger">Logger to write to.</param>

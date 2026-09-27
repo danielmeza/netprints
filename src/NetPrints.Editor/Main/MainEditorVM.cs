@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.Logging;
 using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
@@ -23,6 +24,7 @@ public sealed partial class MainEditorVM : ObservableObject
 {
     private readonly EditorContext context;
     private readonly HashSet<(string Id, string? ManifestPath, string Code)> reportedExtensionFailures = [];
+    private readonly HostChannelBridge hostChannelBridge;
     private Project? subscribedProject;
 
     /// <summary>
@@ -33,6 +35,8 @@ public sealed partial class MainEditorVM : ObservableObject
     public MainEditorVM(EditorContext context, Project? project = null)
     {
         this.context = context;
+        hostChannelBridge = new HostChannelBridge(context.HostChannel, context.Dispatcher, ReloadReflectionAsync, FocusDocument,
+            context.LoggerFactory.CreateLogger<HostChannelBridge>());
         Project = project;
     }
 
@@ -307,8 +311,20 @@ public sealed partial class MainEditorVM : ObservableObject
 
         try
         {
+            IReadOnlyList<string> requestedProperties = context.Extensions.Current.ProjectProperties;
             ProjectSnapshot snapshot = await context.Projects.LoadAsync(path, CancellationToken.None);
             DocumentIssue? notTrusted = await LoadExtensionsForProjectAsync(snapshot);
+            if (context.Extensions.Current.ProjectProperties.Any(name => !requestedProperties.Contains(name, StringComparer.Ordinal)))
+            {
+                // The project's own extensions add MSBuild properties the first evaluation did not request (FR-025).
+                snapshot = await context.Projects.LoadAsync(path, CancellationToken.None);
+            }
+
+            DocumentIssue? unknownProfile = context.Extensions.Current.FindProfile(snapshot.ProfileId) is null
+                ? new DocumentIssue(DocumentIssueSeverity.Warning, DocumentIssue.UnknownProfile,
+                    $"The project profile '{snapshot.ProfileId}' is not provided by any loaded extension: the default profile is used. The project file is unchanged.",
+                    new DocumentId(Path.GetFileName(snapshot.ProjectFilePath)))
+                : null;
             ProjectLoadResult loaded = await context.Persistence.LoadAsync(snapshot, CancellationToken.None);
 
             context.Windows.CloseAllClassEditors();
@@ -317,7 +333,7 @@ public sealed partial class MainEditorVM : ObservableObject
 
             await ReportExtensionFailuresAsync();
 
-            IReadOnlyList<DocumentIssue> issues = notTrusted is null ? loaded.Issues : [notTrusted, .. loaded.Issues];
+            IReadOnlyList<DocumentIssue> issues = [.. new[] { notTrusted, unknownProfile }.OfType<DocumentIssue>(), .. loaded.Issues];
             if (issues.Count > 0)
             {
                 await context.Dialogs.ShowErrorAsync("Project loaded with issues",
@@ -432,7 +448,7 @@ public sealed partial class MainEditorVM : ObservableObject
 
         try
         {
-            await context.Persistence.SaveAsync(project, cls => RenderGenerated(project, cls), CancellationToken.None);
+            await context.Persistence.SaveAsync(project, cls => RenderGenerated(context, project, cls), CancellationToken.None);
             return true;
         }
         catch (Exception ex)
@@ -443,8 +459,8 @@ public sealed partial class MainEditorVM : ObservableObject
     }
 
     /// <summary>Renders a class's generated C# file the same way a build would (project-system.md §3).</summary>
-    private static string RenderGenerated(Project project, ClassGraph cls) =>
-        GraphCodeGenerator.RenderFile(new ClassTranslator(TranslationEnvironment.BuiltIn).TranslateClass(cls), Path.GetFileName(project.GetGraphFilePath(cls)));
+    private static string RenderGenerated(EditorContext context, Project project, ClassGraph cls) =>
+        GraphCodeGenerator.RenderFile(new ClassTranslator(context.Extensions.Current.Translation).TranslateClass(cls), Path.GetFileName(project.GetGraphFilePath(cls)));
 
     /// <summary>Compiles the project in the background (PAR-09).</summary>
     [RelayCommand(CanExecute = nameof(CanCompile))]
@@ -469,7 +485,7 @@ public sealed partial class MainEditorVM : ObservableObject
         project.CompilationMessage = "Compiling...";
         try
         {
-            await context.Persistence.SaveAsync(project, cls => RenderForBuild(project, cls), CancellationToken.None);
+            await context.Persistence.SaveAsync(project, cls => RenderForBuild(context, project, cls), CancellationToken.None);
             BuildResult result = await context.Projects.BuildAsync(project.Path, CancellationToken.None);
             SetBuildOutcome(project, DiagnosticMapper.FromBuild(result.Messages), result.Success, result.OutputAssemblyPath);
             return result.Success;
@@ -505,11 +521,11 @@ public sealed partial class MainEditorVM : ObservableObject
             : $"Build failed with {diagnostics.Count(d => d.Severity == CodeDiagnosticSeverity.Error)} error(s)";
     }
 
-    private static string RenderForBuild(Project project, ClassGraph cls)
+    private static string RenderForBuild(EditorContext context, Project project, ClassGraph cls)
     {
         try
         {
-            return RenderGenerated(project, cls);
+            return RenderGenerated(context, project, cls);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
@@ -550,13 +566,25 @@ public sealed partial class MainEditorVM : ObservableObject
     {
         try
         {
-            Project?.CreateNewClass(DefaultProjectProfile.Instance);
+            if (Project is { } project)
+            {
+                project.CreateNewClass(ResolveProfile(project));
+            }
         }
         catch (Exception ex)
         {
             await context.Dialogs.ShowErrorAsync("Failed to create class", ex.ToString());
         }
     }
+
+    /// <summary>
+    /// The profile the project's <c>NetPrintsProfile</c> names, or the default profile when no loaded extension provides it
+    /// (the <c>NPD005</c> warning was shown on load, extension-points.md §5).
+    /// </summary>
+    private IProjectProfile ResolveProfile(Project project) =>
+        project.Snapshot is { } snapshot && context.Extensions.Current.FindProfile(snapshot.ProfileId) is { } profile
+            ? profile
+            : DefaultProjectProfile.Instance;
 
     /// <summary>Adds an existing *.netpc.json class, copied into the project folder (PAR-13).</summary>
     [RelayCommand(CanExecute = nameof(IsProjectOpen))]
@@ -614,6 +642,34 @@ public sealed partial class MainEditorVM : ObservableObject
     private Task ShowReferencesAsync() =>
         Project is null ? Task.CompletedTask : context.Dialogs.ShowReferencesAsync(new ReferenceListVM(Project, context));
 
+    /// <summary>
+    /// Opens the class whose graph file is <paramref name="path"/> (project-relative or absolute), reusing an open window.
+    /// The node is not selected: navigating to a node arrives with the error list (sub-phase I).
+    /// </summary>
+    private bool FocusDocument(string path, string? nodeId)
+    {
+        if (Project is not { } project)
+        {
+            return false;
+        }
+
+        string projectDirectory = Path.GetDirectoryName(project.Path) ?? "";
+        string fullPath = Path.GetFullPath(path, projectDirectory);
+        StringComparison comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        ClassGraph? cls = project.Classes.FirstOrDefault(c => string.Equals(Path.GetFullPath(project.GetGraphFilePath(c)), fullPath, comparison));
+        if (cls is null)
+        {
+            return false;
+        }
+
+        OpenClass(cls);
+        return true;
+    }
+
     /// <summary>Called when the main window closes (PAR-14).</summary>
-    public void OnMainWindowClosed() => context.Windows.CloseAllClassEditors();
+    public void OnMainWindowClosed()
+    {
+        hostChannelBridge.Dispose();
+        context.Windows.CloseAllClassEditors();
+    }
 }
