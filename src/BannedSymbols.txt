@@ -1,0 +1,25 @@
+;; RS0030 (ADR-0003 follow-up, AGENTS.md "C# rules"). Sync-over-async, blocking waits and
+;; non-deterministic time/thread APIs, verified against the versions this repo references
+;; (Avalonia 12.1.3, net10.0). Doc-comment-id format: https://learn.microsoft.com/dotnet/fundamentals/code-analysis/quality-rules/ca1200
+M:System.Threading.Tasks.Task.Wait;Await it (async all the way, AGENTS.md "C# rules")
+M:System.Threading.Tasks.Task.Wait(System.Int32);Await it (async all the way, AGENTS.md "C# rules")
+M:System.Threading.Tasks.Task.Wait(System.TimeSpan);Await it (async all the way, AGENTS.md "C# rules")
+M:System.Threading.Tasks.Task.Wait(System.Threading.CancellationToken);Await it (async all the way, AGENTS.md "C# rules")
+M:System.Threading.Tasks.Task.Wait(System.Int32,System.Threading.CancellationToken);Await it (async all the way, AGENTS.md "C# rules")
+P:System.Threading.Tasks.Task`1.Result;Await it
+M:System.Runtime.CompilerServices.TaskAwaiter.GetResult;Await it; no sync-over-async bridges
+M:System.Runtime.CompilerServices.TaskAwaiter`1.GetResult;Await it; no sync-over-async bridges
+M:System.Runtime.CompilerServices.ValueTaskAwaiter.GetResult;Await it; no sync-over-async bridges
+M:System.Runtime.CompilerServices.ValueTaskAwaiter`1.GetResult;Await it; no sync-over-async bridges
+M:Avalonia.Threading.Dispatcher.Invoke(System.Action);Use await Dispatcher.UIThread.InvokeAsync
+M:Avalonia.Threading.Dispatcher.Invoke(System.Action,Avalonia.Threading.DispatcherPriority);Use await Dispatcher.UIThread.InvokeAsync
+M:Avalonia.Threading.Dispatcher.Invoke(System.Action,Avalonia.Threading.DispatcherPriority,System.Threading.CancellationToken);Use await Dispatcher.UIThread.InvokeAsync
+M:Avalonia.Threading.Dispatcher.Invoke(System.Action,Avalonia.Threading.DispatcherPriority,System.Threading.CancellationToken,System.TimeSpan);Use await Dispatcher.UIThread.InvokeAsync
+M:Avalonia.Threading.Dispatcher.Invoke``1(System.Func{``0});Use await Dispatcher.UIThread.InvokeAsync
+M:Avalonia.Threading.Dispatcher.Invoke``1(System.Func{``0},Avalonia.Threading.DispatcherPriority);Use await Dispatcher.UIThread.InvokeAsync
+M:Avalonia.Threading.Dispatcher.Invoke``1(System.Func{``0},Avalonia.Threading.DispatcherPriority,System.Threading.CancellationToken);Use await Dispatcher.UIThread.InvokeAsync
+M:Avalonia.Threading.Dispatcher.Invoke``1(System.Func{``0},Avalonia.Threading.DispatcherPriority,System.Threading.CancellationToken,System.TimeSpan);Use await Dispatcher.UIThread.InvokeAsync
+P:System.DateTime.Now;Inject TimeProvider
+P:System.DateTime.UtcNow;Inject TimeProvider
+M:System.Threading.Thread.Sleep(System.Int32);Use await Task.Delay(..., cancellationToken)
+M:System.Threading.Thread.Sleep(System.TimeSpan);Use await Task.Delay(..., cancellationToken)

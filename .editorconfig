@@ -138,6 +138,10 @@ dotnet_diagnostic.CS1572.severity = error # <param> tag names a parameter that d
 dotnet_diagnostic.CS1573.severity = error # Parameter has no matching <param> tag in the XML comment
 dotnet_diagnostic.CS1574.severity = error # cref/name attribute in an XML comment could not be resolved
 
+# ADR-0003 follow-up: Microsoft.CodeAnalysis.BannedApiAnalyzers (src/BannedSymbols.txt,
+# src/ConsoleBannedSymbols.txt), src/ only.
+dotnet_diagnostic.RS0030.severity = error # Do not use banned APIs
+
 # ---------------------------------------------------------------------------
 # Additional analyzers (ADR-0003): SonarAnalyzer.CSharp, IDisposableAnalyzers and
 # Microsoft.VisualStudio.Threading.Analyzers (Directory.Packages.props/Directory.Build.props),
