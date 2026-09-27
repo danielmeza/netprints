@@ -2386,3 +2386,22 @@ regeneration, not stale. Found and killed one orphaned `Xvfb :173` (PPID reparen
 was not separable file-by-file from T059's changes, so it is committed here rather than split
 across two commits. T060's own commit below only adds the dedicated ED-T15 test file and confirms
 the wiring.
+
+## T060 — Editor dirty tracking
+
+Production wiring (`UndoRedoStack.Applied`, `ClassEditorVM`'s per-graph/per-node subscriptions,
+`MethodVM`/`MemberVariableVM`/class-inspector `MarkDirty()` calls) shipped with T059's commit (see
+above). This task adds the missing piece: `tests/NetPrints.Editor.Tests/ClassEditor/
+DirtyTrackingTests.cs` (ED-T15), covering the contract's five scenarios directly against
+`ProjectPersistence.SaveAsync`'s `WrittenFiles` and `ClassGraph.IsDirty` rather than through the
+UI: pan/zoom/selection do not mark dirty and Save writes nothing; moving a node marks only that
+class dirty and Save writes only its graph + `.netpc.g.cs`; add-a-node-then-undo leaves the class
+dirty (`Applied` fires on `Undo` too); when undo nets back to exactly the loaded bytes, `SaveAsync`
+skips the rewrite anyway (`WriteIfDifferentAsync`); renaming a method through `MethodVM` marks
+dirty. No `DirtyTrackingTests` scenario needed a real UI: pan/zoom live only in
+`GraphEditorView`/Nodify and never touch the model, so "does not mark dirty" is true by construction
+there, not something to assert against a view.
+
+No `!`/`null!`/`default!` added. Verified: `dotnet build tests/NetPrints.Editor.Tests -c Release`
+0 errors/0 warnings; filtered xUnit v3 run (`DirtyTrackingTests`, `ClassEditorVMTests`,
+`MainEditorVMTests`): 40 total, 36 passed, 4 skipped (T061-gated), 0 failed.
