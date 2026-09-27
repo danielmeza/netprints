@@ -51,8 +51,13 @@ namespace NetPrints.Tests.Projects
                 """);
         }
 
+        // Forces MSBuild's console logger to English regardless of the host's locale: this class
+        // greps its output for a literal, English message ("Skipping target ...").
+        private static readonly IReadOnlyDictionary<string, string> EnglishCliEnvironment =
+            new Dictionary<string, string> { ["DOTNET_CLI_UI_LANGUAGE"] = "en" };
+
         private static Task<(int ExitCode, string Output)> RunDotnetAsync(string workingDirectory, params string[] args) =>
-            ExternalProcess.RunDotnetAsync(workingDirectory, environment: null, args);
+            ExternalProcess.RunDotnetAsync(workingDirectory, EnglishCliEnvironment, args);
 
         // PS-T01: first build generates all graphs and compiles; second build logs "Skipping target
         // NetPrintsGenerate"; touching one graph regenerates only it.

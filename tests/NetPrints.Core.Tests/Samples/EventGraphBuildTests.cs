@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using NetPrints.Tests.Projects;
@@ -16,6 +17,19 @@ namespace NetPrints.Tests.Samples
     /// </summary>
     public class EventGraphBuildTests
     {
+        // The spawned program's own OnTick(1.5f) output is asserted against a literal "1.5": force the
+        // invariant culture there (this test asserts the child process's number formatting, not
+        // product code, which stays untouched) and MSBuild's own console messages to English.
+        private static readonly IReadOnlyDictionary<string, string> BuildEnvironment =
+            new Dictionary<string, string> { ["DOTNET_CLI_UI_LANGUAGE"] = "en" };
+
+        private static readonly IReadOnlyDictionary<string, string> RunEnvironment =
+            new Dictionary<string, string>
+            {
+                ["DOTNET_CLI_UI_LANGUAGE"] = "en",
+                ["DOTNET_SYSTEM_GLOBALIZATION_INVARIANT"] = "1",
+            };
+
         [Fact]
         public async Task GameEventsBuildsAndRunsOnStartAndOnTickThroughARealDotnetBuild()
         {
@@ -59,12 +73,12 @@ namespace NetPrints.Tests.Samples
                 LocalSdkLayout.Write(directory);
                 string csprojPath = Path.Combine(directory, "EventGraphs.csproj");
 
-                (int buildExit, string buildOutput) = await ExternalProcess.RunDotnetAsync(directory, environment: null,
+                (int buildExit, string buildOutput) = await ExternalProcess.RunDotnetAsync(directory, BuildEnvironment,
                     "build", csprojPath, "-v:n", "-tl:off", "--nologo");
                 Assert.True(buildExit == 0, buildOutput);
                 Assert.True(File.Exists(Path.Combine(directory, "EventGraphs.GameEvents.netpc.g.cs")), buildOutput);
 
-                (int runExit, string runOutput) = await ExternalProcess.RunDotnetAsync(directory, environment: null,
+                (int runExit, string runOutput) = await ExternalProcess.RunDotnetAsync(directory, RunEnvironment,
                     "run", "--project", csprojPath, "--no-build");
                 Assert.True(runExit == 0, runOutput);
                 Assert.Contains("OnStart!", runOutput);
