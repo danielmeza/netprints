@@ -3480,13 +3480,9 @@ edited, so the diff between what was reviewed and what changed stays visible.
   `EventGraphs.GameEvents.cs` alongside its hand-written `EventBase.cs` companion (its declared super
   type) — plus a synthetic minimal class built directly from a `ForLoopNode` with an unconnected
   `InitialIndexPin`, proven red (`CS1525: Invalid expression term ';'`) before this fix and green after.
-  **`AllNodes.Everything.cs` is excluded from this guard**: it has two pre-existing compile errors
-  unrelated to this bug, confirmed by compiling it standalone — `CS1721` (`class Everything<T> :
-  System.Object, System.Object`, a duplicate base-class entry emitted by the class translator/emitter
-  for a generic class with no explicit interfaces) and `CS0273`/`CS0274` (the `Items` property is
-  `private` but its `get`/`set` accessors are both emitted `public`, which C# forbids). Neither is caused
-  or touched by this batch; left for a follow-up batch to fix and then fold `AllNodes.Everything.cs` into
-  `GoldenCompileTests` too.
+  **`AllNodes.Everything.cs` was excluded from this guard** for two pre-existing compile errors unrelated
+  to this bug; both are now fixed and the golden is folded into `GoldenCompileTests` (see "Fix: duplicate
+  `System.Object` base and non-restrictive accessor modifiers" below).
 - Decision (`Locals` fixture, `tests/NetPrints.Core.Tests/Fixtures/Locals/Locals.netpc.json`, no
   namespace so `cls.FullName == "Locals"` matches the golden's literal name): a hand-loop, not
   `ForLoopNode` (the bug above) — `MethodEntry → CallMethod(op_LessThan, count < 5) → IfElse →`
@@ -3524,3 +3520,80 @@ edited, so the diff between what was reviewed and what changed stays visible.
   its own "Bug fixed" entry); (2) `GetSetChooserVM.Open`'s new
   null-`DeclaringType` branch is a minimal, currently-unreachable stopgap — T087 should confirm it still
   makes sense once the Variables panel can actually drag a local onto the canvas, rather than assuming it.
+
+## Fix: duplicate `System.Object` base and non-restrictive accessor modifiers
+
+The checked-in `AllNodes.Everything.cs` golden did not compile (`CS1721`, `CS0273`/`CS0274`), excluded
+from `GoldenCompileTests` by the previous batch pending a fix (see above).
+
+- Bug fixed, pre-P1 (`git merge-base HEAD origin/master` = `09c178d`; both root causes already present,
+  byte-identical, at that commit — carried through the P1 refactor unchanged): `ClassGraph.AllBaseTypes`
+  (`src/NetPrints.Core/Core/ClassGraph.cs`) defaulted an interface pin added
+  (`ClassReturnNode.AddInterfacePin`, called once by `AllNodesFixtureFactory` for its type-graph coverage)
+  but left unconnected to `System.Object`, instead of contributing no interface at all — duplicating the
+  class's own implicit `System.Object` super type (`CS1721`). Fixed by dropping a pin with no inferred
+  type from the sequence (`OfType<TypeSpecifier>()`) instead of defaulting it. `ClassTranslator.TranslateClass`
+  additionally deduplicates the final base/interface list (`Distinct(StringComparer.Ordinal)`) as a
+  backstop against a class emitter (extension-points.md §3) adding a type already present.
+- Bug fixed, pre-P1 (same base commit; the logic was inline in `TranslateVariable` there, moved verbatim
+  into the `AccessorVisibilityPrefix` helper during the P1 refactor): an accessor's visibility was emitted
+  whenever it differed from the property's own (`!=`), instead of only when strictly more restrictive.
+  `AllNodesFixtureFactory.AddItemsVariable` builds exactly that impossible combination — a `private`
+  `Items` variable (default `Visibility`, never set) with `public` getter/setter methods — which the model
+  does not reject, and the old check emitted `private ... { public get ... public set ... }` (`CS0273`/
+  `CS0274`). Fixed with a restrictiveness ranking (`Private` < `Protected`/`Internal` < `Public`) so a
+  non-restrictive accessor modifier (equal to or less restrictive than the property's own) is dropped
+  instead of emitted; the fixture itself is untouched, since dropping the modifier is a legitimate way to
+  emit valid C# for the accessibility C# allows here (the property's own visibility applies).
+- Tests: `Translator/ClassTranslatorTests.cs` gained
+  `UnconnectedInterfacePinDoesNotDuplicateSystemObjectBase` and
+  `PrivatePropertyWithPublicAccessorsEmitsNoAccessorModifier`, each reproducing one bug in isolation, red
+  before the fix (`System.Object, System.Object` / `public get`, `public set` respectively) and green
+  after. `AllNodes.Everything.cs` added to `GoldenCompileTests.StandaloneCompilableGoldens` (red before the
+  fix with the exact `CS1721`/`CS0273`/`CS0274` errors quoted above, green after); the exclusion note and
+  its class-level doc comment removed.
+- Golden regenerated with `NETPRINTS_UPDATE_SNAPSHOTS=1` scoped to `GoldenCSharpTests` (never the unscoped
+  suite, per the `RoundTripTests`/`CommittedSampleTests` scare noted above). `AllNodes.Everything.cs`
+  changed on exactly the three lines the two bugs produced (`: System.Object, System.Object` →
+  `: System.Object`; both `public get`/`public set` → `get`/`set`); every other golden stays
+  byte-identical. `Translator/EmitterTests.ClassAndMemberEmittersAppearInOrder` hardcoded the same
+  pre-existing bug through the `DeclarePartial` accessor path (`Items { public get; public set; }`) and
+  needed the same one-line update to `Items { get; set; }`.
+
+## Guard: `samples/` pollution (AGENTS.md "Never leave changes under `samples/`")
+
+Investigated a report that the suite dirties `samples/HelloWorld/HelloWorld.Program.netpc.json` and
+leaves a stray `.g.cs`/`bin`/`obj` behind, said to have broken 11 tests earlier the same day.
+
+- No currently-run test does this. Every test that touches `samples/HelloWorld` in a plain run
+  (`HelloWorldSampleTests`, `MigratedFixtureBuildTests`, `SampleBuild`, `GraphCodeGeneratorTests`,
+  `RoundTripTests`, `StrictIdTests`, the `Editor.Tests`/`Editor.UITests`/`Desktop.E2ETests` copies) either
+  only reads the real path to copy it into a temp directory first, or only reads it into memory — verified
+  by hashing every file under `samples/` before and after running all of them (Core.Tests' `*Samples*`,
+  `*RoundTripTests`, `*StrictIdTests`, `*GraphCodeGeneratorTests`, plus the full solution-wide suite and
+  the dedicated E2E job): identical hashes, no new files, both times. The dirty state seen earlier that day
+  (fresh `bin`/`obj`/`.g.cs` mtimes, but no git diff) was the project owner's own manual editor session,
+  not a test.
+- The real, already-documented mechanism (see the "Operational note" above, `HelloWorld.Program.netpc.json`
+  scare): `CommittedSampleTests.GraphIsCanonical`/`GeneratedFileIsUpToDate` intentionally rewrite every
+  `samples/**/*.netpc.json`/`.g.cs` in place when `NETPRINTS_UPDATE_SNAPSHOTS=1` is set — by design, as
+  its own doc comment says, not a bug — but the env var is process-wide, so setting it for an unscoped
+  suite or theory (as that earlier scare did) silently regenerates the checked-in sample alongside whatever
+  golden was actually being targeted. This batch's own regeneration was correctly scoped to
+  `*GoldenCSharpTests` and never touched `samples/`.
+- Guard added: `Samples/SamplesDirectoryGuard.cs`, `SamplesDirectoryGuardFixture`, registered assembly-wide
+  in `NetPrints.Core.Tests` via `[assembly: AssemblyFixture(typeof(SamplesDirectoryGuardFixture))]`
+  (`Xunit.AssemblyFixtureAttribute`, constructed once before any test in the assembly runs and disposed
+  once after all of them finish, regardless of test order or parallelization — the only way to bound a
+  before/after snapshot around the whole run without relying on test ordering). The constructor hashes
+  (SHA-256) every file under the real `samples/`; `Dispose` hashes it again and throws, naming every
+  added/removed/changed path, if anything differs — skipped when `NETPRINTS_UPDATE_SNAPSHOTS=1` is set, to
+  keep the legitimate `CommittedSampleTests` regeneration path working. `Dispose` throwing is the
+  test-framework's own teardown-failure signal here (like `Assert.*`), not a production `IDisposable`, so
+  it does not follow the "Dispose never throws" rule for owned resources.
+- Proof: a throwaway test (`File.AppendAllText` onto the real `HelloWorld.Program.netpc.json`) made the
+  run fail with `Test Assembly Cleanup Failure ... SamplesDirectoryGuardFixture threw in Dispose ...
+  changed: HelloWorld/HelloWorld.Program.netpc.json`; reverted (`git checkout`) and the throwaway test
+  deleted before committing.
+- No test changes were needed for "make every test work on a temp copy" (Part B item 2): every candidate
+  already does.
