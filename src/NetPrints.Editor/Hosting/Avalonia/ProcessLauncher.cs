@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using NetPrints.Editor.Hosting;
+using NetPrints.Projects;
 
 namespace NetPrints.Editor.Hosting.Avalonia;
 
@@ -11,16 +12,32 @@ public sealed class ProcessLauncher : IProcessLauncher
     public event Action<string>? OutputReceived;
 
     /// <inheritdoc/>
-    public void Start(string fileName, string? arguments)
+    public void Start(ProcessStartRequest request)
     {
+        var startInfo = new ProcessStartInfo(request.FileName)
+        {
+            WorkingDirectory = request.WorkingDirectory,
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+        };
+
+        foreach (string argument in request.Arguments)
+        {
+            startInfo.ArgumentList.Add(argument);
+        }
+
+        if (request.EnvironmentVariables is not null)
+        {
+            foreach ((string key, string value) in request.EnvironmentVariables)
+            {
+                startInfo.Environment[key] = value;
+            }
+        }
+
         var process = new Process
         {
-            StartInfo = new ProcessStartInfo(fileName, arguments ?? "")
-            {
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-            },
+            StartInfo = startInfo,
             EnableRaisingEvents = true,
         };
 

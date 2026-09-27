@@ -144,7 +144,8 @@ namespace NetPrints.Core
         public partial ObservableRangeCollection<CompilationReference> References { get; set; } = new ObservableRangeCollection<CompilationReference>();
 
         /// <summary>
-        /// Determines what gets output during compilation.
+        /// Determines what gets output during compilation. Unused by the new build pipeline
+        /// (<see cref="CanCompileAndRun"/> no longer reads it); part of the old model removed in T063.
         /// </summary>
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(CanCompileAndRun))]
@@ -357,14 +358,14 @@ namespace NetPrints.Core
         }
 
         /// <summary>
-        /// Whether the project can currently be compiled and run: not already compiling, output type
-        /// is <see cref="BinaryType.Executable"/>, and <see cref="CompilationOutput"/> includes
-        /// <see cref="ProjectCompilationOutput.Binaries"/>.
+        /// Whether the project can currently be compiled and run: not already compiling, and output
+        /// type is <see cref="BinaryType.Executable"/> (<c>IProjectSystem.BuildAsync</c> always
+        /// produces the built output, so there is no <see cref="ProjectCompilationOutput"/> flag to
+        /// check for the new build pipeline).
         /// </summary>
         public bool CanCompileAndRun
         {
-            get => CanCompile && OutputBinaryType == BinaryType.Executable
-                && CompilationOutput.HasFlag(ProjectCompilationOutput.Binaries);
+            get => CanCompile && OutputBinaryType == BinaryType.Executable;
         }
 
         /// <summary>

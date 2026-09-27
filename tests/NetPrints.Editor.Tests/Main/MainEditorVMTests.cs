@@ -4,6 +4,7 @@ using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Main;
 using NetPrints.Editor.References;
 using NetPrints.Editor.Tests.Hosting;
+using NetPrints.Graph;
 using NetPrints.Projects;
 
 namespace NetPrints.Editor.Tests.Main;
@@ -184,7 +185,7 @@ public class MainEditorVMTests(TestEditor testEditor) : IDisposable
         Assert.Equal(BinaryType.SharedLibrary, project.Snapshot?.OutputType);
     }
 
-    [Fact(Timeout = 120000, Skip = "T061 wires Compile/Run through IProjectSystem")]
+    [Fact]
     public async Task RunCompilesThenStartsProgramThroughLauncher()
     {
         var editor = testEditor;
@@ -195,33 +196,50 @@ public class MainEditorVMTests(TestEditor testEditor) : IDisposable
         Assert.True(vm.CanCompileAndRun);
         await vm.RunCommand.ExecuteAsync(null);
 
+        Assert.True(vm.Project?.LastCompilationSucceeded);
+        Assert.Equal("Build succeeded", vm.Project?.CompilationMessage);
         Assert.Equal(1, editor.Processes.Started.Count());
     }
 
-    [Fact(Timeout = 120000, Skip = "T061 wires Compile/Run through IProjectSystem")]
+    [Fact]
     public async Task CompileReportsErrors()
     {
         var editor = testEditor;
         string dir = Track(TestPaths.CreateTempDirectory());
         var project = Project.CreateNew("Broken", "N");
-        project.Path = Path.Combine(dir, "Broken.netpp");
-        project.References.Add(new AssemblyReference(Path.Combine(dir, "missing.dll")));
+        project.Path = Path.Combine(dir, "Broken.csproj");
+        editor.Projects.BuildResultFactory = _ => new BuildResult(false,
+            [new ProjectMessage(ProjectMessageSeverity.Error, "CS0006", "Metadata file 'missing.dll' could not be found", null, null, null)],
+            null, "");
         var vm = new MainEditorVM(editor.Context, project);
 
-        var done = new TaskCompletionSource();
-        ((System.ComponentModel.INotifyPropertyChanged)project).PropertyChanged += (_, e) =>
-        {
-            if (e.PropertyName == nameof(Project.IsCompiling) && !project.IsCompiling)
-            {
-                done.TrySetResult();
-            }
-        };
+        await vm.CompileCommand.ExecuteAsync(null);
 
-        vm.CompileCommand.Execute(null);
-        await done.Task.WaitAsync(TimeSpan.FromSeconds(90), TestContext.Current.CancellationToken);
-
-        Assert.True(project.LastCompileErrors.Any(e => e.Contains("missing.dll")));
+        Assert.False(project.LastCompilationSucceeded);
+        Assert.Equal("Build failed with 1 error(s)", project.CompilationMessage);
+        Assert.Contains(project.LastDiagnostics, d => d.Message.Contains("missing.dll"));
         Assert.False(vm.RunCommand.CanExecute(null), "library projects cannot run");
+    }
+
+    [Fact]
+    public async Task CompileReportsATranslationFailureAsABuildError()
+    {
+        var editor = testEditor;
+        string path = Track(TestPaths.CopyHelloWorldSample());
+        var vm = new MainEditorVM(editor.Context);
+        await vm.LoadProjectAsync(path);
+        var project = vm.Project;
+        Assert.NotNull(project);
+        var cls = project.Classes.Single();
+        cls.Methods.Single().Nodes.OfType<CallMethodNode>().Single().InputDataPins.Single().UnconnectedValue = null;
+        cls.MarkDirty();
+
+        await vm.CompileCommand.ExecuteAsync(null);
+
+        Assert.False(project.LastCompilationSucceeded);
+        Assert.Equal("Build failed with 1 error(s)", project.CompilationMessage);
+        Assert.Equal(cls.FullName, project.LastDiagnostics.Single().ClassFullName);
+        Assert.Empty(editor.Dialogs.Errors);
     }
 
     [Fact]

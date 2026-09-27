@@ -130,4 +130,25 @@ public class DirtyTrackingTests(TestEditor editor) : IAsyncLifetime
         vmA.Methods.Single().Name = "Renamed";
         Assert.True(clsA.IsDirty);
     }
+
+    [Fact]
+    public void EditingAPinValueMarksDirty()
+    {
+        var call = vmA.Methods.Single().Graph.Nodes.OfType<CallMethodNode>().Single();
+
+        call.InputDataPins.Single().UnconnectedValue = "Changed";
+
+        Assert.True(clsA.IsDirty);
+        Assert.False(clsB.IsDirty);
+    }
+
+    [Fact]
+    public void DisconnectingAPinMarksDirty()
+    {
+        var call = vmA.Methods.Single().Graph.Nodes.OfType<CallMethodNode>().Single();
+
+        GraphUtil.DisconnectPin(call.InputExecPins.Single());
+
+        Assert.True(clsA.IsDirty);
+    }
 }

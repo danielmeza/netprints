@@ -3,6 +3,7 @@ using System.Text;
 using NetPrints.Core;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.References;
+using NetPrints.Projects;
 using NetPrints.Testing.Ui.Hosting;
 
 namespace NetPrints.Editor.UITests.Hosting;
@@ -53,7 +54,7 @@ public sealed class CapturingProcessLauncher : IProcessLauncher, IDisposable
     private readonly StringBuilder output = new();
     private readonly List<Process> processes = [];
 
-    public List<(string FileName, string? Arguments)> Started { get; } = [];
+    public List<ProcessStartRequest> Started { get; } = [];
 
     public event Action<string>? OutputReceived;
 
@@ -68,17 +69,33 @@ public sealed class CapturingProcessLauncher : IProcessLauncher, IDisposable
         }
     }
 
-    public void Start(string fileName, string? arguments)
+    public void Start(ProcessStartRequest request)
     {
-        Started.Add((fileName, arguments));
+        Started.Add(request);
+        var startInfo = new ProcessStartInfo(request.FileName)
+        {
+            WorkingDirectory = request.WorkingDirectory,
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+        };
+
+        foreach (string argument in request.Arguments)
+        {
+            startInfo.ArgumentList.Add(argument);
+        }
+
+        if (request.EnvironmentVariables is not null)
+        {
+            foreach ((string key, string value) in request.EnvironmentVariables)
+            {
+                startInfo.Environment[key] = value;
+            }
+        }
+
         var process = new Process
         {
-            StartInfo = new ProcessStartInfo(fileName, arguments ?? "")
-            {
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-            },
+            StartInfo = startInfo,
             EnableRaisingEvents = true,
         };
         process.OutputDataReceived += (_, e) => Append(e.Data);

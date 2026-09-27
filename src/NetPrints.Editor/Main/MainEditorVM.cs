@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.Hosting;
@@ -364,11 +365,79 @@ public sealed partial class MainEditorVM : ObservableObject
 
     /// <summary>Compiles the project in the background (PAR-09).</summary>
     [RelayCommand(CanExecute = nameof(CanCompile))]
-    private void Compile() => Project?.CompileProject();
+    private Task CompileAsync() => Project is null ? Task.CompletedTask : CompileAsync(Project, context);
 
     /// <summary>Compiles, then runs the program when the build succeeded (PAR-10).</summary>
     [RelayCommand(CanExecute = nameof(CanCompileAndRun))]
     private Task RunAsync() => Project is null ? Task.CompletedTask : CompileAndRunAsync(Project, context);
+
+    /// <summary>
+    /// Saves the project's dirty classes, builds it through <see cref="IProjectSystem.BuildAsync"/>
+    /// and maps the outcome onto <see cref="Core.Project.IsCompiling"/>,
+    /// <see cref="Core.Project.LastCompilationSucceeded"/> and <see cref="Core.Project.LastDiagnostics"/>
+    /// (shared by the main and class windows). A class that cannot be translated while saving is
+    /// reported as a build error; any other failure is shown through
+    /// <see cref="IEditorDialogs.ShowErrorAsync"/>.
+    /// </summary>
+    /// <returns>Whether the build succeeded.</returns>
+    public static async Task<bool> CompileAsync(Project project, EditorContext context)
+    {
+        project.IsCompiling = true;
+        project.CompilationMessage = "Compiling...";
+        try
+        {
+            await context.Persistence.SaveAsync(project, cls => RenderForBuild(project, cls), CancellationToken.None);
+            BuildResult result = await context.Projects.BuildAsync(project.Path, CancellationToken.None);
+            SetBuildOutcome(project, DiagnosticMapper.FromBuild(result.Messages), result.Success, result.OutputAssemblyPath);
+            return result.Success;
+        }
+        catch (ClassTranslationFailure failure)
+        {
+            // Interim id until the translator reports coded TranslationExceptions (T086).
+            var diagnostic = new CodeDiagnostic(CodeDiagnosticSeverity.Error, "NPT000",
+                $"{failure.Class.FullName}: {failure.Message}", failure.Class.FullName, null, null, null, null);
+            SetBuildOutcome(project, [diagnostic], false, null);
+            return false;
+        }
+        catch (Exception ex)
+        {
+            project.LastCompilationSucceeded = false;
+            project.CompilationMessage = "Build failed";
+            await context.Dialogs.ShowErrorAsync("Failed to build project", ex.ToString());
+            return false;
+        }
+        finally
+        {
+            project.IsCompiling = false;
+        }
+    }
+
+    private static void SetBuildOutcome(Project project, IReadOnlyList<CodeDiagnostic> diagnostics, bool success, string? assemblyPath)
+    {
+        project.LastDiagnostics = new ObservableRangeCollection<CodeDiagnostic>(diagnostics);
+        project.LastCompilationSucceeded = success;
+        project.LastCompiledAssemblyPath = success ? assemblyPath : null;
+        project.CompilationMessage = success
+            ? "Build succeeded"
+            : $"Build failed with {diagnostics.Count(d => d.Severity == CodeDiagnosticSeverity.Error)} error(s)";
+    }
+
+    private static string RenderForBuild(Project project, ClassGraph cls)
+    {
+        try
+        {
+            return RenderGenerated(project, cls);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            throw new ClassTranslationFailure(cls, ex);
+        }
+    }
+
+    private sealed class ClassTranslationFailure(ClassGraph cls, Exception inner) : Exception(inner.Message, inner)
+    {
+        public ClassGraph Class { get; } = cls;
+    }
 
     /// <summary>
     /// Compiles a project and starts the compiled program on success (shared by the main and
@@ -376,41 +445,15 @@ public sealed partial class MainEditorVM : ObservableObject
     /// </summary>
     public static async Task CompileAndRunAsync(Project project, EditorContext context)
     {
-        var completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-
-        void OnChanged(object? sender, PropertyChangedEventArgs e)
+        if (!await CompileAsync(project, context))
         {
-            if (e.PropertyName == nameof(Core.Project.IsCompiling) && !project.IsCompiling)
-            {
-                completion.TrySetResult(project.LastCompilationSucceeded);
-            }
-        }
-
-        var notifier = (INotifyPropertyChanged)project;
-        notifier.PropertyChanged += OnChanged;
-        try
-        {
-            project.CompileProject();
-            if (!project.IsCompiling)
-            {
-                // Nothing to compile (e.g. output set to Nothing).
-                completion.TrySetResult(false);
-            }
-
-            if (!await completion.Task)
-            {
-                return;
-            }
-        }
-        finally
-        {
-            notifier.PropertyChanged -= OnChanged;
+            return;
         }
 
         try
         {
-            var (fileName, arguments) = project.GetRunCommand();
-            context.Processes.Start(fileName, arguments);
+            ProcessStartRequest request = context.Projects.GetRunCommand(project.Path);
+            context.Processes.Start(request);
         }
         catch (Exception ex)
         {

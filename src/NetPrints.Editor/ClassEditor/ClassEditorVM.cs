@@ -48,6 +48,8 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     private readonly HashSet<Variable> subscribedVariables = [];
     private readonly HashSet<NodeGraph> dirtyTrackedGraphs = [];
     private readonly HashSet<Node> dirtyTrackedNodes = [];
+    private readonly HashSet<NodePin> dirtyTrackedPins = [];
+    private readonly HashSet<INotifyCollectionChanged> dirtyTrackedPinCollections = [];
     private IDisposable? generatedCodeLoop;
 
     /// <summary>Longest retained Output text, in characters (roughly 1 MB): older lines are
@@ -432,24 +434,75 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         SyncDirtyTrackingNodes();
     }
 
-    private void OnDirtyTrackedGraphNodesChanged(object? sender, NotifyCollectionChangedEventArgs e) => SyncDirtyTrackingNodes();
+    private void OnDirtyTrackedGraphNodesChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        SyncDirtyTrackingNodes();
+        Class.MarkDirty();
+    }
 
     private void SyncDirtyTrackingNodes()
     {
-        var current = dirtyTrackedGraphs.SelectMany(g => g.Nodes).ToHashSet();
+        var nodes = dirtyTrackedGraphs.SelectMany(g => g.Nodes).ToHashSet();
 
-        foreach (var removed in dirtyTrackedNodes.Where(n => !current.Contains(n)).ToList())
+        foreach (var removed in dirtyTrackedNodes.Where(n => !nodes.Contains(n)).ToList())
         {
             removed.OnPositionChanged -= OnDirtyTrackedNodePositionChanged;
             dirtyTrackedNodes.Remove(removed);
         }
 
-        foreach (var added in current.Where(n => !dirtyTrackedNodes.Contains(n)))
+        foreach (var added in nodes.Where(n => !dirtyTrackedNodes.Contains(n)))
         {
             added.OnPositionChanged += OnDirtyTrackedNodePositionChanged;
             dirtyTrackedNodes.Add(added);
         }
+
+        SyncDirtyTrackingPins();
     }
+
+    // Pin edits (unconnected values, connections) are model edits too: without them Compile's
+    // save-all would build the stale file on disk.
+    private void SyncDirtyTrackingPins()
+    {
+        var collections = dirtyTrackedNodes.SelectMany(NodePinCollections).ToHashSet();
+        var pins = dirtyTrackedNodes.SelectMany(n => n.InputExecPins.Cast<NodePin>()
+            .Concat(n.OutputExecPins).Concat(n.InputDataPins).Concat(n.OutputDataPins)
+            .Concat(n.InputTypePins).Concat(n.OutputTypePins)).ToHashSet();
+
+        foreach (var removed in dirtyTrackedPinCollections.Where(c => !collections.Contains(c)).ToList())
+        {
+            removed.CollectionChanged -= OnDirtyTrackedPinsChanged;
+            dirtyTrackedPinCollections.Remove(removed);
+        }
+
+        foreach (var added in collections.Where(c => !dirtyTrackedPinCollections.Contains(c)))
+        {
+            added.CollectionChanged += OnDirtyTrackedPinsChanged;
+            dirtyTrackedPinCollections.Add(added);
+        }
+
+        foreach (var removed in dirtyTrackedPins.Where(p => !pins.Contains(p)).ToList())
+        {
+            removed.PropertyChanged -= OnDirtyTrackedPinPropertyChanged;
+            dirtyTrackedPins.Remove(removed);
+        }
+
+        foreach (var added in pins.Where(p => !dirtyTrackedPins.Contains(p)))
+        {
+            added.PropertyChanged += OnDirtyTrackedPinPropertyChanged;
+            dirtyTrackedPins.Add(added);
+        }
+    }
+
+    private static IEnumerable<INotifyCollectionChanged> NodePinCollections(Node node) =>
+        [node.InputExecPins, node.OutputExecPins, node.InputDataPins, node.OutputDataPins, node.InputTypePins, node.OutputTypePins];
+
+    private void OnDirtyTrackedPinsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        SyncDirtyTrackingPins();
+        Class.MarkDirty();
+    }
+
+    private void OnDirtyTrackedPinPropertyChanged(object? sender, PropertyChangedEventArgs e) => Class.MarkDirty();
 
     private void OnDirtyTrackedNodePositionChanged(Node node, double positionX, double positionY) => Class.MarkDirty();
 
@@ -519,14 +572,9 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     private string RenderGenerated(Project project, ClassGraph cls) =>
         NetPrints.Generator.GraphCodeGenerator.RenderFile(classTranslator.TranslateClass(cls), Path.GetFileName(project.GetGraphFilePath(cls)));
 
+    /// <summary>Compiles the whole project through <see cref="MainEditorVM.CompileAsync(Project, EditorContext)"/> (PAR-09).</summary>
     [RelayCommand]
-    private void Compile()
-    {
-        if (Project is { CanCompile: true })
-        {
-            Project.CompileProject();
-        }
-    }
+    private Task CompileAsync() => Project is { CanCompile: true } project ? MainEditorVM.CompileAsync(project, Context) : Task.CompletedTask;
 
     [RelayCommand]
     private Task RunAsync()
@@ -732,6 +780,20 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         }
 
         dirtyTrackedNodes.Clear();
+
+        foreach (var pin in dirtyTrackedPins)
+        {
+            pin.PropertyChanged -= OnDirtyTrackedPinPropertyChanged;
+        }
+
+        dirtyTrackedPins.Clear();
+
+        foreach (var collection in dirtyTrackedPinCollections)
+        {
+            collection.CollectionChanged -= OnDirtyTrackedPinsChanged;
+        }
+
+        dirtyTrackedPinCollections.Clear();
         Messenger.UnregisterAll(this);
         OpenedGraph = null;
         Methods.Dispose();

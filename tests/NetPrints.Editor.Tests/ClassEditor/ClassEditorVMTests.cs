@@ -243,16 +243,16 @@ public class ClassEditorVMTests : IAsyncLifetime
         Assert.True(File.Exists(graphPath));
     }
 
-    [Fact(Timeout = 120000, Skip = "T061 wires Compile/Run through IProjectSystem; a snapshot-loaded project's CompilationOutput is Nothing until then")]
+    [Fact]
     public async Task RunCompilesAndStartsProgram()
     {
         await vm.RunCommand.ExecuteAsync(null);
 
-        Assert.True(project.LastCompilationSucceeded, string.Join("\n", project.LastCompileErrors));
+        Assert.True(project.LastCompilationSucceeded, string.Join("\n", project.LastDiagnostics.Select(d => d.Message)));
         Assert.Equal(1, editor.Processes.Started.Count());
     }
 
-    [Fact(Timeout = 120000, Skip = "T061 wires Compile/Run through IProjectSystem; a snapshot-loaded project's CompilationOutput is Nothing until then")]
+    [Fact(Timeout = 120000)]
     public async Task RunSwitchesToOutputOnceNotOnEveryLine()
     {
         vm.SelectedBottomTab = 0;

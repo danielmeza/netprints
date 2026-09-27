@@ -145,11 +145,11 @@ public sealed class FakeWindowService : IWindowService
 
 public sealed class FakeProcessLauncher : IProcessLauncher
 {
-    public List<(string FileName, string? Arguments)> Started { get; } = [];
+    public List<ProcessStartRequest> Started { get; } = [];
 
     public event Action<string>? OutputReceived;
 
-    public void Start(string fileName, string? arguments) => Started.Add((fileName, arguments));
+    public void Start(ProcessStartRequest request) => Started.Add(request);
 
     /// <summary>Simulates a line of output, for tests of the Output pane wiring.</summary>
     public void Raise(string line) => OutputReceived?.Invoke(line);

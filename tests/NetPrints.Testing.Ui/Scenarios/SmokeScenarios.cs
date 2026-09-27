@@ -41,11 +41,6 @@ public abstract class SmokeScenarios
     /// <summary>Open the sample, put an If Else (condition ticked) before WriteLine, compile and run: "Hello, World!" (FR-017).</summary>
     protected async Task EditCompileAndRunAsync(CancellationToken cancellationToken)
     {
-        // T061 wires Compile/Run through IProjectSystem; a project opened through the new
-        // snapshot-based load path never gets a CompilationOutput other than Nothing before then,
-        // so Compile is a no-op and this flow cannot reach "Build succeeded".
-        Assert.Skip("T061 wires Compile/Run through IProjectSystem");
-
         var context = await StartAsync(cancellationToken);
         var actor = context.Actor;
 

@@ -2405,3 +2405,52 @@ there, not something to assert against a view.
 No `!`/`null!`/`default!` added. Verified: `dotnet build tests/NetPrints.Editor.Tests -c Release`
 0 errors/0 warnings; filtered xUnit v3 run (`DirtyTrackingTests`, `ClassEditorVMTests`,
 `MainEditorVMTests`): 40 total, 36 passed, 4 skipped (T061-gated), 0 failed.
+
+## T061 — Compile/Run via IProjectSystem
+
+`MainEditorVM.CompileAsync(Project, EditorContext)` (static, shared with `ClassEditorVM` like the
+existing `CompileAndRunAsync`) is the new pipeline: `IsCompiling`/"Compiling..." →
+`ProjectPersistence.SaveAsync` (dirty classes) → `IProjectSystem.BuildAsync` →
+`DiagnosticMapper.FromBuild` → `Project.LastDiagnostics`, `LastCompilationSucceeded`,
+`LastCompiledAssemblyPath` and `CompilationMessage` ("Build succeeded" / "Build failed with N
+error(s)", N = error-severity diagnostics). Run = compile, then `IProjectSystem.GetRunCommand` →
+`IProcessLauncher.Start`. The `Compile` relay commands became async (`CompileAsync`); the generated
+command names (`CompileCommand`, `RunCommand`) are unchanged, so no XAML binding moved.
+
+Decisions and deviations:
+
+- **`IProcessLauncher.Start` now takes a `ProcessStartRequest`** (was `string fileName, string?
+  arguments`): `GetRunCommand` returns one, with an argument list and a working directory the old
+  signature could not carry. `ProcessLauncher` and both test launchers build the `ProcessStartInfo`
+  the same way `ProcessRunner` does (ArgumentList, WorkingDirectory, Environment).
+- **`DiagnosticMapper` is created with only the `FromBuild(IReadOnlyList<ProjectMessage>)` overload.**
+  The contract's `classesByGeneratedPath` parameter (source-map mapping of `X.netpc.g.cs` messages to
+  nodes), `FromRoslyn` and `FromTranslation` need `TranslatedClass`/`SourceMap`, which arrive with T090
+  (RC-T10); the overload is a plain field-for-field mapping until then. `CodeDiagnostic`,
+  `Project.LastDiagnostics` were already pulled forward by T050/T055.
+- **A class that fails to translate while saving is reported as a build error** (`NPT000`, an interim
+  id until T086's coded `TranslationException`s), not as a "Failed to save" dialog: `SaveAsync` now
+  renders the `.g.cs` for every dirty class, so a half-edited graph (e.g. a cleared pin value) would
+  otherwise make Compile unusable. Other save/build failures (I/O, `NoSdkProjectSystem`'s NPW001)
+  show the error dialog.
+- **`CanCompileAndRun` no longer reads `CompilationOutput`** (`CanCompile && Executable`);
+  `CompilationOutput`'s own `[NotifyPropertyChangedFor(nameof(CanCompileAndRun))]` stays because the
+  T005 notification map pins it (removing it failed `NotificationMapTests`; T063 deletes both).
+- **Dirty tracking extended beyond T060's letter to pin edits**: `ClassEditorVM` now also marks the
+  class dirty on any property change of a tracked node's pins (unconnected value, connections) and on
+  changes of the node/pin collections. Without it Compile's save-all missed pin edits and the old
+  `BrokenGraphFillsTheErrorList` UI flow built the stale file. `DirtyTrackingTests` gained the pin-value
+  and disconnect cases.
+- The error list (`ClassEditorWindow.axaml`) binds to `Project.LastDiagnostics` with a small
+  `Id`/`Message` template; `DiagnosticRowVM`/`ErrorListVM` (node navigation) stay with the later
+  diagnostics tasks.
+- Un-skipped the four T061-gated editor tests plus the headless `EditCompileAndRun` smoke flow (real
+  `dotnet build` of the sample through `LocalSdkLayout`); rewrote `CompileReportsErrors` on
+  `FakeProjectSystem.BuildResultFactory`; added a translation-failure test and `DiagnosticMapperTests`.
+  Snapshot baselines `main-window-project`, `main-window-project-pane`, `main-window-settings-pane` and
+  `search-popup` regenerated: the Run button is now enabled for the Executable sample.
+
+No `!`/`null!`/`default!` added. Verified: `dotnet build` 0 warnings/0 errors; `NetPrints.Core.Tests`
+316 green; `NetPrints.Editor.Tests` compile/run/dirty classes green; headless UI:
+`ClassEditorWindowTests`, `SnapshotTests`, `HeadlessSmokeTests.EditCompileAndRun` green.
+
