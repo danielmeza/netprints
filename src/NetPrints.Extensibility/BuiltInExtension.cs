@@ -1,10 +1,11 @@
 using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Nodes;
+using NetPrints.Extensibility.Settings;
 
 namespace NetPrints.Extensibility;
 
 /// <summary>
-/// The extension that contributes what ships with NetPrints: <see cref="BuiltInNodeLibrary"/>. Loaded in-process
+/// The extension that contributes what ships with NetPrints: <see cref="BuiltInNodeLibrary"/> and the <see cref="NetPrintsSettings"/> section. Loaded in-process
 /// and first (extension-points.md §8.1).
 /// </summary>
 public sealed class BuiltInExtension : INetPrintsExtension
@@ -25,5 +26,6 @@ public sealed class BuiltInExtension : INetPrintsExtension
     {
         ArgumentNullException.ThrowIfNull(builder);
         builder.AddNodeLibrary(BuiltInNodeLibrary.Instance);
+        builder.AddSettings(NetPrintsSettings.Descriptor);
     }
 }

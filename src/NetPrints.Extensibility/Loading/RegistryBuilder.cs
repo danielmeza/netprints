@@ -1,7 +1,9 @@
 using System.Text.Json.Serialization.Metadata;
 using Microsoft.Extensions.Logging;
 using NetPrints.Core;
+using NetPrints.Extensibility.Hosting;
 using NetPrints.Extensibility.Nodes;
+using NetPrints.Extensibility.Settings;
 using NetPrints.Reflection;
 using NetPrints.Serialization.Mapping;
 using NetPrints.Translator;
@@ -25,6 +27,10 @@ internal sealed class RegistryBuilder(ILogger logger)
     private readonly HashSet<string> profileIds = new(StringComparer.Ordinal) { DefaultProjectProfile.ProfileId };
     private readonly List<IJsonTypeInfoResolver> resolvers = [];
     private readonly List<string> projectProperties = [];
+    private readonly List<IHostChannelFactory> hostChannels = [];
+    private readonly HashSet<string> hostChannelIds = new(StringComparer.Ordinal);
+    private readonly List<ExtensionSettingsDescriptor> settings = [];
+    private readonly HashSet<string> settingsIds = new(StringComparer.Ordinal);
     private readonly List<object> owned = [];
     private readonly List<ExtensionContributionIssue> issues = [];
 
@@ -62,6 +68,39 @@ internal sealed class RegistryBuilder(ILogger logger)
             }
         }
 
+        foreach (IHostChannelFactory factory in contributions.HostChannels)
+        {
+            if (string.IsNullOrWhiteSpace(factory.Id))
+            {
+                RejectOther(manifest, "host channel <empty id>", "the factory id is empty.");
+            }
+            else if (!hostChannelIds.Add(factory.Id))
+            {
+                RejectOther(manifest, $"host channel {factory.Id}", "a host channel factory with this id is already registered.");
+            }
+            else
+            {
+                hostChannels.Add(factory);
+                owned.Add(factory);
+            }
+        }
+
+        foreach (ExtensionSettingsDescriptor descriptor in contributions.Settings)
+        {
+            if (descriptor.ExtensionId != manifest.Id)
+            {
+                RejectOther(manifest, $"settings {descriptor.ExtensionId}", $"the section id must be the extension id '{manifest.Id}'.");
+            }
+            else if (!settingsIds.Add(descriptor.ExtensionId))
+            {
+                RejectOther(manifest, $"settings {descriptor.ExtensionId}", "a settings section for this extension is already registered.");
+            }
+            else
+            {
+                settings.Add(descriptor);
+            }
+        }
+
         foreach (string property in contributions.ProjectProperties)
         {
             if (!projectProperties.Contains(property, StringComparer.OrdinalIgnoreCase))
@@ -89,6 +128,8 @@ internal sealed class RegistryBuilder(ILogger logger)
             profiles,
             resolvers,
             projectProperties,
+            hostChannels,
+            settings,
             issues,
             translation,
             converters,

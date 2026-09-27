@@ -1,8 +1,10 @@
 using System.Text.Json.Serialization.Metadata;
 using Microsoft.Extensions.Logging;
 using NetPrints.Core;
+using NetPrints.Extensibility.Hosting;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Nodes;
+using NetPrints.Extensibility.Settings;
 using NetPrints.Reflection;
 using NetPrints.Translator;
 
@@ -77,4 +79,19 @@ public interface IExtensionBuilder
     /// <returns>This builder.</returns>
     /// <exception cref="ArgumentException"><paramref name="msbuildPropertyName"/> is empty or white space.</exception>
     IExtensionBuilder AddProjectProperty(string msbuildPropertyName);
+
+    /// <summary>
+    /// Adds a factory for the host channel that <c>NETPRINTS_HOST_CHANNEL=&lt;factory id&gt;</c> selects.
+    /// </summary>
+    /// <param name="factory">The factory.</param>
+    /// <returns>This builder.</returns>
+    IExtensionBuilder AddHostChannel(IHostChannelFactory factory);
+
+    /// <summary>
+    /// Declares the extension's settings section. An extension declares at most one, and its
+    /// <see cref="ExtensionSettingsDescriptor.ExtensionId"/> must be the extension's own id.
+    /// </summary>
+    /// <param name="descriptor">The section.</param>
+    /// <returns>This builder.</returns>
+    IExtensionBuilder AddSettings(ExtensionSettingsDescriptor descriptor);
 }

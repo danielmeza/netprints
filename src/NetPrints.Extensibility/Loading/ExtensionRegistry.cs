@@ -1,7 +1,9 @@
 using System.Text.Json.Serialization.Metadata;
 using Microsoft.Extensions.Logging;
 using NetPrints.Core;
+using NetPrints.Extensibility.Hosting;
 using NetPrints.Extensibility.Nodes;
+using NetPrints.Extensibility.Settings;
 using NetPrints.Reflection;
 using NetPrints.Serialization.Mapping;
 using NetPrints.Translator;
@@ -28,6 +30,8 @@ public sealed class ExtensionRegistry : IDisposable
         IReadOnlyList<IProjectProfile> profiles,
         IReadOnlyList<IJsonTypeInfoResolver> jsonResolvers,
         IReadOnlyList<string> projectProperties,
+        IReadOnlyList<IHostChannelFactory> hostChannels,
+        IReadOnlyList<ExtensionSettingsDescriptor> settings,
         IReadOnlyList<ExtensionContributionIssue> issues,
         TranslationEnvironment translation,
         NodeDocumentConverterRegistry nodeConverters,
@@ -43,6 +47,8 @@ public sealed class ExtensionRegistry : IDisposable
         Profiles = profiles;
         JsonTypeInfoResolvers = jsonResolvers;
         ProjectProperties = projectProperties;
+        HostChannels = hostChannels;
+        Settings = settings;
         Issues = issues;
         Translation = translation;
         NodeConverters = nodeConverters;
@@ -96,6 +102,16 @@ public sealed class ExtensionRegistry : IDisposable
     public IReadOnlyList<string> ProjectProperties { get; }
 
     /// <summary>
+    /// The host channel factories, in registry order.
+    /// </summary>
+    public IReadOnlyList<IHostChannelFactory> HostChannels { get; }
+
+    /// <summary>
+    /// The settings sections extensions declared, in registry order.
+    /// </summary>
+    public IReadOnlyList<ExtensionSettingsDescriptor> Settings { get; }
+
+    /// <summary>
     /// The contributions that were rejected (<c>NPX006</c>) while their extension stayed loaded.
     /// </summary>
     public IReadOnlyList<ExtensionContributionIssue> Issues { get; }
@@ -116,6 +132,13 @@ public sealed class ExtensionRegistry : IDisposable
     /// <param name="id">The profile id.</param>
     /// <returns>The profile, or <see langword="null"/> when none has that id.</returns>
     public IProjectProfile? FindProfile(string id) => Profiles.FirstOrDefault(profile => profile.Id == id);
+
+    /// <summary>
+    /// Finds a host channel factory.
+    /// </summary>
+    /// <param name="id">The factory id.</param>
+    /// <returns>The factory, or <see langword="null"/> when none has that id.</returns>
+    public IHostChannelFactory? FindHostChannel(string id) => HostChannels.FirstOrDefault(factory => factory.Id == id);
 
     /// <summary>
     /// Disposes the contributed objects that are <see cref="IDisposable"/> or <see cref="IAsyncDisposable"/>;

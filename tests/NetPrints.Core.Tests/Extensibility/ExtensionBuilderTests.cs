@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using NetPrints.Core;
 using NetPrints.Extensibility;
+using NetPrints.Extensibility.Hosting;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Nodes;
+using NetPrints.Extensibility.Settings;
 using NetPrints.Reflection;
 using NetPrints.Translator;
 using Xunit;
@@ -121,5 +123,60 @@ public class ExtensionBuilderTests
         registry.Dispose();
 
         Assert.True(emitter.Disposed);
+    }
+
+    private sealed class StubHostChannelFactory(string id) : IHostChannelFactory
+    {
+        public string Id => id;
+
+        public IHostChannel Create(HostLaunchContext context) => NullHostChannel.Instance;
+    }
+
+    private static ExtensionSettingsDescriptor<NetPrintsSettings> SettingsFor(string id) =>
+        NetPrintsSettings.Descriptor with { ExtensionId = id };
+
+    [Fact]
+    public void HostChannelsAndSettingsAreCommittedAndFound()
+    {
+        var factory = new StubHostChannelFactory("test");
+        ExtensionSettingsDescriptor<NetPrintsSettings> descriptor = SettingsFor("test.ext");
+        var extension = InProcess("test.ext", builder => builder.AddHostChannel(factory).AddSettings(descriptor));
+
+        using ExtensionRegistry registry = Load(Options([BuiltInExtension.InProcessEntry, extension]));
+
+        Assert.Same(factory, Assert.Single(registry.HostChannels));
+        Assert.Same(factory, registry.FindHostChannel("test"));
+        Assert.Null(registry.FindHostChannel("missing"));
+        Assert.Equal(["netprints", "test.ext"], registry.Settings.Select(s => s.ExtensionId));
+        Assert.Same(descriptor, registry.Settings[1]);
+        Assert.Empty(registry.Issues);
+    }
+
+    [Fact]
+    public void DuplicateHostChannelIdsAndSettingsSectionsAreNpx006()
+    {
+        var extension = InProcess("test.ext", builder => builder
+            .AddHostChannel(new StubHostChannelFactory("dup"))
+            .AddHostChannel(new StubHostChannelFactory("dup"))
+            .AddSettings(SettingsFor("test.ext"))
+            .AddSettings(SettingsFor("test.ext"))
+            .AddSettings(SettingsFor("someone.else")));
+        var other = InProcess("test.other", builder => builder.AddHostChannel(new StubHostChannelFactory("dup")));
+
+        using ExtensionRegistry registry = Load(Options([extension, other]));
+
+        Assert.Single(registry.HostChannels);
+        Assert.Equal("test.ext", Assert.Single(registry.Settings).ExtensionId);
+        Assert.Equal(4, registry.Issues.Count);
+        Assert.All(registry.Issues, issue => Assert.Equal(ExtensionDiagnosticCodes.ContributionRejected, issue.Code));
+        Assert.Equal(2, registry.Loaded.Count);
+    }
+
+    [Fact]
+    public void BuiltInExtensionDeclaresTheNetPrintsSection()
+    {
+        using ExtensionRegistry registry = Load(Options([BuiltInExtension.InProcessEntry]));
+
+        Assert.Same(NetPrintsSettings.Descriptor, Assert.Single(registry.Settings));
     }
 }

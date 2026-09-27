@@ -1,8 +1,10 @@
 using System.Text.Json.Serialization.Metadata;
 using Microsoft.Extensions.Logging;
 using NetPrints.Core;
+using NetPrints.Extensibility.Hosting;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Nodes;
+using NetPrints.Extensibility.Settings;
 using NetPrints.Reflection;
 using NetPrints.Translator;
 
@@ -18,7 +20,9 @@ internal sealed record ExtensionContributions(
     IReadOnlyList<ITypeCatalog> TypeCatalogs,
     IReadOnlyList<IProjectProfile> Profiles,
     IReadOnlyList<IJsonTypeInfoResolver> JsonResolvers,
-    IReadOnlyList<string> ProjectProperties);
+    IReadOnlyList<string> ProjectProperties,
+    IReadOnlyList<IHostChannelFactory> HostChannels,
+    IReadOnlyList<ExtensionSettingsDescriptor> Settings);
 
 /// <summary>
 /// The builder handed to <see cref="INetPrintsExtension.Register"/>: it buffers, and the loader commits the
@@ -33,6 +37,8 @@ internal sealed class ExtensionBuilder(ExtensionManifest manifest, ILoggerFactor
     private readonly List<IProjectProfile> profiles = [];
     private readonly List<IJsonTypeInfoResolver> jsonResolvers = [];
     private readonly List<string> projectProperties = [];
+    private readonly List<IHostChannelFactory> hostChannels = [];
+    private readonly List<ExtensionSettingsDescriptor> settings = [];
     private bool sealedBuilder;
 
     public ExtensionManifest Manifest { get; } = manifest;
@@ -58,6 +64,10 @@ internal sealed class ExtensionBuilder(ExtensionManifest manifest, ILoggerFactor
         return Add(projectProperties, msbuildPropertyName);
     }
 
+    public IExtensionBuilder AddHostChannel(IHostChannelFactory factory) => Add(hostChannels, factory);
+
+    public IExtensionBuilder AddSettings(ExtensionSettingsDescriptor descriptor) => Add(settings, descriptor);
+
     /// <summary>
     /// Ends registration: later builder calls throw. Returns what was buffered.
     /// </summary>
@@ -65,7 +75,8 @@ internal sealed class ExtensionBuilder(ExtensionManifest manifest, ILoggerFactor
     {
         sealedBuilder = true;
         return new ExtensionContributions(
-            [.. nodeLibraries], [.. classEmitters], [.. memberEmitters], [.. typeCatalogs], [.. profiles], [.. jsonResolvers], [.. projectProperties]);
+            [.. nodeLibraries], [.. classEmitters], [.. memberEmitters], [.. typeCatalogs], [.. profiles], [.. jsonResolvers], [.. projectProperties],
+            [.. hostChannels], [.. settings]);
     }
 
     private ExtensionBuilder Add<T>(List<T> list, T item)
