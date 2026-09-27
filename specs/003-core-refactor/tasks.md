@@ -154,9 +154,9 @@ Checkpoint E (plan.md). Out of scope (follow-ups, do not implement): `netprints 
 
 ## Phase 7: User Story 4 — event graphs (P2) (sub-phase G)
 
-- [ ] T078 [US4] Model `EventGraph` (with member `Id`, included in `ClassGraph.Members`/`EnsureUniqueMemberIds`), `EventEntryNode` (`GetPinKeyName` override: `Input<i>` for argument pins), `ClassGraph.EventGraphs` (data-model.md §4); `GraphKeys` `<eventGraphId>`; `GraphKeyTests` extended
-- [ ] T079 [US4] `ExecutionGraphTranslator.TranslateEventEntry`, `ClassTranslator` event methods; golden `EventGraphs.cs` (custom `OnStart`, `OnTick`, override of `public virtual void OnReset()` from a hand-written `EventBase.cs` in the fixture project) + `NPT001`/`NPT002` cases in `tests/NetPrints.Core.Tests/Translator/EventGraphTranslatorTests.cs`; a test that pins the current rule "event methods follow entry node order" (swapping two entries in `Nodes` swaps the methods), recording open item K13
-- [ ] T080 [US4] `eventEntry` converter + `EventGraphDocument` mapping (member `id`, layout key); round-trip test
+- [x] T078 [US4] Model `EventGraph` (with member `Id`, included in `ClassGraph.Members`/`EnsureUniqueMemberIds`), `EventEntryNode` (`GetPinKeyName` override: `Input<i>` for argument pins), `ClassGraph.EventGraphs` (data-model.md §4); `GraphKeys` `<eventGraphId>`; `GraphKeyTests` extended
+- [x] T079 [US4] `ExecutionGraphTranslator.TranslateEventEntry`, `ClassTranslator` event methods; golden `EventGraphs.cs` (custom `OnStart`, `OnTick`, override of `public virtual void OnReset()` from a hand-written `EventBase.cs` in the fixture project) + `NPT001`/`NPT002` cases in `tests/NetPrints.Core.Tests/Translator/EventGraphTranslatorTests.cs`; a test that pins the current rule "event methods follow entry node order" (swapping two entries in `Nodes` swaps the methods), recording open item K13
+- [x] T080 [US4] `eventEntry` converter + `EventGraphDocument` mapping (member `id`, layout key); round-trip test
 - [ ] T081 [US4] Build/run test: fixture `.csproj` (LocalSdkLayout) whose `Main` calls `OnStart()`/`OnTick()`; `dotnet build` + run prints both lines
 - [ ] T082 [US4] Editor event graph list, create/open/remove (undoable), search set, "Custom Event"/"Override <method>" suggestions; `AutomationIds.EventGraphList`, `CreateEventGraphButton`
 - [ ] T083 [US4] ED-T07 in `tests/NetPrints.Editor.UITests/Events/EventGraphTests.cs` with `EventGraphsPage` in `tests/NetPrints.Testing.Ui`; **Checkpoint G**

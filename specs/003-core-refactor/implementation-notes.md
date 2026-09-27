@@ -3048,3 +3048,95 @@ Deferred or partial from the notes:
 14. Startup null-binding log noise in the editor (cosmetic); the CLI has no test project and the CI "CLI sample compile and run" step was not run locally.
 15. `NodeSuggestion` icon for extension nodes defaults to `None_16x.png` (extension icon keys are not editor assets, P3); Create Project still uses the default profile (no chooser scheduled); a declined project asks again next time.
 16. The Release-output pollution by `SdkPackageTests` described above.
+
+## Sub-phase G, batch G1 (T078–T080): event graphs
+
+Fixed first (unrelated to G): `SdkPackageTests` packed `NetPrints.Sdk` straight into `bin/Release`, leaving
+`NetPrints.Core.dll` at 0.0.1.0 after the test ran, so a second `dotnet test -c Release --no-build` failed two
+`GeneratorExtensionTests` with NPX007. Packed into a per-test temp `ArtifactsPath` instead; proved with two
+back-to-back Release suite runs (both 716/707/0/9, `NetPrints.Core.dll`'s hash unchanged). Committed separately.
+
+- Decision: `EventGraph : NodeGraph` (not `ExecutionGraph`), matching data-model.md §4 literally: it has no
+  single `EntryNode` and no `LocalVariables` (sub-phase H); it starts empty and holds several
+  `EventEntryNode`s (`Entries`, `Nodes.OfType<EventEntryNode>()`), each translated into its own method — the
+  same "one graph, several independent flows" shape as `ClassGraph`, not the "one entry, one body" shape of
+  `MethodGraph`/`ConstructorGraph`.
+- Decision: `EventEntryNode : Node` (not `ExecutionEntryNode`), also per data-model.md §4's literal class
+  declaration: `ExecutionEntryNode`'s constructor only accepts an `ExecutionGraph`, which `EventGraph` is not.
+  `InitialExecutionPin`, `GetPinKeyName` ("Input<i>" for `OutputDataPins[i]`) and the custom-event `AddArgument`/
+  `RemoveArgument` pin pattern are duplicated from `MethodEntryNode`, matching the existing duplication between
+  `MethodEntryNode` and `ConstructorEntryNode` rather than introducing a new shared base for three call sites.
+- Decision: an override entry's argument pins are fixed at construction directly from `overridden.Parameters`
+  (typed and named from the base signature, no paired `InputTypePin`), unlike a custom event's arguments (added
+  later via `AddArgument`, `object`-typed until a `type` node feeds their `InputTypePin`, propagated in
+  `HandleInputTypeChanged`). `RemoveArgument` tolerates having more `OutputDataPins` than `InputTypePins`
+  (an override entry) by skipping the type-pin half when there isn't one.
+- Decision: no `[DataContract]`/`[DataMember]` attributes on `EventGraph`/`EventEntryNode`, even though
+  data-model.md §4 shows them: `MethodGraph`, `ClassGraph` etc. already dropped them (serialization goes
+  through the document mapper, not `DataContract`), so matching the surrounding code, not the spec snippet.
+- Decision (class-ness leaks, extending Checkpoint F's list): `GraphKinds.Event`/`NodeGraphKinds.Of` already
+  had the seam (`GraphKinds` documented "bits above `Event` are free"); `NodeGraphKinds.Of` now classifies
+  `EventGraph`. `BuiltInNodeLibrary` gets an `eventEntry` descriptor (`GraphKinds.Event`, no suggestion, same as
+  `methodEntry`/`constructorEntry`/`classReturn`/`typeReturn`) — EX-T12's count assertion and
+  `NodeDocumentConverterRegistryTests`'s converter count both move from 23 to 24, as their own comments already
+  anticipated. `ClassGraph.Members`/`EnsureUniqueMemberIds` extended with an `EventGraph` case in the same
+  `switch`-based leak already on file (leak 3 of Checkpoint F: no shared "member" abstraction).
+- Decision (`ExecutionGraphTranslator`, a new leak): the private `graph` context field/property is now typed
+  `NodeGraph` (was `ExecutionGraph`), since `IExecutionTranslationContext.Graph` always documented "a method,
+  constructor or event graph". `TranslateSignature` (only ever called from `Translate(ExecutionGraph, ...)`)
+  casts back to `ExecutionGraph` once at the top; `TranslateEventEntry` writes its own signature
+  (`TranslateEventSignature`) instead, sharing only the low-level machinery (builder, state ids, pin naming,
+  jump stack, `TranslateVariables`/`CreateStates`/`RemoveUnnecessaryLabels`). `TranslatorUtil.GetAllNodesInExecGraph`/
+  `GetExecNodesInExecGraph(ExecutionGraph)` now delegate to new `GetAllNodesFrom(Node)`/`GetExecNodesFrom(Node)`
+  overloads taking the entry node directly (behavior-preserving refactor; existing goldens byte-identical).
+  `TranslateVariables`'s entry-pin exclusion check widened from `is MethodEntryNode` to
+  `is MethodEntryNode or EventEntryNode` (never affects Method/Constructor translation: no `EventEntryNode`
+  ever appears in their graphs).
+- Decision (NPT001, research.md K13): computed per entry as `ownExecNodes = GetExecNodesFrom(entry)` (forward
+  exec walk only) vs. `nodes = GetAllNodesFrom(entry)` (also follows data/type edges); any node in `nodes` that
+  is impure and not in `ownExecNodes` is a data dependency on a node that belongs to a different entry sharing
+  the same physical `EventGraph` (its value is never computed by this entry's own method) → `NPT001` naming the
+  dependency's graph key and node id. Covered by
+  `EventGraphTranslatorTests.TranslateEventEntryThrowsNpt001ForADataDependencyOnAnotherEntrysNode`.
+- Decision (NPT002): `ClassTranslator.TranslateClass` seeds a `HashSet<string>` from `c.Methods`' names, then
+  walks `c.EventGraphs` in order and each `eventGraph.Entries` in node order, adding each `EventName`; a
+  collision (with a method or an earlier entry) throws `NPT002`. Recorded, not fixed: **K13 stays open** —
+  `nodes` order is semantic for events (two branches that each append an entry conflict at the `nodes` tail,
+  and the merge decides method order); `EventGraphTranslatorTests.SwappingTwoEntriesInNodeOrderSwapsTheGeneratedMethodOrder`
+  pins today's rule so a future fix to K13 has a red test to guide it.
+- Decision: `EmittedMemberKind.EventMethod` (already scaffolded, unused) is now used:
+  `ClassTranslator.TranslateEvent` calls `EmitMember(cls, EmittedMemberKind.EventMethod, entry.EventName, entry)`
+  the same way `TranslateMethod`/`TranslateConstructor` do, so member emitters see event methods too (per the
+  design note "`ClassTranslator` event methods go through the F1 emitter seams").
+- Decision: the new golden `EventGraphs.GameEvents.cs`/`.netpc.json` (`tests/NetPrints.Core.Tests/Fixtures/EventGraphs/`)
+  exercises T079 and T080 together: a class extending a hand-written `EventGraphs.EventBase` (documentation-only,
+  excluded from compilation like every other `Fixtures/**/*.cs`), with a custom `OnStart()` (no args), a custom
+  `OnTick(System.Single deltaTime)` (a `type` node feeding the argument's paired input type pin, plus a pin
+  rename), and `override void OnReset()` (from `EventBase`'s `public virtual void OnReset()`). Registered in
+  both `GoldenCSharpTests.Fixtures()` (DF-T01-style) and `RoundTripTests.RoundTripSources()` (DF-T03, canonical
+  byte-identical round trip) — the latter also transitively exercises `JsonFixtureThroughSaveAndReloadProducesGoldenCSharp`
+  (DF-T02) via `GoldenCSharpTests.Fixtures()`. Reviewed by reading; `git diff --stat` against pre-batch HEAD
+  shows only this new file added under `Fixtures/Golden/`.
+- Decision: `AllNodesFixtureFactory`'s "Everything" class stays without an event graph (its own doc comment
+  already said "excluding the new eventEntry kind"): it is shared, byte-for-byte, with the static
+  `AllNodes.Everything.netpc.json`/`.cs` golden `EmitterTests.NoEmittersProduceTheGoldenOutput` depends on, so
+  adding an event there would have forked that golden. `NotificationMapTests` (which needs one instance of
+  every public `INotifyPropertyChanged` type, `EventEntryNode` included) instead builds one standalone
+  `EventEntryNode` directly and registers it into its instance map; `NotificationMap.golden.json` gained exactly
+  one new top-level entry, `NetPrints.Graph.EventEntryNode` (its own `[ObservableProperty]`s `EventName`,
+  `Modifiers`, `Visibility`, plus the inherited `Name`/`PositionX`/`PositionY`; `IsPure` throws, since
+  `CanSetPure` is not overridden — the default, like every other node kind that cannot toggle purity),
+  regenerated with `NETPRINTS_UPDATE_SNAPSHOTS=1`.
+- Decision: `EmitterTests`/`BuiltInNodeLibraryTests` (EX-T12) had their own pre-existing hardcoded "23" (with
+  comments already anticipating "24 once T080 lands"); moved to 24 alongside `NodeDocumentConverterRegistryTests`.
+- Operational note: mid-batch, `git log`/`git status` showed two new commits (`docs(roadmap)`, unrelated to G)
+  and uncommitted, in-progress edits to `src/NetPrints.Editor/Graph/{GetSetChooserVM,GraphEditorView,NodeGraphVM}`
+  and their tests, appearing minutes into this session — another agent working the same worktree/branch
+  concurrently (plausibly starting T081/T082 early), leaving `NetPrints.Editor` mid-edit and not building. Left
+  entirely untouched; committed only this batch's own files by explicit pathspec; could not run the
+  whole-solution suite as a result — ran `NetPrints.Core.Tests` alone instead (427/427, Debug and Release). Also
+  discovered and reverted (never committed): passing `NETPRINTS_UPDATE_SNAPSHOTS=1` to the full
+  `RoundTripTests` theory once wrote a spurious extra `Variable` member into the checked-in
+  `samples/HelloWorld/HelloWorld.Program.netpc.json` (restored via `git checkout`); root cause not
+  investigated (out of scope for this batch) — worth a dedicated look before ever running that env var against
+  `RoundTripSources()` un-scoped again.
