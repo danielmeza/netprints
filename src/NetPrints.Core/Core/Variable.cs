@@ -1,7 +1,6 @@
 ﻿#nullable enable
 using System;
 using System.Linq;
-using System.Runtime.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Graph;
 
@@ -93,22 +92,6 @@ namespace NetPrints.Core
         /// Specifier for the type of the variable.
         /// </summary>
         public TypeSpecifier Type => TypeGraph.ReturnType;
-
-        private TypeSpecifier? OldType
-        {
-            get => null;
-            set
-            {
-                if (value is null)
-                {
-                    // EmitDefaultValue = false: DataContract never round-trips a null Type value.
-                    return;
-                }
-
-                TypeGraph = new TypeGraph();
-                GraphUtil.CreateNestedTypeNode(TypeGraph, value, 500, 500);
-            }
-        }
 
         /// <summary>
         /// Get method for this variable. Can be null.
@@ -206,7 +189,6 @@ namespace NetPrints.Core
         /// This variable's member id (data-model.md §2), used as its type graph's and accessors' graph
         /// keys (<c>&lt;Id&gt;/type</c>, <c>/get</c>, <c>/set</c>). Assigned once, in the constructor,
         /// from <see cref="IdGeneration.Current"/>; the mapper overwrites it from the document.
-        /// Not <c>[DataMember]</c>.
         /// </summary>
         public string Id { get; internal set; }
 
@@ -229,24 +211,13 @@ namespace NetPrints.Core
             SetterMethod = setter;
             Modifiers = modifiers;
 
-            // Create a type graph with the type as its return type. OwningClass (not the serialized
-            // Class) lets GraphKeys.For key it as "<variable id>/type" (document-format.md §1.4.1).
+            // Create a type graph with the type as its return type. OwningClass lets GraphKeys.For key it
+            // as "<variable id>/type" (document-format.md §1.4.1).
             TypeGraph = new TypeGraph { OwningClass = cls };
             NodeOutputTypePin typePin = GraphUtil.CreateNestedTypeNode(TypeGraph, type, 500, 300).OutputTypePins[0];
             TypeGraph.ReturnNode.PositionX = 800;
             TypeGraph.ReturnNode.PositionY = 300;
             GraphUtil.ConnectTypePins(typePin, TypeGraph.ReturnNode.TypePin);
-        }
-
-        [OnDeserialized]
-        private void OnDeserialized(StreamingContext context)
-        {
-            // OwningClass is [IgnoreDataMember] (T017): a legacy class always deserializes a real,
-            // non-null TypeGraph (it is a [DataMember] with actual content), so the null check only
-            // covers the never-serialized case; OwningClass must be (re)set unconditionally, or
-            // GraphKeys.For(variable.TypeGraph) throws for every legacy import.
-            TypeGraph ??= new TypeGraph();
-            TypeGraph.OwningClass = Class;
         }
     }
 }
