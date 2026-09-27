@@ -2504,3 +2504,32 @@ legacy-import half), `AllNodesFixtureRegenerationTests`, and the legacy cases of
 in-memory model builder. No test csproj, `.gitattributes` or CI entry referenced `Fixtures/Legacy` any
 more. Core.Tests 316 -> 303 (-13); full suite 559 -> 546 (537 passed, 9 skipped, 0 failed); goldens
 byte-identical.
+
+
+## T063 part A — old model/persistence APIs deleted
+
+T063 part A done: e19f3cf. `Project` lost `CreateNew`, `LoadFromPath`, `Save`, `SaveClassInProjectDirectory`,
+`AddExistingClass`, `CompileProject`, `RunProject`, `GetRunCommand`, the no-arg `CreateNewClass()`,
+`References`, `ClassPaths`, `CompilationOutput`, `LastCompileErrors`, `SaveVersion` (data-model.md §5) and
+the `ProjectCompilationOutput` enum; `LastCompiledAssemblyPath` stays (the editor's build outcome still
+sets it) and `GenerateClassSources` stays (the reflection host uses it). `[DataContract]`/`[DataMember]`
+and the `[OnDeserialized]` hook are untouched (part B).
+
+- **`NotificationMap.golden.json` changed** (unavoidable): the T005 map is built by reflecting over
+  `Project`'s settable properties, so the entries of the deleted properties (`ClassPaths`,
+  `CompilationOutput`, `LastCompileErrors`, `References`, `SaveVersion`) had to go, and `Snapshot` (with its
+  `ProfileId`/`TargetFramework` dependents) appears because every project now carries one. Every other
+  entry, including `OutputBinaryType` -> `CanCompileAndRun`, is identical; the C# goldens in
+  `Fixtures/Golden/` are byte-identical.
+- No `Project` factory without a snapshot remains: tests build projects through `TestProjects.Create`
+  (Core.Tests) or `Project.FromSnapshot(TestSnapshots.Empty(...))` (Editor.Tests);
+  `GraphCodeGenerator` builds a throwaway snapshot inline.
+- `DeterministicCompileTests` now saves 8 `CreateNewClass(profile)` classes into a temp copy of
+  HelloWorld with `ProjectPersistence.SaveAsync`, builds through `MsBuildProjectSystem`, deletes `bin/` and
+  `obj/`, builds again and compares the assembly and every `.netpc.g.cs` byte for byte. `SampleBuild` is the
+  shared save-and-build helper (also used by `HelloWorldSampleTests`).
+- `ReferenceAssemblyResolverTests` deleted; the runtime-assembly-path helper moved to
+  `Editor.Tests/TestSnapshots.RuntimeAssemblyPaths`. `NodeTooltipTests` (UITests) checks the `NodeView`'s
+  tooltip, not the inner node border's automation property (the tooltip is set on the `UserControl`).
+- Full suite: 541 total, 532 passed, 9 skipped, 0 failed; Release build 0 warnings, `dotnet format` clean.
+
