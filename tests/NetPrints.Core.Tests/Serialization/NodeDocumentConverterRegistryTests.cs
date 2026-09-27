@@ -103,14 +103,13 @@ namespace NetPrints.Tests.Serialization
         }
 
         [Fact]
-        public void BuiltInContainsExactlyTwentyThreeConvertersSoFar()
+        public void BuiltInContainsExactlyTwentyFourConverters()
         {
-            // eventEntry (the 24th built-in kind of document-format.md §1.5) is added in sub-phase G
-            // (T080); until then NodeDocumentConverterRegistry.BuiltIn covers the other 23.
-            Assert.Equal(23, NodeDocumentConverterRegistry.BuiltIn.Count);
+            // eventEntry (sub-phase G, T080) is the 24th built-in kind of document-format.md §1.5.
+            Assert.Equal(24, NodeDocumentConverterRegistry.BuiltIn.Count);
 
             var registry = new NodeDocumentConverterRegistry(NodeDocumentConverterRegistry.BuiltIn, NoResolvers);
-            Assert.Equal(23, registry.Converters.Count);
+            Assert.Equal(24, registry.Converters.Count);
         }
     }
 }

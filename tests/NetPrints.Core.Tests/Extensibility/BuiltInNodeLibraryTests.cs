@@ -33,11 +33,11 @@ public class BuiltInNodeLibraryTests
     [Fact]
     public void RegistryHoldsOneKindPerBuiltInConverter()
     {
-        // eventEntry, the 24th kind of document-format.md §1.5, joins with its converter in sub-phase G.
+        // eventEntry (sub-phase G, T080) is the 24th kind of document-format.md §1.5.
         using ExtensionRegistry registry = LoadBuiltIn();
 
         Assert.Equal(NodeDocumentConverterRegistry.BuiltIn.Count, registry.NodeKinds.Count);
-        Assert.Equal(23, registry.NodeKinds.Count);
+        Assert.Equal(24, registry.NodeKinds.Count);
         Assert.Equal(registry.NodeKinds.Count, registry.NodeKinds.Select(k => k.Kind).Distinct().Count());
         Assert.All(registry.NodeKinds, kind => Assert.False(kind.Kind.Contains('/')));
         Assert.All(registry.NodeKinds, kind => Assert.Same(kind.Converter, registry.NodeConverters.FindByKind(kind.Kind)));

@@ -122,6 +122,7 @@ public sealed class NodeDocumentConverterRegistry
     {
         var converters = new List<INodeDocumentConverter>();
         converters.AddRange(BuiltInConverters.EntryReturnConverters.All);
+        converters.AddRange(BuiltInConverters.EventConverters.All);
         converters.AddRange(BuiltInConverters.MemberConverters.All);
         converters.AddRange(BuiltInConverters.ValueConverters.All);
         converters.AddRange(BuiltInConverters.FlowConverters.All);

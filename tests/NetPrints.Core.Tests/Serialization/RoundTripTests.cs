@@ -102,6 +102,7 @@ namespace NetPrints.Tests.Serialization
             string root = SampleProjectFactory.FindRepositoryRoot();
             yield return new object[] { Path.Combine(root, "tests", "NetPrints.Core.Tests", "Fixtures", "HelloWorld", "HelloWorld.Program.netpc.json") };
             yield return new object[] { Path.Combine(root, "tests", "NetPrints.Core.Tests", "Fixtures", "AllNodes", "AllNodes.Everything.netpc.json") };
+            yield return new object[] { Path.Combine(root, "tests", "NetPrints.Core.Tests", "Fixtures", "EventGraphs", "EventGraphs.GameEvents.netpc.json") };
             yield return new object[] { Path.Combine(root, "samples", "HelloWorld", "HelloWorld.Program.netpc.json") };
         }
 

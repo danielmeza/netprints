@@ -65,6 +65,7 @@ public static class BuiltInNodeLibrary
             Describe("default", Code, Suggest("Default", "None_16x.png", g => new DefaultNode(g))),
             Describe("methodEntry", GraphKinds.Method),
             Describe("constructorEntry", GraphKinds.Constructor),
+            Describe("eventEntry", GraphKinds.Event),
             Describe("classReturn", GraphKinds.Class),
             Describe("typeReturn", GraphKinds.Type),
             Describe("callMethod", Code),

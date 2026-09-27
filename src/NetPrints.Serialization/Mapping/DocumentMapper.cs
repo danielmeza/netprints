@@ -64,6 +64,9 @@ public sealed class DocumentMapper : IDocumentMapper
         List<ConstructorDocument>? constructors = cls.Constructors.Count > 0
             ? cls.Constructors.Select(c => MapConstructor(c, context)).ToList()
             : null;
+        List<EventGraphDocument>? eventGraphs = cls.EventGraphs.Count > 0
+            ? cls.EventGraphs.Select(e => MapEventGraph(e, context)).ToList()
+            : null;
         List<string>? genericArguments = cls.DeclaredGenericArguments.Count > 0
             ? cls.DeclaredGenericArguments.Select(g => g.Name).ToList()
             : null;
@@ -79,7 +82,7 @@ public sealed class DocumentMapper : IDocumentMapper
             variables,
             methods,
             constructors,
-            null,
+            eventGraphs,
             BuildLayout(cls));
     }
 
@@ -136,7 +139,10 @@ public sealed class DocumentMapper : IDocumentMapper
             MapConstructorFromDocument(constructorDocument, cls, context, document.Layout, knownGraphKeys, seenMemberIds, id, issues);
         }
 
-        // EventGraphs: sub-phase G (T080) adds ClassGraph.EventGraphs and must come back here.
+        foreach (EventGraphDocument eventGraphDocument in document.EventGraphs ?? [])
+        {
+            MapEventGraphFromDocument(eventGraphDocument, cls, context, document.Layout, knownGraphKeys, seenMemberIds, id, issues);
+        }
 
         if (document.Layout is not null)
         {
@@ -158,6 +164,7 @@ public sealed class DocumentMapper : IDocumentMapper
         Variable variable => variable.Id,
         MethodGraph method => method.Id,
         ConstructorGraph constructor => constructor.Id,
+        EventGraph eventGraph => eventGraph.Id,
         _ => throw new InvalidOperationException($"Unknown member type '{member.GetType()}'."),
     };
 
@@ -166,6 +173,9 @@ public sealed class DocumentMapper : IDocumentMapper
 
     private ConstructorDocument MapConstructor(ConstructorGraph constructor, NodeMappingContext context) =>
         new(constructor.Id, constructor.Visibility, MapGraph(constructor, context));
+
+    private EventGraphDocument MapEventGraph(EventGraph eventGraph, NodeMappingContext context) =>
+        new(eventGraph.Id, eventGraph.Name, MapGraph(eventGraph, context));
 
     private VariableDocument MapVariable(Variable variable, NodeMappingContext context)
     {
@@ -366,6 +376,11 @@ public sealed class DocumentMapper : IDocumentMapper
         {
             yield return constructor;
         }
+
+        foreach (EventGraph eventGraph in cls.EventGraphs)
+        {
+            yield return eventGraph;
+        }
     }
 
     /// <summary>
@@ -397,6 +412,11 @@ public sealed class DocumentMapper : IDocumentMapper
         foreach (ConstructorDocument constructor in document.Constructors ?? [])
         {
             Check(constructor.Id);
+        }
+
+        foreach (EventGraphDocument eventGraph in document.EventGraphs ?? [])
+        {
+            Check(eventGraph.Id);
         }
     }
 
@@ -591,6 +611,17 @@ public sealed class DocumentMapper : IDocumentMapper
         cls.Constructors.Add(constructor);
 
         MapGraphFromDocument(document.Graph, constructor, context, layout, knownGraphKeys, id, issues);
+    }
+
+    private void MapEventGraphFromDocument(EventGraphDocument document, ClassGraph cls, NodeMappingContext context,
+        SortedDictionary<string, SortedDictionary<string, int[]>>? layout, HashSet<string> knownGraphKeys,
+        HashSet<string> seenMemberIds, DocumentId id, ICollection<DocumentIssue> issues)
+    {
+        var eventGraph = new EventGraph(document.Name) { Class = cls, Project = cls.Project };
+        eventGraph.Id = ResolveMemberId('m', document.Id, "Member", seenMemberIds, layout, isVariable: false, id, issues);
+        cls.EventGraphs.Add(eventGraph);
+
+        MapGraphFromDocument(document.Graph, eventGraph, context, layout, knownGraphKeys, id, issues);
     }
 
     private void MapGraphFromDocument(GraphDocument graphDocument, NodeGraph graph, NodeMappingContext context,
