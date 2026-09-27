@@ -3,7 +3,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Compilation;
@@ -36,11 +35,7 @@ namespace NetPrints.Core
         /// <summary>
         /// Classes contained in this project.
         /// </summary>
-        public ObservableRangeCollection<ClassGraph> Classes
-        {
-            get;
-            private set;
-        } = new ObservableRangeCollection<ClassGraph>();
+        public ObservableRangeCollection<ClassGraph> Classes { get; } = new ObservableRangeCollection<ClassGraph>();
 
         /// <summary>
         /// Name of the project.
@@ -57,8 +52,7 @@ namespace NetPrints.Core
 
         /// <summary>
         /// Path to the project file. Set from <see cref="ProjectSnapshot.ProjectFilePath"/> by
-        /// <see cref="FromSnapshot"/>; not itself part of the serialized project data (no
-        /// <see cref="DataMemberAttribute"/>).
+        /// <see cref="FromSnapshot"/>; not itself part of the persisted project data.
         /// </summary>
         [ObservableProperty]
         public partial string Path { get; set; }
@@ -226,12 +220,6 @@ namespace NetPrints.Core
         /// </summary>
         public IEnumerable<string> GenerateClassSources(out IReadOnlyList<string> warnings)
         {
-            if (Classes is null)
-            {
-                warnings = Array.Empty<string>();
-                return new string[0];
-            }
-
             ConcurrentBag<string> classSources = new ConcurrentBag<string>();
             ConcurrentBag<string> translationWarnings = new ConcurrentBag<string>();
 
@@ -254,12 +242,6 @@ namespace NetPrints.Core
             warnings = translationWarnings.OrderBy(w => w, StringComparer.Ordinal).ToArray();
 
             return classSources;
-        }
-
-        [OnDeserialized]
-        private void FixDefaults(StreamingContext context)
-        {
-            Classes = new ObservableRangeCollection<ClassGraph>();
         }
     }
 }
