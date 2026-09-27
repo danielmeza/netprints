@@ -1,6 +1,7 @@
 using NetPrints.Editor;
 using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Testing.Ui.Driving;
+using NetPrints.Testing.Ui.Events;
 using NetPrints.Testing.Ui.Graph;
 
 namespace NetPrints.Testing.Ui.ClassEditor;
@@ -22,6 +23,7 @@ public sealed class ClassEditorPage(IUiDriver driver, string classFullName)
     public UiElement CreateMethodButton => Find(AutomationIds.ClassEditorCreateMethodButton);
     public UiElement CreateConstructorButton => Find(AutomationIds.ClassEditorCreateConstructorButton);
     public UiElement CreateVariableButton => Find(AutomationIds.ClassEditorCreateVariableButton);
+    public EventGraphsPage EventGraphs => new(Driver, Query);
     public UiElement ErrorList => Find(AutomationIds.ClassEditorErrorList);
     public UiElement OutputTab => Find(AutomationIds.ClassEditorOutputTab);
     public UiElement OutputText => Find(AutomationIds.ClassEditorOutputText);
@@ -35,8 +37,9 @@ public sealed class ClassEditorPage(IUiDriver driver, string classFullName)
     public UiElement LeftSplitter => Find(AutomationIds.ClassEditorLeftSplitter);
     public UiElement ErrorsSplitter => Find(AutomationIds.ClassEditorErrorsSplitter);
     public UiElement InspectorSplitter => Find(AutomationIds.ClassEditorInspectorSplitter);
+    public UiElement EventGraphsSplitter => Find(AutomationIds.ClassEditorEventGraphsSplitter);
 
-    public IReadOnlyList<UiElement> Splitters => [MethodsSplitter, ConstructorsSplitter, LeftSplitter, ErrorsSplitter, InspectorSplitter];
+    public IReadOnlyList<UiElement> Splitters => [MethodsSplitter, ConstructorsSplitter, LeftSplitter, ErrorsSplitter, InspectorSplitter, EventGraphsSplitter];
 
     public ClassInspectorPanel ClassInspector => new(Driver, Query);
     public InspectorPanel MethodInspector => new(Driver, Query, AutomationIds.MethodInspector);
