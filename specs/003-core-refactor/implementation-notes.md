@@ -3177,3 +3177,109 @@ own "last pointer position" tracking does not follow drag-and-drop the way it fo
   clean. No golden fixture or `NotificationMap.golden.json` changes; no snapshot PNGs changed
   (`get-set-chooser` screenshots only the fixed-size chooser `Border`, not the popup's screen
   position).
+
+## Sub-phase G, batch G2 (T081–T083): event graph build/run, editor UI, Checkpoint G
+
+- T081: `tests/NetPrints.Core.Tests/Samples/EventGraphBuildTests.cs` (`GameEventsBuildsAndRunsOnStartAndOnTickThroughARealDotnetBuild`),
+  same shape as `MigratedFixtureBuildTests`: a temp dir with `LocalSdkLayout.Write`, the G1 golden
+  `Fixtures/EventGraphs/EventBase.cs` and `EventGraphs.GameEvents.netpc.json` copied in verbatim, and a
+  hand-written `Program.cs`/`EventGraphs.csproj` (`Exe`, `NetPrintsProfile=netprints.default`). No
+  manual codegen call is needed: the SDK's `NetPrintsGenerate` MSBuild target (`NetPrints.Sdk.targets`)
+  auto-discovers any `**/*.netpc.json` and writes its `.g.cs` before `CoreCompile`, exactly as
+  `samples/HelloWorld` does — `Program.cs` just calls `new EventGraphs.GameEvents().OnStart()` /
+  `.OnTick(1.5f)`. `dotnet build` then `dotnet run --no-build`; asserts both `"OnStart!"` and `"1.5"`
+  appear in stdout (data-model.md's `EventBase` is documentation-only for the *test project's own*
+  `Compile` items, per T079's note — a real, ordinary source file once copied here).
+- T082: `EventGraphVM` (`src/NetPrints.Editor/Events/EventGraphVM.cs`), a light wrapper exactly like
+  `MethodVM` (`Graph`, a `Name` pass-through setter that marks the class dirty) — `ClassEditorVM` owns
+  creation/open/remove as commands, matching the current (pre-editor-services.md-P1-refactor) shape of
+  every other member list in this file, not that contract's aspirational `ClassEditorServices`/
+  `VariablesPanelVM` split, which hasn't landed yet (no such types exist on this branch).
+  - `ClassEditorVM.EventGraphs` (`ObservableViewModelCollection<EventGraphVM, EventGraph>`), wired into
+    `OnMembersChanged`, `BelongsToClass` and `ClassGraphs()` (so dirty tracking of nodes/pins inside an
+    event graph works the same as for methods/constructors) and `Dispose()`.
+  - `CreateEventGraphCommand` (unique name via `NetPrintsUtil.GetUniqueName("EventGraph", …)`, **undoable**
+    via new `EditorCommands.AddEventGraph`/`RemoveEventGraph`, then opens it — the `EditorCommands.cs`
+    `Add*`/`Remove*` pair convention), `OpenEventGraphCommand` (double click), `RemoveEventGraphCommand`
+    (undoable). Decision: made *create* undoable too (T082 groups "create/open/remove" under one
+    "(undoable)"), unlike `CreateMethod`/`CreateConstructor` (not undoable) but like `CreateVariable` —
+    the two existing member-list conventions already disagree with each other, so this follows the
+    literal task text and the closer sibling (`CreateVariable`, also a member collection with no
+    graph-specific side effects to redo).
+  - `ClassEditorWindow.axaml`: a fourth left-column section ("Event graphs", `EventGraphList`
+    ListBox + `CreateEventGraphButton`), same row/remove-button/double-click pattern as
+    Methods/Constructors (`ClassEditorEventGraphsSplitter` added for consistency, though not named by
+    the contract). The row's remove (minus) button has **no automation id**, matching the existing
+    method/constructor/variable rows exactly (`ClassEditorVMTests`-style: removal is asserted through
+    the command, not a UI click) — ED-T07 below follows the same precedent.
+  - Search set (`SuggestionListVM.BuildSuggestions`, `case null:`, new `else if (nodeGraph is EventGraph)`
+    branch, only reachable on an event graph's *empty* canvas — the existing exec-pin branch already
+    offers This/Static Methods regardless of graph type): `CustomEventSuggestion` (a marker record,
+    `src/NetPrints.Editor/Search/EventSuggestions.cs`) and one `OverrideEventSuggestion(MethodSpecifier)`
+    per overridable base method not already used by a class method or any event graph's entries (the
+    same collision domain as `NPT002`, checked proactively so search cannot offer a name that would
+    throw at translation) — `SuggestionItem.Describe` renders them `"Custom Event"` / `"Override
+    <name>"`.
+  - **Bug found and fixed in the F-era generic node-creation pipeline** (P3b guard: a class-only leak):
+    `SelectAsync`'s reflection-based `AddNode<T>(...)` → `AddNodeRequest` validates a node type's
+    constructor with `nodeType.GetConstructor([typeof(NodeGraph), ...])` — an **exact** parameter-type
+    match (`Type.GetConstructor` does not consider base classes), which is why every other node type
+    (`CallMethodNode`, `LiteralNode`, `IfElseNode`, `ConstructorNode`, …) deliberately declares its
+    constructor's first parameter as `NodeGraph`, never `ExecutionGraph`. `EventEntryNode`'s two
+    constructors take `Core.EventGraph` (G1's own decision, data-model.md §4, literal), so they can
+    never resolve through this path (`ArgumentException: Invalid parameters for constructor of
+    NetPrints.Graph.EventEntryNode`, caught and swallowed into an error dialog — silent in a headless
+    test unless `IEditorDialogs.Errors` is checked, which is how this was actually found). Fixed with a
+    new non-reflection `NodeGraphVM.AddEventEntry(GraphPoint, Func<EventGraph, EventEntryNode> create)`
+    (mirrors the existing `NodeSuggestion`-based `AddNode` overload, which sidesteps reflection the same
+    way for extension nodes); `SelectAsync`'s two new cases call it instead of `AddNode<EventEntryNode>`.
+    Left as the one intentional exception to the "constructor takes `NodeGraph`" convention, since
+    changing `EventEntryNode`'s constructors to take `NodeGraph` would contradict the data-model.md
+    literal signature G1 committed to.
+- T083 (ED-T07): `tests/NetPrints.Editor.UITests/Events/EventGraphTests.cs`
+  (`CreateOpenAddCustomEventViaSearchAndRemoveUndoable`) with `EventGraphsPage`
+  (`tests/NetPrints.Testing.Ui/Events/EventGraphsPage.cs`, same shape as `MainWindowPage`/
+  `ReferencesDialogPage`), exposed as `ClassEditorPage.EventGraphs`. One end-to-end flow: Create (button,
+  asserts the row and that Create also opens the new — empty — graph, like Create Method/Constructor);
+  Open (switch to Main, double click the row, reopens); add a custom event via a real right-click →
+  type-filter → click on "Custom Event" (asserts the resulting `EventEntryNode.EventName` is unique);
+  add an override via search too ("Override ToString", the same base method
+  `OverrideChooserCreatesAndResets` already exercises), asserting `Modifiers.Override` and
+  `OverriddenMethod`; Remove (via the command, no automation id — see above) then Undo/Redo through the
+  real `Ctrl+Z`/`Ctrl+Y` key bindings (`ClassEditorPage.PressUndoAsync`/`PressRedoAsync`), asserting the
+  *same* `EventGraph` instance comes back (not a rebuilt one).
+  - **P3b guard, known gap (not fixed, out of this batch's scope)**: `GraphCanvas.WaitForGraphAsync`
+    also calls `WaitRenderedAsync`, whose "nodes and cables rendered" check is `now == last &&
+    !now.StartsWith('#')` over a `"<nodes>#<cables>"` string — for a graph with **zero** nodes and zero
+    cables (an event graph right after creation, since `EventGraph` "starts empty", data-model.md §4)
+    that string is exactly `"#"`, which `StartsWith('#')` always matches, so the wait can never succeed.
+    Every existing caller always opens a graph with at least an entry node, so this never surfaced
+    before. Worked around here by waiting on `session.Graph.Watermark` alone instead of the composite
+    helper; a real fix (e.g. tracking "settled" explicitly rather than by non-empty string) is left for
+    whoever next needs to open a genuinely empty graph in a UI test.
+  - **Checkpoint G**: US4's Independent Test (spec.md "Create an event graph with two custom events and
+    one override, compile and run a program that calls them, and compare the generated C# with a
+    snapshot") is covered end to end: T079's `EventGraphTranslatorTests` (translation, `NPT001`/`NPT002`)
+    + the golden `EventGraphs.GameEvents.cs`/`.netpc.json` (T079/T080) + this batch's
+    `EventGraphBuildTests` (T081, a real `dotnet build`/`run`) + `EventGraphTests` (T083, the editor UI).
+    FR-026 (event graphs, any number of entries, each its own method) and FR-028 (editor lists,
+    creates, opens, removes event graphs, and offers custom-event/override entries in search) are both
+    exercised. Acceptance scenario 4 (naming collisions rejected with a message) is `NPT002`'s job
+    (T079) surfaced through the existing diagnostics pipeline (ED-T02/ED-T04, sub-phase D/E), not a new
+    UI-level validation dialog — no such "prompt for text" dialog exists anywhere in `IEditorDialogs`
+    (base or P1 delta), and adding one was out of this batch's declared scope; the editor instead
+    proactively filters "Override <method>" suggestions against the same collision domain, and a custom
+    event gets a generator-guaranteed-unique default name (`CustomEvent`, `CustomEvent1`, …) — there is
+    currently no UI affordance to rename an event graph entry's `EventName` after creation (only the
+    `EventGraph`'s own list-row label is renamable via `EventGraphVM.Name`; no node header in this
+    editor is inline-renamable yet, not just `EventEntryNode`), a gap for a future sub-phase, not this
+    one.
+  - No golden fixture or `NotificationMap.golden.json` changes (verified: no `EventGraph`/`EventEntryNode`
+    model or serialization shape changed this batch). Two UI snapshot baselines *did* change, expectedly:
+    `class-editor-main.png` and `search-popup.png` (new "Event graphs" section shifts the fixed
+    1600×1000 window's left-column layout below Variables) — regenerated with
+    `NETPRINTS_UPDATE_SNAPSHOTS=1` and reviewed by eye; only the new panel differs.
+  - Suite: whole solution, Release, foreground: 730 total, 721 passed, 9 skipped (same desktop
+    E2E/headless-driver gaps as G1), 0 failed (two new tests over G1's 728/719: `EventGraphBuildTests`
+    and `EventGraphTests`). `dotnet format NetPrints.slnx --verify-no-changes` and `dotnet build -c
+    Release` (0 warnings) both clean.
