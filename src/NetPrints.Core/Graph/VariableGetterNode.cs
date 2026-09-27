@@ -26,7 +26,7 @@ namespace NetPrints.Graph
         /// <returns>The node's display string.</returns>
         public override string ToString()
         {
-            string staticText = IsStatic ? $"{TargetType.ShortName}." : "";
+            string staticText = IsStatic ? $"{TargetType?.ShortName}." : "";
             return $"Get {staticText}{VariableName}";
         }
     }

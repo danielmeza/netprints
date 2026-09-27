@@ -36,15 +36,22 @@ namespace NetPrints.Core
 
         /// <summary>
         /// Returns whether a given visibility for a member of a type is visible from another type.
+        /// A <see langword="null"/> <paramref name="type"/> (a method-local variable, which has no
+        /// declaring type, US5) is always visible: locals have no cross-type visibility concept.
         /// </summary>
         /// <param name="fromType">Type that we are seeing from.</param>
-        /// <param name="type">Type that we are looking at.</param>
+        /// <param name="type">Type that we are looking at, or <see langword="null"/> for a method-local variable.</param>
         /// <param name="visibility">Visibility of the member on type.</param>
         /// <param name="isSubclassOf">Function for determining whether one type is the subclass of another type.</param>
         /// <returns><see langword="true"/> if a member with <paramref name="visibility"/> on <paramref name="type"/> is visible from <paramref name="fromType"/>.</returns>
-        public static bool IsVisible(TypeSpecifier fromType, TypeSpecifier type, MemberVisibility visibility, Func<TypeSpecifier, TypeSpecifier, bool> isSubclassOf)
+        public static bool IsVisible(TypeSpecifier fromType, TypeSpecifier? type, MemberVisibility visibility, Func<TypeSpecifier, TypeSpecifier, bool> isSubclassOf)
         {
             // TODO: Internal
+
+            if (type is null)
+            {
+                return true;
+            }
 
             if (fromType == type)
             {

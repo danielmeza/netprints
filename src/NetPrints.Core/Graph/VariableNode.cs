@@ -27,9 +27,10 @@ namespace NetPrints.Graph
         }
 
         /// <summary>
-        /// Whether the variable is a local variable.
+        /// Whether the variable is a method-local variable (<see cref="VariableSpecifier.Scope"/> is
+        /// <see cref="VariableScope.Local"/>, US5), rather than a class member.
         /// </summary>
-        public bool IsLocalVariable => TargetType is null;
+        public bool IsLocalVariable => Variable.Scope == VariableScope.Local;
 
         /// <summary>
         /// Name of this variable.
@@ -37,9 +38,10 @@ namespace NetPrints.Graph
         public string VariableName { get => Variable.Name; }
 
         /// <summary>
-        /// Specifier for the type of the target object.
+        /// Specifier for the type of the target object, or <see langword="null"/> for a method-local
+        /// variable (<see cref="IsLocalVariable"/>).
         /// </summary>
-        public TypeSpecifier TargetType { get => Variable.DeclaringType; }
+        public TypeSpecifier? TargetType { get => Variable.DeclaringType; }
 
         /// <summary>
         /// Whether the variable is static.

@@ -38,17 +38,30 @@ public sealed partial class GetSetChooserVM(NodeGraphVM graph) : ObservableObjec
     [NotifyCanExecuteChangedFor(nameof(SetCommand))]
     public partial bool CanSet { get; set; }
 
-    /// <summary>Opens the chooser; Get and Set are enabled according to the accessor visibility.</summary>
+    /// <summary>
+    /// Opens the chooser. Get and Set are enabled according to the accessor visibility, except for a
+    /// method-local variable (<see cref="VariableScope.Local"/>, US5, no declaring type), which is
+    /// always readable and writable from its own method.
+    /// </summary>
     public void Open(VariableSpecifier variable, GraphPoint position)
     {
-        var provider = graph.Context.Reflection.Provider;
-        var fromType = graph.Graph.Class?.Type ?? variable.DeclaringType;
-
         Variable = variable;
         Position = position;
         ScreenPosition = default;
-        CanGet = NetPrintsUtil.IsVisible(fromType, variable.DeclaringType, variable.GetterVisibility, provider.TypeSpecifierIsSubclassOf);
-        CanSet = NetPrintsUtil.IsVisible(fromType, variable.DeclaringType, variable.SetterVisibility, provider.TypeSpecifierIsSubclassOf);
+
+        if (variable.DeclaringType is null)
+        {
+            CanGet = true;
+            CanSet = true;
+        }
+        else
+        {
+            var provider = graph.Context.Reflection.Provider;
+            var fromType = graph.Graph.Class?.Type ?? variable.DeclaringType;
+            CanGet = NetPrintsUtil.IsVisible(fromType, variable.DeclaringType, variable.GetterVisibility, provider.TypeSpecifierIsSubclassOf);
+            CanSet = NetPrintsUtil.IsVisible(fromType, variable.DeclaringType, variable.SetterVisibility, provider.TypeSpecifierIsSubclassOf);
+        }
+
         IsOpen = true;
     }
 

@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.CodeAnalysis.CSharp;
 using NetPrints.Graph;
 
 namespace NetPrints.Core
@@ -9,10 +10,37 @@ namespace NetPrints.Core
     /// <summary>
     /// Abstract base class for graphs with a body of executable nodes: <see cref="MethodGraph"/> and
     /// <see cref="ConstructorGraph"/>. Holds the single <see cref="EntryNode"/> execution starts from,
-    /// the graph's argument types (derived from the entry node's pins) and its visibility.
+    /// the graph's argument types (derived from the entry node's pins), its visibility and its
+    /// method-local variables (US5).
     /// </summary>
     public abstract class ExecutionGraph : NodeGraph
     {
+        /// <summary>
+        /// Variables local to this method or constructor (US5, data-model.md §3), declared at the top
+        /// of the generated body in collection order.
+        /// </summary>
+        public ObservableRangeCollection<LocalVariable> LocalVariables { get; private set; } = new();
+
+        /// <summary>
+        /// Whether <paramref name="name"/> is free to use for a local of this graph: not one of this
+        /// graph's parameter names, not another local's name (<paramref name="except"/> is excluded
+        /// from that check, so a variable can keep its own name while being renamed to something else
+        /// and back), and a valid C# identifier that is not a reserved keyword.
+        /// </summary>
+        /// <param name="name">Candidate local variable name.</param>
+        /// <param name="except">A local to exclude from the "not another local" check (its own current
+        /// name, when checking a candidate rename for it), or <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> if <paramref name="name"/> is available.</returns>
+        public bool IsLocalNameAvailable(string name, LocalVariable? except = null)
+        {
+            ArgumentException.ThrowIfNullOrEmpty(name);
+
+            return SyntaxFacts.IsValidIdentifier(name)
+                && SyntaxFacts.GetKeywordKind(name) == SyntaxKind.None
+                && !NamedArgumentTypes.Any(argument => argument.Name == name)
+                && !LocalVariables.Any(local => local != except && local.Name == name);
+        }
+
         /// <summary>
         /// Entry node where execution starts. Always set by the concrete subclass's constructor
         /// (<see cref="MethodGraph"/>, <see cref="ConstructorGraph"/>) as its first statement, before
