@@ -2675,3 +2675,67 @@ by nothing yet (`ReflectionHost` wiring comes with the registry, T068).
   catalog has no hierarchy. Parameter and return documentation are always `null` (the constructor takes summaries only).
 - Doc fix: `extension-points.md` §4 showed the pre-T058 `ReflectionProvider` constructor; it now shows the real
   `(IReadOnlyList<ResolvedAssembly>, IReadOnlyList<SourceFile>, IReadOnlySet<string>)` signature.
+
+### T065: translation seams and emitters
+
+Added in `src/NetPrints.Core/Translator/Extensibility/`: `INodeTranslator`, `IExecutionTranslationContext`,
+`NodeTranslatorRegistry` (`BuiltIn`, `Find`, `With`), `TranslationEnvironment`, `IClassEmitter`, `IMemberEmitter`,
+`EmittedMemberKind`, `ClassEmitContext`, `MemberEmitContext`, and the internal `BuiltInNodeTranslators` (the former
+handler table and `Translate*Node` methods, moved) and `IBuiltInTranslationContext`. `TranslationException`
+(`NPT005` to `NPT007`, compilation-and-diagnostics.md §2 signature) is in `Translator/`. `ExecutionGraphTranslator` is
+now `sealed`, takes a `TranslationEnvironment` and implements `IExecutionTranslationContext`; `ClassTranslator` takes a
+`TranslationEnvironment` (the parameterless constructor is gone; the generator, the editor and `Project.GenerateClassSources`
+pass `TranslationEnvironment.BuiltIn` until T068 threads the registry's environment through). The golden C# files and
+`NotificationMap.golden.json` are untouched (git shows no change), and `EmitterTests.NoEmittersProduceTheGoldenOutput`
+also compares the `AllNodesFixtureFactory` class against the golden byte for byte.
+Tests: EX-T04, EX-T05 (plus NPT007 and order cases) in `EmitterTests.cs`; registry, `NPT006` and an extension
+translator for a custom node type in `NodeTranslatorRegistryTests.cs`. Written alongside the code, so the red step was a
+compile failure (the types did not exist), not an assertion failure.
+
+Class-ness in the seams (P3b review list). The seam types speak of `ITypeDeclaration` (new, `NetPrints.Core`:
+`Name`, `Namespace`, `FullName`, `Visibility`; `ClassGraph` implements it) where the spec did not force `ClassGraph`.
+Where a class still leaks:
+1. `IExecutionTranslationContext.Class`, `ClassEmitContext.Class`, `MemberEmitContext.Class` are `ClassGraph` (spec §2.1, §3).
+   Each context also has `Declaration` (`ITypeDeclaration`); the class-typed property is the convenience the spec asked for.
+   Deviation: `IExecutionTranslationContext.Class` and `Declaration` are nullable (`NodeGraph.Class` is nullable and unit
+   tests translate graphs without a class), the spec shows a non-null `ClassGraph`.
+2. The names `IClassEmitter`, `ClassEmitContext`, `TranslationEnvironment.ClassEmitters` (spec names, referenced by T067 and T071).
+3. `ClassEmitContext.BaseTypes` is prefilled from `ClassGraph.AllBaseTypes`, and its allowed `ExtraModifiers` set
+   (`partial`, `sealed`, `abstract`, `static`, `unsafe`) is the class one; a struct or enum declaration would need its own set.
+4. `EmittedMemberKind` is a closed enum (`Field`, `Property`, `Method`, `Constructor`, `EventMethod`): no enum members,
+   indexers, operators; `MemberEmitContext.Model` is `object`.
+5. `ClassTranslator` itself: the `class` keyword is in its two templates, and it iterates `ClassGraph.Variables`,
+   `Constructors` and `Methods`.
+6. The built-in translators use `node.Graph.Class` (a `ClassGraph`) for the `static` variable getter/setter default
+   target name, as before.
+7. `NodeGraph.Class` (the graph-to-owner link in the model) is class-typed; `ITypeDeclaration` does not change that.
+Contexts are `sealed` as specified and have `internal` constructors (only the translator creates them); the open point is
+`ITypeDeclaration`, which a non-class declaration can implement.
+
+- Decision: the allowed member modifiers for `MemberEmitContext.ExtraModifiers` (the spec gives only examples) are
+  `abstract`, `new`, `override`, `partial`, `readonly`, `sealed`, `static`, `unsafe`, `virtual`. Anything else is `NPT007`,
+  raised right after the emitter that added it (so the message names it: `<emitter id>: '<modifier>' is not an allowed member modifier.`).
+- Decision: extra modifiers are written after the member's own, ordinal-sorted, skipping ones already present, with
+  `partial` always last (C# requires it directly before the keyword or return type). The class's own `partial` flag
+  is also moved last, which is where it already was.
+- Decision: attributes go on their own lines before the member, before the `// <graph>` comment of a method. A
+  `DeclarePartial` property becomes `<mods> partial T X { [vis] get; [vis] set; }` with accessors only where the model has
+  a getter or setter graph. `DeclarePartial` on a field, method or constructor is `NPT007`.
+- Decision: `ClassTranslator.TranslateMethod`, `TranslateConstructor` and `TranslateVariable` (public, as before) run the
+  member emitters when the member's class is known and skip them when a graph has no class.
+- Decision: an emitter exception is wrapped whatever its type (`NPT005`, inner exception kept, no graph key); `NPT006`
+  carries the node id and the graph key when the graph is attached to a class.
+- Decision: `TranslateNode` is private now (it was public and unused outside the class). The built-in `ReturnNode`
+  translator needs the translator's state-count quirk (`nodeStateIds.Count - 1`, kept as is) through the internal
+  `IBuiltInTranslationContext.IsFinalExecState`, so a custom `IExecutionTranslationContext` cannot run the built-in
+  return translator; extension translators do not need it.
+- Behaviour-neutral detail: the built-in code no longer uses `!`. Where the old code asserted a resolved pin type or a
+  non-null incoming value, it now throws `InvalidOperationException` (the old code would have thrown
+  `NullReferenceException` or emitted nothing); no golden or test hits these. `MakeArrayNode` builds the size form from the
+  type name minus its trailing `[]` instead of removing characters from the output builder (same text).
+  A `CallMethodNode` that handles exceptions but has no exception pin now throws instead of emitting `null = null;`.
+- T103a: the "dead `TranslateMethodEntry` body" item now refers to `BuiltInNodeTranslators.TranslateMethodEntry`. The
+  commented-out block was dropped in the move (it referenced a member that no longer exists); the empty translator remains
+  registered so entry nodes do not hit `NPT006`.
+- Open: the generator and editor build one `ClassTranslator` per call with `TranslationEnvironment.BuiltIn`; T068 must
+  replace that with `ExtensionRegistry.Translation`.

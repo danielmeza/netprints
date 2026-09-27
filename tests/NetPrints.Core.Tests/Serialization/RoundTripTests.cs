@@ -91,7 +91,7 @@ namespace NetPrints.Tests.Serialization
             byte[] saved = await SaveAsync(cls);
             ClassGraph reloaded = await LoadJsonAsync(saved, id, fixtureName);
 
-            var translator = new ClassTranslator();
+            var translator = new ClassTranslator(TranslationEnvironment.BuiltIn);
             string translated = translator.TranslateClass(reloaded);
             string golden = File.ReadAllText(Path.Combine(goldenDir, $"{reloaded.FullName}.cs"));
             Assert.Equal(golden, translated);

@@ -90,7 +90,7 @@ namespace NetPrints.Tests
 
         public ClassTranslatorTests()
         {
-            classTranslator = new ClassTranslator();
+            classTranslator = new ClassTranslator(TranslationEnvironment.BuiltIn);
 
             cls = new ClassGraph()
             {

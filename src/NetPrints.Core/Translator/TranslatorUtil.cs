@@ -41,6 +41,22 @@ namespace NetPrints.Translator
             [MemberVisibility.Internal] = "internal",
         };
 
+        /// <summary>
+        /// The <see cref="GraphKeys.For"/> key of <paramref name="graph"/>, or <see langword="null"/> when the
+        /// graph is not attached to a class (an error path only needs it to name the graph if it can).
+        /// </summary>
+        internal static string? TryGetGraphKey(NodeGraph graph)
+        {
+            try
+            {
+                return GraphKeys.For(graph);
+            }
+            catch (InvalidOperationException)
+            {
+                return null;
+            }
+        }
+
         private const int TemporaryVariableNameLength = 16;
 
         /// <summary>

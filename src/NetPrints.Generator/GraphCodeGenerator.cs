@@ -130,7 +130,7 @@ public sealed class GraphCodeGenerator
             diagnostics.Add(issue.ToDiagnostic() with { ClassFullName = cls.FullName, SourcePath = job.Input });
         }
 
-        string translated = new ClassTranslator().TranslateClass(cls);
+        string translated = new ClassTranslator(TranslationEnvironment.BuiltIn).TranslateClass(cls);
         string rendered = RenderFile(translated, Path.GetFileName(job.Input));
         bool written = await WriteIfChangedAsync(job.Output, rendered, cancellationToken).ConfigureAwait(false);
 

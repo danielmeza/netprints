@@ -106,7 +106,7 @@ namespace NetPrints.Tests.Projects
                 Assert.Equal(firstBytes, secondBytes);
 
                 ClassGraph cls = await LoadClassAsync(graphPath);
-                string translated = new ClassTranslator().TranslateClass(cls);
+                string translated = new ClassTranslator(TranslationEnvironment.BuiltIn).TranslateClass(cls);
                 string expected = GraphCodeGenerator.RenderFile(translated, "HelloWorld.Program.netpc.json");
                 Assert.Equal(expected, firstContent);
             }

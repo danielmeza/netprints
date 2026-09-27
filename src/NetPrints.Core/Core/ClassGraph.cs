@@ -115,7 +115,7 @@ namespace NetPrints.Core
     /// Class graph type. Contains methods, attributes and other common things usually associated
     /// with classes.
     /// </summary>
-    public partial class ClassGraph : NodeGraph
+    public partial class ClassGraph : NodeGraph, ITypeDeclaration
     {
         /// <summary>
         /// Return node of this class that receives the metadata for it.

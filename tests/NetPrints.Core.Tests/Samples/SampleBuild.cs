@@ -66,7 +66,7 @@ namespace NetPrints.Tests.Samples
 
         /// <summary>Renders <paramref name="cls"/>'s generated file, as the editor does before a build.</summary>
         public static string Render(Project project, ClassGraph cls) =>
-            GraphCodeGenerator.RenderFile(new ClassTranslator().TranslateClass(cls), Path.GetFileName(project.GetGraphFilePath(cls)));
+            GraphCodeGenerator.RenderFile(new ClassTranslator(TranslationEnvironment.BuiltIn).TranslateClass(cls), Path.GetFileName(project.GetGraphFilePath(cls)));
 
         public async Task<Project> LoadAsync(CancellationToken cancellationToken)
         {

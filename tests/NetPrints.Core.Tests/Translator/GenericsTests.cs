@@ -68,7 +68,7 @@ namespace NetPrintsUnitTests
 
             // Translate the classes
 
-            ClassTranslator translator = new ClassTranslator();
+            ClassTranslator translator = new ClassTranslator(TranslationEnvironment.BuiltIn);
 
             string openClassTranslated = translator.TranslateClass(openClass);
 

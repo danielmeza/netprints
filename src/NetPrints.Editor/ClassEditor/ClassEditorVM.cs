@@ -43,7 +43,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         MemberVisibility.Public,
     ];
 
-    private readonly ClassTranslator classTranslator = new();
+    private readonly ClassTranslator classTranslator = new(TranslationEnvironment.BuiltIn);
 
     private readonly HashSet<Variable> subscribedVariables = [];
     private readonly HashSet<NodeGraph> dirtyTrackedGraphs = [];

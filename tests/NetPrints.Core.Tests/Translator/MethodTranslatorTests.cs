@@ -18,7 +18,7 @@ namespace NetPrints.Tests
 
         public MethodTranslatorTests()
         {
-            methodTranslator = new ExecutionGraphTranslator();
+            methodTranslator = new ExecutionGraphTranslator(TranslationEnvironment.BuiltIn);
             CreateStringLengthMethod();
             CreateIfElseMethod();
             CreateForLoopMethod();

@@ -227,7 +227,7 @@ namespace NetPrints.Core
             Parallel.ForEach(Classes, cls =>
             {
                 // Translate the class to C#
-                ClassTranslator classTranslator = new ClassTranslator();
+                ClassTranslator classTranslator = new ClassTranslator(TranslationEnvironment.BuiltIn);
 
                 try
                 {

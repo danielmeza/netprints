@@ -55,7 +55,7 @@ namespace NetPrints.Tests.Characterization
             ClassGraph cls = mapper.FromDocument(document, project, issues, id);
             Assert.Empty(issues);
 
-            var translator = new ClassTranslator();
+            var translator = new ClassTranslator(TranslationEnvironment.BuiltIn);
             string translated = translator.TranslateClass(cls);
             string goldenPath = Path.Combine(goldenDir, $"{cls.FullName}.cs");
             bool update = Environment.GetEnvironmentVariable(UpdateSnapshotsVariable) == "1";
