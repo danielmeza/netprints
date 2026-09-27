@@ -574,15 +574,15 @@ namespace NetPrints.Translator
             var memberEndPositions = new Dictionary<string, int>(StringComparer.Ordinal);
             foreach (SyntaxNodeOrToken item in formattedRoot.GetAnnotatedNodesAndTokens(MemberEndAnnotationKind))
             {
-                string tag = item.GetAnnotations(MemberEndAnnotationKind).First().Data!;
+                string tag = RequireAnnotationData(item, MemberEndAnnotationKind);
                 memberEndPositions[tag] = item.SpanStart;
             }
 
             var nodesByMember = new Dictionary<string, List<(int Start, string NodeId)>>(StringComparer.Ordinal);
             foreach (SyntaxNodeOrToken item in formattedRoot.GetAnnotatedNodesAndTokens(NodeIdAnnotationKind).OrderBy(item => item.SpanStart))
             {
-                string nodeId = item.GetAnnotations(NodeIdAnnotationKind).First().Data!;
-                string memberTag = item.GetAnnotations(MemberAnnotationKind).First().Data!;
+                string nodeId = RequireAnnotationData(item, NodeIdAnnotationKind);
+                string memberTag = RequireAnnotationData(item, MemberAnnotationKind);
 
                 if (!nodesByMember.TryGetValue(memberTag, out List<(int, string)>? list))
                 {
@@ -616,6 +616,17 @@ namespace NetPrints.Translator
             entries.Sort((a, b) => a.Span.Start.CompareTo(b.Span.Start));
             return (formattedCode, new SourceMap(entries));
         }
+
+        /// <summary>
+        /// The <see cref="SyntaxAnnotation.Data"/> of <paramref name="item"/>'s first annotation of kind
+        /// <paramref name="annotationKind"/>. Every annotation <see cref="BuildSourceMap"/> attaches is
+        /// constructed with non-null <c>Data</c>, so a missing one here means the annotated token was not
+        /// actually found by <c>GetAnnotatedNodesAndTokens</c> for that kind — a translator bug, not a
+        /// condition callers should recover from.
+        /// </summary>
+        private static string RequireAnnotationData(SyntaxNodeOrToken item, string annotationKind) =>
+            item.GetAnnotations(annotationKind).First().Data
+                ?? throw new InvalidOperationException($"Annotation '{annotationKind}' on '{item}' has no data.");
 
         /// <summary>
         /// One member's (method, constructor, event or property accessor) own generated code, and the
