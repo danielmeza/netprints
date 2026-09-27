@@ -20,7 +20,7 @@ internal static class EventConverters
 
     private sealed class EventEntryNodeConverter : INodeDocumentConverter
     {
-        public string Kind => "eventEntry";
+        public string Kind => BuiltInNodeKinds.EventEntry;
         public Type NodeType => typeof(EventEntryNode);
         public Type DocumentType => typeof(EventEntryNodeDocument);
 

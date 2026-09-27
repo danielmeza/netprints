@@ -3,6 +3,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.Loader;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NetPrints.Core;
 using NetPrints.Extensibility;
@@ -25,7 +26,7 @@ public class ExtensionLoaderTests : IDisposable
         ManifestJson(id, api: api, dependsOn: dependsOn);
 
     [Fact]
-    public void SearchDirectoriesContributeTheirImmediateSubfoldersInOrdinalOrder()
+    public async Task SearchDirectoriesContributeTheirImmediateSubfoldersInOrdinalOrder()
     {
         WriteManifest(Path.Combine(root, "b-folder"), Sample("test.b"));
         WriteManifest(Path.Combine(root, "a-folder"), Sample("test.a"));
@@ -34,7 +35,7 @@ public class ExtensionLoaderTests : IDisposable
         WriteManifest(Path.Combine(root, "a-folder", "nested"), Sample("test.nested"));
         var logs = new CollectingLoggerFactory();
 
-        using ExtensionRegistry registry = Load(Options(searchDirectories: [Path.Combine(root, "missing"), root]), logs);
+        await using ExtensionRegistry registry = Load(Options(searchDirectories: [Path.Combine(root, "missing"), root]), logs);
 
         // Every assembly is missing (NPX007), so each is reported as a failure in discovery order.
         Assert.Equal(["test.a", "test.b"], registry.Results.Select(r => r.Id));
@@ -44,12 +45,12 @@ public class ExtensionLoaderTests : IDisposable
     }
 
     [Fact]
-    public void AnExplicitFolderWithoutAManifestFailsWithNpx001()
+    public async Task AnExplicitFolderWithoutAManifestFailsWithNpx001()
     {
         string folder = Path.Combine(root, "empty");
         Directory.CreateDirectory(folder);
 
-        using ExtensionRegistry registry = Load(Options(folders: [folder]));
+        await using ExtensionRegistry registry = Load(Options(folders: [folder]));
 
         var failure = SingleFailure(registry, "empty");
         Assert.Equal("NPX001", failure.Code);
@@ -57,13 +58,13 @@ public class ExtensionLoaderTests : IDisposable
     }
 
     [Fact]
-    public void AnInvalidManifestFailsWithNpx001AndTheOtherExtensionStillLoads()
+    public async Task AnInvalidManifestFailsWithNpx001AndTheOtherExtensionStillLoads()
     {
         string bad = Path.GetDirectoryName(WriteManifest(Path.Combine(root, "bad"), "{ nope")) ?? root;
         var logs = new CollectingLoggerFactory();
         var good = InProcess("test.good", builder => builder.AddClassEmitter(new NamedClassEmitter("good")));
 
-        using ExtensionRegistry registry = Load(Options([good], [bad]), logs);
+        await using ExtensionRegistry registry = Load(Options([good], [bad]), logs);
 
         var failure = SingleFailure(registry, "bad");
         Assert.Equal("NPX001", failure.Code);
@@ -78,11 +79,11 @@ public class ExtensionLoaderTests : IDisposable
     [InlineData("2.0")]
     [InlineData("0.9")]
     [InlineData("1.1")]
-    public void AnIncompatibleApiVersionFailsWithNpx002(string api)
+    public async Task AnIncompatibleApiVersionFailsWithNpx002(string api)
     {
         string folder = Path.GetDirectoryName(WriteManifest(Path.Combine(root, "x"), Sample("test.x", api))) ?? root;
 
-        using ExtensionRegistry registry = Load(Options(folders: [folder]));
+        await using ExtensionRegistry registry = Load(Options(folders: [folder]));
 
         var failure = SingleFailure(registry, "test.x");
         Assert.Equal("NPX002", failure.Code);
@@ -90,21 +91,21 @@ public class ExtensionLoaderTests : IDisposable
     }
 
     [Fact]
-    public void ACompatibleApiVersionPassesValidation()
+    public async Task ACompatibleApiVersionPassesValidation()
     {
         string folder = Path.GetDirectoryName(WriteManifest(Path.Combine(root, "x"), Sample("test.x", "1.0"))) ?? root;
 
-        using ExtensionRegistry registry = Load(Options(folders: [folder]));
+        await using ExtensionRegistry registry = Load(Options(folders: [folder]));
 
         Assert.Equal("NPX007", SingleFailure(registry, "test.x").Code);
     }
 
     [Fact]
-    public void AMissingDependencyFailsWithNpx003()
+    public async Task AMissingDependencyFailsWithNpx003()
     {
         var extension = InProcess("test.ext", _ => { }, dependsOn: "test.absent");
 
-        using ExtensionRegistry registry = Load(Options([extension]));
+        await using ExtensionRegistry registry = Load(Options([extension]));
 
         var failure = SingleFailure(registry, "test.ext");
         Assert.Equal("NPX003", failure.Code);
@@ -112,12 +113,12 @@ public class ExtensionLoaderTests : IDisposable
     }
 
     [Fact]
-    public void ADependencyThatFailedMakesTheDependentFailWithNpx003()
+    public async Task ADependencyThatFailedMakesTheDependentFailWithNpx003()
     {
         var broken = InProcess("test.broken", _ => throw new InvalidOperationException("boom"));
         var dependent = InProcess("test.dependent", _ => { }, dependsOn: "test.broken");
 
-        using ExtensionRegistry registry = Load(Options([broken, dependent]));
+        await using ExtensionRegistry registry = Load(Options([broken, dependent]));
 
         Assert.Equal("NPX005", SingleFailure(registry, "test.broken").Code);
         Assert.Equal("NPX003", SingleFailure(registry, "test.dependent").Code);
@@ -125,14 +126,14 @@ public class ExtensionLoaderTests : IDisposable
     }
 
     [Fact]
-    public void ADependencyCycleFailsEveryMemberWithNpx003()
+    public async Task ADependencyCycleFailsEveryMemberWithNpx003()
     {
         var a = InProcess("test.a", _ => { }, dependsOn: "test.b");
         var b = InProcess("test.b", _ => { }, dependsOn: "test.a");
         var self = InProcess("test.self", _ => { }, dependsOn: "test.self");
         var fine = InProcess("test.fine", _ => { });
 
-        using ExtensionRegistry registry = Load(Options([a, b, self, fine]));
+        await using ExtensionRegistry registry = Load(Options([a, b, self, fine]));
 
         Assert.Equal("NPX003", SingleFailure(registry, "test.a").Code);
         Assert.Equal("NPX003", SingleFailure(registry, "test.b").Code);
@@ -141,13 +142,13 @@ public class ExtensionLoaderTests : IDisposable
     }
 
     [Fact]
-    public void ADuplicateIdFailsWithNpx004AndTheFirstWins()
+    public async Task ADuplicateIdFailsWithNpx004AndTheFirstWins()
     {
         var first = InProcess("test.dup", builder => builder.AddClassEmitter(new NamedClassEmitter("first")));
         string folder = Path.GetDirectoryName(WriteManifest(Path.Combine(root, "dup"), Sample("test.dup"))) ?? root;
         var logs = new CollectingLoggerFactory();
 
-        using ExtensionRegistry registry = Load(Options([first], [folder]), logs);
+        await using ExtensionRegistry registry = Load(Options([first], [folder]), logs);
 
         Assert.Equal("first", Assert.Single(registry.ClassEmitters).Id);
         Assert.Equal("NPX004", SingleFailure(registry, "test.dup").Code);
@@ -156,33 +157,33 @@ public class ExtensionLoaderTests : IDisposable
     }
 
     [Fact]
-    public void TheSameFolderListedTwiceIsLoadedOnce()
+    public async Task TheSameFolderListedTwiceIsLoadedOnce()
     {
         string folder = Path.GetDirectoryName(WriteManifest(Path.Combine(root, "x"), Sample("test.x"))) ?? root;
 
-        using ExtensionRegistry registry = Load(Options(folders: [folder, folder], searchDirectories: [root]));
+        await using ExtensionRegistry registry = Load(Options(folders: [folder, folder], searchDirectories: [root]));
 
         Assert.Single(registry.Results);
     }
 
     [Fact]
-    public void AMissingAssemblyFailsWithNpx007()
+    public async Task AMissingAssemblyFailsWithNpx007()
     {
         string folder = Path.GetDirectoryName(WriteManifest(Path.Combine(root, "x"), Sample("test.x"))) ?? root;
 
-        using ExtensionRegistry registry = Load(Options(folders: [folder]));
+        await using ExtensionRegistry registry = Load(Options(folders: [folder]));
 
         Assert.Equal("NPX007", SingleFailure(registry, "test.x").Code);
     }
 
     [Fact]
-    public void AnAssemblyThatIsNotManagedCodeFailsWithNpx007()
+    public async Task AnAssemblyThatIsNotManagedCodeFailsWithNpx007()
     {
         string folder = Path.Combine(root, "x");
         WriteManifest(folder, ManifestJson("test.x", "x.dll"));
         File.WriteAllText(Path.Combine(folder, "x.dll"), "not an assembly");
 
-        using ExtensionRegistry registry = Load(Options(folders: [folder]));
+        await using ExtensionRegistry registry = Load(Options(folders: [folder]));
 
         var failure = SingleFailure(registry, "test.x");
         Assert.Equal("NPX007", failure.Code);
@@ -190,13 +191,13 @@ public class ExtensionLoaderTests : IDisposable
     }
 
     [Fact]
-    public void AnAssemblyWithoutAnExtensionTypeFailsWithNpx001()
+    public async Task AnAssemblyWithoutAnExtensionTypeFailsWithNpx001()
     {
         string folder = Path.Combine(root, "x");
         WriteManifest(folder, ManifestJson("test.x", "NetPrints.Serialization.dll"));
         File.Copy(Path.Combine(AppContext.BaseDirectory, "NetPrints.Serialization.dll"), Path.Combine(folder, "NetPrints.Serialization.dll"));
 
-        using ExtensionRegistry registry = Load(Options(folders: [folder]));
+        await using ExtensionRegistry registry = Load(Options(folders: [folder]));
 
         var failure = SingleFailure(registry, "test.x");
         Assert.Equal("NPX001", failure.Code);
@@ -204,7 +205,7 @@ public class ExtensionLoaderTests : IDisposable
     }
 
     [Fact]
-    public void AnAssemblyWithTwoExtensionTypesFailsWithNpx001()
+    public async Task AnAssemblyWithTwoExtensionTypesFailsWithNpx001()
     {
         string folder = Path.Combine(root, "x");
         WriteManifest(folder, ManifestJson("test.x", "Two.dll"));
@@ -214,7 +215,7 @@ public class ExtensionLoaderTests : IDisposable
             public class Two : INetPrintsExtension { public void Register(IExtensionBuilder builder) { } }
             """);
 
-        using ExtensionRegistry registry = Load(Options(folders: [folder]));
+        await using ExtensionRegistry registry = Load(Options(folders: [folder]));
 
         var failure = SingleFailure(registry, "test.x");
         Assert.Equal("NPX001", failure.Code);
@@ -222,7 +223,7 @@ public class ExtensionLoaderTests : IDisposable
     }
 
     [Fact]
-    public void AnExtensionWhoseConstructorThrowsFailsWithNpx005()
+    public async Task AnExtensionWhoseConstructorThrowsFailsWithNpx005()
     {
         string folder = Path.Combine(root, "x");
         WriteManifest(folder, ManifestJson("test.x", "Throwing.dll"));
@@ -235,7 +236,7 @@ public class ExtensionLoaderTests : IDisposable
             }
             """);
 
-        using ExtensionRegistry registry = Load(Options(folders: [folder]));
+        await using ExtensionRegistry registry = Load(Options(folders: [folder]));
 
         var failure = SingleFailure(registry, "test.x");
         Assert.Equal("NPX005", failure.Code);
@@ -243,7 +244,7 @@ public class ExtensionLoaderTests : IDisposable
     }
 
     [Fact]
-    public void AnExtensionAssemblyLoadsInItsOwnContextAndSharesNetPrintsTypes()
+    public async Task AnExtensionAssemblyLoadsInItsOwnContextAndSharesNetPrintsTypes()
     {
         string folder = Path.Combine(root, "x");
         WriteManifest(folder, ManifestJson("test.x", "Sample.dll"));
@@ -262,7 +263,7 @@ public class ExtensionLoaderTests : IDisposable
             """);
         var logs = new CollectingLoggerFactory();
 
-        using ExtensionRegistry registry = Load(Options(folders: [folder]), logs);
+        await using ExtensionRegistry registry = Load(Options(folders: [folder]), logs);
 
         var loaded = Assert.IsType<ExtensionLoadResult.Loaded>(Assert.Single(registry.Results));
         Assert.Equal("test.x", loaded.Manifest.Id);
@@ -280,7 +281,7 @@ public class ExtensionLoaderTests : IDisposable
     }
 
     [Fact]
-    public void ExtensionsLoadDependenciesFirstThenByIdAndInProcessOnesAhead()
+    public async Task ExtensionsLoadDependenciesFirstThenByIdAndInProcessOnesAhead()
     {
         var order = new System.Collections.Generic.List<string>();
         (ExtensionManifest, INetPrintsExtension) Ext(string id, params string[] dependsOn) =>
@@ -291,7 +292,7 @@ public class ExtensionLoaderTests : IDisposable
         WriteManifest(Path.Combine(folder, "3"), ManifestJson("test.mid", "m.dll"));
         var inProcess = new[] { Ext("test.late", "test.early"), Ext("test.early") };
 
-        using ExtensionRegistry registry = Load(Options(inProcess, searchDirectories: [folder]));
+        await using ExtensionRegistry registry = Load(Options(inProcess, searchDirectories: [folder]));
 
         Assert.Equal(["test.early", "test.late"], order);
         Assert.Equal(["test.early", "test.late"], registry.Loaded.Select(m => m.Id));
@@ -299,7 +300,7 @@ public class ExtensionLoaderTests : IDisposable
     }
 
     [Fact]
-    public void TiesAreBrokenByOrdinalId()
+    public async Task TiesAreBrokenByOrdinalId()
     {
         string folder = Path.Combine(root, "search");
         foreach (string id in new[] { "test.c", "test.a", "test.B", "test.b" })
@@ -307,25 +308,25 @@ public class ExtensionLoaderTests : IDisposable
             WriteManifest(Path.Combine(folder, id), ManifestJson(id, id + ".dll"));
         }
 
-        using ExtensionRegistry registry = Load(Options(searchDirectories: [folder]));
+        await using ExtensionRegistry registry = Load(Options(searchDirectories: [folder]));
 
         Assert.Equal(["test.B", "test.a", "test.b", "test.c"], registry.Results.Select(r => r.Id));
     }
 
     [Fact]
-    public void EmittersAreAppliedInLoadOrder()
+    public async Task EmittersAreAppliedInLoadOrder()
     {
         var late = InProcess("test.late", builder => builder.AddClassEmitter(new NamedClassEmitter("late")), dependsOn: "test.early");
         var early = InProcess("test.early", builder => builder.AddClassEmitter(new NamedClassEmitter("early")));
 
-        using ExtensionRegistry registry = Load(Options([late, early]));
+        await using ExtensionRegistry registry = Load(Options([late, early]));
 
         Assert.Equal(["early", "late"], registry.ClassEmitters.Select(e => e.Id));
         Assert.Equal(["early", "late"], registry.Translation.ClassEmitters.Select(e => e.Id));
     }
 
     [Fact]
-    public void ADuplicateKindOrNodeTypeRejectsOnlyTheLaterKindAndKeepsTheExtension()
+    public async Task ADuplicateKindOrNodeTypeRejectsOnlyTheLaterKindAndKeepsTheExtension()
     {
         var first = InProcess("test.one", builder => builder.AddNodeLibrary(new SingleKindLibrary("test.one", PingKind("test.one/Ping"))));
         var second = InProcess("test.two", builder => builder
@@ -333,7 +334,7 @@ public class ExtensionLoaderTests : IDisposable
             .AddNodeLibrary(new SingleKindLibrary("test.two/more", PongKind("test.two/Pong"))));
         var logs = new CollectingLoggerFactory();
 
-        using ExtensionRegistry registry = Load(Options([first, second]), logs);
+        await using ExtensionRegistry registry = Load(Options([first, second]), logs);
 
         Assert.Equal(["test.one", "test.two"], registry.Loaded.Select(m => m.Id));
         Assert.Equal(["test.one/Ping", "test.two/Pong"], registry.NodeKinds.Select(k => k.Kind));
@@ -344,7 +345,7 @@ public class ExtensionLoaderTests : IDisposable
     }
 
     [Fact]
-    public void InconsistentNodeKindsAreRejectedWithNpx006()
+    public async Task InconsistentNodeKindsAreRejectedWithNpx006()
     {
         var wrongPrefix = PingKind("other.ext/Ping");
         var mismatch = PingKind("test.ext/Mismatch") with { Converter = new PingConverter("test.ext/Other") };
@@ -353,7 +354,7 @@ public class ExtensionLoaderTests : IDisposable
         var extension = InProcess("test.ext", builder => builder.AddNodeLibrary(new SingleKindLibrary(
             "test.ext", wrongPrefix, mismatch, builtInName, notANode)));
 
-        using ExtensionRegistry registry = Load(Options([extension]));
+        await using ExtensionRegistry registry = Load(Options([extension]));
 
         Assert.Equal("test.ext", Assert.Single(registry.Loaded).Id);
         Assert.Empty(registry.NodeKinds);
@@ -362,19 +363,19 @@ public class ExtensionLoaderTests : IDisposable
     }
 
     [Fact]
-    public void AKindForAnAlreadyRegisteredNodeTypeIsRejected()
+    public async Task AKindForAnAlreadyRegisteredNodeTypeIsRejected()
     {
         var extension = InProcess("test.ext", builder => builder.AddNodeLibrary(new SingleKindLibrary(
             "test.ext", PingKind("test.ext/A"), PingKind("test.ext/B"))));
 
-        using ExtensionRegistry registry = Load(Options([extension]));
+        await using ExtensionRegistry registry = Load(Options([extension]));
 
         Assert.Equal("test.ext/A", Assert.Single(registry.NodeKinds).Kind);
         Assert.Equal("node kind test.ext/B", Assert.Single(registry.Issues).Contribution);
     }
 
     [Fact]
-    public void ProfileConflictsAreRejectedWithNpx006()
+    public async Task ProfileConflictsAreRejectedWithNpx006()
     {
         var one = InProcess("test.one", builder => builder.AddProjectProfile(new StubProfile("test.profile")));
         var two = InProcess("test.two", builder => builder
@@ -382,7 +383,7 @@ public class ExtensionLoaderTests : IDisposable
             .AddProjectProfile(new StubProfile(DefaultProjectProfile.ProfileId)));
         var logs = new CollectingLoggerFactory();
 
-        using ExtensionRegistry registry = Load(Options([one, two]), logs);
+        await using ExtensionRegistry registry = Load(Options([one, two]), logs);
 
         Assert.Equal(["test.two", "test.two"], registry.Issues.Select(i => i.ExtensionId));
         Assert.Same(DefaultProjectProfile.Instance, registry.FindProfile(DefaultProjectProfile.ProfileId));
@@ -391,13 +392,13 @@ public class ExtensionLoaderTests : IDisposable
     }
 
     [Fact]
-    public void TheTestExtensionLoadsFromASearchDirectoryInItsOwnContextWithEveryContribution()
+    public async Task TheTestExtensionLoadsFromASearchDirectoryInItsOwnContextWithEveryContribution()
     {
         string search = Path.Combine(root, "search");
         TestExtensionLocation.CopyTo(search);
         var logs = new CollectingLoggerFactory();
 
-        using ExtensionRegistry registry = Load(Options(searchDirectories: [search]), logs);
+        await using ExtensionRegistry registry = Load(Options(searchDirectories: [search]), logs);
 
         Assert.Equal(["netprints.test"], registry.Loaded.Select(m => m.Id));
         Assert.Empty(registry.Issues);
@@ -425,9 +426,9 @@ public class ExtensionLoaderTests : IDisposable
     }
 
     [Fact]
-    public void TheTestExtensionLoadsFromAnExplicitFolderAndItsTranslatorJoinsTheEnvironment()
+    public async Task TheTestExtensionLoadsFromAnExplicitFolderAndItsTranslatorJoinsTheEnvironment()
     {
-        using ExtensionRegistry registry = Load(Options(folders: [TestExtensionLocation.Folder]));
+        await using ExtensionRegistry registry = Load(Options(folders: [TestExtensionLocation.Folder]));
 
         Assert.Equal(["netprints.test"], registry.Loaded.Select(m => m.Id));
         NodeKindDescriptor kind = Assert.Single(registry.NodeKinds);
@@ -436,14 +437,14 @@ public class ExtensionLoaderTests : IDisposable
     }
 
     [Fact]
-    public void AFailingSiblingLeavesTheTestExtensionLoadedAndTheRegistryUsable()
+    public async Task AFailingSiblingLeavesTheTestExtensionLoadedAndTheRegistryUsable()
     {
         string search = Path.Combine(root, "search");
         TestExtensionLocation.CopyTo(search);
         WriteManifest(Path.Combine(search, "future"), Sample("test.future", api: "2.0"));
         WriteManifest(Path.Combine(search, "gone"), ManifestJson("test.gone", "missing.dll"));
 
-        using ExtensionRegistry registry = Load(Options(searchDirectories: [search]));
+        await using ExtensionRegistry registry = Load(Options(searchDirectories: [search]));
 
         Assert.Equal(["netprints.test"], registry.Loaded.Select(m => m.Id));
         Assert.Equal("NPX002", SingleFailure(registry, "test.future").Code);
@@ -452,14 +453,14 @@ public class ExtensionLoaderTests : IDisposable
     }
 
     [Fact]
-    public void ADependentOfTheTestExtensionLoadsAfterItAndItsEmittersRunAfterTheTestEmitters()
+    public async Task ADependentOfTheTestExtensionLoadsAfterItAndItsEmittersRunAfterTheTestEmitters()
     {
         string search = Path.Combine(root, "search");
         TestExtensionLocation.CopyTo(search);
         var dependent = InProcess("aaa.dependent", builder => builder.AddClassEmitter(new NamedClassEmitter("aaa.emitter")), dependsOn: "netprints.test");
         var independent = InProcess("bbb.independent", builder => builder.AddClassEmitter(new NamedClassEmitter("bbb.emitter")));
 
-        using ExtensionRegistry registry = Load(Options([dependent, independent], searchDirectories: [search]));
+        await using ExtensionRegistry registry = Load(Options([dependent, independent], searchDirectories: [search]));
 
         Assert.Equal(["bbb.independent", "netprints.test", "aaa.dependent"], registry.Loaded.Select(m => m.Id));
         Assert.Equal(["bbb.emitter", "netprints.test/class", "aaa.emitter"], registry.ClassEmitters.Select(e => e.Id));

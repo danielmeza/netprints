@@ -102,7 +102,7 @@ public class GridRenderTests
     {
         Assert.SkipWhen(Environment.GetEnvironmentVariable(GridBackground.ModeVariable) is { Length: > 0 },
             $"{GridBackground.ModeVariable} overrides Auto");
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var graph = session.Graph;
 
         await graph.RightDragAsync(100, 60, Token);

@@ -47,7 +47,7 @@ public sealed class ProcessRunner : IProcessRunner
             Task<string> standardErrorTask = process.StandardError.ReadToEndAsync(cancellationToken);
             await Task.WhenAll(standardOutputTask, standardErrorTask, process.WaitForExitAsync(cancellationToken)).ConfigureAwait(false);
 
-            return new ProcessResult(process.ExitCode, standardOutputTask.Result, standardErrorTask.Result);
+            return new ProcessResult(process.ExitCode, await standardOutputTask.ConfigureAwait(false), await standardErrorTask.ConfigureAwait(false));
         }
         catch (OperationCanceledException)
         {

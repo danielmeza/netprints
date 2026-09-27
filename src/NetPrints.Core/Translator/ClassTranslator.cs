@@ -39,12 +39,13 @@ namespace NetPrints.Translator
 
         private static readonly HashSet<string> AllowedClassModifiers = new HashSet<string>(StringComparer.Ordinal)
         {
-            "partial", "sealed", "abstract", "static", "unsafe",
+            CSharpKeywords.Partial, CSharpKeywords.Sealed, CSharpKeywords.Abstract, CSharpKeywords.Static, CSharpKeywords.Unsafe,
         };
 
         private static readonly HashSet<string> AllowedMemberModifiers = new HashSet<string>(StringComparer.Ordinal)
         {
-            "abstract", "new", "override", "partial", "readonly", "sealed", "static", "unsafe", "virtual",
+            CSharpKeywords.Abstract, CSharpKeywords.New, CSharpKeywords.Override, CSharpKeywords.Partial,
+            CSharpKeywords.ReadOnly, CSharpKeywords.Sealed, CSharpKeywords.Static, CSharpKeywords.Unsafe, CSharpKeywords.Virtual,
         };
 
         private readonly TranslationEnvironment environment;
@@ -104,7 +105,7 @@ namespace NetPrints.Translator
                 {
                     if (!usedMemberNames.Add(entry.EventName))
                     {
-                        throw new TranslationException("NPT002", $"Duplicate event or method name '{entry.EventName}'.",
+                        throw new TranslationException(TranslationDiagnosticCodes.DuplicateMemberName, $"Duplicate event or method name '{entry.EventName}'.",
                             TranslatorUtil.TryGetGraphKey(eventGraph), entry.Id);
                     }
 
@@ -119,22 +120,22 @@ namespace NetPrints.Translator
 
             if (c.Modifiers.HasFlag(ClassModifiers.Static))
             {
-                modifiers.Add("static");
+                modifiers.Add(CSharpKeywords.Static);
             }
 
             if (c.Modifiers.HasFlag(ClassModifiers.Abstract))
             {
-                modifiers.Add("abstract");
+                modifiers.Add(CSharpKeywords.Abstract);
             }
 
             if (c.Modifiers.HasFlag(ClassModifiers.Sealed))
             {
-                modifiers.Add("sealed");
+                modifiers.Add(CSharpKeywords.Sealed);
             }
 
             if (c.Modifiers.HasFlag(ClassModifiers.Partial))
             {
-                modifiers.Add("partial");
+                modifiers.Add(CSharpKeywords.Partial);
             }
 
             string genericArguments = "";
@@ -177,17 +178,17 @@ namespace NetPrints.Translator
 
             if (variable.Modifiers.HasFlag(VariableModifiers.Static))
             {
-                modifiers.Add("static");
+                modifiers.Add(CSharpKeywords.Static);
             }
 
             if (variable.Modifiers.HasFlag(VariableModifiers.ReadOnly))
             {
-                modifiers.Add("readonly");
+                modifiers.Add(CSharpKeywords.ReadOnly);
             }
 
             if (variable.Modifiers.HasFlag(VariableModifiers.New))
             {
-                modifiers.Add("new");
+                modifiers.Add(CSharpKeywords.New);
             }
 
             if (variable.Modifiers.HasFlag(VariableModifiers.Const))
@@ -337,7 +338,7 @@ namespace NetPrints.Translator
 
                 if (context.DeclarePartial && kind != EmittedMemberKind.Property)
                 {
-                    throw new TranslationException("NPT007", $"{emitter.Id}: DeclarePartial is only valid on a property, not on {kind} '{name}'.",
+                    throw new TranslationException(TranslationDiagnosticCodes.InvalidEmitterOutput, $"{emitter.Id}: DeclarePartial is only valid on a property, not on {kind} '{name}'.",
                         (model as NodeGraph) is { } graph ? TranslatorUtil.TryGetGraphKey(graph) : null);
                 }
             }
@@ -353,13 +354,13 @@ namespace NetPrints.Translator
             }
             catch (Exception ex)
             {
-                throw new TranslationException("NPT005", $"{id}: {ex.Message}", inner: ex);
+                throw new TranslationException(TranslationDiagnosticCodes.EmitterFailed, $"{id}: {ex.Message}", inner: ex);
             }
 
             string? invalid = extraModifiers.FirstOrDefault(modifier => !allowedModifiers.Contains(modifier));
             if (invalid != null)
             {
-                throw new TranslationException("NPT007", $"{id}: '{invalid}' is not an allowed {target} modifier.");
+                throw new TranslationException(TranslationDiagnosticCodes.InvalidEmitterOutput, $"{id}: '{invalid}' is not an allowed {target} modifier.");
             }
         }
 
@@ -373,12 +374,12 @@ namespace NetPrints.Translator
         /// </summary>
         private static string ModifierPrefix(List<string> modifiers, IEnumerable<string> extraModifiers, bool forcePartial = false)
         {
-            List<string> result = modifiers.Where(modifier => modifier != "partial").ToList();
-            result.AddRange(extraModifiers.Where(modifier => modifier != "partial" && !result.Contains(modifier)));
+            List<string> result = modifiers.Where(modifier => modifier != CSharpKeywords.Partial).ToList();
+            result.AddRange(extraModifiers.Where(modifier => modifier != CSharpKeywords.Partial && !result.Contains(modifier)));
 
-            if (forcePartial || modifiers.Contains("partial") || extraModifiers.Contains("partial"))
+            if (forcePartial || modifiers.Contains(CSharpKeywords.Partial) || extraModifiers.Contains(CSharpKeywords.Partial))
             {
-                result.Add("partial");
+                result.Add(CSharpKeywords.Partial);
             }
 
             return string.Concat(result.Select(modifier => modifier + " "));

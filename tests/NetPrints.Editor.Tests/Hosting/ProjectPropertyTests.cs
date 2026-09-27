@@ -38,7 +38,7 @@ public sealed class ProjectPropertyTests : IDisposable
     [Fact]
     public async Task TheTestExtensionReadsItsPropertyThroughTheSnapshot()
     {
-        using ExtensionHost extensions = TestExtensionFolder.CreateHost();
+        await using ExtensionHost extensions = TestExtensionFolder.CreateHost();
         string csproj = WriteProject("<NetPrintsTestMode>on</NetPrintsTestMode>");
 
         ProjectSnapshot snapshot = await NewSystem(extensions).LoadAsync(csproj, TestContext.Current.CancellationToken);
@@ -50,7 +50,7 @@ public sealed class ProjectPropertyTests : IDisposable
     [Fact]
     public async Task ApropertyNoLoadedExtensionRequestsIsNotEvaluated()
     {
-        using ExtensionHost extensions = TestExtensions.CreateBuiltIn();
+        await using ExtensionHost extensions = TestExtensions.CreateBuiltIn();
         string csproj = WriteProject("<NetPrintsTestMode>on</NetPrintsTestMode>");
 
         ProjectSnapshot snapshot = await NewSystem(extensions).LoadAsync(csproj, TestContext.Current.CancellationToken);
@@ -61,12 +61,12 @@ public sealed class ProjectPropertyTests : IDisposable
     [Fact]
     public async Task AProjectSystemCreatedBeforeTheExtensionLoadsSeesItsPropertyAfterwards()
     {
-        using ExtensionHost extensions = TestExtensions.CreateBuiltIn();
+        await using ExtensionHost extensions = TestExtensions.CreateBuiltIn();
         MsBuildProjectSystem system = NewSystem(extensions);
         string csproj = WriteProject("<NetPrintsTestMode>on</NetPrintsTestMode>");
         Assert.Null((await system.LoadAsync(csproj, TestContext.Current.CancellationToken)).GetProperty("NetPrintsTestMode"));
 
-        extensions.LoadForProject([TestExtensionFolder.Folder], CancellationToken.None);
+        await extensions.LoadForProjectAsync([TestExtensionFolder.Folder], CancellationToken.None);
 
         Assert.Equal("on", (await system.LoadAsync(csproj, TestContext.Current.CancellationToken)).GetProperty("NetPrintsTestMode"));
     }

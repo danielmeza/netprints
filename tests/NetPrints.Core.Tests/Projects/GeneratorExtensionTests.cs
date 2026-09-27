@@ -26,7 +26,7 @@ public class GeneratorExtensionTests : IDisposable
 
     private async Task<string> WriteLogGraphAsync(string name = "Logs")
     {
-        using ExtensionRegistry registry = ExtensionTestSupport.Load(new ExtensionLoaderOptions([], [TestExtensionLocation.Folder], [BuiltInExtension.InProcessEntry]));
+        await using ExtensionRegistry registry = ExtensionTestSupport.Load(new ExtensionLoaderOptions([], [TestExtensionLocation.Folder], [BuiltInExtension.InProcessEntry]));
         (ClassGraph cls, _) = ExtensionGraphs.BuildLogClass(registry, "PsT14", name);
         return await ExtensionGraphs.WriteAsync(registry, cls, Path.Combine(directory, $"{name}.netpc.json"));
     }
@@ -153,13 +153,13 @@ public class GeneratorExtensionTests : IDisposable
     }
 
     [Fact]
-    public void LoadExtensionsLoadsTheBuiltInExtensionThenTheRequestsFoldersAndNothingElse()
+    public async Task LoadExtensionsLoadsTheBuiltInExtensionThenTheRequestsFoldersAndNothingElse()
     {
         string folder = TestExtensionLocation.CopyTo(Path.Combine(directory, "ext"));
         var request = new GenerateRequest("p.csproj", "P", "netprints.default", [], [folder]);
 
         (ExtensionRegistry registry, IReadOnlyList<CodeDiagnostic> diagnostics) = GraphCodeGenerator.LoadExtensions(request, TestContext.Current.CancellationToken);
-        using (registry)
+        await using (registry)
         {
             Assert.Empty(diagnostics);
             Assert.Equal(["netprints", "netprints.test"], registry.Loaded.Select(m => m.Id));

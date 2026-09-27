@@ -12,7 +12,7 @@ public class GraphRenderTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task RendersSampleMainGraph()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
 
         Assert.Equal("Program", await session.ClassEditor.TextAsync(Token)); // PAR-22
         foreach (var node in session.GraphVM.Nodes)
@@ -31,7 +31,7 @@ public class GraphRenderTests
     public async Task ClassWindowsOpenMaximized()
     {
         using var sample = new SampleCopy();
-        using var app = HeadlessApp.Start();
+        await using var app = HeadlessApp.Start();
         await app.OpenStartupProjectAsync(sample.ProjectPath, Token);
 
         var page = await app.Main.OpenClassAsync("HelloWorld.Program", Token);

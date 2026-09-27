@@ -15,6 +15,9 @@ namespace NetPrints.Editor.Graph.Pins;
 /// </summary>
 public sealed partial class NodePinVM : ObservableObject, IDisposable
 {
+    /// <summary>Divides a summed pair of positions to place a reroute node exactly between them.</summary>
+    private const double MidpointDivisor = 2;
+
     private readonly INotifyPropertyChanged pinNotifier;
 
     /// <summary>
@@ -385,8 +388,8 @@ public sealed partial class NodePinVM : ObservableObject, IDisposable
                     // AddRerouteNode reconnects the pin, so remember the source first.
                     var source = dataPin.IncomingPin;
                     var reroute = GraphUtil.AddRerouteNode(dataPin);
-                    reroute.PositionX = (Pin.Node.PositionX + source.Node.PositionX) / 2;
-                    reroute.PositionY = (Pin.Node.PositionY + source.Node.PositionY) / 2;
+                    reroute.PositionX = Midpoint(Pin.Node.PositionX, source.Node.PositionX);
+                    reroute.PositionY = Midpoint(Pin.Node.PositionY, source.Node.PositionY);
                     break;
                 }
             case NodeOutputExecPin { OutgoingPin: not null } execPin:
@@ -394,22 +397,25 @@ public sealed partial class NodePinVM : ObservableObject, IDisposable
                     // AddRerouteNode reconnects the pin, so remember the target first.
                     var target = execPin.OutgoingPin;
                     var reroute = GraphUtil.AddRerouteNode(execPin);
-                    reroute.PositionX = (Pin.Node.PositionX + target.Node.PositionX) / 2;
-                    reroute.PositionY = (Pin.Node.PositionY + target.Node.PositionY) / 2;
+                    reroute.PositionX = Midpoint(Pin.Node.PositionX, target.Node.PositionX);
+                    reroute.PositionY = Midpoint(Pin.Node.PositionY, target.Node.PositionY);
                     break;
                 }
             case NodeInputTypePin { IncomingPin: not null } typePin:
                 {
                     var source = typePin.IncomingPin;
                     var reroute = GraphUtil.AddRerouteNode(typePin);
-                    reroute.PositionX = (Pin.Node.PositionX + source.Node.PositionX) / 2;
-                    reroute.PositionY = (Pin.Node.PositionY + source.Node.PositionY) / 2;
+                    reroute.PositionX = Midpoint(Pin.Node.PositionX, source.Node.PositionX);
+                    reroute.PositionY = Midpoint(Pin.Node.PositionY, source.Node.PositionY);
                     break;
                 }
             default:
                 throw new InvalidOperationException("Can't add a reroute node for this pin.");
         }
     }
+
+    /// <summary>Midpoint between two node positions, for placing a reroute node between its neighbors.</summary>
+    private static double Midpoint(double a, double b) => (a + b) / MidpointDivisor;
 
     /// <summary>Raises the connection-dependent properties after the model connections changed.</summary>
     internal void RefreshConnectionState()

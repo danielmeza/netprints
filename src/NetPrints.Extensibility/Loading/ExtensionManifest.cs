@@ -86,8 +86,9 @@ public sealed partial record ExtensionManifest(
                     throw new ExtensionManifestException(manifestPath, "'dependsOn' must be an array of extension ids.");
                 }
 
-                foreach (JsonElement item in dependencies.EnumerateArray())
+                for (int i = 0; i < dependencies.GetArrayLength(); i++)
                 {
+                    JsonElement item = dependencies[i];
                     if (item.ValueKind != JsonValueKind.String || string.IsNullOrWhiteSpace(item.GetString()))
                     {
                         throw new ExtensionManifestException(manifestPath, "'dependsOn' must contain only non-empty strings.");

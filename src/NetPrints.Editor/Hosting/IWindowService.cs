@@ -1,5 +1,4 @@
 using NetPrints.Core;
-using NetPrints.Editor.ClassEditor;
 
 namespace NetPrints.Editor.Hosting;
 
@@ -14,8 +13,8 @@ public interface IWindowService
     /// </summary>
     bool TryActivateClassEditor(ClassGraph cls);
 
-    /// <summary>Opens a new class editor window for the view model.</summary>
-    void OpenClassEditor(ClassEditorVM editor);
+    /// <summary>Creates the class's editor view model and opens its window (this method owns and disposes it).</summary>
+    void OpenClassEditor(ClassGraph cls, EditorContext context);
 
     /// <summary>Closes the window of a class, if any.</summary>
     void CloseClassEditor(ClassGraph cls);

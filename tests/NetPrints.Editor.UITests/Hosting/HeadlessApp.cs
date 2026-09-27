@@ -24,7 +24,7 @@ namespace NetPrints.Editor.UITests.Hosting;
 /// headless driver, the root page object and a Screenplay actor. The test arranges through the
 /// API (<see cref="Composition"/>) and acts through the page objects.
 /// </summary>
-public sealed class HeadlessApp : IDisposable
+public sealed class HeadlessApp : IAsyncDisposable
 {
     /// <summary>The E2E screen size (Xvfb), used as the size of maximized windows.</summary>
     public const int ScreenWidth = 1600;
@@ -69,13 +69,14 @@ public sealed class HeadlessApp : IDisposable
         // so under load. Tests that need a refresh advance CodeRefreshScheduler explicitly instead
         // of waiting on the wall clock.
         CodeRefreshScheduler = new TestScheduler();
-        Composition = new EditorComposition(new EditorHostServices(NullLoggerFactory.Instance, extensions, Settings, NullHostChannel.Instance, HostChannelError: null, MsBuildAvailable: true), c => c with
-        {
-            Dialogs = Dialogs,
-            Processes = Processes,
-            FilePicker = FilePicker,
-            CodeRefreshScheduler = CodeRefreshScheduler,
-        });
+        Composition = new EditorComposition(new EditorHostServices(NullLoggerFactory.Instance, extensions, Settings, NullHostChannel.Instance, HostChannelError: null,
+            MsBuildAvailable: true, DisposeOwnedResources: () => ValueTask.CompletedTask), c => c with
+            {
+                Dialogs = Dialogs,
+                Processes = Processes,
+                FilePicker = FilePicker,
+                CodeRefreshScheduler = CodeRefreshScheduler,
+            });
         exceptionHandler = Composition.InstallUnhandledExceptionHandler(); // as EditorApp does on the desktop
         Tree = new AutomationTree();
 
@@ -151,7 +152,7 @@ public sealed class HeadlessApp : IDisposable
         }
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
         SaveDiagnostics();
         foreach (var window in Tree.Windows.Reverse().ToList())
@@ -163,7 +164,8 @@ public sealed class HeadlessApp : IDisposable
         classWindowSizer.Dispose();
         Tree.Dispose();
         Processes.Dispose();
-        extensions.Dispose();
+        Composition.Dispose();
+        await extensions.DisposeAsync();
         try
         {
             Directory.Delete(settingsDirectory, recursive: true);

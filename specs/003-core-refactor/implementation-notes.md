@@ -3283,3 +3283,90 @@ own "last pointer position" tracking does not follow drag-and-drop the way it fo
     E2E/headless-driver gaps as G1), 0 failed (two new tests over G1's 728/719: `EventGraphBuildTests`
     and `EventGraphTests`). `dotnet format NetPrints.slnx --verify-no-changes` and `dotnet build -c
     Release` (0 warnings) both clean.
+
+## Analyzer promotion and string literal discipline (not a tasks.md item; ADR-0003)
+
+- Fixed the two concrete duplications from the owner's report: `TranslationDiagnosticCodes.cs` (new,
+  `NetPrints.Core/Translator/`) holds every `NPT` code the translator actually throws
+  (`NPT001/002/005/006/007`); `NodeDocumentConverterRegistry.EventEntryKind` is now the one source for
+  `"eventEntry"`, referenced from `EventConverters.cs`, `NodeDocuments.cs`'s `JsonDerivedType` attribute
+  and `BuiltInNodeLibrary.cs`. `SourceHygieneTests.NoRawDiagnosticCodeLiteralsOutsideTheirConstants` gates
+  it (verified: a deliberately reintroduced literal fails the test).
+- Added SonarAnalyzer.CSharp 10.34.0.3385, IDisposableAnalyzers 4.0.8 and
+  Microsoft.VisualStudio.Threading.Analyzers 18.7.23 (all `PackageReference PrivateAssets="all"`,
+  repo-wide via `Directory.Build.props`), plus `AnalysisLevel=latest` (SDK's own analyzers).
+  `AnalysisMode=Recommended` was tried and reverted: its per-rule severities are baked into the SDK's own
+  shipped global analyzer config and outrank anything set in `.editorconfig`, which would need dozens of
+  individual per-rule downgrades to avoid new build errors — out of scope, follow-up in ADR-0003.
+- Severity policy escalated mid-batch (owner decision) from "everything `suggestion`" to a real,
+  build-breaking `error` gate for a curated set: Sonar's `S1192`/`S1854`/`S1481`, every `IDISP` rule that
+  fires in `src/` today, every `VSTHRD` rule that fires in `src/` today except `VSTHRD111`. `S109` (74
+  pre-existing hits) and `VSTHRD111` (84 pre-existing hits) stay `suggestion`, named explicitly, via this
+  batch's ~30–40-hit volume escape hatch — follow-up batch. Full detail, the complete pragma-suppression
+  ledger (22 sites, each with its exact reason) and the Editor carve-out are in ADR-0003.
+- Real fixes in this batch's own code: `PartialModifier`/`StaticModifier`/`JumpStackPlaceholder`/
+  `ReturnStatement` constants in `ExecutionGraphTranslator.cs`/`ClassTranslator.cs`/
+  `BuiltInNodeTranslators.cs` (S1192); three unused pattern-match bindings dropped in `GenericType.cs`/
+  `TypeSpecifier.cs`/`GenericsHelper.cs` (S1481); `TranslatorUtil.cs`'s `AdhocWorkspace` now `using`
+  (IDISP004); three `try/finally { store.Dispose(); }` in `ProjectPersistence.cs` converted to `using`
+  declarations (IDISP017); `ExtensionRegistry.cs`'s and `NetPrints.Desktop/Program.cs`'s sync-over-async
+  bridges over an owned `IAsyncDisposable` now run via `Task.Run(...)` instead of a direct
+  `.GetAwaiter().GetResult()`, removing the actual deadlock risk (not just the analyzer hit).
+- `ExtensionRegistry`/`ExtensionHost` now both implement `IAsyncDisposable`: `ExtensionRegistry.DisposeAsync()`
+  genuinely `await`s an owned `IAsyncDisposable`'s cleanup (no bridge); `ExtensionHost.DisposeAsync()`
+  forwards to it. `Dispose()` on both is a thin `Task.Run(...)`-mitigated bridge onto `DisposeAsync()`
+  (no deadlock risk, but still synchronous) — this is as far "up the chain" as this batch could safely take
+  it. **Blocked, reported instead of forced**: propagating further, so `IExtensionHost`'s own consumers
+  `await using`/`await DisposeAsync()` instead of calling `Dispose()`, needs five `src/NetPrints.Editor/`
+  files (`EditorContext.cs`, `EditorHostServices.cs`, `PersistenceBinding.cs`, `ReflectionHost.cs`,
+  `ExtensionProjectProperties.cs`) — two of which (`PersistenceBinding.cs`, `ReflectionHost.cs`) implement
+  `IExtensionHost` itself, so even widening that interface would need to happen there — and this batch
+  cannot touch any file under `src/NetPrints.Editor/` (a concurrent batch owns it). The two remaining
+  `Dispose()` bridges (`ExtensionRegistry.cs`, `NetPrints.Desktop/Program.cs`) are pragma-suppressed with
+  that reasoning, not as pre-existing debt.
+- A much larger analyzer rule set (Async, Disposal, Constants, Nullability, Exceptions,
+  Strings/collections, Types, Logging, a `Microsoft.CodeAnalysis.BannedApiAnalyzers` package, two new
+  Roslyn-parsed `SourceHygieneTests` facts, a fire-and-forget helper, `NetPrints.Cli`'s `Main` becoming
+  async, `NetPrints.Desktop`'s shutdown redesign) was independently researched
+  (`~/.claude/jobs/3c6fd792/tmp/csharp-agent-rules-draft.md`) and **not landed in this batch**: it spans
+  dozens of rules across every project with "Med–High" estimated hit counts, several of its concrete
+  sites are again under `src/NetPrints.Editor/`, and it does not fit this batch's size — proposed as its
+  own follow-up batch(es) in ADR-0003's Consequences.
+- Pre-merge analyzer check (for the Opus review, PR #6): the curated rule set is `error`-severity now, so
+  a plain `dotnet build -c Release` failing *is* the gate — no extra step needed for it. The one thing
+  still worth a manual check is the `suggestion`-severity remainder (`S109`, `VSTHRD111`, everything
+  `AnalysisLevel=latest` or these three packages can produce that isn't in the curated set): run
+  `dotnet format analyzers --severity info --verify-no-changes` scoped to
+  `git diff --name-only origin/master...HEAD` before approving; this batch ran it against its own changes
+  and against `src/NetPrints.Core/Translator/**`, `src/NetPrints.Extensibility/**` and the event-graph
+  files and fixed the three real hits it found (`EventEntryNode.cs`'s two `S6608`s, `SourceHygieneTests.cs`'s
+  own `SYSLIB1045`); it was not re-run against the rest of the branch's much larger diff (out of scope for
+  this batch, see ADR-0003).
+- Suite: whole solution, Release, foreground: 731 total, 722 passed, 9 skipped (same desktop
+  E2E/headless-driver gaps as prior batches), 0 failed. `dotnet build -c Release` 0 warnings/0 errors,
+  `dotnet format NetPrints.slnx --verify-no-changes` clean. No golden fixture or `NotificationMap.golden.json`
+  changes (pure refactor + tooling, no model change).
+
+### Post-review fix-up: the entries above's "blocked" and severity claims no longer hold
+
+An adversarial review of the diff above (base `2cb7316`) rejected it: the blanket
+`dotnet_analyzer_diagnostic.severity = suggestion` silently disabled the SDK's own CA rules (verified with
+a `throw e;` probe: `CA2200` built clean with the blanket, failed without it, as it should), the
+`src/NetPrints.Editor/**.cs` carve-out and most of its 22 pragmas were unjustified once removed, and the
+"blocked" disposal-chain story above was false (no Editor file implements `IExtensionHost` or calls
+`Dispose()` on it). Decision: fixed for real rather than re-pragma'd — `EditorHostServices` disposes its
+extension host/channel through a `Func<ValueTask>` its caller builds at the same site that created them
+(IDisposableAnalyzers recognizes that as ownership, unlike a constructor parameter); `EditorComposition`
+and `MainEditorVM` are `IDisposable` now; `EditorApp`'s shutdown handler is two named local functions
+instead of an `async void` lambda (VSTHRD101); `Ids.cs`'s Crockford decode table is derived from `Alphabet`
+instead of 22 magic numbers; a shared `BuiltInNodeKinds` class (Serialization/Documents) and
+`CSharpKeywords` class (Core/Translator) replace the remaining literal duplication; the removed Editor
+carve-out's ~19 hits are fixed for real except 11 pre-P1, individually pragma-suppressed and listed in
+ADR-0003 (Core keeps 3 more of its own). S109 and VSTHRD111 are no longer blanket `suggestion`: VSTHRD111
+is `error` except for a named list of UI-bound paths (ADR-0003's layering table); S109 is `error` outside
+the Editor, `suggestion` only there (still a follow-up). See ADR-0003 (revised) for the full, corrected
+severity policy, pragma ledger and disposal-chain description; this entry is left in place rather than
+edited, so the diff between what was reviewed and what changed stays visible.
+- Suite after the fix-up: whole solution, Release, foreground: 732 total, 722 passed, 10 skipped, 0 failed.
+  `dotnet build -c Release` 0 warnings/0 errors, `dotnet format NetPrints.slnx --verify-no-changes` clean,
+  no golden fixture or schema changes.

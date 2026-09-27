@@ -71,7 +71,7 @@ public class ReflectionHostTests
         await plain.ReloadAsync(project, TestContext.Current.CancellationToken);
 
         var manifest = new ExtensionManifest("editor.test", "Editor test", "1.0.0", string.Empty, "1.0", []);
-        using var extensions = new ExtensionHost(
+        await using var extensions = new ExtensionHost(
             new ExtensionLoaderOptions([], [], [BuiltInExtension.InProcessEntry, (manifest, new CatalogExtension())]), NullLoggerFactory.Instance);
         var withCatalog = new ReflectionHost(new InlineDispatcher(), extensions, NullLogger<ReflectionHost>.Instance);
         await withCatalog.ReloadAsync(project, TestContext.Current.CancellationToken);
@@ -87,7 +87,7 @@ public class ReflectionHostTests
     public async Task TheTestExtensionsCatalogTypeReachesTheReflectionHost() // SC-004
     {
         var project = Project.FromSnapshot(TestSnapshots.WithRuntimeAssemblies("P", "N"));
-        using ExtensionHost extensions = TestExtensionFolder.CreateHost();
+        await using ExtensionHost extensions = TestExtensionFolder.CreateHost();
         var host = new ReflectionHost(new InlineDispatcher(), extensions, NullLogger<ReflectionHost>.Instance);
 
         await host.ReloadAsync(project, TestContext.Current.CancellationToken);

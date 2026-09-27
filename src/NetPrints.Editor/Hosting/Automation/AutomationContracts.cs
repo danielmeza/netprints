@@ -37,13 +37,16 @@ public sealed record AutomationQuery(string AutomationId)
 /// <summary>A rectangle; client bounds are in DIPs, screen bounds in device pixels.</summary>
 public sealed record AutomationRect(double X, double Y, double Width, double Height)
 {
+    /// <summary>Divides a side's length to reach the rectangle's center from its origin.</summary>
+    private const double CenterDivisor = 2;
+
     /// <summary>The X coordinate of the rectangle's center.</summary>
     [JsonIgnore]
-    public double CenterX => X + Width / 2;
+    public double CenterX => X + Width / CenterDivisor;
 
     /// <summary>The Y coordinate of the rectangle's center.</summary>
     [JsonIgnore]
-    public double CenterY => Y + Height / 2;
+    public double CenterY => Y + Height / CenterDivisor;
 }
 
 /// <summary>A snapshot of one UI element.</summary>

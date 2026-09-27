@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using NetPrints.Core;
 using NetPrints.Extensibility;
 using NetPrints.Extensibility.Hosting;
@@ -18,7 +19,7 @@ namespace NetPrints.Tests.Extensibility;
 public class ExtensionBuilderTests
 {
     [Fact]
-    public void ContributionsAreCommittedWhenRegisterReturns()
+    public async Task ContributionsAreCommittedWhenRegisterReturns()
     {
         var emitter = new NamedClassEmitter("c");
         var memberEmitter = new DisposableMemberEmitter();
@@ -34,7 +35,7 @@ public class ExtensionBuilderTests
             .AddProjectProperty("netprintstestmode")
             .AddProjectProperty("Other"));
 
-        using ExtensionRegistry registry = Load(Options([extension]));
+        await using ExtensionRegistry registry = Load(Options([extension]));
 
         Assert.Same(emitter, Assert.Single(registry.ClassEmitters));
         Assert.Same(memberEmitter, Assert.Single(registry.MemberEmitters));
@@ -52,7 +53,7 @@ public class ExtensionBuilderTests
     }
 
     [Fact]
-    public void ARegisterThatThrowsDiscardsAllItsContributions()
+    public async Task ARegisterThatThrowsDiscardsAllItsContributions()
     {
         var extension = InProcess("test.ext", builder =>
         {
@@ -61,7 +62,7 @@ public class ExtensionBuilderTests
         });
         var good = InProcess("test.good", builder => builder.AddClassEmitter(new NamedClassEmitter("good")));
 
-        using ExtensionRegistry registry = Load(Options([extension, good]));
+        await using ExtensionRegistry registry = Load(Options([extension, good]));
 
         Assert.Equal("good", Assert.Single(registry.ClassEmitters).Id);
         Assert.Empty(registry.ProjectProperties);
@@ -74,7 +75,7 @@ public class ExtensionBuilderTests
     // Passing null on purpose: the guards are the behaviour under test.
 #pragma warning disable CS8625
     [Fact]
-    public void NullArgumentsThrowArgumentNullException()
+    public async Task NullArgumentsThrowArgumentNullException()
     {
         var extension = InProcess("test.ext", builder =>
         {
@@ -90,7 +91,7 @@ public class ExtensionBuilderTests
             Assert.NotNull(builder.LoggerFactory);
         });
 
-        using ExtensionRegistry registry = Load(Options([extension]));
+        await using ExtensionRegistry registry = Load(Options([extension]));
 
         Assert.Equal("test.ext", Assert.Single(registry.Loaded).Id);
     }
@@ -98,12 +99,12 @@ public class ExtensionBuilderTests
 #pragma warning restore CS8625
 
     [Fact]
-    public void BuilderCallsAfterRegisterThrowInvalidOperationException()
+    public async Task BuilderCallsAfterRegisterThrowInvalidOperationException()
     {
         IExtensionBuilder? captured = null;
         var extension = InProcess("test.ext", builder => captured = builder);
 
-        using ExtensionRegistry registry = Load(Options([extension]));
+        await using ExtensionRegistry registry = Load(Options([extension]));
 
         Assert.NotNull(captured);
         Assert.Throws<InvalidOperationException>(() => captured.AddClassEmitter(new NamedClassEmitter("late")));
@@ -112,16 +113,15 @@ public class ExtensionBuilderTests
     }
 
     [Fact]
-    public void DisposingTheRegistryDisposesContributions()
+    public async Task DisposingTheRegistryDisposesContributions()
     {
         var emitter = new DisposableMemberEmitter();
         var extension = InProcess("test.ext", builder => builder.AddMemberEmitter(emitter));
         ExtensionRegistry registry = Load(Options([extension]));
 
         Assert.False(emitter.Disposed);
-        registry.Dispose();
-        registry.Dispose();
-
+        await registry.DisposeAsync();
+        await registry.DisposeAsync();
         Assert.True(emitter.Disposed);
     }
 
@@ -136,13 +136,13 @@ public class ExtensionBuilderTests
         NetPrintsSettings.Descriptor with { ExtensionId = id };
 
     [Fact]
-    public void HostChannelsAndSettingsAreCommittedAndFound()
+    public async Task HostChannelsAndSettingsAreCommittedAndFound()
     {
         var factory = new StubHostChannelFactory("test");
         ExtensionSettingsDescriptor<NetPrintsSettings> descriptor = SettingsFor("test.ext");
         var extension = InProcess("test.ext", builder => builder.AddHostChannel(factory).AddSettings(descriptor));
 
-        using ExtensionRegistry registry = Load(Options([BuiltInExtension.InProcessEntry, extension]));
+        await using ExtensionRegistry registry = Load(Options([BuiltInExtension.InProcessEntry, extension]));
 
         Assert.Same(factory, Assert.Single(registry.HostChannels));
         Assert.Same(factory, registry.FindHostChannel("test"));
@@ -153,7 +153,7 @@ public class ExtensionBuilderTests
     }
 
     [Fact]
-    public void DuplicateHostChannelIdsAndSettingsSectionsAreNpx006()
+    public async Task DuplicateHostChannelIdsAndSettingsSectionsAreNpx006()
     {
         var extension = InProcess("test.ext", builder => builder
             .AddHostChannel(new StubHostChannelFactory("dup"))
@@ -163,7 +163,7 @@ public class ExtensionBuilderTests
             .AddSettings(SettingsFor("someone.else")));
         var other = InProcess("test.other", builder => builder.AddHostChannel(new StubHostChannelFactory("dup")));
 
-        using ExtensionRegistry registry = Load(Options([extension, other]));
+        await using ExtensionRegistry registry = Load(Options([extension, other]));
 
         Assert.Single(registry.HostChannels);
         Assert.Equal("test.ext", Assert.Single(registry.Settings).ExtensionId);
@@ -173,9 +173,9 @@ public class ExtensionBuilderTests
     }
 
     [Fact]
-    public void BuiltInExtensionDeclaresTheNetPrintsSection()
+    public async Task BuiltInExtensionDeclaresTheNetPrintsSection()
     {
-        using ExtensionRegistry registry = Load(Options([BuiltInExtension.InProcessEntry]));
+        await using ExtensionRegistry registry = Load(Options([BuiltInExtension.InProcessEntry]));
 
         Assert.Same(NetPrintsSettings.Descriptor, Assert.Single(registry.Settings));
     }

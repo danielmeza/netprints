@@ -123,6 +123,31 @@ A batch prompt names the task range and pastes the task text; everything below a
   says otherwise; a deliberate change is reported with the reason.
 - No `!`, `null!` or `default!`. XML docs on every public API (CS1591 is an error). No long code
   comments: rationale goes in the commit message and `specs/003-core-refactor/implementation-notes.md`.
+- An identifier used in more than one place (a diagnostic code, a node/document "kind" string, a display
+  name reused elsewhere) gets a named `const`/`static readonly` constant with an XML doc, declared once,
+  referenced everywhere — never repeat the literal (precedent: `ExtensionDiagnosticCodes`,
+  `TranslationDiagnosticCodes`, `BuiltInNodeKinds`, ADR-0003). SonarAnalyzer.CSharp, IDisposableAnalyzers and
+  Microsoft.VisualStudio.Threading.Analyzers run at `error` severity in `src/**.cs` for a curated rule set —
+  `S1192`/`S109`/`S1854`/`S1481`, every `IDISP001`–`IDISP026` rule, and every `VSTHRD` rule except
+  `VSTHRD111` — regardless of whether every one of them fires today, and at `suggestion` (a hint, won't fail
+  the build) for every other rule these packages ship, everywhere (including `tests/`); a Sonar rule this
+  `.editorconfig` does not name at all (a future package upgrade's new rule) keeps whatever severity the
+  package ships it at instead — see ADR-0003 for the probe that verified this. `VSTHRD111` (ConfigureAwait)
+  is `error` by default too, but `none` for code that deliberately resumes on the UI thread (view models,
+  views, and a short list of other paths — see ADR-0003's layering table). `S109` has no carve-out: it is
+  `error` in all of `src/**.cs`, including `NetPrints.Editor`. `dotnet format analyzers --severity info
+  --verify-no-changes` scoped to a batch's own changed files (`git diff --name-only origin/master...HEAD`)
+  surfaces the `suggestion`-level hits the build doesn't. A violation the curated rules catch gets fixed for
+  real, not suppressed — the one exception is a site where the analyzer's ownership/intent-tracking
+  genuinely cannot see the truth, suppressed with a member-level
+  `[SuppressMessage("<Category>", "<ID>", Justification = "ADR-0003: <one-line reason>")]` on the smallest
+  containing member and listed in ADR-0003's suppression ledger — never a `.editorconfig` per-file severity
+  override, and never a `#pragma` in the `.cs` file: `git grep -n "pragma warning" -- 'src/*.cs'` stays
+  empty, and `git grep -n "SuppressMessage" -- 'src/*.cs'` lists only ledger entries. A "confirmed false
+  positive" in code the batch touches is not by itself a reason to suppress: find the real fix (a different
+  API, an ownership-transfer pattern the analyzer can see, …) instead
+  (`SourceHygieneTests.NoRawDiagnosticCodeLiteralsOutsideTheirConstants` is the actual enforced gate for
+  diagnostic/kind-code literals specifically).
 - Never open images or windows on the owner's desktop: no `eog`/`xdg-open`/viewers, never `DISPLAY=:1`. To inspect a
   snapshot, use the Read tool on the PNG.
 - Never run the whole `Editor.UITests` project under Xvfb blindly (OOM). Headless UITests need no Xvfb; if a

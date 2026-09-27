@@ -112,32 +112,25 @@ public sealed class ProjectPersistence
         string projectDirectory = GetDirectoryOrThrow(snapshot.ProjectFilePath);
 
         Serializers current = serializers;
-        IDocumentStore store = createStore(projectDirectory);
-        try
-        {
-            var issues = new List<DocumentIssue>();
-            var classes = new List<ClassGraph>();
+        using IDocumentStore store = createStore(projectDirectory);
+        var issues = new List<DocumentIssue>();
+        var classes = new List<ClassGraph>();
 
-            foreach (string graphFilePath in snapshot.GraphFiles)
+        foreach (string graphFilePath in snapshot.GraphFiles)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            DocumentId id = FileSystemDocumentStore.ToDocumentId(projectDirectory, graphFilePath);
+            ClassGraph? cls = await TryLoadClassAsync(current, store, id, project, issues, cancellationToken).ConfigureAwait(false);
+            if (cls is not null)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-
-                DocumentId id = FileSystemDocumentStore.ToDocumentId(projectDirectory, graphFilePath);
-                ClassGraph? cls = await TryLoadClassAsync(current, store, id, project, issues, cancellationToken).ConfigureAwait(false);
-                if (cls is not null)
-                {
-                    cls.LoadedGraphFilePath = graphFilePath;
-                    classes.Add(cls);
-                }
+                cls.LoadedGraphFilePath = graphFilePath;
+                classes.Add(cls);
             }
+        }
 
-            project.Classes.ReplaceRange(classes);
-            return new ProjectLoadResult(project, snapshot, issues);
-        }
-        finally
-        {
-            store.Dispose();
-        }
+        project.Classes.ReplaceRange(classes);
+        return new ProjectLoadResult(project, snapshot, issues);
     }
 
     private async Task<ClassGraph?> TryLoadClassAsync(Serializers current, IDocumentStore store, DocumentId id, Project project,
@@ -192,52 +185,45 @@ public sealed class ProjectPersistence
 
         string projectDirectory = GetDirectoryOrThrow(project.Path);
         Serializers current = serializers;
-        IDocumentStore store = createStore(projectDirectory);
-        try
+        using IDocumentStore store = createStore(projectDirectory);
+        var written = new List<string>();
+
+        foreach (ClassGraph cls in project.Classes)
         {
-            var written = new List<string>();
-
-            foreach (ClassGraph cls in project.Classes)
+            if (!cls.IsDirty)
             {
-                if (!cls.IsDirty)
-                {
-                    continue;
-                }
-
-                cancellationToken.ThrowIfCancellationRequested();
-
-                cls.EnsureUniqueMemberIds();
-
-                string graphPath = project.GetGraphFilePath(cls);
-                ClassDocument document = current.Mapper.ToDocument(cls);
-                byte[] graphBytes = await RenderAsync(
-                    (stream, ct) => current.Formats.Default.WriteClassAsync(document, stream, ct), cancellationToken).ConfigureAwait(false);
-
-                DocumentId graphId = FileSystemDocumentStore.ToDocumentId(projectDirectory, graphPath);
-                if (await WriteIfDifferentAsync(store, graphId, graphBytes, cancellationToken).ConfigureAwait(false))
-                {
-                    written.Add(graphPath);
-                }
-
-                cls.LoadedGraphFilePath = graphPath;
-
-                string generatedPath = ToGeneratedPath(graphPath);
-                byte[] generatedBytes = Encoding.UTF8.GetBytes(renderGenerated(cls));
-                DocumentId generatedId = FileSystemDocumentStore.ToDocumentId(projectDirectory, generatedPath);
-                if (await WriteIfDifferentAsync(store, generatedId, generatedBytes, cancellationToken).ConfigureAwait(false))
-                {
-                    written.Add(generatedPath);
-                }
-
-                cls.MarkClean();
+                continue;
             }
 
-            return new ProjectSaveResult(written);
+            cancellationToken.ThrowIfCancellationRequested();
+
+            cls.EnsureUniqueMemberIds();
+
+            string graphPath = project.GetGraphFilePath(cls);
+            ClassDocument document = current.Mapper.ToDocument(cls);
+            byte[] graphBytes = await RenderAsync(
+                (stream, ct) => current.Formats.Default.WriteClassAsync(document, stream, ct), cancellationToken).ConfigureAwait(false);
+
+            DocumentId graphId = FileSystemDocumentStore.ToDocumentId(projectDirectory, graphPath);
+            if (await WriteIfDifferentAsync(store, graphId, graphBytes, cancellationToken).ConfigureAwait(false))
+            {
+                written.Add(graphPath);
+            }
+
+            cls.LoadedGraphFilePath = graphPath;
+
+            string generatedPath = ToGeneratedPath(graphPath);
+            byte[] generatedBytes = Encoding.UTF8.GetBytes(renderGenerated(cls));
+            DocumentId generatedId = FileSystemDocumentStore.ToDocumentId(projectDirectory, generatedPath);
+            if (await WriteIfDifferentAsync(store, generatedId, generatedBytes, cancellationToken).ConfigureAwait(false))
+            {
+                written.Add(generatedPath);
+            }
+
+            cls.MarkClean();
         }
-        finally
-        {
-            store.Dispose();
-        }
+
+        return new ProjectSaveResult(written);
     }
 
     /// <summary>
@@ -268,28 +254,21 @@ public sealed class ProjectPersistence
         byte[] bytes = await File.ReadAllBytesAsync(sourceGraphPath, cancellationToken).ConfigureAwait(false);
 
         Serializers current = serializers;
-        IDocumentStore store = createStore(projectDirectory);
-        try
-        {
-            DocumentId id = FileSystemDocumentStore.ToDocumentId(projectDirectory, targetPath);
-            await store.WriteAsync(id, (stream, ct) => stream.WriteAsync(bytes, ct), cancellationToken).ConfigureAwait(false);
+        using IDocumentStore store = createStore(projectDirectory);
+        DocumentId id = FileSystemDocumentStore.ToDocumentId(projectDirectory, targetPath);
+        await store.WriteAsync(id, (stream, ct) => stream.WriteAsync(bytes, ct), cancellationToken).ConfigureAwait(false);
 
-            ClassDocument document;
-            await using (Stream input = await store.OpenReadAsync(id, cancellationToken).ConfigureAwait(false))
-            {
-                document = await current.Formats.Default.ReadClassAsync(input, id, cancellationToken).ConfigureAwait(false);
-            }
-
-            var issues = new List<DocumentIssue>();
-            ClassGraph cls = current.Mapper.FromDocument(document, project, issues, id);
-            cls.LoadedGraphFilePath = targetPath;
-            project.Classes.Add(cls);
-            return cls;
-        }
-        finally
+        ClassDocument document;
+        await using (Stream input = await store.OpenReadAsync(id, cancellationToken).ConfigureAwait(false))
         {
-            store.Dispose();
+            document = await current.Formats.Default.ReadClassAsync(input, id, cancellationToken).ConfigureAwait(false);
         }
+
+        var issues = new List<DocumentIssue>();
+        ClassGraph cls = current.Mapper.FromDocument(document, project, issues, id);
+        cls.LoadedGraphFilePath = targetPath;
+        project.Classes.Add(cls);
+        return cls;
     }
 
     private static async ValueTask<byte[]> RenderAsync(Func<Stream, CancellationToken, ValueTask> write, CancellationToken cancellationToken)

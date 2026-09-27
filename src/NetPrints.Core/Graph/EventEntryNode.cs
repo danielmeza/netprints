@@ -1,6 +1,5 @@
 #nullable enable
 using System;
-using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Core;
 
@@ -152,7 +151,7 @@ namespace NetPrints.Graph
         {
             if (OutputDataPins.Count > 0)
             {
-                NodeOutputDataPin odpToRemove = OutputDataPins.Last();
+                NodeOutputDataPin odpToRemove = OutputDataPins[OutputDataPins.Count - 1];
                 GraphUtil.DisconnectOutputDataPin(odpToRemove);
                 OutputDataPins.Remove(odpToRemove);
 
@@ -160,7 +159,7 @@ namespace NetPrints.Graph
                 // by the base signature); only remove one if this node actually has one to spare.
                 if (InputTypePins.Count > 0)
                 {
-                    NodeInputTypePin itpToRemove = InputTypePins.Last();
+                    NodeInputTypePin itpToRemove = InputTypePins[InputTypePins.Count - 1];
                     GraphUtil.DisconnectInputTypePin(itpToRemove);
                     InputTypePins.Remove(itpToRemove);
                 }

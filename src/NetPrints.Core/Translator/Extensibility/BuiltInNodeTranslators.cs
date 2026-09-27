@@ -16,6 +16,9 @@ namespace NetPrints.Translator;
 /// </summary>
 internal static class BuiltInNodeTranslators
 {
+    /// <summary>A bare early-out, written by the control-flow nodes that skip the rest of their body.</summary>
+    private const string EarlyOutStatement = "return;";
+
     /// <summary>
     /// Builds the table behind <see cref="NodeTranslatorRegistry.BuiltIn"/>.
     /// </summary>
@@ -582,7 +585,7 @@ internal static class BuiltInNodeTranslators
             // Only write return if the return node is not the last node
             if (!BuiltInContext(context).IsFinalExecState(node.InputExecPins[0]))
             {
-                context.AppendLine("return;");
+                context.AppendLine(EarlyOutStatement);
             }
         }
         else if (node.InputDataPins.Count == 1)
@@ -590,7 +593,7 @@ internal static class BuiltInNodeTranslators
             // Special case for async functions returning Task (no return value)
             if (node.InputDataPins[0].PinType == TypeSpecifier.FromType<Task>())
             {
-                context.AppendLine("return;");
+                context.AppendLine(EarlyOutStatement);
             }
             else
             {
@@ -633,7 +636,7 @@ internal static class BuiltInNodeTranslators
         }
         else
         {
-            context.AppendLine("return;");
+            context.AppendLine(EarlyOutStatement);
         }
 
         context.AppendLine("}");
@@ -647,7 +650,7 @@ internal static class BuiltInNodeTranslators
         }
         else
         {
-            context.AppendLine("return;");
+            context.AppendLine(EarlyOutStatement);
         }
 
         context.AppendLine("}");
@@ -836,7 +839,8 @@ internal static class BuiltInNodeTranslators
         if (node.UsePredefinedSize)
         {
             // The size replaces the trailing "[]" of the array type's name.
-            context.Append(arrayTypeName[..^2]);
+            const int ArraySuffixLength = 2;
+            context.Append(arrayTypeName[..^ArraySuffixLength]);
             context.AppendLine($"[{context.GetPinIncomingValue(node.SizePin)}];");
         }
         else

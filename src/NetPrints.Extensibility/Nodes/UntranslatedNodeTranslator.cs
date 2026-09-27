@@ -24,6 +24,6 @@ internal sealed class UntranslatedNodeTranslator : INodeTranslator
             graphKey = null;
         }
 
-        throw new TranslationException("NPT006", $"No translator for {node.GetType()}", graphKey, node.Id);
+        throw new TranslationException(TranslationDiagnosticCodes.NoTranslatorForNode, $"No translator for {node.GetType()}", graphKey, node.Id);
     }
 }

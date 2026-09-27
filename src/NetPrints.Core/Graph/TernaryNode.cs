@@ -10,6 +10,9 @@ namespace NetPrints.Graph
     /// </summary>
     public class TernaryNode : ExecNode
     {
+        /// <summary>Index of <see cref="ConditionPin"/> among <see cref="Node.InputDataPins"/>.</summary>
+        private const int ConditionPinIndex = 2;
+
         /// <summary>
         /// Always <see langword="true"/>: selecting between two already-computed values has no side
         /// effects worth sequencing.
@@ -40,7 +43,7 @@ namespace NetPrints.Graph
         /// </summary>
         public NodeInputDataPin ConditionPin
         {
-            get { return InputDataPins[2]; }
+            get { return InputDataPins[ConditionPinIndex]; }
         }
 
         /// <summary>

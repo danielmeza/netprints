@@ -19,6 +19,9 @@ namespace NetPrints.Editor.Hosting.Automation;
 /// </summary>
 public sealed class AutomationTree : IDisposable
 {
+    /// <summary>Sub-pixel slack allowed before measured text is considered truncated.</summary>
+    private const double TruncationTolerance = 0.5;
+
     private readonly List<Window> windows = [];
     private readonly Dictionary<Window, string> keys = [];
     private readonly IDisposable openedHandler;
@@ -269,7 +272,7 @@ public sealed class AutomationTree : IDisposable
             FontStretch = textBlock.FontStretch,
         };
         natural.Measure(Size.Infinity);
-        return natural.DesiredSize.Width > textBlock.Bounds.Width + 0.5;
+        return natural.DesiredSize.Width > textBlock.Bounds.Width + TruncationTolerance;
     }
 
     private static string Invariant(double value) => value.ToString("0.###", CultureInfo.InvariantCulture);

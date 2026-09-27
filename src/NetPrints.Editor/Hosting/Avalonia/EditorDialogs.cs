@@ -45,17 +45,8 @@ public sealed class EditorDialogs(Func<Window?> owner) : IEditorDialogs
         ShowAsync<object>(new IssuesDialog(title, issues));
 
     /// <inheritdoc/>
-    public async Task ShowReferencesAsync(ReferenceListVM references)
-    {
-        try
-        {
-            await ShowAsync<object>(new ReferencesDialog { DataContext = references });
-        }
-        finally
-        {
-            references.Dispose();
-        }
-    }
+    public Task ShowReferencesAsync(ReferenceListVM references) =>
+        ShowAsync<object>(new ReferencesDialog { DataContext = references });
 }
 
 /// <summary>Result of a dialog shown without an owner.</summary>

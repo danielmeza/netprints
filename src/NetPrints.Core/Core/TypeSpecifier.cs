@@ -217,7 +217,7 @@ namespace NetPrints.Core
                     return true;
                 }
             }
-            else if (obj is GenericType genType)
+            else if (obj is GenericType)
             {
                 // TODO: Check constraints
                 return true;

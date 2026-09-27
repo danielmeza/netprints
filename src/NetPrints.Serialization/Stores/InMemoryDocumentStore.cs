@@ -48,7 +48,8 @@ public sealed class InMemoryDocumentStore : IDocumentStore
             throw new DocumentNotFoundException(id);
         }
 
-        return ValueTask.FromResult<Stream>(new MemoryStream(content, writable: false));
+        Stream stream = new MemoryStream(content, writable: false);
+        return new ValueTask<Stream>(stream);
     }
 
     /// <inheritdoc/>

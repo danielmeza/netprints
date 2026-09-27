@@ -20,6 +20,9 @@ namespace NetPrints.Translator
         private const string JumpStackVarName = "jumpStack";
         private const string JumpStackType = "System.Collections.Generic.Stack<int>";
 
+        // Placeholder replaced by TranslateJumpStack's declaration, once it is known to be needed.
+        private const string JumpStackPlaceholder = "%JUMPSTACKPLACEHOLDER%";
+
         private readonly Dictionary<NodeOutputDataPin, string> variableNames = new Dictionary<NodeOutputDataPin, string>();
         private readonly Dictionary<Node, List<int>> nodeStateIds = new Dictionary<Node, List<int>>();
         private int nextStateId = 0;
@@ -199,7 +202,8 @@ namespace NetPrints.Translator
         {
             foreach (Node node in nodes)
             {
-                var v = GetOrCreatePinNames(node.OutputDataPins);
+                // Result discarded: called only to assign each output pin a variable name.
+                GetOrCreatePinNames(node.OutputDataPins);
             }
         }
 
@@ -254,38 +258,38 @@ namespace NetPrints.Translator
 
                 if (methodGraph.Modifiers.HasFlag(MethodModifiers.Static))
                 {
-                    WriteModifier("static");
+                    WriteModifier(CSharpKeywords.Static);
                 }
 
                 if (methodGraph.Modifiers.HasFlag(MethodModifiers.Abstract))
                 {
-                    WriteModifier("abstract");
+                    WriteModifier(CSharpKeywords.Abstract);
                 }
 
                 if (methodGraph.Modifiers.HasFlag(MethodModifiers.Sealed))
                 {
-                    WriteModifier("sealed");
+                    WriteModifier(CSharpKeywords.Sealed);
                 }
 
                 if (methodGraph.Modifiers.HasFlag(MethodModifiers.Override))
                 {
-                    WriteModifier("override");
+                    WriteModifier(CSharpKeywords.Override);
                 }
                 else if (methodGraph.Modifiers.HasFlag(MethodModifiers.Virtual))
                 {
-                    WriteModifier("virtual");
+                    WriteModifier(CSharpKeywords.Virtual);
                 }
             }
 
             // Extra modifiers from member emitters; "partial" goes last, directly before the return type.
-            foreach (string modifier in extraModifiers.Where(modifier => modifier != "partial" && !written.Contains(modifier)).OrderBy(modifier => modifier, StringComparer.Ordinal))
+            foreach (string modifier in extraModifiers.Where(modifier => modifier != CSharpKeywords.Partial && !written.Contains(modifier)).OrderBy(modifier => modifier, StringComparer.Ordinal))
             {
                 WriteModifier(modifier);
             }
 
-            if (extraModifiers.Contains("partial"))
+            if (extraModifiers.Contains(CSharpKeywords.Partial))
             {
-                WriteModifier("partial");
+                WriteModifier(CSharpKeywords.Partial);
             }
 
             if (methodGraph != null)
@@ -398,7 +402,7 @@ namespace NetPrints.Translator
 
             // Write a placeholder for the jump stack declaration
             // Replaced later
-            builder.Append("%JUMPSTACKPLACEHOLDER%");
+            builder.Append(JumpStackPlaceholder);
 
             // Write the variable declarations
             TranslateVariables();
@@ -430,11 +434,11 @@ namespace NetPrints.Translator
             {
                 TranslateJumpStack();
 
-                builder.Replace("%JUMPSTACKPLACEHOLDER%", $"{JumpStackType} {JumpStackVarName} = new {JumpStackType}();{Environment.NewLine}");
+                builder.Replace(JumpStackPlaceholder, $"{JumpStackType} {JumpStackVarName} = new {JumpStackType}();{Environment.NewLine}");
             }
             else
             {
-                builder.Replace("%JUMPSTACKPLACEHOLDER%", "");
+                builder.Replace(JumpStackPlaceholder, "");
             }
 
             builder.AppendLine("}"); // Method end
@@ -497,7 +501,7 @@ namespace NetPrints.Translator
             Node? crossEntryDependency = nodes.FirstOrDefault(node => !node.IsPure && !ownExecNodes.Contains(node));
             if (crossEntryDependency is not null)
             {
-                throw new TranslationException("NPT001",
+                throw new TranslationException(TranslationDiagnosticCodes.CrossEntryDependency,
                     $"Event '{entry.EventName}' depends on node '{crossEntryDependency}', which belongs to a different event entry of the same graph.",
                     TranslatorUtil.TryGetGraphKey(graph), crossEntryDependency.Id);
             }
@@ -516,7 +520,7 @@ namespace NetPrints.Translator
             builder.AppendLine("{"); // Method start
 
             // Write a placeholder for the jump stack declaration
-            builder.Append("%JUMPSTACKPLACEHOLDER%");
+            builder.Append(JumpStackPlaceholder);
 
             // Write the variable declarations
             TranslateVariables();
@@ -548,11 +552,11 @@ namespace NetPrints.Translator
             {
                 TranslateJumpStack();
 
-                builder.Replace("%JUMPSTACKPLACEHOLDER%", $"{JumpStackType} {JumpStackVarName} = new {JumpStackType}();{Environment.NewLine}");
+                builder.Replace(JumpStackPlaceholder, $"{JumpStackType} {JumpStackVarName} = new {JumpStackType}();{Environment.NewLine}");
             }
             else
             {
-                builder.Replace("%JUMPSTACKPLACEHOLDER%", "");
+                builder.Replace(JumpStackPlaceholder, "");
             }
 
             builder.AppendLine("}"); // Method end
@@ -582,23 +586,23 @@ namespace NetPrints.Translator
 
             if (entry.Modifiers.HasFlag(MethodModifiers.Static))
             {
-                WriteModifier("static");
+                WriteModifier(CSharpKeywords.Static);
             }
 
             if (entry.Modifiers.HasFlag(MethodModifiers.Override))
             {
-                WriteModifier("override");
+                WriteModifier(CSharpKeywords.Override);
             }
 
             // Extra modifiers from member emitters; "partial" goes last, directly before the return type.
-            foreach (string modifier in extraModifiers.Where(modifier => modifier != "partial" && !written.Contains(modifier)).OrderBy(modifier => modifier, StringComparer.Ordinal))
+            foreach (string modifier in extraModifiers.Where(modifier => modifier != CSharpKeywords.Partial && !written.Contains(modifier)).OrderBy(modifier => modifier, StringComparer.Ordinal))
             {
                 WriteModifier(modifier);
             }
 
-            if (extraModifiers.Contains("partial"))
+            if (extraModifiers.Contains(CSharpKeywords.Partial))
             {
-                WriteModifier("partial");
+                WriteModifier(CSharpKeywords.Partial);
             }
 
             builder.Append(isAsync ? "System.Threading.Tasks.Task " : "void ");
@@ -632,7 +636,7 @@ namespace NetPrints.Translator
         private void TranslateNode(Node node, int pinIndex)
         {
             INodeTranslator translator = environment.Nodes.Find(node.GetType())
-                ?? throw new TranslationException("NPT006", $"No translator for {node.GetType()}", TranslatorUtil.TryGetGraphKey(node.Graph), node.Id);
+                ?? throw new TranslationException(TranslationDiagnosticCodes.NoTranslatorForNode, $"No translator for {node.GetType()}", TranslatorUtil.TryGetGraphKey(node.Graph), node.Id);
 
             if (!(node is RerouteNode))
             {

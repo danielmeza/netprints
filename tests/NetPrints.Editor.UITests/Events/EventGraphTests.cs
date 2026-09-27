@@ -14,7 +14,7 @@ public class EventGraphTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task CreateOpenAddCustomEventViaSearchAndRemoveUndoable()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var events = session.ClassEditor.EventGraphs;
 
         // Create (US4): a new event graph named uniquely, added to the class; Create also opens it,

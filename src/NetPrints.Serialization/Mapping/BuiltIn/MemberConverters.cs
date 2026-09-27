@@ -27,7 +27,7 @@ internal static class MemberConverters
 
     private sealed class CallMethodNodeConverter : INodeDocumentConverter
     {
-        public string Kind => "callMethod";
+        public string Kind => BuiltInNodeKinds.CallMethod;
         public Type NodeType => typeof(CallMethodNode);
         public Type DocumentType => typeof(CallMethodNodeDocument);
 
@@ -49,7 +49,7 @@ internal static class MemberConverters
 
     private sealed class ConstructorNodeConverter : INodeDocumentConverter
     {
-        public string Kind => "constructor";
+        public string Kind => BuiltInNodeKinds.Constructor;
         public Type NodeType => typeof(ConstructorNode);
         public Type DocumentType => typeof(ConstructorNodeDocument);
 
@@ -68,7 +68,7 @@ internal static class MemberConverters
 
     private sealed class MakeDelegateNodeConverter : INodeDocumentConverter
     {
-        public string Kind => "makeDelegate";
+        public string Kind => BuiltInNodeKinds.MakeDelegate;
         public Type NodeType => typeof(MakeDelegateNode);
         public Type DocumentType => typeof(MakeDelegateNodeDocument);
 
@@ -87,7 +87,7 @@ internal static class MemberConverters
 
     private sealed class VariableGetterNodeConverter : INodeDocumentConverter
     {
-        public string Kind => "variableGetter";
+        public string Kind => BuiltInNodeKinds.VariableGetter;
         public Type NodeType => typeof(VariableGetterNode);
         public Type DocumentType => typeof(VariableGetterNodeDocument);
 
@@ -106,7 +106,7 @@ internal static class MemberConverters
 
     private sealed class VariableSetterNodeConverter : INodeDocumentConverter
     {
-        public string Kind => "variableSetter";
+        public string Kind => BuiltInNodeKinds.VariableSetter;
         public Type NodeType => typeof(VariableSetterNode);
         public Type DocumentType => typeof(VariableSetterNodeDocument);
 

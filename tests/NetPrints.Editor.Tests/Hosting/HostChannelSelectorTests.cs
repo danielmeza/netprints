@@ -25,9 +25,9 @@ public class HostChannelSelectorTests
         entries.ToDictionary(e => e.Key, e => e.Value, StringComparer.Ordinal);
 
     [Fact]
-    public void UnsetGivesTheNullChannel()
+    public async Task UnsetGivesTheNullChannel()
     {
-        using ExtensionRegistry registry = RegistryWith(new RecordingFactory());
+        await using ExtensionRegistry registry = RegistryWith(new RecordingFactory());
         var logger = new CollectingLogger();
 
         HostChannelSelection selection = HostChannelSelector.Select(registry, Environment(("NETPRINTS_HOST_OTHER", "1")), logger);
@@ -38,10 +38,10 @@ public class HostChannelSelectorTests
     }
 
     [Fact]
-    public void ANamedFactoryCreatesTheChannelFromTheHostVariables()
+    public async Task ANamedFactoryCreatesTheChannelFromTheHostVariables()
     {
         var factory = new RecordingFactory();
-        using ExtensionRegistry registry = RegistryWith(factory);
+        await using ExtensionRegistry registry = RegistryWith(factory);
 
         HostChannelSelection selection = HostChannelSelector.Select(
             registry, Environment(("NETPRINTS_HOST_CHANNEL", FactoryId), ("NETPRINTS_HOST_PIPE", "p1"), ("PATH", "/bin")), new CollectingLogger());
@@ -54,9 +54,9 @@ public class HostChannelSelectorTests
     }
 
     [Fact]
-    public void AnUnknownFactoryFallsBackToTheNullChannelWithAnErrorAndLog1021()
+    public async Task AnUnknownFactoryFallsBackToTheNullChannelWithAnErrorAndLog1021()
     {
-        using ExtensionRegistry registry = RegistryWith(new RecordingFactory());
+        await using ExtensionRegistry registry = RegistryWith(new RecordingFactory());
         var logger = new CollectingLogger();
 
         HostChannelSelection selection = HostChannelSelector.Select(registry, Environment(("NETPRINTS_HOST_CHANNEL", "nope")), logger);
@@ -67,9 +67,9 @@ public class HostChannelSelectorTests
     }
 
     [Fact]
-    public void AFactoryThatThrowsFallsBackToTheNullChannelWithAnErrorAndLog1023()
+    public async Task AFactoryThatThrowsFallsBackToTheNullChannelWithAnErrorAndLog1023()
     {
-        using ExtensionRegistry registry = RegistryWith(new RecordingFactory { Throw = true });
+        await using ExtensionRegistry registry = RegistryWith(new RecordingFactory { Throw = true });
         var logger = new CollectingLogger();
 
         HostChannelSelection selection = HostChannelSelector.Select(registry, Environment(("NETPRINTS_HOST_CHANNEL", FactoryId)), logger);

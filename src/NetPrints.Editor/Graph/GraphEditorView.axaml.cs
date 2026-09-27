@@ -19,6 +19,7 @@ namespace NetPrints.Editor.Graph;
 public partial class GraphEditorView : UserControl
 {
     private const double ClickThreshold = 4;
+    private const int DoubleClickCount = 2;
     private Point? rightPressPosition;
     private object? backButtonTarget;
 
@@ -129,7 +130,7 @@ public partial class GraphEditorView : UserControl
             return;
         }
 
-        if (properties.IsLeftButtonPressed && e.ClickCount == 2 && FindContext<ConnectionVM>(e.Source) is { } doubleClicked)
+        if (properties.IsLeftButtonPressed && e.ClickCount == DoubleClickCount && FindContext<ConnectionVM>(e.Source) is { } doubleClicked)
         {
             // Double click on a cable inserts a reroute node midway (PAR-48).
             doubleClicked.InsertReroute();

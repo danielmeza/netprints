@@ -24,10 +24,23 @@ namespace NetPrints.Editor.Hosting;
 /// <see cref="EditorComposition"/> wires up a <see cref="NoSdkProjectSystem"/> instead of
 /// <c>MsBuildProjectSystem</c> (project-system.md §4, PS-T13).
 /// </param>
+/// <param name="DisposeOwnedResources">
+/// Disposes <paramref name="Extensions"/> and <paramref name="HostChannel"/>. Built by the host at
+/// the same call site that created them (Desktop's <c>Program.cs</c>), so IDisposableAnalyzers sees
+/// the disposal next to the <c>new</c> expression instead of flagging a disposed constructor
+/// parameter (IDISP007); headless tests that own those instances themselves pass a no-op.
+/// </param>
 public sealed record EditorHostServices(
     ILoggerFactory LoggerFactory,
     IExtensionHost Extensions,
     ISettingsStore Settings,
     IHostChannel HostChannel,
     string? HostChannelError,
-    bool MsBuildAvailable);
+    bool MsBuildAvailable,
+    Func<ValueTask> DisposeOwnedResources) : IAsyncDisposable
+{
+    /// <summary>
+    /// Disposes the extensions and the host channel this instance owns, via <see cref="DisposeOwnedResources"/>.
+    /// </summary>
+    public async ValueTask DisposeAsync() => await DisposeOwnedResources().ConfigureAwait(false);
+}

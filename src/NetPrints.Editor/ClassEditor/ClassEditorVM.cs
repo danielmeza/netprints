@@ -1,5 +1,6 @@
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -56,6 +57,12 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     private const int MaxOutputChars = 1_000_000;
 
     private const string OutputTruncatedMarker = "… earlier output truncated …";
+
+    /// <summary>Grid cells from the origin to a newly created member's entry node.</summary>
+    private const double NewMemberEntryGridOffset = 4;
+
+    /// <summary>Grid cells from a newly created method's entry node to its return node.</summary>
+    private const double NewMethodReturnGridOffset = 15;
 
     private readonly Queue<string> outputLines = new();
     private readonly Subject<string> outputReceived = new();
@@ -307,6 +314,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     partial void OnOpenedGraphChanged(NodeGraphVM? oldValue, NodeGraphVM? newValue) => oldValue?.Dispose();
 
     /// <summary>Opens a graph in the canvas.</summary>
+    [SuppressMessage("IDisposableAnalyzers.Correctness", "IDISP003", Justification = "ADR-0003: OnOpenedGraphChanged (the generated property hook) disposes the old value.")]
     public void OpenGraph(NodeGraph graph) => OpenedGraph = new NodeGraphVM(graph, this);
 
     void IRecipient<OpenGraphMessage>.Receive(OpenGraphMessage message) => OpenGraph(message.Graph);
@@ -354,6 +362,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         || (graph is EventGraph eventGraph && Class.EventGraphs.Contains(eventGraph))
         || Class.Variables.Any(v => v.GetterMethod == graph || v.SetterMethod == graph || v.TypeGraph == graph);
 
+    [SuppressMessage("IDisposableAnalyzers.Correctness", "IDISP003", Justification = "ADR-0003: OnOpenedGraphChanged (the generated property hook) disposes the old value.")]
     private void DropDetachedState()
     {
         if (SelectedVariable is not null && !Class.Variables.Contains(SelectedVariable.Variable))
@@ -649,9 +658,9 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
             Class = Class,
         };
 
-        method.EntryNode.PositionX = cell * 4;
-        method.EntryNode.PositionY = cell * 4;
-        method.MainReturnNode.PositionX = method.EntryNode.PositionX + cell * 15;
+        method.EntryNode.PositionX = cell * NewMemberEntryGridOffset;
+        method.EntryNode.PositionY = cell * NewMemberEntryGridOffset;
+        method.MainReturnNode.PositionX = method.EntryNode.PositionX + cell * NewMethodReturnGridOffset;
         method.MainReturnNode.PositionY = method.EntryNode.PositionY;
         GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, method.MainReturnNode.ReturnPin);
 
@@ -670,8 +679,8 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
             Visibility = MemberVisibility.Public,
         };
 
-        constructor.EntryNode.PositionX = cell * 4;
-        constructor.EntryNode.PositionY = cell * 4;
+        constructor.EntryNode.PositionX = cell * NewMemberEntryGridOffset;
+        constructor.EntryNode.PositionY = cell * NewMemberEntryGridOffset;
 
         Class.Constructors.Add(constructor);
         OpenGraph(constructor);
@@ -702,7 +711,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     [RelayCommand]
     private void CreateEventGraph()
     {
-        string name = NetPrintsUtil.GetUniqueName("EventGraph", Class.EventGraphs.Select(g => g.Name).ToList());
+        string name = NetPrintsUtil.GetUniqueName(EventGraph.DefaultNamePrefix, Class.EventGraphs.Select(g => g.Name).ToList());
         var eventGraph = new EventGraph(name) { Class = Class };
         UndoRedo.Do(EditorCommands.AddEventGraph(Class, eventGraph));
         OpenGraph(eventGraph);
@@ -793,6 +802,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     /// event, clears <see cref="OpenedGraph"/>, and disposes the method/constructor/variable
     /// collections (and, through them, every member view model).
     /// </summary>
+    [SuppressMessage("IDisposableAnalyzers.Correctness", "IDISP003", Justification = "ADR-0003: OnOpenedGraphChanged (the generated property hook) disposes the old value.")]
     public void Dispose()
     {
         generatedCodeLoop?.Dispose();

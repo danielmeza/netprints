@@ -71,4 +71,10 @@ internal static partial class Log
     /// <param name="id">The requested factory id.</param>
     [LoggerMessage(EventId = 1023, Level = LogLevel.Error, Message = "Host channel {Id} could not be created")]
     public static partial void HostChannelCreateFailed(ILogger logger, Exception exception, string id);
+
+    /// <summary>Logs 1024: disposing services on shutdown threw; the process shuts down anyway.</summary>
+    /// <param name="logger">Logger to write to.</param>
+    /// <param name="exception">The exception disposal threw.</param>
+    [LoggerMessage(EventId = 1024, Level = LogLevel.Error, Message = "Shutdown cleanup failed; exiting anyway")]
+    public static partial void ShutdownCleanupFailed(ILogger logger, Exception exception);
 }

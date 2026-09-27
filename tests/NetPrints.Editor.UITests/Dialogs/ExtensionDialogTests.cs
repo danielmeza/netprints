@@ -19,7 +19,7 @@ public class ExtensionDialogTests
         try
         {
             File.WriteAllText(Path.Combine(folder, ExtensionManifest.FileName), "{ this is not a manifest");
-            using var app = HeadlessApp.Start([folder]);
+            await using var app = HeadlessApp.Start([folder]);
 
             await app.Composition.StartAsync([]);
 
@@ -43,7 +43,7 @@ public class ExtensionDialogTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task NoFailuresShowNoDialog()
     {
-        using var app = HeadlessApp.Start();
+        await using var app = HeadlessApp.Start();
 
         await app.Composition.StartAsync([]);
 

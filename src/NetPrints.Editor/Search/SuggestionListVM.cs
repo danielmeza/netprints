@@ -19,6 +19,11 @@ namespace NetPrints.Editor.Search;
 /// </summary>
 public sealed partial class SuggestionListVM : ObservableObject, IDisposable
 {
+    private const string NetPrintsCategory = "NetPrints";
+    private const string ThisMethodsCategory = "This Methods";
+    private const string ThisVariablesCategory = "This Variables";
+    private const string StaticMethodsCategory = "Static Methods";
+
     private readonly NodeGraphVM graph;
     private readonly SourceList<SuggestionItem> source = new();
     private readonly Subject<string> textChanges = new();
@@ -239,7 +244,7 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
             case NodeOutputDataPin odp when odp.PinType.Value is TypeSpecifier pinType:
                 if (classType is not null)
                 {
-                    Add("NetPrints", [new MakeDelegateTypeInfo(pinType, classType)]);
+                    Add(NetPrintsCategory, [new MakeDelegateTypeInfo(pinType, classType)]);
                 }
 
                 Add("Pin Variables", provider.GetVariables(VariableQuery().WithType(pinType).WithStatic(false)));
@@ -247,30 +252,30 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
 
                 foreach (var baseType in baseTypes)
                 {
-                    Add("This Methods", provider.GetMethods(MethodQuery().WithStatic(false).WithArgumentType(pinType).WithType(baseType)));
+                    Add(ThisMethodsCategory, provider.GetMethods(MethodQuery().WithStatic(false).WithArgumentType(pinType).WithType(baseType)));
                 }
 
-                Add("Static Methods", provider.GetMethods(MethodQuery().WithArgumentType(pinType).WithStatic(true)));
+                Add(StaticMethodsCategory, provider.GetMethods(MethodQuery().WithArgumentType(pinType).WithStatic(true)));
                 break;
 
             case NodeInputDataPin idp when idp.PinType.Value is TypeSpecifier pinType:
                 foreach (var baseType in baseTypes)
                 {
-                    Add("This Variables", provider.GetVariables(VariableQuery().WithType(baseType).WithVariableType(pinType, true)));
+                    Add(ThisVariablesCategory, provider.GetVariables(VariableQuery().WithType(baseType).WithVariableType(pinType, true)));
                 }
 
-                Add("Static Methods", provider.GetMethods(MethodQuery().WithStatic(true).WithReturnType(pinType)));
+                Add(StaticMethodsCategory, provider.GetMethods(MethodQuery().WithStatic(true).WithReturnType(pinType)));
                 break;
 
             case NodeOutputExecPin or NodeInputExecPin:
-                Add("NetPrints", BuiltIns());
+                Add(NetPrintsCategory, BuiltIns());
 
                 foreach (var baseType in baseTypes)
                 {
-                    Add("This Methods", provider.GetMethods(MethodQuery().WithType(baseType).WithStatic(false)));
+                    Add(ThisMethodsCategory, provider.GetMethods(MethodQuery().WithType(baseType).WithStatic(false)));
                 }
 
-                Add("Static Methods", provider.GetMethods(MethodQuery().WithStatic(true)));
+                Add(StaticMethodsCategory, provider.GetMethods(MethodQuery().WithStatic(true)));
                 break;
 
             case NodeInputTypePin:
@@ -293,17 +298,17 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
                 break;
 
             case null:
-                Add("NetPrints", BuiltIns());
+                Add(NetPrintsCategory, BuiltIns());
 
                 if (nodeGraph is ExecutionGraph)
                 {
                     foreach (var baseType in baseTypes)
                     {
-                        Add("This Variables", provider.GetVariables(VariableQuery().WithType(baseType).WithStatic(false)));
-                        Add("This Methods", provider.GetMethods(MethodQuery().WithType(baseType).WithStatic(false)));
+                        Add(ThisVariablesCategory, provider.GetVariables(VariableQuery().WithType(baseType).WithStatic(false)));
+                        Add(ThisMethodsCategory, provider.GetMethods(MethodQuery().WithType(baseType).WithStatic(false)));
                     }
 
-                    Add("Static Methods", provider.GetMethods(MethodQuery().WithStatic(true)));
+                    Add(StaticMethodsCategory, provider.GetMethods(MethodQuery().WithStatic(true)));
                     Add("Static Variables", provider.GetVariables(VariableQuery().WithStatic(true)));
                 }
                 else if (nodeGraph is ClassGraph)
@@ -315,12 +320,12 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
                     // US4: an event graph starts empty; "Custom Event" and "Override <method>"
                     // create its entries (EventEntryNode) the same way the class editor's own
                     // lists create methods and constructors.
-                    Add("NetPrints", [new CustomEventSuggestion()]);
+                    Add(NetPrintsCategory, [new CustomEventSuggestion()]);
 
                     var alreadyNamed = new HashSet<string>(cls.Methods.Select(m => m.Name)
                         .Concat(cls.EventGraphs.SelectMany(g => g.Entries.Select(e => e.EventName))));
 
-                    Add("NetPrints", baseTypes.SelectMany(provider.GetOverridableMethodsForType)
+                    Add(NetPrintsCategory, baseTypes.SelectMany(provider.GetOverridableMethodsForType)
                         .Where(m => !alreadyNamed.Contains(m.Name))
                         .Select(m => (object)new OverrideEventSuggestion(m)));
                 }

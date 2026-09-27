@@ -49,7 +49,7 @@ namespace NetPrintsCLI
                 return 0;
             }
 
-            return await BuildAsync(path, options.Run, loggerFactory);
+            return await BuildAsync(path, options.Run, loggerFactory).ConfigureAwait(false);
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -61,7 +61,7 @@ namespace NetPrintsCLI
             var projects = new MsBuildProjectSystem(new ProjectSystemOptions([], "1.0.0-dev"), processes,
                 loggerFactory.CreateLogger<MsBuildProjectSystem>());
 
-            BuildResult result = await projects.BuildAsync(path, CancellationToken.None);
+            BuildResult result = await projects.BuildAsync(path, CancellationToken.None).ConfigureAwait(false);
 
             if (!result.Success)
             {
@@ -81,18 +81,17 @@ namespace NetPrintsCLI
             if (run)
             {
                 Console.WriteLine("Running...");
-                ProcessResult output = await processes.RunAsync(projects.GetRunCommand(path), CancellationToken.None);
-                Console.Write(output.StandardOutput);
-                Console.Error.Write(output.StandardError);
+                ProcessResult output = await processes.RunAsync(projects.GetRunCommand(path), CancellationToken.None).ConfigureAwait(false);
+                await Console.Out.WriteAsync(output.StandardOutput).ConfigureAwait(false);
+                await Console.Error.WriteAsync(output.StandardError).ConfigureAwait(false);
             }
 
             return 1;
         }
 
-        private static int Main(string[] args)
-        {
-            return Parser.Default.ParseArguments<CompileOptions>(args)
-                .MapResult(options => CompileAsync(options).GetAwaiter().GetResult(), errors => BadArgumentsExitCode);
-        }
+        private static async Task<int> Main(string[] args) =>
+            await Parser.Default.ParseArguments<CompileOptions>(args)
+                .MapResult(CompileAsync, _ => Task.FromResult(BadArgumentsExitCode))
+                .ConfigureAwait(false);
     }
 }

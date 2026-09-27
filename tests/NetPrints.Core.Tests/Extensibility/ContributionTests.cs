@@ -26,7 +26,7 @@ using Xunit;
 namespace NetPrints.Tests.Extensibility;
 
 /// <summary>What the real test extension contributes, end to end: EX-T02, EX-T03, EX-T07 and DF-T17.</summary>
-public sealed class ContributionTests : IDisposable
+public sealed class ContributionTests : IAsyncLifetime
 {
     private static readonly ExtensionLoaderOptions WithTestExtension =
         new([], [TestExtensionLocation.Folder], [BuiltInExtension.InProcessEntry]);
@@ -35,10 +35,12 @@ public sealed class ContributionTests : IDisposable
     private readonly ExtensionRegistry registry = ExtensionTestSupport.Load(WithTestExtension);
     private readonly ExtensionRegistry builtIn = ExtensionTestSupport.Load(ExtensionLoaderOptions.BuiltInOnly);
 
-    public void Dispose()
+    public ValueTask InitializeAsync() => ValueTask.CompletedTask;
+
+    public async ValueTask DisposeAsync()
     {
-        registry.Dispose();
-        builtIn.Dispose();
+        await registry.DisposeAsync();
+        await builtIn.DisposeAsync();
         Directory.Delete(directory, recursive: true);
     }
 

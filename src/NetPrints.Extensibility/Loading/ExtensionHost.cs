@@ -6,7 +6,7 @@ namespace NetPrints.Extensibility.Loading;
 /// The <see cref="IExtensionHost"/>: loads the initial registry from its options and reloads it for a project,
 /// reusing the load contexts of folders it has already loaded.
 /// </summary>
-public sealed class ExtensionHost : IExtensionHost, IDisposable
+public sealed class ExtensionHost : IExtensionHost
 {
     private readonly object gate = new();
     private readonly ExtensionLoaderOptions baseOptions;
@@ -45,38 +45,36 @@ public sealed class ExtensionHost : IExtensionHost, IDisposable
     }
 
     /// <inheritdoc />
-    public ExtensionRegistry LoadForProject(IReadOnlyList<string> projectExtensionFolders, CancellationToken cancellationToken)
+    public async ValueTask<ExtensionRegistry> LoadForProjectAsync(IReadOnlyList<string> projectExtensionFolders, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(projectExtensionFolders);
 
         string[] folders = [.. projectExtensionFolders.Select(Path.GetFullPath).Distinct(StringComparer.Ordinal)];
-        ExtensionRegistry previous;
         lock (gate)
         {
             if (folders.SequenceEqual(projectFolders, StringComparer.Ordinal))
             {
                 return current;
             }
-
-            previous = current;
         }
 
         var options = baseOptions with { ExtensionFolders = [.. baseOptions.ExtensionFolders, .. folders] };
         ExtensionRegistry next = new ExtensionLoader(options, loggerFactory, cache).Load(cancellationToken);
 
+        ExtensionRegistry previous;
         lock (gate)
         {
             projectFolders = folders;
-            current = next;
+            previous = Interlocked.Exchange(ref current, next);
         }
 
         RegistryChanged?.Invoke(this, next);
-        previous.Dispose();
+        await previous.DisposeAsync().ConfigureAwait(false);
         return next;
     }
 
     /// <summary>
-    /// Disposes the registry in use.
+    /// Disposes the registry in use, awaiting its owned <see cref="IAsyncDisposable"/> contributions directly.
     /// </summary>
-    public void Dispose() => Current.Dispose();
+    public ValueTask DisposeAsync() => Current.DisposeAsync();
 }

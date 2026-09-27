@@ -94,7 +94,8 @@ internal sealed class NodeListConverter : JsonConverter<IReadOnlyList<NodeDocume
         string? kind = null;
         string? id = null;
 
-        foreach (JsonProperty property in element.EnumerateObject())
+        using JsonElement.ObjectEnumerator properties = element.EnumerateObject();
+        foreach (JsonProperty property in properties)
         {
             if (property.NameEquals("$kind"))
             {
@@ -129,7 +130,8 @@ internal sealed class NodeListConverter : JsonConverter<IReadOnlyList<NodeDocume
         writer.WriteString("$kind", unknown.Kind);
         writer.WriteString("id", unknown.Id);
 
-        foreach (JsonProperty property in unknown.Raw.EnumerateObject())
+        using JsonElement.ObjectEnumerator properties = unknown.Raw.EnumerateObject();
+        foreach (JsonProperty property in properties)
         {
             if (property.NameEquals("$kind") || property.NameEquals("id"))
             {

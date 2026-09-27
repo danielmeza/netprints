@@ -15,7 +15,7 @@ public class CanvasInteractionTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task DraggingPinToCompatiblePinConnects()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var method = (MethodGraph)session.GraphVM.Graph;
         session.GraphVM.Nodes.Single(n => n.Node == method.EntryNode).OutputExecPins.Single().DisconnectAll();
         await session.WaitForRenderedAsync(Token);
@@ -31,7 +31,7 @@ public class CanvasInteractionTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task DraggingPinToIncompatiblePinDoesNotConnect()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var method = (MethodGraph)session.GraphVM.Graph;
         session.GraphVM.Nodes.Single(n => n.Node == method.EntryNode).OutputExecPins.Single().DisconnectAll();
         await session.WaitForRenderedAsync(Token);
@@ -49,7 +49,7 @@ public class CanvasInteractionTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task RightDragPansWithoutOpeningSearch()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var before = await session.Graph.ViewportAsync(Token);
 
         await session.Graph.RightDragAsync(100, 60, Token); // PAR-51
@@ -61,7 +61,7 @@ public class CanvasInteractionTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task PanningShowsTheMoveCursorUntilReleased()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         Assert.Null(await session.Graph.CursorAsync(Token));
 
         var at = await session.Graph.BeginRightDragAsync(100, 60, Token); // PAR-51
@@ -74,7 +74,7 @@ public class CanvasInteractionTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task RightClickWithoutMovingKeepsTheDefaultCursor()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
 
         var search = await session.Graph.RightClickEmptyAsync(Token);
         await search.WaitOpenAsync(Token);
@@ -85,7 +85,7 @@ public class CanvasInteractionTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task WheelZoomsAroundPointerWithinLimits()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var graph = session.Graph;
         var at = await graph.EmptyPointAsync(Token, -300, -300);
         var anchor = await graph.ToGraphAsync(at, Token);
@@ -115,7 +115,7 @@ public class CanvasInteractionTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task ViewportResetsWhenAnotherGraphOpens()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var graph = session.Graph;
         await graph.RightDragAsync(100, 60, Token);
         await graph.WheelAsync(await graph.EmptyPointAsync(Token, -300, -300), -1, Token);
@@ -130,7 +130,7 @@ public class CanvasInteractionTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task MiddleClickClearsInlineValue()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var valuePin = session.GraphVM.Nodes.Single(n => n.Node is CallMethodNode).InputDataPins.Single();
         var valueBox = session.Graph.Node("CallMethodNode").Input(valuePin.Pin.Name).ValueBox;
         Assert.Equal("Hello, World!", await valueBox.TextAsync(Token)); // PAR-44
@@ -143,7 +143,7 @@ public class CanvasInteractionTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task SelectionClickBoxAndDeselect()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var write = session.Graph.Node("CallMethodNode");
 
         await write.SelectAsync(Token); // PAR-49
@@ -161,7 +161,7 @@ public class CanvasInteractionTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task DraggingSelectedNodesMovesThemOnTheGrid()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var write = session.GraphVM.Nodes.Single(n => n.Node is CallMethodNode);
         var entry = session.GraphVM.Nodes.Single(n => n.Node is MethodEntryNode);
         var (writeBefore, entryBefore) = (write.Location, entry.Location);
@@ -180,7 +180,7 @@ public class CanvasInteractionTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task CableGestures()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var method = (MethodGraph)session.GraphVM.Graph;
         var write = session.GraphVM.Nodes.Single(n => n.Node is CallMethodNode);
         var ret = session.GraphVM.Nodes.Single(n => n.Node == method.MainReturnNode);
@@ -211,7 +211,7 @@ public class CanvasInteractionTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task MiddleClickOnPinDisconnects()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var write = session.GraphVM.Nodes.Single(n => n.Node is CallMethodNode);
 
         await session.Graph.Node("CallMethodNode").Input("Exec").DisconnectAsync(Token); // PAR-48
@@ -223,7 +223,7 @@ public class CanvasInteractionTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task NodeChromeOverloadsPureAndPinButtons()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var method = (MethodGraph)session.GraphVM.Graph;
         var write = session.GraphVM.Nodes.Single(n => n.Node is CallMethodNode);
         var node = session.Graph.Node("CallMethodNode");
@@ -249,7 +249,7 @@ public class CanvasInteractionTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task GetSetPopupCreatesNodes()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var method = (MethodGraph)session.GraphVM.Graph;
         var length = new VariableSpecifier("Length", TypeSpecifier.FromType<int>(), MemberVisibility.Public, MemberVisibility.Private,
             TypeSpecifier.FromType<string>(), VariableModifiers.None);
@@ -269,7 +269,7 @@ public class CanvasInteractionTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task GetSetPopupClosesWhenThePointerLeavesIt()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var length = new VariableSpecifier("Length", TypeSpecifier.FromType<int>(), MemberVisibility.Public, MemberVisibility.Public,
             TypeSpecifier.FromType<string>(), VariableModifiers.None);
         var chooser = session.Graph.GetSet;

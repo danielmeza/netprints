@@ -14,6 +14,9 @@ namespace NetPrints.Core
     /// </summary>
     public sealed class EventGraph : NodeGraph
     {
+        /// <summary>Prefix of a new event graph's generated unique name (EventGraph, EventGraph1, ...).</summary>
+        public const string DefaultNamePrefix = "EventGraph";
+
         /// <summary>
         /// This event graph's member id (data-model.md §2), used as its graph key. Assigned once, in
         /// the constructor, from <see cref="IdGeneration.Current"/>; the mapper overwrites it from the

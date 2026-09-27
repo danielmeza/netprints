@@ -15,7 +15,7 @@ public class NodeTooltipTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task WriteLineNodeTooltipContainsTheSummary()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
 
         NodeView view = session.ClassWindow.GetVisualDescendants().OfType<NodeView>()
             .Single(v => v.DataContext is NodeVM { Node: CallMethodNode });

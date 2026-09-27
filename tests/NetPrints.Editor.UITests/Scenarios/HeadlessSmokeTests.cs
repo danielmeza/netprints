@@ -5,9 +5,9 @@ using NetPrints.Testing.Ui.Scenarios;
 namespace NetPrints.Editor.UITests.Scenarios;
 
 /// <summary>The shared smoke flows on the headless driver.</summary>
-public sealed class HeadlessSmokeTests : SmokeScenarios, IDisposable
+public sealed class HeadlessSmokeTests : SmokeScenarios, IAsyncDisposable
 {
-    private readonly List<IDisposable> owned = [];
+    private readonly List<object> owned = [];
     private HeadlessApp? app;
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
@@ -53,11 +53,18 @@ public sealed class HeadlessSmokeTests : SmokeScenarios, IDisposable
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public Task DragFromLists() => DragFromListsAsync(Token);
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
         foreach (var item in Enumerable.Reverse(owned))
         {
-            item.Dispose();
+            if (item is IAsyncDisposable asyncDisposable)
+            {
+                await asyncDisposable.DisposeAsync();
+            }
+            else if (item is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
         }
     }
 }

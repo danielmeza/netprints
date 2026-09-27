@@ -69,7 +69,7 @@ namespace NetPrints.Graph
                     return typeSpecifier;
                 }
             }
-            else if (type is GenericType genericType)
+            else if (type is GenericType)
             {
                 BaseType? replacementType = inputTypePins.SingleOrDefault(t => t.Name == type.Name)?.InferredType?.Value;
                 if (replacementType != null)

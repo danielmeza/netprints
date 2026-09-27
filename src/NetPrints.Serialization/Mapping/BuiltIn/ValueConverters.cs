@@ -28,7 +28,7 @@ internal static class ValueConverters
 
     private sealed class LiteralNodeConverter : INodeDocumentConverter
     {
-        public string Kind => "literal";
+        public string Kind => BuiltInNodeKinds.Literal;
         public Type NodeType => typeof(LiteralNode);
         public Type DocumentType => typeof(LiteralNodeDocument);
 
@@ -47,7 +47,7 @@ internal static class ValueConverters
 
     private sealed class TypeNodeConverter : INodeDocumentConverter
     {
-        public string Kind => "type";
+        public string Kind => BuiltInNodeKinds.Type;
         public Type NodeType => typeof(TypeNode);
         public Type DocumentType => typeof(TypeNodeDocument);
 
@@ -66,7 +66,7 @@ internal static class ValueConverters
 
     private sealed class MakeArrayTypeNodeConverter : INodeDocumentConverter
     {
-        public string Kind => "makeArrayType";
+        public string Kind => BuiltInNodeKinds.MakeArrayType;
         public Type NodeType => typeof(MakeArrayTypeNode);
         public Type DocumentType => typeof(MakeArrayTypeNodeDocument);
 
@@ -77,7 +77,7 @@ internal static class ValueConverters
 
     private sealed class MakeArrayNodeConverter : INodeDocumentConverter
     {
-        public string Kind => "makeArray";
+        public string Kind => BuiltInNodeKinds.MakeArray;
         public Type NodeType => typeof(MakeArrayNode);
         public Type DocumentType => typeof(MakeArrayNodeDocument);
 
@@ -111,7 +111,7 @@ internal static class ValueConverters
 
     private sealed class ExplicitCastNodeConverter : INodeDocumentConverter
     {
-        public string Kind => "explicitCast";
+        public string Kind => BuiltInNodeKinds.ExplicitCast;
         public Type NodeType => typeof(ExplicitCastNode);
         public Type DocumentType => typeof(ExplicitCastNodeDocument);
 
@@ -122,7 +122,7 @@ internal static class ValueConverters
 
     private sealed class TypeOfNodeConverter : INodeDocumentConverter
     {
-        public string Kind => "typeOf";
+        public string Kind => BuiltInNodeKinds.TypeOf;
         public Type NodeType => typeof(TypeOfNode);
         public Type DocumentType => typeof(TypeOfNodeDocument);
 
@@ -133,7 +133,7 @@ internal static class ValueConverters
 
     private sealed class DefaultNodeConverter : INodeDocumentConverter
     {
-        public string Kind => "default";
+        public string Kind => BuiltInNodeKinds.Default;
         public Type NodeType => typeof(DefaultNode);
         public Type DocumentType => typeof(DefaultNodeDocument);
 

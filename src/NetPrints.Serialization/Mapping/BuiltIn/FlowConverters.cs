@@ -28,7 +28,7 @@ internal static class FlowConverters
 
     private sealed class IfElseNodeConverter : INodeDocumentConverter
     {
-        public string Kind => "ifElse";
+        public string Kind => BuiltInNodeKinds.IfElse;
         public Type NodeType => typeof(IfElseNode);
         public Type DocumentType => typeof(IfElseNodeDocument);
 
@@ -39,7 +39,7 @@ internal static class FlowConverters
 
     private sealed class ForLoopNodeConverter : INodeDocumentConverter
     {
-        public string Kind => "forLoop";
+        public string Kind => BuiltInNodeKinds.ForLoop;
         public Type NodeType => typeof(ForLoopNode);
         public Type DocumentType => typeof(ForLoopNodeDocument);
 
@@ -50,7 +50,7 @@ internal static class FlowConverters
 
     private sealed class TernaryNodeConverter : INodeDocumentConverter
     {
-        public string Kind => "ternary";
+        public string Kind => BuiltInNodeKinds.Ternary;
         public Type NodeType => typeof(TernaryNode);
         public Type DocumentType => typeof(TernaryNodeDocument);
 
@@ -61,7 +61,7 @@ internal static class FlowConverters
 
     private sealed class AwaitNodeConverter : INodeDocumentConverter
     {
-        public string Kind => "await";
+        public string Kind => BuiltInNodeKinds.Await;
         public Type NodeType => typeof(AwaitNode);
         public Type DocumentType => typeof(AwaitNodeDocument);
 
@@ -72,7 +72,7 @@ internal static class FlowConverters
 
     private sealed class ThrowNodeConverter : INodeDocumentConverter
     {
-        public string Kind => "throw";
+        public string Kind => BuiltInNodeKinds.Throw;
         public Type NodeType => typeof(ThrowNode);
         public Type DocumentType => typeof(ThrowNodeDocument);
 
@@ -83,7 +83,7 @@ internal static class FlowConverters
 
     private sealed class RerouteNodeConverter : INodeDocumentConverter
     {
-        public string Kind => "reroute";
+        public string Kind => BuiltInNodeKinds.Reroute;
         public Type NodeType => typeof(RerouteNode);
         public Type DocumentType => typeof(RerouteNodeDocument);
 

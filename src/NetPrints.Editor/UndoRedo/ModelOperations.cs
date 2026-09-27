@@ -23,9 +23,9 @@ public static class ModelOperations
             Visibility = variable.Visibility,
         };
 
-        method.EntryNode.PositionX = 560;
-        method.EntryNode.PositionY = 504;
-        method.MainReturnNode.PositionX = method.EntryNode.PositionX + 672;
+        method.EntryNode.PositionX = GraphUtil.NewMethodEntryPositionX;
+        method.EntryNode.PositionY = GraphUtil.NewMethodEntryPositionY;
+        method.MainReturnNode.PositionX = method.EntryNode.PositionX + GraphUtil.NewMethodReturnOffsetX;
         method.MainReturnNode.PositionY = method.EntryNode.PositionY;
 
         GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, method.MainReturnNode.ReturnPin);
@@ -49,9 +49,9 @@ public static class ModelOperations
             Visibility = variable.Visibility,
         };
 
-        method.EntryNode.PositionX = 560;
-        method.EntryNode.PositionY = 504;
-        method.MainReturnNode.PositionX = method.EntryNode.PositionX + 672;
+        method.EntryNode.PositionX = GraphUtil.NewMethodEntryPositionX;
+        method.EntryNode.PositionY = GraphUtil.NewMethodEntryPositionY;
+        method.MainReturnNode.PositionX = method.EntryNode.PositionX + GraphUtil.NewMethodReturnOffsetX;
         method.MainReturnNode.PositionY = method.EntryNode.PositionY;
 
         GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, method.MainReturnNode.ReturnPin);

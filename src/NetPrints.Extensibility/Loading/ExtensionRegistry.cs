@@ -12,9 +12,10 @@ namespace NetPrints.Extensibility.Loading;
 
 /// <summary>
 /// Everything the loaded extensions contribute, in registry order (extension-points.md §8). Owns the contributed
-/// objects and disposes those that are <see cref="IDisposable"/> or <see cref="IAsyncDisposable"/>.
+/// objects and disposes those that are <see cref="IDisposable"/> or <see cref="IAsyncDisposable"/>, awaiting an
+/// owned <see cref="IAsyncDisposable"/> directly through <see cref="DisposeAsync"/>.
 /// </summary>
-public sealed class ExtensionRegistry : IDisposable
+public sealed class ExtensionRegistry : IAsyncDisposable
 {
     private readonly List<object> owned;
     private readonly ILogger logger;
@@ -141,10 +142,11 @@ public sealed class ExtensionRegistry : IDisposable
     public IHostChannelFactory? FindHostChannel(string id) => HostChannels.FirstOrDefault(factory => factory.Id == id);
 
     /// <summary>
-    /// Disposes the contributed objects that are <see cref="IDisposable"/> or <see cref="IAsyncDisposable"/>;
-    /// a failing one is logged and does not stop the others. Idempotent.
+    /// Disposes the contributed objects that are <see cref="IDisposable"/> or <see cref="IAsyncDisposable"/>,
+    /// awaiting an owned <see cref="IAsyncDisposable"/> directly; a failing one is logged and does not stop
+    /// the others. Idempotent.
     /// </summary>
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
         if (disposed)
         {
@@ -162,7 +164,7 @@ public sealed class ExtensionRegistry : IDisposable
                         disposable.Dispose();
                         break;
                     case IAsyncDisposable asyncDisposable:
-                        asyncDisposable.DisposeAsync().AsTask().GetAwaiter().GetResult();
+                        await asyncDisposable.DisposeAsync().ConfigureAwait(false);
                         break;
                 }
             }

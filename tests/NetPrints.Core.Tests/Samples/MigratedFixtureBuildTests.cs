@@ -69,7 +69,7 @@ namespace NetPrints.Tests.Samples
                 var registry = new NodeDocumentConverterRegistry(NodeDocumentConverterRegistry.BuiltIn, []);
                 var mapper = new DocumentMapper(registry);
                 var formats = new DocumentFormatRegistry([new JsonDocumentFormat(new NetPrintsJsonOptions(registry), new DocumentMigrator([]))]);
-                using ExtensionRegistry extensions = ExtensionTestSupport.Load(ExtensionLoaderOptions.BuiltInOnly);
+                await using ExtensionRegistry extensions = ExtensionTestSupport.Load(ExtensionLoaderOptions.BuiltInOnly);
                 var generator = new GraphCodeGenerator(extensions, formats, mapper);
 
                 const string graphFileName = "AllNodes.Everything.netpc.json";

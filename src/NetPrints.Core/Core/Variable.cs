@@ -213,10 +213,13 @@ namespace NetPrints.Core
 
             // Create a type graph with the type as its return type. OwningClass lets GraphKeys.For key it
             // as "<variable id>/type" (document-format.md §1.4.1).
+            const int typeNodePositionX = 500;
+            const int typeNodePositionY = 300;
+            const int returnNodePositionX = 800;
             TypeGraph = new TypeGraph { OwningClass = cls };
-            NodeOutputTypePin typePin = GraphUtil.CreateNestedTypeNode(TypeGraph, type, 500, 300).OutputTypePins[0];
-            TypeGraph.ReturnNode.PositionX = 800;
-            TypeGraph.ReturnNode.PositionY = 300;
+            NodeOutputTypePin typePin = GraphUtil.CreateNestedTypeNode(TypeGraph, type, typeNodePositionX, typeNodePositionY).OutputTypePins[0];
+            TypeGraph.ReturnNode.PositionX = returnNodePositionX;
+            TypeGraph.ReturnNode.PositionY = typeNodePositionY;
             GraphUtil.ConnectTypePins(typePin, TypeGraph.ReturnNode.TypePin);
         }
     }

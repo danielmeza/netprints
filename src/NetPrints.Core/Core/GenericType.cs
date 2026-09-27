@@ -94,7 +94,7 @@ namespace NetPrints.Core
         /// </returns>
         public override bool Equals(object? obj)
         {
-            if (obj is TypeSpecifier t)
+            if (obj is TypeSpecifier)
             {
                 // TODO: Check constraints
                 return true;

@@ -39,7 +39,7 @@ public class SnapshotTests
     public async Task MainWindow()
     {
         using var sample = new SampleCopy();
-        using var app = HeadlessApp.Start();
+        await using var app = HeadlessApp.Start();
         await MatchWindowAsync(app.Driver, app.Main, "main-window-empty");
 
         await app.OpenStartupProjectAsync(sample.ProjectPath, Token);
@@ -55,7 +55,7 @@ public class SnapshotTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task ClassEditorWithTheSampleGraph()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
 
         await MatchWindowAsync(session.Driver, session.ClassEditor, "class-editor-main");
         Store.Match("node-call-method", await session.Graph.Node("CallMethodNode").ScreenshotAsync(Token)); // connected and unconnected pins
@@ -65,7 +65,7 @@ public class SnapshotTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task Inspectors()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var page = session.ClassEditor;
 
         await page.CreateVariableButton.ClickAsync(Token);
@@ -82,7 +82,7 @@ public class SnapshotTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task EveryNodeKind()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         await session.ClassEditor.CreateVariableButton.ClickAsync(Token);
         var variable = session.ClassVM.Variables.Single().Variable.Specifier;
         var graph = session.GraphVM;
@@ -120,7 +120,7 @@ public class SnapshotTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task PreviewCableSearchAndGetSet()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var graph = session.Graph;
 
         var from = await graph.Node("CallMethodNode").Output("Exec").Connector.CenterAsync(Token);
@@ -168,7 +168,7 @@ public class SnapshotTests
     public async Task ReferencesDialog()
     {
         using var sample = new SampleCopy();
-        using var app = HeadlessApp.Start();
+        await using var app = HeadlessApp.Start();
         await app.OpenStartupProjectAsync(sample.ProjectPath, Token);
 
         var references = await app.Main.OpenReferencesAsync(Token);

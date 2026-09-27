@@ -95,7 +95,7 @@ namespace NetPrints.Tests.Samples
             NodeDocumentConverterRegistry registry = NewRegistry();
             var mapper = new DocumentMapper(registry);
             var formats = new DocumentFormatRegistry([NewJsonFormat(registry)]);
-            using ExtensionRegistry extensions = ExtensionTestSupport.Load(ExtensionLoaderOptions.BuiltInOnly);
+            await using ExtensionRegistry extensions = ExtensionTestSupport.Load(ExtensionLoaderOptions.BuiltInOnly);
             var generator = new GraphCodeGenerator(extensions, formats, mapper);
 
             string directory = Directory.CreateTempSubdirectory("netprints-committed-sample-").FullName;

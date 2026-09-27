@@ -50,7 +50,7 @@ internal static class Program
             }
 
             (ExtensionRegistry registry, IReadOnlyList<CodeDiagnostic> extensionDiagnostics) = GraphCodeGenerator.LoadExtensions(request, CancellationToken.None);
-            using (registry)
+            await using (registry)
             {
                 if (extensionDiagnostics.Count > 0)
                 {

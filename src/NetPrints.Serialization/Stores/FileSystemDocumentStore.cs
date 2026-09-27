@@ -121,7 +121,8 @@ public sealed class FileSystemDocumentStore : IDocumentStore
             throw new DocumentNotFoundException(id);
         }
 
-        return ValueTask.FromResult<Stream>(File.OpenRead(path));
+        Stream stream = File.OpenRead(path);
+        return new ValueTask<Stream>(stream);
     }
 
     /// <inheritdoc/>

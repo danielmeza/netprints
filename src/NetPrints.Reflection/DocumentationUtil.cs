@@ -120,7 +120,7 @@ namespace NetPrints.Reflection
             XmlDocument? doc = GetAssemblyDocumentationDocument(methodInfo.ContainingAssembly);
             if (doc != null)
             {
-                XmlNodeList? nodes = doc.SelectNodes($"doc/members/member[@name='{methodKey}']/summary");
+                using XmlNodeList? nodes = doc.SelectNodes($"doc/members/member[@name='{methodKey}']/summary");
 
                 if (nodes != null && nodes.Count > 0)
                 {
@@ -161,7 +161,7 @@ namespace NetPrints.Reflection
                     searchName += ")";
                 }
 
-                XmlNodeList? nodes = doc.SelectNodes($"doc/members/member[@name='{searchName}']/param[@name='{parameterSymbol.Name}']");
+                using XmlNodeList? nodes = doc.SelectNodes($"doc/members/member[@name='{searchName}']/param[@name='{parameterSymbol.Name}']");
 
                 if (nodes != null && nodes.Count > 0)
                 {
@@ -202,7 +202,7 @@ namespace NetPrints.Reflection
                     searchName += ")";
                 }
 
-                XmlNodeList? nodes = doc.SelectNodes($"doc/members/member[@name='{searchName}']/returns");
+                using XmlNodeList? nodes = doc.SelectNodes($"doc/members/member[@name='{searchName}']/returns");
 
                 if (nodes != null && nodes.Count > 0)
                 {

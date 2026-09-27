@@ -20,7 +20,7 @@ namespace NetPrints.Editor.Main;
 /// View model of the main window: project lifecycle, settings, references and the class list
 /// (PAR-01..15).
 /// </summary>
-public sealed partial class MainEditorVM : ObservableObject
+public sealed partial class MainEditorVM : ObservableObject, IDisposable
 {
     private readonly EditorContext context;
     private readonly HashSet<(string Id, string? ManifestPath, string Code)> reportedExtensionFailures = [];
@@ -384,7 +384,7 @@ public sealed partial class MainEditorVM : ObservableObject
             }
         }
 
-        context.Extensions.LoadForProject(folders, CancellationToken.None);
+        await context.Extensions.LoadForProjectAsync(folders, CancellationToken.None);
         return notTrusted;
     }
 
@@ -492,8 +492,7 @@ public sealed partial class MainEditorVM : ObservableObject
         }
         catch (ClassTranslationFailure failure)
         {
-            // Interim id until the translator reports coded TranslationExceptions (T086).
-            var diagnostic = new CodeDiagnostic(CodeDiagnosticSeverity.Error, "NPT000",
+            var diagnostic = new CodeDiagnostic(CodeDiagnosticSeverity.Error, TranslationDiagnosticCodes.Unclassified,
                 $"{failure.Class.FullName}: {failure.Message}", failure.Class.FullName, null, null, null, null);
             SetBuildOutcome(project, [diagnostic], false, null);
             return false;
@@ -621,7 +620,7 @@ public sealed partial class MainEditorVM : ObservableObject
             return;
         }
 
-        context.Windows.OpenClassEditor(new ClassEditorVM(cls, context));
+        context.Windows.OpenClassEditor(cls, context);
     }
 
     /// <summary>Closes the window of a class and removes it from the project (PAR-11, fixes the WPF defect).</summary>
@@ -639,8 +638,16 @@ public sealed partial class MainEditorVM : ObservableObject
 
     /// <summary>Opens the References dialog (PAR-08).</summary>
     [RelayCommand(CanExecute = nameof(IsProjectOpen))]
-    private Task ShowReferencesAsync() =>
-        Project is null ? Task.CompletedTask : context.Dialogs.ShowReferencesAsync(new ReferenceListVM(Project, context));
+    private async Task ShowReferencesAsync()
+    {
+        if (Project is null)
+        {
+            return;
+        }
+
+        using var references = new ReferenceListVM(Project, context);
+        await context.Dialogs.ShowReferencesAsync(references);
+    }
 
     /// <summary>
     /// Opens the class whose graph file is <paramref name="path"/> (project-relative or absolute), reusing an open window.
@@ -669,7 +676,10 @@ public sealed partial class MainEditorVM : ObservableObject
     /// <summary>Called when the main window closes (PAR-14).</summary>
     public void OnMainWindowClosed()
     {
-        hostChannelBridge.Dispose();
+        Dispose();
         context.Windows.CloseAllClassEditors();
     }
+
+    /// <summary>Unsubscribes <see cref="hostChannelBridge"/> from the host channel.</summary>
+    public void Dispose() => hostChannelBridge.Dispose();
 }

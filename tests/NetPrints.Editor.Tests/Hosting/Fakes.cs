@@ -159,7 +159,7 @@ public sealed class FakeWindowService : IWindowService
         return false;
     }
 
-    public void OpenClassEditor(ClassEditorVM editor) => Open[editor.Class] = editor;
+    public void OpenClassEditor(ClassGraph cls, EditorContext context) => Open[cls] = new ClassEditorVM(cls, context);
 
     public void CloseClassEditor(ClassGraph cls)
     {

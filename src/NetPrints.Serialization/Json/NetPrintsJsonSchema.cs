@@ -24,6 +24,15 @@ public static class NetPrintsJsonSchema
     /// <summary>Draft the schema declares itself against.</summary>
     private const string MetaSchemaUri = "https://json-schema.org/draft/2020-12/schema";
 
+    /// <summary>The JSON Schema keyword for an object's required property names.</summary>
+    private const string RequiredKeyword = "required";
+
+    /// <summary>Elements in the <c>int[]</c> position pair (X, Y) the schema constrains to exactly this length.</summary>
+    private const int PositionComponentCount = 2;
+
+    /// <summary>The JSON Schema keyword for a string's regular-expression constraint.</summary>
+    private const string PatternKeyword = "pattern";
+
     /// <summary>Document types whose <c>id</c> property is a member id (document-format.md §1.4).</summary>
     private static readonly Type[] MemberDocumentTypes =
         [typeof(VariableDocument), typeof(MethodDocument), typeof(ConstructorDocument), typeof(EventGraphDocument)];
@@ -108,8 +117,8 @@ public static class NetPrintsJsonSchema
 
         if (context.TypeInfo.Type == typeof(int[]))
         {
-            obj["minItems"] = 2;
-            obj["maxItems"] = 2;
+            obj["minItems"] = PositionComponentCount;
+            obj["maxItems"] = PositionComponentCount;
         }
 
         if (context.PropertyInfo is { Name: "schemaVersion" })
@@ -122,11 +131,11 @@ public static class NetPrintsJsonSchema
             anyOf.Add(new JsonObject
             {
                 ["type"] = "object",
-                ["required"] = new JsonArray("$kind", "id"),
+                [RequiredKeyword] = new JsonArray("$kind", "id"),
                 ["properties"] = new JsonObject
                 {
-                    ["$kind"] = new JsonObject { ["type"] = "string", ["pattern"] = "/" },
-                    ["id"] = new JsonObject { ["type"] = "string", ["pattern"] = IdFormat.PatternFor('n') },
+                    ["$kind"] = new JsonObject { ["type"] = "string", [PatternKeyword] = "/" },
+                    ["id"] = new JsonObject { ["type"] = "string", [PatternKeyword] = IdFormat.PatternFor('n') },
                 },
             });
         }
@@ -137,24 +146,24 @@ public static class NetPrintsJsonSchema
         {
             if (idProperty.DeclaringType == typeof(NodeDocument))
             {
-                obj["pattern"] = IdFormat.PatternFor('n');
+                obj[PatternKeyword] = IdFormat.PatternFor('n');
             }
             else if (Array.IndexOf(MemberDocumentTypes, idProperty.DeclaringType) >= 0)
             {
-                obj["pattern"] = IdFormat.PatternFor('m');
+                obj[PatternKeyword] = IdFormat.PatternFor('m');
             }
         }
         else if (context.PropertyInfo is { Name: "from" or "to", DeclaringType: var declaringType } && declaringType == typeof(ConnectionDocument))
         {
-            obj["pattern"] = ConnectionEndpointPattern;
+            obj[PatternKeyword] = ConnectionEndpointPattern;
         }
         else if (context.TypeInfo.Type == typeof(SortedDictionary<string, SortedDictionary<string, int[]>>))
         {
-            obj["propertyNames"] = new JsonObject { ["pattern"] = LayoutGraphKeyPattern };
+            obj["propertyNames"] = new JsonObject { [PatternKeyword] = LayoutGraphKeyPattern };
         }
         else if (context.TypeInfo.Type == typeof(SortedDictionary<string, int[]>))
         {
-            obj["propertyNames"] = new JsonObject { ["pattern"] = IdFormat.PatternFor('n') };
+            obj["propertyNames"] = new JsonObject { [PatternKeyword] = IdFormat.PatternFor('n') };
         }
 
         FixRequired(context, obj);
@@ -182,7 +191,7 @@ public static class NetPrintsJsonSchema
         JsonPropertyInfo? Find(string jsonName) => context.TypeInfo.Properties.FirstOrDefault(p => p.Name == jsonName);
 
         bool usesNeverConvention = context.TypeInfo.Properties.Any(IsAlwaysWritten);
-        var wasRequired = (obj["required"] as JsonArray)?.Select(n => n?.GetValue<string>()).ToHashSet() ?? [];
+        var wasRequired = (obj[RequiredKeyword] as JsonArray)?.Select(n => n?.GetValue<string>()).ToHashSet() ?? [];
 
         var required = new JsonArray();
         foreach (string name in properties.Select(p => p.Key))
@@ -200,11 +209,11 @@ public static class NetPrintsJsonSchema
 
         if (required.Count > 0)
         {
-            obj["required"] = required;
+            obj[RequiredKeyword] = required;
         }
         else
         {
-            obj.Remove("required");
+            obj.Remove(RequiredKeyword);
         }
     }
 

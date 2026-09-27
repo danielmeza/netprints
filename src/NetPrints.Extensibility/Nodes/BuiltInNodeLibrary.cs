@@ -1,5 +1,6 @@
 using NetPrints.Core;
 using NetPrints.Graph;
+using NetPrints.Serialization.Documents;
 using NetPrints.Serialization.Mapping;
 using NetPrints.Translator;
 
@@ -48,31 +49,31 @@ public static class BuiltInNodeLibrary
         // Order of the suggestions per graph kind is the order of PAR-52's built-in list.
         return
         [
-            Describe("forLoop", Code, Suggest("For Loop", "Loop_16x.png", g => new ForLoopNode(g))),
-            Describe("ifElse", Code, Suggest("If Else", "If_16x.png", g => new IfElseNode(g))),
-            Describe("constructor", Code, Suggest("Construct New Object", "Create_16x.png",
+            Describe(BuiltInNodeKinds.ForLoop, Code, Suggest("For Loop", "Loop_16x.png", g => new ForLoopNode(g))),
+            Describe(BuiltInNodeKinds.IfElse, Code, Suggest("If Else", "If_16x.png", g => new IfElseNode(g))),
+            Describe(BuiltInNodeKinds.Constructor, Code, Suggest("Construct New Object", "Create_16x.png",
                 g => new ConstructorNode(g, new ConstructorSpecifier([], TypeSpecifier.FromType<object>())))),
-            Describe("typeOf", Code, Suggest("Type Of", "Type_16x.png", g => new TypeOfNode(g))),
-            Describe("explicitCast", Code, Suggest("Explicit Cast", "Convert_16x.png", g => new ExplicitCastNode(g))),
-            Describe("return", GraphKinds.Method, Suggest("Return", "Return_16x.png", g => new ReturnNode(AsMethodGraph(g)))),
-            Describe("makeArray", Code, Suggest("Make Array", "ListView_16x.png", g => new MakeArrayNode(g))),
-            Describe("literal", Code, Suggest("Literal", "Literal_16x.png", g => new LiteralNode(g, TypeSpecifier.FromType<object>()))),
-            Describe("type", CodeAndClass, Suggest("Type", "Type_16x.png", g => new TypeNode(g, TypeSpecifier.FromType<object>()))),
-            Describe("makeArrayType", CodeAndClass, Suggest("Make Array Type", "Type_16x.png", g => new MakeArrayTypeNode(g))),
-            Describe("throw", Code, Suggest("Throw", "Throw_16x.png", g => new ThrowNode(g))),
-            Describe("await", GraphKinds.Method, Suggest("Await", "Task_16x.png", g => new AwaitNode(g))),
-            Describe("ternary", Code, Suggest("Ternary", "ConditionalRule_16x.png", g => new TernaryNode(g))),
-            Describe("default", Code, Suggest("Default", "None_16x.png", g => new DefaultNode(g))),
-            Describe("methodEntry", GraphKinds.Method),
-            Describe("constructorEntry", GraphKinds.Constructor),
-            Describe("eventEntry", GraphKinds.Event),
-            Describe("classReturn", GraphKinds.Class),
-            Describe("typeReturn", GraphKinds.Type),
-            Describe("callMethod", Code),
-            Describe("makeDelegate", Code),
-            Describe("variableGetter", Code),
-            Describe("variableSetter", Code),
-            Describe("reroute", Code),
+            Describe(BuiltInNodeKinds.TypeOf, Code, Suggest("Type Of", "Type_16x.png", g => new TypeOfNode(g))),
+            Describe(BuiltInNodeKinds.ExplicitCast, Code, Suggest("Explicit Cast", "Convert_16x.png", g => new ExplicitCastNode(g))),
+            Describe(BuiltInNodeKinds.Return, GraphKinds.Method, Suggest("Return", "Return_16x.png", g => new ReturnNode(AsMethodGraph(g)))),
+            Describe(BuiltInNodeKinds.MakeArray, Code, Suggest("Make Array", "ListView_16x.png", g => new MakeArrayNode(g))),
+            Describe(BuiltInNodeKinds.Literal, Code, Suggest("Literal", "Literal_16x.png", g => new LiteralNode(g, TypeSpecifier.FromType<object>()))),
+            Describe(BuiltInNodeKinds.Type, CodeAndClass, Suggest("Type", "Type_16x.png", g => new TypeNode(g, TypeSpecifier.FromType<object>()))),
+            Describe(BuiltInNodeKinds.MakeArrayType, CodeAndClass, Suggest("Make Array Type", "Type_16x.png", g => new MakeArrayTypeNode(g))),
+            Describe(BuiltInNodeKinds.Throw, Code, Suggest("Throw", "Throw_16x.png", g => new ThrowNode(g))),
+            Describe(BuiltInNodeKinds.Await, GraphKinds.Method, Suggest("Await", "Task_16x.png", g => new AwaitNode(g))),
+            Describe(BuiltInNodeKinds.Ternary, Code, Suggest("Ternary", "ConditionalRule_16x.png", g => new TernaryNode(g))),
+            Describe(BuiltInNodeKinds.Default, Code, Suggest("Default", "None_16x.png", g => new DefaultNode(g))),
+            Describe(BuiltInNodeKinds.MethodEntry, GraphKinds.Method),
+            Describe(BuiltInNodeKinds.ConstructorEntry, GraphKinds.Constructor),
+            Describe(BuiltInNodeKinds.EventEntry, GraphKinds.Event),
+            Describe(BuiltInNodeKinds.ClassReturn, GraphKinds.Class),
+            Describe(BuiltInNodeKinds.TypeReturn, GraphKinds.Type),
+            Describe(BuiltInNodeKinds.CallMethod, Code),
+            Describe(BuiltInNodeKinds.MakeDelegate, Code),
+            Describe(BuiltInNodeKinds.VariableGetter, Code),
+            Describe(BuiltInNodeKinds.VariableSetter, Code),
+            Describe(BuiltInNodeKinds.Reroute, Code),
         ];
     }
 

@@ -52,7 +52,7 @@ public sealed class JsonDocumentFormat : IDocumentFormat
     /// <see cref="DocumentFormatException.BytePosition"/>; errors found after parsing carry the JSON
     /// path (<see cref="JsonException.Path"/>) in the exception message instead.
     /// </remarks>
-    public ValueTask<ClassDocument> ReadClassAsync(Stream input, DocumentId id, CancellationToken cancellationToken)
+    public async ValueTask<ClassDocument> ReadClassAsync(Stream input, DocumentId id, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(input);
         cancellationToken.ThrowIfCancellationRequested();
@@ -60,7 +60,7 @@ public sealed class JsonDocumentFormat : IDocumentFormat
         JsonNode? root;
         try
         {
-            root = JsonNode.Parse(input, nodeOptions: null, NetPrintsJsonOptions.DocumentOptions);
+            root = await JsonNode.ParseAsync(input, nodeOptions: null, NetPrintsJsonOptions.DocumentOptions, cancellationToken).ConfigureAwait(false);
         }
         catch (JsonException ex)
         {
@@ -87,9 +87,8 @@ public sealed class JsonDocumentFormat : IDocumentFormat
 
         try
         {
-            ClassDocument document = JsonSerializer.Deserialize<ClassDocument>(migrated, options.SerializerOptions)
+            return JsonSerializer.Deserialize<ClassDocument>(migrated, options.SerializerOptions)
                 ?? throw new DocumentFormatException("The document deserialized to null.", id);
-            return ValueTask.FromResult(document);
         }
         catch (JsonException ex)
         {

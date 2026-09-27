@@ -11,6 +11,15 @@
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.9.0" />
   </ItemGroup>
 
+  <!-- Analyzer-only packages (ADR-0003), referenced repo-wide from Directory.Build.props. A curated
+       rule set from each is `error` in src/**.cs; every other rule they ship is `suggestion`
+       (.editorconfig), so no rule from these packages fails the build by surprise. -->
+  <ItemGroup Label="Analyzers">
+    <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.34.0.3385" />
+    <PackageVersion Include="IDisposableAnalyzers" Version="4.0.8" />
+    <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="18.7.23" />
+  </ItemGroup>
+
   <ItemGroup Label="CLI">
     <PackageVersion Include="CommandLineParser" Version="2.9.1" />
   </ItemGroup>

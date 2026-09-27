@@ -16,7 +16,7 @@ public class ClassEditorWindowTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task InspectorsListsAndGeneratedCode()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var page = session.ClassEditor;
         var vm = session.ClassVM;
 
@@ -56,7 +56,7 @@ public class ClassEditorWindowTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task OverrideChooserCreatesAndResets()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var toString = session.ClassVM.OverridableMethods.First(m => m.Name == "ToString"); // PAR-26
 
         session.ClassWindow.FindControl<ComboBox>("OverrideBox")!.SelectedItem = toString; // choosing a combo box item
@@ -69,7 +69,7 @@ public class ClassEditorWindowTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task DeleteUndoRedoKeys()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var page = session.ClassEditor;
         var method = (MethodGraph)session.GraphVM.Graph;
 
@@ -91,7 +91,7 @@ public class ClassEditorWindowTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task RunCompilesStartsAndPrints()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
 
         await session.ClassEditor.RunButton.ClickAsync(Token);
 
@@ -103,7 +103,7 @@ public class ClassEditorWindowTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task BrokenGraphFillsTheErrorList()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var valuePin = session.GraphVM.Nodes.Single(n => n.Node is CallMethodNode).InputDataPins.Single();
         await session.Graph.Node("CallMethodNode").Input(valuePin.Pin.Name).ValueBox.ClickAsync(UiButton.Middle, Token); // clear "Hello, World!"
 
@@ -116,7 +116,7 @@ public class ClassEditorWindowTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task NodesAndPinsHaveToolTips()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var write = session.Graph.Node("CallMethodNode");
 
         foreach (string pin in await write.PinNamesAsync(Token))
@@ -129,7 +129,7 @@ public class ClassEditorWindowTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task SplittersResizeTheirNeighbours()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var page = session.ClassEditor;
 
         async Task<(double Width, double Height)> SizeAsync(UiElement e)

@@ -31,7 +31,7 @@ public sealed class StorageFilePickerService(Func<TopLevel?> topLevel) : IFilePi
     /// <exception cref="InvalidOperationException">No window is available to own the picker.</exception>
     public async Task<string?> SaveFileAsync(string title, string suggestedName, string defaultExtension, IReadOnlyList<FileFilter> filters)
     {
-        var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
+        using var file = await StorageProvider.SaveFilePickerAsync(new FilePickerSaveOptions
         {
             Title = title,
             SuggestedFileName = suggestedName,

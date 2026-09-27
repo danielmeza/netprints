@@ -47,8 +47,9 @@ public sealed class WindowService : IWindowService
     }
 
     /// <inheritdoc/>
-    public void OpenClassEditor(ClassEditorVM editor)
+    public void OpenClassEditor(ClassGraph cls, EditorContext context)
     {
+        var editor = new ClassEditorVM(cls, context);
         var window = new ClassEditorWindow
         {
             DataContext = editor,

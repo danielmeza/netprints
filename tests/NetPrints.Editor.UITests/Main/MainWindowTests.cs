@@ -14,7 +14,7 @@ public class MainWindowTests
     {
         using var sample = new SampleCopy();
         var sw = Stopwatch.StartNew();
-        using var app = HeadlessApp.Start();
+        await using var app = HeadlessApp.Start();
         var frame = await app.Driver.ScreenshotAsync((await app.Main.GetAsync(Token)).Window, Token);
         sw.Stop();
 
@@ -35,7 +35,7 @@ public class MainWindowTests
     public async Task ProjectAndSettingsPanesAndEnablement()
     {
         using var sample = new SampleCopy();
-        using var app = HeadlessApp.Start();
+        await using var app = HeadlessApp.Start();
         var main = app.Main;
 
         Assert.False(await main.SettingsButton.IsEnabledAsync(Token)); // PAR-07
@@ -66,7 +66,7 @@ public class MainWindowTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task ToolbarLabelsFitTheirButtons()
     {
-        using var app = HeadlessApp.Start();
+        await using var app = HeadlessApp.Start();
 
         foreach (var button in app.Main.ToolbarButtons)
         {
@@ -79,7 +79,7 @@ public class MainWindowTests
     public async Task OpenProjectThroughTheFilePicker()
     {
         using var sample = new SampleCopy();
-        using var app = HeadlessApp.Start();
+        await using var app = HeadlessApp.Start();
         await app.Main.ShowProjectPaneAsync(Token);
 
         app.FilePicker.Enqueue("open", "Open Project", sample.ProjectPath);
@@ -93,7 +93,7 @@ public class MainWindowTests
     public async Task ClassWindowIsReusedAndRestored()
     {
         using var sample = new SampleCopy();
-        using var app = HeadlessApp.Start();
+        await using var app = HeadlessApp.Start();
         await app.OpenStartupProjectAsync(sample.ProjectPath, Token);
         var page = await app.Main.OpenClassAsync("HelloWorld.Program", Token);
         Assert.Equal("Maximized", await page.WindowStateAsync(Token)); // PAR-22
@@ -111,7 +111,7 @@ public class MainWindowTests
     public async Task RemovingAClassClosesItsWindow()
     {
         using var sample = new SampleCopy();
-        using var app = HeadlessApp.Start();
+        await using var app = HeadlessApp.Start();
         await app.OpenStartupProjectAsync(sample.ProjectPath, Token);
         var page = await app.Main.OpenClassAsync("HelloWorld.Program", Token);
 

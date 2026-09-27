@@ -16,7 +16,7 @@ namespace NetPrints.Editor.Hosting;
 /// Composition root: creates the Avalonia service implementations, the main view model and the
 /// main window (no DI container).
 /// </summary>
-public sealed class EditorComposition
+public sealed class EditorComposition : IDisposable
 {
     /// <param name="host">Process-wide services created once by the host (desktop, headless tests).</param>
     /// <param name="customize">Optional hook to replace services (used by the headless UI tests).</param>
@@ -35,7 +35,7 @@ public sealed class EditorComposition
         var persistence = new ProjectPersistence(projects, formats, mapper,
             directory => new FileSystemDocumentStore(directory, DefaultScheduler.Instance, host.LoggerFactory.CreateLogger<FileSystemDocumentStore>()),
             host.LoggerFactory.CreateLogger<ProjectPersistence>());
-        _ = PersistenceBinding.Bind(persistence, host.Extensions);
+        persistenceBinding = PersistenceBinding.Bind(persistence, host.Extensions);
 
         var context = new EditorContext(
             new StorageFilePickerService(() => Windows.ActiveWindow),
@@ -58,6 +58,7 @@ public sealed class EditorComposition
     }
 
     private readonly string? hostChannelError;
+    private readonly PersistenceBinding persistenceBinding;
 
     /// <summary>
     /// Placeholder <c>NetPrints.Sdk</c> version substituted into a new project's template
@@ -102,9 +103,20 @@ public sealed class EditorComposition
     /// <summary>Creates the main window and its view model.</summary>
     public MainWindow CreateMainWindow()
     {
+        MainEditor?.Dispose();
         MainEditor = new MainEditorVM(Context);
         var window = new MainWindow { DataContext = MainEditor };
         Windows.MainWindow = window;
         return window;
+    }
+
+    /// <summary>
+    /// Stops rebinding persistence to the extension host's registry (see
+    /// <see cref="PersistenceBinding.Bind"/>) and disposes <see cref="MainEditor"/>, if created.
+    /// </summary>
+    public void Dispose()
+    {
+        MainEditor?.Dispose();
+        persistenceBinding.Dispose();
     }
 }

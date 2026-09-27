@@ -47,6 +47,12 @@ public static class IdFormat
     /// </summary>
     public const int ValueDigits = 13;
 
+    /// <summary>Bits one <see cref="Alphabet"/> character encodes (32 characters = 2^5).</summary>
+    private const int AlphabetBits = 5;
+
+    /// <summary>Mask of the low <see cref="AlphabetBits"/> bits.</summary>
+    private const int AlphabetMask = (1 << AlphabetBits) - 1;
+
     /// <summary>
     /// The <see cref="Alphabet"/> as a regular-expression character class, shared by <see cref="Pattern"/>
     /// and <see cref="PatternFor"/> so the two never duplicate it.
@@ -134,8 +140,8 @@ public static class IdFormat
         long remaining = value;
         for (int i = ValueDigits; i >= 1; i--)
         {
-            chars[i] = Alphabet[(int)(remaining & 0x1F)];
-            remaining >>= 5;
+            chars[i] = Alphabet[(int)(remaining & AlphabetMask)];
+            remaining >>= AlphabetBits;
         }
 
         return new string(chars);
@@ -176,7 +182,7 @@ public static class IdFormat
                 return false;
             }
 
-            decoded = (decoded << 5) | (uint)digit;
+            decoded = (decoded << AlphabetBits) | (uint)digit;
         }
 
         prefix = candidatePrefix;
@@ -184,35 +190,17 @@ public static class IdFormat
         return true;
     }
 
-    private static int DecodeDigit(char c) => char.ToLowerInvariant(c) switch
+    private static int DecodeDigit(char c)
     {
-        >= '0' and <= '9' => c - '0',
-        'a' => 10,
-        'b' => 11,
-        'c' => 12,
-        'd' => 13,
-        'e' => 14,
-        'f' => 15,
-        'g' => 16,
-        'h' => 17,
-        'i' or 'l' => 1, // Crockford transcription aliases.
-        'j' => 18,
-        'k' => 19,
-        'm' => 20,
-        'n' => 21,
-        'o' => 0, // Crockford transcription alias.
-        'p' => 22,
-        'q' => 23,
-        'r' => 24,
-        's' => 25,
-        't' => 26,
-        'v' => 27,
-        'w' => 28,
-        'x' => 29,
-        'y' => 30,
-        'z' => 31,
-        _ => -1,
-    };
+        char canonical = char.ToLowerInvariant(c) switch
+        {
+            'i' or 'l' => '1', // Crockford transcription aliases.
+            'o' => '0', // Crockford transcription alias.
+            char other => other,
+        };
+
+        return Alphabet.IndexOf(canonical);
+    }
 }
 
 /// <summary>

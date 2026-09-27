@@ -6,6 +6,9 @@
     <Nullable>enable</Nullable>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <!-- ADR-0003: the SDK's own analyzers, at their most thorough, at their own default severity
+         (.editorconfig sets no blanket default for them, only for the three packages below). -->
+    <AnalysisLevel>latest</AnalysisLevel>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(CI)' == 'true' Or '$(GITHUB_ACTIONS)' == 'true'">
@@ -16,4 +19,18 @@
   <PropertyGroup Condition="'$(MSBuildProjectName)' == 'NetPrintsVSIX'">
     <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
   </PropertyGroup>
+
+  <!-- ADR-0003: SonarAnalyzer.CSharp (code smells: duplicate literals, magic numbers, dead stores,
+       unused locals), IDisposableAnalyzers (manual-disposal surface) and
+       Microsoft.VisualStudio.Threading.Analyzers (VSTHRD: async/UI-thread misuse, e.g.
+       Dispatcher.UIThread and async void handlers). Analyzer-only, so PrivateAssets keeps them out
+       of anything this repo packs. A curated rule set from each is `error` in src/**.cs (real
+       build-breaking gates); every other rule they ship is `suggestion` (.editorconfig). Skipped on
+       the legacy, non-SDK VSIX project, which does not use central package management (above) and
+       is not built. -->
+  <ItemGroup Condition="'$(MSBuildProjectName)' != 'NetPrintsVSIX'">
+    <PackageReference Include="SonarAnalyzer.CSharp" PrivateAssets="all" />
+    <PackageReference Include="IDisposableAnalyzers" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" PrivateAssets="all" />
+  </ItemGroup>
 </Project>

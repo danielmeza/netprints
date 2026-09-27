@@ -19,6 +19,9 @@ namespace NetPrints.Serialization.Json;
 /// </summary>
 public static class CanonicalJsonWriter
 {
+    /// <summary>Spaces added per nesting level (document-format.md §1.1: 2-space indentation).</summary>
+    private const int IndentStep = 2;
+
     private static readonly JsonSerializerOptions ScalarOptions = new()
     {
         Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
@@ -165,9 +168,9 @@ public static class CanonicalJsonWriter
             }
 
             firstBlock = false;
-            WriteIndent(w, indent + 2);
+            WriteIndent(w, indent + IndentStep);
             WritePropertyName(w, key);
-            WriteValue(w, value, indent + 2, inline: false, key, arrayPropertyName: null, ChildLayoutContext(layoutContext, key));
+            WriteValue(w, value, indent + IndentStep, inline: false, key, arrayPropertyName: null, ChildLayoutContext(layoutContext, key));
         }
 
         w.WriteLine();
@@ -225,8 +228,8 @@ public static class CanonicalJsonWriter
             }
 
             firstBlock = false;
-            WriteIndent(w, indent + 2);
-            WriteValue(w, element, indent + 2, inline: false, propertyName: null, arrayPropertyName: propertyName, layoutContext);
+            WriteIndent(w, indent + IndentStep);
+            WriteValue(w, element, indent + IndentStep, inline: false, propertyName: null, arrayPropertyName: propertyName, layoutContext);
         }
 
         w.WriteLine();

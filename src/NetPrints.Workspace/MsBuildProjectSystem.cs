@@ -35,6 +35,18 @@ public sealed class MsBuildProjectSystem : IProjectSystem
     private const string SourceDirectoryGlobSuffix = "/**/*.cs";
     private static readonly string[] DirectoryBuildFileNames = ["Directory.Build.props", "Directory.Build.targets", "Directory.Packages.props"];
 
+    /// <summary>MSBuild's well-known single-target-framework property name.</summary>
+    private const string TargetFrameworkProperty = "TargetFramework";
+
+    /// <summary>The item type for an assembly reference by <c>HintPath</c>.</summary>
+    private const string ReferenceItemType = "Reference";
+
+    /// <summary>The item type for a compiled source file (as opposed to an excluded <c>None</c> one).</summary>
+    private const string CompileItemType = "Compile";
+
+    /// <summary>The metadata name marking an item as one this project system added for a source directory.</summary>
+    private const string NetPrintsSourceDirectoryMetadata = "NetPrintsSourceDirectory";
+
     private readonly ProjectSystemOptions options;
     private readonly IProcessRunner processes;
     private readonly ILogger<MsBuildProjectSystem> logger;
@@ -82,7 +94,7 @@ public sealed class MsBuildProjectSystem : IProjectSystem
             var workspaceProperties = new Dictionary<string, string>();
             if (retargetedFramework is not null)
             {
-                workspaceProperties["TargetFramework"] = retargetedFramework;
+                workspaceProperties[TargetFrameworkProperty] = retargetedFramework;
             }
 
             using MSBuildWorkspace workspace = MSBuildWorkspace.Create(workspaceProperties);
@@ -121,7 +133,7 @@ public sealed class MsBuildProjectSystem : IProjectSystem
                 RootNamespace: evaluated.GetPropertyValue("RootNamespace"),
                 AssemblyName: evaluated.GetPropertyValue("AssemblyName"),
                 OutputType: binaryType,
-                TargetFramework: retargetedFramework ?? evaluated.GetPropertyValue("TargetFramework"),
+                TargetFramework: retargetedFramework ?? evaluated.GetPropertyValue(TargetFrameworkProperty),
                 ProfileId: profileId,
                 ReferencesNetPrintsSdk: evaluated.GetItems("PackageReference")
                     .Any(item => string.Equals(item.EvaluatedInclude, "NetPrints.Sdk", StringComparison.OrdinalIgnoreCase)),
@@ -332,9 +344,18 @@ public sealed class MsBuildProjectSystem : IProjectSystem
     private static (MSBuildProject Evaluated, ProjectCollection Collection, string? RetargetedFramework) Evaluate(string projectFilePath)
     {
         var collection = new ProjectCollection();
-        MSBuildProject project = EvaluateOrThrow(projectFilePath, null, collection);
+        MSBuildProject project;
+        try
+        {
+            project = EvaluateOrThrow(projectFilePath, null, collection);
+        }
+        catch
+        {
+            collection.Dispose();
+            throw;
+        }
 
-        if (!string.IsNullOrEmpty(project.GetPropertyValue("TargetFramework")))
+        if (!string.IsNullOrEmpty(project.GetPropertyValue(TargetFrameworkProperty)))
         {
             return (project, collection, null);
         }
@@ -346,12 +367,23 @@ public sealed class MsBuildProjectSystem : IProjectSystem
             return (project, collection, null);
         }
 
-        collection.Dispose();
         string firstFramework = frameworks[0];
         var retargeted = new ProjectCollection();
-        MSBuildProject retargetedProject = EvaluateOrThrow(projectFilePath,
-            new Dictionary<string, string> { ["TargetFramework"] = firstFramework }, retargeted);
-        return (retargetedProject, retargeted, firstFramework);
+        try
+        {
+            MSBuildProject retargetedProject = EvaluateOrThrow(projectFilePath,
+                new Dictionary<string, string> { [TargetFrameworkProperty] = firstFramework }, retargeted);
+            return (retargetedProject, retargeted, firstFramework);
+        }
+        catch
+        {
+            retargeted.Dispose();
+            throw;
+        }
+        finally
+        {
+            collection.Dispose();
+        }
     }
 
     private static MSBuildProject EvaluateOrThrow(string projectFilePath, IDictionary<string, string>? globalProperties, ProjectCollection collection)
@@ -362,7 +394,6 @@ public sealed class MsBuildProjectSystem : IProjectSystem
         }
         catch (InvalidProjectFileException ex)
         {
-            collection.Dispose();
             throw new ProjectSystemException(ProjectSystemException.EvaluationFailed, ex.Message, ex);
         }
     }
@@ -434,12 +465,12 @@ public sealed class MsBuildProjectSystem : IProjectSystem
                 case "ProjectReference":
                     result.Add(new ProjectReferenceInfo(DeclaredReferenceKind.Project, item.Include, null, true, false));
                     break;
-                case "Reference" when GetMetadataOrNull(item, "HintPath") is not null:
+                case ReferenceItemType when GetMetadataOrNull(item, "HintPath") is not null:
                     result.Add(new ProjectReferenceInfo(DeclaredReferenceKind.Assembly, item.Include, null, true, true));
                     break;
-                case "Compile" or "None" when string.Equals(GetMetadataOrNull(item, "NetPrintsSourceDirectory"), "true", StringComparison.OrdinalIgnoreCase):
+                case CompileItemType or "None" when string.Equals(GetMetadataOrNull(item, NetPrintsSourceDirectoryMetadata), "true", StringComparison.OrdinalIgnoreCase):
                     result.Add(new ProjectReferenceInfo(DeclaredReferenceKind.SourceDirectory, StripSourceDirectoryGlob(item.Include),
-                        null, string.Equals(item.ItemType, "Compile", StringComparison.Ordinal), true));
+                        null, string.Equals(item.ItemType, CompileItemType, StringComparison.Ordinal), true));
                     break;
             }
         }
@@ -510,7 +541,7 @@ public sealed class MsBuildProjectSystem : IProjectSystem
 
         foreach (ProjectItemElement item in root.Items)
         {
-            if (!string.Equals(item.ItemType, "Reference", StringComparison.Ordinal))
+            if (!string.Equals(item.ItemType, ReferenceItemType, StringComparison.Ordinal))
             {
                 continue;
             }
@@ -523,7 +554,7 @@ public sealed class MsBuildProjectSystem : IProjectSystem
         }
 
         string simpleName = Path.GetFileNameWithoutExtension(assemblyPath);
-        ProjectItemElement newItem = root.AddItem("Reference", simpleName);
+        ProjectItemElement newItem = root.AddItem(ReferenceItemType, simpleName);
         newItem.AddMetadata("HintPath", hintPath);
     }
 
@@ -538,19 +569,19 @@ public sealed class MsBuildProjectSystem : IProjectSystem
     private static void AddSourceDirectory(ProjectRootElement root, string directoryPath, string projectDirectory)
     {
         string glob = SourceDirectoryGlob(projectDirectory, directoryPath);
-        ProjectItemElement item = root.AddItem("Compile", glob);
-        item.AddMetadata("NetPrintsSourceDirectory", "true", expressAsAttribute: true);
+        ProjectItemElement item = root.AddItem(CompileItemType, glob);
+        item.AddMetadata(NetPrintsSourceDirectoryMetadata, "true", expressAsAttribute: true);
     }
 
     private static void SetSourceDirectoryIncluded(ProjectRootElement root, string directoryPath, bool included, string projectDirectory)
     {
         string glob = SourceDirectoryGlob(projectDirectory, directoryPath);
-        string wantedType = included ? "Compile" : "None";
+        string wantedType = included ? CompileItemType : "None";
 
         ProjectItemElement? existing = root.Items.FirstOrDefault(item =>
-            (string.Equals(item.ItemType, "Compile", StringComparison.Ordinal) || string.Equals(item.ItemType, "None", StringComparison.Ordinal))
+            (string.Equals(item.ItemType, CompileItemType, StringComparison.Ordinal) || string.Equals(item.ItemType, "None", StringComparison.Ordinal))
             && string.Equals(item.Include, glob, StringComparison.Ordinal)
-            && string.Equals(GetMetadataOrNull(item, "NetPrintsSourceDirectory"), "true", StringComparison.OrdinalIgnoreCase));
+            && string.Equals(GetMetadataOrNull(item, NetPrintsSourceDirectoryMetadata), "true", StringComparison.OrdinalIgnoreCase));
 
         if (existing is null || string.Equals(existing.ItemType, wantedType, StringComparison.Ordinal))
         {
@@ -559,7 +590,7 @@ public sealed class MsBuildProjectSystem : IProjectSystem
 
         var group = (ProjectItemGroupElement)existing.Parent!;
         ProjectItemElement replacement = group.AddItem(wantedType, glob);
-        replacement.AddMetadata("NetPrintsSourceDirectory", "true", expressAsAttribute: true);
+        replacement.AddMetadata(NetPrintsSourceDirectoryMetadata, "true", expressAsAttribute: true);
         group.RemoveChild(existing);
     }
 
@@ -573,10 +604,10 @@ public sealed class MsBuildProjectSystem : IProjectSystem
         string matchInclude = kind == DeclaredReferenceKind.SourceDirectory ? SourceDirectoryGlob(projectDirectory, include) : include;
 
         bool Matches(ProjectItemElement item) => kind == DeclaredReferenceKind.Assembly
-            ? string.Equals(item.ItemType, "Reference", StringComparison.Ordinal) && string.Equals(item.Include, matchInclude, StringComparison.Ordinal)
-            : (string.Equals(item.ItemType, "Compile", StringComparison.Ordinal) || string.Equals(item.ItemType, "None", StringComparison.Ordinal))
+            ? string.Equals(item.ItemType, ReferenceItemType, StringComparison.Ordinal) && string.Equals(item.Include, matchInclude, StringComparison.Ordinal)
+            : (string.Equals(item.ItemType, CompileItemType, StringComparison.Ordinal) || string.Equals(item.ItemType, "None", StringComparison.Ordinal))
                 && string.Equals(item.Include, matchInclude, StringComparison.Ordinal)
-                && string.Equals(GetMetadataOrNull(item, "NetPrintsSourceDirectory"), "true", StringComparison.OrdinalIgnoreCase);
+                && string.Equals(GetMetadataOrNull(item, NetPrintsSourceDirectoryMetadata), "true", StringComparison.OrdinalIgnoreCase);
 
         ProjectItemElement? found = root.Items.FirstOrDefault(Matches);
         if (found is not null)

@@ -13,7 +13,7 @@ public class EditFlowTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task CreateIfElseConnectSaveAndReload()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var method = (MethodGraph)session.GraphVM.Graph;
         session.GraphVM.Nodes.Single(n => n.Node == method.EntryNode).OutputExecPins.Single().DisconnectAll();
         await session.WaitForRenderedAsync(Token);

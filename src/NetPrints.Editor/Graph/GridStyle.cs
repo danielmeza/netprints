@@ -58,6 +58,21 @@ public readonly record struct GridFrame(
     Color MinorColor,
     Color MajorColor)
 {
+    /// <summary>Maximum value of an 8-bit color channel, for normalizing an alpha byte to the 0-1 range.</summary>
+    private const double MaxColorChannel = 255.0;
+
+    /// <summary>Rounds a line's center to the nearest device pixel (added before flooring).</summary>
+    private const float RoundToNearestPixel = 0.5f;
+
+    /// <summary>Fraction of a line's width to its either side of its centered position.</summary>
+    private const float HalfWidth = 0.5f;
+
+    /// <summary>Quadratic coefficient of the smoothstep Hermite polynomial (3t² - 2t³).</summary>
+    private const double SmoothStepQuadraticCoefficient = 3;
+
+    /// <summary>Cubic coefficient of the smoothstep Hermite polynomial (3t² - 2t³).</summary>
+    private const double SmoothStepCubicCoefficient = 2;
+
     /// <summary>
     /// Derives the frame parameters. The phase is taken modulo one major period, so the floats the
     /// render paths use stay small however far the view is panned, and line index 0 of the reduced
@@ -96,7 +111,7 @@ public readonly record struct GridFrame(
 
     /// <summary>The first device column (or row) covered by a line centered at <paramref name="center"/>.</summary>
     /// <remarks>The snapping rule shared by both render paths.</remarks>
-    public static float SnapStart(float center, int width) => MathF.Floor(center + 0.5f - 0.5f * width);
+    public static float SnapStart(float center, int width) => MathF.Floor(center + RoundToNearestPixel - HalfWidth * width);
 
     /// <summary>Whether line <paramref name="index"/> (0 at the phase) is a major line.</summary>
     public bool IsMajor(int index) => ((index % MajorEvery) + MajorEvery) % MajorEvery == 0;
@@ -104,7 +119,7 @@ public readonly record struct GridFrame(
     /// <summary>Source-over compositing of straight-alpha colors, rounded to bytes.</summary>
     public static Color Over(Color source, Color destination)
     {
-        double sa = source.A / 255.0, da = destination.A / 255.0;
+        double sa = source.A / MaxColorChannel, da = destination.A / MaxColorChannel;
         double a = sa + da * (1 - sa);
         if (a <= 0)
         {
@@ -112,7 +127,7 @@ public readonly record struct GridFrame(
         }
 
         byte Channel(byte s, byte d) => (byte)Math.Round((s * sa + d * da * (1 - sa)) / a);
-        return Color.FromArgb((byte)Math.Round(a * 255), Channel(source.R, destination.R), Channel(source.G, destination.G),
+        return Color.FromArgb((byte)Math.Round(a * MaxColorChannel), Channel(source.R, destination.R), Channel(source.G, destination.G),
             Channel(source.B, destination.B));
     }
 
@@ -121,7 +136,7 @@ public readonly record struct GridFrame(
     private static double SmoothStep(double edge0, double edge1, double x)
     {
         double t = Math.Clamp((x - edge0) / (edge1 - edge0), 0, 1);
-        return t * t * (3 - 2 * t);
+        return t * t * (SmoothStepQuadraticCoefficient - SmoothStepCubicCoefficient * t);
     }
 
     private static double Mod(double value, double modulus) => value - modulus * Math.Floor(value / modulus);

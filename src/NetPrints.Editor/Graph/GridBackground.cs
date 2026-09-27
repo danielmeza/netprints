@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Logging;
@@ -207,6 +208,7 @@ public sealed class GridBackground : Control
     /// viewport and resolved mode) for the render thread; see <see cref="GridDrawOperation"/>.
     /// </summary>
     /// <param name="context">Drawing context to queue the custom draw operation on.</param>
+    [SuppressMessage("IDisposableAnalyzers.Correctness", "IDISP004", Justification = "ADR-0003: Avalonia's renderer disposes the queued ICustomDrawOperation after executing it.")]
     public override void Render(DrawingContext context)
     {
         style ??= new GridStyle(CellSize, MajorEvery, MinorWidth: 1, MajorWidth: 1, BackgroundColor, MinorColor, MajorColor);

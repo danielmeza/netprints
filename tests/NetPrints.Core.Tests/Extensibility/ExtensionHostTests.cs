@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using NetPrints.Extensibility;
 using NetPrints.Extensibility.Loading;
 using Xunit;
@@ -36,10 +38,10 @@ public class ExtensionHostTests : IDisposable
     }
 
     [Fact]
-    public void CurrentIsLoadedFromTheOptions()
+    public async Task CurrentIsLoadedFromTheOptions()
     {
         var disposable = new DisposableMemberEmitter();
-        using var host = new ExtensionHost(
+        await using var host = new ExtensionHost(
             Options([BuiltInExtension.InProcessEntry, InProcess("test.ext", builder => builder.AddMemberEmitter(disposable))]),
             new CollectingLoggerFactory());
 
@@ -47,11 +49,11 @@ public class ExtensionHostTests : IDisposable
     }
 
     [Fact]
-    public void LoadingForAProjectRebuildsTheRegistryOnceAndReusesTheLoadContext()
+    public async Task LoadingForAProjectRebuildsTheRegistryOnceAndReusesTheLoadContext()
     {
         string folder = CompiledExtension("test.compiled");
         var emitters = new List<DisposableMemberEmitter>();
-        using var host = new ExtensionHost(
+        await using var host = new ExtensionHost(
             Options([BuiltInExtension.InProcessEntry, InProcess("test.ext", builder =>
             {
                 var emitter = new DisposableMemberEmitter();
@@ -63,8 +65,8 @@ public class ExtensionHostTests : IDisposable
         var raised = new List<ExtensionRegistry>();
         host.RegistryChanged += (_, registry) => raised.Add(registry);
 
-        ExtensionRegistry withProject = host.LoadForProject([folder], TestContext.Current.CancellationToken);
-        ExtensionRegistry again = host.LoadForProject([folder], TestContext.Current.CancellationToken);
+        ExtensionRegistry withProject = await host.LoadForProjectAsync([folder], TestContext.Current.CancellationToken);
+        ExtensionRegistry again = await host.LoadForProjectAsync([folder], TestContext.Current.CancellationToken);
 
         Assert.NotSame(initial, withProject);
         Assert.Same(withProject, again);
@@ -75,8 +77,8 @@ public class ExtensionHostTests : IDisposable
         Assert.True(emitters[0].Disposed);
         Assert.False(emitters[1].Disposed);
 
-        ExtensionRegistry dropped = host.LoadForProject([], TestContext.Current.CancellationToken);
-        ExtensionRegistry restored = host.LoadForProject([folder], TestContext.Current.CancellationToken);
+        ExtensionRegistry dropped = await host.LoadForProjectAsync([], TestContext.Current.CancellationToken);
+        ExtensionRegistry restored = await host.LoadForProjectAsync([folder], TestContext.Current.CancellationToken);
 
         Assert.DoesNotContain(dropped.Loaded, m => m.Id == "test.compiled");
         Assert.Same(
@@ -85,15 +87,15 @@ public class ExtensionHostTests : IDisposable
     }
 
     [Fact]
-    public void ACancelledLoadLeavesTheRegistryUnchanged()
+    public async Task ACancelledLoadLeavesTheRegistryUnchanged()
     {
         string folder = CompiledExtension("test.compiled");
-        using var host = new ExtensionHost(ExtensionLoaderOptions.BuiltInOnly, new CollectingLoggerFactory());
+        await using var host = new ExtensionHost(ExtensionLoaderOptions.BuiltInOnly, new CollectingLoggerFactory());
         ExtensionRegistry initial = host.Current;
         using var cancelled = new System.Threading.CancellationTokenSource();
         cancelled.Cancel();
 
-        Assert.Throws<OperationCanceledException>(() => host.LoadForProject([folder], cancelled.Token));
+        await Assert.ThrowsAsync<OperationCanceledException>(() => host.LoadForProjectAsync([folder], cancelled.Token).AsTask());
 
         Assert.Same(initial, host.Current);
     }

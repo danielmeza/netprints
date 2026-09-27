@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization.Metadata;
+using NetPrints.Serialization.Documents;
 using BuiltInConverters = NetPrints.Serialization.Mapping.BuiltIn;
 
 namespace NetPrints.Serialization.Mapping;
@@ -22,10 +23,14 @@ public sealed class NodeDocumentConverterRegistry
     /// </summary>
     private static readonly HashSet<string> KnownBuiltInKinds = new(StringComparer.Ordinal)
     {
-        "methodEntry", "constructorEntry", "return", "classReturn", "typeReturn", "eventEntry",
-        "callMethod", "constructor", "makeDelegate", "variableGetter", "variableSetter",
-        "literal", "type", "makeArrayType", "makeArray", "explicitCast", "typeOf",
-        "ifElse", "forLoop", "ternary", "await", "throw", "default", "reroute",
+        BuiltInNodeKinds.MethodEntry, BuiltInNodeKinds.ConstructorEntry, BuiltInNodeKinds.Return,
+        BuiltInNodeKinds.ClassReturn, BuiltInNodeKinds.TypeReturn, BuiltInNodeKinds.EventEntry,
+        BuiltInNodeKinds.CallMethod, BuiltInNodeKinds.Constructor, BuiltInNodeKinds.MakeDelegate,
+        BuiltInNodeKinds.VariableGetter, BuiltInNodeKinds.VariableSetter, BuiltInNodeKinds.Literal,
+        BuiltInNodeKinds.Type, BuiltInNodeKinds.MakeArrayType, BuiltInNodeKinds.MakeArray,
+        BuiltInNodeKinds.ExplicitCast, BuiltInNodeKinds.TypeOf, BuiltInNodeKinds.IfElse,
+        BuiltInNodeKinds.ForLoop, BuiltInNodeKinds.Ternary, BuiltInNodeKinds.Await,
+        BuiltInNodeKinds.Throw, BuiltInNodeKinds.Default, BuiltInNodeKinds.Reroute,
     };
 
     private readonly Dictionary<string, INodeDocumentConverter> byKind;

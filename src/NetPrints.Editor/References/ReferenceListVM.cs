@@ -109,7 +109,7 @@ public sealed partial class ReferenceListVM : ObservableObject, IDisposable
 
     /// <summary>Removes a reference (PAR-20).</summary>
     [RelayCommand]
-    private async Task Remove(DeclaredReferenceVM? reference)
+    private async Task RemoveAsync(DeclaredReferenceVM? reference)
     {
         if (reference is null)
         {

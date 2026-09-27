@@ -28,7 +28,7 @@ public class HoverAndDropTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task HoveringACableHighlightsIt()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var cable = session.Graph.Connection("MethodEntryNode.Exec->CallMethodNode.Exec");
         await session.Driver.MoveAsync(await session.Graph.EmptyPointAsync(Token), Token);
         var before = await cable.ScreenshotAroundMidpointAsync(24, Token);
@@ -45,7 +45,7 @@ public class HoverAndDropTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task HoveringAPinHighlightsIt()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var pin = session.Graph.Node("CallMethodNode").Input("Exec");
 
         Assert.True(await PixelsChangeOnHoverAsync(session, pin), "the pin row is highlighted under the pointer");
@@ -55,7 +55,7 @@ public class HoverAndDropTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task HoveringANodeHighlightsIt()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var node = session.Graph.Node("CallMethodNode");
 
         await node.Label.HoverAsync(Token);
@@ -66,7 +66,7 @@ public class HoverAndDropTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task DroppingAMethodOnTheCanvasAddsACallNode()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var main = session.ClassVM.Methods.Single(m => m.Name == "Main");
         var data = new DataTransfer();
         data.Add(DataTransferItem.Create(GraphDragDrop.MethodFormat, main)); // what the method list puts on the clipboard
@@ -84,7 +84,7 @@ public class HoverAndDropTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task DroppingAVariableOnTheCanvasOffersGetAndSet()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         await session.ClassEditor.CreateVariableButton.ClickAsync(Token);
         var variable = session.ClassVM.Variables.Single();
         var data = new DataTransfer();
@@ -101,7 +101,7 @@ public class HoverAndDropTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task DroppingAVariableOpensTheGetSetPopupAtTheDropPoint()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         await session.ClassEditor.CreateVariableButton.ClickAsync(Token);
         var variable = session.ClassVM.Variables.Single();
         var data = new DataTransfer();
@@ -121,7 +121,7 @@ public class HoverAndDropTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task DroppingSomethingElseIsRefused()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var data = new DataTransfer();
         data.Add(DataTransferItem.CreateText("not a method"));
         int nodes = session.GraphVM.Nodes.Count;

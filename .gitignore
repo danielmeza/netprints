@@ -257,3 +257,4 @@ paket-files/
 # NetPrints modernization
 TestResults/
 samples/**/Compiled_*/
+.vscode/

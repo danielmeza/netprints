@@ -40,6 +40,9 @@ public sealed class GraphPointConverter : IValueConverter
 /// </summary>
 public static class GraphBrushes
 {
+    /// <summary>Brightness fraction applied to each color channel of an unconnected pin's fill.</summary>
+    private const double DimmedPinBrightness = 0.6;
+
     /// <summary>Border brush for a selected node.</summary>
     public static readonly IImmutableSolidColorBrush SelectedBorder = new ImmutableSolidColorBrush(Color.FromArgb(0xFF, 0x00, 0x99, 0x00));
 
@@ -93,7 +96,7 @@ public static class GraphBrushes
     public static IBrush DimmedPin(PinKind kind)
     {
         var c = PinColors[kind];
-        return new ImmutableSolidColorBrush(Color.FromArgb(c.A, (byte)(c.R * 0.6), (byte)(c.G * 0.6), (byte)(c.B * 0.6)));
+        return new ImmutableSolidColorBrush(Color.FromArgb(c.A, (byte)(c.R * DimmedPinBrightness), (byte)(c.G * DimmedPinBrightness), (byte)(c.B * DimmedPinBrightness)));
     }
 }
 
@@ -218,6 +221,12 @@ public sealed class DefaultValueBrushConverter : IValueConverter
 /// <summary>bool (faint) → cable opacity (0.1 faint, 0.7 normal).</summary>
 public sealed class FaintOpacityConverter : IValueConverter
 {
+    /// <summary>Opacity of a faint (unhighlighted) cable.</summary>
+    private const double FaintOpacity = 0.1;
+
+    /// <summary>Opacity of a normal (highlighted) cable.</summary>
+    private const double NormalOpacity = 0.7;
+
     /// <summary>Shared, stateless instance for XAML bindings.</summary>
     public static readonly FaintOpacityConverter Instance = new();
 
@@ -227,7 +236,7 @@ public sealed class FaintOpacityConverter : IValueConverter
     /// <param name="parameter">Unused.</param>
     /// <param name="culture">Unused.</param>
     /// <returns>0.1 if <paramref name="value"/> is <see langword="true"/>, otherwise 0.7.</returns>
-    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) => value is true ? 0.1 : 0.7;
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) => value is true ? FaintOpacity : NormalOpacity;
 
     /// <summary>Not supported: this converter is one-way.</summary>
     /// <param name="value">Unused.</param>
@@ -242,6 +251,12 @@ public sealed class FaintOpacityConverter : IValueConverter
 /// <summary>bool (faint) → cable thickness (2 faint, 4 normal).</summary>
 public sealed class FaintThicknessConverter : IValueConverter
 {
+    /// <summary>Thickness, in DIP, of a faint (unhighlighted) cable.</summary>
+    private const double FaintThickness = 2.0;
+
+    /// <summary>Thickness, in DIP, of a normal (highlighted) cable.</summary>
+    private const double NormalThickness = 4.0;
+
     /// <summary>Shared, stateless instance for XAML bindings.</summary>
     public static readonly FaintThicknessConverter Instance = new();
 
@@ -251,7 +266,7 @@ public sealed class FaintThicknessConverter : IValueConverter
     /// <param name="parameter">Unused.</param>
     /// <param name="culture">Unused.</param>
     /// <returns>2.0 if <paramref name="value"/> is <see langword="true"/>, otherwise 4.0.</returns>
-    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) => value is true ? 2.0 : 4.0;
+    public object? Convert(object? value, Type targetType, object? parameter, CultureInfo culture) => value is true ? FaintThickness : NormalThickness;
 
     /// <summary>Not supported: this converter is one-way.</summary>
     /// <param name="value">Unused.</param>

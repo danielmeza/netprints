@@ -441,6 +441,10 @@ public sealed class DocumentMapper : IDocumentMapper
         return reassigned;
     }
 
+    /// <summary>The issue-message label <see cref="ResolveMemberId"/> is always called with: every
+    /// caller resolves a variable, method, constructor or event graph id, all "Member" kinds.</summary>
+    private const string MemberIdKind = "Member";
+
     /// <summary>
     /// Resolves a member id: a shape not matching <see cref="IdFormat.PatternFor"/> is replaced by a
     /// fresh one first (<see cref="DocumentIssue.InvalidIdReassigned"/>, <c>NPD009</c>, research.md R21),
@@ -548,7 +552,7 @@ public sealed class DocumentMapper : IDocumentMapper
         {
             Visibility = document.Visibility,
         };
-        variable.Id = ResolveMemberId('m', document.Id, "Member", seenMemberIds, layout, isVariable: true, id, issues);
+        variable.Id = ResolveMemberId('m', document.Id, MemberIdKind, seenMemberIds, layout, isVariable: true, id, issues);
 
         // Variable's constructor always builds a placeholder type-node tree for its TypeSpecifier
         // argument (GraphUtil.CreateNestedTypeNode), unlike every other graph kind's constructor,
@@ -596,7 +600,7 @@ public sealed class DocumentMapper : IDocumentMapper
             Visibility = document.Visibility,
             Modifiers = document.Modifiers,
         };
-        method.Id = ResolveMemberId('m', document.Id, "Member", seenMemberIds, layout, isVariable: false, id, issues);
+        method.Id = ResolveMemberId('m', document.Id, MemberIdKind, seenMemberIds, layout, isVariable: false, id, issues);
         cls.Methods.Add(method);
 
         MapGraphFromDocument(document.Graph, method, context, layout, knownGraphKeys, id, issues);
@@ -607,7 +611,7 @@ public sealed class DocumentMapper : IDocumentMapper
         HashSet<string> seenMemberIds, DocumentId id, ICollection<DocumentIssue> issues)
     {
         var constructor = new ConstructorGraph { Class = cls, Project = cls.Project, Visibility = document.Visibility };
-        constructor.Id = ResolveMemberId('m', document.Id, "Member", seenMemberIds, layout, isVariable: false, id, issues);
+        constructor.Id = ResolveMemberId('m', document.Id, MemberIdKind, seenMemberIds, layout, isVariable: false, id, issues);
         cls.Constructors.Add(constructor);
 
         MapGraphFromDocument(document.Graph, constructor, context, layout, knownGraphKeys, id, issues);
@@ -618,7 +622,7 @@ public sealed class DocumentMapper : IDocumentMapper
         HashSet<string> seenMemberIds, DocumentId id, ICollection<DocumentIssue> issues)
     {
         var eventGraph = new EventGraph(document.Name) { Class = cls, Project = cls.Project };
-        eventGraph.Id = ResolveMemberId('m', document.Id, "Member", seenMemberIds, layout, isVariable: false, id, issues);
+        eventGraph.Id = ResolveMemberId('m', document.Id, MemberIdKind, seenMemberIds, layout, isVariable: false, id, issues);
         cls.EventGraphs.Add(eventGraph);
 
         MapGraphFromDocument(document.Graph, eventGraph, context, layout, knownGraphKeys, id, issues);

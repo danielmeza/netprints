@@ -18,7 +18,7 @@ public class AutomationAgentTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task AnswersStatusFindDumpAndSettle()
     {
-        using var app = HeadlessApp.Start();
+        await using var app = HeadlessApp.Start();
         string pipe = NewPipeName();
         using var agent = new AutomationAgent(pipe, app.Tree, () => new AutomationStatus(true, false, false, null, Environment.ProcessId));
         await using var client = await AutomationClient.ConnectAsync(pipe, TimeSpan.FromSeconds(10), Token);
@@ -49,7 +49,7 @@ public class AutomationAgentTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task DisposingWhileARequestIsInFlightFaultsOnlyThatRequest()
     {
-        using var app = HeadlessApp.Start();
+        await using var app = HeadlessApp.Start();
 
         await AssertNoUnobservedExceptionsAsync(async () =>
         {
@@ -88,7 +88,7 @@ public class AutomationAgentTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task DisposingTheAgentWhileAConnectionIsServedDoesNotFaultItsRelease()
     {
-        using var app = HeadlessApp.Start();
+        await using var app = HeadlessApp.Start();
 
         await AssertNoUnobservedExceptionsAsync(async () =>
         {
@@ -154,7 +154,7 @@ public class AutomationAgentTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task RejectsAQueryWithNoAutomationId()
     {
-        using var app = HeadlessApp.Start();
+        await using var app = HeadlessApp.Start();
         string pipe = NewPipeName();
         using var agent = new AutomationAgent(pipe, app.Tree, () => new AutomationStatus(true, false, false, null, Environment.ProcessId));
         await using var client = await AutomationClient.ConnectAsync(pipe, TimeSpan.FromSeconds(10), Token);
@@ -168,7 +168,7 @@ public class AutomationAgentTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task DropsAConnectionThatSendsAnOversizedRequestLine()
     {
-        using var app = HeadlessApp.Start();
+        await using var app = HeadlessApp.Start();
         string pipe = NewPipeName();
         using var agent = new AutomationAgent(pipe, app.Tree, () => new AutomationStatus(true, false, false, null, Environment.ProcessId));
 
@@ -212,7 +212,7 @@ public class AutomationAgentTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task RefusesConnectionsBeyondTheConcurrencyCap()
     {
-        using var app = HeadlessApp.Start();
+        await using var app = HeadlessApp.Start();
         string pipe = NewPipeName();
         using var agent = new AutomationAgent(pipe, app.Tree, () => new AutomationStatus(true, false, false, null, Environment.ProcessId));
 

@@ -24,28 +24,26 @@ internal static class Program
     [STAThread]
     public static int Main(string[] args)
     {
-        ILoggerFactory loggerFactory = CreateLoggerFactory();
+        using ILoggerFactory loggerFactory = CreateLoggerFactory();
         Logger.Sink = new AvaloniaLogSink(loggerFactory);
 
         // Must run before any Microsoft.Build-namespace type is loaded (project-system.md §4).
         bool msBuildAvailable = MsBuildRegistration.EnsureRegistered(loggerFactory.CreateLogger(nameof(MsBuildRegistration)));
 
         var settings = new JsonFileSettingsStore(JsonFileSettingsStore.DefaultFilePath(), loggerFactory.CreateLogger<JsonFileSettingsStore>());
-        using var extensions = new ExtensionHost(
+        var extensions = new ExtensionHost(
             new ExtensionLoaderOptions(GetExtensionSearchDirectories(settings), [], [BuiltInExtension.InProcessEntry]), loggerFactory);
         HostChannelSelection channel = HostChannelSelector.Select(
             extensions.Current, GetEnvironment(), loggerFactory.CreateLogger(nameof(HostChannelSelector)));
-        EditorApp.HostServices = new EditorHostServices(loggerFactory, extensions, settings, channel.Channel, channel.Error, msBuildAvailable);
+        EditorApp.HostServices = new EditorHostServices(loggerFactory, extensions, settings, channel.Channel, channel.Error, msBuildAvailable,
+            async () =>
+            {
+                await extensions.DisposeAsync().ConfigureAwait(false);
+                await channel.Channel.DisposeAsync().ConfigureAwait(false);
+            });
 
-        try
-        {
-            return BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
-        }
-        finally
-        {
-            channel.Channel.DisposeAsync().AsTask().GetAwaiter().GetResult();
-            loggerFactory.Dispose();
-        }
+        // EditorApp's ShutdownRequested handler awaits HostServices.DisposeAsync() before the app exits.
+        return BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
     }
 
     /// <summary>

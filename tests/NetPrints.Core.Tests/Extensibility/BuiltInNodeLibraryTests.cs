@@ -1,6 +1,7 @@
 using System;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using NetPrints.Core;
 using NetPrints.Extensibility;
 using NetPrints.Extensibility.Loading;
@@ -31,10 +32,10 @@ public class BuiltInNodeLibraryTests
     private static ExtensionRegistry LoadBuiltIn() => Load(ExtensionLoaderOptions.BuiltInOnly);
 
     [Fact]
-    public void RegistryHoldsOneKindPerBuiltInConverter()
+    public async Task RegistryHoldsOneKindPerBuiltInConverter()
     {
         // eventEntry (sub-phase G, T080) is the 24th kind of document-format.md §1.5.
-        using ExtensionRegistry registry = LoadBuiltIn();
+        await using ExtensionRegistry registry = LoadBuiltIn();
 
         Assert.Equal(NodeDocumentConverterRegistry.BuiltIn.Count, registry.NodeKinds.Count);
         Assert.Equal(24, registry.NodeKinds.Count);
@@ -47,9 +48,9 @@ public class BuiltInNodeLibraryTests
     }
 
     [Fact]
-    public void RemovingTheBuiltInExtensionMakesBuiltInNodesUnknown()
+    public async Task RemovingTheBuiltInExtensionMakesBuiltInNodesUnknown()
     {
-        using ExtensionRegistry registry = Load(Options());
+        await using ExtensionRegistry registry = Load(Options());
 
         Assert.Empty(registry.NodeKinds);
         Assert.Null(registry.NodeConverters.FindByKind("ifElse"));
@@ -58,9 +59,9 @@ public class BuiltInNodeLibraryTests
     }
 
     [Fact]
-    public void TranslationEnvironmentReusesTheBuiltInTranslators()
+    public async Task TranslationEnvironmentReusesTheBuiltInTranslators()
     {
-        using ExtensionRegistry registry = LoadBuiltIn();
+        await using ExtensionRegistry registry = LoadBuiltIn();
 
         Assert.Same(NodeTranslatorRegistry.BuiltIn.Find(typeof(CallMethodNode)), registry.Translation.Nodes.Find(typeof(CallMethodNode)));
         Assert.Same(NodeTranslatorRegistry.BuiltIn.Find(typeof(ForLoopNode)), registry.Translation.Nodes.Find(typeof(ForLoopNode)));
@@ -77,9 +78,9 @@ public class BuiltInNodeLibraryTests
     [InlineData("typeReturn")]
     [InlineData("type")]
     [InlineData("makeArrayType")]
-    public void KindsTheExecutionTranslatorNeverHandlesFailWithNpt006(string kindName)
+    public async Task KindsTheExecutionTranslatorNeverHandlesFailWithNpt006(string kindName)
     {
-        using ExtensionRegistry registry = LoadBuiltIn();
+        await using ExtensionRegistry registry = LoadBuiltIn();
         var kind = registry.NodeKinds.Single(k => k.Kind == kindName);
         Assert.Null(NodeTranslatorRegistry.BuiltIn.Find(kind.NodeType));
         var graph = new MethodGraph("M");

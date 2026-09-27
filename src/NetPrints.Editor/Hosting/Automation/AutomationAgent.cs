@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.IO.Pipes;
 using System.Text;
 using System.Text.Json;
@@ -136,27 +137,27 @@ public sealed class AutomationAgent : IDisposable
             var server = nextServer;
             try
             {
-                await server.WaitForConnectionAsync(stop.Token);
+                await server.WaitForConnectionAsync(stop.Token).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
-                await server.DisposeAsync();
+                await server.DisposeAsync().ConfigureAwait(false);
                 return;
             }
             catch (Exception e)
             {
-                await server.DisposeAsync();
+                await server.DisposeAsync().ConfigureAwait(false);
                 LogError("stopped accepting connections", e);
                 return;
             }
 
-            if (connectionSlots.Wait(0))
+            if (await connectionSlots.WaitAsync(0).ConfigureAwait(false))
             {
                 _ = ServeConnectionAsync(server);
             }
             else
             {
-                await server.DisposeAsync();
+                await server.DisposeAsync().ConfigureAwait(false);
             }
 
             try
@@ -182,7 +183,7 @@ public sealed class AutomationAgent : IDisposable
     {
         try
         {
-            await ServeAsync(stream);
+            await ServeAsync(stream).ConfigureAwait(false);
         }
         catch (Exception e)
         {
@@ -194,6 +195,7 @@ public sealed class AutomationAgent : IDisposable
         }
     }
 
+    [SuppressMessage("IDisposableAnalyzers.Correctness", "IDISP007", Justification = "ADR-0003: ServeAsync takes ownership of its connection stream.")]
     private async Task ServeAsync(NamedPipeServerStream stream)
     {
         await using var _ = stream;
@@ -203,20 +205,20 @@ public sealed class AutomationAgent : IDisposable
 
         try
         {
-            while (!stop.IsCancellationRequested && await lines.ReadLineAsync(stop.Token) is { } line)
+            while (!stop.IsCancellationRequested && await lines.ReadLineAsync(stop.Token).ConfigureAwait(false) is { } line)
             {
                 AutomationResponse response;
                 try
                 {
                     var request = JsonSerializer.Deserialize<AutomationRequest>(line, Json) ?? throw new InvalidOperationException("Empty request.");
-                    response = await HandleAsync(request);
+                    response = await HandleAsync(request).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
                     response = new AutomationResponse(false) { Error = e.Message };
                 }
 
-                await writer.WriteLineAsync(JsonSerializer.Serialize(response, Json));
+                await writer.WriteLineAsync(JsonSerializer.Serialize(response, Json)).ConfigureAwait(false);
             }
         }
         catch (Exception e) when (e is IOException or OperationCanceledException or ObjectDisposedException)
@@ -304,7 +306,7 @@ file sealed class BoundedLineReader(TextReader reader, int maxChars)
         {
             if (start >= length)
             {
-                length = await reader.ReadAsync(buffer, cancellationToken);
+                length = await reader.ReadAsync(buffer, cancellationToken).ConfigureAwait(false);
                 start = 0;
                 if (length == 0)
                 {

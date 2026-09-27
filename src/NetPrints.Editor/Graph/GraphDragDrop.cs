@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Avalonia;
 using Avalonia.Input;
 using NetPrints.Editor.ClassEditor;
@@ -30,7 +31,7 @@ public static class GraphDragDrop
 
     private static async Task StartDragAsync(PointerPressedEventArgs e, DataTransferItem item)
     {
-        var data = new DataTransfer();
+        using var data = new DataTransfer();
         data.Add(item);
         await DragDrop.DoDragDropAsync(e, data, DragDropEffects.Copy);
     }
@@ -76,6 +77,7 @@ public sealed class DragSourceHelper
     /// </summary>
     /// <param name="e">The pointer-moved event.</param>
     /// <param name="relativeTo">Visual the pointer position is measured relative to; must match the one passed to <see cref="Pressed"/>.</param>
+    [SuppressMessage("Usage", "VSTHRD100", Justification = "ADR-0003: async void is deliberate, an event handler (see the comment above).")]
     public async void Moved(PointerEventArgs e, Visual relativeTo)
     {
         if (pressed is null || payload is null)

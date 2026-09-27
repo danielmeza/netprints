@@ -4,6 +4,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Styling;
+using Microsoft.Extensions.Logging;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Editor.Main;
@@ -18,6 +19,10 @@ public partial class EditorApp : Application
 {
     /// <summary>The embedded Inter font (Avalonia.Fonts.Inter), used as the default font family.</summary>
     public const string DefaultFontFamily = "avares://Avalonia.Fonts.Inter/Assets#Inter";
+
+    /// <summary>Written to stderr once the main window's close has awaited <see cref="HostServices"/>'s
+    /// cleanup, before shutdown proceeds; observed by the E2E shutdown test.</summary>
+    public const string ShutdownCleanupMarker = "[NetPrints] Host services disposed.";
 
     private static EditorHostServices? hostServices;
 
@@ -63,6 +68,17 @@ public partial class EditorApp : Application
             var window = composition.CreateMainWindow();
             desktop.MainWindow = window;
             desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;
+
+            var shutdownCoordinator = new ShutdownCoordinator(
+                async () =>
+                {
+                    composition.Dispose();
+                    await HostServices.DisposeAsync();
+                    await Console.Error.WriteLineAsync(ShutdownCleanupMarker);
+                },
+                () => desktop.Shutdown(),
+                HostServices.LoggerFactory.CreateLogger(nameof(EditorApp)));
+            desktop.ShutdownRequested += (_, e) => shutdownCoordinator.OnShutdownRequested(e);
 
             // Automation mode (E2E tests only): settled screenshots and a read-only agent.
             if (AutomationAgent.IsEnabled(out string pipeName))

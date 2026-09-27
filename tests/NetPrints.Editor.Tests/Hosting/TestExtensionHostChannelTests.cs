@@ -9,7 +9,7 @@ using NetPrints.Extensibility.Loading;
 namespace NetPrints.Editor.Tests.Hosting;
 
 /// <summary>SC-004: the real test extension's host channel is selected by id and its messages drive the editor.</summary>
-public sealed class TestExtensionHostChannelTests : IDisposable
+public sealed class TestExtensionHostChannelTests : IAsyncLifetime
 {
     private const string TestHostChannelId = "test";
 
@@ -18,9 +18,11 @@ public sealed class TestExtensionHostChannelTests : IDisposable
     private readonly ExtensionHost extensions = TestExtensionFolder.CreateHost();
     private readonly string csproj = TestPaths.CopyHelloWorldSample();
 
-    public void Dispose()
+    public ValueTask InitializeAsync() => ValueTask.CompletedTask;
+
+    public async ValueTask DisposeAsync()
     {
-        extensions.Dispose();
+        await extensions.DisposeAsync();
         TestPaths.TryDelete(csproj);
     }
 

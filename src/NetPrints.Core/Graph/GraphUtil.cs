@@ -14,6 +14,15 @@ namespace NetPrints.Graph
     /// </summary>
     public static class GraphUtil
     {
+        /// <summary>Default canvas X position for a newly created method's entry node.</summary>
+        public const int NewMethodEntryPositionX = 560;
+
+        /// <summary>Default canvas Y position for a newly created method's entry node.</summary>
+        public const int NewMethodEntryPositionY = 504;
+
+        /// <summary>Horizontal offset from a newly created method's entry node to its return node.</summary>
+        public const int NewMethodReturnOffsetX = 672;
+
         /// <summary>
         /// Splits camel-case names into words seperated by spaces (eg. "CallMethodNode" ->
         /// "Call Method Node"), by inserting a space before every uppercase letter.
@@ -462,9 +471,9 @@ namespace NetPrints.Graph
             };
 
             // Set position of entry and return node
-            newMethod.EntryNode.PositionX = 560;
-            newMethod.EntryNode.PositionY = 504;
-            newMethod.ReturnNodes.First().PositionX = newMethod.EntryNode.PositionX + 672;
+            newMethod.EntryNode.PositionX = NewMethodEntryPositionX;
+            newMethod.EntryNode.PositionY = NewMethodEntryPositionY;
+            newMethod.ReturnNodes.First().PositionX = newMethod.EntryNode.PositionX + NewMethodReturnOffsetX;
             newMethod.ReturnNodes.First().PositionY = newMethod.EntryNode.PositionY;
 
             // Connect entry and return node execution pins

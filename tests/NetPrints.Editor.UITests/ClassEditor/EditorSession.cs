@@ -10,7 +10,7 @@ using NetPrints.Testing.Ui.Graph;
 namespace NetPrints.Editor.UITests.ClassEditor;
 
 /// <summary>The HelloWorld sample open in the editor with <c>Program.Main</c> on the canvas.</summary>
-public sealed class EditorSession : IDisposable
+public sealed class EditorSession : IAsyncDisposable
 {
     public const string ClassName = "HelloWorld.Program";
 
@@ -64,9 +64,9 @@ public sealed class EditorSession : IDisposable
             && (await Graph.ConnectionNamesAsync(cancellationToken)).Count == GraphVM.Connections.Count,
             "nodes and cables realized", cancellationToken);
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
-        App.Dispose();
+        await App.DisposeAsync();
         Sample.Dispose();
     }
 }
