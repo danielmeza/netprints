@@ -229,7 +229,7 @@ Composite semantics (providers in order: catalogs in registry order, then the li
 | `GetNonStaticTypes`, `GetOverridableMethodsForType`, `GetPublicMethodOverloads`, `GetConstructors`, `GetEnumNames`, `GetMethods`, `GetVariables` | concatenation in provider order, distinct by `Equals`, first occurrence kept |
 | `GetMethodDocumentation`, `GetMethodParameterDocumentation`, `GetMethodReturnDocumentation` | first non-null |
 
-Live provider change: `ReflectionProvider(IReadOnlyList<ResolvedAssembly> assemblies, IEnumerable<string> sourcePaths, IEnumerable<string> sources, IReadOnlySet<string> excludedAssemblyNames)`;
+Live provider change: `ReflectionProvider(IReadOnlyList<ResolvedAssembly> assemblies, IReadOnlyList<SourceFile> sources, IReadOnlySet<string> excludedAssemblyNames)` (tasks.md T058);
 types whose containing assembly name is in `excludedAssemblyNames` (union of `CoveredAssemblyNames`)
 are skipped in every enumeration; the assemblies stay referenced so user sources still bind.
 Thread-safety: catalogs are immutable; the composite adds no state.

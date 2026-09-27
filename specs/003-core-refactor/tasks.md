@@ -139,7 +139,7 @@ Checkpoint E (plan.md). Out of scope (follow-ups, do not implement): `netprints 
 ## Phase 6: User Story 3 — extension points and loading (P1) (sub-phase F)
 
 - [ ] T065 [US3] Translation seams (extension-points.md §2.1) in `src/NetPrints.Core/Translator/Extensibility/`; `ExecutionGraphTranslator` on `NodeTranslatorRegistry` (built-ins internal); `NPT006`; emitters (§3) and `ClassTranslator(TranslationEnvironment)`; update call sites (generator, editor); EX-T04, EX-T05 in `tests/NetPrints.Core.Tests/Translator/EmitterTests.cs`; golden tests unchanged
-- [ ] T066 [P] [US3] Catalogs (§4) in `src/NetPrints.Reflection/Catalogs/`; EX-T06 in `tests/NetPrints.Editor.Tests/Reflection/CompositeReflectionProviderTests.cs`
+- [x] T066 [P] [US3] Catalogs (§4) in `src/NetPrints.Reflection/Catalogs/`; EX-T06 in `tests/NetPrints.Editor.Tests/Reflection/CompositeReflectionProviderTests.cs`
 - [ ] T067 [US3] `src/NetPrints.Extensibility/`: `ExtensionApi`, `INetPrintsExtension`, `IExtensionBuilder` (buffered; `AddProjectProperty`), `Nodes/*`, `BuiltInNodeLibrary` (PAR-53 suggestions moved from `src/NetPrints.Editor/Search/SuggestionItem.cs`), `BuiltInExtension`; EX-T12
 - [ ] T068 [US3] `Loading/ExtensionManifest.cs`, `ExtensionLoadResult.cs`, `ExtensionLoaderOptions.cs` (`ExtensionFolders`), `ExtensionLoadContext.cs` (§8.2 incl. `Microsoft.Build*`), `ExtensionLoader.cs` (§8.1, logs 2001–2005), `ExtensionRegistry.cs`, `IExtensionHost`/`ExtensionHost` (load-context cache)
 - [ ] T069 [P] [US3] Settings (§7): `ExtensionSettingsDescriptor`, `ISettingsStore`, `JsonFileSettingsStore` (log 2006), `NetPrintsSettings` (`ExtensionPaths`, `TrustedProjects`); EX-T09

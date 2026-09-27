@@ -2654,3 +2654,24 @@ Known narrowings and open items:
 - `Project.LastCompiledAssemblyPath` and `Project.GenerateClassSources` were kept on purpose (the editor's build outcome and the reflection host use them).
 - The CLI has no test project, and the CI workflow's "CLI sample compile and run" step was not run locally.
 - The 2 null-forgiving operators above.
+
+## Sub-phase F
+
+### T066: catalogs
+
+`CatalogInfo`, `ITypeCatalog`, `CompositeReflectionProvider`, `InMemoryTypeCatalog` in `src/NetPrints.Reflection/Catalogs/`;
+EX-T06 in `tests/NetPrints.Editor.Tests/Reflection/CompositeReflectionProviderTests.cs`. The live provider's
+`excludedAssemblyNames` parameter already existed from T058, so T066 only adds the catalog side. The composite is used
+by nothing yet (`ReflectionHost` wiring comes with the registry, T068).
+
+- Decision: `VariableSpecifier` and `ConstructorSpecifier` define no `Equals`, so "distinct by `Equals`" would compare
+  references. The composite dedupes them with internal structural comparers (`SpecifierComparers`: declaring type, name,
+  type, modifiers for variables; declaring type and `ToString()` for constructors). `TypeSpecifier`, `MethodSpecifier`
+  and strings use their own equality.
+- Decision: `InMemoryTypeCatalog` carries no inheritance or conversion data, so `TypeSpecifierIsSubclassOf` and
+  `HasImplicitCast` are always `false` and the composite falls through to the live provider. Its `GetMethods` and
+  `GetVariables` filters mirror the live provider's (type, static, generic, visibility, argument/return/variable type)
+  except that argument and return matching is exact equality (no subclass or type-parameter tolerance), because the
+  catalog has no hierarchy. Parameter and return documentation are always `null` (the constructor takes summaries only).
+- Doc fix: `extension-points.md` §4 showed the pre-T058 `ReflectionProvider` constructor; it now shows the real
+  `(IReadOnlyList<ResolvedAssembly>, IReadOnlyList<SourceFile>, IReadOnlySet<string>)` signature.
