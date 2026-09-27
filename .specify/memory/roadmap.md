@@ -157,6 +157,11 @@ Graph-format follow-ups from P1: `format --check` and `regen --check`, `netprint
     history (Alt+← / Alt+→);
   - a tooltip on hover over a connection: `Node.pin → Node.pin`, the type and the member documentation;
   - breadcrumbs (Project › Class › Method).
+- **Event entry inspector** (owner report, 2026-09-27): selecting an event entry or opening its graph shows the
+  entry's properties in the inspector. You can rename it, with the name kept unique (FR-027), and edit its
+  arguments (name and type; modifiers once P3b adds them). An override takes its signature from the base
+  method, and that signature is read-only. P1 only names entries at creation (`CustomEvent1`, …) and gives
+  them no arguments.
 
 ### P3 — Editor extension host
 `NetPrints.Desktop --profile`, plugin-loaded editor extensions, UI contributions (commands,
@@ -195,6 +200,14 @@ profiles and P3 extensions use, so custom emitters need no core changes.
     constructors, collection expressions, `var` and braces.
   - The default style comes from, in order: an `.editorconfig` preference, then the profile, then a per-class
     override (stored only when it differs).
+- **Events and subscriptions** (owner report, 2026-09-27):
+  - Declare C# `event` members with a delegate type (built-in or a P3b `delegate` kind).
+  - Bind an event-graph entry as the handler of an event on this class, a variable or a referenced type.
+  - Each binding chooses a **binding mode**:
+    - **direct**: `+=`, with `-=` generated on dispose;
+    - **weak reference**: a generated weak-handler or weak-event-manager pattern, so the subscriber doesn't keep
+      the source alive.
+  - Each mode is an emission style. U2's `[UMultiDelegate]`/BlueprintAssignable builds on this.
 - **Parameter modifiers** (moved here from the candidates). Today, arguments of a user-defined method are by
   value only; `ref`/`out`/`in` and optional values work only when calling existing .NET methods; `params` is
   not detected.
