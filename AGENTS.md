@@ -108,15 +108,23 @@ around only hides future `NullReferenceException`s.
 ## Batch rules for implementer agents
 A batch prompt names the task range and pastes the task text; everything below applies to every batch.
 - Read only the spec files and sections the prompt names, plus the code you modify. Never read whole specs.
-- Build quietly: `dotnet build -v q -tl:off --nologo`. The test runner is the xUnit in-process runner, not
-  `--treenode-filter`: run a class with `tests/<Project>/bin/Debug/net10.0/<Project> -class '*Name'`.
+- Build quietly: `dotnet build -v q -tl:off --nologo`. Tests: build first, then
+  `dotnet test --no-build --no-progress --no-ansi` (global.json selects Microsoft.Testing.Platform; the output
+  lists only failed/skipped tests plus the summary). Run one class with
+  `tests/<Project>/bin/Debug/net10.0/<Project> -class '*Name'`; `--treenode-filter` is not accepted.
 - Iterate with filtered tests. Run the whole suite once at the end of the batch:
-  `dotnet test --solution NetPrints.slnx -c Release --no-build -- --ignore-exit-code 8`, then
-  `dotnet build -c Release` (0 warnings) and `dotnet format NetPrints.slnx --verify-no-changes`.
+  `dotnet test --solution NetPrints.slnx -c Release --no-build --no-progress --no-ansi -- --ignore-exit-code 8`,
+  then `dotnet build -c Release` (0 warnings) and `dotnet format NetPrints.slnx --verify-no-changes`.
+- Run the whole suite in the foreground (Bash `timeout` 600000) with the output redirected to a log inside
+  the session's scratch/temp dir, then read only its tail. If a command is started in the background you are
+  re-invoked when it exits: never poll for it. If you ever need a wait loop, bound it (max ~60 iterations) and
+  never `pgrep -f` a string that appears in your own command line; never wait on a file you did not create.
 - Golden fixtures in `tests/NetPrints.Core.Tests/Fixtures/Golden/` stay byte-identical unless the task
   says otherwise; a deliberate change is reported with the reason.
 - No `!`, `null!` or `default!`. XML docs on every public API (CS1591 is an error). No long code
   comments: rationale goes in the commit message and `specs/003-core-refactor/implementation-notes.md`.
+- Never open images or windows on the owner's desktop: no `eog`/`xdg-open`/viewers, never `DISPLAY=:1`. To inspect a
+  snapshot, use the Read tool on the PNG.
 - Never run the whole `Editor.UITests` project under Xvfb blindly (OOM). Headless UITests need no Xvfb; if a
   display is needed, check `pgrep -af Xvfb` first, use your own display number, never `DISPLAY=:1`, and kill it.
 - Commit per task with a pathspec of your own files only, tick the task in `tasks.md`, note decisions in
