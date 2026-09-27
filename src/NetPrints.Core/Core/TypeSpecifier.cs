@@ -186,32 +186,25 @@ namespace NetPrints.Core
 
         /// <summary>
         /// Compares this type to another <see cref="TypeSpecifier"/> by name and generic arguments
-        /// (see <see cref="GenericArgumentsEqual"/>), or, unconditionally, to any
-        /// <see cref="GenericType"/> -- this last case is a placeholder (tracked by a TODO) that has
-        /// not been implemented to check constraint compatibility and always returns
-        /// <see langword="true"/>.
+        /// (see <see cref="GenericArgumentsEqual"/>), consistent with <see cref="GetHashCode"/>, or,
+        /// unconditionally, to any <see cref="GenericType"/> -- this last case is a placeholder
+        /// (tracked by a TODO) that has not been implemented to check constraint compatibility and
+        /// always returns <see langword="true"/>.
         /// </summary>
         /// <param name="obj">Object to compare to.</param>
         /// <returns>
         /// <see langword="true"/> if <paramref name="obj"/> is a <see cref="GenericType"/> (always), or
-        /// a <see cref="TypeSpecifier"/> with the same name, generic arguments and <see cref="IsEnum"/>
-        /// (a name collision between an enum and a non-enum type with the same name is not equal).
+        /// a <see cref="TypeSpecifier"/> with the same name and generic arguments. <see cref="IsEnum"/>
+        /// and <see cref="IsInterface"/> are not part of equality: they are derived facts about the
+        /// same named type, and two <see cref="TypeSpecifier"/> instances for the same type can
+        /// disagree on them (eg. an array-of-enum type built from an element type's flags vs. one
+        /// built with a hardcoded <see langword="false"/>).
         /// </returns>
         public override bool Equals(object? obj)
         {
             if (obj is TypeSpecifier t)
             {
-                // Name equal
-                // Generic arguments equal
-                // IsEnum equal
-
-                if (Name == t.Name && GenericArgumentsEqual(t))
-                {
-                    if (IsEnum != t.IsEnum)
-                        return false;
-
-                    return true;
-                }
+                return Name == t.Name && GenericArgumentsEqual(t);
             }
             else if (obj is GenericType)
             {
