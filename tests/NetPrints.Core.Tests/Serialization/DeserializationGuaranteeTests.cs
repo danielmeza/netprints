@@ -263,12 +263,14 @@ namespace NetPrints.Tests.Serialization
             var mapper = new DocumentMapper(registry);
 
             ClassDocument document = mapper.ToDocument(project.Classes.Single());
-            MethodDocument main = document.Methods!.Single();
+            Assert.NotNull(document.Methods);
+            MethodDocument main = document.Methods.Single();
+            Assert.NotNull(main.Graph.Connections);
             const string lateId = "n000000001pxzz";
             GraphDocument graph = main.Graph with
             {
                 Nodes = [.. main.Graph.Nodes, new LateInferNodeDocument(lateId, null, null)],
-                Connections = [.. main.Graph.Connections!, new ConnectionDocument("n000000001pxre/out.type.OutputType", $"{lateId}/in.type.Type")],
+                Connections = [.. main.Graph.Connections, new ConnectionDocument("n000000001pxre/out.type.OutputType", $"{lateId}/in.type.Type")],
             };
             document = document with { Methods = [main with { Graph = graph }] };
 
