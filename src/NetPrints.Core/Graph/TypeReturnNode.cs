@@ -1,5 +1,4 @@
 ﻿#nullable enable
-using System.Runtime.Serialization;
 using NetPrints.Core;
 
 namespace NetPrints.Graph
@@ -8,7 +7,6 @@ namespace NetPrints.Graph
     /// A <see cref="TypeGraph"/>'s single fixed node, analogous to <see cref="ClassReturnNode"/>: it
     /// holds the graph's resolved type as a single input type pin.
     /// </summary>
-    [DataContract]
     public class TypeReturnNode : Node
     {
         /// <summary>

@@ -1,5 +1,4 @@
 ﻿#nullable enable
-using System.Runtime.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Core;
 
@@ -8,26 +7,17 @@ namespace NetPrints.Graph
     /// <summary>
     /// Abstract base class for node pins.
     /// </summary>
-    [DataContract]
-    [KnownType(typeof(NodeInputDataPin))]
-    [KnownType(typeof(NodeOutputDataPin))]
-    [KnownType(typeof(NodeInputExecPin))]
-    [KnownType(typeof(NodeOutputExecPin))]
-    [KnownType(typeof(NodeInputTypePin))]
-    [KnownType(typeof(NodeOutputTypePin))]
     public abstract partial class NodePin : ModelObject
     {
         /// <summary>
         /// Name of the pin.
         /// </summary>
         [ObservableProperty]
-        [DataMember]
         public partial string Name { get; set; }
 
         /// <summary>
         /// Node this pin is contained in.
         /// </summary>
-        [DataMember]
         public Node Node
         {
             get;

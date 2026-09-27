@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
 using NetPrints.Core;
 
 namespace NetPrints.Graph
@@ -10,7 +9,6 @@ namespace NetPrints.Graph
     /// <summary>
     /// Represents a node which returns from a method.
     /// </summary>
-    [DataContract]
     public class ReturnNode : Node
     {
         /// <summary>

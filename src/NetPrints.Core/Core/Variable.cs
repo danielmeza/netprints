@@ -71,7 +71,6 @@ namespace NetPrints.Core
     /// Specifier describing a property of a class.
     /// </summary>
     [Serializable]
-    [DataContract(Name = "PropertySpecifier")]
     public partial class Variable : ModelObject
     {
         /// <summary>
@@ -79,13 +78,11 @@ namespace NetPrints.Core
         /// </summary>
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(Specifier))]
-        [DataMember]
         public partial string Name { get; set; }
 
         /// <summary>
         /// Class this variable is contained in.
         /// </summary>
-        [DataMember]
         public ClassGraph Class
         {
             get;
@@ -97,7 +94,6 @@ namespace NetPrints.Core
         /// </summary>
         public TypeSpecifier Type => TypeGraph.ReturnType;
 
-        [DataMember(Name = "Type", EmitDefaultValue = false, IsRequired = false)]
         private TypeSpecifier? OldType
         {
             get => null;
@@ -122,7 +118,6 @@ namespace NetPrints.Core
         [NotifyPropertyChangedFor(nameof(HasAccessors))]
         [NotifyPropertyChangedFor(nameof(HasPublicSetter))]
         [NotifyPropertyChangedFor(nameof(Specifier))]
-        [DataMember]
         public partial MethodGraph? GetterMethod { get; set; }
 
         /// <summary>
@@ -133,7 +128,6 @@ namespace NetPrints.Core
         [NotifyPropertyChangedFor(nameof(HasAccessors))]
         [NotifyPropertyChangedFor(nameof(HasPublicGetter))]
         [NotifyPropertyChangedFor(nameof(Specifier))]
-        [DataMember]
         public partial MethodGraph? SetterMethod { get; set; }
 
         /// <summary>
@@ -142,7 +136,6 @@ namespace NetPrints.Core
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(Type))]
         [NotifyPropertyChangedFor(nameof(Specifier))]
-        [DataMember]
         public partial TypeGraph TypeGraph { get; set; }
 
         /// <summary>
@@ -176,7 +169,6 @@ namespace NetPrints.Core
         /// <summary>
         /// Whether this property is static.
         /// </summary>
-        [DataMember]
         [Obsolete]
         public bool IsStatic
         {
@@ -191,7 +183,6 @@ namespace NetPrints.Core
         [NotifyPropertyChangedFor(nameof(HasPublicGetter))]
         [NotifyPropertyChangedFor(nameof(HasPublicSetter))]
         [NotifyPropertyChangedFor(nameof(Specifier))]
-        [DataMember]
         public partial MemberVisibility Visibility { get; set; } = MemberVisibility.Private;
 
         /// <summary>
@@ -199,7 +190,6 @@ namespace NetPrints.Core
         /// </summary>
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(Specifier))]
-        [DataMember]
         public partial VariableModifiers Modifiers { get; set; }
 
         /// <summary>

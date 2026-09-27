@@ -1,5 +1,4 @@
 ﻿#nullable enable
-using System.Runtime.Serialization;
 using NetPrints.Core;
 
 namespace NetPrints.Graph
@@ -7,7 +6,6 @@ namespace NetPrints.Graph
     /// <summary>
     /// Node that gets the value of a variable.
     /// </summary>
-    [DataContract]
     public class VariableGetterNode : VariableNode
     {
         /// <summary>

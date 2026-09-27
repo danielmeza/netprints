@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
 
 namespace NetPrints.Core
 {
@@ -36,13 +35,11 @@ namespace NetPrints.Core
     /// Named specifier for a method parameter: its type (inherited from <see cref="Named{T}"/>), pass
     /// type, and optional explicit default value.
     /// </summary>
-    [DataContract]
     public class MethodParameter : Named<BaseType>
     {
         /// <summary>
         /// How this parameter is passed.
         /// </summary>
-        [DataMember]
         public MethodParameterPassType PassType
         {
             get;
@@ -52,7 +49,6 @@ namespace NetPrints.Core
         /// <summary>
         /// Whether the parameter has an explicit default value.
         /// </summary>
-        [DataMember]
         public bool HasExplicitDefaultValue
         {
             get;
@@ -63,7 +59,6 @@ namespace NetPrints.Core
         /// Explicit default value for the parameter.
         /// Only valid when HasExplicitDefaultValue is true.
         /// </summary>
-        [DataMember]
         public object? ExplicitDefaultValue
         {
             get;
@@ -92,13 +87,11 @@ namespace NetPrints.Core
     /// Specifier describing a method.
     /// </summary>
     [Serializable]
-    [DataContract]
     public partial class MethodSpecifier
     {
         /// <summary>
         /// Name of the method without any prefixes.
         /// </summary>
-        [DataMember]
         public string Name
         {
             get;
@@ -108,7 +101,6 @@ namespace NetPrints.Core
         /// <summary>
         /// Specifier for the type this method is contained in.
         /// </summary>
-        [DataMember]
         public TypeSpecifier DeclaringType
         {
             get;
@@ -118,7 +110,6 @@ namespace NetPrints.Core
         /// <summary>
         /// Named specifiers for the types this method takes as arguments.
         /// </summary>
-        [DataMember]
         public IList<MethodParameter> Parameters
         {
             get;
@@ -136,7 +127,6 @@ namespace NetPrints.Core
         /// <summary>
         /// Specifiers for the types this method returns.
         /// </summary>
-        [DataMember]
         public IList<BaseType> ReturnTypes
         {
             get;
@@ -146,7 +136,6 @@ namespace NetPrints.Core
         /// <summary>
         /// Modifiers this method has.
         /// </summary>
-        [DataMember]
         public MethodModifiers Modifiers
         {
             get;
@@ -156,7 +145,6 @@ namespace NetPrints.Core
         /// <summary>
         /// Visibility of this method.
         /// </summary>
-        [DataMember]
         public MemberVisibility Visibility
         {
             get;
@@ -166,7 +154,6 @@ namespace NetPrints.Core
         /// <summary>
         /// Generic arguments this method takes.
         /// </summary>
-        [DataMember]
         public IList<BaseType> GenericArguments
         {
             get;

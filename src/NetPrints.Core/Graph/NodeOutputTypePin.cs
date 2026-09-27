@@ -1,5 +1,4 @@
 ﻿#nullable enable
-using System.Runtime.Serialization;
 using NetPrints.Core;
 
 namespace NetPrints.Graph
@@ -7,13 +6,11 @@ namespace NetPrints.Graph
     /// <summary>
     /// Pin which outputs a type. Can be connected to input type pins.
     /// </summary>
-    [DataContract]
     public class NodeOutputTypePin : NodeTypePin
     {
         /// <summary>
         /// Connected input data pins.
         /// </summary>
-        [DataMember]
         public ObservableRangeCollection<NodeInputTypePin> OutgoingPins { get; private set; }
             = new ObservableRangeCollection<NodeInputTypePin>();
 
@@ -27,7 +24,6 @@ namespace NetPrints.Graph
             get => outputType;
         }
 
-        [DataMember]
         private ObservableValue<BaseType> outputType;
 
         /// <summary>

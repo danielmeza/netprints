@@ -1,5 +1,4 @@
 ﻿#nullable enable
-using System.Runtime.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Core;
 
@@ -18,7 +17,6 @@ namespace NetPrints.Graph
     /// <summary>
     /// Pin which can receive types.
     /// </summary>
-    [DataContract]
     public partial class NodeInputTypePin : NodeTypePin
     {
         /// <summary>
@@ -32,7 +30,6 @@ namespace NetPrints.Graph
         /// </summary>
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(InferredType))]
-        [DataMember]
         public partial NodeOutputTypePin? IncomingPin { get; set; }
 
         partial void OnIncomingPinChanged(NodeOutputTypePin? oldValue, NodeOutputTypePin? newValue) =>

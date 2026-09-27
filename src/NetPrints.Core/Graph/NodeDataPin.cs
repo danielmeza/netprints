@@ -1,5 +1,4 @@
 ﻿#nullable enable
-using System.Runtime.Serialization;
 using NetPrints.Core;
 
 namespace NetPrints.Graph
@@ -7,13 +6,11 @@ namespace NetPrints.Graph
     /// <summary>
     /// Abstract class for data pins.
     /// </summary>
-    [DataContract]
     public abstract class NodeDataPin : NodePin
     {
         /// <summary>
         /// Specifier for the type of this data pin.
         /// </summary>
-        [DataMember]
         public ObservableValue<BaseType> PinType { get; private set; }
 
         /// <summary>

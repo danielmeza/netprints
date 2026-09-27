@@ -2,21 +2,18 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
 
 namespace NetPrints.Core
 {
     /// <summary>
     /// Specifier describing "real" types (not purely unbound generic).
     /// </summary>
-    [DataContract]
     [Serializable]
     public class TypeSpecifier : BaseType
     {
         /// <summary>
         /// Whether this type is an enum.
         /// </summary>
-        [DataMember]
         public bool IsEnum
         {
             get;
@@ -26,7 +23,6 @@ namespace NetPrints.Core
         /// <summary>
         /// Whether this type is an interface.
         /// </summary>
-        [DataMember]
         public bool IsInterface
         {
             get;
@@ -36,7 +32,6 @@ namespace NetPrints.Core
         /// <summary>
         /// Generic arguments this type takes.
         /// </summary>
-        [DataMember]
         public ObservableRangeCollection<BaseType> GenericArguments
         {
             get;

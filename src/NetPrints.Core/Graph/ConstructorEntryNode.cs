@@ -1,7 +1,6 @@
 ﻿#nullable enable
 using System;
 using System.Linq;
-using System.Runtime.Serialization;
 using NetPrints.Core;
 
 namespace NetPrints.Graph
@@ -9,7 +8,6 @@ namespace NetPrints.Graph
     /// <summary>
     /// Node representing the initial execution node of a constructor.
     /// </summary>
-    [DataContract]
     public class ConstructorEntryNode : ExecutionEntryNode
     {
         /// <summary>

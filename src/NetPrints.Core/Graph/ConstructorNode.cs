@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Core;
 
@@ -11,7 +10,6 @@ namespace NetPrints.Graph
     /// <summary>
     /// Node representing a constructor call.
     /// </summary>
-    [DataContract]
     public partial class ConstructorNode : ExecNode
     {
         /// <summary>
@@ -27,7 +25,6 @@ namespace NetPrints.Graph
         /// Specifier for the constructor.
         /// </summary>
         [ObservableProperty]
-        [DataMember]
         public partial ConstructorSpecifier ConstructorSpecifier { get; private set; }
 
         /// <summary>

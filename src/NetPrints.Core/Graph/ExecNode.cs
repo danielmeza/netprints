@@ -1,5 +1,4 @@
 ﻿#nullable enable
-using System.Runtime.Serialization;
 using NetPrints.Core;
 
 namespace NetPrints.Graph
@@ -7,9 +6,6 @@ namespace NetPrints.Graph
     /// <summary>
     /// Abstract class for nodes that can be executed.
     /// </summary>
-    [DataContract]
-    [KnownType(typeof(CallMethodNode))]
-    [KnownType(typeof(ConstructorNode))]
     public abstract class ExecNode : Node
     {
         /// <summary>

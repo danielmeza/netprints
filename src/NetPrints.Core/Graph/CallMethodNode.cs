@@ -3,7 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Runtime.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Core;
 
@@ -12,7 +11,6 @@ namespace NetPrints.Graph
     /// <summary>
     /// Node representing a method call.
     /// </summary>
-    [DataContract]
     public partial class CallMethodNode : ExecNode
     {
         private const string ExceptionPinName = "Exception";
@@ -31,7 +29,6 @@ namespace NetPrints.Graph
         /// Specifier for the method to call.
         /// </summary>
         [ObservableProperty]
-        [DataMember]
         public partial MethodSpecifier MethodSpecifier { get; private set; }
 
         /// <summary>

@@ -1,6 +1,5 @@
 ﻿#nullable enable
 using System.Linq;
-using System.Runtime.Serialization;
 using System.Threading.Tasks;
 using NetPrints.Core;
 
@@ -9,7 +8,6 @@ namespace NetPrints.Graph
     /// <summary>
     /// Node for awaiting tasks.
     /// </summary>
-    [DataContract]
     public class AwaitNode : ExecNode
     {
         /// <summary>

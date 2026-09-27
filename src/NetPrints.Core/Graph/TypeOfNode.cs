@@ -1,6 +1,5 @@
 ﻿#nullable enable
 using System;
-using System.Runtime.Serialization;
 using NetPrints.Core;
 
 namespace NetPrints.Graph
@@ -9,7 +8,6 @@ namespace NetPrints.Graph
     /// Node representing a C# <c>typeof</c> expression: outputs the runtime <see cref="Type"/> for its
     /// input type pin.
     /// </summary>
-    [DataContract]
     public class TypeOfNode : Node
     {
         /// <summary>

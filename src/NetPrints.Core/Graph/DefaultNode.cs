@@ -1,6 +1,5 @@
 ﻿#nullable enable
 using System;
-using System.Runtime.Serialization;
 using NetPrints.Core;
 
 namespace NetPrints.Graph
@@ -8,7 +7,6 @@ namespace NetPrints.Graph
     /// <summary>
     /// Node that returns the default value of a type.
     /// </summary>
-    [DataContract]
     public class DefaultNode : Node
     {
         /// <summary>

@@ -1,5 +1,4 @@
 ﻿#nullable enable
-using System.Runtime.Serialization;
 
 namespace NetPrints.Core
 {
@@ -8,20 +7,16 @@ namespace NetPrints.Core
     /// converted to the class itself.
     /// </summary>
     /// <typeparam name="T">Type of the value.</typeparam>
-    [DataContract]
-    [KnownType(typeof(MethodParameter))]
     public class Named<T>
     {
         /// <summary>
         /// The name.
         /// </summary>
-        [DataMember]
         public string Name { get; set; }
 
         /// <summary>
         /// The named value.
         /// </summary>
-        [DataMember]
         public T Value { get; set; }
 
         /// <summary>

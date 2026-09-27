@@ -83,7 +83,6 @@ namespace NetPrints.Core
     /// <summary>
     /// Method type. Contains common things usually associated with methods such as its arguments and its name.
     /// </summary>
-    [DataContract]
     public partial class MethodGraph : ExecutionGraph
     {
         /// <summary>
@@ -125,7 +124,6 @@ namespace NetPrints.Core
         /// <summary>
         /// Name of the method without any prefixes.
         /// </summary>
-        [DataMember]
         public string Name
         {
             get;
@@ -135,7 +133,6 @@ namespace NetPrints.Core
         /// <summary>
         /// Modifiers this method has.
         /// </summary>
-        [DataMember]
         public MethodModifiers Modifiers
         {
             get;

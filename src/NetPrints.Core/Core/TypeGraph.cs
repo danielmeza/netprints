@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
 using NetPrints.Graph;
 
 namespace NetPrints.Core
@@ -10,7 +9,6 @@ namespace NetPrints.Core
     /// <summary>
     /// Type graph that returns a type.
     /// </summary>
-    [DataContract]
     public class TypeGraph : NodeGraph
     {
         /// <summary>
@@ -37,7 +35,6 @@ namespace NetPrints.Core
         /// never changes legacy XML output; set by <see cref="Variable"/>. Used by
         /// <see cref="GraphKeys.For"/> to key a type graph as <c>&lt;variable id&gt;/type</c>.
         /// </summary>
-        [IgnoreDataMember]
         public ClassGraph? OwningClass { get; internal set; }
 
         /// <summary>

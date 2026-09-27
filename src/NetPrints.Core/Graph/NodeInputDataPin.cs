@@ -1,6 +1,5 @@
 ﻿#nullable enable
 using System;
-using System.Runtime.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Core;
 
@@ -19,7 +18,6 @@ namespace NetPrints.Graph
     /// <summary>
     /// Input data pin which can be connected to up to one output data pin to receive a value.
     /// </summary>
-    [DataContract]
     public partial class NodeInputDataPin : NodeDataPin
     {
         /// <summary>
@@ -32,7 +30,6 @@ namespace NetPrints.Graph
         /// Can trigger IncomingPinChanged when set.
         /// </summary>
         [ObservableProperty]
-        [DataMember]
         public partial NodeOutputDataPin? IncomingPin { get; set; }
 
         partial void OnIncomingPinChanged(NodeOutputDataPin? oldValue, NodeOutputDataPin? newValue) =>
@@ -53,7 +50,6 @@ namespace NetPrints.Graph
         /// an exception.
         /// </summary>
         [ObservableProperty]
-        [DataMember]
         public partial object? UnconnectedValue { get; set; }
 
         partial void OnUnconnectedValueChanging(object? oldValue, object? newValue)
@@ -78,7 +74,6 @@ namespace NetPrints.Graph
         /// meaningful for a <see cref="CallMethodNode"/> argument pin.
         /// </summary>
         [ObservableProperty]
-        [DataMember]
         public partial object? ExplicitDefaultValue { get; set; }
 
         /// <summary>
@@ -88,7 +83,6 @@ namespace NetPrints.Graph
         /// <see cref="CallMethodNode"/> argument pin.
         /// </summary>
         [ObservableProperty]
-        [DataMember]
         public partial bool UsesExplicitDefaultValue { get; set; }
 
         /// <summary>

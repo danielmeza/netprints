@@ -3,7 +3,6 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
-using System.Runtime.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Core;
 
@@ -16,7 +15,6 @@ namespace NetPrints.Graph
     /// <see cref="MaybeNullAttribute"/> (an unconstrained type parameter has no nullable annotation of its
     /// own to express that directly).
     /// </summary>
-    [DataContract]
     public class ObservableValue<T> : INotifyPropertyChanged
     {
         /// <summary>
@@ -31,7 +29,6 @@ namespace NetPrints.Graph
         /// The current value. Setting it raises <see cref="OnValueChanged"/> and
         /// <see cref="PropertyChanged"/> unconditionally, even if the new value equals the old one.
         /// </summary>
-        [DataMember]
         [AllowNull, MaybeNull]
         public T Value
         {
@@ -92,7 +89,6 @@ namespace NetPrints.Graph
     /// input type pins) as a single output type pin. Used to reference a type by name in a type
     /// expression.
     /// </summary>
-    [DataContract]
     public partial class TypeNode : Node
     {
         /// <summary>
@@ -101,10 +97,8 @@ namespace NetPrints.Graph
         /// pin, not through this property directly.
         /// </summary>
         [ObservableProperty]
-        [DataMember]
         public partial BaseType Type { get; private set; }
 
-        [DataMember]
         private ObservableValue<BaseType> constructedType;
 
         /// <summary>

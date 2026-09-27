@@ -1,5 +1,4 @@
 #nullable enable
-using System.Runtime.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace NetPrints.Core
@@ -12,7 +11,6 @@ namespace NetPrints.Core
     /// constructors, keeps working unchanged; MVVMTK0032 (which suggests <c>ObservableObject</c>
     /// instead) is suppressed here only.
     /// </summary>
-    [DataContract]
     [INotifyPropertyChanged]
 #pragma warning disable MVVMTK0032
     public abstract partial class ModelObject

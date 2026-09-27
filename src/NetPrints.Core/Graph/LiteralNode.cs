@@ -1,7 +1,6 @@
 ﻿#nullable enable
 using System;
 using System.Linq;
-using System.Runtime.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Core;
 
@@ -10,7 +9,6 @@ namespace NetPrints.Graph
     /// <summary>
     /// Node representing a literal value.
     /// </summary>
-    [DataContract]
     public partial class LiteralNode : Node
     {
         /// <summary>
@@ -33,7 +31,6 @@ namespace NetPrints.Graph
         /// Specifier for the type of this literal.
         /// </summary>
         [ObservableProperty]
-        [DataMember]
         public partial TypeSpecifier LiteralType { get; private set; }
 
         /// <summary>

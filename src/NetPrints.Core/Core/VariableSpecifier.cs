@@ -1,5 +1,4 @@
 ﻿#nullable enable
-using System.Runtime.Serialization;
 
 namespace NetPrints.Core
 {
@@ -7,13 +6,11 @@ namespace NetPrints.Core
     /// Specifier describing a discovered field or property: its name, declaring and value types,
     /// getter/setter/overall visibility, and modifiers (static, indexer, etc.).
     /// </summary>
-    [DataContract]
     public class VariableSpecifier
     {
         /// <summary>
         /// Name of the property without any prefixes.
         /// </summary>
-        [DataMember]
         public string Name
         {
             get;
@@ -23,7 +20,6 @@ namespace NetPrints.Core
         /// <summary>
         /// Specifier for the type this property is contained in.
         /// </summary>
-        [DataMember]
         public TypeSpecifier DeclaringType
         {
             get;
@@ -33,7 +29,6 @@ namespace NetPrints.Core
         /// <summary>
         /// Specifier for the type of the property.
         /// </summary>
-        [DataMember]
         public TypeSpecifier Type
         {
             get;
@@ -43,7 +38,6 @@ namespace NetPrints.Core
         /// <summary>
         /// Visibility of this property's getter.
         /// </summary>
-        [DataMember]
         public MemberVisibility GetterVisibility
         {
             get;
@@ -53,7 +47,6 @@ namespace NetPrints.Core
         /// <summary>
         /// Visibility of this property's setter.
         /// </summary>
-        [DataMember]
         public MemberVisibility SetterVisibility
         {
             get;
@@ -63,7 +56,6 @@ namespace NetPrints.Core
         /// <summary>
         /// Visibility of this property.
         /// </summary>
-        [DataMember]
         public MemberVisibility Visibility
         {
             get;
@@ -73,7 +65,6 @@ namespace NetPrints.Core
         /// <summary>
         /// Modifiers of this variable.
         /// </summary>
-        [DataMember]
         public VariableModifiers Modifiers
         {
             get;

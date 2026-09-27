@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
 using NetPrints.Graph;
 
 namespace NetPrints.Core
@@ -12,7 +11,6 @@ namespace NetPrints.Core
     /// <see cref="ConstructorGraph"/>. Holds the single <see cref="EntryNode"/> execution starts from,
     /// the graph's argument types (derived from the entry node's pins) and its visibility.
     /// </summary>
-    [DataContract]
     public abstract class ExecutionGraph : NodeGraph
     {
         /// <summary>
@@ -21,7 +19,6 @@ namespace NetPrints.Core
         /// anything else can observe the graph; the backing field stays nullable only because
         /// DataContract deserialization sets it through this property, bypassing constructors.
         /// </summary>
-        [DataMember]
         public ExecutionEntryNode EntryNode
         {
             get => entryNode ?? throw new InvalidOperationException(
@@ -51,7 +48,6 @@ namespace NetPrints.Core
         /// <summary>
         /// Visibility of this graph.
         /// </summary>
-        [DataMember]
         public MemberVisibility Visibility
         {
             get;

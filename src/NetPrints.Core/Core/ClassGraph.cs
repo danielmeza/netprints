@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
 using NetPrints.Graph;
 
 namespace NetPrints.Core
@@ -116,7 +115,6 @@ namespace NetPrints.Core
     /// Class graph type. Contains methods, attributes and other common things usually associated
     /// with classes.
     /// </summary>
-    [DataContract]
     public partial class ClassGraph : NodeGraph
     {
         /// <summary>
@@ -130,19 +128,16 @@ namespace NetPrints.Core
         /// <summary>
         /// Properties of this class.
         /// </summary>
-        [DataMember]
         public ObservableRangeCollection<Variable> Variables { get; set; } = new ObservableRangeCollection<Variable>();
 
         /// <summary>
         /// Methods of this class.
         /// </summary>
-        [DataMember]
         public ObservableRangeCollection<MethodGraph> Methods { get; set; } = new ObservableRangeCollection<MethodGraph>();
 
         /// <summary>
         /// Constructors of this class.
         /// </summary>
-        [DataMember]
         public ObservableRangeCollection<ConstructorGraph> Constructors { get; set; } = new ObservableRangeCollection<ConstructorGraph>();
 
         /// <summary>
@@ -164,13 +159,11 @@ namespace NetPrints.Core
         /// <summary>
         /// Namespace this class is in.
         /// </summary>
-        [DataMember]
         public string Namespace { get; set; } = string.Empty;
 
         /// <summary>
         /// Name of the class without namespace.
         /// </summary>
-        [DataMember]
         public string Name { get; set; } = string.Empty;
 
         /// <summary>
@@ -184,19 +177,16 @@ namespace NetPrints.Core
         /// <summary>
         /// Modifiers this class has.
         /// </summary>
-        [DataMember]
         public ClassModifiers Modifiers { get; set; }
 
         /// <summary>
         /// Visibility of this class.
         /// </summary>
-        [DataMember]
         public MemberVisibility Visibility { get; set; } = MemberVisibility.Internal;
 
         /// <summary>
         /// Generic arguments this class takes.
         /// </summary>
-        [DataMember]
         public ObservableRangeCollection<GenericType> DeclaredGenericArguments { get; set; } = new ObservableRangeCollection<GenericType>();
 
         /// <summary>
@@ -232,7 +222,6 @@ namespace NetPrints.Core
         /// class newly created in memory), cleared by <see cref="MarkClean"/> (after a successful
         /// save or a fresh load). Not serialized; not observable in P1 (dirty-state UX is P3a).
         /// </summary>
-        [IgnoreDataMember]
         public bool IsDirty { get; private set; }
 
         /// <summary>
@@ -250,7 +239,6 @@ namespace NetPrints.Core
         /// class created in memory and never yet saved. Set by <c>ProjectPersistence.LoadAsync</c>
         /// (project-system.md, T056); read by <see cref="Project.GetGraphFilePath"/>. Not serialized.
         /// </summary>
-        [IgnoreDataMember]
         public string? LoadedGraphFilePath { get; internal set; }
 
         private static string? GetMemberId(object member) => member switch

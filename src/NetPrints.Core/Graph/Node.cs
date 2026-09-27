@@ -11,66 +11,36 @@ namespace NetPrints.Graph
     /// <summary>
     /// Abstract base class for all node types.
     /// </summary>
-    [DataContract]
-    [KnownType(typeof(CallMethodNode))]
-    [KnownType(typeof(MethodEntryNode))]
-    [KnownType(typeof(ConstructorEntryNode))]
-    [KnownType(typeof(ForLoopNode))]
-    [KnownType(typeof(IfElseNode))]
-    [KnownType(typeof(LiteralNode))]
-    [KnownType(typeof(ReturnNode))]
-    [KnownType(typeof(ClassReturnNode))]
-    [KnownType(typeof(VariableGetterNode))]
-    [KnownType(typeof(VariableSetterNode))]
-    [KnownType(typeof(ConstructorNode))]
-    [KnownType(typeof(MakeDelegateNode))]
-    [KnownType(typeof(TypeOfNode))]
-    [KnownType(typeof(ExplicitCastNode))]
-    [KnownType(typeof(RerouteNode))]
-    [KnownType(typeof(MakeArrayNode))]
-    [KnownType(typeof(TypeNode))]
-    [KnownType(typeof(MakeArrayTypeNode))]
-    [KnownType(typeof(ThrowNode))]
-    [KnownType(typeof(AwaitNode))]
-    [KnownType(typeof(TernaryNode))]
-    [KnownType(typeof(TypeReturnNode))]
-    [KnownType(typeof(DefaultNode))]
     public abstract partial class Node : ModelObject
     {
         /// <summary>
         /// Input data pins of this node.
         /// </summary>
-        [DataMember]
         public ObservableRangeCollection<NodeInputDataPin> InputDataPins { get; private set; } = new ObservableRangeCollection<NodeInputDataPin>();
 
         /// <summary>
         /// Output data pins of this node.
         /// </summary>
-        [DataMember]
         public ObservableRangeCollection<NodeOutputDataPin> OutputDataPins { get; private set; } = new ObservableRangeCollection<NodeOutputDataPin>();
 
         /// <summary>
         /// Input execution pins of this node.
         /// </summary>
-        [DataMember]
         public ObservableRangeCollection<NodeInputExecPin> InputExecPins { get; private set; } = new ObservableRangeCollection<NodeInputExecPin>();
 
         /// <summary>
         /// Output execution pins of this node.
         /// </summary>
-        [DataMember]
         public ObservableRangeCollection<NodeOutputExecPin> OutputExecPins { get; private set; } = new ObservableRangeCollection<NodeOutputExecPin>();
 
         /// <summary>
         /// Input type pins of this node.
         /// </summary>
-        [DataMember]
         public ObservableRangeCollection<NodeInputTypePin> InputTypePins { get; private set; } = new ObservableRangeCollection<NodeInputTypePin>();
 
         /// <summary>
         /// Output type pins of this node.
         /// </summary>
-        [DataMember]
         public ObservableRangeCollection<NodeOutputTypePin> OutputTypePins { get; private set; } = new ObservableRangeCollection<NodeOutputTypePin>();
 
         /// <summary>
@@ -91,7 +61,6 @@ namespace NetPrints.Graph
         /// Triggers a call to OnPositionChange when set.
         /// </summary>
         [ObservableProperty]
-        [DataMember]
         public partial double PositionX { get; set; }
 
         /// <summary>
@@ -99,7 +68,6 @@ namespace NetPrints.Graph
         /// Triggers a call to OnPositionChange when set.
         /// </summary>
         [ObservableProperty]
-        [DataMember]
         public partial double PositionY { get; set; }
 
         partial void OnPositionXChanged(double oldValue, double newValue) => OnPositionChanged?.Invoke(this, PositionX, PositionY);
@@ -109,7 +77,6 @@ namespace NetPrints.Graph
         /// Name of this node.
         /// </summary>
         [ObservableProperty]
-        [DataMember]
         public partial string Name { get; set; }
 
         /// <summary>
@@ -172,7 +139,6 @@ namespace NetPrints.Graph
         /// <summary>
         /// Graph this node is contained in.
         /// </summary>
-        [DataMember]
         public NodeGraph Graph
         {
             get;
@@ -185,7 +151,6 @@ namespace NetPrints.Graph
         /// <see cref="IgnoreDataMemberAttribute"/>, not <c>[DataMember]</c>: ids belong to the JSON
         /// document, not to the DataContract serializer.
         /// </summary>
-        [IgnoreDataMember]
         public string Id { get; internal set; }
 
         /// <summary>

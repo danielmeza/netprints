@@ -1,5 +1,4 @@
 ﻿#nullable enable
-using System.Runtime.Serialization;
 using NetPrints.Core;
 
 namespace NetPrints.Graph
@@ -7,7 +6,6 @@ namespace NetPrints.Graph
     /// <summary>
     /// Node representing an if / else expression.
     /// </summary>
-    [DataContract]
     public class IfElseNode : Node
     {
         /// <summary>

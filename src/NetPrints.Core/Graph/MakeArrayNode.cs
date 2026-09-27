@@ -1,6 +1,5 @@
 ﻿#nullable enable
 using System;
-using System.Runtime.Serialization;
 using NetPrints.Core;
 
 namespace NetPrints.Graph
@@ -8,7 +7,6 @@ namespace NetPrints.Graph
     /// <summary>
     /// Node representing the creation of an array.
     /// </summary>
-    [DataContract]
     public class MakeArrayNode : Node
     {
         /// <summary>
@@ -29,7 +27,6 @@ namespace NetPrints.Graph
             }
         }
 
-        [DataMember]
         private bool usePredefinedSize = false;
 
         /// <summary>

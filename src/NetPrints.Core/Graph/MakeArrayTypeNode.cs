@@ -1,6 +1,5 @@
 ﻿#nullable enable
 using System;
-using System.Runtime.Serialization;
 using NetPrints.Core;
 
 namespace NetPrints.Graph
@@ -11,10 +10,8 @@ namespace NetPrints.Graph
     /// (eg. a generic argument), as opposed to <see cref="MakeArrayNode"/>, which creates array
     /// values at runtime.
     /// </summary>
-    [DataContract]
     public class MakeArrayTypeNode : Node
     {
-        [DataMember]
         private ObservableValue<BaseType> arrayType;
 
         /// <summary>

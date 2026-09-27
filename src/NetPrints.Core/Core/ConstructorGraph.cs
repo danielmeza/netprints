@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
 using NetPrints.Graph;
 
 namespace NetPrints.Core
@@ -11,7 +10,6 @@ namespace NetPrints.Core
     /// A class's constructor: an <see cref="ExecutionGraph"/> whose entry node is a
     /// <see cref="ConstructorEntryNode"/>.
     /// </summary>
-    [DataContract]
     public class ConstructorGraph : ExecutionGraph
     {
         /// <summary>

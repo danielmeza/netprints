@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Runtime.Serialization;
 using NetPrints.Graph;
 
 namespace NetPrints.Core
@@ -12,11 +11,6 @@ namespace NetPrints.Core
     /// <see cref="ConstructorGraph"/>, <see cref="ClassGraph"/> and <see cref="TypeGraph"/>. Holds the
     /// graph's node collection and its owning class and project.
     /// </summary>
-    [DataContract]
-    [KnownType(typeof(MethodGraph))]
-    [KnownType(typeof(ConstructorGraph))]
-    [KnownType(typeof(ClassGraph))]
-    [KnownType(typeof(TypeGraph))]
     public abstract class NodeGraph
     {
         /// <summary>
@@ -27,13 +21,11 @@ namespace NetPrints.Core
         /// afterwards by <see cref="OnNodesChanged"/> (structural changes) and <see cref="ReindexNode"/>
         /// (a node's <see cref="Node.Id"/> changing after it was added).
         /// </summary>
-        [IgnoreDataMember]
         private Dictionary<string, Node>? nodeIndex;
 
         /// <summary>
         /// Collection of nodes in this graph.
         /// </summary>
-        [DataMember]
         public ObservableRangeCollection<Node> Nodes
         {
             get;
@@ -43,7 +35,6 @@ namespace NetPrints.Core
         /// <summary>
         /// Class this graph is contained in.
         /// </summary>
-        [DataMember]
         public ClassGraph? Class
         {
             get;
@@ -65,7 +56,6 @@ namespace NetPrints.Core
         /// <c>NetPrints.Serialization</c>; not serialized by <see cref="System.Runtime.Serialization.DataContractSerializer"/>
         /// and not otherwise inspected by <c>NetPrints.Core</c>.
         /// </summary>
-        [IgnoreDataMember]
         public object? PreservedDocumentState { get; set; }
 
         /// <summary>

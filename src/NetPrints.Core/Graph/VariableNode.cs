@@ -1,5 +1,4 @@
 ﻿#nullable enable
-using System.Runtime.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Core;
 
@@ -8,9 +7,6 @@ namespace NetPrints.Graph
     /// <summary>
     /// Abstract class for variable nodes.
     /// </summary>
-    [DataContract]
-    [KnownType(typeof(VariableGetterNode))]
-    [KnownType(typeof(VariableSetterNode))]
     public abstract partial class VariableNode : Node
     {
         /// <summary>
@@ -82,7 +78,6 @@ namespace NetPrints.Graph
         /// Specifier for the underlying variable.
         /// </summary>
         [ObservableProperty]
-        [DataMember(Name = "FieldOrProperty")]
         public partial VariableSpecifier Variable { get; private set; }
 
         /// <summary>

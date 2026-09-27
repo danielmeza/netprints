@@ -1,7 +1,6 @@
 ﻿#nullable enable
 using System;
 using System.Collections.Generic;
-using System.Runtime.Serialization;
 using NetPrints.Core;
 
 namespace NetPrints.Graph
@@ -10,7 +9,6 @@ namespace NetPrints.Graph
     /// Node representing a reroute node. Does nothing by itself.
     /// Used for layouting in the editor.
     /// </summary>
-    [DataContract]
     public class RerouteNode : Node
     {
         /// <summary>

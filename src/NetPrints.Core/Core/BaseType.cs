@@ -1,6 +1,5 @@
 ﻿#nullable enable
 using System;
-using System.Runtime.Serialization;
 
 namespace NetPrints.Core
 {
@@ -8,15 +7,11 @@ namespace NetPrints.Core
     /// Abstract specifier describing types.
     /// </summary>
     [Serializable]
-    [DataContract]
-    [KnownType(typeof(TypeSpecifier))]
-    [KnownType(typeof(GenericType))]
     public abstract class BaseType
     {
         /// <summary>
         /// Full name of the type (ie. Namespace.TypeName).
         /// </summary>
-        [DataMember]
         public string Name
         {
             get;

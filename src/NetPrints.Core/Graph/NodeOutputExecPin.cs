@@ -1,5 +1,4 @@
 ﻿#nullable enable
-using System.Runtime.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace NetPrints.Graph
@@ -17,7 +16,6 @@ namespace NetPrints.Graph
     /// <summary>
     /// Pin which can be connected to an input execution pin to pass along execution.
     /// </summary>
-    [DataContract]
     public partial class NodeOutputExecPin : NodeExecPin
     {
         /// <summary>
@@ -30,7 +28,6 @@ namespace NetPrints.Graph
         /// Can trigger OutgoingPinChanged when set.
         /// </summary>
         [ObservableProperty]
-        [DataMember]
         public partial NodeInputExecPin? OutgoingPin { get; set; }
 
         partial void OnOutgoingPinChanged(NodeInputExecPin? oldValue, NodeInputExecPin? newValue) =>

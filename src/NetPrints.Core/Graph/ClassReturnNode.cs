@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
 using System.Text;
 using NetPrints.Core;
 
@@ -14,7 +13,6 @@ namespace NetPrints.Graph
     /// interfaces as input type pins, so inheritance participates in the same connection and
     /// type-inference machinery as any other node.
     /// </summary>
-    [DataContract]
     public class ClassReturnNode : Node
     {
         /// <summary>

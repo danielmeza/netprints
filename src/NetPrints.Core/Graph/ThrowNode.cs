@@ -1,6 +1,5 @@
 ﻿#nullable enable
 using System;
-using System.Runtime.Serialization;
 using NetPrints.Core;
 
 namespace NetPrints.Graph
@@ -8,7 +7,6 @@ namespace NetPrints.Graph
     /// <summary>
     /// Node representing an exception throw.
     /// </summary>
-    [DataContract]
     public class ThrowNode : Node
     {
         /// <summary>

@@ -31,7 +31,6 @@ namespace NetPrints.Core
     /// <summary>
     /// Project model.
     /// </summary>
-    [DataContract]
     public partial class Project : ModelObject
     {
         /// <summary>
@@ -47,7 +46,6 @@ namespace NetPrints.Core
         /// Name of the project.
         /// </summary>
         [ObservableProperty]
-        [DataMember]
         public partial string Name { get; set; }
 
         /// <summary>
@@ -55,7 +53,6 @@ namespace NetPrints.Core
         /// compilation, or when the last compilation failed.
         /// </summary>
         [ObservableProperty]
-        [DataMember]
         public partial string? LastCompiledAssemblyPath { get; set; }
 
         /// <summary>
@@ -70,7 +67,6 @@ namespace NetPrints.Core
         /// Default namespace of newly created classes.
         /// </summary>
         [ObservableProperty]
-        [DataMember]
         public partial string DefaultNamespace { get; set; }
 
         /// <summary>
@@ -78,7 +74,6 @@ namespace NetPrints.Core
         /// </summary>
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(CanCompileAndRun))]
-        [DataMember]
         public partial BinaryType OutputBinaryType { get; set; }
 
         private Project()

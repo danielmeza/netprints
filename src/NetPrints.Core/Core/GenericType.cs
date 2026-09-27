@@ -1,7 +1,6 @@
 ﻿#nullable enable
 using System;
 using System.Collections.Generic;
-using System.Runtime.Serialization;
 
 namespace NetPrints.Core
 {
@@ -9,7 +8,6 @@ namespace NetPrints.Core
     /// Constraint on generic types.
     /// </summary>
     [Serializable]
-    [DataContract]
     public class GenericTypeConstraint
     {
     }
@@ -17,7 +15,6 @@ namespace NetPrints.Core
     /// <summary>
     /// An unbound generic type.
     /// </summary>
-    [DataContract]
     [Serializable]
     public class GenericType : BaseType
     {

@@ -1,7 +1,6 @@
 ﻿#nullable enable
 using System;
 using System.Linq;
-using System.Runtime.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Core;
 
@@ -10,14 +9,12 @@ namespace NetPrints.Graph
     /// <summary>
     /// Node representing the creation of a delegate (method pointer).
     /// </summary>
-    [DataContract]
     public partial class MakeDelegateNode : Node
     {
         /// <summary>
         /// Specifier describing the method the delegate is created for.
         /// </summary>
         [ObservableProperty]
-        [DataMember]
         public partial MethodSpecifier MethodSpecifier { get; private set; }
 
         /// <summary>

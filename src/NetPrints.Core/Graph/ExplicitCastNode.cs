@@ -1,7 +1,6 @@
 ﻿#nullable enable
 using System;
 using System.Linq;
-using System.Runtime.Serialization;
 using NetPrints.Core;
 
 namespace NetPrints.Graph
@@ -9,7 +8,6 @@ namespace NetPrints.Graph
     /// <summary>
     /// Node representing an explicit type cast.
     /// </summary>
-    [DataContract]
     public class ExplicitCastNode : Node
     {
         /// <summary>
