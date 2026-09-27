@@ -362,12 +362,20 @@ namespace NetPrints.Translator
         /// </summary>
         /// <param name="code">C# source to format. Must be parseable (need not be a full compilation unit).</param>
         /// <returns>The formatted source.</returns>
-        public static string FormatCode(string code)
+        public static string FormatCode(string code) => FormatCode(CSharpSyntaxTree.ParseText(code).GetCompilationUnitRoot()).ToFullString();
+
+        /// <summary>
+        /// Formats an already-parsed root with the same Roslyn defaults as <see cref="FormatCode(string)"/>,
+        /// preserving any <see cref="SyntaxAnnotation"/> already attached to its tokens (research.md R3):
+        /// used by <see cref="ClassTranslator.Translate(NetPrints.Core.ClassGraph)"/> to build a
+        /// <see cref="SourceMap"/> without changing the formatted text (RC-T06).
+        /// </summary>
+        /// <param name="root">Root to format.</param>
+        /// <returns>The formatted root.</returns>
+        internal static SyntaxNode FormatCode(SyntaxNode root)
         {
-            SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(code);
             using var workspace = new AdhocWorkspace();
-            SyntaxNode formatted = Formatter.Format(syntaxTree.GetCompilationUnitRoot(), workspace).NormalizeWhitespace();
-            return formatted.ToFullString();
+            return Formatter.Format(root, workspace).NormalizeWhitespace();
         }
     }
 }

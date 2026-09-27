@@ -36,6 +36,7 @@ namespace NetPrints.Translator
         private int jumpStackStateId;
 
         private readonly StringBuilder builder = new StringBuilder();
+        private readonly List<NodeOffset> nodeOffsets = new List<NodeOffset>();
 
         private readonly TranslationEnvironment environment;
 
@@ -65,6 +66,14 @@ namespace NetPrints.Translator
 
         /// <inheritdoc />
         public string CreateTemporaryVariableName() => TranslatorUtil.GetTemporaryVariableName(random);
+
+        /// <summary>
+        /// The offset of each impure node's own statements in the unformatted code the last
+        /// <see cref="Translate(ExecutionGraph, bool)"/> or <see cref="TranslateEventEntry(EventGraph, EventEntryNode)"/>
+        /// call returned, in the order they were written (research.md R3). Used only by
+        /// <see cref="ClassTranslator"/> to build a <see cref="SourceMap"/>.
+        /// </summary>
+        internal IReadOnlyList<NodeOffset> LastNodeOffsets => nodeOffsets;
 
         bool IBuiltInTranslationContext.IsFinalExecState(NodeInputExecPin pin) =>
             GetExecPinStateId(pin) == nodeStateIds.Count - 1;
@@ -426,6 +435,7 @@ namespace NetPrints.Translator
             reservedLocalNames.Clear();
             nodeStateIds.Clear();
             pinsJumpedTo.Clear();
+            nodeOffsets.Clear();
             nextStateId = 0;
             builder.Clear();
             random = new Random(0);
@@ -477,6 +487,7 @@ namespace NetPrints.Translator
                     for (int pinIndex = 0; pinIndex < node.InputExecPins.Count; pinIndex++)
                     {
                         builder.AppendLine(CultureInfo.InvariantCulture, $"State{nodeStateIds[node][pinIndex]}:");
+                        nodeOffsets.Add(new NodeOffset(builder.Length, node.Id));
                         TranslateNode(node, pinIndex);
                         builder.AppendLine();
                     }
@@ -542,6 +553,7 @@ namespace NetPrints.Translator
             reservedLocalNames.Clear();
             nodeStateIds.Clear();
             pinsJumpedTo.Clear();
+            nodeOffsets.Clear();
             nextStateId = 0;
             builder.Clear();
             random = new Random(0);
@@ -596,6 +608,7 @@ namespace NetPrints.Translator
                     for (int pinIndex = 0; pinIndex < node.InputExecPins.Count; pinIndex++)
                     {
                         builder.AppendLine(CultureInfo.InvariantCulture, $"State{nodeStateIds[node][pinIndex]}:");
+                        nodeOffsets.Add(new NodeOffset(builder.Length, node.Id));
                         TranslateNode(node, pinIndex);
                         builder.AppendLine();
                     }
@@ -672,7 +685,34 @@ namespace NetPrints.Translator
             {
                 if (!code.Contains($"goto State{stateId};", StringComparison.Ordinal))
                 {
-                    code = code.Replace($"State{stateId}:", "", StringComparison.Ordinal);
+                    code = RemoveLabel(code, $"State{stateId}:");
+                }
+            }
+
+            return code;
+        }
+
+        /// <summary>
+        /// Removes every occurrence of <paramref name="label"/> from <paramref name="code"/> (normally
+        /// exactly one: each state id is unique), shifting every recorded node offset past a removed
+        /// occurrence down by its length (research.md R3), so it still points at the same generated text.
+        /// </summary>
+        /// <param name="code">Code to remove <paramref name="label"/> from.</param>
+        /// <param name="label">Label text to remove, without its trailing line break.</param>
+        /// <returns><paramref name="code"/> with every occurrence of <paramref name="label"/> removed.</returns>
+        private string RemoveLabel(string code, string label)
+        {
+            int index;
+            while ((index = code.IndexOf(label, StringComparison.Ordinal)) >= 0)
+            {
+                code = string.Concat(code.AsSpan(0, index), code.AsSpan(index + label.Length));
+
+                for (int i = 0; i < nodeOffsets.Count; i++)
+                {
+                    if (nodeOffsets[i].Offset >= index)
+                    {
+                        nodeOffsets[i] = new NodeOffset(nodeOffsets[i].Offset - label.Length, nodeOffsets[i].NodeId);
+                    }
                 }
             }
 

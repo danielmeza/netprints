@@ -108,7 +108,7 @@ namespace NetPrints.Tests.Projects
                 Assert.Equal(firstBytes, secondBytes);
 
                 ClassGraph cls = await LoadClassAsync(graphPath);
-                string translated = new ClassTranslator(TranslationEnvironment.BuiltIn).TranslateClass(cls);
+                TranslatedClass translated = new ClassTranslator(TranslationEnvironment.BuiltIn).Translate(cls);
                 string expected = GraphCodeGenerator.RenderFile(translated, "HelloWorld.Program.netpc.json");
                 Assert.Equal(expected, firstContent);
             }
@@ -121,7 +121,8 @@ namespace NetPrints.Tests.Projects
         [Fact]
         public void RenderFileNormalizesLineEndingsAndTrailingNewline()
         {
-            string rendered = GraphCodeGenerator.RenderFile("public class Foo\r\n{\r\n}\r\n\r\n", "Foo.netpc.json");
+            var translated = new TranslatedClass("Foo", "public class Foo\r\n{\r\n}\r\n\r\n", SourceMap.Empty);
+            string rendered = GraphCodeGenerator.RenderFile(translated, "Foo.netpc.json");
 
             Assert.DoesNotContain('\r', rendered);
             Assert.Equal(

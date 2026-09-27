@@ -462,7 +462,7 @@ public sealed partial class MainEditorVM : ObservableObject, IDisposable
 
     /// <summary>Renders a class's generated C# file the same way a build would (project-system.md §3).</summary>
     private static string RenderGenerated(EditorContext context, Project project, ClassGraph cls) =>
-        GraphCodeGenerator.RenderFile(new ClassTranslator(context.Extensions.Current.Translation).TranslateClass(cls), Path.GetFileName(project.GetGraphFilePath(cls)));
+        GraphCodeGenerator.RenderFile(new ClassTranslator(context.Extensions.Current.Translation).Translate(cls), Path.GetFileName(project.GetGraphFilePath(cls)));
 
     /// <summary>Compiles the project in the background (PAR-09).</summary>
     [RelayCommand(CanExecute = nameof(CanCompile))]

@@ -3767,3 +3767,46 @@ set `ScreenPosition`, still opened at the origin.
   window edge) all still pass unchanged.
 - Suite: whole solution, Release, foreground; E2E with `NETPRINTS_E2E=1` separately. Totals recorded
   in the PR/report for this batch.
+
+## Sub-phase I, batch I1 (T089–T091): source map, diagnostics, live analysis
+
+- **T089**: `ClassTranslator.Translate(ClassGraph)` returns a `TranslatedClass(FullName, Code, Map)`
+  (`src/NetPrints.Core/Translator/SourceMap.cs`); `TranslateClass` now delegates to it
+  (`.Translate(c).Code`), so every existing caller keeps working unchanged. Building never changes
+  `Code` (RC-T06): the map is built by annotating the *unformatted* generated code's tokens with
+  `SyntaxAnnotation`s (kind `NetPrints.NodeId`/`NetPrints.Member`/`NetPrints.MemberEnd`, research.md
+  R3) before formatting, then reading the annotated tokens' spans back from the *formatted* tree —
+  `Formatter.Format`/`NormalizeWhitespace` never look at annotations, so the text they produce is
+  identical whether or not any token carries one. `SourceMap.Find` binary-searches entries sorted by
+  span start; each entry's span is bounded to its own member (method/constructor/event/accessor), so a
+  position before a member's first mapped node, or in the class's own boilerplate, correctly returns
+  `null` instead of bleeding into a neighboring member.
+  - Internal-only plumbing (never exposed past `NetPrints.Core`, no contract cost): `NodeOffset`
+    (`ExecutionGraphTranslator.LastNodeOffsets`, recorded right before each node's own `TranslateNode`
+    call — not for a pure node's inline sub-expression, since its text lands inside the enclosing
+    impure node's own statement anyway) and `ClassTranslator`'s private `TranslatedMember`/
+    `NodeOffsetGroup` (the "Core" split: `TranslateVariableCore`/`TranslateExecutionGraphCore`/
+    `TranslateEventCore` return code *and* offsets; the existing public `TranslateVariable`/
+    `TranslateMethod`/`TranslateConstructor` are unchanged thin wrappers over them, so no existing
+    caller or test needed to change).
+  - **Bug found while wiring this up**: `ExecutionGraphTranslator.RemoveUnnecessaryLabels` deletes
+    unused `StateN:` labels from the builder's raw text *after* node offsets were recorded against
+    that same text, which silently invalidated every offset downstream of a removed label. Fixed by
+    having the (renamed) `RemoveLabel` helper shift every recorded `NodeOffset` at or past each
+    removal point by the removed label's length, in lockstep with the text edit — output text is
+    unchanged (same removal, just decomposed instead of a single `string.Replace`), covered by
+    `ClassTranslatorTests.TestClassTranslation` (previously did not even attempt a class with real
+    method bodies through the new path) and `SourceMapTests`.
+  - Deviation beyond T089's own line: also updated `GraphCodeGenerator.RenderFile` to take
+    `TranslatedClass` (matching compilation-and-diagnostics.md §2 exactly, as flagged under T044's
+    entry above) and its 3 call sites (`GraphCodeGenerator`, `MainEditorVM`, `ClassEditorVM`) plus 3
+    test call sites, to `.Translate(cls)`. This is a pure signature/call-site mechanical change (no
+    editor design), needed so the codebase does not carry two parallel "translate a class" return
+    shapes once T089 lands; `ClassEditorVM.RefreshGeneratedCode`'s direct `TranslateClass(Class)` call
+    (feeding the pre-T094 code preview textbox) is untouched since its signature didn't change.
+  - `SourceMapTests.ACSharpErrorInACallArgumentMapsToTheCallNode` forces a real `CS1503` by wiring an
+    `int` literal into a `CallMethodNode` argument typed `string` (the graph model itself does not
+    enforce pin type compatibility) — using `Guid.Parse` rather than `Console.WriteLine`, since the
+    latter is also overloaded for `int` and would not error.
+  - Golden fixtures: byte-identical, unchanged (`GoldenCSharpTests`, `GoldenCompileTests`,
+    `MigratedFixtureBuildTests` all pass without modification).

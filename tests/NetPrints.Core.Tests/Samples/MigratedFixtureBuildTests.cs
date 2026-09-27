@@ -9,6 +9,7 @@ using NetPrints.Serialization.Mapping;
 using NetPrints.Serialization.Migrations;
 using NetPrints.Tests.Extensibility;
 using NetPrints.Tests.Projects;
+using NetPrints.Translator;
 using Xunit;
 
 namespace NetPrints.Tests.Samples
@@ -83,7 +84,8 @@ namespace NetPrints.Tests.Samples
                 Assert.True(result.Written);
 
                 string golden = await File.ReadAllTextAsync(Path.Combine(goldenDir, "AllNodes.Everything.cs"), TestContext.Current.CancellationToken);
-                string expected = GraphCodeGenerator.RenderFile(golden, graphFileName);
+                var translatedGolden = new TranslatedClass("AllNodes.Everything", golden, SourceMap.Empty);
+                string expected = GraphCodeGenerator.RenderFile(translatedGolden, graphFileName);
                 string actual = await File.ReadAllTextAsync(outputPath, TestContext.Current.CancellationToken);
 
                 Assert.Equal(expected, actual);
