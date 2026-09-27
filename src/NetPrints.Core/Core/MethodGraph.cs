@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
 using NetPrints.Graph;
 
 namespace NetPrints.Core
@@ -164,12 +163,6 @@ namespace NetPrints.Core
             Name = name;
             EntryNode = new MethodEntryNode(this);
             new ReturnNode(this);
-        }
-
-        [OnDeserialized]
-        private void OnDeserialized(StreamingContext context)
-        {
-            GraphTypeInference.Relax(this);
         }
 
         /// <summary>
