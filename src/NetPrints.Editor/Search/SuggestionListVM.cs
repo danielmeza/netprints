@@ -380,7 +380,7 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
                         var existingNames = eventClass.Methods.Select(m => m.Name)
                             .Concat(eventClass.EventGraphs.SelectMany(g => g.Entries.Select(e => e.EventName)))
                             .ToList();
-                        string name = NetPrintsUtil.GetUniqueName("CustomEvent", existingNames);
+                        string name = NetPrintsUtil.GetUniqueName(CustomEventSuggestion.NamePrefix, existingNames);
                         graph.AddEventEntry(Position, g => new EventEntryNode(g, name));
                     }
                     break;
