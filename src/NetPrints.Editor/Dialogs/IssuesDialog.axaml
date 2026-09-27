@@ -1,0 +1,22 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ed="clr-namespace:NetPrints.Editor"
+        x:Class="NetPrints.Editor.Dialogs.IssuesDialog"
+        Icon="avares://NetPrints.Editor/Assets/NetPrintsLogo.ico"
+        Width="700" Height="400"
+        WindowStartupLocation="CenterOwner" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.IssuesDialog}">
+  <Grid RowDefinitions="*,Auto" Margin="8">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+      <ItemsControl x:Name="IssueList" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ExtensionLoadErrors}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="x:String">
+            <TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="2,4" FontFamily="monospace"
+                       AutomationProperties.AutomationId="{x:Static ed:AutomationIds.IssueRow}" AutomationProperties.Name="{Binding}" />
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </ScrollViewer>
+    <Button Grid.Row="1" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.IssuesOkButton}" Content="OK" HorizontalAlignment="Right" Margin="0,8,0,0" MinWidth="80"
+            IsDefault="True" Click="OnOkClicked" />
+  </Grid>
+</Window>

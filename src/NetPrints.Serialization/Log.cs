@@ -8,7 +8,7 @@ namespace NetPrints.Serialization;
 /// </summary>
 internal static partial class Log
 {
-    /// <summary>Logs 3007: <see cref="ProjectPersistence.LoadAsync"/> skipped a class graph it could
+    /// <summary>Logs 3007: <see cref="ProjectPersistence.LoadAsync(string, System.Threading.CancellationToken)"/> skipped a class graph it could
     /// not read.</summary>
     /// <param name="logger">Logger to write to.</param>
     /// <param name="document">Id of the document that could not be read.</param>

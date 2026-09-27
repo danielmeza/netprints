@@ -1,6 +1,9 @@
 using System.Reactive.Concurrency;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Logging;
+using NetPrints.Extensibility.Hosting;
+using NetPrints.Extensibility.Loading;
+using NetPrints.Extensibility.Settings;
 using NetPrints.Projects;
 using NetPrints.Serialization;
 
@@ -29,6 +32,9 @@ namespace NetPrints.Editor.Hosting;
 /// (project-system.md §4).</param>
 /// <param name="Persistence">Loads, saves and adds class graphs of the open project
 /// (document-format.md §2.8).</param>
+/// <param name="Extensions">Holds the registry of loaded extensions.</param>
+/// <param name="HostChannel">The channel to the application hosting the editor.</param>
+/// <param name="Settings">Reads and writes the user's settings file.</param>
 public sealed record EditorContext(
     IFilePickerService FilePicker,
     IEditorDialogs Dialogs,
@@ -42,4 +48,7 @@ public sealed record EditorContext(
     Func<IMessenger> CreateMessenger,
     ILoggerFactory LoggerFactory,
     IProjectSystem Projects,
-    ProjectPersistence Persistence);
+    ProjectPersistence Persistence,
+    IExtensionHost Extensions,
+    IHostChannel HostChannel,
+    ISettingsStore Settings);

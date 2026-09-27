@@ -1,10 +1,17 @@
 using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using Avalonia;
 using Avalonia.Logging;
 using Avalonia.Media;
 using Microsoft.Extensions.Logging;
 using NetPrints.Editor;
 using NetPrints.Editor.Hosting;
+using NetPrints.Extensibility;
+using NetPrints.Extensibility.Loading;
+using NetPrints.Extensibility.Settings;
 using NetPrints.Workspace;
 
 namespace NetPrints.Desktop;
@@ -22,7 +29,13 @@ internal static class Program
 
         // Must run before any Microsoft.Build-namespace type is loaded (project-system.md §4).
         bool msBuildAvailable = MsBuildRegistration.EnsureRegistered(loggerFactory.CreateLogger(nameof(MsBuildRegistration)));
-        EditorApp.HostServices = new EditorHostServices(loggerFactory, msBuildAvailable);
+
+        var settings = new JsonFileSettingsStore(JsonFileSettingsStore.DefaultFilePath(), loggerFactory.CreateLogger<JsonFileSettingsStore>());
+        using var extensions = new ExtensionHost(
+            new ExtensionLoaderOptions(GetExtensionSearchDirectories(settings), [], [BuiltInExtension.InProcessEntry]), loggerFactory);
+        HostChannelSelection channel = HostChannelSelector.Select(
+            extensions.Current, GetEnvironment(), loggerFactory.CreateLogger(nameof(HostChannelSelector)));
+        EditorApp.HostServices = new EditorHostServices(loggerFactory, extensions, settings, channel.Channel, channel.Error, msBuildAvailable);
 
         try
         {
@@ -30,9 +43,26 @@ internal static class Program
         }
         finally
         {
+            channel.Channel.DisposeAsync().AsTask().GetAwaiter().GetResult();
             loggerFactory.Dispose();
         }
     }
+
+    /// <summary>
+    /// The directories searched for extensions: the settings' <c>netprints.extensionPaths</c>, then the
+    /// <c>NETPRINTS_EXTENSION_PATH</c> entries (separated like <c>PATH</c>).
+    /// </summary>
+    private static string[] GetExtensionSearchDirectories(ISettingsStore settings)
+    {
+        string[] fromEnvironment = Environment.GetEnvironmentVariable("NETPRINTS_EXTENSION_PATH")
+            ?.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? [];
+        return [.. settings.Get(NetPrintsSettings.Descriptor).ExtensionPaths, .. fromEnvironment];
+    }
+
+    private static Dictionary<string, string> GetEnvironment() =>
+        Environment.GetEnvironmentVariables().Cast<DictionaryEntry>()
+            .Where(entry => entry.Key is string && entry.Value is string)
+            .ToDictionary(entry => (string)entry.Key, entry => (string)entry.Value!, StringComparer.Ordinal);
 
     /// <summary>
     /// Builds the process-wide <see cref="ILoggerFactory"/>: a simple console logger at

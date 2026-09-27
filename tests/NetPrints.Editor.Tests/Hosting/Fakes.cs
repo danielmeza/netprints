@@ -2,10 +2,14 @@ using System.Reactive.Concurrency;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Reactive.Testing;
+using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.References;
+using NetPrints.Extensibility.Hosting;
+using NetPrints.Extensibility.Loading;
+using NetPrints.Extensibility.Settings;
 using NetPrints.Projects;
 using NetPrints.Serialization;
 using NetPrints.Serialization.Json;
@@ -52,6 +56,21 @@ public sealed class FakeDialogs : IEditorDialogs
     public List<ReferenceListVM> ReferenceDialogs { get; } = [];
     public TypeSpecifier? TypeAnswer { get; set; } = TypeSpecifier.FromType<int>();
     public Func<IReadOnlyList<MethodSpecifier>, MethodSpecifier?> MethodAnswer { get; set; } = m => m.FirstOrDefault();
+    public List<(string ProjectPath, IReadOnlyList<string> Folders)> TrustCalls { get; } = [];
+    public bool TrustAnswer { get; set; }
+    public List<(string Title, IReadOnlyList<CodeDiagnostic> Issues)> IssueDialogs { get; } = [];
+
+    public Task<bool> ConfirmTrustAsync(string projectPath, IReadOnlyList<string> extensionFolders)
+    {
+        TrustCalls.Add((projectPath, extensionFolders));
+        return Task.FromResult(TrustAnswer);
+    }
+
+    public Task ShowIssuesAsync(string title, IReadOnlyList<CodeDiagnostic> issues)
+    {
+        IssueDialogs.Add((title, issues));
+        return Task.CompletedTask;
+    }
 
     public Task ShowErrorAsync(string title, string message)
     {
@@ -87,6 +106,24 @@ public sealed class FakeClipboard : IClipboardService
     {
         Text = text;
         return Task.CompletedTask;
+    }
+}
+
+/// <summary>Settings kept in memory.</summary>
+public sealed class FakeSettingsStore : ISettingsStore
+{
+    private readonly Dictionary<string, object?> values = new(StringComparer.Ordinal);
+
+    public int Writes { get; private set; }
+
+    public T Get<T>(ExtensionSettingsDescriptor<T> descriptor) =>
+        values.TryGetValue(descriptor.ExtensionId, out object? value) && value is T typed ? typed : descriptor.Default;
+
+    public ValueTask SetAsync<T>(ExtensionSettingsDescriptor<T> descriptor, T value, CancellationToken cancellationToken)
+    {
+        values[descriptor.ExtensionId] = value;
+        Writes++;
+        return ValueTask.CompletedTask;
     }
 }
 
@@ -321,9 +358,11 @@ public sealed class TestEditor
         ArgumentNullException.ThrowIfNull(reflection);
         Reflection = reflection;
         Persistence = CreatePersistence(Projects);
+        Extensions = new ExtensionHost(ExtensionLoaderOptions.BuiltInOnly, NullLoggerFactory.Instance);
 
         Context = new EditorContext(FilePicker, Dialogs, Clipboard, Dispatcher, Reflection, Windows, Processes,
-            Scheduler, Scheduler, () => new StrongReferenceMessenger(), NullLoggerFactory.Instance, Projects, Persistence);
+            Scheduler, Scheduler, () => new StrongReferenceMessenger(), NullLoggerFactory.Instance, Projects, Persistence,
+            Extensions, NullHostChannel.Instance, Settings);
     }
 
     /// <summary>Builds a real, JSON-backed <see cref="ProjectPersistence"/> over any <see cref="IProjectSystem"/>.</summary>
@@ -346,6 +385,11 @@ public sealed class TestEditor
     public IReflectionHost Reflection { get; }
     public FakeProjectSystem Projects { get; } = new();
     public ProjectPersistence Persistence { get; }
+
+    /// <summary>The real extension host with only the built-in extension; project folders load through it.</summary>
+    public ExtensionHost Extensions { get; }
+
+    public FakeSettingsStore Settings { get; } = new();
 
     /// <summary>Virtual time for throttled work (the search box) and the generated-code loop.</summary>
     public TestScheduler Scheduler { get; } = new();

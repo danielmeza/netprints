@@ -24,3 +24,21 @@ public sealed class SelectMethodDialogPage(IUiDriver driver) : UiElement(driver,
     public UiElement MethodBox => Find(AutomationIds.SelectMethodBox);
     public UiElement SelectButton => Find(AutomationIds.SelectMethodButton);
 }
+
+/// <summary>Screen object of the issues dialog (at startup: the extensions that failed to load).</summary>
+public sealed class IssuesDialogPage(IUiDriver driver) : UiElement(driver, new AutomationQuery(AutomationIds.IssuesDialog))
+{
+    public UiElement OkButton => Find(AutomationIds.IssuesOkButton);
+
+    public async Task<IReadOnlyList<string>> RowsAsync(CancellationToken cancellationToken) =>
+        (await Driver.FindAllAsync(new AutomationQuery(AutomationIds.IssueRow) { Within = Find(AutomationIds.ExtensionLoadErrors).Query }, cancellationToken))
+            .Select(e => e.Name ?? "").ToList();
+}
+
+/// <summary>Screen object of the dialog that asks whether a project's extensions may load.</summary>
+public sealed class TrustDialogPage(IUiDriver driver) : UiElement(driver, new AutomationQuery(AutomationIds.TrustDialog))
+{
+    public UiElement Prompt => Find(AutomationIds.TrustPrompt);
+    public UiElement TrustButton => Find(AutomationIds.TrustButton);
+    public UiElement DontLoadButton => Find(AutomationIds.TrustDontLoadButton);
+}

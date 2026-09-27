@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text;
+using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.References;
@@ -32,6 +33,22 @@ public sealed class RecordingDialogs : IEditorDialogs
 
     public Task<MethodSpecifier?> SelectMethodAsync(IEnumerable<MethodSpecifier> methods) =>
         Task.FromResult(methods.FirstOrDefault());
+
+    /// <summary>What <see cref="ConfirmTrustAsync"/> answers.</summary>
+    public bool TrustAnswer { get; set; }
+
+    /// <summary>When set, the issues dialog is shown for real (non-modal) instead of only being recorded.</summary>
+    public Func<string, IReadOnlyList<CodeDiagnostic>, Task>? ShowIssues { get; set; }
+
+    public List<(string Title, IReadOnlyList<CodeDiagnostic> Issues)> IssueDialogs { get; } = [];
+
+    public Task<bool> ConfirmTrustAsync(string projectPath, IReadOnlyList<string> extensionFolders) => Task.FromResult(TrustAnswer);
+
+    public Task ShowIssuesAsync(string title, IReadOnlyList<CodeDiagnostic> issues)
+    {
+        IssueDialogs.Add((title, issues));
+        return ShowIssues?.Invoke(title, issues) ?? Task.CompletedTask;
+    }
 
     public Task ShowReferencesAsync(ReferenceListVM references)
     {

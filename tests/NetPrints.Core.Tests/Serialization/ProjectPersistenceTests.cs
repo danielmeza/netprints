@@ -127,6 +127,40 @@ namespace NetPrints.Tests.Serialization
             Assert.Equal(new DocumentId("Bad.netpc.json"), issue.Document);
         }
 
+        // T075: a host that evaluated the project itself (to decide which extensions to load) hands the snapshot over.
+        [Fact]
+        public async Task LoadAsyncFromASnapshotDoesNotEvaluateTheProjectAgain()
+        {
+            CancellationToken ct = TestContext.Current.CancellationToken;
+            NodeDocumentConverterRegistry registry = NewRegistry();
+            JsonDocumentFormat jsonFormat = NewJsonFormat(registry);
+            string pathA = Path.Combine(root, "A.netpc.json");
+            await WriteFileAsync(jsonFormat, MinimalDocument("A", 1), pathA, ct);
+            ProjectSnapshot snapshot = NewSnapshot(Path.Combine(root, "Test.csproj"), [pathA]);
+            ProjectPersistence persistence = NewPersistence(new ThrowingProjectSystem(), new DocumentFormatRegistry([jsonFormat]), new DocumentMapper(registry));
+
+            ProjectLoadResult result = await persistence.LoadAsync(snapshot, ct);
+
+            Assert.Same(snapshot, result.Snapshot);
+            Assert.Equal("Test.A", Assert.Single(result.Project.Classes).FullName);
+            Assert.Empty(result.Issues);
+        }
+
+        private sealed class ThrowingProjectSystem : IProjectSystem
+        {
+            public Task<ProjectSnapshot> LoadAsync(string projectFilePath, CancellationToken cancellationToken) => throw new NotSupportedException();
+
+            public Task<ProjectSnapshot> ApplyAsync(string projectFilePath, IReadOnlyList<ProjectEdit> edits, CancellationToken cancellationToken) =>
+                throw new NotSupportedException();
+
+            public Task<string> CreateAsync(string directory, string projectName, IProjectProfile profile, string rootNamespace, CancellationToken cancellationToken) =>
+                throw new NotSupportedException();
+
+            public Task<BuildResult> BuildAsync(string projectFilePath, CancellationToken cancellationToken) => throw new NotSupportedException();
+
+            public ProcessStartRequest GetRunCommand(string projectFilePath) => throw new NotSupportedException();
+        }
+
         // DF-T15: SaveAsync writes only dirty classes' graphs and generated C#, never the clean ones or
         // the .csproj; an unchanged project afterward writes nothing.
         [Fact]

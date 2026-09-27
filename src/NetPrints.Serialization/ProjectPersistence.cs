@@ -15,7 +15,7 @@ using NetPrints.Serialization.Stores;
 namespace NetPrints.Serialization;
 
 /// <summary>
-/// Result of <see cref="ProjectPersistence.LoadAsync"/>: the built project, the snapshot it was built
+/// Result of <see cref="ProjectPersistence.LoadAsync(string, System.Threading.CancellationToken)"/>: the built project, the snapshot it was built
 /// from, and any non-fatal issues found while loading its classes (document-format.md §2.8).
 /// </summary>
 /// <param name="Project">The loaded project, with <see cref="Core.Project.Classes"/> populated in
@@ -49,7 +49,7 @@ public sealed class ProjectPersistence
     /// <summary>
     /// Creates a persistence facade.
     /// </summary>
-    /// <param name="projects">Project system <see cref="LoadAsync"/> reads the <c>.csproj</c> through.</param>
+    /// <param name="projects">Project system <see cref="LoadAsync(string, CancellationToken)"/> reads the <c>.csproj</c> through.</param>
     /// <param name="formats">Document formats a graph file's format is resolved against.</param>
     /// <param name="mapper">Mapper used to convert classes to and from their document form.</param>
     /// <param name="createStore">Creates the document store a project's graphs are read from and
@@ -79,8 +79,24 @@ public sealed class ProjectPersistence
         ArgumentException.ThrowIfNullOrEmpty(projectFilePath);
 
         ProjectSnapshot snapshot = await projects.LoadAsync(projectFilePath, cancellationToken).ConfigureAwait(false);
+        return await LoadAsync(snapshot, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Loads a project from a snapshot the caller already evaluated (for a host that must decide which
+    /// extensions to load from the snapshot's <see cref="ProjectSnapshot.ExtensionFolders"/> before the
+    /// graphs are mapped): each of its <see cref="ProjectSnapshot.GraphFiles"/> through the registered
+    /// document formats, in order, with the same issue handling as <see cref="LoadAsync(string, CancellationToken)"/>.
+    /// </summary>
+    /// <param name="snapshot">The evaluated project.</param>
+    /// <param name="cancellationToken">Cancels the operation.</param>
+    /// <returns>The loaded project, its snapshot, and any issues found loading its classes.</returns>
+    public async Task<ProjectLoadResult> LoadAsync(ProjectSnapshot snapshot, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(snapshot);
+
         Project project = Project.FromSnapshot(snapshot);
-        string projectDirectory = GetDirectoryOrThrow(projectFilePath);
+        string projectDirectory = GetDirectoryOrThrow(snapshot.ProjectFilePath);
 
         IDocumentStore store = createStore(projectDirectory);
         try

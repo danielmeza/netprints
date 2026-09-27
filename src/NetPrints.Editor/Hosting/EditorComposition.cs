@@ -24,6 +24,7 @@ public sealed class EditorComposition
     /// <param name="customize">Optional hook to replace services (used by the headless UI tests).</param>
     public EditorComposition(EditorHostServices host, Func<EditorContext, EditorContext>? customize = null)
     {
+        hostChannelError = host.HostChannelError;
         var dispatcher = new AvaloniaUiDispatcher();
         Windows = new WindowService();
 
@@ -52,9 +53,14 @@ public sealed class EditorComposition
             () => new WeakReferenceMessenger(),
             host.LoggerFactory,
             projects,
-            persistence);
+            persistence,
+            host.Extensions,
+            host.HostChannel,
+            host.Settings);
         Context = customize?.Invoke(context) ?? context;
     }
+
+    private readonly string? hostChannelError;
 
     /// <summary>
     /// Placeholder <c>NetPrints.Sdk</c> version substituted into a new project's template
@@ -77,6 +83,24 @@ public sealed class EditorComposition
     /// </summary>
     public IDisposable InstallUnhandledExceptionHandler() =>
         new UnhandledExceptionHandler(Context.Dialogs, Context.Dispatcher, Context.LoggerFactory.CreateLogger<UnhandledExceptionHandler>());
+
+    /// <summary>
+    /// Reports what went wrong before the window existed (a requested host channel that is not available, extensions
+    /// that failed to load), then opens the project named on the command line, if any (FR-016, PAR-05). Call after
+    /// <see cref="CreateMainWindow"/>.
+    /// </summary>
+    /// <param name="args">The command-line arguments.</param>
+    public async Task StartAsync(IReadOnlyList<string> args)
+    {
+        MainEditorVM mainEditor = MainEditor ?? throw new InvalidOperationException($"{nameof(CreateMainWindow)} must be called first.");
+        if (hostChannelError is not null)
+        {
+            await Context.Dialogs.ShowErrorAsync("Host channel unavailable", hostChannelError);
+        }
+
+        await mainEditor.ReportExtensionFailuresAsync();
+        await mainEditor.OpenStartupProjectAsync(args);
+    }
 
     /// <summary>Creates the main window and its view model.</summary>
     public MainWindow CreateMainWindow()

@@ -86,7 +86,11 @@ public class DialogTests
             new NetPrints.Editor.Hosting.Avalonia.WindowService(), new CapturingProcessLauncher(),
             System.Reactive.Concurrency.DefaultScheduler.Instance, System.Reactive.Concurrency.DefaultScheduler.Instance,
             () => new CommunityToolkit.Mvvm.Messaging.WeakReferenceMessenger(), NullLoggerFactory.Instance,
-            noSdkProjects, TestPersistence.Create(noSdkProjects));
+            noSdkProjects, TestPersistence.Create(noSdkProjects),
+            new NetPrints.Extensibility.Loading.ExtensionHost(NetPrints.Extensibility.Loading.ExtensionLoaderOptions.BuiltInOnly, NullLoggerFactory.Instance),
+            NetPrints.Extensibility.Hosting.NullHostChannel.Instance,
+            new NetPrints.Extensibility.Settings.JsonFileSettingsStore(Path.Combine(Path.GetTempPath(), "netprints-unused", "settings.json"),
+                NullLogger<NetPrints.Extensibility.Settings.JsonFileSettingsStore>.Instance));
         using var ui = HeadlessUi.Create();
         ui.Show(new ReferencesDialog { DataContext = new ReferenceListVM(project, context) });
         var page = new ReferencesDialogPage(ui.Driver);

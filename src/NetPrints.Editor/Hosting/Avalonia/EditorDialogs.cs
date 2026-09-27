@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Hosting;
@@ -34,6 +35,14 @@ public sealed class EditorDialogs(Func<Window?> owner) : IEditorDialogs
     /// <inheritdoc/>
     public Task<MethodSpecifier?> SelectMethodAsync(IEnumerable<MethodSpecifier> methods) =>
         ShowAsync<MethodSpecifier>(new SelectMethodDialog(methods));
+
+    /// <inheritdoc/>
+    public Task<bool> ConfirmTrustAsync(string projectPath, IReadOnlyList<string> extensionFolders) =>
+        ShowAsync<bool>(new TrustDialog(projectPath, extensionFolders));
+
+    /// <inheritdoc/>
+    public Task ShowIssuesAsync(string title, IReadOnlyList<CodeDiagnostic> issues) =>
+        ShowAsync<object>(new IssuesDialog(title, issues));
 
     /// <inheritdoc/>
     public async Task ShowReferencesAsync(ReferenceListVM references)

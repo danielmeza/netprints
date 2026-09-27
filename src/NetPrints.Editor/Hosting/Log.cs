@@ -46,4 +46,17 @@ internal static partial class Log
     /// <param name="exception">The exception that made the reload fail.</param>
     [LoggerMessage(EventId = 1013, Level = LogLevel.Error, Message = "Loading types for {ProjectName} failed")]
     public static partial void ReflectionReloadFailed(ILogger logger, string projectName, Exception exception);
+
+    /// <summary>Logs 1021: <c>NETPRINTS_HOST_CHANNEL</c> names a factory no loaded extension provides.</summary>
+    /// <param name="logger">Logger to write to.</param>
+    /// <param name="id">The requested factory id.</param>
+    [LoggerMessage(EventId = 1021, Level = LogLevel.Error, Message = "Host channel {Id} is not provided by any extension")]
+    public static partial void HostChannelUnknown(ILogger logger, string id);
+
+    /// <summary>Logs 1023: the factory of the requested host channel threw.</summary>
+    /// <param name="logger">Logger to write to.</param>
+    /// <param name="exception">The exception the factory threw.</param>
+    /// <param name="id">The requested factory id.</param>
+    [LoggerMessage(EventId = 1023, Level = LogLevel.Error, Message = "Host channel {Id} could not be created")]
+    public static partial void HostChannelCreateFailed(ILogger logger, Exception exception, string id);
 }

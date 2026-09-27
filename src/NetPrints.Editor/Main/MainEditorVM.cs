@@ -6,6 +6,8 @@ using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.References;
+using NetPrints.Extensibility.Loading;
+using NetPrints.Extensibility.Settings;
 using NetPrints.Generator;
 using NetPrints.Projects;
 using NetPrints.Serialization;
@@ -20,6 +22,7 @@ namespace NetPrints.Editor.Main;
 public sealed partial class MainEditorVM : ObservableObject
 {
     private readonly EditorContext context;
+    private readonly HashSet<(string Id, string? ManifestPath, string Code)> reportedExtensionFailures = [];
     private Project? subscribedProject;
 
     /// <summary>
@@ -304,16 +307,21 @@ public sealed partial class MainEditorVM : ObservableObject
 
         try
         {
-            ProjectLoadResult loaded = await context.Persistence.LoadAsync(path, CancellationToken.None);
+            ProjectSnapshot snapshot = await context.Projects.LoadAsync(path, CancellationToken.None);
+            DocumentIssue? notTrusted = await LoadExtensionsForProjectAsync(snapshot);
+            ProjectLoadResult loaded = await context.Persistence.LoadAsync(snapshot, CancellationToken.None);
 
             context.Windows.CloseAllClassEditors();
             Project = loaded.Project;
             IsBusy = false;
 
-            if (loaded.Issues.Count > 0)
+            await ReportExtensionFailuresAsync();
+
+            IReadOnlyList<DocumentIssue> issues = notTrusted is null ? loaded.Issues : [notTrusted, .. loaded.Issues];
+            if (issues.Count > 0)
             {
                 await context.Dialogs.ShowErrorAsync("Project loaded with issues",
-                    string.Join("\n\n", loaded.Issues.Select(issue => $"{issue.Code}: {issue.Message}")));
+                    string.Join("\n\n", issues.Select(issue => $"{issue.Code}: {issue.Message}")));
             }
         }
         catch (Exception ex)
@@ -327,6 +335,81 @@ public sealed partial class MainEditorVM : ObservableObject
         {
             IsBusy = false;
         }
+    }
+
+    /// <summary>
+    /// Loads the extensions of the project that is about to open (extension-points.md §8.3), before its graphs are
+    /// mapped: the project's <c>NetPrintsExtension</c> folders are loaded only if its full path is in
+    /// <see cref="NetPrintsSettings.TrustedProjects"/>; otherwise the user is asked once, "Trust" records the path in
+    /// the settings, and "Don't load" opens the project with those extensions' nodes preserved but inactive. A project
+    /// with no extension folders drops the previous project's.
+    /// </summary>
+    /// <returns>The <c>NPD006</c> issue when the user declined; otherwise <see langword="null"/>.</returns>
+    private async Task<DocumentIssue?> LoadExtensionsForProjectAsync(ProjectSnapshot snapshot)
+    {
+        IReadOnlyList<string> folders = snapshot.ExtensionFolders;
+        DocumentIssue? notTrusted = null;
+
+        if (folders.Count > 0 && !IsTrusted(snapshot.ProjectFilePath))
+        {
+            if (await context.Dialogs.ConfirmTrustAsync(snapshot.ProjectFilePath, folders))
+            {
+                NetPrintsSettings current = context.Settings.Get(NetPrintsSettings.Descriptor);
+                await context.Settings.SetAsync(NetPrintsSettings.Descriptor,
+                    current with { TrustedProjects = [.. current.TrustedProjects, snapshot.ProjectFilePath] }, CancellationToken.None);
+            }
+            else
+            {
+                notTrusted = new DocumentIssue(DocumentIssueSeverity.Warning, DocumentIssue.ExtensionNotTrusted,
+                    $"The extensions of '{snapshot.ProjectFilePath}' were not loaded because the project is not trusted: " +
+                    "the nodes they provide are preserved but inactive, and they are saved unchanged.",
+                    new DocumentId(Path.GetFileName(snapshot.ProjectFilePath)));
+                folders = [];
+            }
+        }
+
+        context.Extensions.LoadForProject(folders, CancellationToken.None);
+        return notTrusted;
+    }
+
+    private bool IsTrusted(string projectFilePath)
+    {
+        StringComparison comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        return context.Settings.Get(NetPrintsSettings.Descriptor).TrustedProjects
+            .Any(trusted => string.Equals(trusted, projectFilePath, comparison));
+    }
+
+    /// <summary>
+    /// Shows one dialog listing the extensions that failed to load (<c>NPX001</c> to <c>NPX007</c>) and the
+    /// contributions the registry rejected, skipping what an earlier call already showed. The editor stays usable
+    /// without them (ED-T11, editor-services.md §5).
+    /// </summary>
+    public Task ReportExtensionFailuresAsync()
+    {
+        ExtensionRegistry registry = context.Extensions.Current;
+        List<CodeDiagnostic> diagnostics = [];
+
+        foreach (ExtensionLoadResult.Failed failed in registry.Results.OfType<ExtensionLoadResult.Failed>())
+        {
+            if (reportedExtensionFailures.Add((failed.Id, failed.ManifestPath, failed.Code)))
+            {
+                diagnostics.Add(new CodeDiagnostic(CodeDiagnosticSeverity.Error, failed.Code,
+                    $"Extension '{failed.Id}' was not loaded: {failed.Reason}", null, null, null, failed.ManifestPath, null));
+            }
+        }
+
+        foreach (ExtensionContributionIssue issue in registry.Issues)
+        {
+            if (reportedExtensionFailures.Add((issue.ExtensionId, issue.Contribution, issue.Code)))
+            {
+                diagnostics.Add(new CodeDiagnostic(CodeDiagnosticSeverity.Error, issue.Code,
+                    $"Extension '{issue.ExtensionId}': {issue.Contribution} was rejected: {issue.Reason}", null, null, null, null, null));
+            }
+        }
+
+        return diagnostics.Count == 0
+            ? Task.CompletedTask
+            : context.Dialogs.ShowIssuesAsync("Extensions failed to load", diagnostics);
     }
 
     /// <summary>

@@ -22,8 +22,7 @@ public partial class EditorApp : Application
     private static EditorHostServices? hostServices;
 
     /// <summary>
-    /// Process-wide services (logging and, from T075 on, extensions/settings/host channel/MSBuild
-    /// availability). Set by the host (<c>NetPrints.Desktop</c>'s <c>Program</c>) before
+    /// Process-wide services (logging, extensions, settings, host channel, MSBuild availability). Set by the host (<c>NetPrints.Desktop</c>'s <c>Program</c>) before
     /// <c>StartWithClassicDesktopLifetime</c> runs; read by
     /// <see cref="OnFrameworkInitializationCompleted"/>.
     /// </summary>
@@ -99,8 +98,8 @@ public partial class EditorApp : Application
                 };
             }
 
-            // A single command-line argument is a project to open (FR-016, PAR-05).
-            _ = composition.MainEditor!.OpenStartupProjectAsync(desktop.Args ?? []);
+            // Startup problems first, then a single command-line argument is a project to open (FR-016, PAR-05).
+            _ = composition.StartAsync(desktop.Args ?? []);
         }
 
         base.OnFrameworkInitializationCompleted();

@@ -2892,3 +2892,42 @@ in-memory NPX001 to NPX007 and ordering tests from T068 are untouched. `Contribu
   `FindProfile` returns `null` for an unknown id.
 - Class-ness leaks added: none. The generator request is unchanged (`GenerateRequest` still has no class-only shape); `GraphCodeGenerator` itself is
   class-specific (`ClassDocument`, `ClassTranslator`), as before.
+
+### T075: editor and desktop composition
+
+`EditorContext` gains `Extensions`, `HostChannel` and `Settings` (appended, required); `EditorHostServices` is now `(LoggerFactory, Extensions,
+Settings, HostChannel, HostChannelError, MsBuildAvailable)`. `Program` builds `JsonFileSettingsStore`, an `ExtensionHost` (search directories =
+settings `ExtensionPaths` then `NETPRINTS_EXTENSION_PATH`, built-in extension in process) and the host channel, and disposes the channel on exit.
+New: `Hosting/HostChannelSelector.cs`, `Dialogs/IssuesDialog` and `Dialogs/TrustDialog` behind `IEditorDialogs.ShowIssuesAsync` and
+`ConfirmTrustAsync`, `EditorComposition.StartAsync`, `MainEditorVM.ReportExtensionFailuresAsync`, `ProjectPersistence.LoadAsync(ProjectSnapshot, ct)`.
+Tests: `ProjectTrustTests` (EX-T13), `ExtensionFailureReportTests` and `ExtensionDialogTests` (ED-T11, plus the trust dialog), `HostChannelSelectorTests`,
+one `ProjectPersistenceTests` case.
+
+- Decision: the trust flow lives in `MainEditorVM.LoadProjectAsync`: `IProjectSystem.LoadAsync`, then `LoadExtensionsForProjectAsync` (trusted path in
+  `NetPrintsSettings.TrustedProjects` or `ConfirmTrustAsync`; "Trust" appends the full `.csproj` path with `SetAsync`; "Don't load" passes no
+  folders and adds an `NPD006` warning issue whose document is the `.csproj`), then `ExtensionHost.LoadForProject`, then the graphs are mapped. `LoadForProject`
+  is always called, with an empty list for a project without a `NetPrintsExtension` item, so the previous project's extensions are dropped and
+  a stray `netprints-extension.json` next to the project is never read. Path comparison is ordinal (ignore case on Windows). A declined project asks
+  again next time (nothing is recorded).
+- Decision: `ProjectPersistence` gained `LoadAsync(ProjectSnapshot, ct)` (the path overload now calls it) so the project is evaluated once: the editor
+  needs the snapshot's `ExtensionFolders` before the graphs are mapped. `LoadForProject` runs on the calling (UI) thread; `RegistryChanged` handlers
+  therefore run there too (T076 rebuilds the mapper in one).
+- Decision: the mapper still uses `NodeDocumentConverterRegistry.BuiltIn`, so a trusted extension's nodes are preserved until T076 rebuilds the
+  persistence on `RegistryChanged`. EX-T13's "Trust -> loaded" is asserted through the real loader (a folder with an unreadable manifest gives an
+  `NPX001` row), and "Don't load -> nodes preserved" through the `NPD001` row for the node of an unknown kind.
+- Decision (F4 leftover, unknown kinds): a node kind with no registered extension is already listed on open as an `NPD001` row of the "Project loaded with
+  issues" dialog (with `NPD006` first when the user declined). Nothing new was added for the live code preview or the editor's own translation
+  (`RenderGenerated` still drops the preserved node); that belongs to the error list of sub-phase I, and a build through the SDK target reports `NPT003`.
+- Decision: extension failures (`ExtensionLoadResult.Failed`) and rejected contributions (`registry.Issues`, `NPX006`) share one dialog, titled
+  "Extensions failed to load", shown once at startup by `EditorComposition.StartAsync` and again after a project's folders load, listing only
+  what an earlier call has not shown. The dialog is the generic `IssuesDialog`; its list carries `AutomationIds.ExtensionLoadErrors` and its rows
+  `IssueRow`.
+- Decision: the host channel is selected in the editor (`HostChannelSelector`, testable) rather than in `Desktop/Program`, from `extensions.Current`
+  before any project is open (one channel per process). Unknown id: `NullHostChannel`, log 1021, and `EditorHostServices.HostChannelError`, which
+  `StartAsync` shows in an error dialog (the record gained this member because `Program` runs before any UI exists). A factory that throws is handled
+  the same way with the new log 1023 `HostChannelCreateFailed` (Error, Editor `HostChannelSelector`). Log 1021 moved from Desktop `Program` to the Editor's `Log`.
+  All `NETPRINTS_HOST_*` variables, `CHANNEL` included, are passed as `HostLaunchContext.Settings`, keyed by the name after the prefix.
+- Decision: `EX-T07`'s second half (unknown `NetPrintsProfile` -> default profile + `NPD005`) is not required by T075's text or by an ED id, so it is left
+  for T076 ("New Class uses the project's profile"), which is where the editor first reads the profile.
+- Deferred to T076 as specified: `ProjectSystemOptions.ExtraProperties`, `ReflectionHost` catalogs, mapper rebuild, `TranslationEnvironment.BuiltIn` call sites,
+  `HostChannelBridge` (1020, 1022).

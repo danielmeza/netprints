@@ -2,11 +2,16 @@ using Avalonia.Controls;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Reactive.Testing;
 using NetPrints.Editor.ClassEditor;
+using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Editor.Main;
 using NetPrints.Editor.References;
 using NetPrints.Editor.UITests.Driving;
+using NetPrints.Extensibility;
+using NetPrints.Extensibility.Hosting;
+using NetPrints.Extensibility.Loading;
+using NetPrints.Extensibility.Settings;
 using NetPrints.Testing.Ui.Main;
 using NetPrints.Testing.Ui.Screenplay;
 using NetPrints.Testing.Ui.Snapshots;
@@ -28,8 +33,16 @@ public sealed class HeadlessApp : IDisposable
     private readonly IDisposable exceptionHandler;
     private readonly IDisposable classWindowSizer;
 
-    private HeadlessApp()
+    private readonly ExtensionHost extensions;
+    private readonly string settingsDirectory;
+
+    private HeadlessApp(IReadOnlyList<string> extensionFolders)
     {
+        // A real extension host (the built-in extension plus the given folders) and a real settings file in a
+        // temp folder, so the composition is the production one apart from the recording dialogs.
+        extensions = new ExtensionHost(new ExtensionLoaderOptions([], extensionFolders, [BuiltInExtension.InProcessEntry]), NullLoggerFactory.Instance);
+        settingsDirectory = Path.Combine(Path.GetTempPath(), "netprints-ui-tests", Guid.NewGuid().ToString("N"));
+        Settings = new JsonFileSettingsStore(Path.Combine(settingsDirectory, "settings.json"), NullLogger<JsonFileSettingsStore>.Instance);
         Dialogs = new RecordingDialogs
         {
             // The real (non-modal) references dialog, so tests can drive it.
@@ -40,6 +53,14 @@ public sealed class HeadlessApp : IDisposable
                 dialog.Show();
                 return Task.CompletedTask;
             },
+            // The real (non-modal) issues dialog, so tests can drive it.
+            ShowIssues = (title, issues) =>
+            {
+                var dialog = new IssuesDialog(title, issues);
+                dialog.Show();
+                HeadlessDriver.Pump();
+                return Task.CompletedTask;
+            },
         };
         Processes = new CapturingProcessLauncher();
         FilePicker = new QueuedFilePicker();
@@ -48,7 +69,7 @@ public sealed class HeadlessApp : IDisposable
         // so under load. Tests that need a refresh advance CodeRefreshScheduler explicitly instead
         // of waiting on the wall clock.
         CodeRefreshScheduler = new TestScheduler();
-        Composition = new EditorComposition(new EditorHostServices(NullLoggerFactory.Instance, MsBuildAvailable: true), c => c with
+        Composition = new EditorComposition(new EditorHostServices(NullLoggerFactory.Instance, extensions, Settings, NullHostChannel.Instance, HostChannelError: null, MsBuildAvailable: true), c => c with
         {
             Dialogs = Dialogs,
             Processes = Processes,
@@ -74,6 +95,7 @@ public sealed class HeadlessApp : IDisposable
         Actor = Actor.Named("Ada").WhoCan(UseNetPrints.With(Driver, FilePicker));
     }
 
+    public ISettingsStore Settings { get; }
     public EditorComposition Composition { get; }
     public MainWindow Window { get; }
     public RecordingDialogs Dialogs { get; }
@@ -86,7 +108,10 @@ public sealed class HeadlessApp : IDisposable
     public Actor Actor { get; }
     public MainEditorVM ViewModel => Composition.MainEditor!;
 
-    public static HeadlessApp Start() => new();
+    public static HeadlessApp Start() => new([]);
+
+    /// <summary>A fresh editor whose extension host also loads the given folders (each must hold a manifest).</summary>
+    public static HeadlessApp Start(IReadOnlyList<string> extensionFolders) => new(extensionFolders);
 
     /// <summary>Opens a project the way the command line does (PAR-05) and waits for its types.</summary>
     public async Task OpenStartupProjectAsync(string path, CancellationToken cancellationToken)
@@ -138,6 +163,15 @@ public sealed class HeadlessApp : IDisposable
         classWindowSizer.Dispose();
         Tree.Dispose();
         Processes.Dispose();
+        extensions.Dispose();
+        try
+        {
+            Directory.Delete(settingsDirectory, recursive: true);
+        }
+        catch (DirectoryNotFoundException)
+        {
+            // The settings file was never written.
+        }
     }
 }
 

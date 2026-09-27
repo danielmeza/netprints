@@ -232,6 +232,42 @@ public static class AutomationIds
     /// </summary>
     public const string ErrorOkButton = "Dialogs.Error.Ok";
     /// <summary>
+    /// Automation id for the issues dialog window itself.
+    /// </summary>
+    public const string IssuesDialog = "Dialogs.Issues";
+    /// <summary>
+    /// Automation id for the issues dialog's list; at startup it lists the extensions that failed to load.
+    /// </summary>
+    public const string ExtensionLoadErrors = "Dialogs.Issues.List";
+    /// <summary>
+    /// Automation id for a row of the issues dialog's list. The row's AutomationProperties.Name carries its text.
+    /// </summary>
+    public const string IssueRow = "Dialogs.Issues.Row";
+    /// <summary>
+    /// Automation id for the issues dialog's OK button.
+    /// </summary>
+    public const string IssuesOkButton = "Dialogs.Issues.Ok";
+    /// <summary>
+    /// Automation id for the trust dialog window itself.
+    /// </summary>
+    public const string TrustDialog = "Dialogs.Trust";
+    /// <summary>
+    /// Automation id for the trust dialog's explanation text.
+    /// </summary>
+    public const string TrustPrompt = "Dialogs.Trust.Prompt";
+    /// <summary>
+    /// Automation id for the trust dialog's list of extension folders.
+    /// </summary>
+    public const string TrustFolders = "Dialogs.Trust.Folders";
+    /// <summary>
+    /// Automation id for the trust dialog's Trust button.
+    /// </summary>
+    public const string TrustButton = "Dialogs.Trust.Trust";
+    /// <summary>
+    /// Automation id for the trust dialog's Don't load button.
+    /// </summary>
+    public const string TrustDontLoadButton = "Dialogs.Trust.DontLoad";
+    /// <summary>
     /// Automation id for the select-type dialog's search box.
     /// </summary>
     public const string SelectTypeBox = "Dialogs.SelectType.Box";

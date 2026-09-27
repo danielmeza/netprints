@@ -1,0 +1,25 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ed="clr-namespace:NetPrints.Editor"
+        x:Class="NetPrints.Editor.Dialogs.TrustDialog"
+        Title="Trust this project's extensions?"
+        Icon="avares://NetPrints.Editor/Assets/NetPrintsLogo.ico"
+        Width="700" Height="360"
+        WindowStartupLocation="CenterOwner" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.TrustDialog}">
+  <Grid RowDefinitions="Auto,*,Auto" Margin="8">
+    <TextBlock x:Name="Prompt" TextWrapping="Wrap" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.TrustPrompt}" />
+    <ScrollViewer Grid.Row="1" Margin="0,8" VerticalScrollBarVisibility="Auto">
+      <ItemsControl x:Name="FolderList" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.TrustFolders}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="x:String">
+            <TextBlock Text="{Binding}" TextWrapping="Wrap" FontFamily="monospace" Margin="2" />
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </ScrollViewer>
+    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+      <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.TrustDontLoadButton}" Content="Don't load" MinWidth="80" IsCancel="True" Click="OnDontLoadClicked" />
+      <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.TrustButton}" Content="Trust" MinWidth="80" Classes="accent" Click="OnTrustClicked" />
+    </StackPanel>
+  </Grid>
+</Window>
