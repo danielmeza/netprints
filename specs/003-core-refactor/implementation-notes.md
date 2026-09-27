@@ -3810,3 +3810,21 @@ set `ScreenPosition`, still opened at the origin.
     latter is also overloaded for `int` and would not error.
   - Golden fixtures: byte-identical, unchanged (`GoldenCSharpTests`, `GoldenCompileTests`,
     `MigratedFixtureBuildTests` all pass without modification).
+- **T090**: `DiagnosticMapper.FromBuild` gained an optional second parameter,
+  `classesByGeneratedPath: IReadOnlyDictionary<string, (ClassGraph Class, TranslatedClass Translated)>? = null`
+  (matches compilation-and-diagnostics.md §1 exactly; optional keeps `DiagnosticMapperTests`'s and
+  `MainEditorVM`'s existing one-arg calls compiling unchanged). Per message: first the `(graph <key>,
+  node <id>)` suffix `MsBuildMessageParser` deliberately leaves in `ProjectMessage.Message` is parsed
+  off with a `GeneratedRegex` and stripped; only if that left no `GraphKey` (a genuine compiler
+  diagnostic, not an `NPT`/`NPD` one) and the message's `File` is a key of
+  `classesByGeneratedPath` is its line/column converted to a code position
+  (`SourceText.Lines[line-1].Start + column-1`) and looked up in that class's `SourceMap`. Added
+  `FromRoslyn(Diagnostic, ClassGraph?, SourceMap?)` and `FromTranslation(TranslationException, ClassGraph)`
+  per the contract, both straightforward field mappings (`FromRoslyn` additionally resolves the node
+  through `SourceMap.Find` at the diagnostic's `Location.SourceSpan.Start` when a map is given).
+  `classesByGeneratedPath`'s key is the generated file's own path exactly as the caller's messages
+  carry it (documented on the parameter, not enforced) — T092's `CodeAnalysisHost` is expected to key it
+  by `ProjectSnapshot`'s generated-file paths.
+  - Tests added to the existing `DiagnosticMapperTests.cs` (RC-T10): suffix stripped/parsed,
+    a generated-file message resolved through a hand-built `SourceMap`, `FromRoslyn` resolving a real
+    Roslyn `Diagnostic` through a map, and `FromTranslation`'s field mapping.

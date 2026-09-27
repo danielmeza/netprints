@@ -174,7 +174,7 @@ Checkpoint E (plan.md). Out of scope (follow-ups, do not implement): `netprints 
 ## Phase 9: User Story 6 — C# code view and diagnostics (P2) (sub-phase I)
 
 - [x] T089 [US6] Source map (research R3): `NodeOffsets`, `SourceMap`, `TranslatedClass`, `ClassTranslator.Translate`; RC-T06 in `tests/NetPrints.Core.Tests/Translator/SourceMapTests.cs`
-- [ ] T090 [US6] `src/NetPrints.Core/Compilation/CodeDiagnostic.cs`, `DiagnosticMapper.cs` (compilation-and-diagnostics.md §1); RC-T10
+- [x] T090 [US6] `src/NetPrints.Core/Compilation/CodeDiagnostic.cs`, `DiagnosticMapper.cs` (compilation-and-diagnostics.md §1); RC-T10
 - [ ] T091 [US6] `CodeAnalysisSession` (references/sources/options from `ProjectSnapshot`); RC-T08
 - [ ] T092 [US6] `src/NetPrints.Editor/Diagnostics/ICodeAnalysisHost.cs`, `CodeAnalysisHost.cs` (log 1030); `EditorContext.CodeAnalysis`; ED-T02 (virtual time)
 - [ ] T093 [US6] Bundle Cascadia Mono (OFL + license) in `src/NetPrints.Editor/Assets/Fonts/`
