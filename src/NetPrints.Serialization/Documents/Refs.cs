@@ -5,22 +5,6 @@ using NetPrints.Core;
 namespace NetPrints.Serialization.Documents;
 
 /// <summary>
-/// Whether a <see cref="VariableRef"/> describes a class member or a method-local variable
-/// (document-format.md §1.6). Method-local variables are a sub-phase H (US5) feature; until then
-/// every <see cref="VariableRef"/> this project produces or consumes is <see cref="Member"/>. This is
-/// a document-level enum: the model's own <c>VariableSpecifier</c> gains a matching <c>Scope</c>
-/// member (and, presumably, this enum moves to <c>NetPrints.Core</c>) in sub-phase H.
-/// </summary>
-public enum VariableScope
-{
-    /// <summary>A class-level field or property.</summary>
-    Member,
-
-    /// <summary>A method- or constructor-local variable.</summary>
-    Local,
-}
-
-/// <summary>
 /// Reference to a type (document-format.md §1.6): a full name, whether it is an unbound generic
 /// parameter, whether it is an enum or interface, and its generic arguments (if any).
 /// </summary>

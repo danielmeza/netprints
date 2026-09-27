@@ -218,7 +218,11 @@ public sealed class DocumentMapper : IDocumentMapper
             return cmp != 0 ? cmp : string.CompareOrdinal(a.To, b.To);
         });
 
-        return new GraphDocument(nodeDocuments, connections.Count > 0 ? connections : null, null);
+        List<LocalVariableDocument>? locals = graph is ExecutionGraph { LocalVariables.Count: > 0 } execGraph
+            ? execGraph.LocalVariables.Select(local => new LocalVariableDocument(local.Name, context.ToRef(local.Type))).ToList()
+            : null;
+
+        return new GraphDocument(nodeDocuments, connections.Count > 0 ? connections : null, locals);
     }
 
     private static List<PinStateDocument>? BuildPinStates(Node node, NodeMappingContext context)
@@ -634,6 +638,17 @@ public sealed class DocumentMapper : IDocumentMapper
     {
         string graphKey = GraphKeys.For(graph);
         knownGraphKeys.Add(graphKey);
+
+        // Locals are restored before the graph's nodes (data-model.md §3): a variableGetter/Setter node
+        // referencing one does not depend on this, but "declared first" is the same rule the translator
+        // follows, so the model mirrors it here too.
+        if (graph is ExecutionGraph execGraph && graphDocument.Locals is { } locals)
+        {
+            foreach (LocalVariableDocument local in locals)
+            {
+                execGraph.LocalVariables.Add(new LocalVariable(local.Name, (TypeSpecifier)context.FromRef(local.Type)));
+            }
+        }
 
         var preservedNodes = new List<UnknownNodeDocument>();
         var seenNodeIds = new HashSet<string>(StringComparer.Ordinal);

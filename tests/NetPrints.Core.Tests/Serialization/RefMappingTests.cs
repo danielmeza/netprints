@@ -180,6 +180,29 @@ namespace NetPrints.Tests.Serialization
             Assert.Throws<NetPrints.Serialization.DocumentFormatException>(() => context.FromRef(variableRef));
         }
 
+        // T086 (US5): a local's VariableRef has no declaring type and a Local scope, and round trips.
+        [Fact]
+        public void LocalVariableRefRoundTrips()
+        {
+            var context = NewContext();
+            var local = new LocalVariable("count", TypeSpecifier.FromType<int>());
+
+            VariableRef variableRef = context.ToRef(local.ToSpecifier());
+
+            Assert.Equal("count", variableRef.Name);
+            Assert.Equal(VariableScope.Local, variableRef.Scope);
+            Assert.Null(variableRef.DeclaringType);
+
+            VariableSpecifier roundTripped = context.FromRef(variableRef);
+            Assert.Equal("count", roundTripped.Name);
+            Assert.Equal(TypeSpecifier.FromType<int>(), roundTripped.Type);
+            Assert.Equal(VariableScope.Local, roundTripped.Scope);
+            Assert.Null(roundTripped.DeclaringType);
+            Assert.Equal(MemberVisibility.Private, roundTripped.GetterVisibility);
+            Assert.Equal(MemberVisibility.Private, roundTripped.SetterVisibility);
+            Assert.Equal(VariableModifiers.None, roundTripped.Modifiers);
+        }
+
         [Fact]
         public void ToValueAndFromValueRoundTripThroughNull()
         {

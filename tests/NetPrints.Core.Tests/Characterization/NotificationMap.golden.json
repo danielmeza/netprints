@@ -1,4 +1,12 @@
 {
+  "NetPrints.Core.LocalVariable": {
+    "Name": [
+      "Name"
+    ],
+    "Type": [
+      "Type"
+    ]
+  },
   "NetPrints.Core.Project": {
     "CompilationMessage": [
       "CompilationMessage"

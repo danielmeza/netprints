@@ -136,29 +136,41 @@ public sealed class NodeMappingContext
     }
 
     /// <summary>
-    /// Converts <paramref name="variable"/> to a <see cref="VariableRef"/>. <see cref="VariableRef.Scope"/>
-    /// is always <see cref="VariableScope.Member"/> (method-local variables are sub-phase H).
+    /// Converts <paramref name="variable"/> to a <see cref="VariableRef"/>: <see cref="VariableRef.Scope"/>
+    /// mirrors <see cref="VariableSpecifier.Scope"/>, and <see cref="VariableRef.DeclaringType"/> is
+    /// omitted (<see langword="null"/>) for a method-local variable (US5, sub-phase H).
     /// </summary>
     /// <param name="variable">Variable to convert.</param>
     /// <returns>The converted variable reference.</returns>
     public VariableRef ToRef(VariableSpecifier variable)
     {
-        return new VariableRef(variable.Name, ToRef(variable.Type), ToRef(variable.DeclaringType),
+        TypeRef? declaringType = variable.DeclaringType is { } type ? ToRef(type) : null;
+
+        return new VariableRef(variable.Name, ToRef(variable.Type), declaringType,
             variable.GetterVisibility, variable.SetterVisibility, variable.Visibility, variable.Modifiers,
-            VariableScope.Member);
+            variable.Scope);
     }
 
     /// <summary>
     /// Converts <paramref name="variable"/> back to a <see cref="VariableSpecifier"/>: the inverse of
-    /// <see cref="ToRef(VariableSpecifier)"/>.
+    /// <see cref="ToRef(VariableSpecifier)"/>. A method-local variable (<see cref="VariableScope.Local"/>)
+    /// has no declaring type; a class member must have one.
     /// </summary>
     /// <param name="variable">Variable reference to convert.</param>
     /// <returns>The converted variable specifier.</returns>
-    /// <exception cref="DocumentFormatException"><paramref name="variable"/> has no
-    /// <see cref="VariableRef.DeclaringType"/> (only valid for a method-local variable, not yet
-    /// supported).</exception>
+    /// <exception cref="DocumentFormatException"><paramref name="variable"/> is a class member
+    /// (<see cref="VariableScope.Member"/>) with no <see cref="VariableRef.DeclaringType"/>.</exception>
     public VariableSpecifier FromRef(VariableRef variable)
     {
+        if (variable.Scope == VariableScope.Local)
+        {
+            return new VariableSpecifier(variable.Name, (TypeSpecifier)FromRef(variable.Type),
+                variable.GetterVisibility, variable.SetterVisibility, declaringType: null, variable.Modifiers)
+            {
+                Scope = VariableScope.Local,
+            };
+        }
+
         if (variable.DeclaringType is null)
         {
             throw new DocumentFormatException($"Variable '{variable.Name}' has no declaring type.");

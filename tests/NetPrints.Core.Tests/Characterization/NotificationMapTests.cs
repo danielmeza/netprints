@@ -38,6 +38,12 @@ namespace NetPrints.Tests.Characterization
             var standaloneEntry = new EventEntryNode(new EventGraph("Events"), "OnStart");
             instancesByType.TryAdd(typeof(EventEntryNode), standaloneEntry);
 
+            // LocalVariable (sub-phase H, US5) is likewise not part of the AllNodes fixture (it would
+            // fork the shared "Everything" golden the same way an event graph would, see the comment
+            // above); a standalone instance covers it here too.
+            var standaloneLocal = new LocalVariable("temp", TypeSpecifier.FromType<int>());
+            instancesByType.TryAdd(typeof(LocalVariable), standaloneLocal);
+
             Type[] notifyingTypes = typeof(Project).Assembly.GetTypes()
                 .Where(t => t.IsPublic && !t.IsAbstract && !t.IsGenericTypeDefinition && typeof(INotifyPropertyChanged).IsAssignableFrom(t))
                 .OrderBy(t => t.FullName, StringComparer.Ordinal)
