@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using NetPrints.Core;
+using NetPrints.Graph;
 
 namespace NetPrints.Translator
 {
@@ -92,6 +93,23 @@ namespace NetPrints.Translator
             foreach (MethodGraph m in c.Methods)
             {
                 content.AppendLine(TranslateMethod(m));
+            }
+
+            // Events are emitted after methods (data-model.md §4); event and method names share one
+            // namespace on the generated class (NPT002, research.md K13).
+            var usedMemberNames = new HashSet<string>(c.Methods.Select(m => m.Name), StringComparer.Ordinal);
+            foreach (EventGraph eventGraph in c.EventGraphs)
+            {
+                foreach (EventEntryNode entry in eventGraph.Entries)
+                {
+                    if (!usedMemberNames.Add(entry.EventName))
+                    {
+                        throw new TranslationException("NPT002", $"Duplicate event or method name '{entry.EventName}'.",
+                            TranslatorUtil.TryGetGraphKey(eventGraph), entry.Id);
+                    }
+
+                    content.AppendLine(TranslateEvent(eventGraph, entry));
+                }
             }
 
             List<string> modifiers = new List<string>
@@ -273,6 +291,28 @@ namespace NetPrints.Translator
         public string TranslateConstructor(ConstructorGraph m)
         {
             return TranslateExecutionGraph(m, EmittedMemberKind.Constructor, m.ToString());
+        }
+
+        /// <summary>
+        /// Translates one event graph entry to C#.
+        /// </summary>
+        /// <param name="eventGraph">Event graph <paramref name="entry"/> belongs to.</param>
+        /// <param name="entry">Entry to translate.</param>
+        /// <returns>C# code for the generated method.</returns>
+        /// <exception cref="TranslationException">
+        /// A member emitter threw (<c>NPT005</c>) or produced invalid output (<c>NPT007</c>), a node has no
+        /// translator (<c>NPT006</c>), or <paramref name="entry"/> depends on another entry's node (<c>NPT001</c>).
+        /// </exception>
+        private string TranslateEvent(EventGraph eventGraph, EventEntryNode entry)
+        {
+            if (eventGraph.Class is null)
+            {
+                return methodTranslator.TranslateEventEntry(eventGraph, entry);
+            }
+
+            MemberEmitContext emitContext = EmitMember(eventGraph.Class, EmittedMemberKind.EventMethod, entry.EventName, entry);
+            string code = methodTranslator.TranslateEventEntry(eventGraph, entry, emitContext.ExtraModifiers);
+            return AttributeLines(emitContext.Attributes) + code;
         }
 
         private string TranslateExecutionGraph(ExecutionGraph graph, EmittedMemberKind kind, string name)

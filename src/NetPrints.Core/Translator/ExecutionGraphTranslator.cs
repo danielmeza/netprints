@@ -63,12 +63,15 @@ namespace NetPrints.Translator
         bool IBuiltInTranslationContext.IsFinalExecState(NodeInputExecPin pin) =>
             GetExecPinStateId(pin) == nodeStateIds.Count - 1;
 
-        // Set as the first statement of Translate(), which every other method here is only ever
-        // called from (directly or indirectly), never before. Backed by a nullable field instead of
-        // asserted with `!` so a genuine misuse (calling a Translate*Node method without going
-        // through Translate() first) throws a clear exception instead of a NullReferenceException.
-        private ExecutionGraph? graphField;
-        private ExecutionGraph graph
+        // Set as the first statement of Translate()/TranslateEventEntry(), which every other method
+        // here is only ever called from (directly or indirectly), never before. Backed by a nullable
+        // field instead of asserted with `!` so a genuine misuse (calling a Translate*Node method
+        // without going through one of those first) throws a clear exception instead of a
+        // NullReferenceException. Typed NodeGraph (not ExecutionGraph) so an EventGraph (sub-phase G:
+        // no single EntryNode, several EventEntryNodes may share one) can be translated through the
+        // same context; TranslateSignature casts back to ExecutionGraph, the only case it applies to.
+        private NodeGraph? graphField;
+        private NodeGraph graph
         {
             get => graphField ?? throw new InvalidOperationException(
                 $"{nameof(ExecutionGraphTranslator)}.{nameof(graph)} was read before {nameof(Translate)}() was called.");
@@ -209,7 +212,11 @@ namespace NetPrints.Translator
                 NodeOutputDataPin pin = v.Key;
                 string variableName = v.Value;
 
-                if (!(pin.Node is MethodEntryNode))
+                // An entry node's own output data pins are its arguments, already declared as method
+                // parameters (TranslateSignature/TranslateEventSignature); MethodEntryNode here,
+                // EventEntryNode for an event method (sub-phase G). ConstructorEntryNode has no output
+                // data pins yet (T103a), so it never reaches this check either way.
+                if (pin.Node is not (MethodEntryNode or EventEntryNode))
                 {
                     string typeName = ResolvedPinType(pin).FullCodeName;
                     builder.AppendLine($"{typeName} {variableName} = default({typeName});");
@@ -219,12 +226,16 @@ namespace NetPrints.Translator
 
         private void TranslateSignature(IEnumerable<string> extraModifiers)
         {
-            builder.AppendLine($"// {graph}");
+            // Only ever called from Translate(ExecutionGraph, ...): graph is a MethodGraph or
+            // ConstructorGraph here, never an EventGraph (TranslateEventEntry writes its own signature).
+            var execGraph = (ExecutionGraph)graph;
+
+            builder.AppendLine($"// {execGraph}");
 
             // Write visibility
-            builder.Append($"{TranslatorUtil.VisibilityTokens[graph.Visibility]} ");
+            builder.Append($"{TranslatorUtil.VisibilityTokens[execGraph.Visibility]} ");
 
-            MethodGraph? methodGraph = graph as MethodGraph;
+            MethodGraph? methodGraph = execGraph as MethodGraph;
             List<string> written = new List<string>();
 
             void WriteModifier(string modifier)
@@ -311,7 +322,7 @@ namespace NetPrints.Translator
             }
 
             // Write parameters
-            builder.AppendLine($"({string.Join(", ", GetOrCreateTypedPinNames(graph.EntryNode.OutputDataPins))})");
+            builder.AppendLine($"({string.Join(", ", GetOrCreateTypedPinNames(execGraph.EntryNode.OutputDataPins))})");
         }
 
         private void TranslateJumpStack()
@@ -432,6 +443,167 @@ namespace NetPrints.Translator
 
             // Remove unused labels
             return RemoveUnnecessaryLabels(code);
+        }
+
+        /// <summary>
+        /// Translates one entry of an event graph (data-model.md §4) to its own C# method: a
+        /// <see langword="void"/> (or <see langword="async"/> <c>System.Threading.Tasks.Task</c> if
+        /// <see cref="MethodModifiers.Async"/>) method named <see cref="EventEntryNode.EventName"/>,
+        /// with <paramref name="entry"/>'s visibility and modifiers. Only nodes reachable from
+        /// <paramref name="entry"/> (its own exec successors and their pure dependencies) are
+        /// translated, even if <paramref name="graph"/> holds other entries' nodes too.
+        /// </summary>
+        /// <param name="graph">Event graph <paramref name="entry"/> belongs to.</param>
+        /// <param name="entry">Entry to translate.</param>
+        /// <returns>C# code for the generated method.</returns>
+        public string TranslateEventEntry(EventGraph graph, EventEntryNode entry) =>
+            TranslateEventEntry(graph, entry, Array.Empty<string>());
+
+        /// <summary>
+        /// Same as <see cref="TranslateEventEntry(EventGraph, EventEntryNode)"/>, with additional
+        /// modifiers (from member emitters) in the method's signature.
+        /// </summary>
+        /// <param name="graph">Event graph <paramref name="entry"/> belongs to.</param>
+        /// <param name="entry">Entry to translate.</param>
+        /// <param name="extraModifiers">Modifiers to write after <paramref name="entry"/>'s own,
+        /// <c>partial</c> last.</param>
+        /// <returns>C# code for the generated method.</returns>
+        /// <exception cref="TranslationException">
+        /// A node reachable only through another entry of <paramref name="graph"/> is depended on for
+        /// data (<c>NPT001</c>, research.md K13).
+        /// </exception>
+        public string TranslateEventEntry(EventGraph graph, EventEntryNode entry, IEnumerable<string> extraModifiers)
+        {
+            ArgumentNullException.ThrowIfNull(graph);
+            ArgumentNullException.ThrowIfNull(entry);
+
+            this.graph = graph;
+
+            // Reset state
+            variableNames.Clear();
+            nodeStateIds.Clear();
+            pinsJumpedTo.Clear();
+            nextStateId = 0;
+            builder.Clear();
+            random = new Random(0);
+
+            var ownExecNodes = new HashSet<Node>(TranslatorUtil.GetExecNodesFrom(entry));
+            nodes = TranslatorUtil.GetAllNodesFrom(entry);
+            execNodes = ownExecNodes;
+
+            // A data or type dependency on an impure node not part of this entry's own exec flow means
+            // it belongs to a different entry sharing the same graph: that node's value is never
+            // computed here (research.md K13).
+            Node? crossEntryDependency = nodes.FirstOrDefault(node => !node.IsPure && !ownExecNodes.Contains(node));
+            if (crossEntryDependency is not null)
+            {
+                throw new TranslationException("NPT001",
+                    $"Event '{entry.EventName}' depends on node '{crossEntryDependency}', which belongs to a different event entry of the same graph.",
+                    TranslatorUtil.TryGetGraphKey(graph), crossEntryDependency.Id);
+            }
+
+            // Assign a state id to every non-entry exec node
+            CreateStates();
+
+            // Assign jump stack state id
+            jumpStackStateId = GetNextStateId();
+
+            // Create variables for all output pins for every node
+            CreateVariables();
+
+            TranslateEventSignature(entry, extraModifiers);
+
+            builder.AppendLine("{"); // Method start
+
+            // Write a placeholder for the jump stack declaration
+            builder.Append("%JUMPSTACKPLACEHOLDER%");
+
+            // Write the variable declarations
+            TranslateVariables();
+            builder.AppendLine();
+
+            // Start after the entry if necessary (id != 0)
+            NodeInputExecPin? initialOutgoingPin = entry.InitialExecutionPin.OutgoingPin;
+            if (initialOutgoingPin != null && GetExecPinStateId(initialOutgoingPin) != 0)
+            {
+                WriteGotoOutputPin(entry.InitialExecutionPin);
+            }
+
+            // Translate every exec node reachable from this entry
+            foreach (Node node in execNodes)
+            {
+                if (!(node is EventEntryNode))
+                {
+                    for (int pinIndex = 0; pinIndex < node.InputExecPins.Count; pinIndex++)
+                    {
+                        builder.AppendLine($"State{nodeStateIds[node][pinIndex]}:");
+                        TranslateNode(node, pinIndex);
+                        builder.AppendLine();
+                    }
+                }
+            }
+
+            // Write the jump stack if it was ever used
+            if (pinsJumpedTo.Count > 0)
+            {
+                TranslateJumpStack();
+
+                builder.Replace("%JUMPSTACKPLACEHOLDER%", $"{JumpStackType} {JumpStackVarName} = new {JumpStackType}();{Environment.NewLine}");
+            }
+            else
+            {
+                builder.Replace("%JUMPSTACKPLACEHOLDER%", "");
+            }
+
+            builder.AppendLine("}"); // Method end
+
+            return RemoveUnnecessaryLabels(builder.ToString());
+        }
+
+        private void TranslateEventSignature(EventEntryNode entry, IEnumerable<string> extraModifiers)
+        {
+            builder.AppendLine($"// {entry}");
+
+            builder.Append($"{TranslatorUtil.VisibilityTokens[entry.Visibility]} ");
+
+            bool isAsync = entry.Modifiers.HasFlag(MethodModifiers.Async);
+            List<string> written = new List<string>();
+
+            void WriteModifier(string modifier)
+            {
+                builder.Append($"{modifier} ");
+                written.Add(modifier);
+            }
+
+            if (isAsync)
+            {
+                WriteModifier("async");
+            }
+
+            if (entry.Modifiers.HasFlag(MethodModifiers.Static))
+            {
+                WriteModifier("static");
+            }
+
+            if (entry.Modifiers.HasFlag(MethodModifiers.Override))
+            {
+                WriteModifier("override");
+            }
+
+            // Extra modifiers from member emitters; "partial" goes last, directly before the return type.
+            foreach (string modifier in extraModifiers.Where(modifier => modifier != "partial" && !written.Contains(modifier)).OrderBy(modifier => modifier, StringComparer.Ordinal))
+            {
+                WriteModifier(modifier);
+            }
+
+            if (extraModifiers.Contains("partial"))
+            {
+                WriteModifier("partial");
+            }
+
+            builder.Append(isAsync ? "System.Threading.Tasks.Task " : "void ");
+            builder.Append(entry.EventName);
+            builder.AppendLine($"({string.Join(", ", GetOrCreateTypedPinNames(entry.OutputDataPins))})");
         }
 
         private string RemoveUnnecessaryLabels(string code)

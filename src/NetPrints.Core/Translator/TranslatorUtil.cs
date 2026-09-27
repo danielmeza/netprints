@@ -225,11 +225,22 @@ namespace NetPrints.Translator
         /// </summary>
         /// <param name="graph">Graph containing the nodes.</param>
         /// <returns>Nodes contained in the graph.</returns>
-        public static IEnumerable<Node> GetAllNodesInExecGraph(ExecutionGraph graph)
+        public static IEnumerable<Node> GetAllNodesInExecGraph(ExecutionGraph graph) => GetAllNodesFrom(graph.EntryNode);
+
+        /// <summary>
+        /// Gets every node reachable from <paramref name="entryNode"/>: its exec successors,
+        /// transitively, plus every node reachable from any of those through a data or type input pin
+        /// (sub-phase G: an <see cref="EventEntryNode"/>'s own subgraph within a multi-entry
+        /// <see cref="EventGraph"/>, the same traversal <see cref="GetAllNodesInExecGraph"/> runs from a
+        /// single-entry graph's one entry node).
+        /// </summary>
+        /// <param name="entryNode">Node execution starts from.</param>
+        /// <returns>Every node reachable from <paramref name="entryNode"/>.</returns>
+        public static IEnumerable<Node> GetAllNodesFrom(Node entryNode)
         {
             HashSet<Node> nodes = new HashSet<Node>();
 
-            AddAllNodes(graph.EntryNode, ref nodes);
+            AddAllNodes(entryNode, ref nodes);
 
             return nodes;
         }
@@ -252,11 +263,20 @@ namespace NetPrints.Translator
         /// </summary>
         /// <param name="graph">Graph containing the execution nodes.</param>
         /// <returns>Execution nodes contained in the graph.</returns>
-        public static IEnumerable<Node> GetExecNodesInExecGraph(ExecutionGraph graph)
+        public static IEnumerable<Node> GetExecNodesInExecGraph(ExecutionGraph graph) => GetExecNodesFrom(graph.EntryNode);
+
+        /// <summary>
+        /// Gets every node exec-reachable from <paramref name="entryNode"/> (its own subgraph, sub-phase
+        /// G: distinguishes one <see cref="EventEntryNode"/>'s nodes from another entry's, sharing the
+        /// same <see cref="EventGraph"/>).
+        /// </summary>
+        /// <param name="entryNode">Node execution starts from.</param>
+        /// <returns>Every node exec-reachable from <paramref name="entryNode"/>.</returns>
+        public static IEnumerable<Node> GetExecNodesFrom(Node entryNode)
         {
             HashSet<Node> nodes = new HashSet<Node>();
 
-            AddExecNodes(graph.EntryNode, ref nodes);
+            AddExecNodes(entryNode, ref nodes);
 
             return nodes;
         }

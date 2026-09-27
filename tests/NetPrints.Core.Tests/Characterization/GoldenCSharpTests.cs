@@ -29,6 +29,7 @@ namespace NetPrints.Tests.Characterization
         {
             yield return new object[] { "HelloWorld", "HelloWorld.Program.netpc.json" };
             yield return new object[] { "AllNodes", "AllNodes.Everything.netpc.json" };
+            yield return new object[] { "EventGraphs", "EventGraphs.GameEvents.netpc.json" };
         }
 
         [Theory]
