@@ -1,4 +1,5 @@
 using NetPrints.Core;
+using NetPrints.Extensibility.Nodes;
 using NetPrints.Graph;
 
 namespace NetPrints.Editor.Search;
@@ -89,23 +90,9 @@ public sealed class SuggestionItem
         return text;
     }
 
-    private static readonly Dictionary<TypeSpecifier, (string Text, string Icon)> BuiltInNodes = new()
-    {
-        [TypeSpecifier.FromType<ForLoopNode>()] = ("For Loop", "Loop_16x.png"),
-        [TypeSpecifier.FromType<IfElseNode>()] = ("If Else", "If_16x.png"),
-        [TypeSpecifier.FromType<ConstructorNode>()] = ("Construct New Object", "Create_16x.png"),
-        [TypeSpecifier.FromType<TypeOfNode>()] = ("Type Of", "Type_16x.png"),
-        [TypeSpecifier.FromType<ExplicitCastNode>()] = ("Explicit Cast", "Convert_16x.png"),
-        [TypeSpecifier.FromType<ReturnNode>()] = ("Return", "Return_16x.png"),
-        [TypeSpecifier.FromType<MakeArrayNode>()] = ("Make Array", "ListView_16x.png"),
-        [TypeSpecifier.FromType<LiteralNode>()] = ("Literal", "Literal_16x.png"),
-        [TypeSpecifier.FromType<TypeNode>()] = ("Type", "Type_16x.png"),
-        [TypeSpecifier.FromType<MakeArrayTypeNode>()] = ("Make Array Type", "Type_16x.png"),
-        [TypeSpecifier.FromType<ThrowNode>()] = ("Throw", "Throw_16x.png"),
-        [TypeSpecifier.FromType<AwaitNode>()] = ("Await", "Task_16x.png"),
-        [TypeSpecifier.FromType<TernaryNode>()] = ("Ternary", "ConditionalRule_16x.png"),
-        [TypeSpecifier.FromType<DefaultNode>()] = ("Default", "None_16x.png"),
-    };
+    private static readonly Dictionary<TypeSpecifier, (string Text, string Icon)> BuiltInNodes = BuiltInNodeLibrary.Instance.NodeKinds
+        .Where(kind => kind.Suggestions.Count > 0)
+        .ToDictionary(kind => TypeSpecifier.FromType(kind.NodeType), kind => (kind.Suggestions[0].DisplayName, kind.Suggestions[0].IconKey ?? ""));
 
     private static (string Text, string Icon) Describe(object value) => value switch
     {

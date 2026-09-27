@@ -2739,3 +2739,72 @@ Contexts are `sealed` as specified and have `internal` constructors (only the tr
   registered so entry nodes do not hit `NPT006`.
 - Open: the generator and editor build one `ClassTranslator` per call with `TranslationEnvironment.BuiltIn`; T068 must
   replace that with `ExtensionRegistry.Translation`.
+
+### T067: extension API and built-in node library
+
+`src/NetPrints.Extensibility/` (references Core, Reflection, Serialization): `ExtensionApi` (1.0), `INetPrintsExtension`,
+`IExtensionBuilder` and its internal buffered `ExtensionBuilder` (contributions committed only when `Register` returns;
+calls after that throw `InvalidOperationException`, null arguments `ArgumentNullException`), `Nodes/` (`GraphKinds`,
+`INodeLibrary`, `NodeKindDescriptor`, `NodeSuggestion`, `BuiltInNodeLibrary`, `NodeGraphKinds.Of(graph)`), `BuiltInExtension`
+(id `netprints`, contributes `BuiltInNodeLibrary.Instance`). The PAR-53 text and icon table moved out of
+`SuggestionItem.cs`: `SuggestionItem` now reads it from `BuiltInNodeLibrary` (the Editor references `NetPrints.Extensibility`).
+Tests: `tests/NetPrints.Core.Tests/Extensibility/` (`BuiltInNodeLibraryTests` is EX-T12, `ExtensionBuilderTests`).
+
+- Decision: the builder has no `AddHostChannel` and `AddSettings` yet. Their types (`IHostChannelFactory`,
+  `ExtensionSettingsDescriptor`) are T069/T070; those tasks add the two builder methods, the registry's `HostChannels`,
+  `Settings` and `FindHostChannel`, and the duplicate-id `NPX006` rules for settings. Adding members to `IExtensionBuilder`
+  only breaks implementers of the interface, and the host is the only implementer.
+- Decision: EX-T12 says 24 kinds; `NodeDocumentConverterRegistry.BuiltIn` still has 23 (no `eventEntry` converter until sub-phase
+  G, T080), so the library has one descriptor per converter (23) and the test compares the two counts, asserting 23 today.
+  T080 adds the descriptor with the converter.
+- Decision: every `NodeKindDescriptor` needs a non-null translator. Five built-in kinds have none in
+  `NodeTranslatorRegistry.BuiltIn` (`constructorEntry`, `classReturn`, `typeReturn`, `type`, `makeArrayType`; they are never
+  translated by the execution translator). They get an internal translator that throws `NPT006` (with the graph key, like a missing
+  translator), so a registry built from descriptors behaves like `TranslationEnvironment.BuiltIn` for them.
+- Decision: `NodeSuggestion.Create` is `Func<NodeGraph, Node>`, which cannot ask for a type. The three built-ins that the editor
+  asks a dialog for (`constructor`, `literal`, `type`) create the `System.Object` form. T076 keeps the editor's dialog for those
+  kinds and uses `Create` for the rest; the editor's `SuggestionListVM` graph-kind table is replaced by `AllowedIn` there.
+- Decision: `AllowedIn` reproduces the current per-graph search tables: `return` and `await` only in method graphs, `type` and
+  `makeArrayType` in method, constructor and class graphs, the other suggested kinds in method and constructor graphs, and the
+  entry, return, call, getter/setter and reroute kinds (no suggestion) in the graph they belong to. Event graphs get
+  their kinds in sub-phase G.
+- Class-ness leaks (P3b review list): (1) `GraphKinds` is a closed flags enum with `Class` and `Type`; bits above `Event` are
+  free for new kinds and `NodeGraphKinds.Of` returns `None` for a graph it does not know. (2) `IExtensionBuilder.AddClassEmitter` and
+  `AddMemberEmitter`, `IProjectProfile.ClassTemplates` and `ClassTemplate.Create` (`ClassGraph`) are the spec's names; nothing else in the
+  builder mentions classes. (3) `NodeSuggestion.Create` and `NodeKindDescriptor` are graph-generic (`NodeGraph`). The
+  return suggestion casts to `MethodGraph`.
+
+### T068: loading
+
+`Loading/`: `ExtensionManifest` (`Parse`, `ApiVersion`, `FileName`), `ExtensionManifestException` (`NPX001`),
+`ExtensionDiagnosticCodes`, `ExtensionLoadResult` (`Loaded`, `Failed`), `ExtensionLoaderOptions` (`BuiltInOnly`),
+`ExtensionLoadContext` (internal, §8.2), `ExtensionLoader` (§8.1), `ExtensionRegistry`, `ExtensionContributionIssue`,
+`IExtensionHost` and `ExtensionHost`; internal `RegistryBuilder` and `ExtensionLoadContextCache`. Logs 2001 to 2005 as in
+editor-services.md §6. Tests: `ExtensionManifestTests`, `ExtensionLoaderTests` (EX-T10 and EX-T11 cases with in-memory extensions,
+temp folders and small assemblies compiled with Roslyn at test time, so the `AssemblyLoadContext` path runs without the T071 asset),
+`ExtensionHostTests`. T072 adds EX-T01 with the real test extension.
+
+- Decision: `NPX006` is per contribution and leaves the extension `Loaded`, so it cannot be an `ExtensionLoadResult`. The registry
+  exposes `Issues` (`ExtensionContributionIssue`: extension id, code, contribution, reason) and logs node kind rejections as 2005.
+- Decision: log ids 2007 (`ContributionRejected`, a non-node-kind contribution rejected), 2008 (`SearchDirectoryMissing`, Debug, from
+  §8.1 step 2) and 2009 (`DisposeFailed`) were added; the spec table stops at 2006 (settings).
+- Decision: order. The spec says in-process extensions first "in list order" and ties "by id"; the topological sort keeps both: among
+  the extensions ready to load, in-process ones come first in list order, discovered ones then by ordinal id. A dependency always
+  precedes its dependents, so a discovered extension can load before an in-process one that needs it.
+- Decision: `Results` is the loaded extensions in load order, then every failure in the order it occurred (discovery failures, then
+  dependency failures, then load failures). A failure with no readable manifest uses the folder name as `Id`.
+- Decision: a dependency that fails at load time (`NPX005`, `NPX007`) makes its dependents `NPX003`; so does one that failed
+  discovery. A cycle, and anything that depends on one, is `NPX003`.
+- Decision: node kind rules. An extension kind must start with `<manifest id>/` and a name; only the extension with id `netprints` may
+  register kinds without `/` (and then only ones `NodeDocumentConverterRegistry` knows). A descriptor with a null member, a `NodeType`
+  that is not a `Node`, or a `DocumentType` already used is rejected too. Profile ids that repeat, or `netprints.default`, are `NPX006`.
+- Decision: the load context caches by manifest path, and `ExtensionLoadContext` takes the manifest id as its name
+  (`ExtensionLoadContext(string name, string extensionAssemblyPath)`). `LoadForProject` replaces the previous project's folders (it
+  does not accumulate), does nothing for the same folders, and disposes the previous registry after `RegistryChanged` handlers
+  return. `ExtensionHost` loads its first registry in the constructor.
+- Decision: the extra members beyond the spec are `ExtensionRegistry.JsonTypeInfoResolvers`, `ProjectProperties` (the names
+  of `AddProjectProperty`, distinct ignoring case, for T076's `ProjectSystemOptions.ExtraProperties`), `Issues`, and
+  `ExtensionLoaderOptions.BuiltInOnly`, `BuiltInExtension.InProcessEntry`.
+- `TranslationEnvironment.BuiltIn` call sites (`MainEditorVM`, `ClassEditorVM`, `GraphCodeGenerator`, `Project.GenerateClassSources`)
+  are unchanged: the registry exists now (`ExtensionRegistry.Translation`), but the editor has no registry until the T075
+  composition and the generator has none until T074 (`extension=` folders), so both tasks replace those calls.
