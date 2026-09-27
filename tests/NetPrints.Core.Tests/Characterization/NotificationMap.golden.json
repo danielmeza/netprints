@@ -147,6 +147,27 @@
       "PositionY"
     ]
   },
+  "NetPrints.Graph.EventEntryNode": {
+    "EventName": [
+      "EventName"
+    ],
+    "IsPure": "\u003Cthrows\u003E",
+    "Modifiers": [
+      "Modifiers"
+    ],
+    "Name": [
+      "Name"
+    ],
+    "PositionX": [
+      "PositionX"
+    ],
+    "PositionY": [
+      "PositionY"
+    ],
+    "Visibility": [
+      "Visibility"
+    ]
+  },
   "NetPrints.Graph.ExplicitCastNode": {
     "IsPure": [
       "IsPure"

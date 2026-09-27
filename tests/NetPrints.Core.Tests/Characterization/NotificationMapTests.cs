@@ -31,6 +31,13 @@ namespace NetPrints.Tests.Characterization
 
             Dictionary<Type, object> instancesByType = CollectInstancesByType(project);
 
+            // EventEntryNode (sub-phase G) is not part of the AllNodes fixture (its own golden
+            // (Fixtures/Golden/AllNodes.Everything.cs) is shared with EmitterTests, which needs
+            // AllNodesFixtureFactory's class to translate identically to the JSON fixture, and that
+            // fixture deliberately has no event graph); a standalone instance covers it here instead.
+            var standaloneEntry = new EventEntryNode(new EventGraph("Events"), "OnStart");
+            instancesByType.TryAdd(typeof(EventEntryNode), standaloneEntry);
+
             Type[] notifyingTypes = typeof(Project).Assembly.GetTypes()
                 .Where(t => t.IsPublic && !t.IsAbstract && !t.IsGenericTypeDefinition && typeof(INotifyPropertyChanged).IsAssignableFrom(t))
                 .OrderBy(t => t.FullName, StringComparer.Ordinal)
@@ -274,6 +281,11 @@ namespace NetPrints.Tests.Characterization
                 foreach (ConstructorGraph constructor in cls.Constructors)
                 {
                     RegisterGraph(constructor);
+                }
+
+                foreach (EventGraph eventGraph in cls.EventGraphs)
+                {
+                    RegisterGraph(eventGraph);
                 }
             }
 
