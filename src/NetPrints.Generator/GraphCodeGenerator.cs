@@ -2,16 +2,22 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.Text;
+using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Compilation;
 using NetPrints.Core;
+using NetPrints.Extensibility;
+using NetPrints.Extensibility.Loading;
 using NetPrints.Projects;
 using NetPrints.Serialization;
 using NetPrints.Serialization.Documents;
+using NetPrints.Serialization.Json;
 using NetPrints.Serialization.Mapping;
+using NetPrints.Serialization.Migrations;
 using NetPrints.Translator;
 
 namespace NetPrints.Generator;
@@ -37,27 +43,78 @@ public sealed record GeneratedFileResult(string Input, string Output, bool Writt
 /// preview and the P2 CLI's <c>netprints generate</c> both call directly.
 /// </summary>
 /// <remarks>
-/// Does not yet take an extension registry: nothing under <c>src/NetPrints.Extensibility</c> exists
-/// until sub-phase F (T068). <see cref="GenerateRequest.Extensions"/> is parsed and carried through
-/// today so the request file format does not change again, but is not consulted here; T065/T068 add
-/// an <c>ExtensionRegistry</c> constructor parameter and wire it in once it exists
-/// (implementation-notes.md, T044).
+/// Translates with <see cref="ExtensionRegistry.Translation"/>, so the node translators and emitters of the
+/// extensions the request names take part; a graph holding a node of an extension that is not loaded is
+/// reported as <c>NPT003</c> and its <c>.netpc.g.cs</c> is left as it was.
 /// </remarks>
 public sealed class GraphCodeGenerator
 {
+    /// <summary>Diagnostic id of a graph that holds a node of an extension that is not loaded.</summary>
+    public const string MissingExtensionCode = "NPT003";
+
+    private readonly ExtensionRegistry extensions;
     private readonly DocumentFormatRegistry formats;
     private readonly IDocumentMapper mapper;
 
     /// <summary>
-    /// Creates a generator backed by <paramref name="formats"/> and <paramref name="mapper"/>.
+    /// Creates a generator backed by <paramref name="extensions"/>, <paramref name="formats"/> and <paramref name="mapper"/>.
     /// </summary>
+    /// <param name="extensions">Loaded extensions whose translation environment classes are translated with.</param>
     /// <param name="formats">Document formats a graph's file name is resolved against.</param>
     /// <param name="mapper">Mapper used to build a <see cref="ClassGraph"/> from each graph's document.</param>
-    public GraphCodeGenerator(DocumentFormatRegistry formats, IDocumentMapper mapper)
+    public GraphCodeGenerator(ExtensionRegistry extensions, DocumentFormatRegistry formats, IDocumentMapper mapper)
     {
+        this.extensions = extensions ?? throw new ArgumentNullException(nameof(extensions));
         this.formats = formats ?? throw new ArgumentNullException(nameof(formats));
         this.mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
     }
+
+    /// <summary>
+    /// Creates a generator whose document formats and mapper know the node kinds and JSON metadata
+    /// <paramref name="extensions"/> contributes.
+    /// </summary>
+    /// <param name="extensions">Loaded extensions, the built-in one included.</param>
+    /// <returns>The generator.</returns>
+    public static GraphCodeGenerator Create(ExtensionRegistry extensions)
+    {
+        ArgumentNullException.ThrowIfNull(extensions);
+        var mapper = new DocumentMapper(extensions.NodeConverters);
+        var jsonFormat = new JsonDocumentFormat(new NetPrintsJsonOptions(extensions.NodeConverters), new DocumentMigrator([]));
+        return new GraphCodeGenerator(extensions, new DocumentFormatRegistry([jsonFormat]), mapper);
+    }
+
+    /// <summary>
+    /// Loads the extensions of <paramref name="request"/>: only its explicit <see cref="GenerateRequest.Extensions"/>
+    /// folders and the built-in extension, never a user extension directory (project-system.md §3).
+    /// </summary>
+    /// <param name="request">The request whose extension folders are loaded.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>The registry, and one <c>NPX</c> error per extension that failed or contribution that was rejected.</returns>
+    public static (ExtensionRegistry Registry, IReadOnlyList<CodeDiagnostic> Diagnostics) LoadExtensions(GenerateRequest request, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        var options = new ExtensionLoaderOptions([], [.. request.Extensions], [BuiltInExtension.InProcessEntry]);
+        ExtensionRegistry registry = new ExtensionLoader(options, NullLoggerFactory.Instance).Load(cancellationToken);
+
+        var diagnostics = new List<CodeDiagnostic>();
+        foreach (ExtensionLoadResult.Failed failure in registry.Results.OfType<ExtensionLoadResult.Failed>())
+        {
+            string source = failure.ManifestPath
+                ?? request.Extensions.FirstOrDefault(folder => Path.GetFileName(folder.TrimEnd('/', '\\')) == failure.Id)
+                ?? failure.Id;
+            diagnostics.Add(ExtensionError(failure.Code, $"Extension '{failure.Id}' was not loaded: {failure.Reason}", source));
+        }
+
+        foreach (ExtensionContributionIssue issue in registry.Issues)
+        {
+            diagnostics.Add(ExtensionError(issue.Code, $"Extension '{issue.ExtensionId}' contribution '{issue.Contribution}' was rejected: {issue.Reason}", issue.ExtensionId));
+        }
+
+        return (registry, diagnostics);
+    }
+
+    private static CodeDiagnostic ExtensionError(string code, string message, string source) =>
+        new(CodeDiagnosticSeverity.Error, code, message, ClassFullName: null, GraphKey: null, NodeId: null, SourcePath: source, Span: null);
 
     /// <summary>
     /// Generates every graph of <paramref name="request"/>.
@@ -125,12 +182,30 @@ public sealed class GraphCodeGenerator
         }
 
         var diagnostics = new List<CodeDiagnostic>(issues.Count);
+        bool missingExtension = false;
         foreach (DocumentIssue issue in issues)
         {
-            diagnostics.Add(issue.ToDiagnostic() with { ClassFullName = cls.FullName, SourcePath = job.Input });
+            CodeDiagnostic diagnostic = issue.ToDiagnostic() with { ClassFullName = cls.FullName, SourcePath = job.Input };
+            if (issue.Code == DocumentIssue.UnknownNodeKind)
+            {
+                missingExtension = true;
+                diagnostic = diagnostic with
+                {
+                    Severity = CodeDiagnosticSeverity.Error,
+                    Id = MissingExtensionCode,
+                    Message = $"{issue.Message} Its extension is not loaded: add a NetPrintsExtension item for it.",
+                };
+            }
+
+            diagnostics.Add(diagnostic);
         }
 
-        string translated = new ClassTranslator(TranslationEnvironment.BuiltIn).TranslateClass(cls);
+        if (missingExtension)
+        {
+            return new GeneratedFileResult(job.Input, job.Output, false, diagnostics);
+        }
+
+        string translated = new ClassTranslator(extensions.Translation).TranslateClass(cls);
         string rendered = RenderFile(translated, Path.GetFileName(job.Input));
         bool written = await WriteIfChangedAsync(job.Output, rendered, cancellationToken).ConfigureAwait(false);
 

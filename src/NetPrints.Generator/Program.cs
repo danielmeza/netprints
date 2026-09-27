@@ -4,10 +4,7 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using NetPrints.Compilation;
-using NetPrints.Serialization;
-using NetPrints.Serialization.Json;
-using NetPrints.Serialization.Mapping;
-using NetPrints.Serialization.Migrations;
+using NetPrints.Extensibility.Loading;
 
 namespace NetPrints.Generator;
 
@@ -52,20 +49,21 @@ internal static class Program
                 return ExitBadRequest;
             }
 
-            GraphCodeGenerator generator = CreateGenerator();
-            IReadOnlyList<GeneratedFileResult> results = await generator.GenerateAsync(request, CancellationToken.None).ConfigureAwait(false);
-
-            bool hasError = false;
-            foreach (GeneratedFileResult result in results)
+            (ExtensionRegistry registry, IReadOnlyList<CodeDiagnostic> extensionDiagnostics) = GraphCodeGenerator.LoadExtensions(request, CancellationToken.None);
+            using (registry)
             {
-                foreach (CodeDiagnostic diagnostic in result.Diagnostics)
+                if (extensionDiagnostics.Count > 0)
                 {
-                    Console.WriteLine(FormatCanonical(diagnostic));
-                    hasError |= diagnostic.Severity == CodeDiagnosticSeverity.Error;
-                }
-            }
+                    foreach (CodeDiagnostic diagnostic in extensionDiagnostics)
+                    {
+                        Console.WriteLine(FormatCanonical(diagnostic));
+                    }
 
-            return hasError ? ExitGenerationErrors : ExitSuccess;
+                    return ExitGenerationErrors;
+                }
+
+                return await GenerateAsync(GraphCodeGenerator.Create(registry), request).ConfigureAwait(false);
+            }
         }
         catch (Exception ex)
         {
@@ -74,13 +72,21 @@ internal static class Program
         }
     }
 
-    private static GraphCodeGenerator CreateGenerator()
+    private static async Task<int> GenerateAsync(GraphCodeGenerator generator, GenerateRequest request)
     {
-        var nodeConverters = new NodeDocumentConverterRegistry(NodeDocumentConverterRegistry.BuiltIn, []);
-        var mapper = new DocumentMapper(nodeConverters);
-        var jsonFormat = new JsonDocumentFormat(new NetPrintsJsonOptions(nodeConverters), new DocumentMigrator([]));
-        var formats = new DocumentFormatRegistry([jsonFormat]);
-        return new GraphCodeGenerator(formats, mapper);
+        IReadOnlyList<GeneratedFileResult> results = await generator.GenerateAsync(request, CancellationToken.None).ConfigureAwait(false);
+
+        bool hasError = false;
+        foreach (GeneratedFileResult result in results)
+        {
+            foreach (CodeDiagnostic diagnostic in result.Diagnostics)
+            {
+                Console.WriteLine(FormatCanonical(diagnostic));
+                hasError |= diagnostic.Severity == CodeDiagnosticSeverity.Error;
+            }
+        }
+
+        return hasError ? ExitGenerationErrors : ExitSuccess;
     }
 
     /// <summary>

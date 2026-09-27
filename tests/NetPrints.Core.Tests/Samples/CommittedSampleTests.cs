@@ -4,7 +4,9 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using NetPrints.Core;
+using NetPrints.Extensibility.Loading;
 using NetPrints.Generator;
+using NetPrints.Tests.Extensibility;
 using NetPrints.Serialization;
 using NetPrints.Serialization.Documents;
 using NetPrints.Serialization.Json;
@@ -93,7 +95,8 @@ namespace NetPrints.Tests.Samples
             NodeDocumentConverterRegistry registry = NewRegistry();
             var mapper = new DocumentMapper(registry);
             var formats = new DocumentFormatRegistry([NewJsonFormat(registry)]);
-            var generator = new GraphCodeGenerator(formats, mapper);
+            using ExtensionRegistry extensions = ExtensionTestSupport.Load(ExtensionLoaderOptions.BuiltInOnly);
+            var generator = new GraphCodeGenerator(extensions, formats, mapper);
 
             string directory = Directory.CreateTempSubdirectory("netprints-committed-sample-").FullName;
             try

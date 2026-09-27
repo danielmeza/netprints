@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using NetPrints.Core;
+using NetPrints.Extensibility.Loading;
 using NetPrints.Generator;
+using NetPrints.Tests.Extensibility;
 using NetPrints.Serialization;
 using NetPrints.Serialization.Documents;
 using NetPrints.Serialization.Json;
@@ -63,7 +65,7 @@ namespace NetPrints.Tests.Projects
             NodeDocumentConverterRegistry registry = NewRegistry();
             var mapper = new DocumentMapper(registry);
             var formats = new DocumentFormatRegistry([NewJsonFormat(registry)]);
-            return new GraphCodeGenerator(formats, mapper);
+            return new GraphCodeGenerator(ExtensionTestSupport.Load(ExtensionLoaderOptions.BuiltInOnly), formats, mapper);
         }
 
         [Fact]

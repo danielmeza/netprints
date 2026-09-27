@@ -1,7 +1,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using NetPrints.Extensibility.Loading;
 using NetPrints.Generator;
+using NetPrints.Tests.Extensibility;
 using NetPrints.Serialization;
 using NetPrints.Serialization.Json;
 using NetPrints.Serialization.Mapping;
@@ -67,7 +69,8 @@ namespace NetPrints.Tests.Samples
                 var registry = new NodeDocumentConverterRegistry(NodeDocumentConverterRegistry.BuiltIn, []);
                 var mapper = new DocumentMapper(registry);
                 var formats = new DocumentFormatRegistry([new JsonDocumentFormat(new NetPrintsJsonOptions(registry), new DocumentMigrator([]))]);
-                var generator = new GraphCodeGenerator(formats, mapper);
+                using ExtensionRegistry extensions = ExtensionTestSupport.Load(ExtensionLoaderOptions.BuiltInOnly);
+                var generator = new GraphCodeGenerator(extensions, formats, mapper);
 
                 const string graphFileName = "AllNodes.Everything.netpc.json";
                 string outputPath = Path.Combine(directory, "AllNodes.Everything.netpc.g.cs");
