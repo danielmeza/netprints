@@ -11,16 +11,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
-  <!-- ADR-0003 follow-up: Microsoft.CodeAnalysis.BannedApiAnalyzers (RS0030), src/ only (see the
-       root Directory.Build.props for the other analyzer packages, which also cover tests/). The
-       analyzer only reads additional files literally named "BannedSymbols.*.txt". BannedSymbols.txt
-       bans sync-over-async and DateTime.Now/Thread.Sleep everywhere in src/; BannedSymbols.Console.txt
-       additionally bans System.Console in library projects — not Cli, Desktop, Editor or Generator,
-       each of which is its own console/UI entry point (OutputType Exe) and legitimately writes to
-       Console/the UI. $(OutputType) isn't set yet when this file is evaluated (each Exe project sets
-       it in its own .csproj, imported after this one), so the four are named explicitly rather than
-       conditioned on it. Skipped on the legacy VSIX project, same as the other analyzer-only
-       packages above. -->
+  <!-- ADR-0003 follow-up: Microsoft.CodeAnalysis.BannedApiAnalyzers (RS0030), src/ only (see ADR-0003). -->
   <ItemGroup Condition="'$(MSBuildProjectName)' != 'NetPrintsVSIX'">
     <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" PrivateAssets="all" />
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)BannedSymbols.txt" />

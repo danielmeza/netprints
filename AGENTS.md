@@ -122,7 +122,9 @@ is on); `[review]` means only the reviewer catches it (not promoted to `error` y
   in Editor, Desktop or tests, which need their context. [VSTHRD111]
 - Async methods end in `Async`; a `Task`-returning method never returns `null`. [VSTHRD200, VSTHRD114]
 - `new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously)`. No async work in
-  constructors: use a `static async Task<T> CreateAsync`. `Task.Run` only for CPU-bound work. [review]
+  constructors: use a `static async Task<T> CreateAsync`. `Task.Run` is for CPU-bound work or a
+  long-running background loop a constructor starts and forgets (`AutomationAgent`'s accept loop);
+  not a substitute for `await`ing I/O you could await directly. [review]
 - Marshal to the UI with `await Dispatcher.UIThread.InvokeAsync(...)`, never the blocking `Invoke`. [RS0030]
 
 ### Disposal
@@ -139,20 +141,15 @@ is on); `[review]` means only the reviewer catches it (not promoted to `error` y
   idempotent and does not throw. [IDISP003, IDISP016, IDISP025, IDISP026, S3877, S3881]
 
 ### Constants and literals
-- A literal with meaning beyond its line (diagnostic code, kind id, JSON/property name, setting key, env
-  var, file extension, event id, AutomationId, timeout or limit) is declared once as a `const`/
-  `static readonly` in a documented static class for its domain, with `///` on every member (precedent:
-  `TranslationDiagnosticCodes`, `ExtensionDiagnosticCodes`, `BuiltInNodeKinds`, `CSharpKeywords`), and
-  referenced everywhere, tests included — grep for an existing one before adding it; never a private
-  per-file copy. Sizes, margins and colors go in AXAML resources. A repeated array literal passed as an
-  argument (not a single-use inline one) is hoisted to a `static readonly` field instead. [S1192, S109,
-  SourceHygieneTests, CA1861]
+See "Batch rules for implementer agents" below (the "identifier used in more than one place" rule) for
+the naming-and-placement convention. [S1192, S109, SourceHygieneTests, CA1861]
 
 ### Nullability
-- See "Nullable reference types" above: no `!`, `null!`, `default!`. Use `is null` / `is not null` and
-  guard entry points with `ArgumentNullException.ThrowIfNull`, `ArgumentException.ThrowIfNullOrEmpty`,
-  `ArgumentOutOfRangeException.ThrowIf*`, `ObjectDisposedException.ThrowIf` instead of re-checking what the
-  annotations already guarantee. [SourceHygieneTests, CA1510, CA1511, CA1512, CA1513]
+See "Nullable reference types" above (no `!`, `null!`, `default!`) and "Batch rules for implementer
+agents" below. Guard entry points with `ArgumentNullException.ThrowIfNull`,
+`ArgumentException.ThrowIfNullOrEmpty`, `ArgumentOutOfRangeException.ThrowIf*`,
+`ObjectDisposedException.ThrowIf` instead of re-checking what the annotations already guarantee.
+[SourceHygieneTests, CA1510, CA1511, CA1512, CA1513]
 
 ### Exceptions
 - Throw the most specific existing type; never `Exception`, `ApplicationException`, `SystemException` or
@@ -194,7 +191,7 @@ is on); `[review]` means only the reviewer catches it (not promoted to `error` y
 - The only suppression mechanism is a member-level `[SuppressMessage("<Category>", "<ID>",
   Justification = "ADR-0003: <one-line reason>")]` on the smallest containing member, for pre-P1 code the
   analyzer's ownership/intent-tracking genuinely cannot see the truth of, listed in ADR-0003's suppression
-  ledger. Never `#pragma warning disable`, never a `.editorconfig` per-file severity override.
+  ledger. Never `#pragma warning disable`. `.editorconfig` has no per-file severity override: never add one.
   [SourceHygieneTests: `NoUnlistedSuppressions`]
 - Never change analyzer packages, severities or `.editorconfig` to get a green build; propose it in your
   report.
@@ -217,13 +214,19 @@ A batch prompt names the task range and pastes the task text; everything below a
 - Iterate with filtered tests. Run the whole suite once at the end of the batch:
   `dotnet test --solution NetPrints.slnx -c Release --no-build --no-progress --no-ansi -- --ignore-exit-code 8`,
   then `dotnet build -c Release` (0 warnings) and `dotnet format NetPrints.slnx --verify-no-changes`.
-- **Full suite includes the Desktop E2E tests.** `NetPrints.slnx` includes
-  `tests/NetPrints.Desktop.E2ETests`, which needs `NETPRINTS_E2E=1` and starts its own Xvfb (see
-  `.github/workflows/ci.yml`'s `e2e` job and the "Displays" note above); check `pgrep -af Xvfb` first and
-  set `NETPRINTS_E2E_DISPLAY_START` if `:100`+ is taken. Run it with the same command as above, prefixed
-  with `NETPRINTS_E2E=1`. A run reporting roughly 10 skips (not failures) is missing the E2E tests — CI's
-  main `Test` job ignores that as a known "zero tests ran" exit code (8) for that one project, but a batch
-  report is not CI: report the suite with E2E on.
+- **Full suite includes the Desktop E2E tests, as a second, dedicated run — mirror
+  `.github/workflows/ci.yml`'s two-job split, don't fold E2E into the solution-wide command.** The
+  solution-wide command above (no `NETPRINTS_E2E`) is CI's main `Test` job: `--ignore-exit-code 8`
+  tolerates the Desktop E2E project's "zero tests ran" exit code (its tests self-skip without
+  `NETPRINTS_E2E=1`), and `NetPrints.Editor.UITests`' `HeadlessSmokeTests.MinimizeAndRestoreClassWindow`/
+  `PanCursor`/`DragFromLists` always skip too (the headless driver has no window manager, real cursor or
+  OS drag-drop — see `UiCapabilities`/`SmokeScenarios.Require`) and are tolerated the same way, by not
+  passing `--fail-skips`. Then run CI's `e2e` job: `NETPRINTS_E2E=1 dotnet test --project
+  tests/NetPrints.Desktop.E2ETests -c Release --no-build --no-progress --no-ansi -- --fail-skips on` (no
+  `--ignore-exit-code 8`: with `NETPRINTS_E2E=1` and the X11 driver's full capability set, zero skips is
+  the passing state, so `--fail-skips` turns any skip in that project — expected or not — into a failure,
+  same as CI). It starts its own Xvfb (see the "Displays" note above); check `pgrep -af Xvfb` first and
+  set `NETPRINTS_E2E_DISPLAY_START` if `:100`+ is taken. Report both runs' totals.
 - Run the whole suite in the foreground (Bash `timeout` 600000) with the output redirected to a log inside
   the session's scratch/temp dir, then read only its tail. If a command is started in the background you are
   re-invoked when it exits: never poll for it. If you ever need a wait loop, bound it (max ~60 iterations) and

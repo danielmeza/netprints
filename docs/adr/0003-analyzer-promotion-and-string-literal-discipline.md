@@ -256,6 +256,21 @@ invariant:
 | `NetPrints.Editor/Graph/GridBackground.cs` : `Render` | IDISP004 | Avalonia's renderer disposes a queued `ICustomDrawOperation` after executing it (a documented Avalonia ownership-transfer contract the analyzer does not know). |
 | `NetPrints.Editor/Hosting/Automation/AutomationAgent.cs` : `ServeAsync` | IDISP007 | Takes ownership of its connection stream (`await using var _ = stream;`), a deliberate transfer, not an accidental double-owner. |
 
+### BannedApiAnalyzers scoping, and the XML-documentation promotion
+
+`src/Directory.Build.props` references `Microsoft.CodeAnalysis.BannedApiAnalyzers` (RS0030) for every
+`src/` project except the legacy VSIX one, with two additional-files lists:
+`BannedSymbols.txt` (sync-over-async and `DateTime`/`DateTimeOffset.Now`/`UtcNow`/`Thread.Sleep`,
+every `src/` project) and `BannedSymbols.Console.txt` (`System.Console`, library projects only —
+`Cli`, `Desktop`, `Editor` and `Generator` are named explicitly rather than conditioned on
+`$(OutputType)`, which is not yet set when this file is evaluated, each `Exe` project setting it in
+its own `.csproj` imported afterward). The same file's `[src/**.cs]` `.editorconfig` section promotes
+`CS1591`/`CS1572`/`CS1573`/`CS1574` to `error` (the pre-existing "every public API has an XML doc
+comment" decision, specs/003-core-refactor/contracts/release-and-docs.md §"XML documentation"),
+independently of `TreatWarningsAsErrors`, so a missing or malformed doc comment fails the build even
+for the `src/` projects not otherwise on warnings-as-errors (`NetPrints.Reflection`, `NetPrints.Cli`);
+`tests/` is untouched, since `tests/Directory.Build.props` does not import `src/Directory.Build.props`.
+
 ### Multi-line comments
 
 Every comment this batch and its predecessor added is one line, matching the surrounding code's density

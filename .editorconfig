@@ -123,15 +123,7 @@ csharp_space_around_binary_operators = before_and_after
 # Wrapping
 csharp_preserve_single_line_statements = false
 
-# ---------------------------------------------------------------------------
-# XML documentation (owner decision 2026-09-25, specs/003-core-refactor/contracts/release-and-docs.md
-# §"XML documentation"): every public API in src/ has an XML doc comment.
-# src/Directory.Build.props sets GenerateDocumentationFile for every src/ project, and these four
-# diagnostics are promoted to errors here, independently of TreatWarningsAsErrors (which stays
-# project-by-project, per the comment above): a missing or malformed doc comment fails
-# `dotnet build` even for the src/ projects not on warnings-as-errors (NetPrints.Reflection,
-# NetPrints.Cli). tests/ is untouched: this section is scoped to src/**.cs.
-# ---------------------------------------------------------------------------
+# XML documentation is required on every public API in src/ (see ADR-0003).
 [src/**.cs]
 dotnet_diagnostic.CS1591.severity = error # Missing XML comment for publicly visible type or member
 dotnet_diagnostic.CS1572.severity = error # <param> tag names a parameter that does not exist
@@ -139,7 +131,7 @@ dotnet_diagnostic.CS1573.severity = error # Parameter has no matching <param> ta
 dotnet_diagnostic.CS1574.severity = error # cref/name attribute in an XML comment could not be resolved
 
 # ADR-0003 follow-up: Microsoft.CodeAnalysis.BannedApiAnalyzers (src/BannedSymbols.txt,
-# src/ConsoleBannedSymbols.txt), src/ only.
+# src/BannedSymbols.Console.txt), src/ only.
 dotnet_diagnostic.RS0030.severity = error # Do not use banned APIs
 
 # ---------------------------------------------------------------------------
