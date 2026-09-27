@@ -212,7 +212,7 @@ public sealed class ProjectPersistence
 
             cls.LoadedGraphFilePath = graphPath;
 
-            string generatedPath = ToGeneratedPath(graphPath);
+            string generatedPath = ProjectFiles.GetGeneratedFilePath(graphPath);
             byte[] generatedBytes = Encoding.UTF8.GetBytes(renderGenerated(cls));
             DocumentId generatedId = FileSystemDocumentStore.ToDocumentId(projectDirectory, generatedPath);
             if (await WriteIfDifferentAsync(store, generatedId, generatedBytes, cancellationToken).ConfigureAwait(false))
@@ -298,14 +298,6 @@ public sealed class ProjectPersistence
 
         await store.WriteAsync(id, (stream, ct) => stream.WriteAsync(newBytes, ct), cancellationToken).ConfigureAwait(false);
         return true;
-    }
-
-    private static string ToGeneratedPath(string graphPath)
-    {
-        const string jsonSuffix = ".json";
-        return graphPath.EndsWith(jsonSuffix, StringComparison.OrdinalIgnoreCase)
-            ? string.Concat(graphPath.AsSpan(0, graphPath.Length - jsonSuffix.Length), ".g.cs")
-            : throw new ArgumentException($"Graph file '{graphPath}' does not end with '{jsonSuffix}'.", nameof(graphPath));
     }
 
     private static string GetDirectoryOrThrow(string projectFilePath) =>

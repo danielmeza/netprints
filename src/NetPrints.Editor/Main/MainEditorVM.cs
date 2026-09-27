@@ -489,7 +489,8 @@ public sealed partial class MainEditorVM : ObservableObject, IDisposable
         {
             await context.Persistence.SaveAsync(project, cls => RenderForBuild(context, project, cls), CancellationToken.None);
             BuildResult result = await context.Projects.BuildAsync(project.Path, CancellationToken.None);
-            SetBuildOutcome(project, DiagnosticMapper.FromBuild(result.Messages), result.Success, result.OutputAssemblyPath);
+            var classesByGeneratedPath = BuildClassesByGeneratedPath(context, project);
+            SetBuildOutcome(project, DiagnosticMapper.FromBuild(result.Messages, classesByGeneratedPath), result.Success, result.OutputAssemblyPath);
             return result.Success;
         }
         catch (ClassTranslationFailure failure)
@@ -510,6 +511,29 @@ public sealed partial class MainEditorVM : ObservableObject, IDisposable
         {
             project.IsCompiling = false;
         }
+    }
+
+    /// <summary>
+    /// Re-translates every class, keyed by its generated file's full path, so
+    /// <see cref="DiagnosticMapper.FromBuild"/> can map a build error back to its node (ED-T04).
+    /// </summary>
+    private static IReadOnlyDictionary<string, (ClassGraph Class, TranslatedClass Translated)> BuildClassesByGeneratedPath(EditorContext context, Project project)
+    {
+        var classesByGeneratedPath = new Dictionary<string, (ClassGraph, TranslatedClass)>(StringComparer.Ordinal);
+        foreach (ClassGraph cls in project.Classes)
+        {
+            try
+            {
+                TranslatedClass translated = new ClassTranslator(context.Extensions.Current.Translation).Translate(cls);
+                classesByGeneratedPath[ProjectFiles.GetGeneratedFilePath(project.GetGraphFilePath(cls))] = (cls, translated);
+            }
+            catch (TranslationException)
+            {
+                // Already translated once for the preceding save; left unmapped here is harmless.
+            }
+        }
+
+        return classesByGeneratedPath;
     }
 
     private static void SetBuildOutcome(Project project, IReadOnlyList<CodeDiagnostic> diagnostics, bool success, string? assemblyPath)

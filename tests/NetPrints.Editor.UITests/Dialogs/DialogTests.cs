@@ -1,6 +1,7 @@
 using Avalonia.Headless.XUnit;
 using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Core;
+using NetPrints.Editor.Diagnostics;
 using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Hosting.Automation;
@@ -82,8 +83,9 @@ public class DialogTests
         var dispatcher = new NetPrints.Editor.Hosting.Avalonia.AvaloniaUiDispatcher();
         var noSdkProjects = new NoSdkProjectSystem();
         var extensions = new NetPrints.Extensibility.Loading.ExtensionHost(NetPrints.Extensibility.Loading.ExtensionLoaderOptions.BuiltInOnly, NullLoggerFactory.Instance);
+        var reflection = new ReflectionHost(dispatcher, extensions, NullLogger<ReflectionHost>.Instance);
         var context = new EditorContext(new QueuedFilePicker(), new RecordingDialogs(), new NoClipboard(), dispatcher,
-            new ReflectionHost(dispatcher, extensions, NullLogger<ReflectionHost>.Instance),
+            reflection,
             new NetPrints.Editor.Hosting.Avalonia.WindowService(), new CapturingProcessLauncher(),
             System.Reactive.Concurrency.DefaultScheduler.Instance, System.Reactive.Concurrency.DefaultScheduler.Instance,
             () => new CommunityToolkit.Mvvm.Messaging.WeakReferenceMessenger(), NullLoggerFactory.Instance,
@@ -91,7 +93,8 @@ public class DialogTests
             extensions,
             NetPrints.Extensibility.Hosting.NullHostChannel.Instance,
             new NetPrints.Extensibility.Settings.JsonFileSettingsStore(Path.Combine(Path.GetTempPath(), "netprints-unused", "settings.json"),
-                NullLogger<NetPrints.Extensibility.Settings.JsonFileSettingsStore>.Instance));
+                NullLogger<NetPrints.Extensibility.Settings.JsonFileSettingsStore>.Instance),
+            new CodeAnalysisHost(reflection, extensions, System.Reactive.Concurrency.DefaultScheduler.Instance, dispatcher, NullLogger<CodeAnalysisHost>.Instance));
         using var ui = HeadlessUi.Create();
         ui.Show(new ReferencesDialog { DataContext = new ReferenceListVM(project, context) });
         var page = new ReferencesDialogPage(ui.Driver);

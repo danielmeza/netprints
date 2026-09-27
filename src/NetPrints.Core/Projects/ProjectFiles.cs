@@ -84,6 +84,26 @@ public static class ProjectFiles
         await WriteAtomicAsync(path, builder.ToString(), cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Full path of the generated <c>.netpc.g.cs</c> file next to a graph document (compilation-and-diagnostics.md
+    /// §1: the key <see cref="NetPrints.Compilation.DiagnosticMapper.FromBuild"/> looks build messages up
+    /// by), shared by <c>NetPrints.Serialization.ProjectPersistence</c> and the editor's live analysis
+    /// host so both compute it the same way.
+    /// </summary>
+    /// <param name="graphFilePath">Full path of the graph document (ending in <c>.netpc.json</c>).</param>
+    /// <returns><paramref name="graphFilePath"/> with its trailing <c>.json</c> replaced by <c>.g.cs</c>.</returns>
+    /// <exception cref="ArgumentException"><paramref name="graphFilePath"/> does not end with
+    /// <c>.json</c>.</exception>
+    public static string GetGeneratedFilePath(string graphFilePath)
+    {
+        const string jsonSuffix = ".json";
+        ArgumentException.ThrowIfNullOrEmpty(graphFilePath);
+
+        return graphFilePath.EndsWith(jsonSuffix, StringComparison.OrdinalIgnoreCase)
+            ? string.Concat(graphFilePath.AsSpan(0, graphFilePath.Length - jsonSuffix.Length), ".g.cs")
+            : throw new ArgumentException($"Graph file '{graphFilePath}' does not end with '{jsonSuffix}'.", nameof(graphFilePath));
+    }
+
     private static async Task WriteAtomicAsync(string path, string content, CancellationToken cancellationToken)
     {
         byte[] bytes = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false).GetBytes(content);

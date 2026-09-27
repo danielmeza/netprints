@@ -2,6 +2,7 @@ using System.Reactive.Concurrency;
 using Avalonia.Controls;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Logging;
+using NetPrints.Editor.Diagnostics;
 using NetPrints.Editor.Hosting.Avalonia;
 using NetPrints.Editor.Main;
 using NetPrints.Projects;
@@ -37,12 +38,15 @@ public sealed class EditorComposition : IDisposable
             host.LoggerFactory.CreateLogger<ProjectPersistence>());
         persistenceBinding = PersistenceBinding.Bind(persistence, host.Extensions);
 
+        var reflection = new ReflectionHost(dispatcher, host.Extensions, host.LoggerFactory.CreateLogger<ReflectionHost>());
+        codeAnalysis = new CodeAnalysisHost(reflection, host.Extensions, DefaultScheduler.Instance, dispatcher, host.LoggerFactory.CreateLogger<CodeAnalysisHost>());
+
         var context = new EditorContext(
             new StorageFilePickerService(() => Windows.ActiveWindow),
             new EditorDialogs(() => Windows.ActiveWindow),
             new AvaloniaClipboardService(() => Windows.ActiveWindow),
             dispatcher,
-            new ReflectionHost(dispatcher, host.Extensions, host.LoggerFactory.CreateLogger<ReflectionHost>()),
+            reflection,
             Windows,
             new ProcessLauncher(),
             DefaultScheduler.Instance,
@@ -53,12 +57,14 @@ public sealed class EditorComposition : IDisposable
             persistence,
             host.Extensions,
             host.HostChannel,
-            host.Settings);
+            host.Settings,
+            codeAnalysis);
         Context = customize?.Invoke(context) ?? context;
     }
 
     private readonly string? hostChannelError;
     private readonly PersistenceBinding persistenceBinding;
+    private readonly ICodeAnalysisHost codeAnalysis;
 
     /// <summary>
     /// Placeholder <c>NetPrints.Sdk</c> version substituted into a new project's template
@@ -112,11 +118,13 @@ public sealed class EditorComposition : IDisposable
 
     /// <summary>
     /// Stops rebinding persistence to the extension host's registry (see
-    /// <see cref="PersistenceBinding.Bind"/>) and disposes <see cref="MainEditor"/>, if created.
+    /// <see cref="PersistenceBinding.Bind"/>), disposes <see cref="MainEditor"/>, if created, and the
+    /// code analysis host (editor-services.md §6: "disposed with the main window").
     /// </summary>
     public void Dispose()
     {
         MainEditor?.Dispose();
         persistenceBinding.Dispose();
+        codeAnalysis.Dispose();
     }
 }

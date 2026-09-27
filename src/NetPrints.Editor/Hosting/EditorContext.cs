@@ -1,6 +1,7 @@
 using System.Reactive.Concurrency;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Logging;
+using NetPrints.Editor.Diagnostics;
 using NetPrints.Extensibility.Hosting;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Settings;
@@ -35,6 +36,7 @@ namespace NetPrints.Editor.Hosting;
 /// <param name="Extensions">Holds the registry of loaded extensions.</param>
 /// <param name="HostChannel">The channel to the application hosting the editor.</param>
 /// <param name="Settings">Reads and writes the user's settings file.</param>
+/// <param name="CodeAnalysis">Debounced live analysis of the open project's generated code (editor-services.md §2).</param>
 public sealed record EditorContext(
     IFilePickerService FilePicker,
     IEditorDialogs Dialogs,
@@ -51,4 +53,5 @@ public sealed record EditorContext(
     ProjectPersistence Persistence,
     IExtensionHost Extensions,
     IHostChannel HostChannel,
-    ISettingsStore Settings);
+    ISettingsStore Settings,
+    ICodeAnalysisHost CodeAnalysis);

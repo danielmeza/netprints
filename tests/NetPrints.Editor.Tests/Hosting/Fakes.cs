@@ -5,6 +5,7 @@ using Microsoft.Reactive.Testing;
 using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
+using NetPrints.Editor.Diagnostics;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.References;
 using NetPrints.Extensibility.Hosting;
@@ -351,7 +352,7 @@ public sealed class FakeProjectSystem : IProjectSystem
 /// and a real <see cref="ProjectPersistence"/> (JSON graphs on the real file system). Resolved per
 /// test class from <see cref="Startup"/>; tests that need an unloaded host construct their own.
 /// </summary>
-public sealed class TestEditor
+public sealed class TestEditor : IDisposable
 {
     public TestEditor(IReflectionHost reflection)
         : this(reflection, TestExtensions.CreateBuiltIn(), NullHostChannel.Instance)
@@ -365,10 +366,11 @@ public sealed class TestEditor
         Persistence = CreatePersistence(Projects);
         Extensions = extensions;
         _ = PersistenceBinding.Bind(Persistence, Extensions);
+        CodeAnalysis = new CodeAnalysisHost(Reflection, Extensions, Scheduler, Dispatcher, NullLogger<CodeAnalysisHost>.Instance);
 
         Context = new EditorContext(FilePicker, Dialogs, Clipboard, Dispatcher, Reflection, Windows, Processes,
             Scheduler, Scheduler, () => new StrongReferenceMessenger(), NullLoggerFactory.Instance, Projects, Persistence,
-            Extensions, hostChannel, Settings);
+            Extensions, hostChannel, Settings, CodeAnalysis);
     }
 
     /// <summary>
@@ -411,9 +413,16 @@ public sealed class TestEditor
 
     public FakeSettingsStore Settings { get; } = new();
 
-    /// <summary>Virtual time for throttled work (the search box) and the generated-code loop.</summary>
+    /// <summary>Virtual time for throttled work (the search box, the generated-code loop and live analysis debounce).</summary>
     public TestScheduler Scheduler { get; } = new();
+
+    /// <summary>Debounced live analysis, over the same <see cref="Reflection"/> and <see cref="Scheduler"/> (ED-T02).</summary>
+    public ICodeAnalysisHost CodeAnalysis { get; }
+
     public EditorContext Context { get; }
+
+    /// <summary>Disposes <see cref="CodeAnalysis"/>.</summary>
+    public void Dispose() => CodeAnalysis.Dispose();
 }
 
 /// <summary>Extension hosts for tests.</summary>
