@@ -566,8 +566,8 @@ dotnet_diagnostic.S9999-warning.severity = suggestion
 [src/**.cs]
 # SonarAnalyzer.CSharp: the curated rules this ADR was written for (compilation-and-diagnostics.md
 # evidence: duplicated NPT/eventEntry literals), at `error`, including S109 (magic numbers): its
-# remaining pre-existing hits are individually suppressed (six in Core, see ADR-0003) or, for the
-# Editor's, deferred wholesale below — too many for individual suppression in this batch.
+# remaining pre-existing hits are individually suppressed (six in Core, see ADR-0003) or fixed with
+# named constants/helpers — there is no per-file or per-project carve-out.
 dotnet_diagnostic.S1192.severity = error   # Duplicate string literals
 dotnet_diagnostic.S109.severity = error    # Magic numbers
 dotnet_diagnostic.S1854.severity = error   # Dead stores
@@ -638,6 +638,67 @@ dotnet_diagnostic.VSTHRD200.severity = error # Use "Async" suffix for awaitable 
 # `error`, with ConfigureAwait(false) added at each call site that needed it.
 # ---------------------------------------------------------------------------
 dotnet_diagnostic.VSTHRD111.severity = error # ConfigureAwait(bool)
+
+# ---------------------------------------------------------------------------
+# ADR-0003 follow-up batch (2026-09-27): the researched SDK/Sonar rule set below, at the
+# severities/scoping the research draft's table 2a set. S1309 is skipped (NoUnlistedSuppressions
+# replaces it) and CA2007 is skipped (VSTHRD111 above already enforces ConfigureAwait with this same
+# UI/non-UI layering; CA2007 would double-report the same sites). These are SDK (CA) or
+# SonarAnalyzer.CSharp (S) rules; tests are not overridden here and build at each rule's own
+# AnalysisLevel=latest default severity, same policy as every other CA rule in this file.
+# ---------------------------------------------------------------------------
+dotnet_diagnostic.CA2016.severity = error   # Forward the CancellationToken parameter
+dotnet_diagnostic.CA1068.severity = warning # CancellationToken parameters should come last
+dotnet_diagnostic.CA2012.severity = error   # Use ValueTasks correctly
+dotnet_diagnostic.CA1861.severity = warning # Avoid constant arrays as arguments
+dotnet_diagnostic.CA1510.severity = warning # Use ArgumentNullException throw helper
+dotnet_diagnostic.CA1511.severity = warning # Use ArgumentException throw helper
+dotnet_diagnostic.CA1512.severity = warning # Use ArgumentOutOfRangeException throw helper
+dotnet_diagnostic.CA1513.severity = warning # Use ObjectDisposedException throw helper
+dotnet_diagnostic.CA2201.severity = error   # Do not raise reserved exception types
+dotnet_diagnostic.CA2208.severity = error   # Instantiate argument exceptions correctly
+dotnet_diagnostic.CA2200.severity = error   # Rethrow to preserve stack details
+dotnet_diagnostic.S2486.severity = error    # Exceptions should not be ignored
+dotnet_diagnostic.S108.severity = error     # Nested blocks of code should not be left empty
+dotnet_diagnostic.S2139.severity = warning  # Exceptions should be either logged or rethrown, not both
+dotnet_diagnostic.CA1065.severity = warning # Do not raise exceptions in unexpected locations
+dotnet_diagnostic.CA1307.severity = warning # Specify StringComparison for clarity
+dotnet_diagnostic.CA1309.severity = warning # Use ordinal StringComparison
+dotnet_diagnostic.CA1851.severity = warning # Possible multiple enumerations of IEnumerable collection
+dotnet_diagnostic.CA1827.severity = warning # Do not use Count()/LongCount() when Any() can be used
+dotnet_diagnostic.CA1829.severity = warning # Use Length/Count property instead of Count() when available
+dotnet_diagnostic.CA1860.severity = warning # Avoid using 'Enumerable.Any()' extension method
+dotnet_diagnostic.CA1852.severity = warning # Seal internal types
+dotnet_diagnostic.S2933.severity = warning  # Fields that are only assigned in the constructor should be readonly
+dotnet_diagnostic.CA2211.severity = error   # Non-constant fields should not be visible
+dotnet_diagnostic.CA1848.severity = warning # Use the LoggerMessage delegates
+dotnet_diagnostic.CA2254.severity = error   # Template should be a static expression
+dotnet_diagnostic.CA2017.severity = error   # Parameter count mismatch in the logging message template
+dotnet_diagnostic.CA1727.severity = warning # Use PascalCase for named placeholders in the logging message template
+
+# CA1305/CA1310/CA1311 (locale-sensitive formatting/comparison): `warning` in src/**.cs by default,
+# `error` in NetPrints.Generator, NetPrints.Serialization and NetPrints.Core below, where the wrong
+# overload breaks byte-identical generated code, JSON or golden fixtures on a non-invariant locale.
+dotnet_diagnostic.CA1305.severity = warning # Specify IFormatProvider
+dotnet_diagnostic.CA1310.severity = warning # Specify StringComparison for correctness
+dotnet_diagnostic.CA1311.severity = warning # Specify a culture or use an invariant version
+
+[src/{NetPrints.Generator,NetPrints.Serialization,NetPrints.Core}/**.cs]
+dotnet_diagnostic.CA1305.severity = error # Specify IFormatProvider
+dotnet_diagnostic.CA1310.severity = error # Specify StringComparison for correctness
+dotnet_diagnostic.CA1311.severity = error # Specify a culture or use an invariant version
+
+# CA1002/CA2227 (expose read-only collection types): `error` in the newer projects below; `suggestion`
+# in the legacy NetPrints.Core/NetPrints.Reflection model, which still has public mutable-collection
+# APIs a future batch refactors. Not set for other projects: they carry no collection-shaped public
+# surface these rules would flag.
+[src/{NetPrints.Extensibility,NetPrints.Serialization,NetPrints.Workspace,NetPrints.Generator,NetPrints.Sdk}/**.cs]
+dotnet_diagnostic.CA1002.severity = error # Do not expose generic lists
+dotnet_diagnostic.CA2227.severity = error # Collection properties should be read only
+
+[src/{NetPrints.Core,NetPrints.Reflection}/**.cs]
+dotnet_diagnostic.CA1002.severity = suggestion # Do not expose generic lists
+dotnet_diagnostic.CA2227.severity = suggestion # Collection properties should be read only
 
 [src/NetPrints.Editor/**VM.cs]
 dotnet_diagnostic.VSTHRD111.severity = none
