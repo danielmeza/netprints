@@ -2480,3 +2480,13 @@ No CLI test project exists; verified by hand: `-p samples/HelloWorld/HelloWorld.
 `.netpp`, a missing `-p` and a missing file are rejected without building, `--version` still prints
 `NetPrints.Cli`. No `!`/`null!`/`default!` added.
 
+## Checkpoint — T059–T062
+
+Full run of every test project (`NetPrints.Core.Tests` 316, `NetPrints.Editor.Tests` 166,
+`NetPrints.Editor.UITests` 71, `NetPrints.Desktop.E2ETests` 6; the X11 E2E suite is opt-in, so no Xvfb
+was needed and none was left running): 559 total, 550 passed, 9 skipped (3 UI + 6 E2E, the same 9 as
+the T056–T058 checkpoint), 0 failed. The one failure of that run, `EditFlowTests.
+CreateIfElseConnectSaveAndReload`, reloaded through the legacy `Project.LoadFromPath`; it now reloads
+through `ProjectPersistence.LoadAsync` (T063's "update `EditFlowTests`" item is therefore already done)
+and passes. `dotnet build -c Release` 0 warnings/0 errors, `dotnet format --verify-no-changes` clean.
+
