@@ -97,6 +97,100 @@ around only hides future `NullReferenceException`s.
 - The model no longer uses DataContract, so members are initialized in constructors or `DocumentMapper`.
 - Reviewers list every `!` added in a PR and check each one.
 
+## C# rules
+Fix the cause, not the diagnostic. `[ID]` is the analyzer that fails the build (`TreatWarningsAsErrors`
+is on); `[review]` means only the reviewer catches it (not promoted to `error` yet, or no analyzer can express it).
+
+### Async
+- Async all the way: a method that awaits returns `Task`/`ValueTask`, and so do its callers up to the
+  root (`static async Task<int> Main`, `[RelayCommand] async Task`, xUnit `async Task`). [VSTHRD103]
+- Never block on async: no `.Result`, `.Wait()`, `.GetAwaiter().GetResult()`, with or without a `Task.Run`
+  wrapper. Change the caller to async instead. [VSTHRD002, RS0030]
+- No `async void`, and no bare `_ = SomethingAsync(...)` discard: task discards only through
+  `.Forget(logger)` (`NetPrints.Editor.Hosting.TaskExtensions`), which observes the fault and logs it
+  (1030) instead of an unobserved task exception. UI async work goes through `[RelayCommand] async Task`.
+  [VSTHRD100, VSTHRD101, review]
+- Observe every task: await it or return it. Await a `ValueTask` exactly once. [VSTHRD110, CA2012]
+- Async methods take `CancellationToken cancellationToken` as the last parameter and forward it to every
+  call that accepts one. [CA2016, CA1068]
+- `ConfigureAwait(false)` on every await in non-UI libraries (the paths scoped in `.editorconfig`); never
+  in Editor, Desktop or tests, which need their context. [VSTHRD111]
+- Async methods end in `Async`; a `Task`-returning method never returns `null`. [VSTHRD200, VSTHRD114]
+- `new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously)`. No async work in
+  constructors: use a `static async Task<T> CreateAsync`. `Task.Run` only for CPU-bound work. [review]
+- Marshal to the UI with `await Dispatcher.UIThread.InvokeAsync(...)`, never the blocking `Invoke`. [RS0030]
+
+### Disposal
+- The creator owns a disposable: `using` (`await using` for async disposables) for locals, owned fields
+  disposed by the owner, injected ones never disposed. [IDISP001, IDISP002, IDISP004, IDISP007, IDISP017]
+- A type that owns an `IAsyncDisposable` implements `IAsyncDisposable` itself, all the way up the
+  ownership chain to a root that awaits it (async `Main`, Desktop's `ShutdownCoordinator`, test
+  `DisposeAsync`). [IDISP006, review]
+- Never bridge async disposal into a sync `Dispose()` (`DisposeAsync().AsTask().GetAwaiter().GetResult()`,
+  `Task.Run` wrappers). Make the owner `IAsyncDisposable`. Also implement `IDisposable` only if a real
+  synchronous cleanup exists. [VSTHRD002, RS0030]
+- Disposable classes are `sealed`; otherwise `protected virtual Dispose(bool)` / `DisposeAsyncCore()`.
+  Dispose the old value before reassigning a disposable field; never use a disposed instance; `Dispose` is
+  idempotent and does not throw. [IDISP003, IDISP016, IDISP025, IDISP026, S3877, S3881]
+
+### Constants and literals
+- A literal with meaning beyond its line (diagnostic code, kind id, JSON/property name, setting key, env
+  var, file extension, event id, AutomationId, timeout or limit) is declared once as a `const`/
+  `static readonly` in a documented static class for its domain, with `///` on every member (precedent:
+  `TranslationDiagnosticCodes`, `ExtensionDiagnosticCodes`, `BuiltInNodeKinds`, `CSharpKeywords`), and
+  referenced everywhere, tests included — grep for an existing one before adding it; never a private
+  per-file copy. Sizes, margins and colors go in AXAML resources. [S1192, S109, SourceHygieneTests]
+
+### Nullability
+- See "Nullable reference types" above: no `!`, `null!`, `default!`. Use `is null` / `is not null` and
+  guard entry points with `ArgumentNullException.ThrowIfNull`, `ArgumentException.ThrowIfNullOrEmpty`,
+  `ArgumentOutOfRangeException.ThrowIf*`, `ObjectDisposedException.ThrowIf` instead of re-checking what the
+  annotations already guarantee. [SourceHygieneTests, CA1510, CA1511, CA1512, CA1513]
+
+### Exceptions
+- Throw the most specific existing type; never `Exception`, `ApplicationException`, `SystemException` or
+  `NullReferenceException`. Argument exceptions get `nameof(param)`. [CA2201, CA2208]
+- Rethrow with `throw;` or wrap the original as `InnerException` [CA2200]. No empty catch. Catch
+  `Exception` only at a boundary (entry point, command handler, extension load/register/dispose,
+  `Forget`'s fault path), and log it with the exception object. Log or rethrow, never both; an expected
+  problem in the user's project (bad graph, manifest, reference) is a diagnostic with a stable code, not
+  an exception. [S2486, S108, S2139, review]
+- Never throw from `Dispose`, finalizers, `Equals`, `GetHashCode`, `ToString`, static constructors or
+  exception filters. [CA1065]
+
+### Strings, collections, LINQ
+- Make culture and comparison explicit: `StringComparison.Ordinal` for ids, paths and codes, and
+  `CultureInfo.InvariantCulture` for anything written to generated code, JSON or files. Generated output
+  must be byte-identical on every locale. [CA1305, CA1307, CA1309, CA1310, CA1311]
+- APIs return `IReadOnlyList<T>`/`IReadOnlyDictionary<TKey,TValue>`/`ImmutableArray<T>`. Collection
+  properties are get-only. [CA1002, CA2227]
+- Enumerate an `IEnumerable<T>` once; materialize it if you need it again. Prefer `Count`/`Length`/`Any()`
+  to `Count()`. [CA1851, CA1827, CA1829, CA1860]
+
+### Types and state
+- Classes are `sealed` unless designed for inheritance. Fields assigned only in the constructor are
+  `readonly`. No visible mutable static fields. Value-like data (options, results, messages, DTOs) are
+  `record`s with `init`/`required`; observable state follows the MVVM rules. [CA1852, S2933, CA2211]
+- Inject `TimeProvider`; never use `DateTime.Now`/`UtcNow` or `Thread.Sleep` in `src/`. [RS0030]
+
+### Logging and naming
+- Log through `[LoggerMessage]` partials in the namespace's `Log` class (precedent:
+  `NetPrints.Serialization/Log.cs`, `NetPrints.Editor/Hosting/Log.cs`) with constant PascalCase templates,
+  and pass the exception as the exception argument. Libraries never write to `Console`; `Cli`, `Desktop`,
+  `Editor` and `Generator` are entry points, not libraries, and are exempt. [CA1848, CA2254, CA1727, RS0030]
+- Follow `.editorconfig` and the file's existing naming. Constants are PascalCase; generic parameters are
+  `T…`. [CA1715]
+
+### Analyzer suppressions (ADR-0003)
+- Fix the diagnostic. Never suppress one in code you wrote or touched, and never on new code.
+- The only suppression mechanism is a member-level `[SuppressMessage("<Category>", "<ID>",
+  Justification = "ADR-0003: <one-line reason>")]` on the smallest containing member, for pre-P1 code the
+  analyzer's ownership/intent-tracking genuinely cannot see the truth of, listed in ADR-0003's suppression
+  ledger. Never `#pragma warning disable`, never a `.editorconfig` per-file severity override.
+  [SourceHygieneTests: `NoUnlistedSuppressions`]
+- Never change analyzer packages, severities or `.editorconfig` to get a green build; propose it in your
+  report.
+
 ## Commits and tests
 - End commit messages with the attribution line(s) your session is configured with; PR bodies
   end with the "Generated with Claude Code" footer when produced by Claude Code.
@@ -115,12 +209,23 @@ A batch prompt names the task range and pastes the task text; everything below a
 - Iterate with filtered tests. Run the whole suite once at the end of the batch:
   `dotnet test --solution NetPrints.slnx -c Release --no-build --no-progress --no-ansi -- --ignore-exit-code 8`,
   then `dotnet build -c Release` (0 warnings) and `dotnet format NetPrints.slnx --verify-no-changes`.
+- **Full suite includes the Desktop E2E tests.** `NetPrints.slnx` includes
+  `tests/NetPrints.Desktop.E2ETests`, which needs `NETPRINTS_E2E=1` and starts its own Xvfb (see
+  `.github/workflows/ci.yml`'s `e2e` job and the "Displays" note above); check `pgrep -af Xvfb` first and
+  set `NETPRINTS_E2E_DISPLAY_START` if `:100`+ is taken. Run it with the same command as above, prefixed
+  with `NETPRINTS_E2E=1`. A run reporting roughly 10 skips (not failures) is missing the E2E tests — CI's
+  main `Test` job ignores that as a known "zero tests ran" exit code (8) for that one project, but a batch
+  report is not CI: report the suite with E2E on.
 - Run the whole suite in the foreground (Bash `timeout` 600000) with the output redirected to a log inside
   the session's scratch/temp dir, then read only its tail. If a command is started in the background you are
   re-invoked when it exits: never poll for it. If you ever need a wait loop, bound it (max ~60 iterations) and
   never `pgrep -f` a string that appears in your own command line; never wait on a file you did not create.
 - Golden fixtures in `tests/NetPrints.Core.Tests/Fixtures/Golden/` stay byte-identical unless the task
   says otherwise; a deliberate change is reported with the reason.
+- **Never leave changes under `samples/`** unless the task says so. Editor tests load copies of the
+  samples into a temp directory, but a manual editor run saves into the real one. Run
+  `git status samples/` before committing. A stray saved variable under `samples/` broke 11 tests on
+  2026-09-27.
 - No `!`, `null!` or `default!`. XML docs on every public API (CS1591 is an error). No long code
   comments: rationale goes in the commit message and `specs/003-core-refactor/implementation-notes.md`.
 - An identifier used in more than one place (a diagnostic code, a node/document "kind" string, a display
