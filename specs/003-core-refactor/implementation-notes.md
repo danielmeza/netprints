@@ -2808,3 +2808,52 @@ temp folders and small assemblies compiled with Roslyn at test time, so the `Ass
 - `TranslationEnvironment.BuiltIn` call sites (`MainEditorVM`, `ClassEditorVM`, `GraphCodeGenerator`, `Project.GenerateClassSources`)
   are unchanged: the registry exists now (`ExtensionRegistry.Translation`), but the editor has no registry until the T075
   composition and the generator has none until T074 (`extension=` folders), so both tasks replace those calls.
+
+### T069 and T070: settings and host channel
+
+`Settings/` (`ExtensionSettingsDescriptor`, `ISettingsStore`, `JsonFileSettingsStore`, `NetPrintsSettings`) and `Hosting/`
+(`HostChannelState`, `HostMessage`, `HostMessageTypes`, `IHostChannel`, `HostLaunchContext`, `IHostChannelFactory`,
+`NullHostChannel`, `InMemoryHostChannel`) in `src/NetPrints.Extensibility/`. `IExtensionBuilder.AddHostChannel` and `AddSettings`, and the
+registry's `HostChannels`, `Settings` and `FindHostChannel`, are in (buffered like the rest). Log 2006 `SettingsSectionInvalid`. Tests:
+`JsonFileSettingsStoreTests` (EX-T09), `HostChannelTests`, and three cases in `ExtensionBuilderTests`. EX-T08 needs the editor's
+`IReflectionHost` wiring (T075/T076), so only the channel half (`SendAsync` after dispose throws, messages, completion) is covered here.
+Written alongside the code (red was the compile failure).
+
+- Decision: `NetPrintsSettings` is a record with `init` properties defaulting to empty lists, not positional, so a section with a
+  missing list keeps the other one; its source-generated context sets `RespectNullableAnnotations`, so an explicit `null` is an invalid section.
+  Its section id is `netprints` (`NetPrintsSettings.SectionId`), stored at the top-level `netprints` key; every other id is under `extensions`.
+- Decision: `BuiltInExtension` declares `NetPrintsSettings.Descriptor`, so `registry.Settings` lists the built-in section.
+- Decision: file layout is `schemaVersion`, `netprints`, `extensions` (ids ordinal-sorted), then any other top-level keys ordinal-sorted. A
+  section that was never set is not invented. Unknown sections are kept as parsed nodes and rewritten with the same 2-space indentation, so
+  they are byte-identical when the file was written by this store; a hand-formatted unknown section is re-indented, its content unchanged.
+  Comments and trailing commas are accepted on read (as for documents) and dropped on write.
+- Decision: a file that is not valid JSON (or not an object) gives defaults for every section and logs 2006 with section `$file`; the
+  next `SetAsync` overwrites it. An `IOException` on read is not caught. A newer `schemaVersion` is ignored on read and rewritten as 1.
+- Decision: `SetAsync` writes the temp file and moves it (`File.Move` overwrite, temp name `<file>.tmp-<guid>`, removed on failure, as
+  `FileSystemDocumentStore` does) before it updates the cache, so a failed write leaves the cache unchanged; a null value is `ArgumentNullException`.
+  `Get` caches the typed value per section id (a default from an invalid section is cached too, so 2006 is logged once).
+- Decision: registry rules beyond the spec, all `NPX006` per contribution with the extension staying loaded: a settings descriptor whose
+  `ExtensionId` is not the extension's manifest id (an extension cannot write another's section), a second descriptor for the same
+  id, a host channel factory with an empty id, and a second factory with an id already registered (first wins).
+- Decision: `InMemoryHostChannel.DisposeAsync` closes both ends (the peer's `Messages` completes and its `SendAsync` throws), `OnNext` and
+  `OnCompleted` are serialized by a lock so `Messages` obeys the Rx contract from any sender thread, and `Messages` is a `Subject`
+  (`System.Reactive` reaches `NetPrints.Extensibility` through `NetPrints.Serialization`). `NullHostChannel.Id` is `"null"` and its
+  `Messages` never emits or completes.
+- Log ids added: 2006 only (the spec table already listed it). Host channel logs 1021 and 1022 belong to the editor (T075).
+- Class-ness leaks added: none. Settings and host channel types do not mention types or classes.
+
+### T071: test extension
+
+`tests/NetPrints.TestExtension/` (in `NetPrints.slnx` under `/tests/`): manifest `netprints-extension.json` (id `netprints.test`),
+`EnableDynamicLoading`, NetPrints project references with `Private=false` `ExcludeAssets=runtime`, `CopyLocalLockFileAssemblies=false`, output
+`bin/<cfg>/extensions/netprints.test/` (only the dll, pdb, deps.json, runtimeconfig.json and the manifest land there). Contents: node kind
+`netprints.test/Log` (`LogNode`, `LogNodeDocument`, `LogNodeConverter`, `LogNodeTranslator` emitting `System.Console.WriteLine(<in>)`, `TestNodeLibrary`,
+`TestJsonContext` for its document and settings), `TestClassEmitter`, `TestMemberEmitter`, `TestCatalog` (one type `NetPrints.TestLib.Widget`, covers
+`NetPrints.TestLib`), `TestProfile` (`netprints.test`), `TestSettings` (section `netprints.test`, default greeting `hello`), `TestHostChannelFactory` (`test`, an
+in-memory pair whose host end is in `LastHost`), project property `NetPrintsTestMode`. Checked once with a throwaway test that the registry loads it from
+its output folder in its own load context with every contribution present; T072 adds the real tests and the build ordering from the test projects.
+
+- Decision: the class emitter also adds `partial` to classes named `Partial*`, so the member emitter's `DeclarePartial` property gives compilable C# (EX-T04).
+- Decision: the asset is not referenced by any test project yet; T072 adds a build-only `ProjectReference` (`ReferenceOutputAssembly=false`).
+- Class-ness leaks added: none beyond the seam names already listed (`IClassEmitter`, `IMemberEmitter`, `Declaration.Name` use).
+
