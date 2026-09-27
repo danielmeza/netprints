@@ -211,6 +211,14 @@ profiles and P3 extensions use, so custom emitters need no core changes.
   UnrealSharp's `[UStruct]`/`[UEnum]`/`[UInterface]` (U2) build on the built-in kinds.
 - **P1 guard:** P1's translation seams and class/member emitters (sub-phase F, T065) must not assume every
   declaration is a class. The P1 Opus review checks this; nothing of this phase is built in P1.
+- **Designer-authored comments as XML docs** (owner idea, 2026-09-27; ADR-0002). A designer writes a comment
+  that the C#-side developer can read without opening the graph:
+  - a `Comment` field on a node, shown as a note on the canvas (builds on P6's comment boxes/regions) and
+    emitted as a `//` line above the generated statement;
+  - a `Summary` field on a method/constructor/event graph and on the class itself, emitted as `/// <summary>`
+    on the generated declaration;
+  - plain text in the model (no new node kind); whether XML docs are required or optional, and their exact
+    shape, follows the `.editorconfig`-driven style this phase already builds.
 
 ### P4 — VSIX (deferred)
 Deferred by the project owner on 2026-09-24; revisit after P3/P5. When resumed:
@@ -274,7 +282,7 @@ for those who want to learn it.
   templates (e.g. a new class comes with its lifecycle/event entry points ready).
 - Pin-type colors, automatic conversion nodes when linking compatible types.
 - Per-node error markers (from P1 diagnostics mapping), collapse selection to function/macro,
-  comment boxes/regions.
+  comment boxes/regions (the underlying `Comment`/`Summary` fields and their emission as XML docs are in P3b).
 - Live C# side-by-side view synced with the graph selection (builds on the P1 AvaloniaEdit view).
 - Visual debugging of compiled C# (potential strongest differentiator vs Blueprint, whose debugger
   only covers VM-interpreted graphs): (B) instrumented debug builds report node execution + pin
