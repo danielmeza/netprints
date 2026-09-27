@@ -18,6 +18,14 @@ value-named constants). This closes the contradiction the first revision left be
 "Follow-up, not done here" list still called the Editor's `S109` carve-out future work while the severity
 policy section above it already described the carve-out as current.
 
+Follow-up batch landed the same day: the researched rule set (see "Follow-up, not done here" below)
+promoted, and every violation it flagged fixed for real (see "Follow-up batch: the researched rule set
+lands", below). `S1309` and `CA2007` — both in the original research draft's table — are skipped, not
+landed: `S1309` (flags every `#pragma`/`[SuppressMessage]`, file-grained) is superseded by
+`SourceHygieneTests.NoUnlistedSuppressions` (rule- and site-grained, the tighter gate this ADR already
+requires); `CA2007` would duplicate `VSTHRD111`, which already enforces `ConfigureAwait` with this same
+ADR's UI/non-UI layering table.
+
 ## Context
 
 The owner found that agents keep introducing magic strings and duplicated literals with no discipline
@@ -253,6 +261,69 @@ Every comment this batch and its predecessor added is one line, matching the sur
 (AGENTS.md "Code comments"); rationale that does not fit a line lives here or in
 `specs/003-core-refactor/implementation-notes.md` instead.
 
+### Follow-up batch: the researched rule set lands
+
+The rule set the "Follow-up, not done here" section below described as "research only" now lands, at the
+severities and scoping a dedicated research pass (`csharp-agent-rules-draft.md` §2a) worked out. Two rules
+from that table are skipped rather than landed:
+
+- **S1309** (flags every `#pragma warning disable`/`[SuppressMessage]`, per file): superseded by
+  `SourceHygieneTests.NoUnlistedSuppressions` (landed alongside `NoNullForgivingOperator` in the batch
+  right before this one), which is strictly tighter — per rule ID and per site, not per file — and is
+  this ADR's actual enforced ledger gate already.
+- **CA2007** (ConfigureAwait, scoped to libraries): `VSTHRD111` above already enforces `ConfigureAwait`
+  with this exact ADR's UI/non-UI layering table; turning CA2007 on too would double-report every site
+  VSTHRD111 already covers for no additional coverage.
+
+**`error`, added to `[src/**.cs]`:** `CA2016` (forward `CancellationToken`), `CA2012` (`ValueTask` misuse),
+`CA2201` (reserved/too-general exception types), `CA2208` (argument exception constructor args),
+`CA2200` (rethrow to preserve stack), `S2486`/`S108` (swallowed exceptions, empty blocks), `CA2211`
+(visible mutable static fields), `CA2254`/`CA2017` (log template hygiene).
+
+**`warning` (gates the build too, since `TreatWarningsAsErrors` is on, but may in principle carry a
+member-level `[SuppressMessage]` in a future batch, unlike the `error` rules above), added to
+`[src/**.cs]`:** `CA1068` (`CancellationToken` last), `CA1861` (constant array arguments),
+`CA1510`–`CA1513` (throw helpers), `S2139` (log-and-rethrow), `CA1065` (throwing from unexpected
+members), `CA1307`/`CA1309` (explicit `StringComparison`), `CA1851`/`CA1827`/`CA1829`/`CA1860`
+(`IEnumerable` re-enumeration, `Count()`/`Any()`/`Length`), `CA1852`/`S2933` (seal internal types,
+`readonly` fields), `CA1848`/`CA1727` (`LoggerMessage`, PascalCase placeholders).
+
+**`CA1305`/`CA1310`/`CA1311`** (locale-dependent formatting/comparison): `error` in
+`NetPrints.Generator`, `NetPrints.Serialization` and `NetPrints.Core` — the projects whose output
+(generated code, JSON, golden fixtures) must be byte-identical on any locale — `warning` elsewhere.
+
+**`CA1002`/`CA2227`** (expose read-only collection types): `error` in the newer projects
+(`NetPrints.Extensibility`, `NetPrints.Serialization`, `NetPrints.Workspace`, `NetPrints.Generator`,
+`NetPrints.Sdk`); `suggestion` in the legacy `NetPrints.Core`/`NetPrints.Reflection` model, which still
+has public mutable-collection APIs a future batch refactors; not set for the remaining projects (no
+collection-shaped public surface these rules would flag there).
+
+**No escape hatch needed.** Every rule above landed at the severity the table set, with every violation
+fixed for real — no rule came close to the ~40-hit threshold that would have left it out of
+`.editorconfig`. Every other rule in the table (`CA2016`, `CA1068`, `CA2012`, `CA1861`, `CA1511`–`CA1513`,
+`CA2200`, `S108`, `S2139`, `CA1309`, `CA1827`, `CA1829`, `CA1860`, `CA2211`, `CA1848`, `CA2254`, `CA2017`,
+`CA1727`, `CA1002`, `CA2227`) had zero pre-existing hits once promoted; the rest had a small, concentrated
+count, entirely in code-generation/translation paths where the fix is unambiguous:
+
+| Rule | Hits fixed | Where |
+|---|---|---|
+| CA1307 | ~45 | Template placeholder substitution (`ClassTranslator.cs`'s `.Replace` chains), identifier sanitization, `IndexOf`/`Contains` on kind strings and ids (`NetPrints.Core`, `NetPrints.Serialization`, `NetPrints.Extensibility`, `NetPrints.Generator`, `NetPrints.Editor`) — all fixed with `StringComparison.Ordinal`. |
+| CA1305 | 20 | `StringBuilder.AppendLine`/`Append` of interpolated generated-code text in `ExecutionGraphTranslator.cs` — fixed with `CultureInfo.InvariantCulture`. |
+| CA1851 | 4 | `extraModifiers`/`argumentNames`/`returnNames` parameters enumerated more than once in `ExecutionGraphTranslator.cs` and `BuiltInNodeTranslators.cs` — fixed by materializing each to a `List<T>` once. |
+| CA2201 | 4 | Internal invariant violations thrown as bare `Exception` in `ExecutionGraphTranslator.cs`/`BuiltInNodeTranslators.cs` (now `InvalidOperationException`) and a malformed type-name lookup in `ReflectionProvider.cs` (now `FormatException`). |
+| CA2208 | 3 | `throw new ArgumentException(nameof(type))` passed the parameter name as the *message* in `GenericType.cs`, `TypeSpecifier.cs` and `ReflectionConverter.cs` — a real bug CA2208 caught, fixed with a real message plus `nameof(type)` as the second argument. |
+| CA1310 | 4 | `StartsWith`/`EndsWith` on identifier prefixes/suffixes (`ExecutionGraphTranslator.cs`, `ReflectionProvider.cs`) — fixed with `StringComparison.Ordinal`. |
+| CA1510 | 3 | Manual null checks in `ObservableRangeCollection.cs` — fixed with `ArgumentNullException.ThrowIfNull`. |
+| CA1852 | 2 | `NetPrints.Cli/Program.cs`'s `Program` and `CompileOptions` — sealed. |
+| CA1065 | 1 | `TypeSpecifier.Equals` threw `ArgumentException` on a same-name/different-`IsEnum` collision; `Equals` must never throw, so it now returns `false` (an honest "not equal", not a defect: two types with the same name but different enum-ness were never actually the same type). |
+| CA1311 | 1 | `TranslatorUtil.GetTemporaryVariableName`'s `.ToUpper()` on a random identifier character — fixed with `.ToUpperInvariant()`. |
+| S2933 | 2 | Constructor-only-assigned fields in `MakeArrayTypeNode.cs`/`NodeOutputTypePin.cs` — made `readonly` (mechanical, `dotnet format analyzers`). |
+
+No generated-code or JSON output changed byte-for-byte: every `CultureInfo`/`StringComparison` fix makes
+already-invariant-culture behavior explicit rather than changing it (the build and dev machines here run
+under the invariant/en-US locale already), confirmed by the golden fixtures and JSON schema being
+unchanged (`git status samples/ tests/NetPrints.Core.Tests/Fixtures` clean) and the full suite passing.
+
 ## Consequences
 
 - `dotnet build -c Release` is 0 warnings/errors; the curated rules above genuinely fail the build on a new
@@ -273,17 +344,18 @@ Every comment this batch and its predecessor added is one line, matching the sur
 - **Follow-up, not done here** (each a separate, dedicated batch):
   - `AnalysisMode=Recommended`, once its much larger set of newly-enabled rules has its own
     baseline/suppression pass.
-  - A much larger analyzer rule set was independently researched for a future batch — Async
-    (VSTHRD100/101/110/114/200, CA2007/2016 — several already landed here), Disposal (IDISP002/006/009/
-    016/025/026 — most already landed here — S3881/S3877), Constants (S109 at `error`, landed here
-    everywhere in `src/`), Nullability (CA1510–1513), Exceptions (CA2200/2201/2208 — CA2200 verified live
-    here — S2486/S108/S2139, CA1065), Strings/collections (CA1305/1307/1309/1310/1311, CA1002/2227,
-    CA1827/1829/1851/1860), Types (CA1852, S2933, CA2211), Logging (CA1848/2254/2017/1727), a
-    `Microsoft.CodeAnalysis.BannedApiAnalyzers` package banning sync-over-async APIs and
-    `DateTime.Now`/`Thread.Sleep`, two new Roslyn-parsed `SourceHygieneTests` facts
-    (`NoNullForgivingOperator`, `NoUnlistedSuppressions`). A follow-up batch lands the researched C# rule
-    set (research only so far, nothing landed from it beyond what this ADR already folded in), now that
-    this ADR's own severity policy and disposal-chain work give it a clean base to build on.
+  - ~~A much larger analyzer rule set was independently researched for a future batch~~ — **done** (see
+    "Follow-up batch: the researched rule set lands" above): Async (VSTHRD100/101/110/114/200,
+    CA2016/2012/1068), Disposal (IDISP002/006/009/016/025/026, S3881/S3877 — landed at `suggestion` by
+    the earlier revision above), Constants (S109 at `error` everywhere in `src/`), Nullability
+    (CA1510–1513), Exceptions (CA2200/2201/2208, S2486/S108/S2139, CA1065), Strings/collections
+    (CA1305/1307/1309/1310/1311, CA1002/2227, CA1827/1829/1851/1860), Types (CA1852, S2933, CA2211),
+    Logging (CA1848/2254/2017/1727) all landed at the severities/scoping above, every violation fixed for
+    real, no escape hatch triggered. `S1309` and `CA2007` from that research draft are skipped by design
+    (see above), not deferred. The remaining two items in that draft — the
+    `Microsoft.CodeAnalysis.BannedApiAnalyzers` package and the two `SourceHygieneTests` facts
+    (`NoNullForgivingOperator`, `NoUnlistedSuppressions`) — landed in the batch before this one (`RS0030`,
+    and the hygiene tests respectively). Nothing remains from the original research draft's table.
 
 ## References
 

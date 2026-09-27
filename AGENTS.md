@@ -139,7 +139,9 @@ is on); `[review]` means only the reviewer catches it (not promoted to `error` y
   `static readonly` in a documented static class for its domain, with `///` on every member (precedent:
   `TranslationDiagnosticCodes`, `ExtensionDiagnosticCodes`, `BuiltInNodeKinds`, `CSharpKeywords`), and
   referenced everywhere, tests included — grep for an existing one before adding it; never a private
-  per-file copy. Sizes, margins and colors go in AXAML resources. [S1192, S109, SourceHygieneTests]
+  per-file copy. Sizes, margins and colors go in AXAML resources. A repeated array literal passed as an
+  argument (not a single-use inline one) is hoisted to a `static readonly` field instead. [S1192, S109,
+  SourceHygieneTests, CA1861]
 
 ### Nullability
 - See "Nullable reference types" above: no `!`, `null!`, `default!`. Use `is null` / `is not null` and
@@ -177,7 +179,8 @@ is on); `[review]` means only the reviewer catches it (not promoted to `error` y
 - Log through `[LoggerMessage]` partials in the namespace's `Log` class (precedent:
   `NetPrints.Serialization/Log.cs`, `NetPrints.Editor/Hosting/Log.cs`) with constant PascalCase templates,
   and pass the exception as the exception argument. Libraries never write to `Console`; `Cli`, `Desktop`,
-  `Editor` and `Generator` are entry points, not libraries, and are exempt. [CA1848, CA2254, CA1727, RS0030]
+  `Editor` and `Generator` are entry points, not libraries, and are exempt. [CA1848, CA2254, CA2017,
+  CA1727, RS0030]
 - Follow `.editorconfig` and the file's existing naming. Constants are PascalCase; generic parameters are
   `T…`. [CA1715]
 
@@ -233,9 +236,10 @@ A batch prompt names the task range and pastes the task text; everything below a
   referenced everywhere — never repeat the literal (precedent: `ExtensionDiagnosticCodes`,
   `TranslationDiagnosticCodes`, `BuiltInNodeKinds`, ADR-0003). SonarAnalyzer.CSharp, IDisposableAnalyzers and
   Microsoft.VisualStudio.Threading.Analyzers run at `error` severity in `src/**.cs` for a curated rule set —
-  `S1192`/`S109`/`S1854`/`S1481`, every `IDISP001`–`IDISP026` rule, and every `VSTHRD` rule except
-  `VSTHRD111` — regardless of whether every one of them fires today, and at `suggestion` (a hint, won't fail
-  the build) for every other rule these packages ship, everywhere (including `tests/`); a Sonar rule this
+  `S1192`/`S109`/`S1854`/`S1481`/`S2486`/`S108` (`error`) and `S2139`/`S2933` (`warning`), every
+  `IDISP001`–`IDISP026` rule, and every `VSTHRD` rule except `VSTHRD111` — regardless of whether every one
+  of them fires today, and at `suggestion` (a hint, won't fail the build) for every other rule these
+  packages ship, everywhere (including `tests/`); a Sonar rule this
   `.editorconfig` does not name at all (a future package upgrade's new rule) keeps whatever severity the
   package ships it at instead — see ADR-0003 for the probe that verified this. `VSTHRD111` (ConfigureAwait)
   is `error` by default too, but `none` for code that deliberately resumes on the UI thread (view models,
