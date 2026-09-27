@@ -3448,11 +3448,45 @@ edited, so the diff between what was reviewed and what changed stays visible.
   each pass (red before the fix: printed only `0`), followed by a second, empty-body `ForLoopNode` (0..1)
   to cover a sequential second loop and an empty body, then a final print — asserts the run prints exactly
   `0`, `1`, `2`, `done`. No golden `.g.cs`/`.cs` fixture changed. Aside: the fixture sets both loops'
-  `InitialIndex` pin explicitly (`0`) to sidestep a separate, unrelated latent bug —
-  `ForLoopNode.InitialIndexPin` defaults to `UsesExplicitDefaultValue = true` (a `CallMethodNode`-argument
-  concept meaning "omit the argument"), so `GetPinIncomingValue` returns `null` for an unconnected
-  `InitialIndexPin` and `TranslateStartForLoopNode` interpolates it into `idx = ;` (invalid C#) — out of
-  scope here, not hit by any existing fixture or golden, left for its own bug report.
+  `InitialIndex` pin explicitly (`0`) to sidestep a separate, unrelated latent bug, since fixed (see
+  below).
+- Bug fixed: `ForLoopNode.InitialIndexPin` wrongly defaulted to `UsesExplicitDefaultValue = true` (a
+  `CallMethodNode`-argument concept meaning "omit the argument"), so `GetPinIncomingValue` returned
+  `null` for an unconnected `InitialIndexPin` and `TranslateStartForLoopNode` interpolated it into
+  `idx = ;` (invalid C#). Fixed at the model level: the constructor now sets
+  `InitialIndexPin.UnconnectedValue = 0` instead, the mechanism every other primitive-typed, non-argument
+  input pin already uses for its unconnected default. `UsesExplicitDefaultValue`/`ExplicitDefaultValue`
+  are not serialized per pin (recomputed from `MethodSpecifier` on `CallMethodNode` construction), but
+  `UnconnectedValue` *is* (`DocumentMapper.BuildPinStates`, same as `LiteralNode`), so this did ripple
+  into serialization: `tests/NetPrints.Core.Tests/Fixtures/AllNodes/AllNodes.Everything.netpc.json` gained
+  one new pin-state line (`in.data.InitialIndex`: `0`) to stay DF-T03 byte-identical with the mapper's own
+  canonical re-save (computed via a temporary throwaway test, byte-diffed, then removed — same technique
+  Locals used), and the golden `tests/NetPrints.Core.Tests/Fixtures/Golden/AllNodes.Everything.cs` changed
+  by exactly the one line the bug was about (`varIndex = ;` → `varIndex = 0;`, regenerated with
+  `NETPRINTS_UPDATE_SNAPSHOTS=1` scoped to `GoldenCSharpTests`) — that golden had captured the bug's own
+  invalid output, undetected, since nothing ever compiled it. Grepped every built-in node constructor for
+  the same misuse: `ForLoopNode` was the only non-`CallMethodNode` site setting
+  `UsesExplicitDefaultValue`. Tests:
+  `MethodTranslatorTests.TestForLoopTranslationInitializesUnconnectedInitialIndexToZero`
+  (`tests/NetPrints.Core.Tests/Translator/MethodTranslatorTests.cs`; red before the fix, reproducing
+  `varIndex = ;` from the existing `forLoopMethod` fixture, which already left `InitialIndexPin`
+  unconnected but was never asserted on); `GoldenCompileTests.ForLoopWithUnconnectedInitialIndexCompiles`
+  (below) as a second, Roslyn-level guard.
+- Regression guard added: `tests/NetPrints.Core.Tests/Characterization/GoldenCompileTests.cs`. The
+  `AllNodes.Everything.cs` golden capturing invalid C# went undetected because `GoldenCSharpTests`/
+  `RoundTripTests`/`EmitterTests` only string-compare a translation against the golden, never compile
+  either one. `GoldenCompileTests` Roslyn-compiles (mirrors `ExtensionTestSupport.Compile`) every
+  `Fixtures/Golden/*.cs` body that is standalone-compilable — `HelloWorld.Program.cs`, `Locals.cs`, and
+  `EventGraphs.GameEvents.cs` alongside its hand-written `EventBase.cs` companion (its declared super
+  type) — plus a synthetic minimal class built directly from a `ForLoopNode` with an unconnected
+  `InitialIndexPin`, proven red (`CS1525: Invalid expression term ';'`) before this fix and green after.
+  **`AllNodes.Everything.cs` is excluded from this guard**: it has two pre-existing compile errors
+  unrelated to this bug, confirmed by compiling it standalone — `CS1721` (`class Everything<T> :
+  System.Object, System.Object`, a duplicate base-class entry emitted by the class translator/emitter
+  for a generic class with no explicit interfaces) and `CS0273`/`CS0274` (the `Items` property is
+  `private` but its `get`/`set` accessors are both emitted `public`, which C# forbids). Neither is caused
+  or touched by this batch; left for a follow-up batch to fix and then fold `AllNodes.Everything.cs` into
+  `GoldenCompileTests` too.
 - Decision (`Locals` fixture, `tests/NetPrints.Core.Tests/Fixtures/Locals/Locals.netpc.json`, no
   namespace so `cls.FullName == "Locals"` matches the golden's literal name): a hand-loop, not
   `ForLoopNode` (the bug above) — `MethodEntry → CallMethod(op_LessThan, count < 5) → IfElse →`
@@ -3486,7 +3520,7 @@ edited, so the diff between what was reviewed and what changed stays visible.
   gained `LocalVariableRefRoundTrips` (`ToSpecifier() → ToRef() → FromRef()`), `Samples/LocalVariableBuildTests.cs`
   (real build/run).
 - Open questions for the Opus review: (1) the `ForLoopNode` bug above is now fixed (see the "Bug fixed"
-  entry above) — the only remaining open item from it is the separate, unrelated `InitialIndexPin`
-  default-value bug noted there, filed for its own bug report; (2) `GetSetChooserVM.Open`'s new
+  entry above), including the separate `InitialIndexPin` default-value bug it noted (also now fixed, see
+  its own "Bug fixed" entry); (2) `GetSetChooserVM.Open`'s new
   null-`DeclaringType` branch is a minimal, currently-unreachable stopgap — T087 should confirm it still
   makes sense once the Variables panel can actually drag a local onto the canvas, rather than assuming it.

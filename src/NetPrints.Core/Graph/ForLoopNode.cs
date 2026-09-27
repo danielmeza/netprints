@@ -86,8 +86,7 @@ namespace NetPrints.Graph
 
             AddOutputDataPin("Index", TypeSpecifier.FromType<int>());
 
-            InitialIndexPin.UsesExplicitDefaultValue = true;
-            InitialIndexPin.ExplicitDefaultValue = 0;
+            InitialIndexPin.UnconnectedValue = 0;
         }
 
         /// <summary>

@@ -181,6 +181,7 @@
             "$kind": "forLoop",
             "id": "n000000001pxrm",
             "pins": [
+              { "pin": "in.data.InitialIndex", "value": { "type": "System.Int32", "value": "0" } },
               { "pin": "in.data.MaxIndex", "value": { "type": "System.Int32", "value": "10" } }
             ]
           },

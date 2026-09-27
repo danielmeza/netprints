@@ -51,7 +51,7 @@ namespace AllNodes
             }
 
             // For Loop
-            varIndex = ;
+            varIndex = 0;
             if (varIndex < 10)
             {
                 jumpStack.Push(2);
