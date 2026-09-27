@@ -7,6 +7,8 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using NetPrints.Core;
+using NetPrints.Editor.CodeView;
+using NetPrints.Editor.ErrorList;
 using NetPrints.Editor.Events;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Hosting;
@@ -35,7 +37,7 @@ public enum InspectorKind
 /// <summary>
 /// View model of a class editor window (PAR-22..37, PAR-60).
 /// </summary>
-public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGraphMessage>, IDisposable
+public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGraphMessage>, IRecipient<NavigateToNodeMessage>, IDisposable
 {
     internal static readonly IReadOnlyList<MemberVisibility> Visibilities =
     [
@@ -50,7 +52,6 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     private readonly HashSet<Node> dirtyTrackedNodes = [];
     private readonly HashSet<NodePin> dirtyTrackedPins = [];
     private readonly HashSet<INotifyCollectionChanged> dirtyTrackedPinCollections = [];
-    private IDisposable? generatedCodeLoop;
 
     /// <summary>Longest retained Output text, in characters (roughly 1 MB): older lines are
     /// dropped, oldest first, once exceeded.</summary>
@@ -82,7 +83,8 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         Class = cls;
         Context = context;
         Messenger = context.CreateMessenger();
-        Messenger.Register(this);
+        // RegisterAll, not Register: this implements more than one IRecipient<T>.
+        Messenger.RegisterAll(this);
 
         Methods = new ObservableViewModelCollection<MethodVM, MethodGraph>(cls.Methods, m => new MethodVM(m, cls));
         Constructors = new ObservableViewModelCollection<MethodVM, ConstructorGraph>(cls.Constructors, c => new MethodVM(c, cls));
@@ -90,6 +92,8 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
             v => new MemberVariableVM(v, this), v => v.Dispose());
         EventGraphs = new ObservableViewModelCollection<EventGraphVM, EventGraph>(cls.EventGraphs, g => new EventGraphVM(g, cls));
         VariablesPanel = new VariablesPanelVM(this);
+        CodeView = new CodeViewVM(cls, context.CodeAnalysis);
+        ErrorList = new ErrorListVM(cls, context.CodeAnalysis, Messenger);
 
         cls.Variables.CollectionChanged += OnMembersChanged;
         cls.Methods.CollectionChanged += OnMembersChanged;
@@ -106,7 +110,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
 
         // Dirty tracking (editor-services.md §3, data-model.md §2): every applied undo/redo command
         // edits the model.
-        UndoRedo.Applied += (_, _) => Class.MarkDirty();
+        UndoRedo.Applied += (_, _) => MarkDirty();
 
         context.Reflection.Reloaded += OnReflectionReloaded;
         context.Processes.OutputReceived += OnProcessOutputReceived;
@@ -120,7 +124,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
             .Subscribe(batch => Context.Dispatcher.Post(() => AppendOutput(batch)));
 
         RefreshOverridableMethods();
-        RefreshGeneratedCode();
+        RequestCodeAnalysis();
     }
 
     /// <summary>The wrapped model class.</summary>
@@ -153,6 +157,12 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     /// <summary>The Variables panel's "Class" and "Method: &lt;name&gt;" groups (FR-030, US5).</summary>
     public VariablesPanelVM VariablesPanel { get; }
 
+    /// <summary>The read-only C# code view of the class inspector (US6, FR-031..035).</summary>
+    public CodeViewVM CodeView { get; }
+
+    /// <summary>The class editor's Errors tab (US6, FR-032, FR-034).</summary>
+    public ErrorListVM ErrorList { get; }
+
     /// <summary>The graph shown in the canvas, or null.</summary>
     [ObservableProperty]
     public partial NodeGraphVM? OpenedGraph { get; set; }
@@ -177,10 +187,6 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowMethodInspector))]
     public partial MethodVM? SelectedMethod { get; set; }
-
-    /// <summary>Generated C# of the class, refreshed about every second (PAR-34).</summary>
-    [ObservableProperty]
-    public partial string GeneratedCode { get; set; } = "";
 
     /// <summary>
     /// stdout/stderr of every program Run has started (PAR-10), across every open class window
@@ -220,7 +226,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
             if (Class.Name != value)
             {
                 Class.Name = value;
-                Class.MarkDirty();
+                MarkDirty();
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(Title));
                 OnPropertyChanged(nameof(FullName));
@@ -237,7 +243,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
             if (Class.Namespace != value)
             {
                 Class.Namespace = value;
-                Class.MarkDirty();
+                MarkDirty();
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(FullName));
             }
@@ -253,7 +259,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
             if (Class.Visibility != value)
             {
                 Class.Visibility = value;
-                Class.MarkDirty();
+                MarkDirty();
                 OnPropertyChanged();
             }
         }
@@ -268,7 +274,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
             if (Class.Modifiers != value)
             {
                 Class.Modifiers = value;
-                Class.MarkDirty();
+                MarkDirty();
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(IsSealed));
                 OnPropertyChanged(nameof(IsAbstract));
@@ -322,6 +328,26 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     public void OpenGraph(NodeGraph graph) => OpenedGraph = new NodeGraphVM(graph, this);
 
     void IRecipient<OpenGraphMessage>.Receive(OpenGraphMessage message) => OpenGraph(message.Graph);
+
+    /// <summary>
+    /// Opens the graph <see cref="NavigateToNodeMessage.GraphKey"/> resolves to (if not already
+    /// open) and reveals <see cref="NavigateToNodeMessage.NodeId"/> (FR-034, ED-T03). Does nothing
+    /// when the key does not resolve (the class changed since the diagnostic was reported).
+    /// </summary>
+    void IRecipient<NavigateToNodeMessage>.Receive(NavigateToNodeMessage message)
+    {
+        if (GraphKeys.Resolve(Class, message.GraphKey) is not { } graph)
+        {
+            return;
+        }
+
+        if (OpenedGraph is null || OpenedGraph.Graph != graph)
+        {
+            OpenGraph(graph);
+        }
+
+        OpenedGraph?.RevealNode(message.NodeId);
+    }
 
     // Model changes, including undo and redo, can remove what the inspector or the canvas shows.
     // The editor reacts to the model instead of each command cleaning up after itself.
@@ -460,7 +486,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     private void OnDirtyTrackedGraphNodesChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         SyncDirtyTrackingNodes();
-        Class.MarkDirty();
+        MarkDirty();
     }
 
     private void SyncDirtyTrackingNodes()
@@ -522,46 +548,32 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     private void OnDirtyTrackedPinsChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         SyncDirtyTrackingPins();
-        Class.MarkDirty();
+        MarkDirty();
     }
 
-    private void OnDirtyTrackedPinPropertyChanged(object? sender, PropertyChangedEventArgs e) => Class.MarkDirty();
+    private void OnDirtyTrackedPinPropertyChanged(object? sender, PropertyChangedEventArgs e) => MarkDirty();
 
+    // Position alone never changes the generated code (the translator ignores it), so a pure pan or
+    // drag only needs a save, not a re-analysis.
     private void OnDirtyTrackedNodePositionChanged(Node node, double positionX, double positionY) => Class.MarkDirty();
 
     private ClassTranslator NewTranslator() => new(Context.Extensions.Current.Translation);
 
-    /// <summary>Translates the class to C# now (the loop calls this about every second).</summary>
-    public void RefreshGeneratedCode()
+    /// <summary>Marks the class dirty and requests a live-analysis refresh (FR-032, SC-006): the
+    /// single place every model edit that can change the generated code funnels through.</summary>
+    private void MarkDirty()
     {
-        string code;
-        try
-        {
-            code = NewTranslator().TranslateClass(Class);
-        }
-        catch (Exception ex)
-        {
-            code = ex.ToString();
-        }
-
-        GeneratedCode = code;
+        Class.MarkDirty();
+        RequestCodeAnalysis();
     }
 
-    /// <summary>
-    /// Starts refreshing <see cref="GeneratedCode"/> about every second until the editor is disposed.
-    /// Replaces the WPF editor's timer thread + dispatcher.
-    /// </summary>
-    /// <remarks>
-    /// The translation runs on the UI thread on purpose: the model is not thread-safe, and the WPF
-    /// editor's background translation raced with edits. On very large classes this can stutter
-    /// about once a second; translating a snapshot off the UI thread is a P8 performance item.
-    /// </remarks>
-    public void StartGeneratedCodeLoop()
+    /// <summary>Requests live analysis of the project's current classes, if the class belongs to one.</summary>
+    private void RequestCodeAnalysis()
     {
-        // On the context's code-refresh scheduler, so tests drive it in virtual time (or silence
-        // it entirely, e.g. a snapshot test capturing the preview it would otherwise race).
-        generatedCodeLoop ??= Observable.Interval(TimeSpan.FromSeconds(1), Context.CodeRefreshScheduler)
-            .Subscribe(_ => Context.Dispatcher.Post(RefreshGeneratedCode));
+        if (Project is { } project)
+        {
+            Context.CodeAnalysis.RequestAnalysis(project);
+        }
     }
 
     // Toolbar (PAR-23)
@@ -802,14 +814,15 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     private bool CanRedo() => UndoRedo.CanRedo;
 
     /// <summary>
-    /// Stops the generated-code loop and output buffering, unsubscribes from every model and host
-    /// event, clears <see cref="OpenedGraph"/>, and disposes the method/constructor/variable
-    /// collections (and, through them, every member view model).
+    /// Stops output buffering, disposes <see cref="CodeView"/> and <see cref="ErrorList"/>,
+    /// unsubscribes from every model and host event, clears <see cref="OpenedGraph"/>, and disposes
+    /// the method/constructor/variable collections (and, through them, every member view model).
     /// </summary>
     [SuppressMessage("IDisposableAnalyzers.Correctness", "IDISP003", Justification = "ADR-0003: OnOpenedGraphChanged (the generated property hook) disposes the old value.")]
     public void Dispose()
     {
-        generatedCodeLoop?.Dispose();
+        CodeView.Dispose();
+        ErrorList.Dispose();
         outputFlush?.Dispose();
         outputReceived.Dispose();
 

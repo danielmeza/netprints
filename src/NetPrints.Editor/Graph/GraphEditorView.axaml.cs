@@ -26,6 +26,7 @@ public partial class GraphEditorView : UserControl
     private Point? rightPressPosition;
     private object? backButtonTarget;
     private TopLevel? keyboardTopLevel;
+    private NodeGraphVM? revealSubscription;
 
     /// <summary>
     /// Loads the control's XAML and wires the pointer, drag/drop and connection-completed handlers
@@ -142,15 +143,35 @@ public partial class GraphEditorView : UserControl
     /// <summary>Where a keyboard-triggered node search creates its node (ADR-0004): the selected node's position, or the canvas center.</summary>
     private GraphPoint FallbackGraphPosition() => SelectedNode?.Location ?? ToGraph(CanvasCenterPoint);
 
-    /// <summary>Resets the viewport to zoom 1 and the origin when a new graph is opened (PAR-51).</summary>
+    /// <summary>Resets the viewport to zoom 1 and the origin when a new graph is opened (PAR-51),
+    /// and follows the new graph's <see cref="NodeGraphVM.NodeRevealRequested"/> (FR-034, ED-T03).</summary>
     /// <param name="e">Unused; forwarded to the base implementation.</param>
     protected override void OnDataContextChanged(EventArgs e)
     {
         base.OnDataContextChanged(e);
 
+        if (revealSubscription is { } previous)
+        {
+            previous.NodeRevealRequested -= OnNodeRevealRequested;
+        }
+
+        revealSubscription = ViewModel;
+        if (revealSubscription is { } current)
+        {
+            current.NodeRevealRequested += OnNodeRevealRequested;
+        }
+
         // Opening another graph resets the view (PAR-51).
         Editor.ViewportZoom = 1;
         Editor.ViewportLocation = new Point(0, 0);
+    }
+
+    /// <summary>Centers the viewport on a revealed node (FR-034, ED-T03).</summary>
+    private void OnNodeRevealRequested(object? sender, NodeVM node)
+    {
+        var center = CanvasCenterPoint;
+        double zoom = Editor.ViewportZoom;
+        Editor.ViewportLocation = new Point(node.Location.X - center.X / zoom, node.Location.Y - center.Y / zoom);
     }
 
     private void SyncGrid()

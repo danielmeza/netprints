@@ -212,6 +212,9 @@ public sealed class AutomationTree : IDisposable
                 p[AutomationPropertyNames.IsReadOnly] = textBox.IsReadOnly.ToString();
                 p[AutomationPropertyNames.Placeholder] = textBox.PlaceholderText;
                 break;
+            case NetPrints.Editor.CodeView.CodeView codeView:
+                p[AutomationPropertyNames.IsReadOnly] = codeView.Editor.IsReadOnly.ToString();
+                break;
             case NodifyEditor editor:
                 p[AutomationPropertyNames.ViewportZoom] = Invariant(editor.ViewportZoom);
                 p[AutomationPropertyNames.ViewportX] = Invariant(editor.ViewportLocation.X);
@@ -287,6 +290,7 @@ public sealed class AutomationTree : IDisposable
         Window window => window.Title,
         TextBlock textBlock => textBlock.Text,
         TextBox textBox => textBox.Text,
+        NetPrints.Editor.CodeView.CodeView codeView => codeView.Editor.Text,
         AutoCompleteBox autoComplete => autoComplete.Text,
         ComboBox comboBox => comboBox.SelectedItem?.ToString(),
         ContentControl { Content: string text } => text,

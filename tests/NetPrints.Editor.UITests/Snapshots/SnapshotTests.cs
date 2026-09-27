@@ -75,7 +75,7 @@ public class SnapshotTests
 
         await page.ClassButton.ClickAsync(Token);
         await page.ClassInspector.WaitVisibleAsync(Token);
-        await page.ClassInspector.GeneratedCode.WaitUntilAsync(e => (e.Text ?? "").Contains("class Program"), "generated code", Token);
+        await page.ClassInspector.CodeView.WaitUntilAsync(e => (e.Text ?? "").Contains("class Program"), "generated code", Token);
         Store.Match("inspector-class", await page.InspectorColumn.ScreenshotAsync(Token));
     }
 

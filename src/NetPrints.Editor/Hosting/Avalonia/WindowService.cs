@@ -63,7 +63,6 @@ public sealed class WindowService : IWindowService
         };
 
         windows[editor.Class] = window;
-        editor.StartGeneratedCodeLoop();
         window.Show();
     }
 

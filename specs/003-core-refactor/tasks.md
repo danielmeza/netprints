@@ -179,9 +179,9 @@ Checkpoint E (plan.md). Out of scope (follow-ups, do not implement): `netprints 
 - [x] T092 [US6] `src/NetPrints.Editor/Diagnostics/ICodeAnalysisHost.cs`, `CodeAnalysisHost.cs` (log 1060, see decisions); `EditorContext.CodeAnalysis`; ED-T02 (virtual time)
 - [x] T093 [US6] Bundle Cascadia Mono (OFL + license) in `src/NetPrints.Editor/Assets/Fonts/`
 - [x] T094 [US6] `CodeView/CodeViewVM.cs`, `CodeView.axaml(.cs)`, `SquiggleRenderer.cs`, `RoslynFoldingStrategy.cs`; AvaloniaEdit style include; theme switch; plain-text fallback
-- [ ] T095 [US6] Replace the TextBox in `src/NetPrints.Editor/Inspectors/ClassInspectorView.axaml` (`AutomationIds.ClassInspectorCodeView`); page objects
-- [ ] T096 [US6] `ErrorListVM`, `DiagnosticRowVM`, `NavigateToNodeMessage`; bind the Errors tab; navigation + `NodeGraphVM.RevealNode`; ED-T03 (VM), ED-T04
-- [ ] T097 [US6] Headless ED-T01, ED-T03, ED-T05 in `tests/NetPrints.Editor.UITests/CodeView/CodeViewTests.cs`; regenerate/review baselines; **Checkpoint I** (SC-006 recorded)
+- [x] T095 [US6] Replace the TextBox in `src/NetPrints.Editor/Inspectors/ClassInspectorView.axaml` (`AutomationIds.ClassInspectorCodeView`); page objects
+- [x] T096 [US6] `ErrorListVM`, `DiagnosticRowVM`, `NavigateToNodeMessage`; bind the Errors tab; navigation + `NodeGraphVM.RevealNode`; ED-T03 (VM), ED-T04
+- [x] T097 [US6] Headless ED-T01, ED-T03, ED-T05 in `tests/NetPrints.Editor.UITests/CodeView/CodeViewTests.cs`; regenerate/review baselines; **Checkpoint I** (SC-006 recorded)
 
 ## Phase 10: User Story 7 — maintainability follow-ups (P3) (sub-phase J)
 

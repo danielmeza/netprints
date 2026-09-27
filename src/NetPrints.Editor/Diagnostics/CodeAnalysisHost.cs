@@ -18,6 +18,14 @@ namespace NetPrints.Editor.Diagnostics;
 /// resources per compilation-and-diagnostics.md §3, so recreating it needs no disposal, and reusing a
 /// stale one across a snapshot change would analyze against the wrong references); a session already
 /// loaded when this host is constructed is adopted immediately, not only on the next reload.
+/// Batch I3 decision: construction does real work (loading every reference's metadata and
+/// documentation, parsing the project's other sources) but it is small — measured ~30 ms for a
+/// realistic 167-reference set — and moving it to a background <c>Task.Run</c> was tried and reverted:
+/// with the session recreated on every <see cref="IReflectionHost.Reloaded"/>, back-to-back reloads
+/// (already exercised by the test suite's shared fixtures running in parallel) race the background
+/// build against the next reload, and a version guard that drops a superseded build can leave
+/// <see cref="session"/> stale or briefly <see langword="null"/> instead of always reflecting the
+/// latest snapshot synchronously. Kept synchronous on the calling (UI) thread.
 /// </summary>
 public sealed class CodeAnalysisHost : ICodeAnalysisHost
 {

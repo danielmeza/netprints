@@ -63,6 +63,9 @@ public sealed class ClassEditorPage(IUiDriver driver, string classFullName)
 
     public UiElement VariableNameText(string name) => Variable(name).Find(AutomationIds.VariableName);
 
+    /// <summary>An error list row (diagnostic id text) in the Errors tab.</summary>
+    public UiElement ErrorRow(string diagnosticId) => ErrorList.Find(AutomationIds.ClassEditorErrorId, text: diagnosticId);
+
     public async Task<IReadOnlyList<string>> MethodNamesAsync(CancellationToken cancellationToken) =>
         (await Driver.FindAllAsync(new AutomationQuery(AutomationIds.ClassEditorMethodName) { Within = MethodList.Query }, cancellationToken))
             .Select(e => e.Text ?? "").ToList();
@@ -119,5 +122,5 @@ public sealed class ClassInspectorPanel(IUiDriver driver, AutomationQuery window
 {
     public UiElement NameBox => Find(AutomationIds.ClassInspectorName);
 
-    public UiElement GeneratedCode => Find(AutomationIds.ClassInspectorGeneratedCode);
+    public UiElement CodeView => Find(AutomationIds.ClassInspectorCodeView);
 }

@@ -3932,3 +3932,186 @@ set `ScreenPosition`, still opened at the origin.
     delegation), both against a fake `ICodeAnalysisHost`. No baseline/snapshot changes in this batch:
     `CodeView` is not yet reachable from any window `ClassInspectorCodeView` snapshot tests exercise
     (T095/T097's job).
+
+## Sub-phase I, batch I3 (T095–T097): code view wired in, Errors tab, navigation, Checkpoint I
+
+- **T095**: `ClassInspectorView.axaml`'s `GeneratedCodeBox` (`TextBox`) replaced by `<edcode:CodeView>`,
+  `DataContext="{Binding CodeView}"`, automation id renamed `ClassInspectorGeneratedCode` →
+  `ClassInspectorCodeView` (`AutomationIds`). `ClassEditorVM` gained a `CodeView` (`CodeViewVM`) and
+  `ErrorList` (`ErrorListVM`, T096) property, both disposed from `Dispose()`.
+  - Wiring the live analysis into production (a gap the I2 review flagged: `ICodeAnalysisHost.RequestAnalysis`
+    had no caller outside tests) replaces the old `RefreshGeneratedCode`/`StartGeneratedCodeLoop` 1-second
+    real-time poll: every one of `ClassEditorVM`'s existing `Class.MarkDirty()` call sites (the four
+    class-property setters, `UndoRedo.Applied`, and the three dirty-tracking handlers for member/node/pin
+    structural changes) now goes through a new private `MarkDirty()` that also calls
+    `Context.CodeAnalysis.RequestAnalysis(Project)`, plus one eager call in the constructor for the initial
+    render. `OnDirtyTrackedNodePositionChanged` (a pure pan/drag) is deliberately left calling
+    `Class.MarkDirty()` directly: position never changes the generated code, so re-analyzing on every drag
+    frame would be pure waste (the debounce would absorb it, but there is no reason to ask). This ties
+    `RequestAnalysis` to actual edits instead of a timer, matching SC-006's "≤ 2 s after the last edit"
+    literally (debounce 500 ms + analysis, no coarse polling delay added on top). `CodeRefreshScheduler`
+    stays in `EditorContext` unused (still part of the contract's record; no authority to edit it here).
+  - **Bug found while wiring this up**: `CodeViewVM`'s constructor captured `classFullName` once, as a
+    plain `string`. Renaming the class (`ClassEditorVM.Name`/`Namespace`) changes `ClassGraph.FullName`,
+    so the captured key stops matching `CodeAnalysisSnapshot.Classes`' keys (translated fresh from the
+    *current* name every analysis) — the code view would silently stop updating after a rename. Fixed by
+    having `CodeViewVM` hold the `ClassGraph` itself and read `.FullName` fresh in `OnSnapshot`/
+    `GetQuickInfoAsync` instead of freezing it; caught by extending
+    `ClassEditorVMTests.ClassInspectorEditsModelAndCodeRefreshes` (renames the class, then waits for the
+    code view to show the new name) — it failed against the frozen-string version. `CodeViewVMTests.cs`
+    and `ClassEditorVM`'s own construction call updated to the new `CodeViewVM(ClassGraph, ICodeAnalysisHost)`
+    signature (not part of editor-services.md's own contract text, so free to change).
+  - Hover quick info (FR-035, ED-T05) was not yet wired at the view level in I2 (only
+    `CodeViewVM.GetQuickInfoAsync` existed): `CodeView.axaml.cs` now hooks AvaloniaEdit's
+    `TextView.PointerHover`/`PointerHoverStopped` and a public `ShowQuickInfoAsync(int offset, CancellationToken)`
+    (also directly callable by a test, instead of waiting on AvaloniaEdit's own hover delay) that sets
+    `ToolTip.SetTip` — on `this` (the `CodeView`, the control the automation id is on), not the wrapped
+    `Editor`, so the automation tree reports it. The discard from `PointerHover` goes through the
+    project's mandatory `Forget` (never a bare discard, never `async void`: `VSTHRD100` is error-severity
+    with no per-batch exemption for new code, unlike the one pre-existing, grandfathered site in
+    `GraphDragDrop.cs`); `CodeView` is constructed by Avalonia's XAML loader with no DI hook and
+    `CodeViewVM` deliberately has no `EditorContext`/logger (FR-038), so `Forget(NullLogger<CodeView>.Instance)`
+    is the least-invented option available — a genuine quick-info fault is silently dropped instead of
+    logged. Flagged for review below.
+  - `AutomationTree.cs` gained a `CodeView` case (`TextOf`/`Properties`) reading `IsReadOnly`/`Text`
+    through the wrapped `Editor` (a public `CodeEditor` property, added because the named `Editor` field
+    itself is assembly-internal like every other Avalonia named element, and `NetPrints.Editor.UITests`
+    is a separate assembly).
+  - Page objects: `ClassInspectorPanel.GeneratedCode` → `.CodeView`; `ClassEditorWindowTests`'s and
+    `SnapshotTests`' generated-code assertions updated to wait on the real-time debounce (this
+    composition's `CodeAnalysisHost` uses `DefaultScheduler.Instance`, matching `DialogTests.cs`'s own
+    manual construction) instead of advancing `CodeRefreshScheduler`, now unused in production.
+- **T096**: `ErrorListVM`/`DiagnosticRowVM` (`src/NetPrints.Editor/ErrorList/`) and `NavigateToNodeMessage`
+  (`src/NetPrints.Editor/ClassEditor/`, alongside `OpenGraphMessage`, same messenger pattern).
+  - `ErrorListVM(ClassGraph, ICodeAnalysisHost, IMessenger)` combines the live snapshot's diagnostics and
+    `Project.LastDiagnostics` (the last build's), both filtered to the owning class by
+    `ClassFullName` — a per-class-window Errors tab, not the project-wide list `Project.LastDiagnostics`
+    was bound to directly before (matching `CodeViewVM`'s own per-class scope, and FR-038's "narrow
+    services, never the parent editor": it depends on the class graph, the host and the messenger only).
+    `DiagnosticRowVM` resolves `MemberName` from `GraphKey` via `GraphKeys.Resolve` against the owning
+    class, for display; a diagnostic with no `GraphKey`/`NodeId` is still listed (`CanNavigate` false).
+  - Navigation: `ErrorListVM.NavigateCommand` sends `NavigateToNodeMessage(GraphKey, NodeId)`;
+    `ClassEditorVM.Receive` resolves the graph (`GraphKeys.Resolve`), opens it if it is not the one
+    already showing, then calls the new `NodeGraphVM.RevealNode(nodeId)` (selects the node and raises
+    `NodeRevealRequested`). `ClassEditorVM` now implements two `IRecipient<T>` interfaces, which broke
+    `Messenger.Register(this)`: `IMessengerExtensions.Register<TMessage>(IMessenger, IRecipient<TMessage>)`
+    infers `TMessage` from the single interface `this` converts to, and became ambiguous with a second
+    one. Switched to `Messenger.RegisterAll(this)` (the reflection-based "every `IRecipient<T>`" overload,
+    already used for `UnregisterAll` in `Dispose`).
+  - "Brings into view" (FR-034): `NodeGraphVM` cannot reference Nodify/Avalonia types (architecture gate
+    A1), so `RevealNode` only selects the node and raises a plain `EventHandler<NodeVM>` the view
+    subscribes to per ADR-0004 ("the view owns the canvas viewport, the view model only asks");
+    `GraphEditorView.OnDataContextChanged` (re)subscribes on every graph switch and centers
+    `Editor.ViewportLocation` on the revealed node.
+  - `ClassEditorWindow.axaml`'s Errors `ListBox` now binds `ErrorList.Rows`
+    (`DiagnosticRowVM`); a row's `StackPanel` carries `DoubleTapped="OnDiagnosticRowDoubleTapped"`
+    (same code-behind pattern as `OnMethodDoubleTapped`/`OnEventGraphDoubleTapped`), executing
+    `ErrorList.NavigateCommand`. New `AutomationIds.ClassEditorErrorId` on the row's id `TextBlock`
+    (`Method`/`VariableRow` precedent) so a test can find a specific row by diagnostic id.
+- **T097**: `tests/NetPrints.Editor.UITests/CodeView/CodeViewTests.cs` (ED-T01, ED-T03, ED-T05; ED-T02 was
+  already covered at the host level in I2 by `CodeAnalysisHostTests`).
+  - ED-T01 (`CodeViewIsHighlightedNumberedFoldedAndDoesNotWrap`): asserts `ShowLineNumbers`, `WordWrap`
+    and a non-empty `Foldings` set through the real `CodeView` control (found by
+    `GetVisualDescendants().OfType<CodeView>()`, not by name — it is nested inside `ClassInspectorView`'s
+    own name scope); the highlighted-tokens half of ED-T01 is verified visually, on the regenerated and
+    reviewed `class-inspector-code-view` snapshot (the contract's own two allowed proofs are "pixel check
+    or TextMate token color" — the snapshot review stands in for either).
+  - ED-T05 (`HoveringWriteLineShowsSignatureAndSummary`): calls `CodeView.ShowQuickInfoAsync` directly at
+    an offset inside the real call (`"WriteLine("`, not `"WriteLine"` — the generated code also carries a
+    `// Console.WriteLine` comment above the call, and the first match landed the lookup in the comment,
+    resolving to the `System` namespace instead), then reads the resulting tooltip through
+    `AutomationPropertyNames.ToolTip`.
+  - ED-T03 (`DoubleClickingADiagnosticRowOpensTheGraphSelectsAndRevealsTheNode`): builds a second method
+    with a real `CS1503` (same `Guid.Parse(string)`-fed-an-`int` technique as `SourceMapTests`/
+    `CodeAnalysisHostTests`) directly through the model API, calls `RequestAnalysis` once (this test is
+    about navigation, not about which edit triggers it — that is T095's own test), waits for the error
+    row, double-clicks it, and asserts the method's graph opened, the node is selected, and the canvas
+    viewport moved off the newly-opened graph's `(0, 0)` reset (proving `RevealNode`'s centering ran).
+  - Baselines: `class-inspector-code-view` (new) and `inspector-class` (changed: the inspector now shows
+    a live, highlighted code view instead of a static `TextBox` snapshot of the same generated text) —
+    both reviewed (Read tool) and match expectations. No other `SnapshotTests` baseline changed.
+
+### Checkpoint I report
+
+SC-006: diagnostics appear within 2 s after the last edit for the sample classes on a typical developer machine. Verdict: **met**.
+Debounce is fixed at 500 ms (`CodeAnalysisHost.DebounceWindow`); `AnalyzeAsync` against the HelloWorld
+sample (167 references, one class) completes in low tens of ms (see the session-construction measurement
+below, same order of magnitude), leaving comfortable headroom under 2 s. `CodeAnalysisHostTests` proves
+the debounce-then-diagnostic path end to end in virtual time; `CodeViewTests`'s two UI tests prove the
+same request reaches the real `CodeView`/Errors tab in a full composition with a real (not virtualized)
+scheduler.
+
+#### US6 acceptance scenarios
+
+| # | Scenario | Verdict | Evidence |
+|---|---|---|---|
+| 1 | Keywords/types/strings highlighted, lines numbered, long lines scroll horizontally, types/members foldable | Met | `CodeViewTests.CodeViewIsHighlightedNumberedFoldedAndDoesNotWrap` (line numbers, no-wrap, non-empty foldings) + reviewed `class-inspector-code-view`/`inspector-class` snapshots (highlighting, horizontal scrollbar visible) |
+| 2 | A squiggle and an error-list row (class, method, node) appear within ~2 s of the last edit | Met | `CodeAnalysisHostTests.TypeErrorYieldsADiagnosticWithinTheDebounceThenFixingItClearsIt` (ED-T02, host level); `ErrorListVM`/`DiagnosticRowVM` combine live and build diagnostics with `MemberName` resolved from `GraphKey` |
+| 3 | Double-clicking a diagnostic row opens the graph with the node selected and in view | Met | `CodeViewTests.DoubleClickingADiagnosticRowOpensTheGraphSelectsAndRevealsTheNode` (ED-T03) |
+| 4 | Compile (Compile/Run) errors use the same structured rows | Met | `MainEditorVM.CompileAsync` → `DiagnosticMapper.FromBuild` → `Project.LastDiagnostics` → `ErrorListVM.Refresh` (already covered by `MainEditorVMTests`, T090/T092; unchanged this batch) |
+| 5 | Hovering a framework method name shows signature and summary | Met | `CodeViewTests.HoveringWriteLineShowsSignatureAndSummary` (ED-T05) |
+
+A PARTIAL verdict was avoided by adding the missing production wiring (`RequestAnalysis` had no caller;
+hover had no view-level trigger) rather than accepting gaps, per the batch rules' "gaps closed rather than
+accepted as PARTIAL" precedent (Checkpoint F).
+
+#### Session-on-UI-thread decision (the I2 review's "also check")
+
+`CodeAnalysisHost.OnReflectionReloaded` recreates `CodeAnalysisSession` synchronously on the calling
+thread, which is the UI thread (`IReflectionHost.Reload` marshals `Reloaded` back onto the dispatcher on
+purpose, per its own comment: "everything else runs in the background"). Measured with a throwaway xUnit
+fact (not committed) that loaded a real temporary class-library project through `MsBuildProjectSystem`
+(167 references, the same real .NET 10 ref-pack closure a NetPrints project actually gets) and timed a
+bare `new CodeAnalysisSession(references, otherSources, json)`: **~29 ms**, cold, in-process (a warm
+repeat measured 5 ms). `MetadataReference.CreateFromFile` is lazy (wraps the path; does not eagerly read
+metadata) and there were no other `Compile` sources in the fixture, so this is close to a lower bound for
+a real project of this size — construction does do real work (reference loading, `CSharpSyntaxTree.ParseText`
+per other source), just not much of it.
+
+**Decision: kept synchronous.** Moving it to `Task.Run` was tried (a version-counter guard around a
+background rebuild, matching `ReflectionHost.Reload`'s own "drop a superseded reload" pattern) and
+reverted: `CodeAnalysisHostTests.TypeErrorYieldsADiagnosticWithinTheDebounceThenFixingItClearsIt` started
+failing intermittently under the full `NetPrints.Editor.Tests` run (never in isolation) — `Startup.cs`'s
+shared `IReflectionHost` singleton is reloaded by many test classes in the same process, and back-to-back
+reloads raced the background build against the version guard, occasionally leaving `session` stale or
+transiently `null` instead of always reflecting the latest snapshot the moment `Reloaded` returns. At
+~30 ms, one-time, per reload (project open, reference change — not per keystroke; `RequestAnalysis`'s own
+500 ms+background-`Task.Run` path is what actually carries the per-edit cost), the correctness risk
+outweighed the UI-thread saving. Full solution + both `NetPrints.Editor.Tests` runs (244/244, twice) are
+green with the synchronous version.
+
+#### Open questions for the Opus review
+
+1. `CodeView`'s hover-triggered quick-info faults are silently dropped (`Forget(NullLogger<CodeView>.Instance)`):
+   `CodeViewVM` deliberately has no `EditorContext`/logger (FR-038), and `CodeView` is constructed by
+   Avalonia's XAML loader with no DI hook. Worth a dedicated, narrow logging hook for views with no
+   natural `ILogger`, or is silent-drop acceptable for a cosmetic, low-risk lookup (its only realistic
+   failure mode is cancellation, already handled)?
+2. `ErrorListVM` scopes the Errors tab to the open class only (`Project.LastDiagnostics` used to be
+   bound unfiltered, project-wide). This matches `CodeViewVM`'s existing per-class scope and FR-038, but
+   is a behavior change from the pre-T096 Errors tab (which showed every class's build errors in every
+   window): confirm this is the intended scope, not an accidental narrowing.
+3. `CodeRefreshScheduler` (`EditorContext`) is now unused in production (its only consumer,
+   `ClassEditorVM.StartGeneratedCodeLoop`, is gone) but stays in the contract's record/composition and in
+   `HeadlessApp`/tests, since editing the contract is outside an implementer batch's authority.
+4. `OnDirtyTrackedNodePositionChanged` intentionally does not request analysis (position never changes
+   generated code); every other dirty-tracking/model-edit path does. Confirm this split is exhaustive —
+   i.e., no other `MarkDirty`-adjacent path exists that changes generated code without also going through
+   one of the routed call sites.
+
+### Totals and gates
+
+- New/changed classes filtered: `ClassEditorVMTests`, `CodeViewVMTests`, `CodeAnalysisHostTests`,
+  `DirtyTrackingTests` (`NetPrints.Editor.Tests`, 29/29); `CodeViewTests`, `ClassEditorWindowTests`,
+  `SnapshotTests` (`NetPrints.Editor.UITests`, 17/17).
+- `NetPrints.Editor.Tests` in full: 244/244 (twice, to confirm the session-on-UI-thread revert removed
+  the intermittent failure).
+- `NetPrints.Editor.UITests` in full (headless, no Xvfb): 87 passed, 0 failed, 3 skipped (the
+  pre-existing headless-driver skips: `MinimizeAndRestoreClassWindow`/`PanCursor`/`DragFromLists`).
+- `dotnet build -c Release`: 0 warnings, 0 errors. `dotnet format NetPrints.slnx --verify-no-changes`:
+  clean. `dotnet format analyzers --severity info --verify-no-changes` on this batch's changed files:
+  only pre-existing `VSTHRD111` "add ConfigureAwait" hits in test files this batch merely touched one
+  line of (`SnapshotTests.cs`, `ClassEditorWindowTests.cs`, `ClassEditorPage.cs`) — the same pattern
+  throughout those files' untouched lines; nothing new introduced.
+- `git status samples/`: clean.
+- No `!`, `null!`, `default!` or new `#pragma`/`[SuppressMessage]` added.

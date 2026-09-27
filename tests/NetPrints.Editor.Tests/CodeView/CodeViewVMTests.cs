@@ -10,11 +10,13 @@ namespace NetPrints.Editor.Tests.CodeView;
 /// <summary><see cref="CodeViewVM"/> (editor-services.md §3): follows one class's snapshots, ignoring others.</summary>
 public sealed class CodeViewVMTests
 {
+    private static ClassGraph NewClass(string ns, string name) => new() { Namespace = ns, Name = name };
+
     [Fact]
     public void FollowsItsOwnClassAndIgnoresOthers()
     {
         using var host = new FakeCodeAnalysisHost();
-        using var vm = new CodeViewVM("N.C", host);
+        using var vm = new CodeViewVM(NewClass("N", "C"), host);
 
         var translated = new TranslatedClass("N.C", "public class C { public void M() {} }", SourceMap.Empty);
         var otherTranslated = new TranslatedClass("N.Other", "public class Other {}", SourceMap.Empty);
@@ -38,7 +40,7 @@ public sealed class CodeViewVMTests
     public void ASnapshotWithoutItsClassIsIgnored()
     {
         using var host = new FakeCodeAnalysisHost();
-        using var vm = new CodeViewVM("N.C", host);
+        using var vm = new CodeViewVM(NewClass("N", "C"), host);
 
         host.Push(new CodeAnalysisSnapshot(new Dictionary<string, TranslatedClass>(StringComparer.Ordinal)
         {
@@ -53,7 +55,7 @@ public sealed class CodeViewVMTests
     public async Task GetQuickInfoAsyncDelegatesWithItsOwnClassFullName()
     {
         using var host = new FakeCodeAnalysisHost { QuickInfoResult = new QuickInfo("void M()", "Summary.") };
-        using var vm = new CodeViewVM("N.C", host);
+        using var vm = new CodeViewVM(NewClass("N", "C"), host);
 
         QuickInfo? info = await vm.GetQuickInfoAsync(42, TestContext.Current.CancellationToken);
 

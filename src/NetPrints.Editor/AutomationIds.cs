@@ -94,6 +94,10 @@ public static class AutomationIds
     /// </summary>
     public const string ClassEditorErrorList = "ClassEditor.ErrorList";
     /// <summary>
+    /// Automation id for an error list row's diagnostic id text (US6, ED-T03).
+    /// </summary>
+    public const string ClassEditorErrorId = "ClassEditor.ErrorId";
+    /// <summary>
     /// Automation id for the class editor window's output tab.
     /// </summary>
     public const string ClassEditorOutputTab = "ClassEditor.OutputTab";
@@ -124,9 +128,9 @@ public static class AutomationIds
     /// </summary>
     public const string ClassInspectorName = "Inspectors.Class.Name";
     /// <summary>
-    /// Automation id for the class inspector's generated-code preview.
+    /// Automation id for the class inspector's read-only C# code view (US6).
     /// </summary>
-    public const string ClassInspectorGeneratedCode = "Inspectors.Class.GeneratedCode";
+    public const string ClassInspectorCodeView = "Inspectors.Class.CodeView";
     /// <summary>
     /// Automation id for the method inspector pane.
     /// </summary>

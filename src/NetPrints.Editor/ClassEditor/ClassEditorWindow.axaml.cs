@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Input;
+using NetPrints.Editor.ErrorList;
 using NetPrints.Editor.Events;
 using NetPrints.Editor.Graph;
 
@@ -55,6 +56,15 @@ public partial class ClassEditorWindow : Window
         if ((sender as Control)?.DataContext is EventGraphVM eventGraph)
         {
             ViewModel?.OpenEventGraphCommand.Execute(eventGraph);
+        }
+    }
+
+    // Double click navigates to the diagnostic's node, if it has one (FR-034, ED-T03).
+    private void OnDiagnosticRowDoubleTapped(object? sender, TappedEventArgs e)
+    {
+        if ((sender as Control)?.DataContext is DiagnosticRowVM row)
+        {
+            ViewModel?.ErrorList.NavigateCommand.Execute(row);
         }
     }
 }

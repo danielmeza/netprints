@@ -45,12 +45,10 @@ public class ClassEditorWindowTests
         page = new NetPrints.Testing.Ui.ClassEditor.ClassEditorPage(session.Driver, vm.Class.FullName);
         Assert.Equal("Renamed", await page.TextAsync(Token)); // window title
 
-        // The preview refreshes on a 1-second loop; advance its virtual clock instead of waiting
-        // on the wall clock (HeadlessApp gives it a TestScheduler so nothing advances it on its own).
-        session.App.CodeRefreshScheduler.AdvanceBy(TimeSpan.FromSeconds(1).Ticks);
-        HeadlessDriver.Pump();
-        Assert.Contains("class Renamed", (await page.ClassInspector.GeneratedCode.GetAsync(Token)).Text);
-        Assert.Equal("True", await page.ClassInspector.GeneratedCode.PropertyAsync(AutomationPropertyNames.IsReadOnly, Token));
+        // The code view follows CodeAnalysisHost's real-time debounce in this composition (editor-services.md
+        // §2): wait for it instead of a virtual clock.
+        await page.ClassInspector.CodeView.WaitUntilAsync(e => (e.Text ?? "").Contains("class Renamed"), "generated code", Token);
+        Assert.Equal("True", await page.ClassInspector.CodeView.PropertyAsync(AutomationPropertyNames.IsReadOnly, Token));
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]

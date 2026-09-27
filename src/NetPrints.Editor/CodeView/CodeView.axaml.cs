@@ -1,10 +1,15 @@
 using System.ComponentModel;
+using System.Threading;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Styling;
 using AvaloniaEdit.Folding;
 using AvaloniaEdit.Rendering;
 using AvaloniaEdit.TextMate;
+using Microsoft.Extensions.Logging.Abstractions;
+using NetPrints.Compilation;
+using NetPrints.Editor.Hosting;
 using TextMateSharp.Grammars;
 
 namespace NetPrints.Editor.CodeView;
@@ -35,9 +40,18 @@ public sealed partial class CodeView : UserControl, IDisposable
         foldingManager = FoldingManager.Install(Editor.TextArea);
         InstallHighlighting();
 
+        Editor.TextArea.TextView.PointerHover += OnPointerHover;
+        Editor.TextArea.TextView.PointerHoverStopped += OnPointerHoverStopped;
         DataContextChanged += OnDataContextChanged;
         ActualThemeVariantChanged += OnActualThemeVariantChanged;
     }
+
+    /// <summary>The bound view model, or <see langword="null"/> if the data context is not one.</summary>
+    public CodeViewVM? ViewModel => viewModel;
+
+    /// <summary>The wrapped AvaloniaEdit editor (public for headless UI tests; <c>Editor</c>, the
+    /// named element itself, is assembly-internal).</summary>
+    public AvaloniaEdit.TextEditor CodeEditor => Editor;
 
     private void InstallHighlighting()
     {
@@ -115,6 +129,33 @@ public sealed partial class CodeView : UserControl, IDisposable
         Editor.TextArea.TextView.InvalidateLayer(KnownLayer.Selection);
     }
 
+    private void OnPointerHover(object? sender, PointerEventArgs e)
+    {
+        if (Editor.GetPositionFromPoint(e.GetPosition(Editor)) is not { } position)
+        {
+            ToolTip.SetTip(this, null);
+            return;
+        }
+
+        ShowQuickInfoAsync(Editor.Document.GetOffset(position.Location), CancellationToken.None).Forget(NullLogger<CodeView>.Instance);
+    }
+
+    private void OnPointerHoverStopped(object? sender, PointerEventArgs e) => ToolTip.SetTip(this, null);
+
+    /// <summary>
+    /// Shows the signature and summary of the symbol at <paramref name="offset"/> as this control's
+    /// tooltip (FR-035, ED-T05; set on the control the automation id is on, not the wrapped
+    /// <c>Editor</c>, so the automation tree reports it), or clears it when there is none. Public so
+    /// a test can trigger it directly instead of waiting on AvaloniaEdit's own hover delay.
+    /// </summary>
+    /// <param name="offset">Character offset into the code to look the symbol up at.</param>
+    /// <param name="cancellationToken">Cancels the lookup.</param>
+    public async Task ShowQuickInfoAsync(int offset, CancellationToken cancellationToken)
+    {
+        QuickInfo? info = viewModel is null ? null : await viewModel.GetQuickInfoAsync(offset, cancellationToken);
+        ToolTip.SetTip(this, info is null ? null : info.Summary is null ? info.Signature : $"{info.Signature}\n{info.Summary}");
+    }
+
     private void RefreshFoldings()
     {
         if (viewModel is null)
@@ -146,6 +187,8 @@ public sealed partial class CodeView : UserControl, IDisposable
             viewModel.PropertyChanged -= OnViewModelPropertyChanged;
         }
 
+        Editor.TextArea.TextView.PointerHover -= OnPointerHover;
+        Editor.TextArea.TextView.PointerHoverStopped -= OnPointerHoverStopped;
         FoldingManager.Uninstall(foldingManager);
         textMate?.Dispose();
     }

@@ -1,5 +1,6 @@
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
+using NetPrints.Editor.Diagnostics;
 using NetPrints.Editor.Tests.Hosting;
 using NetPrints.Graph;
 
@@ -144,7 +145,7 @@ public class ClassEditorVMTests : IAsyncLifetime
     }
 
     [Fact]
-    public void ClassInspectorEditsModelAndCodeRefreshes()
+    public async Task ClassInspectorEditsModelAndCodeRefreshes()
     {
         vm.Name = "Renamed";
         vm.Namespace = "Other";
@@ -159,26 +160,44 @@ public class ClassEditorVMTests : IAsyncLifetime
         vm.IsSealed = false;
         Assert.Equal(ClassModifiers.Partial, cls.Modifiers);
 
-        vm.RefreshGeneratedCode();
-        Assert.Contains("partial class Renamed", vm.GeneratedCode);
-        Assert.Contains("namespace Other", vm.GeneratedCode);
+        editor.Scheduler.AdvanceBy(CodeAnalysisHost.DebounceWindow.Ticks);
+        string code = await WaitForCodeAsync(c => c.Contains("partial class Renamed", StringComparison.Ordinal));
+        Assert.Contains("namespace Other", code, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void GeneratedCodeRefreshesEverySecondInVirtualTime()
+    public async Task CodeViewFollowsModelEditsAfterTheDebounceWindow()
     {
-        vm.StartGeneratedCodeLoop();
         vm.Name = "Looped";
 
-        editor.Scheduler.AdvanceBy(TimeSpan.FromMilliseconds(999).Ticks);
-        Assert.DoesNotContain("class Looped", vm.GeneratedCode);
-
-        editor.Scheduler.AdvanceBy(TimeSpan.FromMilliseconds(1).Ticks);
-        Assert.Contains("class Looped", vm.GeneratedCode);
+        editor.Scheduler.AdvanceBy(CodeAnalysisHost.DebounceWindow.Ticks);
+        await WaitForCodeAsync(c => c.Contains("class Looped", StringComparison.Ordinal));
 
         vm.Name = "LoopedAgain";
-        editor.Scheduler.AdvanceBy(TimeSpan.FromSeconds(1).Ticks);
-        Assert.Contains("class LoopedAgain", vm.GeneratedCode);
+        editor.Scheduler.AdvanceBy(CodeAnalysisHost.DebounceWindow.Ticks);
+        await WaitForCodeAsync(c => c.Contains("class LoopedAgain", StringComparison.Ordinal));
+    }
+
+    /// <summary>Polls <see cref="ClassEditorVM.CodeView"/> for its debounced analysis to complete
+    /// (the debounce itself is virtual-time, but <c>AnalyzeAsync</c> hops through a real <c>Task.Run</c>).</summary>
+    private async Task<string> WaitForCodeAsync(Func<string, bool> matches)
+    {
+        DateTime deadline = DateTime.UtcNow + TimeSpan.FromSeconds(30);
+        while (true)
+        {
+            string code = vm.CodeView.Code;
+            if (matches(code))
+            {
+                return code;
+            }
+
+            if (DateTime.UtcNow > deadline)
+            {
+                Assert.Fail($"Code view did not match in time. Last code:\n{code}");
+            }
+
+            await Task.Delay(20, TestContext.Current.CancellationToken);
+        }
     }
 
     [Fact]

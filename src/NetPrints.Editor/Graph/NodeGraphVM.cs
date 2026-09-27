@@ -222,6 +222,29 @@ public sealed partial class NodeGraphVM : ObservableObject, IDisposable
     [RelayCommand]
     public void DeselectNodes() => SelectNodes([], deselectPrevious: true);
 
+    /// <summary>Raised after <see cref="RevealNode"/> selects a node, so the view can scroll it into
+    /// view (ADR-0004: the view owns the canvas viewport, this view model only asks for it).</summary>
+    public event EventHandler<NodeVM>? NodeRevealRequested;
+
+    /// <summary>
+    /// Selects the node with <paramref name="nodeId"/> and asks the view to bring it into view
+    /// (FR-034, ED-T03).
+    /// </summary>
+    /// <param name="nodeId">Id of the node to reveal.</param>
+    /// <returns>Whether a node with that id exists in this graph.</returns>
+    public bool RevealNode(string nodeId)
+    {
+        NodeVM? node = Nodes.FirstOrDefault(n => n.Node.Id == nodeId);
+        if (node is null)
+        {
+            return false;
+        }
+
+        SelectNodes([node], deselectPrevious: true);
+        NodeRevealRequested?.Invoke(this, node);
+        return true;
+    }
+
     /// <summary>
     /// Deletes the selected nodes except method entry, class return and the main return node (PAR-37).
     /// </summary>
