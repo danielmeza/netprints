@@ -94,7 +94,7 @@ around only hides future `NullReferenceException`s.
 - `!` is acceptable only where the compiler cannot express a real, local invariant (for example right after a
   check it doesn't track). Then add a short comment saying why, or prefer a `Debug.Assert`/guard. In tests,
   prefer `Assert.NotNull(x)` (xUnit annotates it) to `x!`.
-- Serializer-populated members (legacy DataContract) are nullable, or initialized in `[OnDeserializing]`.
+- The model no longer uses DataContract, so members are initialized in constructors or `DocumentMapper`.
 - Reviewers list every `!` added in a PR and check each one.
 
 ## Commits and tests
@@ -104,3 +104,22 @@ around only hides future `NullReferenceException`s.
   `TestContext.Current.CancellationToken`. UI tests go through page objects and `AutomationIds`,
   with no sleeps.
 - CI (`CI` workflow) runs on Linux only and must be green before merge.
+
+## Batch rules for implementer agents
+A batch prompt names the task range and pastes the task text; everything below applies to every batch.
+- Read only the spec files and sections the prompt names, plus the code you modify. Never read whole specs.
+- Build quietly: `dotnet build -v q -tl:off --nologo`. The test runner is the xUnit in-process runner, not
+  `--treenode-filter`: run a class with `tests/<Project>/bin/Debug/net10.0/<Project> -class '*Name'`.
+- Iterate with filtered tests. Run the whole suite once at the end of the batch:
+  `dotnet test --solution NetPrints.slnx -c Release --no-build -- --ignore-exit-code 8`, then
+  `dotnet build -c Release` (0 warnings) and `dotnet format NetPrints.slnx --verify-no-changes`.
+- Golden fixtures in `tests/NetPrints.Core.Tests/Fixtures/Golden/` stay byte-identical unless the task
+  says otherwise; a deliberate change is reported with the reason.
+- No `!`, `null!` or `default!`. XML docs on every public API (CS1591 is an error). No long code
+  comments: rationale goes in the commit message and `specs/003-core-refactor/implementation-notes.md`.
+- Never run the whole `Editor.UITests` project under Xvfb blindly (OOM). Headless UITests need no Xvfb; if a
+  display is needed, check `pgrep -af Xvfb` first, use your own display number, never `DISPLAY=:1`, and kill it.
+- Commit per task with a pathspec of your own files only, tick the task in `tasks.md`, note decisions in
+  implementation-notes.md as "Decision: ...", push the branch. Do not stop to ask: decide, record, continue.
+- No publishing (tags, nuget, wiki), no posts to other repos, orbion and UnrealSharp are read-only.
+- The report is short: what was added, goldens diff, suite totals, decisions, deviations, push confirmation.
