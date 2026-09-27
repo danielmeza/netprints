@@ -26,7 +26,7 @@ namespace NetPrints.Core
         /// </summary>
         public virtual string FullCodeName
         {
-            get => Name.Replace("+", ".");
+            get => Name.Replace("+", ".", StringComparison.Ordinal);
         }
 
         /// <summary>
@@ -35,7 +35,7 @@ namespace NetPrints.Core
         /// </summary>
         public virtual string FullCodeNameUnbound
         {
-            get => Name.Replace("+", ".");
+            get => Name.Replace("+", ".", StringComparison.Ordinal);
         }
 
         /// <summary>

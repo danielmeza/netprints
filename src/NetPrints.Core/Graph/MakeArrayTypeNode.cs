@@ -12,7 +12,7 @@ namespace NetPrints.Graph
     /// </summary>
     public class MakeArrayTypeNode : Node
     {
-        private ObservableValue<BaseType> arrayType;
+        private readonly ObservableValue<BaseType> arrayType;
 
         /// <summary>
         /// Adds this node to <paramref name="graph"/> and gives it its element-type input type pin and

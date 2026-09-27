@@ -377,7 +377,7 @@ namespace NetPrints.Reflection
             ITypeSymbol? type = GetTypeFromSpecifier(methodSpecifier.DeclaringType);
 
             // TODO: Get a better way to determine is a method specifier is an operator.
-            bool isOperator = methodSpecifier.Name.StartsWith("op_");
+            bool isOperator = methodSpecifier.Name.StartsWith("op_", StringComparison.Ordinal);
 
             if (type != null)
             {
@@ -459,11 +459,11 @@ namespace NetPrints.Reflection
             // Find array ranks and remove them from the lookup name.
             // Example: int[][,] -> arrayRanks: { 1, 2 }, lookupName: int
             Stack<int> arrayRanks = new Stack<int>();
-            while (lookupName.EndsWith("]"))
+            while (lookupName.EndsWith("]", StringComparison.Ordinal))
             {
                 lookupName = lookupName.Remove(lookupName.Length - 1);
                 int arrayRank = 1;
-                while (lookupName.EndsWith(","))
+                while (lookupName.EndsWith(",", StringComparison.Ordinal))
                 {
                     arrayRank++;
                     lookupName = lookupName.Remove(lookupName.Length - 1);
@@ -472,7 +472,7 @@ namespace NetPrints.Reflection
 
                 if (lookupName.Last() != '[')
                 {
-                    throw new Exception("Expected [ in lookupName");
+                    throw new FormatException("Expected [ in lookupName");
                 }
 
                 lookupName = lookupName.Remove(lookupName.Length - 1);

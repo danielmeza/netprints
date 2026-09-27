@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -112,13 +113,13 @@ namespace NetPrints.Translator
             // Special case for property setters, input name "value".
             // TODO: Don't rely on set_ prefix
             // TODO: Use PropertyGraph instead of MethodGraph
-            if (pin.Node is MethodEntryNode && graph is MethodGraph methodGraph && methodGraph.Name.StartsWith("set_"))
+            if (pin.Node is MethodEntryNode && graph is MethodGraph methodGraph && methodGraph.Name.StartsWith("set_", StringComparison.Ordinal))
             {
                 pinName = "value";
             }
             else
             {
-                pinName = TranslatorUtil.GetUniqueVariableName(pin.Name.Replace("<", "_").Replace(">", "_"), variableNames.Values.ToList());
+                pinName = TranslatorUtil.GetUniqueVariableName(pin.Name.Replace("<", "_", StringComparison.Ordinal).Replace(">", "_", StringComparison.Ordinal), variableNames.Values.ToList());
             }
 
             variableNames.Add(pin, pinName);
@@ -147,7 +148,7 @@ namespace NetPrints.Translator
                 }
                 else
                 {
-                    throw new Exception($"Input data pin {pin} on {pin.Node} was unconnected without an explicit default or unconnected value.");
+                    throw new InvalidOperationException($"Input data pin {pin} on {pin.Node} was unconnected without an explicit default or unconnected value.");
                     //return $"default({pin.PinType.Value.FullCodeName})";
                 }
             }
@@ -223,7 +224,7 @@ namespace NetPrints.Translator
                 if (pin.Node is not (MethodEntryNode or EventEntryNode))
                 {
                     string typeName = ResolvedPinType(pin).FullCodeName;
-                    builder.AppendLine($"{typeName} {variableName} = default({typeName});");
+                    builder.AppendLine(CultureInfo.InvariantCulture, $"{typeName} {variableName} = default({typeName});");
                 }
             }
         }
@@ -234,17 +235,17 @@ namespace NetPrints.Translator
             // ConstructorGraph here, never an EventGraph (TranslateEventEntry writes its own signature).
             var execGraph = (ExecutionGraph)graph;
 
-            builder.AppendLine($"// {execGraph}");
+            builder.AppendLine(CultureInfo.InvariantCulture, $"// {execGraph}");
 
             // Write visibility
-            builder.Append($"{TranslatorUtil.VisibilityTokens[execGraph.Visibility]} ");
+            builder.Append(CultureInfo.InvariantCulture, $"{TranslatorUtil.VisibilityTokens[execGraph.Visibility]} ");
 
             MethodGraph? methodGraph = execGraph as MethodGraph;
             List<string> written = new List<string>();
 
             void WriteModifier(string modifier)
             {
-                builder.Append($"{modifier} ");
+                builder.Append(CultureInfo.InvariantCulture, $"{modifier} ");
                 written.Add(modifier);
             }
 
@@ -282,12 +283,13 @@ namespace NetPrints.Translator
             }
 
             // Extra modifiers from member emitters; "partial" goes last, directly before the return type.
-            foreach (string modifier in extraModifiers.Where(modifier => modifier != CSharpKeywords.Partial && !written.Contains(modifier)).OrderBy(modifier => modifier, StringComparer.Ordinal))
+            List<string> extraModifiersList = extraModifiers.ToList();
+            foreach (string modifier in extraModifiersList.Where(modifier => modifier != CSharpKeywords.Partial && !written.Contains(modifier)).OrderBy(modifier => modifier, StringComparer.Ordinal))
             {
                 WriteModifier(modifier);
             }
 
-            if (extraModifiers.Contains(CSharpKeywords.Partial))
+            if (extraModifiersList.Contains(CSharpKeywords.Partial))
             {
                 WriteModifier(CSharpKeywords.Partial);
             }
@@ -305,7 +307,7 @@ namespace NetPrints.Translator
                 }
                 else if (methodGraph.ReturnTypes.Count() == 1)
                 {
-                    builder.Append($"{methodGraph.ReturnTypes.Single().FullCodeName} ");
+                    builder.Append(CultureInfo.InvariantCulture, $"{methodGraph.ReturnTypes.Single().FullCodeName} ");
                 }
                 else
                 {
@@ -326,21 +328,21 @@ namespace NetPrints.Translator
             }
 
             // Write parameters
-            builder.AppendLine($"({string.Join(", ", GetOrCreateTypedPinNames(execGraph.EntryNode.OutputDataPins))})");
+            builder.AppendLine(CultureInfo.InvariantCulture, $"({string.Join(", ", GetOrCreateTypedPinNames(execGraph.EntryNode.OutputDataPins))})");
         }
 
         private void TranslateJumpStack()
         {
             builder.AppendLine("// Jump stack");
 
-            builder.AppendLine($"State{jumpStackStateId}:");
-            builder.AppendLine($"if ({JumpStackVarName}.Count == 0) throw new System.Exception();");
-            builder.AppendLine($"switch ({JumpStackVarName}.Pop())");
+            builder.AppendLine(CultureInfo.InvariantCulture, $"State{jumpStackStateId}:");
+            builder.AppendLine(CultureInfo.InvariantCulture, $"if ({JumpStackVarName}.Count == 0) throw new System.Exception();");
+            builder.AppendLine(CultureInfo.InvariantCulture, $"switch ({JumpStackVarName}.Pop())");
             builder.AppendLine("{");
 
             foreach (NodeInputExecPin pin in pinsJumpedTo)
             {
-                builder.AppendLine($"case {GetExecPinStateId(pin)}:");
+                builder.AppendLine(CultureInfo.InvariantCulture, $"case {GetExecPinStateId(pin)}:");
                 WriteGotoInputPin(pin);
             }
 
@@ -422,7 +424,7 @@ namespace NetPrints.Translator
                 {
                     for (int pinIndex = 0; pinIndex < node.InputExecPins.Count; pinIndex++)
                     {
-                        builder.AppendLine($"State{nodeStateIds[node][pinIndex]}:");
+                        builder.AppendLine(CultureInfo.InvariantCulture, $"State{nodeStateIds[node][pinIndex]}:");
                         TranslateNode(node, pinIndex);
                         builder.AppendLine();
                     }
@@ -540,7 +542,7 @@ namespace NetPrints.Translator
                 {
                     for (int pinIndex = 0; pinIndex < node.InputExecPins.Count; pinIndex++)
                     {
-                        builder.AppendLine($"State{nodeStateIds[node][pinIndex]}:");
+                        builder.AppendLine(CultureInfo.InvariantCulture, $"State{nodeStateIds[node][pinIndex]}:");
                         TranslateNode(node, pinIndex);
                         builder.AppendLine();
                     }
@@ -566,16 +568,16 @@ namespace NetPrints.Translator
 
         private void TranslateEventSignature(EventEntryNode entry, IEnumerable<string> extraModifiers)
         {
-            builder.AppendLine($"// {entry}");
+            builder.AppendLine(CultureInfo.InvariantCulture, $"// {entry}");
 
-            builder.Append($"{TranslatorUtil.VisibilityTokens[entry.Visibility]} ");
+            builder.Append(CultureInfo.InvariantCulture, $"{TranslatorUtil.VisibilityTokens[entry.Visibility]} ");
 
             bool isAsync = entry.Modifiers.HasFlag(MethodModifiers.Async);
             List<string> written = new List<string>();
 
             void WriteModifier(string modifier)
             {
-                builder.Append($"{modifier} ");
+                builder.Append(CultureInfo.InvariantCulture, $"{modifier} ");
                 written.Add(modifier);
             }
 
@@ -595,28 +597,29 @@ namespace NetPrints.Translator
             }
 
             // Extra modifiers from member emitters; "partial" goes last, directly before the return type.
-            foreach (string modifier in extraModifiers.Where(modifier => modifier != CSharpKeywords.Partial && !written.Contains(modifier)).OrderBy(modifier => modifier, StringComparer.Ordinal))
+            List<string> extraModifiersList = extraModifiers.ToList();
+            foreach (string modifier in extraModifiersList.Where(modifier => modifier != CSharpKeywords.Partial && !written.Contains(modifier)).OrderBy(modifier => modifier, StringComparer.Ordinal))
             {
                 WriteModifier(modifier);
             }
 
-            if (extraModifiers.Contains(CSharpKeywords.Partial))
+            if (extraModifiersList.Contains(CSharpKeywords.Partial))
             {
                 WriteModifier(CSharpKeywords.Partial);
             }
 
             builder.Append(isAsync ? "System.Threading.Tasks.Task " : "void ");
             builder.Append(entry.EventName);
-            builder.AppendLine($"({string.Join(", ", GetOrCreateTypedPinNames(entry.OutputDataPins))})");
+            builder.AppendLine(CultureInfo.InvariantCulture, $"({string.Join(", ", GetOrCreateTypedPinNames(entry.OutputDataPins))})");
         }
 
         private string RemoveUnnecessaryLabels(string code)
         {
             foreach (int stateId in nodeStateIds.Values.SelectMany(i => i))
             {
-                if (!code.Contains($"goto State{stateId};"))
+                if (!code.Contains($"goto State{stateId};", StringComparison.Ordinal))
                 {
-                    code = code.Replace($"State{stateId}:", "");
+                    code = code.Replace($"State{stateId}:", "", StringComparison.Ordinal);
                 }
             }
 
@@ -640,7 +643,7 @@ namespace NetPrints.Translator
 
             if (!(node is RerouteNode))
             {
-                builder.AppendLine($"// {node}");
+                builder.AppendLine(CultureInfo.InvariantCulture, $"// {node}");
             }
 
             translator.Translate(this, node, pinIndex);
@@ -649,7 +652,7 @@ namespace NetPrints.Translator
         /// <inheritdoc />
         public void WriteGotoJumpStack()
         {
-            builder.AppendLine($"goto State{jumpStackStateId};");
+            builder.AppendLine(CultureInfo.InvariantCulture, $"goto State{jumpStackStateId};");
         }
 
         /// <inheritdoc />
@@ -660,12 +663,12 @@ namespace NetPrints.Translator
                 pinsJumpedTo.Add(pin);
             }
 
-            builder.AppendLine($"{JumpStackVarName}.Push({GetExecPinStateId(pin)});");
+            builder.AppendLine(CultureInfo.InvariantCulture, $"{JumpStackVarName}.Push({GetExecPinStateId(pin)});");
         }
 
         private void WriteGotoInputPin(NodeInputExecPin pin)
         {
-            builder.AppendLine($"goto State{GetExecPinStateId(pin)};");
+            builder.AppendLine(CultureInfo.InvariantCulture, $"goto State{GetExecPinStateId(pin)};");
         }
 
         /// <inheritdoc />

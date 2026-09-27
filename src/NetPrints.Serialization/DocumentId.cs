@@ -22,7 +22,7 @@ public readonly record struct DocumentId
             throw new ArgumentException("A document id path must not be empty.", nameof(path));
         }
 
-        if (path.Contains('\\'))
+        if (path.Contains('\\', StringComparison.Ordinal))
         {
             throw new ArgumentException($"Document id path '{path}' must not contain a backslash.", nameof(path));
         }

@@ -149,14 +149,14 @@ namespace NetPrints.Translator
             string usings = string.Concat(emitContext.Usings.Select(u => $"using {u};\n"));
 
             string generatedCode = (string.IsNullOrWhiteSpace(c.Namespace) ? CLASS_TEMPLATE_NO_NAMESPACE : CLASS_TEMPLATE)
-                .Replace("%Usings%", usings)
-                .Replace("%Namespace%", c.Namespace)
-                .Replace("%Attributes%", AttributeLines(emitContext.Attributes))
-                .Replace("%ClassModifiers%", ModifierPrefix(modifiers, emitContext.ExtraModifiers))
-                .Replace("%ClassName%", c.Name)
-                .Replace("%GenericArguments%", genericArguments)
-                .Replace("%BaseTypes%", baseTypes)
-                .Replace("%Content%", content.ToString());
+                .Replace("%Usings%", usings, StringComparison.Ordinal)
+                .Replace("%Namespace%", c.Namespace, StringComparison.Ordinal)
+                .Replace("%Attributes%", AttributeLines(emitContext.Attributes), StringComparison.Ordinal)
+                .Replace("%ClassModifiers%", ModifierPrefix(modifiers, emitContext.ExtraModifiers), StringComparison.Ordinal)
+                .Replace("%ClassName%", c.Name, StringComparison.Ordinal)
+                .Replace("%GenericArguments%", genericArguments, StringComparison.Ordinal)
+                .Replace("%BaseTypes%", baseTypes, StringComparison.Ordinal)
+                .Replace("%Content%", content.ToString(), StringComparison.Ordinal);
 
             return TranslatorUtil.FormatCode(generatedCode);
         }
@@ -225,21 +225,21 @@ namespace NetPrints.Translator
                 // Translate get / set methods
 
                 string output = PROPERTY_TEMPLATE
-                    .Replace("%Attributes%", attributes)
-                    .Replace("%VariableModifiers%", modifierText)
-                    .Replace("%VariableType%", variable.Type.FullCodeName)
-                    .Replace("%VariableName%", variable.Name);
+                    .Replace("%Attributes%", attributes, StringComparison.Ordinal)
+                    .Replace("%VariableModifiers%", modifierText, StringComparison.Ordinal)
+                    .Replace("%VariableType%", variable.Type.FullCodeName, StringComparison.Ordinal)
+                    .Replace("%VariableName%", variable.Name, StringComparison.Ordinal);
 
                 if (variable.GetterMethod != null)
                 {
                     string getterMethodCode = methodTranslator.Translate(variable.GetterMethod, false);
                     string visibilityPrefix = AccessorVisibilityPrefix(variable, variable.GetterMethod);
 
-                    output = output.Replace("%Get%", $"{visibilityPrefix}get\n{getterMethodCode}");
+                    output = output.Replace("%Get%", $"{visibilityPrefix}get\n{getterMethodCode}", StringComparison.Ordinal);
                 }
                 else
                 {
-                    output = output.Replace("%Get%", "");
+                    output = output.Replace("%Get%", "", StringComparison.Ordinal);
                 }
 
                 if (variable.SetterMethod != null)
@@ -247,11 +247,11 @@ namespace NetPrints.Translator
                     string setterMethodCode = methodTranslator.Translate(variable.SetterMethod, false);
                     string visibilityPrefix = AccessorVisibilityPrefix(variable, variable.SetterMethod);
 
-                    output = output.Replace("%Set%", $"{visibilityPrefix}set\n{setterMethodCode}");
+                    output = output.Replace("%Set%", $"{visibilityPrefix}set\n{setterMethodCode}", StringComparison.Ordinal);
                 }
                 else
                 {
-                    output = output.Replace("%Set%", "");
+                    output = output.Replace("%Set%", "", StringComparison.Ordinal);
                 }
 
                 return output;
@@ -259,10 +259,10 @@ namespace NetPrints.Translator
             else
             {
                 return VARIABLE_TEMPLATE
-                    .Replace("%Attributes%", attributes)
-                    .Replace("%VariableModifiers%", modifierText)
-                    .Replace("%VariableType%", variable.Type.FullCodeName)
-                    .Replace("%VariableName%", variable.Name);
+                    .Replace("%Attributes%", attributes, StringComparison.Ordinal)
+                    .Replace("%VariableModifiers%", modifierText, StringComparison.Ordinal)
+                    .Replace("%VariableType%", variable.Type.FullCodeName, StringComparison.Ordinal)
+                    .Replace("%VariableName%", variable.Name, StringComparison.Ordinal);
             }
         }
 

@@ -11,11 +11,11 @@ using NetPrints.Workspace;
 
 namespace NetPrintsCLI
 {
-    class Program
+    sealed class Program
     {
         private const int BadArgumentsExitCode = 1;
 
-        public class CompileOptions
+        public sealed class CompileOptions
         {
             [Option('p', "project-path", Required = false, HelpText = "Path to the project file (.csproj).")]
             public string? ProjectPath { get; set; }

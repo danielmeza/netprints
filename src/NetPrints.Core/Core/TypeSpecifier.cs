@@ -155,7 +155,7 @@ namespace NetPrints.Core
         {
             if (type.IsGenericParameter)
             {
-                throw new ArgumentException(nameof(type));
+                throw new ArgumentException("Type must not be a generic parameter.", nameof(type));
             }
 
             string typeName = type.Name.Split('`').First();
@@ -194,13 +194,9 @@ namespace NetPrints.Core
         /// <param name="obj">Object to compare to.</param>
         /// <returns>
         /// <see langword="true"/> if <paramref name="obj"/> is a <see cref="GenericType"/> (always), or
-        /// a <see cref="TypeSpecifier"/> with the same name and generic arguments.
+        /// a <see cref="TypeSpecifier"/> with the same name, generic arguments and <see cref="IsEnum"/>
+        /// (a name collision between an enum and a non-enum type with the same name is not equal).
         /// </returns>
-        /// <exception cref="ArgumentException">
-        /// <paramref name="obj"/> is a <see cref="TypeSpecifier"/> with the same name and generic
-        /// arguments as this one but a different <see cref="IsEnum"/> (a name collision between an
-        /// enum and a non-enum type).
-        /// </exception>
         public override bool Equals(object? obj)
         {
             if (obj is TypeSpecifier t)
@@ -212,7 +208,7 @@ namespace NetPrints.Core
                 if (Name == t.Name && GenericArgumentsEqual(t))
                 {
                     if (IsEnum != t.IsEnum)
-                        throw new ArgumentException("obj has same type name but IsEnum is different");
+                        return false;
 
                     return true;
                 }
@@ -254,7 +250,7 @@ namespace NetPrints.Core
         /// <returns>The type's display string.</returns>
         public override string ToString()
         {
-            string s = Name.Replace("+", ".");
+            string s = Name.Replace("+", ".", StringComparison.Ordinal);
 
             if (GenericArguments.Count > 0)
             {

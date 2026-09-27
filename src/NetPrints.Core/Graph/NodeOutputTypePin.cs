@@ -24,7 +24,7 @@ namespace NetPrints.Graph
             get => outputType;
         }
 
-        private ObservableValue<BaseType> outputType;
+        private readonly ObservableValue<BaseType> outputType;
 
         /// <summary>
         /// Creates an output type pin carrying <paramref name="outputType"/>.

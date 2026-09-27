@@ -110,7 +110,7 @@ public static class IdFormat
 
         for (int i = 1; i < id.Length; i++)
         {
-            if (Alphabet.IndexOf(id[i]) < 0)
+            if (Alphabet.IndexOf(id[i], StringComparison.Ordinal) < 0)
             {
                 return false;
             }
@@ -199,7 +199,7 @@ public static class IdFormat
             char other => other,
         };
 
-        return Alphabet.IndexOf(canonical);
+        return Alphabet.IndexOf(canonical, StringComparison.Ordinal);
     }
 }
 

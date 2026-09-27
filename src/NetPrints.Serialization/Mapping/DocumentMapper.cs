@@ -854,7 +854,7 @@ public sealed class DocumentMapper : IDocumentMapper
 
     private static (string NodeId, string PinReference) SplitEndpoint(string endpoint)
     {
-        int slash = endpoint.IndexOf('/');
+        int slash = endpoint.IndexOf('/', StringComparison.Ordinal);
         return slash < 0 ? (endpoint, string.Empty) : (endpoint[..slash], endpoint[(slash + 1)..]);
     }
 }

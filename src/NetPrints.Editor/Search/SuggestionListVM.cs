@@ -1,3 +1,4 @@
+using System;
 using System.Collections.ObjectModel;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
@@ -232,10 +233,10 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
 
         // Built-in kinds are offered as their node type (SelectAsync asks a dialog where a kind needs one); an extension's
         // suggestions come last, after every built-in category (extension-points.md §2).
-        IEnumerable<object> BuiltIns() => suggestedKinds.Where(kind => !kind.Kind.Contains('/')).Select(kind => (object)TypeSpecifier.FromType(kind.NodeType));
+        IEnumerable<object> BuiltIns() => suggestedKinds.Where(kind => !kind.Kind.Contains('/', StringComparison.Ordinal)).Select(kind => (object)TypeSpecifier.FromType(kind.NodeType));
 
         IEnumerable<(string Category, object Value)> ExtensionNodes() => suggestedKinds
-            .Where(kind => kind.Kind.Contains('/'))
+            .Where(kind => kind.Kind.Contains('/', StringComparison.Ordinal))
             .SelectMany(kind => kind.Suggestions.Select(suggestion => (suggestion.Category, (object)suggestion)));
 
         ReflectionProviderMethodQuery MethodQuery() => classType is null ? new() : new ReflectionProviderMethodQuery().WithVisibleFrom(classType);

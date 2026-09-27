@@ -151,7 +151,7 @@ internal static class BuiltInNodeTranslators
         }
 
         // Get arguments for method call
-        var argumentNames = IncomingValues(context, node.ArgumentPins);
+        var argumentNames = IncomingValues(context, node.ArgumentPins).ToList();
 
         // Check whether the method is an operator and we need to translate its name
         // into operator symbols. Otherwise just call the method normally.
@@ -161,28 +161,28 @@ internal static class BuiltInNodeTranslators
 
             if (operatorInfo.Unary)
             {
-                if (argumentNames.Count() != 1)
+                if (argumentNames.Count != 1)
                 {
-                    throw new Exception($"Unary operator was found but did not have one argument: {node.MethodName}");
+                    throw new InvalidOperationException($"Unary operator was found but did not have one argument: {node.MethodName}");
                 }
 
                 if (operatorInfo.UnaryRightPosition)
                 {
-                    context.AppendLine($"{argumentNames.ElementAt(0)}{operatorInfo.Symbol};");
+                    context.AppendLine($"{argumentNames[0]}{operatorInfo.Symbol};");
                 }
                 else
                 {
-                    context.AppendLine($"{operatorInfo.Symbol}{argumentNames.ElementAt(0)};");
+                    context.AppendLine($"{operatorInfo.Symbol}{argumentNames[0]};");
                 }
             }
             else
             {
-                if (argumentNames.Count() != 2)
+                if (argumentNames.Count != 2)
                 {
-                    throw new Exception($"Binary operator was found but did not have two arguments: {node.MethodName}");
+                    throw new InvalidOperationException($"Binary operator was found but did not have two arguments: {node.MethodName}");
                 }
 
-                context.AppendLine($"{argumentNames.ElementAt(0)}{operatorInfo.Symbol}{argumentNames.ElementAt(1)};");
+                context.AppendLine($"{argumentNames[0]}{operatorInfo.Symbol}{argumentNames[1]};");
             }
         }
         else
@@ -256,10 +256,10 @@ internal static class BuiltInNodeTranslators
         // Assign the real variables from the temporary tuple
         if (node.ReturnValuePins.Count > 1)
         {
-            var returnNames = PinNames(context, node.ReturnValuePins);
-            for (int i = 0; i < returnNames.Count(); i++)
+            var returnNames = PinNames(context, node.ReturnValuePins).ToList();
+            for (int i = 0; i < returnNames.Count; i++)
             {
-                context.AppendLine($"{returnNames.ElementAt(i)} = {temporaryReturnName}.Item{i + 1};");
+                context.AppendLine($"{returnNames[i]} = {temporaryReturnName}.Item{i + 1};");
             }
         }
 

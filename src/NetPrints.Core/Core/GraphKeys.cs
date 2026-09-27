@@ -92,7 +92,7 @@ public static class GraphKeys
             return cls;
         }
 
-        int slash = key.IndexOf('/');
+        int slash = key.IndexOf('/', StringComparison.Ordinal);
         if (slash >= 0)
         {
             string variableId = key[..slash];

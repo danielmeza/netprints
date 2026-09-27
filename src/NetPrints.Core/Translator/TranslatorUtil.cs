@@ -72,7 +72,7 @@ namespace NetPrints.Translator
             if (additionalLength > 0)
             {
                 string addition = new string(Enumerable.Repeat(chars, additionalLength).Select(s => s[random.Next(s.Length)]).ToArray());
-                addition = addition[0].ToString().ToUpper() + string.Join("", addition.Skip(1));
+                addition = addition[0].ToString().ToUpperInvariant() + string.Join("", addition.Skip(1));
                 name += addition;
             }
 
@@ -174,7 +174,10 @@ namespace NetPrints.Translator
         {
             // Don't allow illegal characters in the name
             // TODO: Make this more general
-            name = name.Replace("+", "_").Replace("[", "").Replace("]", "Array").Replace(",", "");
+            name = name.Replace("+", "_", StringComparison.Ordinal)
+                .Replace("[", "", StringComparison.Ordinal)
+                .Replace("]", "Array", StringComparison.Ordinal)
+                .Replace(",", "", StringComparison.Ordinal);
 
             int i = 1;
 

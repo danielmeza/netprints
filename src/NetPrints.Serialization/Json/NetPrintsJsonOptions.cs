@@ -87,7 +87,7 @@ public sealed class NetPrintsJsonOptions
 
         foreach (INodeDocumentConverter converter in nodes.Converters)
         {
-            if (converter.Kind.Contains('/'))
+            if (converter.Kind.Contains('/', StringComparison.Ordinal))
             {
                 polymorphism.DerivedTypes.Add(new JsonDerivedType(converter.DocumentType, converter.Kind));
             }

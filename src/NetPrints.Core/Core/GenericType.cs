@@ -72,7 +72,7 @@ namespace NetPrints.Core
         {
             if (!type.IsGenericParameter)
             {
-                throw new ArgumentException(nameof(type));
+                throw new ArgumentException("Type must be a generic parameter.", nameof(type));
             }
 
             // TODO: Convert constraints
@@ -114,7 +114,7 @@ namespace NetPrints.Core
         /// <returns><see cref="BaseType.Name"/>'s hash code.</returns>
         public override int GetHashCode()
         {
-            return Name.GetHashCode();
+            return Name.GetHashCode(StringComparison.Ordinal);
         }
 
         /// <summary>

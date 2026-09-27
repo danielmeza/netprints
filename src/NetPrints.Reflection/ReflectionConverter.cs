@@ -85,7 +85,7 @@ namespace NetPrints.Reflection
             {
                 if (namedType.IsUnboundGenericType)
                 {
-                    throw new ArgumentException(nameof(type));
+                    throw new ArgumentException("Type must not be an unbound generic type.", nameof(type));
                 }
 
                 foreach (ITypeSymbol genType in namedType.TypeArguments)

@@ -58,7 +58,7 @@ public sealed class NodeDocumentConverterRegistry
 
         foreach (INodeDocumentConverter converter in converters)
         {
-            bool isExtensionKind = converter.Kind.Contains('/');
+            bool isExtensionKind = converter.Kind.Contains('/', StringComparison.Ordinal);
             if (!isExtensionKind && !KnownBuiltInKinds.Contains(converter.Kind))
             {
                 throw new ArgumentException(

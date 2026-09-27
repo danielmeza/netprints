@@ -20,10 +20,7 @@ namespace NetPrints.Core
         /// </summary> 
         public void AddRange(IEnumerable<T> collection)
         {
-            if (collection == null)
-            {
-                throw new ArgumentNullException(nameof(collection));
-            }
+            ArgumentNullException.ThrowIfNull(collection);
 
             foreach (var item in collection)
             {
@@ -38,10 +35,7 @@ namespace NetPrints.Core
         /// </summary> 
         public void RemoveRange(IEnumerable<T> collection)
         {
-            if (collection == null)
-            {
-                throw new ArgumentNullException(nameof(collection));
-            }
+            ArgumentNullException.ThrowIfNull(collection);
 
             foreach (var item in collection)
             {
@@ -64,10 +58,7 @@ namespace NetPrints.Core
         /// </summary> 
         public void ReplaceRange(IEnumerable<T> collection)
         {
-            if (collection == null)
-            {
-                throw new ArgumentNullException(nameof(collection));
-            }
+            ArgumentNullException.ThrowIfNull(collection);
 
             Items.Clear();
 

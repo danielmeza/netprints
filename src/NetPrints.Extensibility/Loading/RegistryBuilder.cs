@@ -1,3 +1,4 @@
+using System;
 using System.Text.Json.Serialization.Metadata;
 using Microsoft.Extensions.Logging;
 using NetPrints.Core;
@@ -181,7 +182,7 @@ internal sealed class RegistryBuilder(ILogger logger)
         }
 
         bool builtIn = manifest.Id == BuiltInNodeLibrary.Id;
-        if (builtIn ? descriptor.Kind.Contains('/') : !HasPrefix(descriptor.Kind, manifest.Id))
+        if (builtIn ? descriptor.Kind.Contains('/', StringComparison.Ordinal) : !HasPrefix(descriptor.Kind, manifest.Id))
         {
             return builtIn
                 ? "built-in kinds have no '/'."

@@ -56,7 +56,7 @@ public static class GenerateRequestFile
 
         foreach (string line in File.ReadLines(path))
         {
-            int separator = line.IndexOf('=');
+            int separator = line.IndexOf('=', StringComparison.Ordinal);
             if (separator < 0)
             {
                 throw new FormatException($"Request line '{line}' is not of the form 'key=value'.");
@@ -80,7 +80,7 @@ public static class GenerateRequestFile
                     extensions.Add(value);
                     break;
                 case "graph":
-                    int pipe = value.IndexOf('|');
+                    int pipe = value.IndexOf('|', StringComparison.Ordinal);
                     if (pipe < 0)
                     {
                         throw new FormatException($"Graph line '{line}' is missing '|' between its input and output paths.");
