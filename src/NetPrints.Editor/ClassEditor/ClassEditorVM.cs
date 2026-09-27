@@ -89,6 +89,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         Variables = new ObservableViewModelCollection<MemberVariableVM, Variable>(cls.Variables,
             v => new MemberVariableVM(v, this), v => v.Dispose());
         EventGraphs = new ObservableViewModelCollection<EventGraphVM, EventGraph>(cls.EventGraphs, g => new EventGraphVM(g, cls));
+        VariablesPanel = new VariablesPanelVM(this);
 
         cls.Variables.CollectionChanged += OnMembersChanged;
         cls.Methods.CollectionChanged += OnMembersChanged;
@@ -148,6 +149,9 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
 
     /// <summary>View models for <see cref="Class"/>'s event graphs (US4).</summary>
     public ObservableViewModelCollection<EventGraphVM, EventGraph> EventGraphs { get; }
+
+    /// <summary>The Variables panel's "Class" and "Method: &lt;name&gt;" groups (FR-030, US5).</summary>
+    public VariablesPanelVM VariablesPanel { get; }
 
     /// <summary>The graph shown in the canvas, or null.</summary>
     [ObservableProperty]
@@ -851,6 +855,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         dirtyTrackedPinCollections.Clear();
         Messenger.UnregisterAll(this);
         OpenedGraph = null;
+        VariablesPanel.Dispose();
         Methods.Dispose();
         Constructors.Dispose();
         Variables.Dispose();

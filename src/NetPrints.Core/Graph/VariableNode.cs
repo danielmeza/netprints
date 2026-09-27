@@ -1,4 +1,5 @@
 ﻿#nullable enable
+using System;
 using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Core;
 
@@ -107,6 +108,29 @@ namespace NetPrints.Graph
             }
 
             AddOutputDataPin(Variable.Type.ShortName, Variable.Type);
+        }
+
+        /// <summary>
+        /// Updates the variable this node accesses in place, keeping its pins and connections: a rename
+        /// (US5) leaves the node's scope, declaring type, static-ness and value type untouched, so its
+        /// pin shape does not change. A retype or a scope change replaces the node instead (its pin
+        /// shape would differ), so this throws when <paramref name="variable"/> would change it.
+        /// </summary>
+        /// <param name="variable">The variable's new specifier.</param>
+        /// <exception cref="ArgumentException"><paramref name="variable"/> would change the node's pin shape.</exception>
+        public void Retarget(VariableSpecifier variable)
+        {
+            ArgumentNullException.ThrowIfNull(variable);
+
+            if (variable.Scope != Variable.Scope
+                || variable.DeclaringType != Variable.DeclaringType
+                || variable.Type != Variable.Type
+                || variable.Modifiers.HasFlag(VariableModifiers.Static) != IsStatic)
+            {
+                throw new ArgumentException("Retargeting a variable node must keep its pin shape (scope, declaring type, static-ness and value type); use a fresh node instead.", nameof(variable));
+            }
+
+            Variable = variable;
         }
     }
 }

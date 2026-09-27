@@ -17,6 +17,9 @@ public static class GraphDragDrop
     /// <summary>A variable dragged from the variable list.</summary>
     public static readonly DataFormat<MemberVariableVM> VariableFormat = DataFormat.CreateInProcessFormat<MemberVariableVM>("netprints-variable");
 
+    /// <summary>A local variable dragged from the Variables panel's Method group (US5, sub-phase H).</summary>
+    public static readonly DataFormat<LocalVariableVM> LocalVariableFormat = DataFormat.CreateInProcessFormat<LocalVariableVM>("netprints-local-variable");
+
     /// <summary>Starts a drag of a method or constructor, tagged with <see cref="MethodFormat"/>.</summary>
     /// <param name="e">The pointer-pressed event that starts the drag.</param>
     /// <param name="method">Method or constructor being dragged.</param>
@@ -28,6 +31,12 @@ public static class GraphDragDrop
     /// <param name="variable">Variable being dragged.</param>
     public static Task StartDragAsync(PointerPressedEventArgs e, MemberVariableVM variable) =>
         StartDragAsync(e, DataTransferItem.Create(VariableFormat, variable));
+
+    /// <summary>Starts a drag of a local variable, tagged with <see cref="LocalVariableFormat"/> (US5).</summary>
+    /// <param name="e">The pointer-pressed event that starts the drag.</param>
+    /// <param name="variable">Local variable being dragged.</param>
+    public static Task StartDragAsync(PointerPressedEventArgs e, LocalVariableVM variable) =>
+        StartDragAsync(e, DataTransferItem.Create(LocalVariableFormat, variable));
 
     private static async Task StartDragAsync(PointerPressedEventArgs e, DataTransferItem item)
     {
@@ -55,7 +64,7 @@ public sealed class DragSourceHelper
     /// </summary>
     /// <param name="e">The pointer-pressed event.</param>
     /// <param name="relativeTo">Visual the pointer position is measured relative to.</param>
-    /// <param name="item">The <see cref="MethodVM"/> or <see cref="MemberVariableVM"/> that would be dragged.</param>
+    /// <param name="item">The <see cref="MethodVM"/>, <see cref="MemberVariableVM"/> or <see cref="LocalVariableVM"/> that would be dragged.</param>
     public void Pressed(PointerPressedEventArgs e, Visual relativeTo, object item)
     {
         if (e.GetCurrentPoint(relativeTo).Properties.IsLeftButtonPressed && e.ClickCount == 1)
@@ -109,6 +118,9 @@ public sealed class DragSourceHelper
                 break;
             case MemberVariableVM variable:
                 await GraphDragDrop.StartDragAsync(args, variable);
+                break;
+            case LocalVariableVM local:
+                await GraphDragDrop.StartDragAsync(args, local);
                 break;
         }
     }

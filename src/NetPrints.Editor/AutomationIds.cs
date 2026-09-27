@@ -400,6 +400,21 @@ public static class AutomationIds
     /// </summary>
     public const string CreateEventGraphButton = "ClassEditor.CreateEventGraphButton";
 
+    // Method-local variables (US5, sub-phase H)
+    /// <summary>
+    /// Automation id for the Variables panel's "Class" group (the class's member variables).
+    /// </summary>
+    public const string VariablesClassGroup = "ClassEditor.VariablesClassGroup";
+    /// <summary>
+    /// Automation id for the Variables panel's "Method: &lt;name&gt;" group (the opened method's or
+    /// constructor's local variables); only shown while such a graph is open.
+    /// </summary>
+    public const string VariablesMethodGroup = "ClassEditor.VariablesMethodGroup";
+    /// <summary>
+    /// Automation id for the Variables panel's button that creates a new local variable.
+    /// </summary>
+    public const string CreateLocalVariableButton = "ClassEditor.CreateLocalVariableButton";
+
     // Variables list rows (AutomationProperties.Name carries the variable name)
     /// <summary>
     /// Automation id for a variable list row. Its AutomationProperties.Name carries the variable's name.

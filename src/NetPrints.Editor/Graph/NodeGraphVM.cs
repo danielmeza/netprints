@@ -345,6 +345,15 @@ public sealed partial class NodeGraphVM : ObservableObject, IDisposable
     /// <param name="position">Where the node is created, in graph coordinates.</param>
     public void Drop(MemberVariableVM variable, GraphPoint position) => GetSetChooser.Open(variable.Specifier, position);
 
+    /// <summary>
+    /// A local variable was dropped from the Variables panel's Method group (US5, sub-phase H): opens
+    /// the Get/Set chooser the same way a member variable does. Locals are always readable and
+    /// writable from their own method, so the chooser offers both (<see cref="GetSet.GetSetChooserVM.Open"/>).
+    /// </summary>
+    /// <param name="variable">The dropped local variable.</param>
+    /// <param name="position">Where the node is created, in graph coordinates.</param>
+    public void Drop(LocalVariableVM variable, GraphPoint position) => GetSetChooser.Open(variable.Specifier, position);
+
     private void OnReflectionReloaded(object? sender, EventArgs e)
     {
         foreach (var node in Nodes)

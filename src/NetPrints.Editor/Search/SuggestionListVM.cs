@@ -24,6 +24,7 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
     private const string ThisMethodsCategory = "This Methods";
     private const string ThisVariablesCategory = "This Variables";
     private const string StaticMethodsCategory = "Static Methods";
+    private const string MethodVariablesCategory = "Method Variables";
 
     private readonly NodeGraphVM graph;
     private readonly SourceList<SuggestionItem> source = new();
@@ -301,7 +302,7 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
             case null:
                 Add(NetPrintsCategory, BuiltIns());
 
-                if (nodeGraph is ExecutionGraph)
+                if (nodeGraph is ExecutionGraph executionGraph)
                 {
                     foreach (var baseType in baseTypes)
                     {
@@ -311,6 +312,9 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
 
                     Add(StaticMethodsCategory, provider.GetMethods(MethodQuery().WithStatic(true)));
                     Add("Static Variables", provider.GetVariables(VariableQuery().WithStatic(true)));
+
+                    // US5, sub-phase H: the opened method's or constructor's own local variables.
+                    Add(MethodVariablesCategory, executionGraph.LocalVariables.Select(l => (object)l.ToSpecifier()));
                 }
                 else if (nodeGraph is ClassGraph)
                 {

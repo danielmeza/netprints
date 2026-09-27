@@ -321,7 +321,9 @@ public partial class GraphEditorView : UserControl
 
     private void OnDragOver(object? sender, DragEventArgs e)
     {
-        e.DragEffects = e.DataTransfer.Contains(GraphDragDrop.MethodFormat) || e.DataTransfer.Contains(GraphDragDrop.VariableFormat)
+        e.DragEffects = e.DataTransfer.Contains(GraphDragDrop.MethodFormat)
+            || e.DataTransfer.Contains(GraphDragDrop.VariableFormat)
+            || e.DataTransfer.Contains(GraphDragDrop.LocalVariableFormat)
             ? DragDropEffects.Copy
             : DragDropEffects.None;
     }
@@ -344,6 +346,11 @@ public partial class GraphEditorView : UserControl
         else if (e.DataTransfer.TryGetValue(GraphDragDrop.VariableFormat) is { } variable)
         {
             graph.Drop(variable, position);
+            e.Handled = true;
+        }
+        else if (e.DataTransfer.TryGetValue(GraphDragDrop.LocalVariableFormat) is { } local)
+        {
+            graph.Drop(local, position);
             e.Handled = true;
         }
     }
