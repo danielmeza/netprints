@@ -49,10 +49,6 @@ public partial class NodeSearchView : UserControl
                 ResultList.Focus();
                 e.Handled = true;
                 break;
-            case Key.Escape:
-                ViewModel?.CloseCommand.Execute(null);
-                e.Handled = true;
-                break;
         }
     }
 

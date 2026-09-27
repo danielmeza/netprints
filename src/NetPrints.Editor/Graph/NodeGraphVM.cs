@@ -1,6 +1,5 @@
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
-using Avalonia;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using NetPrints.Core;
@@ -339,20 +338,12 @@ public sealed partial class NodeGraphVM : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// A variable was dropped from the class list: opens the Get/Set chooser (PAR-57).
+    /// A variable was dropped from the class list: opens the Get/Set chooser (PAR-57). The chooser's
+    /// on-screen position is a view concern (ADR-0004): <c>CanvasPopup</c> anchors it at the pointer.
     /// </summary>
     /// <param name="variable">The dropped variable.</param>
     /// <param name="position">Where the node is created, in graph coordinates.</param>
-    /// <param name="screenPosition">
-    /// Where the pointer released the drag, relative to the editor control. Drag-and-drop does not
-    /// keep Avalonia's own pointer tracking current, so the popup is placed from this instead of
-    /// <c>Placement="Pointer"</c>.
-    /// </param>
-    public void Drop(MemberVariableVM variable, GraphPoint position, Point screenPosition)
-    {
-        GetSetChooser.Open(variable.Specifier, position);
-        GetSetChooser.ScreenPosition = screenPosition;
-    }
+    public void Drop(MemberVariableVM variable, GraphPoint position) => GetSetChooser.Open(variable.Specifier, position);
 
     private void OnReflectionReloaded(object? sender, EventArgs e)
     {

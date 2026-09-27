@@ -1,4 +1,3 @@
-using Avalonia;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using NetPrints.Core;
@@ -18,14 +17,6 @@ public sealed partial class GetSetChooserVM(NodeGraphVM graph) : ObservableObjec
     /// <summary>Where the node is created (graph coordinates).</summary>
     [ObservableProperty]
     public partial GraphPoint Position { get; set; }
-
-    /// <summary>
-    /// Where the popup is anchored, relative to the editor control (PAR-55). Callers that know the
-    /// pointer's real position (e.g. a drop) set this after <see cref="Open"/>; it otherwise resets
-    /// to the origin, since <c>Placement="Pointer"</c> does not track drag-and-drop reliably.
-    /// </summary>
-    [ObservableProperty]
-    public partial Point ScreenPosition { get; set; }
 
     [ObservableProperty]
     public partial VariableSpecifier? Variable { get; set; }
@@ -47,7 +38,6 @@ public sealed partial class GetSetChooserVM(NodeGraphVM graph) : ObservableObjec
     {
         Variable = variable;
         Position = position;
-        ScreenPosition = default;
 
         if (variable.DeclaringType is null)
         {

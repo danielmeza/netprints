@@ -5,9 +5,9 @@
              x:Class="NetPrints.Editor.Graph.GetSet.GetSetChooserView"
              x:DataType="edgetset:GetSetChooserVM"
              Width="200" Height="60">
-  <!-- Get/Set chooser (PAR-55): closes when the pointer leaves. -->
+  <!-- Get/Set chooser (PAR-55). Light-dismiss and Escape are CanvasPopup's job (ADR-0004). -->
   <Border AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GetSetChooser}" Background="{DynamicResource SystemControlBackgroundAltHighBrush}" BorderBrush="{DynamicResource SystemAccentColor}"
-          BorderThickness="1" PointerExited="OnPointerExited">
+          BorderThickness="1">
     <Grid ColumnDefinitions="*,*">
       <Button x:Name="GetButton" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GetButton}" Content="Get" Margin="4" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
               HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Command="{Binding GetCommand}" />

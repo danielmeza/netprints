@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:edcontrols="clr-namespace:NetPrints.Editor.Controls"
              xmlns:edgetset="clr-namespace:NetPrints.Editor.Graph.GetSet"
              xmlns:edgraph="clr-namespace:NetPrints.Editor.Graph"
              xmlns:ednodes="clr-namespace:NetPrints.Editor.Graph.Nodes"
@@ -78,20 +79,17 @@
     <TextBlock x:Name="Watermark" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GraphWatermark}" Text="{Binding Name}" FontWeight="Bold" FontSize="32" Foreground="#CCEEEEEE"
                VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="8" IsHitTestVisible="False" />
 
-    <!-- Node search (PAR-52) -->
-    <Popup x:Name="SearchPopup" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GraphSearchPopup}" IsOpen="{Binding Search.IsOpen, Mode=TwoWay}" Placement="Pointer"
-           IsLightDismissEnabled="True" PlacementTarget="{Binding #Editor}">
+    <!-- Node search (PAR-52). CanvasPopup anchors itself at the pointer (ADR-0004). -->
+    <edcontrols:CanvasPopup x:Name="SearchPopup" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GraphSearchPopup}" IsOpen="{Binding Search.IsOpen, Mode=TwoWay}"
+           PlacementTarget="{Binding #Editor}">
       <edsearch:NodeSearchView x:Name="SearchView" DataContext="{Binding Search}" />
-    </Popup>
+    </edcontrols:CanvasPopup>
 
-    <!-- Get/Set chooser (PAR-55). Anchored at GetSetChooser.ScreenPosition rather than
-         Placement="Pointer": a drop from the variable list does not update Avalonia's own pointer
-         tracking, so "Pointer" placement opened this over the variable list instead of the canvas. -->
-    <Popup x:Name="GetSetPopup" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GraphGetSetPopup}" IsOpen="{Binding GetSetChooser.IsOpen, Mode=TwoWay}"
-           Placement="AnchorAndGravity" PlacementAnchor="TopLeft" PlacementGravity="BottomRight"
-           HorizontalOffset="{Binding GetSetChooser.ScreenPosition.X}" VerticalOffset="{Binding GetSetChooser.ScreenPosition.Y}"
-           IsLightDismissEnabled="True" PlacementTarget="{Binding #Editor}">
+    <!-- Get/Set chooser (PAR-55, ADR-0004): CanvasPopup anchors itself at the pointer, including a
+         variable drop (drag-and-drop does not update Avalonia's own pointer tracking). -->
+    <edcontrols:CanvasPopup x:Name="GetSetPopup" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GraphGetSetPopup}" IsOpen="{Binding GetSetChooser.IsOpen, Mode=TwoWay}"
+           PlacementTarget="{Binding #Editor}">
       <edgetset:GetSetChooserView DataContext="{Binding GetSetChooser}" />
-    </Popup>
+    </edcontrols:CanvasPopup>
   </Panel>
 </UserControl>

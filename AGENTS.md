@@ -176,6 +176,7 @@ agents" below. Guard entry points with `ArgumentNullException.ThrowIfNull`,
   `readonly`. No visible mutable static fields. Value-like data (options, results, messages, DTOs) are
   `record`s with `init`/`required`; observable state follows the MVVM rules. [CA1852, S2933, CA2211]
 - Inject `TimeProvider`; never use `DateTime.Now`/`UtcNow` or `Thread.Sleep` in `src/`. [RS0030]
+- Canvas overlays use `CanvasPopup` (ADR-0004); never a raw `Popup`.
 
 ### Logging and naming
 - Log through `[LoggerMessage]` partials in the namespace's `Log` class (precedent:

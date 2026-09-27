@@ -4,6 +4,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.VisualTree;
+using NetPrints.Editor.Controls;
 using NetPrints.Editor.Graph.Nodes;
 using NetPrints.Editor.Graph.Pins;
 using NetPrints.Editor.Hosting;
@@ -21,8 +22,10 @@ public partial class GraphEditorView : UserControl
 {
     private const double ClickThreshold = 4;
     private const int DoubleClickCount = 2;
+    private const double HalfDivisor = 2;
     private Point? rightPressPosition;
     private object? backButtonTarget;
+    private TopLevel? keyboardTopLevel;
 
     /// <summary>
     /// Loads the control's XAML and wires the pointer, drag/drop and connection-completed handlers
@@ -51,6 +54,51 @@ public partial class GraphEditorView : UserControl
         Editor.AddHandler(DragDrop.DropEvent, OnDrop);
 
         SearchPopup.Opened += (_, _) => SearchView.FocusSearchBox();
+        SearchPopup.FallbackPositionRequested += (_, e) => e.Position = FallbackScreenPosition();
+        GetSetPopup.FallbackPositionRequested += (_, e) => e.Position = FallbackScreenPosition();
+
+        AttachedToVisualTree += OnAttachedToVisualTree;
+        DetachedFromVisualTree += OnDetachedFromVisualTree;
+    }
+
+    private void OnAttachedToVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
+    {
+        keyboardTopLevel = TopLevel.GetTopLevel(this);
+        keyboardTopLevel?.AddHandler(KeyDownEvent, OnGlobalKeyDown, RoutingStrategies.Tunnel, handledEventsToo: true);
+
+        // Attaches the tracker now, not lazily on first popup open, so it does not miss the very
+        // pointer event that triggers that first open.
+        if (keyboardTopLevel is { } topLevel)
+        {
+            CanvasPointerTracker.For(topLevel);
+        }
+    }
+
+    private void OnDetachedFromVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
+    {
+        keyboardTopLevel?.RemoveHandler(KeyDownEvent, OnGlobalKeyDown);
+        keyboardTopLevel = null;
+    }
+
+    /// <summary>
+    /// Ctrl+Space opens the node search without the pointer (ADR-0004): the popup falls back to the
+    /// selected node's position, or the canvas center if nothing is selected.
+    /// </summary>
+    private void OnGlobalKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Space || e.KeyModifiers != KeyModifiers.Control || ViewModel is not { } graph)
+        {
+            return;
+        }
+
+        if (TopLevel.GetTopLevel(this) is { } topLevel)
+        {
+            CanvasPointerTracker.For(topLevel).Invalidate();
+        }
+
+        // Not a command, and OpenSearchAsync has no catch of its own: route a fault to the error dialog too.
+        graph.OpenSearchAsync(FallbackGraphPosition()).Forget(graph.Context, "Failed to open the node search");
+        e.Handled = true;
     }
 
     /// <summary>The bound graph view model, or <see langword="null"/> if the data context is not one.</summary>
@@ -64,8 +112,35 @@ public partial class GraphEditorView : UserControl
         return new GraphPoint(location.X + editorPoint.X / zoom, location.Y + editorPoint.Y / zoom);
     }
 
+    /// <summary>Converts a graph position to a point relative to the editor control (the inverse of <see cref="ToGraph"/>).</summary>
+    private Point ToScreen(GraphPoint graphPoint)
+    {
+        var location = Editor.ViewportLocation;
+        double zoom = Editor.ViewportZoom;
+        return new Point((graphPoint.X - location.X) * zoom, (graphPoint.Y - location.Y) * zoom);
+    }
+
     /// <summary>Current pointer position in graph coordinates.</summary>
     public GraphPoint PointerGraphPosition => new(Editor.MouseLocation.X, Editor.MouseLocation.Y);
+
+    private NodeVM? SelectedNode => ViewModel?.SelectedNodes.FirstOrDefault();
+
+    /// <summary>The canvas center, relative to the editor control.</summary>
+    private Point CanvasCenterPoint => new(Editor.Bounds.Width / HalfDivisor, Editor.Bounds.Height / HalfDivisor);
+
+    /// <summary>
+    /// Where a popup falls back to when there is no tracked pointer position (ADR-0004): the
+    /// selected node's position, or the canvas center, in the top level's coordinates.
+    /// </summary>
+    private Point FallbackScreenPosition()
+    {
+        var editorPoint = SelectedNode is { } selected ? ToScreen(selected.Location) : CanvasCenterPoint;
+        var topLevel = TopLevel.GetTopLevel(this);
+        return topLevel is null ? editorPoint : Editor.TranslatePoint(editorPoint, topLevel) ?? editorPoint;
+    }
+
+    /// <summary>Where a keyboard-triggered node search creates its node (ADR-0004): the selected node's position, or the canvas center.</summary>
+    private GraphPoint FallbackGraphPosition() => SelectedNode?.Location ?? ToGraph(CanvasCenterPoint);
 
     /// <summary>Resets the viewport to zoom 1 and the origin when a new graph is opened (PAR-51).</summary>
     /// <param name="e">Unused; forwarded to the base implementation.</param>
@@ -268,9 +343,7 @@ public partial class GraphEditorView : UserControl
         }
         else if (e.DataTransfer.TryGetValue(GraphDragDrop.VariableFormat) is { } variable)
         {
-            // The Get/Set popup is placed from this event's own position, not Placement="Pointer":
-            // Avalonia's drag-and-drop tracking does not keep its last pointer position current.
-            graph.Drop(variable, position, screenPosition);
+            graph.Drop(variable, position);
             e.Handled = true;
         }
     }
