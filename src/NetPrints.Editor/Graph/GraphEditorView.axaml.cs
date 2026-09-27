@@ -254,7 +254,8 @@ public partial class GraphEditorView : UserControl
             return;
         }
 
-        var position = ToGraph(e.GetPosition(Editor));
+        var screenPosition = e.GetPosition(Editor);
+        var position = ToGraph(screenPosition);
 
         if (e.DataTransfer.TryGetValue(GraphDragDrop.MethodFormat) is { } method)
         {
@@ -263,7 +264,9 @@ public partial class GraphEditorView : UserControl
         }
         else if (e.DataTransfer.TryGetValue(GraphDragDrop.VariableFormat) is { } variable)
         {
-            graph.Drop(variable, position);
+            // The Get/Set popup is placed from this event's own position, not Placement="Pointer":
+            // Avalonia's drag-and-drop tracking does not keep its last pointer position current.
+            graph.Drop(variable, position, screenPosition);
             e.Handled = true;
         }
     }

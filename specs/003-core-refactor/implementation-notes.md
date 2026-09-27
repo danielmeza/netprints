@@ -3140,3 +3140,40 @@ back-to-back Release suite runs (both 716/707/0/9, `NetPrints.Core.dll`'s hash u
   `samples/HelloWorld/HelloWorld.Program.netpc.json` (restored via `git checkout`); root cause not
   investigated (out of scope for this batch) — worth a dedicated look before ever running that env var against
   `RoundTripSources()` un-scoped again.
+
+## Fix: Get/Set popup placement
+
+Owner-reported bug: dragging a variable from the variable list onto the canvas opened the Get/Set
+chooser over the list, not near the drop point. Root cause: `GetSetPopup` used
+`Placement="Pointer"`, but the drop comes from an async `DragDrop.DoDragDropAsync`, and Avalonia's
+own "last pointer position" tracking does not follow drag-and-drop the way it follows ordinary
+`PointerMoved` events, so the popup opened at a stale position instead.
+
+- Decision: `GetSetChooserVM` gained a `ScreenPosition` (`Avalonia.Point`) property, independent of
+  the existing `Position` (graph coordinates, used to place the created node); `Open` resets it to
+  the origin, and `NodeGraphVM.Drop(MemberVariableVM, GraphPoint, Point)` (a new overload, called
+  from `GraphEditorView.OnDrop`) sets it right after `Open` from the drop event's own
+  `e.GetPosition(Editor)` — not the graph-coordinate one, and not anything Avalonia tracks
+  internally. `GetSetPopup` now uses `Placement="AnchorAndGravity"` with `PlacementAnchor="TopLeft"`,
+  `PlacementGravity="BottomRight"` and `HorizontalOffset`/`VerticalOffset` bound to
+  `ScreenPosition.X`/`.Y`, anchored to `#Editor`'s own top-left corner. `SearchPopup` is untouched
+  (still `Placement="Pointer"`; it opens from a live key press, which Avalonia does track).
+- Decision: the other existing caller, `SuggestionListVM`'s "variable chosen from search results"
+  path, still calls the 2-arg `GetSetChooser.Open(variable, Position)` and does not set
+  `ScreenPosition`, so that popup now opens pinned to the editor's top-left corner instead of near
+  the pointer. This path is not part of the reported bug and the ViewModel has no view/viewport
+  reference to compute a screen point from; left as a known, minor deviation for a follow-up rather
+  than threading a coordinate-conversion service through `NodeGraphVM`/`SuggestionListVM` for it.
+- Tests: `NodeGraphVMTests.DropMethodConstructorAndVariable` now also asserts
+  `GetSetChooser.ScreenPosition` after a 3-arg `Drop`. New UI test
+  `HoverAndDropTests.DroppingAVariableOpensTheGetSetPopupAtTheDropPoint` drags a variable onto a
+  specific, off-corner canvas point (via the headless driver's synthetic `Drop`, the only way to
+  simulate drag-and-drop headless — real `OsDragDrop` is unsupported there) and asserts the
+  chooser's rendered `Border` (`GetSet.View`) lands there (`Bounds.X`/`Y` within rounding of the
+  drop point).
+- Suite: whole solution, Release, foreground: 728 total, 719 passed, 9 skipped (desktop E2E needing
+  `NETPRINTS_E2E=1`; headless driver's `OsDragDrop`/`WindowManager`/`RealCursor` gaps), 0 failed.
+  `dotnet format NetPrints.slnx --verify-no-changes` and `dotnet build -c Release` (0 warnings) both
+  clean. No golden fixture or `NotificationMap.golden.json` changes; no snapshot PNGs changed
+  (`get-set-chooser` screenshots only the fixed-size chooser `Border`, not the popup's screen
+  position).

@@ -99,6 +99,26 @@ public class HoverAndDropTests
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task DroppingAVariableOpensTheGetSetPopupAtTheDropPoint()
+    {
+        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await session.ClassEditor.CreateVariableButton.ClickAsync(Token);
+        var variable = session.ClassVM.Variables.Single();
+        var data = new DataTransfer();
+        data.Add(DataTransferItem.Create(GraphDragDrop.VariableFormat, variable));
+        // Well away from the corner used elsewhere, and from the variable list the drag started
+        // from: the popup used to open over the list instead of here (owner-reported bug).
+        var at = await session.Graph.EmptyPointAsync(Token, -260, 40);
+
+        session.App.Driver.Drop(at, data);
+
+        await session.Graph.GetSet.WaitOpenAsync(Token);
+        var bounds = (await session.Graph.GetSet.View.GetAsync(Token)).Bounds;
+        Assert.Equal(at.X, bounds.X, 0);
+        Assert.Equal(at.Y, bounds.Y, 0);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task DroppingSomethingElseIsRefused()
     {
         using var session = await EditorSession.OpenSampleMainAsync(Token);

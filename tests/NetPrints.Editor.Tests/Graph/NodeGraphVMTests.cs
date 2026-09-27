@@ -1,3 +1,4 @@
+using Avalonia;
 using NetPrints.Core;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Graph.Pins;
@@ -112,10 +113,11 @@ public class NodeGraphVMTests(TestEditor editor) : GraphTestBase(editor)
         var construct = (ConstructorNode)graph.Drop(ctor, new GraphPoint(84, 84));
         Assert.Equal(Class.Type, construct.ConstructorSpecifier.DeclaringType);
 
-        graph.Drop(variable, new GraphPoint(112, 112));
+        graph.Drop(variable, new GraphPoint(112, 112), new Point(340, 260));
         Assert.True(graph.GetSetChooser.IsOpen, "dropping a variable opens the Get/Set chooser (PAR-57)");
         Assert.Equal(new GraphPoint(112, 112), graph.GetSetChooser.Position);
         Assert.Equal(variable.Name, graph.GetSetChooser.Variable!.Name);
+        Assert.Equal(new Point(340, 260), graph.GetSetChooser.ScreenPosition);
     }
 
     [Fact]

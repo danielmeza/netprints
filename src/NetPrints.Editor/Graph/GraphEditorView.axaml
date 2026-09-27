@@ -84,8 +84,12 @@
       <edsearch:NodeSearchView x:Name="SearchView" DataContext="{Binding Search}" />
     </Popup>
 
-    <!-- Get/Set chooser (PAR-55) -->
-    <Popup x:Name="GetSetPopup" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GraphGetSetPopup}" IsOpen="{Binding GetSetChooser.IsOpen, Mode=TwoWay}" Placement="Pointer"
+    <!-- Get/Set chooser (PAR-55). Anchored at GetSetChooser.ScreenPosition rather than
+         Placement="Pointer": a drop from the variable list does not update Avalonia's own pointer
+         tracking, so "Pointer" placement opened this over the variable list instead of the canvas. -->
+    <Popup x:Name="GetSetPopup" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GraphGetSetPopup}" IsOpen="{Binding GetSetChooser.IsOpen, Mode=TwoWay}"
+           Placement="AnchorAndGravity" PlacementAnchor="TopLeft" PlacementGravity="BottomRight"
+           HorizontalOffset="{Binding GetSetChooser.ScreenPosition.X}" VerticalOffset="{Binding GetSetChooser.ScreenPosition.Y}"
            IsLightDismissEnabled="True" PlacementTarget="{Binding #Editor}">
       <edgetset:GetSetChooserView DataContext="{Binding GetSetChooser}" />
     </Popup>
