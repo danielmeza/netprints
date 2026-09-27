@@ -25,7 +25,9 @@ find src/NetPrints.Core -name '*.cs' -not -path '*/obj/*' -not -path '*/bin/*' -
 
         sub split_items {
             my ($text) = @_;
-            my (@items, $depth, $current) = ((), 0, "");
+            my @items;
+            my $depth = 0;
+            my $current = "";
             for my $ch (split //, $text) {
                 if ($ch eq "," && $depth == 0) { push @items, $current; $current = ""; next; }
                 $depth++ if $ch eq "(";
