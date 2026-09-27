@@ -44,9 +44,9 @@ dotnet run --project src/NetPrints.Desktop -c Release -- samples/HelloWorld/Hell
 Compile and run a project from the command line:
 
 ```bash
-# The CLI still opens the legacy .netpp/.netpc format (P1 sub-phase G, T062 switches it to
-# samples/HelloWorld/HelloWorld.csproj); this is a copy kept for that purpose, not the sample.
-dotnet run --project src/NetPrints.Cli -c Release -- -p tests/NetPrints.Core.Tests/Fixtures/Legacy/HelloWorld/HelloWorld.netpp -r
+# The sample imports the generator from bin/$(Configuration): Configuration=Release makes the CLI's
+# own build of it use the Release generator built above (Debug is the default).
+Configuration=Release dotnet run --project src/NetPrints.Cli -c Release -- -p samples/HelloWorld/HelloWorld.csproj -r
 # → "Compilation succeeded." then the program prints "Hello, World!"
 ```
 

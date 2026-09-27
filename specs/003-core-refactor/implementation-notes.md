@@ -2454,3 +2454,29 @@ No `!`/`null!`/`default!` added. Verified: `dotnet build` 0 warnings/0 errors; `
 316 green; `NetPrints.Editor.Tests` compile/run/dirty classes green; headless UI:
 `ClassEditorWindowTests`, `SnapshotTests`, `HeadlessSmokeTests.EditCompileAndRun` green.
 
+## T062 — CLI
+
+`src/NetPrints.Cli/Program.cs` now registers MSBuild (`MsBuildRegistration.EnsureRegistered`, in a
+separate no-inlining method from the one that touches `MsBuildProjectSystem`, so no `Microsoft.Build`
+type loads first), builds a `.csproj` with `IProjectSystem.BuildAsync` and, for `-r`, runs
+`GetRunCommand` through `ProcessRunner`, printing the program's stdout/stderr afterwards (the old
+`RunProject` started it detached). A `.netpp` or any other extension (or no `-p` at all) prints "Only
+.csproj projects are supported" and returns the bad-arguments code (1); no conversion. The other exit
+codes are the unchanged P0 ones (success 1, failed build or unfindable project 0). The project path is
+made absolute first because `BuildAsync` runs `dotnet build` from the project's own directory.
+Errors print as `file(line,col): code: message`.
+
+Two supporting changes the CI step needed, beyond the task text:
+
+- `samples/Directory.Build.props` derived the generator path from `$(Configuration)`, which is empty
+  when `dotnet build` is started without `-c` (`bin//net10.0/...`, generator exit code 129). It now falls
+  back to `Debug`, which is what the build defaults to.
+- The CI step sets `Configuration: Release` (an environment variable becomes an MSBuild property and
+  is inherited by the CLI's child `dotnet build`/`dotnet run --no-build`): CI only builds the generator
+  in Release. README's command carries the same prefix.
+
+No CLI test project exists; verified by hand: `-p samples/HelloWorld/HelloWorld.csproj -r` prints
+"Compilation succeeded." and "Hello, World!" (exit 1, in Debug and with `Configuration=Release`), a
+`.netpp`, a missing `-p` and a missing file are rejected without building, `--version` still prints
+`NetPrints.Cli`. No `!`/`null!`/`default!` added.
+
