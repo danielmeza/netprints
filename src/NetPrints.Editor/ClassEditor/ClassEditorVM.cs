@@ -6,6 +6,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using NetPrints.Core;
+using NetPrints.Editor.Events;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Main;
@@ -80,10 +81,12 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         Constructors = new ObservableViewModelCollection<MethodVM, ConstructorGraph>(cls.Constructors, c => new MethodVM(c, cls));
         Variables = new ObservableViewModelCollection<MemberVariableVM, Variable>(cls.Variables,
             v => new MemberVariableVM(v, this), v => v.Dispose());
+        EventGraphs = new ObservableViewModelCollection<EventGraphVM, EventGraph>(cls.EventGraphs, g => new EventGraphVM(g, cls));
 
         cls.Variables.CollectionChanged += OnMembersChanged;
         cls.Methods.CollectionChanged += OnMembersChanged;
         cls.Constructors.CollectionChanged += OnMembersChanged;
+        cls.EventGraphs.CollectionChanged += OnMembersChanged;
         SyncVariableSubscriptions();
         SyncDirtyTrackingGraphs();
 
@@ -135,6 +138,9 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
 
     /// <summary>View models for <see cref="Class"/>'s variables.</summary>
     public ObservableViewModelCollection<MemberVariableVM, Variable> Variables { get; }
+
+    /// <summary>View models for <see cref="Class"/>'s event graphs (US4).</summary>
+    public ObservableViewModelCollection<EventGraphVM, EventGraph> EventGraphs { get; }
 
     /// <summary>The graph shown in the canvas, or null.</summary>
     [ObservableProperty]
@@ -345,6 +351,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         graph == Class
         || (graph is MethodGraph method && Class.Methods.Contains(method))
         || (graph is ConstructorGraph constructor && Class.Constructors.Contains(constructor))
+        || (graph is EventGraph eventGraph && Class.EventGraphs.Contains(eventGraph))
         || Class.Variables.Any(v => v.GetterMethod == graph || v.SetterMethod == graph || v.TypeGraph == graph);
 
     private void DropDetachedState()
@@ -389,6 +396,11 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         foreach (var constructor in Class.Constructors)
         {
             yield return constructor;
+        }
+
+        foreach (var eventGraph in Class.EventGraphs)
+        {
+            yield return eventGraph;
         }
 
         foreach (var variable in Class.Variables)
@@ -686,6 +698,38 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     /// <summary>Removes a variable (undoable); clears the inspector and canvas when they show it.</summary>
     public void RemoveVariable(MemberVariableVM variable) => UndoRedo.Do(EditorCommands.RemoveVariable(Class, variable.Variable));
 
+    /// <summary>Creates an event graph named EventGraph, EventGraph1, ... (undoable, US4) and opens it.</summary>
+    [RelayCommand]
+    private void CreateEventGraph()
+    {
+        string name = NetPrintsUtil.GetUniqueName("EventGraph", Class.EventGraphs.Select(g => g.Name).ToList());
+        var eventGraph = new EventGraph(name) { Class = Class };
+        UndoRedo.Do(EditorCommands.AddEventGraph(Class, eventGraph));
+        OpenGraph(eventGraph);
+    }
+
+    /// <summary>Double click on an event graph: opens it (US4).</summary>
+    [RelayCommand]
+    private void OpenEventGraph(EventGraphVM? eventGraph)
+    {
+        if (eventGraph is not null)
+        {
+            OpenGraph(eventGraph.Graph);
+        }
+    }
+
+    /// <summary>Removes an event graph (undoable, US4); clears the canvas when it shows it.</summary>
+    [RelayCommand]
+    private void RemoveEventGraph(EventGraphVM? eventGraph)
+    {
+        if (eventGraph is null)
+        {
+            return;
+        }
+
+        UndoRedo.Do(EditorCommands.RemoveEventGraph(Class, eventGraph.Graph));
+    }
+
     /// <summary>Shows the variable inspector (PAR-29).</summary>
     public void SelectVariable(MemberVariableVM variable)
     {
@@ -760,6 +804,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         Class.Variables.CollectionChanged -= OnMembersChanged;
         Class.Methods.CollectionChanged -= OnMembersChanged;
         Class.Constructors.CollectionChanged -= OnMembersChanged;
+        Class.EventGraphs.CollectionChanged -= OnMembersChanged;
         foreach (var variable in subscribedVariables)
         {
             ((INotifyPropertyChanged)variable).PropertyChanged -= OnVariablePropertyChanged;
@@ -799,5 +844,6 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         Methods.Dispose();
         Constructors.Dispose();
         Variables.Dispose();
+        EventGraphs.Dispose();
     }
 }

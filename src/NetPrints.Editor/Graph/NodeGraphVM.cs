@@ -294,6 +294,25 @@ public sealed partial class NodeGraphVM : ObservableObject, IDisposable
         return node;
     }
 
+    /// <summary>
+    /// Creates an event graph entry (US4) directly, bypassing the reflection-based
+    /// <see cref="AddNode{T}(GraphPoint, NodePin?, object[])"/> pipeline: <see cref="EventEntryNode"/>'s
+    /// constructors take an <see cref="EventGraph"/>, not a <see cref="NodeGraph"/>, and
+    /// <see cref="AddNodeRequest"/> validates a constructor by an exact parameter-type match (every
+    /// other node type's constructor is declared with a <see cref="NodeGraph"/> first parameter for
+    /// exactly this reason), so it can never resolve one of <see cref="EventEntryNode"/>'s.
+    /// </summary>
+    /// <param name="position">Where the entry is created (graph coordinates).</param>
+    /// <param name="create">Constructs the entry from this graph, cast to <see cref="EventGraph"/>.</param>
+    /// <returns>The new entry.</returns>
+    public EventEntryNode AddEventEntry(GraphPoint position, Func<EventGraph, EventEntryNode> create)
+    {
+        EventEntryNode node = create((EventGraph)Graph);
+        node.PositionX = Math.Max(0, position.X);
+        node.PositionY = Math.Max(0, position.Y);
+        return node;
+    }
+
     /// <summary>Creates a node of type <typeparamref name="T"/> at a position.</summary>
     public Node AddNode<T>(GraphPoint position, NodePin? suggestionPin = null, params object[] arguments) where T : Node =>
         AddNode(new AddNodeRequest(typeof(T), Graph, position, suggestionPin, arguments));

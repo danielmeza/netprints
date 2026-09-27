@@ -381,6 +381,24 @@ public static class AutomationIds
     /// Automation id for the splitter between the class editor window's graph and inspector column.
     /// </summary>
     public const string ClassEditorInspectorSplitter = "ClassEditor.Splitter.Inspector";
+    /// <summary>
+    /// Automation id for the splitter above the class editor window's event graph list.
+    /// </summary>
+    public const string ClassEditorEventGraphsSplitter = "ClassEditor.Splitter.EventGraphs";
+
+    // Event graphs (US4)
+    /// <summary>
+    /// Automation id for the class editor window's list of the class's event graphs.
+    /// </summary>
+    public const string EventGraphList = "ClassEditor.EventGraphList";
+    /// <summary>
+    /// Automation id for an event graph list row's name text.
+    /// </summary>
+    public const string EventGraphName = "ClassEditor.EventGraphName";
+    /// <summary>
+    /// Automation id for the class editor window's button that creates a new event graph.
+    /// </summary>
+    public const string CreateEventGraphButton = "ClassEditor.CreateEventGraphButton";
 
     // Variables list rows (AutomationProperties.Name carries the variable name)
     /// <summary>

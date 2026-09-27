@@ -36,6 +36,25 @@ public static class EditorCommands
             () => cls.Variables.Insert(Math.Clamp(index, 0, cls.Variables.Count), variable));
     }
 
+    /// <summary>Adds an event graph (US4); undo removes it (redo restores the same graph).</summary>
+    public static IUndoableCommand AddEventGraph(ClassGraph cls, EventGraph graph) =>
+        new DelegateUndoableCommand("Add event graph",
+            () => cls.EventGraphs.Add(graph),
+            () => cls.EventGraphs.Remove(graph));
+
+    /// <summary>Removes an event graph (US4); undo restores it at its position.</summary>
+    public static IUndoableCommand RemoveEventGraph(ClassGraph cls, EventGraph graph)
+    {
+        int index = -1;
+        return new DelegateUndoableCommand("Remove event graph",
+            () =>
+            {
+                index = cls.EventGraphs.IndexOf(graph);
+                cls.EventGraphs.Remove(graph);
+            },
+            () => cls.EventGraphs.Insert(Math.Clamp(index, 0, cls.EventGraphs.Count), graph));
+    }
+
     /// <summary>Adds a getter; undo removes it (redo restores the same getter).</summary>
     public static IUndoableCommand AddGetter(Variable variable)
     {

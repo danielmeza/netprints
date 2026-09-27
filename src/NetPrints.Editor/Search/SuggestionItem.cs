@@ -100,6 +100,8 @@ public sealed class SuggestionItem
         VariableSpecifier variable => ($"{variable.Type} {variable.Name} : {variable.Type}", "Property_16x.png"),
         NodeSuggestion suggestion => (suggestion.DisplayName, suggestion.IconKey ?? "None_16x.png"),
         MakeDelegateTypeInfo makeDelegate => ($"Make Delegate For A Method Of {makeDelegate.Type.ShortName}", "Delegate_16x.png"),
+        CustomEventSuggestion => ("Custom Event", "None_16x.png"),
+        OverrideEventSuggestion overrideEvent => ($"Override {overrideEvent.Method.Name}", "Method_16x.png"),
         TypeSpecifier type when BuiltInNodes.TryGetValue(type, out var builtIn) => builtIn,
         TypeSpecifier type => (type.FullCodeName, "Type_16x.png"),
         _ => throw new NotSupportedException($"Unsupported suggestion {value.GetType()}"),

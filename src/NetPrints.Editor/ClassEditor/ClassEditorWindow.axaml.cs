@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Input;
+using NetPrints.Editor.Events;
 using NetPrints.Editor.Graph;
 
 namespace NetPrints.Editor.ClassEditor;
@@ -46,4 +47,14 @@ public partial class ClassEditorWindow : Window
     private void OnMethodPointerMoved(object? sender, PointerEventArgs e) => dragSource.Moved(e, this);
 
     private void OnMethodPointerReleased(object? sender, PointerReleasedEventArgs e) => dragSource.Released();
+
+    // Double click opens the event graph (US4); unlike methods/constructors, event graphs are not
+    // dragged onto the canvas and have no single-click inspector.
+    private void OnEventGraphDoubleTapped(object? sender, TappedEventArgs e)
+    {
+        if ((sender as Control)?.DataContext is EventGraphVM eventGraph)
+        {
+            ViewModel?.OpenEventGraphCommand.Execute(eventGraph);
+        }
+    }
 }

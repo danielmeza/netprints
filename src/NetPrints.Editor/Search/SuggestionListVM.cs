@@ -310,6 +310,20 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
                 {
                     Add("Types", provider.GetNonStaticTypes());
                 }
+                else if (nodeGraph is EventGraph && cls is not null)
+                {
+                    // US4: an event graph starts empty; "Custom Event" and "Override <method>"
+                    // create its entries (EventEntryNode) the same way the class editor's own
+                    // lists create methods and constructors.
+                    Add("NetPrints", [new CustomEventSuggestion()]);
+
+                    var alreadyNamed = new HashSet<string>(cls.Methods.Select(m => m.Name)
+                        .Concat(cls.EventGraphs.SelectMany(g => g.Entries.Select(e => e.EventName))));
+
+                    Add("NetPrints", baseTypes.SelectMany(provider.GetOverridableMethodsForType)
+                        .Where(m => !alreadyNamed.Contains(m.Name))
+                        .Select(m => (object)new OverrideEventSuggestion(m)));
+                }
                 break;
         }
 
@@ -358,6 +372,21 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
 
                 case VariableSpecifier variable:
                     graph.GetSetChooser.Open(variable, Position);
+                    break;
+
+                case CustomEventSuggestion:
+                    if (graph.Graph is EventGraph { Class: { } eventClass })
+                    {
+                        var existingNames = eventClass.Methods.Select(m => m.Name)
+                            .Concat(eventClass.EventGraphs.SelectMany(g => g.Entries.Select(e => e.EventName)))
+                            .ToList();
+                        string name = NetPrintsUtil.GetUniqueName("CustomEvent", existingNames);
+                        graph.AddEventEntry(Position, g => new EventEntryNode(g, name));
+                    }
+                    break;
+
+                case OverrideEventSuggestion overrideEvent:
+                    graph.AddEventEntry(Position, g => new EventEntryNode(g, overrideEvent.Method));
                     break;
 
                 case MakeDelegateTypeInfo makeDelegate:
