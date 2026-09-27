@@ -2582,8 +2582,8 @@ Findings for B2:
 ## T063 part B: attributes and hooks removed (B2)
 
 Step 2, `scripts/remove-datacontract.sh` (commit eee4477, one-line fix da82353), run once: a5d8979 removes
-236 lines from 53 files, all of them attribute lines (83 `[DataMember]`, 55 `[DataContract]`, 6
-`[IgnoreDataMember]`, 48 `[KnownType]`) plus the 49 `using System.Runtime.Serialization;` that nothing used any
+236 lines from 53 files, all of them attribute lines (85 `[DataMember]`, 56 `[DataContract]`, 6
+`[IgnoreDataMember]`, 40 `[KnownType]`) plus the 49 `using System.Runtime.Serialization;` that nothing used any
 more. Every attribute lived under `src/NetPrints.Core` (37 files in `Graph`, 16 in `Core`), so the script's glob
 stays `src/NetPrints.Core/**/*.cs`. It kept the four files that still had a hook (`StreamingContext`). Rerunning
 it changes nothing. The build needed no follow-up. The first version of the script had a Perl list-assignment
