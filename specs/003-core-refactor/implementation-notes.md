@@ -3828,3 +3828,26 @@ set `ScreenPosition`, still opened at the origin.
   - Tests added to the existing `DiagnosticMapperTests.cs` (RC-T10): suffix stripped/parsed,
     a generated-file message resolved through a hand-built `SourceMap`, `FromRoslyn` resolving a real
     Roslyn `Diagnostic` through a map, and `FromTranslation`'s field mapping.
+- **T091**: `CodeAnalysisSession(references, otherSources, compilationOptionsJson)` matches the contract
+  exactly. `AnalyzeAsync` is synchronous work wrapped in `Task.FromResult` (no internal `Task.Run`,
+  matching §3's "runs on the caller's thread"); `GetQuickInfoAsync` is a real `async` method (its one
+  await, `SyntaxTree.GetRootAsync`, is required — `GetRoot()` trips `VSTHRD103`). The snapshot is a
+  private `Snapshot(Compilation, TreesByClass)` record swapped into a `volatile` field on every
+  `AnalyzeAsync` (a plain reference write is already atomic; "a newer call does not cancel an older
+  one" needs no lock, only "replace" needs to be atomic, which it is). `compilationOptionsJson` is
+  parsed with a private `CompilationOptionsInfo(LanguageVersion, Nullable, ImplicitUsings)` record
+  matching field-for-field the one `MsBuildProjectSystem.BuildCompilationOptionsJson` privately
+  serializes (documented as intentionally not shared: the shape lives entirely inside the "serialized
+  language version, nullable, usings" phrase project-system.md §4 already flags as a placeholder).
+  Quick info's `Summary` is `<summary>` text pulled from `ISymbol.GetDocumentationCommentXml()` via
+  `System.Xml.Linq`, whitespace-collapsed with a plain `Split`/`Join` (catches `XmlException` only,
+  for a symbol whose doc comment happens to be malformed XML — returns `null`, never throws).
+  - RC-T08's test loads a real, temporary class-library project through `MsBuildProjectSystem.LoadAsync`
+    (same pattern as `MsBuildProjectSystemTests`) so `ResolvedAssembly.DocumentationPath` is the real
+    `Microsoft.NETCore.App.Ref` pack path on this machine, then asks for quick info on a `Console.WriteLine`
+    call in a hand-built `TranslatedClass`; a second test proves a genuine `CS0103` on a class with no
+    source map keeps `GraphKey`/`NodeId` null rather than guessing.
+  - Open question for review: `CodeAnalysisSession` has no `IAsyncDisposable`/`IDisposable` — it holds
+    only a `CSharpCompilation`/`SyntaxTree`s (no unmanaged resources, matches the contract's "no
+    unmanaged resources" lifetime rule) — confirm T092's `CodeAnalysisHost` doesn't need to await
+    anything when recreating one per snapshot change.
