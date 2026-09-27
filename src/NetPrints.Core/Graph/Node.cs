@@ -2,7 +2,6 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
-using System.Runtime.Serialization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Core;
 
@@ -148,8 +147,6 @@ namespace NetPrints.Graph
         /// <summary>
         /// This node's id, unique within <see cref="Graph"/> (document-format.md §1.4.1). Assigned
         /// on construction and overwritten from the document by the mapper.
-        /// <see cref="IgnoreDataMemberAttribute"/>, not <c>[DataMember]</c>: ids belong to the JSON
-        /// document, not to the DataContract serializer.
         /// </summary>
         public string Id { get; internal set; }
 
@@ -291,17 +288,6 @@ namespace NetPrints.Graph
         /// <param name="eventArgs">Unused; always <see cref="EventArgs.Empty"/> or <see langword="null"/>.</param>
         protected virtual void HandleInputTypeChanged(object? sender, EventArgs? eventArgs)
         {
-        }
-
-        [OnDeserialized]
-        private void OnDeserializing(StreamingContext context)
-        {
-            foreach (var inputTypePin in InputTypePins)
-            {
-                if (inputTypePin.InferredType != null)
-                    inputTypePin.InferredType.OnValueChanged += EventInputTypeChanged;
-                inputTypePin.IncomingPinChanged += OnIncomingTypePinChanged;
-            }
         }
 
         /// <summary>
