@@ -2966,3 +2966,85 @@ Tests: `ProjectPropertyTests` (FR-025), `HostChannelBridgeTests` (EX-T08), `Proj
 - Class-ness leaks added: none. `HostChannelBridge`, `PersistenceBinding`, `ExtensionProjectProperties` and `NodeGraphVM.AddNode(NodeSuggestion)` are
   graph-generic; `NewClassCommand` and `CreateNewClass(IProjectProfile)` were class-only already.
 - `git grep` for `!` before `.`, `;`, `,`, `)` or a space in `src` finds only the two in `ObservableViewModelCollection.cs`.
+
+## Checkpoint F report (T077)
+
+SC-004: the test extension's six kinds of contribution work end to end (editor and build), and each of the seven load failures leaves the
+editor usable, in automated tests. Verdict: met. The first pass found gaps (the asset's catalog, member emitter, profile, settings and host
+channel were only asserted as registered; NPX002 to NPX007 had no editor-level test); they were closed with the tests marked SC-004 below.
+
+- Decision: gaps closed rather than accepted as PARTIAL. SC-004 says "in automated tests" and "end-to-end", so a registry-only proof was not enough.
+- Decision: the asset stays a build-only reference (`ReferenceOutputAssembly=false`) in `NetPrints.Core.Tests`. The settings test reaches
+  `TestSettings` through the registry's `ExtensionSettingsDescriptor` and reflection (`MakeGenericMethod(descriptor.ValueType)` on `ISettingsStore`),
+  and the host channel test reads the factory's `LastHost` by reflection.
+- Decision: NPX002 in the editor theory uses a folder manifest, not an in-process entry: the loader validates `netprintsApi` only for manifests it reads
+  from a folder (in-process extensions are trusted). Not a production gap.
+- Observation: `TestMemberEmitter` keys `partial` on the owning class name (`Declaration.Name`), so every property of a `Partial*` class is partial; the
+  test asserts that behaviour, and the asset's doc comment says the same.
+
+### SC-004 matrix
+
+The six contributions (FR-016): node kind, class and member emitters, type catalog, project profile, settings, host channel. "Editor" and "Build" are
+the two places a contribution is used; a cell marked n/a has no effect there (catalog, profile, settings and host channel do not touch a build; the
+generator loads only node kinds and emitters).
+
+| Contribution | Editor (test) | Build (test) |
+|---|---|---|
+| Node kind `netprints.test/Log` | `ExtensionSuggestionTests.ASuggestionOfTheTestExtensionFollowsTheBuiltInCategoriesInAMethodGraph`, `.ChoosingTheSuggestionCreatesTheExtensionsNodeAtThePosition`; `ExtensionPersistenceTests.ATrustedExtensionsNodeIsLoadedAndSavedAsItsOwnKind`; `ContributionTests.AnExtensionNodeIsSavedReloadedAndTranslatedWithTheExtensionsCode` | `GeneratorExtensionTests.ABuildWithTheExtensionItemGeneratesAndCompilesTheExtensionNode`, `.TheGeneratorLoadsTheRequestsExtensionFolderAndExitsZero` |
+| Class and member emitters | `ContributionTests.TheTestEmittersMakeAPartialClassItsPropertiesPartialAndLeaveOtherClassesAlone` (SC-004; the editor translates with `registry.Translation`, the same path) | same test through `ClassTranslator(registry.Translation)`; attribute in the built C#: `GeneratorExtensionTests.ABuildWithTheExtensionItemGeneratesAndCompilesTheExtensionNode` |
+| Type catalog `Widget` | `ReflectionHostTests.TheTestExtensionsCatalogTypeReachesTheReflectionHost` (SC-004) | n/a |
+| Profile `netprints.test` | `ProjectProfileTests.TheTestExtensionsProfileIsFoundAndUsedForANewClassWithoutAWarning` (SC-004) | `ContributionTests.TheProfileTemplateIsWrittenByCreateAndAnUnknownProfileIdHasNoRegistryEntry` (the template `CreateAsync` writes, `NetPrintsProfile` in the `.csproj`) |
+| Settings `TestSettings` | `ContributionTests.TheTestExtensionsSettingsSectionDefaultsRoundTripsAndSurvivesARestart` (SC-004, store shared by editor and generator) | n/a (project-level values are MSBuild properties: `ProjectPropertyTests.TheTestExtensionReadsItsPropertyThroughTheSnapshot`) |
+| Host channel `test` | `TestExtensionHostChannelTests.ATypesChangedMessageFromTheTestExtensionsChannelReloadsReflectionExactlyOnce` (SC-004) | n/a |
+
+The seven load failures, each with the other extension (the test asset) still loaded and the editor usable. Registry level: `ExtensionLoaderTests` and
+`ExtensionBuilderTests` (EX-T10). Editor level: `ExtensionFailureReportTests.EachLoadFailureIsOneDialogRowAndTheEditorAndTheTestExtensionStayUsable`
+(SC-004, one theory case per code: the dialog lists exactly one row with the code, the test extension and its node kind stay registered, a project opens with no
+error dialog and New Class still works); the UI test is `ExtensionDialogTests.ExtensionLoadFailuresAreListedAndTheEditorStaysUsable` (ED-T11).
+
+| Code | Registry test | Editor test case |
+|---|---|---|
+| NPX001 | `AnInvalidManifestFailsWithNpx001AndTheOtherExtensionStillLoads` | theory `NPX001`; `ExtensionFailureReportTests.FailuresAreListedInOneDialogAndNotRepeated` |
+| NPX002 | `AFailingSiblingLeavesTheTestExtensionLoadedAndTheRegistryUsable`, `AnIncompatibleApiVersionFailsWithNpx002` | theory `NPX002` |
+| NPX003 | `AMissingDependencyFailsWithNpx003`, `ADependencyThatFailedMakesTheDependentFailWithNpx003` | theory `NPX003` |
+| NPX004 | `ADuplicateIdFailsWithNpx004AndTheFirstWins` | theory `NPX004` |
+| NPX005 | `ExtensionBuilderTests.ARegisterThatThrowsDiscardsAllItsContributions` | theory `NPX005` |
+| NPX006 | `ADuplicateKindOrNodeTypeRejectsOnlyTheLaterKindAndKeepsTheExtension`, `ProfileConflictsAreRejectedWithNpx006` | theory `NPX006` (a profile with the built-in id, in `registry.Issues`) |
+| NPX007 | `AMissingAssemblyFailsWithNpx007` | theory `NPX007` |
+
+### Totals and gates
+
+- Whole suite (`dotnet test --solution NetPrints.slnx -c Release --no-build`, fresh Release build): 716 tests, 707 passed, 0 failed, 9 skipped (the
+  headless UI driver cannot do WindowManager, RealCursor or OsDragDrop). `NetPrints.Core.Tests` 416, `NetPrints.Editor.Tests` 218.
+- `dotnet build -c Release`: 0 warnings, 0 errors. `dotnet format NetPrints.slnx --verify-no-changes`: clean.
+- Goldens: `git diff --stat 9d05bde HEAD -- tests/NetPrints.Core.Tests/Fixtures tests/NetPrints.Core.Tests/Characterization` is empty
+  (`NotificationMap.golden.json` and every fixture unchanged since 9d05bde).
+- No `!` added (the new tests use `?? throw`).
+- Environmental note: `SdkPackageTests` packs with `Version=0.0.1-ps-t05` into the Release output folders, so `NetPrints.Core.dll` in `bin/Release` ends
+  up 0.0.1.0 while the test extension was compiled against 0.0.7.0. A second `dotnet test -c Release --no-build` without rebuilding then fails the two
+  `GeneratorExtensionTests` that run the generator (NPX007, `NetPrints.Core, Version=0.0.7.0` not found); a `dotnet build -c Release` restores them.
+  Pre-existing, unrelated to F; worth fixing (pack to a scratch output) in a later phase.
+
+### Open items for the Opus review
+
+Class-ness leaks recorded during F (F1 to F5):
+1. `GraphKinds` is a closed flags enum (`Class`, `Type`, `Method`, `Event`, ...): a new graph kind needs a new bit in NetPrints itself; `NodeGraphKinds.Of` returns `None` for a graph it does not know.
+2. `IExecutionTranslationContext.Class` (and `ClassEmitContext.Class`, `MemberEmitContext.Class`) is `ClassGraph`, and it is nullable on the translation context (deviation from the spec's non-null snippet: `NodeGraph.Class` is nullable and unit tests translate graphs with no class).
+3. `EmittedMemberKind` is a closed enum (`Field`, `Property`, `Method`, `Constructor`, `EventMethod`); `MemberEmitContext.Model` is `object`; the class emitter's allowed modifier set is the class one.
+4. `ClassTranslator` hard-wires the `class` keyword and iterates `ClassGraph.Variables`, `Constructors`, `Methods`; the built-in translators use `node.Graph.Class` for the static getter/setter target.
+5. Builder and profile names are class-specific: `IExtensionBuilder.AddClassEmitter` and `AddMemberEmitter`, `IProjectProfile.ClassTemplates`, `ClassTemplate.Create(ClassGraph)`.
+6. The return suggestion casts to `MethodGraph`; `NodeGraph.Class` (graph-to-owner link) is class-typed.
+
+Null-forgiving and nullability:
+7. Two `!` remain in `src/NetPrints.Editor/ModelSync/ObservableViewModelCollection.cs` (lines 55 and 83, `(TModel)e.NewItems[i]!`); reviewers check every `!`.
+8. `Project.Snapshot` is still nullable, unlike the data-model.md §5 snippet.
+
+Deferred or partial from the notes:
+9. EX-T08's reload half is covered by T076 (`HostChannelBridgeTests`), and now also by the real asset's channel; the focus-document `nodeId` is parsed but not used (navigate-to-node belongs to sub-phase I).
+10. `RenderGenerated` silently drops a preserved unknown node (the mapper has no logger, 3002 is not emitted) until sub-phase I; the `NPD001` row on open and `NPT003` from the generator are the only signals.
+11. Format gap: `CanSetPure` node kinds (`CallMethodNode`, `ConstructorNode`, `ExplicitCastNode`, `TernaryNode`, `AwaitNode`) have no document field for purity, so a pure instance loads back impure.
+12. `extension-points.md` §4 still shows the four-parameter `ReflectionProvider` constructor; the code follows tasks.md (T058).
+13. `NotificationMap.golden.json` was regenerated once (T063a); `Project.LastCompiledAssemblyPath` and `Project.GenerateClassSources` were kept on purpose.
+14. Startup null-binding log noise in the editor (cosmetic); the CLI has no test project and the CI "CLI sample compile and run" step was not run locally.
+15. `NodeSuggestion` icon for extension nodes defaults to `None_16x.png` (extension icon keys are not editor assets, P3); Create Project still uses the default profile (no chooser scheduled); a declined project asks again next time.
+16. The Release-output pollution by `SdkPackageTests` described above.

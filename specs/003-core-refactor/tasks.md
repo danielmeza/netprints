@@ -150,7 +150,7 @@ Checkpoint E (plan.md). Out of scope (follow-ups, do not implement): `netprints 
 - [x] T074 [US3] Generator uses the request's `extension=` folders (project-system.md §3); PS-T14 in `tests/NetPrints.Core.Tests/Projects/GeneratorExtensionTests.cs`
 - [x] T075 [US3] Desktop/editor composition (editor-services.md §4): settings, `ExtensionHost`, host channel, complete `EditorHostServices`; `EditorContext.Extensions/HostChannel/Settings`; extension-failure dialog (ED-T11); trust flow on project open (`ConfirmTrustAsync`, `LoadForProject`, `NPD006`) — EX-T13 in `tests/NetPrints.Editor.Tests/Hosting/ProjectTrustTests.cs`
 - [x] T076 [US3] Editor use of contributions: search shows `NodeSuggestion`s by `AllowedIn`; `ReflectionHost` composes catalogs; persistence/mapper rebuilt on `RegistryChanged`; New Class uses the project's profile; `HostChannelBridge.cs` (types-changed → reload; focus-document → open/select; logs 1020–1022) + EX-T08; `ProjectSystemOptions.ExtraProperties` from the registry's `AddProjectProperty` names, test: the test extension reads `NetPrintsTestMode` via `ProjectSnapshot.GetProperty` (`tests/NetPrints.Editor.Tests/Hosting/ProjectPropertyTests.cs`, FR-025)
-- [ ] T077 [US3] **Checkpoint F**: SC-004; commit
+- [x] T077 [US3] **Checkpoint F**: SC-004; commit
 
 ## Phase 7: User Story 4 — event graphs (P2) (sub-phase G)
 
