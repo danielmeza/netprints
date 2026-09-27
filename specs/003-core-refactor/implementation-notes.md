@@ -3370,3 +3370,110 @@ edited, so the diff between what was reviewed and what changed stays visible.
 - Suite after the fix-up: whole solution, Release, foreground: 732 total, 722 passed, 10 skipped, 0 failed.
   `dotnet build -c Release` 0 warnings/0 errors, `dotnet format NetPrints.slnx --verify-no-changes` clean,
   no golden fixture or schema changes.
+
+## Sub-phase H, batch H1 (T084–T086): method-local variables, model/translator/document mapping
+
+- Decision (data-model.md §1 is stale here, matches the G1 precedent): no `[DataContract]`/`[DataMember]`
+  on `LocalVariable`/`ExecutionGraph.LocalVariables`/`VariableSpecifier.Scope` and no `[OnDeserializing]`
+  initializer, even though the data-model.md §3 snippet shows them — T063 already deleted DataContract
+  persistence from `src/NetPrints.Core` entirely (accept grep empty), so matching the surrounding
+  (already-stripped) code, not the stale spec snippet. `LocalVariables` is a plain field-initialized
+  `ObservableRangeCollection<LocalVariable>` (`private set`), exactly like `ClassGraph.EventGraphs`.
+- Decision (moved, not duplicated): `VariableScope` already existed in `NetPrints.Serialization.Documents`
+  (a document-only placeholder, its own doc comment said "presumably moves to `NetPrints.Core`" once
+  sub-phase H landed). Moved verbatim into `NetPrints.Core` (declared in `LocalVariable.cs`, next to the
+  type it describes) and deleted the `Documents` copy; `VariableRef.Scope` now references the `Core` enum
+  directly (`Refs.cs` already had `using NetPrints.Core;`). No JSON attribute changes needed anywhere:
+  the global `JsonIgnoreCondition.WhenWritingDefault` already omits `scope: "Member"` (value 0) and a
+  `null` `declaringType` automatically, exactly matching document-format.md's "omit `Member`"/"omit for
+  locals" wording with zero extra code.
+- Decision (a real, not cosmetic, ripple): `VariableSpecifier.DeclaringType` and its constructor parameter
+  became `TypeSpecifier?` (a local has none). Fixed the resulting nullable-flow ripple at every call site
+  rather than routing around it: `NetPrintsUtil.IsVisible`'s `type` parameter is now `TypeSpecifier?`,
+  returning `true` immediately when it is `null` (a local has no cross-type visibility concept — always
+  readable/writable from its own method); `VariableNode.TargetType` is now `TypeSpecifier?`, and
+  `VariableGetterNode`/`VariableSetterNode.ToString()` use `TargetType?.ShortName` (their `IsStatic`-only
+  branch, unrelated to locals, was already carrying a null case data-model.md never actually reaches
+  in practice). **`GetSetChooserVM.Open`** (Editor) now special-cases `variable.DeclaringType is null` to
+  set `CanGet`/`CanSet` both `true` unconditionally before calling `NetPrintsUtil.IsVisible` at all — this
+  is the one Editor-adjacent edit in this batch, required only to keep the solution building under the
+  widened nullability, **not** T087's VariablesPanelVM/drag-to-canvas work (nothing currently opens this
+  popup for a local; T087 is free to wire that up against an already-correct `Open`).
+- Decision (`IsLocalVariable` "on `Scope`", data-model.md §3's Nodes row): `VariableNode.IsLocalVariable`
+  changed from `TargetType is null` (previously always false — no code path could ever construct a
+  `VariableSpecifier` with a null `DeclaringType`, since the type wasn't nullable) to
+  `Variable.Scope == VariableScope.Local`. Found and fixed a real, latent bug this exposed:
+  `VariableSetterNode.NewValuePin` was `IsStatic ? InputDataPins[0] : InputDataPins[1]`, assuming every
+  non-static setter has a target pin at index 0; a local has neither a target pin nor a static prefix, so
+  its only data pin (`NewValue`) is at index 0 too. Now `IsStatic || IsLocalVariable ? [0] : [1]`. Without
+  this fix `LocalIsDeclaredFirstAfterTheVariablesHeader`'s sibling setter test throws `IndexOutOfRange`.
+- Decision (translator, data-model.md §3's Translation/Nodes rows): `ExecutionGraphTranslator` gained
+  `ReserveLocalVariableNames(ExecutionGraph)`, called right after `CreateStates()`/before `CreateVariables()`
+  in `Translate(ExecutionGraph, …)` (never in `TranslateEventEntry`: `EventGraph` has no `LocalVariables`,
+  data-model.md §4). It validates each local's name — `SyntaxFacts.IsValidIdentifier` **and**
+  `SyntaxFacts.GetKeywordKind(name) == SyntaxKind.None` (empirically verified: `IsValidIdentifier` alone
+  accepts bare keywords like `"class"`/`"int"`, it only checks lexical shape) — not a parameter name, and
+  not another local's name (a `HashSet<string>.Add` doubling as the duplicate check), throwing `NPT004`
+  otherwise. Reserved names then widen `GetOrCreatePinName`'s uniqueness list
+  (`variableNames.Values.Concat(reservedLocalNames)`), so a generated pin name can never collide with a
+  user's local — in practice generated names are always `var`-prefixed (`TranslatorUtil.VariablePrefix`)
+  so this can't collide today, but it matches the contract literally and costs nothing. `TranslateVariables`
+  emits each local's `<Type.FullCodeName> <Name> = default(<Type.FullCodeName>);` right after the
+  `// Variables` header, before the existing per-pin-variable loop, only when `graph is ExecutionGraph`.
+  `PureTranslateVariableGetterNode`/`TranslateVariableSetterNode` (`BuiltInNodeTranslators.cs`) both gained
+  an `if (node.IsLocalVariable) { context.Append(node.VariableName); } else { <existing target/dot logic> }`
+  branch: a local reads/writes as a bare name, no `this.`/target/dot, matching data-model.md's Translation
+  row exactly.
+- **Bug found, not fixed (out of scope, pre-existing, unrelated to locals): `ForLoopNode` cannot loop.**
+  `TranslateContinueForLoopNode` (`BuiltInNodeTranslators.cs`, unmodified by this batch) writes
+  `if (idx < max) { push; WriteGotoOutputPinIfNecessary(LoopPin, ContinuePin); }` then, **unconditionally
+  after that `if`'s closing brace**, `WriteGotoOutputPinIfNecessary(CompletedPin, ContinuePin)`. Both calls
+  share the same `fromPin` (`ContinuePin`), so `WriteGotoOutputPinIfNecessary`'s "omit the goto, rely on
+  fallthrough" optimization (`nextId == toId`) is only safe when nothing else follows in the same state —
+  true for every other node translator with a single exit (`IfElseNode`'s two branches are each
+  self-contained; `VariableSetterNode`/`CallMethodNode` each call it exactly once) but false here: when the
+  Loop-pin goto is "unnecessary" (the common case — a loop's first body node is always the very next node
+  `CreateStates` numbers, since it's the first new node the exec-order DFS descends into from `ForLoopNode`
+  itself), the unconditional Completed-goto right after the `if` runs on *every* pass, including the
+  looping one, so the loop body executes exactly once and then exits early. Confirmed by hand: this is not
+  a corner case, it reproduces for the simplest possible "loop with one body node" graph. Discovered while
+  building this batch's own "loop increments a local" fixture (`ForLoopNode` printed the initial value,
+  never looping); avoided entirely by using `IfElseNode` + the operator mechanism instead (see below), so
+  no red/green fix was attempted here — this needs its own test and fix, filed as an open question for the
+  Opus review rather than folded into this batch.
+- Decision (`Locals` fixture, `tests/NetPrints.Core.Tests/Fixtures/Locals/Locals.netpc.json`, no
+  namespace so `cls.FullName == "Locals"` matches the golden's literal name): a hand-loop, not
+  `ForLoopNode` (the bug above) — `MethodEntry → CallMethod(op_LessThan, count < 5) → IfElse →`
+  **True**: `CallMethod(op_Addition, count + 1) → VariableSetter(count) →` back-edge to the `op_LessThan`
+  call's own input exec pin (a second incoming connection into the same pin —
+  `NodeInputExecPin.IncomingPins` is a collection, this is a supported merge point, not a hack) —
+  **False**: `CallMethod(Console.WriteLine(int)) → Return`. Exercises `DefaultOperatorSpecifiers`/
+  `OperatorUtil` (`op_LessThan`/`op_Addition`, research.md's existing built-in-operator mechanism,
+  previously untested end to end through a real compile) alongside the local getter/setter/declaration
+  work T085 actually targets. Registered in `GoldenCSharpTests.Fixtures()` and
+  `RoundTripTests.RoundTripSources()` (DF-T02/DF-T03) the same way EventGraphs was (G1 notes); the
+  checked-in JSON is the mapper's own canonical output (loaded, `MarkDirty()`d, re-saved, byte-compared —
+  same technique, not committed) so DF-T03 passes without hand-formatting guesswork. Build/run test
+  `LocalVariableBuildTests` (mirrors `EventGraphBuildTests`; no hand-written `Program.cs` needed since the
+  class's own `Main()` is the assembly entry point, like `samples/HelloWorld`): asserts the real
+  `dotnet build`+`run` prints `5` (loop runs while `count < 5`, incrementing by 1 each pass).
+- No `NotificationMap.golden.json` regeneration risk repeated: `LocalVariable` (new `ModelObject`) is not
+  reachable from `AllNodesFixtureFactory`'s shared "Everything" fixture (adding one there would fork the
+  `EmitterTests` golden, the same reason G1 gave for `EventEntryNode`); a standalone
+  `new LocalVariable("temp", TypeSpecifier.FromType<int>())` instance covers it in `NotificationMapTests`
+  instead, next to the existing standalone `EventEntryNode`. Regenerated with
+  `NETPRINTS_UPDATE_SNAPSHOTS=1` scoped to `NotificationMapTests` only (never the full `RoundTripTests`
+  theory, per G1's documented `HelloWorld.Program.netpc.json` scare): exactly one new top-level entry,
+  `NetPrints.Core.LocalVariable` (`Name`, `Type`, both plain `[ObservableProperty]`s, no
+  `[NotifyPropertyChangedFor]` — `LocalVariable` has no computed `Specifier` property to notify, unlike
+  `Variable`; `ToSpecifier()` is a method, matching the data-model.md literal).
+- Tests added: `Core/LocalVariableTests.cs` (constructor validation, `ToSpecifier()`, `LocalVariables`
+  collection, `IsLocalNameAvailable`'s three rejection cases), `Translator/LocalVariableTranslatorTests.cs`
+  (declaration ordering, bare-name setter emission, three `NPT004` cases including a same-graph rename
+  that bypasses `IsLocalNameAvailable` — simulating T087 before it exists), `Serialization/RefMappingTests.cs`
+  gained `LocalVariableRefRoundTrips` (`ToSpecifier() → ToRef() → FromRef()`), `Samples/LocalVariableBuildTests.cs`
+  (real build/run).
+- Open questions for the Opus review: (1) the `ForLoopNode` bug above — worth a dedicated task/bug report
+  before any future work relies on `ForLoopNode` looping more than once; (2) `GetSetChooserVM.Open`'s new
+  null-`DeclaringType` branch is a minimal, currently-unreachable stopgap — T087 should confirm it still
+  makes sense once the Variables panel can actually drag a local onto the canvas, rather than assuming it.
