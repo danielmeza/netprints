@@ -157,8 +157,10 @@ Graph-format follow-ups from P1: `format --check` and `regen --check`, `netprint
     history (Alt+← / Alt+→);
   - a tooltip on hover over a connection: `Node.pin → Node.pin`, the type and the member documentation;
   - breadcrumbs (Project › Class › Method).
-- **Event entry inspector** (owner report, 2026-09-27): selecting an event entry or opening its graph shows the
-  entry's properties in the inspector. You can rename it, with the name kept unique (FR-027), and edit its
+- **Event graph and entry inspector** (owner report, 2026-09-27):
+  - Rename an event graph inline in the list or in the inspector. P1 names it `EventGraph`, `EventGraph1`, … and
+    shows the name read-only. The name only organizes the graphs; each entry emits its own method.
+  - Selecting an event entry or opening its graph shows the entry's properties in the inspector. You can rename it, with the name kept unique (FR-027), and edit its
   arguments (name and type; modifiers once P3b adds them). An override takes its signature from the base
   method, and that signature is read-only. P1 only names entries at creation (`CustomEvent1`, …) and gives
   them no arguments.
