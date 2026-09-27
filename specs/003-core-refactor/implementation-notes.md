@@ -2533,3 +2533,41 @@ and the `[OnDeserialized]` hook are untouched (part B).
   tooltip, not the inner node border's automation property (the tooltip is set on the `UserControl`).
 - Full suite: 541 total, 532 passed, 9 skipped, 0 failed; Release build 0 warnings, `dotnet format` clean.
 
+
+## T063 part B: hook guarantees
+
+Step 1 of the owner's method: every guarantee the `[OnDeserializing]`/`[OnDeserialized]` hooks (7 mentions
+in 4 files) give, with one test each on the JSON path. All tests are in
+`tests/NetPrints.Core.Tests/Serialization/DeserializationGuaranteeTests.cs`; each loads the all-nodes fixture
+(a temp copy of `Fixtures/AllNodes/AllNodes.Everything.netpc.json`) through `ProjectPersistence.LoadAsync`
+(a fixed-snapshot `IProjectSystem`, real store, format and `DocumentMapper`). Nothing was removed in this
+batch and none of the tests was red: the JSON path already builds through constructors, so it never ran
+the hooks in the first place.
+
+| Hook (file:line) | Guarantee | Test |
+| --- | --- | --- |
+| `Node.cs:331` (`[OnDeserialized] OnDeserializing`) | An input type pin's incoming pin's `InferredType.OnValueChanged` is subscribed, so an upstream type change reaches the node's `HandleInputTypeChanged` and `InputTypeChanged` exactly once (no double subscription) | `LoadedNodeReactsOnceToUpstreamTypeChange` |
+| `Node.cs:331` | Every input type pin's `IncomingPinChanged` is wired: reconnecting re-subscribes to the new source and drops the old one | `LoadedNodeRewiresInferenceWhenTypePinIsReconnected` |
+| `MethodGraph.cs:172` (`GraphTypeInference.Relax`) | Inferred pin types are settled after load (ternary true/false/output pins, the variable's `List<T>` type) and another `Relax` pass changes nothing, for every graph kind | `LoadedGraphsHaveSettledPinTypes` |
+| `MethodGraph.cs:172` via `CallMethodNode.OnMethodDeserialized` | The exception output pin exists exactly when the catch exec pin is connected | `LoadedCallMethodNodeHasExceptionPinExactlyWhenCatchIsConnected` |
+| `Variable.cs:251` | `Class` is the owning class, `TypeGraph` is non-null, `TypeGraph.OwningClass` is the class (so `GraphKeys.For` gives `<id>/type`, `/get`, `/set`), `TypeGraph.Project` is the project | `LoadedVariableReferencesItsClassAndKeysItsTypeGraph` |
+| `Project.cs:264` (`FixDefaults`) | `Classes` is non-null, usable when empty, and in graph-file order | `LoadedProjectHasUsableClassesCollection` |
+| `NodeGraph` id index (no hook; lazy `nodeIndex`) | `FindNode` resolves every node by the id the document gave it, and tracks additions and removals | `LoadedGraphsFindEveryNodeByItsDocumentId` |
+| implicit (DataContract restored these) | `Node.Graph`, `pin.Node`, `graph.Class`/`Project`, `cls.Project` and connection symmetry (exec, data, type) | `LoadedModelHasConsistentBackReferences` |
+| implicit (a collection or reference left null unless a constructor or hook sets it) | No non-nullable reference and no collection property of a loaded `Project`, `ClassGraph`, `Variable`, graph, node or pin is null (reflection sweep over stored properties; read-only computed ones such as `MakeDelegateNode.TargetPin` may throw by design and are skipped) | `LoadedModelObjectsHaveNoNullNonNullableProperties` |
+
+Findings for B2:
+
+- Mutation check (one change at a time, then reverted): dropping `typePin.IncomingPinChanged += ...` from
+  `Node.AddInputTypePin` turns both Node-wiring tests red; dropping `OwningClass = cls` from `Variable`'s
+  constructor turns the Variable test red.
+- Deleting the two `GraphTypeInference.Relax(graph)` calls in `DocumentMapper` leaves every test green:
+  on the all-nodes fixture the constructors' events already settle every type, so no fixture pins `Relax`
+  as such. The settled-type and catch-pin tests pin its outcome, not its mechanism. `Relax` stays in the
+  mapper regardless (the T063 text keeps it).
+- `Node.OnMethodDeserialized` overrides (`AwaitNode`, `CallMethodNode`) re-subscribe their handlers on every
+  `Relax` pass on top of the constructor's own subscription, i.e. duplicate handlers. Harmless today
+  (`UpdateResultPin`/`UpdateExceptionPin` are idempotent) and not touched here.
+- The `Node` hook is misnamed (`OnDeserializing` carrying `[OnDeserialized]`).
+- No guarantee was hard to test on the JSON path. The `FixDefaults` reset is vacuous there: `Classes` has a
+  field initializer and `Project.FromSnapshot` is the only factory, so that test pins the initializer.
