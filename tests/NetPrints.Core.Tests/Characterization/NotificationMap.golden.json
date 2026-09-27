@@ -1,14 +1,7 @@
 {
   "NetPrints.Core.Project": {
-    "ClassPaths": [
-      "ClassPaths"
-    ],
     "CompilationMessage": [
       "CompilationMessage"
-    ],
-    "CompilationOutput": [
-      "CanCompileAndRun",
-      "CompilationOutput"
     ],
     "DefaultNamespace": [
       "DefaultNamespace"
@@ -18,9 +11,6 @@
     ],
     "LastCompilationSucceeded": [
       "LastCompilationSucceeded"
-    ],
-    "LastCompileErrors": [
-      "LastCompileErrors"
     ],
     "LastCompiledAssemblyPath": [
       "LastCompiledAssemblyPath"
@@ -38,11 +28,10 @@
     "Path": [
       "Path"
     ],
-    "References": [
-      "References"
-    ],
-    "SaveVersion": [
-      "SaveVersion"
+    "Snapshot": [
+      "ProfileId",
+      "Snapshot",
+      "TargetFramework"
     ]
   },
   "NetPrints.Core.Variable": {

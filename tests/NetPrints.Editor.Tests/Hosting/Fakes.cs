@@ -294,7 +294,7 @@ public sealed class FakeProjectSystem : IProjectSystem
         string profileId = ExtractXmlValue(xml, "NetPrintsProfile") ?? DefaultProjectProfile.ProfileId;
         var graphFiles = Directory.GetFiles(directory, "*.netpc.json", SearchOption.AllDirectories)
             .OrderBy(p => p, StringComparer.Ordinal).ToList();
-        var references = ReferenceAssemblyResolver.GetRuntimeAssemblyPaths()
+        var references = TestSnapshots.RuntimeAssemblyPaths()
             .Select(path => new ResolvedAssembly(path, null)).ToList();
 
         return new ProjectSnapshot(projectFilePath, name, rootNamespace, name,

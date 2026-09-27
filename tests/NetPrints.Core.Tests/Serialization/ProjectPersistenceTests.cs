@@ -140,13 +140,14 @@ namespace NetPrints.Tests.Serialization
             var projects = new FakeProjectSystem(NewSnapshot(Path.Combine(root, "Test.csproj"), []));
             ProjectPersistence persistence = NewPersistence(projects, formats, mapper);
 
-            Project project = Project.CreateNew("Test", "Test", addDefaultReferences: false);
-            project.Path = Path.Combine(root, "Test.csproj");
+            Project project = TestProjects.Create("Test", "Test", Path.Combine(root, "Test.csproj"));
 
-            ClassGraph dirty = project.CreateNewClass();
-            dirty.MarkDirty();
-            ClassGraph cleanNoFile = project.CreateNewClass();
-            ClassGraph cleanWithFile = project.CreateNewClass();
+            IProjectProfile profile = DefaultProjectProfile.Instance;
+            ClassGraph dirty = project.CreateNewClass(profile);
+            ClassGraph cleanNoFile = project.CreateNewClass(profile);
+            cleanNoFile.MarkClean();
+            ClassGraph cleanWithFile = project.CreateNewClass(profile);
+            cleanWithFile.MarkClean();
 
             string cleanWithFilePath = Path.Combine(root, $"{cleanWithFile.FullName}.netpc.json");
             const string nonCanonicalContent = "// not canonical json\n{}";

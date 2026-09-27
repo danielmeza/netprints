@@ -1,11 +1,11 @@
 namespace NetPrints.Editor.Hosting;
 
 /// <summary>
-/// A named set of file patterns for file pickers, for example <c>new("Project Files", ["*.netpp"])</c>.
+/// A named set of file patterns for file pickers, for example <c>new("Project Files", ["*.csproj"])</c>.
 /// </summary>
 public sealed record FileFilter(string Name, IReadOnlyList<string> Patterns)
 {
-    /// <summary>Filter for NetPrints project files (<c>*.csproj</c>; research.md R21, no legacy <c>.netpp</c>).</summary>
+    /// <summary>Filter for NetPrints project files (<c>*.csproj</c>; research.md R21).</summary>
     public static readonly FileFilter ProjectFiles = new("Project Files", ["*.csproj"]);
 
     /// <summary>Filter for NetPrints class files (<c>*.netpc.json</c>).</summary>

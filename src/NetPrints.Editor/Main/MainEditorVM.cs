@@ -284,7 +284,7 @@ public sealed partial class MainEditorVM : ObservableObject
     /// <summary>
     /// Loads a project in the background with the progress overlay, through
     /// <see cref="ProjectPersistence"/>. Only a <c>.csproj</c> is accepted: any other path (for
-    /// example an old <c>.netpp</c>) shows a message and nothing is opened or written
+    /// example a legacy project file) shows a message and nothing is opened or written
     /// (research.md R21). On a load failure the exception is shown in an error dialog and copied to
     /// the clipboard (PAR-04); non-fatal issues found while loading classes are shown but do not
     /// keep the project from opening (document-format.md §2.8).

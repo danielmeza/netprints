@@ -1,5 +1,6 @@
 using System;
 using NetPrints.Core;
+using NetPrints.Tests;
 using Xunit;
 
 namespace NetPrintsUnitTests
@@ -14,13 +15,12 @@ namespace NetPrintsUnitTests
     public class ProjectTests
     {
         [Fact]
-        public void SaveClassInProjectDirectoryThrowsForPathWithNoDirectory()
+        public void GetGraphFilePathThrowsForPathWithNoDirectory()
         {
-            var project = Project.CreateNew("P", "N");
-            project.Path = "/"; // Path.GetDirectoryName("/") is null: a root has no parent directory.
+            var project = TestProjects.Create("P", "N", "/"); // Path.GetDirectoryName("/") is null: a root has no parent directory.
             var cls = new ClassGraph { Name = "C", Namespace = "N", Project = project };
 
-            var ex = Assert.Throws<InvalidOperationException>(() => project.SaveClassInProjectDirectory(cls));
+            var ex = Assert.Throws<InvalidOperationException>(() => project.GetGraphFilePath(cls));
             Assert.Contains("has no directory", ex.Message);
         }
     }

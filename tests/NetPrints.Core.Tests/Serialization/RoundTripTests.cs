@@ -56,7 +56,7 @@ namespace NetPrints.Tests.Serialization
             }
 
             var issues = new List<DocumentIssue>();
-            Project project = Project.CreateNew(projectName, projectName);
+            Project project = TestProjects.Create(projectName, projectName);
             ClassGraph cls = mapper.FromDocument(document, project, issues, id);
             Assert.Empty(issues);
             return cls;

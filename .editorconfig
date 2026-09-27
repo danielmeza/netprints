@@ -138,25 +138,3 @@ dotnet_diagnostic.CS1591.severity = error # Missing XML comment for publicly vis
 dotnet_diagnostic.CS1572.severity = error # <param> tag names a parameter that does not exist
 dotnet_diagnostic.CS1573.severity = error # Parameter has no matching <param> tag in the XML comment
 dotnet_diagnostic.CS1574.severity = error # cref/name attribute in an XML comment could not be resolved
-
-# ---------------------------------------------------------------------------
-# Temporary XML-documentation exemptions: only files a P1 task deletes outright, so documenting
-# them now would be wasted work. Each task removes its section when it deletes the file
-# (specs/003-core-refactor/tasks.md).
-# ---------------------------------------------------------------------------
-
-# T063 deletes this file (superseded by IProjectSystem/ProjectPersistence).
-[src/NetPrints.Core/Serialization/SerializationHelper.cs]
-dotnet_diagnostic.CS1591.severity = none
-
-# T063 deletes this file (superseded by IProjectSystem.BuildAsync).
-[src/NetPrints.Core/Compilation/CodeCompiler.cs]
-dotnet_diagnostic.CS1591.severity = none
-
-# T063 deletes this file (superseded by IProjectSystem.BuildAsync).
-[src/NetPrints.Core/Compilation/ICodeCompiler.cs]
-dotnet_diagnostic.CS1591.severity = none
-
-# T063 deletes this file (superseded by MsBuildProjectSystem's MSBuild-resolved references).
-[src/NetPrints.Core/Core/ReferenceAssemblyResolver.cs]
-dotnet_diagnostic.CS1591.severity = none

@@ -54,7 +54,7 @@ namespace NetPrints.Tests.Projects
             }
 
             var issues = new List<DocumentIssue>();
-            Project project = Project.CreateNew("HelloWorld", "HelloWorld", addDefaultReferences: false);
+            Project project = TestProjects.Create("HelloWorld", "HelloWorld");
             return mapper.FromDocument(document, project, issues, id);
         }
 

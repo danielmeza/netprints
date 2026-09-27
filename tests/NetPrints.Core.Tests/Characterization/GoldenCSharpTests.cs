@@ -51,7 +51,7 @@ namespace NetPrints.Tests.Characterization
             }
 
             var issues = new List<DocumentIssue>();
-            Project project = Project.CreateNew(fixtureName, fixtureName);
+            Project project = TestProjects.Create(fixtureName, fixtureName);
             ClassGraph cls = mapper.FromDocument(document, project, issues, id);
             Assert.Empty(issues);
 

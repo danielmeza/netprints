@@ -35,7 +35,7 @@ public class MainEditorVMTests(TestEditor testEditor) : IDisposable
         vm.ToggleProjectPaneCommand.Execute(null);
         Assert.True(vm.IsProjectPaneOpen);
 
-        vm.Project = Project.CreateNew("P", "N");
+        vm.Project = Project.FromSnapshot(TestSnapshots.Empty("P", "N"));
         Assert.True(vm.SaveProjectCommand.CanExecute(null));
         vm.ToggleSettingsPaneCommand.Execute(null);
         Assert.True(vm.IsSettingsPaneOpen);
@@ -50,7 +50,7 @@ public class MainEditorVMTests(TestEditor testEditor) : IDisposable
     public async Task CreateProjectCancelKeepsPreviousProject()
     {
         var editor = testEditor;
-        var previous = Project.CreateNew("Previous", "Prev");
+        var previous = Project.FromSnapshot(TestSnapshots.Empty("Previous", "Prev"));
         var vm = new MainEditorVM(editor.Context, previous);
 
         editor.FilePicker.SaveFileAnswers.Enqueue(null);
@@ -206,7 +206,7 @@ public class MainEditorVMTests(TestEditor testEditor) : IDisposable
     {
         var editor = testEditor;
         string dir = Track(TestPaths.CreateTempDirectory());
-        var project = Project.CreateNew("Broken", "N");
+        var project = Project.FromSnapshot(TestSnapshots.Empty("Broken", "N"));
         project.Path = Path.Combine(dir, "Broken.csproj");
         editor.Projects.BuildResultFactory = _ => new BuildResult(false,
             [new ProjectMessage(ProjectMessageSeverity.Error, "CS0006", "Metadata file 'missing.dll' could not be found", null, null, null)],
@@ -247,8 +247,8 @@ public class MainEditorVMTests(TestEditor testEditor) : IDisposable
     {
         var editor = testEditor;
         string dir = Track(TestPaths.CreateTempDirectory());
-        var project = Project.CreateNew("P", "N");
-        project.Path = Path.Combine(dir, "P.netpp");
+        var project = Project.FromSnapshot(TestSnapshots.Empty("P", "N"));
+        project.Path = Path.Combine(dir, "P.csproj");
         var vm = new MainEditorVM(editor.Context, project);
 
         await vm.NewClassCommand.ExecuteAsync(null);
@@ -338,7 +338,7 @@ public class MainEditorVMTests(TestEditor testEditor) : IDisposable
     public async Task ReferencesDialogOpensForProject()
     {
         var editor = testEditor;
-        var project = Project.CreateNew("P", "N");
+        var project = Project.FromSnapshot(TestSnapshots.Empty("P", "N"));
         var vm = new MainEditorVM(editor.Context, project);
 
         await vm.ShowReferencesCommand.ExecuteAsync(null);

@@ -31,7 +31,7 @@ namespace NetPrints.Tests.Projects
 
         private static async Task WriteEmptyClassGraphAsync(string path, string ns, string name)
         {
-            Project project = Project.CreateNew(ns, ns, addDefaultReferences: false);
+            Project project = TestProjects.Create(ns, ns);
             var cls = new ClassGraph { Name = name, Namespace = ns, Visibility = MemberVisibility.Public, Project = project };
             var mapper = new DocumentMapper(Registry);
             ClassDocument document = mapper.ToDocument(cls);

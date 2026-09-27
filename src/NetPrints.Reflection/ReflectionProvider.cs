@@ -226,7 +226,7 @@ namespace NetPrints.Reflection
         /// <param name="assemblies">Assemblies to reference, resolved by <c>IProjectSystem.LoadAsync</c>
         /// (project-system.md §4), each carrying its own documentation file path if one exists. A path
         /// that does not exist is skipped instead of throwing; callers resolve references with
-        /// <see cref="ReferenceAssemblyResolver"/> or <c>IProjectSystem</c> first (FR-009).</param>
+        /// <c>IProjectSystem</c> first (FR-009).</param>
         /// <param name="sources">C# source files to compile alongside <paramref name="assemblies"/>
         /// (a project's generated classes and other <c>Compile</c> items).</param>
         /// <param name="excludedAssemblyNames">Simple names of assemblies (typically ones a type
@@ -241,7 +241,7 @@ namespace NetPrints.Reflection
             this.excludedAssemblyNames = excludedAssemblyNames ?? throw new ArgumentNullException(nameof(excludedAssemblyNames));
 
             // Assemblies whose file does not exist are skipped instead of throwing; callers resolve
-            // references with ReferenceAssemblyResolver or IProjectSystem first (FR-009).
+            // references with IProjectSystem first (FR-009).
             List<ResolvedAssembly> existingAssemblies = assemblies.Where(a => File.Exists(a.Path)).ToList();
             var documentationPaths = new Dictionary<string, string>();
             foreach (ResolvedAssembly assembly in existingAssemblies)

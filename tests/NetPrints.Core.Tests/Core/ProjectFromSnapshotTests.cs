@@ -56,7 +56,8 @@ namespace NetPrints.Tests.Core
         [Fact]
         public void TargetFrameworkAndProfileIdThrowWithoutASnapshot()
         {
-            Project project = Project.CreateNew("P", "P");
+            Project project = TestProjects.Create("P", "P");
+            project.Snapshot = null;
 
             Assert.Null(project.Snapshot);
             Assert.Throws<InvalidOperationException>(() => project.TargetFramework);

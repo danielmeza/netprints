@@ -60,7 +60,7 @@ namespace NetPrints.Tests.Serialization
 
             DocumentMapper mapper = NewMapper();
             var issues = new List<DocumentIssue>();
-            ClassGraph cls = mapper.FromDocument(classDocument, Project.CreateNew("P", "P"), issues, new DocumentId("C.netpc.json"));
+            ClassGraph cls = mapper.FromDocument(classDocument, TestProjects.Create("P", "P"), issues, new DocumentId("C.netpc.json"));
 
             // One NPD009 per replaced id ("n0", "start", "N00000000057K3", "m1"); nothing else went wrong.
             Assert.Equal(4, issues.Count);
@@ -149,7 +149,7 @@ namespace NetPrints.Tests.Serialization
             // replacement id, so literalB's repair collides with literalA's.
             string forcedReplacement = NodeId(9);
             using var _ = IdGeneration.Use(new FixedThenFallbackIdGenerator(forcedReplacement, repeatCount: 20));
-            ClassGraph cls = mapper.FromDocument(classDocument, Project.CreateNew("P", "P"), issues, new DocumentId("C.netpc.json"));
+            ClassGraph cls = mapper.FromDocument(classDocument, TestProjects.Create("P", "P"), issues, new DocumentId("C.netpc.json"));
 
             Assert.Equal(2, issues.Count(issue => issue.Code == DocumentIssue.InvalidIdReassigned));
             Assert.Equal(1, issues.Count(issue => issue.Code == DocumentIssue.DuplicateIdReassigned));
@@ -174,7 +174,7 @@ namespace NetPrints.Tests.Serialization
 
             DocumentMapper mapper = NewMapper();
             Assert.Throws<DocumentFormatException>(() => mapper.FromDocument(
-                classDocument, Project.CreateNew("P", "P"), new List<DocumentIssue>(), new DocumentId("C.netpc.json")));
+                classDocument, TestProjects.Create("P", "P"), new List<DocumentIssue>(), new DocumentId("C.netpc.json")));
         }
 
         // The migrated fixtures (T054a) and the committed sample are already IdFormat-shaped: loading
@@ -208,7 +208,7 @@ namespace NetPrints.Tests.Serialization
 
             var mapper = new DocumentMapper(registry);
             var issues = new List<DocumentIssue>();
-            mapper.FromDocument(document, Project.CreateNew(projectName, projectName), issues, id);
+            mapper.FromDocument(document, TestProjects.Create(projectName, projectName), issues, id);
 
             Assert.Empty(issues);
         }

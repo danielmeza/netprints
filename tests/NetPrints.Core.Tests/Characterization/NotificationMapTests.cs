@@ -27,7 +27,7 @@ namespace NetPrints.Tests.Characterization
         [Fact]
         public void NotificationsMatchGoldenMap()
         {
-            Project project = AllNodesFixtureFactory.CreateAllNodes(Path.Combine(Path.GetTempPath(), "netprints-notification-map.netpp"));
+            Project project = AllNodesFixtureFactory.CreateAllNodes(Path.Combine(Path.GetTempPath(), "netprints-notification-map.csproj"));
 
             Dictionary<Type, object> instancesByType = CollectInstancesByType(project);
 

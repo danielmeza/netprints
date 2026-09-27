@@ -42,32 +42,14 @@ namespace NetPrints.Tests.Samples
             catch (IOException) { }
         }
 
-        private static ProjectPersistence NewPersistence(IProjectSystem projects)
-        {
-            var registry = new NodeDocumentConverterRegistry(NodeDocumentConverterRegistry.BuiltIn, []);
-            var mapper = new DocumentMapper(registry);
-            var formats = new DocumentFormatRegistry([new JsonDocumentFormat(new NetPrintsJsonOptions(registry), new DocumentMigrator([]))]);
-            return new ProjectPersistence(projects, formats, mapper,
-                dir => new FileSystemDocumentStore(dir, Scheduler.Default, NullLogger<FileSystemDocumentStore>.Instance),
-                NullLogger<ProjectPersistence>.Instance);
-        }
-
         [Fact(Timeout = 120000)]
         public async Task SampleLoadsCompilesAndPrintsHelloWorld()
         {
             CancellationToken cancellationToken = TestContext.Current.CancellationToken;
 
-            // The sample is linked into the test output (samples/**) by the test project.
-            string source = Path.Combine(AppContext.BaseDirectory, "samples", "HelloWorld");
-            foreach (string file in Directory.GetFiles(source))
-            {
-                File.Copy(file, Path.Combine(tempDir, Path.GetFileName(file)));
-            }
-
-            LocalSdkLayout.Write(tempDir);
-
-            var projectSystem = new MsBuildProjectSystem(new ProjectSystemOptions([], "1.0.0-test"), new ProcessRunner(), NullLogger<MsBuildProjectSystem>.Instance);
-            ProjectPersistence persistence = NewPersistence(projectSystem);
+            SampleBuild sample = SampleBuild.CopyHelloWorld(tempDir);
+            MsBuildProjectSystem projectSystem = sample.Projects;
+            ProjectPersistence persistence = sample.Persistence;
 
             string csprojPath = Path.Combine(tempDir, "HelloWorld.csproj");
             ProjectLoadResult loaded = await persistence.LoadAsync(csprojPath, cancellationToken);
@@ -86,46 +68,45 @@ namespace NetPrints.Tests.Samples
         }
 
         /// <summary>
-        /// An If Else between the entry and WriteLine, WriteLine on the True branch (the editor's
-        /// smoke flow graph). The condition is set, or left unset. Built directly through
-        /// <see cref="SampleProjectFactory"/> (same graph shape as the sample): these tests are about
-        /// the translator's behavior, not about loading the checked-in files.
+        /// The sample loaded from a temp copy, with an If Else between the entry and WriteLine, WriteLine
+        /// on the True branch (the editor's smoke flow graph). The condition is set, or left unset.
+        /// These tests are about the translator's behavior, not about loading the checked-in files.
         /// </summary>
-        private Project HelloWorldWithIfElse(bool? condition)
+        private async Task<(SampleBuild Sample, Project Project)> HelloWorldWithIfElseAsync(bool? condition)
         {
-            Project project = SampleProjectFactory.CreateHelloWorld(Path.Combine(tempDir, "HelloWorld.netpp"));
-            var main = project.Classes.Single().Methods.Single();
+            SampleBuild sample = SampleBuild.CopyHelloWorld(tempDir);
+            Project project = await sample.LoadAsync(TestContext.Current.CancellationToken);
+            ClassGraph cls = project.Classes.Single();
+            var main = cls.Methods.Single();
             var write = main.Nodes.OfType<NetPrints.Graph.CallMethodNode>().Single();
             var ifElse = new NetPrints.Graph.IfElseNode(main) { PositionX = 280, PositionY = 392 };
             ifElse.ConditionPin.UnconnectedValue = condition;
             NetPrints.Graph.GraphUtil.ConnectExecPins(main.EntryNode.InitialExecutionPin, ifElse.ExecutionPin);
             NetPrints.Graph.GraphUtil.ConnectExecPins(ifElse.TruePin, write.InputExecPins[0]);
-            return project;
+            cls.MarkDirty();
+            return (sample, project);
         }
 
         [Fact(Timeout = 120000)]
         public async Task IfElseWithConditionCompiles()
         {
-            var project = HelloWorldWithIfElse(true);
+            (SampleBuild sample, Project project) = await HelloWorldWithIfElseAsync(true);
 
-            await CompileAsync(project, TestContext.Current.CancellationToken);
+            BuildResult build = await sample.SaveAndBuildAsync(project, TestContext.Current.CancellationToken);
 
-            Assert.True(project.LastCompilationSucceeded, string.Join(Environment.NewLine, project.LastCompileErrors ?? new ObservableRangeCollection<string>()));
+            Assert.True(build.Success, build.Log);
         }
 
-        /// <summary>A graph that cannot be translated fails the build with the translator's message, not with C# syntax errors.</summary>
+        /// <summary>A graph that cannot be translated fails with the translator's message, not with C# syntax errors.</summary>
         [Fact(Timeout = 120000)]
         public async Task UntranslatableGraphReportsTheReason()
         {
-            var project = HelloWorldWithIfElse(null);
+            (SampleBuild sample, Project project) = await HelloWorldWithIfElseAsync(null);
 
-            await CompileAsync(project, TestContext.Current.CancellationToken);
+            Exception error = await Assert.ThrowsAnyAsync<Exception>(
+                () => sample.SaveAndBuildAsync(project, TestContext.Current.CancellationToken));
 
-            Assert.False(project.LastCompilationSucceeded);
-            string error = Assert.Single(project.LastCompileErrors);
-            Assert.Contains("HelloWorld.Program", error);
-            Assert.Contains("Condition", error);
-            Assert.Equal("Build failed with 1 error(s)", project.CompilationMessage);
+            Assert.Contains("Condition", error.Message);
         }
 
         /// <summary>
@@ -134,9 +115,9 @@ namespace NetPrints.Tests.Samples
         /// indication why); the reason comes back through the warnings instead.
         /// </summary>
         [Fact(Timeout = 120000)]
-        public void UntranslatableGraphIsSkippedNotEmittedAsSource()
+        public async Task UntranslatableGraphIsSkippedNotEmittedAsSource()
         {
-            var project = HelloWorldWithIfElse(null);
+            (_, Project project) = await HelloWorldWithIfElseAsync(null);
 
             var sources = project.GenerateClassSources(out var warnings).ToList();
 
@@ -144,16 +125,6 @@ namespace NetPrints.Tests.Samples
             string warning = Assert.Single(warnings);
             Assert.Contains("HelloWorld.Program", warning);
             Assert.Contains("Condition", warning);
-        }
-
-        /// <summary>Compiles and waits until the background compilation finished.</summary>
-        internal static async Task CompileAsync(Project project, System.Threading.CancellationToken cancellationToken)
-        {
-            project.CompileProject();
-            while (project.IsCompiling)
-            {
-                await Task.Delay(50, cancellationToken);
-            }
         }
     }
 }

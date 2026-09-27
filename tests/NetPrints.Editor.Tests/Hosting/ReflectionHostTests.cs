@@ -37,8 +37,11 @@ public class ReflectionHostTests
     {
         var host = new ReflectionHost(new InlineDispatcher(), NullLogger<ReflectionHost>.Instance);
 
+        Project project = Project.FromSnapshot(TestSnapshots.Empty("P", "N"));
+        project.Snapshot = null;
+
         await Assert.ThrowsAsync<InvalidOperationException>(
-            () => host.ReloadAsync(Project.CreateNew("P", "N"), TestContext.Current.CancellationToken));
+            () => host.ReloadAsync(project, TestContext.Current.CancellationToken));
     }
 
     [Fact(Timeout = 120000)]

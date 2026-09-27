@@ -36,7 +36,7 @@ namespace NetPrints.Tests.Serialization
 
         private static (Project Project, ClassGraph Class, MethodGraph Method) BuildBase()
         {
-            Project project = Project.CreateNew("M", "M");
+            Project project = TestProjects.Create("M", "M");
             var cls = new ClassGraph { Name = "C", Namespace = "M", Visibility = MemberVisibility.Public, Project = project };
             project.Classes.Add(cls);
             SetNodeId(cls, cls.ReturnNode, NodeId(9000));
@@ -235,7 +235,7 @@ namespace NetPrints.Tests.Serialization
 
                 var mapper = new DocumentMapper(Registry);
                 var issues = new System.Collections.Generic.List<DocumentIssue>();
-                Project mergedProject = Project.CreateNew("M", "M");
+                Project mergedProject = TestProjects.Create("M", "M");
                 mapper.FromDocument(resolvedDocument, mergedProject, issues, new DocumentId("merged.netpc.json"));
                 Assert.Empty(issues);
 

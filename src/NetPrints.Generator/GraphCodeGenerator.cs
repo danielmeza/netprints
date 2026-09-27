@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.CodeAnalysis.Text;
 using NetPrints.Compilation;
 using NetPrints.Core;
+using NetPrints.Projects;
 using NetPrints.Serialization;
 using NetPrints.Serialization.Documents;
 using NetPrints.Serialization.Mapping;
@@ -70,11 +71,13 @@ public sealed class GraphCodeGenerator
 
         // A throwaway host for the classes built in this call: FromDocument requires one, but nothing
         // here registers a class on it or resolves another class through it, so a fresh, unshared
-        // project per request is enough (no legacy default references: this project is never compiled).
-        Project project = Project.CreateNew(
-            Path.GetFileNameWithoutExtension(request.ProjectPath),
-            request.RootNamespace ?? string.Empty,
-            addDefaultReferences: false);
+        // project per request is enough (it is never built).
+        string projectName = Path.GetFileNameWithoutExtension(request.ProjectPath);
+        Project project = Project.FromSnapshot(new ProjectSnapshot(
+            request.ProjectPath, projectName, request.RootNamespace ?? string.Empty, projectName, BinaryType.SharedLibrary,
+            "net10.0", request.Profile, ReferencesNetPrintsSdk: true, GraphFiles: [], ExtensionFolders: [],
+            References: [], DeclaredReferences: [], OtherSources: [], CompilationOptionsJson: "{}",
+            Properties: new Dictionary<string, string>(), Messages: []));
 
         var results = new List<GeneratedFileResult>(request.Graphs.Count);
         foreach (GraphJob job in request.Graphs)

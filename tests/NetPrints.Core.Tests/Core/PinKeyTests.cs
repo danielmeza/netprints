@@ -79,7 +79,7 @@ namespace NetPrints.Tests.Core
         [Fact]
         public void PinReferencesMatchGoldenFileAndRoundTripThroughFind()
         {
-            string projectPath = Path.Combine(Path.GetTempPath(), "netprints-pinkeys-" + Guid.NewGuid().ToString("N"), "AllNodes.netpp");
+            string projectPath = Path.Combine(Path.GetTempPath(), "netprints-pinkeys-" + Guid.NewGuid().ToString("N"), "AllNodes.csproj");
 
             Project project;
             using (IdGeneration.Use(new SeededIdGenerator(42)))

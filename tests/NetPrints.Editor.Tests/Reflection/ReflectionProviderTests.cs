@@ -9,15 +9,10 @@ public sealed class RuntimeReflectionFixture
 {
     public RuntimeReflectionFixture()
     {
-        // Same resolution as the editor: a default project references the .NET Framework
-        // reference assemblies, which fall back to the runtime assemblies on Linux.
-        var project = Project.CreateNew("Test", "Test");
-        Paths = new ReferenceAssemblyResolver().ResolveAssemblyPaths(project.References.OfType<AssemblyReference>(), Warnings);
+        Paths = TestSnapshots.RuntimeAssemblyPaths();
         Assemblies = Paths.Select(path => new ResolvedAssembly(path, null)).ToList();
         Provider = new ReflectionProvider(Assemblies, [], new HashSet<string>());
     }
-
-    public List<string> Warnings { get; } = [];
 
     public IReadOnlyList<string> Paths { get; }
 
@@ -29,9 +24,6 @@ public sealed class RuntimeReflectionFixture
 public class ReflectionProviderTests(RuntimeReflectionFixture fixture) : IClassFixture<RuntimeReflectionFixture>
 {
     private readonly IReflectionProvider provider = fixture.Provider;
-
-    [Fact]
-    public void RuntimeReferencesResolveWithoutWarnings() => Assert.Empty(fixture.Warnings);
 
     [Fact]
     public void ReturnsNonStaticTypes()

@@ -59,7 +59,7 @@ namespace NetPrints.Tests.Core
         [Fact]
         public void ForAndResolveRoundTripEveryGraphOfAllNodes()
         {
-            string projectPath = Path.Combine(Path.GetTempPath(), "netprints-graphkeys-" + Guid.NewGuid().ToString("N"), "AllNodes.netpp");
+            string projectPath = Path.Combine(Path.GetTempPath(), "netprints-graphkeys-" + Guid.NewGuid().ToString("N"), "AllNodes.csproj");
             Project project = AllNodesFixtureFactory.CreateAllNodes(projectPath);
             ClassGraph cls = project.Classes.Single();
 

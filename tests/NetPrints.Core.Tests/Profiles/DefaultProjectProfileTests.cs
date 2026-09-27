@@ -35,7 +35,7 @@ namespace NetPrints.Tests.Profiles
         [Fact]
         public void EmptyClassTemplateCreatesAPublicClassInTheProjectsDefaultNamespace()
         {
-            Project project = Project.CreateNew("MyProject", "MyProject.Namespace", addDefaultReferences: false);
+            Project project = TestProjects.Create("MyProject", "MyProject.Namespace");
             ClassTemplate template = Assert.Single(DefaultProjectProfile.Instance.ClassTemplates,
                 t => t.Id == DefaultProjectProfile.EmptyClassTemplateId);
 

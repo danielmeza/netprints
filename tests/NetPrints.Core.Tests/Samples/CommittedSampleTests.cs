@@ -55,7 +55,7 @@ namespace NetPrints.Tests.Samples
             }
 
             var issues = new List<DocumentIssue>();
-            Project project = Project.CreateNew("Sample", "Sample", addDefaultReferences: false);
+            Project project = TestProjects.Create("Sample", "Sample");
             ClassGraph cls = mapper.FromDocument(document, project, issues, id);
             Assert.Empty(issues);
             cls.MarkDirty();

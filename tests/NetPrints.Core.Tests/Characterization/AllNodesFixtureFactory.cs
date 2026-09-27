@@ -44,14 +44,12 @@ namespace NetPrints.Tests.Characterization
         /// Creates the AllNodes project: an executable whose class <c>Everything</c> exercises every
         /// built-in node kind.
         /// </summary>
-        /// <param name="projectPath">Path of the <c>.netpp</c> file the project will be saved to.</param>
+        /// <param name="projectPath">Path of the <c>.csproj</c> file the project belongs to.</param>
         public static Project CreateAllNodes(string projectPath)
         {
             var cursor = new PositionCursor();
 
-            Project project = Project.CreateNew("AllNodes", "AllNodes");
-            project.Path = projectPath;
-            project.OutputBinaryType = BinaryType.SharedLibrary;
+            Project project = TestProjects.Create("AllNodes", "AllNodes", projectPath);
 
             var cls = new ClassGraph()
             {
@@ -70,12 +68,6 @@ namespace NetPrints.Tests.Characterization
             // *unbound* generic arguments; a closed generic such as List<string> is not supported there).
             var classGenericArgument = new GenericType("T");
             cls.DeclaredGenericArguments.Add(classGenericArgument);
-
-            // A fixed (not project-path-derived, so the factory output stays reproducible) assembly
-            // and source directory reference (removed again in T063 once the legacy reference model
-            // is gone). Neither path needs to exist: CompilationReference stores it without validating.
-            project.References.Add(new AssemblyReference("ExternalLibrary.dll"));
-            project.References.Add(new SourceDirectoryReference("ExternalSources"));
 
             AddItemsVariable(cls, project, classGenericArgument, cursor);
             AddConstructor(cls, project, cursor);

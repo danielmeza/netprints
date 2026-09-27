@@ -1,3 +1,5 @@
+using System.Reflection;
+using System.Runtime.InteropServices;
 using NetPrints.Core;
 using NetPrints.Projects;
 
@@ -15,10 +17,33 @@ public static class TestSnapshots
 
     /// <summary>
     /// A snapshot whose <see cref="ProjectSnapshot.References"/> are the running runtime's own
-    /// assemblies (<see cref="ReferenceAssemblyResolver.GetRuntimeAssemblyPaths"/>), so a reflection
+    /// assemblies (<see cref="RuntimeAssemblyPaths"/>), so a reflection
     /// provider built from it sees the whole BCL, like a real project's MSBuild-resolved references.
     /// </summary>
     public static ProjectSnapshot WithRuntimeAssemblies(string name, string rootNamespace) =>
-        Empty(name, rootNamespace, ReferenceAssemblyResolver.GetRuntimeAssemblyPaths()
+        Empty(name, rootNamespace, RuntimeAssemblyPaths()
             .Select(path => new ResolvedAssembly(path, null)).ToList());
+
+    /// <summary>Paths of the managed assemblies of the running .NET runtime, in path order.</summary>
+    public static IReadOnlyList<string> RuntimeAssemblyPaths() => runtimeAssemblyPaths.Value;
+
+    private static readonly Lazy<IReadOnlyList<string>> runtimeAssemblyPaths = new(() =>
+        Directory.EnumerateFiles(RuntimeEnvironment.GetRuntimeDirectory(), "*.dll")
+            .Where(IsManagedAssembly)
+            .OrderBy(path => path, StringComparer.Ordinal)
+            .ToList());
+
+    private static bool IsManagedAssembly(string path)
+    {
+        try
+        {
+            AssemblyName.GetAssemblyName(path);
+            return true;
+        }
+        catch (BadImageFormatException)
+        {
+            // Native images throw BadImageFormatException.
+            return false;
+        }
+    }
 }

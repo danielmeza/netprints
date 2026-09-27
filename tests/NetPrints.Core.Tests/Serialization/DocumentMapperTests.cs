@@ -40,7 +40,7 @@ namespace NetPrints.Tests.Serialization
         public void AllNodesRoundTripsThroughToDocumentAndFromDocument()
         {
             using var _ = IdGeneration.Use(new SeededIdGenerator(42));
-            Project project = AllNodesFixtureFactory.CreateAllNodes("AllNodes.netpp");
+            Project project = AllNodesFixtureFactory.CreateAllNodes("AllNodes.csproj");
             ClassGraph original = project.Classes.Single();
 
             DocumentMapper mapper = NewMapper();
@@ -64,7 +64,7 @@ namespace NetPrints.Tests.Serialization
         public void VariableTypeGraphSurvivesRoundTripWithSettledTypes()
         {
             using var _ = IdGeneration.Use(new SeededIdGenerator(99));
-            Project project = AllNodesFixtureFactory.CreateAllNodes("AllNodes.netpp");
+            Project project = AllNodesFixtureFactory.CreateAllNodes("AllNodes.csproj");
             ClassGraph original = project.Classes.Single();
             TypeSpecifier originalItemsType = original.Variables.Single().Type;
 
@@ -94,7 +94,7 @@ namespace NetPrints.Tests.Serialization
 
             DocumentMapper mapper = NewMapper();
             var issues = new List<DocumentIssue>();
-            ClassGraph cls = mapper.FromDocument(classDocument, Project.CreateNew("P", "P"), issues, new DocumentId("C.netpc.json"));
+            ClassGraph cls = mapper.FromDocument(classDocument, TestProjects.Create("P", "P"), issues, new DocumentId("C.netpc.json"));
 
             Assert.Contains(issues, i => i.Code == DocumentIssue.UnknownNodeKind);
             Assert.NotNull(cls.PreservedDocumentState);
@@ -147,7 +147,7 @@ namespace NetPrints.Tests.Serialization
 
             DocumentMapper mapper = NewMapper();
             var issues = new List<DocumentIssue>();
-            ClassGraph cls = mapper.FromDocument(classDocument, Project.CreateNew("P", "P"), issues, new DocumentId("C.netpc.json"));
+            ClassGraph cls = mapper.FromDocument(classDocument, TestProjects.Create("P", "P"), issues, new DocumentId("C.netpc.json"));
 
             Assert.DoesNotContain(issues, i => i.Code == DocumentIssue.ConnectionDropped);
 
@@ -185,7 +185,7 @@ namespace NetPrints.Tests.Serialization
 
             DocumentMapper mapper = NewMapper();
             var issues = new List<DocumentIssue>();
-            ClassGraph cls = mapper.FromDocument(classDocument, Project.CreateNew("P", "P"), issues, new DocumentId("C.netpc.json"));
+            ClassGraph cls = mapper.FromDocument(classDocument, TestProjects.Create("P", "P"), issues, new DocumentId("C.netpc.json"));
 
             MethodGraph method = cls.Methods.Single();
             Node n0 = method.FindNode(NodeId(0))!;
@@ -198,7 +198,7 @@ namespace NetPrints.Tests.Serialization
             Assert.Equal(50, n1.PositionY);
 
             var issues2 = new List<DocumentIssue>();
-            ClassGraph cls2 = mapper.FromDocument(classDocument, Project.CreateNew("P", "P"), issues2, new DocumentId("C.netpc.json"));
+            ClassGraph cls2 = mapper.FromDocument(classDocument, TestProjects.Create("P", "P"), issues2, new DocumentId("C.netpc.json"));
             Node literalNode2 = cls2.Methods.Single().Nodes.OfType<LiteralNode>().Single();
 
             Assert.Equal(literalNode2.PositionX, literalNode.PositionX);
@@ -217,7 +217,7 @@ namespace NetPrints.Tests.Serialization
 
             DocumentMapper mapper = NewMapper();
             Assert.Throws<DocumentFormatException>(() => mapper.FromDocument(
-                classDocument, Project.CreateNew("P", "P"), new List<DocumentIssue>(), new DocumentId("C.netpc.json")));
+                classDocument, TestProjects.Create("P", "P"), new List<DocumentIssue>(), new DocumentId("C.netpc.json")));
         }
 
         // DF-T22 (document part): a duplicate member id does not fail the load (merge safety); the
@@ -233,7 +233,7 @@ namespace NetPrints.Tests.Serialization
 
             DocumentMapper mapper = NewMapper();
             var issues = new List<DocumentIssue>();
-            ClassGraph cls = mapper.FromDocument(classDocument, Project.CreateNew("P", "P"), issues, new DocumentId("C.netpc.json"));
+            ClassGraph cls = mapper.FromDocument(classDocument, TestProjects.Create("P", "P"), issues, new DocumentId("C.netpc.json"));
 
             Assert.Contains(issues, i => i.Code == DocumentIssue.DuplicateIdReassigned && i.Severity == DocumentIssueSeverity.Warning);
 
@@ -260,7 +260,7 @@ namespace NetPrints.Tests.Serialization
 
             DocumentMapper mapper = NewMapper();
             var issues = new List<DocumentIssue>();
-            ClassGraph cls = mapper.FromDocument(classDocument, Project.CreateNew("P", "P"), issues, new DocumentId("C.netpc.json"));
+            ClassGraph cls = mapper.FromDocument(classDocument, TestProjects.Create("P", "P"), issues, new DocumentId("C.netpc.json"));
 
             Assert.Contains(issues, i => i.Code == DocumentIssue.DuplicateIdReassigned && i.Severity == DocumentIssueSeverity.Warning);
 
@@ -315,7 +315,7 @@ namespace NetPrints.Tests.Serialization
             Assert.Equal("Greeting", renamedDoc.Name);
 
             var issues = new List<DocumentIssue>();
-            ClassGraph rebuilt = mapper.FromDocument(document, Project.CreateNew("P", "P"), issues, new DocumentId("C.netpc.json"));
+            ClassGraph rebuilt = mapper.FromDocument(document, TestProjects.Create("P", "P"), issues, new DocumentId("C.netpc.json"));
             List<CallMethodNode> rebuiltCalls = rebuilt.Methods.Single().Nodes.OfType<CallMethodNode>().ToList();
 
             Assert.Contains(rebuiltCalls, n => n.Name == "CallMethodNode");
