@@ -17,6 +17,8 @@
     </FluentTheme>
     <!-- Nodify control templates; without them no graph item is realized. -->
     <StyleInclude Source="avares://Nodify.Avalonia/Themes/Controls.xaml" />
+    <!-- The code view's AvaloniaEdit TextEditor (research.md R2). -->
+    <StyleInclude Source="avares://AvaloniaEdit/Themes/Fluent/AvaloniaEdit.xaml" />
     <mi:MaterialIconStyles />
     <StyleInclude Source="avares://NetPrints.Editor/EditorStyles.axaml" />
   </Application.Styles>

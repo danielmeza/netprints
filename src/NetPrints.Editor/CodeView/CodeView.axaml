@@ -1,0 +1,16 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ae="clr-namespace:AvaloniaEdit;assembly=AvaloniaEdit"
+             xmlns:vm="clr-namespace:NetPrints.Editor.CodeView"
+             x:Class="NetPrints.Editor.CodeView.CodeView"
+             x:DataType="vm:CodeViewVM">
+  <!-- Read-only C# preview (FR-031..035): line numbers, no wrap, TextMate highlighting and folding
+       installed in code-behind (theme-aware; falls back to plain text if TextMate is unavailable). -->
+  <!-- Text is pushed from CodeViewVM.Code in code-behind, not bound: AvaloniaEdit's TextEditor.Text
+       setter is a plain CLR property compiled bindings cannot target (AVLN3000). -->
+  <ae:TextEditor Name="Editor"
+                 IsReadOnly="True"
+                 ShowLineNumbers="True"
+                 WordWrap="False"
+                 FontFamily="avares://NetPrints.Editor/Assets/Fonts#Cascadia Mono" />
+</UserControl>

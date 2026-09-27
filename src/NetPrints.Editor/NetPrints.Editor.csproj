@@ -14,6 +14,10 @@
     <PackageReference Include="Avalonia.Skia" />
     <PackageReference Include="Avalonia.Fonts.Inter" />
     <PackageReference Include="Nodify.Avalonia" />
+    <!-- The code view (research.md R2): TextMateSharp.Grammars flows in transitively (pinned via its
+         own version, no override) for RegistryOptions/ThemeName. -->
+    <PackageReference Include="Avalonia.AvaloniaEdit" />
+    <PackageReference Include="AvaloniaEdit.TextMate" />
     <PackageReference Include="CommunityToolkit.Mvvm" />
     <PackageReference Include="DynamicData" />
     <!-- Used directly by the search list (Throttle, schedulers), not only through DynamicData. -->

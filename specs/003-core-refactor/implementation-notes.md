@@ -3851,3 +3851,84 @@ set `ScreenPosition`, still opened at the origin.
     only a `CSharpCompilation`/`SyntaxTree`s (no unmanaged resources, matches the contract's "no
     unmanaged resources" lifetime rule) — confirm T092's `CodeAnalysisHost` doesn't need to await
     anything when recreating one per snapshot change.
+
+## Sub-phase I, batch I2 (T092–T094): live analysis host, Cascadia Mono, code view
+
+- **T092 (`ICodeAnalysisHost`/`CodeAnalysisHost`)**: matches editor-services.md §2 exactly (constructor,
+  `RequestAnalysis`, `GetQuickInfoAsync`, `Snapshots`). Resolves I1's two open questions:
+  - **Session lifetime**: recreated (never reused) — synchronously, on the calling (UI) thread, inside
+    `IReflectionHost.Reloaded`'s handler, from `Snapshot.References`/`OtherSources`/`CompilationOptionsJson`
+    (answers T091's open question: no `await` needed, `new CodeAnalysisSession(...)` is plain
+    construction). The constructor also calls the handler once eagerly, adopting a snapshot already
+    loaded before the host was constructed — required in practice: `tests/NetPrints.Editor.Tests/Startup.cs`
+    builds and reloads its shared `IReflectionHost` singleton *before* any `TestEditor` (and thus any
+    `CodeAnalysisHost`) exists, so relying on the next `Reloaded` alone would leave `session` `null` for
+    every test. Debounce (500 ms) and cancellation of a running analysis are separate concerns from the
+    session: an `IScheduler`-driven `Subject<Project>.Throttle` for the former (matches
+    `SuggestionListVM`'s existing search-throttle idiom, virtual-time testable via `TestScheduler` — no
+    `TimeProvider` needed here since Rx's own clock is already virtualized, and the batch's general
+    "inject TimeProvider" rule is about `DateTime.Now`/`Thread.Sleep`, neither of which this debounce
+    touches), a `CancellationTokenSource` swapped per debounced call for the latter.
+  - **Path keys**: `DiagnosticMapper.FromBuild`'s `classesByGeneratedPath` is not needed inside
+    `CodeAnalysisHost` itself — `CodeAnalysisSession.AnalyzeAsync` (T091) already maps its own Roslyn
+    diagnostics through each class's own `SourceMap`, keyed by `TranslatedClass.FullName`, with no
+    generated-path lookup at all. The dictionary is for the *build* pipeline instead
+    (`MainEditorVM.CompileAsync`, which called `FromBuild(result.Messages)` with no second argument):
+    moved the generated-path computation (previously `ProjectPersistence`'s private `ToGeneratedPath`)
+    to a new public `ProjectFiles.GetGeneratedFilePath(string graphFilePath)` (`NetPrints.Core`), reused
+    by both `ProjectPersistence` and a new private `MainEditorVM.BuildClassesByGeneratedPath` that
+    re-translates every class after the build and keys the result by that path with
+    `StringComparer.Ordinal` (a plain `string` key stays the type — `DiagnosticMapper.FromBuild`'s own
+    signature is already shipped and tested; wrapping it in a value type here would ripple across that
+    contract for no benefit). `CompileAsync` now passes this dictionary to `FromBuild`, giving build
+    errors in a generated file a node/line mapping (ED-T04).
+  - **Log EventId**: editor-services.md §6 names 1030 for `CodeAnalysisFailed`, but 1030 was already
+    `Hosting.Log.TaskFaulted` by the time this batch ran (`TaskExtensions.Forget`'s safety net, landed
+    earlier in P1). Assigned **1060** instead (new `Diagnostics/Log.cs`, its own feature-folder block,
+    continuing the existing per-folder numbering after 1050's reserved `GridShaderUnavailable`), recorded
+    on the `[LoggerMessage]` itself; the contract's own numbering table is stale on this one point but
+    left as-is (no authority to edit contracts in an implementer batch).
+  - `RunAnalysisAsync`'s own translation loop (`TranslateAll`) catches `TranslationException` per class
+    (not the whole loop) and reports it via `DiagnosticMapper.FromTranslation`, so one bad class doesn't
+    blank the whole snapshot.
+  - Test: `tests/NetPrints.Editor.Tests/Diagnostics/CodeAnalysisHostTests.cs` (ED-T02) wires a
+    `Guid.Parse(string)` call to an `int` literal (same technique as `SourceMapTests`), drives the
+    debounce with `TestEditor.Scheduler.AdvanceBy(CodeAnalysisHost.DebounceWindow.Ticks)`, and polls
+    (`Task.Delay` loop, matching `MainEditorVMTests.WaitFor`) for the `CS1503` to appear then, after
+    reconnecting a valid string literal, to clear — the debounce itself is virtual-time, but
+    `AnalyzeAsync` runs through a real `Task.Run`, so the test still needs to wait for that hop.
+- **T093 (Cascadia Mono)**: fetched from the official Microsoft release
+  `https://github.com/microsoft/cascadia-code/releases/download/v2407.24/CascadiaCode-2407.24.zip`
+  (`v2407.24`, 2024-11-18): `ttf/CascadiaMono.ttf` (the plain variable font, not the Nerd Font/Powerline
+  variants) into `src/NetPrints.Editor/Assets/Fonts/CascadiaMono.ttf`, plus the release tag's `LICENSE`
+  (`https://raw.githubusercontent.com/microsoft/cascadia-code/v2407.24/LICENSE`, SIL OFL 1.1) as
+  `OFL.txt` next to it — the release zip itself carries no license file, only fonts, so the license came
+  from the repository at the matching tag instead. Font family verified via `fontTools`: "Cascadia Mono"
+  (matches the `avares://NetPrints.Editor/Assets/Fonts#Cascadia Mono` reference in editor-services.md
+  §3). No csproj change needed: the existing `<AvaloniaResource Include="Assets\**" />` glob picks it up.
+- **T094 (CodeView)**: `CodeView/RoslynFoldingStrategy.cs` is a pure, UI-toolkit-free Roslyn syntax walk
+  (type and member-body braces; an "empty" body — nothing between its own braces — folds nothing) so
+  `CodeViewVM` can call it directly (FR-038) without a dependency on AvaloniaEdit; the view converts its
+  `FoldingRange`s to AvaloniaEdit `NewFolding`s. `CodeViewVM` depends only on `ICodeAnalysisHost` (not the
+  full `EditorContext`), filtering one class's `Code`/`Diagnostics` out of every snapshot by
+  `ClassFullName` (`StringComparer.Ordinal`). `SquiggleRenderer` hand-rolls the wavy underline AvaloniaEdit
+  doesn't ship (`BackgroundGeometryBuilder.GetRectsForSegment` for the rects, a small zig-zag
+  `StreamGeometry` under each). `CodeView.axaml.cs` installs TextMate (`RegistryOptions`/`ThemeName.DarkPlus`
+  or `LightPlus` from `ActualThemeVariant`, switched on `ActualThemeVariantChanged`) and folding in its
+  constructor; `Code` is pushed from the view model in code-behind rather than bound in XAML —
+  `TextEditor.Text` is a plain CLR property AvaloniaEdit 12.0.0 exposes that Avalonia's compiled-binding
+  generator cannot target (`AVLN3000: no suitable setter`) — `Diagnostics`/`Foldings` follow the same
+  code-behind push via `PropertyChanged`. TextMate installation is wrapped in a `try`/`catch`: if it
+  throws (research.md R2, risk K6 — Oniguruma is native and not guaranteed on every platform), `Editor`
+  keeps working as a plain, uncolored `TextEditor` instead (the plain-text fallback). Added
+  `Avalonia.AvaloniaEdit`/`AvaloniaEdit.TextMate` `PackageReference`s (versions already pinned in
+  `Directory.Packages.props` by T001) and the `avares://AvaloniaEdit/Themes/Fluent/AvaloniaEdit.xaml`
+  style include to `EditorApp.axaml`; `TextMateSharp.Grammars` (C# grammar/theme data) flows in
+  transitively through `AvaloniaEdit.TextMate`'s own dependency, per research.md R2 ("pin via its
+  transitive version, no override") — no direct package reference or version pin added for it.
+  `CodeView` is not wired into `ClassInspectorView` yet; T095 replaces that TextBox.
+  - Tests: `tests/NetPrints.Editor.Tests/CodeView/RoslynFoldingStrategyTests.cs` (ED-T01's folding half,
+    at the pure-function level) and `CodeViewVMTests.cs` (snapshot filtering by class, quick info
+    delegation), both against a fake `ICodeAnalysisHost`. No baseline/snapshot changes in this batch:
+    `CodeView` is not yet reachable from any window `ClassInspectorCodeView` snapshot tests exercise
+    (T095/T097's job).
