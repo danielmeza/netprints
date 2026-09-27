@@ -336,6 +336,30 @@ namespace NetPrints.Tests.Core
         [GeneratedRegex(@"^dotnet_diagnostic\.(?<rule>[A-Za-z0-9_-]+)\.severity\s*=\s*(?<severity>\S+)")]
         private static partial Regex EditorConfigSeverityPattern();
 
+        [GeneratedRegex(@"<(?:\w+:)?Popup(?=[\s/>])")]
+        private static partial Regex RawPopupTagPattern();
+
+        /// <summary>
+        /// ADR-0004: every canvas popup goes through <c>CanvasPopup</c>, which anchors itself at the
+        /// pointer and centralizes Esc/light-dismiss/focus behavior; nothing else declares a raw
+        /// Avalonia <c>Popup</c>. <c>CanvasPopup</c> itself is a code-only control (no .axaml), so
+        /// this needs no exemption for its own file.
+        /// </summary>
+        [Fact]
+        public void NoRawPopupOutsideCanvasPopup()
+        {
+            string src = Path.Combine(SampleProjectFactory.FindRepositoryRoot(), "src");
+            string[] axamlFiles = EnumerateSourceFiles(src, "*.axaml");
+            Regex pattern = RawPopupTagPattern();
+
+            string[] offenders = [.. axamlFiles
+                .Where(path => pattern.IsMatch(File.ReadAllText(path)))
+                .Select(path => Path.GetRelativePath(src, path))];
+
+            Assert.True(axamlFiles.Length > 0, "Expected to scan at least one src/**/*.axaml file.");
+            Assert.Empty(offenders);
+        }
+
         /// <summary>
         /// Every <c>dotnet_diagnostic.&lt;rule&gt;.severity</c> entry below <c>error</c> in a
         /// <c>[src/...]</c>-headed <c>.editorconfig</c> section must be in this explicit allowlist,

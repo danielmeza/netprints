@@ -267,7 +267,7 @@ public class CanvasInteractionTests
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
-    public async Task GetSetPopupClosesWhenThePointerLeavesIt()
+    public async Task GetSetPopupClosesOnAnOutsideClick()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var length = new VariableSpecifier("Length", TypeSpecifier.FromType<int>(), MemberVisibility.Public, MemberVisibility.Public,
@@ -276,9 +276,11 @@ public class CanvasInteractionTests
         session.GraphVM.GetSetChooser.Open(length, new GraphPoint(56, 400));
         await chooser.WaitOpenAsync(Token);
 
-        await chooser.View.HoverAsync(Token); // PAR-55: enter, then leave
+        await chooser.View.HoverAsync(Token);
         Assert.True(await chooser.IsOpenAsync(Token));
-        await session.Driver.MoveAsync(await session.Graph.EmptyPointAsync(Token), Token);
+
+        // ADR-0004: CanvasPopup light-dismisses on a click outside it, not on the pointer merely leaving it.
+        await session.Driver.ClickAsync(await session.Graph.EmptyPointAsync(Token), UiButton.Left, 1, Token);
 
         await chooser.WaitClosedAsync(Token);
         Assert.False(session.GraphVM.GetSetChooser.IsOpen);
