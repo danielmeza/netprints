@@ -3,11 +3,11 @@ using System.IO;
 using System.Threading.Tasks;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Generator;
-using NetPrints.Tests.Extensibility;
 using NetPrints.Serialization;
 using NetPrints.Serialization.Json;
 using NetPrints.Serialization.Mapping;
 using NetPrints.Serialization.Migrations;
+using NetPrints.Tests.Extensibility;
 using NetPrints.Tests.Projects;
 using Xunit;
 

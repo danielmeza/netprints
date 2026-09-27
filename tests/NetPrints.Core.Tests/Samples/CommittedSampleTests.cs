@@ -6,13 +6,13 @@ using System.Threading.Tasks;
 using NetPrints.Core;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Generator;
-using NetPrints.Tests.Extensibility;
 using NetPrints.Serialization;
 using NetPrints.Serialization.Documents;
 using NetPrints.Serialization.Json;
 using NetPrints.Serialization.Mapping;
 using NetPrints.Serialization.Migrations;
 using NetPrints.Tests.Characterization;
+using NetPrints.Tests.Extensibility;
 using Xunit;
 
 namespace NetPrints.Tests.Samples
