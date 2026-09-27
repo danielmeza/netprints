@@ -54,6 +54,11 @@ namespace NetPrints.Tests.Core
             {
                 yield return constructor;
             }
+
+            foreach (var eventGraph in cls.EventGraphs)
+            {
+                yield return eventGraph;
+            }
         }
 
         [Fact]
@@ -133,6 +138,44 @@ namespace NetPrints.Tests.Core
             var method = new MethodGraph("Detached");
 
             Assert.Throws<InvalidOperationException>(() => GraphKeys.For(method));
+        }
+
+        [Fact]
+        public void ForAndResolveRoundTripAnEventGraph()
+        {
+            var cls = new ClassGraph { Name = "C" };
+            var eventGraph = new EventGraph("Events") { Class = cls };
+            cls.EventGraphs.Add(eventGraph);
+
+            string key = GraphKeys.For(eventGraph);
+
+            Assert.Equal(eventGraph.Id, key);
+            Assert.Same(eventGraph, GraphKeys.Resolve(cls, key));
+        }
+
+        [Fact]
+        public void EnsureUniqueMemberIdsRenamesADuplicateAcrossAMethodAndAnEventGraph()
+        {
+            var cls = new ClassGraph { Name = "C" };
+            MethodGraph method;
+            EventGraph eventGraph;
+
+            using (IdGeneration.Use(new FixedMemberIdGenerator("mdup0002")))
+            {
+                method = new MethodGraph("Method") { Class = cls };
+                eventGraph = new EventGraph("Events") { Class = cls };
+            }
+
+            cls.Methods.Add(method);
+            cls.EventGraphs.Add(eventGraph);
+
+            Assert.Equal(method.Id, eventGraph.Id);
+
+            bool changed = cls.EnsureUniqueMemberIds();
+
+            Assert.True(changed);
+            Assert.Equal("mdup0002", method.Id);
+            Assert.NotEqual(method.Id, eventGraph.Id);
         }
     }
 }

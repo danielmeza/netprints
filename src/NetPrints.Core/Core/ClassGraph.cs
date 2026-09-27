@@ -141,6 +141,11 @@ namespace NetPrints.Core
         public ObservableRangeCollection<ConstructorGraph> Constructors { get; set; } = new ObservableRangeCollection<ConstructorGraph>();
 
         /// <summary>
+        /// Event graphs of this class (US4).
+        /// </summary>
+        public ObservableRangeCollection<EventGraph> EventGraphs { get; set; } = new ObservableRangeCollection<EventGraph>();
+
+        /// <summary>
         /// Base / super type of this class. The ultimate base type of all classes is System.Object.
         /// </summary>
         public TypeSpecifier SuperType
@@ -208,13 +213,13 @@ namespace NetPrints.Core
 
         /// <summary>
         /// This class's members that carry their own member id (data-model.md §2):
-        /// <see cref="Variables"/>, then <see cref="Methods"/>, then <see cref="Constructors"/>, in
-        /// that order. Each element is a <see cref="Variable"/>, <see cref="MethodGraph"/> or
-        /// <see cref="ConstructorGraph"/>.
+        /// <see cref="Variables"/>, then <see cref="Methods"/>, then <see cref="Constructors"/>, then
+        /// <see cref="EventGraphs"/>, in that order. Each element is a <see cref="Variable"/>,
+        /// <see cref="MethodGraph"/>, <see cref="ConstructorGraph"/> or <see cref="EventGraph"/>.
         /// </summary>
         public IEnumerable<object> Members
         {
-            get => Variables.Cast<object>().Concat(Methods).Concat(Constructors);
+            get => Variables.Cast<object>().Concat(Methods).Concat(Constructors).Concat(EventGraphs);
         }
 
         /// <summary>
@@ -246,6 +251,7 @@ namespace NetPrints.Core
             Variable variable => variable.Id,
             MethodGraph method => method.Id,
             ConstructorGraph constructor => constructor.Id,
+            EventGraph eventGraph => eventGraph.Id,
             _ => throw new InvalidOperationException($"Unknown member type '{member.GetType()}'."),
         };
 
@@ -261,6 +267,9 @@ namespace NetPrints.Core
                     break;
                 case ConstructorGraph constructor:
                     constructor.Id = id;
+                    break;
+                case EventGraph eventGraph:
+                    eventGraph.Id = id;
                     break;
                 default:
                     throw new InvalidOperationException($"Unknown member type '{member.GetType()}'.");

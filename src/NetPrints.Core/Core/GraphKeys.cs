@@ -70,6 +70,11 @@ public static class GraphKeys
             return constructor.Id;
         }
 
+        if (graph is EventGraph eventGraph)
+        {
+            return eventGraph.Id;
+        }
+
         throw new InvalidOperationException($"Graph of type '{graph.GetType()}' has no graph key.");
     }
 
@@ -121,6 +126,14 @@ public static class GraphKeys
             if (constructor.Id == key)
             {
                 return constructor;
+            }
+        }
+
+        foreach (EventGraph eventGraph in cls.EventGraphs)
+        {
+            if (eventGraph.Id == key)
+            {
+                return eventGraph;
             }
         }
 

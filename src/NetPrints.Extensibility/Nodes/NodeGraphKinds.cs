@@ -21,6 +21,7 @@ public static class NodeGraphKinds
             ConstructorGraph => GraphKinds.Constructor,
             ClassGraph => GraphKinds.Class,
             TypeGraph => GraphKinds.Type,
+            EventGraph => GraphKinds.Event,
             _ => GraphKinds.None,
         };
     }
