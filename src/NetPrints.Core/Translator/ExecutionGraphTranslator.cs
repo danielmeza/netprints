@@ -738,7 +738,7 @@ namespace NetPrints.Translator
         }
 
         /// <inheritdoc />
-        public void WriteGotoOutputPinIfNecessary(NodeOutputExecPin pin, NodeInputExecPin fromPin)
+        public bool WriteGotoOutputPinIfNecessary(NodeOutputExecPin pin, NodeInputExecPin fromPin)
         {
             int fromId = GetExecPinStateId(fromPin);
             int nextId = fromId + 1;
@@ -748,6 +748,7 @@ namespace NetPrints.Translator
                 if (nextId != jumpStackStateId)
                 {
                     WriteGotoJumpStack();
+                    return true;
                 }
             }
             else
@@ -759,8 +760,11 @@ namespace NetPrints.Translator
                 if (nextId != toId)
                 {
                     WriteGotoInputPin(pin.OutgoingPin);
+                    return true;
                 }
             }
+
+            return false;
         }
 
         /// <summary>

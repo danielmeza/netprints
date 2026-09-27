@@ -706,10 +706,22 @@ internal static class BuiltInNodeTranslators
         context.AppendLine($"if ({context.GetOrCreatePinName(node.IndexPin)} < {context.GetPinIncomingValue(node.MaxIndexPin)})");
         context.AppendLine("{");
         context.WritePushJumpStack(node.ContinuePin);
-        context.WriteGotoOutputPinIfNecessary(node.LoopPin, node.ContinuePin);
+        bool loopPinJumpsAway = context.WriteGotoOutputPinIfNecessary(node.LoopPin, node.ContinuePin);
         context.AppendLine("}");
 
-        context.WriteGotoOutputPinIfNecessary(node.CompletedPin, node.ContinuePin);
+        // Gate the completed-pin jump in an `else` only when the loop-pin one above falls through instead
+        // of jumping away, otherwise it would also fire on a looping pass.
+        if (loopPinJumpsAway)
+        {
+            context.WriteGotoOutputPinIfNecessary(node.CompletedPin, node.ContinuePin);
+        }
+        else
+        {
+            context.AppendLine("else");
+            context.AppendLine("{");
+            context.WriteGotoOutputPinIfNecessary(node.CompletedPin, node.ContinuePin);
+            context.AppendLine("}");
+        }
     }
 
     /// <summary>

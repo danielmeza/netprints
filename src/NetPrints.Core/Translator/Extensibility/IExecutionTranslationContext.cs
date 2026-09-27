@@ -82,7 +82,12 @@ public interface IExecutionTranslationContext
     /// </summary>
     /// <param name="pin">Output exec pin to leave through.</param>
     /// <param name="fromPin">Input exec pin whose state is being emitted.</param>
-    void WriteGotoOutputPinIfNecessary(NodeOutputExecPin pin, NodeInputExecPin fromPin);
+    /// <returns>
+    /// <see langword="true"/> if a <c>goto</c> statement was written (so code that unconditionally follows this
+    /// call, in the same block, is unreachable whenever the jump is taken); <see langword="false"/> if the jump
+    /// was omitted and execution instead falls through to whatever comes next.
+    /// </returns>
+    bool WriteGotoOutputPinIfNecessary(NodeOutputExecPin pin, NodeInputExecPin fromPin);
 
     /// <summary>
     /// Emits a push of <paramref name="pin"/>'s state onto the jump stack.

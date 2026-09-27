@@ -3424,23 +3424,35 @@ edited, so the diff between what was reviewed and what changed stays visible.
   an `if (node.IsLocalVariable) { context.Append(node.VariableName); } else { <existing target/dot logic> }`
   branch: a local reads/writes as a bare name, no `this.`/target/dot, matching data-model.md's Translation
   row exactly.
-- **Bug found, not fixed (out of scope, pre-existing, unrelated to locals): `ForLoopNode` cannot loop.**
-  `TranslateContinueForLoopNode` (`BuiltInNodeTranslators.cs`, unmodified by this batch) writes
-  `if (idx < max) { push; WriteGotoOutputPinIfNecessary(LoopPin, ContinuePin); }` then, **unconditionally
-  after that `if`'s closing brace**, `WriteGotoOutputPinIfNecessary(CompletedPin, ContinuePin)`. Both calls
-  share the same `fromPin` (`ContinuePin`), so `WriteGotoOutputPinIfNecessary`'s "omit the goto, rely on
-  fallthrough" optimization (`nextId == toId`) is only safe when nothing else follows in the same state —
-  true for every other node translator with a single exit (`IfElseNode`'s two branches are each
-  self-contained; `VariableSetterNode`/`CallMethodNode` each call it exactly once) but false here: when the
-  Loop-pin goto is "unnecessary" (the common case — a loop's first body node is always the very next node
-  `CreateStates` numbers, since it's the first new node the exec-order DFS descends into from `ForLoopNode`
-  itself), the unconditional Completed-goto right after the `if` runs on *every* pass, including the
-  looping one, so the loop body executes exactly once and then exits early. Confirmed by hand: this is not
-  a corner case, it reproduces for the simplest possible "loop with one body node" graph. Discovered while
-  building this batch's own "loop increments a local" fixture (`ForLoopNode` printed the initial value,
-  never looping); avoided entirely by using `IfElseNode` + the operator mechanism instead (see below), so
-  no red/green fix was attempted here — this needs its own test and fix, filed as an open question for the
-  Opus review rather than folded into this batch.
+- **Bug fixed: `ForLoopNode` cannot loop.** Cause (`TranslateContinueForLoopNode`,
+  `BuiltInNodeTranslators.cs:699-713`, predates P1 — the same unconditional-goto shape already existed in
+  pre-P1 `ExecutionGraphTranslator.TranslateContinueForLoopNode`, merge-base `09c178d`): the method wrote
+  `if (idx < max) { push; WriteGotoOutputPinIfNecessary(LoopPin, ContinuePin); }` then, unconditionally
+  after that `if`'s closing brace, `WriteGotoOutputPinIfNecessary(CompletedPin, ContinuePin)`. Both calls
+  share the same `fromPin`, so whenever the Loop-pin goto was elided by the fallthrough optimization (the
+  common case — the loop body is the very next state `CreateStates` numbers), execution fell through the
+  `if` and immediately hit the unconditional Completed-goto, so the loop body ran once and exited early.
+  Fix: `WriteGotoOutputPinIfNecessary` (`ExecutionGraphTranslator.cs`,
+  `Extensibility/IExecutionTranslationContext.cs`) now returns whether it actually wrote a `goto` (vs.
+  eliding it via the fallthrough optimization); `TranslateContinueForLoopNode` only wraps the Completed-goto
+  in an `else` branch when the Loop-pin call returned `false` (elided/falls through — the buggy case). When
+  it returned `true` (an explicit `goto` was written for the Loop pin, so that branch already leaves the
+  block unconditionally whenever taken), the Completed-goto is still emitted unconditionally right after
+  the `if`, byte-identical to before — this keeps every already-correct call site (e.g. the `AllNodes`
+  golden's empty-body `ForLoopNode`, whose Loop-pin jump is never elided) unchanged, and avoids emitting a
+  pointless `else { }` there. `TranslateStartForLoopNode` needed no change (it has no code after its own
+  `if`). Test:
+  `ForLoopBuildTests.ForLoopBuildsAndRunsAThreeIterationLoopThroughARealDotnetBuild`
+  (`tests/NetPrints.Core.Tests/Samples/ForLoopBuildTests.cs`, fixture
+  `tests/NetPrints.Core.Tests/Fixtures/ForLoop/ForLoop.netpc.json`): a `ForLoopNode` 0..3 printing its index
+  each pass (red before the fix: printed only `0`), followed by a second, empty-body `ForLoopNode` (0..1)
+  to cover a sequential second loop and an empty body, then a final print — asserts the run prints exactly
+  `0`, `1`, `2`, `done`. No golden `.g.cs`/`.cs` fixture changed. Aside: the fixture sets both loops'
+  `InitialIndex` pin explicitly (`0`) to sidestep a separate, unrelated latent bug —
+  `ForLoopNode.InitialIndexPin` defaults to `UsesExplicitDefaultValue = true` (a `CallMethodNode`-argument
+  concept meaning "omit the argument"), so `GetPinIncomingValue` returns `null` for an unconnected
+  `InitialIndexPin` and `TranslateStartForLoopNode` interpolates it into `idx = ;` (invalid C#) — out of
+  scope here, not hit by any existing fixture or golden, left for its own bug report.
 - Decision (`Locals` fixture, `tests/NetPrints.Core.Tests/Fixtures/Locals/Locals.netpc.json`, no
   namespace so `cls.FullName == "Locals"` matches the golden's literal name): a hand-loop, not
   `ForLoopNode` (the bug above) — `MethodEntry → CallMethod(op_LessThan, count < 5) → IfElse →`
@@ -3473,7 +3485,8 @@ edited, so the diff between what was reviewed and what changed stays visible.
   that bypasses `IsLocalNameAvailable` — simulating T087 before it exists), `Serialization/RefMappingTests.cs`
   gained `LocalVariableRefRoundTrips` (`ToSpecifier() → ToRef() → FromRef()`), `Samples/LocalVariableBuildTests.cs`
   (real build/run).
-- Open questions for the Opus review: (1) the `ForLoopNode` bug above — worth a dedicated task/bug report
-  before any future work relies on `ForLoopNode` looping more than once; (2) `GetSetChooserVM.Open`'s new
+- Open questions for the Opus review: (1) the `ForLoopNode` bug above is now fixed (see the "Bug fixed"
+  entry above) — the only remaining open item from it is the separate, unrelated `InitialIndexPin`
+  default-value bug noted there, filed for its own bug report; (2) `GetSetChooserVM.Open`'s new
   null-`DeclaringType` branch is a minimal, currently-unreachable stopgap — T087 should confirm it still
   makes sense once the Variables panel can actually drag a local onto the canvas, rather than assuming it.

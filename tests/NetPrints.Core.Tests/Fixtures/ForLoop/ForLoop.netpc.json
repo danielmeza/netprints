@@ -1,0 +1,92 @@
+{
+  "$schema": "https://danielmeza.github.io/netprints/schemas/netpc.v1.schema.json",
+  "schemaVersion": 1,
+  "name": "ForLoop",
+  "visibility": "Public",
+  "classGraph": {
+    "nodes": [
+      { "$kind": "classReturn", "id": "n00000000frp00" }
+    ]
+  },
+  "methods": [
+    {
+      "id": "m00000000frp00",
+      "name": "Main",
+      "visibility": "Public",
+      "modifiers": "Static",
+      "graph": {
+        "nodes": [
+          { "$kind": "methodEntry", "id": "n00000000frp01" },
+          { "$kind": "return", "id": "n00000000frp06" },
+          {
+            "$kind": "forLoop",
+            "id": "n00000000frp02",
+            "pins": [
+              { "pin": "in.data.InitialIndex", "value": { "type": "System.Int32", "value": "0" } },
+              { "pin": "in.data.MaxIndex", "value": { "type": "System.Int32", "value": "3" } }
+            ]
+          },
+          {
+            "$kind": "callMethod",
+            "id": "n00000000frp03",
+            "method": {
+              "name": "WriteLine",
+              "declaringType": { "name": "System.Console" },
+              "parameters": [
+                { "name": "value", "type": { "name": "System.Int32" } }
+              ],
+              "modifiers": "Static",
+              "visibility": "Public"
+            }
+          },
+          {
+            "$kind": "forLoop",
+            "id": "n00000000frp04",
+            "pins": [
+              { "pin": "in.data.InitialIndex", "value": { "type": "System.Int32", "value": "0" } },
+              { "pin": "in.data.MaxIndex", "value": { "type": "System.Int32", "value": "1" } }
+            ]
+          },
+          {
+            "$kind": "callMethod",
+            "id": "n00000000frp05",
+            "pins": [
+              { "pin": "in.data.value", "value": { "type": "System.String", "value": "done" } }
+            ],
+            "method": {
+              "name": "WriteLine",
+              "declaringType": { "name": "System.Console" },
+              "parameters": [
+                { "name": "value", "type": { "name": "System.String" } }
+              ],
+              "modifiers": "Static",
+              "visibility": "Public"
+            }
+          }
+        ],
+        "connections": [
+          { "from": "n00000000frp01/out.exec.Exec", "to": "n00000000frp02/in.exec.Exec" },
+          { "from": "n00000000frp02/out.exec.Loop", "to": "n00000000frp03/in.exec.Exec" },
+          { "from": "n00000000frp02/out.data.Index", "to": "n00000000frp03/in.data.value" },
+          { "from": "n00000000frp03/out.exec.Exec", "to": "n00000000frp02/in.exec.Continue" },
+          { "from": "n00000000frp02/out.exec.Completed", "to": "n00000000frp04/in.exec.Exec" },
+          { "from": "n00000000frp04/out.exec.Completed", "to": "n00000000frp05/in.exec.Exec" },
+          { "from": "n00000000frp05/out.exec.Exec", "to": "n00000000frp06/in.exec.Exec" }
+        ]
+      }
+    }
+  ],
+  "layout": {
+    "class": {
+      "n00000000frp00": [112, 112]
+    },
+    "m00000000frp00": {
+      "n00000000frp01": [112, 112],
+      "n00000000frp02": [420, 112],
+      "n00000000frp03": [740, 60],
+      "n00000000frp04": [740, 320],
+      "n00000000frp05": [1060, 320],
+      "n00000000frp06": [1380, 320]
+    }
+  }
+}
