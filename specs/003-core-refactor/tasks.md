@@ -167,8 +167,9 @@ Checkpoint E (plan.md). Out of scope (follow-ups, do not implement): `netprints 
 - [x] T084 [US5] Model `LocalVariable`, `VariableScope`, `ExecutionGraph.LocalVariables`, `IsLocalNameAvailable`, `VariableSpecifier.Scope`; `IsLocalVariable` on `Scope`
 - [x] T085 [US5] Translator: locals first, reserved names, getter/setter; `NPT004`; golden `Locals.cs`; build/run test (loop increments a local, prints it)
 - [x] T086 [US5] `locals` (inline records) + `VariableRef.scope` mapping; round-trip test
-- [ ] T087 [US5] Editor `VariablesPanelVM`, `LocalVariableVM`, `EditorCommands` (create/rename/retype/remove incl. nodes), "Method Variables" search category, drag to canvas; `AutomationIds.VariablesClassGroup`, `VariablesMethodGroup`, `CreateLocalVariableButton`
-- [ ] T088 [US5] VM tests in `tests/NetPrints.Editor.Tests/Variables/LocalVariableTests.cs`; ED-T06 in `tests/NetPrints.Editor.UITests/Variables/LocalVariablePanelTests.cs`; **Checkpoint H**
+- [x] T087 [US5] Editor `VariablesPanelVM`, `LocalVariableVM`, `EditorCommands` (create/rename/retype/remove incl. nodes), "Method Variables" search category, drag to canvas; `AutomationIds.VariablesClassGroup`, `VariablesMethodGroup`, `CreateLocalVariableButton`
+- [x] T088 [US5] VM tests in `tests/NetPrints.Editor.Tests/Variables/LocalVariableTests.cs`; ED-T06 in `tests/NetPrints.Editor.UITests/Variables/LocalVariablePanelTests.cs`; **Checkpoint H**
+  - Checkpoint H verified: see implementation-notes.md "Sub-phase H, batch H2" section
 
 ## Phase 9: User Story 6 — C# code view and diagnostics (P2) (sub-phase I)
 

@@ -3521,6 +3521,123 @@ edited, so the diff between what was reviewed and what changed stays visible.
   null-`DeclaringType` branch is a minimal, currently-unreachable stopgap — T087 should confirm it still
   makes sense once the Variables panel can actually drag a local onto the canvas, rather than assuming it.
 
+## Sub-phase H, batch H2 (T087–T088): editor Variables panel, Checkpoint H
+
+- Decision (H1 open question 1, `GetSetChooserVM.Open`'s null-`DeclaringType` stopgap): confirmed
+  correct as-is, no change needed. `NodeGraphVM.Drop(LocalVariableVM, GraphPoint)` now reaches it the
+  same way `Drop(MemberVariableVM, GraphPoint)` does; a local's specifier always has `DeclaringType is
+  null`, so `CanGet`/`CanSet` are unconditionally `true` — correct, since a local is always readable and
+  writable inside its own method (no cross-type visibility concept applies). Covered by
+  `LocalVariableTests.DroppingALocalOpensGetSetChooserWithBothEnabled` (drop simulation, VM level) and
+  `LocalVariablePanelTests` (UI level, real `DataTransfer`/`Driver.Drop`).
+- Decision (H1 open question 2, `VariableSetterNode.NewValuePin`'s local fix): verified end to end
+  through the editor's own Get/Set-chooser flow (not just a direct constructor call) — dropping a local
+  and choosing Set creates a `VariableSetterNode` with `TargetPin is null` and exactly one input data
+  pin (`NewValuePin` at index 0), renders in the UI test's automation tree without throwing, and accepts
+  a real drop. `LocalVariableTests.SetterNewValuePinIsAtIndexZeroForALocal` and the UI test's drag
+  scenario both assert this.
+- Decision (rename keeps the node, retype/remove replace or remove it): `VariableNode` gained a public
+  `Retarget(VariableSpecifier)` (`src/NetPrints.Core/Graph/VariableNode.cs`) that updates `Variable` in
+  place and throws if the new specifier would change the node's pin shape (scope, declaring type,
+  static-ness or value type) — a rename only changes the name, so existing getter/setter nodes and their
+  connections survive untouched. A retype changes the value-pin type, so `EditorCommands` replaces the
+  node instead (mirrors `ModelOperations.ChangeOverload`'s existing pattern: same position, execution
+  connections preserved, data connections not — the old pin's type no longer matches). A remove
+  disconnects and removes the node, capturing every pin's connections (`NodeConnectionSnapshot`, generic
+  over any node shape via the same four pin collections `GraphUtil.DisconnectNodePins` already
+  enumerates) so undo restores the exact same node instance at its original position, fully reconnected
+  — not a rebuilt one. All three (`RenameLocalVariable`, `RetypeLocalVariable`, `RemoveLocalVariable` in
+  `EditorCommands.cs`) are undoable, matching the task text's "incl. nodes" requirement literally.
+- Bug caught by the VM tests, fixed before committing: a node's base constructor
+  (`Node(NodeGraph graph)`) already adds itself to `graph.Nodes` — `ReplaceLocalVariableNodes`'s first
+  draft called `graph.Nodes.Add(replacement)` again after constructing it, silently duplicating the
+  node (`OfType<VariableSetterNode>().Single()` then threw "more than one element"). Fixed by dropping
+  the redundant `Add`; `RemoveLocalVariable`'s restore path is unaffected since it re-inserts an
+  *already-constructed* captured instance, never a freshly-built one.
+- Decision ("Method Variables" search category, FR-030): added to `SuggestionListVM.BuildSuggestions`'s
+  empty-pin (`case null`) branch, right next to `ThisVariablesCategory`/`Static Variables`, populated
+  from `executionGraph.LocalVariables.Select(l => l.ToSpecifier())`. No new handling needed in
+  `SelectAsync`: it already switches on `VariableSpecifier` generically (`graph.GetSetChooser.Open(...)`,
+  added for member variables) regardless of `Scope`, so a local chosen from search opens the same
+  Get/Set chooser a drop does.
+- Decision (drag & drop plumbing): added `GraphDragDrop.LocalVariableFormat`/`StartDragAsync(...,
+  LocalVariableVM)` alongside the existing `VariableFormat` (kept as two formats, not one generic
+  `VariableFormat<TViewModel>`, matching the existing `MethodFormat`/`VariableFormat` split rather than
+  introducing a new generic shape this late in the phase); `DragSourceHelper.Moved` and
+  `GraphEditorView`'s `OnDragOver`/`OnDrop` gained a third case each. `NodeGraphVM.Drop(LocalVariableVM,
+  GraphPoint)` is a one-line mirror of the member-variable overload.
+- Decision (panel structure, minimal blast radius): `VariablesPanelVM` (new) is owned by
+  `ClassEditorVM.VariablesPanel`, exposing `ClassVariables` as a pass-through to the *existing*
+  `ClassEditorVM.Variables` (untouched — several VM and UI tests bind to it directly) and a
+  `MethodVariables` collection rebuilt from `OpenedGraph?.Graph as ExecutionGraph` whenever
+  `OpenedGraph` changes (subscribed via `PropertyChanged`, disposed/rebuilt each time, `null` when no
+  method or constructor is open — an event graph, for instance). `LocalVariableVM.Name`'s setter checks
+  `ExecutionGraph.IsLocalNameAvailable` (built by H1 for exactly this) before issuing the undoable
+  rename, unlike `MemberVariableVM.Name`/`EventGraphVM.Name`, which set the model directly with no
+  uniqueness check at all (an existing, out-of-scope gap for member variables and event graphs; NPT004
+  is their only backstop) — locals get the stronger guarantee since T087 is the first consumer of
+  `IsLocalNameAvailable`, and it costs nothing to wire up.
+- Decision (row layout, real bug caught by the UI test): the first `LocalVariableView` draft used
+  `MemberVariableView`'s multi-line layout (identity row + a nested "Name" row + a "Change type"
+  button). With the Variables panel's height now split 50/50 between the Class and Method groups
+  (`RowDefinitions="*,*"`), one such row (≈90 px) didn't fit the Method group's own remaining
+  `ListBox` allocation (≈44 px after its header and Create button), and — since the automation tree
+  reports each control's arranged bounds regardless of an ancestor `ScrollViewer`'s clip — the
+  UI test's click on the (visually clipped) name box actually landed on the Create Local Variable
+  button underneath it, silently creating a second local instead of renaming the first (caught as
+  `LocalVariables.Count == 2` immediately after the click, via `Driver.DumpAsync`'s bounds dump: both
+  elements reported nearly identical `y`). Fixed by making `LocalVariableView` a single compact row
+  (Remove, Name, Type in one `Grid`, ≈32 px): the name box is directly editable (`UpdateSourceTrigger=
+  LostFocus`, so a rename commits once per edit, not per keystroke) and still doubles as the drag
+  source, unlike `MemberVariableView` (whose name is drag-only; renaming a member variable goes through
+  the docked Variable inspector, which this batch does not add an equivalent of for locals — not asked
+  for, and the compact row already covers create/rename/retype/remove). Retype has no automation id
+  (reuses `VariableName`/`VariableRow` for the row itself, and the task named only
+  `VariablesClassGroup`/`VariablesMethodGroup`/`CreateLocalVariableButton` as new ids) and is driven by
+  its `LocalVariableVM.RetypeCommand` directly in tests, the same way the method/variable/event graph
+  rows' remove buttons already are (`EventGraphTests`' own documented precedent).
+- Snapshot baselines regenerated (`NETPRINTS_UPDATE_SNAPSHOTS=1` scoped to `SnapshotTests`, reviewed by
+  eye): `class-editor-main.png` and `search-popup.png` — both are full-window screenshots, and the left
+  column's Variables section is now visibly two groups ("Class", "Method: Main") instead of one. A
+  third snapshot (`canvas-every-node-kind.png`, a canvas-only crop unrelated to the left column) came
+  out of the same scoped run with a sub-threshold pixel diff purely from rendering nondeterminism; it
+  was reverted (`git checkout --`) rather than accepted, since nothing in this batch touches that canvas
+  — a reminder that `NETPRINTS_UPDATE_SNAPSHOTS=1` overwrites every snapshot a test *run* touches, not
+  just the ones that failed, so its output must be diffed per file before committing, never trusted
+  wholesale.
+- Tests added: `tests/NetPrints.Editor.Tests/Variables/LocalVariableTests.cs` (9 cases: create
+  uniqueness, rename retargets nodes + rejects invalid/duplicate names, retype replaces nodes, remove
+  removes/restores nodes with reconnection, the two H1-question regression tests above, the panel's
+  method-group lifecycle, and the search category); `tests/NetPrints.Editor.UITests/Variables/
+  LocalVariablePanelTests.cs` (ED-T06: both groups, create/rename/retype/remove/drag, undo/redo each);
+  `tests/NetPrints.Testing.Ui/Variables/LocalVariablesPanel.cs` (page object, mirrors
+  `EventGraphsPage`); `ClassEditorPage` gained `LocalVariables`/`VariablesClassGroup`/
+  `VariablesMethodGroup`.
+- Checkpoint H: US5's Independent Test (spec.md: a method-local variable with a getter/setter, undo of
+  create/rename/retype/remove, drag to canvas) is covered end to end — T085's translator/build-run
+  tests (a local declared, read and written, loop-incremented) + T086's round-trip + this batch's
+  editor VM and UI tests. FR-029 (locals declared at the top of the method, named without collisions —
+  `ReserveLocalVariableNames`/`NPT004`, T085) and FR-030 (Variables panel shows "Class" and
+  "Method: <name>" groups; create/rename/retype/remove undoable; locals in node search and drag & drop)
+  are both exercised. No golden fixture, `NotificationMap.golden.json` or document-format change this
+  batch (verified: no model or serialization shape changed — `VariableNode.Retarget` mutates an existing
+  in-memory node, not its serialized shape).
+- Suite: whole solution, Release, foreground: 791 total, 781 passed, 10 skipped (same
+  headless-driver/self-skip gaps as G1/G2, no new skips), 0 failed. Desktop E2E job
+  (`NETPRINTS_E2E=1`, `--fail-skips on`): 7 total, 7 passed, 0 skipped, 0 failed. `dotnet build -c
+  Release` (0 warnings) and `dotnet format NetPrints.slnx --verify-no-changes` both clean.
+- Open questions for the Opus review: (1) `LocalVariableView`'s inline-editable name box (vs. member
+  variables' inspector-only rename) is a deliberate, smaller-surface choice for locals (no visibility,
+  modifiers or getter/setter *methods* to show) — flag if a dedicated Local Variable inspector is
+  wanted for parity instead; (2) retype and remove have no automation id on their buttons (tests drive
+  the command directly, matching the existing method/variable/event-graph row precedent) — same
+  documented gap as those rows, not newly introduced here; (3) `ReplaceLocalVariableNodes` (retype only)
+  preserves position and execution connections but not *data* connections, since the old pin's type no
+  longer matches the new one — acceptable today (a retyped pin's old connections likely wouldn't
+  type-check anyway), but flag if a future batch wants a compatible-type reconnection pass. Remove/undo
+  (`CaptureAndDisconnect`/`RestoreAndReconnect`) is unaffected by this and restores every pin kind,
+  data included, since the node itself (and its pin types) never changes.
+
 ## Fix: duplicate `System.Object` base and non-restrictive accessor modifiers
 
 The checked-in `AllNodes.Everything.cs` golden did not compile (`CS1721`, `CS0273`/`CS0274`), excluded

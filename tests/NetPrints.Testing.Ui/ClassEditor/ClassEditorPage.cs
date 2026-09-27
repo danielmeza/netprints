@@ -3,6 +3,7 @@ using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Testing.Ui.Driving;
 using NetPrints.Testing.Ui.Events;
 using NetPrints.Testing.Ui.Graph;
+using NetPrints.Testing.Ui.Variables;
 
 namespace NetPrints.Testing.Ui.ClassEditor;
 
@@ -24,6 +25,9 @@ public sealed class ClassEditorPage(IUiDriver driver, string classFullName)
     public UiElement CreateConstructorButton => Find(AutomationIds.ClassEditorCreateConstructorButton);
     public UiElement CreateVariableButton => Find(AutomationIds.ClassEditorCreateVariableButton);
     public EventGraphsPage EventGraphs => new(Driver, Query);
+    public LocalVariablesPanel LocalVariables => new(Driver, Query);
+    public UiElement VariablesClassGroup => Find(AutomationIds.VariablesClassGroup);
+    public UiElement VariablesMethodGroup => Find(AutomationIds.VariablesMethodGroup);
     public UiElement ErrorList => Find(AutomationIds.ClassEditorErrorList);
     public UiElement OutputTab => Find(AutomationIds.ClassEditorOutputTab);
     public UiElement OutputText => Find(AutomationIds.ClassEditorOutputText);
