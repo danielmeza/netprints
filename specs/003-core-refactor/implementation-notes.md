@@ -2615,3 +2615,42 @@ shared the preloaded host, so a late reload replaced the runtime-assembly provid
 during later Node/Pin/Search tests (7 to 11 failures, 2 of 3 standalone runs, "Sequence contains no matching
 element" and empty collections). 20a11bb gives that class its own host; four standalone runs and the full suite
 are clean.
+
+## Checkpoint E report (T064, verification half)
+
+Run on 003-core-refactor at 5a2d0ad, Linux, no Xvfb needed (the headless UITests cover the editor parts).
+
+Full suite (`dotnet test --solution NetPrints.slnx -c Release --no-build -- --ignore-exit-code 8`, once):
+551 total, 542 succeeded, 9 skipped, 0 failed. The skips are the known headless-driver and Desktop E2E
+capability skips (`WindowManager`, `RealCursor`, `OsDragDrop`). `dotnet build -c Release`: 0 warnings, 0 errors.
+`dotnet format NetPrints.slnx --verify-no-changes`: clean.
+
+| SC | Verdict | Evidence |
+| --- | --- | --- |
+| SC-001 | PASS | `GoldenCSharpTests.TranslatedClassesMatchGoldenFiles`, `RoundTripTests.JsonFixtureThroughSaveAndReloadProducesGoldenCSharp`, `MigratedFixtureBuildTests.AllNodesGeneratesEveryGoldenBody` (generator output equals the goldens); `RoundTripTests.JsonRoundTripIsByteIdentical` (canonical bytes survive load and save); `MigratedFixtureBuildTests.HelloWorldSampleBuildsAndRunsThroughARealDotnetBuild` (real `dotnet build`). Goldens: see the list below. |
+| SC-002 | PASS | `ProjectPersistenceTests.SaveAsyncWritesOnlyDirtyClassesAndNothingOnASecondUnchangedSave` (dirty class writes its graph and its `.g.cs`, the second save writes 0); `RoundTripTests.MovingOneNodeChangesExactlyOneLayoutLine`; `SdkTargetsTests.FirstBuildGeneratesSecondSkipsThirdRegeneratesOnlyTheTouchedGraph` (second build skips `NetPrintsGenerate`, touching one graph regenerates only that file). |
+| SC-003 | PASS | `MigratedFixtureBuildTests.HelloWorldSampleBuildsAndRunsThroughARealDotnetBuild` and `HelloWorldSampleTests.SampleLoadsCompilesAndPrintsHelloWorld` (build and print `Hello, World!`); `NodeTooltipTests.WriteLineNodeTooltipContainsTheSummary` (headless UITests). Verified on local Linux; the CI run itself has not happened yet (no PR). |
+| SC-009 | PASS | `MergeTests.TwoBranchesAddingUnrelatedNodesMergeWithOneConflictAtTheNodesTail` (plain `git merge-file`, not skipped: git is on PATH); `GraphKeyTests.KeysAreUnchangedAfterReorderingMethods`; `DocumentMapperTests` DF-T19 (`M(int a, int b)` to `M(int a, string inserted, int b)` keeps the connections by pin name). Layout is keyed by member ids, so reordering touches no layout entry. |
+| SC-010 | PASS | `SchemaTests.GeneratedSchemaMatchesCommittedFile`; `CommittedSampleTests.GraphIsCanonical` and `GeneratedFileIsUpToDate`. These run in the CI `dotnet test` step. |
+
+Null-forgiving operators in `src` (`git grep -nE '[A-Za-z0-9_\)\]]!(\.|;|,|\)| )' -- 'src/**/*.cs'`): 2, both in
+`src/NetPrints.Editor/ModelSync/ObservableViewModelCollection.cs` (lines 55 and 83, `e.NewItems[i]!`). No `null!`
+or `default!` in `src`. Tracked for the Opus review.
+
+Golden files versus origin/master: none of them exist on master, so all are additions on this branch.
+- `Fixtures/Golden/HelloWorld.Program.cs`: unchanged since the sub-phase A baseline (eebaa31).
+- `Fixtures/Golden/AllNodes.Everything.cs`: one intended change, 1fb9759 (a connected `LiteralNode` now keeps its connection, so the `if` reads a literal variable instead of `true`).
+- `Fixtures/Golden/PinKeys.golden.txt`: regenerated for Snowflake ids (1afd46d).
+- `Characterization/NotificationMap.golden.json`: changed in 6a5900e (Fody removal, order), 72808b5 (+3 lines) and e19f3cf (T063a, removed properties). See the open items.
+- `Fixtures/HelloWorld/HelloWorld.Program.netpc.json`, `Fixtures/AllNodes/AllNodes.Everything.netpc.json` and the two fixture `.csproj` files are the migrated fixture inputs.
+
+Known narrowings and open items:
+- `GraphCodeGenerator` takes no `ExtensionRegistry` yet (T068) and `RenderFile` takes a `string` instead of `TranslatedClass` (T089).
+- Format gap: `CanSetPure` node kinds (`CallMethodNode`, `ConstructorNode`, `ExplicitCastNode`, `TernaryNode`, `AwaitNode`) have no document field for purity, so a pure instance loads back impure (see the note under the node converters).
+- Startup null-binding log noise in the editor is still present (cosmetic, not investigated in E).
+- `extension-points.md` §4 still shows the four-parameter `ReflectionProvider` constructor; the code follows tasks.md (T058).
+- `NotificationMap.golden.json` was regenerated once in T063a (removed properties); the T005 gate was otherwise kept.
+- `Project.Snapshot` is still nullable, unlike the data-model.md §5 snippet.
+- `Project.LastCompiledAssemblyPath` and `Project.GenerateClassSources` were kept on purpose (the editor's build outcome and the reflection host use them).
+- The CLI has no test project, and the CI workflow's "CLI sample compile and run" step was not run locally.
+- The 2 null-forgiving operators above.
