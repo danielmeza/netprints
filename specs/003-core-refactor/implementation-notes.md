@@ -3597,3 +3597,56 @@ leaves a stray `.g.cs`/`bin`/`obj` behind, said to have broken 11 tests earlier 
   deleted before committing.
 - No test changes were needed for "make every test work on a temp copy" (Part B item 2): every candidate
   already does.
+
+## Fix: canvas popups centralized behind `CanvasPopup` (ADR-0004)
+
+Owner-reported bug: the Get/Set chooser also opens away from the mouse when it is opened by picking
+a property/field from the member search (e.g. after dragging from an object pin), not just on a
+variable drop (commit 4b8e580, the "Fix: Get/Set popup placement" note above). Root cause was the
+same in both cases — `Placement="Pointer"` reads Avalonia's `internal` last-pointer-position
+tracking, which drag-and-drop does not keep current — but 4b8e580's fix was per-caller
+(`GetSetChooserVM.ScreenPosition`, a 3-arg `Drop` overload), so the member-search path, which never
+set `ScreenPosition`, still opened at the origin.
+
+- Decision: fix centrally, per the owner's direction, rather than threading a screen coordinate
+  through every opening path. See `docs/adr/0004-canvas-overlays-pointer-anchored-host.md` for the
+  full design. New: `CanvasPopup` (`src/NetPrints.Editor/Controls/CanvasPopup.cs`, a sealed `Popup`
+  subclass using `Placement="Custom"`) and `CanvasPointerTracker` (same folder, one per `TopLevel`,
+  listening for `PointerMoved`/`PointerPressed`/`DragDrop.DragOverEvent`/`DragDrop.DropEvent`).
+- Decision: the tracker must attach at `GraphEditorView.OnAttachedToVisualTree`, not lazily inside
+  `CanvasPopup`'s placement callback — the first pointer event ever seen is usually the very one that
+  opens the first popup, and creating the tracker reactively inside that callback misses it (caught
+  by `RightClickOpensSearchAtThePointer` initially failing at the window/canvas center instead of the
+  click point).
+- Decision: `CustomPopupPlacementCallback` clamps against `TopLevel.ClientSize` (the window), not
+  Avalonia's own `PlacementConstraintAdjustment` (`SlideX`/`SlideY`), which clamps against the
+  *screen* — under headless a fixed 1920x1280 stub, unrelated to the (usually much smaller) window,
+  so it would not have clamped a popup that overflows the window but not the screen.
+- Decision: the popup's anchor point is frozen the instant it opens (`CanvasPopup.frozenAnchor`) and
+  only re-clamped, not re-read from the tracker, on later placement passes — otherwise moving the
+  mouse toward the popup's own content after it opens (to click something) would visibly drag the
+  popup along with it.
+- Decision: added a real keyboard path (Ctrl+Space on the graph canvas, `GraphEditorView`'s own
+  `TopLevel`-level `KeyDown` handler) that opens the node search after calling
+  `CanvasPointerTracker.Invalidate()`, so `CanvasPopup` falls back to the selected node's position, or
+  the canvas center, exactly as ADR-0004 specifies for "opened without pointer involvement." This is
+  a new, minor, low-risk editor feature (not previously reachable any other way), added because the
+  fallback path needed a real, testable trigger; it does not replace right-click or cable-drop.
+- Removed (view concern, not a view model's): `GetSetChooserVM.ScreenPosition`, the 3-arg
+  `NodeGraphVM.Drop(MemberVariableVM, GraphPoint, Point)` overload (now 2-arg), `NodeSearchView`'s own
+  Escape handling (`OnSearchKeyDown`'s `case Key.Escape`), and `GetSetChooserView`'s
+  `OnPointerExited`-closes-the-popup handler — `CanvasPopup` now owns Esc, light-dismiss, initial
+  focus and "only one popup open" for every canvas popup.
+- Tests: `SourceHygieneTests.NoRawPopupOutsideCanvasPopup` (proved failing on a probe `<Popup>` in a
+  throwaway `.axaml` file, then reverted). New `CanvasPopupPositioningTests`, one per opening path:
+  `RightClickOpensSearchAtThePointer`, `ReleasingACableOnEmptyCanvasOpensSearchAtTheDropPoint`,
+  `PickingAPropertyFromMemberSearchAnchorsGetSetAtTheClickPoint` (creates a `Version`-typed class
+  variable and a `VariableGetterNode` for it purely to get an object pin with real reflected
+  properties — `HelloWorld`'s only pin is `Console.WriteLine`'s `void` return), and, combined into one
+  test since they share the same session, `OpeningSearchByKeyboardFallsBackToTheSelectedNodeOrTheCanvasCenter`.
+  `RightClickNearTheWindowEdgeClampsSearchInsideTheWindow` proves the clamp. `HoverAndDropTests`
+  (including `DroppingAVariableOpensTheGetSetPopupAtTheDropPoint`, 4b8e580's own regression test),
+  `NodeSearchTests` and `SnapshotTests` (no baseline changes: none of their click points land near a
+  window edge) all still pass unchanged.
+- Suite: whole solution, Release, foreground; E2E with `NETPRINTS_E2E=1` separately. Totals recorded
+  in the PR/report for this batch.
