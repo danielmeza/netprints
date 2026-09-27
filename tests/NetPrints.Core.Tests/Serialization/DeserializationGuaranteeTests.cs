@@ -14,6 +14,7 @@ using NetPrints.Graph;
 using NetPrints.Projects;
 using NetPrints.Serialization;
 using NetPrints.Serialization.Json;
+using NetPrints.Serialization.Documents;
 using NetPrints.Serialization.Mapping;
 using NetPrints.Serialization.Migrations;
 using NetPrints.Serialization.Stores;
@@ -218,6 +219,65 @@ namespace NetPrints.Tests.Serialization
             CallMethodNode reloaded = withCatch.Methods.Single().Nodes.OfType<CallMethodNode>().Single();
             Assert.NotNull(reloaded.CatchPin?.OutgoingPin);
             Assert.Equal(TypeSpecifier.FromType<Exception>(), Assert.IsType<NodeOutputDataPin>(reloaded.ExceptionPin).PinType.Value);
+        }
+
+        private sealed record LateInferNodeDocument(string Id, string? Name, IReadOnlyList<PinStateDocument>? Pins)
+            : NodeDocument(Id, Name, Pins);
+
+        // Derives its output type only in OnMethodDeserialized, with no event handler: what a
+        // GraphTypeInference.Relax pass exists to run once the mapper has wired the connections.
+        private sealed class LateInferNode : Node
+        {
+            public LateInferNode(NodeGraph graph)
+                : base(graph)
+            {
+                AddInputTypePin("Type");
+                AddOutputDataPin("Out", TypeSpecifier.FromType<object>());
+            }
+
+            public NodeOutputDataPin Out => OutputDataPins[0];
+
+            public override void OnMethodDeserialized() =>
+                Out.PinType.Value = InputTypePins[0].InferredType?.Value ?? TypeSpecifier.FromType<object>();
+        }
+
+        private sealed class LateInferNodeConverter : INodeDocumentConverter
+        {
+            public string Kind => "test/lateInfer";
+            public Type NodeType => typeof(LateInferNode);
+            public Type DocumentType => typeof(LateInferNodeDocument);
+
+            public NodeDocument ToDocument(Node node, NodeMappingContext context) => throw new NotSupportedException();
+
+            public Node CreateNode(NodeDocument document, NodeGraph graph, NodeMappingContext context) => new LateInferNode(graph);
+        }
+
+        // DocumentMapper's two GraphTypeInference.Relax calls (MapGraphFromDocument): the constructors'
+        // events settle every built-in node, so only a node that infers in OnMethodDeserialized alone
+        // shows that the mapper runs the pass after wiring the connections.
+        [Fact]
+        public async Task MapperRunsTypeInferenceAfterWiringConnections()
+        {
+            Project project = await LoadAsync(FixtureFile);
+            var registry = new NodeDocumentConverterRegistry([.. NodeDocumentConverterRegistry.BuiltIn, new LateInferNodeConverter()], []);
+            var mapper = new DocumentMapper(registry);
+
+            ClassDocument document = mapper.ToDocument(project.Classes.Single());
+            MethodDocument main = document.Methods!.Single();
+            const string lateId = "n000000001pxzz";
+            GraphDocument graph = main.Graph with
+            {
+                Nodes = [.. main.Graph.Nodes, new LateInferNodeDocument(lateId, null, null)],
+                Connections = [.. main.Graph.Connections!, new ConnectionDocument("n000000001pxre/out.type.OutputType", $"{lateId}/in.type.Type")],
+            };
+            document = document with { Methods = [main with { Graph = graph }] };
+
+            var issues = new List<DocumentIssue>();
+            ClassGraph loaded = mapper.FromDocument(document, project, issues, new DocumentId(FixtureFile));
+
+            Assert.Empty(issues);
+            var late = Assert.IsType<LateInferNode>(loaded.Methods.Single().FindNode(lateId));
+            Assert.Equal(TypeSpecifier.FromType<int>(), late.Out.PinType.Value);
         }
 
         private static Dictionary<NodePin, BaseType?> TypesOf(NodeGraph graph)

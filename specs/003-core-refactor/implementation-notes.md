@@ -2565,6 +2565,13 @@ Findings for B2:
   on the all-nodes fixture the constructors' events already settle every type, so no fixture pins `Relax`
   as such. The settled-type and catch-pin tests pin its outcome, not its mechanism. `Relax` stays in the
   mapper regardless (the T063 text keeps it).
+- B2 step 0: `MapperRunsTypeInferenceAfterWiringConnections` pins the mechanism. No built-in node kind
+  can show it on the JSON path (every node's constructor and connection events settle its types, and
+  reordering nodes and connections did not change that), so the test registers a test-only extension
+  node (`test/lateInfer`) that derives its output type only in `OnMethodDeserialized`, feeds it from an
+  `int` type node and asserts the output pin is `int`. Mutation check: removing both `Relax` calls in
+  `MapGraphFromDocument` turns it red (`Expected: System.Int32, Actual: System.Object`); either call alone
+  keeps it green, so the two calls are redundant with each other for this input.
 - `Node.OnMethodDeserialized` overrides (`AwaitNode`, `CallMethodNode`) re-subscribe their handlers on every
   `Relax` pass on top of the constructor's own subscription, i.e. duplicate handlers. Harmless today
   (`UpdateResultPin`/`UpdateExceptionPin` are idempotent) and not touched here.
