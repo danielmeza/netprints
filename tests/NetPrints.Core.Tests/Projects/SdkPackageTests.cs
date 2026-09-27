@@ -49,10 +49,11 @@ namespace NetPrints.Tests.Projects
             string feedDir = Directory.CreateTempSubdirectory("netprints-sdk-feed-").FullName;
             string packagesDir = Directory.CreateTempSubdirectory("netprints-sdk-packages-").FullName;
             string projectDir = Directory.CreateTempSubdirectory("netprints-sdk-package-project-").FullName;
+            string artifactsDir = Directory.CreateTempSubdirectory("netprints-sdk-artifacts-").FullName;
             try
             {
                 (int packExit, string packOutput) = await RunDotnetAsync(repositoryRoot, environment: null,
-                    "pack", sdkProjectPath, "-c", "Release", "-o", feedDir, $"-p:Version={TestVersion}", "--nologo");
+                    "pack", sdkProjectPath, "-c", "Release", "-o", feedDir, $"-p:Version={TestVersion}", $"-p:ArtifactsPath={artifactsDir}", "--nologo");
                 Assert.True(packExit == 0, packOutput);
 
                 // <clear/> drops every inherited source (this machine's, and any user-wide config), so
@@ -101,6 +102,7 @@ namespace NetPrints.Tests.Projects
                 Directory.Delete(feedDir, recursive: true);
                 Directory.Delete(packagesDir, recursive: true);
                 Directory.Delete(projectDir, recursive: true);
+                Directory.Delete(artifactsDir, recursive: true);
             }
         }
     }
