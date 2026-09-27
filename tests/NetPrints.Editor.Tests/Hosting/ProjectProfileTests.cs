@@ -70,6 +70,27 @@ public sealed class ProjectProfileTests : IDisposable
     }
 
     [Fact]
+    public async Task TheTestExtensionsProfileIsFoundAndUsedForANewClassWithoutAWarning() // SC-004
+    {
+        var editor = TestEditor.Create(TestEditor.CreateReflectionHost);
+        editor.Dialogs.TrustAnswer = true;
+        var vm = new MainEditorVM(editor.Context);
+        string csproj = TestPaths.CopyHelloWorldSample();
+        string projectDirectory = Path.GetDirectoryName(csproj) ?? csproj;
+        cleanup.Add(projectDirectory);
+        ProjectSnapshot snapshot = await editor.Projects.LoadAsync(csproj, TestContext.Current.CancellationToken);
+        editor.Projects.Seed(snapshot with { ProfileId = "netprints.test", ExtensionFolders = [TestExtensionFolder.CopyTo(projectDirectory)] });
+
+        await vm.LoadProjectAsync(csproj);
+        await vm.NewClassCommand.ExecuteAsync(null);
+
+        Assert.NotNull(editor.Extensions.Current.FindProfile("netprints.test"));
+        Assert.DoesNotContain(editor.Dialogs.Errors, e => e.Message.Contains("NPD005", StringComparison.Ordinal));
+        ClassGraph created = vm.Project?.Classes[^1] ?? throw new InvalidOperationException("No class was created.");
+        Assert.Equal("MyClass", created.Name);
+    }
+
+    [Fact]
     public async Task TheDefaultProfileIsUsedWithoutAWarning()
     {
         var editor = TestEditor.Create(TestEditor.CreateReflectionHost);

@@ -83,6 +83,21 @@ public class ReflectionHostTests
         Assert.Contains(withCatalog.NonStaticTypes, t => t == TypeSpecifier.FromType<string>());
     }
 
+    [Fact(Timeout = 120000)]
+    public async Task TheTestExtensionsCatalogTypeReachesTheReflectionHost() // SC-004
+    {
+        var project = Project.FromSnapshot(TestSnapshots.WithRuntimeAssemblies("P", "N"));
+        using ExtensionHost extensions = TestExtensionFolder.CreateHost();
+        var host = new ReflectionHost(new InlineDispatcher(), extensions, NullLogger<ReflectionHost>.Instance);
+
+        await host.ReloadAsync(project, TestContext.Current.CancellationToken);
+
+        var widget = new TypeSpecifier("NetPrints.TestLib.Widget");
+        Assert.Contains(host.NonStaticTypes, t => t == widget);
+        Assert.Contains(host.Provider.GetNonStaticTypes(), t => t == widget);
+        Assert.Contains(host.NonStaticTypes, t => t == TypeSpecifier.FromType<string>());
+    }
+
     private sealed class CatalogExtension : INetPrintsExtension
     {
         public void Register(IExtensionBuilder builder) => builder.AddTypeCatalog(new InMemoryTypeCatalog(
