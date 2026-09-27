@@ -208,6 +208,8 @@ profiles and P3 extensions use, so custom emitters need no core changes.
     - **weak reference**: a generated weak-handler or weak-event-manager pattern, so the subscriber doesn't keep
       the source alive.
   - Each mode is an emission style. U2's `[UMultiDelegate]`/BlueprintAssignable builds on this.
+  - Under the `unreal` profile the mode is fixed. Unreal dynamic delegates bind an object plus a function name
+    through a weak object pointer, so they are weak by construction.
 - **Parameter modifiers** (moved here from the candidates). Today, arguments of a user-defined method are by
   value only; `ref`/`out`/`in` and optional values work only when calling existing .NET methods; `params` is
   not detected.
