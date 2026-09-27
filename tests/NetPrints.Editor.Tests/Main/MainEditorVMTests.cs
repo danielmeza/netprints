@@ -9,8 +9,11 @@ using NetPrints.Projects;
 
 namespace NetPrints.Editor.Tests.Main;
 
-public class MainEditorVMTests(TestEditor testEditor) : IDisposable
+public class MainEditorVMTests : IDisposable
 {
+    // MainEditorVM reloads the reflection host fire-and-forget whenever a project is set; a private
+    // host keeps those reloads from replacing the provider the shared host serves to other tests.
+    private readonly TestEditor testEditor = new(new ReflectionHost(new InlineDispatcher(), NullLogger<ReflectionHost>.Instance));
     private readonly List<string> cleanup = [];
 
     public void Dispose() => cleanup.ForEach(TestPaths.TryDelete);
