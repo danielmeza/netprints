@@ -1,10 +1,10 @@
 namespace AllNodes
 {
-    public class Everything<T> : System.Object, System.Object
+    public class Everything<T> : System.Object
     {
         private static System.Collections.Generic.List<T> Items
         {
-            public get
+            get
             {
                 // Variables
                 System.Collections.Generic.List<T> varList_T_ = default(System.Collections.Generic.List<T>);
@@ -14,7 +14,7 @@ namespace AllNodes
                 return varList_T_;
             }
 
-            public set
+            set
             {
                 // Variables
                 System.Collections.Generic.List<T> varList_T_ = default(System.Collections.Generic.List<T>);

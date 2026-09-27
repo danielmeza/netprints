@@ -16,11 +16,9 @@ namespace NetPrints.Tests.Characterization
     /// because <see cref="GoldenCSharpTests"/>, <c>RoundTripTests</c> and <c>EmitterTests</c> only
     /// string-compare a translation against the golden file, never compile either one. This Roslyn-compiles
     /// (<see cref="ExtensionTestSupport.Compile"/>) every <c>Fixtures/Golden/*.cs</c> body that is
-    /// standalone-compilable, to catch a future golden capturing invalid C# the same way. Two of the four
-    /// goldens are excluded: <c>AllNodes.Everything.cs</c> has two pre-existing compile errors unrelated to
-    /// this bug (a duplicate <c>System.Object</c> base and a private property with public accessors — see
-    /// implementation-notes.md, left for a follow-up batch); <c>EventGraphs.GameEvents.cs</c> needs its
-    /// hand-written <c>EventBase.cs</c> companion, covered separately below.
+    /// standalone-compilable, to catch a future golden capturing invalid C# the same way.
+    /// <c>EventGraphs.GameEvents.cs</c> is exercised separately below because it needs its hand-written
+    /// <c>EventBase.cs</c> companion.
     /// </summary>
     public class GoldenCompileTests
     {
@@ -31,6 +29,7 @@ namespace NetPrints.Tests.Characterization
         {
             yield return new object[] { "HelloWorld.Program.cs" };
             yield return new object[] { "Locals.cs" };
+            yield return new object[] { "AllNodes.Everything.cs" };
         }
 
         [Theory]

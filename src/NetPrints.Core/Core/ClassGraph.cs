@@ -154,11 +154,15 @@ namespace NetPrints.Core
         }
 
         /// <summary>
-        /// Type this class inherits from and interfaces this class implements.
+        /// Type this class inherits from and interfaces this class implements. An interface pin with no
+        /// inferred type (added but never connected) contributes no interface here rather than
+        /// defaulting to <c>System.Object</c>, which would duplicate <see cref="SuperType"/>.
         /// </summary>
         public IEnumerable<TypeSpecifier> AllBaseTypes
         {
-            get => new[] { SuperType }.Concat(ReturnNode.InterfacePins.Select(pin => (TypeSpecifier?)pin.InferredType?.Value ?? TypeSpecifier.FromType<object>()));
+            get => new[] { SuperType }.Concat(ReturnNode.InterfacePins
+                .Select(pin => (TypeSpecifier?)pin.InferredType?.Value)
+                .OfType<TypeSpecifier>());
         }
 
         /// <summary>

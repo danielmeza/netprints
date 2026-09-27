@@ -144,7 +144,10 @@ namespace NetPrints.Translator
                 genericArguments = "<" + string.Join(", ", c.DeclaredGenericArguments) + ">";
             }
 
-            string baseTypes = emitContext.BaseTypes.Count > 0 ? " : " + string.Join(", ", emitContext.BaseTypes) : "";
+            // Deduplicate: AllBaseTypes never repeats a type, but a class emitter (extension-points.md
+            // §3) is free to add its own entries to BaseTypes and could repeat one already there.
+            List<string> distinctBaseTypes = emitContext.BaseTypes.Distinct(StringComparer.Ordinal).ToList();
+            string baseTypes = distinctBaseTypes.Count > 0 ? " : " + string.Join(", ", distinctBaseTypes) : "";
 
             string usings = string.Concat(emitContext.Usings.Select(u => $"using {u};\n"));
 
@@ -385,7 +388,31 @@ namespace NetPrints.Translator
             return string.Concat(result.Select(modifier => modifier + " "));
         }
 
-        private static string AccessorVisibilityPrefix(Variable variable, MethodGraph accessor) =>
-            accessor.Visibility != variable.Visibility ? $"{TranslatorUtil.VisibilityTokens[accessor.Visibility]} " : "";
+        /// <summary>
+        /// Ranks each <see cref="MemberVisibility"/> single-flag value <see cref="TranslatorUtil.VisibilityTokens"/>
+        /// emits a keyword for, from most restrictive (lowest) to least restrictive (highest).
+        /// </summary>
+        private static readonly Dictionary<MemberVisibility, int> VisibilityRestrictiveness = new Dictionary<MemberVisibility, int>
+        {
+            [MemberVisibility.Private] = 0,
+            [MemberVisibility.Protected] = 1,
+            [MemberVisibility.Internal] = 1,
+            [MemberVisibility.Public] = 2,
+        };
+
+        /// <summary>
+        /// The accessor's visibility keyword followed by a space, or an empty string when it must be
+        /// omitted: C# only allows an accessor modifier that is strictly more restrictive than the
+        /// property's own visibility (equal is redundant, less restrictive is invalid, so both are
+        /// dropped here rather than emitted).
+        /// </summary>
+        private static string AccessorVisibilityPrefix(Variable variable, MethodGraph accessor)
+        {
+            bool isMoreRestrictive = VisibilityRestrictiveness.TryGetValue(accessor.Visibility, out int accessorRank)
+                && VisibilityRestrictiveness.TryGetValue(variable.Visibility, out int propertyRank)
+                && accessorRank < propertyRank;
+
+            return isMoreRestrictive ? $"{TranslatorUtil.VisibilityTokens[accessor.Visibility]} " : "";
+        }
     }
 }

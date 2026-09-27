@@ -90,7 +90,7 @@ namespace NetPrints.Tests.Translator
                 "using System.Diagnostics;",
                 "namespace AllNodes",
                 "[System.Obsolete(\"test\")] [System.Serializable] public sealed partial class Everything<T>",
-                "[System.Diagnostics.DebuggerHidden] private static partial System.Collections.Generic.List<T> Items { public get; public set; }",
+                "[System.Diagnostics.DebuggerHidden] private static partial System.Collections.Generic.List<T> Items { get; set; }",
                 "[System.Diagnostics.DebuggerNonUserCode]",
                 "[System.Diagnostics.DebuggerStepThrough]",
                 "public static unsafe System.Tuple<System.Int32, System.String> Main<T0>(",
