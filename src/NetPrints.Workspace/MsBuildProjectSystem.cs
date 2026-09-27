@@ -401,8 +401,9 @@ public sealed class MsBuildProjectSystem : IProjectSystem
     private static List<ResolvedAssembly> BuildResolvedAssemblies(RoslynProject roslynProject) =>
         roslynProject.MetadataReferences
             .OfType<PortableExecutableReference>()
-            .Where(reference => reference.FilePath is not null)
-            .Select(reference => new ResolvedAssembly(reference.FilePath!, FindDocumentationPath(reference.FilePath!)))
+            .Select(reference => reference.FilePath)
+            .OfType<string>()
+            .Select(path => new ResolvedAssembly(path, FindDocumentationPath(path)))
             .OrderBy(reference => reference.Path, StringComparer.Ordinal)
             .ToList();
 
@@ -588,7 +589,8 @@ public sealed class MsBuildProjectSystem : IProjectSystem
             return;
         }
 
-        var group = (ProjectItemGroupElement)existing.Parent!;
+        var group = existing.Parent as ProjectItemGroupElement
+            ?? throw new InvalidOperationException("Project item has no parent item group.");
         ProjectItemElement replacement = group.AddItem(wantedType, glob);
         replacement.AddMetadata(NetPrintsSourceDirectoryMetadata, "true", expressAsAttribute: true);
         group.RemoveChild(existing);
@@ -612,7 +614,9 @@ public sealed class MsBuildProjectSystem : IProjectSystem
         ProjectItemElement? found = root.Items.FirstOrDefault(Matches);
         if (found is not null)
         {
-            ((ProjectItemGroupElement)found.Parent!).RemoveChild(found);
+            var group = found.Parent as ProjectItemGroupElement
+                ?? throw new InvalidOperationException("Project item has no parent item group.");
+            group.RemoveChild(found);
         }
     }
 

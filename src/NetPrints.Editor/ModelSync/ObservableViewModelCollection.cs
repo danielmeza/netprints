@@ -52,7 +52,7 @@ public sealed class ObservableViewModelCollection<TViewModel, TModel> : Observab
             case NotifyCollectionChangedAction.Add when e.NewItems is not null:
                 for (int i = 0; i < e.NewItems.Count; i++)
                 {
-                    Insert(e.NewStartingIndex + i, factory((TModel)e.NewItems[i]!));
+                    Insert(e.NewStartingIndex + i, factory(ToModel(e.NewItems[i])));
                 }
                 break;
 
@@ -80,7 +80,7 @@ public sealed class ObservableViewModelCollection<TViewModel, TModel> : Observab
                 for (int i = 0; i < e.OldItems.Count; i++)
                 {
                     var removed = this[e.OldStartingIndex + i];
-                    this[e.OldStartingIndex + i] = factory((TModel)e.NewItems[i]!);
+                    this[e.OldStartingIndex + i] = factory(ToModel(e.NewItems[i]));
                     onRemoved?.Invoke(removed);
                 }
                 break;
@@ -90,6 +90,10 @@ public sealed class ObservableViewModelCollection<TViewModel, TModel> : Observab
                 break;
         }
     }
+
+    /// <summary>Casts a raw <see cref="NotifyCollectionChangedEventArgs"/> item to <typeparamref name="TModel"/>.</summary>
+    private static TModel ToModel(object? item) =>
+        item as TModel ?? throw new InvalidOperationException($"Expected a non-null {typeof(TModel).Name} collection item.");
 
     private void Rebuild()
     {

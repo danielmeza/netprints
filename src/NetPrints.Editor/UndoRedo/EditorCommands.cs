@@ -20,7 +20,7 @@ public static class EditorCommands
                 variable ??= new Variable(cls, name, TypeSpecifier.FromType<object>(), null, null, VariableModifiers.None);
                 cls.Variables.Add(variable);
             },
-            () => cls.Variables.Remove(variable!));
+            () => cls.Variables.Remove(variable ?? throw new InvalidOperationException("Undo called before the command's Do action.")));
     }
 
     /// <summary>Removes a variable; undo restores the same variable at its position.</summary>

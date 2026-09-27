@@ -258,7 +258,8 @@ public sealed partial class NodeGraphVM : ObservableObject, IDisposable
         }
 
         object[] parameters = [Graph, .. request.ConstructorParameters];
-        var node = (Node)Activator.CreateInstance(request.NodeType, parameters)!;
+        var node = (Node)(Activator.CreateInstance(request.NodeType, parameters)
+            ?? throw new InvalidOperationException($"Could not create an instance of {request.NodeType}."));
         node.PositionX = Math.Max(0, request.Position.X);
         node.PositionY = Math.Max(0, request.Position.Y);
 

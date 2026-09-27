@@ -56,7 +56,7 @@ namespace NetPrints.Graph
         public override string ToString()
         {
             // Always assigned from GetArrayType(), which never returns null.
-            return arrayType.Value!.ShortName;
+            return arrayType.RequireValue().ShortName;
         }
     }
 }

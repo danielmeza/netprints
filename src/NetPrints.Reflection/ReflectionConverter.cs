@@ -56,7 +56,7 @@ namespace NetPrints.Reflection
             if (type is IArrayTypeSymbol)
             {
                 // TODO: Get more interesting type?
-                typeName = typeof(Array).FullName!; // Non-generic BCL type: FullName is never null.
+                typeName = typeof(Array).FullName ?? nameof(Array); // Non-generic BCL type: FullName is never null.
             }
             else
             {

@@ -33,8 +33,8 @@ namespace NetPrints.Graph
         public BaseType ClassType
         {
             // Set from ConstructorSpecifier.DeclaringType when the output pin is created (below) and
-            // never cleared, so it is never null.
-            get => OutputDataPins[0].PinType.Value!;
+            // never cleared, so RequireValue() never throws here.
+            get => OutputDataPins[0].PinType.RequireValue();
         }
 
         /// <summary>
@@ -43,8 +43,8 @@ namespace NetPrints.Graph
         public IReadOnlyList<BaseType> ArgumentTypes
         {
             // PinType.Value is set from ConstructorSpecifier.Arguments when the pin is created (below)
-            // and never cleared, so it is never null for this node's own argument pins.
-            get => ArgumentPins.Select(p => p.PinType.Value!).ToList();
+            // and never cleared, so RequireValue() never throws for this node's own argument pins.
+            get => ArgumentPins.Select(p => p.PinType.RequireValue()).ToList();
         }
 
         /// <summary>

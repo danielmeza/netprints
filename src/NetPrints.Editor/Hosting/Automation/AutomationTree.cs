@@ -33,8 +33,20 @@ public sealed class AutomationTree : IDisposable
     /// </summary>
     public AutomationTree()
     {
-        openedHandler = Window.WindowOpenedEvent.AddClassHandler(typeof(Window), (sender, _) => Track((Window)sender!));
-        closedHandler = Window.WindowClosedEvent.AddClassHandler(typeof(Window), (sender, _) => Untrack((Window)sender!));
+        openedHandler = Window.WindowOpenedEvent.AddClassHandler(typeof(Window), (sender, _) =>
+        {
+            if (sender is Window window)
+            {
+                Track(window);
+            }
+        });
+        closedHandler = Window.WindowClosedEvent.AddClassHandler(typeof(Window), (sender, _) =>
+        {
+            if (sender is Window window)
+            {
+                Untrack(window);
+            }
+        });
     }
 
     /// <summary>Open windows, in the order they opened.</summary>
@@ -135,9 +147,9 @@ public sealed class AutomationTree : IDisposable
         }
 
         // Open popups (their content is a logical child of the Popup).
-        foreach (var popup in visited.OfType<Popup>().Where(p => p.IsOpen && p.Child is Control).ToList())
+        foreach (var popupChild in visited.OfType<Popup>().Where(p => p.IsOpen).Select(p => p.Child as Control).OfType<Control>().ToList())
         {
-            foreach (var c in SelfAndDescendants((Control)popup.Child!))
+            foreach (var c in SelfAndDescendants(popupChild))
             {
                 if (visited.Add(c))
                 {

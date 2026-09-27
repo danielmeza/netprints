@@ -85,6 +85,22 @@ namespace NetPrints.Graph
     }
 
     /// <summary>
+    /// Extension methods for asserting an <see cref="ObservableValue{T}"/> has been resolved.
+    /// </summary>
+    public static class ObservableValueExtensions
+    {
+        /// <summary>
+        /// Returns <paramref name="observableValue"/>'s <see cref="ObservableValue{T}.Value"/>,
+        /// asserting the caller's local invariant that it has already been resolved.
+        /// </summary>
+        /// <param name="observableValue">Observable value expected to be set.</param>
+        /// <returns>The resolved, non-null value.</returns>
+        /// <exception cref="InvalidOperationException"><paramref name="observableValue"/>'s value has not been set.</exception>
+        public static T RequireValue<T>(this ObservableValue<T> observableValue) where T : class =>
+            observableValue.Value ?? throw new InvalidOperationException($"{typeof(T).Name} value has not been resolved yet.");
+    }
+
+    /// <summary>
     /// Pure type node that outputs a fixed type (with its generic arguments, if any, resolved through
     /// input type pins) as a single output type pin. Used to reference a type by name in a type
     /// expression.

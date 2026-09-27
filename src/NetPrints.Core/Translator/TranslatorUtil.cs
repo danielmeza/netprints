@@ -103,7 +103,7 @@ namespace NetPrints.Translator
             // ...); none of their ToString() overrides ever return null.
             string invariant = obj is System.IFormattable formattable
                 ? formattable.ToString(null, System.Globalization.CultureInfo.InvariantCulture)
-                : obj.ToString()!;
+                : obj.ToString() ?? throw new InvalidOperationException($"{obj.GetType()}.ToString() returned null.");
 
             if (type == TypeSpecifier.FromType<string>())
             {

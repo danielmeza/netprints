@@ -80,8 +80,8 @@ namespace NetPrints.Graph
         public IReadOnlyList<BaseType> ArgumentTypes
         {
             // PinType.Value is set from MethodSpecifier.Parameters when the pin is created (below) and
-            // never cleared, so it is never null for this node's own argument pins.
-            get => InputDataPins.Select(p => p.PinType.Value!).ToList();
+            // never cleared, so RequireValue() never throws for this node's own argument pins.
+            get => InputDataPins.Select(p => p.PinType.RequireValue()).ToList();
         }
 
         /// <summary>
@@ -90,7 +90,7 @@ namespace NetPrints.Graph
         public IReadOnlyList<Named<BaseType>> Arguments
         {
             // Same invariant as ArgumentTypes above: PinType.Value is never null for these pins.
-            get => InputDataPins.Select(p => new Named<BaseType>(p.Name, p.PinType.Value!)).ToList();
+            get => InputDataPins.Select(p => new Named<BaseType>(p.Name, p.PinType.RequireValue())).ToList();
         }
 
         /// <summary>
@@ -99,8 +99,8 @@ namespace NetPrints.Graph
         public IReadOnlyList<BaseType> ReturnTypes
         {
             // PinType.Value is set from MethodSpecifier.ReturnTypes when the pin is created (below) and
-            // never cleared, so it is never null for this node's own return pins.
-            get => OutputDataPins.Select(p => p.PinType.Value!).ToList();
+            // never cleared, so RequireValue() never throws for this node's own return pins.
+            get => OutputDataPins.Select(p => p.PinType.RequireValue()).ToList();
         }
 
         /// <summary>
