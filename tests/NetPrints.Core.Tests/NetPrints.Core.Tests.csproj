@@ -41,6 +41,8 @@
     <ProjectReference Include="..\..\src\NetPrints.Serialization\NetPrints.Serialization.csproj" />
     <ProjectReference Include="..\..\src\NetPrints.Generator\NetPrints.Generator.csproj" />
     <ProjectReference Include="..\..\src\NetPrints.Workspace\NetPrints.Workspace.csproj" />
+    <!-- Built first, never referenced: the loader and generator tests load it from its own output folder. -->
+    <ProjectReference Include="..\NetPrints.TestExtension\NetPrints.TestExtension.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
 </Project>

@@ -391,6 +391,81 @@ public class ExtensionLoaderTests : IDisposable
     }
 
     [Fact]
+    public void TheTestExtensionLoadsFromASearchDirectoryInItsOwnContextWithEveryContribution()
+    {
+        string search = Path.Combine(root, "search");
+        TestExtensionLocation.CopyTo(search);
+        var logs = new CollectingLoggerFactory();
+
+        using ExtensionRegistry registry = Load(Options(searchDirectories: [search]), logs);
+
+        Assert.Equal(["netprints.test"], registry.Loaded.Select(m => m.Id));
+        Assert.Empty(registry.Issues);
+        NodeKindDescriptor kind = Assert.Single(registry.NodeKinds);
+        Assert.Equal("netprints.test/Log", kind.Kind);
+
+        var assembly = kind.NodeType.Assembly;
+        var context = AssemblyLoadContext.GetLoadContext(assembly);
+        Assert.NotNull(context);
+        Assert.NotSame(AssemblyLoadContext.Default, context);
+        Assert.Equal("netprints.test", context.Name);
+        Assert.StartsWith(search, assembly.Location, StringComparison.Ordinal);
+        Assert.Same(typeof(Node), kind.NodeType.BaseType);
+        Assert.Same(typeof(Node).Assembly, kind.NodeType.BaseType?.Assembly);
+
+        Assert.Equal(["netprints.test/class"], registry.ClassEmitters.Select(e => e.Id));
+        Assert.Equal(["netprints.test/member"], registry.MemberEmitters.Select(e => e.Id));
+        Assert.Equal("netprints.test/catalog", Assert.Single(registry.TypeCatalogs).Info.Id);
+        Assert.NotNull(registry.FindProfile("netprints.test"));
+        Assert.Equal(["netprints.test"], registry.Settings.Select(d => d.ExtensionId));
+        Assert.NotNull(registry.FindHostChannel("test"));
+        Assert.Contains("NetPrintsTestMode", registry.ProjectProperties);
+        Assert.Single(registry.JsonTypeInfoResolvers);
+        Assert.Contains(logs.Entries, e => e.EventId.Id == 2002 && e.Message == "Loaded extension netprints.test 1.0.0");
+    }
+
+    [Fact]
+    public void TheTestExtensionLoadsFromAnExplicitFolderAndItsTranslatorJoinsTheEnvironment()
+    {
+        using ExtensionRegistry registry = Load(Options(folders: [TestExtensionLocation.Folder]));
+
+        Assert.Equal(["netprints.test"], registry.Loaded.Select(m => m.Id));
+        NodeKindDescriptor kind = Assert.Single(registry.NodeKinds);
+        Assert.Same(kind.Translator, registry.Translation.Nodes.Find(kind.NodeType));
+        Assert.Same(kind.Converter, registry.NodeConverters.FindByDocumentType(kind.Converter.DocumentType));
+    }
+
+    [Fact]
+    public void AFailingSiblingLeavesTheTestExtensionLoadedAndTheRegistryUsable()
+    {
+        string search = Path.Combine(root, "search");
+        TestExtensionLocation.CopyTo(search);
+        WriteManifest(Path.Combine(search, "future"), Sample("test.future", api: "2.0"));
+        WriteManifest(Path.Combine(search, "gone"), ManifestJson("test.gone", "missing.dll"));
+
+        using ExtensionRegistry registry = Load(Options(searchDirectories: [search]));
+
+        Assert.Equal(["netprints.test"], registry.Loaded.Select(m => m.Id));
+        Assert.Equal("NPX002", SingleFailure(registry, "test.future").Code);
+        Assert.Equal("NPX007", SingleFailure(registry, "test.gone").Code);
+        Assert.Single(registry.NodeKinds);
+    }
+
+    [Fact]
+    public void ADependentOfTheTestExtensionLoadsAfterItAndItsEmittersRunAfterTheTestEmitters()
+    {
+        string search = Path.Combine(root, "search");
+        TestExtensionLocation.CopyTo(search);
+        var dependent = InProcess("aaa.dependent", builder => builder.AddClassEmitter(new NamedClassEmitter("aaa.emitter")), dependsOn: "netprints.test");
+        var independent = InProcess("bbb.independent", builder => builder.AddClassEmitter(new NamedClassEmitter("bbb.emitter")));
+
+        using ExtensionRegistry registry = Load(Options([dependent, independent], searchDirectories: [search]));
+
+        Assert.Equal(["bbb.independent", "netprints.test", "aaa.dependent"], registry.Loaded.Select(m => m.Id));
+        Assert.Equal(["bbb.emitter", "netprints.test/class", "aaa.emitter"], registry.ClassEmitters.Select(e => e.Id));
+    }
+
+    [Fact]
     public void ACancelledTokenThrowsOperationCanceled()
     {
         var loader = new ExtensionLoader(Options([BuiltInExtension.InProcessEntry]), new CollectingLoggerFactory());

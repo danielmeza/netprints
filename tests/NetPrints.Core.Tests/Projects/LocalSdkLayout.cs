@@ -71,7 +71,7 @@ namespace NetPrints.Tests.Projects
         /// </summary>
         /// <returns>The detected configuration name, or <c>"Release"</c> if it could not be
         /// determined.</returns>
-        private static string DetectConfiguration()
+        internal static string DetectConfiguration()
         {
             string[] segments = AppContext.BaseDirectory.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
             int frameworkIndex = Array.LastIndexOf(segments, "net10.0");
