@@ -2490,3 +2490,17 @@ CreateIfElseConnectSaveAndReload`, reloaded through the legacy `Project.LoadFrom
 through `ProjectPersistence.LoadAsync` (T063's "update `EditFlowTests`" item is therefore already done)
 and passes. `dotnet build -c Release` 0 warnings/0 errors, `dotnet format --verify-no-changes` clean.
 
+
+## T062a — legacy code deleted
+
+Removed `src/NetPrints.Serialization/Legacy/` (`LegacyXmlDocumentFormat`, `LegacyProject`),
+`NodeGraph.AssignLegacyNodeIds`, `ClassGraph.AssignLegacyMemberIds` and `StableIds.SeedFor`, plus every
+doc-comment mention of them. `ProjectFiles.EnsureGitAttributesAsync` now returns `Task` (its only
+caller ignored the rollback bytes). Tests deleted: the T054a converter (`LegacyMigration`),
+`Fixtures/Legacy/**`, `LegacyProjectTests`, `LegacyXmlDocumentFormatTests` (incl. the DF-T27
+legacy-import half), `AllNodesFixtureRegenerationTests`, and the legacy cases of `NodeIdTests`,
+`GraphKeyTests` and `IdGenerationTests` (`SeedFor`); the fake `legacy-xml` format in
+`DocumentFormatRegistryTests` is now `other` (DF-T16 unchanged). `AllNodesFixtureFactory` stays as an
+in-memory model builder. No test csproj, `.gitattributes` or CI entry referenced `Fixtures/Legacy` any
+more. Core.Tests 316 -> 303 (-13); full suite 559 -> 546 (537 passed, 9 skipped, 0 failed); goldens
+byte-identical.
