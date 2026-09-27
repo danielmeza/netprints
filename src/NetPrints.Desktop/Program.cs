@@ -61,8 +61,9 @@ internal static class Program
 
     private static Dictionary<string, string> GetEnvironment() =>
         Environment.GetEnvironmentVariables().Cast<DictionaryEntry>()
-            .Where(entry => entry.Key is string && entry.Value is string)
-            .ToDictionary(entry => (string)entry.Key, entry => (string)entry.Value!, StringComparer.Ordinal);
+            .Select(entry => (Key: entry.Key as string, Value: entry.Value as string))
+            .Where(entry => entry.Key is not null && entry.Value is not null)
+            .ToDictionary(entry => entry.Key ?? string.Empty, entry => entry.Value ?? string.Empty, StringComparer.Ordinal);
 
     /// <summary>
     /// Builds the process-wide <see cref="ILoggerFactory"/>: a simple console logger at
