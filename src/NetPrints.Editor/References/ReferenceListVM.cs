@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Extensions.Logging;
 using NetPrints.Core;
 using NetPrints.Editor.Hosting;
 using NetPrints.Projects;
@@ -24,9 +25,13 @@ public sealed partial class ReferenceListVM : ObservableObject, IDisposable
     {
         Project = project;
         this.context = context;
+        Logger = context.LoggerFactory.CreateLogger<ReferenceListVM>();
         RebuildReferences();
         ((INotifyPropertyChanged)project).PropertyChanged += OnProjectPropertyChanged;
     }
+
+    /// <summary>Logger for a <see cref="DeclaredReferenceVM"/> entry's fire-and-forget edits.</summary>
+    public ILogger Logger { get; }
 
     /// <summary>The project whose references are shown and edited.</summary>
     public Project Project { get; }

@@ -58,6 +58,9 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
             .Subscribe(_ => OnPropertyChanged(nameof(VisibleCount)));
     }
 
+    /// <summary>Host services shared across the editor (for the view's fire-and-forget commands).</summary>
+    public EditorContext Context => graph.Context;
+
     /// <summary>Filtered rows (headers and suggestions) in display order.</summary>
     public ReadOnlyObservableCollection<SuggestionItem> Items => items;
 

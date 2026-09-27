@@ -23,6 +23,7 @@ namespace NetPrints.Editor.Main;
 public sealed partial class MainEditorVM : ObservableObject, IDisposable
 {
     private readonly EditorContext context;
+    private readonly ILogger<MainEditorVM> logger;
     private readonly HashSet<(string Id, string? ManifestPath, string Code)> reportedExtensionFailures = [];
     private readonly HostChannelBridge hostChannelBridge;
     private Project? subscribedProject;
@@ -35,6 +36,7 @@ public sealed partial class MainEditorVM : ObservableObject, IDisposable
     public MainEditorVM(EditorContext context, Project? project = null)
     {
         this.context = context;
+        logger = context.LoggerFactory.CreateLogger<MainEditorVM>();
         hostChannelBridge = new HostChannelBridge(context.HostChannel, context.Dispatcher, ReloadReflectionAsync, FocusDocument,
             context.LoggerFactory.CreateLogger<HostChannelBridge>());
         Project = project;
@@ -101,7 +103,7 @@ public sealed partial class MainEditorVM : ObservableObject, IDisposable
         {
             if (Project is { } project && project.OutputBinaryType != value)
             {
-                _ = ApplyOutputTypeAsync(project, value);
+                ApplyOutputTypeAsync(project, value).Forget(logger);
             }
         }
     }
@@ -138,7 +140,7 @@ public sealed partial class MainEditorVM : ObservableObject, IDisposable
         if (value is not null)
         {
             ((INotifyPropertyChanged)value).PropertyChanged += OnProjectPropertyChanged;
-            _ = ReloadReflectionAsync();
+            ReloadReflectionAsync().Forget(logger);
         }
 
         OnPropertyChanged(nameof(OutputBinaryType));
@@ -158,7 +160,7 @@ public sealed partial class MainEditorVM : ObservableObject, IDisposable
                 if (Project is { IsCompiling: false })
                 {
                     // Reload after a compilation finished (PAR-15).
-                    _ = ReloadReflectionAsync();
+                    ReloadReflectionAsync().Forget(logger);
                 }
                 break;
             case nameof(Core.Project.OutputBinaryType):
@@ -169,7 +171,7 @@ public sealed partial class MainEditorVM : ObservableObject, IDisposable
                 // References or other build settings may have changed (the References dialog, the
                 // binary-type chooser): reload the reflection provider from the new snapshot.
                 OnPropertyChanged(nameof(OutputBinaryType));
-                _ = ReloadReflectionAsync();
+                ReloadReflectionAsync().Forget(logger);
                 break;
             case nameof(Core.Project.Name):
                 OnPropertyChanged(nameof(Title));

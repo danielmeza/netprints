@@ -1,6 +1,8 @@
 using Avalonia.Controls;
 using Avalonia.Input;
 using Avalonia.Threading;
+using Microsoft.Extensions.Logging;
+using NetPrints.Editor.Hosting;
 
 namespace NetPrints.Editor.Search;
 
@@ -24,9 +26,9 @@ public partial class NodeSearchView : UserControl
 
     private void OnItemTapped(object? sender, TappedEventArgs e)
     {
-        if ((sender as Control)?.DataContext is SuggestionItem { IsHeader: false } item)
+        if ((sender as Control)?.DataContext is SuggestionItem { IsHeader: false } item && ViewModel is { } viewModel)
         {
-            _ = ViewModel?.SelectCommand.ExecuteAsync(item);
+            viewModel.SelectCommand.ExecuteAsync(item).Forget(viewModel.Context.LoggerFactory.CreateLogger<NodeSearchView>());
         }
     }
 
@@ -36,9 +38,9 @@ public partial class NodeSearchView : UserControl
         {
             case Key.Enter:
                 // Enter picks the first suggestion.
-                if (ViewModel?.Items.FirstOrDefault(i => !i.IsHeader) is { } first)
+                if (ViewModel is { } viewModel && viewModel.Items.FirstOrDefault(i => !i.IsHeader) is { } first)
                 {
-                    _ = ViewModel.SelectCommand.ExecuteAsync(first);
+                    viewModel.SelectCommand.ExecuteAsync(first).Forget(viewModel.Context.LoggerFactory.CreateLogger<NodeSearchView>());
                 }
                 e.Handled = true;
                 break;
@@ -56,9 +58,9 @@ public partial class NodeSearchView : UserControl
 
     private void OnListKeyDown(object? sender, KeyEventArgs e)
     {
-        if (e.Key == Key.Enter && ResultList.SelectedItem is SuggestionItem { IsHeader: false } item)
+        if (e.Key == Key.Enter && ResultList.SelectedItem is SuggestionItem { IsHeader: false } item && ViewModel is { } viewModel)
         {
-            _ = ViewModel?.SelectCommand.ExecuteAsync(item);
+            viewModel.SelectCommand.ExecuteAsync(item).Forget(viewModel.Context.LoggerFactory.CreateLogger<NodeSearchView>());
             e.Handled = true;
         }
     }

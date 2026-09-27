@@ -92,7 +92,7 @@ public partial class EditorApp : Application
                 {
                     agent = new AutomationAgent(pipeName, tree, () => new AutomationStatus(
                         window.IsVisible,
-                        composition.MainEditor!.Project is not null && !composition.MainEditor.IsBusy,
+                        composition.MainEditor is { } mainEditor && mainEditor.Project is not null && !mainEditor.IsBusy,
                         composition.Context.Reflection.IsLoaded,
                         startupProject,
                         Environment.ProcessId));
@@ -115,7 +115,7 @@ public partial class EditorApp : Application
             }
 
             // Startup problems first, then a single command-line argument is a project to open (FR-016, PAR-05).
-            _ = composition.StartAsync(desktop.Args ?? []);
+            composition.StartAsync(desktop.Args ?? []).Forget(HostServices.LoggerFactory.CreateLogger(nameof(EditorApp)));
         }
 
         base.OnFrameworkInitializationCompleted();

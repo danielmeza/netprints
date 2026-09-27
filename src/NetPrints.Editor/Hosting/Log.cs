@@ -77,4 +77,10 @@ internal static partial class Log
     /// <param name="exception">The exception disposal threw.</param>
     [LoggerMessage(EventId = 1024, Level = LogLevel.Error, Message = "Shutdown cleanup failed; exiting anyway")]
     public static partial void ShutdownCleanupFailed(ILogger logger, Exception exception);
+
+    /// <summary>Logs 1030: a fire-and-forget task passed to <see cref="TaskExtensions.Forget(Task, ILogger)"/> faulted.</summary>
+    /// <param name="logger">Logger to write to.</param>
+    /// <param name="exception">The task's (unwrapped) exception.</param>
+    [LoggerMessage(EventId = 1030, Level = LogLevel.Error, Message = "Fire-and-forget task faulted")]
+    public static partial void TaskFaulted(ILogger logger, Exception exception);
 }

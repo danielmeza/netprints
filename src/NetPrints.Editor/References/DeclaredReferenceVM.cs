@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using NetPrints.Editor.Hosting;
 using NetPrints.Projects;
 
 namespace NetPrints.Editor.References;
@@ -39,7 +40,7 @@ public sealed class DeclaredReferenceVM(ProjectReferenceInfo info, ReferenceList
 
             if (Info.Included != value)
             {
-                _ = owner.SetSourceDirectoryIncludedAsync(Info.Include, value);
+                owner.SetSourceDirectoryIncludedAsync(Info.Include, value).Forget(owner.Logger);
             }
         }
     }

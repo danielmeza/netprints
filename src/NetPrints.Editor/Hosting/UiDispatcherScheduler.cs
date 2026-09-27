@@ -37,6 +37,8 @@ public sealed class UiDispatcherScheduler(IUiDispatcher dispatcher) : LocalSched
         }
         else
         {
+            // Exempt from "discards only through Forget": Task.Delay with no cancellation token and
+            // a Post that only enqueues never faults this task.
             _ = Task.Delay(dueTime).ContinueWith(_ => dispatcher.Post(Run), TaskScheduler.Default);
         }
 

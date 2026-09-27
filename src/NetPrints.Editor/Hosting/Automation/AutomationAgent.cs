@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Avalonia.Threading;
+using NetPrints.Editor.Hosting;
 
 namespace NetPrints.Editor.Hosting.Automation;
 
@@ -99,7 +100,7 @@ public sealed class AutomationAgent : IDisposable
         this.tree = tree;
         this.status = status;
         nextServer = CreateServer();
-        _ = Task.Run(AcceptLoopAsync);
+        Task.Run(AcceptLoopAsync).Forget(e => LogError("accept loop task fault", e));
     }
 
     /// <summary>Whether the environment asks for automation, and the pipe name to use.</summary>
@@ -153,7 +154,7 @@ public sealed class AutomationAgent : IDisposable
 
             if (await connectionSlots.WaitAsync(0).ConfigureAwait(false))
             {
-                _ = ServeConnectionAsync(server);
+                ServeConnectionAsync(server).Forget(e => LogError("unexpected connection task fault", e));
             }
             else
             {

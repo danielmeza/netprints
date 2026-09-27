@@ -4,8 +4,10 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.VisualTree;
+using Microsoft.Extensions.Logging;
 using NetPrints.Editor.Graph.Nodes;
 using NetPrints.Editor.Graph.Pins;
+using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Hosting.Automation;
 using Nodify.Avalonia.Connections;
 using Nodify.Avalonia.Events;
@@ -216,7 +218,7 @@ public partial class GraphEditorView : UserControl
             if (Math.Abs(released.X - pressed.X) < ClickThreshold && Math.Abs(released.Y - pressed.Y) < ClickThreshold
                 && ViewModel is { } graph)
             {
-                _ = graph.OpenSearchAsync(ToGraph(released));
+                graph.OpenSearchAsync(ToGraph(released)).Forget(graph.Context.LoggerFactory.CreateLogger<GraphEditorView>());
                 e.Handled = true;
             }
         }
@@ -237,7 +239,7 @@ public partial class GraphEditorView : UserControl
         else
         {
             // Released on empty canvas: search filtered for the pin, then auto-connect (PAR-47).
-            _ = graph.OpenSearchAsync(PointerGraphPosition, source.Pin);
+            graph.OpenSearchAsync(PointerGraphPosition, source.Pin).Forget(graph.Context.LoggerFactory.CreateLogger<GraphEditorView>());
         }
     }
 

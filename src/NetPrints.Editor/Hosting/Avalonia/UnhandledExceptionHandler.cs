@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using Avalonia.Threading;
 using Microsoft.Extensions.Logging;
+using NetPrints.Editor.Hosting;
 
 namespace NetPrints.Editor.Hosting.Avalonia;
 
@@ -67,7 +68,7 @@ public sealed class UnhandledExceptionHandler : IDisposable
     {
         Log.UnhandledUiException(logger, exception);
         Reported.AddOrUpdate(exception, Reported);
-        _ = ReportAsync(exception);
+        ReportAsync(exception).Forget(logger);
     }
 
     /// <summary>
@@ -86,7 +87,7 @@ public sealed class UnhandledExceptionHandler : IDisposable
             return;
         }
 
-        dispatcher.Post(() => _ = ReportAsync(exception));
+        dispatcher.Post(() => ReportAsync(exception).Forget(logger));
     }
 
     private async Task ReportAsync(Exception exception)

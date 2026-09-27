@@ -44,7 +44,7 @@ public sealed class HostChannelBridge : IDisposable
         switch (message.Type)
         {
             case HostMessageTypes.TypesChanged:
-                _ = reloadTypes();
+                reloadTypes().Forget(logger);
                 break;
 
             case HostMessageTypes.FocusDocument:
