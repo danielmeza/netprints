@@ -149,7 +149,7 @@ namespace NetPrints.Core
         /// <summary>
         /// This method's member id (data-model.md §2), used as its graph key. Assigned once, in the
         /// constructor, from <see cref="IdGeneration.Current"/>; the mapper overwrites it from the
-        /// document. Not <c>[DataMember]</c>.
+        /// document.
         /// </summary>
         public string Id { get; internal set; }
 

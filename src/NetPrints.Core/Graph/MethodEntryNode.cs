@@ -13,10 +13,7 @@ namespace NetPrints.Graph
         /// <summary>
         /// Same as the base <see cref="Node.MethodGraph"/>, but non-nullable: the constructor only
         /// accepts a <see cref="Core.MethodGraph"/>, so <see cref="Node.Graph"/> is always one for a
-        /// <see cref="MethodEntryNode"/>. Computed from <see cref="Node.Graph"/> on every access
-        /// instead of cached in a field set by the constructor: DataContract deserialization bypasses
-        /// constructors entirely and sets <see cref="Node.Graph"/> directly, so a cached field would
-        /// stay null after loading a saved project.
+        /// <see cref="MethodEntryNode"/>. Computed from <see cref="Node.Graph"/> on every access.
         /// </summary>
         private MethodGraph methodGraph => (MethodGraph)Graph;
 

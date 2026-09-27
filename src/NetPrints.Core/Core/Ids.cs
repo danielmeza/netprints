@@ -30,7 +30,7 @@ public interface IIdGenerator
 /// Formats and parses ids (data-model.md §2): a one-character prefix, then <see cref="ValueDigits"/>
 /// characters of lowercase Crockford base32, most-significant digit first, zero-padded so that
 /// ordinal string order equals numeric value order. The single source of the id shape
-/// (<see cref="Pattern"/>) other code — the DataContract/JSON validators, and later the generated
+/// (<see cref="Pattern"/>) other code — the JSON validators, and later the generated
 /// JSON Schema — reads from, instead of duplicating the regular expression.
 /// </summary>
 public static class IdFormat

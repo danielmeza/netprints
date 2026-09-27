@@ -30,9 +30,8 @@ namespace NetPrints.Core
         /// <summary>
         /// The class this type graph belongs to, when it is a <see cref="Variable"/>'s
         /// <see cref="Variable.TypeGraph"/>; <see langword="null"/> otherwise. Distinct from the
-        /// inherited, DataContract-serialized <see cref="NodeGraph.Class"/> (which stays unset for a
-        /// type graph, unlike for a method or constructor graph) so this in-memory-only back-reference
-        /// never changes legacy XML output; set by <see cref="Variable"/>. Used by
+        /// inherited <see cref="NodeGraph.Class"/> (which stays unset for a type graph, unlike for a
+        /// method or constructor graph); set by <see cref="Variable"/>. Used by
         /// <see cref="GraphKeys.For"/> to key a type graph as <c>&lt;variable id&gt;/type</c>.
         /// </summary>
         public ClassGraph? OwningClass { get; internal set; }

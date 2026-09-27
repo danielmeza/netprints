@@ -16,8 +16,7 @@ namespace NetPrints.Core
         /// <summary>
         /// Entry node where execution starts. Always set by the concrete subclass's constructor
         /// (<see cref="MethodGraph"/>, <see cref="ConstructorGraph"/>) as its first statement, before
-        /// anything else can observe the graph; the backing field stays nullable only because
-        /// DataContract deserialization sets it through this property, bypassing constructors.
+        /// anything else can observe the graph; reading it earlier throws.
         /// </summary>
         public ExecutionEntryNode EntryNode
         {
