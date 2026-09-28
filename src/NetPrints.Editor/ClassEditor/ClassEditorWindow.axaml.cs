@@ -17,16 +17,6 @@ public partial class ClassEditorWindow : Window
 
     private ClassEditorVM? ViewModel => DataContext as ClassEditorVM;
 
-    // A single click selects and opens the method/constructor, in one OpenMethodCommand call (PAR-24,
-    // batch D1).
-    private void OnMethodTapped(object? sender, TappedEventArgs e)
-    {
-        if ((sender as Control)?.DataContext is MethodVM method)
-        {
-            ViewModel?.OpenMethodCommand.Execute(method);
-        }
-    }
-
     // Methods and constructors can be dragged onto the graph (PAR-56).
     private readonly DragSourceHelper dragSource = new();
 

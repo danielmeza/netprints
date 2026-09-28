@@ -63,7 +63,18 @@
                   </Button>
                   <TextBlock Grid.Column="1" Text="{Binding Name}" TextTrimming="CharacterEllipsis" FontSize="14" FontWeight="SemiBold" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorMethodName}"
                              VerticalAlignment="Center" Background="Transparent"
-                             Tapped="OnMethodTapped" PointerPressed="OnMethodPointerPressed" PointerMoved="OnMethodPointerMoved" PointerReleased="OnMethodPointerReleased" />
+                             PointerPressed="OnMethodPointerPressed" PointerMoved="OnMethodPointerMoved" PointerReleased="OnMethodPointerReleased">
+                    <!-- A single tap selects and opens the method/constructor, in one OpenMethodCommand
+                         call (PAR-24, batch D1). Migrated from the OnMethodTapped handler to a behavior
+                         (batch X1, ADR-0007): no typed prebuilt tap-to-command behavior is referenced
+                         yet, so this is EventTriggerBehavior + InvokeCommandAction (D11). -->
+                    <Interaction.Behaviors>
+                      <EventTriggerBehavior EventName="Tapped">
+                        <InvokeCommandAction Command="{Binding $parent[Window].((edclasseditor:ClassEditorVM)DataContext).OpenMethodCommand}"
+                                              CommandParameter="{Binding}" />
+                      </EventTriggerBehavior>
+                    </Interaction.Behaviors>
+                  </TextBlock>
                 </Grid>
               </DataTemplate>
             </ListBox.ItemTemplate>
@@ -98,7 +109,15 @@
                   </Button>
                   <TextBlock Grid.Column="1" Text="{Binding Name}" TextTrimming="CharacterEllipsis" FontSize="14" FontWeight="SemiBold" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorMethodName}"
                              VerticalAlignment="Center" Background="Transparent"
-                             Tapped="OnMethodTapped" PointerPressed="OnMethodPointerPressed" PointerMoved="OnMethodPointerMoved" PointerReleased="OnMethodPointerReleased" />
+                             PointerPressed="OnMethodPointerPressed" PointerMoved="OnMethodPointerMoved" PointerReleased="OnMethodPointerReleased">
+                    <!-- Same tap-to-open wiring as the methods list above. -->
+                    <Interaction.Behaviors>
+                      <EventTriggerBehavior EventName="Tapped">
+                        <InvokeCommandAction Command="{Binding $parent[Window].((edclasseditor:ClassEditorVM)DataContext).OpenMethodCommand}"
+                                              CommandParameter="{Binding}" />
+                      </EventTriggerBehavior>
+                    </Interaction.Behaviors>
+                  </TextBlock>
                 </Grid>
               </DataTemplate>
             </ListBox.ItemTemplate>
