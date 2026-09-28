@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Runtime.CompilerServices;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using NetPrints.Core;
@@ -182,6 +183,38 @@ public sealed partial class NodeGraphVM : ObservableObject, IDisposable
 
     /// <summary>Connects two pins when compatible (PAR-46). Returns whether they were connected.</summary>
     public bool Connect(NodePinVM a, NodePinVM b) => a.ConnectTo(b);
+
+    /// <summary>Pending-connection release point in graph coordinates, pushed by the view (ED-T09).</summary>
+    [ObservableProperty]
+    public partial GraphPoint PendingConnectionAnchor { get; set; }
+
+    /// <summary>
+    /// A Nodify pending connection completed (PAR-46, PAR-47, ED-T09): connects to a compatible pin,
+    /// or opens the node search at <see cref="PendingConnectionAnchor"/> filtered for the source pin
+    /// when released on empty canvas.
+    /// </summary>
+    /// <param name="pins">The source and target connectors' data contexts, as a 2-tuple (Nodify's own
+    /// tuple is <c>(object, object)</c>; matched loosely as <see cref="ITuple"/> so a plain
+    /// <c>(NodePinVM?, NodePinVM?)</c> works too, for VM-level tests).</param>
+    [RelayCommand]
+    private void ConnectionCompleted(object? pins)
+    {
+        const int ExpectedLength = 2;
+        if (pins is not ITuple { Length: ExpectedLength } tuple || tuple[0] is not NodePinVM source)
+        {
+            return;
+        }
+
+        if (tuple[1] is NodePinVM target)
+        {
+            Connect(source, target);
+        }
+        else
+        {
+            // Not a command, and OpenSearchAsync has no catch of its own: route a fault to the error dialog too.
+            OpenSearchAsync(PendingConnectionAnchor, source.Pin).Forget(Context, "Failed to open the node search");
+        }
+    }
 
     /// <summary>Toggles the faint state of the cables of a pin (PAR-48).</summary>
     internal void ToggleFaint(NodePinVM pin)

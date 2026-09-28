@@ -38,7 +38,8 @@
                          GridCellSize="28"
                          MinViewportZoom="0.3"
                          MaxViewportZoom="1"
-                         DragDrop.AllowDrop="True">
+                         DragDrop.AllowDrop="True"
+                         ConnectionCompletedCommand="{Binding ConnectionCompletedCommand}">
       <nodify:NodifyEditor.ItemContainerTheme>
         <!-- Nodify's own container chrome (a blue border, orange when selected) is turned off:
              NodeView already draws the single border WPF had, green when selected. -->
@@ -65,13 +66,15 @@
                          Target="{Binding Target.Anchor, Converter={x:Static edgraph:GraphPointConverter.Instance}}"
                          Stroke="{Binding Kind, Converter={x:Static edgraph:PinKindBrushConverter.Instance}}"
                          Classes.faint="{Binding IsFaint}"
+                         SplitCommand="{Binding InsertRerouteCommand}"
                          StrokeLineCap="Round" />
         </DataTemplate>
       </nodify:NodifyEditor.ConnectionTemplate>
 
       <!-- Live preview cable while dragging from a pin (PAR-46). -->
       <nodify:NodifyEditor.PendingConnection>
-        <nc:PendingConnection EnablePreview="True" EnableSnapping="True" AllowOnlyConnectors="True" StrokeThickness="3" />
+        <nc:PendingConnection EnablePreview="True" EnableSnapping="True" AllowOnlyConnectors="True" StrokeThickness="3"
+                              TargetAnchor="{Binding PendingConnectionAnchor, Mode=OneWayToSource, Converter={x:Static edgraph:GraphPointConverter.Instance}}" />
       </nodify:NodifyEditor.PendingConnection>
     </nodify:NodifyEditor>
 
