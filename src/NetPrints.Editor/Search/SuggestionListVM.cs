@@ -91,6 +91,10 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
 
     partial void OnSearchTextChanged(string value) => textChanges.OnNext(value ?? "");
 
+    /// <summary>Highlighted result, two-way bound to the result list's <c>SelectedItem</c> (PAR-52, batch X2b).</summary>
+    [ObservableProperty]
+    public partial SuggestionItem? SelectedItem { get; set; }
+
     /// <summary>Opens the popup: clears the search text and builds the suggestions for a pin (or none).</summary>
     public async Task OpenAsync(GraphPoint position, NodePin? pin, CancellationToken cancellationToken = default)
     {
@@ -148,6 +152,15 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
 
     [RelayCommand]
     private void Close() => IsOpen = false;
+
+    /// <summary>Enter in the search box: picks and opens the first non-header suggestion (batch X2b).</summary>
+    [RelayCommand]
+    private void SelectFirst() => SelectCommand.Execute(Items.FirstOrDefault(i => !i.IsHeader));
+
+    /// <summary>Down in the search box: highlights the first non-header suggestion before focus moves
+    /// to the result list (batch X2b).</summary>
+    [RelayCommand]
+    private void HighlightFirst() => SelectedItem = Items.FirstOrDefault(i => !i.IsHeader);
 
     private Func<SuggestionItem, bool> BuildPredicate(string text)
     {

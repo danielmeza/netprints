@@ -1,5 +1,4 @@
 using Avalonia.Controls;
-using Avalonia.Input;
 using Avalonia.Threading;
 
 namespace NetPrints.Editor.Search;
@@ -13,51 +12,10 @@ public partial class NodeSearchView : UserControl
         InitializeComponent();
     }
 
-    private SuggestionListVM? ViewModel => DataContext as SuggestionListVM;
-
     /// <summary>The search box is cleared by the view model and focused on open.</summary>
     public void FocusSearchBox() => Dispatcher.UIThread.Post(() =>
     {
         ResultList.ScrollIntoView(0);
         SearchBox.Focus();
     });
-
-    private void OnItemTapped(object? sender, TappedEventArgs e)
-    {
-        if ((sender as Control)?.DataContext is SuggestionItem { IsHeader: false } item && ViewModel is { } viewModel)
-        {
-            // Execute (not ExecuteAsync().Forget(...)) so a fault rethrows on the UI dispatcher and
-            // reaches the error dialog, the same as every other command invocation.
-            viewModel.SelectCommand.Execute(item);
-        }
-    }
-
-    private void OnSearchKeyDown(object? sender, KeyEventArgs e)
-    {
-        switch (e.Key)
-        {
-            case Key.Enter:
-                // Enter picks the first suggestion.
-                if (ViewModel is { } viewModel && viewModel.Items.FirstOrDefault(i => !i.IsHeader) is { } first)
-                {
-                    viewModel.SelectCommand.Execute(first);
-                }
-                e.Handled = true;
-                break;
-            case Key.Down:
-                ResultList.SelectedItem = ViewModel?.Items.FirstOrDefault(i => !i.IsHeader);
-                ResultList.Focus();
-                e.Handled = true;
-                break;
-        }
-    }
-
-    private void OnListKeyDown(object? sender, KeyEventArgs e)
-    {
-        if (e.Key == Key.Enter && ResultList.SelectedItem is SuggestionItem { IsHeader: false } item && ViewModel is { } viewModel)
-        {
-            viewModel.SelectCommand.Execute(item);
-            e.Handled = true;
-        }
-    }
 }
