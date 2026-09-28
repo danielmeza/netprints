@@ -79,7 +79,9 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     private bool outputTruncated;
     private IDisposable? outputFlush;
     private CancellationTokenSource? openGraphCts;
-    private MethodVM? pendingOpenMethod;
+
+    /// <summary>The method, constructor or event graph currently loading through <see cref="OpenGraphThroughPipelineAsync"/>, or null (OWN-07).</summary>
+    private object? pendingOpenTarget;
 
     /// <summary>
     /// Test seam (batch D1): awaited, if set, right after the busy-indicator timer is scheduled and
@@ -856,16 +858,14 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         OpenGraph(eventGraph);
     }
 
-    /// <summary>Double click on an event graph: opens it (US4).</summary>
-    [RelayCommand]
-    private void OpenEventGraph(EventGraphVM? eventGraph)
-    {
-        if (eventGraph is not null)
-        {
-            CancelPendingOpen();
-            OpenGraph(eventGraph.Graph);
-        }
-    }
+    /// <summary>
+    /// Selects and opens an event graph's canvas (US4, OWN-07), through the same open pipeline as
+    /// <see cref="OpenMethodAsync"/>: a single click opens it immediately, and last click wins whether
+    /// the previous one was a method, a constructor or another event graph.
+    /// </summary>
+    [RelayCommand(AllowConcurrentExecutions = true)]
+    private Task OpenEventGraphAsync(EventGraphVM? eventGraph) =>
+        eventGraph is null ? Task.CompletedTask : OpenGraphThroughPipelineAsync(eventGraph, eventGraph.Graph, eventGraph.Name);
 
     /// <summary>Removes an event graph (undoable, US4); clears the canvas when it shows it.</summary>
     [RelayCommand]
@@ -883,36 +883,48 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     /// Selects and opens a method or constructor's graph (PAR-24), in one command: a single click on
     /// its list entry both shows the method inspector and opens the canvas. Previously a single click
     /// only selected it, requiring a second, discoverable double-click gesture the owner reported as
-    /// "the graph doesn't open" (batch D1). Invoked directly (not through a two-way <c>SelectedItem</c>
-    /// binding's changed hook): the method stays the list's <c>SelectedItem</c> across an unrelated
-    /// canvas change (Create Event Graph, Class), so a changed hook would not re-fire on a second click
-    /// of the same, already-selected method — exactly the "Open: switch away, then reopen" case
-    /// <c>EventGraphTests</c> covers. A click on the method already loading is ignored; a click on the
-    /// already-open method with nothing pending is a no-op; a click on a different method cancels the
-    /// pending one. Reflection-backed overload lookups for the graph's nodes are warmed on a background
-    /// thread first (AGENTS.md: heavy work off the UI thread), and <see cref="IsOpeningGraph"/> only
-    /// turns on if that takes longer than <see cref="BusyIndicatorDelay"/>. <c>AllowConcurrentExecutions</c>
-    /// keeps the command's <c>CanExecute</c> true while a previous click is still opening (R2-02):
-    /// without it, <c>InvokeCommandAction</c> silently drops a click made during a load, and the
-    /// supersede logic below is never reached from the UI.
+    /// "the graph doesn't open" (batch D1). The open itself goes through <see cref="OpenGraphThroughPipelineAsync"/>,
+    /// shared with <see cref="OpenEventGraphAsync"/> (OWN-07): last click wins whether the previous one
+    /// was a method or an event graph.
     /// </summary>
     [RelayCommand(AllowConcurrentExecutions = true)]
-    private async Task OpenMethodAsync(MethodVM? method)
+    private Task OpenMethodAsync(MethodVM? method)
     {
         if (method is null)
         {
-            return;
+            return Task.CompletedTask;
         }
 
         SelectedMethod = method;
         Inspector = InspectorKind.Method;
+        return OpenGraphThroughPipelineAsync(method, method.Graph, method.Name);
+    }
 
-        if (method == pendingOpenMethod || (pendingOpenMethod is null && OpenedGraph?.Graph == method.Graph))
+    /// <summary>
+    /// Shared open pipeline for every list row that opens a graph (methods, constructors, event
+    /// graphs; PAR-24, US4, OWN-07): invoked directly by each item kind's own command, not through a
+    /// two-way <c>SelectedItem</c> binding's changed hook, so an item that stays a list's
+    /// <c>SelectedItem</c> across an unrelated canvas change (Create Event Graph, Class, another list's
+    /// item) still reopens on its next click — exactly the "Open: switch away, then reopen" case
+    /// <c>EventGraphTests</c> covers, and the owner's "add event graph, click it, click Main" sequence.
+    /// A click on the item already loading is ignored; a click on the already-open item with nothing
+    /// pending is a no-op; a click on a different item (of any kind) cancels the pending one — last
+    /// click wins (R2-02), generalized past methods alone. Reflection-backed overload lookups for the
+    /// graph's nodes are warmed on a background thread first (AGENTS.md: heavy work off the UI
+    /// thread), and <see cref="IsOpeningGraph"/> only turns on if that takes longer than
+    /// <see cref="BusyIndicatorDelay"/>. <c>AllowConcurrentExecutions</c> on each caller's command keeps
+    /// its <c>CanExecute</c> true while a previous click is still opening: without it,
+    /// <c>InvokeCommandAction</c> silently drops a click made during a load, and the supersede logic
+    /// below is never reached from the UI.
+    /// </summary>
+    private async Task OpenGraphThroughPipelineAsync(object item, NodeGraph graph, string name)
+    {
+        if (Equals(item, pendingOpenTarget) || (pendingOpenTarget is null && OpenedGraph?.Graph == graph))
         {
             return;
         }
 
-        pendingOpenMethod = method;
+        pendingOpenTarget = item;
         if (openGraphCts is not null)
         {
             await openGraphCts.CancelAsync();
@@ -925,7 +937,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
 
         IDisposable indicator = Context.Scheduler.Schedule(BusyIndicatorDelay, () =>
         {
-            OpeningGraphName = method.Name;
+            OpeningGraphName = name;
             IsOpeningGraph = true;
         });
 
@@ -936,9 +948,9 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
                 await delay();
             }
 
-            await WarmOverloadsAsync(method.Graph, token);
+            await WarmOverloadsAsync(graph, token);
             token.ThrowIfCancellationRequested();
-            OpenGraph(method.Graph);
+            OpenGraph(graph);
         }
         catch (OperationCanceledException)
         {
@@ -949,9 +961,9 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
             indicator.Dispose();
             IsOpeningGraph = false;
             OpeningGraphName = null;
-            if (pendingOpenMethod == method)
+            if (Equals(pendingOpenTarget, item))
             {
-                pendingOpenMethod = null;
+                pendingOpenTarget = null;
             }
         }
     }

@@ -170,11 +170,14 @@
                   </Button>
                   <TextBlock Grid.Column="1" Text="{Binding Name}" TextTrimming="CharacterEllipsis" FontSize="14" FontWeight="SemiBold" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventGraphName}"
                              VerticalAlignment="Center" Background="Transparent">
-                    <!-- Double-click opens the event graph (US4); fits ExecuteCommandOnDoubleTappedBehavior (batch X2b). -->
+                    <!-- A single tap opens the event graph, same D1 pattern as the methods/constructors
+                         above (OWN-07): a double-click gesture here made it "slow to open and it
+                         doesn't open, only when focus is lost". -->
                     <Interaction.Behaviors>
-                      <ExecuteCommandOnDoubleTappedBehavior
-                        Command="{Binding $parent[Window].((edclasseditor:ClassEditorVM)DataContext).OpenEventGraphCommand}"
-                        CommandParameter="{Binding}" />
+                      <EventTriggerBehavior EventName="Tapped">
+                        <InvokeCommandAction Command="{Binding $parent[Window].((edclasseditor:ClassEditorVM)DataContext).OpenEventGraphCommand}"
+                                              CommandParameter="{Binding}" />
+                      </EventTriggerBehavior>
                     </Interaction.Behaviors>
                   </TextBlock>
                 </Grid>

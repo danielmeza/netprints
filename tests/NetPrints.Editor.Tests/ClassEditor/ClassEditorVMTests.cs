@@ -488,4 +488,87 @@ public class ClassEditorVMTests : IAsyncLifetime
         vm.RedoCommand.Execute(null);
         Assert.Equal(1, vm.Variables.Count());
     }
+
+    // OWN-07: event graphs share the open pipeline with methods (OpenGraphThroughPipelineAsync) —
+    // one click opens, last click wins across kinds, and re-clicking an item still "selected" in its
+    // own list reopens it when the canvas shows something else.
+
+    [Fact]
+    public async Task OpenEventGraphCommandOpensItImmediately()
+    {
+        vm.CreateEventGraphCommand.Execute(null); // also opens it (US4); switch away first
+        var eventGraph = vm.EventGraphs.Single();
+        await vm.OpenMethodCommand.ExecuteAsync(vm.Methods.Single());
+
+        await vm.OpenEventGraphCommand.ExecuteAsync(eventGraph);
+
+        Assert.Same(eventGraph.Graph, vm.OpenedGraph?.Graph);
+    }
+
+    [Fact]
+    public async Task MethodOpensAfterAnEventGraphIsOpen()
+    {
+        // The owner's exact sequence: add an event graph, open it, then open Main.
+        vm.CreateEventGraphCommand.Execute(null);
+        var eventGraph = vm.EventGraphs.Single();
+        var main = vm.Methods.Single();
+        await vm.OpenEventGraphCommand.ExecuteAsync(eventGraph);
+
+        await vm.OpenMethodCommand.ExecuteAsync(main);
+
+        Assert.Same(main.Graph, vm.OpenedGraph?.Graph);
+        Assert.Same(main, vm.SelectedMethod);
+    }
+
+    [Fact]
+    public async Task EventGraphOpensAfterAMethodIsOpen()
+    {
+        vm.CreateEventGraphCommand.Execute(null);
+        var eventGraph = vm.EventGraphs.Single();
+        await vm.OpenMethodCommand.ExecuteAsync(vm.Methods.Single());
+
+        await vm.OpenEventGraphCommand.ExecuteAsync(eventGraph);
+
+        Assert.Same(eventGraph.Graph, vm.OpenedGraph?.Graph);
+    }
+
+    [Fact]
+    public async Task ReclickingTheAlreadySelectedEventGraphReopensItAfterTheCanvasSwitchedAway()
+    {
+        vm.CreateEventGraphCommand.Execute(null);
+        var eventGraph = vm.EventGraphs.Single();
+
+        vm.ShowClassCommand.Execute(null);
+        Assert.Same(cls, vm.OpenedGraph?.Graph);
+
+        await vm.OpenEventGraphCommand.ExecuteAsync(eventGraph);
+
+        Assert.Same(eventGraph.Graph, vm.OpenedGraph?.Graph);
+    }
+
+    [Fact]
+    public async Task OpeningAMethodWhileAnEventGraphIsStillOpeningSupersedesIt()
+    {
+        // Last click wins across item kinds (R2-02, generalized past methods alone).
+        vm.CreateEventGraphCommand.Execute(null);
+        var eventGraph = vm.EventGraphs.Single();
+        var main = vm.Methods.Single();
+        await vm.OpenMethodCommand.ExecuteAsync(main); // switch away so the next open isn't a no-op
+        ICommand eventGraphCommand = vm.OpenEventGraphCommand;
+        ICommand methodCommand = vm.OpenMethodCommand;
+
+        var gate = new TaskCompletionSource();
+        vm.OpenGraphDelayForTests = () => gate.Task;
+
+        eventGraphCommand.Execute(eventGraph);
+        Task openingEventGraph = vm.OpenEventGraphCommand.ExecutionTask ?? Task.CompletedTask;
+
+        methodCommand.Execute(main);
+        Task openingMethod = vm.OpenMethodCommand.ExecutionTask ?? Task.CompletedTask;
+
+        gate.SetResult();
+        await Task.WhenAll(openingEventGraph, openingMethod);
+
+        Assert.Same(main.Graph, vm.OpenedGraph?.Graph);
+    }
 }

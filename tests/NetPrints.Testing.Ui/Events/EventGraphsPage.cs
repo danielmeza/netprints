@@ -29,4 +29,7 @@ public sealed class EventGraphsPage(IUiDriver driver, AutomationQuery window)
 
     /// <summary>Double-clicks an event graph row, opening it.</summary>
     public Task DoubleClickAsync(string name, CancellationToken cancellationToken) => EventGraph(name).DoubleClickAsync(cancellationToken);
+
+    /// <summary>A single click on an event graph row, opening it (OWN-07: one click, same as a method row).</summary>
+    public Task OpenAsync(string name, CancellationToken cancellationToken) => EventGraph(name).ClickAsync(cancellationToken);
 }
