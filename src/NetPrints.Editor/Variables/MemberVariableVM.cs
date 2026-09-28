@@ -13,17 +13,17 @@ namespace NetPrints.Editor.Variables;
 /// </summary>
 public sealed partial class MemberVariableVM : ObservableObject, IDisposable
 {
-    private readonly ClassEditorVM owner;
+    private readonly ClassEditorServices services;
 
     /// <summary>
     /// Wraps <paramref name="variable"/> and subscribes to its property-changed event.
     /// </summary>
     /// <param name="variable">Variable to wrap.</param>
-    /// <param name="owner">Class editor view model that owns this variable.</param>
-    public MemberVariableVM(Variable variable, ClassEditorVM owner)
+    /// <param name="services">Narrow services shared with the owning class editor (FR-038).</param>
+    public MemberVariableVM(Variable variable, ClassEditorServices services)
     {
         Variable = variable;
-        this.owner = owner;
+        this.services = services;
         ((INotifyPropertyChanged)variable).PropertyChanged += OnVariablePropertyChanged;
     }
 
@@ -40,11 +40,7 @@ public sealed partial class MemberVariableVM : ObservableObject, IDisposable
     public string Name
     {
         get => Variable.Name;
-        set
-        {
-            Variable.Name = value;
-            owner.Class.MarkDirty();
-        }
+        set => Variable.Name = value;
     }
 
     /// <summary>
@@ -73,7 +69,6 @@ public sealed partial class MemberVariableVM : ObservableObject, IDisposable
             }
 
             Variable.Visibility = value;
-            owner.Class.MarkDirty();
         }
     }
 
@@ -84,11 +79,7 @@ public sealed partial class MemberVariableVM : ObservableObject, IDisposable
     public VariableModifiers Modifiers
     {
         get => Variable.Modifiers;
-        set
-        {
-            Variable.Modifiers = value;
-            owner.Class.MarkDirty();
-        }
+        set => Variable.Modifiers = value;
     }
 
     /// <summary>Whether <see cref="VariableModifiers.ReadOnly"/> is set.</summary>
@@ -151,28 +142,28 @@ public sealed partial class MemberVariableVM : ObservableObject, IDisposable
 
     /// <summary>Removes the variable (undoable).</summary>
     [RelayCommand]
-    private void Remove() => owner.RemoveVariable(this);
+    private void Remove() => services.UndoRedo.Do(EditorCommands.RemoveVariable(Variable.Class, Variable));
 
     /// <summary>Shows the variable inspector.</summary>
     [RelayCommand]
-    private void Select() => owner.SelectVariable(this);
+    private void Select() => services.Messenger.Send(new SelectInspectorMessage(this));
 
     [RelayCommand]
-    private void AddGetter() => owner.UndoRedo.Do(EditorCommands.AddGetter(Variable));
+    private void AddGetter() => services.UndoRedo.Do(EditorCommands.AddGetter(Variable));
 
     [RelayCommand]
     private void RemoveGetter()
     {
-        owner.UndoRedo.Do(EditorCommands.RemoveGetter(Variable));
+        services.UndoRedo.Do(EditorCommands.RemoveGetter(Variable));
     }
 
     [RelayCommand]
-    private void AddSetter() => owner.UndoRedo.Do(EditorCommands.AddSetter(Variable));
+    private void AddSetter() => services.UndoRedo.Do(EditorCommands.AddSetter(Variable));
 
     [RelayCommand]
     private void RemoveSetter()
     {
-        owner.UndoRedo.Do(EditorCommands.RemoveSetter(Variable));
+        services.UndoRedo.Do(EditorCommands.RemoveSetter(Variable));
     }
 
     [RelayCommand]
@@ -180,7 +171,7 @@ public sealed partial class MemberVariableVM : ObservableObject, IDisposable
     {
         if (Getter is not null)
         {
-            owner.Messenger.Send(new OpenGraphMessage(Getter));
+            services.Messenger.Send(new OpenGraphMessage(Getter));
         }
     }
 
@@ -189,12 +180,12 @@ public sealed partial class MemberVariableVM : ObservableObject, IDisposable
     {
         if (Setter is not null)
         {
-            owner.Messenger.Send(new OpenGraphMessage(Setter));
+            services.Messenger.Send(new OpenGraphMessage(Setter));
         }
     }
 
     [RelayCommand]
-    private void OpenTypeGraph() => owner.Messenger.Send(new OpenGraphMessage(Variable.TypeGraph));
+    private void OpenTypeGraph() => services.Messenger.Send(new OpenGraphMessage(Variable.TypeGraph));
 
     /// <summary>Unsubscribes from the wrapped variable's property-changed event.</summary>
     public void Dispose() => ((INotifyPropertyChanged)Variable).PropertyChanged -= OnVariablePropertyChanged;

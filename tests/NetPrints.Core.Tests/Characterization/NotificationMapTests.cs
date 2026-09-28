@@ -281,11 +281,15 @@ namespace NetPrints.Tests.Characterization
 
                 foreach (MethodGraph method in cls.Methods)
                 {
+                    // T100: ExecutionGraph now raises PropertyChanged (MethodGraph.Name/Modifiers,
+                    // ExecutionGraph.Visibility), so the graph itself, not just its nodes, joins the map.
+                    Register(method);
                     RegisterGraph(method);
                 }
 
                 foreach (ConstructorGraph constructor in cls.Constructors)
                 {
+                    Register(constructor);
                     RegisterGraph(constructor);
                 }
 

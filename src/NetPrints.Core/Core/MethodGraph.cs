@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Graph;
 
 namespace NetPrints.Core
@@ -123,20 +124,14 @@ namespace NetPrints.Core
         /// <summary>
         /// Name of the method without any prefixes.
         /// </summary>
-        public string Name
-        {
-            get;
-            set;
-        }
+        [ObservableProperty]
+        public partial string Name { get; set; }
 
         /// <summary>
         /// Modifiers this method has.
         /// </summary>
-        public MethodModifiers Modifiers
-        {
-            get;
-            set;
-        } = MethodModifiers.None;
+        [ObservableProperty]
+        public partial MethodModifiers Modifiers { get; set; } = MethodModifiers.None;
 
         /// <summary>
         /// Method entry node where this method graph's execution starts.

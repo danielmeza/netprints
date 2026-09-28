@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Core;
 
@@ -10,10 +11,20 @@ namespace NetPrints.Editor.ClassEditor;
 /// The WPF editor used a full graph view model per list entry; a light wrapper avoids building
 /// node view models for graphs that are not open.
 /// </remarks>
-public sealed class MethodVM(ExecutionGraph graph, ClassGraph cls) : ObservableObject
+public sealed partial class MethodVM : ObservableObject, IDisposable
 {
+    /// <summary>
+    /// Wraps <paramref name="graph"/> and subscribes to its property-changed event.
+    /// </summary>
+    /// <param name="graph">Method or constructor graph to wrap.</param>
+    public MethodVM(ExecutionGraph graph)
+    {
+        Graph = graph;
+        ((INotifyPropertyChanged)graph).PropertyChanged += OnGraphPropertyChanged;
+    }
+
     /// <summary>The wrapped model graph.</summary>
-    public ExecutionGraph Graph { get; } = graph;
+    public ExecutionGraph Graph { get; }
 
     /// <summary>Whether the wrapped graph is a <see cref="ConstructorGraph"/>.</summary>
     public bool IsConstructor => Graph is ConstructorGraph;
@@ -24,11 +35,9 @@ public sealed class MethodVM(ExecutionGraph graph, ClassGraph cls) : ObservableO
         get => Graph is MethodGraph method ? method.Name : Graph.ToString() ?? "";
         set
         {
-            if (Graph is MethodGraph method && method.Name != value)
+            if (Graph is MethodGraph method)
             {
                 method.Name = value;
-                cls.MarkDirty();
-                OnPropertyChanged();
             }
         }
     }
@@ -37,15 +46,7 @@ public sealed class MethodVM(ExecutionGraph graph, ClassGraph cls) : ObservableO
     public MemberVisibility Visibility
     {
         get => Graph.Visibility;
-        set
-        {
-            if (Graph.Visibility != value)
-            {
-                Graph.Visibility = value;
-                cls.MarkDirty();
-                OnPropertyChanged();
-            }
-        }
+        set => Graph.Visibility = value;
     }
 
     /// <summary>The visibility values offered by the method's visibility chooser.</summary>
@@ -57,17 +58,9 @@ public sealed class MethodVM(ExecutionGraph graph, ClassGraph cls) : ObservableO
         get => Graph is MethodGraph method ? method.Modifiers : MethodModifiers.None;
         set
         {
-            if (Graph is MethodGraph method && method.Modifiers != value)
+            if (Graph is MethodGraph method)
             {
                 method.Modifiers = value;
-                cls.MarkDirty();
-                OnPropertyChanged();
-                OnPropertyChanged(nameof(IsSealed));
-                OnPropertyChanged(nameof(IsAbstract));
-                OnPropertyChanged(nameof(IsStatic));
-                OnPropertyChanged(nameof(IsVirtual));
-                OnPropertyChanged(nameof(IsOverride));
-                OnPropertyChanged(nameof(IsAsync));
             }
         }
     }
@@ -94,6 +87,29 @@ public sealed class MethodVM(ExecutionGraph graph, ClassGraph cls) : ObservableO
 
     private void Set(MethodModifiers flag, bool value) => Modifiers = value ? Modifiers | flag : Modifiers & ~flag;
 
+    /// <summary>Re-raises this VM's properties when the wrapped graph's model properties change (editor-services.md §3).</summary>
+    private void OnGraphPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        switch (e.PropertyName)
+        {
+            case nameof(MethodGraph.Name):
+                OnPropertyChanged(nameof(Name));
+                break;
+            case nameof(ExecutionGraph.Visibility):
+                OnPropertyChanged(nameof(Visibility));
+                break;
+            case nameof(MethodGraph.Modifiers):
+                OnPropertyChanged(nameof(Modifiers));
+                OnPropertyChanged(nameof(IsSealed));
+                OnPropertyChanged(nameof(IsAbstract));
+                OnPropertyChanged(nameof(IsStatic));
+                OnPropertyChanged(nameof(IsVirtual));
+                OnPropertyChanged(nameof(IsOverride));
+                OnPropertyChanged(nameof(IsAsync));
+                break;
+        }
+    }
+
     /// <summary>Specifier used to call this method from a graph (drag &amp; drop, PAR-56).</summary>
     public MethodSpecifier ToMethodSpecifier(TypeSpecifier declaringType)
     {
@@ -109,4 +125,7 @@ public sealed class MethodVM(ExecutionGraph graph, ClassGraph cls) : ObservableO
     public ConstructorSpecifier ToConstructorSpecifier(TypeSpecifier declaringType) =>
         new(Graph.NamedArgumentTypes.Select(nt => new MethodParameter(nt.Name, nt.Value, MethodParameterPassType.Default, false, null)),
             declaringType);
+
+    /// <summary>Unsubscribes from the wrapped graph's property-changed event.</summary>
+    public void Dispose() => ((INotifyPropertyChanged)Graph).PropertyChanged -= OnGraphPropertyChanged;
 }

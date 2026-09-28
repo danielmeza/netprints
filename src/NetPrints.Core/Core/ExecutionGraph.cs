@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.CodeAnalysis.CSharp;
 using NetPrints.Graph;
 
@@ -11,9 +12,13 @@ namespace NetPrints.Core
     /// Abstract base class for graphs with a body of executable nodes: <see cref="MethodGraph"/> and
     /// <see cref="ConstructorGraph"/>. Holds the single <see cref="EntryNode"/> execution starts from,
     /// the graph's argument types (derived from the entry node's pins), its visibility and its
-    /// method-local variables (US5).
+    /// method-local variables (US5). Raises <see cref="System.ComponentModel.INotifyPropertyChanged"/>
+    /// notifications through CommunityToolkit.Mvvm's generated <c>[INotifyPropertyChanged]</c>
+    /// boilerplate (it cannot inherit <see cref="ModelObject"/>: it already inherits
+    /// <see cref="NodeGraph"/>).
     /// </summary>
-    public abstract class ExecutionGraph : NodeGraph
+    [INotifyPropertyChanged]
+    public abstract partial class ExecutionGraph : NodeGraph
     {
         /// <summary>
         /// Variables local to this method or constructor (US5, data-model.md §3), declared at the top
@@ -75,10 +80,7 @@ namespace NetPrints.Core
         /// <summary>
         /// Visibility of this graph.
         /// </summary>
-        public MemberVisibility Visibility
-        {
-            get;
-            set;
-        } = MemberVisibility.Private;
+        [ObservableProperty]
+        public partial MemberVisibility Visibility { get; set; } = MemberVisibility.Private;
     }
 }

@@ -31,11 +31,11 @@ public sealed partial class NodeGraphVM : ObservableObject, IDisposable
     /// creates its search and Get/Set chooser view models, and builds the initial connections.
     /// </summary>
     /// <param name="graph">Graph to wrap.</param>
-    /// <param name="owner">Class editor view model that owns this graph.</param>
-    public NodeGraphVM(NodeGraph graph, ClassEditorVM owner)
+    /// <param name="services">Narrow services shared with the owning class editor (FR-038).</param>
+    public NodeGraphVM(NodeGraph graph, ClassEditorServices services)
     {
         Graph = graph;
-        Owner = owner;
+        Services = services;
 
         Nodes = new ObservableViewModelCollection<NodeVM, Node>(graph.Nodes, n => new NodeVM(n, this), n => n.Dispose());
         Nodes.CollectionChanged += OnNodesChanged;
@@ -52,11 +52,11 @@ public sealed partial class NodeGraphVM : ObservableObject, IDisposable
     /// <summary>The wrapped model graph.</summary>
     public NodeGraph Graph { get; }
 
-    /// <summary>The class editor view model that owns this graph.</summary>
-    public ClassEditorVM Owner { get; }
+    /// <summary>Narrow services shared with the owning class editor (FR-038).</summary>
+    public ClassEditorServices Services { get; }
 
     /// <summary>Host services shared across the editor.</summary>
-    public EditorContext Context => Owner.Context;
+    public EditorContext Context => Services.Context;
 
     /// <summary>View models for <see cref="Graph"/>'s nodes.</summary>
     public ObservableViewModelCollection<NodeVM, Node> Nodes { get; }
@@ -348,7 +348,7 @@ public sealed partial class NodeGraphVM : ObservableObject, IDisposable
         Search.OpenAsync(position, suggestionPin, cancellationToken);
 
     /// <summary>Changes the overload of a node through the undo stack (PAR-40).</summary>
-    public void ChangeOverload(NodeVM node, object overload) => Owner.UndoRedo.Do(EditorCommands.ChangeOverload(node.Node, overload));
+    public void ChangeOverload(NodeVM node, object overload) => Services.UndoRedo.Do(EditorCommands.ChangeOverload(node.Node, overload));
 
     /// <summary>A method or constructor was dropped from the class lists (PAR-56).</summary>
     public Node Drop(MethodVM method, GraphPoint position)

@@ -122,7 +122,7 @@ public class NodeGraphVMTests(TestEditor editor) : GraphTestBase(editor)
     public void NameWatermark()
     {
         Assert.Equal(Method.Name, Graph.Name);
-        var classGraph = new NodeGraphVM(Class, ClassEditor);
+        var classGraph = new NodeGraphVM(Class, ClassEditor.Services);
         Assert.Equal("C", classGraph.Name);
         classGraph.Dispose();
     }

@@ -37,7 +37,7 @@ public enum InspectorKind
 /// <summary>
 /// View model of a class editor window (PAR-22..37, PAR-60).
 /// </summary>
-public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGraphMessage>, IRecipient<NavigateToNodeMessage>, IDisposable
+public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGraphMessage>, IRecipient<NavigateToNodeMessage>, IRecipient<SelectInspectorMessage>, IDisposable
 {
     internal static readonly IReadOnlyList<MemberVisibility> Visibilities =
     [
@@ -48,6 +48,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     ];
 
     private readonly HashSet<Variable> subscribedVariables = [];
+    private readonly HashSet<ExecutionGraph> subscribedMethods = [];
     private readonly HashSet<NodeGraph> dirtyTrackedGraphs = [];
     private readonly HashSet<Node> dirtyTrackedNodes = [];
     private readonly HashSet<NodePin> dirtyTrackedPins = [];
@@ -85,11 +86,12 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         Messenger = context.CreateMessenger();
         // RegisterAll, not Register: this implements more than one IRecipient<T>.
         Messenger.RegisterAll(this);
+        Services = new ClassEditorServices(context, UndoRedo, Messenger);
 
-        Methods = new ObservableViewModelCollection<MethodVM, MethodGraph>(cls.Methods, m => new MethodVM(m, cls));
-        Constructors = new ObservableViewModelCollection<MethodVM, ConstructorGraph>(cls.Constructors, c => new MethodVM(c, cls));
+        Methods = new ObservableViewModelCollection<MethodVM, MethodGraph>(cls.Methods, m => new MethodVM(m), m => m.Dispose());
+        Constructors = new ObservableViewModelCollection<MethodVM, ConstructorGraph>(cls.Constructors, c => new MethodVM(c), m => m.Dispose());
         Variables = new ObservableViewModelCollection<MemberVariableVM, Variable>(cls.Variables,
-            v => new MemberVariableVM(v, this), v => v.Dispose());
+            v => new MemberVariableVM(v, Services), v => v.Dispose());
         EventGraphs = new ObservableViewModelCollection<EventGraphVM, EventGraph>(cls.EventGraphs, g => new EventGraphVM(g, cls));
         VariablesPanel = new VariablesPanelVM(this);
         CodeView = new CodeViewVM(cls, context.CodeAnalysis);
@@ -100,6 +102,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         cls.Constructors.CollectionChanged += OnMembersChanged;
         cls.EventGraphs.CollectionChanged += OnMembersChanged;
         SyncVariableSubscriptions();
+        SyncMethodSubscriptions();
         SyncDirtyTrackingGraphs();
 
         UndoRedo.Changed += (_, _) =>
@@ -138,6 +141,9 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
 
     /// <summary>Undo/redo history of this class editor.</summary>
     public UndoRedoStack UndoRedo { get; } = new();
+
+    /// <summary>Narrow services shared with child view models that must not depend on this class editor directly (FR-038).</summary>
+    public ClassEditorServices Services { get; }
 
     /// <summary>The project the class belongs to, or <see langword="null"/> if it has not been added to one.</summary>
     public Project? Project => Class.Project;
@@ -325,7 +331,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
 
     /// <summary>Opens a graph in the canvas.</summary>
     [SuppressMessage("IDisposableAnalyzers.Correctness", "IDISP003", Justification = "ADR-0003: OnOpenedGraphChanged (the generated property hook) disposes the old value.")]
-    public void OpenGraph(NodeGraph graph) => OpenedGraph = new NodeGraphVM(graph, this);
+    public void OpenGraph(NodeGraph graph) => OpenedGraph = new NodeGraphVM(graph, Services);
 
     void IRecipient<OpenGraphMessage>.Receive(OpenGraphMessage message) => OpenGraph(message.Graph);
 
@@ -349,22 +355,54 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         OpenedGraph?.RevealNode(message.NodeId);
     }
 
+    /// <summary>
+    /// Shows the inspector for a variable or method selected from its own list entry (PAR-24, 29):
+    /// <see cref="MemberVariableVM"/> sends this instead of calling back into this class editor
+    /// directly (FR-038).
+    /// </summary>
+    void IRecipient<SelectInspectorMessage>.Receive(SelectInspectorMessage message)
+    {
+        switch (message.Target)
+        {
+            case MemberVariableVM variable:
+                SelectedVariable = variable;
+                Inspector = InspectorKind.Variable;
+                break;
+            case MethodVM method:
+                SelectedMethod = method;
+                Inspector = InspectorKind.Method;
+                break;
+        }
+    }
+
     // Model changes, including undo and redo, can remove what the inspector or the canvas shows.
     // The editor reacts to the model instead of each command cleaning up after itself.
 
     private void OnMembersChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         SyncVariableSubscriptions();
+        SyncMethodSubscriptions();
         SyncDirtyTrackingGraphs();
         DropDetachedState();
     }
 
     private void OnVariablePropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(Variable.GetterMethod) or nameof(Variable.SetterMethod))
+        switch (e.PropertyName)
         {
-            SyncDirtyTrackingGraphs();
-            DropDetachedState();
+            // Name/Visibility/Modifiers bypass the undo stack (the variable inspector's wrapper
+            // setters, editor-services.md §3): mark dirty here instead. GetterMethod/SetterMethod
+            // always change through UndoRedo.Do, which already marks dirty via Applied.
+            case nameof(Variable.Name):
+            case nameof(Variable.Visibility):
+            case nameof(Variable.Modifiers):
+                MarkDirty();
+                break;
+            case nameof(Variable.GetterMethod):
+            case nameof(Variable.SetterMethod):
+                SyncDirtyTrackingGraphs();
+                DropDetachedState();
+                break;
         }
     }
 
@@ -381,6 +419,35 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         {
             ((INotifyPropertyChanged)added).PropertyChanged += OnVariablePropertyChanged;
             subscribedVariables.Add(added);
+        }
+    }
+
+    /// <summary>
+    /// Marks the class dirty when a method or constructor's inspector wrapper setter
+    /// (<see cref="MethodVM.Name"/>, <see cref="MethodVM.Visibility"/>, <see cref="MethodVM.Modifiers"/>)
+    /// assigns the model directly, bypassing the undo stack (editor-services.md §3).
+    /// </summary>
+    private void OnMethodPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(MethodGraph.Name) or nameof(ExecutionGraph.Visibility) or nameof(MethodGraph.Modifiers))
+        {
+            MarkDirty();
+        }
+    }
+
+    private void SyncMethodSubscriptions()
+    {
+        var current = Class.Methods.Cast<ExecutionGraph>().Concat(Class.Constructors).ToHashSet();
+        foreach (var removed in subscribedMethods.Where(g => !current.Contains(g)).ToList())
+        {
+            ((INotifyPropertyChanged)removed).PropertyChanged -= OnMethodPropertyChanged;
+            subscribedMethods.Remove(removed);
+        }
+
+        foreach (var added in current.Where(g => !subscribedMethods.Contains(g)))
+        {
+            ((INotifyPropertyChanged)added).PropertyChanged += OnMethodPropertyChanged;
+            subscribedMethods.Add(added);
         }
     }
 
@@ -720,9 +787,6 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         UndoRedo.Do(EditorCommands.AddVariable(Class, name));
     }
 
-    /// <summary>Removes a variable (undoable); clears the inspector and canvas when they show it.</summary>
-    public void RemoveVariable(MemberVariableVM variable) => UndoRedo.Do(EditorCommands.RemoveVariable(Class, variable.Variable));
-
     /// <summary>Creates an event graph named EventGraph, EventGraph1, ... (undoable, US4) and opens it.</summary>
     [RelayCommand]
     private void CreateEventGraph()
@@ -753,13 +817,6 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         }
 
         UndoRedo.Do(EditorCommands.RemoveEventGraph(Class, eventGraph.Graph));
-    }
-
-    /// <summary>Shows the variable inspector (PAR-29).</summary>
-    public void SelectVariable(MemberVariableVM variable)
-    {
-        SelectedVariable = variable;
-        Inspector = InspectorKind.Variable;
     }
 
     /// <summary>Single click on a method or constructor: shows the method inspector (PAR-24).</summary>
@@ -838,6 +895,13 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         }
 
         subscribedVariables.Clear();
+
+        foreach (var method in subscribedMethods)
+        {
+            ((INotifyPropertyChanged)method).PropertyChanged -= OnMethodPropertyChanged;
+        }
+
+        subscribedMethods.Clear();
 
         foreach (var graph in dirtyTrackedGraphs)
         {

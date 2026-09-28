@@ -1,10 +1,32 @@
 {
+  "NetPrints.Core.ConstructorGraph": {
+    "Class": [],
+    "PreservedDocumentState": [],
+    "Project": [],
+    "Visibility": [
+      "Visibility"
+    ]
+  },
   "NetPrints.Core.LocalVariable": {
     "Name": [
       "Name"
     ],
     "Type": [
       "Type"
+    ]
+  },
+  "NetPrints.Core.MethodGraph": {
+    "Class": [],
+    "Modifiers": [
+      "Modifiers"
+    ],
+    "Name": [
+      "Name"
+    ],
+    "PreservedDocumentState": [],
+    "Project": [],
+    "Visibility": [
+      "Visibility"
     ]
   },
   "NetPrints.Core.Project": {
