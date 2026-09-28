@@ -112,8 +112,7 @@ jobs:
       - name: SHA256SUMS.txt
         working-directory: dist
         run: |
-          # shellcheck disable=SC2035 # release-asset names never start with a dash
-          sha256sum *.nupkg *.snupkg *.tar.gz *.zip > SHA256SUMS.txt
+          sha256sum -- *.nupkg *.snupkg *.tar.gz *.zip > SHA256SUMS.txt
           sha256sum -c SHA256SUMS.txt
           cat SHA256SUMS.txt
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

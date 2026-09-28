@@ -13,11 +13,11 @@ namespace NetPrints.Desktop.E2ETests.Scenarios;
 /// </summary>
 public sealed class ShutdownTests(DesktopWorkerPool pool)
 {
+    /// <summary>The test's own work budget, starting once it has rented a worker (batch D3; see
+    /// <see cref="X11SmokeTestBase.Timeout"/>).</summary>
     private const int Timeout = 60_000;
 
-    private static CancellationToken Token => TestContext.Current.CancellationToken;
-
-    [Fact(Timeout = Timeout)]
+    [Fact]
     public async Task ClosingTheMainWindowDisposesHostServicesExactlyOnceThenExits()
     {
         if (!DesktopWorkerPool.IsEnabled)
@@ -25,18 +25,21 @@ public sealed class ShutdownTests(DesktopWorkerPool pool)
             Assert.Skip($"Desktop E2E tests run with {XServer.EnableVariable}=1 (Linux with Xvfb, openbox, xdotool, ImageMagick and GTK 3).");
         }
 
+        using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
         var steps = new StepTimer(TestContext.Current.TestMethod?.MethodName ?? "test");
         string work = Directory.CreateTempSubdirectory("netprints-e2e-shutdown-").FullName;
-        await using var lease = await pool.RentAsync(Token, work);
+        await using var lease = await pool.RentAsync(timeoutCts.Token, work);
+        timeoutCts.CancelAfter(Timeout); // the budget starts now, not at dispatch (batch D3)
+        var token = timeoutCts.Token;
         var tool = new Tool(lease.Server);
         var editor = lease.Editor;
 
         using (steps.Step("close window"))
         {
             string pid = editor.ProcessId.ToString(CultureInfo.InvariantCulture);
-            string windows = await tool.XdotoolAsync(Token, "search", "--all", "--onlyvisible", "--pid", pid);
+            string windows = await tool.XdotoolAsync(token, "search", "--all", "--onlyvisible", "--pid", pid);
             string windowId = windows.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).First();
-            await tool.XdotoolAsync(Token, "windowclose", windowId);
+            await tool.XdotoolAsync(token, "windowclose", windowId);
         }
 
         using (steps.Step("wait exit"))
@@ -45,7 +48,7 @@ public sealed class ShutdownTests(DesktopWorkerPool pool)
             var clock = Stopwatch.StartNew();
             while (!editor.HasExited && clock.Elapsed < TimeSpan.FromSeconds(30))
             {
-                await Task.Delay(50, Token);
+                await Task.Delay(50, token);
             }
         }
 

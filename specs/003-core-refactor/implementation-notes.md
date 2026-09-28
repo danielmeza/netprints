@@ -5133,3 +5133,62 @@ ADR-0007's new "Dialog-close pattern" bullet for the design; this section is the
   tests/NetPrints.Desktop.E2ETests -c Release --no-build --no-progress --no-ansi -- --fail-skips
   on`): **7 total, 0 failed, 7 succeeded**. No Xvfb/`NetPrints.Desktop` processes left running
   afterward.
+
+## Batch D3 (desktop E2E CI regression: `DragFromLists` timing out at 180 s)
+
+Owner ask: fix a CI-only regression introduced by D2's parallel pool. `Desktop E2E (Linux, Xvfb)`
+failed on every CI run since D2 (bbf8c60, 386b72c, bb6ca1d, 2ec2200), always the same test —
+`DragFromListsTests.DragFromLists`, canceled at exactly 180.00x s — while the suite stayed green
+locally (5/5) and in this batch's own runs.
+
+- **Root cause**: `[Fact(Timeout = 180_000)]` starts its clock at test *dispatch*, not at the start
+  of the test's own work. All 7 scenarios dispatch at the same instant (`xunit.runner.json`'s
+  `maxParallelThreads: 8`), but `DesktopWorkerPool` only has `min(ProcessorCount / 2, 4)` workers —
+  2 on a GitHub-hosted `ubuntu-latest` runner's 4 vCPUs, vs. 4+ on a typical dev box. `StartAsync`
+  calls `pool.RentAsync` before any of the test's own steps, so whatever a test queues for a free
+  worker is already spent against its fixed budget. Reproduced locally under
+  `NETPRINTS_E2E_WORKERS=2 taskset -c 0-3` (2 workers, 4 cores, matching the CI runner): the
+  `e2e-timings-*.md` for that run shows `DragFromLists`'s "start" step (queue wait + editor startup)
+  alone took **53.4 s** — with the old dispatch-time clock, that leaves DragFromLists (the heaviest
+  scenario: 3 drag-and-drop sequences plus method/constructor/variable navigation) the smallest
+  remaining margin of any of the 7 tests to do its own work inside the shared 180 s, and CI's slower,
+  CPU-shared, software-rendered (`llvmpipe`) execution was enough to consistently push it over on the
+  real runner. This is why it was reliably the *same* test every run — not CPU-count variance picking
+  a different unlucky test each time. The CI TRX confirms all 7 tests dispatched within 1 ms of each
+  other; 6 finished between 32 s and 111 s, and `DragFromLists` alone ran to exactly the 180 s cap.
+  Batch X2b's `MemberVariableView` tap/double-tap-to-behavior change was investigated and ruled out:
+  the raw `xdotool` trace shows the hang is in `MoveToAsync`/`SettleAsync` before the drag's own
+  `mousedown` is ever issued — an X11/editor-IPC stall, not an Avalonia gesture-recognition change,
+  and `DragSourceHelper`'s pointer handlers were untouched by X2b (confirmed in its commit message and
+  diff).
+- **Fix**: the 180 s (`X11SmokeTestBase`, `tests/NetPrints.Desktop.E2ETests/Scenarios/X11SmokeTests.cs`)
+  and 60 s (`ShutdownTests.cs`) per-test budgets now start after `pool.RentAsync` returns, not at
+  dispatch. Each test owns a `CancellationTokenSource` linked to `TestContext.Current.CancellationToken`
+  (so external/run cancellation still works); `[Fact(Timeout = ...)]` is removed from all 7 `[Fact]`s
+  (the pool-queue wait is now unbounded per test, backstopped by the job's existing 30-minute
+  `timeout-minutes`, which is the same safety net a worker leak would already need). `CancelAfter` is
+  called immediately after the lease (worker + fresh editor) is obtained, so a test's own budget always
+  covers only its own work.
+- **CI worker count pinned**: `.github/workflows/ci.yml`'s E2E job sets `NETPRINTS_E2E_WORKERS: 2`
+  explicitly (matches the existing `min(ProcessorCount / 2, 4)` default on a 4-vCPU runner) so a future
+  change in GitHub's runner sizing doesn't silently retune concurrency without review. Also added
+  `TestResults/e2e-timings-*.md` to the E2E artifact upload — it wasn't captured before, which is why
+  this batch had to reproduce locally to get per-step timings for the CI-like scenario; the timings
+  file is written to that path already (`StepTimer`), just never uploaded.
+- **`release.yml` shellcheck suppression (batch L3) fixed, not suppressed**: `sha256sum *.nupkg
+  *.snupkg *.tar.gz *.zip` (SC2035: a leading `-` in an asset filename could be parsed as an option)
+  is now `sha256sum -- *.nupkg *.snupkg *.tar.gz *.zip`, same `SHA256SUMS.txt` format, no directive.
+  `# shellcheck disable=SC2035` removed.
+- Verification:
+  - `dotnet build NetPrints.slnx -c Release -v q -tl:off --nologo` → 18 projects, 0 errors, 0 warnings.
+    `dotnet format NetPrints.slnx --verify-no-changes -v q` clean.
+  - `actionlint -shellcheck=<path>` on `ci.yml` and `release.yml`: no findings.
+  - E2E, normal (32-core box, 4 workers): 7/7 passed, 2 m 38.7 s.
+  - E2E, CI-like (`NETPRINTS_E2E_WORKERS=2 taskset -c 0-3`): 7/7 passed, 3 m 15.3 s (previously the
+    scenario this batch targets would have failed under the old dispatch-time timeout, per the
+    53.4 s "start" measurement above).
+  - Full suite (`dotnet test --solution NetPrints.slnx -c Release --no-build --no-progress --no-ansi
+    -- --ignore-exit-code 8`, from the worktree root): **856 total, 0 failed, 846 succeeded, 10
+    skipped**, 3 m 26.5 s.
+  - No Xvfb/`NetPrints.Desktop` processes left running after any run.
+  - CI: pushed to `003-core-refactor`; see the PR (danielmeza/netprints#6) for the resulting run.

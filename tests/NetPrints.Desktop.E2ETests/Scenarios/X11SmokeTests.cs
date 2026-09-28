@@ -16,13 +16,22 @@ namespace NetPrints.Desktop.E2ETests.Scenarios;
 /// </summary>
 public abstract class X11SmokeTestBase(DesktopWorkerPool pool) : SmokeScenarios, IAsyncDisposable
 {
+    /// <summary>
+    /// The test's own work budget: 180 s starting once it has rented a worker, not at dispatch
+    /// (batch D3). All seven scenarios dispatch at once (<c>maxParallelThreads: 8</c>) onto a pool
+    /// of far fewer workers, so most of them queue for a while first; counting that queue wait
+    /// against a fixed per-test <c>[Fact(Timeout = ...)]</c> (which starts the clock at dispatch)
+    /// let a busy run fail a scenario that never got a slow step of its own. See
+    /// docs/adr/0006-parallel-desktop-e2e.md.
+    /// </summary>
     protected const int Timeout = 180_000;
 
     private readonly string work = Directory.CreateTempSubdirectory("netprints-e2e-").FullName;
+    private readonly CancellationTokenSource timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(TestContext.Current.CancellationToken);
     private DesktopLease? lease;
     private X11Driver? driver;
 
-    protected static CancellationToken Token => TestContext.Current.CancellationToken;
+    protected CancellationToken Token => timeoutCts.Token;
 
     private static string Artifacts => Path.Combine(
         Environment.GetEnvironmentVariable("NETPRINTS_UI_ARTIFACTS") is { Length: > 0 } configured ? configured : Path.Combine(AppContext.BaseDirectory, "ui-artifacts"),
@@ -49,6 +58,7 @@ public abstract class X11SmokeTestBase(DesktopWorkerPool pool) : SmokeScenarios,
         LocalSdkLayout.Write(sample);
 
         lease = await pool.RentAsync(cancellationToken, work);
+        timeoutCts.CancelAfter(Timeout); // the budget starts now, not at dispatch (batch D3)
         driver = new X11Driver(lease.Server, lease.Editor, new Tool(lease.Server));
         var actor = Actor.Named("Ada").WhoCan(UseNetPrints.With(driver, new GtkFileDialogs(driver, lease.Editor)));
         await actor.Using<UseNetPrints>().MainWindow.GetAsync(cancellationToken);
@@ -92,41 +102,43 @@ public abstract class X11SmokeTestBase(DesktopWorkerPool pool) : SmokeScenarios,
         {
             // Best effort.
         }
+
+        timeoutCts.Dispose();
     }
 }
 
 public sealed class EditCompileAndRunTests(DesktopWorkerPool pool) : X11SmokeTestBase(pool)
 {
-    [Fact(Timeout = Timeout)]
+    [Fact]
     public Task EditCompileAndRun() => EditCompileAndRunAsync(Token);
 }
 
 public sealed class CreateProjectTests(DesktopWorkerPool pool) : X11SmokeTestBase(pool)
 {
-    [Fact(Timeout = Timeout)]
+    [Fact]
     public Task CreateProject() => CreateProjectAsync(Token);
 }
 
 public sealed class AddReferencesTests(DesktopWorkerPool pool) : X11SmokeTestBase(pool)
 {
-    [Fact(Timeout = Timeout)]
+    [Fact]
     public Task AddReferences() => AddReferencesAsync(typeof(object).Assembly.Location, Token);
 }
 
 public sealed class MinimizeAndRestoreClassWindowTests(DesktopWorkerPool pool) : X11SmokeTestBase(pool)
 {
-    [Fact(Timeout = Timeout)]
+    [Fact]
     public Task MinimizeAndRestoreClassWindow() => MinimizeAndRestoreClassWindowAsync(Token);
 }
 
 public sealed class PanCursorTests(DesktopWorkerPool pool) : X11SmokeTestBase(pool)
 {
-    [Fact(Timeout = Timeout)]
+    [Fact]
     public Task PanCursor() => PanCursorAsync(Token);
 }
 
 public sealed class DragFromListsTests(DesktopWorkerPool pool) : X11SmokeTestBase(pool)
 {
-    [Fact(Timeout = Timeout)]
+    [Fact]
     public Task DragFromLists() => DragFromListsAsync(Token);
 }

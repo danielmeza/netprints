@@ -59,6 +59,17 @@ splitting the work required splitting the class.
   hot spots and before/after regressions can be read off after a run without re-instrumenting.
   `SmokeScenarios.Step` is a no-op hook on the headless driver and a real `StepTimer` on the desktop
   driver.
+- **The per-test timeout starts after the rent, not at dispatch (batch D3).** All 7 scenarios dispatch
+  at once, but the pool has far fewer workers than that on a small CI runner (2 on GitHub's
+  `ubuntu-latest`, vs. `min(ProcessorCount / 2, 4)` on a bigger dev box), so most tests queue for a
+  worker first. Counting that queue wait against a fixed `[Fact(Timeout = ...)]` (which starts at
+  dispatch) let a busy CI run fail whichever scenario happened to queue longest and do the most work,
+  even though it never had a slow step of its own — this is what broke `DragFromLists` on every CI run
+  after D2 (see Batch D3 in implementation-notes.md). Each test now owns a `CancellationTokenSource`
+  linked to the test's own cancellation, and calls `CancelAfter(Timeout)` itself right after
+  `pool.RentAsync` returns; `[Fact(Timeout = ...)]` is removed. The queue wait itself is unbounded per
+  test, backstopped by the CI job's existing 30-minute `timeout-minutes` (the same net a leaked worker
+  would already need).
 
 ### The serial-collection-per-shared-resource rule
 
@@ -94,6 +105,10 @@ every future test added to it, defeating this batch's work.
 - The pool's worker count is a shared ceiling: `NETPRINTS_E2E_WORKERS` above the number of scenario
   classes wastes displays, and a value of 1 degrades to the old serial behavior (still correct, just
   slow) — useful for isolating a flake.
+- CI pins `NETPRINTS_E2E_WORKERS: 2` explicitly (`.github/workflows/ci.yml`, batch D3) rather than
+  relying on the implicit `ProcessorCount`-derived default, so a future change in GitHub's runner
+  sizing doesn't silently retune E2E concurrency (and the CPU contention/timing budget it implies)
+  without review.
 - `LocalSdkLayout` (previously three near-identical copies in `Core.Tests`, `Testing.Ui` and a third
   helper in `Editor.Tests`) is now one implementation in `tests/NetPrints.Testing/LocalSdkLayout.cs`,
   referenced by every test assembly that builds a temp copy of a sample against the repository's own

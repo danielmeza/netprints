@@ -147,9 +147,13 @@ jobs:
       # skip condition that fires unexpectedly) into a failure, so this job cannot go green with
       # zero real coverage: neither "zero tests ran" (exit code 8, not ignored here) nor "every
       # test skipped" can pass silently.
+      # NETPRINTS_E2E_WORKERS pins the desktop worker pool to this runner's standard 4 vCPUs
+      # (min(ProcessorCount/2, 4) would already compute 2 here; pinned so a runner-size change
+      # doesn't silently retune concurrency, batch D3).
       - name: E2E tests
         env:
           NETPRINTS_E2E: 1
+          NETPRINTS_E2E_WORKERS: 2
           NETPRINTS_UI_ARTIFACTS: ${{ github.workspace }}/TestResults/ui
         run: >
           dotnet test --project tests/NetPrints.Desktop.E2ETests -c Release --no-build
@@ -163,6 +167,7 @@ jobs:
           path: |
             TestResults/**/*.trx
             TestResults/ui/**
+            TestResults/e2e-timings-*.md
           if-no-files-found: warn
 
   packages:
