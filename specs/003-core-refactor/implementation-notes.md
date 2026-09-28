@@ -4619,3 +4619,153 @@ E2E suite (AGENTS.md's "A stray saved variable under samples/ broke 11 tests on 
   contract fix in a future batch so the two sections agree; (2) whether the package README's fallback
   commit branch (`master`, changed from the `readme-craft` example's `main`) should instead be read from
   a property, if a future batch renames the default branch.
+
+## Sub-phase L batch L2 (T112–T114, plus two L1 follow-ups)
+
+- **Follow-up a (`NoUnlistedBuildWarningSuppressions`)**: extended the test to also flag an unlisted
+  `<MSBuildWarningsNotAsErrors>`/`<MSBuildWarningsAsMessages>` engine-level entry, via a new
+  `(File, Code)` allowlist seeded with `("Directory.Build.props", "MINVER1001")` (contract §1: MinVer
+  warns with no `.git` history). Proved red (removed the allowlist entry, `dotnet test --filter-class
+  '*SourceHygieneTests*'` failed on exactly that line) then green (restored it, passed). Documented the
+  allowance in a new ADR-0003 "Build-property allowances" subsection (one row).
+- **Follow-up b**: fixed contract §3's Core/Reflection row, which listed `NoWarn CS1591` and
+  contradicted §2 and T111's own (already-deviated, per L1's notes) implementation; the cell now says
+  `GenerateDocumentationFile` is repo-wide via `src/Directory.Build.props` and no project suppresses
+  CS1591.
+- **T112 (§4, local feed)**: `NuGet.config` (local-packages then nuget.org), `local-packages/.gitkeep`,
+  the `.gitignore` block (local-packages/ plus the docs/site build-output patterns T116–T118 will need),
+  `scripts/pack-local.sh` (packs every project under a `0.1.0-local.<timestamp>` `MinVerVersionOverride`).
+  Accept: restore with an empty `local-packages/` succeeded (no NU1301); `--print-version` printed only a
+  matching version and filled the feed; `git status --porcelain` showed no file under `local-packages/`
+  both before and after a real pack.
+- **T113 (§4 steps 1–4, `packages` CI job)**: `scripts/verify-packages.sh <feed> <version>` runs
+  entirely in a `mktemp -d` with an isolated `NUGET_PACKAGES`: the exact seven-file list; each `.nupkg`'s
+  nuspec (license, icon, readme, repository+commit) and contents (README has no HTML tag or relative
+  link/image; Core/Reflection ship `lib/net10.0/*.dll+.xml`; Cli ships the `DotnetTool` packageType and
+  `BuildHost-netcore/`; Sdk ships `build/*.props+.targets`, `tools/net10.0/NetPrints.Generator.dll`, no
+  `lib/`); a global tool install and `--version` check; an SDK build of a copied HelloWorld against the
+  feed, byte-comparing the regenerated `.netpc.g.cs` to the committed one, then `dotnet run` and
+  `netprints -r` both printing "Hello, World!". Added the `packages` job to `ci.yml` (MinVer-version
+  regex check, pack, verify). Proved RL-T02/RL-T03 by hand: removing a package from a fresh feed failed
+  step 1 naming the missing file; replacing a packaged `README.md` with one containing `<p>` (rezipped
+  in place, not through the real pack pipeline — the real `PackageReadme.targets` conversion already
+  strips a lone `<p>`) failed step 2 naming the HTML-tag check. Both exited non-zero with the check
+  named, as required.
+- **T114 (§5/R19, self-contained editor)**: `NetPrints.Desktop.csproj` gained the three publish
+  properties (`PublishSingleFile`/`PublishTrimmed`/`PublishAot` all `false`) and
+  `InternalsVisibleTo NetPrints.Editor.Tests` (for `ProjectCheckTests`). `ProjectCheck.RunAsync`
+  (internal, two overloads: a public-facing one that does the real `MsBuildRegistration`/
+  `MsBuildProjectSystem` wiring, and an internal one taking every MSBuild-dependent input as a
+  parameter so tests can force the "no SDK" path without touching the real, process-wide
+  `MSBuildLocator` state) runs the table of release contract §5 in order: version line (informational
+  version, `+<sha>` stripped), `msbuild:`/NPW001, `IProjectSystem.LoadAsync` + `references:` (finds
+  `System.Console` by file name among `ProjectSnapshot.References`), `ProjectPersistence.LoadAsync` +
+  `graphs:` (a `DocumentIssueSeverity.Error` fails here via the same `DiagnosticExtensions.ToDiagnostic`
+  used elsewhere), translate + `CodeAnalysisSession.AnalyzeAsync` + `analysis:`, `BuildAsync` +
+  `build:`, and `--run` + `run: exit <n>`. `Program.Main` became `async Task<int>` (STAThread still
+  holds for the normal editor path: no `await` runs before the synchronous
+  `StartWithClassicDesktopLifetime` call) and branches to `ProjectCheck.RunAsync` on
+  `--check-project`.
+  - **Shared with the editor's live analysis, not duplicated**: pulled `CodeAnalysisHost.TranslateAll`
+    out into a new `NetPrints.Core.Translator.ProjectTranslation.TranslateAll(Project,
+    TranslationEnvironment)` (both call sites use it now) and `NetPrints.Generator.Program`'s private
+    `FormatCanonical` out into `NetPrints.Core.Compilation.CodeDiagnosticFormat.ToCanonicalLine`
+    (`CodeDiagnostic.cs`), reused by `ProjectCheck` for document-issue, analysis and build-message
+    lines alike.
+  - **`MsBuildRegistration.RegisteredInstance`** (new public property): `EnsureRegistered` returned
+    only a `bool`; `ProjectCheck`'s `msbuild: <path> (<version>)` line needs the actual
+    `VisualStudioInstance`, so registration now records it when it performs one (unchanged, `null`, if
+    `IsRegistered` was already true from an earlier call in the process).
+  - **Hardening found via manual testing, not part of the task text but necessary for a headless tool
+    that must never crash on a malformed project**: a hand-edited graph with a required data pin left
+    fully unset (no connection, no default) makes `ExecutionGraphTranslator.GetPinIncomingValue` throw a
+    raw `InvalidOperationException`, uncaught by either the old `CodeAnalysisHost.TranslateAll` or the
+    new shared `ProjectTranslation.TranslateAll`. Added a boundary `catch (Exception ex) when (ex is not
+    OperationCanceledException)` around the whole load/translate/analyze/build/run block (mirrors
+    `NetPrints.Generator.Program.Main`'s own top-level catch), reporting `ex.ToString()` to stderr and
+    exiting 1 instead of aborting the process. Verified before/after with a copy of HelloWorld whose
+    `callMethod` node's `pins` array was deleted: crashed (`Aborted`, exit 134) before, `error`-free
+    graceful exit 1 after. Not a fix to the underlying translator/mapper gap (out of scope for this
+    sub-phase) — flagged below for the coordinator.
+  - **Deviation, real integration bug found while implementing §5, not anticipated by the contract**:
+    `dotnet publish src/NetPrints.Desktop -c Release -r linux-x64 --self-contained ...` failed three
+    ways in sequence once actually run, because `NetPrints.Editor` has a real `ProjectReference` to
+    `NetPrints.Generator` (`OutputType=Exe`, for `ClassEditorVM`/`MainEditorVM`'s direct call to
+    `GraphCodeGenerator`) and the .NET SDK treats a referenced `Exe` project as a sibling to also
+    publish for the same RID/self-contained-ness: NETSDK1152 (duplicate apphost/runtimeconfig at the
+    same publish path — Generator's own apphost; `UseAppHost=false` on `NetPrints.Generator.csproj`
+    fixed that one, and is correct regardless since Generator is never run as its own executable, only
+    `dotnet exec`'d by `NetPrints.Sdk.targets` or referenced for its API), then NETSDK1150 (the now-framework-dependent
+    Generator can't be referenced by the self-contained Desktop/Editor chain — a documented, intentional
+    SDK check for exactly this "helper exe referenced by an app" shape, aka.ms/netsdk1150), then
+    NETSDK1067 (Generator's own transitively-triggered "publish me too" pass still inherited
+    `SelfContained=true` with `UseAppHost=false`). `ValidateExecutableReferencesMatchSelfContained=false`
+    (the documented fix for NETSDK1150/1151) and several `ProjectReference`
+    `UndefineProperties`/`Properties` combinations did not stop the transitive self-contained publish
+    pass (confirmed with `-v:diag`: `NetPrints.Desktop.csproj` builds `NetPrints.Generator.csproj`
+    directly, on its own node, for `GetTargetFrameworks`/default targets — not through the
+    intermediate `NetPrints.Editor` reference's item metadata at all). The fix that actually works:
+    `NetPrints.Editor.csproj`'s `ProjectReference` to Generator is now
+    `ReferenceOutputAssembly="false"` (build-order only, mirrors `NetPrints.Sdk.csproj`'s own reference
+    to the same project), which removes Generator from that special "referenced executable" publish
+    graph entirely, paired with a plain `<Reference Include="NetPrints.Generator">` with a `HintPath`
+    to its normal (non-RID) build output for the actual compile-time and copy-to-output dependency.
+    Verified: `dotnet publish src/NetPrints.Desktop -c Release -r linux-x64 --self-contained
+    -p:PublishSingleFile=false -p:PublishTrimmed=false -o /tmp/npdesktop-out` now succeeds with a clean
+    layout (`NetPrints.Generator.dll`/`.pdb`/`.xml`/`.runtimeconfig.json` copied once, no RID
+    subfolder, no duplicate apphost); `dotnet pack NetPrints.slnx -c Release` still produces the same
+    seven RL-T01 files with `tools/net10.0/NetPrints.Generator.dll` intact in the Sdk package
+    (packing was never on the affected code path, but re-verified since both projects changed).
+    Flagged for the coordinator: this is a real, previously-undiscovered gap between an earlier batch's
+    `NetPrints.Editor -> NetPrints.Generator` reference and this task's new self-contained RID publish
+    requirement — worth a short ADR note or a call-out in project-system.md if a future project ever
+    adds a second `OutputType=Exe` reference like this one.
+  - `scripts/smoke-desktop.sh <publish-dir>`: layout check (apphost + core DLLs + `BuildHost-netcore/`
+    present, no missing files from single-file bundling), `dotnet build src/NetPrints.Generator`
+    (Debug, in-repo SDK mode), then `env -u DISPLAY -u WAYLAND_DISPLAY <publish-dir>/NetPrints.Desktop
+    --check-project samples/HelloWorld/HelloWorld.csproj --run` with output-line assertions, then
+    `git diff --exit-code -- samples/`. Added the `desktop-publish` CI job (publish + smoke, contract
+    §6, verbatim).
+  - **RL-T07**: `tests/NetPrints.Core.Tests/Architecture/NoRuntimeDirectoryReferencesTests.cs` (new
+    `Architecture/` folder) greps `src/**/*.cs` for `RuntimeEnvironment.GetRuntimeDirectory`,
+    `ReferenceAssemblyResolver` and `Basic.Reference.Assemblies`, and every `.csproj`/`.props`/
+    `.targets` (outside `legacy/`) for `Basic.Reference.Assemblies`: all empty today (T063 already
+    removed the P0 fallback), and this keeps it that way.
+  - **`ProjectCheckTests.cs`** (new, `tests/NetPrints.Editor.Tests/Hosting/`; added a
+    `ReferenceOutputAssembly`-default `ProjectReference` to `NetPrints.Desktop.csproj` from
+    `NetPrints.Editor.Tests.csproj` for this one test class): exit 1 via the public overload against a
+    real temp copy of HelloWorld (`TestPaths.WriteLocalSdkLayout` + a JSON edit renaming the
+    `WriteLine` call's method to `DoesNotExist`, giving a genuine `CS0117` Roslyn error — asserted
+    `analysis: 1 errors, 0 warnings` and the canonical `error CS0117`/`(graph …)` line); exit 2 for a
+    `null` path; exit 3 via the internal overload with `msBuildAvailable: false` and a real
+    `NoSdkProjectSystem` (no fake registration needed, and no interference with
+    `MsBuildTestInitializer`'s process-wide real registration), asserting the output contains
+    `NPW001`. Moved `ProjectOpenPerformanceTests`' own private `WriteLocalSdkLayout`/
+    `FindRepositoryRoot`/`DetectConfiguration` (an exact duplicate) into `TestPaths` as
+    `WriteLocalSdkLayout`/`FindRepositoryRoot`, shared by both test classes now, instead of adding a
+    third copy for `ProjectCheckTests` — a fourth near-identical copy already exists in
+    `NetPrints.Core.Tests/Projects/LocalSdkLayout.cs` and a fifth in
+    `NetPrints.Testing.Ui/Hosting/LocalSdkLayout.cs`; consolidating those two into the shared
+    `NetPrints.Testing` project (which every test assembly already references, and whose own doc
+    comment says it's meant for exactly this) is a good follow-up but out of scope for this batch
+    (cross-project, touches files in `Core.Tests`/`Editor.UITests`/`Desktop.E2ETests` this batch
+    otherwise doesn't touch).
+- Verification: `dotnet build NetPrints.slnx -c Release -v q -tl:off --nologo` → 18 projects, 0
+  errors, 0 warnings. `dotnet format NetPrints.slnx --verify-no-changes` clean. Full suite (`dotnet test
+  --solution NetPrints.slnx -c Release --no-build --no-progress --no-ansi -- --ignore-exit-code 8`):
+  **832 total, 0 failed, 822 succeeded, 10 skipped** (5 more than L1's 827: the 2 new
+  `NoRuntimeDirectoryReferencesTests` plus the 3 new `ProjectCheckTests`). Desktop E2E (`NETPRINTS_E2E=1
+  dotnet test --project tests/NetPrints.Desktop.E2ETests -c Release --no-build --no-progress --no-ansi
+  -- --fail-skips on`): **7 total, 0 failed, 7 succeeded, 0 skipped** (run this batch because T114
+  touches `Program.Main`/Desktop runtime code). `git status --short samples
+  tests/NetPrints.Core.Tests/Fixtures` empty throughout, including after every `scripts/smoke-desktop.sh`
+  run (its own step 4 checks the same thing).
+- Open questions for review: (1) the `NetPrints.Editor -> NetPrints.Generator` self-contained-publish
+  fix above (`ReferenceOutputAssembly="false"` + plain `Reference`) works and is verified, but is a
+  workaround for a genuine .NET SDK limitation (a library-like `OutputType=Exe` project referenced by an
+  app that itself gets RID-published); worth a one-line ADR-0002 note in T115/T121's batch so a future
+  contributor doesn't "simplify" it back to a plain `ProjectReference`; (2) the `ExecutionGraphTranslator`
+  crash on a fully-unset required data pin (no connection, no default) found while testing this batch —
+  `ProjectCheck` now catches it at its own boundary, but the underlying gap (should this be a
+  `TranslationException`/`NPT` diagnostic instead of a raw `InvalidOperationException`?) is unfixed and
+  pre-dates this batch; (3) the `LocalSdkLayout` five-way duplication across test projects noted above.

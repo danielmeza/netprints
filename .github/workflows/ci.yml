@@ -199,3 +199,30 @@ jobs:
         run: |
           [[ "${{ steps.pack.outputs.version }}" =~ ^0\.1\.0-local\.[0-9]{14}$ ]]
           scripts/verify-packages.sh local-packages "${{ steps.pack.outputs.version }}"
+
+  desktop-publish:
+    name: Self-contained editor smoke (linux-x64)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', 'Directory.Build.props', 'src/Directory.Build.props', 'tests/Directory.Build.props', 'global.json', '**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Publish
+        run: >
+          dotnet publish src/NetPrints.Desktop -c Release -r linux-x64 --self-contained
+          -p:PublishSingleFile=false -p:PublishTrimmed=false -o out/linux-x64
+
+      - name: Smoke (headless project check)
+        run: scripts/smoke-desktop.sh out/linux-x64

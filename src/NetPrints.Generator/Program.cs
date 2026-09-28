@@ -56,7 +56,7 @@ internal static class Program
                 {
                     foreach (CodeDiagnostic diagnostic in extensionDiagnostics)
                     {
-                        Console.WriteLine(FormatCanonical(diagnostic));
+                        Console.WriteLine(CodeDiagnosticFormat.ToCanonicalLine(diagnostic));
                     }
 
                     return ExitGenerationErrors;
@@ -81,40 +81,11 @@ internal static class Program
         {
             foreach (CodeDiagnostic diagnostic in result.Diagnostics)
             {
-                Console.WriteLine(FormatCanonical(diagnostic));
+                Console.WriteLine(CodeDiagnosticFormat.ToCanonicalLine(diagnostic));
                 hasError |= diagnostic.Severity == CodeDiagnosticSeverity.Error;
             }
         }
 
         return hasError ? ExitGenerationErrors : ExitSuccess;
-    }
-
-    /// <summary>
-    /// Formats <paramref name="diagnostic"/> as one MSBuild canonical-format line (project-system.md
-    /// §3): with a <see cref="CodeDiagnostic.Span"/>, <c>&lt;path&gt;(&lt;line&gt;,&lt;col&gt;): …</c>;
-    /// without one but with a <see cref="CodeDiagnostic.GraphKey"/>, <c>&lt;path&gt;: … (graph
-    /// &lt;key&gt;, node &lt;id&gt;)</c>; otherwise just <c>&lt;path&gt;: …</c>.
-    /// </summary>
-    /// <param name="diagnostic">Diagnostic to format.</param>
-    /// <returns>The formatted line.</returns>
-    private static string FormatCanonical(CodeDiagnostic diagnostic)
-    {
-        string severity = diagnostic.Severity switch
-        {
-            CodeDiagnosticSeverity.Error => "error",
-            CodeDiagnosticSeverity.Warning => "warning",
-            _ => "info",
-        };
-
-        string path = diagnostic.SourcePath ?? "<unknown>";
-        string location = diagnostic.Span is { } span
-            ? $"{path}({span.Start.Line + 1},{span.Start.Character + 1})"
-            : path;
-
-        string suffix = diagnostic.GraphKey is not null
-            ? $" (graph {diagnostic.GraphKey}, node {diagnostic.NodeId})"
-            : string.Empty;
-
-        return $"{location}: {severity} {diagnostic.Id}: {diagnostic.Message}{suffix}";
     }
 }

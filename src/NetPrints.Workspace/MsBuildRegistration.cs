@@ -19,6 +19,15 @@ namespace NetPrints.Workspace;
 public static class MsBuildRegistration
 {
     /// <summary>
+    /// The instance registered by the most recent successful call to <see cref="EnsureRegistered"/> in
+    /// this process that actually performed a registration (project-system.md §5,
+    /// <c>NetPrints.Desktop.ProjectCheck</c>'s <c>msbuild: &lt;path&gt; (&lt;version&gt;)</c> line).
+    /// <see langword="null"/> until a call registers one, and unchanged by a later call that finds
+    /// <see cref="MSBuildLocator.IsRegistered"/> already <see langword="true"/>.
+    /// </summary>
+    public static VisualStudioInstance? RegisteredInstance { get; private set; }
+
+    /// <summary>
     /// Ensures an MSBuild instance is registered with <see cref="MSBuildLocator"/>: the newest Visual
     /// Studio instance <see cref="MSBuildLocator.QueryVisualStudioInstances()"/> reports, or (when none
     /// is found) whatever <see cref="MSBuildLocator.RegisterDefaults"/> resolves, typically the
@@ -43,12 +52,13 @@ public static class MsBuildRegistration
         if (instance is not null)
         {
             MSBuildLocator.RegisterInstance(instance);
+            RegisteredInstance = instance;
             return true;
         }
 
         try
         {
-            MSBuildLocator.RegisterDefaults();
+            RegisteredInstance = MSBuildLocator.RegisterDefaults();
             return true;
         }
         catch (InvalidOperationException)

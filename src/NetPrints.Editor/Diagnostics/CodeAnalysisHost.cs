@@ -114,8 +114,8 @@ public sealed class CodeAnalysisHost : ICodeAnalysisHost
     {
         try
         {
-            TranslationResult? translation = null;
-            await dispatcher.InvokeAsync(() => translation = TranslateAll(project)).ConfigureAwait(false);
+            ProjectTranslationResult? translation = null;
+            await dispatcher.InvokeAsync(() => translation = ProjectTranslation.TranslateAll(project, extensions.Current.Translation)).ConfigureAwait(false);
             if (translation is null)
             {
                 return;
@@ -140,33 +140,6 @@ public sealed class CodeAnalysisHost : ICodeAnalysisHost
             Log.CodeAnalysisFailed(logger, ex, project.Name);
         }
     }
-
-    /// <summary>
-    /// Translates every class of <paramref name="project"/> on the calling thread (the UI thread: the
-    /// model is not thread-safe). A class that fails to translate contributes an <c>NPT</c> diagnostic
-    /// instead of being skipped silently.
-    /// </summary>
-    private TranslationResult TranslateAll(Project project)
-    {
-        var classes = new Dictionary<string, TranslatedClass>(StringComparer.Ordinal);
-        var diagnostics = new List<CodeDiagnostic>();
-
-        foreach (ClassGraph cls in project.Classes)
-        {
-            try
-            {
-                classes[cls.FullName] = new ClassTranslator(extensions.Current.Translation).Translate(cls);
-            }
-            catch (TranslationException ex)
-            {
-                diagnostics.Add(DiagnosticMapper.FromTranslation(ex, cls));
-            }
-        }
-
-        return new TranslationResult(classes, diagnostics);
-    }
-
-    private sealed record TranslationResult(IReadOnlyDictionary<string, TranslatedClass> Classes, IReadOnlyList<CodeDiagnostic> Diagnostics);
 
     /// <inheritdoc/>
     public void Dispose()

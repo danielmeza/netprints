@@ -3,6 +3,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Logging;
 using Avalonia.Media;
@@ -18,17 +20,28 @@ namespace NetPrints.Desktop;
 
 internal static class Program
 {
+    /// <summary>The first argument that switches <see cref="Main"/> into <see cref="ProjectCheck"/> instead of starting the editor.</summary>
+    private const string CheckProjectArgument = "--check-project";
+
     /// <summary>
     /// Starts the NetPrints editor. A single argument is the path of a project (.csproj) to open.
+    /// <c>--check-project &lt;path.csproj&gt; [--run]</c> instead runs <see cref="ProjectCheck"/> and
+    /// exits without starting Avalonia (release contract §5): no <see langword="await"/> runs before
+    /// Avalonia's own synchronous startup call below, so the thread stays STA for that path.
     /// </summary>
     [STAThread]
-    public static int Main(string[] args)
+    public static async Task<int> Main(string[] args)
     {
         using ILoggerFactory loggerFactory = CreateLoggerFactory();
         Logger.Sink = new AvaloniaLogSink(loggerFactory);
 
         // Must run before any Microsoft.Build-namespace type is loaded (project-system.md §4).
         bool msBuildAvailable = MsBuildRegistration.EnsureRegistered(loggerFactory.CreateLogger(nameof(MsBuildRegistration)));
+
+        if (args is [CheckProjectArgument, ..])
+        {
+            return await ProjectCheck.RunAsync(args.ElementAtOrDefault(1), args.Contains("--run", StringComparer.Ordinal), Console.Out, CancellationToken.None);
+        }
 
         var settings = new JsonFileSettingsStore(JsonFileSettingsStore.DefaultFilePath(), loggerFactory.CreateLogger<JsonFileSettingsStore>());
         var extensions = new ExtensionHost(

@@ -13,7 +13,11 @@ namespace NetPrints.Editor.Hosting;
 /// </summary>
 public sealed class NoSdkProjectSystem : IProjectSystem
 {
-    private const string Message = "No .NET SDK could be found; projects cannot be opened, created or built.";
+    /// <summary>
+    /// Reported through every thrown <see cref="ProjectSystemException"/>; also used, unthrown, by
+    /// <c>NetPrints.Desktop.ProjectCheck</c>'s own registration-failure message (release contract §5).
+    /// </summary>
+    public const string Message = "No .NET SDK could be found; projects cannot be opened, created or built.";
 
     /// <inheritdoc/>
     public Task<ProjectSnapshot> LoadAsync(string projectFilePath, CancellationToken cancellationToken) => throw NoSdk();

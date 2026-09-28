@@ -40,7 +40,7 @@ public sealed class ProjectOpenPerformanceTests : IDisposable
             File.Copy(file, Path.Combine(directory, Path.GetFileName(file)));
         }
 
-        WriteLocalSdkLayout(directory);
+        TestPaths.WriteLocalSdkLayout(directory);
         string csprojPath = Path.Combine(directory, "HelloWorld.csproj");
 
         // Warm-up: the first LoadAsync on a fresh copy restores (obj/project.assets.json is missing).
@@ -73,66 +73,5 @@ public sealed class ProjectOpenPerformanceTests : IDisposable
 
         Assert.True(reflection.IsLoaded);
         Assert.True(stopwatch.ElapsedMilliseconds < OpenBoundMs, $"opening HelloWorld took {stopwatch.ElapsedMilliseconds} ms");
-    }
-
-    /// <summary>
-    /// Writes the same in-repo <c>NetPrints.Sdk</c> development-mode files as <c>samples/</c>
-    /// (project-system.md §2.1), with absolute paths so they resolve from a temp copy.
-    /// </summary>
-    private static void WriteLocalSdkLayout(string targetDirectory)
-    {
-        string repositoryRoot = FindRepositoryRoot();
-        string generatorPath = Path.Combine(repositoryRoot, "src", "NetPrints.Generator", "bin",
-            DetectConfiguration(), "net10.0", "NetPrints.Generator.dll");
-        string sdkPropsPath = Path.Combine(repositoryRoot, "src", "NetPrints.Sdk", "build", "NetPrints.Sdk.props");
-        string sdkTargetsPath = Path.Combine(repositoryRoot, "src", "NetPrints.Sdk", "build", "NetPrints.Sdk.targets");
-
-        File.WriteAllText(Path.Combine(targetDirectory, "Directory.Build.props"), $"""
-            <Project>
-              <PropertyGroup>
-                <NetPrintsUseLocalSdk>true</NetPrintsUseLocalSdk>
-                <NetPrintsGeneratorPath>{generatorPath}</NetPrintsGeneratorPath>
-              </PropertyGroup>
-
-              <Import Project="{sdkPropsPath}" />
-            </Project>
-
-            """);
-
-        File.WriteAllText(Path.Combine(targetDirectory, "Directory.Build.targets"), $"""
-            <Project>
-              <Import Project="{sdkTargetsPath}" />
-            </Project>
-
-            """);
-
-        File.WriteAllText(Path.Combine(targetDirectory, "Directory.Packages.props"), """
-            <Project>
-              <PropertyGroup>
-                <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
-              </PropertyGroup>
-            </Project>
-
-            """);
-    }
-
-    private static string FindRepositoryRoot()
-    {
-        for (DirectoryInfo? dir = new(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
-        {
-            if (File.Exists(Path.Combine(dir.FullName, "NetPrints.slnx")))
-            {
-                return dir.FullName;
-            }
-        }
-
-        throw new InvalidOperationException($"Could not find the repository root (NetPrints.slnx) above '{AppContext.BaseDirectory}'.");
-    }
-
-    private static string DetectConfiguration()
-    {
-        string[] segments = AppContext.BaseDirectory.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        int frameworkIndex = Array.LastIndexOf(segments, "net10.0");
-        return frameworkIndex > 0 ? segments[frameworkIndex - 1] : "Release";
     }
 }

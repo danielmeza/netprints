@@ -36,7 +36,22 @@
     <ProjectReference Include="..\NetPrints.Reflection\NetPrints.Reflection.csproj" />
     <ProjectReference Include="..\NetPrints.Serialization\NetPrints.Serialization.csproj" />
     <ProjectReference Include="..\NetPrints.Workspace\NetPrints.Workspace.csproj" />
-    <ProjectReference Include="..\NetPrints.Generator\NetPrints.Generator.csproj" />
+    <!-- Build-order only (mirrors NetPrints.Sdk.csproj's own reference): keeps NetPrints.Generator out
+         of the SDK's "referenced executable" publish graph (release contract §5, NETSDK1067/1150/1151),
+         which otherwise tries to publish it as its own self-contained sibling app whenever the editor
+         itself is published self-contained for a RID, even though Generator only ever runs via
+         "dotnet exec" (NetPrints.Sdk.targets) or as a plain library reference (below). -->
+    <ProjectReference Include="..\NetPrints.Generator\NetPrints.Generator.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Plain (non-project) reference to the build-order dependency above: MainEditorVM/ClassEditorVM
+         call NetPrints.Generator.GraphCodeGenerator directly, so the assembly is a real compile-time and
+         runtime dependency, copied to this project's own output like any other reference. -->
+    <Reference Include="NetPrints.Generator">
+      <HintPath>..\NetPrints.Generator\bin\$(Configuration)\net10.0\NetPrints.Generator.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
   </ItemGroup>
 
   <ItemGroup>

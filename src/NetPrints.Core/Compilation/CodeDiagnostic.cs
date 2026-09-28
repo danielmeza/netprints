@@ -1,4 +1,5 @@
 #nullable enable
+using System;
 using Microsoft.CodeAnalysis.Text;
 
 namespace NetPrints.Compilation;
@@ -54,3 +55,42 @@ public sealed record CodeDiagnostic(
     string? NodeId,
     string? SourcePath,
     LinePositionSpan? Span);
+
+/// <summary>
+/// Formats a <see cref="CodeDiagnostic"/> as one MSBuild canonical-format line (project-system.md §3),
+/// shared by <c>NetPrints.Generator.Program</c> and <c>NetPrints.Desktop.ProjectCheck</c> so both print
+/// the same shape.
+/// </summary>
+public static class CodeDiagnosticFormat
+{
+    /// <summary>
+    /// Formats <paramref name="diagnostic"/>: with a <see cref="CodeDiagnostic.Span"/>,
+    /// <c>&lt;path&gt;(&lt;line&gt;,&lt;col&gt;): …</c>; without one but with a
+    /// <see cref="CodeDiagnostic.GraphKey"/>, <c>&lt;path&gt;: … (graph &lt;key&gt;, node
+    /// &lt;id&gt;)</c>; otherwise just <c>&lt;path&gt;: …</c>.
+    /// </summary>
+    /// <param name="diagnostic">Diagnostic to format.</param>
+    /// <returns>The formatted line.</returns>
+    public static string ToCanonicalLine(CodeDiagnostic diagnostic)
+    {
+        ArgumentNullException.ThrowIfNull(diagnostic);
+
+        string severity = diagnostic.Severity switch
+        {
+            CodeDiagnosticSeverity.Error => "error",
+            CodeDiagnosticSeverity.Warning => "warning",
+            _ => "info",
+        };
+
+        string path = diagnostic.SourcePath ?? "<unknown>";
+        string location = diagnostic.Span is { } span
+            ? $"{path}({span.Start.Line + 1},{span.Start.Character + 1})"
+            : path;
+
+        string suffix = diagnostic.GraphKey is not null
+            ? $" (graph {diagnostic.GraphKey}, node {diagnostic.NodeId})"
+            : string.Empty;
+
+        return $"{location}: {severity} {diagnostic.Id}: {diagnostic.Message}{suffix}";
+    }
+}

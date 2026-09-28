@@ -7,6 +7,19 @@
     <WarningsAsErrors>$(WarningsAsErrors);CA1848;CA2254</WarningsAsErrors>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <!-- Release archives are self-contained folders (release contract §5): the editor loads MSBuild and
+         Roslyn's build host from disk and compiles against arbitrary assemblies, so no single-file,
+         trimming or Native AOT. -->
+    <PublishSingleFile>false</PublishSingleFile>
+    <PublishTrimmed>false</PublishTrimmed>
+    <PublishAot>false</PublishAot>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="NetPrints.Editor.Tests" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Avalonia.Desktop" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
