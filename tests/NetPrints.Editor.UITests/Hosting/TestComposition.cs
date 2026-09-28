@@ -1,8 +1,8 @@
 using System.Reactive.Concurrency;
-using Avalonia.Controls;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Logging;
 using NetPrints.Editor.Diagnostics;
+using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Hosting.Avalonia;
 using NetPrints.Editor.Main;
 using NetPrints.Projects;
@@ -11,23 +11,33 @@ using NetPrints.Serialization.Mapping;
 using NetPrints.Serialization.Stores;
 using NetPrints.Workspace;
 
-namespace NetPrints.Editor.Hosting;
+namespace NetPrints.Editor.UITests.Hosting;
 
 /// <summary>
-/// Composition root: creates the Avalonia service implementations, the main view model and the
-/// main window (no DI container).
+/// Builds the same <see cref="EditorContext"/> as <see cref="EditorComposition"/> from
+/// <see cref="EditorHostServices"/>, but with the given dialogs, file picker and process launcher
+/// standing in for the production Avalonia implementations. Production code takes no test-only hook
+/// (ED-T14), so the headless UI tests own this composition instead of customizing
+/// <see cref="EditorComposition"/>.
 /// </summary>
-public sealed class EditorComposition : IDisposable
+public sealed class TestComposition : IDisposable
 {
-    /// <param name="host">Process-wide services created once by the host (desktop, headless tests).</param>
-    public EditorComposition(EditorHostServices host)
+    private readonly string? hostChannelError;
+    private readonly PersistenceBinding persistenceBinding;
+    private readonly ICodeAnalysisHost codeAnalysis;
+
+    /// <param name="host">Process-wide services created once by the host.</param>
+    /// <param name="dialogs">Stands in for the production modal dialogs.</param>
+    /// <param name="filePicker">Stands in for the production native file/save pickers.</param>
+    /// <param name="processes">Stands in for the production process launcher.</param>
+    public TestComposition(EditorHostServices host, IEditorDialogs dialogs, IFilePickerService filePicker, IProcessLauncher processes)
     {
         hostChannelError = host.HostChannelError;
         var dispatcher = new AvaloniaUiDispatcher();
         Windows = new WindowService();
 
         IProjectSystem projects = host.MsBuildAvailable
-            ? new MsBuildProjectSystem(new ProjectSystemOptions(new ExtensionProjectProperties(host.Extensions), NetPrintsSdkVersion), new ProcessRunner(),
+            ? new MsBuildProjectSystem(new ProjectSystemOptions(new ExtensionProjectProperties(host.Extensions), EditorComposition.NetPrintsSdkVersion), new ProcessRunner(),
                 host.LoggerFactory.CreateLogger<MsBuildProjectSystem>())
             : new NoSdkProjectSystem();
 
@@ -40,42 +50,15 @@ public sealed class EditorComposition : IDisposable
         var reflection = new ReflectionHost(dispatcher, host.Extensions, host.LoggerFactory.CreateLogger<ReflectionHost>());
         codeAnalysis = new CodeAnalysisHost(reflection, host.Extensions, DefaultScheduler.Instance, dispatcher, host.LoggerFactory.CreateLogger<CodeAnalysisHost>());
 
-        var context = new EditorContext(
-            new StorageFilePickerService(() => Windows.ActiveWindow),
-            new EditorDialogs(() => Windows.ActiveWindow),
-            new AvaloniaClipboardService(() => Windows.ActiveWindow),
-            dispatcher,
-            reflection,
-            Windows,
-            new ProcessLauncher(),
-            DefaultScheduler.Instance,
-            () => new WeakReferenceMessenger(),
-            host.LoggerFactory,
-            projects,
-            persistence,
-            host.Extensions,
-            host.HostChannel,
-            host.Settings,
-            codeAnalysis);
-        Context = context;
+        Context = new EditorContext(filePicker, dialogs, new AvaloniaClipboardService(() => Windows.ActiveWindow), dispatcher, reflection, Windows,
+            processes, DefaultScheduler.Instance, () => new WeakReferenceMessenger(), host.LoggerFactory, projects, persistence, host.Extensions,
+            host.HostChannel, host.Settings, codeAnalysis);
     }
 
-    private readonly string? hostChannelError;
-    private readonly PersistenceBinding persistenceBinding;
-    private readonly ICodeAnalysisHost codeAnalysis;
-
-    /// <summary>
-    /// Placeholder <c>NetPrints.Sdk</c> version substituted into a new project's template
-    /// (project-system.md §4): MinVer is not wired up until sub-phase L (T109). Internal so the
-    /// headless UI tests' own <c>TestComposition</c> (ED-T14: no test hook in production code) can
-    /// reuse it instead of repeating the literal.
-    /// </summary>
-    internal const string NetPrintsSdkVersion = "1.0.0-dev";
-
-    /// <summary>The composed host services.</summary>
+    /// <summary>The composed host services, with the given test doubles standing in for the Avalonia dialogs, file picker and process launcher.</summary>
     public EditorContext Context { get; }
 
-    /// <summary>The concrete window service (not just <see cref="IWindowService"/>, for callers that need <see cref="WindowService.ClassEditorWindows"/> or <see cref="WindowService.MainWindow"/>).</summary>
+    /// <summary>The concrete window service.</summary>
     public WindowService Windows { get; }
 
     /// <summary>The main window's view model, created by <see cref="CreateMainWindow"/>, or <see langword="null"/> before it is called.</summary>
@@ -89,8 +72,8 @@ public sealed class EditorComposition : IDisposable
         new UnhandledExceptionHandler(Context.Dialogs, Context.Dispatcher, Context.LoggerFactory.CreateLogger<UnhandledExceptionHandler>());
 
     /// <summary>
-    /// Reports what went wrong before the window existed (a requested host channel that is not available, extensions
-    /// that failed to load), then opens the project named on the command line, if any (FR-016, PAR-05). Call after
+    /// Reports what went wrong before the window existed, then opens the project named on the
+    /// command line, if any (mirrors <see cref="EditorComposition.StartAsync"/>). Call after
     /// <see cref="CreateMainWindow"/>.
     /// </summary>
     /// <param name="args">The command-line arguments.</param>
@@ -117,9 +100,8 @@ public sealed class EditorComposition : IDisposable
     }
 
     /// <summary>
-    /// Stops rebinding persistence to the extension host's registry (see
-    /// <see cref="PersistenceBinding.Bind"/>), disposes <see cref="MainEditor"/>, if created, and the
-    /// code analysis host (editor-services.md §6: "disposed with the main window").
+    /// Stops rebinding persistence to the extension host's registry, disposes
+    /// <see cref="MainEditor"/>, if created, and the code analysis host.
     /// </summary>
     public void Dispose()
     {

@@ -46,5 +46,6 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="NetPrints.Editor.Tests" />
+    <InternalsVisibleTo Include="NetPrints.Editor.UITests" />
   </ItemGroup>
 </Project>

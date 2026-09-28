@@ -63,13 +63,8 @@ public sealed class HeadlessApp : IAsyncDisposable
         };
         Processes = new CapturingProcessLauncher();
         FilePicker = new QueuedFilePicker();
-        Composition = new EditorComposition(new EditorHostServices(NullLoggerFactory.Instance, extensions, Settings, NullHostChannel.Instance, HostChannelError: null,
-            MsBuildAvailable: true, DisposeOwnedResources: () => ValueTask.CompletedTask), c => c with
-            {
-                Dialogs = Dialogs,
-                Processes = Processes,
-                FilePicker = FilePicker,
-            });
+        Composition = new TestComposition(new EditorHostServices(NullLoggerFactory.Instance, extensions, Settings, NullHostChannel.Instance, HostChannelError: null,
+            MsBuildAvailable: true, DisposeOwnedResources: () => ValueTask.CompletedTask), Dialogs, FilePicker, Processes);
         exceptionHandler = Composition.InstallUnhandledExceptionHandler(); // as EditorApp does on the desktop
         Tree = new AutomationTree();
 
@@ -90,7 +85,7 @@ public sealed class HeadlessApp : IAsyncDisposable
     }
 
     public ISettingsStore Settings { get; }
-    public EditorComposition Composition { get; }
+    public TestComposition Composition { get; }
     public MainWindow Window { get; }
     public RecordingDialogs Dialogs { get; }
     public CapturingProcessLauncher Processes { get; }
