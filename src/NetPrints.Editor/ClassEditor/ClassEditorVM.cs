@@ -93,7 +93,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         Variables = new ObservableViewModelCollection<MemberVariableVM, Variable>(cls.Variables,
             v => new MemberVariableVM(v, Services), v => v.Dispose());
         EventGraphs = new ObservableViewModelCollection<EventGraphVM, EventGraph>(cls.EventGraphs, g => new EventGraphVM(g, cls));
-        VariablesPanel = new VariablesPanelVM(this);
+        VariablesPanel = new VariablesPanelVM(Services, Variables);
         CodeView = new CodeViewVM(cls, context.CodeAnalysis);
         ErrorList = new ErrorListVM(cls, context.CodeAnalysis, Messenger);
 
@@ -327,7 +327,11 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         Context.Dispatcher.Post(() => SelectedOverride = null);
     }
 
-    partial void OnOpenedGraphChanged(NodeGraphVM? oldValue, NodeGraphVM? newValue) => oldValue?.Dispose();
+    partial void OnOpenedGraphChanged(NodeGraphVM? oldValue, NodeGraphVM? newValue)
+    {
+        oldValue?.Dispose();
+        VariablesPanel.OnOpenedGraphChanged(newValue?.Graph as ExecutionGraph);
+    }
 
     /// <summary>Opens a graph in the canvas.</summary>
     [SuppressMessage("IDisposableAnalyzers.Correctness", "IDISP003", Justification = "ADR-0003: OnOpenedGraphChanged (the generated property hook) disposes the old value.")]

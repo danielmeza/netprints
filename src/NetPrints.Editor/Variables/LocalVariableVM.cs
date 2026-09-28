@@ -13,19 +13,19 @@ namespace NetPrints.Editor.Variables;
 public sealed partial class LocalVariableVM : ObservableObject, IDisposable
 {
     private readonly ExecutionGraph graph;
-    private readonly ClassEditorVM owner;
+    private readonly ClassEditorServices services;
 
     /// <summary>
     /// Wraps <paramref name="local"/> and subscribes to its property-changed event.
     /// </summary>
     /// <param name="local">Local variable to wrap.</param>
     /// <param name="graph">Method or constructor graph the local belongs to.</param>
-    /// <param name="owner">Class editor view model that owns the opened graph.</param>
-    public LocalVariableVM(LocalVariable local, ExecutionGraph graph, ClassEditorVM owner)
+    /// <param name="services">Narrow services shared with the owning class editor (FR-038).</param>
+    public LocalVariableVM(LocalVariable local, ExecutionGraph graph, ClassEditorServices services)
     {
         Local = local;
         this.graph = graph;
-        this.owner = owner;
+        this.services = services;
         ((INotifyPropertyChanged)local).PropertyChanged += OnLocalPropertyChanged;
     }
 
@@ -55,7 +55,7 @@ public sealed partial class LocalVariableVM : ObservableObject, IDisposable
                 return;
             }
 
-            owner.UndoRedo.Do(EditorCommands.RenameLocalVariable(graph, Local, value));
+            services.UndoRedo.Do(EditorCommands.RenameLocalVariable(graph, Local, value));
         }
     }
 
@@ -66,16 +66,16 @@ public sealed partial class LocalVariableVM : ObservableObject, IDisposable
     [RelayCommand]
     private async Task RetypeAsync()
     {
-        var chosen = await owner.Context.Dialogs.SelectTypeAsync(owner.Context.Reflection.NonStaticTypes, Type);
+        var chosen = await services.Context.Dialogs.SelectTypeAsync(services.Context.Reflection.NonStaticTypes, Type);
         if (chosen is not null && chosen != Type)
         {
-            owner.UndoRedo.Do(EditorCommands.RetypeLocalVariable(graph, Local, chosen));
+            services.UndoRedo.Do(EditorCommands.RetypeLocalVariable(graph, Local, chosen));
         }
     }
 
     /// <summary>Removes the local variable (undoable); its existing getter/setter nodes are removed too.</summary>
     [RelayCommand]
-    private void Remove() => owner.VariablesPanel.RemoveLocalVariable(this);
+    private void Remove() => services.UndoRedo.Do(EditorCommands.RemoveLocalVariable(graph, Local));
 
     private void OnLocalPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
