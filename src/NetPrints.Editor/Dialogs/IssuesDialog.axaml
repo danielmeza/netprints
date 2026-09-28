@@ -16,7 +16,14 @@
         </ItemsControl.ItemTemplate>
       </ItemsControl>
     </ScrollViewer>
+    <!-- Closes the dialog with no result (D11, ADR-0007 batch X2b). -->
     <Button Grid.Row="1" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.IssuesOkButton}" Content="OK" HorizontalAlignment="Right" Margin="0,8,0,0" MinWidth="80"
-            IsDefault="True" Click="OnOkClicked" />
+            IsDefault="True">
+      <Interaction.Behaviors>
+        <ButtonClickEventTriggerBehavior>
+          <CloseWindowAction />
+        </ButtonClickEventTriggerBehavior>
+      </Interaction.Behaviors>
+    </Button>
   </Grid>
 </Window>

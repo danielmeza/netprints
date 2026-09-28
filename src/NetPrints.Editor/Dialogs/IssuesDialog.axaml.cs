@@ -1,5 +1,4 @@
 using Avalonia.Controls;
-using Avalonia.Interactivity;
 using NetPrints.Compilation;
 
 namespace NetPrints.Editor.Dialogs;
@@ -21,6 +20,4 @@ public partial class IssuesDialog : Window
         Title = title;
         IssueList.ItemsSource = issues.Select(issue => $"{issue.Id}: {issue.Message}").ToList();
     }
-
-    private void OnOkClicked(object? sender, RoutedEventArgs e) => Close();
 }

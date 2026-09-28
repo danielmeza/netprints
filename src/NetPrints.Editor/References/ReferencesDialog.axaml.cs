@@ -1,5 +1,4 @@
 using Avalonia.Controls;
-using Avalonia.Interactivity;
 
 namespace NetPrints.Editor.References;
 
@@ -11,6 +10,4 @@ public partial class ReferencesDialog : Window
     {
         InitializeComponent();
     }
-
-    private void OnCloseClicked(object? sender, RoutedEventArgs e) => Close();
 }

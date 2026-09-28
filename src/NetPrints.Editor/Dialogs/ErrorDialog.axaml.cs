@@ -1,5 +1,4 @@
 using Avalonia.Controls;
-using Avalonia.Interactivity;
 
 namespace NetPrints.Editor.Dialogs;
 
@@ -23,6 +22,4 @@ public partial class ErrorDialog : Window
 
     /// <summary>The displayed message text.</summary>
     public string Message => MessageBox.Text ?? "";
-
-    private void OnOkClicked(object? sender, RoutedEventArgs e) => Close();
 }
