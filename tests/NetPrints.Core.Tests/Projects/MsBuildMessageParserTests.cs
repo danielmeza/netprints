@@ -46,6 +46,16 @@ namespace NetPrints.Tests.Projects
                 "/repo/App/Program.netpc.json", 3, 5), messages[4]);
         }
 
+        [Theory]
+        [InlineData("MSBUILD : error MSB1009: Project file does not exist.")]
+        [InlineData("CSC : error CS2001: Source file 'Foo.cs' could not be found.")]
+        public void ToolNameOriginMapsToNullFile(string line)
+        {
+            ProjectMessage message = Assert.Single(MsBuildMessageParser.Parse(line));
+
+            Assert.Null(message.File);
+        }
+
         [Fact]
         public void LineWithoutColumnParsesWithNullColumn()
         {

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.Extensions.Logging.Abstractions;
+using NetPrints.Core;
 using NetPrints.Desktop;
 using NetPrints.Editor.Hosting;
 using NetPrints.Projects;
@@ -66,6 +67,44 @@ public sealed class ProjectCheckTests : IDisposable
         int exitCode = await ProjectCheck.RunAsync(null, run: false, output, cancellationToken);
 
         Assert.Equal(2, exitCode);
+    }
+
+    [Fact]
+    public async Task CheckProjectWithDashDashArgumentReturnsBadArguments()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var output = new StringWriter();
+
+        // "--check-project --run" (no path) reaches RunAsync with "--run" in projectPath's place.
+        int exitCode = await ProjectCheck.RunAsync("--run", run: false, output,
+            msBuildAvailable: true, registeredInstance: null, new NoSdkProjectSystem(), new ProcessRunner(),
+            NullLoggerFactory.Instance, cancellationToken);
+
+        Assert.Equal(2, exitCode);
+    }
+
+    [Fact]
+    public async Task CheckProjectWithRelativePathIsResolvedToFullPathBeforeLoading()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var output = new StringWriter();
+        var projects = new FakeProjectSystem();
+
+        // A bare relative file name used to reach MsBuildProjectSystem's GetDirectoryOrThrow with no
+        // directory component and throw ArgumentException (R1-14); seed the snapshot at the resolved
+        // full path so a fixed RunAsync loads that path instead of the untouched relative one.
+        string relativePath = "netprints-check-relative-path.csproj";
+        string fullPath = Path.GetFullPath(relativePath);
+        projects.Seed(new ProjectSnapshot(fullPath, "Test", "Test", "Test", BinaryType.SharedLibrary,
+            "net10.0", DefaultProjectProfile.ProfileId, true, [], [], [], [], [], "{}",
+            new Dictionary<string, string>(), []));
+
+        int exitCode = await ProjectCheck.RunAsync(relativePath, run: false, output,
+            msBuildAvailable: true, registeredInstance: null, projects, new ProcessRunner(),
+            NullLoggerFactory.Instance, cancellationToken);
+
+        Assert.Equal(fullPath, Assert.Single(projects.LoadCalls));
+        Assert.Equal(0, exitCode);
     }
 
     [Fact]

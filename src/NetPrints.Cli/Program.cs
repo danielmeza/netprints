@@ -13,7 +13,17 @@ namespace NetPrintsCLI
 {
     sealed class Program
     {
-        private const int BadArgumentsExitCode = 1;
+        /// <summary>Exit code: the project built (and, with <c>--run</c>, ran) successfully.</summary>
+        private const int ExitSuccess = 0;
+
+        /// <summary>Exit code: the project was not found, or the build failed.</summary>
+        private const int ExitBuildFailed = 1;
+
+        /// <summary>Exit code: bad command-line arguments (matches the generator's <c>ExitBadRequest</c>).</summary>
+        private const int BadArgumentsExitCode = 2;
+
+        /// <summary>Exit code: no compatible .NET SDK is registered (matches <c>ProjectCheck.ExitNoSdk</c>).</summary>
+        private const int ExitNoSdk = 3;
 
         public sealed class CompileOptions
         {
@@ -37,7 +47,7 @@ namespace NetPrintsCLI
             if (!File.Exists(path))
             {
                 Console.WriteLine("Could not find project '{0}'.", path);
-                return 0;
+                return ExitBuildFailed;
             }
 
             using ILoggerFactory loggerFactory = LoggerFactory.Create(builder => builder.AddSimpleConsole().SetMinimumLevel(LogLevel.Warning));
@@ -46,20 +56,29 @@ namespace NetPrintsCLI
             if (!MsBuildRegistration.EnsureRegistered(loggerFactory.CreateLogger(nameof(MsBuildRegistration))))
             {
                 Console.WriteLine("No .NET SDK could be found; nothing was built.");
-                return 0;
+                return ExitNoSdk;
             }
 
-            return await BuildAsync(path, options.Run, loggerFactory).ConfigureAwait(false);
+            return await BuildWithMsBuildAsync(path, options.Run, loggerFactory).ConfigureAwait(false);
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static async Task<int> BuildAsync(string path, bool run, ILoggerFactory loggerFactory)
+        private static Task<int> BuildWithMsBuildAsync(string path, bool run, ILoggerFactory loggerFactory)
         {
-            Console.WriteLine("Compiling {0}", path);
-
             var processes = new ProcessRunner();
             var projects = new MsBuildProjectSystem(new ProjectSystemOptions([], "1.0.0-dev"), processes,
                 loggerFactory.CreateLogger<MsBuildProjectSystem>());
+
+            return BuildAsync(path, run, projects, processes);
+        }
+
+        /// <summary>
+        /// Core of the build: takes <paramref name="projects"/> and <paramref name="processes"/> as
+        /// interfaces so a fake <see cref="IProjectSystem"/> can exercise it without MSBuild.
+        /// </summary>
+        internal static async Task<int> BuildAsync(string path, bool run, IProjectSystem projects, IProcessRunner processes)
+        {
+            Console.WriteLine("Compiling {0}", path);
 
             BuildResult result = await projects.BuildAsync(path, CancellationToken.None).ConfigureAwait(false);
 
@@ -73,20 +92,21 @@ namespace NetPrintsCLI
                     Console.WriteLine($"{location}{error.Code}: {error.Message}");
                 }
 
-                return 0;
+                return ExitBuildFailed;
             }
 
             Console.WriteLine("Compilation succeeded.");
 
-            if (run)
+            if (!run)
             {
-                Console.WriteLine("Running...");
-                ProcessResult output = await processes.RunAsync(projects.GetRunCommand(path), CancellationToken.None).ConfigureAwait(false);
-                await Console.Out.WriteAsync(output.StandardOutput).ConfigureAwait(false);
-                await Console.Error.WriteAsync(output.StandardError).ConfigureAwait(false);
+                return ExitSuccess;
             }
 
-            return 1;
+            Console.WriteLine("Running...");
+            ProcessResult output = await processes.RunAsync(projects.GetRunCommand(path), CancellationToken.None).ConfigureAwait(false);
+            await Console.Out.WriteAsync(output.StandardOutput).ConfigureAwait(false);
+            await Console.Error.WriteAsync(output.StandardError).ConfigureAwait(false);
+            return output.ExitCode;
         }
 
         private static async Task<int> Main(string[] args) =>

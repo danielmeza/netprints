@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using NetPrints.Compilation;
@@ -28,7 +29,7 @@ internal static class Program
     /// <summary>Exit code: an unhandled exception (its stack trace is written to stderr).</summary>
     private const int ExitInternalError = 3;
 
-    private static async Task<int> Main(string[] args)
+    internal static async Task<int> Main(string[] args)
     {
         try
         {
@@ -43,8 +44,10 @@ internal static class Program
             {
                 request = GenerateRequestFile.Parse(requestPath);
             }
-            catch (FormatException ex)
+            catch (Exception ex) when (ex is FormatException or IOException)
             {
+                // IOException (FileNotFoundException, DirectoryNotFoundException, …): the rsp path
+                // itself is missing or unreadable, which is a bad request, not an internal error.
                 await Console.Error.WriteLineAsync(ex.Message).ConfigureAwait(false);
                 return ExitBadRequest;
             }

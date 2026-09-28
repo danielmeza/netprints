@@ -95,11 +95,13 @@ internal static class ProjectCheck
         ArgumentNullException.ThrowIfNull(processes);
         ArgumentNullException.ThrowIfNull(loggerFactory);
 
-        if (string.IsNullOrEmpty(projectPath))
+        if (string.IsNullOrEmpty(projectPath) || projectPath.StartsWith("--", StringComparison.Ordinal))
         {
             await Console.Error.WriteLineAsync("Usage: NetPrints.Desktop --check-project <path.csproj> [--run]");
             return ExitBadArguments;
         }
+
+        projectPath = Path.GetFullPath(projectPath);
 
         string informationalVersion = typeof(ProjectCheck).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "0.0.0";
         await output.WriteLineAsync($"NetPrints {informationalVersion.Split('+')[0]}");

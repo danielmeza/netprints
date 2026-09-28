@@ -16,4 +16,8 @@
     <ProjectReference Include="..\NetPrints.Extensibility\NetPrints.Extensibility.csproj" />
     <ProjectReference Include="..\NetPrints.Serialization\NetPrints.Serialization.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- GenerateRequestFileExitCodeTests (R1-20) calls Program.Main directly with a request path. -->
+    <InternalsVisibleTo Include="NetPrints.Core.Tests" />
+  </ItemGroup>
 </Project>

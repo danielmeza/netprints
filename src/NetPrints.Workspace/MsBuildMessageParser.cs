@@ -1,6 +1,7 @@
 #nullable enable
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Text.RegularExpressions;
 using NetPrints.Projects;
 
@@ -46,7 +47,7 @@ public static partial class MsBuildMessageParser
                 severity,
                 match.Groups["code"].Value,
                 match.Groups["msg"].Value,
-                match.Groups["file"].Value,
+                NormalizeFile(match.Groups["file"].Value),
                 line,
                 column));
         }
@@ -56,4 +57,13 @@ public static partial class MsBuildMessageParser
 
     private static int? ParseGroup(Group group) =>
         group.Success ? int.Parse(group.Value, CultureInfo.InvariantCulture) : null;
+
+    /// <summary>
+    /// MSBuild itself and its tasks report their own name as the "file" origin (<c>MSBUILD</c>,
+    /// <c>CSC</c>, <c>EXEC</c>, …) rather than a path; such a bare tool name has no directory
+    /// separator and no extension, so it is mapped to <see langword="null"/> instead of being treated
+    /// as a file <c>DiagnosticMapper</c> would try to open.
+    /// </summary>
+    private static string? NormalizeFile(string file) =>
+        file.IndexOfAny(['/', '\\']) < 0 && !Path.HasExtension(file) ? null : file;
 }

@@ -34,4 +34,9 @@
     <ProjectReference Include="..\NetPrints.Workspace\NetPrints.Workspace.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- CliBuildTests (R1-07) exercises Program.BuildAsync directly with a fake IProjectSystem. -->
+    <InternalsVisibleTo Include="NetPrints.Core.Tests" />
+  </ItemGroup>
+
 </Project>
