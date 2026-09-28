@@ -1,0 +1,24 @@
+/**
+ * Any CSS custom properties in :root are overridden by the theme; keep the file minimal and let
+ * the classic preset's defaults carry the site. */
+
+:root {
+  --ifm-color-primary: #2e5fb0;
+  --ifm-color-primary-dark: #2a56a0;
+  --ifm-color-primary-darker: #275197;
+  --ifm-color-primary-darkest: #20437c;
+  --ifm-color-primary-light: #3268c0;
+  --ifm-color-primary-lighter: #3a6fc4;
+  --ifm-color-primary-lightest: #5686cd;
+  --ifm-code-font-size: 95%;
+}
+
+[data-theme='dark'] {
+  --ifm-color-primary: #7aa7e8;
+  --ifm-color-primary-dark: #5e93e3;
+  --ifm-color-primary-darker: #4f89e0;
+  --ifm-color-primary-darkest: #256bd3;
+  --ifm-color-primary-light: #96bbed;
+  --ifm-color-primary-lighter: #a5c5ef;
+  --ifm-color-primary-lightest: #d1e0f6;
+}
