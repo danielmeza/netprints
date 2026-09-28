@@ -1,7 +1,5 @@
 using Avalonia.Controls;
 using Avalonia.Input;
-using NetPrints.Editor.ErrorList;
-using NetPrints.Editor.Events;
 using NetPrints.Editor.Graph;
 
 namespace NetPrints.Editor.ClassEditor;
@@ -14,8 +12,6 @@ public partial class ClassEditorWindow : Window
     {
         InitializeComponent();
     }
-
-    private ClassEditorVM? ViewModel => DataContext as ClassEditorVM;
 
     // Methods and constructors can be dragged onto the graph (PAR-56).
     private readonly DragSourceHelper dragSource = new();
@@ -31,23 +27,4 @@ public partial class ClassEditorWindow : Window
     private void OnMethodPointerMoved(object? sender, PointerEventArgs e) => dragSource.Moved(e, this);
 
     private void OnMethodPointerReleased(object? sender, PointerReleasedEventArgs e) => dragSource.Released();
-
-    // Double click opens the event graph (US4); unlike methods/constructors, event graphs are not
-    // dragged onto the canvas and have no single-click inspector.
-    private void OnEventGraphDoubleTapped(object? sender, TappedEventArgs e)
-    {
-        if ((sender as Control)?.DataContext is EventGraphVM eventGraph)
-        {
-            ViewModel?.OpenEventGraphCommand.Execute(eventGraph);
-        }
-    }
-
-    // Double click navigates to the diagnostic's node, if it has one (FR-034, ED-T03).
-    private void OnDiagnosticRowDoubleTapped(object? sender, TappedEventArgs e)
-    {
-        if ((sender as Control)?.DataContext is DiagnosticRowVM row)
-        {
-            ViewModel?.ErrorList.NavigateCommand.Execute(row);
-        }
-    }
 }

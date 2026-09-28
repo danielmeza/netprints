@@ -169,8 +169,14 @@
                     <mi:MaterialIcon Kind="Minus" />
                   </Button>
                   <TextBlock Grid.Column="1" Text="{Binding Name}" TextTrimming="CharacterEllipsis" FontSize="14" FontWeight="SemiBold" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventGraphName}"
-                             VerticalAlignment="Center" Background="Transparent"
-                             DoubleTapped="OnEventGraphDoubleTapped" />
+                             VerticalAlignment="Center" Background="Transparent">
+                    <!-- Double-click opens the event graph (US4); fits ExecuteCommandOnDoubleTappedBehavior (batch X2b). -->
+                    <Interaction.Behaviors>
+                      <ExecuteCommandOnDoubleTappedBehavior
+                        Command="{Binding $parent[Window].((edclasseditor:ClassEditorVM)DataContext).OpenEventGraphCommand}"
+                        CommandParameter="{Binding}" />
+                    </Interaction.Behaviors>
+                  </TextBlock>
                 </Grid>
               </DataTemplate>
             </ListBox.ItemTemplate>
@@ -197,7 +203,14 @@
             <ListBox x:Name="ErrorList" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorErrorList}" ItemsSource="{Binding ErrorList.Rows}">
               <ListBox.ItemTemplate>
                 <DataTemplate x:DataType="ederrorlist:DiagnosticRowVM">
-                  <StackPanel Orientation="Horizontal" Spacing="8" DoubleTapped="OnDiagnosticRowDoubleTapped">
+                  <StackPanel Orientation="Horizontal" Spacing="8">
+                    <!-- Double-click navigates to the diagnostic's node (FR-034, ED-T03); fits
+                         ExecuteCommandOnDoubleTappedBehavior (batch X2b). -->
+                    <Interaction.Behaviors>
+                      <ExecuteCommandOnDoubleTappedBehavior
+                        Command="{Binding $parent[Window].((edclasseditor:ClassEditorVM)DataContext).ErrorList.NavigateCommand}"
+                        CommandParameter="{Binding}" />
+                    </Interaction.Behaviors>
                     <TextBlock Text="{Binding Id}" FontWeight="SemiBold" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorErrorId}" />
                     <TextBlock Text="{Binding Message}" />
                     <TextBlock Text="{Binding MemberName}" FontStyle="Italic" />
