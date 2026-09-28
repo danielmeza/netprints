@@ -11,6 +11,13 @@
     <AnalysisLevel>latest</AnalysisLevel>
   </PropertyGroup>
 
+  <PropertyGroup Label="Versioning">
+    <MinVerTagPrefix>v</MinVerTagPrefix>
+    <MinVerMinimumMajorMinor>0.1</MinVerMinimumMajorMinor>
+    <!-- A source archive has no .git: MinVer then warns and uses its default version. -->
+    <MSBuildWarningsNotAsErrors>$(MSBuildWarningsNotAsErrors);MINVER1001</MSBuildWarningsNotAsErrors>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(CI)' == 'true' Or '$(GITHUB_ACTIONS)' == 'true'">
     <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
   </PropertyGroup>

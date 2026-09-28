@@ -7,6 +7,11 @@
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
 
+  <ItemGroup Label="Versioning">
+    <!-- Every project's version comes from the nearest `v*` git tag (release contract §1). -->
+    <GlobalPackageReference Include="MinVer" Version="8.0.0" />
+  </ItemGroup>
+
   <ItemGroup Label="Core and reflection">
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.9.0" />
   </ItemGroup>
