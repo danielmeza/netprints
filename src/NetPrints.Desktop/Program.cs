@@ -1,8 +1,11 @@
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.ExceptionServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
@@ -26,11 +29,14 @@ internal static class Program
     /// <summary>
     /// Starts the NetPrints editor. A single argument is the path of a project (.csproj) to open.
     /// <c>--check-project &lt;path.csproj&gt; [--run]</c> instead runs <see cref="ProjectCheck"/> and
-    /// exits without starting Avalonia (release contract §5): no <see langword="await"/> runs before
-    /// Avalonia's own synchronous startup call below, so the thread stays STA for that path.
+    /// exits without starting Avalonia (release contract §5). <see cref="Main"/> must stay synchronous
+    /// for <see cref="STAThreadAttribute"/> to land on the real entry point (an <c>async Task&lt;int&gt;
+    /// Main</c> compiles to a synthesized wrapper entry point that does not carry it, so the thread is
+    /// never actually STA): <see cref="RunCheckProject"/> pumps that one await on this thread instead
+    /// of blocking on the task, so there is no sync-over-async.
     /// </summary>
     [STAThread]
-    public static async Task<int> Main(string[] args)
+    public static int Main(string[] args)
     {
         var (factory, explicitLogLevel) = CreateLoggerFactory();
         using ILoggerFactory loggerFactory = factory;
@@ -41,7 +47,7 @@ internal static class Program
 
         if (args is [CheckProjectArgument, ..])
         {
-            return await ProjectCheck.RunAsync(args.ElementAtOrDefault(1), args.Contains("--run", StringComparer.Ordinal), Console.Out, CancellationToken.None);
+            return RunCheckProject(args.ElementAtOrDefault(1), args.Contains("--run", StringComparer.Ordinal));
         }
 
         var settings = new JsonFileSettingsStore(JsonFileSettingsStore.DefaultFilePath(), loggerFactory.CreateLogger<JsonFileSettingsStore>());
@@ -58,6 +64,82 @@ internal static class Program
 
         // EditorApp's ShutdownRequested handler awaits HostServices.DisposeAsync() before the app exits.
         return BuildAvaloniaApp().StartWithClassicDesktopLifetime(args);
+    }
+
+    /// <summary>
+    /// Runs <see cref="ProjectCheck.RunAsync(string?, bool, TextWriter, CancellationToken)"/> to
+    /// completion on the calling (STA) thread by pumping a private <see
+    /// cref="SingleThreadSynchronizationContext"/>, instead of blocking on the resulting task
+    /// (<c>--check-project</c> never touches Avalonia, so no display is needed either way).
+    /// </summary>
+    private static int RunCheckProject(string? projectPath, bool run)
+    {
+        var pump = new SingleThreadSynchronizationContext();
+        SynchronizationContext? previous = SynchronizationContext.Current;
+        SynchronizationContext.SetSynchronizationContext(pump);
+        try
+        {
+            int exitCode = ProjectCheck.ExitBadArguments;
+            Exception? failure = null;
+
+            async Task RunAsync()
+            {
+                try
+                {
+                    exitCode = await ProjectCheck.RunAsync(projectPath, run, Console.Out, CancellationToken.None);
+                }
+                catch (Exception ex)
+                {
+                    failure = ex;
+                }
+                finally
+                {
+                    pump.Complete();
+                }
+            }
+
+            Task execution = RunAsync();
+            pump.RunOnCurrentThread();
+            Debug.Assert(execution.IsCompleted, "RunOnCurrentThread only returns once RunAsync's finally has run.");
+
+            if (failure is not null)
+            {
+                ExceptionDispatchInfo.Capture(failure).Throw();
+            }
+
+            return exitCode;
+        }
+        finally
+        {
+            SynchronizationContext.SetSynchronizationContext(previous);
+        }
+    }
+
+    /// <summary>
+    /// A minimal single-threaded dispatcher (the classic "AsyncPump"): runs an <see langword="async"/>
+    /// method to completion on the calling thread by draining its posted continuations one at a time,
+    /// so <see cref="RunCheckProject"/> never has to block on the resulting <see cref="Task"/>.
+    /// </summary>
+    private sealed class SingleThreadSynchronizationContext : SynchronizationContext
+    {
+        private readonly BlockingCollection<(SendOrPostCallback Callback, object? State)> queue = new();
+
+        public override void Post(SendOrPostCallback d, object? state) => queue.Add((d, state));
+
+        public override void Send(SendOrPostCallback d, object? state) =>
+            throw new NotSupportedException($"{nameof(SingleThreadSynchronizationContext)} does not support synchronous {nameof(Send)}.");
+
+        /// <summary>Runs every posted continuation on this thread until <see cref="Complete"/> is called.</summary>
+        public void RunOnCurrentThread()
+        {
+            foreach ((SendOrPostCallback callback, object? state) in queue.GetConsumingEnumerable())
+            {
+                callback(state);
+            }
+        }
+
+        /// <summary>Lets <see cref="RunOnCurrentThread"/> return once every already-posted continuation has run.</summary>
+        public void Complete() => queue.CompleteAdding();
     }
 
     /// <summary>

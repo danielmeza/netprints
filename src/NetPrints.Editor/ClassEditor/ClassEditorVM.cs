@@ -364,7 +364,18 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     [SuppressMessage("IDisposableAnalyzers.Correctness", "IDISP003", Justification = "ADR-0003: OnOpenedGraphChanged (the generated property hook) disposes the old value.")]
     public void OpenGraph(NodeGraph graph) => OpenedGraph = new NodeGraphVM(graph, Services);
 
-    void IRecipient<OpenGraphMessage>.Receive(OpenGraphMessage message) => OpenGraph(message.Graph);
+    /// <summary>
+    /// Cancels a still-loading <see cref="OpenMethodAsync"/> (R2-02): called by every other way to
+    /// change the canvas, so a method whose load finishes late can never override a navigation the
+    /// user made to something else in the meantime.
+    /// </summary>
+    private void CancelPendingOpen() => openGraphCts?.Cancel();
+
+    void IRecipient<OpenGraphMessage>.Receive(OpenGraphMessage message)
+    {
+        CancelPendingOpen();
+        OpenGraph(message.Graph);
+    }
 
     /// <summary>
     /// Opens the graph <see cref="NavigateToNodeMessage.GraphKey"/> resolves to (if not already
@@ -380,6 +391,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
 
         if (OpenedGraph is null || OpenedGraph.Graph != graph)
         {
+            CancelPendingOpen();
             OpenGraph(graph);
         }
 
@@ -680,6 +692,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     [RelayCommand]
     private void ShowClass()
     {
+        CancelPendingOpen();
         Inspector = InspectorKind.Class;
         OpenGraph(Class);
     }
@@ -786,6 +799,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, method.MainReturnNode.ReturnPin);
 
         Class.Methods.Add(method);
+        CancelPendingOpen();
         OpenGraph(method);
     }
 
@@ -804,6 +818,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         constructor.EntryNode.PositionY = cell * NewMemberEntryGridOffset;
 
         Class.Constructors.Add(constructor);
+        CancelPendingOpen();
         OpenGraph(constructor);
     }
 
@@ -813,6 +828,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         MethodGraph? method = GraphUtil.AddOverrideMethod(Class, methodSpecifier);
         if (method is not null)
         {
+            CancelPendingOpen();
             OpenGraph(method);
         }
     }
@@ -832,6 +848,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         string name = NetPrintsUtil.GetUniqueName(EventGraph.DefaultNamePrefix, Class.EventGraphs.Select(g => g.Name).ToList());
         var eventGraph = new EventGraph(name) { Class = Class };
         UndoRedo.Do(EditorCommands.AddEventGraph(Class, eventGraph));
+        CancelPendingOpen();
         OpenGraph(eventGraph);
     }
 
@@ -841,6 +858,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     {
         if (eventGraph is not null)
         {
+            CancelPendingOpen();
             OpenGraph(eventGraph.Graph);
         }
     }
@@ -869,9 +887,12 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     /// already-open method with nothing pending is a no-op; a click on a different method cancels the
     /// pending one. Reflection-backed overload lookups for the graph's nodes are warmed on a background
     /// thread first (AGENTS.md: heavy work off the UI thread), and <see cref="IsOpeningGraph"/> only
-    /// turns on if that takes longer than <see cref="BusyIndicatorDelay"/>.
+    /// turns on if that takes longer than <see cref="BusyIndicatorDelay"/>. <c>AllowConcurrentExecutions</c>
+    /// keeps the command's <c>CanExecute</c> true while a previous click is still opening (R2-02):
+    /// without it, <c>InvokeCommandAction</c> silently drops a click made during a load, and the
+    /// supersede logic below is never reached from the UI.
     /// </summary>
-    [RelayCommand]
+    [RelayCommand(AllowConcurrentExecutions = true)]
     private async Task OpenMethodAsync(MethodVM? method)
     {
         if (method is null)

@@ -1,3 +1,4 @@
+using System.Windows.Input;
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.Diagnostics;
@@ -174,6 +175,58 @@ public class ClassEditorVMTests : IAsyncLifetime
         await openTask;
         Assert.False(vm.IsOpeningGraph);
         Assert.Null(vm.OpeningGraphName);
+    }
+
+    [Fact]
+    public async Task ClickingASecondMethodWhileTheFirstIsStillOpeningSupersedesIt()
+    {
+        // R2-02: goes through ICommand (InvokeCommandAction's real path checks CanExecute, then
+        // Execute), not ExecuteAsync directly — the latter bypasses CanExecute and would not have
+        // caught the regression (AsyncRelayCommand.CanExecute used to return false while running).
+        vm.CreateMethodCommand.Execute(null);
+        var main = vm.Methods.First();
+        var second = vm.Methods.Last();
+        ICommand command = vm.OpenMethodCommand;
+
+        var gate = new TaskCompletionSource();
+        vm.OpenGraphDelayForTests = () => gate.Task;
+
+        Assert.True(command.CanExecute(main));
+        command.Execute(main);
+        Task firstOpen = vm.OpenMethodCommand.ExecutionTask ?? Task.CompletedTask;
+
+        Assert.True(command.CanExecute(second)); // must stay true while opening (AllowConcurrentExecutions)
+        command.Execute(second);
+        Task secondOpen = vm.OpenMethodCommand.ExecutionTask ?? Task.CompletedTask;
+
+        gate.SetResult();
+        await Task.WhenAll(firstOpen, secondOpen);
+
+        Assert.Same(second, vm.SelectedMethod);
+        Assert.Same(second.Graph, vm.OpenedGraph?.Graph);
+        Assert.Equal(InspectorKind.Method, vm.Inspector);
+    }
+
+    [Fact]
+    public async Task ClickingClassWhileAMethodIsStillOpeningShowsTheClassNotTheMethod()
+    {
+        // R2-02 failure scenario 2: ShowClass must cancel the pending open, or the method's load
+        // finishing later overrides the class navigation the user made in the meantime.
+        var main = vm.Methods.Single();
+        ICommand command = vm.OpenMethodCommand;
+
+        var gate = new TaskCompletionSource();
+        vm.OpenGraphDelayForTests = () => gate.Task;
+
+        command.Execute(main);
+        Task openTask = vm.OpenMethodCommand.ExecutionTask ?? Task.CompletedTask;
+
+        vm.ShowClassCommand.Execute(null);
+        gate.SetResult();
+        await openTask;
+
+        Assert.Equal(InspectorKind.Class, vm.Inspector);
+        Assert.Same(cls, vm.OpenedGraph?.Graph);
     }
 
     [Fact]
