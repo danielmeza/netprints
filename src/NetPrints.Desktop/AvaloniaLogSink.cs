@@ -1,4 +1,7 @@
 using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.Text.RegularExpressions;
 using Avalonia.Logging;
 using Microsoft.Extensions.Logging;
 
@@ -9,19 +12,34 @@ namespace NetPrints.Desktop;
 /// <see cref="ILogger"/> categories named <c>Avalonia.&lt;Area&gt;</c> (editor-services.md §6,
 /// FR-042), replacing <c>AppBuilder.LogToTrace()</c>.
 /// </summary>
-public sealed class AvaloniaLogSink : ILogSink
+public sealed partial class AvaloniaLogSink : ILogSink
 {
+    /// <summary>
+    /// Areas Avalonia logs at <see cref="LogEventLevel.Information"/> on every layout/render pass
+    /// (batch D1: opening a small graph logged several of these per click, at Information, with no
+    /// user-visible feedback to explain the delay). Floored to <see cref="LogLevel.Warning"/> unless
+    /// <c>NETPRINTS_LOG_LEVEL</c> explicitly asks for something more verbose.
+    /// </summary>
+    private static readonly HashSet<string> ChattyAreas = new(StringComparer.Ordinal) { "Layout", "Visual" };
+
+    private static readonly Regex PlaceholderPattern = MessageTemplatePlaceholder();
+
     private readonly ILoggerFactory loggerFactory;
+    private readonly LogLevel? explicitMinimumLevel;
 
     /// <summary>
     /// Creates a sink that resolves its per-area loggers from <paramref name="loggerFactory"/>.
     /// </summary>
     /// <param name="loggerFactory">Used to create one logger per distinct Avalonia log area.</param>
+    /// <param name="explicitMinimumLevel">The level <c>NETPRINTS_LOG_LEVEL</c> named, or
+    /// <see langword="null"/> if it was not set: when null, <see cref="ChattyAreas"/> are floored to
+    /// <see cref="LogLevel.Warning"/> regardless of <paramref name="loggerFactory"/>'s own minimum.</param>
     /// <exception cref="ArgumentNullException"><paramref name="loggerFactory"/> is <see langword="null"/>.</exception>
-    public AvaloniaLogSink(ILoggerFactory loggerFactory)
+    public AvaloniaLogSink(ILoggerFactory loggerFactory, LogLevel? explicitMinimumLevel = null)
     {
         ArgumentNullException.ThrowIfNull(loggerFactory);
         this.loggerFactory = loggerFactory;
+        this.explicitMinimumLevel = explicitMinimumLevel;
     }
 
     private ILogger LoggerFor(string area) => loggerFactory.CreateLogger($"Avalonia.{area}");
@@ -37,11 +55,39 @@ public sealed class AvaloniaLogSink : ILogSink
         _ => LogLevel.Information,
     };
 
-    private static string FormatMessage(string messageTemplate, object?[] propertyValues) =>
-        propertyValues.Length == 0 ? messageTemplate : $"{messageTemplate} {string.Join(' ', propertyValues)}";
+    /// <summary>Substitutes each <c>{Placeholder}</c> in <paramref name="messageTemplate"/> with the
+    /// matching entry of <paramref name="propertyValues"/>, in order, instead of leaving the
+    /// placeholders raw and appending the values after the template.</summary>
+    private static string FormatMessage(string messageTemplate, object?[] propertyValues)
+    {
+        if (propertyValues.Length == 0)
+        {
+            return messageTemplate;
+        }
+
+        int index = 0;
+        return PlaceholderPattern.Replace(messageTemplate, _ =>
+            index < propertyValues.Length ? FormatValue(propertyValues[index++]) : "");
+    }
+
+    private static string FormatValue(object? value) => value switch
+    {
+        null => "null",
+        IFormattable formattable => formattable.ToString(null, CultureInfo.InvariantCulture),
+        _ => value.ToString() ?? "",
+    };
 
     /// <inheritdoc/>
-    public bool IsEnabled(LogEventLevel level, string area) => LoggerFor(area).IsEnabled(ToLogLevel(level));
+    public bool IsEnabled(LogEventLevel level, string area)
+    {
+        LogLevel mapped = ToLogLevel(level);
+        if (explicitMinimumLevel is null && ChattyAreas.Contains(area) && mapped < LogLevel.Warning)
+        {
+            return false;
+        }
+
+        return LoggerFor(area).IsEnabled(mapped);
+    }
 
     /// <inheritdoc/>
     public void Log(LogEventLevel level, string area, object? source, string messageTemplate) =>
@@ -50,4 +96,7 @@ public sealed class AvaloniaLogSink : ILogSink
     /// <inheritdoc/>
     public void Log(LogEventLevel level, string area, object? source, string messageTemplate, params object?[] propertyValues) =>
         NetPrints.Desktop.Log.AvaloniaForwarded(LoggerFor(area), ToLogLevel(level), source, FormatMessage(messageTemplate, propertyValues));
+
+    [GeneratedRegex(@"\{\$?[^{}]+\}")]
+    private static partial Regex MessageTemplatePlaceholder();
 }

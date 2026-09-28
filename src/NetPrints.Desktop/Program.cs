@@ -32,8 +32,9 @@ internal static class Program
     [STAThread]
     public static async Task<int> Main(string[] args)
     {
-        using ILoggerFactory loggerFactory = CreateLoggerFactory();
-        Logger.Sink = new AvaloniaLogSink(loggerFactory);
+        var (factory, explicitLogLevel) = CreateLoggerFactory();
+        using ILoggerFactory loggerFactory = factory;
+        Logger.Sink = new AvaloniaLogSink(loggerFactory, explicitLogLevel);
 
         // Must run before any Microsoft.Build-namespace type is loaded (project-system.md §4).
         bool msBuildAvailable = MsBuildRegistration.EnsureRegistered(loggerFactory.CreateLogger(nameof(MsBuildRegistration)));
@@ -79,18 +80,24 @@ internal static class Program
     /// <summary>
     /// Builds the process-wide <see cref="ILoggerFactory"/>: a simple console logger at
     /// <see cref="LogLevel.Information"/>, or the level named by <c>NETPRINTS_LOG_LEVEL</c>
-    /// (a <see cref="LogLevel"/> member name, case-insensitive) if it is set and valid.
+    /// (a <see cref="LogLevel"/> member name, case-insensitive) if it is set and valid. Also returns
+    /// that explicit level (or <see langword="null"/> if the variable was unset/invalid), so
+    /// <see cref="AvaloniaLogSink"/> knows whether to floor its own chatty areas to
+    /// <see cref="LogLevel.Warning"/>.
     /// </summary>
-    private static ILoggerFactory CreateLoggerFactory()
+    private static (ILoggerFactory Factory, LogLevel? ExplicitMinimumLevel) CreateLoggerFactory()
     {
         LogLevel minimumLevel = LogLevel.Information;
         string? levelName = Environment.GetEnvironmentVariable("NETPRINTS_LOG_LEVEL");
+        LogLevel? explicitLevel = null;
         if (levelName is { Length: > 0 } && Enum.TryParse(levelName, ignoreCase: true, out LogLevel overridden))
         {
             minimumLevel = overridden;
+            explicitLevel = overridden;
         }
 
-        return LoggerFactory.Create(builder => builder.AddSimpleConsole().SetMinimumLevel(minimumLevel));
+        ILoggerFactory factory = LoggerFactory.Create(builder => builder.AddSimpleConsole().SetMinimumLevel(minimumLevel));
+        return (factory, explicitLevel);
     }
 
     /// <summary>
