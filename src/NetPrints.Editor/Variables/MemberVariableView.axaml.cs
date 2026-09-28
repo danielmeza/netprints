@@ -15,12 +15,6 @@ public partial class MemberVariableView : UserControl
 
     private MemberVariableVM? ViewModel => DataContext as MemberVariableVM;
 
-    private void OnNameTapped(object? sender, TappedEventArgs e) => ViewModel?.SelectCommand.Execute(null);
-
-    private void OnGetterDoubleTapped(object? sender, TappedEventArgs e) => ViewModel?.OpenGetterCommand.Execute(null);
-
-    private void OnSetterDoubleTapped(object? sender, TappedEventArgs e) => ViewModel?.OpenSetterCommand.Execute(null);
-
     // Variables can be dragged onto the graph to open the Get/Set chooser (PAR-57).
     private readonly DragSourceHelper dragSource = new();
 

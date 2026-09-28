@@ -13,7 +13,12 @@
       </Button>
       <TextBlock x:Name="NameText" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableName}" Grid.Column="1" Text="{Binding Name}" TextTrimming="CharacterEllipsis" FontSize="14" FontWeight="SemiBold"
                  VerticalAlignment="Center" Background="Transparent"
-                 Tapped="OnNameTapped" PointerPressed="OnNamePointerPressed" PointerMoved="OnNamePointerMoved" PointerReleased="OnNamePointerReleased" />
+                 PointerPressed="OnNamePointerPressed" PointerMoved="OnNamePointerMoved" PointerReleased="OnNamePointerReleased">
+        <!-- Tap selects the variable and shows its inspector; fits ExecuteCommandOnTappedBehavior (batch X2b). -->
+        <Interaction.Behaviors>
+          <ExecuteCommandOnTappedBehavior Command="{Binding SelectCommand}" />
+        </Interaction.Behaviors>
+      </TextBlock>
     </Grid>
 
     <Panel Margin="20,0,0,0">
@@ -22,8 +27,12 @@
         <Button Classes="icon" ToolTip.Tip="Remove getter" AutomationProperties.Name="Remove getter" Command="{Binding RemoveGetterCommand}">
           <mi:MaterialIcon Kind="Minus" />
         </Button>
-        <TextBlock Grid.Column="1" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableGetter}" Text="Get" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" Background="Transparent"
-                   DoubleTapped="OnGetterDoubleTapped" />
+        <TextBlock Grid.Column="1" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableGetter}" Text="Get" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" Background="Transparent">
+          <!-- Double-tap opens the getter; fits ExecuteCommandOnDoubleTappedBehavior (batch X2b). -->
+          <Interaction.Behaviors>
+            <ExecuteCommandOnDoubleTappedBehavior Command="{Binding OpenGetterCommand}" />
+          </Interaction.Behaviors>
+        </TextBlock>
       </Grid>
     </Panel>
 
@@ -33,8 +42,12 @@
         <Button Classes="icon" ToolTip.Tip="Remove setter" AutomationProperties.Name="Remove setter" Command="{Binding RemoveSetterCommand}">
           <mi:MaterialIcon Kind="Minus" />
         </Button>
-        <TextBlock Grid.Column="1" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableSetter}" Text="Set" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" Background="Transparent"
-                   DoubleTapped="OnSetterDoubleTapped" />
+        <TextBlock Grid.Column="1" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableSetter}" Text="Set" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" Background="Transparent">
+          <!-- Double-tap opens the setter; fits ExecuteCommandOnDoubleTappedBehavior (batch X2b). -->
+          <Interaction.Behaviors>
+            <ExecuteCommandOnDoubleTappedBehavior Command="{Binding OpenSetterCommand}" />
+          </Interaction.Behaviors>
+        </TextBlock>
       </Grid>
     </Panel>
 
