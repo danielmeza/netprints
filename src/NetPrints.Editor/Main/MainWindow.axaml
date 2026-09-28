@@ -77,7 +77,7 @@
     </Border>
 
     <!-- Progress overlay while a project loads (PAR-04) -->
-    <Border x:Name="BusyOverlay" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MainBusyOverlay}" IsVisible="{Binding IsBusy}" Background="#AA000000">
+    <Border x:Name="BusyOverlay" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MainBusyOverlay}" IsVisible="{Binding IsBusy}" Background="{DynamicResource BusyOverlay.Background}">
       <StackPanel VerticalAlignment="Center" HorizontalAlignment="Stretch" Margin="40" Spacing="8">
         <TextBlock Text="{Binding BusyTitle}" FontSize="24" HorizontalAlignment="Center" />
         <TextBlock Text="{Binding BusyMessage}" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" />

@@ -53,7 +53,7 @@
                   IsVisible="{Binding ShowEnumValue}" />
         <CheckBox Classes="pinValue" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PinValueCheck}" IsChecked="{Binding UnconnectedBool}" IsVisible="{Binding ShowBooleanValue}" />
         <TextBlock Text="{Binding DisplayName}" IsVisible="{Binding ShowLabel}" FontSize="14" FontWeight="SemiBold"
-                   Foreground="#FFEEEEEE" VerticalAlignment="Center" />
+                   Foreground="{DynamicResource Node.TitleForeground}" VerticalAlignment="Center" />
         <TextBox Text="{Binding Name}" IsVisible="{Binding ShowEditableName}" FontSize="14" FontWeight="SemiBold" MinWidth="60" />
       </StackPanel>
     </DataTemplate>
@@ -79,7 +79,7 @@
 
   <!-- Node (PAR-39..42): header colored by kind, selected border, shadow, label. -->
   <Border x:Name="NodeBorder" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.Node}" AutomationProperties.Name="{Binding Name}" Classes.reroute="{Binding IsRerouteNode}"
-          BorderThickness="2" Background="#AA202020" BoxShadow="4 4 8 0 #80000000"
+          BorderThickness="2" Background="{DynamicResource Node.CardBackground}" BoxShadow="{DynamicResource Node.CardShadow}"
           BorderBrush="{Binding IsSelected, Converter={x:Static edgraph:SelectedBorderConverter.Instance}}">
     <StackPanel>
       <Border x:Name="Header" Height="46" IsVisible="{Binding !IsRerouteNode}"
@@ -95,7 +95,7 @@
             </ComboBox.ItemTemplate>
           </ComboBox>
           <TextBlock x:Name="NodeLabel" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NodeLabel}" Grid.Column="1" Text="{Binding Label}" Margin="10" FontWeight="SemiBold" FontSize="18"
-                     Foreground="#FFEEEEEE" VerticalAlignment="Center" />
+                     Foreground="{DynamicResource Node.SubtitleForeground}" VerticalAlignment="Center" />
           <!-- Pure (PAR-41) -->
           <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="10,0" HorizontalAlignment="Right" IsVisible="{Binding CanSetPure}">
             <TextBlock Text="Pure" VerticalAlignment="Center" Margin="0,0,4,0" />

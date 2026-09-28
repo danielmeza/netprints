@@ -8,10 +8,26 @@
         <ResourceDictionary x:Key="Dark">
           <Color x:Key="GraphGrid.MinorColor">#14FFFFFF</Color>
           <Color x:Key="GraphGrid.MajorColor">#2EFFFFFF</Color>
+          <SolidColorBrush x:Key="GraphWatermark.Foreground">#CCEEEEEE</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.CardBackground">#AA202020</SolidColorBrush>
+          <BoxShadows x:Key="Node.CardShadow">4 4 8 0 #80000000</BoxShadows>
+          <SolidColorBrush x:Key="Node.TitleForeground">#FFEEEEEE</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.SubtitleForeground">#FFEEEEEE</SolidColorBrush>
+          <SolidColorBrush x:Key="OpeningGraphIndicator.Background">#CC202020</SolidColorBrush>
+          <SolidColorBrush x:Key="OpeningGraphIndicator.Foreground">White</SolidColorBrush>
+          <SolidColorBrush x:Key="BusyOverlay.Background">#AA000000</SolidColorBrush>
         </ResourceDictionary>
         <ResourceDictionary x:Key="Light">
           <Color x:Key="GraphGrid.MinorColor">#14000000</Color>
           <Color x:Key="GraphGrid.MajorColor">#2E000000</Color>
+          <SolidColorBrush x:Key="GraphWatermark.Foreground">#55202020</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.CardBackground">#AAF0F0F0</SolidColorBrush>
+          <BoxShadows x:Key="Node.CardShadow">2 2 6 0 #40000000</BoxShadows>
+          <SolidColorBrush x:Key="Node.TitleForeground">#FF202020</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.SubtitleForeground">#FF202020</SolidColorBrush>
+          <SolidColorBrush x:Key="OpeningGraphIndicator.Background">#CCF5F5F5</SolidColorBrush>
+          <SolidColorBrush x:Key="OpeningGraphIndicator.Foreground">#FF202020</SolidColorBrush>
+          <SolidColorBrush x:Key="BusyOverlay.Background">#66000000</SolidColorBrush>
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
     </ResourceDictionary>

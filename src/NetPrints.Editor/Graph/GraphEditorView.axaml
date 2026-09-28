@@ -79,7 +79,7 @@
     </nodify:NodifyEditor>
 
     <!-- Graph name watermark (PAR-38) -->
-    <TextBlock x:Name="Watermark" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GraphWatermark}" Text="{Binding Name}" FontWeight="Bold" FontSize="32" Foreground="#CCEEEEEE"
+    <TextBlock x:Name="Watermark" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GraphWatermark}" Text="{Binding Name}" FontWeight="Bold" FontSize="32" Foreground="{DynamicResource GraphWatermark.Foreground}"
                VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="8" IsHitTestVisible="False" />
 
     <!-- Node search (PAR-52). CanvasPopup anchors itself at the pointer (ADR-0004). -->

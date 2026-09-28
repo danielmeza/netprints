@@ -113,16 +113,7 @@ namespace NetPrints.Tests.Core
         }
 
         /// <summary>E2: hex or named color literals on brush/color properties, outside theme dictionaries.</summary>
-        private static readonly Dictionary<string, string> E2Allowlist = new(StringComparer.Ordinal)
-        {
-            ["src/NetPrints.Editor/ClassEditor/ClassEditorWindow.axaml:189"] = "Opening-graph busy overlay background; needs a theme token (batch X2).",
-            ["src/NetPrints.Editor/ClassEditor/ClassEditorWindow.axaml:190"] = "Opening-graph busy overlay text; needs a theme token (batch X2).",
-            ["src/NetPrints.Editor/Graph/GraphEditorView.axaml:82"] = "The empty-graph watermark text; needs a theme token (batch X2).",
-            ["src/NetPrints.Editor/Graph/Nodes/NodeView.axaml:56"] = "Node title text; needs a theme token (batch X2).",
-            ["src/NetPrints.Editor/Graph/Nodes/NodeView.axaml:82"] = "Node card background and drop shadow; needs theme tokens (batch X2).",
-            ["src/NetPrints.Editor/Graph/Nodes/NodeView.axaml:98"] = "Node subtitle text; needs a theme token (batch X2).",
-            ["src/NetPrints.Editor/Main/MainWindow.axaml:80"] = "Main window busy overlay background; needs a theme token (batch X2).",
-        };
+        private static readonly Dictionary<string, string> E2Allowlist = new(StringComparer.Ordinal);
 
         [Fact]
         public void E2_NoColorLiteralsInViews()
