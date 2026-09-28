@@ -4322,3 +4322,110 @@ E2E suite (AGENTS.md's "A stray saved variable under samples/ broke 11 tests on 
   is now a plain public method the owner calls, rather than a message/event — consistent with
   `ClassEditorVM` owning both VMs directly, but a reviewer who wants every cross-VM notification to go
   through `IMessenger` (as `SelectInspectorMessage` does for the inspector) may prefer that instead.
+
+## Sub-phase J, batch J3 (T103a, T103) + Checkpoint J
+
+- **T103a, equality bullet**: a prior batch (commit 9514704, before this one) already fixed
+  `TypeSpecifier.Equals(TypeSpecifier)` to compare name and generic arguments only (dropping `IsEnum`,
+  consistent with `GetHashCode`) and stopped `MakeArrayNode` from copying `IsEnum` onto its array type.
+  Left open, and finished here: `GenericType.Equals(object)` still returned `true` unconditionally for
+  *any* `TypeSpecifier`, and `TypeSpecifier.Equals(object)` had the mirror placeholder for `GenericType`
+  — both are now `false` (an unbound generic parameter is never equal to a bound type, in either
+  direction), which also makes `GetHashCode` trivially consistent (two values `Equals` can ever call
+  equal are always the same concrete type, so they already hash the same way; the old code violated the
+  hash/equals contract by claiming cross-type equality while returning different hash codes).
+  `GraphUtil.CanConnectNodePins`'s two `genTypeA == typeSpecB2`/`genTypeB2 == typeSpecA2` comparisons
+  were the one place that depended on the old "always true": an unbound generic pin is deliberately
+  compatible with any concrete type until constraint checking is implemented (existing `TODO`), so that
+  behavior is now spelled out as an explicit `return true` there (a connectability rule, not a type
+  equality), rather than borrowed from `Equals`. Regression tests:
+  `TypeTests.TypeSpecifierAndGenericTypeAreNeverEqual` replaces the old `TestGenericEquality` (which had
+  pinned the buggy "always equal" behavior with `Assert.Equal`) and
+  `TypeTests.EqualValuesHaveTheSameHashCode`. Found by running the full suite after the fix:
+  `SuggestionListVMTests.SelectingMethodCreatesNodeAtPositionAndCloses` failed — unrelated to equality,
+  see the next bullet.
+- **T103a, `CallMethodNode.genericArgumentTypes` bullet**: the constructor parameter itself was indeed
+  dead (the constructor builds its generic-argument type pins from `MethodSpecifier.GenericArguments`,
+  never from this parameter) and was removed. But `SuggestionListVM.SelectCommand`'s `MethodSpecifier`
+  case created the node through the reflection-based `NodeGraphVM.AddNode<T>(...)` → `AddNodeRequest`
+  path (matched by *exact parameter-type list*, per `AddEventEntry`'s doc comment on that pipeline), and
+  passed a redundant `List<BaseType>` of freshly-built `GenericType`s precisely so reflection would find
+  the 3-parameter constructor overload; removing the parameter left no constructor matching that call,
+  so `AddNodeRequest` silently produced no node (caught by the full suite, not by a targeted test — the
+  failure was `Method.Nodes.OfType<CallMethodNode>().Single()` finding zero nodes). Fixed by dropping the
+  now-unnecessary second argument at that one call site instead of keeping the dead parameter around for
+  reflection's sake. `NodeGraphVM.Drop(MethodVM, GraphPoint)`'s own call (already using the direct,
+  non-reflection constructor) was simplified the same way in T099's aftermath here.
+- **T103a, `[Obsolete]` visibility values**: removed `Private`/`Public`/`Protected`/`Internal` from
+  `VariableModifiers`, `MethodModifiers` and `ClassModifiers`. Verified first (`git grep`) that no
+  `src/`/`tests/` code references them and that the only "Private"/"Public"/etc. strings in
+  `tests/NetPrints.Core.Tests/Fixtures/**/*.json` are `visibility` values (the separate, still-used
+  `MemberVisibility` enum), never `modifiers` values (which are only ever `"Static"` in the checked-in
+  fixtures) — matches the task text's own claim ("not referenced anywhere in this codebase"), so no test
+  was needed for this bullet (not a bug, a dead-code removal with a text-based precondition already
+  verified).
+- **T103a, `ICompilationReference`/`TranslateMethodEntry` bullets: already resolved, no change needed.**
+  `ICompilationReference` was deleted in T063 part A (commit `e19f3cf`, "delete the old model/persistence
+  APIs") along with the rest of the pre-P1 persistence layer; `git grep -i ICompilationReference` is
+  empty. `BuiltInNodeTranslators.TranslateMethodEntry`'s empty body already carries an XML doc explaining
+  the no-op is intentional (added in sub-phase F, commit `934ffcb`: the entry node's state is reached by
+  fallthrough from `ExecutionGraphTranslator.Translate`, so there is nothing left to emit) — this is the
+  "restore its intent" alternative the task text offers, already done by the time of the XML-doc pass
+  that raised the finding.
+- **T103a, null-guard tests**: three gaps closed. `NodeGraphVMTests.DropMethodWhenTheOpenGraphHasNoClassThrows`
+  pins `NodeGraphVM.Drop(MethodVM, GraphPoint)`'s `Graph.Class ?? throw new InvalidOperationException(...)`
+  guard (T011/T012). `EventGraphTranslatorTests.TranslateEventEntryThrowsForANullGraph`/
+  `ThrowsForANullEntry` pin `ExecutionGraphTranslator.TranslateEventEntry`'s two
+  `ArgumentNullException.ThrowIfNull` guards. All three use `null!` to pass a null argument to a
+  non-nullable parameter deliberately, the same pattern already used elsewhere in this suite for testing
+  argument guards (eg. `ExtensionBuilderTests`).
+- **T103, serialization logging**: `DocumentMigrator` and `DocumentMapper` had no `ILogger` at all before
+  this batch (noted as an open item after T042: "T103's implementer should add the log call there ...
+  rather than assume it already exists"). Both now take a required `ILogger<T>` constructor parameter,
+  matching `FileSystemDocumentStore`/`ProjectPersistence`'s existing convention (required, not optional;
+  callers that do not care pass `NullLogger<T>.Instance`) rather than a defaulted/nullable parameter —
+  consistency with the rest of the serialization layer's logging was judged more valuable than avoiding
+  the ~20-file call-site churn. New `Log.cs` per editor-services.md §6's convention: `Migrations/Log.cs`
+  (3001 `DocumentMigrated`, `Information`) and `Mapping/Log.cs` (3002 `UnknownNodeKindPreserved`, 3003
+  `ConnectionDropped`, both `Warning`). `DocumentMigrator.Upgrade` logs 3001 once, only when at least one
+  migration actually ran (from ≠ to), not on every call — a no-op upgrade (already at `Supported`) logs
+  nothing, pinned by `DocumentMigratorLogsNothingWhenNoMigrationRuns`. `DocumentMapper` logs 3002 at the
+  same site that raises the existing `DocumentIssue.UnknownNodeKind`, and 3003 at every site that raises
+  `DocumentIssue.ConnectionDropped` (missing node, unknown pin, incompatible pins, or a connect-time
+  exception) via a small local `Dropped(connection, reason)` helper inside `ApplyConnections` that does
+  both the issue and the log in one place — the issue and the log messages share the same "reason" text
+  now (previously the "could not be connected: {ex.Message}" issue text had no trailing period unlike the
+  other three; the shared helper gives it one, a harmless wording-only change with no test asserting the
+  exact string). Production wiring: `PersistenceBinding.CreateSerializers`/`Bind` now take an
+  `ILoggerFactory` (threaded from `EditorComposition`'s and `TestComposition`'s existing
+  `host.LoggerFactory`); `GraphCodeGenerator.Create` uses `NullLoggerFactory.Instance` for both loggers,
+  matching its existing use of the same for `ExtensionLoader` in that method (the Generator CLI has no
+  host logging infrastructure of its own). `LoggingTests.cs` (new) covers all four events named in the
+  task (3001, 3002, 3003, 3005) with a collecting logger: 3001/3002/3003 reuse the existing
+  `CollectingLoggerFactory` test helper (`NetPrints.Tests.Extensibility`, already used by extension-loading
+  tests) via `ILoggerFactory.CreateLogger<T>()`; 3005 (`FileSystemDocumentStore.ExternalChange`, already
+  implemented before this batch, just untested) mirrors `FileSystemDocumentStoreTests`'s existing
+  external-edit scenario with the collecting factory swapped in for `NullLogger`. 3004 and 3006 stay
+  retired (R21): no code added for them, matching editor-services.md §6's table.
+- **Deviation (required `ILogger<T>` vs. optional)**: considered making the new parameters
+  `ILogger<T>? logger = null` (falling back to `NullLogger<T>.Instance` internally) specifically to avoid
+  touching the ~20 existing `DocumentMapper`/`DocumentMigrator` construction sites across `src/` and
+  `tests/`. Went with the required, no-default form instead, for consistency with
+  `FileSystemDocumentStore`/`ProjectPersistence` and because AGENTS.md's logging convention doesn't carve
+  out an optional-logger exception; a reviewer who considers the blast radius (18 test files plus 2
+  production composition roots) too wide for two warning/information-level diagnostic events may prefer
+  the optional form instead.
+- Suite totals (this batch, Release): full solution `dotnet test` (`--ignore-exit-code 8`) 826 total,
+  0 failed, 816 succeeded, 10 skipped (same pre-existing headless/E2E self-skips as J1/J2); `dotnet build
+  -c Release` 0 warnings; `dotnet format --verify-no-changes` clean. Desktop E2E job (`NETPRINTS_E2E=1`,
+  `--fail-skips on`): 7/7 passed, 0 skipped. `git status samples/ tests/NetPrints.Core.Tests/Fixtures/`
+  clean throughout. Net new tests this batch: 9 (+2 `TypeTests` net of 1 removed, +2
+  `EventGraphTranslatorTests`, +1 `NodeGraphVMTests`, +5 new `LoggingTests`; 817 (J2) + 9 = 826).
+- **Checkpoint J reached** (SC-007: 0 build warnings with warnings-as-errors, 0 references to Fody —
+  unchanged since sub-phase B/C, reconfirmed by the Release build above; SC-008: all P0/P0.1 tests stay
+  green, and ED-T10's architecture gate — added in T102 — is demonstrated to fail on its own fixture).
+- Open questions for review: (1) the required-vs-optional `ILogger<T>` call above; (2) whether
+  `ConnectionDropped`'s shared issue/log "reason" text (now ending in a period for the exception case
+  too) needs a dedicated wording review, since nothing pins the exact string; (3) `T103a`'s
+  `ICompilationReference`/`TranslateMethodEntry` bullets needed no code change — flagging in case a
+  reviewer believes the XML-doc pass intended something further for either.
