@@ -16,6 +16,7 @@ using static NetPrints.Tests.Extensibility.ExtensionTestSupport;
 namespace NetPrints.Tests.Extensibility;
 
 /// <summary>Discovery, validation, ordering and loading (extension-points.md §8.1, EX-T10, EX-T11).</summary>
+[Collection(nameof(RealExtensionLoadCollection))]
 public class ExtensionLoaderTests : IDisposable
 {
     private readonly string root = NewTempDirectory();

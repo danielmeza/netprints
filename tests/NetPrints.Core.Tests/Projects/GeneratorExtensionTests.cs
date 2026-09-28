@@ -16,6 +16,7 @@ using Xunit;
 namespace NetPrints.Tests.Projects;
 
 /// <summary>PS-T14 (project-system.md §7): the generator loads the request's <c>extension=</c> folders (§3).</summary>
+[Collection(nameof(RealExtensionLoadCollection))]
 public class GeneratorExtensionTests : IDisposable
 {
     private readonly string directory = Directory.CreateTempSubdirectory("netprints-generator-ext-").FullName;

@@ -26,6 +26,7 @@ using Xunit;
 namespace NetPrints.Tests.Extensibility;
 
 /// <summary>What the real test extension contributes, end to end: EX-T02, EX-T03, EX-T07 and DF-T17.</summary>
+[Collection(nameof(RealExtensionLoadCollection))]
 public sealed class ContributionTests : IAsyncLifetime
 {
     private static readonly ExtensionLoaderOptions WithTestExtension =

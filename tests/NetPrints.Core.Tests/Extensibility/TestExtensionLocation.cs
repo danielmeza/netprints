@@ -1,8 +1,19 @@
 using System.IO;
 using NetPrints.Testing;
 using NetPrints.Tests.Samples;
+using Xunit;
 
 namespace NetPrints.Tests.Extensibility;
+
+/// <summary>
+/// Serializes the tests that load the real <c>NetPrints.TestExtension</c> assembly through their own
+/// <c>AssemblyLoadContext</c> (batch D4): concurrent <see cref="System.Runtime.Loader.AssemblyDependencyResolver"/>
+/// construction from several threads at once corrupted the process (an AccessViolationException
+/// surfacing in unrelated code, CI run 36413425390). One collection, not the whole assembly, so the
+/// rest of Core.Tests keeps its parallelism.
+/// </summary>
+[CollectionDefinition(nameof(RealExtensionLoadCollection), DisableParallelization = true)]
+public sealed class RealExtensionLoadCollection;
 
 /// <summary>Where the built <c>NetPrints.TestExtension</c> asset (T071) lands for the running configuration.</summary>
 public static class TestExtensionLocation
