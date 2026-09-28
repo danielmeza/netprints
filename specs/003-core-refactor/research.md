@@ -539,7 +539,7 @@ owner's `kicad-sharp` repository for the concrete shapes (release jobs, `NuGet.c
 | Publishing | Trusted Publishing, environment `release` | kicad-sharp job shape; a first step names the missing `NUGET_USER` secret |
 | Desktop | self-contained folder archives, SHA256SUMS, `actions/attest` (Velopack next) | `osx-arm64` on `macos-latest` for the ad-hoc signed apphost; win-x64 cross-published on Linux and not smoke-tested (no Windows runner in P1) |
 | Dry runs | `workflow_dispatch` | plus a path-filtered `pull_request` trigger, because `workflow_dispatch` works only once the file is on the default branch, and the P1 PR must show a green dry run |
-| Docs | Docusaurus 3 in `website/` reading `../docs` (DocFX only) | `numberPrefixParser: false` so `adr/0002-…` and `research/2026-09-25-…` keep their names; a small remark plugin rewrites links that leave `docs/` to GitHub URLs; `specs/` is not published |
+| Docs | Docusaurus 3 in `website/` reading `../docs` (DocFX only) | `numberPrefixParser: false` so `adr/0005-…` and `research/2026-09-25-…` keep their names; a small remark plugin rewrites links that leave `docs/` to GitHub URLs; `specs/` is not published |
 | API reference | DocFX `modern` at `/api/` (DefaultDocumentation) | DocFX 2.81.0 as a local tool (`.config/dotnet-tools.json`); packable libraries only |
 | Research notes | — | published as a "Research notes" category with a generated index that says they are dated and not updated; prototypes excluded |
 | Wiki | two-page pointer via github-wiki-action (curated mirror) | `strategy: init`, gated by `vars.PUBLISH_WIKI` and a `git ls-remote` check; no PR trigger |

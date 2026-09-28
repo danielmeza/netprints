@@ -373,7 +373,7 @@ build the docs site; run the release workflow as a dry run.
 - **FR-059**: A documentation site MUST be built from `docs/` on every pull request (broken links fail the build) and deployed to GitHub Pages from `master` once enabled; it MUST contain the guide, the decision records, the research notes and an API reference for the packable libraries at `/api/`, and MUST NOT publish `specs/` (links to specs point to GitHub).
 - **FR-060**: The graph `$schema` URL MUST be the site's `/schemas/netpc.v1.schema.json`, published from the committed `schemas/` by the docs build; the reader keeps ignoring `$schema`.
 - **FR-061**: The wiki MUST be a two-page pointer to the site, synced from the repository only on `master` once enabled, never from a pull request.
-- **FR-062**: The README MUST have an install section (editor downloads, dotnet tool, NuGet package) and badges; the decision MUST be recorded as ADR 0002.
+- **FR-062**: The README MUST have an install section (editor downloads, dotnet tool, NuGet package) and badges; the decision MUST be recorded as ADR 0005.
 - **FR-063**: The owner's one-time steps (nuget.org Trusted Publishing policy and `NUGET_USER`, the `release` environment, Pages source, wiki enablement, labels) MUST be documented, and every workflow MUST tolerate them not being done (skip or fail with a message naming the step).
 
 ### Key Entities

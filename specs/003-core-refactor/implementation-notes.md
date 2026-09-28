@@ -4767,7 +4767,7 @@ E2E suite (AGENTS.md's "A stray saved variable under samples/ broke 11 tests on 
 - Open questions for review: (1) the `NetPrints.Editor -> NetPrints.Generator` self-contained-publish
   fix above (`ReferenceOutputAssembly="false"` + plain `Reference`) works and is verified, but is a
   workaround for a genuine .NET SDK limitation (a library-like `OutputType=Exe` project referenced by an
-  app that itself gets RID-published); worth a one-line ADR-0002 note in T115/T121's batch so a future
+  app that itself gets RID-published); worth a one-line ADR-0005 note in T115/T121's batch so a future
   contributor doesn't "simplify" it back to a plain `ProjectReference`; (2) the `ExecutionGraphTranslator`
   crash on a fully-unset required data pin (no connection, no default) found while testing this batch —
   `ProjectCheck` now catches it at its own boundary, but the underlying gap (should this be a

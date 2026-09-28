@@ -19,7 +19,7 @@ owner-set repository variable (§11), so the P1 PR can only run dry runs.
 | Workflows | `.github/workflows/release.yml`, `docs.yml`, `wiki.yml` (new); `ci.yml` (two new jobs); `.github/release.yml`, `.github/release-notes.md` (new); `.github/dependabot.yml` |
 | Docs site | `website/` (new), `docs/index.md`, `docs/guide/`, `docs/contributing/`, `docs/**/_category_.json` (new), `docs/api/` (new), `.config/dotnet-tools.json` (new), `scripts/build-docs.sh` (new) |
 | Wiki | `.github/wiki/Home.md`, `.github/wiki/_Sidebar.md` (new) |
-| Decision record | `docs/adr/0002-release-and-docs-stack.md` (new) |
+| Decision record | `docs/adr/0005-release-and-docs-stack.md` (new) |
 
 Actions are pinned by commit SHA with the version in a comment, as in `ci.yml`. SHAs resolved on 2026-09-25
 (`gh api repos/<owner>/<repo>/commits/<tag> --jq .sha`); Dependabot's `github-actions` entry keeps them current.
@@ -720,7 +720,7 @@ const config: Config = {
         routeBasePath: '/',
         include: ['**/*.md'],
         exclude: ['api/**', '**/prototypes/**'],
-        numberPrefixParser: false,             // routes keep the file names (adr/0002-…, research/2026-09-25-…)
+        numberPrefixParser: false,             // routes keep the file names (adr/0005-…, research/2026-09-25-…)
         editUrl: 'https://github.com/danielmeza/netprints/edit/master/docs/',
         beforeDefaultRemarkPlugins: [[repoLinks, {repo: 'https://github.com/danielmeza/netprints', branch: 'master'}]],
         // no sidebarPath: the sidebar is generated from folders, _category_.json and front matter
@@ -1023,7 +1023,8 @@ SDK to open and build projects", unsigned note linking the install page), *Comma
 (`dotnet add package NetPrints.Sdk`). The build-from-source part stays, shortened, under "Contributing" with a
 link to `docs/contributing/releasing.md`.
 
-`docs/adr/0002-release-and-docs-stack.md` (T121), the 0001 format (Status, Context, Decision, Consequences):
+`docs/adr/0005-release-and-docs-stack.md` (T121; numbered 0005, not 0002 — 0002 is taken by
+designer-comments and 0006/0007 already exist), the 0001 format (Status, Context, Decision, Consequences):
 Status "Accepted (2026-09-25)"; Context = no packages, hard-coded version, no docs site, single-file breaks the
 old reference fallback; Decision = the picks and runner-ups of the research §10 summary (MinVer; plain Actions
 + scripts; self-contained folder archives with SHA256SUMS and attestations; Trusted Publishing; Docusaurus 3 +
@@ -1042,7 +1043,7 @@ follow-ups (Velopack installers and auto-update, code signing, package validatio
 | RL-T05 | Versions: MinVer on the checked-out commit matches `^\d+\.\d+\.\d+(-alpha\.0\.\d+)?$`; `pack-local.sh` versions match `^0\.1\.0-local\.\d{14}$`; on a tag the pack job fails unless MinVer equals the tag without `v` |
 | RL-T06 | Self-contained linux-x64 publish: separate-file layout with `BuildHost-netcore/`, `--check-project … --run` with no display prints references from `packs/Microsoft.NETCore.App.Ref/`, 0 analysis errors, a successful build and `Hello, World!`; `samples/` unchanged (§5) |
 | RL-T07 | Grep test in `tests/NetPrints.Core.Tests/Architecture/NoRuntimeDirectoryReferencesTests.cs`: no file under `src/` contains `GetRuntimeDirectory`, `FindRuntimeAssemblyPaths` or `Basic.Reference.Assemblies` |
-| RL-T08 | `scripts/build-docs.sh` succeeds; `website/build/index.html`, a page per research note, `website/build/adr/0002-release-and-docs-stack/index.html`, `website/build/api/index.html` and the `NetPrints.Graph.Node` API page exist; `website/build/schemas/netpc.v1.schema.json` equals the committed schema; no `specs/` route exists; adding a link to a missing page makes the build fail (shown once in the PR) |
+| RL-T08 | `scripts/build-docs.sh` succeeds; `website/build/index.html`, a page per research note, `website/build/adr/0005-release-and-docs-stack/index.html`, `website/build/api/index.html` and the `NetPrints.Graph.Node` API page exist; `website/build/schemas/netpc.v1.schema.json` equals the committed schema; no `specs/` route exists; adding a link to a missing page makes the build fail (shown once in the PR) |
 | RL-T09 | `NetPrintsSchema.V1Url` equals `https://danielmeza.github.io/netprints/schemas/netpc.v1.schema.json` and its path below `/netprints/` equals the schema's path in `website/build` (asserted by `build-docs.sh` and DF-T24's `$id`) |
 | RL-T10 | The release workflow's pull-request run on the P1 PR is green for `pack`, `desktop` (3 legs), `assets`, with `publish-nuget` and `github-release` skipped, no secrets read; the `release-assets` artifact holds 7 package files, 3 archives and a `SHA256SUMS.txt` that verifies |
 | RL-T11 | `actionlint` (v1.7.x, run locally) reports nothing for all workflows; `docs.yml` `deploy` and `wiki.yml` `sync` are skipped on the PR and on `master` while their variables are unset |

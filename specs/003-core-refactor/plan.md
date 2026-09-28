@@ -162,7 +162,7 @@ assets/icons/netprints-icon.png# new (L): package and site icon
 scripts/                       # new (L): pack-local, verify-packages, smoke-desktop, archive-desktop, build-docs
 .config/dotnet-tools.json      # new (L): docfx
 website/                       # new (L): Docusaurus 3 site reading ../docs
-docs/                          # + index.md, guide/, contributing/, api/ (DocFX), _category_.json files, adr/0002
+docs/                          # + index.md, guide/, contributing/, api/ (DocFX), _category_.json files, adr/0005
 .github/                       # + workflows/release.yml, docs.yml, wiki.yml; release.yml (notes categories),
                                #   release-notes.md, wiki/Home.md, wiki/_Sidebar.md; dependabot npm entry
 ```
@@ -189,7 +189,7 @@ Each sub-phase ends green (`dotnet test --solution NetPrints.slnx`) and is a nat
 | I | Code view + diagnostics + navigation + hover | US6 | UI tests + baselines reviewed |
 | J | VM/editor follow-ups: narrow deps, wrappers, gate, Nodify commands, explicit composition, logging call sites | US7 | gate demonstrated; SC-007, SC-008 |
 | K | Polish: README, full suite, E2E once, IDE checks | — | CI green |
-| L | Release, packages and docs: MinVer, package metadata, packable projects, local feed + verification, `--check-project` + self-contained smoke, release workflow (dry run), DocFX + Docusaurus + docs workflow, wiki, README install, ADR 0002; then the PR is marked ready (T108) | US8 | SC-011…SC-015; RL-T01…T12; release dry run green on the PR |
+| L | Release, packages and docs: MinVer, package metadata, packable projects, local feed + verification, `--check-project` + self-contained smoke, release workflow (dry run), DocFX + Docusaurus + docs workflow, wiki, README install, ADR 0005; then the PR is marked ready (T108) | US8 | SC-011…SC-015; RL-T01…T12; release dry run green on the PR |
 
 **PR size (owner decision: one PR).** One branch and one PR, opened as a **draft after sub-phase E**
 so the reviewer reviews A–E (model, graph format, build pipeline, project system; the roadmap "done

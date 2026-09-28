@@ -24,7 +24,7 @@ const config: Config = {
         routeBasePath: '/',
         include: ['**/*.md'],
         exclude: ['api/**', '**/prototypes/**'],
-        numberPrefixParser: false,             // routes keep the file names (adr/0002-…, research/2026-09-25-…)
+        numberPrefixParser: false,             // routes keep the file names (adr/0005-…, research/2026-09-25-…)
         editUrl: 'https://github.com/danielmeza/netprints/edit/master/docs/',
         beforeDefaultRemarkPlugins: [[repoLinks, {repo: 'https://github.com/danielmeza/netprints', branch: 'master'}]],
         // no sidebarPath: the sidebar is generated from folders, _category_.json and front matter
