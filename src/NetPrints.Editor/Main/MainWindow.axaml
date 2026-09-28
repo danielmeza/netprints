@@ -29,7 +29,7 @@
       </Grid>
 
       <ScrollViewer Grid.Row="3" Margin="5,0,5,5" VerticalScrollBarVisibility="Auto">
-        <ItemsControl x:Name="ClassList" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MainClassList}" ItemsSource="{Binding Project.Classes}">
+        <ItemsControl x:Name="ClassList" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MainClassList}" ItemsSource="{Binding Classes}">
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="core:ClassGraph">
               <Grid ColumnDefinitions="*,Auto">

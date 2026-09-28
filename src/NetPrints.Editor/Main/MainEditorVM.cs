@@ -47,10 +47,18 @@ public sealed partial class MainEditorVM : ObservableObject, IDisposable
 
     /// <summary>The open project, or null.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsProjectOpen), nameof(CanCompile), nameof(CanCompileAndRun), nameof(Title))]
+    [NotifyPropertyChangedFor(nameof(IsProjectOpen), nameof(CanCompile), nameof(CanCompileAndRun), nameof(Title), nameof(Classes))]
     [NotifyCanExecuteChangedFor(nameof(SaveProjectCommand), nameof(CompileCommand), nameof(RunCommand),
         nameof(ShowReferencesCommand), nameof(NewClassCommand), nameof(AddExistingClassCommand), nameof(ToggleSettingsPaneCommand))]
     public partial Project? Project { get; set; }
+
+    /// <summary>
+    /// The open project's classes, or empty with no project open (batch D1): the class list's
+    /// <c>ItemsSource</c> binds this instead of the two-segment <c>Project.Classes</c>, which logged a
+    /// "Value is null" binding warning while no project was open yet (the null <see cref="Project"/>
+    /// intermediate). Still the live collection itself, so additions and removals keep updating the list.
+    /// </summary>
+    public IReadOnlyList<ClassGraph> Classes => Project?.Classes ?? [];
 
     /// <summary>Whether the Project pane (Create/Open/Save) is open.</summary>
     [ObservableProperty]

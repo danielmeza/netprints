@@ -98,11 +98,89 @@ public class ClassEditorVMTests : IAsyncLifetime
     }
 
     [Fact]
-    public void RemovingMethodClearsInspectorAndGraph()
+    public async Task OpenMethodCommandSelectsAndOpensInOneCall()
     {
         var main = vm.Methods.Single();
-        vm.SelectMethodCommand.Execute(main);
-        vm.OpenMethodCommand.Execute(main);
+
+        await vm.OpenMethodCommand.ExecuteAsync(main);
+
+        Assert.Same(main, vm.SelectedMethod);
+        Assert.Equal(InspectorKind.Method, vm.Inspector);
+        Assert.Same(main.Graph, vm.OpenedGraph?.Graph);
+    }
+
+    [Fact]
+    public async Task ReclickingTheSameMethodReopensItAfterTheCanvasSwitchedAway()
+    {
+        // Regression: an earlier design opened only on a SelectedItem-changed hook, which does not
+        // re-fire on a second click of a method that was never deselected (EventGraphTests'
+        // "Open: switch away [to another graph, not by deselecting the method], then reopen").
+        var main = vm.Methods.Single();
+        await vm.OpenMethodCommand.ExecuteAsync(main);
+
+        vm.ShowClassCommand.Execute(null);
+        Assert.Same(cls, vm.OpenedGraph?.Graph);
+        Assert.Same(main, vm.SelectedMethod); // still the list's selection
+
+        await vm.OpenMethodCommand.ExecuteAsync(main);
+
+        Assert.Same(main.Graph, vm.OpenedGraph?.Graph);
+    }
+
+    [Fact]
+    public async Task ClickingTheAlreadyOpenMethodDoesNotReopenIt()
+    {
+        var main = vm.Methods.Single();
+        await vm.OpenMethodCommand.ExecuteAsync(main);
+        var openedGraph = vm.OpenedGraph;
+
+        await vm.OpenMethodCommand.ExecuteAsync(main);
+
+        Assert.Same(openedGraph, vm.OpenedGraph);
+    }
+
+    [Fact]
+    public async Task ClickingADifferentMethodOpensItInstead()
+    {
+        vm.CreateMethodCommand.Execute(null);
+        var main = vm.Methods.First();
+        var second = vm.Methods.Last();
+
+        await vm.OpenMethodCommand.ExecuteAsync(main);
+        await vm.OpenMethodCommand.ExecuteAsync(second);
+
+        Assert.Same(second, vm.SelectedMethod);
+        Assert.Same(second.Graph, vm.OpenedGraph?.Graph);
+    }
+
+    [Fact]
+    public async Task ShowsABusyIndicatorOnlyAfterTheDelay()
+    {
+        // Holds the open "in flight" deterministically: real background work (WarmOverloadsAsync's
+        // Task.Run) is fast enough to finish before the test's own next statement in a Release build,
+        // which would otherwise make this a flaky race against the scheduled busy-indicator callback.
+        var gate = new TaskCompletionSource();
+        vm.OpenGraphDelayForTests = () => gate.Task;
+        var main = vm.Methods.Single();
+
+        Task openTask = vm.OpenMethodCommand.ExecuteAsync(main);
+        Assert.False(vm.IsOpeningGraph);
+
+        editor.Scheduler.AdvanceBy(ClassEditorVM.BusyIndicatorDelay.Ticks);
+        Assert.True(vm.IsOpeningGraph);
+        Assert.Equal(main.Name, vm.OpeningGraphName);
+
+        gate.SetResult();
+        await openTask;
+        Assert.False(vm.IsOpeningGraph);
+        Assert.Null(vm.OpeningGraphName);
+    }
+
+    [Fact]
+    public async Task RemovingMethodClearsInspectorAndGraph()
+    {
+        var main = vm.Methods.Single();
+        await vm.OpenMethodCommand.ExecuteAsync(main);
         Assert.Equal(InspectorKind.Method, vm.Inspector);
         Assert.NotNull(vm.OpenedGraph);
 
@@ -115,11 +193,11 @@ public class ClassEditorVMTests : IAsyncLifetime
     }
 
     [Fact]
-    public void RemovingConstructorClearsInspectorAndGraph()
+    public async Task RemovingConstructorClearsInspectorAndGraph()
     {
         vm.CreateConstructorCommand.Execute(null);
         var ctor = vm.Constructors.Single();
-        vm.SelectMethodCommand.Execute(ctor);
+        await vm.OpenMethodCommand.ExecuteAsync(ctor);
 
         vm.RemoveMethodCommand.Execute(ctor);
 
@@ -129,14 +207,14 @@ public class ClassEditorVMTests : IAsyncLifetime
     }
 
     [Fact]
-    public void InspectorSwitches()
+    public async Task InspectorSwitches()
     {
         vm.CreateVariableCommand.Execute(null);
         vm.Variables.Single().SelectCommand.Execute(null);
         Assert.Equal(InspectorKind.Variable, vm.Inspector);
         Assert.Same(vm.Variables.Single(), vm.SelectedVariable);
 
-        vm.SelectMethodCommand.Execute(vm.Methods.Single());
+        await vm.OpenMethodCommand.ExecuteAsync(vm.Methods.Single());
         Assert.Equal(InspectorKind.Method, vm.Inspector);
 
         vm.ShowClassCommand.Execute(null);
@@ -221,9 +299,9 @@ public class ClassEditorVMTests : IAsyncLifetime
     }
 
     [Fact]
-    public void DeleteKeepsEntryAndMainReturn()
+    public async Task DeleteKeepsEntryAndMainReturn()
     {
-        vm.OpenMethodCommand.Execute(vm.Methods.Single());
+        await vm.OpenMethodCommand.ExecuteAsync(vm.Methods.Single());
         var graph = vm.OpenedGraph!;
         var method = (MethodGraph)graph.Graph;
         var extraReturn = new ReturnNode(method);

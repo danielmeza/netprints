@@ -17,16 +17,9 @@ public partial class ClassEditorWindow : Window
 
     private ClassEditorVM? ViewModel => DataContext as ClassEditorVM;
 
-    // Single click shows the method inspector, double click opens the graph (PAR-24, 27).
+    // A single click selects and opens the method/constructor, in one OpenMethodCommand call (PAR-24,
+    // batch D1).
     private void OnMethodTapped(object? sender, TappedEventArgs e)
-    {
-        if ((sender as Control)?.DataContext is MethodVM method)
-        {
-            ViewModel?.SelectMethodCommand.Execute(method);
-        }
-    }
-
-    private void OnMethodDoubleTapped(object? sender, TappedEventArgs e)
     {
         if ((sender as Control)?.DataContext is MethodVM method)
         {

@@ -1,6 +1,7 @@
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -66,11 +67,26 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     /// <summary>Grid cells from a newly created method's entry node to its return node.</summary>
     private const double NewMethodReturnGridOffset = 15;
 
+    /// <summary>How long a graph open must run before the busy overlay appears (batch D1):
+    /// generous enough that a normal open on a small graph never flickers it.</summary>
+    internal static readonly TimeSpan BusyIndicatorDelay = TimeSpan.FromMilliseconds(150);
+
     private readonly Queue<string> outputLines = new();
     private readonly Subject<string> outputReceived = new();
     private int outputCharCount;
     private bool outputTruncated;
     private IDisposable? outputFlush;
+    private CancellationTokenSource? openGraphCts;
+    private MethodVM? pendingOpenMethod;
+
+    /// <summary>
+    /// Test seam (batch D1): awaited, if set, right after the busy-indicator timer is scheduled and
+    /// before the real background work starts, so a test can hold a graph open "in flight"
+    /// deterministically instead of racing real <see cref="Task.Run(Action)"/> completion against the
+    /// test's own next statement (a genuine flake: the real work is fast enough to finish first in a
+    /// Release build). Always <see langword="null"/> in production.
+    /// </summary>
+    internal Func<Task>? OpenGraphDelayForTests { get; set; }
 
     /// <summary>
     /// Wraps <paramref name="cls"/>: builds its method/constructor/variable collections, subscribes
@@ -193,6 +209,15 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowMethodInspector))]
     public partial MethodVM? SelectedMethod { get; set; }
+
+    /// <summary>Whether a graph is still opening past <see cref="BusyIndicatorDelay"/> (batch D1):
+    /// drives the "Opening &lt;name&gt;…" overlay. Never true for an open that finishes quickly.</summary>
+    [ObservableProperty]
+    public partial bool IsOpeningGraph { get; set; }
+
+    /// <summary>Name shown by the busy overlay while <see cref="IsOpeningGraph"/> is true.</summary>
+    [ObservableProperty]
+    public partial string? OpeningGraphName { get; set; }
 
     /// <summary>
     /// stdout/stderr of every program Run has started (PAR-10), across every open class window
@@ -823,9 +848,22 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         UndoRedo.Do(EditorCommands.RemoveEventGraph(Class, eventGraph.Graph));
     }
 
-    /// <summary>Single click on a method or constructor: shows the method inspector (PAR-24).</summary>
+    /// <summary>
+    /// Selects and opens a method or constructor's graph (PAR-24), in one command: a single click on
+    /// its list entry both shows the method inspector and opens the canvas. Previously a single click
+    /// only selected it, requiring a second, discoverable double-click gesture the owner reported as
+    /// "the graph doesn't open" (batch D1). Invoked directly (not through a two-way <c>SelectedItem</c>
+    /// binding's changed hook): the method stays the list's <c>SelectedItem</c> across an unrelated
+    /// canvas change (Create Event Graph, Class), so a changed hook would not re-fire on a second click
+    /// of the same, already-selected method — exactly the "Open: switch away, then reopen" case
+    /// <c>EventGraphTests</c> covers. A click on the method already loading is ignored; a click on the
+    /// already-open method with nothing pending is a no-op; a click on a different method cancels the
+    /// pending one. Reflection-backed overload lookups for the graph's nodes are warmed on a background
+    /// thread first (AGENTS.md: heavy work off the UI thread), and <see cref="IsOpeningGraph"/> only
+    /// turns on if that takes longer than <see cref="BusyIndicatorDelay"/>.
+    /// </summary>
     [RelayCommand]
-    private void SelectMethod(MethodVM? method)
+    private async Task OpenMethodAsync(MethodVM? method)
     {
         if (method is null)
         {
@@ -834,16 +872,105 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
 
         SelectedMethod = method;
         Inspector = InspectorKind.Method;
-    }
 
-    /// <summary>Double click on a method or constructor: opens its graph (PAR-24).</summary>
-    [RelayCommand]
-    private void OpenMethod(MethodVM? method)
-    {
-        if (method is not null)
+        if (method == pendingOpenMethod || (pendingOpenMethod is null && OpenedGraph?.Graph == method.Graph))
         {
+            return;
+        }
+
+        pendingOpenMethod = method;
+        if (openGraphCts is not null)
+        {
+            await openGraphCts.CancelAsync();
+            openGraphCts.Dispose();
+        }
+
+        var cts = new CancellationTokenSource();
+        openGraphCts = cts;
+        CancellationToken token = cts.Token;
+
+        IDisposable indicator = Context.Scheduler.Schedule(BusyIndicatorDelay, () =>
+        {
+            OpeningGraphName = method.Name;
+            IsOpeningGraph = true;
+        });
+
+        try
+        {
+            if (OpenGraphDelayForTests is { } delay)
+            {
+                await delay();
+            }
+
+            await WarmOverloadsAsync(method.Graph, token);
+            token.ThrowIfCancellationRequested();
             OpenGraph(method.Graph);
         }
+        catch (OperationCanceledException)
+        {
+            // Superseded by a later click; OpenedGraph is untouched.
+        }
+        finally
+        {
+            indicator.Dispose();
+            IsOpeningGraph = false;
+            OpeningGraphName = null;
+            if (pendingOpenMethod == method)
+            {
+                pendingOpenMethod = null;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Pre-resolves every <see cref="CallMethodNode"/>/<see cref="ConstructorNode"/> overload list of
+    /// <paramref name="graph"/> on a background thread, so the reflection provider's memoized cache is
+    /// already warm when <see cref="NetPrints.Editor.Graph.Nodes.NodeVM"/> recomputes the same
+    /// overloads synchronously while building the canvas (AGENTS.md: heavy work off the UI thread, not
+    /// papered over with a delay).
+    /// </summary>
+    private async Task WarmOverloadsAsync(NodeGraph graph, CancellationToken cancellationToken)
+    {
+        if (!Context.Reflection.IsLoaded)
+        {
+            return;
+        }
+
+        List<MethodSpecifier> methods = [];
+        List<TypeSpecifier> constructorTypes = [];
+        foreach (var node in graph.Nodes)
+        {
+            switch (node)
+            {
+                case CallMethodNode { MethodSpecifier: { } method }:
+                    methods.Add(method);
+                    break;
+                case ConstructorNode { ConstructorSpecifier: { } ctor }:
+                    constructorTypes.Add(ctor.DeclaringType);
+                    break;
+            }
+        }
+
+        if (methods.Count == 0 && constructorTypes.Count == 0)
+        {
+            return;
+        }
+
+        var provider = Context.Reflection.Provider;
+        await Task.Run(() =>
+        {
+            foreach (var method in methods)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                _ = provider.GetPublicMethodOverloads(method).Count();
+            }
+
+            foreach (var type in constructorTypes)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                _ = provider.GetConstructors(type).Count();
+            }
+        }, cancellationToken);
     }
 
     /// <summary>Removes a method or constructor; clears the inspector and canvas when they show it (PAR-24, 27).</summary>
@@ -886,6 +1013,8 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         ErrorList.Dispose();
         outputFlush?.Dispose();
         outputReceived.Dispose();
+        openGraphCts?.Cancel();
+        openGraphCts?.Dispose();
 
         Context.Reflection.Reloaded -= OnReflectionReloaded;
         Context.Processes.OutputReceived -= OnProcessOutputReceived;

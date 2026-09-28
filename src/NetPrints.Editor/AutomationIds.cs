@@ -117,6 +117,11 @@ public static class AutomationIds
     /// Automation id for the class editor window's graph canvas host.
     /// </summary>
     public const string ClassEditorGraph = "ClassEditor.Graph";
+    /// <summary>
+    /// Automation id for the "Opening &lt;name&gt;…" busy overlay shown over the canvas while a graph
+    /// is opening (batch D1).
+    /// </summary>
+    public const string ClassEditorOpeningGraphIndicator = "ClassEditor.OpeningGraphIndicator";
 
     // Inspectors
     /// <summary>
