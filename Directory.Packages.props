@@ -48,6 +48,13 @@
     <!-- P1 code view (research §3, R16). -->
     <PackageVersion Include="Avalonia.AvaloniaEdit" Version="12.0.0" />
     <PackageVersion Include="AvaloniaEdit.TextMate" Version="12.0.0" />
+    <!-- ADR-0007: prebuilt behaviors before code-behind. Not the "Xaml.Behaviors.Avalonia" meta
+         package (id stops at 11.3 on nuget.org; the per-package 12.x line is what targets Avalonia 12) -
+         only the three packages NetPrints actually uses. Xaml.Behaviors.Interactivity comes in
+         transitively as their shared dependency. -->
+    <PackageVersion Include="Xaml.Behaviors.Interactions" Version="12.0.7" />
+    <PackageVersion Include="Xaml.Behaviors.Interactions.Custom" Version="12.0.7" />
+    <PackageVersion Include="Xaml.Behaviors.Interactions.DragAndDrop" Version="12.0.7" />
   </ItemGroup>
 
   <ItemGroup Label="Logging">

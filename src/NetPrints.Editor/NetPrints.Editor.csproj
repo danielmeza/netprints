@@ -18,6 +18,10 @@
          own version, no override) for RegistryOptions/ThemeName. -->
     <PackageReference Include="Avalonia.AvaloniaEdit" />
     <PackageReference Include="AvaloniaEdit.TextMate" />
+    <!-- ADR-0007: prebuilt behaviors before code-behind or a custom behavior (avalonia-xaml skill, D11). -->
+    <PackageReference Include="Xaml.Behaviors.Interactions" />
+    <PackageReference Include="Xaml.Behaviors.Interactions.Custom" />
+    <PackageReference Include="Xaml.Behaviors.Interactions.DragAndDrop" />
     <PackageReference Include="CommunityToolkit.Mvvm" />
     <PackageReference Include="DynamicData" />
     <!-- Used directly by the search list (Throttle, schedulers), not only through DynamicData. -->
