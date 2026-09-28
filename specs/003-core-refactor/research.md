@@ -588,6 +588,24 @@ single-file or trimmed.
 - Running a compiled graph needs a .NET runtime; the required SDK provides it. Stated in the README, the
   install page, the release notes and the archive's `README.txt` (FR-058).
 
+**Finding recorded during implementation (T114, self-contained publish)**: `dotnet publish
+src/NetPrints.Desktop -r linux-x64 --self-contained` failed three ways in sequence before it worked, none
+anticipated by the contract: `NetPrints.Editor`'s real `ProjectReference` to `NetPrints.Generator`
+(`OutputType=Exe`, used directly by `ClassEditorVM`/`MainEditorVM`) makes the .NET SDK publish Generator
+as a sibling executable for the same RID/self-contained-ness — NETSDK1152 (duplicate apphost/
+runtimeconfig), then NETSDK1150 (a framework-dependent helper exe can't be referenced by a self-contained
+chain), then NETSDK1067, even with `ValidateExecutableReferencesMatchSelfContained=false` and several
+`ProjectReference` metadata combinations. Fix: `NetPrints.Generator.csproj` sets `UseAppHost=false`
+(correct regardless, since it is only ever `dotnet exec`'d); `NetPrints.Editor`'s reference to it becomes
+`ReferenceOutputAssembly="false"` (build order only, mirrors `NetPrints.Sdk.csproj`'s own reference) plus
+a plain `<Reference Include="NetPrints.Generator">` with a `HintPath` for the compile-time/copy-to-output
+dependency, which removes Generator from the SDK's "referenced executable" publish graph entirely.
+Verified: the publish succeeds with one copy of `NetPrints.Generator.dll`/`.pdb`/`.xml`/
+`.runtimeconfig.json`, no RID subfolder, no duplicate apphost; `dotnet pack` still produces the same
+RL-T01 seven files with `tools/net10.0/NetPrints.Generator.dll` intact. Full account and rationale in
+`docs/adr/0005-release-and-docs-stack.md` ("Editor → Generator project reference"); this is a documented
+workaround, not something a future contributor should "simplify" back to a plain `ProjectReference`.
+
 **Evidence in CI**: the `desktop-publish` job publishes the editor self-contained for linux-x64 and runs
 `NetPrints.Desktop --check-project samples/HelloWorld/HelloWorld.csproj --run` without a display: MSBuild
 registration, evaluation, `MSBuildWorkspace` references, in-process Roslyn analysis of the translated graphs,
