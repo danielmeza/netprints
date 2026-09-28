@@ -25,11 +25,13 @@ public sealed class GtkFileDialogs(X11Driver driver, EditorProcess editor) : IFi
     /// <summary>Waits until the dialog window is destroyed or no longer viewable.</summary>
     private async Task WaitForDialogClosedAsync(string title, string window, CancellationToken cancellationToken)
     {
-        await UiWait.UntilAsync(driver, async () =>
-        {
-            var (code, info) = await Tool.TryRunAsync("xwininfo", cancellationToken, "-id", window);
-            return code != 0 || !info.Contains("IsViewable", StringComparison.Ordinal);
-        }, $"the '{title}' file dialog to close", cancellationToken);
+        await UiWait.UntilAsync(driver, () => IsClosedAsync(window, cancellationToken), $"the '{title}' file dialog to close", cancellationToken);
+    }
+
+    private async Task<bool> IsClosedAsync(string window, CancellationToken cancellationToken)
+    {
+        var (code, info) = await Tool.TryRunAsync("xwininfo", cancellationToken, "-id", window);
+        return code != 0 || !info.Contains("IsViewable", StringComparison.Ordinal);
     }
 
     private async Task FocusAsync(string window, CancellationToken cancellationToken)
@@ -48,9 +50,15 @@ public sealed class GtkFileDialogs(X11Driver driver, EditorProcess editor) : IFi
         await Tool.XdotoolAsync(cancellationToken, "key", "--clearmodifiers", "ctrl+a");
         await Tool.XdotoolAsync(cancellationToken, "type", "--clearmodifiers", "--delay", "15", "--", folder ? path.TrimEnd('/') + "/" : path);
         await Tool.XdotoolAsync(cancellationToken, "key", "--clearmodifiers", "Return");
-        if (folder)
+
+        // A second Return, only if the dialog is still open: for a folder, the first Return always
+        // just enters it and the second selects it (pre-existing behavior). For a file, the first
+        // Return normally submits, but when the dialog's current folder is not the typed path's
+        // immediate parent (e.g. a pre-warmed editor's own working directory instead of the
+        // sample's), GTK's location-bar completion resolves the path asynchronously and the first
+        // Return can land on that still-resolving completion instead; the second Return then submits.
+        if (folder || !await IsClosedAsync(window, cancellationToken))
         {
-            // Return in the location field enters the folder; Return again selects it.
             await Tool.XdotoolAsync(cancellationToken, "key", "--clearmodifiers", "Return");
         }
 
@@ -72,6 +80,14 @@ public sealed class GtkFileDialogs(X11Driver driver, EditorProcess editor) : IFi
         await Tool.XdotoolAsync(cancellationToken, "key", "--clearmodifiers", "ctrl+a");
         await Tool.XdotoolAsync(cancellationToken, "type", "--clearmodifiers", "--delay", "15", "--", path);
         await Tool.XdotoolAsync(cancellationToken, "key", "--clearmodifiers", "Return");
+
+        // See ChooseAsync: a second Return, only if still open, covers the same asynchronous
+        // path-completion case for a save path that is not under the dialog's current folder.
+        if (!await IsClosedAsync(window, cancellationToken))
+        {
+            await Tool.XdotoolAsync(cancellationToken, "key", "--clearmodifiers", "Return");
+        }
+
         await WaitForDialogClosedAsync(title, window, cancellationToken);
     }
 }

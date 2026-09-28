@@ -1,29 +1,38 @@
 using NetPrints.Desktop.E2ETests.Driving;
 using NetPrints.Desktop.E2ETests.Hosting;
+using NetPrints.Testing;
 using NetPrints.Testing.Ui.Scenarios;
 using NetPrints.Testing.Ui.Screenplay;
 
 namespace NetPrints.Desktop.E2ETests.Scenarios;
 
-/// <summary>The shared smoke flows on the real desktop editor (X11, xdotool, GTK pickers).</summary>
-[Collection(DesktopCollection.Name)]
-public sealed class X11SmokeTests(XServer server) : SmokeScenarios, IAsyncDisposable
+/// <summary>
+/// The shared smoke flows on the real desktop editor (X11, xdotool, GTK pickers). One sealed class
+/// per scenario below, each with a single <c>[Fact]</c>: xUnit's unit of parallelism is the test
+/// collection, and every test method in one class shares that class's (default) collection and so
+/// runs serially within it — six facts in one class would stay serial no matter how the worker pool
+/// or xunit.runner.json are configured. Splitting them lets xUnit schedule all six onto the pool at
+/// once; see docs/adr/0006-parallel-desktop-e2e.md for why none of them need a serial collection.
+/// </summary>
+public abstract class X11SmokeTestBase(DesktopWorkerPool pool) : SmokeScenarios, IAsyncDisposable
 {
-    private const int Timeout = 180_000;
+    protected const int Timeout = 180_000;
 
     private readonly string work = Directory.CreateTempSubdirectory("netprints-e2e-").FullName;
-    private EditorProcess? editor;
+    private DesktopLease? lease;
     private X11Driver? driver;
 
-    private static CancellationToken Token => TestContext.Current.CancellationToken;
+    protected static CancellationToken Token => TestContext.Current.CancellationToken;
 
     private static string Artifacts => Path.Combine(
         Environment.GetEnvironmentVariable("NETPRINTS_UI_ARTIFACTS") is { Length: > 0 } configured ? configured : Path.Combine(AppContext.BaseDirectory, "ui-artifacts"),
         "e2e", TestContext.Current.TestMethod?.MethodName ?? "test");
 
+    protected override IDisposable Step(string name) => new StepTimer(TestContext.Current.TestMethod?.MethodName ?? "test").Step(name);
+
     protected override async Task<SmokeContext> StartAsync(CancellationToken cancellationToken)
     {
-        if (!XServer.IsEnabled)
+        if (!DesktopWorkerPool.IsEnabled)
         {
             Assert.Skip($"Desktop E2E tests run with {XServer.EnableVariable}=1 (Linux with Xvfb, openbox, xdotool, ImageMagick and GTK 3).");
         }
@@ -37,11 +46,11 @@ public sealed class X11SmokeTests(XServer server) : SmokeScenarios, IAsyncDispos
             File.Copy(file, Path.Combine(sample, Path.GetFileName(file)));
         }
 
-        NetPrints.Testing.Ui.Hosting.LocalSdkLayout.Write(sample);
+        LocalSdkLayout.Write(sample);
 
-        editor = await EditorProcess.StartAsync(server, work, project: null, cancellationToken);
-        driver = new X11Driver(server, editor, new Tool(server));
-        var actor = Actor.Named("Ada").WhoCan(UseNetPrints.With(driver, new GtkFileDialogs(driver, editor)));
+        lease = await pool.RentAsync(cancellationToken, work);
+        driver = new X11Driver(lease.Server, lease.Editor, new Tool(lease.Server));
+        var actor = Actor.Named("Ada").WhoCan(UseNetPrints.With(driver, new GtkFileDialogs(driver, lease.Editor)));
         await actor.Using<UseNetPrints>().MainWindow.GetAsync(cancellationToken);
         await CheckpointAsync(new SmokeContext(actor, "", work), "00-started", cancellationToken);
         return new SmokeContext(actor, Path.Combine(sample, "HelloWorld.csproj"), Directory.CreateDirectory(Path.Combine(work, "out")).FullName);
@@ -53,28 +62,10 @@ public sealed class X11SmokeTests(XServer server) : SmokeScenarios, IAsyncDispos
         screen.Save(Path.Combine(Artifacts, name + ".png"));
     }
 
-    [Fact(Timeout = Timeout)]
-    public Task EditCompileAndRun() => EditCompileAndRunAsync(Token);
-
-    [Fact(Timeout = Timeout)]
-    public Task CreateProject() => CreateProjectAsync(Token);
-
-    [Fact(Timeout = Timeout)]
-    public Task AddReferences() => AddReferencesAsync(typeof(object).Assembly.Location, Token);
-
-    [Fact(Timeout = Timeout)]
-    public Task MinimizeAndRestoreClassWindow() => MinimizeAndRestoreClassWindowAsync(Token);
-
-    [Fact(Timeout = Timeout)]
-    public Task PanCursor() => PanCursorAsync(Token);
-
-    [Fact(Timeout = Timeout)]
-    public Task DragFromLists() => DragFromListsAsync(Token);
-
     /// <summary>Diagnostics for every test (the last state of a failing one): screen, UI dump, logs, xdotool calls.</summary>
     public async ValueTask DisposeAsync()
     {
-        if (editor is not null && driver is not null)
+        if (lease is not null && driver is not null)
         {
             try
             {
@@ -87,10 +78,10 @@ public sealed class X11SmokeTests(XServer server) : SmokeScenarios, IAsyncDispos
                 // Best effort: the editor may have crashed (see its log).
             }
 
-            await File.WriteAllTextAsync(Path.Combine(Artifacts, "editor-stdout.txt"), editor.Output);
-            await File.WriteAllTextAsync(Path.Combine(Artifacts, "editor-stderr.txt"), editor.Errors);
+            await File.WriteAllTextAsync(Path.Combine(Artifacts, "editor-stdout.txt"), lease.Editor.Output);
+            await File.WriteAllTextAsync(Path.Combine(Artifacts, "editor-stderr.txt"), lease.Editor.Errors);
             await File.WriteAllTextAsync(Path.Combine(Artifacts, "xdotool.txt"), driver.Tool.Log);
-            await editor.DisposeAsync();
+            await lease.DisposeAsync();
         }
 
         try
@@ -102,4 +93,40 @@ public sealed class X11SmokeTests(XServer server) : SmokeScenarios, IAsyncDispos
             // Best effort.
         }
     }
+}
+
+public sealed class EditCompileAndRunTests(DesktopWorkerPool pool) : X11SmokeTestBase(pool)
+{
+    [Fact(Timeout = Timeout)]
+    public Task EditCompileAndRun() => EditCompileAndRunAsync(Token);
+}
+
+public sealed class CreateProjectTests(DesktopWorkerPool pool) : X11SmokeTestBase(pool)
+{
+    [Fact(Timeout = Timeout)]
+    public Task CreateProject() => CreateProjectAsync(Token);
+}
+
+public sealed class AddReferencesTests(DesktopWorkerPool pool) : X11SmokeTestBase(pool)
+{
+    [Fact(Timeout = Timeout)]
+    public Task AddReferences() => AddReferencesAsync(typeof(object).Assembly.Location, Token);
+}
+
+public sealed class MinimizeAndRestoreClassWindowTests(DesktopWorkerPool pool) : X11SmokeTestBase(pool)
+{
+    [Fact(Timeout = Timeout)]
+    public Task MinimizeAndRestoreClassWindow() => MinimizeAndRestoreClassWindowAsync(Token);
+}
+
+public sealed class PanCursorTests(DesktopWorkerPool pool) : X11SmokeTestBase(pool)
+{
+    [Fact(Timeout = Timeout)]
+    public Task PanCursor() => PanCursorAsync(Token);
+}
+
+public sealed class DragFromListsTests(DesktopWorkerPool pool) : X11SmokeTestBase(pool)
+{
+    [Fact(Timeout = Timeout)]
+    public Task DragFromLists() => DragFromListsAsync(Token);
 }

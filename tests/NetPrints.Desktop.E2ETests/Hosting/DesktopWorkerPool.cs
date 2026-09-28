@@ -1,0 +1,108 @@
+using System.Globalization;
+using System.Threading.Channels;
+
+namespace NetPrints.Desktop.E2ETests.Hosting;
+
+/// <summary>
+/// A pool of desktop workers for the E2E run (batch D2): each worker owns a private Xvfb display
+/// with openbox already running (<see cref="XServer"/>), started once and reused across tests, so
+/// a test never pays for X server startup. The editor itself is started fresh on
+/// <see cref="RentAsync"/> in the renting test's own working directory (a pre-started spare was
+/// tried and reverted — GTK working-directory constraint, see docs/adr/0006-parallel-desktop-e2e.md).
+/// No test shares a display or an editor, so none need a serial xUnit collection (owner-approved
+/// audit; see the ADR).
+/// </summary>
+public sealed class DesktopWorkerPool : IAsyncLifetime
+{
+    /// <summary>Overrides the pool size (default <c>min(ProcessorCount / 2, 4)</c>, at least 1).</summary>
+    public const string WorkersVariable = "NETPRINTS_E2E_WORKERS";
+
+    private readonly List<Worker> workers = [];
+    private readonly Channel<Worker> available = Channel.CreateUnbounded<Worker>();
+
+    /// <summary>Whether E2E tests run in this environment; otherwise they are skipped (same gate as <see cref="XServer"/>).</summary>
+    public static bool IsEnabled => XServer.IsEnabled;
+
+    public static int PoolSize()
+    {
+        string? configured = Environment.GetEnvironmentVariable(WorkersVariable);
+        if (int.TryParse(configured, NumberStyles.Integer, CultureInfo.InvariantCulture, out int requested) && requested > 0)
+        {
+            return requested;
+        }
+
+        return Math.Clamp(Environment.ProcessorCount / 2, 1, 4);
+    }
+
+    public async ValueTask InitializeAsync()
+    {
+        if (!IsEnabled)
+        {
+            return;
+        }
+
+        for (int i = 0; i < PoolSize(); i++)
+        {
+            var server = new XServer();
+            await server.InitializeAsync();
+            var worker = new Worker(server);
+            workers.Add(worker);
+            available.Writer.TryWrite(worker);
+        }
+    }
+
+    /// <summary>
+    /// Rents a worker's already-running display and starts a fresh editor on it, with
+    /// <paramref name="workDirectory"/> as its working directory. Never the same editor process
+    /// twice; never two editors on the same display at once.
+    /// </summary>
+    public async Task<DesktopLease> RentAsync(CancellationToken cancellationToken, string workDirectory)
+    {
+        var worker = await available.Reader.ReadAsync(cancellationToken);
+        var editor = await EditorProcess.StartAsync(worker.Server, workDirectory, project: null, cancellationToken);
+        return new DesktopLease(this, worker, editor);
+    }
+
+    internal void Return(Worker worker) => available.Writer.TryWrite(worker);
+
+    public async ValueTask DisposeAsync()
+    {
+        foreach (var worker in workers)
+        {
+            await worker.Server.DisposeAsync();
+        }
+    }
+
+    internal sealed class Worker(XServer server)
+    {
+        public XServer Server { get; } = server;
+    }
+}
+
+/// <summary>
+/// A rented worker: a display (<see cref="Server"/>) and a fresh <see cref="Editor"/>, never used
+/// by another test. Disposing it disposes the editor and returns the worker (display) to the pool.
+/// </summary>
+public sealed class DesktopLease : IAsyncDisposable
+{
+    private readonly DesktopWorkerPool pool;
+    private readonly DesktopWorkerPool.Worker worker;
+    private readonly EditorProcess editor;
+
+    internal DesktopLease(DesktopWorkerPool pool, DesktopWorkerPool.Worker worker, EditorProcess editor)
+    {
+        this.pool = pool;
+        this.worker = worker;
+        this.editor = editor;
+    }
+
+    public XServer Server => worker.Server;
+
+    public EditorProcess Editor => editor;
+
+    public async ValueTask DisposeAsync()
+    {
+        await Editor.DisposeAsync();
+        pool.Return(worker);
+    }
+}

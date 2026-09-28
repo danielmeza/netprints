@@ -43,5 +43,7 @@
 
   <ItemGroup>
     <None Include="../../samples/**" CopyToOutputDirectory="PreserveNewest" LinkBase="samples" />
+    <!-- Parallelization settings for the worker pool (batch D2); see docs/adr/0006. -->
+    <None Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
