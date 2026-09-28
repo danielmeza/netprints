@@ -6,11 +6,13 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Projects;
 using NetPrints.Serialization.Documents;
 using NetPrints.Serialization.Mapping;
 using NetPrints.Serialization.Stores;
+using NetPrints.Translator;
 
 namespace NetPrints.Serialization;
 
@@ -26,11 +28,14 @@ namespace NetPrints.Serialization;
 public sealed record ProjectLoadResult(Project Project, ProjectSnapshot Snapshot, IReadOnlyList<DocumentIssue> Issues);
 
 /// <summary>
-/// Result of <see cref="ProjectPersistence.SaveAsync"/>: the files it wrote, in write order.
+/// Result of <see cref="ProjectPersistence.SaveAsync"/>: the files it wrote, in write order, and any
+/// translation failures found while rendering a dirty class's generated C# (R1-01).
 /// </summary>
 /// <param name="WrittenFiles">Full paths of the files that were written (a class's graph, its
 /// generated C#, or both); empty if every class was already clean.</param>
-public sealed record ProjectSaveResult(IReadOnlyList<string> WrittenFiles);
+/// <param name="Diagnostics">One diagnostic per dirty class whose generated C# failed to render: its
+/// graph JSON was still written and its previous <c>.g.cs</c> was left untouched.</param>
+public sealed record ProjectSaveResult(IReadOnlyList<string> WrittenFiles, IReadOnlyList<CodeDiagnostic> Diagnostics);
 
 /// <summary>
 /// Loads, saves and adds class graphs of a project backed by a <c>.csproj</c> (document-format.md
@@ -172,12 +177,17 @@ public sealed class ProjectPersistence
     /// to <see cref="Core.Project.GetGraphFilePath"/>, and <paramref name="renderGenerated"/>'s text is
     /// written next to it (the <c>.netpc.g.cs</c>) — each only when its bytes differ from the file on
     /// disk. A clean class is neither mapped nor written. The <c>.csproj</c> itself is never written.
+    /// A class is isolated from the others: if <paramref name="renderGenerated"/> throws a
+    /// <see cref="TranslationException"/>, the graph JSON above is kept, the previous <c>.g.cs</c> is
+    /// left as it was, the failure is added to the result's diagnostics, and saving continues with the
+    /// next dirty class (R1-01).
     /// </summary>
     /// <param name="project">Project whose dirty classes are saved.</param>
     /// <param name="renderGenerated">Renders a class's generated C# file (typically
     /// <c>GraphCodeGenerator.RenderFile</c> over its translated code).</param>
     /// <param name="cancellationToken">Cancels the operation.</param>
-    /// <returns>The files that were written, in write order.</returns>
+    /// <returns>The files that were written, in write order, and one diagnostic per class whose
+    /// generated C# failed to render.</returns>
     public async Task<ProjectSaveResult> SaveAsync(Project project, Func<ClassGraph, string> renderGenerated, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(project);
@@ -187,6 +197,7 @@ public sealed class ProjectPersistence
         Serializers current = serializers;
         using IDocumentStore store = createStore(projectDirectory);
         var written = new List<string>();
+        var diagnostics = new List<CodeDiagnostic>();
 
         foreach (ClassGraph cls in project.Classes)
         {
@@ -212,18 +223,25 @@ public sealed class ProjectPersistence
 
             cls.LoadedGraphFilePath = graphPath;
 
-            string generatedPath = ProjectFiles.GetGeneratedFilePath(graphPath);
-            byte[] generatedBytes = Encoding.UTF8.GetBytes(renderGenerated(cls));
-            DocumentId generatedId = FileSystemDocumentStore.ToDocumentId(projectDirectory, generatedPath);
-            if (await WriteIfDifferentAsync(store, generatedId, generatedBytes, cancellationToken).ConfigureAwait(false))
+            try
             {
-                written.Add(generatedPath);
+                string generatedPath = ProjectFiles.GetGeneratedFilePath(graphPath);
+                byte[] generatedBytes = Encoding.UTF8.GetBytes(renderGenerated(cls));
+                DocumentId generatedId = FileSystemDocumentStore.ToDocumentId(projectDirectory, generatedPath);
+                if (await WriteIfDifferentAsync(store, generatedId, generatedBytes, cancellationToken).ConfigureAwait(false))
+                {
+                    written.Add(generatedPath);
+                }
+            }
+            catch (TranslationException ex)
+            {
+                diagnostics.Add(DiagnosticMapper.FromTranslation(ex, cls));
             }
 
             cls.MarkClean();
         }
 
-        return new ProjectSaveResult(written);
+        return new ProjectSaveResult(written, diagnostics);
     }
 
     /// <summary>

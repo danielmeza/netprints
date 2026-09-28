@@ -5,6 +5,7 @@ using System.Reactive.Concurrency;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
+using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Projects;
 using NetPrints.Serialization;
@@ -98,16 +99,18 @@ namespace NetPrints.Tests.Samples
             Assert.True(build.Success, build.Log);
         }
 
-        /// <summary>A graph that cannot be translated fails with the translator's message, not with C# syntax errors.</summary>
+        /// <summary>A graph that cannot be translated is reported as a diagnostic carrying the
+        /// translator's message (not a C# syntax error) instead of failing the save (R1-01).</summary>
         [Fact(Timeout = 120000)]
         public async Task UntranslatableGraphReportsTheReason()
         {
             (SampleBuild sample, Project project) = await HelloWorldWithIfElseAsync(null);
 
-            Exception error = await Assert.ThrowsAnyAsync<Exception>(
-                () => sample.SaveAndBuildAsync(project, TestContext.Current.CancellationToken));
+            ProjectSaveResult result = await sample.Persistence.SaveAsync(
+                project, cls => SampleBuild.Render(project, cls), TestContext.Current.CancellationToken);
 
-            Assert.Contains("Condition", error.Message);
+            CodeDiagnostic diagnostic = Assert.Single(result.Diagnostics);
+            Assert.Contains("Condition", diagnostic.Message);
         }
 
         /// <summary>

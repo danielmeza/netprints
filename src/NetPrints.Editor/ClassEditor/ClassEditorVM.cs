@@ -7,6 +7,7 @@ using System.Reactive.Subjects;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
+using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Editor.CodeView;
 using NetPrints.Editor.ErrorList;
@@ -18,6 +19,7 @@ using NetPrints.Editor.ModelSync;
 using NetPrints.Editor.UndoRedo;
 using NetPrints.Editor.Variables;
 using NetPrints.Graph;
+using NetPrints.Serialization;
 using NetPrints.Translator;
 
 namespace NetPrints.Editor.ClassEditor;
@@ -682,7 +684,10 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         OpenGraph(Class);
     }
 
-    /// <summary>Saves every edited class of the whole project (not just this one) (document-format.md §2.8).</summary>
+    /// <summary>Saves every edited class of the whole project (not just this one) (document-format.md §2.8).
+    /// A class that fails to translate is reported through <see cref="Core.Project.LastDiagnostics"/> (the
+    /// Errors tab), not a dialog: its graph is still saved and the rest of the project's dirty classes
+    /// still save too (R1-01).</summary>
     [RelayCommand]
     private async Task SaveAsync()
     {
@@ -693,7 +698,11 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
 
         try
         {
-            await Context.Persistence.SaveAsync(project, cls => RenderGenerated(project, cls), CancellationToken.None);
+            ProjectSaveResult result = await Context.Persistence.SaveAsync(project, cls => RenderGenerated(project, cls), CancellationToken.None);
+            if (result.Diagnostics.Count > 0)
+            {
+                project.LastDiagnostics = new ObservableRangeCollection<CodeDiagnostic>(result.Diagnostics);
+            }
         }
         catch (Exception ex)
         {

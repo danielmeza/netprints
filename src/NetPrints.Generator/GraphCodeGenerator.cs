@@ -170,6 +170,10 @@ public sealed class GraphCodeGenerator
         {
             return new GeneratedFileResult(job.Input, job.Output, false, [ToDiagnostic(ex, job.Input)]);
         }
+        catch (IOException ex)
+        {
+            return new GeneratedFileResult(job.Input, job.Output, false, [ToIOErrorDiagnostic(ex, job.Input)]);
+        }
 
         var issues = new List<DocumentIssue>();
         ClassGraph cls;
@@ -206,7 +210,17 @@ public sealed class GraphCodeGenerator
             return new GeneratedFileResult(job.Input, job.Output, false, diagnostics);
         }
 
-        TranslatedClass translated = new ClassTranslator(extensions.Translation).Translate(cls);
+        TranslatedClass translated;
+        try
+        {
+            translated = new ClassTranslator(extensions.Translation).Translate(cls);
+        }
+        catch (TranslationException ex)
+        {
+            diagnostics.Add(DiagnosticMapper.FromTranslation(ex, cls) with { SourcePath = job.Input });
+            return new GeneratedFileResult(job.Input, job.Output, false, diagnostics);
+        }
+
         string rendered = RenderFile(translated, Path.GetFileName(job.Input));
         bool written = await WriteIfChangedAsync(job.Output, rendered, cancellationToken).ConfigureAwait(false);
 
@@ -248,6 +262,10 @@ public sealed class GraphCodeGenerator
         return new CodeDiagnostic(CodeDiagnosticSeverity.Error, DocumentIssue.DocumentUnreadable, ex.Message,
             ClassFullName: null, GraphKey: null, NodeId: null, SourcePath: sourcePath, Span: span);
     }
+
+    private static CodeDiagnostic ToIOErrorDiagnostic(IOException ex, string sourcePath) =>
+        new(CodeDiagnosticSeverity.Error, DocumentIssue.DocumentUnreadable, ex.Message,
+            ClassFullName: null, GraphKey: null, NodeId: null, SourcePath: sourcePath, Span: null);
 
     private static async Task<bool> WriteIfChangedAsync(string path, string content, CancellationToken cancellationToken)
     {

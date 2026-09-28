@@ -38,4 +38,9 @@ public static class TranslationDiagnosticCodes
     /// <summary>An <see cref="IMemberEmitter"/> produced an invalid result: <c>DeclarePartial</c> set on
     /// a non-property member, or a modifier not allowed for the target.</summary>
     public const string InvalidEmitterOutput = "NPT007";
+
+    /// <summary>A required input data pin (for example a non-primitive <c>CallMethodNode</c> argument)
+    /// has no incoming connection, default value or unconnected value to emit: a graph left in a
+    /// half-edited state.</summary>
+    public const string UnsetRequiredInput = "NPT008";
 }

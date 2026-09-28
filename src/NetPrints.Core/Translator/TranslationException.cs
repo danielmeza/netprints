@@ -6,7 +6,7 @@ namespace NetPrints.Translator;
 /// <summary>
 /// A failure translating a graph or class to C#, carrying a stable <c>NPTnnn</c> code
 /// (compilation-and-diagnostics.md §2): <c>NPT005</c> emitter failure, <c>NPT006</c> no translator for a node
-/// type, <c>NPT007</c> invalid emitter output.
+/// type, <c>NPT007</c> invalid emitter output, <c>NPT008</c> a required input pin is unset.
 /// </summary>
 public sealed class TranslationException : Exception
 {

@@ -458,7 +458,12 @@ public sealed partial class MainEditorVM : ObservableObject, IDisposable
 
         try
         {
-            await context.Persistence.SaveAsync(project, cls => RenderGenerated(context, project, cls), CancellationToken.None);
+            ProjectSaveResult result = await context.Persistence.SaveAsync(project, cls => RenderGenerated(context, project, cls), CancellationToken.None);
+            if (result.Diagnostics.Count > 0)
+            {
+                project.LastDiagnostics = new ObservableRangeCollection<CodeDiagnostic>(result.Diagnostics);
+            }
+
             return true;
         }
         catch (Exception ex)

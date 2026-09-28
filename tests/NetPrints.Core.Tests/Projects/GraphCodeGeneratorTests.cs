@@ -1,11 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
+using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Generator;
+using NetPrints.Graph;
 using NetPrints.Serialization;
 using NetPrints.Serialization.Documents;
 using NetPrints.Serialization.Json;
@@ -112,6 +115,87 @@ namespace NetPrints.Tests.Projects
                 TranslatedClass translated = new ClassTranslator(TranslationEnvironment.BuiltIn).Translate(cls);
                 string expected = GraphCodeGenerator.RenderFile(translated, "HelloWorld.Program.netpc.json");
                 Assert.Equal(expected, firstContent);
+            }
+            finally
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        }
+
+        /// <summary>Builds a class whose only method calls <see cref="Console.WriteLine(string)"/>
+        /// with its argument pin left unconnected and no explicit default, so translating it throws
+        /// NPT008 (R1-02).</summary>
+        private static ClassGraph BuildClassWithUnsetRequiredInput(string className)
+        {
+            var cls = new ClassGraph { Name = className, Namespace = "GenTests" };
+            var method = new MethodGraph("Run") { Class = cls, Visibility = MemberVisibility.Public };
+
+            TypeSpecifier stringType = TypeSpecifier.FromType<string>();
+            var writeConsoleSpecifier = new MethodSpecifier("WriteLine",
+                new[] { new MethodParameter("value", stringType, MethodParameterPassType.Default, false, null) },
+                Array.Empty<BaseType>(), MethodModifiers.None, MemberVisibility.Public,
+                TypeSpecifier.FromType(typeof(Console)), Array.Empty<BaseType>());
+            var writeConsoleNode = new CallMethodNode(method, writeConsoleSpecifier);
+
+            GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, writeConsoleNode.InputExecPins[0]);
+            GraphUtil.ConnectExecPins(writeConsoleNode.OutputExecPins[0], method.ReturnNodes.First().InputExecPins[0]);
+
+            // writeConsoleNode.ArgumentPins[0] is intentionally left unconnected with no default.
+            cls.Methods.Add(method);
+            return cls;
+        }
+
+        private static async Task<string> WriteGraphAsync(string directory, ClassGraph cls)
+        {
+            NodeDocumentConverterRegistry registry = NewRegistry();
+            var mapper = new DocumentMapper(registry, NullLogger<DocumentMapper>.Instance);
+            JsonDocumentFormat jsonFormat = NewJsonFormat(registry);
+            ClassDocument document = mapper.ToDocument(cls);
+
+            string graphPath = Path.Combine(directory, $"{cls.Name}.netpc.json");
+            using var buffer = new MemoryStream();
+            await jsonFormat.WriteClassAsync(document, buffer, TestContext.Current.CancellationToken);
+            await File.WriteAllBytesAsync(graphPath, buffer.ToArray(), TestContext.Current.CancellationToken);
+            return graphPath;
+        }
+
+        // R1-02: a graph that fails to translate is reported as an NPT008 diagnostic (the canonical
+        // line includes it) instead of throwing, and a later graph in the same request still
+        // generates — the generator would exit 1 for this request, not 3.
+        [Fact]
+        public async Task GenerateAsyncReportsATranslationFailureAsNpt008AndStillGeneratesLaterGraphs()
+        {
+            string directory = Directory.CreateTempSubdirectory("netprints-generator-npt008-").FullName;
+            try
+            {
+                string failingGraphPath = await WriteGraphAsync(directory, BuildClassWithUnsetRequiredInput("Failing"));
+                string okGraphPath = await WriteCanonicalGraphAsync(directory);
+                string failingOutputPath = Path.Combine(directory, "Failing.netpc.g.cs");
+                string okOutputPath = Path.Combine(directory, "HelloWorld.Program.netpc.g.cs");
+
+                var request = new GenerateRequest(
+                    Path.Combine(directory, "Gen.csproj"), "GenTests", "netprints.default",
+                    [new GraphJob(failingGraphPath, failingOutputPath), new GraphJob(okGraphPath, okOutputPath)], []);
+
+                GraphCodeGenerator generator = NewGenerator();
+                IReadOnlyList<GeneratedFileResult> results = await generator.GenerateAsync(request, TestContext.Current.CancellationToken);
+
+                Assert.Equal(2, results.Count);
+
+                GeneratedFileResult failing = results[0];
+                Assert.False(failing.Written);
+                CodeDiagnostic diagnostic = Assert.Single(failing.Diagnostics);
+                Assert.Equal(CodeDiagnosticSeverity.Error, diagnostic.Severity);
+                Assert.Equal(TranslationDiagnosticCodes.UnsetRequiredInput, diagnostic.Id);
+                Assert.Equal(failingGraphPath, diagnostic.SourcePath);
+                Assert.StartsWith($"{failingGraphPath}: error NPT008:", CodeDiagnosticFormat.ToCanonicalLine(diagnostic), StringComparison.Ordinal);
+                Assert.False(File.Exists(failingOutputPath));
+
+                // The request did not abort: the graph after the failing one still generated.
+                GeneratedFileResult ok = results[1];
+                Assert.True(ok.Written);
+                Assert.Empty(ok.Diagnostics);
+                Assert.True(File.Exists(okOutputPath));
             }
             finally
             {

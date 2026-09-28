@@ -163,8 +163,9 @@ namespace NetPrints.Translator
                 }
                 else
                 {
-                    throw new InvalidOperationException($"Input data pin {pin} on {pin.Node} was unconnected without an explicit default or unconnected value.");
-                    //return $"default({pin.PinType.Value.FullCodeName})";
+                    throw new TranslationException(TranslationDiagnosticCodes.UnsetRequiredInput,
+                        $"Input data pin {pin} on {pin.Node} was unconnected without an explicit default or unconnected value.",
+                        TranslatorUtil.TryGetGraphKey(pin.Node.Graph), pin.Node.Id);
                 }
             }
             else

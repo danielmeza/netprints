@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
+using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Projects;
 using NetPrints.Serialization;
@@ -14,6 +15,7 @@ using NetPrints.Serialization.Json;
 using NetPrints.Serialization.Mapping;
 using NetPrints.Serialization.Migrations;
 using NetPrints.Serialization.Stores;
+using NetPrints.Translator;
 using Xunit;
 
 namespace NetPrints.Tests.Serialization
@@ -216,6 +218,52 @@ namespace NetPrints.Tests.Serialization
 
             ProjectSaveResult second = await persistence.SaveAsync(project, RenderGenerated, ct);
             Assert.Empty(second.WrittenFiles);
+        }
+
+        // R1-01: a translation failure while rendering one dirty class's generated C# must not abort
+        // the save loop. The graph JSON is written for every dirty class regardless, the failing
+        // class's previous .g.cs is left alone, and later dirty classes still get theirs written.
+        [Fact]
+        public async Task SaveAsyncIsolatesATranslationFailureAndStillSavesLaterDirtyClasses()
+        {
+            CancellationToken ct = TestContext.Current.CancellationToken;
+            NodeDocumentConverterRegistry registry = NewRegistry();
+            var mapper = new DocumentMapper(registry, NullLogger<DocumentMapper>.Instance);
+            JsonDocumentFormat jsonFormat = NewJsonFormat(registry);
+            var formats = new DocumentFormatRegistry([jsonFormat]);
+            var projects = new FakeProjectSystem(NewSnapshot(Path.Combine(root, "Test.csproj"), []));
+            ProjectPersistence persistence = NewPersistence(projects, formats, mapper);
+
+            Project project = TestProjects.Create("Test", "Test", Path.Combine(root, "Test.csproj"));
+            IProjectProfile profile = DefaultProjectProfile.Instance;
+            ClassGraph failing = project.CreateNewClass(profile);
+            ClassGraph ok = project.CreateNewClass(profile);
+
+            Assert.True(failing.IsDirty);
+            Assert.True(ok.IsDirty);
+
+            string RenderGenerated(ClassGraph cls) => cls == failing
+                ? throw new TranslationException(TranslationDiagnosticCodes.UnsetRequiredInput, "boom", "graphKey", "n1")
+                : $"// generated for {cls.FullName}\n";
+
+            ProjectSaveResult result = await persistence.SaveAsync(project, RenderGenerated, ct);
+
+            // Both graphs are written even though the first class's render threw.
+            Assert.True(File.Exists(project.GetGraphFilePath(failing)));
+            Assert.True(File.Exists(project.GetGraphFilePath(ok)));
+
+            // The failing class's .g.cs was never written; the class after it still got its written
+            // (this is the regression: before the fix, the exception aborted the whole loop).
+            Assert.False(File.Exists(Path.Combine(root, $"{failing.FullName}.netpc.g.cs")));
+            string okGeneratedPath = Path.Combine(root, $"{ok.FullName}.netpc.g.cs");
+            Assert.Equal(RenderGenerated(ok), await File.ReadAllTextAsync(okGeneratedPath, ct));
+
+            Assert.False(failing.IsDirty);
+            Assert.False(ok.IsDirty);
+
+            CodeDiagnostic diagnostic = Assert.Single(result.Diagnostics);
+            Assert.Equal(TranslationDiagnosticCodes.UnsetRequiredInput, diagnostic.Id);
+            Assert.Equal(failing.FullName, diagnostic.ClassFullName);
         }
     }
 }
