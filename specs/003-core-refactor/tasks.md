@@ -201,10 +201,10 @@ Checkpoint E (plan.md). Out of scope (follow-ups, do not implement): `netprints 
 
 ## Phase 11: Polish (sub-phase K)
 
-- [ ] T104 [P] User docs as site pages (release-and-docs.md §8 content layout), each with a one-line summary in the README that links it: `docs/guide/projects.md` (`.csproj` + `NetPrints.Sdk`, committed `.netpc.g.cs`: regenerate, never hand-merge, keep visible in PRs; VS Code nesting pattern; SDK requirement), `docs/guide/graph-format.md` (the graph file format for version control: `$schema`, `.gitattributes`, what a node move or add looks like in a diff; links to the document-format contract on GitHub), `docs/guide/extensions.md` (`NETPRINTS_EXTENSION_PATH`/`NETPRINTS_HOST_CHANNEL`/`NETPRINTS_LOG_LEVEL`, extension project requirements, `NetPrintsExtension` items). Plain CommonMark (the site renders `.md` without MDX); no HTML
-- [ ] T105 [P] SC-005 measurement (open HelloWorld restored: evaluation + workspace + extensions + types), recorded in the PR; 3× regression bound only
+- [x] T104 [P] User docs as site pages (release-and-docs.md §8 content layout), each with a one-line summary in the README that links it: `docs/guide/projects.md` (`.csproj` + `NetPrints.Sdk`, committed `.netpc.g.cs`: regenerate, never hand-merge, keep visible in PRs; VS Code nesting pattern; SDK requirement), `docs/guide/graph-format.md` (the graph file format for version control: `$schema`, `.gitattributes`, what a node move or add looks like in a diff; links to the document-format contract on GitHub), `docs/guide/extensions.md` (`NETPRINTS_EXTENSION_PATH`/`NETPRINTS_HOST_CHANNEL`/`NETPRINTS_LOG_LEVEL`, extension project requirements, `NetPrintsExtension` items). Plain CommonMark (the site renders `.md` without MDX); no HTML
+- [x] T105 [P] SC-005 measurement (open HelloWorld restored: evaluation + workspace + extensions + types), recorded in the PR; 3× regression bound only
 - [ ] T106 Manual IDE check (research K9): build and nesting of the HelloWorld sample in Visual Studio 2022, Visual Studio 2026 and Rider; VS Code shows schema validation for `HelloWorld.Program.netpc.json` once the `$schema` URL resolves (after the owner enabled Pages; else note it); record results in the PR
-- [ ] T107 `dotnet format --verify-no-changes`, full suite, E2E once on a private Xvfb (quickstart §6)
+- [x] T107 `dotnet format --verify-no-changes`, full suite, E2E once on a private Xvfb (quickstart §6)
 - [ ] T108 **After Checkpoint L (T122).** Update checkboxes and research notes with findings (R17 open items K13, K14; R18/R19 findings); mark the PR ready; CI, Docs and the Release dry run green; independent review per AGENTS.md
 
 ---

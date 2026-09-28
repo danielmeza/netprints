@@ -4429,3 +4429,108 @@ E2E suite (AGENTS.md's "A stray saved variable under samples/ broke 11 tests on 
   too) needs a dedicated wording review, since nothing pins the exact string; (3) `T103a`'s
   `ICompilationReference`/`TranslateMethodEntry` bullets needed no code change — flagging in case a
   reviewer believes the XML-doc pass intended something further for either.
+
+## Sub-phase K, batch K1 (T104–T107)
+
+- **T104, user docs**: `docs/guide/projects.md`, `docs/guide/graph-format.md`, `docs/guide/extensions.md`
+  written as plain CommonMark (no HTML/MDX), each linked from a new "## Guides" section in the README
+  with a one-line summary, as the task asks. No `_category_.json` or front matter added under
+  `docs/guide/` — release-and-docs.md §8's content-layout table gives that folder's `_category_.json`
+  to T117 (which scaffolds the Docusaurus site itself); T104 only needs the three pages to exist so
+  T117 can pick them up ("T104 before T117 (its pages are in the site)" in tasks.md's dependency list).
+  Every fact was checked against the current code/spec rather than assumed:
+  - `$schema` value (`https://danielmeza.github.io/netprints/schemas/netpc.v1.schema.json`) matches
+    `NetPrintsSchema.V1Url` (`src/NetPrints.Serialization/Json/NetPrintsJsonOptions.cs`) and the
+    committed `samples/HelloWorld/HelloWorld.Program.netpc.json`; confirmed it currently 404s (Pages
+    not enabled yet), matching document-format.md §6's "once the owner has enabled Pages" caveat.
+  - `.gitattributes` lines quoted verbatim from `ProjectFiles.GitAttributesLines`
+    (project-system.md §1.1) and cross-checked against the actual committed
+    `samples/HelloWorld/.gitattributes`.
+  - The move/add diff example is the literal one from document-format.md §1.7 (node
+    `n00000000057k3`'s layout line).
+  - `NETPRINTS_EXTENSION_PATH`, `NETPRINTS_LOG_LEVEL` behaviour (including the `Information` default
+    and case-insensitive `LogLevel` parsing) transcribed from `src/NetPrints.Desktop/Program.cs`;
+    `NETPRINTS_HOST_CHANNEL` and the `NETPRINTS_HOST_*` family transcribed from
+    `src/NetPrints.Editor/Hosting/HostChannelSelector.cs` and extension-points.md §6.
+  - Extension project requirements (`EnableDynamicLoading`, `Private="false"` /
+    `ExcludeAssets="runtime"`, manifest `CopyToOutputDirectory`) transcribed from extension-points.md
+    §8.2 and cross-checked against the real `tests/NetPrints.TestExtension.csproj`. One correction from
+    a first draft: `NetPrints.Extensibility` is **not** one of the four packages `dotnet pack` produces
+    in P1 (release-and-docs.md §3 packs only Core, Reflection, Sdk, Cli), so the extensions guide shows
+    a `ProjectReference` to it (as the real test extension does), not a `PackageReference` to a
+    nonexistent NuGet package.
+  - `NetPrintsExtension` item syntax and semantics (points at the manifest's folder, not the assembly;
+    build always trusts the project's items; the editor asks once and remembers the answer) from
+    project-system.md §1 and spec.md's Q&A/FR-019.
+  - VS Code nesting snippet is the exact one from quickstart.md §2 / research.md R15; the repository's
+    own `.vscode/settings.json` was left unchanged (no task asked for it, and it is guidance for
+    projects opened by *users*, not necessarily this repository's own working copy).
+- **T105, SC-005 measurement**: new test
+  `tests/NetPrints.Editor.Tests/Hosting/ProjectOpenPerformanceTests.cs`
+  (`OpenHelloWorldRestoredIsWithinBudget`), modelled on the existing `SearchPerformanceTests` (same
+  file, "generous regression bound" convention). It copies the real, checked-in `samples/HelloWorld`
+  to a temp directory, writes the same in-repo local-SDK layout files `LocalSdkLayout`/`SampleBuild`
+  already use elsewhere in the suite (so restore resolves the in-repo generator instead of a published
+  package), and does one untimed warm-up `MsBuildProjectSystem.LoadAsync` (the real `dotnet restore`).
+  The timed run then uses a **fresh** `MsBuildProjectSystem` (real MSBuild evaluation + restore check,
+  restore is a no-op since `obj/` is now current) → `ProjectPersistence.LoadAsync(snapshot, …)` (loads
+  the one graph file) → a built-in-only `ExtensionHost` + `LoadForProjectAsync` (HelloWorld references
+  no extensions, so this exercises the empty-folder path) → `ReflectionHost.ReloadAsync` (type
+  loading, including its documented ~1.5 s warm-up). This is the same sequence
+  `MainEditorVM.LoadProjectAsync` runs on a real open, just assembled directly so each stage's own
+  elapsed time can be logged.
+  - **Measured (this sandbox, Release, 3 runs)**: evaluation + restore-check ≈ 647–665 ms; + graph
+    load ≈ +85–90 ms (≈ 736–758 ms cumulative); + extension load ≈ +10 ms (≈ 746–768 ms cumulative);
+    + reflection/type load (incl. warm-up) ≈ +2.3 s, for a **total of ≈ 3.05–3.10 s**.
+  - SC-005's own text targets "at most 3 s … when already restored"; the measured total lands a little
+    (~50–100 ms) over that literal figure on this machine, driven almost entirely by the reflection
+    warm-up stage (the code comment at `ReflectionHost.ReloadAsync` already estimates that stage alone
+    at "about 1.5 s" for ~120k methods — this sandbox's actual cost is closer to 2.3 s). Per the task
+    text ("3× regression bound only") and spec.md's own note that "performance work is P8", the test
+    does **not** assert the literal 3 s bound; it asserts a 3× margin (`OpenBoundMs = 9000`), the same
+    convention `SearchPerformanceTests` already uses for its own SC-005 budget. All three runs passed
+    comfortably inside that bound. Recorded here (not literally "in the PR" title) per the batch's
+    instructions, for the coordinator to fold into the PR description.
+  - Deviation from a literal reading of "workspace": `MsBuildProjectSystem.LoadAsync` already includes
+    creating and querying an `MSBuildWorkspace` internally (plan.md's "MSBuildWorkspace open measured
+    0.8 s" baseline lines up with the ≈650 ms evaluation+restore-check figure above), so no separate
+    "workspace" stage is timed — evaluation and workspace-open are one MSBuild-and-Roslyn round trip in
+    the real code, not two.
+- **T106, manual IDE check — left unticked.** Headless-verifiable parts done and green, following
+  quickstart.md §2 exactly: built `src/NetPrints.Generator`, copied `samples/HelloWorld` outside the
+  repo, packed `NetPrints.Sdk` into a local feed, `dotnet build` of the copy generated
+  `HelloWorld.Program.netpc.g.cs` byte-identical to the committed file (`diff` confirmed), `dotnet run`
+  printed "Hello, World!", and a second `dotnet build -v n` showed `NetPrintsGenerate` skipped as
+  up-to-date. The `$schema` URL was checked (`curl -I`) and currently 404s, consistent with Pages not
+  being enabled yet (a T108/owner item, not this batch's). This machine (Linux) has no Visual Studio
+  2022/2026 (Windows-only, not installable here) and, while a Rider launcher script exists
+  (`~/.local/share/JetBrains/Toolbox/scripts/rider`), actually opening it, building the sample and
+  visually confirming the `*.netpc.json`/`*.netpc.g.cs` nesting in its Solution/Project view is a GUI
+  interaction with no headless equivalent, so it was not attempted (a guess at "it probably nests"
+  would not be a verified check). **Owner manual checks pending** (research K9's own framing: "one
+  manual check per IDE, recorded in the PR"):
+  1. Visual Studio 2022: open `samples/HelloWorld/HelloWorld.csproj` (or a copy per quickstart §2),
+     confirm it builds and that `HelloWorld.Program.netpc.g.cs` nests under
+     `HelloWorld.Program.netpc.json` in Solution Explorer.
+  2. Visual Studio 2026: same as above.
+  3. Rider: same as above (Rider's project view has its own nesting rule for `DependentUpon`, separate
+     from VS Code's `explorer.fileNesting.patterns`).
+  4. Once GitHub Pages is enabled and the docs site has deployed (sub-phase L/owner step), reopen
+     `HelloWorld.Program.netpc.json` in VS Code and confirm schema validation/completion now works
+     through the resolved `$schema` URL.
+  T106 stays unticked in tasks.md until an owner (or a future batch with GUI access) completes 1–3;
+  item 4 is blocked on Pages regardless of IDE access.
+- **T107**: `dotnet format NetPrints.slnx --verify-no-changes` clean (no output). Full suite
+  (`dotnet test --solution NetPrints.slnx -c Release --no-build --no-progress --no-ansi --
+  --ignore-exit-code 8`): **827 total, 0 failed, 817 succeeded, 10 skipped** (same pre-existing
+  headless/E2E self-skips as prior batches; +1 over J3's 826 for the new
+  `ProjectOpenPerformanceTests`). `dotnet build -c Release` 0 warnings. Desktop E2E
+  (`NETPRINTS_E2E=1 NETPRINTS_E2E_DISPLAY_START=150 dotnet test --project
+  tests/NetPrints.Desktop.E2ETests -c Release --no-build --no-progress --no-ansi -- --fail-skips on`,
+  own private Xvfb, no other agent's display in use): **7/7 passed, 0 skipped**. `git status --short
+  samples tests/NetPrints.Core.Tests/Fixtures` empty throughout the batch.
+- Open questions for review: (1) whether the ~50–100 ms literal-3 s overshoot in the SC-005 measurement
+  (§T105 above) is worth a follow-up in P8, given it is entirely the documented reflection warm-up cost
+  and well inside the 3× bound this task actually gates on; (2) T106 is intentionally left unticked —
+  confirm the owner will do the three IDE checks (and the post-Pages VS Code schema check) rather than
+  a future agent attempting them through some remote-desktop/VNC setup.
