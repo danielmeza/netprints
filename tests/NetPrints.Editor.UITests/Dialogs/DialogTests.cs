@@ -32,6 +32,13 @@ public class DialogTests
         await ui.Driver.PressAsync("Ctrl+A", Token);
         await ui.Driver.TypeAsync("System.String", Token);
         Assert.Equal(TypeSpecifier.FromType<string>(), dialog.ResolveSelection()); // editable chooser
+
+        bool closed = false;
+        dialog.Closed += (_, _) => closed = true;
+        await ui.Driver.PressAsync("Escape", Token); // dismisses the AutoCompleteBox's suggestion popup
+        await page.SelectButton.ClickAsync(Token); // batch X2b: DialogVM + DialogCloseBehavior
+        Assert.True(closed);
+        Assert.Equal(TypeSpecifier.FromType<string>(), dialog.Result);
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
@@ -44,11 +51,17 @@ public class DialogTests
             new("ToUpper", [], [stringType], MethodModifiers.None, MemberVisibility.Public, stringType, []),
         ];
         using var ui = HeadlessUi.Create();
-        ui.Show(new SelectMethodDialog(methods));
+        var dialog = ui.Show(new SelectMethodDialog(methods));
         var page = new SelectMethodDialogPage(ui.Driver);
+        bool closed = false;
+        dialog.Closed += (_, _) => closed = true;
 
         Assert.Equal(methods[0].ToString(), await page.MethodBox.PropertyAsync(AutomationPropertyNames.SelectedItem, Token)); // PAR-59
         Assert.True(await page.SelectButton.IsEnabledAsync(Token));
+
+        await page.SelectButton.ClickAsync(Token); // batch X2b: DialogVM + DialogCloseBehavior
+        Assert.True(closed);
+        Assert.Equal(methods[0], dialog.Result);
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
