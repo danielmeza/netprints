@@ -164,3 +164,38 @@ jobs:
             TestResults/**/*.trx
             TestResults/ui/**
           if-no-files-found: warn
+
+  packages:
+    name: Packages (local feed)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', 'Directory.Build.props', 'src/Directory.Build.props', 'tests/Directory.Build.props', 'global.json', '**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: MinVer version of an untagged commit
+        run: |
+          dotnet restore src/NetPrints.Core
+          ver=$(dotnet msbuild src/NetPrints.Core/NetPrints.Core.csproj -t:MinVer -getProperty:MinVerVersion -p:Configuration=Release)
+          echo "MinVer: $ver"
+          [[ "$ver" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-alpha\.0\.[0-9]+)?$ ]]
+
+      - name: Pack into local-packages
+        id: pack
+        run: echo "version=$(scripts/pack-local.sh --print-version)" >> "$GITHUB_OUTPUT"
+
+      - name: Verify packages, tool and SDK from the local feed
+        run: |
+          [[ "${{ steps.pack.outputs.version }}" =~ ^0\.1\.0-local\.[0-9]{14}$ ]]
+          scripts/verify-packages.sh local-packages "${{ steps.pack.outputs.version }}"
