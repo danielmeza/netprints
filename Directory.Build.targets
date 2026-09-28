@@ -1,0 +1,7 @@
+<Project>
+  <Import Project="eng/PackageReadme.targets" Condition="'$(IsPackable)' == 'true'" />
+  <ItemGroup Condition="'$(IsPackable)' == 'true'">
+    <None Include="$(MSBuildThisFileDirectory)assets/icons/netprints-icon.png"
+          Pack="true" PackagePath="icon.png" Visible="false" />
+  </ItemGroup>
+</Project>
