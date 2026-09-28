@@ -4534,3 +4534,88 @@ E2E suite (AGENTS.md's "A stray saved variable under samples/ broke 11 tests on 
   and well inside the 3× bound this task actually gates on; (2) T106 is intentionally left unticked —
   confirm the owner will do the three IDE checks (and the post-Pages VS Code schema check) rather than
   a future agent attempting them through some remote-desktop/VNC setup.
+
+## Sub-phase L, batch L1 (T109–T111): versioning, package metadata, packable projects
+
+- **T109 (§1, MinVer)**: `GlobalPackageReference MinVer 8.0.0` in `Directory.Packages.props`;
+  `MinVerTagPrefix=v`, `MinVerMinimumMajorMinor=0.1`, `MSBuildWarningsNotAsErrors`
+  `;=MINVER1001` in `Directory.Build.props`; removed `<Version>0.0.7</Version>` and
+  `<Copyright>Robin Kahlow 2018</Copyright>` from `src/NetPrints.Core/NetPrints.Core.csproj` (the
+  repo-wide `Copyright` T110 adds below already credits Robin Kahlow). Also dropped
+  `<PackageLicenseExpression>MIT</PackageLicenseExpression>` from the same `PropertyGroup`, though the
+  task text names only `<Version>`/`<Copyright>`: T110's repo-wide `Directory.Build.props` group sets
+  the identical `PackageLicenseExpression=MIT` value, so the per-project copy was purely redundant, not
+  a behavior change. `fetch-depth: 0` added to the
+  `build-test` job's checkout in `.github/workflows/ci.yml`. Accept: `-t:MinVer -getProperty:MinVerVersion`
+  printed `0.1.0-alpha.0.686`; `dotnet pack src/NetPrints.Core -p:MinVerVersionOverride=9.9.9` wrote
+  `NetPrints.Core.9.9.9.nupkg`; a working-tree copy with no `.git` built with 0 errors and a `MINVER1001`
+  warning; `grep -rn "<Version>" src tests` (unscoped, as the task literally wrote it) matches two
+  pre-existing, unrelated hits — `TypeSpecifier.FromType<Version>()` in
+  `tests/NetPrints.Editor.Tests/Graph/GetSet/GetSetChooserVMTests.cs` and
+  `tests/NetPrints.Editor.UITests/Graph/CanvasPopupPositioningTests.cs` — C# generic syntax on
+  `System.Version`, not an XML `<Version>` tag; scoped to build files
+  (`--include='*.csproj' --include='*.props' --include='*.targets'`) it is empty, which is the intent
+  the acceptance check is after. DF-T26 and the golden fixture tests
+  (`CommittedSampleTests`, `HelloWorldSampleTests`) stayed green; `git status --short samples
+  tests/NetPrints.Core.Tests/Fixtures` empty.
+- **Decision: `MSBuildWarningsNotAsErrors` needed no `SourceHygieneTests` allowlist entry.**
+  `NoUnlistedBuildWarningSuppressions` matches the literal tags `<NoWarn>`, `<WarningsNotAsErrors>`,
+  `<TreatWarningsAsErrors>false</TreatWarningsAsErrors>` and `<WarningLevel>` — `<MSBuildWarningsNotAsErrors>`
+  (the MSBuild-engine-level property the contract names, distinct from the Roslyn-compiler
+  `WarningsNotAsErrors` the test targets) does not match any of those patterns as a substring. Verified
+  empirically: `SourceHygieneTests` (all 7 facts, including `NoUnlistedBuildWarningSuppressions` and
+  `NoUnlistedSuppressions`) pass unchanged after adding the property. No ADR-0003 ledger entry was added
+  either, since ADR-0003's ledger is specifically the member-level `[SuppressMessage]` list (its own
+  "Real fixes vs. suppression" section), which this MSBuild-level, task-mandated property is not.
+- **T110 (§2, package metadata)**: root `IsPackable=false` plus the "Package metadata" property group
+  in `Directory.Build.props` (Authors, Company, Product, Copyright, PackageProjectUrl, RepositoryUrl,
+  license, readme, icon, tags, symbols); new `Directory.Build.targets` (imports
+  `eng/PackageReadme.targets` and adds the icon `None` item, both only when `IsPackable=true`); new
+  `eng/PackageReadme.targets`, copied from the owner's `readme-craft` skill example with one adaptation:
+  the outside-a-git-checkout fallback branch is `master` (this repo's default branch), not the example's
+  `main`. `assets/icons/netprints-icon.png` generated with `convert
+  'src/NetPrints.Desktop/NetPrintsLogo.ico[4]' assets/icons/netprints-icon.png` (ImageMagick 6.9.12,
+  `/usr/bin/convert`; `magick` is not installed on this machine) — frame 4 confirmed 256×256 PNG via
+  `identify` both before and after extraction. Accept: `dotnet pack NetPrints.slnx -o /tmp/p0` produced
+  no packages (nothing packable yet); `dotnet build -c Release` 0 warnings.
+- **T111 (§3, packable projects, RL-T01)**: `IsPackable=true` + `EnablePackageValidation=true` +
+  `Description` (attribution sentence) on `NetPrints.Core` and `NetPrints.Reflection`;
+  `IsPackable=true` + `IncludeSymbols=false` + `Description` on `NetPrints.Sdk` (no build output, so a
+  `.snupkg` would fail with NU5017); `IsPackable`/`PackAsTool`/`ToolCommandName=netprints`/
+  `PackageId=NetPrints.Cli`/`GenerateDocumentationFile`/`Description` on `NetPrints.Cli`; a direct
+  `Microsoft.CodeAnalysis.Workspaces.MSBuild` `PackageReference` added to both `NetPrints.Cli` and
+  `NetPrints.Desktop` (roslyn#80127 — `MSBuildWorkspace` only copies `BuildHost-netcore/` next to a
+  *direct* reference, not one pulled in transitively through the `NetPrints.Workspace` project
+  reference). Accept RL-T01: `dotnet pack NetPrints.slnx -c Release -o /tmp/p1` wrote exactly the seven
+  files (`NetPrints.Cli`/`.Core`/`.Reflection` `.nupkg`+`.snupkg`, `NetPrints.Sdk` `.nupkg` only); `unzip
+  -l` of the Cli package lists `tools/net10.0/any/BuildHost-netcore/` (6 files); 0 warnings. Spot-checked
+  the generated package README (`NetPrints.Core`'s): the root README's `<p align>`/`<img>` HTML became
+  plain Markdown, the banner image and the class-editor screenshot became
+  `raw.githubusercontent.com/danielmeza/netprints/<commit>/…` URLs, and the license badge link became a
+  `github.com/.../blob/<commit>/LICENSE` URL — no leftover HTML, no `GenerateNuGetReadme` warning.
+- **Deviation: did not add `GenerateDocumentationFile` or `NoWarn CS1591` to `NetPrints.Core`/
+  `NetPrints.Reflection`, despite contract §3's table cell for Core listing both.**
+  `GenerateDocumentationFile=true` is already set repo-wide for every `src/` project by
+  `src/Directory.Build.props` (§2's "XML documentation" decision), so re-adding it per-project is a
+  no-op. `NoWarn CS1591` is not added at all: it directly contradicts §2's own text two paragraphs
+  earlier ("No project suppresses CS1591... The only exception is an `.editorconfig` section per file
+  for files that a P1 task deletes") and would fail `SourceHygieneTests.NoUnlistedBuildWarningSuppressions`
+  (its `<NoWarn>` pattern matches unconditionally, with no allowlist mechanism to add it to). tasks.md's
+  own T111 line — the authoritative task text — does not mention either property, only `IsPackable`,
+  descriptions and `EnablePackageValidation` for Core/Reflection; this looks like a stale contract-table
+  cell from before the XML-documentation decision landed, not a deliberate ask. Every public member in
+  `NetPrints.Core`/`NetPrints.Reflection` already has an XML doc comment (enforced since an earlier
+  batch), so CS1591 does not fire there regardless.
+- Verification: `dotnet build NetPrints.slnx -c Release -v q -tl:off --nologo` → 18 projects, 0
+  errors, 0 warnings. `dotnet format NetPrints.slnx --verify-no-changes` clean. Full suite (`dotnet test
+  --solution NetPrints.slnx -c Release --no-build --no-progress --no-ansi -- --ignore-exit-code 8`):
+  **827 total, 0 failed, 817 succeeded, 10 skipped** — unchanged from K1's baseline (no test-affecting
+  code in this batch: only `.props`/`.targets`/`.csproj`/workflow/asset changes). Desktop E2E not run:
+  this batch touched no Desktop/Editor runtime code (the `NetPrints.Desktop.csproj` change is a metadata
+  `PackageReference` addition, not a behavior change). `git status --short samples
+  tests/NetPrints.Core.Tests/Fixtures` empty throughout.
+- Open questions for review: (1) the contract §3 table's `NoWarn CS1591` cell for Core/Reflection looks
+  stale against §2's "no project suppresses CS1591" text and against tasks.md's own T111 line — worth a
+  contract fix in a future batch so the two sections agree; (2) whether the package README's fallback
+  commit branch (`master`, changed from the `readme-craft` example's `main`) should instead be read from
+  a property, if a future batch renames the default branch.

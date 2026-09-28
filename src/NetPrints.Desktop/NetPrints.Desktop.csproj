@@ -15,6 +15,10 @@
          satisfies MSBuildLocator's own MSBL001 guard (research K10) here too. -->
     <PackageReference Include="Microsoft.Build" ExcludeAssets="runtime" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Build.Framework" ExcludeAssets="runtime" PrivateAssets="all" />
+    <!-- Direct reference (roslyn#80127): MSBuildWorkspace starts BuildHost-netcore/ from the
+         application folder, and that folder is only copied for a direct PackageReference, not one
+         pulled in transitively through the NetPrints.Workspace project reference. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" />
   </ItemGroup>
 
   <ItemGroup>
