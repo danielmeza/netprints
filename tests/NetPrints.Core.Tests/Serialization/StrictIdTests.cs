@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Core;
 using NetPrints.Graph;
 using NetPrints.Serialization;
@@ -24,7 +25,7 @@ namespace NetPrints.Tests.Serialization
     public class StrictIdTests
     {
         private static DocumentMapper NewMapper() =>
-            new(new NodeDocumentConverterRegistry(NodeDocumentConverterRegistry.BuiltIn, []));
+            new(new NodeDocumentConverterRegistry(NodeDocumentConverterRegistry.BuiltIn, []), NullLogger<DocumentMapper>.Instance);
 
         private static string NodeId(long value) => IdFormat.Format('n', value);
         private static string MemberId(long value) => IdFormat.Format('m', value);
@@ -197,7 +198,7 @@ namespace NetPrints.Tests.Serialization
         private static async Task AssertLoadsWithNoIssuesAsync(string path, string projectName)
         {
             var registry = new NodeDocumentConverterRegistry(NodeDocumentConverterRegistry.BuiltIn, []);
-            var format = new JsonDocumentFormat(new NetPrintsJsonOptions(registry), new DocumentMigrator([]));
+            var format = new JsonDocumentFormat(new NetPrintsJsonOptions(registry), new DocumentMigrator([], NullLogger<DocumentMigrator>.Instance));
             var id = new DocumentId(Path.GetFileName(path));
 
             ClassDocument document;
@@ -206,7 +207,7 @@ namespace NetPrints.Tests.Serialization
                 document = await format.ReadClassAsync(stream, id, TestContext.Current.CancellationToken);
             }
 
-            var mapper = new DocumentMapper(registry);
+            var mapper = new DocumentMapper(registry, NullLogger<DocumentMapper>.Instance);
             var issues = new List<DocumentIssue>();
             mapper.FromDocument(document, TestProjects.Create(projectName, projectName), issues, id);
 

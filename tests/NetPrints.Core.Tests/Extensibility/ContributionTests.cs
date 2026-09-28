@@ -61,7 +61,7 @@ public sealed class ContributionTests : IAsyncLifetime
         }
 
         var issues = new List<DocumentIssue>();
-        ClassGraph cls = new DocumentMapper(from.NodeConverters).FromDocument(document, TestProjects.Create("P", "P"), issues, id);
+        ClassGraph cls = new DocumentMapper(from.NodeConverters, NullLogger<DocumentMapper>.Instance).FromDocument(document, TestProjects.Create("P", "P"), issues, id);
         return (cls, issues);
     }
 
@@ -121,7 +121,7 @@ public sealed class ContributionTests : IAsyncLifetime
         Assert.Contains(log.Id, issue.Message, StringComparison.Ordinal);
         Assert.NotNull(withoutExtension.Methods.Single().PreservedDocumentState);
 
-        ClassDocument saved = new DocumentMapper(builtIn.NodeConverters).ToDocument(withoutExtension);
+        ClassDocument saved = new DocumentMapper(builtIn.NodeConverters, NullLogger<DocumentMapper>.Instance).ToDocument(withoutExtension);
         Assert.NotNull(saved.Methods);
         UnknownNodeDocument preserved = Assert.IsType<UnknownNodeDocument>(saved.Methods.Single().Graph.Nodes.Single(n => n.Id == log.Id));
         Assert.Equal("netprints.test/Log", preserved.Kind);

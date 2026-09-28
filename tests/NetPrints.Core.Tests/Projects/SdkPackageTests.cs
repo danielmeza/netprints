@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Core;
 using NetPrints.Serialization;
 using NetPrints.Serialization.Documents;
@@ -33,9 +34,9 @@ namespace NetPrints.Tests.Projects
         {
             Project project = TestProjects.Create(ns, ns);
             var cls = new ClassGraph { Name = name, Namespace = ns, Visibility = MemberVisibility.Public, Project = project };
-            var mapper = new DocumentMapper(Registry);
+            var mapper = new DocumentMapper(Registry, NullLogger<DocumentMapper>.Instance);
             ClassDocument document = mapper.ToDocument(cls);
-            var format = new JsonDocumentFormat(new NetPrintsJsonOptions(Registry), new DocumentMigrator([]));
+            var format = new JsonDocumentFormat(new NetPrintsJsonOptions(Registry), new DocumentMigrator([], NullLogger<DocumentMigrator>.Instance));
             await using FileStream output = File.Create(path);
             await format.WriteClassAsync(document, output, TestContext.Current.CancellationToken);
         }

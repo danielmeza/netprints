@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Extensions.Logging;
 using NetPrints.Core;
 using NetPrints.Graph;
 using NetPrints.Serialization.Documents;
@@ -25,15 +26,19 @@ internal sealed record PreservedGraphState(IReadOnlyList<UnknownNodeDocument> No
 public sealed class DocumentMapper : IDocumentMapper
 {
     private readonly NodeDocumentConverterRegistry nodes;
+    private readonly ILogger<DocumentMapper> logger;
 
     /// <summary>
     /// Creates a mapper backed by <paramref name="nodes"/>.
     /// </summary>
     /// <param name="nodes">Node document converters (built-in and extension) to map with.</param>
-    public DocumentMapper(NodeDocumentConverterRegistry nodes)
+    /// <param name="logger">Logger for a preserved unknown node or a dropped connection (events 3002, 3003).</param>
+    public DocumentMapper(NodeDocumentConverterRegistry nodes, ILogger<DocumentMapper> logger)
     {
         ArgumentNullException.ThrowIfNull(nodes);
+        ArgumentNullException.ThrowIfNull(logger);
         this.nodes = nodes;
+        this.logger = logger;
     }
 
     /// <inheritdoc/>
@@ -667,6 +672,7 @@ public sealed class DocumentMapper : IDocumentMapper
                 preservedNodes.Add(unknown);
                 issues.Add(new DocumentIssue(DocumentIssueSeverity.Warning, DocumentIssue.UnknownNodeKind,
                     $"Node '{unknown.Id}' has unknown kind '{unknown.Kind}'; preserved unchanged.", id));
+                Log.UnknownNodeKindPreserved(logger, unknown.Id, unknown.Kind, id);
                 continue;
             }
 
@@ -690,7 +696,7 @@ public sealed class DocumentMapper : IDocumentMapper
 
         var preservedNodeIds = new HashSet<string>(preservedNodes.Select(n => n.Id), StringComparer.Ordinal);
         var preservedConnections = new List<ConnectionDocument>();
-        ApplyConnections(RemapConnectionEndpoints(graphDocument.Connections, oldToNewNodeId), graph, id, issues, preservedNodeIds, preservedConnections);
+        ApplyConnections(RemapConnectionEndpoints(graphDocument.Connections, oldToNewNodeId), graph, id, issues, preservedNodeIds, preservedConnections, logger);
 
         if (preservedNodes.Count > 0 || preservedConnections.Count > 0)
         {
@@ -800,11 +806,19 @@ public sealed class DocumentMapper : IDocumentMapper
     }
 
     private static void ApplyConnections(IReadOnlyList<ConnectionDocument>? connections, NodeGraph graph, DocumentId id,
-        ICollection<DocumentIssue> issues, IReadOnlySet<string> preservedNodeIds, List<ConnectionDocument> preservedConnections)
+        ICollection<DocumentIssue> issues, IReadOnlySet<string> preservedNodeIds, List<ConnectionDocument> preservedConnections,
+        ILogger<DocumentMapper> logger)
     {
         if (connections is null)
         {
             return;
+        }
+
+        void Dropped(ConnectionDocument connection, string reason)
+        {
+            issues.Add(new DocumentIssue(DocumentIssueSeverity.Warning, DocumentIssue.ConnectionDropped,
+                $"Connection '{connection.From}' -> '{connection.To}' {reason}.", id));
+            Log.ConnectionDropped(logger, connection.From, connection.To, id, reason);
         }
 
         foreach (ConnectionDocument connection in connections)
@@ -823,8 +837,7 @@ public sealed class DocumentMapper : IDocumentMapper
                 }
                 else
                 {
-                    issues.Add(new DocumentIssue(DocumentIssueSeverity.Warning, DocumentIssue.ConnectionDropped,
-                        $"Connection '{connection.From}' -> '{connection.To}' references a missing node.", id));
+                    Dropped(connection, "references a missing node");
                 }
 
                 continue;
@@ -835,8 +848,7 @@ public sealed class DocumentMapper : IDocumentMapper
 
             if (fromPin is null || toPin is null)
             {
-                issues.Add(new DocumentIssue(DocumentIssueSeverity.Warning, DocumentIssue.ConnectionDropped,
-                    $"Connection '{connection.From}' -> '{connection.To}' references an unknown pin.", id));
+                Dropped(connection, "references an unknown pin");
                 continue;
             }
 
@@ -854,15 +866,13 @@ public sealed class DocumentMapper : IDocumentMapper
                         GraphUtil.ConnectTypePins(fromType, toType);
                         break;
                     default:
-                        issues.Add(new DocumentIssue(DocumentIssueSeverity.Warning, DocumentIssue.ConnectionDropped,
-                            $"Connection '{connection.From}' -> '{connection.To}' connects incompatible pins.", id));
+                        Dropped(connection, "connects incompatible pins");
                         break;
                 }
             }
             catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
             {
-                issues.Add(new DocumentIssue(DocumentIssueSeverity.Warning, DocumentIssue.ConnectionDropped,
-                    $"Connection '{connection.From}' -> '{connection.To}' could not be connected: {ex.Message}", id));
+                Dropped(connection, $"could not be connected: {ex.Message}");
             }
         }
     }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Core;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Generator;
@@ -27,7 +28,7 @@ namespace NetPrints.Tests.Projects
         private static NodeDocumentConverterRegistry NewRegistry() => new(NodeDocumentConverterRegistry.BuiltIn, []);
 
         private static JsonDocumentFormat NewJsonFormat(NodeDocumentConverterRegistry registry) =>
-            new(new NetPrintsJsonOptions(registry), new DocumentMigrator([]));
+            new(new NetPrintsJsonOptions(registry), new DocumentMigrator([], NullLogger<DocumentMigrator>.Instance));
 
         private static async Task<string> WriteCanonicalGraphAsync(string directory)
         {
@@ -45,7 +46,7 @@ namespace NetPrints.Tests.Projects
         private static async Task<ClassGraph> LoadClassAsync(string graphPath)
         {
             NodeDocumentConverterRegistry registry = NewRegistry();
-            var mapper = new DocumentMapper(registry);
+            var mapper = new DocumentMapper(registry, NullLogger<DocumentMapper>.Instance);
             JsonDocumentFormat jsonFormat = NewJsonFormat(registry);
             var id = new DocumentId(Path.GetFileName(graphPath));
 
@@ -63,7 +64,7 @@ namespace NetPrints.Tests.Projects
         private static GraphCodeGenerator NewGenerator()
         {
             NodeDocumentConverterRegistry registry = NewRegistry();
-            var mapper = new DocumentMapper(registry);
+            var mapper = new DocumentMapper(registry, NullLogger<DocumentMapper>.Instance);
             var formats = new DocumentFormatRegistry([NewJsonFormat(registry)]);
             return new GraphCodeGenerator(ExtensionTestSupport.Load(ExtensionLoaderOptions.BuiltInOnly), formats, mapper);
         }

@@ -78,8 +78,9 @@ public sealed class GraphCodeGenerator
     public static GraphCodeGenerator Create(ExtensionRegistry extensions)
     {
         ArgumentNullException.ThrowIfNull(extensions);
-        var mapper = new DocumentMapper(extensions.NodeConverters);
-        var jsonFormat = new JsonDocumentFormat(new NetPrintsJsonOptions(extensions.NodeConverters), new DocumentMigrator([]));
+        var mapper = new DocumentMapper(extensions.NodeConverters, NullLogger<DocumentMapper>.Instance);
+        var jsonFormat = new JsonDocumentFormat(new NetPrintsJsonOptions(extensions.NodeConverters),
+            new DocumentMigrator([], NullLogger<DocumentMigrator>.Instance));
         return new GraphCodeGenerator(extensions, new DocumentFormatRegistry([jsonFormat]), mapper);
     }
 

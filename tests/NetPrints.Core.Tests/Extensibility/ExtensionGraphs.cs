@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Core;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Nodes;
@@ -37,11 +38,11 @@ internal static class ExtensionGraphs
     }
 
     public static JsonDocumentFormat Format(ExtensionRegistry registry) =>
-        new(new NetPrintsJsonOptions(registry.NodeConverters), new DocumentMigrator([]));
+        new(new NetPrintsJsonOptions(registry.NodeConverters), new DocumentMigrator([], NullLogger<DocumentMigrator>.Instance));
 
     public static async Task<string> WriteAsync(ExtensionRegistry registry, ClassGraph cls, string path)
     {
-        ClassDocument document = new DocumentMapper(registry.NodeConverters).ToDocument(cls);
+        ClassDocument document = new DocumentMapper(registry.NodeConverters, NullLogger<DocumentMapper>.Instance).ToDocument(cls);
         await using FileStream output = File.Create(path);
         await Format(registry).WriteClassAsync(document, output, TestContext.Current.CancellationToken);
         return path;

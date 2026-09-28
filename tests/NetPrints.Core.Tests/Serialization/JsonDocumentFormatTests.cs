@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Core;
 using NetPrints.Serialization;
 using NetPrints.Serialization.Documents;
@@ -29,7 +30,7 @@ namespace NetPrints.Tests.Serialization
 
         private static JsonDocumentFormat NewFormat() =>
             new(new NetPrintsJsonOptions(new NodeDocumentConverterRegistry(NodeDocumentConverterRegistry.BuiltIn, [])),
-                new DocumentMigrator([]));
+                new DocumentMigrator([], NullLogger<DocumentMigrator>.Instance));
 
         private static MemoryStream Utf8Stream(string text) => new(Encoding.UTF8.GetBytes(text));
 

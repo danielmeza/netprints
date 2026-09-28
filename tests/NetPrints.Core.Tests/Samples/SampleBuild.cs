@@ -57,8 +57,8 @@ namespace NetPrints.Tests.Samples
         public static ProjectPersistence NewPersistence(IProjectSystem projects)
         {
             var registry = new NodeDocumentConverterRegistry(NodeDocumentConverterRegistry.BuiltIn, []);
-            var mapper = new DocumentMapper(registry);
-            var formats = new DocumentFormatRegistry([new JsonDocumentFormat(new NetPrintsJsonOptions(registry), new DocumentMigrator([]))]);
+            var mapper = new DocumentMapper(registry, NullLogger<DocumentMapper>.Instance);
+            var formats = new DocumentFormatRegistry([new JsonDocumentFormat(new NetPrintsJsonOptions(registry), new DocumentMigrator([], NullLogger<DocumentMigrator>.Instance))]);
             return new ProjectPersistence(projects, formats, mapper,
                 dir => new FileSystemDocumentStore(dir, Scheduler.Default, NullLogger<FileSystemDocumentStore>.Instance),
                 NullLogger<ProjectPersistence>.Instance);

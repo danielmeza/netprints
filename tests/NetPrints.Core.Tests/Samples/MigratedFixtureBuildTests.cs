@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Generator;
 using NetPrints.Serialization;
@@ -68,8 +69,8 @@ namespace NetPrints.Tests.Samples
             try
             {
                 var registry = new NodeDocumentConverterRegistry(NodeDocumentConverterRegistry.BuiltIn, []);
-                var mapper = new DocumentMapper(registry);
-                var formats = new DocumentFormatRegistry([new JsonDocumentFormat(new NetPrintsJsonOptions(registry), new DocumentMigrator([]))]);
+                var mapper = new DocumentMapper(registry, NullLogger<DocumentMapper>.Instance);
+                var formats = new DocumentFormatRegistry([new JsonDocumentFormat(new NetPrintsJsonOptions(registry), new DocumentMigrator([], NullLogger<DocumentMigrator>.Instance))]);
                 await using ExtensionRegistry extensions = ExtensionTestSupport.Load(ExtensionLoaderOptions.BuiltInOnly);
                 var generator = new GraphCodeGenerator(extensions, formats, mapper);
 

@@ -31,11 +31,11 @@ public sealed class EditorComposition : IDisposable
                 host.LoggerFactory.CreateLogger<MsBuildProjectSystem>())
             : new NoSdkProjectSystem();
 
-        (DocumentFormatRegistry formats, IDocumentMapper mapper) = PersistenceBinding.CreateSerializers(host.Extensions.Current);
+        (DocumentFormatRegistry formats, IDocumentMapper mapper) = PersistenceBinding.CreateSerializers(host.Extensions.Current, host.LoggerFactory);
         var persistence = new ProjectPersistence(projects, formats, mapper,
             directory => new FileSystemDocumentStore(directory, DefaultScheduler.Instance, host.LoggerFactory.CreateLogger<FileSystemDocumentStore>()),
             host.LoggerFactory.CreateLogger<ProjectPersistence>());
-        persistenceBinding = PersistenceBinding.Bind(persistence, host.Extensions);
+        persistenceBinding = PersistenceBinding.Bind(persistence, host.Extensions, host.LoggerFactory);
 
         var reflection = new ReflectionHost(dispatcher, host.Extensions, host.LoggerFactory.CreateLogger<ReflectionHost>());
         codeAnalysis = new CodeAnalysisHost(reflection, host.Extensions, DefaultScheduler.Instance, dispatcher, host.LoggerFactory.CreateLogger<CodeAnalysisHost>());

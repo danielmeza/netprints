@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Core;
 using NetPrints.Serialization;
 using NetPrints.Serialization.Documents;
@@ -43,8 +44,8 @@ namespace NetPrints.Tests.Characterization
             var id = new DocumentId(classFileName);
 
             var registry = new NodeDocumentConverterRegistry(NodeDocumentConverterRegistry.BuiltIn, []);
-            var mapper = new DocumentMapper(registry);
-            var format = new JsonDocumentFormat(new NetPrintsJsonOptions(registry), new DocumentMigrator([]));
+            var mapper = new DocumentMapper(registry, NullLogger<DocumentMapper>.Instance);
+            var format = new JsonDocumentFormat(new NetPrintsJsonOptions(registry), new DocumentMigrator([], NullLogger<DocumentMigrator>.Instance));
 
             ClassDocument document;
             using (FileStream stream = File.OpenRead(classPath))

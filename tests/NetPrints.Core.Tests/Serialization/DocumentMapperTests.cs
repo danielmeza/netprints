@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Core;
 using NetPrints.Graph;
 using NetPrints.Serialization;
@@ -22,7 +23,7 @@ namespace NetPrints.Tests.Serialization
     public class DocumentMapperTests
     {
         private static DocumentMapper NewMapper() =>
-            new(new NodeDocumentConverterRegistry(NodeDocumentConverterRegistry.BuiltIn, []));
+            new(new NodeDocumentConverterRegistry(NodeDocumentConverterRegistry.BuiltIn, []), NullLogger<DocumentMapper>.Instance);
 
         private static readonly JsonSerializerOptions JsonOptions =
             new NetPrintsJsonOptions(new NodeDocumentConverterRegistry(NodeDocumentConverterRegistry.BuiltIn, [])).SerializerOptions;

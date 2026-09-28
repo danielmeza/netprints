@@ -365,7 +365,7 @@ public sealed class TestEditor : IDisposable
         Reflection = reflection;
         Persistence = CreatePersistence(Projects);
         Extensions = extensions;
-        _ = PersistenceBinding.Bind(Persistence, Extensions);
+        _ = PersistenceBinding.Bind(Persistence, Extensions, NullLoggerFactory.Instance);
         CodeAnalysis = new CodeAnalysisHost(Reflection, Extensions, Scheduler, Dispatcher, NullLogger<CodeAnalysisHost>.Instance);
 
         Context = new EditorContext(FilePicker, Dialogs, Clipboard, Dispatcher, Reflection, Windows, Processes,
@@ -391,8 +391,8 @@ public sealed class TestEditor : IDisposable
     public static ProjectPersistence CreatePersistence(IProjectSystem projects)
     {
         var nodeConverters = new NodeDocumentConverterRegistry(NodeDocumentConverterRegistry.BuiltIn, []);
-        var mapper = new DocumentMapper(nodeConverters);
-        var formats = new DocumentFormatRegistry([new JsonDocumentFormat(new NetPrintsJsonOptions(nodeConverters), new DocumentMigrator([]))]);
+        var mapper = new DocumentMapper(nodeConverters, NullLogger<DocumentMapper>.Instance);
+        var formats = new DocumentFormatRegistry([new JsonDocumentFormat(new NetPrintsJsonOptions(nodeConverters), new DocumentMigrator([], NullLogger<DocumentMigrator>.Instance))]);
         return new ProjectPersistence(projects, formats, mapper,
             directory => new FileSystemDocumentStore(directory, DefaultScheduler.Instance, NullLogger<FileSystemDocumentStore>.Instance),
             NullLogger<ProjectPersistence>.Instance);

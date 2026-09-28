@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Nodes;
+using Microsoft.Extensions.Logging;
 
 namespace NetPrints.Serialization.Migrations;
 
@@ -22,16 +23,20 @@ public sealed class DocumentMigrator
     public const int CurrentSchemaVersion = 1;
 
     private readonly Dictionary<(DocumentKind Kind, int FromVersion), IDocumentMigration> migrationsByKindAndVersion;
+    private readonly ILogger<DocumentMigrator> logger;
 
     /// <summary>
     /// Creates a migrator from an explicit list of migrations.
     /// </summary>
     /// <param name="migrations">Every registered migration.</param>
+    /// <param name="logger">Logger for a document that was upgraded (event 3001).</param>
     /// <exception cref="ArgumentException">Two migrations share a <see cref="IDocumentMigration.Kind"/>
     /// and <see cref="IDocumentMigration.FromVersion"/>, or a kind's migrations do not form a
     /// contiguous chain starting at version 1.</exception>
-    public DocumentMigrator(IReadOnlyList<IDocumentMigration> migrations)
+    public DocumentMigrator(IReadOnlyList<IDocumentMigration> migrations, ILogger<DocumentMigrator> logger)
     {
+        ArgumentNullException.ThrowIfNull(logger);
+        this.logger = logger;
         migrationsByKindAndVersion = new Dictionary<(DocumentKind, int), IDocumentMigration>();
 
         foreach (IDocumentMigration migration in migrations)
@@ -84,13 +89,14 @@ public sealed class DocumentMigrator
     /// <exception cref="DocumentVersionException"><c>schemaVersion</c> is greater than <see cref="Supported"/>.</exception>
     public JsonObject Upgrade(JsonObject document, DocumentKind kind, DocumentId id)
     {
-        int version = ReadSchemaVersion(document, id);
+        int originalVersion = ReadSchemaVersion(document, id);
 
-        if (version > Supported)
+        if (originalVersion > Supported)
         {
-            throw new DocumentVersionException(version, Supported, id);
+            throw new DocumentVersionException(originalVersion, Supported, id);
         }
 
+        int version = originalVersion;
         while (version < Supported)
         {
             if (!migrationsByKindAndVersion.TryGetValue((kind, version), out IDocumentMigration? migration))
@@ -100,6 +106,11 @@ public sealed class DocumentMigrator
 
             migration.Migrate(document);
             version++;
+        }
+
+        if (version > originalVersion)
+        {
+            Log.DocumentMigrated(logger, id, originalVersion, version);
         }
 
         return document;

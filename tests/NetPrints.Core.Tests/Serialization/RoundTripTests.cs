@@ -5,6 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Core;
 using NetPrints.Graph;
 using NetPrints.Serialization;
@@ -30,7 +31,7 @@ namespace NetPrints.Tests.Serialization
         private static NodeDocumentConverterRegistry NewRegistry() => new(NodeDocumentConverterRegistry.BuiltIn, []);
 
         private static JsonDocumentFormat NewJsonFormat(NodeDocumentConverterRegistry registry) =>
-            new(new NetPrintsJsonOptions(registry), new DocumentMigrator([]));
+            new(new NetPrintsJsonOptions(registry), new DocumentMigrator([], NullLogger<DocumentMigrator>.Instance));
 
         private static async Task<byte[]> ReadFileAsync(string path)
         {
@@ -46,7 +47,7 @@ namespace NetPrints.Tests.Serialization
         private static async Task<ClassGraph> LoadJsonAsync(byte[] json, DocumentId id, string projectName)
         {
             NodeDocumentConverterRegistry registry = NewRegistry();
-            var mapper = new DocumentMapper(registry);
+            var mapper = new DocumentMapper(registry, NullLogger<DocumentMapper>.Instance);
             JsonDocumentFormat jsonFormat = NewJsonFormat(registry);
 
             ClassDocument document;
@@ -67,7 +68,7 @@ namespace NetPrints.Tests.Serialization
             cls.MarkDirty();
 
             NodeDocumentConverterRegistry registry = NewRegistry();
-            var mapper = new DocumentMapper(registry);
+            var mapper = new DocumentMapper(registry, NullLogger<DocumentMapper>.Instance);
             JsonDocumentFormat jsonFormat = NewJsonFormat(registry);
             ClassDocument saved = mapper.ToDocument(cls);
             using var output = new MemoryStream();

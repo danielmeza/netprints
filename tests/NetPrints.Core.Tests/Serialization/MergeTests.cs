@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json.Nodes;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Core;
 using NetPrints.Graph;
 using NetPrints.Serialization;
@@ -122,9 +123,9 @@ namespace NetPrints.Tests.Serialization
 
         private static async Task<byte[]> ToJsonBytesAsync(ClassGraph cls)
         {
-            var mapper = new DocumentMapper(Registry);
+            var mapper = new DocumentMapper(Registry, NullLogger<DocumentMapper>.Instance);
             ClassDocument document = mapper.ToDocument(cls);
-            var format = new JsonDocumentFormat(new NetPrintsJsonOptions(Registry), new DocumentMigrator([]));
+            var format = new JsonDocumentFormat(new NetPrintsJsonOptions(Registry), new DocumentMigrator([], NullLogger<DocumentMigrator>.Instance));
             using var stream = new MemoryStream();
             await format.WriteClassAsync(document, stream, TestContext.Current.CancellationToken);
             return stream.ToArray();
@@ -229,11 +230,11 @@ namespace NetPrints.Tests.Serialization
                 JsonNode? parsed = JsonNode.Parse(resolved);
                 Assert.NotNull(parsed);
 
-                var format = new JsonDocumentFormat(new NetPrintsJsonOptions(Registry), new DocumentMigrator([]));
+                var format = new JsonDocumentFormat(new NetPrintsJsonOptions(Registry), new DocumentMigrator([], NullLogger<DocumentMigrator>.Instance));
                 using var resolvedStream = new MemoryStream(Encoding.UTF8.GetBytes(resolved));
                 ClassDocument resolvedDocument = await format.ReadClassAsync(resolvedStream, new DocumentId("merged.netpc.json"), TestContext.Current.CancellationToken);
 
-                var mapper = new DocumentMapper(Registry);
+                var mapper = new DocumentMapper(Registry, NullLogger<DocumentMapper>.Instance);
                 var issues = new System.Collections.Generic.List<DocumentIssue>();
                 Project mergedProject = TestProjects.Create("M", "M");
                 mapper.FromDocument(resolvedDocument, mergedProject, issues, new DocumentId("merged.netpc.json"));

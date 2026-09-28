@@ -79,8 +79,8 @@ namespace NetPrints.Tests.Serialization
             var registry = new NodeDocumentConverterRegistry(NodeDocumentConverterRegistry.BuiltIn, []);
             var persistence = new ProjectPersistence(
                 new FixedSnapshotProjectSystem(snapshot),
-                new DocumentFormatRegistry([new JsonDocumentFormat(new NetPrintsJsonOptions(registry), new DocumentMigrator([]))]),
-                new DocumentMapper(registry),
+                new DocumentFormatRegistry([new JsonDocumentFormat(new NetPrintsJsonOptions(registry), new DocumentMigrator([], NullLogger<DocumentMigrator>.Instance))]),
+                new DocumentMapper(registry, NullLogger<DocumentMapper>.Instance),
                 dir => new FileSystemDocumentStore(dir, Scheduler.Default, NullLogger<FileSystemDocumentStore>.Instance),
                 NullLogger<ProjectPersistence>.Instance);
 
@@ -212,7 +212,7 @@ namespace NetPrints.Tests.Serialization
             Assert.NotNull(call.ExceptionPin);
 
             var registry = new NodeDocumentConverterRegistry(NodeDocumentConverterRegistry.BuiltIn, []);
-            var mapper = new DocumentMapper(registry);
+            var mapper = new DocumentMapper(registry, NullLogger<DocumentMapper>.Instance);
             var issues = new List<DocumentIssue>();
             ClassGraph withCatch = mapper.FromDocument(mapper.ToDocument(cls), project, issues, new DocumentId(FixtureFile));
             Assert.Empty(issues);
@@ -260,7 +260,7 @@ namespace NetPrints.Tests.Serialization
         {
             Project project = await LoadAsync(FixtureFile);
             var registry = new NodeDocumentConverterRegistry([.. NodeDocumentConverterRegistry.BuiltIn, new LateInferNodeConverter()], []);
-            var mapper = new DocumentMapper(registry);
+            var mapper = new DocumentMapper(registry, NullLogger<DocumentMapper>.Instance);
 
             ClassDocument document = mapper.ToDocument(project.Classes.Single());
             Assert.NotNull(document.Methods);

@@ -73,7 +73,7 @@ namespace NetPrints.Tests.Serialization
         private static NodeDocumentConverterRegistry NewRegistry() => new(NodeDocumentConverterRegistry.BuiltIn, []);
 
         private static JsonDocumentFormat NewJsonFormat(NodeDocumentConverterRegistry registry) =>
-            new(new NetPrintsJsonOptions(registry), new DocumentMigrator([]));
+            new(new NetPrintsJsonOptions(registry), new DocumentMigrator([], NullLogger<DocumentMigrator>.Instance));
 
         private static ClassDocument MinimalDocument(string name, long nodeIdValue) =>
             new(DocumentMigrator.CurrentSchemaVersion, "Test", name, MemberVisibility.Public, ClassModifiers.None, null,
@@ -99,7 +99,7 @@ namespace NetPrints.Tests.Serialization
         {
             CancellationToken ct = TestContext.Current.CancellationToken;
             NodeDocumentConverterRegistry registry = NewRegistry();
-            var mapper = new DocumentMapper(registry);
+            var mapper = new DocumentMapper(registry, NullLogger<DocumentMapper>.Instance);
             JsonDocumentFormat jsonFormat = NewJsonFormat(registry);
             var formats = new DocumentFormatRegistry([jsonFormat]);
 
@@ -137,7 +137,7 @@ namespace NetPrints.Tests.Serialization
             string pathA = Path.Combine(root, "A.netpc.json");
             await WriteFileAsync(jsonFormat, MinimalDocument("A", 1), pathA, ct);
             ProjectSnapshot snapshot = NewSnapshot(Path.Combine(root, "Test.csproj"), [pathA]);
-            ProjectPersistence persistence = NewPersistence(new ThrowingProjectSystem(), new DocumentFormatRegistry([jsonFormat]), new DocumentMapper(registry));
+            ProjectPersistence persistence = NewPersistence(new ThrowingProjectSystem(), new DocumentFormatRegistry([jsonFormat]), new DocumentMapper(registry, NullLogger<DocumentMapper>.Instance));
 
             ProjectLoadResult result = await persistence.LoadAsync(snapshot, ct);
 
@@ -168,7 +168,7 @@ namespace NetPrints.Tests.Serialization
         {
             CancellationToken ct = TestContext.Current.CancellationToken;
             NodeDocumentConverterRegistry registry = NewRegistry();
-            var mapper = new DocumentMapper(registry);
+            var mapper = new DocumentMapper(registry, NullLogger<DocumentMapper>.Instance);
             JsonDocumentFormat jsonFormat = NewJsonFormat(registry);
             var formats = new DocumentFormatRegistry([jsonFormat]);
             var projects = new FakeProjectSystem(NewSnapshot(Path.Combine(root, "Test.csproj"), []));

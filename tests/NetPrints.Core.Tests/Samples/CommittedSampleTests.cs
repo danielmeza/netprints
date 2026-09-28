@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Core;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Generator;
@@ -29,7 +30,7 @@ namespace NetPrints.Tests.Samples
         private static NodeDocumentConverterRegistry NewRegistry() => new(NodeDocumentConverterRegistry.BuiltIn, []);
 
         private static JsonDocumentFormat NewJsonFormat(NodeDocumentConverterRegistry registry) =>
-            new(new NetPrintsJsonOptions(registry), new DocumentMigrator([]));
+            new(new NetPrintsJsonOptions(registry), new DocumentMigrator([], NullLogger<DocumentMigrator>.Instance));
 
         private static string SamplesDirectory() => Path.Combine(SampleProjectFactory.FindRepositoryRoot(), "samples");
 
@@ -44,7 +45,7 @@ namespace NetPrints.Tests.Samples
         {
             var ct = TestContext.Current.CancellationToken;
             NodeDocumentConverterRegistry registry = NewRegistry();
-            var mapper = new DocumentMapper(registry);
+            var mapper = new DocumentMapper(registry, NullLogger<DocumentMapper>.Instance);
             JsonDocumentFormat format = NewJsonFormat(registry);
             var id = new DocumentId(Path.GetFileName(graphPath));
 
@@ -93,7 +94,7 @@ namespace NetPrints.Tests.Samples
             Assert.True(File.Exists(graphPath), $"{generatedPath} has no matching graph file at {graphPath}.");
 
             NodeDocumentConverterRegistry registry = NewRegistry();
-            var mapper = new DocumentMapper(registry);
+            var mapper = new DocumentMapper(registry, NullLogger<DocumentMapper>.Instance);
             var formats = new DocumentFormatRegistry([NewJsonFormat(registry)]);
             await using ExtensionRegistry extensions = ExtensionTestSupport.Load(ExtensionLoaderOptions.BuiltInOnly);
             var generator = new GraphCodeGenerator(extensions, formats, mapper);

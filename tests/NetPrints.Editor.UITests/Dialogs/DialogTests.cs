@@ -123,11 +123,11 @@ public class DialogTests
         public static NetPrints.Serialization.ProjectPersistence Create(NetPrints.Projects.IProjectSystem projects)
         {
             var nodeConverters = new NetPrints.Serialization.Mapping.NodeDocumentConverterRegistry(NetPrints.Serialization.Mapping.NodeDocumentConverterRegistry.BuiltIn, []);
-            var mapper = new NetPrints.Serialization.Mapping.DocumentMapper(nodeConverters);
+            var mapper = new NetPrints.Serialization.Mapping.DocumentMapper(nodeConverters, NullLogger<NetPrints.Serialization.Mapping.DocumentMapper>.Instance);
             var formats = new NetPrints.Serialization.DocumentFormatRegistry([
                 new NetPrints.Serialization.Json.JsonDocumentFormat(
                     new NetPrints.Serialization.Json.NetPrintsJsonOptions(nodeConverters),
-                    new NetPrints.Serialization.Migrations.DocumentMigrator([]))]);
+                    new NetPrints.Serialization.Migrations.DocumentMigrator([], NullLogger<NetPrints.Serialization.Migrations.DocumentMigrator>.Instance))]);
             return new NetPrints.Serialization.ProjectPersistence(projects, formats, mapper,
                 directory => new NetPrints.Serialization.Stores.FileSystemDocumentStore(directory,
                     System.Reactive.Concurrency.DefaultScheduler.Instance, NullLogger<NetPrints.Serialization.Stores.FileSystemDocumentStore>.Instance),
