@@ -50,7 +50,6 @@ public sealed class EditorComposition : IDisposable
             Windows,
             new ProcessLauncher(),
             DefaultScheduler.Instance,
-            DefaultScheduler.Instance,
             () => new WeakReferenceMessenger(),
             host.LoggerFactory,
             projects,

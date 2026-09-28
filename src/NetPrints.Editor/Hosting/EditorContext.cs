@@ -22,11 +22,6 @@ namespace NetPrints.Editor.Hosting;
 /// <param name="Windows">Opens, activates and closes class editor windows.</param>
 /// <param name="Processes">Starts external processes and reports their output.</param>
 /// <param name="Scheduler">Scheduler for time-based work such as the search throttle (virtual time in tests).</param>
-/// <param name="CodeRefreshScheduler">
-/// Scheduler for the class editor's generated-code preview loop (PAR-34), separate from
-/// <paramref name="Scheduler"/> so a host can silence the periodic real-time refresh (e.g. a
-/// snapshot test capturing that preview) without also virtualizing the search throttle.
-/// </param>
 /// <param name="CreateMessenger">Creates a messenger for one editor scope (a class editor window).</param>
 /// <param name="LoggerFactory">Creates the loggers editor-scope services log through (P1).</param>
 /// <param name="Projects">Loads, edits, creates and builds the open project's <c>.csproj</c>
@@ -46,7 +41,6 @@ public sealed record EditorContext(
     IWindowService Windows,
     IProcessLauncher Processes,
     IScheduler Scheduler,
-    IScheduler CodeRefreshScheduler,
     Func<IMessenger> CreateMessenger,
     ILoggerFactory LoggerFactory,
     IProjectSystem Projects,

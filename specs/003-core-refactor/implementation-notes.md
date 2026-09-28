@@ -4086,7 +4086,9 @@ green with the synchronous version.
    `CodeViewVM` deliberately has no `EditorContext`/logger (FR-038), and `CodeView` is constructed by
    Avalonia's XAML loader with no DI hook. Worth a dedicated, narrow logging hook for views with no
    natural `ILogger`, or is silent-drop acceptable for a cosmetic, low-risk lookup (its only realistic
-   failure mode is cancellation, already handled)?
+   failure mode is cancellation, already handled)? **Resolved in the following fix batch**: added a
+   settable `CodeView.LoggerFactory` (view-side, `CodeViewVM` stays logger-free); `ClassInspectorView`
+   sets it from its own `ClassEditorVM.Context.LoggerFactory` on `DataContextChanged`.
 2. `ErrorListVM` scopes the Errors tab to the open class only (`Project.LastDiagnostics` used to be
    bound unfiltered, project-wide). This matches `CodeViewVM`'s existing per-class scope and FR-038, but
    is a behavior change from the pre-T096 Errors tab (which showed every class's build errors in every
@@ -4094,6 +4096,8 @@ green with the synchronous version.
 3. `CodeRefreshScheduler` (`EditorContext`) is now unused in production (its only consumer,
    `ClassEditorVM.StartGeneratedCodeLoop`, is gone) but stays in the contract's record/composition and in
    `HeadlessApp`/tests, since editing the contract is outside an implementer batch's authority.
+   **Resolved in the following fix batch**: removed from `EditorContext`, `EditorComposition` and
+   `HeadlessApp` (and editor-services.md's contract text, with authority granted for this fix).
 4. `OnDirtyTrackedNodePositionChanged` intentionally does not request analysis (position never changes
    generated code); every other dirty-tracking/model-edit path does. Confirm this split is exhaustive —
    i.e., no other `MarkDirty`-adjacent path exists that changes generated code without also going through
@@ -4115,3 +4119,41 @@ green with the synchronous version.
   throughout those files' untouched lines; nothing new introduced.
 - `git status samples/`: clean.
 - No `!`, `null!`, `default!` or new `#pragma`/`[SuppressMessage]` added.
+
+## Sub-phase I, fix batch: samples guard, CodeView logging, CodeRefreshScheduler removal
+
+Follow-up to I3's open questions (above) and a real `samples/` pollution incident from the Desktop
+E2E suite (AGENTS.md's "A stray saved variable under samples/ broke 11 tests on 2026-09-27").
+
+- **Samples pollution guard**: `SamplesDirectoryGuardFixture` (previously `NetPrints.Core.Tests`-only)
+  moved to a new, UI-dependency-free project `tests/NetPrints.Testing`, referenced by every test
+  project that touches `samples/`. Each of `NetPrints.Core.Tests`, `NetPrints.Editor.Tests`,
+  `NetPrints.Editor.UITests` and `NetPrints.Desktop.E2ETests` now registers it with its own
+  `[assembly: AssemblyFixture(typeof(SamplesDirectoryGuardFixture))]`. Investigation: every existing
+  scenario that opens `samples/HelloWorld` already works on a temp copy
+  (`X11SmokeTests.StartAsync`, `HeadlessSmokeTests`/`SampleCopy`) — read closely and confirmed
+  correct, not changed. A real pollution (gitignored `bin/`/`obj/` under the checked-in
+  `samples/HelloWorld`, plus a byte-identical rewrite of `HelloWorld.Program.netpc.json`/`.netpc.g.cs`,
+  confirmed via mtimes and a real `project.assets.json`/compiled `HelloWorld.dll`) was observed once
+  during this batch's own E2E test runs, matching the AGENTS.md incident, but did not reproduce across
+  4 further attempts (individual `[Fact]`s, the full 7-test assembly, `dotnet test` in Debug and
+  Release) — consistent with a rare, non-deterministic trigger rather than a deterministic code path;
+  no scenario code was changed since none was found to be at fault. Red/green proved the guard itself
+  instead: a temporary throwaway `[Fact]` that appended a byte to the real `HelloWorld.Program.netpc.json`
+  made `SamplesDirectoryGuardFixture.Dispose()` throw in the `NetPrints.Desktop.E2ETests` assembly
+  (red); the sample was reverted (`git checkout`) and the throwaway test removed (green), confirmed by
+  the batch's real E2E run below. `NETPRINTS_UPDATE_SNAPSHOTS=1` still exempts the check.
+- **`CodeView` hover logging** (I3 open question 1): `CodeView` gained a settable
+  `ILoggerFactory? LoggerFactory { get; set; }`; `OnPointerHover`'s `Forget` now uses
+  `LoggerFactory?.CreateLogger<CodeView>() ?? NullLogger<CodeView>.Instance` instead of always
+  `NullLogger`. `ClassInspectorView` (the only host) sets it from `((ClassEditorVM)DataContext)?.Context.LoggerFactory`
+  on `DataContextChanged`, the same source `GraphEditorView` uses (`graph.Context.LoggerFactory`) —
+  view-side only; `CodeViewVM` stays logger-free (FR-038).
+- **`CodeRefreshScheduler` removed** (I3 open question 3): its only production consumer
+  (`ClassEditorVM.StartGeneratedCodeLoop`) was already gone as of I3. Removed the parameter from
+  `EditorContext` (and its XML doc) and its construction site in `EditorComposition`; removed
+  `HeadlessApp.CodeRefreshScheduler` and its `customize` wiring (no test ever advanced it) and the
+  now-unused `Microsoft.Reactive.Testing` package reference from `NetPrints.Editor.UITests.csproj`;
+  updated `editor-services.md`'s `EditorContext` contract listing to match.
+- Full suite, `dotnet build -c Release`, `dotnet format` and the Desktop E2E job totals: see the
+  batch's own report.

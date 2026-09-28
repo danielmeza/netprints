@@ -1,6 +1,5 @@
 using Avalonia.Controls;
 using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Reactive.Testing;
 using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Hosting;
@@ -64,18 +63,12 @@ public sealed class HeadlessApp : IAsyncDisposable
         };
         Processes = new CapturingProcessLauncher();
         FilePicker = new QueuedFilePicker();
-        // Virtual time for the generated-code preview loop (a 1-second real-time interval in
-        // production): a real timer would otherwise race a snapshot capturing that preview, more
-        // so under load. Tests that need a refresh advance CodeRefreshScheduler explicitly instead
-        // of waiting on the wall clock.
-        CodeRefreshScheduler = new TestScheduler();
         Composition = new EditorComposition(new EditorHostServices(NullLoggerFactory.Instance, extensions, Settings, NullHostChannel.Instance, HostChannelError: null,
             MsBuildAvailable: true, DisposeOwnedResources: () => ValueTask.CompletedTask), c => c with
             {
                 Dialogs = Dialogs,
                 Processes = Processes,
                 FilePicker = FilePicker,
-                CodeRefreshScheduler = CodeRefreshScheduler,
             });
         exceptionHandler = Composition.InstallUnhandledExceptionHandler(); // as EditorApp does on the desktop
         Tree = new AutomationTree();
@@ -102,7 +95,6 @@ public sealed class HeadlessApp : IAsyncDisposable
     public RecordingDialogs Dialogs { get; }
     public CapturingProcessLauncher Processes { get; }
     public QueuedFilePicker FilePicker { get; }
-    public TestScheduler CodeRefreshScheduler { get; }
     public AutomationTree Tree { get; }
     public HeadlessDriver Driver { get; }
     public MainWindowPage Main { get; }

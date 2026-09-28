@@ -369,7 +369,7 @@ public sealed class TestEditor : IDisposable
         CodeAnalysis = new CodeAnalysisHost(Reflection, Extensions, Scheduler, Dispatcher, NullLogger<CodeAnalysisHost>.Instance);
 
         Context = new EditorContext(FilePicker, Dialogs, Clipboard, Dispatcher, Reflection, Windows, Processes,
-            Scheduler, Scheduler, () => new StrongReferenceMessenger(), NullLoggerFactory.Instance, Projects, Persistence,
+            Scheduler, () => new StrongReferenceMessenger(), NullLoggerFactory.Instance, Projects, Persistence,
             Extensions, hostChannel, Settings, CodeAnalysis);
     }
 

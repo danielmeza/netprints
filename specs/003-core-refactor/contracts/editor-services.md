@@ -18,7 +18,6 @@ public sealed record EditorContext(
     IWindowService Windows,
     IProcessLauncher Processes,
     IScheduler Scheduler,
-    IScheduler CodeRefreshScheduler,
     Func<IMessenger> CreateMessenger,
     // new in P1 (all required, no defaults):
     ILoggerFactory LoggerFactory,

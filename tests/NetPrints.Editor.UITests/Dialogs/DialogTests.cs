@@ -87,7 +87,7 @@ public class DialogTests
         var context = new EditorContext(new QueuedFilePicker(), new RecordingDialogs(), new NoClipboard(), dispatcher,
             reflection,
             new NetPrints.Editor.Hosting.Avalonia.WindowService(), new CapturingProcessLauncher(),
-            System.Reactive.Concurrency.DefaultScheduler.Instance, System.Reactive.Concurrency.DefaultScheduler.Instance,
+            System.Reactive.Concurrency.DefaultScheduler.Instance,
             () => new CommunityToolkit.Mvvm.Messaging.WeakReferenceMessenger(), NullLoggerFactory.Instance,
             noSdkProjects, TestPersistence.Create(noSdkProjects),
             extensions,
