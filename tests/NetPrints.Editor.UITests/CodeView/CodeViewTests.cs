@@ -1,6 +1,8 @@
 using System.Linq;
 using Avalonia.Headless.XUnit;
 using Avalonia.VisualTree;
+using Microsoft.CodeAnalysis.Text;
+using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Editor.UITests.ClassEditor;
@@ -64,8 +66,55 @@ public class CodeViewTests
 
         await codeView.ShowQuickInfoAsync(offset, Token);
 
+        // OWN-01 (owner report): Avalonia only auto-opens a tooltip on its own pointer-enter, never
+        // when the tip is merely set programmatically, so asserting the tip's text alone (as this test
+        // used to) does not catch a tooltip that is set but never shown.
+        bool isOpen = await page.ClassInspector.CodeView.GetAsync<bool>(AutomationPropertyNames.ToolTipIsOpen, Token);
+        Assert.True(isOpen, "the tooltip is open");
         string? tip = await page.ClassInspector.CodeView.PropertyAsync(AutomationPropertyNames.ToolTip, Token);
         Assert.Contains("WriteLine", tip ?? "", StringComparison.Ordinal);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task HoveringADiagnosticSpanShowsItAboveTheQuickInfo()
+    {
+        // OWN-02 (owner report): hovering a squiggle shows the diagnostic(s) under the cursor, above
+        // the symbol quick info. Same CS1503 setup as
+        // DoubleClickingADiagnosticRowOpensTheGraphSelectsAndRevealsTheNode.
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        var page = session.ClassEditor;
+        var vm = session.ClassVM;
+
+        var method = new MethodGraph("BadCall") { Class = vm.Class, Visibility = MemberVisibility.Public };
+        TypeSpecifier stringType = TypeSpecifier.FromType<string>();
+        var parseSpecifier = new MethodSpecifier("Parse",
+            [new MethodParameter("input", stringType, MethodParameterPassType.Default, false, null)],
+            [], MethodModifiers.Static, MemberVisibility.Public, TypeSpecifier.FromType<Guid>(), []);
+        var callNode = new CallMethodNode(method, parseSpecifier);
+        var badArgument = LiteralNode.WithValue(method, 123);
+        GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, callNode.InputExecPins[0]);
+        GraphUtil.ConnectExecPins(callNode.OutputExecPins[0], method.ReturnNodes.First().InputExecPins[0]);
+        GraphUtil.ConnectDataPins(badArgument.ValuePin, callNode.ArgumentPins[0]);
+        vm.Class.Methods.Add(method);
+
+        await page.ClassButton.ClickAsync(Token);
+        await page.ClassInspector.WaitVisibleAsync(Token);
+        session.App.Composition.Context.CodeAnalysis.RequestAnalysis(vm.Project!);
+
+        NetPrints.Editor.CodeView.CodeView codeView = FindCodeView(session);
+        await UiWait.UntilAsync(session.Driver, () => Task.FromResult(codeView.ViewModel!.Diagnostics.Any(d => d.Id == "CS1503")),
+            "the CS1503 diagnostic to reach the code view", Token, TimeSpan.FromSeconds(30));
+
+        CodeDiagnostic diagnostic = codeView.ViewModel!.Diagnostics.First(d => d.Id == "CS1503");
+        LinePositionSpan span = diagnostic.Span!.Value;
+        int offset = SourceText.From(codeView.ViewModel!.Code).Lines.GetPosition(span.Start);
+
+        await codeView.ShowQuickInfoAsync(offset, Token);
+
+        bool isOpen = await page.ClassInspector.CodeView.GetAsync<bool>(AutomationPropertyNames.ToolTipIsOpen, Token);
+        Assert.True(isOpen, "the tooltip is open");
+        string? tip = await page.ClassInspector.CodeView.PropertyAsync(AutomationPropertyNames.ToolTip, Token);
+        Assert.Contains("CS1503", tip ?? "", StringComparison.Ordinal);
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]

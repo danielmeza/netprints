@@ -51,6 +51,28 @@ public sealed partial class ErrorListVM : ObservableObject, IDisposable
     /// <summary>Every diagnostic row of the open class, live analysis first then the last build's.</summary>
     public ObservableRangeCollection<DiagnosticRowVM> Rows { get; } = [];
 
+    /// <summary>Number of <see cref="Rows"/> with <see cref="CodeDiagnosticSeverity.Error"/> (FR-032, OWN-03).</summary>
+    public int ErrorCount => Rows.Count(row => row.IsError);
+
+    /// <summary>Number of <see cref="Rows"/> with <see cref="CodeDiagnosticSeverity.Warning"/> (FR-032, OWN-03).</summary>
+    public int WarningCount => Rows.Count(row => row.IsWarning);
+
+    /// <summary>Number of <see cref="Rows"/> with <see cref="CodeDiagnosticSeverity.Info"/> (FR-032, OWN-03).</summary>
+    public int InfoCount => Rows.Count(row => row.IsInfo);
+
+    /// <summary>
+    /// Text for the class editor's "Errors" tab header (FR-032, OWN-03, owner report): eg. "Errors (2)
+    /// · Warnings (1)", with an "· Info (n)" suffix only while there is at least one info diagnostic.
+    /// </summary>
+    public string Header
+    {
+        get
+        {
+            string header = $"Errors ({ErrorCount}) · Warnings ({WarningCount})";
+            return InfoCount > 0 ? $"{header} · Info ({InfoCount})" : header;
+        }
+    }
+
     /// <summary>Navigates to a row's node, when it has one (FR-034, ED-T03).</summary>
     /// <param name="row">Row to navigate to.</param>
     [RelayCommand]
@@ -83,6 +105,10 @@ public sealed partial class ErrorListVM : ObservableObject, IDisposable
         IEnumerable<CodeDiagnostic> build = cls.Project?.LastDiagnostics
             .Where(d => string.Equals(d.ClassFullName, cls.FullName, StringComparison.Ordinal)) ?? [];
         Rows.ReplaceRange(liveDiagnostics.Concat(build).Select(d => new DiagnosticRowVM(d, cls)));
+        OnPropertyChanged(nameof(ErrorCount));
+        OnPropertyChanged(nameof(WarningCount));
+        OnPropertyChanged(nameof(InfoCount));
+        OnPropertyChanged(nameof(Header));
     }
 
     /// <summary>Unsubscribes from the project's build result and the live-analysis host.</summary>

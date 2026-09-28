@@ -197,7 +197,7 @@
         </Border>
         <GridSplitter Grid.Row="1" ResizeDirection="Rows" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorErrorsSplitter}" />
         <TabControl Grid.Row="2" SelectedIndex="{Binding SelectedBottomTab}">
-          <TabItem Header="Errors">
+          <TabItem Header="{Binding ErrorList.Header}">
             <!-- Rows combine the live analysis and the last build's diagnostics (FR-032, US6);
                  double-click opens the graph and selects the node (FR-034, ED-T03). -->
             <ListBox x:Name="ErrorList" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorErrorList}" ItemsSource="{Binding ErrorList.Rows}">
@@ -211,9 +211,17 @@
                         Command="{Binding $parent[Window].((edclasseditor:ClassEditorVM)DataContext).ErrorList.NavigateCommand}"
                         CommandParameter="{Binding}" />
                     </Interaction.Behaviors>
+                    <!-- Severity icon (FR-032, OWN-03): Classes.<name> is the state→visual mapping
+                         (EditorStyles.axaml colors it per theme); the icon kind comes from
+                         SeverityIconConverter. -->
+                    <mi:MaterialIcon Width="16" Height="16" VerticalAlignment="Center"
+                                      Kind="{Binding Severity, Converter={x:Static ederrorlist:SeverityIconConverter.Instance}}"
+                                      Classes.error="{Binding IsError}" Classes.warning="{Binding IsWarning}" Classes.info="{Binding IsInfo}"
+                                      AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorErrorSeverity}" AutomationProperties.Name="{Binding Severity}" />
                     <TextBlock Text="{Binding Id}" FontWeight="SemiBold" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorErrorId}" />
                     <TextBlock Text="{Binding Message}" />
-                    <TextBlock Text="{Binding MemberName}" FontStyle="Italic" />
+                    <TextBlock Text="{Binding ClassFullName}" FontStyle="Italic" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorErrorClass}" />
+                    <TextBlock Text="{Binding MemberName}" FontStyle="Italic" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorErrorMethod}" />
                   </StackPanel>
                 </DataTemplate>
               </ListBox.ItemTemplate>

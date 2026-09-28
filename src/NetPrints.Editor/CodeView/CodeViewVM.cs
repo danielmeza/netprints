@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using Microsoft.CodeAnalysis.Text;
 using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Editor.Diagnostics;
@@ -57,6 +58,58 @@ public sealed partial class CodeViewVM : ObservableObject, IDisposable
     /// <returns>The symbol's quick info, or <see langword="null"/> if none is available.</returns>
     public Task<QuickInfo?> GetQuickInfoAsync(int position, CancellationToken cancellationToken) =>
         codeAnalysis.GetQuickInfoAsync(cls.FullName, position, cancellationToken);
+
+    /// <summary>
+    /// Gets the hover content for <paramref name="position"/> in <see cref="Code"/> (FR-035, ED-T05;
+    /// OWN-01/OWN-02, owner report): any <see cref="Diagnostics"/> whose span covers the position,
+    /// formatted above the symbol's quick info (from the last analysis that completed) when both apply.
+    /// </summary>
+    /// <param name="position">Character offset into <see cref="Code"/>.</param>
+    /// <param name="cancellationToken">Cancels the quick-info lookup.</param>
+    /// <returns>The hover text to show, or <see langword="null"/> if there is nothing to show.</returns>
+    public async Task<string?> GetHoverContentAsync(int position, CancellationToken cancellationToken)
+    {
+        string? diagnosticsText = DiagnosticsAt(position) is { Count: > 0 } diagnostics
+            ? string.Join('\n', diagnostics.Select(FormatDiagnostic))
+            : null;
+
+        QuickInfo? info = await GetQuickInfoAsync(position, cancellationToken);
+        string? quickInfoText = info is null ? null : info.Summary is null ? info.Signature : $"{info.Signature}\n{info.Summary}";
+
+        return (diagnosticsText, quickInfoText) switch
+        {
+            (null, null) => null,
+            (null, _) => quickInfoText,
+            (_, null) => diagnosticsText,
+            _ => $"{diagnosticsText}\n\n{quickInfoText}",
+        };
+    }
+
+    /// <summary>Every diagnostic in <see cref="Diagnostics"/> whose span covers <paramref name="position"/>.</summary>
+    private IReadOnlyList<CodeDiagnostic> DiagnosticsAt(int position)
+    {
+        if (Diagnostics.Count == 0)
+        {
+            return [];
+        }
+
+        TextLineCollection lines = SourceText.From(Code).Lines;
+        return [.. Diagnostics.Where(d => d.Span is { } span && Covers(lines, span, position))];
+    }
+
+    private static bool Covers(TextLineCollection lines, LinePositionSpan span, int position)
+    {
+        if (span.Start.Line < 0 || span.End.Line >= lines.Count)
+        {
+            return false;
+        }
+
+        int start = lines.GetPosition(span.Start);
+        int end = lines.GetPosition(span.End);
+        return position >= start && position < end;
+    }
+
+    private static string FormatDiagnostic(CodeDiagnostic diagnostic) => $"{diagnostic.Severity} {diagnostic.Id}: {diagnostic.Message}";
 
     private void OnSnapshot(CodeAnalysisSnapshot snapshot)
     {

@@ -34,6 +34,15 @@ public sealed class DiagnosticRowVM
     /// <summary>Severity of the diagnostic.</summary>
     public CodeDiagnosticSeverity Severity => Diagnostic.Severity;
 
+    /// <summary>Whether <see cref="Severity"/> is <see cref="CodeDiagnosticSeverity.Error"/> (FR-032, OWN-03: drives the row's severity icon/color).</summary>
+    public bool IsError => Severity == CodeDiagnosticSeverity.Error;
+
+    /// <summary>Whether <see cref="Severity"/> is <see cref="CodeDiagnosticSeverity.Warning"/> (FR-032, OWN-03).</summary>
+    public bool IsWarning => Severity == CodeDiagnosticSeverity.Warning;
+
+    /// <summary>Whether <see cref="Severity"/> is <see cref="CodeDiagnosticSeverity.Info"/> (FR-032, OWN-03).</summary>
+    public bool IsInfo => Severity == CodeDiagnosticSeverity.Info;
+
     /// <summary>Stable machine-readable code (e.g. <c>"CS0103"</c>).</summary>
     public string Id => Diagnostic.Id;
 

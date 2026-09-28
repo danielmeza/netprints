@@ -43,6 +43,7 @@ public sealed partial class CodeView : UserControl, IDisposable
 
         Editor.TextArea.TextView.PointerHover += OnPointerHover;
         Editor.TextArea.TextView.PointerHoverStopped += OnPointerHoverStopped;
+        PointerExited += OnPointerExited;
         DataContextChanged += OnDataContextChanged;
         ActualThemeVariantChanged += OnActualThemeVariantChanged;
     }
@@ -131,7 +132,11 @@ public sealed partial class CodeView : UserControl, IDisposable
         }
     }
 
-    private void RefreshCode() => Editor.Text = viewModel?.Code ?? string.Empty;
+    private void RefreshCode()
+    {
+        Editor.Text = viewModel?.Code ?? string.Empty;
+        CloseQuickInfo(); // OWN-01: stale hover content would otherwise linger over the new text.
+    }
 
     private void RefreshDiagnostics()
     {
@@ -143,7 +148,7 @@ public sealed partial class CodeView : UserControl, IDisposable
     {
         if (Editor.GetPositionFromPoint(e.GetPosition(Editor)) is not { } position)
         {
-            ToolTip.SetTip(this, null);
+            CloseQuickInfo();
             return;
         }
 
@@ -151,20 +156,37 @@ public sealed partial class CodeView : UserControl, IDisposable
         ShowQuickInfoAsync(Editor.Document.GetOffset(position.Location), CancellationToken.None).Forget(logger);
     }
 
-    private void OnPointerHoverStopped(object? sender, PointerEventArgs e) => ToolTip.SetTip(this, null);
+    private void OnPointerHoverStopped(object? sender, PointerEventArgs e) => CloseQuickInfo();
+
+    private void OnPointerExited(object? sender, PointerEventArgs e) => CloseQuickInfo();
 
     /// <summary>
-    /// Shows the signature and summary of the symbol at <paramref name="offset"/> as this control's
-    /// tooltip (FR-035, ED-T05; set on the control the automation id is on, not the wrapped
-    /// <c>Editor</c>, so the automation tree reports it), or clears it when there is none. Public so
-    /// a test can trigger it directly instead of waiting on AvaloniaEdit's own hover delay.
+    /// Shows the hover content (diagnostics, then the symbol's signature and summary; FR-035, ED-T05,
+    /// OWN-01/OWN-02, owner report) at <paramref name="offset"/> as this control's tooltip and opens it
+    /// (set on the control the automation id is on, not the wrapped <c>Editor</c>, so the automation
+    /// tree reports it — Avalonia otherwise only opens a tooltip on its own pointer-enter, never when
+    /// the tip is set programmatically), or closes it when there is nothing to show. Public so a test
+    /// can trigger it directly instead of waiting on AvaloniaEdit's own hover delay.
     /// </summary>
     /// <param name="offset">Character offset into the code to look the symbol up at.</param>
     /// <param name="cancellationToken">Cancels the lookup.</param>
     public async Task ShowQuickInfoAsync(int offset, CancellationToken cancellationToken)
     {
-        QuickInfo? info = viewModel is null ? null : await viewModel.GetQuickInfoAsync(offset, cancellationToken);
-        ToolTip.SetTip(this, info is null ? null : info.Summary is null ? info.Signature : $"{info.Signature}\n{info.Summary}");
+        string? content = viewModel is null ? null : await viewModel.GetHoverContentAsync(offset, cancellationToken);
+        if (content is null)
+        {
+            CloseQuickInfo();
+            return;
+        }
+
+        ToolTip.SetTip(this, content);
+        ToolTip.SetIsOpen(this, true);
+    }
+
+    private void CloseQuickInfo()
+    {
+        ToolTip.SetIsOpen(this, false);
+        ToolTip.SetTip(this, null);
     }
 
     private void RefreshFoldings()
@@ -200,6 +222,7 @@ public sealed partial class CodeView : UserControl, IDisposable
 
         Editor.TextArea.TextView.PointerHover -= OnPointerHover;
         Editor.TextArea.TextView.PointerHoverStopped -= OnPointerHoverStopped;
+        PointerExited -= OnPointerExited;
         FoldingManager.Uninstall(foldingManager);
         textMate?.Dispose();
     }

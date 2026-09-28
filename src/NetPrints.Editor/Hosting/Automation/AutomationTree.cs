@@ -191,6 +191,7 @@ public sealed class AutomationTree : IDisposable
             [AutomationPropertyNames.IsKeyboardFocusWithin] = control.IsKeyboardFocusWithin.ToString(),
             [AutomationPropertyNames.PseudoClasses] = string.Join(' ', control.Classes),
             [AutomationPropertyNames.ToolTip] = ToolTip.GetTip(control) as string,
+            [AutomationPropertyNames.ToolTipIsOpen] = ToolTip.GetIsOpen(control).ToString(),
             [AutomationPropertyNames.ShowToolTipOnDisabled] = ToolTip.GetShowOnDisabled(control).ToString(),
             [AutomationPropertyNames.Cursor] = EditorCursors.NameOf(control.Cursor),
             [AutomationPropertyNames.TextOverflows] = TextOverflows(control)?.ToString(),

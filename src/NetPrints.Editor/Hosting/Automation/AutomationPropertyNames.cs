@@ -128,6 +128,10 @@ public static class AutomationPropertyNames
     /// </summary>
     public const string ToolTip = nameof(ToolTip);
     /// <summary>
+    /// Reported by every control: whether its tooltip is currently open ("True"/"False"; OWN-01, owner report).
+    /// </summary>
+    public const string ToolTipIsOpen = nameof(ToolTipIsOpen);
+    /// <summary>
     /// Reported by every control: its CLR type name.
     /// </summary>
     public const string Type = nameof(Type);

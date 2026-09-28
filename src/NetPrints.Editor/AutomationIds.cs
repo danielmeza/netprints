@@ -98,6 +98,18 @@ public static class AutomationIds
     /// </summary>
     public const string ClassEditorErrorId = "ClassEditor.ErrorId";
     /// <summary>
+    /// Automation id for an error list row's severity icon (FR-032, OWN-03). Its AutomationProperties.Name carries the severity.
+    /// </summary>
+    public const string ClassEditorErrorSeverity = "ClassEditor.ErrorSeverity";
+    /// <summary>
+    /// Automation id for an error list row's class text (FR-032, OWN-03).
+    /// </summary>
+    public const string ClassEditorErrorClass = "ClassEditor.ErrorClass";
+    /// <summary>
+    /// Automation id for an error list row's method text (FR-032, OWN-03).
+    /// </summary>
+    public const string ClassEditorErrorMethod = "ClassEditor.ErrorMethod";
+    /// <summary>
     /// Automation id for the class editor window's output tab.
     /// </summary>
     public const string ClassEditorOutputTab = "ClassEditor.OutputTab";
