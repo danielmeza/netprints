@@ -258,3 +258,16 @@ paket-files/
 TestResults/
 samples/**/Compiled_*/
 .vscode/
+
+# Local package feed (scripts/pack-local.sh). The folder is tracked through .gitkeep because NuGet
+# fails restore (NU1301) when a configured local source does not exist.
+local-packages/*
+!local-packages/.gitkeep
+
+# Docs site and API reference build output (scripts/build-docs.sh)
+website/node_modules/
+website/build/
+website/.docusaurus/
+website/static/img/*.png
+docs/api/_site/
+docs/api/reference/
