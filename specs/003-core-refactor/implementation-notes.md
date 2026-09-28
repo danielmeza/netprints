@@ -5169,9 +5169,16 @@ locally (5/5) and in this batch's own runs.
   `timeout-minutes`, which is the same safety net a worker leak would already need). `CancelAfter` is
   called immediately after the lease (worker + fresh editor) is obtained, so a test's own budget always
   covers only its own work.
-- **CI worker count pinned**: `.github/workflows/ci.yml`'s E2E job sets `NETPRINTS_E2E_WORKERS: 2`
-  explicitly (matches the existing `min(ProcessorCount / 2, 4)` default on a 4-vCPU runner) so a future
-  change in GitHub's runner sizing doesn't silently retune concurrency without review. Also added
+- **CI worker count pinned to 1, not 2**: the first push of this fix (`NETPRINTS_E2E_WORKERS: 2`,
+  matching the existing `min(ProcessorCount / 2, 4)` default) still failed CI — a *different* test,
+  `EditCompileAndRunTests.EditCompileAndRun`, hit its own internal 60 s `UiWait` ("waiting for:
+  ... output containing 'Hello, World!'") once the dispatch-time-timeout fix stopped killing the
+  slowest test early, which had been shortening the window of 2-editor CPU contention for everyone
+  else. That confirmed the other named candidate: 2 concurrent editors under `llvmpipe` software
+  rendering really do starve each other on this runner's 4 vCPUs — not just a mis-attributed queue
+  wait. `.github/workflows/ci.yml`'s E2E job now sets `NETPRINTS_E2E_WORKERS: 1`: one worker still
+  exercises the pool/fresh-editor-per-rent code path (so this isn't reverting D2's design), just
+  without CI-only CPU contention; the local 4-worker parallel speedup is untouched. Also added
   `TestResults/e2e-timings-*.md` to the E2E artifact upload — it wasn't captured before, which is why
   this batch had to reproduce locally to get per-step timings for the CI-like scenario; the timings
   file is written to that path already (`StepTimer`), just never uploaded.
@@ -5187,6 +5194,9 @@ locally (5/5) and in this batch's own runs.
   - E2E, CI-like (`NETPRINTS_E2E_WORKERS=2 taskset -c 0-3`): 7/7 passed, 3 m 15.3 s (previously the
     scenario this batch targets would have failed under the old dispatch-time timeout, per the
     53.4 s "start" measurement above).
+  - E2E, CI-like at the shipped `NETPRINTS_E2E_WORKERS=1` (`taskset -c 0-3`): 7/7 passed, 5 m 16.8 s —
+    the serial-per-editor baseline (comparable to pre-D2's 5 m 15 s), confirming the CI job's actual
+    config is reliable, not just the 2-worker case above.
   - Full suite (`dotnet test --solution NetPrints.slnx -c Release --no-build --no-progress --no-ansi
     -- --ignore-exit-code 8`, from the worktree root): **856 total, 0 failed, 846 succeeded, 10
     skipped**, 3 m 26.5 s.

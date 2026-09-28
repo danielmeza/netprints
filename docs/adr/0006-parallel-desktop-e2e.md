@@ -105,10 +105,13 @@ every future test added to it, defeating this batch's work.
 - The pool's worker count is a shared ceiling: `NETPRINTS_E2E_WORKERS` above the number of scenario
   classes wastes displays, and a value of 1 degrades to the old serial behavior (still correct, just
   slow) — useful for isolating a flake.
-- CI pins `NETPRINTS_E2E_WORKERS: 2` explicitly (`.github/workflows/ci.yml`, batch D3) rather than
-  relying on the implicit `ProcessorCount`-derived default, so a future change in GitHub's runner
-  sizing doesn't silently retune E2E concurrency (and the CPU contention/timing budget it implies)
-  without review.
+- CI pins `NETPRINTS_E2E_WORKERS: 1` explicitly (`.github/workflows/ci.yml`, batch D3), lower than the
+  `min(ProcessorCount / 2, 4)` default (2 here) would give: on this runner's 4 vCPUs, 2 concurrent
+  editors under `llvmpipe` software rendering starved each other enough to fail a *different* test's
+  own internal wait once the dispatch-time-timeout bug (above) was fixed and stopped masking it by
+  killing the slowest test early. One worker still exercises the pool/fresh-editor-per-rent code path;
+  the full local parallel speedup (this ADR's reason for existing) is unaffected — only CI trades it
+  for reliability on a CPU-constrained runner. See Batch D3 in implementation-notes.md.
 - `LocalSdkLayout` (previously three near-identical copies in `Core.Tests`, `Testing.Ui` and a third
   helper in `Editor.Tests`) is now one implementation in `tests/NetPrints.Testing/LocalSdkLayout.cs`,
   referenced by every test assembly that builds a temp copy of a sample against the repository's own

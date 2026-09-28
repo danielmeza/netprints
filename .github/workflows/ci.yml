@@ -147,13 +147,16 @@ jobs:
       # skip condition that fires unexpectedly) into a failure, so this job cannot go green with
       # zero real coverage: neither "zero tests ran" (exit code 8, not ignored here) nor "every
       # test skipped" can pass silently.
-      # NETPRINTS_E2E_WORKERS pins the desktop worker pool to this runner's standard 4 vCPUs
-      # (min(ProcessorCount/2, 4) would already compute 2 here; pinned so a runner-size change
-      # doesn't silently retune concurrency, batch D3).
+      # NETPRINTS_E2E_WORKERS=1 on this runner's 4 vCPUs (batch D3): 2 concurrent editors under
+      # llvmpipe software rendering still starved each other enough to blow a *different* test's
+      # own internal wait once the dispatch-time-timeout fix (above) stopped masking it by killing
+      # the slowest test early. One worker still exercises the pool/fresh-editor-per-rent code path,
+      # just without CI-only CPU contention; the full worker-pool speedup still applies locally,
+      # where there are cores to spare (see docs/adr/0006-parallel-desktop-e2e.md).
       - name: E2E tests
         env:
           NETPRINTS_E2E: 1
-          NETPRINTS_E2E_WORKERS: 2
+          NETPRINTS_E2E_WORKERS: 1
           NETPRINTS_UI_ARTIFACTS: ${{ github.workspace }}/TestResults/ui
         run: >
           dotnet test --project tests/NetPrints.Desktop.E2ETests -c Release --no-build
