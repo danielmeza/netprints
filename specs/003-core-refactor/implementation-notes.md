@@ -4891,3 +4891,61 @@ passes logged at Information (raw `{Time}`/`{Property}` placeholders) and `Avalo
   cause. (3) `Project.Classes`'s fix in `MainEditorVM`/`MainWindow.axaml` is a pre-existing,
   unrelated-to-the-report bug of the same category, fixed opportunistically because the new general
   "no binding errors" test caught it.
+
+## Batch D2 (faster desktop E2E)
+
+Owner ask: the desktop E2E suite (`NetPrints.Desktop.E2ETests`) ran its 7 scenarios serially through
+one shared Xvfb display/editor collection fixture, at 5 m 15 s a run. See ADR-0006 for the design
+rationale (pool, GTK working-directory constraint, one-class-per-scenario, serial-collection-per-
+shared-resource rule, how to add a new E2E test); this section is the batch's timings and mapping.
+
+- **Pool**: `DesktopWorkerPool` (assembly fixture) pre-warms `min(ProcessorCount / 2, 4)` Xvfb+openbox
+  displays (`NETPRINTS_E2E_WORKERS` overrides), reused across the run; the editor itself starts fresh
+  on every `RentAsync`, in the renting test's own working directory (a pre-started spare was tried and
+  reverted — GTK's Open/Save dialog cannot reliably resolve a typed path when the dialog's current
+  folder is not that path's parent, which a spare can never guarantee). `xunit.runner.json`
+  (`parallelizeTestCollections: true`, `maxParallelThreads: 8`) and removing
+  `DisableTestParallelization` from `AssemblyInfo.cs` let xUnit schedule all 7 collections onto the
+  pool at once.
+- **Collection mapping**: `X11SmokeTests.cs` split into an abstract `X11SmokeTestBase` (shared
+  `StartAsync`/`CheckpointAsync`/diagnostics) plus 6 sealed one-`[Fact]` classes —
+  `EditCompileAndRunTests`, `CreateProjectTests`, `AddReferencesTests`,
+  `MinimizeAndRestoreClassWindowTests`, `PanCursorTests`, `DragFromListsTests` — each its own (default)
+  xUnit collection. `ShutdownTests` rents its own lease directly and is its own collection too (the
+  old `[Collection(DesktopCollection.Name)]`/`DesktopCollection` fixture is gone). All 7 run
+  concurrently; none needs a serial `[Collection]` (owner-approved audit: no test shares a display,
+  editor, clipboard or port with another — see ADR-0006).
+- **Spare-editor experiment**: not attempted again in this batch beyond what is already reverted and
+  documented above — the GTK working-directory constraint is structural (the dialog's current folder
+  is fixed at editor process start, before the pool can know which test will rent the spare or which
+  temp directory it will use), so a second attempt would only re-discover the same failure. Kept
+  fresh-on-rent.
+- **Timings** (this machine, `NETPRINTS_E2E_DISPLAY_START=150`, 4 workers):
+  - Before (serial, pre-batch): 7 total, 0 failed, 5 m 15 s.
+  - After (parallel), 5 consecutive full runs, all green: 2 m 23.7 s, 2 m 28.3 s, 2 m 38.7 s,
+    2 m 24.2 s, 2 m 23.7 s (7/7 passed every time; no flakes, no retries).
+  - Per-step hot spots (`TestResults/e2e-timings-<run>.md`): `EditCompileAndRun`'s "edit graph" step
+    (adding an If Else node and wiring 3 pin connections through the UI) is the single longest step at
+    ~34 s; `CreateProject`/`AddReferences`/`EditCompileAndRun`'s own "start" steps range 1–32 s
+    because `StartAsync` includes both `pool.RentAsync`'s queue wait (until a worker frees up) and the
+    fresh editor's own startup — with only 4 workers for 7 concurrent tests, the last 3 to start pay
+    a queueing cost visible in "start", not a regression in the editor itself.
+- **`LocalSdkLayout` consolidation**: the 3 near-identical copies (`NetPrints.Core.Tests/Projects/
+  LocalSdkLayout.cs`, `NetPrints.Testing.Ui/Hosting/LocalSdkLayout.cs`, and
+  `NetPrints.Editor.Tests/TestPaths.cs`'s `WriteLocalSdkLayout`) are now one
+  `NetPrints.Testing.LocalSdkLayout.Write`, referenced via a `ProjectReference` to
+  `NetPrints.Testing` from `Core.Tests`, `Editor.Tests`, `Editor.UITests` and `Desktop.E2ETests`;
+  about 13 call sites updated to the shared type.
+- Verification: `dotnet build NetPrints.slnx -c Release -v q -tl:off --nologo` → 18 projects, 0
+  errors, 0 warnings. `dotnet format NetPrints.slnx --verify-no-changes -v q` clean. Full suite
+  (`dotnet test --solution NetPrints.slnx -c Release --no-build --no-progress --no-ansi --
+  --ignore-exit-code 8`, run from the worktree so `global.json`'s MTP runner is picked up): **843
+  total, 0 failed, 833 succeeded, 10 skipped, 3 m 26.8 s** (E2E scenarios skip without
+  `NETPRINTS_E2E=1`, as before). `git status --short samples tests/NetPrints.Core.Tests/Fixtures`
+  empty throughout; no Xvfb/`NetPrints.Desktop` processes left running after any run (verified with
+  `pgrep -af Xvfb`/`NetPrints.Desktop` between and after runs).
+- Note for future `dotnet test` invocations against this repo: it must be run with the worktree as
+  the shell's current directory, not merely by passing an absolute project path — `global.json`'s
+  `test.runner: Microsoft.Testing.Platform` is resolved from the process's working directory, and
+  without it `dotnet test` silently falls back to the legacy VSTest CLI (which rejects this repo's
+  `--project`/`--` MTP-style arguments with `MSB1001: Unknown switch`).
