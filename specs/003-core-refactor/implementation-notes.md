@@ -5293,3 +5293,59 @@ rerun; run 36381532778 (8e318a7) also failed the perf test (10.7 s vs. the 9 s b
   `Editor.Tests` module errored with no failing test and no TRX, not reproducible in two follow-up
   attempts). Worth watching for in future CI runs; not chased further here since it does not match
   any of this batch's three reported failures.
+
+## Sub-phase L batch L4 (T116–T118)
+
+- **T116 (§9, DocFX API reference)**: `.config/dotnet-tools.json` pins `docfx` 2.81.0;
+  `docs/api/docfx.json` metadata-generates `NetPrints.Core` and `NetPrints.Reflection` into
+  `reference/`, `docs/api/index.md` + `toc.yml` round it out. `dotnet tool restore && dotnet docfx
+  docs/api/docfx.json` → 0 warnings, 0 errors, 166 managed-reference files; `docs/api/_site/index.html`
+  and `.../reference/NetPrints.Graph.Node.html` both exist. `docs/api/_site/` and `docs/api/reference/`
+  were already in the §4 `.gitignore` block added back in L2 (T112), so `git status` after the build
+  shows only the four new source files.
+- **T117 (§8, Docusaurus site)**: `website/` (Docusaurus 3.10.2, React 19.3.0, TypeScript 5.9.3 — all
+  the versions the contract pinned are still current on npm as of 2026-09-28); `website/src/remark/
+  repo-links.mjs` rewrites any Markdown link/image whose relative target resolves outside `docs/` to a
+  `github.com/danielmeza/netprints/blob|raw/master/...` URL, with a small hand-rolled tree walk instead
+  of pulling in `unist-util-visit` as an extra dependency. `docs/index.md`, the four new
+  `_category_.json` files, `docs/contributing/releasing.md` (local feed, the release workflow's five
+  jobs, dry-run vs. tag-triggered, and the six §11 owner steps) and `scripts/build-docs.sh` are new.
+  `docs/guide/install.md` is a short stub linking to `.specify/memory/roadmap.md` (T120 owns the real
+  page; screenshot-heavy editor guides stay deferred to P3a per the 2026-09-28 owner decision).
+  - `npm install` (not `ci`, since there was no lock file yet) generated a real `website/package-lock.json`
+    (1274 packages). `npm run typecheck` (`tsc`) is clean.
+  - `scripts/build-docs.sh` exits 0: DocFX → `docs/api/_site`, `npm run build` → `website/build`, then
+    the API output and `schemas/netpc.v1.schema.json` are copied in and byte-compared
+    (`NetPrintsSchema.V1Url` already pointed at `.../netprints/schemas/netpc.v1.schema.json`, matching
+    where the script places it under `baseUrl: /netprints/`).
+  - RL-T08's file list: `website/build/index.html`, a page per research note, and the API pages
+    (including `NetPrints.Graph.Node`) all exist. `website/build/adr/0002-release-and-docs-stack/`
+    does not exist — T121 (out of scope for this batch) hasn't run yet, and when it does the ADR will
+    be `0005-*`, not `0002-*`: `docs/adr/README.md` already reserves 0005 for the release ADR (set in
+    an earlier batch), so RL-T08's literal `0002` path is stale text in the contract. Flagging for
+    whoever picks up T121/T122.
+  - `grep -r "/specs/" website/build --include=*.html -l` lists two pages: `guide/graph-format`
+    (its one `/specs/` occurrence is `repo-links`' rewrite to a `.../blob/master/specs/...` URL — the
+    intended case) and `research/2026-09-25-release-and-docs`'s sibling
+    `research/2026-09-25-graph-format` (its occurrence is the unrelated external URL
+    `https://docs.comfy.org/specs/workflow_json`, pre-existing research content that merely contains
+    the substring; left untouched per "content unchanged").
+  - Broken-link check: appended `[x](./missing.md)` to `docs/index.md` → `npm run build` failed with
+    an MDX "couldn't be resolved" error (exit 1); reverted immediately, confirmed a clean rebuild
+    afterward.
+  - `git status` after a full build shows only the tracked source files; `website/build`,
+    `website/node_modules`, `website/.docusaurus` and `website/static/img/*.png` are all `!!`-ignored.
+- **T118 (§10, Docs workflow + dependabot)**: `.github/workflows/docs.yml` verbatim from the contract
+  (`build` uploads `website/build` as the Pages artifact on every push/PR/dispatch; `deploy` needs
+  `build`, requires `master` and `vars.PUBLISH_DOCS == 'true'`, so it's skipped on this PR and on
+  `master` until the owner does §11 step 3). Added the `npm`/`/website` dependabot-ecosystem entry
+  grouping `@docusaurus/*` separately. `actionlint -shellcheck=...` reports nothing for `ci.yml`,
+  `release.yml` and the new `docs.yml`.
+  - Not checked here (per the contract's own note, it's a post-merge check): whether the existing root
+    `nuget` dependabot entry also covers `.config/dotnet-tools.json` (docfx). Left for whoever reviews
+    the first Dependabot run; add an R18 note if it doesn't.
+- Verification: no C#/MSBuild files changed this batch, so the full `dotnet test` suite was not
+  re-run (per the runbook, only required when those files change). `dotnet build
+  NetPrints.slnx -c Release -v q -tl:off --nologo` unaffected (no project files touched).
+  CI: pushed to `003-core-refactor`; see the PR (danielmeza/netprints#6) for the resulting `CI` and new
+  `Docs` workflow runs.
