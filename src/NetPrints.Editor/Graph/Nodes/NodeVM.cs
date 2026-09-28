@@ -69,6 +69,16 @@ public sealed partial class NodeVM : ObservableObject, IDisposable
     /// <summary>Output pins in display order: exec, data, type (right column).</summary>
     public ObservableCollection<NodePinVM> Outputs { get; } = [];
 
+    /// <summary>
+    /// The pin area's rows (OWN-05b): for most node kinds, row i pairs <c>Inputs[i]</c> with
+    /// <c>Outputs[i]</c> (identical to just rendering <see cref="Inputs"/> and <see cref="Outputs"/>
+    /// as two columns). A method/event entry node and a return node instead pair each parameter's
+    /// (or return value's) type pin with its data pin explicitly, so the two stay on the same row no
+    /// matter how many other pins (Exec, generic type parameters) sit around them. See
+    /// <see cref="BuildPinRows"/>.
+    /// </summary>
+    public ObservableCollection<PinRowVM> PinRows { get; } = [];
+
     /// <summary>Every pin of this node, inputs then outputs.</summary>
     public IEnumerable<NodePinVM> AllPins => Inputs.Concat(Outputs);
 
@@ -391,10 +401,11 @@ public sealed partial class NodeVM : ObservableObject, IDisposable
 
         Sync(Inputs, [.. inputExecPins, .. inputDataPins, .. inputTypePins]);
         Sync(Outputs, [.. outputExecPins, .. outputDataPins, .. outputTypePins]);
+        Sync(PinRows, BuildPinRows());
         OnPropertyChanged(nameof(IsPure));
     }
 
-    private static void Sync(ObservableCollection<NodePinVM> target, List<NodePinVM> desired)
+    private static void Sync<T>(ObservableCollection<T> target, List<T> desired)
     {
         if (target.SequenceEqual(desired))
         {
@@ -402,10 +413,87 @@ public sealed partial class NodeVM : ObservableObject, IDisposable
         }
 
         target.Clear();
-        foreach (var pin in desired)
+        foreach (var item in desired)
         {
-            target.Add(pin);
+            target.Add(item);
         }
+    }
+
+    /// <summary>
+    /// Builds this node's pin rows (OWN-05b, called after <see cref="Inputs"/> and <see cref="Outputs"/>
+    /// are up to date): entry-style pairing for a method/event entry node, return-style pairing for a
+    /// return node, index pairing (row i = <c>Inputs[i]</c>, <c>Outputs[i]</c>) for everything else.
+    /// </summary>
+    private List<PinRowVM> BuildPinRows() => Node switch
+    {
+        MethodEntryNode or EventEntryNode => BuildEntryRows(),
+        ReturnNode => BuildReturnRows(),
+        _ => BuildIndexedRows(),
+    };
+
+    /// <summary>
+    /// Rows for a method/event entry node: the Exec pin alone in row 0 (nothing pairs with it), then
+    /// one row per argument pairing its <see cref="Node.InputTypePins"/> entry (or nothing, for an
+    /// event override argument, which has none) with its <see cref="Node.OutputDataPins"/> entry, then
+    /// one row per generic <see cref="Node.OutputTypePins"/> entry (nothing pairs with those either).
+    /// </summary>
+    private List<PinRowVM> BuildEntryRows()
+    {
+        var rows = new List<PinRowVM>();
+
+        if (outputExecPins.Count > 0)
+        {
+            rows.Add(new PinRowVM(null, outputExecPins[0]));
+        }
+
+        for (int i = 0; i < outputDataPins.Count; i++)
+        {
+            rows.Add(new PinRowVM(i < inputTypePins.Count ? inputTypePins[i] : null, outputDataPins[i]));
+        }
+
+        foreach (var genericPin in outputTypePins)
+        {
+            rows.Add(new PinRowVM(null, genericPin));
+        }
+
+        return rows;
+    }
+
+    /// <summary>
+    /// Rows for a return node: the Exec (return) pin alone in row 0, then one row per return value
+    /// pairing its <see cref="Node.InputDataPins"/> entry with its <see cref="Node.InputTypePins"/>
+    /// entry. Both pins of a pair are naturally on the node's input side; the type pin is rendered in
+    /// the row's right column purely to keep it next to its data pin.
+    /// </summary>
+    private List<PinRowVM> BuildReturnRows()
+    {
+        var rows = new List<PinRowVM>();
+
+        if (inputExecPins.Count > 0)
+        {
+            rows.Add(new PinRowVM(inputExecPins[0], null));
+        }
+
+        for (int i = 0; i < inputDataPins.Count; i++)
+        {
+            rows.Add(new PinRowVM(inputDataPins[i], i < inputTypePins.Count ? inputTypePins[i] : null));
+        }
+
+        return rows;
+    }
+
+    /// <summary>Rows for every other node kind: row i pairs <see cref="Inputs"/>[i] with <see cref="Outputs"/>[i].</summary>
+    private List<PinRowVM> BuildIndexedRows()
+    {
+        int count = Math.Max(Inputs.Count, Outputs.Count);
+        var rows = new List<PinRowVM>(count);
+
+        for (int i = 0; i < count; i++)
+        {
+            rows.Add(new PinRowVM(i < Inputs.Count ? Inputs[i] : null, i < Outputs.Count ? Outputs[i] : null));
+        }
+
+        return rows;
     }
 
     private void OnNodePositionChanged(Node node, double positionX, double positionY) => OnPropertyChanged(nameof(Location));

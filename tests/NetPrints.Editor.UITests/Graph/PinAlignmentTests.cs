@@ -7,8 +7,9 @@ using NetPrints.Graph;
 
 namespace NetPrints.Editor.UITests.Graph;
 
-/// <summary>Pin row alignment on nodes (OWN-05, owner-reported): fixed row height, connector and
-/// label sharing one vertical center, and output connectors flush to a common edge.</summary>
+/// <summary>Pin row alignment on nodes (OWN-05, OWN-05b, owner-reported): fixed row height, connector
+/// and label sharing one vertical center, output connectors flush to a common edge, and (OWN-05b) a
+/// parameter's type pin and data pin landing on the same row as each other.</summary>
 public class PinAlignmentTests
 {
     private static CancellationToken Token => TestContext.Current.CancellationToken;
@@ -38,6 +39,45 @@ public class PinAlignmentTests
         AssertSharedVerticalCenter(execConnector, await exec.Label.GetAsync(Token));
         AssertSharedVerticalCenter(parameterConnector, await newParameter.Label.GetAsync(Token));
         Assert.Equal(execConnector.Bounds.X, parameterConnector.Bounds.X, 1.0);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task EntryNodeParameterTypeAndDataPinsShareARowForEveryParameter()
+    {
+        // OWN-05b: the previous fix (e9abd81) only checked a pin against its own label; it never
+        // checked that a parameter's type pin (left column) and its data pin (right column) land on
+        // the same row as each other. Before this fix, each added parameter drifted the two columns
+        // one row further apart.
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        var methodGraph = (MethodGraph)session.GraphVM.Graph;
+        var entryNode = methodGraph.MethodEntryNode;
+        entryNode.AddArgument();
+        entryNode.AddArgument();
+        entryNode.AddArgument();
+        methodGraph.MainReturnNode.AddReturnType();
+        await session.WaitForRenderedAsync(Token);
+
+        var entry = session.Graph.Node("MethodEntryNode");
+        var execConnector = await entry.Output("Exec").Connector.GetAsync(Token);
+
+        for (int i = 0; i < 3; i++)
+        {
+            var typeConnector = await entry.Input($"Input{i}Type").Connector.GetAsync(Token);
+            var dataConnector = await entry.Output($"Input{i}").Connector.GetAsync(Token);
+
+            double typeCenter = typeConnector.Bounds.Y + (typeConnector.Bounds.Height / 2);
+            double dataCenter = dataConnector.Bounds.Y + (dataConnector.Bounds.Height / 2);
+            Assert.Equal(typeCenter, dataCenter, 1.0);
+            Assert.Equal(execConnector.Bounds.X, dataConnector.Bounds.X, 1.0);
+        }
+
+        // A cable dragged onto parameter 2's connector (three rows down, the worst-misaligned one
+        // before the fix) must land on parameter 2's own anchor, not a neighbor's.
+        var returnValue = session.Graph.Node("ReturnNode").Input("Output0");
+        await entry.Output("Input2").ConnectToAsync(returnValue, Token);
+        await session.WaitForRenderedAsync(Token);
+
+        Assert.Same(entryNode.OutputDataPins[2], methodGraph.MainReturnNode.InputDataPins[0].IncomingPin);
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]

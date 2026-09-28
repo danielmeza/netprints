@@ -3,6 +3,7 @@ using NetPrints.Core;
 using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.UITests.ClassEditor;
+using NetPrints.Editor.UITests.Driving;
 using NetPrints.Editor.UITests.Hosting;
 using NetPrints.Graph;
 using NetPrints.Testing.Ui.Dialogs;
@@ -77,6 +78,33 @@ public class SnapshotTests
         await page.ClassInspector.WaitVisibleAsync(Token);
         await page.ClassInspector.CodeView.WaitUntilAsync(e => (e.Text ?? "").Contains("class Program"), "generated code", Token);
         Store.Match("inspector-class", await page.InspectorColumn.ScreenshotAsync(Token));
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task MethodEntryWithParameters()
+    {
+        // OWN-05b baseline: three parameters of different name lengths and types, to visually confirm
+        // each parameter's type pin and value pin land on the same row (PinAlignmentTests has the pixel
+        // checks; this is the human-reviewable picture of the fix).
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        var entryNode = ((MethodGraph)session.GraphVM.Graph).MethodEntryNode;
+        entryNode.AddArgument();
+        entryNode.AddArgument();
+        entryNode.AddArgument();
+        entryNode.OutputDataPins[0].Name = "x";
+        entryNode.OutputDataPins[0].PinType.Value = TypeSpecifier.FromType<int>();
+        entryNode.OutputDataPins[1].Name = "someValue";
+        entryNode.OutputDataPins[1].PinType.Value = TypeSpecifier.FromType<string>();
+        entryNode.OutputDataPins[2].Name = "aVeryLongParameterName";
+        entryNode.OutputDataPins[2].PinType.Value = TypeSpecifier.FromType<bool>();
+        entryNode.PositionX = 28; // the extra-wide node (from the long name above) would otherwise
+        entryNode.PositionY = 480; // overlap Console.WriteLine at its usual sample position.
+        await session.WaitForRenderedAsync(Token);
+        HeadlessDriver.Pump(); // the renames above don't add/remove nodes, so WaitForRenderedAsync's
+                               // node/cable count check is already satisfied; pump once more so the
+                               // node's width settles to the new (longer) pin names before the crop.
+
+        Store.Match("node-method-entry-parameters", await session.Graph.Node("MethodEntryNode").ScreenshotAsync(Token));
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]

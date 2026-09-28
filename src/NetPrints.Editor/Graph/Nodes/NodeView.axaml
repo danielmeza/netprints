@@ -7,6 +7,7 @@
              xmlns:edsearch="clr-namespace:NetPrints.Editor.Search"
              xmlns:nn="clr-namespace:Nodify.Avalonia.Nodes;assembly=Nodify.Avalonia"
              xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             xmlns:conv="clr-namespace:Avalonia.Data.Converters;assembly=Avalonia.Base"
              x:Class="NetPrints.Editor.Graph.Nodes.NodeView"
              x:DataType="ednodes:NodeVM"
              ToolTip.Tip="{Binding ToolTip}">
@@ -122,16 +123,29 @@
         </Grid>
       </Border>
 
+      <!-- Pin rows (OWN-05b): both columns are still driven off the same NodeVM.PinRows list, one
+           entry per row, so row i's left pin and right pin are always the two halves of the same
+           PinRowVM and land at the same height (both ItemsControls stack fixed-Height="28" items in
+           lockstep) - unlike the old Inputs/Outputs columns, which drifted apart whenever one side had
+           an extra pin (Exec, a generic type parameter) the other side didn't. -->
       <Grid x:Name="PinArea" Classes.reroute="{Binding IsRerouteNode}" ColumnDefinitions="*,*">
         <StackPanel>
-          <ItemsControl x:Name="InputPins" ItemsSource="{Binding Inputs}">
+          <ItemsControl x:Name="InputPins" ItemsSource="{Binding PinRows}">
             <ItemsControl.ItemTemplate>
-              <DataTemplate x:DataType="edpins:NodePinVM">
-                <nn:NodeInput Height="28" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.Pin}" AutomationProperties.Name="{Binding AutomationName}" Header="{Binding}" ToolTip.Tip="{Binding ToolTip}"
-                              HeaderTemplate="{StaticResource PinHeaderTemplate}"
-                              ConnectorTemplate="{StaticResource PinConnectorTemplate}"
-                              IsConnected="{Binding IsConnected}"
-                              Anchor="{Binding Anchor, Mode=OneWayToSource, Converter={x:Static edgraph:GraphPointConverter.Instance}}" />
+              <DataTemplate x:DataType="ednodes:PinRowVM">
+                <!-- The Border always renders at a fixed height, so a row with no left pin still
+                     reserves its row's worth of space (an IsVisible="False" pin collapses to zero
+                     height on its own, which would pull every later row up and re-break the pairing
+                     this view exists to fix). -->
+                <Border Height="28">
+                  <nn:NodeInput x:DataType="edpins:NodePinVM" DataContext="{Binding Left}"
+                                IsVisible="{Binding Converter={x:Static conv:ObjectConverters.IsNotNull}}"
+                                AutomationProperties.AutomationId="{x:Static ed:AutomationIds.Pin}" AutomationProperties.Name="{Binding AutomationName}" Header="{Binding}" ToolTip.Tip="{Binding ToolTip}"
+                                HeaderTemplate="{StaticResource PinHeaderTemplate}"
+                                ConnectorTemplate="{StaticResource PinConnectorTemplate}"
+                                IsConnected="{Binding IsConnected}"
+                                Anchor="{Binding Anchor, Mode=OneWayToSource, Converter={x:Static edgraph:GraphPointConverter.Instance}}" />
+                </Border>
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
@@ -147,14 +161,20 @@
         </StackPanel>
 
         <StackPanel Grid.Column="1">
-          <ItemsControl x:Name="OutputPins" ItemsSource="{Binding Outputs}">
+          <ItemsControl x:Name="OutputPins" ItemsSource="{Binding PinRows}">
             <ItemsControl.ItemTemplate>
-              <DataTemplate x:DataType="edpins:NodePinVM">
-                <nn:NodeOutput Height="28" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.Pin}" AutomationProperties.Name="{Binding AutomationName}" Header="{Binding}" ToolTip.Tip="{Binding ToolTip}"
-                               HeaderTemplate="{StaticResource PinHeaderTemplate}"
-                               ConnectorTemplate="{StaticResource PinConnectorTemplate}"
-                               IsConnected="{Binding IsConnected}"
-                               Anchor="{Binding Anchor, Mode=OneWayToSource, Converter={x:Static edgraph:GraphPointConverter.Instance}}" />
+              <DataTemplate x:DataType="ednodes:PinRowVM">
+                <!-- See the matching Border in InputPins above: reserves the row's height even when
+                     this row has no right pin. -->
+                <Border Height="28">
+                  <nn:NodeOutput x:DataType="edpins:NodePinVM" DataContext="{Binding Right}"
+                                 IsVisible="{Binding Converter={x:Static conv:ObjectConverters.IsNotNull}}"
+                                 AutomationProperties.AutomationId="{x:Static ed:AutomationIds.Pin}" AutomationProperties.Name="{Binding AutomationName}" Header="{Binding}" ToolTip.Tip="{Binding ToolTip}"
+                                 HeaderTemplate="{StaticResource PinHeaderTemplate}"
+                                 ConnectorTemplate="{StaticResource PinConnectorTemplate}"
+                                 IsConnected="{Binding IsConnected}"
+                                 Anchor="{Binding Anchor, Mode=OneWayToSource, Converter={x:Static edgraph:GraphPointConverter.Instance}}" />
+                </Border>
               </DataTemplate>
             </ItemsControl.ItemTemplate>
           </ItemsControl>
