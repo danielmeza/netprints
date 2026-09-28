@@ -12,7 +12,7 @@ using NetPrints.Serialization.Json;
 using NetPrints.Serialization.Mapping;
 using NetPrints.Serialization.Migrations;
 using NetPrints.Serialization.Stores;
-using NetPrints.Tests.Projects;
+using NetPrints.Testing;
 using NetPrints.Translator;
 using NetPrints.Workspace;
 

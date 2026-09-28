@@ -5,6 +5,7 @@ using NetPrints.Core;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.References;
 using NetPrints.Projects;
+using NetPrints.Testing;
 using NetPrints.Testing.Ui.Hosting;
 
 namespace NetPrints.Editor.UITests.Hosting;
@@ -226,7 +227,7 @@ public sealed class SampleCopy : IDisposable
             File.Copy(file, Path.Combine(Directory, Path.GetFileName(file)));
         }
 
-        NetPrints.Testing.Ui.Hosting.LocalSdkLayout.Write(Directory);
+        LocalSdkLayout.Write(Directory);
     }
 
     public string Directory { get; }

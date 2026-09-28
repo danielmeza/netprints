@@ -4,6 +4,7 @@ using NetPrints.Editor.Hosting;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Projects;
 using NetPrints.Serialization;
+using NetPrints.Testing;
 using NetPrints.Workspace;
 
 namespace NetPrints.Editor.Tests.Hosting;
@@ -40,7 +41,7 @@ public sealed class ProjectOpenPerformanceTests : IDisposable
             File.Copy(file, Path.Combine(directory, Path.GetFileName(file)));
         }
 
-        TestPaths.WriteLocalSdkLayout(directory);
+        LocalSdkLayout.Write(directory);
         string csprojPath = Path.Combine(directory, "HelloWorld.csproj");
 
         // Warm-up: the first LoadAsync on a fresh copy restores (obj/project.assets.json is missing).

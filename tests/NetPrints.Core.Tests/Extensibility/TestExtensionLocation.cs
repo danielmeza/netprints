@@ -1,5 +1,5 @@
 using System.IO;
-using NetPrints.Tests.Projects;
+using NetPrints.Testing;
 using NetPrints.Tests.Samples;
 
 namespace NetPrints.Tests.Extensibility;

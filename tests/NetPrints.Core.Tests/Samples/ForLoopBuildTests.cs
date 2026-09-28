@@ -1,6 +1,7 @@
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using NetPrints.Testing;
 using NetPrints.Tests.Projects;
 using Xunit;
 

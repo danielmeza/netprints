@@ -8,6 +8,7 @@ using NetPrints.Serialization;
 using NetPrints.Serialization.Json;
 using NetPrints.Serialization.Mapping;
 using NetPrints.Serialization.Migrations;
+using NetPrints.Testing;
 using NetPrints.Tests.Extensibility;
 using NetPrints.Tests.Projects;
 using NetPrints.Translator;

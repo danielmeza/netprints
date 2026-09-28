@@ -11,6 +11,7 @@ using NetPrints.Serialization.Documents;
 using NetPrints.Serialization.Json;
 using NetPrints.Serialization.Mapping;
 using NetPrints.Serialization.Migrations;
+using NetPrints.Testing;
 using Xunit;
 
 namespace NetPrints.Tests.Projects

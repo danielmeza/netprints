@@ -1,12 +1,13 @@
-namespace NetPrints.Testing.Ui.Hosting;
+namespace NetPrints.Testing;
 
 /// <summary>
 /// Writes the same in-repo <c>NetPrints.Sdk</c> development-mode files as <c>samples/</c>
 /// (project-system.md §2.1) into an arbitrary directory, with absolute paths instead of
 /// <c>samples/</c>' repository-relative ones: a temp copy of a sample has no fixed relationship to
-/// the repository root, so a relative <c>../src/...</c> import would not resolve. Shared by the
-/// headless UI tests and the desktop E2E tests, which both copy <c>samples/HelloWorld</c> into a
-/// temp directory and open it through the real <c>MsBuildProjectSystem</c>.
+/// the repository root, so a relative <c>../src/...</c> import would not resolve. Shared by every
+/// test assembly that builds a temp copy of a sample against the repository's own SDK
+/// (Core.Tests, Editor.Tests, Editor.UITests, Desktop.E2ETests): consolidated from three
+/// near-identical copies (batch D2).
 /// </summary>
 public static class LocalSdkLayout
 {
@@ -60,7 +61,7 @@ public static class LocalSdkLayout
     /// <summary>Walks up from <see cref="AppContext.BaseDirectory"/> to find the checked-out repository root.</summary>
     /// <returns>The repository root directory (the one containing <c>NetPrints.slnx</c>).</returns>
     /// <exception cref="InvalidOperationException">No <c>NetPrints.slnx</c> was found above the running tests' output directory.</exception>
-    private static string FindRepositoryRoot()
+    public static string FindRepositoryRoot()
     {
         for (DirectoryInfo? dir = new(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
         {
@@ -79,7 +80,7 @@ public static class LocalSdkLayout
     /// path this writes matches whichever configuration built it.
     /// </summary>
     /// <returns>The detected configuration name, or <c>"Release"</c> if it could not be determined.</returns>
-    private static string DetectConfiguration()
+    public static string DetectConfiguration()
     {
         string[] segments = AppContext.BaseDirectory.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         int frameworkIndex = Array.LastIndexOf(segments, "net10.0");

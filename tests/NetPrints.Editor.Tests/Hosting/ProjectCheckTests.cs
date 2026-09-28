@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Desktop;
 using NetPrints.Editor.Hosting;
 using NetPrints.Projects;
+using NetPrints.Testing;
 using NetPrints.Workspace;
 
 namespace NetPrints.Editor.Tests.Hosting;
@@ -24,7 +25,7 @@ public sealed class ProjectCheckTests : IDisposable
         string csprojPath = TestPaths.CopyHelloWorldSample();
         cleanup.Add(csprojPath);
         string directory = Path.GetDirectoryName(csprojPath) is { } dir ? dir : throw new InvalidOperationException("No directory.");
-        TestPaths.WriteLocalSdkLayout(directory);
+        LocalSdkLayout.Write(directory);
         return csprojPath;
     }
 
