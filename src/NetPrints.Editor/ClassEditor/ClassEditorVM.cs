@@ -379,8 +379,9 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
 
     /// <summary>
     /// Opens the graph <see cref="NavigateToNodeMessage.GraphKey"/> resolves to (if not already
-    /// open) and reveals <see cref="NavigateToNodeMessage.NodeId"/> (FR-034, ED-T03). Does nothing
-    /// when the key does not resolve (the class changed since the diagnostic was reported).
+    /// open) and, when known, reveals <see cref="NavigateToNodeMessage.NodeId"/> (FR-034, ED-T03,
+    /// OWN-04): a diagnostic with no node mapping still opens the graph. Does nothing when the key
+    /// does not resolve (the class changed since the diagnostic was reported).
     /// </summary>
     void IRecipient<NavigateToNodeMessage>.Receive(NavigateToNodeMessage message)
     {
@@ -395,7 +396,10 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
             OpenGraph(graph);
         }
 
-        OpenedGraph?.RevealNode(message.NodeId);
+        if (message.NodeId is { } nodeId)
+        {
+            OpenedGraph?.RevealNode(nodeId);
+        }
     }
 
     /// <summary>

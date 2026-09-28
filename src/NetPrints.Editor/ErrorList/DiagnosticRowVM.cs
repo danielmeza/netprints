@@ -55,6 +55,10 @@ public sealed class DiagnosticRowVM
     /// <summary>Display name of the method, constructor or event graph the diagnostic belongs to, if known.</summary>
     public string? MemberName { get; }
 
-    /// <summary>Whether double-clicking this row can open a graph and select a node (FR-034).</summary>
-    public bool CanNavigate => Diagnostic.GraphKey is not null && Diagnostic.NodeId is not null;
+    /// <summary>
+    /// Whether double-clicking (or activating with Enter) this row can open its graph (FR-034,
+    /// OWN-04): true once <see cref="CodeDiagnostic.GraphKey"/> is known, even without a
+    /// <see cref="CodeDiagnostic.NodeId"/> to select and reveal.
+    /// </summary>
+    public bool CanNavigate => Diagnostic.GraphKey is not null;
 }

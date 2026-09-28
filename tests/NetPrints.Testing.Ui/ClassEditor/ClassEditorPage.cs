@@ -66,6 +66,10 @@ public sealed class ClassEditorPage(IUiDriver driver, string classFullName)
     /// <summary>An error list row (diagnostic id text) in the Errors tab.</summary>
     public UiElement ErrorRow(string diagnosticId) => ErrorList.Find(AutomationIds.ClassEditorErrorId, text: diagnosticId);
 
+    /// <summary>An error list row's severity icon, by its index in the Errors tab (OWN-04): used to
+    /// double-click just past it, in the row's own background rather than on rendered text.</summary>
+    public UiElement ErrorSeverityIcon(int index) => ErrorList.Find(AutomationIds.ClassEditorErrorSeverity, index: index);
+
     public async Task<IReadOnlyList<string>> MethodNamesAsync(CancellationToken cancellationToken) =>
         (await Driver.FindAllAsync(new AutomationQuery(AutomationIds.ClassEditorMethodName) { Within = MethodList.Query }, cancellationToken))
             .Select(e => e.Text ?? "").ToList();

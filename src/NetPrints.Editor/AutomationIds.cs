@@ -217,6 +217,12 @@ public static class AutomationIds
     /// </summary>
     public const string PinValueEnum = "Graph.Pin.ValueEnum";
     /// <summary>
+    /// Automation id for a pin's name/type label (OWN-05: the plain <c>TextBlock</c> or, when the name
+    /// is editable, the <c>TextBox</c>), so a test can compare its bounds against
+    /// <see cref="PinConnector"/>'s.
+    /// </summary>
+    public const string PinLabel = "Graph.Pin.Label";
+    /// <summary>
     /// Automation id for the get/set chooser's get button.
     /// </summary>
     public const string GetButton = "Graph.GetSet.Get";

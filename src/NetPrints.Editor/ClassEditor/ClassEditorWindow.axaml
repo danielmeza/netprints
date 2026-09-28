@@ -201,9 +201,21 @@
             <!-- Rows combine the live analysis and the last build's diagnostics (FR-032, US6);
                  double-click opens the graph and selects the node (FR-034, ED-T03). -->
             <ListBox x:Name="ErrorList" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorErrorList}" ItemsSource="{Binding ErrorList.Rows}">
+              <!-- Enter on the selected row navigates too (FR-034, OWN-04 keyboard a11y); fits
+                   KeyTrigger + InvokeCommandAction (ADR-0007). EventRoutingStrategy="Tunnel": Enter is
+                   raised on the focused ListBoxItem, a descendant of this ListBox, not on the ListBox
+                   itself. -->
+              <Interaction.Behaviors>
+                <KeyTrigger Key="Enter" EventRoutingStrategy="Tunnel">
+                  <InvokeCommandAction Command="{Binding ErrorList.NavigateCommand}" CommandParameter="{Binding #ErrorList.SelectedItem}" />
+                </KeyTrigger>
+              </Interaction.Behaviors>
               <ListBox.ItemTemplate>
                 <DataTemplate x:DataType="ederrorlist:DiagnosticRowVM">
-                  <StackPanel Orientation="Horizontal" Spacing="8">
+                  <!-- Background="Transparent" (OWN-04): a null Background is not hit-test visible in
+                       its own empty space, so only the rendered text glyphs used to respond to the
+                       double-tap below (matches EventGraphList's row template above). -->
+                  <StackPanel Orientation="Horizontal" Spacing="8" Background="Transparent">
                     <!-- Double-click navigates to the diagnostic's node (FR-034, ED-T03); fits
                          ExecuteCommandOnDoubleTappedBehavior (batch X2b). -->
                     <Interaction.Behaviors>

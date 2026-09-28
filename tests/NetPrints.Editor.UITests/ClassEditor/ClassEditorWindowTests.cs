@@ -130,6 +130,68 @@ public class ClassEditorWindowTests
         await session.ClassEditor.ErrorList.WaitUntilAsync(e => e[AutomationPropertyNames.ItemCount] == "1", "one error listed", Token);
     }
 
+    /// <summary>A second method with a real CS1503 (<c>Guid.Parse(string)</c> fed an int), wired into
+    /// its flow (same technique as SourceMapTests/CodeAnalysisHostTests and
+    /// <see cref="CodeView.CodeViewTests.DoubleClickingADiagnosticRowOpensTheGraphSelectsAndRevealsTheNode"/>):
+    /// the graph model does not itself enforce pin type compatibility.</summary>
+    private static (MethodGraph Method, CallMethodNode CallNode) AddBadCallMethod(ClassGraph cls)
+    {
+        var method = new MethodGraph("BadCall") { Class = cls, Visibility = MemberVisibility.Public };
+        TypeSpecifier stringType = TypeSpecifier.FromType<string>();
+        var parseSpecifier = new MethodSpecifier("Parse",
+            [new MethodParameter("input", stringType, MethodParameterPassType.Default, false, null)],
+            [], MethodModifiers.Static, MemberVisibility.Public, TypeSpecifier.FromType<Guid>(), []);
+        var callNode = new CallMethodNode(method, parseSpecifier);
+        var badArgument = LiteralNode.WithValue(method, 123);
+        GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, callNode.InputExecPins[0]);
+        GraphUtil.ConnectExecPins(callNode.OutputExecPins[0], method.ReturnNodes.First().InputExecPins[0]);
+        GraphUtil.ConnectDataPins(badArgument.ValuePin, callNode.ArgumentPins[0]);
+        cls.Methods.Add(method);
+        return (method, callNode);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task DoubleTappingAnErrorRowsBackgroundOpensItsGraphAndSelectsTheNode()
+    {
+        // OWN-04 (owner-reproduced, FR-034/ED-T03): the row's StackPanel had no Background, so only
+        // the rendered text glyphs (e.g. what ErrorRow("CS1503") itself clicks) were hit-testable;
+        // double-clicking elsewhere in the row (the gap right after the severity icon, inside its
+        // Spacing="8") used to do nothing.
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        var page = session.ClassEditor;
+        var vm = session.ClassVM;
+        var (method, callNode) = AddBadCallMethod(vm.Class);
+
+        session.App.Composition.Context.CodeAnalysis.RequestAnalysis(vm.Project!);
+        await page.ErrorRow("CS1503").WaitVisibleAsync(Token, TimeSpan.FromSeconds(30));
+
+        var icon = page.ErrorSeverityIcon(0);
+        var gap = await icon.OffsetAsync(20, 8, Token); // 4px past the 16px-wide icon, inside its Spacing="8" gap: row background, not text
+        await session.Driver.ClickAsync(gap, UiButton.Left, 2, Token);
+
+        await UiWait.UntilAsync(session.Driver, () => Task.FromResult(vm.OpenedGraph?.Graph == method), "the method with the error to open", Token);
+        Assert.Contains(vm.OpenedGraph!.SelectedNodes, n => n.Node == callNode);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task PressingEnterOnTheSelectedErrorRowNavigatesToo()
+    {
+        // OWN-04 keyboard a11y: Enter on the selected row navigates the same as a double-click.
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        var page = session.ClassEditor;
+        var vm = session.ClassVM;
+        var (method, callNode) = AddBadCallMethod(vm.Class);
+
+        session.App.Composition.Context.CodeAnalysis.RequestAnalysis(vm.Project!);
+        await page.ErrorRow("CS1503").WaitVisibleAsync(Token, TimeSpan.FromSeconds(30));
+
+        await page.ErrorRow("CS1503").ClickAsync(Token); // selects the row
+        await session.Driver.PressAsync("Enter", Token);
+
+        await UiWait.UntilAsync(session.Driver, () => Task.FromResult(vm.OpenedGraph?.Graph == method), "the method with the error to open", Token);
+        Assert.Contains(vm.OpenedGraph!.SelectedNodes, n => n.Node == callNode);
+    }
+
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task NodesAndPinsHaveToolTips()
     {

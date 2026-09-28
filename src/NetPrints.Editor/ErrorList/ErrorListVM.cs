@@ -73,17 +73,20 @@ public sealed partial class ErrorListVM : ObservableObject, IDisposable
         }
     }
 
-    /// <summary>Navigates to a row's node, when it has one (FR-034, ED-T03).</summary>
+    /// <summary>
+    /// Opens a row's graph and, when it has one, reveals its node (FR-034, ED-T03, OWN-04): a
+    /// diagnostic with a member but no node mapping still opens the graph.
+    /// </summary>
     /// <param name="row">Row to navigate to.</param>
     [RelayCommand]
     private void Navigate(DiagnosticRowVM? row)
     {
-        if (row is not { CanNavigate: true } || row.Diagnostic.GraphKey is not { } graphKey || row.Diagnostic.NodeId is not { } nodeId)
+        if (row is not { CanNavigate: true } || row.Diagnostic.GraphKey is not { } graphKey)
         {
             return;
         }
 
-        messenger.Send(new NavigateToNodeMessage(graphKey, nodeId));
+        messenger.Send(new NavigateToNodeMessage(graphKey, row.Diagnostic.NodeId));
     }
 
     private void OnSnapshot(CodeAnalysisSnapshot snapshot)

@@ -21,4 +21,24 @@ public sealed class DiagnosticRowVMTests
         Assert.Equal(isWarning, row.IsWarning);
         Assert.Equal(isInfo, row.IsInfo);
     }
+
+    [Fact]
+    public void CanNavigateIsFalseWithNoGraphKey()
+    {
+        var row = new DiagnosticRowVM(Diagnostic(CodeDiagnosticSeverity.Error), null);
+
+        Assert.False(row.CanNavigate);
+    }
+
+    [Fact]
+    public void CanNavigateIsTrueWithAGraphKeyEvenWithoutANode()
+    {
+        // OWN-04 (FR-034, ED-T03): a diagnostic whose position maps to no node (e.g. one reported past
+        // the last mapped statement) still knows its member and should still open the graph.
+        var diagnostic = new CodeDiagnostic(CodeDiagnosticSeverity.Error, "CS0161", "boom", "N.C", "graphKey", null, null, null);
+
+        var row = new DiagnosticRowVM(diagnostic, null);
+
+        Assert.True(row.CanNavigate);
+    }
 }

@@ -52,9 +52,9 @@
         <ComboBox Classes="pinValue" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PinValueEnum}" ItemsSource="{Binding PossibleEnumNames}" SelectedItem="{Binding UnconnectedEnumName}"
                   IsVisible="{Binding ShowEnumValue}" />
         <CheckBox Classes="pinValue" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PinValueCheck}" IsChecked="{Binding UnconnectedBool}" IsVisible="{Binding ShowBooleanValue}" />
-        <TextBlock Text="{Binding DisplayName}" IsVisible="{Binding ShowLabel}" FontSize="14" FontWeight="SemiBold"
+        <TextBlock AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PinLabel}" Text="{Binding DisplayName}" IsVisible="{Binding ShowLabel}" FontSize="14" FontWeight="SemiBold"
                    Foreground="{DynamicResource Node.TitleForeground}" VerticalAlignment="Center" />
-        <TextBox Text="{Binding Name}" IsVisible="{Binding ShowEditableName}" FontSize="14" FontWeight="SemiBold" MinWidth="60" />
+        <TextBox Classes="pinValue" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PinLabel}" Text="{Binding Name}" IsVisible="{Binding ShowEditableName}" FontSize="14" FontWeight="SemiBold" MinWidth="60" />
       </StackPanel>
     </DataTemplate>
   </UserControl.Resources>
@@ -74,6 +74,24 @@
     </Style>
     <Style Selector="Grid#PinArea.reroute">
       <Setter Property="Margin" Value="0" />
+    </Style>
+    <!-- Pin value/name editors (PAR-44, PAR-45, OWN-05): the Fluent theme's default TextBox/ComboBox
+         chrome (padding, min height, top-aligned content) is taller than a plain label and does not
+         vertically center, so a row mixing an editor with a label (or with the exec/type rows above
+         and below it) looks misaligned. Stripped down to match the label rows' own line height. -->
+    <Style Selector="TextBox.pinValue">
+      <Setter Property="Padding" Value="4,0" />
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="ComboBox.pinValue">
+      <Setter Property="Padding" Value="4,0" />
+      <Setter Property="MinHeight" Value="0" />
+      <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+    <Style Selector="CheckBox.pinValue">
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="MinHeight" Value="0" />
     </Style>
   </UserControl.Styles>
 

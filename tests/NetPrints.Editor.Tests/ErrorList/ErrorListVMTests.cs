@@ -2,6 +2,7 @@ using System.Reactive.Subjects;
 using CommunityToolkit.Mvvm.Messaging;
 using NetPrints.Compilation;
 using NetPrints.Core;
+using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.Diagnostics;
 using NetPrints.Editor.ErrorList;
 using NetPrints.Translator;
@@ -55,6 +56,63 @@ public sealed class ErrorListVMTests
         using var vm = new ErrorListVM(NewClass("N", "C"), host, new StrongReferenceMessenger());
 
         Assert.Equal("Errors (0) · Warnings (0)", vm.Header);
+    }
+
+    [Fact]
+    public void NavigatingANavigableRowSendsTheMessage()
+    {
+        // FR-034, ED-T03: a diagnostic mapped to a node sends both the graph key and the node id.
+        using var host = new FakeCodeAnalysisHost();
+        var messenger = new StrongReferenceMessenger();
+        using var vm = new ErrorListVM(NewClass("N", "C"), host, messenger);
+        NavigateToNodeMessage? received = null;
+        messenger.Register<ErrorListVMTests, NavigateToNodeMessage>(this, (_, m) => received = m);
+
+        host.Push(new CodeAnalysisSnapshot(new Dictionary<string, TranslatedClass>(StringComparer.Ordinal),
+            [new CodeDiagnostic(CodeDiagnosticSeverity.Error, "CS1503", "boom", "N.C", "m1", "n1", null, null)]));
+
+        vm.NavigateCommand.Execute(vm.Rows.Single());
+
+        Assert.Equal(new NavigateToNodeMessage("m1", "n1"), received);
+    }
+
+    [Fact]
+    public void NavigatingARowWithNoNodeMappingStillSendsTheMessageOpenTheGraphOnly()
+    {
+        // OWN-04 (FR-034): a diagnostic with a known member but no node still asks to open the graph;
+        // ErrorListVM.Navigate must not bail out just because NodeId is unknown.
+        using var host = new FakeCodeAnalysisHost();
+        var messenger = new StrongReferenceMessenger();
+        using var vm = new ErrorListVM(NewClass("N", "C"), host, messenger);
+        NavigateToNodeMessage? received = null;
+        messenger.Register<ErrorListVMTests, NavigateToNodeMessage>(this, (_, m) => received = m);
+
+        host.Push(new CodeAnalysisSnapshot(new Dictionary<string, TranslatedClass>(StringComparer.Ordinal),
+            [new CodeDiagnostic(CodeDiagnosticSeverity.Error, "CS0161", "boom", "N.C", "m1", null, null, null)]));
+
+        DiagnosticRowVM row = vm.Rows.Single();
+        Assert.True(row.CanNavigate);
+
+        vm.NavigateCommand.Execute(row);
+
+        Assert.Equal(new NavigateToNodeMessage("m1", null), received);
+    }
+
+    [Fact]
+    public void NavigatingARowWithNoGraphKeyDoesNothing()
+    {
+        using var host = new FakeCodeAnalysisHost();
+        var messenger = new StrongReferenceMessenger();
+        using var vm = new ErrorListVM(NewClass("N", "C"), host, messenger);
+        bool received = false;
+        messenger.Register<ErrorListVMTests, NavigateToNodeMessage>(this, (_, _) => received = true);
+
+        host.Push(new CodeAnalysisSnapshot(new Dictionary<string, TranslatedClass>(StringComparer.Ordinal),
+            [Diagnostic(CodeDiagnosticSeverity.Error, "CS0103")]));
+
+        vm.NavigateCommand.Execute(vm.Rows.Single());
+
+        Assert.False(received);
     }
 
     private sealed class FakeCodeAnalysisHost : ICodeAnalysisHost

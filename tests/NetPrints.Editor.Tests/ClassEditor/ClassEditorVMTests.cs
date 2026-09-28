@@ -1,4 +1,5 @@
 using System.Windows.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.Diagnostics;
@@ -227,6 +228,45 @@ public class ClassEditorVMTests : IAsyncLifetime
 
         Assert.Equal(InspectorKind.Class, vm.Inspector);
         Assert.Same(cls, vm.OpenedGraph?.Graph);
+    }
+
+    [Fact]
+    public void NavigateToNodeMessageOpensTheGraphAndSelectsTheNode()
+    {
+        // FR-034, ED-T03: double-clicking an error row opens the graph it belongs to (even when a
+        // different one is on the canvas) and reveals the node.
+        var main = vm.Methods.Single();
+        string graphKey = GraphKeys.For(main.Graph);
+        string nodeId = ((MethodGraph)main.Graph).EntryNode.Id;
+        vm.ShowClassCommand.Execute(null);
+        Assert.Same(cls, vm.OpenedGraph?.Graph);
+
+        vm.Messenger.Send(new NavigateToNodeMessage(graphKey, nodeId));
+
+        Assert.Same(main.Graph, vm.OpenedGraph?.Graph);
+        Assert.True(vm.OpenedGraph!.Nodes.Single(n => n.Node.Id == nodeId).IsSelected);
+    }
+
+    [Fact]
+    public void NavigateToNodeMessageWithNoNodeIdStillOpensTheGraph()
+    {
+        // OWN-04: a diagnostic with a known member but no node mapping still opens the graph instead
+        // of the message being dropped.
+        var main = vm.Methods.Single();
+        string graphKey = GraphKeys.For(main.Graph);
+        vm.ShowClassCommand.Execute(null);
+
+        vm.Messenger.Send(new NavigateToNodeMessage(graphKey, null));
+
+        Assert.Same(main.Graph, vm.OpenedGraph?.Graph);
+    }
+
+    [Fact]
+    public void NavigateToNodeMessageWithAnUnknownGraphKeyDoesNothing()
+    {
+        vm.Messenger.Send(new NavigateToNodeMessage("does-not-resolve", null));
+
+        Assert.Null(vm.OpenedGraph);
     }
 
     [Fact]

@@ -47,6 +47,9 @@ public sealed class PinObject(IUiDriver driver, AutomationQuery query) : UiEleme
     /// <summary>The connector dot, where cables start and end.</summary>
     public UiElement Connector => Find(AutomationIds.PinConnector);
 
+    /// <summary>The pin's name/type label (OWN-05: the plain text or, when editable, the text box).</summary>
+    public UiElement Label => Find(AutomationIds.PinLabel);
+
     /// <summary>The inline value editor of an unconnected input (PAR-44).</summary>
     public UiElement ValueBox => Find(AutomationIds.PinValueText);
 
