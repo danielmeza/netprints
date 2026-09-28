@@ -144,6 +144,17 @@ public class NodeGraphVMTests(TestEditor editor) : GraphTestBase(editor)
         Assert.Equal(variable.Name, graph.GetSetChooser.Variable!.Name);
     }
 
+    // T103a: NodeGraphVM.Drop(MethodVM, GraphPoint)'s Graph.Class guard (added in T011/T012's nullable
+    // rollout) was not covered by a test.
+    [Fact]
+    public void DropMethodWhenTheOpenGraphHasNoClassThrows()
+    {
+        Method.Class = null;
+
+        var ex = Assert.Throws<InvalidOperationException>(() => Graph.Drop(ClassEditor.Methods.Single(), new GraphPoint(1, 1)));
+        Assert.Equal("The open graph has no class.", ex.Message);
+    }
+
     [Fact]
     public void NameWatermark()
     {

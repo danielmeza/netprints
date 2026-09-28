@@ -36,34 +36,6 @@ namespace NetPrints.Core
         /// The variable hides an inherited member of the same name (C# <c>new</c>).
         /// </summary>
         New = 64,
-
-        /// <summary>
-        /// Obsolete: visibility moved to <see cref="Variable.Visibility"/> (<see cref="MemberVisibility"/>).
-        /// Kept at value 0; not referenced anywhere in this codebase.
-        /// </summary>
-        [Obsolete]
-        Private = 0,
-
-        /// <summary>
-        /// Obsolete: visibility moved to <see cref="Variable.Visibility"/> (<see cref="MemberVisibility"/>).
-        /// Kept at value 1; not referenced anywhere in this codebase.
-        /// </summary>
-        [Obsolete]
-        Public = 1,
-
-        /// <summary>
-        /// Obsolete: visibility moved to <see cref="Variable.Visibility"/> (<see cref="MemberVisibility"/>).
-        /// Kept at value 2; not referenced anywhere in this codebase.
-        /// </summary>
-        [Obsolete]
-        Protected = 2,
-
-        /// <summary>
-        /// Obsolete: visibility moved to <see cref="Variable.Visibility"/> (<see cref="MemberVisibility"/>).
-        /// Kept at value 4; not referenced anywhere in this codebase.
-        /// </summary>
-        [Obsolete]
-        Internal = 4,
     }
 
     /// <summary>

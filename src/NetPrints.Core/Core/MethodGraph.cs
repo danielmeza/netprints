@@ -48,36 +48,6 @@ namespace NetPrints.Core
         /// and its <see cref="Graph.AwaitNode"/>s emit <c>await</c> expressions.
         /// </summary>
         Async = 256,
-
-        // DEPRECATED
-        // Moved to MethodVisibility
-        /// <summary>
-        /// Obsolete: visibility moved to <see cref="ExecutionGraph.Visibility"/> (<see cref="MemberVisibility"/>).
-        /// Kept at value 0; not referenced anywhere in this codebase.
-        /// </summary>
-        [Obsolete]
-        Private = 0,
-
-        /// <summary>
-        /// Obsolete: visibility moved to <see cref="ExecutionGraph.Visibility"/> (<see cref="MemberVisibility"/>).
-        /// Kept at value 1; not referenced anywhere in this codebase.
-        /// </summary>
-        [Obsolete]
-        Public = 1,
-
-        /// <summary>
-        /// Obsolete: visibility moved to <see cref="ExecutionGraph.Visibility"/> (<see cref="MemberVisibility"/>).
-        /// Kept at value 2; not referenced anywhere in this codebase.
-        /// </summary>
-        [Obsolete]
-        Protected = 2,
-
-        /// <summary>
-        /// Obsolete: visibility moved to <see cref="ExecutionGraph.Visibility"/> (<see cref="MemberVisibility"/>).
-        /// Kept at value 4; not referenced anywhere in this codebase.
-        /// </summary>
-        [Obsolete]
-        Internal = 4,
     }
 
     /// <summary>

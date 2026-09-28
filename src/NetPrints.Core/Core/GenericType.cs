@@ -83,23 +83,21 @@ namespace NetPrints.Core
 
         /// <summary>
         /// Compares this generic type to another <see cref="GenericType"/> by name (constraints are not
-        /// checked yet, tracked by a TODO), or, unconditionally, to any <see cref="TypeSpecifier"/> --
-        /// this last case is a placeholder (also tracked by a TODO) that has not been implemented to
-        /// check constraint compatibility and always returns <see langword="true"/>.
+        /// checked yet, tracked by a TODO), consistent with <see cref="GetHashCode"/>. A
+        /// <see cref="TypeSpecifier"/> (a bound type) is never equal to an unbound
+        /// <see cref="GenericType"/> parameter, however compatible the two would be once a value is
+        /// substituted for the parameter -- callers that need "is this bound type an acceptable
+        /// substitution" (eg. <see cref="Graph.GraphUtil.CanConnectNodePins"/>) check that directly
+        /// instead of through equality.
         /// </summary>
         /// <param name="obj">Object to compare to.</param>
         /// <returns>
-        /// <see langword="true"/> if <paramref name="obj"/> is a <see cref="TypeSpecifier"/> (always),
-        /// or a <see cref="GenericType"/> with the same <see cref="BaseType.Name"/>.
+        /// <see langword="true"/> if <paramref name="obj"/> is a <see cref="GenericType"/> with the same
+        /// <see cref="BaseType.Name"/>.
         /// </returns>
         public override bool Equals(object? obj)
         {
-            if (obj is TypeSpecifier)
-            {
-                // TODO: Check constraints
-                return true;
-            }
-            else if (obj is GenericType genType)
+            if (obj is GenericType genType)
             {
                 // TODO: Check constraints
                 return Name == genType.Name;
@@ -140,12 +138,12 @@ namespace NetPrints.Core
         }
 
         /// <summary>
-        /// Same as <see cref="Equals(object?)"/>: always <see langword="true"/> (see that method's
-        /// remarks on this being an unimplemented placeholder).
+        /// Same as <see cref="Equals(object?)"/>: always <see langword="false"/> (a bound
+        /// <see cref="TypeSpecifier"/> is never equal to an unbound <see cref="GenericType"/> parameter).
         /// </summary>
         /// <param name="a">Generic type.</param>
         /// <param name="b">Type specifier.</param>
-        /// <returns>Always <see langword="true"/>.</returns>
+        /// <returns>Always <see langword="false"/>.</returns>
         public static bool operator ==(GenericType a, TypeSpecifier b)
         {
             return a.Equals(b);
@@ -153,11 +151,11 @@ namespace NetPrints.Core
 
         /// <summary>
         /// The negation of <see cref="operator ==(GenericType, TypeSpecifier)"/>: always
-        /// <see langword="false"/>.
+        /// <see langword="true"/>.
         /// </summary>
         /// <param name="a">Generic type.</param>
         /// <param name="b">Type specifier.</param>
-        /// <returns>Always <see langword="false"/>.</returns>
+        /// <returns>Always <see langword="true"/>.</returns>
         public static bool operator !=(GenericType a, TypeSpecifier b)
         {
             return !a.Equals(b);

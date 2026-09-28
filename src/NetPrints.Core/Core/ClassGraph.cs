@@ -36,35 +36,6 @@ namespace NetPrints.Core
         /// The class's definition is split across multiple files (C# <c>partial</c>).
         /// </summary>
         Partial = 64,
-
-        // Deprecated
-        /// <summary>
-        /// Obsolete: visibility moved to <see cref="ClassGraph.Visibility"/> (<see cref="MemberVisibility"/>).
-        /// Kept at value 0; not referenced anywhere in this codebase.
-        /// </summary>
-        [Obsolete]
-        Private = 0,
-
-        /// <summary>
-        /// Obsolete: visibility moved to <see cref="ClassGraph.Visibility"/> (<see cref="MemberVisibility"/>).
-        /// Kept at value 1; not referenced anywhere in this codebase.
-        /// </summary>
-        [Obsolete]
-        Public = 1,
-
-        /// <summary>
-        /// Obsolete: visibility moved to <see cref="ClassGraph.Visibility"/> (<see cref="MemberVisibility"/>).
-        /// Kept at value 2; not referenced anywhere in this codebase.
-        /// </summary>
-        [Obsolete]
-        Protected = 2,
-
-        /// <summary>
-        /// Obsolete: visibility moved to <see cref="ClassGraph.Visibility"/> (<see cref="MemberVisibility"/>).
-        /// Kept at value 4; not referenced anywhere in this codebase.
-        /// </summary>
-        [Obsolete]
-        Internal = 4,
     }
 
     /// <summary>

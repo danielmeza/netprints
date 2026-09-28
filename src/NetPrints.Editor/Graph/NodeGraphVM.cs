@@ -390,7 +390,7 @@ public sealed partial class NodeGraphVM : ObservableObject, IDisposable
         var declaringType = declaringClass.Type;
         return method.IsConstructor
             ? AddNode<ConstructorNode>(position, null, method.ToConstructorSpecifier(declaringType))
-            : AddNode<CallMethodNode>(position, null, method.ToMethodSpecifier(declaringType), new List<BaseType>());
+            : AddNode<CallMethodNode>(position, null, method.ToMethodSpecifier(declaringType));
     }
 
     /// <summary>

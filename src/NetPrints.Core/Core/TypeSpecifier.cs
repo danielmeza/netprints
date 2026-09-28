@@ -186,30 +186,24 @@ namespace NetPrints.Core
 
         /// <summary>
         /// Compares this type to another <see cref="TypeSpecifier"/> by name and generic arguments
-        /// (see <see cref="GenericArgumentsEqual"/>), consistent with <see cref="GetHashCode"/>, or,
-        /// unconditionally, to any <see cref="GenericType"/> -- this last case is a placeholder
-        /// (tracked by a TODO) that has not been implemented to check constraint compatibility and
-        /// always returns <see langword="true"/>.
+        /// (see <see cref="GenericArgumentsEqual"/>), consistent with <see cref="GetHashCode"/>. A
+        /// <see cref="GenericType"/> (an unbound parameter) is never equal to this bound type -- see
+        /// <see cref="GenericType.Equals(object?)"/>'s remarks.
         /// </summary>
         /// <param name="obj">Object to compare to.</param>
         /// <returns>
-        /// <see langword="true"/> if <paramref name="obj"/> is a <see cref="GenericType"/> (always), or
-        /// a <see cref="TypeSpecifier"/> with the same name and generic arguments. <see cref="IsEnum"/>
-        /// and <see cref="IsInterface"/> are not part of equality: they are derived facts about the
-        /// same named type, and two <see cref="TypeSpecifier"/> instances for the same type can
-        /// disagree on them (eg. an array-of-enum type built from an element type's flags vs. one
-        /// built with a hardcoded <see langword="false"/>).
+        /// <see langword="true"/> if <paramref name="obj"/> is a <see cref="TypeSpecifier"/> with the
+        /// same name and generic arguments. <see cref="IsEnum"/> and <see cref="IsInterface"/> are not
+        /// part of equality: they are derived facts about the same named type, and two
+        /// <see cref="TypeSpecifier"/> instances for the same type can disagree on them (eg. an
+        /// array-of-enum type built from an element type's flags vs. one built with a hardcoded
+        /// <see langword="false"/>).
         /// </returns>
         public override bool Equals(object? obj)
         {
             if (obj is TypeSpecifier t)
             {
                 return Name == t.Name && GenericArgumentsEqual(t);
-            }
-            else if (obj is GenericType)
-            {
-                // TODO: Check constraints
-                return true;
             }
 
             return false;
@@ -318,12 +312,12 @@ namespace NetPrints.Core
 
         /// <summary>
         /// Same as <see cref="Equals(object?)"/> against a <see cref="GenericType"/> (always
-        /// <see langword="true"/> unless <paramref name="a"/> is <see langword="null"/>; see that
-        /// method's remarks on this being an unimplemented placeholder), null-safe.
+        /// <see langword="false"/> unless both are <see langword="null"/>; a bound type is never equal
+        /// to an unbound generic parameter), null-safe.
         /// </summary>
         /// <param name="a">Type specifier, or <see langword="null"/>.</param>
         /// <param name="b">Generic type, or <see langword="null"/>.</param>
-        /// <returns><see langword="true"/> unless exactly one of the two is <see langword="null"/>.</returns>
+        /// <returns><see langword="true"/> only if both are <see langword="null"/>.</returns>
         public static bool operator ==(TypeSpecifier? a, GenericType? b)
         {
             if (a is null)
@@ -339,7 +333,7 @@ namespace NetPrints.Core
         /// </summary>
         /// <param name="a">Type specifier, or <see langword="null"/>.</param>
         /// <param name="b">Generic type, or <see langword="null"/>.</param>
-        /// <returns><see langword="true"/> if exactly one of the two is <see langword="null"/>.</returns>
+        /// <returns><see langword="true"/> unless both are <see langword="null"/>.</returns>
         public static bool operator !=(TypeSpecifier? a, GenericType? b)
         {
             if (a is null)

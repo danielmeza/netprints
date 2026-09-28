@@ -172,9 +172,7 @@ namespace NetPrints.Graph
         /// </summary>
         /// <param name="graph">Graph the node belongs to.</param>
         /// <param name="methodSpecifier">Specifier for the method to call.</param>
-        /// <param name="genericArgumentTypes">Unused; accepted for source compatibility.</param>
-        public CallMethodNode(NodeGraph graph, MethodSpecifier methodSpecifier,
-            IList<BaseType>? genericArgumentTypes = null)
+        public CallMethodNode(NodeGraph graph, MethodSpecifier methodSpecifier)
             : base(graph)
         {
             MethodSpecifier = methodSpecifier;

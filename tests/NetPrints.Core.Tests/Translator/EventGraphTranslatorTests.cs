@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using NetPrints.Core;
@@ -27,6 +28,27 @@ namespace NetPrints.Tests.Translator
             string code = translator.TranslateEventEntry(eventGraph, entry);
 
             Assert.Contains("public void OnStart()", code);
+        }
+
+        // T103a: the null guards TranslateEventEntry gained in T011/T012's nullable rollout were not
+        // covered by a test.
+        [Fact]
+        public void TranslateEventEntryThrowsForANullGraph()
+        {
+            var eventGraph = new EventGraph("Events");
+            var entry = new EventEntryNode(eventGraph, "OnStart");
+            var translator = new ExecutionGraphTranslator(TranslationEnvironment.BuiltIn);
+
+            Assert.Throws<ArgumentNullException>(() => translator.TranslateEventEntry(null!, entry));
+        }
+
+        [Fact]
+        public void TranslateEventEntryThrowsForANullEntry()
+        {
+            var eventGraph = new EventGraph("Events");
+            var translator = new ExecutionGraphTranslator(TranslationEnvironment.BuiltIn);
+
+            Assert.Throws<ArgumentNullException>(() => translator.TranslateEventEntry(eventGraph, null!));
         }
 
         // NPT001 (research.md K13): a node reachable only from a different entry of the same event

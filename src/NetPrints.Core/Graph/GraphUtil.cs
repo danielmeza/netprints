@@ -65,7 +65,10 @@ namespace NetPrints.Graph
                     return true;
                 }
 
-                // A is GenericType, B is whatever
+                // A is GenericType, B is whatever. An unbound generic parameter is compatible with any
+                // concrete type until constraints are checked (TODO, tracked on GenericType.Equals);
+                // this is a compatibility rule, not type equality, so it is spelled out here rather than
+                // through the (never-equal) GenericType/TypeSpecifier comparison.
 
                 if (datA.PinType.Value is GenericType genTypeA)
                 {
@@ -73,9 +76,9 @@ namespace NetPrints.Graph
                     {
                         return genTypeA == genTypeB;
                     }
-                    else if (datB.PinType.Value is TypeSpecifier typeSpecB2)
+                    else if (datB.PinType.Value is TypeSpecifier)
                     {
-                        return genTypeA == typeSpecB2;
+                        return true;
                     }
                 }
 
@@ -87,9 +90,9 @@ namespace NetPrints.Graph
                     {
                         return genTypeA2 == genTypeB2;
                     }
-                    else if (datA.PinType.Value is TypeSpecifier typeSpecA2)
+                    else if (datA.PinType.Value is TypeSpecifier)
                     {
-                        return genTypeB2 == typeSpecA2;
+                        return true;
                     }
                 }
             }

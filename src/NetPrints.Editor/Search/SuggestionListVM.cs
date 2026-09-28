@@ -377,7 +377,9 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
                     break;
 
                 case MethodSpecifier method:
-                    AddNode<CallMethodNode>(method, method.GenericArguments.Select(a => (BaseType)new GenericType(a.Name)).ToList());
+                    // CallMethodNode builds its generic-argument type pins from method.GenericArguments
+                    // itself (T103a): no separate generic-argument-types constructor argument needed.
+                    AddNode<CallMethodNode>(method);
                     break;
 
                 case VariableSpecifier variable:
