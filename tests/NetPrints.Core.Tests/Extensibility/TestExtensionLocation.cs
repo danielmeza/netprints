@@ -7,9 +7,9 @@ namespace NetPrints.Tests.Extensibility;
 
 /// <summary>
 /// Serializes the tests that load the real <c>NetPrints.TestExtension</c> assembly through their own
-/// <c>AssemblyLoadContext</c> (batch D4): concurrent <see cref="System.Runtime.Loader.AssemblyDependencyResolver"/>
-/// construction from several threads at once corrupted the process (an AccessViolationException
-/// surfacing in unrelated code, CI run 36413425390). One collection, not the whole assembly, so the
+/// <c>AssemblyLoadContext</c> (batch D4). The AccessViolationException D4 attributed to their
+/// concurrency (CI run 36413425390) was code coverage's dynamic instrumentation instead
+/// (docs/adr/0008-static-only-code-coverage.md). One collection, not the whole assembly, so the
 /// rest of Core.Tests keeps its parallelism.
 /// </summary>
 [CollectionDefinition(nameof(RealExtensionLoadCollection), DisableParallelization = true)]

@@ -18,3 +18,4 @@ instead.
 - [0005: Release, packaging and docs stack](0005-release-and-docs-stack.md)
 - [0006: Parallel desktop E2E via a worker pool, one class per scenario](0006-parallel-desktop-e2e.md)
 - [0007: XAML practices for the Avalonia editor](0007-xaml-practices.md)
+- [0008: CI code coverage uses static instrumentation only](0008-static-only-code-coverage.md)

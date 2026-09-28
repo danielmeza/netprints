@@ -5396,3 +5396,25 @@ rerun; run 36381532778 (8e318a7) also failed the perf test (10.7 s vs. the 9 s b
   `actionlint -shellcheck=...` on all four workflows reports nothing. `git status --porcelain --
   samples tests/NetPrints.Core.Tests/Fixtures` empty throughout; all generated output
   (`out/`, `local-packages/*.nupkg`, `website/build`) removed before pushing.
+
+## Fix: `Core.Tests` AccessViolationException under CI coverage
+
+The AV came back on 6dd89f2 (`NetPrintsJsonContext.IReadOnlyListTypeRefSerializeHandler`, from
+`SchemaTests`). Batch D4's explanation, concurrent `AssemblyLoadContext` construction, was wrong.
+The cause is Microsoft.Testing.Extensions.CodeCoverage's dynamic instrumentation. Test child
+processes inherit its CLR profiler; when one of them (the SDK's `dotnet exec NetPrints.Generator.dll
+generate`) loads `NetPrints.Core`, `NetPrints.Serialization` or `NetPrints.Reflection`, the coverage
+controller truncates and re-creates the host's memory-mapped static hit buffer for that module. A
+host thread that hits a probe in that window gets `SIGBUS`, which the runtime reports as an AV.
+Details and evidence are in ADR 0008.
+
+- **Reproduced**: 6 parallel loops of full `--coverage` runs, each against its own copy of the test
+  output folder (the static instrumentation rewrites the DLLs in place, so loops that share one
+  folder corrupt each other). 2 host crashes in about 40 runs, both in `ClassTranslator.BuildSourceMap`
+  (NetPrints.Core). In both dumps the fault is a coverage probe store through `Begin`, and the mapping
+  of `NetPrints.Core`'s buffer was unreadable. `strace` of a single run shows the controller calling
+  `ftruncate(0)` and then `ftruncate(8558)` on that buffer while the host is running.
+- **Fix**: `tests/CodeCoverage.config` turns dynamic managed instrumentation off (static stays on), and
+  ci.yml passes it with the coverage-settings flag. Under `strace`, no `execve` carries profiler
+  variables and no static buffer is created after the host starts. The coverage report still lists
+  every NetPrints assembly. `RealExtensionLoadCollection` stays, with its comment corrected.

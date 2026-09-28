@@ -62,13 +62,14 @@ jobs:
       # exit code (8) only for that project; ignoring it here (and only here, not in the e2e job
       # below) is what makes the skip expected instead of a silent hole in that job's coverage.
       # --coverage runs every test module under Microsoft.Testing.Extensions.CodeCoverage
-      # (referenced by every project under tests/, via tests/Directory.Build.props).
+      # (referenced by every project under tests/, via tests/Directory.Build.props), with
+      # tests/CodeCoverage.config's static-only instrumentation: the default dynamic mode crashed
+      # Core.Tests with an AccessViolationException whenever a test's child `dotnet` process loaded
+      # a NetPrints assembly the host was running (docs/adr/0008-static-only-code-coverage.md).
       # --max-parallel-test-modules 1 (batch D4): `dotnet test --solution` otherwise runs all 4 test
       # projects' processes at once, oversubscribing this runner's 4 vCPUs (D3 already found the same
       # class of issue in the E2E job). That starved MainEditorVMTests's reflection reload and the
-      # HelloWorld open-performance test of CPU, and load on the same box while Core.Tests loads
-      # several AssemblyLoadContexts concurrently is what corrupted the process into an
-      # AccessViolationException (CI runs 36413425390, 36415354694, 36381532778). One module at a
+      # HelloWorld open-performance test of CPU (CI runs 36415354694, 36381532778). One module at a
       # time removes the contention instead of raising any test's timeout or budget.
       - name: Test
         env:
@@ -78,6 +79,7 @@ jobs:
           --max-parallel-test-modules 1
           --report-xunit-trx --results-directory TestResults
           -- --ignore-exit-code 8 --coverage --coverage-output-format cobertura
+          --coverage-settings ${{ github.workspace }}/tests/CodeCoverage.config
 
       # The CLI returns exit code 1 for --version until the P2 redesign and prints it to stderr,
       # so only the combined output is checked.
