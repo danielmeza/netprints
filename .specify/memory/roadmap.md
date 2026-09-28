@@ -130,6 +130,8 @@ intermediate schema versions are shipped.
 Graph-format follow-ups from P1: `format --check` and `regen --check`, `netprints git-install`
 (a `textconv` diff and the optional `netprints merge` driver), and SchemaStore registration of the
 `.netpc.json` schema.
+Done when (owner decision 2026-09-28, applies P2 onward): the phase's features work end-to-end and
+docs updated (guides, API reference, ADRs as applicable).
 
 ### P3a — Editor shell (owner-approved 2026-09-25; source: `docs/research/2026-09-25-ux-audit/`)
 - **Layout:** a single window with a project tree, tabbed graphs, an inspector and a bottom panel (Errors / Output / C#).
@@ -168,12 +170,18 @@ Graph-format follow-ups from P1: `format --check` and `regen --check`, `netprint
   arguments (name and type; modifiers once P3b adds them). An override takes its signature from the base
   method, and that signature is read-only. P1 only names entries at creation (`CustomEvent1`, …) and gives
   them no arguments.
+- **Editor guides** (owner decision 2026-09-28; moved out of P1 because the shell they screenshot didn't
+  exist yet): screenshot-heavy user guides for the editor UI (the shell layout, docking, the start
+  dashboard, navigation basics), added to the docs site once this phase's UI is stable enough to shoot.
+- **Done when:** also docs updated (guides, API reference, ADRs as applicable), including the editor
+  guides above.
 
 ### P3 — Editor extension host
 `NetPrints.Desktop --profile`, plugin-loaded editor extensions, UI contributions (commands,
 inspector sections, panels, settings pages), sample non-Unreal extension, anything functional
 left beyond P0 parity. Publishes the `NetPrints.Serialization` and `NetPrints.Extensibility`
 packages for extension authors. No performance work here (owner decision 2026-09-25: see P8).
+Done when: also docs updated (guides, API reference, ADRs as applicable).
 
 ### P3b — Declarations and code style (owner-approved 2026-09-26)
 One extensible engine for what NetPrints can declare and how it writes C#. It is **extensible from the
@@ -253,6 +261,7 @@ profiles and P3 extensions use, so custom emitters need no core changes.
 
   Whether XML docs are required or optional, and their exact shape, follows the `.editorconfig`-driven style
   this phase already builds.
+- **Done when:** also docs updated (guides, API reference, ADRs as applicable).
 
 ### P4 — VSIX (deferred)
 Deferred by the project owner on 2026-09-24; revisit after P3/P5. When resumed:
@@ -261,11 +270,13 @@ with VS project `IDocumentStore`; Community.VisualStudio.Toolkit, SDK-style. Sep
 workflow chained after `CI` (`workflow_run`, windows-latest, path-filtered). Resolve the
 Nodify.Avalonia 1.0.2 net7.0-only limitation (editor cannot target netstandard2.0) — e.g.
 out-of-process editor window or a maintained/forked canvas.
+Done when: also docs updated (guides, API reference, ADRs as applicable).
 
 ### P5 — VS Code extension + browser build
 Spike Avalonia.Browser + Nodify in a webview (CSP `wasm-unsafe-eval`, size, startup);
 `NetPrints.Sidecar` (Roslyn/codegen, JSON-RPC `IHostChannel`, shipped as dotnet tool with
 bundled self-contained binaries as fallback); TS `CustomEditorProvider`; standalone browser build.
+Done when: also docs updated (guides, API reference, ADRs as applicable).
 
 ### P8 — Performance
 Dedicated optimization phase (owner decision 2026-09-25: performance is kept out of feature
@@ -275,6 +286,7 @@ the CI runner. Also: translate the generated-code preview off the UI thread; Dyn
 ReactiveUI throughput for large graphs and catalogs; `MetadataReference` caching; startup
 time; memory profile of reflection caches. UX audit items L3 (search cold start) and L4. Benchmarks (BenchmarkDotNet) + performance budgets
 enforced in CI.
+Done when: also docs updated (guides, API reference, ADRs as applicable).
 
 ### U1–U3 (NetPrintsUnreal repo)
 Linux go/no-go spike (2026-09-25, UE 5.8.3 prebuilt): **go with caveats**. Build, editor start,
@@ -306,6 +318,7 @@ through a `NetPrints.Sdk` PackageReference, so UnrealSharp's own generators see 
 async/await, delegates, components, containers. U3: `UnrealSharpNetPrints` C++ plugin
 launcher, Unreal `IHostChannel` pipe, `unreal` project profile, upstream PR implementing
 `CSAssetTypeAction_CSBlueprint::OpenAssetEditor` as an external-editor hook.
+Done when (each of U1, U2, U3): also docs updated (guides, API reference, ADRs as applicable).
 
 ### P6 — Usability (Blueprint-level ease of use)
 Goal: someone who does not know C# can build complete classes comfortably; the C# stays visible
@@ -358,6 +371,7 @@ for those who want to learn it.
     by P3b's designer comments to preview a designer's own method `Summary`, not just built-in doc);
   - start page and samples, accessibility (names for icon buttons, contrast ≥ 4.5:1, keyboard navigation);
   - Nodify built-ins not used yet (minimap, fit to view, groups/comments, alignment, keyboard navigation).
+- **Done when:** also docs updated (guides, API reference, ADRs as applicable).
 
 ### P7 — Structured code generation
 Emit `if/else`, `for/foreach/while`, `Sequence` blocks and `return` from the exec graph using
@@ -372,6 +386,7 @@ Block-scoped local variables (owner idea, 2026-09-25): variables owned by for/fo
 - Using a variable outside its scope is an error shown on the node.
 - Semantics to define in the spec: per-iteration reset (C# semantics), capture by async/latent nodes, and
   irregular graphs where a node belongs to several scopes.
+Done when: also docs updated (guides, API reference, ADRs as applicable).
 
 ### Candidates (unscheduled)
 - Parameter modifiers and C# syntax variants: moved into **P3b** (2026-09-26).

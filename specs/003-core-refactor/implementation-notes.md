@@ -4507,18 +4507,21 @@ E2E suite (AGENTS.md's "A stray saved variable under samples/ broke 11 tests on 
   (`~/.local/share/JetBrains/Toolbox/scripts/rider`), actually opening it, building the sample and
   visually confirming the `*.netpc.json`/`*.netpc.g.cs` nesting in its Solution/Project view is a GUI
   interaction with no headless equivalent, so it was not attempted (a guess at "it probably nests"
-  would not be a verified check). **Owner manual checks pending** (research K9's own framing: "one
+  would not be a verified check). **Owner manual checks** (research K9's own framing: "one
   manual check per IDE, recorded in the PR"):
   1. Visual Studio 2022: open `samples/HelloWorld/HelloWorld.csproj` (or a copy per quickstart §2),
      confirm it builds and that `HelloWorld.Program.netpc.g.cs` nests under
-     `HelloWorld.Program.netpc.json` in Solution Explorer.
-  2. Visual Studio 2026: same as above.
+     `HelloWorld.Program.netpc.json` in Solution Explorer. **Still open** for the owner.
+  2. Visual Studio 2026: same as above. **Still open** for the owner.
   3. Rider: same as above (Rider's project view has its own nesting rule for `DependentUpon`, separate
-     from VS Code's `explorer.fileNesting.patterns`).
+     from VS Code's `explorer.fileNesting.patterns`). **Confirmed by the owner (2026-09-28): Rider's
+     file nesting works** — `HelloWorld.Program.netpc.g.cs` nests under `HelloWorld.Program.netpc.json`
+     in the Project view, as expected from the generated file's `DependentUpon`.
   4. Once GitHub Pages is enabled and the docs site has deployed (sub-phase L/owner step), reopen
      `HelloWorld.Program.netpc.json` in VS Code and confirm schema validation/completion now works
-     through the resolved `$schema` URL.
-  T106 stays unticked in tasks.md until an owner (or a future batch with GUI access) completes 1–3;
+     through the resolved `$schema` URL. **Still open** for the owner, blocked on Pages regardless of
+     IDE access.
+  T106 stays unticked in tasks.md until the owner completes 1 and 2 (Rider/item 3 is now confirmed);
   item 4 is blocked on Pages regardless of IDE access.
 - **T107**: `dotnet format NetPrints.slnx --verify-no-changes` clean (no output). Full suite
   (`dotnet test --solution NetPrints.slnx -c Release --no-build --no-progress --no-ansi --
@@ -4532,8 +4535,9 @@ E2E suite (AGENTS.md's "A stray saved variable under samples/ broke 11 tests on 
 - Open questions for review: (1) whether the ~50–100 ms literal-3 s overshoot in the SC-005 measurement
   (§T105 above) is worth a follow-up in P8, given it is entirely the documented reflection warm-up cost
   and well inside the 3× bound this task actually gates on; (2) T106 is intentionally left unticked —
-  confirm the owner will do the three IDE checks (and the post-Pages VS Code schema check) rather than
-  a future agent attempting them through some remote-desktop/VNC setup.
+  Rider's file nesting is now confirmed by the owner (2026-09-28); VS 2022/2026 and the post-Pages
+  VS Code schema check remain for the owner rather than a future agent attempting them through some
+  remote-desktop/VNC setup.
 
 ## Sub-phase L, batch L1 (T109–T111): versioning, package metadata, packable projects
 
