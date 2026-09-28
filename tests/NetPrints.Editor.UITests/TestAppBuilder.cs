@@ -3,11 +3,15 @@ using Avalonia;
 using Avalonia.Headless;
 using Avalonia.Media;
 using NetPrints.Editor.UITests;
+using NetPrints.Testing;
 
 [assembly: AvaloniaTestApplication(typeof(TestAppBuilder))]
 
 // All UI tests share one headless UI thread.
 [assembly: CollectionBehavior(DisableTestParallelization = true)]
+
+// samples/ pollution guard (AGENTS.md "Never leave changes under samples/"); see its own XML doc.
+[assembly: AssemblyFixture(typeof(SamplesDirectoryGuardFixture))]
 
 namespace NetPrints.Editor.UITests;
 

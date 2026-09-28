@@ -1,0 +1,8 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Shared test-support fixtures with no UI/Avalonia dependency, used by every test assembly
+       that touches samples/ (Core.Tests, Editor.Tests, Editor.UITests, Desktop.E2ETests). -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+</Project>

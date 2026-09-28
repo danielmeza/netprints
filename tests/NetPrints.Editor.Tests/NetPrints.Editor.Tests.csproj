@@ -27,6 +27,7 @@
     <ProjectReference Include="..\..\src\NetPrints.Reflection\NetPrints.Reflection.csproj" />
     <ProjectReference Include="..\..\src\NetPrints.Editor\NetPrints.Editor.csproj" />
     <ProjectReference Include="..\..\src\NetPrints.Workspace\NetPrints.Workspace.csproj" />
+    <ProjectReference Include="..\NetPrints.Testing\NetPrints.Testing.csproj" />
     <!-- Built first so the extension folder exists; the assembly itself is loaded by the extension loader, not referenced. -->
     <ProjectReference Include="..\NetPrints.TestExtension\NetPrints.TestExtension.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
