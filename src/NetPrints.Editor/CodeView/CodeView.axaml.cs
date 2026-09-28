@@ -7,6 +7,7 @@ using Avalonia.Styling;
 using AvaloniaEdit.Folding;
 using AvaloniaEdit.Rendering;
 using AvaloniaEdit.TextMate;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Compilation;
 using NetPrints.Editor.Hosting;
@@ -52,6 +53,15 @@ public sealed partial class CodeView : UserControl, IDisposable
     /// <summary>The wrapped AvaloniaEdit editor (public for headless UI tests; <c>Editor</c>, the
     /// named element itself, is assembly-internal).</summary>
     public AvaloniaEdit.TextEditor CodeEditor => Editor;
+
+    /// <summary>
+    /// Logs faults from hover-triggered quick-info lookups (<see cref="OnPointerHover"/>). Avalonia's
+    /// XAML loader constructs this control with no DI hook, and <c>CodeViewVM</c> deliberately has no
+    /// <c>EditorContext</c> (FR-038), so the host view sets this from its own <c>EditorContext.LoggerFactory</c>
+    /// (<c>ClassInspectorView</c>, the same way <c>GraphEditorView</c> uses <c>graph.Context.LoggerFactory</c>).
+    /// Faults are logged only, never shown as an error dialog: a failed quick-info lookup is cosmetic.
+    /// </summary>
+    public ILoggerFactory? LoggerFactory { get; set; }
 
     private void InstallHighlighting()
     {
@@ -137,7 +147,8 @@ public sealed partial class CodeView : UserControl, IDisposable
             return;
         }
 
-        ShowQuickInfoAsync(Editor.Document.GetOffset(position.Location), CancellationToken.None).Forget(NullLogger<CodeView>.Instance);
+        ILogger logger = LoggerFactory?.CreateLogger<CodeView>() ?? NullLogger<CodeView>.Instance;
+        ShowQuickInfoAsync(Editor.Document.GetOffset(position.Location), CancellationToken.None).Forget(logger);
     }
 
     private void OnPointerHoverStopped(object? sender, PointerEventArgs e) => ToolTip.SetTip(this, null);
