@@ -51,8 +51,12 @@
         <!-- Methods (PAR-24..26) -->
         <Grid RowDefinitions="Auto,*,Auto,Auto">
           <TextBlock Classes="header" Text="Methods" />
+          <!-- SelectedItem is OneWay, off SelectedMethodInList (R2-16, OWN-07b): a projection of
+               OpenedGraph, not a second write target sharing SelectedMethod with the Constructors
+               list. Selection itself is driven only through OpenMethodCommand (the Tapped behavior
+               below). -->
           <ListBox x:Name="MethodList" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorMethodList}" Grid.Row="1" ItemsSource="{Binding Methods}"
-                   SelectedItem="{Binding SelectedMethod}">
+                   SelectedItem="{Binding SelectedMethodInList, Mode=OneWay}">
             <ListBox.ItemTemplate>
               <DataTemplate x:DataType="edclasseditor:MethodVM">
                 <Grid ColumnDefinitions="Auto,*">
@@ -97,8 +101,9 @@
         <!-- Constructors (PAR-27, 28) -->
         <Grid Grid.Row="2" RowDefinitions="Auto,*,Auto">
           <TextBlock Classes="header" Text="Constructors" />
+          <!-- SelectedItem is OneWay, off SelectedConstructorInList (R2-16, OWN-07b): see the Methods list above. -->
           <ListBox x:Name="ConstructorList" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorConstructorList}" Grid.Row="1" ItemsSource="{Binding Constructors}"
-                   SelectedItem="{Binding SelectedMethod}">
+                   SelectedItem="{Binding SelectedConstructorInList, Mode=OneWay}">
             <ListBox.ItemTemplate>
               <DataTemplate x:DataType="edclasseditor:MethodVM">
                 <Grid ColumnDefinitions="Auto,*">
@@ -159,7 +164,12 @@
         <!-- Event graphs (US4) -->
         <Grid Grid.Row="6" RowDefinitions="Auto,*,Auto">
           <TextBlock Classes="header" Text="Event graphs" />
-          <ListBox x:Name="EventGraphList" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventGraphList}" Grid.Row="1" ItemsSource="{Binding EventGraphs}">
+          <!-- SelectedItem is OneWay, off SelectedEventGraphInList (OWN-07b): otherwise this list has
+               no VM-driven selection at all, so the ListBox's own native selection state (set by the
+               Tapped gesture below regardless of any binding) stays highlighted forever once a row is
+               tapped, even after Main or a constructor is opened afterwards. -->
+          <ListBox x:Name="EventGraphList" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventGraphList}" Grid.Row="1" ItemsSource="{Binding EventGraphs}"
+                   SelectedItem="{Binding SelectedEventGraphInList, Mode=OneWay}">
             <ListBox.ItemTemplate>
               <DataTemplate x:DataType="edevents:EventGraphVM">
                 <Grid ColumnDefinitions="Auto,*">

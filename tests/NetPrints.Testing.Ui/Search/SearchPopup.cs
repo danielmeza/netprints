@@ -33,10 +33,19 @@ public sealed class SearchPopup(IUiDriver driver, AutomationQuery window)
         (await Driver.FindAllAsync(new AutomationQuery(AutomationIds.SearchRowText) { Within = Results.Query }, cancellationToken))
             .Select(e => e.Text ?? "").ToList();
 
+    /// <summary>
+    /// Waits until the debounced filter has actually been applied (FLAKE-01): a row already matching
+    /// the previous, unfiltered view would otherwise let a caller act on it before the list committed
+    /// to the typed text, racing a click against the list's own re-virtualization when it finally does.
+    /// </summary>
+    private Task WaitFilterCommittedAsync(CancellationToken cancellationToken) =>
+        Results.WaitUntilAsync(e => e[AutomationPropertyNames.IsEnabled] == "True", "filter committed", cancellationToken, TimeSpan.FromSeconds(60));
+
     /// <summary>Types a filter and waits until a row with <paramref name="expectedRow"/> is shown.</summary>
     public async Task<SearchPopup> FilterAsync(string text, string expectedRow, CancellationToken cancellationToken)
     {
         await Driver.TypeAsync(text, cancellationToken);
+        await WaitFilterCommittedAsync(cancellationToken);
         await Row(expectedRow).GetAsync(cancellationToken);
         return this;
     }
@@ -45,6 +54,7 @@ public sealed class SearchPopup(IUiDriver driver, AutomationQuery window)
     public async Task<string> FilterAsync(string text, Func<string, bool> expectedRow, CancellationToken cancellationToken)
     {
         await Driver.TypeAsync(text, cancellationToken);
+        await WaitFilterCommittedAsync(cancellationToken);
         var rows = await UiWait.ForAsync(Driver, () => RowTextsAsync(cancellationToken), r => r.Any(expectedRow), $"a matching row after typing '{text}'",
             cancellationToken, TimeSpan.FromSeconds(60));
         return rows.First(expectedRow);

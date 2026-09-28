@@ -156,6 +156,30 @@ public class ClassEditorVMTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task OpeningAConstructorClearsTheMethodsListSelectionAndViceVersa()
+    {
+        // R2-16: Methods and Constructors used to two-way bind the same SelectedMethod, so opening a
+        // constructor pushed it into the Methods list (which does not contain it, giving -1), which
+        // flickered the Methods list's own selection to nothing and could push a stale null back into
+        // SelectedMethod through the two-way binding.
+        var main = vm.Methods.Single();
+        await vm.OpenMethodCommand.ExecuteAsync(main);
+        Assert.Same(main, vm.SelectedMethodInList);
+        Assert.Null(vm.SelectedConstructorInList);
+
+        vm.CreateConstructorCommand.Execute(null);
+        var ctor = vm.Constructors.Single();
+
+        Assert.Same(ctor, vm.SelectedConstructorInList);
+        Assert.Null(vm.SelectedMethodInList); // the Methods list's own highlight, not SelectedMethod itself
+
+        await vm.OpenMethodCommand.ExecuteAsync(main);
+
+        Assert.Same(main, vm.SelectedMethodInList);
+        Assert.Null(vm.SelectedConstructorInList);
+    }
+
+    [Fact]
     public async Task ShowsABusyIndicatorOnlyAfterTheDelay()
     {
         // Holds the open "in flight" deterministically: real background work (WarmOverloadsAsync's

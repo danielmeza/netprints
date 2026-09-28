@@ -74,4 +74,35 @@ public class EventGraphTests
         await session.ClassEditor.PressRedoAsync(Token);
         Assert.DoesNotContain(name, await events.EventGraphNamesAsync(Token));
     }
+
+    /// <summary>
+    /// OWN-07b, owner's sequence: with an event graph open, clicking Main must not leave the Event
+    /// graphs list still showing it highlighted too, and vice versa. Only the open item's own list
+    /// may show a selection; the VM's list-highlight projections (R2-16's fix, extended to event
+    /// graphs) are asserted directly, since that is exactly what each ListBox's SelectedItem binds to.
+    /// </summary>
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task OpeningMainAfterAnEventGraphClearsTheOtherListsHighlightAndBack()
+    {
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        var events = session.ClassEditor.EventGraphs;
+        string name = await events.CreateAsync(Token); // also opens it
+
+        await events.OpenAsync(name, Token);
+        var eventGraph = session.ClassVM.EventGraphs.Single(g => g.Name == name);
+        Assert.Same(eventGraph, session.ClassVM.SelectedEventGraphInList);
+
+        await session.ClassEditor.Method("Main").ClickAsync(Token);
+        await session.Graph.Watermark.WaitUntilAsync(e => e.Text == "Main", "graph 'Main' shown", Token);
+
+        Assert.Same(session.ClassVM.Methods.Single(m => m.Name == "Main"), session.ClassVM.SelectedMethodInList);
+        Assert.Null(session.ClassVM.SelectedEventGraphInList);
+
+        // And back: opening the event graph again clears the Methods list's highlight.
+        await events.OpenAsync(name, Token);
+        await session.Graph.Watermark.WaitUntilAsync(e => e.Text == name, $"graph '{name}' shown", Token);
+
+        Assert.Same(eventGraph, session.ClassVM.SelectedEventGraphInList);
+        Assert.Null(session.ClassVM.SelectedMethodInList);
+    }
 }

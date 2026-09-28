@@ -23,8 +23,11 @@
         </Interaction.Behaviors>
       </TextBox>
       <TextBlock Grid.Row="1" Text="Loading..." IsVisible="{Binding IsLoading}" Margin="8" />
+      <!-- IsEnabled="{Binding !IsFiltering}" (FLAKE-01): disabled while the debounced filter is
+           still in flight, so a row that only matches the previous, unfiltered view cannot be
+           clicked and then replaced out from under the pointer once the filter lands. -->
       <ListBox x:Name="ResultList" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SearchResults}" Grid.Row="1" ItemsSource="{Binding Items}" IsVisible="{Binding !IsLoading}"
-               SelectionMode="Single" SelectedItem="{Binding SelectedItem}">
+               IsEnabled="{Binding !IsFiltering}" SelectionMode="Single" SelectedItem="{Binding SelectedItem}">
         <Interaction.Behaviors>
           <!-- Enter selects the highlighted result; fits ExecuteCommandOnKeyDownBehavior (batch X2b). -->
           <ExecuteCommandOnKeyDownBehavior Key="Enter" Command="{Binding SelectCommand}" CommandParameter="{Binding SelectedItem}" />

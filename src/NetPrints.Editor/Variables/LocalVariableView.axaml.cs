@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Input;
+using Avalonia.Interactivity;
 using NetPrints.Editor.Graph;
 
 namespace NetPrints.Editor.Variables;
@@ -7,10 +8,19 @@ namespace NetPrints.Editor.Variables;
 /// <summary>A row of the Variables panel's "Method: &lt;name&gt;" group (US5, sub-phase H).</summary>
 public partial class LocalVariableView : UserControl
 {
-    /// <summary>Loads the control's XAML.</summary>
+    /// <summary>
+    /// Loads the control's XAML and wires the name box's drag-start handlers (R2-03): attached with
+    /// <see cref="RoutingStrategies.Tunnel"/> and <c>handledEventsToo: true</c> so they see the press
+    /// before the <see cref="TextBox"/>'s own class handler marks it handled (the same routing
+    /// <c>GraphEditorView</c> uses for its own pointer handlers, for the same reason).
+    /// </summary>
     public LocalVariableView()
     {
         InitializeComponent();
+
+        NameBox.AddHandler(PointerPressedEvent, OnNamePointerPressed, RoutingStrategies.Tunnel, handledEventsToo: true);
+        NameBox.AddHandler(PointerMovedEvent, OnNamePointerMoved, RoutingStrategies.Tunnel, handledEventsToo: true);
+        NameBox.AddHandler(PointerReleasedEvent, OnNamePointerReleased, RoutingStrategies.Tunnel, handledEventsToo: true);
     }
 
     private LocalVariableVM? ViewModel => DataContext as LocalVariableVM;

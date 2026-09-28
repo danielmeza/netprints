@@ -57,13 +57,12 @@ public class LocalVariablePanelTests
         await session.ClassEditor.PressRedoAsync(Token);
         Assert.Equal(TypeSpecifier.FromType<int>(), method.LocalVariables.Single().Type);
 
-        // Drag onto the canvas opens the Get/Set chooser with both enabled (H1's stopgap,
-        // reachable now that the panel can actually drop a local onto the graph; PAR-57).
-        var data = new DataTransfer();
-        data.Add(DataTransferItem.Create(GraphDragDrop.LocalVariableFormat, localVM));
+        // Dragging the row with real pointer input (press, move, release) opens the Get/Set chooser
+        // with both enabled (H1's stopgap, PAR-57): a synthetic DataTransfer+Drop skipped the row's
+        // own drag source entirely, hiding the name box's TextBox swallowing the press (R2-03).
         var at = await session.Graph.EmptyPointAsync(Token);
 
-        session.App.Driver.Drop(at, data);
+        await session.ClassEditor.LocalVariables.LocalVariableNameBox(localVM.Name).DragToAsync(at, Token);
 
         await session.Graph.GetSet.WaitOpenAsync(Token);
         await session.Graph.GetSet.SetButton.ClickAsync(Token);

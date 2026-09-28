@@ -191,7 +191,24 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
 
     /// <summary>The graph shown in the canvas, or null.</summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SelectedMethodInList), nameof(SelectedConstructorInList), nameof(SelectedEventGraphInList))]
     public partial NodeGraphVM? OpenedGraph { get; set; }
+
+    /// <summary>
+    /// The Methods list's own highlight (R2-16, OWN-07b): a one-way projection of
+    /// <see cref="OpenedGraph"/>, not a second write target sharing <see cref="SelectedMethod"/> with
+    /// <see cref="SelectedConstructorInList"/>. Opening a constructor or an event graph clears this
+    /// (and <see cref="SelectedMethod"/> stays whatever the inspector still shows), instead of both
+    /// the Methods and Constructors lists — or a list and an event graph's row — staying highlighted
+    /// together.
+    /// </summary>
+    public MethodVM? SelectedMethodInList => Methods.FirstOrDefault(m => m.Graph == OpenedGraph?.Graph);
+
+    /// <summary>The Constructors list's own highlight (R2-16): see <see cref="SelectedMethodInList"/>.</summary>
+    public MethodVM? SelectedConstructorInList => Constructors.FirstOrDefault(m => m.Graph == OpenedGraph?.Graph);
+
+    /// <summary>The Event graphs list's own highlight (OWN-07b): see <see cref="SelectedMethodInList"/>.</summary>
+    public EventGraphVM? SelectedEventGraphInList => EventGraphs.FirstOrDefault(g => g.Graph == OpenedGraph?.Graph);
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowClassInspector), nameof(ShowVariableInspector), nameof(ShowMethodInspector))]
@@ -433,6 +450,12 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         SyncMethodSubscriptions();
         SyncDirtyTrackingGraphs();
         DropDetachedState();
+
+        // A member's own VM instance can be replaced (eg. undo/redo) without OpenedGraph changing:
+        // re-evaluate which list row (if any) that VM re-projects to (R2-16, OWN-07b).
+        OnPropertyChanged(nameof(SelectedMethodInList));
+        OnPropertyChanged(nameof(SelectedConstructorInList));
+        OnPropertyChanged(nameof(SelectedEventGraphInList));
     }
 
     private void OnVariablePropertyChanged(object? sender, PropertyChangedEventArgs e)

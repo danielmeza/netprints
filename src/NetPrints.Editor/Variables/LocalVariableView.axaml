@@ -12,10 +12,12 @@
     <Button Classes="icon" ToolTip.Tip="Remove local variable" AutomationProperties.Name="Remove local variable" Command="{Binding RemoveCommand}">
       <mi:MaterialIcon Kind="Minus" />
     </Button>
+    <!-- Drag-start handlers are wired in the code-behind, not here (R2-03): TextBox's own
+         PointerPressed class handler runs first and marks the event handled, so a plain XAML
+         event attribute (bubble, not handledEventsToo) never sees it. -->
     <TextBox x:Name="NameBox" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableName}" Grid.Column="1"
              Text="{Binding Name, UpdateSourceTrigger=LostFocus}" FontSize="14" FontWeight="SemiBold"
-             VerticalAlignment="Center" Background="Transparent"
-             PointerPressed="OnNamePointerPressed" PointerMoved="OnNamePointerMoved" PointerReleased="OnNamePointerReleased" />
+             VerticalAlignment="Center" Background="Transparent" />
     <Button Grid.Column="2" Classes="flat" Content="{Binding Type.ShortName}" ToolTip.Tip="Change type" Command="{Binding RetypeCommand}" />
   </Grid>
 </UserControl>

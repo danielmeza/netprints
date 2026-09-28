@@ -185,6 +185,26 @@ public class SuggestionListVMTests : GraphTestBase
     }
 
     [Fact]
+    public async Task IsFilteringWhileTheDebouncedFilterIsInFlight()
+    {
+        // FLAKE-01: a property that already matches the previous, unfiltered view (eg. "Major" on a
+        // freshly-dropped Version pin) must not be clickable until the debounced filter actually
+        // lands, or the row can be yanked out from under a click that landed just before it settled.
+        await Graph.OpenSearchAsync(new GraphPoint(0, 0), null, TestContext.Current.CancellationToken);
+        var search = Graph.Search;
+        Assert.False(search.IsFiltering);
+
+        search.SearchText = "major";
+        Assert.True(search.IsFiltering);
+
+        Editor.Scheduler.AdvanceBy(search.FilterThrottle.Ticks - 1);
+        Assert.True(search.IsFiltering);
+
+        Editor.Scheduler.AdvanceBy(1);
+        Assert.False(search.IsFiltering);
+    }
+
+    [Fact]
     public async Task TypingIsThrottledInVirtualTime()
     {
         var search = Graph.Search;

@@ -57,7 +57,13 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
             .Filter(predicates, ListFilterPolicy.ClearAndReplace)
             .ObserveOn(new UiDispatcherScheduler(graph.Context.Dispatcher))
             .Bind(out items, resetThreshold: 50)
-            .Subscribe(_ => OnPropertyChanged(nameof(VisibleCount)));
+            .Subscribe(_ =>
+            {
+                OnPropertyChanged(nameof(VisibleCount));
+
+                // The debounced filter just landed in Items (FLAKE-01): safe to click again.
+                IsFiltering = false;
+            });
     }
 
     /// <summary>Filtered rows (headers and suggestions) in display order.</summary>
@@ -89,7 +95,21 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
     [ObservableProperty]
     public partial string SearchText { get; set; } = "";
 
-    partial void OnSearchTextChanged(string value) => textChanges.OnNext(value ?? "");
+    /// <summary>
+    /// True from the moment the search text changes until the debounced filter has actually been
+    /// applied to <see cref="Items"/> (FLAKE-01). The result list disables itself meanwhile: a row
+    /// that already matched the previous, unfiltered view (eg. "Major" on a freshly-dropped
+    /// <see cref="Version"/> pin, before the user finishes typing "major") would otherwise be
+    /// clickable, and get replaced out from under the pointer the moment the filter lands.
+    /// </summary>
+    [ObservableProperty]
+    public partial bool IsFiltering { get; set; }
+
+    partial void OnSearchTextChanged(string value)
+    {
+        IsFiltering = true;
+        textChanges.OnNext(value ?? "");
+    }
 
     /// <summary>Highlighted result, two-way bound to the result list's <c>SelectedItem</c> (PAR-52, batch X2b).</summary>
     [ObservableProperty]
