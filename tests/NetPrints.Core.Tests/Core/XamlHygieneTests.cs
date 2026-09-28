@@ -78,13 +78,7 @@ namespace NetPrints.Tests.Core
         }
 
         /// <summary>E1: <c>x:CompileBindings="False"</c> and <c>{ReflectionBinding</c> are allowlist-only.</summary>
-        private static readonly Dictionary<string, string> E1Allowlist = new(StringComparer.Ordinal)
-        {
-            ["src/NetPrints.Editor/ClassEditor/ClassEditorWindow.axaml:89"] =
-                "OverrideBox's item template binds a converter with no path (MethodSpecifierConverter); needs x:DataType=\"core:MethodSpecifier\" like SelectMethodDialog.axaml (batch X2).",
-            ["src/NetPrints.Editor/Graph/Nodes/NodeView.axaml:93"] =
-                "The overload chooser's item template has the same converter-only binding as above (batch X2).",
-        };
+        private static readonly Dictionary<string, string> E1Allowlist = new(StringComparer.Ordinal);
 
         [Fact]
         public void E1_NoCompiledBindingOptOuts()

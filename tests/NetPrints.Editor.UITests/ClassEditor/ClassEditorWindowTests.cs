@@ -14,22 +14,6 @@ public class ClassEditorWindowTests
 {
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
-    /// <summary>Batch D1 (owner-reported log noise): records every Avalonia "Binding" area message at
-    /// Warning or above, the way opening the inspectors used to log "Value is null" for
-    /// <c>$parent[Window].DataContext.Show*Inspector</c> before the window set its DataContext before
-    /// loading its XAML (assembly-wide sequential tests, TestAppBuilder.cs, so a global sink is safe).</summary>
-    private sealed class BindingWarningLogSink : ILogSink
-    {
-        public List<string> Messages { get; } = [];
-
-        public bool IsEnabled(LogEventLevel level, string area) => level >= LogEventLevel.Warning && area == "Binding";
-
-        public void Log(LogEventLevel level, string area, object? source, string messageTemplate) => Messages.Add(messageTemplate);
-
-        public void Log(LogEventLevel level, string area, object? source, string messageTemplate, params object?[] propertyValues) =>
-            Messages.Add($"{messageTemplate} {string.Join(' ', propertyValues)}");
-    }
-
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task OpeningAClassAndAMethodLogsNoBindingWarnings()
     {

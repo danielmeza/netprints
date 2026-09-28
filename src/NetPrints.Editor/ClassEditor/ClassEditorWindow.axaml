@@ -8,7 +8,7 @@
         xmlns:edinspectors="clr-namespace:NetPrints.Editor.Inspectors"
         xmlns:edsearch="clr-namespace:NetPrints.Editor.Search"
         xmlns:edvariables="clr-namespace:NetPrints.Editor.Variables"
-        xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+        xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia" xmlns:core="clr-namespace:NetPrints.Core;assembly=NetPrints.Core"
         x:Class="NetPrints.Editor.ClassEditor.ClassEditorWindow"
         x:DataType="edclasseditor:ClassEditorVM"
         Title="{Binding Title}"
@@ -85,8 +85,8 @@
                     ItemsSource="{Binding OverridableMethods}"
                     SelectedItem="{Binding SelectedOverride}">
             <ComboBox.ItemTemplate>
-              <DataTemplate>
-                <TextBlock Text="{Binding Converter={x:Static edsearch:MethodSpecifierConverter.Instance}}" x:CompileBindings="False" />
+              <DataTemplate x:DataType="core:MethodSpecifier">
+                <TextBlock Text="{Binding Converter={x:Static edsearch:MethodSpecifierConverter.Instance}}" />
               </DataTemplate>
             </ComboBox.ItemTemplate>
           </ComboBox>

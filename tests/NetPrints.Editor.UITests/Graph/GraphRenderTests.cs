@@ -1,6 +1,8 @@
 using Avalonia.Headless.XUnit;
+using Avalonia.Logging;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.UITests.ClassEditor;
+using NetPrints.Editor.UITests.Driving;
 using NetPrints.Editor.UITests.Hosting;
 
 namespace NetPrints.Editor.UITests.Graph;
@@ -8,6 +10,26 @@ namespace NetPrints.Editor.UITests.Graph;
 public class GraphRenderTests
 {
     private static CancellationToken Token => TestContext.Current.CancellationToken;
+
+    /// <summary>ADR-0007 / batch X2a: NodeView's overload chooser moved off <c>x:CompileBindings="False"</c>;
+    /// opening a graph with nodes (WriteLine's overload chooser included) must not log a binding warning.</summary>
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task RendersSampleMainGraphLogsNoBindingWarnings()
+    {
+        var sink = new BindingWarningLogSink();
+        ILogSink? previousSink = Logger.Sink;
+        Logger.Sink = sink;
+        try
+        {
+            await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        }
+        finally
+        {
+            Logger.Sink = previousSink;
+        }
+
+        Assert.Empty(sink.Messages);
+    }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task RendersSampleMainGraph()
