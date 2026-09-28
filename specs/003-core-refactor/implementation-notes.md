@@ -4157,3 +4157,79 @@ E2E suite (AGENTS.md's "A stray saved variable under samples/ broke 11 tests on 
   updated `editor-services.md`'s `EditorContext` contract listing to match.
 - Full suite, `dotnet build -c Release`, `dotnet format` and the Desktop E2E job totals: see the
   batch's own report.
+
+## Sub-phase J, batch J1 (T098–T100)
+
+- **T098 (ED-T14)**: the I3 fix batch had already removed `HeadlessApp.CodeRefreshScheduler` and its
+  `customize` wiring; the only remaining `customize` use was the constructor's own optional
+  `Func<EditorContext, EditorContext>?` parameter, dropped from `EditorComposition`. `HeadlessApp` now
+  builds a new `tests/NetPrints.Editor.UITests/Hosting/TestComposition.cs` instead: it duplicates
+  `EditorComposition`'s wiring (project system, persistence, reflection, live analysis) but constructs
+  the `EditorContext` directly with the given `RecordingDialogs`/`QueuedFilePicker`/
+  `CapturingProcessLauncher` test doubles, matching editor-services.md §4 ("tests build their own
+  EditorContext ... never through a hook in production code") rather than sharing logic through a
+  test-only seam in `EditorComposition`. `EditorComposition.NetPrintsSdkVersion` became `internal`
+  (`InternalsVisibleTo` extended to `NetPrints.Editor.UITests`) so `TestComposition` references the
+  same constant instead of repeating the literal.
+- **T099**: new `ClassEditorServices` record (`Context`, `UndoRedo`, `Messenger`) and
+  `SelectInspectorMessage(object Target)`. `MemberVariableVM` and `NodeGraphVM` take
+  `ClassEditorServices` instead of `ClassEditorVM owner`; `ClassEditorVM.Services` is built once in its
+  constructor. `MemberVariableVM.Select()` now sends `SelectInspectorMessage(this)` instead of calling
+  `owner.SelectVariable`; `ClassEditorVM` implements `IRecipient<SelectInspectorMessage>` (handles both
+  `MemberVariableVM` and `MethodVM` targets, per the message's documented shape, though only the
+  variable inspector sends it today). `MemberVariableVM.Remove()` now does
+  `services.UndoRedo.Do(EditorCommands.RemoveVariable(Variable.Class, Variable))` directly; the
+  now-unused `ClassEditorVM.RemoveVariable`/`SelectVariable` methods were deleted. Model-driven cleanup
+  (closing graphs, clearing the inspector) was already routed through `OnMembersChanged`/
+  `DropDetachedState` reacting to `Class.Variables.CollectionChanged` (T060/P0 review), so ED-T08's
+  behavior — undo of a removal restores graphs/inspector exactly like the command path — needed no new
+  code; the existing `MemberVariableVMTests` cases already pin it.
+- **T100**: `ExecutionGraph`/`MethodGraph` (`NetPrints.Core`) never raised property-change notifications
+  before this batch — only `Node`/`NodePin` (T008) and `Variable`/`Project` (T009) were migrated to
+  `ModelObject`. `ExecutionGraph` cannot inherit `ModelObject` (it already inherits `NodeGraph`), so it
+  carries `[INotifyPropertyChanged]` directly (CommunityToolkit.Mvvm's class-level attribute, generates
+  the same boilerplate without requiring `ObservableObject` in the hierarchy) and
+  `[ObservableProperty]` on `Visibility`; `MethodGraph.Name`/`Modifiers` became `[ObservableProperty]`
+  too. `MethodVM`'s Name/Visibility/Modifiers setters are now assign-only; `MethodVM` subscribes to its
+  own `Graph.PropertyChanged` to re-raise its VM properties (mirrors `MemberVariableVM`'s existing
+  pattern with `Variable`) and now implements `IDisposable`. `MethodVM`'s `ClassGraph cls` constructor
+  parameter became dead once `cls.MarkDirty()` moved out of the setters, so it was dropped; `Methods`/
+  `Constructors` in `ClassEditorVM` now pass `m => m.Dispose()` as `onRemoved`, matching `Variables`.
+  `MemberVariableVM`'s Name/Visibility/Modifiers setters are likewise assign-only (no direct
+  `MarkDirty()`/`OnPropertyChanged()`). Dirty marking moved to the parent: `ClassEditorVM`'s existing
+  `OnVariablePropertyChanged` (already subscribed per-variable for GetterMethod/SetterMethod cleanup)
+  now also marks dirty for `Variable.Name`/`Visibility`/`Modifiers` — but deliberately *not* for
+  `GetterMethod`/`SetterMethod`, which always change through `UndoRedo.Do` and are already marked dirty
+  by `Applied`, avoiding a double mark on every accessor add/remove. A parallel `subscribedMethods`/
+  `OnMethodPropertyChanged` pair (mirrors `subscribedVariables`) does the same for `MethodVM`'s own
+  Name/Visibility/Modifiers edits. Net effect: no property is ever *un*-marked, and the only remaining
+  double `MarkDirty()` (a command that itself assigns one of these properties, e.g. `AddGetter`, fires
+  both `Applied` and the property-changed forwarding) is harmless — `IsDirty` is a boolean flag, not a
+  counter, and no test asserts a call count; `DirtyTrackingTests` and
+  `MemberVariableVMTests.VariableInspectorEditsModelAndAccessorVisibility` cover the assign-only/re-raise
+  behavior unchanged, and `DirtyTrackingTests.RenamingAMethodInTheInspectorMarksDirty` already pinned the
+  method-inspector case before this batch.
+- **Golden fixture regenerated (T100 fallout)**: `ExecutionGraph`/`MethodGraph` newly implementing
+  `INotifyPropertyChanged` made `NotificationMapTests` (T005/T010's Fody-removal characterization test)
+  fail — not because of a real gap, but because `AllNodesFixtureFactory`'s `MethodGraph`/
+  `ConstructorGraph` instances were never registered by `NotificationMapTests.CollectInstancesByType`
+  (only their nodes were, via `RegisterGraph`), so neither type had a recorded instance once they
+  joined the reflection scan. Added `Register(method)`/`Register(constructor)` alongside the existing
+  `RegisterGraph` calls and regenerated `NotificationMap.golden.json`
+  (`NETPRINTS_UPDATE_SNAPSHOTS=1`): it gained `NetPrints.Core.ConstructorGraph` (`Visibility`, plus
+  empty entries for `Class`/`PreservedDocumentState`/`Project`, which are settable but don't raise) and
+  `NetPrints.Core.MethodGraph` (`Name`, `Modifiers`, `Visibility`, same three empty entries) — the
+  deliberate, expected consequence of T100, not a regression.
+- Suite totals (this batch, Release): full solution `dotnet test` (`--ignore-exit-code 8`) 811 total,
+  0 failed, 801 succeeded, 10 skipped (the same pre-existing headless/E2E self-skips
+  `AGENTS.md`/sub-phase I describe); `dotnet build -c Release` 0 warnings; `dotnet format
+  --verify-no-changes` clean. Desktop E2E job (`NETPRINTS_E2E=1`, `--fail-skips on`): 7/7 passed, 0
+  skipped. `git status samples/` clean throughout.
+- Open questions for review: (1) `SelectInspectorMessage`'s `MethodVM` case in
+  `ClassEditorVM.Receive` is currently unused (only `MemberVariableVM.Select()` sends it) — kept for the
+  documented `object Target` shape, but a reviewer may prefer it deferred to whichever later task makes
+  `MethodVM`'s own `Select`-equivalent go through the messenger too. (2) `TestComposition` duplicates
+  `EditorComposition`'s constructor wiring (~30 lines) rather than sharing it through an extracted
+  production-side factory; this matches the "no test-only hook" contract text literally and follows
+  `TestEditor`'s existing precedent, but a shared internal factory would remove the duplication if a
+  reviewer prefers it.
