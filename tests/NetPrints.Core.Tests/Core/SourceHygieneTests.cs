@@ -277,14 +277,40 @@ namespace NetPrints.Tests.Core
         [GeneratedRegex(@"<WarningLevel>")]
         private static partial Regex WarningLevelPattern();
 
+        [GeneratedRegex(@"<MSBuildWarningsNotAsErrors>(?<value>[^<]*)</MSBuildWarningsNotAsErrors>")]
+        private static partial Regex MSBuildWarningsNotAsErrorsPattern();
+
+        [GeneratedRegex(@"<MSBuildWarningsAsMessages>(?<value>[^<]*)</MSBuildWarningsAsMessages>")]
+        private static partial Regex MSBuildWarningsAsMessagesPattern();
+
+        /// <summary>
+        /// ADR-0003 "Build-property allowances": an engine-level <c>&lt;MSBuildWarningsNotAsErrors&gt;</c>
+        /// or <c>&lt;MSBuildWarningsAsMessages&gt;</c> entry lowers the warning bar the same way a
+        /// compiler-level <c>&lt;NoWarn&gt;</c> does, just for MSBuild's own diagnostics instead of
+        /// Roslyn's. Allowed only for a warning code listed here, keyed by the file and the code.
+        /// </summary>
+        private static readonly HashSet<(string File, string Code)> BuildPropertyAllowlist = new()
+        {
+            // MinVer warns (MINVER1001) when there is no .git history (a source archive); release
+            // contract §1 requires the build to stay green in that case.
+            ("Directory.Build.props", "MINVER1001"),
+        };
+
+        /// <summary>Splits a semicolon-separated MSBuild property value into its literal warning codes, dropping a self-referencing <c>$(...)</c> expansion.</summary>
+        private static IEnumerable<string> ExtractWarningCodes(string value) =>
+            value.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Where(token => !token.StartsWith("$(", StringComparison.Ordinal));
+
         /// <summary>
         /// No <c>.props</c>, <c>.targets</c> or <c>.csproj</c> file anywhere in the repository (except
         /// <c>legacy/</c>, kept for reference and not built) lowers the warning bar the root
         /// <c>Directory.Build.props</c> sets (<c>TreatWarningsAsErrors</c>) or the curated analyzer
         /// severities in <c>.editorconfig</c> establish: a <c>&lt;NoWarn&gt;</c>/<c>&lt;WarningsNotAsErrors&gt;</c>
-        /// entry, <c>&lt;TreatWarningsAsErrors&gt;false&lt;/TreatWarningsAsErrors&gt;</c>, or an explicit
-        /// <c>&lt;WarningLevel&gt;</c> override would each silently do that project-wide, bypassing
-        /// <see cref="NoUnlistedSuppressions"/>'s per-site ledger entirely.
+        /// entry, <c>&lt;TreatWarningsAsErrors&gt;false&lt;/TreatWarningsAsErrors&gt;</c>, an explicit
+        /// <c>&lt;WarningLevel&gt;</c> override, or an unlisted <c>&lt;MSBuildWarningsNotAsErrors&gt;</c>/
+        /// <c>&lt;MSBuildWarningsAsMessages&gt;</c> engine-level suppression (<see cref="BuildPropertyAllowlist"/>)
+        /// would each silently do that project-wide, bypassing <see cref="NoUnlistedSuppressions"/>'s
+        /// per-site ledger entirely.
         /// </summary>
         [Fact]
         public void NoUnlistedBuildWarningSuppressions()
@@ -323,6 +349,28 @@ namespace NetPrints.Tests.Core
                 if (WarningLevelPattern().IsMatch(text))
                 {
                     offenders.Add($"{relativePath}: <WarningLevel>");
+                }
+
+                foreach (Match match in MSBuildWarningsNotAsErrorsPattern().Matches(text))
+                {
+                    foreach (string code in ExtractWarningCodes(match.Groups["value"].Value))
+                    {
+                        if (!BuildPropertyAllowlist.Contains((relativePath, code)))
+                        {
+                            offenders.Add($"{relativePath}: unlisted <MSBuildWarningsNotAsErrors> {code}");
+                        }
+                    }
+                }
+
+                foreach (Match match in MSBuildWarningsAsMessagesPattern().Matches(text))
+                {
+                    foreach (string code in ExtractWarningCodes(match.Groups["value"].Value))
+                    {
+                        if (!BuildPropertyAllowlist.Contains((relativePath, code)))
+                        {
+                            offenders.Add($"{relativePath}: unlisted <MSBuildWarningsAsMessages> {code}");
+                        }
+                    }
                 }
             }
 

@@ -142,7 +142,7 @@ section per file for files that a P1 task deletes, each naming that task; the de
 
 | Project | Package id | Kind | Project-file additions |
 |---|---|---|---|
-| `src/NetPrints.Core` | `NetPrints.Core` | library | `IsPackable`, `GenerateDocumentationFile`, `NoWarn CS1591`, `EnablePackageValidation`, `Description` |
+| `src/NetPrints.Core` | `NetPrints.Core` | library | `IsPackable`, `EnablePackageValidation`, `Description` (`GenerateDocumentationFile` is already repo-wide via `src/Directory.Build.props` §2; no project suppresses CS1591) |
 | `src/NetPrints.Reflection` | `NetPrints.Reflection` | library | same as Core |
 | `src/NetPrints.Sdk` | `NetPrints.Sdk` | MSBuild targets + build tool (project-system.md §2) | `IsPackable`, `IncludeSymbols=false` (no build output: a symbol package would fail with NU5017), `Description` |
 | `src/NetPrints.Cli` | `NetPrints.Cli` | dotnet tool, command `netprints` | `IsPackable`, `PackAsTool`, `ToolCommandName=netprints`, `GenerateDocumentationFile`, `Description` |

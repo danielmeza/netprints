@@ -256,6 +256,16 @@ invariant:
 | `NetPrints.Editor/Graph/GridBackground.cs` : `Render` | IDISP004 | Avalonia's renderer disposes a queued `ICustomDrawOperation` after executing it (a documented Avalonia ownership-transfer contract the analyzer does not know). |
 | `NetPrints.Editor/Hosting/Automation/AutomationAgent.cs` : `ServeAsync` | IDISP007 | Takes ownership of its connection stream (`await using var _ = stream;`), a deliberate transfer, not an accidental double-owner. |
 
+### Build-property allowances
+
+An engine-level `<MSBuildWarningsNotAsErrors>`/`<MSBuildWarningsAsMessages>` entry lowers the warning bar
+the same way a compiler-level `<NoWarn>` does, just for MSBuild's own diagnostics instead of Roslyn's, so
+it needs the same per-entry ledger, enforced by `SourceHygieneTests.NoUnlistedBuildWarningSuppressions`:
+
+| File | Property | Code | Reason |
+|---|---|---|---|
+| `Directory.Build.props` | `MSBuildWarningsNotAsErrors` | MINVER1001 | MinVer warns when there is no `.git` history (a source archive); release contract §1 requires the build to stay green in that case. |
+
 ### BannedApiAnalyzers scoping, and the XML-documentation promotion
 
 `src/Directory.Build.props` references `Microsoft.CodeAnalysis.BannedApiAnalyzers` (RS0030) for every
