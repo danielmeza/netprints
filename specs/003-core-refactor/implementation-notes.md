@@ -5349,3 +5349,50 @@ rerun; run 36381532778 (8e318a7) also failed the perf test (10.7 s vs. the 9 s b
   NetPrints.slnx -c Release -v q -tl:off --nologo` unaffected (no project files touched).
   CI: pushed to `003-core-refactor`; see the PR (danielmeza/netprints#6) for the resulting `CI` and new
   `Docs` workflow runs.
+
+## Batch L5 / Checkpoint L
+
+- **T119 (§10, wiki)**: `.github/wiki/Home.md`, `.github/wiki/_Sidebar.md` (both verbatim from the
+  contract, five absolute links each) and `.github/workflows/wiki.yml` (verbatim: no `pull_request`
+  trigger, `sync` gated by `github.repository == 'danielmeza/netprints' && vars.PUBLISH_WIKI ==
+  'true'`, a `git ls-remote` guard before `github-wiki-action`). `actionlint
+  -shellcheck=.../shellcheck` reports nothing.
+- **T120 (§12, README + install.md)**: added Release/NuGet(`NetPrints.Sdk`
+  flat-container)/Docs badges next to the existing CI/License ones; an "Install" section (editor
+  download table, `dotnet tool install -g NetPrints.Cli`, `dotnet add package NetPrints.Sdk`) right
+  after the intro/screenshot, before "Using the editor"; the old "Getting started" build/run/E2E
+  walkthrough moved and shortened under "Contributing" (build+test only), linking
+  `specs/001-modernize-build/quickstart.md` for the rest and the new
+  `docs/contributing/releasing.md` for packaging. `docs/guide/install.md` replaced the L4 stub with
+  the full page: the three routes, the .NET 10 SDK requirement and why (Microsoft.Build.Locator
+  skips newer SDKs than the running runtime, research R19), Windows SmartScreen/macOS Gatekeeper
+  steps, `sha256sum`/`gh attestation verify`, and `--check-project`'s five exit codes (read from
+  `src/NetPrints.Desktop/ProjectCheck.cs`'s `Exit*` constants, including `ExitRunFailed = 4`, not
+  called out by the contract text). Verified: every README relative link/anchor target exists;
+  `scripts/build-docs.sh` builds `docs/guide/install.md` with no broken links; a local pack +
+  `scripts/verify-packages.sh` passes, including step 2's packed-`NetPrints.Core`-README check.
+- **T121 (§12, ADR 0005)**: `docs/adr/0005-release-and-docs-stack.md`, the ADR 0001 format. Numbered
+  0005 per the owner decision recorded in `docs/adr/README.md` back in an earlier batch (0002 is
+  designer-comments; 0006/0007 already exist) — L3's implementation notes had already flagged this.
+  Renumbered every other reference to the release-and-docs ADR from 0002 to 0005: `tasks.md` (T121's
+  own line, the FR-062 traceability row), `spec.md` FR-062, `plan.md` (the file-tree comment and the
+  sub-phase L summary row), `research.md` R18's Docs row, `contracts/release-and-docs.md` (the file
+  list, T121's own paragraph, RL-T08, the `numberPrefixParser` comment) and
+  `website/docusaurus.config.ts`'s matching comment. Left alone: the batch-L3 implementation-notes.md
+  entries that accurately describe the *past* 0002 state (they already predicted 0005), and the
+  unrelated ADR-0002 (designer-comments-scheduled-p3b) mentions in `roadmap.md` and ADRs 0003/0004.
+  Added the Editor→Generator `UseAppHost=false`/`ReferenceOutputAssembly=false`/`HintPath` section
+  the L1/L2 notes asked for. Verified: `scripts/build-docs.sh` puts it under the site's Decisions
+  category at `website/build/adr/0005-release-and-docs-stack/`.
+- **T122 (Checkpoint L)**: locally, in order: `dotnet build NetPrints.slnx -c Release` (18 projects,
+  0 errors, 0 warnings); full suite `dotnet test --solution NetPrints.slnx -c Release --no-build
+  --no-progress --no-ansi -- --ignore-exit-code 8` — **856 total, 0 failed, 846 succeeded, 10
+  skipped** (this run includes the desktop E2E project's 7 tests, not separately excluded here; no
+  test-affecting source changed since the last full run reported in these notes);
+  `dotnet format NetPrints.slnx --verify-no-changes -v q` clean; a local pack +
+  `scripts/verify-packages.sh` passed; `dotnet publish src/NetPrints.Desktop -c Release -r linux-x64
+  --self-contained -p:PublishSingleFile=false -p:PublishTrimmed=false -o out/linux-x64` then
+  `scripts/smoke-desktop.sh out/linux-x64` passed with no `DISPLAY`; `scripts/build-docs.sh` passed;
+  `actionlint -shellcheck=...` on all four workflows reports nothing. `git status --porcelain --
+  samples tests/NetPrints.Core.Tests/Fixtures` empty throughout; all generated output
+  (`out/`, `local-packages/*.nupkg`, `website/build`) removed before pushing.
