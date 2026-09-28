@@ -4769,3 +4769,125 @@ E2E suite (AGENTS.md's "A stray saved variable under samples/ broke 11 tests on 
   `ProjectCheck` now catches it at its own boundary, but the underlying gap (should this be a
   `TranslationException`/`NPT` diagnostic instead of a raw `InvalidOperationException`?) is unfixed and
   pre-dates this batch; (3) the `LocalSdkLayout` five-way duplication across test projects noted above.
+
+## Batch D1 (owner bug: slow method open)
+
+Inserted into P1 before sub-phase L3. Owner report: opening `samples/HelloWorld`'s `Program` class and
+selecting `Main` showed the graph only after several seconds or several clicks, with Avalonia layout
+passes logged at Information (raw `{Time}`/`{Property}` placeholders) and `Avalonia.Binding` warnings
+(`VariableInspectorView`/`MethodInspectorView` `IsVisible` `Value is null`) around the same moment.
+
+- **Measurement** (headless, in-process, a real `AvaloniaLogSink`-equivalent sink wired through
+  `Avalonia.Logging.Logger.Sink`, not `NullLoggerFactory`, so it exercises the same level filtering as
+  `Program.cs`; see "Root cause" below for why headless in-process still reproduces the two real
+  behaviors, just at smaller absolute numbers than a windowed run): opening `Program`'s class window
+  took ~320 ms; the first double click on `Main` took ~217 ms, of which Avalonia's own three layout
+  passes (`Started/finished layout pass`) accounted for ~101 ms (one pass: 94.5 ms — first-ever
+  control-template realization in the process, JIT/style warm-up, not repeatable); a second, brand-new
+  empty method opened in ~136 ms and re-opening `Main` a third time took ~135 ms, i.e. a real, roughly
+  steady ~135 ms per open once past the one-time warm-up — close to, and the reason for, the 150 ms busy
+  threshold below. At the real, Information-level logging the process actually runs at, opening Main
+  logged only 6 lines (three "Started/Finished layout pass" pairs) — modest in volume, but exactly the
+  content and format the owner quoted (unrendered placeholders included).
+- **Root cause**: two independent issues, not one:
+  1. **Click wiring, not raw speed**: a single click on a method/constructor row only called
+     `SelectMethodCommand` (inspector only); opening the graph needed a *second*, discoverable
+     double-click gesture. Combined with the ~135 ms per-open cost above (well past instant, on a
+     software-rendered/X11-round-tripping real window this scales far past "several seconds" for the
+     *first* graph opened in a session, per the measured one-time warm-up), the owner's "several clicks"
+     matches a single click doing nothing visible while the user waits, then clicking again.
+  2. **Log noise, not a hang**: `AvaloniaLogSink.Log`'s `FormatMessage` appended property values after
+     the still-templated string instead of substituting `{Placeholder}` tokens, and forwarded every
+     Avalonia area (including `Layout`, which logs "Started/finished layout pass" at Information on
+     every pass) at whatever level the process was already running at (Information by default) — so
+     every graph open, and in fact every layout-triggering interaction afterward, kept re-logging this,
+     matching the owner's "the console also shows" complaint independent of actual wall-clock delay.
+  3. **Binding warnings**: `ClassEditorWindow`'s inspector row `IsVisible="{Binding
+     $parent[Window].((ClassEditorVM)DataContext).ShowVariableInspector}"` is a multi-segment compiled
+     binding path; `$parent[Window]` always resolves (the Window exists), but `.DataContext` is
+     transiently null while `VariableInspectorView`/`MethodInspectorView` are constructed as part of
+     `InitializeComponent()`, before `WindowService.OpenClassEditor`'s object initializer assigns
+     `DataContext`. A multi-segment path with a null intermediate always logs a
+     "Value is null" `Avalonia.Binding` warning; a single-segment `{Binding X}` against a
+     not-yet-assigned (or legitimately null) DataContext does not (`ClassInspectorView`'s existing
+     `IsVisible="{Binding ShowClassInspector}"` proves this — it never warned). Setting the window's
+     `DataContext` before `InitializeComponent()` (tried first) fixes this specific warning but makes
+     every other `x:DataType`-templated `ItemsControl` in the same window (`MethodList`,
+     `ConstructorList`, `VariableList`, `GraphEditorView`'s own bindings, …) start evaluating their
+     compiled bindings eagerly against the window's now-immediately-available `ClassEditorVM`, before
+     each item container gets its own per-item DataContext — ~35 new "Unable to cast … to MethodVM/
+     NodeGraphVM/MemberVariableVM" warnings, a regression (`EventGraphTests.
+     CreateOpenAddCustomEventViaSearchAndRemoveUndoable` failed: reopening an already-selected method
+     after switching the canvas away timed out, a second, independent bug the click-wiring fix below
+     also exercises). Reverted that approach; see the fix below instead. `Project.Classes` in
+     `MainWindow.axaml` was the same multi-segment-path pattern (`Project` legitimately null before a
+     project opens), already present before this batch, caught by the new general binding-warning test.
+- **Fix**:
+  - `ClassEditorVM.OpenMethodCommand` (was two commands, `SelectMethodCommand` sync void +
+    `OpenMethodCommand` sync void): now one `async Task OpenMethodAsync` that selects (sets
+    `SelectedMethod`/`Inspector`) and opens, is idempotent (a click on the method already loading, or
+    already open with nothing pending, is a no-op) and supersedes/cancels a pending open for a
+    different method (`CancellationTokenSource`, same pattern as `CodeAnalysisHost.OnDebounced`). Heavy
+    work off the UI thread (AGENTS.md): `WarmOverloadsAsync` snapshots each node's
+    `MethodSpecifier`/constructor `TypeSpecifier` on the calling thread, then resolves their reflection
+    overloads via `Task.Run` before `OpenGraph` builds `NodeGraphVM`/`NodeVM` (which recompute the same,
+    now-memoized-warm overloads synchronously) — real background work, not a `Task.Delay`. `IsOpeningGraph`/
+    `OpeningGraphName` (new `ObservableProperty`s) only flip on via `Context.Scheduler.Schedule(BusyIndicatorDelay,
+    …)` (150 ms, virtual-time-testable, matches the measured ~135 ms steady-state so a normal open never
+    flickers it) — a canvas overlay in `ClassEditorWindow.axaml` ("Opening &lt;name&gt;…") bound to it.
+    `ClassEditorWindow.axaml.cs`'s `OnMethodTapped` calls the single command (kept as a code-behind
+    `Tapped` handler, not the row's `SelectedItem` binding: the method stays the list's selection across
+    an unrelated canvas change like Create Event Graph, so a `SelectedItem`-changed hook would not
+    re-fire on a second click of the same, already-selected method — see the regression above).
+    `Avalonia.Xaml.Behaviors` was considered for wiring this from XAML instead of code-behind (owner
+    request); no build targets Avalonia 12 yet (latest on nuget.org is 11.3.0.6, paired with Avalonia
+    11.3.0), so it was not added.
+  - `AvaloniaLogSink` (`src/NetPrints.Desktop/AvaloniaLogSink.cs`): renders `{Placeholder}` tokens from
+    `propertyValues` in order (`IFormattable.ToString(null, CultureInfo.InvariantCulture)` per value)
+    instead of appending them after the still-templated string; floors `Layout`/`Visual` to `Warning`
+    unless `NETPRINTS_LOG_LEVEL` is explicitly set (`Program.cs`'s `CreateLoggerFactory` now also
+    returns the parsed explicit level, or null, alongside the factory).
+  - `ClassEditorWindow.axaml`: the two inspector views keep their original `DataContext="{Binding
+    SelectedVariable/SelectedMethod}"` override and internal single-segment bindings (`VariableInspectorView.axaml`/
+    `MethodInspectorView.axaml` unchanged from before this batch), but `IsVisible` moved to a wrapping
+    `Panel` bound directly off the window's own (never-overridden) DataContext
+    (`ShowVariableInspector`/`ShowMethodInspector`) instead of the `$parent[Window]` walk — no
+    multi-segment path, so no null-intermediate warning, and `Visual.IsEffectivelyVisible` (what the
+    automation tree and existing tests check) still reflects the wrapper. `MainEditorVM.Classes` (new,
+    `Project?.Classes ?? []`) replaces `MainWindow.axaml`'s `ItemsSource="{Binding Project.Classes}"`
+    for the same reason.
+- **Tests** (red before, green after): `ClassEditorVMTests`:
+  `OpenMethodCommandSelectsAndOpensInOneCall`, `ClickingTheAlreadyOpenMethodDoesNotReopenIt`,
+  `ClickingADifferentMethodOpensItInstead`, `ReclickingTheSameMethodReopensItAfterTheCanvasSwitchedAway`
+  (the regression above), `ShowsABusyIndicatorOnlyAfterTheDelay` (virtual-time, `editor.Scheduler.AdvanceBy`).
+  `ClassEditorWindowTests.OpeningAClassAndAMethodLogsNoBindingWarnings` (a real `ILogSink` capturing
+  `Avalonia.Binding` at Warning+ around `EditorSession.OpenSampleMainAsync`). `AvaloniaLogSinkTests`
+  (new, `tests/NetPrints.Editor.Tests/Desktop/`, referencing `NetPrints.Desktop` directly like
+  `ProjectCheckTests`): placeholder rendering and the chatty-area floor (with/without an explicit
+  level). `OpenMethodPerformanceTests.OpeningMainStaysWithinBudget` (new,
+  `tests/NetPrints.Editor.UITests/ClassEditor/`): 5000 ms bound, generous against the ~217 ms measured
+  above (SearchPerformanceTests' convention), logs the measured time.
+- Verification: `dotnet build NetPrints.slnx -c Release -v q -tl:off --nologo` → 18 projects, 0 errors,
+  0 warnings. `dotnet format NetPrints.slnx --verify-no-changes` clean. Full suite (`dotnet test
+  --solution NetPrints.slnx -c Release --no-build --no-progress --no-ansi -- --ignore-exit-code 8`):
+  **843 total, 0 failed, 833 succeeded, 10 skipped** (the busy-indicator test's first version raced real
+  background `Task.Run` completion against the test's own next statement and flaked once in this same
+  Release run — `ClassEditorVM.OpenGraphDelayForTests`, an internal test seam, made it deterministic;
+  reran clean 5x after the fix). Desktop E2E (`NETPRINTS_E2E=1 NETPRINTS_E2E_DISPLAY_START=150 dotnet
+  test --project tests/NetPrints.Desktop.E2ETests -c Release --no-build --no-progress --no-ansi --
+  --fail-skips on`): **7 total, 0 failed, 7 succeeded, 0 skipped, 5 m 15 s** (a "before" run was not
+  captured separately — this batch does not change the E2E scenarios themselves, only
+  `ClassEditorVM`/`AvaloniaLogSink`/two XAML views they already exercise; T114's own last recorded E2E
+  time was similarly a handful of seconds per scenario). `git status --short samples
+  tests/NetPrints.Core.Tests/Fixtures` empty throughout; no Xvfb/editor processes left running after the
+  run (verified with `pgrep -af Xvfb`/`NetPrints.Desktop`).
+- Open questions for review: (1) the click is wired through a code-behind `Tapped` handler calling one
+  `[RelayCommand]`, not a `SelectedItem` binding or a XAML behavior — revisit once
+  `Avalonia.Xaml.Behaviors` (or an equivalent) ships an Avalonia-12-targeting build; (2) the ~94.5 ms
+  one-time first layout pass (JIT/style/template warm-up) is inherent to Avalonia's rendering pipeline,
+  not application code — a real windowed run's much larger "several seconds" is this same cost
+  amplified by software rendering and X11 round trips plus the click-wiring bug above, not a separate,
+  undiscovered hang; not chased further since the busy indicator now covers it regardless of exact
+  cause. (3) `Project.Classes`'s fix in `MainEditorVM`/`MainWindow.axaml` is a pre-existing,
+  unrelated-to-the-report bug of the same category, fixed opportunistically because the new general
+  "no binding errors" test caught it.
