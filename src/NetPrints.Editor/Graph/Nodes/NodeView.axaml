@@ -119,10 +119,10 @@
           </ItemsControl>
           <!-- Left +/- (PAR-42) -->
           <StackPanel Orientation="Horizontal" IsVisible="{Binding ShowLeftPinButtons}">
-            <Button Classes="icon" ToolTip.Tip="{Binding LeftPlusToolTip}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NodeLeftPlus}" Command="{Binding LeftPinsPlusCommand}">
+            <Button Classes="icon" ToolTip.Tip="{Binding LeftPlusToolTip}" AutomationProperties.Name="{Binding LeftPlusToolTip}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NodeLeftPlus}" Command="{Binding LeftPinsPlusCommand}">
               <mi:MaterialIcon Kind="Plus" />
             </Button>
-            <Button Classes="icon" ToolTip.Tip="{Binding LeftMinusToolTip}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NodeLeftMinus}" Command="{Binding LeftPinsMinusCommand}">
+            <Button Classes="icon" ToolTip.Tip="{Binding LeftMinusToolTip}" AutomationProperties.Name="{Binding LeftMinusToolTip}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NodeLeftMinus}" Command="{Binding LeftPinsMinusCommand}">
               <mi:MaterialIcon Kind="Minus" />
             </Button>
           </StackPanel>
@@ -142,10 +142,10 @@
           </ItemsControl>
           <!-- Right +/- (PAR-42) -->
           <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" IsVisible="{Binding ShowRightPinButtons}">
-            <Button Classes="icon" ToolTip.Tip="{Binding RightPlusToolTip}" Command="{Binding RightPinsPlusCommand}">
+            <Button Classes="icon" ToolTip.Tip="{Binding RightPlusToolTip}" AutomationProperties.Name="{Binding RightPlusToolTip}" Command="{Binding RightPinsPlusCommand}">
               <mi:MaterialIcon Kind="Plus" />
             </Button>
-            <Button Classes="icon" ToolTip.Tip="{Binding RightMinusToolTip}" Command="{Binding RightPinsMinusCommand}">
+            <Button Classes="icon" ToolTip.Tip="{Binding RightMinusToolTip}" AutomationProperties.Name="{Binding RightMinusToolTip}" Command="{Binding RightPinsMinusCommand}">
               <mi:MaterialIcon Kind="Minus" />
             </Button>
           </StackPanel>

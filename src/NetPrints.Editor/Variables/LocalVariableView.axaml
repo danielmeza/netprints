@@ -9,7 +9,7 @@
        member variable row's multi-line layout, since a method can have several locals and the
        Variables panel splits its height between the Class and Method groups. -->
   <Grid ColumnDefinitions="Auto,*,Auto" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableRow}" AutomationProperties.Name="{Binding Name}">
-    <Button Classes="icon" ToolTip.Tip="Remove local variable" Command="{Binding RemoveCommand}">
+    <Button Classes="icon" ToolTip.Tip="Remove local variable" AutomationProperties.Name="Remove local variable" Command="{Binding RemoveCommand}">
       <mi:MaterialIcon Kind="Minus" />
     </Button>
     <TextBox x:Name="NameBox" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableName}" Grid.Column="1"

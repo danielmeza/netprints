@@ -4994,3 +4994,57 @@ with seeded allowlists. See ADR-0007 for the design rationale; this section is t
   --no-build --no-progress --no-ansi -- --fail-skips on`): **7 total, 0 failed, 7 succeeded**. No
   Xvfb/`NetPrints.Desktop` processes left running afterward. `git status --short samples
   tests/NetPrints.Core.Tests/Fixtures` empty throughout.
+
+## Batch X2a (XAML practices, part 2a: burn down E1, E2, E5)
+
+Owner ask: fix every violation seeded in batch X1's E1 (compiled bindings), E2 (color literals) and
+E5 (accessible names) allowlists and shrink each to zero, leaving E3 (event handlers) for batch X2b.
+
+- **E1** (2 → 0). `ClassEditorWindow.axaml`'s `OverrideBox` and `NodeView.axaml`'s overload chooser
+  both bound a path-less `{Binding Converter=...}` on an untyped `DataTemplate` with
+  `x:CompileBindings="False"`. `ClassEditorWindow`'s `OverridableMethods`/`SelectedOverride` are
+  genuinely `MethodSpecifier`, so its template got `x:DataType="core:MethodSpecifier"` (new
+  `xmlns:core`), matching `SelectMethodDialog.axaml`. `NodeVM.Overloads` is `IReadOnlyList<object>`
+  (a `MethodSpecifier`, a `ConstructorSpecifier`, or a size-mode marker string, depending on node
+  kind), so its template got `x:DataType="x:Object"` instead — accurate for the heterogeneous list,
+  and sufficient for a path-less binding, which never resolves a property off the declared type.
+- **E2** (7 → 0). Eight color literals (one line, `NodeView.axaml`'s node `Border`, carried two: a
+  `Background` and a `BoxShadow`) moved to eight new tokens in `EditorStyles.axaml`'s existing
+  `ThemeDictionaries`, alongside `GraphGrid.MinorColor/MajorColor`: `GraphWatermark.Foreground`,
+  `Node.CardBackground`, `Node.CardShadow` (a `BoxShadows` resource, not just a color — Avalonia
+  parses its string content as a unit, the same way `Thickness`/`Color` resources do),
+  `Node.TitleForeground`, `Node.SubtitleForeground`, `OpeningGraphIndicator.Background/Foreground`
+  and `BusyOverlay.Background`. Every **Dark** value is the original literal unchanged (the app's
+  `RequestedThemeVariant` is fixed to `Dark`, so this is a pixel no-op — confirmed by the unmodified
+  `SnapshotTests` baselines below). **Light** values are new, judgment-call choices (lighter overlay
+  tints, dark-on-light text, a softer drop shadow) never exercised by a running theme switch; a later
+  batch that adds a light-theme toggle should eyeball them.
+- **E5** (12 → 0). Every icon-only button got `AutomationProperties.Name` equal to its own
+  `ToolTip.Tip` (literal where the tip is a literal, `{Binding ...ToolTip}` where the tip is bound):
+  three in `ClassEditorWindow.axaml` (remove method/constructor/event graph), four in `NodeView.axaml`
+  (the four pin +/- buttons), and one each in `ReferencesDialog.axaml`, `LocalVariableView.axaml` and
+  `MemberVariableView.axaml` (remove variable, ×2 there: remove getter, remove setter).
+- All edits to files that also carry **E3** allowlist entries (`ClassEditorWindow.axaml`,
+  `ReferencesDialog.axaml`, `MemberVariableView.axaml`) kept every line's attributes on their
+  existing line (appending, never inserting a line) so the untouched E3 `file:line` keys stay valid;
+  confirmed by re-`grep -n`-ing each E3 anchor line (`OnEventGraphDoubleTapped`,
+  `OnDiagnosticRowDoubleTapped`, `OnCloseClicked`, `OnNameTapped`, `OnGetterDoubleTapped`,
+  `OnSetterDoubleTapped`) after every edit.
+- **No-binding-warnings regression test for `NodeView`**: `ClassEditorWindowTests`'s
+  `BindingWarningLogSink` moved to `tests/NetPrints.Editor.UITests/Driving/BindingWarningLogSink.cs`
+  (was a private nested class) so `Graph/GraphRenderTests.cs` could reuse it for a new
+  `RendersSampleMainGraphLogsNoBindingWarnings` test: the sample's `Main` method calls
+  `Console.WriteLine`, which has other overloads, so `EditorSession.OpenSampleMainAsync` already
+  renders the overload chooser's item template — the same cheap graph-with-nodes session every other
+  `GraphRenderTests`/`SnapshotTests` case uses, no new fixture needed.
+- **Snapshot baselines**: none changed. Every recolored property's Dark value is byte-identical to
+  the literal it replaced, so `SnapshotTests` (`class-editor-main`, `node-call-method`,
+  `main-window-*`, etc.) passed unmodified against the existing committed baselines.
+- Verification: `dotnet build NetPrints.slnx -c Release -v q -tl:off --nologo` → 18 projects, 0
+  errors, 0 warnings. `dotnet format NetPrints.slnx --verify-no-changes -v q` clean. Full suite
+  (`dotnet test --solution NetPrints.slnx -c Release --no-build --no-progress --no-ansi --
+  --ignore-exit-code 8`, from the worktree root): **850 total, 0 failed, 840 succeeded, 10 skipped**.
+  E2E suite (`NETPRINTS_E2E=1 NETPRINTS_E2E_DISPLAY_START=150 dotnet test --project
+  tests/NetPrints.Desktop.E2ETests -c Release --no-build --no-progress --no-ansi -- --fail-skips
+  on`): **7 total, 0 failed, 7 succeeded**. No Xvfb/`NetPrints.Desktop` processes left running
+  afterward.

@@ -30,7 +30,7 @@
                             ToolTip.Tip="Whether to include the reference as a source in the compilation process."
                             ToolTip.ShowOnDisabled="True" VerticalAlignment="Center" />
               <Button Grid.Column="2" Classes="icon" Width="32" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ReferenceRemove}" Height="32" CornerRadius="16"
-                      ToolTip.Tip="Remove this reference"
+                      ToolTip.Tip="Remove this reference" AutomationProperties.Name="Remove this reference"
                       Command="{Binding $parent[ItemsControl].((edreferences:ReferenceListVM)DataContext).RemoveCommand}"
                       CommandParameter="{Binding}">
                 <mi:MaterialIcon Kind="Minus" />

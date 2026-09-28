@@ -248,21 +248,7 @@ namespace NetPrints.Tests.Core
         }
 
         /// <summary>E5: an icon-only button (its only content is an icon element) needs an accessible name.</summary>
-        private static readonly Dictionary<string, string> E5Allowlist = new(StringComparer.Ordinal)
-        {
-            ["src/NetPrints.Editor/ClassEditor/ClassEditorWindow.axaml:59"] = "Remove-method icon button; add AutomationProperties.Name (batch X2).",
-            ["src/NetPrints.Editor/ClassEditor/ClassEditorWindow.axaml:105"] = "Remove-constructor icon button; add AutomationProperties.Name (batch X2).",
-            ["src/NetPrints.Editor/ClassEditor/ClassEditorWindow.axaml:166"] = "Remove-event-graph icon button; add AutomationProperties.Name (batch X2).",
-            ["src/NetPrints.Editor/Graph/Nodes/NodeView.axaml:122"] = "Node pin/collapse icon button; add AutomationProperties.Name (batch X2).",
-            ["src/NetPrints.Editor/Graph/Nodes/NodeView.axaml:125"] = "Node pin/collapse icon button; add AutomationProperties.Name (batch X2).",
-            ["src/NetPrints.Editor/Graph/Nodes/NodeView.axaml:145"] = "Node pin/collapse icon button; add AutomationProperties.Name (batch X2).",
-            ["src/NetPrints.Editor/Graph/Nodes/NodeView.axaml:148"] = "Node pin/collapse icon button; add AutomationProperties.Name (batch X2).",
-            ["src/NetPrints.Editor/References/ReferencesDialog.axaml:32"] = "Remove-reference icon button; add AutomationProperties.Name (batch X2).",
-            ["src/NetPrints.Editor/Variables/LocalVariableView.axaml:12"] = "Remove-variable icon button; add AutomationProperties.Name (batch X2).",
-            ["src/NetPrints.Editor/Variables/MemberVariableView.axaml:11"] = "Remove-variable icon button; add AutomationProperties.Name (batch X2).",
-            ["src/NetPrints.Editor/Variables/MemberVariableView.axaml:22"] = "Add-getter icon button; add AutomationProperties.Name (batch X2).",
-            ["src/NetPrints.Editor/Variables/MemberVariableView.axaml:33"] = "Add-setter icon button; add AutomationProperties.Name (batch X2).",
-        };
+        private static readonly Dictionary<string, string> E5Allowlist = new(StringComparer.Ordinal);
 
         [Fact]
         public void E5_IconOnlyButtonsHaveAnAccessibleName()
