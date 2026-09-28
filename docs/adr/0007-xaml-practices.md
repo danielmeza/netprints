@@ -1,0 +1,94 @@
+# 0007: XAML practices for the Avalonia editor
+
+## Status
+
+Accepted (2026-09-28).
+
+## Context
+
+`src/NetPrints.Editor` had no written XAML conventions beyond ADR-0004's popup rule and whatever a
+given PR happened to do. A research pass (`avalonia-xaml-research.md`, batch X1) surveyed every
+`.axaml`/`.axaml.cs` file against the Avalonia 12 docs and the Xaml.Behaviors library and found a
+recurring pattern worth codifying before P3a (the editor-shell rewrite) touches most of these files
+again: several code-behind event handlers exist only to call one view-model command
+(`OnMethodTapped` being the clearest case, added by batch D1 and migrated away by this ADR), several
+views hardcode a color that should be a Light/Dark token, and a few automation ids and icon-only
+buttons predate the `AutomationIds`/accessibility conventions used elsewhere.
+
+The owner set three ground rules for any such policy:
+
+1. Prefer XAML (bindings, VM commands, styles, behaviors) over code-behind. Code-behind stays for
+   complex view-only logic — drag gestures, pointer math. Every UI action is one VM command, unit
+   tested without the view.
+2. The rules are tiered and not too strict. Converters are fine: a converter may map app or business
+   state to visuals (color, brush, icon, visibility, style); computing or deciding the state
+   (validation, rules, service or model calls, side effects) stays in the VM. The VM decides *what*
+   the state is; a converter may decide *how it looks*.
+3. Prefer a prebuilt behavior (Xaml.Behaviors) first, a custom behavior second, and code-behind only
+   as a last resort.
+
+## Decision
+
+- **The `avalonia-xaml` skill** (`.claude/skills/avalonia-xaml/SKILL.md`) is the single place these
+  rules live, loaded whenever a change touches `.axaml`, `.axaml.cs`, a converter, a style/resource or
+  a VM command bound from XAML. It states the three owner rules above as tiers:
+  - **Enforced** (E1-E6 below): a test fails the build. An exception needs an allowlist entry with a
+    reason.
+  - **Default** (D1-D16): follow it unless there's a reason not to, stated in the PR.
+  - **Consider**: tips, not rules.
+  A sibling `behaviors-catalog.md` holds the full generated catalog of the 383 Xaml.Behaviors 12.0.7
+  types across the 10 packages, so the skill itself stays under the size a model reads comfortably;
+  the skill's D11 keeps only a short "for X, prefer Y" table plus the rule for when a prebuilt
+  behavior beats a custom one or code-behind (rule 3).
+- **Package choice.** NetPrints references `Xaml.Behaviors.Interactions`,
+  `Xaml.Behaviors.Interactions.Custom` and `Xaml.Behaviors.Interactions.DragAndDrop`, all at 12.0.7
+  (the latest 12.x release; floor is Avalonia >= 12.0.5, repo runs 12.1.3). Not the
+  `Xaml.Behaviors.Avalonia` meta package: its id on nuget.org stops at the 11.3 line and does not
+  target Avalonia 12, and even a correctly-versioned meta package would pull in packages NetPrints
+  does not use (Animations, Draggable, Events, ReactiveUI, Responsive, Scripting).
+  `Xaml.Behaviors.Interactivity` (the base types, `EventTriggerBehavior`'s and `InvokeCommandAction`'s
+  actual home) comes in transitively as a shared dependency of the three referenced packages, so it is
+  not referenced directly. All three packages' types resolve in the default `https://github.com/avaloniaui`
+  xmlns, so no prefix is needed in a view.
+- **Enforced checks (`XamlHygieneTests`, next to `SourceHygieneTests`, same project and pattern).**
+  Each rule parses every `src/**/*.axaml` file with `XDocument.Load(path, LoadOptions.SetLineInfo)` and
+  reports `file:line`:
+  - E1: no `x:CompileBindings="False"` or `{ReflectionBinding}` (compiled bindings only).
+  - E2: no hex or named color literal on a brush/color property outside a `ThemeDictionaries` block
+    (`Transparent` is exempt, since it only makes an element hit-testable).
+  - E3: no `Click`/`Tapped`/`DoubleTapped`/`Key*`/similar handler wired to a bare method name in XAML;
+    pointer and `DragDrop.*` handlers are exempt (gestures are view mechanics, rule 1's carve-out).
+  - E4: every `AutomationProperties.AutomationId` is `{x:Static AutomationIds.*}`, never a literal.
+  - E5: an icon-only button (`Button`-family, no `Content`, every child an icon element) has
+    `AutomationProperties.Name` or `LabeledBy`.
+  - E6: no `{StaticResource key}` where `key` is declared under a `ThemeDictionaries` (it must be
+    `DynamicResource`, or the lookup throws or freezes one theme variant).
+  - **Allowlist policy:** E1, E2, E3 and E5 each carry an explicit `Dictionary<"file:line", reason>`
+    seeded with every violation found when the rule shipped (2, 7, 15 and 12 entries respectively,
+    after this batch's own migration removed two E3 entries — see Consequences). Each test also fails
+    if an allowlisted key is no longer produced by the scan, so an allowlist can only shrink: fixing a
+    violation and forgetting to remove its entry breaks the build, the same direction of failure
+    `NullForgivingAllowlist` and `SuppressionAllowlist` use in `SourceHygieneTests`. E4 and E6 ship at
+    zero violations, so they get no allowlist at all — they are pure regression guards.
+- **First migration.** `ClassEditorWindow`'s method/constructor row `Tapped="OnMethodTapped"`
+  (batch D1) is replaced with `EventTriggerBehavior EventName="Tapped"` + `InvokeCommandAction
+  Command="...OpenMethodCommand" CommandParameter="{Binding}"` in XAML, and the handler is deleted.
+  This is the "no prebuilt fits, no reusable custom behavior is worth writing for one call site"
+  branch of rule 3: `Xaml.Behaviors.Interactions.Custom`'s `ExecuteCommandOnTappedBehavior` is the
+  more direct fit and is left for the next batch that touches this file, once the row markup is
+  otherwise stable. `EventTriggerBehavior` is reflection-based and not trim-safe, which is exactly why
+  the skill lists it as a fallback rather than a first choice.
+
+## Consequences
+
+- New XAML work has one document to load instead of re-deriving conventions per PR, and a build-time
+  gate that only tightens (an allowlist can shrink but the check for a *new* violation is always live).
+- The remaining catalogued violations (2 for E1, 7 for E2 after this batch fixed nothing there, 13 for
+  E3 after removing the two `OnMethodTapped` sites, 12 for E5) are batch X2's burn-down list; the
+  roadmap (P3a) records this so it is not lost between batches.
+- Referencing three Xaml.Behaviors packages instead of the meta package means a future package that
+  NetPrints starts needing (say, `Xaml.Behaviors.Interactions.Draggable` for list reordering) must be
+  added explicitly; this is intentional (rule 2's "not too strict" cuts against unused dependencies,
+  not against explicit ones).
+- `EventTriggerBehavior` is reflection-based; if trimming the editor ever becomes a goal, every use
+  found by grepping for it is a candidate to replace with a typed trigger or behavior first.

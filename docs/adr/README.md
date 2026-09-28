@@ -17,3 +17,4 @@ instead.
 - [0004: Canvas overlays go through a pointer-anchored host, `CanvasPopup`](0004-canvas-overlays-pointer-anchored-host.md)
 - 0005: reserved for the release ADR (T121)
 - [0006: Parallel desktop E2E via a worker pool, one class per scenario](0006-parallel-desktop-e2e.md)
+- [0007: XAML practices for the Avalonia editor](0007-xaml-practices.md)

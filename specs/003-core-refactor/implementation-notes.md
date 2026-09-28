@@ -4949,3 +4949,48 @@ shared-resource rule, how to add a new E2E test); this section is the batch's ti
   `test.runner: Microsoft.Testing.Platform` is resolved from the process's working directory, and
   without it `dotnet test` silently falls back to the legacy VSTest CLI (which rejects this repo's
   `--project`/`--` MTP-style arguments with `MSB1001: Unknown switch`).
+
+## Batch X1 (XAML practices, part 1 of 2)
+
+Owner ask: codify the three XAML-vs-code-behind rules (XAML/behaviors first, converters may decide
+*how* not *what*, prebuilt behavior before custom before code-behind) as a skill, add Xaml.Behaviors,
+migrate one code-behind handler as the first example, and enforce the research note's E1-E6 checks
+with seeded allowlists. See ADR-0007 for the design rationale; this section is the batch's specifics.
+
+- **Skill**: `.claude/skills/avalonia-xaml/SKILL.md` (203 lines), a sibling `behaviors-catalog.md` for
+  the full generated Xaml.Behaviors 12.0.7 catalog (383 types, 10 packages) so the skill itself stays
+  short. Frontmatter description triggers on `.axaml`, `.axaml.cs`, converters, styles/ControlThemes/
+  resources and VM commands bound from XAML.
+- **Packages** (`Directory.Packages.props`, referenced from `NetPrints.Editor.csproj`):
+  `Xaml.Behaviors.Interactions`, `Xaml.Behaviors.Interactions.Custom`,
+  `Xaml.Behaviors.Interactions.DragAndDrop`, all 12.0.7 (confirmed on nuget.org; the meta package
+  `Xaml.Behaviors.Avalonia` stops at 11.3 and was rejected for that reason).
+  `Xaml.Behaviors.Interactivity` is a transitive dependency of the three, not referenced directly.
+- **First migration**: `ClassEditorWindow.axaml`'s two method/constructor-row `Tapped="OnMethodTapped"`
+  attributes (added by batch D1) became `<Interaction.Behaviors><EventTriggerBehavior
+  EventName="Tapped"><InvokeCommandAction Command="...OpenMethodCommand" CommandParameter="{Binding}"
+  /></EventTriggerBehavior></Interaction.Behaviors>`; `OnMethodTapped` is deleted from
+  `ClassEditorWindow.axaml.cs`. The drag pointer handlers (`OnMethodPointerPressed/Moved/Released`)
+  are untouched. `ClassEditorVMTests` (`OpenMethodCommand` called directly) and
+  `ClassEditorWindowTests`/`EditorSession.OpenSampleMainAsync` (which double-clicks the row through
+  the real headless driver to open Main) both still pass unmodified.
+- **Hygiene tests**: `tests/NetPrints.Core.Tests/Core/XamlHygieneTests.cs`, alongside
+  `SourceHygieneTests.cs`, same allowlist-with-reason pattern. Parses every `src/**/*.axaml` with
+  `XDocument.Load(path, LoadOptions.SetLineInfo)`. Allowlist sizes after this batch's own migration:
+  E1 2, E2 7 (8 violations, one line has two), E3 15 (17 before removing the two `OnMethodTapped`
+  sites), E5 12. E4 and E6 have zero violations and no allowlist (pure regression guards). Each `[Fact]`
+  also asserts no allowlisted key has stopped violating, verified by hand (temporarily allowlisting a
+  non-existent line, and temporarily de-allowlisting a real one, both failed the test as expected,
+  then reverted).
+- **ADR-0007** (`docs/adr/0007-xaml-practices.md`, indexed in `docs/adr/README.md`) and a P3a roadmap
+  bullet (`.specify/memory/roadmap.md`, owner request 2026-09-28) record the policy and point at the
+  allowlists as the burn-down list for batch X2.
+- Verification: `dotnet build NetPrints.slnx -c Release -v q -tl:off --nologo` → 18 projects, 0
+  errors, 0 warnings. `dotnet format NetPrints.slnx --verify-no-changes -v q` clean. Full suite
+  (`dotnet test --solution NetPrints.slnx -c Release --no-build --no-progress --no-ansi --
+  --ignore-exit-code 8`, from the worktree root): **849 total, 0 failed, 839 succeeded, 10 skipped**
+  (E2E scenarios skip without `NETPRINTS_E2E=1`). E2E suite (`NETPRINTS_E2E=1
+  NETPRINTS_E2E_DISPLAY_START=150 dotnet test --project tests/NetPrints.Desktop.E2ETests -c Release
+  --no-build --no-progress --no-ansi -- --fail-skips on`): **7 total, 0 failed, 7 succeeded**. No
+  Xvfb/`NetPrints.Desktop` processes left running afterward. `git status --short samples
+  tests/NetPrints.Core.Tests/Fixtures` empty throughout.

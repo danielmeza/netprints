@@ -151,6 +151,10 @@ Graph-format follow-ups from P1: `format --check` and `regen --check`, `netprint
 - **Internal contribution points** (owner idea, 2026-09-25): commands, panels, dashboard tiles, project
   templates, context-menu items, tooltip providers and go-to providers are registered through one registry,
   and the built-in editor uses it. P3 then opens the same points to plugins.
+- **Adopt Xaml.Behaviors across the editor** (owner request, 2026-09-28): replace every remaining
+  code-behind handler a prebuilt behavior covers (catalog: `.claude/skills/avalonia-xaml/`), custom
+  behaviors for the rest; done when the XAML hygiene allowlists are empty or hold only justified
+  gestures.
 - **Navigation basics** (owner ideas, 2026-09-25):
   - a command palette and "go to anything" (Ctrl+P / Ctrl+Shift+P: graphs, nodes, variables, methods, commands);
   - go to the source or target of a connection with Ctrl+click or the context menu, with a navigation
