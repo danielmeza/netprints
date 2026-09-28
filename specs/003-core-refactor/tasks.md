@@ -188,8 +188,8 @@ Checkpoint E (plan.md). Out of scope (follow-ups, do not implement): `netprints 
 - [x] T098 [US7] Remove the `customize` hook (`EditorComposition(EditorHostServices)` only); `tests/NetPrints.Editor.UITests/Hosting/HeadlessApp.cs` → explicit `TestComposition`; ED-T14
 - [x] T099 [US7] `ClassEditorServices`; `MemberVariableVM`/`NodeGraphVM` take it; `SelectInspectorMessage`; model-driven cleanup; ED-T08 (dirty marking of T060 keeps working: ED-T15 stays green)
 - [x] T100 [US7] Model wrapper setters → assign-only + model `PropertyChanged` forwarding (each still marks the class dirty, ED-T15)
-- [ ] T101 [US7] Nodify commands in `NodeGraphVM`, bound in `src/NetPrints.Editor/Graph/GraphEditorView.axaml`; remove handlers from `GraphEditorView.axaml.cs`; disable Alt+click disconnect; ED-T09
-- [ ] T102 [US7] Architecture gate ED-T10 + fixture `tests/NetPrints.Editor.Tests/Architecture/Fixtures/ViolatingVM.cs.txt` (fails on the fixture first); rule A3 includes Workspace/Generator/Sdk never referencing Avalonia and Generator never referencing `Microsoft.Build*`
+- [x] T101 [US7] Nodify commands in `NodeGraphVM`, bound in `src/NetPrints.Editor/Graph/GraphEditorView.axaml`; remove handlers from `GraphEditorView.axaml.cs`; disable Alt+click disconnect; ED-T09
+- [x] T102 [US7] Architecture gate ED-T10 + fixture `tests/NetPrints.Editor.Tests/Architecture/Fixtures/ViolatingVM.cs.txt` (fails on the fixture first); rule A3 includes Workspace/Generator/Sdk never referencing Avalonia and Generator never referencing `Microsoft.Build*`
 - [ ] T103 [US7] Serialization log call sites (3001–3003, 3005; 3004 and 3006 retired by R21) with a collecting logger in `tests/NetPrints.Core.Tests/Serialization/LoggingTests.cs`; **Checkpoint J** (SC-007, SC-008)
 - [ ] T103a [US7] Findings from the XML-doc pass (2026-09-25). Each gets a failing test first, where it is a bug:
   - `GenericType.Equals(object)` returns `true` for any `TypeSpecifier`, and `TypeSpecifier.Equals(object)` has the mirror placeholder for `GenericType` and throws `ArgumentException` when only `IsEnum` differs. Define the intended equality (with `GetHashCode`) and test it.

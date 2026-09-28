@@ -4233,3 +4233,92 @@ E2E suite (AGENTS.md's "A stray saved variable under samples/ broke 11 tests on 
   production-side factory; this matches the "no test-only hook" contract text literally and follows
   `TestEditor`'s existing precedent, but a shared internal factory would remove the duplication if a
   reviewer prefers it.
+
+## Sub-phase J, batch J2 (T101–T102)
+
+- **T101**: Nodify (2.0.0) already ships editor-level command hooks for exactly this
+  (`NodifyEditor.ConnectionCompletedCommand`/`DisconnectConnectorCommand`/`RemoveConnectionCommand`,
+  `Connector`/`BaseConnection.DisconnectCommand`, `BaseConnection.SplitCommand`), each falling back
+  from a routed event to the bound command only if the event goes unhandled (decompiled with
+  `ilspycmd` to confirm parameter shapes and event-vs-command precedence; the package ships no
+  source). `NodeGraphVM` gained `ConnectionCompletedCommand` (parameter matched loosely as
+  `System.Runtime.CompilerServices.ITuple` rather than the exact `ValueTuple<object,object>` Nodify
+  passes, so a VM-level test can pass a plain `(NodePinVM?, NodePinVM?)` too) and a
+  `PendingConnectionAnchor` property, kept in sync by a `Mode=OneWayToSource` binding on
+  `PendingConnection.TargetAnchor` (mirrors `NodePinVM.Anchor`'s existing view-pushes-position
+  pattern) so the VM can open the search at the release point without an `Avalonia`/`Nodify` type of
+  its own (A1). `GraphEditorView.axaml`'s `nc:Connection` template now binds `SplitCommand` to
+  `ConnectionVM.InsertRerouteCommand`; Nodify's default `ConnectionGestures.Split` gesture (left
+  double-click) already matches PAR-48, so no gesture reassignment was needed there.
+  `OnPendingConnectionCompleted` and the double-click-reroute branch of `OnEditorPointerPressed` were
+  deleted from code-behind, along with the now-unused `PointerGraphPosition` helper.
+- **Deviation (middle-click disconnect stayed manual)**: the plan was to also bind
+  `DisconnectConnectorCommand`/`RemoveConnectionCommand` and reassign
+  `EditorGestures.Mappings.Connector/Connection.Disconnect` from Nodify's default Alt+click to a
+  plain middle click, which would have been the more literal reading of "disable Alt+click
+  disconnect" and moved disconnect onto the same declarative path as connect/reroute. Measured
+  against `CanvasInteractionTests.CableGestures` (red before the fix, reproduced in isolation): Avalonia's
+  `MouseDevice` tracks `ClickCount` by position+time only, not by button, so a middle click
+  immediately after any other click at the same point (the test's own back-button-then-middle-click
+  sequence) inherits an elevated count and Nodify's `MouseAction.MiddleClick` gesture (which requires
+  `ClickCount == 1`) never matches — a real robustness regression, not just a test artifact, since a
+  user's genuine middle click shortly after another click in the same spot would silently stop
+  disconnecting. `OnEditorPointerPressed` keeps its button-state check (`IsMiddleButtonPressed`,
+  immune to `ClickCount`) for both the pin and the cable case, but now calls the pin's/connection's
+  generated `[RelayCommand]` (`DisconnectAllCommand`/`ClearUnconnectedValueCommand`/`DisconnectCommand`)
+  instead of the plain method, so it still "goes through the command" (ED-T09's wording) without the
+  fragility. Alt+click itself was left at Nodify's default: since neither `DisconnectConnectorCommand`
+  nor `RemoveConnectionCommand`/the per-connector `DisconnectCommand` is bound, the gesture has no
+  command to fall back to and stays inert, exactly as before this batch — nothing needed disabling.
+  A reviewer who wants disconnect fully declarative too should budget for this `ClickCount` caveat
+  (e.g. a custom gesture that also accepts button state) rather than a straight rebind.
+- **T102**: Added `tests/NetPrints.Editor.Tests/Architecture/{ArchitectureGateTests,
+  AssemblyReferenceGateTests, RepositoryPaths}.cs` and the fixture
+  `Architecture/Fixtures/ViolatingVM.cs.txt` (an uncompiled `.txt`, read and parsed by the test).
+  `ArchitectureGateTests` builds one `CSharpCompilation` from every `src/NetPrints.Editor/**/*.cs`
+  file (plus, for the fixture test, the fixture's text under a synthetic `.../ViolatingVM.cs` path)
+  referencing every `.dll` next to the test binary, then uses the semantic model — not a text/using
+  scan — to check A1 (any resolved symbol whose containing namespace starts with `Avalonia`/`Nodify`)
+  and A2 (a constructor parameter or field whose type is named `ClassEditorVM`/`MainEditorVM`, in a
+  file that is not `ClassEditorVM.cs`/`MainEditorVM.cs`). A text-based check would have false-positived
+  on `NodeGraphVM.cs`'s own new XML doc, which now mentions "Nodify" in prose (T101's doc comment) —
+  the reason A1 is symbol-based. Verified red before green by editing the fixture to drop the A1
+  half, confirming `FixtureFailsOnExactlyItsTwoViolations` fails as expected, then restoring it.
+  `AssemblyReferenceGateTests` implements A3 (a project-reference/package scan, per the contract's own
+  wording, not a transitive build-output scan) by reading each of Core/Reflection/Serialization/
+  Extensibility/Workspace/Generator/Sdk's `.csproj` for a `ProjectReference`/`PackageReference` whose
+  Include starts with `Avalonia`, plus Generator's for one starting with `Microsoft.Build`
+  (`Workspace` legitimately depends on `Microsoft.Build*` for MSBuild workspace loading, so it is
+  exempt from that second check, matching the task text).
+- **Deviation (pre-existing A2 violations fixed, not scoped out)**: running the new gate against the
+  real sources first failed on two files T099 did not touch: `LocalVariableVM`/`VariablesPanelVM`
+  both still held a `ClassEditorVM owner` field/constructor parameter. Since ED-T10 requires the gate
+  to demonstrably pass on the real sources, and FR-038 ("child view models MUST depend only on narrow
+  services, never on their parent editor") applies to `VariablesPanelVM` as much as to
+  `MemberVariableVM`/`NodeGraphVM`, both were migrated to finish T099's pattern rather than allowlisting
+  them: `LocalVariableVM` now takes `ClassEditorServices services` (its `Remove()` calls
+  `EditorCommands.RemoveLocalVariable` directly, the same way `MemberVariableVM.Remove()` already
+  bypasses the owner for `RemoveVariable`, so it no longer needs `VariablesPanel` at all).
+  `VariablesPanelVM` takes `ClassEditorServices services` plus the already-built
+  `ObservableViewModelCollection<MemberVariableVM, Variable>` for its "Class" group (a stable
+  reference for the class editor's lifetime, so no live update path is needed); the "Method" group
+  no longer polls `owner.OpenedGraph` via a `PropertyChanged` subscription — `ClassEditorVM`'s
+  existing `OnOpenedGraphChanged` hook (`[ObservableProperty]`'s generated partial method) now calls
+  `VariablesPanel.OnOpenedGraphChanged(newValue?.Graph as ExecutionGraph)` directly, which is also a
+  better fit for the MVVM hook convention than the property-changed-subscription it replaced. The
+  now-dead `VariablesPanelVM.RemoveLocalVariable(LocalVariableVM)` was deleted along with it.
+  `LocalVariableTests`/`LocalVariablePanelTests`/`DirtyTrackingTests` (already covering removal, the
+  Method group's rebuild-on-open/close, and dirty marking) needed no changes and stayed green
+  throughout, pinning the behavior before and after.
+- Suite totals (this batch, Release): full solution `dotnet test` (`--ignore-exit-code 8`) 817 total,
+  0 failed, 807 succeeded, 10 skipped (same pre-existing headless/E2E self-skips as J1); `dotnet build
+  -c Release` 0 warnings; `dotnet format --verify-no-changes` clean. Desktop E2E job
+  (`NETPRINTS_E2E=1`, `--fail-skips on`): 7/7 passed, 0 skipped. `git status samples/
+  tests/NetPrints.Core.Tests/Fixtures/` clean throughout.
+- Open questions for review: (1) the middle-click-disconnect deviation above — should a future batch
+  invest in a `ClickCount`-tolerant custom Nodify gesture so disconnect can be fully declarative like
+  connect/reroute, or is the button-state check (already the pattern for the pin/value-editor split
+  PAR-44 needs regardless) the right permanent home for it? (2) `VariablesPanelVM.OnOpenedGraphChanged`
+  is now a plain public method the owner calls, rather than a message/event — consistent with
+  `ClassEditorVM` owning both VMs directly, but a reviewer who wants every cross-VM notification to go
+  through `IMessenger` (as `SelectInspectorMessage` does for the inspector) may prefer that instead.
