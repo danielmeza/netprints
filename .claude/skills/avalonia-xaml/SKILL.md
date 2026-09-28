@@ -132,7 +132,8 @@ catalog (383 types across 10 packages) is `behaviors-catalog.md`, next to this f
 | Tap / double-tap / right-tap runs a command | `ExecuteCommandOnTappedBehavior`, `ExecuteCommandOnDoubleTappedBehavior`, `ExecuteCommandOnRightTappedBehavior` |
 | A key in one control (Enter in a box, Down to the list) | `ExecuteCommandOnKeyDownBehavior Key="Enter"` (or `Gesture`), `KeyTrigger` + actions |
 | Several actions for one event | `KeyDownTrigger`, `DoubleTappedTrigger`, `ClickEventTrigger`… + `InvokeCommandAction`, `FocusControlAction`, `ChangePropertyAction` |
-| OK or Close button closes the dialog | `ButtonClickEventTriggerBehavior` + `CloseWindowAction` |
+| OK or Close button closes the dialog with no result | `ButtonClickEventTriggerBehavior` + `CloseWindowAction` |
+| Accept/cancel button closes the dialog *with* a result | no prebuilt fits (batch X2b): a VM deriving from `DialogVM<TResult>` (`NetPrints.Editor.Dialogs`) plus the custom `DialogCloseBehavior` (`NetPrints.Editor.Behaviors`) below |
 | Focus on open, show or click | `FocusOnAttachedToVisualTreeBehavior`, `FocusOnVisibleBehavior`, `FocusControlAction`, `FocusSelectedItemBehavior` |
 | Select all or commit on Enter in text boxes | `TextBoxSelectAllOnGotFocusBehavior`, `LoseFocusOnEnterBehavior` |
 | Drag an item VM from a list onto a target | `ContextDragBehavior Context="{Binding}"` + `ContextDropBehavior Handler=...` (`DropHandlerBase`) |
@@ -147,6 +148,17 @@ Don't use the behaviors that bypass the VM or its services. These are the clipbo
 decisions and side effects they perform belong in commands and services (`IClipboardService`, `IFilePickerService`, `IWindowService`).
 Write a custom behavior (derive from `StyledElementBehavior<T>`) only when no prebuilt one fits and the logic is reusable view
 mechanics. Keep it in `NetPrints.Editor/Behaviors/` and give it a headless test.
+
+**Dialog-close-with-result pattern (batch X2b).** `Window.Close(object? dialogResult)` needs a value, and no
+prebuilt behavior can hand it one from a VM, so this is the one case D11 keeps a custom behavior for:
+`SelectMethodDialog`, `SelectTypeDialog` and `TrustDialog` each have a small VM deriving from
+`DialogVM<TResult>`, whose accept/cancel `[RelayCommand]`s call `RequestClose(result)` (sets `Result`,
+raises `IDialogCloseSource.CloseRequested`). `DialogCloseBehavior`, attached once on the dialog `Window`,
+watches its own (auto-synced) `DataContext` for `IDialogCloseSource` and calls `window.Close(source.Result)`.
+The `Window` subclass still implements `IDialogResult<T>` by forwarding `Result` to the VM, so
+`EditorDialogs`'s existing no-owner fallback and any test reading `dialog.Result` keep working unchanged.
+A dialog that closes with no result (`ErrorDialog`, `IssuesDialog`, `ReferencesDialog`) does not need this:
+`ButtonClickEventTriggerBehavior` + `CloseWindowAction` (row above) is enough.
 ```xml
 <ListBox.ItemTemplate><DataTemplate x:DataType="edevents:EventGraphVM">
   <TextBlock Text="{Binding Name}">

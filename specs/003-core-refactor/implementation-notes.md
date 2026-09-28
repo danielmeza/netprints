@@ -5048,3 +5048,84 @@ E5 (accessible names) allowlists and shrink each to zero, leaving E3 (event hand
   tests/NetPrints.Desktop.E2ETests -c Release --no-build --no-progress --no-ansi -- --fail-skips
   on`): **7 total, 0 failed, 7 succeeded**. No Xvfb/`NetPrints.Desktop` processes left running
   afterward.
+
+## Batch X2b (XAML practices, part 2b: burn down E3, dialog-close pattern)
+
+Owner ask: migrate every E3 (command-shaped event handler) allowlist entry left after X2a to a
+prebuilt behavior where one fits, introduce a small dialog-VM + custom-behavior pattern for the three
+dialogs that close with a result, and rewrite (or keep, with a real reason) anything left. See
+ADR-0007's new "Dialog-close pattern" bullet for the design; this section is the batch's specifics.
+
+- **E3 (15 → 0).** Every seeded entry had a fit; none needed the "genuinely must stay" carve-out
+  (Nodify gestures, Ctrl+Space, pointer math never appeared in E3 in the first place — they're
+  pointer/`DragDrop.*` handlers, exempt from the scan since batch X1).
+  - `ClassEditorWindow.axaml` (event-graph and diagnostic-row double-click, 2 sites): both became
+    `ExecuteCommandOnDoubleTappedBehavior` bound to the existing `OpenEventGraphCommand` /
+    `ErrorList.NavigateCommand`, the same `$parent[Window]` reach-up the already-migrated method row
+    uses. No VM change — both commands already existed.
+  - `ErrorDialog.axaml`, `IssuesDialog.axaml`, `ReferencesDialog.axaml` (close-with-no-result, 3
+    sites): `ButtonClickEventTriggerBehavior` + `CloseWindowAction`, exactly the pair D11 already
+    named for this case; `CloseWindowAction` resolves the window via `TopLevel.GetTopLevel(sender)`
+    when `TargetWindow` is unset, so no name/binding is needed. `OnOkClicked`/`OnCloseClicked` and
+    the then-unused `Avalonia.Interactivity` using deleted from each code-behind.
+  - `NodeSearchView.axaml` (search-box Enter/Down, result-list Enter, item tap, 4 sites):
+    `SearchBox` gets `ExecuteCommandOnKeyDownBehavior Key="Enter"` bound to a new
+    `SuggestionListVM.SelectFirstCommand` (`SelectCommand.Execute(Items.FirstOrDefault(!IsHeader))`,
+    matching the allowlist reason verbatim) and a `KeyTrigger Key="Down"` pairing a new
+    `HighlightFirstCommand` (sets a new two-way `SelectedItem` property) with a `FocusControlAction
+    TargetControl="ResultList"` — the VM decides *which* item, the trigger only moves focus (D1).
+    `ResultList` binds `SelectedItem` two-way and gets `ExecuteCommandOnKeyDownBehavior Key="Enter"`
+    bound to the existing `SelectCommand` with `CommandParameter="{Binding SelectedItem}"`. The item
+    template's `Panel` gets `ExecuteCommandOnTappedBehavior` bound to `SelectCommand` with
+    `CommandParameter="{Binding}"` (the tapped `SuggestionItem`, header or not) — `SelectAsync`
+    already guards `item.IsHeader`, so no new VM guard was needed, just reusing the existing one.
+    `NodeSearchView.axaml.cs` lost `OnItemTapped`/`OnSearchKeyDown`/`OnListKeyDown` and its now-unused
+    `ViewModel` accessor; `FocusSearchBox` (called from `GraphEditorView`) is untouched.
+  - `MemberVariableView.axaml` (name tap, getter/setter double-tap, 3 sites): `ExecuteCommandOnTappedBehavior`/
+    `ExecuteCommandOnDoubleTappedBehavior` bound directly to the existing parameterless `SelectCommand`/
+    `OpenGetterCommand`/`OpenSetterCommand` (no reach-up needed, the row's own `DataContext` is the
+    `MemberVariableVM`). `OnNameTapped`/`OnGetterDoubleTapped`/`OnSetterDoubleTapped` deleted from
+    code-behind; the drag pointer handlers are untouched.
+- **Dialog-close-with-result pattern (`SelectMethodDialog`, `SelectTypeDialog`, `TrustDialog`, 6 E3
+  sites: 1 + 1 + 2, note the allowlist counted `TrustDialog`'s two buttons separately).**
+  `IDialogCloseSource` + `DialogVM<TResult>` (`src/NetPrints.Editor/Dialogs/DialogVM.cs`): a `Result`
+  property and a `CloseRequested` event, raised by a protected `RequestClose(result)` that concrete
+  VMs call from their own `[RelayCommand]`s. `DialogCloseBehavior`
+  (`src/NetPrints.Editor/Behaviors/DialogCloseBehavior.cs`, the repo's first custom behavior) sits
+  once on each dialog `Window`, reads its own auto-synced `DataContext` as `IDialogCloseSource` and
+  calls `window.Close(source.Result)` once `CloseRequested` fires.
+  - `SelectMethodDialogVM`: `Methods`, `SelectedMethod` (preselects the first), `SelectCommand` now
+    has `CanExecute = SelectedMethod is not null` (D2) — a small behavior improvement over the
+    original's "click does nothing if nothing is selected".
+  - `SelectTypeDialogVM`: `Types`, `SelectedType`, `TypedText`, and `ResolveSelection()` moved
+    verbatim from `SelectTypeDialog.ResolveSelection` (D16, the exact gap the X1 allowlist reason
+    named). The `Window` keeps a forwarding `ResolveSelection()` so the existing
+    `DialogTests.SelectTypeDefaultsToObjectAndResolvesText` test (which calls it directly) needed no
+    rewrite.
+  - `TrustDialogVM`: `Prompt`, `ExtensionFolders`, `TrustCommand` (→ `RequestClose(true)`),
+    `DontLoadCommand` (→ `RequestClose(false)`).
+  - Each `Window` subclass keeps constructing its VM and setting `DataContext` before
+    `InitializeComponent()` (so the behavior sees a non-null `DataContext` the moment it attaches),
+    and keeps implementing `IDialogResult<T>` by forwarding `Result` to the VM — `EditorDialogs`'s
+    no-owner fallback (`dialog is IDialogResult<T> result ? result.Result : default`) and
+    `ExtensionDialogTests.TrustDialogAnswersWithTheButtonPressed` (`dialog.Result`) both needed no
+    change.
+  - Unit tests: `tests/NetPrints.Editor.Tests/Dialogs/DialogVMTests.cs` (6 cases: preselect/close,
+    `CanExecute` false with no methods, `ResolveSelection` precedence, close-sends-resolved-selection,
+    trust/don't-load). Headless UI: extended `DialogTests.SelectTypeDefaultsToObjectAndResolvesText`
+    and `.SelectMethodPreselectsFirst` to click Select and assert `Closed` fired with the right
+    `Result` (`TrustDialogAnswersWithTheButtonPressed` already covered the full close-with-result path
+    and needed no change). The `SelectType` case needed an `Escape` keypress before the click to
+    dismiss the `AutoCompleteBox`'s still-open suggestion popup, which otherwise ate the click.
+- **Skill and ADR updated**: `avalonia-xaml/SKILL.md`'s D11 table gets a row for "accept/cancel
+  closes with a result" pointing at the new pattern, plus a paragraph naming the two types; ADR-0007
+  gets a "Dialog-close pattern (batch X2b)" bullet under Decision and an updated Consequences bullet
+  recording that every `XamlHygieneTests` allowlist (E1, E2, E3, E5) is now empty.
+- Verification: `dotnet build NetPrints.slnx -c Release -v q -tl:off --nologo` → 18 projects, 0
+  errors, 0 warnings. `dotnet format NetPrints.slnx --verify-no-changes -v q` clean. Full suite
+  (`dotnet test --solution NetPrints.slnx -c Release --no-build --no-progress --no-ansi --
+  --ignore-exit-code 8`, from the worktree root): **856 total, 0 failed, 846 succeeded, 10 skipped**.
+  E2E suite (`NETPRINTS_E2E=1 NETPRINTS_E2E_DISPLAY_START=150 dotnet test --project
+  tests/NetPrints.Desktop.E2ETests -c Release --no-build --no-progress --no-ansi -- --fail-skips
+  on`): **7 total, 0 failed, 7 succeeded**. No Xvfb/`NetPrints.Desktop` processes left running
+  afterward.

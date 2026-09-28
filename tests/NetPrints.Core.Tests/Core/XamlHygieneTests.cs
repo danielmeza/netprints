@@ -167,29 +167,10 @@ namespace NetPrints.Tests.Core
         }
 
         /// <summary>E3: command-shaped events wired to a code-behind handler in XAML. Pointer and
-        /// <c>DragDrop.*</c> events are gesture mechanics (owner rule), so they are not scanned at all.</summary>
-        private static readonly Dictionary<string, string> E3Allowlist = new(StringComparer.Ordinal)
-        {
-            ["src/NetPrints.Editor/ClassEditor/ClassEditorWindow.axaml:173"] =
-                "Event graph double-click opens the graph; fits ExecuteCommandOnDoubleTappedBehavior (batch X2).",
-            ["src/NetPrints.Editor/ClassEditor/ClassEditorWindow.axaml:200"] =
-                "Diagnostic row double-click navigates to the node; fits ExecuteCommandOnDoubleTappedBehavior (batch X2).",
-            ["src/NetPrints.Editor/Dialogs/ErrorDialog.axaml:13"] = "OK closes the dialog with no result; fits ButtonClickEventTriggerBehavior + CloseWindowAction (batch X2).",
-            ["src/NetPrints.Editor/Dialogs/IssuesDialog.axaml:20"] = "OK closes the dialog with no result; fits ButtonClickEventTriggerBehavior + CloseWindowAction (batch X2).",
-            ["src/NetPrints.Editor/Dialogs/SelectMethodDialog.axaml:21"] =
-                "Select closes the dialog with a result; needs a dialog VM plus a result-carrying close action, which does not exist yet (research.md §5; batch X2 or later).",
-            ["src/NetPrints.Editor/Dialogs/SelectTypeDialog.axaml:14"] =
-                "Select closes the dialog with a result; same gap as SelectMethodDialog, plus ResolveSelection (D16) should move to that VM.",
-            ["src/NetPrints.Editor/Dialogs/TrustDialog.axaml:21"] = "Don't load closes the dialog with a result; same result-carrying-close gap as SelectMethodDialog.",
-            ["src/NetPrints.Editor/Dialogs/TrustDialog.axaml:22"] = "Trust closes the dialog with a result; same result-carrying-close gap as SelectMethodDialog.",
-            ["src/NetPrints.Editor/References/ReferencesDialog.axaml:44"] = "Close closes the dialog with no result; fits ButtonClickEventTriggerBehavior + CloseWindowAction (batch X2).",
-            ["src/NetPrints.Editor/Search/NodeSearchView.axaml:11"] = "Enter picks the first non-header result; fits ExecuteCommandOnKeyDownBehavior plus a VM SelectFirstCommand (batch X2).",
-            ["src/NetPrints.Editor/Search/NodeSearchView.axaml:14"] = "Enter on the result list selects the item; fits ExecuteCommandOnKeyDownBehavior (batch X2).",
-            ["src/NetPrints.Editor/Search/NodeSearchView.axaml:23"] = "Tap selects a result, skipping headers; fits ExecuteCommandOnTappedBehavior plus a VM guard (batch X2).",
-            ["src/NetPrints.Editor/Variables/MemberVariableView.axaml:16"] = "Tap selects the variable; fits ExecuteCommandOnTappedBehavior (batch X2).",
-            ["src/NetPrints.Editor/Variables/MemberVariableView.axaml:26"] = "Double-tap opens the getter; fits ExecuteCommandOnDoubleTappedBehavior (batch X2).",
-            ["src/NetPrints.Editor/Variables/MemberVariableView.axaml:37"] = "Double-tap opens the setter; fits ExecuteCommandOnDoubleTappedBehavior (batch X2).",
-        };
+        /// <c>DragDrop.*</c> events are gesture mechanics (owner rule), so they are not scanned at all.
+        /// Empty since batch X2b: every seeded violation had a prebuilt-behavior or dialog-VM fit, so
+        /// none needed to stay (ADR-0007).</summary>
+        private static readonly Dictionary<string, string> E3Allowlist = new(StringComparer.Ordinal);
 
         [Fact]
         public void E3_NoCommandShapedEventHandlersInXaml()

@@ -78,14 +78,32 @@ The owner set three ground rules for any such policy:
   more direct fit and is left for the next batch that touches this file, once the row markup is
   otherwise stable. `EventTriggerBehavior` is reflection-based and not trim-safe, which is exactly why
   the skill lists it as a fallback rather than a first choice.
+- **Dialog-close pattern (batch X2b).** A dialog that closes with no result (`ErrorDialog`,
+  `IssuesDialog`, `ReferencesDialog`) fits the prebuilt `ButtonClickEventTriggerBehavior` +
+  `CloseWindowAction` pair directly. A dialog that closes *with* a result (`SelectMethodDialog`,
+  `SelectTypeDialog`, `TrustDialog`) needs one more piece, since no prebuilt behavior can hand a VM
+  value back to `Window.Close(object?)`: each dialog gets a small VM deriving from
+  `DialogVM<TResult>` (`NetPrints.Editor.Dialogs`), whose accept/cancel commands call
+  `RequestClose(result)`, which sets `Result` and raises `IDialogCloseSource.CloseRequested`. One
+  reusable custom behavior, `DialogCloseBehavior` (`NetPrints.Editor.Behaviors`, D11 "no prebuilt
+  fits, custom second"), sits on the dialog `Window`, watches its own (auto-synced) `DataContext` for
+  `IDialogCloseSource` and calls `window.Close(source.Result)` once `CloseRequested` fires. The
+  `Window` subclass keeps its existing `IDialogResult<T>`/`Result` surface (`EditorDialogs.ShowAsync`'s
+  no-owner fallback and existing tests read `dialog.Result` directly) by forwarding to the VM's
+  `Result`; `SelectTypeDialog.ResolveSelection()` similarly forwards to the VM, which now owns that
+  logic (D16).
 
 ## Consequences
 
 - New XAML work has one document to load instead of re-deriving conventions per PR, and a build-time
   gate that only tightens (an allowlist can shrink but the check for a *new* violation is always live).
 - The remaining catalogued violations (2 for E1, 7 for E2 after this batch fixed nothing there, 13 for
-  E3 after removing the two `OnMethodTapped` sites, 12 for E5) are batch X2's burn-down list; the
-  roadmap (P3a) records this so it is not lost between batches.
+  E3 after removing the two `OnMethodTapped` sites, 12 for E5) were batch X2's burn-down list; the
+  roadmap (P3a) recorded this so it was not lost between batches. Batch X2a emptied E1, E2 and E5;
+  batch X2b emptied E3 (15 seeded entries at that point, all fixed — none needed the "genuinely must
+  stay in code-behind" carve-out rule 1 allows for gestures like Nodify panning or Ctrl+Space, since
+  pointer/`DragDrop.*` handlers were never in E3's scan to begin with). Every `XamlHygieneTests`
+  allowlist is now empty.
 - Referencing three Xaml.Behaviors packages instead of the meta package means a future package that
   NetPrints starts needing (say, `Xaml.Behaviors.Interactions.Draggable` for list reordering) must be
   added explicitly; this is intentional (rule 2's "not too strict" cuts against unused dependencies,
