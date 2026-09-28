@@ -75,6 +75,20 @@ namespace NetPrints.Tests.Serialization
             Assert.Contains("name", ex.Message);
         }
 
+        // R1-05: a duplicate top-level key (e.g. a merge conflict resolved by keeping both lines) must
+        // fail as a tolerable-load DocumentFormatException, not an unchecked ArgumentException from
+        // JsonNode's own dictionary once AllowDuplicateProperties is off.
+        [Fact]
+        public async Task DuplicatePropertyThrowsDocumentFormatException()
+        {
+            JsonDocumentFormat format = NewFormat();
+            using var input = Utf8Stream(
+                "{\n  \"schemaVersion\": 1,\n  \"name\": \"C\",\n  \"name\": \"C2\",\n  \"classGraph\": { \"nodes\": [] }\n}");
+
+            await Assert.ThrowsAsync<DocumentFormatException>(async () =>
+                await format.ReadClassAsync(input, new DocumentId("a.netpc.json"), TestContext.Current.CancellationToken));
+        }
+
         // DF-T21: a $schema value that is not a string fails to load.
         [Fact]
         public async Task NonStringSchemaPropertyThrows()

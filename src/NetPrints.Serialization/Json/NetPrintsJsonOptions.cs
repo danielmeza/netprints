@@ -52,6 +52,10 @@ public sealed class NetPrintsJsonOptions
             AllowOutOfOrderMetadataProperties = true,
             ReadCommentHandling = JsonCommentHandling.Skip,
             AllowTrailingCommas = true,
+            // A duplicate property (e.g. a merge conflict resolved by keeping both lines) must fail
+            // loudly as a JsonException the caller already maps to DocumentFormatException, not silently
+            // parse and then throw ArgumentException on first access (R1-05).
+            AllowDuplicateProperties = false,
             Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
             WriteIndented = false,
         };
@@ -73,6 +77,9 @@ public sealed class NetPrintsJsonOptions
     {
         CommentHandling = JsonCommentHandling.Skip,
         AllowTrailingCommas = true,
+        // Matches SerializerOptions below: a duplicate property must fail as a JsonException the caller
+        // maps to DocumentFormatException, not parse silently (R1-05).
+        AllowDuplicateProperties = false,
     };
 
     private static void AddExtensionKinds(JsonTypeInfo typeInfo, NodeDocumentConverterRegistry nodes)

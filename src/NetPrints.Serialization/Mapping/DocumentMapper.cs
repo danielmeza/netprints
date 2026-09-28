@@ -14,9 +14,21 @@ namespace NetPrints.Serialization.Mapping;
 /// kind), kept so a re-save (or a save of the rest of the class) does not lose them
 /// (document-format.md §2.6). Stored as <see cref="NodeGraph.PreservedDocumentState"/>.
 /// </summary>
-/// <param name="Nodes">Nodes of unrecognized kind, unchanged.</param>
+/// <param name="Nodes">Nodes of unrecognized kind, unchanged, with the original position and index
+/// each needs to be written back byte-identically (R1-03).</param>
 /// <param name="Connections">Connections that reference at least one of <paramref name="Nodes"/>.</param>
-internal sealed record PreservedGraphState(IReadOnlyList<UnknownNodeDocument> Nodes, IReadOnlyList<ConnectionDocument> Connections);
+internal sealed record PreservedGraphState(IReadOnlyList<PreservedNode> Nodes, IReadOnlyList<ConnectionDocument> Connections);
+
+/// <summary>
+/// One preserved unknown-kind node (R1-03): its document (unchanged), its original index in the
+/// graph's node list (so a re-save restores the original order instead of moving every preserved
+/// node to the end), and its original layout position, if the document had one (so a re-save keeps
+/// it instead of losing it to auto-placement).
+/// </summary>
+/// <param name="Index">The node's index in <see cref="Documents.GraphDocument.Nodes"/> as read.</param>
+/// <param name="Document">The preserved node, unchanged.</param>
+/// <param name="Position">The node's <c>layout</c> position as read, or <see langword="null"/> if it had none.</param>
+internal sealed record PreservedNode(int Index, UnknownNodeDocument Document, int[]? Position);
 
 /// <summary>
 /// Maps a <see cref="ClassGraph"/> to and from its <see cref="ClassDocument"/> form (document-format.md
@@ -213,7 +225,15 @@ public sealed class DocumentMapper : IDocumentMapper
 
         if (graph.PreservedDocumentState is PreservedGraphState preserved)
         {
-            nodeDocuments.AddRange(preserved.Nodes);
+            // Restore each preserved node at its original index (R1-03) instead of appending every one
+            // at the end: inserting in ascending index order, each clamped to the list's current length,
+            // reproduces the original interleaving with the known nodes (whose relative order among
+            // themselves is unchanged from the document).
+            foreach (PreservedNode preservedNode in preserved.Nodes.OrderBy(n => n.Index))
+            {
+                nodeDocuments.Insert(Math.Min(preservedNode.Index, nodeDocuments.Count), preservedNode.Document);
+            }
+
             connections.AddRange(preserved.Connections);
         }
 
@@ -332,18 +352,30 @@ public sealed class DocumentMapper : IDocumentMapper
 
         foreach (NodeGraph graph in EnumerateGraphs(cls))
         {
-            if (graph.Nodes.Count == 0)
-            {
-                continue;
-            }
-
             var positions = new SortedDictionary<string, int[]>(StringComparer.Ordinal);
             foreach (Node node in graph.Nodes)
             {
                 positions[node.Id] = [Round(node.PositionX), Round(node.PositionY)];
             }
 
-            layout[GraphKeys.For(graph)] = positions;
+            // A preserved unknown node isn't a real Node (it never went through the loop above), so its
+            // position only survives here: carry forward whatever it was read with (R1-03). A preserved
+            // node with no original position stays unpositioned, same as any other node without one.
+            if (graph.PreservedDocumentState is PreservedGraphState preserved)
+            {
+                foreach (PreservedNode preservedNode in preserved.Nodes)
+                {
+                    if (preservedNode.Position is { } position)
+                    {
+                        positions[preservedNode.Document.Id] = position;
+                    }
+                }
+            }
+
+            if (positions.Count > 0)
+            {
+                layout[GraphKeys.For(graph)] = positions;
+            }
         }
 
         return layout.Count > 0 ? layout : null;
@@ -651,11 +683,13 @@ public sealed class DocumentMapper : IDocumentMapper
         {
             foreach (LocalVariableDocument local in locals)
             {
-                execGraph.LocalVariables.Add(new LocalVariable(local.Name, (TypeSpecifier)context.FromRef(local.Type)));
+                execGraph.LocalVariables.Add(new LocalVariable(local.Name, context.FromTypeRef(local.Type, $"Local variable '{local.Name}' type")));
             }
         }
 
-        var preservedNodes = new List<UnknownNodeDocument>();
+        // (Index, Document) so a re-save can restore each preserved node's original position among the
+        // known nodes (R1-03); the position itself is filled in once the layout below is resolved.
+        var preservedNodeDocuments = new List<(int Index, UnknownNodeDocument Document)>();
         var seenNodeIds = new HashSet<string>(StringComparer.Ordinal);
         var createdNodes = new List<(Node Node, NodeDocument Document)>();
 
@@ -665,11 +699,13 @@ public sealed class DocumentMapper : IDocumentMapper
         // still name the old text — can be found under the new one.
         var oldToNewNodeId = new Dictionary<string, string>(StringComparer.Ordinal);
 
-        foreach (NodeDocument nodeDocument in graphDocument.Nodes)
+        for (int index = 0; index < graphDocument.Nodes.Count; index++)
         {
+            NodeDocument nodeDocument = graphDocument.Nodes[index];
+
             if (nodeDocument is UnknownNodeDocument unknown)
             {
-                preservedNodes.Add(unknown);
+                preservedNodeDocuments.Add((index, unknown));
                 issues.Add(new DocumentIssue(DocumentIssueSeverity.Warning, DocumentIssue.UnknownNodeKind,
                     $"Node '{unknown.Id}' has unknown kind '{unknown.Kind}'; preserved unchanged.", id));
                 Log.UnknownNodeKindPreserved(logger, unknown.Id, unknown.Kind, id);
@@ -694,14 +730,9 @@ public sealed class DocumentMapper : IDocumentMapper
             createdNodes.Add((node, nodeDocument));
         }
 
-        var preservedNodeIds = new HashSet<string>(preservedNodes.Select(n => n.Id), StringComparer.Ordinal);
+        var preservedNodeIds = new HashSet<string>(preservedNodeDocuments.Select(n => n.Document.Id), StringComparer.Ordinal);
         var preservedConnections = new List<ConnectionDocument>();
         ApplyConnections(RemapConnectionEndpoints(graphDocument.Connections, oldToNewNodeId), graph, id, issues, preservedNodeIds, preservedConnections, logger);
-
-        if (preservedNodes.Count > 0 || preservedConnections.Count > 0)
-        {
-            graph.PreservedDocumentState = new PreservedGraphState(preservedNodes, preservedConnections);
-        }
 
         // Settle types from the connections just wired before applying pin states: a pin's
         // eligibility for an unconnected value (and, for an enum pin, the shape the value must have)
@@ -755,7 +786,9 @@ public sealed class DocumentMapper : IDocumentMapper
         {
             foreach (string nodeId in positionsByCurrentId.Keys)
             {
-                if (graph.FindNode(nodeId) is null)
+                // A preserved node's own entry is claimed below, not ignored: it isn't a real Node, so
+                // graph.FindNode never finds it (R1-03).
+                if (graph.FindNode(nodeId) is null && !preservedNodeIds.Contains(nodeId))
                 {
                     issues.Add(new DocumentIssue(DocumentIssueSeverity.Info, DocumentIssue.LayoutEntryIgnored,
                         $"Layout entry for unknown node '{nodeId}' in graph '{graphKey}' ignored.", id));
@@ -766,6 +799,32 @@ public sealed class DocumentMapper : IDocumentMapper
         if (unpositioned.Count > 0)
         {
             GraphAutoLayout.PlaceUnpositioned(graph, unpositioned);
+        }
+
+        // Preserved state is finalized here, once positionsByCurrentId is known, so each preserved
+        // node's own layout entry (if it had one) is captured alongside it (R1-03) instead of being
+        // lost to the NPD004 check above or to a re-save that only ever wrote graph.Nodes' positions.
+        if (preservedNodeDocuments.Count > 0 || preservedConnections.Count > 0)
+        {
+            var preservedNodes = new List<PreservedNode>(preservedNodeDocuments.Count);
+            foreach ((int index, UnknownNodeDocument document) in preservedNodeDocuments)
+            {
+                int[]? position = null;
+                if (positionsByCurrentId is not null && positionsByCurrentId.TryGetValue(document.Id, out int[]? xy))
+                {
+                    if (xy.Length != 2)
+                    {
+                        throw new DocumentFormatException(
+                            $"Layout position for node '{document.Id}' in graph '{graphKey}' must have exactly 2 elements.", id);
+                    }
+
+                    position = xy;
+                }
+
+                preservedNodes.Add(new PreservedNode(index, document, position));
+            }
+
+            graph.PreservedDocumentState = new PreservedGraphState(preservedNodes, preservedConnections);
         }
 
         GraphTypeInference.Relax(graph);

@@ -172,7 +172,7 @@ public sealed class GraphCodeGenerator
         }
         catch (IOException ex)
         {
-            return new GeneratedFileResult(job.Input, job.Output, false, [ToIOErrorDiagnostic(ex, job.Input)]);
+            return new GeneratedFileResult(job.Input, job.Output, false, [ToUnreadableDiagnostic(ex, job.Input)]);
         }
 
         var issues = new List<DocumentIssue>();
@@ -184,6 +184,13 @@ public sealed class GraphCodeGenerator
         catch (DocumentFormatException ex)
         {
             return new GeneratedFileResult(job.Input, job.Output, false, [ToDiagnostic(ex, job.Input)]);
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidCastException or InvalidOperationException)
+        {
+            // Backstop (R1-05): a malformed reference the mapper couldn't recognize as a document
+            // problem on its own must still exit with a diagnostic (and exit code 1), not exit 3 as an
+            // internal error.
+            return new GeneratedFileResult(job.Input, job.Output, false, [ToUnreadableDiagnostic(ex, job.Input)]);
         }
 
         var diagnostics = new List<CodeDiagnostic>(issues.Count);
@@ -263,7 +270,7 @@ public sealed class GraphCodeGenerator
             ClassFullName: null, GraphKey: null, NodeId: null, SourcePath: sourcePath, Span: span);
     }
 
-    private static CodeDiagnostic ToIOErrorDiagnostic(IOException ex, string sourcePath) =>
+    private static CodeDiagnostic ToUnreadableDiagnostic(Exception ex, string sourcePath) =>
         new(CodeDiagnosticSeverity.Error, DocumentIssue.DocumentUnreadable, ex.Message,
             ClassFullName: null, GraphKey: null, NodeId: null, SourcePath: sourcePath, Span: null);
 

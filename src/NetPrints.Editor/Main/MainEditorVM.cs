@@ -641,7 +641,12 @@ public sealed partial class MainEditorVM : ObservableObject, IDisposable
 
         try
         {
-            await context.Persistence.AddGraphAsync(Project, path, CancellationToken.None);
+            (_, IReadOnlyList<DocumentIssue> issues) = await context.Persistence.AddGraphAsync(Project, path, CancellationToken.None);
+            if (issues.Count > 0)
+            {
+                await context.Dialogs.ShowErrorAsync("Class added with issues",
+                    string.Join("\n\n", issues.Select(issue => $"{issue.Code}: {issue.Message}")));
+            }
         }
         catch (Exception ex)
         {

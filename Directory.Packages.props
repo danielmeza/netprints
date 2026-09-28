@@ -98,5 +98,7 @@
          (IOutputDevice.DisplayAsync: MissingMethodException) — a known xunit.v3 3.2.2/MTP-v2 gap,
          not something fixable from this repo's package references alone. -->
     <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="17.14.2" />
+    <!-- SchemaTests (R1-17): validates the committed fixtures against schemas/netpc.v1.schema.json. -->
+    <PackageVersion Include="JsonSchema.Net" Version="9.4.0" />
   </ItemGroup>
 </Project>

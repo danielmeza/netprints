@@ -96,13 +96,17 @@ public sealed record EventEntryNodeDocument(string Id, string? Name, IReadOnlyLi
     string EventName, NetPrints.Core.MemberVisibility Visibility, NetPrints.Core.MethodModifiers Modifiers,
     MethodRef? Overrides, int ArgumentCount) : NodeDocument(Id, Name, Pins);
 
-/// <summary>A method call (document-format.md §1.5, <c>CallMethodNode</c>).</summary>
+/// <summary>A method call (document-format.md §1.5, <c>CallMethodNode</c>). <c>Pure</c>: whether the
+/// node's exec pins were removed (<c>Node.IsPure</c>, R1-04), omitted (read back as
+/// <see langword="false"/>) for the default, impure shape.</summary>
 public sealed record CallMethodNodeDocument(string Id, string? Name, IReadOnlyList<PinStateDocument>? Pins,
-    MethodRef Method, int GenericArgumentCount) : NodeDocument(Id, Name, Pins);
+    MethodRef Method, int GenericArgumentCount, bool Pure) : NodeDocument(Id, Name, Pins);
 
-/// <summary>A constructor call (document-format.md §1.5, <c>ConstructorNode</c>).</summary>
+/// <summary>A constructor call (document-format.md §1.5, <c>ConstructorNode</c>). <c>Pure</c>: whether
+/// the node's exec pins were removed (<c>Node.IsPure</c>, R1-04), omitted (read back as
+/// <see langword="false"/>) for the default, impure shape.</summary>
 public sealed record ConstructorNodeDocument(string Id, string? Name, IReadOnlyList<PinStateDocument>? Pins,
-    ConstructorRef Constructor) : NodeDocument(Id, Name, Pins);
+    ConstructorRef Constructor, bool Pure) : NodeDocument(Id, Name, Pins);
 
 /// <summary>Creates a delegate for a method (document-format.md §1.5, <c>MakeDelegateNode</c>).</summary>
 public sealed record MakeDelegateNodeDocument(string Id, string? Name, IReadOnlyList<PinStateDocument>? Pins,
@@ -138,8 +142,10 @@ public sealed record MakeArrayTypeNodeDocument(string Id, string? Name, IReadOnl
 public sealed record MakeArrayNodeDocument(string Id, string? Name, IReadOnlyList<PinStateDocument>? Pins,
     bool UsePredefinedSize, int ElementCount) : NodeDocument(Id, Name, Pins);
 
-/// <summary>An explicit type cast (document-format.md §1.5, <c>ExplicitCastNode</c>).</summary>
-public sealed record ExplicitCastNodeDocument(string Id, string? Name, IReadOnlyList<PinStateDocument>? Pins)
+/// <summary>An explicit type cast (document-format.md §1.5, <c>ExplicitCastNode</c>). <c>Pure</c>:
+/// whether the node's exec pins were removed (<c>Node.IsPure</c>, R1-04), omitted (read back as
+/// <see langword="false"/>) for the default, impure shape.</summary>
+public sealed record ExplicitCastNodeDocument(string Id, string? Name, IReadOnlyList<PinStateDocument>? Pins, bool Pure)
     : NodeDocument(Id, Name, Pins);
 
 /// <summary>A C# <c>typeof</c> expression (document-format.md §1.5, <c>TypeOfNode</c>).</summary>
@@ -154,12 +160,16 @@ public sealed record IfElseNodeDocument(string Id, string? Name, IReadOnlyList<P
 public sealed record ForLoopNodeDocument(string Id, string? Name, IReadOnlyList<PinStateDocument>? Pins)
     : NodeDocument(Id, Name, Pins);
 
-/// <summary>A ternary expression (document-format.md §1.5, <c>TernaryNode</c>).</summary>
-public sealed record TernaryNodeDocument(string Id, string? Name, IReadOnlyList<PinStateDocument>? Pins)
+/// <summary>A ternary expression (document-format.md §1.5, <c>TernaryNode</c>). <c>Pure</c>: whether the
+/// node's exec pins were removed (<c>Node.IsPure</c>, R1-04), omitted (read back as
+/// <see langword="false"/>) for the default, impure shape.</summary>
+public sealed record TernaryNodeDocument(string Id, string? Name, IReadOnlyList<PinStateDocument>? Pins, bool Pure)
     : NodeDocument(Id, Name, Pins);
 
-/// <summary>An <c>await</c> expression (document-format.md §1.5, <c>AwaitNode</c>).</summary>
-public sealed record AwaitNodeDocument(string Id, string? Name, IReadOnlyList<PinStateDocument>? Pins)
+/// <summary>An <c>await</c> expression (document-format.md §1.5, <c>AwaitNode</c>). <c>Pure</c>: whether
+/// the node's exec pins were removed (<c>Node.IsPure</c>, R1-04), omitted (read back as
+/// <see langword="false"/>) for the default, impure shape.</summary>
+public sealed record AwaitNodeDocument(string Id, string? Name, IReadOnlyList<PinStateDocument>? Pins, bool Pure)
     : NodeDocument(Id, Name, Pins);
 
 /// <summary>A <c>throw</c> statement (document-format.md §1.5, <c>ThrowNode</c>).</summary>

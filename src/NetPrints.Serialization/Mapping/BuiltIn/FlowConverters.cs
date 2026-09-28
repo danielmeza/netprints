@@ -54,9 +54,15 @@ internal static class FlowConverters
         public Type NodeType => typeof(TernaryNode);
         public Type DocumentType => typeof(TernaryNodeDocument);
 
-        public NodeDocument ToDocument(Node node, NodeMappingContext context) => new TernaryNodeDocument(node.Id, null, null);
+        public NodeDocument ToDocument(Node node, NodeMappingContext context) => new TernaryNodeDocument(node.Id, null, null, node.IsPure);
 
-        public Node CreateNode(NodeDocument document, NodeGraph graph, NodeMappingContext context) => new TernaryNode(graph);
+        public Node CreateNode(NodeDocument document, NodeGraph graph, NodeMappingContext context)
+        {
+            var doc = (TernaryNodeDocument)document;
+            var node = new TernaryNode(graph);
+            node.IsPure = doc.Pure;
+            return node;
+        }
     }
 
     private sealed class AwaitNodeConverter : INodeDocumentConverter
@@ -65,9 +71,15 @@ internal static class FlowConverters
         public Type NodeType => typeof(AwaitNode);
         public Type DocumentType => typeof(AwaitNodeDocument);
 
-        public NodeDocument ToDocument(Node node, NodeMappingContext context) => new AwaitNodeDocument(node.Id, null, null);
+        public NodeDocument ToDocument(Node node, NodeMappingContext context) => new AwaitNodeDocument(node.Id, null, null, node.IsPure);
 
-        public Node CreateNode(NodeDocument document, NodeGraph graph, NodeMappingContext context) => new AwaitNode(graph);
+        public Node CreateNode(NodeDocument document, NodeGraph graph, NodeMappingContext context)
+        {
+            var doc = (AwaitNodeDocument)document;
+            var node = new AwaitNode(graph);
+            node.IsPure = doc.Pure;
+            return node;
+        }
     }
 
     private sealed class ThrowNodeConverter : INodeDocumentConverter

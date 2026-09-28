@@ -518,6 +518,9 @@
                   },
                   "genericArgumentCount": {
                     "type": "integer"
+                  },
+                  "pure": {
+                    "type": "boolean"
                   }
                 },
                 "required": [
@@ -591,6 +594,9 @@
                     "required": [
                       "declaringType"
                     ]
+                  },
+                  "pure": {
+                    "type": "boolean"
                   }
                 },
                 "required": [
@@ -1048,6 +1054,9 @@
                     "items": {
                       "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
                     }
+                  },
+                  "pure": {
+                    "type": "boolean"
                   }
                 },
                 "required": [
@@ -1164,6 +1173,9 @@
                     "items": {
                       "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
                     }
+                  },
+                  "pure": {
+                    "type": "boolean"
                   }
                 },
                 "required": [
@@ -1193,6 +1205,9 @@
                     "items": {
                       "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/0/properties/pins/items"
                     }
+                  },
+                  "pure": {
+                    "type": "boolean"
                   }
                 },
                 "required": [

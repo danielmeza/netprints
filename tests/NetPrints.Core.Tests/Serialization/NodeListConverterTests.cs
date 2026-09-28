@@ -75,5 +75,20 @@ namespace NetPrints.Tests.Serialization
         {
             Assert.Throws<DocumentFormatException>(() => Deserialize("""{ "nodes": [ { "$kind": "classReturn" } ] }"""));
         }
+
+        // R1-05: a numeric $kind used to reach JsonElement.GetString() and throw the unchecked
+        // InvalidOperationException; it must be a tolerable-load DocumentFormatException instead.
+        [Fact]
+        public void NumericKindThrowsDocumentFormatException()
+        {
+            Assert.Throws<DocumentFormatException>(() => Deserialize("""{ "nodes": [ { "$kind": 1, "id": "n0" } ] }"""));
+        }
+
+        // R1-05: a numeric id, same reasoning as above.
+        [Fact]
+        public void NumericIdThrowsDocumentFormatException()
+        {
+            Assert.Throws<DocumentFormatException>(() => Deserialize("""{ "nodes": [ { "$kind": "classReturn", "id": 1 } ] }"""));
+        }
     }
 }

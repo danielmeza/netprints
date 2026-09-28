@@ -148,8 +148,8 @@ creates the pins and then applies `pins`.
 | `classReturn` | `ClassReturnNode` | `interfaceCount` (int, omit 0) |
 | `typeReturn` | `TypeReturnNode` | — |
 | `eventEntry` | `EventEntryNode` (new) | `eventName`, `visibility`, `modifiers` (omit None), `overrides` (`MethodRef`, optional), `argumentCount` |
-| `callMethod` | `CallMethodNode` | `method` (`MethodRef`), `genericArgumentCount` (omit 0) |
-| `constructor` | `ConstructorNode` | `constructor` (`ConstructorRef`) |
+| `callMethod` | `CallMethodNode` | `method` (`MethodRef`), `genericArgumentCount` (omit 0), `pure` (bool, omit `false`, R1-04) |
+| `constructor` | `ConstructorNode` | `constructor` (`ConstructorRef`), `pure` (bool, omit `false`, R1-04) |
 | `makeDelegate` | `MakeDelegateNode` | `method` (`MethodRef`) |
 | `variableGetter` | `VariableGetterNode` | `variable` (`VariableRef`) |
 | `variableSetter` | `VariableSetterNode` | `variable` (`VariableRef`) |
@@ -157,17 +157,28 @@ creates the pins and then applies `pins`.
 | `type` | `TypeNode` | `type` (`TypeRef`) |
 | `makeArrayType` | `MakeArrayTypeNode` | — |
 | `makeArray` | `MakeArrayNode` | `usePredefinedSize` (bool), `elementCount` (int, omit 0) |
-| `explicitCast` | `ExplicitCastNode` | — |
+| `explicitCast` | `ExplicitCastNode` | `pure` (bool, omit `false`, R1-04) |
 | `typeOf` | `TypeOfNode` | — |
 | `ifElse` | `IfElseNode` | — |
 | `forLoop` | `ForLoopNode` | — |
-| `ternary` | `TernaryNode` | — |
-| `await` | `AwaitNode` | — |
+| `ternary` | `TernaryNode` | `pure` (bool, omit `false`, R1-04) |
+| `await` | `AwaitNode` | `pure` (bool, omit `false`, R1-04) |
 | `throw` | `ThrowNode` | — |
 | `default` | `DefaultNode` | — |
 | `reroute` | `RerouteNode` | `pinKind` (`exec`\|`data`\|`type`), `count` (int); for `data`: `dataTypes` (`[TypeRef, TypeRef][]`) |
 | `<extensionId>/<name>` | extension node | declared by the extension (§5) |
 | any unknown | `UnknownNodeDocument` | content preserved: `$kind` and `id` first, the other properties in source order, re-emitted through the canonical writer (byte-identical when the input was canonical) |
+
+`pure` (R1-04, added without a schema version bump — an optional field with a backward-compatible
+default needs no migration, §2.5): whether the node's exec pins were removed through the editor's
+purity toggle (`Node.IsPure`/`CanSetPure`, only `CallMethodNode`, `ConstructorNode`,
+`ExplicitCastNode`, `TernaryNode` and `AwaitNode` support it). Applied before connections are restored
+on load, so a pure node's absent exec pins never leave a dangling connection endpoint.
+
+An unknown node's `layout` entry (if it had one) and its position among the other nodes of `nodes` are
+both part of what "preserved unchanged" means (R1-03): a re-save keeps its original index (interleaved
+with the known nodes exactly as read) and its original position, instead of moving it to the end of
+`nodes` and dropping it from `layout`.
 
 ### 1.6 Reference and value DTOs
 
@@ -624,18 +635,18 @@ public sealed record ProjectSaveResult(IReadOnlyList<string> WrittenFiles);
 public sealed class ProjectPersistence
 {
     public ProjectPersistence(IProjectSystem projects, DocumentFormatRegistry formats, IDocumentMapper mapper,
-        Func<string, IDocumentStore> createStore, ILogger<ProjectPersistence> logger);   // createStore(projectDirectory)
+        Func<string, IDocumentStore> createStore, ILogger<ProjectPersistence> logger);   // createStore(storeRoot), see LoadAsync/SaveAsync (R1-06)
     public Task<ProjectLoadResult> LoadAsync(string projectFilePath, CancellationToken cancellationToken);
     public Task<ProjectSaveResult> SaveAsync(Project project, Func<ClassGraph, string> renderGenerated, CancellationToken cancellationToken);
-    public Task<ClassGraph> AddGraphAsync(Project project, string sourceGraphPath, CancellationToken cancellationToken); // "Existing Class"
+    public Task<(ClassGraph Class, IReadOnlyList<DocumentIssue> Issues)> AddGraphAsync(Project project, string sourceGraphPath, CancellationToken cancellationToken); // "Existing Class"
 }
 ```
 
 | Member | Contract |
 |---|---|
-| `LoadAsync` | `IProjectSystem.LoadAsync`, then each `Snapshot.GraphFiles` entry through the JSON format; a malformed graph → issue (Error, with line/position) and the project opens without it. `Project` is built from the snapshot (data-model.md §5); class order = ordinal by file path. |
-| `SaveAsync` | For each class in project order with `ClassGraph.IsDirty` (data-model.md §2): `EnsureUniqueMemberIds()`, `ToDocument`, write the graph to `Project.GetGraphFilePath(cls)` and, next to it, `renderGenerated(cls)` (the `.netpc.g.cs`, `GraphCodeGenerator.RenderFile`), each only when its bytes differ from the file on disk; then `MarkClean()`. A clean class is neither mapped nor written, even if mapping it would now give different bytes (auto-placed nodes, a non-canonical hand edit, re-resolved references): no ripple saves. Never writes the `.csproj` (settings go through `IProjectSystem.ApplyAsync`). Returns written files in write order. |
-| `AddGraphAsync` | Copies a `.netpc.json` byte for byte into the project folder, loads and adds it clean (PAR-13). A legacy `.netpc` is not accepted (research.md R21). |
+| `LoadAsync` | `IProjectSystem.LoadAsync`, then each `Snapshot.GraphFiles` entry through the JSON format; a malformed graph → issue (Error, with line/position) and the project opens without it. `Project` is built from the snapshot (data-model.md §5); class order = ordinal by file path. `createStore` is given the project directory widened to the common ancestor of it and every graph file (R1-06): a graph outside the project directory (project-system.md §7's `<NetPrintsGraph Include="../Shared/X.netpc.json" />`) loads instead of failing the whole project. |
+| `SaveAsync` | For each class in project order with `ClassGraph.IsDirty` (data-model.md §2): `EnsureUniqueMemberIds()`, `ToDocument`, write the graph to `Project.GetGraphFilePath(cls)` and, next to it, `renderGenerated(cls)` (the `.netpc.g.cs`, `GraphCodeGenerator.RenderFile`), each only when its bytes differ from the file on disk; then `MarkClean()`. A clean class is neither mapped nor written, even if mapping it would now give different bytes (auto-placed nodes, a non-canonical hand edit, re-resolved references): no ripple saves. Never writes the `.csproj` (settings go through `IProjectSystem.ApplyAsync`). Returns written files in write order. `createStore`'s root is widened the same way as `LoadAsync` (R1-06), over every class's `GetGraphFilePath`. |
+| `AddGraphAsync` | Reads and maps `sourceGraphPath` first; only once that succeeds is it copied byte for byte into the project folder and the mapped class added, clean (PAR-13). Refuses (`InvalidOperationException`) when the target file name already exists in the project folder, or when a class with the same `FullName` is already loaded — neither silently overwrites nor re-adds a duplicate (R1-08). A legacy `.netpc` is not accepted (research.md R21). Returns the added class and any non-fatal issues `FromDocument` found (previously discarded). |
 | Thread-safety | Stateless; safe to share. The returned model is owned by the UI thread. |
 
 ## 3. (removed 2026-09-26) Legacy XML → v1 rules

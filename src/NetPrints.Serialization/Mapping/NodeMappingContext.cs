@@ -69,6 +69,20 @@ public sealed class NodeMappingContext
     }
 
     /// <summary>
+    /// Converts <paramref name="type"/> back to a concrete <see cref="TypeSpecifier"/> — the checked
+    /// form of <see cref="FromRef(TypeRef)"/> for a caller that requires a bound type (a declaring type,
+    /// a literal's type, …), where <c>generic: true</c> (an unbound generic reference, only valid as a
+    /// generic argument) would otherwise fail an unchecked cast with <c>InvalidCastException</c>
+    /// instead of a tolerable-load <see cref="DocumentFormatException"/> (R1-05).
+    /// </summary>
+    /// <param name="type">Type reference to convert.</param>
+    /// <param name="where">Location used in the exception message.</param>
+    /// <returns>The converted type.</returns>
+    /// <exception cref="DocumentFormatException"><paramref name="type"/> is an unbound generic reference.</exception>
+    public TypeSpecifier FromTypeRef(TypeRef type, string where) =>
+        FromRef(type) as TypeSpecifier ?? throw new DocumentFormatException($"{where} must not be a generic type reference.");
+
+    /// <summary>
     /// Converts <paramref name="method"/> to a <see cref="MethodRef"/>.
     /// </summary>
     /// <param name="method">Method to convert.</param>
@@ -104,7 +118,7 @@ public sealed class NodeMappingContext
         IList<BaseType> genericArgs = method.GenericArgs?.Select(FromRef).ToList() ?? new List<BaseType>();
 
         return new MethodSpecifier(method.Name, parameters, returnTypes, method.Modifiers,
-            method.Visibility, (TypeSpecifier)FromRef(method.DeclaringType), genericArgs);
+            method.Visibility, FromTypeRef(method.DeclaringType, $"Method '{method.Name}' declaring type"), genericArgs);
     }
 
     /// <summary>
@@ -132,7 +146,7 @@ public sealed class NodeMappingContext
         IEnumerable<MethodParameter> parameters = constructor.Parameters?.Select(FromParameterRef)
             ?? Enumerable.Empty<MethodParameter>();
 
-        return new ConstructorSpecifier(parameters, (TypeSpecifier)FromRef(constructor.DeclaringType));
+        return new ConstructorSpecifier(parameters, FromTypeRef(constructor.DeclaringType, "Constructor declaring type"));
     }
 
     /// <summary>
@@ -164,7 +178,7 @@ public sealed class NodeMappingContext
     {
         if (variable.Scope == VariableScope.Local)
         {
-            return new VariableSpecifier(variable.Name, (TypeSpecifier)FromRef(variable.Type),
+            return new VariableSpecifier(variable.Name, FromTypeRef(variable.Type, $"Variable '{variable.Name}' type"),
                 variable.GetterVisibility, variable.SetterVisibility, declaringType: null, variable.Modifiers)
             {
                 Scope = VariableScope.Local,
@@ -176,8 +190,9 @@ public sealed class NodeMappingContext
             throw new DocumentFormatException($"Variable '{variable.Name}' has no declaring type.");
         }
 
-        return new VariableSpecifier(variable.Name, (TypeSpecifier)FromRef(variable.Type),
-            variable.GetterVisibility, variable.SetterVisibility, (TypeSpecifier)FromRef(variable.DeclaringType),
+        return new VariableSpecifier(variable.Name, FromTypeRef(variable.Type, $"Variable '{variable.Name}' type"),
+            variable.GetterVisibility, variable.SetterVisibility,
+            FromTypeRef(variable.DeclaringType, $"Variable '{variable.Name}' declaring type"),
             variable.Modifiers);
     }
 

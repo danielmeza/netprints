@@ -23,6 +23,9 @@ public sealed class JsonFileSettingsStore : ISettingsStore
     {
         CommentHandling = JsonCommentHandling.Skip,
         AllowTrailingCommas = true,
+        // A duplicate key (e.g. a merge conflict resolved by keeping both lines) must fail as a
+        // JsonException Load already catches, not parse silently (R1-05).
+        AllowDuplicateProperties = false,
     };
 
     private static readonly JsonWriterOptions WriterOptions = new()

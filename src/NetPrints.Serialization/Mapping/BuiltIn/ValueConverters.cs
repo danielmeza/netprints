@@ -41,7 +41,7 @@ internal static class ValueConverters
         public Node CreateNode(NodeDocument document, NodeGraph graph, NodeMappingContext context)
         {
             var doc = (LiteralNodeDocument)document;
-            return new LiteralNode(graph, (TypeSpecifier)context.FromRef(doc.LiteralType));
+            return new LiteralNode(graph, context.FromTypeRef(doc.LiteralType, $"Node '{doc.Id}' literal type"));
         }
     }
 
@@ -115,9 +115,15 @@ internal static class ValueConverters
         public Type NodeType => typeof(ExplicitCastNode);
         public Type DocumentType => typeof(ExplicitCastNodeDocument);
 
-        public NodeDocument ToDocument(Node node, NodeMappingContext context) => new ExplicitCastNodeDocument(node.Id, null, null);
+        public NodeDocument ToDocument(Node node, NodeMappingContext context) => new ExplicitCastNodeDocument(node.Id, null, null, node.IsPure);
 
-        public Node CreateNode(NodeDocument document, NodeGraph graph, NodeMappingContext context) => new ExplicitCastNode(graph);
+        public Node CreateNode(NodeDocument document, NodeGraph graph, NodeMappingContext context)
+        {
+            var doc = (ExplicitCastNodeDocument)document;
+            var node = new ExplicitCastNode(graph);
+            node.IsPure = doc.Pure;
+            return node;
+        }
     }
 
     private sealed class TypeOfNodeConverter : INodeDocumentConverter

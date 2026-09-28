@@ -18,6 +18,8 @@
          MSBL001, research K10): pin and exclude both here too, exactly like NetPrints.Workspace.csproj. -->
     <PackageReference Include="Microsoft.Build" ExcludeAssets="runtime" PrivateAssets="all" />
     <PackageReference Include="Microsoft.Build.Framework" ExcludeAssets="runtime" PrivateAssets="all" />
+    <!-- SchemaTests (R1-17): validates the AllNodes/HelloWorld fixtures against the committed schema. -->
+    <PackageReference Include="JsonSchema.Net" />
   </ItemGroup>
 
   <ItemGroup>

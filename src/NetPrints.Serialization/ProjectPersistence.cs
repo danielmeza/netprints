@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -115,9 +116,10 @@ public sealed class ProjectPersistence
 
         Project project = Project.FromSnapshot(snapshot);
         string projectDirectory = GetDirectoryOrThrow(snapshot.ProjectFilePath);
+        string storeRoot = ComputeStoreRoot(projectDirectory, snapshot.GraphFiles);
 
         Serializers current = serializers;
-        using IDocumentStore store = createStore(projectDirectory);
+        using IDocumentStore store = createStore(storeRoot);
         var issues = new List<DocumentIssue>();
         var classes = new List<ClassGraph>();
 
@@ -125,7 +127,7 @@ public sealed class ProjectPersistence
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            DocumentId id = FileSystemDocumentStore.ToDocumentId(projectDirectory, graphFilePath);
+            DocumentId id = FileSystemDocumentStore.ToDocumentId(storeRoot, graphFilePath);
             ClassGraph? cls = await TryLoadClassAsync(current, store, id, project, issues, cancellationToken).ConfigureAwait(false);
             if (cls is not null)
             {
@@ -163,6 +165,15 @@ public sealed class ProjectPersistence
             ReportUnreadable(id, ex.Message, issues);
             return null;
         }
+        catch (Exception ex) when (ex is ArgumentException or InvalidCastException or InvalidOperationException)
+        {
+            // Backstop (R1-05): a malformed reference the mapper couldn't recognize as a document
+            // problem on its own (a raw BCL exception from a dictionary key collision, an unchecked
+            // cast, or a converter's constructor invariant) still reports this one graph as unreadable
+            // instead of failing the whole project load or the build.
+            ReportUnreadable(id, ex.Message, issues);
+            return null;
+        }
     }
 
     private void ReportUnreadable(DocumentId id, string reason, List<DocumentIssue> issues)
@@ -194,8 +205,9 @@ public sealed class ProjectPersistence
         ArgumentNullException.ThrowIfNull(renderGenerated);
 
         string projectDirectory = GetDirectoryOrThrow(project.Path);
+        string storeRoot = ComputeStoreRoot(projectDirectory, project.Classes.Select(project.GetGraphFilePath));
         Serializers current = serializers;
-        using IDocumentStore store = createStore(projectDirectory);
+        using IDocumentStore store = createStore(storeRoot);
         var written = new List<string>();
         var diagnostics = new List<CodeDiagnostic>();
 
@@ -215,7 +227,7 @@ public sealed class ProjectPersistence
             byte[] graphBytes = await RenderAsync(
                 (stream, ct) => current.Formats.Default.WriteClassAsync(document, stream, ct), cancellationToken).ConfigureAwait(false);
 
-            DocumentId graphId = FileSystemDocumentStore.ToDocumentId(projectDirectory, graphPath);
+            DocumentId graphId = FileSystemDocumentStore.ToDocumentId(storeRoot, graphPath);
             if (await WriteIfDifferentAsync(store, graphId, graphBytes, cancellationToken).ConfigureAwait(false))
             {
                 written.Add(graphPath);
@@ -227,7 +239,7 @@ public sealed class ProjectPersistence
             {
                 string generatedPath = ProjectFiles.GetGeneratedFilePath(graphPath);
                 byte[] generatedBytes = Encoding.UTF8.GetBytes(renderGenerated(cls));
-                DocumentId generatedId = FileSystemDocumentStore.ToDocumentId(projectDirectory, generatedPath);
+                DocumentId generatedId = FileSystemDocumentStore.ToDocumentId(storeRoot, generatedPath);
                 if (await WriteIfDifferentAsync(store, generatedId, generatedBytes, cancellationToken).ConfigureAwait(false))
                 {
                     written.Add(generatedPath);
@@ -245,17 +257,24 @@ public sealed class ProjectPersistence
     }
 
     /// <summary>
-    /// Copies <paramref name="sourceGraphPath"/> byte for byte into <paramref name="project"/>'s
-    /// directory (its file name preserved) and loads and adds it, clean (project-system.md, "Existing
-    /// Class"). A legacy <c>.netpc</c> file is not accepted (research.md R21).
+    /// Reads and maps <paramref name="sourceGraphPath"/> and, only once that succeeds, copies it byte
+    /// for byte into <paramref name="project"/>'s directory (its file name preserved) and adds the
+    /// result, clean (project-system.md, "Existing Class"). A legacy <c>.netpc</c> file is not accepted
+    /// (research.md R21). Reading before copying means a malformed source never leaves a copy behind in
+    /// the project folder (R1-08).
     /// </summary>
     /// <param name="project">Project to add the graph to.</param>
     /// <param name="sourceGraphPath">Full path of the <c>.netpc.json</c> file to copy in.</param>
     /// <param name="cancellationToken">Cancels the operation.</param>
-    /// <returns>The added class.</returns>
+    /// <returns>The added class, and any non-fatal issues found mapping it (data dropped by
+    /// <c>FromDocument</c> — unknown node kinds, dropped connections or pins, reassigned ids — that
+    /// used to be silently discarded, R1-08).</returns>
     /// <exception cref="NotSupportedException"><paramref name="sourceGraphPath"/> does not end with
     /// <c>.netpc.json</c>.</exception>
-    public async Task<ClassGraph> AddGraphAsync(Project project, string sourceGraphPath, CancellationToken cancellationToken)
+    /// <exception cref="InvalidOperationException">A file already exists at the target path, or a class
+    /// with the same <see cref="ClassGraph.FullName"/> is already in <paramref name="project"/>.</exception>
+    public async Task<(ClassGraph Class, IReadOnlyList<DocumentIssue> Issues)> AddGraphAsync(
+        Project project, string sourceGraphPath, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(project);
         ArgumentException.ThrowIfNullOrEmpty(sourceGraphPath);
@@ -269,24 +288,40 @@ public sealed class ProjectPersistence
 
         string projectDirectory = GetDirectoryOrThrow(project.Path);
         string targetPath = Path.Combine(projectDirectory, Path.GetFileName(sourceGraphPath));
-        byte[] bytes = await File.ReadAllBytesAsync(sourceGraphPath, cancellationToken).ConfigureAwait(false);
 
         Serializers current = serializers;
-        using IDocumentStore store = createStore(projectDirectory);
-        DocumentId id = FileSystemDocumentStore.ToDocumentId(projectDirectory, targetPath);
-        await store.WriteAsync(id, (stream, ct) => stream.WriteAsync(bytes, ct), cancellationToken).ConfigureAwait(false);
+        var sourceId = new DocumentId(Path.GetFileName(sourceGraphPath));
+        IDocumentFormat format = current.Formats.Find(sourceId, DocumentKind.Class)
+            ?? throw new DocumentFormatException($"No document format recognizes '{sourceGraphPath}'.", sourceId);
 
         ClassDocument document;
-        await using (Stream input = await store.OpenReadAsync(id, cancellationToken).ConfigureAwait(false))
+        await using (FileStream input = File.OpenRead(sourceGraphPath))
         {
-            document = await current.Formats.Default.ReadClassAsync(input, id, cancellationToken).ConfigureAwait(false);
+            document = await format.ReadClassAsync(input, sourceId, cancellationToken).ConfigureAwait(false);
         }
 
         var issues = new List<DocumentIssue>();
-        ClassGraph cls = current.Mapper.FromDocument(document, project, issues, id);
+        ClassGraph cls = current.Mapper.FromDocument(document, project, issues, sourceId);
+
+        if (File.Exists(targetPath))
+        {
+            throw new InvalidOperationException(
+                $"'{Path.GetFileName(targetPath)}' already exists in the project; rename '{sourceGraphPath}' before adding it.");
+        }
+
+        if (project.Classes.Any(existing => existing.FullName == cls.FullName))
+        {
+            throw new InvalidOperationException($"A class named '{cls.FullName}' is already in the project.");
+        }
+
+        byte[] bytes = await File.ReadAllBytesAsync(sourceGraphPath, cancellationToken).ConfigureAwait(false);
+        using IDocumentStore store = createStore(projectDirectory);
+        DocumentId targetId = FileSystemDocumentStore.ToDocumentId(projectDirectory, targetPath);
+        await store.WriteAsync(targetId, (stream, ct) => stream.WriteAsync(bytes, ct), cancellationToken).ConfigureAwait(false);
+
         cls.LoadedGraphFilePath = targetPath;
         project.Classes.Add(cls);
-        return cls;
+        return (cls, issues);
     }
 
     private static async ValueTask<byte[]> RenderAsync(Func<Stream, CancellationToken, ValueTask> write, CancellationToken cancellationToken)
@@ -322,4 +357,47 @@ public sealed class ProjectPersistence
         Path.GetDirectoryName(projectFilePath) is { Length: > 0 } directory
             ? directory
             : throw new InvalidOperationException($"Project path '{projectFilePath}' has no directory.");
+
+    /// <summary>
+    /// Returns the directory the document store must be rooted at so every one of
+    /// <paramref name="graphFilePaths"/> resolves to a <see cref="DocumentId"/> under it: usually
+    /// <paramref name="projectDirectory"/> itself, but widened to a common ancestor when a graph lives
+    /// outside it (project-system.md §7 allows <c>&lt;NetPrintsGraph Include="../Shared/X.netpc.json" /&gt;</c>;
+    /// R1-06 — without this, <see cref="FileSystemDocumentStore.ToDocumentId"/> throws for that graph
+    /// and the whole load or save fails instead of just that one class).
+    /// </summary>
+    /// <param name="projectDirectory">The project's own directory; the starting root.</param>
+    /// <param name="graphFilePaths">Every graph file path the store must be able to resolve.</param>
+    /// <returns>The computed root, an ancestor of <paramref name="projectDirectory"/> and of every path
+    /// in <paramref name="graphFilePaths"/> (or <paramref name="projectDirectory"/> unchanged if every
+    /// path is already under it).</returns>
+    private static string ComputeStoreRoot(string projectDirectory, IEnumerable<string> graphFilePaths)
+    {
+        string root = Path.GetFullPath(projectDirectory);
+
+        foreach (string graphFilePath in graphFilePaths)
+        {
+            string fullGraphPath = Path.GetFullPath(graphFilePath);
+            while (!IsUnderRoot(root, fullGraphPath))
+            {
+                string? parent = Path.GetDirectoryName(root);
+                if (string.IsNullOrEmpty(parent) || parent == root)
+                {
+                    // Reached a drive or file system root with the graph still outside it (e.g. a
+                    // different drive on Windows): nothing more to widen to.
+                    break;
+                }
+
+                root = parent;
+            }
+        }
+
+        return root;
+    }
+
+    private static bool IsUnderRoot(string root, string fullPath)
+    {
+        string relative = Path.GetRelativePath(root, fullPath);
+        return !relative.StartsWith("..", StringComparison.Ordinal) && !Path.IsPathRooted(relative);
+    }
 }

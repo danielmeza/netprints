@@ -34,7 +34,7 @@ internal static class MemberConverters
         public NodeDocument ToDocument(Node node, NodeMappingContext context)
         {
             var call = (CallMethodNode)node;
-            return new CallMethodNodeDocument(call.Id, null, null, context.ToRef(call.MethodSpecifier), call.InputTypePins.Count);
+            return new CallMethodNodeDocument(call.Id, null, null, context.ToRef(call.MethodSpecifier), call.InputTypePins.Count, call.IsPure);
         }
 
         public Node CreateNode(NodeDocument document, NodeGraph graph, NodeMappingContext context)
@@ -43,7 +43,9 @@ internal static class MemberConverters
             // The constructor derives every pin (target, exec/catch, arguments, returns, generic
             // argument type pins) from the method specifier; doc.GenericArgumentCount is redundant
             // with method.genericArgs.Count and needs no separate action.
-            return new CallMethodNode(graph, context.FromRef(doc.Method));
+            var node = new CallMethodNode(graph, context.FromRef(doc.Method));
+            node.IsPure = doc.Pure;
+            return node;
         }
     }
 
@@ -56,13 +58,15 @@ internal static class MemberConverters
         public NodeDocument ToDocument(Node node, NodeMappingContext context)
         {
             var ctor = (ConstructorNode)node;
-            return new ConstructorNodeDocument(ctor.Id, null, null, context.ToRef(ctor.ConstructorSpecifier));
+            return new ConstructorNodeDocument(ctor.Id, null, null, context.ToRef(ctor.ConstructorSpecifier), ctor.IsPure);
         }
 
         public Node CreateNode(NodeDocument document, NodeGraph graph, NodeMappingContext context)
         {
             var doc = (ConstructorNodeDocument)document;
-            return new ConstructorNode(graph, context.FromRef(doc.Constructor));
+            var node = new ConstructorNode(graph, context.FromRef(doc.Constructor));
+            node.IsPure = doc.Pure;
+            return node;
         }
     }
 

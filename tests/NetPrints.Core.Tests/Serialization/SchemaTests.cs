@@ -1,8 +1,10 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
+using Json.Schema;
 using NetPrints.Serialization.Documents;
 using NetPrints.Serialization.Json;
 using NetPrints.Tests.Samples;
@@ -87,6 +89,33 @@ namespace NetPrints.Tests.Serialization
             JsonObject methods = Child(Child(schema, "properties"), "methods");
             JsonObject method = Child(methods, "items");
             Assert.Equal(["id", "name", "visibility", "graph"], Array(method, "required").Select(n => Value<string>(n)));
+        }
+
+        // R1-17: validates a written document against the committed schema, not just the schema's own
+        // shape — writer/schema drift (a converter change, or a missing WhenWritingDefault omission)
+        // would otherwise go unnoticed.
+        [Fact]
+        public void AllNodesAndHelloWorldFixturesValidateAgainstTheCommittedSchema()
+        {
+            JsonSchema schema = JsonSchema.FromText(File.ReadAllText(SchemaPath()));
+            string repositoryRoot = SampleProjectFactory.FindRepositoryRoot();
+
+            string[] fixturePaths =
+            [
+                Path.Combine(repositoryRoot, "tests", "NetPrints.Core.Tests", "Fixtures", "AllNodes", "AllNodes.Everything.netpc.json"),
+                Path.Combine(repositoryRoot, "tests", "NetPrints.Core.Tests", "Fixtures", "HelloWorld", "HelloWorld.Program.netpc.json"),
+            ];
+
+            foreach (string fixturePath in fixturePaths)
+            {
+                JsonElement instance = JsonDocument.Parse(File.ReadAllText(fixturePath)).RootElement;
+                EvaluationResults results = schema.Evaluate(instance, new EvaluationOptions { OutputFormat = OutputFormat.List });
+
+                string DescribeFailure(EvaluationResults detail) =>
+                    $"{detail.EvaluationPath}: {string.Join(", ", detail.Errors?.Values ?? Enumerable.Empty<string>())}";
+                string failures = string.Join("\n", (results.Details ?? []).Where(detail => !detail.IsValid).Select(DescribeFailure));
+                Assert.True(results.IsValid, $"'{fixturePath}' failed schema validation:\n{failures}");
+            }
         }
 
         private static JsonObject ParseGenerated()

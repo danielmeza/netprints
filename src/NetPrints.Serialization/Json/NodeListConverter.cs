@@ -21,6 +21,9 @@ namespace NetPrints.Serialization.Json;
 /// </summary>
 internal sealed class NodeListConverter : JsonConverter<IReadOnlyList<NodeDocument>>
 {
+    private const string KindPropertyName = "$kind";
+
+
     /// <summary>
     /// Reads a JSON array of nodes.
     /// </summary>
@@ -97,13 +100,13 @@ internal sealed class NodeListConverter : JsonConverter<IReadOnlyList<NodeDocume
         using JsonElement.ObjectEnumerator properties = element.EnumerateObject();
         foreach (JsonProperty property in properties)
         {
-            if (property.NameEquals("$kind"))
+            if (property.NameEquals(KindPropertyName))
             {
-                kind = property.Value.GetString();
+                kind = RequireString(property.Value, KindPropertyName);
             }
             else if (property.NameEquals("id"))
             {
-                id = property.Value.GetString();
+                id = RequireString(property.Value, "id");
             }
         }
 
@@ -124,16 +127,25 @@ internal sealed class NodeListConverter : JsonConverter<IReadOnlyList<NodeDocume
         return new UnknownNodeDocument(id, kind, element);
     }
 
+    /// <summary>Reads <paramref name="value"/> as a string, or throws a
+    /// <see cref="DocumentFormatException"/> if it is a JSON value of another kind (e.g. a numeric
+    /// <c>$kind</c>, R1-05) instead of letting <see cref="JsonElement.GetString"/> raise the unchecked
+    /// <see cref="InvalidOperationException"/>.</summary>
+    private static string RequireString(JsonElement value, string propertyName) =>
+        value.ValueKind == JsonValueKind.String
+            ? value.GetString() ?? throw new DocumentFormatException($"A node's '{propertyName}' must not be null.")
+            : throw new DocumentFormatException($"A node's '{propertyName}' must be a string.");
+
     private static void WriteUnknown(Utf8JsonWriter writer, UnknownNodeDocument unknown)
     {
         writer.WriteStartObject();
-        writer.WriteString("$kind", unknown.Kind);
+        writer.WriteString(KindPropertyName, unknown.Kind);
         writer.WriteString("id", unknown.Id);
 
         using JsonElement.ObjectEnumerator properties = unknown.Raw.EnumerateObject();
         foreach (JsonProperty property in properties)
         {
-            if (property.NameEquals("$kind") || property.NameEquals("id"))
+            if (property.NameEquals(KindPropertyName) || property.NameEquals("id"))
             {
                 continue;
             }

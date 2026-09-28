@@ -79,17 +79,60 @@ namespace NetPrints.Tests.Serialization
             Assert.Equal(originalItemsType, rebuilt.Variables.Single().Type);
         }
 
-        // DF-T08 (document part): an unknown node kind and a connection into it are preserved.
+        // DF-T08 (document part): an unknown node kind and a connection into it are preserved, including
+        // its position and its place in the node order (R1-03: a preserved node used to move to the end
+        // of `nodes` and lose its `layout` entry to a false NPD004 on every re-save).
         [Fact]
-        public void UnknownNodeAndItsConnectionArePreservedRoundTrip()
+        public void UnknownNodeAndItsConnectionArePreservedRoundTripWithLayoutAndOrder()
         {
             // "n9" (the unknown node) is exempt from strict-id repair: it is opaque, preserved state,
-            // never mapped to a real Node.
+            // never mapped to a real Node. It comes first in both `nodes` and `layout`, ahead of the
+            // known node "n0" — the reviewer's repro order (R1-03).
             JsonElement raw = JsonDocument.Parse("""{"$kind":"test.ext/widget","id":"n9","extra":1}""").RootElement;
             var unknownNode = new UnknownNodeDocument("n9", "test.ext/widget", raw);
             var classReturn = new ClassReturnNodeDocument(NodeId(0), null, null, 0);
-            var classGraph = new GraphDocument([classReturn, unknownNode],
+            var classGraph = new GraphDocument([unknownNode, classReturn],
                 [new ConnectionDocument($"n9/out.type.Whatever", $"{NodeId(0)}/in.type.BaseType")], null);
+            var layout = new SortedDictionary<string, SortedDictionary<string, int[]>>
+            {
+                ["class"] = new SortedDictionary<string, int[]> { ["n9"] = [300, 400], [NodeId(0)] = [10, 20] },
+            };
+            var classDocument = new ClassDocument(1, null, "C", MemberVisibility.Public, ClassModifiers.None, null,
+                classGraph, null, null, null, null, layout);
+
+            DocumentMapper mapper = NewMapper();
+            var issues = new List<DocumentIssue>();
+            ClassGraph cls = mapper.FromDocument(classDocument, TestProjects.Create("P", "P"), issues, new DocumentId("C.netpc.json"));
+
+            Assert.Contains(issues, i => i.Code == DocumentIssue.UnknownNodeKind);
+            Assert.DoesNotContain(issues, i => i.Code == DocumentIssue.LayoutEntryIgnored);
+            Assert.NotNull(cls.PreservedDocumentState);
+            Assert.Equal(10, cls.Nodes.Single().PositionX);
+            Assert.Equal(20, cls.Nodes.Single().PositionY);
+
+            ClassDocument roundTripped = mapper.ToDocument(cls);
+
+            // Node order: the preserved node is back at its original index, not appended at the end.
+            Assert.Equal(["n9", NodeId(0)], roundTripped.ClassGraph.Nodes.Select(n => n.Id));
+            var preservedNode = Assert.IsType<UnknownNodeDocument>(roundTripped.ClassGraph.Nodes[0]);
+            Assert.Equal("test.ext/widget", preservedNode.Kind);
+            ConnectionDocument preservedConnection = Assert.Single(roundTripped.ClassGraph.Connections!);
+            Assert.Equal("n9/out.type.Whatever", preservedConnection.From);
+            Assert.Equal($"{NodeId(0)}/in.type.BaseType", preservedConnection.To);
+
+            // Layout: both positions survive, including the preserved node's.
+            SortedDictionary<string, int[]> roundTrippedLayout = Assert.Single(roundTripped.Layout!).Value;
+            Assert.Equal(new[] { 300, 400 }, roundTrippedLayout["n9"]);
+            Assert.Equal(new[] { 10, 20 }, roundTrippedLayout[NodeId(0)]);
+        }
+
+        // R1-04: a pure-capable node's purity round-trips through the document. Before the fix, a pure
+        // node had no way to record that and reloaded impure, with its exec pins back.
+        [Fact]
+        public void PureExplicitCastNodeRoundTripsWithoutExecPins()
+        {
+            var cast = new ExplicitCastNodeDocument(NodeId(1), null, null, Pure: true);
+            var classGraph = new GraphDocument([new ClassReturnNodeDocument(NodeId(0), null, null, 0), cast], null, null);
             var classDocument = new ClassDocument(1, null, "C", MemberVisibility.Public, ClassModifiers.None, null,
                 classGraph, null, null, null, null, null);
 
@@ -97,15 +140,30 @@ namespace NetPrints.Tests.Serialization
             var issues = new List<DocumentIssue>();
             ClassGraph cls = mapper.FromDocument(classDocument, TestProjects.Create("P", "P"), issues, new DocumentId("C.netpc.json"));
 
-            Assert.Contains(issues, i => i.Code == DocumentIssue.UnknownNodeKind);
-            Assert.NotNull(cls.PreservedDocumentState);
+            Node castNode = cls.Nodes.Single(n => n.Id == NodeId(1));
+            Assert.True(castNode.IsPure);
+            Assert.Empty(castNode.InputExecPins);
+            Assert.Empty(castNode.OutputExecPins);
 
             ClassDocument roundTripped = mapper.ToDocument(cls);
-            var preservedNode = Assert.IsType<UnknownNodeDocument>(roundTripped.ClassGraph.Nodes.Single(n => n.Id == "n9"));
-            Assert.Equal("test.ext/widget", preservedNode.Kind);
-            ConnectionDocument preservedConnection = Assert.Single(roundTripped.ClassGraph.Connections!);
-            Assert.Equal("n9/out.type.Whatever", preservedConnection.From);
-            Assert.Equal($"{NodeId(0)}/in.type.BaseType", preservedConnection.To);
+            var roundTrippedCast = Assert.IsType<ExplicitCastNodeDocument>(roundTripped.ClassGraph.Nodes.Single(n => n.Id == NodeId(1)));
+            Assert.True(roundTrippedCast.Pure);
+        }
+
+        // R1-05: a generic type reference where a concrete type is required (a literal's type) must fail
+        // as DocumentFormatException, not an unchecked InvalidCastException from the old blind cast.
+        [Fact]
+        public void GenericTypeRefWhereConcreteTypeIsRequiredThrowsDocumentFormatException()
+        {
+            var literal = new LiteralNodeDocument(NodeId(1), null, null, new TypeRef("T", Generic: true));
+            var classGraph = new GraphDocument([new ClassReturnNodeDocument(NodeId(0), null, null, 0), literal], null, null);
+            var classDocument = new ClassDocument(1, null, "C", MemberVisibility.Public, ClassModifiers.None, null,
+                classGraph, null, null, null, null, null);
+
+            DocumentMapper mapper = NewMapper();
+            var issues = new List<DocumentIssue>();
+            Assert.Throws<DocumentFormatException>(() =>
+                mapper.FromDocument(classDocument, TestProjects.Create("P", "P"), issues, new DocumentId("C.netpc.json")));
         }
 
         // DF-T19 (document part): inserting a parameter keeps the connection on the unmoved parameter
@@ -128,7 +186,7 @@ namespace NetPrints.Tests.Serialization
             // pass even with no generic arguments involved, is fixed; see implementation-notes.md,
             // "T035 - LiteralNode.UpdatePinTypes...").
             var entry = new MethodEntryNodeDocument(NodeId(3), null, null, 0, null);
-            var call = new CallMethodNodeDocument(NodeId(2), null, null, editedMethod, 0);
+            var call = new CallMethodNodeDocument(NodeId(2), null, null, editedMethod, 0, Pure: false);
             var literalA = new LiteralNodeDocument(NodeId(6), null, null, intRef);
             var literalB = new LiteralNodeDocument(NodeId(7), null, null, intRef);
 
