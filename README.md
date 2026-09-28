@@ -75,6 +75,12 @@ When those aren't installed (for example on Linux), NetPrints falls back to the 
 through the `dotnet` host. Proper reference-pack and target selection is tracked on the roadmap
 (P1).
 
+## Guides
+
+- [Projects](docs/guide/projects.md) — the `.csproj` project model, the `NetPrints.Sdk` package and the committed generated code.
+- [Graph file format](docs/guide/graph-format.md) — the `*.netpc.json` format, version control and what a diff looks like.
+- [Extensions](docs/guide/extensions.md) — loading extensions, environment variables, and writing your own.
+
 ## Project layout
 
 | Path | Contents |
