@@ -13,7 +13,7 @@ using NetPrints.Extensibility;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Nodes;
 using NetPrints.Extensibility.Settings;
-using NetPrints.Generator;
+using NetPrints.Generation;
 using NetPrints.Graph;
 using NetPrints.Projects;
 using NetPrints.Serialization;

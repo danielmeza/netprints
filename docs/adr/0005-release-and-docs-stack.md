@@ -50,7 +50,16 @@ publishing anything.
   GitHub Release — is gated by a repository variable or a `v*` tag, so CI (including a release dry
   run) exercises the whole pipeline on every pull request without publishing anything.
 
-### Editor → Generator project reference
+### Editor → Generator project reference (superseded by ADR-0009)
+
+> **Superseded 2026-09-28**: the `ReferenceOutputAssembly="false"` + `HintPath` arrangement this
+> subsection describes broke a clean-clone, RID-published build (`CS0234`) and could silently
+> compile against a stale Generator DLL. [ADR-0009](0009-generation-library-split.md) replaces it by
+> extracting the shared code into `NetPrints.Generation`, a normal library both `NetPrints.Generator`
+> and `NetPrints.Editor` reference with a plain `ProjectReference`. The rest of this ADR (versioning,
+> packaging, publishing, docs site, wiki) is unaffected and still applies; this subsection and its
+> "do not simplify" warning in Consequences are kept only as the historical record of why the old
+> shape existed.
 
 `src/NetPrints.Editor` calls `NetPrints.Generator.GraphCodeGenerator` directly (`ClassEditorVM`/
 `MainEditorVM`), so it needs a real reference to `NetPrints.Generator` — an `OutputType=Exe` project
@@ -82,12 +91,9 @@ compile-time and copy-to-output dependency.
 - The docs toolchain now depends on Node.js (Docusaurus) in addition to .NET.
 - The owner has six one-time manual steps (release contract §11) before packages, Pages or the wiki
   publish anything; every workflow tolerates them being undone (skip, or fail naming the step).
-- The Editor → Generator `ReferenceOutputAssembly="false"` + `HintPath` reference is a workaround for
-  a genuine, documented .NET SDK limitation ([aka.ms/netsdk1150](https://aka.ms/netsdk1150): a
-  library-like `Exe` project referenced by an app that itself gets RID-published), not a
-  NetPrints-specific design choice — a future contributor should not "simplify" it back to a plain
-  `ProjectReference`, or the self-contained desktop publish fails again with
-  NETSDK1152/NETSDK1150/NETSDK1067. Because the `HintPath` is configuration-relative, `NetPrints.Generator`
-  must be built in the same configuration as `NetPrints.Editor` before a clean build or publish.
+- **Superseded by [ADR-0009](0009-generation-library-split.md)**: the Editor → Generator
+  `ReferenceOutputAssembly="false"` + `HintPath` reference broke a clean-clone RID-published build
+  (`CS0234`) and could silently compile against a stale Generator DLL. ADR-0009 removes it by moving
+  the shared code into `NetPrints.Generation`, a library both projects reference normally.
 - Follow-ups: Velopack installers and auto-update, code signing, a package-validation baseline
   beyond the two libraries, and registering the graph schema with SchemaStore.

@@ -4,10 +4,10 @@ namespace NetPrints.Editor.Tests.Architecture;
 
 /// <summary>
 /// contracts/editor-services.md §7 rule A3, extended for this batch: the model, reflection,
-/// serialization, extensibility, workspace, generator and SDK projects never reference an assembly
-/// named <c>Avalonia*</c>, and the generator additionally never references <c>Microsoft.Build*</c>
-/// (ED-T10). A project-reference/package scan of each project's own <c>.csproj</c>, not a transitive
-/// build-output scan.
+/// serialization, extensibility, workspace, generation, generator and SDK projects never reference an
+/// assembly named <c>Avalonia*</c>, and the generation/generator projects additionally never reference
+/// <c>Microsoft.Build*</c> (ED-T10). A project-reference/package scan of each project's own
+/// <c>.csproj</c>, not a transitive build-output scan.
 /// </summary>
 public class AssemblyReferenceGateTests
 {
@@ -18,11 +18,16 @@ public class AssemblyReferenceGateTests
         "NetPrints.Serialization",
         "NetPrints.Extensibility",
         "NetPrints.Workspace",
+        "NetPrints.Generation",
         "NetPrints.Generator",
         "NetPrints.Sdk",
     ];
 
-    private const string GeneratorProject = "NetPrints.Generator";
+    private static readonly string[] NeverReferencesMicrosoftBuild =
+    [
+        "NetPrints.Generation",
+        "NetPrints.Generator",
+    ];
 
     [Fact]
     public void ModelAndToolingProjectsNeverReferenceAvalonia()
@@ -41,8 +46,10 @@ public class AssemblyReferenceGateTests
     public void GeneratorNeverReferencesMicrosoftBuild()
     {
         string src = Path.Combine(RepositoryPaths.Root(), "src");
-        var offenders = ReferenceIncludes(src, GeneratorProject)
-            .Where(include => include.StartsWith("Microsoft.Build", StringComparison.Ordinal))
+        var offenders = NeverReferencesMicrosoftBuild
+            .SelectMany(project => ReferenceIncludes(src, project)
+                .Where(include => include.StartsWith("Microsoft.Build", StringComparison.Ordinal))
+                .Select(include => $"{project}: {include}"))
             .ToList();
 
         Assert.Empty(offenders);

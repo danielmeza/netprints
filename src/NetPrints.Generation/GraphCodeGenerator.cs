@@ -20,7 +20,7 @@ using NetPrints.Serialization.Mapping;
 using NetPrints.Serialization.Migrations;
 using NetPrints.Translator;
 
-namespace NetPrints.Generator;
+namespace NetPrints.Generation;
 
 /// <summary>
 /// One graph document <see cref="GraphCodeGenerator.GenerateAsync"/> processed: whether its
@@ -38,9 +38,10 @@ namespace NetPrints.Generator;
 public sealed record GeneratedFileResult(string Input, string Output, bool Written, IReadOnlyList<CodeDiagnostic> Diagnostics);
 
 /// <summary>
-/// Translates graph documents (<c>.netpc.json</c>) to C# (project-system.md §3): the library the
-/// <c>NetPrints.Sdk</c> build target execs (<see cref="Program"/>), and, later, the editor's live
-/// preview and the P2 CLI's <c>netprints generate</c> both call directly.
+/// Translates graph documents (<c>.netpc.json</c>) to C# (project-system.md §3): the library
+/// <c>NetPrints.Generator.Program</c> execs on behalf of the <c>NetPrints.Sdk</c> build target, and
+/// that the editor's live preview and the P2 CLI's <c>netprints generate</c> both call directly
+/// (ADR-0009).
 /// </summary>
 /// <remarks>
 /// Translates with <see cref="ExtensionRegistry.Translation"/>, so the node translators and emitters of the

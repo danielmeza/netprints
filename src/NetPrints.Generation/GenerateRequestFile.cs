@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace NetPrints.Generator;
+namespace NetPrints.Generation;
 
 /// <summary>
 /// One graph document to generate: <see cref="Input"/> is read and translated, and the result is

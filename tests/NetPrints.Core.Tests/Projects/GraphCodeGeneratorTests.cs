@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Extensibility.Loading;
-using NetPrints.Generator;
+using NetPrints.Generation;
 using NetPrints.Graph;
 using NetPrints.Serialization;
 using NetPrints.Serialization.Documents;

@@ -3,18 +3,14 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <AssemblyName>NetPrints.Generator</AssemblyName>
-    <!-- Ahead of using it (T044+): keep the logging-usage rules an error once logging is added here. -->
-    <WarningsAsErrors>$(WarningsAsErrors);CA1848;CA2254</WarningsAsErrors>
-    <!-- Always invoked as "dotnet exec NetPrints.Generator.dll ..." (NetPrints.Sdk.targets) or as a
-         plain library reference from NetPrints.Editor (ClassEditorVM.RenderFile, see that project's
-         ReferenceOutputAssembly="false" + Reference pair: release contract §5); never run as its own
-         native executable, so no apphost is needed. -->
+    <!-- Always invoked as "dotnet exec NetPrints.Generator.dll ..." (NetPrints.Sdk.targets); never run
+         as its own native executable, so no apphost is needed. -->
     <UseAppHost>false</UseAppHost>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\NetPrints.Core\NetPrints.Core.csproj" />
-    <ProjectReference Include="..\NetPrints.Extensibility\NetPrints.Extensibility.csproj" />
-    <ProjectReference Include="..\NetPrints.Serialization\NetPrints.Serialization.csproj" />
+    <!-- Thin host over the translation logic in NetPrints.Generation, a normal library also referenced
+         directly by NetPrints.Editor (ADR-0009; supersedes the ADR-0005 HintPath workaround). -->
+    <ProjectReference Include="..\NetPrints.Generation\NetPrints.Generation.csproj" />
   </ItemGroup>
   <ItemGroup>
     <!-- GenerateRequestFileExitCodeTests (R1-20) calls Program.Main directly with a request path. -->

@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using NetPrints.Compilation;
 using NetPrints.Extensibility.Loading;
+using NetPrints.Generation;
 
 namespace NetPrints.Generator;
 

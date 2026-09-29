@@ -7,7 +7,7 @@ using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Extensibility;
 using NetPrints.Extensibility.Loading;
-using NetPrints.Generator;
+using NetPrints.Generation;
 using NetPrints.Testing;
 using NetPrints.Tests.Extensibility;
 using NetPrints.Tests.Samples;

@@ -9,7 +9,7 @@ using NetPrints.Editor.Hosting;
 using NetPrints.Editor.References;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Settings;
-using NetPrints.Generator;
+using NetPrints.Generation;
 using NetPrints.Projects;
 using NetPrints.Serialization;
 using NetPrints.Translator;

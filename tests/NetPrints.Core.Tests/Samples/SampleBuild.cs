@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Core;
-using NetPrints.Generator;
+using NetPrints.Generation;
 using NetPrints.Projects;
 using NetPrints.Serialization;
 using NetPrints.Serialization.Json;

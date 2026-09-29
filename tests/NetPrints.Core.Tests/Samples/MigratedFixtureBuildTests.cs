@@ -3,7 +3,7 @@ using System.IO;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Extensibility.Loading;
-using NetPrints.Generator;
+using NetPrints.Generation;
 using NetPrints.Serialization;
 using NetPrints.Serialization.Json;
 using NetPrints.Serialization.Mapping;
