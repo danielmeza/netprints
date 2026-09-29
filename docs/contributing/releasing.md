@@ -28,17 +28,17 @@ dotnet tool install -g NetPrints.Cli --version 0.1.0-local.20260101000000 --add-
 
 A release is a pushed tag matching `v*` (for example `v0.1.0`). `.github/workflows/release.yml`:
 
-1. **`pack`** — restores, computes the version with MinVer, `dotnet pack`s the seven NuGet/tool
-   packages, and runs `scripts/verify-packages.sh` against them.
-2. **`desktop`** — publishes the self-contained editor for `linux-x64`, `win-x64` and `osx-arm64`,
-   smoke-tests each with `scripts/smoke-desktop.sh`, and archives it with `scripts/archive-desktop.sh`
-   (`.tar.gz` for Linux/macOS, `.zip` for Windows).
-3. **`assets`** — collects every package and archive, writes `SHA256SUMS.txt`, and attaches build
-   provenance attestations.
+1. **`pack`** — restores, computes the version with MinVer, `dotnet pack`s 4 packages (7 files),
+   and runs `scripts/verify-packages.sh` against them.
+2. **`desktop`** — publishes the self-contained editor for `linux-x64`, `win-x64` and `osx-arm64`.
+   Smoke-tests `linux-x64` and `osx-arm64` with `scripts/smoke-desktop.sh`; `win-x64` has
+   `smoke: false`. Archives each with `scripts/archive-desktop.sh` (`.tar.gz` for Linux/macOS,
+   `.zip` for Windows).
+3. **`assets`** — collects every package and archive, and writes `SHA256SUMS.txt`.
 4. **`publish-nuget`** — pushes the packages to nuget.org with Trusted Publishing (OIDC; no stored
    API key). Tag pushes only.
 5. **`github-release`** — creates the GitHub Release from `.github/release.yml`'s categories and
-   `.github/release-notes.md`. Tag pushes only.
+   `.github/release-notes.md`, and attaches build provenance attestations. Tag pushes only.
 
 `workflow_dispatch` and a pull request that touches the release inputs (this workflow, the release
 scripts, `eng/`, the `Directory.*.props` files or a `src/**/*.csproj`) run the same workflow as a

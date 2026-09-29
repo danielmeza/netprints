@@ -61,11 +61,13 @@ is broken:
 - **Windows**: SmartScreen will say the app is unrecognized. Click **More info**, then **Run
   anyway**.
 - **macOS**: Gatekeeper will refuse to open the app from Finder ("cannot be opened because the
-  developer cannot be verified"). Either right-click the app and choose **Open**, then confirm
-  **Open Anyway** in the dialog that follows, or clear the quarantine attribute from a terminal:
+  developer cannot be verified"). Clear the quarantine attribute from a terminal, then run the
+  editor from there:
 
   ```bash
-  xattr -dr com.apple.quarantine NetPrints.app
+  xattr -dr com.apple.quarantine NetPrints-<version>-osx-arm64
+  cd NetPrints-<version>-osx-arm64
+  ./NetPrints.Desktop
   ```
 
 Code signing is tracked as a follow-up (see [ADR 0005](../adr/0005-release-and-docs-stack.md)).
@@ -76,7 +78,7 @@ Every release includes `SHA256SUMS.txt` alongside the archives and packages. Ver
 against it:
 
 ```bash
-sha256sum -c SHA256SUMS.txt --ignore-missing
+sha256sum -c --ignore-missing SHA256SUMS.txt
 ```
 
 Release artifacts also carry

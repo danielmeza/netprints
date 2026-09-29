@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NetPrints.Sdk" Version="1.0.0" Condition="'$(NetPrintsUseLocalSdk)' != 'true'" PrivateAssets="all" />
+    <PackageReference Include="NetPrints.Sdk" Version="0.1.0" Condition="'$(NetPrintsUseLocalSdk)' != 'true'" PrivateAssets="all" />
   </ItemGroup>
 
 </Project>

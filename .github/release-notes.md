@@ -17,4 +17,4 @@ Packages: `dotnet tool install -g NetPrints.Cli` (command `netprints`) and
 *More info* → *Run anyway*. On macOS, open it once, then *System Settings* → *Privacy & Security* →
 *Open Anyway* (or run `xattr -dr com.apple.quarantine NetPrints-<version>-osx-arm64`).
 
-Verify a download: `sha256sum -c SHA256SUMS.txt` and `gh attestation verify <file> -R danielmeza/netprints`.
+Verify a download: `sha256sum -c --ignore-missing SHA256SUMS.txt` and `gh attestation verify <file> -R danielmeza/netprints`.

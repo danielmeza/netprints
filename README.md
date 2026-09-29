@@ -41,12 +41,6 @@ shows up as tooltips in the node search. You can also add a C# source directory,
 reflection only (handy for using NetPrints inside Unity against your existing scripts) or compiled
 straight into the output.
 
-Projects created by the original WPF editor reference .NET Framework 4.5 reference assemblies.
-When those aren't installed (for example on Linux), NetPrints falls back to the currently running
-.NET runtime's own assemblies for reflection and compilation, and starts compiled executables
-through the `dotnet` host. Proper reference-pack and target selection is tracked on the roadmap
-(P1).
-
 ## Guides
 
 - [Projects](docs/guide/projects.md) — the `.csproj` project model, the `NetPrints.Sdk` package and the committed generated code.
@@ -62,6 +56,12 @@ through the `dotnet` host. Proper reference-pack and target selection is tracked
 | `src/NetPrints.Editor` | The Avalonia 12 editor library: views, view models, services. |
 | `src/NetPrints.Desktop` | The desktop application hosting the editor. |
 | `src/NetPrints.Cli` | The command-line compiler. |
+| `src/NetPrints.Extensibility` | Plugin system, extension manifests, and extension loader. |
+| `src/NetPrints.Generation` | Code generation for graphs to C#. |
+| `src/NetPrints.Generator` | The generator executable invoked by the SDK build target. |
+| `src/NetPrints.Serialization` | Graph serialization and deserialization. |
+| `src/NetPrints.Workspace` | Project workspace and graph file management. |
+| `src/NetPrints.Sdk` | The NuGet SDK package for integrating NetPrints into .NET projects. |
 | `tests/` | `NetPrints.Core.Tests`, `NetPrints.Editor.Tests` and `NetPrints.Editor.UITests` (xUnit v3 on Microsoft.Testing.Platform; the UI tests are headless Avalonia), `NetPrints.Desktop.E2ETests` (real editor over X11) and `NetPrints.Testing.Ui` (shared page objects). |
 | `samples/` | Sample `.csproj`/`.netpc.json` projects (FR-010) used as test fixtures and quick-start material. |
 | `legacy/NetPrintsVSIX` | The old Visual Studio extension, kept for reference. Not built, not tested, not in the solution (see [its README](legacy/NetPrintsVSIX/README.md)). |
@@ -71,14 +71,14 @@ Every `src/`/`tests/` project targets `net10.0`. Package versions are centrally 
 [`Directory.Packages.props`](Directory.Packages.props); shared build settings are in
 [`Directory.Build.props`](Directory.Build.props) (and the `src/`/`tests/`-scoped copies). The
 [CI workflow](.github/workflows/ci.yml) builds, format-checks, tests and runs the E2E suite on
-every push and pull request.
+pushes and pull requests to `master`.
 
 ## Status and roadmap
 
 Under active, phased modernization — see
 [`.specify/memory/roadmap.md`](.specify/memory/roadmap.md) for what's shipped and what's next.
-The Avalonia editor rebuild (P0) and its GPU/CPU grid rendering (P0.1) are merged; core refactor
-and extension points, a catalog/CLI redesign, and editor usability are the phases ahead.
+The Avalonia editor rebuild (P0) and its GPU/CPU grid rendering (P0.1) are merged; a catalog/CLI
+redesign and editor usability are the phases ahead.
 
 ## Contributing
 

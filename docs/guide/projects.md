@@ -15,7 +15,7 @@ Code — understands a NetPrints project too.
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NetPrints.Sdk" Version="1.0.0" PrivateAssets="all" />
+    <PackageReference Include="NetPrints.Sdk" Version="0.1.0" PrivateAssets="all" />
   </ItemGroup>
 
 </Project>
