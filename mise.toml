@@ -1,0 +1,5 @@
+[tools]
+# sourcemeta JSON Schema CLI: metaschema/lint/validate for schemas/netpc.v1.schema.json
+# (docs/adr/0011-jsonschema-cli-for-schema-validation.md). Pinned to the exact release so CI and
+# local runs use the same binary.
+jsonschema = "17.0.0"

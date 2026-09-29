@@ -2,13 +2,13 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://danielmeza.github.io/netprints/schemas/netpc.v1.schema.json",
   "title": "NetPrints class graph (schema v1)",
+  "description": "A NetPrints class graph document (document-format.md §1), the .netpc.json format a NetPrints project's classes are serialized as",
   "type": "object",
   "properties": {
     "$schema": {
       "type": "string"
     },
     "schemaVersion": {
-      "type": "integer",
       "const": 1
     },
     "namespace": {
@@ -448,7 +448,6 @@
                     "required": [
                       "name",
                       "declaringType",
-                      "modifiers",
                       "visibility"
                     ]
                   },
@@ -512,7 +511,6 @@
                     "required": [
                       "name",
                       "declaringType",
-                      "modifiers",
                       "visibility"
                     ]
                   },
@@ -655,7 +653,6 @@
                     "required": [
                       "name",
                       "declaringType",
-                      "modifiers",
                       "visibility"
                     ]
                   }
@@ -776,8 +773,7 @@
                       "type",
                       "getterVisibility",
                       "setterVisibility",
-                      "visibility",
-                      "modifiers"
+                      "visibility"
                     ]
                   }
                 },
@@ -846,8 +842,7 @@
                       "type",
                       "getterVisibility",
                       "setterVisibility",
-                      "visibility",
-                      "modifiers"
+                      "visibility"
                     ]
                   }
                 },
@@ -1336,7 +1331,12 @@
                   }
                 }
               }
-            ]
+            ],
+            "properties": {
+              "$kind": {
+                "type": "string"
+              }
+            }
           }
         },
         "connections": {

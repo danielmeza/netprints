@@ -20,3 +20,4 @@ instead.
 - [0007: XAML practices for the Avalonia editor](0007-xaml-practices.md)
 - [0008: CI code coverage uses static instrumentation only](0008-static-only-code-coverage.md)
 - [0009: Split `NetPrints.Generation` out of `NetPrints.Generator`](0009-generation-library-split.md)
+- [0011: The sourcemeta `jsonschema` CLI validates `schemas/netpc.v1.schema.json`](0011-jsonschema-cli-for-schema-validation.md)

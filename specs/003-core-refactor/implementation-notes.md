@@ -4527,6 +4527,13 @@ E2E suite (AGENTS.md's "A stray saved variable under samples/ broke 11 tests on 
      IDE access.
   T106 stays unticked in tasks.md until the owner completes 1 and 2 (Rider/item 3 is now confirmed);
   item 4 is blocked on Pages regardless of IDE access.
+- **T106 update (2026-09-29).** Owner confirmed file nesting in Rider (as above) and in the ReSharper
+  extension for VS Code, with no custom ReSharper nesting rules configured — since Visual Studio
+  2022/2026 use the same ReSharper/VS nesting engine, items 1 and 2 above are expected to behave the
+  same and are not separately re-verified. Item 4 (VS Code JSON schema validation/completion for
+  `HelloWorld.Program.netpc.json` through the resolved `$schema` URL, now that Pages is live) is still
+  open, pending the owner's manual check. T106's checkbox in tasks.md stays unticked until item 4 is
+  confirmed.
 - **T107**: `dotnet format NetPrints.slnx --verify-no-changes` clean (no output). Full suite
   (`dotnet test --solution NetPrints.slnx -c Release --no-build --no-progress --no-ansi --
   --ignore-exit-code 8`): **827 total, 0 failed, 817 succeeded, 10 skipped** (same pre-existing
