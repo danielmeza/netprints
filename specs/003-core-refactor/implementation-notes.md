@@ -5451,3 +5451,52 @@ Details and evidence are in ADR 0008.
 - **P2, CLI `--version`/`--help` exit code**: both currently exit 2 (CommandLineParser's not-parsed path maps to the
   bad-arguments code), and `ci.yml`'s "CLI smoke" step asserts `rc -eq 2`. The P2 CLI redesign must make them exit 0 and
   flip that assertion to 0.
+
+## Checkpoint T108: review and fix closure (2026-09-29)
+
+Independent review (AGENTS.md) ran as three Opus reviews against `810a2e5` — R1 (core/serialization/
+extensibility/translator/CLI), R2 (Editor/Desktop UI), R3 (CI/release/docs/test infra) — followed by a
+final Opus pre-merge review of the fix commits (F-01..F-07 plus nits). Findings were merged into
+`tmp/fix-plan.md`'s FIX-NOW table and closed in batches, each gated by a green PR CI run before the next
+batch started:
+
+- F1 (save/generator exception isolation) — 40ab84a
+- F2 (STAThread, OpenMethodCommand concurrency) — 941f89d
+- F-Hover (OWN-01..05: code-view hover, error-row nav, pin alignment) — 030798e, e9abd81, bdbd951
+- F3 (serialization/documents correctness) — 843dfea
+- OWN-06/OWN-07 (Space/Delete gesture theft, event-graph open pipeline) — f27c9d5
+- F4 (CLI/generator exit codes) — 6dd89f2
+- F5 (drag start, list-highlight leaks) — b7b8718
+- CI fix: static-only code coverage, `Core.Tests` AccessViolationException (ADR-0008) — cea8392
+- F6 (undo/redo local-variable retype) — ca157a7
+- F7 (editor test-seam hygiene) — 2821a20
+- F8 (E2E worker-pool/dialog-race leaks) — 06f5e6d
+- F9 (CI/release workflow correctness) — 73e7b30
+- F10 (`NetPrints.Generation` library extraction, ADR-0009) — 110b025, 71e4cec
+- F11/F12 (serialization infra cleanup, extensibility robustness) — f2c4d78
+- F13/F-Hyg (Project.Snapshot cleanup, tests/ hygiene gate) — eb0419f
+- F14 (editor VM command/architecture minors, gesture move) — e3ebb6a
+- F15/F16 (CodeView VM commands, dialog VMs, theme hygiene) — a4ef778
+- HYG-2 (remove this PR's null-forgiving sites, replace spin-wait) — d9a33a5
+- F17/F18 (mechanical code nits) — ecced4b
+- F-SC005 (record cold/warm SC-005 timings) — a93d30f
+- Doc1/Doc2 (README, CONTRIBUTING, install, releasing, version pins) — 32883b9
+- Doc2 cont'd (sample `NetPrints.Sdk` pinned to 0.1.0) — 0d7d8a9
+- CI-A (E2E timing upload, local-feed rerun, pack version step) — 35c0318
+- CI-B (global.json SDK, wiki permissions, `out/` ignore, ShutdownTests cleanup) — 967b766
+- Final review G1 (publish-nuget checkout for global.json, F-01) — bfbc00f
+- Final review G2 (new projects reference the editor's own SDK version, F-02) — d2808ee
+- Final review G3 (last-click-wins open pipeline races F-03/F-04) — 3e0368e
+- Null-forgiving allowlist line-number fix (shifted by new ClassEditorVM code) — e084318
+- Extension-testing research and ADR-0010 draft (Proposed), planned for P2/P3 — 63c1c54
+- Final review G4 (retype undo with chained setters F-05, references toggle F-06) — b914d13
+- Final review G5 (deterministic host-channel test, rollback error-hiding, `IsUnderRoot` F-07/nits) — 0ab7c58
+
+Final test totals on `0ab7c58`: `NetPrints.Core.Tests` 528, `NetPrints.Editor.Tests` 326,
+`NetPrints.Editor.UITests` 108 plus 3 skipped, Desktop E2E 9/9 on CI.
+
+SC-005 as recorded (F-SC005, `ProjectOpenPerformanceTests`): cold 4.9–6.5 s, warm 1.5–2.3 s, local. The
+literal <3 s cold-open target is not met; it stays deferred to P8 (3× warm-bound regression gate only).
+
+See "Deferred from the PR #6 review (R1–R3)" above for the full deferred list (P2/P3a/P8 items) carried
+forward from this review cycle.

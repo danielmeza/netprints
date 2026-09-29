@@ -205,7 +205,16 @@ Checkpoint E (plan.md). Out of scope (follow-ups, do not implement): `netprints 
 - [x] T105 [P] SC-005 measurement (open HelloWorld restored: evaluation + workspace + extensions + types), recorded in the PR; 3× regression bound only
 - [ ] T106 Manual IDE check (research K9): build and nesting of the HelloWorld sample in Visual Studio 2022, Visual Studio 2026 and Rider; VS Code shows schema validation for `HelloWorld.Program.netpc.json` once the `$schema` URL resolves (after the owner enabled Pages; else note it); record results in the PR
 - [x] T107 `dotnet format --verify-no-changes`, full suite, E2E once on a private Xvfb (quickstart §6)
-- [ ] T108 **After Checkpoint L (T122).** Update checkboxes and research notes with findings (R17 open items K13, K14; R18/R19 findings); mark the PR ready; CI, Docs and the Release dry run green; independent review per AGENTS.md
+- [x] T108 **After Checkpoint L (T122).** Update checkboxes and research notes with findings (R17 open items K13, K14; R18/R19 findings); mark the PR ready; CI, Docs and the Release dry run green; independent review per AGENTS.md
+  - Independent review ran as 3 Opus reviews (R1 core/serialization/extensibility/translator/CLI, R2
+    editor/desktop UI, R3 CI/release/docs/test infra) plus a final Opus pre-merge review of the fix
+    commits. R17's open items (K13, K14) and the R18/R19 findings are recorded in `research.md`
+    (K13 stays an open item, K14 resolved at T041) and in `implementation-notes.md`'s L5/T121 entries;
+    no further pointer needed here.
+  - Fixes landed in about 30 batches (F1–F18, F-Hover, F-Hyg, F-SC005, Doc1/Doc2, CI-A/CI-B, then
+    G1–G5 for the final review), each gated by a green PR CI run before the next batch started.
+    See "Checkpoint T108" in `implementation-notes.md` for the batch-to-commit list.
+  - PR marked ready by the coordinator after this commit.
 
 ---
 
