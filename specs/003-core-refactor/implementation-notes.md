@@ -4491,6 +4491,10 @@ E2E suite (AGENTS.md's "A stray saved variable under samples/ broke 11 tests on 
     convention `SearchPerformanceTests` already uses for its own SC-005 budget. All three runs passed
     comfortably inside that bound. Recorded here (not literally "in the PR" title) per the batch's
     instructions, for the coordinator to fold into the PR description.
+  - **Superseded by batch D4 and R3-14 below**: the single combined number above no longer matches
+    the test, which batch D4 later split into an untimed cold pass and a timed warm pass (see the
+    D4 section). **SC-005 status: measured; literal <3 s target not met (cold ≈4.89–6.53 s / warm
+    ≈1.52–2.26 s, local, 3 runs); deferred to P8.**
   - Deviation from a literal reading of "workspace": `MsBuildProjectSystem.LoadAsync` already includes
     creating and querying an `MSBuildWorkspace` internally (plan.md's "MSBuildWorkspace open measured
     0.8 s" baseline lines up with the ≈650 ms evaluation+restore-check figure above), so no separate
@@ -5268,6 +5272,15 @@ rerun; run 36381532778 (8e318a7) also failed the perf test (10.7 s vs. the 9 s b
   - SC-005 is still checked: the timed pass exercises the identical pipeline (MSBuild evaluation,
     graph load, extension load, reflection reload) end to end, just without re-paying a process
     start-up cost no real editor session pays twice either.
+  - **Cold-to-warm reinterpretation (flagged R3-14)**: spec.md's SC-005 text has no "second project
+    in an already-running editor" qualifier — that reading was introduced here to justify not timing
+    the warm-up. The test now gates only the warm (second) open against the 9000 ms bound; the
+    spec's literal cold-open target is not asserted by any test and stays open, tracked for P8.
+  - **R3-14 follow-up**: the test was extended to log both passes (it already ran both; only the
+    cold one went unlogged). Measured (this sandbox, Release, 3 runs): cold open (incl. restore +
+    reflection warm-up) 4943 ms / 6527 ms / 4894 ms; warm open 2008 ms / 2261 ms / 1523 ms. **SC-005
+    status: measured; literal <3 s target not met (cold ≈4.89–6.53 s / warm ≈1.52–2.26 s, local);
+    deferred to P8.**
 - **CI fix**: `.github/workflows/ci.yml`'s `Test` step adds `--max-parallel-test-modules 1`, so
   `dotnet test --solution` runs the 4 test projects one at a time instead of concurrently — removing
   the cross-process CPU contention that drove both the `WaitFor` timeout and the perf-budget overrun,
