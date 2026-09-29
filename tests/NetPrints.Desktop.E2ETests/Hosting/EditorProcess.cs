@@ -29,6 +29,12 @@ public sealed class EditorProcess : IAsyncDisposable
 
     public int ProcessId => process.Id;
 
+    /// <summary>Whether the editor process has exited on its own (a clean shutdown, not a forced kill).</summary>
+    public bool HasExited => process.HasExited;
+
+    /// <summary>The editor process's exit code; only valid once <see cref="HasExited"/> is true.</summary>
+    public int ExitCode => process.ExitCode;
+
     public string Output
     {
         get

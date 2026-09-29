@@ -1,8 +1,11 @@
 using System.Diagnostics;
 using System.Text;
+using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.References;
+using NetPrints.Projects;
+using NetPrints.Testing;
 using NetPrints.Testing.Ui.Hosting;
 
 namespace NetPrints.Editor.UITests.Hosting;
@@ -32,6 +35,22 @@ public sealed class RecordingDialogs : IEditorDialogs
     public Task<MethodSpecifier?> SelectMethodAsync(IEnumerable<MethodSpecifier> methods) =>
         Task.FromResult(methods.FirstOrDefault());
 
+    /// <summary>What <see cref="ConfirmTrustAsync"/> answers.</summary>
+    public bool TrustAnswer { get; set; }
+
+    /// <summary>When set, the issues dialog is shown for real (non-modal) instead of only being recorded.</summary>
+    public Func<string, IReadOnlyList<CodeDiagnostic>, Task>? ShowIssues { get; set; }
+
+    public List<(string Title, IReadOnlyList<CodeDiagnostic> Issues)> IssueDialogs { get; } = [];
+
+    public Task<bool> ConfirmTrustAsync(string projectPath, IReadOnlyList<string> extensionFolders) => Task.FromResult(TrustAnswer);
+
+    public Task ShowIssuesAsync(string title, IReadOnlyList<CodeDiagnostic> issues)
+    {
+        IssueDialogs.Add((title, issues));
+        return ShowIssues?.Invoke(title, issues) ?? Task.CompletedTask;
+    }
+
     public Task ShowReferencesAsync(ReferenceListVM references)
     {
         if (ShowReferences is not null)
@@ -53,7 +72,7 @@ public sealed class CapturingProcessLauncher : IProcessLauncher, IDisposable
     private readonly StringBuilder output = new();
     private readonly List<Process> processes = [];
 
-    public List<(string FileName, string? Arguments)> Started { get; } = [];
+    public List<ProcessStartRequest> Started { get; } = [];
 
     public event Action<string>? OutputReceived;
 
@@ -68,17 +87,33 @@ public sealed class CapturingProcessLauncher : IProcessLauncher, IDisposable
         }
     }
 
-    public void Start(string fileName, string? arguments)
+    public void Start(ProcessStartRequest request)
     {
-        Started.Add((fileName, arguments));
+        Started.Add(request);
+        var startInfo = new ProcessStartInfo(request.FileName)
+        {
+            WorkingDirectory = request.WorkingDirectory,
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+        };
+
+        foreach (string argument in request.Arguments)
+        {
+            startInfo.ArgumentList.Add(argument);
+        }
+
+        if (request.EnvironmentVariables is not null)
+        {
+            foreach ((string key, string value) in request.EnvironmentVariables)
+            {
+                startInfo.Environment[key] = value;
+            }
+        }
+
         var process = new Process
         {
-            StartInfo = new ProcessStartInfo(fileName, arguments ?? "")
-            {
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-            },
+            StartInfo = startInfo,
             EnableRaisingEvents = true,
         };
         process.OutputDataReceived += (_, e) => Append(e.Data);
@@ -175,7 +210,11 @@ public sealed class QueuedFilePicker : IFilePickerService, IFileDialogs
     }
 }
 
-/// <summary>Copies the checked-in HelloWorld sample to a temporary folder.</summary>
+/// <summary>
+/// Copies the checked-in <c>samples/HelloWorld</c> to a temporary folder, with a local-SDK layout
+/// (project-system.md §2.1) so the copy builds against this repository's own generator instead of
+/// the (unpublished) <c>NetPrints.Sdk</c> NuGet package (T059/T062a, research.md R21).
+/// </summary>
 public sealed class SampleCopy : IDisposable
 {
     public SampleCopy()
@@ -187,11 +226,13 @@ public sealed class SampleCopy : IDisposable
         {
             File.Copy(file, Path.Combine(Directory, Path.GetFileName(file)));
         }
+
+        LocalSdkLayout.Write(Directory);
     }
 
     public string Directory { get; }
 
-    public string ProjectPath => Path.Combine(Directory, "HelloWorld.netpp");
+    public string ProjectPath => Path.Combine(Directory, "HelloWorld.csproj");
 
     public void Dispose()
     {

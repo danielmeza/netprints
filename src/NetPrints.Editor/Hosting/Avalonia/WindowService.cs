@@ -21,8 +21,10 @@ public sealed class WindowService : IWindowService
         windows.Values.FirstOrDefault(w => w.IsActive) as Window ?? (MainWindow?.IsActive == true ? MainWindow : null)
         ?? MainWindow ?? windows.Values.FirstOrDefault();
 
+    /// <summary>Every currently open class editor window.</summary>
     public IReadOnlyCollection<ClassEditorWindow> ClassEditorWindows => windows.Values;
 
+    /// <inheritdoc/>
     public bool TryActivateClassEditor(ClassGraph cls)
     {
         if (!windows.TryGetValue(cls, out var window))
@@ -44,8 +46,10 @@ public sealed class WindowService : IWindowService
         return true;
     }
 
-    public void OpenClassEditor(ClassEditorVM editor)
+    /// <inheritdoc/>
+    public void OpenClassEditor(ClassGraph cls, EditorContext context)
     {
+        var editor = new ClassEditorVM(cls, context);
         var window = new ClassEditorWindow
         {
             DataContext = editor,
@@ -59,10 +63,14 @@ public sealed class WindowService : IWindowService
         };
 
         windows[editor.Class] = window;
-        editor.StartGeneratedCodeLoop();
         window.Show();
     }
 
+    /// <inheritdoc/>
+    public ClassEditorVM? FindClassEditor(ClassGraph cls) =>
+        windows.TryGetValue(cls, out var window) ? (ClassEditorVM?)window.DataContext : null;
+
+    /// <inheritdoc/>
     public void CloseClassEditor(ClassGraph cls)
     {
         if (windows.TryGetValue(cls, out var window))
@@ -71,6 +79,7 @@ public sealed class WindowService : IWindowService
         }
     }
 
+    /// <inheritdoc/>
     public void CloseAllClassEditors()
     {
         foreach (var window in windows.Values.ToList())

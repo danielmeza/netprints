@@ -4,10 +4,41 @@
     <LangVersion>latest</LangVersion>
     <Deterministic>true</Deterministic>
     <Nullable>enable</Nullable>
-    <!-- Off by default for the legacy projects (Core, Reflection: Fody and RS1024 warnings until
-         P1). The new projects (Editor, Desktop and all test projects) opt in and are warning-free. -->
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <!-- ADR-0003: the SDK's own analyzers, at their most thorough, at their own default severity
+         (.editorconfig sets no blanket default for them, only for the three packages below). -->
+    <AnalysisLevel>latest</AnalysisLevel>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- The four shipped packages opt in (release contract §3); everything else stays unpacked. -->
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Package metadata">
+    <Authors>Daniel Meza, Robin Kahlow</Authors>
+    <Company>Gasoleo Technology</Company>
+    <Product>NetPrints</Product>
+    <Copyright>Copyright (c) 2018 Robin Kahlow; Copyright (c) 2026 Daniel Meza / Gasoleo Technology and contributors</Copyright>
+    <PackageProjectUrl>https://danielmeza.github.io/netprints/</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/danielmeza/netprints</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageTags>netprints;visual-programming;node-graph;blueprints;code-generation</PackageTags>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+  </PropertyGroup>
+
+  <PropertyGroup Label="Versioning">
+    <MinVerTagPrefix>v</MinVerTagPrefix>
+    <MinVerMinimumMajorMinor>0.1</MinVerMinimumMajorMinor>
+    <!-- A source archive has no .git: MinVer then warns and uses its default version. -->
+    <MSBuildWarningsNotAsErrors>$(MSBuildWarningsNotAsErrors);MINVER1001</MSBuildWarningsNotAsErrors>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(CI)' == 'true' Or '$(GITHUB_ACTIONS)' == 'true'">
@@ -18,4 +49,18 @@
   <PropertyGroup Condition="'$(MSBuildProjectName)' == 'NetPrintsVSIX'">
     <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
   </PropertyGroup>
+
+  <!-- ADR-0003: SonarAnalyzer.CSharp (code smells: duplicate literals, magic numbers, dead stores,
+       unused locals), IDisposableAnalyzers (manual-disposal surface) and
+       Microsoft.VisualStudio.Threading.Analyzers (VSTHRD: async/UI-thread misuse, e.g.
+       Dispatcher.UIThread and async void handlers). Analyzer-only, so PrivateAssets keeps them out
+       of anything this repo packs. A curated rule set from each is `error` in src/**.cs (real
+       build-breaking gates); every other rule they ship is `suggestion` (.editorconfig). Skipped on
+       the legacy, non-SDK VSIX project, which does not use central package management (above) and
+       is not built. -->
+  <ItemGroup Condition="'$(MSBuildProjectName)' != 'NetPrintsVSIX'">
+    <PackageReference Include="SonarAnalyzer.CSharp" PrivateAssets="all" />
+    <PackageReference Include="IDisposableAnalyzers" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.VisualStudio.Threading.Analyzers" PrivateAssets="all" />
+  </ItemGroup>
 </Project>

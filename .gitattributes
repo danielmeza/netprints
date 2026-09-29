@@ -7,18 +7,12 @@
 # Files that still use CRLF from the original Windows/WPF codebase (Core,
 # Reflection, and the handful of original Core tests). Left as-is rather than
 # renormalized, so this commit does not touch their content.
-src/NetPrints.Core/Compilation/CodeCompiler.cs -text
-src/NetPrints.Core/Compilation/ICodeCompiler.cs -text
-src/NetPrints.Core/Core/AssemblyReference.cs -text
 src/NetPrints.Core/Core/BaseType.cs -text
 src/NetPrints.Core/Core/ClassGraph.cs -text
-src/NetPrints.Core/Core/CompilationReference.cs -text
 src/NetPrints.Core/Core/ConstructorGraph.cs -text
 src/NetPrints.Core/Core/ConstructorSpecifier.cs -text
 src/NetPrints.Core/Core/ExecutionGraph.cs -text
-src/NetPrints.Core/Core/FrameworkAssemblyReference.cs -text
 src/NetPrints.Core/Core/GenericType.cs -text
-src/NetPrints.Core/Core/ICompilationReference.cs -text
 src/NetPrints.Core/Core/MethodGraph.cs -text
 src/NetPrints.Core/Core/MethodSpecifier.cs -text
 src/NetPrints.Core/Core/Named.cs -text
@@ -26,12 +20,10 @@ src/NetPrints.Core/Core/NetPrintsUtil.cs -text
 src/NetPrints.Core/Core/NodeGraph.cs -text
 src/NetPrints.Core/Core/OperatorUtil.cs -text
 src/NetPrints.Core/Core/Project.cs -text
-src/NetPrints.Core/Core/SourceDirectoryReference.cs -text
 src/NetPrints.Core/Core/TypeGraph.cs -text
 src/NetPrints.Core/Core/TypeSpecifier.cs -text
 src/NetPrints.Core/Core/Variable.cs -text
 src/NetPrints.Core/Core/VariableSpecifier.cs -text
-src/NetPrints.Core/FodyWeavers.xml -text
 src/NetPrints.Core/Graph/CallMethodNode.cs -text
 src/NetPrints.Core/Graph/ClassReturnNode.cs -text
 src/NetPrints.Core/Graph/ConstructorEntryNode.cs -text
@@ -70,7 +62,6 @@ src/NetPrints.Core/Graph/TypeReturnNode.cs -text
 src/NetPrints.Core/Graph/VariableGetterNode.cs -text
 src/NetPrints.Core/Graph/VariableNode.cs -text
 src/NetPrints.Core/Graph/VariableSetterNode.cs -text
-src/NetPrints.Core/Serialization/SerializationHelper.cs -text
 src/NetPrints.Core/Translator/ClassTranslator.cs -text
 src/NetPrints.Core/Translator/ExecutionGraphTranslator.cs -text
 src/NetPrints.Core/Translator/TranslatorUtil.cs -text
@@ -99,6 +90,16 @@ legacy/NetPrintsVSIX/NetPrintsVSIXPackage.cs -text
 legacy/NetPrintsVSIX/NetPrintsVSIXUtil.cs -text
 legacy/NetPrintsVSIX/Properties/AssemblyInfo.cs -text
 legacy/NetPrintsVSIX/source.extension.vsixmanifest -text
+
+# Golden C# recorded from ClassTranslator (Roslyn Formatter.NormalizeWhitespace(), whose default
+# `eol` is "\r\n" regardless of OS): keep the exact bytes the translator produces so
+# GoldenCSharpTests's byte comparison is not broken by checkout-time line-ending conversion.
+tests/NetPrints.Core.Tests/Fixtures/Golden/*.cs -text
+
+# NetPrints graph documents and their generated C# (project-system.md §1.1): LF always, so a
+# generated diff stays visible in PRs (deliberately not marked linguist-generated).
+*.netpc.json text eol=lf
+*.netpc.g.cs text eol=lf
 
 # Binary files: never diff, never convert line endings.
 *.png binary

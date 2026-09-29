@@ -7,6 +7,7 @@ namespace NetPrints.Editor.Hosting.Avalonia;
 /// <summary>Clipboard through <see cref="TopLevel.Clipboard"/>.</summary>
 public sealed class AvaloniaClipboardService(Func<TopLevel?> topLevel) : IClipboardService
 {
+    /// <inheritdoc/>
     public async Task SetTextAsync(string text)
     {
         if (topLevel()?.Clipboard is { } clipboard)

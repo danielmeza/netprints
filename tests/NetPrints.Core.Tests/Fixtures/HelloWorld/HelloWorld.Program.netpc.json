@@ -1,0 +1,56 @@
+{
+  "$schema": "https://danielmeza.github.io/netprints/schemas/netpc.v1.schema.json",
+  "schemaVersion": 1,
+  "namespace": "HelloWorld",
+  "name": "Program",
+  "visibility": "Public",
+  "classGraph": {
+    "nodes": [
+      { "$kind": "classReturn", "id": "n000000000vny0" }
+    ]
+  },
+  "methods": [
+    {
+      "id": "m000000001gs20",
+      "name": "Main",
+      "visibility": "Public",
+      "modifiers": "Static",
+      "graph": {
+        "nodes": [
+          { "$kind": "methodEntry", "id": "n000000000vny1" },
+          { "$kind": "return", "id": "n000000000vny2" },
+          {
+            "$kind": "callMethod",
+            "id": "n000000000vny3",
+            "pins": [
+              { "pin": "in.data.value", "value": { "type": "System.String", "value": "Hello, World!" } }
+            ],
+            "method": {
+              "name": "WriteLine",
+              "declaringType": { "name": "System.Console" },
+              "parameters": [
+                { "name": "value", "type": { "name": "System.String" } }
+              ],
+              "modifiers": "Static",
+              "visibility": "Public"
+            }
+          }
+        ],
+        "connections": [
+          { "from": "n000000000vny1/out.exec.Exec", "to": "n000000000vny3/in.exec.Exec" },
+          { "from": "n000000000vny3/out.exec.Exec", "to": "n000000000vny2/in.exec.Exec" }
+        ]
+      }
+    }
+  ],
+  "layout": {
+    "class": {
+      "n000000000vny0": [112, 112]
+    },
+    "m000000001gs20": {
+      "n000000000vny1": [112, 112],
+      "n000000000vny2": [840, 112],
+      "n000000000vny3": [420, 112]
+    }
+  }
+}

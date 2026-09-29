@@ -4,14 +4,38 @@
     <TargetFramework>net10.0</TargetFramework>
     <ApplicationIcon>NetPrintsLogo.ico</ApplicationIcon>
     <AssemblyName>NetPrints.Desktop</AssemblyName>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors>$(WarningsAsErrors);CA1848;CA2254</WarningsAsErrors>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Release archives are self-contained folders (release contract §5): the editor loads MSBuild and
+         Roslyn's build host from disk and compiles against arbitrary assemblies, so no single-file,
+         trimming or Native AOT. -->
+    <PublishSingleFile>false</PublishSingleFile>
+    <PublishTrimmed>false</PublishTrimmed>
+    <PublishAot>false</PublishAot>
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="NetPrints.Editor.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Avalonia.Desktop" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" />
+    <!-- Transitively pulled in by the NetPrints.Workspace project reference; ExcludeAssets/PrivateAssets
+         satisfies MSBuildLocator's own MSBL001 guard (research K10) here too. -->
+    <PackageReference Include="Microsoft.Build" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Build.Framework" ExcludeAssets="runtime" PrivateAssets="all" />
+    <!-- Direct reference (roslyn#80127): MSBuildWorkspace starts BuildHost-netcore/ from the
+         application folder, and that folder is only copied for a direct PackageReference, not one
+         pulled in transitively through the NetPrints.Workspace project reference. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\NetPrints.Editor\NetPrints.Editor.csproj" />
+    <ProjectReference Include="..\NetPrints.Workspace\NetPrints.Workspace.csproj" />
   </ItemGroup>
 </Project>

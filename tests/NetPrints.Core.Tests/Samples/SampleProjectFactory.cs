@@ -19,12 +19,10 @@ namespace NetPrints.Tests.Samples
         /// Creates the HelloWorld project: an executable whose static <c>Program.Main</c> calls
         /// <c>System.Console.WriteLine("Hello, World!")</c>.
         /// </summary>
-        /// <param name="projectPath">Path of the <c>.netpp</c> file the project will be saved to.</param>
+        /// <param name="projectPath">Path of the <c>.csproj</c> file the project belongs to.</param>
         public static Project CreateHelloWorld(string projectPath)
         {
-            Project project = Project.CreateNew("HelloWorld", "HelloWorld");
-            project.Path = projectPath;
-            project.OutputBinaryType = BinaryType.Executable;
+            Project project = TestProjects.Create("HelloWorld", "HelloWorld", projectPath, BinaryType.Executable);
 
             var cls = new ClassGraph()
             {

@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:edcontrols="clr-namespace:NetPrints.Editor.Controls"
              xmlns:edgetset="clr-namespace:NetPrints.Editor.Graph.GetSet"
              xmlns:edgraph="clr-namespace:NetPrints.Editor.Graph"
              xmlns:ednodes="clr-namespace:NetPrints.Editor.Graph.Nodes"
@@ -37,7 +38,8 @@
                          GridCellSize="28"
                          MinViewportZoom="0.3"
                          MaxViewportZoom="1"
-                         DragDrop.AllowDrop="True">
+                         DragDrop.AllowDrop="True"
+                         ConnectionCompletedCommand="{Binding ConnectionCompletedCommand}">
       <nodify:NodifyEditor.ItemContainerTheme>
         <!-- Nodify's own container chrome (a blue border, orange when selected) is turned off:
              NodeView already draws the single border WPF had, green when selected. -->
@@ -64,30 +66,33 @@
                          Target="{Binding Target.Anchor, Converter={x:Static edgraph:GraphPointConverter.Instance}}"
                          Stroke="{Binding Kind, Converter={x:Static edgraph:PinKindBrushConverter.Instance}}"
                          Classes.faint="{Binding IsFaint}"
+                         SplitCommand="{Binding InsertRerouteCommand}"
                          StrokeLineCap="Round" />
         </DataTemplate>
       </nodify:NodifyEditor.ConnectionTemplate>
 
       <!-- Live preview cable while dragging from a pin (PAR-46). -->
       <nodify:NodifyEditor.PendingConnection>
-        <nc:PendingConnection EnablePreview="True" EnableSnapping="True" AllowOnlyConnectors="True" StrokeThickness="3" />
+        <nc:PendingConnection EnablePreview="True" EnableSnapping="True" AllowOnlyConnectors="True" StrokeThickness="3"
+                              TargetAnchor="{Binding PendingConnectionAnchor, Mode=OneWayToSource, Converter={x:Static edgraph:GraphPointConverter.Instance}}" />
       </nodify:NodifyEditor.PendingConnection>
     </nodify:NodifyEditor>
 
     <!-- Graph name watermark (PAR-38) -->
-    <TextBlock x:Name="Watermark" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GraphWatermark}" Text="{Binding Name}" FontWeight="Bold" FontSize="32" Foreground="#CCEEEEEE"
+    <TextBlock x:Name="Watermark" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GraphWatermark}" Text="{Binding Name}" FontWeight="Bold" FontSize="32" Foreground="{DynamicResource GraphWatermark.Foreground}"
                VerticalAlignment="Bottom" HorizontalAlignment="Left" Margin="8" IsHitTestVisible="False" />
 
-    <!-- Node search (PAR-52) -->
-    <Popup x:Name="SearchPopup" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GraphSearchPopup}" IsOpen="{Binding Search.IsOpen, Mode=TwoWay}" Placement="Pointer"
-           IsLightDismissEnabled="True" PlacementTarget="{Binding #Editor}">
+    <!-- Node search (PAR-52). CanvasPopup anchors itself at the pointer (ADR-0004). -->
+    <edcontrols:CanvasPopup x:Name="SearchPopup" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GraphSearchPopup}" IsOpen="{Binding Search.IsOpen, Mode=TwoWay}"
+           PlacementTarget="{Binding #Editor}">
       <edsearch:NodeSearchView x:Name="SearchView" DataContext="{Binding Search}" />
-    </Popup>
+    </edcontrols:CanvasPopup>
 
-    <!-- Get/Set chooser (PAR-55) -->
-    <Popup x:Name="GetSetPopup" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GraphGetSetPopup}" IsOpen="{Binding GetSetChooser.IsOpen, Mode=TwoWay}" Placement="Pointer"
-           IsLightDismissEnabled="True" PlacementTarget="{Binding #Editor}">
+    <!-- Get/Set chooser (PAR-55, ADR-0004): CanvasPopup anchors itself at the pointer, including a
+         variable drop (drag-and-drop does not update Avalonia's own pointer tracking). -->
+    <edcontrols:CanvasPopup x:Name="GetSetPopup" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GraphGetSetPopup}" IsOpen="{Binding GetSetChooser.IsOpen, Mode=TwoWay}"
+           PlacementTarget="{Binding #Editor}">
       <edgetset:GetSetChooserView DataContext="{Binding GetSetChooser}" />
-    </Popup>
+    </edcontrols:CanvasPopup>
   </Panel>
 </UserControl>

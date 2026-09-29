@@ -1,0 +1,23 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:edvariables="clr-namespace:NetPrints.Editor.Variables"
+             xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             x:Class="NetPrints.Editor.Variables.LocalVariableView"
+             x:DataType="edvariables:LocalVariableVM">
+  <!-- A local variable row (US5, sub-phase H): one compact line (Remove, Name, Type), unlike the
+       member variable row's multi-line layout, since a method can have several locals and the
+       Variables panel splits its height between the Class and Method groups. -->
+  <Grid ColumnDefinitions="Auto,*,Auto" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableRow}" AutomationProperties.Name="{Binding Name}">
+    <Button Classes="icon" ToolTip.Tip="Remove local variable" AutomationProperties.Name="Remove local variable" Command="{Binding RemoveCommand}">
+      <mi:MaterialIcon Kind="Minus" />
+    </Button>
+    <!-- Drag-start handlers are wired in the code-behind, not here (R2-03): TextBox's own
+         PointerPressed class handler runs first and marks the event handled, so a plain XAML
+         event attribute (bubble, not handledEventsToo) never sees it. -->
+    <TextBox x:Name="NameBox" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableName}" Grid.Column="1"
+             Text="{Binding Name, UpdateSourceTrigger=LostFocus}" FontSize="14" FontWeight="SemiBold"
+             VerticalAlignment="Center" Background="Transparent" />
+    <Button Grid.Column="2" Classes="flat" Content="{Binding Type.ShortName}" ToolTip.Tip="Change type" Command="{Binding RetypeCommand}" />
+  </Grid>
+</UserControl>

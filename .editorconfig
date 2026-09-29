@@ -30,10 +30,9 @@ trim_trailing_whitespace = unset
 # C# formatting and style. Severities are left at the analyzer defaults
 # (mostly "silent"/"suggestion") to match the pre-existing build: CSharpRuleSet.ruleset
 # only ever set one Roslynator rule (RCS1001) for which no analyzer package was referenced,
-# so no analyzer diagnostic was actually active before this file. TreatWarningsAsErrors stays
-# project-by-project, unaffected by this file (NetPrints.Core and NetPrints.Reflection are not
-# warnings-as-errors; NetPrints.Editor, NetPrints.Desktop, NetPrints.Cli and every test project
-# are, exactly as before).
+# so no analyzer diagnostic was actually active before this file. TreatWarningsAsErrors is set
+# once, repo-wide, in the root Directory.Build.props: every project, including NetPrints.Core
+# and NetPrints.Reflection, fails its build on any diagnostic whose severity is `warning` or above.
 # ---------------------------------------------------------------------------
 [*.cs]
 
@@ -123,3 +122,597 @@ csharp_space_around_binary_operators = before_and_after
 
 # Wrapping
 csharp_preserve_single_line_statements = false
+
+# XML documentation is required on every public API in src/ (see ADR-0003).
+[src/**.cs]
+dotnet_diagnostic.CS1591.severity = error # Missing XML comment for publicly visible type or member
+dotnet_diagnostic.CS1572.severity = error # <param> tag names a parameter that does not exist
+dotnet_diagnostic.CS1573.severity = error # Parameter has no matching <param> tag in the XML comment
+dotnet_diagnostic.CS1574.severity = error # cref/name attribute in an XML comment could not be resolved
+
+# ADR-0003 follow-up: Microsoft.CodeAnalysis.BannedApiAnalyzers (src/BannedSymbols.txt,
+# src/BannedSymbols.Console.txt), src/ only.
+dotnet_diagnostic.RS0030.severity = error # Do not use banned APIs
+
+# ---------------------------------------------------------------------------
+# Additional analyzers (ADR-0003): SonarAnalyzer.CSharp, IDisposableAnalyzers and
+# Microsoft.VisualStudio.Threading.Analyzers (Directory.Packages.props/Directory.Build.props),
+# referenced repo-wide, including tests. AnalysisLevel is bumped to `latest` too
+# (Directory.Build.props); AnalysisMode stays at its SDK default rather than `Recommended`: that
+# preset bakes per-rule severities into its own shipped global analyzer config, which outranks any
+# severity set here, and would need dozens of individual per-rule downgrades to avoid errors — the
+# same "unknown amount of pre-existing debt" problem this ADR scopes out, so left as a follow-up
+# rather than attempted piecemeal.
+#
+# Policy: the curated rule set below — SonarAnalyzer.CSharp's S1192/S109/S1854/S1481, every
+# IDisposableAnalyzers (IDISP*) rule and every VSTHRD rule except VSTHRD111 — is `error` in
+# src/**.cs, not `suggestion`: a real, build-breaking gate, not a hint. S109 (magic numbers) is the
+# one exception left running at `suggestion`, and only in the Editor (further down): its remaining
+# pre-existing hits there are canvas layout coordinates, too numerous to fix or individually
+# suppress in this batch; the count is on record there, pending a dedicated cleanup batch. VSTHRD111
+# (ConfigureAwait) is laid out separately further down: `error` by default in src/**.cs, `none` for
+# the Editor's UI-bound code and for Desktop, which resume on their UI context deliberately.
+#
+# These three packages ship hundreds of rules enabled by default at `warning`, and there is no
+# single blanket escape hatch for them: `dotnet_analyzer_diagnostic.category-<Category>` cannot
+# match Sonar's category names (e.g. "Major Code Smell") because the key syntax does not accept the
+# space, so that override silently does nothing (verified empirically); IDISP's own category
+# ("IDisposableAnalyzers.Correctness") and VSTHRD's ("Usage"/"Style") would work syntactically, but
+# "Usage" and "Style" are shared with plain CA rules this ADR wants left alone. Every rule these
+# three packages ship is therefore listed below (or above, for IDISP/VSTHRD) at `suggestion`
+# explicitly, so nothing in their default sets fails the build by surprise. Nothing else is
+# downgraded here, so every CA diagnostic from AnalysisLevel=latest, and any other analyzer this
+# repo references, builds at its own default severity.
+#
+# A violation the curated rules above catch is fixed for real, unless the line predates P1
+# (`git merge-base HEAD origin/master`) and this batch does not otherwise touch it; that narrow case
+# is suppressed with a per-file `dotnet_diagnostic.<ruleId>.severity = suggestion` section further down
+# (one rule, one file, a trailing-comment reason), and listed in ADR-0003 — never a `#pragma` in the
+# .cs file: `git grep -n "pragma warning" -- 'src/*.cs'` stays empty. The "Pre-P1 suppressions" section
+# below lists every one.
+# ---------------------------------------------------------------------------
+[*.cs]
+# IDisposableAnalyzers and Microsoft.VisualStudio.Threading.Analyzers, kept at `suggestion`
+# repo-wide by rule ID for the same reason as Sonar below (no usable category: IDISP's is
+# "IDisposableAnalyzers.Correctness", and VSTHRD's "Usage"/"Style" are shared with CA rules this
+# ADR does not want to silence). The rules this ADR curates are set again, at their real severity,
+# under src/**.cs below.
+dotnet_diagnostic.IDISP001.severity = suggestion
+dotnet_diagnostic.IDISP002.severity = suggestion
+dotnet_diagnostic.IDISP003.severity = suggestion
+dotnet_diagnostic.IDISP004.severity = suggestion
+dotnet_diagnostic.IDISP005.severity = suggestion
+dotnet_diagnostic.IDISP006.severity = suggestion
+dotnet_diagnostic.IDISP007.severity = suggestion
+dotnet_diagnostic.IDISP008.severity = suggestion
+dotnet_diagnostic.IDISP009.severity = suggestion
+dotnet_diagnostic.IDISP010.severity = suggestion
+dotnet_diagnostic.IDISP011.severity = suggestion
+dotnet_diagnostic.IDISP012.severity = suggestion
+dotnet_diagnostic.IDISP013.severity = suggestion
+dotnet_diagnostic.IDISP014.severity = suggestion
+dotnet_diagnostic.IDISP015.severity = suggestion
+dotnet_diagnostic.IDISP016.severity = suggestion
+dotnet_diagnostic.IDISP017.severity = suggestion
+dotnet_diagnostic.IDISP018.severity = suggestion
+dotnet_diagnostic.IDISP019.severity = suggestion
+dotnet_diagnostic.IDISP020.severity = suggestion
+dotnet_diagnostic.IDISP021.severity = suggestion
+dotnet_diagnostic.IDISP022.severity = suggestion
+dotnet_diagnostic.IDISP023.severity = suggestion
+dotnet_diagnostic.IDISP024.severity = suggestion
+dotnet_diagnostic.IDISP025.severity = suggestion
+dotnet_diagnostic.IDISP026.severity = suggestion
+dotnet_diagnostic.VSTHRD001.severity = suggestion
+dotnet_diagnostic.VSTHRD002.severity = suggestion
+dotnet_diagnostic.VSTHRD003.severity = suggestion
+dotnet_diagnostic.VSTHRD004.severity = suggestion
+dotnet_diagnostic.VSTHRD010.severity = suggestion
+dotnet_diagnostic.VSTHRD011.severity = suggestion
+dotnet_diagnostic.VSTHRD012.severity = suggestion
+dotnet_diagnostic.VSTHRD100.severity = suggestion
+dotnet_diagnostic.VSTHRD101.severity = suggestion
+dotnet_diagnostic.VSTHRD102.severity = suggestion
+dotnet_diagnostic.VSTHRD103.severity = suggestion
+dotnet_diagnostic.VSTHRD104.severity = suggestion
+dotnet_diagnostic.VSTHRD105.severity = suggestion
+dotnet_diagnostic.VSTHRD106.severity = suggestion
+dotnet_diagnostic.VSTHRD107.severity = suggestion
+dotnet_diagnostic.VSTHRD108.severity = suggestion
+dotnet_diagnostic.VSTHRD109.severity = suggestion
+dotnet_diagnostic.VSTHRD110.severity = suggestion
+dotnet_diagnostic.VSTHRD111.severity = suggestion
+dotnet_diagnostic.VSTHRD112.severity = suggestion
+dotnet_diagnostic.VSTHRD113.severity = suggestion
+dotnet_diagnostic.VSTHRD114.severity = suggestion
+dotnet_diagnostic.VSTHRD115.severity = suggestion
+dotnet_diagnostic.VSTHRD200.severity = suggestion
+
+# SonarAnalyzer.CSharp's full default rule set, kept at `suggestion` (see above); the four rules
+# this ADR curates are named here too (their src/**.cs override, below, only reaches src/, and
+# S1192/S1854/S1481 are excluded from the generated list below since they get their own comment).
+dotnet_diagnostic.S1192.severity = suggestion # Duplicate string literals — error in src/**.cs below
+dotnet_diagnostic.S109.severity = suggestion  # Magic numbers
+dotnet_diagnostic.S1854.severity = suggestion # Dead stores — error in src/**.cs below
+dotnet_diagnostic.S1481.severity = suggestion # Unused local variables — error in src/**.cs below
+dotnet_diagnostic.S1006.severity = suggestion
+dotnet_diagnostic.S101.severity = suggestion
+dotnet_diagnostic.S1048.severity = suggestion
+dotnet_diagnostic.S1066.severity = suggestion
+dotnet_diagnostic.S1075.severity = suggestion
+dotnet_diagnostic.S108.severity = suggestion
+dotnet_diagnostic.S1104.severity = suggestion
+dotnet_diagnostic.S1110.severity = suggestion
+dotnet_diagnostic.S1116.severity = suggestion
+dotnet_diagnostic.S1117.severity = suggestion
+dotnet_diagnostic.S1118.severity = suggestion
+dotnet_diagnostic.S112.severity = suggestion
+dotnet_diagnostic.S1121.severity = suggestion
+dotnet_diagnostic.S1123.severity = suggestion
+dotnet_diagnostic.S1125.severity = suggestion
+dotnet_diagnostic.S1133.severity = suggestion
+dotnet_diagnostic.S1134.severity = suggestion
+dotnet_diagnostic.S1135.severity = suggestion
+dotnet_diagnostic.S1144.severity = suggestion
+dotnet_diagnostic.S1155.severity = suggestion
+dotnet_diagnostic.S1163.severity = suggestion
+dotnet_diagnostic.S1168.severity = suggestion
+dotnet_diagnostic.S1172.severity = suggestion
+dotnet_diagnostic.S1185.severity = suggestion
+dotnet_diagnostic.S1186.severity = suggestion
+dotnet_diagnostic.S1199.severity = suggestion
+dotnet_diagnostic.S1206.severity = suggestion
+dotnet_diagnostic.S1210.severity = suggestion
+dotnet_diagnostic.S1215.severity = suggestion
+dotnet_diagnostic.S1244.severity = suggestion
+dotnet_diagnostic.S125.severity = suggestion
+dotnet_diagnostic.S127.severity = suggestion
+dotnet_diagnostic.S1313.severity = suggestion
+dotnet_diagnostic.S1450.severity = suggestion
+dotnet_diagnostic.S1607.severity = suggestion
+dotnet_diagnostic.S1643.severity = suggestion
+dotnet_diagnostic.S1656.severity = suggestion
+dotnet_diagnostic.S1694.severity = suggestion
+dotnet_diagnostic.S1696.severity = suggestion
+dotnet_diagnostic.S1699.severity = suggestion
+dotnet_diagnostic.S1751.severity = suggestion
+dotnet_diagnostic.S1764.severity = suggestion
+dotnet_diagnostic.S1848.severity = suggestion
+dotnet_diagnostic.S1862.severity = suggestion
+dotnet_diagnostic.S1871.severity = suggestion
+dotnet_diagnostic.S1905.severity = suggestion
+dotnet_diagnostic.S1939.severity = suggestion
+dotnet_diagnostic.S1940.severity = suggestion
+dotnet_diagnostic.S1944.severity = suggestion
+dotnet_diagnostic.S1994.severity = suggestion
+dotnet_diagnostic.S2068.severity = suggestion
+dotnet_diagnostic.S2077.severity = suggestion
+dotnet_diagnostic.S2092.severity = suggestion
+dotnet_diagnostic.S2094.severity = suggestion
+dotnet_diagnostic.S2114.severity = suggestion
+dotnet_diagnostic.S2115.severity = suggestion
+dotnet_diagnostic.S2123.severity = suggestion
+dotnet_diagnostic.S2139.severity = suggestion
+dotnet_diagnostic.S2166.severity = suggestion
+dotnet_diagnostic.S2178.severity = suggestion
+dotnet_diagnostic.S2183.severity = suggestion
+dotnet_diagnostic.S2184.severity = suggestion
+dotnet_diagnostic.S2187.severity = suggestion
+dotnet_diagnostic.S2190.severity = suggestion
+dotnet_diagnostic.S2198.severity = suggestion
+dotnet_diagnostic.S2201.severity = suggestion
+dotnet_diagnostic.S2219.severity = suggestion
+dotnet_diagnostic.S2223.severity = suggestion
+dotnet_diagnostic.S2225.severity = suggestion
+dotnet_diagnostic.S2234.severity = suggestion
+dotnet_diagnostic.S2245.severity = suggestion
+dotnet_diagnostic.S2251.severity = suggestion
+dotnet_diagnostic.S2252.severity = suggestion
+dotnet_diagnostic.S2257.severity = suggestion
+dotnet_diagnostic.S2275.severity = suggestion
+dotnet_diagnostic.S2290.severity = suggestion
+dotnet_diagnostic.S2291.severity = suggestion
+dotnet_diagnostic.S2292.severity = suggestion
+dotnet_diagnostic.S2306.severity = suggestion
+dotnet_diagnostic.S2325.severity = suggestion
+dotnet_diagnostic.S2326.severity = suggestion
+dotnet_diagnostic.S2328.severity = suggestion
+dotnet_diagnostic.S2344.severity = suggestion
+dotnet_diagnostic.S2345.severity = suggestion
+dotnet_diagnostic.S2346.severity = suggestion
+dotnet_diagnostic.S2365.severity = suggestion
+dotnet_diagnostic.S2368.severity = suggestion
+dotnet_diagnostic.S2372.severity = suggestion
+dotnet_diagnostic.S2376.severity = suggestion
+dotnet_diagnostic.S2386.severity = suggestion
+dotnet_diagnostic.S2437.severity = suggestion
+dotnet_diagnostic.S2445.severity = suggestion
+dotnet_diagnostic.S2479.severity = suggestion
+dotnet_diagnostic.S2486.severity = suggestion
+dotnet_diagnostic.S2551.severity = suggestion
+dotnet_diagnostic.S2612.severity = suggestion
+dotnet_diagnostic.S2629.severity = suggestion
+dotnet_diagnostic.S2674.severity = suggestion
+dotnet_diagnostic.S2681.severity = suggestion
+dotnet_diagnostic.S2688.severity = suggestion
+dotnet_diagnostic.S2696.severity = suggestion
+dotnet_diagnostic.S2699.severity = suggestion
+dotnet_diagnostic.S2701.severity = suggestion
+dotnet_diagnostic.S2737.severity = suggestion
+dotnet_diagnostic.S2743.severity = suggestion
+dotnet_diagnostic.S2755.severity = suggestion
+dotnet_diagnostic.S2757.severity = suggestion
+dotnet_diagnostic.S2761.severity = suggestion
+dotnet_diagnostic.S2857.severity = suggestion
+dotnet_diagnostic.S2925.severity = suggestion
+dotnet_diagnostic.S2930.severity = suggestion
+dotnet_diagnostic.S2933.severity = suggestion
+dotnet_diagnostic.S2934.severity = suggestion
+dotnet_diagnostic.S2953.severity = suggestion
+dotnet_diagnostic.S2955.severity = suggestion
+dotnet_diagnostic.S2970.severity = suggestion
+dotnet_diagnostic.S2971.severity = suggestion
+dotnet_diagnostic.S2995.severity = suggestion
+dotnet_diagnostic.S2996.severity = suggestion
+dotnet_diagnostic.S2997.severity = suggestion
+dotnet_diagnostic.S3005.severity = suggestion
+dotnet_diagnostic.S3010.severity = suggestion
+dotnet_diagnostic.S3011.severity = suggestion
+dotnet_diagnostic.S3060.severity = suggestion
+dotnet_diagnostic.S3063.severity = suggestion
+dotnet_diagnostic.S3168.severity = suggestion
+dotnet_diagnostic.S3169.severity = suggestion
+dotnet_diagnostic.S3172.severity = suggestion
+dotnet_diagnostic.S3217.severity = suggestion
+dotnet_diagnostic.S3218.severity = suggestion
+dotnet_diagnostic.S3220.severity = suggestion
+dotnet_diagnostic.S3236.severity = suggestion
+dotnet_diagnostic.S3237.severity = suggestion
+dotnet_diagnostic.S3241.severity = suggestion
+dotnet_diagnostic.S3244.severity = suggestion
+dotnet_diagnostic.S3246.severity = suggestion
+dotnet_diagnostic.S3247.severity = suggestion
+dotnet_diagnostic.S3251.severity = suggestion
+dotnet_diagnostic.S3260.severity = suggestion
+dotnet_diagnostic.S3261.severity = suggestion
+dotnet_diagnostic.S3262.severity = suggestion
+dotnet_diagnostic.S3263.severity = suggestion
+dotnet_diagnostic.S3264.severity = suggestion
+dotnet_diagnostic.S3265.severity = suggestion
+dotnet_diagnostic.S3267.severity = suggestion
+dotnet_diagnostic.S3330.severity = suggestion
+dotnet_diagnostic.S3343.severity = suggestion
+dotnet_diagnostic.S3346.severity = suggestion
+dotnet_diagnostic.S3358.severity = suggestion
+dotnet_diagnostic.S3363.severity = suggestion
+dotnet_diagnostic.S3376.severity = suggestion
+dotnet_diagnostic.S3397.severity = suggestion
+dotnet_diagnostic.S3398.severity = suggestion
+dotnet_diagnostic.S3400.severity = suggestion
+dotnet_diagnostic.S3415.severity = suggestion
+dotnet_diagnostic.S3427.severity = suggestion
+dotnet_diagnostic.S3431.severity = suggestion
+dotnet_diagnostic.S3433.severity = suggestion
+dotnet_diagnostic.S3440.severity = suggestion
+dotnet_diagnostic.S3442.severity = suggestion
+dotnet_diagnostic.S3443.severity = suggestion
+dotnet_diagnostic.S3444.severity = suggestion
+dotnet_diagnostic.S3445.severity = suggestion
+dotnet_diagnostic.S3447.severity = suggestion
+dotnet_diagnostic.S3449.severity = suggestion
+dotnet_diagnostic.S3450.severity = suggestion
+dotnet_diagnostic.S3451.severity = suggestion
+dotnet_diagnostic.S3453.severity = suggestion
+dotnet_diagnostic.S3456.severity = suggestion
+dotnet_diagnostic.S3457.severity = suggestion
+dotnet_diagnostic.S3458.severity = suggestion
+dotnet_diagnostic.S3459.severity = suggestion
+dotnet_diagnostic.S3464.severity = suggestion
+dotnet_diagnostic.S3466.severity = suggestion
+dotnet_diagnostic.S3597.severity = suggestion
+dotnet_diagnostic.S3598.severity = suggestion
+dotnet_diagnostic.S3600.severity = suggestion
+dotnet_diagnostic.S3603.severity = suggestion
+dotnet_diagnostic.S3604.severity = suggestion
+dotnet_diagnostic.S3610.severity = suggestion
+dotnet_diagnostic.S3626.severity = suggestion
+dotnet_diagnostic.S3869.severity = suggestion
+dotnet_diagnostic.S3871.severity = suggestion
+dotnet_diagnostic.S3875.severity = suggestion
+dotnet_diagnostic.S3877.severity = suggestion
+dotnet_diagnostic.S3878.severity = suggestion
+dotnet_diagnostic.S3881.severity = suggestion
+dotnet_diagnostic.S3887.severity = suggestion
+dotnet_diagnostic.S3889.severity = suggestion
+dotnet_diagnostic.S3897.severity = suggestion
+dotnet_diagnostic.S3903.severity = suggestion
+dotnet_diagnostic.S3904.severity = suggestion
+dotnet_diagnostic.S3923.severity = suggestion
+dotnet_diagnostic.S3925.severity = suggestion
+dotnet_diagnostic.S3926.severity = suggestion
+dotnet_diagnostic.S3927.severity = suggestion
+dotnet_diagnostic.S3928.severity = suggestion
+dotnet_diagnostic.S3963.severity = suggestion
+dotnet_diagnostic.S3971.severity = suggestion
+dotnet_diagnostic.S3972.severity = suggestion
+dotnet_diagnostic.S3973.severity = suggestion
+dotnet_diagnostic.S3981.severity = suggestion
+dotnet_diagnostic.S3984.severity = suggestion
+dotnet_diagnostic.S3993.severity = suggestion
+dotnet_diagnostic.S3998.severity = suggestion
+dotnet_diagnostic.S4015.severity = suggestion
+dotnet_diagnostic.S4019.severity = suggestion
+dotnet_diagnostic.S4035.severity = suggestion
+dotnet_diagnostic.S4036.severity = suggestion
+dotnet_diagnostic.S4050.severity = suggestion
+dotnet_diagnostic.S4052.severity = suggestion
+dotnet_diagnostic.S4061.severity = suggestion
+dotnet_diagnostic.S4070.severity = suggestion
+dotnet_diagnostic.S4136.severity = suggestion
+dotnet_diagnostic.S4143.severity = suggestion
+dotnet_diagnostic.S4144.severity = suggestion
+dotnet_diagnostic.S4159.severity = suggestion
+dotnet_diagnostic.S4200.severity = suggestion
+dotnet_diagnostic.S4201.severity = suggestion
+dotnet_diagnostic.S4210.severity = suggestion
+dotnet_diagnostic.S4211.severity = suggestion
+dotnet_diagnostic.S4220.severity = suggestion
+dotnet_diagnostic.S4260.severity = suggestion
+dotnet_diagnostic.S4275.severity = suggestion
+dotnet_diagnostic.S4277.severity = suggestion
+dotnet_diagnostic.S4423.severity = suggestion
+dotnet_diagnostic.S4426.severity = suggestion
+dotnet_diagnostic.S4428.severity = suggestion
+dotnet_diagnostic.S4433.severity = suggestion
+dotnet_diagnostic.S4456.severity = suggestion
+dotnet_diagnostic.S4487.severity = suggestion
+dotnet_diagnostic.S4502.severity = suggestion
+dotnet_diagnostic.S4507.severity = suggestion
+dotnet_diagnostic.S4524.severity = suggestion
+dotnet_diagnostic.S4545.severity = suggestion
+dotnet_diagnostic.S4581.severity = suggestion
+dotnet_diagnostic.S4583.severity = suggestion
+dotnet_diagnostic.S4586.severity = suggestion
+dotnet_diagnostic.S4635.severity = suggestion
+dotnet_diagnostic.S4663.severity = suggestion
+dotnet_diagnostic.S4790.severity = suggestion
+dotnet_diagnostic.S4830.severity = suggestion
+dotnet_diagnostic.S5034.severity = suggestion
+dotnet_diagnostic.S5122.severity = suggestion
+dotnet_diagnostic.S5332.severity = suggestion
+dotnet_diagnostic.S5344.severity = suggestion
+dotnet_diagnostic.S5443.severity = suggestion
+dotnet_diagnostic.S5445.severity = suggestion
+dotnet_diagnostic.S5542.severity = suggestion
+dotnet_diagnostic.S5547.severity = suggestion
+dotnet_diagnostic.S5659.severity = suggestion
+dotnet_diagnostic.S5693.severity = suggestion
+dotnet_diagnostic.S5753.severity = suggestion
+dotnet_diagnostic.S5766.severity = suggestion
+dotnet_diagnostic.S5856.severity = suggestion
+dotnet_diagnostic.S6377.severity = suggestion
+dotnet_diagnostic.S6418.severity = suggestion
+dotnet_diagnostic.S6419.severity = suggestion
+dotnet_diagnostic.S6420.severity = suggestion
+dotnet_diagnostic.S6422.severity = suggestion
+dotnet_diagnostic.S6424.severity = suggestion
+dotnet_diagnostic.S6444.severity = suggestion
+dotnet_diagnostic.S6561.severity = suggestion
+dotnet_diagnostic.S6562.severity = suggestion
+dotnet_diagnostic.S6575.severity = suggestion
+dotnet_diagnostic.S6580.severity = suggestion
+dotnet_diagnostic.S6588.severity = suggestion
+dotnet_diagnostic.S6607.severity = suggestion
+dotnet_diagnostic.S6608.severity = suggestion
+dotnet_diagnostic.S6609.severity = suggestion
+dotnet_diagnostic.S6610.severity = suggestion
+dotnet_diagnostic.S6612.severity = suggestion
+dotnet_diagnostic.S6613.severity = suggestion
+dotnet_diagnostic.S6617.severity = suggestion
+dotnet_diagnostic.S6618.severity = suggestion
+dotnet_diagnostic.S6640.severity = suggestion
+dotnet_diagnostic.S6667.severity = suggestion
+dotnet_diagnostic.S6668.severity = suggestion
+dotnet_diagnostic.S6672.severity = suggestion
+dotnet_diagnostic.S6673.severity = suggestion
+dotnet_diagnostic.S6674.severity = suggestion
+dotnet_diagnostic.S6675.severity = suggestion
+dotnet_diagnostic.S6677.severity = suggestion
+dotnet_diagnostic.S6678.severity = suggestion
+dotnet_diagnostic.S6797.severity = suggestion
+dotnet_diagnostic.S6798.severity = suggestion
+dotnet_diagnostic.S6800.severity = suggestion
+dotnet_diagnostic.S6930.severity = suggestion
+dotnet_diagnostic.S6931.severity = suggestion
+dotnet_diagnostic.S6932.severity = suggestion
+dotnet_diagnostic.S6934.severity = suggestion
+dotnet_diagnostic.S6960.severity = suggestion
+dotnet_diagnostic.S6961.severity = suggestion
+dotnet_diagnostic.S6962.severity = suggestion
+dotnet_diagnostic.S6964.severity = suggestion
+dotnet_diagnostic.S6965.severity = suggestion
+dotnet_diagnostic.S6966.severity = suggestion
+dotnet_diagnostic.S6967.severity = suggestion
+dotnet_diagnostic.S6968.severity = suggestion
+dotnet_diagnostic.S7039.severity = suggestion
+dotnet_diagnostic.S818.severity = suggestion
+dotnet_diagnostic.S8367.severity = suggestion
+dotnet_diagnostic.S8368.severity = suggestion
+dotnet_diagnostic.S8380.severity = suggestion
+dotnet_diagnostic.S8381.severity = suggestion
+dotnet_diagnostic.S8949.severity = suggestion
+dotnet_diagnostic.S8969.severity = suggestion
+dotnet_diagnostic.S8970.severity = suggestion
+dotnet_diagnostic.S907.severity = suggestion
+dotnet_diagnostic.S927.severity = suggestion
+dotnet_diagnostic.S9999-cpd.severity = suggestion
+dotnet_diagnostic.S9999-log.severity = suggestion
+dotnet_diagnostic.S9999-metadata.severity = suggestion
+dotnet_diagnostic.S9999-metrics.severity = suggestion
+dotnet_diagnostic.S9999-symbolRef.severity = suggestion
+dotnet_diagnostic.S9999-telemetry.severity = suggestion
+dotnet_diagnostic.S9999-testMethodDeclaration.severity = suggestion
+dotnet_diagnostic.S9999-token-type.severity = suggestion
+dotnet_diagnostic.S9999-warning.severity = suggestion
+
+[src/**.cs]
+# SonarAnalyzer.CSharp: the curated rules this ADR was written for (compilation-and-diagnostics.md
+# evidence: duplicated NPT/eventEntry literals), at `error`, including S109 (magic numbers): its
+# remaining pre-existing hits are individually suppressed (six in Core, see ADR-0003) or fixed with
+# named constants/helpers — there is no per-file or per-project carve-out.
+dotnet_diagnostic.S1192.severity = error   # Duplicate string literals
+dotnet_diagnostic.S109.severity = error    # Magic numbers
+dotnet_diagnostic.S1854.severity = error   # Dead stores
+dotnet_diagnostic.S1481.severity = error   # Unused local variables
+
+# IDisposableAnalyzers: every IDISP rule, at `error`.
+dotnet_diagnostic.IDISP001.severity = error # Dispose created
+dotnet_diagnostic.IDISP002.severity = error # Dispose member
+dotnet_diagnostic.IDISP003.severity = error # Dispose previous before re-assigning
+dotnet_diagnostic.IDISP004.severity = error # Don't ignore created IDisposable
+dotnet_diagnostic.IDISP005.severity = error # Return type should indicate that the value should be disposed
+dotnet_diagnostic.IDISP006.severity = error # Implement IDisposable
+dotnet_diagnostic.IDISP007.severity = error # Don't dispose injected
+dotnet_diagnostic.IDISP008.severity = error # Don't assign member with injected and created disposables
+dotnet_diagnostic.IDISP009.severity = error # Add IDisposable interface
+dotnet_diagnostic.IDISP010.severity = error # Call base.Dispose(disposing)
+dotnet_diagnostic.IDISP011.severity = error # Don't return disposed instance
+dotnet_diagnostic.IDISP012.severity = error # Property should not return created disposable
+dotnet_diagnostic.IDISP013.severity = error # Await in using
+dotnet_diagnostic.IDISP014.severity = error # Use a single instance of HttpClient
+dotnet_diagnostic.IDISP015.severity = error # Member should not return created and cached instance
+dotnet_diagnostic.IDISP016.severity = error # Don't use disposed instance
+dotnet_diagnostic.IDISP017.severity = error # Prefer using
+dotnet_diagnostic.IDISP018.severity = error # Call SuppressFinalize
+dotnet_diagnostic.IDISP019.severity = error # Call SuppressFinalize
+dotnet_diagnostic.IDISP020.severity = error # Call SuppressFinalize(this)
+dotnet_diagnostic.IDISP021.severity = error # Call this.Dispose(true)
+dotnet_diagnostic.IDISP022.severity = error # Call this.Dispose(false)
+dotnet_diagnostic.IDISP023.severity = error # Don't use reference types in finalizer context
+dotnet_diagnostic.IDISP024.severity = error # Don't call GC.SuppressFinalize(this) when the type is sealed and has no finalizer
+dotnet_diagnostic.IDISP025.severity = error # Class with no virtual dispose method should be sealed
+dotnet_diagnostic.IDISP026.severity = error # Class with no virtual DisposeAsyncCore method should be sealed
+
+# Microsoft.VisualStudio.Threading.Analyzers: every VSTHRD rule except VSTHRD111 (laid out
+# separately below), at `error`.
+dotnet_diagnostic.VSTHRD001.severity = error # Avoid legacy thread switching APIs
+dotnet_diagnostic.VSTHRD002.severity = error # Avoid problematic synchronous waits
+dotnet_diagnostic.VSTHRD003.severity = error # Avoid awaiting foreign Tasks
+dotnet_diagnostic.VSTHRD004.severity = error # Await SwitchToMainThreadAsync
+dotnet_diagnostic.VSTHRD010.severity = error # Invoke single-threaded types on Main thread
+dotnet_diagnostic.VSTHRD011.severity = error # Use AsyncLazy<T>
+dotnet_diagnostic.VSTHRD012.severity = error # Provide JoinableTaskFactory where allowed
+dotnet_diagnostic.VSTHRD100.severity = error # Avoid "async void" methods
+dotnet_diagnostic.VSTHRD101.severity = error # Avoid unsupported async delegates
+dotnet_diagnostic.VSTHRD102.severity = error # Implement internal logic asynchronously
+dotnet_diagnostic.VSTHRD103.severity = error # Call the async version of a blocking method
+dotnet_diagnostic.VSTHRD104.severity = error # Offer async methods
+dotnet_diagnostic.VSTHRD105.severity = error # Avoid method overloads that assume TaskScheduler.Current
+dotnet_diagnostic.VSTHRD106.severity = error # Use InvokeAsync to raise async events
+dotnet_diagnostic.VSTHRD107.severity = error # Await Task within using expression
+dotnet_diagnostic.VSTHRD108.severity = error # Assert thread affinity unconditionally
+dotnet_diagnostic.VSTHRD109.severity = error # Switch instead of assert in async methods
+dotnet_diagnostic.VSTHRD110.severity = error # Observe result of async calls
+dotnet_diagnostic.VSTHRD112.severity = error # Implement System.IAsyncDisposable
+dotnet_diagnostic.VSTHRD113.severity = error # Check for System.IAsyncDisposable
+dotnet_diagnostic.VSTHRD114.severity = error # Avoid returning a null Task
+dotnet_diagnostic.VSTHRD115.severity = error # Avoid creating JoinableTaskContext with null SynchronizationContext
+dotnet_diagnostic.VSTHRD200.severity = error # Use "Async" suffix for awaitable method names
+
+# ---------------------------------------------------------------------------
+# VSTHRD111 (ConfigureAwait): `error` everywhere in src/ by default — a library with no UI
+# synchronization context to resume on should always specify it. The Editor's UI-bound code (view
+# models, views, the ModelSync collections views bind to, the composition root that drives them,
+# and the Avalonia service adapters that must resume on the UI thread to touch dialogs/clipboard/
+# the visual tree) resumes on the UI thread deliberately and turns it off below (finding 11,
+# owner-approved 2026-09-27), and so does all of Desktop. Everything else in the Editor (Hosting's
+# services, Automation, UndoRedo, and the rest) is not UI-bound and stays at this repo-wide
+# `error`, with ConfigureAwait(false) added at each call site that needed it.
+# ---------------------------------------------------------------------------
+dotnet_diagnostic.VSTHRD111.severity = error # ConfigureAwait(bool)
+
+# ---------------------------------------------------------------------------
+# ADR-0003 follow-up batch (2026-09-27): the researched SDK/Sonar rule set below, at the
+# severities/scoping the research draft's table 2a set. S1309 is skipped (NoUnlistedSuppressions
+# replaces it) and CA2007 is skipped (VSTHRD111 above already enforces ConfigureAwait with this same
+# UI/non-UI layering; CA2007 would double-report the same sites). These are SDK (CA) or
+# SonarAnalyzer.CSharp (S) rules; tests are not overridden here and build at each rule's own
+# AnalysisLevel=latest default severity, same policy as every other CA rule in this file.
+# ---------------------------------------------------------------------------
+dotnet_diagnostic.CA2016.severity = error   # Forward the CancellationToken parameter
+dotnet_diagnostic.CA1068.severity = warning # CancellationToken parameters should come last
+dotnet_diagnostic.CA2012.severity = error   # Use ValueTasks correctly
+dotnet_diagnostic.CA1861.severity = warning # Avoid constant arrays as arguments
+dotnet_diagnostic.CA1510.severity = warning # Use ArgumentNullException throw helper
+dotnet_diagnostic.CA1511.severity = warning # Use ArgumentException throw helper
+dotnet_diagnostic.CA1512.severity = warning # Use ArgumentOutOfRangeException throw helper
+dotnet_diagnostic.CA1513.severity = warning # Use ObjectDisposedException throw helper
+dotnet_diagnostic.CA2201.severity = error   # Do not raise reserved exception types
+dotnet_diagnostic.CA2208.severity = error   # Instantiate argument exceptions correctly
+dotnet_diagnostic.CA2200.severity = error   # Rethrow to preserve stack details
+dotnet_diagnostic.S2486.severity = error    # Exceptions should not be ignored
+dotnet_diagnostic.S108.severity = error     # Nested blocks of code should not be left empty
+dotnet_diagnostic.S2139.severity = warning  # Exceptions should be either logged or rethrown, not both
+dotnet_diagnostic.CA1065.severity = warning # Do not raise exceptions in unexpected locations
+dotnet_diagnostic.CA1307.severity = warning # Specify StringComparison for clarity
+dotnet_diagnostic.CA1309.severity = warning # Use ordinal StringComparison
+dotnet_diagnostic.CA1851.severity = warning # Possible multiple enumerations of IEnumerable collection
+dotnet_diagnostic.CA1827.severity = warning # Do not use Count()/LongCount() when Any() can be used
+dotnet_diagnostic.CA1829.severity = warning # Use Length/Count property instead of Count() when available
+dotnet_diagnostic.CA1860.severity = warning # Avoid using 'Enumerable.Any()' extension method
+dotnet_diagnostic.CA1852.severity = warning # Seal internal types
+dotnet_diagnostic.S2933.severity = warning  # Fields that are only assigned in the constructor should be readonly
+dotnet_diagnostic.CA2211.severity = error   # Non-constant fields should not be visible
+dotnet_diagnostic.CA1848.severity = warning # Use the LoggerMessage delegates
+dotnet_diagnostic.CA2254.severity = error   # Template should be a static expression
+dotnet_diagnostic.CA2017.severity = error   # Parameter count mismatch in the logging message template
+dotnet_diagnostic.CA1727.severity = warning # Use PascalCase for named placeholders in the logging message template
+
+# CA1305/CA1310/CA1311 (locale-sensitive formatting/comparison): `warning` in src/**.cs by default,
+# `error` in NetPrints.Generator, NetPrints.Serialization and NetPrints.Core below, where the wrong
+# overload breaks byte-identical generated code, JSON or golden fixtures on a non-invariant locale.
+dotnet_diagnostic.CA1305.severity = warning # Specify IFormatProvider
+dotnet_diagnostic.CA1310.severity = warning # Specify StringComparison for correctness
+dotnet_diagnostic.CA1311.severity = warning # Specify a culture or use an invariant version
+
+[src/{NetPrints.Generator,NetPrints.Serialization,NetPrints.Core}/**.cs]
+dotnet_diagnostic.CA1305.severity = error # Specify IFormatProvider
+dotnet_diagnostic.CA1310.severity = error # Specify StringComparison for correctness
+dotnet_diagnostic.CA1311.severity = error # Specify a culture or use an invariant version
+
+# CA1002/CA2227 (expose read-only collection types): `error` in the newer projects below; `suggestion`
+# in the legacy NetPrints.Core/NetPrints.Reflection model, which still has public mutable-collection
+# APIs a future batch refactors. Not set for other projects: they carry no collection-shaped public
+# surface these rules would flag.
+[src/{NetPrints.Extensibility,NetPrints.Serialization,NetPrints.Workspace,NetPrints.Generator,NetPrints.Sdk}/**.cs]
+dotnet_diagnostic.CA1002.severity = error # Do not expose generic lists
+dotnet_diagnostic.CA2227.severity = error # Collection properties should be read only
+
+[src/{NetPrints.Core,NetPrints.Reflection}/**.cs]
+dotnet_diagnostic.CA1002.severity = suggestion # Do not expose generic lists
+dotnet_diagnostic.CA2227.severity = suggestion # Collection properties should be read only
+
+[src/NetPrints.Editor/**VM.cs]
+dotnet_diagnostic.VSTHRD111.severity = none
+
+[src/NetPrints.Editor/**.axaml.cs]
+dotnet_diagnostic.VSTHRD111.severity = none
+
+[src/NetPrints.Editor/ModelSync/*.cs]
+dotnet_diagnostic.VSTHRD111.severity = none
+
+[src/NetPrints.Editor/Hosting/EditorComposition.cs]
+dotnet_diagnostic.VSTHRD111.severity = none
+
+# Resumes on the UI thread deliberately to call the desktop lifetime's Shutdown() after cleanup.
+[src/NetPrints.Editor/Hosting/ShutdownCoordinator.cs]
+dotnet_diagnostic.VSTHRD111.severity = none
+
+[src/NetPrints.Editor/Hosting/Avalonia/**.cs]
+dotnet_diagnostic.VSTHRD111.severity = none
+
+[src/NetPrints.Editor/Graph/GraphDragDrop.cs]
+dotnet_diagnostic.VSTHRD111.severity = none
+
+[src/NetPrints.Desktop/**.cs]
+dotnet_diagnostic.VSTHRD111.severity = none

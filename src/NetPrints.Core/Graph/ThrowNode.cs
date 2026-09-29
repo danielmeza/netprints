@@ -1,5 +1,5 @@
-﻿using System;
-using System.Runtime.Serialization;
+﻿#nullable enable
+using System;
 using NetPrints.Core;
 
 namespace NetPrints.Graph
@@ -7,7 +7,6 @@ namespace NetPrints.Graph
     /// <summary>
     /// Node representing an exception throw.
     /// </summary>
-    [DataContract]
     public class ThrowNode : Node
     {
         /// <summary>
@@ -18,6 +17,10 @@ namespace NetPrints.Graph
             get { return InputDataPins[0]; }
         }
 
+        /// <summary>
+        /// Adds this node to <paramref name="graph"/> and gives it its execution and exception pins.
+        /// </summary>
+        /// <param name="graph">Graph the node belongs to.</param>
         public ThrowNode(NodeGraph graph)
             : base(graph)
         {
@@ -25,6 +28,10 @@ namespace NetPrints.Graph
             AddInputDataPin("Exception", TypeSpecifier.FromType<Exception>());
         }
 
+        /// <summary>
+        /// Returns "Throw Exception".
+        /// </summary>
+        /// <returns>"Throw Exception".</returns>
         public override string ToString()
         {
             return $"Throw Exception";

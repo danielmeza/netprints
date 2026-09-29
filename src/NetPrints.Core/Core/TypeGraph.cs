@@ -1,7 +1,7 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
 using NetPrints.Graph;
 
 namespace NetPrints.Core
@@ -9,7 +9,6 @@ namespace NetPrints.Core
     /// <summary>
     /// Type graph that returns a type.
     /// </summary>
-    [DataContract]
     public class TypeGraph : NodeGraph
     {
         /// <summary>
@@ -25,9 +24,21 @@ namespace NetPrints.Core
         /// </summary>
         public TypeSpecifier ReturnType
         {
-            get => (TypeSpecifier)ReturnNode.TypePin.InferredType?.Value ?? TypeSpecifier.FromType<object>();
+            get => (TypeSpecifier?)ReturnNode.TypePin.InferredType?.Value ?? TypeSpecifier.FromType<object>();
         }
 
+        /// <summary>
+        /// The class this type graph belongs to, when it is a <see cref="Variable"/>'s
+        /// <see cref="Variable.TypeGraph"/>; <see langword="null"/> otherwise. Distinct from the
+        /// inherited <see cref="NodeGraph.Class"/> (which stays unset for a type graph, unlike for a
+        /// method or constructor graph); set by <see cref="Variable"/>. Used by
+        /// <see cref="GraphKeys.For"/> to key a type graph as <c>&lt;variable id&gt;/type</c>.
+        /// </summary>
+        public ClassGraph? OwningClass { get; internal set; }
+
+        /// <summary>
+        /// Creates a type graph and its <see cref="TypeReturnNode"/>.
+        /// </summary>
         public TypeGraph()
         {
             _ = new TypeReturnNode(this);

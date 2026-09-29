@@ -38,64 +38,107 @@ public abstract class SmokeScenarios
         }
     }
 
+    /// <summary>
+    /// Per-step timing hook (batch D2): a no-op here so the shared scenarios cost nothing extra on
+    /// the headless driver; the desktop E2E driver overrides it with a real <c>StepTimer</c>.
+    /// </summary>
+    protected virtual IDisposable Step(string name) => NoOpStep.Instance;
+
     /// <summary>Open the sample, put an If Else (condition ticked) before WriteLine, compile and run: "Hello, World!" (FR-017).</summary>
     protected async Task EditCompileAndRunAsync(CancellationToken cancellationToken)
     {
-        var context = await StartAsync(cancellationToken);
+        SmokeContext context;
+        using (Step("start"))
+        {
+            context = await StartAsync(cancellationToken);
+        }
+
         var actor = context.Actor;
 
-        await actor.AttemptsToAsync(cancellationToken,
-            OpenTheProject.At(context.SampleProject),
-            OpenTheMethod.Named("Main").Of(ClassName));
-        await CheckpointAsync(context, "01-main-graph", cancellationToken);
+        using (Step("open project"))
+        {
+            await actor.AttemptsToAsync(cancellationToken,
+                OpenTheProject.At(context.SampleProject),
+                OpenTheMethod.Named("Main").Of(ClassName));
+            await CheckpointAsync(context, "01-main-graph", cancellationToken);
+        }
+
         int nodes = await actor.AsksForAsync(TheNodeCount.In(ClassName), cancellationToken);
 
-        await actor.AttemptsToAsync(cancellationToken,
-            AddANode.Named("If Else", ClassName),
-            ConnectThePins.From(ClassName, "MethodEntryNode", "Exec", "IfElseNode", "Exec"),
-            TickThePin.Of(ClassName, "IfElseNode", "Condition"),
-            ConnectThePins.From(ClassName, "IfElseNode", "True", "CallMethodNode", "Exec"));
-        await CheckpointAsync(context, "02-if-else-wired", cancellationToken);
+        using (Step("edit graph"))
+        {
+            await actor.AttemptsToAsync(cancellationToken,
+                AddANode.Named("If Else", ClassName),
+                ConnectThePins.From(ClassName, "MethodEntryNode", "Exec", "IfElseNode", "Exec"),
+                TickThePin.Of(ClassName, "IfElseNode", "Condition"),
+                ConnectThePins.From(ClassName, "IfElseNode", "True", "CallMethodNode", "Exec"));
+            await CheckpointAsync(context, "02-if-else-wired", cancellationToken);
+        }
+
         Assert.Equal(nodes + 1, await actor.AsksForAsync(TheNodeCount.In(ClassName), cancellationToken));
 
-        await actor.AttemptsToAsync(CompileTheProject.From(ClassName), cancellationToken);
-        Assert.Equal("Build succeeded", await actor.AsksForAsync(TheBuildStatus.In(ClassName), cancellationToken));
+        using (Step("compile"))
+        {
+            await actor.AttemptsToAsync(CompileTheProject.From(ClassName), cancellationToken);
+            Assert.Equal("Build succeeded", await actor.AsksForAsync(TheBuildStatus.In(ClassName), cancellationToken));
+        }
 
-        await actor.AttemptsToAsync(RunTheProgram.From(ClassName), cancellationToken);
-        Assert.Contains("Hello, World!", await actor.AsksForAsync(TheProgramOutput.In(ClassName, "Hello, World!"), cancellationToken));
-        await CheckpointAsync(context, "03-ran", cancellationToken);
+        using (Step("run"))
+        {
+            await actor.AttemptsToAsync(RunTheProgram.From(ClassName), cancellationToken);
+            Assert.Contains("Hello, World!", await actor.AsksForAsync(TheProgramOutput.In(ClassName, "Hello, World!"), cancellationToken));
+            await CheckpointAsync(context, "03-ran", cancellationToken);
+        }
     }
 
     /// <summary>Create a project through the save picker (PAR-02).</summary>
     protected async Task CreateProjectAsync(CancellationToken cancellationToken)
     {
-        var context = await StartAsync(cancellationToken);
-        var main = await context.Editor.MainWindow.ShowProjectPaneAsync(cancellationToken);
-        string path = Path.Combine(context.WorkDirectory, "Created.netpp");
+        SmokeContext context;
+        using (Step("start"))
+        {
+            context = await StartAsync(cancellationToken);
+        }
 
-        await context.Editor.FileDialogs.SaveFileAsync("Create Project", path, () => main.CreateProjectButton.ClickAsync(cancellationToken), cancellationToken);
+        using (Step("create project"))
+        {
+            var main = await context.Editor.MainWindow.ShowProjectPaneAsync(cancellationToken);
+            string path = Path.Combine(context.WorkDirectory, "Created.csproj");
 
-        await main.WaitForProjectAsync("Created", cancellationToken);
-        await UiWait.UntilAsync(context.Driver, () => Task.FromResult(File.Exists(path)), "project file written", cancellationToken);
-        await CheckpointAsync(context, "created-project", cancellationToken);
+            await context.Editor.FileDialogs.SaveFileAsync("Create Project", path, () => main.CreateProjectButton.ClickAsync(cancellationToken), cancellationToken);
+
+            await main.WaitForProjectAsync("Created", cancellationToken);
+            await UiWait.UntilAsync(context.Driver, () => Task.FromResult(File.Exists(path)), "project file written", cancellationToken);
+            await CheckpointAsync(context, "created-project", cancellationToken);
+        }
     }
 
     /// <summary>Add an assembly and a source folder in the References dialog (PAR-15..18).</summary>
     protected async Task AddReferencesAsync(string assemblyPath, CancellationToken cancellationToken)
     {
-        var context = await StartAsync(cancellationToken);
+        SmokeContext context;
+        using (Step("start"))
+        {
+            context = await StartAsync(cancellationToken);
+        }
+
         await context.Actor.AttemptsToAsync(OpenTheProject.At(context.SampleProject), cancellationToken);
         var references = await context.Editor.MainWindow.OpenReferencesAsync(cancellationToken);
         string sources = Directory.CreateDirectory(Path.Combine(context.WorkDirectory, "Sources")).FullName;
 
-        await context.Editor.FileDialogs.OpenFileAsync("Add Assembly Reference", assemblyPath,
-            () => references.AddAssemblyButton.ClickAsync(cancellationToken), cancellationToken);
-        await references.WaitForRowAsync(Path.GetFileName(assemblyPath), cancellationToken);
+        using (Step("add references"))
+        {
+            await context.Editor.FileDialogs.OpenFileAsync("Add Assembly Reference", assemblyPath,
+                () => references.AddAssemblyButton.ClickAsync(cancellationToken), cancellationToken);
+            // The declared reference's Include is the assembly's simple name, no extension
+            // (project-system.md §1: <Reference Include="<simple name>">).
+            await references.WaitForRowAsync(Path.GetFileNameWithoutExtension(assemblyPath), cancellationToken);
 
-        await context.Editor.FileDialogs.OpenFolderAsync("Add Source Directory", sources,
-            () => references.AddSourceButton.ClickAsync(cancellationToken), cancellationToken);
-        await references.WaitForRowAsync("Sources", cancellationToken);
-        await CheckpointAsync(context, "references", cancellationToken);
+            await context.Editor.FileDialogs.OpenFolderAsync("Add Source Directory", sources,
+                () => references.AddSourceButton.ClickAsync(cancellationToken), cancellationToken);
+            await references.WaitForRowAsync("Sources", cancellationToken);
+            await CheckpointAsync(context, "references", cancellationToken);
+        }
 
         await references.CloseAsync(cancellationToken);
     }
@@ -103,7 +146,12 @@ public abstract class SmokeScenarios
     /// <summary>A minimized class window is restored, not duplicated, from the class list (PAR-14).</summary>
     protected async Task MinimizeAndRestoreClassWindowAsync(CancellationToken cancellationToken)
     {
-        var context = await StartAsync(cancellationToken);
+        SmokeContext context;
+        using (Step("start"))
+        {
+            context = await StartAsync(cancellationToken);
+        }
+
         Require(context, UiCapabilities.WindowManager);
         await context.Actor.AttemptsToAsync(OpenTheProject.At(context.SampleProject), cancellationToken);
         var main = context.Editor.MainWindow;
@@ -126,7 +174,12 @@ public abstract class SmokeScenarios
     /// <summary>The pointer shows the move cursor while the canvas is panned (PAR-51).</summary>
     protected async Task PanCursorAsync(CancellationToken cancellationToken)
     {
-        var context = await StartAsync(cancellationToken);
+        SmokeContext context;
+        using (Step("start"))
+        {
+            context = await StartAsync(cancellationToken);
+        }
+
         Require(context, UiCapabilities.RealCursor);
         await context.Actor.AttemptsToAsync(cancellationToken, OpenTheProject.At(context.SampleProject), OpenTheMethod.Named("Main").Of(ClassName));
         var graph = context.Editor.ClassEditor(ClassName).Graph;
@@ -168,7 +221,12 @@ public abstract class SmokeScenarios
     /// <summary>Real drags from the method, constructor and variable lists onto the canvas (PAR-56, 57).</summary>
     protected async Task DragFromListsAsync(CancellationToken cancellationToken)
     {
-        var context = await StartAsync(cancellationToken);
+        SmokeContext context;
+        using (Step("start"))
+        {
+            context = await StartAsync(cancellationToken);
+        }
+
         Require(context, UiCapabilities.OsDragDrop);
         await context.Actor.AttemptsToAsync(cancellationToken, OpenTheProject.At(context.SampleProject), OpenTheMethod.Named("Main").Of(ClassName));
         var page = context.Editor.ClassEditor(ClassName);
@@ -197,5 +255,14 @@ public abstract class SmokeScenarios
         await UiWait.UntilAsync(context.Driver, async () => await graph.NodeCountAsync(cancellationToken) == afterConstructor + 1, "getter dropped",
             cancellationToken);
         await CheckpointAsync(context, "dropped-nodes", cancellationToken);
+    }
+
+    private sealed class NoOpStep : IDisposable
+    {
+        public static readonly NoOpStep Instance = new();
+
+        public void Dispose()
+        {
+        }
     }
 }

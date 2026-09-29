@@ -19,16 +19,26 @@ namespace NetPrints.Editor.Hosting.Automation;
 /// </summary>
 public sealed class AutomationTree : IDisposable
 {
+    /// <summary>Sub-pixel slack allowed before measured text is considered truncated.</summary>
+    private const double TruncationTolerance = 0.5;
+
     private readonly List<Window> windows = [];
     private readonly Dictionary<Window, string> keys = [];
     private readonly IDisposable openedHandler;
     private readonly IDisposable closedHandler;
     private int nextKey;
 
+    /// <summary>
+    /// Starts tracking every window opened from now on.
+    /// </summary>
     public AutomationTree()
     {
-        openedHandler = Window.WindowOpenedEvent.AddClassHandler(typeof(Window), (sender, _) => Track((Window)sender!));
-        closedHandler = Window.WindowClosedEvent.AddClassHandler(typeof(Window), (sender, _) => Untrack((Window)sender!));
+        openedHandler = Window.WindowOpenedEvent.AddClassHandler(typeof(Window), (sender, _) =>
+            Track(sender as Window ?? throw new InvalidOperationException(
+                $"{nameof(Window.WindowOpenedEvent)}'s sender was a {sender?.GetType().Name ?? "null"}, not a {nameof(Window)}.")));
+        closedHandler = Window.WindowClosedEvent.AddClassHandler(typeof(Window), (sender, _) =>
+            Untrack(sender as Window ?? throw new InvalidOperationException(
+                $"{nameof(Window.WindowClosedEvent)}'s sender was a {sender?.GetType().Name ?? "null"}, not a {nameof(Window)}.")));
     }
 
     /// <summary>Open windows, in the order they opened.</summary>
@@ -50,8 +60,21 @@ public sealed class AutomationTree : IDisposable
         keys.Remove(window);
     }
 
+    /// <summary>
+    /// The stable key this tree assigned to a tracked window (eg. "w1", "w2", assigned in the order
+    /// windows opened).
+    /// </summary>
+    /// <param name="window">Tracked window to get the key for.</param>
+    /// <returns>The window's key.</returns>
+    /// <exception cref="KeyNotFoundException"><paramref name="window"/> is not tracked.</exception>
     public string KeyOf(Window window) => keys[window];
 
+    /// <summary>
+    /// The tracked window with the given key (see <see cref="KeyOf"/>).
+    /// </summary>
+    /// <param name="key">Key of the window to find.</param>
+    /// <returns>The window with that key.</returns>
+    /// <exception cref="InvalidOperationException">No tracked window has that key.</exception>
     public Window WindowByKey(string key) =>
         keys.FirstOrDefault(p => p.Value == key).Key ?? throw new InvalidOperationException($"No open window with key {key}.");
 
@@ -116,9 +139,9 @@ public sealed class AutomationTree : IDisposable
         }
 
         // Open popups (their content is a logical child of the Popup).
-        foreach (var popup in visited.OfType<Popup>().Where(p => p.IsOpen && p.Child is Control).ToList())
+        foreach (var popupChild in visited.OfType<Popup>().Where(p => p.IsOpen).Select(p => p.Child as Control).OfType<Control>().ToList())
         {
-            foreach (var c in SelfAndDescendants((Control)popup.Child!))
+            foreach (var c in SelfAndDescendants(popupChild))
             {
                 if (visited.Add(c))
                 {
@@ -168,6 +191,7 @@ public sealed class AutomationTree : IDisposable
             [AutomationPropertyNames.IsKeyboardFocusWithin] = control.IsKeyboardFocusWithin.ToString(),
             [AutomationPropertyNames.PseudoClasses] = string.Join(' ', control.Classes),
             [AutomationPropertyNames.ToolTip] = ToolTip.GetTip(control) as string,
+            [AutomationPropertyNames.ToolTipIsOpen] = ToolTip.GetIsOpen(control).ToString(),
             [AutomationPropertyNames.ShowToolTipOnDisabled] = ToolTip.GetShowOnDisabled(control).ToString(),
             [AutomationPropertyNames.Cursor] = EditorCursors.NameOf(control.Cursor),
             [AutomationPropertyNames.TextOverflows] = TextOverflows(control)?.ToString(),
@@ -188,6 +212,9 @@ public sealed class AutomationTree : IDisposable
             case TextBox textBox:
                 p[AutomationPropertyNames.IsReadOnly] = textBox.IsReadOnly.ToString();
                 p[AutomationPropertyNames.Placeholder] = textBox.PlaceholderText;
+                break;
+            case NetPrints.Editor.CodeView.CodeView codeView:
+                p[AutomationPropertyNames.IsReadOnly] = codeView.Editor.IsReadOnly.ToString();
                 break;
             case NodifyEditor editor:
                 p[AutomationPropertyNames.ViewportZoom] = Invariant(editor.ViewportZoom);
@@ -253,7 +280,7 @@ public sealed class AutomationTree : IDisposable
             FontStretch = textBlock.FontStretch,
         };
         natural.Measure(Size.Infinity);
-        return natural.DesiredSize.Width > textBlock.Bounds.Width + 0.5;
+        return natural.DesiredSize.Width > textBlock.Bounds.Width + TruncationTolerance;
     }
 
     private static string Invariant(double value) => value.ToString("0.###", CultureInfo.InvariantCulture);
@@ -264,6 +291,7 @@ public sealed class AutomationTree : IDisposable
         Window window => window.Title,
         TextBlock textBlock => textBlock.Text,
         TextBox textBox => textBox.Text,
+        NetPrints.Editor.CodeView.CodeView codeView => codeView.Editor.Text,
         AutoCompleteBox autoComplete => autoComplete.Text,
         ComboBox comboBox => comboBox.SelectedItem?.ToString(),
         ContentControl { Content: string text } => text,
@@ -288,6 +316,9 @@ public sealed class AutomationTree : IDisposable
         return sb.ToString();
     }
 
+    /// <summary>
+    /// Stops tracking window open/close events. Already-tracked windows are not untracked.
+    /// </summary>
     public void Dispose()
     {
         openedHandler.Dispose();

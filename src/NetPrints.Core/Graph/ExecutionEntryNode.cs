@@ -1,9 +1,13 @@
-﻿using System.Runtime.Serialization;
+﻿#nullable enable
 using NetPrints.Core;
 
 namespace NetPrints.Graph
 {
-    [DataContract]
+    /// <summary>
+    /// Abstract base class for the single entry node every <see cref="ExecutionGraph"/> starts with
+    /// (see <see cref="ExecutionGraph.EntryNode"/>): <see cref="MethodEntryNode"/> for a method,
+    /// <see cref="ConstructorEntryNode"/> for a constructor.
+    /// </summary>
     public abstract class ExecutionEntryNode : Node
     {
         /// <summary>
@@ -14,6 +18,10 @@ namespace NetPrints.Graph
             get { return OutputExecPins[0]; }
         }
 
+        /// <summary>
+        /// Adds this node to <paramref name="graph"/>.
+        /// </summary>
+        /// <param name="graph">Graph the node belongs to.</param>
         public ExecutionEntryNode(ExecutionGraph graph)
             : base(graph)
         {

@@ -1,23 +1,32 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis.CSharp;
 using NetPrints.Core;
 using NetPrints.Graph;
 
 namespace NetPrints.Translator
 {
     /// <summary>
-    /// Translates execution graphs into C#.
+    /// Translates execution graphs into C#, dispatching each node to the translator its
+    /// <see cref="TranslationEnvironment"/> registers for the node's type. Not thread-safe: use one
+    /// instance per translation.
     /// </summary>
-    public class ExecutionGraphTranslator
+    public sealed class ExecutionGraphTranslator : IExecutionTranslationContext, IBuiltInTranslationContext
     {
         private const string JumpStackVarName = "jumpStack";
         private const string JumpStackType = "System.Collections.Generic.Stack<int>";
 
+        // Placeholder replaced by TranslateJumpStack's declaration, once it is known to be needed.
+        private const string JumpStackPlaceholder = "%JUMPSTACKPLACEHOLDER%";
+
         private readonly Dictionary<NodeOutputDataPin, string> variableNames = new Dictionary<NodeOutputDataPin, string>();
+        private readonly HashSet<string> reservedLocalNames = new HashSet<string>(StringComparer.Ordinal);
         private readonly Dictionary<Node, List<int>> nodeStateIds = new Dictionary<Node, List<int>>();
         private int nextStateId = 0;
         private IEnumerable<Node> execNodes = new List<Node>();
@@ -27,39 +36,70 @@ namespace NetPrints.Translator
         private int jumpStackStateId;
 
         private readonly StringBuilder builder = new StringBuilder();
+        private readonly List<NodeOffset> nodeOffsets = new List<NodeOffset>();
 
-        private ExecutionGraph graph;
+        private readonly TranslationEnvironment environment;
 
-        private Random random;
-
-        private delegate void NodeTypeHandler(ExecutionGraphTranslator translator, Node node);
-
-        private readonly Dictionary<Type, List<NodeTypeHandler>> nodeTypeHandlers = new Dictionary<Type, List<NodeTypeHandler>>()
+        /// <summary>
+        /// Creates a translator that resolves node translators through <paramref name="environment"/>.
+        /// </summary>
+        /// <param name="environment">Node translators to dispatch to.</param>
+        public ExecutionGraphTranslator(TranslationEnvironment environment)
         {
-            { typeof(CallMethodNode), new List<NodeTypeHandler> { (translator, node) => translator.TranslateCallMethodNode(node as CallMethodNode) } },
-            { typeof(VariableSetterNode), new List<NodeTypeHandler> { (translator, node) => translator.TranslateVariableSetterNode(node as VariableSetterNode) } },
-            { typeof(ReturnNode), new List<NodeTypeHandler> { (translator, node) => translator.TranslateReturnNode(node as ReturnNode) } },
-            { typeof(MethodEntryNode), new List<NodeTypeHandler> { (translator, node) => translator.TranslateMethodEntry(node as MethodEntryNode) } },
-            { typeof(IfElseNode), new List<NodeTypeHandler> { (translator, node) => translator.TranslateIfElseNode(node as IfElseNode) } },
-            { typeof(ConstructorNode), new List<NodeTypeHandler> { (translator, node) => translator.TranslateConstructorNode(node as ConstructorNode) } },
-            { typeof(ExplicitCastNode), new List<NodeTypeHandler> { (translator, node) => translator.TranslateExplicitCastNode(node as ExplicitCastNode) } },
-            { typeof(ThrowNode), new List<NodeTypeHandler> { (translator, node) => translator.TranslateThrowNode(node as ThrowNode) } },
-            { typeof(AwaitNode), new List<NodeTypeHandler> { (translator, node) => translator.TranslateAwaitNode(node as AwaitNode) } },
-            { typeof(TernaryNode), new List<NodeTypeHandler> { (translator, node) => translator.TranslateTernaryNode(node as TernaryNode) } },
+            this.environment = environment ?? throw new ArgumentNullException(nameof(environment));
+        }
 
-            { typeof(ForLoopNode), new List<NodeTypeHandler> {
-                (translator, node) => translator.TranslateStartForLoopNode(node as ForLoopNode),
-                (translator, node) => translator.TranslateContinueForLoopNode(node as ForLoopNode)} },
+        /// <inheritdoc />
+        public NodeGraph Graph => graph;
 
-            { typeof(RerouteNode), new List<NodeTypeHandler> { (translator, node) => translator.TranslateRerouteNode(node as RerouteNode) } },
+        /// <inheritdoc />
+        public ITypeDeclaration? Declaration => graph.Class;
 
-            { typeof(VariableGetterNode), new List<NodeTypeHandler> { (translator, node) => translator.PureTranslateVariableGetterNode(node as VariableGetterNode) } },
-            { typeof(LiteralNode), new List<NodeTypeHandler> { (translator, node) => translator.PureTranslateLiteralNode(node as LiteralNode) } },
-            { typeof(MakeDelegateNode), new List<NodeTypeHandler> { (translator, node) => translator.PureTranslateMakeDelegateNode(node as MakeDelegateNode) } },
-            { typeof(TypeOfNode), new List<NodeTypeHandler> { (translator, node) => translator.PureTranslateTypeOfNode(node as TypeOfNode) } },
-            { typeof(MakeArrayNode), new List<NodeTypeHandler> { (translator, node) => translator.PureTranslateMakeArrayNode(node as MakeArrayNode) } },
-            { typeof(DefaultNode), new List<NodeTypeHandler> { (translator, node) => translator.PureTranslateDefaultNode(node as DefaultNode) } },
-        };
+        /// <inheritdoc />
+        public ClassGraph? Class => graph.Class;
+
+        /// <inheritdoc />
+        public void Append(string code) => builder.Append(code);
+
+        /// <inheritdoc />
+        public void AppendLine(string code = "") => builder.AppendLine(code);
+
+        /// <inheritdoc />
+        public string CreateTemporaryVariableName() => TranslatorUtil.GetTemporaryVariableName(random);
+
+        /// <summary>
+        /// The offset of each impure node's own statements in the unformatted code the last
+        /// <see cref="Translate(ExecutionGraph, bool)"/> or <see cref="TranslateEventEntry(EventGraph, EventEntryNode)"/>
+        /// call returned, in the order they were written (research.md R3). Used only by
+        /// <see cref="ClassTranslator"/> to build a <see cref="SourceMap"/>.
+        /// </summary>
+        internal IReadOnlyList<NodeOffset> LastNodeOffsets => nodeOffsets;
+
+        bool IBuiltInTranslationContext.IsFinalExecState(NodeInputExecPin pin) =>
+            GetExecPinStateId(pin) == nodeStateIds.Count - 1;
+
+        // Set as the first statement of Translate()/TranslateEventEntry(), which every other method
+        // here is only ever called from (directly or indirectly), never before. Backed by a nullable
+        // field instead of asserted with `!` so a genuine misuse (calling a Translate*Node method
+        // without going through one of those first) throws a clear exception instead of a
+        // NullReferenceException. Typed NodeGraph (not ExecutionGraph) so an EventGraph (sub-phase G:
+        // no single EntryNode, several EventEntryNodes may share one) can be translated through the
+        // same context; TranslateSignature casts back to ExecutionGraph, the only case it applies to.
+        private NodeGraph? graphField;
+        private NodeGraph graph
+        {
+            get => graphField ?? throw new InvalidOperationException(
+                $"{nameof(ExecutionGraphTranslator)}.{nameof(graph)} was read before {nameof(Translate)}() was called.");
+            set => graphField = value;
+        }
+
+        private Random? randomField;
+        private Random random
+        {
+            get => randomField ?? throw new InvalidOperationException(
+                $"{nameof(ExecutionGraphTranslator)}.{nameof(random)} was read before {nameof(Translate)}() was called.");
+            set => randomField = value;
+        }
 
         private int GetNextStateId()
         {
@@ -71,14 +111,9 @@ namespace NetPrints.Translator
             return nodeStateIds[pin.Node][pin.Node.InputExecPins.IndexOf(pin)];
         }
 
-        private string GetOrCreatePinName(NodeOutputDataPin pin)
+        /// <inheritdoc />
+        public string GetOrCreatePinName(NodeOutputDataPin pin)
         {
-            // Return the default value of the pin type if nothing is connected
-            if (pin == null)
-            {
-                return "null";
-            }
-
             if (variableNames.ContainsKey(pin))
             {
                 return variableNames[pin];
@@ -89,26 +124,38 @@ namespace NetPrints.Translator
             // Special case for property setters, input name "value".
             // TODO: Don't rely on set_ prefix
             // TODO: Use PropertyGraph instead of MethodGraph
-            if (pin.Node is MethodEntryNode && graph is MethodGraph methodGraph && methodGraph.Name.StartsWith("set_"))
+            if (pin.Node is MethodEntryNode && graph is MethodGraph methodGraph && methodGraph.Name.StartsWith("set_", StringComparison.Ordinal))
             {
                 pinName = "value";
             }
             else
             {
-                pinName = TranslatorUtil.GetUniqueVariableName(pin.Name.Replace("<", "_").Replace(">", "_"), variableNames.Values.ToList());
+                // Local variable names (declared first, TranslateVariables) are reserved before a pin
+                // ever gets one of its own, so a generated pin name can never shadow a user-declared
+                // local (data-model.md §3).
+                List<string> reservedNames = variableNames.Values.Concat(reservedLocalNames).ToList();
+                pinName = TranslatorUtil.GetUniqueVariableName(pin.Name.Replace("<", "_", StringComparison.Ordinal).Replace(">", "_", StringComparison.Ordinal), reservedNames);
             }
 
             variableNames.Add(pin, pinName);
             return pinName;
         }
 
-        private string GetPinIncomingValue(NodeInputDataPin pin)
+        /// <summary>
+        /// The C# expression for a pin's incoming value, or null to mean "omit the argument, use the
+        /// parameter's own default value" (<see cref="NodeInputDataPin.UsesExplicitDefaultValue"/>).
+        /// Callers check the result for null (e.g. the call-method translator's `prependArgumentName`),
+        /// they do not simply emit it.
+        /// </summary>
+        public string? GetPinIncomingValue(NodeInputDataPin pin)
         {
             if (pin.IncomingPin == null)
             {
                 if (pin.UsesUnconnectedValue && pin.UnconnectedValue != null)
                 {
-                    return TranslatorUtil.ObjectToLiteral(pin.UnconnectedValue, (TypeSpecifier)pin.PinType.Value);
+                    // The translator only ever runs on a fully type-resolved graph (GraphTypeInference
+                    // already ran during deserialization), so PinType.Value is set here.
+                    return TranslatorUtil.ObjectToLiteral(pin.UnconnectedValue, (TypeSpecifier)ResolvedPinType(pin));
                 }
                 else if (pin.UsesExplicitDefaultValue)
                 {
@@ -116,8 +163,9 @@ namespace NetPrints.Translator
                 }
                 else
                 {
-                    throw new Exception($"Input data pin {pin} on {pin.Node} was unconnected without an explicit default or unconnected value.");
-                    //return $"default({pin.PinType.Value.FullCodeName})";
+                    throw new TranslationException(TranslationDiagnosticCodes.UnsetRequiredInput,
+                        $"Input data pin {pin} on {pin.Node} was unconnected without an explicit default or unconnected value.",
+                        TranslatorUtil.TryGetGraphKey(pin.Node.Graph), pin.Node.Id);
                 }
             }
             else
@@ -131,16 +179,20 @@ namespace NetPrints.Translator
             return pins.Select(pin => GetOrCreatePinName(pin)).ToList();
         }
 
-        private IEnumerable<string> GetPinIncomingValues(IEnumerable<NodeInputDataPin> pins)
+        private IEnumerable<string?> GetPinIncomingValues(IEnumerable<NodeInputDataPin> pins)
         {
             return pins.Select(pin => GetPinIncomingValue(pin)).ToList();
         }
 
-        private string GetOrCreateTypedPinName(NodeOutputDataPin pin)
+        /// <inheritdoc />
+        public string GetOrCreateTypedPinName(NodeOutputDataPin pin)
         {
             string pinName = GetOrCreatePinName(pin);
-            return $"{pin.PinType.Value.FullCodeName} {pinName}";
+            return $"{ResolvedPinType(pin).FullCodeName} {pinName}";
         }
+
+        private static BaseType ResolvedPinType(NodeDataPin pin) =>
+            pin.PinType.Value ?? throw new InvalidOperationException($"The type of pin {pin} on {pin.Node} is not resolved.");
 
         private IEnumerable<string> GetOrCreateTypedPinNames(IEnumerable<NodeOutputDataPin> pins)
         {
@@ -167,7 +219,41 @@ namespace NetPrints.Translator
         {
             foreach (Node node in nodes)
             {
-                var v = GetOrCreatePinNames(node.OutputDataPins);
+                // Result discarded: called only to assign each output pin a variable name.
+                GetOrCreatePinNames(node.OutputDataPins);
+            }
+        }
+
+        /// <summary>
+        /// Validates and reserves <paramref name="execGraph"/>'s local variable names (data-model.md
+        /// §3), before any pin gets its own generated name (<see cref="GetOrCreatePinName"/>): each
+        /// name must be a valid, non-keyword C# identifier, distinct from every parameter name and from
+        /// every other local of the same graph. <see cref="ExecutionGraph.IsLocalNameAvailable"/> keeps
+        /// the editor from creating a conflicting local in the first place; this re-checks a graph built
+        /// or edited outside that gate.
+        /// </summary>
+        /// <param name="execGraph">Graph whose local variable names to reserve.</param>
+        /// <exception cref="TranslationException">
+        /// A local's name is not a valid C# identifier, matches a parameter name, or matches another
+        /// local's name (<c>NPT004</c>).
+        /// </exception>
+        private void ReserveLocalVariableNames(ExecutionGraph execGraph)
+        {
+            var parameterNames = new HashSet<string>(execGraph.NamedArgumentTypes.Select(argument => argument.Name), StringComparer.Ordinal);
+
+            foreach (string name in execGraph.LocalVariables.Select(local => local.Name))
+            {
+                bool conflicts = !SyntaxFacts.IsValidIdentifier(name)
+                    || SyntaxFacts.GetKeywordKind(name) != SyntaxKind.None
+                    || parameterNames.Contains(name)
+                    || !reservedLocalNames.Add(name);
+
+                if (conflicts)
+                {
+                    throw new TranslationException(TranslationDiagnosticCodes.LocalVariableNameConflict,
+                        $"Local variable '{name}' conflicts with a parameter, another local, or is not a valid identifier.",
+                        TranslatorUtil.TryGetGraphKey(execGraph));
+                }
             }
         }
 
@@ -175,59 +261,99 @@ namespace NetPrints.Translator
         {
             builder.AppendLine("// Variables");
 
+            if (graph is ExecutionGraph execGraph)
+            {
+                foreach (LocalVariable local in execGraph.LocalVariables)
+                {
+                    string typeName = local.Type.FullCodeName;
+                    builder.AppendLine(CultureInfo.InvariantCulture, $"{typeName} {local.Name} = default({typeName});");
+                }
+            }
+
             foreach (var v in variableNames)
             {
                 NodeOutputDataPin pin = v.Key;
                 string variableName = v.Value;
 
-                if (!(pin.Node is MethodEntryNode))
+                // An entry node's own output data pins are its arguments, already declared as method
+                // parameters (TranslateSignature/TranslateEventSignature); MethodEntryNode here,
+                // EventEntryNode for an event method (sub-phase G). ConstructorEntryNode has no output
+                // data pins yet (T103a), so it never reaches this check either way.
+                if (pin.Node is not (MethodEntryNode or EventEntryNode))
                 {
-                    builder.AppendLine($"{pin.PinType.Value.FullCodeName} {variableName} = default({pin.PinType.Value.FullCodeName});");
+                    string typeName = ResolvedPinType(pin).FullCodeName;
+                    builder.AppendLine(CultureInfo.InvariantCulture, $"{typeName} {variableName} = default({typeName});");
                 }
             }
         }
 
-        private void TranslateSignature()
+        private void TranslateSignature(IEnumerable<string> extraModifiers)
         {
-            builder.AppendLine($"// {graph}");
+            // Only ever called from Translate(ExecutionGraph, ...): graph is a MethodGraph or
+            // ConstructorGraph here, never an EventGraph (TranslateEventEntry writes its own signature).
+            var execGraph = (ExecutionGraph)graph;
+
+            builder.AppendLine(CultureInfo.InvariantCulture, $"// {execGraph}");
 
             // Write visibility
-            builder.Append($"{TranslatorUtil.VisibilityTokens[graph.Visibility]} ");
+            builder.Append(CultureInfo.InvariantCulture, $"{TranslatorUtil.VisibilityTokens[execGraph.Visibility]} ");
 
-            MethodGraph methodGraph = graph as MethodGraph;
+            MethodGraph? methodGraph = execGraph as MethodGraph;
+            List<string> written = new List<string>();
+
+            void WriteModifier(string modifier)
+            {
+                builder.Append(CultureInfo.InvariantCulture, $"{modifier} ");
+                written.Add(modifier);
+            }
 
             if (methodGraph != null)
             {
                 // Write modifiers
                 if (methodGraph.Modifiers.HasFlag(MethodModifiers.Async))
                 {
-                    builder.Append("async ");
+                    WriteModifier("async");
                 }
 
                 if (methodGraph.Modifiers.HasFlag(MethodModifiers.Static))
                 {
-                    builder.Append("static ");
+                    WriteModifier(CSharpKeywords.Static);
                 }
 
                 if (methodGraph.Modifiers.HasFlag(MethodModifiers.Abstract))
                 {
-                    builder.Append("abstract ");
+                    WriteModifier(CSharpKeywords.Abstract);
                 }
 
                 if (methodGraph.Modifiers.HasFlag(MethodModifiers.Sealed))
                 {
-                    builder.Append("sealed ");
+                    WriteModifier(CSharpKeywords.Sealed);
                 }
 
                 if (methodGraph.Modifiers.HasFlag(MethodModifiers.Override))
                 {
-                    builder.Append("override ");
+                    WriteModifier(CSharpKeywords.Override);
                 }
                 else if (methodGraph.Modifiers.HasFlag(MethodModifiers.Virtual))
                 {
-                    builder.Append("virtual ");
+                    WriteModifier(CSharpKeywords.Virtual);
                 }
+            }
 
+            // Extra modifiers from member emitters; "partial" goes last, directly before the return type.
+            List<string> extraModifiersList = extraModifiers.ToList();
+            foreach (string modifier in extraModifiersList.Where(modifier => modifier != CSharpKeywords.Partial && !written.Contains(modifier)).OrderBy(modifier => modifier, StringComparer.Ordinal))
+            {
+                WriteModifier(modifier);
+            }
+
+            if (extraModifiersList.Contains(CSharpKeywords.Partial))
+            {
+                WriteModifier(CSharpKeywords.Partial);
+            }
+
+            if (methodGraph != null)
+            {
                 // Write return type
                 if (methodGraph.ReturnTypes.Count() > 1)
                 {
@@ -239,7 +365,7 @@ namespace NetPrints.Translator
                 }
                 else if (methodGraph.ReturnTypes.Count() == 1)
                 {
-                    builder.Append($"{methodGraph.ReturnTypes.Single().FullCodeName} ");
+                    builder.Append(CultureInfo.InvariantCulture, $"{methodGraph.ReturnTypes.Single().FullCodeName} ");
                 }
                 else
                 {
@@ -260,21 +386,21 @@ namespace NetPrints.Translator
             }
 
             // Write parameters
-            builder.AppendLine($"({string.Join(", ", GetOrCreateTypedPinNames(graph.EntryNode.OutputDataPins))})");
+            builder.AppendLine(CultureInfo.InvariantCulture, $"({string.Join(", ", GetOrCreateTypedPinNames(execGraph.EntryNode.OutputDataPins))})");
         }
 
         private void TranslateJumpStack()
         {
             builder.AppendLine("// Jump stack");
 
-            builder.AppendLine($"State{jumpStackStateId}:");
-            builder.AppendLine($"if ({JumpStackVarName}.Count == 0) throw new System.Exception();");
-            builder.AppendLine($"switch ({JumpStackVarName}.Pop())");
+            builder.AppendLine(CultureInfo.InvariantCulture, $"State{jumpStackStateId}:");
+            builder.AppendLine(CultureInfo.InvariantCulture, $"if ({JumpStackVarName}.Count == 0) throw new System.Exception();");
+            builder.AppendLine(CultureInfo.InvariantCulture, $"switch ({JumpStackVarName}.Pop())");
             builder.AppendLine("{");
 
             foreach (NodeInputExecPin pin in pinsJumpedTo)
             {
-                builder.AppendLine($"case {GetExecPinStateId(pin)}:");
+                builder.AppendLine(CultureInfo.InvariantCulture, $"case {GetExecPinStateId(pin)}:");
                 WriteGotoInputPin(pin);
             }
 
@@ -290,14 +416,27 @@ namespace NetPrints.Translator
         /// <param name="graph">Execution graph to translate.</param>
         /// <param name="withSignature">Whether to translate the signature.</param>
         /// <returns>C# code for the method.</returns>
-        public string Translate(ExecutionGraph graph, bool withSignature)
+        public string Translate(ExecutionGraph graph, bool withSignature) =>
+            Translate(graph, withSignature, Array.Empty<string>());
+
+        /// <summary>
+        /// Translates a method to C# with additional modifiers (from member emitters) in its signature.
+        /// </summary>
+        /// <param name="graph">Execution graph to translate.</param>
+        /// <param name="withSignature">Whether to translate the signature.</param>
+        /// <param name="extraModifiers">Modifiers to write after the graph's own, <c>partial</c> last; ignored
+        /// when <paramref name="withSignature"/> is <see langword="false"/>.</param>
+        /// <returns>C# code for the method.</returns>
+        public string Translate(ExecutionGraph graph, bool withSignature, IEnumerable<string> extraModifiers)
         {
             this.graph = graph;
 
             // Reset state
             variableNames.Clear();
+            reservedLocalNames.Clear();
             nodeStateIds.Clear();
             pinsJumpedTo.Clear();
+            nodeOffsets.Clear();
             nextStateId = 0;
             builder.Clear();
             random = new Random(0);
@@ -312,27 +451,31 @@ namespace NetPrints.Translator
             // Write it later once we know which states get jumped to
             jumpStackStateId = GetNextStateId();
 
+            // Reserve local variable names before any pin gets its own generated name (data-model.md §3)
+            ReserveLocalVariableNames(graph);
+
             // Create variables for all output pins for every node
             CreateVariables();
 
             // Write the signatures
             if (withSignature)
             {
-                TranslateSignature();
+                TranslateSignature(extraModifiers);
             }
 
             builder.AppendLine("{"); // Method start
 
             // Write a placeholder for the jump stack declaration
             // Replaced later
-            builder.Append("%JUMPSTACKPLACEHOLDER%");
+            builder.Append(JumpStackPlaceholder);
 
             // Write the variable declarations
             TranslateVariables();
             builder.AppendLine();
 
             // Start at node after method entry if necessary (id!=0)
-            if (graph.EntryNode.OutputExecPins[0].OutgoingPin != null && GetExecPinStateId(graph.EntryNode.OutputExecPins[0].OutgoingPin) != 0)
+            NodeInputExecPin? initialOutgoingPin = graph.EntryNode.OutputExecPins[0].OutgoingPin;
+            if (initialOutgoingPin != null && GetExecPinStateId(initialOutgoingPin) != 0)
             {
                 WriteGotoOutputPin(graph.EntryNode.OutputExecPins[0]);
             }
@@ -344,7 +487,8 @@ namespace NetPrints.Translator
                 {
                     for (int pinIndex = 0; pinIndex < node.InputExecPins.Count; pinIndex++)
                     {
-                        builder.AppendLine($"State{nodeStateIds[node][pinIndex]}:");
+                        builder.AppendLine(CultureInfo.InvariantCulture, $"State{nodeStateIds[node][pinIndex]}:");
+                        nodeOffsets.Add(new NodeOffset(builder.Length, node.Id));
                         TranslateNode(node, pinIndex);
                         builder.AppendLine();
                     }
@@ -356,11 +500,11 @@ namespace NetPrints.Translator
             {
                 TranslateJumpStack();
 
-                builder.Replace("%JUMPSTACKPLACEHOLDER%", $"{JumpStackType} {JumpStackVarName} = new {JumpStackType}();{Environment.NewLine}");
+                builder.Replace(JumpStackPlaceholder, $"{JumpStackType} {JumpStackVarName} = new {JumpStackType}();{Environment.NewLine}");
             }
             else
             {
-                builder.Replace("%JUMPSTACKPLACEHOLDER%", "");
+                builder.Replace(JumpStackPlaceholder, "");
             }
 
             builder.AppendLine("}"); // Method end
@@ -371,57 +515,258 @@ namespace NetPrints.Translator
             return RemoveUnnecessaryLabels(code);
         }
 
+        /// <summary>
+        /// Translates one entry of an event graph (data-model.md §4) to its own C# method: a
+        /// <see langword="void"/> (or <see langword="async"/> <c>System.Threading.Tasks.Task</c> if
+        /// <see cref="MethodModifiers.Async"/>) method named <see cref="EventEntryNode.EventName"/>,
+        /// with <paramref name="entry"/>'s visibility and modifiers. Only nodes reachable from
+        /// <paramref name="entry"/> (its own exec successors and their pure dependencies) are
+        /// translated, even if <paramref name="graph"/> holds other entries' nodes too.
+        /// </summary>
+        /// <param name="graph">Event graph <paramref name="entry"/> belongs to.</param>
+        /// <param name="entry">Entry to translate.</param>
+        /// <returns>C# code for the generated method.</returns>
+        public string TranslateEventEntry(EventGraph graph, EventEntryNode entry) =>
+            TranslateEventEntry(graph, entry, Array.Empty<string>());
+
+        /// <summary>
+        /// Same as <see cref="TranslateEventEntry(EventGraph, EventEntryNode)"/>, with additional
+        /// modifiers (from member emitters) in the method's signature.
+        /// </summary>
+        /// <param name="graph">Event graph <paramref name="entry"/> belongs to.</param>
+        /// <param name="entry">Entry to translate.</param>
+        /// <param name="extraModifiers">Modifiers to write after <paramref name="entry"/>'s own,
+        /// <c>partial</c> last.</param>
+        /// <returns>C# code for the generated method.</returns>
+        /// <exception cref="TranslationException">
+        /// A node reachable only through another entry of <paramref name="graph"/> is depended on for
+        /// data (<c>NPT001</c>, research.md K13).
+        /// </exception>
+        public string TranslateEventEntry(EventGraph graph, EventEntryNode entry, IEnumerable<string> extraModifiers)
+        {
+            ArgumentNullException.ThrowIfNull(graph);
+            ArgumentNullException.ThrowIfNull(entry);
+
+            this.graph = graph;
+
+            // Reset state
+            variableNames.Clear();
+            reservedLocalNames.Clear();
+            nodeStateIds.Clear();
+            pinsJumpedTo.Clear();
+            nodeOffsets.Clear();
+            nextStateId = 0;
+            builder.Clear();
+            random = new Random(0);
+
+            var ownExecNodes = new HashSet<Node>(TranslatorUtil.GetExecNodesFrom(entry));
+            nodes = TranslatorUtil.GetAllNodesFrom(entry);
+            execNodes = ownExecNodes;
+
+            // A data or type dependency on an impure node not part of this entry's own exec flow means
+            // it belongs to a different entry sharing the same graph: that node's value is never
+            // computed here (research.md K13).
+            Node? crossEntryDependency = nodes.FirstOrDefault(node => !node.IsPure && !ownExecNodes.Contains(node));
+            if (crossEntryDependency is not null)
+            {
+                throw new TranslationException(TranslationDiagnosticCodes.CrossEntryDependency,
+                    $"Event '{entry.EventName}' depends on node '{crossEntryDependency}', which belongs to a different event entry of the same graph.",
+                    TranslatorUtil.TryGetGraphKey(graph), crossEntryDependency.Id);
+            }
+
+            // Assign a state id to every non-entry exec node
+            CreateStates();
+
+            // Assign jump stack state id
+            jumpStackStateId = GetNextStateId();
+
+            // Create variables for all output pins for every node
+            CreateVariables();
+
+            TranslateEventSignature(entry, extraModifiers);
+
+            builder.AppendLine("{"); // Method start
+
+            // Write a placeholder for the jump stack declaration
+            builder.Append(JumpStackPlaceholder);
+
+            // Write the variable declarations
+            TranslateVariables();
+            builder.AppendLine();
+
+            // Start after the entry if necessary (id != 0)
+            NodeInputExecPin? initialOutgoingPin = entry.InitialExecutionPin.OutgoingPin;
+            if (initialOutgoingPin != null && GetExecPinStateId(initialOutgoingPin) != 0)
+            {
+                WriteGotoOutputPin(entry.InitialExecutionPin);
+            }
+
+            // Translate every exec node reachable from this entry
+            foreach (Node node in execNodes)
+            {
+                if (!(node is EventEntryNode))
+                {
+                    for (int pinIndex = 0; pinIndex < node.InputExecPins.Count; pinIndex++)
+                    {
+                        builder.AppendLine(CultureInfo.InvariantCulture, $"State{nodeStateIds[node][pinIndex]}:");
+                        nodeOffsets.Add(new NodeOffset(builder.Length, node.Id));
+                        TranslateNode(node, pinIndex);
+                        builder.AppendLine();
+                    }
+                }
+            }
+
+            // Write the jump stack if it was ever used
+            if (pinsJumpedTo.Count > 0)
+            {
+                TranslateJumpStack();
+
+                builder.Replace(JumpStackPlaceholder, $"{JumpStackType} {JumpStackVarName} = new {JumpStackType}();{Environment.NewLine}");
+            }
+            else
+            {
+                builder.Replace(JumpStackPlaceholder, "");
+            }
+
+            builder.AppendLine("}"); // Method end
+
+            return RemoveUnnecessaryLabels(builder.ToString());
+        }
+
+        private void TranslateEventSignature(EventEntryNode entry, IEnumerable<string> extraModifiers)
+        {
+            builder.AppendLine(CultureInfo.InvariantCulture, $"// {entry}");
+
+            builder.Append(CultureInfo.InvariantCulture, $"{TranslatorUtil.VisibilityTokens[entry.Visibility]} ");
+
+            bool isAsync = entry.Modifiers.HasFlag(MethodModifiers.Async);
+            List<string> written = new List<string>();
+
+            void WriteModifier(string modifier)
+            {
+                builder.Append(CultureInfo.InvariantCulture, $"{modifier} ");
+                written.Add(modifier);
+            }
+
+            if (isAsync)
+            {
+                WriteModifier("async");
+            }
+
+            if (entry.Modifiers.HasFlag(MethodModifiers.Static))
+            {
+                WriteModifier(CSharpKeywords.Static);
+            }
+
+            if (entry.Modifiers.HasFlag(MethodModifiers.Override))
+            {
+                WriteModifier(CSharpKeywords.Override);
+            }
+
+            // Extra modifiers from member emitters; "partial" goes last, directly before the return type.
+            List<string> extraModifiersList = extraModifiers.ToList();
+            foreach (string modifier in extraModifiersList.Where(modifier => modifier != CSharpKeywords.Partial && !written.Contains(modifier)).OrderBy(modifier => modifier, StringComparer.Ordinal))
+            {
+                WriteModifier(modifier);
+            }
+
+            if (extraModifiersList.Contains(CSharpKeywords.Partial))
+            {
+                WriteModifier(CSharpKeywords.Partial);
+            }
+
+            builder.Append(isAsync ? "System.Threading.Tasks.Task " : "void ");
+            builder.Append(entry.EventName);
+            builder.AppendLine(CultureInfo.InvariantCulture, $"({string.Join(", ", GetOrCreateTypedPinNames(entry.OutputDataPins))})");
+        }
+
         private string RemoveUnnecessaryLabels(string code)
         {
             foreach (int stateId in nodeStateIds.Values.SelectMany(i => i))
             {
-                if (!code.Contains($"goto State{stateId};"))
+                if (!code.Contains($"goto State{stateId};", StringComparison.Ordinal))
                 {
-                    code = code.Replace($"State{stateId}:", "");
+                    code = RemoveLabel(code, $"State{stateId}:");
                 }
             }
 
             return code;
         }
 
-        public void TranslateNode(Node node, int pinIndex)
+        /// <summary>
+        /// Removes every occurrence of <paramref name="label"/> from <paramref name="code"/> (normally
+        /// exactly one: each state id is unique), shifting every recorded node offset past a removed
+        /// occurrence down by its length (research.md R3), so it still points at the same generated text.
+        /// </summary>
+        /// <param name="code">Code to remove <paramref name="label"/> from.</param>
+        /// <param name="label">Label text to remove, without its trailing line break.</param>
+        /// <returns><paramref name="code"/> with every occurrence of <paramref name="label"/> removed.</returns>
+        private string RemoveLabel(string code, string label)
         {
+            int index;
+            while ((index = code.IndexOf(label, StringComparison.Ordinal)) >= 0)
+            {
+                code = string.Concat(code.AsSpan(0, index), code.AsSpan(index + label.Length));
+
+                for (int i = 0; i < nodeOffsets.Count; i++)
+                {
+                    if (nodeOffsets[i].Offset >= index)
+                    {
+                        nodeOffsets[i] = new NodeOffset(nodeOffsets[i].Offset - label.Length, nodeOffsets[i].NodeId);
+                    }
+                }
+            }
+
+            return code;
+        }
+
+        /// <summary>
+        /// Translates a single node into C# by dispatching to the translator registered for
+        /// <paramref name="node"/>'s runtime type. Writes a `// {node}` comment first unless
+        /// <paramref name="node"/> is a <see cref="RerouteNode"/>.
+        /// </summary>
+        /// <param name="node">Node to translate.</param>
+        /// <param name="pinIndex">Input exec pin index passed to the translator.</param>
+        /// <exception cref="TranslationException">
+        /// No translator is registered for the node's type (<c>NPT006</c>).
+        /// </exception>
+        private void TranslateNode(Node node, int pinIndex)
+        {
+            INodeTranslator translator = environment.Nodes.Find(node.GetType())
+                ?? throw new TranslationException(TranslationDiagnosticCodes.NoTranslatorForNode, $"No translator for {node.GetType()}", TranslatorUtil.TryGetGraphKey(node.Graph), node.Id);
+
             if (!(node is RerouteNode))
             {
-                builder.AppendLine($"// {node}");
+                builder.AppendLine(CultureInfo.InvariantCulture, $"// {node}");
             }
 
-            if (nodeTypeHandlers.ContainsKey(node.GetType()))
-            {
-                nodeTypeHandlers[node.GetType()][pinIndex](this, node);
-            }
-            else
-            {
-                Debug.WriteLine($"Unhandled type {node.GetType()} in TranslateNode");
-            }
+            translator.Translate(this, node, pinIndex);
         }
 
-        private void WriteGotoJumpStack()
+        /// <inheritdoc />
+        public void WriteGotoJumpStack()
         {
-            builder.AppendLine($"goto State{jumpStackStateId};");
+            builder.AppendLine(CultureInfo.InvariantCulture, $"goto State{jumpStackStateId};");
         }
 
-        private void WritePushJumpStack(NodeInputExecPin pin)
+        /// <inheritdoc />
+        public void WritePushJumpStack(NodeInputExecPin pin)
         {
             if (!pinsJumpedTo.Contains(pin))
             {
                 pinsJumpedTo.Add(pin);
             }
 
-            builder.AppendLine($"{JumpStackVarName}.Push({GetExecPinStateId(pin)});");
+            builder.AppendLine(CultureInfo.InvariantCulture, $"{JumpStackVarName}.Push({GetExecPinStateId(pin)});");
         }
 
         private void WriteGotoInputPin(NodeInputExecPin pin)
         {
-            builder.AppendLine($"goto State{GetExecPinStateId(pin)};");
+            builder.AppendLine(CultureInfo.InvariantCulture, $"goto State{GetExecPinStateId(pin)};");
         }
 
-        private void WriteGotoOutputPin(NodeOutputExecPin pin)
+        /// <inheritdoc />
+        public void WriteGotoOutputPin(NodeOutputExecPin pin)
         {
             if (pin.OutgoingPin == null)
             {
@@ -433,7 +778,8 @@ namespace NetPrints.Translator
             }
         }
 
-        private void WriteGotoOutputPinIfNecessary(NodeOutputExecPin pin, NodeInputExecPin fromPin)
+        /// <inheritdoc />
+        public bool WriteGotoOutputPinIfNecessary(NodeOutputExecPin pin, NodeInputExecPin fromPin)
         {
             int fromId = GetExecPinStateId(fromPin);
             int nextId = fromId + 1;
@@ -443,6 +789,7 @@ namespace NetPrints.Translator
                 if (nextId != jumpStackStateId)
                 {
                     WriteGotoJumpStack();
+                    return true;
                 }
             }
             else
@@ -454,654 +801,26 @@ namespace NetPrints.Translator
                 if (nextId != toId)
                 {
                     WriteGotoInputPin(pin.OutgoingPin);
+                    return true;
                 }
             }
+
+            return false;
         }
 
+        /// <summary>
+        /// Translates every pure node <paramref name="node"/> depends on (transitively, through data
+        /// pins), in the dependency order computed by <see cref="TranslatorUtil.GetSortedPureNodes"/>,
+        /// before <paramref name="node"/> itself is translated. Each dependent node is translated with
+        /// pin index 0 (pure nodes register a single handler).
+        /// </summary>
+        /// <param name="node">Impure or pure node whose pure dependencies are translated.</param>
         public void TranslateDependentPureNodes(Node node)
         {
             var sortedPureNodes = TranslatorUtil.GetSortedPureNodes(node);
             foreach (Node depNode in sortedPureNodes)
             {
                 TranslateNode(depNode, 0);
-            }
-        }
-
-        public void TranslateMethodEntry(MethodEntryNode node)
-        {
-            /*// Go to the next state.
-            // Only write if it's not the initial state (id==0) anyway.
-            if (node.OutputExecPins[0].OutgoingPin != null && GetExecPinStateId(node.OutputExecPins[0].OutgoingPin) != 0)
-            {
-                WriteGotoOutputPin(node.OutputExecPins[0]);
-            }*/
-        }
-
-        public void TranslateCallMethodNode(CallMethodNode node)
-        {
-            // Wrap in try / catch
-            if (node.HandlesExceptions)
-            {
-                builder.AppendLine("try");
-                builder.AppendLine("{");
-            }
-
-            string temporaryReturnName = null;
-
-            if (!node.IsPure)
-            {
-                // Translate all the pure nodes this node depends on in
-                // the correct order
-                TranslateDependentPureNodes(node);
-            }
-
-            // Write assignment of return values
-            if (node.ReturnValuePins.Count == 1)
-            {
-                string returnName = GetOrCreatePinName(node.ReturnValuePins[0]);
-
-                builder.Append($"{returnName} = ");
-            }
-            else if (node.ReturnValuePins.Count > 1)
-            {
-                temporaryReturnName = TranslatorUtil.GetTemporaryVariableName(random);
-
-                var returnTypeNames = string.Join(", ", node.ReturnValuePins.Select(pin => pin.PinType.Value.FullCodeName));
-
-                builder.Append($"{typeof(Tuple).FullName}<{returnTypeNames}> {temporaryReturnName} = ");
-            }
-
-            // Get arguments for method call
-            var argumentNames = GetPinIncomingValues(node.ArgumentPins);
-
-            // Check whether the method is an operator and we need to translate its name
-            // into operator symbols. Otherwise just call the method normally.
-            if (OperatorUtil.TryGetOperatorInfo(node.MethodSpecifier, out OperatorInfo operatorInfo))
-            {
-                Debug.Assert(!argumentNames.Any(a => a is null));
-
-                if (operatorInfo.Unary)
-                {
-                    if (argumentNames.Count() != 1)
-                    {
-                        throw new Exception($"Unary operator was found but did not have one argument: {node.MethodName}");
-                    }
-
-                    if (operatorInfo.UnaryRightPosition)
-                    {
-                        builder.AppendLine($"{argumentNames.ElementAt(0)}{operatorInfo.Symbol};");
-                    }
-                    else
-                    {
-                        builder.AppendLine($"{operatorInfo.Symbol}{argumentNames.ElementAt(0)};");
-                    }
-                }
-                else
-                {
-                    if (argumentNames.Count() != 2)
-                    {
-                        throw new Exception($"Binary operator was found but did not have two arguments: {node.MethodName}");
-                    }
-
-                    builder.AppendLine($"{argumentNames.ElementAt(0)}{operatorInfo.Symbol}{argumentNames.ElementAt(1)};");
-                }
-            }
-            else
-            {
-                // Static: Write class name / target, default to own class name
-                // Instance: Write target, default to this
-
-                if (node.IsStatic)
-                {
-                    builder.Append($"{node.DeclaringType.FullCodeName}.");
-                }
-                else
-                {
-                    if (node.TargetPin.IncomingPin != null)
-                    {
-                        string targetName = GetOrCreatePinName(node.TargetPin.IncomingPin);
-                        builder.Append($"{targetName}.");
-                    }
-                    else
-                    {
-                        // Default to this
-                        builder.Append("this.");
-                    }
-                }
-
-                string[] argNameArray = argumentNames.ToArray();
-                Debug.Assert(argNameArray.Length == node.MethodSpecifier.Parameters.Count);
-
-                bool prependArgumentName = argNameArray.Any(a => a is null);
-
-                List<string> arguments = new List<string>();
-
-                foreach ((var argName, var methodParameter) in argNameArray.Zip(node.MethodSpecifier.Parameters, Tuple.Create))
-                {
-                    // null means use default value
-                    if (!(argName is null))
-                    {
-                        string argument = argName;
-
-                        // Prepend with argument name if wanted
-                        if (prependArgumentName)
-                        {
-                            argument = $"{methodParameter.Name}: {argument}";
-                        }
-
-                        // Prefix with "out" / "ref" / "in"
-                        switch (methodParameter.PassType)
-                        {
-                            case MethodParameterPassType.Out:
-                                argument = "out " + argument;
-                                break;
-                            case MethodParameterPassType.Reference:
-                                argument = "ref " + argument;
-                                break;
-                            case MethodParameterPassType.In:
-                                // Don't pass with in as it could break implicit casts.
-                                // argument = "in " + argument;
-                                break;
-                            default:
-                                break;
-                        }
-
-                        arguments.Add(argument);
-                    }
-                }
-
-                // Write the method call
-                builder.AppendLine($"{node.BoundMethodName}({string.Join(", ", arguments)});");
-            }
-
-            // Assign the real variables from the temporary tuple
-            if (node.ReturnValuePins.Count > 1)
-            {
-                var returnNames = GetOrCreatePinNames(node.ReturnValuePins);
-                for (int i = 0; i < returnNames.Count(); i++)
-                {
-                    builder.AppendLine($"{returnNames.ElementAt(i)} = {temporaryReturnName}.Item{i + 1};");
-                }
-            }
-
-            // Set the exception to null on success if catch pin is connected
-            if (node.HandlesExceptions)
-            {
-                builder.AppendLine($"{GetOrCreatePinName(node.ExceptionPin)} = null;");
-            }
-
-            // Go to the next state
-            if (!node.IsPure)
-            {
-                WriteGotoOutputPinIfNecessary(node.OutputExecPins[0], node.InputExecPins[0]);
-            }
-
-            // Catch exceptions if catch pin is connected
-            if (node.HandlesExceptions)
-            {
-                string exceptionVarName = TranslatorUtil.GetTemporaryVariableName(random);
-                builder.AppendLine("}");
-                builder.AppendLine($"catch (System.Exception {exceptionVarName})");
-                builder.AppendLine("{");
-                builder.AppendLine($"{GetOrCreatePinName(node.ExceptionPin)} = {exceptionVarName};");
-
-                // Set all return values to default on exception
-                foreach (var returnValuePin in node.ReturnValuePins)
-                {
-                    string returnName = GetOrCreatePinName(returnValuePin);
-                    builder.AppendLine($"{returnName} = default({returnValuePin.PinType.Value.FullCodeName});");
-                }
-
-                if (!node.IsPure)
-                {
-                    WriteGotoOutputPinIfNecessary(node.CatchPin, node.InputExecPins[0]);
-                }
-
-                builder.AppendLine("}");
-            }
-        }
-
-        public void TranslateConstructorNode(ConstructorNode node)
-        {
-            if (!node.IsPure)
-            {
-                // Translate all the pure nodes this node depends on in
-                // the correct order
-                TranslateDependentPureNodes(node);
-            }
-
-            // Write assignment and constructor
-            string returnName = GetOrCreatePinName(node.OutputDataPins[0]);
-            builder.Append($"{returnName} = new {node.ClassType}");
-
-            // Write constructor arguments
-            var argumentNames = GetPinIncomingValues(node.ArgumentPins);
-            //builder.AppendLine($"({string.Join(", ", argumentNames)});");
-
-            string[] argNameArray = argumentNames.ToArray();
-            Debug.Assert(argNameArray.Length == node.ConstructorSpecifier.Arguments.Count);
-
-            bool prependArgumentName = argNameArray.Any(a => a is null);
-
-            List<string> arguments = new List<string>();
-
-            foreach ((var argName, var constructorParameter) in argNameArray.Zip(node.ConstructorSpecifier.Arguments, Tuple.Create))
-            {
-                // null means use default value
-                if (!(argName is null))
-                {
-                    string argument = argName;
-
-                    // Prepend with argument name if wanted
-                    if (prependArgumentName)
-                    {
-                        argument = $"{constructorParameter.Name}: {argument}";
-                    }
-
-                    // Prefix with "out" / "ref" / "in"
-                    switch (constructorParameter.PassType)
-                    {
-                        case MethodParameterPassType.Out:
-                            argument = "out " + argument;
-                            break;
-                        case MethodParameterPassType.Reference:
-                            argument = "ref " + argument;
-                            break;
-                        case MethodParameterPassType.In:
-                            // Don't pass with in as it could break implicit casts.
-                            // argument = "in " + argument;
-                            break;
-                        default:
-                            break;
-                    }
-
-                    arguments.Add(argument);
-                }
-            }
-
-            // Write the method call
-            builder.AppendLine($"({string.Join(", ", arguments)});");
-
-            if (!node.IsPure)
-            {
-                // Go to the next state
-                WriteGotoOutputPinIfNecessary(node.OutputExecPins[0], node.InputExecPins[0]);
-            }
-        }
-
-        public void TranslateExplicitCastNode(ExplicitCastNode node)
-        {
-            if (!node.IsPure)
-            {
-                // Translate all the pure nodes this node depends on in
-                // the correct order
-                TranslateDependentPureNodes(node);
-            }
-
-            // Try to cast the incoming object and go to next states.
-            if (node.ObjectToCast.IncomingPin != null)
-            {
-                string pinToCastName = GetPinIncomingValue(node.ObjectToCast);
-                string outputName = GetOrCreatePinName(node.CastPin);
-
-                // If failure pin is not connected write explicit cast that throws.
-                // Otherwise check if cast object is null and execute failure
-                // path if it is.
-                if (node.IsPure || node.CastFailedPin.OutgoingPin == null)
-                {
-                    builder.AppendLine($"{outputName} = ({node.CastType.FullCodeNameUnbound}){pinToCastName};");
-
-                    if (!node.IsPure)
-                    {
-                        WriteGotoOutputPinIfNecessary(node.CastSuccessPin, node.InputExecPins[0]);
-                    }
-                }
-                else
-                {
-                    builder.AppendLine($"{outputName} = {pinToCastName} as {node.CastType.FullCodeNameUnbound};");
-
-                    if (!node.IsPure)
-                    {
-                        builder.AppendLine($"if ({outputName} is null)");
-                        builder.AppendLine("{");
-                        WriteGotoOutputPinIfNecessary(node.CastFailedPin, node.InputExecPins[0]);
-                        builder.AppendLine("}");
-                        builder.AppendLine("else");
-                        builder.AppendLine("{");
-                        WriteGotoOutputPinIfNecessary(node.CastSuccessPin, node.InputExecPins[0]);
-                        builder.AppendLine("}");
-                    }
-                }
-            }
-        }
-
-        public void TranslateThrowNode(ThrowNode node)
-        {
-            TranslateDependentPureNodes(node);
-            builder.AppendLine($"throw {GetPinIncomingValue(node.ExceptionPin)};");
-        }
-
-        public void TranslateAwaitNode(AwaitNode node)
-        {
-            if (!node.IsPure)
-            {
-                // Translate all the pure nodes this node depends on in
-                // the correct order
-                TranslateDependentPureNodes(node);
-            }
-
-            // Store result if task has a return value.
-            if (node.ResultPin != null)
-            {
-                builder.Append($"{GetOrCreatePinName(node.ResultPin)} = ");
-            }
-
-            builder.AppendLine($"await {GetPinIncomingValue(node.TaskPin)};");
-        }
-
-        public void TranslateTernaryNode(TernaryNode node)
-        {
-            if (!node.IsPure)
-            {
-                // Translate all the pure nodes this node depends on in
-                // the correct order
-                TranslateDependentPureNodes(node);
-            }
-
-            builder.Append($"{GetOrCreatePinName(node.OutputObjectPin)} = ");
-            builder.Append($"{GetPinIncomingValue(node.ConditionPin)} ? ");
-            builder.Append($"{GetPinIncomingValue(node.TrueObjectPin)} : ");
-            builder.AppendLine($"{GetPinIncomingValue(node.FalseObjectPin)};");
-
-            if (!node.IsPure)
-            {
-                WriteGotoOutputPinIfNecessary(node.OutputExecPins.Single(), node.InputExecPins.Single());
-            }
-        }
-
-        public void TranslateVariableSetterNode(VariableSetterNode node)
-        {
-            // Translate all the pure nodes this node depends on in
-            // the correct order
-            TranslateDependentPureNodes(node);
-
-            string valueName = GetPinIncomingValue(node.NewValuePin);
-
-            // Add target name if there is a target (null for local and static variables)
-            if (node.IsStatic)
-            {
-                if (!(node.TargetType is null))
-                {
-                    builder.Append(node.TargetType.FullCodeName);
-                }
-                else
-                {
-                    builder.Append(node.Graph.Class.Name);
-                }
-            }
-            if (node.TargetPin != null)
-            {
-                if (node.TargetPin.IncomingPin != null)
-                {
-                    string targetName = GetOrCreatePinName(node.TargetPin.IncomingPin);
-                    builder.Append(targetName);
-                }
-                else
-                {
-                    builder.Append("this");
-                }
-            }
-
-            // Add index if needed
-            if (node.IsIndexer)
-            {
-                builder.Append($"[{GetPinIncomingValue(node.IndexPin)}]");
-            }
-            else
-            {
-                builder.Append($".{node.VariableName}");
-            }
-
-            builder.AppendLine($" = {valueName};");
-
-            // Set output pin of this node to the same value
-            builder.AppendLine($"{GetOrCreatePinName(node.OutputDataPins[0])} = {valueName};");
-
-            // Go to the next state
-            WriteGotoOutputPinIfNecessary(node.OutputExecPins[0], node.InputExecPins[0]);
-        }
-
-        public void TranslateReturnNode(ReturnNode node)
-        {
-            // Translate all the pure nodes this node depends on in
-            // the correct order
-            TranslateDependentPureNodes(node);
-
-            if (node.InputDataPins.Count == 0)
-            {
-                // Only write return if the return node is not the last node
-                if (GetExecPinStateId(node.InputExecPins[0]) != nodeStateIds.Count - 1)
-                {
-                    builder.AppendLine("return;");
-                }
-            }
-            else if (node.InputDataPins.Count == 1)
-            {
-                // Special case for async functions returning Task (no return value)
-                if (node.InputDataPins[0].PinType == TypeSpecifier.FromType<Task>())
-                {
-                    builder.AppendLine("return;");
-                }
-                else
-                {
-                    builder.AppendLine($"return {GetPinIncomingValue(node.InputDataPins[0])};");
-                }
-            }
-            else
-            {
-                var returnValues = node.InputDataPins.Select(pin => GetPinIncomingValue(pin));
-
-                // Tuple<Types..> (won't be needed in the future)
-                string returnType = typeof(Tuple).FullName + "<" + string.Join(", ", node.InputDataPins.Select(pin => pin.PinType.Value.FullCodeName)) + ">";
-                builder.AppendLine($"return new {returnType}({string.Join(", ", returnValues)});");
-            }
-        }
-
-        public void TranslateIfElseNode(IfElseNode node)
-        {
-            // Translate all the pure nodes this node depends on in
-            // the correct order
-            TranslateDependentPureNodes(node);
-
-            string conditionVar = GetPinIncomingValue(node.ConditionPin);
-
-            builder.AppendLine($"if ({conditionVar})");
-            builder.AppendLine("{");
-
-            if (node.TruePin.OutgoingPin != null)
-            {
-                WriteGotoOutputPinIfNecessary(node.TruePin, node.InputExecPins[0]);
-            }
-            else
-            {
-                builder.AppendLine("return;");
-            }
-
-            builder.AppendLine("}");
-
-            builder.AppendLine("else");
-            builder.AppendLine("{");
-
-            if (node.FalsePin.OutgoingPin != null)
-            {
-                WriteGotoOutputPinIfNecessary(node.FalsePin, node.InputExecPins[0]);
-            }
-            else
-            {
-                builder.AppendLine("return;");
-            }
-
-            builder.AppendLine("}");
-        }
-
-        public void TranslateStartForLoopNode(ForLoopNode node)
-        {
-            // Translate all the pure nodes this node depends on in
-            // the correct order
-            TranslateDependentPureNodes(node);
-
-            builder.AppendLine($"{GetOrCreatePinName(node.IndexPin)} = {GetPinIncomingValue(node.InitialIndexPin)};");
-            builder.AppendLine($"if ({GetOrCreatePinName(node.IndexPin)} < {GetPinIncomingValue(node.MaxIndexPin)})");
-            builder.AppendLine("{");
-            WritePushJumpStack(node.ContinuePin);
-            WriteGotoOutputPinIfNecessary(node.LoopPin, node.ExecutionPin);
-            builder.AppendLine("}");
-        }
-
-        public void TranslateContinueForLoopNode(ForLoopNode node)
-        {
-            // Translate all the pure nodes this node depends on in
-            // the correct order
-            TranslateDependentPureNodes(node);
-
-            builder.AppendLine($"{GetOrCreatePinName(node.IndexPin)}++;");
-            builder.AppendLine($"if ({GetOrCreatePinName(node.IndexPin)} < {GetPinIncomingValue(node.MaxIndexPin)})");
-            builder.AppendLine("{");
-            WritePushJumpStack(node.ContinuePin);
-            WriteGotoOutputPinIfNecessary(node.LoopPin, node.ContinuePin);
-            builder.AppendLine("}");
-
-            WriteGotoOutputPinIfNecessary(node.CompletedPin, node.ContinuePin);
-        }
-
-        public void PureTranslateVariableGetterNode(VariableGetterNode node)
-        {
-            string valueName = GetOrCreatePinName(node.OutputDataPins[0]);
-
-            builder.Append($"{valueName} = ");
-
-            if (node.IsStatic)
-            {
-                if (!(node.TargetType is null))
-                {
-                    builder.Append(node.TargetType.FullCodeName);
-                }
-                else
-                {
-                    builder.Append(node.Graph.Class.Name);
-                }
-            }
-            else
-            {
-                if (node.TargetPin?.IncomingPin != null)
-                {
-                    string targetName = GetOrCreatePinName(node.TargetPin.IncomingPin);
-                    builder.Append(targetName);
-                }
-                else
-                {
-                    // Default to this
-                    builder.Append("this");
-                }
-            }
-
-            // Add index if needed
-            if (node.IsIndexer)
-            {
-                builder.Append($"[{GetPinIncomingValue(node.IndexPin)}]");
-            }
-            else
-            {
-                builder.Append($".{node.VariableName}");
-            }
-
-            builder.AppendLine(";");
-        }
-
-        public void PureTranslateLiteralNode(LiteralNode node)
-        {
-            builder.AppendLine($"{GetOrCreatePinName(node.ValuePin)} = {GetPinIncomingValue(node.InputDataPins[0])};");
-        }
-
-        public void PureTranslateMakeDelegateNode(MakeDelegateNode node)
-        {
-            // Write assignment of return value
-            string returnName = GetOrCreatePinName(node.OutputDataPins[0]);
-            builder.Append($"{returnName} = ");
-
-            // Static: Write class name / target, default to own class name
-            // Instance: Write target, default to this
-
-            if (node.IsFromStaticMethod)
-            {
-                builder.Append($"{node.MethodSpecifier.DeclaringType}.");
-            }
-            else
-            {
-                if (node.TargetPin.IncomingPin != null)
-                {
-                    string targetName = GetOrCreatePinName(node.TargetPin.IncomingPin);
-                    builder.Append($"{targetName}.");
-                }
-                else
-                {
-                    // Default to thise
-                    builder.Append("this.");
-                }
-            }
-
-            // Write method name
-            builder.AppendLine($"{node.MethodSpecifier.Name};");
-        }
-
-        public void PureTranslateTypeOfNode(TypeOfNode node)
-        {
-            builder.AppendLine($"{GetOrCreatePinName(node.TypePin)} = typeof({node.InputTypePin.InferredType?.Value?.FullCodeNameUnbound ?? "System.Object"});");
-        }
-
-        public void PureTranslateMakeArrayNode(MakeArrayNode node)
-        {
-            builder.Append($"{GetOrCreatePinName(node.OutputDataPins[0])} = new {node.ArrayType.FullCodeName}");
-
-            // Use predefined size or initializer list
-            if (node.UsePredefinedSize)
-            {
-                // HACKish: Remove trailing "[]" contained in type
-                builder.Remove(builder.Length - 2, 2);
-                builder.AppendLine($"[{GetPinIncomingValue(node.SizePin)}];");
-            }
-            else
-            {
-                builder.AppendLine();
-                builder.AppendLine("{");
-
-                foreach (var inputDataPin in node.InputDataPins)
-                {
-                    builder.AppendLine($"{GetPinIncomingValue(inputDataPin)},");
-                }
-
-                builder.AppendLine("};");
-            }
-        }
-        public void PureTranslateDefaultNode(DefaultNode node)
-        {
-            builder.AppendLine($"{GetOrCreatePinName(node.DefaultValuePin)} = default({node.Type.FullCodeName});");
-        }
-
-        public void TranslateRerouteNode(RerouteNode node)
-        {
-            if (node.ExecRerouteCount + node.TypeRerouteCount + node.DataRerouteCount != 1)
-            {
-                throw new NotImplementedException("Only implemented reroute nodes with exactly 1 type of pin.");
-            }
-
-            if (node.DataRerouteCount == 1)
-            {
-                builder.AppendLine($"{GetOrCreatePinName(node.OutputDataPins[0])} = {GetPinIncomingValue(node.InputDataPins[0])};");
-            }
-            else if (node.ExecRerouteCount == 1)
-            {
-                WriteGotoOutputPinIfNecessary(node.OutputExecPins[0], node.InputExecPins[0]);
             }
         }
     }

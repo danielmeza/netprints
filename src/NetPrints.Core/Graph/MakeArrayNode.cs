@@ -1,5 +1,5 @@
-﻿using System;
-using System.Runtime.Serialization;
+﻿#nullable enable
+using System;
 using NetPrints.Core;
 
 namespace NetPrints.Graph
@@ -7,7 +7,6 @@ namespace NetPrints.Graph
     /// <summary>
     /// Node representing the creation of an array.
     /// </summary>
-    [DataContract]
     public class MakeArrayNode : Node
     {
         /// <summary>
@@ -23,11 +22,11 @@ namespace NetPrints.Graph
                 {
                     usePredefinedSize = value;
                     UpdateInputDataPins();
+                    OnPropertyChanged(nameof(UsePredefinedSize));
                 }
             }
         }
 
-        [DataMember]
         private bool usePredefinedSize = false;
 
         /// <summary>
@@ -72,7 +71,7 @@ namespace NetPrints.Graph
             {
                 if (ElementType is TypeSpecifier typeSpec)
                 {
-                    return new TypeSpecifier($"{typeSpec.Name}[]", typeSpec.IsEnum, typeSpec.IsInterface, typeSpec.GenericArguments);
+                    return new TypeSpecifier($"{typeSpec.Name}[]", isEnum: false, typeSpec.IsInterface, typeSpec.GenericArguments);
                 }
                 else
                 {
@@ -82,10 +81,10 @@ namespace NetPrints.Graph
         }
 
         /// <summary>
-        /// Creates a new node representing the creation of an array.
+        /// Creates a new node representing the creation of an array, in initializer-list mode (see
+        /// <see cref="UsePredefinedSize"/>) with no elements.
         /// </summary>
         /// <param name="graph">Graph the node is part of.</param>
-        /// <param name="elementType">Type specifier for the elements of the array.</param>
         public MakeArrayNode(NodeGraph graph)
             : base(graph)
         {
@@ -118,9 +117,14 @@ namespace NetPrints.Graph
             ArrayPin.PinType.Value = ArrayType;
         }
 
-        protected override void OnInputTypeChanged(object sender, EventArgs eventArgs)
+        /// <summary>
+        /// Propagates <see cref="ArrayType"/> (the inferred array type) to <see cref="ArrayPin"/>.
+        /// </summary>
+        /// <param name="sender">The node whose input type changed.</param>
+        /// <param name="eventArgs">Unused; forwarded to the base implementation.</param>
+        protected override void HandleInputTypeChanged(object? sender, EventArgs? eventArgs)
         {
-            base.OnInputTypeChanged(sender, eventArgs);
+            base.HandleInputTypeChanged(sender, eventArgs);
             UpdateOutputType();
         }
 
@@ -152,6 +156,10 @@ namespace NetPrints.Graph
             return false;
         }
 
+        /// <summary>
+        /// Returns "Make " followed by the element type's name and " Array".
+        /// </summary>
+        /// <returns>"Make " followed by the element type's name and " Array".</returns>
         public override string ToString()
         {
             return $"Make {ElementType.Name} Array";

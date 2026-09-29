@@ -1,0 +1,25 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>NetPrints.TestExtension</AssemblyName>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <!-- extension-points.md 8.2: the extension folder is the output, next to netprints-extension.json. -->
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <OutputPath>bin/$(Configuration)/extensions/netprints.test/</OutputPath>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The host supplies these: the extension must see the host's copy, so nothing is copied to its folder. -->
+    <ProjectReference Include="..\..\src\NetPrints.Core\NetPrints.Core.csproj" Private="false" ExcludeAssets="runtime" />
+    <ProjectReference Include="..\..\src\NetPrints.Reflection\NetPrints.Reflection.csproj" Private="false" ExcludeAssets="runtime" />
+    <ProjectReference Include="..\..\src\NetPrints.Serialization\NetPrints.Serialization.csproj" Private="false" ExcludeAssets="runtime" />
+    <ProjectReference Include="..\..\src\NetPrints.Extensibility\NetPrints.Extensibility.csproj" Private="false" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="netprints-extension.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

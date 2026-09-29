@@ -1,11 +1,16 @@
 using Avalonia.Controls;
-using Microsoft.Reactive.Testing;
+using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Editor.ClassEditor;
+using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Editor.Main;
 using NetPrints.Editor.References;
 using NetPrints.Editor.UITests.Driving;
+using NetPrints.Extensibility;
+using NetPrints.Extensibility.Hosting;
+using NetPrints.Extensibility.Loading;
+using NetPrints.Extensibility.Settings;
 using NetPrints.Testing.Ui.Main;
 using NetPrints.Testing.Ui.Screenplay;
 using NetPrints.Testing.Ui.Snapshots;
@@ -18,7 +23,7 @@ namespace NetPrints.Editor.UITests.Hosting;
 /// headless driver, the root page object and a Screenplay actor. The test arranges through the
 /// API (<see cref="Composition"/>) and acts through the page objects.
 /// </summary>
-public sealed class HeadlessApp : IDisposable
+public sealed class HeadlessApp : IAsyncDisposable
 {
     /// <summary>The E2E screen size (Xvfb), used as the size of maximized windows.</summary>
     public const int ScreenWidth = 1600;
@@ -27,8 +32,16 @@ public sealed class HeadlessApp : IDisposable
     private readonly IDisposable exceptionHandler;
     private readonly IDisposable classWindowSizer;
 
-    private HeadlessApp()
+    private readonly ExtensionHost extensions;
+    private readonly string settingsDirectory;
+
+    private HeadlessApp(IReadOnlyList<string> extensionFolders)
     {
+        // A real extension host (the built-in extension plus the given folders) and a real settings file in a
+        // temp folder, so the composition is the production one apart from the recording dialogs.
+        extensions = new ExtensionHost(new ExtensionLoaderOptions([], extensionFolders, [BuiltInExtension.InProcessEntry]), NullLoggerFactory.Instance);
+        settingsDirectory = Path.Combine(Path.GetTempPath(), "netprints-ui-tests", Guid.NewGuid().ToString("N"));
+        Settings = new JsonFileSettingsStore(Path.Combine(settingsDirectory, "settings.json"), NullLogger<JsonFileSettingsStore>.Instance);
         Dialogs = new RecordingDialogs
         {
             // The real (non-modal) references dialog, so tests can drive it.
@@ -39,30 +52,30 @@ public sealed class HeadlessApp : IDisposable
                 dialog.Show();
                 return Task.CompletedTask;
             },
+            // The real (non-modal) issues dialog, so tests can drive it.
+            ShowIssues = (title, issues) =>
+            {
+                var dialog = new IssuesDialog(title, issues);
+                dialog.Show();
+                HeadlessDriver.Pump();
+                return Task.CompletedTask;
+            },
         };
         Processes = new CapturingProcessLauncher();
         FilePicker = new QueuedFilePicker();
-        // Virtual time for the generated-code preview loop (a 1-second real-time interval in
-        // production): a real timer would otherwise race a snapshot capturing that preview, more
-        // so under load. Tests that need a refresh advance CodeRefreshScheduler explicitly instead
-        // of waiting on the wall clock.
-        CodeRefreshScheduler = new TestScheduler();
-        Composition = new EditorComposition(c => c with
-        {
-            Dialogs = Dialogs,
-            Processes = Processes,
-            FilePicker = FilePicker,
-            CodeRefreshScheduler = CodeRefreshScheduler,
-        });
+        Composition = new TestComposition(new EditorHostServices(NullLoggerFactory.Instance, extensions, Settings, NullHostChannel.Instance, HostChannelError: null,
+            MsBuildAvailable: true, DisposeOwnedResources: () => ValueTask.CompletedTask), Dialogs, FilePicker, Processes);
         exceptionHandler = Composition.InstallUnhandledExceptionHandler(); // as EditorApp does on the desktop
         Tree = new AutomationTree();
 
         // Headless maximized windows keep their size: use the E2E screen size.
         classWindowSizer = Avalonia.Controls.Window.WindowOpenedEvent.AddClassHandler(typeof(ClassEditorWindow), (sender, _) =>
         {
-            var window = (ClassEditorWindow)sender!;
-            window.Width = ScreenWidth;
-            window.Height = ScreenHeight;
+            if (sender is ClassEditorWindow window)
+            {
+                window.Width = ScreenWidth;
+                window.Height = ScreenHeight;
+            }
         });
         Driver = new HeadlessDriver(Tree, () => Processes.Output);
         Window = Composition.CreateMainWindow();
@@ -73,19 +86,23 @@ public sealed class HeadlessApp : IDisposable
         Actor = Actor.Named("Ada").WhoCan(UseNetPrints.With(Driver, FilePicker));
     }
 
-    public EditorComposition Composition { get; }
+    public ISettingsStore Settings { get; }
+    public TestComposition Composition { get; }
     public MainWindow Window { get; }
     public RecordingDialogs Dialogs { get; }
     public CapturingProcessLauncher Processes { get; }
     public QueuedFilePicker FilePicker { get; }
-    public TestScheduler CodeRefreshScheduler { get; }
     public AutomationTree Tree { get; }
     public HeadlessDriver Driver { get; }
     public MainWindowPage Main { get; }
     public Actor Actor { get; }
-    public MainEditorVM ViewModel => Composition.MainEditor!;
+    public MainEditorVM ViewModel => Composition.MainEditor
+        ?? throw new InvalidOperationException($"{nameof(Composition.MainEditor)} has not been created yet.");
 
-    public static HeadlessApp Start() => new();
+    public static HeadlessApp Start() => new([]);
+
+    /// <summary>A fresh editor whose extension host also loads the given folders (each must hold a manifest).</summary>
+    public static HeadlessApp Start(IReadOnlyList<string> extensionFolders) => new(extensionFolders);
 
     /// <summary>Opens a project the way the command line does (PAR-05) and waits for its types.</summary>
     public async Task OpenStartupProjectAsync(string path, CancellationToken cancellationToken)
@@ -98,13 +115,13 @@ public sealed class HeadlessApp : IDisposable
 
     /// <summary>The window of an open class editor (for arranging and asserting through the API).</summary>
     public ClassEditorWindow ClassWindow(string fullName) =>
-        Composition.Windows.ClassEditorWindows.Single(w => ((ClassEditorVM)w.DataContext!).Class.FullName == fullName);
+        Composition.Windows.ClassEditorWindows.Single(w => (w.DataContext as ClassEditorVM)?.Class.FullName == fullName);
 
     /// <summary>
     /// Saves a screenshot of every open window and a dump of the automation tree for the current
     /// test (CI artifact; the last state of a failing test).
     /// </summary>
-    private void SaveDiagnostics()
+    private async Task SaveDiagnosticsAsync()
     {
         try
         {
@@ -115,7 +132,7 @@ public sealed class HeadlessApp : IDisposable
             File.WriteAllText(Path.Combine(folder, "tree.txt"), Tree.Dump());
             foreach (var window in Tree.Windows.Where(w => w.IsVisible).ToList())
             {
-                var image = Driver.ScreenshotAsync(Tree.KeyOf(window), CancellationToken.None).GetAwaiter().GetResult();
+                var image = await Driver.ScreenshotAsync(Tree.KeyOf(window), CancellationToken.None);
                 image.Save(Path.Combine(folder, Tree.KeyOf(window) + ".png"));
             }
         }
@@ -125,9 +142,9 @@ public sealed class HeadlessApp : IDisposable
         }
     }
 
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
-        SaveDiagnostics();
+        await SaveDiagnosticsAsync();
         foreach (var window in Tree.Windows.Reverse().ToList())
         {
             window.Close();
@@ -137,6 +154,16 @@ public sealed class HeadlessApp : IDisposable
         classWindowSizer.Dispose();
         Tree.Dispose();
         Processes.Dispose();
+        Composition.Dispose();
+        await extensions.DisposeAsync();
+        try
+        {
+            Directory.Delete(settingsDirectory, recursive: true);
+        }
+        catch (DirectoryNotFoundException)
+        {
+            // The settings file was never written.
+        }
     }
 }
 
@@ -151,7 +178,8 @@ public static class UiArtifacts
 
     private static readonly string Baselines = typeof(UiArtifacts).Assembly
         .GetCustomAttributes(typeof(System.Reflection.AssemblyMetadataAttribute), false)
-        .Cast<System.Reflection.AssemblyMetadataAttribute>().Single(a => a.Key == "SnapshotBaselines").Value!;
+        .Cast<System.Reflection.AssemblyMetadataAttribute>().Single(a => a.Key == "SnapshotBaselines").Value
+        ?? throw new InvalidOperationException("The 'SnapshotBaselines' assembly metadata has no value.");
 
     /// <summary>The snapshot baselines committed in Snapshots/Baselines.</summary>
     public static SnapshotStore Snapshots { get; } = new(Baselines, Path.Combine(Directory, "snapshots"));

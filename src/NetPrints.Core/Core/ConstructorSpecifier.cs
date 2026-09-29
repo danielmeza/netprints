@@ -1,7 +1,7 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
 
 namespace NetPrints.Core
 {
@@ -9,13 +9,11 @@ namespace NetPrints.Core
     /// Specifier describing a constructor.
     /// </summary>
     [Serializable]
-    [DataContract]
     public partial class ConstructorSpecifier
     {
         /// <summary>
         /// Specifier for the type this constructor is for.
         /// </summary>
-        [DataMember]
         public TypeSpecifier DeclaringType
         {
             get;
@@ -25,7 +23,6 @@ namespace NetPrints.Core
         /// <summary>
         /// Specifiers for the arguments this constructor takes.
         /// </summary>
-        [DataMember]
         public IList<MethodParameter> Arguments
         {
             get;
@@ -43,6 +40,11 @@ namespace NetPrints.Core
             Arguments = arguments.ToList();
         }
 
+        /// <summary>
+        /// Returns the declaring type's name followed by the argument list in parentheses (eg.
+        /// "MyClass(System.Int32, System.String)").
+        /// </summary>
+        /// <returns>The declaring type's name followed by the argument list in parentheses.</returns>
         public override string ToString()
         {
             string constructorString = "";

@@ -13,7 +13,7 @@ public class NodeSearchTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task RightClickOpensSearchAndTypingFilters()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
 
         var search = await (await session.Graph.RightClickEmptyAsync(Token)).WaitOpenAsync(Token); // PAR-52
         Assert.Null(session.GraphVM.Search.SuggestionPin);
@@ -36,7 +36,7 @@ public class NodeSearchTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task ReleasingPinDragOnCanvasOpensFilteredSearch()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var write = session.GraphVM.Nodes.Single(n => n.Node is CallMethodNode);
         var execOut = write.OutputExecPins.First(p => p.Pin.Name != "Catch");
 
@@ -55,7 +55,7 @@ public class NodeSearchTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task LiteralAsksForType()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         session.App.Dialogs.TypeAnswer = TypeSpecifier.FromType<int>();
 
         var search = await (await session.Graph.RightClickEmptyAsync(Token)).WaitOpenAsync(Token);

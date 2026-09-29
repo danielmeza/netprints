@@ -4,8 +4,17 @@ using NetPrints.Core;
 
 namespace NetPrints.Reflection
 {
+    /// <summary>
+    /// Synthesized <see cref="MethodSpecifier"/>s for C#'s built-in operators (on <see cref="bool"/>,
+    /// numeric types, etc.), so they can be searched and translated the same way as a reflected
+    /// <c>op_*</c> method (see <see cref="OperatorUtil"/>) even though the compiler does not expose
+    /// them as ordinary methods.
+    /// </summary>
     public static class DefaultOperatorSpecifiers
     {
+        /// <summary>
+        /// Every synthesized built-in operator specifier. Computed once and cached on first access.
+        /// </summary>
         public static IEnumerable<MethodSpecifier> All
         {
             get
@@ -15,52 +24,54 @@ namespace NetPrints.Reflection
                     var boolType = TypeSpecifier.FromType<bool>();
                     var intType = TypeSpecifier.FromType<int>();
 
-                    all = new List<MethodSpecifier>();
+                    var built = new List<MethodSpecifier>();
 
                     // Numerical
                     foreach (var defaultNumericType in defaultNumericTypes)
                     {
                         foreach (var unaryOpName in defaultNumericUnaryOperatorNames)
                         {
-                            AddOperator(unaryOpName, true, defaultNumericType, defaultNumericType);
+                            AddOperator(built, unaryOpName, true, defaultNumericType, defaultNumericType);
                         }
 
                         foreach (var unaryOpName in defaultNumericBinaryOperatorNames)
                         {
-                            AddOperator(unaryOpName, false, defaultNumericType, defaultNumericType);
+                            AddOperator(built, unaryOpName, false, defaultNumericType, defaultNumericType);
                         }
 
                         foreach (var unaryOpName in defaultNumericComparisonOperatorNames)
                         {
-                            AddOperator(unaryOpName, false, defaultNumericType, boolType);
+                            AddOperator(built, unaryOpName, false, defaultNumericType, boolType);
                         }
                     }
 
                     // Logical (boolean)
-                    AddOperator("op_LogicalNot", true, boolType, boolType);
-                    AddOperator("op_LogicalAnd", false, boolType, boolType);
-                    AddOperator("op_LogicalOr", false, boolType, boolType);
+                    AddOperator(built, "op_LogicalNot", true, boolType, boolType);
+                    AddOperator(built, "op_LogicalAnd", false, boolType, boolType);
+                    AddOperator(built, "op_LogicalOr", false, boolType, boolType);
 
                     // Integer bitwise operators
-                    AddOperator("op_LogicalNot", true, intType, intType);
-                    AddOperator("op_BitwiseAnd", false, intType, intType);
-                    AddOperator("op_BitwiseOr", false, intType, intType);
-                    AddOperator("op_ExclusiveOr", false, intType, intType);
-                    AddOperator("op_LeftShift", false, intType, intType);
-                    AddOperator("op_RightShift", false, intType, intType);
+                    AddOperator(built, "op_LogicalNot", true, intType, intType);
+                    AddOperator(built, "op_BitwiseAnd", false, intType, intType);
+                    AddOperator(built, "op_BitwiseOr", false, intType, intType);
+                    AddOperator(built, "op_ExclusiveOr", false, intType, intType);
+                    AddOperator(built, "op_LeftShift", false, intType, intType);
+                    AddOperator(built, "op_RightShift", false, intType, intType);
 
                     // String addition
                     var stringType = TypeSpecifier.FromType<string>();
-                    AddOperator("op_Addition", false, stringType, stringType);
+                    AddOperator(built, "op_Addition", false, stringType, stringType);
+
+                    all = built;
                 }
 
                 return all;
             }
         }
 
-        private static List<MethodSpecifier> all;
+        private static List<MethodSpecifier>? all;
 
-        private static void AddOperator(string opName, bool unary, TypeSpecifier argType, TypeSpecifier returnType)
+        private static void AddOperator(List<MethodSpecifier> target, string opName, bool unary, TypeSpecifier argType, TypeSpecifier returnType)
         {
             IEnumerable<MethodParameter> parameters = new[]
             {
@@ -72,7 +83,7 @@ namespace NetPrints.Reflection
                 parameters = parameters.Concat(new[] { new MethodParameter("b", argType, MethodParameterPassType.Default, false, null) });
             }
 
-            all.Add(new MethodSpecifier(opName, parameters, new[] { returnType }, MethodModifiers.Static, MemberVisibility.Public, returnType, new BaseType[0]));
+            target.Add(new MethodSpecifier(opName, parameters, new[] { returnType }, MethodModifiers.Static, MemberVisibility.Public, returnType, new BaseType[0]));
         }
 
         private static readonly List<TypeSpecifier> defaultNumericTypes = new List<TypeSpecifier>()

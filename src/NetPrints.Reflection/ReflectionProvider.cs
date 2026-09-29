@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -7,7 +8,9 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Emit;
+using NetPrints.Compilation;
 using NetPrints.Core;
+using NetPrints.Projects;
 
 namespace NetPrints.Reflection
 {
@@ -21,6 +24,10 @@ namespace NetPrints.Reflection
         internal ConditionalWeakTable<ITypeSymbol, List<ISymbol>> Members { get; } = new ConditionalWeakTable<ITypeSymbol, List<ISymbol>>();
     }
 
+    /// <summary>
+    /// Roslyn symbol helpers used by <see cref="ReflectionProvider"/>: member enumeration (cached
+    /// per <see cref="MemberCache"/>), accessibility and subclass checks, and full type names.
+    /// </summary>
     public static class ISymbolExtensions
     {
 
@@ -35,13 +42,14 @@ namespace NetPrints.Reflection
             }
 
             var members = new List<ISymbol>();
-            var overridenMethods = new HashSet<IMethodSymbol>();
+            var overridenMethods = new HashSet<IMethodSymbol>(SymbolEqualityComparer.Default);
 
             var startSymbol = symbol;
+            ITypeSymbol? current = symbol;
 
-            while (symbol != null)
+            while (current != null)
             {
-                var symbolMembers = symbol.GetMembers();
+                var symbolMembers = current.GetMembers();
 
                 // Add symbols which weren't overriden yet
                 List<ISymbol> newMembers = symbolMembers.Where(m => !(m is IMethodSymbol methodSymbol) || !overridenMethods.Contains(methodSymbol)).ToList();
@@ -54,12 +62,12 @@ namespace NetPrints.Reflection
                 {
                     newOverridenMethods.ForEach(m => overridenMethods.Add(m));
                     newOverridenMethods = newOverridenMethods
-                        .Where(m => m.OverriddenMethod != null)
                         .Select(m => m.OverriddenMethod)
+                        .OfType<IMethodSymbol>()
                         .ToList();
                 }
 
-                symbol = symbol.BaseType;
+                current = current.BaseType;
             }
 
             cache.Members.AddOrUpdate(startSymbol, members.ToList());
@@ -67,16 +75,35 @@ namespace NetPrints.Reflection
             return members;
         }
 
+        /// <summary>
+        /// Returns whether <paramref name="symbol"/> is declared <c>public</c>.
+        /// </summary>
+        /// <param name="symbol">Symbol to check.</param>
+        /// <returns><see langword="true"/> if the symbol's declared accessibility is public.</returns>
         public static bool IsPublic(this ISymbol symbol)
         {
             return symbol.DeclaredAccessibility == Microsoft.CodeAnalysis.Accessibility.Public;
         }
 
+        /// <summary>
+        /// Returns whether <paramref name="symbol"/> is declared <c>protected</c> (exactly; not
+        /// <c>protected internal</c> or <c>private protected</c>).
+        /// </summary>
+        /// <param name="symbol">Symbol to check.</param>
+        /// <returns><see langword="true"/> if the symbol's declared accessibility is protected.</returns>
         public static bool IsProtected(this ISymbol symbol)
         {
             return symbol.DeclaredAccessibility == Microsoft.CodeAnalysis.Accessibility.Protected;
         }
 
+        /// <summary>
+        /// Returns <paramref name="symbol"/>'s ordinary and operator methods (see
+        /// <see cref="GetAllMembers"/> for what "all" includes), excluding conversion operators (see
+        /// <see cref="GetConverters"/>).
+        /// </summary>
+        /// <param name="symbol">Type to get methods for.</param>
+        /// <param name="cache">Member cache to resolve <paramref name="symbol"/>'s members through.</param>
+        /// <returns>The type's ordinary and operator methods.</returns>
         public static IEnumerable<IMethodSymbol> GetMethods(this ITypeSymbol symbol, MemberCache cache)
         {
             return symbol.GetAllMembers(cache)
@@ -85,6 +112,12 @@ namespace NetPrints.Reflection
                     .Where(method => method.MethodKind == MethodKind.Ordinary || method.MethodKind == MethodKind.BuiltinOperator || method.MethodKind == MethodKind.UserDefinedOperator);
         }
 
+        /// <summary>
+        /// Returns <paramref name="symbol"/>'s user-defined conversion operators (implicit and explicit).
+        /// </summary>
+        /// <param name="symbol">Type to get conversion operators for.</param>
+        /// <param name="cache">Member cache to resolve <paramref name="symbol"/>'s members through.</param>
+        /// <returns>The type's conversion operators.</returns>
         public static IEnumerable<IMethodSymbol> GetConverters(this ITypeSymbol symbol, MemberCache cache)
         {
             return symbol.GetAllMembers(cache)
@@ -93,11 +126,23 @@ namespace NetPrints.Reflection
                     .Where(method => method.MethodKind == MethodKind.Conversion);
         }
 
-        public static bool IsSubclassOf(this ITypeSymbol symbol, ITypeSymbol cls)
+        /// <summary>
+        /// Returns whether <paramref name="symbol"/> derives from, or (when <paramref name="cls"/> is
+        /// an interface) implements, <paramref name="cls"/>.
+        /// </summary>
+        /// <param name="symbol">Candidate subclass, or <see langword="null"/> (returns <see langword="false"/>).</param>
+        /// <param name="cls">Candidate base class or interface, or <see langword="null"/> (returns <see langword="false"/>).</param>
+        /// <returns><see langword="true"/> if <paramref name="symbol"/> derives from or implements <paramref name="cls"/>.</returns>
+        public static bool IsSubclassOf(this ITypeSymbol? symbol, ITypeSymbol? cls)
         {
+            if (symbol is null || cls is null)
+            {
+                return false;
+            }
+
             // If cls is an interface type, check if the interface is implemented
             // TODO: Currently only checking full name and type parameter count for interfaces.
-            if (symbol != null && cls.TypeKind == TypeKind.Interface && cls is INamedTypeSymbol namedCls)
+            if (cls.TypeKind == TypeKind.Interface && cls is INamedTypeSymbol namedCls)
             {
                 bool IsSameInterface(INamedTypeSymbol a, INamedTypeSymbol b)
                 {
@@ -110,10 +155,11 @@ namespace NetPrints.Reflection
             }
 
             // Traverse base types to find out if symbol inherits from cls
-            ITypeSymbol candidateBaseType = symbol;
+            ITypeSymbol? candidateBaseType = symbol;
             while (candidateBaseType != null)
             {
-                if (candidateBaseType == cls)
+                // Identity, not SymbolEqualityComparer: see implementation-notes.md "T013" (changes search results).
+                if (ReferenceEqualityComparer.Instance.Equals(candidateBaseType, cls))
                 {
                     return true;
                 }
@@ -124,6 +170,12 @@ namespace NetPrints.Reflection
             return false;
         }
 
+        /// <summary>
+        /// Returns <paramref name="typeSymbol"/>'s metadata name, prefixed with its containing
+        /// namespace's metadata name (dot-separated) unless it is in the global namespace.
+        /// </summary>
+        /// <param name="typeSymbol">Type to get the full name of.</param>
+        /// <returns>The type's namespace-qualified metadata name.</returns>
         public static string GetFullName(this ITypeSymbol typeSymbol)
         {
             string fullName = typeSymbol.MetadataName;
@@ -135,12 +187,18 @@ namespace NetPrints.Reflection
         }
     }
 
+    /// <summary>
+    /// <see cref="IReflectionProvider"/> backed by a Roslyn <see cref="CSharpCompilation"/> built from
+    /// the given assemblies, source files and in-memory sources. See <see cref="MemoizedReflectionProvider"/>
+    /// for a caching wrapper around repeated queries.
+    /// </summary>
     public class ReflectionProvider : IReflectionProvider
     {
         private readonly MemberCache memberCache = new MemberCache();
         private readonly CSharpCompilation compilation;
         private readonly DocumentationUtil documentationUtil;
         private readonly List<IMethodSymbol> extensionMethods;
+        private readonly IReadOnlySet<string> excludedAssemblyNames;
 
         private static (EmitResult, Stream) CompileInMemory(CSharpCompilation compilation)
         {
@@ -163,42 +221,43 @@ namespace NetPrints.Reflection
         }
 
         /// <summary>
-        /// Creates a ReflectionProvider given paths to assemblies and source files.
+        /// Creates a ReflectionProvider from resolved assemblies and source files.
         /// </summary>
-        /// <param name="assemblyPaths">Paths to assemblies.</param>
-        /// <param name="sourcePaths">Paths to source files.</param>
-        public ReflectionProvider(IEnumerable<string> assemblyPaths, IEnumerable<string> sourcePaths, IEnumerable<string> sources)
+        /// <param name="assemblies">Assemblies to reference, resolved by <c>IProjectSystem.LoadAsync</c>
+        /// (project-system.md §4), each carrying its own documentation file path if one exists. A path
+        /// that does not exist is skipped instead of throwing; callers resolve references with
+        /// <c>IProjectSystem</c> first (FR-009).</param>
+        /// <param name="sources">C# source files to compile alongside <paramref name="assemblies"/>
+        /// (a project's generated classes and other <c>Compile</c> items).</param>
+        /// <param name="excludedAssemblyNames">Simple names of assemblies (typically ones a type
+        /// catalog already covers, extension-points.md §4) whose types are skipped by every
+        /// enumeration (<see cref="GetNonStaticTypes"/>, the untyped queries of <see cref="GetMethods"/>
+        /// and <see cref="GetVariables"/>); the assemblies stay referenced so user sources still bind
+        /// against their types.</param>
+        public ReflectionProvider(IReadOnlyList<ResolvedAssembly> assemblies, IReadOnlyList<SourceFile> sources, IReadOnlySet<string> excludedAssemblyNames)
         {
-            var compilationOptions = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
+            ArgumentNullException.ThrowIfNull(assemblies);
+            ArgumentNullException.ThrowIfNull(sources);
+            this.excludedAssemblyNames = excludedAssemblyNames ?? throw new ArgumentNullException(nameof(excludedAssemblyNames));
 
-            // Create assembly metadata references. Paths that do not exist are skipped instead of
-            // throwing; callers resolve references with ReferenceAssemblyResolver first (FR-009).
-            var assemblyReferences = assemblyPaths.Where(File.Exists).Select(path =>
+            // Assemblies whose file does not exist are skipped instead of throwing; callers resolve
+            // references with IProjectSystem first (FR-009).
+            List<ResolvedAssembly> existingAssemblies = assemblies.Where(a => File.Exists(a.Path)).ToList();
+            var documentationPaths = new Dictionary<string, string>();
+            foreach (ResolvedAssembly assembly in existingAssemblies)
             {
-                DocumentationProvider documentationProvider = DocumentationProvider.Default;
-
-                // Try to find the documentation in the framework doc path
-                string docPath = Path.ChangeExtension(path, ".xml");
-                string programFilesX86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
-                if (!File.Exists(docPath) && !string.IsNullOrEmpty(programFilesX86))
+                if (assembly.DocumentationPath is { } docPath)
                 {
-                    docPath = Path.Combine(
-                        programFilesX86,
-                        "Reference Assemblies/Microsoft/Framework/.NETFramework/v4.X",
-                        $"{Path.GetFileNameWithoutExtension(path)}.xml");
+                    documentationPaths[assembly.Path] = docPath;
                 }
+            }
 
-                if (File.Exists(docPath))
-                {
-                    documentationProvider = XmlDocumentationProvider.CreateFromFile(docPath);
-                }
-
-                return (MetadataReference)MetadataReference.CreateFromFile(path, documentation: documentationProvider);
-            }).ToList();
+            var assemblyReferences = existingAssemblies
+                .Select(a => (MetadataReference)MetadataReference.CreateFromFile(a.Path))
+                .ToList();
 
             // Create syntax trees from sources
-            sources = sources.Concat(sourcePaths.Where(File.Exists).Select(path => File.ReadAllText(path))).Distinct();
-            var syntaxTrees = sources.Select(source => ParseSyntaxTree(source));
+            var syntaxTrees = sources.Select(source => source.Text).Distinct().Select(text => ParseSyntaxTree(text));
 
             compilation = CSharpCompilation.Create("C", syntaxTrees, assemblyReferences, new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
@@ -214,7 +273,7 @@ namespace NetPrints.Reflection
 
             extensionMethods = new List<IMethodSymbol>(GetValidTypes().SelectMany(t => t.GetMethods(memberCache).Where(m => m.IsExtensionMethod)));
 
-            documentationUtil = new DocumentationUtil(compilation);
+            documentationUtil = new DocumentationUtil(compilation, documentationPaths);
         }
 
         /// <summary>
@@ -228,7 +287,8 @@ namespace NetPrints.Reflection
             {
                 var model = compilation.GetSemanticModel(syntaxTree, true);
                 var classSyntaxes = syntaxTree.GetRoot().DescendantNodes().OfType<ClassDeclarationSyntax>();
-                var classes = classSyntaxes.Select(syntax => model.GetDeclaredSymbol(syntax));
+                // OfType also drops the (unexpected, for a class syntax node of this model) null case.
+                var classes = classSyntaxes.Select(syntax => model.GetDeclaredSymbol(syntax)).OfType<INamedTypeSymbol>();
                 foreach (var cls in classes)
                 {
                     yield return cls;
@@ -249,9 +309,18 @@ namespace NetPrints.Reflection
             return types.Concat(namespaceSymbol.GetNamespaceMembers().SelectMany(ns => GetNamespaceTypes(ns)));
         }
 
+        /// <summary>
+        /// Types offered by every enumeration query, excluding the excluded assemblies' (the
+        /// constructor's own doc comment): a specific, already-known type is still resolved by name
+        /// (<see cref="GetValidTypes(string)"/>, via <see cref="GetTypeFromSpecifier(TypeSpecifier)"/>)
+        /// regardless of exclusion, so its members bind correctly even when it does not show up in a
+        /// search.
+        /// </summary>
         private IEnumerable<INamedTypeSymbol> GetValidTypes()
         {
-            return compilation.SourceModule.ReferencedAssemblySymbols.SelectMany(module => GetNamespaceTypes(module.GlobalNamespace))
+            return compilation.SourceModule.ReferencedAssemblySymbols
+                .Where(module => !excludedAssemblyNames.Contains(module.Name))
+                .SelectMany(module => GetNamespaceTypes(module.GlobalNamespace))
                 .Concat(GetSyntaxTreeTypes());
         }
 
@@ -263,11 +332,12 @@ namespace NetPrints.Reflection
                 { return module.GetTypeByMetadataName(name); }
                 catch { return null; }
             })
-            .Where(t => t != null)
+            .OfType<INamedTypeSymbol>()
             .Concat(GetSyntaxTreeTypes().Where(t => t.GetFullName() == name)); // TODO: Correct full name
         }
 
         #region IReflectionProvider
+        /// <inheritdoc/>
         public IEnumerable<TypeSpecifier> GetNonStaticTypes()
         {
             return GetValidTypes().Where(
@@ -277,9 +347,10 @@ namespace NetPrints.Reflection
                 .Select(t => ReflectionConverter.TypeSpecifierFromSymbol(t));
         }
 
+        /// <inheritdoc/>
         public IEnumerable<MethodSpecifier> GetOverridableMethodsForType(TypeSpecifier typeSpecifier)
         {
-            ITypeSymbol type = GetTypeFromSpecifier(typeSpecifier);
+            ITypeSymbol? type = GetTypeFromSpecifier(typeSpecifier);
 
             if (type != null)
             {
@@ -300,12 +371,13 @@ namespace NetPrints.Reflection
             }
         }
 
+        /// <inheritdoc/>
         public IEnumerable<MethodSpecifier> GetPublicMethodOverloads(MethodSpecifier methodSpecifier)
         {
-            ITypeSymbol type = GetTypeFromSpecifier(methodSpecifier.DeclaringType);
+            ITypeSymbol? type = GetTypeFromSpecifier(methodSpecifier.DeclaringType);
 
             // TODO: Get a better way to determine is a method specifier is an operator.
-            bool isOperator = methodSpecifier.Name.StartsWith("op_");
+            bool isOperator = methodSpecifier.Name.StartsWith("op_", StringComparison.Ordinal);
 
             if (type != null)
             {
@@ -328,6 +400,7 @@ namespace NetPrints.Reflection
             }
         }
 
+        /// <inheritdoc/>
         public IEnumerable<ConstructorSpecifier> GetConstructors(TypeSpecifier typeSpecifier)
         {
             var symbol = GetTypeFromSpecifier<INamedTypeSymbol>(typeSpecifier);
@@ -340,6 +413,7 @@ namespace NetPrints.Reflection
             return new ConstructorSpecifier[0];
         }
 
+        /// <inheritdoc/>
         public IEnumerable<string> GetEnumNames(TypeSpecifier typeSpecifier)
         {
             var symbol = GetTypeFromSpecifier(typeSpecifier);
@@ -354,38 +428,42 @@ namespace NetPrints.Reflection
             return new string[0];
         }
 
+        /// <inheritdoc/>
         public bool TypeSpecifierIsSubclassOf(TypeSpecifier a, TypeSpecifier b)
         {
-            ITypeSymbol typeA = GetTypeFromSpecifier(a);
-            ITypeSymbol typeB = GetTypeFromSpecifier(b);
+            ITypeSymbol? typeA = GetTypeFromSpecifier(a);
+            ITypeSymbol? typeB = GetTypeFromSpecifier(b);
 
             return typeA != null && typeB != null && typeA.IsSubclassOf(typeB);
         }
 
-        private T GetTypeFromSpecifier<T>(TypeSpecifier specifier)
+        private T? GetTypeFromSpecifier<T>(TypeSpecifier specifier)
+            where T : class, ITypeSymbol
         {
-            return (T)GetTypeFromSpecifier(specifier);
+            return (T?)GetTypeFromSpecifier(specifier);
         }
 
-        private readonly Dictionary<TypeSpecifier, ITypeSymbol> cachedTypeSpecifierSymbols = new Dictionary<TypeSpecifier, ITypeSymbol>();
+        // A ConcurrentDictionary (not a plain Dictionary): queried from the UI thread and from
+        // background tasks (suggestion lists, reflection reloads), same as the memoized queries in
+        // MemoizedReflectionProvider. GetOrAdd may run the (pure, idempotent) lookup more than once
+        // under a race; it never corrupts the dictionary itself.
+        private readonly ConcurrentDictionary<TypeSpecifier, ITypeSymbol?> cachedTypeSpecifierSymbols = new ConcurrentDictionary<TypeSpecifier, ITypeSymbol?>();
 
-        private ITypeSymbol GetTypeFromSpecifier(TypeSpecifier specifier)
+        private ITypeSymbol? GetTypeFromSpecifier(TypeSpecifier specifier) =>
+            cachedTypeSpecifierSymbols.GetOrAdd(specifier, ComputeTypeFromSpecifier);
+
+        private ITypeSymbol? ComputeTypeFromSpecifier(TypeSpecifier specifier)
         {
-            if (cachedTypeSpecifierSymbols.TryGetValue(specifier, out var symbol))
-            {
-                return symbol;
-            }
-
             string lookupName = specifier.Name;
 
             // Find array ranks and remove them from the lookup name.
             // Example: int[][,] -> arrayRanks: { 1, 2 }, lookupName: int
             Stack<int> arrayRanks = new Stack<int>();
-            while (lookupName.EndsWith("]"))
+            while (lookupName.EndsWith("]", StringComparison.Ordinal))
             {
                 lookupName = lookupName.Remove(lookupName.Length - 1);
                 int arrayRank = 1;
-                while (lookupName.EndsWith(","))
+                while (lookupName.EndsWith(",", StringComparison.Ordinal))
                 {
                     arrayRank++;
                     lookupName = lookupName.Remove(lookupName.Length - 1);
@@ -394,7 +472,7 @@ namespace NetPrints.Reflection
 
                 if (lookupName.Last() != '[')
                 {
-                    throw new Exception("Expected [ in lookupName");
+                    throw new FormatException("Expected [ in lookupName");
                 }
 
                 lookupName = lookupName.Remove(lookupName.Length - 1);
@@ -405,7 +483,7 @@ namespace NetPrints.Reflection
 
             IEnumerable<INamedTypeSymbol> types = GetValidTypes(lookupName);
 
-            ITypeSymbol foundType = null;
+            ITypeSymbol? foundType = null;
 
             foreach (INamedTypeSymbol t in types)
             {
@@ -415,7 +493,7 @@ namespace NetPrints.Reflection
                     {
                         var typeArguments = specifier.GenericArguments
                             .Select(baseType => baseType is TypeSpecifier typeSpec ?
-                                GetTypeFromSpecifier(typeSpec) :
+                                GetTypeFromSpecifier(typeSpec) ?? throw new InvalidOperationException($"Could not resolve generic argument type '{typeSpec}'.") :
                                 t.TypeArguments[specifier.GenericArguments.IndexOf(baseType)])
                             .ToArray();
                         foundType = t.Construct(typeArguments);
@@ -440,14 +518,12 @@ namespace NetPrints.Reflection
                 }
             }
 
-            cachedTypeSpecifierSymbols.Add(specifier, foundType);
-
             return foundType;
         }
 
-        private IMethodSymbol GetMethodInfoFromSpecifier(MethodSpecifier specifier)
+        private IMethodSymbol? GetMethodInfoFromSpecifier(MethodSpecifier specifier)
         {
-            INamedTypeSymbol declaringType = GetTypeFromSpecifier<INamedTypeSymbol>(specifier.DeclaringType);
+            INamedTypeSymbol? declaringType = GetTypeFromSpecifier<INamedTypeSymbol>(specifier.DeclaringType);
             return declaringType?.GetMethods(memberCache).FirstOrDefault(
                     m => m.Name == specifier.Name
                     && m.Parameters.Select(p => ReflectionConverter.BaseTypeSpecifierFromSymbol(p.Type)).SequenceEqual(specifier.ArgumentTypes));
@@ -455,9 +531,10 @@ namespace NetPrints.Reflection
 
         // Documentation
 
-        public string GetMethodDocumentation(MethodSpecifier methodSpecifier)
+        /// <inheritdoc/>
+        public string? GetMethodDocumentation(MethodSpecifier methodSpecifier)
         {
-            IMethodSymbol methodInfo = GetMethodInfoFromSpecifier(methodSpecifier);
+            IMethodSymbol? methodInfo = GetMethodInfoFromSpecifier(methodSpecifier);
 
             if (methodInfo == null)
             {
@@ -467,9 +544,10 @@ namespace NetPrints.Reflection
             return documentationUtil.GetMethodSummary(methodInfo);
         }
 
-        public string GetMethodParameterDocumentation(MethodSpecifier methodSpecifier, int parameterIndex)
+        /// <inheritdoc/>
+        public string? GetMethodParameterDocumentation(MethodSpecifier methodSpecifier, int parameterIndex)
         {
-            IMethodSymbol methodInfo = GetMethodInfoFromSpecifier(methodSpecifier);
+            IMethodSymbol? methodInfo = GetMethodInfoFromSpecifier(methodSpecifier);
 
             if (methodInfo == null)
             {
@@ -479,9 +557,10 @@ namespace NetPrints.Reflection
             return documentationUtil.GetMethodParameterInfo(methodInfo.Parameters[parameterIndex]);
         }
 
-        public string GetMethodReturnDocumentation(MethodSpecifier methodSpecifier, int returnIndex)
+        /// <inheritdoc/>
+        public string? GetMethodReturnDocumentation(MethodSpecifier methodSpecifier, int returnIndex)
         {
-            IMethodSymbol methodInfo = GetMethodInfoFromSpecifier(methodSpecifier);
+            IMethodSymbol? methodInfo = GetMethodInfoFromSpecifier(methodSpecifier);
 
             if (methodInfo == null)
             {
@@ -491,17 +570,19 @@ namespace NetPrints.Reflection
             return documentationUtil.GetMethodReturnInfo(methodInfo);
         }
 
+        /// <inheritdoc/>
         public bool HasImplicitCast(TypeSpecifier fromType, TypeSpecifier toType)
         {
             // Check if there exists a conversion that is implicit between the types.
 
-            ITypeSymbol fromSymbol = GetTypeFromSpecifier(fromType);
-            ITypeSymbol toSymbol = GetTypeFromSpecifier(toType);
+            ITypeSymbol? fromSymbol = GetTypeFromSpecifier(fromType);
+            ITypeSymbol? toSymbol = GetTypeFromSpecifier(toType);
 
             return fromSymbol != null && toSymbol != null
                 && compilation.ClassifyConversion(fromSymbol, toSymbol).IsImplicit;
         }
 
+        /// <inheritdoc/>
         public IEnumerable<MethodSpecifier> GetMethods(ReflectionProviderMethodQuery query)
         {
             IEnumerable<IMethodSymbol> methodSymbols;
@@ -510,7 +591,7 @@ namespace NetPrints.Reflection
             if (!(query.Type is null))
             {
                 // Get all methods of the type
-                ITypeSymbol type = GetTypeFromSpecifier(query.Type);
+                ITypeSymbol? type = GetTypeFromSpecifier(query.Type);
 
                 if (type == null)
                 {
@@ -563,7 +644,7 @@ namespace NetPrints.Reflection
                 methodSymbols = methodSymbols
                     .Where(m => m.Parameters
                         .Select(p => p.Type)
-                        .Any(t => t == searchType
+                        .Any(t => SymbolEqualityComparer.Default.Equals(t, searchType)
                                     || searchType.IsSubclassOf(t)
                                     || t.TypeKind == TypeKind.TypeParameter));
             }
@@ -574,7 +655,7 @@ namespace NetPrints.Reflection
                 var searchType = GetTypeFromSpecifier(query.ReturnType);
 
                 methodSymbols = methodSymbols
-                    .Where(m => m.ReturnType == searchType
+                    .Where(m => SymbolEqualityComparer.Default.Equals(m.ReturnType, searchType)
                                 || m.ReturnType.IsSubclassOf(searchType)
                                 || m.ReturnType.TypeKind == TypeKind.TypeParameter);
             }
@@ -612,6 +693,7 @@ namespace NetPrints.Reflection
             return methodSpecifiers;
         }
 
+        /// <inheritdoc/>
         public IEnumerable<VariableSpecifier> GetVariables(ReflectionProviderVariableQuery query)
         {
             // Note: Currently we handle fields and properties in this function
@@ -638,7 +720,7 @@ namespace NetPrints.Reflection
             if (!(query.Type is null))
             {
                 // Get all properties of the type
-                ITypeSymbol type = GetTypeFromSpecifier(query.Type);
+                ITypeSymbol? type = GetTypeFromSpecifier(query.Type);
 
                 if (type == null)
                 {

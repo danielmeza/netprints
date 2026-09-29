@@ -45,7 +45,7 @@ speckit-specify → speckit-clarify → speckit-plan (+ research.md) → speckit
 
 ## Building, testing and running
 
-See the [README](README.md#getting-started) for the day-to-day commands
+See the [README](README.md#contributing) for the day-to-day commands
 (`dotnet build`/`test`/`run`) and the [P0 quickstart](specs/001-modernize-build/quickstart.md)
 for the full walkthrough, including headless UI tests and the desktop E2E suite.
 
@@ -54,16 +54,17 @@ Before opening a PR:
 ```bash
 dotnet build NetPrints.slnx -c Release
 dotnet test --solution NetPrints.slnx -c Release --no-build -- --ignore-exit-code 8
-dotnet format NetPrints.slnx --verify-no-changes --exclude-diagnostics RS1024
+dotnet format NetPrints.slnx --verify-no-changes
 ```
 
-`--ignore-exit-code 8` matches CI: with `NETPRINTS_E2E` unset, the desktop E2E project runs zero
-tests and would otherwise exit non-zero on an otherwise-green tree. `--exclude-diagnostics RS1024`
-also matches CI: that analyzer's code fix is a real behavior change (see P1 T013), not a
-formatting one, so it must not be auto-applied by `dotnet format`.
+`--ignore-exit-code 8` here only suppresses the desktop E2E project's own "zero tests" exit: with
+`NETPRINTS_E2E` unset it runs zero tests and would otherwise exit non-zero on an otherwise-green
+tree. CI doesn't apply this flag solution-wide — it runs the desktop E2E project as its own step
+with the flag, and every other test project without it, so a real zero-tests regression elsewhere
+(for example, a headless-UI-test discovery break) still fails the job.
 
-`dotnet format` fixes itself: run `dotnet format NetPrints.slnx --exclude-diagnostics RS1024` (no
-`--verify-no-changes`) to apply whatever it would otherwise flag in CI.
+`dotnet format` fixes itself: run `dotnet format NetPrints.slnx` (no `--verify-no-changes`) to
+apply whatever it would otherwise flag in CI.
 
 ## Test conventions
 

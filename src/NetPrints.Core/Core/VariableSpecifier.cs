@@ -1,14 +1,16 @@
-﻿using System.Runtime.Serialization;
+﻿#nullable enable
 
 namespace NetPrints.Core
 {
-    [DataContract]
+    /// <summary>
+    /// Specifier describing a discovered field or property: its name, declaring and value types,
+    /// getter/setter/overall visibility, and modifiers (static, indexer, etc.).
+    /// </summary>
     public class VariableSpecifier
     {
         /// <summary>
         /// Name of the property without any prefixes.
         /// </summary>
-        [DataMember]
         public string Name
         {
             get;
@@ -16,10 +18,10 @@ namespace NetPrints.Core
         }
 
         /// <summary>
-        /// Specifier for the type this property is contained in.
+        /// Specifier for the type this property is contained in, or <see langword="null"/> for a
+        /// method-local variable (<see cref="Scope"/> is <see cref="VariableScope.Local"/>, US5).
         /// </summary>
-        [DataMember]
-        public TypeSpecifier DeclaringType
+        public TypeSpecifier? DeclaringType
         {
             get;
             private set;
@@ -28,7 +30,6 @@ namespace NetPrints.Core
         /// <summary>
         /// Specifier for the type of the property.
         /// </summary>
-        [DataMember]
         public TypeSpecifier Type
         {
             get;
@@ -36,9 +37,8 @@ namespace NetPrints.Core
         }
 
         /// <summary>
-        /// Whether this property has a public getter.
+        /// Visibility of this property's getter.
         /// </summary>
-        [DataMember]
         public MemberVisibility GetterVisibility
         {
             get;
@@ -46,9 +46,8 @@ namespace NetPrints.Core
         }
 
         /// <summary>
-        /// Whether this property has a public setter.
+        /// Visibility of this property's setter.
         /// </summary>
-        [DataMember]
         public MemberVisibility SetterVisibility
         {
             get;
@@ -58,7 +57,6 @@ namespace NetPrints.Core
         /// <summary>
         /// Visibility of this property.
         /// </summary>
-        [DataMember]
         public MemberVisibility Visibility
         {
             get;
@@ -68,15 +66,34 @@ namespace NetPrints.Core
         /// <summary>
         /// Modifiers of this variable.
         /// </summary>
-        [DataMember]
         public VariableModifiers Modifiers
         {
             get;
             set;
         }
 
+        /// <summary>
+        /// Whether this specifier describes a class member or a method-local variable (US5, sub-phase H).
+        /// Defaults to <see cref="VariableScope.Member"/>.
+        /// </summary>
+        public VariableScope Scope
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// Creates a variable specifier from its discovered name, type and modifiers.
+        /// </summary>
+        /// <param name="name">Name of the variable, without any prefixes.</param>
+        /// <param name="type">Specifier for the variable's value type.</param>
+        /// <param name="getterVisibility">Visibility of the getter.</param>
+        /// <param name="setterVisibility">Visibility of the setter.</param>
+        /// <param name="declaringType">Specifier for the type the variable is declared in, or
+        /// <see langword="null"/> for a method-local variable.</param>
+        /// <param name="modifiers">Modifiers of the variable (static, indexer, etc.).</param>
         public VariableSpecifier(string name, TypeSpecifier type, MemberVisibility getterVisibility, MemberVisibility setterVisibility,
-            TypeSpecifier declaringType, VariableModifiers modifiers)
+            TypeSpecifier? declaringType, VariableModifiers modifiers)
         {
             Name = name;
             Type = type;

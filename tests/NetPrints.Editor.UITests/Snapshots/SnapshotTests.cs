@@ -3,6 +3,7 @@ using NetPrints.Core;
 using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.UITests.ClassEditor;
+using NetPrints.Editor.UITests.Driving;
 using NetPrints.Editor.UITests.Hosting;
 using NetPrints.Graph;
 using NetPrints.Testing.Ui.Dialogs;
@@ -39,7 +40,7 @@ public class SnapshotTests
     public async Task MainWindow()
     {
         using var sample = new SampleCopy();
-        using var app = HeadlessApp.Start();
+        await using var app = HeadlessApp.Start();
         await MatchWindowAsync(app.Driver, app.Main, "main-window-empty");
 
         await app.OpenStartupProjectAsync(sample.ProjectPath, Token);
@@ -55,7 +56,7 @@ public class SnapshotTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task ClassEditorWithTheSampleGraph()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
 
         await MatchWindowAsync(session.Driver, session.ClassEditor, "class-editor-main");
         Store.Match("node-call-method", await session.Graph.Node("CallMethodNode").ScreenshotAsync(Token)); // connected and unconnected pins
@@ -65,7 +66,7 @@ public class SnapshotTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task Inspectors()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var page = session.ClassEditor;
 
         await page.CreateVariableButton.ClickAsync(Token);
@@ -75,14 +76,41 @@ public class SnapshotTests
 
         await page.ClassButton.ClickAsync(Token);
         await page.ClassInspector.WaitVisibleAsync(Token);
-        await page.ClassInspector.GeneratedCode.WaitUntilAsync(e => (e.Text ?? "").Contains("class Program"), "generated code", Token);
+        await page.ClassInspector.CodeView.WaitUntilAsync(e => (e.Text ?? "").Contains("class Program"), "generated code", Token);
         Store.Match("inspector-class", await page.InspectorColumn.ScreenshotAsync(Token));
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task MethodEntryWithParameters()
+    {
+        // OWN-05b baseline: three parameters of different name lengths and types, to visually confirm
+        // each parameter's type pin and value pin land on the same row (PinAlignmentTests has the pixel
+        // checks; this is the human-reviewable picture of the fix).
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        var entryNode = ((MethodGraph)session.GraphVM.Graph).MethodEntryNode;
+        entryNode.AddArgument();
+        entryNode.AddArgument();
+        entryNode.AddArgument();
+        entryNode.OutputDataPins[0].Name = "x";
+        entryNode.OutputDataPins[0].PinType.Value = TypeSpecifier.FromType<int>();
+        entryNode.OutputDataPins[1].Name = "someValue";
+        entryNode.OutputDataPins[1].PinType.Value = TypeSpecifier.FromType<string>();
+        entryNode.OutputDataPins[2].Name = "aVeryLongParameterName";
+        entryNode.OutputDataPins[2].PinType.Value = TypeSpecifier.FromType<bool>();
+        entryNode.PositionX = 28; // the extra-wide node (from the long name above) would otherwise
+        entryNode.PositionY = 480; // overlap Console.WriteLine at its usual sample position.
+        await session.WaitForRenderedAsync(Token);
+        HeadlessDriver.Pump(); // the renames above don't add/remove nodes, so WaitForRenderedAsync's
+                               // node/cable count check is already satisfied; pump once more so the
+                               // node's width settles to the new (longer) pin names before the crop.
+
+        Store.Match("node-method-entry-parameters", await session.Graph.Node("MethodEntryNode").ScreenshotAsync(Token));
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task EveryNodeKind()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         await session.ClassEditor.CreateVariableButton.ClickAsync(Token);
         var variable = session.ClassVM.Variables.Single().Variable.Specifier;
         var graph = session.GraphVM;
@@ -120,7 +148,7 @@ public class SnapshotTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task PreviewCableSearchAndGetSet()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var graph = session.Graph;
 
         var from = await graph.Node("CallMethodNode").Output("Exec").Connector.CenterAsync(Token);
@@ -168,11 +196,13 @@ public class SnapshotTests
     public async Task ReferencesDialog()
     {
         using var sample = new SampleCopy();
-        using var app = HeadlessApp.Start();
+        await using var app = HeadlessApp.Start();
         await app.OpenStartupProjectAsync(sample.ProjectPath, Token);
 
         var references = await app.Main.OpenReferencesAsync(Token);
-        await references.WaitForRowAsync("System.dll", Token);
+        // The SDK-style sample declares no explicit references (research.md R21): wait for the
+        // dialog itself to settle instead of a specific row.
+        await references.AddAssemblyButton.GetAsync(Token);
 
         await MatchWindowAsync(app.Driver, references, "dialog-references");
     }

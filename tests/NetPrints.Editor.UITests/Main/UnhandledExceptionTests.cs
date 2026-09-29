@@ -20,7 +20,7 @@ public class UnhandledExceptionTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task DispatcherExceptionIsReportedAndTheEditorKeepsRunning()
     {
-        using var app = HeadlessApp.Start();
+        await using var app = HeadlessApp.Start();
 
         Dispatcher.UIThread.Post(() => throw new InvalidOperationException("boom from the dispatcher"));
         await WaitForErrorsAsync(app, 1);
@@ -34,7 +34,7 @@ public class UnhandledExceptionTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task AsyncVoidHandlerExceptionIsReported()
     {
-        using var app = HeadlessApp.Start();
+        await using var app = HeadlessApp.Start();
 
         async void Handler()
         {
@@ -52,7 +52,7 @@ public class UnhandledExceptionTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task AsyncVoidHandlerExceptionIsReportedOnlyOnce()
     {
-        using var app = HeadlessApp.Start();
+        await using var app = HeadlessApp.Start();
 
         async void Handler()
         {

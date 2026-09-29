@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using NetPrints.Core;
 using NetPrints.Graph;
@@ -17,12 +19,13 @@ namespace NetPrints.Tests
 
         public MethodTranslatorTests()
         {
-            methodTranslator = new ExecutionGraphTranslator();
+            methodTranslator = new ExecutionGraphTranslator(TranslationEnvironment.BuiltIn);
             CreateStringLengthMethod();
             CreateIfElseMethod();
             CreateForLoopMethod();
         }
 
+        [MemberNotNull(nameof(stringLengthMethod))]
         private void CreateStringLengthMethod()
         {
             List<TypeSpecifier> argumentTypes = new List<TypeSpecifier>()
@@ -72,6 +75,7 @@ namespace NetPrints.Tests
             GraphUtil.ConnectDataPins(getLengthNode.OutputDataPins[0], stringLengthMethod.ReturnNodes.First().InputDataPins[0]);
         }
 
+        [MemberNotNull(nameof(ifElseMethod))]
         private void CreateIfElseMethod()
         {
             // Create method
@@ -120,6 +124,7 @@ namespace NetPrints.Tests
             GraphUtil.ConnectDataPins(literalNode.ValuePin, ifElseMethod.ReturnNodes.First().InputDataPins[0]);
         }
 
+        [MemberNotNull(nameof(forLoopMethod))]
         private void CreateForLoopMethod()
         {
             // Create method
@@ -156,6 +161,23 @@ namespace NetPrints.Tests
         public void TestForLoopTranslation()
         {
             string translated = methodTranslator.Translate(forLoopMethod, true);
+        }
+
+        /// <summary>
+        /// Bug fix (implementation-notes.md "InitialIndexPin default-value bug"): <see cref="forLoopMethod"/>
+        /// leaves <see cref="ForLoopNode.InitialIndexPin"/> unconnected, relying on its unconnected value.
+        /// Before the fix the pin instead defaulted to <see cref="NodeInputDataPin.UsesExplicitDefaultValue"/>
+        /// (a <c>CallMethodNode</c>-argument concept meaning "omit the argument"), so
+        /// <c>GetPinIncomingValue</c> returned <see langword="null"/> and the loop's index initializer was
+        /// emitted as the invalid C# statement <c>idx = ;</c>.
+        /// </summary>
+        [Fact]
+        public void TestForLoopTranslationInitializesUnconnectedInitialIndexToZero()
+        {
+            string translated = methodTranslator.Translate(forLoopMethod, true);
+
+            Assert.DoesNotContain(" = ;", translated, StringComparison.Ordinal);
+            Assert.Contains(" = 0;", translated, StringComparison.Ordinal);
         }
     }
 }

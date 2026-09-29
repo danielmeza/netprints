@@ -20,6 +20,13 @@ public sealed class ObservableViewModelCollection<TViewModel, TModel> : Observab
     private readonly Func<TModel, TViewModel> factory;
     private readonly Action<TViewModel>? onRemoved;
 
+    /// <summary>
+    /// Builds an initial view model per item of <paramref name="source"/> and starts mirroring its
+    /// changes.
+    /// </summary>
+    /// <param name="source">Model collection to mirror.</param>
+    /// <param name="factory">Creates a view model for a model.</param>
+    /// <param name="onRemoved">Called for each view model removed from this collection (by removal, replacement or rebuild), or <see langword="null"/> to do nothing.</param>
     public ObservableViewModelCollection(ObservableCollection<TModel> source, Func<TModel, TViewModel> factory,
         Action<TViewModel>? onRemoved = null)
         : base(source.Select(factory))
@@ -45,7 +52,7 @@ public sealed class ObservableViewModelCollection<TViewModel, TModel> : Observab
             case NotifyCollectionChangedAction.Add when e.NewItems is not null:
                 for (int i = 0; i < e.NewItems.Count; i++)
                 {
-                    Insert(e.NewStartingIndex + i, factory((TModel)e.NewItems[i]!));
+                    Insert(e.NewStartingIndex + i, factory(ToModel(e.NewItems[i])));
                 }
                 break;
 
@@ -73,7 +80,7 @@ public sealed class ObservableViewModelCollection<TViewModel, TModel> : Observab
                 for (int i = 0; i < e.OldItems.Count; i++)
                 {
                     var removed = this[e.OldStartingIndex + i];
-                    this[e.OldStartingIndex + i] = factory((TModel)e.NewItems[i]!);
+                    this[e.OldStartingIndex + i] = factory(ToModel(e.NewItems[i]));
                     onRemoved?.Invoke(removed);
                 }
                 break;
@@ -83,6 +90,10 @@ public sealed class ObservableViewModelCollection<TViewModel, TModel> : Observab
                 break;
         }
     }
+
+    /// <summary>Casts a raw <see cref="NotifyCollectionChangedEventArgs"/> item to <typeparamref name="TModel"/>.</summary>
+    private static TModel ToModel(object? item) =>
+        item as TModel ?? throw new InvalidOperationException($"Expected a non-null {typeof(TModel).Name} collection item.");
 
     private void Rebuild()
     {
@@ -105,6 +116,7 @@ public sealed class ObservableViewModelCollection<TViewModel, TModel> : Observab
         OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
     }
 
+    /// <summary>Unsubscribes from the source collection's change event. Does not dispose the view models.</summary>
     public void Dispose()
     {
         notifier.CollectionChanged -= OnSourceCollectionChanged;

@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Core;
 
@@ -10,10 +11,22 @@ namespace NetPrints.Editor.ClassEditor;
 /// The WPF editor used a full graph view model per list entry; a light wrapper avoids building
 /// node view models for graphs that are not open.
 /// </remarks>
-public sealed class MethodVM(ExecutionGraph graph) : ObservableObject
+public sealed partial class MethodVM : ObservableObject, IDisposable
 {
-    public ExecutionGraph Graph { get; } = graph;
+    /// <summary>
+    /// Wraps <paramref name="graph"/> and subscribes to its property-changed event.
+    /// </summary>
+    /// <param name="graph">Method or constructor graph to wrap.</param>
+    public MethodVM(ExecutionGraph graph)
+    {
+        Graph = graph;
+        ((INotifyPropertyChanged)graph).PropertyChanged += OnGraphPropertyChanged;
+    }
 
+    /// <summary>The wrapped model graph.</summary>
+    public ExecutionGraph Graph { get; }
+
+    /// <summary>Whether the wrapped graph is a <see cref="ConstructorGraph"/>.</summary>
     public bool IsConstructor => Graph is ConstructorGraph;
 
     /// <summary>Name; read-only for constructors.</summary>
@@ -22,63 +35,80 @@ public sealed class MethodVM(ExecutionGraph graph) : ObservableObject
         get => Graph is MethodGraph method ? method.Name : Graph.ToString() ?? "";
         set
         {
-            if (Graph is MethodGraph method && method.Name != value)
+            if (Graph is MethodGraph method)
             {
                 method.Name = value;
-                OnPropertyChanged();
             }
         }
     }
 
+    /// <summary>The graph's visibility.</summary>
     public MemberVisibility Visibility
     {
         get => Graph.Visibility;
-        set
-        {
-            if (Graph.Visibility != value)
-            {
-                Graph.Visibility = value;
-                OnPropertyChanged();
-            }
-        }
+        set => Graph.Visibility = value;
     }
 
+    /// <summary>The visibility values offered by the method's visibility chooser.</summary>
     public IReadOnlyList<MemberVisibility> PossibleVisibilities => ClassEditorVM.Visibilities;
 
+    /// <summary>The graph's modifiers, or <see cref="MethodModifiers.None"/> for a constructor (which has none).</summary>
     public MethodModifiers Modifiers
     {
         get => Graph is MethodGraph method ? method.Modifiers : MethodModifiers.None;
         set
         {
-            if (Graph is MethodGraph method && method.Modifiers != value)
+            if (Graph is MethodGraph method)
             {
                 method.Modifiers = value;
-                OnPropertyChanged();
+            }
+        }
+    }
+
+    /// <summary>Whether <see cref="MethodModifiers.Sealed"/> is set. Always <see langword="false"/> for a constructor.</summary>
+    public bool IsSealed { get => Has(MethodModifiers.Sealed); set => Set(MethodModifiers.Sealed, value); }
+
+    /// <summary>Whether <see cref="MethodModifiers.Abstract"/> is set. Always <see langword="false"/> for a constructor.</summary>
+    public bool IsAbstract { get => Has(MethodModifiers.Abstract); set => Set(MethodModifiers.Abstract, value); }
+
+    /// <summary>Whether <see cref="MethodModifiers.Static"/> is set. Always <see langword="false"/> for a constructor.</summary>
+    public bool IsStatic { get => Has(MethodModifiers.Static); set => Set(MethodModifiers.Static, value); }
+
+    /// <summary>Whether <see cref="MethodModifiers.Virtual"/> is set. Always <see langword="false"/> for a constructor.</summary>
+    public bool IsVirtual { get => Has(MethodModifiers.Virtual); set => Set(MethodModifiers.Virtual, value); }
+
+    /// <summary>Whether <see cref="MethodModifiers.Override"/> is set. Always <see langword="false"/> for a constructor.</summary>
+    public bool IsOverride { get => Has(MethodModifiers.Override); set => Set(MethodModifiers.Override, value); }
+
+    /// <summary>Whether <see cref="MethodModifiers.Async"/> is set. Always <see langword="false"/> for a constructor.</summary>
+    public bool IsAsync { get => Has(MethodModifiers.Async); set => Set(MethodModifiers.Async, value); }
+
+    private bool Has(MethodModifiers flag) => Modifiers.HasFlag(flag);
+
+    private void Set(MethodModifiers flag, bool value) => Modifiers = value ? Modifiers | flag : Modifiers & ~flag;
+
+    /// <summary>Re-raises this VM's properties when the wrapped graph's model properties change (editor-services.md §3).</summary>
+    private void OnGraphPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        switch (e.PropertyName)
+        {
+            case nameof(MethodGraph.Name):
+                OnPropertyChanged(nameof(Name));
+                break;
+            case nameof(ExecutionGraph.Visibility):
+                OnPropertyChanged(nameof(Visibility));
+                break;
+            case nameof(MethodGraph.Modifiers):
+                OnPropertyChanged(nameof(Modifiers));
                 OnPropertyChanged(nameof(IsSealed));
                 OnPropertyChanged(nameof(IsAbstract));
                 OnPropertyChanged(nameof(IsStatic));
                 OnPropertyChanged(nameof(IsVirtual));
                 OnPropertyChanged(nameof(IsOverride));
                 OnPropertyChanged(nameof(IsAsync));
-            }
+                break;
         }
     }
-
-    public bool IsSealed { get => Has(MethodModifiers.Sealed); set => Set(MethodModifiers.Sealed, value); }
-
-    public bool IsAbstract { get => Has(MethodModifiers.Abstract); set => Set(MethodModifiers.Abstract, value); }
-
-    public bool IsStatic { get => Has(MethodModifiers.Static); set => Set(MethodModifiers.Static, value); }
-
-    public bool IsVirtual { get => Has(MethodModifiers.Virtual); set => Set(MethodModifiers.Virtual, value); }
-
-    public bool IsOverride { get => Has(MethodModifiers.Override); set => Set(MethodModifiers.Override, value); }
-
-    public bool IsAsync { get => Has(MethodModifiers.Async); set => Set(MethodModifiers.Async, value); }
-
-    private bool Has(MethodModifiers flag) => Modifiers.HasFlag(flag);
-
-    private void Set(MethodModifiers flag, bool value) => Modifiers = value ? Modifiers | flag : Modifiers & ~flag;
 
     /// <summary>Specifier used to call this method from a graph (drag &amp; drop, PAR-56).</summary>
     public MethodSpecifier ToMethodSpecifier(TypeSpecifier declaringType)
@@ -95,4 +125,7 @@ public sealed class MethodVM(ExecutionGraph graph) : ObservableObject
     public ConstructorSpecifier ToConstructorSpecifier(TypeSpecifier declaringType) =>
         new(Graph.NamedArgumentTypes.Select(nt => new MethodParameter(nt.Name, nt.Value, MethodParameterPassType.Default, false, null)),
             declaringType);
+
+    /// <summary>Unsubscribes from the wrapped graph's property-changed event.</summary>
+    public void Dispose() => ((INotifyPropertyChanged)Graph).PropertyChanged -= OnGraphPropertyChanged;
 }

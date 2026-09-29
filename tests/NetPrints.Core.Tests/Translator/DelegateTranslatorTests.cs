@@ -14,7 +14,7 @@ namespace NetPrints.Tests
 
         public DelegateTranslatorTests()
         {
-            methodTranslator = new ExecutionGraphTranslator();
+            methodTranslator = new ExecutionGraphTranslator(TranslationEnvironment.BuiltIn);
         }
 
         [Fact]

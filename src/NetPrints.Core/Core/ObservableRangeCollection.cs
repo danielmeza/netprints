@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
@@ -19,10 +20,7 @@ namespace NetPrints.Core
         /// </summary> 
         public void AddRange(IEnumerable<T> collection)
         {
-            if (collection == null)
-            {
-                throw new ArgumentNullException(nameof(collection));
-            }
+            ArgumentNullException.ThrowIfNull(collection);
 
             foreach (var item in collection)
             {
@@ -37,10 +35,7 @@ namespace NetPrints.Core
         /// </summary> 
         public void RemoveRange(IEnumerable<T> collection)
         {
-            if (collection == null)
-            {
-                throw new ArgumentNullException(nameof(collection));
-            }
+            ArgumentNullException.ThrowIfNull(collection);
 
             foreach (var item in collection)
             {
@@ -63,10 +58,7 @@ namespace NetPrints.Core
         /// </summary> 
         public void ReplaceRange(IEnumerable<T> collection)
         {
-            if (collection == null)
-            {
-                throw new ArgumentNullException(nameof(collection));
-            }
+            ArgumentNullException.ThrowIfNull(collection);
 
             Items.Clear();
 
@@ -78,6 +70,10 @@ namespace NetPrints.Core
             OnCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
         }
 
+        /// <summary>
+        /// Removes every item one at a time (rather than the base implementation's single clear), so
+        /// each removal still goes through <see cref="Collection{T}.RemoveAt(int)"/>.
+        /// </summary>
         protected override void ClearItems()
         {
             while (Count > 0)

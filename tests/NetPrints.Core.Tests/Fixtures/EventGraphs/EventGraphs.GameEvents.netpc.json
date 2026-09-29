@@ -1,0 +1,113 @@
+{
+  "$schema": "https://danielmeza.github.io/netprints/schemas/netpc.v1.schema.json",
+  "schemaVersion": 1,
+  "namespace": "EventGraphs",
+  "name": "GameEvents",
+  "visibility": "Public",
+  "classGraph": {
+    "nodes": [
+      { "$kind": "classReturn", "id": "n000000000ge01" },
+      {
+        "$kind": "type",
+        "id": "n000000000ge02",
+        "type": { "name": "EventGraphs.EventBase" }
+      }
+    ],
+    "connections": [
+      { "from": "n000000000ge02/out.type.OutputType", "to": "n000000000ge01/in.type.BaseType" }
+    ]
+  },
+  "eventGraphs": [
+    {
+      "id": "m000000000ge01",
+      "name": "GameEvents",
+      "graph": {
+        "nodes": [
+          {
+            "$kind": "eventEntry",
+            "id": "n000000000ge03",
+            "eventName": "OnStart",
+            "visibility": "Public"
+          },
+          {
+            "$kind": "callMethod",
+            "id": "n000000000ge04",
+            "pins": [
+              { "pin": "in.data.value", "value": { "type": "System.String", "value": "OnStart!" } }
+            ],
+            "method": {
+              "name": "WriteLine",
+              "declaringType": { "name": "System.Console" },
+              "parameters": [
+                { "name": "value", "type": { "name": "System.String" } }
+              ],
+              "modifiers": "Static",
+              "visibility": "Public"
+            }
+          },
+          {
+            "$kind": "eventEntry",
+            "id": "n000000000ge05",
+            "pins": [
+              { "pin": "out.data.Input0", "name": "deltaTime" }
+            ],
+            "eventName": "OnTick",
+            "visibility": "Public",
+            "argumentCount": 1
+          },
+          {
+            "$kind": "callMethod",
+            "id": "n000000000ge06",
+            "method": {
+              "name": "WriteLine",
+              "declaringType": { "name": "System.Console" },
+              "parameters": [
+                { "name": "value", "type": { "name": "System.Single" } }
+              ],
+              "modifiers": "Static",
+              "visibility": "Public"
+            }
+          },
+          {
+            "$kind": "type",
+            "id": "n000000000ge08",
+            "type": { "name": "System.Single" }
+          },
+          {
+            "$kind": "eventEntry",
+            "id": "n000000000ge07",
+            "eventName": "OnReset",
+            "visibility": "Public",
+            "modifiers": "Override",
+            "overrides": {
+              "name": "OnReset",
+              "declaringType": { "name": "EventGraphs.EventBase" },
+              "modifiers": "Virtual",
+              "visibility": "Public"
+            }
+          }
+        ],
+        "connections": [
+          { "from": "n000000000ge03/out.exec.Exec", "to": "n000000000ge04/in.exec.Exec" },
+          { "from": "n000000000ge05/out.data.Input0", "to": "n000000000ge06/in.data.value" },
+          { "from": "n000000000ge05/out.exec.Exec", "to": "n000000000ge06/in.exec.Exec" },
+          { "from": "n000000000ge08/out.type.OutputType", "to": "n000000000ge05/in.type.Input0Type" }
+        ]
+      }
+    }
+  ],
+  "layout": {
+    "class": {
+      "n000000000ge01": [112, 112],
+      "n000000000ge02": [-140, 112]
+    },
+    "m000000000ge01": {
+      "n000000000ge03": [112, 112],
+      "n000000000ge04": [420, 112],
+      "n000000000ge05": [112, 300],
+      "n000000000ge06": [420, 300],
+      "n000000000ge07": [112, 480],
+      "n000000000ge08": [-140, 300]
+    }
+  }
+}

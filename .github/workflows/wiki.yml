@@ -1,0 +1,35 @@
+name: Wiki
+
+on:
+  push:
+    branches: [master]
+    paths: ['.github/wiki/**']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    name: Sync .github/wiki to the wiki
+    # Only once the owner enabled the wiki and created its first page (release contract §11, step 4).
+    if: github.repository == 'danielmeza/netprints' && vars.PUBLISH_WIKI == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Check that the wiki repository exists
+        id: wiki
+        run: |
+          if git ls-remote "https://github.com/${GITHUB_REPOSITORY}.wiki.git" >/dev/null 2>&1; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::The wiki is not initialized yet; create its first page (release contract §11, step 4)."
+          fi
+      - if: steps.wiki.outputs.ready == 'true'
+        uses: Andrew-Chen-Wang/github-wiki-action@1bbb4280446f9630e8e21a18012cbacf3b0f992e # v5.0.6
+        with:
+          path: .github/wiki
+          strategy: init
+          preprocess: false

@@ -1,16 +1,24 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ed="clr-namespace:NetPrints.Editor"
+        xmlns:edb="clr-namespace:NetPrints.Editor.Behaviors"
+        xmlns:eddialogs="clr-namespace:NetPrints.Editor.Dialogs"
         xmlns:edsearch="clr-namespace:NetPrints.Editor.Search"
         xmlns:core="clr-namespace:NetPrints.Core;assembly=NetPrints.Core"
         x:Class="NetPrints.Editor.Dialogs.SelectMethodDialog"
+        x:DataType="eddialogs:SelectMethodDialogVM"
         Title="Select Method"
         Icon="avares://NetPrints.Editor/Assets/NetPrintsLogo.ico"
         Width="700" Height="160"
         WindowStartupLocation="CenterOwner" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SelectMethodDialog}">
+  <!-- Closes with the VM's result once it asks to (D16, ADR-0007 batch X2b). -->
+  <Interaction.Behaviors>
+    <edb:DialogCloseBehavior />
+  </Interaction.Behaviors>
   <StackPanel Margin="12" Spacing="8">
     <!-- Method chooser; the first method is preselected (PAR-59). -->
-    <ComboBox x:Name="MethodBox" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SelectMethodBox}" HorizontalAlignment="Stretch" MaxDropDownHeight="400">
+    <ComboBox x:Name="MethodBox" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SelectMethodBox}" HorizontalAlignment="Stretch" MaxDropDownHeight="400"
+              ItemsSource="{Binding Methods}" SelectedItem="{Binding SelectedMethod}">
       <ComboBox.ItemTemplate>
         <DataTemplate x:DataType="core:MethodSpecifier">
           <TextBlock Text="{Binding Converter={x:Static edsearch:MethodSpecifierConverter.Instance}}" />
@@ -18,6 +26,6 @@
       </ComboBox.ItemTemplate>
     </ComboBox>
     <Button x:Name="SelectButton" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SelectMethodButton}" Content="Select" HorizontalAlignment="Right" MinWidth="80" IsDefault="True"
-            Click="OnSelectClicked" />
+            Command="{Binding SelectCommand}" />
   </StackPanel>
 </Window>

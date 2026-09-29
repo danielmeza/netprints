@@ -6,7 +6,6 @@
     <TargetFramework>net10.0</TargetFramework>
     <OutputType>Exe</OutputType>
     <ImplicitUsings>enable</ImplicitUsings>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <WarningsAsErrors>$(WarningsAsErrors);xUnit1051</WarningsAsErrors>
     <!-- Without NETPRINTS_E2E=1 every test is skipped, which is exit code 8 ("zero tests ran").
@@ -18,6 +17,10 @@
   <ItemGroup>
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" />
+    <!-- Transitively pulled in via NetPrints.Testing.Ui -> NetPrints.Editor -> NetPrints.Workspace;
+         ExcludeAssets/PrivateAssets satisfies MSBuildLocator's own MSBL001 guard (research K10) here too. -->
+    <PackageReference Include="Microsoft.Build" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Build.Framework" ExcludeAssets="runtime" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
@@ -25,6 +28,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\NetPrints.Testing\NetPrints.Testing.csproj" />
     <ProjectReference Include="..\NetPrints.Testing.Ui\NetPrints.Testing.Ui.csproj" />
     <!-- Built first; started as a separate process from its own output folder. -->
     <ProjectReference Include="..\..\src\NetPrints.Desktop\NetPrints.Desktop.csproj" ReferenceOutputAssembly="false" />
@@ -39,5 +43,7 @@
 
   <ItemGroup>
     <None Include="../../samples/**" CopyToOutputDirectory="PreserveNewest" LinkBase="samples" />
+    <!-- Parallelization settings for the worker pool (batch D2); see docs/adr/0006. -->
+    <None Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

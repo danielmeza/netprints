@@ -29,7 +29,7 @@
       </Grid>
 
       <ScrollViewer Grid.Row="3" Margin="5,0,5,5" VerticalScrollBarVisibility="Auto">
-        <ItemsControl x:Name="ClassList" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MainClassList}" ItemsSource="{Binding Project.Classes}">
+        <ItemsControl x:Name="ClassList" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MainClassList}" ItemsSource="{Binding Classes}">
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="core:ClassGraph">
               <Grid ColumnDefinitions="*,Auto">
@@ -65,26 +65,28 @@
         <!-- Settings pane (PAR-07) -->
         <StackPanel x:Name="SettingsPane" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MainSettingsPane}" IsVisible="{Binding IsSettingsPaneOpen}" Spacing="4">
           <TextBlock Classes="header" Text="Settings" />
-          <Grid ColumnDefinitions="Auto,*" ToolTip.Tip="What to output on compilation.">
-            <TextBlock Text="Output" VerticalAlignment="Center" Margin="4" />
-            <ComboBox AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MainOutputChooser}" Grid.Column="1" Margin="4" HorizontalAlignment="Stretch"
-                      IsEnabled="{Binding IsProjectOpen}"
-                      ItemsSource="{Binding CompilationOutputs}"
-                      SelectedItem="{Binding CompilationOutput}" />
-          </Grid>
           <Grid ColumnDefinitions="Auto,*" ToolTip.Tip="Type of binary to output.">
             <TextBlock Text="Binary type" VerticalAlignment="Center" Margin="4" />
-            <ComboBox AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MainBinaryTypeChooser}" Grid.Column="1" Margin="4" HorizontalAlignment="Stretch"
+            <!-- OneWay (R2-10, D10): selecting an item invokes SetOutputTypeCommand instead of a
+                 property setter kicking off an untracked async edit; a failed edit's OnPropertyChanged
+                 re-pulls the actual value back into the box. -->
+            <ComboBox x:Name="BinaryTypeChooser" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MainBinaryTypeChooser}" Grid.Column="1" Margin="4" HorizontalAlignment="Stretch"
                       IsEnabled="{Binding IsProjectOpen}"
                       ItemsSource="{Binding BinaryTypes}"
-                      SelectedItem="{Binding OutputBinaryType}" />
+                      SelectedItem="{Binding OutputBinaryType, Mode=OneWay}">
+              <Interaction.Behaviors>
+                <EventTriggerBehavior EventName="SelectionChanged">
+                  <InvokeCommandAction Command="{Binding SetOutputTypeCommand}" CommandParameter="{Binding #BinaryTypeChooser.SelectedItem}" />
+                </EventTriggerBehavior>
+              </Interaction.Behaviors>
+            </ComboBox>
           </Grid>
         </StackPanel>
       </Panel>
     </Border>
 
     <!-- Progress overlay while a project loads (PAR-04) -->
-    <Border x:Name="BusyOverlay" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MainBusyOverlay}" IsVisible="{Binding IsBusy}" Background="#AA000000">
+    <Border x:Name="BusyOverlay" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MainBusyOverlay}" IsVisible="{Binding IsBusy}" Background="{DynamicResource BusyOverlay.Background}">
       <StackPanel VerticalAlignment="Center" HorizontalAlignment="Stretch" Margin="40" Spacing="8">
         <TextBlock Text="{Binding BusyTitle}" FontSize="24" HorizontalAlignment="Center" />
         <TextBlock Text="{Binding BusyMessage}" HorizontalAlignment="Center" TextTrimming="CharacterEllipsis" />

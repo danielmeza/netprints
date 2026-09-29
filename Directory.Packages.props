@@ -7,11 +7,25 @@
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
   </PropertyGroup>
 
+  <ItemGroup Label="Versioning">
+    <!-- Every project's version comes from the nearest `v*` git tag (release contract §1). -->
+    <GlobalPackageReference Include="MinVer" Version="8.0.0" />
+  </ItemGroup>
+
   <ItemGroup Label="Core and reflection">
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.9.0" />
-    <!-- Core only; removed in P1. -->
-    <PackageVersion Include="Fody" Version="6.9.3" />
-    <PackageVersion Include="PropertyChanged.Fody" Version="4.1.0" />
+  </ItemGroup>
+
+  <!-- Analyzer-only packages (ADR-0003), referenced repo-wide from Directory.Build.props. A curated
+       rule set from each is `error` in src/**.cs; every other rule they ship is `suggestion`
+       (.editorconfig), so no rule from these packages fails the build by surprise. -->
+  <ItemGroup Label="Analyzers">
+    <PackageVersion Include="SonarAnalyzer.CSharp" Version="10.34.0.3385" />
+    <PackageVersion Include="IDisposableAnalyzers" Version="4.0.8" />
+    <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="18.7.23" />
+    <!-- RS0030 (ADR-0003 follow-up): bans sync-over-async and DateTime.Now/Thread.Sleep APIs no
+         CA/VSTHRD/Sonar rule targets. src/Directory.Build.props only, so tests/ is unaffected. -->
+    <PackageVersion Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="5.6.0" />
   </ItemGroup>
 
   <ItemGroup Label="CLI">
@@ -31,6 +45,29 @@
     <!-- Used directly by the search list; the version DynamicData 9.4.33 is built against. -->
     <PackageVersion Include="System.Reactive" Version="6.1.0" />
     <PackageVersion Include="Material.Icons.Avalonia" Version="3.0.2" />
+    <!-- P1 code view (research §3, R16). -->
+    <PackageVersion Include="Avalonia.AvaloniaEdit" Version="12.0.0" />
+    <PackageVersion Include="AvaloniaEdit.TextMate" Version="12.0.0" />
+    <!-- ADR-0007: prebuilt behaviors before code-behind. Not the "Xaml.Behaviors.Avalonia" meta
+         package (id stops at 11.3 on nuget.org; the per-package 12.x line is what targets Avalonia 12) -
+         only the three packages NetPrints actually uses. Xaml.Behaviors.Interactivity comes in
+         transitively as their shared dependency. -->
+    <PackageVersion Include="Xaml.Behaviors.Interactions" Version="12.0.7" />
+    <PackageVersion Include="Xaml.Behaviors.Interactions.Custom" Version="12.0.7" />
+    <PackageVersion Include="Xaml.Behaviors.Interactions.DragAndDrop" Version="12.0.7" />
+  </ItemGroup>
+
+  <ItemGroup Label="Logging">
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="10.0.12" />
+  </ItemGroup>
+
+  <ItemGroup Label="Workspace (MSBuild evaluation, project system)">
+    <PackageVersion Include="Microsoft.Build.Locator" Version="1.11.2" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="5.9.0" />
+    <PackageVersion Include="Microsoft.Build" Version="18.0.2" />
+    <PackageVersion Include="Microsoft.Build.Framework" Version="18.0.2" />
   </ItemGroup>
 
   <ItemGroup Label="Tests">
@@ -44,6 +81,8 @@
          assembly: its test framework replaces Avalonia's and every [AvaloniaFact] fails. -->
     <PackageVersion Include="Xunit.DependencyInjection" Version="11.3.2" />
     <PackageVersion Include="Microsoft.Reactive.Testing" Version="6.1.0" />
+    <!-- FakeTimeProvider: deterministic clock for SnowflakeIdGenerator tests (data-model.md §2). -->
+    <PackageVersion Include="Microsoft.Extensions.TimeProvider.Testing" Version="10.10.0" />
     <!-- Headless UI tests: Skia without the libfontconfig dependency, so the tests run on a
          machine with only the .NET SDK (SC-001). Must match the SkiaSharp version of Avalonia. -->
     <PackageVersion Include="SkiaSharp" Version="3.119.4" />
@@ -59,5 +98,7 @@
          (IOutputDevice.DisplayAsync: MissingMethodException) — a known xunit.v3 3.2.2/MTP-v2 gap,
          not something fixable from this repo's package references alone. -->
     <PackageVersion Include="Microsoft.Testing.Extensions.CodeCoverage" Version="17.14.2" />
+    <!-- SchemaTests (R1-17): validates the committed fixtures against schemas/netpc.v1.schema.json. -->
+    <PackageVersion Include="JsonSchema.Net" Version="9.4.0" />
   </ItemGroup>
 </Project>

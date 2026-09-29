@@ -6,12 +6,37 @@
     <AssemblyName>NetPrints.Cli</AssemblyName>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <IsPackable>true</IsPackable>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>netprints</ToolCommandName>
+    <PackageId>NetPrints.Cli</PackageId>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Description>The netprints command-line tool: builds and runs NetPrints projects. Installs as `netprints`. NetPrints continues the original NetPrints by Robin Kahlow (https://github.com/RobinKa/netprints).</Description>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="CommandLineParser" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" />
+    <!-- Transitively pulled in by the NetPrints.Workspace project reference; ExcludeAssets/PrivateAssets
+         satisfies MSBuildLocator's own MSBL001 guard (research K10). -->
+    <PackageReference Include="Microsoft.Build" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Build.Framework" ExcludeAssets="runtime" PrivateAssets="all" />
+    <!-- Direct reference (roslyn#80127): MSBuildWorkspace starts BuildHost-netcore/ from the
+         application folder, and that folder is only copied for a direct PackageReference, not one
+         pulled in transitively through the NetPrints.Workspace project reference. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\NetPrints.Core\NetPrints.Core.csproj" />
+    <ProjectReference Include="..\NetPrints.Workspace\NetPrints.Workspace.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- CliBuildTests (R1-07) exercises Program.BuildAsync directly with a fake IProjectSystem. -->
+    <InternalsVisibleTo Include="NetPrints.Core.Tests" />
   </ItemGroup>
 
 </Project>

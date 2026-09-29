@@ -1,6 +1,7 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Linq;
-using System.Runtime.Serialization;
+using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Core;
 
 namespace NetPrints.Graph
@@ -8,8 +9,7 @@ namespace NetPrints.Graph
     /// <summary>
     /// Node representing a literal value.
     /// </summary>
-    [DataContract]
-    public class LiteralNode : Node
+    public partial class LiteralNode : Node
     {
         /// <summary>
         /// Output data pin for the value of this literal.
@@ -30,9 +30,16 @@ namespace NetPrints.Graph
         /// <summary>
         /// Specifier for the type of this literal.
         /// </summary>
-        [DataMember]
-        public TypeSpecifier LiteralType { get; private set; }
+        [ObservableProperty]
+        public partial TypeSpecifier LiteralType { get; private set; }
 
+        /// <summary>
+        /// Adds this node to <paramref name="graph"/> and gives it its input and output value pins,
+        /// plus a generic-argument input type pin for each of <paramref name="literalType"/>'s generic
+        /// arguments.
+        /// </summary>
+        /// <param name="graph">Graph the node belongs to.</param>
+        /// <param name="literalType">Specifier for the literal's type.</param>
         public LiteralNode(NodeGraph graph, TypeSpecifier literalType)
             : base(graph)
         {
@@ -51,9 +58,16 @@ namespace NetPrints.Graph
             UpdatePinTypes();
         }
 
-        protected override void OnInputTypeChanged(object sender, EventArgs eventArgs)
+        /// <summary>
+        /// Reconstructs the input and output value pin types from <see cref="LiteralType"/> with its
+        /// generic parameters substituted by this node's input type pins (<see cref="UpdatePinTypes"/>),
+        /// disconnecting each pin first if its type actually changes.
+        /// </summary>
+        /// <param name="sender">The node whose input type changed.</param>
+        /// <param name="eventArgs">Unused; forwarded to the base implementation.</param>
+        protected override void HandleInputTypeChanged(object? sender, EventArgs? eventArgs)
         {
-            base.OnInputTypeChanged(sender, eventArgs);
+            base.HandleInputTypeChanged(sender, eventArgs);
 
             UpdatePinTypes();
         }
@@ -66,13 +80,17 @@ namespace NetPrints.Graph
             // Set pin types
             // TODO: Check if we can leave the pins connected
 
-            if (constructedType != InputValuePin.PinType.Value)
+            // GenericsHelper.ConstructWithTypePins returns a new TypeSpecifier instance on every call,
+            // even when nothing actually changed, so compare by value (TypeSpecifier.Equals) instead of
+            // by reference: otherwise this disconnects both value pins on every GraphTypeInference.Relax
+            // pass, silently dropping connections into or out of the literal.
+            if (!constructedType.Equals(InputValuePin.PinType.Value))
             {
                 GraphUtil.DisconnectInputDataPin(InputValuePin);
                 InputValuePin.PinType.Value = constructedType;
             }
 
-            if (constructedType != ValuePin.PinType.Value)
+            if (!constructedType.Equals(ValuePin.PinType.Value))
             {
                 GraphUtil.DisconnectOutputDataPin(ValuePin);
                 ValuePin.PinType.Value = constructedType;
@@ -93,9 +111,14 @@ namespace NetPrints.Graph
             return node;
         }
 
+        /// <summary>
+        /// Returns "Literal - " followed by the value pin's resolved type's short name, or "?" if
+        /// unresolved.
+        /// </summary>
+        /// <returns>"Literal - " followed by the value pin's type's short name, or "?".</returns>
         public override string ToString()
         {
-            return $"Literal - {ValuePin.PinType.Value.ShortName}";
+            return $"Literal - {ValuePin.PinType.Value?.ShortName ?? "?"}";
         }
     }
 }

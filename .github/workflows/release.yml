@@ -1,0 +1,217 @@
+name: Release
+
+# Packs the NuGet packages and the self-contained editor archives, publishes the packages to nuget.org
+# with Trusted Publishing (OIDC, no stored API key) and creates a GitHub Release with checksums and
+# provenance attestations. Push a tag like `v1.2.3` to release. workflow_dispatch and pull requests that
+# touch the release inputs are dry runs: they build everything and publish nothing.
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+  # Dry run everything the win-x64/osx-arm64 legs (only exercised here, not in ci.yml) touch, plus
+  # the packed NuGet metadata and tool config, so a break there surfaces on a PR instead of on the
+  # first real tag push (R3-08).
+  pull_request:
+    branches: [master]
+    paths:
+      - '.github/workflows/release.yml'
+      - '.github/release.yml'
+      - '.github/release-notes.md'
+      - 'scripts/**'
+      - 'eng/**'
+      - 'Directory.Build.props'
+      - 'Directory.Build.targets'
+      - 'Directory.Packages.props'
+      - 'src/**/*.csproj'
+      - 'src/NetPrints.Desktop/**'
+      - 'src/NetPrints.Editor/**'
+      - 'src/NetPrints.Sdk/build/**'
+      - 'assets/**'
+      - 'README.md'
+      - 'global.json'
+      - 'NuGet.config'
+      - '.config/dotnet-tools.json'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  DOTNET_NOLOGO: 1
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+
+jobs:
+  pack:
+    name: Pack
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0   # MinVer needs the tags and the history
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+      - name: Version (MinVer)
+        id: ver
+        run: |
+          dotnet restore NetPrints.slnx
+          ver=$(dotnet msbuild src/NetPrints.Core/NetPrints.Core.csproj -t:MinVer -getProperty:MinVerVersion -p:Configuration=Release)
+          if [ "$GITHUB_REF_TYPE" = "tag" ] && [ "$ver" != "${GITHUB_REF_NAME#v}" ]; then
+            echo "::error::MinVer computed $ver for tag $GITHUB_REF_NAME"; exit 1
+          fi
+          echo "version=$ver" >> "$GITHUB_OUTPUT"
+      - name: Pack
+        run: dotnet pack NetPrints.slnx -c Release --no-restore -o artifacts/packages
+      - name: Verify packages, tool and SDK
+        run: scripts/verify-packages.sh artifacts/packages "${{ steps.ver.outputs.version }}"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: nupkg
+          path: |
+            artifacts/packages/*.nupkg
+            artifacts/packages/*.snupkg
+          if-no-files-found: error
+
+  desktop:
+    name: Editor (${{ matrix.rid }})
+    needs: pack
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - { os: ubuntu-latest, rid: linux-x64, smoke: true }
+          - { os: ubuntu-latest, rid: win-x64, smoke: false }
+          - { os: macos-latest, rid: osx-arm64, smoke: true }   # macOS signs the apphost ad hoc
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+      - name: Publish (self-contained folder, not single-file, not trimmed)
+        run: >
+          dotnet publish src/NetPrints.Desktop -c Release -r ${{ matrix.rid }} --self-contained
+          -p:PublishSingleFile=false -p:PublishTrimmed=false -o out/${{ matrix.rid }}
+      - name: Smoke (headless project check)
+        if: matrix.smoke
+        run: scripts/smoke-desktop.sh out/${{ matrix.rid }}
+      - name: Archive
+        run: scripts/archive-desktop.sh out/${{ matrix.rid }} "${{ needs.pack.outputs.version }}" ${{ matrix.rid }}
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: desktop-${{ matrix.rid }}
+          path: artifacts/desktop/*
+          if-no-files-found: error
+
+  assets:
+    name: Checksums
+    needs: [pack, desktop]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          path: dist
+          merge-multiple: true
+      - name: SHA256SUMS.txt
+        working-directory: dist
+        run: |
+          sha256sum -- *.nupkg *.snupkg *.tar.gz *.zip > SHA256SUMS.txt
+          sha256sum -c SHA256SUMS.txt
+          cat SHA256SUMS.txt
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: release-assets
+          path: dist/*
+          if-no-files-found: error
+
+  publish-nuget:
+    name: Publish to NuGet.org
+    needs: [pack, assets]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Only for real version tags (v*); never for workflow_dispatch or pull requests.
+    if: startsWith(github.ref, 'refs/tags/v')
+    environment: release
+    permissions:
+      id-token: write   # GitHub OIDC token for NuGet Trusted Publishing
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: global.json
+          sparse-checkout-cone-mode: false
+          persist-credentials: false
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: nupkg
+          path: packages
+      - name: Check the one-time setup
+        env:
+          NUGET_USER: ${{ secrets.NUGET_USER }}
+        run: |
+          if [ -z "$NUGET_USER" ]; then
+            echo "::error::Secret NUGET_USER is not set (release contract §11, step 1)"; exit 1
+          fi
+      - name: NuGet login (OIDC -> short-lived API key)
+        id: login
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
+        with:
+          user: ${{ secrets.NUGET_USER }}   # nuget.org profile name, not the email
+      # Pushing *.nupkg also pushes each matching *.snupkg.
+      - name: Push packages
+        run: >
+          dotnet nuget push "packages/*.nupkg"
+          --api-key ${{ steps.login.outputs.NUGET_API_KEY }}
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate
+
+  github-release:
+    name: GitHub Release
+    # Gated on publish-nuget (not just pack/assets): a failed NuGet push must not still produce a
+    # public Release. publish-nuget already requires the `release` environment's approval, so this
+    # job inherits that gate transitively instead of prompting for a second approval (R3-09). If the
+    # NuGet push does fail, re-run it — it's safe under --skip-duplicate — then re-run this job.
+    needs: [assets, publish-nuget]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
+      artifact-metadata: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: .github
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: release-assets
+          path: dist
+      - uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
+        with:
+          subject-path: |
+            dist/*.nupkg
+            dist/*.tar.gz
+            dist/*.zip
+      - uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
+        with:
+          files: dist/*
+          body_path: .github/release-notes.md
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
+          fail_on_unmatched_files: true

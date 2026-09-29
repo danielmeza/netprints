@@ -20,17 +20,27 @@
     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
       <ItemsControl x:Name="ReferenceList" ItemsSource="{Binding References}">
         <ItemsControl.ItemTemplate>
-          <DataTemplate x:DataType="edreferences:CompilationReferenceVM">
+          <DataTemplate x:DataType="edreferences:DeclaredReferenceVM">
             <Grid ColumnDefinitions="*,150,Auto" Margin="2" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ReferenceRow}" AutomationProperties.Name="{Binding DisplayText}">
               <TextBlock Text="{Binding DisplayText}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
                          FontSize="14" ToolTip.Tip="{Binding DisplayText}" />
-              <ToggleSwitch Grid.Column="1" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ReferenceInclude}" IsChecked="{Binding IncludeInCompilation}"
+              <!-- OneWay (R2-10, D10): toggling invokes SetIncludedCommand instead of a property setter
+                   kicking off an untracked async edit. The parameter is the switch's own clicked state
+                   (F-06), not the row's last-applied state, so a stale switch cannot invert the next click. -->
+              <ToggleSwitch x:Name="IncludeToggle" Grid.Column="1" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ReferenceInclude}" IsChecked="{Binding IncludeInCompilation, Mode=OneWay}"
                             IsEnabled="{Binding ShowIncludeInCompilation}"
                             OnContent="Include" OffContent="Exclude"
                             ToolTip.Tip="Whether to include the reference as a source in the compilation process."
-                            ToolTip.ShowOnDisabled="True" VerticalAlignment="Center" />
+                            ToolTip.ShowOnDisabled="True" VerticalAlignment="Center">
+                <Interaction.Behaviors>
+                  <EventTriggerBehavior EventName="IsCheckedChanged">
+                    <InvokeCommandAction Command="{Binding SetIncludedCommand}"
+                                          CommandParameter="{Binding #IncludeToggle.IsChecked}" />
+                  </EventTriggerBehavior>
+                </Interaction.Behaviors>
+              </ToggleSwitch>
               <Button Grid.Column="2" Classes="icon" Width="32" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ReferenceRemove}" Height="32" CornerRadius="16"
-                      ToolTip.Tip="Remove this reference"
+                      ToolTip.Tip="Remove this reference" AutomationProperties.Name="Remove this reference"
                       Command="{Binding $parent[ItemsControl].((edreferences:ReferenceListVM)DataContext).RemoveCommand}"
                       CommandParameter="{Binding}">
                 <mi:MaterialIcon Kind="Minus" />
@@ -41,6 +51,13 @@
       </ItemsControl>
     </ScrollViewer>
 
-    <Button Grid.Row="2" x:Name="CloseButton" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ReferencesCloseButton}" Classes="flat" Content="Close" Margin="5,5,5,10" Click="OnCloseClicked" />
+    <!-- Closes the dialog with no result (D11, ADR-0007 batch X2b). -->
+    <Button Grid.Row="2" x:Name="CloseButton" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ReferencesCloseButton}" Classes="flat" Content="Close" Margin="5,5,5,10">
+      <Interaction.Behaviors>
+        <ButtonClickEventTriggerBehavior>
+          <CloseWindowAction />
+        </ButtonClickEventTriggerBehavior>
+      </Interaction.Behaviors>
+    </Button>
   </Grid>
 </Window>

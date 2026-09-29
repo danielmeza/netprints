@@ -2,8 +2,6 @@
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
     <OutputType>Exe</OutputType>
-    <Nullable>disable</Nullable>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <AssemblyName>NetPrints.Core.Tests</AssemblyName>
     <!-- Every async call in a test must observe TestContext.Current.CancellationToken. -->
     <WarningsAsErrors>$(WarningsAsErrors);xUnit1051</WarningsAsErrors>
@@ -11,14 +9,47 @@
 
   <ItemGroup>
     <PackageReference Include="xunit.v3" />
+    <!-- FileSystemDocumentStoreTests: a TestScheduler to drive Changes' debounce deterministically. -->
+    <PackageReference Include="Microsoft.Reactive.Testing" />
+    <!-- SnowflakeIdGeneratorTests: a deterministic, controllable clock. -->
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
+    <!-- Referencing NetPrints.Workspace pulls in Microsoft.CodeAnalysis.Workspaces.MSBuild, whose own
+         dependency on Microsoft.Build.Framework carries no asset exclusion of its own (MSBuildLocator's
+         MSBL001, research K10): pin and exclude both here too, exactly like NetPrints.Workspace.csproj. -->
+    <PackageReference Include="Microsoft.Build" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Build.Framework" ExcludeAssets="runtime" PrivateAssets="all" />
+    <!-- SchemaTests (R1-17): validates the AllNodes/HelloWorld fixtures against the committed schema. -->
+    <PackageReference Include="JsonSchema.Net" />
   </ItemGroup>
 
   <ItemGroup>
     <None Include="../../samples/**" CopyToOutputDirectory="PreserveNewest" LinkBase="samples" />
+    <!-- Golden/*.cs are recorded C# text, not sources to compile. -->
+    <Compile Remove="Fixtures/Golden/**/*.cs" />
+    <None Include="Fixtures/Golden/**/*.cs" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Fixtures/**" CopyToOutputDirectory="PreserveNewest" />
+    <!-- The migrated AllNodes/HelloWorld fixtures' own .csproj files (T054a): excluded from the
+         default None glob above by $(DefaultExcludesInProjectFolder) ("**/*.*proj"), so each needs
+         its own explicit item; kept out of Compile like every other fixture .cs file (none exist yet,
+         but ExternalSources/**/*.cs never should either, research.md R21). -->
+    <Compile Remove="Fixtures/**/*.cs" />
+    <None Include="Fixtures/AllNodes/AllNodes.csproj" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Fixtures/HelloWorld/HelloWorld.csproj" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\NetPrints.Core\NetPrints.Core.csproj" />
+    <ProjectReference Include="..\..\src\NetPrints.Extensibility\NetPrints.Extensibility.csproj" />
+    <ProjectReference Include="..\..\src\NetPrints.Serialization\NetPrints.Serialization.csproj" />
+    <ProjectReference Include="..\..\src\NetPrints.Generation\NetPrints.Generation.csproj" />
+    <!-- GenerateRequestFileTests (R1-20) calls NetPrints.Generator.Program.Main directly. -->
+    <ProjectReference Include="..\..\src\NetPrints.Generator\NetPrints.Generator.csproj" />
+    <ProjectReference Include="..\..\src\NetPrints.Workspace\NetPrints.Workspace.csproj" />
+    <!-- CliBuildTests (R1-07) exercises NetPrintsCLI.Program.BuildAsync directly. -->
+    <ProjectReference Include="..\..\src\NetPrints.Cli\NetPrints.Cli.csproj" />
+    <ProjectReference Include="..\NetPrints.Testing\NetPrints.Testing.csproj" />
+    <!-- Built first, never referenced: the loader and generator tests load it from its own output folder. -->
+    <ProjectReference Include="..\NetPrints.TestExtension\NetPrints.TestExtension.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
 </Project>

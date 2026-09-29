@@ -15,8 +15,17 @@ namespace NetPrints.Editor.Graph.Pins;
 /// </summary>
 public sealed partial class NodePinVM : ObservableObject, IDisposable
 {
+    /// <summary>Divisor for midpoint calculations.</summary>
+    private const double MidpointDivisor = 2;
+
     private readonly INotifyPropertyChanged pinNotifier;
 
+    /// <summary>
+    /// Wraps <paramref name="pin"/>: subscribes to its property-changed event, its node's input type
+    /// change event, and its own connection-changed event (whichever applies to its concrete pin type).
+    /// </summary>
+    /// <param name="pin">Pin to wrap.</param>
+    /// <param name="node">View model of the node the pin belongs to.</param>
     public NodePinVM(NodePin pin, NodeVM node)
     {
         Pin = pin;
@@ -43,11 +52,13 @@ public sealed partial class NodePinVM : ObservableObject, IDisposable
     /// <summary>Raised when the model connection of this pin changed.</summary>
     public event EventHandler? ConnectionChanged;
 
+    /// <summary>The wrapped model pin.</summary>
     public NodePin Pin { get; }
 
     /// <summary>The node view model this pin belongs to.</summary>
     public NodeVM Node { get; }
 
+    /// <summary>Exec, data or type, derived from the wrapped pin's concrete type.</summary>
     public PinKind Kind => Pin switch
     {
         NodeExecPin => PinKind.Exec,
@@ -55,8 +66,10 @@ public sealed partial class NodePinVM : ObservableObject, IDisposable
         _ => PinKind.Data,
     };
 
+    /// <summary>Whether the wrapped pin is an input pin.</summary>
     public bool IsInput => Pin is NodeInputDataPin or NodeInputExecPin or NodeInputTypePin;
 
+    /// <summary>Whether the wrapped pin is an output pin.</summary>
     public bool IsOutput => !IsInput;
 
     /// <summary>Stable identity of the pin within its node for UI automation: "in:&lt;name&gt;" or "out:&lt;name&gt;".</summary>
@@ -90,8 +103,10 @@ public sealed partial class NodePinVM : ObservableObject, IDisposable
     /// <summary>Unconnected pins are drawn dimmed (60 %, PAR-43).</summary>
     public bool IsDimmed => !IsConnected;
 
+    /// <summary>Whether the wrapped pin belongs to a <see cref="RerouteNode"/> (drawn without a label).</summary>
     public bool IsRerouteNodePin => Pin.Node is RerouteNode;
 
+    /// <summary>The wrapped pin's display string (<c>Pin.ToString()</c>).</summary>
     public string DisplayName => Pin.ToString();
 
     /// <summary>Editable for method entry outputs and return node inputs (PAR-45).</summary>
@@ -99,10 +114,13 @@ public sealed partial class NodePinVM : ObservableObject, IDisposable
         (Pin.Node is MethodEntryNode && Pin.Node.OutputDataPins.Contains(Pin))
         || (Pin.Node is ReturnNode && Pin.Node.InputDataPins.Contains(Pin));
 
+    /// <summary>Whether to show the pin's name as a plain label (not a reroute node pin, not editable).</summary>
     public bool ShowLabel => !IsRerouteNodePin && !IsNameEditable;
 
+    /// <summary>Whether to show the pin's name as an editable text box (see <see cref="IsNameEditable"/>).</summary>
     public bool ShowEditableName => !IsRerouteNodePin && IsNameEditable;
 
+    /// <summary>The wrapped pin's name. Setting it also refreshes <see cref="DisplayName"/>.</summary>
     public string Name
     {
         get => Pin.Name;
@@ -117,6 +135,11 @@ public sealed partial class NodePinVM : ObservableObject, IDisposable
         }
     }
 
+    /// <summary>
+    /// Tooltip text: for a data pin, its type and name, its explicit default value if it has one, and
+    /// its reflected parameter/return documentation if loaded; a fixed description for an exec pin
+    /// (the "Catch" pin also explains what it does); otherwise the pin's name.
+    /// </summary>
     public string ToolTip
     {
         get
@@ -196,10 +219,16 @@ public sealed partial class NodePinVM : ObservableObject, IDisposable
     public bool ShowUnconnectedValue => UsesUnconnectedValue
         && !(PinTypeSpecifier is { } t && (t.IsEnum || t == TypeSpecifier.FromType<bool>()));
 
+    /// <summary>Enum chooser for an unconnected input whose type is an enum.</summary>
     public bool ShowEnumValue => UsesUnconnectedValue && PinTypeSpecifier is { IsEnum: true };
 
+    /// <summary>Checkbox for an unconnected input typed <see cref="bool"/>.</summary>
     public bool ShowBooleanValue => UsesUnconnectedValue && PinTypeSpecifier == TypeSpecifier.FromType<bool>();
 
+    /// <summary>
+    /// The enum member names for an unconnected input data pin whose type is an enum and whose host's
+    /// reflection is loaded; otherwise <see langword="null"/>.
+    /// </summary>
     public IEnumerable<string>? PossibleEnumNames =>
         Pin is NodeInputDataPin && PinTypeSpecifier is { IsEnum: true } typeSpecifier && Node.Graph.Context.Reflection.IsLoaded
             ? Node.Graph.Context.Reflection.Provider.GetEnumNames(typeSpecifier)
@@ -212,6 +241,13 @@ public sealed partial class NodePinVM : ObservableObject, IDisposable
         OnPropertyChanged(nameof(ToolTip));
     }
 
+    /// <summary>
+    /// The pin's unconnected value (only meaningful for an input data pin). Setting it converts the
+    /// value to the pin's runtime type when known and not an enum (silently ignoring a conversion that
+    /// throws <see cref="InvalidCastException"/>, <see cref="FormatException"/> or
+    /// <see cref="OverflowException"/>), then raises the dependent properties. <see langword="null"/>
+    /// for anything but an input data pin.
+    /// </summary>
     public object? UnconnectedValue
     {
         get => (Pin as NodeInputDataPin)?.UnconnectedValue;
@@ -251,12 +287,14 @@ public sealed partial class NodePinVM : ObservableObject, IDisposable
         set => UnconnectedValue = value;
     }
 
+    /// <summary><see cref="UnconnectedValue"/> as a <see cref="bool"/>, for the checkbox editor.</summary>
     public bool UnconnectedBool
     {
         get => UnconnectedValue is true;
         set => UnconnectedValue = value;
     }
 
+    /// <summary><see cref="UnconnectedValue"/> as an enum member name, for the enum chooser.</summary>
     public string? UnconnectedEnumName
     {
         get => UnconnectedValue as string;
@@ -350,8 +388,8 @@ public sealed partial class NodePinVM : ObservableObject, IDisposable
                     // AddRerouteNode reconnects the pin, so remember the source first.
                     var source = dataPin.IncomingPin;
                     var reroute = GraphUtil.AddRerouteNode(dataPin);
-                    reroute.PositionX = (Pin.Node.PositionX + source.Node.PositionX) / 2;
-                    reroute.PositionY = (Pin.Node.PositionY + source.Node.PositionY) / 2;
+                    reroute.PositionX = Midpoint(Pin.Node.PositionX, source.Node.PositionX);
+                    reroute.PositionY = Midpoint(Pin.Node.PositionY, source.Node.PositionY);
                     break;
                 }
             case NodeOutputExecPin { OutgoingPin: not null } execPin:
@@ -359,22 +397,25 @@ public sealed partial class NodePinVM : ObservableObject, IDisposable
                     // AddRerouteNode reconnects the pin, so remember the target first.
                     var target = execPin.OutgoingPin;
                     var reroute = GraphUtil.AddRerouteNode(execPin);
-                    reroute.PositionX = (Pin.Node.PositionX + target.Node.PositionX) / 2;
-                    reroute.PositionY = (Pin.Node.PositionY + target.Node.PositionY) / 2;
+                    reroute.PositionX = Midpoint(Pin.Node.PositionX, target.Node.PositionX);
+                    reroute.PositionY = Midpoint(Pin.Node.PositionY, target.Node.PositionY);
                     break;
                 }
             case NodeInputTypePin { IncomingPin: not null } typePin:
                 {
                     var source = typePin.IncomingPin;
                     var reroute = GraphUtil.AddRerouteNode(typePin);
-                    reroute.PositionX = (Pin.Node.PositionX + source.Node.PositionX) / 2;
-                    reroute.PositionY = (Pin.Node.PositionY + source.Node.PositionY) / 2;
+                    reroute.PositionX = Midpoint(Pin.Node.PositionX, source.Node.PositionX);
+                    reroute.PositionY = Midpoint(Pin.Node.PositionY, source.Node.PositionY);
                     break;
                 }
             default:
                 throw new InvalidOperationException("Can't add a reroute node for this pin.");
         }
     }
+
+    /// <summary>Midpoint between two node positions, for placing a reroute node between its neighbors.</summary>
+    private static double Midpoint(double a, double b) => (a + b) / MidpointDivisor;
 
     /// <summary>Raises the connection-dependent properties after the model connections changed.</summary>
     internal void RefreshConnectionState()
@@ -411,15 +452,16 @@ public sealed partial class NodePinVM : ObservableObject, IDisposable
         OnPropertyChanged(nameof(ToolTip));
     }
 
-    private void OnInputDataPinIncomingPinChanged(NodeInputDataPin pin, NodeOutputDataPin oldPin, NodeOutputDataPin newPin) =>
+    private void OnInputDataPinIncomingPinChanged(NodeInputDataPin pin, NodeOutputDataPin? oldPin, NodeOutputDataPin? newPin) =>
         ConnectionChanged?.Invoke(this, EventArgs.Empty);
 
-    private void OnOutputExecPinOutgoingPinChanged(NodeOutputExecPin pin, NodeInputExecPin oldPin, NodeInputExecPin newPin) =>
+    private void OnOutputExecPinOutgoingPinChanged(NodeOutputExecPin pin, NodeInputExecPin? oldPin, NodeInputExecPin? newPin) =>
         ConnectionChanged?.Invoke(this, EventArgs.Empty);
 
-    private void OnInputTypePinIncomingPinChanged(NodeInputTypePin pin, NodeOutputTypePin oldPin, NodeOutputTypePin newPin) =>
+    private void OnInputTypePinIncomingPinChanged(NodeInputTypePin pin, NodeOutputTypePin? oldPin, NodeOutputTypePin? newPin) =>
         ConnectionChanged?.Invoke(this, EventArgs.Empty);
 
+    /// <summary>Unsubscribes from the wrapped pin's and node's events.</summary>
     public void Dispose()
     {
         pinNotifier.PropertyChanged -= OnPinPropertyChanged;

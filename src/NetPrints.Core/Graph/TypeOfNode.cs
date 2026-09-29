@@ -1,13 +1,13 @@
-﻿using System;
-using System.Runtime.Serialization;
+﻿#nullable enable
+using System;
 using NetPrints.Core;
 
 namespace NetPrints.Graph
 {
     /// <summary>
-    /// Node representing a literal value.
+    /// Node representing a C# <c>typeof</c> expression: outputs the runtime <see cref="Type"/> for its
+    /// input type pin.
     /// </summary>
-    [DataContract]
     public class TypeOfNode : Node
     {
         /// <summary>
@@ -26,6 +26,11 @@ namespace NetPrints.Graph
             get { return InputTypePins[0]; }
         }
 
+        /// <summary>
+        /// Adds this node to <paramref name="graph"/> and gives it its input type pin and its
+        /// <see cref="Type"/>-valued output pin.
+        /// </summary>
+        /// <param name="graph">Graph the node belongs to.</param>
         public TypeOfNode(NodeGraph graph)
             : base(graph)
         {
@@ -33,6 +38,10 @@ namespace NetPrints.Graph
             AddOutputDataPin("Type", TypeSpecifier.FromType<Type>());
         }
 
+        /// <summary>
+        /// Returns "Type Of".
+        /// </summary>
+        /// <returns>"Type Of".</returns>
         public override string ToString()
         {
             return $"Type Of";

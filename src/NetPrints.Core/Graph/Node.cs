@@ -1,76 +1,45 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Diagnostics;
 using System.Linq;
-using System.Runtime.Serialization;
+using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Core;
-using PropertyChanged;
 
 namespace NetPrints.Graph
 {
     /// <summary>
     /// Abstract base class for all node types.
     /// </summary>
-    [DataContract]
-    [KnownType(typeof(CallMethodNode))]
-    [KnownType(typeof(MethodEntryNode))]
-    [KnownType(typeof(ConstructorEntryNode))]
-    [KnownType(typeof(ForLoopNode))]
-    [KnownType(typeof(IfElseNode))]
-    [KnownType(typeof(LiteralNode))]
-    [KnownType(typeof(ReturnNode))]
-    [KnownType(typeof(ClassReturnNode))]
-    [KnownType(typeof(VariableGetterNode))]
-    [KnownType(typeof(VariableSetterNode))]
-    [KnownType(typeof(ConstructorNode))]
-    [KnownType(typeof(MakeDelegateNode))]
-    [KnownType(typeof(TypeOfNode))]
-    [KnownType(typeof(ExplicitCastNode))]
-    [KnownType(typeof(RerouteNode))]
-    [KnownType(typeof(MakeArrayNode))]
-    [KnownType(typeof(TypeNode))]
-    [KnownType(typeof(MakeArrayTypeNode))]
-    [KnownType(typeof(ThrowNode))]
-    [KnownType(typeof(AwaitNode))]
-    [KnownType(typeof(TernaryNode))]
-    [KnownType(typeof(TypeReturnNode))]
-    [KnownType(typeof(DefaultNode))]
-    [AddINotifyPropertyChangedInterface]
-    public abstract class Node
+    public abstract partial class Node : ModelObject
     {
         /// <summary>
         /// Input data pins of this node.
         /// </summary>
-        [DataMember]
         public ObservableRangeCollection<NodeInputDataPin> InputDataPins { get; private set; } = new ObservableRangeCollection<NodeInputDataPin>();
 
         /// <summary>
         /// Output data pins of this node.
         /// </summary>
-        [DataMember]
         public ObservableRangeCollection<NodeOutputDataPin> OutputDataPins { get; private set; } = new ObservableRangeCollection<NodeOutputDataPin>();
 
         /// <summary>
         /// Input execution pins of this node.
         /// </summary>
-        [DataMember]
         public ObservableRangeCollection<NodeInputExecPin> InputExecPins { get; private set; } = new ObservableRangeCollection<NodeInputExecPin>();
 
         /// <summary>
         /// Output execution pins of this node.
         /// </summary>
-        [DataMember]
         public ObservableRangeCollection<NodeOutputExecPin> OutputExecPins { get; private set; } = new ObservableRangeCollection<NodeOutputExecPin>();
 
         /// <summary>
         /// Input type pins of this node.
         /// </summary>
-        [DataMember]
         public ObservableRangeCollection<NodeInputTypePin> InputTypePins { get; private set; } = new ObservableRangeCollection<NodeInputTypePin>();
 
         /// <summary>
         /// Output type pins of this node.
         /// </summary>
-        [DataMember]
         public ObservableRangeCollection<NodeOutputTypePin> OutputTypePins { get; private set; } = new ObservableRangeCollection<NodeOutputTypePin>();
 
         /// <summary>
@@ -84,46 +53,30 @@ namespace NetPrints.Graph
         /// <summary>
         /// Called when this node's position changes.
         /// </summary>
-        public event NodePositionChangedDelegate OnPositionChanged;
+        public event NodePositionChangedDelegate? OnPositionChanged;
 
         /// <summary>
         /// Visual position x of this node.
         /// Triggers a call to OnPositionChange when set.
         /// </summary>
-        [DataMember]
-        public double PositionX
-        {
-            get => positionX;
-            set
-            {
-                positionX = value;
-                OnPositionChanged?.Invoke(this, positionX, positionY);
-            }
-        }
+        [ObservableProperty]
+        public partial double PositionX { get; set; }
 
         /// <summary>
         /// Visual position y of this node.
         /// Triggers a call to OnPositionChange when set.
         /// </summary>
-        [DataMember]
-        public double PositionY
-        {
-            get => positionY;
-            set
-            {
-                positionY = value;
-                OnPositionChanged?.Invoke(this, positionX, positionY);
-            }
-        }
+        [ObservableProperty]
+        public partial double PositionY { get; set; }
 
-        private double positionX;
-        private double positionY;
+        partial void OnPositionXChanged(double oldValue, double newValue) => OnPositionChanged?.Invoke(this, PositionX, PositionY);
+        partial void OnPositionYChanged(double oldValue, double newValue) => OnPositionChanged?.Invoke(this, PositionX, PositionY);
 
         /// <summary>
         /// Name of this node.
         /// </summary>
-        [DataMember]
-        public string Name { get; set; }
+        [ObservableProperty]
+        public partial string Name { get; set; }
 
         /// <summary>
         /// Whether this is a pure node (ie. one without any execution pins).
@@ -146,17 +99,29 @@ namespace NetPrints.Graph
                 if (IsPure != value)
                 {
                     SetPurity(value);
+                    OnPropertyChanged(nameof(IsPure));
                 }
 
                 Debug.Assert(value == IsPure, "Purity could not be set correctly.");
             }
         }
 
+        /// <summary>
+        /// Whether <see cref="IsPure"/> can be set on this node type. <see langword="false"/> by
+        /// default; a node type that can toggle purity (adding or removing its exec pins) overrides
+        /// this to <see langword="true"/> together with <see cref="SetPurity"/>.
+        /// </summary>
         public virtual bool CanSetPure
         {
             get => false;
         }
 
+        /// <summary>
+        /// Applies a purity change requested through <see cref="IsPure"/>'s setter (adds or removes
+        /// this node's exec pins as needed). The base implementation does nothing; override together
+        /// with <see cref="CanSetPure"/> returning <see langword="true"/>.
+        /// </summary>
+        /// <param name="pure">The new purity value.</param>
         protected virtual void SetPurity(bool pure)
         {
         }
@@ -165,7 +130,7 @@ namespace NetPrints.Graph
         /// Method graph this node is contained in.
         /// Null if the graph is not a MethodGraph.
         /// </summary>
-        public MethodGraph MethodGraph
+        public MethodGraph? MethodGraph
         {
             get => Graph as MethodGraph;
         }
@@ -173,21 +138,59 @@ namespace NetPrints.Graph
         /// <summary>
         /// Graph this node is contained in.
         /// </summary>
-        [DataMember]
         public NodeGraph Graph
         {
             get;
             private set;
         }
 
+        /// <summary>
+        /// This node's id, unique within <see cref="Graph"/> (document-format.md §1.4.1). Assigned
+        /// on construction and overwritten from the document by the mapper.
+        /// </summary>
+        public string Id { get; internal set; }
+
+        /// <summary>
+        /// This node type's default name: its concrete runtime type name (e.g. <c>"CallMethodNode"</c>).
+        /// A node whose <see cref="Name"/> equals its <see cref="DefaultName"/> is written without an
+        /// explicit <c>name</c> (document-format.md §1.5); reading one back with no stored name gives
+        /// it this default.
+        /// </summary>
+        public virtual string DefaultName => GetType().Name;
+
+        /// <summary>
+        /// Returns <paramref name="pin"/>'s stable "keyName" component of its pin reference
+        /// (document-format.md §1.4.2, <see cref="PinKeys"/>): a positional name for a pin whose
+        /// display <see cref="NodePin.Name"/> the user can rename (an entry node's argument pins, a
+        /// return node's return-value pins), the pin's own <see cref="NodePin.Name"/> otherwise. The
+        /// base implementation returns <paramref name="pin"/>'s <see cref="NodePin.Name"/>; override
+        /// together with a node kind that has user-renamable pins.
+        /// </summary>
+        /// <param name="pin">Pin of this node to get the key name of.</param>
+        /// <returns>The pin's keyName.</returns>
+        public virtual string GetPinKeyName(NodePin pin) => pin.Name;
+
+        /// <summary>
+        /// Adds the new node to <paramref name="graph"/>'s <see cref="NodeGraph.Nodes"/>, allocates its
+        /// <see cref="Id"/> and assigns it a name unique among the graph's existing nodes, derived from
+        /// the concrete node type name.
+        /// </summary>
+        /// <param name="graph">Graph the node belongs to.</param>
         protected Node(NodeGraph graph)
         {
             Graph = graph;
+            Id = graph.AllocateNodeId();
             Graph.Nodes.Add(this);
 
             Name = NetPrintsUtil.GetUniqueName(GetType().Name, Graph.Nodes.Select(n => n.Name).ToList());
         }
 
+        /// <summary>
+        /// The node type's display name: its concrete type name split on capitalization boundaries
+        /// (eg. <c>CallMethodNode</c> -> <c>"Call Method Node"</c>), via
+        /// <see cref="GraphUtil.SplitCamelCase"/>.
+        /// </summary>
+        /// <returns>The split type name.</returns>
         public override string ToString()
         {
             return GraphUtil.SplitCamelCase(GetType().Name);
@@ -232,7 +235,7 @@ namespace NetPrints.Graph
         }
 
         /// <summary>
-        /// Adds an input data pin to this node.
+        /// Adds an input type pin to this node.
         /// </summary>
         /// <param name="pinName">Name of the pin.</param>
         protected void AddInputTypePin(string pinName)
@@ -243,16 +246,16 @@ namespace NetPrints.Graph
         }
 
         /// <summary>
-        /// Adds an output data pin to this node.
+        /// Adds an output type pin to this node.
         /// </summary>
         /// <param name="pinName">Name of the pin.</param>
-        /// <param name="getOutputTypeFunc">Function that generates the output type.</param>
+        /// <param name="outputType">Observable value carrying the pin's output type.</param>
         protected void AddOutputTypePin(string pinName, ObservableValue<BaseType> outputType)
         {
             OutputTypePins.Add(new NodeOutputTypePin(this, pinName, outputType));
         }
 
-        private void OnIncomingTypePinChanged(NodeInputTypePin pin, NodeOutputTypePin oldPin, NodeOutputTypePin newPin)
+        private void OnIncomingTypePinChanged(NodeInputTypePin pin, NodeOutputTypePin? oldPin, NodeOutputTypePin? newPin)
         {
             if (oldPin?.InferredType != null)
                 oldPin.InferredType.OnValueChanged -= EventInputTypeChanged;
@@ -266,29 +269,25 @@ namespace NetPrints.Graph
         /// <summary>
         /// Called when anything about the input type arguments changes.
         /// </summary>
-        public event EventHandler InputTypeChanged;
+        public event EventHandler? InputTypeChanged;
 
-        private void EventInputTypeChanged(object sender, EventArgs eventArgs)
+        private void EventInputTypeChanged(object? sender, EventArgs? eventArgs)
         {
-            OnInputTypeChanged(sender, eventArgs);
+            HandleInputTypeChanged(sender, eventArgs);
 
             // Notify others afterwards, since the above call might have updated something
-            InputTypeChanged?.Invoke(sender, eventArgs);
+            InputTypeChanged?.Invoke(sender, eventArgs ?? EventArgs.Empty);
         }
 
-        protected virtual void OnInputTypeChanged(object sender, EventArgs eventArgs)
+        /// <summary>
+        /// Called whenever an input type pin's inferred type changes (before <see cref="InputTypeChanged"/>
+        /// is raised), so a derived node type can recompute its own pin types. The base implementation
+        /// does nothing.
+        /// </summary>
+        /// <param name="sender">The node whose input type changed.</param>
+        /// <param name="eventArgs">Unused; always <see cref="EventArgs.Empty"/> or <see langword="null"/>.</param>
+        protected virtual void HandleInputTypeChanged(object? sender, EventArgs? eventArgs)
         {
-        }
-
-        [OnDeserialized]
-        private void OnDeserializing(StreamingContext context)
-        {
-            foreach (var inputTypePin in InputTypePins)
-            {
-                if (inputTypePin.InferredType != null)
-                    inputTypePin.InferredType.OnValueChanged += EventInputTypeChanged;
-                inputTypePin.IncomingPinChanged += OnIncomingTypePinChanged;
-            }
         }
 
         /// <summary>
@@ -296,8 +295,8 @@ namespace NetPrints.Graph
         /// </summary>
         public virtual void OnMethodDeserialized()
         {
-            // Call OnInputTypeChanged to update the types of all nodes correctly.
-            OnInputTypeChanged(this, null);
+            // Call HandleInputTypeChanged to update the types of all nodes correctly.
+            HandleInputTypeChanged(this, null);
         }
     }
 }

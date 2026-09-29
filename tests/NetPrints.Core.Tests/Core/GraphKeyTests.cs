@@ -1,0 +1,181 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using NetPrints.Core;
+using NetPrints.Tests.Characterization;
+using Xunit;
+
+namespace NetPrints.Tests.Core
+{
+    /// <summary>DF-T22, model part: <see cref="GraphKeys"/> and <see cref="ClassGraph.EnsureUniqueMemberIds"/>.</summary>
+    public class GraphKeyTests
+    {
+        /// <summary>Returns a fixed member id for every 'm'-prefixed request (so several members can be
+        /// forced to collide) while leaving node ids ('n') random, so building a graph does not
+        /// exhaust a short, hand-written queue.</summary>
+        private sealed class FixedMemberIdGenerator : IIdGenerator
+        {
+            private readonly string memberId;
+
+            public FixedMemberIdGenerator(string memberId)
+            {
+                this.memberId = memberId;
+            }
+
+            public string NewId(char prefix) => prefix == 'm' ? memberId : RandomIdGenerator.Instance.NewId(prefix);
+        }
+
+        private static IEnumerable<NodeGraph> AllGraphsOf(ClassGraph cls)
+        {
+            yield return cls;
+
+            foreach (Variable variable in cls.Variables)
+            {
+                yield return variable.TypeGraph;
+
+                if (variable.GetterMethod is not null)
+                {
+                    yield return variable.GetterMethod;
+                }
+
+                if (variable.SetterMethod is not null)
+                {
+                    yield return variable.SetterMethod;
+                }
+            }
+
+            foreach (var method in cls.Methods)
+            {
+                yield return method;
+            }
+
+            foreach (var constructor in cls.Constructors)
+            {
+                yield return constructor;
+            }
+
+            foreach (var eventGraph in cls.EventGraphs)
+            {
+                yield return eventGraph;
+            }
+        }
+
+        [Fact]
+        public void ForAndResolveRoundTripEveryGraphOfAllNodes()
+        {
+            string projectPath = Path.Combine(Path.GetTempPath(), "netprints-graphkeys-" + Guid.NewGuid().ToString("N"), "AllNodes.csproj");
+            Project project = AllNodesFixtureFactory.CreateAllNodes(projectPath);
+            ClassGraph cls = project.Classes.Single();
+
+            foreach (NodeGraph graph in AllGraphsOf(cls))
+            {
+                string key = GraphKeys.For(graph);
+                Assert.Same(graph, GraphKeys.Resolve(cls, key));
+            }
+        }
+
+        [Fact]
+        public void KeysAreUnchangedAfterReorderingMethods()
+        {
+            var cls = new ClassGraph { Name = "C" };
+            var first = new MethodGraph("First") { Class = cls };
+            var second = new MethodGraph("Second") { Class = cls };
+            cls.Methods.Add(first);
+            cls.Methods.Add(second);
+
+            string firstKeyBefore = GraphKeys.For(first);
+            string secondKeyBefore = GraphKeys.For(second);
+
+            cls.Methods.Clear();
+            cls.Methods.Add(second);
+            cls.Methods.Add(first);
+
+            Assert.Equal(firstKeyBefore, GraphKeys.For(first));
+            Assert.Equal(secondKeyBefore, GraphKeys.For(second));
+        }
+
+        [Fact]
+        public void EnsureUniqueMemberIdsRenamesOnlyTheLaterDuplicate()
+        {
+            var cls = new ClassGraph { Name = "C" };
+            MethodGraph first;
+            MethodGraph second;
+
+            using (IdGeneration.Use(new FixedMemberIdGenerator("mdup0001")))
+            {
+                first = new MethodGraph("First") { Class = cls };
+                second = new MethodGraph("Second") { Class = cls };
+            }
+
+            cls.Methods.Add(first);
+            cls.Methods.Add(second);
+
+            Assert.Equal(first.Id, second.Id);
+
+            bool changed = cls.EnsureUniqueMemberIds();
+
+            Assert.True(changed);
+            Assert.Equal("mdup0001", first.Id);
+            Assert.NotEqual(first.Id, second.Id);
+        }
+
+        [Fact]
+        public void EnsureUniqueMemberIdsReturnsFalseWhenNothingChanges()
+        {
+            var cls = new ClassGraph { Name = "C" };
+            var first = new MethodGraph("First") { Class = cls };
+            var second = new MethodGraph("Second") { Class = cls };
+            cls.Methods.Add(first);
+            cls.Methods.Add(second);
+
+            Assert.False(cls.EnsureUniqueMemberIds());
+        }
+
+        [Fact]
+        public void ForThrowsForADetachedGraph()
+        {
+            var method = new MethodGraph("Detached");
+
+            Assert.Throws<InvalidOperationException>(() => GraphKeys.For(method));
+        }
+
+        [Fact]
+        public void ForAndResolveRoundTripAnEventGraph()
+        {
+            var cls = new ClassGraph { Name = "C" };
+            var eventGraph = new EventGraph("Events") { Class = cls };
+            cls.EventGraphs.Add(eventGraph);
+
+            string key = GraphKeys.For(eventGraph);
+
+            Assert.Equal(eventGraph.Id, key);
+            Assert.Same(eventGraph, GraphKeys.Resolve(cls, key));
+        }
+
+        [Fact]
+        public void EnsureUniqueMemberIdsRenamesADuplicateAcrossAMethodAndAnEventGraph()
+        {
+            var cls = new ClassGraph { Name = "C" };
+            MethodGraph method;
+            EventGraph eventGraph;
+
+            using (IdGeneration.Use(new FixedMemberIdGenerator("mdup0002")))
+            {
+                method = new MethodGraph("Method") { Class = cls };
+                eventGraph = new EventGraph("Events") { Class = cls };
+            }
+
+            cls.Methods.Add(method);
+            cls.EventGraphs.Add(eventGraph);
+
+            Assert.Equal(method.Id, eventGraph.Id);
+
+            bool changed = cls.EnsureUniqueMemberIds();
+
+            Assert.True(changed);
+            Assert.Equal("mdup0002", method.Id);
+            Assert.NotEqual(method.Id, eventGraph.Id);
+        }
+    }
+}

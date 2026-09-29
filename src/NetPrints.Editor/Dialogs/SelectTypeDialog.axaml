@@ -1,16 +1,23 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ed="clr-namespace:NetPrints.Editor"
+        xmlns:edb="clr-namespace:NetPrints.Editor.Behaviors"
+        xmlns:eddialogs="clr-namespace:NetPrints.Editor.Dialogs"
         x:Class="NetPrints.Editor.Dialogs.SelectTypeDialog"
+        x:DataType="eddialogs:SelectTypeDialogVM"
         Title="Select Type"
         Icon="avares://NetPrints.Editor/Assets/NetPrintsLogo.ico"
         Width="500" Height="160"
         WindowStartupLocation="CenterOwner" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SelectTypeDialog}">
+  <!-- Closes with the VM's result once it asks to (D16, ADR-0007 batch X2b). -->
+  <Interaction.Behaviors>
+    <edb:DialogCloseBehavior />
+  </Interaction.Behaviors>
   <StackPanel Margin="12" Spacing="8">
     <!-- Editable chooser over the non-static types (PAR-58). -->
     <AutoCompleteBox x:Name="TypeBox" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SelectTypeBox}" FilterMode="ContainsOrdinal" MinimumPrefixLength="1" MaxDropDownHeight="300"
-                     PlaceholderText="Type name" />
+                     PlaceholderText="Type name" ItemsSource="{Binding Types}" SelectedItem="{Binding SelectedType}" Text="{Binding TypedText}" />
     <Button x:Name="SelectButton" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SelectTypeButton}" Content="Select" HorizontalAlignment="Right" MinWidth="80" IsDefault="True"
-            Click="OnSelectClicked" />
+            Command="{Binding SelectCommand}" />
   </StackPanel>
 </Window>

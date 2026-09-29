@@ -4,10 +4,11 @@ using System.Globalization;
 namespace NetPrints.Desktop.E2ETests.Hosting;
 
 /// <summary>
-/// A private X server for the E2E run: Xvfb on a free display number (100 and up, or from
+/// A private X server: Xvfb on a free display number (100 and up, or from
 /// <c>NETPRINTS_E2E_DISPLAY_START</c>; never the user's desktop) at 1600x1000x24, 96 DPI, with
-/// the openbox window manager. Started once per
-/// run (collection fixture), like <c>xvfb-run -a</c>, plus a window manager.
+/// the openbox window manager, like <c>xvfb-run -a</c> plus a window manager. One instance per
+/// <see cref="DesktopWorkerPool"/> worker (batch D2): each worker's display is exclusive to
+/// whichever test currently holds its lease, never shared between concurrently running tests.
 /// </summary>
 public sealed class XServer : IAsyncLifetime
 {
@@ -117,6 +118,15 @@ public sealed class XServer : IAsyncLifetime
 
             if (process.HasExited || !File.Exists($"/tmp/.X11-unix/X{Display}"))
             {
+                if (!process.HasExited)
+                {
+                    // The socket never appeared but Xvfb is still running: kill it before trying the
+                    // next display, or it leaks and holds this display's lock for the machine's
+                    // uptime (R3-04).
+                    process.Kill(entireProcessTree: true);
+                    await process.WaitForExitAsync();
+                }
+
                 process.Dispose();
                 continue; // another run took the display: try the next one
             }
@@ -188,10 +198,4 @@ public sealed class XServer : IAsyncLifetime
             // Best effort.
         }
     }
-}
-
-[CollectionDefinition(Name, DisableParallelization = true)]
-public sealed class DesktopCollection : ICollectionFixture<XServer>
-{
-    public const string Name = "Desktop";
 }

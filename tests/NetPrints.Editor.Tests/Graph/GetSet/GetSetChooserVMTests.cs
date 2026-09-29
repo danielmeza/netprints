@@ -34,6 +34,6 @@ public class GetSetChooserVMTests(TestEditor editor) : GraphTestBase(editor)
 
         chooser.Open(own, new NetPrints.Editor.Graph.GraphPoint(0, 0));
         chooser.CloseCommand.Execute(null);
-        Assert.False(chooser.IsOpen, "closes when the pointer leaves");
+        Assert.False(chooser.IsOpen, "the close command closes it");
     }
 }

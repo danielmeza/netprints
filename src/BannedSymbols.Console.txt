@@ -1,0 +1,3 @@
+;; RS0030, library projects only (Cli, Desktop and Editor write to Console/UI deliberately).
+;; Libraries log through [LoggerMessage] (AGENTS.md "C# rules"), never Console directly.
+T:System.Console;Libraries log through [LoggerMessage] (AGENTS.md "C# rules"), never Console

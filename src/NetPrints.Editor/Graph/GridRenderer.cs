@@ -146,9 +146,12 @@ internal static class GridRenderer
 
     private static SKColor ToSk(Color color) => new(color.R, color.G, color.B, color.A);
 
+    /// <summary>Maximum value of an 8-bit color channel, for normalizing to the 0-1 range Skia's float colors use.</summary>
+    private const float MaxColorChannel = 255f;
+
     private static SKColorF Premultiplied(Color color)
     {
-        float a = color.A / 255f;
-        return new SKColorF(color.R / 255f * a, color.G / 255f * a, color.B / 255f * a, a);
+        float a = color.A / MaxColorChannel;
+        return new SKColorF(color.R / MaxColorChannel * a, color.G / MaxColorChannel * a, color.B / MaxColorChannel * a, a);
     }
 }

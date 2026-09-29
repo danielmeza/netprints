@@ -1,8 +1,8 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Linq;
-using System.Runtime.Serialization;
+using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Graph;
-using PropertyChanged;
 
 namespace NetPrints.Core
 {
@@ -12,44 +12,48 @@ namespace NetPrints.Core
     [Flags]
     public enum VariableModifiers
     {
+        /// <summary>
+        /// No modifiers.
+        /// </summary>
         None = 0,
-        ReadOnly = 8,
-        Const = 16,
-        Static = 32,
-        New = 64,
 
-        [Obsolete]
-        Private = 0,
-        [Obsolete]
-        Public = 1,
-        [Obsolete]
-        Protected = 2,
-        [Obsolete]
-        Internal = 4,
+        /// <summary>
+        /// The variable is read-only (a C# <c>readonly</c> field or a get-only property).
+        /// </summary>
+        ReadOnly = 8,
+
+        /// <summary>
+        /// The variable is a compile-time constant (C# <c>const</c>).
+        /// </summary>
+        Const = 16,
+
+        /// <summary>
+        /// The variable is static rather than an instance member.
+        /// </summary>
+        Static = 32,
+
+        /// <summary>
+        /// The variable hides an inherited member of the same name (C# <c>new</c>).
+        /// </summary>
+        New = 64,
     }
 
     /// <summary>
     /// Specifier describing a property of a class.
     /// </summary>
     [Serializable]
-    [DataContract(Name = "PropertySpecifier")]
-    [AddINotifyPropertyChangedInterface]
-    public class Variable
+    public partial class Variable : ModelObject
     {
         /// <summary>
         /// Name of the variable without any prefixes.
         /// </summary>
-        [DataMember]
-        public string Name
-        {
-            get;
-            set;
-        }
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(Specifier))]
+        public partial string Name { get; set; }
 
         /// <summary>
         /// Class this variable is contained in.
         /// </summary>
-        [DataMember]
         public ClassGraph Class
         {
             get;
@@ -61,46 +65,33 @@ namespace NetPrints.Core
         /// </summary>
         public TypeSpecifier Type => TypeGraph.ReturnType;
 
-        [DataMember(Name = "Type", EmitDefaultValue = false, IsRequired = false)]
-        private TypeSpecifier OldType
-        {
-            get => null;
-            set
-            {
-                TypeGraph = new TypeGraph();
-                GraphUtil.CreateNestedTypeNode(TypeGraph, value, 500, 500);
-            }
-        }
-
         /// <summary>
         /// Get method for this variable. Can be null.
         /// </summary>
-        [DataMember]
-        public MethodGraph GetterMethod
-        {
-            get;
-            set;
-        }
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(HasPublicGetter))]
+        [NotifyPropertyChangedFor(nameof(HasAccessors))]
+        [NotifyPropertyChangedFor(nameof(HasPublicSetter))]
+        [NotifyPropertyChangedFor(nameof(Specifier))]
+        public partial MethodGraph? GetterMethod { get; set; }
 
         /// <summary>
         /// Set method for this variable. Can be null.
         /// </summary>
-        [DataMember]
-        public MethodGraph SetterMethod
-        {
-            get;
-            set;
-        }
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(HasPublicSetter))]
+        [NotifyPropertyChangedFor(nameof(HasAccessors))]
+        [NotifyPropertyChangedFor(nameof(HasPublicGetter))]
+        [NotifyPropertyChangedFor(nameof(Specifier))]
+        public partial MethodGraph? SetterMethod { get; set; }
 
         /// <summary>
         /// Graph specifying the type of this variable.
         /// </summary>
-        [DataMember]
-        public TypeGraph TypeGraph
-        {
-            get;
-            set;
-        }
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(Type))]
+        [NotifyPropertyChangedFor(nameof(Specifier))]
+        public partial TypeGraph TypeGraph { get; set; }
 
         /// <summary>
         /// Whether this variable has a public getter.
@@ -133,7 +124,6 @@ namespace NetPrints.Core
         /// <summary>
         /// Whether this property is static.
         /// </summary>
-        [DataMember]
         [Obsolete]
         public bool IsStatic
         {
@@ -144,27 +134,35 @@ namespace NetPrints.Core
         /// <summary>
         /// Visibility of this property.
         /// </summary>
-        [DataMember]
-        public MemberVisibility Visibility
-        {
-            get;
-            set;
-        } = MemberVisibility.Private;
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(HasPublicGetter))]
+        [NotifyPropertyChangedFor(nameof(HasPublicSetter))]
+        [NotifyPropertyChangedFor(nameof(Specifier))]
+        public partial MemberVisibility Visibility { get; set; } = MemberVisibility.Private;
 
         /// <summary>
         /// Modifiers of this variable.
         /// </summary>
-        [DataMember]
-        public VariableModifiers Modifiers
-        {
-            get;
-            set;
-        }
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(Specifier))]
+        public partial VariableModifiers Modifiers { get; set; }
 
+        /// <summary>
+        /// A fresh <see cref="VariableSpecifier"/> snapshotting this variable's current name, type,
+        /// getter/setter visibility (the accessor method's own visibility if it has one, otherwise
+        /// <see cref="Visibility"/>) and modifiers. Recomputed on every access; not cached.
+        /// </summary>
         public VariableSpecifier Specifier
         {
             get => new VariableSpecifier(Name, Type, GetterMethod?.Visibility ?? Visibility, SetterMethod?.Visibility ?? Visibility, Class.Type, Modifiers);
         }
+
+        /// <summary>
+        /// This variable's member id (data-model.md §2), used as its type graph's and accessors' graph
+        /// keys (<c>&lt;Id&gt;/type</c>, <c>/get</c>, <c>/set</c>). Assigned once, in the constructor,
+        /// from <see cref="IdGeneration.Current"/>; the mapper overwrites it from the document.
+        /// </summary>
+        public string Id { get; internal set; }
 
         /// <summary>
         /// Creates a PropertySpecifier.
@@ -175,30 +173,26 @@ namespace NetPrints.Core
         /// <param name="getter">Get method for the property. Can be null if there is none.</param>
         /// <param name="setter">Set method for the property. Can be null if there is none.</param>
         /// <param name="modifiers">Modifiers of the variable.</param>
-        public Variable(ClassGraph cls, string name, TypeSpecifier type, MethodGraph getter,
-            MethodGraph setter, VariableModifiers modifiers)
+        public Variable(ClassGraph cls, string name, TypeSpecifier type, MethodGraph? getter,
+            MethodGraph? setter, VariableModifiers modifiers)
         {
+            Id = IdGeneration.Current.NewId('m');
             Class = cls;
             Name = name;
             GetterMethod = getter;
             SetterMethod = setter;
             Modifiers = modifiers;
 
-            // Create a type graph with the type as its return type.
-            TypeGraph = new TypeGraph();
-            NodeOutputTypePin typePin = GraphUtil.CreateNestedTypeNode(TypeGraph, type, 500, 300).OutputTypePins[0];
-            TypeGraph.ReturnNode.PositionX = 800;
-            TypeGraph.ReturnNode.PositionY = 300;
+            // Create a type graph with the type as its return type. OwningClass lets GraphKeys.For key it
+            // as "<variable id>/type" (document-format.md §1.4.1).
+            const int typeNodePositionX = 500;
+            const int typeNodePositionY = 300;
+            const int returnNodePositionX = 800;
+            TypeGraph = new TypeGraph { OwningClass = cls };
+            NodeOutputTypePin typePin = GraphUtil.CreateNestedTypeNode(TypeGraph, type, typeNodePositionX, typeNodePositionY).OutputTypePins[0];
+            TypeGraph.ReturnNode.PositionX = returnNodePositionX;
+            TypeGraph.ReturnNode.PositionY = typeNodePositionY;
             GraphUtil.ConnectTypePins(typePin, TypeGraph.ReturnNode.TypePin);
-        }
-
-        [OnDeserialized]
-        private void OnDeserialized(StreamingContext context)
-        {
-            if (TypeGraph is null)
-            {
-                TypeGraph = new TypeGraph();
-            }
         }
     }
 }

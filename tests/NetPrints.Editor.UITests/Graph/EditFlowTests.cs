@@ -13,7 +13,7 @@ public class EditFlowTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task CreateIfElseConnectSaveAndReload()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var method = (MethodGraph)session.GraphVM.Graph;
         session.GraphVM.Nodes.Single(n => n.Node == method.EntryNode).OutputExecPins.Single().DisconnectAll();
         await session.WaitForRenderedAsync(Token);
@@ -32,7 +32,7 @@ public class EditFlowTests
         await session.ClassEditor.SaveButton.ClickAsync(Token);
         await Testing.Ui.Driving.UiWait.UntilAsync(session.Driver, () => Task.FromResult(LastWrite(session.Sample.Directory) > before), "saved", Token);
 
-        var reloaded = Project.LoadFromPath(session.Sample.ProjectPath);
+        var reloaded = (await session.App.Composition.Context.Persistence.LoadAsync(session.Sample.ProjectPath, Token)).Project;
         var reloadedMain = reloaded.Classes.Single().Methods.Single();
         var reloadedIf = reloadedMain.Nodes.OfType<IfElseNode>().Single();
         Assert.Same(reloadedIf.InputExecPins[0], reloadedMain.EntryNode.InitialExecutionPin.OutgoingPin);

@@ -1,3 +1,5 @@
+using NetPrints.Projects;
+
 namespace NetPrints.Editor.Hosting;
 
 /// <summary>
@@ -5,7 +7,10 @@ namespace NetPrints.Editor.Hosting;
 /// </summary>
 public interface IProcessLauncher
 {
-    void Start(string fileName, string? arguments);
+    /// <summary>Starts an external process. Its stdout/stderr are reported through <see cref="OutputReceived"/>.</summary>
+    /// <param name="request">The process to start, typically <see cref="IProjectSystem.GetRunCommand"/>'s
+    /// result (project-system.md §4).</param>
+    void Start(ProcessStartRequest request);
 
     /// <summary>
     /// One line of a started process's stdout or stderr, or a status line ("Process exited (code

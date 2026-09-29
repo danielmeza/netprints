@@ -4,24 +4,37 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.VisualTree;
+using NetPrints.Editor.Controls;
 using NetPrints.Editor.Graph.Nodes;
 using NetPrints.Editor.Graph.Pins;
+using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Hosting.Automation;
 using Nodify.Avalonia.Connections;
-using Nodify.Avalonia.Events;
 
 namespace NetPrints.Editor.Graph;
 
 /// <summary>
-/// The graph canvas on Nodify (PAR-38..57). Pointer gestures that Nodify does not provide are
-/// handled here and forwarded to the view models.
+/// The graph canvas on Nodify (PAR-38..57). Connect and reroute-insert go through Nodify's own
+/// commands (bound in the XAML, ED-T09); disconnect uses button state, not Nodify's click-counted
+/// gesture, so a middle click right after another click still registers; other pointer gestures
+/// Nodify does not provide are handled here and forwarded to the view models. The connector
+/// gestures themselves (Connect/Disconnect keyboard alternates, OWN-06) are configured once at app
+/// startup by <see cref="GraphEditorGestures"/>, not here (REVIEW-NOTE, PR #6).
 /// </summary>
 public partial class GraphEditorView : UserControl
 {
     private const double ClickThreshold = 4;
+    /// <summary>Divisor for center-point calculations.</summary>
+    private const double HalfDivisor = 2;
     private Point? rightPressPosition;
     private object? backButtonTarget;
+    private TopLevel? keyboardTopLevel;
+    private NodeGraphVM? revealSubscription;
 
+    /// <summary>
+    /// Loads the control's XAML and wires the pointer and drag/drop handlers Nodify does not
+    /// provide, plus keeping the background grid's viewport synced to the editor's.
+    /// </summary>
     public GraphEditorView()
     {
         InitializeComponent();
@@ -39,14 +52,62 @@ public partial class GraphEditorView : UserControl
         Editor.AddHandler(PointerReleasedEvent, OnEditorPointerReleased, RoutingStrategies.Tunnel, handledEventsToo: true);
         Editor.AddHandler(PointerMovedEvent, OnEditorPointerMoved, RoutingStrategies.Tunnel, handledEventsToo: true);
         Editor.AddHandler(PointerCaptureLostEvent, (_, _) => Editor.Cursor = null, RoutingStrategies.Bubble, handledEventsToo: true);
-        Editor.AddHandler(Connector.PendingConnectionCompletedEvent, new PendingConnectionEventHandler(OnPendingConnectionCompleted),
-            RoutingStrategies.Bubble, handledEventsToo: true);
         Editor.AddHandler(DragDrop.DragOverEvent, OnDragOver);
         Editor.AddHandler(DragDrop.DropEvent, OnDrop);
 
         SearchPopup.Opened += (_, _) => SearchView.FocusSearchBox();
+        SearchPopup.FallbackPositionRequested += (_, e) => e.Position = FallbackScreenPosition();
+        GetSetPopup.FallbackPositionRequested += (_, e) => e.Position = FallbackScreenPosition();
+
+        AttachedToVisualTree += OnAttachedToVisualTree;
+        DetachedFromVisualTree += OnDetachedFromVisualTree;
     }
 
+    private void OnAttachedToVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
+    {
+        keyboardTopLevel = TopLevel.GetTopLevel(this);
+        keyboardTopLevel?.AddHandler(KeyDownEvent, OnGlobalKeyDown, RoutingStrategies.Tunnel, handledEventsToo: true);
+
+        // Attaches the tracker now, not lazily on first popup open, so it does not miss the very
+        // pointer event that triggers that first open.
+        if (keyboardTopLevel is { } topLevel)
+        {
+            CanvasPointerTracker.For(topLevel);
+        }
+    }
+
+    private void OnDetachedFromVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
+    {
+        keyboardTopLevel?.RemoveHandler(KeyDownEvent, OnGlobalKeyDown);
+        keyboardTopLevel = null;
+    }
+
+    /// <summary>
+    /// Ctrl+Space opens the node search without the pointer (ADR-0004): the popup falls back to the
+    /// selected node's position, or the canvas center if nothing is selected. Skipped when focus is in
+    /// a text box, check box or combo box (R2-15): the handler sits on the whole window (a
+    /// <see cref="KeyBinding"/> only fires with focus inside this control), so unscoped it also caught
+    /// Ctrl+Space typed in, for example, the inspector's Name box.
+    /// </summary>
+    private void OnGlobalKeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key != Key.Space || e.KeyModifiers != KeyModifiers.Control || ViewModel is not { } graph || IsInsideValueEditor(e.Source))
+        {
+            return;
+        }
+
+        if (TopLevel.GetTopLevel(this) is { } topLevel)
+        {
+            CanvasPointerTracker.For(topLevel).Invalidate();
+        }
+
+        // OpenSearchCommand has no catch of its own: route a fault to the error dialog too. Its own
+        // reentrancy guard (D10) makes a second Ctrl+Space while one search is still opening a no-op.
+        graph.OpenSearchCommand.ExecuteAsync(FallbackGraphPosition()).Forget(graph.Context, "Failed to open the node search");
+        e.Handled = true;
+    }
+
+    /// <summary>The bound graph view model, or <see langword="null"/> if the data context is not one.</summary>
     public NodeGraphVM? ViewModel => DataContext as NodeGraphVM;
 
     /// <summary>Converts a point relative to the editor control to graph coordinates.</summary>
@@ -57,16 +118,62 @@ public partial class GraphEditorView : UserControl
         return new GraphPoint(location.X + editorPoint.X / zoom, location.Y + editorPoint.Y / zoom);
     }
 
-    /// <summary>Current pointer position in graph coordinates.</summary>
-    public GraphPoint PointerGraphPosition => new(Editor.MouseLocation.X, Editor.MouseLocation.Y);
+    /// <summary>Converts a graph position to a point relative to the editor control (the inverse of <see cref="ToGraph"/>).</summary>
+    private Point ToScreen(GraphPoint graphPoint)
+    {
+        var location = Editor.ViewportLocation;
+        double zoom = Editor.ViewportZoom;
+        return new Point((graphPoint.X - location.X) * zoom, (graphPoint.Y - location.Y) * zoom);
+    }
 
+    private NodeVM? SelectedNode => ViewModel?.SelectedNodes.FirstOrDefault();
+
+    /// <summary>The canvas center, relative to the editor control.</summary>
+    private Point CanvasCenterPoint => new(Editor.Bounds.Width / HalfDivisor, Editor.Bounds.Height / HalfDivisor);
+
+    /// <summary>
+    /// Where a popup falls back to when there is no tracked pointer position (ADR-0004): the
+    /// selected node's position, or the canvas center, in the top level's coordinates.
+    /// </summary>
+    private Point FallbackScreenPosition()
+    {
+        var editorPoint = SelectedNode is { } selected ? ToScreen(selected.Location) : CanvasCenterPoint;
+        var topLevel = TopLevel.GetTopLevel(this);
+        return topLevel is null ? editorPoint : Editor.TranslatePoint(editorPoint, topLevel) ?? editorPoint;
+    }
+
+    /// <summary>Where a keyboard-triggered node search creates its node (ADR-0004): the selected node's position, or the canvas center.</summary>
+    private GraphPoint FallbackGraphPosition() => SelectedNode?.Location ?? ToGraph(CanvasCenterPoint);
+
+    /// <summary>Resets the viewport to zoom 1 and the origin when a new graph is opened (PAR-51),
+    /// and follows the new graph's <see cref="NodeGraphVM.NodeRevealRequested"/> (FR-034, ED-T03).</summary>
+    /// <param name="e">Unused; forwarded to the base implementation.</param>
     protected override void OnDataContextChanged(EventArgs e)
     {
         base.OnDataContextChanged(e);
 
+        if (revealSubscription is { } previous)
+        {
+            previous.NodeRevealRequested -= OnNodeRevealRequested;
+        }
+
+        revealSubscription = ViewModel;
+        if (revealSubscription is { } current)
+        {
+            current.NodeRevealRequested += OnNodeRevealRequested;
+        }
+
         // Opening another graph resets the view (PAR-51).
         Editor.ViewportZoom = 1;
         Editor.ViewportLocation = new Point(0, 0);
+    }
+
+    /// <summary>Centers the viewport on a revealed node (FR-034, ED-T03).</summary>
+    private void OnNodeRevealRequested(object? sender, NodeVM node)
+    {
+        var center = CanvasCenterPoint;
+        double zoom = Editor.ViewportZoom;
+        Editor.ViewportLocation = new Point(node.Location.X - center.X / zoom, node.Location.Y - center.Y / zoom);
     }
 
     private void SyncGrid()
@@ -122,14 +229,6 @@ public partial class GraphEditorView : UserControl
             return;
         }
 
-        if (properties.IsLeftButtonPressed && e.ClickCount == 2 && FindContext<ConnectionVM>(e.Source) is { } doubleClicked)
-        {
-            // Double click on a cable inserts a reroute node midway (PAR-48).
-            doubleClicked.InsertReroute();
-            e.Handled = true;
-            return;
-        }
-
         if (properties.IsXButton1Pressed)
         {
             backButtonTarget = (object?)FindContext<ConnectionVM>(e.Source) ?? FindContext<NodePinVM>(e.Source);
@@ -138,23 +237,24 @@ public partial class GraphEditorView : UserControl
 
         if (properties.IsMiddleButtonPressed)
         {
-            // Middle click: clear an unconnected value (PAR-44), disconnect a pin or cable (PAR-48).
+            // Middle click: clear an unconnected value (PAR-44), disconnect a pin or cable (PAR-48),
+            // through the pin's/connection's own command (ED-T09).
             if (FindContext<NodePinVM>(e.Source) is { } pin)
             {
                 if (IsInsideValueEditor(e.Source))
                 {
-                    pin.ClearUnconnectedValue();
+                    pin.ClearUnconnectedValueCommand.Execute(null);
                 }
                 else
                 {
-                    pin.DisconnectAll();
+                    pin.DisconnectAllCommand.Execute(null);
                 }
 
                 e.Handled = true;
             }
             else if (FindContext<ConnectionVM>(e.Source) is { } connection)
             {
-                connection.Disconnect();
+                connection.DisconnectCommand.Execute(null);
                 e.Handled = true;
             }
         }
@@ -208,34 +308,18 @@ public partial class GraphEditorView : UserControl
             if (Math.Abs(released.X - pressed.X) < ClickThreshold && Math.Abs(released.Y - pressed.Y) < ClickThreshold
                 && ViewModel is { } graph)
             {
-                _ = graph.OpenSearchAsync(ToGraph(released));
+                // Not a command, and OpenSearchAsync has no catch of its own: route a fault to the error dialog too.
+                graph.OpenSearchAsync(ToGraph(released)).Forget(graph.Context, "Failed to open the node search");
                 e.Handled = true;
             }
         }
     }
 
-    private void OnPendingConnectionCompleted(object? sender, PendingConnectionEventArgs e)
-    {
-        if (e.Canceled || ViewModel is not { } graph || e.SourceConnector is not NodePinVM source)
-        {
-            return;
-        }
-
-        if (e.TargetConnector is NodePinVM target)
-        {
-            // Connects only compatible pins (PAR-46).
-            graph.Connect(source, target);
-        }
-        else
-        {
-            // Released on empty canvas: search filtered for the pin, then auto-connect (PAR-47).
-            _ = graph.OpenSearchAsync(PointerGraphPosition, source.Pin);
-        }
-    }
-
     private void OnDragOver(object? sender, DragEventArgs e)
     {
-        e.DragEffects = e.DataTransfer.Contains(GraphDragDrop.MethodFormat) || e.DataTransfer.Contains(GraphDragDrop.VariableFormat)
+        e.DragEffects = e.DataTransfer.Contains(GraphDragDrop.MethodFormat)
+            || e.DataTransfer.Contains(GraphDragDrop.VariableFormat)
+            || e.DataTransfer.Contains(GraphDragDrop.LocalVariableFormat)
             ? DragDropEffects.Copy
             : DragDropEffects.None;
     }
@@ -247,7 +331,8 @@ public partial class GraphEditorView : UserControl
             return;
         }
 
-        var position = ToGraph(e.GetPosition(Editor));
+        var screenPosition = e.GetPosition(Editor);
+        var position = ToGraph(screenPosition);
 
         if (e.DataTransfer.TryGetValue(GraphDragDrop.MethodFormat) is { } method)
         {
@@ -257,6 +342,11 @@ public partial class GraphEditorView : UserControl
         else if (e.DataTransfer.TryGetValue(GraphDragDrop.VariableFormat) is { } variable)
         {
             graph.Drop(variable, position);
+            e.Handled = true;
+        }
+        else if (e.DataTransfer.TryGetValue(GraphDragDrop.LocalVariableFormat) is { } local)
+        {
+            graph.Drop(local, position);
             e.Handled = true;
         }
     }

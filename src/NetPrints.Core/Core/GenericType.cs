@@ -1,6 +1,6 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
-using System.Runtime.Serialization;
 
 namespace NetPrints.Core
 {
@@ -8,7 +8,6 @@ namespace NetPrints.Core
     /// Constraint on generic types.
     /// </summary>
     [Serializable]
-    [DataContract]
     public class GenericTypeConstraint
     {
     }
@@ -16,7 +15,6 @@ namespace NetPrints.Core
     /// <summary>
     /// An unbound generic type.
     /// </summary>
-    [DataContract]
     [Serializable]
     public class GenericType : BaseType
     {
@@ -29,7 +27,12 @@ namespace NetPrints.Core
             private set;
         }
 
-        public GenericType(string name, IEnumerable<GenericTypeConstraint> constraints = null)
+        /// <summary>
+        /// Creates a generic type named <paramref name="name"/> with the given constraints.
+        /// </summary>
+        /// <param name="name">Name of the generic type parameter.</param>
+        /// <param name="constraints">Constraints for the generic type, or none.</param>
+        public GenericType(string name, IEnumerable<GenericTypeConstraint>? constraints = null)
             : base(name)
         {
             if (constraints == null)
@@ -69,7 +72,7 @@ namespace NetPrints.Core
         {
             if (!type.IsGenericParameter)
             {
-                throw new ArgumentException(nameof(type));
+                throw new ArgumentException("Type must be a generic parameter.", nameof(type));
             }
 
             // TODO: Convert constraints
@@ -78,14 +81,23 @@ namespace NetPrints.Core
             return genericType;
         }
 
-        public override bool Equals(object obj)
+        /// <summary>
+        /// Compares this generic type to another <see cref="GenericType"/> by name (constraints are not
+        /// checked yet, tracked by a TODO), consistent with <see cref="GetHashCode"/>. A
+        /// <see cref="TypeSpecifier"/> (a bound type) is never equal to an unbound
+        /// <see cref="GenericType"/> parameter, however compatible the two would be once a value is
+        /// substituted for the parameter -- callers that need "is this bound type an acceptable
+        /// substitution" (eg. <see cref="Graph.GraphUtil.CanConnectNodePins"/>) check that directly
+        /// instead of through equality.
+        /// </summary>
+        /// <param name="obj">Object to compare to.</param>
+        /// <returns>
+        /// <see langword="true"/> if <paramref name="obj"/> is a <see cref="GenericType"/> with the same
+        /// <see cref="BaseType.Name"/>.
+        /// </returns>
+        public override bool Equals(object? obj)
         {
-            if (obj is TypeSpecifier t)
-            {
-                // TODO: Check constraints
-                return true;
-            }
-            else if (obj is GenericType genType)
+            if (obj is GenericType genType)
             {
                 // TODO: Check constraints
                 return Name == genType.Name;
@@ -94,26 +106,56 @@ namespace NetPrints.Core
             return false;
         }
 
+        /// <summary>
+        /// Returns <see cref="BaseType.Name"/>'s hash code.
+        /// </summary>
+        /// <returns><see cref="BaseType.Name"/>'s hash code.</returns>
         public override int GetHashCode()
         {
-            return Name.GetHashCode();
+            return Name.GetHashCode(StringComparison.Ordinal);
         }
 
+        /// <summary>
+        /// Same as <see cref="Equals(object?)"/>.
+        /// </summary>
+        /// <param name="a">First generic type.</param>
+        /// <param name="b">Second generic type.</param>
+        /// <returns><see langword="true"/> if the two have the same name.</returns>
         public static bool operator ==(GenericType a, GenericType b)
         {
             return a.Equals(b);
         }
 
+        /// <summary>
+        /// The negation of <see cref="operator ==(GenericType, GenericType)"/>.
+        /// </summary>
+        /// <param name="a">First generic type.</param>
+        /// <param name="b">Second generic type.</param>
+        /// <returns><see langword="true"/> if the two do not have the same name.</returns>
         public static bool operator !=(GenericType a, GenericType b)
         {
             return !a.Equals(b);
         }
 
+        /// <summary>
+        /// Same as <see cref="Equals(object?)"/>: always <see langword="false"/> (a bound
+        /// <see cref="TypeSpecifier"/> is never equal to an unbound <see cref="GenericType"/> parameter).
+        /// </summary>
+        /// <param name="a">Generic type.</param>
+        /// <param name="b">Type specifier.</param>
+        /// <returns>Always <see langword="false"/>.</returns>
         public static bool operator ==(GenericType a, TypeSpecifier b)
         {
             return a.Equals(b);
         }
 
+        /// <summary>
+        /// The negation of <see cref="operator ==(GenericType, TypeSpecifier)"/>: always
+        /// <see langword="true"/>.
+        /// </summary>
+        /// <param name="a">Generic type.</param>
+        /// <param name="b">Type specifier.</param>
+        /// <returns>Always <see langword="true"/>.</returns>
         public static bool operator !=(GenericType a, TypeSpecifier b)
         {
             return !a.Equals(b);

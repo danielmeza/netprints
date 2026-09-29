@@ -1,3 +1,4 @@
+using System;
 using System.Collections.ObjectModel;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
@@ -7,6 +8,7 @@ using DynamicData;
 using NetPrints.Core;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Hosting;
+using NetPrints.Extensibility.Nodes;
 using NetPrints.Graph;
 using NetPrints.Reflection;
 
@@ -18,46 +20,11 @@ namespace NetPrints.Editor.Search;
 /// </summary>
 public sealed partial class SuggestionListVM : ObservableObject, IDisposable
 {
-    private static readonly IReadOnlyDictionary<Type, TypeSpecifier[]> BuiltInNodes = new Dictionary<Type, TypeSpecifier[]>
-    {
-        [typeof(MethodGraph)] =
-        [
-            TypeSpecifier.FromType<ForLoopNode>(),
-            TypeSpecifier.FromType<IfElseNode>(),
-            TypeSpecifier.FromType<ConstructorNode>(),
-            TypeSpecifier.FromType<TypeOfNode>(),
-            TypeSpecifier.FromType<ExplicitCastNode>(),
-            TypeSpecifier.FromType<ReturnNode>(),
-            TypeSpecifier.FromType<MakeArrayNode>(),
-            TypeSpecifier.FromType<LiteralNode>(),
-            TypeSpecifier.FromType<TypeNode>(),
-            TypeSpecifier.FromType<MakeArrayTypeNode>(),
-            TypeSpecifier.FromType<ThrowNode>(),
-            TypeSpecifier.FromType<AwaitNode>(),
-            TypeSpecifier.FromType<TernaryNode>(),
-            TypeSpecifier.FromType<DefaultNode>(),
-        ],
-        [typeof(ConstructorGraph)] =
-        [
-            TypeSpecifier.FromType<ForLoopNode>(),
-            TypeSpecifier.FromType<IfElseNode>(),
-            TypeSpecifier.FromType<ConstructorNode>(),
-            TypeSpecifier.FromType<TypeOfNode>(),
-            TypeSpecifier.FromType<ExplicitCastNode>(),
-            TypeSpecifier.FromType<MakeArrayNode>(),
-            TypeSpecifier.FromType<LiteralNode>(),
-            TypeSpecifier.FromType<TypeNode>(),
-            TypeSpecifier.FromType<MakeArrayTypeNode>(),
-            TypeSpecifier.FromType<ThrowNode>(),
-            TypeSpecifier.FromType<TernaryNode>(),
-            TypeSpecifier.FromType<DefaultNode>(),
-        ],
-        [typeof(ClassGraph)] =
-        [
-            TypeSpecifier.FromType<TypeNode>(),
-            TypeSpecifier.FromType<MakeArrayTypeNode>(),
-        ],
-    };
+    private const string NetPrintsCategory = "NetPrints";
+    private const string ThisMethodsCategory = "This Methods";
+    private const string ThisVariablesCategory = "This Variables";
+    private const string StaticMethodsCategory = "Static Methods";
+    private const string MethodVariablesCategory = "Method Variables";
 
     private readonly NodeGraphVM graph;
     private readonly SourceList<SuggestionItem> source = new();
@@ -68,6 +35,12 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
     private IReadOnlyList<SuggestionItem> allItems = [];
     private int openVersion;
 
+    /// <summary>
+    /// Creates the search popup's view model and wires its filter pipeline: search text is throttled
+    /// on <paramref name="graph"/>'s context scheduler, then re-applied as a DynamicData filter,
+    /// observed back on the UI thread.
+    /// </summary>
+    /// <param name="graph">Graph view model the search is opened for.</param>
     public SuggestionListVM(NodeGraphVM graph)
     {
         this.graph = graph;
@@ -84,7 +57,13 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
             .Filter(predicates, ListFilterPolicy.ClearAndReplace)
             .ObserveOn(new UiDispatcherScheduler(graph.Context.Dispatcher))
             .Bind(out items, resetThreshold: 50)
-            .Subscribe(_ => OnPropertyChanged(nameof(VisibleCount)));
+            .Subscribe(_ =>
+            {
+                OnPropertyChanged(nameof(VisibleCount));
+
+                // The debounced filter just landed in Items (FLAKE-01): safe to click again.
+                IsFiltering = false;
+            });
     }
 
     /// <summary>Filtered rows (headers and suggestions) in display order.</summary>
@@ -116,7 +95,25 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
     [ObservableProperty]
     public partial string SearchText { get; set; } = "";
 
-    partial void OnSearchTextChanged(string value) => textChanges.OnNext(value ?? "");
+    /// <summary>
+    /// True from the moment the search text changes until the debounced filter has actually been
+    /// applied to <see cref="Items"/> (FLAKE-01). The result list disables itself meanwhile: a row
+    /// that already matched the previous, unfiltered view (eg. "Major" on a freshly-dropped
+    /// <see cref="Version"/> pin, before the user finishes typing "major") would otherwise be
+    /// clickable, and get replaced out from under the pointer the moment the filter lands.
+    /// </summary>
+    [ObservableProperty]
+    public partial bool IsFiltering { get; set; }
+
+    partial void OnSearchTextChanged(string value)
+    {
+        IsFiltering = true;
+        textChanges.OnNext(value ?? "");
+    }
+
+    /// <summary>Highlighted result, two-way bound to the result list's <c>SelectedItem</c> (PAR-52, batch X2b).</summary>
+    [ObservableProperty]
+    public partial SuggestionItem? SelectedItem { get; set; }
 
     /// <summary>Opens the popup: clears the search text and builds the suggestions for a pin (or none).</summary>
     public async Task OpenAsync(GraphPoint position, NodePin? pin, CancellationToken cancellationToken = default)
@@ -175,6 +172,24 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
 
     [RelayCommand]
     private void Close() => IsOpen = false;
+
+    /// <summary>
+    /// Enter in the search box: picks and opens the first non-header suggestion (batch X2b). Flushes
+    /// the pending <see cref="FilterThrottle"/> window synchronously first (R2-14): otherwise, pressing
+    /// Enter inside that window reads <see cref="Items"/> before the debounced filter for the latest
+    /// <see cref="SearchText"/> has landed, and picks the previous text's first result instead.
+    /// </summary>
+    [RelayCommand]
+    private void SelectFirst()
+    {
+        var matches = BuildPredicate(SearchText ?? "");
+        SelectCommand.Execute(allItems.FirstOrDefault(i => !i.IsHeader && matches(i)));
+    }
+
+    /// <summary>Down in the search box: highlights the first non-header suggestion before focus moves
+    /// to the result list (batch X2b).</summary>
+    [RelayCommand]
+    private void HighlightFirst() => SelectedItem = Items.FirstOrDefault(i => !i.IsHeader);
 
     private Func<SuggestionItem, bool> BuildPredicate(string text)
     {
@@ -251,7 +266,18 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
 
         void Add(string category, IEnumerable<object> values) => result.AddRange(values.Select(v => (category, v)));
 
-        IEnumerable<object> BuiltIns() => BuiltInNodes.TryGetValue(nodeGraph.GetType(), out var nodes) ? nodes : [];
+        GraphKinds graphKind = NodeGraphKinds.Of(nodeGraph);
+        var suggestedKinds = graphKind == GraphKinds.None
+            ? []
+            : graph.Context.Extensions.Current.NodeKinds.Where(kind => kind.Suggestions.Count > 0 && kind.AllowedIn.HasFlag(graphKind)).ToList();
+
+        // Built-in kinds are offered as their node type (SelectAsync asks a dialog where a kind needs one); an extension's
+        // suggestions come last, after every built-in category (extension-points.md §2).
+        IEnumerable<object> BuiltIns() => suggestedKinds.Where(kind => !kind.Kind.Contains('/', StringComparison.Ordinal)).Select(kind => (object)TypeSpecifier.FromType(kind.NodeType));
+
+        IEnumerable<(string Category, object Value)> ExtensionNodes() => suggestedKinds
+            .Where(kind => kind.Kind.Contains('/', StringComparison.Ordinal))
+            .SelectMany(kind => kind.Suggestions.Select(suggestion => (suggestion.Category, (object)suggestion)));
 
         ReflectionProviderMethodQuery MethodQuery() => classType is null ? new() : new ReflectionProviderMethodQuery().WithVisibleFrom(classType);
 
@@ -262,7 +288,7 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
             case NodeOutputDataPin odp when odp.PinType.Value is TypeSpecifier pinType:
                 if (classType is not null)
                 {
-                    Add("NetPrints", [new MakeDelegateTypeInfo(pinType, classType)]);
+                    Add(NetPrintsCategory, [new MakeDelegateTypeInfo(pinType, classType)]);
                 }
 
                 Add("Pin Variables", provider.GetVariables(VariableQuery().WithType(pinType).WithStatic(false)));
@@ -270,30 +296,30 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
 
                 foreach (var baseType in baseTypes)
                 {
-                    Add("This Methods", provider.GetMethods(MethodQuery().WithStatic(false).WithArgumentType(pinType).WithType(baseType)));
+                    Add(ThisMethodsCategory, provider.GetMethods(MethodQuery().WithStatic(false).WithArgumentType(pinType).WithType(baseType)));
                 }
 
-                Add("Static Methods", provider.GetMethods(MethodQuery().WithArgumentType(pinType).WithStatic(true)));
+                Add(StaticMethodsCategory, provider.GetMethods(MethodQuery().WithArgumentType(pinType).WithStatic(true)));
                 break;
 
             case NodeInputDataPin idp when idp.PinType.Value is TypeSpecifier pinType:
                 foreach (var baseType in baseTypes)
                 {
-                    Add("This Variables", provider.GetVariables(VariableQuery().WithType(baseType).WithVariableType(pinType, true)));
+                    Add(ThisVariablesCategory, provider.GetVariables(VariableQuery().WithType(baseType).WithVariableType(pinType, true)));
                 }
 
-                Add("Static Methods", provider.GetMethods(MethodQuery().WithStatic(true).WithReturnType(pinType)));
+                Add(StaticMethodsCategory, provider.GetMethods(MethodQuery().WithStatic(true).WithReturnType(pinType)));
                 break;
 
             case NodeOutputExecPin or NodeInputExecPin:
-                Add("NetPrints", BuiltIns());
+                Add(NetPrintsCategory, BuiltIns());
 
                 foreach (var baseType in baseTypes)
                 {
-                    Add("This Methods", provider.GetMethods(MethodQuery().WithType(baseType).WithStatic(false)));
+                    Add(ThisMethodsCategory, provider.GetMethods(MethodQuery().WithType(baseType).WithStatic(false)));
                 }
 
-                Add("Static Methods", provider.GetMethods(MethodQuery().WithStatic(true)));
+                Add(StaticMethodsCategory, provider.GetMethods(MethodQuery().WithStatic(true)));
                 break;
 
             case NodeInputTypePin:
@@ -301,6 +327,7 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
                 break;
 
             case NodeOutputTypePin otp:
+                // NodeOutputTypePin.InferredType is non-nullable (its inferred type is never absent).
                 if (nodeGraph is ExecutionGraph && otp.InferredType.Value is TypeSpecifier typeSpecifier)
                 {
                     Add("Pin Static Methods", provider.GetMethods(MethodQuery().WithType(typeSpecifier).WithStatic(true)));
@@ -315,24 +342,46 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
                 break;
 
             case null:
-                Add("NetPrints", BuiltIns());
+                Add(NetPrintsCategory, BuiltIns());
 
-                if (nodeGraph is ExecutionGraph)
+                if (nodeGraph is ExecutionGraph executionGraph)
                 {
                     foreach (var baseType in baseTypes)
                     {
-                        Add("This Variables", provider.GetVariables(VariableQuery().WithType(baseType).WithStatic(false)));
-                        Add("This Methods", provider.GetMethods(MethodQuery().WithType(baseType).WithStatic(false)));
+                        Add(ThisVariablesCategory, provider.GetVariables(VariableQuery().WithType(baseType).WithStatic(false)));
+                        Add(ThisMethodsCategory, provider.GetMethods(MethodQuery().WithType(baseType).WithStatic(false)));
                     }
 
-                    Add("Static Methods", provider.GetMethods(MethodQuery().WithStatic(true)));
+                    Add(StaticMethodsCategory, provider.GetMethods(MethodQuery().WithStatic(true)));
                     Add("Static Variables", provider.GetVariables(VariableQuery().WithStatic(true)));
+
+                    // US5, sub-phase H: the opened method's or constructor's own local variables.
+                    Add(MethodVariablesCategory, executionGraph.LocalVariables.Select(l => (object)l.ToSpecifier()));
                 }
                 else if (nodeGraph is ClassGraph)
                 {
                     Add("Types", provider.GetNonStaticTypes());
                 }
+                else if (nodeGraph is EventGraph && cls is not null)
+                {
+                    // US4: an event graph starts empty; "Custom Event" and "Override <method>"
+                    // create its entries (EventEntryNode) the same way the class editor's own
+                    // lists create methods and constructors.
+                    Add(NetPrintsCategory, [new CustomEventSuggestion()]);
+
+                    var alreadyNamed = new HashSet<string>(cls.Methods.Select(m => m.Name)
+                        .Concat(cls.EventGraphs.SelectMany(g => g.Entries.Select(e => e.EventName))));
+
+                    Add(NetPrintsCategory, baseTypes.SelectMany(provider.GetOverridableMethodsForType)
+                        .Where(m => !alreadyNamed.Contains(m.Name))
+                        .Select(m => (object)new OverrideEventSuggestion(m)));
+                }
                 break;
+        }
+
+        if (pin is null or NodeOutputExecPin or NodeInputExecPin)
+        {
+            result.AddRange(ExtensionNodes());
         }
 
         return result;
@@ -365,12 +414,33 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
         {
             switch (item.Value)
             {
+                case NodeSuggestion suggestion:
+                    graph.AddNode(Position, pin, suggestion);
+                    break;
+
                 case MethodSpecifier method:
-                    AddNode<CallMethodNode>(method, method.GenericArguments.Select(a => (BaseType)new GenericType(a.Name)).ToList());
+                    // CallMethodNode builds its generic-argument type pins from method.GenericArguments
+                    // itself (T103a): no separate generic-argument-types constructor argument needed.
+                    AddNode<CallMethodNode>(method);
                     break;
 
                 case VariableSpecifier variable:
                     graph.GetSetChooser.Open(variable, Position);
+                    break;
+
+                case CustomEventSuggestion:
+                    if (graph.Graph is EventGraph { Class: { } eventClass })
+                    {
+                        var existingNames = eventClass.Methods.Select(m => m.Name)
+                            .Concat(eventClass.EventGraphs.SelectMany(g => g.Entries.Select(e => e.EventName)))
+                            .ToList();
+                        string name = NetPrintsUtil.GetUniqueName(CustomEventSuggestion.NamePrefix, existingNames);
+                        graph.AddEventEntry(Position, g => new EventEntryNode(g, name));
+                    }
+                    break;
+
+                case OverrideEventSuggestion overrideEvent:
+                    graph.AddEventEntry(Position, g => new EventEntryNode(g, overrideEvent.Method));
                     break;
 
                 case MakeDelegateTypeInfo makeDelegate:
@@ -453,6 +523,7 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
         }
     }
 
+    /// <summary>Disposes the filter pipeline and its subjects.</summary>
     public void Dispose()
     {
         pipeline.Dispose();

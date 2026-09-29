@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using NetPrints.Editor.Hosting;
+using NetPrints.Projects;
 
 namespace NetPrints.Editor.Hosting.Avalonia;
 
@@ -7,18 +8,36 @@ namespace NetPrints.Editor.Hosting.Avalonia;
 /// (the editor's Output pane) instead of the editor's own terminal.</summary>
 public sealed class ProcessLauncher : IProcessLauncher
 {
+    /// <inheritdoc/>
     public event Action<string>? OutputReceived;
 
-    public void Start(string fileName, string? arguments)
+    /// <inheritdoc/>
+    public void Start(ProcessStartRequest request)
     {
+        var startInfo = new ProcessStartInfo(request.FileName)
+        {
+            WorkingDirectory = request.WorkingDirectory,
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+        };
+
+        foreach (string argument in request.Arguments)
+        {
+            startInfo.ArgumentList.Add(argument);
+        }
+
+        if (request.EnvironmentVariables is not null)
+        {
+            foreach ((string key, string value) in request.EnvironmentVariables)
+            {
+                startInfo.Environment[key] = value;
+            }
+        }
+
         var process = new Process
         {
-            StartInfo = new ProcessStartInfo(fileName, arguments ?? "")
-            {
-                UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-            },
+            StartInfo = startInfo,
             EnableRaisingEvents = true,
         };
 

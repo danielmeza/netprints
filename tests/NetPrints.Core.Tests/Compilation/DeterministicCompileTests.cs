@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using NetPrints.Core;
+using NetPrints.Projects;
 using NetPrints.Tests.Samples;
 using Xunit;
 
@@ -22,30 +24,53 @@ namespace NetPrints.Tests.Compilation
             catch (IOException) { }
         }
 
-        [Fact(Timeout = 120000)]
-        public async Task CompilingTwiceGivesIdenticalBinaries()
+        private async Task<Dictionary<string, byte[]>> BuildAndRecordAsync(SampleBuild sample, Project project, System.Threading.CancellationToken cancellationToken)
         {
-            var cancellationToken = TestContext.Current.CancellationToken;
-            var project = SampleProjectFactory.CreateHelloWorld(Path.Combine(tempDir, "HelloWorld.netpp"));
+            BuildResult build = await sample.SaveAndBuildAsync(project, cancellationToken);
+            Assert.True(build.Success, build.Log);
+            string assembly = Assert.IsType<string>(build.OutputAssemblyPath);
 
-            // Several classes, so the order in which sources reach the compiler matters.
-            for (int i = 0; i < 8; i++)
+            var recorded = new Dictionary<string, byte[]> { [Path.GetFileName(assembly)] = await File.ReadAllBytesAsync(assembly, cancellationToken) };
+            foreach (string generated in Directory.EnumerateFiles(tempDir, "*.netpc.g.cs").OrderBy(p => p, StringComparer.Ordinal))
             {
-                project.CreateNewClass();
+                recorded[Path.GetFileName(generated)] = await File.ReadAllBytesAsync(generated, cancellationToken);
             }
 
-            project.Save();
+            return recorded;
+        }
 
-            byte[] Output() => File.ReadAllBytes(Path.Combine(tempDir, "Compiled_HelloWorld", "HelloWorld.exe"));
+        [Fact(Timeout = 240000)]
+        public async Task BuildingTwiceGivesIdenticalOutput()
+        {
+            var cancellationToken = TestContext.Current.CancellationToken;
+            SampleBuild sample = SampleBuild.CopyHelloWorld(tempDir);
+            Project project = await sample.LoadAsync(cancellationToken);
 
-            await HelloWorldSampleTests.CompileAsync(project, cancellationToken);
-            Assert.True(project.LastCompilationSucceeded, string.Join(Environment.NewLine, project.LastCompileErrors));
-            byte[] first = Output();
-
-            for (int run = 0; run < 3; run++)
+            // Several classes, so the order in which sources reach the compiler matters.
+            IProjectProfile profile = DefaultProjectProfile.Instance;
+            for (int i = 0; i < 8; i++)
             {
-                await HelloWorldSampleTests.CompileAsync(project, cancellationToken);
-                Assert.True(first.SequenceEqual(Output()), $"compilation {run + 2} produced different bytes");
+                project.CreateNewClass(profile);
+            }
+
+            Dictionary<string, byte[]> first = await BuildAndRecordAsync(sample, project, cancellationToken);
+            Assert.Equal(9, first.Keys.Count(name => name.EndsWith(".netpc.g.cs", StringComparison.Ordinal)));
+
+            foreach (string folder in new[] { "bin", "obj" })
+            {
+                string path = Path.Combine(tempDir, folder);
+                if (Directory.Exists(path))
+                {
+                    Directory.Delete(path, true);
+                }
+            }
+
+            Dictionary<string, byte[]> second = await BuildAndRecordAsync(sample, project, cancellationToken);
+
+            Assert.Equal(first.Keys.OrderBy(k => k, StringComparer.Ordinal), second.Keys.OrderBy(k => k, StringComparer.Ordinal));
+            foreach ((string name, byte[] bytes) in first)
+            {
+                Assert.True(bytes.AsSpan().SequenceEqual(second[name]), $"{name} differs between the two builds");
             }
         }
     }

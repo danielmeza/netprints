@@ -1,4 +1,4 @@
-﻿using System.Runtime.Serialization;
+﻿#nullable enable
 using NetPrints.Core;
 
 namespace NetPrints.Graph
@@ -6,7 +6,6 @@ namespace NetPrints.Graph
     /// <summary>
     /// Node representing an integer-based for-loop.
     /// </summary>
-    [DataContract]
     public class ForLoopNode : Node
     {
         /// <summary>
@@ -68,6 +67,11 @@ namespace NetPrints.Graph
             get { return OutputDataPins[0]; }
         }
 
+        /// <summary>
+        /// Adds this node to <paramref name="graph"/> and gives it its execution, continue, index-range
+        /// and index pins. Defaults <see cref="InitialIndexPin"/>'s unconnected value to 0.
+        /// </summary>
+        /// <param name="graph">Graph the node belongs to.</param>
         public ForLoopNode(NodeGraph graph)
             : base(graph)
         {
@@ -82,10 +86,13 @@ namespace NetPrints.Graph
 
             AddOutputDataPin("Index", TypeSpecifier.FromType<int>());
 
-            InitialIndexPin.UsesExplicitDefaultValue = true;
-            InitialIndexPin.ExplicitDefaultValue = 0;
+            InitialIndexPin.UnconnectedValue = 0;
         }
 
+        /// <summary>
+        /// Returns "For Loop".
+        /// </summary>
+        /// <returns>"For Loop".</returns>
         public override string ToString()
         {
             return "For Loop";

@@ -1,0 +1,200 @@
+#nullable enable
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace NetPrints.Core;
+
+/// <summary>
+/// Computes and resolves the stable "graph key" every <see cref="NodeGraph"/> of a class is
+/// identified by (document-format.md §1.4.1): <c>class</c> for the class graph, a member id for a
+/// method, constructor or event graph, and <c>&lt;variableId&gt;/type</c>, <c>/get</c>, <c>/set</c>
+/// for a variable's type graph and accessors. Used for the document's <c>layout</c> map, diagnostic
+/// locations and generator messages.
+/// </summary>
+public static class GraphKeys
+{
+    /// <summary>
+    /// Returns <paramref name="graph"/>'s graph key.
+    /// </summary>
+    /// <param name="graph">Graph to compute the key of.</param>
+    /// <returns>The graph key.</returns>
+    /// <exception cref="InvalidOperationException"><paramref name="graph"/> is not attached to a
+    /// class (<see cref="NodeGraph.Class"/> is <see langword="null"/>), or is a graph kind with no
+    /// defined key.</exception>
+    public static string For(NodeGraph graph)
+    {
+        if (graph is ClassGraph)
+        {
+            return "class";
+        }
+
+        if (graph is TypeGraph typeGraph)
+        {
+            ClassGraph owner = typeGraph.OwningClass ?? throw new InvalidOperationException(
+                "Graph of type 'TypeGraph' is not attached to a class.");
+
+            foreach (Variable variable in owner.Variables)
+            {
+                if (ReferenceEquals(variable.TypeGraph, graph))
+                {
+                    return $"{variable.Id}/type";
+                }
+            }
+
+            throw new InvalidOperationException("Graph of type 'TypeGraph' has no graph key.");
+        }
+
+        ClassGraph cls = graph.Class ?? throw new InvalidOperationException(
+            $"Graph of type '{graph.GetType()}' is not attached to a class.");
+
+        if (graph is MethodGraph method)
+        {
+            foreach (Variable variable in cls.Variables)
+            {
+                if (ReferenceEquals(variable.GetterMethod, method))
+                {
+                    return $"{variable.Id}/get";
+                }
+
+                if (ReferenceEquals(variable.SetterMethod, method))
+                {
+                    return $"{variable.Id}/set";
+                }
+            }
+
+            return method.Id;
+        }
+
+        if (graph is ConstructorGraph constructor)
+        {
+            return constructor.Id;
+        }
+
+        if (graph is EventGraph eventGraph)
+        {
+            return eventGraph.Id;
+        }
+
+        throw new InvalidOperationException($"Graph of type '{graph.GetType()}' has no graph key.");
+    }
+
+    /// <summary>
+    /// Returns the graph of <paramref name="cls"/> whose graph key is <paramref name="key"/>.
+    /// </summary>
+    /// <param name="cls">Class to resolve the key against.</param>
+    /// <param name="key">Graph key, as returned by <see cref="For"/>.</param>
+    /// <returns>The matching graph, or <see langword="null"/> if <paramref name="key"/> does not
+    /// resolve to one of <paramref name="cls"/>'s graphs.</returns>
+    public static NodeGraph? Resolve(ClassGraph cls, string key)
+    {
+        if (key == "class")
+        {
+            return cls;
+        }
+
+        int slash = key.IndexOf('/', StringComparison.Ordinal);
+        if (slash >= 0)
+        {
+            string variableId = key[..slash];
+            string accessor = key[(slash + 1)..];
+            Variable? variable = cls.Variables.FirstOrDefault(v => v.Id == variableId);
+
+            if (variable is null)
+            {
+                return null;
+            }
+
+            return accessor switch
+            {
+                "type" => variable.TypeGraph,
+                "get" => variable.GetterMethod,
+                "set" => variable.SetterMethod,
+                _ => null,
+            };
+        }
+
+        foreach (MethodGraph method in cls.Methods)
+        {
+            if (method.Id == key)
+            {
+                return method;
+            }
+        }
+
+        foreach (ConstructorGraph constructor in cls.Constructors)
+        {
+            if (constructor.Id == key)
+            {
+                return constructor;
+            }
+        }
+
+        foreach (EventGraph eventGraph in cls.EventGraphs)
+        {
+            if (eventGraph.Id == key)
+            {
+                return eventGraph;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Returns the graph key of the graph of <paramref name="cls"/> that has a node with
+    /// <paramref name="nodeId"/> (host <c>focusDocument</c> navigation, R2-21): the class graph itself,
+    /// its methods, constructors and event graphs, and each variable's getter, setter and type graph, in
+    /// that order.
+    /// </summary>
+    /// <param name="cls">Class to search.</param>
+    /// <param name="nodeId">Id of the node to find.</param>
+    /// <returns>The owning graph's key, or <see langword="null"/> if no graph of <paramref name="cls"/> has that node.</returns>
+    public static string? ForNode(ClassGraph cls, string nodeId)
+    {
+        foreach (NodeGraph graph in AllGraphs(cls))
+        {
+            if (graph.FindNode(nodeId) is not null)
+            {
+                return For(graph);
+            }
+        }
+
+        return null;
+    }
+
+    private static IEnumerable<NodeGraph> AllGraphs(ClassGraph cls)
+    {
+        yield return cls;
+
+        foreach (MethodGraph method in cls.Methods)
+        {
+            yield return method;
+        }
+
+        foreach (ConstructorGraph constructor in cls.Constructors)
+        {
+            yield return constructor;
+        }
+
+        foreach (EventGraph eventGraph in cls.EventGraphs)
+        {
+            yield return eventGraph;
+        }
+
+        foreach (Variable variable in cls.Variables)
+        {
+            if (variable.GetterMethod is { } getter)
+            {
+                yield return getter;
+            }
+
+            if (variable.SetterMethod is { } setter)
+            {
+                yield return setter;
+            }
+
+            yield return variable.TypeGraph;
+        }
+    }
+}

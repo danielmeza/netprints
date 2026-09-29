@@ -1,0 +1,8 @@
+{
+  "label": "Research notes",
+  "position": 9,
+  "link": {
+    "type": "generated-index",
+    "description": "Dated research notes behind design decisions. Each records what was true on its date and is not updated."
+  }
+}

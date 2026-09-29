@@ -1,0 +1,8 @@
+{
+  "id": "netprints.test",
+  "name": "NetPrints test extension",
+  "version": "1.0.0",
+  "assembly": "NetPrints.TestExtension.dll",
+  "netprintsApi": "1.0",
+  "dependsOn": []
+}

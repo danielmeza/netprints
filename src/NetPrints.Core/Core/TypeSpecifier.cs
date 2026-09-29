@@ -1,21 +1,19 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
 
 namespace NetPrints.Core
 {
     /// <summary>
     /// Specifier describing "real" types (not purely unbound generic).
     /// </summary>
-    [DataContract]
     [Serializable]
     public class TypeSpecifier : BaseType
     {
         /// <summary>
         /// Whether this type is an enum.
         /// </summary>
-        [DataMember]
         public bool IsEnum
         {
             get;
@@ -25,7 +23,6 @@ namespace NetPrints.Core
         /// <summary>
         /// Whether this type is an interface.
         /// </summary>
-        [DataMember]
         public bool IsInterface
         {
             get;
@@ -35,7 +32,6 @@ namespace NetPrints.Core
         /// <summary>
         /// Generic arguments this type takes.
         /// </summary>
-        [DataMember]
         public ObservableRangeCollection<BaseType> GenericArguments
         {
             get;
@@ -83,7 +79,7 @@ namespace NetPrints.Core
 
         /// <summary>
         /// Same as <see cref="FullCodeName"/> but with unbound generic arguments replaced
-        /// by blank (eg. List<T> -> List<>). Needed when referring to unbound types in code.
+        /// by blank (eg. <c>List&lt;T&gt;</c> -> <c>List&lt;&gt;</c>). Needed when referring to unbound types in code.
         /// </summary>
         public override string FullCodeNameUnbound
         {
@@ -124,7 +120,7 @@ namespace NetPrints.Core
         /// <param name="isEnum">Whether the type is an enum.</param>
         /// <param name="isInterface">Whether the type is an interface.</param>
         /// <param name="genericArguments">Generic arguments the type takes.</param>
-        public TypeSpecifier(string typeName, bool isEnum = false, bool isInterface = false, IEnumerable<BaseType> genericArguments = null)
+        public TypeSpecifier(string typeName, bool isEnum = false, bool isInterface = false, IEnumerable<BaseType>? genericArguments = null)
             : base(typeName)
         {
             IsEnum = isEnum;
@@ -159,7 +155,7 @@ namespace NetPrints.Core
         {
             if (type.IsGenericParameter)
             {
-                throw new ArgumentException(nameof(type));
+                throw new ArgumentException("Type must not be a generic parameter.", nameof(type));
             }
 
             string typeName = type.Name.Split('`').First();
@@ -188,26 +184,26 @@ namespace NetPrints.Core
             return typeSpecifier;
         }
 
-        public override bool Equals(object obj)
+        /// <summary>
+        /// Compares this type to another <see cref="TypeSpecifier"/> by name and generic arguments
+        /// (see <see cref="GenericArgumentsEqual"/>), consistent with <see cref="GetHashCode"/>. A
+        /// <see cref="GenericType"/> (an unbound parameter) is never equal to this bound type -- see
+        /// <see cref="GenericType.Equals(object?)"/>'s remarks.
+        /// </summary>
+        /// <param name="obj">Object to compare to.</param>
+        /// <returns>
+        /// <see langword="true"/> if <paramref name="obj"/> is a <see cref="TypeSpecifier"/> with the
+        /// same name and generic arguments. <see cref="IsEnum"/> and <see cref="IsInterface"/> are not
+        /// part of equality: they are derived facts about the same named type, and two
+        /// <see cref="TypeSpecifier"/> instances for the same type can disagree on them (eg. an
+        /// array-of-enum type built from an element type's flags vs. one built with a hardcoded
+        /// <see langword="false"/>).
+        /// </returns>
+        public override bool Equals(object? obj)
         {
             if (obj is TypeSpecifier t)
             {
-                // Name equal
-                // Generic arguments equal
-                // IsEnum equal
-
-                if (Name == t.Name && GenericArgumentsEqual(t))
-                {
-                    if (IsEnum != t.IsEnum)
-                        throw new ArgumentException("obj has same type name but IsEnum is different");
-
-                    return true;
-                }
-            }
-            else if (obj is GenericType genType)
-            {
-                // TODO: Check constraints
-                return true;
+                return Name == t.Name && GenericArgumentsEqual(t);
             }
 
             return false;
@@ -223,14 +219,25 @@ namespace NetPrints.Core
             return GenericArguments.SequenceEqual(t.GenericArguments);
         }
 
+        /// <summary>
+        /// Returns a hash combining <see cref="BaseType.Name"/> and the generic arguments' joined
+        /// string form, consistent with <see cref="Equals(object?)"/>'s name-and-generic-arguments
+        /// comparison.
+        /// </summary>
+        /// <returns>A hash code for this type.</returns>
         public override int GetHashCode()
         {
             return HashCode.Combine(Name, string.Join(",", GenericArguments));
         }
 
+        /// <summary>
+        /// Returns <see cref="BaseType.Name"/> (with nested-class "+" replaced by "."), followed by its
+        /// generic arguments in angle brackets if any.
+        /// </summary>
+        /// <returns>The type's display string.</returns>
         public override string ToString()
         {
-            string s = Name.Replace("+", ".");
+            string s = Name.Replace("+", ".", StringComparison.Ordinal);
 
             if (GenericArguments.Count > 0)
             {
@@ -260,7 +267,7 @@ namespace NetPrints.Core
             for (int i = 0; i < newGenericArgs.Count; i++)
             {
                 if (newGenericArgs[i] is GenericType oldGenericType
-                    && typeSpecifiers.TryGetValue(oldGenericType, out BaseType newType))
+                    && typeSpecifiers.TryGetValue(oldGenericType, out BaseType? newType))
                 {
                     newGenericArgs[i] = newType;
                 }
@@ -271,7 +278,13 @@ namespace NetPrints.Core
             return new TypeSpecifier(Name, IsEnum, IsInterface, newGenericArgs);
         }
 
-        public static bool operator ==(TypeSpecifier a, TypeSpecifier b)
+        /// <summary>
+        /// Same as <see cref="Equals(object?)"/>, null-safe (two <see langword="null"/>s are equal).
+        /// </summary>
+        /// <param name="a">First type, or <see langword="null"/>.</param>
+        /// <param name="b">Second type, or <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> if the two are equal or both <see langword="null"/>.</returns>
+        public static bool operator ==(TypeSpecifier? a, TypeSpecifier? b)
         {
             if (a is null)
             {
@@ -281,7 +294,13 @@ namespace NetPrints.Core
             return a.Equals(b);
         }
 
-        public static bool operator !=(TypeSpecifier a, TypeSpecifier b)
+        /// <summary>
+        /// The negation of <see cref="operator ==(TypeSpecifier?, TypeSpecifier?)"/>.
+        /// </summary>
+        /// <param name="a">First type, or <see langword="null"/>.</param>
+        /// <param name="b">Second type, or <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> unless the two are equal or both <see langword="null"/>.</returns>
+        public static bool operator !=(TypeSpecifier? a, TypeSpecifier? b)
         {
             if (a is null)
             {
@@ -291,7 +310,15 @@ namespace NetPrints.Core
             return !a.Equals(b);
         }
 
-        public static bool operator ==(TypeSpecifier a, GenericType b)
+        /// <summary>
+        /// Same as <see cref="Equals(object?)"/> against a <see cref="GenericType"/> (always
+        /// <see langword="false"/> unless both are <see langword="null"/>; a bound type is never equal
+        /// to an unbound generic parameter), null-safe.
+        /// </summary>
+        /// <param name="a">Type specifier, or <see langword="null"/>.</param>
+        /// <param name="b">Generic type, or <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> only if both are <see langword="null"/>.</returns>
+        public static bool operator ==(TypeSpecifier? a, GenericType? b)
         {
             if (a is null)
             {
@@ -301,7 +328,13 @@ namespace NetPrints.Core
             return a.Equals(b);
         }
 
-        public static bool operator !=(TypeSpecifier a, GenericType b)
+        /// <summary>
+        /// The negation of <see cref="operator ==(TypeSpecifier?, GenericType?)"/>.
+        /// </summary>
+        /// <param name="a">Type specifier, or <see langword="null"/>.</param>
+        /// <param name="b">Generic type, or <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> unless both are <see langword="null"/>.</returns>
+        public static bool operator !=(TypeSpecifier? a, GenericType? b)
         {
             if (a is null)
             {
@@ -311,7 +344,15 @@ namespace NetPrints.Core
             return !a.Equals(b);
         }
 
-        public static bool operator ==(TypeSpecifier a, BaseType b)
+        /// <summary>
+        /// Same as <see cref="Equals(object?)"/>, null-safe, with <paramref name="b"/> typed as the
+        /// common <see cref="BaseType"/> base (dispatches to the <see cref="TypeSpecifier"/> or
+        /// <see cref="GenericType"/> comparison at runtime).
+        /// </summary>
+        /// <param name="a">Type specifier, or <see langword="null"/>.</param>
+        /// <param name="b">Type, or <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> if the two are equal or both <see langword="null"/>.</returns>
+        public static bool operator ==(TypeSpecifier? a, BaseType? b)
         {
             if (a is null)
             {
@@ -321,7 +362,13 @@ namespace NetPrints.Core
             return a.Equals(b);
         }
 
-        public static bool operator !=(TypeSpecifier a, BaseType b)
+        /// <summary>
+        /// The negation of <see cref="operator ==(TypeSpecifier?, BaseType?)"/>.
+        /// </summary>
+        /// <param name="a">Type specifier, or <see langword="null"/>.</param>
+        /// <param name="b">Type, or <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> unless the two are equal or both <see langword="null"/>.</returns>
+        public static bool operator !=(TypeSpecifier? a, BaseType? b)
         {
             if (a is null)
             {
@@ -331,7 +378,13 @@ namespace NetPrints.Core
             return !a.Equals(b);
         }
 
-        public static bool operator ==(BaseType a, TypeSpecifier b)
+        /// <summary>
+        /// Same as <see cref="operator ==(TypeSpecifier?, BaseType?)"/> with the operands reversed.
+        /// </summary>
+        /// <param name="a">Type, or <see langword="null"/>.</param>
+        /// <param name="b">Type specifier, or <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> if the two are equal or both <see langword="null"/>.</returns>
+        public static bool operator ==(BaseType? a, TypeSpecifier? b)
         {
             if (a is null)
             {
@@ -341,7 +394,13 @@ namespace NetPrints.Core
             return a.Equals(b);
         }
 
-        public static bool operator !=(BaseType a, TypeSpecifier b)
+        /// <summary>
+        /// The negation of <see cref="operator ==(BaseType?, TypeSpecifier?)"/>.
+        /// </summary>
+        /// <param name="a">Type, or <see langword="null"/>.</param>
+        /// <param name="b">Type specifier, or <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> unless the two are equal or both <see langword="null"/>.</returns>
+        public static bool operator !=(BaseType? a, TypeSpecifier? b)
         {
             if (a is null)
             {

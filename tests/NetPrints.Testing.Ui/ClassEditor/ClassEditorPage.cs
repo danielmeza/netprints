@@ -1,7 +1,9 @@
 using NetPrints.Editor;
 using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Testing.Ui.Driving;
+using NetPrints.Testing.Ui.Events;
 using NetPrints.Testing.Ui.Graph;
+using NetPrints.Testing.Ui.Variables;
 
 namespace NetPrints.Testing.Ui.ClassEditor;
 
@@ -22,6 +24,10 @@ public sealed class ClassEditorPage(IUiDriver driver, string classFullName)
     public UiElement CreateMethodButton => Find(AutomationIds.ClassEditorCreateMethodButton);
     public UiElement CreateConstructorButton => Find(AutomationIds.ClassEditorCreateConstructorButton);
     public UiElement CreateVariableButton => Find(AutomationIds.ClassEditorCreateVariableButton);
+    public EventGraphsPage EventGraphs => new(Driver, Query);
+    public LocalVariablesPanel LocalVariables => new(Driver, Query);
+    public UiElement VariablesClassGroup => Find(AutomationIds.VariablesClassGroup);
+    public UiElement VariablesMethodGroup => Find(AutomationIds.VariablesMethodGroup);
     public UiElement ErrorList => Find(AutomationIds.ClassEditorErrorList);
     public UiElement OutputTab => Find(AutomationIds.ClassEditorOutputTab);
     public UiElement OutputText => Find(AutomationIds.ClassEditorOutputText);
@@ -35,8 +41,9 @@ public sealed class ClassEditorPage(IUiDriver driver, string classFullName)
     public UiElement LeftSplitter => Find(AutomationIds.ClassEditorLeftSplitter);
     public UiElement ErrorsSplitter => Find(AutomationIds.ClassEditorErrorsSplitter);
     public UiElement InspectorSplitter => Find(AutomationIds.ClassEditorInspectorSplitter);
+    public UiElement EventGraphsSplitter => Find(AutomationIds.ClassEditorEventGraphsSplitter);
 
-    public IReadOnlyList<UiElement> Splitters => [MethodsSplitter, ConstructorsSplitter, LeftSplitter, ErrorsSplitter, InspectorSplitter];
+    public IReadOnlyList<UiElement> Splitters => [MethodsSplitter, ConstructorsSplitter, LeftSplitter, ErrorsSplitter, InspectorSplitter, EventGraphsSplitter];
 
     public ClassInspectorPanel ClassInspector => new(Driver, Query);
     public InspectorPanel MethodInspector => new(Driver, Query, AutomationIds.MethodInspector);
@@ -55,6 +62,13 @@ public sealed class ClassEditorPage(IUiDriver driver, string classFullName)
     public UiElement Variable(string name) => VariableList.Find(AutomationIds.VariableRow, name: name);
 
     public UiElement VariableNameText(string name) => Variable(name).Find(AutomationIds.VariableName);
+
+    /// <summary>An error list row (diagnostic id text) in the Errors tab.</summary>
+    public UiElement ErrorRow(string diagnosticId) => ErrorList.Find(AutomationIds.ClassEditorErrorId, text: diagnosticId);
+
+    /// <summary>An error list row's severity icon, by its index in the Errors tab (OWN-04): used to
+    /// double-click just past it, in the row's own background rather than on rendered text.</summary>
+    public UiElement ErrorSeverityIcon(int index) => ErrorList.Find(AutomationIds.ClassEditorErrorSeverity, index: index);
 
     public async Task<IReadOnlyList<string>> MethodNamesAsync(CancellationToken cancellationToken) =>
         (await Driver.FindAllAsync(new AutomationQuery(AutomationIds.ClassEditorMethodName) { Within = MethodList.Query }, cancellationToken))
@@ -85,11 +99,14 @@ public sealed class ClassEditorPage(IUiDriver driver, string classFullName)
         return (await StatusText.TextAsync(cancellationToken))!;
     }
 
-    /// <summary>Waits until Run's Output tab shows <paramref name="expected"/> (the program's console output).</summary>
+    /// <summary>Waits until Run's Output tab shows <paramref name="expected"/> (the program's console output).
+    /// The budget matches <see cref="WaitForBuildResultAsync"/>'s: the run command is <c>dotnet run
+    /// --project ... --no-build</c> (FLAKE-02), which still pays SDK-resolution and process-start
+    /// overhead beyond the already-built binary, so 60 s left too little margin on a cold runner.</summary>
     public async Task<string> WaitForOutputContainingAsync(string expected, CancellationToken cancellationToken)
     {
         await OutputText.WaitUntilAsync(e => (e.Text ?? "").Contains(expected, StringComparison.Ordinal),
-            $"output containing '{expected}'", cancellationToken, TimeSpan.FromSeconds(60));
+            $"output containing '{expected}'", cancellationToken, TimeSpan.FromSeconds(120));
         return (await OutputText.TextAsync(cancellationToken))!;
     }
 
@@ -112,5 +129,5 @@ public sealed class ClassInspectorPanel(IUiDriver driver, AutomationQuery window
 {
     public UiElement NameBox => Find(AutomationIds.ClassInspectorName);
 
-    public UiElement GeneratedCode => Find(AutomationIds.ClassInspectorGeneratedCode);
+    public UiElement CodeView => Find(AutomationIds.ClassInspectorCodeView);
 }

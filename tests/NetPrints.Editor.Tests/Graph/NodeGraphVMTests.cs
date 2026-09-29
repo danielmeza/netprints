@@ -60,6 +60,32 @@ public class NodeGraphVMTests(TestEditor editor) : GraphTestBase(editor)
     }
 
     [Fact]
+    public void ConnectionCompletedCommandConnectsCompatiblePins()
+    {
+        var write = new CallMethodNode(Method, ConsoleWriteLine(StringType));
+        VmOf(Method.EntryNode.InitialExecutionPin).DisconnectAll();
+        var source = VmOf(Method.EntryNode.InitialExecutionPin);
+        var target = VmOf(write.InputExecPins[0]);
+
+        Graph.ConnectionCompletedCommand.Execute((source, target)); // ED-T09
+
+        Assert.Same(write.InputExecPins[0], Method.EntryNode.InitialExecutionPin.OutgoingPin);
+    }
+
+    [Fact]
+    public void ConnectionCompletedCommandOpensSearchWhenReleasedOnEmptyCanvas()
+    {
+        var source = VmOf(Method.EntryNode.InitialExecutionPin);
+        Graph.PendingConnectionAnchor = new GraphPoint(40, 60);
+
+        Graph.ConnectionCompletedCommand.Execute((source, (NodePinVM?)null)); // ED-T09, PAR-47
+
+        Assert.True(Graph.Search.IsOpen);
+        Assert.Same(Method.EntryNode.InitialExecutionPin, Graph.Search.SuggestionPin);
+        Assert.Equal(new GraphPoint(40, 60), Graph.Search.Position);
+    }
+
+    [Fact]
     public void SelectionByClickBoxAndDeselect()
     {
         var entry = VmOf(Method.EntryNode);
@@ -118,11 +144,22 @@ public class NodeGraphVMTests(TestEditor editor) : GraphTestBase(editor)
         Assert.Equal(variable.Name, graph.GetSetChooser.Variable!.Name);
     }
 
+    // T103a: NodeGraphVM.Drop(MethodVM, GraphPoint)'s Graph.Class guard (added in T011/T012's nullable
+    // rollout) was not covered by a test.
+    [Fact]
+    public void DropMethodWhenTheOpenGraphHasNoClassThrows()
+    {
+        Method.Class = null;
+
+        var ex = Assert.Throws<InvalidOperationException>(() => Graph.Drop(ClassEditor.Methods.Single(), new GraphPoint(1, 1)));
+        Assert.Equal("The open graph has no class.", ex.Message);
+    }
+
     [Fact]
     public void NameWatermark()
     {
         Assert.Equal(Method.Name, Graph.Name);
-        var classGraph = new NodeGraphVM(Class, ClassEditor);
+        var classGraph = new NodeGraphVM(Class, ClassEditor.Services);
         Assert.Equal("C", classGraph.Name);
         classGraph.Dispose();
     }

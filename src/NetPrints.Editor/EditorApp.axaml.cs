@@ -4,6 +4,8 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Styling;
+using Microsoft.Extensions.Logging;
+using NetPrints.Editor.Graph;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Editor.Main;
@@ -19,7 +21,32 @@ public partial class EditorApp : Application
     /// <summary>The embedded Inter font (Avalonia.Fonts.Inter), used as the default font family.</summary>
     public const string DefaultFontFamily = "avares://Avalonia.Fonts.Inter/Assets#Inter";
 
-    public override void Initialize() => AvaloniaXamlLoader.Load(this);
+    private static EditorHostServices? hostServices;
+
+    /// <summary>
+    /// Process-wide services (logging, extensions, settings, host channel, MSBuild availability). Set by the host (<c>NetPrints.Desktop</c>'s <c>Program</c>) before
+    /// <c>StartWithClassicDesktopLifetime</c> runs; read by
+    /// <see cref="OnFrameworkInitializationCompleted"/>.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">Read before a host has set it.</exception>
+    public static EditorHostServices HostServices
+    {
+        get => hostServices ?? throw new InvalidOperationException(
+            $"{nameof(EditorApp)}.{nameof(HostServices)} was read before a host set it.");
+        set => hostServices = value;
+    }
+
+    /// <summary>
+    /// Loads the application's XAML (styles, resources) and configures Nodify's connector gestures
+    /// once, before any <see cref="Graph.GraphEditorView"/> is created (REVIEW-NOTE, PR #6): the real
+    /// desktop host and the headless UI tests both build this same <see cref="EditorApp"/>, so this is
+    /// the one shared place, called once.
+    /// </summary>
+    public override void Initialize()
+    {
+        AvaloniaXamlLoader.Load(this);
+        GraphEditorGestures.Configure();
+    }
 
     /// <summary>
     /// Removes all transitions (theme animations), so screenshots and pixel checks are taken in a
@@ -31,16 +58,34 @@ public partial class EditorApp : Application
             Setters = { new Setter(Animatable.TransitionsProperty, null) },
         });
 
+    /// <summary>
+    /// On a classic desktop lifetime: composes the editor's services, creates and shows the main
+    /// window, installs the unhandled-exception handler, and, when <c>NETPRINTS_AUTOMATION=1</c>,
+    /// starts the automation agent (disabling UI transitions first, for settled screenshots) and
+    /// exits loudly if it fails to start. Opens the project named on the command line, if any.
+    /// </summary>
     public override void OnFrameworkInitializationCompleted()
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            var composition = new EditorComposition();
+            var composition = new EditorComposition(HostServices);
             var exceptionHandler = composition.InstallUnhandledExceptionHandler();
             desktop.Exit += (_, _) => exceptionHandler.Dispose();
             var window = composition.CreateMainWindow();
             desktop.MainWindow = window;
             desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;
+
+            var shutdownLogger = HostServices.LoggerFactory.CreateLogger(nameof(EditorApp));
+            var shutdownCoordinator = new ShutdownCoordinator(
+                async () =>
+                {
+                    composition.Dispose();
+                    await HostServices.DisposeAsync();
+                    Hosting.Log.HostServicesDisposed(shutdownLogger);
+                },
+                () => desktop.Shutdown(),
+                shutdownLogger);
+            desktop.ShutdownRequested += (_, e) => shutdownCoordinator.OnShutdownRequested(e);
 
             // Automation mode (E2E tests only): settled screenshots and a read-only agent.
             if (AutomationAgent.IsEnabled(out string pipeName))
@@ -54,10 +99,11 @@ public partial class EditorApp : Application
                 {
                     agent = new AutomationAgent(pipeName, tree, () => new AutomationStatus(
                         window.IsVisible,
-                        composition.MainEditor!.Project is not null && !composition.MainEditor.IsBusy,
+                        composition.MainEditor is { } mainEditor && mainEditor.Project is not null && !mainEditor.IsBusy,
                         composition.Context.Reflection.IsLoaded,
                         startupProject,
-                        Environment.ProcessId));
+                        Environment.ProcessId),
+                        HostServices.LoggerFactory.CreateLogger<AutomationAgent>());
                 }
                 catch (Exception e)
                 {
@@ -76,8 +122,9 @@ public partial class EditorApp : Application
                 };
             }
 
-            // A single command-line argument is a project to open (FR-016, PAR-05).
-            _ = composition.MainEditor!.OpenStartupProjectAsync(desktop.Args ?? []);
+            // Startup problems first, then a single command-line argument is a project to open (FR-016, PAR-05).
+            // Not a command, and StartAsync has no catch of its own: route a fault to the error dialog too.
+            composition.StartAsync(desktop.Args ?? []).Forget(composition.Context, "Failed to start the editor");
         }
 
         base.OnFrameworkInitializationCompleted();

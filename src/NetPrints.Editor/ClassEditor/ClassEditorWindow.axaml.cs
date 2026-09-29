@@ -7,28 +7,10 @@ namespace NetPrints.Editor.ClassEditor;
 /// <summary>Class editor window (PAR-22..37).</summary>
 public partial class ClassEditorWindow : Window
 {
+    /// <summary>Loads the window's XAML.</summary>
     public ClassEditorWindow()
     {
         InitializeComponent();
-    }
-
-    private ClassEditorVM? ViewModel => DataContext as ClassEditorVM;
-
-    // Single click shows the method inspector, double click opens the graph (PAR-24, 27).
-    private void OnMethodTapped(object? sender, TappedEventArgs e)
-    {
-        if ((sender as Control)?.DataContext is MethodVM method)
-        {
-            ViewModel?.SelectMethodCommand.Execute(method);
-        }
-    }
-
-    private void OnMethodDoubleTapped(object? sender, TappedEventArgs e)
-    {
-        if ((sender as Control)?.DataContext is MethodVM method)
-        {
-            ViewModel?.OpenMethodCommand.Execute(method);
-        }
     }
 
     // Methods and constructors can be dragged onto the graph (PAR-56).

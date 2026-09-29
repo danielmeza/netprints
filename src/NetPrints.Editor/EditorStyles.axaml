@@ -1,5 +1,6 @@
 <Styles xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia">
   <Styles.Resources>
     <ResourceDictionary>
       <!-- Graph canvas grid (spec 002): lines white on dark, black on light; minor 8% and major 18% alpha.
@@ -8,14 +9,58 @@
         <ResourceDictionary x:Key="Dark">
           <Color x:Key="GraphGrid.MinorColor">#14FFFFFF</Color>
           <Color x:Key="GraphGrid.MajorColor">#2EFFFFFF</Color>
+          <SolidColorBrush x:Key="GraphWatermark.Foreground">#CCEEEEEE</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.CardBackground">#AA202020</SolidColorBrush>
+          <BoxShadows x:Key="Node.CardShadow">4 4 8 0 #80000000</BoxShadows>
+          <SolidColorBrush x:Key="Node.TitleForeground">#FFEEEEEE</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.SubtitleForeground">#FFEEEEEE</SolidColorBrush>
+          <SolidColorBrush x:Key="OpeningGraphIndicator.Background">#CC202020</SolidColorBrush>
+          <SolidColorBrush x:Key="OpeningGraphIndicator.Foreground">White</SolidColorBrush>
+          <SolidColorBrush x:Key="BusyOverlay.Background">#AA000000</SolidColorBrush>
+          <!-- Pin hover stroke (PAR-43, R2-07): white reads fine over the dark card, invisible over Light. -->
+          <SolidColorBrush x:Key="Pin.HoverStroke">White</SolidColorBrush>
+          <!-- Error-list row severity icon (FR-032, OWN-03, owner report). -->
+          <SolidColorBrush x:Key="Diagnostic.Error.Foreground">#FF6666</SolidColorBrush>
+          <SolidColorBrush x:Key="Diagnostic.Warning.Foreground">#FFB74D</SolidColorBrush>
+          <SolidColorBrush x:Key="Diagnostic.Info.Foreground">#64B5F6</SolidColorBrush>
         </ResourceDictionary>
+        <!-- Light (R2-17): unreachable today (EditorApp.axaml hard-codes RequestedThemeVariant="Dark",
+             no user setting) and incomplete (GraphBrushes in Graph/GraphConverters.cs is not themed).
+             Kept only because GridRenderTests already switches to Light and checks the grid tokens;
+             full tokenization and a Light snapshot test are deferred (P3a). -->
         <ResourceDictionary x:Key="Light">
           <Color x:Key="GraphGrid.MinorColor">#14000000</Color>
           <Color x:Key="GraphGrid.MajorColor">#2E000000</Color>
+          <SolidColorBrush x:Key="GraphWatermark.Foreground">#55202020</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.CardBackground">#AAF0F0F0</SolidColorBrush>
+          <BoxShadows x:Key="Node.CardShadow">2 2 6 0 #40000000</BoxShadows>
+          <SolidColorBrush x:Key="Node.TitleForeground">#FF202020</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.SubtitleForeground">#FF202020</SolidColorBrush>
+          <SolidColorBrush x:Key="OpeningGraphIndicator.Background">#CCF5F5F5</SolidColorBrush>
+          <SolidColorBrush x:Key="OpeningGraphIndicator.Foreground">#FF202020</SolidColorBrush>
+          <SolidColorBrush x:Key="BusyOverlay.Background">#66000000</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.HoverStroke">Black</SolidColorBrush>
+          <!-- Error-list row severity icon (FR-032, OWN-03, owner report). -->
+          <SolidColorBrush x:Key="Diagnostic.Error.Foreground">#C62828</SolidColorBrush>
+          <SolidColorBrush x:Key="Diagnostic.Warning.Foreground">#E65100</SolidColorBrush>
+          <SolidColorBrush x:Key="Diagnostic.Info.Foreground">#1565C0</SolidColorBrush>
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
     </ResourceDictionary>
   </Styles.Resources>
+
+  <!-- Error-list row severity icon color (FR-032, OWN-03): the icon's class is set from
+       DiagnosticRowVM.Is{Error,Warning,Info} (Classes.<name>="{Binding ...}"), the state→visual mapping
+       this style then turns into a themed color. -->
+  <Style Selector="mi|MaterialIcon.error">
+    <Setter Property="Foreground" Value="{DynamicResource Diagnostic.Error.Foreground}" />
+  </Style>
+  <Style Selector="mi|MaterialIcon.warning">
+    <Setter Property="Foreground" Value="{DynamicResource Diagnostic.Warning.Foreground}" />
+  </Style>
+  <Style Selector="mi|MaterialIcon.info">
+    <Setter Property="Foreground" Value="{DynamicResource Diagnostic.Info.Foreground}" />
+  </Style>
 
   <!-- Round toolbar buttons (MahApps MetroCircleButtonStyle in the WPF editor). -->
   <Style Selector="Button.round">

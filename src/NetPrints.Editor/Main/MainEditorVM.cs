@@ -1,11 +1,20 @@
-using System.Collections.Specialized;
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
+using Microsoft.Extensions.Logging;
+using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
+using NetPrints.Editor.ErrorList;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.References;
+using NetPrints.Extensibility.Loading;
+using NetPrints.Extensibility.Settings;
+using NetPrints.Generation;
+using NetPrints.Projects;
+using NetPrints.Serialization;
+using NetPrints.Translator;
 
 namespace NetPrints.Editor.Main;
 
@@ -13,25 +22,50 @@ namespace NetPrints.Editor.Main;
 /// View model of the main window: project lifecycle, settings, references and the class list
 /// (PAR-01..15).
 /// </summary>
-public sealed partial class MainEditorVM : ObservableObject
+public sealed partial class MainEditorVM : ObservableObject, IDisposable
 {
     private readonly EditorContext context;
+    private readonly ILogger<MainEditorVM> logger;
+    private readonly HashSet<(string Id, string? ManifestPath, string Code)> reportedExtensionFailures = [];
+    private readonly HostChannelBridge hostChannelBridge;
     private Project? subscribedProject;
 
+    /// <summary>The extension folders currently loaded (R2-11): restored on the catch path of
+    /// <see cref="LoadProjectAsync"/> when the new project's extensions were already swapped in but its
+    /// graphs never finished mapping, so the previous project's nodes and translation keep working.</summary>
+    private IReadOnlyList<string> activeExtensionFolders = [];
+
+    /// <summary>
+    /// Creates the main window's view model, optionally with a project already open.
+    /// </summary>
+    /// <param name="context">Host services shared across the editor.</param>
+    /// <param name="project">Initially open project, or <see langword="null"/>.</param>
     public MainEditorVM(EditorContext context, Project? project = null)
     {
         this.context = context;
+        logger = context.LoggerFactory.CreateLogger<MainEditorVM>();
+        hostChannelBridge = new HostChannelBridge(context.HostChannel, context.Dispatcher, ReloadReflectionAsync, FocusDocument,
+            context.LoggerFactory.CreateLogger<HostChannelBridge>());
         Project = project;
     }
 
+    /// <summary>Host services shared across the editor.</summary>
     public EditorContext Context => context;
 
     /// <summary>The open project, or null.</summary>
     [ObservableProperty]
-    [NotifyPropertyChangedFor(nameof(IsProjectOpen), nameof(CanCompile), nameof(CanCompileAndRun), nameof(Title))]
+    [NotifyPropertyChangedFor(nameof(IsProjectOpen), nameof(CanCompile), nameof(CanCompileAndRun), nameof(Title), nameof(Classes))]
     [NotifyCanExecuteChangedFor(nameof(SaveProjectCommand), nameof(CompileCommand), nameof(RunCommand),
         nameof(ShowReferencesCommand), nameof(NewClassCommand), nameof(AddExistingClassCommand), nameof(ToggleSettingsPaneCommand))]
     public partial Project? Project { get; set; }
+
+    /// <summary>
+    /// The open project's classes, or empty with no project open (batch D1): the class list's
+    /// <c>ItemsSource</c> binds this instead of the two-segment <c>Project.Classes</c>, which logged a
+    /// "Value is null" binding warning while no project was open yet (the null <see cref="Project"/>
+    /// intermediate). Still the live collection itself, so additions and removals keep updating the list.
+    /// </summary>
+    public IReadOnlyList<ClassGraph> Classes => Project?.Classes ?? [];
 
     /// <summary>Whether the Project pane (Create/Open/Save) is open.</summary>
     [ObservableProperty]
@@ -56,42 +90,57 @@ public sealed partial class MainEditorVM : ObservableObject
     [ObservableProperty]
     public partial string BusyMessage { get; set; } = "";
 
+    /// <summary>Whether a project is open.</summary>
     public bool IsProjectOpen => Project is not null;
 
+    /// <summary>Whether the open project can currently be compiled; <see langword="false"/> with no project open.</summary>
     public bool CanCompile => Project?.CanCompile ?? false;
 
+    /// <summary>Whether the open project can currently be compiled and run; <see langword="false"/> with no project open.</summary>
     public bool CanCompileAndRun => Project?.CanCompileAndRun ?? false;
 
     /// <summary>Window title: the project name (PAR-01).</summary>
     public string Title => Project?.Name is { Length: > 0 } name ? name : "NetPrints";
 
-    public IReadOnlyList<ProjectCompilationOutput> CompilationOutputs { get; } = Enum.GetValues<ProjectCompilationOutput>();
-
+    /// <summary>The values offered by the binary-type chooser.</summary>
     public IReadOnlyList<BinaryType> BinaryTypes { get; } = Enum.GetValues<BinaryType>();
 
-    public ProjectCompilationOutput CompilationOutput
-    {
-        get => Project?.CompilationOutput ?? ProjectCompilationOutput.Nothing;
-        set
-        {
-            if (Project is not null && Project.CompilationOutput != value)
-            {
-                Project.CompilationOutput = value;
-                OnPropertyChanged();
-            }
-        }
-    }
+    /// <summary>
+    /// The open project's output binary type, or <see cref="BinaryType.SharedLibrary"/> with no
+    /// project open. Read-only: the binary type chooser is bound <c>OneWay</c> and invokes
+    /// <see cref="SetOutputTypeCommand"/> on selection instead (R2-10), so two quick toggles serialize
+    /// through the command's own concurrency guard instead of racing each other's
+    /// <see cref="IProjectSystem.ApplyAsync"/> call.
+    /// </summary>
+    public BinaryType OutputBinaryType => Project?.OutputBinaryType ?? BinaryType.SharedLibrary;
 
-    public BinaryType OutputBinaryType
+    /// <summary>
+    /// Edits the <c>.csproj</c>'s output type through <see cref="IProjectSystem.ApplyAsync"/>
+    /// (<see cref="ProjectEdit.SetOutputType"/>, project-system.md §4) and replaces
+    /// <see cref="Core.Project.Snapshot"/> once that completes.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(IsProjectOpen))]
+    private async Task SetOutputTypeAsync(BinaryType value)
     {
-        get => Project?.OutputBinaryType ?? BinaryType.SharedLibrary;
-        set
+        if (Project is not { } project || project.OutputBinaryType == value)
         {
-            if (Project is not null && Project.OutputBinaryType != value)
-            {
-                Project.OutputBinaryType = value;
-                OnPropertyChanged();
-            }
+            return;
+        }
+
+        try
+        {
+            ProjectSnapshot snapshot = await context.Projects.ApplyAsync(
+                project.Path, [new ProjectEdit.SetOutputType(value)], CancellationToken.None);
+            project.Snapshot = snapshot;
+            project.OutputBinaryType = snapshot.OutputType;
+        }
+        catch (Exception ex)
+        {
+            await context.Dialogs.ShowErrorAsync("Failed to change the binary type", ex.ToString());
+        }
+        finally
+        {
+            OnPropertyChanged(nameof(OutputBinaryType));
         }
     }
 
@@ -100,7 +149,6 @@ public sealed partial class MainEditorVM : ObservableObject
     {
         if (subscribedProject is not null)
         {
-            subscribedProject.References.CollectionChanged -= OnReferencesChanged;
             ((INotifyPropertyChanged)subscribedProject).PropertyChanged -= OnProjectPropertyChanged;
         }
 
@@ -108,12 +156,10 @@ public sealed partial class MainEditorVM : ObservableObject
 
         if (value is not null)
         {
-            value.References.CollectionChanged += OnReferencesChanged;
             ((INotifyPropertyChanged)value).PropertyChanged += OnProjectPropertyChanged;
-            _ = ReloadReflectionAsync();
+            ReloadReflectionAsync().Forget(logger);
         }
 
-        OnPropertyChanged(nameof(CompilationOutput));
         OnPropertyChanged(nameof(OutputBinaryType));
 
         if (value is null)
@@ -121,8 +167,6 @@ public sealed partial class MainEditorVM : ObservableObject
             IsSettingsPaneOpen = false;
         }
     }
-
-    private void OnReferencesChanged(object? sender, NotifyCollectionChangedEventArgs e) => _ = ReloadReflectionAsync();
 
     private void OnProjectPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
@@ -133,14 +177,18 @@ public sealed partial class MainEditorVM : ObservableObject
                 if (Project is { IsCompiling: false })
                 {
                     // Reload after a compilation finished (PAR-15).
-                    _ = ReloadReflectionAsync();
+                    ReloadReflectionAsync().Forget(logger);
                 }
                 break;
             case nameof(Core.Project.OutputBinaryType):
-            case nameof(Core.Project.CompilationOutput):
                 RefreshCompileState();
-                OnPropertyChanged(nameof(CompilationOutput));
                 OnPropertyChanged(nameof(OutputBinaryType));
+                break;
+            case nameof(Core.Project.Snapshot):
+                // References or other build settings may have changed (the References dialog, the
+                // binary-type chooser): reload the reflection provider from the new snapshot.
+                OnPropertyChanged(nameof(OutputBinaryType));
+                ReloadReflectionAsync().Forget(logger);
                 break;
             case nameof(Core.Project.Name):
                 OnPropertyChanged(nameof(Title));
@@ -203,16 +251,17 @@ public sealed partial class MainEditorVM : ObservableObject
     }
 
     /// <summary>
-    /// Creates "MyProject"/"MyNamespace" with default references and asks where to save it.
-    /// Cancelling restores the previous project (PAR-03).
+    /// Creates a new project in a folder and name chosen by the user and opens it (PAR-03,
+    /// project-system.md §6): <see cref="IFilePickerService.SaveFileAsync"/> supplies the directory
+    /// and project name, then <see cref="IProjectSystem.CreateAsync"/> writes the <c>.csproj</c>.
+    /// Cancelling, or a failure, restores the previous project.
     /// </summary>
     [RelayCommand]
     private async Task CreateProjectAsync()
     {
         Project? oldProject = Project;
-        var newProject = Core.Project.CreateNew("MyProject", "MyNamespace");
 
-        string? path = await context.FilePicker.SaveFileAsync("Create Project", $"{newProject.Name}.netpp", "netpp",
+        string? path = await context.FilePicker.SaveFileAsync("Create Project", "MyProject.csproj", "csproj",
             [FileFilter.ProjectFiles]);
 
         if (path is null)
@@ -220,26 +269,33 @@ public sealed partial class MainEditorVM : ObservableObject
             return;
         }
 
-        newProject.Path = path;
-        newProject.Name = System.IO.Path.GetFileNameWithoutExtension(path);
+        string? directory = Path.GetDirectoryName(path);
+        if (string.IsNullOrEmpty(directory))
+        {
+            await context.Dialogs.ShowErrorAsync("Failed to create project", $"'{path}' has no directory.");
+            return;
+        }
+
+        string projectName = Path.GetFileNameWithoutExtension(path);
 
         try
         {
-            newProject.Save();
+            string csprojPath = await context.Projects.CreateAsync(
+                directory, projectName, DefaultProjectProfile.Instance, projectName, CancellationToken.None);
+            context.Windows.CloseAllClassEditors();
+            await LoadProjectAsync(csprojPath);
         }
         catch (Exception ex)
         {
-            await context.Dialogs.ShowErrorAsync("Failed to save project", $"Failed to save the project at {path}.\n\n{ex}");
+            await context.Dialogs.ShowErrorAsync("Failed to create project", $"Failed to create the project at {path}.\n\n{ex}");
             Project = oldProject;
             return;
         }
 
-        context.Windows.CloseAllClassEditors();
-        Project = newProject;
         IsProjectPaneOpen = false;
     }
 
-    /// <summary>Opens a project chosen with a *.netpp picker (PAR-04).</summary>
+    /// <summary>Opens a project chosen with a *.csproj picker (PAR-04).</summary>
     [RelayCommand]
     private async Task OpenProjectAsync()
     {
@@ -252,26 +308,81 @@ public sealed partial class MainEditorVM : ObservableObject
     }
 
     /// <summary>
-    /// Loads a project in the background with the progress overlay. On failure the exception is
-    /// shown in an error dialog and copied to the clipboard (PAR-04).
+    /// Loads a project in the background with the progress overlay, through
+    /// <see cref="ProjectPersistence"/>. Only a <c>.csproj</c> is accepted: any other path (for
+    /// example a legacy project file) shows a message and nothing is opened or written
+    /// (research.md R21). On a load failure the exception is shown in an error dialog and copied to
+    /// the clipboard (PAR-04); non-fatal issues found while loading classes are shown but do not
+    /// keep the project from opening (document-format.md §2.8).
     /// </summary>
     public async Task LoadProjectAsync(string path)
     {
+        if (!path.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase))
+        {
+            await context.Dialogs.ShowErrorAsync("Unsupported project file",
+                $"'{path}' is not a NetPrints project: only '.csproj' projects are supported. Nothing was opened.");
+            return;
+        }
+
         BusyTitle = "Loading project";
         BusyMessage = path;
         IsBusy = true;
+        IReadOnlyList<string> previousExtensionFolders = activeExtensionFolders;
 
         try
         {
-            Project loaded = await Task.Run(() => Core.Project.LoadFromPath(path))
-                ?? throw new InvalidDataException($"The file {path} does not contain a NetPrints project.");
+            IReadOnlyList<string> requestedProperties = context.Extensions.Current.ProjectProperties;
+            ProjectSnapshot snapshot = await context.Projects.LoadAsync(path, CancellationToken.None);
+            DocumentIssue? notTrusted = await LoadExtensionsForProjectAsync(snapshot);
+            if (context.Extensions.Current.ProjectProperties.Any(name => !requestedProperties.Contains(name, StringComparer.Ordinal)))
+            {
+                // The project's own extensions add MSBuild properties the first evaluation did not request (FR-025).
+                snapshot = await context.Projects.LoadAsync(path, CancellationToken.None);
+            }
+
+            DocumentIssue? unknownProfile = context.Extensions.Current.FindProfile(snapshot.ProfileId) is null
+                ? new DocumentIssue(DocumentIssueSeverity.Warning, DocumentIssue.UnknownProfile,
+                    $"The project profile '{snapshot.ProfileId}' is not provided by any loaded extension: the default profile is used. The project file is unchanged.",
+                    new DocumentId(Path.GetFileName(snapshot.ProjectFilePath)))
+                : null;
+            ProjectLoadResult loaded = await context.Persistence.LoadAsync(snapshot, CancellationToken.None);
 
             context.Windows.CloseAllClassEditors();
-            Project = loaded;
+            Project = loaded.Project;
+            IsBusy = false;
+
+            await ReportExtensionFailuresAsync();
+
+            IReadOnlyList<DocumentIssue> issues = [.. new[] { notTrusted, unknownProfile }.OfType<DocumentIssue>(), .. loaded.Issues];
+            if (issues.Count > 0)
+            {
+                await context.Dialogs.ShowErrorAsync("Project loaded with issues",
+                    string.Join("\n\n", issues.Select(issue => $"{issue.Code}: {issue.Message}")));
+            }
         }
         catch (Exception ex)
         {
             IsBusy = false;
+
+            // R2-11: the new project's extensions were already swapped in (LoadExtensionsForProjectAsync
+            // runs before its graphs are mapped), but its graphs never finished mapping: restore the
+            // previous project's extensions, or its own nodes and translation stop working until it is
+            // reopened.
+            if (!activeExtensionFolders.SequenceEqual(previousExtensionFolders))
+            {
+                try
+                {
+                    await context.Extensions.LoadForProjectAsync(previousExtensionFolders, CancellationToken.None);
+                    activeExtensionFolders = previousExtensionFolders;
+                }
+                catch (Exception rollbackEx)
+                {
+                    // The original load failure below must still reach the user even if the rollback
+                    // itself fails (R2-22).
+                    Log.ExtensionRollbackFailed(logger, rollbackEx);
+                }
+            }
+
             await context.Clipboard.SetTextAsync(ex.ToString());
             await context.Dialogs.ShowErrorAsync("Failed to load project",
                 $"Failed to load project at path {path}. The exception has been copied to your clipboard.\n\n{ex}");
@@ -283,8 +394,84 @@ public sealed partial class MainEditorVM : ObservableObject
     }
 
     /// <summary>
-    /// Saves the project and all classes, asking for a path first if none is set (PAR-06).
-    /// Returns whether the project was saved.
+    /// Loads the extensions of the project that is about to open (extension-points.md §8.3), before its graphs are
+    /// mapped: the project's <c>NetPrintsExtension</c> folders are loaded only if its full path is in
+    /// <see cref="NetPrintsSettings.TrustedProjects"/>; otherwise the user is asked once, "Trust" records the path in
+    /// the settings, and "Don't load" opens the project with those extensions' nodes preserved but inactive. A project
+    /// with no extension folders drops the previous project's.
+    /// </summary>
+    /// <returns>The <c>NPD006</c> issue when the user declined; otherwise <see langword="null"/>.</returns>
+    private async Task<DocumentIssue?> LoadExtensionsForProjectAsync(ProjectSnapshot snapshot)
+    {
+        IReadOnlyList<string> folders = snapshot.ExtensionFolders;
+        DocumentIssue? notTrusted = null;
+
+        if (folders.Count > 0 && !IsTrusted(snapshot.ProjectFilePath))
+        {
+            if (await context.Dialogs.ConfirmTrustAsync(snapshot.ProjectFilePath, folders))
+            {
+                NetPrintsSettings current = context.Settings.Get(NetPrintsSettings.Descriptor);
+                await context.Settings.SetAsync(NetPrintsSettings.Descriptor,
+                    current with { TrustedProjects = [.. current.TrustedProjects, snapshot.ProjectFilePath] }, CancellationToken.None);
+            }
+            else
+            {
+                notTrusted = new DocumentIssue(DocumentIssueSeverity.Warning, DocumentIssue.ExtensionNotTrusted,
+                    $"The extensions of '{snapshot.ProjectFilePath}' were not loaded because the project is not trusted: " +
+                    "the nodes they provide are preserved but inactive, and they are saved unchanged.",
+                    new DocumentId(Path.GetFileName(snapshot.ProjectFilePath)));
+                folders = [];
+            }
+        }
+
+        await context.Extensions.LoadForProjectAsync(folders, CancellationToken.None);
+        activeExtensionFolders = folders;
+        return notTrusted;
+    }
+
+    private bool IsTrusted(string projectFilePath)
+    {
+        StringComparison comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        return context.Settings.Get(NetPrintsSettings.Descriptor).TrustedProjects
+            .Any(trusted => string.Equals(trusted, projectFilePath, comparison));
+    }
+
+    /// <summary>
+    /// Shows one dialog listing the extensions that failed to load (<c>NPX001</c> to <c>NPX007</c>) and the
+    /// contributions the registry rejected, skipping what an earlier call already showed. The editor stays usable
+    /// without them (ED-T11, editor-services.md §5).
+    /// </summary>
+    public Task ReportExtensionFailuresAsync()
+    {
+        ExtensionRegistry registry = context.Extensions.Current;
+        List<CodeDiagnostic> diagnostics = [];
+
+        foreach (ExtensionLoadResult.Failed failed in registry.Results.OfType<ExtensionLoadResult.Failed>())
+        {
+            if (reportedExtensionFailures.Add((failed.Id, failed.ManifestPath, failed.Code)))
+            {
+                diagnostics.Add(new CodeDiagnostic(CodeDiagnosticSeverity.Error, failed.Code,
+                    $"Extension '{failed.Id}' was not loaded: {failed.Reason}", null, null, null, failed.ManifestPath, null));
+            }
+        }
+
+        foreach (ExtensionContributionIssue issue in registry.Issues)
+        {
+            if (reportedExtensionFailures.Add((issue.ExtensionId, issue.Contribution, issue.Code)))
+            {
+                diagnostics.Add(new CodeDiagnostic(CodeDiagnosticSeverity.Error, issue.Code,
+                    $"Extension '{issue.ExtensionId}': {issue.Contribution} was rejected: {issue.Reason}", null, null, null, null, null));
+            }
+        }
+
+        return diagnostics.Count == 0
+            ? Task.CompletedTask
+            : context.Dialogs.ShowIssuesAsync("Extensions failed to load", diagnostics);
+    }
+
+    /// <summary>
+    /// Saves every edited class of the open project through <see cref="ProjectPersistence"/> (PAR-06).
+    /// Returns whether the project was open (and therefore saved).
     /// </summary>
     [RelayCommand(CanExecute = nameof(IsProjectOpen))]
     private async Task<bool> SaveProjectAsync()
@@ -295,27 +482,19 @@ public sealed partial class MainEditorVM : ObservableObject
 
     internal async Task<bool> PromptProjectSaveAsync()
     {
-        if (Project is null)
+        if (Project is not { } project)
         {
             return false;
         }
 
-        if (Project.Path is null)
-        {
-            string? path = await context.FilePicker.SaveFileAsync("Save Project", $"{Project.Name}.netpp", "netpp",
-                [FileFilter.ProjectFiles]);
-
-            if (path is null)
-            {
-                return false;
-            }
-
-            Project.Path = path;
-        }
-
         try
         {
-            Project.Save();
+            ProjectSaveResult result = await context.Persistence.SaveAsync(project, cls => RenderGenerated(context, project, cls), CancellationToken.None);
+            if (result.Diagnostics.Count > 0)
+            {
+                project.LastDiagnostics = new ObservableRangeCollection<CodeDiagnostic>(result.Diagnostics);
+            }
+
             return true;
         }
         catch (Exception ex)
@@ -325,13 +504,113 @@ public sealed partial class MainEditorVM : ObservableObject
         }
     }
 
+    /// <summary>Renders a class's generated C# file the same way a build would (project-system.md §3).</summary>
+    private static string RenderGenerated(EditorContext context, Project project, ClassGraph cls) =>
+        GraphCodeGenerator.RenderFile(new ClassTranslator(context.Extensions.Current.Translation).Translate(cls), Path.GetFileName(project.GetGraphFilePath(cls)));
+
     /// <summary>Compiles the project in the background (PAR-09).</summary>
     [RelayCommand(CanExecute = nameof(CanCompile))]
-    private void Compile() => Project?.CompileProject();
+    private Task CompileAsync() => Project is null ? Task.CompletedTask : CompileAsync(Project, context);
 
     /// <summary>Compiles, then runs the program when the build succeeded (PAR-10).</summary>
     [RelayCommand(CanExecute = nameof(CanCompileAndRun))]
     private Task RunAsync() => Project is null ? Task.CompletedTask : CompileAndRunAsync(Project, context);
+
+    /// <summary>
+    /// Saves the project's dirty classes, builds it through <see cref="IProjectSystem.BuildAsync"/>
+    /// and maps the outcome onto <see cref="Core.Project.IsCompiling"/>,
+    /// <see cref="Core.Project.LastCompilationSucceeded"/> and <see cref="Core.Project.LastDiagnostics"/>
+    /// (shared by the main and class windows). A class that cannot be translated while saving is
+    /// reported as a build error; any other failure is shown through
+    /// <see cref="IEditorDialogs.ShowErrorAsync"/>.
+    /// </summary>
+    /// <returns>Whether the build succeeded.</returns>
+    public static async Task<bool> CompileAsync(Project project, EditorContext context)
+    {
+        project.IsCompiling = true;
+        project.CompilationMessage = "Compiling...";
+        try
+        {
+            await context.Persistence.SaveAsync(project, cls => RenderForBuild(context, project, cls), CancellationToken.None);
+            BuildResult result = await context.Projects.BuildAsync(project.Path, CancellationToken.None);
+            var classesByGeneratedPath = BuildClassesByGeneratedPath(context, project);
+            SetBuildOutcome(project, DiagnosticMapper.FromBuild(result.Messages, classesByGeneratedPath), result.Success, result.OutputAssemblyPath);
+            return result.Success;
+        }
+        catch (ClassTranslationFailure failure)
+        {
+            var diagnostic = new CodeDiagnostic(CodeDiagnosticSeverity.Error, TranslationDiagnosticCodes.Unclassified,
+                $"{failure.Class.FullName}: {failure.Message}", failure.Class.FullName, null, null, null, null);
+            SetBuildOutcome(project, [diagnostic], false, null);
+            return false;
+        }
+        catch (Exception ex)
+        {
+            project.LastCompilationSucceeded = false;
+            project.CompilationMessage = "Build failed";
+            await context.Dialogs.ShowErrorAsync("Failed to build project", ex.ToString());
+            return false;
+        }
+        finally
+        {
+            project.IsCompiling = false;
+        }
+    }
+
+    /// <summary>
+    /// Re-translates every class, keyed by its generated file's full path, so
+    /// <see cref="DiagnosticMapper.FromBuild"/> can map a build error back to its node (ED-T04).
+    /// </summary>
+    private static IReadOnlyDictionary<string, (ClassGraph Class, TranslatedClass Translated)> BuildClassesByGeneratedPath(EditorContext context, Project project)
+    {
+        var classesByGeneratedPath = new Dictionary<string, (ClassGraph, TranslatedClass)>(StringComparer.Ordinal);
+        foreach (ClassGraph cls in project.Classes)
+        {
+            try
+            {
+                TranslatedClass translated = new ClassTranslator(context.Extensions.Current.Translation).Translate(cls);
+                classesByGeneratedPath[ProjectFiles.GetGeneratedFilePath(project.GetGraphFilePath(cls))] = (cls, translated);
+            }
+            catch (TranslationException)
+            {
+                // Already translated once for the preceding save; left unmapped here is harmless.
+            }
+        }
+
+        return classesByGeneratedPath;
+    }
+
+    private static void SetBuildOutcome(Project project, IReadOnlyList<CodeDiagnostic> diagnostics, bool success, string? assemblyPath)
+    {
+        project.LastDiagnostics = new ObservableRangeCollection<CodeDiagnostic>(diagnostics);
+        project.LastCompilationSucceeded = success;
+        project.LastCompiledAssemblyPath = success ? assemblyPath : null;
+        project.CompilationMessage = success
+            ? "Build succeeded"
+            : $"Build failed with {diagnostics.Count(d => d.Severity == CodeDiagnosticSeverity.Error)} error(s)";
+    }
+
+    private static string RenderForBuild(EditorContext context, Project project, ClassGraph cls)
+    {
+        try
+        {
+            return RenderGenerated(context, project, cls);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            throw new ClassTranslationFailure(cls, ex);
+        }
+    }
+
+    /// <summary>
+    /// Marks a translation failure during compile as one that must abort the whole build (a
+    /// <see cref="ClassTranslationAbortException"/>), rather than being isolated per class by
+    /// <see cref="ProjectPersistence.SaveAsync"/> (F-07).
+    /// </summary>
+    private sealed class ClassTranslationFailure(ClassGraph cls, Exception inner) : ClassTranslationAbortException(inner.Message, inner)
+    {
+        public ClassGraph Class { get; } = cls;
+    }
 
     /// <summary>
     /// Compiles a project and starts the compiled program on success (shared by the main and
@@ -339,41 +618,15 @@ public sealed partial class MainEditorVM : ObservableObject
     /// </summary>
     public static async Task CompileAndRunAsync(Project project, EditorContext context)
     {
-        var completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-
-        void OnChanged(object? sender, PropertyChangedEventArgs e)
+        if (!await CompileAsync(project, context))
         {
-            if (e.PropertyName == nameof(Core.Project.IsCompiling) && !project.IsCompiling)
-            {
-                completion.TrySetResult(project.LastCompilationSucceeded);
-            }
-        }
-
-        var notifier = (INotifyPropertyChanged)project;
-        notifier.PropertyChanged += OnChanged;
-        try
-        {
-            project.CompileProject();
-            if (!project.IsCompiling)
-            {
-                // Nothing to compile (e.g. output set to Nothing).
-                completion.TrySetResult(false);
-            }
-
-            if (!await completion.Task)
-            {
-                return;
-            }
-        }
-        finally
-        {
-            notifier.PropertyChanged -= OnChanged;
+            return;
         }
 
         try
         {
-            var (fileName, arguments) = project.GetRunCommand();
-            context.Processes.Start(fileName, arguments);
+            ProcessStartRequest request = context.Projects.GetRunCommand(project.Path);
+            context.Processes.Start(request);
         }
         catch (Exception ex)
         {
@@ -387,7 +640,10 @@ public sealed partial class MainEditorVM : ObservableObject
     {
         try
         {
-            Project?.CreateNewClass();
+            if (Project is { } project)
+            {
+                project.CreateNewClass(ResolveProfile(project));
+            }
         }
         catch (Exception ex)
         {
@@ -395,7 +651,16 @@ public sealed partial class MainEditorVM : ObservableObject
         }
     }
 
-    /// <summary>Adds an existing *.netpc class, copied into the project folder (PAR-13).</summary>
+    /// <summary>
+    /// The profile the project's <c>NetPrintsProfile</c> names, or the default profile when no loaded extension provides it
+    /// (the <c>NPD005</c> warning was shown on load, extension-points.md §5).
+    /// </summary>
+    private IProjectProfile ResolveProfile(Project project) =>
+        project.Snapshot is { } snapshot && context.Extensions.Current.FindProfile(snapshot.ProfileId) is { } profile
+            ? profile
+            : DefaultProjectProfile.Instance;
+
+    /// <summary>Adds an existing *.netpc.json class, copied into the project folder (PAR-13).</summary>
     [RelayCommand(CanExecute = nameof(IsProjectOpen))]
     private async Task AddExistingClassAsync()
     {
@@ -412,7 +677,12 @@ public sealed partial class MainEditorVM : ObservableObject
 
         try
         {
-            Project.AddExistingClass(path);
+            (_, IReadOnlyList<DocumentIssue> issues) = await context.Persistence.AddGraphAsync(Project, path, CancellationToken.None);
+            if (issues.Count > 0)
+            {
+                await context.Dialogs.ShowErrorAsync("Class added with issues",
+                    string.Join("\n\n", issues.Select(issue => $"{issue.Code}: {issue.Message}")));
+            }
         }
         catch (Exception ex)
         {
@@ -430,7 +700,7 @@ public sealed partial class MainEditorVM : ObservableObject
             return;
         }
 
-        context.Windows.OpenClassEditor(new ClassEditorVM(cls, context));
+        context.Windows.OpenClassEditor(cls, context);
     }
 
     /// <summary>Closes the window of a class and removes it from the project (PAR-11, fixes the WPF defect).</summary>
@@ -448,9 +718,55 @@ public sealed partial class MainEditorVM : ObservableObject
 
     /// <summary>Opens the References dialog (PAR-08).</summary>
     [RelayCommand(CanExecute = nameof(IsProjectOpen))]
-    private Task ShowReferencesAsync() =>
-        Project is null ? Task.CompletedTask : context.Dialogs.ShowReferencesAsync(new ReferenceListVM(Project, context));
+    private async Task ShowReferencesAsync()
+    {
+        if (Project is null)
+        {
+            return;
+        }
+
+        using var references = new ReferenceListVM(Project, context);
+        await context.Dialogs.ShowReferencesAsync(references);
+    }
+
+    /// <summary>
+    /// Opens the class whose graph file is <paramref name="path"/> (project-relative or absolute), reusing an open
+    /// window, and, when <paramref name="nodeId"/> resolves to one of its graphs, navigates to that node (R2-21)
+    /// through the class editor's own scoped messenger (FR-038), the same path <see cref="ErrorListVM"/> uses.
+    /// </summary>
+    private bool FocusDocument(string path, string? nodeId)
+    {
+        if (Project is not { } project)
+        {
+            return false;
+        }
+
+        string projectDirectory = Path.GetDirectoryName(project.Path) ?? "";
+        string fullPath = Path.GetFullPath(path, projectDirectory);
+        StringComparison comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        ClassGraph? cls = project.Classes.FirstOrDefault(c => string.Equals(Path.GetFullPath(project.GetGraphFilePath(c)), fullPath, comparison));
+        if (cls is null)
+        {
+            return false;
+        }
+
+        OpenClass(cls);
+
+        if (nodeId is not null && context.Windows.FindClassEditor(cls) is { } editor && GraphKeys.ForNode(cls, nodeId) is { } graphKey)
+        {
+            editor.Messenger.Send(new NavigateToNodeMessage(graphKey, nodeId));
+        }
+
+        return true;
+    }
 
     /// <summary>Called when the main window closes (PAR-14).</summary>
-    public void OnMainWindowClosed() => context.Windows.CloseAllClassEditors();
+    public void OnMainWindowClosed()
+    {
+        Dispose();
+        context.Windows.CloseAllClassEditors();
+    }
+
+    /// <summary>Unsubscribes <see cref="hostChannelBridge"/> from the host channel.</summary>
+    public void Dispose() => hostChannelBridge.Dispose();
 }

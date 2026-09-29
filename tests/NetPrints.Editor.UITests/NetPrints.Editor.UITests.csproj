@@ -3,7 +3,6 @@
     <TargetFramework>net10.0</TargetFramework>
     <OutputType>Exe</OutputType>
     <ImplicitUsings>enable</ImplicitUsings>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <!-- Every async call in a test must observe TestContext.Current.CancellationToken. -->
     <WarningsAsErrors>$(WarningsAsErrors);xUnit1051</WarningsAsErrors>
   </PropertyGroup>
@@ -17,9 +16,10 @@
     <!-- Use the dependency-free Linux Skia build (no libfontconfig) instead of the default one. -->
     <PackageReference Include="SkiaSharp.NativeAssets.Linux" ExcludeAssets="all" />
     <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" />
-    <!-- A never-advanced virtual clock for the class editor's generated-code refresh loop, so it
-         cannot race a snapshot capture. -->
-    <PackageReference Include="Microsoft.Reactive.Testing" />
+    <!-- Transitively pulled in by the NetPrints.Editor -> NetPrints.Workspace project reference;
+         ExcludeAssets/PrivateAssets satisfies MSBuildLocator's own MSBL001 guard (research K10) here too. -->
+    <PackageReference Include="Microsoft.Build" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Build.Framework" ExcludeAssets="runtime" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
@@ -28,6 +28,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\NetPrints.Editor\NetPrints.Editor.csproj" />
+    <ProjectReference Include="..\NetPrints.Testing\NetPrints.Testing.csproj" />
     <ProjectReference Include="..\NetPrints.Testing.Ui\NetPrints.Testing.Ui.csproj" />
   </ItemGroup>
 

@@ -1,11 +1,17 @@
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.Diagnostics.CodeAnalysis;
+using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
+using NetPrints.Compilation;
 using NetPrints.Core;
+using NetPrints.Editor.CodeView;
+using NetPrints.Editor.ErrorList;
+using NetPrints.Editor.Events;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Main;
@@ -13,6 +19,7 @@ using NetPrints.Editor.ModelSync;
 using NetPrints.Editor.UndoRedo;
 using NetPrints.Editor.Variables;
 using NetPrints.Graph;
+using NetPrints.Serialization;
 using NetPrints.Translator;
 
 namespace NetPrints.Editor.ClassEditor;
@@ -20,15 +27,20 @@ namespace NetPrints.Editor.ClassEditor;
 /// <summary>Which inspector the class editor shows on the right (PAR-33).</summary>
 public enum InspectorKind
 {
+    /// <summary>The class inspector (name, namespace, visibility, modifiers).</summary>
     Class,
+
+    /// <summary>The variable inspector, for <see cref="ClassEditorVM.SelectedVariable"/>.</summary>
     Variable,
+
+    /// <summary>The method inspector, for <see cref="ClassEditorVM.SelectedMethod"/>.</summary>
     Method,
 }
 
 /// <summary>
 /// View model of a class editor window (PAR-22..37, PAR-60).
 /// </summary>
-public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGraphMessage>, IDisposable
+public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGraphMessage>, IRecipient<NavigateToNodeMessage>, IRecipient<SelectInspectorMessage>, IDisposable
 {
     internal static readonly IReadOnlyList<MemberVisibility> Visibilities =
     [
@@ -38,10 +50,12 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         MemberVisibility.Public,
     ];
 
-    private readonly ClassTranslator classTranslator = new();
-
     private readonly HashSet<Variable> subscribedVariables = [];
-    private IDisposable? generatedCodeLoop;
+    private readonly HashSet<ExecutionGraph> subscribedMethods = [];
+    private readonly HashSet<NodeGraph> dirtyTrackedGraphs = [];
+    private readonly HashSet<Node> dirtyTrackedNodes = [];
+    private readonly HashSet<NodePin> dirtyTrackedPins = [];
+    private readonly HashSet<INotifyCollectionChanged> dirtyTrackedPinCollections = [];
 
     /// <summary>Longest retained Output text, in characters (roughly 1 MB): older lines are
     /// dropped, oldest first, once exceeded.</summary>
@@ -49,34 +63,68 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
 
     private const string OutputTruncatedMarker = "… earlier output truncated …";
 
+    /// <summary>Grid cells from the origin to a newly created member's entry node.</summary>
+    private const double NewMemberEntryGridOffset = 4;
+
+    /// <summary>Grid cells from a newly created method's entry node to its return node.</summary>
+    private const double NewMethodReturnGridOffset = 15;
+
+    /// <summary>How long a graph open must run before the busy overlay appears (batch D1):
+    /// generous enough that a normal open on a small graph never flickers it.</summary>
+    internal static readonly TimeSpan BusyIndicatorDelay = TimeSpan.FromMilliseconds(150);
+
     private readonly Queue<string> outputLines = new();
     private readonly Subject<string> outputReceived = new();
     private int outputCharCount;
     private bool outputTruncated;
     private IDisposable? outputFlush;
+    private CancellationTokenSource? openGraphCts;
 
+    /// <summary>The method, constructor or event graph currently loading through <see cref="OpenGraphThroughPipelineAsync"/>, or null (OWN-07).</summary>
+    private object? pendingOpenTarget;
+
+    /// <summary>
+    /// Wraps <paramref name="cls"/>: builds its method/constructor/variable collections, subscribes
+    /// to model and reflection-reload events, starts buffering process output, and computes the
+    /// initial overridable methods and generated-code preview.
+    /// </summary>
+    /// <param name="cls">Class to edit.</param>
+    /// <param name="context">Host services shared across the editor.</param>
     public ClassEditorVM(ClassGraph cls, EditorContext context)
     {
         Class = cls;
         Context = context;
         Messenger = context.CreateMessenger();
-        Messenger.Register(this);
+        // RegisterAll, not Register: this implements more than one IRecipient<T>.
+        Messenger.RegisterAll(this);
+        Services = new ClassEditorServices(context, UndoRedo, Messenger);
 
-        Methods = new ObservableViewModelCollection<MethodVM, MethodGraph>(cls.Methods, m => new MethodVM(m));
-        Constructors = new ObservableViewModelCollection<MethodVM, ConstructorGraph>(cls.Constructors, c => new MethodVM(c));
+        Methods = new ObservableViewModelCollection<MethodVM, MethodGraph>(cls.Methods, m => new MethodVM(m), m => m.Dispose());
+        Constructors = new ObservableViewModelCollection<MethodVM, ConstructorGraph>(cls.Constructors, c => new MethodVM(c), m => m.Dispose());
         Variables = new ObservableViewModelCollection<MemberVariableVM, Variable>(cls.Variables,
-            v => new MemberVariableVM(v, this), v => v.Dispose());
+            v => new MemberVariableVM(v, Services), v => v.Dispose());
+        EventGraphs = new ObservableViewModelCollection<EventGraphVM, EventGraph>(cls.EventGraphs, g => new EventGraphVM(g, cls));
+        VariablesPanel = new VariablesPanelVM(Services, Variables);
+        CodeView = new CodeViewVM(cls, context.CodeAnalysis);
+        ErrorList = new ErrorListVM(cls, context.CodeAnalysis, Messenger);
 
         cls.Variables.CollectionChanged += OnMembersChanged;
         cls.Methods.CollectionChanged += OnMembersChanged;
         cls.Constructors.CollectionChanged += OnMembersChanged;
+        cls.EventGraphs.CollectionChanged += OnMembersChanged;
         SyncVariableSubscriptions();
+        SyncMethodSubscriptions();
+        SyncDirtyTrackingGraphs();
 
         UndoRedo.Changed += (_, _) =>
         {
             UndoCommand.NotifyCanExecuteChanged();
             RedoCommand.NotifyCanExecuteChanged();
         };
+
+        // Dirty tracking (editor-services.md §3, data-model.md §2): every applied undo/redo command
+        // edits the model.
+        UndoRedo.Applied += (_, _) => MarkDirty();
 
         context.Reflection.Reloaded += OnReflectionReloaded;
         context.Processes.OutputReceived += OnProcessOutputReceived;
@@ -90,11 +138,13 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
             .Subscribe(batch => Context.Dispatcher.Post(() => AppendOutput(batch)));
 
         RefreshOverridableMethods();
-        RefreshGeneratedCode();
+        RequestCodeAnalysis();
     }
 
+    /// <summary>The wrapped model class.</summary>
     public ClassGraph Class { get; }
 
+    /// <summary>Host services shared across the editor.</summary>
     public EditorContext Context { get; }
 
     /// <summary>Messenger scoped to this class editor.</summary>
@@ -103,26 +153,65 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     /// <summary>Undo/redo history of this class editor.</summary>
     public UndoRedoStack UndoRedo { get; } = new();
 
+    /// <summary>Narrow services shared with child view models that must not depend on this class editor directly (FR-038).</summary>
+    public ClassEditorServices Services { get; }
+
+    /// <summary>The project the class belongs to, or <see langword="null"/> if it has not been added to one.</summary>
     public Project? Project => Class.Project;
 
+    /// <summary>View models for <see cref="Class"/>'s methods.</summary>
     public ObservableViewModelCollection<MethodVM, MethodGraph> Methods { get; }
 
+    /// <summary>View models for <see cref="Class"/>'s constructors.</summary>
     public ObservableViewModelCollection<MethodVM, ConstructorGraph> Constructors { get; }
 
+    /// <summary>View models for <see cref="Class"/>'s variables.</summary>
     public ObservableViewModelCollection<MemberVariableVM, Variable> Variables { get; }
+
+    /// <summary>View models for <see cref="Class"/>'s event graphs (US4).</summary>
+    public ObservableViewModelCollection<EventGraphVM, EventGraph> EventGraphs { get; }
+
+    /// <summary>The Variables panel's "Class" and "Method: &lt;name&gt;" groups (FR-030, US5).</summary>
+    public VariablesPanelVM VariablesPanel { get; }
+
+    /// <summary>The read-only C# code view of the class inspector (US6, FR-031..035).</summary>
+    public CodeViewVM CodeView { get; }
+
+    /// <summary>The class editor's Errors tab (US6, FR-032, FR-034).</summary>
+    public ErrorListVM ErrorList { get; }
 
     /// <summary>The graph shown in the canvas, or null.</summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SelectedMethodInList), nameof(SelectedConstructorInList), nameof(SelectedEventGraphInList))]
     public partial NodeGraphVM? OpenedGraph { get; set; }
+
+    /// <summary>
+    /// The Methods list's own highlight (R2-16, OWN-07b): a one-way projection of
+    /// <see cref="OpenedGraph"/>, not a second write target sharing <see cref="SelectedMethod"/> with
+    /// <see cref="SelectedConstructorInList"/>. Opening a constructor or an event graph clears this
+    /// (and <see cref="SelectedMethod"/> stays whatever the inspector still shows), instead of both
+    /// the Methods and Constructors lists — or a list and an event graph's row — staying highlighted
+    /// together.
+    /// </summary>
+    public MethodVM? SelectedMethodInList => Methods.FirstOrDefault(m => m.Graph == OpenedGraph?.Graph);
+
+    /// <summary>The Constructors list's own highlight (R2-16): see <see cref="SelectedMethodInList"/>.</summary>
+    public MethodVM? SelectedConstructorInList => Constructors.FirstOrDefault(m => m.Graph == OpenedGraph?.Graph);
+
+    /// <summary>The Event graphs list's own highlight (OWN-07b): see <see cref="SelectedMethodInList"/>.</summary>
+    public EventGraphVM? SelectedEventGraphInList => EventGraphs.FirstOrDefault(g => g.Graph == OpenedGraph?.Graph);
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowClassInspector), nameof(ShowVariableInspector), nameof(ShowMethodInspector))]
     public partial InspectorKind Inspector { get; set; } = InspectorKind.Class;
 
+    /// <summary>Whether the class inspector should be shown.</summary>
     public bool ShowClassInspector => Inspector == InspectorKind.Class;
 
+    /// <summary>Whether the variable inspector should be shown (a variable is also selected).</summary>
     public bool ShowVariableInspector => Inspector == InspectorKind.Variable && SelectedVariable is not null;
 
+    /// <summary>Whether the method inspector should be shown (a method is also selected).</summary>
     public bool ShowMethodInspector => Inspector == InspectorKind.Method && SelectedMethod is not null;
 
     [ObservableProperty]
@@ -133,9 +222,14 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     [NotifyPropertyChangedFor(nameof(ShowMethodInspector))]
     public partial MethodVM? SelectedMethod { get; set; }
 
-    /// <summary>Generated C# of the class, refreshed about every second (PAR-34).</summary>
+    /// <summary>Whether a graph is still opening past <see cref="BusyIndicatorDelay"/> (batch D1):
+    /// drives the "Opening &lt;name&gt;…" overlay. Never true for an open that finishes quickly.</summary>
     [ObservableProperty]
-    public partial string GeneratedCode { get; set; } = "";
+    public partial bool IsOpeningGraph { get; set; }
+
+    /// <summary>Name shown by the busy overlay while <see cref="IsOpeningGraph"/> is true.</summary>
+    [ObservableProperty]
+    public partial string? OpeningGraphName { get; set; }
 
     /// <summary>
     /// stdout/stderr of every program Run has started (PAR-10), across every open class window
@@ -163,8 +257,10 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     /// <summary>The class name with its namespace (the window's automation name).</summary>
     public string FullName => Class.FullName ?? "";
 
+    /// <summary>The visibility values offered by the class's visibility chooser.</summary>
     public IReadOnlyList<MemberVisibility> PossibleVisibilities => Visibilities;
 
+    /// <summary>The class's name, without namespace. Setting it also refreshes <see cref="Title"/> and <see cref="FullName"/>.</summary>
     public string Name
     {
         get => Class.Name;
@@ -173,6 +269,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
             if (Class.Name != value)
             {
                 Class.Name = value;
+                MarkDirty();
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(Title));
                 OnPropertyChanged(nameof(FullName));
@@ -180,6 +277,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         }
     }
 
+    /// <summary>The class's namespace. Setting it also refreshes <see cref="FullName"/>.</summary>
     public string Namespace
     {
         get => Class.Namespace;
@@ -188,12 +286,14 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
             if (Class.Namespace != value)
             {
                 Class.Namespace = value;
+                MarkDirty();
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(FullName));
             }
         }
     }
 
+    /// <summary>The class's visibility.</summary>
     public MemberVisibility Visibility
     {
         get => Class.Visibility;
@@ -202,11 +302,13 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
             if (Class.Visibility != value)
             {
                 Class.Visibility = value;
+                MarkDirty();
                 OnPropertyChanged();
             }
         }
     }
 
+    /// <summary>The class's modifiers.</summary>
     public ClassModifiers Modifiers
     {
         get => Class.Modifiers;
@@ -215,6 +317,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
             if (Class.Modifiers != value)
             {
                 Class.Modifiers = value;
+                MarkDirty();
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(IsSealed));
                 OnPropertyChanged(nameof(IsAbstract));
@@ -224,12 +327,16 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         }
     }
 
+    /// <summary>Whether <see cref="ClassModifiers.Sealed"/> is set.</summary>
     public bool IsSealed { get => Modifiers.HasFlag(ClassModifiers.Sealed); set => SetModifier(ClassModifiers.Sealed, value); }
 
+    /// <summary>Whether <see cref="ClassModifiers.Abstract"/> is set.</summary>
     public bool IsAbstract { get => Modifiers.HasFlag(ClassModifiers.Abstract); set => SetModifier(ClassModifiers.Abstract, value); }
 
+    /// <summary>Whether <see cref="ClassModifiers.Static"/> is set.</summary>
     public bool IsStatic { get => Modifiers.HasFlag(ClassModifiers.Static); set => SetModifier(ClassModifiers.Static, value); }
 
+    /// <summary>Whether <see cref="ClassModifiers.Partial"/> is set.</summary>
     public bool IsPartial { get => Modifiers.HasFlag(ClassModifiers.Partial); set => SetModifier(ClassModifiers.Partial, value); }
 
     private void SetModifier(ClassModifiers flag, bool value) => Modifiers = value ? Modifiers | flag : Modifiers & ~flag;
@@ -257,12 +364,75 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         Context.Dispatcher.Post(() => SelectedOverride = null);
     }
 
-    partial void OnOpenedGraphChanged(NodeGraphVM? oldValue, NodeGraphVM? newValue) => oldValue?.Dispose();
+    partial void OnOpenedGraphChanged(NodeGraphVM? oldValue, NodeGraphVM? newValue)
+    {
+        VariablesPanel.OnOpenedGraphChanged(newValue?.Graph as ExecutionGraph);
+    }
+
+    /// <summary>Disposes the current <see cref="OpenedGraph"/> (the property's only setter) and replaces it with a new one.</summary>
+    private void ReplaceOpenedGraph(NodeGraphVM? replacement)
+    {
+        OpenedGraph?.Dispose();
+        OpenedGraph = replacement;
+    }
 
     /// <summary>Opens a graph in the canvas.</summary>
-    public void OpenGraph(NodeGraph graph) => OpenedGraph = new NodeGraphVM(graph, this);
+    public void OpenGraph(NodeGraph graph) => ReplaceOpenedGraph(new NodeGraphVM(graph, Services));
 
-    void IRecipient<OpenGraphMessage>.Receive(OpenGraphMessage message) => OpenGraph(message.Graph);
+    /// <summary>
+    /// Cancels a still-loading <see cref="OpenMethodAsync"/> (R2-02): called by every other way to
+    /// change the canvas, so a method whose load finishes late can never override a navigation the
+    /// user made to something else in the meantime. Clears <see cref="pendingOpenTarget"/> immediately
+    /// (F-03) rather than waiting for the cancelled load's own <c>finally</c>, which can run hundreds
+    /// of milliseconds later and, until then, would drop a re-click on that same item.
+    /// </summary>
+    private void CancelPendingOpen()
+    {
+        openGraphCts?.Cancel();
+        pendingOpenTarget = null;
+    }
+
+    void IRecipient<OpenGraphMessage>.Receive(OpenGraphMessage message)
+    {
+        CancelPendingOpen();
+        OpenGraph(message.Graph);
+    }
+
+    /// <summary>
+    /// Opens the graph <see cref="NavigateToNodeMessage.GraphKey"/> resolves to (if not already
+    /// open) and, when known, reveals <see cref="NavigateToNodeMessage.NodeId"/> (FR-034, ED-T03,
+    /// OWN-04): a diagnostic with no node mapping still opens the graph. Does nothing when the key
+    /// does not resolve (the class changed since the diagnostic was reported).
+    /// </summary>
+    void IRecipient<NavigateToNodeMessage>.Receive(NavigateToNodeMessage message)
+    {
+        if (GraphKeys.Resolve(Class, message.GraphKey) is not { } graph)
+        {
+            return;
+        }
+
+        if (OpenedGraph is null || OpenedGraph.Graph != graph)
+        {
+            CancelPendingOpen();
+            OpenGraph(graph);
+        }
+
+        if (message.NodeId is { } nodeId)
+        {
+            OpenedGraph?.RevealNode(nodeId);
+        }
+    }
+
+    /// <summary>
+    /// Shows the inspector for a variable or method selected from its own list entry (PAR-24, 29):
+    /// <see cref="MemberVariableVM"/> sends this instead of calling back into this class editor
+    /// directly (FR-038).
+    /// </summary>
+    void IRecipient<SelectInspectorMessage>.Receive(SelectInspectorMessage message)
+    {
+        SelectedVariable = message.Target;
+        Inspector = InspectorKind.Variable;
+    }
 
     // Model changes, including undo and redo, can remove what the inspector or the canvas shows.
     // The editor reacts to the model instead of each command cleaning up after itself.
@@ -270,14 +440,34 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     private void OnMembersChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         SyncVariableSubscriptions();
+        SyncMethodSubscriptions();
+        SyncDirtyTrackingGraphs();
         DropDetachedState();
+
+        // A member's own VM instance can be replaced (eg. undo/redo) without OpenedGraph changing:
+        // re-evaluate which list row (if any) that VM re-projects to (R2-16, OWN-07b).
+        OnPropertyChanged(nameof(SelectedMethodInList));
+        OnPropertyChanged(nameof(SelectedConstructorInList));
+        OnPropertyChanged(nameof(SelectedEventGraphInList));
     }
 
     private void OnVariablePropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName is nameof(Variable.GetterMethod) or nameof(Variable.SetterMethod))
+        switch (e.PropertyName)
         {
-            DropDetachedState();
+            // Name/Visibility/Modifiers bypass the undo stack (the variable inspector's wrapper
+            // setters, editor-services.md §3): mark dirty here instead. GetterMethod/SetterMethod
+            // always change through UndoRedo.Do, which already marks dirty via Applied.
+            case nameof(Variable.Name):
+            case nameof(Variable.Visibility):
+            case nameof(Variable.Modifiers):
+                MarkDirty();
+                break;
+            case nameof(Variable.GetterMethod):
+            case nameof(Variable.SetterMethod):
+                SyncDirtyTrackingGraphs();
+                DropDetachedState();
+                break;
         }
     }
 
@@ -297,11 +487,41 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         }
     }
 
+    /// <summary>
+    /// Marks the class dirty when a method or constructor's inspector wrapper setter
+    /// (<see cref="MethodVM.Name"/>, <see cref="MethodVM.Visibility"/>, <see cref="MethodVM.Modifiers"/>)
+    /// assigns the model directly, bypassing the undo stack (editor-services.md §3).
+    /// </summary>
+    private void OnMethodPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(MethodGraph.Name) or nameof(ExecutionGraph.Visibility) or nameof(MethodGraph.Modifiers))
+        {
+            MarkDirty();
+        }
+    }
+
+    private void SyncMethodSubscriptions()
+    {
+        var current = Class.Methods.Cast<ExecutionGraph>().Concat(Class.Constructors).ToHashSet();
+        foreach (var removed in subscribedMethods.Where(g => !current.Contains(g)).ToList())
+        {
+            ((INotifyPropertyChanged)removed).PropertyChanged -= OnMethodPropertyChanged;
+            subscribedMethods.Remove(removed);
+        }
+
+        foreach (var added in current.Where(g => !subscribedMethods.Contains(g)))
+        {
+            ((INotifyPropertyChanged)added).PropertyChanged += OnMethodPropertyChanged;
+            subscribedMethods.Add(added);
+        }
+    }
+
     /// <summary>Graphs that belong to the class: its own graph, methods, constructors and variable graphs.</summary>
     private bool BelongsToClass(NodeGraph graph) =>
         graph == Class
-        || Class.Methods.Contains(graph as MethodGraph)
-        || Class.Constructors.Contains(graph as ConstructorGraph)
+        || (graph is MethodGraph method && Class.Methods.Contains(method))
+        || (graph is ConstructorGraph constructor && Class.Constructors.Contains(constructor))
+        || (graph is EventGraph eventGraph && Class.EventGraphs.Contains(eventGraph))
         || Class.Variables.Any(v => v.GetterMethod == graph || v.SetterMethod == graph || v.TypeGraph == graph);
 
     private void DropDetachedState()
@@ -326,41 +546,165 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
 
         if (OpenedGraph is not null && !BelongsToClass(OpenedGraph.Graph))
         {
-            OpenedGraph = null;
+            ReplaceOpenedGraph(null);
         }
-    }
-
-    /// <summary>Translates the class to C# now (the loop calls this about every second).</summary>
-    public void RefreshGeneratedCode()
-    {
-        string code;
-        try
-        {
-            code = classTranslator.TranslateClass(Class);
-        }
-        catch (Exception ex)
-        {
-            code = ex.ToString();
-        }
-
-        GeneratedCode = code;
     }
 
     /// <summary>
-    /// Starts refreshing <see cref="GeneratedCode"/> about every second until the editor is disposed.
-    /// Replaces the WPF editor's timer thread + dispatcher.
+    /// Every graph that currently belongs to <see cref="Class"/> (data-model.md §2): the class graph
+    /// itself, its methods and constructors, and each variable's getter, setter and type graph.
     /// </summary>
-    /// <remarks>
-    /// The translation runs on the UI thread on purpose: the model is not thread-safe, and the WPF
-    /// editor's background translation raced with edits. On very large classes this can stutter
-    /// about once a second; translating a snapshot off the UI thread is a P8 performance item.
-    /// </remarks>
-    public void StartGeneratedCodeLoop()
+    private IEnumerable<NodeGraph> ClassGraphs()
     {
-        // On the context's code-refresh scheduler, so tests drive it in virtual time (or silence
-        // it entirely, e.g. a snapshot test capturing the preview it would otherwise race).
-        generatedCodeLoop ??= Observable.Interval(TimeSpan.FromSeconds(1), Context.CodeRefreshScheduler)
-            .Subscribe(_ => Context.Dispatcher.Post(RefreshGeneratedCode));
+        yield return Class;
+
+        foreach (var method in Class.Methods)
+        {
+            yield return method;
+        }
+
+        foreach (var constructor in Class.Constructors)
+        {
+            yield return constructor;
+        }
+
+        foreach (var eventGraph in Class.EventGraphs)
+        {
+            yield return eventGraph;
+        }
+
+        foreach (var variable in Class.Variables)
+        {
+            if (variable.GetterMethod is { } getter)
+            {
+                yield return getter;
+            }
+
+            if (variable.SetterMethod is { } setter)
+            {
+                yield return setter;
+            }
+
+            yield return variable.TypeGraph;
+        }
+    }
+
+    /// <summary>
+    /// Dirty tracking (editor-services.md §3): resyncs which graphs' <c>Nodes</c> collections (and,
+    /// through <see cref="SyncDirtyTrackingNodes"/>, which nodes' <see cref="Node.OnPositionChanged"/>)
+    /// are subscribed, following <see cref="ClassGraphs"/> as members and getter/setter graphs come
+    /// and go.
+    /// </summary>
+    private void SyncDirtyTrackingGraphs()
+    {
+        var current = ClassGraphs().ToHashSet();
+
+        foreach (var removed in dirtyTrackedGraphs.Where(g => !current.Contains(g)).ToList())
+        {
+            removed.Nodes.CollectionChanged -= OnDirtyTrackedGraphNodesChanged;
+            dirtyTrackedGraphs.Remove(removed);
+        }
+
+        foreach (var added in current.Where(g => !dirtyTrackedGraphs.Contains(g)))
+        {
+            added.Nodes.CollectionChanged += OnDirtyTrackedGraphNodesChanged;
+            dirtyTrackedGraphs.Add(added);
+        }
+
+        SyncDirtyTrackingNodes();
+    }
+
+    private void OnDirtyTrackedGraphNodesChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        SyncDirtyTrackingNodes();
+        MarkDirty();
+    }
+
+    private void SyncDirtyTrackingNodes()
+    {
+        var nodes = dirtyTrackedGraphs.SelectMany(g => g.Nodes).ToHashSet();
+
+        foreach (var removed in dirtyTrackedNodes.Where(n => !nodes.Contains(n)).ToList())
+        {
+            removed.OnPositionChanged -= OnDirtyTrackedNodePositionChanged;
+            dirtyTrackedNodes.Remove(removed);
+        }
+
+        foreach (var added in nodes.Where(n => !dirtyTrackedNodes.Contains(n)))
+        {
+            added.OnPositionChanged += OnDirtyTrackedNodePositionChanged;
+            dirtyTrackedNodes.Add(added);
+        }
+
+        SyncDirtyTrackingPins();
+    }
+
+    // Pin edits (unconnected values, connections) are model edits too: without them Compile's
+    // save-all would build the stale file on disk.
+    private void SyncDirtyTrackingPins()
+    {
+        var collections = dirtyTrackedNodes.SelectMany(NodePinCollections).ToHashSet();
+        var pins = dirtyTrackedNodes.SelectMany(n => n.InputExecPins.Cast<NodePin>()
+            .Concat(n.OutputExecPins).Concat(n.InputDataPins).Concat(n.OutputDataPins)
+            .Concat(n.InputTypePins).Concat(n.OutputTypePins)).ToHashSet();
+
+        foreach (var removed in dirtyTrackedPinCollections.Where(c => !collections.Contains(c)).ToList())
+        {
+            removed.CollectionChanged -= OnDirtyTrackedPinsChanged;
+            dirtyTrackedPinCollections.Remove(removed);
+        }
+
+        foreach (var added in collections.Where(c => !dirtyTrackedPinCollections.Contains(c)))
+        {
+            added.CollectionChanged += OnDirtyTrackedPinsChanged;
+            dirtyTrackedPinCollections.Add(added);
+        }
+
+        foreach (var removed in dirtyTrackedPins.Where(p => !pins.Contains(p)).ToList())
+        {
+            removed.PropertyChanged -= OnDirtyTrackedPinPropertyChanged;
+            dirtyTrackedPins.Remove(removed);
+        }
+
+        foreach (var added in pins.Where(p => !dirtyTrackedPins.Contains(p)))
+        {
+            added.PropertyChanged += OnDirtyTrackedPinPropertyChanged;
+            dirtyTrackedPins.Add(added);
+        }
+    }
+
+    private static IEnumerable<INotifyCollectionChanged> NodePinCollections(Node node) =>
+        [node.InputExecPins, node.OutputExecPins, node.InputDataPins, node.OutputDataPins, node.InputTypePins, node.OutputTypePins];
+
+    private void OnDirtyTrackedPinsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        SyncDirtyTrackingPins();
+        MarkDirty();
+    }
+
+    private void OnDirtyTrackedPinPropertyChanged(object? sender, PropertyChangedEventArgs e) => MarkDirty();
+
+    // Position alone never changes the generated code (the translator ignores it), so a pure pan or
+    // drag only needs a save, not a re-analysis.
+    private void OnDirtyTrackedNodePositionChanged(Node node, double positionX, double positionY) => Class.MarkDirty();
+
+    private ClassTranslator NewTranslator() => new(Context.Extensions.Current.Translation);
+
+    /// <summary>Marks the class dirty and requests a live-analysis refresh (FR-032, SC-006): the
+    /// single place every model edit that can change the generated code funnels through.</summary>
+    private void MarkDirty()
+    {
+        Class.MarkDirty();
+        RequestCodeAnalysis();
+    }
+
+    /// <summary>Requests live analysis of the project's current classes, if the class belongs to one.</summary>
+    private void RequestCodeAnalysis()
+    {
+        if (Project is { } project)
+        {
+            Context.CodeAnalysis.RequestAnalysis(project);
+        }
     }
 
     // Toolbar (PAR-23)
@@ -369,22 +713,30 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     [RelayCommand]
     private void ShowClass()
     {
+        CancelPendingOpen();
         Inspector = InspectorKind.Class;
         OpenGraph(Class);
     }
 
-    /// <summary>Saves the whole project (not just the class).</summary>
+    /// <summary>Saves every edited class of the whole project (not just this one) (document-format.md §2.8).
+    /// A class that fails to translate is reported through <see cref="Core.Project.LastDiagnostics"/> (the
+    /// Errors tab), not a dialog: its graph is still saved and the rest of the project's dirty classes
+    /// still save too (R1-01).</summary>
     [RelayCommand]
     private async Task SaveAsync()
     {
-        if (Project is null)
+        if (Project is not { } project)
         {
             return;
         }
 
         try
         {
-            Project.Save();
+            ProjectSaveResult result = await Context.Persistence.SaveAsync(project, cls => RenderGenerated(project, cls), CancellationToken.None);
+            if (result.Diagnostics.Count > 0)
+            {
+                project.LastDiagnostics = new ObservableRangeCollection<CodeDiagnostic>(result.Diagnostics);
+            }
         }
         catch (Exception ex)
         {
@@ -392,14 +744,13 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         }
     }
 
+    /// <summary>Renders a class's generated C# file the same way a build would (project-system.md §3).</summary>
+    private string RenderGenerated(Project project, ClassGraph cls) =>
+        NetPrints.Generation.GraphCodeGenerator.RenderFile(NewTranslator().Translate(cls), Path.GetFileName(project.GetGraphFilePath(cls)));
+
+    /// <summary>Compiles the whole project through <see cref="MainEditorVM.CompileAsync(Project, EditorContext)"/> (PAR-09).</summary>
     [RelayCommand]
-    private void Compile()
-    {
-        if (Project is { CanCompile: true })
-        {
-            Project.CompileProject();
-        }
-    }
+    private Task CompileAsync() => Project is { CanCompile: true } project ? MainEditorVM.CompileAsync(project, Context) : Task.CompletedTask;
 
     [RelayCommand]
     private Task RunAsync()
@@ -462,13 +813,14 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
             Class = Class,
         };
 
-        method.EntryNode.PositionX = cell * 4;
-        method.EntryNode.PositionY = cell * 4;
-        method.MainReturnNode.PositionX = method.EntryNode.PositionX + cell * 15;
+        method.EntryNode.PositionX = cell * NewMemberEntryGridOffset;
+        method.EntryNode.PositionY = cell * NewMemberEntryGridOffset;
+        method.MainReturnNode.PositionX = method.EntryNode.PositionX + cell * NewMethodReturnGridOffset;
         method.MainReturnNode.PositionY = method.EntryNode.PositionY;
         GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, method.MainReturnNode.ReturnPin);
 
         Class.Methods.Add(method);
+        CancelPendingOpen();
         OpenGraph(method);
     }
 
@@ -483,10 +835,11 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
             Visibility = MemberVisibility.Public,
         };
 
-        constructor.EntryNode.PositionX = cell * 4;
-        constructor.EntryNode.PositionY = cell * 4;
+        constructor.EntryNode.PositionX = cell * NewMemberEntryGridOffset;
+        constructor.EntryNode.PositionY = cell * NewMemberEntryGridOffset;
 
         Class.Constructors.Add(constructor);
+        CancelPendingOpen();
         OpenGraph(constructor);
     }
 
@@ -496,6 +849,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         MethodGraph? method = GraphUtil.AddOverrideMethod(Class, methodSpecifier);
         if (method is not null)
         {
+            CancelPendingOpen();
             OpenGraph(method);
         }
     }
@@ -508,37 +862,180 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         UndoRedo.Do(EditorCommands.AddVariable(Class, name));
     }
 
-    /// <summary>Removes a variable (undoable); clears the inspector and canvas when they show it.</summary>
-    public void RemoveVariable(MemberVariableVM variable) => UndoRedo.Do(EditorCommands.RemoveVariable(Class, variable.Variable));
-
-    /// <summary>Shows the variable inspector (PAR-29).</summary>
-    public void SelectVariable(MemberVariableVM variable)
+    /// <summary>Creates an event graph named EventGraph, EventGraph1, ... (undoable, US4) and opens it.</summary>
+    [RelayCommand]
+    private void CreateEventGraph()
     {
-        SelectedVariable = variable;
-        Inspector = InspectorKind.Variable;
+        string name = NetPrintsUtil.GetUniqueName(EventGraph.DefaultNamePrefix, Class.EventGraphs.Select(g => g.Name).ToList());
+        var eventGraph = new EventGraph(name) { Class = Class };
+        UndoRedo.Do(EditorCommands.AddEventGraph(Class, eventGraph));
+        CancelPendingOpen();
+        OpenGraph(eventGraph);
     }
 
-    /// <summary>Single click on a method or constructor: shows the method inspector (PAR-24).</summary>
+    /// <summary>
+    /// Selects and opens an event graph's canvas (US4, OWN-07), through the same open pipeline as
+    /// <see cref="OpenMethodAsync"/>: a single click opens it immediately, and last click wins whether
+    /// the previous one was a method, a constructor or another event graph.
+    /// </summary>
+    [RelayCommand(AllowConcurrentExecutions = true)]
+    private Task OpenEventGraphAsync(EventGraphVM? eventGraph) =>
+        eventGraph is null ? Task.CompletedTask : OpenGraphThroughPipelineAsync(eventGraph, eventGraph.Graph, eventGraph.Name);
+
+    /// <summary>Removes an event graph (undoable, US4); clears the canvas when it shows it.</summary>
     [RelayCommand]
-    private void SelectMethod(MethodVM? method)
+    private void RemoveEventGraph(EventGraphVM? eventGraph)
     {
-        if (method is null)
+        if (eventGraph is null)
         {
             return;
         }
 
-        SelectedMethod = method;
-        Inspector = InspectorKind.Method;
+        UndoRedo.Do(EditorCommands.RemoveEventGraph(Class, eventGraph.Graph));
     }
 
-    /// <summary>Double click on a method or constructor: opens its graph (PAR-24).</summary>
-    [RelayCommand]
-    private void OpenMethod(MethodVM? method)
+    /// <summary>
+    /// Selects and opens a method or constructor's graph (PAR-24), in one command: a single click on
+    /// its list entry both shows the method inspector and opens the canvas. Previously a single click
+    /// only selected it, requiring a second, discoverable double-click gesture the owner reported as
+    /// "the graph doesn't open" (batch D1). The open itself goes through <see cref="OpenGraphThroughPipelineAsync"/>,
+    /// shared with <see cref="OpenEventGraphAsync"/> (OWN-07): last click wins whether the previous one
+    /// was a method or an event graph.
+    /// </summary>
+    [RelayCommand(AllowConcurrentExecutions = true)]
+    private Task OpenMethodAsync(MethodVM? method)
     {
-        if (method is not null)
+        if (method is null)
         {
-            OpenGraph(method.Graph);
+            return Task.CompletedTask;
         }
+
+        SelectedMethod = method;
+        Inspector = InspectorKind.Method;
+        return OpenGraphThroughPipelineAsync(method, method.Graph, method.Name);
+    }
+
+    /// <summary>
+    /// Shared open pipeline for every list row that opens a graph (methods, constructors, event
+    /// graphs; PAR-24, US4, OWN-07): invoked directly by each item kind's own command, not through a
+    /// two-way <c>SelectedItem</c> binding's changed hook, so an item that stays a list's
+    /// <c>SelectedItem</c> across an unrelated canvas change (Create Event Graph, Class, another list's
+    /// item) still reopens on its next click — exactly the "Open: switch away, then reopen" case
+    /// <c>EventGraphTests</c> covers, and the owner's "add event graph, click it, click Main" sequence.
+    /// A click on the item already loading is ignored; a click on the already-open item with nothing
+    /// pending is a no-op; a click on a different item (of any kind) cancels the pending one — last
+    /// click wins (R2-02), generalized past methods alone. Reflection-backed overload lookups for the
+    /// graph's nodes are warmed on a background thread first (AGENTS.md: heavy work off the UI
+    /// thread), and <see cref="IsOpeningGraph"/> only turns on if that takes longer than
+    /// <see cref="BusyIndicatorDelay"/>. <c>AllowConcurrentExecutions</c> on each caller's command keeps
+    /// its <c>CanExecute</c> true while a previous click is still opening: without it,
+    /// <c>InvokeCommandAction</c> silently drops a click made during a load, and the supersede logic
+    /// below is never reached from the UI.
+    /// </summary>
+    private async Task OpenGraphThroughPipelineAsync(object item, NodeGraph graph, string name)
+    {
+        if (Equals(item, pendingOpenTarget) || (pendingOpenTarget is null && OpenedGraph?.Graph == graph))
+        {
+            return;
+        }
+
+        pendingOpenTarget = item;
+
+        // F-04: install the new CTS synchronously before any await, so an overlapping execution
+        // (AllowConcurrentExecutions) can never observe or dispose a CTS that is still live. Only the
+        // previous one, captured into a local, is cancelled and disposed below.
+        CancellationTokenSource? previous = openGraphCts;
+        var cts = new CancellationTokenSource();
+        openGraphCts = cts;
+        CancellationToken token = cts.Token;
+
+        if (previous is not null)
+        {
+            await previous.CancelAsync();
+            previous.Dispose();
+        }
+
+        IDisposable indicator = Context.Scheduler.Schedule(BusyIndicatorDelay, () =>
+        {
+            OpeningGraphName = name;
+            IsOpeningGraph = true;
+        });
+
+        try
+        {
+            await WarmOverloadsAsync(graph, token);
+            token.ThrowIfCancellationRequested();
+            OpenGraph(graph);
+        }
+        catch (OperationCanceledException)
+        {
+            // Superseded by a later click; OpenedGraph is untouched.
+        }
+        finally
+        {
+            indicator.Dispose();
+            IsOpeningGraph = false;
+            OpeningGraphName = null;
+
+            // Own the clear only if no later execution has since installed its own CTS (F-03):
+            // comparing against the captured item would also match a newer execution opening the
+            // same item again while this cancelled one's finally is still pending.
+            if (ReferenceEquals(openGraphCts, cts))
+            {
+                pendingOpenTarget = null;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Pre-resolves every <see cref="CallMethodNode"/>/<see cref="ConstructorNode"/> overload list of
+    /// <paramref name="graph"/> on a background thread, so the reflection provider's memoized cache is
+    /// already warm when <see cref="NetPrints.Editor.Graph.Nodes.NodeVM"/> recomputes the same
+    /// overloads synchronously while building the canvas (AGENTS.md: heavy work off the UI thread, not
+    /// papered over with a delay).
+    /// </summary>
+    private async Task WarmOverloadsAsync(NodeGraph graph, CancellationToken cancellationToken)
+    {
+        if (!Context.Reflection.IsLoaded)
+        {
+            return;
+        }
+
+        List<MethodSpecifier> methods = [];
+        List<TypeSpecifier> constructorTypes = [];
+        foreach (var node in graph.Nodes)
+        {
+            switch (node)
+            {
+                case CallMethodNode { MethodSpecifier: { } method }:
+                    methods.Add(method);
+                    break;
+                case ConstructorNode { ConstructorSpecifier: { } ctor }:
+                    constructorTypes.Add(ctor.DeclaringType);
+                    break;
+            }
+        }
+
+        if (methods.Count == 0 && constructorTypes.Count == 0)
+        {
+            return;
+        }
+
+        var provider = Context.Reflection.Provider;
+        await Task.Run(() =>
+        {
+            foreach (var method in methods)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                _ = provider.GetPublicMethodOverloads(method).Count();
+            }
+
+            foreach (var type in constructorTypes)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                _ = provider.GetConstructors(type).Count();
+            }
+        }, cancellationToken);
     }
 
     /// <summary>Removes a method or constructor; clears the inspector and canvas when they show it (PAR-24, 27).</summary>
@@ -569,27 +1066,73 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
 
     private bool CanRedo() => UndoRedo.CanRedo;
 
+    /// <summary>
+    /// Stops output buffering, disposes <see cref="CodeView"/> and <see cref="ErrorList"/>,
+    /// unsubscribes from every model and host event, clears <see cref="OpenedGraph"/>, and disposes
+    /// the method/constructor/variable collections (and, through them, every member view model).
+    /// </summary>
     public void Dispose()
     {
-        generatedCodeLoop?.Dispose();
+        CodeView.Dispose();
+        ErrorList.Dispose();
         outputFlush?.Dispose();
         outputReceived.Dispose();
+        openGraphCts?.Cancel();
+        openGraphCts?.Dispose();
 
         Context.Reflection.Reloaded -= OnReflectionReloaded;
         Context.Processes.OutputReceived -= OnProcessOutputReceived;
         Class.Variables.CollectionChanged -= OnMembersChanged;
         Class.Methods.CollectionChanged -= OnMembersChanged;
         Class.Constructors.CollectionChanged -= OnMembersChanged;
+        Class.EventGraphs.CollectionChanged -= OnMembersChanged;
         foreach (var variable in subscribedVariables)
         {
             ((INotifyPropertyChanged)variable).PropertyChanged -= OnVariablePropertyChanged;
         }
 
         subscribedVariables.Clear();
+
+        foreach (var method in subscribedMethods)
+        {
+            ((INotifyPropertyChanged)method).PropertyChanged -= OnMethodPropertyChanged;
+        }
+
+        subscribedMethods.Clear();
+
+        foreach (var graph in dirtyTrackedGraphs)
+        {
+            graph.Nodes.CollectionChanged -= OnDirtyTrackedGraphNodesChanged;
+        }
+
+        dirtyTrackedGraphs.Clear();
+
+        foreach (var node in dirtyTrackedNodes)
+        {
+            node.OnPositionChanged -= OnDirtyTrackedNodePositionChanged;
+        }
+
+        dirtyTrackedNodes.Clear();
+
+        foreach (var pin in dirtyTrackedPins)
+        {
+            pin.PropertyChanged -= OnDirtyTrackedPinPropertyChanged;
+        }
+
+        dirtyTrackedPins.Clear();
+
+        foreach (var collection in dirtyTrackedPinCollections)
+        {
+            collection.CollectionChanged -= OnDirtyTrackedPinsChanged;
+        }
+
+        dirtyTrackedPinCollections.Clear();
         Messenger.UnregisterAll(this);
-        OpenedGraph = null;
+        ReplaceOpenedGraph(null);
+        VariablesPanel.Dispose();
         Methods.Dispose();
         Constructors.Dispose();
         Variables.Dispose();
+        EventGraphs.Dispose();
     }
 }

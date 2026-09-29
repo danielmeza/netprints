@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Hosting;
@@ -23,30 +24,34 @@ public sealed class EditorDialogs(Func<Window?> owner) : IEditorDialogs
         return await closed.Task;
     }
 
+    /// <inheritdoc/>
     public Task ShowErrorAsync(string title, string message) =>
         ShowAsync<object>(new ErrorDialog(title, message));
 
+    /// <inheritdoc/>
     public Task<TypeSpecifier?> SelectTypeAsync(IEnumerable<TypeSpecifier> types, TypeSpecifier initial) =>
         ShowAsync<TypeSpecifier>(new SelectTypeDialog(types, initial));
 
+    /// <inheritdoc/>
     public Task<MethodSpecifier?> SelectMethodAsync(IEnumerable<MethodSpecifier> methods) =>
         ShowAsync<MethodSpecifier>(new SelectMethodDialog(methods));
 
-    public async Task ShowReferencesAsync(ReferenceListVM references)
-    {
-        try
-        {
-            await ShowAsync<object>(new ReferencesDialog { DataContext = references });
-        }
-        finally
-        {
-            references.Dispose();
-        }
-    }
+    /// <inheritdoc/>
+    public Task<bool> ConfirmTrustAsync(string projectPath, IReadOnlyList<string> extensionFolders) =>
+        ShowAsync<bool>(new TrustDialog(projectPath, extensionFolders));
+
+    /// <inheritdoc/>
+    public Task ShowIssuesAsync(string title, IReadOnlyList<CodeDiagnostic> issues) =>
+        ShowAsync<object>(new IssuesDialog(title, issues));
+
+    /// <inheritdoc/>
+    public Task ShowReferencesAsync(ReferenceListVM references) =>
+        ShowAsync<object>(new ReferencesDialog { DataContext = references });
 }
 
 /// <summary>Result of a dialog shown without an owner.</summary>
 public interface IDialogResult<out T>
 {
+    /// <summary>The dialog's result once it has closed, or <see langword="null"/> if cancelled.</summary>
     T? Result { get; }
 }

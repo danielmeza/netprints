@@ -1,7 +1,9 @@
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using Avalonia.Logging;
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
+using NetPrints.Editor.Graph;
 using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Editor.UITests.Driving;
 using NetPrints.Graph;
@@ -14,9 +16,27 @@ public class ClassEditorWindowTests
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task OpeningAClassAndAMethodLogsNoBindingWarnings()
+    {
+        var sink = new BindingWarningLogSink();
+        ILogSink? previousSink = Logger.Sink;
+        Logger.Sink = sink;
+        try
+        {
+            await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        }
+        finally
+        {
+            Logger.Sink = previousSink;
+        }
+
+        Assert.Empty(sink.Messages);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task InspectorsListsAndGeneratedCode()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var page = session.ClassEditor;
         var vm = session.ClassVM;
 
@@ -45,18 +65,16 @@ public class ClassEditorWindowTests
         page = new NetPrints.Testing.Ui.ClassEditor.ClassEditorPage(session.Driver, vm.Class.FullName);
         Assert.Equal("Renamed", await page.TextAsync(Token)); // window title
 
-        // The preview refreshes on a 1-second loop; advance its virtual clock instead of waiting
-        // on the wall clock (HeadlessApp gives it a TestScheduler so nothing advances it on its own).
-        session.App.CodeRefreshScheduler.AdvanceBy(TimeSpan.FromSeconds(1).Ticks);
-        HeadlessDriver.Pump();
-        Assert.Contains("class Renamed", (await page.ClassInspector.GeneratedCode.GetAsync(Token)).Text);
-        Assert.Equal("True", await page.ClassInspector.GeneratedCode.PropertyAsync(AutomationPropertyNames.IsReadOnly, Token));
+        // The code view follows CodeAnalysisHost's real-time debounce in this composition (editor-services.md
+        // §2): wait for it instead of a virtual clock.
+        await page.ClassInspector.CodeView.WaitUntilAsync(e => (e.Text ?? "").Contains("class Renamed"), "generated code", Token);
+        Assert.Equal("True", await page.ClassInspector.CodeView.PropertyAsync(AutomationPropertyNames.IsReadOnly, Token));
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task OverrideChooserCreatesAndResets()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var toString = session.ClassVM.OverridableMethods.First(m => m.Name == "ToString"); // PAR-26
 
         session.ClassWindow.FindControl<ComboBox>("OverrideBox")!.SelectedItem = toString; // choosing a combo box item
@@ -69,7 +87,7 @@ public class ClassEditorWindowTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task DeleteUndoRedoKeys()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var page = session.ClassEditor;
         var method = (MethodGraph)session.GraphVM.Graph;
 
@@ -91,7 +109,7 @@ public class ClassEditorWindowTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task RunCompilesStartsAndPrints()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
 
         await session.ClassEditor.RunButton.ClickAsync(Token);
 
@@ -103,7 +121,7 @@ public class ClassEditorWindowTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task BrokenGraphFillsTheErrorList()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var valuePin = session.GraphVM.Nodes.Single(n => n.Node is CallMethodNode).InputDataPins.Single();
         await session.Graph.Node("CallMethodNode").Input(valuePin.Pin.Name).ValueBox.ClickAsync(UiButton.Middle, Token); // clear "Hello, World!"
 
@@ -113,10 +131,76 @@ public class ClassEditorWindowTests
         await session.ClassEditor.ErrorList.WaitUntilAsync(e => e[AutomationPropertyNames.ItemCount] == "1", "one error listed", Token);
     }
 
+    /// <summary>A second method with a real CS1503 (<c>Guid.Parse(string)</c> fed an int), wired into
+    /// its flow (same technique as SourceMapTests/CodeAnalysisHostTests and
+    /// <see cref="CodeView.CodeViewTests.DoubleClickingADiagnosticRowOpensTheGraphSelectsAndRevealsTheNode"/>):
+    /// the graph model does not itself enforce pin type compatibility.</summary>
+    private static (MethodGraph Method, CallMethodNode CallNode) AddBadCallMethod(ClassGraph cls)
+    {
+        var method = new MethodGraph("BadCall") { Class = cls, Visibility = MemberVisibility.Public };
+        TypeSpecifier stringType = TypeSpecifier.FromType<string>();
+        var parseSpecifier = new MethodSpecifier("Parse",
+            [new MethodParameter("input", stringType, MethodParameterPassType.Default, false, null)],
+            [], MethodModifiers.Static, MemberVisibility.Public, TypeSpecifier.FromType<Guid>(), []);
+        var callNode = new CallMethodNode(method, parseSpecifier);
+        var badArgument = LiteralNode.WithValue(method, 123);
+        GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, callNode.InputExecPins[0]);
+        GraphUtil.ConnectExecPins(callNode.OutputExecPins[0], method.ReturnNodes.First().InputExecPins[0]);
+        GraphUtil.ConnectDataPins(badArgument.ValuePin, callNode.ArgumentPins[0]);
+        cls.Methods.Add(method);
+        return (method, callNode);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task DoubleTappingAnErrorRowsBackgroundOpensItsGraphAndSelectsTheNode()
+    {
+        // OWN-04 (owner-reproduced, FR-034/ED-T03): the row's StackPanel had no Background, so only
+        // the rendered text glyphs (e.g. what ErrorRow("CS1503") itself clicks) were hit-testable;
+        // double-clicking elsewhere in the row (the gap right after the severity icon, inside its
+        // Spacing="8") used to do nothing.
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        var page = session.ClassEditor;
+        var vm = session.ClassVM;
+        var (method, callNode) = AddBadCallMethod(vm.Class);
+
+        Project project = vm.Project ?? throw new InvalidOperationException("Expected the opened class to have a project.");
+        session.App.Composition.Context.CodeAnalysis.RequestAnalysis(project);
+        await page.ErrorRow("CS1503").WaitVisibleAsync(Token, TimeSpan.FromSeconds(30));
+
+        var icon = page.ErrorSeverityIcon(0);
+        var gap = await icon.OffsetAsync(20, 8, Token); // 4px past the 16px-wide icon, inside its Spacing="8" gap: row background, not text
+        await session.Driver.ClickAsync(gap, UiButton.Left, 2, Token);
+
+        await UiWait.UntilAsync(session.Driver, () => Task.FromResult(vm.OpenedGraph?.Graph == method), "the method with the error to open", Token);
+        NodeGraphVM openedGraph = vm.OpenedGraph ?? throw new InvalidOperationException("Expected a graph to be open.");
+        Assert.Contains(openedGraph.SelectedNodes, n => n.Node == callNode);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task PressingEnterOnTheSelectedErrorRowNavigatesToo()
+    {
+        // OWN-04 keyboard a11y: Enter on the selected row navigates the same as a double-click.
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        var page = session.ClassEditor;
+        var vm = session.ClassVM;
+        var (method, callNode) = AddBadCallMethod(vm.Class);
+
+        Project project = vm.Project ?? throw new InvalidOperationException("Expected the opened class to have a project.");
+        session.App.Composition.Context.CodeAnalysis.RequestAnalysis(project);
+        await page.ErrorRow("CS1503").WaitVisibleAsync(Token, TimeSpan.FromSeconds(30));
+
+        await page.ErrorRow("CS1503").ClickAsync(Token); // selects the row
+        await session.Driver.PressAsync("Enter", Token);
+
+        await UiWait.UntilAsync(session.Driver, () => Task.FromResult(vm.OpenedGraph?.Graph == method), "the method with the error to open", Token);
+        NodeGraphVM openedGraph = vm.OpenedGraph ?? throw new InvalidOperationException("Expected a graph to be open.");
+        Assert.Contains(openedGraph.SelectedNodes, n => n.Node == callNode);
+    }
+
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task NodesAndPinsHaveToolTips()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var write = session.Graph.Node("CallMethodNode");
 
         foreach (string pin in await write.PinNamesAsync(Token))
@@ -129,7 +213,7 @@ public class ClassEditorWindowTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task SplittersResizeTheirNeighbours()
     {
-        using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var page = session.ClassEditor;
 
         async Task<(double Width, double Height)> SizeAsync(UiElement e)

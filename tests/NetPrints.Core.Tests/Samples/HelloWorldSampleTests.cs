@@ -1,13 +1,32 @@
 using System;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reactive.Concurrency;
+using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging.Abstractions;
+using NetPrints.Compilation;
 using NetPrints.Core;
+using NetPrints.Projects;
+using NetPrints.Serialization;
+using NetPrints.Serialization.Json;
+using NetPrints.Serialization.Mapping;
+using NetPrints.Serialization.Migrations;
+using NetPrints.Serialization.Stores;
+using NetPrints.Tests.Projects;
+using NetPrints.Translator;
+using NetPrints.Workspace;
 using Xunit;
 
 namespace NetPrints.Tests.Samples
 {
+    /// <summary>
+    /// The checked-in <c>samples/HelloWorld</c> project (FR-010): loads through
+    /// <see cref="ProjectPersistence"/> and builds/runs through <see cref="IProjectSystem"/>
+    /// (project-system.md §4). The canonical-graph and up-to-date-<c>.g.cs</c> checks that used to live
+    /// here (DF-T26) moved to <c>CommittedSampleTests</c>; the temp-copy build of AllNodes moved to
+    /// <c>MigratedFixtureBuildTests</c>.
+    /// </summary>
     public class HelloWorldSampleTests : IDisposable
     {
         private readonly string tempDir;
@@ -25,145 +44,93 @@ namespace NetPrints.Tests.Samples
             catch (IOException) { }
         }
 
-        /// <summary>
-        /// The checked-in sample is exactly what <see cref="SampleProjectFactory"/> produces.
-        /// Set NETPRINTS_REGENERATE_SAMPLES=1 to rewrite samples/HelloWorld from the factory.
-        /// </summary>
-        [Fact]
-        public void FactoryMatchesCheckedInSample()
-        {
-            string sampleDir = Path.Combine(SampleProjectFactory.FindRepositoryRoot(), "samples", "HelloWorld");
-
-            if (Environment.GetEnvironmentVariable(SampleProjectFactory.RegenerateVariable) == "1")
-            {
-                Directory.CreateDirectory(sampleDir);
-                SampleProjectFactory.CreateHelloWorld(Path.Combine(sampleDir, "HelloWorld.netpp")).Save();
-            }
-
-            SampleProjectFactory.CreateHelloWorld(Path.Combine(tempDir, "HelloWorld.netpp")).Save();
-
-            var generated = Directory.GetFiles(tempDir).Select(Path.GetFileName).OrderBy(f => f, StringComparer.Ordinal).ToList();
-            var checkedIn = Directory.GetFiles(sampleDir).Select(Path.GetFileName).OrderBy(f => f, StringComparer.Ordinal).ToList();
-            Assert.Equal(checkedIn, generated);
-
-            foreach (string file in generated)
-            {
-                Assert.True(File.ReadAllBytes(Path.Combine(sampleDir, file)).SequenceEqual(File.ReadAllBytes(Path.Combine(tempDir, file))),
-                    $"{file} differs from the factory output; regenerate with {SampleProjectFactory.RegenerateVariable}=1");
-            }
-        }
-
         [Fact(Timeout = 120000)]
         public async Task SampleLoadsCompilesAndPrintsHelloWorld()
         {
-            var cancellationToken = TestContext.Current.CancellationToken;
+            CancellationToken cancellationToken = TestContext.Current.CancellationToken;
 
-            // The sample is linked into the test output (samples/**) by the test project.
-            string source = Path.Combine(AppContext.BaseDirectory, "samples", "HelloWorld");
-            foreach (string file in Directory.GetFiles(source))
-            {
-                File.Copy(file, Path.Combine(tempDir, Path.GetFileName(file)));
-            }
+            SampleBuild sample = SampleBuild.CopyHelloWorld(tempDir);
+            MsBuildProjectSystem projectSystem = sample.Projects;
+            ProjectPersistence persistence = sample.Persistence;
 
-            Project project = Project.LoadFromPath(Path.Combine(tempDir, "HelloWorld.netpp"));
-            Assert.Single(project.Classes);
+            string csprojPath = Path.Combine(tempDir, "HelloWorld.csproj");
+            ProjectLoadResult loaded = await persistence.LoadAsync(csprojPath, cancellationToken);
+            Assert.Empty(loaded.Issues);
+            Assert.Single(loaded.Project.Classes);
 
-            await CompileAsync(project, cancellationToken);
+            BuildResult build = await projectSystem.BuildAsync(csprojPath, cancellationToken);
+            Assert.True(build.Success, build.Log);
 
-            Assert.True(project.LastCompilationSucceeded, string.Join(Environment.NewLine, project.LastCompileErrors ?? new ObservableRangeCollection<string>()));
-            Assert.Equal("Build succeeded", project.CompilationMessage);
+            ProcessStartRequest run = projectSystem.GetRunCommand(csprojPath);
+            ProcessResult result = await new ProcessRunner().RunAsync(run, cancellationToken);
 
-            var (fileName, arguments) = project.GetRunCommand();
-            var psi = new ProcessStartInfo(fileName, arguments)
-            {
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-            };
-
-            using Process process = Process.Start(psi);
-            string output = await process.StandardOutput.ReadToEndAsync(cancellationToken);
-            string error = await process.StandardError.ReadToEndAsync(cancellationToken);
-            await process.WaitForExitAsync(cancellationToken);
-
-            Assert.Equal(0, process.ExitCode);
-            Assert.True(error.Length == 0, error);
-            Assert.Equal("Hello, World!", output.Trim());
+            Assert.Equal(0, result.ExitCode);
+            Assert.True(result.StandardError.Length == 0, result.StandardError);
+            Assert.Equal("Hello, World!", result.StandardOutput.Trim());
         }
 
         /// <summary>
-        /// An If Else between the entry and WriteLine, WriteLine on the True branch (the editor's
-        /// smoke flow graph). The condition is set, or left unset.
+        /// The sample loaded from a temp copy, with an If Else between the entry and WriteLine, WriteLine
+        /// on the True branch (the editor's smoke flow graph). The condition is set, or left unset.
+        /// These tests are about the translator's behavior, not about loading the checked-in files.
         /// </summary>
-        private Project HelloWorldWithIfElse(bool? condition)
+        private async Task<(SampleBuild Sample, Project Project)> HelloWorldWithIfElseAsync(bool? condition)
         {
-            string source = Path.Combine(AppContext.BaseDirectory, "samples", "HelloWorld");
-            foreach (string file in Directory.GetFiles(source))
-            {
-                File.Copy(file, Path.Combine(tempDir, Path.GetFileName(file)));
-            }
-
-            Project project = Project.LoadFromPath(Path.Combine(tempDir, "HelloWorld.netpp"));
-            var main = project.Classes.Single().Methods.Single();
+            SampleBuild sample = SampleBuild.CopyHelloWorld(tempDir);
+            Project project = await sample.LoadAsync(TestContext.Current.CancellationToken);
+            ClassGraph cls = project.Classes.Single();
+            var main = cls.Methods.Single();
             var write = main.Nodes.OfType<NetPrints.Graph.CallMethodNode>().Single();
             var ifElse = new NetPrints.Graph.IfElseNode(main) { PositionX = 280, PositionY = 392 };
             ifElse.ConditionPin.UnconnectedValue = condition;
             NetPrints.Graph.GraphUtil.ConnectExecPins(main.EntryNode.InitialExecutionPin, ifElse.ExecutionPin);
             NetPrints.Graph.GraphUtil.ConnectExecPins(ifElse.TruePin, write.InputExecPins[0]);
-            return project;
+            cls.MarkDirty();
+            return (sample, project);
         }
 
         [Fact(Timeout = 120000)]
         public async Task IfElseWithConditionCompiles()
         {
-            var project = HelloWorldWithIfElse(true);
+            (SampleBuild sample, Project project) = await HelloWorldWithIfElseAsync(true);
 
-            await CompileAsync(project, TestContext.Current.CancellationToken);
+            BuildResult build = await sample.SaveAndBuildAsync(project, TestContext.Current.CancellationToken);
 
-            Assert.True(project.LastCompilationSucceeded, string.Join(Environment.NewLine, project.LastCompileErrors ?? new ObservableRangeCollection<string>()));
+            Assert.True(build.Success, build.Log);
         }
 
-        /// <summary>A graph that cannot be translated fails the build with the translator's message, not with C# syntax errors.</summary>
+        /// <summary>A graph that cannot be translated is reported as a diagnostic carrying the
+        /// translator's message (not a C# syntax error) instead of failing the save (R1-01).</summary>
         [Fact(Timeout = 120000)]
         public async Task UntranslatableGraphReportsTheReason()
         {
-            var project = HelloWorldWithIfElse(null);
+            (SampleBuild sample, Project project) = await HelloWorldWithIfElseAsync(null);
 
-            await CompileAsync(project, TestContext.Current.CancellationToken);
+            ProjectSaveResult result = await sample.Persistence.SaveAsync(
+                project, cls => SampleBuild.Render(project, cls), TestContext.Current.CancellationToken);
 
-            Assert.False(project.LastCompilationSucceeded);
-            string error = Assert.Single(project.LastCompileErrors);
-            Assert.Contains("HelloWorld.Program", error);
-            Assert.Contains("Condition", error);
-            Assert.Equal("Build failed with 1 error(s)", project.CompilationMessage);
+            CodeDiagnostic diagnostic = Assert.Single(result.Diagnostics);
+            Assert.Contains("Condition", diagnostic.Message);
         }
 
         /// <summary>
         /// An untranslatable class is skipped instead of compiled as its own exception text (which
         /// used to drop every type in the project from search and type pickers, with no
-        /// indication why); the reason comes back through the warnings instead.
+        /// indication why); the reason comes back as an <c>NPT</c> diagnostic instead (R1-16: the same
+        /// <see cref="ProjectTranslation.TranslateAll"/> path <c>CodeAnalysisHost</c> and
+        /// <c>ProjectCheck</c> use, not the deleted <c>Project.GenerateClassSources</c>).
         /// </summary>
         [Fact(Timeout = 120000)]
-        public void UntranslatableGraphIsSkippedNotEmittedAsSource()
+        public async Task UntranslatableGraphIsSkippedNotEmittedAsSource()
         {
-            var project = HelloWorldWithIfElse(null);
+            (_, Project project) = await HelloWorldWithIfElseAsync(null);
 
-            var sources = project.GenerateClassSources(out var warnings).ToList();
+            ProjectTranslationResult result = ProjectTranslation.TranslateAll(project, TranslationEnvironment.BuiltIn);
 
-            Assert.Empty(sources);
-            string warning = Assert.Single(warnings);
-            Assert.Contains("HelloWorld.Program", warning);
-            Assert.Contains("Condition", warning);
-        }
-
-        /// <summary>Compiles and waits until the background compilation finished.</summary>
-        internal static async Task CompileAsync(Project project, System.Threading.CancellationToken cancellationToken)
-        {
-            project.CompileProject();
-            while (project.IsCompiling)
-            {
-                await Task.Delay(50, cancellationToken);
-            }
+            Assert.Empty(result.Classes);
+            CodeDiagnostic diagnostic = Assert.Single(result.Diagnostics);
+            Assert.Equal("HelloWorld.Program", diagnostic.ClassFullName);
+            Assert.Contains("Condition", diagnostic.Message);
         }
     }
 }

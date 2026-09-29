@@ -1,6 +1,15 @@
 <!--
 Sync Impact Report
-- Version change: 1.1.0 → 1.2.0 (MINOR: principle IV redefined — net10.0 everywhere)
+- Version change: 1.2.2 → 1.2.3 (PATCH, owner-approved 2026-09-26): legacy DataContract XML is no longer
+  read at all; the repo's own legacy files are migrated once in P1 and the legacy code is removed.
+- Previous: 1.2.1 → 1.2.2 (PATCH, owner-approved 2026-09-25): release packaging workflows may
+  use macOS/Windows runners; main CI stays Linux-only.
+- Previous: 1.2.0 → 1.2.1 (PATCH: clarifications, owner-approved 2026-09-25)
+  - IV: the netstandard2.0 exception covers only analyzers/generators NetPrints ships, not
+    generators it consumes.
+  - Technology Constraints: Avalonia 12.x (current pin), AvaloniaEdit, Microsoft.Extensions.Logging,
+    SDK-style project model.
+- Previous: 1.1.0 → 1.2.0 (MINOR: principle IV redefined — net10.0 everywhere)
 - Reason: Visual Studio/.NET Framework hosting is out of scope; owner approved net10.0 for all
   projects and dependencies (2026-09-24)
 - Previous: 1.0.0 → 1.1.0 (MINOR: principles I and IV redefined in scope, workflow rules added)
@@ -46,7 +55,8 @@ express, the fix is a new extension point in NetPrints — never a fork or a tar
 ### IV. Single Target Framework
 All projects target `net10.0` and may use the latest dependency versions that support it; no
 `netstandard2.0` or .NET Framework multi-targeting. The only exception is Roslyn analyzers and
-source generators, which MUST target `netstandard2.0` because the compiler requires it.
+source generators that NetPrints itself ships, which MUST target `netstandard2.0` because the
+compiler requires it; third-party generators NetPrints consumes are not covered by this rule.
 Libraries used by the browser build MUST be WASM-safe (no blocking file-system or process
 access outside abstractions). Visual Studio (.NET Framework) hosting is out of scope.
 
@@ -79,10 +89,12 @@ dead dependencies rather than carrying them forward.
   nullable reference types and deterministic builds enabled for new/modernized projects.
 - Compiler services: Roslyn (latest stable). MVVM:
   CommunityToolkit.Mvvm; DynamicData for search/filtering and large collections; ReactiveUI
-  only where it clearly helps. UI: Avalonia (11.x while Nodify.Avalonia requires it; move to newer when the canvas allows) +
-  Nodify.Avalonia. CLI: Spectre.Console.Cli.
+  only where it clearly helps. UI: Avalonia 12.x + Nodify.Avalonia; AvaloniaEdit for code views. Logging:
+  Microsoft.Extensions.Logging with `[LoggerMessage]` source-generated methods. CLI: Spectre.Console.Cli.
+- Project model: NetPrints projects are SDK-style `.csproj` files using the `NetPrints.Sdk`
+  package; generated C# is written next to each graph by an MSBuild step, not a source generator.
 - Default document format: System.Text.Json with source-generated contexts, behind the
-  serialization abstraction. Legacy DataContract XML is import-only once JSON lands.
+  serialization abstraction. Legacy DataContract XML (`.netpp`/`.netpc`) is not read or converted.
 - No IL weaving (Fody) in new code; prefer source generators.
 
 ## Development Workflow
@@ -98,6 +110,9 @@ dead dependencies rather than carrying them forward.
   ubuntu-latest). It builds the whole solution and runs all tests headless, and MUST pass
   before merge. The single exception is the VS extension: when P4 resumes it gets its own
   Windows workflow chained after `CI` via `workflow_run`, path-filtered.
+- Release packaging workflows (e.g. `release.yml`) may use macOS or Windows runners where a
+  platform build needs them (macOS app bundles, Windows smoke tests). They are not a substitute for
+  the Linux `CI` gate.
 
 ## Governance
 
@@ -107,4 +122,4 @@ principle/section added; PATCH: clarifications) and notes affected specs. Review
 check PRs against these principles; any deviation MUST be justified in the plan's
 Complexity Tracking section.
 
-**Version**: 1.2.0 | **Ratified**: 2026-09-24 | **Last Amended**: 2026-09-24
+**Version**: 1.2.3 | **Ratified**: 2026-09-24 | **Last Amended**: 2026-09-26

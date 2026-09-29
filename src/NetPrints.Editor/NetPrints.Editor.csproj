@@ -3,26 +3,48 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>NetPrints.Editor</RootNamespace>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors>$(WarningsAsErrors);CA1848;CA2254</WarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     <PackageReference Include="Avalonia" />
     <PackageReference Include="Avalonia.Themes.Fluent" />
     <!-- The graph grid draws on the leased SKCanvas (GridBackground). -->
     <PackageReference Include="Avalonia.Skia" />
     <PackageReference Include="Avalonia.Fonts.Inter" />
     <PackageReference Include="Nodify.Avalonia" />
+    <!-- The code view (research.md R2): TextMateSharp.Grammars flows in transitively (pinned via its
+         own version, no override) for RegistryOptions/ThemeName. -->
+    <PackageReference Include="Avalonia.AvaloniaEdit" />
+    <PackageReference Include="AvaloniaEdit.TextMate" />
+    <!-- ADR-0007: prebuilt behaviors before code-behind or a custom behavior (avalonia-xaml skill, D11). -->
+    <PackageReference Include="Xaml.Behaviors.Interactions" />
+    <PackageReference Include="Xaml.Behaviors.Interactions.Custom" />
+    <PackageReference Include="Xaml.Behaviors.Interactions.DragAndDrop" />
     <PackageReference Include="CommunityToolkit.Mvvm" />
     <PackageReference Include="DynamicData" />
     <!-- Used directly by the search list (Throttle, schedulers), not only through DynamicData. -->
     <PackageReference Include="System.Reactive" />
     <PackageReference Include="Material.Icons.Avalonia" />
+    <!-- Transitively pulled in by the NetPrints.Workspace project reference (MsBuildProjectSystem);
+         ExcludeAssets/PrivateAssets satisfies MSBuildLocator's own MSBL001 guard (research K10) here
+         too, since NuGet surfaces them as PackageReference items of this project as well. -->
+    <PackageReference Include="Microsoft.Build" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Build.Framework" ExcludeAssets="runtime" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\NetPrints.Core\NetPrints.Core.csproj" />
+    <ProjectReference Include="..\NetPrints.Extensibility\NetPrints.Extensibility.csproj" />
     <ProjectReference Include="..\NetPrints.Reflection\NetPrints.Reflection.csproj" />
+    <ProjectReference Include="..\NetPrints.Serialization\NetPrints.Serialization.csproj" />
+    <ProjectReference Include="..\NetPrints.Workspace\NetPrints.Workspace.csproj" />
+    <!-- MainEditorVM/ClassEditorVM call NetPrints.Generation.GraphCodeGenerator directly: a normal
+         ProjectReference to the shared library, not to the NetPrints.Generator exe (ADR-0009 supersedes
+         the ADR-0005 ReferenceOutputAssembly=false + HintPath workaround, which broke a RID-published
+         build, NETSDK1067/1150/1151/CS0234, and could silently compile against a stale DLL). -->
+    <ProjectReference Include="..\NetPrints.Generation\NetPrints.Generation.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -32,5 +54,6 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="NetPrints.Editor.Tests" />
+    <InternalsVisibleTo Include="NetPrints.Editor.UITests" />
   </ItemGroup>
 </Project>

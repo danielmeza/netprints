@@ -1,14 +1,43 @@
-﻿using System.Collections.Generic;
+﻿#nullable enable
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace NetPrints.Core
 {
+    /// <summary>
+    /// How an operator method (named <c>op_*</c> per the .NET operator overload convention) is
+    /// displayed and translated back to its C# operator syntax.
+    /// </summary>
     public class OperatorInfo
     {
+        /// <summary>
+        /// Human-readable name shown in the editor (eg. "Add", "Greater than or equal").
+        /// </summary>
         public string DisplayName { get; }
+
+        /// <summary>
+        /// The C# operator symbol (eg. "+", "&gt;=").
+        /// </summary>
         public string Symbol { get; }
+
+        /// <summary>
+        /// Whether this is a unary operator (one operand) rather than binary (two operands).
+        /// </summary>
         public bool Unary { get; }
+
+        /// <summary>
+        /// For a unary operator, whether the symbol is written after the operand (eg. postfix
+        /// <c>x++</c>) rather than before it (eg. prefix <c>-x</c>). Unused for a binary operator.
+        /// </summary>
         public bool UnaryRightPosition { get; }
 
+        /// <summary>
+        /// Creates an operator descriptor.
+        /// </summary>
+        /// <param name="displayName">Human-readable name shown in the editor.</param>
+        /// <param name="symbol">The C# operator symbol.</param>
+        /// <param name="unary">Whether this is a unary operator.</param>
+        /// <param name="unaryRightPosition">For a unary operator, whether the symbol is written after the operand.</param>
         public OperatorInfo(string displayName, string symbol, bool unary, bool unaryRightPosition = false)
         {
             DisplayName = displayName;
@@ -18,6 +47,11 @@ namespace NetPrints.Core
         }
     }
 
+    /// <summary>
+    /// Recognizes operator-overload methods (by their <c>op_*</c> name) and maps them to their
+    /// <see cref="OperatorInfo"/>, so the translator can emit the operator syntax instead of a method
+    /// call.
+    /// </summary>
     public static class OperatorUtil
     {
         private const string OperatorPrefix = "op_";
@@ -61,8 +95,8 @@ namespace NetPrints.Core
         /// <summary>
         /// Returns whether the method specifier is an operator.
         /// </summary>
-        /// <param name="methodName">Name of the method.</param>
-        /// <returns></returns>
+        /// <param name="methodSpecifier">Method specifier to check.</param>
+        /// <returns><see langword="true"/> if the method's name is a recognized <c>op_*</c> operator overload.</returns>
         public static bool IsOperator(MethodSpecifier methodSpecifier) =>
             operatorSymbols.ContainsKey(methodSpecifier.Name);
 
@@ -71,8 +105,8 @@ namespace NetPrints.Core
         /// </summary>
         /// <param name="methodSpecifier">Method specifier to find operator info for.</param>
         /// <param name="operatorInfo">Operator info for the method specifier if found.</param>
-        /// <returns></returns>
-        public static bool TryGetOperatorInfo(MethodSpecifier methodSpecifier, out OperatorInfo operatorInfo) =>
+        /// <returns><see langword="true"/> if <paramref name="methodSpecifier"/>'s name is a recognized <c>op_*</c> operator overload.</returns>
+        public static bool TryGetOperatorInfo(MethodSpecifier methodSpecifier, [MaybeNullWhen(false)] out OperatorInfo operatorInfo) =>
             operatorSymbols.TryGetValue(methodSpecifier.Name, out operatorInfo);
     }
 }

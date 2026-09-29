@@ -1,0 +1,4 @@
+<!-- In-repo NetPrints.Sdk development mode (project-system.md §2.1): see Directory.Build.props. -->
+<Project>
+  <Import Project="../src/NetPrints.Sdk/build/NetPrints.Sdk.targets" />
+</Project>

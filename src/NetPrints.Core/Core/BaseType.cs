@@ -1,5 +1,5 @@
-﻿using System;
-using System.Runtime.Serialization;
+﻿#nullable enable
+using System;
 
 namespace NetPrints.Core
 {
@@ -7,15 +7,11 @@ namespace NetPrints.Core
     /// Abstract specifier describing types.
     /// </summary>
     [Serializable]
-    [DataContract]
-    [KnownType(typeof(TypeSpecifier))]
-    [KnownType(typeof(GenericType))]
     public abstract class BaseType
     {
         /// <summary>
         /// Full name of the type (ie. Namespace.TypeName).
         /// </summary>
-        [DataMember]
         public string Name
         {
             get;
@@ -30,16 +26,16 @@ namespace NetPrints.Core
         /// </summary>
         public virtual string FullCodeName
         {
-            get => Name.Replace("+", ".");
+            get => Name.Replace("+", ".", StringComparison.Ordinal);
         }
 
         /// <summary>
         /// Same as <see cref="FullCodeName"/> but with unbound generic arguments replaced
-        /// by blank (eg. List<T> -> List<>). Needed when referring to unbound types in code.
+        /// by blank (eg. <c>List&lt;T&gt;</c> -> <c>List&lt;&gt;</c>). Needed when referring to unbound types in code.
         /// </summary>
         public virtual string FullCodeNameUnbound
         {
-            get => Name.Replace("+", ".");
+            get => Name.Replace("+", ".", StringComparison.Ordinal);
         }
 
         /// <summary>
@@ -50,11 +46,19 @@ namespace NetPrints.Core
             get => Name;
         }
 
+        /// <summary>
+        /// Sets <see cref="Name"/>.
+        /// </summary>
+        /// <param name="name">Full name of the type (ie. Namespace.TypeName).</param>
         protected BaseType(string name)
         {
             Name = name;
         }
 
+        /// <summary>
+        /// Returns <see cref="Name"/>.
+        /// </summary>
+        /// <returns><see cref="Name"/>.</returns>
         public override string ToString()
         {
             return Name;

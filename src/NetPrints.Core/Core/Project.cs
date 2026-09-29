@@ -1,714 +1,208 @@
-﻿using System;
-using System.Collections.Concurrent;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Diagnostics;
-using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.Serialization;
-using System.Threading;
-using System.Threading.Tasks;
+using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Compilation;
-using NetPrints.Core;
-using NetPrints.Serialization;
-using NetPrints.Translator;
-using PropertyChanged;
+using NetPrints.Projects;
 
 namespace NetPrints.Core
 {
-    [Flags]
-    public enum ProjectCompilationOutput
-    {
-        Nothing = 0,
-        SourceCode = 1,
-        Binaries = 2,
-        Errors = 4,
-        All = SourceCode | Binaries | Errors,
-    }
-
+    /// <summary>
+    /// The kind of binary a project compiles to.
+    /// </summary>
     public enum BinaryType
     {
+        /// <summary>
+        /// A library with no entry point (a .dll with no runnable command).
+        /// </summary>
         SharedLibrary,
+
+        /// <summary>
+        /// A runnable executable (see <c>IProjectSystem.GetRunCommand</c>).
+        /// </summary>
         Executable,
     }
 
     /// <summary>
     /// Project model.
     /// </summary>
-    [DataContract]
-    [AddINotifyPropertyChangedInterface]
-    public class Project
+    public partial class Project : ModelObject
     {
-        private static readonly IEnumerable<FrameworkAssemblyReference> DefaultReferences = new FrameworkAssemblyReference[]
-        {
-            new FrameworkAssemblyReference(".NETFramework/v4.5/System.dll"),
-            new FrameworkAssemblyReference(".NETFramework/v4.5/System.Core.dll"),
-            new FrameworkAssemblyReference(".NETFramework/v4.5/mscorlib.dll"),
-        };
-
-        private static readonly DataContractSerializer ProjectSerializer = new DataContractSerializer(typeof(Project));
-
         /// <summary>
         /// Classes contained in this project.
         /// </summary>
-        public ObservableRangeCollection<ClassGraph> Classes
-        {
-            get;
-            private set;
-        } = new ObservableRangeCollection<ClassGraph>();
+        public ObservableRangeCollection<ClassGraph> Classes { get; } = new ObservableRangeCollection<ClassGraph>();
 
         /// <summary>
         /// Name of the project.
         /// </summary>
-        [DataMember]
-        public string Name
-        {
-            get;
-            set;
-        }
+        [ObservableProperty]
+        public partial string Name { get; set; }
 
         /// <summary>
-        /// Version of the editor that the project was saved in.
+        /// Path to the last successfully compiled assembly. Null before the first successful
+        /// compilation, or when the last compilation failed.
         /// </summary>
-        [DataMember]
-        public Version SaveVersion
-        {
-            get;
-            set;
-        }
+        [ObservableProperty]
+        public partial string? LastCompiledAssemblyPath { get; set; }
 
         /// <summary>
-        /// Path to the last successfully compiled assembly.
+        /// Path to the project file. Set from <see cref="ProjectSnapshot.ProjectFilePath"/> by
+        /// <see cref="FromSnapshot"/>; not itself part of the persisted project data.
         /// </summary>
-        [DataMember]
-        public string LastCompiledAssemblyPath
-        {
-            get;
-            set;
-        }
-
-        /// <summary>
-        /// Path to the project file.
-        /// </summary>
-        public string Path
-        {
-            get;
-            set;
-        }
+        [ObservableProperty]
+        public partial string Path { get; set; }
 
         /// <summary>
         /// Default namespace of newly created classes.
         /// </summary>
-        [DataMember]
-        public string DefaultNamespace
-        {
-            get;
-            set;
-        }
-
-        /// <summary>
-        /// Paths to files for the class models within this project.
-        /// </summary>
-        [DataMember]
-        public ObservableRangeCollection<string> ClassPaths
-        {
-            get;
-            set;
-        } = new ObservableRangeCollection<string>();
-
-        /// <summary>
-        /// References of this project.
-        /// </summary>
-        [DataMember]
-        public ObservableRangeCollection<CompilationReference> References
-        {
-            get;
-            set;
-        } = new ObservableRangeCollection<CompilationReference>();
-
-        /// <summary>
-        /// Determines what gets output during compilation.
-        /// </summary>
-        [DataMember]
-        public ProjectCompilationOutput CompilationOutput
-        {
-            get;
-            set;
-        }
+        [ObservableProperty]
+        public partial string DefaultNamespace { get; set; }
 
         /// <summary>
         /// Type of the binary that we want to output.
         /// </summary>
-        [DataMember]
-        public BinaryType OutputBinaryType
-        {
-            get;
-            set;
-        }
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(CanCompileAndRun))]
+        public partial BinaryType OutputBinaryType { get; set; }
 
         private Project()
         {
         }
 
-        public string GetClassStoragePath(ClassGraph cls)
-        {
-            return $"{cls.FullName}.netpc";
-        }
+        #region Snapshot-based model (data-model.md §5, T055)
 
         /// <summary>
-        /// Saves the project to its path.
+        /// The project's most recently loaded or applied snapshot (project-system.md §4,
+        /// <c>IProjectSystem.LoadAsync</c>/<c>ApplyAsync</c>): always set, since the only constructor
+        /// path (<see cref="FromSnapshot"/>) requires one. The setter exists only for the editor to
+        /// replace it with a newer snapshot (e.g. <c>MainEditorVM</c>, <c>ReferenceListVM</c>).
+        /// <see cref="TargetFramework"/> and <see cref="ProfileId"/> are derived from it and re-raise
+        /// their own change notification whenever it is replaced.
         /// </summary>
-        public void Save()
-        {
-            // Save all classes
-            foreach (ClassGraph cls in Classes)
-            {
-                SaveClassInProjectDirectory(cls);
-            }
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(TargetFramework))]
+        [NotifyPropertyChangedFor(nameof(ProfileId))]
+        public partial ProjectSnapshot Snapshot { get; set; }
 
-            // Set class paths from class storage paths
-            ClassPaths = new ObservableRangeCollection<string>(Classes.Select(c => GetClassStoragePath(c)));
+        /// <summary>Target framework moniker of <see cref="Snapshot"/> (e.g. <c>"net10.0"</c>).</summary>
+        public string TargetFramework => Snapshot.TargetFramework;
 
-            SaveVersion = Assembly.GetExecutingAssembly().GetName().Version;
-
-            using FileStream fileStream = File.Open(Path, FileMode.Create);
-            ProjectSerializer.WriteObject(fileStream, this);
-        }
+        /// <summary>Reverse-DNS id of <see cref="Snapshot"/>'s <c>NetPrintsProfile</c>.</summary>
+        public string ProfileId => Snapshot.ProfileId;
 
         /// <summary>
-        /// Creates a new project.
+        /// Diagnostics from the project's last build (project-system.md §4,
+        /// <c>IProjectSystem.BuildAsync</c>'s <c>BuildResult.Messages</c> mapped to
+        /// <see cref="CodeDiagnostic"/>). Empty on success or before the first build.
         /// </summary>
-        /// <param name="name">Name of the project.</param>
-        /// <param name="defaultNamespace">Default namespace of the project.</param>
-        /// <param name="addDefaultReferences">Whether to add default references to the project.</param>
-        /// <returns>The created project.</returns>
-        public static Project CreateNew(string name, string defaultNamespace, bool addDefaultReferences = true,
-            ProjectCompilationOutput compilationOutput = ProjectCompilationOutput.All)
+        [ObservableProperty]
+        public partial ObservableRangeCollection<CodeDiagnostic> LastDiagnostics { get; set; } = new ObservableRangeCollection<CodeDiagnostic>();
+
+        /// <summary>
+        /// Creates a project from <paramref name="snapshot"/> (project-system.md §4):
+        /// <see cref="Name"/>, <see cref="DefaultNamespace"/> (<see cref="ProjectSnapshot.RootNamespace"/>),
+        /// <see cref="OutputBinaryType"/> and <see cref="Path"/>
+        /// (<see cref="ProjectSnapshot.ProjectFilePath"/>) are set from it. <see cref="Classes"/> starts
+        /// empty; the caller adds classes loaded through <c>ProjectPersistence</c> (T056).
+        /// </summary>
+        /// <param name="snapshot">Snapshot to build the project from.</param>
+        /// <returns>The new project.</returns>
+        public static Project FromSnapshot(ProjectSnapshot snapshot)
         {
-            Project project = new Project()
+            ArgumentNullException.ThrowIfNull(snapshot);
+
+            return new Project
             {
-                Name = name,
-                DefaultNamespace = defaultNamespace,
-                CompilationOutput = compilationOutput
+                Snapshot = snapshot,
+                Name = snapshot.Name,
+                DefaultNamespace = snapshot.RootNamespace,
+                OutputBinaryType = snapshot.OutputType,
+                Path = snapshot.ProjectFilePath,
             };
-
-            if (addDefaultReferences)
-            {
-                project.References.AddRange(DefaultReferences);
-            }
-
-            return project;
         }
 
         /// <summary>
-        /// Loads a project from a path.
+        /// Returns the file <paramref name="cls"/> is (or would be) saved to (data-model.md §5): the
+        /// path it was loaded from (<see cref="ClassGraph.LoadedGraphFilePath"/>), or, for a class
+        /// created in memory and never yet saved,
+        /// <c>&lt;project directory&gt;/&lt;cls.FullName&gt;.netpc.json</c>.
         /// </summary>
-        /// <param name="path">Path to the project file.</param>
-        /// <returns>Loaded project or null if unsuccessful</returns>
-        public static Project LoadFromPath(string path)
+        /// <param name="cls">Class to get the graph file path for.</param>
+        /// <returns>The class's graph file path.</returns>
+        public string GetGraphFilePath(ClassGraph cls)
         {
-            using FileStream fileStream = File.OpenRead(path);
-
-            if (ProjectSerializer.ReadObject(fileStream) is Project project)
-            {
-                project.Path = path;
-
-                // Load classes
-                ConcurrentBag<ClassGraph> classes = new ConcurrentBag<ClassGraph>();
-
-                Parallel.ForEach(project.ClassPaths, classPath =>
-                {
-                    ClassGraph cls = SerializationHelper.LoadClass(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(project.Path), classPath));
-                    cls.Project = project;
-                    classes.Add(cls);
-                });
-
-                project.Classes.ReplaceRange(classes.OrderBy(c => c.Name));
-
-                return project;
-            }
-
-            return null;
-        }
-
-        public bool CanCompileAndRun
-        {
-            get => CanCompile && OutputBinaryType == BinaryType.Executable
-                && CompilationOutput.HasFlag(ProjectCompilationOutput.Binaries);
-        }
-
-        public bool CanCompile
-        {
-            get => !isCompiling;
-        }
-
-        public string CompilationMessage
-        {
-            get => compilationMessage;
-            set
-            {
-                if (compilationMessage != value)
-                {
-                    compilationMessage = value;
-                }
-            }
-        }
-
-        private string compilationMessage = "Ready";
-
-        public bool IsCompiling
-        {
-            get => isCompiling;
-            set
-            {
-                if (isCompiling != value)
-                {
-                    isCompiling = value;
-                }
-            }
-        }
-
-        private bool isCompiling;
-
-        public bool LastCompilationSucceeded
-        {
-            get => lastCompilationSucceeded;
-            set
-            {
-                if (lastCompilationSucceeded != value)
-                {
-                    lastCompilationSucceeded = value;
-                }
-            }
-        }
-
-        private bool lastCompilationSucceeded = false;
-
-        public ObservableRangeCollection<string> LastCompileErrors
-        {
-            get => lastCompileErrors;
-            set
-            {
-                if (lastCompileErrors != value)
-                {
-                    lastCompileErrors = value;
-                }
-            }
-        }
-
-        private ObservableRangeCollection<string> lastCompileErrors;
-
-        public async void CompileProject()
-        {
-            // Check if we are already compiling
-            if (!CanCompile || CompilationOutput == ProjectCompilationOutput.Nothing)
-            {
-                return;
-            }
-
-            IsCompiling = true;
-            CompilationMessage = "Compiling...";
-
-            var references = References.ToArray();
-
-            // Compile in another thread
-            var compileTask = Task.Run(() =>
-            {
-                string projectDir = System.IO.Path.GetDirectoryName(Path);
-                string compiledDir = System.IO.Path.Combine(projectDir, $"Compiled_{Name}");
-
-                DirectoryInfo compiledDirInfo = new DirectoryInfo(compiledDir);
-                if (compiledDirInfo.Exists)
-                {
-                    // Delete existing compiled output
-                    foreach (FileInfo file in compiledDirInfo.EnumerateFiles())
-                    {
-                        file.Delete();
-                    }
-
-                    foreach (DirectoryInfo dir in compiledDirInfo.EnumerateDirectories())
-                    {
-                        dir.Delete(true);
-                    }
-                }
-                else
-                {
-                    Directory.CreateDirectory(compiledDir);
-                }
-
-                var translatedClasses = new ConcurrentBag<(string FullName, string Code)>();
-                var translationErrors = new ConcurrentBag<string>();
-
-                // Translate classes in parallel
-                Parallel.ForEach(Classes, cls =>
-                {
-                    // Translate the class to C#
-                    ClassTranslator classTranslator = new ClassTranslator();
-
-                    string code;
-                    try
-                    {
-                        code = classTranslator.TranslateClass(cls);
-                    }
-                    catch (Exception ex)
-                    {
-                        // Report the reason instead of compiling the exception text.
-                        translationErrors.Add($"{cls.FullName}: {ex.Message}");
-                        code = $"// {cls.FullName} could not be translated: {ex.Message}";
-                    }
-
-                    string[] directories = cls.FullName.Split('.');
-                    directories = directories
-                        .Take(directories.Length - 1)
-                        .Prepend(compiledDir)
-                        .ToArray();
-
-                    // Write source to file
-                    string outputDirectory = System.IO.Path.Combine(directories);
-
-                    System.IO.Directory.CreateDirectory(outputDirectory);
-
-                    if (CompilationOutput.HasFlag(ProjectCompilationOutput.SourceCode))
-                    {
-                        File.WriteAllText(System.IO.Path.Combine(outputDirectory, $"{cls.Name}.cs"), code);
-                    }
-
-                    translatedClasses.Add((cls.FullName, code));
-                });
-
-                if (!translationErrors.IsEmpty)
-                {
-                    return new CodeCompileResults(false, translationErrors.OrderBy(e => e, StringComparer.Ordinal).ToArray(), null);
-                }
-
-                // Deterministic output (constitution VI): the compiler sees the sources in a stable order.
-                var classSources = translatedClasses
-                    .OrderBy(c => c.FullName, StringComparer.Ordinal)
-                    .Select(c => c.Code);
-
-                bool generateExecutable = OutputBinaryType == BinaryType.Executable;
-                string ext = generateExecutable ? "exe" : "dll";
-
-                string outputPath = System.IO.Path.Combine(compiledDir, $"{Name}.{ext}");
-
-                // Create compiler on other app domain, compile, unload the app domain
-
-                var codeCompiler = new Compilation.CodeCompiler();
-
-                bool deleteBinaries = !CompilationOutput.HasFlag(ProjectCompilationOutput.Binaries) && !File.Exists(outputPath);
-
-                // Missing framework reference assemblies fall back to the runtime's (FR-008, FR-009).
-                var resolver = new ReferenceAssemblyResolver();
-                var referenceWarnings = new List<string>();
-                var assemblyPaths = resolver.ResolveAssemblyPaths(references.OfType<AssemblyReference>(), referenceWarnings);
-
-                var sources = classSources
-                    .Concat(references
-                        .OfType<SourceDirectoryReference>()
-                        .Where(sourceRef => sourceRef.IncludeInCompilation)
-                        .SelectMany(sourceRef => sourceRef.SourceFilePaths.OrderBy(p => p, StringComparer.Ordinal))
-                        .Select(sourcePath => File.ReadAllText(sourcePath)))
-                    .Distinct()
-                    .ToArray();
-
-                CodeCompileResults compilationResults = codeCompiler.CompileSources(
-                    outputPath, assemblyPaths, sources, generateExecutable);
-
-                if (referenceWarnings.Count > 0)
-                {
-                    compilationResults = new CodeCompileResults(compilationResults.Success,
-                        referenceWarnings.Concat(compilationResults.Errors).ToArray(),
-                        compilationResults.PathToAssembly);
-                }
-
-                // Started through the dotnet host, which needs a runtime config (FR-010).
-                if (compilationResults.Success && generateExecutable && resolver.UsesRuntimeAssemblies
-                    && CompilationOutput.HasFlag(ProjectCompilationOutput.Binaries))
-                {
-                    File.WriteAllText(GetRuntimeConfigPath(compiledDir), CreateRuntimeConfigJson());
-                }
-
-                // Delete the output binary if we don't want it.
-                // TODO: Don't generate it in the first place.
-                if (compilationResults.PathToAssembly != null && deleteBinaries)
-                {
-                    if (File.Exists(compilationResults.PathToAssembly))
-                    {
-                        File.Delete(compilationResults.PathToAssembly);
-                    }
-                }
-
-                // Write errors to file
-                if (CompilationOutput.HasFlag(ProjectCompilationOutput.Errors))
-                {
-                    File.WriteAllText(System.IO.Path.Combine(compiledDir, $"{Name}_errors.txt"),
-                        string.Join(Environment.NewLine, compilationResults.Errors));
-                }
-
-                return compilationResults;
-            });
-
-            CodeCompileResults results;
-            try
-            {
-                results = await compileTask;
-            }
-            catch (Exception ex)
-            {
-                // Report unexpected failures as a failed build instead of crashing the host.
-                results = new CodeCompileResults(false, new[] { ex.ToString() }, null);
-            }
-
-            LastCompilationSucceeded = results.Success;
-            LastCompileErrors = new ObservableRangeCollection<string>(results.Errors);
-
-            if (LastCompilationSucceeded)
-            {
-                LastCompiledAssemblyPath = results.PathToAssembly;
-                CompilationMessage = "Build succeeded";
-            }
-            else
-            {
-                CompilationMessage = $"Build failed with {LastCompileErrors.Count} error(s)";
-            }
-
-            IsCompiling = false;
+            ArgumentNullException.ThrowIfNull(cls);
+            return cls.LoadedGraphFilePath ?? System.IO.Path.Combine(GetProjectDirectory(Path), $"{cls.FullName}.netpc.json");
         }
 
         /// <summary>
-        /// Translates every class to C#, for the reflection host. A class that fails to translate
-        /// (e.g. an unconnected node) is skipped instead of compiling its exception text as source;
-        /// the reason is reported through <paramref name="warnings"/> instead.
+        /// Adds and returns a new, empty class built from <paramref name="profile"/>'s first class
+        /// template (extension-points.md §5), named uniquely ("MyClass", "MyClass2", … — PAR-12) in
+        /// <see cref="DefaultNamespace"/>. Starts dirty (<see cref="ClassGraph.IsDirty"/>): nothing has
+        /// been saved for it yet.
         /// </summary>
-        public IEnumerable<string> GenerateClassSources(out IReadOnlyList<string> warnings)
+        /// <param name="profile">Profile whose first class template builds the new class.</param>
+        /// <returns>The newly created class.</returns>
+        public ClassGraph CreateNewClass(IProjectProfile profile)
         {
-            if (Classes is null)
-            {
-                warnings = Array.Empty<string>();
-                return new string[0];
-            }
+            ArgumentNullException.ThrowIfNull(profile);
 
-            ConcurrentBag<string> classSources = new ConcurrentBag<string>();
-            ConcurrentBag<string> translationWarnings = new ConcurrentBag<string>();
+            string qualifiedName = NetPrintsUtil.GetUniqueName($"{DefaultNamespace}.MyClass", Classes.Select(c => c.FullName).ToList());
+            string name = qualifiedName.Split('.').Last();
 
-            // Translate classes in parallel
-            Parallel.ForEach(Classes, cls =>
-            {
-                // Translate the class to C#
-                ClassTranslator classTranslator = new ClassTranslator();
-
-                try
-                {
-                    classSources.Add(classTranslator.TranslateClass(cls));
-                }
-                catch (Exception ex)
-                {
-                    translationWarnings.Add($"{cls.FullName}: {ex.Message}");
-                }
-            });
-
-            warnings = translationWarnings.OrderBy(w => w, StringComparer.Ordinal).ToArray();
-
-            return classSources;
-        }
-
-        /// <summary>
-        /// Gets the command that runs the compiled executable. Executables compiled against the
-        /// running .NET runtime's assemblies (see <see cref="ReferenceAssemblyResolver"/>) have a
-        /// runtime configuration file and are started through the <c>dotnet</c> host.
-        /// </summary>
-        /// <returns>File name and arguments of the process to start.</returns>
-        public (string FileName, string Arguments) GetRunCommand()
-        {
-            if (OutputBinaryType != BinaryType.Executable || !CompilationOutput.HasFlag(ProjectCompilationOutput.Binaries))
-            {
-                throw new InvalidOperationException("Can only run executable projects which output their binaries.");
-            }
-
-            string compiledDir = GetCompiledDirectory();
-            string exePath = System.IO.Path.GetFullPath(System.IO.Path.Combine(compiledDir, $"{Name}.exe"));
-
-            if (!File.Exists(exePath))
-            {
-                throw new Exception($"The executable does not exist at {exePath}");
-            }
-
-            if (File.Exists(GetRuntimeConfigPath(compiledDir)))
-            {
-                return (ReferenceAssemblyResolver.GetDotNetHostPath(), $"\"{exePath}\"");
-            }
-
-            return (exePath, "");
-        }
-
-        public void RunProject()
-        {
-            var (fileName, arguments) = GetRunCommand();
-            Process.Start(new ProcessStartInfo(fileName, arguments) { UseShellExecute = false });
-        }
-
-        private string GetCompiledDirectory() =>
-            System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Path), $"Compiled_{Name}");
-
-        private string GetRuntimeConfigPath(string compiledDir) =>
-            System.IO.Path.Combine(compiledDir, $"{Name}.runtimeconfig.json");
-
-        private static string CreateRuntimeConfigJson()
-        {
-            Version version = Environment.Version;
-            return "{\n" +
-                "  \"runtimeOptions\": {\n" +
-                $"    \"tfm\": \"net{version.Major}.{version.Minor}\",\n" +
-                "    \"framework\": {\n" +
-                "      \"name\": \"Microsoft.NETCore.App\",\n" +
-                $"      \"version\": \"{version.Major}.{version.Minor}.0\"\n" +
-                "    }\n" +
-                "  }\n" +
-                "}\n";
-        }
-
-        private void FixReferencePaths()
-        {
-            var referencesToRemove = new List<CompilationReference>();
-
-            // Fix references
-            foreach (var reference in References)
-            {
-                if (reference is AssemblyReference assemblyReference)
-                {
-                    // Check if the assembly exists at the path and
-                    // give the user a chance to select another one.
-                    if (!File.Exists(assemblyReference.AssemblyPath))
-                    {
-                        throw new NotImplementedException();
-
-                        // TODO: Fix
-                        /*var openFileDialog = new OpenFileDialog()
-                        {
-                            Title = $"Open replacement for {assemblyReference}",
-                            CheckFileExists = true,
-                        };
-
-                        if (openFileDialog.ShowDialog() == true)
-                        {
-                            assemblyReference.AssemblyPath = openFileDialog.FileName;
-                        }
-                        else
-                        {
-                            referencesToRemove.Add(reference);
-                        }*/
-                    }
-                }
-            }
-
-            // Remove references which couldn't be fixed
-            if (referencesToRemove.Count > 0)
-            {
-                References.RemoveRange(referencesToRemove);
-
-                // TODO
-                /*MessageBox.Show("The following assemblies could not be found and have been removed from the project:\n\n" +
-                    string.Join(Environment.NewLine, referencesToRemove.Select(n => n.ToString())),
-                    "Could not load some assemblies", MessageBoxButton.OK, MessageBoxImage.Warning);*/
-            }
-        }
-
-        #region Create / Load / Save Project
-        /// <summary>
-        /// Saves the given class in the project directory.
-        /// </summary>
-        /// <param name="cls">Class to save.</param>
-        public void SaveClassInProjectDirectory(ClassGraph cls)
-        {
-            string outputPath = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Path), GetClassStoragePath(cls));
-
-            // Save in same directory as project
-            SerializationHelper.SaveClass(cls, outputPath);
-        }
-
-        #endregion
-
-        #region Creating and loading classes
-        public ClassGraph CreateNewClass()
-        {
-            // Make a class name that isn't already a file and isn't
-            // already a class in the project.
-
-            IList<string> existingFiles = System.IO.Directory.GetFiles(System.IO.Path.GetDirectoryName(Path))
-                .Select(f => System.IO.Path.GetFileNameWithoutExtension(f))
-                .Concat(Classes.Select(c => System.IO.Path.GetFileNameWithoutExtension(GetClassStoragePath(c))))
-                .ToList();
-
-            string storageName = $"{DefaultNamespace}.MyClass";
-            storageName = NetPrintsUtil.GetUniqueName(storageName, existingFiles);
-
-            // TODO: Might break if GetUniqueName adds a dot
-            // (which it doesn't at the time of writing, it just adds
-            // numbers, but this is not guaranteed forever).
-            string name = storageName.Split('.').Last();
-
-            ClassGraph cls = new ClassGraph()
-            {
-                Name = name,
-                Namespace = DefaultNamespace,
-                Project = this,
-            };
-
-            // TODO: SaveClassInProjectDirectory(clsVM);
+            ClassGraph cls = profile.ClassTemplates[0].Create(this, name);
+            cls.MarkDirty();
             Classes.Add(cls);
 
             return cls;
         }
 
-        public ClassGraph AddExistingClass(string path)
-        {
-            // Check if a class with the same storage name is already loaded
-            string fileName = System.IO.Path.GetFileName(path);
-            ClassGraph cls = Classes.FirstOrDefault(c => string.Equals(GetClassStoragePath(c), fileName, StringComparison.OrdinalIgnoreCase));
-
-            bool loadAndSave = false;
-
-            if (cls != null)
-            {
-                // Ask if we should overwrite if it already exists
-                // TODO: Probably want to move this into a view instead of here in
-                // the viewmodel.
-                /*MessageBoxResult result = MessageBox.Show($"File with name {fileName} already exists in this project. Overwrite it?", "File already exists",
-                    MessageBoxButton.YesNo, MessageBoxImage.Question);
-
-                // Overwrite the class if chosen
-                if (result == MessageBoxResult.Yes)
-                {
-                    // Remove the old class and load the new one
-                    Project.Classes.Remove(cls);
-                    loadAndSave = true;
-                }*/
-            }
-            else
-            {
-                // Load the new class
-                loadAndSave = true;
-            }
-
-            if (loadAndSave)
-            {
-                // Load the class and save it relative to the project
-                cls = SerializationHelper.LoadClass(path);
-                cls.Project = this;
-                SaveClassInProjectDirectory(cls);
-                Classes.Add(cls);
-            }
-
-            return cls;
-        }
         #endregion
 
-        [OnDeserialized]
-        private void FixDefaults(StreamingContext context)
+        /// <summary>
+        /// Directory of a project file. Throws if <paramref name="projectPath"/> has no directory
+        /// (a root or relative path) instead of returning a value from a null-directory silently.
+        /// </summary>
+        private static string GetProjectDirectory(string projectPath) =>
+            System.IO.Path.GetDirectoryName(projectPath)
+                ?? throw new InvalidOperationException($"Project path '{projectPath}' has no directory.");
+
+        /// <summary>
+        /// Whether the project can currently be compiled and run: not already compiling, and output
+        /// type is <see cref="BinaryType.Executable"/>.
+        /// </summary>
+        public bool CanCompileAndRun
         {
-            Classes = new ObservableRangeCollection<ClassGraph>();
+            get => CanCompile && OutputBinaryType == BinaryType.Executable;
         }
+
+        /// <summary>
+        /// Whether the project can currently be compiled: not already compiling (see <see cref="IsCompiling"/>).
+        /// </summary>
+        public bool CanCompile
+        {
+            get => !IsCompiling;
+        }
+
+        /// <summary>
+        /// Human-readable status shown while and after compiling (eg. "Ready", "Compiling...",
+        /// "Build succeeded", "Build failed with N error(s)").
+        /// </summary>
+        [ObservableProperty]
+        public partial string CompilationMessage { get; set; } = "Ready";
+
+        /// <summary>
+        /// Whether a build is currently running.
+        /// </summary>
+        [ObservableProperty]
+        public partial bool IsCompiling { get; set; }
+
+        /// <summary>
+        /// Whether the last build succeeded.
+        /// </summary>
+        [ObservableProperty]
+        public partial bool LastCompilationSucceeded { get; set; }
     }
 }

@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
 using System.IO.Pipes;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Avalonia.Threading;
+using Microsoft.Extensions.Logging;
+using NetPrints.Editor.Hosting;
 
 namespace NetPrints.Editor.Hosting.Automation;
 
@@ -10,20 +13,30 @@ namespace NetPrints.Editor.Hosting.Automation;
 /// <param name="MainWindowShown">The main window is open and visible.</param>
 /// <param name="ProjectLoaded">A project is open and no project is loading.</param>
 /// <param name="ReflectionLoaded">The types of the project's references are loaded.</param>
+/// <param name="ProjectPath">Path to the open project, or <see langword="null"/> if none is open.</param>
+/// <param name="ProcessId">The editor process's id.</param>
 public sealed record AutomationStatus(bool MainWindowShown, bool ProjectLoaded, bool ReflectionLoaded, string? ProjectPath, int ProcessId);
 
 /// <summary>One request line of the automation protocol.</summary>
 public sealed record AutomationRequest(string Op)
 {
+    /// <summary>The query for a <c>find</c> request; required for that operation, unused otherwise.</summary>
     public AutomationQuery? Query { get; init; }
 }
 
 /// <summary>One response line of the automation protocol.</summary>
 public sealed record AutomationResponse(bool Ok)
 {
+    /// <summary>The exception message, when <see cref="Ok"/> is <see langword="false"/>.</summary>
     public string? Error { get; init; }
+
+    /// <summary>The matched elements, for a <c>find</c> request.</summary>
     public IReadOnlyList<AutomationElement>? Elements { get; init; }
+
+    /// <summary>The editor's ready-signal snapshot, for a <c>status</c> request.</summary>
     public AutomationStatus? Status { get; init; }
+
+    /// <summary>The window/element tree dump, for a <c>dump</c> request.</summary>
     public string? Text { get; init; }
 }
 
@@ -44,7 +57,15 @@ public sealed class AutomationProtocolException(string message) : IOException(me
 /// </summary>
 public sealed class AutomationAgent : IDisposable
 {
+    /// <summary>
+    /// Environment variable that enables the automation agent when set to "1".
+    /// </summary>
     public const string EnableVariable = "NETPRINTS_AUTOMATION";
+
+    /// <summary>
+    /// Environment variable that overrides the automation pipe's name/path (see
+    /// <see cref="DefaultPipeName"/> for the default), for callers that need a known path.
+    /// </summary>
     public const string PipeVariable = "NETPRINTS_AUTOMATION_PIPE";
 
     /// <summary>Longest request line the agent reads before dropping the connection.</summary>
@@ -53,6 +74,10 @@ public sealed class AutomationAgent : IDisposable
     /// <summary>Most automation connections served at once; the rest are refused immediately.</summary>
     private const int MaxConcurrentConnections = 8;
 
+    /// <summary>
+    /// Serializer options for the automation protocol's line-delimited JSON: web defaults
+    /// (camelCase), omitting <see langword="null"/> properties.
+    /// </summary>
     public static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
     {
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
@@ -61,6 +86,7 @@ public sealed class AutomationAgent : IDisposable
     private readonly string pipeName;
     private readonly AutomationTree tree;
     private readonly Func<AutomationStatus> status;
+    private readonly ILogger<AutomationAgent> logger;
     private readonly CancellationTokenSource stop = new();
     private readonly SemaphoreSlim connectionSlots = new(MaxConcurrentConnections, MaxConcurrentConnections);
     private NamedPipeServerStream nextServer;
@@ -70,13 +96,19 @@ public sealed class AutomationAgent : IDisposable
     /// already owning the name, …) throw synchronously from here, so the caller can log them and
     /// fail fast instead of the bind happening inside a background task nobody observes.
     /// </summary>
-    public AutomationAgent(string pipeName, AutomationTree tree, Func<AutomationStatus> status)
+    public AutomationAgent(string pipeName, AutomationTree tree, Func<AutomationStatus> status, ILogger<AutomationAgent> logger)
     {
+        ArgumentNullException.ThrowIfNull(pipeName);
+        ArgumentNullException.ThrowIfNull(tree);
+        ArgumentNullException.ThrowIfNull(status);
+        ArgumentNullException.ThrowIfNull(logger);
+
         this.pipeName = pipeName;
         this.tree = tree;
         this.status = status;
+        this.logger = logger;
         nextServer = CreateServer();
-        _ = Task.Run(AcceptLoopAsync);
+        Task.Run(AcceptLoopAsync).Forget(e => LogError("accept loop task fault", e));
     }
 
     /// <summary>Whether the environment asks for automation, and the pipe name to use.</summary>
@@ -114,27 +146,27 @@ public sealed class AutomationAgent : IDisposable
             var server = nextServer;
             try
             {
-                await server.WaitForConnectionAsync(stop.Token);
+                await server.WaitForConnectionAsync(stop.Token).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
-                await server.DisposeAsync();
+                await server.DisposeAsync().ConfigureAwait(false);
                 return;
             }
             catch (Exception e)
             {
-                await server.DisposeAsync();
+                await server.DisposeAsync().ConfigureAwait(false);
                 LogError("stopped accepting connections", e);
                 return;
             }
 
-            if (connectionSlots.Wait(0))
+            if (await connectionSlots.WaitAsync(0).ConfigureAwait(false))
             {
-                _ = ServeConnectionAsync(server);
+                ServeConnectionAsync(server).Forget(e => LogError("unexpected connection task fault", e));
             }
             else
             {
-                await server.DisposeAsync();
+                await server.DisposeAsync().ConfigureAwait(false);
             }
 
             try
@@ -160,7 +192,7 @@ public sealed class AutomationAgent : IDisposable
     {
         try
         {
-            await ServeAsync(stream);
+            await ServeAsync(stream).ConfigureAwait(false);
         }
         catch (Exception e)
         {
@@ -172,6 +204,7 @@ public sealed class AutomationAgent : IDisposable
         }
     }
 
+    [SuppressMessage("IDisposableAnalyzers.Correctness", "IDISP007", Justification = "ADR-0003: ServeAsync takes ownership of its connection stream.")]
     private async Task ServeAsync(NamedPipeServerStream stream)
     {
         await using var _ = stream;
@@ -181,20 +214,20 @@ public sealed class AutomationAgent : IDisposable
 
         try
         {
-            while (!stop.IsCancellationRequested && await lines.ReadLineAsync(stop.Token) is { } line)
+            while (!stop.IsCancellationRequested && await lines.ReadLineAsync(stop.Token).ConfigureAwait(false) is { } line)
             {
                 AutomationResponse response;
                 try
                 {
                     var request = JsonSerializer.Deserialize<AutomationRequest>(line, Json) ?? throw new InvalidOperationException("Empty request.");
-                    response = await HandleAsync(request);
+                    response = await HandleAsync(request).ConfigureAwait(false);
                 }
                 catch (Exception e)
                 {
                     response = new AutomationResponse(false) { Error = e.Message };
                 }
 
-                await writer.WriteLineAsync(JsonSerializer.Serialize(response, Json));
+                await writer.WriteLineAsync(JsonSerializer.Serialize(response, Json)).ConfigureAwait(false);
             }
         }
         catch (Exception e) when (e is IOException or OperationCanceledException or ObjectDisposedException)
@@ -243,8 +276,12 @@ public sealed class AutomationAgent : IDisposable
         }
     }
 
-    private void LogError(string what, Exception e) => Console.Error.WriteLine($"[NetPrints automation '{pipeName}'] {what}: {e}");
+    private void LogError(string what, Exception e) => Log.AutomationAgentError(logger, e, pipeName, what);
 
+    /// <summary>
+    /// Stops accepting connections and releases the pipe. In-flight connections are not forcibly
+    /// closed; they end on their own once the client disconnects or the process exits.
+    /// </summary>
     public void Dispose()
     {
         stop.Cancel();
@@ -278,7 +315,7 @@ file sealed class BoundedLineReader(TextReader reader, int maxChars)
         {
             if (start >= length)
             {
-                length = await reader.ReadAsync(buffer, cancellationToken);
+                length = await reader.ReadAsync(buffer, cancellationToken).ConfigureAwait(false);
                 start = 0;
                 if (length == 0)
                 {

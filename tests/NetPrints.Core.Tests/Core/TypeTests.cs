@@ -18,16 +18,40 @@ namespace NetPrintsUnitTests
             Assert.NotEqual(sameAsTypeA, typeB);
         }
 
+        // A bound TypeSpecifier and an unbound GenericType parameter are never equal, in either
+        // direction, even when the generic type's name happens to match the specifier's (T103a):
+        // GenericType.Equals(TypeSpecifier) and TypeSpecifier.Equals(GenericType) used to both return
+        // true unconditionally, disagreeing with GetHashCode and giving every TypeSpecifier the same
+        // "equal" GenericType instance regardless of name. GraphUtil.CanConnectNodePins checks
+        // generic/concrete pin compatibility directly instead of relying on this equality.
         [Fact]
-        public void TestGenericEquality()
+        public void TypeSpecifierAndGenericTypeAreNeverEqual()
         {
             TypeSpecifier typeA = new TypeSpecifier("TypeA", false, false, new BaseType[] { });
             GenericType genType1 = new GenericType("T1");
-            GenericType genType2 = new GenericType("T2");
+            GenericType genType2 = new GenericType("TypeA");
 
-            Assert.Equal<BaseType>(typeA, genType1);
-            Assert.Equal<BaseType>(typeA, genType2);
+            Assert.NotEqual<BaseType>(typeA, genType1);
+            Assert.NotEqual<BaseType>(typeA, genType2);
+            Assert.NotEqual<BaseType>(genType1, typeA);
+            Assert.NotEqual<BaseType>(genType2, typeA);
             Assert.NotEqual(genType1, genType2);
+        }
+
+        // GetHashCode consistency (T103a): two values Equals says are equal must return the same hash
+        // code. Since a TypeSpecifier and a GenericType are never equal (above), this only needs to hold
+        // within each type -- pinned here so a future change to either Equals cannot reintroduce the
+        // cross-type mismatch (different hash, claimed-equal) the old placeholder had.
+        [Fact]
+        public void EqualValuesHaveTheSameHashCode()
+        {
+            TypeSpecifier typeA = TypeSpecifier.FromType<List<int>>();
+            TypeSpecifier sameAsTypeA = TypeSpecifier.FromType<List<int>>();
+            Assert.Equal(typeA.GetHashCode(), sameAsTypeA.GetHashCode());
+
+            GenericType genType = new GenericType("T");
+            GenericType sameGenType = new GenericType("T");
+            Assert.Equal(genType.GetHashCode(), sameGenType.GetHashCode());
         }
 
         [Fact]

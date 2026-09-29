@@ -1,0 +1,459 @@
+{
+  "NetPrints.Core.ConstructorGraph": {
+    "Class": [],
+    "PreservedDocumentState": [],
+    "Project": [],
+    "Visibility": [
+      "Visibility"
+    ]
+  },
+  "NetPrints.Core.LocalVariable": {
+    "Name": [
+      "Name"
+    ],
+    "Type": [
+      "Type"
+    ]
+  },
+  "NetPrints.Core.MethodGraph": {
+    "Class": [],
+    "Modifiers": [
+      "Modifiers"
+    ],
+    "Name": [
+      "Name"
+    ],
+    "PreservedDocumentState": [],
+    "Project": [],
+    "Visibility": [
+      "Visibility"
+    ]
+  },
+  "NetPrints.Core.Project": {
+    "CompilationMessage": [
+      "CompilationMessage"
+    ],
+    "DefaultNamespace": [
+      "DefaultNamespace"
+    ],
+    "IsCompiling": [
+      "IsCompiling"
+    ],
+    "LastCompilationSucceeded": [
+      "LastCompilationSucceeded"
+    ],
+    "LastCompiledAssemblyPath": [
+      "LastCompiledAssemblyPath"
+    ],
+    "LastDiagnostics": [
+      "LastDiagnostics"
+    ],
+    "Name": [
+      "Name"
+    ],
+    "OutputBinaryType": [
+      "CanCompileAndRun",
+      "OutputBinaryType"
+    ],
+    "Path": [
+      "Path"
+    ],
+    "Snapshot": [
+      "ProfileId",
+      "Snapshot",
+      "TargetFramework"
+    ]
+  },
+  "NetPrints.Core.Variable": {
+    "GetterMethod": [
+      "GetterMethod",
+      "HasAccessors",
+      "HasPublicGetter",
+      "HasPublicSetter",
+      "Specifier"
+    ],
+    "Modifiers": [
+      "Modifiers",
+      "Specifier"
+    ],
+    "Name": [
+      "Name",
+      "Specifier"
+    ],
+    "SetterMethod": [
+      "HasAccessors",
+      "HasPublicGetter",
+      "HasPublicSetter",
+      "SetterMethod",
+      "Specifier"
+    ],
+    "TypeGraph": [
+      "Specifier",
+      "Type",
+      "TypeGraph"
+    ],
+    "Visibility": [
+      "HasPublicGetter",
+      "HasPublicSetter",
+      "Specifier",
+      "Visibility"
+    ]
+  },
+  "NetPrints.Graph.AwaitNode": {
+    "IsPure": [
+      "IsPure"
+    ],
+    "Name": [
+      "Name"
+    ],
+    "PositionX": [
+      "PositionX"
+    ],
+    "PositionY": [
+      "PositionY"
+    ]
+  },
+  "NetPrints.Graph.CallMethodNode": {
+    "IsPure": [
+      "IsPure"
+    ],
+    "Name": [
+      "Name"
+    ],
+    "PositionX": [
+      "PositionX"
+    ],
+    "PositionY": [
+      "PositionY"
+    ]
+  },
+  "NetPrints.Graph.ClassReturnNode": {
+    "IsPure": "\u003Cthrows\u003E",
+    "Name": [
+      "Name"
+    ],
+    "PositionX": [
+      "PositionX"
+    ],
+    "PositionY": [
+      "PositionY"
+    ]
+  },
+  "NetPrints.Graph.ConstructorEntryNode": {
+    "IsPure": "\u003Cthrows\u003E",
+    "Name": [
+      "Name"
+    ],
+    "PositionX": [
+      "PositionX"
+    ],
+    "PositionY": [
+      "PositionY"
+    ]
+  },
+  "NetPrints.Graph.ConstructorNode": {
+    "IsPure": [
+      "IsPure"
+    ],
+    "Name": [
+      "Name"
+    ],
+    "PositionX": [
+      "PositionX"
+    ],
+    "PositionY": [
+      "PositionY"
+    ]
+  },
+  "NetPrints.Graph.DefaultNode": {
+    "IsPure": "\u003Cthrows\u003E",
+    "Name": [
+      "Name"
+    ],
+    "PositionX": [
+      "PositionX"
+    ],
+    "PositionY": [
+      "PositionY"
+    ]
+  },
+  "NetPrints.Graph.EventEntryNode": {
+    "EventName": [
+      "EventName"
+    ],
+    "IsPure": "\u003Cthrows\u003E",
+    "Modifiers": [
+      "Modifiers"
+    ],
+    "Name": [
+      "Name"
+    ],
+    "PositionX": [
+      "PositionX"
+    ],
+    "PositionY": [
+      "PositionY"
+    ],
+    "Visibility": [
+      "Visibility"
+    ]
+  },
+  "NetPrints.Graph.ExplicitCastNode": {
+    "IsPure": [
+      "IsPure"
+    ],
+    "Name": [
+      "Name"
+    ],
+    "PositionX": [
+      "PositionX"
+    ],
+    "PositionY": [
+      "PositionY"
+    ]
+  },
+  "NetPrints.Graph.ForLoopNode": {
+    "IsPure": "\u003Cthrows\u003E",
+    "Name": [
+      "Name"
+    ],
+    "PositionX": [
+      "PositionX"
+    ],
+    "PositionY": [
+      "PositionY"
+    ]
+  },
+  "NetPrints.Graph.IfElseNode": {
+    "IsPure": "\u003Cthrows\u003E",
+    "Name": [
+      "Name"
+    ],
+    "PositionX": [
+      "PositionX"
+    ],
+    "PositionY": [
+      "PositionY"
+    ]
+  },
+  "NetPrints.Graph.LiteralNode": {
+    "IsPure": "\u003Cthrows\u003E",
+    "Name": [
+      "Name"
+    ],
+    "PositionX": [
+      "PositionX"
+    ],
+    "PositionY": [
+      "PositionY"
+    ]
+  },
+  "NetPrints.Graph.MakeArrayNode": {
+    "IsPure": "\u003Cthrows\u003E",
+    "Name": [
+      "Name"
+    ],
+    "PositionX": [
+      "PositionX"
+    ],
+    "PositionY": [
+      "PositionY"
+    ],
+    "UsePredefinedSize": [
+      "UsePredefinedSize"
+    ]
+  },
+  "NetPrints.Graph.MakeArrayTypeNode": {
+    "IsPure": "\u003Cthrows\u003E",
+    "Name": [
+      "Name"
+    ],
+    "PositionX": [
+      "PositionX"
+    ],
+    "PositionY": [
+      "PositionY"
+    ]
+  },
+  "NetPrints.Graph.MakeDelegateNode": {
+    "IsPure": "\u003Cthrows\u003E",
+    "Name": [
+      "Name"
+    ],
+    "PositionX": [
+      "PositionX"
+    ],
+    "PositionY": [
+      "PositionY"
+    ]
+  },
+  "NetPrints.Graph.MethodEntryNode": {
+    "IsPure": "\u003Cthrows\u003E",
+    "Name": [
+      "Name"
+    ],
+    "PositionX": [
+      "PositionX"
+    ],
+    "PositionY": [
+      "PositionY"
+    ]
+  },
+  "NetPrints.Graph.NodeInputDataPin": {
+    "ExplicitDefaultValue": [
+      "ExplicitDefaultValue"
+    ],
+    "IncomingPin": [
+      "IncomingPin"
+    ],
+    "Name": [
+      "Name"
+    ],
+    "UnconnectedValue": "\u003Cthrows\u003E",
+    "UsesExplicitDefaultValue": [
+      "UsesExplicitDefaultValue"
+    ]
+  },
+  "NetPrints.Graph.NodeInputExecPin": {
+    "Name": [
+      "Name"
+    ]
+  },
+  "NetPrints.Graph.NodeInputTypePin": {
+    "IncomingPin": [
+      "IncomingPin",
+      "InferredType"
+    ],
+    "Name": [
+      "Name"
+    ]
+  },
+  "NetPrints.Graph.NodeOutputDataPin": {
+    "Name": [
+      "Name"
+    ]
+  },
+  "NetPrints.Graph.NodeOutputExecPin": {
+    "Name": [
+      "Name"
+    ],
+    "OutgoingPin": [
+      "OutgoingPin"
+    ]
+  },
+  "NetPrints.Graph.NodeOutputTypePin": {
+    "Name": [
+      "Name"
+    ]
+  },
+  "NetPrints.Graph.RerouteNode": {
+    "IsPure": "\u003Cthrows\u003E",
+    "Name": [
+      "Name"
+    ],
+    "PositionX": [
+      "PositionX"
+    ],
+    "PositionY": [
+      "PositionY"
+    ]
+  },
+  "NetPrints.Graph.ReturnNode": {
+    "IsPure": "\u003Cthrows\u003E",
+    "Name": [
+      "Name"
+    ],
+    "PositionX": [
+      "PositionX"
+    ],
+    "PositionY": [
+      "PositionY"
+    ]
+  },
+  "NetPrints.Graph.TernaryNode": {
+    "IsPure": [
+      "IsPure"
+    ],
+    "Name": [
+      "Name"
+    ],
+    "PositionX": [
+      "PositionX"
+    ],
+    "PositionY": [
+      "PositionY"
+    ]
+  },
+  "NetPrints.Graph.ThrowNode": {
+    "IsPure": "\u003Cthrows\u003E",
+    "Name": [
+      "Name"
+    ],
+    "PositionX": [
+      "PositionX"
+    ],
+    "PositionY": [
+      "PositionY"
+    ]
+  },
+  "NetPrints.Graph.TypeNode": {
+    "IsPure": "\u003Cthrows\u003E",
+    "Name": [
+      "Name"
+    ],
+    "PositionX": [
+      "PositionX"
+    ],
+    "PositionY": [
+      "PositionY"
+    ]
+  },
+  "NetPrints.Graph.TypeOfNode": {
+    "IsPure": "\u003Cthrows\u003E",
+    "Name": [
+      "Name"
+    ],
+    "PositionX": [
+      "PositionX"
+    ],
+    "PositionY": [
+      "PositionY"
+    ]
+  },
+  "NetPrints.Graph.TypeReturnNode": {
+    "IsPure": "\u003Cthrows\u003E",
+    "Name": [
+      "Name"
+    ],
+    "PositionX": [
+      "PositionX"
+    ],
+    "PositionY": [
+      "PositionY"
+    ]
+  },
+  "NetPrints.Graph.VariableGetterNode": {
+    "IsPure": "\u003Cthrows\u003E",
+    "Name": [
+      "Name"
+    ],
+    "PositionX": [
+      "PositionX"
+    ],
+    "PositionY": [
+      "PositionY"
+    ]
+  },
+  "NetPrints.Graph.VariableSetterNode": {
+    "IsPure": "\u003Cthrows\u003E",
+    "Name": [
+      "Name"
+    ],
+    "PositionX": [
+      "PositionX"
+    ],
+    "PositionY": [
+      "PositionY"
+    ]
+  }
+}

@@ -1,4 +1,5 @@
 using NetPrints.Core;
+using NetPrints.Projects;
 using NetPrints.Reflection;
 
 namespace NetPrints.Editor.Tests.Reflection;
@@ -8,16 +9,14 @@ public sealed class RuntimeReflectionFixture
 {
     public RuntimeReflectionFixture()
     {
-        // Same resolution as the editor: a default project references the .NET Framework
-        // reference assemblies, which fall back to the runtime assemblies on Linux.
-        var project = Project.CreateNew("Test", "Test");
-        Paths = new ReferenceAssemblyResolver().ResolveAssemblyPaths(project.References.OfType<AssemblyReference>(), Warnings);
-        Provider = new ReflectionProvider(Paths, [], []);
+        Paths = TestSnapshots.RuntimeAssemblyPaths();
+        Assemblies = Paths.Select(path => new ResolvedAssembly(path, null)).ToList();
+        Provider = new ReflectionProvider(Assemblies, [], new HashSet<string>());
     }
 
-    public List<string> Warnings { get; } = [];
-
     public IReadOnlyList<string> Paths { get; }
+
+    public IReadOnlyList<ResolvedAssembly> Assemblies { get; }
 
     public IReflectionProvider Provider { get; }
 }
@@ -25,9 +24,6 @@ public sealed class RuntimeReflectionFixture
 public class ReflectionProviderTests(RuntimeReflectionFixture fixture) : IClassFixture<RuntimeReflectionFixture>
 {
     private readonly IReflectionProvider provider = fixture.Provider;
-
-    [Fact]
-    public void RuntimeReferencesResolveWithoutWarnings() => Assert.Empty(fixture.Warnings);
 
     [Fact]
     public void ReturnsNonStaticTypes()
@@ -95,8 +91,23 @@ public class ReflectionProviderTests(RuntimeReflectionFixture fixture) : IClassF
     public void MissingAssemblyPathsAreSkipped()
     {
         string missing = Path.Combine(Path.GetTempPath(), "netprints-missing-" + Guid.NewGuid() + ".dll");
-        var p = new ReflectionProvider([typeof(object).Assembly.Location, missing], [], []);
+        var p = new ReflectionProvider(
+            [new ResolvedAssembly(typeof(object).Assembly.Location, null), new ResolvedAssembly(missing, null)],
+            [], new HashSet<string>());
         Assert.NotNull(p.GetNonStaticTypes().FirstOrDefault());
+    }
+
+    // extension-points.md §4: a type catalog's covered assemblies are excluded from enumeration
+    // (search/browsing) but stay referenced, so a specific, already-known type from one still resolves.
+    [Fact]
+    public void ExcludedAssemblyTypesAreSkippedInEnumerationButStillResolveByName()
+    {
+        string? coreLibName = typeof(object).Assembly.GetName().Name;
+        Assert.NotNull(coreLibName);
+        var provider = new ReflectionProvider(fixture.Assemblies, [], new HashSet<string> { coreLibName });
+
+        Assert.DoesNotContain(TypeSpecifier.FromType<string>(), provider.GetNonStaticTypes().ToList());
+        Assert.True(provider.TypeSpecifierIsSubclassOf(TypeSpecifier.FromType<string>(), TypeSpecifier.FromType<object>()));
     }
 
     [Fact]

@@ -1,50 +1,53 @@
-﻿using System.Runtime.Serialization;
+﻿#nullable enable
+using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Core;
 
 namespace NetPrints.Graph
 {
+    /// <summary>
+    /// Raised by <see cref="NodeInputTypePin.IncomingPinChanged"/> after
+    /// <see cref="NodeInputTypePin.IncomingPin"/> is set.
+    /// </summary>
+    /// <param name="pin">Pin whose incoming connection changed.</param>
+    /// <param name="oldPin">Previously connected output type pin, or <see langword="null"/>.</param>
+    /// <param name="newPin">Newly connected output type pin, or <see langword="null"/>.</param>
     public delegate void InputTypePinIncomingPinChangedDelegate(
-        NodeInputTypePin pin, NodeOutputTypePin oldPin, NodeOutputTypePin newPin);
+        NodeInputTypePin pin, NodeOutputTypePin? oldPin, NodeOutputTypePin? newPin);
 
     /// <summary>
     /// Pin which can receive types.
     /// </summary>
-    [DataContract]
-    public class NodeInputTypePin : NodeTypePin
+    public partial class NodeInputTypePin : NodeTypePin
     {
         /// <summary>
         /// Called when the node's incoming pin changed.
         /// </summary>
-        public event InputTypePinIncomingPinChangedDelegate IncomingPinChanged;
+        public event InputTypePinIncomingPinChangedDelegate? IncomingPinChanged;
 
         /// <summary>
         /// Incoming type pin for this pin. Null when not connected.
         /// Can trigger IncomingPinChanged when set.
         /// </summary>
-        [DataMember]
-        public NodeOutputTypePin IncomingPin
-        {
-            get => incomingPin;
-            set
-            {
-                if (incomingPin != value)
-                {
-                    var oldPin = incomingPin;
+        [ObservableProperty]
+        [NotifyPropertyChangedFor(nameof(InferredType))]
+        public partial NodeOutputTypePin? IncomingPin { get; set; }
 
-                    incomingPin = value;
+        partial void OnIncomingPinChanged(NodeOutputTypePin? oldValue, NodeOutputTypePin? newValue) =>
+            IncomingPinChanged?.Invoke(this, oldValue, newValue);
 
-                    IncomingPinChanged?.Invoke(this, oldPin, incomingPin);
-                }
-            }
-        }
-
-        public override ObservableValue<BaseType> InferredType
+        /// <summary>
+        /// The connected pin's inferred type, or <see langword="null"/> if unconnected.
+        /// </summary>
+        public override ObservableValue<BaseType>? InferredType
         {
             get => IncomingPin?.InferredType;
         }
 
-        private NodeOutputTypePin incomingPin;
-
+        /// <summary>
+        /// Creates an input type pin with no incoming connection.
+        /// </summary>
+        /// <param name="node">Node the pin belongs to.</param>
+        /// <param name="name">Name of the pin.</param>
         public NodeInputTypePin(Node node, string name)
             : base(node, name)
         {

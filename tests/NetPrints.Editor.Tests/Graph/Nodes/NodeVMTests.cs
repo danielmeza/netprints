@@ -131,7 +131,7 @@ public class NodeVMTests(TestEditor editor) : GraphTestBase(editor)
         array.LeftPinsPlusCommand.Execute(null);
         Assert.Equal(before + 1, array.Node.InputDataPins.Count);
 
-        var classGraph = new NodeGraphVM(Class, ClassEditor);
+        var classGraph = new NodeGraphVM(Class, ClassEditor.Services);
         var classReturn = classGraph.Nodes.Single(n => n.Node is ClassReturnNode);
         Assert.True(classReturn.ShowLeftPinButtons);
         Assert.Equal("Add interface", classReturn.LeftPlusToolTip);
