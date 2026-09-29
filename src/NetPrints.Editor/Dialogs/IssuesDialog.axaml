@@ -1,13 +1,15 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ed="clr-namespace:NetPrints.Editor"
+        xmlns:eddialogs="clr-namespace:NetPrints.Editor.Dialogs"
         x:Class="NetPrints.Editor.Dialogs.IssuesDialog"
+        x:DataType="eddialogs:IssuesDialogVM"
         Icon="avares://NetPrints.Editor/Assets/NetPrintsLogo.ico"
         Width="700" Height="400"
         WindowStartupLocation="CenterOwner" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.IssuesDialog}">
   <Grid RowDefinitions="*,Auto" Margin="8">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
-      <ItemsControl x:Name="IssueList" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ExtensionLoadErrors}">
+      <ItemsControl AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ExtensionLoadErrors}" ItemsSource="{Binding Issues}">
         <ItemsControl.ItemTemplate>
           <DataTemplate x:DataType="x:String">
             <TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="2,4" FontFamily="monospace"

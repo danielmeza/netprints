@@ -47,7 +47,7 @@ internal static class Program
 
         if (args is [CheckProjectArgument, ..])
         {
-            return RunCheckProject(args.ElementAtOrDefault(1), args.Contains("--run", StringComparer.Ordinal));
+            return RunCheckProject(args.ElementAtOrDefault(1), args.Contains("--run", StringComparer.Ordinal), loggerFactory, msBuildAvailable);
         }
 
         var settings = new JsonFileSettingsStore(JsonFileSettingsStore.DefaultFilePath(), loggerFactory.CreateLogger<JsonFileSettingsStore>());
@@ -67,12 +67,13 @@ internal static class Program
     }
 
     /// <summary>
-    /// Runs <see cref="ProjectCheck.RunAsync(string?, bool, TextWriter, CancellationToken)"/> to
+    /// Runs <see cref="ProjectCheck.RunAsync(string?, bool, TextWriter, ILoggerFactory, bool, CancellationToken)"/>,
+    /// reusing this process's already-registered MSBuild instance and already-built logger factory, to
     /// completion on the calling (STA) thread by pumping a private <see
     /// cref="SingleThreadSynchronizationContext"/>, instead of blocking on the resulting task
     /// (<c>--check-project</c> never touches Avalonia, so no display is needed either way).
     /// </summary>
-    private static int RunCheckProject(string? projectPath, bool run)
+    private static int RunCheckProject(string? projectPath, bool run, ILoggerFactory loggerFactory, bool msBuildAvailable)
     {
         var pump = new SingleThreadSynchronizationContext();
         SynchronizationContext? previous = SynchronizationContext.Current;
@@ -86,7 +87,7 @@ internal static class Program
             {
                 try
                 {
-                    exitCode = await ProjectCheck.RunAsync(projectPath, run, Console.Out, CancellationToken.None);
+                    exitCode = await ProjectCheck.RunAsync(projectPath, run, Console.Out, loggerFactory, msBuildAvailable, CancellationToken.None);
                 }
                 catch (Exception ex)
                 {

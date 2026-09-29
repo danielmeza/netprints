@@ -122,4 +122,20 @@ public sealed class ProjectCheckTests : IDisposable
         Assert.Equal(3, exitCode);
         Assert.Contains(ProjectSystemException.NoSdkRegistered, output.ToString(), StringComparison.Ordinal);
     }
+
+    [Fact]
+    public async Task CheckProjectWithACallerSuppliedLoggerFactoryReusesItInsteadOfBuildingASecondOne()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var output = new StringWriter();
+
+        // Program.Main already built a factory and registered MSBuild before dispatching here
+        // (--check-project); this overload must reuse both rather than building a second factory at a
+        // fixed Warning level and calling MsBuildRegistration.EnsureRegistered again.
+        int exitCode = await ProjectCheck.RunAsync("unused.csproj", run: false, output,
+            NullLoggerFactory.Instance, msBuildAvailable: false, cancellationToken);
+
+        Assert.Equal(3, exitCode);
+        Assert.Contains(ProjectSystemException.NoSdkRegistered, output.ToString(), StringComparison.Ordinal);
+    }
 }

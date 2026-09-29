@@ -62,7 +62,7 @@
 
   <UserControl.Styles>
     <Style Selector="Shape.pin:pointerover">
-      <Setter Property="Stroke" Value="White" />
+      <Setter Property="Stroke" Value="{DynamicResource Pin.HoverStroke}" />
     </Style>
     <Style Selector="Border#NodeBorder">
       <Setter Property="MinWidth" Value="224" />

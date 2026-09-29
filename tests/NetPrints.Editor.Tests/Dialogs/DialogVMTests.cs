@@ -1,3 +1,4 @@
+using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Editor.Dialogs;
 
@@ -97,5 +98,24 @@ public class DialogVMTests
 
         Assert.True(closed);
         Assert.Equal(trust, vm.Result);
+    }
+
+    [Fact]
+    public void IssuesDialogVMFormatsEachDiagnosticAsIdColonMessage()
+    {
+        var first = new CodeDiagnostic(CodeDiagnosticSeverity.Error, "NPD001", "boom", null, null, null, null, null);
+        var second = new CodeDiagnostic(CodeDiagnosticSeverity.Warning, "NPD002", "careful", null, null, null, null, null);
+
+        var vm = new IssuesDialogVM([first, second]);
+
+        Assert.Equal(["NPD001: boom", "NPD002: careful"], vm.Issues);
+    }
+
+    [Fact]
+    public void ErrorDialogVMExposesTheMessageAsGiven()
+    {
+        var vm = new ErrorDialogVM("details\nline 2");
+
+        Assert.Equal("details\nline 2", vm.Message);
     }
 }

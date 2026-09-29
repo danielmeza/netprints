@@ -2,6 +2,7 @@ using System.IO.Pipes;
 using System.Text;
 using System.Text.Json;
 using Avalonia.Headless.XUnit;
+using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Editor.UITests.Driving;
 using NetPrints.Testing.Ui.Driving;
@@ -20,7 +21,7 @@ public class AutomationAgentTests
     {
         await using var app = HeadlessApp.Start();
         string pipe = NewPipeName();
-        using var agent = new AutomationAgent(pipe, app.Tree, () => new AutomationStatus(true, false, false, null, Environment.ProcessId));
+        using var agent = new AutomationAgent(pipe, app.Tree, () => new AutomationStatus(true, false, false, null, Environment.ProcessId), NullLogger<AutomationAgent>.Instance);
         await using var client = await AutomationClient.ConnectAsync(pipe, TimeSpan.FromSeconds(10), Token);
 
         var status = await client.StatusAsync(Token);
@@ -56,7 +57,7 @@ public class AutomationAgentTests
             for (int i = 0; i < 20; i++)
             {
                 string pipe = NewPipeName();
-                using var agent = new AutomationAgent(pipe, app.Tree, () => new AutomationStatus(true, false, false, null, Environment.ProcessId));
+                using var agent = new AutomationAgent(pipe, app.Tree, () => new AutomationStatus(true, false, false, null, Environment.ProcessId), NullLogger<AutomationAgent>.Instance);
                 var client = await AutomationClient.ConnectAsync(pipe, TimeSpan.FromSeconds(10), Token);
 
                 // Started but not awaited before disposing, to race SendAsync's gate against
@@ -95,7 +96,7 @@ public class AutomationAgentTests
             for (int i = 0; i < 20; i++)
             {
                 string pipe = NewPipeName();
-                var agent = new AutomationAgent(pipe, app.Tree, () => new AutomationStatus(true, false, false, null, Environment.ProcessId));
+                var agent = new AutomationAgent(pipe, app.Tree, () => new AutomationStatus(true, false, false, null, Environment.ProcessId), NullLogger<AutomationAgent>.Instance);
                 await using var client = await AutomationClient.ConnectAsync(pipe, TimeSpan.FromSeconds(10), Token);
 
                 // A round trip proves the connection is actually being served (its slot held,
@@ -156,7 +157,7 @@ public class AutomationAgentTests
     {
         await using var app = HeadlessApp.Start();
         string pipe = NewPipeName();
-        using var agent = new AutomationAgent(pipe, app.Tree, () => new AutomationStatus(true, false, false, null, Environment.ProcessId));
+        using var agent = new AutomationAgent(pipe, app.Tree, () => new AutomationStatus(true, false, false, null, Environment.ProcessId), NullLogger<AutomationAgent>.Instance);
         await using var client = await AutomationClient.ConnectAsync(pipe, TimeSpan.FromSeconds(10), Token);
 
         // {"op":"find","query":{}} deserializes with AutomationId == null: it must not match every
@@ -170,7 +171,7 @@ public class AutomationAgentTests
     {
         await using var app = HeadlessApp.Start();
         string pipe = NewPipeName();
-        using var agent = new AutomationAgent(pipe, app.Tree, () => new AutomationStatus(true, false, false, null, Environment.ProcessId));
+        using var agent = new AutomationAgent(pipe, app.Tree, () => new AutomationStatus(true, false, false, null, Environment.ProcessId), NullLogger<AutomationAgent>.Instance);
 
         await using var raw = new NamedPipeClientStream(".", pipe, PipeDirection.InOut, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
         await raw.ConnectAsync(TimeSpan.FromSeconds(10), Token);
@@ -214,7 +215,7 @@ public class AutomationAgentTests
     {
         await using var app = HeadlessApp.Start();
         string pipe = NewPipeName();
-        using var agent = new AutomationAgent(pipe, app.Tree, () => new AutomationStatus(true, false, false, null, Environment.ProcessId));
+        using var agent = new AutomationAgent(pipe, app.Tree, () => new AutomationStatus(true, false, false, null, Environment.ProcessId), NullLogger<AutomationAgent>.Instance);
 
         // One over the agent's cap: connects at the transport level (the OS accepts it), but the
         // agent refuses to serve it, so it sees no bytes back and the pipe closes. A status round

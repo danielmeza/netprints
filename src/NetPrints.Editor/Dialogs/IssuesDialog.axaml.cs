@@ -7,17 +7,17 @@ namespace NetPrints.Editor.Dialogs;
 public partial class IssuesDialog : Window
 {
     /// <summary>Loads the dialog's XAML, with no title or issues set.</summary>
-    public IssuesDialog()
+    public IssuesDialog() : this("", [])
     {
-        InitializeComponent();
     }
 
     /// <summary>Loads the dialog's XAML with a title and the issues to list.</summary>
     /// <param name="title">Dialog window title.</param>
     /// <param name="issues">The diagnostics, listed in order as <c>Id: Message</c>.</param>
-    public IssuesDialog(string title, IReadOnlyList<CodeDiagnostic> issues) : this()
+    public IssuesDialog(string title, IReadOnlyList<CodeDiagnostic> issues)
     {
         Title = title;
-        IssueList.ItemsSource = issues.Select(issue => $"{issue.Id}: {issue.Message}").ToList();
+        DataContext = new IssuesDialogVM(issues);
+        InitializeComponent();
     }
 }

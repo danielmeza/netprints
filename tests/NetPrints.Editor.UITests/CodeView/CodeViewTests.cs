@@ -1,4 +1,5 @@
 using System.Linq;
+using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.VisualTree;
 using Microsoft.CodeAnalysis.Text;
@@ -51,6 +52,42 @@ public class CodeViewTests
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task DetachingAndReattachingKeepsFoldingAndHoverWorking()
+    {
+        // R2-13: CodeView used to dispose its folding manager and TextMate installation for good on
+        // the first detach; a later re-attach (re-templating, moving the control into a tab or dock)
+        // came back as plain text with no hover. It now installs/uninstalls symmetrically instead.
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        var page = session.ClassEditor;
+
+        await page.ClassButton.ClickAsync(Token);
+        await page.ClassInspector.WaitVisibleAsync(Token);
+        await page.ClassInspector.CodeView.WaitUntilAsync(e => (e.Text ?? "").Contains("WriteLine", StringComparison.Ordinal), "generated code", Token);
+
+        NetPrints.Editor.CodeView.CodeView codeView = FindCodeView(session);
+        var viewModel = codeView.ViewModel ?? throw new InvalidOperationException("The code view has no view model.");
+        Assert.NotEmpty(viewModel.Foldings);
+
+        Panel parent = codeView.Parent as Panel ?? throw new InvalidOperationException("CodeView's parent is not a Panel.");
+        int index = parent.Children.IndexOf(codeView);
+        parent.Children.RemoveAt(index); // detaches
+        parent.Children.Insert(index, codeView); // re-attaches to the same visual tree
+
+        // Folding survives the round trip: RefreshFoldings re-applies the VM's current state on attach.
+        Assert.NotEmpty(viewModel.Foldings);
+
+        string code = viewModel.Code;
+        // "WriteLine(", not "WriteLine": the generated code also has a "// Console.WriteLine" comment above the call.
+        int offset = code.IndexOf("WriteLine(", StringComparison.Ordinal) + 2;
+        await viewModel.ShowQuickInfoCommand.ExecuteAsync(offset);
+
+        bool isOpen = await page.ClassInspector.CodeView.GetAsync<bool>(AutomationPropertyNames.ToolTipIsOpen, Token);
+        Assert.True(isOpen, "the tooltip is open after re-attaching");
+        string? tip = await page.ClassInspector.CodeView.PropertyAsync(AutomationPropertyNames.ToolTip, Token);
+        Assert.Contains("WriteLine", tip ?? "", StringComparison.Ordinal);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task HoveringWriteLineShowsSignatureAndSummary()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
@@ -61,11 +98,12 @@ public class CodeViewTests
         await page.ClassInspector.CodeView.WaitUntilAsync(e => (e.Text ?? "").Contains("WriteLine", StringComparison.Ordinal), "generated code", Token);
 
         NetPrints.Editor.CodeView.CodeView codeView = FindCodeView(session);
-        string code = (codeView.ViewModel ?? throw new InvalidOperationException("The code view has no view model.")).Code;
+        var viewModel = codeView.ViewModel ?? throw new InvalidOperationException("The code view has no view model.");
+        string code = viewModel.Code;
         // "WriteLine(", not "WriteLine": the generated code also has a "// Console.WriteLine" comment above the call.
         int offset = code.IndexOf("WriteLine(", StringComparison.Ordinal) + 2;
 
-        await codeView.ShowQuickInfoAsync(offset, Token);
+        await viewModel.ShowQuickInfoCommand.ExecuteAsync(offset);
 
         // OWN-01 (owner report): Avalonia only auto-opens a tooltip on its own pointer-enter, never
         // when the tip is merely set programmatically, so asserting the tip's text alone (as this test
@@ -111,7 +149,7 @@ public class CodeViewTests
         LinePositionSpan span = diagnostic.Span ?? throw new InvalidOperationException("The CS1503 diagnostic has no Span.");
         int offset = SourceText.From(viewModel.Code).Lines.GetPosition(span.Start);
 
-        await codeView.ShowQuickInfoAsync(offset, Token);
+        await viewModel.ShowQuickInfoCommand.ExecuteAsync(offset);
 
         bool isOpen = await page.ClassInspector.CodeView.GetAsync<bool>(AutomationPropertyNames.ToolTipIsOpen, Token);
         Assert.True(isOpen, "the tooltip is open");

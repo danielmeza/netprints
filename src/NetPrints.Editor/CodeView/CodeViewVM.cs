@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using Microsoft.CodeAnalysis.Text;
 using NetPrints.Compilation;
 using NetPrints.Core;
@@ -20,6 +21,7 @@ public sealed partial class CodeViewVM : ObservableObject, IDisposable
     private readonly ClassGraph cls;
     private readonly ICodeAnalysisHost codeAnalysis;
     private readonly IDisposable subscription;
+    private CancellationTokenSource? quickInfoCancellation;
 
     /// <summary>
     /// Creates a code view model that follows <paramref name="cls"/> in
@@ -48,6 +50,58 @@ public sealed partial class CodeViewVM : ObservableObject, IDisposable
     /// <summary>Collapsible regions of <see cref="Code"/> (types and member bodies).</summary>
     [ObservableProperty]
     public partial IReadOnlyList<FoldingRange> Foldings { get; set; } = [];
+
+    /// <summary>
+    /// The hover content for the last <see cref="ShowQuickInfoCommand"/> offset that was not superseded
+    /// or cleared, or <see langword="null"/> if there is nothing to show (R2-12: the view only binds
+    /// this and opens/closes its tooltip from it; the lookup, cancellation and formatting all live here).
+    /// </summary>
+    [ObservableProperty]
+    public partial string? QuickInfoText { get; set; }
+
+    /// <summary>
+    /// Looks up and shows the hover content at <paramref name="offset"/> (FR-035, ED-T05, OWN-01/OWN-02,
+    /// owner report), cancelling whatever lookup is still in flight. A cancelled or superseded lookup
+    /// never overwrites <see cref="QuickInfoText"/>, so a stale result cannot replace the current one or
+    /// reopen the tooltip after <see cref="ClearQuickInfo"/> ran.
+    /// </summary>
+    /// <param name="offset">Character offset into <see cref="Code"/> to look the symbol up at.</param>
+    [RelayCommand]
+    private async Task ShowQuickInfoAsync(int offset)
+    {
+        if (quickInfoCancellation is { } previous)
+        {
+            await previous.CancelAsync();
+        }
+
+        var cancellation = new CancellationTokenSource();
+        quickInfoCancellation = cancellation;
+
+        string? content;
+        try
+        {
+            content = await GetHoverContentAsync(offset, cancellation.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+
+        if (quickInfoCancellation == cancellation)
+        {
+            QuickInfoText = content;
+        }
+    }
+
+    /// <summary>Cancels any in-flight lookup and clears <see cref="QuickInfoText"/> (pointer left, hover
+    /// stopped, or the code changed under it).</summary>
+    [RelayCommand]
+    private void ClearQuickInfo()
+    {
+        quickInfoCancellation?.Cancel();
+        quickInfoCancellation = null;
+        QuickInfoText = null;
+    }
 
     /// <summary>
     /// Gets the signature and documentation summary of the symbol at <paramref name="position"/> in
@@ -124,6 +178,10 @@ public sealed partial class CodeViewVM : ObservableObject, IDisposable
         Foldings = RoslynFoldingStrategy.ComputeFoldings(translated.Code);
     }
 
-    /// <summary>Unsubscribes from <see cref="ICodeAnalysisHost.Snapshots"/>.</summary>
-    public void Dispose() => subscription.Dispose();
+    /// <summary>Unsubscribes from <see cref="ICodeAnalysisHost.Snapshots"/> and cancels any in-flight quick-info lookup.</summary>
+    public void Dispose()
+    {
+        quickInfoCancellation?.Cancel();
+        subscription.Dispose();
+    }
 }

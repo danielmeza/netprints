@@ -110,6 +110,80 @@ public sealed class CodeViewVMTests
         Assert.Equal("void M()", content);
     }
 
+    /// <summary>
+    /// R2-12: <see cref="CodeViewVM.ShowQuickInfoCommand"/> cancels whatever lookup is still in flight,
+    /// but a superseding call must win even if the superseded lookup's own completion is not observed
+    /// through the cancellation token (an uncooperative or already-running dependency) — so
+    /// <see cref="ControllableCodeAnalysisHost"/> deliberately ignores the token and only completes
+    /// when the test tells it to.
+    /// </summary>
+    [Fact]
+    public async Task ShowQuickInfoCommandNeverLetsASupersededLookupOverwriteTheCurrentOne()
+    {
+        using var host = new ControllableCodeAnalysisHost();
+        using var vm = new CodeViewVM(NewClass("N", "C"), host);
+
+        Task first = vm.ShowQuickInfoCommand.ExecuteAsync(1);
+        Task second = vm.ShowQuickInfoCommand.ExecuteAsync(2);
+
+        host.Complete(2, new QuickInfo("second", null));
+        await second;
+        Assert.Equal("second", vm.QuickInfoText);
+
+        // The superseded lookup finally completes; it must not resurrect its own (now stale) content.
+        host.Complete(1, new QuickInfo("first", null));
+        await first;
+        Assert.Equal("second", vm.QuickInfoText);
+    }
+
+    /// <summary>
+    /// R2-12/OWN-01: a lookup that completes after the pointer already left must not reopen the
+    /// tooltip. <see cref="CodeView.CodeView.OnPointerHoverStopped"/> calls <c>ClearQuickInfoCommand</c>;
+    /// this exercises the view model half of that guarantee directly.
+    /// </summary>
+    [Fact]
+    public async Task ClearQuickInfoStopsALateResultFromReopeningTheTooltip()
+    {
+        using var host = new ControllableCodeAnalysisHost();
+        using var vm = new CodeViewVM(NewClass("N", "C"), host);
+
+        Task lookup = vm.ShowQuickInfoCommand.ExecuteAsync(1);
+        vm.ClearQuickInfoCommand.Execute(null);
+        Assert.Null(vm.QuickInfoText);
+
+        host.Complete(1, new QuickInfo("late", null)); // the pointer already left by the time this arrives
+        await lookup;
+
+        Assert.Null(vm.QuickInfoText);
+    }
+
+    /// <summary>A quick-info lookup whose completion the test controls, ignoring the cancellation token
+    /// so tests can exercise <see cref="CodeViewVM"/>'s own "still current?" guard rather than relying
+    /// on the token being observed.</summary>
+    private sealed class ControllableCodeAnalysisHost : ICodeAnalysisHost
+    {
+        private readonly Subject<CodeAnalysisSnapshot> snapshots = new();
+        private readonly Dictionary<int, TaskCompletionSource<QuickInfo?>> pending = new();
+
+        public IObservable<CodeAnalysisSnapshot> Snapshots => snapshots;
+
+        public void RequestAnalysis(Project project)
+        {
+        }
+
+        public Task<QuickInfo?> GetQuickInfoAsync(string classFullName, int position, CancellationToken cancellationToken)
+        {
+            var completion = new TaskCompletionSource<QuickInfo?>(TaskCreationOptions.RunContinuationsAsynchronously);
+            pending[position] = completion;
+            return completion.Task;
+        }
+
+        /// <summary>Completes the pending lookup at <paramref name="position"/> with <paramref name="result"/>.</summary>
+        public void Complete(int position, QuickInfo? result) => pending[position].TrySetResult(result);
+
+        public void Dispose() => snapshots.Dispose();
+    }
+
     private sealed class FakeCodeAnalysisHost : ICodeAnalysisHost
     {
         private readonly Subject<CodeAnalysisSnapshot> snapshots = new();

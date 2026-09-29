@@ -37,7 +37,6 @@ namespace NetPrints.Tests.Core
             "Closing", "IsCheckedChanged", "ValueChanged", "ContextRequested",
         };
 
-        private static readonly HashSet<string> ResourceRoots = new(StringComparer.Ordinal) { "Application", "Styles", "ResourceDictionary" };
         private static readonly HashSet<string> IconTags = new(StringComparer.Ordinal) { "MaterialIcon", "PathIcon", "Image", "Path", "Viewbox", "Svg" };
         private static readonly HashSet<string> ButtonTags = new(StringComparer.Ordinal)
         {
@@ -112,8 +111,29 @@ namespace NetPrints.Tests.Core
             AssertAllowlistHasNoStaleEntries(E1Allowlist.Keys, seen);
         }
 
-        /// <summary>E2: hex or named color literals on brush/color properties, outside theme dictionaries.</summary>
-        private static readonly Dictionary<string, string> E2Allowlist = new(StringComparer.Ordinal);
+        /// <summary>E2: hex or named color literals on brush/color properties, outside theme dictionaries.
+        /// R2-07: also checks a <c>Setter</c>'s <c>Value</c> when its <c>Property</c> ends with a color
+        /// suffix (the attribute is named <c>Value</c>, not e.g. <c>Stroke</c>, so the plain
+        /// attribute-name check below never saw it), and no longer exempts an entire
+        /// <c>Styles</c>/<c>ResourceDictionary</c>-rooted file: only its <c>ThemeDictionaries</c> are a
+        /// legitimate home for a raw color, and that is already excluded per-element below.</summary>
+        private static readonly Dictionary<string, string> E2Allowlist = new(StringComparer.Ordinal)
+        {
+            ["src/NetPrints.Editor/EditorApp.axaml:13"] = "FluentTheme's own Dark palette definition (ColorPaletteResources): the literal is the base system color, one level below any token.",
+        };
+
+        /// <summary>True when <paramref name="value"/> is a color literal E2 forbids: not a binding/resource
+        /// markup extension and not the always-allowed <c>Transparent</c>.</summary>
+        private static bool IsColorLiteral(string value)
+        {
+            string trimmed = value.Trim();
+            if (trimmed.StartsWith('{') || string.Equals(trimmed, "Transparent", StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            return HexColorPattern.IsMatch(trimmed) || NamedColorPattern.IsMatch(trimmed);
+        }
 
         [Fact]
         public void E2_NoColorLiteralsInViews()
@@ -124,12 +144,6 @@ namespace NetPrints.Tests.Core
 
             foreach (AxamlFile file in files)
             {
-                XElement? root = file.Document.Root;
-                if (root is null || ResourceRoots.Contains(root.Name.LocalName))
-                {
-                    continue; // A resource file (Application/Styles/ResourceDictionary), not a view.
-                }
-
                 foreach (XElement element in file.Document.Descendants())
                 {
                     if (IsUnderThemeDictionaries(element))
@@ -137,17 +151,31 @@ namespace NetPrints.Tests.Core
                         continue;
                     }
 
-                    foreach (XAttribute attribute in element.Attributes())
+                    if (element.Name.LocalName == "Setter")
                     {
-                        string value = attribute.Value.Trim();
-                        if (!ColorPropertySuffixes.Any(suffix => attribute.Name.LocalName.EndsWith(suffix, StringComparison.Ordinal))
-                            || value.StartsWith('{')
-                            || string.Equals(value, "Transparent", StringComparison.Ordinal))
+                        XAttribute? property = element.Attribute("Property");
+                        XAttribute? value = element.Attribute("Value");
+                        if (property is null || value is null
+                            || !ColorPropertySuffixes.Any(suffix => property.Value.EndsWith(suffix, StringComparison.Ordinal))
+                            || !IsColorLiteral(value.Value))
                         {
                             continue;
                         }
 
-                        if (!HexColorPattern.IsMatch(value) && !NamedColorPattern.IsMatch(value))
+                        string setterKey = $"{file.RelativePath}:{LineOf(element)}";
+                        seen.Add(setterKey);
+                        if (!E2Allowlist.ContainsKey(setterKey))
+                        {
+                            offenders.Add($"{setterKey}: Setter Property=\"{property.Value}\" Value=\"{value.Value}\"");
+                        }
+
+                        continue;
+                    }
+
+                    foreach (XAttribute attribute in element.Attributes())
+                    {
+                        if (!ColorPropertySuffixes.Any(suffix => attribute.Name.LocalName.EndsWith(suffix, StringComparison.Ordinal))
+                            || !IsColorLiteral(attribute.Value))
                         {
                             continue;
                         }

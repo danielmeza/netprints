@@ -1,5 +1,4 @@
 using Avalonia.Controls;
-using NetPrints.Editor.ClassEditor;
 
 namespace NetPrints.Editor.Inspectors;
 
@@ -10,10 +9,5 @@ public partial class ClassInspectorView : UserControl
     public ClassInspectorView()
     {
         InitializeComponent();
-        DataContextChanged += OnDataContextChanged;
     }
-
-    // CodeViewVM has no EditorContext (FR-038); give CodeView this pane's own logger factory instead.
-    private void OnDataContextChanged(object? sender, EventArgs e) =>
-        CodeView.LoggerFactory = (DataContext as ClassEditorVM)?.Context.LoggerFactory;
 }

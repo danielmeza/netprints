@@ -81,7 +81,7 @@ public partial class EditorApp : Application
                 {
                     composition.Dispose();
                     await HostServices.DisposeAsync();
-                    Log.HostServicesDisposed(shutdownLogger);
+                    Hosting.Log.HostServicesDisposed(shutdownLogger);
                 },
                 () => desktop.Shutdown(),
                 shutdownLogger);
@@ -102,7 +102,8 @@ public partial class EditorApp : Application
                         composition.MainEditor is { } mainEditor && mainEditor.Project is not null && !mainEditor.IsBusy,
                         composition.Context.Reflection.IsLoaded,
                         startupProject,
-                        Environment.ProcessId));
+                        Environment.ProcessId),
+                        HostServices.LoggerFactory.CreateLogger<AutomationAgent>());
                 }
                 catch (Exception e)
                 {

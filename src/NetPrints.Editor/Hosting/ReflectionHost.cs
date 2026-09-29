@@ -34,6 +34,10 @@ public sealed class ReflectionHost : IReflectionHost
     /// <param name="logger">Logger for reload start/completion/failure (events 1010-1013).</param>
     public ReflectionHost(IUiDispatcher dispatcher, IExtensionHost extensions, ILogger<ReflectionHost> logger)
     {
+        ArgumentNullException.ThrowIfNull(dispatcher);
+        ArgumentNullException.ThrowIfNull(extensions);
+        ArgumentNullException.ThrowIfNull(logger);
+
         this.dispatcher = dispatcher;
         this.extensions = extensions;
         this.logger = logger;

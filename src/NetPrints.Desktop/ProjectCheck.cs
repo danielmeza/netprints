@@ -62,11 +62,33 @@ internal static class ProjectCheck
 
         using ILoggerFactory loggerFactory = LoggerFactory.Create(builder => builder.AddSimpleConsole().SetMinimumLevel(LogLevel.Warning));
         bool msBuildAvailable = MsBuildRegistration.EnsureRegistered(loggerFactory.CreateLogger(nameof(MsBuildRegistration)));
+        return await RunAsync(projectPath, run, output, loggerFactory, msBuildAvailable, cancellationToken);
+    }
+
+    /// <summary>
+    /// Like <see cref="RunAsync(string?, bool, TextWriter, CancellationToken)"/>, for a caller
+    /// (<c>Program.Main</c>) that already registered MSBuild and built the process-wide
+    /// <see cref="ILoggerFactory"/>: reuses both instead of building a second factory pinned to
+    /// <see cref="LogLevel.Warning"/> (ignoring <c>NETPRINTS_LOG_LEVEL</c>) and calling
+    /// <see cref="MsBuildRegistration.EnsureRegistered"/> a second time.
+    /// </summary>
+    /// <param name="projectPath">Full path of the <c>.csproj</c> to check, or <see langword="null"/>/empty for bad arguments.</param>
+    /// <param name="run">Whether to also run the project's built output.</param>
+    /// <param name="output">Where the check's step-by-step report is written.</param>
+    /// <param name="loggerFactory">The caller's already-created, process-wide logger factory.</param>
+    /// <param name="msBuildAvailable">Whether the caller already confirmed an MSBuild instance is registered.</param>
+    /// <param name="cancellationToken">Cancels the operation.</param>
+    /// <returns>The process exit code (0 on success).</returns>
+    public static Task<int> RunAsync(string? projectPath, bool run, TextWriter output, ILoggerFactory loggerFactory, bool msBuildAvailable, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(output);
+        ArgumentNullException.ThrowIfNull(loggerFactory);
+
         IProjectSystem projects = msBuildAvailable
             ? new MsBuildProjectSystem(new ProjectSystemOptions([], UnusedSdkVersionPlaceholder), new ProcessRunner(), loggerFactory.CreateLogger<MsBuildProjectSystem>())
             : new NoSdkProjectSystem();
 
-        return await RunAsync(projectPath, run, output, msBuildAvailable, MsBuildRegistration.RegisteredInstance, projects, new ProcessRunner(), loggerFactory, cancellationToken);
+        return RunAsync(projectPath, run, output, msBuildAvailable, MsBuildRegistration.RegisteredInstance, projects, new ProcessRunner(), loggerFactory, cancellationToken);
     }
 
     /// <summary>

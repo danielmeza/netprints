@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Avalonia.Threading;
+using Microsoft.Extensions.Logging;
 using NetPrints.Editor.Hosting;
 
 namespace NetPrints.Editor.Hosting.Automation;
@@ -85,6 +86,7 @@ public sealed class AutomationAgent : IDisposable
     private readonly string pipeName;
     private readonly AutomationTree tree;
     private readonly Func<AutomationStatus> status;
+    private readonly ILogger<AutomationAgent> logger;
     private readonly CancellationTokenSource stop = new();
     private readonly SemaphoreSlim connectionSlots = new(MaxConcurrentConnections, MaxConcurrentConnections);
     private NamedPipeServerStream nextServer;
@@ -94,11 +96,17 @@ public sealed class AutomationAgent : IDisposable
     /// already owning the name, …) throw synchronously from here, so the caller can log them and
     /// fail fast instead of the bind happening inside a background task nobody observes.
     /// </summary>
-    public AutomationAgent(string pipeName, AutomationTree tree, Func<AutomationStatus> status)
+    public AutomationAgent(string pipeName, AutomationTree tree, Func<AutomationStatus> status, ILogger<AutomationAgent> logger)
     {
+        ArgumentNullException.ThrowIfNull(pipeName);
+        ArgumentNullException.ThrowIfNull(tree);
+        ArgumentNullException.ThrowIfNull(status);
+        ArgumentNullException.ThrowIfNull(logger);
+
         this.pipeName = pipeName;
         this.tree = tree;
         this.status = status;
+        this.logger = logger;
         nextServer = CreateServer();
         Task.Run(AcceptLoopAsync).Forget(e => LogError("accept loop task fault", e));
     }
@@ -268,7 +276,7 @@ public sealed class AutomationAgent : IDisposable
         }
     }
 
-    private void LogError(string what, Exception e) => Console.Error.WriteLine($"[NetPrints automation '{pipeName}'] {what}: {e}");
+    private void LogError(string what, Exception e) => Log.AutomationAgentError(logger, e, pipeName, what);
 
     /// <summary>
     /// Stops accepting connections and releases the pipe. In-flight connections are not forcibly

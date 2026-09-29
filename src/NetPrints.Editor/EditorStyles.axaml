@@ -17,11 +17,17 @@
           <SolidColorBrush x:Key="OpeningGraphIndicator.Background">#CC202020</SolidColorBrush>
           <SolidColorBrush x:Key="OpeningGraphIndicator.Foreground">White</SolidColorBrush>
           <SolidColorBrush x:Key="BusyOverlay.Background">#AA000000</SolidColorBrush>
+          <!-- Pin hover stroke (PAR-43, R2-07): white reads fine over the dark card, invisible over Light. -->
+          <SolidColorBrush x:Key="Pin.HoverStroke">White</SolidColorBrush>
           <!-- Error-list row severity icon (FR-032, OWN-03, owner report). -->
           <SolidColorBrush x:Key="Diagnostic.Error.Foreground">#FF6666</SolidColorBrush>
           <SolidColorBrush x:Key="Diagnostic.Warning.Foreground">#FFB74D</SolidColorBrush>
           <SolidColorBrush x:Key="Diagnostic.Info.Foreground">#64B5F6</SolidColorBrush>
         </ResourceDictionary>
+        <!-- Light (R2-17): unreachable today (EditorApp.axaml hard-codes RequestedThemeVariant="Dark",
+             no user setting) and incomplete (GraphBrushes in Graph/GraphConverters.cs is not themed).
+             Kept only because GridRenderTests already switches to Light and checks the grid tokens;
+             full tokenization and a Light snapshot test are deferred (P3a). -->
         <ResourceDictionary x:Key="Light">
           <Color x:Key="GraphGrid.MinorColor">#14000000</Color>
           <Color x:Key="GraphGrid.MajorColor">#2E000000</Color>
@@ -33,6 +39,7 @@
           <SolidColorBrush x:Key="OpeningGraphIndicator.Background">#CCF5F5F5</SolidColorBrush>
           <SolidColorBrush x:Key="OpeningGraphIndicator.Foreground">#FF202020</SolidColorBrush>
           <SolidColorBrush x:Key="BusyOverlay.Background">#66000000</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.HoverStroke">Black</SolidColorBrush>
           <!-- Error-list row severity icon (FR-032, OWN-03, owner report). -->
           <SolidColorBrush x:Key="Diagnostic.Error.Foreground">#C62828</SolidColorBrush>
           <SolidColorBrush x:Key="Diagnostic.Warning.Foreground">#E65100</SolidColorBrush>

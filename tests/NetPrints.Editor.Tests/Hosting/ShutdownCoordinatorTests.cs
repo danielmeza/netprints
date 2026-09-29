@@ -96,4 +96,24 @@ public class ShutdownCoordinatorTests
         Assert.Equal(1024, entry.EventId.Id);
         Assert.Same(failure, entry.Exception);
     }
+
+    [Fact]
+    public void AThrowingShutdownIsLoggedInsteadOfFaultingTheUnobservedCleanupTask()
+    {
+        // R2-27: shutdown() used to run in the cleanup try's finally, so a throw there faulted the
+        // task OnShutdownRequested starts and nobody awaits (an unobserved task exception).
+        var failure = new InvalidOperationException("shutdown boom");
+        var logger = new CollectingLogger<ShutdownCoordinator>();
+        var coordinator = new ShutdownCoordinator(
+            () => ValueTask.CompletedTask,
+            () => throw failure,
+            logger);
+
+        var exception = Record.Exception(() => coordinator.OnShutdownRequested(new ShutdownRequestedEventArgs()));
+
+        Assert.Null(exception);
+        var entry = Assert.Single(logger.Entries);
+        Assert.Equal(1024, entry.EventId.Id);
+        Assert.Same(failure, entry.Exception);
+    }
 }

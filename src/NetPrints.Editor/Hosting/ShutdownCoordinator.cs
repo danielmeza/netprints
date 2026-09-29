@@ -26,6 +26,10 @@ public sealed class ShutdownCoordinator
     /// <param name="logger">Logger for a cleanup failure (<see cref="Log.ShutdownCleanupFailed"/>).</param>
     public ShutdownCoordinator(Func<ValueTask> cleanUpAsync, Action shutdown, ILogger logger)
     {
+        ArgumentNullException.ThrowIfNull(cleanUpAsync);
+        ArgumentNullException.ThrowIfNull(shutdown);
+        ArgumentNullException.ThrowIfNull(logger);
+
         this.cleanUpAsync = cleanUpAsync;
         this.shutdown = shutdown;
         this.logger = logger;
@@ -57,10 +61,18 @@ public sealed class ShutdownCoordinator
         {
             Log.ShutdownCleanupFailed(logger, ex);
         }
-        finally
+
+        cleanedUp = true;
+
+        // Not in the try's finally: shutdown() throwing there would fault this method's returned task,
+        // which nothing observes (R2-27), instead of being handled the same way a cleanup failure is.
+        try
         {
-            cleanedUp = true;
             shutdown();
+        }
+        catch (Exception ex)
+        {
+            Log.ShutdownCleanupFailed(logger, ex);
         }
     }
 }
