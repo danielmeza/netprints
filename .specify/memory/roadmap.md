@@ -130,6 +130,9 @@ intermediate schema versions are shipped.
 Graph-format follow-ups from P1: `format --check` and `regen --check`, `netprints git-install`
 (a `textconv` diff and the optional `netprints merge` driver), and SchemaStore registration of the
 `.netpc.json` schema.
+- **Extension testing — multi-extension suite.** Host-side test suite with purpose-built fixture extensions (baseline pair with `dependsOn`, id squatter, duplicate id, private-dependency v1/v2, host-assembly skew, shared-prefix private dependency, type provider/consumer, throws-mid-register, native dependency). Scenarios: id conflicts, load-order permutation invariance, dependency-version isolation, extension-on-extension types, documents across extension subsets, failure isolation, scale, and reload caching. See research in `docs/research/2026-09-29-extension-testing/`.
+- **API compatibility tracking.** Add `PublicApiAnalyzers` to `NetPrints.Extensibility`, `NetPrints.Core`, `NetPrints.Reflection` and `NetPrints.Serialization`; mark unstable API with `[Experimental]`. When the extension API is first published, set `PackageValidationBaselineVersion` and tie `ExtensionApi.Version` bumps to Shipped/Unshipped changes.
+- **ADR: extension shared-assembly and extension-on-extension hazards.** Two behaviours are currently unpinned: (1) a private dependency whose name starts with a shared prefix (e.g. `NetPrints*`, `Avalonia*`) is deferred to the Default context and fails with `NPX007`; (2) `dependsOn` only orders loading, so extension B cannot resolve extension A's types. Decide with an ADR before NetPrintsUnreal ships more than one extension (owner request 2026-09-29). See research section 1 and recommendation section (d).
 Done when (owner decision 2026-09-28, applies P2 onward): the phase's features work end-to-end and
 docs updated (guides, API reference, ADRs as applicable).
 
@@ -181,6 +184,8 @@ docs updated (guides, API reference, ADRs as applicable).
 inspector sections, panels, settings pages), sample non-Unreal extension, anything functional
 left beyond P0 parity. Publishes the `NetPrints.Serialization` and `NetPrints.Extensibility`
 packages for extension authors. No performance work here (owner decision 2026-09-25: see P8).
+- **Extension testing — author conformance kit (may start in P2).** Ship `NetPrints.Extensibility.Testing` (NuGet package) with `ExtensionTest<TExtension>` (declarative `TestState`, `RunAsync`), an `ExtensionHarness` for real or folder-based testing, and a conformance suite with 12 checks (manifest, packaging, type identity, pure/repeatable registration, no issues, node round-trip, translation compilation, deterministic emitters, settings, host channel lifecycle, coexistence with built-ins and a "noisy neighbour", disposal). Optional xUnit adapter. `NetPrints.TestExtension` is tested only through this kit. See research.
+- **Before the first NetPrintsUnreal release:** a `netprints-verify` tool (modelled on IntelliJ Plugin Verifier), a reusable author CI workflow, a nightly job co-loading published extensions, and a `dotnet new netprints-extension` template.
 Done when: also docs updated (guides, API reference, ADRs as applicable).
 
 ### P3b — Declarations and code style (owner-approved 2026-09-26)

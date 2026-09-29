@@ -5434,6 +5434,7 @@ Details and evidence are in ADR 0008.
 
 ## Deferred from the PR #6 review (R1–R3)
 
+- **Extension testing (owner request 2026-09-29):** author conformance kit, host multi-extension suite, API compat/verifier → roadmap P2/P3; research in `docs/research/2026-09-29-extension-testing/`.
 - **P3a, R2-09**: replace `DragSourceHelper` and the pointer handlers in `ClassEditorWindow.axaml.cs`,
   `MemberVariableView.axaml.cs` and `LocalVariableView.axaml.cs` with `ContextDragBehavior`/`ContextDropBehavior`
   from `Xaml.Behaviors.Interactions.DragAndDrop` (ADR-0007). This PR only fixed the drag start (R2-03: tunnel +
