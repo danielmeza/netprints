@@ -102,7 +102,8 @@ namespace NetPrints.Tests.Characterization
                 }
 
                 // Concrete, non-generic, non-array public type: FullName is never null.
-                map[type.FullName!] = properties;
+                string typeName = type.FullName ?? throw new InvalidOperationException($"'{type}' has no FullName.");
+                map[typeName] = properties;
             }
 
             string goldenPath = Path.Combine(SampleProjectFactory.FindRepositoryRoot(), "tests", "NetPrints.Core.Tests", "Characterization", "NotificationMap.golden.json");
@@ -140,7 +141,9 @@ namespace NetPrints.Tests.Characterization
             if (propertyType == typeof(bool))
             {
                 // A bool-typed property's reflected value is never null.
-                candidate = !(bool)current!;
+                candidate = current is bool value
+                    ? !value
+                    : throw new InvalidOperationException("A bool-typed property's reflected value was null.");
                 return true;
             }
 
@@ -160,7 +163,7 @@ namespace NetPrints.Tests.Characterization
             if (IsNumeric(propertyType))
             {
                 // A numeric-typed property's reflected value is never null.
-                candidate = AddOne(propertyType, current!);
+                candidate = AddOne(propertyType, current ?? throw new InvalidOperationException("A numeric-typed property's reflected value was null."));
                 return true;
             }
 

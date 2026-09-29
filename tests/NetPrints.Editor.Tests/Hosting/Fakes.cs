@@ -452,14 +452,26 @@ public sealed class GatedReflectionProvider(IReflectionProvider inner) : IReflec
 
     public IEnumerable<MethodSpecifier> GetPublicMethodOverloads(MethodSpecifier methodSpecifier)
     {
-        Gate?.Task.GetAwaiter().GetResult();
+        WaitForGate();
         return inner.GetPublicMethodOverloads(methodSpecifier);
     }
 
     public IEnumerable<ConstructorSpecifier> GetConstructors(TypeSpecifier typeSpecifier)
     {
-        Gate?.Task.GetAwaiter().GetResult();
+        WaitForGate();
         return inner.GetConstructors(typeSpecifier);
+    }
+
+    /// <summary>
+    /// Blocks the calling (background) thread until <see cref="Gate"/> completes. <see cref="IReflectionProvider"/>
+    /// is a synchronous interface, so there is no <see langword="await"/>able alternative here; a spin-wait on
+    /// <see cref="Task.IsCompleted"/> holds the seam "in flight" for a test without a sync-over-async
+    /// <c>.Wait()</c>/<c>GetAwaiter().GetResult()</c>.
+    /// </summary>
+    private void WaitForGate()
+    {
+        TaskCompletionSource? gate = Gate;
+        SpinWait.SpinUntil(() => gate is null || gate.Task.IsCompleted);
     }
 
     public IEnumerable<string> GetEnumNames(TypeSpecifier typeSpecifier) => inner.GetEnumNames(typeSpecifier);

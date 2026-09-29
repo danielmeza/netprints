@@ -6,6 +6,7 @@ using NetPrints.Core;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Projects;
 using NetPrints.Reflection;
+using NetPrints.Translator;
 
 namespace NetPrints.Editor.Hosting;
 
@@ -93,7 +94,9 @@ public sealed class ReflectionHost : IReflectionHost
             var references = snapshot.References;
             var otherSources = snapshot.OtherSources;
             ExtensionRegistry registry = extensions.Current;
-            var generatedSources = project.GenerateClassSources(registry.Translation, out var translationWarnings).ToList();
+            ProjectTranslationResult translation = ProjectTranslation.TranslateAll(project, registry.Translation);
+            var generatedSources = translation.Classes.Values.Select(c => c.Code).ToList();
+            var translationWarnings = translation.Diagnostics.Select(d => $"{d.ClassFullName}: {d.Message}").ToList();
             IReadOnlyList<ITypeCatalog> catalogs = registry.TypeCatalogs;
             IReadOnlySet<string> excludedAssemblyNames = catalogs.SelectMany(catalog => catalog.Info.CoveredAssemblyNames).ToHashSet(StringComparer.Ordinal);
 

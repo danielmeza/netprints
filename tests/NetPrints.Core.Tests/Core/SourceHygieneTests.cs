@@ -19,6 +19,13 @@ namespace NetPrints.Tests.Core
                 .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
                     && !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal))];
 
+        /// <summary>
+        /// Every <c>src/**/*.cs</c> and <c>tests/**/*.cs</c> file under <paramref name="repoRoot"/> (R1-22/R2-18/R3-15:
+        /// the "no <c>!</c>, no unlisted suppression" gates cover <c>tests/</c> too, not just <c>src/</c>).
+        /// </summary>
+        private static string[] EnumerateSourceAndTestFiles(string repoRoot) =>
+            [.. new[] { "src", "tests" }.SelectMany(dir => EnumerateSourceFiles(Path.Combine(repoRoot, dir), "*.cs"))];
+
         [Fact]
         public void NoSourceFileMentionsProgramFilesX86()
         {
@@ -119,18 +126,81 @@ namespace NetPrints.Tests.Core
 
         /// <summary>
         /// ADR-0003 "no `!`" (AGENTS.md "Nullable reference types"): no analyzer flags the
-        /// null-forgiving operator, so this parses every <c>src/**/*.cs</c> file with Roslyn and fails
-        /// on any <see cref="SyntaxKind.SuppressNullableWarningExpression"/> node outside
-        /// <see cref="NullForgivingAllowlist"/>. The allowlist is empty by design: fix the cause
-        /// instead of adding to it.
+        /// null-forgiving operator, so this parses every <c>src/**/*.cs</c> and <c>tests/**/*.cs</c> file
+        /// with Roslyn and fails on any <see cref="SyntaxKind.SuppressNullableWarningExpression"/> node
+        /// outside <see cref="NullForgivingAllowlist"/> (R1-22/R2-18/R3-15: the gate used to scan only
+        /// <c>src/</c>). <c>src/</c> is clean, so its half of the allowlist is empty by design. The
+        /// <c>tests/</c> half lists every site that predates this gate (F-Hyg fixed the sites the review
+        /// actually named — Extensibility/Serialization/Characterization/Translator/CodeView/hosting — and
+        /// extended the scan to catch every future one); it can only shrink, one file at a time, never grow.
         /// </summary>
-        private static readonly HashSet<string> NullForgivingAllowlist = new(StringComparer.Ordinal);
+        private static readonly HashSet<string> NullForgivingAllowlist = new(StringComparer.Ordinal)
+        {
+            "tests/NetPrints.Desktop.E2ETests/Hosting/EditorProcess.cs:60",
+            "tests/NetPrints.Desktop.E2ETests/Hosting/Tool.cs:81",
+            "tests/NetPrints.Desktop.E2ETests/Hosting/XServer.cs:108",
+            "tests/NetPrints.Desktop.E2ETests/Hosting/XServer.cs:144",
+            "tests/NetPrints.Desktop.E2ETests/Scenarios/X11SmokeTests.cs:71",
+            "tests/NetPrints.Editor.Tests/ClassEditor/ClassEditorVMTests.cs:281",
+            "tests/NetPrints.Editor.Tests/ClassEditor/ClassEditorVMTests.cs:432",
+            "tests/NetPrints.Editor.Tests/ClassEditor/ClassEditorVMTests.cs:450",
+            "tests/NetPrints.Editor.Tests/Graph/GraphTestBase.cs:32",
+            "tests/NetPrints.Editor.Tests/Graph/NodeGraphVMTests.cs:131",
+            "tests/NetPrints.Editor.Tests/Graph/NodeGraphVMTests.cs:144",
+            "tests/NetPrints.Editor.Tests/Graph/Nodes/NodeVMTests.cs:70",
+            "tests/NetPrints.Editor.Tests/Graph/Nodes/PinRowsTests.cs:22",
+            "tests/NetPrints.Editor.Tests/Graph/Nodes/PinRowsTests.cs:27",
+            "tests/NetPrints.Editor.Tests/Graph/Nodes/PinRowsTests.cs:28",
+            "tests/NetPrints.Editor.Tests/Graph/Nodes/PinRowsTests.cs:36",
+            "tests/NetPrints.Editor.Tests/Graph/Nodes/PinRowsTests.cs:37",
+            "tests/NetPrints.Editor.Tests/Graph/Nodes/PinRowsTests.cs:51",
+            "tests/NetPrints.Editor.Tests/Graph/Nodes/PinRowsTests.cs:52",
+            "tests/NetPrints.Editor.Tests/Graph/Nodes/PinRowsTests.cs:65",
+            "tests/NetPrints.Editor.Tests/Graph/Nodes/PinRowsTests.cs:75",
+            "tests/NetPrints.Editor.Tests/Graph/Nodes/PinRowsTests.cs:84",
+            "tests/NetPrints.Editor.Tests/Graph/Nodes/PinRowsTests.cs:85",
+            "tests/NetPrints.Editor.Tests/Graph/Pins/NodePinVMTests.cs:68",
+            "tests/NetPrints.Editor.Tests/Graph/ReflectionReloadTests.cs:39",
+            "tests/NetPrints.Editor.Tests/Graph/ReflectionReloadTests.cs:52",
+            "tests/NetPrints.Editor.Tests/Graph/ReflectionReloadTests.cs:53",
+            "tests/NetPrints.Editor.Tests/Graph/ReflectionReloadTests.cs:62",
+            "tests/NetPrints.Editor.Tests/Main/MainEditorVMTests.cs:120",
+            "tests/NetPrints.Editor.Tests/Reflection/ReflectionProviderTests.cs:116",
+            "tests/NetPrints.Editor.Tests/Search/SearchPerformanceTests.cs:28",
+            "tests/NetPrints.Editor.Tests/Search/SearchPerformanceTests.cs:39",
+            "tests/NetPrints.Editor.Tests/Search/SuggestionListVMTests.cs:41",
+            "tests/NetPrints.Editor.Tests/Search/SuggestionListVMTests.cs:47",
+            "tests/NetPrints.Editor.Tests/Variables/MemberVariableVMTests.cs:43",
+            "tests/NetPrints.Editor.Tests/Variables/MemberVariableVMTests.cs:50",
+            "tests/NetPrints.Editor.Tests/Variables/MemberVariableVMTests.cs:118",
+            "tests/NetPrints.Editor.UITests/ClassEditor/ClassEditorWindowTests.cs:79",
+            "tests/NetPrints.Editor.UITests/ClassEditor/ClassEditorWindowTests.cs:165",
+            "tests/NetPrints.Editor.UITests/ClassEditor/ClassEditorWindowTests.cs:173",
+            "tests/NetPrints.Editor.UITests/ClassEditor/ClassEditorWindowTests.cs:185",
+            "tests/NetPrints.Editor.UITests/ClassEditor/ClassEditorWindowTests.cs:192",
+            "tests/NetPrints.Editor.UITests/ClassEditor/EditorSession.cs:35",
+            "tests/NetPrints.Editor.UITests/ClassEditor/EditorSession.cs:36",
+            "tests/NetPrints.Editor.UITests/Graph/GridRenderTests.cs:117",
+            "tests/NetPrints.Editor.UITests/Graph/GridRenderTests.cs:130",
+            "tests/NetPrints.Editor.UITests/Scenarios/HeadlessSmokeTests.cs:28",
+            "tests/NetPrints.Editor.UITests/TestAppBuilder.cs:33",
+            "tests/NetPrints.Testing.Ui/ClassEditor/ClassEditorPage.cs:99",
+            "tests/NetPrints.Testing.Ui/ClassEditor/ClassEditorPage.cs:107",
+            "tests/NetPrints.Testing.Ui/Driving/AutomationClient.cs:60",
+            "tests/NetPrints.Testing.Ui/Driving/UiElement.cs:29",
+            "tests/NetPrints.Testing.Ui/Driving/UiWait.cs:44",
+            "tests/NetPrints.Testing.Ui/Graph/GraphCanvas.cs:65",
+            "tests/NetPrints.Testing.Ui/Graph/GraphCanvas.cs:86",
+            "tests/NetPrints.Testing.Ui/Graph/GraphCanvas.cs:87",
+            "tests/NetPrints.Testing.Ui/Graph/NodeObject.cs:40",
+            "tests/NetPrints.Testing.Ui/Snapshots/UiImage.cs:43",
+        };
 
         [Fact]
         public void NoNullForgivingOperator()
         {
-            string src = Path.Combine(SampleProjectFactory.FindRepositoryRoot(), "src");
-            string[] sourceFiles = EnumerateSourceFiles(src, "*.cs");
+            string repoRoot = SampleProjectFactory.FindRepositoryRoot();
+            string[] sourceFiles = EnumerateSourceAndTestFiles(repoRoot);
             var offenders = new List<string>();
             int parsedFileCount = 0;
 
@@ -138,7 +208,7 @@ namespace NetPrints.Tests.Core
             {
                 SyntaxNode root = CSharpSyntaxTree.ParseText(File.ReadAllText(path), path: path, cancellationToken: TestContext.Current.CancellationToken).GetRoot(TestContext.Current.CancellationToken);
                 parsedFileCount++;
-                string relativePath = Path.GetRelativePath(src, path);
+                string relativePath = Path.GetRelativePath(repoRoot, path).Replace('\\', '/');
 
                 foreach (PostfixUnaryExpressionSyntax node in root.DescendantNodes()
                     .OfType<PostfixUnaryExpressionSyntax>()
@@ -153,12 +223,13 @@ namespace NetPrints.Tests.Core
                 }
             }
 
-            Assert.True(parsedFileCount > 0, "Expected to parse at least one src/**/*.cs file.");
+            Assert.True(parsedFileCount > 0, "Expected to parse at least one src/**/*.cs or tests/**/*.cs file.");
             Assert.Empty(offenders);
         }
 
         /// <summary>
-        /// ADR-0003 "Real fixes vs. suppression": every suppression mechanism in <c>src/</c> — a
+        /// ADR-0003 "Real fixes vs. suppression": every suppression mechanism in <c>src/</c> or
+        /// <c>tests/</c> (R1-22/R2-18/R3-15: the gate used to scan only <c>src/</c>) — a
         /// <c>#pragma warning disable</c>, <c>[SuppressMessage]</c> (short or <c>Attribute</c>-suffixed,
         /// qualified or not) or a nullable-context escape (<c>#nullable disable</c>/<c>restore</c>) in a
         /// <c>.cs</c> file — must match a row in ADR-0003's suppression ledger. A <c>[SuppressMessage]</c>
@@ -167,29 +238,30 @@ namespace NetPrints.Tests.Core
         /// Tighter than <c>S1309</c>: per rule and per site, not per file. <c>&lt;NoWarn&gt;</c> and the
         /// rest of a project's warning configuration are covered by
         /// <see cref="NoUnlistedBuildWarningSuppressions"/> instead, since those live in
-        /// <c>.csproj</c>/<c>.props</c>/<c>.targets</c> files, not <c>.cs</c> ones.
+        /// <c>.csproj</c>/<c>.props</c>/<c>.targets</c> files, not <c>.cs</c> ones. Allowlist entries only
+        /// shrink; a fresh site is fixed, not added.
         /// </summary>
         private static readonly HashSet<(string File, string Member, string Rule)> SuppressionAllowlist = new()
         {
-            ("NetPrints.Editor/ClassEditor/ClassEditorVM.cs", "OpenGraph", "IDISP003"),
-            ("NetPrints.Editor/ClassEditor/ClassEditorVM.cs", "DropDetachedState", "IDISP003"),
-            ("NetPrints.Editor/ClassEditor/ClassEditorVM.cs", "Dispose", "IDISP003"),
-            ("NetPrints.Editor/Graph/GraphDragDrop.cs", "Moved", "VSTHRD100"),
-            ("NetPrints.Editor/Graph/GridBackground.cs", "Render", "IDISP004"),
-            ("NetPrints.Editor/Hosting/Automation/AutomationAgent.cs", "ServeAsync", "IDISP007"),
+            ("src/NetPrints.Editor/ClassEditor/ClassEditorVM.cs", "OpenGraph", "IDISP003"),
+            ("src/NetPrints.Editor/ClassEditor/ClassEditorVM.cs", "DropDetachedState", "IDISP003"),
+            ("src/NetPrints.Editor/ClassEditor/ClassEditorVM.cs", "Dispose", "IDISP003"),
+            ("src/NetPrints.Editor/Graph/GraphDragDrop.cs", "Moved", "VSTHRD100"),
+            ("src/NetPrints.Editor/Graph/GridBackground.cs", "Render", "IDISP004"),
+            ("src/NetPrints.Editor/Hosting/Automation/AutomationAgent.cs", "ServeAsync", "IDISP007"),
         };
 
         [Fact]
         public void NoUnlistedSuppressions()
         {
-            string src = Path.Combine(SampleProjectFactory.FindRepositoryRoot(), "src");
+            string repoRoot = SampleProjectFactory.FindRepositoryRoot();
             var offenders = new List<string>();
             int parsedFileCount = 0;
 
-            foreach (string path in EnumerateSourceFiles(src, "*.cs"))
+            foreach (string path in EnumerateSourceAndTestFiles(repoRoot))
             {
                 parsedFileCount++;
-                string relativePath = Path.GetRelativePath(src, path).Replace('\\', '/');
+                string relativePath = Path.GetRelativePath(repoRoot, path).Replace('\\', '/');
                 SyntaxNode root = CSharpSyntaxTree.ParseText(File.ReadAllText(path), path: path, cancellationToken: TestContext.Current.CancellationToken).GetRoot(TestContext.Current.CancellationToken);
 
                 foreach (var trivia in root.DescendantTrivia().Where(t => t.IsKind(SyntaxKind.PragmaWarningDirectiveTrivia)))
@@ -225,7 +297,85 @@ namespace NetPrints.Tests.Core
                 }
             }
 
-            Assert.True(parsedFileCount > 0, "Expected to scan at least one src/ file.");
+            Assert.True(parsedFileCount > 0, "Expected to scan at least one src/ or tests/ file.");
+            Assert.Empty(offenders);
+        }
+
+        /// <summary>
+        /// ADR-0003 "no sync-over-async": no analyzer flags blocking on a <see cref="Task"/> result, so
+        /// this parses every <c>src/**/*.cs</c> and <c>tests/**/*.cs</c> file with Roslyn and fails on a
+        /// <c>.Wait()</c> call, a <c>.GetAwaiter().GetResult()</c> chain, or a <c>.Result</c> access whose
+        /// receiver looks like a <see cref="Task"/> (R1-22/R2-18/R3-15). The allowlist is empty by design
+        /// and can only shrink for pre-existing vendored code; a fresh site is fixed, not added.
+        /// </summary>
+        private static readonly HashSet<string> SyncOverAsyncAllowlist = new(StringComparer.Ordinal);
+
+        /// <summary>True for a <c>.Result</c> access whose receiver is itself named like a <see cref="Task"/>
+        /// (e.g. <c>stdOutTask.Result</c>) or an <c>…Async(...)</c> call's result — as opposed to an
+        /// unrelated domain <c>Result</c> property (e.g. a dialog view model's own <c>Result</c>).</summary>
+        private static bool LooksLikeTaskResultAccess(MemberAccessExpressionSyntax memberAccess)
+        {
+            if (memberAccess.Name.Identifier.Text != "Result")
+            {
+                return false;
+            }
+
+            if (memberAccess.Expression.ToString().Contains("Task", StringComparison.Ordinal))
+            {
+                return true;
+            }
+
+            return memberAccess.Expression is InvocationExpressionSyntax { Expression: var target }
+                && target.ToString().EndsWith("Async", StringComparison.Ordinal);
+        }
+
+        [Fact]
+        public void NoSyncOverAsync()
+        {
+            string repoRoot = SampleProjectFactory.FindRepositoryRoot();
+            var offenders = new List<string>();
+            int parsedFileCount = 0;
+
+            foreach (string path in EnumerateSourceAndTestFiles(repoRoot))
+            {
+                parsedFileCount++;
+                string relativePath = Path.GetRelativePath(repoRoot, path).Replace('\\', '/');
+                SyntaxNode root = CSharpSyntaxTree.ParseText(File.ReadAllText(path), path: path, cancellationToken: TestContext.Current.CancellationToken).GetRoot(TestContext.Current.CancellationToken);
+
+                foreach (InvocationExpressionSyntax invocation in root.DescendantNodes().OfType<InvocationExpressionSyntax>())
+                {
+                    bool isWait = invocation.Expression is MemberAccessExpressionSyntax { Name.Identifier.Text: "Wait" };
+                    bool isGetAwaiterGetResult = invocation.Expression is MemberAccessExpressionSyntax
+                    {
+                        Name.Identifier.Text: "GetResult",
+                        Expression: InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Name.Identifier.Text: "GetAwaiter" } },
+                    };
+                    if (!isWait && !isGetAwaiterGetResult)
+                    {
+                        continue;
+                    }
+
+                    int line = invocation.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
+                    string key = $"{relativePath}:{line}";
+                    if (!SyncOverAsyncAllowlist.Contains(key))
+                    {
+                        offenders.Add($"{key}: {invocation}");
+                    }
+                }
+
+                foreach (MemberAccessExpressionSyntax memberAccess in root.DescendantNodes().OfType<MemberAccessExpressionSyntax>()
+                    .Where(LooksLikeTaskResultAccess))
+                {
+                    int line = memberAccess.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
+                    string key = $"{relativePath}:{line}";
+                    if (!SyncOverAsyncAllowlist.Contains(key))
+                    {
+                        offenders.Add($"{key}: {memberAccess}");
+                    }
+                }
+            }
+
+            Assert.True(parsedFileCount > 0, "Expected to scan at least one src/ or tests/ file.");
             Assert.Empty(offenders);
         }
 

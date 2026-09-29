@@ -1,3 +1,4 @@
+using System;
 using System.Text.Json;
 using NetPrints.Serialization;
 using NetPrints.Serialization.Documents;
@@ -15,7 +16,8 @@ namespace NetPrints.Tests.Serialization
             new NetPrintsJsonOptions(new NodeDocumentConverterRegistry(NodeDocumentConverterRegistry.BuiltIn, [])).SerializerOptions;
 
         private static GraphDocument Deserialize(string json) =>
-            JsonSerializer.Deserialize<GraphDocument>(json, Options)!;
+            JsonSerializer.Deserialize<GraphDocument>(json, Options)
+                ?? throw new InvalidOperationException($"Deserializing '{json}' produced no {nameof(GraphDocument)}.");
 
         [Fact]
         public void KindAfterIdDeserializes()

@@ -23,7 +23,7 @@ public class ProjectTrustTests : IDisposable
 
     public void Dispose() => cleanup.ForEach(TestPaths.TryDelete);
 
-    private string ProjectWithExtension(bool declareItem)
+    private async Task<string> ProjectWithExtensionAsync(bool declareItem)
     {
         string csproj = TestPaths.CopyHelloWorldSample();
         cleanup.Add(Path.GetDirectoryName(csproj) ?? csproj);
@@ -36,7 +36,7 @@ public class ProjectTrustTests : IDisposable
         Directory.CreateDirectory(extensionFolder);
         File.WriteAllText(Path.Combine(extensionFolder, ExtensionManifest.FileName), "{ this is not a manifest");
 
-        ProjectSnapshot snapshot = testEditor.Projects.LoadAsync(csproj, CancellationToken.None).GetAwaiter().GetResult();
+        ProjectSnapshot snapshot = await testEditor.Projects.LoadAsync(csproj, TestContext.Current.CancellationToken);
         testEditor.Projects.Seed(snapshot with { ExtensionFolders = declareItem ? [extensionFolder] : [] });
         testEditor.Projects.LoadCalls.Clear();
         return csproj;
@@ -50,7 +50,7 @@ public class ProjectTrustTests : IDisposable
     [Fact]
     public async Task DecliningOpensTheProjectWithoutItsExtensionsAndReportsNpd006()
     {
-        string csproj = ProjectWithExtension(declareItem: true);
+        string csproj = await ProjectWithExtensionAsync(declareItem: true);
         var vm = new MainEditorVM(testEditor.Context);
 
         await vm.LoadProjectAsync(csproj);
@@ -71,7 +71,7 @@ public class ProjectTrustTests : IDisposable
     [Fact]
     public async Task TrustingLoadsTheExtensionsAndRecordsTheProject()
     {
-        string csproj = ProjectWithExtension(declareItem: true);
+        string csproj = await ProjectWithExtensionAsync(declareItem: true);
         testEditor.Dialogs.TrustAnswer = true;
         var vm = new MainEditorVM(testEditor.Context);
 
@@ -86,7 +86,7 @@ public class ProjectTrustTests : IDisposable
     [Fact]
     public async Task ATrustedProjectLoadsItsExtensionsWithoutAsking()
     {
-        string csproj = ProjectWithExtension(declareItem: true);
+        string csproj = await ProjectWithExtensionAsync(declareItem: true);
         await testEditor.Settings.SetAsync(NetPrintsSettings.Descriptor,
             NetPrintsSettings.Empty with { TrustedProjects = [csproj] }, TestContext.Current.CancellationToken);
         var vm = new MainEditorVM(testEditor.Context);
@@ -100,7 +100,7 @@ public class ProjectTrustTests : IDisposable
     [Fact]
     public async Task AManifestInTheProjectFolderWithoutAnItemIsNeverLoaded()
     {
-        string csproj = ProjectWithExtension(declareItem: false);
+        string csproj = await ProjectWithExtensionAsync(declareItem: false);
         var vm = new MainEditorVM(testEditor.Context);
 
         await vm.LoadProjectAsync(csproj);
@@ -114,7 +114,7 @@ public class ProjectTrustTests : IDisposable
     [Fact]
     public async Task OpeningAProjectWithoutExtensionsDropsThePreviousProjectsExtensions()
     {
-        string withExtension = ProjectWithExtension(declareItem: true);
+        string withExtension = await ProjectWithExtensionAsync(declareItem: true);
         testEditor.Dialogs.TrustAnswer = true;
         var vm = new MainEditorVM(testEditor.Context);
         await vm.LoadProjectAsync(withExtension);

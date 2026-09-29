@@ -189,7 +189,7 @@ namespace NetPrints.Tests.Projects
             {
                 string csprojPath = Path.Combine(directory, "PsT09.csproj");
                 string existingAssemblyPath = Path.Combine(directory, "libs", "Existing.dll");
-                Directory.CreateDirectory(Path.GetDirectoryName(existingAssemblyPath)!);
+                Directory.CreateDirectory(Path.GetDirectoryName(existingAssemblyPath) ?? throw new InvalidOperationException($"'{existingAssemblyPath}' has no directory."));
                 // A real assembly file (this test assembly's own output), not arbitrary bytes: Roslyn
                 // must be able to treat it as a genuine PE reference.
                 File.Copy(typeof(MsBuildProjectSystemTests).Assembly.Location, existingAssemblyPath);

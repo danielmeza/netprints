@@ -1,13 +1,10 @@
 ﻿#nullable enable
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Compilation;
 using NetPrints.Projects;
-using NetPrints.Translator;
 
 namespace NetPrints.Core
 {
@@ -78,27 +75,22 @@ namespace NetPrints.Core
 
         /// <summary>
         /// The project's most recently loaded or applied snapshot (project-system.md §4,
-        /// <c>IProjectSystem.LoadAsync</c>/<c>ApplyAsync</c>): always set for a project created through
-        /// <see cref="FromSnapshot"/>.
+        /// <c>IProjectSystem.LoadAsync</c>/<c>ApplyAsync</c>): always set, since the only constructor
+        /// path (<see cref="FromSnapshot"/>) requires one. The setter exists only for the editor to
+        /// replace it with a newer snapshot (e.g. <c>MainEditorVM</c>, <c>ReferenceListVM</c>).
         /// <see cref="TargetFramework"/> and <see cref="ProfileId"/> are derived from it and re-raise
         /// their own change notification whenever it is replaced.
         /// </summary>
         [ObservableProperty]
         [NotifyPropertyChangedFor(nameof(TargetFramework))]
         [NotifyPropertyChangedFor(nameof(ProfileId))]
-        public partial ProjectSnapshot? Snapshot { get; set; }
+        public partial ProjectSnapshot Snapshot { get; set; }
 
         /// <summary>Target framework moniker of <see cref="Snapshot"/> (e.g. <c>"net10.0"</c>).</summary>
-        /// <exception cref="InvalidOperationException"><see cref="Snapshot"/> is <see langword="null"/>
-        /// (this project was not created through <see cref="FromSnapshot"/>).</exception>
-        public string TargetFramework => Snapshot?.TargetFramework
-            ?? throw new InvalidOperationException($"'{nameof(Project)}.{nameof(TargetFramework)}' has no value without a snapshot (see {nameof(FromSnapshot)}).");
+        public string TargetFramework => Snapshot.TargetFramework;
 
         /// <summary>Reverse-DNS id of <see cref="Snapshot"/>'s <c>NetPrintsProfile</c>.</summary>
-        /// <exception cref="InvalidOperationException"><see cref="Snapshot"/> is <see langword="null"/>
-        /// (this project was not created through <see cref="FromSnapshot"/>).</exception>
-        public string ProfileId => Snapshot?.ProfileId
-            ?? throw new InvalidOperationException($"'{nameof(Project)}.{nameof(ProfileId)}' has no value without a snapshot (see {nameof(FromSnapshot)}).");
+        public string ProfileId => Snapshot.ProfileId;
 
         /// <summary>
         /// Diagnostics from the project's last build (project-system.md §4,
@@ -212,39 +204,5 @@ namespace NetPrints.Core
         /// </summary>
         [ObservableProperty]
         public partial bool LastCompilationSucceeded { get; set; }
-
-        /// <summary>
-        /// Translates every class to C#, for the reflection host. A class that fails to translate
-        /// (e.g. an unconnected node) is skipped instead of compiling its exception text as source;
-        /// the reason is reported through <paramref name="warnings"/> instead.
-        /// </summary>
-        /// <param name="environment">Node translators and emitters of the loaded extensions.</param>
-        /// <param name="warnings">Why each skipped class failed, ordered.</param>
-        public IEnumerable<string> GenerateClassSources(TranslationEnvironment environment, out IReadOnlyList<string> warnings)
-        {
-            ArgumentNullException.ThrowIfNull(environment);
-            ConcurrentBag<string> classSources = new ConcurrentBag<string>();
-            ConcurrentBag<string> translationWarnings = new ConcurrentBag<string>();
-
-            // Translate classes in parallel
-            Parallel.ForEach(Classes, cls =>
-            {
-                // Translate the class to C#
-                ClassTranslator classTranslator = new ClassTranslator(environment);
-
-                try
-                {
-                    classSources.Add(classTranslator.TranslateClass(cls));
-                }
-                catch (Exception ex)
-                {
-                    translationWarnings.Add($"{cls.FullName}: {ex.Message}");
-                }
-            });
-
-            warnings = translationWarnings.OrderBy(w => w, StringComparer.Ordinal).ToArray();
-
-            return classSources;
-        }
     }
 }

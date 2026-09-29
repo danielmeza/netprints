@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using NetPrints.Core;
 using NetPrints.Extensibility;
@@ -72,20 +73,18 @@ public class ExtensionBuilderTests
         Assert.Equal(["test.good"], registry.Loaded.Select(m => m.Id));
     }
 
-    // Passing null on purpose: the guards are the behaviour under test.
-#pragma warning disable CS8625
     [Fact]
     public async Task NullArgumentsThrowArgumentNullException()
     {
         var extension = InProcess("test.ext", builder =>
         {
-            Assert.Throws<ArgumentNullException>(() => builder.AddNodeLibrary(null));
-            Assert.Throws<ArgumentNullException>(() => builder.AddClassEmitter(null));
-            Assert.Throws<ArgumentNullException>(() => builder.AddMemberEmitter(null));
-            Assert.Throws<ArgumentNullException>(() => builder.AddTypeCatalog(null));
-            Assert.Throws<ArgumentNullException>(() => builder.AddProjectProfile(null));
-            Assert.Throws<ArgumentNullException>(() => builder.AddJsonTypeInfoResolver(null));
-            Assert.Throws<ArgumentNullException>(() => builder.AddProjectProperty(null));
+            AssertAddThrowsForNullArgument(builder, nameof(IExtensionBuilder.AddNodeLibrary));
+            AssertAddThrowsForNullArgument(builder, nameof(IExtensionBuilder.AddClassEmitter));
+            AssertAddThrowsForNullArgument(builder, nameof(IExtensionBuilder.AddMemberEmitter));
+            AssertAddThrowsForNullArgument(builder, nameof(IExtensionBuilder.AddTypeCatalog));
+            AssertAddThrowsForNullArgument(builder, nameof(IExtensionBuilder.AddProjectProfile));
+            AssertAddThrowsForNullArgument(builder, nameof(IExtensionBuilder.AddJsonTypeInfoResolver));
+            AssertAddThrowsForNullArgument(builder, nameof(IExtensionBuilder.AddProjectProperty));
             Assert.Throws<ArgumentException>(() => builder.AddProjectProperty(" "));
             Assert.Equal("test.ext", builder.Manifest.Id);
             Assert.NotNull(builder.LoggerFactory);
@@ -96,7 +95,20 @@ public class ExtensionBuilderTests
         Assert.Equal("test.ext", Assert.Single(registry.Loaded).Id);
     }
 
-#pragma warning restore CS8625
+    /// <summary>
+    /// Invokes <paramref name="methodName"/> on <see cref="IExtensionBuilder"/> with a null argument
+    /// through reflection — its parameters are non-nullable, so a literal <see langword="null"/> (or a
+    /// null-forgiving one) would not compile — and asserts the call throws <see cref="ArgumentNullException"/>.
+    /// </summary>
+    private static void AssertAddThrowsForNullArgument(IExtensionBuilder builder, string methodName)
+    {
+        MethodInfo method = typeof(IExtensionBuilder).GetMethod(methodName)
+            ?? throw new InvalidOperationException($"No method named '{methodName}' on {nameof(IExtensionBuilder)}.");
+
+        TargetInvocationException thrown = Assert.Throws<TargetInvocationException>(() => method.Invoke(builder, [null]));
+
+        Assert.IsType<ArgumentNullException>(thrown.InnerException);
+    }
 
     [Fact]
     public async Task BuilderCallsAfterRegisterThrowInvalidOperationException()

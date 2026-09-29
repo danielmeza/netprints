@@ -4,7 +4,9 @@ using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Tests.Hosting;
 using NetPrints.Extensibility;
 using NetPrints.Extensibility.Loading;
+using NetPrints.Graph;
 using NetPrints.Reflection;
+using NetPrints.Translator;
 
 namespace NetPrints.Editor.Tests.Hosting;
 
@@ -35,16 +37,61 @@ public class ReflectionHostTests
         Assert.True(host.Provider.GetNonStaticTypes().Contains(TypeSpecifier.FromType<string>()));
     }
 
-    [Fact]
-    public async Task ReloadRequiresASnapshot()
+    /// <summary>
+    /// R1-16: <see cref="ReflectionHost"/> routes through the same <see cref="ProjectTranslation.TranslateAll"/>
+    /// path <c>CodeAnalysisHost</c>/<c>ProjectCheck</c> use, so a broken class is skipped and reported as
+    /// an <c>NPT</c> diagnostic (not a raw exception message), and several broken classes are reported in
+    /// the project's own class order — not the nondeterministic order the deleted, <c>Parallel.ForEach</c>-based
+    /// <c>Project.GenerateClassSources</c> produced.
+    /// </summary>
+    [Fact(Timeout = 120000)]
+    public async Task BrokenClassesAreSkippedAndReportedInProjectOrder()
     {
         var host = new ReflectionHost(new InlineDispatcher(), TestExtensions.CreateBuiltIn(), NullLogger<ReflectionHost>.Instance);
+        var project = Project.FromSnapshot(TestSnapshots.WithRuntimeAssemblies("P", "N"));
+        project.Classes.Add(WorkingClass("N.Ok"));
+        project.Classes.Add(BrokenClass("N.Broken1"));
+        project.Classes.Add(BrokenClass("N.Broken2"));
 
-        Project project = Project.FromSnapshot(TestSnapshots.Empty("P", "N"));
-        project.Snapshot = null;
+        await host.ReloadAsync(project, TestContext.Current.CancellationToken);
 
-        await Assert.ThrowsAsync<InvalidOperationException>(
-            () => host.ReloadAsync(project, TestContext.Current.CancellationToken));
+        Assert.Contains(host.NonStaticTypes, t => t.Name == "N.Ok");
+        Assert.DoesNotContain(host.NonStaticTypes, t => t.Name is "N.Broken1" or "N.Broken2");
+        Assert.Equal(2, host.LastWarnings.Count);
+        Assert.StartsWith("N.Broken1: ", host.LastWarnings[0]);
+        Assert.StartsWith("N.Broken2: ", host.LastWarnings[1]);
+
+        ProjectTranslationResult direct = ProjectTranslation.TranslateAll(project, TranslationEnvironment.BuiltIn);
+        Assert.All(direct.Diagnostics, d => Assert.Equal(TranslationDiagnosticCodes.UnsetRequiredInput, d.Id));
+    }
+
+    /// <summary>A method whose only node is its default entry/return exec chain: translates cleanly.</summary>
+    private static ClassGraph WorkingClass(string fullName)
+    {
+        ClassGraph cls = NewClass(fullName);
+        cls.Visibility = MemberVisibility.Public;
+        var method = new MethodGraph("Run") { Visibility = MemberVisibility.Public };
+        GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, method.MainReturnNode.ReturnPin);
+        cls.Methods.Add(method);
+        return cls;
+    }
+
+    /// <summary>A method with an <see cref="IfElseNode"/> whose condition pin is left unconnected
+    /// (NPT008, the same shape as <c>HelloWorldSampleTests.HelloWorldWithIfElseAsync(null)</c>).</summary>
+    private static ClassGraph BrokenClass(string fullName)
+    {
+        ClassGraph cls = NewClass(fullName);
+        var method = new MethodGraph("Run") { Visibility = MemberVisibility.Public };
+        var ifElse = new IfElseNode(method);
+        GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, ifElse.ExecutionPin);
+        cls.Methods.Add(method);
+        return cls;
+    }
+
+    private static ClassGraph NewClass(string fullName)
+    {
+        int lastDot = fullName.LastIndexOf('.');
+        return new ClassGraph { Namespace = fullName[..lastDot], Name = fullName[(lastDot + 1)..] };
     }
 
     [Fact(Timeout = 120000)]

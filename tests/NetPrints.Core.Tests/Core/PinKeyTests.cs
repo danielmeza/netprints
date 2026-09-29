@@ -117,7 +117,7 @@ namespace NetPrints.Tests.Core
 
             if (Environment.GetEnvironmentVariable(GoldenCSharpTests.UpdateSnapshotsVariable) == "1")
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(goldenPath)!);
+                Directory.CreateDirectory(Path.GetDirectoryName(goldenPath) ?? throw new InvalidOperationException($"'{goldenPath}' has no directory."));
                 File.WriteAllLines(goldenPath, lines);
             }
 

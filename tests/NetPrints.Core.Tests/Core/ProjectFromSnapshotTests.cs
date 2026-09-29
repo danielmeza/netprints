@@ -53,15 +53,21 @@ namespace NetPrints.Tests.Core
             Assert.Empty(project.LastDiagnostics);
         }
 
+        /// <summary>R1-15: <see cref="Project.Snapshot"/> is non-nullable (the only constructor path,
+        /// <see cref="Project.FromSnapshot"/>, requires one), so a replacement snapshot's own
+        /// <see cref="Project.TargetFramework"/>/<see cref="Project.ProfileId"/> take effect immediately;
+        /// there is no snapshot-less state left to throw for.</summary>
         [Fact]
-        public void TargetFrameworkAndProfileIdThrowWithoutASnapshot()
+        public void ReplacingTheSnapshotUpdatesTargetFrameworkAndProfileId()
         {
-            Project project = TestProjects.Create("P", "P");
-            project.Snapshot = null;
+            Project project = Project.FromSnapshot(NewSnapshot());
+            ProjectSnapshot replacement = NewSnapshot() with { TargetFramework = "net9.0", ProfileId = "other.profile" };
 
-            Assert.Null(project.Snapshot);
-            Assert.Throws<InvalidOperationException>(() => project.TargetFramework);
-            Assert.Throws<InvalidOperationException>(() => project.ProfileId);
+            project.Snapshot = replacement;
+
+            Assert.Same(replacement, project.Snapshot);
+            Assert.Equal("net9.0", project.TargetFramework);
+            Assert.Equal("other.profile", project.ProfileId);
         }
 
         [Fact]

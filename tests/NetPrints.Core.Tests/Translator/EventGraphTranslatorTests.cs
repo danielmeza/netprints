@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using NetPrints.Core;
 using NetPrints.Graph;
 using NetPrints.Translator;
@@ -39,7 +40,7 @@ namespace NetPrints.Tests.Translator
             var entry = new EventEntryNode(eventGraph, "OnStart");
             var translator = new ExecutionGraphTranslator(TranslationEnvironment.BuiltIn);
 
-            Assert.Throws<ArgumentNullException>(() => translator.TranslateEventEntry(null!, entry));
+            AssertTranslateEventEntryThrowsForNullArgument(translator, eventGraph: null, entry: entry);
         }
 
         [Fact]
@@ -48,7 +49,23 @@ namespace NetPrints.Tests.Translator
             var eventGraph = new EventGraph("Events");
             var translator = new ExecutionGraphTranslator(TranslationEnvironment.BuiltIn);
 
-            Assert.Throws<ArgumentNullException>(() => translator.TranslateEventEntry(eventGraph, null!));
+            AssertTranslateEventEntryThrowsForNullArgument(translator, eventGraph: eventGraph, entry: null);
+        }
+
+        /// <summary>
+        /// Invokes <see cref="ExecutionGraphTranslator.TranslateEventEntry(EventGraph, EventEntryNode)"/>
+        /// through reflection — its parameters are non-nullable, so a literal <see langword="null"/> (or a
+        /// null-forgiving one) would not compile — and asserts the call throws <see cref="ArgumentNullException"/>.
+        /// </summary>
+        private static void AssertTranslateEventEntryThrowsForNullArgument(ExecutionGraphTranslator translator, EventGraph? eventGraph, EventEntryNode? entry)
+        {
+            MethodInfo method = typeof(ExecutionGraphTranslator).GetMethod(
+                    nameof(ExecutionGraphTranslator.TranslateEventEntry), [typeof(EventGraph), typeof(EventEntryNode)])
+                ?? throw new InvalidOperationException($"No two-argument '{nameof(ExecutionGraphTranslator.TranslateEventEntry)}' overload on {nameof(ExecutionGraphTranslator)}.");
+
+            TargetInvocationException thrown = Assert.Throws<TargetInvocationException>(() => method.Invoke(translator, [eventGraph, entry]));
+
+            Assert.IsType<ArgumentNullException>(thrown.InnerException);
         }
 
         // NPT001 (research.md K13): a node reachable only from a different entry of the same event

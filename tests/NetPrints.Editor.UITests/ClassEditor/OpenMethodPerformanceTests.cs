@@ -22,7 +22,8 @@ public class OpenMethodPerformanceTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task OpeningMainStaysWithinBudget()
     {
-        var output = TestContext.Current.TestOutputHelper!;
+        var output = TestContext.Current.TestOutputHelper
+            ?? throw new InvalidOperationException($"{nameof(TestContext)} has no {nameof(TestContext.Current.TestOutputHelper)}.");
         using var sample = new SampleCopy();
         await using var app = HeadlessApp.Start();
         await app.OpenStartupProjectAsync(sample.ProjectPath, Token);

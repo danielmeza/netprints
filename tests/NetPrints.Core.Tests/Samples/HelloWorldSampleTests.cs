@@ -116,19 +116,21 @@ namespace NetPrints.Tests.Samples
         /// <summary>
         /// An untranslatable class is skipped instead of compiled as its own exception text (which
         /// used to drop every type in the project from search and type pickers, with no
-        /// indication why); the reason comes back through the warnings instead.
+        /// indication why); the reason comes back as an <c>NPT</c> diagnostic instead (R1-16: the same
+        /// <see cref="ProjectTranslation.TranslateAll"/> path <c>CodeAnalysisHost</c> and
+        /// <c>ProjectCheck</c> use, not the deleted <c>Project.GenerateClassSources</c>).
         /// </summary>
         [Fact(Timeout = 120000)]
         public async Task UntranslatableGraphIsSkippedNotEmittedAsSource()
         {
             (_, Project project) = await HelloWorldWithIfElseAsync(null);
 
-            var sources = project.GenerateClassSources(TranslationEnvironment.BuiltIn, out var warnings).ToList();
+            ProjectTranslationResult result = ProjectTranslation.TranslateAll(project, TranslationEnvironment.BuiltIn);
 
-            Assert.Empty(sources);
-            string warning = Assert.Single(warnings);
-            Assert.Contains("HelloWorld.Program", warning);
-            Assert.Contains("Condition", warning);
+            Assert.Empty(result.Classes);
+            CodeDiagnostic diagnostic = Assert.Single(result.Diagnostics);
+            Assert.Equal("HelloWorld.Program", diagnostic.ClassFullName);
+            Assert.Contains("Condition", diagnostic.Message);
         }
     }
 }

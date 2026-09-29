@@ -53,7 +53,7 @@ namespace NetPrints.Tests.Projects
             Task<string> stdOutTask = process.StandardOutput.ReadToEndAsync(TestContext.Current.CancellationToken);
             Task<string> stdErrTask = process.StandardError.ReadToEndAsync(TestContext.Current.CancellationToken);
             await Task.WhenAll(stdOutTask, stdErrTask, process.WaitForExitAsync(TestContext.Current.CancellationToken));
-            return (process.ExitCode, stdOutTask.Result + stdErrTask.Result);
+            return (process.ExitCode, await stdOutTask + await stdErrTask);
         }
     }
 }

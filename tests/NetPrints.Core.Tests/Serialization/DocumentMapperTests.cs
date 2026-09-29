@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
@@ -116,12 +117,16 @@ namespace NetPrints.Tests.Serialization
             Assert.Equal(["n9", NodeId(0)], roundTripped.ClassGraph.Nodes.Select(n => n.Id));
             var preservedNode = Assert.IsType<UnknownNodeDocument>(roundTripped.ClassGraph.Nodes[0]);
             Assert.Equal("test.ext/widget", preservedNode.Kind);
-            ConnectionDocument preservedConnection = Assert.Single(roundTripped.ClassGraph.Connections!);
+            IReadOnlyList<ConnectionDocument> connections = roundTripped.ClassGraph.Connections
+                ?? throw new InvalidOperationException("The round-tripped graph has no connections.");
+            ConnectionDocument preservedConnection = Assert.Single(connections);
             Assert.Equal("n9/out.type.Whatever", preservedConnection.From);
             Assert.Equal($"{NodeId(0)}/in.type.BaseType", preservedConnection.To);
 
             // Layout: both positions survive, including the preserved node's.
-            SortedDictionary<string, int[]> roundTrippedLayout = Assert.Single(roundTripped.Layout!).Value;
+            SortedDictionary<string, SortedDictionary<string, int[]>> roundTrippedLayoutByGraph = roundTripped.Layout
+                ?? throw new InvalidOperationException("The round-tripped class has no layout.");
+            SortedDictionary<string, int[]> roundTrippedLayout = Assert.Single(roundTrippedLayoutByGraph).Value;
             Assert.Equal(new[] { 300, 400 }, roundTrippedLayout["n9"]);
             Assert.Equal(new[] { 10, 20 }, roundTrippedLayout[NodeId(0)]);
         }
@@ -247,8 +252,8 @@ namespace NetPrints.Tests.Serialization
             ClassGraph cls = mapper.FromDocument(classDocument, TestProjects.Create("P", "P"), issues, new DocumentId("C.netpc.json"));
 
             MethodGraph method = cls.Methods.Single();
-            Node n0 = method.FindNode(NodeId(0))!;
-            Node n1 = method.FindNode(NodeId(1))!;
+            Node n0 = method.FindNode(NodeId(0)) ?? throw new InvalidOperationException($"Node {NodeId(0)} not found.");
+            Node n1 = method.FindNode(NodeId(1)) ?? throw new InvalidOperationException($"Node {NodeId(1)} not found.");
             Node literalNode = method.Nodes.OfType<LiteralNode>().Single();
 
             Assert.Equal(100, n0.PositionX);
@@ -347,8 +352,12 @@ namespace NetPrints.Tests.Serialization
             cls.Methods.Move(1, 0);
             ClassDocument after = mapper.ToDocument(cls);
 
-            Assert.Equal(before.Layout![methodA.Id], after.Layout![methodA.Id]);
-            Assert.Equal(before.Layout![methodB.Id], after.Layout![methodB.Id]);
+            SortedDictionary<string, SortedDictionary<string, int[]>> beforeLayout = before.Layout
+                ?? throw new InvalidOperationException("'before' has no layout.");
+            SortedDictionary<string, SortedDictionary<string, int[]>> afterLayout = after.Layout
+                ?? throw new InvalidOperationException("'after' has no layout.");
+            Assert.Equal(beforeLayout[methodA.Id], afterLayout[methodA.Id]);
+            Assert.Equal(beforeLayout[methodB.Id], afterLayout[methodB.Id]);
         }
 
         // DF-T25: a node whose Name equals its DefaultName omits `name` and reads back unchanged; a
@@ -366,7 +375,9 @@ namespace NetPrints.Tests.Serialization
             DocumentMapper mapper = NewMapper();
             ClassDocument document = mapper.ToDocument(cls);
 
-            IReadOnlyList<NodeDocument> nodeDocuments = document.Methods!.Single().Graph.Nodes;
+            IReadOnlyList<MethodDocument> methods = document.Methods
+                ?? throw new InvalidOperationException("The document has no methods.");
+            IReadOnlyList<NodeDocument> nodeDocuments = methods.Single().Graph.Nodes;
             NodeDocument defaultDoc = nodeDocuments.Single(n => n.Id == defaultNamed.Id);
             NodeDocument renamedDoc = nodeDocuments.Single(n => n.Id == renamed.Id);
 

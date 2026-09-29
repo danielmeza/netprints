@@ -43,7 +43,8 @@ public class CodeViewTests
         NetPrints.Editor.CodeView.CodeView codeView = FindCodeView(session);
         Assert.True(codeView.CodeEditor.ShowLineNumbers);
         Assert.False(codeView.CodeEditor.WordWrap);
-        Assert.NotEmpty(codeView.ViewModel!.Foldings); // at least the class and the Main method
+        var viewModel = codeView.ViewModel ?? throw new InvalidOperationException("The code view has no view model.");
+        Assert.NotEmpty(viewModel.Foldings); // at least the class and the Main method
 
         // ED-T01's other half (highlighted tokens) is verified visually: reviewed on regeneration.
         Store.Match("class-inspector-code-view", await page.InspectorColumn.ScreenshotAsync(Token));
@@ -60,7 +61,7 @@ public class CodeViewTests
         await page.ClassInspector.CodeView.WaitUntilAsync(e => (e.Text ?? "").Contains("WriteLine", StringComparison.Ordinal), "generated code", Token);
 
         NetPrints.Editor.CodeView.CodeView codeView = FindCodeView(session);
-        string code = codeView.ViewModel!.Code;
+        string code = (codeView.ViewModel ?? throw new InvalidOperationException("The code view has no view model.")).Code;
         // "WriteLine(", not "WriteLine": the generated code also has a "// Console.WriteLine" comment above the call.
         int offset = code.IndexOf("WriteLine(", StringComparison.Ordinal) + 2;
 
@@ -99,15 +100,16 @@ public class CodeViewTests
 
         await page.ClassButton.ClickAsync(Token);
         await page.ClassInspector.WaitVisibleAsync(Token);
-        session.App.Composition.Context.CodeAnalysis.RequestAnalysis(vm.Project!);
+        session.App.Composition.Context.CodeAnalysis.RequestAnalysis(vm.Project ?? throw new InvalidOperationException("No project is open."));
 
         NetPrints.Editor.CodeView.CodeView codeView = FindCodeView(session);
-        await UiWait.UntilAsync(session.Driver, () => Task.FromResult(codeView.ViewModel!.Diagnostics.Any(d => d.Id == "CS1503")),
+        var viewModel = codeView.ViewModel ?? throw new InvalidOperationException("The code view has no view model.");
+        await UiWait.UntilAsync(session.Driver, () => Task.FromResult(viewModel.Diagnostics.Any(d => d.Id == "CS1503")),
             "the CS1503 diagnostic to reach the code view", Token, TimeSpan.FromSeconds(30));
 
-        CodeDiagnostic diagnostic = codeView.ViewModel!.Diagnostics.First(d => d.Id == "CS1503");
-        LinePositionSpan span = diagnostic.Span!.Value;
-        int offset = SourceText.From(codeView.ViewModel!.Code).Lines.GetPosition(span.Start);
+        CodeDiagnostic diagnostic = viewModel.Diagnostics.First(d => d.Id == "CS1503");
+        LinePositionSpan span = diagnostic.Span ?? throw new InvalidOperationException("The CS1503 diagnostic has no Span.");
+        int offset = SourceText.From(viewModel.Code).Lines.GetPosition(span.Start);
 
         await codeView.ShowQuickInfoAsync(offset, Token);
 
@@ -139,13 +141,13 @@ public class CodeViewTests
         GraphUtil.ConnectDataPins(badArgument.ValuePin, callNode.ArgumentPins[0]);
         vm.Class.Methods.Add(method);
 
-        session.App.Composition.Context.CodeAnalysis.RequestAnalysis(vm.Project!);
+        session.App.Composition.Context.CodeAnalysis.RequestAnalysis(vm.Project ?? throw new InvalidOperationException("No project is open."));
         await page.ErrorRow("CS1503").WaitVisibleAsync(Token, TimeSpan.FromSeconds(30));
 
         await page.ErrorRow("CS1503").DoubleClickAsync(Token);
 
         await UiWait.UntilAsync(session.Driver, () => Task.FromResult(vm.OpenedGraph?.Graph == method), "the method with the error to open", Token);
-        Assert.Contains(vm.OpenedGraph!.SelectedNodes, n => n.Node == callNode);
+        Assert.Contains((vm.OpenedGraph ?? throw new InvalidOperationException("No graph is open.")).SelectedNodes, n => n.Node == callNode);
 
         // The viewport recentres on the revealed node (FR-034): still (0, 0), the reset every newly
         // opened graph starts at, would mean RevealNode's centering never ran.

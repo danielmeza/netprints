@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Core;
 using NetPrints.Editor.Hosting;
@@ -14,14 +15,24 @@ public sealed class Startup
     public void ConfigureServices(IServiceCollection services)
     {
         // Loading the runtime assembly set takes seconds, so one loaded host is shared by all tests.
+        // Its own reload is async; the README's "Initializing data on startup" says to load an async
+        // singleton through an IHostedService, not a blocking GetAwaiter().GetResult() in the factory.
         services.AddSingleton<IReflectionHost>(_ =>
-        {
-            var host = new ReflectionHost(new InlineDispatcher(), TestExtensions.CreateBuiltIn(), NullLogger<ReflectionHost>.Instance);
-            var project = Project.FromSnapshot(TestSnapshots.WithRuntimeAssemblies("Shared", "Shared"));
-            host.ReloadAsync(project).GetAwaiter().GetResult();
-            return host;
-        });
+            new ReflectionHost(new InlineDispatcher(), TestExtensions.CreateBuiltIn(), NullLogger<ReflectionHost>.Instance));
+        services.AddHostedService<ReflectionHostWarmup>();
 
         services.AddTransient<TestEditor>();
+    }
+
+    /// <summary>Loads the shared <see cref="IReflectionHost"/> once, before any test runs.</summary>
+    private sealed class ReflectionHostWarmup(IReflectionHost host) : IHostedService
+    {
+        public Task StartAsync(CancellationToken cancellationToken)
+        {
+            var project = Project.FromSnapshot(TestSnapshots.WithRuntimeAssemblies("Shared", "Shared"));
+            return host.ReloadAsync(project, cancellationToken);
+        }
+
+        public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }
