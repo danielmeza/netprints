@@ -57,47 +57,85 @@ jobs:
       - name: Format check
         run: dotnet format NetPrints.slnx --verify-no-changes --no-restore
 
-      # Core, reflection, view-model and headless Avalonia UI tests (no display server needed).
-      # The desktop E2E tests are skipped here (NETPRINTS_E2E unset), which is a "zero tests ran"
-      # exit code (8) only for that project; ignoring it here (and only here, not in the e2e job
-      # below) is what makes the skip expected instead of a silent hole in that job's coverage.
-      # --coverage runs every test module under Microsoft.Testing.Extensions.CodeCoverage
-      # (referenced by every project under tests/, via tests/Directory.Build.props), with
+      # Core and reflection tests (no display server needed). --coverage runs this module under
+      # Microsoft.Testing.Extensions.CodeCoverage (referenced via tests/Directory.Build.props), with
       # tests/CodeCoverage.config's static-only instrumentation: the default dynamic mode crashed
       # Core.Tests with an AccessViolationException whenever a test's child `dotnet` process loaded
       # a NetPrints assembly the host was running (docs/adr/0008-static-only-code-coverage.md).
-      # --max-parallel-test-modules 1 (batch D4): `dotnet test --solution` otherwise runs all 4 test
-      # projects' processes at once, oversubscribing this runner's 4 vCPUs (D3 already found the same
-      # class of issue in the E2E job). That starved MainEditorVMTests's reflection reload and the
-      # HelloWorld open-performance test of CPU (CI runs 36415354694, 36381532778). One module at a
-      # time removes the contention instead of raising any test's timeout or budget.
-      - name: Test
+      # No --ignore-exit-code here: a "zero tests ran" exit (8) is a real failure for this module.
+      - name: Test (Core)
+        run: >
+          dotnet test --project tests/NetPrints.Core.Tests -c Release --no-build
+          --report-xunit-trx --results-directory TestResults
+          -- --coverage --coverage-output-format cobertura
+          --coverage-settings ${{ github.workspace }}/tests/CodeCoverage.config
+
+      # View-model tests (no display server needed). Same coverage setup and zero-tests handling as
+      # Core above.
+      - name: Test (Editor)
+        run: >
+          dotnet test --project tests/NetPrints.Editor.Tests -c Release --no-build
+          --report-xunit-trx --results-directory TestResults
+          -- --coverage --coverage-output-format cobertura
+          --coverage-settings ${{ github.workspace }}/tests/CodeCoverage.config
+
+      # Headless Avalonia UI tests (no display server needed). Snapshot actual/diff images, flow
+      # screenshots and per-test diagnostics go under NETPRINTS_UI_ARTIFACTS. Also run without
+      # --ignore-exit-code: an Avalonia.Headless.XUnit version mismatch that breaks discovery here
+      # (Directory.Packages.props / dependabot.yml both call out this risk) must fail the job, not
+      # go green with the whole headless UI suite silently gone.
+      - name: Test (Editor UI, headless)
         env:
           NETPRINTS_UI_ARTIFACTS: ${{ github.workspace }}/TestResults/ui
         run: >
-          dotnet test --solution NetPrints.slnx -c Release --no-build
-          --max-parallel-test-modules 1
+          dotnet test --project tests/NetPrints.Editor.UITests -c Release --no-build
+          --report-xunit-trx --results-directory TestResults
+          -- --coverage --coverage-output-format cobertura
+          --coverage-settings ${{ github.workspace }}/tests/CodeCoverage.config
+
+      # The desktop E2E project is built as part of the solution but only actually exercised in the
+      # `e2e` job below (it needs Xvfb and NETPRINTS_E2E=1). With NETPRINTS_E2E unset it discovers
+      # zero tests here, which is exit code 8 ("zero tests ran"). --ignore-exit-code 8 is scoped to
+      # this project's own step, so it no longer masks a real zero-tests regression in Core.Tests,
+      # Editor.Tests or Editor.UITests above (previously all four modules ran under one
+      # `dotnet test --solution` invocation and shared a single --ignore-exit-code 8, so a discovery
+      # break in any of them would have gone unnoticed).
+      - name: Test (Desktop E2E, zero tests expected here)
+        run: >
+          dotnet test --project tests/NetPrints.Desktop.E2ETests -c Release --no-build
           --report-xunit-trx --results-directory TestResults
           -- --ignore-exit-code 8 --coverage --coverage-output-format cobertura
           --coverage-settings ${{ github.workspace }}/tests/CodeCoverage.config
 
-      # The CLI returns exit code 1 for --version until the P2 redesign and prints it to stderr,
-      # so only the combined output is checked.
+      # Since 6dd89f2 the CLI's exit code follows its documented contract (0 success, 1 build
+      # failure/not found, 2 bad arguments, 3 no SDK; --run propagates the child's own exit code).
+      # `--version`/`--help` go through CommandLineParser's "not parsed" path, which this CLI maps to
+      # the bad-arguments code (2) rather than 0 until the P2 redesign (spec 001, "Out of scope");
+      # assert that exact code instead of swallowing it with `|| true`.
       - name: CLI smoke
         run: |
-          output=$(dotnet run --project src/NetPrints.Cli -c Release --no-build -- --version 2>&1 || true)
+          set +e
+          output=$(dotnet run --project src/NetPrints.Cli -c Release --no-build -- --version 2>&1)
+          rc=$?
+          set -e
           echo "$output"
           echo "$output" | grep -q "NetPrints.Cli"
+          [ "$rc" -eq 2 ]
 
       # The sample imports the generator built above from bin/$(Configuration); Configuration makes the
-      # CLI's own `dotnet build`/`dotnet run` of it use Release like the solution build.
+      # CLI's own `dotnet build`/`dotnet run` of it use Release like the solution build. Compile + run
+      # succeeds end-to-end, so the CLI (propagating HelloWorld's own exit code via --run) must exit 0.
       - name: CLI sample compile and run
         env:
           Configuration: Release
         run: |
-          output=$(dotnet run --project src/NetPrints.Cli -c Release --no-build -- -p samples/HelloWorld/HelloWorld.csproj -r 2>&1 || true)
+          set +e
+          output=$(dotnet run --project src/NetPrints.Cli -c Release --no-build -- -p samples/HelloWorld/HelloWorld.csproj -r 2>&1)
+          rc=$?
+          set -e
           echo "$output"
           echo "$output" | grep -q "Hello, World!"
+          [ "$rc" -eq 0 ]
 
       - name: Upload test results
         if: always()
@@ -202,12 +240,22 @@ jobs:
           key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', 'Directory.Build.props', 'src/Directory.Build.props', 'tests/Directory.Build.props', 'global.json', '**/*.csproj') }}
           restore-keys: nuget-${{ runner.os }}-
 
+      # `^...(-alpha\.0\.[0-9]+)?$` only matched the very first prerelease shape MinVer produces
+      # (no tags yet, or straight past a stable release). Once any prerelease tag exists (v0.2.0-rc.1,
+      # which release.yml's `prerelease: contains(github.ref_name,'-')` treats as an intended path),
+      # MinVer versions later commits as e.g. `0.2.0-rc.1.<height>` and this step would fail on every
+      # push/PR until a stable tag is cut. Assert valid SemVer 2.0 (with optional build metadata) and
+      # reject the literal `0.0.0` default instead, which only shows up when MinVer can't compute a
+      # height at all (for example a too-shallow clone).
       - name: MinVer version of an untagged commit
         run: |
           dotnet restore src/NetPrints.Core
           ver=$(dotnet msbuild src/NetPrints.Core/NetPrints.Core.csproj -t:MinVer -getProperty:MinVerVersion -p:Configuration=Release)
           echo "MinVer: $ver"
-          [[ "$ver" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-alpha\.0\.[0-9]+)?$ ]]
+          if [ "$ver" = "0.0.0" ]; then
+            echo "::error::MinVer computed the literal default 0.0.0 (no git height available?)"; exit 1
+          fi
+          [[ "$ver" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]
 
       - name: Pack into local-packages
         id: pack

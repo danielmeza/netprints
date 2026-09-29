@@ -41,6 +41,7 @@ jobs:
     # Only from master, and only once the owner enabled Pages (release contract §11, step 3).
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master' && vars.PUBLISH_DOCS == 'true'
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
       pages: write
       id-token: write

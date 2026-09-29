@@ -57,8 +57,11 @@ dotnet test --solution NetPrints.slnx -c Release --no-build -- --ignore-exit-cod
 dotnet format NetPrints.slnx --verify-no-changes
 ```
 
-`--ignore-exit-code 8` matches CI: with `NETPRINTS_E2E` unset, the desktop E2E project runs zero
-tests and would otherwise exit non-zero on an otherwise-green tree.
+`--ignore-exit-code 8` here only suppresses the desktop E2E project's own "zero tests" exit: with
+`NETPRINTS_E2E` unset it runs zero tests and would otherwise exit non-zero on an otherwise-green
+tree. CI doesn't apply this flag solution-wide — it runs the desktop E2E project as its own step
+with the flag, and every other test project without it, so a real zero-tests regression elsewhere
+(for example, a headless-UI-test discovery break) still fails the job.
 
 `dotnet format` fixes itself: run `dotnet format NetPrints.slnx` (no `--verify-no-changes`) to
 apply whatever it would otherwise flag in CI.

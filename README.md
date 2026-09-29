@@ -84,8 +84,10 @@ and extension points, a catalog/CLI redesign, and editor usability are the phase
 
 Building from source needs the [.NET 10 SDK](https://dotnet.microsoft.com/download) (10.0.100 or
 later — `global.json` rolls forward to newer feature bands). Build and test (no display server
-needed; `--ignore-exit-code 8` is what CI passes too, since the desktop E2E project runs zero tests
-with `NETPRINTS_E2E` unset):
+needed; `--ignore-exit-code 8` only suppresses the desktop E2E project's "zero tests" exit, since it
+runs zero tests with `NETPRINTS_E2E` unset. CI doesn't apply this flag to the whole solution: it
+runs the desktop E2E project as its own step with the flag, and every other test project without it,
+so a real zero-tests regression elsewhere still fails the job):
 
 ```bash
 dotnet build NetPrints.slnx -c Release
