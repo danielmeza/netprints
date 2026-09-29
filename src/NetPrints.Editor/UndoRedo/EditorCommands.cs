@@ -199,25 +199,51 @@ public static class EditorCommands
 
     /// <summary>
     /// Retypes a local variable (US5) and replaces any of its existing getter/setter nodes in
-    /// <paramref name="graph"/> with a fresh node of the new type (a type change alters the node's pin
-    /// shape, unlike a rename): position and execution connections are preserved, matching
-    /// <see cref="ModelOperations.ChangeOverload(Node, object)"/>'s existing behavior for overload
-    /// changes; data connections are not (the old pin's type no longer matches). Undo reverses both.
+    /// <paramref name="graph"/> with a node of the new type (a type change alters the node's pin
+    /// shape, unlike a rename): position and execution connections are preserved; data connections are
+    /// not (the old pin's type no longer matches). Like <see cref="RemoveLocalVariable"/>, the original
+    /// nodes are captured with <see cref="CaptureAndDisconnect"/> so undo restores the exact same
+    /// instances and every connection, and the replacement nodes are built once and reused, so redo
+    /// re-applies the same swap rather than minting new node ids each cycle. Undo reverses both.
     /// </summary>
     public static IUndoableCommand RetypeLocalVariable(ExecutionGraph graph, LocalVariable local, TypeSpecifier newType)
     {
         TypeSpecifier? oldType = null;
+        List<LocalVariableNodeSwap>? swaps = null;
+
         return new DelegateUndoableCommand("Retype local variable",
             () =>
             {
                 oldType = local.Type;
                 local.Type = newType;
-                ReplaceLocalVariableNodes(graph, local);
+
+                if (swaps is null)
+                {
+                    swaps = BuildLocalVariableNodeSwaps(graph, local);
+                }
+                else
+                {
+                    // Redo: undo just restored the original nodes via RestoreAndReconnect, so swap the
+                    // same replacement instances back in rather than building fresh ones (stable ids).
+                    foreach (var swap in swaps)
+                    {
+                        GraphUtil.DisconnectNodePins(swap.Original.Node);
+                        graph.Nodes.Remove(swap.Original.Node);
+                        graph.Nodes.Add(swap.Replacement);
+                        ConnectExecOnly(swap.Original, swap.Replacement);
+                    }
+                }
             },
             () =>
             {
                 local.Type = oldType ?? throw new InvalidOperationException(NoDoActionMessage);
-                ReplaceLocalVariableNodes(graph, local);
+
+                foreach (var swap in swaps ?? throw new InvalidOperationException(NoDoActionMessage))
+                {
+                    GraphUtil.DisconnectNodePins(swap.Replacement);
+                    graph.Nodes.Remove(swap.Replacement);
+                    RestoreAndReconnect(swap.Original);
+                }
             });
     }
 
@@ -261,12 +287,28 @@ public static class EditorCommands
         }
     }
 
-    /// <summary>Replaces every getter/setter node of <paramref name="local"/> whose type is now stale with a fresh one built from its current specifier (a retype, different pin shape).</summary>
-    private static void ReplaceLocalVariableNodes(ExecutionGraph graph, LocalVariable local)
+    /// <summary>An original getter/setter node, captured with <see cref="CaptureAndDisconnect"/>, paired with the replacement node built for it by a retype (see <see cref="RetypeLocalVariable"/>).</summary>
+    private sealed class LocalVariableNodeSwap
+    {
+        public required NodeConnectionSnapshot Original { get; init; }
+        public required Node Replacement { get; init; }
+    }
+
+    /// <summary>
+    /// Captures every getter/setter node of <paramref name="local"/> whose type is now stale (with
+    /// <see cref="CaptureAndDisconnect"/>, so the originals can later be restored exactly) and builds a
+    /// fresh replacement node of the current specifier for each, at the same position and with the same
+    /// execution connections (not data connections: the old pin's type no longer matches).
+    /// </summary>
+    private static List<LocalVariableNodeSwap> BuildLocalVariableNodeSwaps(ExecutionGraph graph, LocalVariable local)
     {
         var specifier = local.ToSpecifier();
+        var swaps = new List<LocalVariableNodeSwap>();
+
         foreach (var node in FindLocalVariableNodes(graph, local.Name).Where(n => n.Variable.Type != specifier.Type))
         {
+            var original = CaptureAndDisconnect(node);
+
             Node replacement = node switch
             {
                 VariableGetterNode => new VariableGetterNode(graph, specifier),
@@ -277,20 +319,29 @@ public static class EditorCommands
             replacement.PositionX = node.PositionX;
             replacement.PositionY = node.PositionY;
 
-            NodeOutputExecPin[] incoming = node.InputExecPins.Count > 0 ? node.InputExecPins[0].IncomingPins.ToArray() : [];
-            NodeInputExecPin? outgoing = node.OutputExecPins.Count > 0 ? node.OutputExecPins[0].OutgoingPin : null;
+            ConnectExecOnly(original, replacement);
+            swaps.Add(new LocalVariableNodeSwap { Original = original, Replacement = replacement });
+        }
 
-            GraphUtil.DisconnectNodePins(node);
-            graph.Nodes.Remove(node); // replacement already added itself to graph.Nodes on construction (Node's base constructor)
+        return swaps;
+    }
 
-            foreach (var from in incoming)
+    /// <summary>Reconnects <paramref name="replacement"/>'s execution pins from <paramref name="original"/>'s captured connections (its data connections are not restored: the old pin's type no longer matches the replacement's).</summary>
+    private static void ConnectExecOnly(NodeConnectionSnapshot original, Node replacement)
+    {
+        for (int i = 0; i < original.InputExecIncoming.Count && i < replacement.InputExecPins.Count; i++)
+        {
+            foreach (var from in original.InputExecIncoming[i])
             {
-                GraphUtil.ConnectExecPins(from, replacement.InputExecPins[0]);
+                GraphUtil.ConnectExecPins(from, replacement.InputExecPins[i]);
             }
+        }
 
-            if (outgoing is not null)
+        for (int i = 0; i < original.OutputExecOutgoing.Count && i < replacement.OutputExecPins.Count; i++)
+        {
+            if (original.OutputExecOutgoing[i] is { } to)
             {
-                GraphUtil.ConnectExecPins(replacement.OutputExecPins[0], outgoing);
+                GraphUtil.ConnectExecPins(replacement.OutputExecPins[i], to);
             }
         }
     }

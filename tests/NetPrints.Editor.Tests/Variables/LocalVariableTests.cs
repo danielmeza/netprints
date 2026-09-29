@@ -104,6 +104,8 @@ public class LocalVariableTests : IDisposable
         setter.PositionY = 24;
         GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, setter.InputExecPins[0]);
         GraphUtil.ConnectExecPins(setter.OutputExecPins[0], method.MainReturnNode.ReturnPin);
+        var literal = new LiteralNode(method, TypeSpecifier.FromType<object>());
+        GraphUtil.ConnectDataPins(literal.ValuePin, setter.NewValuePin);
 
         editor.Dialogs.TypeAnswer = TypeSpecifier.FromType<int>();
         await local.RetypeCommand.ExecuteAsync(null);
@@ -115,11 +117,91 @@ public class LocalVariableTests : IDisposable
         Assert.Equal(24, replacement.PositionY);
         Assert.Same(replacement.InputExecPins[0], method.EntryNode.InitialExecutionPin.OutgoingPin);
         Assert.Same(method.MainReturnNode.ReturnPin, replacement.OutputExecPins[0].OutgoingPin);
+        Assert.Null(replacement.NewValuePin.IncomingPin); // data connections are not carried to the new-type node
 
         vm.UndoCommand.Execute(null);
         var restored = method.Nodes.OfType<VariableSetterNode>().Single();
+        Assert.Same(setter, restored); // R2-04: undo restores the exact original instance, not a rebuilt one
         Assert.Equal(TypeSpecifier.FromType<object>(), restored.Variable.Type);
         Assert.Same(restored.InputExecPins[0], method.EntryNode.InitialExecutionPin.OutgoingPin);
+        Assert.Same(literal.ValuePin, restored.NewValuePin.IncomingPin); // R2-04: the data wire is back too
+    }
+
+    [Fact]
+    public async Task RetypeLocalVariableRestoresDataConnectionsAndIdsAcrossUndoRedoCycles()
+    {
+        var local = CreateLocal();
+        var position = new GraphPoint(100, 100);
+
+        // A getter wired into a call.
+        graph.GetSetChooser.Open(local.Specifier, position);
+        graph.GetSetChooser.GetCommand.Execute(null);
+        var getter = method.Nodes.OfType<VariableGetterNode>().Single();
+        getter.PositionX = 10;
+        getter.PositionY = 20;
+        var sink = new MethodSpecifier("Sink", [new MethodParameter("value", TypeSpecifier.FromType<object>(), MethodParameterPassType.Default, false, null)],
+            [], MethodModifiers.Static, MemberVisibility.Public, TypeSpecifier.FromType<object>(), []);
+        var call = new CallMethodNode(method, sink);
+        GraphUtil.ConnectDataPins(getter.ValuePin, call.InputDataPins[0]);
+
+        // A setter wired from a literal, on an exec chain.
+        graph.GetSetChooser.Open(local.Specifier, position);
+        graph.GetSetChooser.SetCommand.Execute(null);
+        var setter = method.Nodes.OfType<VariableSetterNode>().Single();
+        setter.PositionX = 42;
+        setter.PositionY = 24;
+        var literal = new LiteralNode(method, TypeSpecifier.FromType<object>());
+        GraphUtil.ConnectDataPins(literal.ValuePin, setter.NewValuePin);
+        GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, setter.InputExecPins[0]);
+        GraphUtil.ConnectExecPins(setter.OutputExecPins[0], method.MainReturnNode.ReturnPin);
+
+        string getterId = getter.Id;
+        string setterId = setter.Id;
+
+        editor.Dialogs.TypeAnswer = TypeSpecifier.FromType<int>();
+        await local.RetypeCommand.ExecuteAsync(null);
+
+        var replacementGetter = method.Nodes.OfType<VariableGetterNode>().Single();
+        var replacementSetter = method.Nodes.OfType<VariableSetterNode>().Single();
+        Assert.NotSame(getter, replacementGetter);
+        Assert.NotSame(setter, replacementSetter);
+        string replacementGetterId = replacementGetter.Id;
+        string replacementSetterId = replacementSetter.Id;
+
+        for (int cycle = 0; cycle < 3; cycle++)
+        {
+            vm.UndoCommand.Execute(null);
+
+            var restoredGetter = method.Nodes.OfType<VariableGetterNode>().Single();
+            var restoredSetter = method.Nodes.OfType<VariableSetterNode>().Single();
+            Assert.Same(getter, restoredGetter); // same instance every cycle, not a rebuilt one
+            Assert.Same(setter, restoredSetter);
+            Assert.Equal(getterId, restoredGetter.Id); // ids do not change across undo/redo cycles
+            Assert.Equal(setterId, restoredSetter.Id);
+            Assert.Equal(TypeSpecifier.FromType<object>(), restoredGetter.Variable.Type);
+            Assert.Equal(10, restoredGetter.PositionX);
+            Assert.Equal(20, restoredGetter.PositionY);
+            Assert.Equal(42, restoredSetter.PositionX);
+            Assert.Equal(24, restoredSetter.PositionY);
+            Assert.Same(call.InputDataPins[0], restoredGetter.ValuePin.OutgoingPins.Single()); // getter's data wire restored
+            Assert.Same(literal.ValuePin, restoredSetter.NewValuePin.IncomingPin); // setter's data wire restored
+            Assert.Same(restoredSetter.InputExecPins[0], method.EntryNode.InitialExecutionPin.OutgoingPin);
+            Assert.Same(method.MainReturnNode.ReturnPin, restoredSetter.OutputExecPins[0].OutgoingPin);
+
+            vm.RedoCommand.Execute(null);
+
+            var redoneGetter = method.Nodes.OfType<VariableGetterNode>().Single();
+            var redoneSetter = method.Nodes.OfType<VariableSetterNode>().Single();
+            Assert.Same(replacementGetter, redoneGetter); // the same replacement instance every redo
+            Assert.Same(replacementSetter, redoneSetter);
+            Assert.Equal(replacementGetterId, redoneGetter.Id); // ids stay the same, not minted fresh each redo
+            Assert.Equal(replacementSetterId, redoneSetter.Id);
+            Assert.Equal(TypeSpecifier.FromType<int>(), redoneGetter.Variable.Type);
+            Assert.Equal(10, redoneGetter.PositionX);
+            Assert.Equal(20, redoneGetter.PositionY);
+            Assert.Same(redoneSetter.InputExecPins[0], method.EntryNode.InitialExecutionPin.OutgoingPin);
+            Assert.Same(method.MainReturnNode.ReturnPin, redoneSetter.OutputExecPins[0].OutgoingPin);
+        }
     }
 
     [Fact]

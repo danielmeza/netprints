@@ -84,4 +84,57 @@ public class LocalVariablePanelTests
         await session.ClassEditor.PressRedoAsync(Token);
         Assert.Empty(method.LocalVariables);
     }
+
+    /// <summary>
+    /// R2-04: retyping a local through the panel's type chooser and pressing Ctrl+Z must restore the
+    /// exact getter/setter node instances and their data connections, not just the exec pins.
+    /// </summary>
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task RetypeLocalVariableUndoRestoresDataConnections()
+    {
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        var method = (MethodGraph)session.GraphVM.Graph;
+
+        await session.ClassEditor.LocalVariables.CreateAsync(Token);
+        var localVM = (session.ClassVM.VariablesPanel.MethodVariables
+            ?? throw new InvalidOperationException("No method or constructor graph is open.")).Single();
+
+        // A getter wired into a call, and a setter wired from a literal on an exec chain.
+        var specifier = localVM.Local.ToSpecifier();
+        var getter = new VariableGetterNode(method, specifier);
+        var sink = new MethodSpecifier("Sink", [new MethodParameter("value", TypeSpecifier.FromType<object>(), MethodParameterPassType.Default, false, null)],
+            [], MethodModifiers.Static, MemberVisibility.Public, TypeSpecifier.FromType<object>(), []);
+        var call = new CallMethodNode(method, sink);
+        GraphUtil.ConnectDataPins(getter.ValuePin, call.InputDataPins[0]);
+
+        var setter = new VariableSetterNode(method, specifier);
+        var literal = new LiteralNode(method, TypeSpecifier.FromType<object>());
+        GraphUtil.ConnectDataPins(literal.ValuePin, setter.NewValuePin);
+        GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, setter.InputExecPins[0]);
+        GraphUtil.ConnectExecPins(setter.OutputExecPins[0], method.MainReturnNode.ReturnPin);
+        await session.WaitForRenderedAsync(Token);
+
+        // Retype through the panel's real type chooser (H1/US5), then undo with a real Ctrl+Z.
+        session.App.Dialogs.TypeAnswer = TypeSpecifier.FromType<int>();
+        await localVM.RetypeCommand.ExecuteAsync(null);
+        await session.WaitForRenderedAsync(Token);
+        Assert.NotSame(getter, method.Nodes.OfType<VariableGetterNode>().Single());
+        Assert.NotSame(setter, method.Nodes.OfType<VariableSetterNode>().Single());
+
+        await session.ClassEditor.PressUndoAsync(Token);
+        await session.WaitForRenderedAsync(Token);
+
+        var restoredGetter = method.Nodes.OfType<VariableGetterNode>().Single();
+        var restoredSetter = method.Nodes.OfType<VariableSetterNode>().Single();
+        Assert.Same(getter, restoredGetter); // R2-04: same instance, not rebuilt
+        Assert.Same(setter, restoredSetter);
+        Assert.Same(call.InputDataPins[0], restoredGetter.ValuePin.OutgoingPins.Single()); // getter's data wire back
+        Assert.Same(literal.ValuePin, restoredSetter.NewValuePin.IncomingPin); // setter's data wire back
+        Assert.Same(restoredSetter.InputExecPins[0], method.EntryNode.InitialExecutionPin.OutgoingPin);
+        Assert.Same(method.MainReturnNode.ReturnPin, restoredSetter.OutputExecPins[0].OutgoingPin);
+
+        await session.ClassEditor.PressRedoAsync(Token);
+        await session.WaitForRenderedAsync(Token);
+        Assert.Equal(TypeSpecifier.FromType<int>(), localVM.Local.Type);
+    }
 }
