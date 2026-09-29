@@ -357,7 +357,7 @@ public sealed class FakeProjectSystem : IProjectSystem
 /// and a real <see cref="ProjectPersistence"/> (JSON graphs on the real file system). Resolved per
 /// test class from <see cref="Startup"/>; tests that need an unloaded host construct their own.
 /// </summary>
-public sealed class TestEditor : IDisposable
+public sealed class TestEditor : IAsyncDisposable
 {
     private IDisposable? persistenceBinding;
 
@@ -428,11 +428,12 @@ public sealed class TestEditor : IDisposable
 
     public EditorContext Context { get; }
 
-    /// <summary>Disposes <see cref="CodeAnalysis"/> and the persistence binding.</summary>
-    public void Dispose()
+    /// <summary>Disposes <see cref="CodeAnalysis"/>, the persistence binding and <see cref="Extensions"/>.</summary>
+    public async ValueTask DisposeAsync()
     {
         CodeAnalysis.Dispose();
         persistenceBinding?.Dispose();
+        await Extensions.DisposeAsync();
     }
 }
 

@@ -1,4 +1,5 @@
 using System.Reactive.Concurrency;
+using System.Reflection;
 using Avalonia.Controls;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Logging;
@@ -77,10 +78,12 @@ public sealed class EditorComposition : IDisposable
 internal sealed class EditorServices : IDisposable
 {
     /// <summary>
-    /// Placeholder <c>NetPrints.Sdk</c> version substituted into a new project's template
-    /// (project-system.md §4): MinVer is not wired up until sub-phase L (T109).
+    /// <c>NetPrints.Sdk</c> version substituted into a new project's template (project-system.md §4):
+    /// the editor's own <see cref="AssemblyInformationalVersionAttribute"/>, which MinVer stamps at
+    /// build time, with the <c>+&lt;sha&gt;</c> build-metadata suffix stripped (release-and-docs.md,
+    /// "Editor version").
     /// </summary>
-    private const string NetPrintsSdkVersion = "1.0.0-dev";
+    private static readonly string NetPrintsSdkVersion = EditorSdkVersion.Resolve(typeof(EditorServices).Assembly);
 
     private readonly string? hostChannelError;
     private readonly PersistenceBinding persistenceBinding;
@@ -186,4 +189,25 @@ internal sealed class EditorServices : IDisposable
         persistenceBinding.Dispose();
         codeAnalysis.Dispose();
     }
+}
+
+/// <summary>
+/// Derives the editor's own version for <see cref="ProjectSystemOptions.NetPrintsSdkVersion"/>
+/// (release-and-docs.md, "Editor version").
+/// </summary>
+internal static class EditorSdkVersion
+{
+    /// <summary>Used when the assembly carries no informational version, e.g. run without MinVer having stamped one.</summary>
+    internal const string Fallback = "0.1.0-dev";
+
+    /// <summary>The editor assembly's informational version, stripped of its <c>+&lt;sha&gt;</c> suffix, or <see cref="Fallback"/>.</summary>
+    internal static string Resolve(Assembly assembly)
+    {
+        string? informational = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+        return informational is null ? Fallback : StripBuildMetadata(informational);
+    }
+
+    /// <summary>Strips MinVer's <c>+&lt;sha&gt;</c> build-metadata suffix, if present.</summary>
+    internal static string StripBuildMetadata(string version) =>
+        version.Contains('+', StringComparison.Ordinal) ? version[..version.IndexOf('+', StringComparison.Ordinal)] : version;
 }

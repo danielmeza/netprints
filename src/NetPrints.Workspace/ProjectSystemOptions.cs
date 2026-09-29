@@ -12,6 +12,6 @@ namespace NetPrints.Workspace;
 /// back, read with <see cref="ProjectSnapshot.GetProperty"/>.</param>
 /// <param name="NetPrintsSdkVersion">The <c>NetPrints.Sdk</c> package version substituted for a new
 /// project's <c>{NetPrintsSdkVersion}</c> template placeholder (<see cref="IProjectSystem.CreateAsync"/>).
-/// Not sourced from MinVer yet — that isn't wired up until sub-phase L (T109), so a caller supplies the
-/// version explicitly until then, the same documented gap as sub-phase D's pack-and-consume tests.</param>
+/// The caller supplies this explicitly; the editor derives its own from its MinVer-stamped assembly
+/// version (release-and-docs.md, "Editor version").</param>
 public sealed record ProjectSystemOptions(IReadOnlyList<string> ExtraProperties, string NetPrintsSdkVersion);
