@@ -10,12 +10,22 @@ namespace NetPrints.Desktop.E2ETests.Hosting;
 /// <see cref="RentAsync"/> in the renting test's own working directory (a pre-started spare was
 /// tried and reverted — GTK working-directory constraint, see docs/adr/0006-parallel-desktop-e2e.md).
 /// No test shares a display or an editor, so none need a serial xUnit collection (owner-approved
-/// audit; see the ADR).
+/// audit; see the ADR). A worker is always returned — even when starting its editor fails, or
+/// disposing one throws — so one flaky startup fails only its own caller, not every queued test
+/// (R3-01).
 /// </summary>
 public sealed class DesktopWorkerPool : IAsyncLifetime
 {
     /// <summary>Overrides the pool size (default <c>min(ProcessorCount / 2, 4)</c>, at least 1).</summary>
     public const string WorkersVariable = "NETPRINTS_E2E_WORKERS";
+
+    /// <summary>
+    /// Bounds a <see cref="RentAsync{T}"/> queue wait: well over the ~5-minute serial baseline for
+    /// all seven scenarios, well under the CI job's 30-minute timeout, so a pool that never frees a
+    /// worker fails its own queued callers with a clear <see cref="TimeoutException"/> and a TRX,
+    /// instead of the whole job dying with neither (R3-01).
+    /// </summary>
+    private static readonly TimeSpan RentTimeout = TimeSpan.FromMinutes(10);
 
     private readonly List<Worker> workers = [];
     private readonly Channel<Worker> available = Channel.CreateUnbounded<Worker>();
@@ -44,9 +54,9 @@ public sealed class DesktopWorkerPool : IAsyncLifetime
         for (int i = 0; i < PoolSize(); i++)
         {
             var server = new XServer();
-            await server.InitializeAsync();
             var worker = new Worker(server);
-            workers.Add(worker);
+            workers.Add(worker); // added before InitializeAsync, so DisposeAsync cleans up a partial start too (R3-04)
+            await server.InitializeAsync();
             available.Writer.TryWrite(worker);
         }
     }
@@ -56,11 +66,43 @@ public sealed class DesktopWorkerPool : IAsyncLifetime
     /// <paramref name="workDirectory"/> as its working directory. Never the same editor process
     /// twice; never two editors on the same display at once.
     /// </summary>
-    public async Task<DesktopLease> RentAsync(CancellationToken cancellationToken, string workDirectory)
+    public Task<DesktopLease> RentAsync(CancellationToken cancellationToken, string workDirectory) =>
+        RentAsync(cancellationToken, async (worker, token) =>
+        {
+            var editor = await EditorProcess.StartAsync(worker.Server, workDirectory, project: null, token);
+            return new DesktopLease(this, worker, editor);
+        });
+
+    /// <summary>
+    /// Rents a worker and hands it to <paramref name="start"/>, returning the worker to the pool if
+    /// <paramref name="start"/> throws (R3-01), instead of leaking it. A test seam: a fault-injection
+    /// test can fail "starting the editor" without a real display; <see cref="RentAsync(CancellationToken, string)"/>
+    /// is the production path.
+    /// </summary>
+    internal async Task<T> RentAsync<T>(CancellationToken cancellationToken, Func<Worker, CancellationToken, Task<T>> start)
     {
-        var worker = await available.Reader.ReadAsync(cancellationToken);
-        var editor = await EditorProcess.StartAsync(worker.Server, workDirectory, project: null, cancellationToken);
-        return new DesktopLease(this, worker, editor);
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        deadline.CancelAfter(RentTimeout);
+
+        Worker worker;
+        try
+        {
+            worker = await available.Reader.ReadAsync(deadline.Token);
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            throw new TimeoutException($"No worker became available within {RentTimeout} (a leaked or exhausted pool).");
+        }
+
+        try
+        {
+            return await start(worker, cancellationToken);
+        }
+        catch
+        {
+            Return(worker);
+            throw;
+        }
     }
 
     internal void Return(Worker worker) => available.Writer.TryWrite(worker);
@@ -81,7 +123,8 @@ public sealed class DesktopWorkerPool : IAsyncLifetime
 
 /// <summary>
 /// A rented worker: a display (<see cref="Server"/>) and a fresh <see cref="Editor"/>, never used
-/// by another test. Disposing it disposes the editor and returns the worker (display) to the pool.
+/// by another test. Disposing it disposes the editor and returns the worker (display) to the pool,
+/// even if disposing the editor throws (R3-01).
 /// </summary>
 public sealed class DesktopLease : IAsyncDisposable
 {
@@ -102,7 +145,13 @@ public sealed class DesktopLease : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        await Editor.DisposeAsync();
-        pool.Return(worker);
+        try
+        {
+            await Editor.DisposeAsync();
+        }
+        finally
+        {
+            pool.Return(worker);
+        }
     }
 }

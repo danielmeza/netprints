@@ -10,6 +10,10 @@ namespace NetPrints.Desktop.E2ETests.Driving;
 /// </summary>
 public sealed class GtkFileDialogs(X11Driver driver, EditorProcess editor) : IFileDialogs
 {
+    /// <summary>How long to wait for the dialog to close on its own before sending a second
+    /// <c>Return</c> (R3-05): brief, since it only covers the completion race described below.</summary>
+    private static readonly TimeSpan SecondReturnWait = TimeSpan.FromMilliseconds(500);
+
     private Tool Tool => driver.Tool;
 
     private async Task<string> WaitForDialogAsync(string title, CancellationToken cancellationToken)
@@ -32,6 +36,26 @@ public sealed class GtkFileDialogs(X11Driver driver, EditorProcess editor) : IFi
     {
         var (code, info) = await Tool.TryRunAsync("xwininfo", cancellationToken, "-id", window);
         return code != 0 || !info.Contains("IsViewable", StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Whether the dialog closed within <see cref="SecondReturnWait"/> of the first <c>Return</c>
+    /// (R3-05): a check-then-act read of <see cref="IsClosedAsync"/> right after sending the key raced
+    /// the dialog's own unmap, so a dialog the first <c>Return</c> already submitted could still look
+    /// viewable for a few milliseconds, and the stray second <c>Return</c> that followed landed on
+    /// whatever had focus by then. Waiting first removes that race.
+    /// </summary>
+    private async Task<bool> ClosedAfterFirstReturnAsync(string window, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await UiWait.UntilAsync(driver, () => IsClosedAsync(window, cancellationToken), "the dialog to close after Return", cancellationToken, SecondReturnWait);
+            return true;
+        }
+        catch (UiWaitTimeoutException)
+        {
+            return false;
+        }
     }
 
     private async Task FocusAsync(string window, CancellationToken cancellationToken)
@@ -57,9 +81,10 @@ public sealed class GtkFileDialogs(X11Driver driver, EditorProcess editor) : IFi
         // immediate parent (e.g. a pre-warmed editor's own working directory instead of the
         // sample's), GTK's location-bar completion resolves the path asynchronously and the first
         // Return can land on that still-resolving completion instead; the second Return then submits.
-        if (folder || !await IsClosedAsync(window, cancellationToken))
+        // Targeted at the dialog window (R3-05), so it cannot land elsewhere once the dialog is gone.
+        if (folder || !await ClosedAfterFirstReturnAsync(window, cancellationToken))
         {
-            await Tool.XdotoolAsync(cancellationToken, "key", "--clearmodifiers", "Return");
+            await Tool.XdotoolAsync(cancellationToken, "key", "--window", window, "--clearmodifiers", "Return");
         }
 
         await WaitForDialogClosedAsync(title, window, cancellationToken);
@@ -81,11 +106,12 @@ public sealed class GtkFileDialogs(X11Driver driver, EditorProcess editor) : IFi
         await Tool.XdotoolAsync(cancellationToken, "type", "--clearmodifiers", "--delay", "15", "--", path);
         await Tool.XdotoolAsync(cancellationToken, "key", "--clearmodifiers", "Return");
 
-        // See ChooseAsync: a second Return, only if still open, covers the same asynchronous
-        // path-completion case for a save path that is not under the dialog's current folder.
-        if (!await IsClosedAsync(window, cancellationToken))
+        // See ChooseAsync: a second Return, only if still open after a brief wait, covers the same
+        // asynchronous path-completion case for a save path that is not under the dialog's current
+        // folder, and is targeted at the dialog window (R3-05).
+        if (!await ClosedAfterFirstReturnAsync(window, cancellationToken))
         {
-            await Tool.XdotoolAsync(cancellationToken, "key", "--clearmodifiers", "Return");
+            await Tool.XdotoolAsync(cancellationToken, "key", "--window", window, "--clearmodifiers", "Return");
         }
 
         await WaitForDialogClosedAsync(title, window, cancellationToken);

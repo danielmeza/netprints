@@ -118,6 +118,15 @@ public sealed class XServer : IAsyncLifetime
 
             if (process.HasExited || !File.Exists($"/tmp/.X11-unix/X{Display}"))
             {
+                if (!process.HasExited)
+                {
+                    // The socket never appeared but Xvfb is still running: kill it before trying the
+                    // next display, or it leaks and holds this display's lock for the machine's
+                    // uptime (R3-04).
+                    process.Kill(entireProcessTree: true);
+                    await process.WaitForExitAsync();
+                }
+
                 process.Dispose();
                 continue; // another run took the display: try the next one
             }

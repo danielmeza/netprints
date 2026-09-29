@@ -23,7 +23,9 @@ splitting the work required splitting the class.
   reused for the life of the run — a test never pays for X server startup. N defaults to
   `min(ProcessorCount / 2, 4)`, overridable with `NETPRINTS_E2E_WORKERS`. `RentAsync` hands out a
   `DesktopLease` (a worker plus a *freshly started* editor process) and returns the worker to the
-  pool when the lease is disposed.
+  pool when the lease is disposed. The worker is always returned — even when the editor fails to
+  start, or disposing one throws — so one flaky startup fails only its own caller, not every test
+  still queued behind it (R3-01; a partially started `XServer` is cleaned up the same way, R3-04).
 - **The editor is started fresh on every `RentAsync`**, not pre-started as a spare on the returned
   worker. A pre-started spare was tried and reverted: GTK's Open/Save dialog's location-bar
   completion resolves a typed absolute path against the dialog's current folder, which for a GTK
@@ -38,7 +40,11 @@ splitting the work required splitting the class.
   the editor's own working directory (any editor, spare or not, once other tests are running
   concurrently and no scenario's temp dir is a live ancestor of another's) can hit the same
   completion race even with a fresh editor; that keystroke is conditional on the dialog still being
-  open, so it costs nothing when the first `Return` already submitted.
+  open. It waits briefly for the close before checking (R3-05): reading "still open" immediately
+  after the first `Return` raced the dialog's own unmap, so a dialog that had already submitted
+  could still look viewable for a few milliseconds, and the stray second `Return` that followed
+  could land on whatever else had focus by then. The second `Return`, when sent, is also targeted at
+  the dialog window explicitly rather than whatever has focus.
 - **One sealed class per scenario.** The shared flows live in `SmokeScenarios` (already shared with
   the headless driver); `X11SmokeTestBase` implements the desktop-specific `StartAsync`/
   `CheckpointAsync` and rents its own lease, and each scenario gets its own sealed subclass with a
@@ -67,9 +73,13 @@ splitting the work required splitting the class.
   even though it never had a slow step of its own — this is what broke `DragFromLists` on every CI run
   after D2 (see Batch D3 in implementation-notes.md). Each test now owns a `CancellationTokenSource`
   linked to the test's own cancellation, and calls `CancelAfter(Timeout)` itself right after
-  `pool.RentAsync` returns; `[Fact(Timeout = ...)]` is removed. The queue wait itself is unbounded per
-  test, backstopped by the CI job's existing 30-minute `timeout-minutes` (the same net a leaked worker
-  would already need).
+  `pool.RentAsync` returns; `[Fact(Timeout = ...)]` is removed. `RentAsync` itself now bounds the
+  queue wait (10 minutes): well over the ~5-minute serial baseline for all seven scenarios, well
+  under the CI job's 30-minute `timeout-minutes`, so a pool that never frees a worker fails its own
+  queued tests with a clear `TimeoutException` and a TRX, instead of the whole job dying with
+  neither (R3-01). This bound is a backstop on top of the fix, not a substitute for it: a worker is
+  returned as soon as `RentAsync` or `DesktopLease.DisposeAsync` can manage it, so in practice a
+  queued test only ever waits for the workers ahead of it to finish.
 
 ### The serial-collection-per-shared-resource rule
 

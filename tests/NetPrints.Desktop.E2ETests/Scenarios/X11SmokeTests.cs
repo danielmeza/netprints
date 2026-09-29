@@ -79,19 +79,27 @@ public abstract class X11SmokeTestBase(DesktopWorkerPool pool) : SmokeScenarios,
         {
             try
             {
-                Directory.CreateDirectory(Artifacts);
-                (await driver.ScreenAsync(CancellationToken.None)).Save(Path.Combine(Artifacts, "zz-final.png"));
-                await File.WriteAllTextAsync(Path.Combine(Artifacts, "tree.txt"), await driver.DumpAsync(CancellationToken.None));
-            }
-            catch (Exception e) when (e is IOException or InvalidOperationException or TimeoutException)
-            {
-                // Best effort: the editor may have crashed (see its log).
-            }
+                try
+                {
+                    Directory.CreateDirectory(Artifacts);
+                    (await driver.ScreenAsync(CancellationToken.None)).Save(Path.Combine(Artifacts, "zz-final.png"));
+                    await File.WriteAllTextAsync(Path.Combine(Artifacts, "tree.txt"), await driver.DumpAsync(CancellationToken.None));
+                }
+                catch (Exception e) when (e is IOException or InvalidOperationException or TimeoutException)
+                {
+                    // Best effort: the editor may have crashed (see its log).
+                }
 
-            await File.WriteAllTextAsync(Path.Combine(Artifacts, "editor-stdout.txt"), lease.Editor.Output);
-            await File.WriteAllTextAsync(Path.Combine(Artifacts, "editor-stderr.txt"), lease.Editor.Errors);
-            await File.WriteAllTextAsync(Path.Combine(Artifacts, "xdotool.txt"), driver.Tool.Log);
-            await lease.DisposeAsync();
+                await File.WriteAllTextAsync(Path.Combine(Artifacts, "editor-stdout.txt"), lease.Editor.Output);
+                await File.WriteAllTextAsync(Path.Combine(Artifacts, "editor-stderr.txt"), lease.Editor.Errors);
+                await File.WriteAllTextAsync(Path.Combine(Artifacts, "xdotool.txt"), driver.Tool.Log);
+            }
+            finally
+            {
+                // Disposing the lease (and so returning its worker) must not depend on the artifact
+                // writes above succeeding, or an IO failure there leaks the editor and the worker (R3-01).
+                await lease.DisposeAsync();
+            }
         }
 
         try
