@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Reactive.Concurrency;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -12,6 +13,7 @@ using NetPrints.Extensibility.Hosting;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Settings;
 using NetPrints.Projects;
+using NetPrints.Reflection;
 using NetPrints.Serialization;
 using NetPrints.Serialization.Json;
 using NetPrints.Serialization.Mapping;
@@ -423,6 +425,92 @@ public sealed class TestEditor : IDisposable
 
     /// <summary>Disposes <see cref="CodeAnalysis"/>.</summary>
     public void Dispose() => CodeAnalysis.Dispose();
+}
+
+/// <summary>
+/// Wraps a real, loaded <see cref="IReflectionProvider"/>, letting a test block
+/// <see cref="GetPublicMethodOverloads"/> and <see cref="GetConstructors"/> on a gate it controls
+/// (R2-05): <see cref="ClassEditorVM"/>'s real seam for warming a graph's overload lookups before
+/// opening it, used instead of a test-only hook on the production view model itself.
+/// </summary>
+public sealed class GatedReflectionProvider(IReflectionProvider inner) : IReflectionProvider
+{
+    /// <summary>
+    /// Set by a test to hold <see cref="GetPublicMethodOverloads"/>/<see cref="GetConstructors"/> "in
+    /// flight" until completed, deterministically instead of racing real background work. Null (the
+    /// default) does not gate at all.
+    /// </summary>
+    public TaskCompletionSource? Gate { get; set; }
+
+    public bool TypeSpecifierIsSubclassOf(TypeSpecifier a, TypeSpecifier b) => inner.TypeSpecifierIsSubclassOf(a, b);
+
+    public bool HasImplicitCast(TypeSpecifier fromType, TypeSpecifier toType) => inner.HasImplicitCast(fromType, toType);
+
+    public IEnumerable<TypeSpecifier> GetNonStaticTypes() => inner.GetNonStaticTypes();
+
+    public IEnumerable<MethodSpecifier> GetOverridableMethodsForType(TypeSpecifier typeSpecifier) => inner.GetOverridableMethodsForType(typeSpecifier);
+
+    public IEnumerable<MethodSpecifier> GetPublicMethodOverloads(MethodSpecifier methodSpecifier)
+    {
+        Gate?.Task.GetAwaiter().GetResult();
+        return inner.GetPublicMethodOverloads(methodSpecifier);
+    }
+
+    public IEnumerable<ConstructorSpecifier> GetConstructors(TypeSpecifier typeSpecifier)
+    {
+        Gate?.Task.GetAwaiter().GetResult();
+        return inner.GetConstructors(typeSpecifier);
+    }
+
+    public IEnumerable<string> GetEnumNames(TypeSpecifier typeSpecifier) => inner.GetEnumNames(typeSpecifier);
+
+    public IEnumerable<MethodSpecifier> GetMethods(ReflectionProviderMethodQuery query) => inner.GetMethods(query);
+
+    public IEnumerable<VariableSpecifier> GetVariables(ReflectionProviderVariableQuery query) => inner.GetVariables(query);
+
+    public string? GetMethodDocumentation(MethodSpecifier methodSpecifier) => inner.GetMethodDocumentation(methodSpecifier);
+
+    public string? GetMethodParameterDocumentation(MethodSpecifier methodSpecifier, int parameterIndex) =>
+        inner.GetMethodParameterDocumentation(methodSpecifier, parameterIndex);
+
+    public string? GetMethodReturnDocumentation(MethodSpecifier methodSpecifier, int returnIndex) =>
+        inner.GetMethodReturnDocumentation(methodSpecifier, returnIndex);
+}
+
+/// <summary>Wraps a real, already-loaded <see cref="IReflectionHost"/>, exposing its provider through a
+/// <see cref="GatedReflectionProvider"/> a test can gate (see <see cref="GatedProvider"/>).</summary>
+public sealed class GatedReflectionHost : IReflectionHost
+{
+    private readonly IReflectionHost inner;
+
+    public GatedReflectionHost(IReflectionHost inner)
+    {
+        this.inner = inner;
+        GatedProvider = new GatedReflectionProvider(inner.Provider);
+    }
+
+    /// <summary>The gate a test sets to hold a warm-up lookup "in flight" (see <see cref="GatedReflectionProvider.Gate"/>).</summary>
+    public GatedReflectionProvider GatedProvider { get; }
+
+    public bool IsLoaded => inner.IsLoaded;
+
+    public Task Loaded => inner.Loaded;
+
+    public IReflectionProvider Provider => GatedProvider;
+
+    public ProjectSnapshot? Snapshot => inner.Snapshot;
+
+    public ReadOnlyObservableCollection<TypeSpecifier> NonStaticTypes => inner.NonStaticTypes;
+
+    public IReadOnlyList<string> LastWarnings => inner.LastWarnings;
+
+    public event EventHandler? Reloaded
+    {
+        add => inner.Reloaded += value;
+        remove => inner.Reloaded -= value;
+    }
+
+    public Task ReloadAsync(Project project, CancellationToken cancellationToken = default) => inner.ReloadAsync(project, cancellationToken);
 }
 
 /// <summary>Extension hosts for tests.</summary>

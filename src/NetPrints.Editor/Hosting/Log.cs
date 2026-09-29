@@ -78,6 +78,12 @@ internal static partial class Log
     [LoggerMessage(EventId = 1024, Level = LogLevel.Error, Message = "Shutdown cleanup failed; exiting anyway")]
     public static partial void ShutdownCleanupFailed(ILogger logger, Exception exception);
 
+    /// <summary>Logs 1025: host services finished disposing during shutdown, right before the process
+    /// exits (R2-05: replaces a bespoke stderr marker the E2E <c>ShutdownTests</c> greps for instead).</summary>
+    /// <param name="logger">Logger to write to.</param>
+    [LoggerMessage(EventId = 1025, Level = LogLevel.Information, Message = "Host services disposed")]
+    public static partial void HostServicesDisposed(ILogger logger);
+
     /// <summary>Logs 1030: a fire-and-forget task passed to <see cref="TaskExtensions.Forget(Task, ILogger)"/> faulted.</summary>
     /// <param name="logger">Logger to write to.</param>
     /// <param name="exception">The task's (unwrapped) exception.</param>

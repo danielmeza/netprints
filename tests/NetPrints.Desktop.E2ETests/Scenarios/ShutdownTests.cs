@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Globalization;
 using NetPrints.Desktop.E2ETests.Hosting;
-using NetPrints.Editor;
 
 namespace NetPrints.Desktop.E2ETests.Scenarios;
 
@@ -16,6 +15,10 @@ public sealed class ShutdownTests(DesktopWorkerPool pool)
     /// <summary>The test's own work budget, starting once it has rented a worker (batch D3; see
     /// <see cref="X11SmokeTestBase.Timeout"/>).</summary>
     private const int Timeout = 60_000;
+
+    /// <summary>The message <c>Log.HostServicesDisposed</c> (1025) logs (R2-05): replaces a bespoke
+    /// stderr marker with a real log event, on stdout via the console logger's default routing.</summary>
+    private const string HostServicesDisposedMessage = "Host services disposed";
 
     [Fact]
     public async Task ClosingTheMainWindowDisposesHostServicesExactlyOnceThenExits()
@@ -54,7 +57,7 @@ public sealed class ShutdownTests(DesktopWorkerPool pool)
 
         Assert.True(editor.HasExited, $"The editor did not exit after its main window was closed.\nStderr:\n{editor.Errors}");
         Assert.Equal(0, editor.ExitCode);
-        Assert.Equal(1, editor.Errors.Split(EditorApp.ShutdownCleanupMarker, StringSplitOptions.None).Length - 1);
+        Assert.Equal(1, editor.Output.Split(HostServicesDisposedMessage, StringSplitOptions.None).Length - 1);
 
         try
         {

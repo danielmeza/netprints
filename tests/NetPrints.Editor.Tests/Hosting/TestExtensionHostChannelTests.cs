@@ -54,9 +54,20 @@ public sealed class TestExtensionHostChannelTests : IAsyncLifetime
 
             await hostEnd.SendAsync(new HostMessage(HostMessageTypes.TypesChanged, NoPayload), TestContext.Current.CancellationToken);
             await reloaded.Task.WaitAsync(TimeSpan.FromSeconds(60), TestContext.Current.CancellationToken);
-            await Task.Delay(300, TestContext.Current.CancellationToken);
 
-            Assert.Equal(1, Volatile.Read(ref reloads));
+            // Drains instead of trusting a fixed delay (R2-22: a duplicate reload arriving at 301 ms
+            // would have passed the old check anyway): keeps polling until the count has held steady
+            // for a few checks in a row, rather than guessing a sleep long enough to catch one.
+            int seen = Volatile.Read(ref reloads);
+            for (int stableChecks = 0; stableChecks < 5;)
+            {
+                await Task.Delay(20, TestContext.Current.CancellationToken);
+                int now = Volatile.Read(ref reloads);
+                stableChecks = now == seen ? stableChecks + 1 : 0;
+                seen = now;
+            }
+
+            Assert.Equal(1, seen);
         }
         finally
         {

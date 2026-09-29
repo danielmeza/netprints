@@ -20,10 +20,6 @@ public partial class EditorApp : Application
     /// <summary>The embedded Inter font (Avalonia.Fonts.Inter), used as the default font family.</summary>
     public const string DefaultFontFamily = "avares://Avalonia.Fonts.Inter/Assets#Inter";
 
-    /// <summary>Written to stderr once the main window's close has awaited <see cref="HostServices"/>'s
-    /// cleanup, before shutdown proceeds; observed by the E2E shutdown test.</summary>
-    public const string ShutdownCleanupMarker = "[NetPrints] Host services disposed.";
-
     private static EditorHostServices? hostServices;
 
     /// <summary>
@@ -69,15 +65,16 @@ public partial class EditorApp : Application
             desktop.MainWindow = window;
             desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;
 
+            var shutdownLogger = HostServices.LoggerFactory.CreateLogger(nameof(EditorApp));
             var shutdownCoordinator = new ShutdownCoordinator(
                 async () =>
                 {
                     composition.Dispose();
                     await HostServices.DisposeAsync();
-                    await Console.Error.WriteLineAsync(ShutdownCleanupMarker);
+                    Log.HostServicesDisposed(shutdownLogger);
                 },
                 () => desktop.Shutdown(),
-                HostServices.LoggerFactory.CreateLogger(nameof(EditorApp)));
+                shutdownLogger);
             desktop.ShutdownRequested += (_, e) => shutdownCoordinator.OnShutdownRequested(e);
 
             // Automation mode (E2E tests only): settled screenshots and a read-only agent.

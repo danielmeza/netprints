@@ -14,6 +14,7 @@ public class ClassEditorVMTests : IAsyncLifetime
     private Project? projectField;
     private ClassGraph? clsField;
     private ClassEditorVM? vmField;
+    private GatedReflectionHost? reflectionField;
 
     public ClassEditorVMTests(TestEditor editor)
     {
@@ -24,12 +25,21 @@ public class ClassEditorVMTests : IAsyncLifetime
     private ClassGraph cls => clsField ?? throw new InvalidOperationException($"{nameof(InitializeAsync)} has not run yet.");
     private ClassEditorVM vm => vmField ?? throw new InvalidOperationException($"{nameof(InitializeAsync)} has not run yet.");
 
+    /// <summary>Wraps <see cref="TestEditor.Reflection"/> so a test can hold a graph's overload warm-up
+    /// "in flight" (R2-05), replacing the removed <c>ClassEditorVM.OpenGraphDelayForTests</c> hook.</summary>
+    private GatedReflectionHost reflection => reflectionField ?? throw new InvalidOperationException($"{nameof(InitializeAsync)} has not run yet.");
+
     public async ValueTask InitializeAsync()
     {
         projectField = await TestPaths.LoadHelloWorldCopyAsync(TestContext.Current.CancellationToken);
         clsField = projectField.Classes.Single();
-        vmField = new ClassEditorVM(clsField, editor.Context);
+        reflectionField = new GatedReflectionHost(editor.Reflection);
+        vmField = new ClassEditorVM(clsField, editor.Context with { Reflection = reflectionField });
     }
+
+    private static MethodSpecifier ConsoleWriteLine() =>
+        new("WriteLine", [new MethodParameter("value", TypeSpecifier.FromType<string>(), MethodParameterPassType.Default, false, null)],
+            [], MethodModifiers.Static, MemberVisibility.Public, TypeSpecifier.FromType(typeof(Console)), []);
 
     public ValueTask DisposeAsync()
     {
@@ -186,7 +196,7 @@ public class ClassEditorVMTests : IAsyncLifetime
         // Task.Run) is fast enough to finish before the test's own next statement in a Release build,
         // which would otherwise make this a flaky race against the scheduled busy-indicator callback.
         var gate = new TaskCompletionSource();
-        vm.OpenGraphDelayForTests = () => gate.Task;
+        reflection.GatedProvider.Gate = gate;
         var main = vm.Methods.Single();
 
         Task openTask = vm.OpenMethodCommand.ExecuteAsync(main);
@@ -214,7 +224,7 @@ public class ClassEditorVMTests : IAsyncLifetime
         ICommand command = vm.OpenMethodCommand;
 
         var gate = new TaskCompletionSource();
-        vm.OpenGraphDelayForTests = () => gate.Task;
+        reflection.GatedProvider.Gate = gate;
 
         Assert.True(command.CanExecute(main));
         command.Execute(main);
@@ -241,7 +251,7 @@ public class ClassEditorVMTests : IAsyncLifetime
         ICommand command = vm.OpenMethodCommand;
 
         var gate = new TaskCompletionSource();
-        vm.OpenGraphDelayForTests = () => gate.Task;
+        reflection.GatedProvider.Gate = gate;
 
         command.Execute(main);
         Task openTask = vm.OpenMethodCommand.ExecutionTask ?? Task.CompletedTask;
@@ -576,13 +586,14 @@ public class ClassEditorVMTests : IAsyncLifetime
         // Last click wins across item kinds (R2-02, generalized past methods alone).
         vm.CreateEventGraphCommand.Execute(null);
         var eventGraph = vm.EventGraphs.Single();
+        _ = new CallMethodNode(eventGraph.Graph, ConsoleWriteLine()); // gives its open real warm-up work to gate on
         var main = vm.Methods.Single();
         await vm.OpenMethodCommand.ExecuteAsync(main); // switch away so the next open isn't a no-op
         ICommand eventGraphCommand = vm.OpenEventGraphCommand;
         ICommand methodCommand = vm.OpenMethodCommand;
 
         var gate = new TaskCompletionSource();
-        vm.OpenGraphDelayForTests = () => gate.Task;
+        reflection.GatedProvider.Gate = gate;
 
         eventGraphCommand.Execute(eventGraph);
         Task openingEventGraph = vm.OpenEventGraphCommand.ExecutionTask ?? Task.CompletedTask;

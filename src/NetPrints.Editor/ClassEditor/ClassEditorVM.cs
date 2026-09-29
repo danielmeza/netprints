@@ -84,15 +84,6 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     private object? pendingOpenTarget;
 
     /// <summary>
-    /// Test seam (batch D1): awaited, if set, right after the busy-indicator timer is scheduled and
-    /// before the real background work starts, so a test can hold a graph open "in flight"
-    /// deterministically instead of racing real <see cref="Task.Run(Action)"/> completion against the
-    /// test's own next statement (a genuine flake: the real work is fast enough to finish first in a
-    /// Release build). Always <see langword="null"/> in production.
-    /// </summary>
-    internal Func<Task>? OpenGraphDelayForTests { get; set; }
-
-    /// <summary>
     /// Wraps <paramref name="cls"/>: builds its method/constructor/variable collections, subscribes
     /// to model and reflection-reload events, starts buffering process output, and computes the
     /// initial overridable methods and generated-code preview.
@@ -966,11 +957,6 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
 
         try
         {
-            if (OpenGraphDelayForTests is { } delay)
-            {
-                await delay();
-            }
-
             await WarmOverloadsAsync(graph, token);
             token.ThrowIfCancellationRequested();
             OpenGraph(graph);
