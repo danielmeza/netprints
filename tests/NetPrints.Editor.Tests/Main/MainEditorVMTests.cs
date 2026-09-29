@@ -181,11 +181,62 @@ public class MainEditorVMTests : IDisposable
         Assert.NotNull(project);
         Assert.Equal(BinaryType.Executable, vm.OutputBinaryType);
 
-        vm.OutputBinaryType = BinaryType.SharedLibrary;
+        await vm.SetOutputTypeCommand.ExecuteAsync(BinaryType.SharedLibrary);
 
         Assert.Equal(BinaryType.SharedLibrary, vm.OutputBinaryType);
         Assert.Equal(BinaryType.SharedLibrary, project.OutputBinaryType);
         Assert.Equal(BinaryType.SharedLibrary, project.Snapshot?.OutputType);
+    }
+
+    [Fact]
+    public async Task ConcurrentOutputTypeTogglesLetOneCommandWinDeterministically()
+    {
+        // R2-10: SetOutputTypeCommand is a plain [RelayCommand] async Task, so its CanExecute is false
+        // while IsRunning (AsyncRelayCommandOptions default). ExecuteAsync itself does not consult
+        // CanExecute -- InvokeCommandAction does, checking it before calling Execute, the same as the
+        // combo box's XAML binding -- so this test checks CanExecute the same way, with the gate
+        // holding the first edit in flight so that check is deterministic instead of racing
+        // FakeProjectSystem's synchronously-completed task.
+        var gate = new TaskCompletionSource();
+        var gatedProjects = new GatedProjectSystem(testEditor.Projects, gate.Task);
+        var context = testEditor.Context with { Projects = gatedProjects };
+        string path = Track(TestPaths.CopyHelloWorldSample());
+        var vm = new MainEditorVM(context);
+        await vm.LoadProjectAsync(path);
+        Assert.Equal(BinaryType.Executable, vm.OutputBinaryType);
+
+        Task first = vm.SetOutputTypeCommand.ExecuteAsync(BinaryType.SharedLibrary);
+        Assert.True(vm.SetOutputTypeCommand.IsRunning);
+        Assert.False(vm.SetOutputTypeCommand.CanExecute(BinaryType.SharedLibrary), "a second toggle is rejected while the first is in flight");
+
+        gate.SetResult();
+        await first;
+
+        // The first toggle's edit completed; a real second toggle would have been rejected above.
+        Assert.Equal(BinaryType.SharedLibrary, vm.OutputBinaryType);
+        Assert.Equal(BinaryType.SharedLibrary, vm.Project?.OutputBinaryType);
+    }
+
+    /// <summary>Delays every <see cref="ApplyAsync"/> until <paramref name="gate"/> completes, so a test can
+    /// observe a command's <c>IsRunning</c> deterministically instead of racing a synchronously-completed fake.</summary>
+    private sealed class GatedProjectSystem(IProjectSystem inner, Task gate) : IProjectSystem
+    {
+        public Task<ProjectSnapshot> LoadAsync(string projectFilePath, CancellationToken cancellationToken) =>
+            inner.LoadAsync(projectFilePath, cancellationToken);
+
+        public async Task<ProjectSnapshot> ApplyAsync(string projectFilePath, IReadOnlyList<ProjectEdit> edits, CancellationToken cancellationToken)
+        {
+            await gate;
+            return await inner.ApplyAsync(projectFilePath, edits, cancellationToken);
+        }
+
+        public Task<string> CreateAsync(string directory, string projectName, IProjectProfile profile, string rootNamespace, CancellationToken cancellationToken) =>
+            inner.CreateAsync(directory, projectName, profile, rootNamespace, cancellationToken);
+
+        public Task<BuildResult> BuildAsync(string projectFilePath, CancellationToken cancellationToken) =>
+            inner.BuildAsync(projectFilePath, cancellationToken);
+
+        public ProcessStartRequest GetRunCommand(string projectFilePath) => inner.GetRunCommand(projectFilePath);
     }
 
     [Fact]

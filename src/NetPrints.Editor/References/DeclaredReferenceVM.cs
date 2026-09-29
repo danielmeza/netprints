@@ -7,7 +7,7 @@ namespace NetPrints.Editor.References;
 /// One entry of the References dialog (PAR-16, PAR-19), wrapping a
 /// <see cref="ProjectReferenceInfo"/> declared in the project file (project-system.md §4).
 /// </summary>
-public sealed class DeclaredReferenceVM(ProjectReferenceInfo info, ReferenceListVM owner) : ObservableObject
+public sealed class DeclaredReferenceVM(ProjectReferenceInfo info) : ObservableObject
 {
     /// <summary>The wrapped reference, as last read from the project's snapshot.</summary>
     public ProjectReferenceInfo Info { get; } = info;
@@ -22,25 +22,11 @@ public sealed class DeclaredReferenceVM(ProjectReferenceInfo info, ReferenceList
 
     /// <summary>
     /// Whether a source directory reference is a <c>Compile</c> item (included) rather than a
-    /// <c>None</c> item (excluded). Setting it applies
-    /// <see cref="ProjectEdit.SetSourceDirectoryIncluded"/> through the owning
-    /// <see cref="ReferenceListVM"/>; always <see langword="false"/> for any other reference kind.
+    /// <c>None</c> item (excluded); always <see langword="false"/> for any other reference kind.
+    /// Read-only: the toggle switch is bound <c>OneWay</c> and invokes
+    /// <see cref="ReferenceListVM.SetSourceDirectoryIncludedCommand"/> instead (R2-10), which toggles
+    /// this value through <see cref="ProjectEdit.SetSourceDirectoryIncluded"/> and applies
+    /// <see cref="ReferenceListVM"/>'s own concurrency guard.
     /// </summary>
-    /// <exception cref="InvalidOperationException">Set on a reference that is not a source directory.</exception>
-    public bool IncludeInCompilation
-    {
-        get => Info.Kind == DeclaredReferenceKind.SourceDirectory && Info.Included;
-        set
-        {
-            if (Info.Kind != DeclaredReferenceKind.SourceDirectory)
-            {
-                throw new InvalidOperationException("Only source directory references can be included in compilation.");
-            }
-
-            if (Info.Included != value)
-            {
-                owner.SetSourceDirectoryIncluded(Info.Include, value);
-            }
-        }
-    }
+    public bool IncludeInCompilation => Info.Kind == DeclaredReferenceKind.SourceDirectory && Info.Included;
 }

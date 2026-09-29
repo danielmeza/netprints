@@ -1,7 +1,6 @@
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
-using Microsoft.Extensions.Logging;
 using NetPrints.Core;
 using NetPrints.Editor.Hosting;
 using NetPrints.Projects;
@@ -46,7 +45,7 @@ public sealed partial class ReferenceListVM : ObservableObject, IDisposable
 
     private void RebuildReferences() =>
         References = (Project.Snapshot?.DeclaredReferences ?? [])
-            .Select(reference => new DeclaredReferenceVM(reference, this))
+            .Select(reference => new DeclaredReferenceVM(reference))
             .ToList();
 
     /// <summary>Adds an assembly; a duplicate <c>HintPath</c> is a no-op (PAR-17, project-system.md §4).</summary>
@@ -95,28 +94,28 @@ public sealed partial class ReferenceListVM : ObservableObject, IDisposable
         }
     }
 
-    /// <summary>Toggles a source directory reference between included (<c>Compile</c>) and excluded (<c>None</c>).</summary>
-    internal async Task SetSourceDirectoryIncludedAsync(string directoryPath, bool included)
+    /// <summary>
+    /// Toggles a source directory reference between included (<c>Compile</c>) and excluded (<c>None</c>)
+    /// (R2-10): the toggle switch's <c>OneWay</c> binding still shows <paramref name="reference"/>'s
+    /// last-applied state, so the target state is its opposite.
+    /// </summary>
+    [RelayCommand]
+    private async Task SetSourceDirectoryIncludedAsync(DeclaredReferenceVM? reference)
     {
+        if (reference is not { Info.Kind: DeclaredReferenceKind.SourceDirectory })
+        {
+            return;
+        }
+
         try
         {
-            await ApplyAsync([new ProjectEdit.SetSourceDirectoryIncluded(directoryPath, included)]);
+            await ApplyAsync([new ProjectEdit.SetSourceDirectoryIncluded(reference.Info.Include, !reference.IncludeInCompilation)]);
         }
         catch (Exception ex)
         {
             await context.Dialogs.ShowErrorAsync("Failed to change the source directory", ex.ToString());
         }
     }
-
-    /// <summary>
-    /// Starts <see cref="SetSourceDirectoryIncludedAsync"/> without awaiting it, for
-    /// <see cref="DeclaredReferenceVM.IncludeInCompilation"/>'s property setter. Already reports its
-    /// own failures through the error dialog, so a fault here is only ever a defensive log (1030).
-    /// </summary>
-    /// <param name="directoryPath">Source directory to toggle.</param>
-    /// <param name="included">Whether the directory should be a <c>Compile</c> item.</param>
-    internal void SetSourceDirectoryIncluded(string directoryPath, bool included) =>
-        SetSourceDirectoryIncludedAsync(directoryPath, included).Forget(context.LoggerFactory.CreateLogger<ReferenceListVM>());
 
     /// <summary>Removes a reference (PAR-20).</summary>
     [RelayCommand]

@@ -1,4 +1,5 @@
 using NetPrints.Core;
+using NetPrints.Editor.ClassEditor;
 
 namespace NetPrints.Editor.Hosting;
 
@@ -15,6 +16,10 @@ public interface IWindowService
 
     /// <summary>Creates the class's editor view model and opens its window (this method owns and disposes it).</summary>
     void OpenClassEditor(ClassGraph cls, EditorContext context);
+
+    /// <summary>The open class editor's view model for a class, or <see langword="null"/> if its window is not
+    /// open (host <c>focusDocument</c> navigation, R2-21).</summary>
+    ClassEditorVM? FindClassEditor(ClassGraph cls);
 
     /// <summary>Closes the window of a class, if any.</summary>
     void CloseClassEditor(ClassGraph cls);

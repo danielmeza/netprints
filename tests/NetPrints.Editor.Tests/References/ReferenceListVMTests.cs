@@ -64,7 +64,7 @@ public class ReferenceListVMTests(TestEditor testEditor) : IDisposable
         var reference = vm.References.Single();
         Assert.True(reference.ShowIncludeInCompilation);
         Assert.True(reference.IncludeInCompilation, "a newly added source directory is a Compile item (project-system.md §4)");
-        reference.IncludeInCompilation = false;
+        await vm.SetSourceDirectoryIncludedCommand.ExecuteAsync(reference);
         Assert.False(vm.References.Single().IncludeInCompilation);
     }
 

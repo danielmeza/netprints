@@ -1,9 +1,15 @@
+using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.Input;
+using Avalonia.VisualTree;
 using NetPrints.Core;
 using NetPrints.Editor.Graph;
+using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Editor.UITests.ClassEditor;
+using NetPrints.Editor.UITests.Driving;
 using NetPrints.Graph;
 using NetPrints.Testing.Ui.Driving;
+using Nodify.Avalonia.Connections;
 
 namespace NetPrints.Editor.UITests.Graph;
 
@@ -11,6 +17,50 @@ namespace NetPrints.Editor.UITests.Graph;
 public class CanvasInteractionTests
 {
     private static CancellationToken Token => TestContext.Current.CancellationToken;
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task CtrlEnterOnAFocusedConnectorStartsAConnection()
+    {
+        // REVIEW-NOTE (PR #6): Ctrl+Enter replaces bare Space as the connector's keyboard "Connect"
+        // gesture (GraphEditorGestures), so a keyboard-only path to connect a pin still exists once
+        // Space/Delete are freed for typing (OWN-06). Focusing the Connector directly (rather than
+        // clicking it, which would itself fire the mouse "Connect" gesture) isolates the keyboard path.
+        // Nodify's Connect gesture is a drag: the key's own release, like a mouse-up, ends the pending
+        // connection (there is no other connector at the same point to land on), so the press and the
+        // release are sent separately, checking the pending state in between instead of through the
+        // driver's single combined PressAsync.
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        var pin = session.GraphVM.Nodes.Single(n => n.Node is CallMethodNode).OutputExecPins.First(p => p.Pin.Name != "Catch");
+        var connector = session.ClassWindow.GetVisualDescendants().OfType<Connector>().Single(c => ReferenceEquals(c.DataContext, pin));
+
+        connector.Focus();
+        HeadlessDriver.Pump();
+        Assert.False(connector.IsPendingConnection);
+
+        session.ClassWindow.KeyPress(Key.Enter, RawInputModifiers.Control, PhysicalKey.None, null);
+        HeadlessDriver.Pump();
+
+        Assert.True(connector.IsPendingConnection);
+
+        session.ClassWindow.KeyRelease(Key.Enter, RawInputModifiers.Control, PhysicalKey.None, null);
+        HeadlessDriver.Pump();
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task CtrlSpaceInAPinValueTextBoxDoesNotOpenSearch()
+    {
+        // R2-15: the Ctrl+Space handler sits on the whole window, so it must skip a text box instead
+        // of opening the node search over whatever the user is typing.
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        var valuePin = session.GraphVM.Nodes.Single(n => n.Node is CallMethodNode).InputDataPins.Single();
+        var valueBox = session.Graph.Node("CallMethodNode").Input(valuePin.Pin.Name).ValueBox;
+
+        await valueBox.ClickAsync(Token);
+        await session.Driver.PressAsync("Ctrl+Space", Token);
+
+        Assert.Equal("True", await valueBox.PropertyAsync(AutomationPropertyNames.IsFocused, Token));
+        Assert.False(await session.Graph.Search.IsOpenAsync(Token));
+    }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task DraggingPinToCompatiblePinConnects()

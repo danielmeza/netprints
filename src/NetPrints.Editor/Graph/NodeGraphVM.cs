@@ -380,6 +380,15 @@ public sealed partial class NodeGraphVM : ObservableObject, IDisposable
     public Task OpenSearchAsync(GraphPoint position, NodePin? suggestionPin = null, CancellationToken cancellationToken = default) =>
         Search.OpenAsync(position, suggestionPin, cancellationToken);
 
+    /// <summary>
+    /// Opens the node search at <paramref name="position"/> with no pin (R2-15, ADR-0004): the
+    /// keyboard entry point (Ctrl+Space), so the view only computes the fallback position and the
+    /// generated command's own reentrancy guard stops a second Ctrl+Space from starting a second
+    /// search while one is already opening.
+    /// </summary>
+    [RelayCommand]
+    private Task OpenSearchAsync(GraphPoint position) => OpenSearchAsync(position, suggestionPin: null);
+
     /// <summary>Changes the overload of a node through the undo stack (PAR-40).</summary>
     public void ChangeOverload(NodeVM node, object overload) => Services.UndoRedo.Do(EditorCommands.ChangeOverload(node.Node, overload));
 

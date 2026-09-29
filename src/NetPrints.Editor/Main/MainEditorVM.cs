@@ -1,10 +1,12 @@
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Logging;
 using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
+using NetPrints.Editor.ErrorList;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.References;
 using NetPrints.Extensibility.Loading;
@@ -27,6 +29,11 @@ public sealed partial class MainEditorVM : ObservableObject, IDisposable
     private readonly HashSet<(string Id, string? ManifestPath, string Code)> reportedExtensionFailures = [];
     private readonly HostChannelBridge hostChannelBridge;
     private Project? subscribedProject;
+
+    /// <summary>The extension folders currently loaded (R2-11): restored on the catch path of
+    /// <see cref="LoadProjectAsync"/> when the new project's extensions were already swapped in but its
+    /// graphs never finished mapping, so the previous project's nodes and translation keep working.</summary>
+    private IReadOnlyList<string> activeExtensionFolders = [];
 
     /// <summary>
     /// Creates the main window's view model, optionally with a project already open.
@@ -100,24 +107,26 @@ public sealed partial class MainEditorVM : ObservableObject, IDisposable
 
     /// <summary>
     /// The open project's output binary type, or <see cref="BinaryType.SharedLibrary"/> with no
-    /// project open. Setting it edits the <c>.csproj</c> through
-    /// <see cref="IProjectSystem.ApplyAsync"/> (<see cref="ProjectEdit.SetOutputType"/>,
-    /// project-system.md §4) and replaces <see cref="Core.Project.Snapshot"/> once that completes.
+    /// project open. Read-only: the binary type chooser is bound <c>OneWay</c> and invokes
+    /// <see cref="SetOutputTypeCommand"/> on selection instead (R2-10), so two quick toggles serialize
+    /// through the command's own concurrency guard instead of racing each other's
+    /// <see cref="IProjectSystem.ApplyAsync"/> call.
     /// </summary>
-    public BinaryType OutputBinaryType
-    {
-        get => Project?.OutputBinaryType ?? BinaryType.SharedLibrary;
-        set
-        {
-            if (Project is { } project && project.OutputBinaryType != value)
-            {
-                ApplyOutputTypeAsync(project, value).Forget(logger);
-            }
-        }
-    }
+    public BinaryType OutputBinaryType => Project?.OutputBinaryType ?? BinaryType.SharedLibrary;
 
-    private async Task ApplyOutputTypeAsync(Project project, BinaryType value)
+    /// <summary>
+    /// Edits the <c>.csproj</c>'s output type through <see cref="IProjectSystem.ApplyAsync"/>
+    /// (<see cref="ProjectEdit.SetOutputType"/>, project-system.md §4) and replaces
+    /// <see cref="Core.Project.Snapshot"/> once that completes.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(IsProjectOpen))]
+    private async Task SetOutputTypeAsync(BinaryType value)
     {
+        if (Project is not { } project || project.OutputBinaryType == value)
+        {
+            return;
+        }
+
         try
         {
             ProjectSnapshot snapshot = await context.Projects.ApplyAsync(
@@ -318,6 +327,7 @@ public sealed partial class MainEditorVM : ObservableObject, IDisposable
         BusyTitle = "Loading project";
         BusyMessage = path;
         IsBusy = true;
+        IReadOnlyList<string> previousExtensionFolders = activeExtensionFolders;
 
         try
         {
@@ -353,6 +363,17 @@ public sealed partial class MainEditorVM : ObservableObject, IDisposable
         catch (Exception ex)
         {
             IsBusy = false;
+
+            // R2-11: the new project's extensions were already swapped in (LoadExtensionsForProjectAsync
+            // runs before its graphs are mapped), but its graphs never finished mapping: restore the
+            // previous project's extensions, or its own nodes and translation stop working until it is
+            // reopened.
+            if (!activeExtensionFolders.SequenceEqual(previousExtensionFolders))
+            {
+                await context.Extensions.LoadForProjectAsync(previousExtensionFolders, CancellationToken.None);
+                activeExtensionFolders = previousExtensionFolders;
+            }
+
             await context.Clipboard.SetTextAsync(ex.ToString());
             await context.Dialogs.ShowErrorAsync("Failed to load project",
                 $"Failed to load project at path {path}. The exception has been copied to your clipboard.\n\n{ex}");
@@ -395,6 +416,7 @@ public sealed partial class MainEditorVM : ObservableObject, IDisposable
         }
 
         await context.Extensions.LoadForProjectAsync(folders, CancellationToken.None);
+        activeExtensionFolders = folders;
         return notTrusted;
     }
 
@@ -694,8 +716,9 @@ public sealed partial class MainEditorVM : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// Opens the class whose graph file is <paramref name="path"/> (project-relative or absolute), reusing an open window.
-    /// The node is not selected: navigating to a node arrives with the error list (sub-phase I).
+    /// Opens the class whose graph file is <paramref name="path"/> (project-relative or absolute), reusing an open
+    /// window, and, when <paramref name="nodeId"/> resolves to one of its graphs, navigates to that node (R2-21)
+    /// through the class editor's own scoped messenger (FR-038), the same path <see cref="ErrorListVM"/> uses.
     /// </summary>
     private bool FocusDocument(string path, string? nodeId)
     {
@@ -714,6 +737,12 @@ public sealed partial class MainEditorVM : ObservableObject, IDisposable
         }
 
         OpenClass(cls);
+
+        if (nodeId is not null && context.Windows.FindClassEditor(cls) is { } editor && GraphKeys.ForNode(cls, nodeId) is { } graphKey)
+        {
+            editor.Messenger.Send(new NavigateToNodeMessage(graphKey, nodeId));
+        }
+
         return true;
     }
 

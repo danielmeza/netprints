@@ -9,9 +9,7 @@ using NetPrints.Editor.Graph.Nodes;
 using NetPrints.Editor.Graph.Pins;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Hosting.Automation;
-using Nodify.Avalonia;
 using Nodify.Avalonia.Connections;
-using Nodify.Avalonia.Helpers.Gestures;
 
 namespace NetPrints.Editor.Graph;
 
@@ -19,7 +17,9 @@ namespace NetPrints.Editor.Graph;
 /// The graph canvas on Nodify (PAR-38..57). Connect and reroute-insert go through Nodify's own
 /// commands (bound in the XAML, ED-T09); disconnect uses button state, not Nodify's click-counted
 /// gesture, so a middle click right after another click still registers; other pointer gestures
-/// Nodify does not provide are handled here and forwarded to the view models.
+/// Nodify does not provide are handled here and forwarded to the view models. The connector
+/// gestures themselves (Connect/Disconnect keyboard alternates, OWN-06) are configured once at app
+/// startup by <see cref="GraphEditorGestures"/>, not here (REVIEW-NOTE, PR #6).
 /// </summary>
 public partial class GraphEditorView : UserControl
 {
@@ -29,26 +29,6 @@ public partial class GraphEditorView : UserControl
     private object? backButtonTarget;
     private TopLevel? keyboardTopLevel;
     private NodeGraphVM? revealSubscription;
-
-    /// <summary>
-    /// Drops Nodify's keyboard alternates for starting/ending a pin connection and for
-    /// toggling/panning by keyboard (OWN-06): a <c>KeyDown</c> that bubbles up from a pin's value
-    /// or name text box reaches the pin's connector before it reaches anything of ours, so Space
-    /// (the connector's "Connect" gesture) moved focus off the text box onto the connector and
-    /// showed Nodify's keyboard-connect hotkey badges ("some numbers show up on the nodes")
-    /// instead of inserting a space, and Delete (the connector's "Disconnect" gesture)
-    /// disconnected the pin instead of deleting a character. Pins are only ever connected or
-    /// disconnected by dragging in this app (PAR-46, PAR-48), and the editor is never panned or
-    /// selected by keyboard, so these keyboard-only alternates are removed once, globally; the
-    /// mouse gestures they pair with are untouched.
-    /// </summary>
-    static GraphEditorView()
-    {
-        EditorGestures.Mappings.Connector.Connect.Value = new PointerGesture(MouseAction.LeftClick);
-        EditorGestures.Mappings.Connector.Disconnect.Value = new PointerGesture(MouseAction.LeftClick, KeyModifiers.Alt);
-        EditorGestures.Mappings.Editor.Keyboard.ToggleSelected.Unbind();
-        EditorGestures.Mappings.Editor.Keyboard.Pan.Unbind();
-    }
 
     /// <summary>
     /// Loads the control's XAML and wires the pointer and drag/drop handlers Nodify does not
@@ -103,11 +83,14 @@ public partial class GraphEditorView : UserControl
 
     /// <summary>
     /// Ctrl+Space opens the node search without the pointer (ADR-0004): the popup falls back to the
-    /// selected node's position, or the canvas center if nothing is selected.
+    /// selected node's position, or the canvas center if nothing is selected. Skipped when focus is in
+    /// a text box, check box or combo box (R2-15): the handler sits on the whole window (a
+    /// <see cref="KeyBinding"/> only fires with focus inside this control), so unscoped it also caught
+    /// Ctrl+Space typed in, for example, the inspector's Name box.
     /// </summary>
     private void OnGlobalKeyDown(object? sender, KeyEventArgs e)
     {
-        if (e.Key != Key.Space || e.KeyModifiers != KeyModifiers.Control || ViewModel is not { } graph)
+        if (e.Key != Key.Space || e.KeyModifiers != KeyModifiers.Control || ViewModel is not { } graph || IsInsideValueEditor(e.Source))
         {
             return;
         }
@@ -117,8 +100,9 @@ public partial class GraphEditorView : UserControl
             CanvasPointerTracker.For(topLevel).Invalidate();
         }
 
-        // Not a command, and OpenSearchAsync has no catch of its own: route a fault to the error dialog too.
-        graph.OpenSearchAsync(FallbackGraphPosition()).Forget(graph.Context, "Failed to open the node search");
+        // OpenSearchCommand has no catch of its own: route a fault to the error dialog too. Its own
+        // reentrancy guard (D10) makes a second Ctrl+Space while one search is still opening a no-op.
+        graph.OpenSearchCommand.ExecuteAsync(FallbackGraphPosition()).Forget(graph.Context, "Failed to open the node search");
         e.Handled = true;
     }
 

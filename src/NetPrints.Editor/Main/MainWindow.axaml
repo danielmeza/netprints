@@ -67,10 +67,19 @@
           <TextBlock Classes="header" Text="Settings" />
           <Grid ColumnDefinitions="Auto,*" ToolTip.Tip="Type of binary to output.">
             <TextBlock Text="Binary type" VerticalAlignment="Center" Margin="4" />
-            <ComboBox AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MainBinaryTypeChooser}" Grid.Column="1" Margin="4" HorizontalAlignment="Stretch"
+            <!-- OneWay (R2-10, D10): selecting an item invokes SetOutputTypeCommand instead of a
+                 property setter kicking off an untracked async edit; a failed edit's OnPropertyChanged
+                 re-pulls the actual value back into the box. -->
+            <ComboBox x:Name="BinaryTypeChooser" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MainBinaryTypeChooser}" Grid.Column="1" Margin="4" HorizontalAlignment="Stretch"
                       IsEnabled="{Binding IsProjectOpen}"
                       ItemsSource="{Binding BinaryTypes}"
-                      SelectedItem="{Binding OutputBinaryType}" />
+                      SelectedItem="{Binding OutputBinaryType, Mode=OneWay}">
+              <Interaction.Behaviors>
+                <EventTriggerBehavior EventName="SelectionChanged">
+                  <InvokeCommandAction Command="{Binding SetOutputTypeCommand}" CommandParameter="{Binding #BinaryTypeChooser.SelectedItem}" />
+                </EventTriggerBehavior>
+              </Interaction.Behaviors>
+            </ComboBox>
           </Grid>
         </StackPanel>
       </Panel>

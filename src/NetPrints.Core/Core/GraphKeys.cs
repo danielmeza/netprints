@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace NetPrints.Core;
@@ -138,5 +139,62 @@ public static class GraphKeys
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Returns the graph key of the graph of <paramref name="cls"/> that has a node with
+    /// <paramref name="nodeId"/> (host <c>focusDocument</c> navigation, R2-21): the class graph itself,
+    /// its methods, constructors and event graphs, and each variable's getter, setter and type graph, in
+    /// that order.
+    /// </summary>
+    /// <param name="cls">Class to search.</param>
+    /// <param name="nodeId">Id of the node to find.</param>
+    /// <returns>The owning graph's key, or <see langword="null"/> if no graph of <paramref name="cls"/> has that node.</returns>
+    public static string? ForNode(ClassGraph cls, string nodeId)
+    {
+        foreach (NodeGraph graph in AllGraphs(cls))
+        {
+            if (graph.FindNode(nodeId) is not null)
+            {
+                return For(graph);
+            }
+        }
+
+        return null;
+    }
+
+    private static IEnumerable<NodeGraph> AllGraphs(ClassGraph cls)
+    {
+        yield return cls;
+
+        foreach (MethodGraph method in cls.Methods)
+        {
+            yield return method;
+        }
+
+        foreach (ConstructorGraph constructor in cls.Constructors)
+        {
+            yield return constructor;
+        }
+
+        foreach (EventGraph eventGraph in cls.EventGraphs)
+        {
+            yield return eventGraph;
+        }
+
+        foreach (Variable variable in cls.Variables)
+        {
+            if (variable.GetterMethod is { } getter)
+            {
+                yield return getter;
+            }
+
+            if (variable.SetterMethod is { } setter)
+            {
+                yield return setter;
+            }
+
+            yield return variable.TypeGraph;
+        }
     }
 }

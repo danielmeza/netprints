@@ -5,6 +5,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Avalonia.Styling;
 using Microsoft.Extensions.Logging;
+using NetPrints.Editor.Graph;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Editor.Main;
@@ -35,8 +36,17 @@ public partial class EditorApp : Application
         set => hostServices = value;
     }
 
-    /// <summary>Loads the application's XAML (styles, resources).</summary>
-    public override void Initialize() => AvaloniaXamlLoader.Load(this);
+    /// <summary>
+    /// Loads the application's XAML (styles, resources) and configures Nodify's connector gestures
+    /// once, before any <see cref="Graph.GraphEditorView"/> is created (REVIEW-NOTE, PR #6): the real
+    /// desktop host and the headless UI tests both build this same <see cref="EditorApp"/>, so this is
+    /// the one shared place, called once.
+    /// </summary>
+    public override void Initialize()
+    {
+        AvaloniaXamlLoader.Load(this);
+        GraphEditorGestures.Configure();
+    }
 
     /// <summary>
     /// Removes all transitions (theme animations), so screenshots and pixel checks are taken in a

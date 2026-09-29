@@ -70,4 +70,38 @@ public sealed class ExtensionPersistenceTests : IDisposable
         await editor.Persistence.SaveAsync(vm.Project ?? throw new InvalidOperationException("No project."), _ => "// generated", TestContext.Current.CancellationToken);
         Assert.Contains("\"netprints.test/Log\"", await File.ReadAllTextAsync(graphPath, TestContext.Current.CancellationToken), StringComparison.Ordinal);
     }
+
+    [Fact]
+    public async Task AFailedSecondLoadKeepsTheOpenProjectsExtensionsActive()
+    {
+        // R2-11: LoadExtensionsForProjectAsync swaps in the new project's extensions before its own
+        // graphs are mapped. If that second project then fails to load, the first project's
+        // extensions must be restored, or its nodes stop translating until it is reopened.
+        (string csprojA, string graphPathA) = await ProjectWithLogNodeAsync();
+        editor.Dialogs.TrustAnswer = true;
+        var vm = new MainEditorVM(editor.Context);
+        await vm.LoadProjectAsync(csprojA);
+        Assert.NotNull(FindLogNode(vm.Project));
+        Project projectA = vm.Project ?? throw new InvalidOperationException("No project.");
+
+        // B declares a graph file that does not exist on disk (a corrupt/edited-externally project):
+        // Persistence.LoadAsync throws DocumentNotFoundException, uncaught, after B's (empty)
+        // extensions already replaced A's.
+        string csprojB = TestPaths.CopyHelloWorldSample();
+        string directoryB = Path.GetDirectoryName(csprojB) ?? csprojB;
+        cleanup.Add(directoryB);
+        ProjectSnapshot snapshotB = await editor.Projects.LoadAsync(csprojB, TestContext.Current.CancellationToken);
+        editor.Projects.Seed(snapshotB with { GraphFiles = [Path.Combine(directoryB, "Missing.netpc.json")] });
+
+        await vm.LoadProjectAsync(csprojB);
+
+        Assert.Same(projectA, vm.Project);
+        Assert.Contains(editor.Dialogs.Errors, e => e.Title == "Failed to load project");
+
+        // A's own extension is still active: its Log node still saves as its own kind, not as
+        // preserved, inactive state.
+        projectA.Classes.Single().MarkDirty();
+        await editor.Persistence.SaveAsync(projectA, _ => "// generated", TestContext.Current.CancellationToken);
+        Assert.Contains("\"netprints.test/Log\"", await File.ReadAllTextAsync(graphPathA, TestContext.Current.CancellationToken), StringComparison.Ordinal);
+    }
 }

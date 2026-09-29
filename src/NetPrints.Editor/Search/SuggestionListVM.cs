@@ -173,9 +173,18 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
     [RelayCommand]
     private void Close() => IsOpen = false;
 
-    /// <summary>Enter in the search box: picks and opens the first non-header suggestion (batch X2b).</summary>
+    /// <summary>
+    /// Enter in the search box: picks and opens the first non-header suggestion (batch X2b). Flushes
+    /// the pending <see cref="FilterThrottle"/> window synchronously first (R2-14): otherwise, pressing
+    /// Enter inside that window reads <see cref="Items"/> before the debounced filter for the latest
+    /// <see cref="SearchText"/> has landed, and picks the previous text's first result instead.
+    /// </summary>
     [RelayCommand]
-    private void SelectFirst() => SelectCommand.Execute(Items.FirstOrDefault(i => !i.IsHeader));
+    private void SelectFirst()
+    {
+        var matches = BuildPredicate(SearchText ?? "");
+        SelectCommand.Execute(allItems.FirstOrDefault(i => !i.IsHeader && matches(i)));
+    }
 
     /// <summary>Down in the search box: highlights the first non-header suggestion before focus moves
     /// to the result list (batch X2b).</summary>

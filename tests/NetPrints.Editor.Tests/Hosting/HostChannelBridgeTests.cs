@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Text.Json;
 using NetPrints.Core;
+using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Main;
 using NetPrints.Extensibility.Hosting;
@@ -85,6 +86,23 @@ public sealed class HostChannelBridgeTests : IDisposable
         await host.SendAsync(FocusMessage(graphPath), TestContext.Current.CancellationToken);
         Assert.Single(editor.Windows.Open);
         Assert.Same(opened, Assert.Single(editor.Windows.Activated));
+    }
+
+    [Fact]
+    public async Task FocusDocumentWithANodeIdNavigatesToTheNode()
+    {
+        // R2-21: HelloWorld.Program's return node is "n000000000vny2" (see ExtensionPersistenceTests).
+        await vm.LoadProjectAsync(csproj);
+
+        await host.SendAsync(new HostMessage(HostMessageTypes.FocusDocument,
+            JsonSerializer.SerializeToElement(new { path = "HelloWorld.Program.netpc.json", nodeId = "n000000000vny2" })),
+            TestContext.Current.CancellationToken);
+
+        ClassGraph opened = Assert.Single(editor.Windows.Open.Keys);
+        ClassEditorVM classEditor = editor.Windows.Open[opened];
+        Assert.NotNull(classEditor.OpenedGraph);
+        var revealed = Assert.Single(classEditor.OpenedGraph.SelectedNodes);
+        Assert.Equal("n000000000vny2", revealed.Node.Id);
     }
 
     [Fact]

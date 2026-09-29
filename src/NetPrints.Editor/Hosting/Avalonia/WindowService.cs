@@ -67,6 +67,10 @@ public sealed class WindowService : IWindowService
     }
 
     /// <inheritdoc/>
+    public ClassEditorVM? FindClassEditor(ClassGraph cls) =>
+        windows.TryGetValue(cls, out var window) ? (ClassEditorVM?)window.DataContext : null;
+
+    /// <inheritdoc/>
     public void CloseClassEditor(ClassGraph cls)
     {
         if (windows.TryGetValue(cls, out var window))

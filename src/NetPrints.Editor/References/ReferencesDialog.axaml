@@ -24,11 +24,20 @@
             <Grid ColumnDefinitions="*,150,Auto" Margin="2" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ReferenceRow}" AutomationProperties.Name="{Binding DisplayText}">
               <TextBlock Text="{Binding DisplayText}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
                          FontSize="14" ToolTip.Tip="{Binding DisplayText}" />
-              <ToggleSwitch Grid.Column="1" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ReferenceInclude}" IsChecked="{Binding IncludeInCompilation}"
+              <!-- OneWay (R2-10, D10): toggling invokes SetSourceDirectoryIncludedCommand instead of a
+                   property setter kicking off an untracked async edit. -->
+              <ToggleSwitch Grid.Column="1" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ReferenceInclude}" IsChecked="{Binding IncludeInCompilation, Mode=OneWay}"
                             IsEnabled="{Binding ShowIncludeInCompilation}"
                             OnContent="Include" OffContent="Exclude"
                             ToolTip.Tip="Whether to include the reference as a source in the compilation process."
-                            ToolTip.ShowOnDisabled="True" VerticalAlignment="Center" />
+                            ToolTip.ShowOnDisabled="True" VerticalAlignment="Center">
+                <Interaction.Behaviors>
+                  <EventTriggerBehavior EventName="IsCheckedChanged">
+                    <InvokeCommandAction Command="{Binding $parent[ItemsControl].((edreferences:ReferenceListVM)DataContext).SetSourceDirectoryIncludedCommand}"
+                                          CommandParameter="{Binding}" />
+                  </EventTriggerBehavior>
+                </Interaction.Behaviors>
+              </ToggleSwitch>
               <Button Grid.Column="2" Classes="icon" Width="32" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ReferenceRemove}" Height="32" CornerRadius="16"
                       ToolTip.Tip="Remove this reference" AutomationProperties.Name="Remove this reference"
                       Command="{Binding $parent[ItemsControl].((edreferences:ReferenceListVM)DataContext).RemoveCommand}"

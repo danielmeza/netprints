@@ -204,6 +204,39 @@ public class SuggestionListVMTests : GraphTestBase
         Assert.False(search.IsFiltering);
     }
 
+    [Fact(Timeout = 60000)]
+    public async Task SelectFirstFlushesThePendingFilterBeforePickingTheFirstItem()
+    {
+        // R2-14: no AdvanceBy after setting SearchText, so the 100 ms throttle has not landed and
+        // Items still shows the unfiltered list; SelectFirst must still pick "If Else", not whatever
+        // the stale Items happened to have first.
+        await Graph.OpenSearchAsync(new GraphPoint(10, 20), null, TestContext.Current.CancellationToken);
+        var search = Graph.Search;
+        Assert.NotEqual("If Else", search.Items.FirstOrDefault(i => !i.IsHeader)?.Text);
+
+        search.SearchText = "If Else";
+        Assert.True(search.IsFiltering);
+
+        search.SelectFirstCommand.Execute(null);
+
+        var node = Method.Nodes.OfType<IfElseNode>().Single();
+        Assert.Equal(10, node.PositionX);
+        Assert.Equal(20, node.PositionY);
+    }
+
+    [Fact(Timeout = 60000)]
+    public async Task HighlightFirstSetsTheSelectedItemToTheFirstNonHeaderRow()
+    {
+        await Graph.OpenSearchAsync(new GraphPoint(0, 0), null, TestContext.Current.CancellationToken);
+        var search = Graph.Search;
+        Type(search, "If Else");
+
+        search.HighlightFirstCommand.Execute(null);
+
+        Assert.Equal("If Else", search.SelectedItem?.Text);
+        Assert.Empty(Method.Nodes.OfType<IfElseNode>()); // highlighting alone does not create a node
+    }
+
     [Fact]
     public async Task TypingIsThrottledInVirtualTime()
     {

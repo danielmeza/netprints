@@ -164,6 +164,8 @@ public sealed class FakeWindowService : IWindowService
 
     public void OpenClassEditor(ClassGraph cls, EditorContext context) => Open[cls] = new ClassEditorVM(cls, context);
 
+    public ClassEditorVM? FindClassEditor(ClassGraph cls) => Open.GetValueOrDefault(cls);
+
     public void CloseClassEditor(ClassGraph cls)
     {
         if (Open.Remove(cls, out var editor))
