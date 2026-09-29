@@ -447,7 +447,8 @@
                     },
                     "required": [
                       "name",
-                      "declaringType"
+                      "declaringType",
+                      "visibility"
                     ]
                   },
                   "argumentCount": {
@@ -509,7 +510,8 @@
                     },
                     "required": [
                       "name",
-                      "declaringType"
+                      "declaringType",
+                      "visibility"
                     ]
                   },
                   "genericArgumentCount": {
@@ -650,7 +652,8 @@
                     },
                     "required": [
                       "name",
-                      "declaringType"
+                      "declaringType",
+                      "visibility"
                     ]
                   }
                 },
@@ -767,7 +770,10 @@
                     },
                     "required": [
                       "name",
-                      "type"
+                      "type",
+                      "getterVisibility",
+                      "setterVisibility",
+                      "visibility"
                     ]
                   }
                 },
@@ -833,7 +839,10 @@
                     },
                     "required": [
                       "name",
-                      "type"
+                      "type",
+                      "getterVisibility",
+                      "setterVisibility",
+                      "visibility"
                     ]
                   }
                 },

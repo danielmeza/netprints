@@ -95,28 +95,73 @@ namespace NetPrints.Tests.Serialization
         // shape — writer/schema drift (a converter change, or a missing WhenWritingDefault omission)
         // would otherwise go unnoticed.
         [Fact]
-        public void AllNodesAndHelloWorldFixturesValidateAgainstTheCommittedSchema()
+        public void EveryNetpcJsonFixtureValidatesAgainstTheCommittedSchema()
         {
-            JsonSchema schema = JsonSchema.FromText(File.ReadAllText(SchemaPath()));
             string repositoryRoot = SampleProjectFactory.FindRepositoryRoot();
-
             string[] fixturePaths =
             [
-                Path.Combine(repositoryRoot, "tests", "NetPrints.Core.Tests", "Fixtures", "AllNodes", "AllNodes.Everything.netpc.json"),
-                Path.Combine(repositoryRoot, "tests", "NetPrints.Core.Tests", "Fixtures", "HelloWorld", "HelloWorld.Program.netpc.json"),
+                Path.Combine(repositoryRoot, "samples", "HelloWorld", "HelloWorld.Program.netpc.json"),
+                .. Directory.GetFiles(Path.Combine(repositoryRoot, "tests", "NetPrints.Core.Tests", "Fixtures"), "*.netpc.json", SearchOption.AllDirectories),
             ];
+            Assert.True(fixturePaths.Length >= 6, "expected the sample plus every fixture");
 
             foreach (string fixturePath in fixturePaths)
             {
-                JsonElement instance = JsonDocument.Parse(File.ReadAllText(fixturePath)).RootElement;
-                EvaluationResults results = schema.Evaluate(instance, new EvaluationOptions { OutputFormat = OutputFormat.List });
-
-                string DescribeFailure(EvaluationResults detail) =>
-                    $"{detail.EvaluationPath}: {string.Join(", ", detail.Errors?.Values ?? Enumerable.Empty<string>())}";
-                string failures = string.Join("\n", (results.Details ?? []).Where(detail => !detail.IsValid).Select(DescribeFailure));
-                Assert.True(results.IsValid, $"'{fixturePath}' failed schema validation:\n{failures}");
+                EvaluationResults results = Evaluate(JsonDocument.Parse(File.ReadAllText(fixturePath)).RootElement);
+                Assert.True(results.IsValid, $"'{fixturePath}' failed schema validation:\n{Describe(results)}");
             }
         }
+
+        [Fact]
+        public void MethodRefWithoutVisibilityFailsValidation()
+        {
+            string fixturePath = Path.Combine(SampleProjectFactory.FindRepositoryRoot(), "tests", "NetPrints.Core.Tests", "Fixtures", "HelloWorld", "HelloWorld.Program.netpc.json");
+            JsonNode? document = JsonNode.Parse(File.ReadAllText(fixturePath));
+            Assert.NotNull(document);
+
+            JsonObject methodRef = Assert.Single(FindMethodRefs(document).Take(1));
+            Assert.True(methodRef.Remove("visibility"));
+
+            EvaluationResults results = Evaluate(JsonSerializer.SerializeToElement(document));
+            Assert.False(results.IsValid);
+        }
+
+        [Fact]
+        public void NodesItemsSchemaRequiresOnlyKind()
+        {
+            Assert.Equal(["$kind"], Array(NodesItemsSchema(ParseGenerated()), "required").Select(n => Value<string>(n)));
+        }
+
+        private static System.Collections.Generic.IEnumerable<JsonObject> FindMethodRefs(JsonNode node)
+        {
+            if (node is JsonObject obj)
+            {
+                if (obj.ContainsKey("visibility") && obj.ContainsKey("name") && obj.ContainsKey("declaringType") && !obj.ContainsKey("graph"))
+                {
+                    yield return obj;
+                }
+
+                foreach (JsonObject found in obj.Select(p => p.Value).OfType<JsonNode>().SelectMany(FindMethodRefs))
+                {
+                    yield return found;
+                }
+            }
+            else if (node is JsonArray array)
+            {
+                foreach (JsonObject found in array.OfType<JsonNode>().SelectMany(FindMethodRefs))
+                {
+                    yield return found;
+                }
+            }
+        }
+
+        private static readonly Lazy<JsonSchema> CommittedSchema = new(() => JsonSchema.FromText(File.ReadAllText(SchemaPath())));
+
+        private static EvaluationResults Evaluate(JsonElement instance) =>
+            CommittedSchema.Value.Evaluate(instance, new EvaluationOptions { OutputFormat = OutputFormat.List });
+
+        private static string Describe(EvaluationResults results) =>
+            string.Join("\n", (results.Details ?? []).Where(d => !d.IsValid).Select(d => $"{d.EvaluationPath}: {string.Join(", ", d.Errors?.Values ?? Enumerable.Empty<string>())}"));
 
         private static JsonObject ParseGenerated()
         {

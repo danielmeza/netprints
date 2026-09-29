@@ -186,23 +186,7 @@ public static class NetPrintsJsonSchema
         return obj;
     }
 
-    /// <summary>
-    /// Recomputes an object schema's <c>required</c> array (document-format.md §6): the exporter marks
-    /// every constructor parameter without a C# default value as required, regardless of nullability or
-    /// of <see cref="JsonIgnoreCondition.WhenWritingDefault"/> (research.md R17, K14). Two corrections:
-    /// a type that marks at least one member <see cref="JsonIgnoreCondition.Never"/> (the convention
-    /// every <c>ClassDocument</c>/member/node-common field uses for Req. = yes, document-format.md §1.1)
-    /// is required exactly on those members and no others; a type with no such member (the reference
-    /// and value DTOs of §1.6, which rely on nullability and C# default parameter values instead) keeps
-    /// the exporter's own list minus any member the exporter over-included: a nullable one, and a
-    /// value-typed one (an enum, <c>int</c>, <c>bool</c>, ...) whose default is silently supplied on
-    /// read and silently omitted on write, so it is never actually enforced even without a literal C#
-    /// default value (jsonschema validate: <c>VariableRef.modifiers</c> was falsely required, failing on
-    /// the <c>Locals</c> fixture's local variables, which never carry non-default modifiers). A property
-    /// with no backing <see cref="JsonPropertyInfo"/> at all (the <c>$kind</c> discriminator the exporter
-    /// itself adds for polymorphism, not a reflected DTO member) is kept exactly as the exporter required
-    /// it, since neither correction has a C# member to re-derive it from.
-    /// </summary>
+    /// <summary>Recomputes an object schema's <c>required</c> array from the <see cref="JsonIgnoreCondition.Never"/> members, or the exporter's list minus nullable and default-valid value-typed ones (document-format.md §6).</summary>
     private static void FixRequired(JsonSchemaExporterContext context, JsonObject obj)
     {
         if (obj[PropertiesKeyword] is not JsonObject properties)
@@ -220,15 +204,12 @@ public static class NetPrintsJsonSchema
         {
             JsonPropertyInfo? property = Find(name);
 
-            // A property with no backing JsonPropertyInfo is not a reflected DTO member at all: the
-            // exporter's own polymorphism support put it here (the "$kind" discriminator on
-            // NodeDocument's anyOf, documented by the sibling "properties" entry added above). Keep it
-            // exactly as the exporter required it; there is no C# member to re-derive it from.
+            // No backing JsonPropertyInfo: the exporter's own "$kind" discriminator, kept as required.
             bool isRequired = property is null
                 ? wasRequired.Contains(name)
                 : usesNeverConvention
                     ? IsAlwaysWritten(property)
-                    : wasRequired.Contains(name) && !property.PropertyType.IsValueType && !IsNullableProperty(property);
+                    : wasRequired.Contains(name) && !HasValidDefault(property.PropertyType) && !IsNullableProperty(property);
 
             if (isRequired)
             {
@@ -245,6 +226,10 @@ public static class NetPrintsJsonSchema
             obj.Remove(RequiredKeyword);
         }
     }
+
+    // A value type whose default is a valid wire value is omitted on write; an enum whose zero is Invalid is not.
+    private static bool HasValidDefault(Type type) =>
+        type.IsValueType && (!type.IsEnum || Enum.GetName(type, Enum.ToObject(type, 0)) is { } name && name != "Invalid");
 
     private static bool IsAlwaysWritten(JsonPropertyInfo property) =>
         property.AttributeProvider?.GetCustomAttributes(typeof(JsonIgnoreAttribute), inherit: true)

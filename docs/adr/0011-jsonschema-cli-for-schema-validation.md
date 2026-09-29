@@ -31,11 +31,12 @@ Running it surfaced real, fixable issues, addressed in the same PR (`NetPrintsJs
 - `jsonschema validate` failed `Locals.netpc.json`: its local `variableGetter`/`variableSetter` nodes
   omit `variable.modifiers` (`None`, the common case for a local), but the schema required it.
   `FixRequired`'s non-`Never`-convention branch (the reference/value DTOs of document-format.md §1.6)
-  required every constructor parameter with no C# default, including non-nullable *value*-typed ones.
-  Unlike a non-nullable reference type, a missing value-typed property (an enum, `int`, `bool`, ...) is
-  silently defaulted on read and silently omitted on write (`NetPrintsJsonOptions`'s
-  `DefaultIgnoreCondition = WhenWritingDefault`), so it was never actually enforced — the fix excludes
-  value types from this branch's `required` computation.
+  required every constructor parameter with no C# default, including value-typed ones. A value-typed
+  property whose default is a valid wire value is silently defaulted on read and silently omitted on
+  write (`NetPrintsJsonOptions`'s `DefaultIgnoreCondition = WhenWritingDefault`), so it must not be
+  required: in practice `MethodRef.modifiers` and `VariableRef.modifiers` (`None` = 0). An enum whose
+  zero value is `Invalid` (`MemberVisibility`) is always written, so `visibility` stays required; the
+  generator's rule is "optional only when the zero value is a defined enum member not named `Invalid`".
 
 Two lint findings are excluded rather than fixed, via `lint`'s `--exclude <rule>`:
 
@@ -48,11 +49,11 @@ Two lint findings are excluded rather than fixed, via `lint`'s `--exclude <rule>
 
 ## Decision
 
-- `mise.toml` pins `jsonschema` to `17.0.0` (`mise ls-remote jsonschema`'s latest at the time).
+- `mise.toml` pins `jsonschema` to `17.0.0` (`mise ls-remote jsonschema`'s latest at the time); the CI
+  job pins `mise` itself (`2026.9.1`) via `jdx/mise-action`'s `version` input.
 - `eng/validate-schemas.sh` runs `jsonschema metaschema`, `jsonschema lint` (with the two exclusions
-  above), and `jsonschema validate` against each of the six instance files, exiting non-zero on the
-  first failure. It is the one place that lists those six paths; a new conforming document is added
-  there too.
+  above), and `jsonschema validate` against every tracked `.netpc.json` (`git ls-files`; it fails if none is found),
+  exiting non-zero on the first failure.
 - `.github/workflows/ci.yml` gets a `jsonschema` job: `jdx/mise-action` (installs the pinned CLI) then
   `eng/validate-schemas.sh`, with only `contents: read` (inherited from the workflow-level
   `permissions`).
@@ -70,8 +71,8 @@ Alternatives considered:
 - **A custom lint step in C#.** Reimplements checks (`const_with_type`,
   `required_properties_in_properties`, ...) a maintained tool already provides; more code to own for
   no benefit.
-- **`ajv-cli` or another Node-based validator.** No project-established Node toolchain; `mise` already
-  pins the .NET SDK version for this repo (`global.json`) and is a natural place to pin a second,
+- **`ajv-cli` or another Node-based validator.** No project-established Node toolchain; `mise` (new in this
+  PR, via `mise.toml`; the .NET SDK is pinned separately by `global.json`) is a natural place to pin a
   single-purpose binary tool.
 
 ## Consequences
@@ -79,7 +80,6 @@ Alternatives considered:
 - A schema change is checked from two independent angles: the C# tests it must keep matching
   byte-for-byte, and the CLI's meta-schema/lint/validate pass, both locally (`eng/validate-schemas.sh`)
   and in CI.
-- A future `.netpc.json` fixture that should conform to the schema needs a line in
-  `eng/validate-schemas.sh`'s instance list, or it silently isn't checked by this pass (`SchemaTests`
-  still separately pins the two fixtures it loads in-process).
+- A new tracked `.netpc.json` document is validated automatically; `SchemaTests` validates the sample
+  and every fixture in-process too.
 - `mise.toml` is now the place any other single-purpose CLI tool this repo adopts gets pinned.

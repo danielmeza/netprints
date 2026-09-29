@@ -31,18 +31,12 @@ echo "validate-schemas.sh: metaschema $SCHEMA"
 echo "validate-schemas.sh: lint $SCHEMA"
 "${JSONSCHEMA[@]}" lint "$SCHEMA" "${LINT_EXCLUDE[@]}" || fail "lint found issues (see above)"
 
-INSTANCES=(
-    "$REPO_ROOT/samples/HelloWorld/HelloWorld.Program.netpc.json"
-    "$REPO_ROOT/tests/NetPrints.Core.Tests/Fixtures/AllNodes/AllNodes.Everything.netpc.json"
-    "$REPO_ROOT/tests/NetPrints.Core.Tests/Fixtures/EventGraphs/EventGraphs.GameEvents.netpc.json"
-    "$REPO_ROOT/tests/NetPrints.Core.Tests/Fixtures/ForLoop/ForLoop.netpc.json"
-    "$REPO_ROOT/tests/NetPrints.Core.Tests/Fixtures/HelloWorld/HelloWorld.Program.netpc.json"
-    "$REPO_ROOT/tests/NetPrints.Core.Tests/Fixtures/Locals/Locals.netpc.json"
-)
+mapfile -t INSTANCES < <(git ls-files '*.netpc.json')
+[[ ${#INSTANCES[@]} -gt 0 ]] || fail "no tracked .netpc.json instances found"
 
 for instance in "${INSTANCES[@]}"; do
     echo "validate-schemas.sh: validate $instance"
-    "${JSONSCHEMA[@]}" validate "$SCHEMA" "$instance" || fail "$instance failed schema validation"
+    "${JSONSCHEMA[@]}" validate "$SCHEMA" "$REPO_ROOT/$instance" || fail "$instance failed schema validation"
 done
 
 echo "validate-schemas.sh: all checks passed (${#INSTANCES[@]} instance(s))"
