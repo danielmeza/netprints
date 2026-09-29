@@ -410,6 +410,15 @@ public sealed class ProjectPersistence
     private static bool IsUnderRoot(string root, string fullPath)
     {
         string relative = Path.GetRelativePath(root, fullPath);
-        return !relative.StartsWith("..", StringComparison.Ordinal) && !Path.IsPathRooted(relative);
+        if (Path.IsPathRooted(relative))
+        {
+            return false;
+        }
+
+        // A path outside the root is exactly ".." or starts with ".." followed by a separator; a name
+        // that merely starts with ".." (e.g. "..foo") is a real file inside the root.
+        return relative != ".."
+            && !relative.StartsWith(".." + Path.DirectorySeparatorChar, StringComparison.Ordinal)
+            && !relative.StartsWith(".." + Path.AltDirectorySeparatorChar, StringComparison.Ordinal);
     }
 }

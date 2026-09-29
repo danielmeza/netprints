@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reactive.Concurrency;
+using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -506,6 +507,39 @@ namespace NetPrints.Tests.Serialization
 
             Assert.False(File.Exists(Path.Combine(root, "Bad.netpc.json")));
             Assert.Empty(project.Classes);
+        }
+
+        // R2-22: only a relative path equal to ".." or starting with ".." plus a directory separator is
+        // outside the root - a literal name that merely starts with ".." (like "..foo") is not.
+        [Theory]
+        [InlineData("..foo", true)]
+        [InlineData("../x", false)]
+        [InlineData("..", false)]
+        [InlineData("sub/..bar", true)]
+        public void IsUnderRootOnlyTreatsADotDotSegmentAsOutside(string relativePath, bool expectedUnderRoot)
+        {
+            string projectRoot = Path.Combine(root, "Project");
+            string fullPath = Path.GetFullPath(Path.Combine(projectRoot, relativePath));
+
+            Assert.Equal(expectedUnderRoot, InvokeIsUnderRoot(projectRoot, fullPath));
+        }
+
+        [Fact]
+        public void IsUnderRootTreatsARootedPathElsewhereAsOutside()
+        {
+            string projectRoot = Path.Combine(root, "Project");
+            string elsewhere = OperatingSystem.IsWindows()
+                ? @"D:\Elsewhere\X.netpc.json"
+                : Path.Combine(root, "Elsewhere", "X.netpc.json");
+
+            Assert.False(InvokeIsUnderRoot(projectRoot, elsewhere));
+        }
+
+        private static bool InvokeIsUnderRoot(string projectRoot, string fullPath)
+        {
+            MethodInfo method = typeof(ProjectPersistence).GetMethod("IsUnderRoot", BindingFlags.NonPublic | BindingFlags.Static)
+                ?? throw new InvalidOperationException("ProjectPersistence.IsUnderRoot not found; the fixture is stale.");
+            return method.Invoke(null, [projectRoot, fullPath]) is true;
         }
     }
 }

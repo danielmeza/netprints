@@ -370,8 +370,17 @@ public sealed partial class MainEditorVM : ObservableObject, IDisposable
             // reopened.
             if (!activeExtensionFolders.SequenceEqual(previousExtensionFolders))
             {
-                await context.Extensions.LoadForProjectAsync(previousExtensionFolders, CancellationToken.None);
-                activeExtensionFolders = previousExtensionFolders;
+                try
+                {
+                    await context.Extensions.LoadForProjectAsync(previousExtensionFolders, CancellationToken.None);
+                    activeExtensionFolders = previousExtensionFolders;
+                }
+                catch (Exception rollbackEx)
+                {
+                    // The original load failure below must still reach the user even if the rollback
+                    // itself fails (R2-22).
+                    Log.ExtensionRollbackFailed(logger, rollbackEx);
+                }
             }
 
             await context.Clipboard.SetTextAsync(ex.ToString());

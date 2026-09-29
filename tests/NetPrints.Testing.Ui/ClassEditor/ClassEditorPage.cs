@@ -99,11 +99,14 @@ public sealed class ClassEditorPage(IUiDriver driver, string classFullName)
         return (await StatusText.TextAsync(cancellationToken))!;
     }
 
-    /// <summary>Waits until Run's Output tab shows <paramref name="expected"/> (the program's console output).</summary>
+    /// <summary>Waits until Run's Output tab shows <paramref name="expected"/> (the program's console output).
+    /// The budget matches <see cref="WaitForBuildResultAsync"/>'s: the run command is <c>dotnet run
+    /// --project ... --no-build</c> (FLAKE-02), which still pays SDK-resolution and process-start
+    /// overhead beyond the already-built binary, so 60 s left too little margin on a cold runner.</summary>
     public async Task<string> WaitForOutputContainingAsync(string expected, CancellationToken cancellationToken)
     {
         await OutputText.WaitUntilAsync(e => (e.Text ?? "").Contains(expected, StringComparison.Ordinal),
-            $"output containing '{expected}'", cancellationToken, TimeSpan.FromSeconds(60));
+            $"output containing '{expected}'", cancellationToken, TimeSpan.FromSeconds(120));
         return (await OutputText.TextAsync(cancellationToken))!;
     }
 

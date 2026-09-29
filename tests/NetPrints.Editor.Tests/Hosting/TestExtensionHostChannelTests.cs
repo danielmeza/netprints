@@ -44,6 +44,12 @@ public sealed class TestExtensionHostChannelTests : IAsyncLifetime
         {
             await vm.LoadProjectAsync(csproj);
 
+            // Settle the reload that opening the project itself triggers (MainEditorVM.OnProjectChanged)
+            // before sending the channel message below: otherwise the two reloads race, and the count
+            // observed afterward depends on which one the ReflectionHost version guard lets publish last
+            // (R2-22). Loaded is the host's own signal for "a reload has published"; no sleep involved.
+            await editor.Reflection.Loaded.WaitAsync(TimeSpan.FromSeconds(60), TestContext.Current.CancellationToken);
+
             int reloads = 0;
             var reloaded = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             editor.Reflection.Reloaded += (_, _) =>
@@ -55,19 +61,11 @@ public sealed class TestExtensionHostChannelTests : IAsyncLifetime
             await hostEnd.SendAsync(new HostMessage(HostMessageTypes.TypesChanged, NoPayload), TestContext.Current.CancellationToken);
             await reloaded.Task.WaitAsync(TimeSpan.FromSeconds(60), TestContext.Current.CancellationToken);
 
-            // Drains instead of trusting a fixed delay (R2-22: a duplicate reload arriving at 301 ms
-            // would have passed the old check anyway): keeps polling until the count has held steady
-            // for a few checks in a row, rather than guessing a sleep long enough to catch one.
-            int seen = Volatile.Read(ref reloads);
-            for (int stableChecks = 0; stableChecks < 5;)
-            {
-                await Task.Delay(20, TestContext.Current.CancellationToken);
-                int now = Volatile.Read(ref reloads);
-                stableChecks = now == seen ? stableChecks + 1 : 0;
-                seen = now;
-            }
-
-            Assert.Equal(1, seen);
+            // R2-22: no further reload can be in flight to arrive late and inflate this count. The
+            // project-load reload already settled above, so the message is the only other trigger in
+            // this test, and the version guard means a stale reload can only be dropped, never publish
+            // a second time.
+            Assert.Equal(1, Volatile.Read(ref reloads));
         }
         finally
         {

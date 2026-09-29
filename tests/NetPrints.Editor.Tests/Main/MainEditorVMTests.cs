@@ -4,6 +4,7 @@ using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Main;
 using NetPrints.Editor.References;
 using NetPrints.Editor.Tests.Hosting;
+using NetPrints.Extensibility.Loading;
 using NetPrints.Graph;
 using NetPrints.Projects;
 
@@ -435,6 +436,76 @@ public class MainEditorVMTests : IDisposable
         Assert.Equal("Failed to load project", title);
         Assert.Contains(nameof(ProjectSystemException), message);
         Assert.Contains("No .NET SDK could be found", message);
+    }
+
+    // R2-22: a rollback that fails must not hide the original load error.
+    [Fact]
+    public async Task ARollbackFailureDoesNotHideTheOriginalLoadError()
+    {
+        var faultyExtensions = new FaultyRollbackExtensionHost(testEditor.Extensions);
+        var context = testEditor.Context with { Extensions = faultyExtensions };
+        testEditor.Dialogs.TrustAnswer = true;
+        var vm = new MainEditorVM(context);
+        CancellationToken ct = TestContext.Current.CancellationToken;
+
+        // A: opens with its own (nonexistent, but distinct) extension folder, so activeExtensionFolders
+        // changes when B opens below.
+        string pathA = Track(TestPaths.CopyHelloWorldSample());
+        string directoryA = Path.GetDirectoryName(pathA) ?? pathA;
+        ProjectSnapshot snapshotA = await testEditor.Projects.LoadAsync(pathA, ct);
+        testEditor.Projects.Seed(snapshotA with { ExtensionFolders = [Path.Combine(directoryA, "ExtA")] });
+        await vm.LoadProjectAsync(pathA);
+        Project projectA = vm.Project ?? throw new InvalidOperationException("No project.");
+
+        // B: a different extension folder (so LoadExtensionsForProjectAsync swaps A's out before B's
+        // graphs are mapped) and a missing graph file (so persistence.LoadAsync throws, R2-11's setup).
+        string pathB = Track(TestPaths.CopyHelloWorldSample());
+        string directoryB = Path.GetDirectoryName(pathB) ?? pathB;
+        ProjectSnapshot snapshotB = await testEditor.Projects.LoadAsync(pathB, ct);
+        testEditor.Projects.Seed(snapshotB with
+        {
+            ExtensionFolders = [Path.Combine(directoryB, "ExtB")],
+            GraphFiles = [Path.Combine(directoryB, "Missing.netpc.json")],
+        });
+
+        // The 3rd LoadForProjectAsync call is the rollback restoring A's folders (1: A's own load, 2:
+        // B's own load, 3: the rollback); making it throw must not swallow B's original load failure.
+        faultyExtensions.ThrowOnCall = 3;
+
+        await vm.LoadProjectAsync(pathB);
+
+        Assert.Same(projectA, vm.Project);
+        Assert.Contains(testEditor.Dialogs.Errors, e => e.Title == "Failed to load project");
+    }
+
+    /// <summary>Delegates to a real <see cref="IExtensionHost"/>, except a chosen call number to
+    /// <see cref="LoadForProjectAsync"/> throws - used to fail MainEditorVM's rollback deliberately.</summary>
+    private sealed class FaultyRollbackExtensionHost(IExtensionHost inner) : IExtensionHost
+    {
+        private int calls;
+
+        /// <summary>The 1-based call number that should throw; 0 (default) never throws.</summary>
+        public int ThrowOnCall { get; set; }
+
+        public ExtensionRegistry Current => inner.Current;
+
+        public event EventHandler<ExtensionRegistry>? RegistryChanged
+        {
+            add => inner.RegistryChanged += value;
+            remove => inner.RegistryChanged -= value;
+        }
+
+        public ValueTask<ExtensionRegistry> LoadForProjectAsync(IReadOnlyList<string> projectExtensionFolders, CancellationToken cancellationToken)
+        {
+            if (Interlocked.Increment(ref calls) == ThrowOnCall)
+            {
+                throw new InvalidOperationException("Rollback load failed (test).");
+            }
+
+            return inner.LoadForProjectAsync(projectExtensionFolders, cancellationToken);
+        }
+
+        public ValueTask DisposeAsync() => inner.DisposeAsync();
     }
 
     private static async Task WaitFor(Func<bool> condition)
