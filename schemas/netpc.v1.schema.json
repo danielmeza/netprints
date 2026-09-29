@@ -2,13 +2,13 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://danielmeza.github.io/netprints/schemas/netpc.v1.schema.json",
   "title": "NetPrints class graph (schema v1)",
+  "description": "A NetPrints class graph document (document-format.md §1), the .netpc.json format a NetPrints project's classes are serialized as",
   "type": "object",
   "properties": {
     "$schema": {
       "type": "string"
     },
     "schemaVersion": {
-      "type": "integer",
       "const": 1
     },
     "namespace": {
@@ -447,9 +447,7 @@
                     },
                     "required": [
                       "name",
-                      "declaringType",
-                      "modifiers",
-                      "visibility"
+                      "declaringType"
                     ]
                   },
                   "argumentCount": {
@@ -511,9 +509,7 @@
                     },
                     "required": [
                       "name",
-                      "declaringType",
-                      "modifiers",
-                      "visibility"
+                      "declaringType"
                     ]
                   },
                   "genericArgumentCount": {
@@ -654,9 +650,7 @@
                     },
                     "required": [
                       "name",
-                      "declaringType",
-                      "modifiers",
-                      "visibility"
+                      "declaringType"
                     ]
                   }
                 },
@@ -773,11 +767,7 @@
                     },
                     "required": [
                       "name",
-                      "type",
-                      "getterVisibility",
-                      "setterVisibility",
-                      "visibility",
-                      "modifiers"
+                      "type"
                     ]
                   }
                 },
@@ -843,11 +833,7 @@
                     },
                     "required": [
                       "name",
-                      "type",
-                      "getterVisibility",
-                      "setterVisibility",
-                      "visibility",
-                      "modifiers"
+                      "type"
                     ]
                   }
                 },
@@ -1336,7 +1322,12 @@
                   }
                 }
               }
-            ]
+            ],
+            "properties": {
+              "$kind": {
+                "type": "string"
+              }
+            }
           }
         },
         "connections": {

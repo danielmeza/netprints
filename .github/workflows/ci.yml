@@ -301,3 +301,16 @@ jobs:
 
       - name: Smoke (headless project check)
         run: scripts/smoke-desktop.sh out/linux-x64
+
+  jsonschema:
+    name: JSON Schema (metaschema, lint, validate)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Installs the sourcemeta jsonschema CLI pinned in mise.toml (ADR-0011).
+      - uses: jdx/mise-action@9149ea85001c7435d5a66bb127d6a1b6227cb0a5 # v5.0.0
+
+      - name: Validate schemas
+        run: eng/validate-schemas.sh

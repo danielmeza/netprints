@@ -66,6 +66,10 @@ with the flag, and every other test project without it, so a real zero-tests reg
 `dotnet format` fixes itself: run `dotnet format NetPrints.slnx` (no `--verify-no-changes`) to
 apply whatever it would otherwise flag in CI.
 
+A change to `schemas/netpc.v1.schema.json` or a `.netpc.json` fixture also needs
+`mise install && eng/validate-schemas.sh` (ADR-0011), which metaschema-checks and lints the schema
+and validates every conforming instance with the sourcemeta `jsonschema` CLI.
+
 ## Test conventions
 
 - Reproduce a bug with a test that fails before fixing it.

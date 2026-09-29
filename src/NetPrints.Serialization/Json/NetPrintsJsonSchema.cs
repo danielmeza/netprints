@@ -33,6 +33,12 @@ public static class NetPrintsJsonSchema
     /// <summary>The JSON Schema keyword for a string's regular-expression constraint.</summary>
     private const string PatternKeyword = "pattern";
 
+    /// <summary>The JSON Schema keyword for an object's property schemas.</summary>
+    private const string PropertiesKeyword = "properties";
+
+    /// <summary>The JSON Schema <c>type</c> value for a string.</summary>
+    private const string StringTypeName = "string";
+
     /// <summary>Document types whose <c>id</c> property is a member id (document-format.md §1.4).</summary>
     private static readonly Type[] MemberDocumentTypes =
         [typeof(VariableDocument), typeof(MethodDocument), typeof(ConstructorDocument), typeof(EventGraphDocument)];
@@ -82,8 +88,9 @@ public static class NetPrintsJsonSchema
 
         var schema = (JsonObject)NetPrintsJsonContext.Default.Options.GetJsonSchemaAsNode(typeof(ClassDocument), exporterOptions);
 
-        // Root metadata (document-format.md §6): $schema/$id/title first, ahead of the exporter's own
-        // "type"/"properties"/"required" keys.
+        // Root metadata (document-format.md §6): $schema/$id/title/description first, ahead of the
+        // exporter's own "type"/"properties"/"required" keys.
+        schema.Insert(0, "description", "A NetPrints class graph document (document-format.md §1), the .netpc.json format a NetPrints project's classes are serialized as");
         schema.Insert(0, "title", "NetPrints class graph (schema v1)");
         schema.Insert(0, "$id", NetPrintsSchema.V1Url);
         schema.Insert(0, "$schema", MetaSchemaUri);
@@ -91,9 +98,9 @@ public static class NetPrintsJsonSchema
         // The writer's own `$schema` header property (document-format.md §1.1) is not a member of
         // ClassDocument (JsonDocumentFormat strips it on read and adds it on write around plain
         // serialization), so the exporter never sees it; add it to the object schema by hand.
-        JsonObject properties = schema["properties"] as JsonObject
+        JsonObject properties = schema[PropertiesKeyword] as JsonObject
             ?? throw new InvalidOperationException("Generated 'ClassDocument' schema has no 'properties' object.");
-        properties.Insert(0, "$schema", new JsonObject { ["type"] = "string" });
+        properties.Insert(0, "$schema", new JsonObject { ["type"] = StringTypeName });
 
         JsonSerializerOptions writeOptions = new()
         {
@@ -123,7 +130,10 @@ public static class NetPrintsJsonSchema
 
         if (context.PropertyInfo is { Name: "schemaVersion" })
         {
+            // "const" already implies the value's type; drop the exporter's own "type" (jsonschema
+            // lint: const_with_type).
             obj["const"] = 1;
+            obj.Remove("type");
         }
 
         if (context.TypeInfo.Type == typeof(NodeDocument) && obj["anyOf"] is JsonArray anyOf)
@@ -132,12 +142,17 @@ public static class NetPrintsJsonSchema
             {
                 ["type"] = "object",
                 [RequiredKeyword] = new JsonArray("$kind", "id"),
-                ["properties"] = new JsonObject
+                [PropertiesKeyword] = new JsonObject
                 {
-                    ["$kind"] = new JsonObject { ["type"] = "string", [PatternKeyword] = "/" },
-                    ["id"] = new JsonObject { ["type"] = "string", [PatternKeyword] = IdFormat.PatternFor('n') },
+                    ["$kind"] = new JsonObject { ["type"] = StringTypeName, [PatternKeyword] = "/" },
+                    ["id"] = new JsonObject { ["type"] = StringTypeName, [PatternKeyword] = IdFormat.PatternFor('n') },
                 },
             });
+
+            // Every anyOf branch narrows $kind to its own string const; document the shared shape here
+            // too, so the exporter's "required": ["$kind"] on this object has a sibling "properties"
+            // entry to point at (jsonschema lint: required_properties_in_properties).
+            obj[PropertiesKeyword] = new JsonObject { ["$kind"] = new JsonObject { ["type"] = StringTypeName } };
         }
 
         // Id patterns (research.md R21, T054b): every node/member id and connection endpoint, plus the
@@ -179,11 +194,18 @@ public static class NetPrintsJsonSchema
     /// every <c>ClassDocument</c>/member/node-common field uses for Req. = yes, document-format.md §1.1)
     /// is required exactly on those members and no others; a type with no such member (the reference
     /// and value DTOs of §1.6, which rely on nullability and C# default parameter values instead) keeps
-    /// the exporter's own list minus any member the exporter over-included despite being nullable.
+    /// the exporter's own list minus any member the exporter over-included: a nullable one, and a
+    /// value-typed one (an enum, <c>int</c>, <c>bool</c>, ...) whose default is silently supplied on
+    /// read and silently omitted on write, so it is never actually enforced even without a literal C#
+    /// default value (jsonschema validate: <c>VariableRef.modifiers</c> was falsely required, failing on
+    /// the <c>Locals</c> fixture's local variables, which never carry non-default modifiers). A property
+    /// with no backing <see cref="JsonPropertyInfo"/> at all (the <c>$kind</c> discriminator the exporter
+    /// itself adds for polymorphism, not a reflected DTO member) is kept exactly as the exporter required
+    /// it, since neither correction has a C# member to re-derive it from.
     /// </summary>
     private static void FixRequired(JsonSchemaExporterContext context, JsonObject obj)
     {
-        if (obj["properties"] is not JsonObject properties)
+        if (obj[PropertiesKeyword] is not JsonObject properties)
         {
             return;
         }
@@ -197,9 +219,16 @@ public static class NetPrintsJsonSchema
         foreach (string name in properties.Select(p => p.Key))
         {
             JsonPropertyInfo? property = Find(name);
-            bool isRequired = property is not null && (usesNeverConvention
-                ? IsAlwaysWritten(property)
-                : wasRequired.Contains(name) && !IsNullableProperty(property));
+
+            // A property with no backing JsonPropertyInfo is not a reflected DTO member at all: the
+            // exporter's own polymorphism support put it here (the "$kind" discriminator on
+            // NodeDocument's anyOf, documented by the sibling "properties" entry added above). Keep it
+            // exactly as the exporter required it; there is no C# member to re-derive it from.
+            bool isRequired = property is null
+                ? wasRequired.Contains(name)
+                : usesNeverConvention
+                    ? IsAlwaysWritten(property)
+                    : wasRequired.Contains(name) && !property.PropertyType.IsValueType && !IsNullableProperty(property);
 
             if (isRequired)
             {
