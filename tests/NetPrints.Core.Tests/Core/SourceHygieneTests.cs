@@ -227,9 +227,6 @@ namespace NetPrints.Tests.Core
         /// </summary>
         private static readonly HashSet<(string File, string Member, string Rule)> SuppressionAllowlist = new()
         {
-            ("src/NetPrints.Editor/ClassEditor/ClassEditorVM.cs", "OpenGraph", "IDISP003"),
-            ("src/NetPrints.Editor/ClassEditor/ClassEditorVM.cs", "DropDetachedState", "IDISP003"),
-            ("src/NetPrints.Editor/ClassEditor/ClassEditorVM.cs", "Dispose", "IDISP003"),
             ("src/NetPrints.Editor/Graph/GraphDragDrop.cs", "Moved", "VSTHRD100"),
             ("src/NetPrints.Editor/Graph/GridBackground.cs", "Render", "IDISP004"),
             ("src/NetPrints.Editor/Hosting/Automation/AutomationAgent.cs", "ServeAsync", "IDISP007"),

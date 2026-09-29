@@ -5431,3 +5431,22 @@ Details and evidence are in ADR 0008.
   ci.yml passes it with the coverage-settings flag. Under `strace`, no `execve` carries profiler
   variables and no static buffer is created after the host starts. The coverage report still lists
   every NetPrints assembly. `RealExtensionLoadCollection` stays, with its comment corrected.
+
+## Deferred from the PR #6 review (R1–R3)
+
+- **P3a, R2-09**: replace `DragSourceHelper` and the pointer handlers in `ClassEditorWindow.axaml.cs`,
+  `MemberVariableView.axaml.cs` and `LocalVariableView.axaml.cs` with `ContextDragBehavior`/`ContextDropBehavior`
+  from `Xaml.Behaviors.Interactions.DragAndDrop` (ADR-0007). This PR only fixed the drag start (R2-03: tunnel +
+  `handledEventsToo`); the custom helper and code-behind are an accepted interim deviation from D11.
+- **P3a, R2-17 (remainder)**: tokenize `GraphBrushes` in `Graph/GraphConverters.cs` (node headers, pin colors,
+  selection border, default-value indicator), add a Light snapshot test, and make the Light theme reachable
+  (`EditorApp.axaml` hard-codes `RequestedThemeVariant="Dark"`). The Light dictionary in `EditorStyles.axaml` is kept
+  only because `GridRenderTests` switches to Light.
+- **P8, R3-25**: `SourceHygieneTests.NullForgivingAllowlist` holds 42 pre-existing `!` sites under `tests/` (E2E
+  hosting, Testing.Ui drivers, older Editor.Tests). Remove them with `Assert.NotNull`/pattern matches and leave the
+  allowlist empty.
+- **P8, E2E sharding**: the desktop E2E job runs one worker (`NETPRINTS_E2E_WORKERS=1`) on a single runner; sharding
+  across runners is deferred (see ADR-0006).
+- **P2, CLI `--version`/`--help` exit code**: both currently exit 2 (CommandLineParser's not-parsed path maps to the
+  bad-arguments code), and `ci.yml`'s "CLI smoke" step asserts `rc -eq 2`. The P2 CLI redesign must make them exit 0 and
+  flip that assertion to 0.

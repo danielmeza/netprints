@@ -126,3 +126,4 @@ every future test added to it, defeating this batch's work.
   helper in `Editor.Tests`) is now one implementation in `tests/NetPrints.Testing/LocalSdkLayout.cs`,
   referenced by every test assembly that builds a temp copy of a sample against the repository's own
   SDK; a future change to that local-SDK layout is now one edit, not three.
+- Sharding the E2E suite across runners is deferred to P8.
