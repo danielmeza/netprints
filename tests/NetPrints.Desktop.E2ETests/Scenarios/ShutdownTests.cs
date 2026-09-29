@@ -55,17 +55,26 @@ public sealed class ShutdownTests(DesktopWorkerPool pool)
             }
         }
 
-        Assert.True(editor.HasExited, $"The editor did not exit after its main window was closed.\nStderr:\n{editor.Errors}");
-        Assert.Equal(0, editor.ExitCode);
-        Assert.Equal(1, editor.Output.Split(HostServicesDisposedMessage, StringSplitOptions.None).Length - 1);
-
         try
         {
-            Directory.Delete(work, recursive: true);
+            Assert.True(editor.HasExited, $"The editor did not exit after its main window was closed.\nStderr:\n{editor.Errors}");
+            Assert.Equal(0, editor.ExitCode);
+            Assert.Equal(1, editor.Output.Split(HostServicesDisposedMessage, StringSplitOptions.None).Length - 1);
         }
-        catch (IOException)
+        finally
         {
-            // Best effort.
+            try
+            {
+                Directory.Delete(work, recursive: true);
+            }
+            catch (IOException)
+            {
+                // Best effort.
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // Best effort.
+            }
         }
     }
 }

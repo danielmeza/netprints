@@ -271,3 +271,6 @@ website/.docusaurus/
 website/static/img/*.png
 docs/api/_site/
 docs/api/reference/
+
+# Publish output from `dotnet publish ... -o out/`
+out/

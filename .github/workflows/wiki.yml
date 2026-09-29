@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   sync:
@@ -15,6 +15,8 @@ jobs:
     # Only once the owner enabled the wiki and created its first page (release contract §11, step 4).
     if: github.repository == 'danielmeza/netprints' && vars.PUBLISH_WIKI == 'true'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Check that the wiki repository exists
