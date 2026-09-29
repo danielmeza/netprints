@@ -370,9 +370,15 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         VariablesPanel.OnOpenedGraphChanged(newValue?.Graph as ExecutionGraph);
     }
 
+    /// <summary>Disposes the current <see cref="OpenedGraph"/> and replaces it with a new one.</summary>
+    private void ReplaceOpenedGraph(NodeGraphVM? replacement)
+    {
+        OpenedGraph?.Dispose();
+        OpenedGraph = replacement;
+    }
+
     /// <summary>Opens a graph in the canvas.</summary>
-    [SuppressMessage("IDisposableAnalyzers.Correctness", "IDISP003", Justification = "ADR-0003: OnOpenedGraphChanged (the generated property hook) disposes the old value.")]
-    public void OpenGraph(NodeGraph graph) => OpenedGraph = new NodeGraphVM(graph, Services);
+    public void OpenGraph(NodeGraph graph) => ReplaceOpenedGraph(new NodeGraphVM(graph, Services));
 
     /// <summary>
     /// Cancels a still-loading <see cref="OpenMethodAsync"/> (R2-02): called by every other way to
@@ -419,17 +425,8 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     /// </summary>
     void IRecipient<SelectInspectorMessage>.Receive(SelectInspectorMessage message)
     {
-        switch (message.Target)
-        {
-            case MemberVariableVM variable:
-                SelectedVariable = variable;
-                Inspector = InspectorKind.Variable;
-                break;
-            case MethodVM method:
-                SelectedMethod = method;
-                Inspector = InspectorKind.Method;
-                break;
-        }
+        SelectedVariable = message.Target;
+        Inspector = InspectorKind.Variable;
     }
 
     // Model changes, including undo and redo, can remove what the inspector or the canvas shows.
@@ -522,7 +519,6 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         || (graph is EventGraph eventGraph && Class.EventGraphs.Contains(eventGraph))
         || Class.Variables.Any(v => v.GetterMethod == graph || v.SetterMethod == graph || v.TypeGraph == graph);
 
-    [SuppressMessage("IDisposableAnalyzers.Correctness", "IDISP003", Justification = "ADR-0003: OnOpenedGraphChanged (the generated property hook) disposes the old value.")]
     private void DropDetachedState()
     {
         if (SelectedVariable is not null && !Class.Variables.Contains(SelectedVariable.Variable))
@@ -545,7 +541,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
 
         if (OpenedGraph is not null && !BelongsToClass(OpenedGraph.Graph))
         {
-            OpenedGraph = null;
+            ReplaceOpenedGraph(null);
         }
     }
 
@@ -1061,7 +1057,6 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     /// unsubscribes from every model and host event, clears <see cref="OpenedGraph"/>, and disposes
     /// the method/constructor/variable collections (and, through them, every member view model).
     /// </summary>
-    [SuppressMessage("IDisposableAnalyzers.Correctness", "IDISP003", Justification = "ADR-0003: OnOpenedGraphChanged (the generated property hook) disposes the old value.")]
     public void Dispose()
     {
         CodeView.Dispose();
@@ -1119,7 +1114,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
 
         dirtyTrackedPinCollections.Clear();
         Messenger.UnregisterAll(this);
-        OpenedGraph = null;
+        ReplaceOpenedGraph(null);
         VariablesPanel.Dispose();
         Methods.Dispose();
         Constructors.Dispose();

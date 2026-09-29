@@ -15,7 +15,7 @@ namespace NetPrints.Editor.Graph.Pins;
 /// </summary>
 public sealed partial class NodePinVM : ObservableObject, IDisposable
 {
-    /// <summary>Divides a summed pair of positions to place a reroute node exactly between them.</summary>
+    /// <summary>Divisor for midpoint calculations.</summary>
     private const double MidpointDivisor = 2;
 
     private readonly INotifyPropertyChanged pinNotifier;

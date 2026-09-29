@@ -23,6 +23,7 @@ public sealed partial class ErrorListVM : ObservableObject, IDisposable
     private readonly IMessenger messenger;
     private readonly IDisposable subscription;
     private IReadOnlyList<CodeDiagnostic> liveDiagnostics = [];
+    private Project? currentProject;
 
     /// <summary>
     /// Creates an error list that follows <paramref name="cls"/>'s live analysis and its project's
@@ -40,11 +41,7 @@ public sealed partial class ErrorListVM : ObservableObject, IDisposable
         this.cls = cls;
         this.messenger = messenger;
 
-        if (cls.Project is { } project)
-        {
-            project.PropertyChanged += OnProjectPropertyChanged;
-        }
-
+        EnsureProjectSubscription();
         subscription = codeAnalysis.Snapshots.Subscribe(OnSnapshot);
     }
 
@@ -103,8 +100,26 @@ public sealed partial class ErrorListVM : ObservableObject, IDisposable
         }
     }
 
+    private void EnsureProjectSubscription()
+    {
+        if (cls.Project != currentProject)
+        {
+            if (currentProject is not null)
+            {
+                currentProject.PropertyChanged -= OnProjectPropertyChanged;
+            }
+
+            currentProject = cls.Project;
+            if (currentProject is not null)
+            {
+                currentProject.PropertyChanged += OnProjectPropertyChanged;
+            }
+        }
+    }
+
     private void Refresh()
     {
+        EnsureProjectSubscription();
         IEnumerable<CodeDiagnostic> build = cls.Project?.LastDiagnostics
             .Where(d => string.Equals(d.ClassFullName, cls.FullName, StringComparison.Ordinal)) ?? [];
         Rows.ReplaceRange(liveDiagnostics.Concat(build).Select(d => new DiagnosticRowVM(d, cls)));
@@ -117,9 +132,9 @@ public sealed partial class ErrorListVM : ObservableObject, IDisposable
     /// <summary>Unsubscribes from the project's build result and the live-analysis host.</summary>
     public void Dispose()
     {
-        if (cls.Project is { } project)
+        if (currentProject is not null)
         {
-            project.PropertyChanged -= OnProjectPropertyChanged;
+            currentProject.PropertyChanged -= OnProjectPropertyChanged;
         }
 
         subscription.Dispose();

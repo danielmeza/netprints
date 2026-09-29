@@ -24,6 +24,7 @@ namespace NetPrints.Editor.Graph;
 public partial class GraphEditorView : UserControl
 {
     private const double ClickThreshold = 4;
+    /// <summary>Divisor for center-point calculations.</summary>
     private const double HalfDivisor = 2;
     private Point? rightPressPosition;
     private object? backButtonTarget;

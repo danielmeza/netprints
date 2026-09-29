@@ -359,6 +359,8 @@ public sealed class FakeProjectSystem : IProjectSystem
 /// </summary>
 public sealed class TestEditor : IDisposable
 {
+    private IDisposable? persistenceBinding;
+
     public TestEditor(IReflectionHost reflection)
         : this(reflection, TestExtensions.CreateBuiltIn(), NullHostChannel.Instance)
     {
@@ -370,7 +372,7 @@ public sealed class TestEditor : IDisposable
         Reflection = reflection;
         Persistence = CreatePersistence(Projects);
         Extensions = extensions;
-        _ = PersistenceBinding.Bind(Persistence, Extensions, NullLoggerFactory.Instance);
+        persistenceBinding = PersistenceBinding.Bind(Persistence, Extensions, NullLoggerFactory.Instance);
         CodeAnalysis = new CodeAnalysisHost(Reflection, Extensions, Scheduler, Dispatcher, NullLogger<CodeAnalysisHost>.Instance);
 
         Context = new EditorContext(FilePicker, Dialogs, Clipboard, Dispatcher, Reflection, Windows, Processes,
@@ -426,8 +428,12 @@ public sealed class TestEditor : IDisposable
 
     public EditorContext Context { get; }
 
-    /// <summary>Disposes <see cref="CodeAnalysis"/>.</summary>
-    public void Dispose() => CodeAnalysis.Dispose();
+    /// <summary>Disposes <see cref="CodeAnalysis"/> and the persistence binding.</summary>
+    public void Dispose()
+    {
+        CodeAnalysis.Dispose();
+        persistenceBinding?.Dispose();
+    }
 }
 
 /// <summary>

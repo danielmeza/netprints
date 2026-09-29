@@ -26,6 +26,7 @@ public sealed partial class AvaloniaLogSink : ILogSink
 
     private readonly ILoggerFactory loggerFactory;
     private readonly LogLevel? explicitMinimumLevel;
+    private readonly Dictionary<string, ILogger> loggerCache = new(StringComparer.Ordinal);
 
     /// <summary>
     /// Creates a sink that resolves its per-area loggers from <paramref name="loggerFactory"/>.
@@ -42,7 +43,15 @@ public sealed partial class AvaloniaLogSink : ILogSink
         this.explicitMinimumLevel = explicitMinimumLevel;
     }
 
-    private ILogger LoggerFor(string area) => loggerFactory.CreateLogger($"Avalonia.{area}");
+    private ILogger LoggerFor(string area)
+    {
+        if (!loggerCache.TryGetValue(area, out var logger))
+        {
+            logger = loggerFactory.CreateLogger($"Avalonia.{area}");
+            loggerCache[area] = logger;
+        }
+        return logger;
+    }
 
     private static LogLevel ToLogLevel(LogEventLevel level) => level switch
     {

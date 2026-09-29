@@ -97,6 +97,7 @@ public class DialogTests
         var noSdkProjects = new NoSdkProjectSystem();
         var extensions = new NetPrints.Extensibility.Loading.ExtensionHost(NetPrints.Extensibility.Loading.ExtensionLoaderOptions.BuiltInOnly, NullLoggerFactory.Instance);
         var reflection = new ReflectionHost(dispatcher, extensions, NullLogger<ReflectionHost>.Instance);
+        using var codeAnalysis = new CodeAnalysisHost(reflection, extensions, System.Reactive.Concurrency.DefaultScheduler.Instance, dispatcher, NullLogger<CodeAnalysisHost>.Instance);
         var context = new EditorContext(new QueuedFilePicker(), new RecordingDialogs(), new NoClipboard(), dispatcher,
             reflection,
             new NetPrints.Editor.Hosting.Avalonia.WindowService(), new CapturingProcessLauncher(),
@@ -107,9 +108,10 @@ public class DialogTests
             NetPrints.Extensibility.Hosting.NullHostChannel.Instance,
             new NetPrints.Extensibility.Settings.JsonFileSettingsStore(Path.Combine(Path.GetTempPath(), "netprints-unused", "settings.json"),
                 NullLogger<NetPrints.Extensibility.Settings.JsonFileSettingsStore>.Instance),
-            new CodeAnalysisHost(reflection, extensions, System.Reactive.Concurrency.DefaultScheduler.Instance, dispatcher, NullLogger<CodeAnalysisHost>.Instance));
+            codeAnalysis);
         using var ui = HeadlessUi.Create();
-        ui.Show(new ReferencesDialog { DataContext = new ReferenceListVM(project, context) });
+        using var referenceListVM = new ReferenceListVM(project, context);
+        ui.Show(new ReferencesDialog { DataContext = referenceListVM });
         var page = new ReferencesDialogPage(ui.Driver);
 
         var rows = await page.RowNamesAsync(Token);

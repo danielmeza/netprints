@@ -2,8 +2,8 @@ namespace NetPrints.Editor.ClassEditor;
 
 /// <summary>
 /// Requests that the class editor shows the inspector for <paramref name="Target"/> (a
-/// <see cref="Variables.MemberVariableVM"/> or <see cref="MethodVM"/>), sent instead of the child view
+/// <see cref="Variables.MemberVariableVM"/>), sent instead of the child view
 /// model calling back into its owning <see cref="ClassEditorVM"/> directly (FR-038).
 /// </summary>
 /// <param name="Target">The view model to select and show the inspector for.</param>
-public sealed record SelectInspectorMessage(object Target);
+public sealed record SelectInspectorMessage(Variables.MemberVariableVM Target);

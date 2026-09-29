@@ -876,7 +876,7 @@ public sealed class DocumentMapper : IDocumentMapper
         void Dropped(ConnectionDocument connection, string reason)
         {
             issues.Add(new DocumentIssue(DocumentIssueSeverity.Warning, DocumentIssue.ConnectionDropped,
-                $"Connection '{connection.From}' -> '{connection.To}' {reason}.", id));
+                $"Connection '{connection.From}' -> '{connection.To}' {reason.TrimEnd('.')}.", id));
             Log.ConnectionDropped(logger, connection.From, connection.To, id, reason);
         }
 
