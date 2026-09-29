@@ -31,7 +31,10 @@ public sealed class StepTimer(string testName)
 
     private static string CreateSummaryFile()
     {
-        string directory = Directory.CreateDirectory(Path.Combine(AppContext.BaseDirectory, "TestResults")).FullName;
+        string baseDir = (Environment.GetEnvironmentVariable("NETPRINTS_UI_ARTIFACTS") is { Length: > 0 } artifactsDir
+            ? Path.GetDirectoryName(artifactsDir)
+            : null) ?? "TestResults";
+        string directory = Directory.CreateDirectory(baseDir).FullName;
         string path = Path.Combine(directory, $"e2e-timings-{DateTime.UtcNow:yyyyMMdd-HHmmss}.md");
         File.WriteAllText(path, $"# E2E step timings{Environment.NewLine}{Environment.NewLine}| test | step | ms |{Environment.NewLine}|---|---|---|{Environment.NewLine}");
         return path;

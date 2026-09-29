@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: docs-${{ github.ref }}
+  group: docs-build-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -42,6 +42,9 @@ jobs:
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/master' && vars.PUBLISH_DOCS == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    concurrency:
+      group: docs-deploy-${{ github.ref }}
+      cancel-in-progress: false
     permissions:
       pages: write
       id-token: write

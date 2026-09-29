@@ -43,7 +43,7 @@ for name in "${EXPECTED_FILES[@]}"; do
     [[ -f "$FEED/$name" ]] || fail "step 1 (file list): missing $name in $FEED"
 done
 
-ACTUAL_COUNT=$(find "$FEED" -maxdepth 1 -name '*.nupkg' -o -name '*.snupkg' | wc -l)
+ACTUAL_COUNT=$(find "$FEED" -maxdepth 1 \( -name "*.${VERSION}.nupkg" -o -name "*.${VERSION}.snupkg" \) | wc -l)
 [[ "$ACTUAL_COUNT" -eq "${#EXPECTED_FILES[@]}" ]] || fail "step 1 (file list): $FEED has $ACTUAL_COUNT package file(s), expected ${#EXPECTED_FILES[@]}"
 
 # --- Step 2: each .nupkg's nuspec and contents --------------------------------------------------

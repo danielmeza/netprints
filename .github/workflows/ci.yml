@@ -266,7 +266,9 @@ jobs:
 
       - name: Pack into local-packages
         id: pack
-        run: echo "version=$(scripts/pack-local.sh --print-version)" >> "$GITHUB_OUTPUT"
+        run: |
+          v=$(scripts/pack-local.sh --print-version)
+          echo "version=$v" >> "$GITHUB_OUTPUT"
 
       - name: Verify packages, tool and SDK from the local feed
         run: |
