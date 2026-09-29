@@ -3,6 +3,7 @@ using Avalonia.Headless.XUnit;
 using Avalonia.Logging;
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
+using NetPrints.Editor.Graph;
 using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Editor.UITests.Driving;
 using NetPrints.Graph;
@@ -162,7 +163,8 @@ public class ClassEditorWindowTests
         var vm = session.ClassVM;
         var (method, callNode) = AddBadCallMethod(vm.Class);
 
-        session.App.Composition.Context.CodeAnalysis.RequestAnalysis(vm.Project!);
+        Project project = vm.Project ?? throw new InvalidOperationException("Expected the opened class to have a project.");
+        session.App.Composition.Context.CodeAnalysis.RequestAnalysis(project);
         await page.ErrorRow("CS1503").WaitVisibleAsync(Token, TimeSpan.FromSeconds(30));
 
         var icon = page.ErrorSeverityIcon(0);
@@ -170,7 +172,8 @@ public class ClassEditorWindowTests
         await session.Driver.ClickAsync(gap, UiButton.Left, 2, Token);
 
         await UiWait.UntilAsync(session.Driver, () => Task.FromResult(vm.OpenedGraph?.Graph == method), "the method with the error to open", Token);
-        Assert.Contains(vm.OpenedGraph!.SelectedNodes, n => n.Node == callNode);
+        NodeGraphVM openedGraph = vm.OpenedGraph ?? throw new InvalidOperationException("Expected a graph to be open.");
+        Assert.Contains(openedGraph.SelectedNodes, n => n.Node == callNode);
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
@@ -182,14 +185,16 @@ public class ClassEditorWindowTests
         var vm = session.ClassVM;
         var (method, callNode) = AddBadCallMethod(vm.Class);
 
-        session.App.Composition.Context.CodeAnalysis.RequestAnalysis(vm.Project!);
+        Project project = vm.Project ?? throw new InvalidOperationException("Expected the opened class to have a project.");
+        session.App.Composition.Context.CodeAnalysis.RequestAnalysis(project);
         await page.ErrorRow("CS1503").WaitVisibleAsync(Token, TimeSpan.FromSeconds(30));
 
         await page.ErrorRow("CS1503").ClickAsync(Token); // selects the row
         await session.Driver.PressAsync("Enter", Token);
 
         await UiWait.UntilAsync(session.Driver, () => Task.FromResult(vm.OpenedGraph?.Graph == method), "the method with the error to open", Token);
-        Assert.Contains(vm.OpenedGraph!.SelectedNodes, n => n.Node == callNode);
+        NodeGraphVM openedGraph = vm.OpenedGraph ?? throw new InvalidOperationException("Expected a graph to be open.");
+        Assert.Contains(openedGraph.SelectedNodes, n => n.Node == callNode);
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]

@@ -19,13 +19,13 @@ public class PinRowsTests(TestEditor editor) : GraphTestBase(editor)
         // 0 parameters: just the Exec row, nothing on the left.
         Assert.Single(entry.PinRows);
         Assert.Null(entry.PinRows[0].Left);
-        Assert.Equal("Exec", entry.PinRows[0].Right!.Pin.Name);
+        Assert.Equal("Exec", Require(entry.PinRows[0].Right).Pin.Name);
 
         // 1 parameter: row 1 pairs its type pin with its data pin.
         Method.MethodEntryNode.AddArgument();
         Assert.Equal(2, entry.PinRows.Count);
-        Assert.Equal(Method.MethodEntryNode.InputTypePins[0], entry.PinRows[1].Left!.Pin);
-        Assert.Equal(Method.MethodEntryNode.OutputDataPins[0], entry.PinRows[1].Right!.Pin);
+        Assert.Equal(Method.MethodEntryNode.InputTypePins[0], Require(entry.PinRows[1].Left).Pin);
+        Assert.Equal(Method.MethodEntryNode.OutputDataPins[0], Require(entry.PinRows[1].Right).Pin);
 
         // 3 parameters: row i+1 pairs InputTypePins[i] with OutputDataPins[i] for every i.
         Method.MethodEntryNode.AddArgument();
@@ -33,8 +33,8 @@ public class PinRowsTests(TestEditor editor) : GraphTestBase(editor)
         Assert.Equal(4, entry.PinRows.Count);
         for (int i = 0; i < 3; i++)
         {
-            Assert.Equal(Method.MethodEntryNode.InputTypePins[i], entry.PinRows[i + 1].Left!.Pin);
-            Assert.Equal(Method.MethodEntryNode.OutputDataPins[i], entry.PinRows[i + 1].Right!.Pin);
+            Assert.Equal(Method.MethodEntryNode.InputTypePins[i], Require(entry.PinRows[i + 1].Left).Pin);
+            Assert.Equal(Method.MethodEntryNode.OutputDataPins[i], Require(entry.PinRows[i + 1].Right).Pin);
         }
     }
 
@@ -48,8 +48,8 @@ public class PinRowsTests(TestEditor editor) : GraphTestBase(editor)
         Method.MethodEntryNode.RemoveArgument();
 
         Assert.Equal(2, entry.PinRows.Count);
-        Assert.Equal(Method.MethodEntryNode.InputTypePins[0], entry.PinRows[1].Left!.Pin);
-        Assert.Equal(Method.MethodEntryNode.OutputDataPins[0], entry.PinRows[1].Right!.Pin);
+        Assert.Equal(Method.MethodEntryNode.InputTypePins[0], Require(entry.PinRows[1].Left).Pin);
+        Assert.Equal(Method.MethodEntryNode.OutputDataPins[0], Require(entry.PinRows[1].Right).Pin);
     }
 
     [Fact]
@@ -62,7 +62,7 @@ public class PinRowsTests(TestEditor editor) : GraphTestBase(editor)
         // Row 0 = Exec, row 1 = the parameter, row 2 = the generic type parameter (right only).
         Assert.Equal(3, entry.PinRows.Count);
         Assert.Null(entry.PinRows[2].Left);
-        Assert.Equal(Method.MethodEntryNode.OutputTypePins[0], entry.PinRows[2].Right!.Pin);
+        Assert.Equal(Method.MethodEntryNode.OutputTypePins[0], Require(entry.PinRows[2].Right).Pin);
     }
 
     [Fact]
@@ -72,7 +72,7 @@ public class PinRowsTests(TestEditor editor) : GraphTestBase(editor)
 
         // 0 return values: just the return Exec row, nothing on the right.
         Assert.Single(ret.PinRows);
-        Assert.Equal("Exec", ret.PinRows[0].Left!.Pin.Name);
+        Assert.Equal("Exec", Require(ret.PinRows[0].Left).Pin.Name);
         Assert.Null(ret.PinRows[0].Right);
 
         Method.MainReturnNode.AddReturnType();
@@ -81,8 +81,8 @@ public class PinRowsTests(TestEditor editor) : GraphTestBase(editor)
         Assert.Equal(3, ret.PinRows.Count);
         for (int i = 0; i < 2; i++)
         {
-            Assert.Equal(Method.MainReturnNode.InputDataPins[i], ret.PinRows[i + 1].Left!.Pin);
-            Assert.Equal(Method.MainReturnNode.InputTypePins[i], ret.PinRows[i + 1].Right!.Pin);
+            Assert.Equal(Method.MainReturnNode.InputDataPins[i], Require(ret.PinRows[i + 1].Left).Pin);
+            Assert.Equal(Method.MainReturnNode.InputTypePins[i], Require(ret.PinRows[i + 1].Right).Pin);
         }
     }
 
@@ -98,4 +98,8 @@ public class PinRowsTests(TestEditor editor) : GraphTestBase(editor)
             Assert.Equal(i < call.Outputs.Count ? call.Outputs[i] : null, call.PinRows[i].Right);
         }
     }
+
+    /// <summary>Unwraps a row's optional pin slot, failing with a clear message instead of a bare null-reference when the row shape a test assumes doesn't hold.</summary>
+    private static T Require<T>(T? value) where T : class =>
+        value ?? throw new InvalidOperationException("Expected this pin row to have a pin.");
 }

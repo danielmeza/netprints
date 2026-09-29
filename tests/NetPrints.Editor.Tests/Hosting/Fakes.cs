@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Reactive.Concurrency;
+using System.Threading;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Reactive.Testing;
@@ -464,16 +465,33 @@ public sealed class GatedReflectionProvider(IReflectionProvider inner) : IReflec
         return inner.GetConstructors(typeSpecifier);
     }
 
+    /// <summary>How long <see cref="WaitForGate"/> blocks for before failing loudly instead of hanging forever.</summary>
+    private static readonly TimeSpan GateTimeout = TimeSpan.FromSeconds(10);
+
     /// <summary>
-    /// Blocks the calling (background) thread until <see cref="Gate"/> completes. <see cref="IReflectionProvider"/>
-    /// is a synchronous interface, so there is no <see langword="await"/>able alternative here; a spin-wait on
-    /// <see cref="Task.IsCompleted"/> holds the seam "in flight" for a test without a sync-over-async
-    /// <c>.Wait()</c>/<c>GetAwaiter().GetResult()</c>.
+    /// Blocks the calling (background) thread until <see cref="Gate"/> completes, or <see cref="GateTimeout"/>
+    /// elapses. <see cref="IReflectionProvider"/> is a synchronous interface, so there is no
+    /// <see langword="await"/>able alternative here; a continuation signals a <see cref="ManualResetEventSlim"/>
+    /// that this thread blocks on (no CPU-burning spin-wait, no sync-over-async <c>.Wait()</c>/
+    /// <c>GetAwaiter().GetResult()</c> on the gate's own <see cref="Task"/>), and a timeout that expires
+    /// throws instead of hanging a test that forgot to complete its gate.
     /// </summary>
     private void WaitForGate()
     {
         TaskCompletionSource? gate = Gate;
-        SpinWait.SpinUntil(() => gate is null || gate.Task.IsCompleted);
+        if (gate is null)
+        {
+            return;
+        }
+
+        var signaled = new ManualResetEventSlim(initialState: false);
+        gate.Task.ContinueWith(_ => signaled.Set(), TaskScheduler.Default);
+        if (!signaled.WaitHandle.WaitOne(GateTimeout))
+        {
+            throw new TimeoutException($"GatedReflectionProvider's gate did not complete within {GateTimeout}.");
+        }
+
+        signaled.Dispose();
     }
 
     public IEnumerable<string> GetEnumNames(TypeSpecifier typeSpecifier) => inner.GetEnumNames(typeSpecifier);

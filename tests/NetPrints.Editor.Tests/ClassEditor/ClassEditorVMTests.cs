@@ -278,7 +278,7 @@ public class ClassEditorVMTests : IAsyncLifetime
         vm.Messenger.Send(new NavigateToNodeMessage(graphKey, nodeId));
 
         Assert.Same(main.Graph, vm.OpenedGraph?.Graph);
-        Assert.True(vm.OpenedGraph!.Nodes.Single(n => n.Node.Id == nodeId).IsSelected);
+        Assert.True(vm.OpenedGraph is { } openedGraph && openedGraph.Nodes.Single(n => n.Node.Id == nodeId).IsSelected);
     }
 
     [Fact]
