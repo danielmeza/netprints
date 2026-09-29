@@ -1,4 +1,5 @@
 using System.Reactive.Subjects;
+using System.Reflection;
 using Microsoft.CodeAnalysis.Text;
 using NetPrints.Compilation;
 using NetPrints.Core;
@@ -157,6 +158,64 @@ public sealed class CodeViewVMTests
         Assert.Null(vm.QuickInfoText);
     }
 
+    /// <summary>
+    /// Same swap-before-await bug as <c>ClassEditorVM</c>'s F-04: <c>ShowQuickInfoAsync</c> used to
+    /// reinstall <c>quickInfoCancellation</c> only after awaiting the superseded lookup's
+    /// <c>CancelAsync</c>, so a <see cref="CodeViewVM.ClearQuickInfoCommand"/> (pointer exit) landing
+    /// in that await got clobbered by the very lookup that superseded it, resurrecting the tooltip.
+    /// A real race depends on that await genuinely yielding, which is not reliably forceable headless;
+    /// instead this registers a callback on the first lookup's own token — CancellationTokenSource
+    /// guarantees a registered callback runs during Cancel/CancelAsync — so firing ClearQuickInfo from
+    /// it deterministically reproduces the exact interleaving without any real thread race.
+    /// </summary>
+    [Fact]
+    public async Task ClearQuickInfoDuringASupersedingCancelIsNotResurrectedByTheSupersedingLookup()
+    {
+        using var host = new ControllableCodeAnalysisHost();
+        using var vm = new CodeViewVM(NewClass("N", "C"), host);
+
+        Task first = vm.ShowQuickInfoCommand.ExecuteAsync(1);
+        CancellationTokenSource cts1 = QuickInfoCancellationOf(vm)
+            ?? throw new InvalidOperationException("No CTS was installed after the first lookup.");
+
+        var callbackRan = new TaskCompletionSource();
+        cts1.Token.Register(() =>
+        {
+            vm.ClearQuickInfoCommand.Execute(null); // the pointer leaves while lookup 2 is cancelling lookup 1
+            callbackRan.SetResult();
+        });
+
+        var requested2 = new TaskCompletionSource();
+        host.OnRequested = position =>
+        {
+            if (position == 2)
+            {
+                requested2.TrySetResult();
+            }
+        };
+
+        Task second = vm.ShowQuickInfoCommand.ExecuteAsync(2);
+        await callbackRan.Task;
+        await requested2.Task; // lookup 2 must have actually started before it can be completed
+
+        host.Complete(2, new QuickInfo("second", null));
+        await second;
+        Assert.Null(vm.QuickInfoText);
+
+        host.Complete(1, new QuickInfo("first", null));
+        await first;
+        Assert.Null(vm.QuickInfoText);
+    }
+
+    /// <summary>Reads <c>CodeViewVM</c>'s private <c>quickInfoCancellation</c> field (no public seam
+    /// exists for it) so a test can force a callback onto a specific lookup's own token.</summary>
+    private static CancellationTokenSource? QuickInfoCancellationOf(CodeViewVM target)
+    {
+        FieldInfo field = typeof(CodeViewVM).GetField("quickInfoCancellation", BindingFlags.NonPublic | BindingFlags.Instance)
+            ?? throw new InvalidOperationException("CodeViewVM.quickInfoCancellation field not found; the fixture is stale.");
+        return (CancellationTokenSource?)field.GetValue(target);
+    }
+
     /// <summary>A quick-info lookup whose completion the test controls, ignoring the cancellation token
     /// so tests can exercise <see cref="CodeViewVM"/>'s own "still current?" guard rather than relying
     /// on the token being observed.</summary>
@@ -167,6 +226,10 @@ public sealed class CodeViewVMTests
 
         public IObservable<CodeAnalysisSnapshot> Snapshots => snapshots;
 
+        /// <summary>Raised synchronously as each lookup is requested, so a test can wait for a specific
+        /// superseding lookup to have actually started before completing it.</summary>
+        public Action<int>? OnRequested { get; set; }
+
         public void RequestAnalysis(Project project)
         {
         }
@@ -175,6 +238,7 @@ public sealed class CodeViewVMTests
         {
             var completion = new TaskCompletionSource<QuickInfo?>(TaskCreationOptions.RunContinuationsAsynchronously);
             pending[position] = completion;
+            OnRequested?.Invoke(position);
             return completion.Task;
         }
 

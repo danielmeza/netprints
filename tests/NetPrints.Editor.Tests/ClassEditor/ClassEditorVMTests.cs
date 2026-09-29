@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using NetPrints.Core;
@@ -262,6 +263,104 @@ public class ClassEditorVMTests : IAsyncLifetime
 
         Assert.Equal(InspectorKind.Class, vm.Inspector);
         Assert.Same(cls, vm.OpenedGraph?.Graph);
+    }
+
+    [Fact]
+    public async Task ReclickingTheSameMethodWhileItsCancelledLoadIsStillPendingReopensIt()
+    {
+        // F-03: CancelPendingOpen used to leave pendingOpenTarget set until the cancelled load's own
+        // finally ran (which can be hundreds of ms later), so the Equals(item, pendingOpenTarget)
+        // guard dropped this exact re-click and the canvas stayed on Class.
+        var main = vm.Methods.Single();
+        ICommand command = vm.OpenMethodCommand;
+
+        var gate = new TaskCompletionSource();
+        reflection.GatedProvider.Gate = gate;
+
+        command.Execute(main);
+        Task firstOpen = vm.OpenMethodCommand.ExecutionTask ?? Task.CompletedTask;
+
+        vm.ShowClassCommand.Execute(null);
+        Assert.Same(cls, vm.OpenedGraph?.Graph);
+
+        command.Execute(main);
+        Task secondOpen = vm.OpenMethodCommand.ExecutionTask ?? Task.CompletedTask;
+
+        gate.SetResult();
+        await Task.WhenAll(firstOpen, secondOpen);
+
+        Assert.Same(main.Graph, vm.OpenedGraph?.Graph);
+    }
+
+    [Fact]
+    public async Task ThreeRapidOpensLetOnlyTheLastOneWinWithoutDisposingALiveCts()
+    {
+        // F-04: the pipeline used to re-read openGraphCts after awaiting CancelAsync and dispose
+        // whatever was there, which could be another click's still-live CTS. A real three-way race
+        // depends on that await actually yielding, which is not reliably forceable in a headless
+        // test. Instead, this registers a callback on A's own token: CancellationTokenSource
+        // guarantees registered callbacks run synchronously during Cancel/CancelAsync, on the
+        // cancelling thread, so firing click C from inside that callback deterministically
+        // reproduces "C runs in the meantime, while B is still between cancelling and disposing" —
+        // the exact interleaving the review describes — without any real thread race.
+        vm.CreateMethodCommand.Execute(null);
+        vm.CreateMethodCommand.Execute(null);
+        var a = vm.Methods[0];
+        var b = vm.Methods[1];
+        var c = vm.Methods[2];
+        _ = new CallMethodNode(b.Graph, ConsoleWriteLine());
+        _ = new CallMethodNode(c.Graph, ConsoleWriteLine());
+        ICommand command = vm.OpenMethodCommand;
+
+        var gate = new TaskCompletionSource();
+        reflection.GatedProvider.Gate = gate;
+
+        command.Execute(a);
+        Task openA = vm.OpenMethodCommand.ExecutionTask ?? Task.CompletedTask;
+        CancellationTokenSource ctsA = OpenGraphCtsOf(vm) ?? throw new InvalidOperationException("No CTS was installed after opening A.");
+
+        // CancellationTokenSource dispatches a registered callback asynchronously, so the callback
+        // itself signals this once it (and the nested click it fires) has actually run.
+        var callbackRan = new TaskCompletionSource();
+        CancellationTokenSource? ctsC = null;
+        Task? openC = null;
+        ctsA.Token.Register(() =>
+        {
+            command.Execute(c);
+            ctsC = OpenGraphCtsOf(vm);
+            openC = vm.OpenMethodCommand.ExecutionTask;
+            callbackRan.SetResult();
+        });
+
+        command.Execute(b);
+        Task openB = vm.OpenMethodCommand.ExecutionTask ?? Task.CompletedTask;
+
+        await callbackRan.Task;
+
+        if (ctsC is null || openC is null)
+        {
+            throw new InvalidOperationException("A's cancellation callback did not run C's click.");
+        }
+
+        gate.SetResult();
+        await Task.WhenAll(openA, openB, openC);
+
+        // A CTS disposed by another execution while it was still in flight can no longer accept new
+        // registrations; checked after everything has settled, since the buggy dispose is permanent
+        // the moment it happens, wherever in the sequence that was.
+        Exception? disposedWhileLive = Record.Exception(() => ctsC.Token.Register(() => { }));
+        Assert.Null(disposedWhileLive);
+        Assert.Same(c.Graph, vm.OpenedGraph?.Graph);
+    }
+
+    /// <summary>Reads <c>ClassEditorVM</c>'s private <c>openGraphCts</c> field (no public seam exists for
+    /// it) so a test can check that a superseded open's CTS was cancelled rather than disposed while
+    /// another execution's CTS was still live (F-04).</summary>
+    private static CancellationTokenSource? OpenGraphCtsOf(ClassEditorVM target)
+    {
+        FieldInfo field = typeof(ClassEditorVM).GetField("openGraphCts", BindingFlags.NonPublic | BindingFlags.Instance)
+            ?? throw new InvalidOperationException("ClassEditorVM.openGraphCts field not found; the fixture is stale.");
+        return (CancellationTokenSource?)field.GetValue(target);
     }
 
     [Fact]

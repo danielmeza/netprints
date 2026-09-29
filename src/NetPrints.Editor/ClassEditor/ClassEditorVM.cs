@@ -366,11 +366,10 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
 
     partial void OnOpenedGraphChanged(NodeGraphVM? oldValue, NodeGraphVM? newValue)
     {
-        oldValue?.Dispose();
         VariablesPanel.OnOpenedGraphChanged(newValue?.Graph as ExecutionGraph);
     }
 
-    /// <summary>Disposes the current <see cref="OpenedGraph"/> and replaces it with a new one.</summary>
+    /// <summary>Disposes the current <see cref="OpenedGraph"/> (the property's only setter) and replaces it with a new one.</summary>
     private void ReplaceOpenedGraph(NodeGraphVM? replacement)
     {
         OpenedGraph?.Dispose();
@@ -383,9 +382,15 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     /// <summary>
     /// Cancels a still-loading <see cref="OpenMethodAsync"/> (R2-02): called by every other way to
     /// change the canvas, so a method whose load finishes late can never override a navigation the
-    /// user made to something else in the meantime.
+    /// user made to something else in the meantime. Clears <see cref="pendingOpenTarget"/> immediately
+    /// (F-03) rather than waiting for the cancelled load's own <c>finally</c>, which can run hundreds
+    /// of milliseconds later and, until then, would drop a re-click on that same item.
     /// </summary>
-    private void CancelPendingOpen() => openGraphCts?.Cancel();
+    private void CancelPendingOpen()
+    {
+        openGraphCts?.Cancel();
+        pendingOpenTarget = null;
+    }
 
     void IRecipient<OpenGraphMessage>.Receive(OpenGraphMessage message)
     {
@@ -935,15 +940,20 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         }
 
         pendingOpenTarget = item;
-        if (openGraphCts is not null)
-        {
-            await openGraphCts.CancelAsync();
-            openGraphCts.Dispose();
-        }
 
+        // F-04: install the new CTS synchronously before any await, so an overlapping execution
+        // (AllowConcurrentExecutions) can never observe or dispose a CTS that is still live. Only the
+        // previous one, captured into a local, is cancelled and disposed below.
+        CancellationTokenSource? previous = openGraphCts;
         var cts = new CancellationTokenSource();
         openGraphCts = cts;
         CancellationToken token = cts.Token;
+
+        if (previous is not null)
+        {
+            await previous.CancelAsync();
+            previous.Dispose();
+        }
 
         IDisposable indicator = Context.Scheduler.Schedule(BusyIndicatorDelay, () =>
         {
@@ -966,7 +976,11 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
             indicator.Dispose();
             IsOpeningGraph = false;
             OpeningGraphName = null;
-            if (Equals(pendingOpenTarget, item))
+
+            // Own the clear only if no later execution has since installed its own CTS (F-03):
+            // comparing against the captured item would also match a newer execution opening the
+            // same item again while this cancelled one's finally is still pending.
+            if (ReferenceEquals(openGraphCts, cts))
             {
                 pendingOpenTarget = null;
             }

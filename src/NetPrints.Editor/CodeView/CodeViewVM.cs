@@ -69,13 +69,17 @@ public sealed partial class CodeViewVM : ObservableObject, IDisposable
     [RelayCommand]
     private async Task ShowQuickInfoAsync(int offset)
     {
-        if (quickInfoCancellation is { } previous)
+        // Install the new CTS before awaiting the old one's cancellation (same swap-before-await
+        // fix as ClassEditorVM's F-04), so a ClearQuickInfo (pointer exit) landing in that await
+        // cannot be overwritten by re-reading the field afterward.
+        CancellationTokenSource? previous = quickInfoCancellation;
+        var cancellation = new CancellationTokenSource();
+        quickInfoCancellation = cancellation;
+
+        if (previous is not null)
         {
             await previous.CancelAsync();
         }
-
-        var cancellation = new CancellationTokenSource();
-        quickInfoCancellation = cancellation;
 
         string? content;
         try
