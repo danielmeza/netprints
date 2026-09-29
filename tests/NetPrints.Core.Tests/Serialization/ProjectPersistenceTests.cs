@@ -319,6 +319,50 @@ namespace NetPrints.Tests.Serialization
             Assert.Equal(failing.FullName, diagnostic.ClassFullName);
         }
 
+        // F-07: a raw exception from renderGenerated that is not a TranslationException (e.g. the
+        // InvalidOperationException ExecutionGraphTranslator throws for an unresolved pin type, or
+        // anything an extension translator throws) must be isolated the same way, as NPT000.
+        [Fact]
+        public async Task SaveAsyncIsolatesANonTranslationExceptionAndStillSavesLaterDirtyClasses()
+        {
+            CancellationToken ct = TestContext.Current.CancellationToken;
+            NodeDocumentConverterRegistry registry = NewRegistry();
+            var mapper = new DocumentMapper(registry, NullLogger<DocumentMapper>.Instance);
+            JsonDocumentFormat jsonFormat = NewJsonFormat(registry);
+            var formats = new DocumentFormatRegistry([jsonFormat]);
+            var projects = new FakeProjectSystem(NewSnapshot(Path.Combine(root, "Test.csproj"), []));
+            ProjectPersistence persistence = NewPersistence(projects, formats, mapper);
+
+            Project project = TestProjects.Create("Test", "Test", Path.Combine(root, "Test.csproj"));
+            IProjectProfile profile = DefaultProjectProfile.Instance;
+            ClassGraph failing = project.CreateNewClass(profile);
+            ClassGraph ok = project.CreateNewClass(profile);
+
+            Assert.True(failing.IsDirty);
+            Assert.True(ok.IsDirty);
+
+            string RenderGenerated(ClassGraph cls) => cls == failing
+                ? throw new InvalidOperationException("The type of pin 'x' on 'y' is not resolved.")
+                : $"// generated for {cls.FullName}\n";
+
+            ProjectSaveResult result = await persistence.SaveAsync(project, RenderGenerated, ct);
+
+            // Both graphs are written even though the first class's render threw a raw exception.
+            Assert.True(File.Exists(project.GetGraphFilePath(failing)));
+            Assert.True(File.Exists(project.GetGraphFilePath(ok)));
+
+            Assert.False(File.Exists(Path.Combine(root, $"{failing.FullName}.netpc.g.cs")));
+            string okGeneratedPath = Path.Combine(root, $"{ok.FullName}.netpc.g.cs");
+            Assert.Equal(RenderGenerated(ok), await File.ReadAllTextAsync(okGeneratedPath, ct));
+
+            Assert.False(failing.IsDirty);
+            Assert.False(ok.IsDirty);
+
+            CodeDiagnostic diagnostic = Assert.Single(result.Diagnostics);
+            Assert.Equal(TranslationDiagnosticCodes.Unclassified, diagnostic.Id);
+            Assert.Equal(failing.FullName, diagnostic.ClassFullName);
+        }
+
         // R1-06: a graph outside the project directory (project-system.md §7's
         // <NetPrintsGraph Include="../Shared/X.netpc.json" />) must load instead of LoadAsync throwing
         // ArgumentException from FileSystemDocumentStore.ToDocumentId.

@@ -45,7 +45,7 @@ public sealed partial class ReferenceListVM : ObservableObject, IDisposable
 
     private void RebuildReferences() =>
         References = (Project.Snapshot?.DeclaredReferences ?? [])
-            .Select(reference => new DeclaredReferenceVM(reference))
+            .Select(info => new DeclaredReferenceVM(info, included => SetSourceDirectoryIncludedAsync(info, included)))
             .ToList();
 
     /// <summary>Adds an assembly; a duplicate <c>HintPath</c> is a no-op (PAR-17, project-system.md §4).</summary>
@@ -95,25 +95,29 @@ public sealed partial class ReferenceListVM : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// Toggles a source directory reference between included (<c>Compile</c>) and excluded (<c>None</c>)
-    /// (R2-10): the toggle switch's <c>OneWay</c> binding still shows <paramref name="reference"/>'s
-    /// last-applied state, so the target state is its opposite.
+    /// Sets a source directory reference's included/excluded state to <paramref name="included"/>
+    /// (R2-10, F-06): the target state comes from the toggle switch's own clicked state
+    /// (<see cref="DeclaredReferenceVM.SetIncludedCommand"/>), not from inverting the row's
+    /// last-applied state, so a switch left out of sync by a prior failed apply cannot invert the next
+    /// click. Realizing a row (the <c>OneWay</c> binding setting the switch to the current model state)
+    /// calls this with <paramref name="included"/> already equal to <paramref name="info"/>'s state, which
+    /// is a no-op below rather than an unwanted apply.
     /// </summary>
-    [RelayCommand]
-    private async Task SetSourceDirectoryIncludedAsync(DeclaredReferenceVM? reference)
+    private async Task SetSourceDirectoryIncludedAsync(ProjectReferenceInfo info, bool included)
     {
-        if (reference is not { Info.Kind: DeclaredReferenceKind.SourceDirectory })
+        if (info.Kind != DeclaredReferenceKind.SourceDirectory || included == info.Included)
         {
             return;
         }
 
         try
         {
-            await ApplyAsync([new ProjectEdit.SetSourceDirectoryIncluded(reference.Info.Include, !reference.IncludeInCompilation)]);
+            await ApplyAsync([new ProjectEdit.SetSourceDirectoryIncluded(info.Include, included)]);
         }
         catch (Exception ex)
         {
             await context.Dialogs.ShowErrorAsync("Failed to change the source directory", ex.ToString());
+            RebuildReferences(); // resync every switch with the model after a failed apply
         }
     }
 

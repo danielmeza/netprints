@@ -64,8 +64,61 @@ public class ReferenceListVMTests(TestEditor testEditor) : IDisposable
         var reference = vm.References.Single();
         Assert.True(reference.ShowIncludeInCompilation);
         Assert.True(reference.IncludeInCompilation, "a newly added source directory is a Compile item (project-system.md §4)");
-        await vm.SetSourceDirectoryIncludedCommand.ExecuteAsync(reference);
+        await reference.SetIncludedCommand.ExecuteAsync(false);
         Assert.False(vm.References.Single().IncludeInCompilation);
+    }
+
+    [Fact]
+    public void RealizingARowWithTheCurrentStateDoesNotApplyAnEdit()
+    {
+        // F-06: the toggle switch's OneWay binding sets IsChecked to the row's current state whenever a
+        // row is (re)built, which raises IsCheckedChanged and invokes SetIncludedCommand with that same
+        // state. That must be a no-op, not a redundant (or, before the fix, inverted) apply.
+        var (_, vm) = CreateVm([
+            new ProjectReferenceInfo(DeclaredReferenceKind.SourceDirectory, dir, null, true, true),
+        ]);
+        var reference = vm.References.Single();
+
+        reference.SetIncludedCommand.Execute(reference.IncludeInCompilation);
+
+        Assert.Empty(testEditor.Projects.ApplyCalls);
+        Assert.True(vm.References.Single().IncludeInCompilation);
+    }
+
+    [Fact]
+    public async Task ToggleAfterAFailedApplyEndsInTheClickedStateAndResyncsTheSwitch()
+    {
+        // F-06: SetIncludedCommand takes the switch's clicked state directly, and a failed apply rebuilds
+        // References, so a second click ends in the state the user actually clicked rather than the
+        // opposite (which `!reference.IncludeInCompilation` produced once the switch and model disagreed).
+        var (_, vm) = CreateVm([
+            new ProjectReferenceInfo(DeclaredReferenceKind.SourceDirectory, dir, null, true, true),
+        ]);
+        var reference = vm.References.Single();
+        Assert.True(reference.IncludeInCompilation);
+
+        bool failNext = true;
+        testEditor.Projects.FailApply = _ =>
+        {
+            if (failNext)
+            {
+                failNext = false;
+                return new InvalidOperationException("the csproj is locked");
+            }
+
+            return null;
+        };
+
+        // The user clicks to exclude; the apply fails, so the model is unchanged.
+        await reference.SetIncludedCommand.ExecuteAsync(false);
+        Assert.Single(testEditor.Dialogs.Errors);
+        var resynced = vm.References.Single();
+        Assert.NotSame(reference, resynced); // References was rebuilt so the switch resyncs with the model
+        Assert.True(resynced.IncludeInCompilation);
+
+        // The user clicks to exclude again; this time it applies.
+        await resynced.SetIncludedCommand.ExecuteAsync(false);
+        Assert.False(vm.References.Single().IncludeInCompilation); // ends in the state the user clicked
     }
 
     [Fact]

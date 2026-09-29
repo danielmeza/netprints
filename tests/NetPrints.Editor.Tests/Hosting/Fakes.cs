@@ -211,8 +211,12 @@ public sealed class FakeProjectSystem : IProjectSystem
     private readonly Dictionary<string, ProjectSnapshot> snapshots = new(StringComparer.Ordinal);
 
     public List<string> LoadCalls { get; } = [];
+    public List<IReadOnlyList<ProjectEdit>> ApplyCalls { get; } = [];
     public Func<string, BuildResult>? BuildResultFactory { get; set; }
     public Func<string, ProcessStartRequest>? RunCommandFactory { get; set; }
+
+    /// <summary>When set and it returns non-null for a given batch of edits, <see cref="ApplyAsync"/> throws that instead of applying (test seam for F-06).</summary>
+    public Func<IReadOnlyList<ProjectEdit>, Exception?>? FailApply { get; set; }
 
     public void Seed(ProjectSnapshot snapshot) => snapshots[snapshot.ProjectFilePath] = snapshot;
 
@@ -230,6 +234,12 @@ public sealed class FakeProjectSystem : IProjectSystem
 
     public Task<ProjectSnapshot> ApplyAsync(string projectFilePath, IReadOnlyList<ProjectEdit> edits, CancellationToken cancellationToken)
     {
+        ApplyCalls.Add(edits);
+        if (FailApply?.Invoke(edits) is { } failure)
+        {
+            throw failure;
+        }
+
         ProjectSnapshot snapshot = snapshots.TryGetValue(projectFilePath, out ProjectSnapshot? existing)
             ? existing
             : SynthesizeSnapshot(projectFilePath);

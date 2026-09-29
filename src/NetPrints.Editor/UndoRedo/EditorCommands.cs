@@ -225,12 +225,21 @@ public static class EditorCommands
                 {
                     // Redo: undo just restored the original nodes via RestoreAndReconnect, so swap the
                     // same replacement instances back in rather than building fresh ones (stable ids).
+                    // Disconnect and remove every original first, then reconnect every replacement
+                    // through the original->replacement map: otherwise a connection between two
+                    // originals (e.g. a chained setter) would reconnect to a not-yet-swapped original.
                     foreach (var swap in swaps)
                     {
                         GraphUtil.DisconnectNodePins(swap.Original.Node);
                         graph.Nodes.Remove(swap.Original.Node);
+                    }
+
+                    var replacementByOriginalNode = swaps.ToDictionary(s => s.Original.Node, s => s.Replacement);
+
+                    foreach (var swap in swaps)
+                    {
                         graph.Nodes.Add(swap.Replacement);
-                        ConnectExecOnly(swap.Original, swap.Replacement);
+                        ConnectExecOnly(swap.Original, swap.Replacement, replacementByOriginalNode);
                     }
                 }
             },
@@ -238,11 +247,20 @@ public static class EditorCommands
             {
                 local.Type = oldType ?? throw new InvalidOperationException(NoDoActionMessage);
 
-                foreach (var swap in swaps ?? throw new InvalidOperationException(NoDoActionMessage))
+                var currentSwaps = swaps ?? throw new InvalidOperationException(NoDoActionMessage);
+
+                // Remove every replacement first, then restore the originals in ascending index
+                // order: RestoreAndReconnect inserts each at its captured index, so restoring out of
+                // that order would shift later insertions and change the final node order.
+                foreach (var swap in currentSwaps)
                 {
                     GraphUtil.DisconnectNodePins(swap.Replacement);
                     graph.Nodes.Remove(swap.Replacement);
-                    RestoreAndReconnect(swap.Original);
+                }
+
+                foreach (var original in currentSwaps.Select(s => s.Original).OrderBy(o => o.Index))
+                {
+                    RestoreAndReconnect(original);
                 }
             });
     }
@@ -295,45 +313,70 @@ public static class EditorCommands
     }
 
     /// <summary>
-    /// Captures every getter/setter node of <paramref name="local"/> whose type is now stale (with
-    /// <see cref="CaptureAndDisconnect"/>, so the originals can later be restored exactly) and builds a
+    /// Captures every getter/setter node of <paramref name="local"/> whose type is now stale, and builds a
     /// fresh replacement node of the current specifier for each, at the same position and with the same
-    /// execution connections (not data connections: the old pin's type no longer matches).
+    /// execution connections (not data connections: the old pin's type no longer matches). Every original
+    /// is captured before any of them is disconnected, so a connection between two stale nodes (e.g. a
+    /// chained `set x` -> `set x`) is recorded against the real original pin on both sides rather than a
+    /// half-built replacement; connections between two originals are then remapped onto their
+    /// replacements when reconnecting.
     /// </summary>
     private static List<LocalVariableNodeSwap> BuildLocalVariableNodeSwaps(ExecutionGraph graph, LocalVariable local)
     {
         var specifier = local.ToSpecifier();
+        var staleNodes = FindLocalVariableNodes(graph, local.Name).Where(n => n.Variable.Type != specifier.Type).ToList();
+        var originals = staleNodes.Select(CaptureConnections).ToList();
+
+        foreach (var original in originals)
+        {
+            GraphUtil.DisconnectNodePins(original.Node);
+            original.Node.Graph.Nodes.Remove(original.Node);
+        }
+
         var swaps = new List<LocalVariableNodeSwap>();
 
-        foreach (var node in FindLocalVariableNodes(graph, local.Name).Where(n => n.Variable.Type != specifier.Type))
+        foreach (var original in originals)
         {
-            var original = CaptureAndDisconnect(node);
-
-            Node replacement = node switch
+            Node replacement = original.Node switch
             {
                 VariableGetterNode => new VariableGetterNode(graph, specifier),
                 VariableSetterNode => new VariableSetterNode(graph, specifier),
-                _ => throw new InvalidOperationException($"Unexpected local variable node kind '{node.GetType().Name}'."),
+                _ => throw new InvalidOperationException($"Unexpected local variable node kind '{original.Node.GetType().Name}'."),
             };
 
-            replacement.PositionX = node.PositionX;
-            replacement.PositionY = node.PositionY;
+            replacement.PositionX = original.Node.PositionX;
+            replacement.PositionY = original.Node.PositionY;
 
-            ConnectExecOnly(original, replacement);
             swaps.Add(new LocalVariableNodeSwap { Original = original, Replacement = replacement });
+        }
+
+        var replacementByOriginalNode = swaps.ToDictionary(s => s.Original.Node, s => s.Replacement);
+
+        foreach (var swap in swaps)
+        {
+            ConnectExecOnly(swap.Original, swap.Replacement, replacementByOriginalNode);
         }
 
         return swaps;
     }
 
-    /// <summary>Reconnects <paramref name="replacement"/>'s execution pins from <paramref name="original"/>'s captured connections (its data connections are not restored: the old pin's type no longer matches the replacement's).</summary>
-    private static void ConnectExecOnly(NodeConnectionSnapshot original, Node replacement)
+    /// <summary>
+    /// Reconnects <paramref name="replacement"/>'s execution pins from <paramref name="original"/>'s
+    /// captured connections (its data connections are not restored: the old pin's type no longer matches
+    /// the replacement's). When a captured endpoint belongs to another original node that is itself being
+    /// swapped, it is redirected to that original's replacement instead, through
+    /// <paramref name="replacementByOriginalNode"/>.
+    /// </summary>
+    private static void ConnectExecOnly(NodeConnectionSnapshot original, Node replacement, IReadOnlyDictionary<Node, Node> replacementByOriginalNode)
     {
         for (int i = 0; i < original.InputExecIncoming.Count && i < replacement.InputExecPins.Count; i++)
         {
             foreach (var from in original.InputExecIncoming[i])
             {
-                GraphUtil.ConnectExecPins(from, replacement.InputExecPins[i]);
+                var source = replacementByOriginalNode.TryGetValue(from.Node, out var replacedFrom)
+                    ? replacedFrom.OutputExecPins[from.Node.OutputExecPins.IndexOf(from)]
+                    : from;
+                GraphUtil.ConnectExecPins(source, replacement.InputExecPins[i]);
             }
         }
 
@@ -341,7 +384,10 @@ public static class EditorCommands
         {
             if (original.OutputExecOutgoing[i] is { } to)
             {
-                GraphUtil.ConnectExecPins(replacement.OutputExecPins[i], to);
+                var target = replacementByOriginalNode.TryGetValue(to.Node, out var replacedTo)
+                    ? replacedTo.InputExecPins[to.Node.InputExecPins.IndexOf(to)]
+                    : to;
+                GraphUtil.ConnectExecPins(replacement.OutputExecPins[i], target);
             }
         }
     }
@@ -360,20 +406,22 @@ public static class EditorCommands
     /// <summary>Records every connection of <paramref name="node"/>, then disconnects and removes it.</summary>
     private static NodeConnectionSnapshot CaptureAndDisconnect(Node node)
     {
-        var snapshot = new NodeConnectionSnapshot
-        {
-            Node = node,
-            Index = node.Graph.Nodes.IndexOf(node),
-            InputExecIncoming = node.InputExecPins.Select(p => (IReadOnlyList<NodeOutputExecPin>)p.IncomingPins.ToArray()).ToArray(),
-            OutputExecOutgoing = node.OutputExecPins.Select(p => p.OutgoingPin).ToArray(),
-            InputDataIncoming = node.InputDataPins.Select(p => p.IncomingPin).ToArray(),
-            OutputDataOutgoing = node.OutputDataPins.Select(p => (IReadOnlyList<NodeInputDataPin>)p.OutgoingPins.ToArray()).ToArray(),
-        };
-
+        var snapshot = CaptureConnections(node);
         GraphUtil.DisconnectNodePins(node);
         node.Graph.Nodes.Remove(node);
         return snapshot;
     }
+
+    /// <summary>Records every connection of <paramref name="node"/> without disconnecting or removing it.</summary>
+    private static NodeConnectionSnapshot CaptureConnections(Node node) => new()
+    {
+        Node = node,
+        Index = node.Graph.Nodes.IndexOf(node),
+        InputExecIncoming = node.InputExecPins.Select(p => (IReadOnlyList<NodeOutputExecPin>)p.IncomingPins.ToArray()).ToArray(),
+        OutputExecOutgoing = node.OutputExecPins.Select(p => p.OutgoingPin).ToArray(),
+        InputDataIncoming = node.InputDataPins.Select(p => p.IncomingPin).ToArray(),
+        OutputDataOutgoing = node.OutputDataPins.Select(p => (IReadOnlyList<NodeInputDataPin>)p.OutgoingPins.ToArray()).ToArray(),
+    };
 
     /// <summary>Reinserts a captured node at its original position and restores every recorded connection.</summary>
     private static void RestoreAndReconnect(NodeConnectionSnapshot snapshot)

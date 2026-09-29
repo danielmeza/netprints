@@ -251,6 +251,16 @@ public sealed class ProjectPersistence
             {
                 diagnostics.Add(DiagnosticMapper.FromTranslation(ex, cls));
             }
+            catch (Exception ex) when (ex is not OperationCanceledException and not ClassTranslationAbortException)
+            {
+                // F-07: the translator (and any extension translator) has raw throw sites that are not
+                // a TranslationException, e.g. an unresolved generic pin type. Isolate those the same
+                // way, as NPT000, so one bad class does not abort saving the rest (R1-01). A caller that
+                // wants a translation failure to abort the whole save instead (e.g. MainEditorVM.CompileAsync)
+                // throws a ClassTranslationAbortException from renderGenerated, which is left to propagate.
+                diagnostics.Add(new CodeDiagnostic(CodeDiagnosticSeverity.Error, TranslationDiagnosticCodes.Unclassified,
+                    $"{cls.FullName}: {ex.Message}", cls.FullName, null, null, null, null));
+            }
 
             cls.MarkClean();
         }

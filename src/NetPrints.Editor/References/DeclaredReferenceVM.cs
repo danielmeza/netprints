@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using NetPrints.Projects;
 
 namespace NetPrints.Editor.References;
@@ -7,7 +8,7 @@ namespace NetPrints.Editor.References;
 /// One entry of the References dialog (PAR-16, PAR-19), wrapping a
 /// <see cref="ProjectReferenceInfo"/> declared in the project file (project-system.md §4).
 /// </summary>
-public sealed class DeclaredReferenceVM(ProjectReferenceInfo info) : ObservableObject
+public sealed partial class DeclaredReferenceVM(ProjectReferenceInfo info, Func<bool, Task>? setIncluded = null) : ObservableObject
 {
     /// <summary>The wrapped reference, as last read from the project's snapshot.</summary>
     public ProjectReferenceInfo Info { get; } = info;
@@ -23,10 +24,19 @@ public sealed class DeclaredReferenceVM(ProjectReferenceInfo info) : ObservableO
     /// <summary>
     /// Whether a source directory reference is a <c>Compile</c> item (included) rather than a
     /// <c>None</c> item (excluded); always <see langword="false"/> for any other reference kind.
-    /// Read-only: the toggle switch is bound <c>OneWay</c> and invokes
-    /// <see cref="ReferenceListVM.SetSourceDirectoryIncludedCommand"/> instead (R2-10), which toggles
-    /// this value through <see cref="ProjectEdit.SetSourceDirectoryIncluded"/> and applies
-    /// <see cref="ReferenceListVM"/>'s own concurrency guard.
+    /// Read-only: the toggle switch is bound <c>OneWay</c> and invokes <see cref="SetIncludedCommand"/>
+    /// instead (R2-10, F-06), which applies this value through
+    /// <see cref="ProjectEdit.SetSourceDirectoryIncluded"/> and <see cref="ReferenceListVM"/>'s own
+    /// concurrency guard.
     /// </summary>
     public bool IncludeInCompilation => Info.Kind == DeclaredReferenceKind.SourceDirectory && Info.Included;
+
+    /// <summary>
+    /// Applies <paramref name="included"/> (F-06): the toggle switch's own clicked state, taken as the
+    /// command parameter, rather than inferred by inverting <see cref="IncludeInCompilation"/>. That
+    /// inversion broke once the switch and the model could disagree (e.g. after a failed apply), since
+    /// the next click would then invert the user's intent instead of applying it.
+    /// </summary>
+    [RelayCommand]
+    private Task SetIncludedAsync(bool included) => setIncluded?.Invoke(included) ?? Task.CompletedTask;
 }

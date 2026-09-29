@@ -205,6 +205,68 @@ public class LocalVariableTests : IDisposable
     }
 
     [Fact]
+    public async Task RetypeLocalVariablePreservesChainedSetterConnectionsAndOrderUndoRedo()
+    {
+        // F-05: S1 -> S2, both setters of the same local. S1's snapshot must not end up pointing
+        // at S2's replacement, and undo must restore both the connection and the node order.
+        var local = CreateLocal();
+        var position = new GraphPoint(100, 100);
+
+        graph.GetSetChooser.Open(local.Specifier, position);
+        graph.GetSetChooser.SetCommand.Execute(null);
+        var s1 = method.Nodes.OfType<VariableSetterNode>().Single();
+        s1.PositionX = 10;
+        s1.PositionY = 20;
+
+        graph.GetSetChooser.Open(local.Specifier, position);
+        graph.GetSetChooser.SetCommand.Execute(null);
+        var s2 = method.Nodes.OfType<VariableSetterNode>().Single(n => n != s1);
+        s2.PositionX = 42;
+        s2.PositionY = 24;
+
+        GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, s1.InputExecPins[0]);
+        GraphUtil.ConnectExecPins(s1.OutputExecPins[0], s2.InputExecPins[0]); // S1 -> S2 chain
+        GraphUtil.ConnectExecPins(s2.OutputExecPins[0], method.MainReturnNode.ReturnPin);
+
+        var literal1 = new LiteralNode(method, TypeSpecifier.FromType<object>());
+        GraphUtil.ConnectDataPins(literal1.ValuePin, s1.NewValuePin);
+        var literal2 = new LiteralNode(method, TypeSpecifier.FromType<object>());
+        GraphUtil.ConnectDataPins(literal2.ValuePin, s2.NewValuePin);
+
+        var preRetypeNodeOrder = method.Nodes.ToList();
+
+        editor.Dialogs.TypeAnswer = TypeSpecifier.FromType<int>();
+        await local.RetypeCommand.ExecuteAsync(null);
+
+        var replacements = method.Nodes.OfType<VariableSetterNode>().ToList();
+        Assert.Equal(2, replacements.Count);
+        var r1 = replacements.Single(n => n.PositionX == 10);
+        var r2 = replacements.Single(n => n.PositionX == 42);
+        Assert.Same(r2.InputExecPins[0], r1.OutputExecPins[0].OutgoingPin); // chain carried to the replacements
+        Assert.Same(method.EntryNode.InitialExecutionPin.OutgoingPin, r1.InputExecPins[0]);
+        Assert.Same(method.MainReturnNode.ReturnPin, r2.OutputExecPins[0].OutgoingPin);
+
+        vm.UndoCommand.Execute(null);
+
+        Assert.Equal(preRetypeNodeOrder, method.Nodes.ToList()); // same instances, same order
+        Assert.Same(s2.InputExecPins[0], s1.OutputExecPins[0].OutgoingPin); // S1 -> S2 restored, not S1 -> R2
+        Assert.Same(s1.InputExecPins[0], method.EntryNode.InitialExecutionPin.OutgoingPin);
+        Assert.Same(method.MainReturnNode.ReturnPin, s2.OutputExecPins[0].OutgoingPin);
+        Assert.Same(literal1.ValuePin, s1.NewValuePin.IncomingPin);
+        Assert.Same(literal2.ValuePin, s2.NewValuePin.IncomingPin);
+        Assert.DoesNotContain(r1, method.Nodes); // the replacement is fully detached, not left dangling
+        Assert.DoesNotContain(r2, method.Nodes);
+
+        vm.RedoCommand.Execute(null);
+
+        Assert.Same(r1, method.Nodes.OfType<VariableSetterNode>().Single(n => n.PositionX == 10));
+        Assert.Same(r2, method.Nodes.OfType<VariableSetterNode>().Single(n => n.PositionX == 42));
+        Assert.Same(r2.InputExecPins[0], r1.OutputExecPins[0].OutgoingPin); // chain preserved again on redo
+        Assert.Same(method.EntryNode.InitialExecutionPin.OutgoingPin, r1.InputExecPins[0]);
+        Assert.Same(method.MainReturnNode.ReturnPin, r2.OutputExecPins[0].OutgoingPin);
+    }
+
+    [Fact]
     public void RemoveLocalVariableRemovesAndRestoresNodesUndoably()
     {
         var local = CreateLocal();

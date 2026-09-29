@@ -593,7 +593,12 @@ public sealed partial class MainEditorVM : ObservableObject, IDisposable
         }
     }
 
-    private sealed class ClassTranslationFailure(ClassGraph cls, Exception inner) : Exception(inner.Message, inner)
+    /// <summary>
+    /// Marks a translation failure during compile as one that must abort the whole build (a
+    /// <see cref="ClassTranslationAbortException"/>), rather than being isolated per class by
+    /// <see cref="ProjectPersistence.SaveAsync"/> (F-07).
+    /// </summary>
+    private sealed class ClassTranslationFailure(ClassGraph cls, Exception inner) : ClassTranslationAbortException(inner.Message, inner)
     {
         public ClassGraph Class { get; } = cls;
     }
