@@ -133,7 +133,7 @@ internal static class ProjectCheck
 
             (DocumentFormatRegistry formats, IDocumentMapper mapper) = PersistenceBinding.CreateSerializers(extensions.Current, loggerFactory);
             var persistence = new ProjectPersistence(projects, formats, mapper,
-                directory => new FileSystemDocumentStore(directory, DefaultScheduler.Instance, loggerFactory.CreateLogger<FileSystemDocumentStore>()),
+                (directory, watch) => new FileSystemDocumentStore(directory, DefaultScheduler.Instance, loggerFactory.CreateLogger<FileSystemDocumentStore>(), watch),
                 loggerFactory.CreateLogger<ProjectPersistence>());
 
             ProjectLoadResult loaded = await persistence.LoadAsync(snapshot, cancellationToken);

@@ -125,6 +125,21 @@ public class ExtensionBuilderTests
         Assert.True(emitter.Disposed);
     }
 
+    // R1-10: a contribution implementing both IDisposable and IAsyncDisposable is awaited through the
+    // async path, not disposed synchronously.
+    [Fact]
+    public async Task DisposingARegistryPrefersIAsyncDisposableOverIDisposable()
+    {
+        var emitter = new DualDisposableMemberEmitter();
+        var extension = InProcess("test.ext", builder => builder.AddMemberEmitter(emitter));
+        ExtensionRegistry registry = Load(Options([extension]));
+
+        await registry.DisposeAsync();
+
+        Assert.True(emitter.AsyncDisposed);
+        Assert.False(emitter.SyncDisposed);
+    }
+
     private sealed class StubHostChannelFactory(string id) : IHostChannelFactory
     {
         public string Id => id;

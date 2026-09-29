@@ -12,6 +12,7 @@ using NetPrints.Serialization.Json;
 using NetPrints.Serialization.Mapping;
 using NetPrints.Serialization.Migrations;
 using NetPrints.Testing;
+using NetPrints.Tests.Extensibility;
 using Xunit;
 
 namespace NetPrints.Tests.Projects
@@ -99,6 +100,44 @@ namespace NetPrints.Tests.Projects
                 Assert.Contains("Building target \"NetPrintsGenerate\" partially", thirdOutput, StringComparison.Ordinal);
                 Assert.True(File.GetLastWriteTimeUtc(genAPath) > genATimeBefore);
                 Assert.Equal(genBTimeBefore, File.GetLastWriteTimeUtc(genBPath));
+            }
+            finally
+            {
+                Directory.Delete(directory, recursive: true);
+            }
+        }
+
+        // R1-12: NetPrintsGenerate's Inputs miss extension assemblies; touching only the extension's dll
+        // (no graph, no manifest) must still re-trigger it instead of leaving stale generated code.
+        [Fact]
+        public async Task TouchingOnlyTheExtensionDllRetriggersNetPrintsGenerate()
+        {
+            string directory = Directory.CreateTempSubdirectory("netprints-sdk-targets-").FullName;
+            try
+            {
+                LocalSdkLayout.Write(directory);
+                await WriteEmptyClassGraphAsync(Path.Combine(directory, "PsT15.A.netpc.json"), "PsT15", "A");
+                string extensionFolder = TestExtensionLocation.CopyTo(directory);
+                string csprojPath = Path.Combine(directory, "PsT15.csproj");
+                WriteProjectFile(csprojPath, "PsT15", extraItems: $"""<NetPrintsExtension Include="{extensionFolder}" />""");
+
+                (int firstExit, string _) = await RunDotnetAsync(directory, "build", csprojPath, "-v:n", "-tl:off", "--nologo");
+                Assert.Equal(0, firstExit);
+                string genPath = Path.Combine(directory, "PsT15.A.netpc.g.cs");
+                Assert.True(File.Exists(genPath));
+
+                (int secondExit, string secondOutput) = await RunDotnetAsync(directory, "build", csprojPath, "-v:n", "-tl:off", "--nologo");
+                Assert.Equal(0, secondExit);
+                Assert.Contains("Skipping target \"NetPrintsGenerate\"", secondOutput, StringComparison.Ordinal);
+
+                DateTime genTimeBefore = File.GetLastWriteTimeUtc(genPath);
+                string dllPath = Directory.GetFiles(extensionFolder, "*.dll").Single();
+                File.SetLastWriteTimeUtc(dllPath, DateTime.UtcNow.AddSeconds(5));
+
+                (int thirdExit, string thirdOutput) = await RunDotnetAsync(directory, "build", csprojPath, "-v:n", "-tl:off", "--nologo");
+                Assert.Equal(0, thirdExit);
+                Assert.DoesNotContain("Skipping target \"NetPrintsGenerate\"", thirdOutput, StringComparison.Ordinal);
+                Assert.True(File.GetLastWriteTimeUtc(genPath) > genTimeBefore);
             }
             finally
             {

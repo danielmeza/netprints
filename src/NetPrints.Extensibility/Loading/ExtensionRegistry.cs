@@ -160,11 +160,13 @@ public sealed class ExtensionRegistry : IAsyncDisposable
             {
                 switch (item)
                 {
-                    case IDisposable disposable:
-                        disposable.Dispose();
-                        break;
+                    // R1-10: IAsyncDisposable is matched first so a contribution implementing both is
+                    // disposed asynchronously, not synchronously.
                     case IAsyncDisposable asyncDisposable:
                         await asyncDisposable.DisposeAsync().ConfigureAwait(false);
+                        break;
+                    case IDisposable disposable:
+                        disposable.Dispose();
                         break;
                 }
             }

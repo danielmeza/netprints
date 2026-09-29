@@ -81,7 +81,8 @@ public static class ProjectFiles
             builder.Append(line).Append('\n');
         }
 
-        await WriteAtomicAsync(path, builder.ToString(), cancellationToken).ConfigureAwait(false);
+        byte[] bytes = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false).GetBytes(builder.ToString());
+        await WriteAtomicAsync(path, bytes, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -104,13 +105,31 @@ public static class ProjectFiles
             : throw new ArgumentException($"Graph file '{graphFilePath}' does not end with '{jsonSuffix}'.", nameof(graphFilePath));
     }
 
-    private static async Task WriteAtomicAsync(string path, string content, CancellationToken cancellationToken)
+    /// <summary>
+    /// Writes <paramref name="path"/> atomically (R1-21 — the one place every atomic temp-file-plus-move
+    /// write in the codebase goes through): <paramref name="writeToTempPath"/> fills a fresh temporary
+    /// file next to <paramref name="path"/>, and only once it completes without throwing does the
+    /// temporary file replace <paramref name="path"/> in one <see cref="File.Move(string, string, bool)"/>.
+    /// On an exception (including cancellation) from <paramref name="writeToTempPath"/> or the move
+    /// itself, the temporary file is deleted and <paramref name="path"/> is left untouched.
+    /// </summary>
+    /// <param name="path">Final path to write.</param>
+    /// <param name="writeToTempPath">Writes the new content to the temporary path it is given.</param>
+    /// <param name="cancellationToken">Cancels the operation.</param>
+    /// <param name="beforeMove">Runs immediately before the move, once <paramref name="writeToTempPath"/>
+    /// has succeeded (a caller that must record a fact exactly at that boundary, such as
+    /// <c>FileSystemDocumentStore</c> suppressing its own write's file system event).</param>
+    public static async Task WriteAtomicAsync(
+        string path, Func<string, CancellationToken, Task> writeToTempPath, CancellationToken cancellationToken, Action? beforeMove = null)
     {
-        byte[] bytes = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false).GetBytes(content);
+        ArgumentException.ThrowIfNullOrEmpty(path);
+        ArgumentNullException.ThrowIfNull(writeToTempPath);
+
         string tempPath = $"{path}.tmp-{Guid.NewGuid():N}";
         try
         {
-            await File.WriteAllBytesAsync(tempPath, bytes, cancellationToken).ConfigureAwait(false);
+            await writeToTempPath(tempPath, cancellationToken).ConfigureAwait(false);
+            beforeMove?.Invoke();
             File.Move(tempPath, path, overwrite: true);
         }
         catch
@@ -123,4 +142,11 @@ public static class ProjectFiles
             throw;
         }
     }
+
+    /// <summary>Convenience overload of <see cref="WriteAtomicAsync(string, Func{string, CancellationToken, Task}, CancellationToken, Action?)"/> that writes raw bytes.</summary>
+    /// <param name="path">Final path to write.</param>
+    /// <param name="bytes">Bytes to write.</param>
+    /// <param name="cancellationToken">Cancels the operation.</param>
+    public static Task WriteAtomicAsync(string path, byte[] bytes, CancellationToken cancellationToken) =>
+        WriteAtomicAsync(path, (tempPath, ct) => File.WriteAllBytesAsync(tempPath, bytes, ct), cancellationToken);
 }

@@ -48,7 +48,7 @@ public sealed class ProjectPersistence
 {
     private readonly IProjectSystem projects;
     private volatile Serializers serializers;
-    private readonly Func<string, IDocumentStore> createStore;
+    private readonly Func<string, bool, IDocumentStore> createStore;
     private readonly ILogger<ProjectPersistence> logger;
 
     /// <summary>
@@ -58,10 +58,12 @@ public sealed class ProjectPersistence
     /// <param name="formats">Document formats a graph file's format is resolved against.</param>
     /// <param name="mapper">Mapper used to convert classes to and from their document form.</param>
     /// <param name="createStore">Creates the document store a project's graphs are read from and
-    /// written to, given the project's directory.</param>
+    /// written to, given the project's directory and whether it should watch that directory for external
+    /// changes. Every call here passes <see langword="false"/> (R1-09): a load, save or add only needs to
+    /// read and write, so it never pays for a recursive <c>FileSystemWatcher</c>.</param>
     /// <param name="logger">Logger for a class graph that could not be loaded (event 3007).</param>
     public ProjectPersistence(IProjectSystem projects, DocumentFormatRegistry formats, IDocumentMapper mapper,
-        Func<string, IDocumentStore> createStore, ILogger<ProjectPersistence> logger)
+        Func<string, bool, IDocumentStore> createStore, ILogger<ProjectPersistence> logger)
     {
         this.projects = projects ?? throw new ArgumentNullException(nameof(projects));
         serializers = new Serializers(
@@ -119,7 +121,7 @@ public sealed class ProjectPersistence
         string storeRoot = ComputeStoreRoot(projectDirectory, snapshot.GraphFiles);
 
         Serializers current = serializers;
-        using IDocumentStore store = createStore(storeRoot);
+        using IDocumentStore store = createStore(storeRoot, false);
         var issues = new List<DocumentIssue>();
         var classes = new List<ClassGraph>();
 
@@ -207,7 +209,7 @@ public sealed class ProjectPersistence
         string projectDirectory = GetDirectoryOrThrow(project.Path);
         string storeRoot = ComputeStoreRoot(projectDirectory, project.Classes.Select(project.GetGraphFilePath));
         Serializers current = serializers;
-        using IDocumentStore store = createStore(storeRoot);
+        using IDocumentStore store = createStore(storeRoot, false);
         var written = new List<string>();
         var diagnostics = new List<CodeDiagnostic>();
 
@@ -315,7 +317,7 @@ public sealed class ProjectPersistence
         }
 
         byte[] bytes = await File.ReadAllBytesAsync(sourceGraphPath, cancellationToken).ConfigureAwait(false);
-        using IDocumentStore store = createStore(projectDirectory);
+        using IDocumentStore store = createStore(projectDirectory, false);
         DocumentId targetId = FileSystemDocumentStore.ToDocumentId(projectDirectory, targetPath);
         await store.WriteAsync(targetId, (stream, ct) => stream.WriteAsync(bytes, ct), cancellationToken).ConfigureAwait(false);
 

@@ -92,7 +92,7 @@ namespace NetPrints.Tests.Serialization
 
         private ProjectPersistence NewPersistence(IProjectSystem projects, DocumentFormatRegistry formats, IDocumentMapper mapper) =>
             new(projects, formats, mapper,
-                _ => new FileSystemDocumentStore(root, Scheduler.Default, NullLogger<FileSystemDocumentStore>.Instance),
+                (_, watch) => new FileSystemDocumentStore(root, Scheduler.Default, NullLogger<FileSystemDocumentStore>.Instance, watch),
                 NullLogger<ProjectPersistence>.Instance);
 
         // R1-06: unlike NewPersistence above (always rooted at the test's temp dir), this respects
@@ -101,8 +101,44 @@ namespace NetPrints.Tests.Serialization
         // (a graph outside it) is actually exercised end to end.
         private static ProjectPersistence NewPersistenceAtGivenDirectory(IProjectSystem projects, DocumentFormatRegistry formats, IDocumentMapper mapper) =>
             new(projects, formats, mapper,
-                directory => new FileSystemDocumentStore(directory, Scheduler.Default, NullLogger<FileSystemDocumentStore>.Instance),
+                (directory, watch) => new FileSystemDocumentStore(directory, Scheduler.Default, NullLogger<FileSystemDocumentStore>.Instance, watch),
                 NullLogger<ProjectPersistence>.Instance);
+
+        // R1-09: every load, save or add must ask for a non-watching store — a plain read/write never
+        // needs a recursive FileSystemWatcher over the project directory.
+        [Fact]
+        public async Task LoadSaveAndAddGraphAllRequestANonWatchingStore()
+        {
+            CancellationToken ct = TestContext.Current.CancellationToken;
+            var requestedWatch = new List<bool>();
+            NodeDocumentConverterRegistry registry = NewRegistry();
+            var mapper = new DocumentMapper(registry, NullLogger<DocumentMapper>.Instance);
+            JsonDocumentFormat jsonFormat = NewJsonFormat(registry);
+            var formats = new DocumentFormatRegistry([jsonFormat]);
+            string projectPath = Path.Combine(root, "Test.csproj");
+            string graphPath = Path.Combine(root, "A.netpc.json");
+            await WriteFileAsync(jsonFormat, MinimalDocument("A", 1), graphPath, ct);
+            var projects = new FakeProjectSystem(NewSnapshot(projectPath, [graphPath]));
+            var persistence = new ProjectPersistence(projects, formats, mapper,
+                (directory, watch) =>
+                {
+                    requestedWatch.Add(watch);
+                    return new FileSystemDocumentStore(directory, Scheduler.Default, NullLogger<FileSystemDocumentStore>.Instance, watch);
+                },
+                NullLogger<ProjectPersistence>.Instance);
+
+            ProjectLoadResult loaded = await persistence.LoadAsync(projectPath, ct);
+            await persistence.SaveAsync(loaded.Project, _ => "// generated\n", ct);
+
+            string sourceDir = Path.Combine(root, "Source");
+            Directory.CreateDirectory(sourceDir);
+            string sourceGraphPath = Path.Combine(sourceDir, "B.netpc.json");
+            await WriteFileAsync(jsonFormat, MinimalDocument("B", 2), sourceGraphPath, ct);
+            await persistence.AddGraphAsync(loaded.Project, sourceGraphPath, ct);
+
+            Assert.NotEmpty(requestedWatch);
+            Assert.All(requestedWatch, Assert.False);
+        }
 
         private static async Task WriteFileAsync(JsonDocumentFormat format, ClassDocument document, string path, CancellationToken cancellationToken)
         {

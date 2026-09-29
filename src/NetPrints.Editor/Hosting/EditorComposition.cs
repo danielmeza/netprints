@@ -105,7 +105,7 @@ internal sealed class EditorServices : IDisposable
 
         (DocumentFormatRegistry formats, IDocumentMapper mapper) = PersistenceBinding.CreateSerializers(host.Extensions.Current, host.LoggerFactory);
         var persistence = new ProjectPersistence(projects, formats, mapper,
-            directory => new FileSystemDocumentStore(directory, DefaultScheduler.Instance, host.LoggerFactory.CreateLogger<FileSystemDocumentStore>()),
+            (directory, watch) => new FileSystemDocumentStore(directory, DefaultScheduler.Instance, host.LoggerFactory.CreateLogger<FileSystemDocumentStore>(), watch),
             host.LoggerFactory.CreateLogger<ProjectPersistence>());
         persistenceBinding = PersistenceBinding.Bind(persistence, host.Extensions, host.LoggerFactory);
 

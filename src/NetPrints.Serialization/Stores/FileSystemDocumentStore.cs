@@ -11,6 +11,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using NetPrints.Projects;
 
 namespace NetPrints.Serialization.Stores;
 
@@ -28,7 +29,7 @@ public sealed class FileSystemDocumentStore : IDocumentStore
 
     private readonly IScheduler scheduler;
     private readonly ILogger<FileSystemDocumentStore> logger;
-    private readonly FileSystemWatcher watcher;
+    private readonly FileSystemWatcher? watcher;
     private readonly Subject<DocumentChange> changes = new();
     private readonly ConcurrentDictionary<DocumentId, SemaphoreSlim> locks = new();
     private readonly ConcurrentDictionary<DocumentId, IDisposable> pendingTimers = new();
@@ -38,12 +39,17 @@ public sealed class FileSystemDocumentStore : IDocumentStore
 
     /// <summary>
     /// Creates a file system document store rooted at <paramref name="rootDirectory"/>, creating it if
-    /// it does not exist yet, and starts watching it for external changes.
+    /// it does not exist yet, and, when <paramref name="watch"/> is <see langword="true"/>, starts
+    /// watching it for external changes.
     /// </summary>
     /// <param name="rootDirectory">Directory documents are stored under.</param>
     /// <param name="scheduler">Scheduler <see cref="Changes"/> debounces and emits on.</param>
     /// <param name="logger">Logger for external changes (event 3005).</param>
-    public FileSystemDocumentStore(string rootDirectory, IScheduler scheduler, ILogger<FileSystemDocumentStore> logger)
+    /// <param name="watch">Whether to construct the recursive <see cref="FileSystemWatcher"/> that backs
+    /// <see cref="Changes"/>. A caller that only reads and writes (<c>ProjectPersistence</c>) passes
+    /// <see langword="false"/> so a plain load or save does not pay for one (R1-09): without it,
+    /// <see cref="Changes"/> simply never emits.</param>
+    public FileSystemDocumentStore(string rootDirectory, IScheduler scheduler, ILogger<FileSystemDocumentStore> logger, bool watch = true)
     {
         ArgumentException.ThrowIfNullOrEmpty(rootDirectory);
         this.scheduler = scheduler ?? throw new ArgumentNullException(nameof(scheduler));
@@ -52,16 +58,19 @@ public sealed class FileSystemDocumentStore : IDocumentStore
         RootDirectory = Path.GetFullPath(rootDirectory);
         Directory.CreateDirectory(RootDirectory);
 
-        watcher = new FileSystemWatcher(RootDirectory)
+        if (watch)
         {
-            IncludeSubdirectories = true,
-            NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName,
-        };
-        watcher.Changed += HandleChanged;
-        watcher.Created += HandleChanged;
-        watcher.Deleted += HandleDeleted;
-        watcher.Renamed += HandleRenamed;
-        watcher.EnableRaisingEvents = true;
+            watcher = new FileSystemWatcher(RootDirectory)
+            {
+                IncludeSubdirectories = true,
+                NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName,
+            };
+            watcher.Changed += HandleChanged;
+            watcher.Created += HandleChanged;
+            watcher.Deleted += HandleDeleted;
+            watcher.Renamed += HandleRenamed;
+            watcher.EnableRaisingEvents = true;
+        }
     }
 
     /// <inheritdoc/>
@@ -138,28 +147,20 @@ public sealed class FileSystemDocumentStore : IDocumentStore
             string directory = Path.GetDirectoryName(targetPath) ?? RootDirectory;
             Directory.CreateDirectory(directory);
 
-            string tempPath = Path.Combine(directory, $"{Path.GetFileName(targetPath)}.tmp-{Guid.NewGuid():N}");
             try
             {
-                await using (FileStream tempStream = File.Open(tempPath, FileMode.Create, FileAccess.Write))
-                {
-                    await write(tempStream, cancellationToken).ConfigureAwait(false);
-                }
-
-                // Own writes are suppressed (not reported through Changes): record the time before the
-                // move so the resulting raw file system event (a Renamed event: the temp path to the
-                // target path) is recognized and dropped as soon as it arrives.
-                ownWriteAt[id] = scheduler.Now;
-                File.Move(tempPath, targetPath, overwrite: true);
+                await ProjectFiles.WriteAtomicAsync(
+                    targetPath,
+                    (tempPath, ct) => WriteToTempFileAsync(tempPath, write, ct),
+                    cancellationToken,
+                    // Own writes are suppressed (not reported through Changes): record the time right
+                    // before the move so the resulting raw file system event (a Renamed event: the temp
+                    // path to the target path) is recognized and dropped as soon as it arrives.
+                    beforeMove: () => ownWriteAt[id] = scheduler.Now).ConfigureAwait(false);
             }
             catch
             {
                 ownWriteAt.TryRemove(id, out _);
-                if (File.Exists(tempPath))
-                {
-                    File.Delete(tempPath);
-                }
-
                 throw;
             }
         }
@@ -167,6 +168,12 @@ public sealed class FileSystemDocumentStore : IDocumentStore
         {
             gate.Release();
         }
+    }
+
+    private static async Task WriteToTempFileAsync(string tempPath, Func<Stream, CancellationToken, ValueTask> write, CancellationToken cancellationToken)
+    {
+        await using FileStream tempStream = File.Open(tempPath, FileMode.Create, FileAccess.Write);
+        await write(tempStream, cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc/>
@@ -279,12 +286,15 @@ public sealed class FileSystemDocumentStore : IDocumentStore
 
             disposed = true;
 
-            watcher.EnableRaisingEvents = false;
-            watcher.Changed -= HandleChanged;
-            watcher.Created -= HandleChanged;
-            watcher.Deleted -= HandleDeleted;
-            watcher.Renamed -= HandleRenamed;
-            watcher.Dispose();
+            if (watcher is not null)
+            {
+                watcher.EnableRaisingEvents = false;
+                watcher.Changed -= HandleChanged;
+                watcher.Created -= HandleChanged;
+                watcher.Deleted -= HandleDeleted;
+                watcher.Renamed -= HandleRenamed;
+                watcher.Dispose();
+            }
 
             foreach (IDisposable timer in pendingTimers.Values)
             {

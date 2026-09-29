@@ -11,18 +11,20 @@
     <UpToDateCheckInput Include="@(NetPrintsGraph)" />
   </ItemGroup>
 
-  <Target Name="NetPrintsGenerate"
-          BeforeTargets="CoreCompile"
-          Condition="'@(NetPrintsGraph)' != ''"
-          Inputs="@(NetPrintsGraph);$(NetPrintsGeneratorPath);$(MSBuildProjectFullPath);@(NetPrintsExtension->'%(FullPath)/netprints-extension.json')"
-          Outputs="@(NetPrintsGraph->'%(GeneratedFile)')">
-    <PropertyGroup>
-      <_NetPrintsHost>$(DOTNET_HOST_PATH)</_NetPrintsHost>
-      <_NetPrintsHost Condition="'$(_NetPrintsHost)' == '' and '$(NetCoreRoot)' != ''">$(NetCoreRoot)dotnet$(_NetPrintsExeExtension)</_NetPrintsHost>
-      <_NetPrintsHost Condition="'$(_NetPrintsHost)' == ''">dotnet</_NetPrintsHost>
-      <_NetPrintsRequest>$(IntermediateOutputPath)netprints.generate.rsp</_NetPrintsRequest>
-    </PropertyGroup>
+  <PropertyGroup>
+    <_NetPrintsRequest>$(IntermediateOutputPath)netprints.generate.rsp</_NetPrintsRequest>
+  </PropertyGroup>
+
+  <!-- Written by its own target, ahead of NetPrintsGenerate, so the request file — and the extension
+       assemblies' actual, glob-expanded paths (R1-12: implicit metadata batching on
+       %(NetPrintsExtension.FullPath), only available inside a target, makes each Include a plain,
+       globbable string — unlike an '@(NetPrintsExtension->'%(FullPath)/**/*.dll')' transform, which
+       Inputs treats as one literal, non-existent path) — can themselves be Inputs of that target
+       (WriteOnlyWhenDifferent so RootNamespace/NetPrintsProfile changes from Directory.Build.props
+       invalidate it even though no graph or extension file changed). -->
+  <Target Name="_NetPrintsWriteRequest" Condition="'@(NetPrintsGraph)' != ''">
     <ItemGroup>
+      <_NetPrintsExtensionAssembly Include="%(NetPrintsExtension.FullPath)/**/*.dll" Condition="'@(NetPrintsExtension)' != ''" />
       <_NetPrintsRequestLine Include="project=$(MSBuildProjectFullPath)" />
       <_NetPrintsRequestLine Include="rootNamespace=$(RootNamespace)" />
       <_NetPrintsRequestLine Include="profile=$(NetPrintsProfile)" />
@@ -30,6 +32,19 @@
       <_NetPrintsRequestLine Include="@(NetPrintsGraph->'graph=%(FullPath)|%(GeneratedFile)')" />
     </ItemGroup>
     <WriteLinesToFile File="$(_NetPrintsRequest)" Lines="@(_NetPrintsRequestLine)" Overwrite="true" WriteOnlyWhenDifferent="true" />
+  </Target>
+
+  <Target Name="NetPrintsGenerate"
+          BeforeTargets="CoreCompile"
+          DependsOnTargets="_NetPrintsWriteRequest"
+          Condition="'@(NetPrintsGraph)' != ''"
+          Inputs="@(NetPrintsGraph);$(NetPrintsGeneratorPath);$(MSBuildProjectFullPath);$(_NetPrintsRequest);@(NetPrintsExtension->'%(FullPath)/netprints-extension.json');@(_NetPrintsExtensionAssembly)"
+          Outputs="@(NetPrintsGraph->'%(GeneratedFile)')">
+    <PropertyGroup>
+      <_NetPrintsHost>$(DOTNET_HOST_PATH)</_NetPrintsHost>
+      <_NetPrintsHost Condition="'$(_NetPrintsHost)' == '' and '$(NetCoreRoot)' != ''">$(NetCoreRoot)dotnet$(_NetPrintsExeExtension)</_NetPrintsHost>
+      <_NetPrintsHost Condition="'$(_NetPrintsHost)' == ''">dotnet</_NetPrintsHost>
+    </PropertyGroup>
     <Exec Command="&quot;$(_NetPrintsHost)&quot; exec &quot;$(NetPrintsGeneratorPath)&quot; generate &quot;$(_NetPrintsRequest)&quot;"
           WorkingDirectory="$(MSBuildProjectDirectory)" />
     <Touch Files="@(NetPrintsGraph->'%(GeneratedFile)')" />

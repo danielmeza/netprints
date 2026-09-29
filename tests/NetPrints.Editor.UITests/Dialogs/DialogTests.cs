@@ -142,8 +142,8 @@ public class DialogTests
                     new NetPrints.Serialization.Json.NetPrintsJsonOptions(nodeConverters),
                     new NetPrints.Serialization.Migrations.DocumentMigrator([], NullLogger<NetPrints.Serialization.Migrations.DocumentMigrator>.Instance))]);
             return new NetPrints.Serialization.ProjectPersistence(projects, formats, mapper,
-                directory => new NetPrints.Serialization.Stores.FileSystemDocumentStore(directory,
-                    System.Reactive.Concurrency.DefaultScheduler.Instance, NullLogger<NetPrints.Serialization.Stores.FileSystemDocumentStore>.Instance),
+                (directory, watch) => new NetPrints.Serialization.Stores.FileSystemDocumentStore(directory,
+                    System.Reactive.Concurrency.DefaultScheduler.Instance, NullLogger<NetPrints.Serialization.Stores.FileSystemDocumentStore>.Instance, watch),
                 NullLogger<NetPrints.Serialization.ProjectPersistence>.Instance);
         }
     }

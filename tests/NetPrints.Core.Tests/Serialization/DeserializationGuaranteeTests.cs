@@ -81,7 +81,7 @@ namespace NetPrints.Tests.Serialization
                 new FixedSnapshotProjectSystem(snapshot),
                 new DocumentFormatRegistry([new JsonDocumentFormat(new NetPrintsJsonOptions(registry), new DocumentMigrator([], NullLogger<DocumentMigrator>.Instance))]),
                 new DocumentMapper(registry, NullLogger<DocumentMapper>.Instance),
-                dir => new FileSystemDocumentStore(dir, Scheduler.Default, NullLogger<FileSystemDocumentStore>.Instance),
+                (dir, watch) => new FileSystemDocumentStore(dir, Scheduler.Default, NullLogger<FileSystemDocumentStore>.Instance, watch),
                 NullLogger<ProjectPersistence>.Instance);
 
             ProjectLoadResult result = await persistence.LoadAsync(projectFile, TestContext.Current.CancellationToken);

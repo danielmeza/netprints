@@ -396,7 +396,7 @@ public sealed class TestEditor : IDisposable
         var mapper = new DocumentMapper(nodeConverters, NullLogger<DocumentMapper>.Instance);
         var formats = new DocumentFormatRegistry([new JsonDocumentFormat(new NetPrintsJsonOptions(nodeConverters), new DocumentMigrator([], NullLogger<DocumentMigrator>.Instance))]);
         return new ProjectPersistence(projects, formats, mapper,
-            directory => new FileSystemDocumentStore(directory, DefaultScheduler.Instance, NullLogger<FileSystemDocumentStore>.Instance),
+            (directory, watch) => new FileSystemDocumentStore(directory, DefaultScheduler.Instance, NullLogger<FileSystemDocumentStore>.Instance, watch),
             NullLogger<ProjectPersistence>.Instance);
     }
 

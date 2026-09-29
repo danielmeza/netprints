@@ -86,6 +86,37 @@ public class ExtensionHostTests : IDisposable
             restored.ClassEmitters.Single().GetType().Assembly);
     }
 
+    // R1-11: two overlapping LoadForProjectAsync calls for the same folders must be serialized, so the
+    // second one re-checks projectFolders after acquiring the gate and returns the first one's registry
+    // instead of loading (and racing to swap `current`) again.
+    [Fact]
+    public async Task ConcurrentLoadForProjectCallsAreSerializedAndBothReturnTheSameRegistry()
+    {
+        string folder = Path.Combine(root, "test.slow");
+        WriteManifest(folder, ManifestJson("test.slow", "test.slow.dll"));
+        Compile(folder, "test.slow", """
+            using NetPrints.Extensibility;
+            public class Ext : INetPrintsExtension
+            {
+                public void Register(IExtensionBuilder builder) => System.Threading.Thread.Sleep(300);
+            }
+            """);
+
+        await using var host = new ExtensionHost(ExtensionLoaderOptions.BuiltInOnly, new CollectingLoggerFactory());
+        var raised = new List<ExtensionRegistry>();
+        host.RegistryChanged += (_, registry) => raised.Add(registry);
+
+        Task<ExtensionRegistry> first = Task.Run(async () => await host.LoadForProjectAsync([folder], TestContext.Current.CancellationToken));
+        await Task.Delay(50, TestContext.Current.CancellationToken);
+        Task<ExtensionRegistry> second = Task.Run(async () => await host.LoadForProjectAsync([folder], TestContext.Current.CancellationToken));
+
+        ExtensionRegistry[] results = await Task.WhenAll(first, second);
+
+        Assert.Same(results[0], results[1]);
+        Assert.Same(results[0], host.Current);
+        Assert.Same(results[0], Assert.Single(raised));
+    }
+
     [Fact]
     public async Task ACancelledLoadLeavesTheRegistryUnchanged()
     {

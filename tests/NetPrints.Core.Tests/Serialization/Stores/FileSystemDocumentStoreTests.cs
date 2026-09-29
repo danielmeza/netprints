@@ -124,5 +124,29 @@ namespace NetPrints.Tests.Serialization.Stores
 
             Directory.Delete(directory, recursive: true);
         }
+
+        // R1-09: watch: false (ProjectPersistence's own read/write stores) constructs no FileSystemWatcher
+        // at all, so an external edit never surfaces — only Dispose completing Changes proves that.
+        [Fact]
+        public async Task WatchFalseObservesNoExternalEditsButStillCompletesOnDispose()
+        {
+            string directory = NewRoot();
+            var store = new FileSystemDocumentStore(directory, Scheduler.Default, NullLogger<FileSystemDocumentStore>.Instance, watch: false);
+            var id = new DocumentId("a.txt");
+            await store.WriteAsync(id, (s, ct) => WriteText(s, "seed", ct), TestContext.Current.CancellationToken);
+
+            var received = new List<DocumentChange>();
+            bool completed = false;
+            using IDisposable subscription = store.Changes.Subscribe(received.Add, () => completed = true);
+
+            await File.WriteAllTextAsync(store.GetFullPath(id), "external", TestContext.Current.CancellationToken);
+            await Task.Delay(500, TestContext.Current.CancellationToken);
+            Assert.Empty(received);
+
+            store.Dispose();
+            Assert.True(completed);
+
+            Directory.Delete(directory, recursive: true);
+        }
     }
 }

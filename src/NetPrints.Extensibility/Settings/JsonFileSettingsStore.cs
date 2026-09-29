@@ -3,6 +3,7 @@ using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.Extensions.Logging;
+using NetPrints.Projects;
 
 namespace NetPrints.Extensibility.Settings;
 
@@ -221,8 +222,10 @@ public sealed class JsonFileSettingsStore : ISettingsStore
 
             Log.SettingsSectionInvalid(logger, null, FileSection, filePath);
         }
-        catch (JsonException ex)
+        catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
         {
+            // R1-13: a locked or unreadable settings.json (not just malformed JSON) must not be cached
+            // by the Lazy above as a permanent failure — every Get would then rethrow from editor startup.
             Log.SettingsSectionInvalid(logger, ex, FileSection, filePath);
         }
 
@@ -237,21 +240,7 @@ public sealed class JsonFileSettingsStore : ISettingsStore
             Directory.CreateDirectory(directory);
         }
 
-        string tempPath = $"{filePath}.tmp-{Guid.NewGuid():N}";
-        try
-        {
-            await File.WriteAllBytesAsync(tempPath, bytes, cancellationToken).ConfigureAwait(false);
-            File.Move(tempPath, filePath, overwrite: true);
-        }
-        catch
-        {
-            if (File.Exists(tempPath))
-            {
-                File.Delete(tempPath);
-            }
-
-            throw;
-        }
+        await ProjectFiles.WriteAtomicAsync(filePath, bytes, cancellationToken).ConfigureAwait(false);
     }
 
     private sealed record State(JsonObject Root, ConcurrentDictionary<string, object?> Values);

@@ -294,22 +294,7 @@ public sealed class GraphCodeGenerator
             Directory.CreateDirectory(directory);
         }
 
-        string tempPath = $"{path}.tmp-{Guid.NewGuid():N}";
-        try
-        {
-            await File.WriteAllBytesAsync(tempPath, bytes, cancellationToken).ConfigureAwait(false);
-            File.Move(tempPath, path, overwrite: true);
-        }
-        catch
-        {
-            if (File.Exists(tempPath))
-            {
-                File.Delete(tempPath);
-            }
-
-            throw;
-        }
-
+        await ProjectFiles.WriteAtomicAsync(path, bytes, cancellationToken).ConfigureAwait(false);
         return true;
     }
 }

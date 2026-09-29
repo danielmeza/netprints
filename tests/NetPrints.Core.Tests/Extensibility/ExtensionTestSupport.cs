@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json.Serialization.Metadata;
+using System.Threading.Tasks;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.Extensions.Logging;
@@ -127,6 +128,29 @@ public sealed class DisposableMemberEmitter : IMemberEmitter, IDisposable
     }
 
     public void Dispose() => Disposed = true;
+}
+
+/// <summary>Implements both <see cref="IDisposable"/> and <see cref="IAsyncDisposable"/>, recording which
+/// one was actually called (R1-10: the async one must win).</summary>
+public sealed class DualDisposableMemberEmitter : IMemberEmitter, IDisposable, IAsyncDisposable
+{
+    public string Id => "dual-disposable";
+
+    public bool SyncDisposed { get; private set; }
+
+    public bool AsyncDisposed { get; private set; }
+
+    public void EmitMember(MemberEmitContext context)
+    {
+    }
+
+    public void Dispose() => SyncDisposed = true;
+
+    public ValueTask DisposeAsync()
+    {
+        AsyncDisposed = true;
+        return ValueTask.CompletedTask;
+    }
 }
 
 public sealed class StubProfile(string id) : IProjectProfile

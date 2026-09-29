@@ -177,21 +177,10 @@ public sealed class MsBuildProjectSystem : IProjectSystem
                 ApplyEdit(root, edit, projectDirectory);
             }
 
-            string tempPath = $"{projectFilePath}.tmp-{Guid.NewGuid():N}";
-            try
-            {
-                root.Save(tempPath);
-                File.Move(tempPath, projectFilePath, overwrite: true);
-            }
-            catch
-            {
-                if (File.Exists(tempPath))
-                {
-                    File.Delete(tempPath);
-                }
-
-                throw;
-            }
+            await ProjectFiles.WriteAtomicAsync(
+                projectFilePath,
+                (tempPath, _) => { root.Save(tempPath); return Task.CompletedTask; },
+                cancellationToken).ConfigureAwait(false);
         }
 
         return await LoadAsync(projectFilePath, cancellationToken).ConfigureAwait(false);

@@ -9,6 +9,7 @@ namespace NetPrints.Extensibility.Loading;
 public sealed class ExtensionHost : IExtensionHost
 {
     private readonly object gate = new();
+    private readonly SemaphoreSlim loadGate = new(1, 1);
     private readonly ExtensionLoaderOptions baseOptions;
     private readonly ILoggerFactory loggerFactory;
     private readonly ExtensionLoadContextCache cache = new();
@@ -48,29 +49,43 @@ public sealed class ExtensionHost : IExtensionHost
     public async ValueTask<ExtensionRegistry> LoadForProjectAsync(IReadOnlyList<string> projectExtensionFolders, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(projectExtensionFolders);
+        cancellationToken.ThrowIfCancellationRequested();
 
         string[] folders = [.. projectExtensionFolders.Select(Path.GetFullPath).Distinct(StringComparer.Ordinal)];
-        lock (gate)
+
+        // R1-11: the whole "same folders?" check, the load and the swap are serialized, so two
+        // overlapping calls (a quick project switch, or a reload racing an open) can't both load and
+        // race to swap `current` — the loser would otherwise dispose the registry the winner already
+        // returned to its caller, which may still be binding it.
+        await loadGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
         {
-            if (folders.SequenceEqual(projectFolders, StringComparer.Ordinal))
+            lock (gate)
             {
-                return current;
+                if (folders.SequenceEqual(projectFolders, StringComparer.Ordinal))
+                {
+                    return current;
+                }
             }
+
+            var options = baseOptions with { ExtensionFolders = [.. baseOptions.ExtensionFolders, .. folders] };
+            ExtensionRegistry next = new ExtensionLoader(options, loggerFactory, cache).Load(cancellationToken);
+
+            ExtensionRegistry previous;
+            lock (gate)
+            {
+                projectFolders = folders;
+                previous = Interlocked.Exchange(ref current, next);
+            }
+
+            RegistryChanged?.Invoke(this, next);
+            await previous.DisposeAsync().ConfigureAwait(false);
+            return next;
         }
-
-        var options = baseOptions with { ExtensionFolders = [.. baseOptions.ExtensionFolders, .. folders] };
-        ExtensionRegistry next = new ExtensionLoader(options, loggerFactory, cache).Load(cancellationToken);
-
-        ExtensionRegistry previous;
-        lock (gate)
+        finally
         {
-            projectFolders = folders;
-            previous = Interlocked.Exchange(ref current, next);
+            loadGate.Release();
         }
-
-        RegistryChanged?.Invoke(this, next);
-        await previous.DisposeAsync().ConfigureAwait(false);
-        return next;
     }
 
     /// <summary>

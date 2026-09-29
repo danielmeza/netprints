@@ -60,7 +60,7 @@ namespace NetPrints.Tests.Samples
             var mapper = new DocumentMapper(registry, NullLogger<DocumentMapper>.Instance);
             var formats = new DocumentFormatRegistry([new JsonDocumentFormat(new NetPrintsJsonOptions(registry), new DocumentMigrator([], NullLogger<DocumentMigrator>.Instance))]);
             return new ProjectPersistence(projects, formats, mapper,
-                dir => new FileSystemDocumentStore(dir, Scheduler.Default, NullLogger<FileSystemDocumentStore>.Instance),
+                (dir, watch) => new FileSystemDocumentStore(dir, Scheduler.Default, NullLogger<FileSystemDocumentStore>.Instance, watch),
                 NullLogger<ProjectPersistence>.Instance);
         }
 

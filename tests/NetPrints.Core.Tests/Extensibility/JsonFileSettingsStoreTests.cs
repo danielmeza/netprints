@@ -164,6 +164,33 @@ public class JsonFileSettingsStoreTests : IDisposable
         Assert.Equal(2006, Assert.Single(logs.Entries).EventId.Id);
     }
 
+    // R1-13: an unreadable file (an IOException/UnauthorizedAccessException, not just malformed JSON)
+    // falls back to defaults and logs 2006 the same way — Get must not keep rethrowing forever.
+    [Fact]
+    public async Task UnreadableFileGivesDefaultsAndLogs2006()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            Assert.Skip("File permission bits are POSIX-only.");
+            return;
+        }
+
+        Directory.CreateDirectory(Path.GetDirectoryName(FilePath) ?? directory);
+        await File.WriteAllTextAsync(FilePath, """{ "extensions": { "test.sample": { "name": "s", "count": 1 } } }""", TestContext.Current.CancellationToken);
+        File.SetUnixFileMode(FilePath, UnixFileMode.None);
+        try
+        {
+            JsonFileSettingsStore store = NewStore();
+
+            Assert.Equal(Sample.Default, store.Get(Sample));
+            Assert.Equal(2006, Assert.Single(logs.Entries).EventId.Id);
+        }
+        finally
+        {
+            File.SetUnixFileMode(FilePath, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+        }
+    }
+
     [Fact]
     public async Task TheFileIsReadOnceAndCached()
     {
