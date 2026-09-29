@@ -187,8 +187,15 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends xvfb openbox xdotool imagemagick x11-utils libgtk-3-0t64 adwaita-icon-theme
 
+      # NetPrints.Generator is no longer on NetPrints.Editor's build graph (ADR-0009: a plain
+      # ProjectReference to NetPrints.Generation replaced the ReferenceOutputAssembly=false + HintPath
+      # reference that used to build it as a side effect). The tests below run the real Desktop app,
+      # which execs the in-repo dev-mode generator (project-system.md §2.1) by path, so it must be
+      # built explicitly here too, same as scripts/smoke-desktop.sh does for the published editor.
       - name: Build
-        run: dotnet build tests/NetPrints.Desktop.E2ETests -c Release
+        run: |
+          dotnet build tests/NetPrints.Desktop.E2ETests -c Release
+          dotnet build src/NetPrints.Generator -c Release
 
       # The tests start their own Xvfb on a free display (like xvfb-run -a) plus openbox.
       # --fail-skips turns any skipped test (e.g. NETPRINTS_E2E not reaching the test host, or a
