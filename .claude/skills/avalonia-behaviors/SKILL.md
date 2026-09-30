@@ -107,4 +107,4 @@ and the dialog behaviors. Their decisions and side effects belong in commands an
 - `references/<job>.md`: recipes and catalog tables for one job. The D11 table names the file; open only that one.
 - [references/catalog-guide.md](references/catalog-guide.md): how to read a catalog entry and its stance tag, the
   packages, and where the catalog came from.
-- `scripts/behavior-props.cs`: prints a type's properties with their declaring base. Run it; don't read it.
+- `scripts/behavior-props.cs`: prints a type's properties with their declaring base. Run it; don't read it; it covers Xaml.Behaviors types, while the `avalonia-docs` MCP tools cover Avalonia core types.

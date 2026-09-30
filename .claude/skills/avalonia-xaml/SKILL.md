@@ -12,6 +12,8 @@ paths:
 
 Stack: .NET 10, Avalonia 12, Nodify.Avalonia 2, CommunityToolkit.Mvvm 8, AvaloniaEdit, Material.Icons and
 Xaml.Behaviors 12 (exact versions: `Directory.Packages.props`). Compiled bindings are on (`AvaloniaUseCompiledBindingsByDefault`).
+For questions about Avalonia's own API, controls or behavior, use the `avalonia-docs` MCP tools when they are available;
+where they differ from this repo's code or these rules, the repo and the rules win.
 
 The rules come in three tiers:
 - **Enforced**: a test checks it (`XamlHygieneTests`), so a violation fails the build. To make an exception, add an allowlist entry with a reason.
