@@ -7,6 +7,6 @@ public sealed class SmokeTests
     [Fact]
     public void ProjectLoads()
     {
-        Assert.Equal("NetPrints.Cli", typeof(NetPrintsCLI.Program).Assembly.GetName().Name);
+        Assert.Equal("NetPrints.Cli", typeof(NetPrints.Cli.CliApplication).Assembly.GetName().Name);
     }
 }

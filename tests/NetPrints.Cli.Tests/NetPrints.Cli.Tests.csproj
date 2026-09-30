@@ -8,6 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="xunit.v3" />
+    <PackageReference Include="Spectre.Console.Testing" />
     <!-- Referencing NetPrints.Cli pulls in Microsoft.CodeAnalysis.Workspaces.MSBuild, whose own
          dependency on Microsoft.Build.Framework carries no asset exclusion of its own (MSBuildLocator's
          MSBL001, research K10): pin and exclude both here too, exactly like NetPrints.Core.Tests. -->

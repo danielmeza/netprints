@@ -171,10 +171,10 @@ tracked API.
 
 ### Batch C1 — model: sonnet — T019–T022 — 6 units
 
-- [ ] T019 [US1] Test first: `tests/NetPrints.Cli.Tests/CliExitCodeTests.cs` against `CliApplication.RunAsync` with
+- [x] T019 [US1] Test first: `tests/NetPrints.Cli.Tests/CliExitCodeTests.cs` against `CliApplication.RunAsync` with
   Spectre's `TestConsole`: CL-T01 iterating over every registered command (commands added by later tasks are covered
   automatically), CL-T02, CL-T07 (with `--verbose` before and after the command name), CL-T10, CL-T12.
-- [ ] T020 [US1] Rewrite `src/NetPrints.Cli/Program.cs`; add `src/NetPrints.Cli/CliApplication.cs`, `CliServices.cs`,
+- [x] T020 [US1] Rewrite `src/NetPrints.Cli/Program.cs`; add `src/NetPrints.Cli/CliApplication.cs`, `CliServices.cs`,
   `ExitCodes.cs`, `Infrastructure/TypeRegistrar.cs`, `Infrastructure/TypeResolver.cs`, `Infrastructure/CliEnvironment.cs`
   (injectable current directory and environment) and `Infrastructure/CommandSettingsBase.cs` (`--verbose`), namespace
   `NetPrints.Cli`: a pre-parse rejects the P1 flags and moves a leading `--verbose` after the command name;
@@ -182,11 +182,11 @@ tracked API.
   other → 4; stderr logging at Warning (Information with `--verbose`). Keep P1's build core until T022 moves it, so
   `CliBuildTests` stay green. In `src/NetPrints.Cli/NetPrints.Cli.csproj` replace `CommandLineParser` with
   `Spectre.Console.Cli` and `Microsoft.Extensions.DependencyInjection`.
-- [ ] T021 [US1] Test first `tests/NetPrints.Cli.Tests/Infrastructure/ProjectLocatorTests.cs` (CL-T03); add
+- [x] T021 [US1] Test first `tests/NetPrints.Cli.Tests/Infrastructure/ProjectLocatorTests.cs` (CL-T03); add
   `src/NetPrints.Cli/Infrastructure/ProjectLocator.cs` and `Infrastructure/ProjectCommandBase.cs` (project resolution
   against `CliEnvironment`; SDK check through an `IMsBuildRegistration` seam over `MsBuildRegistration.EnsureRegistered`,
   `NoInlining` split kept).
-- [ ] T022 [US1] Test first: port `tests/NetPrints.Core.Tests/Projects/CliBuildTests.cs` to
+- [x] T022 [US1] Test first: port `tests/NetPrints.Core.Tests/Projects/CliBuildTests.cs` to
   `tests/NetPrints.Cli.Tests/Commands/BuildCommandTests.cs` targeting `BuildCommand`, keeping every case and adding
   CL-T04 and CL-T06; then add `src/NetPrints.Cli/Commands/BuildCommand.cs` (P1's build core moves here); delete the old
   test file once the port is green; remove `CommandLineParser` from `Directory.Packages.props` and the

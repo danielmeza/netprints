@@ -121,35 +121,23 @@ jobs:
           -- --ignore-exit-code 8 --coverage --coverage-output-format cobertura
           --coverage-settings ${{ github.workspace }}/tests/CodeCoverage.config
 
-      # Since 6dd89f2 the CLI's exit code follows its documented contract (0 success, 1 build
-      # failure/not found, 2 bad arguments, 3 no SDK; --run propagates the child's own exit code).
-      # `--version`/`--help` go through CommandLineParser's "not parsed" path, which this CLI maps to
-      # the bad-arguments code (2) rather than 0 until the P2 redesign (spec 001, "Out of scope");
-      # assert that exact code instead of swallowing it with `|| true`.
+      # `--version` prints "NetPrints.Cli <version>" and exits 0 since the Spectre CLI (P2).
       - name: CLI smoke
         run: |
-          set +e
           output=$(dotnet run --project src/NetPrints.Cli -c Release --no-build -- --version 2>&1)
-          rc=$?
-          set -e
           echo "$output"
           echo "$output" | grep -q "NetPrints.Cli"
-          [ "$rc" -eq 2 ]
 
       # The sample imports the generator built above from bin/$(Configuration); Configuration makes the
-      # CLI's own `dotnet build`/`dotnet run` of it use Release like the solution build. Compile + run
-      # succeeds end-to-end, so the CLI (propagating HelloWorld's own exit code via --run) must exit 0.
+      # CLI's own `dotnet build` of it use Release like the solution build. `run` arrives with T024/T026,
+      # until then the step builds the sample.
       - name: CLI sample compile and run
         env:
           Configuration: Release
         run: |
-          set +e
-          output=$(dotnet run --project src/NetPrints.Cli -c Release --no-build -- -p samples/HelloWorld/HelloWorld.csproj -r 2>&1)
-          rc=$?
-          set -e
+          output=$(dotnet run --project src/NetPrints.Cli -c Release --no-build -- build samples/HelloWorld/HelloWorld.csproj 2>&1)
           echo "$output"
-          echo "$output" | grep -q "Hello, World!"
-          [ "$rc" -eq 0 ]
+          echo "$output" | grep -q "Build succeeded."
 
       - name: Upload test results
         if: always()

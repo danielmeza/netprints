@@ -60,6 +60,40 @@
 - Only `<NoWarn>` in the repository: the `Directory.Build.targets` opt-in line.
 - CI: green run 36664521413 at 9280856 after a rerun. The first attempt failed only in `Test (Editor UI, headless)`: `SnapshotTests.Inspectors` ('inspector-class' 0.893% of pixels differ, max 0.5%), a rendering flake in code this batch does not touch (the same test passed locally in the whole suite and on 854066f); the rerun passed.
 
+## Batch C1 (T019-T022) — Spectre CLI skeleton, project resolution, build
+
+### Decisions
+
+- Every CLI type is `internal` (tests see it through the existing `InternalsVisibleTo`), so nothing enters `PublicAPI.Unshipped.txt`; `NetPrints.Cli` is not an API-tracked project.
+- Commands are listed once in `CliCommandCatalog.All` (name plus a registration action); `CliApplication.ConfigureCommands` walks it, and CL-T01 iterates it, so a command added later gets the `--help` check and `ValidateExamples` for free.
+- `CliEnvironment` is a class over `currentDirectory`, a `getVariable` function and the stderr `TextWriter` (`FromProcess()` for the real one). Internal-error and usage messages go to `environment.Error`; project-resolution errors and results go to the injected `IAnsiConsole` (stdout), as in P1.
+- The project system is injected as `Lazy<IProjectSystem>`: resolving `IProjectSystem` eagerly would load Microsoft.Build before `IMsBuildRegistration.EnsureRegistered` ran. `CliServices.CreateProjectSystem` and `MsBuildRegistrationAdapter.EnsureRegistered` keep the `NoInlining` split.
+- `UseStrictParsing()`: without it Spectre silently moves unknown options into the remaining arguments (found by CL-T02: `build --no-such-option` exited 2 only because the test's directory had no project).
+- Output is written with `IAnsiConsole.Profile.Out.Writer` (`WriteLineRaw`), not `console.WriteLine`: the latter wraps at the console width, which breaks paths and diagnostics when stdout is redirected (width 80).
+- Console settings (`CliServices.ConsoleSettings`): `AnsiSupport.No` and `ColorSystemSupport.NoColors` when the output is redirected or `NO_COLOR` is non-empty, otherwise detection.
+- `TypeRegistrar` owns the `ServiceProvider`s it builds and is disposed by `CliApplication.RunAsync` (IDISP004/005/007).
+- `TypeResolver` is not disposable: it wraps a provider the registrar owns.
+- The pre-parse rejects the P1 flags only in the leading options (before the command name or `--`); after the command name they are ordinary unknown options, so `run <project> -- -r` will forward `-r`.
+- T022: the old `CliBuildTests` cases `SuccessfulRunPropagatesTheChildsNonZeroExitCode` and `SuccessfulRunWithZeroChildExitCodeReturnsExitCode0` exercise the run path, which `BuildCommand` does not have; they move to `RunCommandTests` in T023 (CL-T05). The project reference from `NetPrints.Core.Tests` to `NetPrints.Cli` existed only for `CliBuildTests` and is removed with the file.
+- T022: the messages changed from P1's `Compiling ...`/`Compilation succeeded.`/`Compilation failed with N errors:` to the contract's `Build succeeded.` / `Build failed with N error(s).` (no header line).
+
+### Deviations
+
+- CI: the "CLI smoke" step now asserts exit 0 (was 2) and "CLI sample compile and run" runs `build samples/HelloWorld/HelloWorld.csproj` and greps `Build succeeded.`, because P1's `-p/-r` flags are rejected from C1 on and CI must stay green until T026 rewrites both steps (`run` arrives in C2).
+- The tests and the code were written in one pass per task file rather than committed per task: T019-T022 are one commit, because T019's suite needs the build command (T022) to satisfy `ThereIsAtLeastTheBuildCommand` and `--help` over the catalog.
+- `samples/HelloWorld/Compiled_HelloWorld/` (ignored, dated 2026-09-25, a P1 leftover) makes a local `netprints build samples/HelloWorld` fail with CS0101; a clean copy builds. Not touched (run output), CI checks out clean.
+
+### Red/green evidence
+
+- Red for T019, T021 and T022 (tests first): with the three test files and `Support/CliTestHost.cs` written and `CommandLineParser` already replaced by `Spectre.Console.Cli` in the csproj, `dotnet build tests/NetPrints.Cli.Tests` failed (10 errors: the old `Program.cs` no longer compiled, and `CliApplication`, `CliCommandCatalog`, `CliServices`, `ProjectLocator`, `IMsBuildRegistration`, `ExitCodes` did not exist).
+- Green after T020-T022 code: first run 36 of 37 passed; the failure `UnknownCommandOptionOrValueExitsWithUsage(build --no-such-option)` (no message on stderr) was real red for strict parsing, green after `UseStrictParsing()`. Cli.Tests: 37 passed.
+- The whole-suite run found `SourceHygieneTests.NoNullForgivingOperator` failing on three `Path.GetDirectoryName(...)!` in the new tests; fixed without `!`.
+
+### Checkpoint C1
+
+- `dotnet build -c Release`: 0 warnings, 0 errors. `dotnet format NetPrints.slnx --verify-no-changes`: clean.
+- Whole suite (Release): 1047 tests, after the fix 0 failed (Core.Tests 566 passed, Cli.Tests 37 passed); E2E (`--fail-skips on`): 9 of 9 passed.
+
 ## Deviations
 
 - Commit 0613745's message lost `$(TargetPath)` to shell expansion.
