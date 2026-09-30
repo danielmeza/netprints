@@ -3,12 +3,12 @@ using NetPrints.Catalog;
 
 namespace NetPrints.Annotations
 {
-    /// <summary>The descriptors of NPC001 to NPC006 (contracts/catalog.md section 3), tracked in <c>AnalyzerReleases.Unshipped.md</c>.</summary>
+    /// <summary>The descriptors of NPC001 to NPC007 (contracts/catalog.md section 3), tracked in <c>AnalyzerReleases.Unshipped.md</c>.</summary>
     internal static class GeneratorDiagnostics
     {
         public const string Category = "NetPrints.Catalog";
 
-        public const string HelpLink = "https://danielmeza.github.io/netprints/docs/guide/catalogs#diagnostics";
+        public const string HelpLink = "https://danielmeza.github.io/netprints/guide/catalogs#diagnostics";
 
         private const string MessageFormat = "{0}";
 
@@ -66,6 +66,15 @@ namespace NetPrints.Annotations
             isEnabledByDefault: true,
             helpLinkUri: HelpLink);
 
+        public static readonly DiagnosticDescriptor MissingDocumentation = new DiagnosticDescriptor(
+            CatalogDiagnosticCodes.MissingDocumentation,
+            "Annotated library compiled without documentation comments",
+            MessageFormat,
+            Category,
+            DiagnosticSeverity.Warning,
+            isEnabledByDefault: true,
+            helpLinkUri: HelpLink);
+
         public static Diagnostic ToDiagnostic(DiagnosticModel model) =>
             Diagnostic.Create(DescriptorOf(model.Code), model.Location?.ToLocation() ?? Location.None, model.Message);
 
@@ -83,6 +92,8 @@ namespace NetPrints.Annotations
                     return IgnoredAnnotation;
                 case CatalogDiagnosticCodes.SkippedMemberMissingAssembly:
                     return SkippedMember;
+                case CatalogDiagnosticCodes.MissingDocumentation:
+                    return MissingDocumentation;
                 default:
                     return DuplicateCatalogId;
             }

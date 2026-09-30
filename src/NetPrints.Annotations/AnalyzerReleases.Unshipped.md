@@ -11,3 +11,4 @@ NPC003 | NetPrints.Catalog | Error | Catalog profile file or catalog id is inval
 NPC004 | NetPrints.Catalog | Warning | NetPrints annotation on a symbol that is not public
 NPC005 | NetPrints.Catalog | Warning | Catalog member skipped because an assembly is not available
 NPC006 | NetPrints.Catalog | Error | Two catalogs have the same id
+NPC007 | NetPrints.Catalog | Warning | Annotated library compiled without documentation comments

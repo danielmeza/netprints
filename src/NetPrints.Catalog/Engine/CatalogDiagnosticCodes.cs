@@ -21,6 +21,9 @@ public static class CatalogDiagnosticCodes
     /// <summary>NPC006, error: two catalogs with the same id in one build.</summary>
     public const string DuplicateBuildCatalogId = "NPC006";
 
+    /// <summary>NPC007, warning: an annotated library is compiled without documentation comments, so its own catalog has no documentation.</summary>
+    public const string MissingDocumentation = "NPC007";
+
     /// <summary>NPC101, error: the catalog <c>schemaVersion</c> is not supported by this reader.</summary>
     public const string UnsupportedSchemaVersion = "NPC101";
 

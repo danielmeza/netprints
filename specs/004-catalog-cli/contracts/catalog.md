@@ -103,10 +103,11 @@ Everything else is internal: `SymbolIds`, `Glob`, `CSharpLiteral`, `CatalogSchem
 |---|---|---|
 | NPC001 | Error | A catalog request names an assembly that is not referenced |
 | NPC002 | Error | Unknown profile id |
-| NPC003 | Error | Profile file unreadable or invalid |
+| NPC003 | Error | Profile file unreadable or invalid; a catalog id or accessor name that is not valid |
 | NPC004 | Warning | Annotation on a member or type that is not public; ignored |
 | NPC005 | Warning | Member skipped: a type it uses comes from an assembly that is not available |
-| NPC006 | Error | Two catalogs with the same id in one build |
+| NPC006 | Error | Two catalogs with the same id, or the same accessor name, in one build |
+| NPC007 | Warning | An annotated library is compiled without documentation comments (no `GenerateDocumentationFile`), so its own catalog has no summaries |
 | NPC101 | Error | Catalog `schemaVersion` not supported by this reader |
 | NPC102 | Error | Catalog file malformed |
 | NPC103 | Warning | Two loaded catalogs share an id; the later one is ignored |

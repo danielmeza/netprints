@@ -33,4 +33,6 @@ public class GreetingService
 
 ## Troubleshooting
 
-Generator diagnostics (NPC001 through NPC006) are listed in the [guide](https://danielmeza.github.io/netprints/docs/guide/catalogs.html#diagnostics).
+Generator diagnostics (NPC001 through NPC007) are listed in the [guide](https://danielmeza.github.io/netprints/guide/catalogs#diagnostics).
+
+The documentation summaries of your own catalog come from your source comments, which the compiler parses only when the project sets the `GenerateDocumentationFile` property to `true`. Without it the catalog is still embedded, but has no summaries, and the generator reports NPC007.

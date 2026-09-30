@@ -33,6 +33,10 @@ internal sealed class GeneratorInputs
 
     public GeneratorInputs AddDocumentation(string path, string text) => Add(new InMemoryText(path, text, isDocumentation: true));
 
+    /// <summary>How many times the generator read the text of a documentation file, by file name.</summary>
+    public IReadOnlyDictionary<string, int> DocumentationReads =>
+        files.Where(file => file.IsDocumentation).ToDictionary(file => System.IO.Path.GetFileName(file.Path), file => file.Reads, StringComparer.Ordinal);
+
     public ImmutableArray<AdditionalText> Texts => [.. files];
 
     public AnalyzerConfigOptionsProvider Options() => new InMemoryOptionsProvider(this);
@@ -49,7 +53,13 @@ internal sealed class GeneratorInputs
 
         public bool IsDocumentation { get; } = isDocumentation;
 
-        public override SourceText GetText(CancellationToken cancellationToken = default) => SourceText.From(text);
+        public int Reads { get; private set; }
+
+        public override SourceText GetText(CancellationToken cancellationToken = default)
+        {
+            Reads++;
+            return SourceText.From(text);
+        }
     }
 
     private sealed class InMemoryOptions(IReadOnlyDictionary<string, string> values) : AnalyzerConfigOptions

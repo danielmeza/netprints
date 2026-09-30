@@ -14,7 +14,7 @@ netprints catalog --package Newtonsoft.Json@13.0.3 --exclude "*.Internal.*"
 netprints catalog --format csharp --class-name MyLibCatalog --namespace MyCompany
 ```
 
-See the [CLI guide](https://danielmeza.github.io/netprints/docs/guide/catalogs.html) for full documentation.
+See the [CLI guide](https://danielmeza.github.io/netprints/guide/catalogs) for full documentation.
 
 ## Loading catalogs
 
@@ -42,6 +42,6 @@ Custom profiles are JSON files (`.npprofile.json`) that define inclusion and exc
 
 ## See also
 
-- [Type catalogs guide](https://danielmeza.github.io/netprints/docs/guide/catalogs.html)
+- [Type catalogs guide](https://danielmeza.github.io/netprints/guide/catalogs)
 - [NetPrints.Annotations](https://www.nuget.org/packages/NetPrints.Annotations) — embed catalogs in your assemblies
 - [NetPrints.Cli](https://www.nuget.org/packages/NetPrints.Cli) — command-line catalog builder

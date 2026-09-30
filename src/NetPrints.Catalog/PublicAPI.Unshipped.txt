@@ -20,6 +20,7 @@ const NetPrints.Catalog.CatalogDiagnosticCodes.DuplicateLoadedCatalogId = "NPC10
 const NetPrints.Catalog.CatalogDiagnosticCodes.IgnoredAnnotation = "NPC004" -> string!
 const NetPrints.Catalog.CatalogDiagnosticCodes.InvalidProfileFile = "NPC003" -> string!
 const NetPrints.Catalog.CatalogDiagnosticCodes.MalformedCatalog = "NPC102" -> string!
+const NetPrints.Catalog.CatalogDiagnosticCodes.MissingDocumentation = "NPC007" -> string!
 const NetPrints.Catalog.CatalogDiagnosticCodes.SkippedMemberMissingAssembly = "NPC005" -> string!
 const NetPrints.Catalog.CatalogDiagnosticCodes.UnknownProfile = "NPC002" -> string!
 const NetPrints.Catalog.CatalogDiagnosticCodes.UnreferencedAssembly = "NPC001" -> string!

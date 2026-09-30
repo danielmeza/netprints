@@ -283,8 +283,8 @@ the documented diagnostic id.
   live provider presents them (covered by the parity test).
 - An annotation on a member that is not public is ignored with a warning diagnostic.
 - An annotated library packaged with reference assemblies (`ref/<tfm>/X.dll` next to `lib/<tfm>/X.dll`): the
-  consumer's resolved reference is the reference assembly, and its embedded catalog is still found (from the
-  reference assembly if it survived there, else from the matching implementation assembly).
+  consumer's resolved reference is the reference assembly, and its embedded catalog is still found there: reference
+  assemblies built by Roslyn keep the assembly attribute. Reference assemblies produced by tools that strip it are not supported.
 - `format` on a file that is not valid JSON, or not a graph: the file is reported as unreadable, nothing
   is written, exit 1; other files are still processed.
 - `merge` when base, ours or theirs is unreadable (for example a conflict-marked file): the driver falls

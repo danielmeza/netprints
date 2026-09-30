@@ -23,8 +23,11 @@ namespace NetPrints.Annotations
         string? AccessorName,
         LocationInfo? Location);
 
-    /// <summary>An additional file the generator reads: a <c>*.npprofile.json</c> profile or a reference documentation file.</summary>
-    internal sealed record AdditionalFileModel(string Path, string FileName, string Text, bool IsProfile, bool IsDocumentation);
+    /// <summary>
+    /// An additional file the generator reads: a <c>*.npprofile.json</c> profile (its text is kept) or a reference documentation file (only the
+    /// <see cref="AdditionalText"/> is kept, and its text is read when a request needs it).
+    /// </summary>
+    internal sealed record AdditionalFileModel(string Path, string FileName, string? Text, AdditionalText? Source, bool IsProfile, bool IsDocumentation);
 
     /// <summary>Everything a referenced-assembly build reads besides the request.</summary>
     internal sealed record BuildInputs(
@@ -36,10 +39,10 @@ namespace NetPrints.Annotations
     internal sealed record DiagnosticModel(string Code, bool IsError, string Message, LocationInfo? Location);
 
     /// <summary>The outcome for one catalog: the file to add, or only diagnostics when it failed.</summary>
-    internal sealed record CatalogOutput(string? Id, string? HintName, string? Source, EquatableArray<DiagnosticModel> Diagnostics)
+    internal sealed record CatalogOutput(string? Id, string? HintName, string? Source, string? Accessor, EquatableArray<DiagnosticModel> Diagnostics)
     {
         public bool Succeeded => Source is not null;
 
-        public static CatalogOutput Failed(params DiagnosticModel[] diagnostics) => new CatalogOutput(null, null, null, new EquatableArray<DiagnosticModel>(diagnostics));
+        public static CatalogOutput Failed(params DiagnosticModel[] diagnostics) => new CatalogOutput(null, null, null, null, new EquatableArray<DiagnosticModel>(diagnostics));
     }
 }

@@ -229,6 +229,14 @@ A library can embed a catalog directly in its assembly so the editor discovers i
 
 The package is a Roslyn analyzer and build target; it is a `developmentDependency`, so NuGet treats it as tooling.
 
+The summaries of your own catalog come from your source comments, which the compiler parses only when documentation generation is on. Set it in the project, or the catalog has no summaries and the generator reports NPC007:
+
+```xml
+<PropertyGroup>
+  <GenerateDocumentationFile>true</GenerateDocumentationFile>
+</PropertyGroup>
+```
+
 ### Marking types and methods
 
 Use four attributes from `NetPrints.Annotations` to control what a catalog includes. The attributes are injected by the Roslyn generator and are always available in your source, with no package reference needed at runtime:
@@ -299,10 +307,11 @@ Catalog diagnostics use stable codes. The NPC0xx codes come from building a cata
 | --- | --- | --- |
 | NPC001 | Error | A catalog request names an assembly that is not referenced. |
 | NPC002 | Error | Unknown profile id. |
-| NPC003 | Error | Profile file unreadable or invalid. |
+| NPC003 | Error | Profile file unreadable or invalid, or a catalog id or accessor name that is not valid. |
 | NPC004 | Warning | An annotation sits on a member or type that is not public; it is ignored. |
 | NPC005 | Warning | A member was skipped because a type it uses comes from an assembly that is not available. Add the assembly's folder with `--reference-path`. |
-| NPC006 | Error | Two catalogs with the same id in one build. |
+| NPC006 | Error | Two catalogs with the same id, or the same accessor name, in one build. Neither is emitted; set `AccessorName` to tell them apart. |
+| NPC007 | Warning | An annotated library is compiled without documentation comments, so its own catalog has no summaries. Set `GenerateDocumentationFile` to `true`. |
 | NPC101 | Error | The catalog `schemaVersion` is not supported by this reader. |
 | NPC102 | Error | The catalog file is malformed. |
 | NPC103 | Warning | Two loaded catalogs share an id; the later one is ignored. |

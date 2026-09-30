@@ -61,4 +61,27 @@ public sealed class IncrementalTests
         Assert.Single(GeneratorTestHost.GeneratedSources(driver), s => s.HintName == "NetPrintsCatalog.other.g.cs");
         Assert.DoesNotContain(GeneratorTestHost.GeneratedSources(driver), s => s.HintName == "NetPrintsCatalog.catalogfixturelib.g.cs");
     }
+
+    [Fact]
+    public void AnAnnotatedLibraryWithoutARequestNeverReadsAReferenceDocumentationFile()
+    {
+        GeneratorInputs inputs = new GeneratorInputs().AddDocumentation("refs/Other.xml", "<doc><members /></doc>");
+        CSharpCompilation compilation = GeneratorTestHost.Compile("Lib", "public class Thing { [NetPrints.Annotations.NetPrintsNode] public void Do() { } }");
+
+        GeneratorTestHost.CreateDriver(compilation, inputs).RunGenerators(compilation, TestContext.Current.CancellationToken);
+
+        Assert.Equal(0, inputs.DocumentationReads["Other.xml"]);
+    }
+
+    [Fact]
+    public void ARequestReadsOnlyTheDocumentationFileOfTheRequestedAssembly()
+    {
+        GeneratorInputs inputs = GeneratorFixtures.FixtureInputs().AddDocumentation("refs/Other.xml", "<doc><members /></doc>");
+        CSharpCompilation compilation = GeneratorFixtures.CompileConsumer(Request);
+
+        GeneratorTestHost.CreateDriver(compilation, inputs).RunGenerators(compilation, TestContext.Current.CancellationToken);
+
+        Assert.Equal(0, inputs.DocumentationReads["Other.xml"]);
+        Assert.True(inputs.DocumentationReads["CatalogFixtureLib.xml"] > 0);
+    }
 }

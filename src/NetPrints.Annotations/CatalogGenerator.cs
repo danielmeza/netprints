@@ -121,8 +121,13 @@ namespace NetPrints.Annotations
                 return null;
             }
 
+            if (isDocumentation)
+            {
+                return new AdditionalFileModel(text.Path, fileName, null, text, isProfile, isDocumentation);
+            }
+
             string? content = text.GetText(cancellationToken)?.ToString();
-            return content is null ? null : new AdditionalFileModel(text.Path, fileName, content, isProfile, isDocumentation);
+            return content is null ? null : new AdditionalFileModel(text.Path, fileName, content, null, isProfile, isDocumentation);
         }
 
         private static string FileNameOf(string path)
@@ -184,6 +189,11 @@ namespace NetPrints.Annotations
 
         private static CatalogOutput BuildReferenced(CatalogRequest request, BuildInputs inputs, CancellationToken cancellationToken)
         {
+            if (request.AccessorName is not null && !CatalogCSharpEmitter.IsValidClassName(request.AccessorName))
+            {
+                return CatalogOutput.Failed(Error(CatalogDiagnosticCodes.InvalidProfileFile, $"The accessor name '{request.AccessorName}' is not a valid C# identifier.", request.Location));
+            }
+
             CSharpCompilation compilation = CSharpCompilation.Create(
                 "NetPrints.Catalog.Build",
                 syntaxTrees: null,
@@ -204,9 +214,11 @@ namespace NetPrints.Annotations
                 return CatalogOutput.Failed(failure ?? Error(CatalogDiagnosticCodes.UnknownProfile, "The profile could not be resolved.", request.Location));
             }
 
-            IEnumerable<string> documentation = inputs.Files.Items
+            string[] documentation = inputs.Files.Items
                 .Where(file => file.IsDocumentation && string.Equals(file.FileName, request.AssemblyName + DocumentationFileSuffix, StringComparison.OrdinalIgnoreCase))
-                .Select(file => file.Text);
+                .Select(file => file.Source?.GetText(cancellationToken)?.ToString())
+                .OfType<string>()
+                .ToArray();
             cancellationToken.ThrowIfCancellationRequested();
 
             CatalogBuildResult result;
@@ -237,14 +249,23 @@ namespace NetPrints.Annotations
                 new CatalogProfileFilter(BuiltInCatalogProfiles.Annotated),
                 new CompilationDocumentationSource(compilation),
                 identity);
-            return new EquatableArray<CatalogOutput>(new[] { Produce(result, null, rootNamespace, SelfHintName, source => SourceLocationOf(compilation, source)) });
+            CatalogOutput output = Produce(result, null, rootNamespace, SelfHintName, source => SourceLocationOf(compilation, source));
+            if (compilation.SyntaxTrees.FirstOrDefault()?.Options.DocumentationMode == DocumentationMode.None)
+            {
+                DiagnosticModel warning = new DiagnosticModel(
+                    CatalogDiagnosticCodes.MissingDocumentation,
+                    false,
+                    "The annotated catalog has no documentation because documentation comments are not parsed; set <GenerateDocumentationFile>true</GenerateDocumentationFile> in the project.",
+                    null);
+                output = output with { Diagnostics = new EquatableArray<DiagnosticModel>(output.Diagnostics.Items.Append(warning).ToArray()) };
+            }
+
+            return new EquatableArray<CatalogOutput>(new[] { output });
         }
 
         private static CatalogOutput Produce(CatalogBuildResult result, string? accessorName, string? rootNamespace, string hintName, Func<string?, LocationInfo?> locate)
         {
-            string accessor = accessorName is not null && CatalogCSharpEmitter.IsValidClassName(accessorName)
-                ? accessorName
-                : EmbeddedCatalogEmitter.DefaultAccessorName(result.Document.Id);
+            string accessor = accessorName ?? EmbeddedCatalogEmitter.DefaultAccessorName(result.Document.Id);
             DiagnosticModel[] diagnostics = result.Diagnostics
                 .Select(diagnostic => new DiagnosticModel(
                     diagnostic.Code,
@@ -252,7 +273,7 @@ namespace NetPrints.Annotations
                     diagnostic.Source is null ? diagnostic.Message : diagnostic.Source + ": " + diagnostic.Message,
                     locate(diagnostic.Source)))
                 .ToArray();
-            return new CatalogOutput(result.Document.Id, hintName, EmbeddedCatalogEmitter.Emit(result.Document, rootNamespace, accessor), new EquatableArray<DiagnosticModel>(diagnostics));
+            return new CatalogOutput(result.Document.Id, hintName, EmbeddedCatalogEmitter.Emit(result.Document, rootNamespace, accessor), accessor, new EquatableArray<DiagnosticModel>(diagnostics));
         }
 
         private static LocationInfo? SourceLocationOf(Compilation compilation, string? documentationId)
@@ -282,7 +303,7 @@ namespace NetPrints.Annotations
                 {
                     try
                     {
-                        resolved = ProfileJson.Parse(file.Text);
+                        resolved = ProfileJson.Parse(file.Text ?? string.Empty);
                     }
                     catch (CatalogFormatException exception)
                     {
@@ -333,10 +354,22 @@ namespace NetPrints.Annotations
                 production.ReportDiagnostic(GeneratorDiagnostics.ToDiagnostic(Error(CatalogDiagnosticCodes.DuplicateBuildCatalogId, $"More than one catalog has the id '{id}'; none of them is emitted.", null)));
             }
 
+            HashSet<string> collidingAccessors = new HashSet<string>(
+                all.Where(output => output.Succeeded && output.Id is { } id && !duplicated.Contains(id))
+                    .GroupBy(output => output.Accessor, StringComparer.Ordinal)
+                    .Where(group => group.Count() > 1)
+                    .Select(group => group.Key)
+                    .OfType<string>(),
+                StringComparer.Ordinal);
+            foreach (string accessor in collidingAccessors.OrderBy(accessor => accessor, StringComparer.Ordinal))
+            {
+                production.ReportDiagnostic(GeneratorDiagnostics.ToDiagnostic(Error(CatalogDiagnosticCodes.DuplicateBuildCatalogId, $"More than one catalog has the accessor name '{accessor}'; none of them is emitted. Set AccessorName on the catalogs.", null)));
+            }
+
             HashSet<string> hints = new HashSet<string>(StringComparer.Ordinal);
             foreach (CatalogOutput output in all.OrderBy(output => output.HintName, StringComparer.Ordinal))
             {
-                if (output.Source is { } source && output.HintName is { } hint && output.Id is { } id && !duplicated.Contains(id) && hints.Add(hint))
+                if (output.Source is { } source && output.HintName is { } hint && output.Id is { } id && !duplicated.Contains(id) && !(output.Accessor is { } accessor && collidingAccessors.Contains(accessor)) && hints.Add(hint))
                 {
                     production.AddSource(hint, SourceText.From(source, Encoding.UTF8));
                 }
