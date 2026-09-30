@@ -17,6 +17,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <NetPrintsExperimentalOptIn Include="NPXE0002" />
+  </ItemGroup>
+  <ItemGroup>
     <InternalsVisibleTo Include="NetPrints.Editor.Tests" />
   </ItemGroup>
 

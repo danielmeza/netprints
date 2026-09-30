@@ -1,18 +1,4 @@
 #nullable enable
-abstract NetPrints.Extensibility.Loading.ExtensionLoadResult.<Clone>$() -> NetPrints.Extensibility.Loading.ExtensionLoadResult!
-abstract NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.<Clone>$() -> NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor!
-const NetPrints.Extensibility.Hosting.HostMessageTypes.FocusDocument = "netprints.focus-document" -> string!
-const NetPrints.Extensibility.Hosting.HostMessageTypes.TypesChanged = "netprints.types-changed" -> string!
-const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.ApiVersion = "NPX002" -> string!
-const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.AssemblyLoadFailed = "NPX007" -> string!
-const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.ContributionRejected = "NPX006" -> string!
-const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.Dependency = "NPX003" -> string!
-const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.DuplicateId = "NPX004" -> string!
-const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.InvalidManifest = "NPX001" -> string!
-const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.RegisterFailed = "NPX005" -> string!
-const NetPrints.Extensibility.Loading.ExtensionManifest.FileName = "netprints-extension.json" -> string!
-const NetPrints.Extensibility.Nodes.BuiltInNodeLibrary.Id = "netprints" -> string!
-const NetPrints.Extensibility.Settings.NetPrintsSettings.SectionId = "netprints" -> string!
 NetPrints.Extensibility.BuiltInExtension
 NetPrints.Extensibility.BuiltInExtension.BuiltInExtension() -> void
 NetPrints.Extensibility.BuiltInExtension.Register(NetPrints.Extensibility.IExtensionBuilder! builder) -> void
@@ -28,24 +14,7 @@ NetPrints.Extensibility.Hosting.HostLaunchContext.Equals(NetPrints.Extensibility
 NetPrints.Extensibility.Hosting.HostLaunchContext.HostLaunchContext(System.Collections.Generic.IReadOnlyDictionary<string!, string!>! Settings) -> void
 NetPrints.Extensibility.Hosting.HostLaunchContext.Settings.get -> System.Collections.Generic.IReadOnlyDictionary<string!, string!>!
 NetPrints.Extensibility.Hosting.HostLaunchContext.Settings.init -> void
-NetPrints.Extensibility.Hosting.HostMessage
-NetPrints.Extensibility.Hosting.HostMessage.<Clone>$() -> NetPrints.Extensibility.Hosting.HostMessage!
-NetPrints.Extensibility.Hosting.HostMessage.Deconstruct(out string! Type, out System.Text.Json.JsonElement Payload) -> void
-NetPrints.Extensibility.Hosting.HostMessage.Equals(NetPrints.Extensibility.Hosting.HostMessage? other) -> bool
-NetPrints.Extensibility.Hosting.HostMessage.HostMessage(string! Type, System.Text.Json.JsonElement Payload) -> void
-NetPrints.Extensibility.Hosting.HostMessage.Payload.get -> System.Text.Json.JsonElement
-NetPrints.Extensibility.Hosting.HostMessage.Payload.init -> void
-NetPrints.Extensibility.Hosting.HostMessage.Type.get -> string!
-NetPrints.Extensibility.Hosting.HostMessage.Type.init -> void
 NetPrints.Extensibility.Hosting.HostMessageTypes
-NetPrints.Extensibility.Hosting.IHostChannel
-NetPrints.Extensibility.Hosting.IHostChannel.Id.get -> string!
-NetPrints.Extensibility.Hosting.IHostChannel.Messages.get -> System.IObservable<NetPrints.Extensibility.Hosting.HostMessage!>!
-NetPrints.Extensibility.Hosting.IHostChannel.SendAsync(NetPrints.Extensibility.Hosting.HostMessage! message, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask
-NetPrints.Extensibility.Hosting.IHostChannel.State.get -> NetPrints.Extensibility.Hosting.HostChannelState
-NetPrints.Extensibility.Hosting.IHostChannelFactory
-NetPrints.Extensibility.Hosting.IHostChannelFactory.Create(NetPrints.Extensibility.Hosting.HostLaunchContext! context) -> NetPrints.Extensibility.Hosting.IHostChannel!
-NetPrints.Extensibility.Hosting.IHostChannelFactory.Id.get -> string!
 NetPrints.Extensibility.Hosting.InMemoryHostChannel
 NetPrints.Extensibility.Hosting.InMemoryHostChannel.DisposeAsync() -> System.Threading.Tasks.ValueTask
 NetPrints.Extensibility.Hosting.InMemoryHostChannel.Id.get -> string!
@@ -59,14 +28,10 @@ NetPrints.Extensibility.Hosting.NullHostChannel.Messages.get -> System.IObservab
 NetPrints.Extensibility.Hosting.NullHostChannel.SendAsync(NetPrints.Extensibility.Hosting.HostMessage! message, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask
 NetPrints.Extensibility.Hosting.NullHostChannel.State.get -> NetPrints.Extensibility.Hosting.HostChannelState
 NetPrints.Extensibility.IExtensionBuilder
-NetPrints.Extensibility.IExtensionBuilder.AddClassEmitter(NetPrints.Translator.IClassEmitter! emitter) -> NetPrints.Extensibility.IExtensionBuilder!
-NetPrints.Extensibility.IExtensionBuilder.AddHostChannel(NetPrints.Extensibility.Hosting.IHostChannelFactory! factory) -> NetPrints.Extensibility.IExtensionBuilder!
 NetPrints.Extensibility.IExtensionBuilder.AddJsonTypeInfoResolver(System.Text.Json.Serialization.Metadata.IJsonTypeInfoResolver! resolver) -> NetPrints.Extensibility.IExtensionBuilder!
-NetPrints.Extensibility.IExtensionBuilder.AddMemberEmitter(NetPrints.Translator.IMemberEmitter! emitter) -> NetPrints.Extensibility.IExtensionBuilder!
 NetPrints.Extensibility.IExtensionBuilder.AddNodeLibrary(NetPrints.Extensibility.Nodes.INodeLibrary! library) -> NetPrints.Extensibility.IExtensionBuilder!
 NetPrints.Extensibility.IExtensionBuilder.AddProjectProfile(NetPrints.Core.IProjectProfile! profile) -> NetPrints.Extensibility.IExtensionBuilder!
 NetPrints.Extensibility.IExtensionBuilder.AddProjectProperty(string! msbuildPropertyName) -> NetPrints.Extensibility.IExtensionBuilder!
-NetPrints.Extensibility.IExtensionBuilder.AddSettings(NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor! descriptor) -> NetPrints.Extensibility.IExtensionBuilder!
 NetPrints.Extensibility.IExtensionBuilder.AddTypeCatalog(NetPrints.Reflection.ITypeCatalog! catalog) -> NetPrints.Extensibility.IExtensionBuilder!
 NetPrints.Extensibility.IExtensionBuilder.LoggerFactory.get -> Microsoft.Extensions.Logging.ILoggerFactory!
 NetPrints.Extensibility.IExtensionBuilder.Manifest.get -> NetPrints.Extensibility.Loading.ExtensionManifest!
@@ -92,20 +57,6 @@ NetPrints.Extensibility.Loading.ExtensionHost.DisposeAsync() -> System.Threading
 NetPrints.Extensibility.Loading.ExtensionHost.ExtensionHost(NetPrints.Extensibility.Loading.ExtensionLoaderOptions! options, Microsoft.Extensions.Logging.ILoggerFactory! loggerFactory) -> void
 NetPrints.Extensibility.Loading.ExtensionHost.LoadForProjectAsync(System.Collections.Generic.IReadOnlyList<string!>! projectExtensionFolders, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<NetPrints.Extensibility.Loading.ExtensionRegistry!>
 NetPrints.Extensibility.Loading.ExtensionHost.RegistryChanged -> System.EventHandler<NetPrints.Extensibility.Loading.ExtensionRegistry!>?
-NetPrints.Extensibility.Loading.ExtensionLoader
-NetPrints.Extensibility.Loading.ExtensionLoader.ExtensionLoader(NetPrints.Extensibility.Loading.ExtensionLoaderOptions! options, Microsoft.Extensions.Logging.ILoggerFactory! loggerFactory) -> void
-NetPrints.Extensibility.Loading.ExtensionLoader.Load(System.Threading.CancellationToken cancellationToken) -> NetPrints.Extensibility.Loading.ExtensionRegistry!
-NetPrints.Extensibility.Loading.ExtensionLoaderOptions
-NetPrints.Extensibility.Loading.ExtensionLoaderOptions.<Clone>$() -> NetPrints.Extensibility.Loading.ExtensionLoaderOptions!
-NetPrints.Extensibility.Loading.ExtensionLoaderOptions.Deconstruct(out System.Collections.Generic.IReadOnlyList<string!>! SearchDirectories, out System.Collections.Generic.IReadOnlyList<string!>! ExtensionFolders, out System.Collections.Generic.IReadOnlyList<(NetPrints.Extensibility.Loading.ExtensionManifest! Manifest, NetPrints.Extensibility.INetPrintsExtension! Extension)>! InProcess) -> void
-NetPrints.Extensibility.Loading.ExtensionLoaderOptions.Equals(NetPrints.Extensibility.Loading.ExtensionLoaderOptions? other) -> bool
-NetPrints.Extensibility.Loading.ExtensionLoaderOptions.ExtensionFolders.get -> System.Collections.Generic.IReadOnlyList<string!>!
-NetPrints.Extensibility.Loading.ExtensionLoaderOptions.ExtensionFolders.init -> void
-NetPrints.Extensibility.Loading.ExtensionLoaderOptions.ExtensionLoaderOptions(System.Collections.Generic.IReadOnlyList<string!>! SearchDirectories, System.Collections.Generic.IReadOnlyList<string!>! ExtensionFolders, System.Collections.Generic.IReadOnlyList<(NetPrints.Extensibility.Loading.ExtensionManifest! Manifest, NetPrints.Extensibility.INetPrintsExtension! Extension)>! InProcess) -> void
-NetPrints.Extensibility.Loading.ExtensionLoaderOptions.InProcess.get -> System.Collections.Generic.IReadOnlyList<(NetPrints.Extensibility.Loading.ExtensionManifest! Manifest, NetPrints.Extensibility.INetPrintsExtension! Extension)>!
-NetPrints.Extensibility.Loading.ExtensionLoaderOptions.InProcess.init -> void
-NetPrints.Extensibility.Loading.ExtensionLoaderOptions.SearchDirectories.get -> System.Collections.Generic.IReadOnlyList<string!>!
-NetPrints.Extensibility.Loading.ExtensionLoaderOptions.SearchDirectories.init -> void
 NetPrints.Extensibility.Loading.ExtensionLoadResult
 NetPrints.Extensibility.Loading.ExtensionLoadResult.Deconstruct(out string! Id, out string? ManifestPath) -> void
 NetPrints.Extensibility.Loading.ExtensionLoadResult.ExtensionLoadResult(NetPrints.Extensibility.Loading.ExtensionLoadResult! original) -> void
@@ -130,6 +81,20 @@ NetPrints.Extensibility.Loading.ExtensionLoadResult.Loaded.Manifest.get -> NetPr
 NetPrints.Extensibility.Loading.ExtensionLoadResult.Loaded.Manifest.init -> void
 NetPrints.Extensibility.Loading.ExtensionLoadResult.ManifestPath.get -> string?
 NetPrints.Extensibility.Loading.ExtensionLoadResult.ManifestPath.init -> void
+NetPrints.Extensibility.Loading.ExtensionLoader
+NetPrints.Extensibility.Loading.ExtensionLoader.ExtensionLoader(NetPrints.Extensibility.Loading.ExtensionLoaderOptions! options, Microsoft.Extensions.Logging.ILoggerFactory! loggerFactory) -> void
+NetPrints.Extensibility.Loading.ExtensionLoader.Load(System.Threading.CancellationToken cancellationToken) -> NetPrints.Extensibility.Loading.ExtensionRegistry!
+NetPrints.Extensibility.Loading.ExtensionLoaderOptions
+NetPrints.Extensibility.Loading.ExtensionLoaderOptions.<Clone>$() -> NetPrints.Extensibility.Loading.ExtensionLoaderOptions!
+NetPrints.Extensibility.Loading.ExtensionLoaderOptions.Deconstruct(out System.Collections.Generic.IReadOnlyList<string!>! SearchDirectories, out System.Collections.Generic.IReadOnlyList<string!>! ExtensionFolders, out System.Collections.Generic.IReadOnlyList<(NetPrints.Extensibility.Loading.ExtensionManifest! Manifest, NetPrints.Extensibility.INetPrintsExtension! Extension)>! InProcess) -> void
+NetPrints.Extensibility.Loading.ExtensionLoaderOptions.Equals(NetPrints.Extensibility.Loading.ExtensionLoaderOptions? other) -> bool
+NetPrints.Extensibility.Loading.ExtensionLoaderOptions.ExtensionFolders.get -> System.Collections.Generic.IReadOnlyList<string!>!
+NetPrints.Extensibility.Loading.ExtensionLoaderOptions.ExtensionFolders.init -> void
+NetPrints.Extensibility.Loading.ExtensionLoaderOptions.ExtensionLoaderOptions(System.Collections.Generic.IReadOnlyList<string!>! SearchDirectories, System.Collections.Generic.IReadOnlyList<string!>! ExtensionFolders, System.Collections.Generic.IReadOnlyList<(NetPrints.Extensibility.Loading.ExtensionManifest! Manifest, NetPrints.Extensibility.INetPrintsExtension! Extension)>! InProcess) -> void
+NetPrints.Extensibility.Loading.ExtensionLoaderOptions.InProcess.get -> System.Collections.Generic.IReadOnlyList<(NetPrints.Extensibility.Loading.ExtensionManifest! Manifest, NetPrints.Extensibility.INetPrintsExtension! Extension)>!
+NetPrints.Extensibility.Loading.ExtensionLoaderOptions.InProcess.init -> void
+NetPrints.Extensibility.Loading.ExtensionLoaderOptions.SearchDirectories.get -> System.Collections.Generic.IReadOnlyList<string!>!
+NetPrints.Extensibility.Loading.ExtensionLoaderOptions.SearchDirectories.init -> void
 NetPrints.Extensibility.Loading.ExtensionManifest
 NetPrints.Extensibility.Loading.ExtensionManifest.<Clone>$() -> NetPrints.Extensibility.Loading.ExtensionManifest!
 NetPrints.Extensibility.Loading.ExtensionManifest.ApiVersion.get -> System.Version?
@@ -217,14 +182,6 @@ NetPrints.Extensibility.Nodes.NodeSuggestion.Equals(NetPrints.Extensibility.Node
 NetPrints.Extensibility.Nodes.NodeSuggestion.IconKey.get -> string?
 NetPrints.Extensibility.Nodes.NodeSuggestion.IconKey.init -> void
 NetPrints.Extensibility.Nodes.NodeSuggestion.NodeSuggestion(string! Category, string! DisplayName, string? IconKey, System.Func<NetPrints.Core.NodeGraph!, NetPrints.Graph.Node!>! Create) -> void
-NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor
-NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.Deconstruct(out string! ExtensionId, out System.Type! ValueType) -> void
-NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.ExtensionId.get -> string!
-NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.ExtensionId.init -> void
-NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.ExtensionSettingsDescriptor(NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor! original) -> void
-NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.ExtensionSettingsDescriptor(string! ExtensionId, System.Type! ValueType) -> void
-NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.ValueType.get -> System.Type!
-NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.ValueType.init -> void
 NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>
 NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.Deconstruct(out string! ExtensionId, out System.Text.Json.Serialization.Metadata.JsonTypeInfo<T>! TypeInfo, out T Default) -> void
 NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.Default.get -> T
@@ -233,9 +190,6 @@ NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.Equals(NetPrints
 NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.ExtensionSettingsDescriptor(string! ExtensionId, System.Text.Json.Serialization.Metadata.JsonTypeInfo<T>! TypeInfo, T Default) -> void
 NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.TypeInfo.get -> System.Text.Json.Serialization.Metadata.JsonTypeInfo<T>!
 NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.TypeInfo.init -> void
-NetPrints.Extensibility.Settings.ISettingsStore
-NetPrints.Extensibility.Settings.ISettingsStore.Get<T>(NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>! descriptor) -> T
-NetPrints.Extensibility.Settings.ISettingsStore.SetAsync<T>(NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>! descriptor, T value, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask
 NetPrints.Extensibility.Settings.JsonFileSettingsStore
 NetPrints.Extensibility.Settings.JsonFileSettingsStore.Get<T>(NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>! descriptor) -> T
 NetPrints.Extensibility.Settings.JsonFileSettingsStore.JsonFileSettingsStore(string! filePath, Microsoft.Extensions.Logging.ILogger<NetPrints.Extensibility.Settings.JsonFileSettingsStore!>! logger) -> void
@@ -248,18 +202,71 @@ NetPrints.Extensibility.Settings.NetPrintsSettings.ExtensionPaths.init -> void
 NetPrints.Extensibility.Settings.NetPrintsSettings.NetPrintsSettings() -> void
 NetPrints.Extensibility.Settings.NetPrintsSettings.TrustedProjects.get -> System.Collections.Generic.IReadOnlyList<string!>!
 NetPrints.Extensibility.Settings.NetPrintsSettings.TrustedProjects.init -> void
+[NPXE0001]NetPrints.Extensibility.Hosting.HostMessage
+[NPXE0001]NetPrints.Extensibility.Hosting.HostMessage.<Clone>$() -> NetPrints.Extensibility.Hosting.HostMessage!
+[NPXE0001]NetPrints.Extensibility.Hosting.HostMessage.Deconstruct(out string! Type, out System.Text.Json.JsonElement Payload) -> void
+[NPXE0001]NetPrints.Extensibility.Hosting.HostMessage.Equals(NetPrints.Extensibility.Hosting.HostMessage? other) -> bool
+[NPXE0001]NetPrints.Extensibility.Hosting.HostMessage.HostMessage(string! Type, System.Text.Json.JsonElement Payload) -> void
+[NPXE0001]NetPrints.Extensibility.Hosting.HostMessage.Payload.get -> System.Text.Json.JsonElement
+[NPXE0001]NetPrints.Extensibility.Hosting.HostMessage.Payload.init -> void
+[NPXE0001]NetPrints.Extensibility.Hosting.HostMessage.Type.get -> string!
+[NPXE0001]NetPrints.Extensibility.Hosting.HostMessage.Type.init -> void
+[NPXE0001]NetPrints.Extensibility.Hosting.IHostChannel
+[NPXE0001]NetPrints.Extensibility.Hosting.IHostChannel.Id.get -> string!
+[NPXE0001]NetPrints.Extensibility.Hosting.IHostChannel.Messages.get -> System.IObservable<NetPrints.Extensibility.Hosting.HostMessage!>!
+[NPXE0001]NetPrints.Extensibility.Hosting.IHostChannel.SendAsync(NetPrints.Extensibility.Hosting.HostMessage! message, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask
+[NPXE0001]NetPrints.Extensibility.Hosting.IHostChannel.State.get -> NetPrints.Extensibility.Hosting.HostChannelState
+[NPXE0001]NetPrints.Extensibility.Hosting.IHostChannelFactory
+[NPXE0001]NetPrints.Extensibility.Hosting.IHostChannelFactory.Create(NetPrints.Extensibility.Hosting.HostLaunchContext! context) -> NetPrints.Extensibility.Hosting.IHostChannel!
+[NPXE0001]NetPrints.Extensibility.Hosting.IHostChannelFactory.Id.get -> string!
+[NPXE0001]NetPrints.Extensibility.IExtensionBuilder.AddHostChannel(NetPrints.Extensibility.Hosting.IHostChannelFactory! factory) -> NetPrints.Extensibility.IExtensionBuilder!
+[NPXE0001]override NetPrints.Extensibility.Hosting.HostMessage.Equals(object? obj) -> bool
+[NPXE0001]override NetPrints.Extensibility.Hosting.HostMessage.GetHashCode() -> int
+[NPXE0001]override NetPrints.Extensibility.Hosting.HostMessage.ToString() -> string!
+[NPXE0001]static NetPrints.Extensibility.Hosting.HostMessage.operator !=(NetPrints.Extensibility.Hosting.HostMessage? left, NetPrints.Extensibility.Hosting.HostMessage? right) -> bool
+[NPXE0001]static NetPrints.Extensibility.Hosting.HostMessage.operator ==(NetPrints.Extensibility.Hosting.HostMessage? left, NetPrints.Extensibility.Hosting.HostMessage? right) -> bool
+[NPXE0002]NetPrints.Extensibility.IExtensionBuilder.AddSettings(NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor! descriptor) -> NetPrints.Extensibility.IExtensionBuilder!
+[NPXE0002]NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor
+[NPXE0002]NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.Deconstruct(out string! ExtensionId, out System.Type! ValueType) -> void
+[NPXE0002]NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.ExtensionId.get -> string!
+[NPXE0002]NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.ExtensionId.init -> void
+[NPXE0002]NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.ExtensionSettingsDescriptor(NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor! original) -> void
+[NPXE0002]NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.ExtensionSettingsDescriptor(string! ExtensionId, System.Type! ValueType) -> void
+[NPXE0002]NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.ValueType.get -> System.Type!
+[NPXE0002]NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.ValueType.init -> void
+[NPXE0002]NetPrints.Extensibility.Settings.ISettingsStore
+[NPXE0002]NetPrints.Extensibility.Settings.ISettingsStore.Get<T>(NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>! descriptor) -> T
+[NPXE0002]NetPrints.Extensibility.Settings.ISettingsStore.SetAsync<T>(NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>! descriptor, T value, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask
+[NPXE0002]abstract NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.<Clone>$() -> NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor!
+[NPXE0002]override NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.Equals(object? obj) -> bool
+[NPXE0002]override NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.GetHashCode() -> int
+[NPXE0002]override NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.ToString() -> string!
+[NPXE0002]static NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.operator !=(NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor? left, NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor? right) -> bool
+[NPXE0002]static NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.operator ==(NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor? left, NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor? right) -> bool
+[NPXE0002]virtual NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.EqualityContract.get -> System.Type!
+[NPXE0002]virtual NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.Equals(NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor? other) -> bool
+[NPXE0002]virtual NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.PrintMembers(System.Text.StringBuilder! builder) -> bool
+[NPXE0003]NetPrints.Extensibility.IExtensionBuilder.AddClassEmitter(NetPrints.Translator.IClassEmitter! emitter) -> NetPrints.Extensibility.IExtensionBuilder!
+[NPXE0003]NetPrints.Extensibility.IExtensionBuilder.AddMemberEmitter(NetPrints.Translator.IMemberEmitter! emitter) -> NetPrints.Extensibility.IExtensionBuilder!
+abstract NetPrints.Extensibility.Loading.ExtensionLoadResult.<Clone>$() -> NetPrints.Extensibility.Loading.ExtensionLoadResult!
+const NetPrints.Extensibility.Hosting.HostMessageTypes.FocusDocument = "netprints.focus-document" -> string!
+const NetPrints.Extensibility.Hosting.HostMessageTypes.TypesChanged = "netprints.types-changed" -> string!
+const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.ApiVersion = "NPX002" -> string!
+const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.AssemblyLoadFailed = "NPX007" -> string!
+const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.ContributionRejected = "NPX006" -> string!
+const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.Dependency = "NPX003" -> string!
+const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.DuplicateId = "NPX004" -> string!
+const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.InvalidManifest = "NPX001" -> string!
+const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.RegisterFailed = "NPX005" -> string!
+const NetPrints.Extensibility.Loading.ExtensionManifest.FileName = "netprints-extension.json" -> string!
+const NetPrints.Extensibility.Nodes.BuiltInNodeLibrary.Id = "netprints" -> string!
+const NetPrints.Extensibility.Settings.NetPrintsSettings.SectionId = "netprints" -> string!
 override NetPrints.Extensibility.Hosting.HostLaunchContext.Equals(object? obj) -> bool
 override NetPrints.Extensibility.Hosting.HostLaunchContext.GetHashCode() -> int
 override NetPrints.Extensibility.Hosting.HostLaunchContext.ToString() -> string!
-override NetPrints.Extensibility.Hosting.HostMessage.Equals(object? obj) -> bool
-override NetPrints.Extensibility.Hosting.HostMessage.GetHashCode() -> int
-override NetPrints.Extensibility.Hosting.HostMessage.ToString() -> string!
 override NetPrints.Extensibility.Loading.ExtensionContributionIssue.Equals(object? obj) -> bool
 override NetPrints.Extensibility.Loading.ExtensionContributionIssue.GetHashCode() -> int
 override NetPrints.Extensibility.Loading.ExtensionContributionIssue.ToString() -> string!
-override NetPrints.Extensibility.Loading.ExtensionLoaderOptions.Equals(object? obj) -> bool
-override NetPrints.Extensibility.Loading.ExtensionLoaderOptions.GetHashCode() -> int
-override NetPrints.Extensibility.Loading.ExtensionLoaderOptions.ToString() -> string!
 override NetPrints.Extensibility.Loading.ExtensionLoadResult.Equals(object? obj) -> bool
 override NetPrints.Extensibility.Loading.ExtensionLoadResult.Failed.<Clone>$() -> NetPrints.Extensibility.Loading.ExtensionLoadResult.Failed!
 override NetPrints.Extensibility.Loading.ExtensionLoadResult.Failed.Equals(object? obj) -> bool
@@ -271,6 +278,9 @@ override NetPrints.Extensibility.Loading.ExtensionLoadResult.Loaded.Equals(objec
 override NetPrints.Extensibility.Loading.ExtensionLoadResult.Loaded.GetHashCode() -> int
 override NetPrints.Extensibility.Loading.ExtensionLoadResult.Loaded.ToString() -> string!
 override NetPrints.Extensibility.Loading.ExtensionLoadResult.ToString() -> string!
+override NetPrints.Extensibility.Loading.ExtensionLoaderOptions.Equals(object? obj) -> bool
+override NetPrints.Extensibility.Loading.ExtensionLoaderOptions.GetHashCode() -> int
+override NetPrints.Extensibility.Loading.ExtensionLoaderOptions.ToString() -> string!
 override NetPrints.Extensibility.Loading.ExtensionManifest.Equals(object? obj) -> bool
 override NetPrints.Extensibility.Loading.ExtensionManifest.GetHashCode() -> int
 override NetPrints.Extensibility.Loading.ExtensionManifest.ToString() -> string!
@@ -280,9 +290,6 @@ override NetPrints.Extensibility.Nodes.NodeKindDescriptor.ToString() -> string!
 override NetPrints.Extensibility.Nodes.NodeSuggestion.Equals(object? obj) -> bool
 override NetPrints.Extensibility.Nodes.NodeSuggestion.GetHashCode() -> int
 override NetPrints.Extensibility.Nodes.NodeSuggestion.ToString() -> string!
-override NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.Equals(object? obj) -> bool
-override NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.GetHashCode() -> int
-override NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.ToString() -> string!
 override NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.<Clone>$() -> NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>!
 override NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.Equals(object? obj) -> bool
 override NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.GetHashCode() -> int
@@ -298,32 +305,28 @@ static NetPrints.Extensibility.BuiltInExtension.Manifest.get -> NetPrints.Extens
 static NetPrints.Extensibility.ExtensionApi.Version.get -> System.Version!
 static NetPrints.Extensibility.Hosting.HostLaunchContext.operator !=(NetPrints.Extensibility.Hosting.HostLaunchContext? left, NetPrints.Extensibility.Hosting.HostLaunchContext? right) -> bool
 static NetPrints.Extensibility.Hosting.HostLaunchContext.operator ==(NetPrints.Extensibility.Hosting.HostLaunchContext? left, NetPrints.Extensibility.Hosting.HostLaunchContext? right) -> bool
-static NetPrints.Extensibility.Hosting.HostMessage.operator !=(NetPrints.Extensibility.Hosting.HostMessage? left, NetPrints.Extensibility.Hosting.HostMessage? right) -> bool
-static NetPrints.Extensibility.Hosting.HostMessage.operator ==(NetPrints.Extensibility.Hosting.HostMessage? left, NetPrints.Extensibility.Hosting.HostMessage? right) -> bool
 static NetPrints.Extensibility.Hosting.InMemoryHostChannel.CreatePair(string! id) -> (NetPrints.Extensibility.Hosting.InMemoryHostChannel! Editor, NetPrints.Extensibility.Hosting.InMemoryHostChannel! Host)
 static NetPrints.Extensibility.Hosting.NullHostChannel.Instance.get -> NetPrints.Extensibility.Hosting.NullHostChannel!
 static NetPrints.Extensibility.Loading.ExtensionContributionIssue.operator !=(NetPrints.Extensibility.Loading.ExtensionContributionIssue? left, NetPrints.Extensibility.Loading.ExtensionContributionIssue? right) -> bool
 static NetPrints.Extensibility.Loading.ExtensionContributionIssue.operator ==(NetPrints.Extensibility.Loading.ExtensionContributionIssue? left, NetPrints.Extensibility.Loading.ExtensionContributionIssue? right) -> bool
-static NetPrints.Extensibility.Loading.ExtensionLoaderOptions.BuiltInOnly.get -> NetPrints.Extensibility.Loading.ExtensionLoaderOptions!
-static NetPrints.Extensibility.Loading.ExtensionLoaderOptions.operator !=(NetPrints.Extensibility.Loading.ExtensionLoaderOptions? left, NetPrints.Extensibility.Loading.ExtensionLoaderOptions? right) -> bool
-static NetPrints.Extensibility.Loading.ExtensionLoaderOptions.operator ==(NetPrints.Extensibility.Loading.ExtensionLoaderOptions? left, NetPrints.Extensibility.Loading.ExtensionLoaderOptions? right) -> bool
 static NetPrints.Extensibility.Loading.ExtensionLoadResult.Failed.operator !=(NetPrints.Extensibility.Loading.ExtensionLoadResult.Failed? left, NetPrints.Extensibility.Loading.ExtensionLoadResult.Failed? right) -> bool
 static NetPrints.Extensibility.Loading.ExtensionLoadResult.Failed.operator ==(NetPrints.Extensibility.Loading.ExtensionLoadResult.Failed? left, NetPrints.Extensibility.Loading.ExtensionLoadResult.Failed? right) -> bool
 static NetPrints.Extensibility.Loading.ExtensionLoadResult.Loaded.operator !=(NetPrints.Extensibility.Loading.ExtensionLoadResult.Loaded? left, NetPrints.Extensibility.Loading.ExtensionLoadResult.Loaded? right) -> bool
 static NetPrints.Extensibility.Loading.ExtensionLoadResult.Loaded.operator ==(NetPrints.Extensibility.Loading.ExtensionLoadResult.Loaded? left, NetPrints.Extensibility.Loading.ExtensionLoadResult.Loaded? right) -> bool
 static NetPrints.Extensibility.Loading.ExtensionLoadResult.operator !=(NetPrints.Extensibility.Loading.ExtensionLoadResult? left, NetPrints.Extensibility.Loading.ExtensionLoadResult? right) -> bool
 static NetPrints.Extensibility.Loading.ExtensionLoadResult.operator ==(NetPrints.Extensibility.Loading.ExtensionLoadResult? left, NetPrints.Extensibility.Loading.ExtensionLoadResult? right) -> bool
+static NetPrints.Extensibility.Loading.ExtensionLoaderOptions.BuiltInOnly.get -> NetPrints.Extensibility.Loading.ExtensionLoaderOptions!
+static NetPrints.Extensibility.Loading.ExtensionLoaderOptions.operator !=(NetPrints.Extensibility.Loading.ExtensionLoaderOptions? left, NetPrints.Extensibility.Loading.ExtensionLoaderOptions? right) -> bool
+static NetPrints.Extensibility.Loading.ExtensionLoaderOptions.operator ==(NetPrints.Extensibility.Loading.ExtensionLoaderOptions? left, NetPrints.Extensibility.Loading.ExtensionLoaderOptions? right) -> bool
+static NetPrints.Extensibility.Loading.ExtensionManifest.Parse(System.IO.Stream! json, string! manifestPath) -> NetPrints.Extensibility.Loading.ExtensionManifest!
 static NetPrints.Extensibility.Loading.ExtensionManifest.operator !=(NetPrints.Extensibility.Loading.ExtensionManifest? left, NetPrints.Extensibility.Loading.ExtensionManifest? right) -> bool
 static NetPrints.Extensibility.Loading.ExtensionManifest.operator ==(NetPrints.Extensibility.Loading.ExtensionManifest? left, NetPrints.Extensibility.Loading.ExtensionManifest? right) -> bool
-static NetPrints.Extensibility.Loading.ExtensionManifest.Parse(System.IO.Stream! json, string! manifestPath) -> NetPrints.Extensibility.Loading.ExtensionManifest!
 static NetPrints.Extensibility.Nodes.BuiltInNodeLibrary.Instance.get -> NetPrints.Extensibility.Nodes.INodeLibrary!
 static NetPrints.Extensibility.Nodes.NodeGraphKinds.Of(NetPrints.Core.NodeGraph! graph) -> NetPrints.Extensibility.Nodes.GraphKinds
 static NetPrints.Extensibility.Nodes.NodeKindDescriptor.operator !=(NetPrints.Extensibility.Nodes.NodeKindDescriptor? left, NetPrints.Extensibility.Nodes.NodeKindDescriptor? right) -> bool
 static NetPrints.Extensibility.Nodes.NodeKindDescriptor.operator ==(NetPrints.Extensibility.Nodes.NodeKindDescriptor? left, NetPrints.Extensibility.Nodes.NodeKindDescriptor? right) -> bool
 static NetPrints.Extensibility.Nodes.NodeSuggestion.operator !=(NetPrints.Extensibility.Nodes.NodeSuggestion? left, NetPrints.Extensibility.Nodes.NodeSuggestion? right) -> bool
 static NetPrints.Extensibility.Nodes.NodeSuggestion.operator ==(NetPrints.Extensibility.Nodes.NodeSuggestion? left, NetPrints.Extensibility.Nodes.NodeSuggestion? right) -> bool
-static NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.operator !=(NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor? left, NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor? right) -> bool
-static NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.operator ==(NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor? left, NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor? right) -> bool
 static NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.operator !=(NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>? left, NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>? right) -> bool
 static NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>.operator ==(NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>? left, NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor<T>? right) -> bool
 static NetPrints.Extensibility.Settings.JsonFileSettingsStore.DefaultFilePath() -> string!
@@ -334,6 +337,3 @@ static NetPrints.Extensibility.Settings.NetPrintsSettings.operator ==(NetPrints.
 virtual NetPrints.Extensibility.Loading.ExtensionLoadResult.EqualityContract.get -> System.Type!
 virtual NetPrints.Extensibility.Loading.ExtensionLoadResult.Equals(NetPrints.Extensibility.Loading.ExtensionLoadResult? other) -> bool
 virtual NetPrints.Extensibility.Loading.ExtensionLoadResult.PrintMembers(System.Text.StringBuilder! builder) -> bool
-virtual NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.EqualityContract.get -> System.Type!
-virtual NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.Equals(NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor? other) -> bool
-virtual NetPrints.Extensibility.Settings.ExtensionSettingsDescriptor.PrintMembers(System.Text.StringBuilder! builder) -> bool

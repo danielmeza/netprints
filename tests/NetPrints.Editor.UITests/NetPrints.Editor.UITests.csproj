@@ -10,6 +10,9 @@
   <!-- No Xunit.DependencyInjection here: its test framework replaces Avalonia's and every
        [AvaloniaFact] fails. -->
   <ItemGroup>
+    <NetPrintsExperimentalOptIn Include="NPXE0002" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="Avalonia.Headless.XUnit" />
     <PackageReference Include="Avalonia.Skia" />

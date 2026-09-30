@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+using NetPrints.Core;
 using System.Text.Json.Serialization.Metadata;
 
 namespace NetPrints.Extensibility.Settings;
@@ -8,6 +10,7 @@ namespace NetPrints.Extensibility.Settings;
 /// </summary>
 /// <param name="ExtensionId">The extension id; the key of the section in the settings file.</param>
 /// <param name="ValueType">The CLR type of the section's value.</param>
+[Experimental(ExperimentalApiIds.Settings, UrlFormat = ExperimentalApiIds.UrlFormat)]
 public abstract record ExtensionSettingsDescriptor(string ExtensionId, Type ValueType);
 
 /// <summary>

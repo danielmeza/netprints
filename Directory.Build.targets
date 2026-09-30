@@ -4,4 +4,10 @@
     <None Include="$(MSBuildThisFileDirectory)assets/icons/netprints-icon.png"
           Pack="true" PackagePath="icon.png" Visible="false" />
   </ItemGroup>
+  <!-- ADR-0017: per-project, per-id opt-in to [Experimental] APIs; items are only visible inside a target. -->
+  <Target Name="NetPrintsExperimentalOptIn" BeforeTargets="CoreCompile">
+    <PropertyGroup>
+      <NoWarn>$(NoWarn);@(NetPrintsExperimentalOptIn)</NoWarn>
+    </PropertyGroup>
+  </Target>
 </Project>

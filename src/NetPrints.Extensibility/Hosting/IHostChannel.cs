@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+using NetPrints.Core;
 namespace NetPrints.Extensibility.Hosting;
 
 /// <summary>
 /// A two-way message channel between the editor and the application that hosts it (extension-points.md §6).
 /// </summary>
+[Experimental(ExperimentalApiIds.HostChannel, UrlFormat = ExperimentalApiIds.UrlFormat)]
 public interface IHostChannel : IAsyncDisposable
 {
     /// <summary>
@@ -40,6 +43,7 @@ public sealed record HostLaunchContext(IReadOnlyDictionary<string, string> Setti
 /// <summary>
 /// Creates the channel selected by <c>NETPRINTS_HOST_CHANNEL</c> (extension-points.md §6).
 /// </summary>
+[Experimental(ExperimentalApiIds.HostChannel, UrlFormat = ExperimentalApiIds.UrlFormat)]
 public interface IHostChannelFactory
 {
     /// <summary>

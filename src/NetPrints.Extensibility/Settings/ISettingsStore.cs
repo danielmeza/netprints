@@ -1,8 +1,11 @@
+using System.Diagnostics.CodeAnalysis;
+using NetPrints.Core;
 namespace NetPrints.Extensibility.Settings;
 
 /// <summary>
 /// Reads and writes per-extension settings sections (extension-points.md §7).
 /// </summary>
+[Experimental(ExperimentalApiIds.Settings, UrlFormat = ExperimentalApiIds.UrlFormat)]
 public interface ISettingsStore
 {
     /// <summary>

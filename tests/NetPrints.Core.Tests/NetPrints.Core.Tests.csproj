@@ -8,6 +8,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <NetPrintsExperimentalOptIn Include="NPXE0001" />
+    <NetPrintsExperimentalOptIn Include="NPXE0002" />
+    <NetPrintsExperimentalOptIn Include="NPXE0003" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="xunit.v3" />
     <!-- FileSystemDocumentStoreTests: a TestScheduler to drive Changes' debounce deterministically. -->
     <PackageReference Include="Microsoft.Reactive.Testing" />

@@ -1,1 +1,19 @@
 #nullable enable
+NetPrints.Core.ExperimentalApiIds
+*REMOVED*NetPrints.Translator.IClassEmitter
+*REMOVED*NetPrints.Translator.IClassEmitter.EmitClass(NetPrints.Translator.ClassEmitContext! context) -> void
+*REMOVED*NetPrints.Translator.IClassEmitter.Id.get -> string!
+*REMOVED*NetPrints.Translator.IMemberEmitter
+*REMOVED*NetPrints.Translator.IMemberEmitter.EmitMember(NetPrints.Translator.MemberEmitContext! context) -> void
+*REMOVED*NetPrints.Translator.IMemberEmitter.Id.get -> string!
+[NPXE0003]NetPrints.Translator.IClassEmitter
+[NPXE0003]NetPrints.Translator.IClassEmitter.EmitClass(NetPrints.Translator.ClassEmitContext! context) -> void
+[NPXE0003]NetPrints.Translator.IClassEmitter.Id.get -> string!
+[NPXE0003]NetPrints.Translator.IMemberEmitter
+[NPXE0003]NetPrints.Translator.IMemberEmitter.EmitMember(NetPrints.Translator.MemberEmitContext! context) -> void
+[NPXE0003]NetPrints.Translator.IMemberEmitter.Id.get -> string!
+const NetPrints.Core.ExperimentalApiIds.CatalogProfiles = "NPXE0004" -> string!
+const NetPrints.Core.ExperimentalApiIds.Emitters = "NPXE0003" -> string!
+const NetPrints.Core.ExperimentalApiIds.HostChannel = "NPXE0001" -> string!
+const NetPrints.Core.ExperimentalApiIds.Settings = "NPXE0002" -> string!
+const NetPrints.Core.ExperimentalApiIds.UrlFormat = "https://danielmeza.github.io/netprints/docs/guide/extensions#api-stability" -> string!

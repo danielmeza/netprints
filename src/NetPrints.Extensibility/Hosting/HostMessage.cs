@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+using NetPrints.Core;
 using System.Text.Json;
 
 namespace NetPrints.Extensibility.Hosting;
@@ -7,6 +9,7 @@ namespace NetPrints.Extensibility.Hosting;
 /// </summary>
 /// <param name="Type">The message type, for example <see cref="HostMessageTypes.TypesChanged"/>.</param>
 /// <param name="Payload">The payload; its shape depends on <paramref name="Type"/>.</param>
+[Experimental(ExperimentalApiIds.HostChannel, UrlFormat = ExperimentalApiIds.UrlFormat)]
 public sealed record HostMessage(string Type, JsonElement Payload);
 
 /// <summary>

@@ -8,6 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <NetPrintsExperimentalOptIn Include="NPXE0001" />
+    <NetPrintsExperimentalOptIn Include="NPXE0002" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="Xunit.DependencyInjection" />
     <PackageReference Include="Microsoft.Reactive.Testing" />
