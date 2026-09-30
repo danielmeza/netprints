@@ -294,19 +294,19 @@ contracts/catalog.md). **Independent test**: CT-T01–CT-T19; SC-004, SC-005 (ex
 
 ### Batch D3 — model: sonnet — T044–T046 — 6 units
 
-- [ ] T044 [US2] Test first: `tests/NetPrints.Catalog.Tests/Engine/PublicApiProfileTests.cs` (CT-T04),
+- [x] T044 [US2] Test first: `tests/NetPrints.Catalog.Tests/Engine/PublicApiProfileTests.cs` (CT-T04),
   `Engine/AnnotatedProfileTests.cs` (CT-T05, also proves the injected attributes are visible on the compiled fixture —
   research R11 risk), `Engine/CustomProfileTests.cs` (CT-T06), `Engine/DeterminismTests.cs` (CT-T02),
   `Engine/MissingDependencyTests.cs` (CT-T19); snapshots under `tests/NetPrints.Catalog.Tests/Snapshots/` with catalog
   ids `catalogfixturelib` (`public-api`, `annotated`) and `catalogfixturelib-flags` (`fixture-flags`); extend
   `ExperimentalApiTests` with `NPXE0004`.
-- [ ] T045 [US2] Shared engine: `src/NetPrints.Catalog/Engine/ICatalogFilter.cs`, `CatalogProfileFilter.cs`,
+- [x] T045 [US2] Shared engine: `src/NetPrints.Catalog/Engine/ICatalogFilter.cs`, `CatalogProfileFilter.cs`,
   `BuiltInCatalogProfiles.cs`, `SymbolIds.cs`, `SummaryNormalizer.cs` (data-model.md §6), `IDocumentationSource.cs`,
   `XmlDocumentationSource.cs` (parses XML text; reading files stays in net10.0-only code because the generator's RS1035
   bans file access), `CatalogIdentity.cs`, `CatalogBuilder.cs`, `CatalogBuildResult.cs`, `Engine/ExperimentalApis.cs`
   (internal `CatalogProfiles = "NPXE0004"`, `UrlFormat`; shared so the generator links it); `[Experimental]` on
   `CatalogBuilder`, `ICatalogFilter`, `CatalogProfile`, `CatalogProfileFilter`, `BuiltInCatalogProfiles`.
-- [ ] T046 [US2] Create the snapshots with `NETPRINTS_UPDATE_SNAPSHOTS=1` and review them line by line against the
+- [x] T046 [US2] Create the snapshots with `NETPRINTS_UPDATE_SNAPSHOTS=1` and review them line by line against the
   fixture sources and spec §Edge Cases; record notable choices in `specs/004-catalog-cli/implementation-notes.md`;
   confirm `src/NetPrints.Annotations` still builds the shared files warning-free; whole suite; commit.
 

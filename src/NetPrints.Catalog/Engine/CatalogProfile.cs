@@ -1,8 +1,10 @@
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace NetPrints.Catalog;
 
 /// <summary>Which symbols a profile starts from, before its globs and rules apply.</summary>
+[Experimental(ExperimentalApis.CatalogProfiles, UrlFormat = ExperimentalApis.UrlFormat)]
 public enum CatalogProfileBase
 {
     /// <summary>Every public type and member.</summary>
@@ -16,6 +18,7 @@ public enum CatalogProfileBase
 }
 
 /// <summary>What a profile does with obsolete symbols.</summary>
+[Experimental(ExperimentalApis.CatalogProfiles, UrlFormat = ExperimentalApis.UrlFormat)]
 public enum CatalogObsoleteMode
 {
     /// <summary>Keep every obsolete symbol.</summary>
@@ -29,6 +32,7 @@ public enum CatalogObsoleteMode
 }
 
 /// <summary>Whether an attribute rule keeps or drops the symbols it matches.</summary>
+[Experimental(ExperimentalApis.CatalogProfiles, UrlFormat = ExperimentalApis.UrlFormat)]
 public enum CatalogAttributeRuleKind
 {
     /// <summary>Only symbols with a matching attribute are kept.</summary>
@@ -47,12 +51,14 @@ public enum CatalogAttributeRuleKind
 /// <param name="Position">The zero-based constructor argument index.</param>
 /// <param name="EqualsValue">The value the argument must equal; exactly one of this and <paramref name="ContainsValue"/> is set.</param>
 /// <param name="ContainsValue">The value the argument must contain.</param>
+[Experimental(ExperimentalApis.CatalogProfiles, UrlFormat = ExperimentalApis.UrlFormat)]
 public sealed record CatalogArgumentMatch(string? Name = null, int? Position = null, string? EqualsValue = null, string? ContainsValue = null);
 
 /// <summary>Selects symbols by attribute (and optionally one attribute argument).</summary>
 /// <param name="Rule">Keep or drop the matches.</param>
 /// <param name="Attribute">The attribute's full name, for example <c>UnrealSharp.Attributes.UFunctionAttribute</c>.</param>
 /// <param name="Argument">An argument the attribute must have, when set.</param>
+[Experimental(ExperimentalApis.CatalogProfiles, UrlFormat = ExperimentalApis.UrlFormat)]
 public sealed record CatalogAttributeRule(CatalogAttributeRuleKind Rule, string Attribute, CatalogArgumentMatch? Argument = null);
 
 /// <summary>
@@ -70,6 +76,7 @@ public sealed record CatalogAttributeRule(CatalogAttributeRuleKind Rule, string 
 /// <param name="MemberAttributes">Attribute rules over members.</param>
 /// <param name="Obsolete">The obsolete rule; defaults to <see cref="CatalogObsoleteMode.ExcludeErrors"/>.</param>
 /// <param name="SchemaVersion">The profile schema version this value was read as.</param>
+[Experimental(ExperimentalApis.CatalogProfiles, UrlFormat = ExperimentalApis.UrlFormat)]
 public sealed record CatalogProfile(
     string Id,
     CatalogProfileBase Base = CatalogProfileBase.PublicApi,

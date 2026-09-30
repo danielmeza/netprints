@@ -32,6 +32,19 @@ public sealed class AnnotatedProfileTests
     }
 
     [Fact]
+    public void AnnotationsOnPublicMembersAreVisibleWithTheDefaultMetadataImport()
+    {
+        MetadataReference fixture = MetadataReference.CreateFromFile(FixtureLibrary.AssemblyPath);
+        CSharpCompilation compilation = CSharpCompilation.Create("Tool", references: [.. FixtureCatalog.FrameworkReferences(), fixture]);
+        IAssemblySymbol assembly = FixtureCatalog.AssemblyOf(compilation, fixture);
+
+        CatalogBuildResult result = CatalogBuilder.Build(compilation, [assembly], new CatalogProfileFilter(BuiltInCatalogProfiles.Annotated), FixtureCatalog.FixtureDocumentation(), new CatalogIdentity(FixtureCatalog.FixtureId));
+
+        Assert.Equal(Result.Document.Types.Select(type => type.Id), result.Document.Types.Select(type => type.Id));
+        Assert.Empty(result.Diagnostics);
+    }
+
+    [Fact]
     public void SelectsAnnotatedTypesWithTheirPublicMembersAndAnnotatedMethodsOnly()
     {
         Assert.Equal([CounterId, HelpersId], Result.Document.Types.Select(type => type.Id));

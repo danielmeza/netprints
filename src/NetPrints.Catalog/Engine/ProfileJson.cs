@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text.RegularExpressions;
 
@@ -10,11 +11,12 @@ namespace NetPrints.Catalog;
 /// source generator can use it too. Unknown properties are ignored; every defect, including a newer
 /// <c>schemaVersion</c>, is reported as NPC003.
 /// </summary>
+[Experimental(ExperimentalApis.CatalogProfiles, UrlFormat = ExperimentalApis.UrlFormat)]
 public static class ProfileJson
 {
     private const string SchemaVersionProperty = "schemaVersion";
 
-    private static readonly Regex IdPattern = new("^[a-z0-9][a-z0-9._-]*$", RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1));
+    private static readonly Regex IdPattern = new(CatalogIdentity.IdPattern, RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1));
 
     /// <summary>Reads a profile from JSON text.</summary>
     /// <param name="json">The profile text.</param>

@@ -13,6 +13,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- ADR-0017: the engine implements its own experimental API; the id is opted in here, not suppressed. -->
+    <NetPrintsExperimentalOptIn Include="NPXE0004" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" VersionOverride="5.0.0" PrivateAssets="all" />
   </ItemGroup>
 

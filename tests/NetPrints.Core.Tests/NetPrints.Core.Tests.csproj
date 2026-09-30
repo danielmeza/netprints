@@ -56,6 +56,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\NetPrints.Core\NetPrints.Core.csproj" />
+    <ProjectReference Include="..\..\src\NetPrints.Catalog\NetPrints.Catalog.csproj" />
     <ProjectReference Include="..\..\src\NetPrints.Extensibility\NetPrints.Extensibility.csproj" />
     <ProjectReference Include="..\..\src\NetPrints.Serialization\NetPrints.Serialization.csproj" />
     <ProjectReference Include="..\..\src\NetPrints.Generation\NetPrints.Generation.csproj" />

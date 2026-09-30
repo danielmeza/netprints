@@ -7,6 +7,7 @@ using System.Linq;
 using System.Reflection;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using NetPrints.Catalog;
 using NetPrints.Core;
 using NetPrints.Extensibility;
 using NetPrints.Tests.Samples;
@@ -25,6 +26,7 @@ namespace NetPrints.Tests.Architecture
             { "NPXE0001", "using NetPrints.Extensibility.Hosting; class Consumer { IHostChannelFactory? Factory; }" },
             { "NPXE0002", "using NetPrints.Extensibility.Settings; class Consumer { ISettingsStore? Store; }" },
             { "NPXE0003", "using NetPrints.Translator; class Consumer { IClassEmitter? Emitter; }" },
+            { "NPXE0004", "using NetPrints.Catalog; class Consumer { CatalogProfile? Profile; ICatalogFilter? Filter; }" },
         };
 
         [Theory]
@@ -62,10 +64,35 @@ namespace NetPrints.Tests.Architecture
             Assert.Contains(File.ReadLines(page), line => line.Trim() == "## API stability");
         }
 
+        [Theory]
+        [InlineData("CatalogBuilder")]
+        [InlineData("ICatalogFilter")]
+        [InlineData("CatalogProfile")]
+        [InlineData("CatalogProfileFilter")]
+        [InlineData("BuiltInCatalogProfiles")]
+        [InlineData("ProfileJson")]
+        public void TheCatalogProfileApiIsMarkedWithTheCatalogProfilesId(string typeName)
+        {
+            Type type = typeof(CatalogDocument).Assembly.GetType("NetPrints.Catalog." + typeName)
+                ?? throw new InvalidOperationException($"{typeName} not found in NetPrints.Catalog");
+
+            Assert.Equal(ExperimentalApiIds.CatalogProfiles, ExperimentalIdOf(type));
+        }
+
+        [Fact]
+        public void TheCatalogAssemblyDeclaresTheSameIdAsCore()
+        {
+            Type declaring = typeof(CatalogDocument).Assembly.GetType("NetPrints.Catalog.ExperimentalApis")
+                ?? throw new InvalidOperationException("ExperimentalApis not found in NetPrints.Catalog");
+
+            Assert.Equal(ExperimentalApiIds.CatalogProfiles, declaring.GetField("CatalogProfiles", BindingFlags.Public | BindingFlags.Static)?.GetRawConstantValue());
+            Assert.Equal(ExperimentalApiIds.UrlFormat, declaring.GetField("UrlFormat", BindingFlags.Public | BindingFlags.Static)?.GetRawConstantValue());
+        }
+
         [Fact]
         public void EveryPublicSymbolThatMentionsAnExperimentalTypeIsExperimentalWithTheSameId()
         {
-            Assembly[] assemblies = [typeof(ExperimentalApiIds).Assembly, typeof(IExtensionBuilder).Assembly];
+            Assembly[] assemblies = [typeof(ExperimentalApiIds).Assembly, typeof(IExtensionBuilder).Assembly, typeof(CatalogDocument).Assembly];
             var offenders = new List<string>();
 
             foreach (Type type in assemblies.SelectMany(assembly => assembly.GetExportedTypes()))
@@ -160,6 +187,7 @@ namespace NetPrints.Tests.Architecture
                     .Select(path => MetadataReference.CreateFromFile(path)),
                 MetadataReference.CreateFromFile(typeof(IExtensionBuilder).Assembly.Location),
                 MetadataReference.CreateFromFile(typeof(IClassEmitter).Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(CatalogDocument).Assembly.Location),
             ];
             var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
                 .WithNullableContextOptions(NullableContextOptions.Enable);

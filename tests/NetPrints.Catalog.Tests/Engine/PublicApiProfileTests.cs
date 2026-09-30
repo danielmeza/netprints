@@ -16,9 +16,10 @@ public sealed class PublicApiProfileTests
     public void EqualsTheCommittedSnapshot() => FixtureCatalog.AssertSnapshot("public-api.npcat.json", Result);
 
     [Fact]
-    public void ProducesNoDiagnosticsAndTheDocumentIdentity()
+    public void ProducesOnlyTheIgnoredAnnotationWarningAndTheDocumentIdentity()
     {
-        FixtureCatalog.AssertNoDiagnostics(Result);
+        CatalogDiagnostic warning = Assert.Single(Result.Diagnostics);
+        Assert.Equal(CatalogDiagnosticCodes.IgnoredAnnotation, warning.Code);
         Assert.Equal(FixtureCatalog.FixtureId, Result.Document.Id);
         Assert.Equal("1.0.0.0", Result.Document.Version);
         Assert.Equal("public-api", Result.Document.Profile);
