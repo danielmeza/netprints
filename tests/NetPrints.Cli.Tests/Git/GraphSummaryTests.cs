@@ -89,7 +89,7 @@ public sealed class GraphSummaryTests : IDisposable
     public async Task AGraphWithANullNodeListExits1AsUnreadableNotAnInternalError()
     {
         string path = Path.Combine(_temp, "Null.netpc.json");
-        File.Copy(Path.Combine(Root, "tests", "NetPrints.Cli.Tests", "Git", "Fixtures", "NullNodes", "ours.netpc.json"), path);
+        File.Copy(Path.Combine(Root, "tests", "NetPrints.Cli.Tests", "Git", "Fixtures", "NullNodes", "ours.conflicted.txt"), path);
 
         (int exit, _, string error) = await ShowAsync(path);
 

@@ -99,7 +99,7 @@ public sealed class FormatCommandTests : IDisposable
     [Fact]
     public async Task AGraphWithANullNodeListIsUnreadable()
     {
-        Write("Null.netpc.json", File.ReadAllText(Path.Combine(LocalSdkLayout.FindRepositoryRoot(), "tests", "NetPrints.Cli.Tests", "Git", "Fixtures", "NullNodes", "ours.netpc.json")));
+        Write("Null.netpc.json", File.ReadAllText(Path.Combine(LocalSdkLayout.FindRepositoryRoot(), "tests", "NetPrints.Cli.Tests", "Git", "Fixtures", "NullNodes", "ours.conflicted.txt")));
 
         int exitCode = await _host.RunAsync("format", "--check", _root);
 
