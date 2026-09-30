@@ -19,6 +19,9 @@
     <Project Path="src/NetPrints.Serialization/NetPrints.Serialization.csproj" />
     <Project Path="src/NetPrints.Workspace/NetPrints.Workspace.csproj" />
   </Folder>
+  <Folder Name="/tests/Fixtures/">
+    <Project Path="tests/Fixtures/Catalog/CatalogFixtureLib/CatalogFixtureLib.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/NetPrints.Catalog.Tests/NetPrints.Catalog.Tests.csproj" />
     <Project Path="tests/NetPrints.Cli.Tests/NetPrints.Cli.Tests.csproj" />
