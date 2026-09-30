@@ -56,6 +56,9 @@ public sealed class NetPrintsJsonOptions
             // loudly as a JsonException the caller already maps to DocumentFormatException, not silently
             // parse and then throw ArgumentException on first access (R1-05).
             AllowDuplicateProperties = false,
+            // A null in a member the document types declare non-nullable (e.g. "nodes": null) is a format error, not a null
+            // reference later on.
+            RespectNullableAnnotations = true,
             Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
             WriteIndented = false,
         };

@@ -52,6 +52,17 @@ public sealed class GitInstallCommandTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task AnAttributesFileThatCannotBeWrittenExitsOneInsteadOfAnInternalError()
+    {
+        Directory.CreateDirectory(Repo.File(".gitattributes"));
+
+        (int exit, CliTestHost host) = await InstallAsync();
+
+        host.AssertExit(ExitCodes.Failed, exit);
+        Assert.DoesNotContain("Internal error", host.Error.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task ASecondRunReportsAlreadyInstalledAndWritesNothing()
     {
         await InstallAsync();

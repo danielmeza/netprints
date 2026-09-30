@@ -33,15 +33,20 @@ Inputs: `%O` base, `%A` ours (also the output), `%B` theirs; `--marker-size` (de
 Algorithm (research R15):
 1. Read the three files through the `IDocumentFormat` that `DocumentFormatRegistry` resolves for `--path` (git
    passes temporary files without the graph extension; default: the `.netpc.json` format). Any failure → text
-   fallback (step 5) on the raw texts.
+   fallback (step 5) on the raw texts. A null in a member the document declares non-nullable (e.g. `"nodes": null`)
+   is a read failure, as is an exception thrown by the merge itself.
 2. Merge by identity: scalar class fields three-way; variables/methods/constructors/event graphs by id; per member
    scalar fields three-way and the graph merged as below; delete vs modify → conflict.
 3. Graph: nodes by id — unchanged on one side → take the other; both changed → per-pin `(Name, Value)` three-way,
-   other node properties three-way; add/add with the same id and different content → conflict. Connections:
+   other node properties three-way; add/add with the same id and different content → conflict. Node shape: when a
+   node's non-pin properties (e.g. `pure`) changed on exactly one side and the other side changed that node's pins or
+   added or removed a connection touching it → `NodeProperty` conflict (a node's pins follow from its properties,
+   which the driver cannot evaluate). Connections:
    `base ∪ addedOurs ∪ addedTheirs − removedOurs − removedTheirs`. Locals by name. Node order: base order, then
    ours' additions, then theirs'. Layout: per graph key and node id, three-way with ours winning; entries of
    deleted nodes dropped.
-4. Validate: connection endpoints exist; ≤ 1 connection into each data input pin (exec inputs may have many);
+4. Validate: connection endpoints exist; ≤ 1 connection into each data input pin and each type input pin, and ≤ 1
+   connection out of each exec output pin (exec inputs and data/type outputs may have many);
    member ids unique; member names unique per kind. Clean and valid → write canonical bytes to `%A`, exit 0.
 5. Fallback: write the canonical texts of the three documents (or raw texts) to temp files and run
    `git merge-file -p --marker-size <n> -L ours -L base -L theirs <ours> <base> <theirs>` through `IProcessRunner`;

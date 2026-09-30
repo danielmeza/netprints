@@ -86,6 +86,19 @@ public sealed class GraphSummaryTests : IDisposable
     }
 
     [Fact]
+    public async Task AGraphWithANullNodeListExits1AsUnreadableNotAnInternalError()
+    {
+        string path = Path.Combine(_temp, "Null.netpc.json");
+        File.Copy(Path.Combine(Root, "tests", "NetPrints.Cli.Tests", "Git", "Fixtures", "NullNodes", "ours.netpc.json"), path);
+
+        (int exit, _, string error) = await ShowAsync(path);
+
+        Assert.Equal(ExitCodes.Failed, exit);
+        Assert.Contains("unreadable", error, StringComparison.Ordinal);
+        Assert.DoesNotContain("Internal error", error, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task AMissingFileExits2()
     {
         (int exit, _, string error) = await ShowAsync(Path.Combine(_temp, "nope.netpc.json"));

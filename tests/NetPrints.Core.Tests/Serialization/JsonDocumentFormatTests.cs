@@ -75,6 +75,18 @@ namespace NetPrints.Tests.Serialization
             Assert.Contains("name", ex.Message);
         }
 
+        [Theory]
+        [InlineData("{ \"schemaVersion\": 1, \"name\": \"C\", \"classGraph\": { \"nodes\": null } }")]
+        [InlineData("{ \"schemaVersion\": 1, \"name\": \"C\", \"classGraph\": null }")]
+        public async Task ANullInAMemberTheDocumentDeclaresNonNullableThrowsDocumentFormatException(string json)
+        {
+            JsonDocumentFormat format = NewFormat();
+            using var input = Utf8Stream(json);
+
+            await Assert.ThrowsAsync<DocumentFormatException>(async () =>
+                await format.ReadClassAsync(input, new DocumentId("a.netpc.json"), TestContext.Current.CancellationToken));
+        }
+
         // R1-05: a duplicate top-level key (e.g. a merge conflict resolved by keeping both lines) must
         // fail as a tolerable-load DocumentFormatException, not an unchecked ArgumentException from
         // JsonNode's own dictionary once AllowDuplicateProperties is off.

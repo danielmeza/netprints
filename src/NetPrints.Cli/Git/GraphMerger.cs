@@ -20,6 +20,8 @@ namespace NetPrints.Cli.Git;
 internal sealed class GraphMerger(IDocumentFormat format)
 {
     private const string DataInputMarker = "/in.data.";
+    private const string TypeInputMarker = "/in.type.";
+    private const string ExecOutputMarker = "/out.exec.";
     private const string VisibilitySuffix = ".visibility";
     private const string GraphSuffix = ".graph";
     private static readonly GraphDocument EmptyGraph = new([], null, null);
@@ -83,14 +85,9 @@ internal sealed class GraphMerger(IDocumentFormat format)
                     }
                 }
 
-                foreach (IGrouping<string, ConnectionDocument> input in (graph.Connections ?? [])
-                    .Where(connection => connection.To.Contains(DataInputMarker, StringComparison.Ordinal))
-                    .GroupBy(connection => connection.To, StringComparer.Ordinal)
-                    .Where(group => group.Count() > 1))
-                {
-                    int slash = input.Key.IndexOf('/', StringComparison.Ordinal);
-                    Conflicts.Add(new MergeConflict(MergeConflictKind.DataInputTwice, $"{path}.nodes[{input.Key[..slash]}].pins[{input.Key[(slash + 1)..]}]"));
-                }
+                ReportRepeated(path, graph, DataInputMarker, connection => connection.To, MergeConflictKind.DataInputTwice);
+                ReportRepeated(path, graph, TypeInputMarker, connection => connection.To, MergeConflictKind.TypeInputTwice);
+                ReportRepeated(path, graph, ExecOutputMarker, connection => connection.From, MergeConflictKind.ExecOutputTwice);
             }
 
             ReportDuplicates("variables", (merged.Variables ?? []).Select(v => (v.Id, (string?)v.Name)));
@@ -103,6 +100,18 @@ internal sealed class GraphMerger(IDocumentFormat format)
                 {
                     Conflicts.Add(new MergeConflict(MergeConflictKind.DuplicateMember, $"members[{group.Key}]"));
                 }
+            }
+        }
+
+        private void ReportRepeated(string path, GraphDocument graph, string marker, Func<ConnectionDocument, string> endpointOf, MergeConflictKind kind)
+        {
+            foreach (IGrouping<string, ConnectionDocument> pin in (graph.Connections ?? [])
+                .Where(connection => endpointOf(connection).Contains(marker, StringComparison.Ordinal))
+                .GroupBy(endpointOf, StringComparer.Ordinal)
+                .Where(group => group.Count() > 1))
+            {
+                int slash = pin.Key.IndexOf('/', StringComparison.Ordinal);
+                Conflicts.Add(new MergeConflict(kind, $"{path}.nodes[{pin.Key[..slash]}].pins[{pin.Key[(slash + 1)..]}]"));
             }
         }
 
@@ -368,6 +377,7 @@ internal sealed class GraphMerger(IDocumentFormat format)
             var baseConnections = (b.Connections ?? []).ToHashSet();
             var ourConnections = (o.Connections ?? []).ToHashSet();
             var theirConnections = (t.Connections ?? []).ToHashSet();
+            await CheckNodeShapesAsync(b, o, t, path, baseConnections, ourConnections, theirConnections).ConfigureAwait(false);
             IEnumerable<ConnectionDocument> connections = baseConnections
                 .Concat(ourConnections.Except(baseConnections))
                 .Concat(theirConnections.Except(baseConnections))
@@ -376,6 +386,47 @@ internal sealed class GraphMerger(IDocumentFormat format)
             ConnectionDocument[] sorted = [.. connections.OrderBy(c => c.From, StringComparer.Ordinal).ThenBy(c => c.To, StringComparer.Ordinal)];
             return new GraphDocument(nodes ?? [], sorted.Length == 0 ? null : sorted, locals);
         }
+
+        // A node's shape (its pins) follows from its properties, which the merger cannot evaluate; a property change on one side
+        // against pin or wiring edits to the same node on the other side is therefore reported instead of guessed.
+        private async Task CheckNodeShapesAsync(
+            GraphDocument b,
+            GraphDocument o,
+            GraphDocument t,
+            string path,
+            HashSet<ConnectionDocument> baseConnections,
+            HashSet<ConnectionDocument> ourConnections,
+            HashSet<ConnectionDocument> theirConnections)
+        {
+            Dictionary<string, NodeDocument> ourNodes = Index(o.Nodes, node => node.Id);
+            Dictionary<string, NodeDocument> theirNodes = Index(t.Nodes, node => node.Id);
+            foreach (NodeDocument baseNode in b.Nodes)
+            {
+                if (!ourNodes.TryGetValue(baseNode.Id, out NodeDocument? ours) || !theirNodes.TryGetValue(baseNode.Id, out NodeDocument? theirs))
+                {
+                    continue;
+                }
+
+                string baseProperties = await PrintAsync(baseNode with { Pins = null }).ConfigureAwait(false);
+                bool ourPropertiesChanged = await PrintAsync(ours with { Pins = null }).ConfigureAwait(false) != baseProperties;
+                bool theirPropertiesChanged = await PrintAsync(theirs with { Pins = null }).ConfigureAwait(false) != baseProperties;
+                if (ourPropertiesChanged == theirPropertiesChanged)
+                {
+                    continue;
+                }
+
+                (NodeDocument other, HashSet<ConnectionDocument> otherConnections) = ourPropertiesChanged ? (theirs, theirConnections) : (ours, ourConnections);
+                bool pinsChanged = await PrintAsync(other).ConfigureAwait(false) != await PrintAsync(baseNode).ConfigureAwait(false);
+                bool rewired = otherConnections.Except(baseConnections).Concat(baseConnections.Except(otherConnections)).Any(connection => Touches(connection, baseNode.Id));
+                if (pinsChanged || rewired)
+                {
+                    Conflicts.Add(new MergeConflict(MergeConflictKind.NodeProperty, $"{path}.nodes[{baseNode.Id}]"));
+                }
+            }
+        }
+
+        private static bool Touches(ConnectionDocument connection, string nodeId) =>
+            NodeOf(connection.From) == nodeId || NodeOf(connection.To) == nodeId;
 
         private async Task<NodeDocument> MergeNodeAsync(NodeDocument b, NodeDocument o, NodeDocument t, string path)
         {

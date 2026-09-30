@@ -66,6 +66,11 @@ internal sealed class GitInstallCommand(IAnsiConsole console, CliEnvironment env
             await environment.Error.WriteLineAsync($"git could not run: {ex.Message}").ConfigureAwait(false);
             return ExitCodes.Failed;
         }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            await environment.Error.WriteLineAsync($"Could not write the git attributes: {ex.Message}").ConfigureAwait(false);
+            return ExitCodes.Failed;
+        }
     }
 
     private async Task<int> InstallAsync(GitConfig config, string attributesPath, GitInstallSettings settings, CancellationToken cancellationToken)

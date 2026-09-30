@@ -94,6 +94,7 @@ public sealed class GraphMergerTests : IDisposable
     [Theory]
     [InlineData("DataInputTwice", "DataInputTwice")]
     [InlineData("DanglingConnection", "DanglingConnection")]
+    [InlineData("BothInsertAfterSameNode", "ExecOutputTwice")]
     public async Task ASemanticConflictOfTheMergedGraphFallsBackToTheTextMergeAndExitsOne(string fixture, string kind)
     {
         MergeRun run = await MergeAsync(fixture);
@@ -101,6 +102,37 @@ public sealed class GraphMergerTests : IDisposable
         Assert.Equal(ExitCodes.Failed, run.Exit);
         Assert.Contains(kind, run.Error, StringComparison.Ordinal);
         Assert.Contains("n0000000000010", run.Merged, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("NodeShapeVsConnection")]
+    [InlineData("NodeShapeVsPinValue")]
+    public async Task ANodeShapeChangeAgainstTheOtherSidesWiringOrPinEditConflictsAndExitsOne(string fixture)
+    {
+        MergeRun run = await MergeAsync(fixture);
+
+        Assert.Equal(ExitCodes.Failed, run.Exit);
+        Assert.Contains("NodeProperty", run.Error, StringComparison.Ordinal);
+        Assert.Contains("n0000000000002", run.Error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ANodeShapeConflictOverlappingTheOtherSidesWiringLeavesMarkersInTheFile()
+    {
+        MergeRun run = await MergeAsync("NodeShapeVsConnection");
+
+        Assert.Contains("<<<<<<< ours", run.Merged, StringComparison.Ordinal);
+        Assert.Contains(">>>>>>> theirs", run.Merged, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AGraphWithANullNodeListIsUnreadableAndIsMergedAsText()
+    {
+        MergeRun run = await MergeAsync("NullNodes");
+
+        Assert.Equal(ExitCodes.Failed, run.Exit);
+        Assert.Contains("unreadable", run.Error, StringComparison.Ordinal);
+        Assert.DoesNotContain("Internal error", run.Error, StringComparison.Ordinal);
     }
 
     [Fact]

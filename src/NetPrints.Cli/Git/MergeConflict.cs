@@ -18,6 +18,12 @@ internal enum MergeConflictKind
     /// <summary>The merged graph connects more than one source into one data input pin.</summary>
     DataInputTwice,
 
+    /// <summary>The merged graph connects more than one target from one exec output pin.</summary>
+    ExecOutputTwice,
+
+    /// <summary>The merged graph connects more than one source into one type input pin.</summary>
+    TypeInputTwice,
+
     /// <summary>The merged graph holds a connection to a node that no longer exists.</summary>
     DanglingConnection,
 

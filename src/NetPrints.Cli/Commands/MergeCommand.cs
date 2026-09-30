@@ -69,7 +69,17 @@ internal sealed class MergeCommand(CliEnvironment environment, IProcessRunner pr
             return await FallbackAsync(oursFile, oursBytes, baseBytes, theirsBytes, settings.MarkerSize, cancellationToken).ConfigureAwait(false);
         }
 
-        MergeOutcome outcome = await new GraphMerger(format).MergeAsync(baseDocument, oursDocument, theirsDocument, cancellationToken).ConfigureAwait(false);
+        MergeOutcome outcome;
+        try
+        {
+            outcome = await new GraphMerger(format).MergeAsync(baseDocument, oursDocument, theirsDocument, cancellationToken).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            await environment.Error.WriteLineAsync($"{display}: merge failed: {ex.Message}; merging as text").ConfigureAwait(false);
+            return await FallbackAsync(oursFile, oursBytes, baseBytes, theirsBytes, settings.MarkerSize, cancellationToken).ConfigureAwait(false);
+        }
+
         if (outcome is MergeOutcome.Clean clean)
         {
             await File.WriteAllBytesAsync(oursFile, await WriteAsync(format, clean.Document, cancellationToken).ConfigureAwait(false), cancellationToken).ConfigureAwait(false);

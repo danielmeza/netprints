@@ -97,6 +97,17 @@ public sealed class FormatCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task AGraphWithANullNodeListIsUnreadable()
+    {
+        Write("Null.netpc.json", File.ReadAllText(Path.Combine(LocalSdkLayout.FindRepositoryRoot(), "tests", "NetPrints.Cli.Tests", "Git", "Fixtures", "NullNodes", "ours.netpc.json")));
+
+        int exitCode = await _host.RunAsync("format", "--check", _root);
+
+        _host.AssertExit(ExitCodes.Failed, exitCode);
+        Assert.Contains("unreadable: Null.netpc.json:", _host.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task CheckListsUnreadableAndNonCanonicalFiles()
     {
         Write("Bad.netpc.json", "{ not json");

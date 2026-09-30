@@ -631,4 +631,48 @@ All 15 Review E findings are handled: R1, R2, R11, R12, R13 in 7dbd970; R9, R10 
 - **Docs**: `scripts/build-docs.sh` succeeded. Docusaurus build: 0 broken links (fragment identifiers with em-dashes removed).
 - **Format**: `dotnet format --verify-no-changes` clean (Release, all projects).
 
+## Review F (T099)
+
+Sub-phase F (`6925062^..00c87e3`), reviewed at `00c87e3`: Checkpoint F not accepted until the blocker and major findings are fixed. 1 blocker, 5 major, 7 minor, 7 nit. Independent run: Cli.Tests 210/210, Core.Tests 596/596; the manual isolated-repo run held SC-002 (format part), SC-009 and SC-010, and plain git reported 3 hunks on the two-insertions history. Batches: F-F1 merge safety, F-F2 show and diff, F-F3 format/fallback bytes/test isolation, F-F4 docs, contract, notes.
+
+| Id | Severity | Finding | Fix batch | Status |
+|---|---|---|---|---|
+| F-R1 | blocker | Merge validation checks only data inputs: two inserts after one exec output, or two sources into one type input, merge clean and lose a call | F-F1 | fixed in F-F1 |
+| F-R2 | major | A node-shape change (e.g. `pure`) on one side against new wiring or pin values on the other merges clean, then NPD002/NPD003 on regen | F-F1 | fixed in F-F1 |
+| F-R3 | major | `git diff` aborts (exit 128) as soon as a graph cannot be read | F-F2 | open |
+| F-R4 | major | `show` omits every node property except the target, so real changes give an empty diff | F-F2 | open |
+| F-R5 | major | `format` does not canonicalize connection order, which the editor does | F-F3 | open |
+| F-R6 | major | Large parts of the merger have no test | F-F1 | fixed in F-F1 |
+| F-R7 | minor | The docs state false things | F-F4 | open |
+| F-R8 | minor | `git.md` lacks the limits part T096 asked for | F-F4 | open |
+| F-R9 | minor | GI-T03's baseline does not match the contract or SC-009 | F-F4 | open |
+| F-R10 | minor | The text fallback is not byte-exact; `show` output encoding not pinned | F-F3 | open |
+| F-R11 | minor | Invalid input and I/O failures surface as `Internal error` (exit 4) | F-F1 | fixed in F-F1 |
+| F-R12 | minor | Git tests are not isolated from the developer's global git configuration | F-F3 | open |
+| F-R13 | minor | The Checkpoint F report is inaccurate | F-F4 | open |
+| F-R14 | nit | Decisions the contract was silent on are recorded only in the notes | F-F4 | open |
+| F-R15 | nit | `show` and `merge` read and write files directly | F-F4 | open |
+| F-R16 | nit | The default arm of the summary writer is misleading | F-F2 | open |
+| F-R17 | nit | A stray sentence in `cli.md` | F-F4 | open |
+| F-R18 | nit | The `show` goldens are not independent of the writer | F-F2 | open |
+| F-R19 | nit | The SC-010 test covers only the default install | F-F3 | open |
+| F-R20 | nit | `format`'s messages are inconsistent | F-F3 | open |
+
+### F-F1 (F-R1, F-R2, F-R6, F-R11)
+
+**Decisions**
+
+- F-R1: `Validate` also rejects more than one connection into a type input pin (`TypeInputTwice`) and more than one out of an exec output pin (`ExecOutputTwice`), next to `DataInputTwice`; contracts/git.md §2 step 4 and docs/guide/git.md amended.
+- F-R2: the report's conservative rule, with no pin mapper: a node whose non-pin properties changed on exactly one side, against pin changes or added/removed connections touching that node on the other side, is a `NodeProperty` conflict; contracts/git.md §2 step 3 and docs/guide/git.md amended.
+- F-R11: read-time rejection through `RespectNullableAnnotations` on the source-generated serializer options, so `"nodes": null` is a `DocumentFormatException` for `show`, `format` and `merge`; `merge` also falls back to the raw text when the merge itself throws, and `git-install` maps `IOException`/`UnauthorizedAccessException` to exit 1 (contracts/git.md §2 step 1 amended).
+- A node-shape conflict exits 1 even when `git merge-file` finds no overlapping lines (no markers then); the contract already says a semantic conflict always exits 1.
+- F-R6: in-memory unit tests in `Git/GraphMergerUnitTests.cs`, one case per branch: `NodeProperty` (both changed, add/add), `DuplicateMember` (same id, same name), `Scalar` (class fields, member name, locals, accessor add/add), member and accessor delete/modify and delete/unchanged, pin delete/modify, both sides adding members, layout carried for theirs-only nodes.
+
+**Red/green evidence**
+
+- Red (before the fix, `GraphMergerTests`, `GraphMergerUnitTests`, `GraphSummaryTests`, `FormatCommandTests`, `GitInstallCommandTests`): 73 tests, 11 failed, 62 passed. The failures: `TwoInsertionsAfterTheSameExecOutputConflict`, `TwoSourcesIntoOneTypeInputConflict`, both F-R2 unit tests, the `BothInsertAfterSameNode` and two `NodeShapeVs*` fixture cases, and the four F-R11 tests (merge, show and format on `NullNodes`, git-install with an unwritable `.gitattributes`). `JsonDocumentFormatTests` null-member theory (2 cases) was red without the option (2 of 8 failed).
+- The F-R6 tests and the clean-merge guards passed on the first run: the merger already behaved as specified there, so they pin existing behaviour and were written after the code in that sense. The F-R1, F-R2 and F-R11 tests were written before the fix.
+- Green: `NetPrints.Cli.Tests` 245 of 245 after the fix; whole suite 1641 total, 1631 passed, 10 skipped, 0 failed. `dotnet format --verify-no-changes` clean, build 28 projects 0 warnings 0 errors.
+- Not covered by a test: the `merge` catch-all fallback when the merger throws (no input reaches it once nulls are rejected at read time).
+
 ## Governance proposals

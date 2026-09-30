@@ -61,10 +61,11 @@ This registers the `merge` driver in addition to the diff configuration. When yo
 - Class fields and member fields are merged three-way.
 - Variables, methods, constructors and event graphs are merged by id.
 - Nodes are merged by id; a node that changes on only one side uses the new version. A node changed differently on both sides is a conflict.
+- A node whose properties (for example `pure`) changed on one side, while the other side changed that node's pins or rewired it, is a conflict: its pins follow from its properties, so the driver does not guess.
 - Connections are calculated as: `base + additions from your side - removals from your side + additions from their side - removals from their side`.
 - Layout positions (where nodes appear in the editor) prefer your version if both sides moved the same node.
 
-When the merge succeeds, the result is written in canonical form and exits 0. When there is a conflict (a node or field changed differently on both sides, or both sides connect into the same data input pin), the driver falls back to a text merge with conflict markers and exits 1. Either way, the merge is safe: no information is lost.
+When the merge succeeds, the result is written in canonical form and exits 0. When there is a conflict (a node or field changed differently on both sides, both sides connect into the same data or type input pin, or both sides connect a different node after the same exec output pin), the driver falls back to a text merge with conflict markers and exits 1. Either way, the merge is safe: no information is lost.
 
 See the [command-line guide](cli.md) for the full driver details on the `merge` command.
 
