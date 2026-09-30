@@ -1,0 +1,102 @@
+[
+  {
+    "query": "the node header brush for pure functions is unreadable in the Light theme in NetPrints, fix it",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "write a converter that turns a CompileStatus into a status dot color for the toolbar in MainWindow.axaml",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "make all flat buttons in the class editor have rounded corners and less padding",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "Nodify's connection wires look too thick and the selection border is the wrong accent color; theme them to match the editor",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "add a 'danger' style class for destructive buttons that makes them red in both themes",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "NodeView.axaml hardcodes #FF3C3C3C for the pin label color and XamlHygieneTests E2 fails; fix it properly",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "the error-underline brush in ClassEditorWindow.axaml is hardcoded; give it Light and Dark variants",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "toolbar ToggleButtons in MainWindow.axaml need a visible hover and pressed look in EditorStyles.axaml",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "color Nodify connections by pin type: white for exec pins, per-type colors for data pins",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "disabled toolbar buttons in MainWindow.axaml are unreadable in the Dark theme; fix the look",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "the Enter key in the node search box doesn't select the highlighted result",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "add an async Compile command that shows a busy spinner while compiling",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "OnSearchBoxKeyDown in NodeSearchView.axaml.cs closes the popup on Escape; replace it",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "pressing Delete in the graph editor doesn't remove the selected node",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "the variable list in the class editor gets slow with 3000 variables",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "the inline rename box in the event graph list should grab focus and select all its text when it appears",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "users want to drag variables up and down in the class editor to reorder them",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "the output panel should follow new lines unless the user scrolled up",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "the Remove variable button in VariableInspectorView.axaml is just an icon and screen readers say 'button'",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "add a unit test for ProjectEdit.SetSourceDirectoryIncluded in tests/NetPrints.Core.Tests",
+    "should_trigger": false,
+    "split": "validation"
+  }
+]

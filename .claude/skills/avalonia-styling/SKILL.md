@@ -1,0 +1,72 @@
+---
+name: avalonia-styling
+description: "How to make NetPrints Avalonia views look right: colors and brushes that work in Light and Dark, styles and style classes, ControlThemes, Nodify theme overrides, and IValueConverter rules. Use when a change adds or edits a converter, color, brush, style or theme, even if the request only says 'make it look like' or 'fix the colors'. Always load avalonia-xaml alongside it."
+paths:
+  - "**/*.axaml"
+  - "**/*.axaml.cs"
+  - "**/NetPrints.Editor/**/*.cs"
+  - "**/NetPrints.Desktop/**/*.cs"
+---
+
+# Styling and theming in NetPrints
+
+**Invoke the `avalonia-xaml` skill too, before you edit anything, unless it is already loaded in this session.** It
+holds the enforced rules (E1-E6, which `XamlHygieneTests` checks at build time) and the defaults that every XAML change
+follows; this skill only adds D5, D7 and D8. Rule IDs are shared across the `avalonia-*` skills.
+Two enforced rules bite most often here: **E2**, no color literals in views (one exception, stated in E2), and **E6**, a theme
+token is always a `DynamicResource`, never a `StaticResource`.
+
+The tiers and E1-E6 are defined in `avalonia-xaml`. List any Default rule you deviate from in the PR.
+
+## Default
+
+**D5. Converters decide how a state *looks*; the view model (VM) decides *what* the state is.** Writing a converter is
+normal and encouraged for reusable, view-only transformations. A converter may map app or business *state* to
+theme-independent visuals: icons, visibility, opacity, thickness, text formatting.
+- **A color that depends on the theme never comes from a converter.** Map the state to a style class
+  (`Classes.pure="{Binding IsPure}"`) and have the style set a `DynamicResource` token (D7).
+- Allowed: a `CompileStatus` to icon-kind converter.
+- Not allowed: a `CanConnectConverter` that asks the type system whether two pins are compatible, or a converter
+  that resolves a type name through the reflection provider. Those compute the state. Expose `IsCompatible` or
+  `ResolvedType` on the VM, then (if you like) convert *that* into a brush.
+- A converter must never validate, apply rules, call services or the model, or cause side effects.
+- Shape: `public sealed`, a `static readonly Instance` referenced with `{x:Static}` (the repo convention), and
+  `ConvertBack` throwing `NotSupportedException` unless the binding is TwoWay. Return
+  `AvaloniaProperty.UnsetValue` for unexpected input. Give it a plain xUnit test with no Avalonia app required.
+- Built-ins that often remove the need for a converter: `!`/`!!` negation, `ObjectConverters.IsNotNull`,
+  `StringConverters.IsNullOrEmpty`, `BoolConverters.And`, `StringFormat`, `MultiBinding`, and `FuncValueConverter` for a one-off.
+
+**D7. Colors and brushes are theme tokens.** Define them in `ThemeDictionaries` (`Dark`, `Light`, and optionally `Default`
+as a fallback) in `EditorStyles.axaml`, named `Area.Role` (for example `GraphGrid.MinorColor`, `Node.HeaderForeground`). Reference them with
+`DynamicResource`. Use Fluent's `System*` keys (`SystemAccentColor`, `SystemControlForegroundBaseMediumBrush`)
+before inventing a new one. Use `StaticResource` for things that never vary by theme: templates, `ControlTheme`s, sizes.
+
+**D8. Styles for tweaks, ControlThemes for re-templating.**
+- `Style` + class (`<Style Selector="Button.flat">`) is for additive property changes. Styles cascade and stack.
+- `ControlTheme` (`TargetType`, `BasedOn="{StaticResource {x:Type nodify:ItemContainer}}"`) replaces a control's
+  whole look or template. Only one theme applies at a time. Use `^` for nested selectors.
+- App-wide styles go in `EditorStyles.axaml`. The palette (`ColorPaletteResources`) and app resources go in `EditorApp.axaml`.
+  Keep a resource local (`UserControl.Resources` or `.Styles`) when only one view uses it, and promote it when a second view needs it.
+- Style classes are lowercase, and kebab-case when multi-word (`round`, `flat`, `icon`, `drop-target`). Existing classes
+  such as `pinValue` keep their names. Don't rename them just to conform.
+- Prefer a style class to repeating the same five inline setters. For a color change, use a style, not a template.
+
+## Gotchas
+
+- A brush that a converter builds in C# freezes the variant it was built in, because the binding isn't re-evaluated
+  when the theme changes (see D5).
+- A `ControlTheme` replaces the whole template and only one applies at a time. Base it on the default
+  (`BasedOn="{StaticResource {x:Type nodify:ItemContainer}}"`) or the control loses the parts you didn't restyle.
+
+## Known debt
+
+- `NodeKindBrushConverter` returns Dark-only brushes from `GraphBrushes`. It moves to tokens and style classes when a
+  Light variant is needed.
+
+## Before you finish
+
+1. `dotnet build tests/NetPrints.Core.Tests -v q -tl:off --nologo`, then `tests/NetPrints.Core.Tests/bin/Debug/net10.0/NetPrints.Core.Tests -class '*XamlHygieneTests'` (E2, E6); fix and re-run until green.
+2. A new converter gets a plain xUnit test with no Avalonia app.
+3. Check both variants. In a headless test, set `RequestedThemeVariant` (on the app or a `ThemeVariantScope`) to
+   `ThemeVariant.Light` and then `ThemeVariant.Dark` and assert what resolves, as `GridRenderTests` does; for a quick
+   look, run the editor and switch the variant.
