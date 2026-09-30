@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
-using NetPrints.Core;
 using System.Text.Json.Serialization.Metadata;
+using NetPrints.Core;
 
 namespace NetPrints.Extensibility.Settings;
 

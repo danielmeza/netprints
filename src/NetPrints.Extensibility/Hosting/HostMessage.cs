@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
-using NetPrints.Core;
 using System.Text.Json;
+using NetPrints.Core;
 
 namespace NetPrints.Extensibility.Hosting;
 

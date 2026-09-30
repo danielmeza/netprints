@@ -115,7 +115,7 @@ tracked API.
 
 ### Batch B2 — model: sonnet — T012–T016 — 6 units
 
-- [ ] T012 [US6] Test first (AP-T02, AP-T03): `tests/NetPrints.Core.Tests/Architecture/ExperimentalApiTests.cs` (for
+- [x] T012 [US6] Test first (AP-T02, AP-T03): `tests/NetPrints.Core.Tests/Architecture/ExperimentalApiTests.cs` (for
   `NPXE0001`–`NPXE0003`: an in-test external compilation referencing the built assemblies and using one marked API
   reports that id as an error, and compiles with the id suppressed; `NPXE0004` is added in T044); update
   `tests/NetPrints.Core.Tests/Core/SourceHygieneTests.cs`: the `<NoWarn>` gate allows exactly the
@@ -126,24 +126,28 @@ tracked API.
   `src/NetPrints.Core/ExperimentalApiIds.cs`, `src/NetPrints.Catalog/Engine/CatalogDiagnosticCodes.cs` and
   `src/NetPrints.Catalog/Engine/ExperimentalApis.cs` (the one allowed `NPXE0004` duplicate: the generator cannot
   reference Core; record it as a Decision).
-- [ ] T013 [US6] `Directory.Build.targets`: turn the `NetPrintsExperimentalOptIn` items into one
+- [x] T013 [US6] `Directory.Build.targets`: turn the `NetPrintsExperimentalOptIn` items into one
   `<NoWarn>$(NoWarn);@(NetPrintsExperimentalOptIn)</NoWarn>` line (items joined with `;`); each project that uses an
   experimental API adds `<NetPrintsExperimentalOptIn Include="NPXE000n" />` for only the ids it uses (no repo-wide
   property; a defining assembly only if the build shows the diagnostic, recorded in implementation-notes); add a row
   to the suppression ledger in `docs/adr/0003-analyzer-promotion-and-string-literal-discipline.md` pointing to
   ADR-0017.
-- [ ] T014 [US6] Add `src/NetPrints.Core/ExperimentalApiIds.cs` (public constants `HostChannel = "NPXE0001"`,
+- [x] T014 [US6] Add `src/NetPrints.Core/ExperimentalApiIds.cs` (public constants `HostChannel = "NPXE0001"`,
   `Settings = "NPXE0002"`, `Emitters = "NPXE0003"`, `CatalogProfiles = "NPXE0004"`, `UrlFormat`; Core's
   `PublicAPI.Unshipped.txt`), used by Core and Extensibility; mark with
   `[Experimental]`: `IHostChannel`, `IHostChannelFactory`, `HostMessage`, `IExtensionBuilder.AddHostChannel` (0001);
   `ExtensionSettingsDescriptor`, `ISettingsStore`, `IExtensionBuilder.AddSettings` (0002); `IClassEmitter`,
   `IMemberEmitter` in `src/NetPrints.Core/Translator/Extensibility/Emitters.cs`, `IExtensionBuilder.AddClassEmitter`,
   `AddMemberEmitter` (0003).
-- [ ] T015 [US6] `docs/guide/extensions.md`: new section "API stability" (anchor `api-stability`): the four ids, what
+- [x] T015 [US6] `docs/guide/extensions.md`: new section "API stability" (anchor `api-stability`): the four ids, what
   each covers, how an external extension opts in (`<NoWarn>$(NoWarn);NPXE0001</NoWarn>`; in-repo projects use a
   `NetPrintsExperimentalOptIn` item instead, ADR-0017), and the tracked API files.
-- [ ] T016 [US6] Whole suite, release build, format check; Checkpoint B report in
+- [x] T016 [US6] Whole suite, release build, format check; Checkpoint B report in
   `specs/004-catalog-cli/implementation-notes.md`; commit. **Checkpoint B** (SC-011).
+- [x] T016a [US6] Hygiene test (owner-approved): `tests/NetPrints.Core.Tests/Core/SolutionHygieneTests.cs` requires every
+  `*.csproj` under `src/` and `tests/` to be listed in `NetPrints.slnx`, except those under `tests/**/Fixtures/**`;
+  `samples/`, `legacy/` and `docs/` are out of scope (samples load the Generator from `bin/`, see
+  `samples/Directory.Build.props`).
 
 ### Batch B-R — model: opus — T017 (sub-phase review)
 

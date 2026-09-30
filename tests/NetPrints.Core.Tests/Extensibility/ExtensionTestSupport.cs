@@ -222,6 +222,8 @@ public static class ExtensionTestSupport
     public static ExtensionLoadResult.Failed SingleFailure(ExtensionRegistry registry, string id) =>
         Assert.Single(registry.Results.OfType<ExtensionLoadResult.Failed>(), r => r.Id == id);
 
+    private static readonly string[] OptedInExperimentalIds = [ExperimentalApiIds.HostChannel, ExperimentalApiIds.Settings, ExperimentalApiIds.Emitters];
+
     /// <summary>Compiles <paramref name="source"/> into <c>folder/name.dll</c> against the host's assemblies.</summary>
     public static string Compile(string folder, string name, string source)
     {
@@ -233,7 +235,8 @@ public static class ExtensionTestSupport
             name,
             [CSharpSyntaxTree.ParseText(source)],
             references,
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: NullableContextOptions.Enable));
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: NullableContextOptions.Enable)
+                .WithSpecificDiagnosticOptions(OptedInExperimentalIds.ToDictionary(id => id, _ => ReportDiagnostic.Suppress)));
         string path = Path.Combine(folder, name + ".dll");
         var emitted = compilation.Emit(path);
         Assert.True(emitted.Success, string.Join(Environment.NewLine, emitted.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error)));

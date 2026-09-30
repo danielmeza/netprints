@@ -43,7 +43,7 @@ public interface IExtensionBuilder
     /// </summary>
     /// <param name="emitter">The emitter.</param>
     /// <returns>This builder.</returns>
-[Experimental(ExperimentalApiIds.Emitters, UrlFormat = ExperimentalApiIds.UrlFormat)]
+    [Experimental(ExperimentalApiIds.Emitters, UrlFormat = ExperimentalApiIds.UrlFormat)]
     IExtensionBuilder AddClassEmitter(IClassEmitter emitter);
 
     /// <summary>
@@ -51,7 +51,7 @@ public interface IExtensionBuilder
     /// </summary>
     /// <param name="emitter">The emitter.</param>
     /// <returns>This builder.</returns>
-[Experimental(ExperimentalApiIds.Emitters, UrlFormat = ExperimentalApiIds.UrlFormat)]
+    [Experimental(ExperimentalApiIds.Emitters, UrlFormat = ExperimentalApiIds.UrlFormat)]
     IExtensionBuilder AddMemberEmitter(IMemberEmitter emitter);
 
     /// <summary>
@@ -88,7 +88,7 @@ public interface IExtensionBuilder
     /// </summary>
     /// <param name="factory">The factory.</param>
     /// <returns>This builder.</returns>
-[Experimental(ExperimentalApiIds.HostChannel, UrlFormat = ExperimentalApiIds.UrlFormat)]
+    [Experimental(ExperimentalApiIds.HostChannel, UrlFormat = ExperimentalApiIds.UrlFormat)]
     IExtensionBuilder AddHostChannel(IHostChannelFactory factory);
 
     /// <summary>
@@ -97,6 +97,6 @@ public interface IExtensionBuilder
     /// </summary>
     /// <param name="descriptor">The section.</param>
     /// <returns>This builder.</returns>
-[Experimental(ExperimentalApiIds.Settings, UrlFormat = ExperimentalApiIds.UrlFormat)]
+    [Experimental(ExperimentalApiIds.Settings, UrlFormat = ExperimentalApiIds.UrlFormat)]
     IExtensionBuilder AddSettings(ExtensionSettingsDescriptor descriptor);
 }

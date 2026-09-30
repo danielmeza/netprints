@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -45,13 +46,13 @@ namespace NetPrints.Tests.Architecture
 
         private static ImmutableArray<Diagnostic> Compile(string source, string? optIn)
         {
-            _ = typeof(IExtensionBuilder).Assembly;
-            _ = typeof(IClassEmitter).Assembly;
+            string trusted = (string?)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") ?? string.Empty;
             List<MetadataReference> references =
             [
-                .. AppDomain.CurrentDomain.GetAssemblies()
-                    .Where(assembly => !assembly.IsDynamic && !string.IsNullOrEmpty(assembly.Location))
-                    .Select(assembly => MetadataReference.CreateFromFile(assembly.Location)),
+                .. trusted.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries)
+                    .Select(path => MetadataReference.CreateFromFile(path)),
+                MetadataReference.CreateFromFile(typeof(IExtensionBuilder).Assembly.Location),
+                MetadataReference.CreateFromFile(typeof(IClassEmitter).Assembly.Location),
             ];
             var options = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
                 .WithNullableContextOptions(NullableContextOptions.Enable);
