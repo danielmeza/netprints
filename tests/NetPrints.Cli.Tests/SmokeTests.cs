@@ -2,11 +2,11 @@ using Xunit;
 
 namespace NetPrints.Cli.Tests;
 
-public class SmokeTests
+public sealed class SmokeTests
 {
     [Fact]
     public void ProjectLoads()
     {
-        Assert.True(true);
+        Assert.Equal("NetPrints.Cli", typeof(NetPrintsCLI.Program).Assembly.GetName().Name);
     }
 }

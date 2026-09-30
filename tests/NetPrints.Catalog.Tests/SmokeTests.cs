@@ -1,12 +1,13 @@
+using System.Reflection;
 using Xunit;
 
 namespace NetPrints.Catalog.Tests;
 
-public class SmokeTests
+public sealed class SmokeTests
 {
     [Fact]
     public void ProjectLoads()
     {
-        Assert.True(true);
+        Assert.Equal("NetPrints.Catalog", Assembly.Load(new AssemblyName("NetPrints.Catalog")).GetName().Name);
     }
 }

@@ -12,7 +12,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <!-- The four shipped packages opt in (release contract §3); everything else stays unpacked. -->
+    <!-- The six shipped packages opt in (release contract §3); everything else stays unpacked. -->
     <IsPackable>false</IsPackable>
   </PropertyGroup>
 

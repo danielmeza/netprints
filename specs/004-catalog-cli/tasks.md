@@ -75,14 +75,14 @@ publishing (tags, NuGet, wiki, SchemaStore, upstream repos). Every batch must pa
 
 ### Batch A-R — model: opus — T006 (sub-phase review)
 
-- [ ] T006 Review sub-phase A: an Opus reviewer who did not implement it reviews the whole diff of batches A1
+- [x] T006 Review sub-phase A: an Opus reviewer who did not implement it reviews the whole diff of batches A1
   (from the commit before the first batch to HEAD) — the setup changes, the constitution and plan.md's standing constraints —
   and runs the independent test of the phase; findings (severity, file:line, fix) go to the PR as review comments and to
   `specs/004-catalog-cli/implementation-notes.md` under "Review A". No code changes in this task.
 
 ### Batch A-F — model: sonnet — T007 (reserved: fix review findings)
 
-- [ ] T007 Fix every finding of T006 (test first for behaviour findings), reply on each review thread with the fixing
+- [x] T007 Fix every finding of T006 (test first for behaviour findings), reply on each review thread with the fixing
   commit or the reason for deferral, whole suite, commit; if the review had no findings, tick this task with "no
   findings". The next sub-phase starts only after this batch is green on CI.
 
