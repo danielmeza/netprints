@@ -29,26 +29,41 @@ The owner set three ground rules for any such policy:
 
 ## Decision
 
-- **The `avalonia-xaml` skill** (`.claude/skills/avalonia-xaml/SKILL.md`) is the single place these
-  rules live, loaded whenever a change touches `.axaml`, `.axaml.cs`, a converter, a style/resource or
-  a VM command bound from XAML. It states the three owner rules above as tiers:
+> **Amended 2026-09-29** (PR #10): the single `avalonia-xaml` skill was split into the three skills
+> below, with rule IDs unchanged, and the package-choice reasoning was corrected: the
+> `Xaml.Behaviors.Avalonia` meta package does have 12.x releases; it is avoided for the unused
+> packages it pulls in, not for a missing 12.x line.
+
+- **Three `avalonia-*` skills** (`.claude/skills/`) are the single place these rules live. They share one
+  rule numbering, so an ID cited in code, a test or a PR means the same thing in any of them, all three carry the same
+  `paths:` filter (`.axaml`, `.axaml.cs` and C# under `NetPrints.Editor`/`NetPrints.Desktop`), so
+  they are discovered together once Claude reads such a file, and each skill's description then picks
+  it only for the kind of change it covers:
+  - `avalonia-xaml`: E1-E6 and D1-D4, D6, D10, D12-D16, loaded for every change to `.axaml`,
+    `.axaml.cs` or a VM command bound from XAML;
+  - `avalonia-behaviors`: D9 and D11, loaded when a change adds or replaces an event handler, a
+    shortcut, focus, drag and drop or a dialog result;
+  - `avalonia-styling`: D5, D7 and D8, loaded when a change adds a converter, a color, a style, a
+    ControlTheme or a theme resource.
+  They state the three owner rules above as tiers:
   - **Enforced** (E1-E6 below): a test fails the build. An exception needs an allowlist entry with a
     reason.
   - **Default** (D1-D16): follow it unless there's a reason not to, stated in the PR.
   - **Consider**: tips, not rules.
-  A sibling `behaviors-catalog.md` holds the full generated catalog of the 383 Xaml.Behaviors 12.0.7
-  types across the 10 packages, so the skill itself stays under the size a model reads comfortably;
-  the skill's D11 keeps only a short "for X, prefer Y" table plus the rule for when a prebuilt
-  behavior beats a custom one or code-behind (rule 3).
+  The full generated catalog of the 383 Xaml.Behaviors 12.0.7 types across the 10 packages lives in
+  `avalonia-behaviors/references/`, split by job (commands and keys, triggers and actions, dialogs,
+  focus, lists, drag and drop, …) with worked recipes in each file, so a model loads only the file its
+  change needs; D11 keeps the order of preference, a "for X, prefer Y" table that routes to those
+  files, and the rule for when a prebuilt behavior beats a custom one or code-behind (rule 3).
 - **Package choice.** NetPrints references `Xaml.Behaviors.Interactions`,
   `Xaml.Behaviors.Interactions.Custom` and `Xaml.Behaviors.Interactions.DragAndDrop`, all at 12.0.7
   (the latest 12.x release; floor is Avalonia >= 12.0.5, repo runs 12.1.3). Not the
-  `Xaml.Behaviors.Avalonia` meta package: its id on nuget.org stops at the 11.3 line and does not
-  target Avalonia 12, and even a correctly-versioned meta package would pull in packages NetPrints
-  does not use (Animations, Draggable, Events, ReactiveUI, Responsive, Scripting).
-  `Xaml.Behaviors.Interactivity` (the base types, `EventTriggerBehavior`'s and `InvokeCommandAction`'s
-  actual home) comes in transitively as a shared dependency of the three referenced packages, so it is
-  not referenced directly. All three packages' types resolve in the default `https://github.com/avaloniaui`
+  `Xaml.Behaviors.Avalonia` meta package: its 12.x releases (12.0.7 included) also pull in
+  `Xaml.Behaviors.Animations`, `.Interactions.Draggable`, `.Interactions.Events` and
+  `.Interactions.Responsive`, which NetPrints does not use. `Xaml.Behaviors.Interactivity` (the base
+  behavior types) comes in transitively as a shared dependency of the three referenced packages, so it is
+  not referenced directly; `EventTriggerBehavior` and `InvokeCommandAction` themselves live in
+  `Xaml.Behaviors.Interactions`. All three packages' types resolve in the default `https://github.com/avaloniaui`
   xmlns, so no prefix is needed in a view.
 - **Enforced checks (`XamlHygieneTests`, next to `SourceHygieneTests`, same project and pattern).**
   Each rule parses every `src/**/*.axaml` file with `XDocument.Load(path, LoadOptions.SetLineInfo)` and
@@ -77,7 +92,7 @@ The owner set three ground rules for any such policy:
   branch of rule 3: `Xaml.Behaviors.Interactions.Custom`'s `ExecuteCommandOnTappedBehavior` is the
   more direct fit and is left for the next batch that touches this file, once the row markup is
   otherwise stable. `EventTriggerBehavior` is reflection-based and not trim-safe, which is exactly why
-  the skill lists it as a fallback rather than a first choice.
+  `avalonia-behaviors` lists it as a fallback rather than a first choice.
 - **Dialog-close pattern (batch X2b).** A dialog that closes with no result (`ErrorDialog`,
   `IssuesDialog`, `ReferencesDialog`) fits the prebuilt `ButtonClickEventTriggerBehavior` +
   `CloseWindowAction` pair directly. A dialog that closes *with* a result (`SelectMethodDialog`,
@@ -95,7 +110,7 @@ The owner set three ground rules for any such policy:
 
 ## Consequences
 
-- New XAML work has one document to load instead of re-deriving conventions per PR, and a build-time
+- New XAML work has one set of skills to load instead of re-deriving conventions per PR, and a build-time
   gate that only tightens (an allowlist can shrink but the check for a *new* violation is always live).
 - The remaining catalogued violations (2 for E1, 7 for E2 after this batch fixed nothing there, 13 for
   E3 after removing the two `OnMethodTapped` sites, 12 for E5) were batch X2's burn-down list; the
@@ -105,7 +120,7 @@ The owner set three ground rules for any such policy:
   pointer/`DragDrop.*` handlers were never in E3's scan to begin with). Every `XamlHygieneTests`
   allowlist is now empty.
 - Referencing three Xaml.Behaviors packages instead of the meta package means a future package that
-  NetPrints starts needing (say, `Xaml.Behaviors.Interactions.Draggable` for list reordering) must be
+  NetPrints starts needing (say, `Xaml.Behaviors.Interactions.Responsive` for adaptive classes) must be
   added explicitly; this is intentional (rule 2's "not too strict" cuts against unused dependencies,
   not against explicit ones).
 - `EventTriggerBehavior` is reflection-based; if trimming the editor ever becomes a goal, every use

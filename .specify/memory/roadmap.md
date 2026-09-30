@@ -157,7 +157,7 @@ docs updated (guides, API reference, ADRs as applicable).
   templates, context-menu items, tooltip providers and go-to providers are registered through one registry,
   and the built-in editor uses it. P3 then opens the same points to plugins.
 - **Adopt Xaml.Behaviors across the editor** (owner request, 2026-09-28): replace every remaining
-  code-behind handler a prebuilt behavior covers (catalog: `.claude/skills/avalonia-xaml/`), custom
+  code-behind handler a prebuilt behavior covers (catalog: `.claude/skills/avalonia-behaviors/`), custom
   behaviors for the rest; done when the XAML hygiene allowlists are empty or hold only justified
   gestures.
 - **Navigation basics** (owner ideas, 2026-09-25):

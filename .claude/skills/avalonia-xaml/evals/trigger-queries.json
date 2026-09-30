@@ -1,0 +1,102 @@
+[
+  {
+    "query": "In src/NetPrints.Editor/Variables/VariableInspectorView.axaml add a 'Default value' TextBox bound to the selected variable's DefaultValue, and make sure screen readers announce its label",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "the methods ItemsControl in ClassEditorWindow.axaml gets really slow when a class has ~2000 methods, can you fix the view?",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "NodeView.axaml has a DataTemplate that uses x:CompileBindings=\"False\" because the binding path wouldn't compile; make it compile properly",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "add an async Compile command to MainEditorVM that shows a busy indicator in MainWindow while it runs and can be cancelled",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "the Remove variable button in VariableInspectorView.axaml is only a minus icon and screen readers just say 'button'; fix it",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "add a design-time DataContext to MethodInspectorView.axaml so the previewer shows something useful",
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "ClassEditorWindow.axaml has a Click handler on the Add method button that just calls the VM; move it to a command binding",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "add AutomationIds to the buttons in RenameDialog.axaml so the UI tests can find them",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "MethodInspectorView.axaml reaches up with $parent[Window].DataContext to read the current class; bind it properly instead",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "add a 'No variables yet' empty state to the variable list in VariableInspectorView.axaml",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "add a unit test for ProjectEdit.SetSourceDirectoryIncluded in tests/NetPrints.Core.Tests",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "bump Avalonia from 12.1.3 to 12.1.4 in Directory.Packages.props and make sure CI stays green",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "ClassEditorVM.AddMethodCommand should refuse duplicate method names; implement it in ClassEditorVM.cs and cover it with a test",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "remove the unused System.Reactive PackageReference from src/NetPrints.Editor/NetPrints.Editor.csproj",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "NodeSearchService.Search ranks results alphabetically; make it rank prefix matches first (NodeSearchService.cs)",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "the undo stack in ProjectEditSession.cs loses the last edit after Save; find and fix the bug",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "add a --no-color flag to the netprints CLI in src/NetPrints.Cli/Program.cs",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "write a README section explaining how to build NetPrints.Desktop on macOS",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "make the CompileStatus enum serialize as a string in the project JSON written by ProjectSerializer.cs",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "add a GitHub Actions job that runs dotnet format --verify-no-changes on src/NetPrints.Editor",
+    "should_trigger": false,
+    "split": "validation"
+  }
+]
