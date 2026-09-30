@@ -310,16 +310,17 @@ the documented diagnostic id.
 - **FR-001**: The `netprints` tool MUST offer the commands `build`, `run`, `generate` (alias `regen`),
   `migrate`, `catalog`, `format`, `show`, `merge` and `git-install`, each with its own help text and
   examples.
-- **FR-002**: `--help`, `-h` and `--version` MUST exit 0, at the top level and for every command.
-  `--version` MUST print one line, `NetPrints.Cli <informational version>`.
+- **FR-002**: `--help` and `-h` MUST exit 0 at the top level and for every command; `--version` MUST exit 0 at
+  the top level and print one line, `NetPrints.Cli <informational version>`.
 - **FR-003**: Every command MUST follow one exit-code contract: 0 success; 1 the operation failed or a
   check found differences or conflicts; 2 invalid usage (unknown command or option, bad value, missing or
   ambiguous project); 3 no compatible .NET SDK was found; 4 internal error. `run` returns the program's
   own exit code once the build succeeded. The contract MUST be documented and each code covered by a
   test.
-- **FR-004**: Project commands (`build`, `run`, `generate`, `migrate` with a project, `catalog
-  --project`) MUST accept a project file, a directory holding exactly one project file, or nothing (the
-  current directory, same rule).
+- **FR-004**: Project commands (`build`, `run`, `generate`, `catalog --project`) MUST accept a project file, a
+  directory holding exactly one project file, or nothing (the current directory, same rule). `migrate` takes
+  graph files, directories (searched recursively) or a project file, and applies the same rule when given no
+  argument.
 - **FR-005**: `build` MUST build the project through the installed .NET SDK and print each error as
   `file(line,column): code: message`.
 - **FR-006**: `run` MUST build, then run the project, passing every argument after `--` to the program
@@ -502,8 +503,9 @@ the documented diagnostic id.
 
 ### Measurable Outcomes
 
-- **SC-001**: `netprints --help`, `-h`, `--version` and `<command> --help` for every command exit 0 in CI
-  (the CLI smoke step asserts 0); each of the five exit codes is produced by at least one automated test.
+- **SC-001**: `netprints --help`, `-h`, `--version` and `<command> --help` for every command exit 0 (the CI
+  smoke step asserts 0 for the top level; a test covers every command); each of the five exit codes is produced
+  by at least one automated test.
 - **SC-002**: In CI, `netprints run samples/HelloWorld/HelloWorld.csproj` prints `Hello, World!` and exits
   0, and `netprints regen --check` and `netprints format --check` pass on every sample project and fail
   (exit 1, naming the file) in tests that make one graph stale or non-canonical.

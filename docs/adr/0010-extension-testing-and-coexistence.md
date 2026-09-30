@@ -85,6 +85,6 @@ not packable yet (P3 publishes them).
   such an assembly now loads privately, which is what its author meant.
 - Every public API change of the tracked libraries is a reviewed diff; experimental API needs an explicit
   opt-in outside the repository.
-- The suite adds about eleven small fixture projects and one test category to the Core job. Unload testing
+- The suite adds about a dozen small fixture projects and one test category to the Core job. Unload testing
   stays deferred until collectible contexts are adopted.
 - The kit's public surface is designed once, in P3, against the harness that P2 already exercises.

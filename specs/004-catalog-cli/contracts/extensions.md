@@ -34,12 +34,13 @@ built-in id or already registered → `NPX006` contribution issue, first wins.
 
 | Fixture | Kind | Folder / id | Content |
 |---|---|---|---|
-| Alpha | project | `tests/Fixtures/Extensions/Fx.Alpha` / `fx.alpha` | Node kind `fx.alpha/Ping`, a class emitter adding `// fx.alpha`, settings section |
+| Alpha | project | `tests/Fixtures/Extensions/Fx.Alpha` / `fx.alpha` | One contribution of every kind MX-T07 checks: node kind `fx.alpha/Ping` (with a CLR node type and a JSON resolver), a class emitter adding `// fx.alpha`, a settings section, a project profile `fx.alpha.profile`, a host channel factory `fx.alpha.channel`, a document type, a catalog profile `fx-alpha`, a project property |
 | Beta | project | `Fx.Beta` / `fx.beta`, `dependsOn: [fx.alpha]` | Node kind `fx.beta/Pong`, a member emitter that adds `// fx.beta` to methods whose graph holds a `fx.alpha/Ping` node |
-| LibV1 / LibV2 | project | `Fx.LibV1`, `Fx.LibV2` + `Fixture.SharedLib.V1/.V2` (assembly `Fixture.SharedLib` 1.0/2.0) | Each registers a node whose translator calls `SharedLib.Describe()` (different signatures per version) |
-| PrefixedPrivate | project | `Fx.PrefixedPrivate` + `NetPrintsFixture.Runtime` | Registers a node whose translator uses `NetPrintsFixture.Runtime.Helper` |
+| LibV1 / LibV2 | project | `Fx.LibV1` / `fx.libv1`, `Fx.LibV2` / `fx.libv2` + `Fixture.SharedLib.V1/.V2` (assembly `Fixture.SharedLib` 1.0/2.0) | Each registers a node whose translator calls `SharedLib.Describe()` (different signatures per version) |
+| PrefixedPrivate | project | `Fx.PrefixedPrivate` / `fx.private-prefix` + `NetPrintsFixture.Runtime` | Registers a node whose translator uses `NetPrintsFixture.Runtime.Helper` |
 | TypesProvider / TypesConsumer | project | `Fx.TypesProvider` (`fx.types-provider`), `Fx.TypesConsumer` (`dependsOn` provider, `Private=false` reference) | Consumer's node pin type and emitter use `ProviderType`; exposes `typeof(ProviderType)` for identity checks |
-| Native | project | `Fx.Native` | Private `SkiaSharp.NativeAssets.Linux.NoDependencies`; `Register` calls `sk_version_get_milestone` via `DllImport("libSkiaSharp")` |
+| Diamond | project | `Fx.Diamond` / `fx.diamond`, `dependsOn: [fx.libv1, fx.libv2]`, references `Fixture.SharedLib` with `Private=false` | Registers a node whose translator calls `SharedLib.Describe()`; MX-T05 expects v1 (first in `dependsOn` order) |
+| Native | project | `Fx.Native` / `fx.native` | Private `SkiaSharp.NativeAssets.Linux.NoDependencies`; `Register` calls `sk_version_get_milestone` via `DllImport("libSkiaSharp")` |
 | Catalog | project | `Fx.Catalog` / `fx.catalog` | Contributes the fixture catalog (`CatalogLoader.LoadFile`) and the `fixture-flags` profile (used by CT-T13, CT-T15) |
 | Squatter | Roslyn | `fx.squatter` | Claims alpha's profile, host channel, settings and catalog-profile ids and a `fx.alpha/…` kind |
 | Duplicates | Roslyn | two folders with id `fx.dup` | |
@@ -63,9 +64,11 @@ CancellationToken)`; `Task<IReadOnlyList<GeneratedFileResult>> GenerateAsync(str
 - `Microsoft.CodeAnalysis.PublicApiAnalyzers` via `src/Directory.Build.props` for projects that set
   `<NetPrintsTrackPublicApi>true</NetPrintsTrackPublicApi>` (Extensibility, Core, Reflection, Serialization, Catalog),
   adding `PublicAPI.Shipped.txt` and `PublicAPI.Unshipped.txt` as `AdditionalFiles`.
-- Ids (`NetPrints.Extensibility.ExperimentalApis` and a copy of the constants in Core and Catalog, each `internal`):
-  `NPXE0001` host channel, `NPXE0002` settings, `NPXE0003` emitters, `NPXE0004` catalog engine/profiles; `UrlFormat`
-  `https://danielmeza.github.io/netprints/docs/guide/extensions#api-stability`.
+- Ids in `src/NetPrints.Core/ExperimentalApiIds.cs` (public, used by Core and Extensibility): `NPXE0001` host channel,
+  `NPXE0002` settings, `NPXE0003` emitters, `NPXE0004` catalog engine/profiles; `UrlFormat`
+  `https://danielmeza.github.io/netprints/docs/guide/extensions#api-stability`. The shared
+  `src/NetPrints.Catalog/Engine/ExperimentalApis.cs` re-declares `NPXE0004` internally because the generator, which
+  compiles it, cannot reference Core (the one allowed duplicate, allowlisted in the literal gate).
 - `Directory.Build.props`: `<NetPrintsExperimentalOptIn>NPXE0001;NPXE0002;NPXE0003;NPXE0004</NetPrintsExperimentalOptIn>`;
   `Directory.Build.targets`: `<NoWarn>$(NoWarn);$(NetPrintsExperimentalOptIn)</NoWarn>` — the only allowed `<NoWarn>`.
 

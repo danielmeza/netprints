@@ -89,7 +89,8 @@ netprints catalog [--config <file>]
                   [--extension <folder>]... [--check]
 ```
 
-- Config lookup: `--config`, else `./netprints.catalog.json`; neither and no source option → exit 2.
+- Config lookup: `--config`, else `./netprints.catalog.json`; neither and no source option → exit 2; an unreadable,
+  invalid or newer config file → exit 1.
 - Merge: data-model.md §3. Default output: `<id>.npcat.json` (`catalog`) or `<ClassName>.g.cs` (`csharp`) next
   to the config file (or in the current directory).
 - Profile resolution order: explicit option/config → (with `--project`) the project profile's `CatalogProfileId`
@@ -155,11 +156,11 @@ internal static partial class <ClassName>
 | CT-T03 | `Format/CatalogReaderTests` | Round trip = identity; unknown properties tolerated; version 2 → NPC101; malformed → NPC102 |
 | CT-T04 | `Engine/PublicApiProfileTests` | Fixture `public-api` = `Snapshots/public-api.npcat.json`, covering every edge case of spec §Edge Cases |
 | CT-T05 | `Engine/AnnotatedProfileTests` | Fixture `annotated` = `Snapshots/annotated.npcat.json` (incl. `[NetPrintsIgnore]`, node hints) |
-| CT-T06 | `Engine/CustomProfileTests` | `fixture-flags` = `Snapshots/fixture-flags.npcat.json` (argument `contains` on enum flags; `equals` by position) |
+| CT-T06 | `Engine/CustomProfileTests` | `fixture-flags` with id `catalogfixturelib-flags` = `Snapshots/fixture-flags.npcat.json` (argument `contains` on enum flags; `equals` by position) |
 | CT-T07 | `Engine/GlobTests` | `*`, `?`, literal dots, nested names, ordinal case |
 | CT-T08 | `Runtime/ParityTests` | Live provider vs `CatalogTypeCatalog` over the fixture: 0 differences for every query (research R10) |
 | CT-T09 | `Runtime/CatalogTypeCatalogTests` | Subclass (base + interfaces, transitive), implicit casts (identity, reference, `op_Implicit`), documentation per parameter and return, enum names, overridable methods |
-| CT-T10 | `Config/CatalogConfigTests` | Parse, relative paths, override and append rules, inline profile, invalid file → 2, `schemaVersion: 2` → error naming both versions |
+| CT-T10 | `Config/CatalogConfigTests` | Parse, relative paths, override and append rules, inline profile, invalid file → 1, `schemaVersion: 2` → error naming both versions (1); uses `Config/netprints.catalog.json` (the §5 example) |
 | CT-T11 | `CatalogCommandTests` (Cli.Tests) | Real SDK: `--assembly` fixture DLL → equals CT-T04 snapshot; second run writes nothing; `--check` 0, then 1 after changing `--exclude` |
 | CT-T12 | `CatalogCommandTests` | `--package CatalogFixtureLib@1.0.0` from a temporary feed (packed fixture) → same catalog as CT-T11; unknown package → 1 |
 | CT-T13 | `CatalogCommandTests` | `--project` of a temp NetPrints project whose extension contributes `fixture-flags` and whose project profile's `CatalogProfileId` is `fixture-flags` → CT-T06 snapshot without `--profile` |

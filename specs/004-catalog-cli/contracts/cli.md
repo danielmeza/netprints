@@ -11,7 +11,9 @@ netprints --help | -h | --version
 
 - `--version` prints exactly `NetPrints.Cli <AssemblyInformationalVersion>` and exits 0.
 - `--help`/`-h` at any level print the help and exit 0.
-- `--verbose` lowers the stderr log level from Warning to Information and prints internal-error stack traces.
+- `--verbose` lowers the stderr log level from Warning to Information and prints internal-error stack traces. It
+  is an option of every command (shared `CommandSettingsBase`); a `--verbose` given before the command name is moved
+  after it by the pre-parse, so both positions work.
 - Output: plain text (no ANSI) when stdout is redirected or `NO_COLOR` is set. Results and diagnostics go to
   stdout; logs and internal-error details to stderr.
 - P1 flags (`-p`, `--project-path`, `-r`, `--run`) anywhere before a command → stderr
@@ -23,8 +25,8 @@ netprints --help | -h | --version
 | Code | Name | When |
 |---|---|---|
 | 0 | `Success` | The command did what it was asked |
-| 1 | `Failed` | Build or generation errors; `--check` found differences; merge conflict; restore failure; unreadable input file |
-| 2 | `Usage` | Unknown command/option, invalid value, a path that does not exist, no or several project files, P1 flags, `git-install` outside a work tree |
+| 1 | `Failed` | Build or generation errors; `--check` found differences; merge conflict; restore failure; an unreadable or invalid input file (graph, catalog configuration, profile), including a newer `schemaVersion` |
+| 2 | `Usage` | Unknown command/option, invalid option value, a path argument that does not exist, no or several project files, P1 flags, `git-install` outside a work tree |
 | 3 | `NoSdk` | No compatible .NET SDK registered (commands that evaluate or build projects) |
 | 4 | `InternalError` | Unhandled exception |
 
@@ -32,8 +34,7 @@ netprints --help | -h | --version
 
 ## 3. Project argument
 
-`<project>` is optional for `build`, `run`, `generate`, `migrate` (when no path is a file) and `catalog
---project`. Resolution: an existing `.csproj` file → it; an existing directory → its single `*.csproj`; omitted →
+`<project>` is optional for `build`, `run`, `generate` and `catalog --project` (`migrate` takes paths, see §4). Resolution: an existing `.csproj` file → it; an existing directory → its single `*.csproj`; omitted →
 the current directory's single `*.csproj`. Zero or several candidates, a non-existent path, or a file that is not a
 `.csproj` → exit 2 with the reason.
 
@@ -44,7 +45,7 @@ the current directory's single `*.csproj`. Zero or several candidates, a non-exi
 | `build` | `build [<project>]` | `EnsureSdk` → `IProjectSystem.BuildAsync` | Errors as `file(line,column): code: message`; last line `Build succeeded.` / `Build failed with N error(s).` |
 | `run` | `run [<project>] [-- <args>...]` | Build; on success run `IProjectSystem.GetRunCommand` with `<args>` appended | Build output as `build`, then the program's stdout/stderr forwarded verbatim |
 | `generate` (alias `regen`) | `generate [<project>] [--check] [--graph <file>]...` | Load project snapshot → `GenerateRequestFactory.FromSnapshot` → `GraphCodeGenerator.LoadExtensions` → `GenerateAsync(mode)` | Canonical diagnostic lines; `generated: <relative path>` per written file, or `stale: <relative path>` per stale/missing file with `--check`; last line `N generated file(s) up to date, M written.` / `M stale.` |
-| `migrate` | `migrate [<paths or project>...]` | For each graph: read `schemaVersion`; while v1 is current, report only | `<relative path>: schema <n> (current)`; last line `No migrations are available; N graph(s) are at schema version 1.`; a newer/missing version → `<path>: schema <n> is not supported (this tool supports 1)`, exit 1 |
+| `migrate` | `migrate [<path>...]` | Paths are graph files, directories searched recursively for graphs, or a `.csproj` (its graphs); no argument → the §3 project rule. Each graph is read through its `IDocumentFormat`; while v1 is current, report only | `<relative path>: schema <n> (current)`; last line `No migrations are available; N graph(s) are at schema version 1.`; a newer/missing version → `<path>: schema <n> is not supported (this tool supports 1)`, exit 1 |
 | `catalog` | see contracts/catalog.md §4 | Build or check one catalog | `wrote <path> (<T> types, <M> members)` or `stale: <path>`; `NPC` diagnostics as `<source>: <severity> <code>: <message>` |
 | `format` | `format [<paths>...] [--check]` | Canonicalize `*.netpc.json` (directories recursive; default `.`) | `formatted: <path>` / `not canonical: <path>` (check) / `unreadable: <path>: <reason>`; last line summary |
 | `show` | `show <file>` | Print the graph summary (contracts/git.md §1) | Summary only |
@@ -58,8 +59,8 @@ Every command has at least one `.WithExample(...)`; `config.ValidateExamples()` 
 - `Program.Main(string[] args)` → `CliApplication.RunAsync(args, CliServices.CreateDefault(), cancellationToken)`.
 - `CliApplication.RunAsync(IReadOnlyList<string> args, IServiceCollection services, CancellationToken)` builds the
   `CommandApp` with `TypeRegistrar(services)` and is what tests call with fakes (`IProjectSystem`,
-  `IProcessRunner`, `IMsBuildRegistration`, `IAnsiConsole` = `TestConsole`, `IFileSystemRoot` for the current
-  directory).
+  `IProcessRunner`, `IMsBuildRegistration`, `IAnsiConsole` = `TestConsole`, and `CliEnvironment` — current directory
+  and environment variables).
 - `ProjectCommandBase<TSettings>` holds the project resolution and the SDK check (`MsBuildRegistration`
   before any Microsoft.Build type loads).
 
@@ -67,13 +68,13 @@ Every command has at least one `.WithExample(...)`; `config.ValidateExamples()` 
 
 | Id | Test (file) | Case |
 |---|---|---|
-| CL-T01 | `CliExitCodeTests` | `--help`, `-h`, `--version` and `<command> --help` for all nine commands exit 0; `--version` line format |
+| CL-T01 | `CliExitCodeTests` | `--help`, `-h`, `--version` at the top level and `<command> --help` for every registered command exit 0 (the test iterates the registered commands, so each new command is covered); `--version` line format |
 | CL-T02 | `CliExitCodeTests` | Unknown command, unknown option, invalid value → 2; P1 flags → 2 with the replacement message |
 | CL-T03 | `ProjectLocatorTests` | File, directory with one project, none, two, non-existent path, non-`.csproj` file |
 | CL-T04 | `BuildCommandTests` (ported `CliBuildTests`) | Success 0; failure 1 with formatted errors (fake project system) |
 | CL-T05 | `RunCommandTests` | Arguments after `--` reach the program; child exit code returned; build failure → 1 without running |
 | CL-T06 | `BuildCommandTests` | No SDK → 3 (fake registration) |
-| CL-T07 | `CliExitCodeTests` | A command that throws → 4; stack trace only with `--verbose` |
+| CL-T07 | `CliExitCodeTests` | A command that throws → 4; stack trace only with `--verbose`, given before or after the command name |
 | CL-T08 | `GenerateCommandTests` | Temp copy of HelloWorld: fresh → 0 and nothing written; one stale → `generate` rewrites only it; `--check` → 1 naming it, no write; failing extension folder → 1, no write |
 | CL-T09 | `MigrateCommandTests` | All v1 → 0 with report; `schemaVersion: 2` file → 1 |
 | CL-T10 | `CliExitCodeTests` | Redirected output and `NO_COLOR` contain no ANSI escape |

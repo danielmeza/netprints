@@ -60,7 +60,8 @@ internal sealed class NetPrintsEmbeddedCatalogAttribute(string id, int schemaVer
 }
 ```
 
-(Primary constructors shown for brevity; the injected source uses classic constructors so it compiles at C# 7.3.)
+(Primary constructors and `?` shown for brevity. The injected and generated sources compile at C# 7.3: classic
+constructors, no `?` annotations on reference types and no `#nullable` directive.)
 
 ## 3. Generator behaviour (`CatalogGenerator : IIncrementalGenerator`)
 
@@ -135,9 +136,9 @@ P1.
 | AN-T07 | `Generator/IncrementalTests` | Editing an unrelated syntax tree leaves the referenced-assembly step `Cached`/`Unchanged` |
 | AN-T08 | `Generator/LanguageVersionTests` | Consumer at `LanguageVersion.CSharp7_3` compiles the generated sources without errors |
 | AN-T09 | `Runtime/EmbeddedCatalogReaderTests` | Metadata-only read and loaded-assembly read give equal documents; assembly without catalogs → empty |
-| AN-T10 | `EndToEnd/AnnotationsPackageTests` | Pack `NetPrints.Annotations` into a temp feed; `dotnet build` a netstandard2.0 library using it; its embedded catalog = snapshot |
+| AN-T10 | `EndToEnd/AnnotationsPackageTests` | Pack `NetPrints.Annotations` into a temp feed; `dotnet build` the netstandard2.0 library `AnnotatedSample` 1.0.0 (`EndToEnd/AnnotatedSample/`) against it; its embedded catalog = `Snapshots/annotated-sample.npcat.json` |
 | AN-T11 | `Reflection/EmbeddedCatalogDiscoveryTests` (Editor.Tests) | Project referencing the built fixture: search offers the annotated nodes and not the library's other public members |
 | AN-T12 | `Samples/AnnotatedLibraryBuildTests` (Core.Tests) | NetPrints project referencing the annotated fixture: a graph calling a `[NetPrintsNode]` method builds and runs |
-| AN-T13 | `EndToEnd/CrossFlavorSnapshotTests` | Tool, driver and built-assembly catalogs byte-identical for `public-api`, `annotated`, `fixture-flags` (SC-003) |
+| AN-T13 | `EndToEnd/CrossFlavorSnapshotTests` | Tool, driver and built-assembly catalogs byte-identical for `public-api`, `annotated`, `fixture-flags` (SC-003); built legs: `CatalogFixtureLib` (own `annotated`) and `tests/Fixtures/Catalog/CatalogConsumerLib` (`public-api` and `fixture-flags` requests) |
 | AN-T14 | `Generator/DeterminismTests` | Two driver runs and shuffled tree/reference order → identical output |
 | AN-T15 | `EndToEnd/ReferenceAssemblyPackageTests` | Pack the annotated fixture with `ProduceReferenceAssembly` and its reference assembly under `ref/net10.0/`; a consumer project restores it (resolved reference = the ref assembly); `EmbeddedCatalogReader.Read(resolved path)` finds the catalog (directly or through the `lib/` fallback); record which in implementation-notes.md |

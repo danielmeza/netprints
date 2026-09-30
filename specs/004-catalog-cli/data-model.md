@@ -103,7 +103,7 @@ visible).
 | Field | Type | CLI override |
 |---|---|---|
 | `$schema` | string? | — |
-| `schemaVersion` | int? | Default 1; a newer version is a usage error naming both versions (exit 2) |
+| `schemaVersion` | int? | Default 1; a newer version is an error naming both versions (exit 1) |
 | `sources` | Source[] (≥ 1) | `--assembly <path>` (repeatable), `--package <id>@<version>`, `--project <path>`; any source option replaces the file's `sources` |
 | **Source** `assembly` | string | Path or glob, relative to the config file |
 | **Source** `package` + `version` | string | NuGet id and exact version |

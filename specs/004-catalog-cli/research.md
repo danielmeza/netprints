@@ -87,8 +87,9 @@ globally installed tool, ADR-0009).
 
 ## 5. `migrate`
 
-**Decision**: `migrate [paths|project] [--check]` finds graphs (files, directories, or a project's graphs),
-reads each file's `schemaVersion` with a lightweight JSON read, and prints `<file>: schema 1 (current)`.
+**Decision**: `migrate [paths]` finds graphs (files, directories searched recursively, or a project's graphs),
+reads each through the `IDocumentFormat` that `DocumentFormatRegistry` resolves (constitution VII; a newer version
+surfaces as P1's `DocumentVersionException`), and prints `<file>: schema 1 (current)`.
 With `DocumentMigrator.CurrentSchemaVersion == 1` and no registered migrations it prints "No migrations are
 available; N graph(s) are at schema version 1." and exits 0. A newer or missing version is an error (exit 1).
 The command already routes through `DocumentMigrator` so the first v2 migration only adds the migration and a
@@ -110,7 +111,10 @@ Shared files use only APIs available on both targets, a `Guard` helper instead o
 `Polyfills.cs` (`#if NETSTANDARD2_0`: `IsExternalInit`, nullable flow attributes). The writer is
 hand-written (a `StringBuilder` with the canonical rules), so neither target needs System.Text.Json at write
 time; net10.0-only parts (`Json/CatalogReader.cs` on STJ source generation, `Runtime/`, `Config/`, `Sources/`)
-are excluded from the link.
+are excluded from the link. The polyfill file also declares `ExperimentalAttribute` and the required-member
+attributes for netstandard2.0, and `Engine/ExperimentalApis.cs` holds the `NPXE0004` id so linked files compile
+without Core. The link is added in the first catalog batch, so the netstandard2.0 build guards every shared file
+from the start; documentation arrives as XML text (the generator's RS1035 forbids file access).
 
 **Rationale**: Constitution IV allows netstandard2.0 only for the generator itself, so `NetPrints.Catalog`
 cannot multi-target; sharing source keeps one implementation, which is what makes the cross-flavor snapshot
@@ -177,9 +181,11 @@ whose `ProjectSnapshot.References` already carry each assembly's path and XML do
   `dotnet restore` through `IProcessRunner`; the package's own assemblies are the references under
   `<global packages folder>/<id lower>/<version>/`.
 The temporary project lives under `obj/netprints-catalog/<hash of the config>/` next to the config file (so
-`NuGet.config` files above it apply), sets `ImportDirectoryBuildProps`, `ImportDirectoryBuildTargets` and
-`ImportDirectoryPackagesProps` to `false` and `ManagePackageVersionsCentrally` to `false`, and is deleted
-after a successful run. The catalog compilation is a `CSharpCompilation` over those references with no
+`NuGet.config` files above it apply). Because `Sdk.props` reads `ImportDirectoryBuildProps` and friends before a
+`<Project Sdk=…>` body, the file uses explicit `<Import Project="Sdk.props" Sdk="Microsoft.NET.Sdk" />` after a
+`PropertyGroup` that sets `ImportDirectoryBuildProps`, `ImportDirectoryBuildTargets`,
+`ImportDirectoryPackagesProps` and `ManagePackageVersionsCentrally` to `false` (a test runs it under a directory
+with CPM and `Directory.Build.props` files). It is deleted after a successful run. The catalog compilation is a `CSharpCompilation` over those references with no
 syntax trees. No SDK → exit 3. The tool never downloads packs or packages itself.
 
 **Rationale**: Reuses the P1 reference resolution (and its documentation lookup) instead of re-implementing
@@ -461,7 +467,8 @@ in once, visibly.
 ## 24. Packaging and release
 
 **Decision**: `NetPrints.Catalog` packable with `EnablePackageValidation` (no baseline, ADR-0010);
-`NetPrints.Annotations` packable as a development-dependency analyzer package. `scripts/verify-packages.sh`
+`NetPrints.Annotations` packable as a development-dependency analyzer package with `IncludeSymbols=false` (like
+`NetPrints.Sdk`: a package without build output fails pack with NU5017 when symbols are on). `scripts/verify-packages.sh`
 expects the two new `.nupkg`/`.snupkg` pairs (Annotations: `.nupkg` only, no symbols package for an analyzer-only
 package) and checks their layout (`lib/net10.0/NetPrints.Catalog.dll`; `analyzers/dotnet/cs/NetPrints.Annotations.dll`,
 `build/NetPrints.Annotations.targets`, `developmentDependency`). `release.yml` packs the solution, so no workflow

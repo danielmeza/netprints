@@ -46,7 +46,8 @@ extensions load < 10 s). No P8 work.
 
 **Constraints**: see "Standing constraints" below.
 
-**Scale/Scope**: 106 tasks in 26 batches; 2 new src projects, 2 new test projects, 13 fixture projects; 6 ADRs.
+**Scale/Scope**: 123 tasks in 44 batches (28 implementation, 8 sub-phase reviews incl. the final PR review, 8
+reserved fix batches); 2 new src projects, 2 new test projects, 15 fixture projects; 6 ADRs.
 
 ## Standing constraints (every batch)
 
@@ -68,7 +69,11 @@ extensions load < 10 s). No P8 work.
 - Deterministic output everywhere (ordinal ordering, invariant culture, LF, no timestamps).
 - No publishing: no tags, no NuGet push, no wiki edits, no posts to upstream/UnrealSharp/SchemaStore repositories.
   SchemaStore submission is an **owner action**; the repo only prepares `eng/schemastore/`.
-- One branch (`004-catalog-cli`), one PR (draft now; ready after Checkpoint H and review).
+- One branch (`004-catalog-cli`), one PR (draft now; ready after Checkpoint H and the final review).
+- Batch sizing and reviews (owner rule, 2026-09-29): implementation batches carry 5–6 units (a heavy design task counts
+  about 2; haiku mechanical batches up to ~8 tasks); every sub-phase ends with an Opus review of its whole diff and a
+  reserved sonnet fix batch that is green on CI before the next sub-phase; one final, lighter Opus review of the whole
+  PR checks integration across sub-phases before merge.
 - Every batch runs on Linux CI: build `dotnet build -v q -tl:off --nologo`; tests: build first, then
   `dotnet test --no-build --no-progress --no-ansi`; whole suite once at the end of a batch (AGENTS.md batch rules).
 - Governance files (`.specify/memory/*`) are not edited by implementers; proposals go in implementation-notes.md.
@@ -124,8 +129,8 @@ src/
 │   └── Git/GraphSummaryWriter.cs, GraphMerger.cs, TextMergeFallback.cs, GitConfig.cs, GitAttributesFile.cs
 ├── NetPrints.Generation/              # changed: GenerateRequestFactory.cs, GenerationMode, UpToDate; references Catalog
 ├── NetPrints.Extensibility/           # changed: Loading/HostAssemblies.cs, ExtensionLoadContext, ExtensionLoader,
-│                                      #   Log.cs, AddCatalogProfile, ExperimentalApis.cs, PublicAPI files
-├── NetPrints.Core/ Reflection/ Serialization/   # changed: PublicAPI files, [Experimental] on emitters (Core)
+│                                      #   Log.cs, AddCatalogProfile, PublicAPI files
+├── NetPrints.Core/ Reflection/ Serialization/   # changed: PublicAPI files; Core: ExperimentalApiIds.cs, [Experimental] on emitters
 └── NetPrints.Editor/Hosting/ReflectionHost.cs   # changed: embedded catalog discovery
 tests/
 ├── NetPrints.Catalog.Tests/           # new: Format/, Engine/, Runtime/, Config/, Emit/, Generator/, EndToEnd/, Snapshots/, Profiles/
@@ -151,15 +156,17 @@ library (`NetPrints.Catalog`) and one generator package (`NetPrints.Annotations`
 |---|---|---|---|
 | A. Setup | — | Packages, project skeletons, CI steps, implementation notes | A: solution builds, suite green |
 | B. API tracking | US6 | PublicApiAnalyzers + files; `[Experimental]` + opt-in + hygiene gate | B: SC-011 |
-| C. CLI | US1 | Spectre app, exit codes, build/run/migrate, generate/regen `--check`, CI smoke flipped, CLI guide | C: SC-001, SC-002 (run + regen) |
+| C. CLI | US1 | Spectre app, exit codes, build/run/migrate, generate/regen `--check`, CI smoke flipped, CLI guide | C: SC-001 (commands so far), SC-002 (run + regen) |
 | D. Catalog engine + tool | US2 | Model, writer/reader, schema, engine + profiles, fixture, runtime catalog + parity, config + sources, `catalog` command, e2e, catalogs guide | D: SC-004, SC-005 (extension path), SC-006 |
 | E. Annotations | US3 | Generator, embedded catalogs, package + targets, cross-flavor snapshots, editor discovery, e2e | E: SC-003, SC-005 (embedded path), SC-013 |
-| F. Graph tooling + git | US4 | `format`, `show`, `merge`, `git-install`, SchemaStore entry, git guide | F: SC-002 (format), SC-009, SC-010 |
+| F. Graph tooling + git | US4 | `format`, `show`, `merge`, `git-install`, SchemaStore entry, git guide | F: SC-001 (all nine commands), SC-002 (format), SC-009, SC-010 |
 | G. Extensions coexist | US5 | Fixtures, harness, pins (red), loader rules (green), scenarios, extensions guide | G: SC-007, SC-008 |
 | H. Polish | all | Docs build, quickstart run, release dry run, full suite + E2E, review | H: SC-012, all SC |
 
-The attribute-injecting generator skeleton lands in D (before the fixture library that uses the attributes); the
-catalog emission part of the generator lands in E.
+Each sub-phase closes with its review (`X-R`, Opus, whole sub-phase diff, the story end to end) and a reserved fix
+batch (`X-F`, sonnet); H closes with the final PR review (integration only) and its fix batch. The
+attribute-injecting generator skeleton lands in D (before the fixture library that uses the attributes); the catalog
+emission part of the generator lands in E.
 
 ## Complexity Tracking
 
@@ -168,7 +175,7 @@ catalog emission part of the generator lands in E.
 | netstandard2.0 project (`NetPrints.Annotations`) | The compiler loads generators only as netstandard2.0 | Constitution IV explicitly allows it for generators NetPrints ships |
 | Shared source between `NetPrints.Catalog` and the generator | One engine for both flavors (byte-identical parity) | Multi-targeting `NetPrints.Catalog` violates IV; two engines drift |
 | One `<NoWarn>` line (experimental opt-in) | In-repo consumers of `[Experimental]` API must opt in | Hygiene gate allows exactly this line and checks its content (ADR-0010, ADR-0003 ledger row) |
-| ~12 fixture projects | Real `.deps.json` and private dependencies for coexistence tests | Roslyn-at-runtime fixtures cannot produce dependency manifests reliably (research §6(b)) |
+| 15 fixture projects (13 extensions, 2 catalog libraries) | Real `.deps.json` and private dependencies for coexistence tests | Roslyn-at-runtime fixtures cannot produce dependency manifests reliably (research §6(b)) |
 | `VersionOverride` for the generator's Roslyn | Generators must build against the minimum compiler they run in | Lowering the central version would downgrade the whole repo's Roslyn |
 | AN-T10 builds a throwaway netstandard2.0 consumer in a temporary directory | Proves FR-025 (any consumer framework) with the real package | It is test data created at run time, not a repository project; constitution IV governs repository projects |
 
