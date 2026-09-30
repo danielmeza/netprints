@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization.Metadata;
 using System.Threading;
 using System.Threading.Tasks;
 using NetPrints.Serialization.Documents;
@@ -87,7 +88,7 @@ public sealed class JsonDocumentFormat : IDocumentFormat
 
         try
         {
-            return JsonSerializer.Deserialize<ClassDocument>(migrated, options.SerializerOptions)
+            return JsonSerializer.Deserialize(migrated, ClassTypeInfo())
                 ?? throw new DocumentFormatException("The document deserialized to null.", id);
         }
         catch (JsonException ex)
@@ -103,7 +104,7 @@ public sealed class JsonDocumentFormat : IDocumentFormat
         ArgumentNullException.ThrowIfNull(output);
         cancellationToken.ThrowIfCancellationRequested();
 
-        JsonNode? serializedNode = JsonSerializer.SerializeToNode(document, options.SerializerOptions);
+        JsonNode? serializedNode = JsonSerializer.SerializeToNode(document, ClassTypeInfo());
         if (serializedNode is not JsonObject serialized)
         {
             throw new InvalidOperationException($"'{nameof(ClassDocument)}' did not serialize to a JSON object.");
@@ -120,4 +121,8 @@ public sealed class JsonDocumentFormat : IDocumentFormat
         CanonicalJsonWriter.Write(root, output);
         return ValueTask.CompletedTask;
     }
+
+    private JsonTypeInfo<ClassDocument> ClassTypeInfo() =>
+        options.SerializerOptions.GetTypeInfo(typeof(ClassDocument)) as JsonTypeInfo<ClassDocument>
+        ?? throw new InvalidOperationException($"No serializer metadata is registered for '{nameof(ClassDocument)}'.");
 }

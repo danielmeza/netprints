@@ -434,17 +434,8 @@ public sealed class MsBuildProjectSystem : IProjectSystem
         bool implicitUsings = string.Equals(implicitUsingsValue, "enable", StringComparison.OrdinalIgnoreCase)
             || string.Equals(implicitUsingsValue, "true", StringComparison.OrdinalIgnoreCase);
 
-        return JsonSerializer.Serialize(new CompilationOptionsInfo(languageVersion, nullableContext, implicitUsings));
+        return JsonSerializer.Serialize(new CompilationOptionsInfo(languageVersion, nullableContext, implicitUsings), CompilationOptionsJsonContext.Default.CompilationOptionsInfo);
     }
-
-    /// <summary>
-    /// Narrow, deliberately minimal shape behind <see cref="ProjectSnapshot.CompilationOptionsJson"/>
-    /// ("serialized language version, nullable, usings" per project-system.md §4's own comment): the
-    /// full contract for what <c>CodeAnalysisSession</c> (compilation-and-diagnostics.md §2, T089/T092+)
-    /// needs is not specified beyond that phrase, so this is a reasonable, revisitable placeholder —
-    /// see implementation-notes.md.
-    /// </summary>
-    private sealed record CompilationOptionsInfo(string LanguageVersion, string Nullable, bool ImplicitUsings);
 
     private static List<ProjectReferenceInfo> BuildDeclaredReferences(ProjectRootElement root)
     {

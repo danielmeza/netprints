@@ -177,6 +177,7 @@ agents" below. Guard entry points with `ArgumentNullException.ThrowIfNull`,
   `record`s with `init`/`required`; observable state follows the MVVM rules. [CA1852, S2933, CA2211]
 - Inject `TimeProvider`; never use `DateTime.Now`/`UtcNow` or `Thread.Sleep` in `src/`. [RS0030]
 - Canvas overlays use `CanvasPopup` (ADR-0004); never a raw `Popup`.
+- JSON goes through source-generated `JsonSerializerContext`s only: call the `JsonTypeInfo` overloads of `JsonSerializer`, never the reflection ones (`JsonSerializerOptions` or no options) in `src/`. [RS0030]
 
 ### Logging and naming
 - Log through `[LoggerMessage]` partials in the namespace's `Log` class (precedent:

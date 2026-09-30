@@ -74,15 +74,6 @@ public sealed class AutomationAgent : IDisposable
     /// <summary>Most automation connections served at once; the rest are refused immediately.</summary>
     private const int MaxConcurrentConnections = 8;
 
-    /// <summary>
-    /// Serializer options for the automation protocol's line-delimited JSON: web defaults
-    /// (camelCase), omitting <see langword="null"/> properties.
-    /// </summary>
-    public static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
-    {
-        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
-    };
-
     private readonly string pipeName;
     private readonly AutomationTree tree;
     private readonly Func<AutomationStatus> status;
@@ -219,7 +210,7 @@ public sealed class AutomationAgent : IDisposable
                 AutomationResponse response;
                 try
                 {
-                    var request = JsonSerializer.Deserialize<AutomationRequest>(line, Json) ?? throw new InvalidOperationException("Empty request.");
+                    var request = JsonSerializer.Deserialize(line, AutomationJsonContext.Default.AutomationRequest) ?? throw new InvalidOperationException("Empty request.");
                     response = await HandleAsync(request).ConfigureAwait(false);
                 }
                 catch (Exception e)
@@ -227,7 +218,7 @@ public sealed class AutomationAgent : IDisposable
                     response = new AutomationResponse(false) { Error = e.Message };
                 }
 
-                await writer.WriteLineAsync(JsonSerializer.Serialize(response, Json)).ConfigureAwait(false);
+                await writer.WriteLineAsync(JsonSerializer.Serialize(response, AutomationJsonContext.Default.AutomationResponse)).ConfigureAwait(false);
             }
         }
         catch (Exception e) when (e is IOException or OperationCanceledException or ObjectDisposedException)

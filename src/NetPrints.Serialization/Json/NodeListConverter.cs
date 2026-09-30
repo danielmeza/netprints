@@ -80,7 +80,7 @@ internal sealed class NodeListConverter : JsonConverter<IReadOnlyList<NodeDocume
             {
                 // Declared type NodeDocument, not the node's runtime type, so the polymorphic
                 // ($kind) dispatch registered on NodeDocument fires.
-                JsonSerializer.Serialize(writer, node, typeof(NodeDocument), options);
+                JsonSerializer.Serialize(writer, node, options.GetTypeInfo(typeof(NodeDocument)));
             }
         }
 
@@ -119,7 +119,7 @@ internal sealed class NodeListConverter : JsonConverter<IReadOnlyList<NodeDocume
         {
             if (derivedType.TypeDiscriminator is string discriminator && discriminator == kind)
             {
-                return (NodeDocument?)element.Deserialize(derivedType.DerivedType, options)
+                return (NodeDocument?)element.Deserialize(options.GetTypeInfo(derivedType.DerivedType))
                     ?? throw new DocumentFormatException($"Node '{id}' deserialized to null.");
             }
         }

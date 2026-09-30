@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 
 namespace NetPrints.Catalog;
 
@@ -18,6 +19,10 @@ public static class CatalogReader
     {
         Converters = { new LenientStringConverter() },
     };
+
+    private static readonly JsonTypeInfo<CatalogDocument> ReadTypeInfo =
+        ReadOptions.GetTypeInfo(typeof(CatalogDocument)) as JsonTypeInfo<CatalogDocument>
+        ?? throw new InvalidOperationException($"No serializer metadata is registered for '{nameof(CatalogDocument)}'.");
 
     /// <summary>Reads a catalog from a UTF-8 stream.</summary>
     /// <param name="stream">The stream to read.</param>
@@ -75,7 +80,7 @@ public static class CatalogReader
                 $"Catalog schemaVersion {schemaVersion} is not supported; this reader supports up to {CatalogDocument.CurrentSchemaVersion}.");
         }
 
-        CatalogDocument document = root.Deserialize<CatalogDocument>(ReadOptions)
+        CatalogDocument document = root.Deserialize(ReadTypeInfo)
             ?? throw Malformed("the document is empty");
         document = document with { Types = document.Types ?? [] };
         Validate(document);

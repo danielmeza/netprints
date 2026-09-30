@@ -58,7 +58,7 @@ public sealed class CodeAnalysisSession
         ArgumentNullException.ThrowIfNull(otherSources);
         ArgumentException.ThrowIfNullOrEmpty(compilationOptionsJson);
 
-        CompilationOptionsInfo options = JsonSerializer.Deserialize<CompilationOptionsInfo>(compilationOptionsJson)
+        CompilationOptionsInfo options = JsonSerializer.Deserialize(compilationOptionsJson, CompilationOptionsJsonContext.Default.CompilationOptionsInfo)
             ?? new CompilationOptionsInfo("default", nameof(NullableContextOptions.Disable), false);
 
         parseOptions = new CSharpParseOptions(ParseLanguageVersion(options.LanguageVersion));
@@ -198,14 +198,6 @@ public sealed class CodeAnalysisSession
             return null;
         }
     }
-
-    /// <summary>
-    /// Narrow, deliberately minimal shape behind <see cref="ProjectSnapshot.CompilationOptionsJson"/>,
-    /// matching <c>NetPrints.Workspace.MsBuildProjectSystem</c>'s private <c>CompilationOptionsInfo</c>
-    /// (same property names; the shape is not otherwise part of the contract, so keeping two independent
-    /// copies is deliberate rather than sharing a public type across the projects/analysis boundary).
-    /// </summary>
-    private sealed record CompilationOptionsInfo(string LanguageVersion, string Nullable, bool ImplicitUsings);
 
     private sealed record Snapshot(CSharpCompilation Compilation, IReadOnlyDictionary<string, SyntaxTree> TreesByClass);
 }
