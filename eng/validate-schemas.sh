@@ -29,6 +29,7 @@ LINT_EXCLUDE=(--exclude simple_properties_identifiers --exclude top_level_exampl
 SCHEMAS=(
     "netpc.v1.schema.json:*.netpc.json"
     "npcat.v1.schema.json:*.npcat.json"
+    "netprints.catalog.v1.schema.json::(glob)**/netprints.catalog.json"
 )
 
 total=0

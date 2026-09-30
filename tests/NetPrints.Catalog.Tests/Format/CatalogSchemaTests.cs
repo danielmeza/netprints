@@ -32,6 +32,56 @@ public sealed class CatalogSchemaTests
         Assert.Equal(File.ReadAllText(path), generated);
     }
 
+    private static string ConfigSchemaPath() => Path.Combine(TestPaths.RepositoryRoot(), "schemas", "netprints.catalog.v1.schema.json");
+
+    private static string ConfigExamplePath() =>
+        Path.Combine(TestPaths.RepositoryRoot(), "tests", "NetPrints.Catalog.Tests", "Config", "netprints.catalog.json");
+
+    private static readonly Lazy<JsonSchema> CommittedConfig = new(() => JsonSchema.FromText(File.ReadAllText(ConfigSchemaPath())));
+
+    private static bool IsValidConfig(string json) =>
+        CommittedConfig.Value.Evaluate(JsonDocument.Parse(json).RootElement, new EvaluationOptions { OutputFormat = OutputFormat.List }).IsValid;
+
+    [Fact]
+    public void GeneratedConfigSchemaMatchesTheCommittedFile()
+    {
+        string generated = CatalogConfigSchema.GenerateV1();
+        string path = ConfigSchemaPath();
+        if (TestPaths.UpdateSnapshots)
+        {
+            File.WriteAllText(path, generated);
+        }
+
+        Assert.True(File.Exists(path), $"Missing schema file {path}; regenerate with {TestPaths.UpdateSnapshotsVariable}=1");
+        Assert.Equal(File.ReadAllText(path), generated);
+    }
+
+    [Fact]
+    public void TheConfigExampleValidates()
+    {
+        Assert.True(IsValidConfig(File.ReadAllText(ConfigExamplePath())));
+    }
+
+    [Theory]
+    [InlineData("""{ "schemaVersion": 2, "sources": [ { "assembly": "a.dll" } ] }""")]
+    [InlineData("""{ "sources": [] }""")]
+    [InlineData("""{ "sources": [ { "assembly": "a.dll", "package": "P", "version": "1" } ] }""")]
+    [InlineData("""{ "sources": [ { "package": "P" } ] }""")]
+    [InlineData("""{ "sources": [ { "assembly": "a.dll" } ], "output": { "format": "xml" } }""")]
+    [InlineData("""{ "sources": [ { "assembly": "a.dll" } ], "profile": 3 }""")]
+    public void RejectsInvalidConfigs(string json)
+    {
+        Assert.False(IsValidConfig(json));
+    }
+
+    [Theory]
+    [InlineData("""{ "sources": [ { "project": "p.csproj", "assemblies": [ "A" ] } ], "profile": { "id": "mine", "base": "none" } }""")]
+    [InlineData("""{ "sources": [ { "assembly": "a.dll" } ], "output": { "format": "csharp", "className": "C", "namespace": "N" } }""")]
+    public void AcceptsValidConfigs(string json)
+    {
+        Assert.True(IsValidConfig(json));
+    }
+
     private static JsonObject Generated() =>
         JsonNode.Parse(CatalogSchema.GenerateV1()) as JsonObject ?? throw new InvalidOperationException("The generated schema is not an object.");
 

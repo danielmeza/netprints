@@ -449,3 +449,161 @@ NetPrints.Catalog.XmlDocumentationSource.GetParameter(string! documentationId, s
 NetPrints.Catalog.XmlDocumentationSource.GetReturns(string! documentationId) -> string?
 NetPrints.Catalog.XmlDocumentationSource.GetSummary(string! documentationId) -> string?
 NetPrints.Catalog.XmlDocumentationSource.XmlDocumentationSource(System.Collections.Generic.IEnumerable<string!>! xmlTexts) -> void
+NetPrints.Catalog.CatalogOutputConfig
+override NetPrints.Catalog.ResolvedCatalogConfig.GetHashCode() -> int
+NetPrints.Catalog.ResolvedCatalogConfig.Version.init -> void
+NetPrints.Catalog.CatalogOutputFormat.Catalog = 0 -> NetPrints.Catalog.CatalogOutputFormat
+NetPrints.Catalog.ResolvedCatalogConfig.Version.get -> string?
+NetPrints.Catalog.ResolvedCatalogConfig.OutputPath.get -> string?
+NetPrints.Catalog.CatalogConfig.Exclude.get -> System.Collections.Generic.IReadOnlyList<string!>?
+NetPrints.Catalog.CatalogOverrides.ReferencePaths.init -> void
+NetPrints.Catalog.ResolvedCatalogConfig.Sources.init -> void
+override NetPrints.Catalog.CatalogOverrides.ToString() -> string!
+NetPrints.Catalog.CatalogConfig.Schema.get -> string?
+NetPrints.Catalog.CatalogSourceConfig.Assemblies.init -> void
+NetPrints.Catalog.CatalogOverrides.ClassName.init -> void
+static NetPrints.Catalog.CatalogConfigResolver.Resolve(NetPrints.Catalog.CatalogConfig? file, string? configDirectory, NetPrints.Catalog.CatalogOverrides! overrides, string! currentDirectory) -> NetPrints.Catalog.ResolvedCatalogConfig!
+NetPrints.Catalog.CatalogSourceConfig.Assembly.init -> void
+NetPrints.Catalog.CatalogOutputConfig.Path.init -> void
+NetPrints.Catalog.CatalogConfigResolver
+static NetPrints.Catalog.CatalogOutputConfig.operator ==(NetPrints.Catalog.CatalogOutputConfig? left, NetPrints.Catalog.CatalogOutputConfig? right) -> bool
+NetPrints.Catalog.CatalogConfig.Id.init -> void
+NetPrints.Catalog.CatalogSourceConfig.Version.get -> string?
+static NetPrints.Catalog.CatalogSourceConfig.operator !=(NetPrints.Catalog.CatalogSourceConfig? left, NetPrints.Catalog.CatalogSourceConfig? right) -> bool
+NetPrints.Catalog.CatalogOutputConfig.Namespace.init -> void
+NetPrints.Catalog.CatalogSourceConfig.<Clone>$() -> NetPrints.Catalog.CatalogSourceConfig!
+NetPrints.Catalog.CatalogOverrides.Exclude.get -> System.Collections.Generic.IReadOnlyList<string!>?
+NetPrints.Catalog.CatalogConfigSchema
+NetPrints.Catalog.ResolvedCatalogConfig.ResolvedCatalogConfig() -> void
+NetPrints.Catalog.ResolvedCatalogConfig.Include.get -> System.Collections.Generic.IReadOnlyList<string!>!
+NetPrints.Catalog.CatalogSourceConfig.CatalogSourceConfig() -> void
+NetPrints.Catalog.CatalogOverrides.CatalogOverrides() -> void
+NetPrints.Catalog.ResolvedCatalogConfig.Exclude.init -> void
+NetPrints.Catalog.CatalogOutputFormat
+NetPrints.Catalog.CatalogSourceConfig
+NetPrints.Catalog.CatalogOverrides.Namespace.init -> void
+NetPrints.Catalog.ResolvedCatalogConfig.BaseDirectory.get -> string!
+NetPrints.Catalog.CatalogOverrides.ClassName.get -> string?
+NetPrints.Catalog.ResolvedCatalogConfig.BaseDirectory.init -> void
+NetPrints.Catalog.ResolvedCatalogConfig.TargetFramework.get -> string!
+NetPrints.Catalog.CatalogConfig.ReferencePaths.init -> void
+override NetPrints.Catalog.CatalogSourceConfig.Equals(object? obj) -> bool
+NetPrints.Catalog.ResolvedCatalogConfig.Id.init -> void
+NetPrints.Catalog.CatalogConfig.Exclude.init -> void
+static NetPrints.Catalog.ResolvedCatalogConfig.operator !=(NetPrints.Catalog.ResolvedCatalogConfig? left, NetPrints.Catalog.ResolvedCatalogConfig? right) -> bool
+NetPrints.Catalog.CatalogOverrides.Include.get -> System.Collections.Generic.IReadOnlyList<string!>?
+NetPrints.Catalog.CatalogConfig.CatalogConfig() -> void
+NetPrints.Catalog.CatalogConfig.Include.init -> void
+NetPrints.Catalog.ResolvedCatalogConfig.Id.get -> string?
+const NetPrints.Catalog.CatalogConfig.CurrentSchemaVersion = 1 -> int
+NetPrints.Catalog.CatalogSourceConfig.Package.init -> void
+NetPrints.Catalog.CatalogOverrides.Format.get -> NetPrints.Catalog.CatalogOutputFormat?
+NetPrints.Catalog.ResolvedCatalogConfig.InlineProfileJson.init -> void
+static NetPrints.Catalog.CatalogOverrides.operator ==(NetPrints.Catalog.CatalogOverrides? left, NetPrints.Catalog.CatalogOverrides? right) -> bool
+NetPrints.Catalog.CatalogOutputConfig.ClassName.get -> string?
+NetPrints.Catalog.CatalogOverrides.Include.init -> void
+override NetPrints.Catalog.CatalogOutputConfig.GetHashCode() -> int
+NetPrints.Catalog.CatalogOverrides.Sources.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Catalog.CatalogSourceConfig!>?
+NetPrints.Catalog.CatalogConfig.SchemaVersion.init -> void
+override NetPrints.Catalog.CatalogSourceConfig.ToString() -> string!
+override NetPrints.Catalog.CatalogConfig.Equals(object? obj) -> bool
+NetPrints.Catalog.CatalogConfig.Profile.get -> System.Text.Json.JsonElement?
+NetPrints.Catalog.CatalogOverrides.Extensions.get -> System.Collections.Generic.IReadOnlyList<string!>?
+NetPrints.Catalog.CatalogSourceConfig.Version.init -> void
+NetPrints.Catalog.CatalogOutputConfig.Format.init -> void
+NetPrints.Catalog.CatalogSourceConfig.Project.get -> string?
+NetPrints.Catalog.CatalogOverrides.Version.get -> string?
+NetPrints.Catalog.CatalogOverrides.ReferencePaths.get -> System.Collections.Generic.IReadOnlyList<string!>?
+static NetPrints.Catalog.CatalogSourceConfig.operator ==(NetPrints.Catalog.CatalogSourceConfig? left, NetPrints.Catalog.CatalogSourceConfig? right) -> bool
+NetPrints.Catalog.CatalogOverrides.<Clone>$() -> NetPrints.Catalog.CatalogOverrides!
+override NetPrints.Catalog.CatalogSourceConfig.GetHashCode() -> int
+NetPrints.Catalog.CatalogConfig.Schema.init -> void
+NetPrints.Catalog.CatalogConfig.ReferencePaths.get -> System.Collections.Generic.IReadOnlyList<string!>?
+NetPrints.Catalog.ResolvedCatalogConfig.ClassName.get -> string?
+NetPrints.Catalog.ResolvedCatalogConfig.InlineProfileJson.get -> string?
+override NetPrints.Catalog.ResolvedCatalogConfig.Equals(object? obj) -> bool
+NetPrints.Catalog.CatalogOverrides
+NetPrints.Catalog.CatalogConfigException.CatalogConfigException(string! message, System.Exception? innerException = null) -> void
+NetPrints.Catalog.CatalogOutputConfig.CatalogOutputConfig() -> void
+NetPrints.Catalog.CatalogConfig.Sources.init -> void
+NetPrints.Catalog.CatalogConfig.Output.get -> NetPrints.Catalog.CatalogOutputConfig?
+NetPrints.Catalog.ResolvedCatalogConfig.Include.init -> void
+NetPrints.Catalog.CatalogConfigException
+NetPrints.Catalog.CatalogOutputConfig.ClassName.init -> void
+static NetPrints.Catalog.CatalogOutputConfig.operator !=(NetPrints.Catalog.CatalogOutputConfig? left, NetPrints.Catalog.CatalogOutputConfig? right) -> bool
+NetPrints.Catalog.CatalogConfig.Version.init -> void
+NetPrints.Catalog.CatalogConfig.Id.get -> string?
+NetPrints.Catalog.CatalogOverrides.Namespace.get -> string?
+NetPrints.Catalog.CatalogConfig.Sources.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Catalog.CatalogSourceConfig!>?
+NetPrints.Catalog.CatalogConfig.Profile.init -> void
+override NetPrints.Catalog.CatalogOverrides.Equals(object? obj) -> bool
+override NetPrints.Catalog.CatalogOutputConfig.Equals(object? obj) -> bool
+NetPrints.Catalog.CatalogConfig.<Clone>$() -> NetPrints.Catalog.CatalogConfig!
+NetPrints.Catalog.ResolvedCatalogConfig.ProfileReference.get -> string?
+NetPrints.Catalog.ResolvedCatalogConfig.Format.get -> NetPrints.Catalog.CatalogOutputFormat
+NetPrints.Catalog.CatalogConfig.SchemaVersion.get -> int?
+NetPrints.Catalog.CatalogOverrides.OutputPath.init -> void
+NetPrints.Catalog.ResolvedCatalogConfig.Exclude.get -> System.Collections.Generic.IReadOnlyList<string!>!
+NetPrints.Catalog.ResolvedCatalogConfig.Extensions.init -> void
+NetPrints.Catalog.CatalogOverrides.Format.init -> void
+NetPrints.Catalog.CatalogConfig.TargetFramework.init -> void
+NetPrints.Catalog.ResolvedCatalogConfig.TargetFramework.init -> void
+static NetPrints.Catalog.CatalogConfig.operator ==(NetPrints.Catalog.CatalogConfig? left, NetPrints.Catalog.CatalogConfig? right) -> bool
+NetPrints.Catalog.ResolvedCatalogConfig.ReferencePaths.get -> System.Collections.Generic.IReadOnlyList<string!>!
+static NetPrints.Catalog.CatalogConfigResolver.Parse(string! json) -> NetPrints.Catalog.CatalogConfig!
+static NetPrints.Catalog.CatalogConfig.operator !=(NetPrints.Catalog.CatalogConfig? left, NetPrints.Catalog.CatalogConfig? right) -> bool
+NetPrints.Catalog.ResolvedCatalogConfig.ClassName.init -> void
+override NetPrints.Catalog.CatalogConfig.GetHashCode() -> int
+NetPrints.Catalog.CatalogConfig.Output.init -> void
+override NetPrints.Catalog.CatalogOutputConfig.ToString() -> string!
+NetPrints.Catalog.CatalogConfig.Include.get -> System.Collections.Generic.IReadOnlyList<string!>?
+NetPrints.Catalog.CatalogOverrides.Id.init -> void
+NetPrints.Catalog.ResolvedCatalogConfig
+NetPrints.Catalog.CatalogOutputConfig.Path.get -> string?
+NetPrints.Catalog.CatalogOverrides.Extensions.init -> void
+NetPrints.Catalog.CatalogOverrides.Exclude.init -> void
+NetPrints.Catalog.CatalogConfig.Extensions.get -> System.Collections.Generic.IReadOnlyList<string!>?
+NetPrints.Catalog.ResolvedCatalogConfig.OutputPath.init -> void
+NetPrints.Catalog.CatalogOutputConfig.<Clone>$() -> NetPrints.Catalog.CatalogOutputConfig!
+NetPrints.Catalog.ResolvedCatalogConfig.Sources.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Catalog.CatalogSourceConfig!>!
+static NetPrints.Catalog.CatalogConfigResolver.Read(string! path) -> NetPrints.Catalog.CatalogConfig!
+NetPrints.Catalog.ResolvedCatalogConfig.Extensions.get -> System.Collections.Generic.IReadOnlyList<string!>!
+NetPrints.Catalog.CatalogOverrides.TargetFramework.get -> string?
+NetPrints.Catalog.ResolvedCatalogConfig.ProfileReference.init -> void
+const NetPrints.Catalog.CatalogConfigResolver.DefaultTargetFramework = "net10.0" -> string!
+NetPrints.Catalog.CatalogOverrides.Equals(NetPrints.Catalog.CatalogOverrides? other) -> bool
+const NetPrints.Catalog.CatalogConfig.SchemaUrl = "https://danielmeza.github.io/netprints/schemas/netprints.catalog.v1.schema.json" -> string!
+NetPrints.Catalog.CatalogOverrides.Profile.init -> void
+const NetPrints.Catalog.CatalogConfig.FileName = "netprints.catalog.json" -> string!
+NetPrints.Catalog.CatalogOutputConfig.Equals(NetPrints.Catalog.CatalogOutputConfig? other) -> bool
+NetPrints.Catalog.CatalogConfig
+NetPrints.Catalog.CatalogConfig.Equals(NetPrints.Catalog.CatalogConfig? other) -> bool
+NetPrints.Catalog.CatalogConfig.TargetFramework.get -> string?
+NetPrints.Catalog.CatalogConfig.Extensions.init -> void
+override NetPrints.Catalog.CatalogConfig.ToString() -> string!
+NetPrints.Catalog.CatalogConfig.Version.get -> string?
+NetPrints.Catalog.ResolvedCatalogConfig.ReferencePaths.init -> void
+NetPrints.Catalog.CatalogOverrides.TargetFramework.init -> void
+NetPrints.Catalog.CatalogOverrides.OutputPath.get -> string?
+NetPrints.Catalog.CatalogSourceConfig.Assembly.get -> string?
+NetPrints.Catalog.ResolvedCatalogConfig.Namespace.get -> string?
+NetPrints.Catalog.CatalogOutputFormat.Csharp = 1 -> NetPrints.Catalog.CatalogOutputFormat
+static NetPrints.Catalog.ResolvedCatalogConfig.operator ==(NetPrints.Catalog.ResolvedCatalogConfig? left, NetPrints.Catalog.ResolvedCatalogConfig? right) -> bool
+NetPrints.Catalog.CatalogOutputConfig.Format.get -> NetPrints.Catalog.CatalogOutputFormat?
+static NetPrints.Catalog.CatalogConfigSchema.GenerateV1() -> string!
+override NetPrints.Catalog.ResolvedCatalogConfig.ToString() -> string!
+NetPrints.Catalog.CatalogOverrides.Version.init -> void
+NetPrints.Catalog.CatalogSourceConfig.Project.init -> void
+NetPrints.Catalog.CatalogOverrides.Profile.get -> string?
+NetPrints.Catalog.CatalogOverrides.Id.get -> string?
+NetPrints.Catalog.ResolvedCatalogConfig.Equals(NetPrints.Catalog.ResolvedCatalogConfig? other) -> bool
+NetPrints.Catalog.CatalogOverrides.Sources.init -> void
+override NetPrints.Catalog.CatalogOverrides.GetHashCode() -> int
+static NetPrints.Catalog.CatalogOverrides.operator !=(NetPrints.Catalog.CatalogOverrides? left, NetPrints.Catalog.CatalogOverrides? right) -> bool
+NetPrints.Catalog.ResolvedCatalogConfig.<Clone>$() -> NetPrints.Catalog.ResolvedCatalogConfig!
+NetPrints.Catalog.ResolvedCatalogConfig.Namespace.init -> void
+NetPrints.Catalog.CatalogSourceConfig.Package.get -> string?
+NetPrints.Catalog.CatalogOutputConfig.Namespace.get -> string?
+NetPrints.Catalog.CatalogSourceConfig.Assemblies.get -> System.Collections.Generic.IReadOnlyList<string!>?
+NetPrints.Catalog.CatalogSourceConfig.Equals(NetPrints.Catalog.CatalogSourceConfig? other) -> bool
+NetPrints.Catalog.ResolvedCatalogConfig.Format.init -> void

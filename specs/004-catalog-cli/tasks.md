@@ -329,10 +329,10 @@ contracts/catalog.md). **Independent test**: CT-T01–CT-T19; SC-004, SC-005 (ex
 
 ### Batch D5 — model: sonnet — T051–T054 — 6 units
 
-- [ ] T051 [US2] Test first `tests/NetPrints.Catalog.Tests/Config/CatalogConfigTests.cs` (CT-T10), using the
+- [x] T051 [US2] Test first `tests/NetPrints.Catalog.Tests/Config/CatalogConfigTests.cs` (CT-T10), using the
   contracts/catalog.md §5 example committed as `tests/NetPrints.Catalog.Tests/Config/netprints.catalog.json` (also the
   schema instance `eng/validate-schemas.sh` validates).
-- [ ] T052 [US2] `src/NetPrints.Catalog/Config/CatalogConfig.cs`, `CatalogOverrides.cs`, `CatalogConfigResolver.cs`,
+- [x] T052 [US2] `src/NetPrints.Catalog/Config/CatalogConfig.cs`, `CatalogOverrides.cs`, `CatalogConfigResolver.cs`,
   `CatalogConfigJsonContext.cs`; generate and commit `schemas/netprints.catalog.v1.schema.json`; add its case to
   `Format/CatalogSchemaTests.cs` (CT-T16) and its instance glob (`netprints.catalog.json`) to `eng/validate-schemas.sh`.
 - [ ] T053 [US2] Test first `tests/NetPrints.Catalog.Tests/Sources/CatalogSourceResolverTests.cs` with a fake

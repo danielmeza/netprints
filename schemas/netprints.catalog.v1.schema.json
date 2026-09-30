@@ -1,0 +1,134 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://danielmeza.github.io/netprints/schemas/netprints.catalog.v1.schema.json",
+  "title": "NetPrints catalog configuration (schema v1)",
+  "description": "The configuration of 'netprints catalog': what to catalog and how (contracts/catalog.md §5)",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "schemaVersion": {
+      "const": 1
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "assembly": {
+            "type": "string"
+          },
+          "package": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          },
+          "project": {
+            "type": "string"
+          },
+          "assemblies": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "minItems": 1
+          }
+        },
+        "oneOf": [
+          {
+            "required": [
+              "assembly"
+            ]
+          },
+          {
+            "required": [
+              "package",
+              "version"
+            ]
+          },
+          {
+            "required": [
+              "project",
+              "assemblies"
+            ]
+          }
+        ]
+      },
+      "minItems": 1
+    },
+    "referencePaths": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "targetFramework": {
+      "type": "string"
+    },
+    "include": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "exclude": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "profile": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "object",
+          "description": "An inline catalog profile with the properties of a '*.npprofile.json' file",
+          "required": [
+            "id"
+          ],
+          "properties": {
+            "id": {
+              "type": "string"
+            }
+          }
+        }
+      ]
+    },
+    "id": {
+      "type": "string"
+    },
+    "version": {
+      "type": "string"
+    },
+    "output": {
+      "type": "object",
+      "properties": {
+        "path": {
+          "type": "string"
+        },
+        "format": {
+          "enum": [
+            "catalog",
+            "csharp"
+          ]
+        },
+        "className": {
+          "type": "string"
+        },
+        "namespace": {
+          "type": "string"
+        }
+      }
+    },
+    "extensions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}
