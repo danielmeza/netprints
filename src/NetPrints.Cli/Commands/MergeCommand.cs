@@ -118,7 +118,7 @@ internal sealed class MergeCommand(CliEnvironment environment, IProcessRunner pr
         TextMergeResult result = await new TextMergeFallback(processes).MergeAsync(ours, baseContent, theirs, markerSize, cancellationToken).ConfigureAwait(false);
         if (result.Error is null)
         {
-            await File.WriteAllTextAsync(oursFile, result.Text, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), cancellationToken).ConfigureAwait(false);
+            await File.WriteAllBytesAsync(oursFile, result.Content, cancellationToken).ConfigureAwait(false);
         }
         else
         {

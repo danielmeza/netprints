@@ -78,7 +78,7 @@ internal sealed class FormatCommand(IAnsiConsole console, CliEnvironment environ
         string path = Path.GetFullPath(argument.Length == 0 ? "." : argument, environment.CurrentDirectory);
         if (Directory.Exists(path))
         {
-            GraphFileSearch.Collect(path, graphs, unreadable, environment.CurrentDirectory);
+            GraphFileSearch.Collect(path, graphs, unreadable, (directory, reason) => $"unreadable: {environment.DisplayPath(directory)}: {reason}");
             return null;
         }
 
@@ -98,7 +98,7 @@ internal sealed class FormatCommand(IAnsiConsole console, CliEnvironment environ
 
     private async Task<FormatOutcome> FormatAsync(string graph, bool check, CancellationToken cancellationToken)
     {
-        string display = Path.GetRelativePath(environment.CurrentDirectory, graph);
+        string display = environment.DisplayPath(graph);
         var id = new DocumentId(Path.GetFileName(graph));
         IDocumentFormat? format = _formats.Find(id, DocumentKind.Class);
         if (format is null || !format.CanWrite)

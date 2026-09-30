@@ -17,10 +17,15 @@ namespace NetPrints.Serialization.Json;
 /// Reads and writes class graph documents in NetPrints' canonical JSON form (document-format.md §2.2):
 /// on read, a leading <c>$schema</c> property is stripped and the document is migrated to the current
 /// schema version before being deserialized; on write, <c>$schema</c> is inserted first and the result
-/// is written through <see cref="CanonicalJsonWriter"/>.
+/// is written through <see cref="CanonicalJsonWriter"/>, with every graph's <c>connections</c> sorted by
+/// ordinal <c>from</c>, then <c>to</c> whatever order they were read in (the editor and <c>netprints format</c> share that one order).
 /// </summary>
 public sealed class JsonDocumentFormat : IDocumentFormat
 {
+    private const string ConnectionsProperty = "connections";
+    private const string FromProperty = "from";
+    private const string ToProperty = "to";
+
     private readonly NetPrintsJsonOptions options;
     private readonly DocumentMigrator migrator;
 
@@ -118,9 +123,55 @@ public sealed class JsonDocumentFormat : IDocumentFormat
             root[key] = value;
         }
 
+        SortConnections(root);
         CanonicalJsonWriter.Write(root, output);
         return ValueTask.CompletedTask;
     }
+
+    private static void SortConnections(JsonNode? node)
+    {
+        switch (node)
+        {
+            case JsonObject obj:
+                foreach ((string key, JsonNode? value) in obj)
+                {
+                    if (key == ConnectionsProperty && value is JsonArray connections)
+                    {
+                        SortArray(connections);
+                    }
+                    else
+                    {
+                        SortConnections(value);
+                    }
+                }
+
+                break;
+            case JsonArray array:
+                foreach (JsonNode? item in array)
+                {
+                    SortConnections(item);
+                }
+
+                break;
+        }
+    }
+
+    private static void SortArray(JsonArray connections)
+    {
+        JsonNode?[] sorted = [.. connections
+            .OrderBy(connection => EndpointOf(connection, FromProperty), StringComparer.Ordinal)
+            .ThenBy(connection => EndpointOf(connection, ToProperty), StringComparer.Ordinal)];
+        connections.Clear();
+        foreach (JsonNode? connection in sorted)
+        {
+            connections.Add(connection);
+        }
+    }
+
+    private static string EndpointOf(JsonNode? connection, string property) =>
+        connection is JsonObject obj && obj.TryGetPropertyValue(property, out JsonNode? value) && value is JsonValue text && text.TryGetValue(out string? endpoint)
+            ? endpoint
+            : string.Empty;
 
     private JsonTypeInfo<ClassDocument> ClassTypeInfo() =>
         options.SerializerOptions.GetTypeInfo(typeof(ClassDocument)) as JsonTypeInfo<ClassDocument>

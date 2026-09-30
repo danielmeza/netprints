@@ -20,12 +20,13 @@ internal static class GraphFileSearch
     /// </summary>
     /// <param name="directory">The directory to search recursively.</param>
     /// <param name="graphs">Receives the full paths of the graphs found.</param>
-    /// <param name="unreadable">Receives one line per directory that could not be listed.</param>
-    /// <param name="relativeTo">The directory paths in <paramref name="unreadable"/> are shown relative to.</param>
-    public static void Collect(string directory, ICollection<string> graphs, ICollection<string> unreadable, string relativeTo)
+    /// <param name="unreadable">Receives one line per directory that could not be listed, as <paramref name="describe"/> formats it.</param>
+    /// <param name="describe">Formats the line of a directory that could not be listed from its full path and the reason.</param>
+    public static void Collect(string directory, ICollection<string> graphs, ICollection<string> unreadable, Func<string, string, string> describe)
     {
         ArgumentNullException.ThrowIfNull(graphs);
         ArgumentNullException.ThrowIfNull(unreadable);
+        ArgumentNullException.ThrowIfNull(describe);
         string[] files;
         string[] children;
         try
@@ -35,7 +36,7 @@ internal static class GraphFileSearch
         }
         catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
         {
-            unreadable.Add($"{Path.GetRelativePath(relativeTo, directory)}: unreadable: {ex.Message}");
+            unreadable.Add(describe(directory, ex.Message));
             return;
         }
 
@@ -52,7 +53,8 @@ internal static class GraphFileSearch
                 continue;
             }
 
-            Collect(child, graphs, unreadable, relativeTo);
+            Collect(child, graphs, unreadable, describe);
         }
     }
 }
+

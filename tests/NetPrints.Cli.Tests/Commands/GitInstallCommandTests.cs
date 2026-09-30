@@ -34,7 +34,7 @@ public sealed class GitInstallCommandTests : IAsyncLifetime
 
     private async Task<(int Exit, CliTestHost Host)> InstallAsync(params string[] args)
     {
-        var host = new CliTestHost(Repo.Path);
+        var host = new CliTestHost(Repo.Path, Repo.Variables);
         int exit = await host.RunRealAsync(["git-install", .. args]);
         return (exit, host);
     }
@@ -100,6 +100,32 @@ public sealed class GitInstallCommandTests : IAsyncLifetime
         host.AssertExit(ExitCodes.Success, exit);
         Assert.Equal("dotnet /opt/np/NetPrints.Cli.dll show --textconv", await Repo.ConfigAsync("diff.netprints.textconv"));
         Assert.Equal("dotnet /opt/np/NetPrints.Cli.dll merge %O %A %B --marker-size %L --path %P", await Repo.ConfigAsync("merge.netprints.driver"));
+    }
+
+    [Fact]
+    public async Task ASecondRunLeavesTheGitConfigBytesAlone()
+    {
+        await InstallAsync();
+        byte[] before = File.ReadAllBytes(Repo.File(".git/config"));
+
+        await InstallAsync();
+
+        Assert.Equal(before, File.ReadAllBytes(Repo.File(".git/config")));
+    }
+
+    [Fact]
+    public async Task InstallingWithTheMergeDriverTwiceChangesNothingTheSecondTime()
+    {
+        await InstallAsync("--merge", "--command", "netprints");
+        byte[] config = File.ReadAllBytes(Repo.File(".git/config"));
+        byte[] attributes = File.ReadAllBytes(Repo.File(".gitattributes"));
+
+        (int exit, CliTestHost host) = await InstallAsync("--merge", "--command", "netprints");
+
+        host.AssertExit(ExitCodes.Success, exit);
+        Assert.Contains("already installed", host.Output, StringComparison.Ordinal);
+        Assert.Equal(config, File.ReadAllBytes(Repo.File(".git/config")));
+        Assert.Equal(attributes, File.ReadAllBytes(Repo.File(".gitattributes")));
     }
 
     [Fact]

@@ -29,6 +29,76 @@ public sealed class FormatCommandTests : IDisposable
 
     private string Compact() => JsonNode.Parse(_canonical)?.ToJsonString() ?? throw new InvalidOperationException("The sample is not JSON.");
 
+    private string Shuffled()
+    {
+        string[] lines = _canonical.Split('\n');
+        int first = Array.FindIndex(lines, line => line.Contains("\"from\":", StringComparison.Ordinal));
+        Assert.Contains("\"from\":", lines[first + 1], StringComparison.Ordinal);
+        (lines[first], lines[first + 1]) = (lines[first + 1].TrimEnd(',') + ",", lines[first].TrimEnd(','));
+        return string.Join('\n', lines);
+    }
+
+    [Fact]
+    public async Task CheckFlagsConnectionsOutOfTheEditorsOrderAndFormatSortsThem()
+    {
+        string shuffled = Shuffled();
+        Assert.NotEqual(_canonical, shuffled);
+        string path = Write("A.netpc.json", shuffled);
+
+        _host.AssertExit(ExitCodes.Failed, await _host.RunAsync("format", "--check", _root));
+        Assert.Contains("not canonical: A.netpc.json", _host.Output, StringComparison.Ordinal);
+        Assert.Equal(shuffled, File.ReadAllText(path));
+
+        var format = new CliTestHost(_root);
+        format.AssertExit(ExitCodes.Success, await format.RunAsync("format", _root));
+        Assert.Equal(_canonical, File.ReadAllText(path));
+
+        var check = new CliTestHost(_root);
+        check.AssertExit(ExitCodes.Success, await check.RunAsync("format", "--check", _root));
+    }
+
+    [Fact]
+    public async Task AnUnreadableDirectoryIsReportedInTheSameShapeAsAnUnreadableFile()
+    {
+        if (OperatingSystem.IsWindows() || Environment.IsPrivilegedProcess)
+        {
+            Assert.Skip("Needs POSIX permissions and a non-root user.");
+            return;
+        }
+
+        string locked = Directory.CreateDirectory(Path.Combine(_root, "locked")).FullName;
+        File.SetUnixFileMode(locked, UnixFileMode.None);
+        try
+        {
+            _host.AssertExit(ExitCodes.Failed, await _host.RunAsync("format", "--check", _root));
+            Assert.Contains("unreadable: locked:", _host.Output, StringComparison.Ordinal);
+        }
+        finally
+        {
+            File.SetUnixFileMode(locked, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        }
+    }
+
+    [Fact]
+    public async Task AGraphOutsideTheCurrentDirectoryIsShownWithItsAbsolutePath()
+    {
+        string outside = Directory.CreateTempSubdirectory("np-format-out-").FullName;
+        try
+        {
+            string path = Path.Combine(outside, "Bad.netpc.json");
+            File.WriteAllText(path, "{ not json");
+
+            _host.AssertExit(ExitCodes.Failed, await _host.RunAsync("format", "--check", path));
+
+            Assert.Contains($"unreadable: {path}:", _host.Output, StringComparison.Ordinal);
+            Assert.DoesNotContain("../", _host.Output, StringComparison.Ordinal);
+        }
+        finally
+        {
+            Directory.Delete(outside, recursive: true);
+        }
+    }
+
     [Fact]
     public async Task CheckNamesANonCanonicalFileExitsOneAndWritesNothing()
     {

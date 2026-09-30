@@ -641,22 +641,22 @@ Sub-phase F (`6925062^..00c87e3`), reviewed at `00c87e3`: Checkpoint F not accep
 | F-R2 | major | A node-shape change (e.g. `pure`) on one side against new wiring or pin values on the other merges clean, then NPD002/NPD003 on regen | F-F1 | fixed in F-F1 |
 | F-R3 | major | `git diff` aborts (exit 128) as soon as a graph cannot be read | F-F2 | fixed in F-F2 |
 | F-R4 | major | `show` omits every node property except the target, so real changes give an empty diff | F-F2 | fixed in F-F2 |
-| F-R5 | major | `format` does not canonicalize connection order, which the editor does | F-F3 | open |
+| F-R5 | major | `format` does not canonicalize connection order, which the editor does | F-F3 | fixed in F-F3 |
 | F-R6 | major | Large parts of the merger have no test | F-F1 | fixed in F-F1 |
 | F-R7 | minor | The docs state false things | F-F4 | open |
 | F-R8 | minor | `git.md` lacks the limits part T096 asked for | F-F4 | open |
 | F-R9 | minor | GI-T03's baseline does not match the contract or SC-009 | F-F4 | open |
-| F-R10 | minor | The text fallback is not byte-exact; `show` output encoding not pinned | F-F3 | open |
+| F-R10 | minor | The text fallback is not byte-exact; `show` output encoding not pinned | F-F3 | fixed in F-F3 |
 | F-R11 | minor | Invalid input and I/O failures surface as `Internal error` (exit 4) | F-F1 | fixed in F-F1 |
-| F-R12 | minor | Git tests are not isolated from the developer's global git configuration | F-F3 | open |
+| F-R12 | minor | Git tests are not isolated from the developer's global git configuration | F-F3 | fixed in F-F3 |
 | F-R13 | minor | The Checkpoint F report is inaccurate | F-F4 | open |
 | F-R14 | nit | Decisions the contract was silent on are recorded only in the notes | F-F4 | open |
 | F-R15 | nit | `show` and `merge` read and write files directly | F-F4 | open |
 | F-R16 | nit | The default arm of the summary writer is misleading | F-F2 | fixed in F-F2 |
 | F-R17 | nit | A stray sentence in `cli.md` | F-F4 | open |
 | F-R18 | nit | The `show` goldens are not independent of the writer | F-F2 | fixed in F-F2 |
-| F-R19 | nit | The SC-010 test covers only the default install | F-F3 | open |
-| F-R20 | nit | `format`'s messages are inconsistent | F-F3 | open |
+| F-R19 | nit | The SC-010 test covers only the default install | F-F3 | fixed in F-F3 |
+| F-R20 | nit | `format`'s messages are inconsistent | F-F3 | fixed in F-F3 |
 
 ### F-F1 (F-R1, F-R2, F-R6, F-R11)
 
@@ -691,5 +691,23 @@ Sub-phase F (`6925062^..00c87e3`), reviewed at `00c87e3`: Checkpoint F not accep
 - Green: the same 35 pass (`/mnt/DATA/tmp/claude/red/ff2-green1.txt`). The property test first failed on test-side toggles that set a value the fixture already had; those were fixed in the tests, not the writer.
 - Written after the code in that sense: `GraphSummaryPropertyTests.EveryBuiltInNodeKindHasAnArmThatRendersItsKind` and `EveryPropertyOfEveryBuiltInNodeKindHasAMutationCase` passed on the first run (the old writer already rendered every kind; the second is a tripwire for future properties). The regenerated AllNodes and HelloWorld goldens are recorded from the writer and only reviewed.
 - Full suite 1654 total, 1644 passed, 10 skipped, 0 failed; `dotnet format --verify-no-changes` clean; build 0 warnings 0 errors.
+
+### F-F3 (F-R5, F-R10, F-R12, F-R19, F-R20)
+
+**Decisions**
+
+- F-R5: `JsonDocumentFormat.WriteClassAsync` sorts every `connections` array (class graph, methods, constructors, event graphs) by ordinal `from`, then ordinal `to`, so the editor, `format` and `merge` share one order; loading accepts any order. Pin order is kept (it needs node definitions). contracts/git.md §3a, `graph-format.md` and `cli.md` amended.
+- F-R5: the tracked `.netpc.json` files checked with `format --check` over a copy: `samples/` was already canonical (no byte changed); three Core.Tests fixtures (`AnnotatedCall`, `CatalogCall`, `ForLoop`) had connections out of order and were rewritten, the diff is only moved connection lines. The 11 Cli merge fixtures are hand-written inputs that differ from canonical for layout reasons unrelated to this change and were left as they are. `samples/HelloWorld/Compiled_HelloWorld/` was not touched.
+- F-R10: `git merge-file` runs without `-p` and the merged bytes are read back from the temporary `ours` file and written to `%A` (byte order mark and non-UTF-8 bytes survive); the entry point sets `Console.OutputEncoding` to UTF-8 without a byte order mark; contracts/git.md §2 step 5 amended.
+- F-R12: `TempGitRepository` runs every git process with `GIT_CONFIG_GLOBAL` set to an empty file, `GIT_CONFIG_NOSYSTEM=1` and a private `XDG_CONFIG_HOME`, and hands the same variables to the CLI under test.
+- F-R19: a second run leaves the bytes of `.git/config` unchanged, and `--merge` installed twice changes nothing.
+- F-R20: `GraphFileSearch` takes a formatter for the directory line, so `format` prints `unreadable: <path>: <reason>` for files and directories and `migrate` keeps `<path>: unreadable: <reason>`; `CliEnvironment.DisplayPath` shows a path relative to the current directory when inside it and absolute otherwise.
+
+**Red/green evidence**
+
+- Red (saved at `/mnt/DATA/tmp/claude/red/ff3-cli-red.txt` and `ff3-core-red.txt`): `FormatCommandTests`, `GraphMergerTests`, `GitInstallCommandTests`, `GitDriversEndToEndTests` 53 tests, 5 failed (shuffled connections, unreadable directory line, absolute path outside the current directory, the byte-exact fallback, the isolated git configuration); `JsonDocumentFormatTests` 9 tests, 1 failed (connection order).
+- Green: the same classes pass; `NetPrints.Cli.Tests` 266 of 266.
+- Written after the code in that sense: the two F-R19 tests passed on the first run (the install was already idempotent, as probe 4 said). No test pins the UTF-8 console encoding: on Linux the default is already UTF-8, so it could not be made red here.
+- Full suite 1662 total, 1652 passed, 10 skipped, 0 failed; `dotnet format --verify-no-changes` clean; build 0 warnings 0 errors.
 
 ## Governance proposals

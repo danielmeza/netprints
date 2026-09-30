@@ -40,4 +40,15 @@ internal sealed class CliEnvironment
     /// <param name="name">The variable name.</param>
     /// <returns>The value, or <see langword="null"/> when unset.</returns>
     public string? GetVariable(string name) => _getVariable(name);
+
+    /// <summary>Formats a path for a message: relative to <see cref="CurrentDirectory"/> when it lies inside it, absolute otherwise.</summary>
+    /// <param name="fullPath">The full path.</param>
+    /// <returns>The path to show.</returns>
+    public string DisplayPath(string fullPath)
+    {
+        string relative = Path.GetRelativePath(CurrentDirectory, fullPath);
+        return relative == ".." || relative.StartsWith(".." + Path.DirectorySeparatorChar, StringComparison.Ordinal) || Path.IsPathRooted(relative)
+            ? fullPath
+            : relative;
+    }
 }

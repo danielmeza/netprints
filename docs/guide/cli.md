@@ -128,7 +128,7 @@ netprints migrate samples/HelloWorld/HelloWorld.Program.netpc.json
 netprints format [<paths>...] [--check]
 ```
 
-Rewrites `.netpc.json` graphs into their canonical form (the form the editor writes), touching only files whose bytes change. Paths are graph files or directories searched recursively (`bin`, `obj` and symbolic links are skipped); the default is the current directory. With `--check` it writes nothing and exits 1 if any graph is not canonical or cannot be read.
+Rewrites `.netpc.json` graphs into their canonical form (the form the editor writes, with each graph's connections sorted by `from`, then `to`), touching only files whose bytes change. Paths are graph files or directories searched recursively (`bin`, `obj` and symbolic links are skipped); the default is the current directory. With `--check` it writes nothing and exits 1 if any graph is not canonical or cannot be read.
 
 ```
 netprints format samples

@@ -55,8 +55,9 @@ Algorithm (research R15):
    connection out of each exec output pin (exec inputs and data/type outputs may have many);
    member ids unique; member names unique per kind. Clean and valid → write canonical bytes to `%A`, exit 0.
 5. Fallback: write the canonical texts of the three documents (or raw texts) to temp files and run
-   `git merge-file -p --marker-size <n> -L ours -L base -L theirs <ours> <base> <theirs>` through `IProcessRunner`;
-   write its stdout to `%A`; exit 1 (also when `git merge-file` reports 0 conflicts after a semantic conflict — a
+   `git merge-file --marker-size <n> -L ours -L base -L theirs <ours> <base> <theirs>` through `IProcessRunner`
+   (no `-p`: it merges into the temporary `ours` file); read that file back as bytes and write the bytes to `%A`, so a
+   byte order mark and bytes that are not UTF-8 survive; exit 1 (also when `git merge-file` reports 0 conflicts after a semantic conflict — a
    semantic conflict always exits 1). List each conflict on stderr.
 
 ## 3. `git-install`
@@ -73,6 +74,19 @@ Rules: runs `git rev-parse --show-toplevel` first (not a work tree → exit 2); 
 reported as `already installed`, nothing written; an existing `*.netpc.json` line naming another `diff=`/`merge=`
 driver → kept, reported, exit 1 without writing; the `.gitattributes` file keeps its line endings and other
 lines.
+
+`show` writes UTF-8 without a byte order mark whatever the console code page (the entry point sets the console output
+encoding).
+
+## 3a. `format`
+
+`format` rewrites each graph with the JSON format's write path, the same one the editor saves through. That path writes
+every graph's `connections` (class graph, methods, constructors, event graphs) sorted by ordinal `from`, then ordinal
+`to`: a total, stable order (`StringComparison.Ordinal`, never culture-sensitive). Reading accepts any order; only writing
+canonicalises, so `format --check` flags a file whose connections are in another order (a hand edit or a hand-resolved
+merge). Pin order inside a node is the editor's declaration order and cannot be derived without node definitions, so
+`format` keeps it. Messages name a path relative to the current directory when it lies inside it and absolute otherwise;
+an unreadable directory and an unreadable file both print as `unreadable: <path>: <reason>`.
 
 ## 4. SchemaStore entry (`eng/schemastore/catalog-entries.json`)
 

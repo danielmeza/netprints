@@ -118,7 +118,7 @@ internal sealed class MigrateCommand(
 
         if (argument.Length > 0 && Directory.Exists(path))
         {
-            GraphFileSearch.Collect(path, graphs, unreadable, environment.CurrentDirectory);
+            GraphFileSearch.Collect(path, graphs, unreadable, (directory, reason) => $"{environment.DisplayPath(directory)}: unreadable: {reason}");
             return CollectResult.Ok;
         }
 
@@ -180,7 +180,7 @@ internal sealed class MigrateCommand(
 
     private async Task<bool> ReportAsync(string graph, DocumentFormatRegistry formats, CancellationToken cancellationToken)
     {
-        string display = Path.GetRelativePath(environment.CurrentDirectory, graph);
+        string display = environment.DisplayPath(graph);
         var id = new DocumentId(Path.GetFileName(graph));
         IDocumentFormat? format = formats.Find(id, DocumentKind.Class);
         if (format is null)

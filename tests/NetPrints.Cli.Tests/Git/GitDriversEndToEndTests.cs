@@ -31,7 +31,7 @@ public sealed class GitDriversEndToEndTests : IAsyncLifetime
 
     private async Task InstallAsync()
     {
-        var host = new CliTestHost(Repo.Path);
+        var host = new CliTestHost(Repo.Path, Repo.Variables);
         host.AssertExit(ExitCodes.Success, await host.RunRealAsync("git-install", "--merge", "--command", CliUnderTest));
         await Repo.GitAsync("add", ".gitattributes");
         await Repo.GitAsync("commit", "-q", "-m", "attributes");
@@ -52,6 +52,17 @@ public sealed class GitDriversEndToEndTests : IAsyncLifetime
         await CommitAsync("theirs", "theirs", directory);
         await Repo.GitAsync("checkout", "-q", "main");
         await CommitAsync("ours", "ours", directory);
+    }
+
+    [Fact]
+    public async Task TheRepositoryHelperIgnoresTheDevelopersGlobalAndSystemGitConfiguration()
+    {
+        string config = await Repo.GitAsync("config", "--list", "--show-origin");
+
+        foreach (string line in config.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+        {
+            Assert.StartsWith("file:.git/config", line, StringComparison.Ordinal);
+        }
     }
 
     [Fact]

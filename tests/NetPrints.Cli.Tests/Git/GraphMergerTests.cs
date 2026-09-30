@@ -53,6 +53,27 @@ public sealed class GraphMergerTests : IDisposable
     }
 
     [Fact]
+    public async Task TheTextFallbackKeepsTheBytesOfAnInputThatIsNotUtf8AndItsByteOrderMark()
+    {
+        byte[] bom = [0xEF, 0xBB, 0xBF];
+        byte[] Version(string first, string last) => [.. bom, .. System.Text.Encoding.ASCII.GetBytes(first + "\nb\n"), 0xFF, 0xFE, (byte)'\n', .. System.Text.Encoding.ASCII.GetBytes("c\nd\ne\nf\n" + last + "\n")];
+        string baseFile = Path.Combine(_temp, "O.tmp");
+        string oursFile = Path.Combine(_temp, "A.tmp");
+        string theirsFile = Path.Combine(_temp, "B.tmp");
+        await File.WriteAllBytesAsync(baseFile, Version("a", "g"), TestContext.Current.CancellationToken);
+        await File.WriteAllBytesAsync(oursFile, Version("a-ours", "g"), TestContext.Current.CancellationToken);
+        await File.WriteAllBytesAsync(theirsFile, Version("a", "g-theirs"), TestContext.Current.CancellationToken);
+
+        int exit = await new CliTestHost(_temp).RunRealAsync("merge", baseFile, oursFile, theirsFile, "--path", "samples/C.netpc.json");
+
+        byte[] merged = await File.ReadAllBytesAsync(oursFile, TestContext.Current.CancellationToken);
+        Assert.Equal(ExitCodes.Failed, exit);
+        Assert.True(merged.AsSpan().StartsWith(bom), "The byte order mark was dropped.");
+        Assert.True(merged.AsSpan().IndexOf(new byte[] { 0xFF, 0xFE }) > 0, "Bytes that are not UTF-8 were replaced.");
+        Assert.Equal(Version("a-ours", "g-theirs"), merged);
+    }
+
+    [Fact]
     public async Task TwoBranchesAddingDifferentNodesMergeCleanlyIntoTheCanonicalUnionWhereGitMergeFileConflicts()
     {
         MergeRun run = await MergeAsync("MergeClean");

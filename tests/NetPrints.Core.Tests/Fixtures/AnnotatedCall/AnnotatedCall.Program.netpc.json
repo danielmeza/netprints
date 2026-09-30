@@ -54,8 +54,8 @@
         ],
         "connections": [
           { "from": "n0000000an1201/out.exec.Exec", "to": "n0000000an1203/in.exec.Exec" },
-          { "from": "n0000000an1203/out.exec.Exec", "to": "n0000000an1204/in.exec.Exec" },
           { "from": "n0000000an1203/out.data.String", "to": "n0000000an1204/in.data.value" },
+          { "from": "n0000000an1203/out.exec.Exec", "to": "n0000000an1204/in.exec.Exec" },
           { "from": "n0000000an1204/out.exec.Exec", "to": "n0000000an1202/in.exec.Exec" }
         ]
       }
