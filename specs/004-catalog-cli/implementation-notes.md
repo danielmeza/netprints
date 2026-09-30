@@ -58,7 +58,7 @@
 - Whole suite (Release, no E2E env): 1015 tests, 1005 passed, 10 skipped, 0 failed.
 - E2E (`NETPRINTS_E2E=1`, `--fail-skips on`): 9 tests, 9 passed, 0 skipped.
 - Only `<NoWarn>` in the repository: the `Directory.Build.targets` opt-in line.
-- CI: CI_RUN_PLACEHOLDER
+- CI: green run 36664521413 at 9280856 after a rerun. The first attempt failed only in `Test (Editor UI, headless)`: `SnapshotTests.Inspectors` ('inspector-class' 0.893% of pixels differ, max 0.5%), a rendering flake in code this batch does not touch (the same test passed locally in the whole suite and on 854066f); the rerun passed.
 
 ## Deviations
 
@@ -77,7 +77,7 @@ Heads-up for sub-phases D/E: any netstandard2.0 dependency of the generator must
 
 ### Review B (T017, Opus) — PR #9 review 5361050457
 
-11 findings (2 High, 4 Medium, 4 Low, 1 Nit), all fixed in T018 (commits 919f1c8 and FIX2_SHA):
+11 findings (2 High, 4 Medium, 4 Low, 1 Nit), all fixed in T018 (commits 919f1c8 and 9280856):
 
 1. High, help URL 404: `UrlFormat` had a `/docs/` segment the site (`routeBasePath: '/'`) does not serve. Fixed in `ExperimentalApiIds`, `PublicAPI.Unshipped.txt`, contract §5 and research.md. AP-T02 now checks the URL maps to an existing `docs/**/*.md` page with an `## API stability` heading (red first: the mapped path `docs/docs/guide/extensions.md` did not exist).
 2. High, unmarked public API around experimental types: a reflection test (`EveryPublicSymbolThatMentionsAnExperimentalTypeIsExperimentalWithTheSameId`) checks that every public symbol in Core and Extensibility whose signature (base type, interfaces, parameters, return, property, field, event, generic arguments) mentions an `[Experimental]` type carries that id. Red on the old code with 18 offenders (`TranslationEnvironment` members and constructor, `ExtensionSettingsDescriptor<T>`, `JsonFileSettingsStore`, `ExtensionRegistry.HostChannels/FindHostChannel/Settings/ClassEmitters/MemberEmitters`, `NullHostChannel`, `InMemoryHostChannel` and their members). Decision: none of these became `internal`. `NullHostChannel`, `InMemoryHostChannel` and `JsonFileSettingsStore` are public API in the 003 contracts (extension-points.md §6-§7) and the test kit and embedding hosts use them (TestExtension uses `InMemoryHostChannel`), so each is marked with its id (host channel, host channel, settings); `ExtensionSettingsDescriptor<T>`, `NetPrintsSettings.Descriptor` and the registry members are marked with their ids. `TranslationEnvironment` stays stable as a type; its constructor, `Deconstruct` (now explicit, so it can be marked) and the two emitter properties carry `NPXE0003` (`[method:]`/`[property:]` targets on the positional record). Editor.UITests gained the `NPXE0001` opt-in the build then showed. API files: for Core the shipped `TranslationEnvironment` lines got `*REMOVED*` plus `[NPXE0003]` lines in Unshipped; for Extensibility the unshipped lines were prefixed in place; both from the analyzer's own RS0016/RS0017 messages, then the build was clean.
