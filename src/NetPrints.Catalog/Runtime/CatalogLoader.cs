@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Reflection;
 using Microsoft.Extensions.Logging;
 using NetPrints.Reflection;
 
@@ -30,6 +32,16 @@ public static class CatalogLoader
     /// <returns>The catalog.</returns>
     /// <exception cref="CatalogFormatException">The text is not a supported catalog (NPC101, NPC102).</exception>
     public static ITypeCatalog LoadJson(string json) => Load(CatalogReader.Read(json));
+
+    /// <summary>Creates the type catalogs of the catalogs an assembly embeds.</summary>
+    /// <param name="assembly">The assembly.</param>
+    /// <returns>One catalog per embedded document, in attribute order; empty when the assembly embeds none.</returns>
+    /// <exception cref="CatalogFormatException">An embedded catalog is not a supported catalog (NPC101, NPC102).</exception>
+    public static IReadOnlyList<ITypeCatalog> LoadEmbedded(Assembly assembly)
+    {
+        ArgumentNullException.ThrowIfNull(assembly);
+        return [.. EmbeddedCatalogReader.Read(assembly).Select(Load)];
+    }
 
     /// <summary>
     /// Keeps the first catalog of every id, in the order given. Every later catalog with an id already seen is dropped and reported

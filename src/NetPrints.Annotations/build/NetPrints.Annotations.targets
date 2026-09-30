@@ -1,0 +1,15 @@
+<Project>
+  <ItemGroup>
+    <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="NetPrintsReferenceDocumentation" />
+    <CompilerVisibleProperty Include="RootNamespace" />
+  </ItemGroup>
+
+  <!-- Hands the XML documentation next to each referenced assembly to the generator; framework assemblies only when asked. -->
+  <Target Name="NetPrintsAddReferenceDocumentation" AfterTargets="ResolveAssemblyReferences" BeforeTargets="CoreCompile">
+    <ItemGroup>
+      <_NetPrintsReferenceXml Include="@(ReferencePath->'%(RootDir)%(Directory)%(Filename).xml')"
+                              Condition="'%(ReferencePath.FrameworkReferenceName)' == '' or '$(NetPrintsCatalogFrameworkDocumentation)' == 'true'" />
+      <AdditionalFiles Include="@(_NetPrintsReferenceXml)" Condition="Exists('%(FullPath)')" NetPrintsReferenceDocumentation="true" />
+    </ItemGroup>
+  </Target>
+</Project>

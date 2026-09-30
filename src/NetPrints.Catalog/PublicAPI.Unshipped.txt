@@ -631,3 +631,7 @@ NetPrints.Catalog.ResolvedCatalogConfig.Format.init -> void
 [NPXE0004]static NetPrints.Catalog.ProfileJson.Parse(string! json) -> NetPrints.Catalog.CatalogProfile!
 [NPXE0004]static NetPrints.Catalog.XmlDocumentationSource.Empty.get -> NetPrints.Catalog.XmlDocumentationSource!
 [NPXE0004]static NetPrints.Catalog.XmlDocumentationSource.FromText(string! xml) -> NetPrints.Catalog.XmlDocumentationSource!
+NetPrints.Catalog.EmbeddedCatalogReader
+static NetPrints.Catalog.CatalogLoader.LoadEmbedded(System.Reflection.Assembly! assembly) -> System.Collections.Generic.IReadOnlyList<NetPrints.Reflection.ITypeCatalog!>!
+static NetPrints.Catalog.EmbeddedCatalogReader.Read(string! assemblyPath) -> System.Collections.Generic.IReadOnlyList<NetPrints.Catalog.CatalogDocument!>!
+static NetPrints.Catalog.EmbeddedCatalogReader.Read(System.Reflection.Assembly! assembly) -> System.Collections.Generic.IReadOnlyList<NetPrints.Catalog.CatalogDocument!>!

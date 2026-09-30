@@ -32,5 +32,6 @@
 
   <ItemGroup>
     <None Include="$(TargetPath)" Pack="true" PackagePath="analyzers/dotnet/cs" />
+    <None Include="build\NetPrints.Annotations.targets" Pack="true" PackagePath="build" />
   </ItemGroup>
 </Project>

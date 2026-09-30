@@ -420,19 +420,19 @@ SC-013.
 
 ### Batch E2 — model: sonnet — T069–T072 — 5 units
 
-- [ ] T069 [US3] Build `src/NetPrints.Annotations/NetPrints.Annotations.csproj` with the completed generator (T067) and
+- [x] T069 [US3] Build `src/NetPrints.Annotations/NetPrints.Annotations.csproj` with the completed generator (T067) and
   `EnforceExtendedAnalyzerRules`; fix any RS1035/RS1036 or netstandard2.0 finding in the shared files (no file or
   environment access, no API missing from netstandard2.0) without suppressions.
-- [ ] T070 [US3] Test first `tests/NetPrints.Catalog.Tests/Runtime/EmbeddedCatalogReaderTests.cs` (AN-T09); add
+- [x] T070 [US3] Test first `tests/NetPrints.Catalog.Tests/Runtime/EmbeddedCatalogReaderTests.cs` (AN-T09); add
   `src/NetPrints.Catalog/Runtime/EmbeddedCatalogReader.cs` (System.Reflection.Metadata and `CustomAttributeData`) and
   `CatalogLoader.LoadEmbedded`.
-- [ ] T071 [US3] Test first `tests/NetPrints.Catalog.Tests/EndToEnd/AnnotationsPackageTests.cs` (AN-T10): the sample
+- [x] T071 [US3] Test first `tests/NetPrints.Catalog.Tests/EndToEnd/AnnotationsPackageTests.cs` (AN-T10): the sample
   sources live in `tests/NetPrints.Catalog.Tests/EndToEnd/AnnotatedSample/` and are excluded from the test project
   (`<Compile Remove="EndToEnd/AnnotatedSample/**" />`, copied to the output as `None`); the test packs
   `NetPrints.Annotations` into a temporary feed, copies the sources to a temporary directory outside the repository,
   writes there a netstandard2.0 `AnnotatedSample.csproj` (version 1.0.0) and a `NuGet.config` listing the feed and nuget.org (NETStandard.Library comes from there), runs
   `dotnet build`, and compares the embedded catalog with `tests/NetPrints.Catalog.Tests/Snapshots/annotated-sample.npcat.json`.
-- [ ] T072 [US3] `src/NetPrints.Annotations/build/NetPrints.Annotations.targets` (contracts/annotations.md §5) and the
+- [x] T072 [US3] `src/NetPrints.Annotations/build/NetPrints.Annotations.targets` (contracts/annotations.md §5) and the
   package layout (`analyzers/dotnet/cs/`, `build/`, `developmentDependency`, package README through
   `eng/PackageReadme.targets`); whole suite; commit.
 

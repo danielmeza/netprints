@@ -29,6 +29,9 @@
       <_Parameter1>CatalogFixtureLibOutput</_Parameter1>
       <_Parameter2>$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)', '..', 'Fixtures', 'Catalog', 'CatalogFixtureLib', 'bin', '$(Configuration)', 'net10.0'))</_Parameter2>
     </AssemblyAttribute>
+    <!-- The AN-T10 sample sources use the injected attributes, so they are test data for a temporary project, never compiled here. -->
+    <Compile Remove="EndToEnd/AnnotatedSample/**" />
+    <None Include="EndToEnd/AnnotatedSample/**" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Profiles\**\*" CopyToOutputDirectory="PreserveNewest" />
     <None Include="Format\Golden\**\*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>

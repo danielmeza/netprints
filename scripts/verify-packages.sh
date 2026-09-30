@@ -111,6 +111,8 @@ extract_nupkg NetPrints.Annotations
 check_common_metadata NetPrints.Annotations
 grep -q '<developmentDependency>true</developmentDependency>' "$EXTRACT/NetPrints.Annotations.nuspec" || fail "step 2 (NetPrints.Annotations): nuspec has no <developmentDependency>true</developmentDependency>"
 [[ -f "$EXTRACT/analyzers/dotnet/cs/NetPrints.Annotations.dll" ]] || fail "step 2 (NetPrints.Annotations): missing analyzers/dotnet/cs/NetPrints.Annotations.dll"
+[[ -f "$EXTRACT/build/NetPrints.Annotations.targets" ]] || fail "step 2 (NetPrints.Annotations): missing build/NetPrints.Annotations.targets"
+grep -q 'NetPrintsReferenceDocumentation' "$EXTRACT/build/NetPrints.Annotations.targets" || fail "step 2 (NetPrints.Annotations): build/NetPrints.Annotations.targets does not declare NetPrintsReferenceDocumentation"
 [[ -d "$EXTRACT/lib" ]] && fail "step 2 (NetPrints.Annotations): package has a lib/ folder (should have none)"
 
 # --- Step 3: tool install from the feed ---------------------------------------------------------
