@@ -66,6 +66,9 @@ namespace NetPrints.Tests.Core
                 Path.Combine("NetPrints.Generation", "GraphCodeGenerator.cs"),
                 Path.Combine("NetPrints.Core", "Projects", "ProjectSystemException.cs"),
                 Path.Combine("NetPrints.Core", "Projects", "ProjectMessage.cs"),
+                Path.Combine("NetPrints.Core", "ExperimentalApiIds.cs"),
+                Path.Combine("NetPrints.Catalog", "Engine", "CatalogDiagnosticCodes.cs"),
+                Path.Combine("NetPrints.Catalog", "Engine", "ExperimentalApis.cs"),
             ];
 
             string[] sourceFiles = [.. Directory.EnumerateFiles(src, "*.cs", SearchOption.AllDirectories)
@@ -113,15 +116,18 @@ namespace NetPrints.Tests.Core
             Assert.Empty(offenders);
 
             IEnumerable<string> duplicates = declaredCodes.GroupBy(code => code, StringComparer.Ordinal)
-                .Where(group => group.Count() > 1)
+                .Where(group => group.Count() > 1 && group.Key != AllowedDuplicateCode)
                 .Select(group => group.Key);
             Assert.Empty(duplicates);
         }
 
-        [GeneratedRegex(@"""(?:NPT|NPD|NPX|NPW)\d{3,}""")]
+        /// <summary>The generator cannot reference Core, so <c>Catalog/Engine/ExperimentalApis.cs</c> re-declares this id (ADR-0017 decision, implementation notes).</summary>
+        private const string AllowedDuplicateCode = "NPXE0004";
+
+        [GeneratedRegex(@"""(?:(?:NPT|NPD|NPX|NPW|NPC)\d{3,}|NPXE\d{4})""")]
         private static partial Regex DiagnosticCodeLiteralPattern();
 
-        [GeneratedRegex(@"const string \w+ = ""(?<code>(?:NPT|NPD|NPX|NPW)\d{3,})""")]
+        [GeneratedRegex(@"const string \w+ = ""(?<code>(?:NPT|NPD|NPX|NPW|NPC)\d{3,}|NPXE\d{4})""")]
         private static partial Regex DiagnosticCodeDeclarationPattern();
 
         /// <summary>
@@ -462,7 +468,7 @@ namespace NetPrints.Tests.Core
                 string relativePath = Path.GetRelativePath(root, path).Replace('\\', '/');
                 string text = File.ReadAllText(path);
 
-                if (NoWarnPattern().IsMatch(text))
+                if (NoWarnPattern().IsMatch(text) && !IsOptInNoWarn(relativePath, text))
                 {
                     offenders.Add($"{relativePath}: <NoWarn>");
                 }
@@ -508,6 +514,129 @@ namespace NetPrints.Tests.Core
             Assert.True(parsedFileCount > 0, "Expected to scan at least one .props/.targets/.csproj file.");
             Assert.Empty(offenders);
         }
+
+        private const string OptInNoWarnLine = "<NoWarn>$(NoWarn);@(NetPrintsExperimentalOptIn)</NoWarn>";
+
+        private const string OptInTargetsFile = "Directory.Build.targets";
+
+        /// <summary>ADR-0017: the one <c>&lt;NoWarn&gt;</c> the repository allows is the opt-in line in the root <c>Directory.Build.targets</c>.</summary>
+        private static bool IsOptInNoWarn(string relativePath, string text) =>
+            relativePath == OptInTargetsFile
+            && NoWarnPattern().Count(text) == 1
+            && text.Contains(OptInNoWarnLine, StringComparison.Ordinal);
+
+        private static IEnumerable<string> EnumerateBuildFiles(string root, params string[] patterns) =>
+            patterns.SelectMany(pattern => Directory.EnumerateFiles(root, pattern, SearchOption.AllDirectories))
+                .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+                    && !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+                    && !path.Contains($"{Path.DirectorySeparatorChar}legacy{Path.DirectorySeparatorChar}", StringComparison.Ordinal));
+
+        /// <summary>ADR-0017: the opt-in line exists exactly once, in <c>Directory.Build.targets</c>, and no other file has a <c>&lt;NoWarn&gt;</c>.</summary>
+        [Fact]
+        public void TheOnlyNoWarnIsTheExperimentalOptInLine()
+        {
+            string root = SampleProjectFactory.FindRepositoryRoot();
+            string[] holders =
+            [
+                .. EnumerateBuildFiles(root, "*.props", "*.targets", "*.csproj")
+                    .Where(path => NoWarnPattern().IsMatch(File.ReadAllText(path)))
+                    .Select(path => Path.GetRelativePath(root, path).Replace('\\', '/')),
+            ];
+
+            Assert.Equal([OptInTargetsFile], holders);
+            Assert.True(IsOptInNoWarn(OptInTargetsFile, File.ReadAllText(Path.Combine(root, OptInTargetsFile))), $"{OptInTargetsFile} must contain exactly {OptInNoWarnLine}");
+        }
+
+        /// <summary>ADR-0017: opt-ins are per project, so an item in a props or targets file (a repo-wide or inherited opt-in) is rejected.</summary>
+        [Fact]
+        public void ExperimentalOptInItemsLiveOnlyInProjectFiles()
+        {
+            string root = SampleProjectFactory.FindRepositoryRoot();
+
+            string[] offenders =
+            [
+                .. EnumerateBuildFiles(root, "*.props", "*.targets")
+                    .Where(path => File.ReadAllText(path).Contains("<NetPrintsExperimentalOptIn", StringComparison.Ordinal))
+                    .Select(path => Path.GetRelativePath(root, path).Replace('\\', '/')),
+            ];
+
+            Assert.Empty(offenders);
+        }
+
+        /// <summary>ADR-0017: every opt-in item names an id <c>ExperimentalApiIds</c> declares, so an unknown or graduated (stale) id fails.</summary>
+        [Fact]
+        public void EveryExperimentalOptInIsADeclaredId()
+        {
+            string root = SampleProjectFactory.FindRepositoryRoot();
+            string idsFile = Path.Combine(root, "src", "NetPrints.Core", "ExperimentalApiIds.cs");
+            Assert.True(File.Exists(idsFile), "src/NetPrints.Core/ExperimentalApiIds.cs must declare the experimental ids");
+            HashSet<string> declared =
+            [
+                .. ExperimentalIdDeclarationPattern().Matches(File.ReadAllText(idsFile)).Select(match => match.Groups["id"].Value),
+            ];
+            Assert.NotEmpty(declared);
+
+            var offenders = new List<string>();
+            foreach (string path in EnumerateBuildFiles(root, "*.csproj"))
+            {
+                string relativePath = Path.GetRelativePath(root, path).Replace('\\', '/');
+                foreach (Match item in ExperimentalOptInItemPattern().Matches(File.ReadAllText(path)))
+                {
+                    foreach (string id in item.Groups["ids"].Value.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                    {
+                        if (!declared.Contains(id))
+                        {
+                            offenders.Add($"{relativePath}: {id}");
+                        }
+                    }
+                }
+            }
+
+            Assert.Empty(offenders);
+        }
+
+        /// <summary>ADR-0017: no source file disables an <c>NPXE</c> diagnostic with a pragma; the opt-in item is the only way.</summary>
+        [Fact]
+        public void NoPragmaDisablesAnExperimentalDiagnostic()
+        {
+            string[] offenders =
+            [
+                .. EnumerateSourceAndTestFiles(SampleProjectFactory.FindRepositoryRoot())
+                    .Where(path => File.ReadLines(path).Any(line => ExperimentalPragmaPattern().IsMatch(line)))
+                    .Select(path => Path.GetRelativePath(SampleProjectFactory.FindRepositoryRoot(), path)),
+            ];
+
+            Assert.Empty(offenders);
+        }
+
+        /// <summary>ADR-0017: no <c>.editorconfig</c> or globalconfig entry sets a severity for an <c>NPXE</c> id.</summary>
+        [Fact]
+        public void NoEditorConfigSeverityForAnExperimentalDiagnostic()
+        {
+            string root = SampleProjectFactory.FindRepositoryRoot();
+
+            string[] offenders =
+            [
+                .. new[] { ".editorconfig", "*.globalconfig" }
+                    .SelectMany(pattern => EnumerateBuildFiles(root, pattern))
+                    .Where(path => ExperimentalSeverityPattern().IsMatch(File.ReadAllText(path)))
+                    .Select(path => Path.GetRelativePath(root, path).Replace('\\', '/')),
+            ];
+
+            Assert.Empty(offenders);
+        }
+
+        [GeneratedRegex(@"const string \w+ = ""(?<id>NPXE\d{4})""")]
+        private static partial Regex ExperimentalIdDeclarationPattern();
+
+        [GeneratedRegex(@"<NetPrintsExperimentalOptIn\s+Include=""(?<ids>[^""]*)""")]
+        private static partial Regex ExperimentalOptInItemPattern();
+
+        [GeneratedRegex(@"^\s*#pragma\s+warning\s+disable\b.*\bNPXE", RegexOptions.IgnoreCase)]
+        private static partial Regex ExperimentalPragmaPattern();
+
+        [GeneratedRegex(@"^\s*dotnet_diagnostic\.NPXE", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
+        private static partial Regex ExperimentalSeverityPattern();
 
         [GeneratedRegex(@"^\[(?<section>.+)\]$")]
         private static partial Regex EditorConfigSectionPattern();
