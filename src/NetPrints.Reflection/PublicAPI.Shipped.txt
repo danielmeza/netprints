@@ -1,0 +1,170 @@
+#nullable enable
+NetPrints.Reflection.CatalogInfo
+NetPrints.Reflection.CatalogInfo.<Clone>$() -> NetPrints.Reflection.CatalogInfo!
+NetPrints.Reflection.CatalogInfo.CatalogInfo(string! Id, string! Version, System.Collections.Generic.IReadOnlyList<string!>! CoveredAssemblyNames) -> void
+NetPrints.Reflection.CatalogInfo.CoveredAssemblyNames.get -> System.Collections.Generic.IReadOnlyList<string!>!
+NetPrints.Reflection.CatalogInfo.CoveredAssemblyNames.init -> void
+NetPrints.Reflection.CatalogInfo.Deconstruct(out string! Id, out string! Version, out System.Collections.Generic.IReadOnlyList<string!>! CoveredAssemblyNames) -> void
+NetPrints.Reflection.CatalogInfo.Equals(NetPrints.Reflection.CatalogInfo? other) -> bool
+NetPrints.Reflection.CatalogInfo.Id.get -> string!
+NetPrints.Reflection.CatalogInfo.Id.init -> void
+NetPrints.Reflection.CatalogInfo.Version.get -> string!
+NetPrints.Reflection.CatalogInfo.Version.init -> void
+NetPrints.Reflection.CompositeReflectionProvider
+NetPrints.Reflection.CompositeReflectionProvider.CompositeReflectionProvider(System.Collections.Generic.IReadOnlyList<NetPrints.Reflection.IReflectionProvider!>! providers) -> void
+NetPrints.Reflection.CompositeReflectionProvider.GetConstructors(NetPrints.Core.TypeSpecifier! typeSpecifier) -> System.Collections.Generic.IEnumerable<NetPrints.Core.ConstructorSpecifier!>!
+NetPrints.Reflection.CompositeReflectionProvider.GetEnumNames(NetPrints.Core.TypeSpecifier! typeSpecifier) -> System.Collections.Generic.IEnumerable<string!>!
+NetPrints.Reflection.CompositeReflectionProvider.GetMethodDocumentation(NetPrints.Core.MethodSpecifier! methodSpecifier) -> string?
+NetPrints.Reflection.CompositeReflectionProvider.GetMethodParameterDocumentation(NetPrints.Core.MethodSpecifier! methodSpecifier, int parameterIndex) -> string?
+NetPrints.Reflection.CompositeReflectionProvider.GetMethodReturnDocumentation(NetPrints.Core.MethodSpecifier! methodSpecifier, int returnIndex) -> string?
+NetPrints.Reflection.CompositeReflectionProvider.GetMethods(NetPrints.Reflection.ReflectionProviderMethodQuery! query) -> System.Collections.Generic.IEnumerable<NetPrints.Core.MethodSpecifier!>!
+NetPrints.Reflection.CompositeReflectionProvider.GetNonStaticTypes() -> System.Collections.Generic.IEnumerable<NetPrints.Core.TypeSpecifier!>!
+NetPrints.Reflection.CompositeReflectionProvider.GetOverridableMethodsForType(NetPrints.Core.TypeSpecifier! typeSpecifier) -> System.Collections.Generic.IEnumerable<NetPrints.Core.MethodSpecifier!>!
+NetPrints.Reflection.CompositeReflectionProvider.GetPublicMethodOverloads(NetPrints.Core.MethodSpecifier! methodSpecifier) -> System.Collections.Generic.IEnumerable<NetPrints.Core.MethodSpecifier!>!
+NetPrints.Reflection.CompositeReflectionProvider.GetVariables(NetPrints.Reflection.ReflectionProviderVariableQuery! query) -> System.Collections.Generic.IEnumerable<NetPrints.Core.VariableSpecifier!>!
+NetPrints.Reflection.CompositeReflectionProvider.HasImplicitCast(NetPrints.Core.TypeSpecifier! fromType, NetPrints.Core.TypeSpecifier! toType) -> bool
+NetPrints.Reflection.CompositeReflectionProvider.Providers.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Reflection.IReflectionProvider!>!
+NetPrints.Reflection.CompositeReflectionProvider.TypeSpecifierIsSubclassOf(NetPrints.Core.TypeSpecifier! a, NetPrints.Core.TypeSpecifier! b) -> bool
+NetPrints.Reflection.DefaultOperatorSpecifiers
+NetPrints.Reflection.DocumentationUtil
+NetPrints.Reflection.DocumentationUtil.DocumentationUtil(Microsoft.CodeAnalysis.Compilation! compilation, System.Collections.Generic.IReadOnlyDictionary<string!, string!>! documentationPaths) -> void
+NetPrints.Reflection.DocumentationUtil.GetMethodParameterInfo(Microsoft.CodeAnalysis.IParameterSymbol! parameterSymbol) -> string?
+NetPrints.Reflection.DocumentationUtil.GetMethodReturnInfo(Microsoft.CodeAnalysis.IMethodSymbol! methodSymbol) -> string?
+NetPrints.Reflection.DocumentationUtil.GetMethodSummary(Microsoft.CodeAnalysis.IMethodSymbol! methodInfo) -> string?
+NetPrints.Reflection.InMemoryTypeCatalog
+NetPrints.Reflection.InMemoryTypeCatalog.GetConstructors(NetPrints.Core.TypeSpecifier! typeSpecifier) -> System.Collections.Generic.IEnumerable<NetPrints.Core.ConstructorSpecifier!>!
+NetPrints.Reflection.InMemoryTypeCatalog.GetEnumNames(NetPrints.Core.TypeSpecifier! typeSpecifier) -> System.Collections.Generic.IEnumerable<string!>!
+NetPrints.Reflection.InMemoryTypeCatalog.GetMethodDocumentation(NetPrints.Core.MethodSpecifier! methodSpecifier) -> string?
+NetPrints.Reflection.InMemoryTypeCatalog.GetMethodParameterDocumentation(NetPrints.Core.MethodSpecifier! methodSpecifier, int parameterIndex) -> string?
+NetPrints.Reflection.InMemoryTypeCatalog.GetMethodReturnDocumentation(NetPrints.Core.MethodSpecifier! methodSpecifier, int returnIndex) -> string?
+NetPrints.Reflection.InMemoryTypeCatalog.GetMethods(NetPrints.Reflection.ReflectionProviderMethodQuery! query) -> System.Collections.Generic.IEnumerable<NetPrints.Core.MethodSpecifier!>!
+NetPrints.Reflection.InMemoryTypeCatalog.GetNonStaticTypes() -> System.Collections.Generic.IEnumerable<NetPrints.Core.TypeSpecifier!>!
+NetPrints.Reflection.InMemoryTypeCatalog.GetOverridableMethodsForType(NetPrints.Core.TypeSpecifier! typeSpecifier) -> System.Collections.Generic.IEnumerable<NetPrints.Core.MethodSpecifier!>!
+NetPrints.Reflection.InMemoryTypeCatalog.GetPublicMethodOverloads(NetPrints.Core.MethodSpecifier! methodSpecifier) -> System.Collections.Generic.IEnumerable<NetPrints.Core.MethodSpecifier!>!
+NetPrints.Reflection.InMemoryTypeCatalog.GetVariables(NetPrints.Reflection.ReflectionProviderVariableQuery! query) -> System.Collections.Generic.IEnumerable<NetPrints.Core.VariableSpecifier!>!
+NetPrints.Reflection.InMemoryTypeCatalog.HasImplicitCast(NetPrints.Core.TypeSpecifier! fromType, NetPrints.Core.TypeSpecifier! toType) -> bool
+NetPrints.Reflection.InMemoryTypeCatalog.Info.get -> NetPrints.Reflection.CatalogInfo!
+NetPrints.Reflection.InMemoryTypeCatalog.InMemoryTypeCatalog(NetPrints.Reflection.CatalogInfo! info, System.Collections.Generic.IReadOnlyList<NetPrints.Core.TypeSpecifier!>! nonStaticTypes, System.Collections.Generic.IReadOnlyList<NetPrints.Core.MethodSpecifier!>! methods, System.Collections.Generic.IReadOnlyList<NetPrints.Core.VariableSpecifier!>! variables, System.Collections.Generic.IReadOnlyList<NetPrints.Core.ConstructorSpecifier!>! constructors, System.Collections.Generic.IReadOnlyDictionary<NetPrints.Core.TypeSpecifier!, System.Collections.Generic.IReadOnlyList<string!>!>! enumNames, System.Collections.Generic.IReadOnlyDictionary<NetPrints.Core.MethodSpecifier!, string!>! documentation) -> void
+NetPrints.Reflection.InMemoryTypeCatalog.TypeSpecifierIsSubclassOf(NetPrints.Core.TypeSpecifier! a, NetPrints.Core.TypeSpecifier! b) -> bool
+NetPrints.Reflection.IReflectionProvider
+NetPrints.Reflection.IReflectionProvider.GetConstructors(NetPrints.Core.TypeSpecifier! typeSpecifier) -> System.Collections.Generic.IEnumerable<NetPrints.Core.ConstructorSpecifier!>!
+NetPrints.Reflection.IReflectionProvider.GetEnumNames(NetPrints.Core.TypeSpecifier! typeSpecifier) -> System.Collections.Generic.IEnumerable<string!>!
+NetPrints.Reflection.IReflectionProvider.GetMethodDocumentation(NetPrints.Core.MethodSpecifier! methodSpecifier) -> string?
+NetPrints.Reflection.IReflectionProvider.GetMethodParameterDocumentation(NetPrints.Core.MethodSpecifier! methodSpecifier, int parameterIndex) -> string?
+NetPrints.Reflection.IReflectionProvider.GetMethodReturnDocumentation(NetPrints.Core.MethodSpecifier! methodSpecifier, int returnIndex) -> string?
+NetPrints.Reflection.IReflectionProvider.GetMethods(NetPrints.Reflection.ReflectionProviderMethodQuery! query) -> System.Collections.Generic.IEnumerable<NetPrints.Core.MethodSpecifier!>!
+NetPrints.Reflection.IReflectionProvider.GetNonStaticTypes() -> System.Collections.Generic.IEnumerable<NetPrints.Core.TypeSpecifier!>!
+NetPrints.Reflection.IReflectionProvider.GetOverridableMethodsForType(NetPrints.Core.TypeSpecifier! typeSpecifier) -> System.Collections.Generic.IEnumerable<NetPrints.Core.MethodSpecifier!>!
+NetPrints.Reflection.IReflectionProvider.GetPublicMethodOverloads(NetPrints.Core.MethodSpecifier! methodSpecifier) -> System.Collections.Generic.IEnumerable<NetPrints.Core.MethodSpecifier!>!
+NetPrints.Reflection.IReflectionProvider.GetVariables(NetPrints.Reflection.ReflectionProviderVariableQuery! query) -> System.Collections.Generic.IEnumerable<NetPrints.Core.VariableSpecifier!>!
+NetPrints.Reflection.IReflectionProvider.HasImplicitCast(NetPrints.Core.TypeSpecifier! fromType, NetPrints.Core.TypeSpecifier! toType) -> bool
+NetPrints.Reflection.IReflectionProvider.TypeSpecifierIsSubclassOf(NetPrints.Core.TypeSpecifier! a, NetPrints.Core.TypeSpecifier! b) -> bool
+NetPrints.Reflection.IReflectionProviderQuery
+NetPrints.Reflection.ISymbolExtensions
+NetPrints.Reflection.ITypeCatalog
+NetPrints.Reflection.ITypeCatalog.Info.get -> NetPrints.Reflection.CatalogInfo!
+NetPrints.Reflection.MemberCache
+NetPrints.Reflection.MemberCache.MemberCache() -> void
+NetPrints.Reflection.Memoization
+NetPrints.Reflection.MemoizedReflectionProvider
+NetPrints.Reflection.MemoizedReflectionProvider.GetConstructors(NetPrints.Core.TypeSpecifier! typeSpecifier) -> System.Collections.Generic.IEnumerable<NetPrints.Core.ConstructorSpecifier!>!
+NetPrints.Reflection.MemoizedReflectionProvider.GetEnumNames(NetPrints.Core.TypeSpecifier! typeSpecifier) -> System.Collections.Generic.IEnumerable<string!>!
+NetPrints.Reflection.MemoizedReflectionProvider.GetMethodDocumentation(NetPrints.Core.MethodSpecifier! methodSpecifier) -> string?
+NetPrints.Reflection.MemoizedReflectionProvider.GetMethodParameterDocumentation(NetPrints.Core.MethodSpecifier! methodSpecifier, int parameterIndex) -> string?
+NetPrints.Reflection.MemoizedReflectionProvider.GetMethodReturnDocumentation(NetPrints.Core.MethodSpecifier! methodSpecifier, int returnIndex) -> string?
+NetPrints.Reflection.MemoizedReflectionProvider.GetMethods(NetPrints.Reflection.ReflectionProviderMethodQuery! query) -> System.Collections.Generic.IEnumerable<NetPrints.Core.MethodSpecifier!>!
+NetPrints.Reflection.MemoizedReflectionProvider.GetNonStaticTypes() -> System.Collections.Generic.IEnumerable<NetPrints.Core.TypeSpecifier!>!
+NetPrints.Reflection.MemoizedReflectionProvider.GetOverridableMethodsForType(NetPrints.Core.TypeSpecifier! typeSpecifier) -> System.Collections.Generic.IEnumerable<NetPrints.Core.MethodSpecifier!>!
+NetPrints.Reflection.MemoizedReflectionProvider.GetPublicMethodOverloads(NetPrints.Core.MethodSpecifier! methodSpecifier) -> System.Collections.Generic.IEnumerable<NetPrints.Core.MethodSpecifier!>!
+NetPrints.Reflection.MemoizedReflectionProvider.GetVariables(NetPrints.Reflection.ReflectionProviderVariableQuery! query) -> System.Collections.Generic.IEnumerable<NetPrints.Core.VariableSpecifier!>!
+NetPrints.Reflection.MemoizedReflectionProvider.HasImplicitCast(NetPrints.Core.TypeSpecifier! fromType, NetPrints.Core.TypeSpecifier! toType) -> bool
+NetPrints.Reflection.MemoizedReflectionProvider.MemoizedReflectionProvider(NetPrints.Reflection.IReflectionProvider! reflectionProvider) -> void
+NetPrints.Reflection.MemoizedReflectionProvider.Reset() -> void
+NetPrints.Reflection.MemoizedReflectionProvider.TypeSpecifierIsSubclassOf(NetPrints.Core.TypeSpecifier! a, NetPrints.Core.TypeSpecifier! b) -> bool
+NetPrints.Reflection.ReflectionConverter
+NetPrints.Reflection.ReflectionProvider
+NetPrints.Reflection.ReflectionProvider.GetConstructors(NetPrints.Core.TypeSpecifier! typeSpecifier) -> System.Collections.Generic.IEnumerable<NetPrints.Core.ConstructorSpecifier!>!
+NetPrints.Reflection.ReflectionProvider.GetEnumNames(NetPrints.Core.TypeSpecifier! typeSpecifier) -> System.Collections.Generic.IEnumerable<string!>!
+NetPrints.Reflection.ReflectionProvider.GetMethodDocumentation(NetPrints.Core.MethodSpecifier! methodSpecifier) -> string?
+NetPrints.Reflection.ReflectionProvider.GetMethodParameterDocumentation(NetPrints.Core.MethodSpecifier! methodSpecifier, int parameterIndex) -> string?
+NetPrints.Reflection.ReflectionProvider.GetMethodReturnDocumentation(NetPrints.Core.MethodSpecifier! methodSpecifier, int returnIndex) -> string?
+NetPrints.Reflection.ReflectionProvider.GetMethods(NetPrints.Reflection.ReflectionProviderMethodQuery! query) -> System.Collections.Generic.IEnumerable<NetPrints.Core.MethodSpecifier!>!
+NetPrints.Reflection.ReflectionProvider.GetNonStaticTypes() -> System.Collections.Generic.IEnumerable<NetPrints.Core.TypeSpecifier!>!
+NetPrints.Reflection.ReflectionProvider.GetOverridableMethodsForType(NetPrints.Core.TypeSpecifier! typeSpecifier) -> System.Collections.Generic.IEnumerable<NetPrints.Core.MethodSpecifier!>!
+NetPrints.Reflection.ReflectionProvider.GetPublicMethodOverloads(NetPrints.Core.MethodSpecifier! methodSpecifier) -> System.Collections.Generic.IEnumerable<NetPrints.Core.MethodSpecifier!>!
+NetPrints.Reflection.ReflectionProvider.GetVariables(NetPrints.Reflection.ReflectionProviderVariableQuery! query) -> System.Collections.Generic.IEnumerable<NetPrints.Core.VariableSpecifier!>!
+NetPrints.Reflection.ReflectionProvider.HasImplicitCast(NetPrints.Core.TypeSpecifier! fromType, NetPrints.Core.TypeSpecifier! toType) -> bool
+NetPrints.Reflection.ReflectionProvider.ReflectionProvider(System.Collections.Generic.IReadOnlyList<NetPrints.Projects.ResolvedAssembly!>! assemblies, System.Collections.Generic.IReadOnlyList<NetPrints.Compilation.SourceFile!>! sources, System.Collections.Generic.IReadOnlySet<string!>! excludedAssemblyNames) -> void
+NetPrints.Reflection.ReflectionProvider.TypeSpecifierIsSubclassOf(NetPrints.Core.TypeSpecifier! a, NetPrints.Core.TypeSpecifier! b) -> bool
+NetPrints.Reflection.ReflectionProviderMethodQuery
+NetPrints.Reflection.ReflectionProviderMethodQuery.ArgumentType.get -> NetPrints.Core.TypeSpecifier?
+NetPrints.Reflection.ReflectionProviderMethodQuery.ArgumentType.set -> void
+NetPrints.Reflection.ReflectionProviderMethodQuery.Equals(NetPrints.Reflection.ReflectionProviderMethodQuery? x, NetPrints.Reflection.ReflectionProviderMethodQuery? y) -> bool
+NetPrints.Reflection.ReflectionProviderMethodQuery.GetHashCode(NetPrints.Reflection.ReflectionProviderMethodQuery! obj) -> int
+NetPrints.Reflection.ReflectionProviderMethodQuery.HasGenericArguments.get -> bool?
+NetPrints.Reflection.ReflectionProviderMethodQuery.HasGenericArguments.set -> void
+NetPrints.Reflection.ReflectionProviderMethodQuery.ReflectionProviderMethodQuery() -> void
+NetPrints.Reflection.ReflectionProviderMethodQuery.ReturnType.get -> NetPrints.Core.TypeSpecifier?
+NetPrints.Reflection.ReflectionProviderMethodQuery.ReturnType.set -> void
+NetPrints.Reflection.ReflectionProviderMethodQuery.Static.get -> bool?
+NetPrints.Reflection.ReflectionProviderMethodQuery.Static.set -> void
+NetPrints.Reflection.ReflectionProviderMethodQuery.Type.get -> NetPrints.Core.TypeSpecifier?
+NetPrints.Reflection.ReflectionProviderMethodQuery.Type.set -> void
+NetPrints.Reflection.ReflectionProviderMethodQuery.VisibleFrom.get -> NetPrints.Core.TypeSpecifier?
+NetPrints.Reflection.ReflectionProviderMethodQuery.VisibleFrom.set -> void
+NetPrints.Reflection.ReflectionProviderMethodQuery.WithArgumentType(NetPrints.Core.TypeSpecifier! argumentType) -> NetPrints.Reflection.ReflectionProviderMethodQuery!
+NetPrints.Reflection.ReflectionProviderMethodQuery.WithHasGenericArguments(bool hasGenericArguments) -> NetPrints.Reflection.ReflectionProviderMethodQuery!
+NetPrints.Reflection.ReflectionProviderMethodQuery.WithReturnType(NetPrints.Core.TypeSpecifier! returnType) -> NetPrints.Reflection.ReflectionProviderMethodQuery!
+NetPrints.Reflection.ReflectionProviderMethodQuery.WithStatic(bool isStatic) -> NetPrints.Reflection.ReflectionProviderMethodQuery!
+NetPrints.Reflection.ReflectionProviderMethodQuery.WithType(NetPrints.Core.TypeSpecifier! type) -> NetPrints.Reflection.ReflectionProviderMethodQuery!
+NetPrints.Reflection.ReflectionProviderMethodQuery.WithVisibleFrom(NetPrints.Core.TypeSpecifier! visibleFrom) -> NetPrints.Reflection.ReflectionProviderMethodQuery!
+NetPrints.Reflection.ReflectionProviderVariableQuery
+NetPrints.Reflection.ReflectionProviderVariableQuery.Equals(NetPrints.Reflection.ReflectionProviderVariableQuery? x, NetPrints.Reflection.ReflectionProviderVariableQuery? y) -> bool
+NetPrints.Reflection.ReflectionProviderVariableQuery.GetHashCode(NetPrints.Reflection.ReflectionProviderVariableQuery! obj) -> int
+NetPrints.Reflection.ReflectionProviderVariableQuery.ReflectionProviderVariableQuery() -> void
+NetPrints.Reflection.ReflectionProviderVariableQuery.Static.get -> bool?
+NetPrints.Reflection.ReflectionProviderVariableQuery.Static.set -> void
+NetPrints.Reflection.ReflectionProviderVariableQuery.Type.get -> NetPrints.Core.TypeSpecifier?
+NetPrints.Reflection.ReflectionProviderVariableQuery.Type.set -> void
+NetPrints.Reflection.ReflectionProviderVariableQuery.VariableType.get -> NetPrints.Core.TypeSpecifier?
+NetPrints.Reflection.ReflectionProviderVariableQuery.VariableType.set -> void
+NetPrints.Reflection.ReflectionProviderVariableQuery.VariableTypeDerivesFrom.get -> bool
+NetPrints.Reflection.ReflectionProviderVariableQuery.VariableTypeDerivesFrom.set -> void
+NetPrints.Reflection.ReflectionProviderVariableQuery.VisibleFrom.get -> NetPrints.Core.TypeSpecifier?
+NetPrints.Reflection.ReflectionProviderVariableQuery.VisibleFrom.set -> void
+NetPrints.Reflection.ReflectionProviderVariableQuery.WithStatic(bool isStatic) -> NetPrints.Reflection.ReflectionProviderVariableQuery!
+NetPrints.Reflection.ReflectionProviderVariableQuery.WithType(NetPrints.Core.TypeSpecifier! type) -> NetPrints.Reflection.ReflectionProviderVariableQuery!
+NetPrints.Reflection.ReflectionProviderVariableQuery.WithVariableType(NetPrints.Core.TypeSpecifier! type, bool derivesFrom = false) -> NetPrints.Reflection.ReflectionProviderVariableQuery!
+NetPrints.Reflection.ReflectionProviderVariableQuery.WithVisibleFrom(NetPrints.Core.TypeSpecifier! visibleFrom) -> NetPrints.Reflection.ReflectionProviderVariableQuery!
+override NetPrints.Reflection.CatalogInfo.Equals(object? obj) -> bool
+override NetPrints.Reflection.CatalogInfo.GetHashCode() -> int
+override NetPrints.Reflection.CatalogInfo.ToString() -> string!
+override NetPrints.Reflection.ReflectionProviderMethodQuery.Equals(object? obj) -> bool
+override NetPrints.Reflection.ReflectionProviderMethodQuery.GetHashCode() -> int
+override NetPrints.Reflection.ReflectionProviderVariableQuery.Equals(object? obj) -> bool
+override NetPrints.Reflection.ReflectionProviderVariableQuery.GetHashCode() -> int
+static NetPrints.Reflection.CatalogInfo.operator !=(NetPrints.Reflection.CatalogInfo? left, NetPrints.Reflection.CatalogInfo? right) -> bool
+static NetPrints.Reflection.CatalogInfo.operator ==(NetPrints.Reflection.CatalogInfo? left, NetPrints.Reflection.CatalogInfo? right) -> bool
+static NetPrints.Reflection.DefaultOperatorSpecifiers.All.get -> System.Collections.Generic.IEnumerable<NetPrints.Core.MethodSpecifier!>!
+static NetPrints.Reflection.ISymbolExtensions.GetAllMembers(this Microsoft.CodeAnalysis.ITypeSymbol! symbol, NetPrints.Reflection.MemberCache! cache) -> System.Collections.Generic.IEnumerable<Microsoft.CodeAnalysis.ISymbol!>!
+static NetPrints.Reflection.ISymbolExtensions.GetConverters(this Microsoft.CodeAnalysis.ITypeSymbol! symbol, NetPrints.Reflection.MemberCache! cache) -> System.Collections.Generic.IEnumerable<Microsoft.CodeAnalysis.IMethodSymbol!>!
+static NetPrints.Reflection.ISymbolExtensions.GetFullName(this Microsoft.CodeAnalysis.ITypeSymbol! typeSymbol) -> string!
+static NetPrints.Reflection.ISymbolExtensions.GetMethods(this Microsoft.CodeAnalysis.ITypeSymbol! symbol, NetPrints.Reflection.MemberCache! cache) -> System.Collections.Generic.IEnumerable<Microsoft.CodeAnalysis.IMethodSymbol!>!
+static NetPrints.Reflection.ISymbolExtensions.IsProtected(this Microsoft.CodeAnalysis.ISymbol! symbol) -> bool
+static NetPrints.Reflection.ISymbolExtensions.IsPublic(this Microsoft.CodeAnalysis.ISymbol! symbol) -> bool
+static NetPrints.Reflection.ISymbolExtensions.IsSubclassOf(this Microsoft.CodeAnalysis.ITypeSymbol? symbol, Microsoft.CodeAnalysis.ITypeSymbol? cls) -> bool
+static NetPrints.Reflection.Memoization.Detuplify<A, B, R>(this System.Func<System.Tuple<A, B>!, R>! f) -> System.Func<A, B, R>!
+static NetPrints.Reflection.Memoization.Memoize<A, B, R>(this System.Func<A, B, R>! f) -> System.Func<A, B, R>!
+static NetPrints.Reflection.Memoization.Memoize<A, R>(this System.Func<A, R>! f) -> System.Func<A, R>!
+static NetPrints.Reflection.Memoization.Memoize<R>(this System.Func<R>! f) -> System.Func<R>!
+static NetPrints.Reflection.Memoization.Tuplify<A, B, R>(this System.Func<A, B, R>! f) -> System.Func<System.Tuple<A, B>!, R>!
+static NetPrints.Reflection.ReflectionConverter.BaseTypeSpecifierFromSymbol(Microsoft.CodeAnalysis.ITypeSymbol! type) -> NetPrints.Core.BaseType!
+static NetPrints.Reflection.ReflectionConverter.ConstructorSpecifierFromSymbol(Microsoft.CodeAnalysis.IMethodSymbol! constructorMethodSymbol) -> NetPrints.Core.ConstructorSpecifier!
+static NetPrints.Reflection.ReflectionConverter.GenericTypeSpecifierFromSymbol(Microsoft.CodeAnalysis.ITypeParameterSymbol! type) -> NetPrints.Core.GenericType!
+static NetPrints.Reflection.ReflectionConverter.MethodParameterFromSymbol(in Microsoft.CodeAnalysis.IParameterSymbol! paramSymbol) -> NetPrints.Core.MethodParameter!
+static NetPrints.Reflection.ReflectionConverter.MethodSpecifierFromSymbol(Microsoft.CodeAnalysis.IMethodSymbol! method) -> NetPrints.Core.MethodSpecifier!
+static NetPrints.Reflection.ReflectionConverter.NamedBaseTypeSpecifierFromSymbol(Microsoft.CodeAnalysis.IParameterSymbol! paramSymbol) -> NetPrints.Core.Named<NetPrints.Core.BaseType!>!
+static NetPrints.Reflection.ReflectionConverter.TypeSpecifierFromSymbol(Microsoft.CodeAnalysis.ITypeSymbol! type) -> NetPrints.Core.TypeSpecifier!
+static NetPrints.Reflection.ReflectionConverter.VariableSpecifierFromField(Microsoft.CodeAnalysis.IFieldSymbol! field) -> NetPrints.Core.VariableSpecifier!
+static NetPrints.Reflection.ReflectionConverter.VariableSpecifierFromSymbol(Microsoft.CodeAnalysis.IPropertySymbol! property) -> NetPrints.Core.VariableSpecifier!
+static NetPrints.Reflection.ReflectionConverter.VisibilityFromAccessibility(Microsoft.CodeAnalysis.Accessibility accessibility) -> NetPrints.Core.MemberVisibility

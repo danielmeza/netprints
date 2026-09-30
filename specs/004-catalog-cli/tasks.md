@@ -96,20 +96,20 @@ tracked API.
 
 ### Batch B1 — model: sonnet — T008–T011 — 5 units
 
-- [ ] T008 [US6] Test first (AP-T01): `tests/NetPrints.Core.Tests/Architecture/PublicApiTrackingTests.cs` — each project
+- [x] T008 [US6] Test first (AP-T01): `tests/NetPrints.Core.Tests/Architecture/PublicApiTrackingTests.cs` — each project
   with `NetPrintsTrackPublicApi=true` (Extensibility, Core, Reflection, Serialization, Catalog) has
   `PublicAPI.Shipped.txt` and `PublicAPI.Unshipped.txt` whose first line is `#nullable enable`; an in-test Roslyn
   compilation running the PublicApiAnalyzers analyzer (path from `$(PkgMicrosoft_CodeAnalysis_PublicApiAnalyzers)`,
   `GeneratePathProperty="true"` on a test-only `PackageReference`) reports RS0016 for an undeclared public type.
-- [ ] T009 [US6] In `src/Directory.Build.props`, when `'$(NetPrintsTrackPublicApi)' == 'true'`, reference
+- [x] T009 [US6] In `src/Directory.Build.props`, when `'$(NetPrintsTrackPublicApi)' == 'true'`, reference
   `Microsoft.CodeAnalysis.PublicApiAnalyzers` (`PrivateAssets="all"`) and add both files as `AdditionalFiles`; set the
   property in `src/NetPrints.{Extensibility,Core,Reflection,Serialization,Catalog}/*.csproj`; create the ten files.
-- [ ] T010 [US6] Fill the files with the analyzer's code fix (`dotnet format analyzers src/<P>/<P>.csproj --diagnostics
+- [x] T010 [US6] Fill the files with the analyzer's code fix (`dotnet format analyzers src/<P>/<P>.csproj --diagnostics
   RS0016 RS0037 --severity info`; if the fixer does not apply, use the IDE's fix-all or list the API of the built
   assembly with a throwaway script, and say which in implementation-notes.md); move every Core and Reflection entry to `PublicAPI.Shipped.txt` (their API equals
   `v0.1.1`; confirm `git diff v0.1.1 -- src/NetPrints.Core src/NetPrints.Reflection` shows no public API change);
   Extensibility, Serialization and Catalog keep everything in Unshipped.
-- [ ] T011 [US6] Fix every other new analyzer diagnostic (RS0026, RS0027, RS0041, …) in the
+- [x] T011 [US6] Fix every other new analyzer diagnostic (RS0026, RS0027, RS0041, …) in the
   `src/NetPrints.{Extensibility,Core,Reflection,Serialization}/` files the analyzers report, with a real API change, never
   a suppression; note each in implementation-notes.md; whole suite; commit.
 

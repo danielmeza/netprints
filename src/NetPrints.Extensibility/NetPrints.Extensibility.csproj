@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
+    <NetPrintsTrackPublicApi>true</NetPrintsTrackPublicApi>
     <AssemblyName>NetPrints.Extensibility</AssemblyName>
     <ImplicitUsings>enable</ImplicitUsings>
     <WarningsAsErrors>$(WarningsAsErrors);CA1848;CA2254</WarningsAsErrors>

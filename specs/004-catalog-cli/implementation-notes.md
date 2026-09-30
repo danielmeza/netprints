@@ -24,6 +24,12 @@
 
 **CI**: green run 36654324173 at 0b57512. The Release runs at 355905b and 0613745 failed and were fixed by 0613745 and 0b57512.
 
+## Batch B1 (T008-T011) — API tracking
+
+- T010: `dotnet format analyzers src/<P>/<P>.csproj --diagnostics RS0016 RS0037 --severity info` applied for every project. Entries: Core 1251, Extensibility 338, Reflection 169, Serialization 899, Catalog 0 (no public API yet). Core and Reflection moved to `PublicAPI.Shipped.txt` (`git diff v0.1.1` on them shows only the new `NetPrintsTrackPublicApi` property); the rest stay in Unshipped.
+- T011: no other analyzer diagnostic (RS0026, RS0027, RS0041, ...) fires, so no API change was needed.
+- T008: the test project references the analyzer package only for its path (`GeneratePathProperty`); `ExcludeAssets` does not keep its analyzer off the compilation, so a target removes that `Analyzer` item.
+
 ## Deviations
 
 - Commit 0613745's message lost `$(TargetPath)` to shell expansion.

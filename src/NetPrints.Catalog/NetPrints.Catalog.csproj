@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
+    <NetPrintsTrackPublicApi>true</NetPrintsTrackPublicApi>
     <IsPackable>true</IsPackable>
     <EnablePackageValidation>true</EnablePackageValidation>
     <PackageId>NetPrints.Catalog</PackageId>

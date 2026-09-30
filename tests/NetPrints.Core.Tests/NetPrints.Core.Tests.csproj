@@ -20,6 +20,22 @@
     <PackageReference Include="Microsoft.Build.Framework" ExcludeAssets="runtime" PrivateAssets="all" />
     <!-- SchemaTests (R1-17): validates the AllNodes/HelloWorld fixtures against the committed schema. -->
     <PackageReference Include="JsonSchema.Net" />
+    <!-- PublicApiTrackingTests (AP-T01) loads the analyzer from its package folder; it must not analyze the tests. -->
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" GeneratePathProperty="true" PrivateAssets="all" />
+  </ItemGroup>
+
+  <!-- The package is here only for its path: keep its analyzer off this project's own compilation. -->
+  <Target Name="DropPublicApiAnalyzerFromTests" AfterTargets="ResolveLockFileAnalyzers">
+    <ItemGroup>
+      <Analyzer Remove="@(Analyzer)" Condition="'%(Analyzer.NuGetPackageId)' == 'Microsoft.CodeAnalysis.PublicApiAnalyzers'" />
+    </ItemGroup>
+  </Target>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>PublicApiAnalyzersPath</_Parameter1>
+      <_Parameter2>$(PkgMicrosoft_CodeAnalysis_PublicApiAnalyzers)</_Parameter2>
+    </AssemblyAttribute>
   </ItemGroup>
 
   <ItemGroup>
