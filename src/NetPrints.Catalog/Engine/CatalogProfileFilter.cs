@@ -77,7 +77,7 @@ public sealed class CatalogProfileFilter : ICatalogFilter
 
     private static bool AnnotatedSelectsType(INamedTypeSymbol type) =>
         SymbolAttributes.Has(type, SymbolAttributes.TypeAttribute)
-        || type.GetMembers().OfType<IMethodSymbol>().Any(method => SymbolAttributes.Has(method, SymbolAttributes.NodeAttribute));
+        || type.GetMembers().OfType<IMethodSymbol>().Any(method => Exposure.IsCatalogMember(method) && !SymbolAttributes.Has(method, SymbolAttributes.IgnoreAttribute) && SymbolAttributes.Has(method, SymbolAttributes.NodeAttribute));
 
     private static bool AnnotatedSelectsMember(ISymbol member) =>
         SymbolAttributes.Has(member, SymbolAttributes.NodeAttribute)

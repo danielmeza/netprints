@@ -303,53 +303,6 @@ static NetPrints.Catalog.CatalogTypeRef.operator !=(NetPrints.Catalog.CatalogTyp
 static NetPrints.Catalog.CatalogTypeRef.operator ==(NetPrints.Catalog.CatalogTypeRef? left, NetPrints.Catalog.CatalogTypeRef? right) -> bool
 static NetPrints.Catalog.CatalogVariable.operator !=(NetPrints.Catalog.CatalogVariable? left, NetPrints.Catalog.CatalogVariable? right) -> bool
 static NetPrints.Catalog.CatalogVariable.operator ==(NetPrints.Catalog.CatalogVariable? left, NetPrints.Catalog.CatalogVariable? right) -> bool
-NetPrints.Catalog.CatalogSchema
-static NetPrints.Catalog.CatalogSchema.GenerateV1() -> string!
-NetPrints.Catalog.Glob
-static NetPrints.Catalog.Glob.AnyMatch(System.Collections.Generic.IReadOnlyList<string!>? patterns, string! text) -> bool
-static NetPrints.Catalog.Glob.IsMatch(string! pattern, string! text) -> bool
-[NPXE0004]NetPrints.Catalog.BuiltInCatalogProfiles
-[NPXE0004]static NetPrints.Catalog.BuiltInCatalogProfiles.Annotated.get -> NetPrints.Catalog.CatalogProfile!
-[NPXE0004]static NetPrints.Catalog.BuiltInCatalogProfiles.Ids.get -> System.Collections.Generic.IReadOnlyList<string!>!
-[NPXE0004]static NetPrints.Catalog.BuiltInCatalogProfiles.PublicApi.get -> NetPrints.Catalog.CatalogProfile!
-[NPXE0004]static NetPrints.Catalog.BuiltInCatalogProfiles.TryGet(string! id) -> NetPrints.Catalog.CatalogProfile?
-[NPXE0004]NetPrints.Catalog.CatalogArgumentMatch
-[NPXE0004]NetPrints.Catalog.CatalogArgumentMatch.<Clone>$() -> NetPrints.Catalog.CatalogArgumentMatch!
-[NPXE0004]NetPrints.Catalog.CatalogArgumentMatch.CatalogArgumentMatch(string? Name = null, int? Position = null, string? EqualsValue = null, string? ContainsValue = null) -> void
-[NPXE0004]NetPrints.Catalog.CatalogArgumentMatch.ContainsValue.get -> string?
-[NPXE0004]NetPrints.Catalog.CatalogArgumentMatch.ContainsValue.init -> void
-[NPXE0004]NetPrints.Catalog.CatalogArgumentMatch.Deconstruct(out string? Name, out int? Position, out string? EqualsValue, out string? ContainsValue) -> void
-[NPXE0004]NetPrints.Catalog.CatalogArgumentMatch.Equals(NetPrints.Catalog.CatalogArgumentMatch? other) -> bool
-[NPXE0004]override NetPrints.Catalog.CatalogArgumentMatch.Equals(object? obj) -> bool
-[NPXE0004]NetPrints.Catalog.CatalogArgumentMatch.EqualsValue.get -> string?
-[NPXE0004]NetPrints.Catalog.CatalogArgumentMatch.EqualsValue.init -> void
-[NPXE0004]override NetPrints.Catalog.CatalogArgumentMatch.GetHashCode() -> int
-[NPXE0004]NetPrints.Catalog.CatalogArgumentMatch.Name.get -> string?
-[NPXE0004]NetPrints.Catalog.CatalogArgumentMatch.Name.init -> void
-[NPXE0004]NetPrints.Catalog.CatalogArgumentMatch.Position.get -> int?
-[NPXE0004]NetPrints.Catalog.CatalogArgumentMatch.Position.init -> void
-[NPXE0004]override NetPrints.Catalog.CatalogArgumentMatch.ToString() -> string!
-[NPXE0004]static NetPrints.Catalog.CatalogArgumentMatch.operator !=(NetPrints.Catalog.CatalogArgumentMatch? left, NetPrints.Catalog.CatalogArgumentMatch? right) -> bool
-[NPXE0004]static NetPrints.Catalog.CatalogArgumentMatch.operator ==(NetPrints.Catalog.CatalogArgumentMatch? left, NetPrints.Catalog.CatalogArgumentMatch? right) -> bool
-[NPXE0004]NetPrints.Catalog.CatalogAttributeRule
-[NPXE0004]NetPrints.Catalog.CatalogAttributeRule.<Clone>$() -> NetPrints.Catalog.CatalogAttributeRule!
-[NPXE0004]NetPrints.Catalog.CatalogAttributeRule.Argument.get -> NetPrints.Catalog.CatalogArgumentMatch?
-[NPXE0004]NetPrints.Catalog.CatalogAttributeRule.Argument.init -> void
-[NPXE0004]NetPrints.Catalog.CatalogAttributeRule.Attribute.get -> string!
-[NPXE0004]NetPrints.Catalog.CatalogAttributeRule.Attribute.init -> void
-[NPXE0004]NetPrints.Catalog.CatalogAttributeRule.CatalogAttributeRule(NetPrints.Catalog.CatalogAttributeRuleKind Rule, string! Attribute, NetPrints.Catalog.CatalogArgumentMatch? Argument = null) -> void
-[NPXE0004]NetPrints.Catalog.CatalogAttributeRule.Deconstruct(out NetPrints.Catalog.CatalogAttributeRuleKind Rule, out string! Attribute, out NetPrints.Catalog.CatalogArgumentMatch? Argument) -> void
-[NPXE0004]NetPrints.Catalog.CatalogAttributeRule.Equals(NetPrints.Catalog.CatalogAttributeRule? other) -> bool
-[NPXE0004]override NetPrints.Catalog.CatalogAttributeRule.Equals(object? obj) -> bool
-[NPXE0004]override NetPrints.Catalog.CatalogAttributeRule.GetHashCode() -> int
-[NPXE0004]NetPrints.Catalog.CatalogAttributeRule.Rule.get -> NetPrints.Catalog.CatalogAttributeRuleKind
-[NPXE0004]NetPrints.Catalog.CatalogAttributeRule.Rule.init -> void
-[NPXE0004]override NetPrints.Catalog.CatalogAttributeRule.ToString() -> string!
-[NPXE0004]static NetPrints.Catalog.CatalogAttributeRule.operator !=(NetPrints.Catalog.CatalogAttributeRule? left, NetPrints.Catalog.CatalogAttributeRule? right) -> bool
-[NPXE0004]static NetPrints.Catalog.CatalogAttributeRule.operator ==(NetPrints.Catalog.CatalogAttributeRule? left, NetPrints.Catalog.CatalogAttributeRule? right) -> bool
-[NPXE0004]NetPrints.Catalog.CatalogAttributeRuleKind
-[NPXE0004]NetPrints.Catalog.CatalogAttributeRuleKind.Exclude = 1 -> NetPrints.Catalog.CatalogAttributeRuleKind
-[NPXE0004]NetPrints.Catalog.CatalogAttributeRuleKind.Require = 0 -> NetPrints.Catalog.CatalogAttributeRuleKind
 NetPrints.Catalog.CatalogBuildResult
 NetPrints.Catalog.CatalogBuildResult.<Clone>$() -> NetPrints.Catalog.CatalogBuildResult!
 NetPrints.Catalog.CatalogBuildResult.CatalogBuildResult(NetPrints.Catalog.CatalogDocument! Document, System.Collections.Generic.IReadOnlyList<NetPrints.Catalog.CatalogDiagnostic!>! Diagnostics) -> void
@@ -364,91 +317,6 @@ override NetPrints.Catalog.CatalogBuildResult.GetHashCode() -> int
 override NetPrints.Catalog.CatalogBuildResult.ToString() -> string!
 static NetPrints.Catalog.CatalogBuildResult.operator !=(NetPrints.Catalog.CatalogBuildResult? left, NetPrints.Catalog.CatalogBuildResult? right) -> bool
 static NetPrints.Catalog.CatalogBuildResult.operator ==(NetPrints.Catalog.CatalogBuildResult? left, NetPrints.Catalog.CatalogBuildResult? right) -> bool
-[NPXE0004]NetPrints.Catalog.CatalogBuilder
-[NPXE0004]static NetPrints.Catalog.CatalogBuilder.Build(Microsoft.CodeAnalysis.Compilation! compilation, System.Collections.Generic.IReadOnlyList<Microsoft.CodeAnalysis.IAssemblySymbol!>! assemblies, NetPrints.Catalog.ICatalogFilter! filter, NetPrints.Catalog.IDocumentationSource! documentation, NetPrints.Catalog.CatalogIdentity! identity) -> NetPrints.Catalog.CatalogBuildResult!
-NetPrints.Catalog.CatalogIdentity
-NetPrints.Catalog.CatalogIdentity.<Clone>$() -> NetPrints.Catalog.CatalogIdentity!
-NetPrints.Catalog.CatalogIdentity.CatalogIdentity(string? Id = null, string? Version = null) -> void
-NetPrints.Catalog.CatalogIdentity.Deconstruct(out string? Id, out string? Version) -> void
-NetPrints.Catalog.CatalogIdentity.Equals(NetPrints.Catalog.CatalogIdentity? other) -> bool
-override NetPrints.Catalog.CatalogIdentity.Equals(object? obj) -> bool
-override NetPrints.Catalog.CatalogIdentity.GetHashCode() -> int
-NetPrints.Catalog.CatalogIdentity.Id.get -> string?
-NetPrints.Catalog.CatalogIdentity.Id.init -> void
-static NetPrints.Catalog.CatalogIdentity.IsValidId(string? id) -> bool
-override NetPrints.Catalog.CatalogIdentity.ToString() -> string!
-NetPrints.Catalog.CatalogIdentity.Version.get -> string?
-NetPrints.Catalog.CatalogIdentity.Version.init -> void
-static NetPrints.Catalog.CatalogIdentity.operator !=(NetPrints.Catalog.CatalogIdentity? left, NetPrints.Catalog.CatalogIdentity? right) -> bool
-static NetPrints.Catalog.CatalogIdentity.operator ==(NetPrints.Catalog.CatalogIdentity? left, NetPrints.Catalog.CatalogIdentity? right) -> bool
-[NPXE0004]NetPrints.Catalog.CatalogObsoleteMode
-[NPXE0004]NetPrints.Catalog.CatalogObsoleteMode.Exclude = 1 -> NetPrints.Catalog.CatalogObsoleteMode
-[NPXE0004]NetPrints.Catalog.CatalogObsoleteMode.ExcludeErrors = 2 -> NetPrints.Catalog.CatalogObsoleteMode
-[NPXE0004]NetPrints.Catalog.CatalogObsoleteMode.Include = 0 -> NetPrints.Catalog.CatalogObsoleteMode
-[NPXE0004]NetPrints.Catalog.CatalogProfile
-[NPXE0004]NetPrints.Catalog.CatalogProfile.<Clone>$() -> NetPrints.Catalog.CatalogProfile!
-[NPXE0004]const NetPrints.Catalog.CatalogProfile.AnnotatedId = "annotated" -> string!
-[NPXE0004]NetPrints.Catalog.CatalogProfile.Base.get -> NetPrints.Catalog.CatalogProfileBase
-[NPXE0004]NetPrints.Catalog.CatalogProfile.Base.init -> void
-[NPXE0004]NetPrints.Catalog.CatalogProfile.CatalogProfile(string! Id, NetPrints.Catalog.CatalogProfileBase Base = NetPrints.Catalog.CatalogProfileBase.PublicApi, System.Collections.Generic.IReadOnlyList<string!>? IncludeNamespaces = null, System.Collections.Generic.IReadOnlyList<string!>? ExcludeNamespaces = null, System.Collections.Generic.IReadOnlyList<string!>? IncludeTypes = null, System.Collections.Generic.IReadOnlyList<string!>? ExcludeTypes = null, System.Collections.Generic.IReadOnlyList<NetPrints.Catalog.CatalogAttributeRule!>? TypeAttributes = null, System.Collections.Generic.IReadOnlyList<NetPrints.Catalog.CatalogAttributeRule!>? MemberAttributes = null, NetPrints.Catalog.CatalogObsoleteMode Obsolete = NetPrints.Catalog.CatalogObsoleteMode.ExcludeErrors, int SchemaVersion = 1) -> void
-[NPXE0004]const NetPrints.Catalog.CatalogProfile.CurrentSchemaVersion = 1 -> int
-[NPXE0004]NetPrints.Catalog.CatalogProfile.Deconstruct(out string! Id, out NetPrints.Catalog.CatalogProfileBase Base, out System.Collections.Generic.IReadOnlyList<string!>? IncludeNamespaces, out System.Collections.Generic.IReadOnlyList<string!>? ExcludeNamespaces, out System.Collections.Generic.IReadOnlyList<string!>? IncludeTypes, out System.Collections.Generic.IReadOnlyList<string!>? ExcludeTypes, out System.Collections.Generic.IReadOnlyList<NetPrints.Catalog.CatalogAttributeRule!>? TypeAttributes, out System.Collections.Generic.IReadOnlyList<NetPrints.Catalog.CatalogAttributeRule!>? MemberAttributes, out NetPrints.Catalog.CatalogObsoleteMode Obsolete, out int SchemaVersion) -> void
-[NPXE0004]NetPrints.Catalog.CatalogProfile.Equals(NetPrints.Catalog.CatalogProfile? other) -> bool
-[NPXE0004]override NetPrints.Catalog.CatalogProfile.Equals(object? obj) -> bool
-[NPXE0004]NetPrints.Catalog.CatalogProfile.ExcludeNamespaces.get -> System.Collections.Generic.IReadOnlyList<string!>?
-[NPXE0004]NetPrints.Catalog.CatalogProfile.ExcludeNamespaces.init -> void
-[NPXE0004]NetPrints.Catalog.CatalogProfile.ExcludeTypes.get -> System.Collections.Generic.IReadOnlyList<string!>?
-[NPXE0004]NetPrints.Catalog.CatalogProfile.ExcludeTypes.init -> void
-[NPXE0004]override NetPrints.Catalog.CatalogProfile.GetHashCode() -> int
-[NPXE0004]NetPrints.Catalog.CatalogProfile.Id.get -> string!
-[NPXE0004]NetPrints.Catalog.CatalogProfile.Id.init -> void
-[NPXE0004]NetPrints.Catalog.CatalogProfile.IncludeNamespaces.get -> System.Collections.Generic.IReadOnlyList<string!>?
-[NPXE0004]NetPrints.Catalog.CatalogProfile.IncludeNamespaces.init -> void
-[NPXE0004]NetPrints.Catalog.CatalogProfile.IncludeTypes.get -> System.Collections.Generic.IReadOnlyList<string!>?
-[NPXE0004]NetPrints.Catalog.CatalogProfile.IncludeTypes.init -> void
-[NPXE0004]NetPrints.Catalog.CatalogProfile.MemberAttributes.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Catalog.CatalogAttributeRule!>?
-[NPXE0004]NetPrints.Catalog.CatalogProfile.MemberAttributes.init -> void
-[NPXE0004]NetPrints.Catalog.CatalogProfile.Obsolete.get -> NetPrints.Catalog.CatalogObsoleteMode
-[NPXE0004]NetPrints.Catalog.CatalogProfile.Obsolete.init -> void
-[NPXE0004]const NetPrints.Catalog.CatalogProfile.PublicApiId = "public-api" -> string!
-[NPXE0004]NetPrints.Catalog.CatalogProfile.SchemaVersion.get -> int
-[NPXE0004]NetPrints.Catalog.CatalogProfile.SchemaVersion.init -> void
-[NPXE0004]override NetPrints.Catalog.CatalogProfile.ToString() -> string!
-[NPXE0004]NetPrints.Catalog.CatalogProfile.TypeAttributes.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Catalog.CatalogAttributeRule!>?
-[NPXE0004]NetPrints.Catalog.CatalogProfile.TypeAttributes.init -> void
-[NPXE0004]static NetPrints.Catalog.CatalogProfile.operator !=(NetPrints.Catalog.CatalogProfile? left, NetPrints.Catalog.CatalogProfile? right) -> bool
-[NPXE0004]static NetPrints.Catalog.CatalogProfile.operator ==(NetPrints.Catalog.CatalogProfile? left, NetPrints.Catalog.CatalogProfile? right) -> bool
-[NPXE0004]NetPrints.Catalog.CatalogProfileBase
-[NPXE0004]NetPrints.Catalog.CatalogProfileBase.Annotated = 1 -> NetPrints.Catalog.CatalogProfileBase
-[NPXE0004]NetPrints.Catalog.CatalogProfileBase.None = 2 -> NetPrints.Catalog.CatalogProfileBase
-[NPXE0004]NetPrints.Catalog.CatalogProfileBase.PublicApi = 0 -> NetPrints.Catalog.CatalogProfileBase
-[NPXE0004]NetPrints.Catalog.CatalogProfileFilter
-[NPXE0004]NetPrints.Catalog.CatalogProfileFilter.CatalogProfileFilter(NetPrints.Catalog.CatalogProfile! profile) -> void
-[NPXE0004]NetPrints.Catalog.CatalogProfileFilter.DescribeNode(Microsoft.CodeAnalysis.ISymbol! symbol) -> NetPrints.Catalog.CatalogNodeHint?
-[NPXE0004]NetPrints.Catalog.CatalogProfileFilter.IncludeMember(Microsoft.CodeAnalysis.ISymbol! member) -> bool
-[NPXE0004]NetPrints.Catalog.CatalogProfileFilter.IncludeType(Microsoft.CodeAnalysis.INamedTypeSymbol! type) -> bool
-[NPXE0004]NetPrints.Catalog.CatalogProfileFilter.ProfileId.get -> string!
-[NPXE0004]NetPrints.Catalog.ICatalogFilter
-[NPXE0004]NetPrints.Catalog.ICatalogFilter.DescribeNode(Microsoft.CodeAnalysis.ISymbol! symbol) -> NetPrints.Catalog.CatalogNodeHint?
-[NPXE0004]NetPrints.Catalog.ICatalogFilter.IncludeMember(Microsoft.CodeAnalysis.ISymbol! member) -> bool
-[NPXE0004]NetPrints.Catalog.ICatalogFilter.IncludeType(Microsoft.CodeAnalysis.INamedTypeSymbol! type) -> bool
-[NPXE0004]NetPrints.Catalog.ICatalogFilter.ProfileId.get -> string!
-NetPrints.Catalog.IDocumentationSource
-NetPrints.Catalog.IDocumentationSource.GetParameter(string! documentationId, string! parameterName) -> string?
-NetPrints.Catalog.IDocumentationSource.GetReturns(string! documentationId) -> string?
-NetPrints.Catalog.IDocumentationSource.GetSummary(string! documentationId) -> string?
-[NPXE0004]NetPrints.Catalog.ProfileJson
-[NPXE0004]static NetPrints.Catalog.ProfileJson.Parse(string! json) -> NetPrints.Catalog.CatalogProfile!
-NetPrints.Catalog.SymbolIds
-static NetPrints.Catalog.SymbolIds.FullName(Microsoft.CodeAnalysis.INamedTypeSymbol! type) -> string!
-static NetPrints.Catalog.SymbolIds.Of(Microsoft.CodeAnalysis.ISymbol! symbol) -> string!
-NetPrints.Catalog.XmlDocumentationSource
-static NetPrints.Catalog.XmlDocumentationSource.Empty.get -> NetPrints.Catalog.XmlDocumentationSource!
-static NetPrints.Catalog.XmlDocumentationSource.FromText(string! xml) -> NetPrints.Catalog.XmlDocumentationSource!
-NetPrints.Catalog.XmlDocumentationSource.GetParameter(string! documentationId, string! parameterName) -> string?
-NetPrints.Catalog.XmlDocumentationSource.GetReturns(string! documentationId) -> string?
-NetPrints.Catalog.XmlDocumentationSource.GetSummary(string! documentationId) -> string?
-NetPrints.Catalog.XmlDocumentationSource.XmlDocumentationSource(System.Collections.Generic.IEnumerable<string!>! xmlTexts) -> void
 NetPrints.Catalog.CatalogOutputConfig
 override NetPrints.Catalog.ResolvedCatalogConfig.GetHashCode() -> int
 NetPrints.Catalog.ResolvedCatalogConfig.Version.init -> void
@@ -473,7 +341,6 @@ static NetPrints.Catalog.CatalogSourceConfig.operator !=(NetPrints.Catalog.Catal
 NetPrints.Catalog.CatalogOutputConfig.Namespace.init -> void
 NetPrints.Catalog.CatalogSourceConfig.<Clone>$() -> NetPrints.Catalog.CatalogSourceConfig!
 NetPrints.Catalog.CatalogOverrides.Exclude.get -> System.Collections.Generic.IReadOnlyList<string!>?
-NetPrints.Catalog.CatalogConfigSchema
 NetPrints.Catalog.ResolvedCatalogConfig.ResolvedCatalogConfig() -> void
 NetPrints.Catalog.ResolvedCatalogConfig.Include.get -> System.Collections.Generic.IReadOnlyList<string!>!
 NetPrints.Catalog.CatalogSourceConfig.CatalogSourceConfig() -> void
@@ -590,7 +457,6 @@ NetPrints.Catalog.ResolvedCatalogConfig.Namespace.get -> string?
 NetPrints.Catalog.CatalogOutputFormat.Csharp = 1 -> NetPrints.Catalog.CatalogOutputFormat
 static NetPrints.Catalog.ResolvedCatalogConfig.operator ==(NetPrints.Catalog.ResolvedCatalogConfig? left, NetPrints.Catalog.ResolvedCatalogConfig? right) -> bool
 NetPrints.Catalog.CatalogOutputConfig.Format.get -> NetPrints.Catalog.CatalogOutputFormat?
-static NetPrints.Catalog.CatalogConfigSchema.GenerateV1() -> string!
 override NetPrints.Catalog.ResolvedCatalogConfig.ToString() -> string!
 NetPrints.Catalog.CatalogOverrides.Version.init -> void
 NetPrints.Catalog.CatalogSourceConfig.Project.init -> void
@@ -607,37 +473,159 @@ NetPrints.Catalog.CatalogOutputConfig.Namespace.get -> string?
 NetPrints.Catalog.CatalogSourceConfig.Assemblies.get -> System.Collections.Generic.IReadOnlyList<string!>?
 NetPrints.Catalog.CatalogSourceConfig.Equals(NetPrints.Catalog.CatalogSourceConfig? other) -> bool
 NetPrints.Catalog.ResolvedCatalogConfig.Format.init -> void
-static NetPrints.Catalog.CSharpLiteral.Quote(string! value) -> string!
-NetPrints.Catalog.CatalogCSharpEmitter
-static NetPrints.Catalog.CatalogCSharpEmitter.Emit(NetPrints.Catalog.CatalogDocument! document, string! namespace, string! className) -> string!
-NetPrints.Catalog.CSharpLiteral
-NetPrints.Catalog.CatalogSourceResolver.CatalogSourceResolver(NetPrints.Projects.IProjectSystem! projects, NetPrints.Projects.IProcessRunner! processes) -> void
-override NetPrints.Catalog.CatalogCompilationInput.GetHashCode() -> int
-NetPrints.Catalog.CatalogSourceSet.DeleteTemporaryDirectories() -> void
-NetPrints.Catalog.CatalogSourceException
-NetPrints.Catalog.CatalogCompilationInput.Assemblies.init -> void
-NetPrints.Catalog.CatalogCompilationInput.Documentation.get -> NetPrints.Catalog.IDocumentationSource!
-static NetPrints.Catalog.CatalogCompilationFactory.Create(NetPrints.Catalog.CatalogSourceSet! sources) -> NetPrints.Catalog.CatalogCompilationInput!
-NetPrints.Catalog.CatalogSourceSet.Targets.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Projects.ResolvedAssembly!>!
-NetPrints.Catalog.CatalogCompilationInput.Documentation.init -> void
-NetPrints.Catalog.CatalogSourceResolver
-NetPrints.Catalog.CatalogCompilationInput.Deconstruct(out Microsoft.CodeAnalysis.CSharp.CSharpCompilation! Compilation, out System.Collections.Generic.IReadOnlyList<Microsoft.CodeAnalysis.IAssemblySymbol!>! Assemblies, out NetPrints.Catalog.IDocumentationSource! Documentation) -> void
-NetPrints.Catalog.CatalogCompilationInput.Compilation.init -> void
-NetPrints.Catalog.CatalogSourceResolver.ResolveAsync(NetPrints.Catalog.ResolvedCatalogConfig! config, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<NetPrints.Catalog.CatalogSourceSet!>!
-NetPrints.Catalog.CatalogCompilationInput.Equals(NetPrints.Catalog.CatalogCompilationInput? other) -> bool
-NetPrints.Catalog.CatalogSourceSet.References.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Projects.ResolvedAssembly!>!
-NetPrints.Catalog.CatalogSourceSet.Diagnostics.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Catalog.CatalogDiagnostic!>!
-static NetPrints.Catalog.CatalogCompilationInput.operator !=(NetPrints.Catalog.CatalogCompilationInput? left, NetPrints.Catalog.CatalogCompilationInput? right) -> bool
-static NetPrints.Catalog.CatalogCompilationInput.operator ==(NetPrints.Catalog.CatalogCompilationInput? left, NetPrints.Catalog.CatalogCompilationInput? right) -> bool
-NetPrints.Catalog.CatalogCompilationFactory
-NetPrints.Catalog.CatalogSourceSet.CatalogSourceSet(System.Collections.Generic.IReadOnlyList<NetPrints.Projects.ResolvedAssembly!>! references, System.Collections.Generic.IReadOnlyList<NetPrints.Projects.ResolvedAssembly!>! targets, System.Collections.Generic.IReadOnlyList<NetPrints.Catalog.CatalogDiagnostic!>! diagnostics, System.Collections.Generic.IReadOnlyList<string!>! temporaryDirectories) -> void
-NetPrints.Catalog.CatalogSourceSet
-override NetPrints.Catalog.CatalogCompilationInput.Equals(object? obj) -> bool
-NetPrints.Catalog.CatalogCompilationInput.Assemblies.get -> System.Collections.Generic.IReadOnlyList<Microsoft.CodeAnalysis.IAssemblySymbol!>!
-NetPrints.Catalog.CatalogSourceSet.TemporaryDirectories.get -> System.Collections.Generic.IReadOnlyList<string!>!
-NetPrints.Catalog.CatalogCompilationInput
-NetPrints.Catalog.CatalogSourceException.CatalogSourceException(string! message, System.Exception? innerException = null) -> void
-override NetPrints.Catalog.CatalogCompilationInput.ToString() -> string!
-NetPrints.Catalog.CatalogCompilationInput.CatalogCompilationInput(Microsoft.CodeAnalysis.CSharp.CSharpCompilation! Compilation, System.Collections.Generic.IReadOnlyList<Microsoft.CodeAnalysis.IAssemblySymbol!>! Assemblies, NetPrints.Catalog.IDocumentationSource! Documentation) -> void
-NetPrints.Catalog.CatalogCompilationInput.Compilation.get -> Microsoft.CodeAnalysis.CSharp.CSharpCompilation!
-NetPrints.Catalog.CatalogCompilationInput.<Clone>$() -> NetPrints.Catalog.CatalogCompilationInput!
+[NPXE0004]NetPrints.Catalog.BuiltInCatalogProfiles
+[NPXE0004]NetPrints.Catalog.CatalogArgumentMatch
+[NPXE0004]NetPrints.Catalog.CatalogArgumentMatch.<Clone>$() -> NetPrints.Catalog.CatalogArgumentMatch!
+[NPXE0004]NetPrints.Catalog.CatalogArgumentMatch.CatalogArgumentMatch(string? Name = null, int? Position = null, string? EqualsValue = null, string? ContainsValue = null) -> void
+[NPXE0004]NetPrints.Catalog.CatalogArgumentMatch.ContainsValue.get -> string?
+[NPXE0004]NetPrints.Catalog.CatalogArgumentMatch.ContainsValue.init -> void
+[NPXE0004]NetPrints.Catalog.CatalogArgumentMatch.Deconstruct(out string? Name, out int? Position, out string? EqualsValue, out string? ContainsValue) -> void
+[NPXE0004]NetPrints.Catalog.CatalogArgumentMatch.Equals(NetPrints.Catalog.CatalogArgumentMatch? other) -> bool
+[NPXE0004]NetPrints.Catalog.CatalogArgumentMatch.EqualsValue.get -> string?
+[NPXE0004]NetPrints.Catalog.CatalogArgumentMatch.EqualsValue.init -> void
+[NPXE0004]NetPrints.Catalog.CatalogArgumentMatch.Name.get -> string?
+[NPXE0004]NetPrints.Catalog.CatalogArgumentMatch.Name.init -> void
+[NPXE0004]NetPrints.Catalog.CatalogArgumentMatch.Position.get -> int?
+[NPXE0004]NetPrints.Catalog.CatalogArgumentMatch.Position.init -> void
+[NPXE0004]NetPrints.Catalog.CatalogAttributeRule
+[NPXE0004]NetPrints.Catalog.CatalogAttributeRule.<Clone>$() -> NetPrints.Catalog.CatalogAttributeRule!
+[NPXE0004]NetPrints.Catalog.CatalogAttributeRule.Argument.get -> NetPrints.Catalog.CatalogArgumentMatch?
+[NPXE0004]NetPrints.Catalog.CatalogAttributeRule.Argument.init -> void
+[NPXE0004]NetPrints.Catalog.CatalogAttributeRule.Attribute.get -> string!
+[NPXE0004]NetPrints.Catalog.CatalogAttributeRule.Attribute.init -> void
+[NPXE0004]NetPrints.Catalog.CatalogAttributeRule.CatalogAttributeRule(NetPrints.Catalog.CatalogAttributeRuleKind Rule, string! Attribute, NetPrints.Catalog.CatalogArgumentMatch? Argument = null) -> void
+[NPXE0004]NetPrints.Catalog.CatalogAttributeRule.Deconstruct(out NetPrints.Catalog.CatalogAttributeRuleKind Rule, out string! Attribute, out NetPrints.Catalog.CatalogArgumentMatch? Argument) -> void
+[NPXE0004]NetPrints.Catalog.CatalogAttributeRule.Equals(NetPrints.Catalog.CatalogAttributeRule? other) -> bool
+[NPXE0004]NetPrints.Catalog.CatalogAttributeRule.Rule.get -> NetPrints.Catalog.CatalogAttributeRuleKind
+[NPXE0004]NetPrints.Catalog.CatalogAttributeRule.Rule.init -> void
+[NPXE0004]NetPrints.Catalog.CatalogAttributeRuleKind
+[NPXE0004]NetPrints.Catalog.CatalogAttributeRuleKind.Exclude = 1 -> NetPrints.Catalog.CatalogAttributeRuleKind
+[NPXE0004]NetPrints.Catalog.CatalogAttributeRuleKind.Require = 0 -> NetPrints.Catalog.CatalogAttributeRuleKind
+[NPXE0004]NetPrints.Catalog.CatalogBuilder
+[NPXE0004]NetPrints.Catalog.CatalogCSharpEmitter
+[NPXE0004]NetPrints.Catalog.CatalogCompilationFactory
+[NPXE0004]NetPrints.Catalog.CatalogCompilationInput
+[NPXE0004]NetPrints.Catalog.CatalogCompilationInput.<Clone>$() -> NetPrints.Catalog.CatalogCompilationInput!
+[NPXE0004]NetPrints.Catalog.CatalogCompilationInput.Assemblies.get -> System.Collections.Generic.IReadOnlyList<Microsoft.CodeAnalysis.IAssemblySymbol!>!
+[NPXE0004]NetPrints.Catalog.CatalogCompilationInput.Assemblies.init -> void
+[NPXE0004]NetPrints.Catalog.CatalogCompilationInput.CatalogCompilationInput(Microsoft.CodeAnalysis.CSharp.CSharpCompilation! Compilation, System.Collections.Generic.IReadOnlyList<Microsoft.CodeAnalysis.IAssemblySymbol!>! Assemblies, NetPrints.Catalog.IDocumentationSource! Documentation) -> void
+[NPXE0004]NetPrints.Catalog.CatalogCompilationInput.Compilation.get -> Microsoft.CodeAnalysis.CSharp.CSharpCompilation!
+[NPXE0004]NetPrints.Catalog.CatalogCompilationInput.Compilation.init -> void
+[NPXE0004]NetPrints.Catalog.CatalogCompilationInput.Deconstruct(out Microsoft.CodeAnalysis.CSharp.CSharpCompilation! Compilation, out System.Collections.Generic.IReadOnlyList<Microsoft.CodeAnalysis.IAssemblySymbol!>! Assemblies, out NetPrints.Catalog.IDocumentationSource! Documentation) -> void
+[NPXE0004]NetPrints.Catalog.CatalogCompilationInput.Documentation.get -> NetPrints.Catalog.IDocumentationSource!
+[NPXE0004]NetPrints.Catalog.CatalogCompilationInput.Documentation.init -> void
+[NPXE0004]NetPrints.Catalog.CatalogCompilationInput.Equals(NetPrints.Catalog.CatalogCompilationInput? other) -> bool
+[NPXE0004]NetPrints.Catalog.CatalogIdentity
+[NPXE0004]NetPrints.Catalog.CatalogIdentity.<Clone>$() -> NetPrints.Catalog.CatalogIdentity!
+[NPXE0004]NetPrints.Catalog.CatalogIdentity.CatalogIdentity(string? Id = null, string? Version = null) -> void
+[NPXE0004]NetPrints.Catalog.CatalogIdentity.Deconstruct(out string? Id, out string? Version) -> void
+[NPXE0004]NetPrints.Catalog.CatalogIdentity.Equals(NetPrints.Catalog.CatalogIdentity? other) -> bool
+[NPXE0004]NetPrints.Catalog.CatalogIdentity.Id.get -> string?
+[NPXE0004]NetPrints.Catalog.CatalogIdentity.Id.init -> void
+[NPXE0004]NetPrints.Catalog.CatalogIdentity.Version.get -> string?
+[NPXE0004]NetPrints.Catalog.CatalogIdentity.Version.init -> void
+[NPXE0004]NetPrints.Catalog.CatalogObsoleteMode
+[NPXE0004]NetPrints.Catalog.CatalogObsoleteMode.Exclude = 1 -> NetPrints.Catalog.CatalogObsoleteMode
+[NPXE0004]NetPrints.Catalog.CatalogObsoleteMode.ExcludeErrors = 2 -> NetPrints.Catalog.CatalogObsoleteMode
+[NPXE0004]NetPrints.Catalog.CatalogObsoleteMode.Include = 0 -> NetPrints.Catalog.CatalogObsoleteMode
+[NPXE0004]NetPrints.Catalog.CatalogProfile
+[NPXE0004]NetPrints.Catalog.CatalogProfile.<Clone>$() -> NetPrints.Catalog.CatalogProfile!
+[NPXE0004]NetPrints.Catalog.CatalogProfile.Base.get -> NetPrints.Catalog.CatalogProfileBase
+[NPXE0004]NetPrints.Catalog.CatalogProfile.Base.init -> void
+[NPXE0004]NetPrints.Catalog.CatalogProfile.CatalogProfile(string! Id, NetPrints.Catalog.CatalogProfileBase Base = NetPrints.Catalog.CatalogProfileBase.PublicApi, System.Collections.Generic.IReadOnlyList<string!>? IncludeNamespaces = null, System.Collections.Generic.IReadOnlyList<string!>? ExcludeNamespaces = null, System.Collections.Generic.IReadOnlyList<string!>? IncludeTypes = null, System.Collections.Generic.IReadOnlyList<string!>? ExcludeTypes = null, System.Collections.Generic.IReadOnlyList<NetPrints.Catalog.CatalogAttributeRule!>? TypeAttributes = null, System.Collections.Generic.IReadOnlyList<NetPrints.Catalog.CatalogAttributeRule!>? MemberAttributes = null, NetPrints.Catalog.CatalogObsoleteMode Obsolete = NetPrints.Catalog.CatalogObsoleteMode.ExcludeErrors, int SchemaVersion = 1) -> void
+[NPXE0004]NetPrints.Catalog.CatalogProfile.Deconstruct(out string! Id, out NetPrints.Catalog.CatalogProfileBase Base, out System.Collections.Generic.IReadOnlyList<string!>? IncludeNamespaces, out System.Collections.Generic.IReadOnlyList<string!>? ExcludeNamespaces, out System.Collections.Generic.IReadOnlyList<string!>? IncludeTypes, out System.Collections.Generic.IReadOnlyList<string!>? ExcludeTypes, out System.Collections.Generic.IReadOnlyList<NetPrints.Catalog.CatalogAttributeRule!>? TypeAttributes, out System.Collections.Generic.IReadOnlyList<NetPrints.Catalog.CatalogAttributeRule!>? MemberAttributes, out NetPrints.Catalog.CatalogObsoleteMode Obsolete, out int SchemaVersion) -> void
+[NPXE0004]NetPrints.Catalog.CatalogProfile.Equals(NetPrints.Catalog.CatalogProfile? other) -> bool
+[NPXE0004]NetPrints.Catalog.CatalogProfile.ExcludeNamespaces.get -> System.Collections.Generic.IReadOnlyList<string!>?
+[NPXE0004]NetPrints.Catalog.CatalogProfile.ExcludeNamespaces.init -> void
+[NPXE0004]NetPrints.Catalog.CatalogProfile.ExcludeTypes.get -> System.Collections.Generic.IReadOnlyList<string!>?
+[NPXE0004]NetPrints.Catalog.CatalogProfile.ExcludeTypes.init -> void
+[NPXE0004]NetPrints.Catalog.CatalogProfile.Id.get -> string!
+[NPXE0004]NetPrints.Catalog.CatalogProfile.Id.init -> void
+[NPXE0004]NetPrints.Catalog.CatalogProfile.IncludeNamespaces.get -> System.Collections.Generic.IReadOnlyList<string!>?
+[NPXE0004]NetPrints.Catalog.CatalogProfile.IncludeNamespaces.init -> void
+[NPXE0004]NetPrints.Catalog.CatalogProfile.IncludeTypes.get -> System.Collections.Generic.IReadOnlyList<string!>?
+[NPXE0004]NetPrints.Catalog.CatalogProfile.IncludeTypes.init -> void
+[NPXE0004]NetPrints.Catalog.CatalogProfile.MemberAttributes.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Catalog.CatalogAttributeRule!>?
+[NPXE0004]NetPrints.Catalog.CatalogProfile.MemberAttributes.init -> void
+[NPXE0004]NetPrints.Catalog.CatalogProfile.Obsolete.get -> NetPrints.Catalog.CatalogObsoleteMode
+[NPXE0004]NetPrints.Catalog.CatalogProfile.Obsolete.init -> void
+[NPXE0004]NetPrints.Catalog.CatalogProfile.SchemaVersion.get -> int
+[NPXE0004]NetPrints.Catalog.CatalogProfile.SchemaVersion.init -> void
+[NPXE0004]NetPrints.Catalog.CatalogProfile.TypeAttributes.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Catalog.CatalogAttributeRule!>?
+[NPXE0004]NetPrints.Catalog.CatalogProfile.TypeAttributes.init -> void
+[NPXE0004]NetPrints.Catalog.CatalogProfileBase
+[NPXE0004]NetPrints.Catalog.CatalogProfileBase.Annotated = 1 -> NetPrints.Catalog.CatalogProfileBase
+[NPXE0004]NetPrints.Catalog.CatalogProfileBase.None = 2 -> NetPrints.Catalog.CatalogProfileBase
+[NPXE0004]NetPrints.Catalog.CatalogProfileBase.PublicApi = 0 -> NetPrints.Catalog.CatalogProfileBase
+[NPXE0004]NetPrints.Catalog.CatalogProfileFilter
+[NPXE0004]NetPrints.Catalog.CatalogProfileFilter.CatalogProfileFilter(NetPrints.Catalog.CatalogProfile! profile) -> void
+[NPXE0004]NetPrints.Catalog.CatalogProfileFilter.DescribeNode(Microsoft.CodeAnalysis.ISymbol! symbol) -> NetPrints.Catalog.CatalogNodeHint?
+[NPXE0004]NetPrints.Catalog.CatalogProfileFilter.IncludeMember(Microsoft.CodeAnalysis.ISymbol! member) -> bool
+[NPXE0004]NetPrints.Catalog.CatalogProfileFilter.IncludeType(Microsoft.CodeAnalysis.INamedTypeSymbol! type) -> bool
+[NPXE0004]NetPrints.Catalog.CatalogProfileFilter.ProfileId.get -> string!
+[NPXE0004]NetPrints.Catalog.CatalogSourceException
+[NPXE0004]NetPrints.Catalog.CatalogSourceException.CatalogSourceException(string! message, System.Exception? innerException = null) -> void
+[NPXE0004]NetPrints.Catalog.CatalogSourceResolver
+[NPXE0004]NetPrints.Catalog.CatalogSourceResolver.CatalogSourceResolver(NetPrints.Projects.IProjectSystem! projects, NetPrints.Projects.IProcessRunner! processes) -> void
+[NPXE0004]NetPrints.Catalog.CatalogSourceResolver.ResolveAsync(NetPrints.Catalog.ResolvedCatalogConfig! config, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<NetPrints.Catalog.CatalogSourceSet!>!
+[NPXE0004]NetPrints.Catalog.CatalogSourceSet
+[NPXE0004]NetPrints.Catalog.CatalogSourceSet.CatalogSourceSet(System.Collections.Generic.IReadOnlyList<NetPrints.Projects.ResolvedAssembly!>! references, System.Collections.Generic.IReadOnlyList<NetPrints.Projects.ResolvedAssembly!>! targets, System.Collections.Generic.IReadOnlyList<NetPrints.Catalog.CatalogDiagnostic!>! diagnostics, System.Collections.Generic.IReadOnlyList<string!>! temporaryDirectories) -> void
+[NPXE0004]NetPrints.Catalog.CatalogSourceSet.DeleteTemporaryDirectories() -> void
+[NPXE0004]NetPrints.Catalog.CatalogSourceSet.Diagnostics.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Catalog.CatalogDiagnostic!>!
+[NPXE0004]NetPrints.Catalog.CatalogSourceSet.References.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Projects.ResolvedAssembly!>!
+[NPXE0004]NetPrints.Catalog.CatalogSourceSet.Targets.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Projects.ResolvedAssembly!>!
+[NPXE0004]NetPrints.Catalog.CatalogSourceSet.TemporaryDirectories.get -> System.Collections.Generic.IReadOnlyList<string!>!
+[NPXE0004]NetPrints.Catalog.ICatalogFilter
+[NPXE0004]NetPrints.Catalog.ICatalogFilter.DescribeNode(Microsoft.CodeAnalysis.ISymbol! symbol) -> NetPrints.Catalog.CatalogNodeHint?
+[NPXE0004]NetPrints.Catalog.ICatalogFilter.IncludeMember(Microsoft.CodeAnalysis.ISymbol! member) -> bool
+[NPXE0004]NetPrints.Catalog.ICatalogFilter.IncludeType(Microsoft.CodeAnalysis.INamedTypeSymbol! type) -> bool
+[NPXE0004]NetPrints.Catalog.ICatalogFilter.ProfileId.get -> string!
+[NPXE0004]NetPrints.Catalog.IDocumentationSource
+[NPXE0004]NetPrints.Catalog.IDocumentationSource.GetParameter(string! documentationId, string! parameterName) -> string?
+[NPXE0004]NetPrints.Catalog.IDocumentationSource.GetReturns(string! documentationId) -> string?
+[NPXE0004]NetPrints.Catalog.IDocumentationSource.GetSummary(string! documentationId) -> string?
+[NPXE0004]NetPrints.Catalog.ProfileJson
+[NPXE0004]NetPrints.Catalog.XmlDocumentationSource
+[NPXE0004]NetPrints.Catalog.XmlDocumentationSource.GetParameter(string! documentationId, string! parameterName) -> string?
+[NPXE0004]NetPrints.Catalog.XmlDocumentationSource.GetReturns(string! documentationId) -> string?
+[NPXE0004]NetPrints.Catalog.XmlDocumentationSource.GetSummary(string! documentationId) -> string?
+[NPXE0004]NetPrints.Catalog.XmlDocumentationSource.XmlDocumentationSource(System.Collections.Generic.IEnumerable<string!>! xmlTexts) -> void
+[NPXE0004]const NetPrints.Catalog.CatalogProfile.AnnotatedId = "annotated" -> string!
+[NPXE0004]const NetPrints.Catalog.CatalogProfile.CurrentSchemaVersion = 1 -> int
+[NPXE0004]const NetPrints.Catalog.CatalogProfile.PublicApiId = "public-api" -> string!
+[NPXE0004]override NetPrints.Catalog.CatalogArgumentMatch.Equals(object? obj) -> bool
+[NPXE0004]override NetPrints.Catalog.CatalogArgumentMatch.GetHashCode() -> int
+[NPXE0004]override NetPrints.Catalog.CatalogArgumentMatch.ToString() -> string!
+[NPXE0004]override NetPrints.Catalog.CatalogAttributeRule.Equals(object? obj) -> bool
+[NPXE0004]override NetPrints.Catalog.CatalogAttributeRule.GetHashCode() -> int
+[NPXE0004]override NetPrints.Catalog.CatalogAttributeRule.ToString() -> string!
+[NPXE0004]override NetPrints.Catalog.CatalogCompilationInput.Equals(object? obj) -> bool
+[NPXE0004]override NetPrints.Catalog.CatalogCompilationInput.GetHashCode() -> int
+[NPXE0004]override NetPrints.Catalog.CatalogCompilationInput.ToString() -> string!
+[NPXE0004]override NetPrints.Catalog.CatalogIdentity.Equals(object? obj) -> bool
+[NPXE0004]override NetPrints.Catalog.CatalogIdentity.GetHashCode() -> int
+[NPXE0004]override NetPrints.Catalog.CatalogIdentity.ToString() -> string!
+[NPXE0004]override NetPrints.Catalog.CatalogProfile.Equals(object? obj) -> bool
+[NPXE0004]override NetPrints.Catalog.CatalogProfile.GetHashCode() -> int
+[NPXE0004]override NetPrints.Catalog.CatalogProfile.ToString() -> string!
+[NPXE0004]static NetPrints.Catalog.BuiltInCatalogProfiles.Annotated.get -> NetPrints.Catalog.CatalogProfile!
+[NPXE0004]static NetPrints.Catalog.BuiltInCatalogProfiles.Ids.get -> System.Collections.Generic.IReadOnlyList<string!>!
+[NPXE0004]static NetPrints.Catalog.BuiltInCatalogProfiles.PublicApi.get -> NetPrints.Catalog.CatalogProfile!
+[NPXE0004]static NetPrints.Catalog.BuiltInCatalogProfiles.TryGet(string! id) -> NetPrints.Catalog.CatalogProfile?
+[NPXE0004]static NetPrints.Catalog.CatalogArgumentMatch.operator !=(NetPrints.Catalog.CatalogArgumentMatch? left, NetPrints.Catalog.CatalogArgumentMatch? right) -> bool
+[NPXE0004]static NetPrints.Catalog.CatalogArgumentMatch.operator ==(NetPrints.Catalog.CatalogArgumentMatch? left, NetPrints.Catalog.CatalogArgumentMatch? right) -> bool
+[NPXE0004]static NetPrints.Catalog.CatalogAttributeRule.operator !=(NetPrints.Catalog.CatalogAttributeRule? left, NetPrints.Catalog.CatalogAttributeRule? right) -> bool
+[NPXE0004]static NetPrints.Catalog.CatalogAttributeRule.operator ==(NetPrints.Catalog.CatalogAttributeRule? left, NetPrints.Catalog.CatalogAttributeRule? right) -> bool
+[NPXE0004]static NetPrints.Catalog.CatalogBuilder.Build(Microsoft.CodeAnalysis.Compilation! compilation, System.Collections.Generic.IReadOnlyList<Microsoft.CodeAnalysis.IAssemblySymbol!>! assemblies, NetPrints.Catalog.ICatalogFilter! filter, NetPrints.Catalog.IDocumentationSource! documentation, NetPrints.Catalog.CatalogIdentity! identity) -> NetPrints.Catalog.CatalogBuildResult!
+[NPXE0004]static NetPrints.Catalog.CatalogCSharpEmitter.Emit(NetPrints.Catalog.CatalogDocument! document, string! namespace, string! className) -> string!
+[NPXE0004]static NetPrints.Catalog.CatalogCompilationFactory.Create(NetPrints.Catalog.CatalogSourceSet! sources) -> NetPrints.Catalog.CatalogCompilationInput!
+[NPXE0004]static NetPrints.Catalog.CatalogCompilationInput.operator !=(NetPrints.Catalog.CatalogCompilationInput? left, NetPrints.Catalog.CatalogCompilationInput? right) -> bool
+[NPXE0004]static NetPrints.Catalog.CatalogCompilationInput.operator ==(NetPrints.Catalog.CatalogCompilationInput? left, NetPrints.Catalog.CatalogCompilationInput? right) -> bool
+[NPXE0004]static NetPrints.Catalog.CatalogIdentity.IsValidId(string? id) -> bool
+[NPXE0004]static NetPrints.Catalog.CatalogIdentity.operator !=(NetPrints.Catalog.CatalogIdentity? left, NetPrints.Catalog.CatalogIdentity? right) -> bool
+[NPXE0004]static NetPrints.Catalog.CatalogIdentity.operator ==(NetPrints.Catalog.CatalogIdentity? left, NetPrints.Catalog.CatalogIdentity? right) -> bool
+[NPXE0004]static NetPrints.Catalog.CatalogProfile.operator !=(NetPrints.Catalog.CatalogProfile? left, NetPrints.Catalog.CatalogProfile? right) -> bool
+[NPXE0004]static NetPrints.Catalog.CatalogProfile.operator ==(NetPrints.Catalog.CatalogProfile? left, NetPrints.Catalog.CatalogProfile? right) -> bool
+[NPXE0004]static NetPrints.Catalog.ProfileJson.Parse(string! json) -> NetPrints.Catalog.CatalogProfile!
+[NPXE0004]static NetPrints.Catalog.XmlDocumentationSource.Empty.get -> NetPrints.Catalog.XmlDocumentationSource!
+[NPXE0004]static NetPrints.Catalog.XmlDocumentationSource.FromText(string! xml) -> NetPrints.Catalog.XmlDocumentationSource!

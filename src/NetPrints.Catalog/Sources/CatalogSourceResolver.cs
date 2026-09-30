@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -14,6 +15,7 @@ namespace NetPrints.Catalog;
 /// inherited <c>Directory.Build.props</c> and central package management and is restored with <c>dotnet restore</c>.
 /// Nothing is downloaded by the tool itself.
 /// </summary>
+[Experimental(ExperimentalApis.CatalogProfiles, UrlFormat = ExperimentalApis.UrlFormat)]
 public sealed class CatalogSourceResolver
 {
     private const string NuGetPackageRootProperty = "NuGetPackageRoot";

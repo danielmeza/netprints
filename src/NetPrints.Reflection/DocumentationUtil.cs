@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Xml;
+using System.Xml.Linq;
 using Microsoft.CodeAnalysis;
+using NetPrints.Catalog;
 
 namespace NetPrints.Reflection
 {
@@ -43,6 +45,10 @@ namespace NetPrints.Reflection
             this.compilation = compilation;
             this.documentationPaths = documentationPaths;
         }
+
+        // The catalog's normalization (data-model.md §6), so live and cataloged documentation read the same.
+        private static string? Normalize(XmlNode? node) =>
+            node is null ? null : SummaryNormalizer.Normalize(XElement.Parse(node.OuterXml));
 
         private string? GetAssemblyPath(IAssemblySymbol assembly)
         {
@@ -130,7 +136,7 @@ namespace NetPrints.Reflection
 
                 if (nodes != null && nodes.Count > 0)
                 {
-                    documentation = nodes.Item(0)?.InnerText;
+                    documentation = Normalize(nodes.Item(0));
                 }
 
                 cachedMethodSummaries.Add(methodKey, documentation);
@@ -165,7 +171,7 @@ namespace NetPrints.Reflection
 
                 if (nodes != null && nodes.Count > 0)
                 {
-                    documentation = nodes.Item(0)?.InnerText;
+                    documentation = Normalize(nodes.Item(0));
                 }
 
                 cachedMethodParameterInfos.Add(cacheKey, documentation);
@@ -200,7 +206,7 @@ namespace NetPrints.Reflection
 
                 if (nodes != null && nodes.Count > 0)
                 {
-                    documentation = nodes.Item(0)?.InnerText;
+                    documentation = Normalize(nodes.Item(0));
                 }
 
                 cachedMethodReturnInfo.Add(methodKey, documentation);

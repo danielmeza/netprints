@@ -62,6 +62,29 @@
       "summary": "Flags read by the fixture-flags profile."
     },
     {
+      "id": "T:Fixture.Documentation.Documented",
+      "namespace": "Fixture.Documentation",
+      "name": "Documented",
+      "kind": "class",
+      "modifiers": ["static"],
+      "summary": "Members documented the way real libraries do: several lines, references and paragraphs.",
+      "methods": [
+        {
+          "id": "M:Fixture.Documentation.Documented.Add(System.Int32,System.Int32)",
+          "name": "Add",
+          "visibility": "public",
+          "modifiers": ["static"],
+          "parameters": [
+            { "name": "left", "type": { "name": "System.Int32" }, "summary": "The left operand." },
+            { "name": "right", "type": { "name": "System.Int32" }, "summary": "The right operand, see Int32." }
+          ],
+          "returnType": { "name": "System.Int32" },
+          "returnSummary": "The Int32 sum, or null never.",
+          "summary": "Adds left to right, as Max does.\n\nA second paragraph with code."
+        }
+      ]
+    },
+    {
       "id": "T:Fixture.Generics.Box`1",
       "namespace": "Fixture.Generics",
       "name": "Box",
@@ -701,6 +724,51 @@
           "modifiers": ["static", "const"],
           "get": "public",
           "summary": "A constant."
+        }
+      ]
+    },
+    {
+      "id": "T:Fixture.Utilities.Indexed",
+      "namespace": "Fixture.Utilities",
+      "name": "Indexed",
+      "kind": "class",
+      "summary": "Members the catalog does not list: an indexer and an event.",
+      "constructors": [
+        {
+          "id": "M:Fixture.Utilities.Indexed.#ctor",
+          "visibility": "public"
+        }
+      ],
+      "methods": [
+        {
+          "id": "M:Fixture.Utilities.Indexed.Raise",
+          "name": "Raise",
+          "visibility": "public",
+          "summary": "Raises Changed."
+        }
+      ]
+    },
+    {
+      "id": "T:Fixture.Utilities.InternalNodeOnly",
+      "namespace": "Fixture.Utilities",
+      "name": "InternalNodeOnly",
+      "kind": "class",
+      "summary": "A type whose only annotated method is not public: the annotated profile must not select it.",
+      "constructors": [
+        {
+          "id": "M:Fixture.Utilities.InternalNodeOnly.#ctor",
+          "visibility": "public"
+        }
+      ],
+      "variables": [
+        {
+          "id": "P:Fixture.Utilities.InternalNodeOnly.Value",
+          "name": "Value",
+          "kind": "property",
+          "type": { "name": "System.Int32" },
+          "modifiers": ["readonly"],
+          "get": "public",
+          "summary": "Gets a value."
         }
       ]
     }

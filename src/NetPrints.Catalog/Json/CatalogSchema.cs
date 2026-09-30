@@ -11,7 +11,7 @@ namespace NetPrints.Catalog;
 /// Generates the committed JSON Schema for catalog files: the exact text of <c>schemas/npcat.v1.schema.json</c>,
 /// built with <see cref="JsonSchemaExporter"/> over <see cref="CatalogDocument"/>.
 /// </summary>
-public static class CatalogSchema
+internal static class CatalogSchema
 {
     private const string MetaSchemaUri = "https://json-schema.org/draft/2020-12/schema";
 

@@ -98,4 +98,17 @@ public sealed class CatalogWriterTests
     {
         Assert.Equal(Written, Written);
     }
+
+    [Fact]
+    public void UnpairedSurrogatesAreEscapedAndSurvivePairedOnes()
+    {
+        const string Text = "lone \uD800 and \uDC00 kept pair \uD83D\uDE00 end";
+        CatalogDocument sample = SampleCatalog.Build();
+        CatalogDocument document = sample with { Types = [sample.Types[0] with { Summary = Text }, .. sample.Types.Skip(1)] };
+
+        string written = CanonicalCatalogWriter.Write(document);
+
+        Assert.Contains("lone \\ud800 and \\udc00 kept pair \U0001F600 end", written, StringComparison.Ordinal);
+        Assert.Equal(Text, CatalogReader.Read(written).Types[0].Summary);
+    }
 }

@@ -1,6 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
 namespace NetPrints.Catalog;
 
 /// <summary>Supplies the normalized documentation text of a symbol, looked up by its documentation comment id.</summary>
+[Experimental(ExperimentalApis.CatalogProfiles, UrlFormat = ExperimentalApis.UrlFormat)]
 public interface IDocumentationSource
 {
     /// <summary>Gets the normalized <c>&lt;summary&gt;</c> of a symbol.</summary>

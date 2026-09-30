@@ -127,3 +127,30 @@ public class Counter
     [NetPrintsIgnore]
     public void Reset() => Count = 0;
 }
+
+/// <summary>A type whose only annotated method is not public: the <c>annotated</c> profile must not select it.</summary>
+public class InternalNodeOnly
+{
+    /// <summary>Gets a value.</summary>
+    public int Value => 1;
+
+    /// <summary>Not public: an annotation here is ignored with a warning.</summary>
+    /// <returns>Zero.</returns>
+    [NetPrintsNode]
+    internal int Quiet() => 0;
+}
+
+/// <summary>Members the catalog does not list: an indexer and an event.</summary>
+public class Indexed
+{
+    /// <summary>Occurs when the value changes.</summary>
+    public event EventHandler? Changed;
+
+    /// <summary>Gets an item by position.</summary>
+    /// <param name="index">The position.</param>
+    /// <returns>The item.</returns>
+    public int this[int index] => index;
+
+    /// <summary>Raises <see cref="Changed"/>.</summary>
+    public void Raise() => Changed?.Invoke(this, EventArgs.Empty);
+}

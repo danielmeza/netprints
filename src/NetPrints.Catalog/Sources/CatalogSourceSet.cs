@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using NetPrints.Projects;
 
 namespace NetPrints.Catalog;
 
 /// <summary>The resolved sources of a catalog run: every reference the compilation needs and the assemblies to catalog.</summary>
+[Experimental(ExperimentalApis.CatalogProfiles, UrlFormat = ExperimentalApis.UrlFormat)]
 public sealed class CatalogSourceSet
 {
     /// <summary>Creates a source set.</summary>

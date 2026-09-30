@@ -10,6 +10,10 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
   </ItemGroup>
   <ItemGroup>
+    <!-- One normalizer for the live documentation and the catalog (FR-016 parity); Catalog references Reflection, so the source is linked, not referenced. -->
+    <Compile Include="..\NetPrints.Catalog\Engine\SummaryNormalizer.cs" Link="Documentation\SummaryNormalizer.cs" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\NetPrints.Core\NetPrints.Core.csproj" />
   </ItemGroup>
 </Project>

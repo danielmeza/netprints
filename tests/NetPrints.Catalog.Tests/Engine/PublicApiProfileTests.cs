@@ -18,8 +18,8 @@ public sealed class PublicApiProfileTests
     [Fact]
     public void ProducesOnlyTheIgnoredAnnotationWarningAndTheDocumentIdentity()
     {
-        CatalogDiagnostic warning = Assert.Single(Result.Diagnostics);
-        Assert.Equal(CatalogDiagnosticCodes.IgnoredAnnotation, warning.Code);
+        Assert.Equal(["M:Fixture.Utilities.Helpers.Hidden", "M:Fixture.Utilities.InternalNodeOnly.Quiet"], Result.Diagnostics.Select(warning => warning.Source));
+        Assert.All(Result.Diagnostics, warning => Assert.Equal(CatalogDiagnosticCodes.IgnoredAnnotation, warning.Code));
         Assert.Equal(FixtureCatalog.FixtureId, Result.Document.Id);
         Assert.Equal("1.0.0.0", Result.Document.Version);
         Assert.Equal("public-api", Result.Document.Profile);

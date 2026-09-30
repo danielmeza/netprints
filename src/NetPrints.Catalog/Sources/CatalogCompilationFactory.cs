@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using Microsoft.CodeAnalysis;
@@ -12,9 +13,11 @@ namespace NetPrints.Catalog;
 /// <param name="Compilation">A compilation over the references, without syntax trees.</param>
 /// <param name="Assemblies">The symbols of the assemblies to catalog.</param>
 /// <param name="Documentation">The documentation of those assemblies.</param>
+[Experimental(ExperimentalApis.CatalogProfiles, UrlFormat = ExperimentalApis.UrlFormat)]
 public sealed record CatalogCompilationInput(CSharpCompilation Compilation, IReadOnlyList<IAssemblySymbol> Assemblies, IDocumentationSource Documentation);
 
 /// <summary>Creates the compilation of a catalog run from resolved sources.</summary>
+[Experimental(ExperimentalApis.CatalogProfiles, UrlFormat = ExperimentalApis.UrlFormat)]
 public static class CatalogCompilationFactory
 {
     /// <summary>Opens the assemblies of <paramref name="sources"/> as metadata references.</summary>

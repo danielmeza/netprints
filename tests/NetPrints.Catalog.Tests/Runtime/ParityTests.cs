@@ -66,6 +66,9 @@ public sealed class ParityTests
     // Left out of every catalog on purpose: an obsolete member whose use is an error, and members marked [NetPrintsIgnore].
     private static readonly HashSet<string> ProfileExcluded = ["Fixture.Legacy.Old.Removed", "Fixture.Utilities.Counter.Reset", "Fixture.Utilities.Counter.Secret"];
 
+    // D-R16: the live provider lists indexers (as a property named "this[]"); a catalog never does (Exposure.IsHiddenKind). Events are not listed by either side.
+    private static readonly HashSet<string> NotCatalogedByDesign = ["Fixture.Utilities.Indexed.this[]"];
+
     private static bool Cataloged(TypeSpecifier? type) => type is not null && CatalogedNames.Contains(type.Name);
 
     private static bool Cataloged(MethodSpecifier method) =>
@@ -73,7 +76,8 @@ public sealed class ParityTests
 
     private static bool Cataloged(VariableSpecifier variable) =>
         Cataloged(variable.DeclaringType) && (Exposed(variable.GetterVisibility) || Exposed(variable.SetterVisibility))
-        && !ProfileExcluded.Contains($"{variable.DeclaringType?.Name.Replace('+', '.')}.{variable.Name}");
+        && !ProfileExcluded.Contains($"{variable.DeclaringType?.Name.Replace('+', '.')}.{variable.Name}")
+        && !NotCatalogedByDesign.Contains($"{variable.DeclaringType?.Name.Replace('+', '.')}.{variable.Name}");
 
     private static bool Exposed(MemberVisibility visibility) => visibility.HasFlag(MemberVisibility.Public) || visibility.HasFlag(MemberVisibility.Protected);
 

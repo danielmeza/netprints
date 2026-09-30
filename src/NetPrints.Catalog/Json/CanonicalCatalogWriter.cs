@@ -224,8 +224,9 @@ public static class CanonicalCatalogWriter
     {
         var builder = new StringBuilder(value.Length + 2);
         builder.Append('"');
-        foreach (char c in value)
+        for (int index = 0; index < value.Length; index++)
         {
+            char c = value[index];
             switch (c)
             {
                 case '"':
@@ -244,7 +245,11 @@ public static class CanonicalCatalogWriter
                     builder.Append("\\t");
                     break;
                 default:
-                    if (c < FirstNonControlCharacter)
+                    if (char.IsHighSurrogate(c) && index + 1 < value.Length && char.IsLowSurrogate(value[index + 1]))
+                    {
+                        builder.Append(c).Append(value[++index]);
+                    }
+                    else if (c < FirstNonControlCharacter || char.IsSurrogate(c))
                     {
                         builder.Append("\\u").Append(((int)c).ToString("x4", CultureInfo.InvariantCulture));
                     }

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Xml;
@@ -11,6 +12,7 @@ namespace NetPrints.Catalog;
 /// reads the files: file access is not available to the source generator). The first file that documents a symbol
 /// wins; text that is not well-formed XML is skipped.
 /// </summary>
+[Experimental(ExperimentalApis.CatalogProfiles, UrlFormat = ExperimentalApis.UrlFormat)]
 public sealed class XmlDocumentationSource : IDocumentationSource
 {
     private readonly Dictionary<string, XElement> members = new(System.StringComparer.Ordinal);

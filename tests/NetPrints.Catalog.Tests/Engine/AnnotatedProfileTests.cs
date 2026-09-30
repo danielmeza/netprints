@@ -60,6 +60,10 @@ public sealed class AnnotatedProfileTests
     }
 
     [Fact]
+    public void ATypeWhoseOnlyAnnotatedMethodIsNotPublicIsNotSelected() =>
+        Assert.DoesNotContain(Result.Document.Types, type => type.Id == "T:Fixture.Utilities.InternalNodeOnly");
+
+    [Fact]
     public void CarriesNodeHintsAndDropsIgnoredMembers()
     {
         CatalogType counter = FixtureCatalog.TypeOf(Result, CounterId);
@@ -79,11 +83,15 @@ public sealed class AnnotatedProfileTests
     [Fact]
     public void WarnsAboutAnnotationsOnNonPublicMembers()
     {
-        CatalogDiagnostic warning = Assert.Single(Result.Diagnostics);
+        Assert.Equal(2, Result.Diagnostics.Count);
+        Assert.All(Result.Diagnostics, warning =>
+        {
+            Assert.Equal(CatalogDiagnosticCodes.IgnoredAnnotation, warning.Code);
+            Assert.Equal(CatalogDiagnosticSeverity.Warning, warning.Severity);
+        });
 
-        Assert.Equal(CatalogDiagnosticCodes.IgnoredAnnotation, warning.Code);
-        Assert.Equal(CatalogDiagnosticSeverity.Warning, warning.Severity);
-        Assert.Equal("M:Fixture.Utilities.Helpers.Hidden", warning.Source);
-        Assert.Contains("Hidden", warning.Message, System.StringComparison.Ordinal);
+        CatalogDiagnostic hidden = Result.Diagnostics.Single(warning => warning.Source == "M:Fixture.Utilities.Helpers.Hidden");
+        Assert.Contains("Hidden", hidden.Message, System.StringComparison.Ordinal);
+        Assert.Contains(Result.Diagnostics, warning => warning.Source == "M:Fixture.Utilities.InternalNodeOnly.Quiet");
     }
 }

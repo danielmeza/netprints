@@ -132,6 +132,21 @@ public sealed class CatalogConfigTests
     }
 
     [Fact]
+    public void AnInlineProfileWithACommentAndATrailingCommaIsAccepted()
+    {
+        CatalogConfig file = CatalogConfigResolver.Parse("""
+            { "sources": [ { "assembly": "a.dll" } ], "profile": { // why
+                "schemaVersion": 1, "id": "inline", "base": "none", "includeNamespaces": [ "A.*", ], } }
+            """);
+
+        ResolvedCatalogConfig resolved = Resolve(file);
+
+        Assert.NotNull(resolved.InlineProfileJson);
+        Assert.DoesNotContain("//", resolved.InlineProfileJson, StringComparison.Ordinal);
+        Assert.Equal("inline", ProfileJson.Parse(resolved.InlineProfileJson).Id);
+    }
+
+    [Fact]
     public void AnInvalidInlineProfileFails()
     {
         CatalogConfig file = CatalogConfigResolver.Parse("""{ "sources": [ { "assembly": "a.dll" } ], "profile": { "base": "everything" } }""");

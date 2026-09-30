@@ -4,7 +4,7 @@ using System.Text;
 namespace NetPrints.Catalog;
 
 /// <summary>Writes .NET strings as C# string literals. Shared source: no file access, no System.Text.Json.</summary>
-public static class CSharpLiteral
+internal static class CSharpLiteral
 {
     private const int FirstNonControlCharacter = 0x20;
 

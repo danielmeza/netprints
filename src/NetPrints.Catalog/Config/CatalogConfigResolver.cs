@@ -1,7 +1,9 @@
 using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.Json;
 
 namespace NetPrints.Catalog;
@@ -183,7 +185,7 @@ public static class CatalogConfigResolver
             case JsonValueKind.String:
                 return (ProfileReference(profile.GetString() ?? string.Empty, fileDirectory), null);
             case JsonValueKind.Object:
-                string json = profile.GetRawText();
+                string json = Serialize(profile);
                 try
                 {
                     ProfileJson.Parse(json);
@@ -201,4 +203,15 @@ public static class CatalogConfigResolver
 
     private static string ProfileReference(string value, string directory) =>
         value.EndsWith(ProfileFileSuffix, StringComparison.OrdinalIgnoreCase) ? Path.GetFullPath(value, directory) : value;
+
+    private static string Serialize(JsonElement element)
+    {
+        ArrayBufferWriter<byte> buffer = new();
+        using (Utf8JsonWriter writer = new(buffer))
+        {
+            element.WriteTo(writer);
+        }
+
+        return Encoding.UTF8.GetString(buffer.WrittenSpan);
+    }
 }

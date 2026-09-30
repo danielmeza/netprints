@@ -13,6 +13,12 @@ public static class CatalogReader
 {
     private const string SchemaVersionProperty = "schemaVersion";
 
+    // A copy of the context options that also reads an escaped unpaired surrogate; the context itself stays untouched, as the schema is generated from it.
+    private static readonly JsonSerializerOptions ReadOptions = new(CatalogJsonContext.Default.Options)
+    {
+        Converters = { new LenientStringConverter() },
+    };
+
     /// <summary>Reads a catalog from a UTF-8 stream.</summary>
     /// <param name="stream">The stream to read.</param>
     /// <returns>The catalog.</returns>
@@ -69,7 +75,7 @@ public static class CatalogReader
                 $"Catalog schemaVersion {schemaVersion} is not supported; this reader supports up to {CatalogDocument.CurrentSchemaVersion}.");
         }
 
-        CatalogDocument document = root.Deserialize(CatalogJsonContext.Default.CatalogDocument)
+        CatalogDocument document = root.Deserialize<CatalogDocument>(ReadOptions)
             ?? throw Malformed("the document is empty");
         document = document with { Types = document.Types ?? [] };
         Validate(document);

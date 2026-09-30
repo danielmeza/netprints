@@ -4,7 +4,7 @@ using Microsoft.CodeAnalysis;
 namespace NetPrints.Catalog;
 
 /// <summary>Documentation comment ids of Roslyn symbols, the ids catalogs use for types and members.</summary>
-public static class SymbolIds
+internal static class SymbolIds
 {
     private const int PrefixLength = 2;
 

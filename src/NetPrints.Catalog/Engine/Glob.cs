@@ -7,7 +7,7 @@ namespace NetPrints.Catalog;
 /// <c>Ns.*</c> covers nested namespaces and nested types), <c>?</c> matches exactly one character, everything
 /// else is a literal. Matching is ordinal and case-sensitive.
 /// </summary>
-public static class Glob
+internal static class Glob
 {
     private const char AnyRun = '*';
 
