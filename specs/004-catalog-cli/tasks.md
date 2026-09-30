@@ -335,7 +335,7 @@ contracts/catalog.md). **Independent test**: CT-T01–CT-T19; SC-004, SC-005 (ex
 - [x] T052 [US2] `src/NetPrints.Catalog/Config/CatalogConfig.cs`, `CatalogOverrides.cs`, `CatalogConfigResolver.cs`,
   `CatalogConfigJsonContext.cs`; generate and commit `schemas/netprints.catalog.v1.schema.json`; add its case to
   `Format/CatalogSchemaTests.cs` (CT-T16) and its instance glob (`netprints.catalog.json`) to `eng/validate-schemas.sh`.
-- [ ] T053 [US2] Test first `tests/NetPrints.Catalog.Tests/Sources/CatalogSourceResolverTests.cs` with a fake
+- [x] T053 [US2] Test first `tests/NetPrints.Catalog.Tests/Sources/CatalogSourceResolverTests.cs` with a fake
   `IProjectSystem`/`IProcessRunner` (temporary project content, cleanup, restore failure → error, and a run under a
   temporary directory holding a CPM `Directory.Packages.props` and a `Directory.Build.props` that must not leak in); then
   `src/NetPrints.Catalog/Sources/CatalogSourceResolver.cs` (research R9: user project for `project`; temporary SDK project
@@ -344,7 +344,7 @@ contracts/catalog.md). **Independent test**: CT-T01–CT-T19; SC-004, SC-005 (ex
   `ImportDirectoryBuildTargets`, `ImportDirectoryPackagesProps` and `ManagePackageVersionsCentrally` to `false`;
   `dotnet restore` through `IProcessRunner`; package assemblies identified by global-packages path) and
   `Sources/CatalogCompilationFactory.cs`.
-- [ ] T054 [US2] Test first `tests/NetPrints.Catalog.Tests/Emit/CSharpFormatTests.cs` (CT-T14); then shared
+- [x] T054 [US2] Test first `tests/NetPrints.Catalog.Tests/Emit/CSharpFormatTests.cs` (CT-T14); then shared
   `src/NetPrints.Catalog/Emit/CSharpLiteral.cs` (escaping) and `Emit/CatalogCSharpEmitter.cs`; whole suite; commit.
 
 ### Batch D6 — model: sonnet — T055–T058 — 6 units

@@ -611,3 +611,33 @@ static NetPrints.Catalog.CSharpLiteral.Quote(string! value) -> string!
 NetPrints.Catalog.CatalogCSharpEmitter
 static NetPrints.Catalog.CatalogCSharpEmitter.Emit(NetPrints.Catalog.CatalogDocument! document, string! namespace, string! className) -> string!
 NetPrints.Catalog.CSharpLiteral
+NetPrints.Catalog.CatalogSourceResolver.CatalogSourceResolver(NetPrints.Projects.IProjectSystem! projects, NetPrints.Projects.IProcessRunner! processes) -> void
+override NetPrints.Catalog.CatalogCompilationInput.GetHashCode() -> int
+NetPrints.Catalog.CatalogSourceSet.DeleteTemporaryDirectories() -> void
+NetPrints.Catalog.CatalogSourceException
+NetPrints.Catalog.CatalogCompilationInput.Assemblies.init -> void
+NetPrints.Catalog.CatalogCompilationInput.Documentation.get -> NetPrints.Catalog.IDocumentationSource!
+static NetPrints.Catalog.CatalogCompilationFactory.Create(NetPrints.Catalog.CatalogSourceSet! sources) -> NetPrints.Catalog.CatalogCompilationInput!
+NetPrints.Catalog.CatalogSourceSet.Targets.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Projects.ResolvedAssembly!>!
+NetPrints.Catalog.CatalogCompilationInput.Documentation.init -> void
+NetPrints.Catalog.CatalogSourceResolver
+NetPrints.Catalog.CatalogCompilationInput.Deconstruct(out Microsoft.CodeAnalysis.CSharp.CSharpCompilation! Compilation, out System.Collections.Generic.IReadOnlyList<Microsoft.CodeAnalysis.IAssemblySymbol!>! Assemblies, out NetPrints.Catalog.IDocumentationSource! Documentation) -> void
+NetPrints.Catalog.CatalogCompilationInput.Compilation.init -> void
+NetPrints.Catalog.CatalogSourceResolver.ResolveAsync(NetPrints.Catalog.ResolvedCatalogConfig! config, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<NetPrints.Catalog.CatalogSourceSet!>!
+NetPrints.Catalog.CatalogCompilationInput.Equals(NetPrints.Catalog.CatalogCompilationInput? other) -> bool
+NetPrints.Catalog.CatalogSourceSet.References.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Projects.ResolvedAssembly!>!
+NetPrints.Catalog.CatalogSourceSet.Diagnostics.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Catalog.CatalogDiagnostic!>!
+static NetPrints.Catalog.CatalogCompilationInput.operator !=(NetPrints.Catalog.CatalogCompilationInput? left, NetPrints.Catalog.CatalogCompilationInput? right) -> bool
+static NetPrints.Catalog.CatalogCompilationInput.operator ==(NetPrints.Catalog.CatalogCompilationInput? left, NetPrints.Catalog.CatalogCompilationInput? right) -> bool
+NetPrints.Catalog.CatalogCompilationFactory
+NetPrints.Catalog.CatalogSourceSet.CatalogSourceSet(System.Collections.Generic.IReadOnlyList<NetPrints.Projects.ResolvedAssembly!>! references, System.Collections.Generic.IReadOnlyList<NetPrints.Projects.ResolvedAssembly!>! targets, System.Collections.Generic.IReadOnlyList<NetPrints.Catalog.CatalogDiagnostic!>! diagnostics, System.Collections.Generic.IReadOnlyList<string!>! temporaryDirectories) -> void
+NetPrints.Catalog.CatalogSourceSet
+override NetPrints.Catalog.CatalogCompilationInput.Equals(object? obj) -> bool
+NetPrints.Catalog.CatalogCompilationInput.Assemblies.get -> System.Collections.Generic.IReadOnlyList<Microsoft.CodeAnalysis.IAssemblySymbol!>!
+NetPrints.Catalog.CatalogSourceSet.TemporaryDirectories.get -> System.Collections.Generic.IReadOnlyList<string!>!
+NetPrints.Catalog.CatalogCompilationInput
+NetPrints.Catalog.CatalogSourceException.CatalogSourceException(string! message, System.Exception? innerException = null) -> void
+override NetPrints.Catalog.CatalogCompilationInput.ToString() -> string!
+NetPrints.Catalog.CatalogCompilationInput.CatalogCompilationInput(Microsoft.CodeAnalysis.CSharp.CSharpCompilation! Compilation, System.Collections.Generic.IReadOnlyList<Microsoft.CodeAnalysis.IAssemblySymbol!>! Assemblies, NetPrints.Catalog.IDocumentationSource! Documentation) -> void
+NetPrints.Catalog.CatalogCompilationInput.Compilation.get -> Microsoft.CodeAnalysis.CSharp.CSharpCompilation!
+NetPrints.Catalog.CatalogCompilationInput.<Clone>$() -> NetPrints.Catalog.CatalogCompilationInput!
