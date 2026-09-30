@@ -32,7 +32,8 @@ public sealed class GraphMergerTests : IDisposable
         string oursFile = Path.Combine(_temp, "A.tmp");
         string theirsFile = Path.Combine(_temp, "B.tmp");
         File.Copy(Fixture(fixture, "base"), baseFile, overwrite: true);
-        File.Copy(Fixture(fixture, "ours"), oursFile, overwrite: true);
+        string oursFixture = Fixture(fixture, "ours");
+        File.Copy(File.Exists(oursFixture) ? oursFixture : Path.Combine(FixtureRoot, fixture, "ours.conflicted.txt"), oursFile, overwrite: true);
         File.Copy(Fixture(fixture, "theirs"), theirsFile, overwrite: true);
 
         var host = new CliTestHost(_temp);
