@@ -283,3 +283,5 @@ static NetPrints.Catalog.CatalogTypeRef.operator !=(NetPrints.Catalog.CatalogTyp
 static NetPrints.Catalog.CatalogTypeRef.operator ==(NetPrints.Catalog.CatalogTypeRef? left, NetPrints.Catalog.CatalogTypeRef? right) -> bool
 static NetPrints.Catalog.CatalogVariable.operator !=(NetPrints.Catalog.CatalogVariable? left, NetPrints.Catalog.CatalogVariable? right) -> bool
 static NetPrints.Catalog.CatalogVariable.operator ==(NetPrints.Catalog.CatalogVariable? left, NetPrints.Catalog.CatalogVariable? right) -> bool
+NetPrints.Catalog.CatalogSchema
+static NetPrints.Catalog.CatalogSchema.GenerateV1() -> string!

@@ -267,7 +267,7 @@ contracts/catalog.md). **Independent test**: CT-T01–CT-T19; SC-004, SC-005 (ex
   so every shared file builds on netstandard2.0 from this batch on.
 - [x] T039 [US2] `src/NetPrints.Catalog/Json/CanonicalCatalogWriter.cs` (shared, no System.Text.Json),
   `Json/CatalogReader.cs`, `Json/CatalogJsonContext.cs`, `Json/CatalogFormatException.cs`.
-- [ ] T040 [US2] `src/NetPrints.Catalog/Json/CatalogSchema.cs` (JsonSchemaExporter, like `NetPrintsJsonSchema`),
+- [x] T040 [US2] `src/NetPrints.Catalog/Json/CatalogSchema.cs` (JsonSchemaExporter, like `NetPrintsJsonSchema`),
   committed `schemas/npcat.v1.schema.json`, test `tests/NetPrints.Catalog.Tests/Format/CatalogSchemaTests.cs`
   (CT-T16, npcat part); `eng/validate-schemas.sh` loops over every `schemas/*.schema.json` with its instance globs
   (`*.netpc.json`, `*.npcat.json`); `scripts/build-docs.sh` adds a `cmp` per schema; whole suite; commit.

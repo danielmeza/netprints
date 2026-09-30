@@ -234,4 +234,22 @@ Deviations: the version is read from the package folder name rather than substit
 
 26 comments in review 5362322402 (2 High, 5 Medium, 13 Low, 6 Nit); all fixed: runtime behaviour in 3f8469d (part 1), CI gate, version rule, SDK property, tests, script, docs and these notes in part 2. Lessons: a gate needs a run that proves it can fail; an SDK build target that rewrites files must run after, not before, a check of those files; a note that says "None" for open items needs a list to be true.
 
+## Sub-phase D
+
+### Batch D1 (T037-T040, model, writer, reader, schema)
+
+Decisions:
+- Model type names carry the `Catalog` prefix (`CatalogTypeRef`, `CatalogNodeHint`, `CatalogObsoleteInfo`, `CatalogTypedValue`, `CatalogTypeKind`, ...) so they never clash with Roslyn's `TypeKind` or the Core specifier types; data-model.md's short names map one to one.
+- Optional flags (`generic`, `isEnum`, `isInterface`, `params`, `error`) are plain `bool` (false = omitted); optional collections are `IReadOnlyList<T>?`. Records compare lists by reference, so round trips are asserted on the re-written text, not with `Assert.Equal` on records.
+- The writer writes the model in the order it is given; sorting (by name, id, rendered name) belongs to the builder (D3). Assemblies are written multi-line (only parameters, type references, node hints and obsolete records are inline, as the contract lists); every parameter is one line inside a multi-line `parameters` array, string arrays (`modifiers`, `genericParameters`, `keywords`) are inline, `enumMembers` and `interfaces` are one per line. An empty obsolete record is written `{}`.
+- Escaping: `"`, `\\`, and every char below U+0020 (`\n`, `\r`, `\t` short, the rest `\u00xx` lower-case); U+007F to U+009F and everything non-ASCII are written as is.
+- No `!` anywhere; `LowerCaseEnumConverter<T>` (net10.0 only) reads and writes enums as lower-case names because the shared model cannot carry System.Text.Json attributes. `CatalogJsonContext` sets camel case, `WhenWritingNull` and `RespectNullableAnnotations`; the generated schema replaces the exporter's output for enums with a lower-case `enum` list, strips `null` from `type` and pins `schemaVersion` to `const 1`.
+- The reader checks `schemaVersion` on the JSON element first (missing or non-number is NPC102, above 1 is NPC101), then deserializes; it also rejects an empty `assemblies` list and duplicate type ids (NPC102). `Types` is normalized to an empty list because the generated deserializer leaves it null when the property is absent.
+- `CatalogDiagnosticCodes` constants are named after the meaning (`UnsupportedSchemaVersion`, `MalformedCatalog`, ...); `ExperimentalApis.cs` (the second `NPXE0004` declaration) arrives with T044, so no experimental type exists yet and no D1 file needs the opt-in.
+- API tracking: `dotnet format analyzers --diagnostics RS0016 RS0037` filled `PublicAPI.Unshipped.txt` for the model; `CatalogSchema` was added by hand because the fixer reported nothing for it.
+- `eng/validate-schemas.sh` loops over `SCHEMAS` (schema file and instance glob); a schema with no tracked instance fails. `scripts/build-docs.sh` compares both schemas after the copy.
+- The Annotations project already compiles the shared sources (Model, Engine, `CanonicalCatalogWriter`, Emit) for netstandard2.0; that build is the proof that they stay compatible.
+
+Red/green: T037 tests were written before any model type existed (red = compile errors CS0246 on `CatalogDocument`), committed, then green with T038/T039 (24 tests). T040's `CatalogSchemaTests` were red on `CatalogSchema` missing, then green (35 tests in `NetPrints.Catalog.Tests`); the sourcemeta CLI lint caught `enum_with_type` on the first schema, fixed in `CatalogSchema`.
+
 ## Governance proposals

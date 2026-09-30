@@ -26,3 +26,4 @@ cp schemas/*.schema.json website/build/schemas/
 
 test -f website/build/api/index.html
 cmp schemas/netpc.v1.schema.json website/build/schemas/netpc.v1.schema.json
+cmp schemas/npcat.v1.schema.json website/build/schemas/npcat.v1.schema.json
