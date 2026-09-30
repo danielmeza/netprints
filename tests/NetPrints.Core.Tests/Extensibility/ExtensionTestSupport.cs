@@ -222,10 +222,11 @@ public static class ExtensionTestSupport
     public static ExtensionLoadResult.Failed SingleFailure(ExtensionRegistry registry, string id) =>
         Assert.Single(registry.Results.OfType<ExtensionLoadResult.Failed>(), r => r.Id == id);
 
-    private static readonly string[] OptedInExperimentalIds = [ExperimentalApiIds.HostChannel, ExperimentalApiIds.Settings, ExperimentalApiIds.Emitters];
-
-    /// <summary>Compiles <paramref name="source"/> into <c>folder/name.dll</c> against the host's assemblies.</summary>
-    public static string Compile(string folder, string name, string source)
+    /// <summary>
+    /// Compiles <paramref name="source"/> into <c>folder/name.dll</c> against the host's assemblies. <paramref name="optIn"/> lists the
+    /// experimental ids the source uses (ADR-0017): the compilation equivalent of the opt-in items a project declares.
+    /// </summary>
+    public static string Compile(string folder, string name, string source, params string[] optIn)
     {
         Directory.CreateDirectory(folder);
         string trusted = (string?)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") ?? string.Empty;
@@ -236,7 +237,7 @@ public static class ExtensionTestSupport
             [CSharpSyntaxTree.ParseText(source)],
             references,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: NullableContextOptions.Enable)
-                .WithSpecificDiagnosticOptions(OptedInExperimentalIds.ToDictionary(id => id, _ => ReportDiagnostic.Suppress)));
+                .WithSpecificDiagnosticOptions(optIn.ToDictionary(id => id, _ => ReportDiagnostic.Suppress)));
         string path = Path.Combine(folder, name + ".dll");
         var emitted = compilation.Emit(path);
         Assert.True(emitted.Success, string.Join(Environment.NewLine, emitted.Diagnostics.Where(d => d.Severity == DiagnosticSeverity.Error)));

@@ -5,6 +5,8 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally Condition="'$(ManagePackageVersionsCentrally)' == ''">true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+    <!-- Shared by the PackageVersion below and NetPrints.Core.Tests' PackageDownload (PublicApiTrackingTests loads the analyzer from the package folder). -->
+    <PublicApiAnalyzersVersion>5.6.0</PublicApiAnalyzersVersion>
   </PropertyGroup>
 
   <ItemGroup Label="Versioning">
@@ -27,7 +29,7 @@
     <!-- RS0030 (ADR-0003 follow-up): bans sync-over-async and DateTime.Now/Thread.Sleep APIs no
          CA/VSTHRD/Sonar rule targets. src/Directory.Build.props only, so tests/ is unaffected. -->
     <PackageVersion Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="5.6.0" />
-    <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="5.6.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="$(PublicApiAnalyzersVersion)" />
   </ItemGroup>
 
   <ItemGroup Label="CLI">

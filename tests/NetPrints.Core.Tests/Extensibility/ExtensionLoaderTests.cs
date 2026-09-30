@@ -245,6 +245,24 @@ public class ExtensionLoaderTests : IDisposable
     }
 
     [Fact]
+    public void ATestExtensionMustListTheExperimentalIdsItUses()
+    {
+        const string source = """
+            public class Emitter : NetPrints.Translator.IClassEmitter
+            {
+                public string Id => "sample";
+                public void EmitClass(NetPrints.Translator.ClassEmitContext context) { }
+            }
+            """;
+
+        var failure = Assert.ThrowsAny<Xunit.Sdk.XunitException>(() => Compile(Path.Combine(root, "no-opt-in"), "NoOptIn", source));
+        Assert.Contains(ExperimentalApiIds.Emitters, failure.Message, StringComparison.Ordinal);
+
+        Assert.True(File.Exists(Compile(Path.Combine(root, "opt-in"), "OptIn", source, ExperimentalApiIds.Emitters)));
+        Assert.ThrowsAny<Xunit.Sdk.XunitException>(() => Compile(Path.Combine(root, "wrong-opt-in"), "WrongOptIn", source, ExperimentalApiIds.Settings));
+    }
+
+    [Fact]
     public async Task AnExtensionAssemblyLoadsInItsOwnContextAndSharesNetPrintsTypes()
     {
         string folder = Path.Combine(root, "x");
@@ -261,7 +279,7 @@ public class ExtensionLoaderTests : IDisposable
                 public string Id => "sample";
                 public void EmitClass(NetPrints.Translator.ClassEmitContext context) { }
             }
-            """);
+            """, ExperimentalApiIds.Emitters);
         var logs = new CollectingLoggerFactory();
 
         await using ExtensionRegistry registry = Load(Options(folders: [folder]), logs);

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Xml.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -75,7 +76,7 @@ namespace NetPrints.Tests.Core
                 .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
                     && !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal))];
 
-            var declaredCodes = new List<string>();
+            var declaredCodes = new List<(string Code, string File)>();
             var offenders = new List<string>();
 
             foreach (string path in sourceFiles)
@@ -97,7 +98,7 @@ namespace NetPrints.Tests.Core
                     if (declaration.Success)
                     {
                         Assert.True(isDeclaringFile, $"{relativePath}: a diagnostic code constant must be declared in one of the designated files.");
-                        declaredCodes.Add(declaration.Groups["code"].Value);
+                        declaredCodes.Add((declaration.Groups["code"].Value, relativePath));
                         continue;
                     }
 
@@ -115,14 +116,26 @@ namespace NetPrints.Tests.Core
 
             Assert.Empty(offenders);
 
-            IEnumerable<string> duplicates = declaredCodes.GroupBy(code => code, StringComparer.Ordinal)
-                .Where(group => group.Count() > 1 && group.Key != AllowedDuplicateCode)
+            IEnumerable<string> duplicates = declaredCodes.GroupBy(declaration => declaration.Code, StringComparer.Ordinal)
+                .Where(group => group.Count() > 1 && !IsAllowedDuplicate(group.Key, [.. group.Select(declaration => declaration.File)]))
                 .Select(group => group.Key);
             Assert.Empty(duplicates);
         }
 
         /// <summary>The generator cannot reference Core, so <c>Catalog/Engine/ExperimentalApis.cs</c> re-declares this id (ADR-0017 decision, implementation notes).</summary>
         private const string AllowedDuplicateCode = "NPXE0004";
+
+        private static readonly string[] AllowedDuplicateFiles =
+        [
+            "NetPrints.Core/ExperimentalApiIds.cs",
+            "NetPrints.Catalog/Engine/ExperimentalApis.cs",
+        ];
+
+        /// <summary>The one allowed duplicate is exactly two declarations of <c>NPXE0004</c>, one in each of the two named files.</summary>
+        internal static bool IsAllowedDuplicate(string code, IReadOnlyCollection<string> files) =>
+            code == AllowedDuplicateCode
+            && files.Count == AllowedDuplicateFiles.Length
+            && files.Select(file => file.Replace('\\', '/')).Order(StringComparer.Ordinal).SequenceEqual(AllowedDuplicateFiles.Order(StringComparer.Ordinal));
 
         [GeneratedRegex(@"""(?:(?:NPT|NPD|NPX|NPW|NPC)\d{3,}|NPXE\d{4})""")]
         private static partial Regex DiagnosticCodeLiteralPattern();
@@ -402,42 +415,6 @@ namespace NetPrints.Tests.Core
             return null;
         }
 
-        [GeneratedRegex(@"<NoWarn>")]
-        private static partial Regex NoWarnPattern();
-
-        [GeneratedRegex(@"<WarningsNotAsErrors>")]
-        private static partial Regex WarningsNotAsErrorsPattern();
-
-        [GeneratedRegex(@"<TreatWarningsAsErrors>\s*false\s*</TreatWarningsAsErrors>", RegexOptions.IgnoreCase)]
-        private static partial Regex TreatWarningsAsErrorsFalsePattern();
-
-        [GeneratedRegex(@"<WarningLevel>")]
-        private static partial Regex WarningLevelPattern();
-
-        [GeneratedRegex(@"<MSBuildWarningsNotAsErrors>(?<value>[^<]*)</MSBuildWarningsNotAsErrors>")]
-        private static partial Regex MSBuildWarningsNotAsErrorsPattern();
-
-        [GeneratedRegex(@"<MSBuildWarningsAsMessages>(?<value>[^<]*)</MSBuildWarningsAsMessages>")]
-        private static partial Regex MSBuildWarningsAsMessagesPattern();
-
-        /// <summary>
-        /// ADR-0003 "Build-property allowances": an engine-level <c>&lt;MSBuildWarningsNotAsErrors&gt;</c>
-        /// or <c>&lt;MSBuildWarningsAsMessages&gt;</c> entry lowers the warning bar the same way a
-        /// compiler-level <c>&lt;NoWarn&gt;</c> does, just for MSBuild's own diagnostics instead of
-        /// Roslyn's. Allowed only for a warning code listed here, keyed by the file and the code.
-        /// </summary>
-        private static readonly HashSet<(string File, string Code)> BuildPropertyAllowlist = new()
-        {
-            // MinVer warns (MINVER1001) when there is no .git history (a source archive); release
-            // contract §1 requires the build to stay green in that case.
-            ("Directory.Build.props", "MINVER1001"),
-        };
-
-        /// <summary>Splits a semicolon-separated MSBuild property value into its literal warning codes, dropping a self-referencing <c>$(...)</c> expansion.</summary>
-        private static IEnumerable<string> ExtractWarningCodes(string value) =>
-            value.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-                .Where(token => !token.StartsWith("$(", StringComparison.Ordinal));
-
         /// <summary>
         /// No <c>.props</c>, <c>.targets</c> or <c>.csproj</c> file anywhere in the repository (except
         /// <c>legacy/</c>, kept for reference and not built) lowers the warning bar the root
@@ -456,95 +433,35 @@ namespace NetPrints.Tests.Core
             var offenders = new List<string>();
             int parsedFileCount = 0;
 
-            IEnumerable<string> files = new[] { "*.props", "*.targets", "*.csproj" }
-                .SelectMany(pattern => Directory.EnumerateFiles(root, pattern, SearchOption.AllDirectories))
-                .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
-                    && !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
-                    && !path.Contains($"{Path.DirectorySeparatorChar}legacy{Path.DirectorySeparatorChar}", StringComparison.Ordinal));
-
-            foreach (string path in files)
+            foreach ((string relativePath, XDocument document) in BuildFileRules.Load(root, "*.props", "*.targets", "*.csproj"))
             {
                 parsedFileCount++;
-                string relativePath = Path.GetRelativePath(root, path).Replace('\\', '/');
-                string text = File.ReadAllText(path);
-
-                if (NoWarnPattern().IsMatch(text) && !IsOptInNoWarn(relativePath, text))
-                {
-                    offenders.Add($"{relativePath}: <NoWarn>");
-                }
-
-                if (WarningsNotAsErrorsPattern().IsMatch(text))
-                {
-                    offenders.Add($"{relativePath}: <WarningsNotAsErrors>");
-                }
-
-                if (TreatWarningsAsErrorsFalsePattern().IsMatch(text))
-                {
-                    offenders.Add($"{relativePath}: <TreatWarningsAsErrors>false</TreatWarningsAsErrors>");
-                }
-
-                if (WarningLevelPattern().IsMatch(text))
-                {
-                    offenders.Add($"{relativePath}: <WarningLevel>");
-                }
-
-                foreach (Match match in MSBuildWarningsNotAsErrorsPattern().Matches(text))
-                {
-                    foreach (string code in ExtractWarningCodes(match.Groups["value"].Value))
-                    {
-                        if (!BuildPropertyAllowlist.Contains((relativePath, code)))
-                        {
-                            offenders.Add($"{relativePath}: unlisted <MSBuildWarningsNotAsErrors> {code}");
-                        }
-                    }
-                }
-
-                foreach (Match match in MSBuildWarningsAsMessagesPattern().Matches(text))
-                {
-                    foreach (string code in ExtractWarningCodes(match.Groups["value"].Value))
-                    {
-                        if (!BuildPropertyAllowlist.Contains((relativePath, code)))
-                        {
-                            offenders.Add($"{relativePath}: unlisted <MSBuildWarningsAsMessages> {code}");
-                        }
-                    }
-                }
+                offenders.AddRange(BuildFileRules.WarningOffenders(relativePath, document));
             }
 
             Assert.True(parsedFileCount > 0, "Expected to scan at least one .props/.targets/.csproj file.");
             Assert.Empty(offenders);
         }
 
-        private const string OptInNoWarnLine = "<NoWarn>$(NoWarn);@(NetPrintsExperimentalOptIn)</NoWarn>";
-
-        private const string OptInTargetsFile = "Directory.Build.targets";
-
-        /// <summary>ADR-0017: the one <c>&lt;NoWarn&gt;</c> the repository allows is the opt-in line in the root <c>Directory.Build.targets</c>.</summary>
-        private static bool IsOptInNoWarn(string relativePath, string text) =>
-            relativePath == OptInTargetsFile
-            && NoWarnPattern().Count(text) == 1
-            && text.Contains(OptInNoWarnLine, StringComparison.Ordinal);
-
-        private static IEnumerable<string> EnumerateBuildFiles(string root, params string[] patterns) =>
-            patterns.SelectMany(pattern => Directory.EnumerateFiles(root, pattern, SearchOption.AllDirectories))
-                .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
-                    && !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
-                    && !path.Contains($"{Path.DirectorySeparatorChar}legacy{Path.DirectorySeparatorChar}", StringComparison.Ordinal));
-
         /// <summary>ADR-0017: the opt-in line exists exactly once, in <c>Directory.Build.targets</c>, and no other file has a <c>&lt;NoWarn&gt;</c>.</summary>
         [Fact]
         public void TheOnlyNoWarnIsTheExperimentalOptInLine()
         {
             string root = SampleProjectFactory.FindRepositoryRoot();
-            string[] holders =
-            [
-                .. EnumerateBuildFiles(root, "*.props", "*.targets", "*.csproj")
-                    .Where(path => NoWarnPattern().IsMatch(File.ReadAllText(path)))
-                    .Select(path => Path.GetRelativePath(root, path).Replace('\\', '/')),
-            ];
+            var holders = new List<string>();
+            foreach ((string relativePath, XDocument document) in BuildFileRules.Load(root, "*.props", "*.targets", "*.csproj"))
+            {
+                if (BuildFileRules.NoWarnElements(document).Any())
+                {
+                    holders.Add(relativePath);
+                }
+            }
 
-            Assert.Equal([OptInTargetsFile], holders);
-            Assert.True(IsOptInNoWarn(OptInTargetsFile, File.ReadAllText(Path.Combine(root, OptInTargetsFile))), $"{OptInTargetsFile} must contain exactly {OptInNoWarnLine}");
+            Assert.Equal([BuildFileRules.OptInTargetsFile], holders);
+            XDocument targets = XDocument.Load(Path.Combine(root, BuildFileRules.OptInTargetsFile));
+            Assert.True(
+                BuildFileRules.NoWarnElements(targets).All(noWarn => BuildFileRules.IsOptInNoWarn(BuildFileRules.OptInTargetsFile, targets, noWarn)),
+                $"{BuildFileRules.OptInTargetsFile} must contain exactly <NoWarn>{BuildFileRules.OptInNoWarnValue}</NoWarn>");
         }
 
         /// <summary>ADR-0017: opt-ins are per project, so an item in a props or targets file (a repo-wide or inherited opt-in) is rejected.</summary>
@@ -555,9 +472,9 @@ namespace NetPrints.Tests.Core
 
             string[] offenders =
             [
-                .. EnumerateBuildFiles(root, "*.props", "*.targets")
-                    .Where(path => File.ReadAllText(path).Contains("<NetPrintsExperimentalOptIn", StringComparison.Ordinal))
-                    .Select(path => Path.GetRelativePath(root, path).Replace('\\', '/')),
+                .. BuildFileRules.Load(root, "*.props", "*.targets")
+                    .Where(file => BuildFileRules.Named(file.Document, BuildFileRules.OptInItem).Any())
+                    .Select(file => file.RelativePath),
             ];
 
             Assert.Empty(offenders);
@@ -577,34 +494,13 @@ namespace NetPrints.Tests.Core
             Assert.NotEmpty(declared);
 
             var offenders = new List<string>();
-            foreach (string path in EnumerateBuildFiles(root, "*.csproj"))
+            foreach ((string relativePath, XDocument document) in BuildFileRules.Load(root, "*.csproj"))
             {
-                string relativePath = Path.GetRelativePath(root, path).Replace('\\', '/');
-                foreach (Match item in ExperimentalOptInItemPattern().Matches(File.ReadAllText(path)))
+                foreach (string id in BuildFileRules.OptInIds(document).Where(id => !declared.Contains(id)))
                 {
-                    foreach (string id in item.Groups["ids"].Value.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
-                    {
-                        if (!declared.Contains(id))
-                        {
-                            offenders.Add($"{relativePath}: {id}");
-                        }
-                    }
+                    offenders.Add($"{relativePath}: {id}");
                 }
             }
-
-            Assert.Empty(offenders);
-        }
-
-        /// <summary>ADR-0017: no source file disables an <c>NPXE</c> diagnostic with a pragma; the opt-in item is the only way.</summary>
-        [Fact]
-        public void NoPragmaDisablesAnExperimentalDiagnostic()
-        {
-            string[] offenders =
-            [
-                .. EnumerateSourceAndTestFiles(SampleProjectFactory.FindRepositoryRoot())
-                    .Where(path => File.ReadLines(path).Any(line => ExperimentalPragmaPattern().IsMatch(line)))
-                    .Select(path => Path.GetRelativePath(SampleProjectFactory.FindRepositoryRoot(), path)),
-            ];
 
             Assert.Empty(offenders);
         }
@@ -618,7 +514,7 @@ namespace NetPrints.Tests.Core
             string[] offenders =
             [
                 .. new[] { ".editorconfig", "*.globalconfig" }
-                    .SelectMany(pattern => EnumerateBuildFiles(root, pattern))
+                    .SelectMany(pattern => BuildFileRules.EnumeratePaths(root, pattern))
                     .Where(path => ExperimentalSeverityPattern().IsMatch(File.ReadAllText(path)))
                     .Select(path => Path.GetRelativePath(root, path).Replace('\\', '/')),
             ];
@@ -628,12 +524,6 @@ namespace NetPrints.Tests.Core
 
         [GeneratedRegex(@"const string \w+ = ""(?<id>NPXE\d{4})""")]
         private static partial Regex ExperimentalIdDeclarationPattern();
-
-        [GeneratedRegex(@"<NetPrintsExperimentalOptIn\s+Include=""(?<ids>[^""]*)""")]
-        private static partial Regex ExperimentalOptInItemPattern();
-
-        [GeneratedRegex(@"^\s*#pragma\s+warning\s+disable\b.*\bNPXE", RegexOptions.IgnoreCase)]
-        private static partial Regex ExperimentalPragmaPattern();
 
         [GeneratedRegex(@"^\s*dotnet_diagnostic\.NPXE", RegexOptions.IgnoreCase | RegexOptions.Multiline)]
         private static partial Regex ExperimentalSeverityPattern();

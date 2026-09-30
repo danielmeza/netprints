@@ -26,11 +26,11 @@ authors, who must opt in themselves.
    verified in sub-phase B, and the observed compiler behaviour is recorded in the implementation notes.
 4. Fixture and test extensions opt in per project like any consumer. The extensions guide still tells external
    authors to use `<NoWarn>$(NoWarn);NPXE000n</NoWarn>` (or a narrow `#pragma`), the standard .NET way.
-5. `SourceHygieneTests` enforces:
+5. `SourceHygieneTests` enforces (it reads build files as XML, so attribute order, quotes and `Condition` cannot hide an entry):
    - the only `<NoWarn>` is the `Directory.Build.targets` line;
    - every opt-in item is an id declared in `ExperimentalApiIds`, so unknown or stale ids fail and graduating an
      API forces its opt-ins out;
-   - no `#pragma warning disable NPXE*`;
+   - no `#pragma warning disable` of any form: `NoUnlistedSuppressions` rejects every warning pragma, `NPXE*` included;
    - no `.editorconfig` or globalconfig severity entries for `NPXE` ids.
 6. The probe test (AP-T02) is unchanged: an external compilation without the opt-in gets the error.
 7. ADR-0003's exception-ledger row points to this ADR.
