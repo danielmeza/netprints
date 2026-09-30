@@ -1,0 +1,75 @@
+{
+  "$schema": "https://danielmeza.github.io/netprints/schemas/netpc.v1.schema.json",
+  "schemaVersion": 1,
+  "namespace": "AnnotatedCall",
+  "name": "Program",
+  "visibility": "Public",
+  "classGraph": {
+    "nodes": [
+      { "$kind": "classReturn", "id": "n0000000an1200" }
+    ]
+  },
+  "methods": [
+    {
+      "id": "m0000000an1200",
+      "name": "Main",
+      "visibility": "Public",
+      "modifiers": "Static",
+      "graph": {
+        "nodes": [
+          { "$kind": "methodEntry", "id": "n0000000an1201" },
+          { "$kind": "return", "id": "n0000000an1202" },
+          {
+            "$kind": "callMethod",
+            "id": "n0000000an1203",
+            "pins": [
+              { "pin": "in.data.name", "value": { "type": "System.String", "value": "World" } }
+            ],
+            "method": {
+              "name": "Greet",
+              "declaringType": { "name": "AnnotatedFixture.Greeter" },
+              "parameters": [
+                { "name": "name", "type": { "name": "System.String" } }
+              ],
+              "returnTypes": [
+                { "name": "System.String" }
+              ],
+              "modifiers": "Static",
+              "visibility": "Public"
+            }
+          },
+          {
+            "$kind": "callMethod",
+            "id": "n0000000an1204",
+            "method": {
+              "name": "WriteLine",
+              "declaringType": { "name": "System.Console" },
+              "parameters": [
+                { "name": "value", "type": { "name": "System.String" } }
+              ],
+              "modifiers": "Static",
+              "visibility": "Public"
+            }
+          }
+        ],
+        "connections": [
+          { "from": "n0000000an1201/out.exec.Exec", "to": "n0000000an1203/in.exec.Exec" },
+          { "from": "n0000000an1203/out.exec.Exec", "to": "n0000000an1204/in.exec.Exec" },
+          { "from": "n0000000an1203/out.data.String", "to": "n0000000an1204/in.data.value" },
+          { "from": "n0000000an1204/out.exec.Exec", "to": "n0000000an1202/in.exec.Exec" }
+        ]
+      }
+    }
+  ],
+  "layout": {
+    "class": {
+      "n0000000an1200": [112, 112]
+    },
+    "m0000000an1200": {
+      "n0000000an1201": [112, 112],
+      "n0000000an1202": [1100, 112],
+      "n0000000an1203": [420, 112],
+      "n0000000an1204": [740, 112]
+    }
+  }
+}

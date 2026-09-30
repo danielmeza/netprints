@@ -209,7 +209,9 @@ public sealed class MyLibExtension : INetPrintsExtension
 }
 ```
 
-The editor then offers the catalog's types and members in node search, and the generated code compiles against the real assembly, which the project references. When two loaded catalogs share an id, the first is used and NPC103 is logged.
+The editor then offers the catalog's types and members in node search, and the generated code compiles against the real assembly, which the project references. When two loaded catalogs share an id, the first is used and NPC103 is logged. `LoadFile` throws `CatalogFormatException` (NPC101 for a newer schema, NPC102 otherwise); catch it around each file if the extension should keep working without that catalog.
+
+The editor also reads the catalogs that the assemblies a project references embed (`NetPrints.Annotations`). They come after the extensions' catalogs, so an extension's catalog wins a shared id, and a referenced assembly whose catalog cannot be read (for example a newer schema) is skipped with a warning while the other references still contribute.
 
 The catalog profile APIs (`CatalogProfile`, `AddCatalogProfile`, and the catalog builder) are experimental: using them needs the `NPXE0004` opt-in, see [API stability](extensions.md#api-stability). Loading a catalog (`CatalogLoader`, `ITypeCatalog`) is stable. The repository's fixture extension, `tests/Fixtures/Extensions/Fx.Catalog`, is a complete example, and the test `ExtensionCatalogTests` builds and runs a graph that calls a cataloged method.
 

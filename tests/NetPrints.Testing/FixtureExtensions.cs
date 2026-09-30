@@ -28,4 +28,17 @@ public static class FixtureExtensions
         LocalSdkLayout.DetectConfiguration(),
         "net10.0",
         "CatalogFixtureLib.dll");
+
+    /// <summary>The built <c>CatalogAnnotatedLib.dll</c>, which embeds its own <c>annotated</c> catalog; the test projects build it first and never reference it.</summary>
+    /// <returns>The assembly path, in the configuration of the running tests.</returns>
+    public static string AnnotatedLibraryAssembly() => Path.Combine(
+        LocalSdkLayout.FindRepositoryRoot(),
+        "tests",
+        "Fixtures",
+        "Catalog",
+        "CatalogAnnotatedLib",
+        "bin",
+        LocalSdkLayout.DetectConfiguration(),
+        "net10.0",
+        "CatalogAnnotatedLib.dll");
 }

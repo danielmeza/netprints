@@ -456,11 +456,11 @@ SC-013.
 
 ### Batch E4 — model: sonnet — T076–T078 — 4 units
 
-- [ ] T076 [US3] Test first `tests/NetPrints.Editor.Tests/Reflection/EmbeddedCatalogDiscoveryTests.cs` (AN-T11).
-- [ ] T077 [US3] `src/NetPrints.Editor/Hosting/ReflectionHost.cs`: after the registry's catalogs, add the embedded
+- [x] T076 [US3] Test first `tests/NetPrints.Editor.Tests/Reflection/EmbeddedCatalogDiscoveryTests.cs` (AN-T11).
+- [x] T077 [US3] `src/NetPrints.Editor/Hosting/ReflectionHost.cs`: after the registry's catalogs, add the embedded
   catalogs of `snapshot.References` (`EmbeddedCatalogReader` + `CatalogLoader`), first id wins (NPC103 logged),
   covered assemblies excluded from the live provider; `Hosting/Log.cs` entries.
-- [ ] T078 [US3] `tests/NetPrints.Core.Tests/Samples/AnnotatedLibraryBuildTests.cs` (AN-T12); whole suite; commit.
+- [x] T078 [US3] `tests/NetPrints.Core.Tests/Samples/AnnotatedLibraryBuildTests.cs` (AN-T12); whole suite; commit.
 
 ### Batch E5 — model: haiku — T079–T081 — 3 units
 

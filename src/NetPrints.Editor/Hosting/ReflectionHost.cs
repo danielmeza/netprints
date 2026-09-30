@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
+using NetPrints.Catalog;
 using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Extensibility.Loading;
@@ -14,7 +15,10 @@ namespace NetPrints.Editor.Hosting;
 /// Builds the reflection provider for a project off the UI thread and publishes it on the UI
 /// thread (PAR-15). References and other sources come directly from <see cref="Project.Snapshot"/>
 /// (project-system.md §4: <c>IProjectSystem.LoadAsync</c> already resolved them, MSBuild and NuGet
-/// included), so this host itself never touches the file system for a reference.
+/// included), so this host never resolves a reference itself; it only reads the catalogs the
+/// referenced assemblies embed (FR-028), from their metadata and without loading them. Those follow
+/// the extensions' catalogs, the first catalog of an id wins, and the assemblies a catalog covers
+/// are left out of the live provider.
 /// </summary>
 public sealed class ReflectionHost : IReflectionHost
 {
@@ -31,7 +35,7 @@ public sealed class ReflectionHost : IReflectionHost
     /// </summary>
     /// <param name="dispatcher">Dispatcher used to publish a reloaded provider on the UI thread.</param>
     /// <param name="extensions">Source of the type catalogs and the translation environment of the loaded extensions.</param>
-    /// <param name="logger">Logger for reload start/completion/failure (events 1010-1013).</param>
+    /// <param name="logger">Logger for reload start/completion/failure (events 1010-1014).</param>
     public ReflectionHost(IUiDispatcher dispatcher, IExtensionHost extensions, ILogger<ReflectionHost> logger)
     {
         ArgumentNullException.ThrowIfNull(dispatcher);
@@ -101,8 +105,7 @@ public sealed class ReflectionHost : IReflectionHost
             ProjectTranslationResult translation = ProjectTranslation.TranslateAll(project, registry.Translation);
             var generatedSources = translation.Classes.Values.Select(c => c.Code).ToList();
             var translationWarnings = translation.Diagnostics.Select(d => $"{d.ClassFullName}: {d.Message}").ToList();
-            IReadOnlyList<ITypeCatalog> catalogs = registry.TypeCatalogs;
-            IReadOnlySet<string> excludedAssemblyNames = catalogs.SelectMany(catalog => catalog.Info.CoveredAssemblyNames).ToHashSet(StringComparer.Ordinal);
+            IReadOnlyList<ITypeCatalog> registryCatalogs = registry.TypeCatalogs;
 
             var (newProvider, types) = await Task.Run(() =>
             {
@@ -114,6 +117,8 @@ public sealed class ReflectionHost : IReflectionHost
                 }
 
                 cancellationToken.ThrowIfCancellationRequested();
+                IReadOnlyList<ITypeCatalog> catalogs = CatalogLoader.FirstOfEachId([.. registryCatalogs, .. LoadEmbeddedCatalogs(references, cancellationToken)], logger);
+                IReadOnlySet<string> excludedAssemblyNames = catalogs.SelectMany(catalog => catalog.Info.CoveredAssemblyNames).ToHashSet(StringComparer.Ordinal);
                 IReflectionProvider live = new ReflectionProvider(references, sourceFiles, excludedAssemblyNames);
                 IReflectionProvider composed = catalogs.Count == 0 ? live : new CompositeReflectionProvider([.. catalogs, live]);
                 IReflectionProvider built = new MemoizedReflectionProvider(composed);
@@ -156,5 +161,28 @@ public sealed class ReflectionHost : IReflectionHost
             Log.ReflectionReloadFailed(logger, project.Name, ex);
             throw;
         }
+    }
+
+    private List<ITypeCatalog> LoadEmbeddedCatalogs(IReadOnlyList<ResolvedAssembly> references, CancellationToken cancellationToken)
+    {
+        List<ITypeCatalog> catalogs = [];
+        foreach (ResolvedAssembly reference in references)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            try
+            {
+                catalogs.AddRange(EmbeddedCatalogReader.Read(reference.Path).Select(CatalogLoader.Load));
+            }
+            catch (CatalogFormatException ex)
+            {
+                Log.EmbeddedCatalogSkipped(logger, ex.Code, reference.Path, ex.Message);
+            }
+            catch (IOException ex)
+            {
+                Log.EmbeddedCatalogSkipped(logger, ex.GetType().Name, reference.Path, ex.Message);
+            }
+        }
+
+        return catalogs;
     }
 }
