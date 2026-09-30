@@ -52,5 +52,9 @@ internal static class CliCommandCatalog
         new(ShowCommand.Name, config => config.AddCommand<ShowCommand>(ShowCommand.Name)
             .WithDescription("Print a stable, line-oriented summary of a graph file (the text git diffs).")
             .WithExample(ShowCommand.Name, SampleGraph)),
+        new(MergeCommand.Name, config => config.AddCommand<MergeCommand>(MergeCommand.Name)
+            .WithDescription("The git merge driver for graphs: merge two versions by node, pin and member identity, or fall back to a text merge with conflict markers.")
+            .WithExample(MergeCommand.Name, "%O", "%A", "%B")
+            .WithExample(MergeCommand.Name, "%O", "%A", "%B", "--marker-size", "9", "--path", "Program.netpc.json")),
     ];
 }

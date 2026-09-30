@@ -507,14 +507,14 @@ SC-013.
 
 ### Batch F2 — model: sonnet — T088–T091 — 6 units
 
-- [ ] T088 [US4] Test first `tests/NetPrints.Cli.Tests/Git/GraphMergerTests.cs` (GI-T03–GI-T08, GI-T12) with fixtures
+- [x] T088 [US4] Test first `tests/NetPrints.Cli.Tests/Git/GraphMergerTests.cs` (GI-T03–GI-T08, GI-T12) with fixtures
   `tests/NetPrints.Cli.Tests/Git/Fixtures/<case>/{base,ours,theirs,expected}.netpc.json` (GI-T03 reuses the DF-T23
   base from `tests/NetPrints.Core.Tests/Serialization/MergeTests.cs`).
-- [ ] T089 [US4] `src/NetPrints.Cli/Git/GraphMerger.cs` (inputs read through the `IDocumentFormat` resolved from
+- [x] T089 [US4] `src/NetPrints.Cli/Git/GraphMerger.cs` (inputs read through the `IDocumentFormat` resolved from
   `--path`; identity merge and validation, `MergeConflict`, `MergeOutcome` per data-model.md §7).
-- [ ] T090 [US4] `src/NetPrints.Cli/Git/TextMergeFallback.cs` (`git merge-file -p` through `IProcessRunner`) and
+- [x] T090 [US4] `src/NetPrints.Cli/Git/TextMergeFallback.cs` (`git merge-file -p` through `IProcessRunner`) and
   `src/NetPrints.Cli/Commands/MergeCommand.cs`.
-- [ ] T091 [US4] Whole suite; batch F2 results in `specs/004-catalog-cli/implementation-notes.md`; commit.
+- [x] T091 [US4] Whole suite; batch F2 results in `specs/004-catalog-cli/implementation-notes.md`; commit.
 
 ### Batch F3 — model: sonnet — T092–T095 — 6 units
 
