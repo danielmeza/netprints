@@ -32,6 +32,26 @@ public sealed class CatalogBuilderTests
         Assert.Equal("annotated", result.Document.Profile);
     }
 
+    [Theory]
+    [InlineData("_Private", "private")]
+    [InlineData("My Lib", "my-lib")]
+    [InlineData("Acme.Core_2", "acme.core_2")]
+    [InlineData("Ünï", "n")]
+    [InlineData("___", "catalog")]
+    public void ADerivedIdIsMadeValidFromTheAssemblyName(string assemblyName, string expected)
+    {
+        CSharpCompilation library = FixtureCatalog.CreateCompilation(assemblyName, FixtureCatalog.FrameworkReferences(), CSharpSyntaxTree.ParseText("public class C { }", cancellationToken: TestContext.Current.CancellationToken));
+        using System.IO.MemoryStream stream = new();
+        Assert.True(library.Emit(stream, cancellationToken: TestContext.Current.CancellationToken).Success);
+        MetadataReference reference = MetadataReference.CreateFromStream(new System.IO.MemoryStream(stream.ToArray()));
+        CSharpCompilation tool = FixtureCatalog.CreateCompilation("Tool", [.. FixtureCatalog.FrameworkReferences(), reference]);
+
+        CatalogBuildResult result = CatalogBuilder.Build(tool, [FixtureCatalog.AssemblyOf(tool, reference)], new CatalogProfileFilter(BuiltInCatalogProfiles.PublicApi), XmlDocumentationSource.Empty, new CatalogIdentity());
+
+        Assert.Equal(expected, result.Document.Id);
+        Assert.True(CatalogIdentity.IsValidId(result.Document.Id));
+    }
+
     [Fact]
     public void AnExplicitIdentityOverridesTheDefaults()
     {

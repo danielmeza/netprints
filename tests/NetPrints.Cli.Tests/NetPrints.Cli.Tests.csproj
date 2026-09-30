@@ -25,6 +25,8 @@
     <ProjectReference Include="..\Fixtures\Extensions\Fx.Catalog\Fx.Catalog.csproj" ReferenceOutputAssembly="false" />
     <!-- Built first, never referenced: the catalog tests catalog it, and CT-T12 packs it. -->
     <ProjectReference Include="..\Fixtures\Catalog\CatalogFixtureLib\CatalogFixtureLib.csproj" ReferenceOutputAssembly="false" />
+    <!-- Built first, never referenced: the dependency-resolution tests catalog it with and without its dependency at hand. -->
+    <ProjectReference Include="..\Fixtures\Catalog\CatalogDependentLib\CatalogDependentLib.csproj" ReferenceOutputAssembly="false" />
     <!-- Built first, never referenced: the end-to-end tests run a temp copy of samples/HelloWorld against the generator's own output folder. -->
     <ProjectReference Include="..\..\src\NetPrints.Generator\NetPrints.Generator.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>

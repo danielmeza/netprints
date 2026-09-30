@@ -570,7 +570,7 @@ NetPrints.Catalog.ResolvedCatalogConfig.Format.init -> void
 [NPXE0004]NetPrints.Catalog.CatalogSourceResolver.ResolveAsync(NetPrints.Catalog.ResolvedCatalogConfig! config, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<NetPrints.Catalog.CatalogSourceSet!>!
 [NPXE0004]NetPrints.Catalog.CatalogSourceSet
 [NPXE0004]NetPrints.Catalog.CatalogSourceSet.CatalogSourceSet(System.Collections.Generic.IReadOnlyList<NetPrints.Projects.ResolvedAssembly!>! references, System.Collections.Generic.IReadOnlyList<NetPrints.Projects.ResolvedAssembly!>! targets, System.Collections.Generic.IReadOnlyList<NetPrints.Catalog.CatalogDiagnostic!>! diagnostics, System.Collections.Generic.IReadOnlyList<string!>! temporaryDirectories) -> void
-[NPXE0004]NetPrints.Catalog.CatalogSourceSet.DeleteTemporaryDirectories() -> void
+[NPXE0004]NetPrints.Catalog.CatalogSourceSet.DeleteTemporaryDirectories() -> System.Collections.Generic.IReadOnlyList<string!>!
 [NPXE0004]NetPrints.Catalog.CatalogSourceSet.Diagnostics.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Catalog.CatalogDiagnostic!>!
 [NPXE0004]NetPrints.Catalog.CatalogSourceSet.References.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Projects.ResolvedAssembly!>!
 [NPXE0004]NetPrints.Catalog.CatalogSourceSet.Targets.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Projects.ResolvedAssembly!>!
@@ -617,6 +617,8 @@ NetPrints.Catalog.ResolvedCatalogConfig.Format.init -> void
 [NPXE0004]static NetPrints.Catalog.CatalogAttributeRule.operator !=(NetPrints.Catalog.CatalogAttributeRule? left, NetPrints.Catalog.CatalogAttributeRule? right) -> bool
 [NPXE0004]static NetPrints.Catalog.CatalogAttributeRule.operator ==(NetPrints.Catalog.CatalogAttributeRule? left, NetPrints.Catalog.CatalogAttributeRule? right) -> bool
 [NPXE0004]static NetPrints.Catalog.CatalogBuilder.Build(Microsoft.CodeAnalysis.Compilation! compilation, System.Collections.Generic.IReadOnlyList<Microsoft.CodeAnalysis.IAssemblySymbol!>! assemblies, NetPrints.Catalog.ICatalogFilter! filter, NetPrints.Catalog.IDocumentationSource! documentation, NetPrints.Catalog.CatalogIdentity! identity) -> NetPrints.Catalog.CatalogBuildResult!
+[NPXE0004]static NetPrints.Catalog.CatalogCSharpEmitter.IsValidClassName(string! name) -> bool
+[NPXE0004]static NetPrints.Catalog.CatalogCSharpEmitter.IsValidNamespace(string! name) -> bool
 [NPXE0004]static NetPrints.Catalog.CatalogCSharpEmitter.Emit(NetPrints.Catalog.CatalogDocument! document, string! namespace, string! className) -> string!
 [NPXE0004]static NetPrints.Catalog.CatalogCompilationFactory.Create(NetPrints.Catalog.CatalogSourceSet! sources) -> NetPrints.Catalog.CatalogCompilationInput!
 [NPXE0004]static NetPrints.Catalog.CatalogCompilationInput.operator !=(NetPrints.Catalog.CatalogCompilationInput? left, NetPrints.Catalog.CatalogCompilationInput? right) -> bool

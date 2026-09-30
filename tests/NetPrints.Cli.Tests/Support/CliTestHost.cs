@@ -122,6 +122,12 @@ internal sealed class CliTestHost
 
     public string Output => _testConsole.Output;
 
+    /// <summary>Asserts the exit code and, on a mismatch, shows both outputs so a one-off failure (an internal error, exit 4) names its cause.</summary>
+    /// <param name="expected">The expected exit code.</param>
+    /// <param name="actual">The exit code the run returned.</param>
+    public void AssertExit(int expected, int actual) =>
+        Assert.True(expected == actual, $"Expected exit {expected}, got {actual}.{System.Environment.NewLine}stdout: {Output}{System.Environment.NewLine}stderr: {Error}");
+
     public IServiceCollection Services
     {
         get

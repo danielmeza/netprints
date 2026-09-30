@@ -39,7 +39,7 @@ public sealed class CatalogCommandTests : IDisposable, IClassFixture<PackedFixtu
         Assert.True(first == ExitCodes.Success, _host.Output + _host.Error);
         Assert.Equal(CatalogFixtures.Snapshot(PublicApiSnapshot), File.ReadAllText(Output));
         Assert.Contains("wrote " + Output, _host.Output, StringComparison.Ordinal);
-        Assert.False(Directory.Exists(Path.Combine(_directory, "obj", "netprints-catalog")) && Directory.EnumerateDirectories(Path.Combine(_directory, "obj", "netprints-catalog")).Any());
+        Assert.False(Directory.Exists(Path.Combine(_directory, "obj")));
 
         DateTime modified = File.GetLastWriteTimeUtc(Output);
         var second = new CliTestHost(_directory);
@@ -205,13 +205,116 @@ public sealed class CatalogCommandTests : IDisposable, IClassFixture<PackedFixtu
     [Theory]
     [InlineData("--format", "xml")]
     [InlineData("--package", "NoVersion")]
-    [InlineData("--profile", "no-such-profile")]
     public async Task InvalidOptionValuesAreUsage(string option, string value)
     {
         int exitCode = await _host.RunAsync("catalog", "--assembly", CatalogFixtures.LibraryAssembly, option, value);
 
         Assert.Equal(ExitCodes.Usage, exitCode);
         Assert.NotEmpty(_host.Error.ToString());
+    }
+
+    [Fact]
+    public async Task AnUnknownProfileOptionIsUsageAndPrintsNpc002()
+    {
+        int exitCode = await _host.RunAsync("catalog", "--assembly", CatalogFixtures.LibraryAssembly, "--profile", "no-such-profile");
+
+        Assert.Equal(ExitCodes.Usage, exitCode);
+        Assert.Contains("catalog: error NPC002: Unknown catalog profile 'no-such-profile'. Available: public-api", _host.Error.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AnUnknownProfileInTheConfigurationFileExitsOneAndPrintsNpc002()
+    {
+        string assembly = CatalogFixtures.LibraryAssembly.Replace('\\', '/');
+        File.WriteAllText(
+            Path.Combine(_directory, "netprints.catalog.json"),
+            $$"""{ "schemaVersion": 1, "sources": [ { "assembly": "{{assembly}}" } ], "profile": "no-such-profile" }""");
+
+        int exitCode = await _host.RunAsync("catalog");
+
+        Assert.Equal(ExitCodes.Failed, exitCode);
+        Assert.Contains("catalog: error NPC002: Unknown catalog profile 'no-such-profile'", _host.Error.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AnInvalidProfileFileExitsOneAndPrintsNpc003()
+    {
+        string profile = Path.Combine(_directory, "bad.npprofile.json");
+        File.WriteAllText(profile, "{ not json");
+
+        int exitCode = await _host.RunAsync("catalog", "--assembly", CatalogFixtures.LibraryAssembly, "--profile", profile);
+
+        Assert.Equal(ExitCodes.Failed, exitCode);
+        Assert.Contains("catalog: error NPC003:", _host.Error.ToString(), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("--class-name", "1Bad")]
+    [InlineData("--class-name", "class")]
+    [InlineData("--namespace", "My..Catalogs")]
+    [InlineData("--namespace", "My.namespace")]
+    public async Task AnInvalidClassNameOrNamespaceIsUsageBeforeAnySdkIsNeeded(string option, string value)
+    {
+        _host.MsBuild.Available = false;
+
+        int exitCode = await _host.RunAsync("catalog", "--assembly", CatalogFixtures.LibraryAssembly, "--format", "csharp", option, value);
+
+        Assert.Equal(ExitCodes.Usage, exitCode);
+        Assert.Contains(value, _host.Error.ToString(), StringComparison.Ordinal);
+        Assert.Equal(0, _host.MsBuild.Calls);
+    }
+
+    [Fact]
+    public async Task AMissingConfigurationFileNamedWithConfigIsUsage()
+    {
+        int exitCode = await _host.RunAsync("catalog", "--config", Path.Combine(_directory, "missing.json"));
+
+        Assert.Equal(ExitCodes.Usage, exitCode);
+        Assert.Contains("missing.json", _host.Error.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task TheProjectIsLoadedOncePerRun()
+    {
+        string project = Path.Combine(_directory, "App.csproj");
+        File.WriteAllText(project, "<Project Sdk=\"Microsoft.NET.Sdk\" />");
+
+        int exitCode = await _host.RunAsync("catalog", "--project", project, "--assemblies", "Anything");
+
+        Assert.Equal(ExitCodes.Failed, exitCode);
+        Assert.Contains("NPC001", _host.Output, StringComparison.Ordinal);
+        Assert.Equal([project], _host.Projects.LoadedProjects);
+    }
+
+    [Fact]
+    public async Task ADependencyInAnotherDirectoryIsFoundThroughTheReferencePath()
+    {
+        (string dependent, string dependencies) = SplitDependentFromItsDependency();
+
+        int without = await _host.RunRealAsync("catalog", "--assembly", dependent, "--output", Output);
+        string missing = File.ReadAllText(Output);
+        var withPath = new CliTestHost(_directory);
+        int with = await withPath.RunRealAsync("catalog", "--assembly", dependent, "--reference-path", dependencies, "--output", Output);
+
+        Assert.Equal(ExitCodes.Success, without);
+        Assert.Contains("NPC005", _host.Output, StringComparison.Ordinal);
+        Assert.DoesNotContain("\"Take\"", missing, StringComparison.Ordinal);
+        Assert.True(with == ExitCodes.Success, withPath.Output + withPath.Error);
+        Assert.DoesNotContain("NPC005", withPath.Output, StringComparison.Ordinal);
+        Assert.Contains("\"Take\"", File.ReadAllText(Output), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ADependencyNextToTheAssemblyIsFoundWithoutAReferencePath()
+    {
+        (string dependent, string dependencies) = SplitDependentFromItsDependency();
+        File.Copy(Path.Combine(dependencies, CatalogFixtures.LibraryName + ".dll"), Path.Combine(Path.GetDirectoryName(dependent) ?? _directory, CatalogFixtures.LibraryName + ".dll"));
+
+        int exitCode = await _host.RunRealAsync("catalog", "--assembly", dependent, "--output", Output);
+
+        Assert.True(exitCode == ExitCodes.Success, _host.Output + _host.Error);
+        Assert.DoesNotContain("NPC005", _host.Output, StringComparison.Ordinal);
+        Assert.Contains("\"Take\"", File.ReadAllText(Output), StringComparison.Ordinal);
     }
 
     [Fact]
@@ -234,6 +337,18 @@ public sealed class CatalogCommandTests : IDisposable, IClassFixture<PackedFixtu
 
         Assert.Equal(ExitCodes.Failed, exitCode);
         Assert.Contains("2", _host.Error.ToString(), StringComparison.Ordinal);
+    }
+
+    private (string Dependent, string Dependencies) SplitDependentFromItsDependency()
+    {
+        string dependentDirectory = Path.Combine(_directory, "dependent");
+        string dependencies = Path.Combine(_directory, "dependencies");
+        Directory.CreateDirectory(dependentDirectory);
+        Directory.CreateDirectory(dependencies);
+        string dependent = Path.Combine(dependentDirectory, CatalogFixtures.DependentName + ".dll");
+        File.Copy(CatalogFixtures.DependentAssembly, dependent);
+        File.Copy(CatalogFixtures.LibraryAssembly, Path.Combine(dependencies, CatalogFixtures.LibraryName + ".dll"));
+        return (dependent, dependencies);
     }
 
     private string WriteNetPrintsProject()

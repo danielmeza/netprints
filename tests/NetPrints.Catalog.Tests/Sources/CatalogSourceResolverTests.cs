@@ -269,4 +269,101 @@ public sealed class CatalogSourceResolverTests : IDisposable
         Assert.False(Directory.Exists(first.TemporaryDirectories[0]));
         Assert.True(Directory.Exists(third.TemporaryDirectories[0]));
     }
+
+    [Fact]
+    public async Task ATemporaryProjectLoadErrorFailsTheRunInsteadOfShowingUpAsAMissingReference()
+    {
+        ProjectMessage error = new(ProjectMessageSeverity.Error, ProjectMessage.WorkspaceDiagnostic, "Msbuild failed when processing the file", "catalog.csproj", null, null);
+        CatalogSourceResolver resolver = Resolver(path => FakeProjectSystem.Snapshot(path, [], messages: [error]), out _);
+
+        CatalogSourceException exception = await Assert.ThrowsAsync<CatalogSourceException>(() =>
+            resolver.ResolveAsync(Config(new CatalogSourceConfig { Package = "A", Version = "1.0.0" }), TestContext.Current.CancellationToken));
+
+        Assert.Contains("Msbuild failed when processing the file", exception.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AWarningOnTheTemporaryProjectDoesNotFailTheRun()
+    {
+        ProjectMessage warning = new(ProjectMessageSeverity.Warning, ProjectMessage.WorkspaceDiagnostic, "just a warning", "catalog.csproj", null, null);
+        CatalogSourceResolver resolver = Resolver(path => FakeProjectSystem.Snapshot(path, [], messages: [warning]), out _);
+
+        CatalogSourceSet set = await resolver.ResolveAsync(Config(new CatalogSourceConfig { Package = "A", Version = "1.0.0" }), TestContext.Current.CancellationToken);
+
+        Assert.Single(set.TemporaryDirectories);
+    }
+
+    [Theory]
+    [InlineData("1.0", "1.0.0")]
+    [InlineData("1.0.0.0", "1.0.0")]
+    [InlineData("1.0.0+build5", "1.0.0")]
+    [InlineData("2.1.0-BETA.1", "2.1.0-beta.1")]
+    public async Task APackageVersionThatNuGetNormalizesIsStillFound(string typed, string folder)
+    {
+        ResolvedAssembly own = new(PackagePath("Some.Package", folder, "Some.Package.dll"), null);
+        Dictionary<string, string> properties = new() { ["NuGetPackageRoot"] = PackageRoot };
+        CatalogSourceResolver resolver = Resolver(path => FakeProjectSystem.Snapshot(path, [own], properties), out _);
+
+        CatalogSourceSet set = await resolver.ResolveAsync(Config(new CatalogSourceConfig { Package = "Some.Package", Version = typed }), TestContext.Current.CancellationToken);
+
+        Assert.Equal([own], set.Targets);
+        Assert.Empty(set.Diagnostics);
+    }
+
+    [Fact]
+    public async Task CleaningUpRemovesTheEmptyParentDirectories()
+    {
+        CatalogSourceResolver resolver = Resolver(path => FakeProjectSystem.Snapshot(path, []), out _);
+        CatalogSourceSet set = await resolver.ResolveAsync(Config(new CatalogSourceConfig { Package = "A", Version = "1.0.0" }), TestContext.Current.CancellationToken);
+
+        IReadOnlyList<string> failures = set.DeleteTemporaryDirectories();
+
+        Assert.Empty(failures);
+        Assert.False(Directory.Exists(Path.Combine(directory.FullName, "obj")));
+    }
+
+    [Fact]
+    public async Task CleaningUpKeepsAParentThatHoldsOtherFiles()
+    {
+        CatalogSourceResolver resolver = Resolver(path => FakeProjectSystem.Snapshot(path, []), out _);
+        CatalogSourceSet set = await resolver.ResolveAsync(Config(new CatalogSourceConfig { Package = "A", Version = "1.0.0" }), TestContext.Current.CancellationToken);
+        string other = Touch("obj/project.assets.json");
+
+        set.DeleteTemporaryDirectories();
+
+        Assert.True(File.Exists(other));
+        Assert.False(Directory.Exists(Path.Combine(directory.FullName, "obj", "netprints-catalog")));
+    }
+
+    [Fact]
+    public async Task ACleanupThatCannotDeleteReportsInsteadOfThrowing()
+    {
+        CatalogSourceResolver resolver = Resolver(path => FakeProjectSystem.Snapshot(path, []), out _);
+        CatalogSourceSet set = await resolver.ResolveAsync(Config(new CatalogSourceConfig { Package = "A", Version = "1.0.0" }), TestContext.Current.CancellationToken);
+        string locked = Path.Combine(set.TemporaryDirectories[0], "held.txt");
+        File.WriteAllText(locked, "x");
+
+        IReadOnlyList<string> failures;
+        if (OperatingSystem.IsWindows())
+        {
+            using FileStream held = new(locked, FileMode.Open, FileAccess.Read, FileShare.None);
+            failures = set.DeleteTemporaryDirectories();
+        }
+        else
+        {
+            UnixFileMode original = File.GetUnixFileMode(set.TemporaryDirectories[0]);
+            File.SetUnixFileMode(set.TemporaryDirectories[0], UnixFileMode.UserRead | UnixFileMode.UserExecute);
+            try
+            {
+                failures = set.DeleteTemporaryDirectories();
+            }
+            finally
+            {
+                File.SetUnixFileMode(set.TemporaryDirectories[0], original);
+            }
+        }
+
+        string failure = Assert.Single(failures);
+        Assert.Contains(set.TemporaryDirectories[0], failure, StringComparison.Ordinal);
+    }
 }

@@ -24,8 +24,8 @@ internal sealed class FakeProjectSystem(Func<string, ProjectSnapshot> snapshots,
         return Task.FromResult(snapshots(projectFilePath));
     }
 
-    public static ProjectSnapshot Snapshot(string path, IReadOnlyList<ResolvedAssembly> references, IReadOnlyDictionary<string, string>? properties = null) =>
-        new(path, "Temp", "Temp", "Temp", BinaryType.SharedLibrary, "net10.0", string.Empty, false, [], [], references, [], [], "{}", properties ?? new Dictionary<string, string>(), []);
+    public static ProjectSnapshot Snapshot(string path, IReadOnlyList<ResolvedAssembly> references, IReadOnlyDictionary<string, string>? properties = null, IReadOnlyList<ProjectMessage>? messages = null) =>
+        new(path, "Temp", "Temp", "Temp", BinaryType.SharedLibrary, "net10.0", string.Empty, false, [], [], references, [], [], "{}", properties ?? new Dictionary<string, string>(), messages ?? []);
 
     public Task<ProjectSnapshot> ApplyAsync(string projectFilePath, IReadOnlyList<ProjectEdit> edits, CancellationToken cancellationToken) =>
         throw new NotSupportedException();

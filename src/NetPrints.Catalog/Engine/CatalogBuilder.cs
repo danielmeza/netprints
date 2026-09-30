@@ -43,7 +43,7 @@ public static class CatalogBuilder
         }
 
         IAssemblySymbol first = assemblies[0];
-        string id = identity.Id ?? new string(first.Name.Select(char.ToLowerInvariant).ToArray());
+        string id = identity.Id ?? CatalogIdentity.DeriveId(first.Name);
         if (!CatalogIdentity.IsValidId(id))
         {
             throw new ArgumentException($"'{id}' is not a valid catalog id; it must match {CatalogIdentity.IdPattern}.", nameof(identity));

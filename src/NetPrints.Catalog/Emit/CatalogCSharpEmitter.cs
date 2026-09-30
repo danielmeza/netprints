@@ -26,12 +26,12 @@ public static class CatalogCSharpEmitter
         Guard.NotNull(document, nameof(document));
         Guard.NotNull(@namespace, nameof(@namespace));
         Guard.NotNull(className, nameof(className));
-        if (@namespace.Length == 0 || !@namespace.Split('.').All(IsIdentifier))
+        if (!IsValidNamespace(@namespace))
         {
             throw new ArgumentException($"'{@namespace}' is not a valid namespace.", nameof(@namespace));
         }
 
-        if (!IsIdentifier(className))
+        if (!IsValidClassName(className))
         {
             throw new ArgumentException($"'{className}' is not a valid class name.", nameof(className));
         }
@@ -49,6 +49,16 @@ public static class CatalogCSharpEmitter
             .Append("}\n")
             .ToString();
     }
+
+    /// <summary>Returns whether <paramref name="name"/> is a namespace <see cref="Emit"/> accepts.</summary>
+    /// <param name="name">Identifiers separated by dots; none may be a C# keyword.</param>
+    /// <returns><see langword="true"/> when every segment is a valid identifier.</returns>
+    public static bool IsValidNamespace(string name) => name.Length > 0 && name.Split('.').All(IsIdentifier);
+
+    /// <summary>Returns whether <paramref name="name"/> is a class name <see cref="Emit"/> accepts.</summary>
+    /// <param name="name">The candidate name.</param>
+    /// <returns><see langword="true"/> when it is a valid identifier and not a C# keyword.</returns>
+    public static bool IsValidClassName(string name) => IsIdentifier(name);
 
     private static bool IsIdentifier(string name) => SyntaxFacts.IsValidIdentifier(name) && SyntaxFacts.GetKeywordKind(name) == SyntaxKind.None;
 }

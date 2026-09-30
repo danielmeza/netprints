@@ -56,6 +56,7 @@ public sealed class CatalogSourceResolver
             string directory = TemporaryCatalogProject.DirectoryFor(config.BaseDirectory, config.TargetFramework, assemblyFiles, packages, config.ReferencePaths);
             temporaryDirectories.Add(directory);
             ProjectSnapshot snapshot = await LoadTemporaryProjectAsync(directory, config, assemblyFiles, packages, cancellationToken).ConfigureAwait(false);
+            ThrowOnErrors(snapshot);
             references.AddRange(snapshot.References);
             SelectAssemblyTargets(snapshot, assemblyFiles, targets);
             SelectPackageTargets(snapshot, packages, targets, diagnostics);
@@ -64,6 +65,7 @@ public sealed class CatalogSourceResolver
         foreach (CatalogSourceConfig source in config.Sources.Where(source => !string.IsNullOrEmpty(source.Project)))
         {
             ProjectSnapshot snapshot = await projects.LoadAsync(source.Project ?? string.Empty, cancellationToken).ConfigureAwait(false);
+            ThrowOnErrors(snapshot);
             references.AddRange(snapshot.References);
             SelectProjectTargets(snapshot, source, targets, diagnostics);
         }
@@ -73,6 +75,15 @@ public sealed class CatalogSourceResolver
             [.. targets.Select(WithDocumentation).DistinctBy(target => target.Path, PathComparer)],
             diagnostics,
             temporaryDirectories);
+    }
+
+    private static void ThrowOnErrors(ProjectSnapshot snapshot)
+    {
+        string[] errors = [.. snapshot.Messages.Where(message => message.Severity == ProjectMessageSeverity.Error).Select(message => message.Message)];
+        if (errors.Length > 0)
+        {
+            throw new CatalogSourceException($"Loading '{snapshot.ProjectFilePath}' failed:{Environment.NewLine}{string.Join(Environment.NewLine, errors)}");
+        }
     }
 
     private static StringComparer PathComparer => OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
@@ -156,7 +167,8 @@ public sealed class CatalogSourceResolver
             ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nuget", "packages");
         foreach ((string id, string version) in packages)
         {
-            string prefix = Path.Combine(root, id.ToLowerInvariant(), version.ToLowerInvariant()) + Path.DirectorySeparatorChar;
+            // NuGet stores 1.0 as 1.0.0 and drops +metadata; after the restore the id folder holds the one resolved version.
+            string prefix = Path.Combine(root, id.ToLowerInvariant()) + Path.DirectorySeparatorChar;
             List<ResolvedAssembly> own = [.. snapshot.References.Where(reference => reference.Path.StartsWith(prefix, PathComparison))];
             if (own.Count == 0)
             {

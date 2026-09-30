@@ -103,6 +103,13 @@ internal sealed class CatalogCommand(
         failure = ExitCodes.Success;
         string currentDirectory = environment.CurrentDirectory;
         string? configPath = ConfigPath(settings, currentDirectory);
+        if (settings.Config is { Length: > 0 } && configPath is not null && !File.Exists(configPath))
+        {
+            environment.Error.WriteLine($"The configuration file '{configPath}' does not exist.");
+            failure = ExitCodes.Usage;
+            return false;
+        }
+
         if (configPath is null && !settings.HasSource)
         {
             environment.Error.WriteLine($"No configuration file ({CatalogConfig.FileName} in the current directory or --config) and no source (--assembly, --package or --project).");
@@ -138,6 +145,20 @@ internal sealed class CatalogCommand(
         if (config.Id is not null && !CatalogIdentity.IsValidId(config.Id))
         {
             environment.Error.WriteLine($"'{config.Id}' is not a valid catalog id: use lower-case letters, digits, '.', '_' and '-', starting with a letter or digit.");
+            failure = ExitCodes.Usage;
+            return false;
+        }
+
+        if (config.ClassName is { } className && !CatalogCSharpEmitter.IsValidClassName(className))
+        {
+            environment.Error.WriteLine($"'{className}' is not a valid class name (--class-name).");
+            failure = ExitCodes.Usage;
+            return false;
+        }
+
+        if (config.Namespace is { } @namespace && !CatalogCSharpEmitter.IsValidNamespace(@namespace))
+        {
+            environment.Error.WriteLine($"'{@namespace}' is not a valid namespace (--namespace).");
             failure = ExitCodes.Usage;
             return false;
         }
@@ -181,10 +202,12 @@ internal sealed class CatalogCommand(
 
     private async Task<int> RunAsync(CatalogSettings settings, ResolvedCatalogConfig config, CancellationToken cancellationToken)
     {
+        // One load per project for the whole run: the resolver reuses the snapshot this command already has.
+        var system = new CachingProjectSystem(projects.Value);
         ProjectSnapshot? project = null;
         if (ProjectSource(config) is { Project: { } projectPath })
         {
-            project = await projects.Value.LoadAsync(projectPath, cancellationToken).ConfigureAwait(false);
+            project = await system.LoadAsync(projectPath, cancellationToken).ConfigureAwait(false);
             if (ProjectMessageFormat.WriteErrors(project.Messages, environment.Error))
             {
                 return ExitCodes.Failed;
@@ -206,14 +229,14 @@ internal sealed class CatalogCommand(
                 return ExitCodes.Failed;
             }
 
-            CatalogProfile? profile = SelectProfile(config, registry, project, out int failure);
+            CatalogProfile? profile = SelectProfile(settings, config, registry, project, out int failure);
             return profile is null
                 ? failure
-                : await BuildAsync(settings, config, profile, cancellationToken).ConfigureAwait(false);
+                : await BuildAsync(settings, config, profile, system, cancellationToken).ConfigureAwait(false);
         }
     }
 
-    private CatalogProfile? SelectProfile(ResolvedCatalogConfig config, ExtensionRegistry registry, ProjectSnapshot? project, out int failure)
+    private CatalogProfile? SelectProfile(CatalogSettings settings, ResolvedCatalogConfig config, ExtensionRegistry registry, ProjectSnapshot? project, out int failure)
     {
         failure = ExitCodes.Failed;
         try
@@ -232,8 +255,9 @@ internal sealed class CatalogCommand(
                 CatalogProfile? found = FindProfile(id, registry);
                 if (found is null)
                 {
-                    environment.Error.WriteLine(UnknownProfileMessage(id, registry));
-                    failure = ExitCodes.Usage;
+                    // A --profile value is a usage error (2); an id read from the configuration file is a bad input file (1).
+                    WriteError(CatalogDiagnosticCodes.UnknownProfile, UnknownProfileMessage(id, registry));
+                    failure = string.IsNullOrEmpty(settings.Profile) ? ExitCodes.Failed : ExitCodes.Usage;
                     return null;
                 }
 
@@ -244,7 +268,7 @@ internal sealed class CatalogCommand(
                 CatalogProfile? projectDefault = ProjectDefaultProfile(project, registry);
                 if (projectDefault is null && ProjectProfileId(project, registry) is { } missing)
                 {
-                    environment.Error.WriteLine($"The project's profile selects the catalog profile '{missing}', which no built-in profile or loaded extension provides.");
+                    WriteError(CatalogDiagnosticCodes.UnknownProfile, $"The project's profile selects the catalog profile '{missing}', which no built-in profile or loaded extension provides.");
                     return null;
                 }
 
@@ -255,7 +279,7 @@ internal sealed class CatalogCommand(
         }
         catch (CatalogFormatException ex)
         {
-            environment.Error.WriteLine(ex.Message);
+            WriteError(ex.Code, ex.Message);
             return null;
         }
         catch (IOException ex)
@@ -264,6 +288,9 @@ internal sealed class CatalogCommand(
             return null;
         }
     }
+
+    private void WriteError(string code, string message) =>
+        environment.Error.WriteLine(Describe(new CatalogDiagnostic(code, CatalogDiagnosticSeverity.Error, message)));
 
     private static CatalogProfile? FindProfile(string id, ExtensionRegistry registry) =>
         BuiltInCatalogProfiles.TryGet(id) ?? registry.CatalogProfiles.FirstOrDefault(profile => string.Equals(profile.Id, id, StringComparison.Ordinal));
@@ -286,9 +313,9 @@ internal sealed class CatalogCommand(
                 ExcludeTypes = [.. profile.ExcludeTypes ?? [], .. config.Exclude],
             };
 
-    private async Task<int> BuildAsync(CatalogSettings settings, ResolvedCatalogConfig config, CatalogProfile profile, CancellationToken cancellationToken)
+    private async Task<int> BuildAsync(CatalogSettings settings, ResolvedCatalogConfig config, CatalogProfile profile, IProjectSystem system, CancellationToken cancellationToken)
     {
-        CatalogSourceSet sources = await new CatalogSourceResolver(projects.Value, processes).ResolveAsync(config, cancellationToken).ConfigureAwait(false);
+        CatalogSourceSet sources = await new CatalogSourceResolver(system, processes).ResolveAsync(config, cancellationToken).ConfigureAwait(false);
         WriteDiagnostics(sources.Diagnostics);
         if (sources.Targets.Count == 0 || sources.Diagnostics.Any(diagnostic => diagnostic.Severity == CatalogDiagnosticSeverity.Error))
         {
@@ -303,22 +330,17 @@ internal sealed class CatalogCommand(
             return ExitCodes.Failed;
         }
 
-        (string Path, string Text)? output = Render(config, result.Document);
-        if (output is null)
+        (string path, string text) = Render(config, result.Document);
+        int exitCode = await WriteAsync(path, text, result.Document, settings.Check, cancellationToken).ConfigureAwait(false);
+        foreach (string warning in sources.DeleteTemporaryDirectories())
         {
-            return ExitCodes.Usage;
-        }
-
-        int exitCode = await WriteAsync(output.Value.Path, output.Value.Text, result.Document, settings.Check, cancellationToken).ConfigureAwait(false);
-        if (exitCode != ExitCodes.Usage)
-        {
-            sources.DeleteTemporaryDirectories();
+            await environment.Error.WriteLineAsync("warning: " + warning).ConfigureAwait(false);
         }
 
         return exitCode;
     }
 
-    private (string Path, string Text)? Render(ResolvedCatalogConfig config, CatalogDocument document)
+    private static (string Path, string Text) Render(ResolvedCatalogConfig config, CatalogDocument document)
     {
         if (config.Format == CatalogOutputFormat.Catalog)
         {
@@ -326,16 +348,8 @@ internal sealed class CatalogCommand(
         }
 
         string className = config.ClassName ?? DefaultClassName(document.Id);
-        try
-        {
-            string text = CatalogCSharpEmitter.Emit(document, config.Namespace ?? DefaultNamespace, className);
-            return (config.OutputPath ?? Path.Combine(config.BaseDirectory, className + ".g.cs"), text);
-        }
-        catch (ArgumentException ex)
-        {
-            environment.Error.WriteLine(ex.Message);
-            return null;
-        }
+        string text = CatalogCSharpEmitter.Emit(document, config.Namespace ?? DefaultNamespace, className);
+        return (config.OutputPath ?? Path.Combine(config.BaseDirectory, className + ".g.cs"), text);
     }
 
     private async Task<int> WriteAsync(string path, string text, CatalogDocument document, bool check, CancellationToken cancellationToken)

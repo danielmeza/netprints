@@ -72,12 +72,14 @@ internal static class TemporaryCatalogProject
                 new XElement("EnableDefaultItems", False),
                 new XElement("GenerateAssemblyInfo", False),
                 new XElement("NuGetAudit", False),
-                new XElement("CopyLocalLockFileAssemblies", False)),
+                new XElement("CopyLocalLockFileAssemblies", False),
+                new XElement("_ResolveReferenceDependencies", "true")),
             new XElement(
                 "ItemGroup",
                 assemblies.Select(path => new XElement("Reference", new XAttribute(IncludeAttribute, Path.GetFileNameWithoutExtension(path)), new XElement("HintPath", path))),
                 packages.Select(package => new XElement("PackageReference", new XAttribute(IncludeAttribute, package.Id), new XAttribute("Version", package.Version)))),
-            Import("Sdk.targets"));
+            Import("Sdk.targets"),
+            DependenciesTarget());
 
         if (referencePaths.Count > 0)
         {
@@ -92,6 +94,16 @@ internal static class TemporaryCatalogProject
 
         return builder.Append('\n').ToString();
     }
+
+    // A design-time build skips the dependencies of a Reference unless _ResolveReferenceDependencies is set; with it, ResolveAssemblyReferences finds them
+    // in the reference's own directory and on AssemblySearchPaths, but the compiler is only handed the references, so they join ReferencePath here.
+    // Without this the dependency is missing from the compilation and members using it are dropped (NPC005).
+    private static XElement DependenciesTarget() =>
+        new(
+            "Target",
+            new XAttribute("Name", "NetPrintsCatalogDependencies"),
+            new XAttribute("AfterTargets", "ResolveAssemblyReferences"),
+            new XElement("ItemGroup", new XElement("ReferencePath", new XAttribute(IncludeAttribute, "@(ReferenceDependencyPaths)"), new XAttribute("Exclude", "@(ReferencePath)"))));
 
     private static XElement Import(string project) =>
         new("Import", new XAttribute(ProjectAttribute, project), new XAttribute(SdkAttribute, SdkName));
