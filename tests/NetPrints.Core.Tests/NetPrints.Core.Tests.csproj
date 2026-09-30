@@ -69,6 +69,16 @@
     <ProjectReference Include="..\NetPrints.TestExtension\NetPrints.TestExtension.csproj" ReferenceOutputAssembly="false" />
     <!-- Built first, never referenced: tests load the fx.catalog extension from its own output folder. -->
     <ProjectReference Include="..\Fixtures\Extensions\Fx.Catalog\Fx.Catalog.csproj" ReferenceOutputAssembly="false" />
+    <!-- Built first, never referenced: the multi-extension tests copy each fixture extension folder (the shared library versions build through their extensions). -->
+    <ProjectReference Include="..\Fixtures\Extensions\Fx.Alpha\Fx.Alpha.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Fx.Beta\Fx.Beta.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Fx.LibV1\Fx.LibV1.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Fx.LibV2\Fx.LibV2.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Fx.PrefixedPrivate\Fx.PrefixedPrivate.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Fx.TypesProvider\Fx.TypesProvider.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Fx.TypesConsumer\Fx.TypesConsumer.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Fx.Diamond\Fx.Diamond.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Fx.Native\Fx.Native.csproj" ReferenceOutputAssembly="false" />
     <!-- Built first, never referenced: the catalog end-to-end tests reference the DLL from a temporary project. -->
     <ProjectReference Include="..\Fixtures\Catalog\CatalogFixtureLib\CatalogFixtureLib.csproj" ReferenceOutputAssembly="false" />
     <!-- Built first, never referenced: the annotated-library build test references the DLL from a temporary project. -->

@@ -541,7 +541,7 @@ SC-013.
 
 ### Batch F-R — model: opus — T099 (sub-phase review)
 
-- [ ] T099 [US4] Review sub-phase F: an Opus reviewer who did not implement it reviews the whole diff of batches F1–F4
+- [x] T099 [US4] Review sub-phase F: an Opus reviewer who did not implement it reviews the whole diff of batches F1–F4
   (from the commit before the first batch to HEAD) — user story US4 end to end against spec.md, contracts/git.md, the constitution and plan.md's standing constraints —
   and runs the independent test of the phase; findings (severity, file:line, fix) go to the PR as review comments and to
   `specs/004-catalog-cli/implementation-notes.md` under "Review F". No code changes in this task.
@@ -561,15 +561,15 @@ SC-013.
 
 ### Batch G1 — model: sonnet — T101–T103 — 5 units
 
-- [ ] T101 [US5] Fixture projects under `tests/Fixtures/Extensions/`: `Fx.Alpha` (one contribution of every kind MX-T07
+- [x] T101 [US5] Fixture projects under `tests/Fixtures/Extensions/`: `Fx.Alpha` (one contribution of every kind MX-T07
   checks), `Fx.Beta`, `Fx.LibV1`, `Fx.LibV2`, `Fixture.SharedLib.V1`, `Fixture.SharedLib.V2`, `Fx.PrefixedPrivate`,
   `NetPrintsFixture.Runtime`, `Fx.TypesProvider`, `Fx.TypesConsumer`, `Fx.Diamond`, `Fx.Native` (ids and content per
   contracts/extensions.md §3, each with `netprints-extension.json`); `ProjectReference`s from `tests/NetPrints.Core.Tests/NetPrints.Core.Tests.csproj`
   (`ReferenceOutputAssembly="false"`); `NetPrints.slnx` entries;
   `tests/NetPrints.Core.Tests/Extensibility/MultiExtension/FixtureExtensions.cs` (`CopyTo`).
-- [ ] T102 [US5] `tests/NetPrints.Testing/Extensions/ExtensionHarness.cs` (contracts/extensions.md §4) and
+- [x] T102 [US5] `tests/NetPrints.Testing/Extensions/ExtensionHarness.cs` (contracts/extensions.md §4) and
   `tests/NetPrints.Core.Tests/Extensibility/MultiExtension/ExtensionHarnessTests.cs`.
-- [ ] T103 [US5] `tests/NetPrints.Core.Tests/Extensibility/MultiExtension/CharacterizationTests.cs` (MX-T01: host type
+- [x] T103 [US5] `tests/NetPrints.Core.Tests/Extensibility/MultiExtension/CharacterizationTests.cs` (MX-T01: host type
   identity, NPX001–NPX007 and ordering with the new fixtures, green on the current loader); whole suite; commit.
 
 ### Batch G2 — model: sonnet — T104–T107 — 6 units

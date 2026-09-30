@@ -1,0 +1,8 @@
+{
+  "id": "fx.types-consumer",
+  "name": "Fixture type consumer extension",
+  "version": "1.0.0",
+  "assembly": "Fx.TypesConsumer.dll",
+  "netprintsApi": "1.0",
+  "dependsOn": ["fx.types-provider"]
+}

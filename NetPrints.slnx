@@ -24,7 +24,19 @@
     <Project Path="tests/Fixtures/Catalog/CatalogConsumerLib/CatalogConsumerLib.csproj" />
     <Project Path="tests/Fixtures/Catalog/CatalogDependentLib/CatalogDependentLib.csproj" />
     <Project Path="tests/Fixtures/Catalog/CatalogFixtureLib/CatalogFixtureLib.csproj" />
+    <Project Path="tests/Fixtures/Extensions/Fixture.SharedLib.V1/Fixture.SharedLib.V1.csproj" />
+    <Project Path="tests/Fixtures/Extensions/Fixture.SharedLib.V2/Fixture.SharedLib.V2.csproj" />
+    <Project Path="tests/Fixtures/Extensions/Fx.Alpha/Fx.Alpha.csproj" />
+    <Project Path="tests/Fixtures/Extensions/Fx.Beta/Fx.Beta.csproj" />
     <Project Path="tests/Fixtures/Extensions/Fx.Catalog/Fx.Catalog.csproj" />
+    <Project Path="tests/Fixtures/Extensions/Fx.Diamond/Fx.Diamond.csproj" />
+    <Project Path="tests/Fixtures/Extensions/Fx.LibV1/Fx.LibV1.csproj" />
+    <Project Path="tests/Fixtures/Extensions/Fx.LibV2/Fx.LibV2.csproj" />
+    <Project Path="tests/Fixtures/Extensions/Fx.Native/Fx.Native.csproj" />
+    <Project Path="tests/Fixtures/Extensions/Fx.PrefixedPrivate/Fx.PrefixedPrivate.csproj" />
+    <Project Path="tests/Fixtures/Extensions/Fx.TypesConsumer/Fx.TypesConsumer.csproj" />
+    <Project Path="tests/Fixtures/Extensions/Fx.TypesProvider/Fx.TypesProvider.csproj" />
+    <Project Path="tests/Fixtures/Extensions/NetPrintsFixture.Runtime/NetPrintsFixture.Runtime.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/NetPrints.Catalog.Tests/NetPrints.Catalog.Tests.csproj" />

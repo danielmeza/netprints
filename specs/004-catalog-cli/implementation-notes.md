@@ -725,3 +725,45 @@ Sub-phase F (`6925062^..00c87e3`), reviewed at `00c87e3`: Checkpoint F not accep
 **Tests**: no code or test changes required; docs only.
 
 ## Governance proposals
+
+## Batch G1 (T101-T103)
+
+**Added**
+
+- Fixture projects under `tests/Fixtures/Extensions/`: `Fx.Alpha`, `Fx.Beta`, `Fx.LibV1`, `Fx.LibV2`, `Fixture.SharedLib.V1`, `Fixture.SharedLib.V2` (assembly `Fixture.SharedLib` 1.0/2.0), `Fx.PrefixedPrivate`, `NetPrintsFixture.Runtime`, `Fx.TypesProvider`, `Fx.TypesConsumer`, `Fx.Diamond`, `Fx.Native`; each extension has a `netprints-extension.json`, the output folder `bin/<cfg>/extensions/<id>/` and the `Fx.Catalog` project layout. `Shared/FxKit.cs` is linked into the extensions that need a plain node kind (document, converter, translator, library, source-generated JSON context).
+- `tests/NetPrints.Core.Tests` references the nine extension projects with `ReferenceOutputAssembly="false"`; the two library versions build through their extensions and are not referenced directly. All twelve projects are in `NetPrints.slnx`.
+- `tests/NetPrints.Testing/Extensions/ExtensionHarness.cs` (`CreateAsync`, `Registry`, `Translate`, `RoundTripAsync`, `GenerateAsync`, `DisposeAsync`); `NetPrints.Testing` now references Core, Extensibility, Generation and Serialization.
+- `Core.Tests/Extensibility/MultiExtension/`: `FixtureExtensions` (`Folder`, `CopyTo`), `MultiExtensionGraphs`, `ExtensionHarnessTests`, `CharacterizationTests`.
+
+**Decisions**
+
+- The harness always loads the built-in extension first; in-process extensions get the ids `harness.inprocess.<index>`. `GenerateAsync` scans `*.netpc.json` recursively and writes `<name>.netpc.g.cs` next to each graph.
+- Fixture Alpha's class emitter and Beta's member emitter add `System.ComponentModel.Description("fx.alpha")` / `("fx.beta")` attributes. Contract 3 says the emitters add `// fx.alpha` / `// fx.beta`; `ClassEmitContext` and `MemberEmitContext` can only add attributes, usings and modifiers, so a comment cannot be emitted. G2/G3 assert the attribute text (`AlphaClassEmitter.Marker`, `BetaMemberEmitter.Marker`); contract 3 should be amended.
+- Beta recognises alpha's node by the full name `Fx.Alpha.AlphaPingNode`, so it needs no reference to alpha.
+- LibV1's `SharedLib.Describe()` returns `shared-lib-v1`; LibV2's `Describe(string caller)` returns `shared-lib-v2:<caller>`, and its node passes `fx.libv2`. Diamond is compiled against V1 with `Private=false` and writes `Describe()`.
+- `Fx.TypesConsumer` exposes `TypesConsumerExtension.SeenProviderType` and `Fx.LibV1/V2` expose `SeenSharedLib`, for identity checks through reflection; `Fx.Native` exposes `NativeExtension.Milestone`, set in `Register`.
+- `Fx.Native` sets `CopyLocalLockFileAssemblies` to true (the extensions' shared props set it false), so the native assets land under `runtimes/` in its folder.
+- The fixtures with kinds register no catalog or settings except Alpha. `Fx.TypesProvider` registers nothing; its assembly is the point.
+
+**Characterization (MX-T01), green on the current loader**
+
+- Host type identity: the extension's node type derives from the host's `Node`, its assembly sits in a context named after the extension id, `NetPrints.Core` exists once in the process.
+- A copy of `NetPrints.Core.dll` in an extension folder is ignored, with no warning logged (MX-T03 adds the warning).
+- Load order: dependency order, then ordinal id, whatever the discovery order; in-process extensions come before folder extensions when neither depends on the other, so an in-process extension can win an id against a folder extension it does not declare a dependency on.
+- NPX001-NPX007, each with alpha and beta loaded: only the failing extension is reported, neighbours and their kinds stay. NPX006 is an issue against the rejecting extension, which stays loaded.
+- LibV1 and LibV2 load together, each translator calls its own version (MX-T06 already holds).
+- `Fx.Native` loads on Linux (native assets resolve through the extension's `deps.json`).
+
+**Current behaviour that contradicts the contract (pinned, marked "CurrentBehaviour" in the test name, for G2/G3)**
+
+- MX-T02: `fx.private-prefix` fails with NPX005 (`NetPrintsFixture.Runtime` is looked up in the host because of the `NetPrints` prefix). After T105 it must load.
+- MX-T04: `fx.types-consumer` fails with NPX005 (the provider's assembly is not found; contexts do not chain). After T106 it must load and share the provider's type.
+- MX-T05: `fx.diamond` fails with NPX005 (`Fixture.SharedLib` is in neither its own folder nor its dependencies' contexts). After T106 it must load with version 1.
+- The three tests are the only ones G2 has to flip; the rest of `CharacterizationTests` must stay green unchanged.
+
+**Red/green**
+
+- Red: `ExtensionHarnessTests` and `MultiExtensionGraphs` written before `ExtensionHarness`; the build failed with CS0234 (`NetPrints.Testing.Extensions` does not exist).
+- Green: `ExtensionHarnessTests` 6/6 on the first run after the harness; no test failed after it.
+- `CharacterizationTests` are written against existing code (green from their first run except two test-side mistakes fixed in the tests: the built-in id, and the NPX006 scenario, where the in-process extension loaded before alpha and won the profile id).
+- Fixture content of alpha (every contribution kind) is exercised in G3 (MX-T07); G1 pins only its node, class emitter, property and profile through the harness tests.
