@@ -36,6 +36,8 @@
     <ProjectReference Include="..\NetPrints.Testing\NetPrints.Testing.csproj" />
     <!-- Built first so the extension folder exists; the assembly itself is loaded by the extension loader, not referenced. -->
     <ProjectReference Include="..\NetPrints.TestExtension\NetPrints.TestExtension.csproj" ReferenceOutputAssembly="false" />
+    <!-- Built first, never referenced: tests load the fx.catalog extension from its own output folder. -->
+    <ProjectReference Include="..\Fixtures\Extensions\Fx.Catalog\Fx.Catalog.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>

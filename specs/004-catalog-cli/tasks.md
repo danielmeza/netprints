@@ -349,18 +349,18 @@ contracts/catalog.md). **Independent test**: CT-T01–CT-T19; SC-004, SC-005 (ex
 
 ### Batch D6 — model: sonnet — T055–T058 — 6 units
 
-- [ ] T055 [US2] `tests/Fixtures/Extensions/Directory.Build.props` (imports the parent `Directory.Build.props` through
+- [x] T055 [US2] `tests/Fixtures/Extensions/Directory.Build.props` (imports the parent `Directory.Build.props` through
   `GetPathOfFileAbove`, so the experimental opt-in and analyzers apply; TestExtension's extension settings, output
   `bin/$(Configuration)/extensions/<id>/`) and fixture extension `tests/Fixtures/Extensions/Fx.Catalog/` (id
   `fx.catalog`: contributes the fixture catalog loaded from a copied `public-api.npcat.json`, the `fixture-flags`
   profile, and project profile `fx.catalog.profile` with `CatalogProfileId = "fixture-flags"`); add to `NetPrints.slnx`;
   Core.Tests, Editor.Tests and Cli.Tests reference it with `ReferenceOutputAssembly="false"`.
-- [ ] T056 [US2] Test first `tests/NetPrints.Cli.Tests/Commands/CatalogCommandTests.cs` (CT-T11, CT-T12 with a
+- [x] T056 [US2] Test first `tests/NetPrints.Cli.Tests/Commands/CatalogCommandTests.cs` (CT-T11, CT-T12 with a
   temporary feed holding `CatalogFixtureLib` packed with `-p:IsPackable=true`, CT-T13).
-- [ ] T057 [US2] `src/NetPrints.Cli/Commands/CatalogCommand.cs` and a `ProjectReference` to `NetPrints.Catalog` in
+- [x] T057 [US2] `src/NetPrints.Cli/Commands/CatalogCommand.cs` and a `ProjectReference` to `NetPrints.Catalog` in
   `src/NetPrints.Cli/NetPrints.Cli.csproj` (options and resolution per contracts/catalog.md §4;
   loads `--extension` and project extensions for profiles; prints NPC diagnostics; `--check`).
-- [ ] T058 [US2] `tests/NetPrints.Catalog.Tests/Engine/CatalogPerformanceTests.cs` (CT-T17); whole suite; commit.
+- [x] T058 [US2] `tests/NetPrints.Catalog.Tests/Engine/CatalogPerformanceTests.cs` (CT-T17); whole suite; commit.
 
 ### Batch D7 — model: sonnet — T059–T062 — 5 units
 

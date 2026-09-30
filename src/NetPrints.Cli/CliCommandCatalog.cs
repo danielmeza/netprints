@@ -14,6 +14,9 @@ internal sealed record CliCommand(string Name, Action<IConfigurator> Register);
 internal static class CliCommandCatalog
 {
     private const string SampleProject = "samples/HelloWorld";
+    private const string SampleAssembly = "MyLibrary.dll";
+    private const string SampleCatalog = "mylibrary.npcat.json";
+    private const string SampleCatalogConfig = "netprints.catalog.json";
     private const string SampleGraph = "samples/HelloWorld/HelloWorld.Program.netpc.json";
 
     /// <summary>Gets all registered commands, in help order.</summary>
@@ -37,5 +40,10 @@ internal static class CliCommandCatalog
             .WithDescription("Report the schema version of graph files (no migrations exist yet).")
             .WithExample(MigrateCommand.Name)
             .WithExample(MigrateCommand.Name, SampleGraph)),
+        new(CatalogCommand.Name, config => config.AddCommand<CatalogCommand>(CatalogCommand.Name)
+            .WithDescription("Build a catalog of the types and members of assemblies or packages, or check that a stored catalog is up to date.")
+            .WithExample(CatalogCommand.Name, "--assembly", SampleAssembly, "--output", SampleCatalog)
+            .WithExample(CatalogCommand.Name, "--config", SampleCatalogConfig, "--check")
+            .WithExample(CatalogCommand.Name, "--package", "Newtonsoft.Json@13.0.3", "--profile", "annotated")),
     ];
 }

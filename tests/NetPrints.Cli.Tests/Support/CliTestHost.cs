@@ -133,6 +133,7 @@ internal sealed class CliTestHost
             Processes.Error = Error;
             services.AddSingleton<IProgramRunner>(Processes);
             services.AddSingleton<IMsBuildRegistration>(MsBuild);
+            services.AddSingleton<IProcessRunner>(new ProcessRunner());
             if (Tool is not null)
             {
                 services.AddSingleton(Tool);

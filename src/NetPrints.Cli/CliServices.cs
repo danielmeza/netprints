@@ -17,6 +17,9 @@ internal static class CliServices
     private const string NoColorVariable = "NO_COLOR";
     private const string DevelopmentSdkVersion = "1.0.0-dev";
 
+    // The catalog command reads the package cache the restore of its temporary project used (a NuGet.config may move it).
+    private const string NuGetPackageRootProperty = "NuGetPackageRoot";
+
     /// <summary>Creates the service collection of the real process: its console, environment, process runner and MSBuild-backed project system.</summary>
     /// <returns>The registrations <see cref="CliApplication.RunAsync(System.Collections.Generic.IReadOnlyList{string}, IServiceCollection, System.Threading.CancellationToken)"/> completes with logging and the commands.</returns>
     public static IServiceCollection CreateDefault()
@@ -64,7 +67,7 @@ internal static class CliServices
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static IProjectSystem CreateProjectSystem(IServiceProvider provider) =>
         new MsBuildProjectSystem(
-            new ProjectSystemOptions([GenerateCommand.SdkVersionProperty], DevelopmentSdkVersion, GenerateOnLoad: false),
+            new ProjectSystemOptions([GenerateCommand.SdkVersionProperty, NuGetPackageRootProperty], DevelopmentSdkVersion, GenerateOnLoad: false),
             provider.GetRequiredService<IProcessRunner>(),
             provider.GetRequiredService<ILoggerFactory>().CreateLogger<MsBuildProjectSystem>());
 }

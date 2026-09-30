@@ -67,6 +67,8 @@
     <ProjectReference Include="..\NetPrints.Testing\NetPrints.Testing.csproj" />
     <!-- Built first, never referenced: the loader and generator tests load it from its own output folder. -->
     <ProjectReference Include="..\NetPrints.TestExtension\NetPrints.TestExtension.csproj" ReferenceOutputAssembly="false" />
+    <!-- Built first, never referenced: tests load the fx.catalog extension from its own output folder. -->
+    <ProjectReference Include="..\Fixtures\Extensions\Fx.Catalog\Fx.Catalog.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
 </Project>

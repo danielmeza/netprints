@@ -21,6 +21,7 @@
   </Folder>
   <Folder Name="/tests/Fixtures/">
     <Project Path="tests/Fixtures/Catalog/CatalogFixtureLib/CatalogFixtureLib.csproj" />
+    <Project Path="tests/Fixtures/Extensions/Fx.Catalog/Fx.Catalog.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/NetPrints.Catalog.Tests/NetPrints.Catalog.Tests.csproj" />

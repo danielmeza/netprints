@@ -16,6 +16,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- ADR-0017: the catalog command builds and selects profiles through the experimental catalog API; the id is opted in, not suppressed. -->
+    <NetPrintsExperimentalOptIn Include="NPXE0004" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Spectre.Console.Cli" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
@@ -31,6 +36,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\NetPrints.Catalog\NetPrints.Catalog.csproj" />
     <ProjectReference Include="..\NetPrints.Core\NetPrints.Core.csproj" />
     <ProjectReference Include="..\NetPrints.Generation\NetPrints.Generation.csproj" />
     <ProjectReference Include="..\NetPrints.Serialization\NetPrints.Serialization.csproj" />

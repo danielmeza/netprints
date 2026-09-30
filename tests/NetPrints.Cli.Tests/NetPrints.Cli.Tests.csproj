@@ -21,6 +21,10 @@
     <ProjectReference Include="..\NetPrints.Testing\NetPrints.Testing.csproj" />
     <!-- Built first, never referenced: migrate tests load it from its own output folder. -->
     <ProjectReference Include="..\NetPrints.TestExtension\NetPrints.TestExtension.csproj" ReferenceOutputAssembly="false" />
+    <!-- Built first, never referenced: tests load the fx.catalog extension from its own output folder. -->
+    <ProjectReference Include="..\Fixtures\Extensions\Fx.Catalog\Fx.Catalog.csproj" ReferenceOutputAssembly="false" />
+    <!-- Built first, never referenced: the catalog tests catalog it, and CT-T12 packs it. -->
+    <ProjectReference Include="..\Fixtures\Catalog\CatalogFixtureLib\CatalogFixtureLib.csproj" ReferenceOutputAssembly="false" />
     <!-- Built first, never referenced: the end-to-end tests run a temp copy of samples/HelloWorld against the generator's own output folder. -->
     <ProjectReference Include="..\..\src\NetPrints.Generator\NetPrints.Generator.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
