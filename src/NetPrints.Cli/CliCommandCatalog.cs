@@ -20,5 +20,13 @@ internal static class CliCommandCatalog
             .WithDescription("Build a NetPrints project.")
             .WithExample(BuildCommand.Name)
             .WithExample(BuildCommand.Name, "samples/HelloWorld")),
+        new(RunCommand.Name, config => config.AddCommand<RunCommand>(RunCommand.Name)
+            .WithDescription("Build a NetPrints project and run the program.")
+            .WithExample(RunCommand.Name)
+            .WithExample(RunCommand.Name, "samples/HelloWorld", "--", "arg1", "arg2")),
+        new(MigrateCommand.Name, config => config.AddCommand<MigrateCommand>(MigrateCommand.Name)
+            .WithDescription("Report the schema version of graph files (no migrations exist yet).")
+            .WithExample(MigrateCommand.Name)
+            .WithExample(MigrateCommand.Name, "samples/HelloWorld", "graphs/Extra.netpc.json")),
     ];
 }

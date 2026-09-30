@@ -121,23 +121,23 @@ jobs:
           -- --ignore-exit-code 8 --coverage --coverage-output-format cobertura
           --coverage-settings ${{ github.workspace }}/tests/CodeCoverage.config
 
-      # `--version` prints "NetPrints.Cli <version>" and exits 0 since the Spectre CLI (P2).
+      # `--version` prints "NetPrints.Cli <version>" and `--help` prints the usage; both exit 0.
       - name: CLI smoke
         run: |
           output=$(dotnet run --project src/NetPrints.Cli -c Release --no-build -- --version 2>&1)
           echo "$output"
           echo "$output" | grep -q "NetPrints.Cli"
+          dotnet run --project src/NetPrints.Cli -c Release --no-build -- --help
 
       # The sample imports the generator built above from bin/$(Configuration); Configuration makes the
-      # CLI's own `dotnet build` of it use Release like the solution build. `run` arrives with T024/T026,
-      # until then the step builds the sample.
+      # CLI's own `dotnet build` of it use Release like the solution build.
       - name: CLI sample compile and run
         env:
           Configuration: Release
         run: |
-          output=$(dotnet run --project src/NetPrints.Cli -c Release --no-build -- build samples/HelloWorld/HelloWorld.csproj 2>&1)
+          output=$(dotnet run --project src/NetPrints.Cli -c Release --no-build -- run samples/HelloWorld/HelloWorld.csproj 2>&1)
           echo "$output"
-          echo "$output" | grep -q "Build succeeded."
+          echo "$output" | grep -q "Hello, World!"
 
       - name: Upload test results
         if: always()

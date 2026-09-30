@@ -77,7 +77,24 @@
 - T022: the old `CliBuildTests` cases `SuccessfulRunPropagatesTheChildsNonZeroExitCode` and `SuccessfulRunWithZeroChildExitCodeReturnsExitCode0` exercise the run path, which `BuildCommand` does not have; they move to `RunCommandTests` in T023 (CL-T05). The project reference from `NetPrints.Core.Tests` to `NetPrints.Cli` existed only for `CliBuildTests` and is removed with the file.
 - T022: the messages changed from P1's `Compiling ...`/`Compilation succeeded.`/`Compilation failed with N errors:` to the contract's `Build succeeded.` / `Build failed with N error(s).` (no header line).
 
-### Deviations
+### Batch C2 (T023-T026) — run, migrate, CI
+
+### Decisions
+
+- `ProjectCommandBase.ExecuteProjectAsync` now receives the `CommandContext` (`run` reads `Remaining.Raw`) and exposes `Environment` as a protected property, so subclasses do not capture the constructor parameter a second time.
+- `run` appends `--` plus the arguments after `--` to `GetRunCommand`'s arguments only when there are any (`dotnet run ... --no-build -- a b`); the child's stdout goes to the console output, its stderr to `CliEnvironment.Error`, and its exit code is the command's. The two run cases dropped from `CliBuildTests` are ported into `RunCommandTests`.
+- `migrate` does not derive from `ProjectCommandBase` (it takes several paths). A `.csproj` argument, or no argument, resolves the project (`ProjectLocator`), checks the SDK (exit 3) and reads `ProjectSnapshot.GraphFiles`; a directory is searched recursively for `*.netpc.json`, skipping `bin` and `obj`; a `.netpc.json` file is read directly; another file or a missing path exits 2.
+- Each graph is read through the `IDocumentFormat` that `DocumentFormatRegistry.Find` resolves, from a `FileSystemDocumentStore` (`watch: false`) rooted at the graph's directory with the file name as id. A `DocumentVersionException` prints `<path>: schema <found> is not supported (this tool supports <supported>)`; any other read failure prints `<path>: unreadable: <reason>`; both exit 1 after the remaining graphs are reported, with the last line `N of M graph(s) could not be read.` (the contract defines the last line only for success).
+- The registry uses the built-in node converters only (no extension node converters yet), so a graph with extension nodes reports as unreadable until a later batch loads extensions.
+- `NetPrints.Cli` references `NetPrints.Serialization` directly (it was not transitive).
+- T026: CI "CLI smoke" also runs `--help`; "CLI sample compile and run" runs `run samples/HelloWorld/HelloWorld.csproj` and greps `Hello, World!`; `scripts/verify-packages.sh` step 4 runs the installed tool as `netprints run` and greps `Hello, World!`.
+
+### Red/green evidence
+
+- Red (T023, tests first): `RunCommandTests` and `MigrateCommandTests` written with the `FakeProjectSystem.LoadAsync`/`GraphFiles` support, commands not registered: 16 of 17 failed (unknown command, exit 2). Green after T024/T025: 17 of 17 passed.
+- Manual: `migrate samples/HelloWorld/HelloWorld.Program.netpc.json` reports schema 1; `run` of a clean copy of the sample prints `Hello, World!`, exit 0.
+
+## Deviations
 
 - CI: the "CLI smoke" step now asserts exit 0 (was 2) and "CLI sample compile and run" runs `build samples/HelloWorld/HelloWorld.csproj` and greps `Build succeeded.`, because P1's `-p/-r` flags are rejected from C1 on and CI must stay green until T026 rewrites both steps (`run` arrives in C2).
 - `scripts/verify-packages.sh` step 4 ran the installed tool as `netprints -p <csproj> -r` (the CI "Packages (local feed)" job failed on the P1-flag message at c35dc4f); it now runs `netprints build <csproj>` and greps `Build succeeded.`. T075 or T026 may switch it to `run` once C2 lands.

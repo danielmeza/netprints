@@ -51,6 +51,6 @@ internal sealed class BuildCommand(
     }
 
     /// <inheritdoc/>
-    protected override Task<int> ExecuteProjectAsync(string projectPath, ProjectSettings settings, CancellationToken cancellationToken) =>
+    protected override Task<int> ExecuteProjectAsync(CommandContext context, string projectPath, ProjectSettings settings, CancellationToken cancellationToken) =>
         BuildAsync(projects.Value, Console, projectPath, cancellationToken);
 }

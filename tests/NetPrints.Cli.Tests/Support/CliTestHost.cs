@@ -21,8 +21,14 @@ internal sealed class FakeProjectSystem : IProjectSystem
     public Exception? ThrowOnBuild { get; set; }
     public ProcessStartRequest RunCommand { get; set; } = new("dotnet", ["run"], "/tmp");
     public List<string> BuiltProjects { get; } = [];
+    public IReadOnlyList<string> GraphFiles { get; set; } = [];
+    public List<string> LoadedProjects { get; } = [];
 
-    public Task<ProjectSnapshot> LoadAsync(string projectFilePath, CancellationToken cancellationToken) => throw new NotSupportedException();
+    public Task<ProjectSnapshot> LoadAsync(string projectFilePath, CancellationToken cancellationToken)
+    {
+        LoadedProjects.Add(projectFilePath);
+        return Task.FromResult(new ProjectSnapshot(projectFilePath, "P", "P", "P", BinaryType.Executable, "net10.0", "", false, GraphFiles, [], [], [], [], "", new Dictionary<string, string>(), []));
+    }
     public Task<ProjectSnapshot> ApplyAsync(string projectFilePath, IReadOnlyList<ProjectEdit> edits, CancellationToken cancellationToken) => throw new NotSupportedException();
     public Task<string> CreateAsync(string directory, string projectName, IProjectProfile profile, string rootNamespace, CancellationToken cancellationToken) => throw new NotSupportedException();
 

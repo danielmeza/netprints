@@ -18,13 +18,16 @@ internal abstract class ProjectCommandBase<TSettings>(
     ILoggerFactory loggerFactory) : AsyncCommand<TSettings>
     where TSettings : ProjectSettings
 {
+    /// <summary>Gets the process state (current directory, variables, stderr).</summary>
+    protected CliEnvironment Environment { get; } = environment;
+
     /// <summary>Gets the console results and diagnostics are written to.</summary>
     protected IAnsiConsole Console { get; } = console;
 
     /// <inheritdoc/>
     public sealed override async Task<int> ExecuteAsync(CommandContext context, TSettings settings, CancellationToken cancellationToken)
     {
-        ProjectLocation location = ProjectLocator.Locate(settings.Project, environment);
+        ProjectLocation location = ProjectLocator.Locate(settings.Project, Environment);
         if (location.Path is not { } projectPath)
         {
             Console.WriteLineRaw(location.Error ?? "The project could not be resolved.");
@@ -37,13 +40,14 @@ internal abstract class ProjectCommandBase<TSettings>(
             return ExitCodes.NoSdk;
         }
 
-        return await ExecuteProjectAsync(projectPath, settings, cancellationToken).ConfigureAwait(false);
+        return await ExecuteProjectAsync(context, projectPath, settings, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>Runs the command against the resolved project once an SDK is registered.</summary>
+    /// <param name="context">The command context, holding the arguments after <c>--</c>.</param>
     /// <param name="projectPath">The full path of the project file.</param>
     /// <param name="settings">The parsed settings.</param>
     /// <param name="cancellationToken">Cancels the work.</param>
     /// <returns>The process exit code.</returns>
-    protected abstract Task<int> ExecuteProjectAsync(string projectPath, TSettings settings, CancellationToken cancellationToken);
+    protected abstract Task<int> ExecuteProjectAsync(CommandContext context, string projectPath, TSettings settings, CancellationToken cancellationToken);
 }

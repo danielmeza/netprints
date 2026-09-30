@@ -194,16 +194,16 @@ tracked API.
 
 ### Batch C2 — model: sonnet — T023–T026 — 5 units
 
-- [ ] T023 [US1] Test first: `tests/NetPrints.Cli.Tests/Commands/RunCommandTests.cs` (CL-T05) and
+- [x] T023 [US1] Test first: `tests/NetPrints.Cli.Tests/Commands/RunCommandTests.cs` (CL-T05) and
   `tests/NetPrints.Cli.Tests/Commands/MigrateCommandTests.cs` (CL-T09).
-- [ ] T024 [US1] `src/NetPrints.Cli/Commands/RunCommand.cs` (builds through `BuildCommand`'s core; arguments after `--`
+- [x] T024 [US1] `src/NetPrints.Cli/Commands/RunCommand.cs` (builds through `BuildCommand`'s core; arguments after `--`
   from `CommandContext.Remaining.Raw`; child exit code returned).
-- [ ] T025 [US1] `src/NetPrints.Cli/Commands/MigrateCommand.cs` (arguments per contracts/cli.md §4; each graph read
+- [x] T025 [US1] `src/NetPrints.Cli/Commands/MigrateCommand.cs` (arguments per contracts/cli.md §4; each graph read
   through the `IDocumentFormat` that `DocumentFormatRegistry` resolves, from a `FileSystemDocumentStore` with
   `watch: false`; a graph that reads is at the current version; `DocumentVersionException` → error naming the found and
   supported versions; writes nothing); add a `ProjectReference` to `NetPrints.Serialization` in
   `src/NetPrints.Cli/NetPrints.Cli.csproj` unless it is already transitive.
-- [ ] T026 [US1] `.github/workflows/ci.yml`: "CLI smoke" runs `--version` and `--help` and asserts rc 0 (replace the
+- [x] T026 [US1] `.github/workflows/ci.yml`: "CLI smoke" runs `--version` and `--help` and asserts rc 0 (replace the
   comment about exit 2); "CLI sample compile and run" uses `-- run samples/HelloWorld/HelloWorld.csproj`; whole suite;
   commit.
 
