@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using NetPrints.Cli.Infrastructure;
 using NetPrints.Cli.Tests.Support;
@@ -20,12 +21,36 @@ public sealed class CliExitCodeTests
     [Theory]
     [InlineData("--help")]
     [InlineData("-h")]
-    public async Task TopLevelHelpExitsZero(string flag)
+    [InlineData("--verbose", "--help")]
+    [InlineData("--verbose", "-h")]
+    public async Task TopLevelHelpExitsZero(params string[] args)
     {
         var host = new CliTestHost();
 
-        Assert.Equal(ExitCodes.Success, await host.RunAsync(flag));
+        Assert.Equal(ExitCodes.Success, await host.RunAsync(args));
         Assert.Contains("USAGE", host.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task VerboseBeforeVersionStillPrintsTheVersion()
+    {
+        var host = new CliTestHost();
+
+        Assert.Equal(ExitCodes.Success, await host.RunAsync("--verbose", "--version"));
+        Assert.StartsWith("NetPrints.Cli ", host.Output.Trim(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ABareVerboseBehavesLikeABareInvocation()
+    {
+        var bare = new CliTestHost();
+        var verbose = new CliTestHost();
+
+        int bareExitCode = await bare.RunAsync();
+        int verboseExitCode = await verbose.RunAsync("--verbose");
+
+        Assert.Equal(bareExitCode, verboseExitCode);
+        Assert.Equal(bare.Output, verbose.Output);
     }
 
     [Fact]
@@ -109,6 +134,63 @@ public sealed class CliExitCodeTests
         string error = host.Error.ToString();
         Assert.Contains("boom", error, StringComparison.Ordinal);
         Assert.Equal(verbose, error.Contains("   at ", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task CancellationIsReportedAsExit130WithoutAnInternalError()
+    {
+        var host = new CliTestHost(Directory.CreateTempSubdirectory("np-cli-").FullName);
+        string project = Path.Combine(host.Environment.CurrentDirectory, "App.csproj");
+        await File.WriteAllTextAsync(project, "<Project />", TestContext.Current.CancellationToken);
+        using var cancellation = new CancellationTokenSource();
+        host.Projects.ThrowOnBuild = new OperationCanceledException(cancellation.Token);
+        await cancellation.CancelAsync();
+
+        Assert.Equal(ExitCodes.Canceled, await host.RunAsync(cancellation.Token, "build"));
+
+        Assert.DoesNotContain("Internal error", host.Error.ToString(), StringComparison.Ordinal);
+        Assert.Empty(host.Output);
+    }
+
+    [Fact]
+    public async Task AnOperationCanceledExceptionWithoutARequestedCancellationIsStillAnInternalError()
+    {
+        var host = new CliTestHost(Directory.CreateTempSubdirectory("np-cli-").FullName);
+        await File.WriteAllTextAsync(Path.Combine(host.Environment.CurrentDirectory, "App.csproj"), "<Project />", TestContext.Current.CancellationToken);
+        host.Projects.ThrowOnBuild = new OperationCanceledException("timed out");
+
+        Assert.Equal(ExitCodes.InternalError, await host.RunAsync("build"));
+    }
+
+    private sealed class MissingService;
+
+    private sealed class NeedsMissingServiceCommand(MissingService service) : AsyncCommand
+    {
+        public MissingService Service { get; } = service;
+
+        public override Task<int> ExecuteAsync(CommandContext context, CancellationToken cancellationToken) => Task.FromResult(0);
+    }
+
+    [Fact]
+    public async Task ACommandWithAnUnresolvableDependencyIsAnInternalErrorNotAUsageError()
+    {
+        var host = new CliTestHost();
+        CliCommand[] commands = [new("broken", config => config.AddCommand<NeedsMissingServiceCommand>("broken"))];
+
+        int exitCode = await CliApplication.RunAsync(["broken"], host.Services, commands, TestContext.Current.CancellationToken);
+
+        Assert.Equal(ExitCodes.InternalError, exitCode);
+        Assert.Contains("Internal error", host.Error.ToString(), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("build", "--verbose=maybe")]
+    [InlineData("generate", "--graph", "")]
+    public async Task ConversionAndValidationFailuresRemainUsageErrors(params string[] args)
+    {
+        var host = new CliTestHost();
+
+        Assert.Equal(ExitCodes.Usage, await host.RunAsync(args));
     }
 
     [Fact]

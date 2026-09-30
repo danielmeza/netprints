@@ -58,6 +58,70 @@ public sealed class RunCommandTests : IDisposable
         Assert.Equal(["run", "--project", _project, "--no-build", "--", "one", "--two", "-r"], started.Arguments);
     }
 
+    public static TheoryData<string[]> VerbatimTails => new()
+    {
+        { [""] },
+        { ["-"] },
+        { ["--="] },
+        { ["a b", "--name", ""] },
+        { ["one", "--", "two", "-p"] },
+        { ["--"] },
+        { ["--verbose", "-h", "--help"] },
+    };
+
+    [Theory]
+    [MemberData(nameof(VerbatimTails))]
+    public async Task TheTailAfterTheFirstSeparatorIsForwardedVerbatim(string[] tail)
+    {
+        _host.Projects.RunCommand = new ProcessStartRequest("dotnet", ["run", "--no-build"], _root);
+
+        int exitCode = await _host.RunAsync(["run", _project, "--", .. tail]);
+
+        Assert.Equal(ExitCodes.Success, exitCode);
+        ProcessStartRequest started = Assert.Single(_host.Processes.Started);
+        Assert.Equal(["run", "--no-build", "--", .. tail], started.Arguments);
+    }
+
+    [Fact]
+    public async Task ATailOptionNamedLikeAToolOptionIsNotConsumedByTheTool()
+    {
+        int exitCode = await _host.RunAsync("run", "--", "--verbose");
+
+        Assert.Equal(ExitCodes.Success, exitCode);
+        Assert.Equal("--verbose", Assert.Single(_host.Processes.Started).Arguments[^1]);
+        Assert.DoesNotContain("info:", _host.Error.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ARealProgramReceivesAnEmptyArgumentAndALoneDash()
+    {
+        var sample = new SampleCopy();
+        try
+        {
+            var host = new CliTestHost(sample.Directory);
+
+            int exitCode = await host.RunRealAsync("run", sample.Project, "--", "", "--=", "-");
+
+            Assert.Equal(ExitCodes.Success, exitCode);
+            Assert.Contains("Hello, World!", host.Output, StringComparison.Ordinal);
+        }
+        finally
+        {
+            sample.Dispose();
+        }
+    }
+
+    [Fact]
+    public async Task TheProgramsOutputIsWrittenByTheRunnerNotBufferedByTheCommand()
+    {
+        _host.Processes.Result = new ProcessResult(0, "out\n", "err\n");
+
+        Assert.Equal(ExitCodes.Success, await _host.RunAsync("run"));
+
+        Assert.Equal("out\n", _host.Output.Replace("\r", "", StringComparison.Ordinal).Replace("Build succeeded.\n", "", StringComparison.Ordinal));
+        Assert.Equal("err\n", _host.Error.ToString().Replace("\r", "", StringComparison.Ordinal));
+    }
+
     [Fact]
     public async Task TheProjectArgumentSelectsTheProjectAndArgumentsStillFollow()
     {

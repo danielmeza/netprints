@@ -17,7 +17,8 @@ internal sealed class RunCommand(
     CliEnvironment environment,
     IMsBuildRegistration msBuild,
     ILoggerFactory loggerFactory,
-    IProcessRunner processes,
+    IProgramRunner programs,
+    ForwardedArguments forwarded,
     Lazy<IProjectSystem> projects) : ProjectCommandBase<ProjectSettings>(console, environment, msBuild, loggerFactory)
 {
     /// <summary>The command name.</summary>
@@ -38,15 +39,11 @@ internal sealed class RunCommand(
         }
 
         ProcessStartRequest request = system.GetRunCommand(projectPath);
-        IReadOnlyList<string> programArguments = context.Remaining.Raw;
-        if (programArguments.Count > 0)
+        if (forwarded.Values.Count > 0)
         {
-            request = request with { Arguments = [.. request.Arguments, ArgumentSeparator, .. programArguments] };
+            request = request with { Arguments = [.. request.Arguments, ArgumentSeparator, .. forwarded.Values] };
         }
 
-        ProcessResult output = await processes.RunAsync(request, cancellationToken).ConfigureAwait(false);
-        await Console.Profile.Out.Writer.WriteAsync(output.StandardOutput).ConfigureAwait(false);
-        await Environment.Error.WriteAsync(output.StandardError).ConfigureAwait(false);
-        return output.ExitCode;
+        return await programs.RunAsync(request, cancellationToken).ConfigureAwait(false);
     }
 }

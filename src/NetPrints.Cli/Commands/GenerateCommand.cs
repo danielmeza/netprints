@@ -38,19 +38,25 @@ internal sealed class GenerateCommand(
         ArgumentNullException.ThrowIfNull(settings);
 
         ProjectSnapshot snapshot = await projects.Value.LoadAsync(projectPath, cancellationToken).ConfigureAwait(false);
+        if (ProjectMessageFormat.WriteErrors(snapshot.Messages, Environment.Error))
+        {
+            return ExitCodes.Failed;
+        }
+
         GenerateRequest request = GenerateRequestFactory.FromSnapshot(snapshot);
 
         if (settings.Graphs.Length > 0)
         {
             var wanted = settings.Graphs.Select(graph => Path.GetFullPath(graph, Environment.CurrentDirectory)).ToList();
-            string? unknown = wanted.Find(graph => !request.Graphs.Any(job => job.Input == graph));
+            StringComparer comparer = GraphPathComparison.Default;
+            string? unknown = wanted.Find(graph => !request.Graphs.Any(job => comparer.Equals(job.Input, graph)));
             if (unknown is not null)
             {
-                Console.WriteLineRaw($"'{unknown}' is not a graph of the project '{projectPath}'.");
+                await Environment.Error.WriteLineAsync($"'{unknown}' is not a graph of the project '{projectPath}'.").ConfigureAwait(false);
                 return ExitCodes.Usage;
             }
 
-            request = request with { Graphs = [.. request.Graphs.Where(job => wanted.Contains(job.Input))] };
+            request = request with { Graphs = [.. request.Graphs.Where(job => wanted.Contains(job.Input, comparer))] };
         }
 
         (ExtensionRegistry registry, IReadOnlyList<CodeDiagnostic> extensionDiagnostics) = GraphCodeGenerator.LoadExtensions(request, cancellationToken);

@@ -76,7 +76,8 @@ public sealed class BuildCommandTests : IDisposable
         Assert.Equal(ExitCodes.NoSdk, await _host.RunAsync("build"));
 
         Assert.Empty(_host.Projects.BuiltProjects);
-        Assert.Contains("No .NET SDK", _host.Output, StringComparison.Ordinal);
+        Assert.Contains("No .NET SDK", _host.Error.ToString(), StringComparison.Ordinal);
+        Assert.Empty(_host.Output);
     }
 
     [Fact]
@@ -85,6 +86,7 @@ public sealed class BuildCommandTests : IDisposable
         Assert.Equal(ExitCodes.Usage, await _host.RunAsync("build", Path.Combine(_root, "Missing.csproj")));
 
         Assert.Equal(0, _host.MsBuild.Calls);
-        Assert.Contains("does not exist", _host.Output, StringComparison.Ordinal);
+        Assert.Contains("does not exist", _host.Error.ToString(), StringComparison.Ordinal);
+        Assert.Empty(_host.Output);
     }
 }

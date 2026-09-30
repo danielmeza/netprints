@@ -17,7 +17,7 @@ internal static class CliServices
     private const string DevelopmentSdkVersion = "1.0.0-dev";
 
     /// <summary>Creates the service collection of the real process: its console, environment, process runner and MSBuild-backed project system.</summary>
-    /// <returns>The registrations <see cref="CliApplication.RunAsync"/> completes with logging and the commands.</returns>
+    /// <returns>The registrations <see cref="CliApplication.RunAsync(System.Collections.Generic.IReadOnlyList{string}, IServiceCollection, System.Threading.CancellationToken)"/> completes with logging and the commands.</returns>
     public static IServiceCollection CreateDefault()
     {
         CliEnvironment environment = CliEnvironment.FromProcess();
@@ -25,6 +25,7 @@ internal static class CliServices
         services.AddSingleton(environment);
         services.AddSingleton(CreateConsole(Console.Out, Console.IsOutputRedirected, environment));
         services.AddSingleton<IProcessRunner, ProcessRunner>();
+        services.AddSingleton<IProgramRunner>(_ => new ProgramRunner());
         services.AddSingleton<IMsBuildRegistration, MsBuildRegistrationAdapter>();
         services.AddSingleton(provider => new Lazy<IProjectSystem>(() => CreateProjectSystem(provider)));
         return services;

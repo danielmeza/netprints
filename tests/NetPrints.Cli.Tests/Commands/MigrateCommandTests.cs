@@ -2,6 +2,8 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using NetPrints.Cli.Tests.Support;
+using NetPrints.Extensibility.Loading;
+using NetPrints.Projects;
 using NetPrints.Testing;
 using Xunit;
 
@@ -70,6 +72,60 @@ public sealed class MigrateCommandTests : IDisposable
     }
 
     [Fact]
+    public async Task AGraphWithoutASchemaVersionSaysItIsMissing()
+    {
+        Write("A.netpc.json", """{ "namespace": "N", "name": "C", "classGraph": { "nodes": [] } }""");
+
+        Assert.Equal(ExitCodes.Failed, await _host.RunAsync("migrate", _root));
+
+        string line = Assert.Single(_host.Output.Split('\n', StringSplitOptions.TrimEntries), text => text.StartsWith("A.netpc.json:", StringComparison.Ordinal));
+        Assert.Contains("unreadable:", line, StringComparison.Ordinal);
+        Assert.Contains("schemaVersion", line, StringComparison.Ordinal);
+        Assert.Contains("missing", line, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task ADirectorySymlinkIsNotFollowed()
+    {
+        Assert.SkipWhen(OperatingSystem.IsWindows(), "Creating a symbolic link needs a privilege on Windows.");
+        Write("tree/A.netpc.json", V1Graph);
+        Write("outside/Other.netpc.json", V2Graph);
+        Directory.CreateSymbolicLink(Path.Combine(_root, "tree", "up"), Path.Combine(_root, "outside"));
+
+        int exitCode = await _host.RunAsync("migrate", Path.Combine(_root, "tree"));
+
+        Assert.Equal(ExitCodes.Success, exitCode);
+        Assert.Contains("1 graph(s)", _host.Output, StringComparison.Ordinal);
+        Assert.DoesNotContain("Other.netpc.json", _host.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AnUnreadableSubdirectoryIsReportedAsAFailureNotACrash()
+    {
+        if (OperatingSystem.IsWindows() || Environment.IsPrivilegedProcess)
+        {
+            Assert.Skip("Needs POSIX permissions and a non-root user.");
+            return;
+        }
+
+        Write("A.netpc.json", V1Graph);
+        string locked = Directory.CreateDirectory(Path.Combine(_root, "locked")).FullName;
+        File.SetUnixFileMode(locked, UnixFileMode.None);
+        try
+        {
+            int exitCode = await _host.RunAsync("migrate", _root);
+
+            Assert.Equal(ExitCodes.Failed, exitCode);
+            Assert.Contains("locked: unreadable:", _host.Output, StringComparison.Ordinal);
+            Assert.DoesNotContain("Internal error", _host.Error.ToString(), StringComparison.Ordinal);
+        }
+        finally
+        {
+            File.SetUnixFileMode(locked, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        }
+    }
+
+    [Fact]
     public async Task AGraphFileArgumentIsReadDirectly()
     {
         string file = Write("A.netpc.json", V1Graph);
@@ -126,7 +182,7 @@ public sealed class MigrateCommandTests : IDisposable
         _host.Projects.ExtensionFolders = [broken];
 
         Assert.Equal(ExitCodes.Failed, await _host.RunAsync("migrate", project));
-        Assert.Contains("NPX", _host.Output, StringComparison.Ordinal);
+        Assert.Contains(ExtensionDiagnosticCodes.InvalidManifest, _host.Output, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -145,7 +201,8 @@ public sealed class MigrateCommandTests : IDisposable
     public async Task AMissingPathExits2()
     {
         Assert.Equal(ExitCodes.Usage, await _host.RunAsync("migrate", Path.Combine(_root, "nope")));
-        Assert.Contains("does not exist", _host.Output, StringComparison.Ordinal);
+        Assert.Contains("does not exist", _host.Error.ToString(), StringComparison.Ordinal);
+        Assert.Empty(_host.Output);
     }
 
     [Fact]

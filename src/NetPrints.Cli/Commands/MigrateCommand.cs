@@ -47,13 +47,18 @@ internal sealed class MigrateCommand(
         string[] arguments = settings.Paths.Length == 0 ? [""] : settings.Paths;
         var graphs = new SortedSet<string>(StringComparer.Ordinal);
         var extensionFolders = new SortedSet<string>(StringComparer.Ordinal);
+        var unreadable = new List<string>();
         foreach (string argument in arguments)
         {
-            string? error = await CollectAsync(argument, graphs, extensionFolders, cancellationToken).ConfigureAwait(false);
-            if (error is not null)
+            CollectResult result = await CollectAsync(argument, graphs, extensionFolders, unreadable, cancellationToken).ConfigureAwait(false);
+            if (result.ExitCode != ExitCodes.Success)
             {
-                console.WriteLineRaw(error);
-                return error == NoSdkMessage ? ExitCodes.NoSdk : ExitCodes.Usage;
+                if (result.Message is not null)
+                {
+                    await environment.Error.WriteLineAsync(result.Message).ConfigureAwait(false);
+                }
+
+                return result.ExitCode;
             }
         }
 
@@ -74,12 +79,17 @@ internal sealed class MigrateCommand(
             var formats = new DocumentFormatRegistry([
                 new JsonDocumentFormat(new NetPrintsJsonOptions(registry.NodeConverters), new DocumentMigrator([], NullLogger<DocumentMigrator>.Instance)),
             ]);
-            return await ReportAllAsync(graphs, formats, cancellationToken).ConfigureAwait(false);
+            return await ReportAllAsync(graphs, unreadable, formats, cancellationToken).ConfigureAwait(false);
         }
     }
 
-    private async Task<int> ReportAllAsync(SortedSet<string> graphs, DocumentFormatRegistry formats, CancellationToken cancellationToken)
+    private async Task<int> ReportAllAsync(SortedSet<string> graphs, List<string> unreadable, DocumentFormatRegistry formats, CancellationToken cancellationToken)
     {
+        foreach (string line in unreadable)
+        {
+            console.WriteLineRaw(line);
+        }
+
         int failures = 0;
         foreach (string graph in graphs)
         {
@@ -89,56 +99,66 @@ internal sealed class MigrateCommand(
             }
         }
 
-        console.WriteLineRaw(failures == 0
+        console.WriteLineRaw(failures == 0 && unreadable.Count == 0
             ? $"No migrations are available; {graphs.Count} graph(s) are at schema version {DocumentMigrator.CurrentSchemaVersion}."
-            : $"{failures} of {graphs.Count} graph(s) could not be read.");
-        return failures == 0 ? ExitCodes.Success : ExitCodes.Failed;
+            : unreadable.Count == 0
+                ? $"{failures} of {graphs.Count} graph(s) could not be read."
+                : $"{failures} of {graphs.Count} graph(s) and {unreadable.Count} director(ies) could not be read.");
+        return failures == 0 && unreadable.Count == 0 ? ExitCodes.Success : ExitCodes.Failed;
     }
 
-    private const string NoSdkMessage = "No .NET SDK could be found; nothing was checked.";
-
-    private async Task<string?> CollectAsync(string argument, SortedSet<string> graphs, SortedSet<string> extensionFolders, CancellationToken cancellationToken)
+    private async Task<CollectResult> CollectAsync(string argument, SortedSet<string> graphs, SortedSet<string> extensionFolders, List<string> unreadable, CancellationToken cancellationToken)
     {
         string path = Path.GetFullPath(argument.Length == 0 ? "." : argument, environment.CurrentDirectory);
 
         if (argument.Length > 0 && File.Exists(path) && path.EndsWith(GraphExtension, StringComparison.OrdinalIgnoreCase))
         {
             graphs.Add(path);
-            return null;
+            return CollectResult.Ok;
         }
 
         if (argument.Length > 0 && Directory.Exists(path))
         {
-            foreach (string file in EnumerateGraphs(path))
-            {
-                graphs.Add(file);
-            }
-
-            return null;
+            CollectGraphs(path, graphs, unreadable);
+            return CollectResult.Ok;
         }
 
         if (argument.Length > 0 && !File.Exists(path))
         {
-            return $"'{path}' does not exist.";
+            return CollectResult.Fail(ExitCodes.Usage, $"'{path}' does not exist.");
         }
 
         if (argument.Length > 0 && !path.EndsWith(ProjectExtension, StringComparison.OrdinalIgnoreCase))
         {
-            return $"'{path}' is neither a {GraphExtension} graph, a {ProjectExtension} project nor a directory.";
+            return CollectResult.Fail(ExitCodes.Usage, $"'{path}' is neither a {GraphExtension} graph, a {ProjectExtension} project nor a directory.");
         }
 
         ProjectLocation location = ProjectLocator.Locate(argument.Length == 0 ? null : argument, environment);
         if (location.Path is not { } projectPath)
         {
-            return location.Error ?? "The project could not be resolved.";
+            return CollectResult.Fail(ExitCodes.Usage, location.Error ?? "The project could not be resolved.");
         }
 
         if (!msBuild.EnsureRegistered(loggerFactory.CreateLogger(nameof(IMsBuildRegistration))))
         {
-            return NoSdkMessage;
+            return CollectResult.Fail(ExitCodes.NoSdk, "No .NET SDK could be found; nothing was checked.");
         }
 
-        ProjectSnapshot snapshot = await projects.Value.LoadAsync(projectPath, cancellationToken).ConfigureAwait(false);
+        ProjectSnapshot snapshot;
+        try
+        {
+            snapshot = await projects.Value.LoadAsync(projectPath, cancellationToken).ConfigureAwait(false);
+        }
+        catch (ProjectSystemException ex)
+        {
+            return CollectResult.Fail(ex.Code == ProjectSystemException.NoSdkRegistered ? ExitCodes.NoSdk : ExitCodes.Failed, $"{projectPath}: {ex.Message}");
+        }
+
+        if (ProjectMessageFormat.WriteErrors(snapshot.Messages, environment.Error))
+        {
+            return CollectResult.Fail(ExitCodes.Failed, null);
+        }
+
         foreach (string file in snapshot.GraphFiles)
         {
             graphs.Add(Path.GetFullPath(file, Path.GetDirectoryName(projectPath) ?? environment.CurrentDirectory));
@@ -149,31 +169,48 @@ internal sealed class MigrateCommand(
             extensionFolders.Add(Path.GetFullPath(folder, Path.GetDirectoryName(projectPath) ?? environment.CurrentDirectory));
         }
 
-        return null;
+        return CollectResult.Ok;
     }
 
-    private static IEnumerable<string> EnumerateGraphs(string directory)
+    // Symbolic links and junctions are not followed (a link back up the tree would rescan it), and a directory that cannot be listed is
+    // reported and counted as a failure instead of aborting the walk.
+    private void CollectGraphs(string directory, ICollection<string> graphs, ICollection<string> unreadable)
     {
-        foreach (string file in Directory.EnumerateFiles(directory, "*" + GraphExtension, SearchOption.TopDirectoryOnly))
+        string[] files;
+        string[] children;
+        try
         {
-            if (file.EndsWith(GraphExtension, StringComparison.OrdinalIgnoreCase))
-            {
-                yield return file;
-            }
+            files = Directory.GetFiles(directory, "*" + GraphExtension, SearchOption.TopDirectoryOnly);
+            children = Directory.GetDirectories(directory);
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
+        {
+            unreadable.Add($"{Path.GetRelativePath(environment.CurrentDirectory, directory)}: unreadable: {ex.Message}");
+            return;
         }
 
-        foreach (string child in Directory.EnumerateDirectories(directory))
+        foreach (string file in files.Where(file => file.EndsWith(GraphExtension, StringComparison.OrdinalIgnoreCase)))
         {
-            if (SkippedDirectories.Contains(Path.GetFileName(child), StringComparer.OrdinalIgnoreCase))
+            graphs.Add(file);
+        }
+
+        foreach (string child in children)
+        {
+            if (SkippedDirectories.Contains(Path.GetFileName(child), StringComparer.OrdinalIgnoreCase)
+                || new DirectoryInfo(child).Attributes.HasFlag(FileAttributes.ReparsePoint))
             {
                 continue;
             }
 
-            foreach (string file in EnumerateGraphs(child))
-            {
-                yield return file;
-            }
+            CollectGraphs(child, graphs, unreadable);
         }
+    }
+
+    private readonly record struct CollectResult(int ExitCode, string? Message)
+    {
+        public static CollectResult Ok { get; } = new(ExitCodes.Success, null);
+
+        public static CollectResult Fail(int exitCode, string? message) => new(exitCode, message);
     }
 
     private async Task<bool> ReportAsync(string graph, DocumentFormatRegistry formats, CancellationToken cancellationToken)

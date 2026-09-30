@@ -1,12 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Spectre.Console.Cli;
 
 namespace NetPrints.Cli.Infrastructure;
 
 /// <summary>Adapts an <see cref="IServiceCollection"/> to Spectre's <see cref="ITypeRegistrar"/>; owns the providers it builds.</summary>
-internal sealed class TypeRegistrar(IServiceCollection services) : ITypeRegistrar, IDisposable
+internal sealed class TypeRegistrar(IServiceCollection services) : ITypeRegistrar, IAsyncDisposable
 {
     private readonly List<ServiceProvider> _providers = [];
 
@@ -32,11 +33,11 @@ internal sealed class TypeRegistrar(IServiceCollection services) : ITypeRegistra
     }
 
     /// <summary>Disposes every provider <see cref="Build"/> created.</summary>
-    public void Dispose()
+    public async ValueTask DisposeAsync()
     {
         foreach (ServiceProvider provider in _providers)
         {
-            provider.Dispose();
+            await provider.DisposeAsync().ConfigureAwait(false);
         }
     }
 }

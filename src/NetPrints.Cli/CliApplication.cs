@@ -29,33 +29,47 @@ internal static class CliApplication
     /// <param name="services">The registrations commands resolve from; logging is added here.</param>
     /// <param name="cancellationToken">Cancels the running command.</param>
     /// <returns>The process exit code (<see cref="ExitCodes"/>).</returns>
-    public static async Task<int> RunAsync(IReadOnlyList<string> args, IServiceCollection services, CancellationToken cancellationToken)
+    public static Task<int> RunAsync(IReadOnlyList<string> args, IServiceCollection services, CancellationToken cancellationToken) =>
+        RunAsync(args, services, CliCommandCatalog.All, cancellationToken);
+
+    /// <summary>Runs the tool with an explicit command list.</summary>
+    /// <param name="args">The command-line arguments.</param>
+    /// <param name="services">The registrations commands resolve from; logging is added here.</param>
+    /// <param name="commands">The commands to register.</param>
+    /// <param name="cancellationToken">Cancels the running command.</param>
+    /// <returns>The process exit code (<see cref="ExitCodes"/>).</returns>
+    public static async Task<int> RunAsync(IReadOnlyList<string> args, IServiceCollection services, IReadOnlyList<CliCommand> commands, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(args);
         ArgumentNullException.ThrowIfNull(services);
 
         CliEnvironment environment;
         IAnsiConsole console;
-        using (ServiceProvider probe = services.BuildServiceProvider())
+        await using (ServiceProvider probe = services.BuildServiceProvider())
         {
             environment = probe.GetRequiredService<CliEnvironment>();
             console = probe.GetRequiredService<IAnsiConsole>();
         }
 
-        if (P1FlagPresent(args))
+        // Everything after the first separator belongs to the user's program; Spectre never sees it (it would drop or reject valid values).
+        int separator = args.ToList().IndexOf(Separator);
+        IReadOnlyList<string> own = separator < 0 ? args : [.. args.Take(separator)];
+        services.AddSingleton(new ForwardedArguments(separator < 0 ? [] : [.. args.Skip(separator + 1)]));
+
+        if (P1FlagPresent(own))
         {
             await environment.Error.WriteLineAsync(P1FlagsMessage).ConfigureAwait(false);
             return ExitCodes.Usage;
         }
 
-        IReadOnlyList<string> normalized = MoveLeadingVerbose(args);
-        bool verbose = normalized.TakeWhile(arg => arg != Separator).Contains(VerboseFlag);
+        IReadOnlyList<string> normalized = MoveLeadingVerbose(own);
+        bool verbose = own.Contains(VerboseFlag);
 
         services.AddLogging(builder => builder
             .AddConsole(options => options.LogToStandardErrorThreshold = LogLevel.Trace)
             .SetMinimumLevel(verbose ? LogLevel.Information : LogLevel.Warning));
 
-        using var registrar = new TypeRegistrar(services);
+        await using var registrar = new TypeRegistrar(services);
         var app = new CommandApp(registrar);
         app.Configure(config =>
         {
@@ -63,8 +77,8 @@ internal static class CliApplication
             config.UseStrictParsing();
             config.SetApplicationVersion(ApplicationName + " " + InformationalVersion());
             config.ConfigureConsole(console);
-            config.SetExceptionHandler((exception, _) => HandleException(exception, environment.Error, verbose));
-            ConfigureCommands(config);
+            config.SetExceptionHandler((exception, _) => HandleException(exception, environment.Error, verbose, cancellationToken));
+            ConfigureCommands(config, commands);
         });
 
         return await app.RunAsync(normalized, cancellationToken).ConfigureAwait(false);
@@ -72,10 +86,12 @@ internal static class CliApplication
 
     /// <summary>Registers every command of <see cref="CliCommandCatalog"/>.</summary>
     /// <param name="config">The Spectre configurator.</param>
-    public static void ConfigureCommands(IConfigurator config)
+    public static void ConfigureCommands(IConfigurator config) => ConfigureCommands(config, CliCommandCatalog.All);
+
+    private static void ConfigureCommands(IConfigurator config, IReadOnlyList<CliCommand> commands)
     {
         ArgumentNullException.ThrowIfNull(config);
-        foreach (CliCommand command in CliCommandCatalog.All)
+        foreach (CliCommand command in commands)
         {
             command.Register(config);
         }
@@ -102,7 +118,13 @@ internal static class CliApplication
     private static IReadOnlyList<string> MoveLeadingVerbose(IReadOnlyList<string> args)
     {
         int command = args.ToList().FindIndex(arg => !arg.StartsWith('-'));
-        if (command <= 0 || !args.Take(command).Contains(VerboseFlag))
+        if (command < 0)
+        {
+            // No command: --verbose has no effect on help or version, and the root command has no such option.
+            return [.. args.Where(arg => arg != VerboseFlag)];
+        }
+
+        if (command == 0 || !args.Take(command).Contains(VerboseFlag))
         {
             return args;
         }
@@ -112,9 +134,24 @@ internal static class CliApplication
         return moved;
     }
 
-    private static int HandleException(Exception exception, TextWriter error, bool verbose)
+    // Spectre raises CommandRuntimeException for usage problems (conversion, validation, missing values) and for DI and command-creation
+    // faults alike, with no structural difference; the faults are recognised by the fixed prefix of their messages.
+    private static readonly string[] InternalRuntimeMessages =
+    [
+        "Could not resolve type",
+        "Could not create",
+        "Could not find converter",
+        "Could not get settings type",
+    ];
+
+    private static int HandleException(Exception exception, TextWriter error, bool verbose, CancellationToken cancellationToken)
     {
-        if (exception is CommandParseException or CommandRuntimeException)
+        if (exception is OperationCanceledException && cancellationToken.IsCancellationRequested)
+        {
+            return ExitCodes.Canceled;
+        }
+
+        if (exception is CommandParseException || (exception is CommandRuntimeException && !IsInternalRuntimeFault(exception.Message)))
         {
             error.WriteLine(exception.Message);
             return ExitCodes.Usage;
@@ -123,6 +160,9 @@ internal static class CliApplication
         error.WriteLine(verbose ? exception.ToString() : "Internal error: " + exception.Message);
         return ExitCodes.InternalError;
     }
+
+    private static bool IsInternalRuntimeFault(string message) =>
+        InternalRuntimeMessages.Any(prefix => message.StartsWith(prefix, StringComparison.Ordinal));
 
     private static string InformationalVersion() =>
         typeof(CliApplication).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion

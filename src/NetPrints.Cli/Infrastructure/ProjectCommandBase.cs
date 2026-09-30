@@ -1,6 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using NetPrints.Projects;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
@@ -30,17 +31,25 @@ internal abstract class ProjectCommandBase<TSettings>(
         ProjectLocation location = ProjectLocator.Locate(settings.Project, Environment);
         if (location.Path is not { } projectPath)
         {
-            Console.WriteLineRaw(location.Error ?? "The project could not be resolved.");
+            await Environment.Error.WriteLineAsync(location.Error ?? "The project could not be resolved.").ConfigureAwait(false);
             return ExitCodes.Usage;
         }
 
         if (!msBuild.EnsureRegistered(loggerFactory.CreateLogger(nameof(IMsBuildRegistration))))
         {
-            Console.WriteLineRaw("No .NET SDK could be found; nothing was built.");
+            await Environment.Error.WriteLineAsync("No .NET SDK could be found; nothing was built.").ConfigureAwait(false);
             return ExitCodes.NoSdk;
         }
 
-        return await ExecuteProjectAsync(context, projectPath, settings, cancellationToken).ConfigureAwait(false);
+        try
+        {
+            return await ExecuteProjectAsync(context, projectPath, settings, cancellationToken).ConfigureAwait(false);
+        }
+        catch (ProjectSystemException ex)
+        {
+            await Environment.Error.WriteLineAsync($"{projectPath}: {ex.Message}").ConfigureAwait(false);
+            return ex.Code == ProjectSystemException.NoSdkRegistered ? ExitCodes.NoSdk : ExitCodes.Failed;
+        }
     }
 
     /// <summary>Runs the command against the resolved project once an SDK is registered.</summary>

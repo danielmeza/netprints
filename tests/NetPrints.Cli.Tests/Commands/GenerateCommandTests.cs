@@ -1,7 +1,10 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using NetPrints.Cli.Infrastructure;
 using NetPrints.Cli.Tests.Support;
+using NetPrints.Extensibility.Loading;
+using NetPrints.Projects;
 using Xunit;
 
 namespace NetPrints.Cli.Tests.Commands;
@@ -107,14 +110,72 @@ public sealed class GenerateCommandTests : IDisposable
     public async Task AGraphOutsideTheProjectIsAUsageError()
     {
         Assert.Equal(ExitCodes.Usage, await _host.RunRealAsync("generate", "--graph", "missing.netpc.json"));
-        Assert.Contains("missing.netpc.json", _host.Output, StringComparison.Ordinal);
+        Assert.Contains("missing.netpc.json", _host.Error.ToString(), StringComparison.Ordinal);
+        Assert.Empty(_host.Output);
+    }
+
+    [Fact]
+    public async Task AGraphPathIsResolvedAgainstTheCurrentDirectoryNotTheProjectDirectory()
+    {
+        string parent = Path.GetDirectoryName(_sample.Directory) ?? _sample.Directory;
+        string relative = Path.Combine(Path.GetFileName(_sample.Directory), SampleCopy.GraphName);
+        File.WriteAllText(_sample.Combine(SampleCopy.GeneratedName), "// stale\n");
+
+        int fromParent = await new CliTestHost(parent).RunRealAsync("generate", "--check", _sample.Project, "--graph", relative);
+        var fromProject = new CliTestHost(_sample.Directory);
+        int bareName = await fromProject.RunRealAsync("generate", "--check", "--graph", SampleCopy.GraphName);
+        var wrongBase = new CliTestHost(parent);
+        int projectRelative = await wrongBase.RunRealAsync("generate", "--check", _sample.Project, "--graph", SampleCopy.GraphName);
+
+        Assert.Equal(ExitCodes.Failed, fromParent);
+        Assert.Equal(ExitCodes.Failed, bareName);
+        Assert.Equal(ExitCodes.Usage, projectRelative);
+    }
+
+    [Fact]
+    public async Task AnEmptyGraphValueIsAUsageError()
+    {
+        Assert.Equal(ExitCodes.Usage, await _host.RunRealAsync("generate", "--graph", ""));
+        Assert.DoesNotContain("__default_command", _host.Error.ToString() + _host.Output, StringComparison.Ordinal);
+        Assert.Contains("--graph", _host.Error.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AGraphOptionWithoutAValueNeverLeaksSpectresDefaultCommandToken()
+    {
+        Assert.Equal(ExitCodes.Usage, await _host.RunRealAsync("generate", "--graph"));
+        Assert.DoesNotContain("__default_command", _host.Error.ToString() + _host.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task TheDefaultCommandTokenAsAGraphValueIsAUsageError()
+    {
+        Assert.Equal(ExitCodes.Usage, await _host.RunRealAsync("generate", "--graph", "__default_command"));
+        Assert.DoesNotContain("is not a graph", _host.Error.ToString(), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(true, "HELLOWORLD.program.netpc.json", true)]
+    [InlineData(false, "HELLOWORLD.program.netpc.json", false)]
+    [InlineData(false, "HelloWorld.Program.netpc.json", true)]
+    public void GraphNamesCompareCaseInsensitivelyOnlyOnCaseInsensitiveFileSystems(bool caseInsensitive, string wanted, bool expected)
+    {
+        Assert.Equal(expected, GraphPathComparison.For(caseInsensitive).Equals(wanted, SampleCopy.GraphName));
+    }
+
+    [Fact]
+    public void TheDefaultGraphComparisonFollowsTheOperatingSystem()
+    {
+        bool caseInsensitive = OperatingSystem.IsWindows() || OperatingSystem.IsMacOS();
+
+        Assert.Equal(caseInsensitive, GraphPathComparison.Default.Equals("a", "A"));
     }
 
     [Fact]
     public async Task AFailingExtensionFolderExitsOneAndWritesNothing()
     {
         string broken = Directory.CreateDirectory(_sample.Combine("broken-ext")).FullName;
-        await File.WriteAllTextAsync(Path.Combine(broken, "extension.json"), "{ not json", TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(broken, ExtensionManifest.FileName), "{ not json", TestContext.Current.CancellationToken);
         string csproj = await File.ReadAllTextAsync(_sample.Project, TestContext.Current.CancellationToken);
         await File.WriteAllTextAsync(
             _sample.Project,
@@ -126,7 +187,7 @@ public sealed class GenerateCommandTests : IDisposable
         int exitCode = await _host.RunRealAsync("generate");
 
         Assert.Equal(ExitCodes.Failed, exitCode);
-        Assert.Contains("NPX", _host.Output, StringComparison.Ordinal);
+        Assert.Contains(ExtensionDiagnosticCodes.InvalidManifest, _host.Output, StringComparison.Ordinal);
         Assert.Equal("// stale\n", File.ReadAllText(generated));
     }
 }

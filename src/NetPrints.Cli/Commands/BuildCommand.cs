@@ -42,8 +42,7 @@ internal sealed class BuildCommand(
         ProjectMessage[] errors = result.Messages.Where(message => message.Severity == ProjectMessageSeverity.Error).ToArray();
         foreach (ProjectMessage error in errors)
         {
-            string location = error.File is null ? "" : error.Line is null ? $"{error.File}: " : $"{error.File}({error.Line},{error.Column}): ";
-            console.WriteLineRaw($"{location}{error.Code}: {error.Message}");
+            console.WriteLineRaw(ProjectMessageFormat.ToLine(error));
         }
 
         console.WriteLineRaw($"Build failed with {errors.Length} error(s).");

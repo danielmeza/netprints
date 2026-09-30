@@ -193,4 +193,24 @@ Deviations from the task: none of the marked types was made internal (finding 2,
 
 **Open items**: None. C1–C3 deferred items were closed: C2's extension folder wiring (closed in C3).
 
+### Review C fix batch, part 1 (T036, CLI runtime behaviour)
+
+Decisions, one per Review C comment:
+- `run --` forwarding: `CliApplication.RunAsync` cuts the argv at the first `--` before Spectre sees it and registers the tail as `ForwardedArguments`; `RunCommand` reads that holder instead of `Remaining.Raw`. Cases pinned: `""`, `-`, `--=`, an argument with spaces, a second `--` in the tail.
+- `run` buffering: new internal `IProgramRunner`/`ProgramRunner`. In production the child inherits stdin, stdout and stderr (prompts, ordering, colours, Ctrl+C); given streams, it redirects and copies with `CopyToAsync`. The test host's `CapturingProgramRunner` does that and writes to its console, so the forwarding tests keep asserting output. `IProcessRunner` stays for builds.
+- Restore failure: `snapshot.Messages` errors are printed to stderr (`file(line,col): code: message`) and `generate`/`migrate` return 1 before generating.
+- Malformed csproj: `MsBuildProjectSystem` already wraps `InvalidProjectFileException` in `ProjectSystemException` (`NPW003`), so no new code was added; the CLI now catches `ProjectSystemException` (project commands and migrate), prints `<project>: <message>` to stderr and returns 1 (3 for `NoSdkRegistered`). 4 stays for real bugs.
+- `--verbose` with no command is dropped before Spectre, so `--verbose --help` and `--verbose --version` exit 0 and a bare `--verbose` equals bare `netprints` (help, exit 0).
+- `CommandRuntimeException`: Spectre gives no structural distinction, so DI and command-creation faults are recognised by the fixed message prefixes of Spectre 0.55 (`Could not resolve type`, `Could not create`, `Could not find converter`, `Could not get settings type`) and map to 4; conversion, validation and missing-value errors stay 2. A test registers a command with an unresolvable dependency.
+- Ctrl+C: `OperationCanceledException` with the token cancelled returns 130 silently (`ExitCodes.Canceled`); an OCE without a cancellation request is still an internal error. Part 2 documents 130.
+- Streams: every exit-2 and exit-3 message (unknown project, no SDK, `--graph` rejection, migrate path errors) goes to stderr.
+- `--graph`: matching uses `GraphPathComparison.Default` (case-insensitive on Windows and macOS); relative values resolve against the current directory (part 2 fixes the guide); `GenerateSettings.Validate` rejects an empty value and Spectre's `__default_command` token with exit 2. `--check` help now says "Write no generated file".
+- `migrate` walk: reparse points (symlinks, junctions) are not followed; a directory that cannot be listed prints `<dir>: unreadable: <reason>`, counts as a failure and exits 1. `.git` and `node_modules` are not skipped (not asked).
+- `migrate` exit code: `CollectAsync` returns a `CollectResult(ExitCode, Message)` instead of the caller comparing message strings.
+- Missing `schemaVersion`: the `unreadable: Missing 'schemaVersion'.` line is kept and now pinned by a test; part 2 aligns the contract.
+- `TypeRegistrar` is `IAsyncDisposable`; `CliApplication` uses `await using` (also for the probe provider).
+- Broken-manifest test writes `ExtensionManifest.FileName` and asserts `NPX001` (`InvalidManifest`).
+
+Deviations: the manual smoke used a scratch console app that echoes its arguments (not HelloWorld, which ignores them); HelloWorld is covered by the `SampleCopy` tests. Symlink and unreadable-directory tests skip on Windows (and as root).
+
 ## Governance proposals

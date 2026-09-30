@@ -17,4 +17,7 @@ internal static class ExitCodes
 
     /// <summary>An unhandled exception.</summary>
     public const int InternalError = 4;
+
+    /// <summary>The command was canceled (Ctrl+C); the shell convention 128 + SIGINT.</summary>
+    public const int Canceled = 130;
 }

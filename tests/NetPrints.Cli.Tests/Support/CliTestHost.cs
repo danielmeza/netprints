@@ -23,12 +23,16 @@ internal sealed class FakeProjectSystem : IProjectSystem
     public List<string> BuiltProjects { get; } = [];
     public IReadOnlyList<string> GraphFiles { get; set; } = [];
     public IReadOnlyList<string> ExtensionFolders { get; set; } = [];
+    public IReadOnlyList<ProjectMessage> Messages { get; set; } = [];
+    public Exception? ThrowOnLoad { get; set; }
     public List<string> LoadedProjects { get; } = [];
 
     public Task<ProjectSnapshot> LoadAsync(string projectFilePath, CancellationToken cancellationToken)
     {
         LoadedProjects.Add(projectFilePath);
-        return Task.FromResult(new ProjectSnapshot(projectFilePath, "P", "P", "P", BinaryType.Executable, "net10.0", "", false, GraphFiles, ExtensionFolders, [], [], [], "", new Dictionary<string, string>(), []));
+        return ThrowOnLoad is null
+            ? Task.FromResult(new ProjectSnapshot(projectFilePath, "P", "P", "P", BinaryType.Executable, "net10.0", "", false, GraphFiles, ExtensionFolders, [], [], [], "", new Dictionary<string, string>(), Messages))
+            : throw ThrowOnLoad;
     }
     public Task<ProjectSnapshot> ApplyAsync(string projectFilePath, IReadOnlyList<ProjectEdit> edits, CancellationToken cancellationToken) => throw new NotSupportedException();
     public Task<string> CreateAsync(string directory, string projectName, IProjectProfile profile, string rootNamespace, CancellationToken cancellationToken) => throw new NotSupportedException();
@@ -44,15 +48,39 @@ internal sealed class FakeProjectSystem : IProjectSystem
     public ProcessStartRequest GetRunCommand(string projectFilePath) => RunCommand;
 }
 
-internal sealed class FakeProcessRunner : IProcessRunner
+/// <summary>Stands in for the child process: records the request, then writes its scripted output to the host's writers the way a capturing runner would.</summary>
+internal sealed class FakeProcessRunner : IProgramRunner
 {
     public ProcessResult Result { get; set; } = new(0, "", "");
     public List<ProcessStartRequest> Started { get; } = [];
+    public TextWriter Out { get; set; } = TextWriter.Null;
+    public TextWriter Error { get; set; } = TextWriter.Null;
 
-    public Task<ProcessResult> RunAsync(ProcessStartRequest request, CancellationToken cancellationToken)
+    public async Task<int> RunAsync(ProcessStartRequest request, CancellationToken cancellationToken)
     {
         Started.Add(request);
-        return Task.FromResult(Result);
+        await Out.WriteAsync(Result.StandardOutput);
+        await Error.WriteAsync(Result.StandardError);
+        return Result.ExitCode;
+    }
+}
+
+/// <summary>Runs the real process with both outputs redirected, streams them with <c>CopyToAsync</c> and writes them to the host's writers.</summary>
+internal sealed class CapturingProgramRunner(TextWriter output, TextWriter error) : IProgramRunner
+{
+    public async Task<int> RunAsync(ProcessStartRequest request, CancellationToken cancellationToken)
+    {
+        using var standardOutput = new MemoryStream();
+        using var standardError = new MemoryStream();
+        try
+        {
+            return await new ProgramRunner(standardOutput, standardError).RunAsync(request, cancellationToken);
+        }
+        finally
+        {
+            await output.WriteAsync(System.Text.Encoding.UTF8.GetString(standardOutput.ToArray()));
+            await error.WriteAsync(System.Text.Encoding.UTF8.GetString(standardError.ToArray()));
+        }
     }
 }
 
@@ -99,7 +127,9 @@ internal sealed class CliTestHost
             var services = new ServiceCollection();
             services.AddSingleton(Environment);
             services.AddSingleton(Console);
-            services.AddSingleton<IProcessRunner>(Processes);
+            Processes.Out = Console.Profile.Out.Writer;
+            Processes.Error = Error;
+            services.AddSingleton<IProgramRunner>(Processes);
             services.AddSingleton<IMsBuildRegistration>(MsBuild);
             services.AddSingleton(new Lazy<IProjectSystem>(() => Projects));
             return services;
@@ -114,9 +144,13 @@ internal sealed class CliTestHost
         IServiceCollection services = CliServices.CreateDefault();
         services.AddSingleton(Environment);
         services.AddSingleton(Console);
+        services.AddSingleton<IProgramRunner>(new CapturingProgramRunner(Console.Profile.Out.Writer, Error));
         return CliApplication.RunAsync(args, services, TestContext.Current.CancellationToken);
     }
 
     public Task<int> RunAsync(params string[] args) =>
         CliApplication.RunAsync(args, Services, TestContext.Current.CancellationToken);
+
+    public Task<int> RunAsync(CancellationToken cancellationToken, params string[] args) =>
+        CliApplication.RunAsync(args, Services, cancellationToken);
 }
