@@ -1,50 +1,102 @@
 [
   {
     "query": "OnSearchBoxKeyDown in NodeSearchView.axaml.cs closes the popup on Escape; get rid of that code-behind handler",
-    "should_trigger": true
+    "should_trigger": true,
+    "split": "train"
   },
   {
     "query": "when the inline rename box shows up in the event graph list it should grab focus and have all its text selected",
-    "should_trigger": true
+    "should_trigger": true,
+    "split": "train"
   },
   {
     "query": "add Ctrl+Shift+F to the class editor window to open the find box",
-    "should_trigger": true
+    "should_trigger": true,
+    "split": "train"
   },
   {
     "query": "users want to reorder variables in the class editor by dragging them up and down",
-    "should_trigger": true
-  },
-  {
-    "query": "the pure-function node header color is unreadable in the Light theme, fix it",
-    "should_trigger": false
-  },
-  {
-    "query": "add a unit test for ClassEditorVM.RemoveMethodCommand",
-    "should_trigger": false
-  },
-  {
-    "query": "make every flat button in the class editor use rounded corners and a bit less padding",
-    "should_trigger": false
-  },
-  {
-    "query": "the netprints CLI should return exit code 0 for --version and --help",
-    "should_trigger": false
+    "should_trigger": true,
+    "split": "train"
   },
   {
     "query": "the OK button in the rename dialog should close it and hand the typed name back to the caller",
-    "should_trigger": true
+    "should_trigger": true,
+    "split": "train"
   },
   {
     "query": "make the output list follow new lines as they arrive, unless the user has scrolled up to read something",
-    "should_trigger": true
+    "should_trigger": true,
+    "split": "train"
+  },
+  {
+    "query": "double-clicking a method in the methods list of ClassEditorWindow.axaml.cs should open it; that's a DoubleTapped code-behind handler, replace it",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "let users drag a node from the palette onto the graph canvas to create it at the drop position",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "Ctrl+Z and Ctrl+Y should still undo/redo in ClassEditorWindow while a TextBox has focus",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "the SelectionChanged handler in TypePickerView.axaml.cs just calls a VM method; replace it without code-behind",
+    "should_trigger": true,
+    "split": "validation"
+  },
+  {
+    "query": "the pure-function node header color is unreadable in the Light theme, fix it",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "add a unit test for ClassEditorVM.RemoveMethodCommand",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "make every flat button in the class editor use rounded corners and a bit less padding",
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "write a converter that turns a CompileStatus into a status dot color for the toolbar in MainWindow.axaml",
+    "should_trigger": false,
+    "split": "train"
   },
   {
     "query": "add AutomationIds constants for the rename dialog's OK and Cancel buttons",
-    "should_trigger": false
+    "should_trigger": false,
+    "split": "train"
   },
   {
     "query": "make the selected node's border use the accent color in both the light and dark themes",
-    "should_trigger": false
+    "should_trigger": false,
+    "split": "train"
+  },
+  {
+    "query": "add a 'Default value' TextBox bound to the selected variable's DefaultValue in VariableInspectorView.axaml",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "the methods ItemsControl in ClassEditorWindow.axaml is really slow with 2000 methods; fix the view",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "add a design-time DataContext to MethodInspectorView.axaml so the previewer shows something",
+    "should_trigger": false,
+    "split": "validation"
+  },
+  {
+    "query": "bump Avalonia to 12.1.4 in Directory.Packages.props",
+    "should_trigger": false,
+    "split": "validation"
   }
 ]

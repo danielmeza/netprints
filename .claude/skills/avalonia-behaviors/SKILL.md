@@ -1,6 +1,6 @@
 ---
 name: avalonia-behaviors
-description: "How to wire interaction in NetPrints Avalonia 12 views without code-behind: Xaml.Behaviors behaviors, triggers and actions (full catalog split by job, with recipes from the repo), keyboard shortcuts (KeyBinding, HotKey, tunnel-routed keys), focus and select-all, dialogs that close with or without a result, drag and drop and list reordering, and auto-scroll. Use it whenever a change adds or replaces an event handler (Click, Tapped, DoubleTapped, KeyDown, SelectionChanged, pointer or drag events) or a Focus()/SelectAll()/Close()/ScrollToEnd() call in *.axaml.cs, adds a shortcut, or picks a behavior, even if the request doesn't mention behaviors. Always load avalonia-xaml alongside it."
+description: "How to wire user interaction in NetPrints Avalonia views without code-behind: keyboard shortcuts and hotkeys, focus and select-all, closing dialogs with a result, drag and drop, list reordering, and auto-scroll or following the newest line. Use when a change adds a shortcut or replaces a Click, KeyDown, SelectionChanged or drag handler or a Focus()/Close()/ScrollToEnd() call, even if behaviors aren't mentioned. Always load avalonia-xaml alongside it."
 allowed-tools: Bash(dotnet run ${CLAUDE_SKILL_DIR}/scripts/behavior-props.cs *)
 paths:
   - "**/*.axaml"

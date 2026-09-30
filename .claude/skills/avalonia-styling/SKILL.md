@@ -1,6 +1,6 @@
 ---
 name: avalonia-styling
-description: "How NetPrints Avalonia 12 views look: IValueConverter rules (what a converter may and may not decide), colors and brushes as theme tokens in ThemeDictionaries with DynamicResource, Fluent System* resources, Light and Dark variants, Style plus class versus ControlTheme, style class naming, where app-wide styles and resources live (EditorStyles.axaml, EditorApp.axaml), and the rendering cost of templates. Use it whenever a change adds or edits a converter, a color or brush, a style or style class, a ControlTheme, a theme resource or a Nodify theme override, even if the request only says 'make it look like…' or 'fix the colors'. Always load avalonia-xaml alongside it."
+description: "How to make NetPrints Avalonia views look right: colors and brushes that work in Light and Dark, styles and style classes, ControlThemes, Nodify theme overrides, and IValueConverter rules. Use when a change adds or edits a converter, color, brush, style or theme, even if the request only says 'make it look like' or 'fix the colors'. Always load avalonia-xaml alongside it."
 paths:
   - "**/*.axaml"
   - "**/*.axaml.cs"
