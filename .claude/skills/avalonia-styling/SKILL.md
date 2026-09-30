@@ -1,6 +1,6 @@
 ---
 name: avalonia-styling
-description: "How NetPrints Avalonia 12 views look: IValueConverter rules (what a converter may and may not decide), colors and brushes as theme tokens in ThemeDictionaries with DynamicResource, Fluent System* resources, Light and Dark variants, Style plus class versus ControlTheme, style class naming, where app-wide styles and resources live (EditorStyles.axaml, EditorApp.axaml), and the rendering cost of templates. Use it whenever a change adds or edits a converter, a color or brush, a style or style class, a ControlTheme, a theme resource or a Nodify theme override, even if the request only says 'make it look like…' or 'fix the colors'."
+description: "How NetPrints Avalonia 12 views look: IValueConverter rules (what a converter may and may not decide), colors and brushes as theme tokens in ThemeDictionaries with DynamicResource, Fluent System* resources, Light and Dark variants, Style plus class versus ControlTheme, style class naming, where app-wide styles and resources live (EditorStyles.axaml, EditorApp.axaml), and the rendering cost of templates. Use it whenever a change adds or edits a converter, a color or brush, a style or style class, a ControlTheme, a theme resource or a Nodify theme override, even if the request only says 'make it look like…' or 'fix the colors'. Always load avalonia-xaml alongside it."
 paths:
   - "**/*.axaml"
   - "**/*.axaml.cs"
@@ -10,8 +10,9 @@ paths:
 
 # Styling and theming in NetPrints
 
-This skill holds rules D5, D7 and D8 of the shared XAML rules. The enforced rules and the other defaults live in
-`avalonia-xaml`, which applies to the same change; load it too. Rule IDs are shared across the `avalonia-*` skills.
+**Invoke the `avalonia-xaml` skill too, before you edit anything, unless it is already loaded in this session.** It
+holds the enforced rules (E1-E6, which `XamlHygieneTests` checks at build time) and the defaults that every XAML change
+follows; this skill only adds D5, D7 and D8. Rule IDs are shared across the `avalonia-*` skills.
 Two enforced rules bite most often here: **E2**, no color literals in views (only `Transparent`), and **E6**, a theme
 token is always a `DynamicResource`, never a `StaticResource`.
 

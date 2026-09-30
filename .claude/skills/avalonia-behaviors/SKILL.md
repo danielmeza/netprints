@@ -1,6 +1,6 @@
 ---
 name: avalonia-behaviors
-description: "How to wire interaction in NetPrints Avalonia 12 views without code-behind: Xaml.Behaviors behaviors, triggers and actions (full catalog split by job, with recipes from the repo), keyboard shortcuts (KeyBinding, HotKey, tunnel-routed keys), focus and select-all, dialogs that close with or without a result, drag and drop and list reordering, and auto-scroll. Use it whenever a change adds or replaces an event handler (Click, Tapped, DoubleTapped, KeyDown, SelectionChanged, pointer or drag events) or a Focus()/SelectAll()/Close()/ScrollToEnd() call in *.axaml.cs, adds a shortcut, or picks a behavior, even if the request doesn't mention behaviors."
+description: "How to wire interaction in NetPrints Avalonia 12 views without code-behind: Xaml.Behaviors behaviors, triggers and actions (full catalog split by job, with recipes from the repo), keyboard shortcuts (KeyBinding, HotKey, tunnel-routed keys), focus and select-all, dialogs that close with or without a result, drag and drop and list reordering, and auto-scroll. Use it whenever a change adds or replaces an event handler (Click, Tapped, DoubleTapped, KeyDown, SelectionChanged, pointer or drag events) or a Focus()/SelectAll()/Close()/ScrollToEnd() call in *.axaml.cs, adds a shortcut, or picks a behavior, even if the request doesn't mention behaviors. Always load avalonia-xaml alongside it."
 paths:
   - "**/*.axaml"
   - "**/*.axaml.cs"
@@ -10,8 +10,9 @@ paths:
 
 # Behaviors and shortcuts in NetPrints
 
-This skill holds rules D9 and D11 of the shared XAML rules. The enforced rules (E1-E6) and the other defaults live in
-`avalonia-xaml`, which applies to the same change; load it too. Rule IDs are shared across the `avalonia-*` skills.
+**Invoke the `avalonia-xaml` skill too, before you edit anything, unless it is already loaded in this session.** It
+holds the enforced rules (E1-E6, which `XamlHygieneTests` checks at build time) and the defaults that every XAML change
+follows; this skill only adds D9 and D11. Rule IDs are shared across the `avalonia-*` skills.
 
 The tiers (Enforced, Default, Consider) and E1-E6 are defined in `avalonia-xaml`. List any Default rule you deviate from in the PR.
 
