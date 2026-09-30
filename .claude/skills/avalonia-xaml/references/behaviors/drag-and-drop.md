@@ -7,10 +7,18 @@ Part of the Xaml.Behaviors 12.0.7 catalog; `README.md` in this folder is the ind
 ## In NetPrints today
 
 `MemberVariableView.axaml` starts a variable drag from pointer handlers in code-behind, which D1 allows as gesture
-mechanics. For a new drag of an item VM from a list onto a target, prefer `ContextDragBehavior Context="{Binding}"`
-on the source and `ContextDropBehavior` with a `DropHandlerBase` subclass on the target; the handler calls one VM
-command. Reordering (`ListReorderDragBehavior`, `ItemDragBehavior`) needs the `Xaml.Behaviors.Interactions.Draggable`
-package, which isn't referenced: add it as `README.md` describes and say why in the PR.
+mechanics; dragging a method or variable name onto the graph works the same way.
+
+- **Drag an item VM onto a target, or reorder a list:** `ContextDragBehavior Context="{Binding}"` on the source and
+  `ContextDropBehavior` with a `DropHandlerBase` subclass on the target (both in the referenced `DragAndDrop`
+  package). The handler only works out the source and target items and calls one VM command, such as
+  `MoveMethodCommand`, which changes the model through an undoable edit. The command gets the unit test; the handler
+  stays thin.
+- **When the row already starts another drag** (a name you drag onto the graph), put the new drag on a separate
+  grip element, so the two gestures don't fight over the same pointer press.
+- **Not the Draggable package** (`ListReorderDragBehavior`, `ItemDragBehavior`): those behaviors move items in the
+  view and never call a command, so the model, undo and the next rebuild of the VM collection all miss the move.
+  The package isn't referenced either.
 
 ## Catalog
 

@@ -167,7 +167,7 @@ file for your job; `references/behaviors/README.md` is the index and explains ho
 | Focus on open, show or click; select all | `FocusOnAttachedToVisualTreeBehavior`, `FocusOnVisibleBehavior`, `FocusSelectedItemBehavior`, `TextBoxSelectAllOnGotFocusBehavior` | `focus-and-text.md` |
 | Follow a growing log or list | `AutoScrollToBottomBehavior` | `lists-and-scrolling.md` |
 | Drag an item VM from a list onto a target | `ContextDragBehavior Context="{Binding}"` + `ContextDropBehavior Handler=...` (`DropHandlerBase`) | `drag-and-drop.md` |
-| Reorder a list by drag | `ListReorderDragBehavior`, `ItemDragBehavior`; needs the `Xaml.Behaviors.Interactions.Draggable` package, which isn't referenced yet | `drag-and-drop.md` |
+| Reorder a list by drag | the same `ContextDragBehavior` + `ContextDropBehavior` pair, whose handler calls one undoable VM `Move…` command; not the Draggable package's `ListReorderDragBehavior`/`ItemDragBehavior`, which never call a command, so the model and undo miss the move | `drag-and-drop.md` |
 
 Don't use the behaviors that bypass the VM or its services: clipboard, file system, storage pickers, HTTP,
 `SetViewModelProperty`, `ToggleViewModelBoolean`, `ConditionalAction`/`SwitchCaseAction`, `Collections`, `Scripting`

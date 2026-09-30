@@ -8,7 +8,12 @@ Part of the Xaml.Behaviors 12.0.7 catalog; `README.md` in this folder is the ind
 
 ### Follow a growing output list
 
-*Not yet used in the repo.* Replaces a `CollectionChanged` handler that calls `ScrollToEnd()`:
+*Not yet used in the repo.* Replaces a `CollectionChanged` handler that calls `ScrollToEnd()`. How it works (checked in
+the 12.0.7 assembly): attached to a `ScrollViewer`, it scrolls to the end whenever the content's height grows;
+attached to an `ItemsControl`/`ListBox`, it finds the inner `ScrollViewer` and also scrolls when items are added. It
+stops following while the user has scrolled up and resumes once they are back at the bottom. It does nothing on a
+`TextBox`, so for text output wrap the growing text (`SelectableTextBlock`, or a `TextBox` without its own fixed
+height) in a `ScrollViewer` and attach the behavior to that:
 
 ```xml
 <ListBox ItemsSource="{Binding OutputLines}">
@@ -16,6 +21,15 @@ Part of the Xaml.Behaviors 12.0.7 catalog; `README.md` in this folder is the ind
     <AutoScrollToBottomBehavior />
   </Interaction.Behaviors>
 </ListBox>
+```
+
+```xml
+<ScrollViewer>
+  <Interaction.Behaviors>
+    <AutoScrollToBottomBehavior />
+  </Interaction.Behaviors>
+  <SelectableTextBlock Text="{Binding Output}" FontFamily="monospace" />
+</ScrollViewer>
 ```
 
 ## Catalog
