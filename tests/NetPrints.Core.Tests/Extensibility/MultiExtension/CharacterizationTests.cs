@@ -16,8 +16,8 @@ namespace NetPrints.Tests.Extensibility.MultiExtension;
 
 /// <summary>
 /// MX-T01: what the loader does before the ADR-0010 §4 change (host type identity, NPX001-NPX007, ordering), pinned with the
-/// fixture extensions. Written against the existing loader, so green from the first run; the tests marked "current behaviour"
-/// pin a result the ADR-0010 rules replace and are updated by the batch that changes it.
+/// fixture extensions. Written against the existing loader, so green from the first run. The results the ADR-0010 rules replaced moved to
+/// <see cref="SharedAssemblyRuleTests"/> and <see cref="DependencyTypeSharingTests"/>.
 /// </summary>
 [Collection(nameof(RealExtensionLoadCollection))]
 public sealed class CharacterizationTests : IAsyncLifetime
@@ -68,21 +68,6 @@ public sealed class CharacterizationTests : IAsyncLifetime
 
         Assembly[] coreCopies = [.. AssemblyLoadContext.All.SelectMany(c => c.Assemblies).Where(a => a.GetName().Name == "NetPrints.Core")];
         Assert.Single(coreCopies);
-    }
-
-    [Fact]
-    public async Task ACopyOfAHostAssemblyInTheExtensionFolderIsIgnoredSilently()
-    {
-        string folder = Copy(FixtureExtensions.Alpha);
-        File.Copy(typeof(Node).Assembly.Location, Path.Combine(folder, "NetPrints.Core.dll"));
-        var logs = new CollectingLoggerFactory();
-
-        await using ExtensionRegistry registry = Load(Options(folders: [folder]), logs);
-
-        Assert.Equal([FixtureExtensions.Alpha], LoadedIds(registry));
-        var ping = Assert.Single(registry.NodeKinds);
-        Assert.Same(typeof(Node), ping.NodeType.BaseType);
-        Assert.DoesNotContain(logs.Entries, e => e.Level >= Microsoft.Extensions.Logging.LogLevel.Warning);
     }
 
     [Fact]
@@ -217,41 +202,6 @@ public sealed class CharacterizationTests : IAsyncLifetime
 
         Assert.Contains("System.Console.WriteLine(\"shared-lib-v1\");", code, StringComparison.Ordinal);
         Assert.Contains("System.Console.WriteLine(\"shared-lib-v2:fx.libv2\");", code, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public async Task CurrentBehaviourAPrivateDependencyWhoseNameStartsWithNetPrintsIsLookedUpInTheHostAndTheExtensionFails()
-    {
-        await using ExtensionHarness harness = await LoadAsync([Copy(FixtureExtensions.PrefixedPrivate)]);
-
-        ExtensionLoadResult.Failed failed = Failure(harness.Registry, FixtureExtensions.PrefixedPrivate);
-        Assert.Equal("NPX005", failed.Code);
-        Assert.Contains("NetPrintsFixture.Runtime", failed.Reason, StringComparison.Ordinal);
-        Assert.DoesNotContain(harness.Registry.NodeKinds, k => k.Kind == "fx.private-prefix/Describe");
-    }
-
-    [Fact]
-    public async Task CurrentBehaviourAConsumerDoesNotSeeItsProvidersAssemblyAndFails()
-    {
-        await using ExtensionHarness harness = await LoadAsync([Copy(FixtureExtensions.TypesProvider), Copy(FixtureExtensions.TypesConsumer)]);
-
-        Assert.Contains(FixtureExtensions.TypesProvider, LoadedIds(harness.Registry));
-        ExtensionLoadResult.Failed failed = Failure(harness.Registry, FixtureExtensions.TypesConsumer);
-        Assert.Equal("NPX005", failed.Code);
-        Assert.Contains("Fx.TypesProvider", failed.Reason, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public async Task CurrentBehaviourADiamondWhoseDependenciesProvideTheLibraryDoesNotSeeItAndFails()
-    {
-        await using ExtensionHarness harness = await LoadAsync(
-            [Copy(FixtureExtensions.LibV1), Copy(FixtureExtensions.LibV2), Copy(FixtureExtensions.Diamond)]);
-
-        Assert.Contains(FixtureExtensions.LibV1, LoadedIds(harness.Registry));
-        Assert.Contains(FixtureExtensions.LibV2, LoadedIds(harness.Registry));
-        ExtensionLoadResult.Failed failed = Failure(harness.Registry, FixtureExtensions.Diamond);
-        Assert.Equal("NPX005", failed.Code);
-        Assert.Contains("Fixture.SharedLib", failed.Reason, StringComparison.Ordinal);
     }
 
     [Fact]

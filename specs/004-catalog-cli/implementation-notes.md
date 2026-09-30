@@ -767,3 +767,42 @@ Sub-phase F (`6925062^..00c87e3`), reviewed at `00c87e3`: Checkpoint F not accep
 - Green: `ExtensionHarnessTests` 6/6 on the first run after the harness; no test failed after it.
 - `CharacterizationTests` are written against existing code (green from their first run except two test-side mistakes fixed in the tests: the built-in id, and the NPX006 scenario, where the in-process extension loaded before alpha and won the profile id).
 - Fixture content of alpha (every contribution kind) is exercised in G3 (MX-T07); G1 pins only its node, class emitter, property and profile through the harness tests.
+
+## Batch G2 (T104-T107)
+
+**Red (T104), current loader, before any change to `src/`**
+
+`SharedAssemblyRuleTests` and `DependencyTypeSharingTests`: 8 tests, 6 failed, 2 passed.
+
+- `APrivateDependencyWhoseNameStartsWithNetPrintsLoadsFromTheExtensionFolder` (MX-T02): `fx.private-prefix` not in the loaded ids (NPX005, `NetPrintsFixture.Runtime` looked up in the host).
+- `ACopyOfAHostAssemblyInTheExtensionFolderIsIgnoredAndLogged` (MX-T03): no log entry with event 2010 (only `ExtensionDiscovered`, `ExtensionLoaded`).
+- `AConsumerSeesTheTypeOfItsProviderAndNotACopy`, `ACopyOfTheProvidersAssemblyInTheConsumerFolderIsIgnoredAndLogged` (MX-T04): `fx.types-consumer` fails NPX005, `FileNotFoundException: Could not load file or assembly 'Fx.TypesProvider'`.
+- `AConsumersEmitterOutputUsesTheProvidersType` (MX-T04): output lacks `Description("fx.types-provider")`.
+- `ADiamondTakesTheLibraryFromTheFirstDependencyInDeclaredOrderWhateverTheDiscoveryOrder` (MX-T05): `fx.diamond` fails NPX005, `Could not load file or assembly 'Fixture.SharedLib'`.
+- Already green on the old loader: `AFolderWithoutHostAssemblyCopiesLogsNoShadowWarning`, `AProviderThatFailsToLoadFailsItsConsumerWithNpx003`.
+
+**Green**
+
+- After T105/T106 and `VersionIsolationTests` (MX-T06): Extensibility namespace 119/119; whole suite 1689 total, 1679 passed, 10 skipped (headless UI driver), 0 failed.
+- `dotnet format --verify-no-changes` clean.
+
+**Added**
+
+- `Loading/HostAssemblies.cs` (`IsProvided`): TPA, loaded in Default, `Microsoft.Build*`. The prefix list (`NetPrints`, `Microsoft.CodeAnalysis`, `CommunityToolkit.Mvvm`, `System.Reactive`, `DynamicData`, `Avalonia`, `Microsoft.Extensions.*.Abstractions`) is gone.
+- `ExtensionLoadContext(name, path, dependencies)`: host-provided, then dependency chain (declared order, depth-first, each context once: loaded assembly, else its resolver, loaded into that context), then own resolver. `FindDependencyOwner` serves the shadow check.
+- `ExtensionLoader` keeps id to context and passes the dependency contexts (topological order makes them exist); `ExtensionLoadContextCache.GetOrCreate` takes them. `Log.HostAssemblyShadowed` (2010) and `Log.DependencyAssemblyShadowed` (2011), both warnings, checked once per extension at load over the `*.dll` files of the extension folder.
+- No public API change; ADR-0010 needs no amendment (its text matches the rules as built).
+
+**Decisions**
+
+- The three `CurrentBehaviour` characterization tests were replaced by the MX-T02, MX-T04 and MX-T05 tests (removed from `CharacterizationTests`). `ACopyOfAHostAssemblyInTheExtensionFolderIsIgnoredSilently` also moved (as `...AndLogged`): it asserted no warning, which MX-T03 contradicts; the rest of `CharacterizationTests` is unchanged.
+- A dependency is looked up by simple name only (no version check); the first context in the chain that has loaded it or can resolve it wins.
+- A file that is both host-provided and in a dependency is reported once, as `HostAssemblyShadowed`; the extension's own assembly is never reported.
+- In-process dependencies have no context and contribute nothing to the chain.
+- A cached context keeps the dependency contexts from its first load (reload uses the same cache, same manifest paths).
+- Fixture `Fixture.SharedLib` V1/V2 report assembly version 0.0.0.0 at runtime (the repository's versioning overrides `AssemblyVersion`), so MX-T06 tells the two apart by load context, `Assembly` identity and the translators' output, not by version.
+
+**For G3**
+
+- Load-context tests that need warnings use `Load(Options(...), CollectingLoggerFactory)`; `ExtensionHarness` logs to a null factory.
+- Shadow warnings are event ids 2010/2011, level Warning.

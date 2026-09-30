@@ -4,43 +4,58 @@ using System.Runtime.Loader;
 namespace NetPrints.Extensibility.Loading;
 
 /// <summary>
-/// Loads one extension assembly and its private dependencies in isolation, and shares the host's copy of
-/// everything the extension API exposes (extension-points.md §8.2, research R8). Not collectible.
+/// Loads one extension assembly and its private dependencies in isolation. Assemblies the host provides come from the
+/// Default context, assemblies of the extensions it depends on come from their contexts, everything else from the
+/// extension's own folder (ADR-0010 §4). Not collectible.
 /// </summary>
 internal sealed class ExtensionLoadContext : AssemblyLoadContext
 {
-    private static readonly string[] SharedPrefixes =
-    [
-        "NetPrints",
-        "Microsoft.Build",
-        "Microsoft.CodeAnalysis",
-        "CommunityToolkit.Mvvm",
-        "System.Reactive",
-        "DynamicData",
-        "Avalonia",
-    ];
-
-    private static readonly HashSet<string> PlatformAssemblies = ReadPlatformAssemblies();
-
     private readonly AssemblyDependencyResolver resolver;
+    private readonly IReadOnlyList<ExtensionLoadContext> dependencies;
 
     /// <summary>
     /// Creates the context for the extension assembly at <paramref name="extensionAssemblyPath"/>.
     /// </summary>
     /// <param name="name">The load context name, the manifest id.</param>
     /// <param name="extensionAssemblyPath">Full path of the extension assembly.</param>
-    public ExtensionLoadContext(string name, string extensionAssemblyPath)
+    /// <param name="dependencies">The contexts of the extensions it depends on, in declared order.</param>
+    public ExtensionLoadContext(string name, string extensionAssemblyPath, IReadOnlyList<ExtensionLoadContext> dependencies)
         : base(name, isCollectible: false)
     {
         resolver = new AssemblyDependencyResolver(extensionAssemblyPath);
+        this.dependencies = dependencies;
+    }
+
+    /// <summary>The first context in the dependency chain that provides <paramref name="name"/>, or <see langword="null"/>.</summary>
+    /// <param name="name">The assembly to look for.</param>
+    /// <returns>The owning context.</returns>
+    public ExtensionLoadContext? FindDependencyOwner(AssemblyName name)
+    {
+        var visited = new HashSet<ExtensionLoadContext> { this };
+        foreach (ExtensionLoadContext dependency in dependencies)
+        {
+            ExtensionLoadContext? owner = dependency.FindOwner(name, visited);
+            if (owner is not null)
+            {
+                return owner;
+            }
+        }
+
+        return null;
     }
 
     protected override Assembly? Load(AssemblyName assemblyName)
     {
         string? name = assemblyName.Name;
-        if (name is null || IsShared(name))
+        if (name is null || HostAssemblies.IsProvided(name))
         {
             return null;
+        }
+
+        ExtensionLoadContext? owner = FindDependencyOwner(assemblyName);
+        if (owner is not null)
+        {
+            return owner.LoadOwned(assemblyName);
         }
 
         string? path = resolver.ResolveAssemblyToPath(assemblyName);
@@ -53,35 +68,42 @@ internal sealed class ExtensionLoadContext : AssemblyLoadContext
         return path is null ? IntPtr.Zero : LoadUnmanagedDllFromPath(path);
     }
 
-    private static bool IsShared(string name)
+    private ExtensionLoadContext? FindOwner(AssemblyName name, HashSet<ExtensionLoadContext> visited)
     {
-        foreach (string prefix in SharedPrefixes)
+        if (!visited.Add(this))
         {
-            if (name.StartsWith(prefix, StringComparison.Ordinal))
+            return null;
+        }
+
+        if (FindLoaded(name) is not null || resolver.ResolveAssemblyToPath(name) is not null)
+        {
+            return this;
+        }
+
+        foreach (ExtensionLoadContext dependency in dependencies)
+        {
+            ExtensionLoadContext? owner = dependency.FindOwner(name, visited);
+            if (owner is not null)
             {
-                return true;
+                return owner;
             }
         }
 
-        if (name.StartsWith("Microsoft.Extensions.", StringComparison.Ordinal) && name.EndsWith(".Abstractions", StringComparison.Ordinal))
-        {
-            return true;
-        }
-
-        return PlatformAssemblies.Contains(name);
+        return null;
     }
 
-    private static HashSet<string> ReadPlatformAssemblies()
+    private Assembly? LoadOwned(AssemblyName name)
     {
-        var names = new HashSet<string>(StringComparer.Ordinal);
-        if (AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") is string list)
+        Assembly? loaded = FindLoaded(name);
+        if (loaded is not null)
         {
-            foreach (string path in list.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries))
-            {
-                names.Add(Path.GetFileNameWithoutExtension(path));
-            }
+            return loaded;
         }
 
-        return names;
+        string? path = resolver.ResolveAssemblyToPath(name);
+        return path is null ? null : LoadFromAssemblyPath(path);
     }
+
+    private Assembly? FindLoaded(AssemblyName name) =>
+        Assemblies.FirstOrDefault(assembly => string.Equals(assembly.GetName().Name, name.Name, StringComparison.Ordinal));
 }

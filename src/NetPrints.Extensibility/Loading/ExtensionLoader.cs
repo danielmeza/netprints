@@ -50,6 +50,7 @@ public sealed class ExtensionLoader
         var registryBuilder = new RegistryBuilder(loggerFactory.CreateLogger<ExtensionRegistry>());
         var loaded = new List<ExtensionLoadResult>();
         var loadedIds = new HashSet<string>(StringComparer.Ordinal);
+        var contexts = new Dictionary<string, ExtensionLoadContext>(StringComparer.Ordinal);
 
         foreach (Candidate candidate in ordered)
         {
@@ -62,7 +63,7 @@ public sealed class ExtensionLoader
                 continue;
             }
 
-            ExtensionLoadResult result = LoadOne(candidate, registryBuilder);
+            ExtensionLoadResult result = LoadOne(candidate, registryBuilder, contexts);
             if (result is ExtensionLoadResult.Failed failed)
             {
                 failures.Add(failed);
@@ -235,7 +236,7 @@ public sealed class ExtensionLoader
         return byGroup != 0 ? byGroup : string.CompareOrdinal(left.Manifest.Id, right.Manifest.Id);
     }
 
-    private ExtensionLoadResult LoadOne(Candidate candidate, RegistryBuilder registryBuilder)
+    private ExtensionLoadResult LoadOne(Candidate candidate, RegistryBuilder registryBuilder, Dictionary<string, ExtensionLoadContext> contexts)
     {
         ExtensionManifest manifest = candidate.Manifest;
         INetPrintsExtension extension;
@@ -257,7 +258,10 @@ public sealed class ExtensionLoader
             Type[] extensionTypes;
             try
             {
-                ExtensionLoadContext context = cache.GetOrCreate(manifestPath, manifest.Id, assemblyPath);
+                ExtensionLoadContext[] dependencies = [.. manifest.DependsOn.Distinct().Select(id => contexts.GetValueOrDefault(id)).OfType<ExtensionLoadContext>()];
+                ExtensionLoadContext context = cache.GetOrCreate(manifestPath, manifest.Id, assemblyPath, dependencies);
+                contexts[manifest.Id] = context;
+                ReportShadowedAssemblies(manifest.Id, folder, assemblyPath, context);
                 Assembly assembly = context.LoadFromAssemblyPath(assemblyPath);
                 extensionTypes = [.. assembly.GetExportedTypes().Where(IsExtensionType)];
             }
@@ -301,6 +305,27 @@ public sealed class ExtensionLoader
         contributions = builder.Seal();
         registryBuilder.Commit(manifest, contributions);
         return new ExtensionLoadResult.Loaded(manifest.Id, candidate.ManifestPath, manifest);
+    }
+
+    private void ReportShadowedAssemblies(string id, string folder, string assemblyPath, ExtensionLoadContext context)
+    {
+        foreach (string file in Directory.EnumerateFiles(folder, "*.dll").Order(StringComparer.Ordinal))
+        {
+            if (string.Equals(Path.GetFullPath(file), assemblyPath, StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            string name = Path.GetFileNameWithoutExtension(file);
+            if (HostAssemblies.IsProvided(name))
+            {
+                Log.HostAssemblyShadowed(logger, id, name, file);
+            }
+            else if (context.FindDependencyOwner(new AssemblyName(name)) is { } owner)
+            {
+                Log.DependencyAssemblyShadowed(logger, id, name, owner.Name ?? string.Empty);
+            }
+        }
     }
 
     private static bool IsExtensionType(Type type) =>

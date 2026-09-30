@@ -574,16 +574,16 @@ SC-013.
 
 ### Batch G2 — model: sonnet — T104–T107 — 6 units
 
-- [ ] T104 [US5] Test first, red on the current loader (record the failing run in implementation-notes.md):
+- [x] T104 [US5] Test first, red on the current loader (record the failing run in implementation-notes.md):
   `MultiExtension/SharedAssemblyRuleTests.cs` (MX-T02, MX-T03) and `MultiExtension/DependencyTypeSharingTests.cs`
   (MX-T04, MX-T05).
-- [ ] T105 [US5] `src/NetPrints.Extensibility/Loading/HostAssemblies.cs` and the ADR-0010 sharing rule in
+- [x] T105 [US5] `src/NetPrints.Extensibility/Loading/HostAssemblies.cs` and the ADR-0010 sharing rule in
   `Loading/ExtensionLoadContext.cs` (prefix list removed); `Log.HostAssemblyShadowed` in
   `src/NetPrints.Extensibility/Log.cs`.
-- [ ] T106 [US5] Dependency delegation: `ExtensionLoadContext` dependency contexts and chain resolution;
+- [x] T106 [US5] Dependency delegation: `ExtensionLoadContext` dependency contexts and chain resolution;
   `Loading/ExtensionLoader.cs` passes contexts in topological order; `Loading/ExtensionLoadContextCache.cs`;
   `Log.DependencyAssemblyShadowed`; MX-T01–MX-T05 green.
-- [ ] T107 [US5] `MultiExtension/VersionIsolationTests.cs` (MX-T06); whole suite; commit (tests and fix pushed together).
+- [x] T107 [US5] `MultiExtension/VersionIsolationTests.cs` (MX-T06); whole suite; commit (tests and fix pushed together).
 
 ### Batch G3 — model: sonnet — T108–T111 — 6 units
 
