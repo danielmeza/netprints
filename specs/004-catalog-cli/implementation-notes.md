@@ -371,7 +371,7 @@ Red/green: T059 was red first: with the test in place and the fixture graph abse
 
 ## Review D (T063, Opus) — PR #9 review 5365750210
 
-Verdict: Checkpoint D accepted with a fix batch: 4 medium and 15 low anchored findings (D-R1 to D-R19) plus two findings that could not be anchored (D-R20 and D-R21). No high findings. The reviewer's independent run matched Checkpoint D (1443 total, 0 failed, 10 skipped). Fixed in three batches: D-F1 (2d49055), D-F2 (5d2df0f), D-F3 (@F3@).
+Verdict: Checkpoint D accepted with a fix batch: 4 medium and 15 low anchored findings (D-R1 to D-R19) plus two findings that could not be anchored (D-R20 and D-R21). No high findings. The reviewer's independent run matched Checkpoint D (1443 total, 0 failed, 10 skipped). Fixed in three batches: D-F1 (2d49055), D-F2 (5d2df0f), D-F3 (80ee183).
 
 | Id | Sev | Finding | Status |
 | --- | --- | --- | --- |
@@ -385,17 +385,17 @@ Verdict: Checkpoint D accepted with a fix batch: 4 medium and 15 low anchored fi
 | D-R8 | low | package targets matched on the typed version string | fixed, 5d2df0f |
 | D-R9 | low | temporary-directory cleanup not best-effort | fixed, 5d2df0f |
 | D-R10 | low | `annotated` selected a type through a non-public `[NetPrintsNode]` method | fixed, 2d49055 |
-| D-R11 | low | guide statements that do not match the code | fixed, @F3@ (`--include` widens, absolute `wrote` path, `public-api` protected members, NPC codes, unreferenced-assembly edge case, when the temporary directories are kept, exit codes, cleanup warnings, `@version` matching, dependency resolution) |
-| D-R12 | low | contract and data model drift | fixed, @F3@ (4-argument `Resolve` was already in §2 from D-F1; §1 example regenerated from the snapshot; `Outer+Inner`; "not cataloged" lists; §4 exit codes, output path, cleanup) |
-| D-R13 | low | release notes miss sub-phase D | fixed, @F3@ |
-| D-R14 | low | CT-T12 not isolated from the user's package source mapping | fixed, @F3@ |
-| D-R15 | low | fake project system paired with the real process runner | fixed, @F3@ |
-| D-R16 | low | indexers and events excluded without a note, parity blind to it | fixed, 2d49055 (fixture, `NotCatalogedByDesign`); documented @F3@ |
-| D-R17 | low | build half of CT-T15 does not depend on the extension | fixed, @F3@ (confirmed, negative control added) |
+| D-R11 | low | guide statements that do not match the code | fixed, 80ee183 (`--include` widens, absolute `wrote` path, `public-api` protected members, NPC codes, unreferenced-assembly edge case, when the temporary directories are kept, exit codes, cleanup warnings, `@version` matching, dependency resolution) |
+| D-R12 | low | contract and data model drift | fixed, 80ee183 (4-argument `Resolve` was already in §2 from D-F1; §1 example regenerated from the snapshot; `Outer+Inner`; "not cataloged" lists; §4 exit codes, output path, cleanup) |
+| D-R13 | low | release notes miss sub-phase D | fixed, 80ee183 |
+| D-R14 | low | CT-T12 not isolated from the user's package source mapping | fixed, 80ee183 |
+| D-R15 | low | fake project system paired with the real process runner | fixed, 80ee183 |
+| D-R16 | low | indexers and events excluded without a note, parity blind to it | fixed, 2d49055 (fixture, `NotCatalogedByDesign`); documented 80ee183 |
+| D-R17 | low | build half of CT-T15 does not depend on the extension | fixed, 80ee183 (confirmed, negative control added) |
 | D-R18 | low | lone surrogates written unescaped | fixed, 2d49055 |
 | D-R19 | low | no test of dependency resolution through reference paths | fixed, 5d2df0f (found a real gap) |
 | D-R20 | low (body) | `MsBuildRegistration.EnsureRegistered` check-then-act race | fixed, 5d2df0f (lock; diagnosis below) |
-| D-R21 | low (body) | `CliExitCodeTests` leaks `/tmp/np-cli-*` directories | fixed, @F3@ |
+| D-R21 | low (body) | `CliExitCodeTests` leaks `/tmp/np-cli-*` directories | fixed, 80ee183 |
 
 Every finding has a final status. The spec edge cases the reviewer listed as deferred to E are under "Review D → deferred".
 
