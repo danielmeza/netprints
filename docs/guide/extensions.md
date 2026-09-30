@@ -105,3 +105,33 @@ A host channel is an optional, extension-provided bidirectional link between the
 external process (for example, a game engine the graphs target). `NETPRINTS_HOST_CHANNEL=<factory
 id>` selects it; an extension contributes a channel factory with `IExtensionBuilder`. At most one
 channel is active per editor process.
+
+## API stability
+
+Parts of the extension API are still settling. They carry `[Experimental]`, and using one is a compile
+error until your project opts in to its id. The opt-in is the acknowledgement that the API can change or
+disappear in a minor release.
+
+| Id | Covers |
+| --- | --- |
+| `NPXE0001` | The host channel: `IHostChannel`, `IHostChannelFactory`, `HostMessage`, `IExtensionBuilder.AddHostChannel`. |
+| `NPXE0002` | Extension settings: `ExtensionSettingsDescriptor`, `ISettingsStore`, `IExtensionBuilder.AddSettings`. |
+| `NPXE0003` | Class and member emitters: `IClassEmitter`, `IMemberEmitter`, `IExtensionBuilder.AddClassEmitter`, `IExtensionBuilder.AddMemberEmitter`. |
+| `NPXE0004` | The catalog engine and its profiles. |
+
+To opt in, list only the ids your extension uses:
+
+```xml
+<PropertyGroup>
+  <NoWarn>$(NoWarn);NPXE0001</NoWarn>
+</PropertyGroup>
+```
+
+A narrow `#pragma warning disable NPXE0001` around the use works too. Projects inside the NetPrints
+repository declare `<NetPrintsExperimentalOptIn Include="NPXE0001" />` items instead, and
+`Directory.Build.targets` turns them into the one allowed `NoWarn` (ADR-0017). An id disappears when its API
+graduates to stable.
+
+The public API of `NetPrints.Core`, `NetPrints.Extensibility`, `NetPrints.Reflection`,
+`NetPrints.Serialization` and `NetPrints.Catalog` is tracked in each project's `PublicAPI.Shipped.txt` and
+`PublicAPI.Unshipped.txt`. A change to a public symbol shows up in review as a change to those files.
