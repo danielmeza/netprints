@@ -336,4 +336,37 @@ Decisions:
 
 Red/green: T056 was red before the command existed: 15 of 18 `CatalogCommandTests` failed (`unknown command`; the three usage theory cases already passed because an unknown command is also exit 2). With T057 17 passed and one failed (the package case, NPC001: the resolver looked in `~/.nuget/packages`), green after `NuGetPackageRoot` was captured (18 of 18; the fixture, the flags and the project-profile cases equalled the D3 snapshots on the first run). T058 was written after the engine (nothing to make red: the limits are wide by design); its two tests pass and were measured with a 1 ms limit to record the numbers above.
 
+### Batch D7 (T059-T062, end to end, catalogs guide, Checkpoint D)
+
+Decisions:
+- T059 graph: `Fixtures/CatalogCall/CatalogCall.Program.netpc.json` constructs `new Vector2(3, 4)` (constructor node, impure), calls `Add(other)` on it with itself as the argument, reads `Length` (a variable getter) and prints it with `Console.WriteLine(float)`: the output is `10` (sqrt(6^2 + 8^2)), which a default or skipped call cannot produce. A first draft with pure nodes printed `0` because nothing executed them: constructor and `Add` nodes must be on the exec chain. Node ids follow the 14-character `SchemaTests` pattern (a 15-character draft failed `EveryNetpcJsonFixtureValidatesAgainstTheCommittedSchema`).
+- `ExtensionCatalogTests` writes a temporary `.csproj` with a `Reference` (`HintPath`) to the built `CatalogFixtureLib.dll` and `<NetPrintsExtension Include="...fx.catalog" />`, then runs a real `dotnet build` and `dotnet run --no-build` through `ExternalProcess` and `LocalSdkLayout`, as `ForLoopBuildTests` does. `FixtureExtensions.CatalogLibraryAssembly()` (NetPrints.Testing) locates the DLL; Core.Tests references `CatalogFixtureLib.csproj` with `ReferenceOutputAssembly="false"` so it is built first (the other test projects locate it the same way).
+- `CatalogSearchTests` (Editor.Tests) loads the `fx.catalog` folder into an `ExtensionHost`, reloads a `ReflectionHost` and asserts `Vector2` is offered and `Provider.GetMethods(WithType(Vector2).WithStatic(false))` yields `Add`; a second test shows the type is absent without the extension. `ReflectionHost` already fed `registry.TypeCatalogs` into its provider (D4), so `CatalogLoader.FirstOfEachId` was not pulled forward from T077. Editor.Tests needs no `NPXE0004` opt-in (it uses no marked API).
+- Help links: no NPC diagnostic carries a help URL today (`CatalogDiagnosticCodes` are plain codes printed as `<source>: <severity> <code>: <message>`); only `NPXE` ids link, to `guide/extensions#api-stability`. The guide's "Diagnostics" section has the heading `## Diagnostics`, so `.../guide/catalogs#diagnostics` resolves (checked in the built site) for any later link.
+- T060/T061: `docs/guide/catalogs.md` documents what exists (option names verbatim from `CatalogSettings`), including `--format csharp`, profile resolution and the experimental status of the profile APIs. Not documented, because they land in sub-phase E: annotations and embedded catalogs (T079 adds an "Annotations" section). `docs/guide/cli.md` got a short `catalog` section pointing to the guide; `docfx.json` includes `NetPrints.Catalog.csproj` (the six "Duplicate source file PublicAPI" docfx warnings are the same for Core and Reflection, so nothing new); README and `extensions.md` link the guide.
+
+Red/green: T059 was red first: with the test in place and the fixture graph absent it failed with `FileNotFoundException` (`CatalogCall.Program.netpc.json`); with a first graph it built and ran but printed `0` (assert `10` failed), then went green after the exec chain was fixed. The full suite then caught the id-length schema failure (red), fixed (green). `CatalogSearchTests` was written after the feature existed (D4/D6), so it was green on first run and is a regression pin, not a red-first test.
+
+### Checkpoint D
+
+**Status**: green.
+
+**Build**: `dotnet build NetPrints.slnx -c Release`: 25 projects, 0 errors, 0 warnings. `dotnet format NetPrints.slnx --verify-no-changes`: exit 0. `scripts/build-docs.sh`: succeeded (catalogs page built, anchor `diagnostics` present, `schemas/*.json` compared with `cmp`).
+
+**Test suite** (Release, solution-wide, `--ignore-exit-code 8`): 1443 total, 1433 passed, 0 failed, 10 skipped (headless UI capability skips), 4m 16s (1440 before D7 plus `ExtensionCatalogTests` 1 and `CatalogSearchTests` 2). The first run had two failures: the schema id length of the new fixture (fixed) and one `NetPrints.Cli.Tests` error whose test I could not name; the project passed 142 of 142 when run alone and passed again in the second full run, so I treat it as a transient, listed below.
+
+**SC-004** (public-api catalog equals the live provider's view): `ParityTests` (CT-T08, D4) shows 0 differences over the fixture, and `CatalogCommandTests` CT-T11 shows the CLI output equals the committed `public-api.npcat.json` snapshot (D6, 18 of 18).
+
+**SC-005, extension path**: `ExtensionCatalogTests` builds and runs a temporary project that references `CatalogFixtureLib.dll` and the `fx.catalog` extension; the graph calling `Vector2.Add` prints `10`. `CatalogSearchTests` shows the editor's reflection host offering `Vector2.Add`. The embedded path is Checkpoint E.
+
+**SC-006** (performance): `CatalogPerformanceTests` (CT-T17) passes with the specified limits (5 s, 30 s); measured in D6: fixture 0.05 s, `System.Runtime` reference pack 0.63 s. Both ran again in the suite above.
+
+**Documentation**: new `docs/guide/catalogs.md`; `cli.md`, `extensions.md`, `README.md` link it; `docs/api/docfx.json` includes `NetPrints.Catalog`.
+
+**Open items for the reviewer (T063)**:
+- The unexplained one-off `Cli.Tests` error in the first full run (no reproduction in two later runs).
+- `CatalogLoader.FirstOfEachId` is still unused until T077 (E).
+- The guide does not cover annotations or embedded catalogs (T079), and `--format csharp` output is documented from the contract and D6 notes, checked by `CSharpFormatTests` rather than by an end-to-end compile in the guide.
+- NPC diagnostics have no help URL; if one is wanted, use `guide/catalogs#diagnostics`.
+
 ## Governance proposals

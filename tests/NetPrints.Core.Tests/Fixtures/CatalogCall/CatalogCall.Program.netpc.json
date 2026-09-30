@@ -1,0 +1,104 @@
+{
+  "$schema": "https://danielmeza.github.io/netprints/schemas/netpc.v1.schema.json",
+  "schemaVersion": 1,
+  "namespace": "CatalogCall",
+  "name": "Program",
+  "visibility": "Public",
+  "classGraph": {
+    "nodes": [
+      { "$kind": "classReturn", "id": "n0000000ct1500" }
+    ]
+  },
+  "methods": [
+    {
+      "id": "m0000000ct1500",
+      "name": "Main",
+      "visibility": "Public",
+      "modifiers": "Static",
+      "graph": {
+        "nodes": [
+          { "$kind": "methodEntry", "id": "n0000000ct1501" },
+          { "$kind": "return", "id": "n0000000ct1502" },
+          {
+            "$kind": "constructor",
+            "id": "n0000000ct1503",
+            "pins": [
+              { "pin": "in.data.X", "value": { "type": "System.Single", "value": "3" } },
+              { "pin": "in.data.Y", "value": { "type": "System.Single", "value": "4" } }
+            ],
+            "constructor": {
+              "declaringType": { "name": "Fixture.Geometry.Vector2" },
+              "parameters": [
+                { "name": "X", "type": { "name": "System.Single" } },
+                { "name": "Y", "type": { "name": "System.Single" } }
+              ]
+            }
+          },
+          {
+            "$kind": "callMethod",
+            "id": "n0000000ct1504",
+            "method": {
+              "name": "Add",
+              "declaringType": { "name": "Fixture.Geometry.Vector2" },
+              "parameters": [
+                { "name": "other", "type": { "name": "Fixture.Geometry.Vector2" } }
+              ],
+              "returnTypes": [
+                { "name": "Fixture.Geometry.Vector2" }
+              ],
+              "visibility": "Public"
+            }
+          },
+          {
+            "$kind": "variableGetter",
+            "id": "n0000000ct1505",
+            "variable": {
+              "name": "Length",
+              "type": { "name": "System.Single" },
+              "declaringType": { "name": "Fixture.Geometry.Vector2" },
+              "getterVisibility": "Public",
+              "setterVisibility": "Private",
+              "visibility": "Public"
+            }
+          },
+          {
+            "$kind": "callMethod",
+            "id": "n0000000ct1506",
+            "method": {
+              "name": "WriteLine",
+              "declaringType": { "name": "System.Console" },
+              "parameters": [
+                { "name": "value", "type": { "name": "System.Single" } }
+              ],
+              "modifiers": "Static",
+              "visibility": "Public"
+            }
+          }
+        ],
+        "connections": [
+          { "from": "n0000000ct1501/out.exec.Exec", "to": "n0000000ct1503/in.exec.Exec" },
+          { "from": "n0000000ct1503/out.exec.Exec", "to": "n0000000ct1504/in.exec.Exec" },
+          { "from": "n0000000ct1504/out.exec.Exec", "to": "n0000000ct1506/in.exec.Exec" },
+          { "from": "n0000000ct1503/out.data.Vector2", "to": "n0000000ct1504/in.data.Target" },
+          { "from": "n0000000ct1503/out.data.Vector2", "to": "n0000000ct1504/in.data.other" },
+          { "from": "n0000000ct1504/out.data.Vector2", "to": "n0000000ct1505/in.data.Target" },
+          { "from": "n0000000ct1505/out.data.Single", "to": "n0000000ct1506/in.data.value" },
+          { "from": "n0000000ct1506/out.exec.Exec", "to": "n0000000ct1502/in.exec.Exec" }
+        ]
+      }
+    }
+  ],
+  "layout": {
+    "class": {
+      "n0000000ct1500": [112, 112]
+    },
+    "m0000000ct1500": {
+      "n0000000ct1501": [112, 112],
+      "n0000000ct1502": [1500, 112],
+      "n0000000ct1503": [112, 300],
+      "n0000000ct1504": [420, 300],
+      "n0000000ct1505": [740, 300],
+      "n0000000ct1506": [1060, 112]
+    }
+  }
+}

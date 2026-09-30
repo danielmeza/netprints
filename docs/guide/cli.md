@@ -1,6 +1,6 @@
 # Command-line tool
 
-The `netprints` command-line tool is a global tool installed from the `NetPrints.Cli` package. It can build projects, run programs, regenerate graphs, and report on the state of graph files.
+The `netprints` command-line tool is a global tool installed from the `NetPrints.Cli` package. It can build projects, run programs, regenerate graphs, catalog assemblies, and report on the state of graph files.
 
 ## Global options
 
@@ -121,6 +121,17 @@ netprints migrate samples/HelloWorld/HelloWorld.Program.netpc.json
 ```
 
 **Output:** `<path>: schema 1 (current)` per graph, then `No migrations are available; N graph(s) are at schema version 1.` A graph with a newer schema prints `<path>: schema <n> is not supported (this tool supports 1)`, one without a `schemaVersion` prints `<path>: unreadable: Missing 'schemaVersion'.`, and both exit 1. Directory searches do not follow symbolic links, and a directory that cannot be read is reported as `<dir>: unreadable: <reason>` (exit 1).
+
+### `catalog` — Write a type catalog
+
+```
+netprints catalog [--config <file>] [--assembly <path>]... [--package <id@version>]... [--project <path>]
+                  [--profile <id|file>] [--output <path>] [--format catalog|csharp] [--check] [...]
+```
+
+Catalogs the public surface of assemblies, packages or a project's references into a `*.npcat.json` file (or a C# class). With `--check` it writes nothing and exits 1 when the output is missing or differs. The full option list, the configuration file, profiles and the diagnostics are in [Type catalogs](catalogs.md).
+
+**Output:** `wrote <path> (N types, M members)`, `up to date: <path> (...)`, or with `--check` `stale: <path>`.
 
 ## Exit codes
 

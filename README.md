@@ -46,6 +46,7 @@ straight into the output.
 - [Projects](docs/guide/projects.md) — the `.csproj` project model, the `NetPrints.Sdk` package and the committed generated code.
 - [Graph file format](docs/guide/graph-format.md) — the `*.netpc.json` format, version control and what a diff looks like.
 - [Extensions](docs/guide/extensions.md) — loading extensions, environment variables, and writing your own.
+- [Type catalogs](docs/guide/catalogs.md) — the `netprints catalog` tool, profiles, and contributing a catalog from an extension.
 
 ## Project layout
 

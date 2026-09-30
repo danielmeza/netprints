@@ -2,7 +2,7 @@
   "metadata": [
     {
       "src": [
-        { "src": "../../src", "files": ["NetPrints.Core/NetPrints.Core.csproj", "NetPrints.Reflection/NetPrints.Reflection.csproj"] }
+        { "src": "../../src", "files": ["NetPrints.Core/NetPrints.Core.csproj", "NetPrints.Reflection/NetPrints.Reflection.csproj", "NetPrints.Catalog/NetPrints.Catalog.csproj"] }
       ],
       "dest": "reference",
       "properties": { "Configuration": "Release" },

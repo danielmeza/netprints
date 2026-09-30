@@ -364,18 +364,18 @@ contracts/catalog.md). **Independent test**: CT-T01–CT-T19; SC-004, SC-005 (ex
 
 ### Batch D7 — model: sonnet — T059–T062 — 5 units
 
-- [ ] T059 [US2] End to end (CT-T15): `tests/NetPrints.Core.Tests/Samples/ExtensionCatalogTests.cs` (temporary project
+- [x] T059 [US2] End to end (CT-T15): `tests/NetPrints.Core.Tests/Samples/ExtensionCatalogTests.cs` (temporary project
   referencing `CatalogFixtureLib.dll` with `NetPrintsExtension` = `fx.catalog`; graph fixture
   `tests/NetPrints.Core.Tests/Fixtures/CatalogCall/CatalogCall.Program.netpc.json` calling
   `Fixture.Geometry.Vector2.Add`; builds and runs) and `tests/NetPrints.Editor.Tests/Reflection/CatalogSearchTests.cs`
   (`ReflectionHost` with the extension: search offers `Vector2.Add`).
-- [ ] T060 [P] [US2] New `docs/guide/catalogs.md`: what a catalog is, the tool flavor (`netprints catalog`, config file
+- [x] T060 [P] [US2] New `docs/guide/catalogs.md`: what a catalog is, the tool flavor (`netprints catalog`, config file
   reference, overrides, sources, `--check`, `--format csharp`), profiles (built-ins, custom file, extension
   contributions, project default), consuming a catalog from an extension, the schema link, and a "Diagnostics" section
   (anchor `diagnostics`) with NPC001–NPC006 and NPC101–NPC103.
-- [ ] T061 [P] [US2] `docs/api/docfx.json`: add `NetPrints.Catalog/NetPrints.Catalog.csproj`; link the catalogs guide
+- [x] T061 [P] [US2] `docs/api/docfx.json`: add `NetPrints.Catalog/NetPrints.Catalog.csproj`; link the catalogs guide
   from `docs/guide/extensions.md` and `README.md`.
-- [ ] T062 [US2] Whole suite and `scripts/build-docs.sh`; Checkpoint D report in
+- [x] T062 [US2] Whole suite and `scripts/build-docs.sh`; Checkpoint D report in
   `specs/004-catalog-cli/implementation-notes.md`; commit. **Checkpoint D** (SC-004, SC-005 extension path, SC-006).
 
 ### Batch D-R — model: opus — T063 (sub-phase review)

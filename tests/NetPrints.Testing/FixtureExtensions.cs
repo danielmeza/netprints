@@ -15,4 +15,17 @@ public static class FixtureExtensions
         LocalSdkLayout.DetectConfiguration(),
         "extensions",
         "fx.catalog");
+
+    /// <summary>The built <c>CatalogFixtureLib.dll</c> the fixture catalog describes; the test projects build it first and never reference it.</summary>
+    /// <returns>The assembly path, in the configuration of the running tests.</returns>
+    public static string CatalogLibraryAssembly() => Path.Combine(
+        LocalSdkLayout.FindRepositoryRoot(),
+        "tests",
+        "Fixtures",
+        "Catalog",
+        "CatalogFixtureLib",
+        "bin",
+        LocalSdkLayout.DetectConfiguration(),
+        "net10.0",
+        "CatalogFixtureLib.dll");
 }
