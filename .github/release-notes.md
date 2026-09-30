@@ -9,7 +9,11 @@ lists, gets error `NPXE0003` until the project opts in (`<NoWarn>$(NoWarn);NPXE0
 
 **New:** `netprints generate` (alias `regen`), with `--check` to fail CI on stale generated files, and `netprints migrate` to report graph schema versions. `run` forwards everything after `--` unchanged and streams the program's output. `generate` warns (and `--check` fails) when the tool's version differs from the project's `NetPrints.Sdk` package.
 
-**New:** `NetPrints.Catalog` (experimental) and `NetPrints.Annotations` (experimental) packages for graph catalogs and source annotations (preview, not yet documented).
+**New:** `netprints catalog` writes a type catalog (`*.npcat.json`, or a C# class with `--format csharp`) from assemblies, NuGet packages or a project's references, with `--check` for CI. It reads `netprints.catalog.json`; both files have JSON schemas (`npcat.v1.schema.json`, `netprints.catalog.v1.schema.json`). See the [catalogs guide](https://danielmeza.github.io/netprints/guide/catalogs).
+
+**New (experimental):** the catalog profile API: `IExtensionBuilder.AddCatalogProfile` and `ExtensionRegistry.CatalogProfiles` let an extension contribute a profile that decides what a catalog lists; using it needs the `NPXE0004` opt-in. `NetPrints.Extensibility` now depends on `NetPrints.Catalog`. The `NetPrints.Annotations` package (experimental) is still in preview and not yet documented.
+
+**Changed:** the editor's method, parameter and return documentation (`DocumentationUtil`) is now whitespace-collapsed plain text; `<see cref>`, `<paramref>` and `<see langword>` render as their target name (they rendered as nothing before), and an empty element gives no text instead of an empty string. It now also finds documentation for methods in multi-segment namespaces and for generic, nested and `ref` members, which had none.
 
 ## Downloads
 

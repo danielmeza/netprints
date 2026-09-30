@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -12,9 +13,26 @@ using Xunit;
 
 namespace NetPrints.Cli.Tests;
 
-public sealed class CliExitCodeTests
+public sealed class CliExitCodeTests : IDisposable
 {
     private const char Escape = '\u001b';
+
+    private readonly List<string> _directories = [];
+
+    public void Dispose()
+    {
+        foreach (string directory in _directories)
+        {
+            Directory.Delete(directory, recursive: true);
+        }
+    }
+
+    private CliTestHost NewHostInTempDirectory()
+    {
+        string directory = Directory.CreateTempSubdirectory("np-cli-").FullName;
+        _directories.Add(directory);
+        return new CliTestHost(directory);
+    }
 
     public static TheoryData<string> CommandNames => [.. CliCommandCatalog.All.Select(command => command.Name)];
 
@@ -123,7 +141,7 @@ public sealed class CliExitCodeTests
     [InlineData(true, "build", "--verbose")]
     public async Task ACommandThatThrowsExitsWithInternalErrorAndTheStackTraceOnlyWithVerbose(bool verbose, params string[] args)
     {
-        var host = new CliTestHost(Directory.CreateTempSubdirectory("np-cli-").FullName);
+        var host = NewHostInTempDirectory();
         string project = Path.Combine(host.Environment.CurrentDirectory, "App.csproj");
         await File.WriteAllTextAsync(project, "<Project />", TestContext.Current.CancellationToken);
         host.Projects.ThrowOnBuild = new InvalidOperationException("boom");
@@ -139,7 +157,7 @@ public sealed class CliExitCodeTests
     [Fact]
     public async Task CancellationIsReportedAsExit130WithoutAnInternalError()
     {
-        var host = new CliTestHost(Directory.CreateTempSubdirectory("np-cli-").FullName);
+        var host = NewHostInTempDirectory();
         string project = Path.Combine(host.Environment.CurrentDirectory, "App.csproj");
         await File.WriteAllTextAsync(project, "<Project />", TestContext.Current.CancellationToken);
         using var cancellation = new CancellationTokenSource();
@@ -155,7 +173,7 @@ public sealed class CliExitCodeTests
     [Fact]
     public async Task AnOperationCanceledExceptionWithoutARequestedCancellationIsStillAnInternalError()
     {
-        var host = new CliTestHost(Directory.CreateTempSubdirectory("np-cli-").FullName);
+        var host = NewHostInTempDirectory();
         await File.WriteAllTextAsync(Path.Combine(host.Environment.CurrentDirectory, "App.csproj"), "<Project />", TestContext.Current.CancellationToken);
         host.Projects.ThrowOnBuild = new OperationCanceledException("timed out");
 

@@ -61,12 +61,16 @@ Model records live in `src/NetPrints.Catalog/Model/` (shared source, ADR-0012).
 | | `get` | enum? | Getter visibility (`public` \| `protected`); omitted when not readable |
 | | `set` | enum? | Setter visibility; omitted when not writable (readonly field, get-only property) |
 | | `summary` | string? | |
-| **TypeRef** | `name` | string | Full name with `.` for namespaces and `+`-free nesting as the live provider renders it; generic parameter name when `generic` |
+| **TypeRef** | `name` | string | Full name with `.` for namespaces and `Outer+Inner` for nested types, as the live provider renders it; generic parameter name when `generic` |
 | | `generic` | bool? | Unbound generic parameter |
 | | `isEnum`, `isInterface` | bool? | |
 | | `args` | TypeRef[]? | Generic arguments; arrays are `System.Array`-shaped as the live provider renders them |
 | **NodeHint** | `displayName`, `category` | string? | |
 | | `keywords` | string[]? | Sorted |
+
+**Not cataloged** (deliberately): indexers, events, finalizers, explicit interface implementations, pointer and
+function-pointer members, and members whose name starts with `<`. The live provider lists an indexer as `this[]`;
+the parity test excludes it by name (`ParityTests.NotCatalogedByDesign`).
 
 Validation: ids unique per document; every `declaringType` refers to a type in the document; `enumMembers`
 only on enums; `constructors` never on interfaces or static classes. Converting a catalog to NetPrints

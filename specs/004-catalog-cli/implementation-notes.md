@@ -369,6 +369,36 @@ Red/green: T059 was red first: with the test in place and the fixture graph abse
 - The guide does not cover annotations or embedded catalogs (T079), and `--format csharp` output is documented from the contract and D6 notes, checked by `CSharpFormatTests` rather than by an end-to-end compile in the guide.
 - NPC diagnostics have no help URL; if one is wanted, use `guide/catalogs#diagnostics`.
 
+## Review D (T063, Opus) — PR #9 review 5365750210
+
+Verdict: Checkpoint D accepted with a fix batch: 4 medium and 15 low anchored findings (D-R1 to D-R19) plus two findings that could not be anchored (D-R20 and D-R21). No high findings. The reviewer's independent run matched Checkpoint D (1443 total, 0 failed, 10 skipped). Fixed in three batches: D-F1 (2d49055), D-F2 (5d2df0f), D-F3 (@F3@).
+
+| Id | Sev | Finding | Status |
+| --- | --- | --- | --- |
+| D-R1 | medium | inline profile with a comment or trailing comma rejected | fixed, 2d49055 |
+| D-R2 | medium | documentation parity only for single-line comments | fixed, 2d49055 |
+| D-R3 | medium | large `--format csharp` catalogs fail with CS8103 | deferred to E (T066 note in tasks.md, redesign as UTF-8 data) |
+| D-R4 | medium | stable public surface larger than contract §2 | fixed, 2d49055 |
+| D-R5 | low | NPC002/NPC003 never printed as codes | fixed, 5d2df0f |
+| D-R6 | low | late or wrongly coded usage errors | fixed, 5d2df0f |
+| D-R7 | low | project loaded twice, load messages dropped | fixed, 5d2df0f |
+| D-R8 | low | package targets matched on the typed version string | fixed, 5d2df0f |
+| D-R9 | low | temporary-directory cleanup not best-effort | fixed, 5d2df0f |
+| D-R10 | low | `annotated` selected a type through a non-public `[NetPrintsNode]` method | fixed, 2d49055 |
+| D-R11 | low | guide statements that do not match the code | fixed, @F3@ (`--include` widens, absolute `wrote` path, `public-api` protected members, NPC codes, unreferenced-assembly edge case, when the temporary directories are kept, exit codes, cleanup warnings, `@version` matching, dependency resolution) |
+| D-R12 | low | contract and data model drift | fixed, @F3@ (4-argument `Resolve` was already in §2 from D-F1; §1 example regenerated from the snapshot; `Outer+Inner`; "not cataloged" lists; §4 exit codes, output path, cleanup) |
+| D-R13 | low | release notes miss sub-phase D | fixed, @F3@ |
+| D-R14 | low | CT-T12 not isolated from the user's package source mapping | fixed, @F3@ |
+| D-R15 | low | fake project system paired with the real process runner | fixed, @F3@ |
+| D-R16 | low | indexers and events excluded without a note, parity blind to it | fixed, 2d49055 (fixture, `NotCatalogedByDesign`); documented @F3@ |
+| D-R17 | low | build half of CT-T15 does not depend on the extension | fixed, @F3@ (confirmed, negative control added) |
+| D-R18 | low | lone surrogates written unescaped | fixed, 2d49055 |
+| D-R19 | low | no test of dependency resolution through reference paths | fixed, 5d2df0f (found a real gap) |
+| D-R20 | low (body) | `MsBuildRegistration.EnsureRegistered` check-then-act race | fixed, 5d2df0f (lock; diagnosis below) |
+| D-R21 | low (body) | `CliExitCodeTests` leaks `/tmp/np-cli-*` directories | fixed, @F3@ |
+
+Every finding has a final status. The spec edge cases the reviewer listed as deferred to E are under "Review D → deferred".
+
 ### Review D fixes
 
 Batch D-F1 (D-R1, D-R2, D-R4, D-R10, D-R16, D-R18). Each behaviour fix has a test that failed first.
@@ -390,5 +420,28 @@ Batch D-F2 (D-R5 to D-R9, D-R19, D-R20). Each behaviour fix has a test that fail
 - **D-R9**: `CatalogSourceSet.DeleteTemporaryDirectories()` now returns the failures instead of throwing (`IOException`, `UnauthorizedAccessException`) and removes `obj/netprints-catalog` and then `obj` when they end up empty. The command prints each failure as `warning: ...` on stderr and keeps its exit code. `PublicAPI.Unshipped.txt` follows the new return type.
 - **D-R19**: this test found a real gap. `CatalogDependentLib` (new fixture, its public API uses `CatalogFixtureLib`) is cataloged with its dependency in another directory: without `--reference-path` NPC005 and no `Take` member; with it, no NPC005 and `Take`; and with the dependency next to it, no NPC005. It failed at first because a design-time build of the temporary project does not resolve the dependencies of a `Reference` (`_FindDependencies` is false unless `_ResolveReferenceDependencies` is true) and the compiler only receives `ReferencePath`. The temporary project now sets `_ResolveReferenceDependencies` and adds `@(ReferenceDependencyPaths)` (minus what is already there) to `ReferencePath` after `ResolveAssemblyReferences`. So neither the `--reference-path` directories nor the assembly's own directory worked before this batch, despite FR-020 and the D5 note.
 - **D-R20 diagnosis**: the CI log of the first attempt of run 36711995204 shows `GenerateCommandTests.CheckNamesTheStaleFileExitsOneAndWritesNothing` failing after 45 ms with exit 4 (`Internal error`, an unhandled exception), the first test of the run (1 s after the start). 45 ms is too short for a `dotnet restore` of its own, so the "Restore failed for /tmp/np-sample-2NbfUT/HelloWorld.csproj" warnings in the same log belong to another test's process and are not the cause. `Cli.Tests` is the only test project that calls MSBuild without a `ModuleInitializer` registration, and five classes call `RunRealAsync` in parallel, so their first `MsBuildRegistration.EnsureRegistered` calls run concurrently with the unlocked check-then-register; that fits an exception in the first milliseconds (exit 4). I could not reproduce it (16 threads behind a barrier, 8 runs, all passed before the fix), so this is the most likely cause, not a proven one. Fix: the whole body of `EnsureRegistered` runs under a `Lock`; `MsBuildRegistrationTests` keeps the concurrent case as a regression test (it never failed before the fix, so it is not a red/green pair). The exit-4 message was lost because the tests asserted only the code: `CliTestHost.AssertExit` (used by `GenerateCommandTests`) now fails with both outputs, so a repeat names its exception. CI already ran `--report-xunit-trx` for every test project and uploaded `TestResults/**/*.trx` as `test-results` under `if: always()`; nothing to add there.
+
+Batch D-F3 (D-R11 to D-R15, D-R17, D-R21, the D-R3 deferral and the bookkeeping).
+
+- **D-R14**: the test `NuGet.config` clears `packageSourceMapping` and maps every package to the fixture feed; `dotnet pack` runs with `-nodeReuse:false`.
+- **D-R15**: `CliTestHost.Services` registers `UnexpectedProcessRunner` (throws, naming the file it was asked to start) where the fake project system is used; `RunRealAsync` keeps the real runner from `CliServices.CreateDefault()`. No existing fake-host test reached the runner, so nothing else changed.
+- **D-R17**: confirmed by deleting the `NetPrintsExtension` line locally: the test still passed, because the graph carries its method specifier and the project references the library directly. The catalog half of CT-T15 is `CatalogSearchTests`. Decision: keep the build-and-run test, assert it produces no NPX001, and add a negative control (`TheBuildLoadsTheExtensionFolderItIsGivenSoAFolderWithoutOneFailsIt`: an empty folder as `NetPrintsExtension` fails the build with NPX001 `netprints-extension.json not found`). That proves the build loads the folder the item names; the class summary states what each half covers.
+- **D-R21**: `CliExitCodeTests` is `IDisposable` and deletes the temporary directories it creates (`NewHostInTempDirectory`); the /tmp count of `np-cli-*` directories no longer grows. The other Cli test classes already delete their `np-*` roots in `Dispose` (checked: Migrate, Build, Run, ProjectFailure, ProjectLocator, Generate, HelloWorld, Catalog, SampleCopy, PackedFixtureFeed).
+- **D-F2 gap**: `TheIdAndTheOutputFileAreDerivedFromTheAssemblyName` runs the command on assemblies compiled as `_Private` and `My Lib` and expects `private.npcat.json` and `my-lib.npcat.json` with the matching `id`. It passed at first run (the behaviour was fixed in D-F2); it is a regression pin, not a red/green pair.
+- **D-R3**: deferred to E, see below.
+- Docs: `docs/guide/catalogs.md`, contracts/catalog.md §1, §4, data-model.md §1 and `.github/release-notes.md` (Unreleased) updated as listed in the table.
+
+### Review D → deferred
+
+- **D-R3** (`--format csharp` reaches CS8103 from the third catalog of System.Runtime size; the assembly is 4x the JSON; a file-scoped `namespace X;` needs C# 10 while netstandard2.0 consumers default to C# 7.3): E (T066, `EmbeddedCatalogEmitter`, shared with `CatalogCSharpEmitter`) redesigns the emitter output as UTF-8 data (`"..."u8`, `byte[]` or an embedded resource) with a block-scoped namespace, and updates contracts/catalog.md §4. Recorded as a note under T066 in tasks.md. It must be settled before U1.
+- **T077**: wire `CatalogLoader.FirstOfEachId` and NPC103 logging into `ReflectionHost` (`AddTypeCatalog` does not dedupe by id), and make a newer-schema catalog not disable the whole extension (today an extension that calls `LoadFile` on such a file fails as a whole). Also the 'ref/lib reference assemblies' edge case of `EmbeddedCatalogReader`.
+- **Help links**: E's generator `DiagnosticDescriptor`s set `helpLinkUri` to `guide/catalogs#diagnostics`; the CLI keeps plain lines.
+- **T079**: guide sections for annotations and embedded catalogs.
+
+### Follow-ups for the final review (H-R)
+
+- Check whether the P1 code generator turns a catalog enum default (`System.Int32` plus a number) into an `int` passed to an enum parameter (CS1503); the catalog writes it that way for parity with the live provider.
+- Live-provider quirks mirrored for parity (FR-016); a later fix must change both sides: static classes in `GetNonStaticTypes`; type-parameter variable names; field getter and setter visibility, const included; enum constructor and constant synthesis; void treated as a struct.
+- Optional (reviewer): compile the engine snapshot tests against the reference pack, as `CatalogPerformanceTests` does.
 
 ## Governance proposals

@@ -2,6 +2,8 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using NetPrints.Cli.Tests.Support;
 using NetPrints.Testing;
 using Xunit;
@@ -262,6 +264,27 @@ public sealed class CatalogCommandTests : IDisposable, IClassFixture<PackedFixtu
         Assert.Equal(ExitCodes.Usage, exitCode);
         Assert.Contains(value, _host.Error.ToString(), StringComparison.Ordinal);
         Assert.Equal(0, _host.MsBuild.Calls);
+    }
+
+    [Theory]
+    [InlineData("_Private", "private")]
+    [InlineData("My Lib", "my-lib")]
+    public async Task TheIdAndTheOutputFileAreDerivedFromTheAssemblyName(string assemblyName, string expectedId)
+    {
+        string assembly = Path.Combine(_directory, assemblyName + ".dll");
+        CSharpCompilation compilation = CSharpCompilation.Create(
+            assemblyName,
+            [CSharpSyntaxTree.ParseText("public class Marker { }", cancellationToken: TestContext.Current.CancellationToken)],
+            [MetadataReference.CreateFromFile(typeof(object).Assembly.Location)],
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+        Assert.True(compilation.Emit(assembly, cancellationToken: TestContext.Current.CancellationToken).Success);
+
+        int exitCode = await _host.RunRealAsync("catalog", "--assembly", assembly);
+
+        Assert.True(exitCode == ExitCodes.Success, _host.Output + _host.Error);
+        string written = Path.Combine(_directory, expectedId + ".npcat.json");
+        Assert.True(File.Exists(written), _host.Output);
+        Assert.Contains($"\"id\": \"{expectedId}\"", File.ReadAllText(written), StringComparison.Ordinal);
     }
 
     [Fact]

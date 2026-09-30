@@ -380,14 +380,14 @@ contracts/catalog.md). **Independent test**: CT-T01–CT-T19; SC-004, SC-005 (ex
 
 ### Batch D-R — model: opus — T063 (sub-phase review)
 
-- [ ] T063 [US2] Review sub-phase D: an Opus reviewer who did not implement it reviews the whole diff of batches D1–D7
+- [x] T063 [US2] Review sub-phase D: an Opus reviewer who did not implement it reviews the whole diff of batches D1–D7
   (from the commit before the first batch to HEAD) — user story US2 end to end against spec.md, contracts/catalog.md, the constitution and plan.md's standing constraints —
   and runs the independent test of the phase; findings (severity, file:line, fix) go to the PR as review comments and to
   `specs/004-catalog-cli/implementation-notes.md` under "Review D". No code changes in this task.
 
 ### Batch D-F — model: sonnet — T064 (reserved: fix review findings)
 
-- [ ] T064 [US2] Fix every finding of T063 (test first for behaviour findings), reply on each review thread with the fixing
+- [x] T064 [US2] Fix every finding of T063 (test first for behaviour findings), reply on each review thread with the fixing
   commit or the reason for deferral, whole suite, commit; if the review had no findings, tick this task with "no
   findings". The next sub-phase starts only after this batch is green on CI.
 
@@ -407,6 +407,9 @@ SC-013.
   `CSharpGeneratorDriver`.
 - [ ] T066 [US3] Shared `src/NetPrints.Catalog/Emit/EmbeddedCatalogEmitter.cs` (assembly attribute + accessor, escaped
   literal via `CSharpLiteral`).
+  Note (Review D, D-R3): the shared emitter output must be redesigned here as UTF-8 data (`"..."u8`, `byte[]` or an
+  embedded resource) with a block-scoped namespace (the generator's consumers are C# 7.3), because `const string`
+  text reaches CS8103 from the third System.Runtime-sized catalog; update contracts/catalog.md §4 with it.
 - [ ] T067 [US3] Complete `src/NetPrints.Annotations/CatalogGenerator.cs` (own-source pipeline with
   `ForAttributeWithMetadataName`; referenced-assembly pipeline over `MetadataReferencesProvider` + attribute requests in
   a private compilation; profiles from `AdditionalFiles`; documentation from `NetPrintsReferenceDocumentation`

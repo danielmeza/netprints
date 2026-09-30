@@ -26,16 +26,16 @@ netprints catalog --package Newtonsoft.Json@13.0.3 --exclude "*.Internal.*"
 netprints catalog --config netprints.catalog.json --check
 ```
 
-Every source is resolved through a temporary SDK project under `obj/netprints-catalog/<hash>/`, next to the configuration file (or in the current directory), so a package's dependencies restore from your configured NuGet sources. The temporary project is deleted after a successful run and kept when a restore fails.
+Every source is resolved through a temporary SDK project under `obj/netprints-catalog/<hash>/`, next to the configuration file (or in the current directory), so a package's dependencies restore from your configured NuGet sources. The temporary directories (`obj/netprints-catalog/<hash>/`, and `obj/` when it ends up empty) are deleted once the output has been written or checked, including when `--check` reports a difference. They are kept when the run stops earlier, so that you can inspect them: a restore failure, an error in the project you gave to `--project`, or an error diagnostic such as NPC001. A directory that cannot be deleted is reported as `warning: ...` on stderr and does not change the exit code.
 
 ### Sources
 
 Give at least one source, on the command line or in the configuration file:
 
 - `--assembly <path>` catalogs an assembly. The value can be a glob of file names (`libs/*.dll`).
-- `--package <id>@<version>` catalogs a NuGet package at an exact version.
+- `--package <id>@<version>` catalogs a NuGet package at an exact version. After the restore, the package's folder under the temporary project's package root holds the one resolved version, so a version written as `1.0`, `1.0.0.0` or `1.0.0+build` finds the same package as `1.0.0`.
 - `--project <path>` catalogs assemblies referenced by a project (a `.csproj`, or a directory holding one). `--assemblies <name>` picks references by simple name and can be repeated; it needs `--project`. Only one `--project` is allowed per run.
-- `--reference-path <dir>` adds a directory searched for the dependencies of the assemblies.
+- `--reference-path <dir>` adds a directory searched for the dependencies of the assemblies. The dependencies of a cataloged assembly are resolved through these directories and through the assembly's own directory; a dependency found in none of them makes the members that use its types skip with NPC005.
 - `--framework <tfm>` sets the target framework the temporary project restores for (default `net10.0`).
 
 A source option on the command line replaces the `sources` of the configuration file.
@@ -75,16 +75,18 @@ The schema is [`schemas/netprints.catalog.v1.schema.json`](https://danielmeza.gi
 
 ### Overrides
 
-Options on the command line override the scalar settings of the file and replace its lists, with one exception: `--include` and `--exclude` are appended to the file's lists, so a run can narrow the configured catalog without repeating it.
+Options on the command line override the scalar settings of the file and replace its lists, with one exception: `--include` and `--exclude` are appended to the file's lists. The globs of `include` are combined with OR, so an extra `--include` widens the catalog; only `--exclude` narrows it.
 
 ### Output and `--check`
 
 The tool writes the catalog to `--output`, by default `<id>.npcat.json` next to the configuration file (or in the current directory). It writes only when the content differs, so an up-to-date file keeps its timestamp.
 
 ```
-wrote catalogs/mylib.npcat.json (42 types, 310 members)
-up to date: catalogs/mylib.npcat.json (42 types, 310 members)
+wrote /home/me/repo/catalogs/mylib.npcat.json (42 types, 310 members)
+up to date: /home/me/repo/catalogs/mylib.npcat.json (42 types, 310 members)
 ```
+
+The command prints the absolute path of the file (`generate` prints paths relative to the current directory).
 
 `--check` writes nothing and exits with 1 when the output is missing or differs, printing `stale: <path>`. Use it in CI to make sure the committed catalog matches the library:
 
@@ -92,7 +94,16 @@ up to date: catalogs/mylib.npcat.json (42 types, 310 members)
 netprints catalog --config netprints.catalog.json --check
 ```
 
-Diagnostics print as `<source>: <severity> <code>: <message>`. A warning leaves the exit code alone; an error exits with 1 before anything is built. The exit codes are 0 for written or up to date, 1 for errors (an error diagnostic, a restore failure, a `--check` difference), 2 for usage errors and 3 when no .NET SDK is found, as in the other commands (see [Command-line tool](cli.md)).
+Diagnostics print as `<source>: <severity> <code>: <message>`. A warning leaves the exit code alone; an error exits with 1 before anything is built. An unknown profile and an invalid profile file print `catalog: error NPC002: ...` and `catalog: error NPC003: ...` on stderr. The exit codes are as in the other commands (see [Command-line tool](cli.md)):
+
+| Exit | When |
+| --- | --- |
+| 0 | The catalog was written or is up to date. |
+| 1 | An error diagnostic, a restore failure, a project with errors, a `--check` difference, an unreadable or invalid configuration or profile file, an unknown profile id read from the configuration file or the project's profile, or an output file that cannot be written. |
+| 2 | Usage: no source, an invalid option value (`--format`, `--package` without a version, `--class-name`, `--namespace`), an unknown `--profile` id, a `--config` file that does not exist. |
+| 3 | No .NET SDK is found. |
+
+Option-value checks (`--format`, `--package`, `--class-name`, `--namespace`) and a missing `--config` file run before the SDK check, so they are reported even without an SDK; an unknown `--profile` id needs the extensions loaded first, so it comes after.
 
 ### `--format csharp`
 
@@ -117,13 +128,21 @@ internal static partial class MyLibCatalog
 
 Without `--class-name` the class is the id in Pascal case followed by `Catalog`, and the namespace defaults to `NetPrints.Catalogs`. `--check` works for this format too. The generated file references `NetPrints.Catalog`.
 
+### What a catalog does not list
+
+Indexers, events, finalizers, explicit interface implementations, pointer and function-pointer members and compiler-named members are not cataloged. The live reflection provider lists an indexer as `this[]`; the catalog leaves it out on purpose.
+
+### An assembly the project does not reference
+
+`--assembly` and `--package` catalog what you name, whether or not a project references it. With `--project` and `--assemblies`, a name the project does not reference is NPC001. A cataloged assembly that the graphs' project does not reference still shows up in node search, but code that uses its types fails to compile with the compiler's normal error until the project references it.
+
 ## Profiles
 
 A profile decides which types and members a catalog lists. The tool starts from a base and applies the profile's rules in a fixed order: base selection, namespace globs, type globs, type attribute rules, member attribute rules, the obsolete rule, and finally `[NetPrintsIgnore]`, which always excludes.
 
 ### Built-in profiles
 
-- `public-api` lists every public type and member. It is the default.
+- `public-api` lists every public type and member, plus the protected members of unsealed types. It is the default.
 - `annotated` lists only what the library marks with the NetPrints annotation attributes (`[NetPrintsType]`, `[NetPrintsNode]`).
 
 ### A custom profile file
@@ -150,7 +169,7 @@ A profile is a small JSON file. Pass its path to `--profile`; it must end in `.n
 | `typeAttributes`, `memberAttributes` | Rules `{ "rule": "require" or "exclude", "attribute", "argument"? }`. An `argument` names one parameter by `name` or `position` and compares it with `equals` or `contains`. |
 | `obsolete` | `include`, `exclude` or `excludeErrors` (default: drop only members marked `[Obsolete(error: true)]`). |
 
-An unknown profile id is NPC002; a profile file that cannot be read or is invalid is NPC003 (a `schemaVersion` above 1 included).
+An unknown profile id is NPC002; a profile file that cannot be read or is invalid is NPC003 (a `schemaVersion` above 1 included). Both print as `catalog: error <code>: <message>`.
 
 ### Profiles from extensions
 
@@ -162,7 +181,7 @@ netprints catalog --assembly libs/MyLib.dll --extension path/to/extension --prof
 
 ### The project default
 
-With `--project`, and no `--profile` in the command or the file, the tool uses the catalog profile of the project's own profile (`CatalogProfileId` of the `NetPrintsProfile` the project selects, resolved through the project's extensions). The resolution order is: an explicit option or file setting, then the project profile's, then `public-api`. Ids resolve among the built-ins first, then the profiles contributed by `--extension` folders and by the project's extensions. A `--profile` id that no one provides exits with 2 and lists the available ones; a project profile whose catalog profile id no one provides exits with 1.
+With `--project`, and no `--profile` in the command or the file, the tool uses the catalog profile of the project's own profile (`CatalogProfileId` of the `NetPrintsProfile` the project selects, resolved through the project's extensions). The resolution order is: an explicit option or file setting, then the project profile's, then `public-api`. Ids resolve among the built-ins first, then the profiles contributed by `--extension` folders and by the project's extensions. A `--profile` id that no one provides exits with 2 and lists the available ones; the same id read from the configuration file, or a project profile whose catalog profile id no one provides, exits with 1.
 
 ## Consuming a catalog from an extension
 

@@ -97,6 +97,13 @@ internal sealed class FakeMsBuildRegistration : IMsBuildRegistration
     }
 }
 
+/// <summary>An <see cref="IProcessRunner"/> for fake-host tests: a command that reaches it would run a real process next to a fake project system, so it fails the test.</summary>
+internal sealed class UnexpectedProcessRunner : IProcessRunner
+{
+    public Task<ProcessResult> RunAsync(ProcessStartRequest request, CancellationToken cancellationToken) =>
+        throw new InvalidOperationException($"A fake-host test started '{request.FileName}'; use RunRealAsync for tests that run real processes.");
+}
+
 /// <summary>Builds the service collection a CLI test runs against: fakes, a <see cref="TestConsole"/> and a scripted environment.</summary>
 internal sealed class CliTestHost
 {
@@ -139,7 +146,7 @@ internal sealed class CliTestHost
             Processes.Error = Error;
             services.AddSingleton<IProgramRunner>(Processes);
             services.AddSingleton<IMsBuildRegistration>(MsBuild);
-            services.AddSingleton<IProcessRunner>(new ProcessRunner());
+            services.AddSingleton<IProcessRunner>(new UnexpectedProcessRunner());
             if (Tool is not null)
             {
                 services.AddSingleton(Tool);

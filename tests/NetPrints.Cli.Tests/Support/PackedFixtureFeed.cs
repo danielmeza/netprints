@@ -25,7 +25,7 @@ public sealed class PackedFixtureFeed : IAsyncLifetime
         ProcessResult result = await new ProcessRunner().RunAsync(
             new ProcessStartRequest(
                 "dotnet",
-                ["pack", CatalogFixtures.LibraryProject, "--no-build", "-c", LocalSdkLayout.DetectConfiguration(), "-p:IsPackable=true", "-o", Feed, "--nologo", "-v", "q"],
+                ["pack", CatalogFixtures.LibraryProject, "--no-build", "-nodeReuse:false", "-c", LocalSdkLayout.DetectConfiguration(), "-p:IsPackable=true", "-o", Feed, "--nologo", "-v", "q"],
                 _root),
             CancellationToken.None);
         Assert.True(result.ExitCode == 0, result.StandardOutput + result.StandardError);
@@ -41,6 +41,12 @@ public sealed class PackedFixtureFeed : IAsyncLifetime
             <clear />
             <add key="fixture" value="{Feed}" />
           </packageSources>
+          <packageSourceMapping>
+            <clear />
+            <packageSource key="fixture">
+              <package pattern="*" />
+            </packageSource>
+          </packageSourceMapping>
           <config>
             <add key="globalPackagesFolder" value="{Packages}" />
           </config>

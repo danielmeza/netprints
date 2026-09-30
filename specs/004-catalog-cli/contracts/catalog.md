@@ -5,7 +5,7 @@ Implements FR-012–FR-024, FR-029 (tool side), FR-037 (ADR-0012, ADR-0013). Sou
 
 ## 1. Catalog file (`*.npcat.json`)
 
-Shape: [data-model.md](../data-model.md) §1. Example (abridged):
+Shape: [data-model.md](../data-model.md) §1. Example (abridged from `tests/NetPrints.Catalog.Tests/Snapshots/public-api.npcat.json`; members and types are left out, the shape is the writer's):
 
 ```json
 {
@@ -15,7 +15,10 @@ Shape: [data-model.md](../data-model.md) §1. Example (abridged):
   "version": "1.0.0.0",
   "profile": "public-api",
   "assemblies": [
-    { "name": "CatalogFixtureLib", "version": "1.0.0.0" }
+    {
+      "name": "CatalogFixtureLib",
+      "version": "1.0.0.0"
+    }
   ],
   "types": [
     {
@@ -23,15 +26,41 @@ Shape: [data-model.md](../data-model.md) §1. Example (abridged):
       "namespace": "Fixture.Geometry",
       "name": "Vector2",
       "kind": "struct",
-      "summary": "A 2D vector.",
+      "baseType": { "name": "System.ValueType" },
+      "summary": "A two-dimensional vector: struct, operators, implicit conversions, interface implementation.",
       "constructors": [
-        { "id": "M:Fixture.Geometry.Vector2.#ctor(System.Single,System.Single)", "visibility": "public", "parameters": [ { "name": "x", "type": { "name": "System.Single" } }, { "name": "y", "type": { "name": "System.Single" } } ] }
+        {
+          "id": "M:Fixture.Geometry.Vector2.#ctor(System.Single,System.Single)",
+          "visibility": "public",
+          "parameters": [
+            { "name": "X", "type": { "name": "System.Single" }, "summary": "The horizontal component." },
+            { "name": "Y", "type": { "name": "System.Single" }, "summary": "The vertical component." }
+          ]
+        }
       ],
       "methods": [
-        { "id": "M:Fixture.Geometry.Vector2.Add(Fixture.Geometry.Vector2,Fixture.Geometry.Vector2)", "name": "Add", "visibility": "public", "modifiers": ["static"], "parameters": [ { "name": "a", "type": { "name": "Fixture.Geometry.Vector2" } }, { "name": "b", "type": { "name": "Fixture.Geometry.Vector2" } } ], "returnType": { "name": "Fixture.Geometry.Vector2" }, "summary": "Adds two vectors." }
+        {
+          "id": "M:Fixture.Geometry.Vector2.Add(Fixture.Geometry.Vector2)",
+          "name": "Add",
+          "visibility": "public",
+          "parameters": [
+            { "name": "other", "type": { "name": "Fixture.Geometry.Vector2" }, "summary": "The other vector." }
+          ],
+          "returnType": { "name": "Fixture.Geometry.Vector2" },
+          "returnSummary": "The sum.",
+          "summary": "Adds another vector to this one."
+        }
       ],
       "variables": [
-        { "id": "P:Fixture.Geometry.Vector2.X", "name": "X", "kind": "property", "type": { "name": "System.Single" }, "get": "public" }
+        {
+          "id": "P:Fixture.Geometry.Vector2.X",
+          "name": "X",
+          "kind": "property",
+          "type": { "name": "System.Single" },
+          "get": "public",
+          "set": "public",
+          "summary": "The horizontal component."
+        }
       ]
     }
   ]
@@ -102,10 +131,20 @@ netprints catalog [--config <file>]
   → `public-api`. Ids resolve among built-ins, then profiles contributed by `--extension` folders and the
   project's extensions (registry order); a path ending in `.npprofile.json` is read as a file.
 - Sources (research R9): each resolved through an SDK project; temporary projects under
-  `obj/netprints-catalog/<hash>/` next to the config (or current directory), deleted on success.
+  `obj/netprints-catalog/<hash>/` next to the config (or current directory), deleted (with `obj/` when empty) after
+  the write phase, kept when the run stops before it (restore failure, project errors, an error diagnostic); a
+  directory that cannot be deleted is a `warning:` line on stderr and leaves the exit code alone. A package target
+  is matched on `<root>/<id lower>/`, so `@1.0` and `@1.0.0+build` find the resolved version. Dependencies of an
+  assembly resolve through `--reference-path` and the assembly's own directory. Option-value checks (option values,
+  `--class-name`, `--namespace`, a missing `--config`) run before the SDK check.
 - Output: written only when content differs. `--check`: nothing written; exit 1 when missing or different.
-- Exit: 0 written/up to date; 1 errors (NPC error diagnostics, restore failure, check difference); 2 usage; 3 no
-  SDK.
+- Output path printed by `wrote`/`up to date`/`stale` is absolute.
+- Diagnostics: `<source>: <severity> <code>: <message>`; NPC002/NPC003 print as `catalog: error NPC00x: <message>`
+  on stderr.
+- Exit: 0 written/up to date; 1 errors (NPC error diagnostics, restore failure, project errors, check difference,
+  an unreadable or invalid config or profile file, an unknown profile id from the config or the project profile,
+  an unwritable output); 2 usage (no source, an invalid option value, an unknown `--profile` id, a `--config` that
+  does not exist); 3 no SDK.
 
 `csharp` format (`CatalogCSharpEmitter`, shared with the generator's accessor emitter):
 
@@ -121,6 +160,10 @@ internal static partial class <ClassName>
         global::NetPrints.Catalog.CatalogLoader.LoadJson(Json);
 }
 ```
+
+Not cataloged (data-model.md §1): indexers, events, finalizers, explicit interface implementations, pointer and
+function-pointer members and compiler-named members. The live provider lists an indexer (as `this[]`); the parity
+test excludes it by name (`ParityTests.NotCatalogedByDesign`).
 
 ## 5. Configuration file example
 
