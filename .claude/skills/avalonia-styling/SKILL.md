@@ -65,7 +65,7 @@ before inventing a new one. Use `StaticResource` for things that never vary by t
 
 ## Before you finish
 
-1. `dotnet build -v q -tl:off --nologo`, then run `XamlHygieneTests` (E2, E6).
+1. `dotnet build tests/NetPrints.Core.Tests -v q -tl:off --nologo`, then `tests/NetPrints.Core.Tests/bin/Debug/net10.0/NetPrints.Core.Tests -class '*XamlHygieneTests'` (E2, E6); fix and re-run until green.
 2. A new converter gets a plain xUnit test with no Avalonia app.
 3. Check both variants. In a headless test, set `RequestedThemeVariant` (on the app or a `ThemeVariantScope`) to
    `ThemeVariant.Light` and then `ThemeVariant.Dark` and assert what resolves, as `GridRenderTests` does; for a quick

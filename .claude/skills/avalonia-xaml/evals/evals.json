@@ -36,6 +36,19 @@
         "Busy state bound to CompileCommand.IsRunning",
         "No async void and no Forget() in the view"
       ]
+    },
+    {
+      "id": 4,
+      "prompt": "Make MethodInspectorView show useful content in the XAML previewer and make its fields understandable to screen readers.",
+      "expected_output": "A design-time DataContext (Design.DataContext) on MethodInspectorView that the runtime never uses (D14); each field's caption is linked with AutomationProperties.LabeledBy, or the control gets AutomationProperties.Name (D13); x:Name only on elements that are read (D15); compiled bindings stay on with no opt-out (E1); accessible icon buttons keep AutomationProperties.Name (E4).",
+      "files": [],
+      "assertions": [
+        "Design.DataContext supplies sample data for the previewer and is not used at runtime",
+        "Fields get AutomationProperties.LabeledBy or AutomationProperties.Name",
+        "x:Name only where the name is read (by a binding, ElementName, or code)",
+        "No x:CompileBindings=\"False\" opt-out",
+        "Icon-only buttons keep AutomationProperties.Name"
+      ]
     }
   ]
 }

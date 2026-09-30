@@ -1,6 +1,7 @@
 ---
 name: avalonia-behaviors
 description: "How to wire interaction in NetPrints Avalonia 12 views without code-behind: Xaml.Behaviors behaviors, triggers and actions (full catalog split by job, with recipes from the repo), keyboard shortcuts (KeyBinding, HotKey, tunnel-routed keys), focus and select-all, dialogs that close with or without a result, drag and drop and list reordering, and auto-scroll. Use it whenever a change adds or replaces an event handler (Click, Tapped, DoubleTapped, KeyDown, SelectionChanged, pointer or drag events) or a Focus()/SelectAll()/Close()/ScrollToEnd() call in *.axaml.cs, adds a shortcut, or picks a behavior, even if the request doesn't mention behaviors. Always load avalonia-xaml alongside it."
+allowed-tools: Bash(dotnet run ${CLAUDE_SKILL_DIR}/scripts/behavior-props.cs *)
 paths:
   - "**/*.axaml"
   - "**/*.axaml.cs"
@@ -56,7 +57,8 @@ recipes (real repo XAML where one exists), followed by the catalog tables for th
 below names; [catalog-guide.md](references/catalog-guide.md) explains the stance tags and the packages. To see a
 type's properties, including the ones it inherits, run
 `dotnet run ${CLAUDE_SKILL_DIR}/scripts/behavior-props.cs -- <TypeName>` (outside Claude Code the path is
-`.claude/skills/avalonia-behaviors/scripts/behavior-props.cs`); part of a name lists similar types.
+`.claude/skills/avalonia-behaviors/scripts/behavior-props.cs`); part of a name lists similar types. Needs the .NET 10 SDK
+and a restored NuGet cache.
 
 | For | Prefer | Recipes and catalog |
 |---|---|---|
@@ -98,7 +100,7 @@ and the dialog behaviors. Their decisions and side effects belong in commands an
 1. `dotnet build -v q -tl:off --nologo`. Compiled XAML rejects an unknown behavior property here.
 2. A VM unit test covers each command the behavior calls; a headless test (`[AvaloniaFact]`) covers the wiring when
    it is more than one line (a trigger with several actions, a custom behavior, a tunnel-routed key).
-3. Run `XamlHygieneTests`: E3 fails the build on a command-shaped handler left in XAML.
+3. Build the test project and run `tests/NetPrints.Core.Tests/bin/Debug/net10.0/NetPrints.Core.Tests -class '*XamlHygieneTests'`: E3 fails on a command-shaped handler left in XAML. Fix and re-run until green.
 
 ## Reference files and scripts
 

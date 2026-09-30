@@ -151,5 +151,5 @@ from a VM, as `SelectTypeDialogVM.ResolveSelection` does; the view doesn't compu
 ## Before you finish a XAML change
 
 1. `dotnet build -v q -tl:off --nologo`. Compiled bindings report broken paths here.
-2. Run `XamlHygieneTests` and the VM tests for any command you added.
+2. `dotnet build tests/NetPrints.Core.Tests -v q -tl:off --nologo`, then `tests/NetPrints.Core.Tests/bin/Debug/net10.0/NetPrints.Core.Tests -class '*XamlHygieneTests'` and the VM tests for any command you added; fix and re-run until green.
 3. The PR lists each Default rule you deviated from, and why.

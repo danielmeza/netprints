@@ -5,19 +5,54 @@
       "id": 1,
       "prompt": "Add a Rename dialog for event graphs in the NetPrints editor. It opens with the current name in a text box that already has focus with all its text selected; Enter or OK accepts and returns the new name; Escape or Cancel closes it and returns null. Write the view (.axaml and .axaml.cs), the view model and a unit test for the view model.",
       "expected_output": "A DialogVM<string>-based VM with RequestClose, DialogCloseBehavior on the Window, prebuilt focus/select-all behaviors, no event handlers in XAML, AutomationIds constants, VM test.",
-      "files": []
+      "files": [],
+      "assertions": [
+        "The VM derives from DialogVM<string> and closes through RequestClose",
+        "DialogCloseBehavior on the Window, not code-behind Close()",
+        "Focus and select-all use prebuilt behaviors, not Focus()/SelectAll() in code-behind",
+        "No event handlers in the XAML",
+        "AutomationIds constants for the named controls",
+        "A unit test covers the view model"
+      ]
     },
     {
       "id": 2,
       "prompt": "In the class editor window's Output pane (ClassEditorWindow), make the output follow new lines as they arrive, add an icon-only 'Clear output' button, and bind Ctrl+L to the same action. Write the XAML and view-model changes plus tests.",
-      "expected_output": "AutoScrollToBottomBehavior (no ScrollToEnd in code-behind), a [RelayCommand] Clear with a unit test, icon button with AutomationProperties.Name and an AutomationIds constant, KeyBinding Ctrl+L to the same command.",
-      "files": []
+      "expected_output": "Reuses the existing ClearOutputCommand and Clear button in ClassEditorWindow.axaml (no new command). The output text is wrapped in a ScrollViewer carrying AutoScrollToBottomBehavior (the behavior does nothing on a TextBox), no ScrollToEnd in code-behind. Adds KeyBinding Gesture=\"Ctrl+L\" bound to the same command, and makes the button icon-only with AutomationProperties.Name.",
+      "files": [],
+      "assertions": [
+        "Reuses ClearOutputCommand; no new Clear command",
+        "The output text sits inside a ScrollViewer that carries AutoScrollToBottomBehavior",
+        "AutoScrollToBottomBehavior is not attached to a TextBox",
+        "No ScrollToEnd call in code-behind",
+        "KeyBinding Gesture=\"Ctrl+L\" is bound to the same ClearOutputCommand",
+        "The Clear button is icon-only and has AutomationProperties.Name"
+      ]
     },
     {
       "id": 3,
-      "prompt": "Let users reorder the methods in the class editor's method list by dragging them. Propose the XAML, view-model and package changes needed.",
-      "expected_output": "Uses a Draggable-package reorder behavior (or a context drag/drop pair) and states that Xaml.Behaviors.Interactions.Draggable must be added to Directory.Packages.props and the Editor csproj; never the Xaml.Behaviors.Avalonia meta package; reorder decision in a VM command with a test.",
-      "files": []
+      "prompt": "Let users reorder the methods in the class editor's method list by dragging them. Propose the XAML and view-model changes needed.",
+      "expected_output": "ContextDragBehavior on a grip separate from the method name (the name is already dragged onto the graph), plus ContextDropBehavior with a DropHandlerBase subclass whose handler calls one undoable VM Move... command. The command has a unit test. No package change.",
+      "files": [],
+      "assertions": [
+        "No reference to Xaml.Behaviors.Interactions.Draggable",
+        "No ListReorderDragBehavior or ItemDragBehavior",
+        "ContextDragBehavior starts the drag from a grip separate from the name, which is already dragged onto the graph",
+        "ContextDropBehavior uses a DropHandlerBase subclass whose handler calls a VM command",
+        "The Move command is undoable and has a unit test"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Let the user copy the selected node's name with Ctrl+C.",
+      "expected_output": "A VM command that calls IClipboardService, bound with a KeyBinding Gesture=\"Ctrl+C\". No SetClipboardTextAction and no clipboard behavior (references/avoid.md).",
+      "files": [],
+      "assertions": [
+        "A VM command calls IClipboardService to set the text",
+        "A KeyBinding with Gesture Ctrl+C is bound to that command",
+        "No SetClipboardTextAction or other clipboard behavior in XAML",
+        "No clipboard call in code-behind"
+      ]
     }
   ]
 }

@@ -8,19 +8,25 @@ using System.Reflection.PortableExecutable;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 
+const string Usage = "usage: dotnet run behavior-props.cs -- <TypeName>   e.g. ExecuteCommandOnKeyDownBehavior";
+if (args is ["--help" or "-h"])
+{
+    Console.WriteLine(Usage);
+    return 0;
+}
 if (args.Length != 1)
 {
-    Console.Error.WriteLine("usage: dotnet run behavior-props.cs -- <TypeName>");
+    Console.Error.WriteLine(Usage);
     return 2;
 }
 
 var cache = Environment.GetEnvironmentVariable("NUGET_PACKAGES")
     ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nuget", "packages");
 var version = FindPinnedVersion() ?? LatestCachedVersion(cache);
-if (version is null)
+if (version is null || !Directory.Exists(Path.Combine(cache, "xaml.behaviors.interactions", version)))
 {
-    Console.Error.WriteLine($"No Xaml.Behaviors packages found under {cache}; run a restore first.");
-    return 1;
+    Console.Error.WriteLine($"Xaml.Behaviors {version ?? "(any version)"} isn't in the NuGet cache ({cache}). Run `dotnet restore` first.");
+    return 3;
 }
 
 var types = new Dictionary<string, TypeEntry>(StringComparer.Ordinal);
@@ -37,7 +43,8 @@ var match = types.Values.Where(t => t.Name.Equals(args[0], StringComparison.Ordi
 if (match.Count == 0)
 {
     var similar = types.Values.Where(t => t.Name.Contains(args[0], StringComparison.OrdinalIgnoreCase)).Select(t => t.Name).Distinct().Order().Take(20);
-    Console.WriteLine($"No type named {args[0]} in Xaml.Behaviors {version}. Similar: {string.Join(", ", similar)}");
+    var hint = similar.ToList();
+    Console.Error.WriteLine($"No type named {args[0]} in Xaml.Behaviors {version}." + (hint.Count > 0 ? $" Similar: {string.Join(", ", hint)}" : ""));
     return 1;
 }
 
@@ -79,7 +86,8 @@ static string? LatestCachedVersion(string cache)
         : null;
 }
 
-static string Display(string metadataName) => Regex.Replace(metadataName, "`(\\d+)", m => m.Groups[1].Value == "1" ? "<T>" : "<...>");
+static string Display(string metadataName) =>
+    Regex.Replace(Regex.Replace(metadataName, "`\\d+(?=<)", ""), "`(\\d+)", m => m.Groups[1].Value == "1" ? "<T>" : "<...>");
 
 static void Index(string dll, Dictionary<string, TypeEntry> types)
 {
