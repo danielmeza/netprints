@@ -530,12 +530,12 @@ SC-013.
 
 ### Batch F4 — model: haiku — T096–T098 — 3 units
 
-- [ ] T096 [P] [US4] New `docs/guide/git.md`: CI checks (`format --check`, `regen --check`), `show`, `git-install`
+- [x] T096 [P] [US4] New `docs/guide/git.md`: CI checks (`format --check`, `regen --check`), `show`, `git-install`
   (options, local tools, uninstall), the merge driver's behaviour and limits (web merges, generated files), and
   SchemaStore (pending owner submission).
-- [ ] T097 [P] [US4] `docs/guide/graph-format.md` (link the git guide, the checks and the schema's SchemaStore status) and
+- [x] T097 [P] [US4] `docs/guide/graph-format.md` (link the git guide, the checks and the schema's SchemaStore status) and
   `docs/guide/projects.md` ("regenerated, never hand-merged": mention the driver and `regen`).
-- [ ] T098 [US4] Whole suite and `scripts/build-docs.sh`; Checkpoint F report in
+- [x] T098 [US4] Whole suite and `scripts/build-docs.sh`; Checkpoint F report in
   `specs/004-catalog-cli/implementation-notes.md`; commit. **Checkpoint F** (SC-001 complete: all nine commands; SC-002 format part, SC-009,
   SC-010).
 

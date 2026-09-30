@@ -606,4 +606,29 @@ All 15 Review E findings are handled: R1, R2, R11, R12, R13 in 7dbd970; R9, R10 
 - **Help**: `git-install --help` is not in `CliHelpExamplesTests` (its examples have no repository path, and that test requires at least one).
 - **Suite**: full Release run 1603 total, 10 skipped, 0 failed after the fix (Cli.Tests 18 new tests); `dotnet format --verify-no-changes` clean.
 
+### Batch F4 (T096–T098, documentation and checkpoint)
+
+- **T096 (git.md)**: new guide covering `format --check`, `generate --check` (with `regen --check` alias), `show` summary, `git-install` (local/global, `--merge`, `--command`, `--uninstall`), merge driver behaviour (three-way merge, fallback with markers, exit codes), and SchemaStore (entry prepared, submission is owner action). The guide links to cli.md for detailed command reference; broken-anchor links (em-dash characters) were removed to avoid build warnings.
+- **T097 (graph-format.md and projects.md)**: graph-format.md adds "Version control" section linking to git.md for `show`, merge driver, and SchemaStore (pending); projects.md drops hardcoded `Version="0.1.0"` on `NetPrints.Sdk` package reference and uses `<version>` placeholder (matching install.md style); generated code section now mentions merge driver and `regen --check` CI usage.
+- **T098 (docs build, suite run, checkpoint)**: `scripts/build-docs.sh` succeeded with 6 docfx warnings (duplicate source file entries in .csproj, pre-existing) and 0 broken links after fixing fragment links in git.md. Tests: 1603 total (Release, all projects including E2E Desktop), 1593 passed, 10 skipped, 0 failed. E2E separately (Release, `NETPRINTS_E2E=1 --fail-skips on`): 9 passed, 0 skipped. Full suite completed in 4m 47s+2m 34s. `dotnet format --verify-no-changes` clean.
+
+**Evidence**:
+
+- **SC-001** (all nine commands): commands.cs files (`build`, `run`, `generate`, `migrate`, `catalog`, `format`, `show`, `merge`, `git-install`) exist and are registered in `CliCommandCatalog.All`. CliHelpExamplesTests (55 items) validates `--help`, `-h`, `--version` exit 0 for all commands and top-level. Full CLI.Tests cover each command (BuildCommandTests, RunCommandTests, GenerateCommandTests, MigrateCommandTests, CatalogCommandTests, FormatCommandTests, GitInstallCommandTests, Git/GraphMergerTests, Git/GraphSummaryTests).
+
+- **SC-002** (format part): FormatCommandTests validates `--check` exit 1 (non-canonical), rewrite canonical, `--check` exit 0 (canonical), invalid JSON unreadable, directory recursion skipping `bin`/`obj`, bad paths exit 2. E2E: `netprints format --check samples` passes (no changes). CI job: `format --check samples` passes as part of "Graph checks" step (git diff b7c1af2).
+
+- **SC-009** (merge driver): GraphMergerTests (GI-T03–GI-T08, GI-T12, 8 cases) covers clean merges (both sides add nodes, merged identity + layout ours-wins), conflict cases (pin changed differently, node deleted vs modified, two sources into one data input), fallback to text merge, exit codes 0 (clean) and 1 (conflict). `expected` fixtures verify canonical bytes for clean cases. E2E (`GitDriversEndToEndTests`): two branches merge through `git merge` driver with 0 conflicts, plain git on same history reports conflicts (contract baseline).
+
+- **SC-010** (git-install idempotent): GitInstallCommandTests (11 tests) covers install local/global, `--merge`, `--command`, idempotent second run (no changes), `--uninstall`, conflicting line rejected, outside repo exit 2. E2E validates install writes config keys and attributes line, second run reports `already installed:` and writes 0 files, output identical (lines 605-606, implementation-notes.md B3 narrative).
+
+**Checkpoint F**
+
+**Status**: ✓ Green
+
+- **Build**: `dotnet build -v q -tl:off --nologo`: 28 projects, 0 errors, 0 warnings.
+- **Tests** (Release): 1603 total; 1593 passed, 10 skipped (E2E Desktop tests without `NETPRINTS_E2E=1`, UITests headless driver limitations), 0 failed. E2E Desktop (Release, `NETPRINTS_E2E=1`): 9 passed, 0 skipped.
+- **Docs**: `scripts/build-docs.sh` succeeded. Docusaurus build: 0 broken links (fragment identifiers with em-dashes removed).
+- **Format**: `dotnet format --verify-no-changes` clean (Release, all projects).
+
 ## Governance proposals
