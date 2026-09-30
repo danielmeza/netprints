@@ -27,7 +27,7 @@ tests against the real desktop app) instead of manual verification.
 | | |
 |---|---|
 | **Editor** | Download a build from the [latest release](https://github.com/danielmeza/netprints/releases/latest) for Linux, Windows or macOS and unpack it. Requires the [.NET 10 SDK](https://dotnet.microsoft.com/download) to open and build projects. Builds are unsigned — see the [install guide](docs/guide/install.md) for the SmartScreen/*Open Anyway* steps and checksum verification. |
-| **Command-line tool** | `dotnet tool install -g NetPrints.Cli`, then `netprints -p MyApp.csproj -r` |
+| **Command-line tool** | `dotnet tool install -g NetPrints.Cli`, then `netprints build MyApp.csproj` or `netprints run MyApp.csproj` |
 | **In a project** | `dotnet add package NetPrints.Sdk` |
 
 See the [full install guide](docs/guide/install.md) for details on each route, the SDK/runtime

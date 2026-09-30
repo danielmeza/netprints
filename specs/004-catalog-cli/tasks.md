@@ -224,12 +224,12 @@ tracked API.
 
 ### Batch C4 — model: haiku — T032–T034 — 3 units
 
-- [ ] T032 [P] [US1] New `docs/guide/cli.md`: global options, each command with synopsis and example, the exit-code
+- [x] T032 [P] [US1] New `docs/guide/cli.md`: global options, each command with synopsis and example, the exit-code
   table, CI recipes (`regen --check`, `format --check`), the removed P1 flags (content: contracts/cli.md §1–§4).
-- [ ] T033 [P] [US1] Update `docs/guide/install.md` ("Command-line tool": new commands), `docs/guide/projects.md`
+- [x] T033 [P] [US1] Update `docs/guide/install.md` ("Command-line tool": new commands), `docs/guide/projects.md`
   (`netprints generate` / `regen --check`), the CLI section of `README.md`, and `.github/release-notes.md` (P1 flags
   removed, new commands, the `NetPrints.Catalog` and `NetPrints.Annotations` packages).
-- [ ] T034 [US1] Whole suite and `scripts/build-docs.sh`; Checkpoint C report in
+- [x] T034 [US1] Whole suite and `scripts/build-docs.sh`; Checkpoint C report in
   `specs/004-catalog-cli/implementation-notes.md`; commit. **Checkpoint C** (SC-001 for the commands so far; SC-002 run
   and regen parts).
 

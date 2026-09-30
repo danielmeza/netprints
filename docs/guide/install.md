@@ -22,11 +22,12 @@ editor evaluates and builds your `.csproj` with MSBuild, the same way `dotnet bu
 
 ```bash
 dotnet tool install -g NetPrints.Cli
-netprints -p MyApp.csproj -r
+netprints build MyApp.csproj
+netprints run MyApp.csproj
 ```
 
-`-r` builds and runs the project after compiling the graph; drop it to only compile. Requires the
-.NET 10 SDK for the same reason as the editor.
+`netprints build` compiles the graph to C# and builds the project. `netprints run` does the same and then runs the program.
+See the [command-line guide](cli.md) for all commands and options. Requires the .NET 10 SDK for the same reason as the editor.
 
 ## In a project
 

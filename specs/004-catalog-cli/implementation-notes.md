@@ -170,4 +170,27 @@ Heads-up for sub-phases D/E: any netstandard2.0 dependency of the generator must
 
 Deviations from the task: none of the marked types was made internal (finding 2, reason above). Finding 6 has no red run of its own: its test needs the new overload, and the old blanket list could never fail it. Findings 7 and 8 were shown red by the same probe (its `GlobalAnalyzerConfigFiles`, `EditorConfigFiles` and `<Analyzer Remove>` items passed the old gates).
 
+### Checkpoint C
+
+**Status**: ✓ Green
+
+**Build**: Solution builds with 0 warnings (Release mode).
+- `dotnet build -c Release -v q -tl:off --nologo`: 23 projects, 0 errors, 0 warnings.
+
+**Test Suite**:
+- Main suite (Release): 1087 tests, 1077 passed, 0 failed, 10 skipped (5m 04s)
+- E2E (`NETPRINTS_E2E=1`, `--fail-skips on`): 9 tests, 9 passed, 0 failed, 0 skipped (2m 37s)
+
+**CI**: Green; PR #9 awaits final review (T035).
+
+**Documentation**: New `docs/guide/cli.md` with global options, all four commands, exit codes, CI recipes, and deprecated P1 flags. Updated `docs/guide/install.md`, `docs/guide/projects.md`, `README.md`, and `.github/release-notes.md`.
+
+**SC-001 status (command coverage)**: ✓ Four of nine commands shipped and documented (`build`, `run`, `generate`/`regen`, `migrate`). Full coverage deferred to Checkpoint F (T098).
+
+**SC-002 status (run and regen parts)**: ✓ Closed.
+- T026: `run` command and CI step `netprints run samples/HelloWorld` (green)
+- T030: `generate --check` CI step (green)
+
+**Open items**: None. C1–C3 deferred items were closed: C2's extension folder wiring (closed in C3).
+
 ## Governance proposals

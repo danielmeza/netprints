@@ -5,6 +5,10 @@ shipped unmarked in 0.1.1. Code that implements or references them, or builds a 
 lists, gets error `NPXE0003` until the project opts in (`<NoWarn>$(NoWarn);NPXE0003</NoWarn>`). See
 [API stability](https://danielmeza.github.io/netprints/guide/extensions#api-stability).
 
+**New:** Command-line tool `netprints` (package `NetPrints.Cli`) with `build`, `run`, `generate` (`regen`), and `migrate` commands. The `--version` flag and `--help` documentation are included. The tool replaces the `0.1` flags `-p` / `--project-path` and `-r` / `--run` with dedicated commands.
+
+**New:** `NetPrints.Catalog` (experimental) and `NetPrints.Annotations` (experimental) packages for graph catalogs and source annotations (preview, not yet documented).
+
 ## Downloads
 
 | Platform | File |

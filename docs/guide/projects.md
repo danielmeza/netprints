@@ -46,6 +46,16 @@ A build only regenerates a `.netpc.g.cs` file when its graph (or the generator, 
 or a referenced extension's manifest) actually changed; an up-to-date build does nothing (MSBuild
 reports the generate target as skipped).
 
+To check if generated code is current without building, use:
+
+```bash
+netprints generate --check
+# or the alias
+netprints regen --check
+```
+
+This exits 0 if all generated files are up to date, or 1 if any are stale or missing.
+
 ## Editing outside the editor
 
 Because the graph is text and the generated code is committed, a lot of a NetPrints project can be
