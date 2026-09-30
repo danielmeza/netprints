@@ -475,7 +475,7 @@ SC-013.
 
 ### Batch E-R — model: opus — T082 (sub-phase review)
 
-- [ ] T082 [US3] Review sub-phase E: an Opus reviewer who did not implement it reviews the whole diff of batches E1–E5
+- [x] T082 [US3] Review sub-phase E: an Opus reviewer who did not implement it reviews the whole diff of batches E1–E5
   (from the commit before the first batch to HEAD) — user story US3 end to end against spec.md, contracts/annotations.md, the constitution and plan.md's standing constraints —
   and runs the independent test of the phase; findings (severity, file:line, fix) go to the PR as review comments and to
   `specs/004-catalog-cli/implementation-notes.md` under "Review E". No code changes in this task.

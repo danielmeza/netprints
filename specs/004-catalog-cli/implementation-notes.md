@@ -511,4 +511,37 @@ Decisions:
 
 Red/green: T079 and T080 are pure documentation/package content (no tests changed); no red phase. Packages built and verified locally.
 
+### Review E (T082, Opus): PR #9 review 5369187090
+
+Review: https://github.com/danielmeza/netprints/pull/9#pullrequestreview-5369187090 (`35339b8..c798fab`).
+
+Verdict: Checkpoint E accepted with a fix batch; no high-severity findings (4 medium, 11 low). Independent run: Release build 0 warnings, Catalog.Tests 336/336, full solution 1539 total, 1529 passed, 0 failed, 10 skipped; `pack-local.sh` and `verify-packages.sh` pass.
+
+Findings: E-R1 medium (help links 404), E-R2 medium (own catalog has no documentation without `GenerateDocumentationFile`), E-R3 medium (guide "Selecting a profile" wrong), E-R4 medium (guide lacks `NetPrintsCatalog`, accessors, reference documentation), E-R5 low (guide claims node hints are used), E-R6 low (Annotations README: no install snippet, wrong `NetPrintsCatalog`), E-R7 low (Catalog README overstates, snippet does not compile), E-R8 low (`verify-packages.sh` does not check the shipped README), E-R9 low (missing reference file logs misleading 1014, some IO failures fail the reload), E-R10 low (no test that an extension catalog wins over an embedded one), E-R11 low (accessor names unchecked), E-R12 low (generator keeps all reference XML text), E-R13 low (`ref/` to `lib/` fallback neither built nor removed from spec), E-R14 low (SC-003 `annotated` built leg is not an MSBuild build), E-R15 low (type-scoped search still offers unannotated members).
+
+Assignment: E-F1: R1, R2, R11, R12, R13. E-F2: R9, R10, R14, and the JSON source-gen cleanup. E-F3: R3-R8, R15.
+
+Rulings on the known items:
+1. Newer-schema catalogs on the extension side covered only by the docs: accepted. An additive `CatalogLoader.TryLoadFile(path, logger)` would cost nothing now (nothing shipped) but is optional, not a finding.
+2. Type-scoped queries still list unannotated members: matches contracts/annotations.md section 6 and the P1 `ReflectionProvider`; US3 scenario 4 holds for the type-less search. Document now (R15), decide in a follow-up task; extension catalogs behave the same.
+3. AN-T12 written after the code and E4's newer-schema red masked by a compile error: accepted (T078 did not ask for test first, no production change behind AN-T12; the newer-schema test discriminates by inspection).
+4. The D-R3 fix: verified (`byte[]` initializers, block-scoped namespaces, `LargeCatalogEmitTests` at C# 7.3, round-trip test).
+5. Items deferred from D: `FirstOfEachId`/NPC103 done and tested; newer schema done for embedded catalogs (log 1014), docs only for extensions; help links set but dead (R1); ref/lib edge case see R13.
+6. The `local-packages/.gitkeep` deletion: neither script removes it; swept into 927d3a1 by a broad stage, fixed by c798fab. No code finding.
+7. The `eng/PackageReadme.targets` change: works; the angle-bracket constraint comes from `verify-packages.sh:76` (grep over the packed README), not from nuget.org; `verify-packages.sh` does not check which README ships (R8); the Annotations README lost its install snippet (R6).
+8. Accuracy of the guide: the optional-annotation note must stay; the Annotations section is 538 words (not about 2250); claims the code does not back are R3, R4, R5 and R15; no bloat to cut.
+
+### Batch E-F1 (T083 part 1: R1, R2, R11, R12, R13)
+
+Commit 7dbd970.
+
+Decisions:
+- **R1**: `GeneratorDiagnostics.HelpLink`, both package READMEs and contract section 4 use `https://danielmeza.github.io/netprints/guide/catalogs#diagnostics` (no `/docs/`, no `.html`). `DiagnosticsTests` now maps the descriptor's link to `docs/guide/catalogs.md` and its `## Diagnostics` heading, and checks every `danielmeza.github.io/netprints/` link of both READMEs against an existing docs page.
+- **R2**: new NPC007 (warning, next free id), reported when an annotated library's compilation has `DocumentationMode.None`; the catalog is still emitted. It applies to the own catalog only (referenced catalogs read XML files). Added to contracts/catalog.md section 3, contracts/annotations.md sections 3 and 4, the guide's table and Annotations section, the Annotations README (no angle brackets, for `verify-packages.sh`), `AnalyzerReleases.Unshipped.md` and `PublicAPI.Unshipped.txt`. Not done: the MSBuild variant of AN-T10 without the property (slow pack and build); the driver test with `DocumentationMode.None` covers the behaviour, and the fixtures that MSBuild builds set the property.
+- **R11**: an invalid `AccessorName` is NPC003 (as an invalid `Id`, contract section 3) and fails that catalog; accessor names that collide, explicit or derived (`my-lib` and `my.lib`), are NPC006 and neither catalog is emitted (ids already reported as duplicates are not reported twice). `CatalogOutput` carries the accessor. The default name from the assembly name was not changed; the contract example now states the explicit `AccessorName`.
+- **R12**: `AdditionalFileModel` keeps the `AdditionalText` of a documentation file (equality by reference) and no text; `BuildReferenced` reads only the file named `<AssemblyName>.xml` of the requested assembly. Profile files still keep their text (small).
+- **R13**: E3's `ReferenceAssemblyPackageTests.TheCatalogIsFoundInTheResolvedReferenceAssembly` reads the resolved `ref/net10.0/AnnotatedRef.dll` directly and finds the catalog, so the attribute survives in a Roslyn reference assembly. Decision (coordinator): no `lib/` fallback. Spec edge case, contract section 6 and the AN-T15 row now say so; reference assemblies from tools that strip the attribute are unsupported.
+
+Red/green: red first (8 of 17 failed in `DiagnosticsTests` and `IncrementalTests`: help link mapping, NPC007 missing, invalid accessor, both collisions, both documentation-read counts). Green after the change (35 of 35 in the Generator namespace). Full Release suite: 1548 total, 1538 passed, 0 failed, 10 skipped (base 1539 plus 9 new); build 0 warnings; `dotnet format --verify-no-changes` clean.
+
 ## Governance proposals
