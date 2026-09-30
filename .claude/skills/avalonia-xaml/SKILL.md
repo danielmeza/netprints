@@ -1,6 +1,6 @@
 ---
 name: avalonia-xaml
-description: "Rules and examples for creating or editing Avalonia 12 .axaml views, code-behind (*.axaml.cs), styles, ControlThemes, resources, converters and Xaml.Behaviors in NetPrints (src/NetPrints.Editor, src/NetPrints.Desktop). Use it whenever a change touches *.axaml, *.axaml.cs, an IValueConverter, a Style/ControlTheme/theme resource, or a view model command bound from XAML."
+description: "Rules, worked examples and the full Xaml.Behaviors 12.0.7 catalog for Avalonia 12 UI work in NetPrints (src/NetPrints.Editor, src/NetPrints.Desktop): .axaml views, code-behind (*.axaml.cs), styles, ControlThemes, theme resources, converters, compiled bindings, commands, keyboard shortcuts, focus, dialogs, drag and drop, and behaviors/triggers/actions. Use it whenever a change touches *.axaml or *.axaml.cs, an IValueConverter, a Style/ControlTheme/theme resource, or a view model command bound from XAML, and whenever you would add or replace an event handler (Click, Tapped, KeyDown, SelectionChanged…) or a Focus()/Close() call in code-behind, even if the request doesn't mention XAML or behaviors."
 ---
 
 # Avalonia XAML in NetPrints
@@ -66,8 +66,8 @@ A view with no bindings, such as the code-behind dialogs, doesn't need `x:DataTy
 **D4. Keep reach-ups short.** Bind to the *nearest* stable owner: the `ListBox` or `ItemsControl` that holds the items, or
 the `UserControl`. Avoid `$parent[Window]` from inside a template, and don't use numeric hops such as `$parent[Border;2]`. Both break
 when the layout is refactored. Better options, in order: (1) the item VM exposes the command itself; (2) `$parent[ItemsHost]`;
-(3) restructure so that no reach-up is needed. For example, the inspectors in `ClassEditorWindow` read
-`$parent[Window]...ShowVariableInspector` only because their DataContext is overridden. Wrap them instead:
+(3) restructure so that no reach-up is needed. For example, an inspector whose DataContext is overridden would need
+`$parent[Window]...ShowVariableInspector`; `ClassEditorWindow` wraps it instead:
 ```xml
 <Panel IsVisible="{Binding ShowVariableInspector}">
   <edinspectors:VariableInspectorView DataContext="{Binding SelectedVariable}" />
@@ -122,53 +122,57 @@ before falling back to code-behind.
   write `ExecuteAsync(...).Forget()` from a view.
 - Test with `await vm.XCommand.ExecuteAsync(null)`. Don't block on the UI thread, and do heavy work off it.
 
-**D11. Use a prebuilt behavior before you write code-behind or a custom behavior.** The package is
-`Xaml.Behaviors.*` 12.x, and its types sit in the default `https://github.com/avaloniaui` xmlns, so no prefix is needed. Prefer the typed
-behaviors and triggers over `EventTriggerBehavior EventName="..."`, which uses reflection and is not trim-safe. The full generated
-catalog (383 types across 10 packages) is `behaviors-catalog.md`, next to this file; the table below is the short version.
+**D11. Use a prebuilt behavior before you write code-behind or a custom behavior.** NetPrints references
+`Xaml.Behaviors.Interactions`, `.Interactions.Custom` and `.Interactions.DragAndDrop` 12.0.7. Their types sit in the
+default `https://github.com/avaloniaui` xmlns, so they need no prefix. Don't add the `Xaml.Behaviors.Avalonia` meta
+package: its line stops at 11.3 (ADR-0007). Take the first option that fits:
 
-| For | Prefer the prebuilt |
-|---|---|
-| Tap / double-tap / right-tap runs a command | `ExecuteCommandOnTappedBehavior`, `ExecuteCommandOnDoubleTappedBehavior`, `ExecuteCommandOnRightTappedBehavior` |
-| A key in one control (Enter in a box, Down to the list) | `ExecuteCommandOnKeyDownBehavior Key="Enter"` (or `Gesture`), `KeyTrigger` + actions |
-| Several actions for one event | `KeyDownTrigger`, `DoubleTappedTrigger`, `ClickEventTrigger`… + `InvokeCommandAction`, `FocusControlAction`, `ChangePropertyAction` |
-| OK or Close button closes the dialog with no result | `ButtonClickEventTriggerBehavior` + `CloseWindowAction` |
-| Accept/cancel button closes the dialog *with* a result | no prebuilt fits (batch X2b): a VM deriving from `DialogVM<TResult>` (`NetPrints.Editor.Dialogs`) plus the custom `DialogCloseBehavior` (`NetPrints.Editor.Behaviors`) below |
-| Focus on open, show or click | `FocusOnAttachedToVisualTreeBehavior`, `FocusOnVisibleBehavior`, `FocusControlAction`, `FocusSelectedItemBehavior` |
-| Select all or commit on Enter in text boxes | `TextBoxSelectAllOnGotFocusBehavior`, `LoseFocusOnEnterBehavior` |
-| Drag an item VM from a list onto a target | `ContextDragBehavior Context="{Binding}"` + `ContextDropBehavior Handler=...` (`DropHandlerBase`) |
-| Reordering a list by drag | `ListReorderDragBehavior`, `ItemDragBehavior`, `AutoScrollDuringDragBehavior` |
-| Lifecycle (Loaded, DataContext changed, theme changed) | `LoadedTrigger`, `DataContextChangedTrigger`, `ActualThemeVariantChangedTrigger` |
-| Follow a growing log or list | `AutoScrollToBottomBehavior` |
-| Popups and flyouts | `PopupOpenedTrigger`, `HideFlyoutAction`, `ButtonHideFlyoutOnClickBehavior` (canvas popups stay `CanvasPopup`, per ADR-0004) |
-| One event, one command, no typed behavior fits | `EventTriggerBehavior EventName="..."` + `InvokeCommandAction Command="..." CommandParameter="{Binding}"` (reflection-based; prefer a typed behavior above when one exists) |
+1. **No behavior at all:** `Command` on the control, `KeyBinding` or `HotKey` (D9), or a two-way binding whose VM
+   `On<Name>Changed` hook reacts.
+2. **A typed behavior for the event**, such as `ExecuteCommandOnTappedBehavior` or
+   `ExecuteCommandOnKeyDownBehavior Key="Enter"`.
+3. **A typed trigger with several actions**, such as `KeyTrigger` + `InvokeCommandAction` + `FocusControlAction`.
+4. **`EventTriggerBehavior EventName="..."` + `InvokeCommandAction`**, only when no typed trigger covers the event. It
+   finds the event through reflection, so it isn't trim-safe and a typo fails only at runtime.
+5. **A custom `StyledElementBehavior<T>`** in `NetPrints.Editor/Behaviors/` with a headless test, only for reusable
+   view mechanics that no prebuilt covers. Today that is only `DialogCloseBehavior`.
+6. **Code-behind**, only for gesture math and interop (D1).
 
-Don't use the behaviors that bypass the VM or its services. These are the clipboard, file-system, storage-picker, HTTP, `SetViewModelProperty`,
-`ToggleViewModelBoolean`, `ConditionalAction`/`SwitchCaseAction`, `Collections`, `Scripting` and dialog behaviors. The
-decisions and side effects they perform belong in commands and services (`IClipboardService`, `IFilePickerService`, `IWindowService`).
-Write a custom behavior (derive from `StyledElementBehavior<T>`) only when no prebuilt one fits and the logic is reusable view
-mechanics. Keep it in `NetPrints.Editor/Behaviors/` and give it a headless test.
-
-**Dialog-close-with-result pattern (batch X2b).** `Window.Close(object? dialogResult)` needs a value, and no
-prebuilt behavior can hand it one from a VM, so this is the one case D11 keeps a custom behavior for:
-`SelectMethodDialog`, `SelectTypeDialog` and `TrustDialog` each have a small VM deriving from
-`DialogVM<TResult>`, whose accept/cancel `[RelayCommand]`s call `RequestClose(result)` (sets `Result`,
-raises `IDialogCloseSource.CloseRequested`). `DialogCloseBehavior`, attached once on the dialog `Window`,
-watches its own (auto-synced) `DataContext` for `IDialogCloseSource` and calls `window.Close(source.Result)`.
-The `Window` subclass still implements `IDialogResult<T>` by forwarding `Result` to the VM, so
-`EditorDialogs`'s existing no-owner fallback and any test reading `dialog.Result` keep working unchanged.
-A dialog that closes with no result (`ErrorDialog`, `IssuesDialog`, `ReferencesDialog`) does not need this:
-`ButtonClickEventTriggerBehavior` + `CloseWindowAction` (row above) is enough.
+The typical conversion replaces a handler with a behavior, and the decision moves into a VM command:
 ```xml
-<ListBox.ItemTemplate><DataTemplate x:DataType="edevents:EventGraphVM">
-  <TextBlock Text="{Binding Name}">
-    <Interaction.Behaviors>
-      <ExecuteCommandOnDoubleTappedBehavior CommandParameter="{Binding}"
-        Command="{Binding $parent[ListBox].((edclasseditor:ClassEditorVM)DataContext).OpenEventGraphCommand}" />
-    </Interaction.Behaviors>
-  </TextBlock>
-</DataTemplate></ListBox.ItemTemplate>
+<!-- Before: KeyDown="OnSearchKeyDown", and a handler that checks e.Key == Key.Enter and calls the VM. -->
+<!-- After (src/NetPrints.Editor/Search/NodeSearchView.axaml): -->
+<TextBox Text="{Binding SearchText}">
+  <Interaction.Behaviors>
+    <ExecuteCommandOnKeyDownBehavior Key="Enter" Command="{Binding SelectFirstCommand}" />
+  </Interaction.Behaviors>
+</TextBox>
 ```
+
+**Find the behavior by job.** The catalog of all 383 types is split by job under `references/behaviors/`. Each file
+starts with worked recipes taken from real repo XAML, followed by the catalog tables for that job. Open only the
+file for your job; `references/behaviors/README.md` is the index and explains how to check property names.
+
+| For | Prefer | Recipes and catalog |
+|---|---|---|
+| Tap / double-tap / right-tap runs a command | `ExecuteCommandOnTappedBehavior`, `…OnDoubleTappedBehavior`, `…OnRightTappedBehavior` | `commands-and-keys.md` |
+| A key in one control (Enter in a box) | `ExecuteCommandOnKeyDownBehavior Key="Enter"` (or `Gesture`); `EventRoutingStrategy="Tunnel"` when the control swallows the key | `commands-and-keys.md` |
+| Commit a text box on Enter | `LoseFocusOnEnterBehavior` | `commands-and-keys.md` |
+| Several actions for one event or key | `KeyTrigger`, `KeyDownTrigger`, `DoubleTappedTrigger`, `ClickEventTrigger`… + `InvokeCommandAction`, `FocusControlAction`, `ChangePropertyAction` | `triggers-and-actions.md` |
+| Lifecycle (Loaded, DataContext changed, theme changed) | `LoadedTrigger`, `DataContextChangedTrigger`, `ActualThemeVariantChangedTrigger` | `triggers-and-actions.md` |
+| One event, one command, no typed behavior fits | `EventTriggerBehavior EventName="..."` + `InvokeCommandAction` (option 4) | `triggers-and-actions.md` |
+| OK or Close closes the dialog with no result | `ButtonClickEventTriggerBehavior` + `CloseWindowAction` | `dialogs-windows-popups.md` |
+| Accept/cancel closes the dialog *with* a result | a VM deriving from `DialogVM<TResult>` + the custom `edb:DialogCloseBehavior` on the `Window` | `dialogs-windows-popups.md` |
+| Popups and flyouts | `PopupOpenedTrigger`, `HideFlyoutAction`, `ButtonHideFlyoutOnClickBehavior`; canvas popups stay `CanvasPopup` (ADR-0004) | `dialogs-windows-popups.md` |
+| Focus on open, show or click; select all | `FocusOnAttachedToVisualTreeBehavior`, `FocusOnVisibleBehavior`, `FocusSelectedItemBehavior`, `TextBoxSelectAllOnGotFocusBehavior` | `focus-and-text.md` |
+| Follow a growing log or list | `AutoScrollToBottomBehavior` | `lists-and-scrolling.md` |
+| Drag an item VM from a list onto a target | `ContextDragBehavior Context="{Binding}"` + `ContextDropBehavior Handler=...` (`DropHandlerBase`) | `drag-and-drop.md` |
+| Reorder a list by drag | `ListReorderDragBehavior`, `ItemDragBehavior`; needs the `Xaml.Behaviors.Interactions.Draggable` package, which isn't referenced yet | `drag-and-drop.md` |
+
+Don't use the behaviors that bypass the VM or its services: clipboard, file system, storage pickers, HTTP,
+`SetViewModelProperty`, `ToggleViewModelBoolean`, `ConditionalAction`/`SwitchCaseAction`, `Collections`, `Scripting`
+and the dialog behaviors. Their decisions and side effects belong in commands and services (`IClipboardService`,
+`IFilePickerService`, `IWindowService`); `avoid.md` lists them all.
 
 **D12. Lists that can grow virtualize.** `ListBox` virtualizes by default, but a plain `ItemsControl` does not. For a list that can grow, either
 use `ListBox` or give the `ItemsControl` an `ItemsPanel` of `VirtualizingStackPanel`. Never put a virtualizing list inside
@@ -187,10 +191,10 @@ Design VMs live beside the view and are never used at runtime. Also use `Design.
 
 **D15. Use `x:Name` only when something reads it.** That means code-behind, a `#Name` binding, or a behavior's `TargetControl`. Names are
 PascalCase nouns with a role suffix (`SearchBox`, `ResultList`, `GraphEditor`). Tests find elements by AutomationId, not by name.
-Avalonia generates a field for each name, so an unused name is noise (for example `InputPins`, `NamespaceBox`, `ReferenceList`).
+Avalonia generates a field for each name, so an unused name is noise (for example `InputPins`, `ReferenceList`).
 
 **D16. Windows and popups go through the existing hosts.** Open dialogs through `IWindowService` and return results
-from a VM. The view should not compute them (`SelectTypeDialog.ResolveSelection` should move into a VM). Canvas overlays use
+from a VM, as `SelectTypeDialogVM.ResolveSelection` does; the view doesn't compute them. Canvas overlays use
 `CanvasPopup` (ADR-0004, which is already enforced).
 
 ## Consider
@@ -213,3 +217,10 @@ from a VM. The view should not compute them (`SelectTypeDialog.ResolveSelection`
 1. `dotnet build -v q -tl:off --nologo`. Compiled bindings report broken paths here.
 2. Run `XamlHygieneTests` and the VM tests for any command you added.
 3. The PR lists each Default rule you deviated from, and why.
+
+## Reference files
+
+Load these only when the change needs them.
+- `references/behaviors/README.md`: the index of the behavior catalog, the package list and how to check a
+  behavior's property names.
+- `references/behaviors/<job>.md`: recipes and catalog tables for one job, as routed by the D11 table.

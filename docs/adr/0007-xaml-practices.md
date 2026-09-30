@@ -36,10 +36,11 @@ The owner set three ground rules for any such policy:
     reason.
   - **Default** (D1-D16): follow it unless there's a reason not to, stated in the PR.
   - **Consider**: tips, not rules.
-  A sibling `behaviors-catalog.md` holds the full generated catalog of the 383 Xaml.Behaviors 12.0.7
-  types across the 10 packages, so the skill itself stays under the size a model reads comfortably;
-  the skill's D11 keeps only a short "for X, prefer Y" table plus the rule for when a prebuilt
-  behavior beats a custom one or code-behind (rule 3).
+  The full generated catalog of the 383 Xaml.Behaviors 12.0.7 types across the 10 packages lives in
+  `references/behaviors/`, split by job (commands and keys, triggers and actions, dialogs, focus,
+  lists, drag and drop, …) with worked recipes in each file, so a model loads only the file its change
+  needs; the skill's D11 keeps the order of preference, a "for X, prefer Y" table that routes to those
+  files, and the rule for when a prebuilt behavior beats a custom one or code-behind (rule 3).
 - **Package choice.** NetPrints references `Xaml.Behaviors.Interactions`,
   `Xaml.Behaviors.Interactions.Custom` and `Xaml.Behaviors.Interactions.DragAndDrop`, all at 12.0.7
   (the latest 12.x release; floor is Avalonia >= 12.0.5, repo runs 12.1.3). Not the
