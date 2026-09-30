@@ -1,10 +1,13 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Reactive.Linq;
+using NetPrints.Core;
 
 namespace NetPrints.Extensibility.Hosting;
 
 /// <summary>
 /// The channel used when no host is attached: open, silent, and it drops what is sent.
 /// </summary>
+[Experimental(ExperimentalApiIds.HostChannel, UrlFormat = ExperimentalApiIds.UrlFormat)]
 public sealed class NullHostChannel : IHostChannel
 {
     private NullHostChannel()

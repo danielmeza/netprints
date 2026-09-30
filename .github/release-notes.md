@@ -1,3 +1,10 @@
+## Unreleased
+
+**Breaking (source):** `IClassEmitter` and `IMemberEmitter` in `NetPrints.Core` are now `[Experimental("NPXE0003")]`; they
+shipped unmarked in 0.1.1. Code that implements or references them, or builds a `TranslationEnvironment` with emitter
+lists, gets error `NPXE0003` until the project opts in (`<NoWarn>$(NoWarn);NPXE0003</NoWarn>`). See
+[API stability](https://danielmeza.github.io/netprints/guide/extensions#api-stability).
+
 ## Downloads
 
 | Platform | File |

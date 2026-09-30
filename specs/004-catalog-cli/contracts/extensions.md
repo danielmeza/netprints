@@ -66,9 +66,11 @@ CancellationToken)`; `Task<IReadOnlyList<GeneratedFileResult>> GenerateAsync(str
   adding `PublicAPI.Shipped.txt` and `PublicAPI.Unshipped.txt` as `AdditionalFiles`.
 - Ids in `src/NetPrints.Core/ExperimentalApiIds.cs` (public, used by Core and Extensibility): `NPXE0001` host channel,
   `NPXE0002` settings, `NPXE0003` emitters, `NPXE0004` catalog engine/profiles; `UrlFormat`
-  `https://danielmeza.github.io/netprints/docs/guide/extensions#api-stability`. The shared
+  `https://danielmeza.github.io/netprints/guide/extensions#api-stability`. The shared
   `src/NetPrints.Catalog/Engine/ExperimentalApis.cs` re-declares `NPXE0004` internally because the generator, which
   compiles it, cannot reference Core (the one allowed duplicate, allowlisted in the literal gate).
+- The site serves `docs/` at its root (`routeBasePath: '/'`), so `UrlFormat` has no `/docs/` segment. Every public symbol
+  whose signature mentions an `[Experimental]` type carries the same id, and AP-T02 checks both.
 - Opt-in is per project and per id (ADR-0017): a project that uses an experimental API adds
   `<NetPrintsExperimentalOptIn Include="NPXE0003" />` items for only the ids it uses; `Directory.Build.targets` turns
   the items into `NoWarn` on one line, the only allowed `<NoWarn>`. No repo-wide opt-in, nothing inherited. A defining
@@ -96,5 +98,5 @@ CancellationToken)`; `Task<IReadOnlyList<GeneratedFileResult>> GenerateAsync(str
 | MX-T15 | `MultiExtension/ReloadTests` | `ExtensionHost` reload reuses contexts; `AssemblyLoadContext.All` count stable over 3 reloads |
 | MX-T16 | `MultiExtension/NativeDependencyTests` | `fx.native` loads and its native call returns a milestone > 0 (Linux; explicit skip reason elsewhere) |
 | AP-T01 | `Architecture/PublicApiTrackingTests` | Every tracked project references the analyzer and has both files starting `#nullable enable`; an in-test compilation with the analyzer and an undeclared public member reports RS0016 |
-| AP-T02 | `Architecture/ExperimentalApiTests` | For each `NPXE` id, an in-test external compilation using a marked API without opt-in reports that id as an error; with the id in `NoWarn` it compiles |
+| AP-T02 | `Architecture/ExperimentalApiTests` | For each `NPXE` id, an in-test external compilation using a marked API without opt-in reports that id as an error; with the id in `NoWarn` it compiles; `UrlFormat` maps to an existing `docs/**/*.md` page with an `## API stability` heading; every public symbol in Core and Extensibility whose signature mentions an `[Experimental]` type carries that id |
 | AP-T03 | `Core/SourceHygieneTests` | The only `<NoWarn>` in the repository is `Directory.Build.targets`' opt-in line; every `NetPrintsExperimentalOptIn` item is an id declared in `ExperimentalApiIds` (unknown or stale ids fail); no `#pragma warning disable NPXE*`; no `.editorconfig`/globalconfig severity entries for `NPXE` ids (ADR-0017) |

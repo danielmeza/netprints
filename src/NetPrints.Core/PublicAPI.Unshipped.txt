@@ -16,4 +16,16 @@ const NetPrints.Core.ExperimentalApiIds.CatalogProfiles = "NPXE0004" -> string!
 const NetPrints.Core.ExperimentalApiIds.Emitters = "NPXE0003" -> string!
 const NetPrints.Core.ExperimentalApiIds.HostChannel = "NPXE0001" -> string!
 const NetPrints.Core.ExperimentalApiIds.Settings = "NPXE0002" -> string!
-const NetPrints.Core.ExperimentalApiIds.UrlFormat = "https://danielmeza.github.io/netprints/docs/guide/extensions#api-stability" -> string!
+const NetPrints.Core.ExperimentalApiIds.UrlFormat = "https://danielmeza.github.io/netprints/guide/extensions#api-stability" -> string!
+*REMOVED*NetPrints.Translator.TranslationEnvironment.ClassEmitters.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Translator.IClassEmitter!>!
+*REMOVED*NetPrints.Translator.TranslationEnvironment.ClassEmitters.init -> void
+*REMOVED*NetPrints.Translator.TranslationEnvironment.Deconstruct(out NetPrints.Translator.NodeTranslatorRegistry! Nodes, out System.Collections.Generic.IReadOnlyList<NetPrints.Translator.IClassEmitter!>! ClassEmitters, out System.Collections.Generic.IReadOnlyList<NetPrints.Translator.IMemberEmitter!>! MemberEmitters) -> void
+*REMOVED*NetPrints.Translator.TranslationEnvironment.MemberEmitters.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Translator.IMemberEmitter!>!
+*REMOVED*NetPrints.Translator.TranslationEnvironment.MemberEmitters.init -> void
+*REMOVED*NetPrints.Translator.TranslationEnvironment.TranslationEnvironment(NetPrints.Translator.NodeTranslatorRegistry! Nodes, System.Collections.Generic.IReadOnlyList<NetPrints.Translator.IClassEmitter!>! ClassEmitters, System.Collections.Generic.IReadOnlyList<NetPrints.Translator.IMemberEmitter!>! MemberEmitters) -> void
+[NPXE0003]NetPrints.Translator.TranslationEnvironment.ClassEmitters.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Translator.IClassEmitter!>!
+[NPXE0003]NetPrints.Translator.TranslationEnvironment.ClassEmitters.init -> void
+[NPXE0003]NetPrints.Translator.TranslationEnvironment.MemberEmitters.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Translator.IMemberEmitter!>!
+[NPXE0003]NetPrints.Translator.TranslationEnvironment.MemberEmitters.init -> void
+[NPXE0003]NetPrints.Translator.TranslationEnvironment.TranslationEnvironment(NetPrints.Translator.NodeTranslatorRegistry! Nodes, System.Collections.Generic.IReadOnlyList<NetPrints.Translator.IClassEmitter!>! ClassEmitters, System.Collections.Generic.IReadOnlyList<NetPrints.Translator.IMemberEmitter!>! MemberEmitters) -> void
+[NPXE0003]NetPrints.Translator.TranslationEnvironment.Deconstruct(out NetPrints.Translator.NodeTranslatorRegistry! Nodes, out System.Collections.Generic.IReadOnlyList<NetPrints.Translator.IClassEmitter!>! ClassEmitters, out System.Collections.Generic.IReadOnlyList<NetPrints.Translator.IMemberEmitter!>! MemberEmitters) -> void

@@ -40,3 +40,15 @@ authors, who must opt in themselves.
 - Each dependency on unstable API is visible in its csproj and in review diffs.
 - Consuming projects carry a few extra lines.
 - Graduation cleanup is enforced by a test, so a stable API cannot keep a stale opt-in.
+- `IClassEmitter` and `IMemberEmitter` (and the emitter members of `TranslationEnvironment`) shipped unmarked in
+  `NetPrints.Core` 0.1.1. Marking them is a source break for consumers that use them: they now get `NPXE0003` until
+  they opt in. It is accepted because FR-045 needs every unstable API marked before the next release, and it is
+  announced in the guide's "API stability" section and the release notes.
+- Every public symbol whose signature mentions an `[Experimental]` type carries the same id (AP-T02 checks this by
+  reflection), so no unstable API is reachable through an unmarked one.
+- The in-test extension compiler (`ExtensionTestSupport.Compile`) takes the ids a test extension uses and passes them to
+  `WithSpecificDiagnosticOptions`. That is the compilation equivalent of an opt-in item, so a test extension opts in per
+  id like any consumer.
+- `Directory.Build.targets` fails the build when an opt-in item is not an `NPXE` id, so the item cannot carry other
+  diagnostics into `NoWarn`. The hygiene gates also reject `GlobalAnalyzerConfigFiles`, `EditorConfigFiles` and
+  `<Analyzer Remove>` items in build files, which could hide a diagnostic another way.

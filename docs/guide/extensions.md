@@ -114,10 +114,14 @@ disappear in a minor release.
 
 | Id | Covers |
 | --- | --- |
-| `NPXE0001` | The host channel: `IHostChannel`, `IHostChannelFactory`, `HostMessage`, `IExtensionBuilder.AddHostChannel`. |
-| `NPXE0002` | Extension settings: `ExtensionSettingsDescriptor`, `ISettingsStore`, `IExtensionBuilder.AddSettings`. |
-| `NPXE0003` | Class and member emitters: `IClassEmitter`, `IMemberEmitter`, `IExtensionBuilder.AddClassEmitter`, `IExtensionBuilder.AddMemberEmitter`. |
+| `NPXE0001` | The host channel: `IHostChannel`, `IHostChannelFactory`, `HostMessage`, `NullHostChannel`, `InMemoryHostChannel`, `IExtensionBuilder.AddHostChannel`, `ExtensionRegistry.HostChannels`, `ExtensionRegistry.FindHostChannel`. |
+| `NPXE0002` | Extension settings: `ExtensionSettingsDescriptor` and `ExtensionSettingsDescriptor<T>`, `ISettingsStore`, `JsonFileSettingsStore`, `NetPrintsSettings.Descriptor`, `IExtensionBuilder.AddSettings`, `ExtensionRegistry.Settings`. |
+| `NPXE0003` | Class and member emitters: `IClassEmitter`, `IMemberEmitter`, `IExtensionBuilder.AddClassEmitter`, `IExtensionBuilder.AddMemberEmitter`, the emitter lists of `ExtensionRegistry` and `TranslationEnvironment` (including its constructor). |
 | `NPXE0004` | The catalog engine and its profiles. |
+
+`IClassEmitter` and `IMemberEmitter` shipped without the attribute in `NetPrints.Core` 0.1.1. Code that
+implements or references them, or that builds a `TranslationEnvironment` with emitter lists, now needs
+`NPXE0003` when it moves to a newer `NetPrints.Core`.
 
 To opt in, list only the ids your extension uses:
 

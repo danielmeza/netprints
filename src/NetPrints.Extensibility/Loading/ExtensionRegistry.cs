@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization.Metadata;
 using Microsoft.Extensions.Logging;
 using NetPrints.Core;
@@ -75,11 +76,13 @@ public sealed class ExtensionRegistry : IAsyncDisposable
     /// <summary>
     /// The class emitters, in registry order.
     /// </summary>
+    [Experimental(ExperimentalApiIds.Emitters, UrlFormat = ExperimentalApiIds.UrlFormat)]
     public IReadOnlyList<IClassEmitter> ClassEmitters { get; }
 
     /// <summary>
     /// The member emitters, in registry order.
     /// </summary>
+    [Experimental(ExperimentalApiIds.Emitters, UrlFormat = ExperimentalApiIds.UrlFormat)]
     public IReadOnlyList<IMemberEmitter> MemberEmitters { get; }
 
     /// <summary>
@@ -105,11 +108,13 @@ public sealed class ExtensionRegistry : IAsyncDisposable
     /// <summary>
     /// The host channel factories, in registry order.
     /// </summary>
+    [Experimental(ExperimentalApiIds.HostChannel, UrlFormat = ExperimentalApiIds.UrlFormat)]
     public IReadOnlyList<IHostChannelFactory> HostChannels { get; }
 
     /// <summary>
     /// The settings sections extensions declared, in registry order.
     /// </summary>
+    [Experimental(ExperimentalApiIds.Settings, UrlFormat = ExperimentalApiIds.UrlFormat)]
     public IReadOnlyList<ExtensionSettingsDescriptor> Settings { get; }
 
     /// <summary>
@@ -139,6 +144,7 @@ public sealed class ExtensionRegistry : IAsyncDisposable
     /// </summary>
     /// <param name="id">The factory id.</param>
     /// <returns>The factory, or <see langword="null"/> when none has that id.</returns>
+    [Experimental(ExperimentalApiIds.HostChannel, UrlFormat = ExperimentalApiIds.UrlFormat)]
     public IHostChannelFactory? FindHostChannel(string id) => HostChannels.FirstOrDefault(factory => factory.Id == id);
 
     /// <summary>

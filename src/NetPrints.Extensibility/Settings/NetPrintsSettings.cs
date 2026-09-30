@@ -1,4 +1,6 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization;
+using NetPrints.Core;
 
 namespace NetPrints.Extensibility.Settings;
 
@@ -30,6 +32,7 @@ public sealed record NetPrintsSettings
     /// <summary>
     /// The descriptor of the built-in section.
     /// </summary>
+    [Experimental(ExperimentalApiIds.Settings, UrlFormat = ExperimentalApiIds.UrlFormat)]
     public static ExtensionSettingsDescriptor<NetPrintsSettings> Descriptor { get; } =
         new(SectionId, NetPrintsSettingsJsonContext.Default.NetPrintsSettings, Empty);
 }

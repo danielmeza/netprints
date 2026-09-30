@@ -1,5 +1,7 @@
 #nullable enable
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using NetPrints.Core;
 
 namespace NetPrints.Translator;
 
@@ -10,11 +12,26 @@ namespace NetPrints.Translator;
 /// <param name="Nodes">Node translators by node type.</param>
 /// <param name="ClassEmitters">Emitters that run once per translated type declaration.</param>
 /// <param name="MemberEmitters">Emitters that run once per translated member.</param>
+[method: Experimental(ExperimentalApiIds.Emitters, UrlFormat = ExperimentalApiIds.UrlFormat)]
 public sealed record TranslationEnvironment(
     NodeTranslatorRegistry Nodes,
-    IReadOnlyList<IClassEmitter> ClassEmitters,
-    IReadOnlyList<IMemberEmitter> MemberEmitters)
+    [property: Experimental(ExperimentalApiIds.Emitters, UrlFormat = ExperimentalApiIds.UrlFormat)] IReadOnlyList<IClassEmitter> ClassEmitters,
+    [property: Experimental(ExperimentalApiIds.Emitters, UrlFormat = ExperimentalApiIds.UrlFormat)] IReadOnlyList<IMemberEmitter> MemberEmitters)
 {
+    /// <summary>
+    /// Splits the environment into its parts.
+    /// </summary>
+    /// <param name="Nodes">Node translators by node type.</param>
+    /// <param name="ClassEmitters">Emitters that run once per translated type declaration.</param>
+    /// <param name="MemberEmitters">Emitters that run once per translated member.</param>
+    [Experimental(ExperimentalApiIds.Emitters, UrlFormat = ExperimentalApiIds.UrlFormat)]
+    public void Deconstruct(out NodeTranslatorRegistry Nodes, out IReadOnlyList<IClassEmitter> ClassEmitters, out IReadOnlyList<IMemberEmitter> MemberEmitters)
+    {
+        Nodes = this.Nodes;
+        ClassEmitters = this.ClassEmitters;
+        MemberEmitters = this.MemberEmitters;
+    }
+
     /// <summary>
     /// The built-in node translators and no emitters.
     /// </summary>

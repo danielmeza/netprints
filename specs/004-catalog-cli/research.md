@@ -449,7 +449,7 @@ fail the build through `TreatWarningsAsErrors`; no `.editorconfig` change.
 ## 23. `[Experimental]`
 
 **Decision**: `System.Diagnostics.CodeAnalysis.ExperimentalAttribute` with ids and `UrlFormat =
-"https://danielmeza.github.io/netprints/docs/guide/extensions#api-stability"`:
+"https://danielmeza.github.io/netprints/guide/extensions#api-stability"`:
 `NPXE0001` host channel (`IHostChannel`, `IHostChannelFactory`, `HostMessage`, `IExtensionBuilder.AddHostChannel`);
 `NPXE0002` extension settings (`ExtensionSettingsDescriptor`, `ISettingsStore`, `IExtensionBuilder.AddSettings`);
 `NPXE0003` class and member emitters (`IClassEmitter`, `IMemberEmitter`, `AddClassEmitter`, `AddMemberEmitter`);

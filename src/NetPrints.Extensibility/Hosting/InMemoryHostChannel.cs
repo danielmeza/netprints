@@ -1,4 +1,6 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Reactive.Subjects;
+using NetPrints.Core;
 
 namespace NetPrints.Extensibility.Hosting;
 
@@ -6,6 +8,7 @@ namespace NetPrints.Extensibility.Hosting;
 /// One end of an in-process channel pair, for tests and embedding (extension-points.md §6). What one end sends the
 /// other receives; disposing either end closes both.
 /// </summary>
+[Experimental(ExperimentalApiIds.HostChannel, UrlFormat = ExperimentalApiIds.UrlFormat)]
 public sealed class InMemoryHostChannel : IHostChannel
 {
     private readonly Subject<HostMessage> incoming = new();

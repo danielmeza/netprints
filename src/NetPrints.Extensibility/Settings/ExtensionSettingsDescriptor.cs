@@ -20,5 +20,6 @@ public abstract record ExtensionSettingsDescriptor(string ExtensionId, Type Valu
 /// <param name="ExtensionId">The extension id; the key of the section in the settings file.</param>
 /// <param name="TypeInfo">Source-generated JSON metadata for <typeparamref name="T"/>.</param>
 /// <param name="Default">The value used when the section is missing or invalid.</param>
+[Experimental(ExperimentalApiIds.Settings, UrlFormat = ExperimentalApiIds.UrlFormat)]
 public sealed record ExtensionSettingsDescriptor<T>(string ExtensionId, JsonTypeInfo<T> TypeInfo, T Default)
     : ExtensionSettingsDescriptor(ExtensionId, typeof(T));

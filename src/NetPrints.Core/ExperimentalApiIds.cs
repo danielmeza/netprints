@@ -19,5 +19,5 @@ public static class ExperimentalApiIds
     public const string CatalogProfiles = "NPXE0004";
 
     /// <summary>The guide section that explains the stability promise and how to opt in; the diagnostics link to it.</summary>
-    public const string UrlFormat = "https://danielmeza.github.io/netprints/docs/guide/extensions#api-stability";
+    public const string UrlFormat = "https://danielmeza.github.io/netprints/guide/extensions#api-stability";
 }
