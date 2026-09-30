@@ -1,0 +1,94 @@
+# Contract: extension coexistence, multi-extension suite and API tracking (P2)
+
+Implements FR-038–FR-045 (ADR-0010). Sources: `src/NetPrints.Extensibility/Loading/`, `src/*/PublicAPI.*.txt`,
+`Directory.Build.props`, `Directory.Build.targets`. Tests: `tests/NetPrints.Core.Tests/Extensibility/MultiExtension/`,
+`tests/NetPrints.Core.Tests/Architecture/`, fixtures in `tests/Fixtures/Extensions/`.
+
+## 1. Loader rules
+
+`ExtensionLoadContext.Load(AssemblyName name)`:
+
+1. `HostAssemblies.IsProvided(name.Name)` → return `null` (the Default context supplies it). Provided =
+   in `TRUSTED_PLATFORM_ASSEMBLIES`, or an assembly with that simple name is loaded in
+   `AssemblyLoadContext.Default`, or the name starts with `Microsoft.Build` (MSBuildLocator family).
+2. For each dependency context in `Dependencies` (declared `dependsOn` order), depth-first through their own
+   dependencies, each context visited once: if it has loaded an assembly with that name, return it; else if its
+   resolver resolves the name, load it into *that* context and return it.
+3. Own resolver → `LoadFromAssemblyPath`; else `null`.
+
+Warnings (`NetPrints.Extensibility.Log`, `src/NetPrints.Extensibility/Log.cs`): `HostAssemblyShadowed(extensionId, assemblyName, path)` when an
+extension folder contains a file whose name is a provided host assembly; `DependencyAssemblyShadowed(extensionId,
+assemblyName, dependencyId)` when a folder contains a copy of an assembly a dependency provides. Checked once per
+extension at load.
+
+`ExtensionLoader` creates contexts in topological order and passes each its dependency contexts;
+`ExtensionLoadContextCache` keys stay manifest paths.
+
+## 2. Catalog profile contribution
+
+`IExtensionBuilder AddCatalogProfile(CatalogProfile profile)` (`[Experimental("NPXE0004")]`);
+`ExtensionRegistry.CatalogProfiles : IReadOnlyList<CatalogProfile>` in registry order. A profile id that is a
+built-in id or already registered → `NPX006` contribution issue, first wins.
+
+## 3. Fixtures
+
+| Fixture | Kind | Folder / id | Content |
+|---|---|---|---|
+| Alpha | project | `tests/Fixtures/Extensions/Fx.Alpha` / `fx.alpha` | Node kind `fx.alpha/Ping`, a class emitter adding `// fx.alpha`, settings section |
+| Beta | project | `Fx.Beta` / `fx.beta`, `dependsOn: [fx.alpha]` | Node kind `fx.beta/Pong`, a member emitter that adds `// fx.beta` to methods whose graph holds a `fx.alpha/Ping` node |
+| LibV1 / LibV2 | project | `Fx.LibV1`, `Fx.LibV2` + `Fixture.SharedLib.V1/.V2` (assembly `Fixture.SharedLib` 1.0/2.0) | Each registers a node whose translator calls `SharedLib.Describe()` (different signatures per version) |
+| PrefixedPrivate | project | `Fx.PrefixedPrivate` + `NetPrintsFixture.Runtime` | Registers a node whose translator uses `NetPrintsFixture.Runtime.Helper` |
+| TypesProvider / TypesConsumer | project | `Fx.TypesProvider` (`fx.types-provider`), `Fx.TypesConsumer` (`dependsOn` provider, `Private=false` reference) | Consumer's node pin type and emitter use `ProviderType`; exposes `typeof(ProviderType)` for identity checks |
+| Native | project | `Fx.Native` | Private `SkiaSharp.NativeAssets.Linux.NoDependencies`; `Register` calls `sk_version_get_milestone` via `DllImport("libSkiaSharp")` |
+| Catalog | project | `Fx.Catalog` / `fx.catalog` | Contributes the fixture catalog (`CatalogLoader.LoadFile`) and the `fixture-flags` profile (used by CT-T13, CT-T15) |
+| Squatter | Roslyn | `fx.squatter` | Claims alpha's profile, host channel, settings and catalog-profile ids and a `fx.alpha/…` kind |
+| Duplicates | Roslyn | two folders with id `fx.dup` | |
+| ThrowsMidway | Roslyn | `fx.throws` | Adds two kinds, then throws in `Register` |
+| HostSkew | Roslyn | `fx.hostskew` | Compiled against an in-test reference assembly named `NetPrints.Core` with an extra public method, which `Register` calls |
+| Scale | Roslyn | `fx.scale.00`…`fx.scale.49` | One node kind each, random `dependsOn` chains generated from a fixed seed |
+
+Shared settings: `tests/Fixtures/Extensions/Directory.Build.props` (TestExtension's properties; output
+`bin/$(Configuration)/extensions/<id>/`). `tests/NetPrints.Core.Tests` references each project with
+`ReferenceOutputAssembly="false"`; `FixtureExtensions.CopyTo(root, id)` copies a built fixture.
+
+## 4. `ExtensionHarness` (`tests/NetPrints.Testing/Extensions/ExtensionHarness.cs`)
+
+`static Task<ExtensionHarness> CreateAsync(IReadOnlyList<string> folders, IReadOnlyList<INetPrintsExtension> inProcess,
+CancellationToken)`; `ExtensionRegistry Registry`; `string Translate(ClassGraph)`; `Task<byte[]> RoundTripAsync(byte[] document,
+CancellationToken)`; `Task<IReadOnlyList<GeneratedFileResult>> GenerateAsync(string projectDirectory, CancellationToken)`;
+`IAsyncDisposable`. Internal test support; not packaged (P3 lifts it into the public kit).
+
+## 5. API tracking and `[Experimental]`
+
+- `Microsoft.CodeAnalysis.PublicApiAnalyzers` via `src/Directory.Build.props` for projects that set
+  `<NetPrintsTrackPublicApi>true</NetPrintsTrackPublicApi>` (Extensibility, Core, Reflection, Serialization, Catalog),
+  adding `PublicAPI.Shipped.txt` and `PublicAPI.Unshipped.txt` as `AdditionalFiles`.
+- Ids (`NetPrints.Extensibility.ExperimentalApis` and a copy of the constants in Core and Catalog, each `internal`):
+  `NPXE0001` host channel, `NPXE0002` settings, `NPXE0003` emitters, `NPXE0004` catalog engine/profiles; `UrlFormat`
+  `https://danielmeza.github.io/netprints/docs/guide/extensions#api-stability`.
+- `Directory.Build.props`: `<NetPrintsExperimentalOptIn>NPXE0001;NPXE0002;NPXE0003;NPXE0004</NetPrintsExperimentalOptIn>`;
+  `Directory.Build.targets`: `<NoWarn>$(NoWarn);$(NetPrintsExperimentalOptIn)</NoWarn>` — the only allowed `<NoWarn>`.
+
+## 6. Test obligations
+
+| Id | Test (file) | Case |
+|---|---|---|
+| MX-T01 | existing `ExtensionLoaderTests`, `ContributionTests` + `MultiExtension/CharacterizationTests` | Before the loader change: host types identity (EX-T01), NPX001–NPX007, ordering — all green and unchanged after |
+| MX-T02 | `MultiExtension/SharedAssemblyRuleTests` | `fx.private-prefix` loads, its node translates using `NetPrintsFixture.Runtime` (red before T-loader) |
+| MX-T03 | `MultiExtension/SharedAssemblyRuleTests` | A copy of `NetPrints.Core.dll` in a fixture folder is ignored; `HostAssemblyShadowed` logged |
+| MX-T04 | `MultiExtension/DependencyTypeSharingTests` | Consumer's `typeof(ProviderType)` equals provider's; consumer emitter output uses the type (red before T-loader); provider failing → consumer NPX003 |
+| MX-T05 | `MultiExtension/DependencyTypeSharingTests` | Diamond: two providers of `Fixture.SharedLib` → first in `dependsOn` order wins, stable across runs |
+| MX-T06 | `MultiExtension/VersionIsolationTests` | LibV1 + LibV2 load together; each translator calls its own version; two distinct `Assembly` instances |
+| MX-T07 | `MultiExtension/IdConflictTests` | Squatter vs alpha across kinds, profiles, host channels, settings, document types, CLR node types, JSON resolvers, catalog profiles; project properties dedupe; loser named in `Issues`; alpha's behaviour unchanged |
+| MX-T08 | `MultiExtension/IdConflictTests` | Duplicate ids → NPX004, first folder wins, same winner under reversed folder order |
+| MX-T09 | `MultiExtension/LoadOrderPermutationTests` | Alpha, Beta, LibV1, PrefixedPrivate: all 24 discovery orders → same `Loaded` order, registry order, byte-identical generated C# of a graph using all four |
+| MX-T10 | `MultiExtension/FailureIsolationTests` | ThrowsMidway: none of its kinds registered; neighbours intact; NPX005 |
+| MX-T11 | `MultiExtension/FailureIsolationTests` | HostSkew → NPX005 (`MissingMethodException`), others load |
+| MX-T12 | `MultiExtension/DocumentSubsetTests` | Graph with alpha and beta nodes reopened with {α,β}, {α}, {β}, {} → unknown nodes preserved, re-save byte-identical; `generate` with {α} reports NPT003 |
+| MX-T13 | `MultiExtension/FailureIsolationTests` | Each NPX001–NPX007 fixture with alpha + beta: others load, registry usable |
+| MX-T14 | `MultiExtension/ScaleTests` | 50 Roslyn fixtures load in < 10 s, same order on two runs |
+| MX-T15 | `MultiExtension/ReloadTests` | `ExtensionHost` reload reuses contexts; `AssemblyLoadContext.All` count stable over 3 reloads |
+| MX-T16 | `MultiExtension/NativeDependencyTests` | `fx.native` loads and its native call returns a milestone > 0 (Linux; explicit skip reason elsewhere) |
+| AP-T01 | `Architecture/PublicApiTrackingTests` | Every tracked project references the analyzer and has both files starting `#nullable enable`; an in-test compilation with the analyzer and an undeclared public member reports RS0016 |
+| AP-T02 | `Architecture/ExperimentalApiTests` | For each `NPXE` id, an in-test external compilation using a marked API without opt-in reports that id as an error; with the id in `NoWarn` it compiles |
+| AP-T03 | `Core/SourceHygieneTests` | The only `<NoWarn>` in the repository is `Directory.Build.targets`' opt-in line, and `NetPrintsExperimentalOptIn` contains only `NPXE\d{4}` ids |
