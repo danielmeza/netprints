@@ -19,7 +19,7 @@ matches the job; the others aren't needed.
 | Clipboard, files, pickers, network, dialogs or VM state from XAML | `avoid.md` (read it before using any of these) |
 
 To find a type when you don't know the job, search the folder:
-`grep -rn -i 'doubletap' .claude/skills/avalonia-xaml/references/behaviors/`.
+`grep -rn -i 'doubletap' .claude/skills/avalonia-behaviors/references/`.
 
 ## Reading a catalog entry
 

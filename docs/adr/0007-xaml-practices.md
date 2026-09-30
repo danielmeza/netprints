@@ -29,17 +29,24 @@ The owner set three ground rules for any such policy:
 
 ## Decision
 
-- **The `avalonia-xaml` skill** (`.claude/skills/avalonia-xaml/SKILL.md`) is the single place these
-  rules live, loaded whenever a change touches `.axaml`, `.axaml.cs`, a converter, a style/resource or
-  a VM command bound from XAML. It states the three owner rules above as tiers:
+- **Three `avalonia-*` skills** (`.claude/skills/`) are the single place these rules live. They share one
+  rule numbering, so an ID cited in code, a test or a PR means the same thing in any of them, and each
+  skill's description triggers it only for the kind of change it covers:
+  - `avalonia-xaml`: E1-E6 and D1-D4, D6, D10, D12-D16, loaded for every change to `.axaml`,
+    `.axaml.cs` or a VM command bound from XAML;
+  - `avalonia-behaviors`: D9 and D11, loaded when a change adds or replaces an event handler, a
+    shortcut, focus, drag and drop or a dialog result;
+  - `avalonia-styling`: D5, D7 and D8, loaded when a change adds a converter, a color, a style, a
+    ControlTheme or a theme resource.
+  They state the three owner rules above as tiers:
   - **Enforced** (E1-E6 below): a test fails the build. An exception needs an allowlist entry with a
     reason.
   - **Default** (D1-D16): follow it unless there's a reason not to, stated in the PR.
   - **Consider**: tips, not rules.
   The full generated catalog of the 383 Xaml.Behaviors 12.0.7 types across the 10 packages lives in
-  `references/behaviors/`, split by job (commands and keys, triggers and actions, dialogs, focus,
-  lists, drag and drop, …) with worked recipes in each file, so a model loads only the file its change
-  needs; the skill's D11 keeps the order of preference, a "for X, prefer Y" table that routes to those
+  `avalonia-behaviors/references/`, split by job (commands and keys, triggers and actions, dialogs,
+  focus, lists, drag and drop, …) with worked recipes in each file, so a model loads only the file its
+  change needs; D11 keeps the order of preference, a "for X, prefer Y" table that routes to those
   files, and the rule for when a prebuilt behavior beats a custom one or code-behind (rule 3).
 - **Package choice.** NetPrints references `Xaml.Behaviors.Interactions`,
   `Xaml.Behaviors.Interactions.Custom` and `Xaml.Behaviors.Interactions.DragAndDrop`, all at 12.0.7

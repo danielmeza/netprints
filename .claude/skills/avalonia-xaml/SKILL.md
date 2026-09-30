@@ -1,6 +1,6 @@
 ---
 name: avalonia-xaml
-description: "Rules, worked examples and the full Xaml.Behaviors 12.0.7 catalog for Avalonia 12 UI work in NetPrints (src/NetPrints.Editor, src/NetPrints.Desktop): .axaml views, code-behind (*.axaml.cs), styles, ControlThemes, theme resources, converters, compiled bindings, commands, keyboard shortcuts, focus, dialogs, drag and drop, and behaviors/triggers/actions. Use it whenever a change touches *.axaml or *.axaml.cs, an IValueConverter, a Style/ControlTheme/theme resource, or a view model command bound from XAML, and whenever you would add or replace an event handler (Click, Tapped, KeyDown, SelectionChanged…) or a Focus()/Close() call in code-behind, even if the request doesn't mention XAML or behaviors."
+description: "Core rules for any Avalonia 12 XAML change in NetPrints (src/NetPrints.Editor, src/NetPrints.Desktop): the enforced XamlHygieneTests rules (compiled bindings, no color literals, no command-shaped event handlers, AutomationIds, accessible icon buttons, DynamicResource for theme tokens) plus defaults for code-behind, commands, async commands, typed bindings, reach-ups, data templates, lists, accessibility, design-time data, x:Name and dialogs. Use it whenever a change touches *.axaml or *.axaml.cs or a view model command bound from XAML. For event handlers, shortcuts, focus, drag and drop or dialog results also use avalonia-behaviors; for converters, colors, styles or themes also use avalonia-styling."
 ---
 
 # Avalonia XAML in NetPrints
@@ -16,6 +16,17 @@ The rules come in three tiers:
 Every rule has a boundary, and the boundary is part of the rule. When a rule seems to forbid something reasonable, read it
 again: the rules target *misplaced logic*, not the tools themselves.
 
+## Related skills
+
+The XAML rules are split across three skills that share one numbering, so a rule ID cited in code, a test or a PR
+(E1-E6, D1-D16) means the same thing wherever it lives:
+- `avalonia-xaml` (this skill): E1-E6, D1-D4, D6, D10, D12-D16. It applies to every XAML change.
+- `avalonia-behaviors`: D9 (keyboard shortcuts) and D11 (behaviors, with the Xaml.Behaviors catalog). Load it as well
+  when a change adds or replaces an event handler, calls `Focus()`, `Close()` or `ScrollToEnd()` from a view, or adds
+  a shortcut, drag and drop or a dialog result.
+- `avalonia-styling`: D5 (converters), D7 (theme tokens) and D8 (styles and ControlThemes). Load it as well when a
+  change adds a converter, a color or brush, a style class, a ControlTheme or a theme resource.
+
 ## Enforced
 
 - **E1. No compiled-binding opt-outs.** `x:CompileBindings="False"` and `{ReflectionBinding}` are allowlist-only.
@@ -24,11 +35,11 @@ again: the rules target *misplaced logic*, not the tools themselves.
   `{Binding Converter=...}` then compiles, as it already does in `SelectMethodDialog.axaml`.
 - **E2. No color literals in views.** A view is any `.axaml` file whose root is not `Application`, `Styles` or `ResourceDictionary`. Views may not use hex values or named colors on brush or color properties.
   `Transparent` is allowed, because it makes an element hit-testable.
-  *Why:* a hardcoded color does not follow the Light/Dark variant. Put a token in `EditorStyles.axaml` instead (see D7).
+  *Why:* a hardcoded color does not follow the Light/Dark variant. Put a token in `EditorStyles.axaml` instead (D7, `avalonia-styling`).
 - **E3. Command-shaped events are not wired in XAML.** `Click`, `Tapped`, `DoubleTapped`, `KeyDown`/`KeyUp`,
   `SelectionChanged`, `TextChanged`, `GotFocus`/`LostFocus` and similar handlers need an allowlist entry.
   Pointer and drag/drop events (`PointerPressed/Moved/Released`, `DragDrop.*`) are allowed, because gestures are view mechanics.
-  *Why:* each UI action is one view-model command with its own unit test. Wire it with `Command`, `KeyBinding` or a behavior (D11).
+  *Why:* each UI action is one view-model command with its own unit test. Wire it with `Command`, `KeyBinding` or a behavior (D9, D11, `avalonia-behaviors`).
 - **E4. AutomationIds come from `AutomationIds`.** Write `AutomationProperties.AutomationId="{x:Static ed:AutomationIds.X}"`.
   Never use a string literal. *Why:* the UI and E2E tests share one set of constants, which lets renames compile-check.
 - **E5. Icon-only buttons have an accessible name.** Any `Button` whose only content is a `MaterialIcon`, `PathIcon` or `Image`
@@ -74,45 +85,8 @@ when the layout is refactored. Better options, in order: (1) the item VM exposes
 </Panel>
 ```
 
-**D5. Converters decide how a state *looks*; the VM decides *what* the state is.** Writing a converter is
-normal and encouraged for reusable, view-only transformations. A converter may map app or business *state* to
-visuals: brushes, colors, icons, visibility, opacity, thickness, text formatting.
-- Allowed: `NodeKindBrushConverter` (`NodeVisualKind` to header brush), or a `CompileStatus` to status-brush converter.
-- Not allowed: a `CanConnectConverter` that asks the type system whether two pins are compatible, or a converter
-  that resolves a type name through the reflection provider. Those compute the state. Expose `IsCompatible` or
-  `ResolvedType` on the VM, then (if you like) convert *that* into a brush.
-- A converter must never validate, apply rules, call services or the model, or cause side effects.
-- Shape: `public sealed`, a `static readonly Instance` referenced with `{x:Static}` (the repo convention), and
-  `ConvertBack` throwing `NotSupportedException` unless the binding is TwoWay. Return
-  `AvaloniaProperty.UnsetValue` for unexpected input. Give it a plain xUnit test with no Avalonia app required.
-- Built-ins that often remove the need for a converter: `!`/`!!` negation, `ObjectConverters.IsNotNull`,
-  `StringConverters.IsNullOrEmpty`, `BoolConverters.And`, `StringFormat`, `MultiBinding`, and `FuncValueConverter` for a one-off.
-
 **D6. Assign typed data templates by `DataType`.** Match views to VMs with `DataTemplate x:DataType`, either in place or in
 `DataTemplates`. There is no reflection `ViewLocator`. *Why:* the templates are compile-checked and trimming-safe.
-
-**D7. Colors and brushes are theme tokens.** Define them in `ThemeDictionaries` (`Dark`, `Light`, and optionally `Default`
-as a fallback) in `EditorStyles.axaml`, named `Area.Role` (for example `GraphGrid.MinorColor`, `Node.HeaderForeground`). Reference them with
-`DynamicResource`. Use Fluent's `System*` keys (`SystemAccentColor`, `SystemControlForegroundBaseMediumBrush`)
-before inventing a new one. Use `StaticResource` for things that never vary by theme: templates, `ControlTheme`s, sizes.
-Colors computed in C# (`GraphBrushes`) should move to tokens once they need a light variant.
-
-**D8. Styles for tweaks, ControlThemes for re-templating.**
-- `Style` + class (`<Style Selector="Button.flat">`) is for additive property changes. Styles cascade and stack.
-- `ControlTheme` (`TargetType`, `BasedOn="{StaticResource {x:Type nodify:ItemContainer}}"`) replaces a control's
-  whole look or template. Only one theme applies at a time. Use `^` for nested selectors.
-- App-wide styles go in `EditorStyles.axaml`. The palette (`ColorPaletteResources`) and app resources go in `EditorApp.axaml`.
-  Keep a resource local (`UserControl.Resources` or `.Styles`) when only one view uses it, and promote it when a second view needs it.
-- Style classes are lowercase, and kebab-case when multi-word (`round`, `flat`, `icon`, `drop-target`). Existing classes
-  such as `pinValue` keep their names. Don't rename them just to conform.
-- Prefer a style class to repeating the same five inline setters. For a color change, use a style, not a template.
-
-**D9. Keyboard shortcuts are bindings to commands.** Put them in `<Window.KeyBindings>` or `<UserControl.KeyBindings>`, using a
-`KeyBinding` with a `Gesture` and a `Command`. A `KeyBinding` fires only while focus is inside that element. Use `HotKey` on the
-`Button` or `MenuItem` that already shows the action, and `InputGesture` to display it in menus. Write `Ctrl+`: Avalonia maps
-it to Cmd on macOS (per the docs; confirm on the Mac mini). When the focused control swallows the key first (a
-TextBox or Nodify), use a tunnel-routed behavior (`ExecuteCommandOnKeyDownBehavior EventRoutingStrategy="Tunnel"`)
-before falling back to code-behind.
 
 **D10. Long work goes in async commands and shows busy state.** Write `[RelayCommand] async Task XAsync(CancellationToken ct)`.
 - Bind busy UI to `XCommand.IsRunning`. Use a VM `IsBusy` flag with `try/finally` only when one flag spans
@@ -121,58 +95,6 @@ before falling back to code-behind.
 - Keep the default of rethrowing: a fault reaches the error dialog. Don't use `FlowExceptionsToTaskScheduler`, and don't
   write `ExecuteAsync(...).Forget()` from a view.
 - Test with `await vm.XCommand.ExecuteAsync(null)`. Don't block on the UI thread, and do heavy work off it.
-
-**D11. Use a prebuilt behavior before you write code-behind or a custom behavior.** NetPrints references
-`Xaml.Behaviors.Interactions`, `.Interactions.Custom` and `.Interactions.DragAndDrop` 12.0.7. Their types sit in the
-default `https://github.com/avaloniaui` xmlns, so they need no prefix. Don't add the `Xaml.Behaviors.Avalonia` meta
-package: its line stops at 11.3 (ADR-0007). Take the first option that fits:
-
-1. **No behavior at all:** `Command` on the control, `KeyBinding` or `HotKey` (D9), or a two-way binding whose VM
-   `On<Name>Changed` hook reacts.
-2. **A typed behavior for the event**, such as `ExecuteCommandOnTappedBehavior` or
-   `ExecuteCommandOnKeyDownBehavior Key="Enter"`.
-3. **A typed trigger with several actions**, such as `KeyTrigger` + `InvokeCommandAction` + `FocusControlAction`.
-4. **`EventTriggerBehavior EventName="..."` + `InvokeCommandAction`**, only when no typed trigger covers the event. It
-   finds the event through reflection, so it isn't trim-safe and a typo fails only at runtime.
-5. **A custom `StyledElementBehavior<T>`** in `NetPrints.Editor/Behaviors/` with a headless test, only for reusable
-   view mechanics that no prebuilt covers. Today that is only `DialogCloseBehavior`.
-6. **Code-behind**, only for gesture math and interop (D1).
-
-The typical conversion replaces a handler with a behavior, and the decision moves into a VM command:
-```xml
-<!-- Before: KeyDown="OnSearchKeyDown", and a handler that checks e.Key == Key.Enter and calls the VM. -->
-<!-- After (src/NetPrints.Editor/Search/NodeSearchView.axaml): -->
-<TextBox Text="{Binding SearchText}">
-  <Interaction.Behaviors>
-    <ExecuteCommandOnKeyDownBehavior Key="Enter" Command="{Binding SelectFirstCommand}" />
-  </Interaction.Behaviors>
-</TextBox>
-```
-
-**Find the behavior by job.** The catalog of all 383 types is split by job under `references/behaviors/`. Each file
-starts with worked recipes taken from real repo XAML, followed by the catalog tables for that job. Open only the
-file for your job; `references/behaviors/README.md` is the index and explains how to check property names.
-
-| For | Prefer | Recipes and catalog |
-|---|---|---|
-| Tap / double-tap / right-tap runs a command | `ExecuteCommandOnTappedBehavior`, `…OnDoubleTappedBehavior`, `…OnRightTappedBehavior` | `commands-and-keys.md` |
-| A key in one control (Enter in a box) | `ExecuteCommandOnKeyDownBehavior Key="Enter"` (or `Gesture`); `EventRoutingStrategy="Tunnel"` when the control swallows the key | `commands-and-keys.md` |
-| Commit a text box on Enter | `LoseFocusOnEnterBehavior` | `commands-and-keys.md` |
-| Several actions for one event or key | `KeyTrigger`, `KeyDownTrigger`, `DoubleTappedTrigger`, `ClickEventTrigger`… + `InvokeCommandAction`, `FocusControlAction`, `ChangePropertyAction` | `triggers-and-actions.md` |
-| Lifecycle (Loaded, DataContext changed, theme changed) | `LoadedTrigger`, `DataContextChangedTrigger`, `ActualThemeVariantChangedTrigger` | `triggers-and-actions.md` |
-| One event, one command, no typed behavior fits | `EventTriggerBehavior EventName="..."` + `InvokeCommandAction` (option 4) | `triggers-and-actions.md` |
-| OK or Close closes the dialog with no result | `ButtonClickEventTriggerBehavior` + `CloseWindowAction` | `dialogs-windows-popups.md` |
-| Accept/cancel closes the dialog *with* a result | a VM deriving from `DialogVM<TResult>` + the custom `edb:DialogCloseBehavior` on the `Window` | `dialogs-windows-popups.md` |
-| Popups and flyouts | `PopupOpenedTrigger`, `HideFlyoutAction`, `ButtonHideFlyoutOnClickBehavior`; canvas popups stay `CanvasPopup` (ADR-0004) | `dialogs-windows-popups.md` |
-| Focus on open, show or click; select all | `FocusOnAttachedToVisualTreeBehavior`, `FocusOnVisibleBehavior`, `FocusSelectedItemBehavior`, `TextBoxSelectAllOnGotFocusBehavior` | `focus-and-text.md` |
-| Follow a growing log or list | `AutoScrollToBottomBehavior` | `lists-and-scrolling.md` |
-| Drag an item VM from a list onto a target | `ContextDragBehavior Context="{Binding}"` + `ContextDropBehavior Handler=...` (`DropHandlerBase`) | `drag-and-drop.md` |
-| Reorder a list by drag | the same `ContextDragBehavior` + `ContextDropBehavior` pair, whose handler calls one undoable VM `Move…` command; not the Draggable package's `ListReorderDragBehavior`/`ItemDragBehavior`, which never call a command, so the model and undo miss the move | `drag-and-drop.md` |
-
-Don't use the behaviors that bypass the VM or its services: clipboard, file system, storage pickers, HTTP,
-`SetViewModelProperty`, `ToggleViewModelBoolean`, `ConditionalAction`/`SwitchCaseAction`, `Collections`, `Scripting`
-and the dialog behaviors. Their decisions and side effects belong in commands and services (`IClipboardService`,
-`IFilePickerService`, `IWindowService`); `avoid.md` lists them all.
 
 **D12. Lists that can grow virtualize.** `ListBox` virtualizes by default, but a plain `ItemsControl` does not. For a list that can grow, either
 use `ListBox` or give the `ItemsControl` an `ItemsPanel` of `VirtualizingStackPanel`. Never put a virtualizing list inside
@@ -200,9 +122,6 @@ from a VM, as `SelectTypeDialogVM.ResolveSelection` does; the view doesn't compu
 ## Consider
 
 - `Mode=OneTime` for values that never change after load, such as labels built from immutable specifiers.
-- Use `IsHitTestVisible="False"` on decorative overlays. Use `Background="Transparent"` only on elements that must catch the pointer.
-- One `Grid` beats nested `StackPanel`s in repeated templates (`NodeView` is rendered for every node). Use the
-  panel's own `Background`/`BorderBrush` instead of wrapping it in an extra `Border`. `BoxShadow` and stacked translucency cost fill rate.
 - Use `TextBlock` rather than a read-only `TextBox` for display-only text, unless the text must be selectable (as in `ErrorDialog`).
 - Use `#Name` element bindings to connect two views without code, for example
   `ViewportLocation="{Binding #Editor.ViewportLocation}"` instead of syncing it in `PropertyChanged`.
@@ -210,17 +129,9 @@ from a VM, as `SelectTypeDialogVM.ResolveSelection` does; the view doesn't compu
   `PlaceholderText` instead of `Watermark`, `TopLevel.GetTopLevel(visual)`, and `AttachDeveloperTools()`.
 - `WeakReferenceMessenger` is for cross-window notifications only. Between a parent and child VM, use direct references or events.
 - Headless tests (`[AvaloniaFact]`) cover wiring: a behavior fires its command, and a template resolves. VM tests cover logic.
-- Use `ThemeVariantScope` to force a variant on a subtree, such as a dark code pane in the light theme.
 
 ## Before you finish a XAML change
 
 1. `dotnet build -v q -tl:off --nologo`. Compiled bindings report broken paths here.
 2. Run `XamlHygieneTests` and the VM tests for any command you added.
 3. The PR lists each Default rule you deviated from, and why.
-
-## Reference files
-
-Load these only when the change needs them.
-- `references/behaviors/README.md`: the index of the behavior catalog, the package list and how to check a
-  behavior's property names.
-- `references/behaviors/<job>.md`: recipes and catalog tables for one job, as routed by the D11 table.
