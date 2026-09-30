@@ -1,6 +1,11 @@
 ---
 name: avalonia-xaml
 description: "Core rules for any Avalonia 12 XAML change in NetPrints (src/NetPrints.Editor, src/NetPrints.Desktop): the enforced XamlHygieneTests rules (compiled bindings, no color literals, no command-shaped event handlers, AutomationIds, accessible icon buttons, DynamicResource for theme tokens) plus defaults for code-behind, commands, async commands, typed bindings, reach-ups, data templates, lists, accessibility, design-time data, x:Name and dialogs. Use it whenever a change touches *.axaml or *.axaml.cs or a view model command bound from XAML. For event handlers, shortcuts, focus, drag and drop or dialog results also use avalonia-behaviors; for converters, colors, styles or themes also use avalonia-styling."
+paths:
+  - "**/*.axaml"
+  - "**/*.axaml.cs"
+  - "**/NetPrints.Editor/**/*.cs"
+  - "**/NetPrints.Desktop/**/*.cs"
 ---
 
 # Avalonia XAML in NetPrints

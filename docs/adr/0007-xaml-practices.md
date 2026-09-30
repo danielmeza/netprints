@@ -35,8 +35,10 @@ The owner set three ground rules for any such policy:
 > packages it pulls in, not for a missing 12.x line.
 
 - **Three `avalonia-*` skills** (`.claude/skills/`) are the single place these rules live. They share one
-  rule numbering, so an ID cited in code, a test or a PR means the same thing in any of them, and each
-  skill's description triggers it only for the kind of change it covers:
+  rule numbering, so an ID cited in code, a test or a PR means the same thing in any of them, all three carry the same
+  `paths:` filter (`.axaml`, `.axaml.cs` and C# under `NetPrints.Editor`/`NetPrints.Desktop`), so
+  they are discovered together once Claude reads such a file, and each skill's description then picks
+  it only for the kind of change it covers:
   - `avalonia-xaml`: E1-E6 and D1-D4, D6, D10, D12-D16, loaded for every change to `.axaml`,
     `.axaml.cs` or a VM command bound from XAML;
   - `avalonia-behaviors`: D9 and D11, loaded when a change adds or replaces an event handler, a
