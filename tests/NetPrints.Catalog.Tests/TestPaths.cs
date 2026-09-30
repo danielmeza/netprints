@@ -22,4 +22,7 @@ internal static class TestPaths
 
     public static string GoldenPath(string fileName) =>
         Path.Combine(RepositoryRoot(), "tests", "NetPrints.Catalog.Tests", "Format", "Golden", fileName);
+
+    public static string SnapshotPath(string fileName) =>
+        Path.Combine(RepositoryRoot(), "tests", "NetPrints.Catalog.Tests", "Snapshots", fileName);
 }
