@@ -607,3 +607,7 @@ NetPrints.Catalog.CatalogOutputConfig.Namespace.get -> string?
 NetPrints.Catalog.CatalogSourceConfig.Assemblies.get -> System.Collections.Generic.IReadOnlyList<string!>?
 NetPrints.Catalog.CatalogSourceConfig.Equals(NetPrints.Catalog.CatalogSourceConfig? other) -> bool
 NetPrints.Catalog.ResolvedCatalogConfig.Format.init -> void
+static NetPrints.Catalog.CSharpLiteral.Quote(string! value) -> string!
+NetPrints.Catalog.CatalogCSharpEmitter
+static NetPrints.Catalog.CatalogCSharpEmitter.Emit(NetPrints.Catalog.CatalogDocument! document, string! namespace, string! className) -> string!
+NetPrints.Catalog.CSharpLiteral
