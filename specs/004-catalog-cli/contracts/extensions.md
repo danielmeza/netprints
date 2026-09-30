@@ -69,8 +69,11 @@ CancellationToken)`; `Task<IReadOnlyList<GeneratedFileResult>> GenerateAsync(str
   `https://danielmeza.github.io/netprints/docs/guide/extensions#api-stability`. The shared
   `src/NetPrints.Catalog/Engine/ExperimentalApis.cs` re-declares `NPXE0004` internally because the generator, which
   compiles it, cannot reference Core (the one allowed duplicate, allowlisted in the literal gate).
-- `Directory.Build.props`: `<NetPrintsExperimentalOptIn>NPXE0001;NPXE0002;NPXE0003;NPXE0004</NetPrintsExperimentalOptIn>`;
-  `Directory.Build.targets`: `<NoWarn>$(NoWarn);$(NetPrintsExperimentalOptIn)</NoWarn>` — the only allowed `<NoWarn>`.
+- Opt-in is per project and per id (ADR-0017): a project that uses an experimental API adds
+  `<NetPrintsExperimentalOptIn Include="NPXE0003" />` items for only the ids it uses; `Directory.Build.targets` turns
+  the items into `NoWarn` on one line, the only allowed `<NoWarn>`. No repo-wide opt-in, nothing inherited. A defining
+  assembly opts in only if the build shows the diagnostic for its own usage. External authors use
+  `<NoWarn>$(NoWarn);NPXE000n</NoWarn>` or a narrow `#pragma`.
 
 ## 6. Test obligations
 
@@ -94,4 +97,4 @@ CancellationToken)`; `Task<IReadOnlyList<GeneratedFileResult>> GenerateAsync(str
 | MX-T16 | `MultiExtension/NativeDependencyTests` | `fx.native` loads and its native call returns a milestone > 0 (Linux; explicit skip reason elsewhere) |
 | AP-T01 | `Architecture/PublicApiTrackingTests` | Every tracked project references the analyzer and has both files starting `#nullable enable`; an in-test compilation with the analyzer and an undeclared public member reports RS0016 |
 | AP-T02 | `Architecture/ExperimentalApiTests` | For each `NPXE` id, an in-test external compilation using a marked API without opt-in reports that id as an error; with the id in `NoWarn` it compiles |
-| AP-T03 | `Core/SourceHygieneTests` | The only `<NoWarn>` in the repository is `Directory.Build.targets`' opt-in line, and `NetPrintsExperimentalOptIn` contains only `NPXE\d{4}` ids |
+| AP-T03 | `Core/SourceHygieneTests` | The only `<NoWarn>` in the repository is `Directory.Build.targets`' opt-in line; every `NetPrintsExperimentalOptIn` item is an id declared in `ExperimentalApiIds` (unknown or stale ids fail); no `#pragma warning disable NPXE*`; no `.editorconfig`/globalconfig severity entries for `NPXE` ids (ADR-0017) |

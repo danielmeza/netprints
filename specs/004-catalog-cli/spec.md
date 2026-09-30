@@ -470,8 +470,8 @@ the documented diagnostic id.
   the API released in `v0.1.1` (Core, Reflection) MUST be recorded as shipped.
 - **FR-045**: API expected to change (host channel, extension settings, class and member emitters, the
   catalog engine's programmatic API and catalog profiles) MUST be marked experimental with documented ids
-  (`NPXE0001`–`NPXE0004`) and a link to the stability guide; the repository's own projects opt in through
-  one reviewed setting.
+  (`NPXE0001`–`NPXE0004`) and a link to the stability guide; each of the repository's own projects opts in
+  per id in its own project file (ADR-0017).
 
 **Documentation and release (all stories)**
 
@@ -479,7 +479,7 @@ the documented diagnostic id.
   catalogs (both flavors, profiles, schema, consumption) and git integration (format and regen checks,
   diff and merge drivers, SchemaStore), updates to the extensions guide (coexistence rules, `dependsOn`
   type sharing, API stability) and the install guide (new commands), the `NetPrints.Catalog` API
-  reference, and an ADR index covering ADR-0010 and ADR-0012–ADR-0016.
+  reference, and an ADR index covering ADR-0010 and ADR-0012–ADR-0017.
 - **FR-047**: `NetPrints.Catalog` and `NetPrints.Annotations` MUST be packed by the release workflow's dry
   run and verified by the package verification script; nothing is published in this phase.
 

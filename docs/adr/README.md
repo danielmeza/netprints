@@ -27,3 +27,4 @@ instead.
 - [0014: `NetPrints.Annotations` is a generator-only package with embedded catalogs](0014-annotations-generator-only-package.md)
 - [0015: The `netprints` CLI: command surface and exit-code contract](0015-cli-commands-and-exit-codes.md)
 - [0016: Git integration for graph files: text conversion, merge driver and SchemaStore](0016-git-integration-for-graphs.md)
+- [0017: Experimental API opt-in is per project and per id](0017-experimental-api-opt-in.md)

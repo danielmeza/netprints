@@ -17,7 +17,7 @@ loading anything. Snapshot tests prove both flavors byte-identical and a `public
 provider. The extension loader decides the two hazards of ADR-0010 (share only what the host provides; `dependsOn`
 shares types), a host multi-extension suite pins them, and the extension-facing libraries gain PublicApiAnalyzers
 and `[Experimental]` markers. Git integration (text conversion, identity merge driver, `git-install`) and a
-prepared SchemaStore entry complete the graph-format follow-ups. Decisions: ADR-0010 (accepted), ADR-0012–ADR-0016.
+prepared SchemaStore entry complete the graph-format follow-ups. Decisions: ADR-0010 (accepted), ADR-0012–ADR-0017.
 
 ## Technical Context
 
@@ -54,7 +54,7 @@ reserved fix batches); 2 new src projects, 2 new test projects, 15 fixture proje
 - `net10.0` everywhere except the Roslyn source generator (`netstandard2.0`). Shared engine files compile on both.
 - Analyzers at error (ADR-0003); hygiene tests forbid `!` null-forgiving, `#pragma`/`[SuppressMessage]`
   suppressions outside the ADR-0003 ledger, `#nullable disable`, sync-over-async and `<NoWarn>` (the single
-  ADR-0010 opt-in line excepted). Fix causes, never suppress; never change analyzer packages, severities or
+  ADR-0017 opt-in line excepted). Fix causes, never suppress; never change analyzer packages, severities or
   `.editorconfig` to get green (the only planned analyzer changes are PublicApiAnalyzers and the experimental
   opt-in, both in sub-phase B).
 - XAML over code-behind if any UI is touched (only `ReflectionHost`, a non-UI host class, changes in the editor).
@@ -104,7 +104,7 @@ specs/004-catalog-cli/
 ├── implementation-notes.md      # created in T004; decisions and checkpoint reports
 ├── checklists/requirements.md
 └── contracts/cli.md, catalog.md, annotations.md, git.md, extensions.md
-docs/adr/0010-…, 0012-…–0016-…  (committed with this spec)
+docs/adr/0010-…, 0012-…–0017-…  (committed with this spec)
 ```
 
 ### Source Code (new = added by P2, changed = modified)
@@ -174,7 +174,7 @@ emission part of the generator lands in E.
 |---|---|---|
 | netstandard2.0 project (`NetPrints.Annotations`) | The compiler loads generators only as netstandard2.0 | Constitution IV explicitly allows it for generators NetPrints ships |
 | Shared source between `NetPrints.Catalog` and the generator | One engine for both flavors (byte-identical parity) | Multi-targeting `NetPrints.Catalog` violates IV; two engines drift |
-| One `<NoWarn>` line (experimental opt-in) | In-repo consumers of `[Experimental]` API must opt in | Hygiene gate allows exactly this line and checks its content (ADR-0010, ADR-0003 ledger row) |
+| One `<NoWarn>` line (experimental opt-in) | In-repo consumers of `[Experimental]` API must opt in, per project and per id | Hygiene gate allows exactly this line, checks every opt-in item against `ExperimentalApiIds` and forbids NPXE pragmas and severity entries (ADR-0017, ADR-0003 ledger row) |
 | 15 fixture projects (13 extensions, 2 catalog libraries) | Real `.deps.json` and private dependencies for coexistence tests | Roslyn-at-runtime fixtures cannot produce dependency manifests reliably (research §6(b)) |
 | `VersionOverride` for the generator's Roslyn | Generators must build against the minimum compiler they run in | Lowering the central version would downgrade the whole repo's Roslyn |
 | AN-T10 builds a throwaway netstandard2.0 consumer in a temporary directory | Proves FR-025 (any consumer framework) with the real package | It is test data created at run time, not a repository project; constitution IV governs repository projects |

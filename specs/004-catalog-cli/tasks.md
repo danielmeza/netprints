@@ -119,14 +119,19 @@ tracked API.
   `NPXE0001`–`NPXE0003`: an in-test external compilation referencing the built assemblies and using one marked API
   reports that id as an error, and compiles with the id suppressed; `NPXE0004` is added in T044); update
   `tests/NetPrints.Core.Tests/Core/SourceHygieneTests.cs`: the `<NoWarn>` gate allows exactly the
-  `Directory.Build.targets` opt-in line and asserts `NetPrintsExperimentalOptIn` holds only `NPXE\d{4}` ids, and the
+  `Directory.Build.targets` opt-in line, every `NetPrintsExperimentalOptIn` item must be an id declared in
+  `ExperimentalApiIds` (unknown or stale ids fail), no `#pragma warning disable NPXE*` and no
+  `.editorconfig`/globalconfig severity entries for `NPXE` ids are allowed (ADR-0017), and the
   raw-code-literal gate also matches `NPC\d{3}` and `NPXE\d{4}` with declaring files
   `src/NetPrints.Core/ExperimentalApiIds.cs`, `src/NetPrints.Catalog/Engine/CatalogDiagnosticCodes.cs` and
   `src/NetPrints.Catalog/Engine/ExperimentalApis.cs` (the one allowed `NPXE0004` duplicate: the generator cannot
   reference Core; record it as a Decision).
-- [ ] T013 [US6] `Directory.Build.props`: `<NetPrintsExperimentalOptIn>NPXE0001;NPXE0002;NPXE0003;NPXE0004</NetPrintsExperimentalOptIn>`;
-  `Directory.Build.targets`: `<NoWarn>$(NoWarn);$(NetPrintsExperimentalOptIn)</NoWarn>`; add a row to the suppression
-  ledger in `docs/adr/0003-analyzer-promotion-and-string-literal-discipline.md` pointing to ADR-0010 §3.
+- [ ] T013 [US6] `Directory.Build.targets`: turn the `NetPrintsExperimentalOptIn` items into one
+  `<NoWarn>$(NoWarn);@(NetPrintsExperimentalOptIn)</NoWarn>` line (items joined with `;`); each project that uses an
+  experimental API adds `<NetPrintsExperimentalOptIn Include="NPXE000n" />` for only the ids it uses (no repo-wide
+  property; a defining assembly only if the build shows the diagnostic, recorded in implementation-notes); add a row
+  to the suppression ledger in `docs/adr/0003-analyzer-promotion-and-string-literal-discipline.md` pointing to
+  ADR-0017.
 - [ ] T014 [US6] Add `src/NetPrints.Core/ExperimentalApiIds.cs` (public constants `HostChannel = "NPXE0001"`,
   `Settings = "NPXE0002"`, `Emitters = "NPXE0003"`, `CatalogProfiles = "NPXE0004"`, `UrlFormat`; Core's
   `PublicAPI.Unshipped.txt`), used by Core and Extensibility; mark with
@@ -135,7 +140,8 @@ tracked API.
   `IMemberEmitter` in `src/NetPrints.Core/Translator/Extensibility/Emitters.cs`, `IExtensionBuilder.AddClassEmitter`,
   `AddMemberEmitter` (0003).
 - [ ] T015 [US6] `docs/guide/extensions.md`: new section "API stability" (anchor `api-stability`): the four ids, what
-  each covers, how an extension opts in (`<NoWarn>$(NoWarn);NPXE0001</NoWarn>`), and the tracked API files.
+  each covers, how an external extension opts in (`<NoWarn>$(NoWarn);NPXE0001</NoWarn>`; in-repo projects use a
+  `NetPrintsExperimentalOptIn` item instead, ADR-0017), and the tracked API files.
 - [ ] T016 [US6] Whole suite, release build, format check; Checkpoint B report in
   `specs/004-catalog-cli/implementation-notes.md`; commit. **Checkpoint B** (SC-011).
 

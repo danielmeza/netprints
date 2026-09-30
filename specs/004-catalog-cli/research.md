@@ -454,15 +454,17 @@ fail the build through `TreatWarningsAsErrors`; no `.editorconfig` change.
 `NPXE0002` extension settings (`ExtensionSettingsDescriptor`, `ISettingsStore`, `IExtensionBuilder.AddSettings`);
 `NPXE0003` class and member emitters (`IClassEmitter`, `IMemberEmitter`, `AddClassEmitter`, `AddMemberEmitter`);
 `NPXE0004` catalog engine and profiles (`CatalogBuilder`, `ICatalogFilter`, `CatalogProfile`,
-`IExtensionBuilder.AddCatalogProfile`). In-repo projects opt in through one property,
-`NetPrintsExperimentalOptIn` in `Directory.Build.props`, appended to `NoWarn` in `Directory.Build.targets`;
-`SourceHygieneTests`' `<NoWarn>` gate allowlists exactly that line and asserts its value contains only
-`NPXE` ids, and ADR-0003's ledger gets a row pointing to ADR-0010. A probe test compiles an external project
+`IExtensionBuilder.AddCatalogProfile`). In-repo projects opt in per project and per id
+(ADR-0017, amending ADR-0010 §3): each declares `<NetPrintsExperimentalOptIn Include="NPXE000n" />` items for only
+the ids it uses, and `Directory.Build.targets` turns them into `NoWarn` on one line. `SourceHygieneTests` allows
+only that `<NoWarn>` line, requires every item to be a declared `ExperimentalApiIds` id, and forbids
+`#pragma warning disable NPXE*` and `.editorconfig`/globalconfig severity entries for `NPXE` ids; ADR-0003's
+ledger gets a row pointing to ADR-0017. A probe test compiles an external project
 (Roslyn, in-test) that uses each marked API without opting in and asserts the `NPXE` error.
 
 **Rationale**: These are the surfaces P3 (host channel, settings pages), P3b (emission engine) and P2 itself
-(catalog profiles) are expected to reshape. External authors must opt in; the repository owns the API and opts
-in once, visibly.
+(catalog profiles) are expected to reshape. External authors must opt in; the repository owns the API and each
+consuming project opts in visibly, per id.
 
 ## 24. Packaging and release
 

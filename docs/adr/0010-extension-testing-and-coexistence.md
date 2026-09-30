@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted (2026-09-29, P2 spec `specs/004-catalog-cli/`). Drafted as Proposed in
+Accepted (2026-09-29, P2 spec `specs/004-catalog-cli/`; decision 3's opt-in clause amended by ADR-0017). Drafted as Proposed in
 `docs/research/2026-09-29-extension-testing/` §7; this version keeps its decisions 1–3, replaces its decision 4
 ("decide the hazards in a separate ADR") with the decision itself, and adds the P2/P3 split of the author kit.
 
@@ -50,6 +50,7 @@ not packable yet (P3 publishes them).
      emitters, `NPXE0004` catalog engine and profiles. The repository's own projects opt in through one
      property (`NetPrintsExperimentalOptIn`, appended to `NoWarn` in `Directory.Build.targets`); that line is
      the only `<NoWarn>` the hygiene gate allows, and it may hold only `NPXE` ids (ADR-0003 ledger row).
+     Amended by ADR-0017: opt-in is per project and per id.
    - `PackageValidationBaselineVersion` is set when the extension API is first published (P3), not in P2:
      0.x packages may change, and the tracked API files already make every change visible in review. From then
      on a release check ties `ExtensionApi.Version` bumps to Shipped/Unshipped changes.
