@@ -21,6 +21,7 @@
     <ProjectReference Include="..\..\src\NetPrints.Core\NetPrints.Core.csproj" Private="false" ExcludeAssets="runtime" />
     <ProjectReference Include="..\..\src\NetPrints.Reflection\NetPrints.Reflection.csproj" Private="false" ExcludeAssets="runtime" />
     <ProjectReference Include="..\..\src\NetPrints.Serialization\NetPrints.Serialization.csproj" Private="false" ExcludeAssets="runtime" />
+    <ProjectReference Include="..\..\src\NetPrints.Catalog\NetPrints.Catalog.csproj" Private="false" ExcludeAssets="runtime" />
     <ProjectReference Include="..\..\src\NetPrints.Extensibility\NetPrints.Extensibility.csproj" Private="false" ExcludeAssets="runtime" />
   </ItemGroup>
 

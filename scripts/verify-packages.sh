@@ -99,6 +99,7 @@ grep -q '<developmentDependency>true</developmentDependency>' "$EXTRACT/NetPrint
 [[ -f "$EXTRACT/build/NetPrints.Sdk.props" ]] || fail "step 2 (NetPrints.Sdk): missing build/NetPrints.Sdk.props"
 [[ -f "$EXTRACT/build/NetPrints.Sdk.targets" ]] || fail "step 2 (NetPrints.Sdk): missing build/NetPrints.Sdk.targets"
 [[ -f "$EXTRACT/tools/net10.0/NetPrints.Generator.dll" ]] || fail "step 2 (NetPrints.Sdk): missing tools/net10.0/NetPrints.Generator.dll"
+[[ -f "$EXTRACT/tools/net10.0/NetPrints.Catalog.dll" ]] || fail "step 2 (NetPrints.Sdk): missing tools/net10.0/NetPrints.Catalog.dll (the generator host carries the catalog runtime so extensions share it)"
 [[ -d "$EXTRACT/lib" ]] && fail "step 2 (NetPrints.Sdk): package has a lib/ folder (should have none)"
 
 extract_nupkg NetPrints.Catalog

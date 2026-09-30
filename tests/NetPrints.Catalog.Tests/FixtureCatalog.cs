@@ -25,6 +25,8 @@ internal static class FixtureCatalog
             references,
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: NullableContextOptions.Enable, metadataImportOptions: MetadataImportOptions.All));
 
+    public static IReadOnlyList<string> FrameworkAssemblyPaths() => FrameworkPaths;
+
     public static IReadOnlyList<MetadataReference> FrameworkReferences() =>
         [.. FrameworkPaths.Select(path => (MetadataReference)MetadataReference.CreateFromFile(path))];
 

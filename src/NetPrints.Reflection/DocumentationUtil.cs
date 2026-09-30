@@ -56,6 +56,12 @@ namespace NetPrints.Reflection
 
         private string GetMethodInfoKey(IMethodSymbol methodInfo)
         {
+            // The compiler's own documentation comment id (namespaces, nesting, generics and ref kinds included), as in the XML file.
+            if (methodInfo.OriginalDefinition.GetDocumentationCommentId() is { } commentId)
+            {
+                return commentId;
+            }
+
             string key = $"M:{methodInfo.ContainingType.GetFullName()}.{methodInfo.Name}";
 
             if (methodInfo.Parameters.Length > 0)
@@ -153,13 +159,7 @@ namespace NetPrints.Reflection
             XmlDocument? doc = GetAssemblyDocumentationDocument(methodSymbol.ContainingAssembly);
             if (doc != null)
             {
-                string searchName = $"M:{methodSymbol.ContainingType.GetFullName()}.{methodSymbol.Name}";
-                if (methodSymbol.Parameters.Length > 0)
-                {
-                    searchName += "(";
-                    searchName += string.Join(",", methodSymbol.Parameters.Select(p => p.Type.GetFullName()));
-                    searchName += ")";
-                }
+                string searchName = GetMethodInfoKey(methodSymbol);
 
                 using XmlNodeList? nodes = doc.SelectNodes($"doc/members/member[@name='{searchName}']/param[@name='{parameterSymbol.Name}']");
 
@@ -194,13 +194,7 @@ namespace NetPrints.Reflection
 
             if (doc != null)
             {
-                string searchName = $"M:{methodSymbol.ContainingType.GetFullName()}.{methodSymbol.Name}";
-                if (methodSymbol.Parameters.Length > 0)
-                {
-                    searchName += "(";
-                    searchName += string.Join(",", methodSymbol.Parameters.Select(p => p.Type.GetFullName()));
-                    searchName += ")";
-                }
+                string searchName = GetMethodInfoKey(methodSymbol);
 
                 using XmlNodeList? nodes = doc.SelectNodes($"doc/members/member[@name='{searchName}']/returns");
 

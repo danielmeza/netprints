@@ -1,4 +1,20 @@
 #nullable enable
+NetPrints.Catalog.CatalogLoader
+NetPrints.Catalog.CatalogTypeCatalog
+NetPrints.Catalog.CatalogTypeCatalog.CatalogTypeCatalog(NetPrints.Catalog.CatalogDocument! document) -> void
+NetPrints.Catalog.CatalogTypeCatalog.GetConstructors(NetPrints.Core.TypeSpecifier! typeSpecifier) -> System.Collections.Generic.IEnumerable<NetPrints.Core.ConstructorSpecifier!>!
+NetPrints.Catalog.CatalogTypeCatalog.GetEnumNames(NetPrints.Core.TypeSpecifier! typeSpecifier) -> System.Collections.Generic.IEnumerable<string!>!
+NetPrints.Catalog.CatalogTypeCatalog.GetMethodDocumentation(NetPrints.Core.MethodSpecifier! methodSpecifier) -> string?
+NetPrints.Catalog.CatalogTypeCatalog.GetMethodParameterDocumentation(NetPrints.Core.MethodSpecifier! methodSpecifier, int parameterIndex) -> string?
+NetPrints.Catalog.CatalogTypeCatalog.GetMethodReturnDocumentation(NetPrints.Core.MethodSpecifier! methodSpecifier, int returnIndex) -> string?
+NetPrints.Catalog.CatalogTypeCatalog.GetMethods(NetPrints.Reflection.ReflectionProviderMethodQuery! query) -> System.Collections.Generic.IEnumerable<NetPrints.Core.MethodSpecifier!>!
+NetPrints.Catalog.CatalogTypeCatalog.GetNonStaticTypes() -> System.Collections.Generic.IEnumerable<NetPrints.Core.TypeSpecifier!>!
+NetPrints.Catalog.CatalogTypeCatalog.GetOverridableMethodsForType(NetPrints.Core.TypeSpecifier! typeSpecifier) -> System.Collections.Generic.IEnumerable<NetPrints.Core.MethodSpecifier!>!
+NetPrints.Catalog.CatalogTypeCatalog.GetPublicMethodOverloads(NetPrints.Core.MethodSpecifier! methodSpecifier) -> System.Collections.Generic.IEnumerable<NetPrints.Core.MethodSpecifier!>!
+NetPrints.Catalog.CatalogTypeCatalog.GetVariables(NetPrints.Reflection.ReflectionProviderVariableQuery! query) -> System.Collections.Generic.IEnumerable<NetPrints.Core.VariableSpecifier!>!
+NetPrints.Catalog.CatalogTypeCatalog.HasImplicitCast(NetPrints.Core.TypeSpecifier! fromType, NetPrints.Core.TypeSpecifier! toType) -> bool
+NetPrints.Catalog.CatalogTypeCatalog.Info.get -> NetPrints.Reflection.CatalogInfo!
+NetPrints.Catalog.CatalogTypeCatalog.TypeSpecifierIsSubclassOf(NetPrints.Core.TypeSpecifier! a, NetPrints.Core.TypeSpecifier! b) -> bool
 const NetPrints.Catalog.CatalogDiagnosticCodes.DuplicateBuildCatalogId = "NPC006" -> string!
 const NetPrints.Catalog.CatalogDiagnosticCodes.DuplicateLoadedCatalogId = "NPC103" -> string!
 const NetPrints.Catalog.CatalogDiagnosticCodes.IgnoredAnnotation = "NPC004" -> string!
@@ -265,6 +281,10 @@ static NetPrints.Catalog.CatalogDiagnostic.operator !=(NetPrints.Catalog.Catalog
 static NetPrints.Catalog.CatalogDiagnostic.operator ==(NetPrints.Catalog.CatalogDiagnostic? left, NetPrints.Catalog.CatalogDiagnostic? right) -> bool
 static NetPrints.Catalog.CatalogDocument.operator !=(NetPrints.Catalog.CatalogDocument? left, NetPrints.Catalog.CatalogDocument? right) -> bool
 static NetPrints.Catalog.CatalogDocument.operator ==(NetPrints.Catalog.CatalogDocument? left, NetPrints.Catalog.CatalogDocument? right) -> bool
+static NetPrints.Catalog.CatalogLoader.FirstOfEachId(System.Collections.Generic.IEnumerable<NetPrints.Reflection.ITypeCatalog!>! catalogs, Microsoft.Extensions.Logging.ILogger! logger) -> System.Collections.Generic.IReadOnlyList<NetPrints.Reflection.ITypeCatalog!>!
+static NetPrints.Catalog.CatalogLoader.Load(NetPrints.Catalog.CatalogDocument! document) -> NetPrints.Reflection.ITypeCatalog!
+static NetPrints.Catalog.CatalogLoader.LoadFile(string! path) -> NetPrints.Reflection.ITypeCatalog!
+static NetPrints.Catalog.CatalogLoader.LoadJson(string! json) -> NetPrints.Reflection.ITypeCatalog!
 static NetPrints.Catalog.CatalogMethod.operator !=(NetPrints.Catalog.CatalogMethod? left, NetPrints.Catalog.CatalogMethod? right) -> bool
 static NetPrints.Catalog.CatalogMethod.operator ==(NetPrints.Catalog.CatalogMethod? left, NetPrints.Catalog.CatalogMethod? right) -> bool
 static NetPrints.Catalog.CatalogNodeHint.operator !=(NetPrints.Catalog.CatalogNodeHint? left, NetPrints.Catalog.CatalogNodeHint? right) -> bool

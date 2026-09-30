@@ -312,17 +312,17 @@ contracts/catalog.md). **Independent test**: CT-T01–CT-T19; SC-004, SC-005 (ex
 
 ### Batch D4 — model: sonnet — T047–T050 — 6 units
 
-- [ ] T047 [US2] Test first: `tests/NetPrints.Catalog.Tests/Runtime/CatalogTypeCatalogTests.cs` (CT-T09, CT-T18) and
+- [x] T047 [US2] Test first: `tests/NetPrints.Catalog.Tests/Runtime/CatalogTypeCatalogTests.cs` (CT-T09, CT-T18) and
   `Runtime/ParityTests.cs` (CT-T08: `ReflectionProvider` over the fixture vs `CatalogTypeCatalog` over its
   `public-api` catalog, every query, 0 differences).
-- [ ] T048 [US2] `src/NetPrints.Catalog/Runtime/SpecifierFactory.cs` (TypeRef → specifiers, `ReflectionConverter`
+- [x] T048 [US2] `src/NetPrints.Catalog/Runtime/SpecifierFactory.cs` (TypeRef → specifiers, `ReflectionConverter`
   rules), `Runtime/CatalogTypeCatalog.cs`, `Runtime/CatalogLoader.cs`, `Log.cs` (NPC103 warning via `[LoggerMessage]`).
-- [ ] T049 [US2] Test first: new cases in `tests/NetPrints.Core.Tests/Extensibility/ContributionTests.cs` (profile
+- [x] T049 [US2] Test first: new cases in `tests/NetPrints.Core.Tests/Extensibility/ContributionTests.cs` (profile
   contributed; built-in or duplicate id → NPX006, first wins); add `IExtensionBuilder.AddCatalogProfile`
   (`[Experimental("NPXE0004")]`) in `src/NetPrints.Extensibility/IExtensionBuilder.cs`, `ExtensionBuilder.cs`,
   `Loading/RegistryBuilder.cs`, `Loading/ExtensionRegistry.cs` (`CatalogProfiles`); `NetPrints.Extensibility`
   references `NetPrints.Catalog` (so every host — editor, generator, CLI — carries it).
-- [ ] T050 [US2] `tests/NetPrints.Editor.Tests/Architecture/AssemblyReferenceGateTests.cs`: add `NetPrints.Catalog`
+- [x] T050 [US2] `tests/NetPrints.Editor.Tests/Architecture/AssemblyReferenceGateTests.cs`: add `NetPrints.Catalog`
   and `NetPrints.Annotations` (no `Avalonia*`, no `Microsoft.Build*`); `scripts/verify-packages.sh` asserts
   `tools/net10.0/NetPrints.Catalog.dll` inside the `NetPrints.Sdk` package (the generator host carries it, so
   extensions share it); whole suite; commit.

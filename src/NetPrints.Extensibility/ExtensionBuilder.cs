@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization.Metadata;
 using Microsoft.Extensions.Logging;
+using NetPrints.Catalog;
 using NetPrints.Core;
 using NetPrints.Extensibility.Hosting;
 using NetPrints.Extensibility.Loading;
@@ -22,7 +23,8 @@ internal sealed record ExtensionContributions(
     IReadOnlyList<IJsonTypeInfoResolver> JsonResolvers,
     IReadOnlyList<string> ProjectProperties,
     IReadOnlyList<IHostChannelFactory> HostChannels,
-    IReadOnlyList<ExtensionSettingsDescriptor> Settings);
+    IReadOnlyList<ExtensionSettingsDescriptor> Settings,
+    IReadOnlyList<CatalogProfile> CatalogProfiles);
 
 /// <summary>
 /// The builder handed to <see cref="INetPrintsExtension.Register"/>: it buffers, and the loader commits the
@@ -39,6 +41,7 @@ internal sealed class ExtensionBuilder(ExtensionManifest manifest, ILoggerFactor
     private readonly List<string> projectProperties = [];
     private readonly List<IHostChannelFactory> hostChannels = [];
     private readonly List<ExtensionSettingsDescriptor> settings = [];
+    private readonly List<CatalogProfile> catalogProfiles = [];
     private bool sealedBuilder;
 
     public ExtensionManifest Manifest { get; } = manifest;
@@ -68,6 +71,8 @@ internal sealed class ExtensionBuilder(ExtensionManifest manifest, ILoggerFactor
 
     public IExtensionBuilder AddSettings(ExtensionSettingsDescriptor descriptor) => Add(settings, descriptor);
 
+    public IExtensionBuilder AddCatalogProfile(CatalogProfile profile) => Add(catalogProfiles, profile);
+
     /// <summary>
     /// Ends registration: later builder calls throw. Returns what was buffered.
     /// </summary>
@@ -76,7 +81,7 @@ internal sealed class ExtensionBuilder(ExtensionManifest manifest, ILoggerFactor
         sealedBuilder = true;
         return new ExtensionContributions(
             [.. nodeLibraries], [.. classEmitters], [.. memberEmitters], [.. typeCatalogs], [.. profiles], [.. jsonResolvers], [.. projectProperties],
-            [.. hostChannels], [.. settings]);
+            [.. hostChannels], [.. settings], [.. catalogProfiles]);
     }
 
     private ExtensionBuilder Add<T>(List<T> list, T item)

@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging.Abstractions;
+using NetPrints.Catalog;
 using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Extensibility;
@@ -22,6 +23,7 @@ using NetPrints.Serialization.Mapping;
 using NetPrints.Translator;
 using NetPrints.Workspace;
 using Xunit;
+using static NetPrints.Tests.Extensibility.ExtensionTestSupport;
 
 namespace NetPrints.Tests.Extensibility;
 
@@ -156,6 +158,39 @@ public sealed class ContributionTests : IAsyncLifetime
 
         Assert.Null(registry.FindProfile("unknown.profile"));
         Assert.Same(DefaultProjectProfile.Instance, registry.FindProfile(DefaultProjectProfile.ProfileId));
+    }
+
+    [Fact]
+    public async Task ACatalogProfileAnExtensionContributesIsInTheRegistryAndBuiltInsAreNotDuplicated()
+    {
+        var profile = new CatalogProfile("test.flags", CatalogProfileBase.None);
+        var extension = InProcess("test.ext", builder => builder.AddCatalogProfile(profile));
+
+        await using ExtensionRegistry withProfile = Load(Options([BuiltInExtension.InProcessEntry, extension]));
+
+        Assert.Same(profile, Assert.Single(withProfile.CatalogProfiles));
+        Assert.Empty(withProfile.Issues);
+        Assert.Empty(builtIn.CatalogProfiles);
+    }
+
+    [Fact]
+    public async Task ABuiltInOrAlreadyRegisteredCatalogProfileIdIsNpx006AndTheFirstWins()
+    {
+        var first = new CatalogProfile("test.dup", CatalogProfileBase.None);
+        var second = new CatalogProfile("test.dup", CatalogProfileBase.Annotated);
+        var extension = InProcess("test.ext", builder => builder
+            .AddCatalogProfile(new CatalogProfile(CatalogProfile.PublicApiId, CatalogProfileBase.None))
+            .AddCatalogProfile(new CatalogProfile(CatalogProfile.AnnotatedId, CatalogProfileBase.None))
+            .AddCatalogProfile(first)
+            .AddCatalogProfile(second));
+        var other = InProcess("test.other", builder => builder.AddCatalogProfile(new CatalogProfile("test.dup", CatalogProfileBase.PublicApi)));
+
+        await using ExtensionRegistry registry = Load(Options([extension, other]));
+
+        Assert.Same(first, Assert.Single(registry.CatalogProfiles));
+        Assert.Equal(4, registry.Issues.Count);
+        Assert.All(registry.Issues, issue => Assert.Equal(ExtensionDiagnosticCodes.ContributionRejected, issue.Code));
+        Assert.Equal(2, registry.Loaded.Count);
     }
 
     [Fact]

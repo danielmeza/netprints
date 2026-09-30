@@ -16,6 +16,7 @@ NetPrints.Extensibility.Hosting.HostLaunchContext.Settings.get -> System.Collect
 NetPrints.Extensibility.Hosting.HostLaunchContext.Settings.init -> void
 NetPrints.Extensibility.Hosting.HostMessageTypes
 NetPrints.Extensibility.IExtensionBuilder
+[NPXE0004]NetPrints.Extensibility.IExtensionBuilder.AddCatalogProfile(NetPrints.Catalog.CatalogProfile! profile) -> NetPrints.Extensibility.IExtensionBuilder!
 NetPrints.Extensibility.IExtensionBuilder.AddJsonTypeInfoResolver(System.Text.Json.Serialization.Metadata.IJsonTypeInfoResolver! resolver) -> NetPrints.Extensibility.IExtensionBuilder!
 NetPrints.Extensibility.IExtensionBuilder.AddNodeLibrary(NetPrints.Extensibility.Nodes.INodeLibrary! library) -> NetPrints.Extensibility.IExtensionBuilder!
 NetPrints.Extensibility.IExtensionBuilder.AddProjectProfile(NetPrints.Core.IProjectProfile! profile) -> NetPrints.Extensibility.IExtensionBuilder!
@@ -106,6 +107,7 @@ NetPrints.Extensibility.Loading.ExtensionManifestException.Code.get -> string!
 NetPrints.Extensibility.Loading.ExtensionManifestException.ExtensionManifestException(string! manifestPath, string! message, System.Exception? inner = null) -> void
 NetPrints.Extensibility.Loading.ExtensionManifestException.ManifestPath.get -> string!
 NetPrints.Extensibility.Loading.ExtensionRegistry
+[NPXE0004]NetPrints.Extensibility.Loading.ExtensionRegistry.CatalogProfiles.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Catalog.CatalogProfile!>!
 NetPrints.Extensibility.Loading.ExtensionRegistry.DisposeAsync() -> System.Threading.Tasks.ValueTask
 NetPrints.Extensibility.Loading.ExtensionRegistry.FindProfile(string! id) -> NetPrints.Core.IProjectProfile?
 NetPrints.Extensibility.Loading.ExtensionRegistry.Issues.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Extensibility.Loading.ExtensionContributionIssue!>!

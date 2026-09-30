@@ -1,6 +1,7 @@
 using System;
 using System.Text.Json.Serialization.Metadata;
 using Microsoft.Extensions.Logging;
+using NetPrints.Catalog;
 using NetPrints.Core;
 using NetPrints.Extensibility.Hosting;
 using NetPrints.Extensibility.Nodes;
@@ -32,6 +33,8 @@ internal sealed class RegistryBuilder(ILogger logger)
     private readonly HashSet<string> hostChannelIds = new(StringComparer.Ordinal);
     private readonly List<ExtensionSettingsDescriptor> settings = [];
     private readonly HashSet<string> settingsIds = new(StringComparer.Ordinal);
+    private readonly List<CatalogProfile> catalogProfiles = [];
+    private readonly HashSet<string> catalogProfileIds = new(BuiltInCatalogProfiles.Ids, StringComparer.Ordinal);
     private readonly List<object> owned = [];
     private readonly List<ExtensionContributionIssue> issues = [];
 
@@ -102,6 +105,22 @@ internal sealed class RegistryBuilder(ILogger logger)
             }
         }
 
+        foreach (CatalogProfile profile in contributions.CatalogProfiles)
+        {
+            if (BuiltInCatalogProfiles.Ids.Contains(profile.Id, StringComparer.Ordinal))
+            {
+                RejectOther(manifest, $"catalog profile {profile.Id}", "a built-in catalog profile cannot be replaced.");
+            }
+            else if (!catalogProfileIds.Add(profile.Id))
+            {
+                RejectOther(manifest, $"catalog profile {profile.Id}", "a catalog profile with this id is already registered.");
+            }
+            else
+            {
+                catalogProfiles.Add(profile);
+            }
+        }
+
         foreach (string property in contributions.ProjectProperties)
         {
             if (!projectProperties.Contains(property, StringComparer.OrdinalIgnoreCase))
@@ -131,6 +150,7 @@ internal sealed class RegistryBuilder(ILogger logger)
             projectProperties,
             hostChannels,
             settings,
+            catalogProfiles,
             issues,
             translation,
             converters,

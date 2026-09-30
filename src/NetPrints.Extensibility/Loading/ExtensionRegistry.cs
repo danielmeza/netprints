@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization.Metadata;
 using Microsoft.Extensions.Logging;
+using NetPrints.Catalog;
 using NetPrints.Core;
 using NetPrints.Extensibility.Hosting;
 using NetPrints.Extensibility.Nodes;
@@ -34,6 +35,7 @@ public sealed class ExtensionRegistry : IAsyncDisposable
         IReadOnlyList<string> projectProperties,
         IReadOnlyList<IHostChannelFactory> hostChannels,
         IReadOnlyList<ExtensionSettingsDescriptor> settings,
+        IReadOnlyList<CatalogProfile> catalogProfiles,
         IReadOnlyList<ExtensionContributionIssue> issues,
         TranslationEnvironment translation,
         NodeDocumentConverterRegistry nodeConverters,
@@ -51,6 +53,7 @@ public sealed class ExtensionRegistry : IAsyncDisposable
         ProjectProperties = projectProperties;
         HostChannels = hostChannels;
         Settings = settings;
+        CatalogProfiles = catalogProfiles;
         Issues = issues;
         Translation = translation;
         NodeConverters = nodeConverters;
@@ -116,6 +119,12 @@ public sealed class ExtensionRegistry : IAsyncDisposable
     /// </summary>
     [Experimental(ExperimentalApiIds.Settings, UrlFormat = ExperimentalApiIds.UrlFormat)]
     public IReadOnlyList<ExtensionSettingsDescriptor> Settings { get; }
+
+    /// <summary>
+    /// The catalog profiles extensions contributed, in registry order (the built-in ones are not listed).
+    /// </summary>
+    [Experimental(ExperimentalApiIds.CatalogProfiles, UrlFormat = ExperimentalApiIds.UrlFormat)]
+    public IReadOnlyList<CatalogProfile> CatalogProfiles { get; }
 
     /// <summary>
     /// The contributions that were rejected (<c>NPX006</c>) while their extension stayed loaded.
