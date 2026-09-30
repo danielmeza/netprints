@@ -73,8 +73,24 @@ check_common_metadata() {
 
     [[ -f "$EXTRACT/icon.png" ]] || fail "step 2 ($id): package has no icon.png"
     [[ -f "$EXTRACT/README.md" ]] || fail "step 2 ($id): package has no README.md"
-    grep -Eq '<[A-Za-z/]' "$EXTRACT/README.md" && fail "step 2 ($id): packed README.md still has an HTML tag"
-    grep -Poq '\]\((?!https?://|#)' "$EXTRACT/README.md" && fail "step 2 ($id): packed README.md still has a relative link or image"
+    # Fenced code blocks may hold angle brackets (an XML install snippet); only prose is checked.
+    local prose
+    prose="$(awk '/^```/ { fenced = !fenced; next } !fenced' "$EXTRACT/README.md")"
+    grep -Eq '<[A-Za-z/]' <<<"$prose" && fail "step 2 ($id): packed README.md still has an HTML tag"
+    grep -Poq '\]\((?!https?://|#)' <<<"$prose" && fail "step 2 ($id): packed README.md still has a relative link or image"
+
+    # The README the package ships: its own for NetPrints.Annotations and NetPrints.Catalog, else the root one.
+    local heading
+    heading="$(head -n 1 "$EXTRACT/README.md")"
+    case "$id" in
+        NetPrints.Annotations | NetPrints.Catalog)
+            [[ "$heading" == "# $id" ]] || fail "step 2 ($id): packed README.md starts with '$heading', expected '# $id' (src/$id/README.md)"
+            ;;
+        *)
+            grep -qxF '## Project layout' "$EXTRACT/README.md" \
+                || fail "step 2 ($id): packed README.md is not the root README"
+            ;;
+    esac
     return 0
 }
 

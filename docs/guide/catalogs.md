@@ -209,7 +209,7 @@ public sealed class MyLibExtension : INetPrintsExtension
 }
 ```
 
-The editor then offers the catalog's types and members in node search, and the generated code compiles against the real assembly, which the project references. When two loaded catalogs share an id, the first is used and NPC103 is logged. `LoadFile` throws `CatalogFormatException` (NPC101 for a newer schema, NPC102 otherwise); catch it around each file if the extension should keep working without that catalog.
+The editor then offers the catalog's types and members in node search (a search opened from a pin of a covered type still lists the type's public members, see [Discovery by the editor](#discovery-by-the-editor)), and the generated code compiles against the real assembly, which the project references. When two loaded catalogs share an id, the first is used and NPC103 is logged. `LoadFile` throws `CatalogFormatException` (NPC101 for a newer schema, NPC102 otherwise); catch it around each file if the extension should keep working without that catalog.
 
 The editor also reads the catalogs that the assemblies a project references embed (`NetPrints.Annotations`). They come after the extensions' catalogs, so an extension's catalog wins a shared id, and a referenced assembly whose catalog cannot be read (for example a newer schema) is skipped with a warning while the other references still contribute.
 
@@ -219,15 +219,15 @@ The catalog profile APIs (`CatalogProfile`, `AddCatalogProfile`, and the catalog
 
 Annotating a library is optional. Any referenced library or NuGet package works in NetPrints without annotations; the editor reads its public API directly. `NetPrints.Annotations` is for library authors who want to choose which members become nodes, customize their names and documentation, and ship that curated catalog inside the library. For a library you don't own, use the `netprints catalog` CLI to build a catalog file instead.
 
-A library can embed a catalog directly in its assembly so the editor discovers it without a separate file or extension. Use the `NetPrints.Annotations` package: add it as a `PrivateAssets="all"` package reference so it stays out of a consumer's dependencies.
+A library can embed a catalog directly in its assembly so the editor discovers it without a separate file or extension. Use the `NetPrints.Annotations` package: add it as a `PrivateAssets="all"` package reference so it stays out of a consumer's dependencies. The version is whatever you restore from your feed; nothing is published yet, so `<version>` stands in for it.
 
 ```xml
 <ItemGroup>
-  <PackageReference Include="NetPrints.Annotations" Version="0.1.0" PrivateAssets="all" />
+  <PackageReference Include="NetPrints.Annotations" Version="<version>" PrivateAssets="all" />
 </ItemGroup>
 ```
 
-The package is a Roslyn analyzer and build target; it is a `developmentDependency`, so NuGet treats it as tooling.
+The package is a Roslyn analyzer and build target; it is a `developmentDependency`, so NuGet treats it as tooling. Its generator needs the compiler of the .NET 10 SDK (Roslyn 5.0 or later); an older compiler cannot load it, and the attributes are then missing.
 
 The summaries of your own catalog come from your source comments, which the compiler parses only when documentation generation is on. Set it in the project, or the catalog has no summaries and the generator reports NPC007:
 
@@ -239,11 +239,14 @@ The summaries of your own catalog come from your source comments, which the comp
 
 ### Marking types and methods
 
-Use four attributes from `NetPrints.Annotations` to control what a catalog includes. The attributes are injected by the Roslyn generator and are always available in your source, with no package reference needed at runtime:
+Four attributes from `NetPrints.Annotations` control what a catalog includes. The generator injects them into your compilation, so they are always available in your source and add no run-time dependency:
 
-- `[NetPrintsType]` on a class, struct, interface or enum marks it for inclusion. The `DisplayName` and `Category` properties customize how it appears in node search.
-- `[NetPrintsNode]` on a public method marks it for inclusion as a node. `DisplayName`, `Category` and `Keywords` customize node search.
+- `[NetPrintsType]` on a class, struct, interface or enum marks it for inclusion. `DisplayName` and `Category` are optional hints.
+- `[NetPrintsNode]` on a public method marks it for inclusion as a node. `DisplayName`, `Category` and `Keywords` are optional hints.
 - `[NetPrintsIgnore]` on a type or member excludes it from every profile, even if the profile would otherwise include it.
+- `[assembly: NetPrintsCatalog]` embeds a catalog of another assembly that your project references, see [Catalogs of referenced assemblies](#catalogs-of-referenced-assemblies).
+
+The hints are recorded in the catalog (as the `node` object of a type or method) for tools that read it. The editor does not use them yet: node search shows the member name and its declaring type, as it does for a library without annotations. What the annotations do today is choose which types and methods the catalog lists.
 
 Only public types and members are cataloged; an annotation on a non-public target is NPC004 (a warning, the target is ignored).
 
@@ -261,41 +264,89 @@ public class GreetingService
 }
 ```
 
+### Catalogs of referenced assemblies
+
+`[assembly: NetPrintsCatalog("MyDependency")]` makes the build embed a separate catalog of a referenced assembly, for example a dependency that has no annotations of its own. The first argument is the assembly name; the properties are all optional:
+
+| Property | Meaning |
+| --- | --- |
+| `Id` | The catalog id. Defaults to the lower-cased assembly name; it must match `[a-z0-9][a-z0-9._-]*`, or the catalog is NPC003. |
+| `Profile` | A built-in profile id (`public-api`, the default, or `annotated`) or the file name of a profile file, see below. |
+| `Include`, `Exclude` | Type-name globs added to the profile's own include and exclude rules. |
+| `AccessorName` | The name of the generated accessor, see below. |
+
+An assembly that the project does not reference is NPC001. The assembly's XML documentation is read from the `.xml` file next to it, see [Reference documentation](#reference-documentation).
+
+```csharp
+[assembly: NetPrintsCatalog("MyDependency", Exclude = new[] { "*.Internal.*" }, AccessorName = "MyDependency")]
+```
+
+The generator also adds a catalog of the project's own annotated types, when it has any. That catalog always uses the `annotated` profile; profiles apply only to `[assembly: NetPrintsCatalog]` requests.
+
 ### Selecting a profile
 
-By default, `[NetPrintsType]` and `[NetPrintsNode]` annotations imply the `annotated` profile. To use a custom profile, add it as an `AdditionalFiles` item with metadata `NetPrintsProfile="true"`. The profile file name (without `.npprofile.json`) becomes the id:
+The built-in profiles are `public-api` (every public type and member, the default) and `annotated` (only what `[NetPrintsType]` and `[NetPrintsNode]` mark). To use a custom profile, add its file as an `AdditionalFiles` item. A file counts as a profile when its name ends with `.npprofile.json`; no item metadata is needed:
 
 ```xml
 <ItemGroup>
-  <AdditionalFiles Include="Profiles/my-public-api.npprofile.json" NetPrintsProfile="true" />
-  <AdditionalFiles Include="Profiles/internal-tools.npprofile.json" NetPrintsProfile="true" />
+  <AdditionalFiles Include="Profiles/my-public-api.npprofile.json" />
 </ItemGroup>
 ```
 
-Then reference the profile by name in the `[assembly: NetPrintsCatalog(..., Profile = "my-public-api")]` attribute. The built-in profiles are still available.
+Then pass the full file name, suffix included, as the `Profile` value. The value is the file name, not the `id` that the profile's JSON declares:
 
-### Embedding a catalog
+```csharp
+[assembly: NetPrintsCatalog("MyDependency", Profile = "my-public-api.npprofile.json")]
+```
 
-The Roslyn generator automatically embeds a catalog as an assembly attribute `[assembly: NetPrintsEmbeddedCatalog(...)]` and exposes accessors in a `NetPrintsCatalogs` class:
+A value that is neither a built-in id nor a name ending in `.npprofile.json` is NPC002 (`Profile = "my-public-api"` is one). A file name that is not an `AdditionalFiles` item, or a file that cannot be parsed, is NPC003.
+
+### The generated accessor
+
+For every catalog, the generator also writes a class `NetPrintsCatalogs` in the project's `RootNamespace` (the global namespace when the property is empty): `internal static partial`, so each project that uses the generator has its own. It has one property pair per catalog, named after the catalog:
+
+- the name is `AccessorName` when you set it, otherwise the catalog id in PascalCase (`my-lib.core` becomes `MyLibCore`; a name that would start with a digit or be a keyword gets a `_` prefix);
+- `<Name>Utf8` is the catalog as UTF-8 bytes and `<Name>` is the same JSON as a string.
 
 ```csharp
 namespace MyCompany
 {
     internal static partial class NetPrintsCatalogs
     {
-        public static byte[] MyLibUtf8 { get; } = new byte[] { 123, 10, 32, ... };
+        public static byte[] MyDependencyUtf8 { get; } = new byte[] { 123, 10, 32, /* ... */ };
 
-        public static string MyLib => 
-            global::System.Text.Encoding.UTF8.GetString(MyLibUtf8);
+        public static string MyDependency => Encoding.UTF8.GetString(MyDependencyUtf8);
     }
 }
 ```
 
-Your code can read the embedded catalog via `CatalogLoader.LoadEmbedded(this.GetType().Assembly)`, and the editor reads it automatically when a project references your assembly.
+An accessor name that is not a valid C# identifier is NPC003. Two catalogs with the same id or the same accessor name in one build are NPC006: neither is emitted, and `AccessorName` tells them apart.
+
+The accessor is for a project that also loads the catalog itself, typically an extension, which hands it to the editor:
+
+```csharp
+public sealed class MyDependencyExtension : INetPrintsExtension
+{
+    public void Register(IExtensionBuilder builder) =>
+        builder.AddTypeCatalog(CatalogLoader.LoadJson(NetPrintsCatalogs.MyDependency));
+}
+```
+
+`CatalogLoader` comes from `NetPrints.Catalog`, which an extension references anyway. A library that only ships its own catalog has no use for the accessor: the editor reads the `[assembly: NetPrintsEmbeddedCatalog]` attribute from the assembly directly, and the library needs no run-time reference to `NetPrints.Catalog`.
+
+### Reference documentation
+
+Summaries of a referenced assembly come from its XML documentation file. The build targets pass the `.xml` file next to each referenced assembly to the generator, so a package or file reference with its documentation file needs nothing more. The framework's own documentation is left out; set `NetPrintsCatalogFrameworkDocumentation` to `true` to include it. A referenced assembly without a `.xml` file is cataloged without summaries. For your own catalog, set `GenerateDocumentationFile` as shown above, or expect NPC007.
+
+### Embedding a catalog
+
+The embedded catalog is an assembly attribute, `[assembly: NetPrintsEmbeddedCatalog(...)]`, carrying the catalog id, its schema version and the JSON. The accessors above are written next to it.
 
 ### Discovery by the editor
 
 When a project loads a referenced assembly, the editor reads any embedded catalogs and offers their types and members in node search. The editor first loads extension catalogs, then embedded catalogs, so an extension's catalog wins if two share an id (NPC103 is logged). If a catalog cannot be read (a newer schema version or a malformed file), the editor skips it with a warning while other references still contribute, so your library stays usable.
+
+A catalog controls what the search lists when it is not scoped to a type. A search opened from a pin of a covered type, for example a `Greeter` pin, is still answered from the live compilation: it lists the type's public members, including the ones the catalog omits and those marked `[NetPrintsIgnore]`. The same holds for catalogs that an extension contributes.
 
 Help for diagnosing embedding problems is under Diagnostics, below.
 

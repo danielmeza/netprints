@@ -156,6 +156,11 @@ docs updated (guides, API reference, ADRs as applicable).
 - **Internal contribution points** (owner idea, 2026-09-25): commands, panels, dashboard tiles, project
   templates, context-menu items, tooltip providers and go-to providers are registered through one registry,
   and the built-in editor uses it. P3 then opens the same points to plugins.
+- **Type-scoped search and embedded catalogs** (deferred from P2 Review E-R15; spec decision first): a search opened
+  from a pin of a type in a covered assembly still lists the type's public members, including those the embedded
+  catalog omits and `[NetPrintsIgnore]` ones (extension catalogs too). Decide whether type-scoped search respects the
+  embedded catalog of the type's assembly, hiding omitted and `[NetPrintsIgnore]` members, with the live provider as
+  the fallback for assemblies no catalog covers. Binding through `GetTypeFromSpecifier` stays as it is.
 - **Adopt Xaml.Behaviors across the editor** (owner request, 2026-09-28): replace every remaining
   code-behind handler a prebuilt behavior covers (catalog: `.claude/skills/avalonia-behaviors/`), custom
   behaviors for the rest; done when the XAML hygiene allowlists are empty or hold only justified
