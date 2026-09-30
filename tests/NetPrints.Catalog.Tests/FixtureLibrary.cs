@@ -12,6 +12,8 @@ internal static class FixtureLibrary
 
     private const string ConsumerOutputMetadataKey = "CatalogConsumerLibOutput";
 
+    private const string AnnotatedOutputMetadataKey = "CatalogAnnotatedLibOutput";
+
     public static string OutputDirectory { get; } = OutputOf(OutputMetadataKey);
 
     public static string ConsumerAssemblyPath { get; } = Path.Combine(OutputOf(ConsumerOutputMetadataKey), "CatalogConsumerLib.dll");
@@ -19,6 +21,10 @@ internal static class FixtureLibrary
     public static string AssemblyPath { get; } = Path.Combine(OutputDirectory, "CatalogFixtureLib.dll");
 
     public static string DocumentationPath { get; } = Path.Combine(OutputDirectory, "CatalogFixtureLib.xml");
+
+    public static string AnnotatedAssemblyPath { get; } = Path.Combine(OutputOf(AnnotatedOutputMetadataKey), "CatalogAnnotatedLib.dll");
+
+    public static string AnnotatedDocumentationPath { get; } = Path.Combine(OutputOf(AnnotatedOutputMetadataKey), "CatalogAnnotatedLib.xml");
 
     public static string ProfilePath(string fileName) => Path.Combine(AppContext.BaseDirectory, "Profiles", fileName);
 

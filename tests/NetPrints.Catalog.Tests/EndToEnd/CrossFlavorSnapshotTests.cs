@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using NetPrints.Catalog.Tests.Generator;
 using Xunit;
 
@@ -10,7 +12,7 @@ namespace NetPrints.Catalog.Tests.EndToEnd;
 /// AN-T13 (SC-003): the tool flavor (the engine over metadata references), the driver flavor (the generator run in-process) and the built-assembly
 /// flavor (a catalog read back from an assembly's metadata) give byte-identical catalogs for <c>public-api</c>, <c>annotated</c> and <c>fixture-flags</c>.
 /// The built <c>public-api</c> and <c>fixture-flags</c> legs are the real <c>CatalogConsumerLib</c> build; <c>CatalogFixtureLib</c> itself embeds nothing
-/// (E1), so the built <c>annotated</c> leg is the fixture sources compiled with the generator and emitted to an assembly.
+/// (E1), so the built <c>annotated</c> leg above is the fixture sources compiled with the generator and emitted to an assembly; the MSBuild-built <c>CatalogAnnotatedLib</c> is compared with the tool in its own test.
 /// </summary>
 public sealed class CrossFlavorSnapshotTests : System.IDisposable
 {
@@ -68,6 +70,23 @@ public sealed class CrossFlavorSnapshotTests : System.IDisposable
         Assert.Equal(tool, driver);
         Assert.Equal(tool, Assert.Single(Serialize(EmbeddedCatalogReader.Read(path))).Value);
         Assert.Equal(File.ReadAllText(TestPaths.SnapshotPath("annotated.npcat.json")), tool);
+    }
+
+    [Fact]
+    public void AnnotatedOverTheMsBuildBuiltAnnotatedLibraryIsIdenticalToItsEmbeddedCatalog()
+    {
+        MetadataReference library = MetadataReference.CreateFromFile(FixtureLibrary.AnnotatedAssemblyPath);
+        CSharpCompilation compilation = FixtureCatalog.CreateCompilation("Tool", [.. FixtureCatalog.FrameworkReferences(), library]);
+        var result = CatalogBuilder.Build(
+            compilation,
+            [FixtureCatalog.AssemblyOf(compilation, library)],
+            new CatalogProfileFilter(BuiltInCatalogProfiles.Annotated),
+            XmlDocumentationSource.FromText(File.ReadAllText(FixtureLibrary.AnnotatedDocumentationPath)),
+            new CatalogIdentity("catalogannotatedlib"));
+
+        string embedded = Assert.Single(Serialize(EmbeddedCatalogReader.Read(FixtureLibrary.AnnotatedAssemblyPath))).Value;
+
+        Assert.Equal(embedded, CanonicalCatalogWriter.Write(result.Document));
     }
 
     [Fact]

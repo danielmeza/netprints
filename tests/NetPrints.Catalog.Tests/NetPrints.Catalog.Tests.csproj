@@ -34,6 +34,11 @@
       <_Parameter1>CatalogConsumerLibOutput</_Parameter1>
       <_Parameter2>$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)', '..', 'Fixtures', 'Catalog', 'CatalogConsumerLib', 'bin', '$(Configuration)', 'net10.0'))</_Parameter2>
     </AssemblyAttribute>
+    <ProjectReference Include="..\Fixtures\Catalog\CatalogAnnotatedLib\CatalogAnnotatedLib.csproj" ReferenceOutputAssembly="false" />
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>CatalogAnnotatedLibOutput</_Parameter1>
+      <_Parameter2>$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)', '..', 'Fixtures', 'Catalog', 'CatalogAnnotatedLib', 'bin', '$(Configuration)', 'net10.0'))</_Parameter2>
+    </AssemblyAttribute>
     <!-- The AN-T10 sample sources use the injected attributes, so they are test data for a temporary project, never compiled here. -->
     <Compile Remove="EndToEnd/AnnotatedSample/**" />
     <None Include="EndToEnd/AnnotatedSample/**" CopyToOutputDirectory="PreserveNewest" />
