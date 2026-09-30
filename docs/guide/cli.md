@@ -161,6 +161,29 @@ It falls back to `git merge-file -p` over the three texts, writes that over `<ou
 
 An unreadable graph exits 1 with the reason on stderr; a missing file exits 2.
 
+### `git-install` — Register the graph drivers with git
+
+```
+netprints git-install [--merge] [--global] [--command <cmd>] [--uninstall]
+```
+
+Makes `git diff` print the `show` summary of graphs and, with `--merge`, makes `git merge` use the `merge` driver. It sets `diff.netprints.textconv` to `<cmd> show` (with `--merge` also `merge.netprints.name` and `merge.netprints.driver` = `<cmd> merge %O %A %B --marker-size %L --path %P`) in the repository's git configuration and adds `*.netpc.json diff=netprints` (with `--merge`, `*.netpc.json diff=netprints merge=netprints`) to the `.gitattributes` at the work-tree root. Other lines and the file's line endings are kept.
+
+| Option | Effect |
+|---|---|
+| `--merge` | Also register the merge driver; an existing diff-only line is upgraded in place. |
+| `--global` | Write the user's git configuration and attributes file (`core.attributesFile`, else `$XDG_CONFIG_HOME/git/attributes`, else `~/.config/git/attributes`). Works outside a repository. |
+| `--command <cmd>` | The command the configuration runs (default `netprints`); use `dotnet tool run netprints` for a local tool. |
+| `--uninstall` | Remove exactly the configuration keys and the attributes line it added; an attributes file left empty is deleted. |
+
+```
+netprints git-install
+netprints git-install --merge --command "dotnet tool run netprints"
+netprints git-install --global --uninstall
+```
+
+**Output:** `installed: <what>`, `already installed: <what>` (nothing is written when everything is in place), `removed: <what>` or `not installed: nothing to remove`. Outside a git work tree (without `--global`) it exits 2. When the attributes already name another `diff=` or `merge=` driver for `*.netpc.json` it keeps that line, writes nothing, reports the line on stderr and exits 1. `git` missing or failing exits 1.
+
 ### `catalog` — Write a type catalog
 
 ```

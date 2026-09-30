@@ -1,0 +1,14 @@
+[
+  {
+    "name": "NetPrints graph",
+    "description": "NetPrints visual-programming class graph (.netpc.json)",
+    "fileMatch": ["*.netpc.json"],
+    "url": "https://danielmeza.github.io/netprints/schemas/netpc.v1.schema.json"
+  },
+  {
+    "name": "NetPrints catalog configuration",
+    "description": "Configuration of the netprints catalog command",
+    "fileMatch": ["netprints.catalog.json"],
+    "url": "https://danielmeza.github.io/netprints/schemas/netprints.catalog.v1.schema.json"
+  }
+]

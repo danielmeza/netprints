@@ -56,5 +56,10 @@ internal static class CliCommandCatalog
             .WithDescription("The git merge driver for graphs: merge two versions by node, pin and member identity, or fall back to a text merge with conflict markers.")
             .WithExample(MergeCommand.Name, "%O", "%A", "%B")
             .WithExample(MergeCommand.Name, "%O", "%A", "%B", "--marker-size", "9", "--path", "Program.netpc.json")),
+        new(GitInstallCommand.Name, config => config.AddCommand<GitInstallCommand>(GitInstallCommand.Name)
+            .WithDescription("Register the graph diff text conversion and, with --merge, the merge driver in git's configuration and attributes, or remove them.")
+            .WithExample(GitInstallCommand.Name)
+            .WithExample(GitInstallCommand.Name, "--merge", "--command", "dotnet tool run netprints")
+            .WithExample(GitInstallCommand.Name, "--global", "--uninstall")),
     ];
 }

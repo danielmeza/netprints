@@ -518,13 +518,13 @@ SC-013.
 
 ### Batch F3 — model: sonnet — T092–T095 — 6 units
 
-- [ ] T092 [US4] Test first `tests/NetPrints.Cli.Tests/Commands/GitInstallCommandTests.cs` (GI-T09, temporary git
+- [x] T092 [US4] Test first `tests/NetPrints.Cli.Tests/Commands/GitInstallCommandTests.cs` (GI-T09, temporary git
   repositories).
-- [ ] T093 [US4] `src/NetPrints.Cli/Git/GitConfig.cs`, `Git/GitAttributesFile.cs`,
+- [x] T093 [US4] `src/NetPrints.Cli/Git/GitConfig.cs`, `Git/GitAttributesFile.cs`,
   `src/NetPrints.Cli/Commands/GitInstallCommand.cs` (contracts/git.md §3).
-- [ ] T094 [US4] `tests/NetPrints.Cli.Tests/Git/GitDriversEndToEndTests.cs` (GI-T10: `git diff` through `show`, `git
+- [x] T094 [US4] `tests/NetPrints.Cli.Tests/Git/GitDriversEndToEndTests.cs` (GI-T10: `git diff` through `show`, `git
   merge` through the driver, plain-git baseline conflict).
-- [ ] T095 [P] [US4] `eng/schemastore/catalog-entries.json` and `eng/schemastore/PULL_REQUEST.md` (with the line
+- [x] T095 [P] [US4] `eng/schemastore/catalog-entries.json` and `eng/schemastore/PULL_REQUEST.md` (with the line
   "**Owner action**: submit after the docs site serves both URLs; not done by agents"), and
   `tests/NetPrints.Cli.Tests/Git/SchemaStoreEntryTests.cs` (GI-T11); whole suite; commit.
 
