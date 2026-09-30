@@ -274,20 +274,20 @@ contracts/catalog.md). **Independent test**: CT-T01–CT-T19; SC-004, SC-005 (ex
 
 ### Batch D2 — model: sonnet — T041–T043 — 5 units
 
-- [ ] T041 [US3] Reference `src/NetPrints.Annotations` from `tests/NetPrints.Catalog.Tests` with `Aliases="Annotations"`
+- [x] T041 [US3] Reference `src/NetPrints.Annotations` from `tests/NetPrints.Catalog.Tests` with `Aliases="Annotations"`
   (extern alias; the shared engine types would otherwise clash with `NetPrints.Catalog`'s). Test first
   `tests/NetPrints.Catalog.Tests/Generator/AttributeInjectionTests.cs` (AN-T01); add
   `src/NetPrints.Annotations/AttributeSources.cs` (contracts/annotations.md §2, C# 7.3-compatible) and a first
   `src/NetPrints.Annotations/CatalogGenerator.cs` that only registers post-initialization output
   (`AddEmbeddedAttributeDefinition()` + the attributes).
-- [ ] T042 [US2] Fixture `tests/Fixtures/Catalog/CatalogFixtureLib/` (`CatalogFixtureLib.csproj`: net10.0,
+- [x] T042 [US2] Fixture `tests/Fixtures/Catalog/CatalogFixtureLib/` (`CatalogFixtureLib.csproj`: net10.0,
   `GenerateDocumentationFile`, version 1.0.0, analyzer `ProjectReference` to `src/NetPrints.Annotations` with
   `OutputItemType="Analyzer" ReferenceOutputAssembly="false" PrivateAssets="all"`; sources covering every edge case in spec §Edge Cases
   plus `Fixture.Attributes.ExposeAttribute(ExposeFlags flags)` and `[NetPrintsType]`/`[NetPrintsNode]`/
   `[NetPrintsIgnore]` uses); `tests/NetPrints.Catalog.Tests/Profiles/fixture-flags.npprofile.json` (contracts/catalog.md
   §6); `tests/NetPrints.Catalog.Tests/FixtureLibrary.cs` locator; Catalog.Tests references the fixture with
   `ReferenceOutputAssembly="false"`; add the fixture to `NetPrints.slnx`.
-- [ ] T043 [US2] Test first `tests/NetPrints.Catalog.Tests/Engine/GlobTests.cs` (CT-T07) and
+- [x] T043 [US2] Test first `tests/NetPrints.Catalog.Tests/Engine/GlobTests.cs` (CT-T07) and
   `Engine/ProfileJsonTests.cs` (valid profile with `schemaVersion`; malformed or newer → NPC003); then shared
   `src/NetPrints.Catalog/Engine/Glob.cs`, `Engine/CatalogProfile.cs` (record per data-model.md §2) and
   `Engine/ProfileJson.cs` (a minimal JSON reader, no System.Text.Json, so the generator can use it); whole suite; commit.

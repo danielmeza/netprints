@@ -1,13 +1,12 @@
 extern alias Annotations;
-
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using RoslynCompilation = Microsoft.CodeAnalysis.Compilation;
 using AnnotationsGenerator = Annotations::NetPrints.Annotations.CatalogGenerator;
+using RoslynCompilation = Microsoft.CodeAnalysis.Compilation;
 
 namespace NetPrints.Catalog.Tests.Generator;
 
