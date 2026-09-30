@@ -13,17 +13,19 @@ paths:
 **Invoke the `avalonia-xaml` skill too, before you edit anything, unless it is already loaded in this session.** It
 holds the enforced rules (E1-E6, which `XamlHygieneTests` checks at build time) and the defaults that every XAML change
 follows; this skill only adds D5, D7 and D8. Rule IDs are shared across the `avalonia-*` skills.
-Two enforced rules bite most often here: **E2**, no color literals in views (only `Transparent`), and **E6**, a theme
+Two enforced rules bite most often here: **E2**, no color literals in views (one exception, stated in E2), and **E6**, a theme
 token is always a `DynamicResource`, never a `StaticResource`.
 
-The tiers (Enforced, Default, Consider) and E1-E6 are defined in `avalonia-xaml`. List any Default rule you deviate from in the PR.
+The tiers and E1-E6 are defined in `avalonia-xaml`. List any Default rule you deviate from in the PR.
 
 ## Default
 
-**D5. Converters decide how a state *looks*; the VM decides *what* the state is.** Writing a converter is
+**D5. Converters decide how a state *looks*; the view model (VM) decides *what* the state is.** Writing a converter is
 normal and encouraged for reusable, view-only transformations. A converter may map app or business *state* to
-visuals: brushes, colors, icons, visibility, opacity, thickness, text formatting.
-- Allowed: `NodeKindBrushConverter` (`NodeVisualKind` to header brush), or a `CompileStatus` to status-brush converter.
+theme-independent visuals: icons, visibility, opacity, thickness, text formatting.
+- **A color that depends on the theme never comes from a converter.** Map the state to a style class
+  (`Classes.pure="{Binding IsPure}"`) and have the style set a `DynamicResource` token (D7).
+- Allowed: a `CompileStatus` to icon-kind converter.
 - Not allowed: a `CanConnectConverter` that asks the type system whether two pins are compatible, or a converter
   that resolves a type name through the reflection provider. Those compute the state. Expose `IsCompatible` or
   `ResolvedType` on the VM, then (if you like) convert *that* into a brush.
@@ -38,7 +40,6 @@ visuals: brushes, colors, icons, visibility, opacity, thickness, text formatting
 as a fallback) in `EditorStyles.axaml`, named `Area.Role` (for example `GraphGrid.MinorColor`, `Node.HeaderForeground`). Reference them with
 `DynamicResource`. Use Fluent's `System*` keys (`SystemAccentColor`, `SystemControlForegroundBaseMediumBrush`)
 before inventing a new one. Use `StaticResource` for things that never vary by theme: templates, `ControlTheme`s, sizes.
-Colors computed in C# (`GraphBrushes`) should move to tokens once they need a light variant.
 
 **D8. Styles for tweaks, ControlThemes for re-templating.**
 - `Style` + class (`<Style Selector="Button.flat">`) is for additive property changes. Styles cascade and stack.
@@ -50,19 +51,17 @@ Colors computed in C# (`GraphBrushes`) should move to tokens once they need a li
   such as `pinValue` keep their names. Don't rename them just to conform.
 - Prefer a style class to repeating the same five inline setters. For a color change, use a style, not a template.
 
-## Consider
-
-- Use `IsHitTestVisible="False"` on decorative overlays. Use `Background="Transparent"` only on elements that must catch the pointer.
-- `BoxShadow` and stacked translucency cost fill rate in repeated templates.
-- Use `ThemeVariantScope` to force a variant on a subtree, such as a dark code pane in the light theme.
-
 ## Gotchas
 
-- A brush that a converter builds in C# doesn't follow a theme switch, because the binding isn't re-evaluated when
-  the variant changes. Map the state to a style class instead (`Classes.pure="{Binding IsPure}"`) and let the style
-  set a `DynamicResource` token.
+- A brush that a converter builds in C# freezes the variant it was built in, because the binding isn't re-evaluated
+  when the theme changes (see D5).
 - A `ControlTheme` replaces the whole template and only one applies at a time. Base it on the default
   (`BasedOn="{StaticResource {x:Type nodify:ItemContainer}}"`) or the control loses the parts you didn't restyle.
+
+## Known debt
+
+- `NodeKindBrushConverter` returns Dark-only brushes from `GraphBrushes`. It moves to tokens and style classes when a
+  Light variant is needed.
 
 ## Before you finish
 

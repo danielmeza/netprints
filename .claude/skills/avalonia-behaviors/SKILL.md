@@ -25,7 +25,7 @@ TextBox or Nodify), use a tunnel-routed behavior (`ExecuteCommandOnKeyDownBehavi
 before falling back to code-behind.
 
 **D11. Use a prebuilt behavior before you write code-behind or a custom behavior.** NetPrints references
-`Xaml.Behaviors.Interactions`, `.Interactions.Custom` and `.Interactions.DragAndDrop` 12.0.7. Their types sit in the
+`Xaml.Behaviors.Interactions`, `.Interactions.Custom` and `.Interactions.DragAndDrop` 12 (exact version: `Directory.Packages.props`). Their types sit in the
 default `https://github.com/avaloniaui` xmlns, so they need no prefix. Don't add the `Xaml.Behaviors.Avalonia` meta
 package: it also pulls in Animations, Draggable, Events and Responsive, which NetPrints doesn't use (ADR-0007). Take the first option that fits:
 
@@ -37,10 +37,10 @@ package: it also pulls in Animations, Draggable, Events and Responsive, which Ne
 4. **`EventTriggerBehavior EventName="..."` + `InvokeCommandAction`**, only when no typed trigger covers the event. It
    finds the event through reflection, so it isn't trim-safe and a typo fails only at runtime.
 5. **A custom `StyledElementBehavior<T>`** in `NetPrints.Editor/Behaviors/` with a headless test, only for reusable
-   view mechanics that no prebuilt covers. Check `src/NetPrints.Editor/Behaviors/` for one that already exists.
+   view mechanics that no prebuilt covers (see [custom-behaviors.md](references/custom-behaviors.md)). Check `src/NetPrints.Editor/Behaviors/` for one that already exists.
 6. **Code-behind**, only for gesture math and interop (D1).
 
-The typical conversion replaces a handler with a behavior, and the decision moves into a VM command:
+The typical conversion replaces a handler with a behavior, and the decision moves into a view model (VM) command:
 ```xml
 <!-- Before: KeyDown="OnSearchKeyDown", and a handler that checks e.Key == Key.Enter and calls the VM. -->
 <!-- After (src/NetPrints.Editor/Search/NodeSearchView.axaml): -->
@@ -71,6 +71,8 @@ type's properties, including the ones it inherits, run
 | Popups and flyouts | `PopupOpenedTrigger`, `HideFlyoutAction`, `ButtonHideFlyoutOnClickBehavior`; canvas popups stay `CanvasPopup` (ADR-0004) | [dialogs-windows-popups.md](references/dialogs-windows-popups.md) |
 | Focus on open, show or click; select all | `FocusOnAttachedToVisualTreeBehavior`, `FocusOnVisibleBehavior`, `FocusSelectedItemBehavior`, `TextBoxSelectAllOnGotFocusBehavior` | [focus-and-text.md](references/focus-and-text.md) |
 | Follow a growing log or list | `AutoScrollToBottomBehavior` | [lists-and-scrolling.md](references/lists-and-scrolling.md) |
+| Automation names and announcements, validation visuals | `ScreenReaderAnnounceAction` and the validation types | [accessibility-and-validation.md](references/accessibility-and-validation.md) |
+| Animations, transitions, theme-variant triggers, responsive classes (rarely needed) | see the file | [visuals-and-layout.md](references/visuals-and-layout.md) |
 | Drag an item VM from a list onto a target | `ContextDragBehavior Context="{Binding}"` + `ContextDropBehavior Handler=...` (`DropHandlerBase`) | [drag-and-drop.md](references/drag-and-drop.md) |
 | Reorder a list by drag | the same `ContextDragBehavior` + `ContextDropBehavior` pair, whose handler calls one undoable VM `Move…` command; not the Draggable package's `ListReorderDragBehavior`/`ItemDragBehavior`, which never call a command, so the model and undo miss the move | [drag-and-drop.md](references/drag-and-drop.md) |
 
@@ -86,7 +88,10 @@ and the dialog behaviors. Their decisions and side effects belong in commands an
   before deciding a property doesn't exist.
 - `EventTriggerBehavior EventName="..."` finds the event by reflection, so a typo fails only at runtime.
 - `AutoScrollToBottomBehavior` does nothing on a `TextBox`. Attach it to a `ScrollViewer` or an `ItemsControl`.
-- `Ctrl+` in a gesture is documented to map to Cmd on macOS; nobody has checked it on a Mac yet.
+
+## Known debt
+
+- `Ctrl+` in a gesture is documented to map to Cmd on macOS, but it has not been verified on a Mac.
 
 ## Before you finish
 

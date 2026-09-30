@@ -12,7 +12,7 @@ tags. Prebuilt types need no xmlns prefix.
 
 ## The NetPrints pattern
 
-Nothing in the repo uses the drag-and-drop behaviors yet: `MemberVariableView.axaml` starts its variable drag from
+Nothing in the repo uses the drag-and-drop behaviors: `MemberVariableView.axaml` starts its variable drag from
 pointer handlers in code-behind, which D1 allows as gesture mechanics. For a new drag, use this pattern.
 
 - **Drag an item VM onto a target, or reorder a list:** `ContextDragBehavior` on the source and `ContextDropBehavior`

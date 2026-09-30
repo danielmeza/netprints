@@ -44,7 +44,7 @@ The XAML rules are split across three skills that share one numbering, so a rule
 - **E3. Command-shaped events are not wired in XAML.** `Click`, `Tapped`, `DoubleTapped`, `KeyDown`/`KeyUp`,
   `SelectionChanged`, `TextChanged`, `GotFocus`/`LostFocus` and similar handlers need an allowlist entry.
   Pointer and drag/drop events (`PointerPressed/Moved/Released`, `DragDrop.*`) are allowed, because gestures are view mechanics.
-  *Why:* each UI action is one view-model command with its own unit test. Wire it with `Command`, `KeyBinding` or a behavior (D9, D11, `avalonia-behaviors`).
+  *Why:* each UI action is one view model (VM) command with its own unit test. Wire it with `Command`, `KeyBinding` or a behavior (D9, D11, `avalonia-behaviors`).
 - **E4. AutomationIds come from `AutomationIds`.** Write `AutomationProperties.AutomationId="{x:Static ed:AutomationIds.X}"`.
   Never use a string literal. *Why:* the UI and E2E tests share one set of constants, which lets renames compile-check.
 - **E5. Icon-only buttons have an accessible name.** Any `Button` whose only content is a `MaterialIcon`, `PathIcon` or `Image`
@@ -62,7 +62,7 @@ The XAML rules are split across three skills that share one numbering, so a rule
 **D1. XAML first; code-behind only for view mechanics.** Wire behavior in XAML: bindings, `Command`, styles,
 `KeyBinding` and behaviors. Code-behind is fine for work that is purely about the view and would be awkward in XAML. Examples: drag gestures, the
 Nodify viewport math (`GraphEditorView.ToGraph`), AvaloniaEdit interop (`CodeView`), and focus or scroll plumbing
-that no behavior covers. Keep such handlers small: they translate the gesture and then call **one** view-model command.
+that no behavior covers. Keep such handlers small: they translate the gesture and then call **one** VM command.
 They must not decide domain questions. *Why:* a command can be tested without a window, and a handler cannot.
 - Every new UI action gets a `[RelayCommand]` on the VM and a unit test that runs it without the view.
 - `InitializeComponent`, `DataContext` setup and a named-control accessor are not "logic". Leave them alone.
@@ -82,7 +82,7 @@ A view with no bindings, such as the code-behind dialogs, doesn't need `x:DataTy
 
 **D4. Keep reach-ups short.** Bind to the *nearest* stable owner: the `ListBox` or `ItemsControl` that holds the items, or
 the `UserControl`. Avoid `$parent[Window]` from inside a template, and don't use numeric hops such as `$parent[Border;2]`. Both break
-when the layout is refactored. Better options, in order: (1) the item VM exposes the command itself; (2) `$parent[ItemsHost]`;
+when the layout is refactored. Better options, in order: (1) the item VM exposes the command itself; (2) `$parent[ItemsControl]`, the nearest items host;
 (3) restructure so that no reach-up is needed. For example, an inspector whose DataContext is overridden would need
 `$parent[Window]...ShowVariableInspector`; `ClassEditorWindow` wraps it instead:
 ```xml
@@ -90,8 +90,6 @@ when the layout is refactored. Better options, in order: (1) the item VM exposes
   <edinspectors:VariableInspectorView DataContext="{Binding SelectedVariable}" />
 </Panel>
 ```
-`ClassEditorWindow.axaml` still reaches `$parent[Window]` from several item templates. That predates this rule;
-don't copy it.
 
 **D6. Assign typed data templates by `DataType`.** Match views to VMs with `DataTemplate x:DataType`, either in place or in
 `DataTemplates`. There is no reflection `ViewLocator`. *Why:* the templates are compile-checked and trimming-safe.
@@ -129,10 +127,8 @@ from a VM, as `SelectTypeDialogVM.ResolveSelection` does; the view doesn't compu
 
 ## Consider
 
-- `Mode=OneTime` for values that never change after load, such as labels built from immutable specifiers.
-- One `Grid` beats nested `StackPanel`s in repeated templates (`NodeView` is rendered for every node). Use the
-  panel's own `Background`/`BorderBrush` instead of wrapping it in an extra `Border` (see D12).
-- Use `TextBlock` rather than a read-only `TextBox` for display-only text, unless the text must be selectable (as in `ErrorDialog`).
+- `NodeView` is rendered for every node, so prefer one `Grid` to nested `StackPanel`s there.
+- Display-only text is a `TextBlock`, unless it must be selectable (as in `ErrorDialog`).
 - Use `#Name` element bindings to connect two views without code, for example
   `ViewportLocation="{Binding #Editor.ViewportLocation}"` instead of syncing it in `PropertyChanged`.
 - `WeakReferenceMessenger` is for cross-window notifications only. Between a parent and child VM, use direct references or events.
@@ -147,6 +143,10 @@ from a VM, as `SelectTypeDialogVM.ResolveSelection` does; the view doesn't compu
   the row `Background="Transparent"` (E2 allows it for this reason).
 - Headless tests have no window manager, real cursor or OS drag and drop (see `UiCapabilities`). A test that needs
   them belongs in the Desktop E2E project.
+
+## Known debt
+
+- `ClassEditorWindow.axaml` still reaches `$parent[Window]` from several item templates (D4). Don't copy it.
 
 ## Before you finish a XAML change
 

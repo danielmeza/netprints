@@ -14,7 +14,7 @@ tags. Prebuilt types need no xmlns prefix.
 
 ### Follow a growing output list
 
-*Not yet used in the repo.* Replaces a `CollectionChanged` handler that calls `ScrollToEnd()`. How it works (checked in
+*No repo example: check the properties with `scripts/behavior-props.cs` and build.* Replaces a `CollectionChanged` handler that calls `ScrollToEnd()`. How it works (checked in
 the 12.0.7 assembly): attached to a `ScrollViewer`, it scrolls to the end whenever the content's height grows;
 attached to an `ItemsControl`/`ListBox`, it finds the inner `ScrollViewer` and also scrolls when items are added. It
 stops following while the user has scrolled up and resumes once they are back at the bottom. It does nothing on a

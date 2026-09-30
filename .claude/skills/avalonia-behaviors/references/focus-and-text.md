@@ -9,7 +9,7 @@ tags. Prebuilt types need no xmlns prefix.
 
 ### Focus and select all when a view opens
 
-*Not yet used in the repo.* Replaces `Focus()` and `SelectAll()` calls in `OnOpened` or `OnAttachedToVisualTree`:
+*No repo example: check the properties with `scripts/behavior-props.cs` and build.* Replaces `Focus()` and `SelectAll()` calls in `OnOpened` or `OnAttachedToVisualTree`:
 
 ```xml
 <TextBox Text="{Binding Name}">

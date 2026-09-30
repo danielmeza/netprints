@@ -27,14 +27,15 @@
     },
     {
       "id": 3,
-      "prompt": "Write a converter that turns a CompileStatus into the color of a status dot in the main window toolbar.",
-      "expected_output": "A sealed converter with a static Instance used via x:Static, ConvertBack throwing NotSupportedException, UnsetValue for unexpected input, a plain xUnit test, and colors that follow the theme (D5, D7).",
+      "prompt": "Show the compile status (CompileStatus) as a colored dot in the main window toolbar.",
+      "expected_output": "The dot's color comes from style classes set from the VM state, with each class's style setting a per-variant DynamicResource token; no converter builds a brush. A converter appears only if it maps CompileStatus to an icon kind, and then it is sealed with a static Instance, ConvertBack throws NotSupportedException, unexpected input returns UnsetValue, and a plain xUnit test covers it (D5, D7).",
       "files": [],
       "assertions": [
-        "Converter is sealed with a static Instance",
-        "ConvertBack throws NotSupportedException",
-        "Plain xUnit test without an Avalonia app",
-        "Colors follow the theme (tokens or style classes)"
+        "Color comes from style classes plus per-variant tokens in ThemeDictionaries",
+        "Tokens are referenced with DynamicResource",
+        "No converter returns a brush or color",
+        "Any converter maps to an icon kind, is sealed with a static Instance, and ConvertBack throws NotSupportedException",
+        "Any converter has a plain xUnit test without an Avalonia app"
       ]
     }
   ]
