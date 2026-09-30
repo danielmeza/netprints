@@ -495,15 +495,15 @@ SC-013.
 
 ### Batch F1 — model: sonnet — T084–T087 — 5 units
 
-- [ ] T084 [US4] Test first: `tests/NetPrints.Cli.Tests/Commands/FormatCommandTests.cs` (GI-T01) and
+- [x] T084 [US4] Test first: `tests/NetPrints.Cli.Tests/Commands/FormatCommandTests.cs` (GI-T01) and
   `tests/NetPrints.Cli.Tests/Git/GraphSummaryTests.cs` (GI-T02; goldens
   `tests/NetPrints.Cli.Tests/Git/Snapshots/HelloWorld.show.txt`, `AllNodes.show.txt`).
-- [ ] T085 [US4] `src/NetPrints.Cli/Commands/FormatCommand.cs` (format resolved through `DocumentFormatRegistry`, files
+- [x] T085 [US4] `src/NetPrints.Cli/Commands/FormatCommand.cs` (format resolved through `DocumentFormatRegistry`, files
   through `FileSystemDocumentStore`; read, write through the same `IDocumentFormat` to memory, byte compare;
   `--check`).
-- [ ] T086 [US4] `src/NetPrints.Cli/Git/GraphSummaryWriter.cs` (contracts/git.md §1) and
+- [x] T086 [US4] `src/NetPrints.Cli/Git/GraphSummaryWriter.cs` (contracts/git.md §1) and
   `src/NetPrints.Cli/Commands/ShowCommand.cs` (document read through `DocumentFormatRegistry`).
-- [ ] T087 [US4] `.github/workflows/ci.yml` "Graph checks": add `netprints format --check samples`; whole suite; commit.
+- [x] T087 [US4] `.github/workflows/ci.yml` "Graph checks": add `netprints format --check samples`; whole suite; commit.
 
 ### Batch F2 — model: sonnet — T088–T091 — 6 units
 

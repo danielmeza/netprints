@@ -122,6 +122,35 @@ netprints migrate samples/HelloWorld/HelloWorld.Program.netpc.json
 
 **Output:** `<path>: schema 1 (current)` per graph, then `No migrations are available; N graph(s) are at schema version 1.` A graph with a newer schema prints `<path>: schema <n> is not supported (this tool supports 1)`, one without a `schemaVersion` prints `<path>: unreadable: Missing 'schemaVersion'.`, and both exit 1. Directory searches do not follow symbolic links, and a directory that cannot be read is reported as `<dir>: unreadable: <reason>` (exit 1).
 
+### `format` — Canonicalize graph files
+
+```
+netprints format [<paths>...] [--check]
+```
+
+Rewrites `.netpc.json` graphs into their canonical form (the form the editor writes), touching only files whose bytes change. Paths are graph files or directories searched recursively (`bin`, `obj` and symbolic links are skipped); the default is the current directory. With `--check` it writes nothing and exits 1 if any graph is not canonical or cannot be read.
+
+```
+netprints format samples
+netprints format --check samples
+```
+
+**Output:** `formatted: <path>` per rewritten file (or `not canonical: <path>` with `--check`), `unreadable: <path>: <reason>` per unreadable file, then a summary line. A path that does not exist or is neither a graph nor a directory exits 2.
+
+### `show` — Summarize a graph
+
+```
+netprints show <graph>
+```
+
+Prints a stable, line-oriented summary of one graph (class header, members, nodes sorted by id, pin values, connections, layout entry count), independent of the node order in the file. Nodes of extension kinds print as `node <id> <kind> (extension not loaded)`. This is the text `git diff` shows once `git-install` has configured it.
+
+```
+netprints show samples/HelloWorld/HelloWorld.Program.netpc.json
+```
+
+An unreadable graph exits 1 with the reason on stderr; a missing file exits 2.
+
 ### `catalog` — Write a type catalog
 
 ```
@@ -162,7 +191,9 @@ netprints generate --check
 
 ### Format and verify graphs are canonical
 
-This command is not yet available; see the [release notes](https://github.com/danielmeza/netprints/releases) for what is coming.
+```bash
+netprints format --check
+```
 
 ## Removed 0.1 flags
 

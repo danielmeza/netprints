@@ -35,9 +35,8 @@ internal sealed class MigrateCommand(
     /// <summary>The command name.</summary>
     public const string Name = "migrate";
 
-    private const string GraphExtension = ".netpc.json";
+    private const string GraphExtension = GraphFileSearch.GraphExtension;
     private const string ProjectExtension = ".csproj";
-    private static readonly string[] SkippedDirectories = ["bin", "obj"];
 
     /// <inheritdoc/>
     public override async Task<int> ExecuteAsync(CommandContext context, MigrateSettings settings, CancellationToken cancellationToken)
@@ -119,7 +118,7 @@ internal sealed class MigrateCommand(
 
         if (argument.Length > 0 && Directory.Exists(path))
         {
-            CollectGraphs(path, graphs, unreadable);
+            GraphFileSearch.Collect(path, graphs, unreadable, environment.CurrentDirectory);
             return CollectResult.Ok;
         }
 
@@ -170,40 +169,6 @@ internal sealed class MigrateCommand(
         }
 
         return CollectResult.Ok;
-    }
-
-    // Symbolic links and junctions are not followed (a link back up the tree would rescan it), and a directory that cannot be listed is
-    // reported and counted as a failure instead of aborting the walk.
-    private void CollectGraphs(string directory, ICollection<string> graphs, ICollection<string> unreadable)
-    {
-        string[] files;
-        string[] children;
-        try
-        {
-            files = Directory.GetFiles(directory, "*" + GraphExtension, SearchOption.TopDirectoryOnly);
-            children = Directory.GetDirectories(directory);
-        }
-        catch (Exception ex) when (ex is UnauthorizedAccessException or IOException)
-        {
-            unreadable.Add($"{Path.GetRelativePath(environment.CurrentDirectory, directory)}: unreadable: {ex.Message}");
-            return;
-        }
-
-        foreach (string file in files.Where(file => file.EndsWith(GraphExtension, StringComparison.OrdinalIgnoreCase)))
-        {
-            graphs.Add(file);
-        }
-
-        foreach (string child in children)
-        {
-            if (SkippedDirectories.Contains(Path.GetFileName(child), StringComparer.OrdinalIgnoreCase)
-                || new DirectoryInfo(child).Attributes.HasFlag(FileAttributes.ReparsePoint))
-            {
-                continue;
-            }
-
-            CollectGraphs(child, graphs, unreadable);
-        }
     }
 
     private readonly record struct CollectResult(int ExitCode, string? Message)

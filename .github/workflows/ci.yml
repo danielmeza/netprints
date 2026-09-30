@@ -55,7 +55,9 @@ jobs:
       # which would make this check pass on a file it just regenerated. The samples use the in-repo SDK, so the
       # check needs only the CLI and generator built above.
       - name: Graph checks
-        run: dotnet run --project src/NetPrints.Cli -c Release --no-build -- regen --check samples/HelloWorld
+        run: |
+          dotnet run --project src/NetPrints.Cli -c Release --no-build -- regen --check samples/HelloWorld
+          dotnet run --project src/NetPrints.Cli -c Release --no-build -- format --check samples
 
       # Fails if any file would be reformatted by `dotnet format` (whitespace, style and analyzer
       # fixes from .editorconfig); run the same command locally to fix. RS1024's sites in

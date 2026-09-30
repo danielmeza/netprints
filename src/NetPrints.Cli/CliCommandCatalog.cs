@@ -45,5 +45,12 @@ internal static class CliCommandCatalog
             .WithExample(CatalogCommand.Name, "--assembly", SampleAssembly, "--output", SampleCatalog)
             .WithExample(CatalogCommand.Name, "--config", SampleCatalogConfig, "--check")
             .WithExample(CatalogCommand.Name, "--package", "Newtonsoft.Json@13.0.3", "--profile", "annotated")),
+        new(FormatCommand.Name, config => config.AddCommand<FormatCommand>(FormatCommand.Name)
+            .WithDescription("Rewrite graph files into canonical form, or check that they already are.")
+            .WithExample(FormatCommand.Name, SampleProject)
+            .WithExample(FormatCommand.Name, "--check", SampleProject)),
+        new(ShowCommand.Name, config => config.AddCommand<ShowCommand>(ShowCommand.Name)
+            .WithDescription("Print a stable, line-oriented summary of a graph file (the text git diffs).")
+            .WithExample(ShowCommand.Name, SampleGraph)),
     ];
 }

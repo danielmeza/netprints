@@ -23,7 +23,7 @@ class <namespace>.<name> <visibility> [<modifiers>]
 
 `class` block first, then members in file order (variables, methods, constructors, event graphs, each with its
 graph lines), then `layout <n> entries` (count only). Unknown extension nodes print as `node <id> <kind>
-(extension not loaded)`. Golden: `tests/NetPrints.Cli.Tests/Git/Snapshots/HelloWorld.show.txt` and
+(extension not loaded)`. Additions fixed in F1: a pin line is `pin <pin> [as <name>] [= <type> "<value>"]` (value backslash-escaped, `null` unquoted); modifiers are comma-joined; a variable's type is the `type` node wired into its `typeReturn`, and its `type-graph`, `getter <visibility>` and `setter <visibility>` blocks (depth 2) hold their graph lines; the class graph's lines sit at depth 1. Golden: `tests/NetPrints.Cli.Tests/Git/Snapshots/HelloWorld.show.txt` and
 `AllNodes.show.txt`.
 
 ## 2. `merge`

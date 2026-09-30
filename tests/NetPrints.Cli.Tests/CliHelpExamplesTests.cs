@@ -16,6 +16,8 @@ public sealed class CliHelpExamplesTests
     [InlineData("run --help")]
     [InlineData("generate --help")]
     [InlineData("migrate --help")]
+    [InlineData("format --help")]
+    [InlineData("show --help")]
     public async Task EveryPathInAnExampleExists(string command)
     {
         var host = new CliTestHost();
