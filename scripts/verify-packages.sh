@@ -30,6 +30,9 @@ mkdir -p "$NUGET_PACKAGES"
 # --- Step 1: the exact file list of §3 for <version> -------------------------------------------
 
 EXPECTED_FILES=(
+    "NetPrints.Annotations.$VERSION.nupkg"
+    "NetPrints.Catalog.$VERSION.nupkg"
+    "NetPrints.Catalog.$VERSION.snupkg"
     "NetPrints.Cli.$VERSION.nupkg"
     "NetPrints.Cli.$VERSION.snupkg"
     "NetPrints.Core.$VERSION.nupkg"
@@ -97,6 +100,17 @@ grep -q '<developmentDependency>true</developmentDependency>' "$EXTRACT/NetPrint
 [[ -f "$EXTRACT/build/NetPrints.Sdk.targets" ]] || fail "step 2 (NetPrints.Sdk): missing build/NetPrints.Sdk.targets"
 [[ -f "$EXTRACT/tools/net10.0/NetPrints.Generator.dll" ]] || fail "step 2 (NetPrints.Sdk): missing tools/net10.0/NetPrints.Generator.dll"
 [[ -d "$EXTRACT/lib" ]] && fail "step 2 (NetPrints.Sdk): package has a lib/ folder (should have none)"
+
+extract_nupkg NetPrints.Catalog
+check_common_metadata NetPrints.Catalog
+[[ -f "$EXTRACT/lib/net10.0/NetPrints.Catalog.dll" ]] || fail "step 2 (NetPrints.Catalog): missing lib/net10.0/NetPrints.Catalog.dll"
+[[ -f "$EXTRACT/lib/net10.0/NetPrints.Catalog.xml" ]] || fail "step 2 (NetPrints.Catalog): missing lib/net10.0/NetPrints.Catalog.xml"
+
+extract_nupkg NetPrints.Annotations
+check_common_metadata NetPrints.Annotations
+grep -q '<developmentDependency>true</developmentDependency>' "$EXTRACT/NetPrints.Annotations.nuspec" || fail "step 2 (NetPrints.Annotations): nuspec has no <developmentDependency>true</developmentDependency>"
+[[ -f "$EXTRACT/analyzers/dotnet/cs/NetPrints.Annotations.dll" ]] || fail "step 2 (NetPrints.Annotations): missing analyzers/dotnet/cs/NetPrints.Annotations.dll"
+[[ -d "$EXTRACT/lib" ]] && fail "step 2 (NetPrints.Annotations): package has a lib/ folder (should have none)"
 
 # --- Step 3: tool install from the feed ---------------------------------------------------------
 
