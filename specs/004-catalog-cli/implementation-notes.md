@@ -558,4 +558,20 @@ Commits 94b41d6 (R9, R10), 1c5c277 (R14), 77c1a49 (JSON).
 
 Full Release suite: 1552 total, 1542 passed, 10 skipped, 0 failed; `dotnet format --verify-no-changes` clean.
 
+### Batch E-F3 (T083 part 3: R3, R4, R5, R6, R7, R8, R15)
+
+Commit 17f4c34 (docs and packaging only; no behaviour change, so no red/green; the checks below were verified against the code).
+
+- **R3**: "Selecting a profile" now says a profile file is an `AdditionalFiles` item whose name ends in `.npprofile.json` (no metadata), the `Profile` value is the full file name, the built-in ids are `public-api` and `annotated`, an unknown id is NPC002, a missing or invalid file NPC003, and the own catalog always uses `annotated` (checked against `CatalogGenerator.TryResolveProfile`).
+- **R4**: new guide subsections for catalogs of referenced assemblies (`Id`, `Profile`, `Include`, `Exclude`, `AccessorName`, NPC001), the generated accessor (naming from `AccessorName` or the PascalCase id, `NetPrintsCatalogs` in the `RootNamespace`, NPC003, NPC006, an extension registering it with `CatalogLoader.LoadJson`) and reference documentation (`NetPrintsCatalogFrameworkDocumentation`, NPC007). The `LoadEmbedded(this.GetType()...)` advice is gone; the guide now says a library needs no run-time reference to `NetPrints.Catalog`.
+- **R5**: the guide and the Annotations README say the hints are recorded in the catalog and not used by the editor yet (no follow-up task added: R15's deferral covers the editor search rework). Four attributes are listed. The version in the snippets is `<version>`, the `<version>` convention of install.md, since nothing is published.
+- **R6**: `eng/PackageReadme.targets` and `verify-packages.sh` skip fenced code blocks; the Annotations README has the `PackageReference` snippet, the .NET 10 SDK (Roslyn 5.0) requirement and a corrected `[assembly: NetPrintsCatalog]` description.
+- **R7**: the Catalog README says what catalogs do without the Roslyn claim, `var catalog` is no longer declared twice (`embedded`, `fromJson`), and both CLI examples name a source.
+- **R8**: `verify-packages.sh` asserts the first heading of the packed README (`# NetPrints.Annotations`, `# NetPrints.Catalog`) and, for the other packages, the root README's `## Project layout` heading.
+- **R15**: documented in the guide (Discovery by the editor and Consuming a catalog from an extension). Deferred: a later spec decision on whether type-scoped search respects the embedded catalog of the type's assembly, hiding omitted and `[NetPrintsIgnore]` members, with live fallback for uncovered assemblies. Recorded in `.specify/memory/roadmap.md` under P3a.
+
+Checks: `scripts/pack-local.sh` and `scripts/verify-packages.sh` pass (the Annotations README with the XML snippet packs without a converter warning); the website builds; full Release suite 1552 total, 1542 passed, 10 skipped, 0 failed; `dotnet format --verify-no-changes` clean.
+
+All 15 Review E findings are handled: R1, R2, R11, R12, R13 in 7dbd970; R9, R10 in 94b41d6; R14 in 1c5c277; R3, R4, R5, R6, R7, R8 in 17f4c34; R15 documented in 17f4c34 and deferred (roadmap P3a).
+
 ## Governance proposals

@@ -482,7 +482,7 @@ SC-013.
 
 ### Batch E-F — model: sonnet — T083 (reserved: fix review findings)
 
-- [ ] T083 [US3] Fix every finding of T082 (test first for behaviour findings), reply on each review thread with the fixing
+- [x] T083 [US3] Fix every finding of T082 (test first for behaviour findings), reply on each review thread with the fixing
   commit or the reason for deferral, whole suite, commit; if the review had no findings, tick this task with "no
   findings". The next sub-phase starts only after this batch is green on CI.
 
