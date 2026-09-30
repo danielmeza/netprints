@@ -80,6 +80,7 @@
 ### Deviations
 
 - CI: the "CLI smoke" step now asserts exit 0 (was 2) and "CLI sample compile and run" runs `build samples/HelloWorld/HelloWorld.csproj` and greps `Build succeeded.`, because P1's `-p/-r` flags are rejected from C1 on and CI must stay green until T026 rewrites both steps (`run` arrives in C2).
+- `scripts/verify-packages.sh` step 4 ran the installed tool as `netprints -p <csproj> -r` (the CI "Packages (local feed)" job failed on the P1-flag message at c35dc4f); it now runs `netprints build <csproj>` and greps `Build succeeded.`. T075 or T026 may switch it to `run` once C2 lands.
 - The tests and the code were written in one pass per task file rather than committed per task: T019-T022 are one commit, because T019's suite needs the build command (T022) to satisfy `ThereIsAtLeastTheBuildCommand` and `--help` over the catalog.
 - `samples/HelloWorld/Compiled_HelloWorld/` (ignored, dated 2026-09-25, a P1 leftover) makes a local `netprints build samples/HelloWorld` fail with CS0101; a clean copy builds. Not touched (run output), CI checks out clean.
 

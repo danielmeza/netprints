@@ -156,7 +156,7 @@ cmp -s "$COMMITTED" "$GENERATED" || fail "step 4 (SDK build): generated .netpc.g
 RUN_OUTPUT="$(dotnet run --project "$APP" -c Release --no-build 2>&1 || true)"
 echo "$RUN_OUTPUT" | grep -qF "Hello, World!" || fail "step 4 (dotnet run): output does not contain 'Hello, World!': $RUN_OUTPUT"
 
-TOOL_RUN_OUTPUT="$("$TOOL_PATH/netprints" -p "$APP/HelloWorld.csproj" -r 2>&1 || true)"
-echo "$TOOL_RUN_OUTPUT" | grep -qF "Hello, World!" || fail "step 4 (netprints -r): output does not contain 'Hello, World!': $TOOL_RUN_OUTPUT"
+TOOL_BUILD_OUTPUT="$("$TOOL_PATH/netprints" build "$APP/HelloWorld.csproj" 2>&1 || true)"
+echo "$TOOL_BUILD_OUTPUT" | grep -qF "Build succeeded." || fail "step 4 (netprints build): output does not contain 'Build succeeded.': $TOOL_BUILD_OUTPUT"
 
 echo "verify-packages.sh: all checks passed for $VERSION"
