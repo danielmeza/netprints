@@ -1,0 +1,50 @@
+[
+  {
+    "query": "the node header brush for pure functions is unreadable in the Light theme in NetPrints, fix it",
+    "should_trigger": true
+  },
+  {
+    "query": "write a converter that turns a CompileStatus into a status dot color for the toolbar in MainWindow.axaml",
+    "should_trigger": true
+  },
+  {
+    "query": "make all flat buttons in the class editor have rounded corners and less padding",
+    "should_trigger": true
+  },
+  {
+    "query": "Nodify's connection wires look too thick and the selection border is the wrong accent color; theme them to match the editor",
+    "should_trigger": true
+  },
+  {
+    "query": "the Enter key in the node search box doesn't select the highlighted result",
+    "should_trigger": false
+  },
+  {
+    "query": "add an async Compile command that shows a busy spinner while compiling",
+    "should_trigger": false
+  },
+  {
+    "query": "OnSearchBoxKeyDown in NodeSearchView.axaml.cs closes the popup on Escape; replace it",
+    "should_trigger": false
+  },
+  {
+    "query": "explain how the JSON graph format stores node positions",
+    "should_trigger": false
+  },
+  {
+    "query": "add a 'danger' style class for destructive buttons that makes them red in both themes",
+    "should_trigger": true
+  },
+  {
+    "query": "NodeView.axaml hardcodes #FF3C3C3C for the pin label color and XamlHygieneTests E2 fails; fix it properly",
+    "should_trigger": true
+  },
+  {
+    "query": "pressing Delete in the graph editor doesn't remove the selected node",
+    "should_trigger": false
+  },
+  {
+    "query": "the variable list in the class editor gets slow with 3000 variables",
+    "should_trigger": false
+  }
+]

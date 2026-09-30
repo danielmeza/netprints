@@ -5,8 +5,8 @@ description: "Core rules for any Avalonia 12 XAML change in NetPrints (src/NetPr
 
 # Avalonia XAML in NetPrints
 
-Stack: .NET 10, Avalonia 12.1, Nodify.Avalonia 2.0, CommunityToolkit.Mvvm 8.4, AvaloniaEdit 12,
-Material.Icons, Xaml.Behaviors 12.x. Compiled bindings are on (`AvaloniaUseCompiledBindingsByDefault`).
+Stack: .NET 10, Avalonia 12, Nodify.Avalonia 2, CommunityToolkit.Mvvm 8, AvaloniaEdit, Material.Icons and
+Xaml.Behaviors 12 (exact versions: `Directory.Packages.props`). Compiled bindings are on (`AvaloniaUseCompiledBindingsByDefault`).
 
 The rules come in three tiers:
 - **Enforced**: a test checks it (`XamlHygieneTests`), so a violation fails the build. To make an exception, add an allowlist entry with a reason.
@@ -70,7 +70,8 @@ only a parameterless method or one that takes a single `object`, and a plain met
 **D3. Every binding scope is typed.** Put `x:DataType` on the root, on every `DataTemplate`, and on any `Style` or
 `ControlTheme` that contains bindings. When a binding crosses into another scope, cast it:
 ```xml
-Command="{Binding $parent[ListBox].((edclasseditor:ClassEditorVM)DataContext).RemoveMethodCommand}"
+<!-- src/NetPrints.Editor/Search/NodeSearchView.axaml, inside the result item template -->
+Command="{Binding $parent[ListBox].((edsearch:SuggestionListVM)DataContext).SelectCommand}"
 ```
 A view with no bindings, such as the code-behind dialogs, doesn't need `x:DataType`. Give it one when it gets a VM.
 
@@ -84,6 +85,8 @@ when the layout is refactored. Better options, in order: (1) the item VM exposes
   <edinspectors:VariableInspectorView DataContext="{Binding SelectedVariable}" />
 </Panel>
 ```
+`ClassEditorWindow.axaml` still reaches `$parent[Window]` from several item templates. That predates this rule;
+don't copy it.
 
 **D6. Assign typed data templates by `DataType`.** Match views to VMs with `DataTemplate x:DataType`, either in place or in
 `DataTemplates`. There is no reflection `ViewLocator`. *Why:* the templates are compile-checked and trimming-safe.
@@ -122,6 +125,8 @@ from a VM, as `SelectTypeDialogVM.ResolveSelection` does; the view doesn't compu
 ## Consider
 
 - `Mode=OneTime` for values that never change after load, such as labels built from immutable specifiers.
+- One `Grid` beats nested `StackPanel`s in repeated templates (`NodeView` is rendered for every node). Use the
+  panel's own `Background`/`BorderBrush` instead of wrapping it in an extra `Border` (see D12).
 - Use `TextBlock` rather than a read-only `TextBox` for display-only text, unless the text must be selectable (as in `ErrorDialog`).
 - Use `#Name` element bindings to connect two views without code, for example
   `ViewportLocation="{Binding #Editor.ViewportLocation}"` instead of syncing it in `PropertyChanged`.

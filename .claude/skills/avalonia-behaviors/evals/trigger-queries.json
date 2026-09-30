@@ -1,0 +1,50 @@
+[
+  {
+    "query": "OnSearchBoxKeyDown in NodeSearchView.axaml.cs closes the popup on Escape; get rid of that code-behind handler",
+    "should_trigger": true
+  },
+  {
+    "query": "when the inline rename box shows up in the event graph list it should grab focus and have all its text selected",
+    "should_trigger": true
+  },
+  {
+    "query": "add Ctrl+Shift+F to the class editor window to open the find box",
+    "should_trigger": true
+  },
+  {
+    "query": "users want to reorder variables in the class editor by dragging them up and down",
+    "should_trigger": true
+  },
+  {
+    "query": "the pure-function node header color is unreadable in the Light theme, fix it",
+    "should_trigger": false
+  },
+  {
+    "query": "add a unit test for ClassEditorVM.RemoveMethodCommand",
+    "should_trigger": false
+  },
+  {
+    "query": "make every flat button in the class editor use rounded corners and a bit less padding",
+    "should_trigger": false
+  },
+  {
+    "query": "the netprints CLI should return exit code 0 for --version and --help",
+    "should_trigger": false
+  },
+  {
+    "query": "the OK button in the rename dialog should close it and hand the typed name back to the caller",
+    "should_trigger": true
+  },
+  {
+    "query": "make the output list follow new lines as they arrive, unless the user has scrolled up to read something",
+    "should_trigger": true
+  },
+  {
+    "query": "add AutomationIds constants for the rename dialog's OK and Cancel buttons",
+    "should_trigger": false
+  },
+  {
+    "query": "make the selected node's border use the accent color in both the light and dark themes",
+    "should_trigger": false
+  }
+]

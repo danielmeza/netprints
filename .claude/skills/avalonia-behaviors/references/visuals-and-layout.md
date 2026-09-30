@@ -2,7 +2,12 @@
 
 Animations, transitions, composition effects, theme variants, cursors and responsive classes. NetPrints rarely needs these.
 
-Part of the Xaml.Behaviors 12.0.7 catalog; `README.md` in this folder is the index. Prebuilt types need no xmlns prefix.
+Part of the `avalonia-behaviors` skill: its SKILL.md routes each job here, and `catalog-guide.md` explains the stance
+tags. Prebuilt types need no xmlns prefix.
+
+## Contents
+
+- Catalog: Composition (Animations); Animations; Composition (Custom); Transitions; ThemeVariant; Cursor; Icon; Layout; RenderTarget; WriteableBitmap; Screen; Multimedia; Responsive
 
 ## Catalog
 

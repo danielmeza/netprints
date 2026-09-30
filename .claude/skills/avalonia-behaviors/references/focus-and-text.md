@@ -2,7 +2,8 @@
 
 Focus a control when it opens or appears, select all text, and auto-complete boxes.
 
-Part of the Xaml.Behaviors 12.0.7 catalog; `README.md` in this folder is the index. Prebuilt types need no xmlns prefix.
+Part of the `avalonia-behaviors` skill: its SKILL.md routes each job here, and `catalog-guide.md` explains the stance
+tags. Prebuilt types need no xmlns prefix.
 
 ## Recipes
 

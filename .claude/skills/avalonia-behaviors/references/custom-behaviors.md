@@ -2,7 +2,8 @@
 
 The base types to derive from when no prebuilt behavior fits.
 
-Part of the Xaml.Behaviors 12.0.7 catalog; `README.md` in this folder is the index. Prebuilt types need no xmlns prefix.
+Part of the `avalonia-behaviors` skill: its SKILL.md routes each job here, and `catalog-guide.md` explains the stance
+tags. Prebuilt types need no xmlns prefix.
 
 ## Recipes
 
@@ -11,7 +12,7 @@ Part of the Xaml.Behaviors 12.0.7 catalog; `README.md` in this folder is the ind
 Only when no prebuilt one fits and the logic is reusable view mechanics. Derive from `StyledElementBehavior<T>`,
 put it in `src/NetPrints.Editor/Behaviors/`, unhook in `OnDetaching`, react to `OnDataContextChangedEvent` if it
 reads the `DataContext`, and give it a headless test. `DialogCloseBehavior.cs` is the reference implementation:
-about 50 lines, `sealed`, with XML docs on the type.
+about 60 lines, `sealed`, with XML docs on the type.
 
 ## Catalog
 

@@ -1,0 +1,50 @@
+[
+  {
+    "query": "In src/NetPrints.Editor/Variables/VariableInspectorView.axaml add a 'Default value' TextBox bound to the selected variable's DefaultValue, and make sure screen readers announce its label",
+    "should_trigger": true
+  },
+  {
+    "query": "the methods ItemsControl in ClassEditorWindow.axaml gets really slow when a class has ~2000 methods, can you fix the view?",
+    "should_trigger": true
+  },
+  {
+    "query": "NodeView.axaml has a DataTemplate that uses x:CompileBindings=\"False\" because the binding path wouldn't compile; make it compile properly",
+    "should_trigger": true
+  },
+  {
+    "query": "add an async Compile command to MainEditorVM that shows a busy indicator in MainWindow while it runs and can be cancelled",
+    "should_trigger": true
+  },
+  {
+    "query": "add a unit test for ProjectEdit.SetSourceDirectoryIncluded in tests/NetPrints.Core.Tests",
+    "should_trigger": false
+  },
+  {
+    "query": "refactor ExecutionGraphTranslator so it emits if/else blocks instead of the goto state machine",
+    "should_trigger": false
+  },
+  {
+    "query": "the JSON Schema CI job fails on samples/HelloWorld/Program.netpc.json, figure out why",
+    "should_trigger": false
+  },
+  {
+    "query": "write an xUnit test for the NodeKindBrushConverter that checks every NodeVisualKind maps to a brush",
+    "should_trigger": false
+  },
+  {
+    "query": "the Remove variable button in VariableInspectorView.axaml is only a minus icon and screen readers just say 'button'; fix it",
+    "should_trigger": true
+  },
+  {
+    "query": "add a design-time DataContext to MethodInspectorView.axaml so the previewer shows something useful",
+    "should_trigger": true
+  },
+  {
+    "query": "bump Avalonia from 12.1.3 to 12.1.4 in Directory.Packages.props and make sure CI stays green",
+    "should_trigger": false
+  },
+  {
+    "query": "update the docs site page about the graph format to describe the new layout entries",
+    "should_trigger": false
+  }
+]

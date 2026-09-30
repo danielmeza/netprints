@@ -2,7 +2,13 @@
 
 Close a dialog with or without a result, and show popups, flyouts, tooltips and notifications.
 
-Part of the Xaml.Behaviors 12.0.7 catalog; `README.md` in this folder is the index. Prebuilt types need no xmlns prefix.
+Part of the `avalonia-behaviors` skill: its SKILL.md routes each job here, and `catalog-guide.md` explains the stance
+tags. Prebuilt types need no xmlns prefix.
+
+## Contents
+
+- Recipes: A dialog closes with no result; A dialog closes with a result
+- Catalog: Window; Popup; ToolTips; SplitView; ContextDialogs; Notifications
 
 ## Recipes
 

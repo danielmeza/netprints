@@ -2,7 +2,13 @@
 
 Run a VM command when an element is tapped, double-tapped or gets a key. Start here to replace a Tapped, DoubleTapped or KeyDown handler.
 
-Part of the Xaml.Behaviors 12.0.7 catalog; `README.md` in this folder is the index. Prebuilt types need no xmlns prefix.
+Part of the `avalonia-behaviors` skill: its SKILL.md routes each job here, and `catalog-guide.md` explains the stance
+tags. Prebuilt types need no xmlns prefix.
+
+## Contents
+
+- Recipes: Enter in a text box runs a command; Tap an item to run the list's command with that item; The focused control swallows the key
+- Catalog: ExecuteCommand; Button; Input
 
 ## Recipes
 
@@ -47,16 +53,24 @@ as `MemberVariableView.axaml` does. Double-tap works the same with `ExecuteComma
 
 ### The focused control swallows the key
 
-*Not yet used in the repo.* A `TextBox` or the Nodify editor may handle a key before a bubbling handler sees it. Listen on the tunnel pass
-instead of falling back to code-behind (D9):
+A key can be raised on a descendant (the focused `ListBoxItem` of a list), or a `TextBox` or the Nodify editor can
+handle it before a bubbling handler sees it. Listen on the tunnel pass instead of falling back to code-behind (D9):
 
 ```xml
-<ExecuteCommandOnKeyDownBehavior Key="Escape" EventRoutingStrategy="Tunnel" MarkAsHandled="True"
-                                 Command="{Binding CancelCommand}" />
+<!-- src/NetPrints.Editor/ClassEditor/ClassEditorWindow.axaml (the error list) -->
+<ListBox x:Name="ErrorList" ItemsSource="{Binding ErrorList.Rows}">
+  <Interaction.Behaviors>
+    <KeyTrigger Key="Enter" EventRoutingStrategy="Tunnel">
+      <InvokeCommandAction Command="{Binding ErrorList.NavigateCommand}"
+                           CommandParameter="{Binding #ErrorList.SelectedItem}" />
+    </KeyTrigger>
+  </Interaction.Behaviors>
+</ListBox>
 ```
 
-`EventRoutingStrategy` and `MarkAsHandled` come from the shared `ExecuteCommandRoutedEventBehaviorBase`. For a
-shortcut that should work anywhere in a window, a `KeyBinding` in `<Window.KeyBindings>` is simpler (D9).
+`ExecuteCommandOnKeyDownBehavior` takes the same `EventRoutingStrategy="Tunnel"` (and `MarkAsHandled`) when one
+command is enough. For a shortcut that should work anywhere in a window, a `KeyBinding` in `<Window.KeyBindings>` is
+simpler (D9).
 
 ## Catalog
 

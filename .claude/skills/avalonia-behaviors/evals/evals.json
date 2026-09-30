@@ -1,0 +1,23 @@
+{
+  "skill_name": "avalonia-behaviors",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Add a Rename dialog for event graphs in the NetPrints editor. It opens with the current name in a text box that already has focus with all its text selected; Enter or OK accepts and returns the new name; Escape or Cancel closes it and returns null. Write the view (.axaml and .axaml.cs), the view model and a unit test for the view model.",
+      "expected_output": "A DialogVM<string>-based VM with RequestClose, DialogCloseBehavior on the Window, prebuilt focus/select-all behaviors, no event handlers in XAML, AutomationIds constants, VM test.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "prompt": "In the class editor window's Output pane (ClassEditorWindow), make the output follow new lines as they arrive, add an icon-only 'Clear output' button, and bind Ctrl+L to the same action. Write the XAML and view-model changes plus tests.",
+      "expected_output": "AutoScrollToBottomBehavior (no ScrollToEnd in code-behind), a [RelayCommand] Clear with a unit test, icon button with AutomationProperties.Name and an AutomationIds constant, KeyBinding Ctrl+L to the same command.",
+      "files": []
+    },
+    {
+      "id": 3,
+      "prompt": "Let users reorder the methods in the class editor's method list by dragging them. Propose the XAML, view-model and package changes needed.",
+      "expected_output": "Uses a Draggable-package reorder behavior (or a context drag/drop pair) and states that Xaml.Behaviors.Interactions.Draggable must be added to Directory.Packages.props and the Editor csproj; never the Xaml.Behaviors.Avalonia meta package; reorder decision in a VM command with a test.",
+      "files": []
+    }
+  ]
+}

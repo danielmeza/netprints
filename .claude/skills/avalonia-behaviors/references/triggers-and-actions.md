@@ -2,7 +2,13 @@
 
 Chain several actions on one event or key, react to lifecycle events, or handle an event no typed behavior covers.
 
-Part of the Xaml.Behaviors 12.0.7 catalog; `README.md` in this folder is the index. Prebuilt types need no xmlns prefix.
+Part of the `avalonia-behaviors` skill: its SKILL.md routes each job here, and `catalog-guide.md` explains the stance
+tags. Prebuilt types need no xmlns prefix.
+
+## Contents
+
+- Recipes: One key, two actions; No typed behavior fits the event
+- Catalog: InputElement/Triggers; InputElement/Actions; Actions; Core (Interactions); Core (Custom); Gestures; Show; Control; Events
 
 ## Recipes
 
@@ -39,8 +45,8 @@ option):
 </ComboBox>
 ```
 
-Before using it, check whether a two-way binding to a VM property with an `On<Name>Changed` hook would do the
-job with no trigger at all.
+Keep the binding `OneWay`, as here, and let the command apply the change (R2-10). A two-way binding whose setter
+starts an edit bypasses the command, its test and undo, and two quick changes can race.
 
 ## Catalog
 

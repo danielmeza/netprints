@@ -10,10 +10,7 @@ This skill holds rules D5, D7 and D8 of the shared XAML rules. The enforced rule
 Two enforced rules bite most often here: **E2**, no color literals in views (only `Transparent`), and **E6**, a theme
 token is always a `DynamicResource`, never a `StaticResource`.
 
-The rules come in three tiers:
-- **Enforced**: a test checks it (`XamlHygieneTests`), so a violation fails the build. To make an exception, add an allowlist entry with a reason.
-- **Default**: follow it unless you have a reason not to. If you deviate, give the reason in the PR description.
-- **Consider**: tips that are worth knowing. Nobody has to follow them.
+The tiers (Enforced, Default, Consider) and E1-E6 are defined in `avalonia-xaml`. List any Default rule you deviate from in the PR.
 
 ## Default
 
@@ -50,12 +47,13 @@ Colors computed in C# (`GraphBrushes`) should move to tokens once they need a li
 ## Consider
 
 - Use `IsHitTestVisible="False"` on decorative overlays. Use `Background="Transparent"` only on elements that must catch the pointer.
-- One `Grid` beats nested `StackPanel`s in repeated templates (`NodeView` is rendered for every node). Use the
-  panel's own `Background`/`BorderBrush` instead of wrapping it in an extra `Border`. `BoxShadow` and stacked translucency cost fill rate.
+- `BoxShadow` and stacked translucency cost fill rate in repeated templates.
 - Use `ThemeVariantScope` to force a variant on a subtree, such as a dark code pane in the light theme.
 
 ## Before you finish
 
 1. `dotnet build -v q -tl:off --nologo`, then run `XamlHygieneTests` (E2, E6).
 2. A new converter gets a plain xUnit test with no Avalonia app.
-3. Check the change in both the Light and the Dark variant.
+3. Check both variants. In a headless test, set `RequestedThemeVariant` (on the app or a `ThemeVariantScope`) to
+   `ThemeVariant.Light` and then `ThemeVariant.Dark` and assert what resolves, as `GridRenderTests` does; for a quick
+   look, run the editor and switch the variant.

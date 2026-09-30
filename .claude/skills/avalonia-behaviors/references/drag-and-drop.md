@@ -2,23 +2,80 @@
 
 Drag item VMs onto drop targets, reorder lists, and move elements by dragging.
 
-Part of the Xaml.Behaviors 12.0.7 catalog; `README.md` in this folder is the index. Prebuilt types need no xmlns prefix.
+Part of the `avalonia-behaviors` skill: its SKILL.md routes each job here, and `catalog-guide.md` explains the stance
+tags. Prebuilt types need no xmlns prefix.
 
-## In NetPrints today
+## Contents
 
-`MemberVariableView.axaml` starts a variable drag from pointer handlers in code-behind, which D1 allows as gesture
-mechanics; dragging a method or variable name onto the graph works the same way.
+- The NetPrints pattern
+- Catalog: DragAndDrop; ManagedDragDrop; Draggable
 
-- **Drag an item VM onto a target, or reorder a list:** `ContextDragBehavior Context="{Binding}"` on the source and
-  `ContextDropBehavior` with a `DropHandlerBase` subclass on the target (both in the referenced `DragAndDrop`
-  package). The handler only works out the source and target items and calls one VM command, such as
-  `MoveMethodCommand`, which changes the model through an undoable edit. The command gets the unit test; the handler
-  stays thin.
-- **When the row already starts another drag** (a name you drag onto the graph), put the new drag on a separate
-  grip element, so the two gestures don't fight over the same pointer press.
-- **Not the Draggable package** (`ListReorderDragBehavior`, `ItemDragBehavior`): those behaviors move items in the
-  view and never call a command, so the model, undo and the next rebuild of the VM collection all miss the move.
-  The package isn't referenced either.
+## The NetPrints pattern
+
+Nothing in the repo uses the drag-and-drop behaviors yet: `MemberVariableView.axaml` starts its variable drag from
+pointer handlers in code-behind, which D1 allows as gesture mechanics. For a new drag, use this pattern.
+
+- **Drag an item VM onto a target, or reorder a list:** `ContextDragBehavior` on the source and `ContextDropBehavior`
+  with a `DropHandlerBase` subclass on the target. The handler only works out the items and calls one VM command,
+  which changes the model through an undoable edit. The command gets the unit test; the handler stays thin.
+- **When the row already starts another drag** (a name dragged onto the graph), put the new drag on a separate grip,
+  so the two gestures don't fight over one pointer press. Give keyboard users a Move up/down command too (D13).
+- **Not the Draggable package.** `ItemDragBehavior` reorders by calling `RemoveAt`/`Insert` on the bound
+  `ItemsSource` list itself, and `ListReorderDragBehavior` only draws a drop placeholder. Neither calls a command, so
+  the model and undo miss the move. The package isn't referenced either.
+
+Sketch, not compiled (`ItemVM`, `ListVM`, `MoveRequest` and `MoveCommand` stand for your own types; the
+`DropHandlerBase` signatures are the 12.0.7 ones):
+
+```xml
+<ListBox ItemsSource="{Binding Items}">
+  <Interaction.Behaviors>
+    <ContextDropBehavior Context="{Binding}" Handler="{x:Static edb:ReorderDropHandler.Instance}" />
+  </Interaction.Behaviors>
+  <ListBox.ItemTemplate>
+    <DataTemplate x:DataType="ed:ItemVM">
+      <Grid ColumnDefinitions="Auto,*" Background="Transparent">
+        <mi:MaterialIcon Kind="DragVertical" Background="Transparent">
+          <Interaction.Behaviors>
+            <ContextDragBehavior Context="{Binding}" />
+          </Interaction.Behaviors>
+        </mi:MaterialIcon>
+        <TextBlock Grid.Column="1" Text="{Binding Name}" />
+      </Grid>
+    </DataTemplate>
+  </ListBox.ItemTemplate>
+</ListBox>
+```
+
+```csharp
+public sealed class ReorderDropHandler : DropHandlerBase
+{
+    public static ReorderDropHandler Instance { get; } = new();
+
+    public override bool Validate(object? sender, DragEventArgs e, object? sourceContext, object? targetContext, object? state) =>
+        sourceContext is ItemVM && targetContext is ListVM && TargetItem(e) is not null;
+
+    public override bool Execute(object? sender, DragEventArgs e, object? sourceContext, object? targetContext, object? state)
+    {
+        if (sourceContext is not ItemVM moved || targetContext is not ListVM list || TargetItem(e) is not { } target)
+        {
+            return false;
+        }
+
+        var request = new MoveRequest(moved, target);
+        if (!list.MoveCommand.CanExecute(request))
+        {
+            return false;
+        }
+
+        list.MoveCommand.Execute(request);
+        return true;
+    }
+
+    private static ItemVM? TargetItem(DragEventArgs e) =>
+        (e.Source as Visual)?.FindAncestorOfType<ListBoxItem>(includeSelf: true)?.DataContext as ItemVM;
+}
+```
 
 ## Catalog
 
@@ -52,7 +109,7 @@ Use when: In-process drag/drop without the platform DataTransfer (managed previe
 
 ### Draggable · `Xaml.Behaviors.Interactions.Draggable` (package not referenced)
 
-Use when: Move elements or reorder list items by dragging, auto-scroll while dragging [list reordering of methods/variables if ever needed].
+Use when: Move elements or reorder list items by dragging, auto-scroll while dragging [avoid: edits the bound list directly, bypassing commands and undo; use ContextDrag/ContextDrop and a VM command].
 
 | Name | Kind | What it does |
 |---|---|---|

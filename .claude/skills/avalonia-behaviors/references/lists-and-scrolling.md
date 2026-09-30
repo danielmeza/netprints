@@ -2,7 +2,13 @@
 
 Items controls, list and tree items, selection, tabs and scrolling to new items.
 
-Part of the Xaml.Behaviors 12.0.7 catalog; `README.md` in this folder is the index. Prebuilt types need no xmlns prefix.
+Part of the `avalonia-behaviors` skill: its SKILL.md routes each job here, and `catalog-guide.md` explains the stance
+tags. Prebuilt types need no xmlns prefix.
+
+## Contents
+
+- Recipes: Follow a growing output list
+- Catalog: Behaviors; ItemsControl; ListBox; ListBoxItem; SelectingItemsControl; TreeView; TreeViewItem; ScrollViewer; TabControl; Carousel
 
 ## Recipes
 
