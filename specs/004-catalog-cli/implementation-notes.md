@@ -544,4 +544,18 @@ Decisions:
 
 Red/green: red first (8 of 17 failed in `DiagnosticsTests` and `IncrementalTests`: help link mapping, NPC007 missing, invalid accessor, both collisions, both documentation-read counts). Green after the change (35 of 35 in the Generator namespace). Full Release suite: 1548 total, 1538 passed, 0 failed, 10 skipped (base 1539 plus 9 new); build 0 warnings; `dotnet format --verify-no-changes` clean.
 
+### Batch E-F2 (T083 part 2: R9, R10, R14 and the JSON source-generation cleanup)
+
+Commits 94b41d6 (R9, R10), 1c5c277 (R14), 77c1a49 (JSON).
+
+- **R9**: `ReflectionHost.LoadEmbeddedCatalogs` skips a reference path that does not exist without a log line, and catches `UnauthorizedAccessException` together with `IOException` (event 1014, reference skipped, reload continues). The method is now `internal` so the unreadable-file test can call it directly: the live `ReflectionProvider` still throws on a reference it cannot read, which is outside this finding. Red first: the missing-path test failed on the misleading `FileNotFoundException` warning and the unreadable one on the escaping `UnauthorizedAccessException`; green after the fix.
+- **R10**: `AnExtensionCatalogWinsOverAnEmbeddedCatalogOfTheSameId` (extension catalog with id `catalogannotatedlib`, embedded one of the same id): the extension's type is offered, the embedded catalog is reported as NPC103 and its assembly falls back to the live compilation. It passed at once (the behaviour already held by inspection), so it is a pinning test written after the code.
+- **R14**: `CatalogAnnotatedLib` is now a build-first reference of `NetPrints.Catalog.Tests` (same pattern as the other fixtures; MSBuild builds it once per solution build). `AnnotatedOverTheMsBuildBuiltAnnotatedLibraryIsIdenticalToItsEmbeddedCatalog` compares the tool (engine over the dll and its `.xml`, profile `annotated`, id `catalogannotatedlib`) with the catalog embedded in the MSBuild-built dll. Also written after the code, green at once.
+- **JSON**: new source-generated contexts `AutomationJsonContext` (Web defaults, `WhenWritingNull`; `AutomationAgent.Json` removed, the test clients use `AutomationJsonContext.Default`), and one `CompilationOptionsJsonContext` per project for `CompilationOptionsInfo` (Workspace writes, Core reads; default naming, so the JSON is unchanged; the two records stay separate because no shared home exists between those projects). `CanonicalJsonWriter` writes property names through `JavaScriptEncoder.UnsafeRelaxedJsonEscaping.Encode` (golden tests unchanged). `JsonDocumentFormat`, `NodeListConverter` and `CatalogReader` use the `JsonTypeInfo` overloads via `options.GetTypeInfo(...)`, so extension resolvers still apply.
+- **Ban**: every `JsonSerializer` overload that takes `JsonSerializerOptions` (or neither options nor `JsonTypeInfo`) is in `src/BannedSymbols.txt` (RS0030, `src/` only like the rest of that file, so tests are not affected and need no suppression). One line added to AGENTS.md "C# rules". A grep of `src/` finds no reflection-based `JsonSerializer` call.
+- **Kept on purpose**: `JsonNode.ToJsonString(ScalarOptions)` in `CanonicalJsonWriter.WriteValue` (a `JsonNode` method, not a `JsonSerializer` overload, it only applies the relaxed encoder to scalar values); `JsonSerializerOptions` instances in `NetPrintsJsonOptions`, `CatalogReader` and the three schema writers (used as containers for resolvers/converters/encoders, no reflective serialization).
+- No `IsAotCompatible`/`PublishAot`: the editor loads Roslyn, MSBuild and extensions.
+
+Full Release suite: 1552 total, 1542 passed, 10 skipped, 0 failed; `dotnet format --verify-no-changes` clean.
+
 ## Governance proposals
