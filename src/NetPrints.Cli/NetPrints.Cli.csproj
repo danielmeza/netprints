@@ -37,6 +37,7 @@
   <ItemGroup>
     <!-- CliBuildTests (R1-07) exercises Program.BuildAsync directly with a fake IProjectSystem. -->
     <InternalsVisibleTo Include="NetPrints.Core.Tests" />
+    <InternalsVisibleTo Include="NetPrints.Cli.Tests" />
   </ItemGroup>
 
 </Project>

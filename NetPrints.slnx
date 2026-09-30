@@ -5,6 +5,8 @@
     <Platform Name="x86" />
   </Configurations>
   <Folder Name="/src/">
+    <Project Path="src/NetPrints.Annotations/NetPrints.Annotations.csproj" />
+    <Project Path="src/NetPrints.Catalog/NetPrints.Catalog.csproj" />
     <Project Path="src/NetPrints.Cli/NetPrints.Cli.csproj" />
     <Project Path="src/NetPrints.Core/NetPrints.Core.csproj" />
     <Project Path="src/NetPrints.Desktop/NetPrints.Desktop.csproj" />
@@ -18,6 +20,8 @@
     <Project Path="src/NetPrints.Workspace/NetPrints.Workspace.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/NetPrints.Catalog.Tests/NetPrints.Catalog.Tests.csproj" />
+    <Project Path="tests/NetPrints.Cli.Tests/NetPrints.Cli.Tests.csproj" />
     <Project Path="tests/NetPrints.Core.Tests/NetPrints.Core.Tests.csproj" />
     <Project Path="tests/NetPrints.Desktop.E2ETests/NetPrints.Desktop.E2ETests.csproj" />
     <Project Path="tests/NetPrints.Editor.Tests/NetPrints.Editor.Tests.csproj" />

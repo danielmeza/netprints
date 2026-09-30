@@ -48,11 +48,11 @@ publishing (tags, NuGet, wiki, SchemaStore, upstream repos). Every batch must pa
 
 ### Batch A1 — model: haiku — T001–T005 — 5 units
 
-- [ ] T001 Add central versions to `Directory.Packages.props`: `Spectre.Console.Cli` 0.57.2, `Spectre.Console.Testing`
+- [x] T001 Add central versions to `Directory.Packages.props`: `Spectre.Console.Cli` 0.57.2, `Spectre.Console.Testing`
   0.57.2, `Microsoft.Extensions.DependencyInjection` 10.0.12, `Microsoft.CodeAnalysis.PublicApiAnalyzers` 5.6.0 and
   `Microsoft.CodeAnalysis.CSharp` 5.9.0 (the version the Workspaces 5.9.0 dependency already pins; the generator
   overrides it). Keep `CommandLineParser` until T022; confirm `SkiaSharp.NativeAssets.Linux.NoDependencies` is listed.
-- [ ] T002 Create `src/NetPrints.Catalog/NetPrints.Catalog.csproj` (net10.0, `IsPackable`, `EnablePackageValidation`,
+- [x] T002 Create `src/NetPrints.Catalog/NetPrints.Catalog.csproj` (net10.0, `IsPackable`, `EnablePackageValidation`,
   `PackageId`, `Description`, `ProjectReference` to `NetPrints.Reflection`) and
   `src/NetPrints.Annotations/NetPrints.Annotations.csproj` (netstandard2.0, `IsRoslynComponent`,
   `EnforceExtendedAnalyzerRules`, `IncludeBuildOutput=false`, `DevelopmentDependency=true`, `IsPackable`,
@@ -60,16 +60,16 @@ publishing (tags, NuGet, wiki, SchemaStore, upstream repos). Every batch must pa
   `$(TargetPath)` → `analyzers/dotnet/cs`, `IncludeSymbols=false` as in `NetPrints.Sdk.csproj`, since a package without
   build output fails pack with NU5017 otherwise); `NetPrints.Catalog.csproj` also references
   `Microsoft.Extensions.Logging.Abstractions` (for `[LoggerMessage]`); add both to `NetPrints.slnx`.
-- [ ] T003 Create `tests/NetPrints.Catalog.Tests/NetPrints.Catalog.Tests.csproj` and
+- [x] T003 Create `tests/NetPrints.Catalog.Tests/NetPrints.Catalog.Tests.csproj` and
   `tests/NetPrints.Cli.Tests/NetPrints.Cli.Tests.csproj` (copy the shape of
   `tests/NetPrints.Core.Tests/NetPrints.Core.Tests.csproj`: xUnit v3, Exe, MTP; Catalog.Tests references
   `NetPrints.Catalog`, Cli.Tests references `NetPrints.Cli`), each with one passing smoke `[Fact]`; add
   `<InternalsVisibleTo Include="NetPrints.Cli.Tests" />` to `src/NetPrints.Cli/NetPrints.Cli.csproj`; add both to
   `NetPrints.slnx`.
-- [ ] T004 In `.github/workflows/ci.yml` add steps "Test (Catalog)" and "Test (CLI)" after "Test (Core)" with the same
+- [x] T004 In `.github/workflows/ci.yml` add steps "Test (Catalog)" and "Test (CLI)" after "Test (Core)" with the same
   flags; create `specs/004-catalog-cli/implementation-notes.md` with the headings "Decisions", "Checkpoint reports",
   "Deviations", "Governance proposals".
-- [ ] T005 Build and run the whole suite; write the Checkpoint A report in
+- [x] T005 Build and run the whole suite; write the Checkpoint A report in
   `specs/004-catalog-cli/implementation-notes.md`; commit. **Checkpoint A**: solution builds with 0 warnings, suite
   green, CI green on the draft PR.
 

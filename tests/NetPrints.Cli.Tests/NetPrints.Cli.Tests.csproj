@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>NetPrints.Cli.Tests</AssemblyName>
+    <WarningsAsErrors>$(WarningsAsErrors);xUnit1051</WarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+    <!-- Referencing NetPrints.Cli pulls in Microsoft.CodeAnalysis.Workspaces.MSBuild, whose own
+         dependency on Microsoft.Build.Framework carries no asset exclusion of its own (MSBuildLocator's
+         MSBL001, research K10): pin and exclude both here too, exactly like NetPrints.Core.Tests. -->
+    <PackageReference Include="Microsoft.Build" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Build.Framework" ExcludeAssets="runtime" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\NetPrints.Cli\NetPrints.Cli.csproj" />
+  </ItemGroup>
+</Project>

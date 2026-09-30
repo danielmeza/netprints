@@ -70,6 +70,20 @@ jobs:
           -- --coverage --coverage-output-format cobertura
           --coverage-settings ${{ github.workspace }}/tests/CodeCoverage.config
 
+      - name: Test (Catalog)
+        run: >
+          dotnet test --project tests/NetPrints.Catalog.Tests -c Release --no-build
+          --report-xunit-trx --results-directory TestResults
+          -- --coverage --coverage-output-format cobertura
+          --coverage-settings ${{ github.workspace }}/tests/CodeCoverage.config
+
+      - name: Test (CLI)
+        run: >
+          dotnet test --project tests/NetPrints.Cli.Tests -c Release --no-build
+          --report-xunit-trx --results-directory TestResults
+          -- --coverage --coverage-output-format cobertura
+          --coverage-settings ${{ github.workspace }}/tests/CodeCoverage.config
+
       # View-model tests (no display server needed). Same coverage setup and zero-tests handling as
       # Core above.
       - name: Test (Editor)
