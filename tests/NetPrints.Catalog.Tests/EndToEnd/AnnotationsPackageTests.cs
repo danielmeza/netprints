@@ -91,7 +91,7 @@ public sealed class AnnotatedSampleBuild : IAsyncLifetime
 
         CopySources();
         File.WriteAllText(Path.Combine(SampleDirectory, "AnnotatedSample.csproj"), Project(version));
-        File.WriteAllText(Path.Combine(SampleDirectory, "NuGet.config"), NuGetConfig());
+        IsolatedNuGetConfig.Write(SampleDirectory, Feed, Path.Combine(root, "packages"), "NetPrints.*");
 
         BuildOutput = await RunAsync(SampleDirectory, "build", "-nodeReuse:false", "-c", Configuration, "--nologo", "-v", "q");
         CompilerVisibleItemMetadata = await RunAsync(SampleDirectory, "msbuild", "-nodeReuse:false", "-getItem:CompilerVisibleItemMetadata");
@@ -130,27 +130,5 @@ public sealed class AnnotatedSampleBuild : IAsyncLifetime
             <PackageReference Include="NetPrints.Annotations" Version="{version}" PrivateAssets="all" />
           </ItemGroup>
         </Project>
-        """;
-
-    private string NuGetConfig() => $"""
-        <configuration>
-          <packageSources>
-            <clear />
-            <add key="local" value="{Feed}" />
-            <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
-          </packageSources>
-          <packageSourceMapping>
-            <clear />
-            <packageSource key="local">
-              <package pattern="NetPrints.*" />
-            </packageSource>
-            <packageSource key="nuget.org">
-              <package pattern="*" />
-            </packageSource>
-          </packageSourceMapping>
-          <config>
-            <add key="globalPackagesFolder" value="{Path.Combine(root, "packages")}" />
-          </config>
-        </configuration>
         """;
 }

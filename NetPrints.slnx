@@ -20,6 +20,7 @@
     <Project Path="src/NetPrints.Workspace/NetPrints.Workspace.csproj" />
   </Folder>
   <Folder Name="/tests/Fixtures/">
+    <Project Path="tests/Fixtures/Catalog/CatalogConsumerLib/CatalogConsumerLib.csproj" />
     <Project Path="tests/Fixtures/Catalog/CatalogDependentLib/CatalogDependentLib.csproj" />
     <Project Path="tests/Fixtures/Catalog/CatalogFixtureLib/CatalogFixtureLib.csproj" />
     <Project Path="tests/Fixtures/Extensions/Fx.Catalog/Fx.Catalog.csproj" />

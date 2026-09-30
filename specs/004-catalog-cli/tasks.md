@@ -438,19 +438,19 @@ SC-013.
 
 ### Batch E3 — model: sonnet — T073–T075 — 5 units
 
-- [ ] T073 [US3] Test first `tests/NetPrints.Catalog.Tests/EndToEnd/ReferenceAssemblyPackageTests.cs` (AN-T15: pack the
+- [x] T073 [US3] Test first `tests/NetPrints.Catalog.Tests/EndToEnd/ReferenceAssemblyPackageTests.cs` (AN-T15: pack the
   fixture (`-p:IsPackable=true`) with `ProduceReferenceAssembly` and its reference assembly under `ref/net10.0/`, consume it, assert the
   catalog is discovered); add the `ref/` → `lib/` fallback to `src/NetPrints.Catalog/Runtime/EmbeddedCatalogReader.cs`,
   and switch the generated `NetPrintsEmbeddedCatalogAttribute` to `public` + `[Embedded]` only if the test shows
   Roslyn drops it; record the observed behaviour in `specs/004-catalog-cli/implementation-notes.md`.
-- [ ] T074 [US3] Fixture `tests/Fixtures/Catalog/CatalogConsumerLib/` (references `CatalogFixtureLib`; declares
+- [x] T074 [US3] Fixture `tests/Fixtures/Catalog/CatalogConsumerLib/` (references `CatalogFixtureLib`; declares
   `[assembly: NetPrintsCatalog("CatalogFixtureLib")]` and `[assembly: NetPrintsCatalog("CatalogFixtureLib", Id =
   "catalogfixturelib-flags", Profile = "fixture-flags.npprofile.json")]` with the profile as an `AdditionalFiles` item;
   analyzer reference with `PrivateAssets="all"`, and an explicit
   `<Import Project="..\..\..\..\src\NetPrints.Annotations\build\NetPrints.Annotations.targets" />` because package
   `build/` targets are imported only for a `PackageReference`; added to `NetPrints.slnx`) and
   `tests/NetPrints.Catalog.Tests/EndToEnd/CrossFlavorSnapshotTests.cs` (AN-T13, SC-003).
-- [ ] T075 [US3] `scripts/verify-packages.sh`: expect `NetPrints.Catalog` (`.nupkg` + `.snupkg`,
+- [x] T075 [US3] `scripts/verify-packages.sh`: expect `NetPrints.Catalog` (`.nupkg` + `.snupkg`,
   `lib/net10.0/NetPrints.Catalog.dll`) and `NetPrints.Annotations` (`.nupkg`; analyzer and targets present; no `lib/`;
   `developmentDependency`); run `scripts/pack-local.sh` and the script; whole suite; commit.
 

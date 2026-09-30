@@ -80,7 +80,7 @@ public sealed class EmbeddedCatalogReaderTests : IDisposable
 
         EmbeddedCatalogReader.Read(path);
 
-        Assert.DoesNotContain(AppDomain.CurrentDomain.GetAssemblies(), a => a.GetName().Name == "Consumer");
+        Assert.DoesNotContain(AppDomain.CurrentDomain.GetAssemblies(), a => !a.IsDynamic && a.Location == path);
     }
 
     [Fact]
