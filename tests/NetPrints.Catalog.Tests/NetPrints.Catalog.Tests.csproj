@@ -8,9 +8,14 @@
 
   <ItemGroup>
     <PackageReference Include="xunit.v3" />
+    <PackageReference Include="JsonSchema.Net" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\NetPrints.Catalog\NetPrints.Catalog.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Format\Golden\**\*" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

@@ -255,7 +255,7 @@ contracts/catalog.md). **Independent test**: CT-T01–CT-T19; SC-004, SC-005 (ex
 
 ### Batch D1 — model: sonnet — T037–T040 — 6 units
 
-- [ ] T037 [US2] Test first: `tests/NetPrints.Catalog.Tests/Format/CatalogWriterTests.cs` (CT-T01, golden
+- [x] T037 [US2] Test first: `tests/NetPrints.Catalog.Tests/Format/CatalogWriterTests.cs` (CT-T01, golden
   `tests/NetPrints.Catalog.Tests/Format/Golden/writer.npcat.json` from a hand-built model) and
   `Format/CatalogReaderTests.cs` (CT-T03).
 - [ ] T038 [US2] Shared source (must also compile on netstandard2.0): `src/NetPrints.Catalog/Model/*.cs` (records per
