@@ -8,10 +8,12 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Cli.Infrastructure;
+using NetPrints.Compilation;
+using NetPrints.Extensibility.Loading;
+using NetPrints.Generation;
 using NetPrints.Projects;
 using NetPrints.Serialization;
 using NetPrints.Serialization.Json;
-using NetPrints.Serialization.Mapping;
 using NetPrints.Serialization.Migrations;
 using NetPrints.Serialization.Stores;
 using Spectre.Console;
@@ -37,12 +39,6 @@ internal sealed class MigrateCommand(
     private const string ProjectExtension = ".csproj";
     private static readonly string[] SkippedDirectories = ["bin", "obj"];
 
-    private readonly DocumentFormatRegistry _formats = new([
-        new JsonDocumentFormat(
-            new NetPrintsJsonOptions(new NodeDocumentConverterRegistry(NodeDocumentConverterRegistry.BuiltIn, [])),
-            new DocumentMigrator([], NullLogger<DocumentMigrator>.Instance)),
-    ]);
-
     /// <inheritdoc/>
     public override async Task<int> ExecuteAsync(CommandContext context, MigrateSettings settings, CancellationToken cancellationToken)
     {
@@ -50,9 +46,10 @@ internal sealed class MigrateCommand(
 
         string[] arguments = settings.Paths.Length == 0 ? [""] : settings.Paths;
         var graphs = new SortedSet<string>(StringComparer.Ordinal);
+        var extensionFolders = new SortedSet<string>(StringComparer.Ordinal);
         foreach (string argument in arguments)
         {
-            string? error = await CollectAsync(argument, graphs, cancellationToken).ConfigureAwait(false);
+            string? error = await CollectAsync(argument, graphs, extensionFolders, cancellationToken).ConfigureAwait(false);
             if (error is not null)
             {
                 console.WriteLineRaw(error);
@@ -60,10 +57,33 @@ internal sealed class MigrateCommand(
             }
         }
 
+        (ExtensionRegistry registry, IReadOnlyList<CodeDiagnostic> extensionDiagnostics) = GraphCodeGenerator.LoadExtensions(
+            new GenerateRequest(string.Empty, null, string.Empty, [], [.. extensionFolders]), cancellationToken);
+        await using (registry.ConfigureAwait(false))
+        {
+            if (extensionDiagnostics.Count > 0)
+            {
+                foreach (CodeDiagnostic diagnostic in extensionDiagnostics)
+                {
+                    console.WriteLineRaw(CodeDiagnosticFormat.ToCanonicalLine(diagnostic));
+                }
+
+                return ExitCodes.Failed;
+            }
+
+            var formats = new DocumentFormatRegistry([
+                new JsonDocumentFormat(new NetPrintsJsonOptions(registry.NodeConverters), new DocumentMigrator([], NullLogger<DocumentMigrator>.Instance)),
+            ]);
+            return await ReportAllAsync(graphs, formats, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    private async Task<int> ReportAllAsync(SortedSet<string> graphs, DocumentFormatRegistry formats, CancellationToken cancellationToken)
+    {
         int failures = 0;
         foreach (string graph in graphs)
         {
-            if (!await ReportAsync(graph, cancellationToken).ConfigureAwait(false))
+            if (!await ReportAsync(graph, formats, cancellationToken).ConfigureAwait(false))
             {
                 failures++;
             }
@@ -77,7 +97,7 @@ internal sealed class MigrateCommand(
 
     private const string NoSdkMessage = "No .NET SDK could be found; nothing was checked.";
 
-    private async Task<string?> CollectAsync(string argument, SortedSet<string> graphs, CancellationToken cancellationToken)
+    private async Task<string?> CollectAsync(string argument, SortedSet<string> graphs, SortedSet<string> extensionFolders, CancellationToken cancellationToken)
     {
         string path = Path.GetFullPath(argument.Length == 0 ? "." : argument, environment.CurrentDirectory);
 
@@ -124,6 +144,11 @@ internal sealed class MigrateCommand(
             graphs.Add(Path.GetFullPath(file, Path.GetDirectoryName(projectPath) ?? environment.CurrentDirectory));
         }
 
+        foreach (string folder in snapshot.ExtensionFolders)
+        {
+            extensionFolders.Add(Path.GetFullPath(folder, Path.GetDirectoryName(projectPath) ?? environment.CurrentDirectory));
+        }
+
         return null;
     }
 
@@ -151,11 +176,11 @@ internal sealed class MigrateCommand(
         }
     }
 
-    private async Task<bool> ReportAsync(string graph, CancellationToken cancellationToken)
+    private async Task<bool> ReportAsync(string graph, DocumentFormatRegistry formats, CancellationToken cancellationToken)
     {
         string display = Path.GetRelativePath(environment.CurrentDirectory, graph);
         var id = new DocumentId(Path.GetFileName(graph));
-        IDocumentFormat? format = _formats.Find(id, DocumentKind.Class);
+        IDocumentFormat? format = formats.Find(id, DocumentKind.Class);
         if (format is null)
         {
             console.WriteLineRaw($"{display}: unreadable: no document format handles this file.");

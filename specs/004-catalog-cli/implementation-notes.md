@@ -85,7 +85,7 @@
 - `run` appends `--` plus the arguments after `--` to `GetRunCommand`'s arguments only when there are any (`dotnet run ... --no-build -- a b`); the child's stdout goes to the console output, its stderr to `CliEnvironment.Error`, and its exit code is the command's. The two run cases dropped from `CliBuildTests` are ported into `RunCommandTests`.
 - `migrate` does not derive from `ProjectCommandBase` (it takes several paths). A `.csproj` argument, or no argument, resolves the project (`ProjectLocator`), checks the SDK (exit 3) and reads `ProjectSnapshot.GraphFiles`; a directory is searched recursively for `*.netpc.json`, skipping `bin` and `obj`; a `.netpc.json` file is read directly; another file or a missing path exits 2.
 - Each graph is read through the `IDocumentFormat` that `DocumentFormatRegistry.Find` resolves, from a `FileSystemDocumentStore` (`watch: false`) rooted at the graph's directory with the file name as id. A `DocumentVersionException` prints `<path>: schema <found> is not supported (this tool supports <supported>)`; any other read failure prints `<path>: unreadable: <reason>`; both exit 1 after the remaining graphs are reported, with the last line `N of M graph(s) could not be read.` (the contract defines the last line only for success).
-- The registry uses the built-in node converters only (no extension node converters yet), so a graph with extension nodes reports as unreadable until a later batch loads extensions.
+- The registry uses the built-in node converters only (no extension node converters yet); C3 wires the project's extension folders in (see Batch C3).
 - `NetPrints.Cli` references `NetPrints.Serialization` directly (it was not transitive).
 - T026: CI "CLI smoke" also runs `--help`; "CLI sample compile and run" runs `run samples/HelloWorld/HelloWorld.csproj` and greps `Hello, World!`; `scripts/verify-packages.sh` step 4 runs the installed tool as `netprints run` and greps `Hello, World!`.
 
@@ -93,6 +93,31 @@
 
 - Red (T023, tests first): `RunCommandTests` and `MigrateCommandTests` written with the `FakeProjectSystem.LoadAsync`/`GraphFiles` support, commands not registered: 16 of 17 failed (unknown command, exit 2). Green after T024/T025: 17 of 17 passed.
 - Manual: `migrate samples/HelloWorld/HelloWorld.Program.netpc.json` reports schema 1; `run` of a clean copy of the sample prints `Hello, World!`, exit 0.
+
+### Batch C3 (T027-T031) — generate, regen --check, CI graph check
+
+### Decisions
+
+- `GeneratedFileResult` gains `UpToDate` (last, defaulted parameter): true when the output already held the rendered bytes before the call, false for a missing or different file and for any error. `Written` stays "the file was rewritten", so Write reports stale as `Written` and fresh as `UpToDate`, Check reports stale as neither. `GenerateAsync(request, mode, ct)` is a new overload; the two-argument one calls it with `Write`, so `Generator/Program.cs` is unchanged. `NetPrints.Generation` and `NetPrints.Workspace` are not API-tracked.
+- `generate` output: diagnostics as canonical lines, `generated: <path>` per rewritten file, `stale: <path>` per stale file (paths relative to the project directory); last line `N generated file(s) up to date, M written.`, or `M stale.` when `--check` found stale files. Exit 1 on any error diagnostic or stale file; a failing extension folder prints its `NPX` lines, exits 1 and writes nothing. `--graph` must name a graph of the project, otherwise exit 2.
+- Found by CL-T08: `IProjectSystem.LoadAsync` opens the project in `MSBuildWorkspace`, whose design-time build runs the SDK's `NetPrintsGenerate` target (BeforeTargets CoreCompile), so `generate --check` silently rewrote stale files (and `Touch`ed fresh ones) before the command looked at them. `ProjectSystemOptions` gets `GenerateOnLoad` (default true); false passes the global property `NetPrintsSkipGenerate=true` to the workspace, and `NetPrints.Sdk.targets` skips the target when it is `true`. The CLI's project system sets it to false (`build` and `run` generate through `dotnet build`, unaffected). Pinned by `GenerateRequestFactoryTests.LoadingWithGenerateOnLoadOffLeavesAStaleGeneratedFileAlone`.
+- CL-T13 builds a temp copy of HelloWorld against the in-repo SDK, parses the `netprints.generate.rsp` the target wrote and compares it field by field with `FromSnapshot` of the loaded project (records with list members do not compare structurally).
+- The command tests reuse `CliTestHost` through `RunRealAsync` (real `CliServices.CreateDefault()` with the host's console and environment) and a `SampleCopy` fixture; `Cli.Tests` references `NetPrints.Testing` (`LocalSdkLayout`) and builds `NetPrints.Generator` and `NetPrints.TestExtension` first without referencing them. Mtimes are not a usable "nothing written" signal because the SDK target touches outputs; the tests compare content and the output lines.
+- CL-T11 (`run` on a temp copy of HelloWorld through the real tool) was already green when written: it pins the C2 behaviour with the real SDK rather than driving new code.
+- Migrate now loads the extension folders of the projects it reads (`GraphCodeGenerator.LoadExtensions`) and builds its `JsonDocumentFormat` from the registry's node converters; a failing extension exits 1 with the `NPX` lines. The C2 open item is closed, but correct it: an unknown `$kind` is not "unreadable", `NodeListConverter` keeps it as an `UnknownNodeDocument`, so the report never failed on extension nodes; the wiring matters once a migration writes graphs. Graphs given as files or directories have no project, so only the built-in converters apply to them.
+- T030: CI step "Graph checks" runs `regen --check samples/HelloWorld` after the sample run.
+
+### Red/green evidence
+
+- Red (T027): `GenerationModeTests` and `GenerateRequestFactoryTests` written first: `dotnet build tests/NetPrints.Core.Tests` failed (`GenerationMode`, `GenerateRequestFactory`, `UpToDate` missing). Green after T028: 8 of 8 (then 9 with the `GenerateOnLoad` test).
+- Red (T029): `GenerateCommandTests` and `HelloWorldCliTests` with no `generate` command: 8 of 9 failed (unknown command). After the command: 4 of 9 still failed until `GenerateOnLoad` (stale files were rewritten by the load); then 66 of 66 Cli.Tests.
+- Red/green for `GenerateOnLoad`: with the option in place but the target condition reverted the new Core test failed; with the condition, it passes.
+- Red/green for migrate: `AProjectsBrokenExtensionFolderExits1WithItsDiagnostic` failed before the wiring; `AProjectsExtensionNodesAreReadThroughItsExtensionFolders` passed both before and after (see above).
+
+### Checkpoint C3
+
+- `dotnet build NetPrints.slnx -c Release`: 0 warnings, 0 errors. `dotnet format NetPrints.slnx --verify-no-changes`: exit 0.
+- Whole suite (Release): 1087 tests, 0 failed, 10 skipped (the headless-UI capability skips); E2E (`--fail-skips on`): 9 of 9 passed. Cli.Tests 68 passed.
 
 ## Deviations
 

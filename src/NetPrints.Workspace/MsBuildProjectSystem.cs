@@ -37,6 +37,7 @@ public sealed class MsBuildProjectSystem : IProjectSystem
 
     /// <summary>MSBuild's well-known single-target-framework property name.</summary>
     private const string TargetFrameworkProperty = "TargetFramework";
+    private const string SkipGenerateProperty = "NetPrintsSkipGenerate";
 
     /// <summary>The item type for an assembly reference by <c>HintPath</c>.</summary>
     private const string ReferenceItemType = "Reference";
@@ -95,6 +96,11 @@ public sealed class MsBuildProjectSystem : IProjectSystem
             if (retargetedFramework is not null)
             {
                 workspaceProperties[TargetFrameworkProperty] = retargetedFramework;
+            }
+
+            if (!options.GenerateOnLoad)
+            {
+                workspaceProperties[SkipGenerateProperty] = "true";
             }
 
             using MSBuildWorkspace workspace = MSBuildWorkspace.Create(workspaceProperties);

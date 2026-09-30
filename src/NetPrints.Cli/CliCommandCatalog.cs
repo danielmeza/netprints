@@ -13,20 +13,28 @@ internal sealed record CliCommand(string Name, Action<IConfigurator> Register);
 /// <summary>Every command the tool registers; later batches append their commands here.</summary>
 internal static class CliCommandCatalog
 {
+    private const string SampleProject = "samples/HelloWorld";
+
     /// <summary>Gets all registered commands, in help order.</summary>
     public static IReadOnlyList<CliCommand> All { get; } =
     [
         new(BuildCommand.Name, config => config.AddCommand<BuildCommand>(BuildCommand.Name)
             .WithDescription("Build a NetPrints project.")
             .WithExample(BuildCommand.Name)
-            .WithExample(BuildCommand.Name, "samples/HelloWorld")),
+            .WithExample(BuildCommand.Name, SampleProject)),
         new(RunCommand.Name, config => config.AddCommand<RunCommand>(RunCommand.Name)
             .WithDescription("Build a NetPrints project and run the program.")
             .WithExample(RunCommand.Name)
-            .WithExample(RunCommand.Name, "samples/HelloWorld", "--", "arg1", "arg2")),
+            .WithExample(RunCommand.Name, SampleProject, "--", "arg1", "arg2")),
+        new(GenerateCommand.Name, config => config.AddCommand<GenerateCommand>(GenerateCommand.Name)
+            .WithAlias(GenerateCommand.Alias)
+            .WithDescription("Regenerate the C# of a project's graphs, or check that it is up to date.")
+            .WithExample(GenerateCommand.Name)
+            .WithExample(GenerateCommand.Name, SampleProject, "--check")
+            .WithExample(GenerateCommand.Alias, "--graph", "HelloWorld.Program.netpc.json")),
         new(MigrateCommand.Name, config => config.AddCommand<MigrateCommand>(MigrateCommand.Name)
             .WithDescription("Report the schema version of graph files (no migrations exist yet).")
             .WithExample(MigrateCommand.Name)
-            .WithExample(MigrateCommand.Name, "samples/HelloWorld", "graphs/Extra.netpc.json")),
+            .WithExample(MigrateCommand.Name, SampleProject, "graphs/Extra.netpc.json")),
     ];
 }

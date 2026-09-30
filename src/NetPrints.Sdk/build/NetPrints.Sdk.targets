@@ -37,7 +37,7 @@
   <Target Name="NetPrintsGenerate"
           BeforeTargets="CoreCompile"
           DependsOnTargets="_NetPrintsWriteRequest"
-          Condition="'@(NetPrintsGraph)' != ''"
+          Condition="'@(NetPrintsGraph)' != '' and '$(NetPrintsSkipGenerate)' != 'true'"
           Inputs="@(NetPrintsGraph);$(NetPrintsGeneratorPath);$(MSBuildProjectFullPath);$(_NetPrintsRequest);@(NetPrintsExtension->'%(FullPath)/netprints-extension.json');@(_NetPrintsExtensionAssembly)"
           Outputs="@(NetPrintsGraph->'%(GeneratedFile)')">
     <PropertyGroup>

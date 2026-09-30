@@ -139,6 +139,10 @@ jobs:
           echo "$output"
           echo "$output" | grep -q "Hello, World!"
 
+      # Every graph's generated .netpc.g.cs must be up to date; exit 1 names the stale files.
+      - name: Graph checks
+        run: dotnet run --project src/NetPrints.Cli -c Release --no-build -- regen --check samples/HelloWorld
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1

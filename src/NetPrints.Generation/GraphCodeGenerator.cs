@@ -23,19 +23,32 @@ using NetPrints.Translator;
 namespace NetPrints.Generation;
 
 /// <summary>
-/// One graph document <see cref="GraphCodeGenerator.GenerateAsync"/> processed: whether its
+/// One graph document <see cref="GraphCodeGenerator.GenerateAsync(GenerateRequest, CancellationToken)"/> processed: whether its
 /// <c>.netpc.g.cs</c> was (re)written, and the diagnostics found while reading or translating it
 /// (project-system.md §3).
 /// </summary>
 /// <param name="Input">Path of the graph document that was read (<see cref="GraphJob.Input"/>).</param>
 /// <param name="Output">Path of the generated file (<see cref="GraphJob.Output"/>).</param>
 /// <param name="Written">Whether <paramref name="Output"/> was (re)written. <see langword="false"/>
-/// both when its bytes already matched the rendered content and when an error stopped generation
-/// before rendering — either way, a file left over from a previous, successful generation is
-/// untouched.</param>
+/// when its bytes already matched the rendered content, when an error stopped generation
+/// before rendering, and always in <see cref="GenerationMode.Check"/> — in each case a file left over
+/// from a previous, successful generation is untouched.</param>
 /// <param name="Diagnostics">Diagnostics found while reading or translating <paramref name="Input"/>,
 /// in the order they were found.</param>
-public sealed record GeneratedFileResult(string Input, string Output, bool Written, IReadOnlyList<CodeDiagnostic> Diagnostics);
+/// <param name="UpToDate">Whether <paramref name="Output"/> already held the rendered content before
+/// this call; <see langword="false"/> for a missing or different file and when an error stopped
+/// generation before rendering.</param>
+public sealed record GeneratedFileResult(string Input, string Output, bool Written, IReadOnlyList<CodeDiagnostic> Diagnostics, bool UpToDate = false);
+
+/// <summary>What <see cref="GraphCodeGenerator.GenerateAsync(GenerateRequest, GenerationMode, CancellationToken)"/> does with a rendered file.</summary>
+public enum GenerationMode
+{
+    /// <summary>Writes each file whose content differs from what is on disk.</summary>
+    Write,
+
+    /// <summary>Writes nothing; only reports, per file, whether it is up to date.</summary>
+    Check,
+}
 
 /// <summary>
 /// Translates graph documents (<c>.netpc.json</c>) to C# (project-system.md §3): the library
@@ -124,7 +137,17 @@ public sealed class GraphCodeGenerator
     /// <param name="request">Graphs to generate, and the project they belong to.</param>
     /// <param name="cancellationToken">Token to cancel the operation.</param>
     /// <returns>One result per graph of <paramref name="request"/>, in request order.</returns>
-    public async Task<IReadOnlyList<GeneratedFileResult>> GenerateAsync(GenerateRequest request, CancellationToken cancellationToken)
+    public Task<IReadOnlyList<GeneratedFileResult>> GenerateAsync(GenerateRequest request, CancellationToken cancellationToken) =>
+        GenerateAsync(request, GenerationMode.Write, cancellationToken);
+
+    /// <summary>
+    /// Generates every graph of <paramref name="request"/> according to <paramref name="mode"/>.
+    /// </summary>
+    /// <param name="request">Graphs to generate, and the project they belong to.</param>
+    /// <param name="mode">Whether to write the changed files or only report them.</param>
+    /// <param name="cancellationToken">Token to cancel the operation.</param>
+    /// <returns>One result per graph of <paramref name="request"/>, in request order.</returns>
+    public async Task<IReadOnlyList<GeneratedFileResult>> GenerateAsync(GenerateRequest request, GenerationMode mode, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -142,13 +165,13 @@ public sealed class GraphCodeGenerator
         foreach (GraphJob job in request.Graphs)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            results.Add(await GenerateOneAsync(job, project, cancellationToken).ConfigureAwait(false));
+            results.Add(await GenerateOneAsync(job, project, mode, cancellationToken).ConfigureAwait(false));
         }
 
         return results;
     }
 
-    private async Task<GeneratedFileResult> GenerateOneAsync(GraphJob job, Project project, CancellationToken cancellationToken)
+    private async Task<GeneratedFileResult> GenerateOneAsync(GraphJob job, Project project, GenerationMode mode, CancellationToken cancellationToken)
     {
         var id = new DocumentId(Path.GetFileName(job.Input));
 
@@ -230,9 +253,9 @@ public sealed class GraphCodeGenerator
         }
 
         string rendered = RenderFile(translated, Path.GetFileName(job.Input));
-        bool written = await WriteIfChangedAsync(job.Output, rendered, cancellationToken).ConfigureAwait(false);
+        (bool written, bool upToDate) = await WriteIfChangedAsync(job.Output, rendered, mode, cancellationToken).ConfigureAwait(false);
 
-        return new GeneratedFileResult(job.Input, job.Output, written, diagnostics);
+        return new GeneratedFileResult(job.Input, job.Output, written, diagnostics, upToDate);
     }
 
     /// <summary>
@@ -275,7 +298,7 @@ public sealed class GraphCodeGenerator
         new(CodeDiagnosticSeverity.Error, DocumentIssue.DocumentUnreadable, ex.Message,
             ClassFullName: null, GraphKey: null, NodeId: null, SourcePath: sourcePath, Span: null);
 
-    private static async Task<bool> WriteIfChangedAsync(string path, string content, CancellationToken cancellationToken)
+    private static async Task<(bool Written, bool UpToDate)> WriteIfChangedAsync(string path, string content, GenerationMode mode, CancellationToken cancellationToken)
     {
         byte[] bytes = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false).GetBytes(content);
 
@@ -284,8 +307,13 @@ public sealed class GraphCodeGenerator
             byte[] existing = await File.ReadAllBytesAsync(path, cancellationToken).ConfigureAwait(false);
             if (existing.AsSpan().SequenceEqual(bytes))
             {
-                return false;
+                return (false, true);
             }
+        }
+
+        if (mode == GenerationMode.Check)
+        {
+            return (false, false);
         }
 
         string? directory = Path.GetDirectoryName(path);
@@ -295,6 +323,6 @@ public sealed class GraphCodeGenerator
         }
 
         await ProjectFiles.WriteAtomicAsync(path, bytes, cancellationToken).ConfigureAwait(false);
-        return true;
+        return (true, false);
     }
 }

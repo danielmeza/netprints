@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Threading.Tasks;
 using NetPrints.Cli.Tests.Support;
+using NetPrints.Testing;
 using Xunit;
 
 namespace NetPrints.Cli.Tests.Commands;
@@ -97,6 +98,35 @@ public sealed class MigrateCommandTests : IDisposable
 
         Assert.Equal([project], _host.Projects.LoadedProjects);
         Assert.Contains("A.netpc.json: schema 1 (current)", _host.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AProjectsExtensionNodesAreReadThroughItsExtensionFolders()
+    {
+        const string extensionGraph = """{ "schemaVersion": 1, "namespace": "N", "name": "E", "classGraph": { "nodes": [ { "$kind": "netprints.test/Log", "id": "n1" } ] } }""";
+        string graph = Write("E.netpc.json", extensionGraph);
+        string project = Write("P.csproj", "<Project />");
+        _host.Projects.GraphFiles = [graph];
+        _host.Projects.ExtensionFolders = [Path.Combine(LocalSdkLayout.FindRepositoryRoot(), "tests", "NetPrints.TestExtension", "bin", LocalSdkLayout.DetectConfiguration(), "extensions", "netprints.test")];
+
+        int exitCode = await _host.RunAsync("migrate", project);
+
+        Assert.Equal(ExitCodes.Success, exitCode);
+        Assert.Contains("E.netpc.json: schema 1 (current)", _host.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AProjectsBrokenExtensionFolderExits1WithItsDiagnostic()
+    {
+        string graph = Write("A.netpc.json", V1Graph);
+        string project = Write("P.csproj", "<Project />");
+        string broken = Directory.CreateDirectory(Path.Combine(_root, "broken-ext")).FullName;
+        File.WriteAllText(Path.Combine(broken, "netprints-extension.json"), "{ not json");
+        _host.Projects.GraphFiles = [graph];
+        _host.Projects.ExtensionFolders = [broken];
+
+        Assert.Equal(ExitCodes.Failed, await _host.RunAsync("migrate", project));
+        Assert.Contains("NPX", _host.Output, StringComparison.Ordinal);
     }
 
     [Fact]

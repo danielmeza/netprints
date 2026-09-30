@@ -18,5 +18,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\NetPrints.Cli\NetPrints.Cli.csproj" />
+    <ProjectReference Include="..\NetPrints.Testing\NetPrints.Testing.csproj" />
+    <!-- Built first, never referenced: migrate tests load it from its own output folder. -->
+    <ProjectReference Include="..\NetPrints.TestExtension\NetPrints.TestExtension.csproj" ReferenceOutputAssembly="false" />
+    <!-- Built first, never referenced: the end-to-end tests run a temp copy of samples/HelloWorld against the generator's own output folder. -->
+    <ProjectReference Include="..\..\src\NetPrints.Generator\NetPrints.Generator.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 </Project>

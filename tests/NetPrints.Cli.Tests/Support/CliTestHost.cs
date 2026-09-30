@@ -22,12 +22,13 @@ internal sealed class FakeProjectSystem : IProjectSystem
     public ProcessStartRequest RunCommand { get; set; } = new("dotnet", ["run"], "/tmp");
     public List<string> BuiltProjects { get; } = [];
     public IReadOnlyList<string> GraphFiles { get; set; } = [];
+    public IReadOnlyList<string> ExtensionFolders { get; set; } = [];
     public List<string> LoadedProjects { get; } = [];
 
     public Task<ProjectSnapshot> LoadAsync(string projectFilePath, CancellationToken cancellationToken)
     {
         LoadedProjects.Add(projectFilePath);
-        return Task.FromResult(new ProjectSnapshot(projectFilePath, "P", "P", "P", BinaryType.Executable, "net10.0", "", false, GraphFiles, [], [], [], [], "", new Dictionary<string, string>(), []));
+        return Task.FromResult(new ProjectSnapshot(projectFilePath, "P", "P", "P", BinaryType.Executable, "net10.0", "", false, GraphFiles, ExtensionFolders, [], [], [], "", new Dictionary<string, string>(), []));
     }
     public Task<ProjectSnapshot> ApplyAsync(string projectFilePath, IReadOnlyList<ProjectEdit> edits, CancellationToken cancellationToken) => throw new NotSupportedException();
     public Task<string> CreateAsync(string directory, string projectName, IProjectProfile profile, string rootNamespace, CancellationToken cancellationToken) => throw new NotSupportedException();
@@ -103,6 +104,17 @@ internal sealed class CliTestHost
             services.AddSingleton(new Lazy<IProjectSystem>(() => Projects));
             return services;
         }
+    }
+
+    /// <summary>Runs against the real MSBuild project system and process runner, keeping this host's console and environment.</summary>
+    /// <param name="args">The command-line arguments.</param>
+    /// <returns>The process exit code.</returns>
+    public Task<int> RunRealAsync(params string[] args)
+    {
+        IServiceCollection services = CliServices.CreateDefault();
+        services.AddSingleton(Environment);
+        services.AddSingleton(Console);
+        return CliApplication.RunAsync(args, services, TestContext.Current.CancellationToken);
     }
 
     public Task<int> RunAsync(params string[] args) =>

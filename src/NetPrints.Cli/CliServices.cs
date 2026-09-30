@@ -57,11 +57,12 @@ internal static class CliServices
         };
     }
 
+    // GenerateOnLoad is off so `generate --check` sees the generated files as they are; `build` and `run` generate through dotnet build.
     // Kept out of line: loading MsBuildProjectSystem loads Microsoft.Build, which must wait for the SDK registration.
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static IProjectSystem CreateProjectSystem(IServiceProvider provider) =>
         new MsBuildProjectSystem(
-            new ProjectSystemOptions([], DevelopmentSdkVersion),
+            new ProjectSystemOptions([], DevelopmentSdkVersion, GenerateOnLoad: false),
             provider.GetRequiredService<IProcessRunner>(),
             provider.GetRequiredService<ILoggerFactory>().CreateLogger<MsBuildProjectSystem>());
 }

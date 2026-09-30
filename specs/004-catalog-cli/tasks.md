@@ -209,18 +209,18 @@ tracked API.
 
 ### Batch C3 — model: sonnet — T027–T031 — 6 units
 
-- [ ] T027 [P] [US1] Test first: `tests/NetPrints.Core.Tests/Projects/GenerateRequestFactoryTests.cs` (CL-T13) and
+- [x] T027 [P] [US1] Test first: `tests/NetPrints.Core.Tests/Projects/GenerateRequestFactoryTests.cs` (CL-T13) and
   `tests/NetPrints.Core.Tests/Projects/GenerationModeTests.cs` (CL-T14).
-- [ ] T028 [US1] Add `src/NetPrints.Generation/GenerateRequestFactory.cs` (`FromSnapshot(ProjectSnapshot)`); in
+- [x] T028 [US1] Add `src/NetPrints.Generation/GenerateRequestFactory.cs` (`FromSnapshot(ProjectSnapshot)`); in
   `src/NetPrints.Generation/GraphCodeGenerator.cs` add `GenerationMode { Write, Check }`, a mode parameter on
   `GenerateAsync` (default `Write`) and `GeneratedFileResult.UpToDate`; `src/NetPrints.Generator/Program.cs` keeps
   `Write`.
-- [ ] T029 [US1] Test first `tests/NetPrints.Cli.Tests/Commands/GenerateCommandTests.cs` (CL-T08, real SDK, temp copy
+- [x] T029 [US1] Test first `tests/NetPrints.Cli.Tests/Commands/GenerateCommandTests.cs` (CL-T08, real SDK, temp copy
   of `samples/HelloWorld`); add `src/NetPrints.Cli/Commands/GenerateCommand.cs` (alias `regen`, `--check`, `--graph`)
   and a `ProjectReference` to `NetPrints.Generation` in `src/NetPrints.Cli/NetPrints.Cli.csproj`.
-- [ ] T030 [US1] `tests/NetPrints.Cli.Tests/EndToEnd/HelloWorldCliTests.cs` (CL-T11); `.github/workflows/ci.yml` new
+- [x] T030 [US1] `tests/NetPrints.Cli.Tests/EndToEnd/HelloWorldCliTests.cs` (CL-T11); `.github/workflows/ci.yml` new
   step "Graph checks" running `netprints regen --check samples/HelloWorld`.
-- [ ] T031 [US1] Whole suite; batch C3 results in `specs/004-catalog-cli/implementation-notes.md`; commit.
+- [x] T031 [US1] Whole suite; batch C3 results in `specs/004-catalog-cli/implementation-notes.md`; commit.
 
 ### Batch C4 — model: haiku — T032–T034 — 3 units
 
