@@ -21,10 +21,11 @@ public sealed class GraphSummaryTests : IDisposable
 
     private static string Normalize(string text) => text.Replace("\r\n", "\n", StringComparison.Ordinal);
 
-    private async Task<(int Exit, string Output, string Error)> ShowAsync(string path)
+    private async Task<(int Exit, string Output, string Error)> ShowAsync(string path, bool textconv = false)
     {
         var host = new CliTestHost(_temp);
-        int exit = await host.RunAsync("show", path);
+        string[] args = textconv ? ["show", "--textconv", path] : ["show", path];
+        int exit = await host.RunAsync(args);
         return (exit, Normalize(host.Output), host.Error.ToString());
     }
 
@@ -105,5 +106,58 @@ public sealed class GraphSummaryTests : IDisposable
 
         Assert.Equal(ExitCodes.Usage, exit);
         Assert.Contains("does not exist", error, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task TheHandWrittenGraphMatchesTheContractGrammar()
+    {
+        string fixtures = Path.Combine(Root, "tests", "NetPrints.Cli.Tests", "Git", "Fixtures", "ShowGrammar");
+
+        (int exit, string output, string error) = await ShowAsync(Path.Combine(fixtures, "graph.txt"));
+
+        Assert.True(exit == ExitCodes.Success, error);
+        Assert.Equal(Normalize(File.ReadAllText(Path.Combine(fixtures, "expected.show.txt"))), output);
+    }
+
+    [Theory]
+    [InlineData("Unreadable", "ours.conflicted.txt")]
+    [InlineData("NullNodes", "ours.conflicted.txt")]
+    public async Task TextconvPrintsAnUnreadableFileAsItsRawTextAndExits0(string fixture, string file)
+    {
+        string path = Path.Combine(Root, "tests", "NetPrints.Cli.Tests", "Git", "Fixtures", fixture, file);
+
+        (int exit, string output, string error) = await ShowAsync(path, textconv: true);
+
+        Assert.True(exit == ExitCodes.Success, error);
+        Assert.Equal(Normalize(File.ReadAllText(path)), output);
+    }
+
+    [Fact]
+    public async Task TextconvPrintsAGraphOfANewerSchemaAsItsRawTextAndExits0()
+    {
+        string path = Path.Combine(_temp, "Newer.netpc.json");
+        File.WriteAllText(path, File.ReadAllText(Fixture("HelloWorld", "HelloWorld.Program.netpc.json")).Replace("\"schemaVersion\": 1", "\"schemaVersion\": 99", StringComparison.Ordinal));
+
+        (int exit, string output, string error) = await ShowAsync(path, textconv: true);
+
+        Assert.True(exit == ExitCodes.Success, error);
+        Assert.Equal(Normalize(File.ReadAllText(path)), output);
+    }
+
+    [Fact]
+    public async Task TextconvOfAReadableGraphPrintsTheSummary()
+    {
+        (int exit, string output, string error) = await ShowAsync(Fixture("HelloWorld", "HelloWorld.Program.netpc.json"), textconv: true);
+
+        Assert.True(exit == ExitCodes.Success, error);
+        Assert.Equal(Normalize(Golden("HelloWorld.show.txt")), output);
+    }
+
+    [Fact]
+    public async Task TextconvOfAMissingFileStillExits2()
+    {
+        (int exit, _, _) = await ShowAsync(Path.Combine(_temp, "nope.netpc.json"), textconv: true);
+
+        Assert.Equal(ExitCodes.Usage, exit);
     }
 }

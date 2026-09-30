@@ -46,7 +46,9 @@ class <namespace>.<name> <visibility> [<modifiers>]
   ...
 ```
 
-Run `netprints show <graph>` at any time to print the summary directly.
+A node line carries the node's target and then its non-default properties as `key=value` pairs, for example `node n1 callMethod System.Console.WriteLine(System.String) pure=true modifiers=Static`, so a change to `pure`, an argument count or a parameter default shows in the diff. Only layout changes stay out of it: the summary counts the layout entries and does not list positions.
+
+`git diff` never fails on a graph: `git-install` registers `show --textconv`, which prints a file that cannot be read as a graph (for example the conflict-marked file left by a failed merge, or a graph of a newer schema) as its raw text and exits 0. Run `netprints show <graph>` at any time to print the summary directly; without `--textconv` an unreadable file exits 1.
 
 ## Merging graphs
 

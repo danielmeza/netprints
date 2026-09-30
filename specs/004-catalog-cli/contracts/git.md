@@ -16,15 +16,21 @@ class <namespace>.<name> <visibility> [<modifiers>]
   constructor <id> <visibility>
   event-graph <id> <name>
     local <name> : <type>                                 (sorted by name)
-    node <id> <kind> [<target>]                           (sorted by id; target = method/type/variable rendering)
+    node <id> <kind> [<target>] [<key>=<value>...]        (sorted by id; target = method/type/variable rendering)
       pin <pin> = <typed value>                           (sorted by pin; only pins with a stored value or name)
+      raw <json>                                          (unknown extension nodes only)
     connect <from> -> <to>                                (sorted by from, then to)
 ```
 
 `class` block first, then members in file order (variables, methods, constructors, event graphs, each with its
-graph lines), then `layout <n> entries` (count only). Unknown extension nodes print as `node <id> <kind>
-(extension not loaded)`. Additions fixed in F1: a pin line is `pin <pin> [as <name>] [= <type> "<value>"]` (value backslash-escaped, `null` unquoted); modifiers are comma-joined; a variable's type is the `type` node wired into its `typeReturn`, and its `type-graph`, `getter <visibility>` and `setter <visibility>` blocks (depth 2) hold their graph lines; the class graph's lines sit at depth 1. Golden: `tests/NetPrints.Cli.Tests/Git/Snapshots/HelloWorld.show.txt` and
-`AllNodes.show.txt`.
+graph lines), then `layout <n> entries` (count only; layout-only changes stay invisible by design). Unknown extension nodes print as `node <id> <kind>
+(extension not loaded)` and, when they have properties besides `$kind` and `id`, a `raw <json>` line (compact, file order) below.
+
+Node properties (F-F2): after the target, `key=value` pairs, scalar values unquoted, `name` quoted and escaped like a pin value; a property at its default is omitted. Keys, in this order per kind: `name` (every kind, when non-empty); methodEntry `args`, `generics` (comma-joined); constructorEntry `args`; return `returns`; classReturn `interfaces`; eventEntry `args`, `visibility`, `modifiers`, `overrides`; callMethod `pure`, `genericArgs`, then `modifiers`, `visibility`; constructor, explicitCast, ternary, await `pure`; makeDelegate `modifiers`, `visibility`; variableGetter and variableSetter `visibility`, `getter`, `setter`, `modifiers`, `scope`; makeArray `predefinedSize`, `elements`; reroute `count`, `types` (groups `;`-separated, types comma-joined). `pure` and `predefinedSize` print `=true`; `visibility` and the method `modifiers` are omitted at `Public` and `None`, `scope` at `Member`, counts at 0. A method reference renders as `<type>.<name>[<generic args>](<params>)[-><return types>]`; a parameter is `[<pass type> ]<type>[=<default type>:"<value>"]` (`null` unquoted). `overrides=` prints the signature and return types only. Kinds without properties (typeReturn, makeArrayType, typeOf, ifElse, forLoop, throw, default, type, literal) print the kind and target only. A built-in kind missing from the writer prints its registered `$kind`, never a CLR name. Golden: a hand-written graph, `Fixtures/ShowGrammar/graph.txt` with `expected.show.txt`, written from this text.
+
+`show --textconv`: a file that cannot be read as a graph (read failure, unsupported schema, I/O error) is printed as its raw text and the exit code is 0; a missing file still exits 2. Plain `show` keeps exit 1 for an unreadable file.
+
+Additions fixed in F1: a pin line is `pin <pin> [as <name>] [= <type> "<value>"]` (value backslash-escaped, `null` unquoted); modifiers are comma-joined; a variable's type is the `type` node wired into its `typeReturn`, and its `type-graph`, `getter <visibility>` and `setter <visibility>` blocks (depth 2) hold their graph lines; the class graph's lines sit at depth 1. Golden: `tests/NetPrints.Cli.Tests/Git/Snapshots/HelloWorld.show.txt` and `AllNodes.show.txt`.
 
 ## 2. `merge`
 
@@ -57,7 +63,7 @@ Algorithm (research R15):
 
 | Option | Effect |
 |---|---|
-| (none) | `git config diff.netprints.textconv "<cmd> show"`; `.gitattributes` at the work-tree root gets `*.netpc.json diff=netprints` |
+| (none) | `git config diff.netprints.textconv "<cmd> show --textconv"`; `.gitattributes` at the work-tree root gets `*.netpc.json diff=netprints` |
 | `--merge` | Also `git config merge.netprints.name "NetPrints graph merge"` and `merge.netprints.driver "<cmd> merge %O %A %B --marker-size %L --path %P"`; the attributes line becomes `*.netpc.json diff=netprints merge=netprints` |
 | `--global` | `git config --global …`; attributes in `core.attributesFile` (default `$XDG_CONFIG_HOME/git/attributes` or `~/.config/git/attributes`) |
 | `--command <cmd>` | Command used in the config values (default `netprints`) |

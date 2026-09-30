@@ -1,8 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using NetPrints.Core;
 using NetPrints.Serialization.Documents;
 
 namespace NetPrints.Cli.Git;
@@ -104,6 +109,11 @@ internal static class GraphSummaryWriter
         foreach (NodeDocument node in graph.Nodes.OrderBy(node => node.Id, StringComparer.Ordinal))
         {
             Line(text, depth, NodeLine(node));
+            if (node is UnknownNodeDocument unknown && Raw(unknown) is { } raw)
+            {
+                Line(text, depth + 1, "raw " + raw);
+            }
+
             foreach (PinStateDocument pin in (node.Pins ?? []).OrderBy(pin => pin.Pin, StringComparer.Ordinal))
             {
                 Line(text, depth + 1, PinLine(pin));
@@ -118,35 +128,153 @@ internal static class GraphSummaryWriter
         }
     }
 
-    private static string NodeLine(NodeDocument node) => node switch
+    private static string NodeLine(NodeDocument node)
     {
-        UnknownNodeDocument unknown => Join("node", unknown.Id, unknown.Kind) + UnknownNodeSuffix,
-        MethodEntryNodeDocument => Join("node", node.Id, BuiltInNodeKinds.MethodEntry),
-        ConstructorEntryNodeDocument => Join("node", node.Id, BuiltInNodeKinds.ConstructorEntry),
-        ReturnNodeDocument => Join("node", node.Id, BuiltInNodeKinds.Return),
-        ClassReturnNodeDocument => Join("node", node.Id, BuiltInNodeKinds.ClassReturn),
-        TypeReturnNodeDocument => Join("node", node.Id, BuiltInNodeKinds.TypeReturn),
-        EventEntryNodeDocument entry => Join("node", node.Id, BuiltInNodeKinds.EventEntry, entry.EventName),
-        CallMethodNodeDocument call => Join("node", node.Id, BuiltInNodeKinds.CallMethod, Method(call.Method)),
-        ConstructorNodeDocument constructor => Join("node", node.Id, BuiltInNodeKinds.Constructor, Type(constructor.Constructor.DeclaringType) + Parameters(constructor.Constructor.Parameters)),
-        MakeDelegateNodeDocument delegateNode => Join("node", node.Id, BuiltInNodeKinds.MakeDelegate, Method(delegateNode.Method)),
-        VariableGetterNodeDocument getter => Join("node", node.Id, BuiltInNodeKinds.VariableGetter, Variable(getter.Variable)),
-        VariableSetterNodeDocument setter => Join("node", node.Id, BuiltInNodeKinds.VariableSetter, Variable(setter.Variable)),
-        LiteralNodeDocument literal => Join("node", node.Id, BuiltInNodeKinds.Literal, Type(literal.LiteralType)),
-        TypeNodeDocument type => Join("node", node.Id, BuiltInNodeKinds.Type, Type(type.Type)),
-        MakeArrayTypeNodeDocument => Join("node", node.Id, BuiltInNodeKinds.MakeArrayType),
-        MakeArrayNodeDocument => Join("node", node.Id, BuiltInNodeKinds.MakeArray),
-        ExplicitCastNodeDocument => Join("node", node.Id, BuiltInNodeKinds.ExplicitCast),
-        TypeOfNodeDocument => Join("node", node.Id, BuiltInNodeKinds.TypeOf),
-        IfElseNodeDocument => Join("node", node.Id, BuiltInNodeKinds.IfElse),
-        ForLoopNodeDocument => Join("node", node.Id, BuiltInNodeKinds.ForLoop),
-        TernaryNodeDocument => Join("node", node.Id, BuiltInNodeKinds.Ternary),
-        AwaitNodeDocument => Join("node", node.Id, BuiltInNodeKinds.Await),
-        ThrowNodeDocument => Join("node", node.Id, BuiltInNodeKinds.Throw),
-        DefaultNodeDocument => Join("node", node.Id, BuiltInNodeKinds.Default),
-        RerouteNodeDocument reroute => Join("node", node.Id, BuiltInNodeKinds.Reroute, reroute.PinKind),
-        _ => Join("node", node.Id, node.GetType().Name) + UnknownNodeSuffix,
-    };
+        if (node is UnknownNodeDocument unknown)
+        {
+            return Join("node", unknown.Id, unknown.Kind) + UnknownNodeSuffix;
+        }
+
+        var properties = new List<string>();
+        Add(properties, "name", string.IsNullOrEmpty(node.Name) ? null : Quote(node.Name));
+        (string kind, string target) = Describe(node, properties);
+        return Join("node", node.Id, kind, target, string.Join(' ', properties));
+    }
+
+    // The kind, the target and (appended to properties, in the order of contracts/git.md §1) the non-default scalar properties of a built-in node.
+    private static (string Kind, string Target) Describe(NodeDocument node, List<string> properties)
+    {
+        switch (node)
+        {
+            case MethodEntryNodeDocument entry:
+                Count(properties, "args", entry.ArgumentCount);
+                Add(properties, "generics", entry.GenericArguments is { Count: > 0 } generics ? string.Join(',', generics) : null);
+                return (BuiltInNodeKinds.MethodEntry, string.Empty);
+            case ConstructorEntryNodeDocument entry:
+                Count(properties, "args", entry.ArgumentCount);
+                return (BuiltInNodeKinds.ConstructorEntry, string.Empty);
+            case ReturnNodeDocument ret:
+                Count(properties, "returns", ret.ReturnCount);
+                return (BuiltInNodeKinds.Return, string.Empty);
+            case ClassReturnNodeDocument classReturn:
+                Count(properties, "interfaces", classReturn.InterfaceCount);
+                return (BuiltInNodeKinds.ClassReturn, string.Empty);
+            case EventEntryNodeDocument entry:
+                Count(properties, "args", entry.ArgumentCount);
+                Add(properties, "visibility", NonDefault(entry.Visibility));
+                Add(properties, "modifiers", NonDefault(entry.Modifiers));
+                Add(properties, "overrides", entry.Overrides is { } overrides ? Signature(overrides) + Returns(overrides) : null);
+                return (BuiltInNodeKinds.EventEntry, entry.EventName);
+            case CallMethodNodeDocument call:
+                Flag(properties, "pure", call.Pure);
+                Count(properties, "genericArgs", call.GenericArgumentCount);
+                MethodProperties(properties, call.Method);
+                return (BuiltInNodeKinds.CallMethod, Signature(call.Method) + Returns(call.Method));
+            case ConstructorNodeDocument constructor:
+                Flag(properties, "pure", constructor.Pure);
+                return (BuiltInNodeKinds.Constructor, Type(constructor.Constructor.DeclaringType) + Parameters(constructor.Constructor.Parameters));
+            case MakeDelegateNodeDocument delegateNode:
+                MethodProperties(properties, delegateNode.Method);
+                return (BuiltInNodeKinds.MakeDelegate, Signature(delegateNode.Method) + Returns(delegateNode.Method));
+            case VariableGetterNodeDocument getter:
+                VariableProperties(properties, getter.Variable);
+                return (BuiltInNodeKinds.VariableGetter, Variable(getter.Variable));
+            case VariableSetterNodeDocument setter:
+                VariableProperties(properties, setter.Variable);
+                return (BuiltInNodeKinds.VariableSetter, Variable(setter.Variable));
+            case LiteralNodeDocument literal:
+                return (BuiltInNodeKinds.Literal, Type(literal.LiteralType));
+            case TypeNodeDocument type:
+                return (BuiltInNodeKinds.Type, Type(type.Type));
+            case MakeArrayNodeDocument array:
+                Flag(properties, "predefinedSize", array.UsePredefinedSize);
+                Count(properties, "elements", array.ElementCount);
+                return (BuiltInNodeKinds.MakeArray, string.Empty);
+            case ExplicitCastNodeDocument cast:
+                Flag(properties, "pure", cast.Pure);
+                return (BuiltInNodeKinds.ExplicitCast, string.Empty);
+            case TernaryNodeDocument ternary:
+                Flag(properties, "pure", ternary.Pure);
+                return (BuiltInNodeKinds.Ternary, string.Empty);
+            case AwaitNodeDocument await:
+                Flag(properties, "pure", await.Pure);
+                return (BuiltInNodeKinds.Await, string.Empty);
+            case RerouteNodeDocument reroute:
+                Count(properties, "count", reroute.Count);
+                Add(properties, "types", reroute.DataTypes is { Count: > 0 } groups ? string.Join(';', groups.Select(group => string.Join(',', group.Select(Type)))) : null);
+                return (BuiltInNodeKinds.Reroute, reroute.PinKind);
+            default:
+                return (KindOf(node), string.Empty);
+        }
+    }
+
+    // A built-in node without scalar properties, named by the discriminator its type is registered under.
+    private static string KindOf(NodeDocument node) =>
+        typeof(NodeDocument).GetCustomAttributes<JsonDerivedTypeAttribute>().FirstOrDefault(attribute => attribute.DerivedType == node.GetType())?.TypeDiscriminator?.ToString()
+        ?? node.GetType().Name;
+
+    private static void MethodProperties(List<string> properties, MethodRef method)
+    {
+        Add(properties, "modifiers", NonDefault(method.Modifiers));
+        Add(properties, "visibility", NonDefault(method.Visibility));
+    }
+
+    private static void VariableProperties(List<string> properties, VariableRef variable)
+    {
+        Add(properties, "visibility", NonDefault(variable.Visibility));
+        Add(properties, "getter", NonDefault(variable.GetterVisibility));
+        Add(properties, "setter", NonDefault(variable.SetterVisibility));
+        Add(properties, "modifiers", NonDefault(variable.Modifiers));
+        Add(properties, "scope", variable.Scope == VariableScope.Member ? null : variable.Scope.ToString());
+    }
+
+    private static void Add(List<string> properties, string key, string? value)
+    {
+        if (!string.IsNullOrEmpty(value))
+        {
+            properties.Add(key + "=" + value);
+        }
+    }
+
+    private static void Count(List<string> properties, string key, int value) =>
+        Add(properties, key, value == 0 ? null : value.ToString(CultureInfo.InvariantCulture));
+
+    private static void Flag(List<string> properties, string key, bool value) => Add(properties, key, value ? "true" : null);
+
+    // Public visibility and no modifiers are the defaults and are left out.
+    private static string? NonDefault(MemberVisibility visibility) => visibility == MemberVisibility.Public ? null : visibility.ToString();
+
+    private static string? NonDefault<T>(T modifiers) where T : struct, Enum => Flags(modifiers) is { Length: > 0 } flags ? flags : null;
+
+    private static string Quote(string value) => "\"" + Escape(value) + "\"";
+
+    // The properties of an unknown node other than its kind and id, compact, in file order.
+    private static string? Raw(UnknownNodeDocument node)
+    {
+        if (node.Raw.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
+        using var stream = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(stream))
+        {
+            writer.WriteStartObject();
+            using JsonElement.ObjectEnumerator properties = node.Raw.EnumerateObject();
+            foreach (JsonProperty property in properties)
+            {
+                if (property.Name is not ("$kind" or "id"))
+                {
+                    property.WriteTo(writer);
+                }
+            }
+
+            writer.WriteEndObject();
+        }
+
+        string json = Encoding.UTF8.GetString(stream.ToArray());
+        return json == "{}" ? null : json;
+    }
 
     private static string PinLine(PinStateDocument pin)
     {
@@ -164,14 +292,19 @@ internal static class GraphSummaryWriter
         return line;
     }
 
-    private static string Method(MethodRef method) =>
+    private static string Signature(MethodRef method) =>
         Type(method.DeclaringType) + "." + method.Name
         + (method.GenericArgs is { Count: > 0 } args ? "<" + string.Join(",", args.Select(Type)) + ">" : string.Empty)
         + Parameters(method.Parameters);
 
+    private static string Returns(MethodRef method) =>
+        method.ReturnTypes is { Count: > 0 } types ? "->" + string.Join(",", types.Select(Type)) : string.Empty;
+
     private static string Parameters(IReadOnlyList<ParameterRef>? parameters) =>
         "(" + string.Join(",", (parameters ?? []).Select(parameter =>
-            (parameter.PassType == NetPrints.Core.MethodParameterPassType.Default ? string.Empty : parameter.PassType.ToString().ToLowerInvariant() + " ") + Type(parameter.Type))) + ")";
+            (parameter.PassType == MethodParameterPassType.Default ? string.Empty : parameter.PassType.ToString().ToLowerInvariant() + " ")
+            + Type(parameter.Type)
+            + (parameter.Default is { } value ? "=" + value.Type + ":" + (value.Value is null ? "null" : Quote(value.Value)) : string.Empty))) + ")";
 
     private static string Variable(VariableRef variable) =>
         (variable.DeclaringType is { } declaring ? Type(declaring) + "." : string.Empty) + variable.Name + " : " + Type(variable.Type);

@@ -45,7 +45,7 @@ public sealed class GitInstallCommandTests : IAsyncLifetime
         (int exit, CliTestHost host) = await InstallAsync();
 
         host.AssertExit(ExitCodes.Success, exit);
-        Assert.Equal("netprints show", await Repo.ConfigAsync("diff.netprints.textconv"));
+        Assert.Equal("netprints show --textconv", await Repo.ConfigAsync("diff.netprints.textconv"));
         Assert.Null(await Repo.ConfigAsync("merge.netprints.driver"));
         Assert.Equal(DiffLine + "\n", File.ReadAllText(Repo.File(".gitattributes")));
         Assert.Contains("installed", host.Output, StringComparison.Ordinal);
@@ -98,7 +98,7 @@ public sealed class GitInstallCommandTests : IAsyncLifetime
         (int exit, CliTestHost host) = await InstallAsync("--merge", "--command", "dotnet /opt/np/NetPrints.Cli.dll");
 
         host.AssertExit(ExitCodes.Success, exit);
-        Assert.Equal("dotnet /opt/np/NetPrints.Cli.dll show", await Repo.ConfigAsync("diff.netprints.textconv"));
+        Assert.Equal("dotnet /opt/np/NetPrints.Cli.dll show --textconv", await Repo.ConfigAsync("diff.netprints.textconv"));
         Assert.Equal("dotnet /opt/np/NetPrints.Cli.dll merge %O %A %B --marker-size %L --path %P", await Repo.ConfigAsync("merge.netprints.driver"));
     }
 
@@ -111,6 +111,30 @@ public sealed class GitInstallCommandTests : IAsyncLifetime
 
         host.AssertExit(ExitCodes.Success, exit);
         Assert.Equal("*.png binary\r\n*.sh text eol=lf\r\n" + DiffLine + "\r\n", File.ReadAllText(Repo.File(".gitattributes")));
+    }
+
+    [Fact]
+    public async Task InstallReplacesATextconvThatLacksTheTextconvMode()
+    {
+        await Repo.GitAsync("config", "diff.netprints.textconv", "netprints show");
+
+        (int exit, CliTestHost host) = await InstallAsync();
+
+        host.AssertExit(ExitCodes.Success, exit);
+        Assert.Equal("netprints show --textconv", await Repo.ConfigAsync("diff.netprints.textconv"));
+    }
+
+    [Fact]
+    public async Task UninstallRemovesTheTextconvWithItsMode()
+    {
+        await InstallAsync();
+        Assert.Equal("netprints show --textconv", await Repo.ConfigAsync("diff.netprints.textconv"));
+
+        (int exit, CliTestHost host) = await InstallAsync("--uninstall");
+
+        host.AssertExit(ExitCodes.Success, exit);
+        Assert.Null(await Repo.ConfigAsync("diff.netprints.textconv"));
+        Assert.Contains("removed: git config diff.netprints.textconv", host.Output, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -194,7 +218,7 @@ public sealed class GitInstallCommandTests : IAsyncLifetime
         install.AssertExit(ExitCodes.Success, await install.RunRealAsync("git-install", "--global", "--merge"));
 
         string config = File.ReadAllText(gitConfig);
-        Assert.Contains("textconv = netprints show", config, StringComparison.Ordinal);
+        Assert.Contains("textconv = netprints show --textconv", config, StringComparison.Ordinal);
         Assert.Contains("driver = netprints merge %O %A %B --marker-size %L --path %P", config, StringComparison.Ordinal);
         string attributes = Path.Combine(home, "xdg", "git", "attributes");
         Assert.Equal(MergeLine + "\n", File.ReadAllText(attributes));

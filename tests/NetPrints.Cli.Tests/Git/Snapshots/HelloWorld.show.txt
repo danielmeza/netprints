@@ -3,7 +3,7 @@ class HelloWorld.Program Public
   method m000000001gs20 Main Public Static
     node n000000000vny1 methodEntry
     node n000000000vny2 return
-    node n000000000vny3 callMethod System.Console.WriteLine(System.String)
+    node n000000000vny3 callMethod System.Console.WriteLine(System.String) modifiers=Static
       pin in.data.value = System.String "Hello, World!"
     connect n000000000vny1/out.exec.Exec -> n000000000vny3/in.exec.Exec
     connect n000000000vny3/out.exec.Exec -> n000000000vny2/in.exec.Exec

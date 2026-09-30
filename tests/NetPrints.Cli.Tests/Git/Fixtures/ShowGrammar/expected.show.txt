@@ -1,0 +1,27 @@
+class Demo.Box Public
+  generic T
+  node n02 classReturn interfaces=2
+  variable v01 Count : System.Int32 Private
+    type-graph
+      node n11 typeReturn
+      node n12 type System.Int32
+      connect n12/out.type.OutputType -> n11/in.type.Type
+    getter Public
+      node n13 methodEntry
+    setter Protected
+      node n14 methodEntry args=1
+  method m01 Go Public Sealed,Static
+    local tmp : System.Collections.Generic.List<System.Int32>
+    node n21 methodEntry name="Start" args=1 generics=U,V
+      pin out.data.Input0 as first
+    node n22 callMethod Demo.Util.Foo<System.Int32>(System.Int32=System.Int32:"5",reference System.String)->System.String pure=true genericArgs=1 modifiers=Static visibility=Internal
+      pin in.data.x = System.String "a \"q\" \\ b\nc"
+      pin in.data.y = System.String null
+    node n23 reroute data count=2 types=System.Int32,System.String;System.Double
+    node n24 makeArray predefinedSize=true elements=3
+    node n25 netprints.test/Log (extension not loaded)
+      raw {"level":3,"tag":"x"}
+    connect n21/out.exec.Exec -> n22/in.exec.Exec
+  event-graph e01 Events
+    node n31 eventEntry OnStart args=1 visibility=Protected modifiers=Sealed overrides=Demo.Base.OnStart()->System.Void
+layout 2 entries

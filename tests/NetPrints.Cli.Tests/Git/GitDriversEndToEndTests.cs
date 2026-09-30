@@ -37,21 +37,21 @@ public sealed class GitDriversEndToEndTests : IAsyncLifetime
         await Repo.GitAsync("commit", "-q", "-m", "attributes");
     }
 
-    private async Task CommitAsync(string fixture, string message)
+    private async Task CommitAsync(string fixture, string message, string? directory = null)
     {
-        File.Copy(Path.Combine(FixtureRoot, fixture + ".netpc.json"), Repo.File(GraphFile), overwrite: true);
+        File.Copy(Path.Combine(directory ?? FixtureRoot, fixture + ".netpc.json"), Repo.File(GraphFile), overwrite: true);
         await Repo.GitAsync("add", GraphFile);
         await Repo.GitAsync("commit", "-q", "-m", message);
     }
 
     /// <summary>Builds the GI-T03 history: a base commit, then <c>ours</c> on main and <c>theirs</c> on a side branch.</summary>
-    private async Task BranchAsync()
+    private async Task BranchAsync(string? directory = null)
     {
-        await CommitAsync("base", "base");
+        await CommitAsync("base", "base", directory);
         await Repo.GitAsync("checkout", "-q", "-b", "side");
-        await CommitAsync("theirs", "theirs");
+        await CommitAsync("theirs", "theirs", directory);
         await Repo.GitAsync("checkout", "-q", "main");
-        await CommitAsync("ours", "ours");
+        await CommitAsync("ours", "ours", directory);
     }
 
     [Fact]
@@ -65,6 +65,41 @@ public sealed class GitDriversEndToEndTests : IAsyncLifetime
 
         Assert.Contains("+    node n0000000000011 callMethod System.Console.WriteLine(System.String)", diff, StringComparison.Ordinal);
         Assert.DoesNotContain("$kind", diff, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task GitDiffShowsAChangeToPureAlone()
+    {
+        await InstallAsync();
+        await CommitAsync("base", "base");
+        string call = "\"id\": \"n0000000000002\",";
+        string original = File.ReadAllText(Repo.File(GraphFile));
+        Assert.Contains(call, original, StringComparison.Ordinal);
+        File.WriteAllText(Repo.File(GraphFile), original.Replace(call, call + "\n            \"pure\": true,", StringComparison.Ordinal));
+
+        ProcessResult diff = await Repo.RunGitAsync("diff", "--", GraphFile);
+
+        Assert.True(diff.ExitCode == 0, diff.StandardError);
+        Assert.Contains("+    node n0000000000002 callMethod System.Console.Call1(", diff.StandardOutput, StringComparison.Ordinal);
+        Assert.Contains("pure=true", diff.StandardOutput, StringComparison.Ordinal);
+        Assert.DoesNotContain("$kind", diff.StandardOutput, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task GitDiffSucceedsOnTheConflictMarkedFileTheDriverLeaves()
+    {
+        await InstallAsync();
+        await BranchAsync(Path.Combine(FixtureRoot, "..", "PinConflict"));
+        ProcessResult merge = await Repo.RunGitAsync("merge", "--no-edit", "side");
+        Assert.NotEqual(0, merge.ExitCode);
+        Assert.Contains("<<<<<<<", File.ReadAllText(Repo.File(GraphFile)), StringComparison.Ordinal);
+
+        ProcessResult diff = await Repo.RunGitAsync("diff", "HEAD", "--", GraphFile);
+        ProcessResult conflicted = await Repo.RunGitAsync("diff", "--", GraphFile);
+
+        Assert.True(diff.ExitCode == 0, diff.StandardError);
+        Assert.True(conflicted.ExitCode == 0, conflicted.StandardError);
+        Assert.Contains("<<<<<<<", diff.StandardOutput, StringComparison.Ordinal);
     }
 
     [Fact]

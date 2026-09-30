@@ -1,40 +1,40 @@
 class AllNodes.Everything Public
   generic T
-  node n000000001pxr0 classReturn
+  node n000000001pxr0 classReturn interfaces=1
   variable m0000000021t60 Items : System.Collections.Generic.List<T> Private Static
     type-graph
       node n000000001pxr1 typeReturn
       node n000000001pxr2 type System.Collections.Generic.List<T>
-      node n000000001pxr3 type T
+      node n000000001pxr3 type T name="TypeNode2"
       connect n000000001pxr2/out.type.OutputType -> n000000001pxr1/in.type.Type
       connect n000000001pxr3/out.type.OutputType -> n000000001pxr2/in.type.T
     getter Public
       node n000000001pxr4 methodEntry
-      node n000000001pxr5 return
+      node n000000001pxr5 return returns=1
       node n000000001pxr6 type System.Collections.Generic.List<T>
-      node n000000001pxr7 variableGetter AllNodes.Everything<T>.Items : System.Collections.Generic.List<T>
+      node n000000001pxr7 variableGetter AllNodes.Everything<T>.Items : System.Collections.Generic.List<T> visibility=Private getter=Private setter=Private modifiers=Static
       connect n000000001pxr4/out.exec.Exec -> n000000001pxr5/in.exec.Exec
       connect n000000001pxr6/out.type.OutputType -> n000000001pxr5/in.type.Output0Type
       connect n000000001pxr7/out.data.List<T> -> n000000001pxr5/in.data.Output0
     setter Public
-      node n000000001pxr8 methodEntry
+      node n000000001pxr8 methodEntry args=1
       node n000000001pxr9 return
       node n000000001pxra type System.Collections.Generic.List<T>
-      node n000000001pxrb variableSetter AllNodes.Everything<T>.Items : System.Collections.Generic.List<T>
+      node n000000001pxrb variableSetter AllNodes.Everything<T>.Items : System.Collections.Generic.List<T> visibility=Private getter=Private setter=Private modifiers=Static
       connect n000000001pxr8/out.data.Input0 -> n000000001pxrb/in.data.NewValue
       connect n000000001pxr8/out.exec.Exec -> n000000001pxrb/in.exec.Exec
       connect n000000001pxra/out.type.OutputType -> n000000001pxr8/in.type.Input0Type
       connect n000000001pxrb/out.exec.Exec -> n000000001pxr9/in.exec.Exec
   method m0000000021t61 Main Public Static
-    node n000000001pxrc methodEntry
+    node n000000001pxrc methodEntry args=2 generics=T0
       pin out.data.Input0 as first
-    node n000000001pxrd return
+    node n000000001pxrd return returns=2
       pin in.data.Output0 as resultCode = System.Int32 "0"
       pin in.data.Output1 = System.String ""
     node n000000001pxre type System.Int32
-    node n000000001pxrf type System.String
-    node n000000001pxrg type System.Int32
-    node n000000001pxrh type System.String
+    node n000000001pxrf type System.String name="TypeNode2"
+    node n000000001pxrg type System.Int32 name="TypeNode3"
+    node n000000001pxrh type System.String name="TypeNode4"
     node n000000001pxrj literal System.Boolean
       pin in.data.Value = System.Boolean "true"
     node n000000001pxrk ifElse
@@ -48,40 +48,40 @@ class AllNodes.Everything Public
       pin in.data.Condition = System.Boolean "true"
       pin in.data.False = System.Int32 "2"
       pin in.data.True = System.Int32 "1"
-    node n000000001pxrs type System.Int32
+    node n000000001pxrs type System.Int32 name="TypeNode5"
     node n000000001pxrt explicitCast
-    node n000000001pxrv type System.String
-    node n000000001pxrw callMethod System.Console.WriteLine(System.String)
-    node n000000001pxrx makeDelegate System.Console.WriteLine(System.String)
-    node n000000001pxry type System.Collections.Generic.List<System.Int32>
+    node n000000001pxrv type System.String name="TypeNode6"
+    node n000000001pxrw callMethod System.Console.WriteLine(System.String) modifiers=Static
+    node n000000001pxrx makeDelegate System.Console.WriteLine(System.String) modifiers=Static
+    node n000000001pxry type System.Collections.Generic.List<System.Int32> name="TypeNode7"
     node n000000001pxrz makeArrayType
-    node n000000001pxs0 type System.Double
-    node n000000001pxs1 makeArray
+    node n000000001pxs0 type System.Double name="TypeNode8"
+    node n000000001pxs1 makeArray predefinedSize=true
       pin in.data.Size = System.Int32 "3"
-    node n000000001pxs2 type System.Int32
-    node n000000001pxs3 makeArray
-    node n000000001pxs4 type System.Int32
+    node n000000001pxs2 type System.Int32 name="TypeNode9"
+    node n000000001pxs3 makeArray name="MakeArrayNode2" elements=3
+    node n000000001pxs4 type System.Int32 name="TypeNode10"
     node n000000001pxs5 typeOf
-    node n000000001pxs6 type System.Int32
+    node n000000001pxs6 type System.Int32 name="TypeNode11"
     node n000000001pxs7 default
-    node n000000001pxs8 type System.Int32
-    node n000000001pxs9 reroute data
-    node n000000001pxsa reroute exec
-    node n000000001pxsb reroute type
-    node n000000001pxsc literal System.Boolean
+    node n000000001pxs8 type System.Int32 name="TypeNode12"
+    node n000000001pxs9 reroute data types=System.Int32,System.Int32
+    node n000000001pxsa reroute exec name="RerouteNode2" count=1
+    node n000000001pxsb reroute type name="RerouteNode3" count=1
+    node n000000001pxsc literal System.Boolean name="LiteralNode2"
       pin in.data.Value = System.Boolean "true"
-    node n000000001pxsd literal System.Int32
+    node n000000001pxsd literal System.Int32 name="LiteralNode3"
       pin in.data.Value = System.Int32 "42"
-    node n000000001pxse literal System.Int64
+    node n000000001pxse literal System.Int64 name="LiteralNode4"
       pin in.data.Value = System.Int64 "42"
-    node n000000001pxsf literal System.Double
+    node n000000001pxsf literal System.Double name="LiteralNode5"
       pin in.data.Value = System.Double "NaN"
-    node n000000001pxsg literal System.Char
+    node n000000001pxsg literal System.Char name="LiteralNode6"
       pin in.data.Value = System.Char "x"
-    node n000000001pxsh literal System.String
+    node n000000001pxsh literal System.String name="LiteralNode7"
       pin in.data.Value = System.String "Quotes \" and a\nnewline"
-    node n000000001pxsj literal System.Decimal
-    node n000000001pxsk literal System.DayOfWeek
+    node n000000001pxsj literal System.Decimal name="LiteralNode8"
+    node n000000001pxsk literal System.DayOfWeek name="LiteralNode9"
       pin in.data.Value = System.DayOfWeek "Monday"
     connect n000000001pxrc/out.exec.Exec -> n000000001pxrk/in.exec.Exec
     connect n000000001pxre/out.type.OutputType -> n000000001pxrc/in.type.Input0Type

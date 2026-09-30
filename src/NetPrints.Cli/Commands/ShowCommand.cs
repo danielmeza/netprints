@@ -13,7 +13,7 @@ namespace NetPrints.Cli.Commands;
 
 /// <summary>
 /// <c>netprints show &lt;graph&gt;</c>: prints the line-oriented summary of a graph (contracts/git.md §1), the text git diffs when
-/// <c>git-install</c> configured it as the diff text conversion (FR-033).
+/// <c>git-install</c> configured it as the diff text conversion (FR-033). With <c>--textconv</c> a file that is not a readable graph is printed as its raw text and the exit code is 0.
 /// </summary>
 internal sealed class ShowCommand(IAnsiConsole console, CliEnvironment environment) : AsyncCommand<ShowSettings>
 {
@@ -46,6 +46,11 @@ internal sealed class ShowCommand(IAnsiConsole console, CliEnvironment environme
             }
 
             await console.Profile.Out.Writer.WriteAsync(GraphSummaryWriter.Write(document)).ConfigureAwait(false);
+            return ExitCodes.Success;
+        }
+        catch (Exception ex) when (settings.TextConv && ex is DocumentFormatException or IOException or UnauthorizedAccessException)
+        {
+            await console.Profile.Out.Writer.WriteAsync(await File.ReadAllTextAsync(path, cancellationToken).ConfigureAwait(false)).ConfigureAwait(false);
             return ExitCodes.Success;
         }
         catch (DocumentVersionException ex)

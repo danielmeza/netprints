@@ -82,7 +82,7 @@ internal sealed class GitInstallCommand(IAnsiConsole console, CliEnvironment env
             return ExitCodes.Failed;
         }
 
-        var wanted = new List<KeyValuePair<string, string>> { new(TextconvKey, $"{settings.Command} show") };
+        var wanted = new List<KeyValuePair<string, string>> { new(TextconvKey, $"{settings.Command} show --textconv") };
         if (settings.Merge)
         {
             wanted.Add(new(MergeNameKey, MergeName));

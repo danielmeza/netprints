@@ -639,8 +639,8 @@ Sub-phase F (`6925062^..00c87e3`), reviewed at `00c87e3`: Checkpoint F not accep
 |---|---|---|---|---|
 | F-R1 | blocker | Merge validation checks only data inputs: two inserts after one exec output, or two sources into one type input, merge clean and lose a call | F-F1 | fixed in F-F1 |
 | F-R2 | major | A node-shape change (e.g. `pure`) on one side against new wiring or pin values on the other merges clean, then NPD002/NPD003 on regen | F-F1 | fixed in F-F1 |
-| F-R3 | major | `git diff` aborts (exit 128) as soon as a graph cannot be read | F-F2 | open |
-| F-R4 | major | `show` omits every node property except the target, so real changes give an empty diff | F-F2 | open |
+| F-R3 | major | `git diff` aborts (exit 128) as soon as a graph cannot be read | F-F2 | fixed in F-F2 |
+| F-R4 | major | `show` omits every node property except the target, so real changes give an empty diff | F-F2 | fixed in F-F2 |
 | F-R5 | major | `format` does not canonicalize connection order, which the editor does | F-F3 | open |
 | F-R6 | major | Large parts of the merger have no test | F-F1 | fixed in F-F1 |
 | F-R7 | minor | The docs state false things | F-F4 | open |
@@ -652,9 +652,9 @@ Sub-phase F (`6925062^..00c87e3`), reviewed at `00c87e3`: Checkpoint F not accep
 | F-R13 | minor | The Checkpoint F report is inaccurate | F-F4 | open |
 | F-R14 | nit | Decisions the contract was silent on are recorded only in the notes | F-F4 | open |
 | F-R15 | nit | `show` and `merge` read and write files directly | F-F4 | open |
-| F-R16 | nit | The default arm of the summary writer is misleading | F-F2 | open |
+| F-R16 | nit | The default arm of the summary writer is misleading | F-F2 | fixed in F-F2 |
 | F-R17 | nit | A stray sentence in `cli.md` | F-F4 | open |
-| F-R18 | nit | The `show` goldens are not independent of the writer | F-F2 | open |
+| F-R18 | nit | The `show` goldens are not independent of the writer | F-F2 | fixed in F-F2 |
 | F-R19 | nit | The SC-010 test covers only the default install | F-F3 | open |
 | F-R20 | nit | `format`'s messages are inconsistent | F-F3 | open |
 
@@ -674,5 +674,22 @@ Sub-phase F (`6925062^..00c87e3`), reviewed at `00c87e3`: Checkpoint F not accep
 - The F-R6 tests and the clean-merge guards passed on the first run: the merger already behaved as specified there, so they pin existing behaviour and were written after the code in that sense. The F-R1, F-R2 and F-R11 tests were written before the fix.
 - Green: `NetPrints.Cli.Tests` 245 of 245 after the fix; whole suite 1641 total, 1631 passed, 10 skipped, 0 failed. `dotnet format --verify-no-changes` clean, build 28 projects 0 warnings 0 errors.
 - Not covered by a test: the `merge` catch-all fallback when the merger throws (no input reaches it once nulls are rejected at read time).
+
+### F-F2 (F-R3, F-R4, F-R16, F-R18)
+
+**Decisions**
+
+- F-R3: `show --textconv` prints a file that cannot be read as a graph (format, schema-version or I/O failure) as its raw text and exits 0; `git-install` registers `<cmd> show --textconv`, and a reinstall replaces the old value; plain `show` keeps exit 1 (contracts/git.md §1 and §3, `git.md`, `cli.md`).
+- F-R4: the node line gains `key=value` properties (name, pure, counts, generics, visibility and modifiers of the method or variable reference, parameter defaults, reroute types), fixed key order per kind, defaults omitted; method references render return types as `->T`; unknown nodes get a `raw <json>` line; layout-only changes stay invisible (contracts/git.md §1 lists every key).
+- F-R4: `overrides=` of an event entry prints the signature and return types only, not the overridden method's own modifiers and visibility.
+- F-R16: a built-in kind without scalar properties renders its registered `$kind` (read from the `JsonDerivedType` attributes of `NodeDocument`); the CLR-name arm is gone.
+- F-R18: a hand-written graph with its expected summary (`Fixtures/ShowGrammar/graph.txt`, `expected.show.txt`, written from the contract text before the writer was changed) covers getter and setter, a local, a renamed pin, an escaped and a `null` value, a generic argument, comma-joined modifiers, parameter defaults, reroute types and an unknown node. The two recorded goldens were regenerated after the grammar change and their diff read against the contract.
+
+**Red/green evidence**
+
+- Red (before the fix; `*GraphSummary*`, `GitInstallCommandTests`, `GitDriversEndToEndTests`; saved at `/mnt/DATA/tmp/claude/red/ff2-red.txt`): 35 tests, 13 failed, 22 passed. Failed: the hand-written golden, the four `--textconv` cases (unknown option), the five textconv-value tests of GI-T09 (including the reinstall and `--uninstall` ones), the property-coverage test, and the two GI-T10 cases (`git diff` of a `pure` change is empty; `git diff` after a driver conflict).
+- Green: the same 35 pass (`/mnt/DATA/tmp/claude/red/ff2-green1.txt`). The property test first failed on test-side toggles that set a value the fixture already had; those were fixed in the tests, not the writer.
+- Written after the code in that sense: `GraphSummaryPropertyTests.EveryBuiltInNodeKindHasAnArmThatRendersItsKind` and `EveryPropertyOfEveryBuiltInNodeKindHasAMutationCase` passed on the first run (the old writer already rendered every kind; the second is a tripwire for future properties). The regenerated AllNodes and HelloWorld goldens are recorded from the writer and only reviewed.
+- Full suite 1654 total, 1644 passed, 10 skipped, 0 failed; `dotnet format --verify-no-changes` clean; build 0 warnings 0 errors.
 
 ## Governance proposals

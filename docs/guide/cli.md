@@ -140,10 +140,12 @@ netprints format --check samples
 ### `show` — Summarize a graph
 
 ```
-netprints show <graph>
+netprints show [--textconv] <graph>
 ```
 
-Prints a stable, line-oriented summary of one graph (class header, members, nodes sorted by id, pin values, connections, layout entry count), independent of the node order in the file. Nodes of extension kinds print as `node <id> <kind> (extension not loaded)`. This is the text `git diff` shows once `git-install` has configured it.
+Prints a stable, line-oriented summary of one graph (class header, members, nodes sorted by id with their non-default properties as `key=value`, pin values, connections, layout entry count), independent of the node order in the file. Nodes of extension kinds print as `node <id> <kind> (extension not loaded)` followed by a `raw <json>` line holding their other properties. This is the text `git diff` shows once `git-install` has configured it.
+
+With `--textconv`, a file that cannot be read as a graph is printed as its raw text and the exit code is 0, so `git diff` never fails (a file that does not exist still exits 2). Without it, an unreadable file exits 1.
 
 ```
 netprints show samples/HelloWorld/HelloWorld.Program.netpc.json
@@ -167,7 +169,7 @@ An unreadable graph exits 1 with the reason on stderr; a missing file exits 2.
 netprints git-install [--merge] [--global] [--command <cmd>] [--uninstall]
 ```
 
-Makes `git diff` print the `show` summary of graphs and, with `--merge`, makes `git merge` use the `merge` driver. It sets `diff.netprints.textconv` to `<cmd> show` (with `--merge` also `merge.netprints.name` and `merge.netprints.driver` = `<cmd> merge %O %A %B --marker-size %L --path %P`) in the repository's git configuration and adds `*.netpc.json diff=netprints` (with `--merge`, `*.netpc.json diff=netprints merge=netprints`) to the `.gitattributes` at the work-tree root. Other lines and the file's line endings are kept.
+Makes `git diff` print the `show` summary of graphs and, with `--merge`, makes `git merge` use the `merge` driver. It sets `diff.netprints.textconv` to `<cmd> show --textconv` (with `--merge` also `merge.netprints.name` and `merge.netprints.driver` = `<cmd> merge %O %A %B --marker-size %L --path %P`) in the repository's git configuration and adds `*.netpc.json diff=netprints` (with `--merge`, `*.netpc.json diff=netprints merge=netprints`) to the `.gitattributes` at the work-tree root. Other lines and the file's line endings are kept.
 
 | Option | Effect |
 |---|---|
