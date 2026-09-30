@@ -17,6 +17,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\NetPrints.Catalog\Model\**\*.cs;..\NetPrints.Catalog\Engine\**\*.cs;..\NetPrints.Catalog\Json\CanonicalCatalogWriter.cs;..\NetPrints.Catalog\Emit\**\*.cs" Link="Shared\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Include="$(TargetPath)" Pack="true" PackagePath="analyzers/dotnet/cs" />
   </ItemGroup>
 </Project>

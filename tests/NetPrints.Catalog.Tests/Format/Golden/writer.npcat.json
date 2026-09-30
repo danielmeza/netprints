@@ -1,0 +1,121 @@
+{
+  "$schema": "https://danielmeza.github.io/netprints/schemas/npcat.v1.schema.json",
+  "schemaVersion": 1,
+  "id": "samplelib",
+  "version": "1.2.3.4",
+  "profile": "public-api",
+  "assemblies": [
+    {
+      "name": "SampleLib",
+      "version": "1.2.3.4"
+    },
+    {
+      "name": "SampleLib.Extras",
+      "version": "1.0.0.0"
+    }
+  ],
+  "types": [
+    {
+      "id": "T:Sample.Color",
+      "namespace": "Sample",
+      "name": "Color",
+      "kind": "enum",
+      "enumMembers": [
+        "Red",
+        "Green",
+        "Blue"
+      ],
+      "summary": "Quote \" backslash \\ tab \t newline \n cr \r bell \u0001 unit \u001f accents éü smile 😀."
+    },
+    {
+      "id": "T:Sample.Geometry.Vector2",
+      "namespace": "Sample.Geometry",
+      "name": "Vector2",
+      "kind": "struct",
+      "modifiers": ["sealed"],
+      "interfaces": [
+        { "name": "System.IEquatable" },
+        { "name": "System.IFormattable", "isInterface": true }
+      ],
+      "summary": "A 2D vector.",
+      "node": { "displayName": "Vector 2D", "category": "Math|Vectors", "keywords": ["point", "vec"] },
+      "constructors": [
+        {
+          "id": "M:Sample.Geometry.Vector2.#ctor(System.Single,System.Single)",
+          "visibility": "public",
+          "parameters": [
+            { "name": "x", "type": { "name": "System.Single" } },
+            { "name": "y", "type": { "name": "System.Single" } }
+          ],
+          "summary": "Creates a vector."
+        }
+      ],
+      "methods": [
+        {
+          "id": "M:Sample.Geometry.Vector2.Add(Sample.Geometry.Vector2,Sample.Geometry.Vector2)",
+          "name": "Add",
+          "visibility": "public",
+          "modifiers": ["static"],
+          "parameters": [
+            { "name": "a", "type": { "name": "Sample.Geometry.Vector2" } },
+            { "name": "b", "type": { "name": "Sample.Geometry.Vector2" }, "summary": "The second vector." }
+          ],
+          "returnType": { "name": "Sample.Geometry.Vector2" },
+          "returnSummary": "The sum.",
+          "summary": "Adds two vectors."
+        },
+        {
+          "id": "M:Sample.Geometry.Vector2.TryParse(System.String,Sample.Geometry.Vector2@,System.Int32,System.Object[])",
+          "name": "TryParse",
+          "visibility": "protected",
+          "modifiers": ["static", "virtual"],
+          "genericParameters": ["T"],
+          "parameters": [
+            { "name": "text", "type": { "name": "System.String" } },
+            { "name": "result", "type": { "name": "Sample.Geometry.Vector2" }, "passType": "out" },
+            { "name": "radix", "type": { "name": "System.Int32" }, "default": { "type": "System.Int32", "value": "10" } },
+            { "name": "rest", "type": { "name": "System.Object" }, "params": true },
+            { "name": "source", "type": { "name": "System.String" }, "passType": "reference", "default": { "type": "System.String" } }
+          ],
+          "returnType": { "name": "System.Collections.Generic.List", "args": [{ "name": "T", "generic": true }, { "name": "Sample.Color", "isEnum": true }] },
+          "obsolete": { "message": "Use \"Parse\" instead.", "error": true },
+          "node": { "category": "Math" }
+        },
+        {
+          "id": "M:Sample.Geometry.Vector2.Reset",
+          "name": "Reset",
+          "visibility": "public",
+          "obsolete": {}
+        }
+      ],
+      "variables": [
+        {
+          "id": "F:Sample.Geometry.Vector2.Zero",
+          "name": "Zero",
+          "kind": "field",
+          "type": { "name": "Sample.Geometry.Vector2" },
+          "modifiers": ["static", "readonly"],
+          "get": "public"
+        },
+        {
+          "id": "P:Sample.Geometry.Vector2.X",
+          "name": "X",
+          "kind": "property",
+          "type": { "name": "System.Single" },
+          "get": "public",
+          "set": "protected",
+          "summary": "The x component."
+        }
+      ]
+    },
+    {
+      "id": "T:Sample.Geometry.Vector2.Comparer",
+      "name": "Comparer",
+      "kind": "class",
+      "modifiers": ["abstract"],
+      "genericParameters": ["TKey", "TValue"],
+      "declaringType": "T:Sample.Geometry.Vector2",
+      "baseType": { "name": "Sample.Base", "args": [{ "name": "System.String" }] }
+    }
+  ]
+}

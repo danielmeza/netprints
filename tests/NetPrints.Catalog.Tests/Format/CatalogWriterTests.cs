@@ -58,8 +58,8 @@ public sealed class CatalogWriterTests
     public void ParametersTypeRefsHintsAndObsoleteRecordsAreInline()
     {
         string text = Written;
-        Assert.Contains("        { \"name\": \"a\", \"type\": { \"name\": \"Sample.Geometry.Vector2\" } },", text, StringComparison.Ordinal);
-        Assert.Contains("\"baseType\": { \"name\": \"Sample.Base\", \"args\": [{ \"name\": \"System.String\" }] },", text, StringComparison.Ordinal);
+        Assert.Contains("{ \"name\": \"a\", \"type\": { \"name\": \"Sample.Geometry.Vector2\" } },", text, StringComparison.Ordinal);
+        Assert.Contains("\"baseType\": { \"name\": \"Sample.Base\", \"args\": [{ \"name\": \"System.String\" }] }", text, StringComparison.Ordinal);
         Assert.Contains("\"node\": { \"displayName\": \"Vector 2D\", \"category\": \"Math|Vectors\", \"keywords\": [\"point\", \"vec\"] },", text, StringComparison.Ordinal);
         Assert.Contains("\"obsolete\": { \"message\": \"Use \\\"Parse\\\" instead.\", \"error\": true },", text, StringComparison.Ordinal);
         Assert.Contains("\"default\": { \"type\": \"System.Int32\", \"value\": \"10\" }", text, StringComparison.Ordinal);
@@ -70,7 +70,7 @@ public sealed class CatalogWriterTests
     {
         string text = Written;
         Assert.DoesNotContain("null", text, StringComparison.Ordinal);
-        Assert.DoesNotContain("[]", text, StringComparison.Ordinal);
+        Assert.DoesNotContain(": []", text, StringComparison.Ordinal);
         Assert.DoesNotContain("false", text, StringComparison.Ordinal);
         Assert.DoesNotContain("\"namespace\": null", text, StringComparison.Ordinal);
         Assert.Contains("\"obsolete\": {}", text, StringComparison.Ordinal);

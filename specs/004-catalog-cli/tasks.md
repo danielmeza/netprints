@@ -258,14 +258,14 @@ contracts/catalog.md). **Independent test**: CT-T01–CT-T19; SC-004, SC-005 (ex
 - [x] T037 [US2] Test first: `tests/NetPrints.Catalog.Tests/Format/CatalogWriterTests.cs` (CT-T01, golden
   `tests/NetPrints.Catalog.Tests/Format/Golden/writer.npcat.json` from a hand-built model) and
   `Format/CatalogReaderTests.cs` (CT-T03).
-- [ ] T038 [US2] Shared source (must also compile on netstandard2.0): `src/NetPrints.Catalog/Model/*.cs` (records per
+- [x] T038 [US2] Shared source (must also compile on netstandard2.0): `src/NetPrints.Catalog/Model/*.cs` (records per
   data-model.md §1), `Engine/Guard.cs`, `Engine/Polyfills.cs` (`#if NETSTANDARD2_0`: `IsExternalInit`, nullable flow
   attributes, `ExperimentalAttribute`, `RequiredMemberAttribute`, `CompilerFeatureRequiredAttribute`,
   `SetsRequiredMembersAttribute`), `Engine/CatalogDiagnosticCodes.cs` (NPC001–NPC006, NPC101–NPC103),
   `Engine/CatalogDiagnostic.cs`; add the links to `src/NetPrints.Annotations/NetPrints.Annotations.csproj` now
   (`<Compile Include="..\NetPrints.Catalog\Model\**\*.cs;..\NetPrints.Catalog\Engine\**\*.cs;..\NetPrints.Catalog\Json\CanonicalCatalogWriter.cs;..\NetPrints.Catalog\Emit\**\*.cs" Link="Shared\%(RecursiveDir)%(Filename)%(Extension)" />`),
   so every shared file builds on netstandard2.0 from this batch on.
-- [ ] T039 [US2] `src/NetPrints.Catalog/Json/CanonicalCatalogWriter.cs` (shared, no System.Text.Json),
+- [x] T039 [US2] `src/NetPrints.Catalog/Json/CanonicalCatalogWriter.cs` (shared, no System.Text.Json),
   `Json/CatalogReader.cs`, `Json/CatalogJsonContext.cs`, `Json/CatalogFormatException.cs`.
 - [ ] T040 [US2] `src/NetPrints.Catalog/Json/CatalogSchema.cs` (JsonSchemaExporter, like `NetPrintsJsonSchema`),
   committed `schemas/npcat.v1.schema.json`, test `tests/NetPrints.Catalog.Tests/Format/CatalogSchemaTests.cs`
