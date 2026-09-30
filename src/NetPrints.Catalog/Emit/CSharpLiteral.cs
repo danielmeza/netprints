@@ -6,6 +6,8 @@ namespace NetPrints.Catalog;
 /// <summary>Writes .NET strings as C# string literals. Shared source: no file access, no System.Text.Json.</summary>
 internal static class CSharpLiteral
 {
+    private const int BytesPerLine = 32;
+
     private const int FirstNonControlCharacter = 0x20;
 
     private const int DeleteCharacter = 0x7F;
@@ -68,6 +70,27 @@ internal static class CSharpLiteral
         }
 
         return builder.Append('"').ToString();
+    }
+
+    /// <summary>Appends the UTF-8 bytes of <paramref name="value"/> as a <c>new byte[] { ... }</c> expression, decimal values, one line per <see cref="BytesPerLine"/> bytes.</summary>
+    /// <param name="builder">Receives the expression, starting at the current position, LF line endings, without a trailing newline.</param>
+    /// <param name="value">The text to encode.</param>
+    /// <param name="indent">The indentation of the line the expression starts on.</param>
+    public static void AppendUtf8Array(StringBuilder builder, string value, string indent)
+    {
+        Guard.NotNull(builder, nameof(builder));
+        Guard.NotNull(value, nameof(value));
+        Guard.NotNull(indent, nameof(indent));
+
+        byte[] bytes = new UTF8Encoding(false).GetBytes(value);
+        builder.Append("new byte[]\n").Append(indent).Append("{");
+        for (int index = 0; index < bytes.Length; index++)
+        {
+            builder.Append(index % BytesPerLine == 0 ? "\n" + indent + "    " : " ");
+            builder.Append(bytes[index].ToString(CultureInfo.InvariantCulture)).Append(',');
+        }
+
+        builder.Append('\n').Append(indent).Append('}');
     }
 
     private static bool NeedsEscape(char c) =>

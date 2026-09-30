@@ -12,8 +12,6 @@ public sealed class AttributeInjectionTests
     private const string Usage = """
         using NetPrints.Annotations;
 
-        [assembly: NetPrintsCatalog("Some.Library", Id = "some", Profile = "public-api", Include = new[] { "A.*" }, Exclude = new[] { "A.B" }, AccessorName = "Some")]
-
         namespace Lib
         {
             [NetPrintsType(DisplayName = "Thing", Category = "Things")]
@@ -36,6 +34,19 @@ public sealed class AttributeInjectionTests
         Assert.Empty(generatorDiagnostics);
         Assert.Empty(GeneratorTestHost.Errors(output));
         Assert.Contains(output.SyntaxTrees, t => t.FilePath.EndsWith("NetPrintsAttributes.g.cs", System.StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void TheCatalogAttributeAcceptsEveryNamedArgument()
+    {
+        const string Source = """
+            [assembly: NetPrints.Annotations.NetPrintsCatalog("Some.Library", Id = "some", Profile = "public-api", Include = new[] { "A.*" }, Exclude = new[] { "A.B" }, AccessorName = "Some")]
+            """;
+
+        var (output, generatorDiagnostics) = GeneratorTestHost.Run(GeneratorTestHost.Compile("Lib", Source));
+
+        Assert.Empty(GeneratorTestHost.Errors(output));
+        Assert.Equal(CatalogDiagnosticCodes.UnreferencedAssembly, Assert.Single(generatorDiagnostics).Id);
     }
 
     [Fact]

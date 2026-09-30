@@ -401,21 +401,21 @@ SC-013.
 
 ### Batch E1 — model: sonnet — T065–T068 — 6 units
 
-- [ ] T065 [US3] Test first: `tests/NetPrints.Catalog.Tests/Generator/OwnSourceCatalogTests.cs` (AN-T02),
+- [x] T065 [US3] Test first: `tests/NetPrints.Catalog.Tests/Generator/OwnSourceCatalogTests.cs` (AN-T02),
   `Generator/ReferencedCatalogTests.cs` (AN-T03), `Generator/DiagnosticsTests.cs` (AN-T04–AN-T06),
   `Generator/LanguageVersionTests.cs` (AN-T08), `Generator/DeterminismTests.cs` (AN-T14), all through
   `CSharpGeneratorDriver`.
-- [ ] T066 [US3] Shared `src/NetPrints.Catalog/Emit/EmbeddedCatalogEmitter.cs` (assembly attribute + accessor, escaped
+- [x] T066 [US3] Shared `src/NetPrints.Catalog/Emit/EmbeddedCatalogEmitter.cs` (assembly attribute + accessor, escaped
   literal via `CSharpLiteral`).
   Note (Review D, D-R3): the shared emitter output must be redesigned here as UTF-8 data (`"..."u8`, `byte[]` or an
   embedded resource) with a block-scoped namespace (the generator's consumers are C# 7.3), because `const string`
   text reaches CS8103 from the third System.Runtime-sized catalog; update contracts/catalog.md §4 with it.
-- [ ] T067 [US3] Complete `src/NetPrints.Annotations/CatalogGenerator.cs` (own-source pipeline with
+- [x] T067 [US3] Complete `src/NetPrints.Annotations/CatalogGenerator.cs` (own-source pipeline with
   `ForAttributeWithMetadataName`; referenced-assembly pipeline over `MetadataReferencesProvider` + attribute requests in
   a private compilation; profiles from `AdditionalFiles`; documentation from `NetPrintsReferenceDocumentation`
   additional files; root namespace from `build_property.RootNamespace`), `GeneratorDiagnostics.cs`,
   `AnalyzerReleases.Shipped.md`, `AnalyzerReleases.Unshipped.md`.
-- [ ] T068 [US3] Test first `tests/NetPrints.Catalog.Tests/Generator/IncrementalTests.cs` (AN-T07), then tracking names
+- [x] T068 [US3] Test first `tests/NetPrints.Catalog.Tests/Generator/IncrementalTests.cs` (AN-T07), then tracking names
   and equatable models in the generator until it passes; whole suite; commit.
 
 ### Batch E2 — model: sonnet — T069–T072 — 5 units

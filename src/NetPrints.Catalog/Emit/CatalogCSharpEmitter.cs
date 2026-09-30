@@ -7,8 +7,9 @@ using Microsoft.CodeAnalysis.CSharp;
 namespace NetPrints.Catalog;
 
 /// <summary>
-/// Emits a catalog as a C# file (contracts/catalog.md §4): the canonical JSON as a constant and a factory that loads it
-/// as a type catalog. Shared source: no file access.
+/// Emits a catalog as a C# file (contracts/catalog.md §4): the canonical JSON as UTF-8 bytes (a <c>byte[]</c> initializer,
+/// stored as raw data, so it does not count against the user string limit that a large <c>const string</c> reaches) and a
+/// factory that loads it as a type catalog. The file compiles at C# 7.3. Shared source: no file access.
 /// </summary>
 [Experimental(ExperimentalApis.CatalogProfiles, UrlFormat = ExperimentalApis.UrlFormat)]
 public static class CatalogCSharpEmitter
@@ -36,16 +37,22 @@ public static class CatalogCSharpEmitter
             throw new ArgumentException($"'{className}' is not a valid class name.", nameof(className));
         }
 
-        return new StringBuilder()
+        StringBuilder builder = new StringBuilder()
             .Append(Header).Append('\n')
-            .Append("namespace ").Append(@namespace).Append(";\n")
-            .Append('\n')
-            .Append("internal static partial class ").Append(className).Append('\n')
+            .Append("namespace ").Append(@namespace).Append('\n')
             .Append("{\n")
-            .Append("    public const string Json = ").Append(CSharpLiteral.Quote(CanonicalCatalogWriter.Write(document))).Append(";\n")
+            .Append("    internal static partial class ").Append(className).Append('\n')
+            .Append("    {\n")
+            .Append("        public static byte[] JsonUtf8 { get; } = ");
+        CSharpLiteral.AppendUtf8Array(builder, CanonicalCatalogWriter.Write(document), "        ");
+        return builder
+            .Append(";\n")
             .Append('\n')
-            .Append("    public static global::NetPrints.Reflection.ITypeCatalog Create() =>\n")
-            .Append("        global::NetPrints.Catalog.CatalogLoader.LoadJson(Json);\n")
+            .Append("        public static string Json => global::System.Text.Encoding.UTF8.GetString(JsonUtf8);\n")
+            .Append('\n')
+            .Append("        public static global::NetPrints.Reflection.ITypeCatalog Create() =>\n")
+            .Append("            global::NetPrints.Catalog.CatalogLoader.LoadJson(Json);\n")
+            .Append("    }\n")
             .Append("}\n")
             .ToString();
     }
