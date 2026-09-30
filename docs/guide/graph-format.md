@@ -70,7 +70,7 @@ full schema, identifier rules and canonical-writing rules behind this.
 Graph files are designed to work well in git: they are text, canonical (deterministic bytes), and
 merge-friendly. See [Git workflow](git.md) for the `show` command (readable diffs), the merge driver
 (smart merging), and checks for canonical form and current generated code. Both `.netpc.json` and
-`netprints.catalog.json` files have published schemas registered with SchemaStore (see the [Git
+`netprints.catalog.json` files have schemas prepared for SchemaStore registration (see the [Git
 workflow](git.md#schema-validation-and-editor-support) section for details).
 
 ## Generated code

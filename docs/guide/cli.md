@@ -151,6 +151,8 @@ With `--textconv`, a file that cannot be read as a graph is printed as its raw t
 netprints show samples/HelloWorld/HelloWorld.Program.netpc.json
 ```
 
+An unreadable graph exits 1 with the reason on stderr; a missing file exits 2.
+
 ### `merge` — Git merge driver for graphs
 
 ```
@@ -160,8 +162,6 @@ netprints merge <base> <ours> <theirs> [--marker-size <n>] [--path <name>]
 The merge driver `git-install --merge` registers (git passes `%O %A %B`, `%L` as the marker size and `%P` as the path). It reads the three versions, merges them by identity and, when the result is valid, writes the canonical graph over `<ours>` and exits 0: class fields and member fields three-way; variables, methods, constructors and event graphs by id; nodes by id, pins by key (name and unconnected value), connections as additions and removals against the base, layout with `<ours>` winning when both sides moved the same node.
 
 It falls back to `git merge-file -p` over the three texts, writes that over `<ours>` (conflict markers `--marker-size` long, labelled `ours`, `base`, `theirs`) and exits 1 when a file cannot be read (for example it still holds conflict markers), when a member, node or pin was changed differently on both sides, when a node was deleted on one side and changed on the other, or when the merged graph would be invalid (two sources into one data input, a connection to a deleted node, duplicate member ids or names). Each conflict is listed on stderr as `<path>: conflict: <kind> at <location>`. A missing input file exits 2. `--path` names the file in the work tree and chooses the document format; without it the graph format is used.
-
-An unreadable graph exits 1 with the reason on stderr; a missing file exits 2.
 
 ### `git-install` — Register the graph drivers with git
 

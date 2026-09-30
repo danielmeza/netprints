@@ -525,7 +525,7 @@ the documented diagnostic id.
 - **SC-008**: Both hazards are closed: an extension with a host-like private dependency loads and runs,
   and a dependent extension's view of its dependency's type is the same type (identity check passes).
 - **SC-009**: In an automated git test, two branches that add different nodes to the same method merge
-  with 0 conflicts through the driver (plain git gives 1), and the merged file is canonical and generates
+  with 0 conflicts through the driver (plain git gives at least one), and the merged file is canonical and generates
   the same C# as a hand-merged reference; a same-property conflict exits non-zero with markers and both
   values present.
 - **SC-010**: After `git-install`, `git diff` of a changed graph shows summary lines instead of JSON;

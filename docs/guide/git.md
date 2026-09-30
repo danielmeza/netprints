@@ -67,7 +67,11 @@ This registers the `merge` driver in addition to the diff configuration. When yo
 - Connections are calculated as: `base + additions from your side - removals from your side + additions from their side - removals from their side`.
 - Layout positions (where nodes appear in the editor) prefer your version if both sides moved the same node.
 
-When the merge succeeds, the result is written in canonical form and exits 0. When there is a conflict (a node or field changed differently on both sides, both sides connect into the same data or type input pin, or both sides connect a different node after the same exec output pin), the driver falls back to a text merge with conflict markers and exits 1. Either way, the merge is safe: no information is lost.
+When the merge succeeds, the result is written in canonical form and exits 0. When there is a conflict (a node or field changed differently on both sides, both sides connect into the same data or type input pin, or both sides connect a different node after the same exec output pin), the driver exits 1 and falls back to a text merge with conflict markers.
+
+### Limits
+
+The merge driver does not run in web-based merges (GitHub and GitLab UI merges and PR mergeability checks), so resolve conflicts locally with git before pushing. Every clone needs `git-install --merge` because git configuration is not versioned and a committed `.gitattributes` alone falls back to the text merge. When merging generated files (`.netpc.g.cs`), take either side and then run `netprints regen` to update the generated code from the merged graph. Layout-only moves of nodes produce no lines in the `show` summary. Use `git diff --no-textconv` to view raw JSON instead of the summary.
 
 See the [command-line guide](cli.md) for the full driver details on the `merge` command.
 
@@ -115,4 +119,4 @@ Both `.netpc.json` and `netprints.catalog.json` files have published JSON Schema
 
 Every graph file starts with a `$schema` property that points to the schema URL. Editors that understand JSON Schema (VS Code, Rider, JetBrains IDEs) use it to validate and auto-complete the file.
 
-The schemas are registered with [SchemaStore](https://www.schemastore.org/), so editors like VS Code can validate and complete `*.netpc.json` files even without an explicit `$schema` property (this is an owner action after the schemas are published on the project documentation site; the repository prepares the SchemaStore entry).
+The schemas are prepared for submission to [SchemaStore](https://www.schemastore.org/), so editors like VS Code can validate and complete `*.netpc.json` files even without an explicit `$schema` property (submission to SchemaStore is pending as an owner action).

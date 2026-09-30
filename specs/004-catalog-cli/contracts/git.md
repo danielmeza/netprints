@@ -60,6 +60,11 @@ Algorithm (research R15):
    byte order mark and bytes that are not UTF-8 survive; exit 1 (also when `git merge-file` reports 0 conflicts after a semantic conflict — a
    semantic conflict always exits 1). List each conflict on stderr.
 
+**Decisions**
+
+- When the same id is added on both sides, the conflicts raised are `DuplicateMember` (if contents differ) or `NodeProperty` (if the same). For locals and accessor changed/added differently, the conflict is `Scalar`.
+- When an item (member, node, pin, connection, layout entry) is deleted on one side and unchanged on the other, the deletion wins; a delete vs modify conflict is raised only when the base had the item (step 2).
+
 ## 3. `git-install`
 
 | Option | Effect |
@@ -77,6 +82,13 @@ lines.
 
 `show` writes UTF-8 without a byte order mark whatever the console code page (the entry point sets the console output
 encoding).
+
+**Decisions**
+
+- `--global` skips the `git rev-parse` work-tree check (not a work tree → still succeeds, writing global config).
+- `--merge` sets up the merge driver; downgrading back to diff-only (removing `merge=netprints` from attributes) requires running `git-install` again without `--merge` (downgrade without re-run is not performed).
+- Our own config keys (`diff.netprints.*`, `merge.netprints.*`) with existing different values are overwritten.
+- `--uninstall` removes the attributes line it added; if `.gitattributes` becomes blank afterwards, the file is deleted. Empty `[diff "netprints"]` and `[merge "netprints"]` sections in git config are left behind (they are harmless and easy to spot if needed).
 
 ## 3a. `format`
 
@@ -116,7 +128,7 @@ line "**Owner action**: submit after the docs site serves both URLs; not done by
 |---|---|---|
 | GI-T01 | `Commands/FormatCommandTests` | Non-canonical file → `--check` exit 1, no write; `format` rewrites it; canonical files untouched (bytes and timestamp); invalid JSON → `unreadable`, exit 1, others processed; directory recursion |
 | GI-T02 | `Git/GraphSummaryTests` | HelloWorld and AllNodes goldens; unknown-extension node line; node order in the file does not change the output |
-| GI-T03 | `Git/GraphMergerTests` | Two branches add different nodes/connections/layout to one method (DF-T23 fixture) → clean, canonical, contains both; plain `git merge-file` on the same inputs reports 1 conflict |
+| GI-T03 | `Git/GraphMergerTests` | Two branches add different nodes/connections/layout to one method (DF-T23 fixture) → clean, canonical, contains both; plain `git merge-file` on the same inputs reports at least one conflict |
 | GI-T04 | `Git/GraphMergerTests` | Same pin value changed differently → exit 1, markers present, both values in the output |
 | GI-T05 | `Git/GraphMergerTests` | Node deleted on one side, pin changed on the other → conflict fallback |
 | GI-T06 | `Git/GraphMergerTests` | Both sides connect different sources into one data input; a connection to a node the other side deleted → conflict fallback |

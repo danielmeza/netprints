@@ -320,7 +320,7 @@ targets.
 **Decision**: `format`, `show` and `merge` never name a concrete format: they resolve the `IDocumentFormat` for a
 file through `DocumentFormatRegistry` (by file name; `merge` uses `--path`, the real name, because git hands the
 driver temporary files without the extension) and open files through P1's `FileSystemDocumentStore`
-(constitution VII). `format` reads each file (tolerant read; unknown nodes preserved), writes it through the
+(constitution VII). The `merge` driver's paths (git-provided temporary files) use direct I/O, not the store, which is correct for driver inputs. `format` reads each file (tolerant read; unknown nodes preserved), writes it through the
 same format to memory, and compares bytes; `--check` lists files that differ
 or fail to read. No extensions are loaded (unknown nodes are re-emitted canonically). `show` reads the same way
 and prints the summary grammar in contracts/git.md §1 (one line per class header, member, node, pin value,

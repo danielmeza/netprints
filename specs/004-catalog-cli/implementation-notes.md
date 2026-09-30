@@ -614,13 +614,13 @@ All 15 Review E findings are handled: R1, R2, R11, R12, R13 in 7dbd970; R9, R10 
 
 **Evidence**:
 
-- **SC-001** (all nine commands): commands.cs files (`build`, `run`, `generate`, `migrate`, `catalog`, `format`, `show`, `merge`, `git-install`) exist and are registered in `CliCommandCatalog.All`. CliHelpExamplesTests (55 items) validates `--help`, `-h`, `--version` exit 0 for all commands and top-level. Full CLI.Tests cover each command (BuildCommandTests, RunCommandTests, GenerateCommandTests, MigrateCommandTests, CatalogCommandTests, FormatCommandTests, GitInstallCommandTests, Git/GraphMergerTests, Git/GraphSummaryTests).
+- **SC-001** (all nine commands): commands.cs files (`build`, `run`, `generate`, `migrate`, `catalog`, `format`, `show`, `merge`, `git-install`) exist and are registered in `CliCommandCatalog.All`. `CliExitCodeTests.EveryCommandsHelpExitsZero` validates `--help`, `-h`, `--version` exit 0 for all commands and top-level. Full CLI.Tests cover each command (BuildCommandTests, RunCommandTests, GenerateCommandTests, MigrateCommandTests, CatalogCommandTests, FormatCommandTests, GitInstallCommandTests, Git/GraphMergerTests, Git/GraphSummaryTests).
 
-- **SC-002** (format part): FormatCommandTests validates `--check` exit 1 (non-canonical), rewrite canonical, `--check` exit 0 (canonical), invalid JSON unreadable, directory recursion skipping `bin`/`obj`, bad paths exit 2. E2E: `netprints format --check samples` passes (no changes). CI job: `format --check samples` passes as part of "Graph checks" step (git diff b7c1af2).
+- **SC-002** (format part): FormatCommandTests validates `--check` exit 1 (non-canonical), rewrite canonical, `--check` exit 0 (canonical), invalid JSON unreadable, directory recursion skipping `bin`/`obj`, bad paths exit 2. E2E: `TheCheckedInSamplesAreCanonical` validates samples are already canonical. CI job: `format --check samples` passes as part of "Graph checks" step.
 
-- **SC-009** (merge driver): GraphMergerTests (GI-T03–GI-T08, GI-T12, 8 cases) covers clean merges (both sides add nodes, merged identity + layout ours-wins), conflict cases (pin changed differently, node deleted vs modified, two sources into one data input), fallback to text merge, exit codes 0 (clean) and 1 (conflict). `expected` fixtures verify canonical bytes for clean cases. E2E (`GitDriversEndToEndTests`): two branches merge through `git merge` driver with 0 conflicts, plain git on same history reports conflicts (contract baseline).
+- **SC-009** (merge driver): GraphMergerTests (GI-T03–GI-T08, GI-T12, 8 cases) covers clean merges (both sides add nodes, merged identity + layout ours-wins), conflict cases (pin changed differently, node deleted vs modified, two sources into one data input), fallback to text merge, exit codes 0 (clean) and 1 (conflict). `expected` fixtures verify canonical bytes for clean cases. E2E (`GitDriversEndToEndTests`): two branches merge through `git merge` driver with 0 conflicts, plain git on same history reports at least one conflict.
 
-- **SC-010** (git-install idempotent): GitInstallCommandTests (11 tests) covers install local/global, `--merge`, `--command`, idempotent second run (no changes), `--uninstall`, conflicting line rejected, outside repo exit 2. E2E validates install writes config keys and attributes line, second run reports `already installed:` and writes 0 files, output identical (lines 605-606, implementation-notes.md B3 narrative).
+- **SC-010** (git-install idempotent): GitInstallCommandTests (11 tests) covers install local/global, `--merge`, `--command`, idempotent second run (no changes), `--uninstall`, conflicting line rejected, outside repo exit 2. E2E validates install writes config keys and attributes line, second run reports `already installed:` and writes 0 files, output identical (`GitInstallCommandTests` lines verify both `.git/config` and `.gitattributes` bytes unchanged).
 
 **Checkpoint F**
 
@@ -643,17 +643,17 @@ Sub-phase F (`6925062^..00c87e3`), reviewed at `00c87e3`: Checkpoint F not accep
 | F-R4 | major | `show` omits every node property except the target, so real changes give an empty diff | F-F2 | fixed in F-F2 |
 | F-R5 | major | `format` does not canonicalize connection order, which the editor does | F-F3 | fixed in F-F3 |
 | F-R6 | major | Large parts of the merger have no test | F-F1 | fixed in F-F1 |
-| F-R7 | minor | The docs state false things | F-F4 | open |
-| F-R8 | minor | `git.md` lacks the limits part T096 asked for | F-F4 | open |
-| F-R9 | minor | GI-T03's baseline does not match the contract or SC-009 | F-F4 | open |
+| F-R7 | minor | The docs state false things | F-F4 | fixed in F-F4 |
+| F-R8 | minor | `git.md` lacks the limits part T096 asked for | F-F4 | fixed in F-F4 |
+| F-R9 | minor | GI-T03's baseline does not match the contract or SC-009 | F-F4 | fixed in F-F4 |
 | F-R10 | minor | The text fallback is not byte-exact; `show` output encoding not pinned | F-F3 | fixed in F-F3 |
 | F-R11 | minor | Invalid input and I/O failures surface as `Internal error` (exit 4) | F-F1 | fixed in F-F1 |
 | F-R12 | minor | Git tests are not isolated from the developer's global git configuration | F-F3 | fixed in F-F3 |
-| F-R13 | minor | The Checkpoint F report is inaccurate | F-F4 | open |
-| F-R14 | nit | Decisions the contract was silent on are recorded only in the notes | F-F4 | open |
-| F-R15 | nit | `show` and `merge` read and write files directly | F-F4 | open |
+| F-R13 | minor | The Checkpoint F report is inaccurate | F-F4 | fixed in F-F4 |
+| F-R14 | nit | Decisions the contract was silent on are recorded only in the notes | F-F4 | fixed in F-F4 |
+| F-R15 | nit | `show` and `merge` read and write files directly | F-F4 | fixed in F-F4 |
 | F-R16 | nit | The default arm of the summary writer is misleading | F-F2 | fixed in F-F2 |
-| F-R17 | nit | A stray sentence in `cli.md` | F-F4 | open |
+| F-R17 | nit | A stray sentence in `cli.md` | F-F4 | fixed in F-F4 |
 | F-R18 | nit | The `show` goldens are not independent of the writer | F-F2 | fixed in F-F2 |
 | F-R19 | nit | The SC-010 test covers only the default install | F-F3 | fixed in F-F3 |
 | F-R20 | nit | `format`'s messages are inconsistent | F-F3 | fixed in F-F3 |
@@ -709,5 +709,19 @@ Sub-phase F (`6925062^..00c87e3`), reviewed at `00c87e3`: Checkpoint F not accep
 - Green: the same classes pass; `NetPrints.Cli.Tests` 266 of 266.
 - Written after the code in that sense: the two F-R19 tests passed on the first run (the install was already idempotent, as probe 4 said). No test pins the UTF-8 console encoding: on Linux the default is already UTF-8, so it could not be made red here.
 - Full suite 1662 total, 1652 passed, 10 skipped, 0 failed; `dotnet format --verify-no-changes` clean; build 0 warnings 0 errors.
+
+### F-F4 (F-R7, F-R8, F-R9, F-R13, F-R14, F-R15, F-R17)
+
+**Changes**
+
+- F-R7: `docs/guide/projects.md:41-42` reworded to "the driver merges only the `*.netpc.json` graph file; git then merges the generated `.netpc.g.cs` as text". `docs/guide/graph-format.md` and `docs/guide/git.md:115` corrected: SchemaStore entry is prepared but not yet submitted. `docs/guide/git.md:70` reworded to reflect actual behaviour after F-F1 fixes: "When the merge succeeds, the result is written in canonical form and exits 0. When there is a conflict, the driver exits 1 and falls back to text merge with markers." (no longer claims no information is lost, since semantic conflicts can drop pins/connections without markers).
+- F-R8: `docs/guide/git.md` after line 69 added a "Limits" section documenting: web merges don't run custom drivers; every clone needs `git-install --merge`; generated files handled by taking either side and running `regen`; layout-only moves invisible in `show`; `git diff --no-textconv` for raw JSON.
+- F-R9: `specs/004-catalog-cli/contracts/git.md:119` (GI-T03) amended to "plain `git merge-file` on the same inputs reports at least one conflict" (empirically 3 hunks). `specs/004-catalog-cli/spec.md:528` (SC-009) updated to "plain git gives at least one" instead of "plain git gives 1".
+- F-R13: `implementation-notes.md` SC-001–SC-010 descriptions corrected: SC-001 credits `CliExitCodeTests.EveryCommandsHelpExitsZero` (not CliHelpExamplesTests); SC-002 removed stale commit ref and corrected to `TheCheckedInSamplesAreCanonical`; SC-009 says "at least one conflict" (matching the contract fix); SC-010 clarified references to `GitInstallCommandTests` verification.
+- F-R14: `specs/004-catalog-cli/contracts/git.md` §2 and §3 amended with decision notes: same id added both sides → `DuplicateMember` or `NodeProperty`; locals and accessors → `Scalar`; deletion of unchanged item wins; `--global` skips work-tree check; no downgrade without `--merge`; our keys with another value overwritten; `--uninstall` deletes blank attributes file and empty sections.
+- F-R15: `specs/004-catalog-cli/research.md` §14 clarified: direct I/O for temporary files in git driver paths is correct (not store documents). Removed stale reference in F-R18 note.
+- F-R17: `docs/guide/cli.md:164` moved from `merge` section to `show` section (after line 148) as the description of `show` exit codes. Reformatted as: "An unreadable graph exits 1 with the reason on stderr; a missing file exits 2."
+
+**Tests**: no code or test changes required; docs only.
 
 ## Governance proposals

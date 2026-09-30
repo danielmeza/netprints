@@ -38,8 +38,9 @@ pick it up. This file is:
 - **regenerated, never hand-merged.** If you edit it directly, the next build overwrites your
   changes. If a merge conflicts on it, resolve the conflict in the `.netpc.json` graph (or just take
   either side) and rebuild — do not try to hand-merge the generated C#. When merging graphs with git's
-  merge driver (see [Git workflow](git.md#merging-graphs)), the driver regenerates the `.netpc.g.cs`
-  file, never merges it.
+  merge driver (see [Git workflow](git.md#merging-graphs)), the driver merges only the `.netpc.json`
+  graph file; git then merges the generated `.netpc.g.cs` as text, which conflicts when both sides
+  changed the graph.
 - **kept visible in PRs.** It is not marked `linguist-generated`, so GitHub shows it in diffs. This
   is deliberate: the generated C# is often the easiest way to review what a graph change actually
   does, and a reviewer should not have to open the editor to see it.
