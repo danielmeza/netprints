@@ -13,9 +13,15 @@ netprints --help | -h | --version
 - `--help`/`-h` at any level print the help and exit 0.
 - `--verbose` lowers the stderr log level from Warning to Information and prints internal-error stack traces. It
   is an option of every command (shared `CommandSettingsBase`); a `--verbose` given before the command name is moved
-  after it by the pre-parse, so both positions work.
-- Output: plain text (no ANSI) when stdout is redirected or `NO_COLOR` is set. Results and diagnostics go to
-  stdout; logs and internal-error details to stderr.
+  after it by the pre-parse, so both positions work. With no command (`--verbose --help`, `--verbose --version`) it
+  is dropped and has no effect.
+- Output: plain text (no ANSI) when stdout is redirected or `NO_COLOR` is set. **Stream split:** results and
+  command diagnostics (`generated:`, `stale:`, canonical diagnostic lines, summaries) go to stdout; everything else
+  goes to stderr: every exit-2 and exit-3 message, project restore/load errors (exit 1), version-skew warnings and
+  errors (§4 `generate`), logs, and internal-error details. `run` starts the program with stdin, stdout and stderr
+  inherited, so its output streams live and is never captured or reordered.
+- Ctrl+C (SIGINT) cancels the running command: nothing is printed and the exit code is 130 (`ExitCodes.Canceled`, the shell
+  convention 128 + SIGINT), not 4.
 - P1 flags (`-p`, `--project-path`, `-r`, `--run`) anywhere before a command → stderr
   `The -p/--project-path and -r/--run options were replaced: use 'netprints build <project>' or 'netprints run <project>'.`,
   exit 2.
@@ -25,10 +31,11 @@ netprints --help | -h | --version
 | Code | Name | When |
 |---|---|---|
 | 0 | `Success` | The command did what it was asked |
-| 1 | `Failed` | Build or generation errors; `--check` found differences; merge conflict; restore failure; an unreadable or invalid input file (graph, catalog configuration, profile), including a newer `schemaVersion` |
-| 2 | `Usage` | Unknown command/option, invalid option value, a path argument that does not exist, no or several project files, P1 flags, `git-install` outside a work tree |
+| 1 | `Failed` | Build or generation errors; `--check` found differences; a restore or project-load failure; a tool/SDK version mismatch under `generate --check`; merge conflict; an unreadable or invalid input file (graph, catalog configuration, profile), including a newer or missing `schemaVersion` |
+| 2 | `Usage` | Unknown command/option, invalid option value, a path argument that does not exist, no or several project files, P1 flags, a `--graph` that is not a graph of the project, `git-install` outside a work tree |
 | 3 | `NoSdk` | No compatible .NET SDK registered (commands that evaluate or build projects) |
-| 4 | `InternalError` | Unhandled exception |
+| 4 | `InternalError` | Unhandled exception, including dependency-injection and command-construction faults |
+| 130 | `Canceled` | The command was cancelled with Ctrl+C. A documented exception to the 0-4 range |
 
 `run` returns the program's exit code after a successful build.
 
@@ -43,9 +50,9 @@ the current directory's single `*.csproj`. Zero or several candidates, a non-exi
 | Command | Synopsis | Behaviour | Output |
 |---|---|---|---|
 | `build` | `build [<project>]` | `EnsureSdk` → `IProjectSystem.BuildAsync` | Errors as `file(line,column): code: message`; last line `Build succeeded.` / `Build failed with N error(s).` |
-| `run` | `run [<project>] [-- <args>...]` | Build; on success run `IProjectSystem.GetRunCommand` with `<args>` appended | Build output as `build`, then the program's stdout/stderr forwarded verbatim |
-| `generate` (alias `regen`) | `generate [<project>] [--check] [--graph <file>]...` | Load project snapshot → `GenerateRequestFactory.FromSnapshot` → `GraphCodeGenerator.LoadExtensions` → `GenerateAsync(mode)` | Canonical diagnostic lines; `generated: <relative path>` per written file, or `stale: <relative path>` per stale/missing file with `--check`; last line `N generated file(s) up to date, M written.` / `M stale.` |
-| `migrate` | `migrate [<path>...]` | Paths are graph files, directories searched recursively for graphs, or a `.csproj` (its graphs); no argument → the §3 project rule. Each graph is read through its `IDocumentFormat`; while v1 is current, report only | `<relative path>: schema <n> (current)`; last line `No migrations are available; N graph(s) are at schema version 1.`; a newer/missing version → `<path>: schema <n> is not supported (this tool supports 1)`, exit 1 |
+| `run` | `run [<project>] [-- <args>...]` | Build; on success run `IProjectSystem.GetRunCommand` with `<args>` appended | Build output as `build`, then the program's own output, live (inherited stdio). `<args>` is everything after the first `--`, forwarded verbatim (empty values, `-` and `--=` included); Spectre never parses it |
+| `generate` (alias `regen`) | `generate [<project>] [--check] [--graph <file>]...` | Load project snapshot → `GenerateRequestFactory.FromSnapshot` → `GraphCodeGenerator.LoadExtensions` → `GenerateAsync(mode)` | Canonical diagnostic lines; `generated: <relative path>` per written file, or `stale: <relative path>` per stale/missing file with `--check`; last line `N generated file(s) up to date, M written.` / `M stale.`. `--check` writes no generated file (it still loads the project, so a restore and design-time build may create `obj/`). `--graph <file>` is resolved against the current directory (not the project directory), compared case-insensitively on Windows and macOS, and must name a graph of the project (else exit 2). **Version rule (ADR-0015 amendment 1):** the project's `NetPrintsSdkVersion` (set by the `NetPrints.Sdk` package; empty for the in-repo local SDK, which is not compared) is compared with the tool's version ignoring `+build` metadata; on a difference plain `generate` prints `warning: ...` to stderr and continues, and `--check` prints `error: ...` naming both versions and how to align them to stderr and exits 1 |
+| `migrate` | `migrate [<path>...]` | Paths are graph files, directories searched recursively for graphs, or a `.csproj` (its graphs); no argument → the §3 project rule. Each graph is read through its `IDocumentFormat`; while v1 is current, report only | `<relative path>: schema <n> (current)`; last line `No migrations are available; N graph(s) are at schema version 1.`; a newer version → `<path>: schema <n> is not supported (this tool supports 1)`, a missing one → `<path>: unreadable: Missing 'schemaVersion'.`, both exit 1. Directory walks skip reparse points (symlinks) and report an unreadable directory as `<dir>: unreadable: <reason>`, exit 1 |
 | `catalog` | see contracts/catalog.md §4 | Build or check one catalog | `wrote <path> (<T> types, <M> members)` or `stale: <path>`; `NPC` diagnostics as `<source>: <severity> <code>: <message>` |
 | `format` | `format [<paths>...] [--check]` | Canonicalize `*.netpc.json` (directories recursive; default `.`) | `formatted: <path>` / `not canonical: <path>` (check) / `unreadable: <path>: <reason>`; last line summary |
 | `show` | `show <file>` | Print the graph summary (contracts/git.md §1) | Summary only |

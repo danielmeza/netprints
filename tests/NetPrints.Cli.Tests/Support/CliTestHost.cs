@@ -24,6 +24,7 @@ internal sealed class FakeProjectSystem : IProjectSystem
     public IReadOnlyList<string> GraphFiles { get; set; } = [];
     public IReadOnlyList<string> ExtensionFolders { get; set; } = [];
     public IReadOnlyList<ProjectMessage> Messages { get; set; } = [];
+    public Dictionary<string, string> Properties { get; } = [];
     public Exception? ThrowOnLoad { get; set; }
     public List<string> LoadedProjects { get; } = [];
 
@@ -31,7 +32,7 @@ internal sealed class FakeProjectSystem : IProjectSystem
     {
         LoadedProjects.Add(projectFilePath);
         return ThrowOnLoad is null
-            ? Task.FromResult(new ProjectSnapshot(projectFilePath, "P", "P", "P", BinaryType.Executable, "net10.0", "", false, GraphFiles, ExtensionFolders, [], [], [], "", new Dictionary<string, string>(), Messages))
+            ? Task.FromResult(new ProjectSnapshot(projectFilePath, "P", "P", "P", BinaryType.Executable, "net10.0", "", false, GraphFiles, ExtensionFolders, [], [], [], "", Properties, Messages))
             : throw ThrowOnLoad;
     }
     public Task<ProjectSnapshot> ApplyAsync(string projectFilePath, IReadOnlyList<ProjectEdit> edits, CancellationToken cancellationToken) => throw new NotSupportedException();
@@ -117,6 +118,7 @@ internal sealed class CliTestHost
     public FakeProjectSystem Projects { get; } = new();
     public FakeProcessRunner Processes { get; } = new();
     public FakeMsBuildRegistration MsBuild { get; } = new();
+    public ToolVersion? Tool { get; set; }
 
     public string Output => _testConsole.Output;
 
@@ -131,6 +133,11 @@ internal sealed class CliTestHost
             Processes.Error = Error;
             services.AddSingleton<IProgramRunner>(Processes);
             services.AddSingleton<IMsBuildRegistration>(MsBuild);
+            if (Tool is not null)
+            {
+                services.AddSingleton(Tool);
+            }
+
             services.AddSingleton(new Lazy<IProjectSystem>(() => Projects));
             return services;
         }

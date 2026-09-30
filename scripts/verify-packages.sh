@@ -118,7 +118,9 @@ TOOL_PATH="$WORK/tools"
 dotnet tool install NetPrints.Cli --tool-path "$TOOL_PATH" --version "$VERSION" --add-source "$FEED" >&2 \
     || fail "step 3 (tool install): dotnet tool install failed"
 
-TOOL_OUTPUT="$("$TOOL_PATH/netprints" --version 2>&1 || true)"
+TOOL_RC=0
+TOOL_OUTPUT="$("$TOOL_PATH/netprints" --version 2>&1)" || TOOL_RC=$?
+[[ $TOOL_RC -eq 0 ]] || fail "step 3 (tool --version): exit code $TOOL_RC, expected 0: $TOOL_OUTPUT"
 echo "$TOOL_OUTPUT" | grep -qF "$VERSION" || fail "step 3 (tool --version): output does not contain $VERSION: $TOOL_OUTPUT"
 
 # --- Step 4: SDK build from the feed -------------------------------------------------------------
@@ -153,10 +155,19 @@ GENERATED="$APP/HelloWorld.Program.netpc.g.cs"
 [[ -f "$GENERATED" ]] || fail "step 4 (SDK build): $GENERATED was not generated"
 cmp -s "$COMMITTED" "$GENERATED" || fail "step 4 (SDK build): generated .netpc.g.cs differs from the committed one"
 
-RUN_OUTPUT="$(dotnet run --project "$APP" -c Release --no-build 2>&1 || true)"
+# The packed tool renders like the packed SDK generator (same version), against a PackageReference project.
+CHECK_RC=0
+CHECK_OUTPUT="$("$TOOL_PATH/netprints" regen --check "$APP" 2>&1)" || CHECK_RC=$?
+[[ $CHECK_RC -eq 0 ]] || fail "step 4 (netprints regen --check): exit code $CHECK_RC, expected 0: $CHECK_OUTPUT"
+
+RUN_RC=0
+RUN_OUTPUT="$(dotnet run --project "$APP" -c Release --no-build 2>&1)" || RUN_RC=$?
+[[ $RUN_RC -eq 0 ]] || fail "step 4 (dotnet run): exit code $RUN_RC, expected 0: $RUN_OUTPUT"
 echo "$RUN_OUTPUT" | grep -qF "Hello, World!" || fail "step 4 (dotnet run): output does not contain 'Hello, World!': $RUN_OUTPUT"
 
-TOOL_RUN_OUTPUT="$("$TOOL_PATH/netprints" run "$APP/HelloWorld.csproj" 2>&1 || true)"
+TOOL_RUN_RC=0
+TOOL_RUN_OUTPUT="$("$TOOL_PATH/netprints" run "$APP/HelloWorld.csproj" 2>&1)" || TOOL_RUN_RC=$?
+[[ $TOOL_RUN_RC -eq 0 ]] || fail "step 4 (netprints run): exit code $TOOL_RUN_RC, expected 0: $TOOL_RUN_OUTPUT"
 echo "$TOOL_RUN_OUTPUT" | grep -qF "Hello, World!" || fail "step 4 (netprints run): output does not contain 'Hello, World!': $TOOL_RUN_OUTPUT"
 
 echo "verify-packages.sh: all checks passed for $VERSION"

@@ -3,6 +3,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using NetPrints.Cli.Commands;
 using NetPrints.Cli.Infrastructure;
 using NetPrints.Projects;
 using NetPrints.Workspace;
@@ -63,7 +64,7 @@ internal static class CliServices
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static IProjectSystem CreateProjectSystem(IServiceProvider provider) =>
         new MsBuildProjectSystem(
-            new ProjectSystemOptions([], DevelopmentSdkVersion, GenerateOnLoad: false),
+            new ProjectSystemOptions([GenerateCommand.SdkVersionProperty], DevelopmentSdkVersion, GenerateOnLoad: false),
             provider.GetRequiredService<IProcessRunner>(),
             provider.GetRequiredService<ILoggerFactory>().CreateLogger<MsBuildProjectSystem>());
 }

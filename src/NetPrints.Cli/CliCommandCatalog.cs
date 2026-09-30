@@ -14,6 +14,7 @@ internal sealed record CliCommand(string Name, Action<IConfigurator> Register);
 internal static class CliCommandCatalog
 {
     private const string SampleProject = "samples/HelloWorld";
+    private const string SampleGraph = "samples/HelloWorld/HelloWorld.Program.netpc.json";
 
     /// <summary>Gets all registered commands, in help order.</summary>
     public static IReadOnlyList<CliCommand> All { get; } =
@@ -23,18 +24,18 @@ internal static class CliCommandCatalog
             .WithExample(BuildCommand.Name)
             .WithExample(BuildCommand.Name, SampleProject)),
         new(RunCommand.Name, config => config.AddCommand<RunCommand>(RunCommand.Name)
-            .WithDescription("Build a NetPrints project and run the program.")
+            .WithDescription("Build a NetPrints project and run the program; arguments after -- go to the program.")
             .WithExample(RunCommand.Name)
             .WithExample(RunCommand.Name, SampleProject, "--", "arg1", "arg2")),
         new(GenerateCommand.Name, config => config.AddCommand<GenerateCommand>(GenerateCommand.Name)
             .WithAlias(GenerateCommand.Alias)
-            .WithDescription("Regenerate the C# of a project's graphs, or check that it is up to date.")
+            .WithDescription("Regenerate the C# of a project's graphs, or check that it is up to date (alias: regen).")
             .WithExample(GenerateCommand.Name)
             .WithExample(GenerateCommand.Name, SampleProject, "--check")
-            .WithExample(GenerateCommand.Alias, "--graph", "HelloWorld.Program.netpc.json")),
+            .WithExample(GenerateCommand.Alias, "--graph", SampleGraph)),
         new(MigrateCommand.Name, config => config.AddCommand<MigrateCommand>(MigrateCommand.Name)
             .WithDescription("Report the schema version of graph files (no migrations exist yet).")
             .WithExample(MigrateCommand.Name)
-            .WithExample(MigrateCommand.Name, SampleProject, "graphs/Extra.netpc.json")),
+            .WithExample(MigrateCommand.Name, SampleGraph)),
     ];
 }

@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using NetPrints.Cli.Commands;
 using NetPrints.Cli.Infrastructure;
 using NetPrints.Cli.Tests.Support;
 using NetPrints.Extensibility.Loading;
@@ -64,10 +65,12 @@ public sealed class GenerateCommandTests : IDisposable
     {
         string generated = _sample.Combine(SampleCopy.GeneratedName);
         File.WriteAllText(generated, "// stale\n");
+        DateTime modified = File.GetLastWriteTimeUtc(generated);
 
         int exitCode = await _host.RunRealAsync("generate", "--check");
 
         Assert.Equal(ExitCodes.Failed, exitCode);
+        Assert.Equal(modified, File.GetLastWriteTimeUtc(generated));
         Assert.Contains("stale: " + SampleCopy.GeneratedName, _host.Output, StringComparison.Ordinal);
         Assert.Contains("1 stale.", _host.Output, StringComparison.Ordinal);
         Assert.Equal("// stale\n", File.ReadAllText(generated));
@@ -189,5 +192,71 @@ public sealed class GenerateCommandTests : IDisposable
         Assert.Equal(ExitCodes.Failed, exitCode);
         Assert.Contains(ExtensionDiagnosticCodes.InvalidManifest, _host.Output, StringComparison.Ordinal);
         Assert.Equal("// stale\n", File.ReadAllText(generated));
+    }
+
+    [Fact]
+    public async Task AVersionMismatchWarnsOnStderrAndGeneratesAnyway()
+    {
+        var host = new CliTestHost(_sample.Directory) { Tool = new ToolVersion("0.2.0+abc123") };
+        host.Projects.Properties[GenerateCommand.SdkVersionProperty] = "0.1.0";
+
+        int exitCode = await host.RunAsync("generate");
+
+        Assert.Equal(ExitCodes.Success, exitCode);
+        string error = host.Error.ToString();
+        Assert.Contains("warning", error, StringComparison.Ordinal);
+        Assert.Contains("0.1.0", error, StringComparison.Ordinal);
+        Assert.Contains("0.2.0", error, StringComparison.Ordinal);
+        Assert.Contains("up to date", host.Output, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AVersionMismatchFailsCheckNamingBothVersionsAndHowToAlignThem()
+    {
+        var host = new CliTestHost(_sample.Directory) { Tool = new ToolVersion("0.2.0") };
+        host.Projects.Properties[GenerateCommand.SdkVersionProperty] = "0.1.0";
+
+        int exitCode = await host.RunAsync("generate", "--check");
+
+        Assert.Equal(ExitCodes.Failed, exitCode);
+        string error = host.Error.ToString();
+        Assert.Contains("error", error, StringComparison.Ordinal);
+        Assert.Contains("0.1.0", error, StringComparison.Ordinal);
+        Assert.Contains("0.2.0", error, StringComparison.Ordinal);
+        Assert.Contains("dotnet tool update", error, StringComparison.Ordinal);
+        Assert.DoesNotContain("up to date", host.Output, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("0.2.0+abc123", "0.2.0")]
+    [InlineData("0.2.0", "0.2.0")]
+    [InlineData("0.2.0-alpha.0.3+abc123", "0.2.0-alpha.0.3")]
+    public async Task EqualVersionsIgnoringBuildMetadataAreQuiet(string tool, string sdk)
+    {
+        var host = new CliTestHost(_sample.Directory) { Tool = new ToolVersion(tool) };
+        host.Projects.Properties[GenerateCommand.SdkVersionProperty] = sdk;
+
+        Assert.Equal(ExitCodes.Success, await host.RunAsync("generate", "--check"));
+
+        Assert.Empty(host.Error.ToString());
+    }
+
+    [Fact]
+    public async Task AProjectWithoutASdkVersionPropertyIsNotCompared()
+    {
+        var host = new CliTestHost(_sample.Directory) { Tool = new ToolVersion("0.2.0") };
+        host.Projects.Properties[GenerateCommand.SdkVersionProperty] = "";
+
+        Assert.Equal(ExitCodes.Success, await host.RunAsync("generate", "--check"));
+
+        Assert.Empty(host.Error.ToString());
+    }
+
+    [Fact]
+    public async Task TheInRepoLocalSdkProjectIsNeverComparedAgainstTheRealTool()
+    {
+        Assert.Equal(ExitCodes.Success, await _host.RunRealAsync("generate", "--check"));
+
+        Assert.DoesNotContain("warning", _host.Error.ToString(), StringComparison.OrdinalIgnoreCase);
     }
 }

@@ -5,7 +5,9 @@ shipped unmarked in 0.1.1. Code that implements or references them, or builds a 
 lists, gets error `NPXE0003` until the project opts in (`<NoWarn>$(NoWarn);NPXE0003</NoWarn>`). See
 [API stability](https://danielmeza.github.io/netprints/guide/extensions#api-stability).
 
-**New:** Command-line tool `netprints` (package `NetPrints.Cli`) with `build`, `run`, `generate` (`regen`), and `migrate` commands. The `--version` flag and `--help` documentation are included. The tool replaces the `0.1` flags `-p` / `--project-path` and `-r` / `--run` with dedicated commands.
+**Breaking:** The `netprints` command line (package `NetPrints.Cli`, shipped in 0.1.x) is rebuilt around commands. The 0.1 flags are removed, not deprecated; using one prints a message to stderr and exits 2. Replace `netprints -p X` (or `--project-path X`) with `netprints build X`, and `netprints -p X -r` (or `--run`) with `netprints run X`. Exit codes that 0.1 scripts may test also changed: `--help` and `--version` exit 0 (were 2), a project path that does not exist exits 2 (was 1), and Ctrl+C exits 130. See the [exit codes](https://danielmeza.github.io/netprints/guide/cli#exit-codes) and the [removed flags](https://danielmeza.github.io/netprints/guide/cli#removed-01-flags).
+
+**New:** `netprints generate` (alias `regen`), with `--check` to fail CI on stale generated files, and `netprints migrate` to report graph schema versions. `run` forwards everything after `--` unchanged and streams the program's output. `generate` warns (and `--check` fails) when the tool's version differs from the project's `NetPrints.Sdk` package.
 
 **New:** `NetPrints.Catalog` (experimental) and `NetPrints.Annotations` (experimental) packages for graph catalogs and source annotations (preview, not yet documented).
 

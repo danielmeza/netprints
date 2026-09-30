@@ -34,10 +34,18 @@
     <WriteLinesToFile File="$(_NetPrintsRequest)" Lines="@(_NetPrintsRequestLine)" Overwrite="true" WriteOnlyWhenDifferent="true" />
   </Target>
 
+  <!-- _NetPrintsSkipGenerate is internal: the CLI's project system (which never generates while loading) and the editor's design-time check set it as
+       a global property so that loading a project does not rewrite its generated files. It is not a user setting. -->
+  <Target Name="_NetPrintsReportSkippedGenerate"
+          BeforeTargets="CoreCompile"
+          Condition="'@(NetPrintsGraph)' != '' and '$(_NetPrintsSkipGenerate)' == 'true'">
+    <Message Importance="low" Text="NetPrintsGenerate skipped: _NetPrintsSkipGenerate is set, the generated files are used as they are." />
+  </Target>
+
   <Target Name="NetPrintsGenerate"
           BeforeTargets="CoreCompile"
           DependsOnTargets="_NetPrintsWriteRequest"
-          Condition="'@(NetPrintsGraph)' != '' and '$(NetPrintsSkipGenerate)' != 'true'"
+          Condition="'@(NetPrintsGraph)' != '' and '$(_NetPrintsSkipGenerate)' != 'true'"
           Inputs="@(NetPrintsGraph);$(NetPrintsGeneratorPath);$(MSBuildProjectFullPath);$(_NetPrintsRequest);@(NetPrintsExtension->'%(FullPath)/netprints-extension.json');@(_NetPrintsExtensionAssembly)"
           Outputs="@(NetPrintsGraph->'%(GeneratedFile)')">
     <PropertyGroup>

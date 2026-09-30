@@ -24,13 +24,17 @@ internal sealed class GenerateCommand(
     CliEnvironment environment,
     IMsBuildRegistration msBuild,
     ILoggerFactory loggerFactory,
-    Lazy<IProjectSystem> projects) : ProjectCommandBase<GenerateSettings>(console, environment, msBuild, loggerFactory)
+    Lazy<IProjectSystem> projects,
+    ToolVersion tool) : ProjectCommandBase<GenerateSettings>(console, environment, msBuild, loggerFactory)
 {
     /// <summary>The command name.</summary>
     public const string Name = "generate";
 
     /// <summary>The command's alias.</summary>
     public const string Alias = "regen";
+
+    /// <summary>The MSBuild property the <c>NetPrints.Sdk</c> package sets to its own version.</summary>
+    public const string SdkVersionProperty = "NetPrintsSdkVersion";
 
     /// <inheritdoc/>
     protected override async Task<int> ExecuteProjectAsync(CommandContext context, string projectPath, GenerateSettings settings, CancellationToken cancellationToken)
@@ -41,6 +45,18 @@ internal sealed class GenerateCommand(
         if (ProjectMessageFormat.WriteErrors(snapshot.Messages, Environment.Error))
         {
             return ExitCodes.Failed;
+        }
+
+        string? skew = SdkVersionSkew(snapshot);
+        if (skew is not null)
+        {
+            if (settings.Check)
+            {
+                await Environment.Error.WriteLineAsync("error: " + skew).ConfigureAwait(false);
+                return ExitCodes.Failed;
+            }
+
+            await Environment.Error.WriteLineAsync("warning: " + skew).ConfigureAwait(false);
         }
 
         GenerateRequest request = GenerateRequestFactory.FromSnapshot(snapshot);
@@ -73,6 +89,29 @@ internal sealed class GenerateCommand(
                 .GenerateAsync(request, mode, cancellationToken).ConfigureAwait(false);
             return Report(results, Path.GetDirectoryName(projectPath) ?? Environment.CurrentDirectory, settings.Check);
         }
+    }
+
+    // The tool renders with the generator compiled into it; `dotnet build` renders with the project's NetPrints.Sdk package.
+    // Projects on the in-repo local SDK have no NetPrintsSdkVersion and are not compared.
+    private string? SdkVersionSkew(ProjectSnapshot snapshot)
+    {
+        string? sdk = snapshot.GetProperty(SdkVersionProperty);
+        if (string.IsNullOrWhiteSpace(sdk))
+        {
+            return null;
+        }
+
+        string toolVersion = WithoutBuildMetadata(tool.Value);
+        return string.Equals(WithoutBuildMetadata(sdk), toolVersion, StringComparison.OrdinalIgnoreCase)
+            ? null
+            : $"the project uses NetPrints.Sdk {sdk} but this tool is {toolVersion}, so the generated files may differ from what 'dotnet build' writes. "
+                + $"Align them: 'dotnet tool update NetPrints.Cli --version {WithoutBuildMetadata(sdk)}' (global tool) or set the NetPrints.Sdk PackageReference to {toolVersion}.";
+    }
+
+    private static string WithoutBuildMetadata(string version)
+    {
+        int plus = version.IndexOf('+', StringComparison.Ordinal);
+        return (plus < 0 ? version : version[..plus]).Trim();
     }
 
     private int Report(IReadOnlyList<GeneratedFileResult> results, string projectDirectory, bool check)

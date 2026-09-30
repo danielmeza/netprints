@@ -50,6 +50,13 @@ jobs:
       - name: Build
         run: dotnet build NetPrints.slnx -c Release --no-restore
 
+      # Every graph's generated .netpc.g.cs must be up to date; exit 1 names the stale files. Runs before any
+      # step that builds a sample: the SDK's NetPrintsGenerate target rewrites a stale file during `dotnet build`,
+      # which would make this check pass on a file it just regenerated. The samples use the in-repo SDK, so the
+      # check needs only the CLI and generator built above.
+      - name: Graph checks
+        run: dotnet run --project src/NetPrints.Cli -c Release --no-build -- regen --check samples/HelloWorld
+
       # Fails if any file would be reformatted by `dotnet format` (whitespace, style and analyzer
       # fixes from .editorconfig); run the same command locally to fix. RS1024's sites in
       # NetPrints.Reflection were fixed by hand in P1 T013 (an auto-fix there is a behavior change,
@@ -139,9 +146,9 @@ jobs:
           echo "$output"
           echo "$output" | grep -q "Hello, World!"
 
-      # Every graph's generated .netpc.g.cs must be up to date; exit 1 names the stale files.
-      - name: Graph checks
-        run: dotnet run --project src/NetPrints.Cli -c Release --no-build -- regen --check samples/HelloWorld
+      # Building the sample regenerates a stale .g.cs in place; a committed file that changed fails the job.
+      - name: Generated files unchanged
+        run: git diff --exit-code -- '*.netpc.g.cs'
 
       - name: Upload test results
         if: always()

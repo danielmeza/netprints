@@ -235,14 +235,14 @@ tracked API.
 
 ### Batch C-R — model: opus — T035 (sub-phase review)
 
-- [ ] T035 [US1] Review sub-phase C: an Opus reviewer who did not implement it reviews the whole diff of batches C1–C4
+- [x] T035 [US1] Review sub-phase C: an Opus reviewer who did not implement it reviews the whole diff of batches C1–C4
   (from the commit before the first batch to HEAD) — user story US1 end to end against spec.md, contracts/cli.md, the constitution and plan.md's standing constraints —
   and runs the independent test of the phase; findings (severity, file:line, fix) go to the PR as review comments and to
   `specs/004-catalog-cli/implementation-notes.md` under "Review C". No code changes in this task.
 
 ### Batch C-F — model: sonnet — T036 (reserved: fix review findings)
 
-- [ ] T036 [US1] Fix every finding of T035 (test first for behaviour findings), reply on each review thread with the fixing
+- [x] T036 [US1] Fix every finding of T035 (test first for behaviour findings), reply on each review thread with the fixing
   commit or the reason for deferral, whole suite, commit; if the review had no findings, tick this task with "no
   findings". The next sub-phase starts only after this batch is green on CI.
 

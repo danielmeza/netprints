@@ -37,3 +37,23 @@ Spectre.Console.Cli for the CLI. P2 adds catalogs, graph checks and git integrat
   the install guide say how.
 - CI can tell a crash (4) from a failed build (1) and uses `--check` modes as gates.
 - Every command is testable in process with fake project systems and process runners.
+
+## Amendment 1: tool and SDK version skew (Review C, 2026-09-30)
+
+`generate` renders with the generator compiled into the installed tool, while `dotnet build` renders with the
+generator of the project's `NetPrints.Sdk` package. When the two versions differ, a `regen --check` in CI would
+fail on any release that changes the emitted C#, and `generate` would write output that the next build rewrites.
+
+- **Mechanism.** The package's `build/NetPrints.Sdk.props` sets the MSBuild property `NetPrintsSdkVersion` to the
+  name of the package's version folder (`<packages>/netprints.sdk/<version>/build/`). The CLI's project system
+  reads it from the evaluated project (`ProjectSystemOptions.ExtraProperties`). No pack-time substitution is needed.
+- **Skipped for the in-repo SDK.** With `NetPrintsUseLocalSdk=true` (the samples) the property stays empty and
+  nothing is compared: those projects import the generator built from the same checkout.
+- **Comparison.** Build metadata after `+` is ignored; anything else that differs (including a prerelease label)
+  is a mismatch. An empty property (no SDK package) is not compared.
+- **Plain `generate`.** Prints `warning: ...` to stderr naming both versions and continues; exit code unchanged.
+- **`generate --check`.** Prints `error: ...` to stderr naming both versions and how to align them (`dotnet tool
+  update NetPrints.Cli --version <sdk version>`, or set the `PackageReference` to the tool's version), and exits 1
+  without generating.
+- **Rejected.** Exec'ing the project's own generator host for `--check` would make the check exact, but it ties the
+  tool to the host's private command line, which ADR-0009 keeps internal.

@@ -69,6 +69,54 @@ public sealed class GenerateRequestFactoryTests : IDisposable
     [Fact]
     public async Task LoadingWithGenerateOnLoadOffLeavesAStaleGeneratedFileAlone()
     {
+        string generated = CopyHelloWorldWithStaleGeneratedFile();
+        var system = new MsBuildProjectSystem(new ProjectSystemOptions([], "9.9.9-test", GenerateOnLoad: false), new ProcessRunner(), NullLogger<MsBuildProjectSystem>.Instance);
+
+        await system.LoadAsync(Path.Combine(_directory, "HelloWorld.csproj"), TestContext.Current.CancellationToken);
+
+        Assert.Equal("// stale\n", await File.ReadAllTextAsync(generated, TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task LoadingWithTheDefaultOptionsRegeneratesAStaleGeneratedFile()
+    {
+        string generated = CopyHelloWorldWithStaleGeneratedFile();
+        var system = new MsBuildProjectSystem(new ProjectSystemOptions([], "9.9.9-test"), new ProcessRunner(), NullLogger<MsBuildProjectSystem>.Instance);
+
+        await system.LoadAsync(Path.Combine(_directory, "HelloWorld.csproj"), TestContext.Current.CancellationToken);
+
+        Assert.NotEqual("// stale\n", await File.ReadAllTextAsync(generated, TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task ThePublicLookingSkipPropertyNoLongerSkipsGeneration()
+    {
+        string generated = CopyHelloWorldWithStaleGeneratedFile();
+        string project = Path.Combine(_directory, "HelloWorld.csproj");
+        string text = await File.ReadAllTextAsync(project, TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(project, text.Replace("<NetPrintsProfile>", "<NetPrintsSkipGenerate>true</NetPrintsSkipGenerate><NetPrintsProfile>", StringComparison.Ordinal), TestContext.Current.CancellationToken);
+        var system = new MsBuildProjectSystem(new ProjectSystemOptions([], "9.9.9-test"), new ProcessRunner(), NullLogger<MsBuildProjectSystem>.Instance);
+
+        await system.LoadAsync(project, TestContext.Current.CancellationToken);
+
+        Assert.NotEqual("// stale\n", await File.ReadAllTextAsync(generated, TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task SkippedGenerationLeavesTheFileAndSaysSoInTheBuildLog()
+    {
+        string generated = CopyHelloWorldWithStaleGeneratedFile();
+
+        (int exit, string output) = await ExternalProcess.RunDotnetAsync(_directory, environment: null,
+            "build", Path.Combine(_directory, "HelloWorld.csproj"), "-p:_NetPrintsSkipGenerate=true", "-v:d", "-tl:off", "--nologo");
+
+        Assert.Equal("// stale\n", await File.ReadAllTextAsync(generated, TestContext.Current.CancellationToken));
+        Assert.Contains("NetPrintsGenerate skipped", output, StringComparison.Ordinal);
+        Assert.True(exit is 0 or 1, output);
+    }
+
+    private string CopyHelloWorldWithStaleGeneratedFile()
+    {
         string sample = Path.Combine(SampleProjectFactory.FindRepositoryRoot(), "samples", "HelloWorld");
         foreach (string name in new[] { "HelloWorld.csproj", "HelloWorld.Program.netpc.json" })
         {
@@ -77,11 +125,7 @@ public sealed class GenerateRequestFactoryTests : IDisposable
 
         LocalSdkLayout.Write(_directory);
         string generated = Path.Combine(_directory, "HelloWorld.Program.netpc.g.cs");
-        await File.WriteAllTextAsync(generated, "// stale\n", TestContext.Current.CancellationToken);
-        var system = new MsBuildProjectSystem(new ProjectSystemOptions([], "9.9.9-test", GenerateOnLoad: false), new ProcessRunner(), NullLogger<MsBuildProjectSystem>.Instance);
-
-        await system.LoadAsync(Path.Combine(_directory, "HelloWorld.csproj"), TestContext.Current.CancellationToken);
-
-        Assert.Equal("// stale\n", await File.ReadAllTextAsync(generated, TestContext.Current.CancellationToken));
+        File.WriteAllText(generated, "// stale\n");
+        return generated;
     }
 }

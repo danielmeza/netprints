@@ -60,87 +60,6 @@
 - Only `<NoWarn>` in the repository: the `Directory.Build.targets` opt-in line.
 - CI: green run 36664521413 at 9280856 after a rerun. The first attempt failed only in `Test (Editor UI, headless)`: `SnapshotTests.Inspectors` ('inspector-class' 0.893% of pixels differ, max 0.5%), a rendering flake in code this batch does not touch (the same test passed locally in the whole suite and on 854066f); the rerun passed.
 
-## Batch C1 (T019-T022) — Spectre CLI skeleton, project resolution, build
-
-### Decisions
-
-- Every CLI type is `internal` (tests see it through the existing `InternalsVisibleTo`), so nothing enters `PublicAPI.Unshipped.txt`; `NetPrints.Cli` is not an API-tracked project.
-- Commands are listed once in `CliCommandCatalog.All` (name plus a registration action); `CliApplication.ConfigureCommands` walks it, and CL-T01 iterates it, so a command added later gets the `--help` check and `ValidateExamples` for free.
-- `CliEnvironment` is a class over `currentDirectory`, a `getVariable` function and the stderr `TextWriter` (`FromProcess()` for the real one). Internal-error and usage messages go to `environment.Error`; project-resolution errors and results go to the injected `IAnsiConsole` (stdout), as in P1.
-- The project system is injected as `Lazy<IProjectSystem>`: resolving `IProjectSystem` eagerly would load Microsoft.Build before `IMsBuildRegistration.EnsureRegistered` ran. `CliServices.CreateProjectSystem` and `MsBuildRegistrationAdapter.EnsureRegistered` keep the `NoInlining` split.
-- `UseStrictParsing()`: without it Spectre silently moves unknown options into the remaining arguments (found by CL-T02: `build --no-such-option` exited 2 only because the test's directory had no project).
-- Output is written with `IAnsiConsole.Profile.Out.Writer` (`WriteLineRaw`), not `console.WriteLine`: the latter wraps at the console width, which breaks paths and diagnostics when stdout is redirected (width 80).
-- Console settings (`CliServices.ConsoleSettings`): `AnsiSupport.No` and `ColorSystemSupport.NoColors` when the output is redirected or `NO_COLOR` is non-empty, otherwise detection.
-- `TypeRegistrar` owns the `ServiceProvider`s it builds and is disposed by `CliApplication.RunAsync` (IDISP004/005/007).
-- `TypeResolver` is not disposable: it wraps a provider the registrar owns.
-- The pre-parse rejects the P1 flags only in the leading options (before the command name or `--`); after the command name they are ordinary unknown options, so `run <project> -- -r` will forward `-r`.
-- T022: the old `CliBuildTests` cases `SuccessfulRunPropagatesTheChildsNonZeroExitCode` and `SuccessfulRunWithZeroChildExitCodeReturnsExitCode0` exercise the run path, which `BuildCommand` does not have; they move to `RunCommandTests` in T023 (CL-T05). The project reference from `NetPrints.Core.Tests` to `NetPrints.Cli` existed only for `CliBuildTests` and is removed with the file.
-- T022: the messages changed from P1's `Compiling ...`/`Compilation succeeded.`/`Compilation failed with N errors:` to the contract's `Build succeeded.` / `Build failed with N error(s).` (no header line).
-
-### Batch C2 (T023-T026) — run, migrate, CI
-
-### Decisions
-
-- `ProjectCommandBase.ExecuteProjectAsync` now receives the `CommandContext` (`run` reads `Remaining.Raw`) and exposes `Environment` as a protected property, so subclasses do not capture the constructor parameter a second time.
-- `run` appends `--` plus the arguments after `--` to `GetRunCommand`'s arguments only when there are any (`dotnet run ... --no-build -- a b`); the child's stdout goes to the console output, its stderr to `CliEnvironment.Error`, and its exit code is the command's. The two run cases dropped from `CliBuildTests` are ported into `RunCommandTests`.
-- `migrate` does not derive from `ProjectCommandBase` (it takes several paths). A `.csproj` argument, or no argument, resolves the project (`ProjectLocator`), checks the SDK (exit 3) and reads `ProjectSnapshot.GraphFiles`; a directory is searched recursively for `*.netpc.json`, skipping `bin` and `obj`; a `.netpc.json` file is read directly; another file or a missing path exits 2.
-- Each graph is read through the `IDocumentFormat` that `DocumentFormatRegistry.Find` resolves, from a `FileSystemDocumentStore` (`watch: false`) rooted at the graph's directory with the file name as id. A `DocumentVersionException` prints `<path>: schema <found> is not supported (this tool supports <supported>)`; any other read failure prints `<path>: unreadable: <reason>`; both exit 1 after the remaining graphs are reported, with the last line `N of M graph(s) could not be read.` (the contract defines the last line only for success).
-- The registry uses the built-in node converters only (no extension node converters yet); C3 wires the project's extension folders in (see Batch C3).
-- `NetPrints.Cli` references `NetPrints.Serialization` directly (it was not transitive).
-- T026: CI "CLI smoke" also runs `--help`; "CLI sample compile and run" runs `run samples/HelloWorld/HelloWorld.csproj` and greps `Hello, World!`; `scripts/verify-packages.sh` step 4 runs the installed tool as `netprints run` and greps `Hello, World!`.
-
-### Red/green evidence
-
-- Red (T023, tests first): `RunCommandTests` and `MigrateCommandTests` written with the `FakeProjectSystem.LoadAsync`/`GraphFiles` support, commands not registered: 16 of 17 failed (unknown command, exit 2). Green after T024/T025: 17 of 17 passed.
-- Manual: `migrate samples/HelloWorld/HelloWorld.Program.netpc.json` reports schema 1; `run` of a clean copy of the sample prints `Hello, World!`, exit 0.
-
-### Batch C3 (T027-T031) — generate, regen --check, CI graph check
-
-### Decisions
-
-- `GeneratedFileResult` gains `UpToDate` (last, defaulted parameter): true when the output already held the rendered bytes before the call, false for a missing or different file and for any error. `Written` stays "the file was rewritten", so Write reports stale as `Written` and fresh as `UpToDate`, Check reports stale as neither. `GenerateAsync(request, mode, ct)` is a new overload; the two-argument one calls it with `Write`, so `Generator/Program.cs` is unchanged. `NetPrints.Generation` and `NetPrints.Workspace` are not API-tracked.
-- `generate` output: diagnostics as canonical lines, `generated: <path>` per rewritten file, `stale: <path>` per stale file (paths relative to the project directory); last line `N generated file(s) up to date, M written.`, or `M stale.` when `--check` found stale files. Exit 1 on any error diagnostic or stale file; a failing extension folder prints its `NPX` lines, exits 1 and writes nothing. `--graph` must name a graph of the project, otherwise exit 2.
-- Found by CL-T08: `IProjectSystem.LoadAsync` opens the project in `MSBuildWorkspace`, whose design-time build runs the SDK's `NetPrintsGenerate` target (BeforeTargets CoreCompile), so `generate --check` silently rewrote stale files (and `Touch`ed fresh ones) before the command looked at them. `ProjectSystemOptions` gets `GenerateOnLoad` (default true); false passes the global property `NetPrintsSkipGenerate=true` to the workspace, and `NetPrints.Sdk.targets` skips the target when it is `true`. The CLI's project system sets it to false (`build` and `run` generate through `dotnet build`, unaffected). Pinned by `GenerateRequestFactoryTests.LoadingWithGenerateOnLoadOffLeavesAStaleGeneratedFileAlone`.
-- CL-T13 builds a temp copy of HelloWorld against the in-repo SDK, parses the `netprints.generate.rsp` the target wrote and compares it field by field with `FromSnapshot` of the loaded project (records with list members do not compare structurally).
-- The command tests reuse `CliTestHost` through `RunRealAsync` (real `CliServices.CreateDefault()` with the host's console and environment) and a `SampleCopy` fixture; `Cli.Tests` references `NetPrints.Testing` (`LocalSdkLayout`) and builds `NetPrints.Generator` and `NetPrints.TestExtension` first without referencing them. Mtimes are not a usable "nothing written" signal because the SDK target touches outputs; the tests compare content and the output lines.
-- CL-T11 (`run` on a temp copy of HelloWorld through the real tool) was already green when written: it pins the C2 behaviour with the real SDK rather than driving new code.
-- Migrate now loads the extension folders of the projects it reads (`GraphCodeGenerator.LoadExtensions`) and builds its `JsonDocumentFormat` from the registry's node converters; a failing extension exits 1 with the `NPX` lines. The C2 open item is closed, but correct it: an unknown `$kind` is not "unreadable", `NodeListConverter` keeps it as an `UnknownNodeDocument`, so the report never failed on extension nodes; the wiring matters once a migration writes graphs. Graphs given as files or directories have no project, so only the built-in converters apply to them.
-- T030: CI step "Graph checks" runs `regen --check samples/HelloWorld` after the sample run.
-
-### Red/green evidence
-
-- Red (T027): `GenerationModeTests` and `GenerateRequestFactoryTests` written first: `dotnet build tests/NetPrints.Core.Tests` failed (`GenerationMode`, `GenerateRequestFactory`, `UpToDate` missing). Green after T028: 8 of 8 (then 9 with the `GenerateOnLoad` test).
-- Red (T029): `GenerateCommandTests` and `HelloWorldCliTests` with no `generate` command: 8 of 9 failed (unknown command). After the command: 4 of 9 still failed until `GenerateOnLoad` (stale files were rewritten by the load); then 66 of 66 Cli.Tests.
-- Red/green for `GenerateOnLoad`: with the option in place but the target condition reverted the new Core test failed; with the condition, it passes.
-- Red/green for migrate: `AProjectsBrokenExtensionFolderExits1WithItsDiagnostic` failed before the wiring; `AProjectsExtensionNodesAreReadThroughItsExtensionFolders` passed both before and after (see above).
-
-### Checkpoint C3
-
-- `dotnet build NetPrints.slnx -c Release`: 0 warnings, 0 errors. `dotnet format NetPrints.slnx --verify-no-changes`: exit 0.
-- Whole suite (Release): 1087 tests, 0 failed, 10 skipped (the headless-UI capability skips); E2E (`--fail-skips on`): 9 of 9 passed. Cli.Tests 68 passed.
-
-## Deviations
-
-- CI: the "CLI smoke" step now asserts exit 0 (was 2) and "CLI sample compile and run" runs `build samples/HelloWorld/HelloWorld.csproj` and greps `Build succeeded.`, because P1's `-p/-r` flags are rejected from C1 on and CI must stay green until T026 rewrites both steps (`run` arrives in C2).
-- `scripts/verify-packages.sh` step 4 ran the installed tool as `netprints -p <csproj> -r` (the CI "Packages (local feed)" job failed on the P1-flag message at c35dc4f); it now runs `netprints build <csproj>` and greps `Build succeeded.`. T075 or T026 may switch it to `run` once C2 lands.
-- The tests and the code were written in one pass per task file rather than committed per task: T019-T022 are one commit, because T019's suite needs the build command (T022) to satisfy `ThereIsAtLeastTheBuildCommand` and `--help` over the catalog.
-- `samples/HelloWorld/Compiled_HelloWorld/` (ignored, dated 2026-09-25, a P1 leftover) makes a local `netprints build samples/HelloWorld` fail with CS0101; a clean copy builds. Not touched (run output), CI checks out clean.
-
-### Red/green evidence
-
-- Red for T019, T021 and T022 (tests first): with the three test files and `Support/CliTestHost.cs` written and `CommandLineParser` already replaced by `Spectre.Console.Cli` in the csproj, `dotnet build tests/NetPrints.Cli.Tests` failed (10 errors: the old `Program.cs` no longer compiled, and `CliApplication`, `CliCommandCatalog`, `CliServices`, `ProjectLocator`, `IMsBuildRegistration`, `ExitCodes` did not exist).
-- Green after T020-T022 code: first run 36 of 37 passed; the failure `UnknownCommandOptionOrValueExitsWithUsage(build --no-such-option)` (no message on stderr) was real red for strict parsing, green after `UseStrictParsing()`. Cli.Tests: 37 passed.
-- The whole-suite run found `SourceHygieneTests.NoNullForgivingOperator` failing on three `Path.GetDirectoryName(...)!` in the new tests; fixed without `!`.
-
-### Checkpoint C1
-
-- `dotnet build -c Release`: 0 warnings, 0 errors. `dotnet format NetPrints.slnx --verify-no-changes`: clean.
-- Whole suite (Release): 1047 tests, after the fix 0 failed (Core.Tests 566 passed, Cli.Tests 37 passed); E2E (`--fail-skips on`): 9 of 9 passed.
-
-## Deviations
-
-- Commit 0613745's message lost `$(TargetPath)` to shell expansion.
-
 ### Review A (T006, Opus) — PR #9 review 5360487391
 
 0 blocking findings, 4 Low and 2 Nit, all fixed in T007:
@@ -170,6 +89,84 @@ Heads-up for sub-phases D/E: any netstandard2.0 dependency of the generator must
 
 Deviations from the task: none of the marked types was made internal (finding 2, reason above). Finding 6 has no red run of its own: its test needs the new overload, and the old blanket list could never fail it. Findings 7 and 8 were shown red by the same probe (its `GlobalAnalyzerConfigFiles`, `EditorConfigFiles` and `<Analyzer Remove>` items passed the old gates).
 
+## Batch C1 (T019-T022) — Spectre CLI skeleton, project resolution, build
+
+### Decisions
+
+- Every CLI type is `internal` (tests see it through the existing `InternalsVisibleTo`), so nothing enters `PublicAPI.Unshipped.txt`; `NetPrints.Cli` is not an API-tracked project.
+- Commands are listed once in `CliCommandCatalog.All` (name plus a registration action); `CliApplication.ConfigureCommands` walks it, and CL-T01 iterates it, so a command added later gets the `--help` check and `ValidateExamples` for free.
+- `CliEnvironment` is a class over `currentDirectory`, a `getVariable` function and the stderr `TextWriter` (`FromProcess()` for the real one). Internal-error and usage messages go to `environment.Error`; project-resolution errors and results go to the injected `IAnsiConsole` (stdout), as in P1.
+- The project system is injected as `Lazy<IProjectSystem>`: resolving `IProjectSystem` eagerly would load Microsoft.Build before `IMsBuildRegistration.EnsureRegistered` ran. `CliServices.CreateProjectSystem` and `MsBuildRegistrationAdapter.EnsureRegistered` keep the `NoInlining` split.
+- `UseStrictParsing()`: without it Spectre silently moves unknown options into the remaining arguments (found by CL-T02: `build --no-such-option` exited 2 only because the test's directory had no project).
+- Output is written with `IAnsiConsole.Profile.Out.Writer` (`WriteLineRaw`), not `console.WriteLine`: the latter wraps at the console width, which breaks paths and diagnostics when stdout is redirected (width 80).
+- Console settings (`CliServices.ConsoleSettings`): `AnsiSupport.No` and `ColorSystemSupport.NoColors` when the output is redirected or `NO_COLOR` is non-empty, otherwise detection.
+- `TypeRegistrar` owns the `ServiceProvider`s it builds and is disposed by `CliApplication.RunAsync` (IDISP004/005/007).
+- `TypeResolver` is not disposable: it wraps a provider the registrar owns.
+- The pre-parse rejects the P1 flags only in the leading options (before the command name or `--`); after the command name they are ordinary unknown options, so `run <project> -- -r` will forward `-r`.
+- T022: the old `CliBuildTests` cases `SuccessfulRunPropagatesTheChildsNonZeroExitCode` and `SuccessfulRunWithZeroChildExitCodeReturnsExitCode0` exercise the run path, which `BuildCommand` does not have; they move to `RunCommandTests` in T023 (CL-T05). The project reference from `NetPrints.Core.Tests` to `NetPrints.Cli` existed only for `CliBuildTests` and is removed with the file.
+- T022: the messages changed from P1's `Compiling ...`/`Compilation succeeded.`/`Compilation failed with N errors:` to the contract's `Build succeeded.` / `Build failed with N error(s).` (no header line).
+
+### Deviations
+
+- CI: the "CLI smoke" step now asserts exit 0 (was 2) and "CLI sample compile and run" runs `build samples/HelloWorld/HelloWorld.csproj` and greps `Build succeeded.`, because P1's `-p/-r` flags are rejected from C1 on and CI must stay green until T026 rewrites both steps (`run` arrives in C2).
+- `scripts/verify-packages.sh` step 4 ran the installed tool as `netprints -p <csproj> -r` (the CI "Packages (local feed)" job failed on the P1-flag message at c35dc4f); it now runs `netprints build <csproj>` and greps `Build succeeded.`. T075 or T026 may switch it to `run` once C2 lands.
+- The tests and the code were written in one pass per task file rather than committed per task: T019-T022 are one commit, because T019's suite needs the build command (T022) to satisfy `ThereIsAtLeastTheBuildCommand` and `--help` over the catalog.
+- `samples/HelloWorld/Compiled_HelloWorld/` (ignored, dated 2026-09-25, a P1 leftover) makes a local `netprints build samples/HelloWorld` fail with CS0101; a clean copy builds. Not touched (run output), CI checks out clean.
+- Commit 0613745's message lost `$(TargetPath)` to shell expansion.
+
+### Red/green evidence
+
+- Red for T019, T021 and T022 (tests first): with the three test files and `Support/CliTestHost.cs` written and `CommandLineParser` already replaced by `Spectre.Console.Cli` in the csproj, `dotnet build tests/NetPrints.Cli.Tests` failed (10 errors: the old `Program.cs` no longer compiled, and `CliApplication`, `CliCommandCatalog`, `CliServices`, `ProjectLocator`, `IMsBuildRegistration`, `ExitCodes` did not exist).
+- Green after T020-T022 code: first run 36 of 37 passed; the failure `UnknownCommandOptionOrValueExitsWithUsage(build --no-such-option)` (no message on stderr) was real red for strict parsing, green after `UseStrictParsing()`. Cli.Tests: 37 passed.
+- The whole-suite run found `SourceHygieneTests.NoNullForgivingOperator` failing on three `Path.GetDirectoryName(...)!` in the new tests; fixed without `!`.
+
+### Checkpoint C1
+
+- `dotnet build -c Release`: 0 warnings, 0 errors. `dotnet format NetPrints.slnx --verify-no-changes`: clean.
+- Whole suite (Release): 1047 tests, after the fix 0 failed (Core.Tests 566 passed, Cli.Tests 37 passed); E2E (`--fail-skips on`): 9 of 9 passed.
+
+### Batch C2 (T023-T026) — run, migrate, CI
+
+### Decisions
+
+- `ProjectCommandBase.ExecuteProjectAsync` now receives the `CommandContext` (`run` reads `Remaining.Raw`) and exposes `Environment` as a protected property, so subclasses do not capture the constructor parameter a second time.
+- `run` appends `--` plus the arguments after `--` to `GetRunCommand`'s arguments only when there are any (`dotnet run ... --no-build -- a b`); the child's stdout goes to the console output, its stderr to `CliEnvironment.Error`, and its exit code is the command's. The two run cases dropped from `CliBuildTests` are ported into `RunCommandTests`.
+- `migrate` does not derive from `ProjectCommandBase` (it takes several paths). A `.csproj` argument, or no argument, resolves the project (`ProjectLocator`), checks the SDK (exit 3) and reads `ProjectSnapshot.GraphFiles`; a directory is searched recursively for `*.netpc.json`, skipping `bin` and `obj`; a `.netpc.json` file is read directly; another file or a missing path exits 2.
+- Each graph is read through the `IDocumentFormat` that `DocumentFormatRegistry.Find` resolves, from a `FileSystemDocumentStore` (`watch: false`) rooted at the graph's directory with the file name as id. A `DocumentVersionException` prints `<path>: schema <found> is not supported (this tool supports <supported>)`; any other read failure prints `<path>: unreadable: <reason>`; both exit 1 after the remaining graphs are reported, with the last line `N of M graph(s) could not be read.` (the contract defines the last line only for success).
+- The registry uses the built-in node converters only (no extension node converters yet); C3 wires the project's extension folders in (see Batch C3).
+- `NetPrints.Cli` references `NetPrints.Serialization` directly (it was not transitive).
+- T026: CI "CLI smoke" also runs `--help`; "CLI sample compile and run" runs `run samples/HelloWorld/HelloWorld.csproj` and greps `Hello, World!`; `scripts/verify-packages.sh` step 4 runs the installed tool as `netprints run` and greps `Hello, World!`.
+
+### Red/green evidence
+
+- Red (T023, tests first): `RunCommandTests` and `MigrateCommandTests` written with the `FakeProjectSystem.LoadAsync`/`GraphFiles` support, commands not registered: 16 of 17 failed (unknown command, exit 2). Green after T024/T025: 17 of 17 passed.
+- Manual: `migrate samples/HelloWorld/HelloWorld.Program.netpc.json` reports schema 1; `run` of a clean copy of the sample prints `Hello, World!`, exit 0.
+
+### Batch C3 (T027-T031) — generate, regen --check, CI graph check
+
+### Decisions
+
+- `GeneratedFileResult` gains `UpToDate` (last, defaulted parameter): true when the output already held the rendered bytes before the call, false for a missing or different file and for any error. `Written` stays "the file was rewritten", so Write reports stale as `Written` and fresh as `UpToDate`, Check reports stale as neither. `GenerateAsync(request, mode, ct)` is a new overload; the two-argument one calls it with `Write`, so `Generator/Program.cs` is unchanged. `NetPrints.Generation` and `NetPrints.Workspace` are not API-tracked.
+- `generate` output: diagnostics as canonical lines, `generated: <path>` per rewritten file, `stale: <path>` per stale file (paths relative to the project directory); last line `N generated file(s) up to date, M written.`, or `M stale.` when `--check` found stale files. Exit 1 on any error diagnostic or stale file; a failing extension folder prints its `NPX` lines, exits 1 and writes nothing. `--graph` must name a graph of the project, otherwise exit 2.
+- Found by CL-T08: `IProjectSystem.LoadAsync` opens the project in `MSBuildWorkspace`, whose design-time build runs the SDK's `NetPrintsGenerate` target (BeforeTargets CoreCompile), so `generate --check` silently rewrote stale files (and `Touch`ed fresh ones) before the command looked at them. `ProjectSystemOptions` gets `GenerateOnLoad` (default true); false passes the global property `_NetPrintsSkipGenerate=true` to the workspace (named `NetPrintsSkipGenerate` until Review C part 2 made it internal), and `NetPrints.Sdk.targets` skips the target when it is `true`. The CLI's project system sets it to false (`build` and `run` generate through `dotnet build`, unaffected). Pinned by `GenerateRequestFactoryTests.LoadingWithGenerateOnLoadOffLeavesAStaleGeneratedFileAlone`.
+- CL-T13 builds a temp copy of HelloWorld against the in-repo SDK, parses the `netprints.generate.rsp` the target wrote and compares it field by field with `FromSnapshot` of the loaded project (records with list members do not compare structurally).
+- The command tests reuse `CliTestHost` through `RunRealAsync` (real `CliServices.CreateDefault()` with the host's console and environment) and a `SampleCopy` fixture; `Cli.Tests` references `NetPrints.Testing` (`LocalSdkLayout`) and builds `NetPrints.Generator` and `NetPrints.TestExtension` first without referencing them. The tests compare content and the output lines. (This note first said mtimes were not a usable "nothing written" signal because the SDK target touches outputs; that stopped being true once `GenerateOnLoad: false` landed, and `CheckNamesTheStaleFileExitsOneAndWritesNothing` now also asserts the mtime is unchanged.)
+- CL-T11 (`run` on a temp copy of HelloWorld through the real tool) was already green when written: it pins the C2 behaviour with the real SDK rather than driving new code.
+- Migrate now loads the extension folders of the projects it reads (`GraphCodeGenerator.LoadExtensions`) and builds its `JsonDocumentFormat` from the registry's node converters; a failing extension exits 1 with the `NPX` lines. The C2 open item is closed, but correct it: an unknown `$kind` is not "unreadable", `NodeListConverter` keeps it as an `UnknownNodeDocument`, so the report never failed on extension nodes; the wiring matters once a migration writes graphs. Graphs given as files or directories have no project, so only the built-in converters apply to them.
+- T030: CI step "Graph checks" runs `regen --check samples/HelloWorld` after the sample run.
+
+### Red/green evidence
+
+- Red (T027): `GenerationModeTests` and `GenerateRequestFactoryTests` written first: `dotnet build tests/NetPrints.Core.Tests` failed (`GenerationMode`, `GenerateRequestFactory`, `UpToDate` missing). Green after T028: 8 of 8 (then 9 with the `GenerateOnLoad` test).
+- Red (T029): `GenerateCommandTests` and `HelloWorldCliTests` with no `generate` command: 8 of 9 failed (unknown command). After the command: 4 of 9 still failed until `GenerateOnLoad` (stale files were rewritten by the load); then 66 of 66 Cli.Tests.
+- Red/green for `GenerateOnLoad`: with the option in place but the target condition reverted the new Core test failed; with the condition, it passes.
+- Red/green for migrate: `AProjectsBrokenExtensionFolderExits1WithItsDiagnostic` failed before the wiring; `AProjectsExtensionNodesAreReadThroughItsExtensionFolders` passed both before and after (see above).
+
+### Checkpoint C3
+
+- `dotnet build NetPrints.slnx -c Release`: 0 warnings, 0 errors. `dotnet format NetPrints.slnx --verify-no-changes`: exit 0.
+- Whole suite (Release): 1087 tests, 0 failed, 10 skipped (the headless-UI capability skips); E2E (`--fail-skips on`): 9 of 9 passed. Cli.Tests 68 passed.
+
 ### Checkpoint C
 
 **Status**: ✓ Green
@@ -183,15 +180,14 @@ Deviations from the task: none of the marked types was made internal (finding 2,
 
 **CI**: Green; PR #9 awaits final review (T035).
 
-**Documentation**: New `docs/guide/cli.md` with global options, all four commands, exit codes, CI recipes, and deprecated P1 flags. Updated `docs/guide/install.md`, `docs/guide/projects.md`, `README.md`, and `.github/release-notes.md`.
+**Documentation**: New `docs/guide/cli.md` with global options, all four commands, exit codes, CI recipes, and removed P1 flags. Updated `docs/guide/install.md`, `docs/guide/projects.md`, `README.md`, and `.github/release-notes.md`.
 
 **SC-001 status (command coverage)**: ✓ Four of nine commands shipped and documented (`build`, `run`, `generate`/`regen`, `migrate`). Full coverage deferred to Checkpoint F (T098).
 
-**SC-002 status (run and regen parts)**: ✓ Closed.
-- T026: `run` command and CI step `netprints run samples/HelloWorld` (green)
-- T030: `generate --check` CI step (green)
+**SC-002 status (run and regen parts)**: reopened by Review C, closed again in Review C part 2 on the evidence below.
+- As first written this said "Closed" on the CI "Graph checks" step. That step ran after the sample build, whose `NetPrintsGenerate` target rewrites a stale `.g.cs`, so it could never fail (Review C, High). The `run` half (T026) stood; the regen half did not.
 
-**Open items**: None. C1–C3 deferred items were closed: C2's extension folder wiring (closed in C3).
+**Open items at the time of Checkpoint C** (this section first said "None"): restore failure exited 0, a project load failure exited 4, `run` mangled `--` arguments and buffered the program's output, Ctrl+C exited 4, exit-2/3 messages went to stdout, the CI graph gate could not fail, the tool and SDK versions were never compared, and the docs and contract disagreed with the code. All are closed in Review C parts 1 and 2 below. Still open, by design: the commands of sub-phases D-F (`catalog`, `format`, `show`, `merge`, `git-install`, SC-001 at Checkpoint F) and the final PR review (T035).
 
 ### Review C fix batch, part 1 (T036, CLI runtime behaviour)
 
@@ -212,5 +208,30 @@ Decisions, one per Review C comment:
 - Broken-manifest test writes `ExtensionManifest.FileName` and asserts `NPX001` (`InvalidManifest`).
 
 Deviations: the manual smoke used a scratch console app that echoes its arguments (not HelloWorld, which ignores them); HelloWorld is covered by the `SampleCopy` tests. Symlink and unreadable-directory tests skip on Windows (and as root).
+
+### Review C fix batch, part 2 (T036, CI, versions, scripts, docs)
+
+Decisions, one per remaining Review C comment:
+- **CI gate that could not fail (High).** In `ci.yml`, "Graph checks" now runs right after the solution build and before any step that builds a sample; a "Generated files unchanged" step after the sample run does `git diff --exit-code -- '*.netpc.g.cs'`. Evidence below.
+- **Version skew (Medium).** The package's `build/NetPrints.Sdk.props` sets `NetPrintsSdkVersion` from its version folder (`<packages>/netprints.sdk/<version>/build/`), not for `NetPrintsUseLocalSdk=true`. `CliServices` asks the project system for it (`ExtraProperties`), `GenerateCommand` compares it with `ToolVersion` (the informational version, registered by `CliApplication` with `TryAddSingleton` so tests inject their own) ignoring `+metadata`: `generate` warns on stderr and continues, `generate --check` prints an error naming both versions and how to align them and exits 1. Rule recorded as Amendment 1 of ADR-0015. Path-derived rather than pack-time substituted so the props file stays one file shared by the samples and the package; it depends on NuGet's folder layout, which is fixed.
+- **`NetPrintsSkipGenerate` (Low).** Renamed `_NetPrintsSkipGenerate` in `MsBuildProjectSystem` and the targets; a new `_NetPrintsReportSkippedGenerate` target logs a low-importance message (`-v:d`) when generation is skipped. A project that still sets the old public-looking property now regenerates.
+- **Load-time default (Low).** `LoadingWithTheDefaultOptionsRegeneratesAStaleGeneratedFile` is the mirror of the `GenerateOnLoad: false` test (the editor relies on the default).
+- **`verify-packages.sh` (Low).** Both `|| true` are gone; exit codes are captured and asserted 0 for `--version`, `dotnet run` and `netprints run`, and `netprints regen --check "$APP"` runs with the packed tool against the `PackageReference` project.
+- **Docs.** `docs/guide/cli.md`: `--graph` is relative to the current directory; stray `regen` line removed; "Removed 0.1 flags" with the exact message, exit 2 and the mapping; exit 130, the stdout/stderr split, `run -- <args>` forwarding and the version rule added. `.github/release-notes.md`: a Breaking entry (flag mapping, exit-code changes) and a New entry; the CLI is not "New". `contracts/cli.md`: the `unreadable: Missing 'schemaVersion'.` line, 130, the stream split, the version rule, `--graph` resolution and the migrate walk. `CliCommandCatalog`: examples use `samples/HelloWorld/HelloWorld.Program.netpc.json`; the run description mentions `--` and the generate description mentions `regen`, since Spectre's help shows neither in the usage line. `CliHelpExamplesTests` checks that example paths exist and that the help mentions them. The rest of the `--check` wording (thread 1005): "Write no generated file" and the `obj/` note are in the guide and the contract.
+
+Red/green:
+- Red: `GenerateCommandTests` version cases (2 failed: no warning, exit 0 for `--check`), `SdkVersionPropertyTests` (2 failed), `GenerateRequestFactoryTests` skip-property cases (2 failed: the old public property still skipped, no skip message). Green after the code: Core.Tests 9 of 9, Cli.Tests 35 of 35 for those classes. The default-load mirror test passed on the existing code (it pins the default against a future flip). `CliHelpExamplesTests` red on the old catalog (2 of 6), green after.
+- `scripts/pack-local.sh` then `scripts/verify-packages.sh local-packages <version>`: all checks passed, including the new `regen --check` with the packed tool (the packed SDK's version folder equals the tool's version).
+
+**SC-002 evidence (closed here).** A scratch git repository holding `samples/` (HelloWorld with the in-repo SDK, `src` symlinked), Release CLI:
+1. A `.g.cs` with `// stale` appended and committed. The new CI order: `netprints regen --check samples/HelloWorld` prints `stale: HelloWorld.Program.netpc.g.cs`, `1 stale.`, exit **1**. The step fails.
+2. The old order (sample `run` first, then `regen --check`): `run` exits 0 and prints `Hello, World!`, then `regen --check` prints `1 generated file(s) up to date, 0 written.`, exit **0**. This is the defect.
+3. After the sample run with the stale file committed and the graph touched, `git diff --exit-code -- '*.netpc.g.cs'` prints the one-line diff and exits **1**, so a build that rewrote a committed file fails the new step. (Without the touch MSBuild's incremental check leaves a newer stale file alone, which is why `regen --check` runs first and the diff is the second line of defence.)
+
+Deviations: the version is read from the package folder name rather than substituted at pack time (above). `git diff` proof used a scratch repository, not the CI runner (the step itself is proven only by running the same commands).
+
+### Review C summary
+
+26 comments in review 5362322402 (2 High, 5 Medium, 13 Low, 6 Nit); all fixed: runtime behaviour in 3f8469d (part 1), CI gate, version rule, SDK property, tests, script, docs and these notes in part 2. Lessons: a gate needs a run that proves it can fail; an SDK build target that rewrites files must run after, not before, a check of those files; a note that says "None" for open items needs a list to be true.
 
 ## Governance proposals

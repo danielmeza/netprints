@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using NetPrints.Cli.Infrastructure;
 using Spectre.Console;
@@ -54,6 +55,7 @@ internal static class CliApplication
         // Everything after the first separator belongs to the user's program; Spectre never sees it (it would drop or reject valid values).
         int separator = args.ToList().IndexOf(Separator);
         IReadOnlyList<string> own = separator < 0 ? args : [.. args.Take(separator)];
+        services.TryAddSingleton(new ToolVersion(InformationalVersion()));
         services.AddSingleton(new ForwardedArguments(separator < 0 ? [] : [.. args.Skip(separator + 1)]));
 
         if (P1FlagPresent(own))
