@@ -587,13 +587,13 @@ SC-013.
 
 ### Batch G3 — model: sonnet — T108–T111 — 6 units
 
-- [ ] T108 [P] [US5] `MultiExtension/IdConflictTests.cs` (MX-T07, MX-T08).
-- [ ] T109 [P] [US5] `MultiExtension/LoadOrderPermutationTests.cs` (MX-T09) and `MultiExtension/DocumentSubsetTests.cs`
+- [x] T108 [P] [US5] `MultiExtension/IdConflictTests.cs` (MX-T07, MX-T08).
+- [x] T109 [P] [US5] `MultiExtension/LoadOrderPermutationTests.cs` (MX-T09) and `MultiExtension/DocumentSubsetTests.cs`
   (MX-T12).
-- [ ] T110 [P] [US5] `MultiExtension/FailureIsolationTests.cs` (MX-T10, MX-T11, MX-T13); if MX-T10 finds contributions
+- [x] T110 [P] [US5] `MultiExtension/FailureIsolationTests.cs` (MX-T10, MX-T11, MX-T13); if MX-T10 finds contributions
   of the throwing extension committed, make `src/NetPrints.Extensibility/Loading/RegistryBuilder.cs` commit per
   extension atomically (the test is the red step).
-- [ ] T111 [P] [US5] `MultiExtension/ScaleTests.cs` (MX-T14), `MultiExtension/ReloadTests.cs` (MX-T15),
+- [x] T111 [P] [US5] `MultiExtension/ScaleTests.cs` (MX-T14), `MultiExtension/ReloadTests.cs` (MX-T15),
   `MultiExtension/NativeDependencyTests.cs` (MX-T16); whole suite; commit.
 
 ### Batch G4 — model: haiku — T112–T114 — 3 units

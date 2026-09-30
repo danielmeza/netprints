@@ -806,3 +806,35 @@ Sub-phase F (`6925062^..00c87e3`), reviewed at `00c87e3`: Checkpoint F not accep
 
 - Load-context tests that need warnings use `Load(Options(...), CollectingLoggerFactory)`; `ExtensionHarness` logs to a null factory.
 - Shadow warnings are event ids 2010/2011, level Warning.
+
+## Batch G3 (T108-T111)
+
+**Added**
+
+- `MultiExtension/IdConflictTests` (MX-T07, MX-T08), `LoadOrderPermutationTests` (MX-T09), `DocumentSubsetTests` (MX-T12), `FailureIsolationTests` (MX-T10, MX-T11, MX-T13), `ScaleTests` (MX-T14), `ReloadTests` (MX-T15), `NativeDependencyTests` (MX-T16). 23 tests; no change to `src/`.
+
+**Red/green**
+
+- No red step: every test passed on its first run against the current loader (characterization of behaviour that was already correct), after test-side fixes only (alpha's catalog profile base is `PublicApi`, not `None`; a nullable warning; `Load` without the harness does not add the built-in extension, so the scale count is 50).
+- MX-T10 is the case T110 named as the possible red step: a `Register` that adds a node library with two kinds, a class emitter, a member emitter, a profile and a property and then throws commits none of them. `ExtensionBuilder` buffers and `ExtensionLoader` calls `RegistryBuilder.Commit` only after `Register` returns, so the commit is already atomic per extension. `RegistryBuilder` is unchanged.
+- Whole suite: 1712 total, 1702 passed, 10 skipped (headless UI driver), 0 failed. `dotnet format --verify-no-changes` clean.
+
+**Decisions**
+
+- Squatter (MX-T07) is an in-process extension with `dependsOn: [fx.alpha]`, not a Roslyn fixture: it finds alpha's node and document types through the `fx.alpha` load context whose assemblies sit under the test's temp folder. Rejected, each as NPX006 against `fx.squatter`: `fx.alpha/Ping` (prefix), a new kind on alpha's CLR node type, a new kind on alpha's document type, alpha's profile, host channel, settings section and catalog profile id. Alpha's contributions are the ones in the registry.
+- JSON resolvers are not conflict-checked: they are appended in load order, so alpha's come first and win. Pinned as such.
+- Project properties dedupe ignoring case (`FXALPHAPROPERTY` after `FxAlphaProperty`), silently.
+- MX-T08: the contract says "first folder wins" and "same winner under reversed folder order". Both cannot hold for two different folders; the test asserts the first folder in each order wins and the loser is NPX004, and that the registry content is identical (the two copies are the same extension).
+- MX-T10 also has a Roslyn `fx.throws` variant (two kinds, then throw); MX-T10 in-process variant covers every contribution kind.
+- MX-T11: `fx.hostskew` is compiled against a stand-in `NetPrints.Core` (same version) with an extra public static method on `ExperimentalApiIds`; the stand-in is not shipped in the folder, so at run time the host's Core binds and `Register` throws `MissingMethodException` (NPX005).
+- MX-T12: with only beta loaded, beta fails NPX003 (its dependency alpha is absent), so {beta} behaves like {}; both round-trip byte-identical. `generate` with only alpha reports NPT003 naming `fx.beta/Pong` and writes nothing.
+- MX-T13 is one theory over NPX001-NPX007 with alpha and beta, asserting the failure (or, for NPX006, the contribution issue) and that a graph using both neighbours still translates. It overlaps `CharacterizationTests`; it adds the translate check.
+- MX-T14: one Roslyn compile of a generic extension that derives its id from its folder name, copied 50 times; `dependsOn` is seeded (`20260930`), each entry depends on up to three earlier ones. Only the load is timed (limit 10 s, the contract's); it takes about 1 s. The second run reverses the folder order.
+- MX-T15: reload is `LoadForProjectAsync` for the folders, then `[]`, then the folders again, three times; the test compares the count of load contexts named `fx.alpha`/`fx.beta` (steady after the first load) and that alpha's node type is the same `Type` across reloads.
+- MX-T16: reads `NativeExtension.Milestone` by reflection from the extension's own context; skipped with an explicit reason off Linux. Builds on the G1 `Fx.Native` fixture.
+
+**For G-R**
+
+- Load-context count is checked by name among all contexts in the process; it assumes nothing else loads `fx.alpha`/`fx.beta` concurrently (all fixture tests share `RealExtensionLoadCollection`).
+- Contract 3 still says alpha/beta emitters add `// fx.alpha`; tests assert the attribute text (see G1).
+- The contract's MX-T08 wording (see above) and the Roslyn-vs-in-process squatter are deviations to confirm.
