@@ -1,0 +1,41 @@
+{
+  "skill_name": "avalonia-xaml",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "The methods list in the class editor window (src/NetPrints.Editor/ClassEditor/ClassEditorWindow.axaml) gets very slow when a class has thousands of methods. Fix it.",
+      "expected_output": "The list virtualizes (ListBox, or an ItemsControl with a VirtualizingStackPanel), is not inside a StackPanel or ScrollViewer, and keeps a flat item template (D12).",
+      "files": [],
+      "assertions": [
+        "Uses ListBox or VirtualizingStackPanel for the methods list",
+        "The list is constrained by a Grid row, not a StackPanel or ScrollViewer",
+        "No new code-behind"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Add a 'Remove method' icon button to each row of the class editor's methods list.",
+      "expected_output": "An icon-only Button with AutomationProperties.Name (E5) and an AutomationIds constant (E4), bound through a typed reach-up to a [RelayCommand] on the VM (D2-D4), with a VM unit test; no Click handler (E3).",
+      "files": [],
+      "assertions": [
+        "Button has AutomationProperties.Name",
+        "AutomationId comes from AutomationIds",
+        "Command binding uses a typed cast to the nearest owner",
+        "A [RelayCommand] with a unit test",
+        "No Click handler in XAML"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Add a 'Compile' button to the main window that compiles the project without freezing the UI, shows that it is busy, and can be cancelled.",
+      "expected_output": "A [RelayCommand] async Task CompileAsync(CancellationToken) with IncludeCancelCommand, busy UI bound to IsRunning, no async void or .Forget from the view, and a test that awaits ExecuteAsync (D10).",
+      "files": [],
+      "assertions": [
+        "Async RelayCommand taking a CancellationToken",
+        "IncludeCancelCommand = true and a Cancel button",
+        "Busy state bound to CompileCommand.IsRunning",
+        "No async void and no Forget() in the view"
+      ]
+    }
+  ]
+}

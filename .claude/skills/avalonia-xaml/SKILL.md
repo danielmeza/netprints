@@ -135,10 +135,18 @@ from a VM, as `SelectTypeDialogVM.ResolveSelection` does; the view doesn't compu
 - Use `TextBlock` rather than a read-only `TextBox` for display-only text, unless the text must be selectable (as in `ErrorDialog`).
 - Use `#Name` element bindings to connect two views without code, for example
   `ViewportLocation="{Binding #Editor.ViewportLocation}"` instead of syncing it in `PropertyChanged`.
-- Avalonia 12 API names: `DataTransfer`/`DoDragDropAsync`, `FocusChangedEventArgs`, gesture events without the `Gestures.` prefix,
-  `PlaceholderText` instead of `Watermark`, `TopLevel.GetTopLevel(visual)`, and `AttachDeveloperTools()`.
 - `WeakReferenceMessenger` is for cross-window notifications only. Between a parent and child VM, use direct references or events.
 - Headless tests (`[AvaloniaFact]`) cover wiring: a behavior fires its command, and a template resolves. VM tests cover logic.
+
+## Gotchas
+
+- Avalonia 12 renamed APIs that older samples still use: `DataTransfer`/`DoDragDropAsync`, `FocusChangedEventArgs`,
+  gesture events without the `Gestures.` prefix, `PlaceholderText` instead of `Watermark`,
+  `TopLevel.GetTopLevel(visual)` and `AttachDeveloperTools()`.
+- A `null` `Background` is not hit-test visible in its own empty space, so an item row reacts only on its text. Give
+  the row `Background="Transparent"` (E2 allows it for this reason).
+- Headless tests have no window manager, real cursor or OS drag and drop (see `UiCapabilities`). A test that needs
+  them belongs in the Desktop E2E project.
 
 ## Before you finish a XAML change
 

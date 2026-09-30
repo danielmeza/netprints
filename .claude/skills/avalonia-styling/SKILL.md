@@ -56,6 +56,14 @@ Colors computed in C# (`GraphBrushes`) should move to tokens once they need a li
 - `BoxShadow` and stacked translucency cost fill rate in repeated templates.
 - Use `ThemeVariantScope` to force a variant on a subtree, such as a dark code pane in the light theme.
 
+## Gotchas
+
+- A brush that a converter builds in C# doesn't follow a theme switch, because the binding isn't re-evaluated when
+  the variant changes. Map the state to a style class instead (`Classes.pure="{Binding IsPure}"`) and let the style
+  set a `DynamicResource` token.
+- A `ControlTheme` replaces the whole template and only one applies at a time. Base it on the default
+  (`BasedOn="{StaticResource {x:Type nodify:ItemContainer}}"`) or the control loses the parts you didn't restyle.
+
 ## Before you finish
 
 1. `dotnet build -v q -tl:off --nologo`, then run `XamlHygieneTests` (E2, E6).

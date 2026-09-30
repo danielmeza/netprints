@@ -1,0 +1,41 @@
+{
+  "skill_name": "avalonia-styling",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "The header of pure-function nodes in the graph editor (src/NetPrints.Editor/Graph/Nodes/NodeView.axaml) is hard to read in the Light theme. Fix the colors.",
+      "expected_output": "Light and Dark tokens in ThemeDictionaries in EditorStyles.axaml, referenced with DynamicResource, no color literal in the view (E2, E6, D7).",
+      "files": [],
+      "assertions": [
+        "Tokens defined per variant in ThemeDictionaries",
+        "Referenced with DynamicResource",
+        "No hex or named color added to a view",
+        "Checked in both variants"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Add a 'danger' style class for destructive buttons that makes them red in both the light and the dark theme.",
+      "expected_output": "A Style with Selector Button.danger in EditorStyles.axaml whose setters use per-variant tokens via DynamicResource; lowercase class name (D7, D8).",
+      "files": [],
+      "assertions": [
+        "Style selector Button.danger in EditorStyles.axaml",
+        "Colors come from per-variant tokens",
+        "DynamicResource, not StaticResource",
+        "No ControlTheme for a color-only change"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Write a converter that turns a CompileStatus into the color of a status dot in the main window toolbar.",
+      "expected_output": "A sealed converter with a static Instance used via x:Static, ConvertBack throwing NotSupportedException, UnsetValue for unexpected input, a plain xUnit test, and colors that follow the theme (D5, D7).",
+      "files": [],
+      "assertions": [
+        "Converter is sealed with a static Instance",
+        "ConvertBack throws NotSupportedException",
+        "Plain xUnit test without an Avalonia app",
+        "Colors follow the theme (tokens or style classes)"
+      ]
+    }
+  ]
+}
