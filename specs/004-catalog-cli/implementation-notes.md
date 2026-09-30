@@ -502,4 +502,13 @@ Red/green: `EmbeddedCatalogDiscoveryTests` were red before `ReflectionHost` chan
 
 Suite: 1539 total, 0 failed, 1529 succeeded, 10 skipped (Release, base 1534 plus 5 new); Release build 0 warnings; `dotnet format --verify-no-changes` clean (after import ordering); Desktop E2E job 9 of 9, 0 skipped.
 
+### Batch E5 (T079-T081, guide annotations section, package READMEs, full suite and checkpoint)
+
+Decisions:
+- **T079**: `docs/guide/catalogs.md` gained a comprehensive "Annotations" section (2250 words) covering optional annotation of libraries, the four attributes, embedded catalogs, discovery by the editor, and the generator diagnostics. A note states upfront that annotations are optional: any library works without them, and the CLI can build a catalog for libraries you don't own.
+- **T080**: `README.md` gained a "Ship nodes with your library" section (75 words) with the optional annotation note. Per-project package READMEs created for `NetPrints.Annotations` and `NetPrints.Catalog` (165 and 160 words respectively), placed in `src/*/README.md`. `eng/PackageReadme.targets` modified to check for a project-specific README first (`$(MSBuildProjectDirectory)/README.md`), falling back to the root for other packages. All package READMEs avoid code blocks with angle brackets so the HTML-to-Markdown conversion leaves them clean for nuget.org.
+- **T081**: `scripts/pack-local.sh` and `scripts/verify-packages.sh` pass without modification; the verify script asserts exactly the file list and metadata of §3 steps 1-4 (SC-005 locally). The full Release suite totals 1539 tests (1529 passed, 10 skipped, 0 failed), with 0 build warnings. Tasks T079–T081 ticked in `tasks.md`. Checkpoint E (SC-003, SC-005 embedded path, SC-013 locally) met.
+
+Red/green: T079 and T080 are pure documentation/package content (no tests changed); no red phase. Packages built and verified locally.
+
 ## Governance proposals

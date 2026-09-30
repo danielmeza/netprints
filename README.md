@@ -41,6 +41,10 @@ shows up as tooltips in the node search. You can also add a C# source directory,
 reflection only (handy for using NetPrints inside Unity against your existing scripts) or compiled
 straight into the output.
 
+## Ship nodes with your library
+
+Annotations are optional. Any library works in NetPrints without them; the editor reads its public API directly. If you want to choose which members become nodes and ship a curated catalog inside your library, add the `NetPrints.Annotations` package (`PrivateAssets="all"`) and mark the public types and methods with `[NetPrintsType]` and `[NetPrintsNode]` attributes. The Roslyn generator embeds the catalog as an assembly attribute, which the editor reads from any referenced assembly. See the [Annotations guide](docs/guide/catalogs.md#annotations) for details.
+
 ## Guides
 
 - [Projects](docs/guide/projects.md) — the `.csproj` project model, the `NetPrints.Sdk` package and the committed generated code.

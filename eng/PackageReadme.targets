@@ -84,9 +84,12 @@
       <_ReadmeCommit Condition="'$(_ReadmeGitExitCode)' != '0' or '$(_ReadmeCommit)' == ''">master</_ReadmeCommit>
       <_ReadmeRepo>$(RepositoryUrl.Replace('https://github.com/', '').TrimEnd('/'))</_ReadmeRepo>
       <_NuGetReadme>$(IntermediateOutputPath)nuget/README.md</_NuGetReadme>
+      <!-- Use project-specific README if it exists, otherwise fall back to root README. -->
+      <_ReadmeSource Condition="Exists('$(MSBuildProjectDirectory)/README.md')">$(MSBuildProjectDirectory)/README.md</_ReadmeSource>
+      <_ReadmeSource Condition="'$(_ReadmeSource)' == ''">$(MSBuildThisFileDirectory)../README.md</_ReadmeSource>
     </PropertyGroup>
 
-    <ConvertReadmeForNuGet Source="$(MSBuildThisFileDirectory)../README.md" Destination="$(_NuGetReadme)"
+    <ConvertReadmeForNuGet Source="$(_ReadmeSource)" Destination="$(_NuGetReadme)"
                            RawBaseUrl="https://raw.githubusercontent.com/$(_ReadmeRepo)/$(_ReadmeCommit)/"
                            BlobBaseUrl="https://github.com/$(_ReadmeRepo)/blob/$(_ReadmeCommit)/" />
 

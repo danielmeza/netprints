@@ -215,6 +215,82 @@ The editor also reads the catalogs that the assemblies a project references embe
 
 The catalog profile APIs (`CatalogProfile`, `AddCatalogProfile`, and the catalog builder) are experimental: using them needs the `NPXE0004` opt-in, see [API stability](extensions.md#api-stability). Loading a catalog (`CatalogLoader`, `ITypeCatalog`) is stable. The repository's fixture extension, `tests/Fixtures/Extensions/Fx.Catalog`, is a complete example, and the test `ExtensionCatalogTests` builds and runs a graph that calls a cataloged method.
 
+## Annotations
+
+Annotating a library is optional. Any referenced library or NuGet package works in NetPrints without annotations; the editor reads its public API directly. `NetPrints.Annotations` is for library authors who want to choose which members become nodes, customize their names and documentation, and ship that curated catalog inside the library. For a library you don't own, use the `netprints catalog` CLI to build a catalog file instead.
+
+A library can embed a catalog directly in its assembly so the editor discovers it without a separate file or extension. Use the `NetPrints.Annotations` package: add it as a `PrivateAssets="all"` package reference so it stays out of a consumer's dependencies.
+
+```xml
+<ItemGroup>
+  <PackageReference Include="NetPrints.Annotations" Version="0.1.0" PrivateAssets="all" />
+</ItemGroup>
+```
+
+The package is a Roslyn analyzer and build target; it is a `developmentDependency`, so NuGet treats it as tooling.
+
+### Marking types and methods
+
+Use four attributes from `NetPrints.Annotations` to control what a catalog includes. The attributes are injected by the Roslyn generator and are always available in your source, with no package reference needed at runtime:
+
+- `[NetPrintsType]` on a class, struct, interface or enum marks it for inclusion. The `DisplayName` and `Category` properties customize how it appears in node search.
+- `[NetPrintsNode]` on a public method marks it for inclusion as a node. `DisplayName`, `Category` and `Keywords` customize node search.
+- `[NetPrintsIgnore]` on a type or member excludes it from every profile, even if the profile would otherwise include it.
+
+Only public types and members are cataloged; an annotation on a non-public target is NPC004 (a warning, the target is ignored).
+
+```csharp
+using NetPrints.Annotations;
+
+[NetPrintsType(DisplayName = "Greeter", Category = "Greeting")]
+public class GreetingService
+{
+    [NetPrintsNode(DisplayName = "Greet", Keywords = new[] { "hello", "message" })]
+    public string Greet(string name) => $"Hello, {name}!";
+
+    [NetPrintsIgnore]
+    public void InternalHelper() { }
+}
+```
+
+### Selecting a profile
+
+By default, `[NetPrintsType]` and `[NetPrintsNode]` annotations imply the `annotated` profile. To use a custom profile, add it as an `AdditionalFiles` item with metadata `NetPrintsProfile="true"`. The profile file name (without `.npprofile.json`) becomes the id:
+
+```xml
+<ItemGroup>
+  <AdditionalFiles Include="Profiles/my-public-api.npprofile.json" NetPrintsProfile="true" />
+  <AdditionalFiles Include="Profiles/internal-tools.npprofile.json" NetPrintsProfile="true" />
+</ItemGroup>
+```
+
+Then reference the profile by name in the `[assembly: NetPrintsCatalog(..., Profile = "my-public-api")]` attribute. The built-in profiles are still available.
+
+### Embedding a catalog
+
+The Roslyn generator automatically embeds a catalog as an assembly attribute `[assembly: NetPrintsEmbeddedCatalog(...)]` and exposes accessors in a `NetPrintsCatalogs` class:
+
+```csharp
+namespace MyCompany
+{
+    internal static partial class NetPrintsCatalogs
+    {
+        public static byte[] MyLibUtf8 { get; } = new byte[] { 123, 10, 32, ... };
+
+        public static string MyLib => 
+            global::System.Text.Encoding.UTF8.GetString(MyLibUtf8);
+    }
+}
+```
+
+Your code can read the embedded catalog via `CatalogLoader.LoadEmbedded(this.GetType().Assembly)`, and the editor reads it automatically when a project references your assembly.
+
+### Discovery by the editor
+
+When a project loads a referenced assembly, the editor reads any embedded catalogs and offers their types and members in node search. The editor first loads extension catalogs, then embedded catalogs, so an extension's catalog wins if two share an id (NPC103 is logged). If a catalog cannot be read (a newer schema version or a malformed file), the editor skips it with a warning while other references still contribute, so your library stays usable.
+
+Help for diagnosing embedding problems is under Diagnostics, below.
+
 ## Diagnostics
 
 Catalog diagnostics use stable codes. The NPC0xx codes come from building a catalog, the NPC1xx codes from reading one.

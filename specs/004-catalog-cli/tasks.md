@@ -464,12 +464,12 @@ SC-013.
 
 ### Batch E5 — model: haiku — T079–T081 — 3 units
 
-- [ ] T079 [P] [US3] `docs/guide/catalogs.md`: section "Annotations" (package reference with `PrivateAssets="all"`, the
+- [x] T079 [P] [US3] `docs/guide/catalogs.md`: section "Annotations" (package reference with `PrivateAssets="all"`, the
   four attributes, `[assembly: NetPrintsCatalog]` with profiles as `AdditionalFiles`, reference documentation,
   discovery by the editor, generator diagnostics NPC001–NPC006).
-- [ ] T080 [P] [US3] Package README for `NetPrints.Annotations` and `NetPrints.Catalog` (per `eng/PackageReadme.targets`)
+- [x] T080 [P] [US3] Package README for `NetPrints.Annotations` and `NetPrints.Catalog` (per `eng/PackageReadme.targets`)
   and a short "Ship nodes with your library" paragraph in `README.md`.
-- [ ] T081 [US3] Whole suite, `scripts/pack-local.sh` + `scripts/verify-packages.sh`; Checkpoint E report in
+- [x] T081 [US3] Whole suite, `scripts/pack-local.sh` + `scripts/verify-packages.sh`; Checkpoint E report in
   `specs/004-catalog-cli/implementation-notes.md`; commit. **Checkpoint E** (SC-003, SC-005 embedded path, SC-013
   locally).
 
