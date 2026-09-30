@@ -163,12 +163,17 @@ public sealed class ReflectionHost : IReflectionHost
         }
     }
 
-    private List<ITypeCatalog> LoadEmbeddedCatalogs(IReadOnlyList<ResolvedAssembly> references, CancellationToken cancellationToken)
+    internal List<ITypeCatalog> LoadEmbeddedCatalogs(IReadOnlyList<ResolvedAssembly> references, CancellationToken cancellationToken)
     {
         List<ITypeCatalog> catalogs = [];
         foreach (ResolvedAssembly reference in references)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            if (!File.Exists(reference.Path))
+            {
+                continue;
+            }
+
             try
             {
                 catalogs.AddRange(EmbeddedCatalogReader.Read(reference.Path).Select(CatalogLoader.Load));
@@ -177,7 +182,7 @@ public sealed class ReflectionHost : IReflectionHost
             {
                 Log.EmbeddedCatalogSkipped(logger, ex.Code, reference.Path, ex.Message);
             }
-            catch (IOException ex)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
             {
                 Log.EmbeddedCatalogSkipped(logger, ex.GetType().Name, reference.Path, ex.Message);
             }

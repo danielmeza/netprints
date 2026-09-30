@@ -5,10 +5,12 @@ using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Core;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Tests.Hosting;
+using NetPrints.Extensibility;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Projects;
 using NetPrints.Reflection;
 using NetPrints.Testing;
+using NetPrints.Translator;
 using Project = NetPrints.Core.Project;
 
 namespace NetPrints.Editor.Tests.Reflection;
@@ -66,6 +68,61 @@ public sealed class EmbeddedCatalogDiscoveryTests : IDisposable
         Assert.Single(logger.Messages, m => m.Contains("NPC101", StringComparison.Ordinal) && m.Contains("newer.dll", StringComparison.Ordinal));
     }
 
+    [Fact(Timeout = 120000)]
+    public async Task AnExtensionCatalogWinsOverAnEmbeddedCatalogOfTheSameId() // E-R10, NPC103
+    {
+        var manifest = new ExtensionManifest("editor.test", "Editor test", "1.0.0", string.Empty, "1.0", []);
+        await using var extensions = new ExtensionHost(
+            new ExtensionLoaderOptions([], [], [BuiltInExtension.InProcessEntry, (manifest, new SameIdCatalogExtension())]), NullLoggerFactory.Instance);
+        var logger = new CollectingLogger();
+        var host = new ReflectionHost(new InlineDispatcher(), extensions, logger);
+
+        await host.ReloadAsync(ProjectReferencing(FixtureExtensions.AnnotatedLibraryAssembly()), TestContext.Current.CancellationToken);
+
+        // The embedded catalog lost, so its assembly is not covered and its other public types come from the live compilation.
+        Assert.Contains(host.NonStaticTypes, t => t.Name == "Acme.Widget");
+        Assert.Contains(host.NonStaticTypes, t => t == Unlisted);
+        Assert.Single(logger.Messages, m => m.Contains("NPC103", StringComparison.Ordinal));
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task AReferenceThatDoesNotExistIsSkippedWithoutAWarning() // E-R9
+    {
+        var host = NewHost(out CollectingLogger logger);
+
+        await host.ReloadAsync(ProjectReferencing(Path.Combine(scratch, "NotBuiltYet.dll"), FixtureExtensions.AnnotatedLibraryAssembly()), TestContext.Current.CancellationToken);
+
+        Assert.Contains(host.NonStaticTypes, t => t == Greeter);
+        Assert.DoesNotContain(logger.Messages, m => m.Contains("NotBuiltYet.dll", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void AnUnreadableReferenceIsSkippedWith1014AndTheOthersStillContribute() // E-R9
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        string locked = Path.Combine(scratch, "Locked.dll");
+        File.Copy(FixtureExtensions.AnnotatedLibraryAssembly(), locked);
+        File.SetUnixFileMode(locked, UnixFileMode.None);
+        var host = NewHost(out CollectingLogger logger);
+
+        try
+        {
+            var catalogs = host.LoadEmbeddedCatalogs([new ResolvedAssembly(locked, null), new ResolvedAssembly(FixtureExtensions.AnnotatedLibraryAssembly(), null)], TestContext.Current.CancellationToken);
+
+            Assert.Single(catalogs);
+        }
+        finally
+        {
+            File.SetUnixFileMode(locked, UnixFileMode.UserRead | UnixFileMode.UserWrite);
+        }
+
+        Assert.Single(logger.Messages, m => m.Contains("Locked.dll", StringComparison.Ordinal));
+    }
+
     private static ReflectionHost NewHost(out CollectingLogger logger)
     {
         logger = new CollectingLogger();
@@ -103,6 +160,14 @@ public sealed class EmbeddedCatalogDiscoveryTests : IDisposable
         var result = compilation.Emit(path, cancellationToken: TestContext.Current.CancellationToken);
         Assert.True(result.Success, string.Join('\n', result.Diagnostics));
         return path;
+    }
+
+    private sealed class SameIdCatalogExtension : INetPrintsExtension
+    {
+        public void Register(IExtensionBuilder builder) => builder.AddTypeCatalog(new InMemoryTypeCatalog(
+            new CatalogInfo("catalogannotatedlib", "1.0.0", []),
+            [new TypeSpecifier("Acme.Widget")], [], [], [],
+            new Dictionary<TypeSpecifier, IReadOnlyList<string>>(), new Dictionary<MethodSpecifier, string>()));
     }
 
     private sealed class CollectingLogger : ILogger<ReflectionHost>
