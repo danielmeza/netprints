@@ -253,7 +253,7 @@ tests; the existing windows' shortcuts run through the registry.
 
 ### Batch B4 — model: sonnet — T026–T027 — 3 units
 
-- [ ] T026 [US4] Key bindings from the registry (2 units). Test first:
+- [x] T026 [US4] Key bindings from the registry (2 units). Test first:
   `tests/NetPrints.Editor.UITests/Commands/CommandKeyBindingTests.cs` (headless, on a test host window with a text box
   and a graph canvas). `Global` gestures run their command anywhere. `Graph` gestures run only while the canvas has
   focus, and never while a text input inside a node or the inspector has focus (Ctrl+A, Delete and F2 stay with the
@@ -262,7 +262,7 @@ tests; the existing windows' shortcuts run through the registry.
   `Graph`, on the tree for `ProjectTree`), parsing the descriptor strings into `KeyGesture` in the view layer.
   `GraphEditorView`'s global Ctrl+Space tunnel handler is replaced by `nodeSearch`. Attach both to
   `ClassEditorWindow`, replacing its hand-written Delete, Ctrl+Z and Ctrl+Y bindings; C moves them to the shell.
-- [ ] T027 **Checkpoint B**: report the registry tests, the handler tests, SC-003 so far (registered built-ins match
+- [x] T027 **Checkpoint B**: report the registry tests, the handler tests, SC-003 so far (registered built-ins match
   the contract, 0 conflicts, the pending list), and the existing windows' shortcuts running through the registry.
   Docs updated: ADR-0020 and contracts/contributions.md name any member that changed in implementation (the contract
   allows that only together with its tests).

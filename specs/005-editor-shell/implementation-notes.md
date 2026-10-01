@@ -278,6 +278,21 @@ After Review A: all of R1-R21 fixed or decided; solution suite 1772 tests, 1759 
 
 Docs updated: `docs/contributing/testing.md` (CI section), `AGENTS.md` (the Windows workflow, the `test`/`e2e` split), the Avalonia skills and ADR-0007 (the `ViewModel` naming, A1 commits 48cc09d and bf000fc); no further change was needed in them.
 
+### Checkpoint B (T027)
+
+| Item | Evidence |
+|---|---|
+| Registry tests | `ContributionRegistryTests` 39, `CommandGestureTests` 25, `ContributionsAreUiFreeTests` 7, `BuiltInCommandTableTests` 33: all pass (Editor tests project). |
+| Handler tests | `EditCommandsTests` 22, `ProjectCommandsTests` 38, `BuildCommandsTests` 11, `MainEditorProjectActionsTests` 13, `ProjectSessionViewModelTests` 8: all pass. |
+| SC-003, registered built-ins | `BuiltInCommandTableTests` compares every registered built-in with its row of contracts/commands.md (id, label, menu path, group and order, gestures, scope, bar order, handler type, icon): `ARegisteredCommandMatchesItsRow` per id, `EveryRegisteredBuiltInIsARow`, `MenuEntriesFollowTheTableOrderWithinTheirGroup`, `MenuPathsAreTheSixMenus`, `EveryIconIsAMaterialIcon`. |
+| SC-003, conflicts | `TheBuiltInsReportNoIssues`: the registry's `Issues` is empty after `BuiltInContributions.Register` (0 duplicate ids, 0 gesture conflicts, 0 invalid descriptors). `ExitsAltF4BelongsToTheOsAndIsNotARegisteredGesture` pins the one table gesture that is not registered. |
+| SC-003, pending | Rows without a handler yet, each with its task, pinned by `ThePendingListIsShrinkOnlyAndEachEntryIsStillPending`: `showPanel.<panel>`, `floatDocument`, `dockDocument`, `resetLayout`, `nextTab`, `previousTab`, `closeTab` (T039); `theme.dark`, `theme.light`, `theme.system` (T093); `commandPalette` (T075); `goToAnything` (T076); `navigateBack`, `navigateForward` (T074); `goToSource`, `goToTarget` (T077); `keyboardShortcuts`, `about` (T055); `startPage` (T066). |
+| Existing windows' shortcuts | The class editor window has no hand-written key bindings left: `CommandKeyBindingsBehavior` (window) and `ScopedCommandKeysBehavior` (the canvas panel) take them from the registry through `CommandInvoker`. `ClassEditorShortcutTests` (real window and sample project): Delete from the canvas removes the selected node, Delete with focus in the override combo box does nothing, Ctrl+Z and Ctrl+Y from outside the canvas act on the history the editor records to. Ctrl+Space (`nodeSearch`) is covered by `CanvasPopupPositioningTests.OpeningSearchByKeyboardFallsBackToTheSelectedNodeOrTheCanvasCenter` and `CanvasInteractionTests.CtrlSpaceInAPinValueTextBoxDoesNotOpenSearch`; `GraphViewRequestTests` 3/3; `LocalVariablePanelTests` (real Ctrl+Z). |
+| Key binding rules | `CommandKeyBindingTests` 9/9 (headless): Global gestures run from a text box, a node text box and the canvas; Graph gestures only with the canvas focused; Ctrl+A, Delete and F2 stay with a text box inside a node; a scope runs only its own commands; a disabled command does not run, and enabling it makes the same key run it (state read at invocation). |
+| Whole suite | Solution suite (Debug, no `NETPRINTS_E2E`): 2020 tests, 2007 passed, 13 skipped (the usual E2E and headless skips), 0 failed. Desktop E2E (Release, `NETPRINTS_E2E=1 --fail-skips on`, own Xvfb): 31 of 31 passed, 0 skipped. `dotnet format --verify-no-changes` clean; Release build 0 warnings. |
+
+Docs updated: ADR-0020 (status line, the two key-binding behaviors, the scope paragraph, a "Changes made in implementation" section) and contracts/contributions.md (`Freeze`, `CommandScope` flags and `Global` overlap, `CommandGesture`, the function-key exemption, the extra `InvalidDescriptor` cases, `CommandContext` members, `IProjectActions` and `UnloadingCommandHandler`, no `CanExecuteChanged` and the Run and Stop refresh through `PropertyChanged(IsRunning)`, the key binding surface row). contracts/commands.md already carries the four add-member rows (B3). Each statement was checked against the code (`ContributionRegistry`, `CommandScope`, `CommandGesture`, `CommandContext`, `IProjectActions`, `UnloadingCommandHandler`, `ProjectSessionViewModel`, `CommandInvoker`, the behaviors).
+
 ## Review A (T016, part 1 of 4)
 
 Review of sub-phase A (`86196b7..7d94130`), report in `.agent-archive/netprints-p3a/review-A.md`: no blockers, 2 majors,
@@ -453,3 +468,29 @@ Decisions:
 - The labels of the four add-member commands ("Add method", "Add constructor", "Add variable", "Add event graph") are now rows of the commands.md table.
 - `rename` on a tree item only reveals the class settings (the Name box) until C's tree has inline rename; `delete` of a tree item handles classes, methods and event graphs, not variables (no tree item for them yet).
 - `Go` and `Help` contributions register nothing yet; their files exist for the pending commands above.
+
+### Batch B4 (T026-T027: df94fd2, b9af37c and the notes commit)
+
+- Red, T026 (behavioural, with the two behaviors as empty stubs): `CommandKeyBindingTests` failed 4 of 9, the other 5 being "does not run" cases that a stub satisfies:
+
+```
+AGlobalGestureRunsWhereverTheFocusIs          Expected: 3        Actual: 0
+AGraphGestureRunsWhileTheCanvasHasFocus       Expected: 1        Actual: 0
+AScopeRunsOnlyItsOwnCommands                  Expected: (1, 2, 1) Actual: (0, 0, 0)
+ADisabledCommandDoesNotRunAndTheStateIsReadAtInvocation  Expected: (1, 1) Actual: (0, 0)
+total: 9, failed: 4
+```
+
+  Green after the behaviors: 9/9. Mutation (the text input test removed from `ScopedCommandKeysBehavior`): 4 failed (`AGraphGestureStaysWithATextInputInsideANode` for Ctrl+A, Delete and F2, and `ADeleteInANodeTextBoxEditsTheText`); restored.
+- Written after the code: `ClassEditorShortcutTests` (3), the `CanvasPopupPositioningTests` change, and `ProjectSessionViewModelTests.AdoptedUndoStackReplacesTheOneOfTheClass`. Mutations: `Session?.UseUndoStack(...)` removed from `MainEditorViewModel.AttachCommands` failed `UndoAndRedoActOnTheHistoryTheEditorRecordsTo`; `undoStacks[cls] = stack` removed failed the session test; both restored.
+- Wiring: `CommandInvoker` (Shell) lists a scope's commands and runs one against a fresh context only when `CanExecute` is true at that moment. `ClassEditorViewModel.Commands` holds it; `MainEditorViewModel` builds a frozen registry of the built-ins and attaches an invoker to each class editor it opens, with `ClassEditorCommandContextProvider` (open graph, its selected nodes, the session, the class's document id) and `LegacyWindowShell` (project actions only). `ClassEditorWindow.axaml` has the window behavior and wraps the canvas in a `Panel` carrying the scoped behavior. `GraphEditorView` lost its Ctrl+Space tunnel handler, its top level reference and its private `IsInsideValueEditor` (now `CommandKeyGestures.IsInsideValueEditor`, shared).
+- Allowlists: no XAML hygiene or `SourceHygieneTests` allowlist entry named the removed `KeyBinding`s or handler, so none was freed and none was added.
+- Green: Editor UI tests, the solution suite and the Desktop E2E as in the Checkpoint B table.
+
+Decisions:
+- The scoped behavior sits on a `Panel` around `GraphEditorView` (data context: the class editor view model), not on the Nodify editor, because the invoker lives on the class editor view model and the view's data context is the graph. Keys from the inspector or the error list are outside it.
+- Graph gestures need focus inside the canvas, as the contract says, so `CanvasPopupPositioningTests` clicks the empty canvas before Ctrl+Space. A freshly opened graph does not take focus by itself yet; the shell (C) is the place for that.
+- `ProjectSessionViewModel.UseUndoStack` makes the class editor's own stack the session's stack for that class, so the registry's undo and redo act on the history the editor records to. C replaces the per-editor stack with the session's.
+- The class editor's document id uses the graph key `class` for whatever graph is open: the model has no ids for methods and event graphs yet, and the undo handler needs only the class path.
+- Delete of nodes is still not undoable (`NodeGraphViewModel.DeleteSelectedNodes` was never recorded in the history); the undo test uses a probe command, not a delete.
+- Key gestures not parseable into an Avalonia key are skipped; the descriptor key `Esc` maps to `Escape`.
