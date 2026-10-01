@@ -1,0 +1,75 @@
+{
+  "$schema": "https://danielmeza.github.io/netprints/schemas/netpc.v1.schema.json",
+  "schemaVersion": 1,
+  "namespace": "T",
+  "name": "C",
+  "visibility": "Public",
+  "classGraph": {
+    "nodes": [
+      {
+        "$kind": "classReturn",
+        "id": "n0000000000000"
+      }
+    ]
+  },
+  "methods": [
+    {
+      "id": "m0000000000001",
+      "name": "Main",
+      "visibility": "Public",
+      "graph": {
+        "nodes": [
+          {
+            "$kind": "methodEntry",
+            "id": "n0000000000001"
+          },
+          {
+            "$kind": "callMethod",
+            "id": "n0000000000002",
+            "method": {
+              "name": "Beep",
+              "declaringType": {
+                "name": "System.Console"
+              },
+              "modifiers": "Static",
+              "visibility": "Public"
+            },
+            "pure": true
+          },
+          {
+            "$kind": "return",
+            "id": "n0000000000004"
+          }
+        ],
+        "connections": [
+          {
+            "from": "n0000000000001/out.exec.Exec",
+            "to": "n0000000000004/in.exec.Exec"
+          }
+        ]
+      }
+    }
+  ],
+  "layout": {
+    "class": {
+      "n0000000000000": [
+        112,
+        112
+      ]
+    },
+    "m0000000000001": {
+      "n0000000000001": [
+        112,
+        112
+      ],
+      "n0000000000002": [
+        420,
+        112
+      ],
+      "n0000000000004": [
+        728,
+        112
+      ]
+    }
+  }
+}

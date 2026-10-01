@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <RootNamespace>AnnotatedFixture</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <Description>Fixture library annotated with the NetPrints attributes; embeds its own catalog (tests only).</Description>
+    <MinVerSkip>true</MinVerSkip>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The in-repo form of PackageReference NetPrints.Annotations PrivateAssets="all". -->
+    <ProjectReference Include="..\..\..\..\src\NetPrints.Annotations\NetPrints.Annotations.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
+  <!-- Package build/ targets are imported only for a PackageReference. -->
+  <Import Project="..\..\..\..\src\NetPrints.Annotations\build\NetPrints.Annotations.targets" />
+</Project>

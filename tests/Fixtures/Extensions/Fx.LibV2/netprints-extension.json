@@ -1,0 +1,8 @@
+{
+  "id": "fx.libv2",
+  "name": "Fixture library v2 extension",
+  "version": "1.0.0",
+  "assembly": "Fx.LibV2.dll",
+  "netprintsApi": "1.0",
+  "dependsOn": []
+}

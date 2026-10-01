@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Xml;
+using System.Xml.Linq;
 using Microsoft.CodeAnalysis;
+using NetPrints.Catalog;
 
 namespace NetPrints.Reflection
 {
@@ -44,6 +46,10 @@ namespace NetPrints.Reflection
             this.documentationPaths = documentationPaths;
         }
 
+        // The catalog's normalization (data-model.md §6), so live and cataloged documentation read the same.
+        private static string? Normalize(XmlNode? node) =>
+            node is null ? null : SummaryNormalizer.Normalize(XElement.Parse(node.OuterXml));
+
         private string? GetAssemblyPath(IAssemblySymbol assembly)
         {
             MetadataReference? reference = compilation.GetMetadataReference(assembly);
@@ -56,6 +62,12 @@ namespace NetPrints.Reflection
 
         private string GetMethodInfoKey(IMethodSymbol methodInfo)
         {
+            // The compiler's own documentation comment id (namespaces, nesting, generics and ref kinds included), as in the XML file.
+            if (methodInfo.OriginalDefinition.GetDocumentationCommentId() is { } commentId)
+            {
+                return commentId;
+            }
+
             string key = $"M:{methodInfo.ContainingType.GetFullName()}.{methodInfo.Name}";
 
             if (methodInfo.Parameters.Length > 0)
@@ -124,7 +136,7 @@ namespace NetPrints.Reflection
 
                 if (nodes != null && nodes.Count > 0)
                 {
-                    documentation = nodes.Item(0)?.InnerText;
+                    documentation = Normalize(nodes.Item(0));
                 }
 
                 cachedMethodSummaries.Add(methodKey, documentation);
@@ -153,19 +165,13 @@ namespace NetPrints.Reflection
             XmlDocument? doc = GetAssemblyDocumentationDocument(methodSymbol.ContainingAssembly);
             if (doc != null)
             {
-                string searchName = $"M:{methodSymbol.ContainingType.GetFullName()}.{methodSymbol.Name}";
-                if (methodSymbol.Parameters.Length > 0)
-                {
-                    searchName += "(";
-                    searchName += string.Join(",", methodSymbol.Parameters.Select(p => p.Type.GetFullName()));
-                    searchName += ")";
-                }
+                string searchName = GetMethodInfoKey(methodSymbol);
 
                 using XmlNodeList? nodes = doc.SelectNodes($"doc/members/member[@name='{searchName}']/param[@name='{parameterSymbol.Name}']");
 
                 if (nodes != null && nodes.Count > 0)
                 {
-                    documentation = nodes.Item(0)?.InnerText;
+                    documentation = Normalize(nodes.Item(0));
                 }
 
                 cachedMethodParameterInfos.Add(cacheKey, documentation);
@@ -194,19 +200,13 @@ namespace NetPrints.Reflection
 
             if (doc != null)
             {
-                string searchName = $"M:{methodSymbol.ContainingType.GetFullName()}.{methodSymbol.Name}";
-                if (methodSymbol.Parameters.Length > 0)
-                {
-                    searchName += "(";
-                    searchName += string.Join(",", methodSymbol.Parameters.Select(p => p.Type.GetFullName()));
-                    searchName += ")";
-                }
+                string searchName = GetMethodInfoKey(methodSymbol);
 
                 using XmlNodeList? nodes = doc.SelectNodes($"doc/members/member[@name='{searchName}']/returns");
 
                 if (nodes != null && nodes.Count > 0)
                 {
-                    documentation = nodes.Item(0)?.InnerText;
+                    documentation = Normalize(nodes.Item(0));
                 }
 
                 cachedMethodReturnInfo.Add(methodKey, documentation);

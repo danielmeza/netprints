@@ -1,10 +1,14 @@
 #nullable enable
+using System.Diagnostics.CodeAnalysis;
+using NetPrints.Core;
+
 namespace NetPrints.Translator;
 
 /// <summary>
 /// Adds usings, attributes, modifiers and base types to a translated type declaration
 /// (extension-points.md §3).
 /// </summary>
+[Experimental(ExperimentalApiIds.Emitters, UrlFormat = ExperimentalApiIds.UrlFormat)]
 public interface IClassEmitter
 {
     /// <summary>
@@ -23,6 +27,7 @@ public interface IClassEmitter
 /// Adds attributes and modifiers to a translated member, or turns a property into a partial declaration
 /// (extension-points.md §3).
 /// </summary>
+[Experimental(ExperimentalApiIds.Emitters, UrlFormat = ExperimentalApiIds.UrlFormat)]
 public interface IMemberEmitter
 {
     /// <summary>

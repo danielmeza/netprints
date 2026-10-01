@@ -1,0 +1,776 @@
+{
+  "$schema": "https://danielmeza.github.io/netprints/schemas/npcat.v1.schema.json",
+  "schemaVersion": 1,
+  "id": "catalogfixturelib",
+  "version": "1.0.0.0",
+  "profile": "public-api",
+  "assemblies": [
+    {
+      "name": "CatalogFixtureLib",
+      "version": "1.0.0.0"
+    }
+  ],
+  "types": [
+    {
+      "id": "T:Fixture.Attributes.ExposeAttribute",
+      "namespace": "Fixture.Attributes",
+      "name": "ExposeAttribute",
+      "kind": "class",
+      "modifiers": ["sealed"],
+      "baseType": { "name": "System.Attribute" },
+      "summary": "Marks a member for the fixture-flags profile.",
+      "constructors": [
+        {
+          "id": "M:Fixture.Attributes.ExposeAttribute.#ctor(Fixture.Attributes.ExposeFlags)",
+          "visibility": "public",
+          "parameters": [
+            { "name": "flags", "type": { "name": "Fixture.Attributes.ExposeFlags", "isEnum": true }, "summary": "What the member exposes." }
+          ],
+          "summary": "Marks a member for the fixture-flags profile."
+        }
+      ],
+      "variables": [
+        {
+          "id": "P:Fixture.Attributes.ExposeAttribute.Flags",
+          "name": "Flags",
+          "kind": "property",
+          "type": { "name": "Fixture.Attributes.ExposeFlags", "isEnum": true },
+          "modifiers": ["readonly"],
+          "get": "public",
+          "summary": "Gets what the member exposes."
+        }
+      ]
+    },
+    {
+      "id": "T:Fixture.Attributes.ExposeFlags",
+      "namespace": "Fixture.Attributes",
+      "name": "ExposeFlags",
+      "kind": "enum",
+      "baseType": { "name": "System.Enum" },
+      "interfaces": [
+        { "name": "System.IComparable", "isInterface": true },
+        { "name": "System.IConvertible", "isInterface": true },
+        { "name": "System.IFormattable", "isInterface": true },
+        { "name": "System.ISpanFormattable", "isInterface": true }
+      ],
+      "enumMembers": [
+        "None",
+        "Callable",
+        "Readable",
+        "Writable"
+      ],
+      "summary": "Flags read by the fixture-flags profile."
+    },
+    {
+      "id": "T:Fixture.Documentation.Documented",
+      "namespace": "Fixture.Documentation",
+      "name": "Documented",
+      "kind": "class",
+      "modifiers": ["static"],
+      "summary": "Members documented the way real libraries do: several lines, references and paragraphs.",
+      "methods": [
+        {
+          "id": "M:Fixture.Documentation.Documented.Add(System.Int32,System.Int32)",
+          "name": "Add",
+          "visibility": "public",
+          "modifiers": ["static"],
+          "parameters": [
+            { "name": "left", "type": { "name": "System.Int32" }, "summary": "The left operand." },
+            { "name": "right", "type": { "name": "System.Int32" }, "summary": "The right operand, see Int32." }
+          ],
+          "returnType": { "name": "System.Int32" },
+          "returnSummary": "The Int32 sum, or null never.",
+          "summary": "Adds left to right, as Max does.\n\nA second paragraph with code."
+        }
+      ]
+    },
+    {
+      "id": "T:Fixture.Generics.Box`1",
+      "namespace": "Fixture.Generics",
+      "name": "Box",
+      "kind": "class",
+      "genericParameters": ["T"],
+      "summary": "A generic box with constraints and a nested type.",
+      "constructors": [
+        {
+          "id": "M:Fixture.Generics.Box`1.#ctor",
+          "visibility": "public"
+        }
+      ],
+      "methods": [
+        {
+          "id": "M:Fixture.Generics.Box`1.AsSequence",
+          "name": "AsSequence",
+          "visibility": "public",
+          "returnType": { "name": "System.Collections.Generic.IEnumerable", "isInterface": true, "args": [{ "name": "T", "generic": true }] },
+          "returnSummary": "A sequence with the value when set.",
+          "summary": "Lists the value as a sequence."
+        },
+        {
+          "id": "M:Fixture.Generics.Box`1.Map``1(System.Func{`0,``0})",
+          "name": "Map",
+          "visibility": "public",
+          "genericParameters": ["TResult"],
+          "parameters": [
+            { "name": "selector", "type": { "name": "System.Func", "args": [{ "name": "T", "generic": true }, { "name": "TResult", "generic": true }] }, "summary": "The mapping." }
+          ],
+          "returnType": { "name": "TResult", "generic": true },
+          "returnSummary": "The mapped value.",
+          "summary": "Maps the value with a generic method."
+        }
+      ],
+      "variables": [
+        {
+          "id": "P:Fixture.Generics.Box`1.Value",
+          "name": "Value",
+          "kind": "property",
+          "type": { "name": "T", "generic": true },
+          "get": "public",
+          "set": "public",
+          "summary": "Gets or sets the value."
+        }
+      ]
+    },
+    {
+      "id": "T:Fixture.Generics.Box`1.Handle",
+      "namespace": "Fixture.Generics",
+      "name": "Handle",
+      "kind": "class",
+      "modifiers": ["sealed"],
+      "declaringType": "T:Fixture.Generics.Box`1",
+      "summary": "A nested type of a generic type.",
+      "constructors": [
+        {
+          "id": "M:Fixture.Generics.Box`1.Handle.#ctor",
+          "visibility": "public"
+        }
+      ],
+      "variables": [
+        {
+          "id": "P:Fixture.Generics.Box`1.Handle.Id",
+          "name": "Id",
+          "kind": "property",
+          "type": { "name": "System.Int32" },
+          "get": "public",
+          "set": "public",
+          "summary": "Gets or sets the identifier."
+        }
+      ]
+    },
+    {
+      "id": "T:Fixture.Generics.IProducer`1",
+      "namespace": "Fixture.Generics",
+      "name": "IProducer",
+      "kind": "interface",
+      "genericParameters": ["TOut"],
+      "summary": "A generic interface with a covariant parameter.",
+      "methods": [
+        {
+          "id": "M:Fixture.Generics.IProducer`1.Produce",
+          "name": "Produce",
+          "visibility": "public",
+          "modifiers": ["abstract"],
+          "returnType": { "name": "TOut", "generic": true },
+          "returnSummary": "The value.",
+          "summary": "Produces a value."
+        }
+      ]
+    },
+    {
+      "id": "T:Fixture.Geometry.Circle",
+      "namespace": "Fixture.Geometry",
+      "name": "Circle",
+      "kind": "class",
+      "modifiers": ["sealed"],
+      "baseType": { "name": "Fixture.Geometry.ShapeBase" },
+      "interfaces": [
+        { "name": "Fixture.Geometry.IShape", "isInterface": true }
+      ],
+      "summary": "A circle.",
+      "constructors": [
+        {
+          "id": "M:Fixture.Geometry.Circle.#ctor",
+          "visibility": "public"
+        }
+      ],
+      "methods": [
+        {
+          "id": "M:Fixture.Geometry.Circle.Area",
+          "name": "Area",
+          "visibility": "public",
+          "modifiers": ["override"],
+          "returnType": { "name": "System.Single" }
+        }
+      ],
+      "variables": [
+        {
+          "id": "P:Fixture.Geometry.Circle.Radius",
+          "name": "Radius",
+          "kind": "property",
+          "type": { "name": "System.Single" },
+          "get": "public",
+          "set": "public",
+          "summary": "Gets or sets the radius."
+        }
+      ]
+    },
+    {
+      "id": "T:Fixture.Geometry.IShape",
+      "namespace": "Fixture.Geometry",
+      "name": "IShape",
+      "kind": "interface",
+      "summary": "Something with an area.",
+      "methods": [
+        {
+          "id": "M:Fixture.Geometry.IShape.Area",
+          "name": "Area",
+          "visibility": "public",
+          "modifiers": ["abstract"],
+          "returnType": { "name": "System.Single" },
+          "returnSummary": "The area.",
+          "summary": "Computes the area."
+        }
+      ]
+    },
+    {
+      "id": "T:Fixture.Geometry.ShapeBase",
+      "namespace": "Fixture.Geometry",
+      "name": "ShapeBase",
+      "kind": "class",
+      "modifiers": ["abstract"],
+      "interfaces": [
+        { "name": "Fixture.Geometry.IShape", "isInterface": true }
+      ],
+      "summary": "An abstract shape with an overridable member and a protected constructor.",
+      "constructors": [
+        {
+          "id": "M:Fixture.Geometry.ShapeBase.#ctor",
+          "visibility": "protected",
+          "summary": "Initializes a new instance of the ShapeBase class."
+        }
+      ],
+      "methods": [
+        {
+          "id": "M:Fixture.Geometry.ShapeBase.Area",
+          "name": "Area",
+          "visibility": "public",
+          "modifiers": ["abstract"],
+          "returnType": { "name": "System.Single" }
+        },
+        {
+          "id": "M:Fixture.Geometry.ShapeBase.Describe",
+          "name": "Describe",
+          "visibility": "public",
+          "modifiers": ["virtual"],
+          "returnType": { "name": "System.String" },
+          "returnSummary": "The description.",
+          "summary": "Describes the shape."
+        }
+      ],
+      "variables": [
+        {
+          "id": "P:Fixture.Geometry.ShapeBase.Name",
+          "name": "Name",
+          "kind": "property",
+          "type": { "name": "System.String" },
+          "get": "public",
+          "set": "public",
+          "summary": "Gets or sets the shape name."
+        }
+      ]
+    },
+    {
+      "id": "T:Fixture.Geometry.Vector2",
+      "namespace": "Fixture.Geometry",
+      "name": "Vector2",
+      "kind": "struct",
+      "baseType": { "name": "System.ValueType" },
+      "interfaces": [
+        { "name": "Fixture.Geometry.IShape", "isInterface": true },
+        { "name": "System.IEquatable", "isInterface": true, "args": [{ "name": "Fixture.Geometry.Vector2" }] }
+      ],
+      "summary": "A two-dimensional vector: struct, operators, implicit conversions, interface implementation.",
+      "constructors": [
+        {
+          "id": "M:Fixture.Geometry.Vector2.#ctor",
+          "visibility": "public"
+        },
+        {
+          "id": "M:Fixture.Geometry.Vector2.#ctor(System.Single,System.Single)",
+          "visibility": "public",
+          "parameters": [
+            { "name": "X", "type": { "name": "System.Single" }, "summary": "The horizontal component." },
+            { "name": "Y", "type": { "name": "System.Single" }, "summary": "The vertical component." }
+          ],
+          "summary": "A two-dimensional vector: struct, operators, implicit conversions, interface implementation."
+        }
+      ],
+      "methods": [
+        {
+          "id": "M:Fixture.Geometry.Vector2.Add(Fixture.Geometry.Vector2)",
+          "name": "Add",
+          "visibility": "public",
+          "parameters": [
+            { "name": "other", "type": { "name": "Fixture.Geometry.Vector2" }, "summary": "The other vector." }
+          ],
+          "returnType": { "name": "Fixture.Geometry.Vector2" },
+          "returnSummary": "The sum.",
+          "summary": "Adds another vector to this one."
+        },
+        {
+          "id": "M:Fixture.Geometry.Vector2.Area",
+          "name": "Area",
+          "visibility": "public",
+          "returnType": { "name": "System.Single" }
+        },
+        {
+          "id": "M:Fixture.Geometry.Vector2.Deconstruct(System.Single@,System.Single@)",
+          "name": "Deconstruct",
+          "visibility": "public",
+          "parameters": [
+            { "name": "X", "type": { "name": "System.Single" }, "passType": "out" },
+            { "name": "Y", "type": { "name": "System.Single" }, "passType": "out" }
+          ]
+        },
+        {
+          "id": "M:Fixture.Geometry.Vector2.Equals(Fixture.Geometry.Vector2)",
+          "name": "Equals",
+          "visibility": "public",
+          "parameters": [
+            { "name": "other", "type": { "name": "Fixture.Geometry.Vector2" } }
+          ],
+          "returnType": { "name": "System.Boolean" }
+        },
+        {
+          "id": "M:Fixture.Geometry.Vector2.Equals(System.Object)",
+          "name": "Equals",
+          "visibility": "public",
+          "modifiers": ["override"],
+          "parameters": [
+            { "name": "obj", "type": { "name": "System.Object" } }
+          ],
+          "returnType": { "name": "System.Boolean" }
+        },
+        {
+          "id": "M:Fixture.Geometry.Vector2.GetHashCode",
+          "name": "GetHashCode",
+          "visibility": "public",
+          "modifiers": ["override"],
+          "returnType": { "name": "System.Int32" }
+        },
+        {
+          "id": "M:Fixture.Geometry.Vector2.ToString",
+          "name": "ToString",
+          "visibility": "public",
+          "modifiers": ["override"],
+          "returnType": { "name": "System.String" }
+        },
+        {
+          "id": "M:Fixture.Geometry.Vector2.op_Addition(Fixture.Geometry.Vector2,Fixture.Geometry.Vector2)",
+          "name": "op_Addition",
+          "visibility": "public",
+          "modifiers": ["static", "operator"],
+          "parameters": [
+            { "name": "left", "type": { "name": "Fixture.Geometry.Vector2" }, "summary": "The first vector." },
+            { "name": "right", "type": { "name": "Fixture.Geometry.Vector2" }, "summary": "The second vector." }
+          ],
+          "returnType": { "name": "Fixture.Geometry.Vector2" },
+          "returnSummary": "The sum.",
+          "summary": "Adds two vectors."
+        },
+        {
+          "id": "M:Fixture.Geometry.Vector2.op_Equality(Fixture.Geometry.Vector2,Fixture.Geometry.Vector2)",
+          "name": "op_Equality",
+          "visibility": "public",
+          "modifiers": ["static", "operator"],
+          "parameters": [
+            { "name": "left", "type": { "name": "Fixture.Geometry.Vector2" } },
+            { "name": "right", "type": { "name": "Fixture.Geometry.Vector2" } }
+          ],
+          "returnType": { "name": "System.Boolean" }
+        },
+        {
+          "id": "M:Fixture.Geometry.Vector2.op_Explicit(Fixture.Geometry.Vector2)~System.Single",
+          "name": "op_Explicit",
+          "visibility": "public",
+          "modifiers": ["static", "operator"],
+          "parameters": [
+            { "name": "value", "type": { "name": "Fixture.Geometry.Vector2" }, "summary": "The vector." }
+          ],
+          "returnType": { "name": "System.Single" },
+          "summary": "Converts a vector to its length."
+        },
+        {
+          "id": "M:Fixture.Geometry.Vector2.op_Implicit(System.Single)~Fixture.Geometry.Vector2",
+          "name": "op_Implicit",
+          "visibility": "public",
+          "modifiers": ["static", "operator"],
+          "parameters": [
+            { "name": "value", "type": { "name": "System.Single" }, "summary": "The scalar." }
+          ],
+          "returnType": { "name": "Fixture.Geometry.Vector2" },
+          "summary": "Converts a scalar to a vector with equal components."
+        },
+        {
+          "id": "M:Fixture.Geometry.Vector2.op_Inequality(Fixture.Geometry.Vector2,Fixture.Geometry.Vector2)",
+          "name": "op_Inequality",
+          "visibility": "public",
+          "modifiers": ["static", "operator"],
+          "parameters": [
+            { "name": "left", "type": { "name": "Fixture.Geometry.Vector2" } },
+            { "name": "right", "type": { "name": "Fixture.Geometry.Vector2" } }
+          ],
+          "returnType": { "name": "System.Boolean" }
+        },
+        {
+          "id": "M:Fixture.Geometry.Vector2.op_UnaryNegation(Fixture.Geometry.Vector2)",
+          "name": "op_UnaryNegation",
+          "visibility": "public",
+          "modifiers": ["static", "operator"],
+          "parameters": [
+            { "name": "value", "type": { "name": "Fixture.Geometry.Vector2" }, "summary": "The vector." }
+          ],
+          "returnType": { "name": "Fixture.Geometry.Vector2" },
+          "returnSummary": "The negated vector.",
+          "summary": "Negates a vector."
+        }
+      ],
+      "variables": [
+        {
+          "id": "P:Fixture.Geometry.Vector2.Length",
+          "name": "Length",
+          "kind": "property",
+          "type": { "name": "System.Single" },
+          "modifiers": ["readonly"],
+          "get": "public",
+          "summary": "Gets the length of the vector."
+        },
+        {
+          "id": "P:Fixture.Geometry.Vector2.X",
+          "name": "X",
+          "kind": "property",
+          "type": { "name": "System.Single" },
+          "get": "public",
+          "set": "public",
+          "summary": "The horizontal component."
+        },
+        {
+          "id": "P:Fixture.Geometry.Vector2.Y",
+          "name": "Y",
+          "kind": "property",
+          "type": { "name": "System.Single" },
+          "get": "public",
+          "set": "public",
+          "summary": "The vertical component."
+        },
+        {
+          "id": "P:Fixture.Geometry.Vector2.Zero",
+          "name": "Zero",
+          "kind": "property",
+          "type": { "name": "Fixture.Geometry.Vector2" },
+          "modifiers": ["static", "readonly"],
+          "get": "public",
+          "summary": "Gets the zero vector."
+        }
+      ]
+    },
+    {
+      "id": "T:Fixture.Legacy.Ancient",
+      "namespace": "Fixture.Legacy",
+      "name": "Ancient",
+      "kind": "class",
+      "modifiers": ["sealed"],
+      "summary": "An obsolete type.",
+      "constructors": [
+        {
+          "id": "M:Fixture.Legacy.Ancient.#ctor",
+          "visibility": "public"
+        }
+      ],
+      "variables": [
+        {
+          "id": "P:Fixture.Legacy.Ancient.Value",
+          "name": "Value",
+          "kind": "property",
+          "type": { "name": "System.Int32" },
+          "modifiers": ["readonly"],
+          "get": "public",
+          "summary": "Gets a value."
+        }
+      ]
+    },
+    {
+      "id": "T:Fixture.Legacy.Level",
+      "namespace": "Fixture.Legacy",
+      "name": "Level",
+      "kind": "enum",
+      "baseType": { "name": "System.Enum" },
+      "interfaces": [
+        { "name": "System.IComparable", "isInterface": true },
+        { "name": "System.IConvertible", "isInterface": true },
+        { "name": "System.IFormattable", "isInterface": true },
+        { "name": "System.ISpanFormattable", "isInterface": true }
+      ],
+      "enumMembers": [
+        "Low",
+        "High",
+        "Big"
+      ],
+      "summary": "An enum with an obsolete member and explicit values."
+    },
+    {
+      "id": "T:Fixture.Legacy.Old",
+      "namespace": "Fixture.Legacy",
+      "name": "Old",
+      "kind": "class",
+      "summary": "Obsolete members of every kind.",
+      "constructors": [
+        {
+          "id": "M:Fixture.Legacy.Old.#ctor",
+          "visibility": "public"
+        }
+      ],
+      "methods": [
+        {
+          "id": "M:Fixture.Legacy.Old.NewName",
+          "name": "NewName",
+          "visibility": "public",
+          "summary": "The replacement."
+        },
+        {
+          "id": "M:Fixture.Legacy.Old.OldName",
+          "name": "OldName",
+          "visibility": "public",
+          "summary": "An obsolete method that still compiles.",
+          "obsolete": { "message": "Use NewName." }
+        }
+      ]
+    },
+    {
+      "id": "T:Fixture.Utilities.Counter",
+      "namespace": "Fixture.Utilities",
+      "name": "Counter",
+      "kind": "class",
+      "summary": "A type with annotations, an ignored member and a nested enum.",
+      "node": { "displayName": "Counter Widget", "category": "Widgets" },
+      "constructors": [
+        {
+          "id": "M:Fixture.Utilities.Counter.#ctor",
+          "visibility": "public"
+        }
+      ],
+      "methods": [
+        {
+          "id": "M:Fixture.Utilities.Counter.Step(Fixture.Utilities.Counter.StepKind)",
+          "name": "Step",
+          "visibility": "public",
+          "parameters": [
+            { "name": "kind", "type": { "name": "Fixture.Utilities.Counter+StepKind", "isEnum": true }, "default": { "type": "System.Int32", "value": "0" }, "summary": "The step kind." }
+          ],
+          "summary": "Steps the counter.",
+          "node": { "keywords": ["increment"] }
+        }
+      ],
+      "variables": [
+        {
+          "id": "P:Fixture.Utilities.Counter.Count",
+          "name": "Count",
+          "kind": "property",
+          "type": { "name": "System.Int32" },
+          "get": "public",
+          "set": "public",
+          "summary": "Gets or sets the count."
+        }
+      ]
+    },
+    {
+      "id": "T:Fixture.Utilities.Counter.StepKind",
+      "namespace": "Fixture.Utilities",
+      "name": "StepKind",
+      "kind": "enum",
+      "declaringType": "T:Fixture.Utilities.Counter",
+      "baseType": { "name": "System.Enum" },
+      "interfaces": [
+        { "name": "System.IComparable", "isInterface": true },
+        { "name": "System.IConvertible", "isInterface": true },
+        { "name": "System.IFormattable", "isInterface": true },
+        { "name": "System.ISpanFormattable", "isInterface": true }
+      ],
+      "enumMembers": [
+        "Up",
+        "Down"
+      ],
+      "summary": "Kinds of steps."
+    },
+    {
+      "id": "T:Fixture.Utilities.Helpers",
+      "namespace": "Fixture.Utilities",
+      "name": "Helpers",
+      "kind": "class",
+      "modifiers": ["static"],
+      "summary": "A static class covering parameter modifiers, default values, extension methods and annotations.",
+      "methods": [
+        {
+          "id": "M:Fixture.Utilities.Helpers.Double(System.Int32)",
+          "name": "Double",
+          "visibility": "public",
+          "modifiers": ["static"],
+          "parameters": [
+            { "name": "value", "type": { "name": "System.Int32" }, "summary": "The value." }
+          ],
+          "returnType": { "name": "System.Int32" },
+          "returnSummary": "Twice the value.",
+          "summary": "Doubles a value.",
+          "node": { "displayName": "Double", "category": "Math", "keywords": ["multiply", "twice"] }
+        },
+        {
+          "id": "M:Fixture.Utilities.Helpers.FirstOrNothing``1(System.Collections.Generic.IEnumerable{``0})",
+          "name": "FirstOrNothing",
+          "visibility": "public",
+          "modifiers": ["static", "extension"],
+          "genericParameters": ["T"],
+          "parameters": [
+            { "name": "source", "type": { "name": "System.Collections.Generic.IEnumerable", "isInterface": true, "args": [{ "name": "T", "generic": true }] }, "summary": "The sequence." }
+          ],
+          "returnType": { "name": "T", "generic": true },
+          "returnSummary": "The first element or the default.",
+          "summary": "A generic extension method."
+        },
+        {
+          "id": "M:Fixture.Utilities.Helpers.Format(System.String,System.Int32,System.Char,System.String,System.DayOfWeek,System.Double)",
+          "name": "Format",
+          "visibility": "public",
+          "modifiers": ["static"],
+          "parameters": [
+            { "name": "text", "type": { "name": "System.String" }, "summary": "The text." },
+            { "name": "width", "type": { "name": "System.Int32" }, "default": { "type": "System.Int32", "value": "10" }, "summary": "The minimum width." },
+            { "name": "fill", "type": { "name": "System.Char" }, "default": { "type": "System.Char", "value": " " }, "summary": "The fill character." },
+            { "name": "separator", "type": { "name": "System.String" }, "default": { "type": "System.String" }, "summary": "The separator, null by default." },
+            { "name": "mode", "type": { "name": "System.DayOfWeek", "isEnum": true }, "default": { "type": "System.Int32", "value": "1" }, "summary": "The mode." },
+            { "name": "ratio", "type": { "name": "System.Double" }, "default": { "type": "System.Double", "value": "0.5" }, "summary": "The ratio." }
+          ],
+          "returnType": { "name": "System.String" },
+          "returnSummary": "The formatted text.",
+          "summary": "Formats text with default values of several kinds."
+        },
+        {
+          "id": "M:Fixture.Utilities.Helpers.LengthOf(Fixture.Geometry.Vector2@)",
+          "name": "LengthOf",
+          "visibility": "public",
+          "modifiers": ["static"],
+          "parameters": [
+            { "name": "value", "type": { "name": "Fixture.Geometry.Vector2" }, "passType": "in", "summary": "The value." }
+          ],
+          "returnType": { "name": "System.Single" },
+          "returnSummary": "The vector length.",
+          "summary": "Reads a large value by readonly reference."
+        },
+        {
+          "id": "M:Fixture.Utilities.Helpers.Reverse(System.String)",
+          "name": "Reverse",
+          "visibility": "public",
+          "modifiers": ["static", "extension"],
+          "parameters": [
+            { "name": "text", "type": { "name": "System.String" }, "summary": "The text to reverse." }
+          ],
+          "returnType": { "name": "System.String" },
+          "returnSummary": "The reversed text.",
+          "summary": "An extension method."
+        },
+        {
+          "id": "M:Fixture.Utilities.Helpers.Sum(System.Int32[])",
+          "name": "Sum",
+          "visibility": "public",
+          "modifiers": ["static"],
+          "parameters": [
+            { "name": "values", "type": { "name": "System.Array" }, "params": true, "summary": "The values." }
+          ],
+          "returnType": { "name": "System.Int32" },
+          "returnSummary": "The sum.",
+          "summary": "Sums a variable number of values."
+        },
+        {
+          "id": "M:Fixture.Utilities.Helpers.Swap``1(``0@,``0@)",
+          "name": "Swap",
+          "visibility": "public",
+          "modifiers": ["static"],
+          "genericParameters": ["T"],
+          "parameters": [
+            { "name": "left", "type": { "name": "T", "generic": true }, "passType": "reference", "summary": "The first value." },
+            { "name": "right", "type": { "name": "T", "generic": true }, "passType": "reference", "summary": "The second value." }
+          ],
+          "summary": "Swaps two values by reference."
+        },
+        {
+          "id": "M:Fixture.Utilities.Helpers.TryParse(System.String,System.Int32@)",
+          "name": "TryParse",
+          "visibility": "public",
+          "modifiers": ["static"],
+          "parameters": [
+            { "name": "text", "type": { "name": "System.String" }, "summary": "The text." },
+            { "name": "value", "type": { "name": "System.Int32" }, "passType": "out", "summary": "The parsed value." }
+          ],
+          "returnType": { "name": "System.Boolean" },
+          "returnSummary": "True when parsing succeeded.",
+          "summary": "Parses text, returning success and the value through an out parameter."
+        }
+      ],
+      "variables": [
+        {
+          "id": "F:Fixture.Utilities.Helpers.Answer",
+          "name": "Answer",
+          "kind": "field",
+          "type": { "name": "System.Int32" },
+          "modifiers": ["static", "const"],
+          "get": "public",
+          "summary": "A constant."
+        }
+      ]
+    },
+    {
+      "id": "T:Fixture.Utilities.Indexed",
+      "namespace": "Fixture.Utilities",
+      "name": "Indexed",
+      "kind": "class",
+      "summary": "Members the catalog does not list: an indexer and an event.",
+      "constructors": [
+        {
+          "id": "M:Fixture.Utilities.Indexed.#ctor",
+          "visibility": "public"
+        }
+      ],
+      "methods": [
+        {
+          "id": "M:Fixture.Utilities.Indexed.Raise",
+          "name": "Raise",
+          "visibility": "public",
+          "summary": "Raises Changed."
+        }
+      ]
+    },
+    {
+      "id": "T:Fixture.Utilities.InternalNodeOnly",
+      "namespace": "Fixture.Utilities",
+      "name": "InternalNodeOnly",
+      "kind": "class",
+      "summary": "A type whose only annotated method is not public: the annotated profile must not select it.",
+      "constructors": [
+        {
+          "id": "M:Fixture.Utilities.InternalNodeOnly.#ctor",
+          "visibility": "public"
+        }
+      ],
+      "variables": [
+        {
+          "id": "P:Fixture.Utilities.InternalNodeOnly.Value",
+          "name": "Value",
+          "kind": "property",
+          "type": { "name": "System.Int32" },
+          "modifiers": ["readonly"],
+          "get": "public",
+          "summary": "Gets a value."
+        }
+      ]
+    }
+  ]
+}

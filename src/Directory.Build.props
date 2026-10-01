@@ -19,4 +19,11 @@
   <ItemGroup Condition="'$(MSBuildProjectName)' != 'NetPrintsVSIX' And '$(MSBuildProjectName)' != 'NetPrints.Cli' And '$(MSBuildProjectName)' != 'NetPrints.Desktop' And '$(MSBuildProjectName)' != 'NetPrints.Editor' And '$(MSBuildProjectName)' != 'NetPrints.Generator'">
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)BannedSymbols.Console.txt" />
   </ItemGroup>
+
+  <!-- API tracking (extensions contract §5): projects that set NetPrintsTrackPublicApi declare their public API in two files. -->
+  <ItemGroup Condition="'$(NetPrintsTrackPublicApi)' == 'true'">
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" PrivateAssets="all" />
+    <AdditionalFiles Include="PublicAPI.Shipped.txt" />
+    <AdditionalFiles Include="PublicAPI.Unshipped.txt" />
+  </ItemGroup>
 </Project>

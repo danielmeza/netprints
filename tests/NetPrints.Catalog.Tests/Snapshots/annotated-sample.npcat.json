@@ -1,0 +1,53 @@
+{
+  "$schema": "https://danielmeza.github.io/netprints/schemas/npcat.v1.schema.json",
+  "schemaVersion": 1,
+  "id": "annotatedsample",
+  "version": "1.0.0.0",
+  "profile": "annotated",
+  "assemblies": [
+    {
+      "name": "AnnotatedSample",
+      "version": "1.0.0.0"
+    }
+  ],
+  "types": [
+    {
+      "id": "T:AnnotatedSample.Greeter",
+      "namespace": "AnnotatedSample",
+      "name": "Greeter",
+      "kind": "class",
+      "modifiers": ["sealed"],
+      "summary": "Builds greetings.",
+      "node": { "displayName": "Greeter", "category": "Sample" },
+      "constructors": [
+        {
+          "id": "M:AnnotatedSample.Greeter.#ctor",
+          "visibility": "public"
+        }
+      ],
+      "methods": [
+        {
+          "id": "M:AnnotatedSample.Greeter.Count",
+          "name": "Count",
+          "visibility": "public",
+          "returnType": { "name": "System.Int32" },
+          "returnSummary": "The count.",
+          "summary": "Counts the greetings made so far."
+        },
+        {
+          "id": "M:AnnotatedSample.Greeter.Greet(System.String)",
+          "name": "Greet",
+          "visibility": "public",
+          "modifiers": ["static"],
+          "parameters": [
+            { "name": "name", "type": { "name": "System.String" }, "summary": "Who to greet." }
+          ],
+          "returnType": { "name": "System.String" },
+          "returnSummary": "The greeting.",
+          "summary": "Builds a greeting.",
+          "node": { "displayName": "Greet", "category": "Sample", "keywords": ["hello", "welcome"] }
+        }
+      ]
+    }
+  ]
+}

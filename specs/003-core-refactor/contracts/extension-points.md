@@ -432,6 +432,7 @@ public sealed class ExtensionRegistry : IDisposable
 3. Duplicate id → first wins; later → `Failed(NPX004)`.
 4. Validation: manifest schema (`NPX001`); `netprintsApi` major ≠ `ExtensionApi.Version.Major` or
    minor > host minor → `NPX002`; `dependsOn` id missing or failed → `NPX003`; cycle → all members `NPX003`.
+   A dependency's copy of an assembly older than the extension's reference → `NPX008` (P2, ADR-0010 §4).
 5. Topological sort by `dependsOn`; ties by id (ordinal). This order is the **registry order** used
    everywhere (emitters, catalogs, JSON resolvers, search categories).
 6. For each: load assembly in its `ExtensionLoadContext` (failure → `NPX007`), find the single

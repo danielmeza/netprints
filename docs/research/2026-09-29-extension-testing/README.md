@@ -569,6 +569,9 @@ Work in layers, cheapest first:
 
 ## 7. Draft ADR (for `docs/adr/`, next free number, currently 0010)
 
+> Accepted on 2026-09-29 as [`docs/adr/0010-extension-testing-and-coexistence.md`](../../adr/0010-extension-testing-and-coexistence.md)
+> (P2, `specs/004-catalog-cli/`), which also decides the two hazards. The draft below is kept for history.
+
 ```markdown
 # 0010: Extension testing — author kit, multi-extension scenarios, API compatibility gates
 

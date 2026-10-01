@@ -1,0 +1,8 @@
+{
+  "id": "fx.native",
+  "name": "Fixture native dependency extension",
+  "version": "1.0.0",
+  "assembly": "Fx.Native.dll",
+  "netprintsApi": "1.0",
+  "dependsOn": []
+}

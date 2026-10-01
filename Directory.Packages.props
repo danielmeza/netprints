@@ -5,6 +5,8 @@
   <PropertyGroup>
     <ManagePackageVersionsCentrally Condition="'$(ManagePackageVersionsCentrally)' == ''">true</ManagePackageVersionsCentrally>
     <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+    <!-- Shared by the PackageVersion below and NetPrints.Core.Tests' PackageDownload (PublicApiTrackingTests loads the analyzer from the package folder). -->
+    <PublicApiAnalyzersVersion>5.6.0</PublicApiAnalyzersVersion>
   </PropertyGroup>
 
   <ItemGroup Label="Versioning">
@@ -13,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup Label="Core and reflection">
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.9.0" />
   </ItemGroup>
 
@@ -26,10 +29,12 @@
     <!-- RS0030 (ADR-0003 follow-up): bans sync-over-async and DateTime.Now/Thread.Sleep APIs no
          CA/VSTHRD/Sonar rule targets. src/Directory.Build.props only, so tests/ is unaffected. -->
     <PackageVersion Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="5.6.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="$(PublicApiAnalyzersVersion)" />
   </ItemGroup>
 
   <ItemGroup Label="CLI">
-    <PackageVersion Include="CommandLineParser" Version="2.9.1" />
+    <PackageVersion Include="Spectre.Console.Cli" Version="0.57.2" />
+    <PackageVersion Include="Spectre.Console.Testing" Version="0.57.2" />
   </ItemGroup>
 
   <ItemGroup Label="Editor">
@@ -61,6 +66,7 @@
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="10.0.12" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
   </ItemGroup>
 
   <ItemGroup Label="Workspace (MSBuild evaluation, project system)">

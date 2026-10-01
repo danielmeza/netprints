@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Linq;
+using System.Threading;
 using Microsoft.Build.Locator;
 using Microsoft.Extensions.Logging;
 
@@ -18,6 +19,10 @@ namespace NetPrints.Workspace;
 /// </summary>
 public static class MsBuildRegistration
 {
+    // Parallel first calls (the CLI's test classes run in parallel; a host may register from several entry points) must not both pass the
+    // IsRegistered check and register, or one loads Microsoft.Build types while the other is still installing the assembly resolver.
+    private static readonly Lock Gate = new();
+
     /// <summary>
     /// The instance registered by the most recent successful call to <see cref="EnsureRegistered"/> in
     /// this process that actually performed a registration (project-system.md §5,
@@ -39,6 +44,14 @@ public static class MsBuildRegistration
     /// <see cref="MSBuildLocator"/> does not support switching instances once registered);
     /// <see langword="false"/> if no Visual Studio instance or .NET SDK could be found.</returns>
     public static bool EnsureRegistered(ILogger logger)
+    {
+        lock (Gate)
+        {
+            return RegisterLocked(logger);
+        }
+    }
+
+    private static bool RegisterLocked(ILogger logger)
     {
         if (MSBuildLocator.IsRegistered)
         {

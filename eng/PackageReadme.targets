@@ -25,7 +25,7 @@
       <Using Namespace="System.Linq" />
       <Using Namespace="System.Text.RegularExpressions" />
       <Code Type="Fragment" Language="cs"><![CDATA[
-        var md = File.ReadAllText(Source);
+        var source = File.ReadAllText(Source);
         const RegexOptions S = RegexOptions.Singleline;
         Func<string, string, string> attr = (tag, name) =>
         {
@@ -33,33 +33,44 @@
             return m.Success ? m.Groups[1].Value : "";
         };
 
-        // 1. HTML -> Markdown, for the tags the README uses. Images first, so links can wrap them.
-        md = Regex.Replace(md, @"<img\b[^>]*>", m => "![" + attr(m.Value, "alt") + "](" + attr(m.Value, "src") + ")");
-        md = Regex.Replace(md, @"<a\b[^>]*>(.*?)</a>",
-            m => "[" + m.Groups[1].Value.Trim() + "](" + attr(m.Value, "href") + ")", S);
-        md = Regex.Replace(md, @"<h([1-6])\b[^>]*>(.*?)</h\1>", m =>
+        // Fenced code blocks are copied as they are: their angle brackets are code, not HTML.
+        Func<string, string> convert = doc =>
         {
-            // Images inside a heading go on their own line above it.
-            var inner = Regex.Replace(m.Groups[2].Value, @"<br\s*/?>", " ");
-            var images = Regex.Matches(inner, @"!\[[^\]]*\]\([^)]*\)").Cast<Match>().Select(x => x.Value);
-            var text = Regex.Replace(Regex.Replace(inner, @"!\[[^\]]*\]\([^)]*\)", ""), @"\s+", " ").Trim();
-            var level = int.Parse(m.Groups[1].Value);
-            var heading = level <= 2 ? new string('#', level) + " " + text : "**" + text + "**";
-            return string.Join("\n\n", images.Concat(new[] { heading }));
-        }, S);
-        md = Regex.Replace(md, @"<p\b[^>]*>(.*?)</p>",
-            m => string.Join("\n", m.Groups[1].Value.Trim().Split('\n').Select(l => l.Trim())), S);
-        md = Regex.Replace(md, @"<summary>(.*?)</summary>", "### $1", S);
-        md = Regex.Replace(md, @"</?details>\n?", "");
-        md = Regex.Replace(md, @"<br\s*/?>", "");
+            // 1. HTML -> Markdown, for the tags the README uses. Images first, so links can wrap them.
+            doc = Regex.Replace(doc, @"<img\b[^>]*>", m => "![" + attr(m.Value, "alt") + "](" + attr(m.Value, "src") + ")");
+            doc = Regex.Replace(doc, @"<a\b[^>]*>(.*?)</a>",
+                m => "[" + m.Groups[1].Value.Trim() + "](" + attr(m.Value, "href") + ")", S);
+            doc = Regex.Replace(doc, @"<h([1-6])\b[^>]*>(.*?)</h\1>", m =>
+            {
+                // Images inside a heading go on their own line above it.
+                var inner = Regex.Replace(m.Groups[2].Value, @"<br\s*/?>", " ");
+                var images = Regex.Matches(inner, @"!\[[^\]]*\]\([^)]*\)").Cast<Match>().Select(x => x.Value);
+                var text = Regex.Replace(Regex.Replace(inner, @"!\[[^\]]*\]\([^)]*\)", ""), @"\s+", " ").Trim();
+                var level = int.Parse(m.Groups[1].Value);
+                var heading = level <= 2 ? new string('#', level) + " " + text : "**" + text + "**";
+                return string.Join("\n\n", images.Concat(new[] { heading }));
+            }, S);
+            doc = Regex.Replace(doc, @"<p\b[^>]*>(.*?)</p>",
+                m => string.Join("\n", m.Groups[1].Value.Trim().Split('\n').Select(l => l.Trim())), S);
+            doc = Regex.Replace(doc, @"<summary>(.*?)</summary>", "### $1", S);
+            doc = Regex.Replace(doc, @"</?details>\n?", "");
+            doc = Regex.Replace(doc, @"<br\s*/?>", "");
 
-        // 2. Relative images -> raw files; every other relative link -> the file on GitHub.
-        md = Regex.Replace(md, @"(!\[[^\]]*\])\((?![a-zA-Z][a-zA-Z0-9+.-]*:|#)([^)\s]+)\)",
-            m => m.Groups[1].Value + "(" + RawBaseUrl + m.Groups[2].Value + ")");
-        md = Regex.Replace(md, @"\]\((?![a-zA-Z][a-zA-Z0-9+.-]*:|#)([^)\s]+)\)",
-            m => "](" + BlobBaseUrl + m.Groups[1].Value + ")");
+            // 2. Relative images -> raw files; every other relative link -> the file on GitHub.
+            doc = Regex.Replace(doc, @"(!\[[^\]]*\])\((?![a-zA-Z][a-zA-Z0-9+.-]*:|#)([^)\s]+)\)",
+                m => m.Groups[1].Value + "(" + RawBaseUrl + m.Groups[2].Value + ")");
+            doc = Regex.Replace(doc, @"\]\((?![a-zA-Z][a-zA-Z0-9+.-]*:|#)([^)\s]+)\)",
+                m => "](" + BlobBaseUrl + m.Groups[1].Value + ")");
 
-        var leftover = Regex.Match(md, @"<(?!!--)/?[a-zA-Z][^>\n]*>");
+            return doc;
+        };
+
+        var parts = Regex.Split(source, @"(^```.*?^```[^\n]*$)", RegexOptions.Multiline | S);
+        for (var i = 0; i < parts.Length; i += 2)
+            parts[i] = convert(parts[i]);
+        var md = string.Concat(parts);
+
+        var leftover = Regex.Match(string.Concat(parts.Where((part, index) => index % 2 == 0)), @"<(?!!--)/?[a-zA-Z][^>\n]*>");
         if (leftover.Success)
             Log.LogWarning("The package README still contains HTML that nuget.org won't render: " + leftover.Value);
 
@@ -84,9 +95,12 @@
       <_ReadmeCommit Condition="'$(_ReadmeGitExitCode)' != '0' or '$(_ReadmeCommit)' == ''">master</_ReadmeCommit>
       <_ReadmeRepo>$(RepositoryUrl.Replace('https://github.com/', '').TrimEnd('/'))</_ReadmeRepo>
       <_NuGetReadme>$(IntermediateOutputPath)nuget/README.md</_NuGetReadme>
+      <!-- Use project-specific README if it exists, otherwise fall back to root README. -->
+      <_ReadmeSource Condition="Exists('$(MSBuildProjectDirectory)/README.md')">$(MSBuildProjectDirectory)/README.md</_ReadmeSource>
+      <_ReadmeSource Condition="'$(_ReadmeSource)' == ''">$(MSBuildThisFileDirectory)../README.md</_ReadmeSource>
     </PropertyGroup>
 
-    <ConvertReadmeForNuGet Source="$(MSBuildThisFileDirectory)../README.md" Destination="$(_NuGetReadme)"
+    <ConvertReadmeForNuGet Source="$(_ReadmeSource)" Destination="$(_NuGetReadme)"
                            RawBaseUrl="https://raw.githubusercontent.com/$(_ReadmeRepo)/$(_ReadmeCommit)/"
                            BlobBaseUrl="https://github.com/$(_ReadmeRepo)/blob/$(_ReadmeCommit)/" />
 

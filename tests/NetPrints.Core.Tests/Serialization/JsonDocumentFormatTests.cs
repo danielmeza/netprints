@@ -1,4 +1,5 @@
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -42,6 +43,30 @@ namespace NetPrints.Tests.Serialization
             return Encoding.UTF8.GetString(output.ToArray());
         }
 
+        // F-R5: connections are written in ordinal From, then To order, whatever order they were read or built in.
+        [Fact]
+        public async Task ConnectionsAreWrittenInOrdinalFromThenToOrderAndAnyOrderIsRead()
+        {
+            ConnectionDocument[] shuffled =
+            [
+                new("n2/out", "n9/in"),
+                new("n10/out", "n1/in"),
+                new("N3/out", "n1/in"),
+                new("n2/out", "n1/in"),
+            ];
+            var document = SampleDocument with { ClassGraph = new GraphDocument([new ClassReturnNodeDocument("n0", null, null, 0)], shuffled, null) };
+
+            string written = await WriteCanonicalAsync(document);
+
+            string[] froms = [.. JsonNode.Parse(written)?["classGraph"]?["connections"]?.AsArray().Select(c => $"{c?["from"]}>{c?["to"]}") ?? []];
+            Assert.Equal(["N3/out>n1/in", "n10/out>n1/in", "n2/out>n1/in", "n2/out>n9/in"], froms);
+
+            using var input = Utf8Stream(written);
+            ClassDocument read = await NewFormat().ReadClassAsync(input, new DocumentId("a.netpc.json"), TestContext.Current.CancellationToken);
+            Assert.Equal(4, read.ClassGraph.Connections?.Count);
+            Assert.Equal(written, await WriteCanonicalAsync(read with { ClassGraph = new GraphDocument(read.ClassGraph.Nodes, [.. shuffled.Reverse()], null) }));
+        }
+
         // DF-T09: malformed JSON syntax fails with a line and byte position.
         [Fact]
         public async Task MalformedJsonSyntaxThrowsWithLineAndPosition()
@@ -73,6 +98,18 @@ namespace NetPrints.Tests.Serialization
 
             Assert.Null(ex.Line);
             Assert.Contains("name", ex.Message);
+        }
+
+        [Theory]
+        [InlineData("{ \"schemaVersion\": 1, \"name\": \"C\", \"classGraph\": { \"nodes\": null } }")]
+        [InlineData("{ \"schemaVersion\": 1, \"name\": \"C\", \"classGraph\": null }")]
+        public async Task ANullInAMemberTheDocumentDeclaresNonNullableThrowsDocumentFormatException(string json)
+        {
+            JsonDocumentFormat format = NewFormat();
+            using var input = Utf8Stream(json);
+
+            await Assert.ThrowsAsync<DocumentFormatException>(async () =>
+                await format.ReadClassAsync(input, new DocumentId("a.netpc.json"), TestContext.Current.CancellationToken));
         }
 
         // R1-05: a duplicate top-level key (e.g. a merge conflict resolved by keeping both lines) must

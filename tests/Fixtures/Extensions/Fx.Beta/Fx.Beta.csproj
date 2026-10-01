@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AssemblyName>Fx.Beta</AssemblyName>
+    <OutputPath>bin/$(Configuration)/extensions/fx.beta/</OutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <NetPrintsExperimentalOptIn Include="NPXE0003" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The host supplies these: the extension must see the host's copy, so nothing is copied to its folder. -->
+    <ProjectReference Include="..\..\..\..\src\NetPrints.Core\NetPrints.Core.csproj" Private="false" ExcludeAssets="runtime" />
+    <ProjectReference Include="..\..\..\..\src\NetPrints.Reflection\NetPrints.Reflection.csproj" Private="false" ExcludeAssets="runtime" />
+    <ProjectReference Include="..\..\..\..\src\NetPrints.Serialization\NetPrints.Serialization.csproj" Private="false" ExcludeAssets="runtime" />
+    <ProjectReference Include="..\..\..\..\src\NetPrints.Catalog\NetPrints.Catalog.csproj" Private="false" ExcludeAssets="runtime" />
+    <ProjectReference Include="..\..\..\..\src\NetPrints.Extensibility\NetPrints.Extensibility.csproj" Private="false" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Shared\FxKit.cs" Link="FxKit.cs" />
+  </ItemGroup>
+
+</Project>

@@ -47,6 +47,14 @@ internal static partial class Log
     [LoggerMessage(EventId = 1013, Level = LogLevel.Error, Message = "Loading types for {ProjectName} failed")]
     public static partial void ReflectionReloadFailed(ILogger logger, string projectName, Exception exception);
 
+    /// <summary>Logs 1014: the catalog a referenced assembly embeds could not be read (for example a newer schema, NPC101) and was skipped; the other references still contribute.</summary>
+    /// <param name="logger">Logger to write to.</param>
+    /// <param name="code">The diagnostic code (<c>NPC101</c>, <c>NPC102</c>) or the exception type name for a file that could not be read.</param>
+    /// <param name="path">Path of the referenced assembly.</param>
+    /// <param name="message">What is wrong with the catalog.</param>
+    [LoggerMessage(EventId = 1014, Level = LogLevel.Warning, Message = "{Code}: the catalog embedded in {Path} was skipped: {Message}")]
+    public static partial void EmbeddedCatalogSkipped(ILogger logger, string code, string path, string message);
+
     /// <summary>Logs 1020: a message arrived on the host channel.</summary>
     /// <param name="logger">Logger to write to.</param>
     /// <param name="type">The message type.</param>

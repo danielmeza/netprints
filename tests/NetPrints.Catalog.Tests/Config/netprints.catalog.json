@@ -1,0 +1,12 @@
+{
+  "$schema": "https://danielmeza.github.io/netprints/schemas/netprints.catalog.v1.schema.json",
+  "schemaVersion": 1,
+  "sources": [
+    { "package": "Newtonsoft.Json", "version": "13.0.3" },
+    { "assembly": "libs/MyLib.dll" }
+  ],
+  "include": [ "MyLib.Public.*" ],
+  "exclude": [ "*.Internal.*" ],
+  "profile": "public-api",
+  "output": { "format": "catalog", "path": "catalogs/mylib.npcat.json" }
+}

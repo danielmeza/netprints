@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using NetPrints.Core;
 using NetPrints.Extensibility;
 using NetPrints.Extensibility.Loading;
 using Xunit;
@@ -33,7 +34,7 @@ public class ExtensionHostTests : IDisposable
                 public string Id => "compiled";
                 public void EmitClass(NetPrints.Translator.ClassEmitContext context) { }
             }
-            """);
+            """, ExperimentalApiIds.Emitters);
         return folder;
     }
 

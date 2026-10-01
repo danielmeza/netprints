@@ -1,0 +1,8 @@
+{
+  "id": "fx.alpha",
+  "name": "Fixture alpha extension",
+  "version": "1.0.0",
+  "assembly": "Fx.Alpha.dll",
+  "netprintsApi": "1.0",
+  "dependsOn": []
+}

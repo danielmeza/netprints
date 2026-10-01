@@ -1,6 +1,8 @@
 using System;
+using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
 using Microsoft.Extensions.Logging;
+using NetPrints.Catalog;
 using NetPrints.Core;
 using NetPrints.Extensibility.Hosting;
 using NetPrints.Extensibility.Nodes;
@@ -27,11 +29,16 @@ internal sealed class RegistryBuilder(ILogger logger)
     private readonly List<IProjectProfile> profiles = [DefaultProjectProfile.Instance];
     private readonly HashSet<string> profileIds = new(StringComparer.Ordinal) { DefaultProjectProfile.ProfileId };
     private readonly List<IJsonTypeInfoResolver> resolvers = [];
+    private readonly Dictionary<Type, string> documentOwners = [];
+    private readonly Dictionary<string, List<IJsonTypeInfoResolver>> resolversByOwner = new(StringComparer.Ordinal);
+    private readonly List<(string ExtensionId, IJsonTypeInfoResolver Resolver)> resolverContributions = [];
     private readonly List<string> projectProperties = [];
     private readonly List<IHostChannelFactory> hostChannels = [];
     private readonly HashSet<string> hostChannelIds = new(StringComparer.Ordinal);
     private readonly List<ExtensionSettingsDescriptor> settings = [];
     private readonly HashSet<string> settingsIds = new(StringComparer.Ordinal);
+    private readonly List<CatalogProfile> catalogProfiles = [];
+    private readonly HashSet<string> catalogProfileIds = new(BuiltInCatalogProfiles.Ids, StringComparer.Ordinal);
     private readonly List<object> owned = [];
     private readonly List<ExtensionContributionIssue> issues = [];
 
@@ -47,6 +54,21 @@ internal sealed class RegistryBuilder(ILogger logger)
         memberEmitters.AddRange(contributions.MemberEmitters);
         typeCatalogs.AddRange(contributions.TypeCatalogs);
         resolvers.AddRange(contributions.JsonResolvers);
+        foreach (IJsonTypeInfoResolver resolver in contributions.JsonResolvers)
+        {
+            resolverContributions.Add((manifest.Id, resolver));
+        }
+
+        if (contributions.JsonResolvers.Count > 0)
+        {
+            if (!resolversByOwner.TryGetValue(manifest.Id, out List<IJsonTypeInfoResolver>? own))
+            {
+                resolversByOwner[manifest.Id] = own = [];
+            }
+
+            own.AddRange(contributions.JsonResolvers);
+        }
+
         owned.AddRange(contributions.ClassEmitters);
         owned.AddRange(contributions.MemberEmitters);
         owned.AddRange(contributions.TypeCatalogs);
@@ -102,6 +124,22 @@ internal sealed class RegistryBuilder(ILogger logger)
             }
         }
 
+        foreach (CatalogProfile profile in contributions.CatalogProfiles)
+        {
+            if (BuiltInCatalogProfiles.Ids.Contains(profile.Id, StringComparer.Ordinal))
+            {
+                RejectOther(manifest, $"catalog profile {profile.Id}", "a built-in catalog profile cannot be replaced.");
+            }
+            else if (!catalogProfileIds.Add(profile.Id))
+            {
+                RejectOther(manifest, $"catalog profile {profile.Id}", "a catalog profile with this id is already registered.");
+            }
+            else
+            {
+                catalogProfiles.Add(profile);
+            }
+        }
+
         foreach (string property in contributions.ProjectProperties)
         {
             if (!projectProperties.Contains(property, StringComparer.OrdinalIgnoreCase))
@@ -117,7 +155,19 @@ internal sealed class RegistryBuilder(ILogger logger)
             new NodeTranslatorRegistry(nodeKinds.ToDictionary(kind => kind.NodeType, kind => kind.Translator)),
             classEmitters,
             memberEmitters);
-        var converters = new NodeDocumentConverterRegistry(nodeKinds.ConvertAll(kind => kind.Converter), resolvers);
+        var routing = new Dictionary<Type, IReadOnlyList<IJsonTypeInfoResolver>>();
+        foreach ((Type documentType, string owner) in documentOwners)
+        {
+            if (resolversByOwner.TryGetValue(owner, out List<IJsonTypeInfoResolver>? own))
+            {
+                routing[documentType] = own;
+            }
+        }
+
+        ReportShadowingResolvers();
+        var converters = new NodeDocumentConverterRegistry(
+            nodeKinds.ConvertAll(kind => kind.Converter),
+            [new OwnerRoutingJsonTypeInfoResolver(routing), .. resolvers]);
 
         return new ExtensionRegistry(
             results,
@@ -131,11 +181,49 @@ internal sealed class RegistryBuilder(ILogger logger)
             projectProperties,
             hostChannels,
             settings,
+            catalogProfiles,
             issues,
             translation,
             converters,
             owned,
             loggerFactory.CreateLogger<ExtensionRegistry>());
+    }
+
+    private void ReportShadowingResolvers()
+    {
+        var probe = new JsonSerializerOptions();
+        var faulted = new HashSet<string>(StringComparer.Ordinal);
+        foreach ((Type documentType, string owner) in documentOwners)
+        {
+            foreach ((string extensionId, IJsonTypeInfoResolver resolver) in resolverContributions)
+            {
+                if (extensionId == owner || faulted.Contains(extensionId))
+                {
+                    continue;
+                }
+
+                string? reason;
+                try
+                {
+                    reason = resolver.GetTypeInfo(documentType, probe) is null
+                        ? null
+                        : $"its resolver also provides type info for document type '{documentType}' owned by '{owner}'; the owner's resolver is used.";
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    faulted.Add(extensionId);
+                    reason = $"probing its resolver for document type '{documentType}' threw {ex.GetType().Name}: {ex.Message}";
+                }
+
+                if (reason is null)
+                {
+                    continue;
+                }
+
+                issues.Add(new ExtensionContributionIssue(extensionId, ExtensionDiagnosticCodes.ContributionRejected, "JSON resolver", reason));
+                Log.ContributionRejected(logger, "JSON resolver", extensionId, reason);
+            }
+        }
     }
 
     private void CommitLibrary(ExtensionManifest manifest, INodeLibrary library)
@@ -164,6 +252,10 @@ internal sealed class RegistryBuilder(ILogger logger)
             kindIds.Add(accepted.Kind);
             nodeTypes.Add(accepted.NodeType);
             documentTypes.Add(accepted.Converter.DocumentType);
+            if (manifest.Id != BuiltInNodeLibrary.Id)
+            {
+                documentOwners[accepted.Converter.DocumentType] = manifest.Id;
+            }
             nodeKinds.Add(accepted);
         }
     }

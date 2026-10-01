@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <RootNamespace>Fixture</RootNamespace>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <Description>Fixture library covering every catalog edge case (tests only).</Description>
+    <MinVerSkip>true</MinVerSkip>
+    <!-- Never packed with the solution; CT-T12 packs it explicitly with -p:IsPackable=true. -->
+    <PackageId>CatalogFixtureLib</PackageId>
+  </PropertyGroup>
+</Project>

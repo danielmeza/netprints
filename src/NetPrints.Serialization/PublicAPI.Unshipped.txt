@@ -1,0 +1,900 @@
+#nullable enable
+abstract NetPrints.Serialization.Documents.NodeDocument.<Clone>$() -> NetPrints.Serialization.Documents.NodeDocument!
+const NetPrints.Serialization.DocumentIssue.ConnectionDropped = "NPD002" -> string!
+const NetPrints.Serialization.DocumentIssue.DocumentUnreadable = "NPD008" -> string!
+const NetPrints.Serialization.DocumentIssue.DuplicateIdReassigned = "NPD007" -> string!
+const NetPrints.Serialization.DocumentIssue.ExtensionNotTrusted = "NPD006" -> string!
+const NetPrints.Serialization.DocumentIssue.InvalidIdReassigned = "NPD009" -> string!
+const NetPrints.Serialization.DocumentIssue.LayoutEntryIgnored = "NPD004" -> string!
+const NetPrints.Serialization.DocumentIssue.PinStateDropped = "NPD003" -> string!
+const NetPrints.Serialization.DocumentIssue.UnknownNodeKind = "NPD001" -> string!
+const NetPrints.Serialization.DocumentIssue.UnknownProfile = "NPD005" -> string!
+const NetPrints.Serialization.Documents.BuiltInNodeKinds.Await = "await" -> string!
+const NetPrints.Serialization.Documents.BuiltInNodeKinds.CallMethod = "callMethod" -> string!
+const NetPrints.Serialization.Documents.BuiltInNodeKinds.ClassReturn = "classReturn" -> string!
+const NetPrints.Serialization.Documents.BuiltInNodeKinds.Constructor = "constructor" -> string!
+const NetPrints.Serialization.Documents.BuiltInNodeKinds.ConstructorEntry = "constructorEntry" -> string!
+const NetPrints.Serialization.Documents.BuiltInNodeKinds.Default = "default" -> string!
+const NetPrints.Serialization.Documents.BuiltInNodeKinds.EventEntry = "eventEntry" -> string!
+const NetPrints.Serialization.Documents.BuiltInNodeKinds.ExplicitCast = "explicitCast" -> string!
+const NetPrints.Serialization.Documents.BuiltInNodeKinds.ForLoop = "forLoop" -> string!
+const NetPrints.Serialization.Documents.BuiltInNodeKinds.IfElse = "ifElse" -> string!
+const NetPrints.Serialization.Documents.BuiltInNodeKinds.Literal = "literal" -> string!
+const NetPrints.Serialization.Documents.BuiltInNodeKinds.MakeArray = "makeArray" -> string!
+const NetPrints.Serialization.Documents.BuiltInNodeKinds.MakeArrayType = "makeArrayType" -> string!
+const NetPrints.Serialization.Documents.BuiltInNodeKinds.MakeDelegate = "makeDelegate" -> string!
+const NetPrints.Serialization.Documents.BuiltInNodeKinds.MethodEntry = "methodEntry" -> string!
+const NetPrints.Serialization.Documents.BuiltInNodeKinds.Reroute = "reroute" -> string!
+const NetPrints.Serialization.Documents.BuiltInNodeKinds.Return = "return" -> string!
+const NetPrints.Serialization.Documents.BuiltInNodeKinds.Ternary = "ternary" -> string!
+const NetPrints.Serialization.Documents.BuiltInNodeKinds.Throw = "throw" -> string!
+const NetPrints.Serialization.Documents.BuiltInNodeKinds.Type = "type" -> string!
+const NetPrints.Serialization.Documents.BuiltInNodeKinds.TypeOf = "typeOf" -> string!
+const NetPrints.Serialization.Documents.BuiltInNodeKinds.TypeReturn = "typeReturn" -> string!
+const NetPrints.Serialization.Documents.BuiltInNodeKinds.VariableGetter = "variableGetter" -> string!
+const NetPrints.Serialization.Documents.BuiltInNodeKinds.VariableSetter = "variableSetter" -> string!
+const NetPrints.Serialization.Json.NetPrintsSchema.V1Url = "https://danielmeza.github.io/netprints/schemas/netpc.v1.schema.json" -> string!
+const NetPrints.Serialization.Migrations.DocumentMigrator.CurrentSchemaVersion = 1 -> int
+NetPrints.Serialization.DiagnosticExtensions
+NetPrints.Serialization.DocumentFormatException
+NetPrints.Serialization.DocumentFormatException.BytePosition.get -> long?
+NetPrints.Serialization.DocumentFormatException.Document.get -> NetPrints.Serialization.DocumentId?
+NetPrints.Serialization.DocumentFormatException.DocumentFormatException(string! message, NetPrints.Serialization.DocumentId? document = null, long? line = null, long? bytePosition = null, System.Exception? inner = null) -> void
+NetPrints.Serialization.DocumentFormatException.Line.get -> long?
+NetPrints.Serialization.DocumentFormatRegistry
+NetPrints.Serialization.DocumentFormatRegistry.Default.get -> NetPrints.Serialization.IDocumentFormat!
+NetPrints.Serialization.DocumentFormatRegistry.DocumentFormatRegistry(System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.IDocumentFormat!>! formats) -> void
+NetPrints.Serialization.DocumentFormatRegistry.Find(NetPrints.Serialization.DocumentId id, NetPrints.Serialization.DocumentKind kind) -> NetPrints.Serialization.IDocumentFormat?
+NetPrints.Serialization.DocumentFormatRegistry.Formats.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.IDocumentFormat!>!
+NetPrints.Serialization.DocumentId
+NetPrints.Serialization.DocumentId.DocumentId() -> void
+NetPrints.Serialization.DocumentId.DocumentId(string! path) -> void
+NetPrints.Serialization.DocumentId.Equals(NetPrints.Serialization.DocumentId other) -> bool
+NetPrints.Serialization.DocumentId.FileName.get -> string!
+NetPrints.Serialization.DocumentId.Path.get -> string!
+NetPrints.Serialization.DocumentId.Sibling(string! fileName) -> NetPrints.Serialization.DocumentId
+NetPrints.Serialization.DocumentIssue
+NetPrints.Serialization.DocumentIssue.<Clone>$() -> NetPrints.Serialization.DocumentIssue!
+NetPrints.Serialization.DocumentIssue.Code.get -> string!
+NetPrints.Serialization.DocumentIssue.Code.init -> void
+NetPrints.Serialization.DocumentIssue.Deconstruct(out NetPrints.Serialization.DocumentIssueSeverity Severity, out string! Code, out string! Message, out NetPrints.Serialization.DocumentId? Document) -> void
+NetPrints.Serialization.DocumentIssue.Document.get -> NetPrints.Serialization.DocumentId?
+NetPrints.Serialization.DocumentIssue.Document.init -> void
+NetPrints.Serialization.DocumentIssue.DocumentIssue(NetPrints.Serialization.DocumentIssueSeverity Severity, string! Code, string! Message, NetPrints.Serialization.DocumentId? Document) -> void
+NetPrints.Serialization.DocumentIssue.Equals(NetPrints.Serialization.DocumentIssue? other) -> bool
+NetPrints.Serialization.DocumentIssue.Message.get -> string!
+NetPrints.Serialization.DocumentIssue.Message.init -> void
+NetPrints.Serialization.DocumentIssue.Severity.get -> NetPrints.Serialization.DocumentIssueSeverity
+NetPrints.Serialization.DocumentIssue.Severity.init -> void
+NetPrints.Serialization.DocumentIssueSeverity
+NetPrints.Serialization.DocumentIssueSeverity.Error = 2 -> NetPrints.Serialization.DocumentIssueSeverity
+NetPrints.Serialization.DocumentIssueSeverity.Info = 0 -> NetPrints.Serialization.DocumentIssueSeverity
+NetPrints.Serialization.DocumentIssueSeverity.Warning = 1 -> NetPrints.Serialization.DocumentIssueSeverity
+NetPrints.Serialization.DocumentKind
+NetPrints.Serialization.DocumentKind.Class = 1 -> NetPrints.Serialization.DocumentKind
+NetPrints.Serialization.DocumentKind.Project = 0 -> NetPrints.Serialization.DocumentKind
+NetPrints.Serialization.DocumentNotFoundException
+NetPrints.Serialization.DocumentNotFoundException.Document.get -> NetPrints.Serialization.DocumentId
+NetPrints.Serialization.DocumentNotFoundException.DocumentNotFoundException(NetPrints.Serialization.DocumentId document) -> void
+NetPrints.Serialization.Documents.AccessorDocument
+NetPrints.Serialization.Documents.AccessorDocument.<Clone>$() -> NetPrints.Serialization.Documents.AccessorDocument!
+NetPrints.Serialization.Documents.AccessorDocument.AccessorDocument(NetPrints.Core.MemberVisibility Visibility, NetPrints.Serialization.Documents.GraphDocument! Graph) -> void
+NetPrints.Serialization.Documents.AccessorDocument.Deconstruct(out NetPrints.Core.MemberVisibility Visibility, out NetPrints.Serialization.Documents.GraphDocument! Graph) -> void
+NetPrints.Serialization.Documents.AccessorDocument.Equals(NetPrints.Serialization.Documents.AccessorDocument? other) -> bool
+NetPrints.Serialization.Documents.AccessorDocument.Graph.get -> NetPrints.Serialization.Documents.GraphDocument!
+NetPrints.Serialization.Documents.AccessorDocument.Graph.init -> void
+NetPrints.Serialization.Documents.AccessorDocument.Visibility.get -> NetPrints.Core.MemberVisibility
+NetPrints.Serialization.Documents.AccessorDocument.Visibility.init -> void
+NetPrints.Serialization.Documents.AwaitNodeDocument
+NetPrints.Serialization.Documents.AwaitNodeDocument.AwaitNodeDocument(string! Id, string? Name, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins, bool Pure) -> void
+NetPrints.Serialization.Documents.AwaitNodeDocument.Deconstruct(out string! Id, out string? Name, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins, out bool Pure) -> void
+NetPrints.Serialization.Documents.AwaitNodeDocument.Equals(NetPrints.Serialization.Documents.AwaitNodeDocument? other) -> bool
+NetPrints.Serialization.Documents.AwaitNodeDocument.Pure.get -> bool
+NetPrints.Serialization.Documents.AwaitNodeDocument.Pure.init -> void
+NetPrints.Serialization.Documents.BuiltInNodeKinds
+NetPrints.Serialization.Documents.CallMethodNodeDocument
+NetPrints.Serialization.Documents.CallMethodNodeDocument.CallMethodNodeDocument(string! Id, string? Name, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins, NetPrints.Serialization.Documents.MethodRef! Method, int GenericArgumentCount, bool Pure) -> void
+NetPrints.Serialization.Documents.CallMethodNodeDocument.Deconstruct(out string! Id, out string? Name, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins, out NetPrints.Serialization.Documents.MethodRef! Method, out int GenericArgumentCount, out bool Pure) -> void
+NetPrints.Serialization.Documents.CallMethodNodeDocument.Equals(NetPrints.Serialization.Documents.CallMethodNodeDocument? other) -> bool
+NetPrints.Serialization.Documents.CallMethodNodeDocument.GenericArgumentCount.get -> int
+NetPrints.Serialization.Documents.CallMethodNodeDocument.GenericArgumentCount.init -> void
+NetPrints.Serialization.Documents.CallMethodNodeDocument.Method.get -> NetPrints.Serialization.Documents.MethodRef!
+NetPrints.Serialization.Documents.CallMethodNodeDocument.Method.init -> void
+NetPrints.Serialization.Documents.CallMethodNodeDocument.Pure.get -> bool
+NetPrints.Serialization.Documents.CallMethodNodeDocument.Pure.init -> void
+NetPrints.Serialization.Documents.ClassDocument
+NetPrints.Serialization.Documents.ClassDocument.<Clone>$() -> NetPrints.Serialization.Documents.ClassDocument!
+NetPrints.Serialization.Documents.ClassDocument.ClassDocument(int SchemaVersion, string? Namespace, string! Name, NetPrints.Core.MemberVisibility Visibility, NetPrints.Core.ClassModifiers Modifiers, System.Collections.Generic.IReadOnlyList<string!>? GenericArguments, NetPrints.Serialization.Documents.GraphDocument! ClassGraph, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.VariableDocument!>? Variables, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.MethodDocument!>? Methods, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.ConstructorDocument!>? Constructors, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.EventGraphDocument!>? EventGraphs, System.Collections.Generic.SortedDictionary<string!, System.Collections.Generic.SortedDictionary<string!, int[]!>!>? Layout) -> void
+NetPrints.Serialization.Documents.ClassDocument.ClassGraph.get -> NetPrints.Serialization.Documents.GraphDocument!
+NetPrints.Serialization.Documents.ClassDocument.ClassGraph.init -> void
+NetPrints.Serialization.Documents.ClassDocument.Constructors.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.ConstructorDocument!>?
+NetPrints.Serialization.Documents.ClassDocument.Constructors.init -> void
+NetPrints.Serialization.Documents.ClassDocument.Deconstruct(out int SchemaVersion, out string? Namespace, out string! Name, out NetPrints.Core.MemberVisibility Visibility, out NetPrints.Core.ClassModifiers Modifiers, out System.Collections.Generic.IReadOnlyList<string!>? GenericArguments, out NetPrints.Serialization.Documents.GraphDocument! ClassGraph, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.VariableDocument!>? Variables, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.MethodDocument!>? Methods, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.ConstructorDocument!>? Constructors, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.EventGraphDocument!>? EventGraphs, out System.Collections.Generic.SortedDictionary<string!, System.Collections.Generic.SortedDictionary<string!, int[]!>!>? Layout) -> void
+NetPrints.Serialization.Documents.ClassDocument.Equals(NetPrints.Serialization.Documents.ClassDocument? other) -> bool
+NetPrints.Serialization.Documents.ClassDocument.EventGraphs.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.EventGraphDocument!>?
+NetPrints.Serialization.Documents.ClassDocument.EventGraphs.init -> void
+NetPrints.Serialization.Documents.ClassDocument.GenericArguments.get -> System.Collections.Generic.IReadOnlyList<string!>?
+NetPrints.Serialization.Documents.ClassDocument.GenericArguments.init -> void
+NetPrints.Serialization.Documents.ClassDocument.Layout.get -> System.Collections.Generic.SortedDictionary<string!, System.Collections.Generic.SortedDictionary<string!, int[]!>!>?
+NetPrints.Serialization.Documents.ClassDocument.Layout.init -> void
+NetPrints.Serialization.Documents.ClassDocument.Methods.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.MethodDocument!>?
+NetPrints.Serialization.Documents.ClassDocument.Methods.init -> void
+NetPrints.Serialization.Documents.ClassDocument.Modifiers.get -> NetPrints.Core.ClassModifiers
+NetPrints.Serialization.Documents.ClassDocument.Modifiers.init -> void
+NetPrints.Serialization.Documents.ClassDocument.Name.get -> string!
+NetPrints.Serialization.Documents.ClassDocument.Name.init -> void
+NetPrints.Serialization.Documents.ClassDocument.Namespace.get -> string?
+NetPrints.Serialization.Documents.ClassDocument.Namespace.init -> void
+NetPrints.Serialization.Documents.ClassDocument.SchemaVersion.get -> int
+NetPrints.Serialization.Documents.ClassDocument.SchemaVersion.init -> void
+NetPrints.Serialization.Documents.ClassDocument.Variables.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.VariableDocument!>?
+NetPrints.Serialization.Documents.ClassDocument.Variables.init -> void
+NetPrints.Serialization.Documents.ClassDocument.Visibility.get -> NetPrints.Core.MemberVisibility
+NetPrints.Serialization.Documents.ClassDocument.Visibility.init -> void
+NetPrints.Serialization.Documents.ClassReturnNodeDocument
+NetPrints.Serialization.Documents.ClassReturnNodeDocument.ClassReturnNodeDocument(string! Id, string? Name, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins, int InterfaceCount) -> void
+NetPrints.Serialization.Documents.ClassReturnNodeDocument.Deconstruct(out string! Id, out string? Name, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins, out int InterfaceCount) -> void
+NetPrints.Serialization.Documents.ClassReturnNodeDocument.Equals(NetPrints.Serialization.Documents.ClassReturnNodeDocument? other) -> bool
+NetPrints.Serialization.Documents.ClassReturnNodeDocument.InterfaceCount.get -> int
+NetPrints.Serialization.Documents.ClassReturnNodeDocument.InterfaceCount.init -> void
+NetPrints.Serialization.Documents.ConnectionDocument
+NetPrints.Serialization.Documents.ConnectionDocument.<Clone>$() -> NetPrints.Serialization.Documents.ConnectionDocument!
+NetPrints.Serialization.Documents.ConnectionDocument.ConnectionDocument(string! From, string! To) -> void
+NetPrints.Serialization.Documents.ConnectionDocument.Deconstruct(out string! From, out string! To) -> void
+NetPrints.Serialization.Documents.ConnectionDocument.Equals(NetPrints.Serialization.Documents.ConnectionDocument? other) -> bool
+NetPrints.Serialization.Documents.ConnectionDocument.From.get -> string!
+NetPrints.Serialization.Documents.ConnectionDocument.From.init -> void
+NetPrints.Serialization.Documents.ConnectionDocument.To.get -> string!
+NetPrints.Serialization.Documents.ConnectionDocument.To.init -> void
+NetPrints.Serialization.Documents.ConstructorDocument
+NetPrints.Serialization.Documents.ConstructorDocument.<Clone>$() -> NetPrints.Serialization.Documents.ConstructorDocument!
+NetPrints.Serialization.Documents.ConstructorDocument.ConstructorDocument(string! Id, NetPrints.Core.MemberVisibility Visibility, NetPrints.Serialization.Documents.GraphDocument! Graph) -> void
+NetPrints.Serialization.Documents.ConstructorDocument.Deconstruct(out string! Id, out NetPrints.Core.MemberVisibility Visibility, out NetPrints.Serialization.Documents.GraphDocument! Graph) -> void
+NetPrints.Serialization.Documents.ConstructorDocument.Equals(NetPrints.Serialization.Documents.ConstructorDocument? other) -> bool
+NetPrints.Serialization.Documents.ConstructorDocument.Graph.get -> NetPrints.Serialization.Documents.GraphDocument!
+NetPrints.Serialization.Documents.ConstructorDocument.Graph.init -> void
+NetPrints.Serialization.Documents.ConstructorDocument.Id.get -> string!
+NetPrints.Serialization.Documents.ConstructorDocument.Id.init -> void
+NetPrints.Serialization.Documents.ConstructorDocument.Visibility.get -> NetPrints.Core.MemberVisibility
+NetPrints.Serialization.Documents.ConstructorDocument.Visibility.init -> void
+NetPrints.Serialization.Documents.ConstructorEntryNodeDocument
+NetPrints.Serialization.Documents.ConstructorEntryNodeDocument.ArgumentCount.get -> int
+NetPrints.Serialization.Documents.ConstructorEntryNodeDocument.ArgumentCount.init -> void
+NetPrints.Serialization.Documents.ConstructorEntryNodeDocument.ConstructorEntryNodeDocument(string! Id, string? Name, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins, int ArgumentCount) -> void
+NetPrints.Serialization.Documents.ConstructorEntryNodeDocument.Deconstruct(out string! Id, out string? Name, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins, out int ArgumentCount) -> void
+NetPrints.Serialization.Documents.ConstructorEntryNodeDocument.Equals(NetPrints.Serialization.Documents.ConstructorEntryNodeDocument? other) -> bool
+NetPrints.Serialization.Documents.ConstructorNodeDocument
+NetPrints.Serialization.Documents.ConstructorNodeDocument.Constructor.get -> NetPrints.Serialization.Documents.ConstructorRef!
+NetPrints.Serialization.Documents.ConstructorNodeDocument.Constructor.init -> void
+NetPrints.Serialization.Documents.ConstructorNodeDocument.ConstructorNodeDocument(string! Id, string? Name, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins, NetPrints.Serialization.Documents.ConstructorRef! Constructor, bool Pure) -> void
+NetPrints.Serialization.Documents.ConstructorNodeDocument.Deconstruct(out string! Id, out string? Name, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins, out NetPrints.Serialization.Documents.ConstructorRef! Constructor, out bool Pure) -> void
+NetPrints.Serialization.Documents.ConstructorNodeDocument.Equals(NetPrints.Serialization.Documents.ConstructorNodeDocument? other) -> bool
+NetPrints.Serialization.Documents.ConstructorNodeDocument.Pure.get -> bool
+NetPrints.Serialization.Documents.ConstructorNodeDocument.Pure.init -> void
+NetPrints.Serialization.Documents.ConstructorRef
+NetPrints.Serialization.Documents.ConstructorRef.<Clone>$() -> NetPrints.Serialization.Documents.ConstructorRef!
+NetPrints.Serialization.Documents.ConstructorRef.ConstructorRef(NetPrints.Serialization.Documents.TypeRef! DeclaringType, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.ParameterRef!>? Parameters) -> void
+NetPrints.Serialization.Documents.ConstructorRef.DeclaringType.get -> NetPrints.Serialization.Documents.TypeRef!
+NetPrints.Serialization.Documents.ConstructorRef.DeclaringType.init -> void
+NetPrints.Serialization.Documents.ConstructorRef.Deconstruct(out NetPrints.Serialization.Documents.TypeRef! DeclaringType, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.ParameterRef!>? Parameters) -> void
+NetPrints.Serialization.Documents.ConstructorRef.Equals(NetPrints.Serialization.Documents.ConstructorRef? other) -> bool
+NetPrints.Serialization.Documents.ConstructorRef.Parameters.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.ParameterRef!>?
+NetPrints.Serialization.Documents.ConstructorRef.Parameters.init -> void
+NetPrints.Serialization.Documents.DefaultNodeDocument
+NetPrints.Serialization.Documents.DefaultNodeDocument.Deconstruct(out string! Id, out string? Name, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins) -> void
+NetPrints.Serialization.Documents.DefaultNodeDocument.DefaultNodeDocument(string! Id, string? Name, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins) -> void
+NetPrints.Serialization.Documents.DefaultNodeDocument.Equals(NetPrints.Serialization.Documents.DefaultNodeDocument? other) -> bool
+NetPrints.Serialization.Documents.EventEntryNodeDocument
+NetPrints.Serialization.Documents.EventEntryNodeDocument.ArgumentCount.get -> int
+NetPrints.Serialization.Documents.EventEntryNodeDocument.ArgumentCount.init -> void
+NetPrints.Serialization.Documents.EventEntryNodeDocument.Deconstruct(out string! Id, out string? Name, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins, out string! EventName, out NetPrints.Core.MemberVisibility Visibility, out NetPrints.Core.MethodModifiers Modifiers, out NetPrints.Serialization.Documents.MethodRef? Overrides, out int ArgumentCount) -> void
+NetPrints.Serialization.Documents.EventEntryNodeDocument.Equals(NetPrints.Serialization.Documents.EventEntryNodeDocument? other) -> bool
+NetPrints.Serialization.Documents.EventEntryNodeDocument.EventEntryNodeDocument(string! Id, string? Name, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins, string! EventName, NetPrints.Core.MemberVisibility Visibility, NetPrints.Core.MethodModifiers Modifiers, NetPrints.Serialization.Documents.MethodRef? Overrides, int ArgumentCount) -> void
+NetPrints.Serialization.Documents.EventEntryNodeDocument.EventName.get -> string!
+NetPrints.Serialization.Documents.EventEntryNodeDocument.EventName.init -> void
+NetPrints.Serialization.Documents.EventEntryNodeDocument.Modifiers.get -> NetPrints.Core.MethodModifiers
+NetPrints.Serialization.Documents.EventEntryNodeDocument.Modifiers.init -> void
+NetPrints.Serialization.Documents.EventEntryNodeDocument.Overrides.get -> NetPrints.Serialization.Documents.MethodRef?
+NetPrints.Serialization.Documents.EventEntryNodeDocument.Overrides.init -> void
+NetPrints.Serialization.Documents.EventEntryNodeDocument.Visibility.get -> NetPrints.Core.MemberVisibility
+NetPrints.Serialization.Documents.EventEntryNodeDocument.Visibility.init -> void
+NetPrints.Serialization.Documents.EventGraphDocument
+NetPrints.Serialization.Documents.EventGraphDocument.<Clone>$() -> NetPrints.Serialization.Documents.EventGraphDocument!
+NetPrints.Serialization.Documents.EventGraphDocument.Deconstruct(out string! Id, out string! Name, out NetPrints.Serialization.Documents.GraphDocument! Graph) -> void
+NetPrints.Serialization.Documents.EventGraphDocument.Equals(NetPrints.Serialization.Documents.EventGraphDocument? other) -> bool
+NetPrints.Serialization.Documents.EventGraphDocument.EventGraphDocument(string! Id, string! Name, NetPrints.Serialization.Documents.GraphDocument! Graph) -> void
+NetPrints.Serialization.Documents.EventGraphDocument.Graph.get -> NetPrints.Serialization.Documents.GraphDocument!
+NetPrints.Serialization.Documents.EventGraphDocument.Graph.init -> void
+NetPrints.Serialization.Documents.EventGraphDocument.Id.get -> string!
+NetPrints.Serialization.Documents.EventGraphDocument.Id.init -> void
+NetPrints.Serialization.Documents.EventGraphDocument.Name.get -> string!
+NetPrints.Serialization.Documents.EventGraphDocument.Name.init -> void
+NetPrints.Serialization.Documents.ExplicitCastNodeDocument
+NetPrints.Serialization.Documents.ExplicitCastNodeDocument.Deconstruct(out string! Id, out string? Name, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins, out bool Pure) -> void
+NetPrints.Serialization.Documents.ExplicitCastNodeDocument.Equals(NetPrints.Serialization.Documents.ExplicitCastNodeDocument? other) -> bool
+NetPrints.Serialization.Documents.ExplicitCastNodeDocument.ExplicitCastNodeDocument(string! Id, string? Name, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins, bool Pure) -> void
+NetPrints.Serialization.Documents.ExplicitCastNodeDocument.Pure.get -> bool
+NetPrints.Serialization.Documents.ExplicitCastNodeDocument.Pure.init -> void
+NetPrints.Serialization.Documents.ForLoopNodeDocument
+NetPrints.Serialization.Documents.ForLoopNodeDocument.Deconstruct(out string! Id, out string? Name, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins) -> void
+NetPrints.Serialization.Documents.ForLoopNodeDocument.Equals(NetPrints.Serialization.Documents.ForLoopNodeDocument? other) -> bool
+NetPrints.Serialization.Documents.ForLoopNodeDocument.ForLoopNodeDocument(string! Id, string? Name, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins) -> void
+NetPrints.Serialization.Documents.GraphDocument
+NetPrints.Serialization.Documents.GraphDocument.<Clone>$() -> NetPrints.Serialization.Documents.GraphDocument!
+NetPrints.Serialization.Documents.GraphDocument.Connections.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.ConnectionDocument!>?
+NetPrints.Serialization.Documents.GraphDocument.Connections.init -> void
+NetPrints.Serialization.Documents.GraphDocument.Deconstruct(out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.NodeDocument!>! Nodes, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.ConnectionDocument!>? Connections, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.LocalVariableDocument!>? Locals) -> void
+NetPrints.Serialization.Documents.GraphDocument.Equals(NetPrints.Serialization.Documents.GraphDocument? other) -> bool
+NetPrints.Serialization.Documents.GraphDocument.GraphDocument(System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.NodeDocument!>! Nodes, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.ConnectionDocument!>? Connections, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.LocalVariableDocument!>? Locals) -> void
+NetPrints.Serialization.Documents.GraphDocument.Locals.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.LocalVariableDocument!>?
+NetPrints.Serialization.Documents.GraphDocument.Locals.init -> void
+NetPrints.Serialization.Documents.GraphDocument.Nodes.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.NodeDocument!>!
+NetPrints.Serialization.Documents.GraphDocument.Nodes.init -> void
+NetPrints.Serialization.Documents.IfElseNodeDocument
+NetPrints.Serialization.Documents.IfElseNodeDocument.Deconstruct(out string! Id, out string? Name, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins) -> void
+NetPrints.Serialization.Documents.IfElseNodeDocument.Equals(NetPrints.Serialization.Documents.IfElseNodeDocument? other) -> bool
+NetPrints.Serialization.Documents.IfElseNodeDocument.IfElseNodeDocument(string! Id, string? Name, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins) -> void
+NetPrints.Serialization.Documents.LiteralNodeDocument
+NetPrints.Serialization.Documents.LiteralNodeDocument.Deconstruct(out string! Id, out string? Name, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins, out NetPrints.Serialization.Documents.TypeRef! LiteralType) -> void
+NetPrints.Serialization.Documents.LiteralNodeDocument.Equals(NetPrints.Serialization.Documents.LiteralNodeDocument? other) -> bool
+NetPrints.Serialization.Documents.LiteralNodeDocument.LiteralNodeDocument(string! Id, string? Name, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins, NetPrints.Serialization.Documents.TypeRef! LiteralType) -> void
+NetPrints.Serialization.Documents.LiteralNodeDocument.LiteralType.get -> NetPrints.Serialization.Documents.TypeRef!
+NetPrints.Serialization.Documents.LiteralNodeDocument.LiteralType.init -> void
+NetPrints.Serialization.Documents.LocalVariableDocument
+NetPrints.Serialization.Documents.LocalVariableDocument.<Clone>$() -> NetPrints.Serialization.Documents.LocalVariableDocument!
+NetPrints.Serialization.Documents.LocalVariableDocument.Deconstruct(out string! Name, out NetPrints.Serialization.Documents.TypeRef! Type) -> void
+NetPrints.Serialization.Documents.LocalVariableDocument.Equals(NetPrints.Serialization.Documents.LocalVariableDocument? other) -> bool
+NetPrints.Serialization.Documents.LocalVariableDocument.LocalVariableDocument(string! Name, NetPrints.Serialization.Documents.TypeRef! Type) -> void
+NetPrints.Serialization.Documents.LocalVariableDocument.Name.get -> string!
+NetPrints.Serialization.Documents.LocalVariableDocument.Name.init -> void
+NetPrints.Serialization.Documents.LocalVariableDocument.Type.get -> NetPrints.Serialization.Documents.TypeRef!
+NetPrints.Serialization.Documents.LocalVariableDocument.Type.init -> void
+NetPrints.Serialization.Documents.MakeArrayNodeDocument
+NetPrints.Serialization.Documents.MakeArrayNodeDocument.Deconstruct(out string! Id, out string? Name, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins, out bool UsePredefinedSize, out int ElementCount) -> void
+NetPrints.Serialization.Documents.MakeArrayNodeDocument.ElementCount.get -> int
+NetPrints.Serialization.Documents.MakeArrayNodeDocument.ElementCount.init -> void
+NetPrints.Serialization.Documents.MakeArrayNodeDocument.Equals(NetPrints.Serialization.Documents.MakeArrayNodeDocument? other) -> bool
+NetPrints.Serialization.Documents.MakeArrayNodeDocument.MakeArrayNodeDocument(string! Id, string? Name, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins, bool UsePredefinedSize, int ElementCount) -> void
+NetPrints.Serialization.Documents.MakeArrayNodeDocument.UsePredefinedSize.get -> bool
+NetPrints.Serialization.Documents.MakeArrayNodeDocument.UsePredefinedSize.init -> void
+NetPrints.Serialization.Documents.MakeArrayTypeNodeDocument
+NetPrints.Serialization.Documents.MakeArrayTypeNodeDocument.Deconstruct(out string! Id, out string? Name, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins) -> void
+NetPrints.Serialization.Documents.MakeArrayTypeNodeDocument.Equals(NetPrints.Serialization.Documents.MakeArrayTypeNodeDocument? other) -> bool
+NetPrints.Serialization.Documents.MakeArrayTypeNodeDocument.MakeArrayTypeNodeDocument(string! Id, string? Name, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins) -> void
+NetPrints.Serialization.Documents.MakeDelegateNodeDocument
+NetPrints.Serialization.Documents.MakeDelegateNodeDocument.Deconstruct(out string! Id, out string? Name, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins, out NetPrints.Serialization.Documents.MethodRef! Method) -> void
+NetPrints.Serialization.Documents.MakeDelegateNodeDocument.Equals(NetPrints.Serialization.Documents.MakeDelegateNodeDocument? other) -> bool
+NetPrints.Serialization.Documents.MakeDelegateNodeDocument.MakeDelegateNodeDocument(string! Id, string? Name, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins, NetPrints.Serialization.Documents.MethodRef! Method) -> void
+NetPrints.Serialization.Documents.MakeDelegateNodeDocument.Method.get -> NetPrints.Serialization.Documents.MethodRef!
+NetPrints.Serialization.Documents.MakeDelegateNodeDocument.Method.init -> void
+NetPrints.Serialization.Documents.MethodDocument
+NetPrints.Serialization.Documents.MethodDocument.<Clone>$() -> NetPrints.Serialization.Documents.MethodDocument!
+NetPrints.Serialization.Documents.MethodDocument.Deconstruct(out string! Id, out string! Name, out NetPrints.Core.MemberVisibility Visibility, out NetPrints.Core.MethodModifiers Modifiers, out NetPrints.Serialization.Documents.GraphDocument! Graph) -> void
+NetPrints.Serialization.Documents.MethodDocument.Equals(NetPrints.Serialization.Documents.MethodDocument? other) -> bool
+NetPrints.Serialization.Documents.MethodDocument.Graph.get -> NetPrints.Serialization.Documents.GraphDocument!
+NetPrints.Serialization.Documents.MethodDocument.Graph.init -> void
+NetPrints.Serialization.Documents.MethodDocument.Id.get -> string!
+NetPrints.Serialization.Documents.MethodDocument.Id.init -> void
+NetPrints.Serialization.Documents.MethodDocument.MethodDocument(string! Id, string! Name, NetPrints.Core.MemberVisibility Visibility, NetPrints.Core.MethodModifiers Modifiers, NetPrints.Serialization.Documents.GraphDocument! Graph) -> void
+NetPrints.Serialization.Documents.MethodDocument.Modifiers.get -> NetPrints.Core.MethodModifiers
+NetPrints.Serialization.Documents.MethodDocument.Modifiers.init -> void
+NetPrints.Serialization.Documents.MethodDocument.Name.get -> string!
+NetPrints.Serialization.Documents.MethodDocument.Name.init -> void
+NetPrints.Serialization.Documents.MethodDocument.Visibility.get -> NetPrints.Core.MemberVisibility
+NetPrints.Serialization.Documents.MethodDocument.Visibility.init -> void
+NetPrints.Serialization.Documents.MethodEntryNodeDocument
+NetPrints.Serialization.Documents.MethodEntryNodeDocument.ArgumentCount.get -> int
+NetPrints.Serialization.Documents.MethodEntryNodeDocument.ArgumentCount.init -> void
+NetPrints.Serialization.Documents.MethodEntryNodeDocument.Deconstruct(out string! Id, out string? Name, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins, out int ArgumentCount, out System.Collections.Generic.IReadOnlyList<string!>? GenericArguments) -> void
+NetPrints.Serialization.Documents.MethodEntryNodeDocument.Equals(NetPrints.Serialization.Documents.MethodEntryNodeDocument? other) -> bool
+NetPrints.Serialization.Documents.MethodEntryNodeDocument.GenericArguments.get -> System.Collections.Generic.IReadOnlyList<string!>?
+NetPrints.Serialization.Documents.MethodEntryNodeDocument.GenericArguments.init -> void
+NetPrints.Serialization.Documents.MethodEntryNodeDocument.MethodEntryNodeDocument(string! Id, string? Name, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins, int ArgumentCount, System.Collections.Generic.IReadOnlyList<string!>? GenericArguments) -> void
+NetPrints.Serialization.Documents.MethodRef
+NetPrints.Serialization.Documents.MethodRef.<Clone>$() -> NetPrints.Serialization.Documents.MethodRef!
+NetPrints.Serialization.Documents.MethodRef.DeclaringType.get -> NetPrints.Serialization.Documents.TypeRef!
+NetPrints.Serialization.Documents.MethodRef.DeclaringType.init -> void
+NetPrints.Serialization.Documents.MethodRef.Deconstruct(out string! Name, out NetPrints.Serialization.Documents.TypeRef! DeclaringType, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.ParameterRef!>? Parameters, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.TypeRef!>? ReturnTypes, out NetPrints.Core.MethodModifiers Modifiers, out NetPrints.Core.MemberVisibility Visibility, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.TypeRef!>? GenericArgs) -> void
+NetPrints.Serialization.Documents.MethodRef.Equals(NetPrints.Serialization.Documents.MethodRef? other) -> bool
+NetPrints.Serialization.Documents.MethodRef.GenericArgs.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.TypeRef!>?
+NetPrints.Serialization.Documents.MethodRef.GenericArgs.init -> void
+NetPrints.Serialization.Documents.MethodRef.MethodRef(string! Name, NetPrints.Serialization.Documents.TypeRef! DeclaringType, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.ParameterRef!>? Parameters, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.TypeRef!>? ReturnTypes, NetPrints.Core.MethodModifiers Modifiers, NetPrints.Core.MemberVisibility Visibility, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.TypeRef!>? GenericArgs) -> void
+NetPrints.Serialization.Documents.MethodRef.Modifiers.get -> NetPrints.Core.MethodModifiers
+NetPrints.Serialization.Documents.MethodRef.Modifiers.init -> void
+NetPrints.Serialization.Documents.MethodRef.Name.get -> string!
+NetPrints.Serialization.Documents.MethodRef.Name.init -> void
+NetPrints.Serialization.Documents.MethodRef.Parameters.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.ParameterRef!>?
+NetPrints.Serialization.Documents.MethodRef.Parameters.init -> void
+NetPrints.Serialization.Documents.MethodRef.ReturnTypes.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.TypeRef!>?
+NetPrints.Serialization.Documents.MethodRef.ReturnTypes.init -> void
+NetPrints.Serialization.Documents.MethodRef.Visibility.get -> NetPrints.Core.MemberVisibility
+NetPrints.Serialization.Documents.MethodRef.Visibility.init -> void
+NetPrints.Serialization.Documents.NodeDocument
+NetPrints.Serialization.Documents.NodeDocument.Deconstruct(out string! Id, out string? Name, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins) -> void
+NetPrints.Serialization.Documents.NodeDocument.Id.get -> string!
+NetPrints.Serialization.Documents.NodeDocument.Id.init -> void
+NetPrints.Serialization.Documents.NodeDocument.Name.get -> string?
+NetPrints.Serialization.Documents.NodeDocument.Name.init -> void
+NetPrints.Serialization.Documents.NodeDocument.NodeDocument(NetPrints.Serialization.Documents.NodeDocument! original) -> void
+NetPrints.Serialization.Documents.NodeDocument.NodeDocument(string! Id, string? Name, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins) -> void
+NetPrints.Serialization.Documents.NodeDocument.Pins.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>?
+NetPrints.Serialization.Documents.NodeDocument.Pins.init -> void
+NetPrints.Serialization.Documents.ParameterRef
+NetPrints.Serialization.Documents.ParameterRef.<Clone>$() -> NetPrints.Serialization.Documents.ParameterRef!
+NetPrints.Serialization.Documents.ParameterRef.Deconstruct(out string! Name, out NetPrints.Serialization.Documents.TypeRef! Type, out NetPrints.Core.MethodParameterPassType PassType, out NetPrints.Serialization.Documents.TypedValue? Default) -> void
+NetPrints.Serialization.Documents.ParameterRef.Default.get -> NetPrints.Serialization.Documents.TypedValue?
+NetPrints.Serialization.Documents.ParameterRef.Default.init -> void
+NetPrints.Serialization.Documents.ParameterRef.Equals(NetPrints.Serialization.Documents.ParameterRef? other) -> bool
+NetPrints.Serialization.Documents.ParameterRef.Name.get -> string!
+NetPrints.Serialization.Documents.ParameterRef.Name.init -> void
+NetPrints.Serialization.Documents.ParameterRef.ParameterRef(string! Name, NetPrints.Serialization.Documents.TypeRef! Type, NetPrints.Core.MethodParameterPassType PassType = NetPrints.Core.MethodParameterPassType.Default, NetPrints.Serialization.Documents.TypedValue? Default = null) -> void
+NetPrints.Serialization.Documents.ParameterRef.PassType.get -> NetPrints.Core.MethodParameterPassType
+NetPrints.Serialization.Documents.ParameterRef.PassType.init -> void
+NetPrints.Serialization.Documents.ParameterRef.Type.get -> NetPrints.Serialization.Documents.TypeRef!
+NetPrints.Serialization.Documents.ParameterRef.Type.init -> void
+NetPrints.Serialization.Documents.PinStateDocument
+NetPrints.Serialization.Documents.PinStateDocument.<Clone>$() -> NetPrints.Serialization.Documents.PinStateDocument!
+NetPrints.Serialization.Documents.PinStateDocument.Deconstruct(out string! Pin, out string? Name, out NetPrints.Serialization.Documents.TypedValue? Value) -> void
+NetPrints.Serialization.Documents.PinStateDocument.Equals(NetPrints.Serialization.Documents.PinStateDocument? other) -> bool
+NetPrints.Serialization.Documents.PinStateDocument.Name.get -> string?
+NetPrints.Serialization.Documents.PinStateDocument.Name.init -> void
+NetPrints.Serialization.Documents.PinStateDocument.Pin.get -> string!
+NetPrints.Serialization.Documents.PinStateDocument.Pin.init -> void
+NetPrints.Serialization.Documents.PinStateDocument.PinStateDocument(string! Pin, string? Name, NetPrints.Serialization.Documents.TypedValue? Value) -> void
+NetPrints.Serialization.Documents.PinStateDocument.Value.get -> NetPrints.Serialization.Documents.TypedValue?
+NetPrints.Serialization.Documents.PinStateDocument.Value.init -> void
+NetPrints.Serialization.Documents.RerouteNodeDocument
+NetPrints.Serialization.Documents.RerouteNodeDocument.Count.get -> int
+NetPrints.Serialization.Documents.RerouteNodeDocument.Count.init -> void
+NetPrints.Serialization.Documents.RerouteNodeDocument.DataTypes.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.TypeRef![]!>?
+NetPrints.Serialization.Documents.RerouteNodeDocument.DataTypes.init -> void
+NetPrints.Serialization.Documents.RerouteNodeDocument.Deconstruct(out string! Id, out string? Name, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins, out string! PinKind, out int Count, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.TypeRef![]!>? DataTypes) -> void
+NetPrints.Serialization.Documents.RerouteNodeDocument.Equals(NetPrints.Serialization.Documents.RerouteNodeDocument? other) -> bool
+NetPrints.Serialization.Documents.RerouteNodeDocument.PinKind.get -> string!
+NetPrints.Serialization.Documents.RerouteNodeDocument.PinKind.init -> void
+NetPrints.Serialization.Documents.RerouteNodeDocument.RerouteNodeDocument(string! Id, string? Name, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins, string! PinKind, int Count, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.TypeRef![]!>? DataTypes) -> void
+NetPrints.Serialization.Documents.ReturnNodeDocument
+NetPrints.Serialization.Documents.ReturnNodeDocument.Deconstruct(out string! Id, out string? Name, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins, out int ReturnCount) -> void
+NetPrints.Serialization.Documents.ReturnNodeDocument.Equals(NetPrints.Serialization.Documents.ReturnNodeDocument? other) -> bool
+NetPrints.Serialization.Documents.ReturnNodeDocument.ReturnCount.get -> int
+NetPrints.Serialization.Documents.ReturnNodeDocument.ReturnCount.init -> void
+NetPrints.Serialization.Documents.ReturnNodeDocument.ReturnNodeDocument(string! Id, string? Name, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins, int ReturnCount) -> void
+NetPrints.Serialization.Documents.TernaryNodeDocument
+NetPrints.Serialization.Documents.TernaryNodeDocument.Deconstruct(out string! Id, out string? Name, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins, out bool Pure) -> void
+NetPrints.Serialization.Documents.TernaryNodeDocument.Equals(NetPrints.Serialization.Documents.TernaryNodeDocument? other) -> bool
+NetPrints.Serialization.Documents.TernaryNodeDocument.Pure.get -> bool
+NetPrints.Serialization.Documents.TernaryNodeDocument.Pure.init -> void
+NetPrints.Serialization.Documents.TernaryNodeDocument.TernaryNodeDocument(string! Id, string? Name, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins, bool Pure) -> void
+NetPrints.Serialization.Documents.ThrowNodeDocument
+NetPrints.Serialization.Documents.ThrowNodeDocument.Deconstruct(out string! Id, out string? Name, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins) -> void
+NetPrints.Serialization.Documents.ThrowNodeDocument.Equals(NetPrints.Serialization.Documents.ThrowNodeDocument? other) -> bool
+NetPrints.Serialization.Documents.ThrowNodeDocument.ThrowNodeDocument(string! Id, string? Name, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins) -> void
+NetPrints.Serialization.Documents.TypedValue
+NetPrints.Serialization.Documents.TypedValue.<Clone>$() -> NetPrints.Serialization.Documents.TypedValue!
+NetPrints.Serialization.Documents.TypedValue.Deconstruct(out string! Type, out string? Value) -> void
+NetPrints.Serialization.Documents.TypedValue.Equals(NetPrints.Serialization.Documents.TypedValue? other) -> bool
+NetPrints.Serialization.Documents.TypedValue.Type.get -> string!
+NetPrints.Serialization.Documents.TypedValue.Type.init -> void
+NetPrints.Serialization.Documents.TypedValue.TypedValue(string! Type, string? Value) -> void
+NetPrints.Serialization.Documents.TypedValue.Value.get -> string?
+NetPrints.Serialization.Documents.TypedValue.Value.init -> void
+NetPrints.Serialization.Documents.TypeNodeDocument
+NetPrints.Serialization.Documents.TypeNodeDocument.Deconstruct(out string! Id, out string? Name, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins, out NetPrints.Serialization.Documents.TypeRef! Type) -> void
+NetPrints.Serialization.Documents.TypeNodeDocument.Equals(NetPrints.Serialization.Documents.TypeNodeDocument? other) -> bool
+NetPrints.Serialization.Documents.TypeNodeDocument.Type.get -> NetPrints.Serialization.Documents.TypeRef!
+NetPrints.Serialization.Documents.TypeNodeDocument.Type.init -> void
+NetPrints.Serialization.Documents.TypeNodeDocument.TypeNodeDocument(string! Id, string? Name, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins, NetPrints.Serialization.Documents.TypeRef! Type) -> void
+NetPrints.Serialization.Documents.TypeOfNodeDocument
+NetPrints.Serialization.Documents.TypeOfNodeDocument.Deconstruct(out string! Id, out string? Name, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins) -> void
+NetPrints.Serialization.Documents.TypeOfNodeDocument.Equals(NetPrints.Serialization.Documents.TypeOfNodeDocument? other) -> bool
+NetPrints.Serialization.Documents.TypeOfNodeDocument.TypeOfNodeDocument(string! Id, string? Name, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins) -> void
+NetPrints.Serialization.Documents.TypeRef
+NetPrints.Serialization.Documents.TypeRef.<Clone>$() -> NetPrints.Serialization.Documents.TypeRef!
+NetPrints.Serialization.Documents.TypeRef.Args.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.TypeRef!>?
+NetPrints.Serialization.Documents.TypeRef.Args.init -> void
+NetPrints.Serialization.Documents.TypeRef.Deconstruct(out string! Name, out bool Generic, out bool IsEnum, out bool IsInterface, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.TypeRef!>? Args) -> void
+NetPrints.Serialization.Documents.TypeRef.Equals(NetPrints.Serialization.Documents.TypeRef? other) -> bool
+NetPrints.Serialization.Documents.TypeRef.Generic.get -> bool
+NetPrints.Serialization.Documents.TypeRef.Generic.init -> void
+NetPrints.Serialization.Documents.TypeRef.IsEnum.get -> bool
+NetPrints.Serialization.Documents.TypeRef.IsEnum.init -> void
+NetPrints.Serialization.Documents.TypeRef.IsInterface.get -> bool
+NetPrints.Serialization.Documents.TypeRef.IsInterface.init -> void
+NetPrints.Serialization.Documents.TypeRef.Name.get -> string!
+NetPrints.Serialization.Documents.TypeRef.Name.init -> void
+NetPrints.Serialization.Documents.TypeRef.TypeRef(string! Name, bool Generic = false, bool IsEnum = false, bool IsInterface = false, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.TypeRef!>? Args = null) -> void
+NetPrints.Serialization.Documents.TypeReturnNodeDocument
+NetPrints.Serialization.Documents.TypeReturnNodeDocument.Deconstruct(out string! Id, out string? Name, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins) -> void
+NetPrints.Serialization.Documents.TypeReturnNodeDocument.Equals(NetPrints.Serialization.Documents.TypeReturnNodeDocument? other) -> bool
+NetPrints.Serialization.Documents.TypeReturnNodeDocument.TypeReturnNodeDocument(string! Id, string? Name, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins) -> void
+NetPrints.Serialization.Documents.UnknownNodeDocument
+NetPrints.Serialization.Documents.UnknownNodeDocument.Deconstruct(out string! Id, out string! Kind, out System.Text.Json.JsonElement Raw) -> void
+NetPrints.Serialization.Documents.UnknownNodeDocument.Equals(NetPrints.Serialization.Documents.UnknownNodeDocument? other) -> bool
+NetPrints.Serialization.Documents.UnknownNodeDocument.Kind.get -> string!
+NetPrints.Serialization.Documents.UnknownNodeDocument.Kind.init -> void
+NetPrints.Serialization.Documents.UnknownNodeDocument.Raw.get -> System.Text.Json.JsonElement
+NetPrints.Serialization.Documents.UnknownNodeDocument.Raw.init -> void
+NetPrints.Serialization.Documents.UnknownNodeDocument.UnknownNodeDocument(string! Id, string! Kind, System.Text.Json.JsonElement Raw) -> void
+NetPrints.Serialization.Documents.VariableDocument
+NetPrints.Serialization.Documents.VariableDocument.<Clone>$() -> NetPrints.Serialization.Documents.VariableDocument!
+NetPrints.Serialization.Documents.VariableDocument.Deconstruct(out string! Id, out string! Name, out NetPrints.Core.MemberVisibility Visibility, out NetPrints.Core.VariableModifiers Modifiers, out NetPrints.Serialization.Documents.GraphDocument! TypeGraph, out NetPrints.Serialization.Documents.AccessorDocument? Getter, out NetPrints.Serialization.Documents.AccessorDocument? Setter) -> void
+NetPrints.Serialization.Documents.VariableDocument.Equals(NetPrints.Serialization.Documents.VariableDocument? other) -> bool
+NetPrints.Serialization.Documents.VariableDocument.Getter.get -> NetPrints.Serialization.Documents.AccessorDocument?
+NetPrints.Serialization.Documents.VariableDocument.Getter.init -> void
+NetPrints.Serialization.Documents.VariableDocument.Id.get -> string!
+NetPrints.Serialization.Documents.VariableDocument.Id.init -> void
+NetPrints.Serialization.Documents.VariableDocument.Modifiers.get -> NetPrints.Core.VariableModifiers
+NetPrints.Serialization.Documents.VariableDocument.Modifiers.init -> void
+NetPrints.Serialization.Documents.VariableDocument.Name.get -> string!
+NetPrints.Serialization.Documents.VariableDocument.Name.init -> void
+NetPrints.Serialization.Documents.VariableDocument.Setter.get -> NetPrints.Serialization.Documents.AccessorDocument?
+NetPrints.Serialization.Documents.VariableDocument.Setter.init -> void
+NetPrints.Serialization.Documents.VariableDocument.TypeGraph.get -> NetPrints.Serialization.Documents.GraphDocument!
+NetPrints.Serialization.Documents.VariableDocument.TypeGraph.init -> void
+NetPrints.Serialization.Documents.VariableDocument.VariableDocument(string! Id, string! Name, NetPrints.Core.MemberVisibility Visibility, NetPrints.Core.VariableModifiers Modifiers, NetPrints.Serialization.Documents.GraphDocument! TypeGraph, NetPrints.Serialization.Documents.AccessorDocument? Getter, NetPrints.Serialization.Documents.AccessorDocument? Setter) -> void
+NetPrints.Serialization.Documents.VariableDocument.Visibility.get -> NetPrints.Core.MemberVisibility
+NetPrints.Serialization.Documents.VariableDocument.Visibility.init -> void
+NetPrints.Serialization.Documents.VariableGetterNodeDocument
+NetPrints.Serialization.Documents.VariableGetterNodeDocument.Deconstruct(out string! Id, out string? Name, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins, out NetPrints.Serialization.Documents.VariableRef! Variable) -> void
+NetPrints.Serialization.Documents.VariableGetterNodeDocument.Equals(NetPrints.Serialization.Documents.VariableGetterNodeDocument? other) -> bool
+NetPrints.Serialization.Documents.VariableGetterNodeDocument.Variable.get -> NetPrints.Serialization.Documents.VariableRef!
+NetPrints.Serialization.Documents.VariableGetterNodeDocument.Variable.init -> void
+NetPrints.Serialization.Documents.VariableGetterNodeDocument.VariableGetterNodeDocument(string! Id, string? Name, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins, NetPrints.Serialization.Documents.VariableRef! Variable) -> void
+NetPrints.Serialization.Documents.VariableRef
+NetPrints.Serialization.Documents.VariableRef.<Clone>$() -> NetPrints.Serialization.Documents.VariableRef!
+NetPrints.Serialization.Documents.VariableRef.DeclaringType.get -> NetPrints.Serialization.Documents.TypeRef?
+NetPrints.Serialization.Documents.VariableRef.DeclaringType.init -> void
+NetPrints.Serialization.Documents.VariableRef.Deconstruct(out string! Name, out NetPrints.Serialization.Documents.TypeRef! Type, out NetPrints.Serialization.Documents.TypeRef? DeclaringType, out NetPrints.Core.MemberVisibility GetterVisibility, out NetPrints.Core.MemberVisibility SetterVisibility, out NetPrints.Core.MemberVisibility Visibility, out NetPrints.Core.VariableModifiers Modifiers, out NetPrints.Core.VariableScope Scope) -> void
+NetPrints.Serialization.Documents.VariableRef.Equals(NetPrints.Serialization.Documents.VariableRef? other) -> bool
+NetPrints.Serialization.Documents.VariableRef.GetterVisibility.get -> NetPrints.Core.MemberVisibility
+NetPrints.Serialization.Documents.VariableRef.GetterVisibility.init -> void
+NetPrints.Serialization.Documents.VariableRef.Modifiers.get -> NetPrints.Core.VariableModifiers
+NetPrints.Serialization.Documents.VariableRef.Modifiers.init -> void
+NetPrints.Serialization.Documents.VariableRef.Name.get -> string!
+NetPrints.Serialization.Documents.VariableRef.Name.init -> void
+NetPrints.Serialization.Documents.VariableRef.Scope.get -> NetPrints.Core.VariableScope
+NetPrints.Serialization.Documents.VariableRef.Scope.init -> void
+NetPrints.Serialization.Documents.VariableRef.SetterVisibility.get -> NetPrints.Core.MemberVisibility
+NetPrints.Serialization.Documents.VariableRef.SetterVisibility.init -> void
+NetPrints.Serialization.Documents.VariableRef.Type.get -> NetPrints.Serialization.Documents.TypeRef!
+NetPrints.Serialization.Documents.VariableRef.Type.init -> void
+NetPrints.Serialization.Documents.VariableRef.VariableRef(string! Name, NetPrints.Serialization.Documents.TypeRef! Type, NetPrints.Serialization.Documents.TypeRef? DeclaringType, NetPrints.Core.MemberVisibility GetterVisibility, NetPrints.Core.MemberVisibility SetterVisibility, NetPrints.Core.MemberVisibility Visibility, NetPrints.Core.VariableModifiers Modifiers, NetPrints.Core.VariableScope Scope = NetPrints.Core.VariableScope.Member) -> void
+NetPrints.Serialization.Documents.VariableRef.Visibility.get -> NetPrints.Core.MemberVisibility
+NetPrints.Serialization.Documents.VariableRef.Visibility.init -> void
+NetPrints.Serialization.Documents.VariableSetterNodeDocument
+NetPrints.Serialization.Documents.VariableSetterNodeDocument.Deconstruct(out string! Id, out string? Name, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins, out NetPrints.Serialization.Documents.VariableRef! Variable) -> void
+NetPrints.Serialization.Documents.VariableSetterNodeDocument.Equals(NetPrints.Serialization.Documents.VariableSetterNodeDocument? other) -> bool
+NetPrints.Serialization.Documents.VariableSetterNodeDocument.Variable.get -> NetPrints.Serialization.Documents.VariableRef!
+NetPrints.Serialization.Documents.VariableSetterNodeDocument.Variable.init -> void
+NetPrints.Serialization.Documents.VariableSetterNodeDocument.VariableSetterNodeDocument(string! Id, string? Name, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins, NetPrints.Serialization.Documents.VariableRef! Variable) -> void
+NetPrints.Serialization.DocumentVersionException
+NetPrints.Serialization.DocumentVersionException.DocumentVersionException(int found, int supported, NetPrints.Serialization.DocumentId? document = null) -> void
+NetPrints.Serialization.DocumentVersionException.Found.get -> int
+NetPrints.Serialization.DocumentVersionException.Supported.get -> int
+NetPrints.Serialization.IDocumentFormat
+NetPrints.Serialization.IDocumentFormat.CanWrite.get -> bool
+NetPrints.Serialization.IDocumentFormat.ClassExtensions.get -> System.Collections.Generic.IReadOnlyList<string!>!
+NetPrints.Serialization.IDocumentFormat.Id.get -> string!
+NetPrints.Serialization.IDocumentFormat.ReadClassAsync(System.IO.Stream! input, NetPrints.Serialization.DocumentId id, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<NetPrints.Serialization.Documents.ClassDocument!>
+NetPrints.Serialization.IDocumentFormat.WriteClassAsync(NetPrints.Serialization.Documents.ClassDocument! document, System.IO.Stream! output, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask
+NetPrints.Serialization.Json.CanonicalJsonWriter
+NetPrints.Serialization.Json.JsonDocumentFormat
+NetPrints.Serialization.Json.JsonDocumentFormat.CanWrite.get -> bool
+NetPrints.Serialization.Json.JsonDocumentFormat.ClassExtensions.get -> System.Collections.Generic.IReadOnlyList<string!>!
+NetPrints.Serialization.Json.JsonDocumentFormat.Id.get -> string!
+NetPrints.Serialization.Json.JsonDocumentFormat.JsonDocumentFormat(NetPrints.Serialization.Json.NetPrintsJsonOptions! options, NetPrints.Serialization.Migrations.DocumentMigrator! migrator) -> void
+NetPrints.Serialization.Json.JsonDocumentFormat.ReadClassAsync(System.IO.Stream! input, NetPrints.Serialization.DocumentId id, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<NetPrints.Serialization.Documents.ClassDocument!>
+NetPrints.Serialization.Json.JsonDocumentFormat.WriteClassAsync(NetPrints.Serialization.Documents.ClassDocument! document, System.IO.Stream! output, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask
+NetPrints.Serialization.Json.NetPrintsJsonOptions
+NetPrints.Serialization.Json.NetPrintsJsonOptions.NetPrintsJsonOptions(NetPrints.Serialization.Mapping.NodeDocumentConverterRegistry! nodes) -> void
+NetPrints.Serialization.Json.NetPrintsJsonOptions.SerializerOptions.get -> System.Text.Json.JsonSerializerOptions!
+NetPrints.Serialization.Json.NetPrintsJsonSchema
+NetPrints.Serialization.Json.NetPrintsSchema
+NetPrints.Serialization.Mapping.DocumentMapper
+NetPrints.Serialization.Mapping.DocumentMapper.DocumentMapper(NetPrints.Serialization.Mapping.NodeDocumentConverterRegistry! nodes, Microsoft.Extensions.Logging.ILogger<NetPrints.Serialization.Mapping.DocumentMapper!>! logger) -> void
+NetPrints.Serialization.Mapping.DocumentMapper.FromDocument(NetPrints.Serialization.Documents.ClassDocument! document, NetPrints.Core.Project! project, System.Collections.Generic.ICollection<NetPrints.Serialization.DocumentIssue!>! issues, NetPrints.Serialization.DocumentId id) -> NetPrints.Core.ClassGraph!
+NetPrints.Serialization.Mapping.DocumentMapper.ToDocument(NetPrints.Core.ClassGraph! cls) -> NetPrints.Serialization.Documents.ClassDocument!
+NetPrints.Serialization.Mapping.IDocumentMapper
+NetPrints.Serialization.Mapping.IDocumentMapper.FromDocument(NetPrints.Serialization.Documents.ClassDocument! document, NetPrints.Core.Project! project, System.Collections.Generic.ICollection<NetPrints.Serialization.DocumentIssue!>! issues, NetPrints.Serialization.DocumentId id) -> NetPrints.Core.ClassGraph!
+NetPrints.Serialization.Mapping.IDocumentMapper.ToDocument(NetPrints.Core.ClassGraph! cls) -> NetPrints.Serialization.Documents.ClassDocument!
+NetPrints.Serialization.Mapping.INodeDocumentConverter
+NetPrints.Serialization.Mapping.INodeDocumentConverter.CreateNode(NetPrints.Serialization.Documents.NodeDocument! document, NetPrints.Core.NodeGraph! graph, NetPrints.Serialization.Mapping.NodeMappingContext! context) -> NetPrints.Graph.Node!
+NetPrints.Serialization.Mapping.INodeDocumentConverter.DocumentType.get -> System.Type!
+NetPrints.Serialization.Mapping.INodeDocumentConverter.Kind.get -> string!
+NetPrints.Serialization.Mapping.INodeDocumentConverter.NodeType.get -> System.Type!
+NetPrints.Serialization.Mapping.INodeDocumentConverter.ToDocument(NetPrints.Graph.Node! node, NetPrints.Serialization.Mapping.NodeMappingContext! context) -> NetPrints.Serialization.Documents.NodeDocument!
+NetPrints.Serialization.Mapping.NodeDocumentConverterRegistry
+NetPrints.Serialization.Mapping.NodeDocumentConverterRegistry.Converters.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Mapping.INodeDocumentConverter!>!
+NetPrints.Serialization.Mapping.NodeDocumentConverterRegistry.ExtensionResolvers.get -> System.Collections.Generic.IReadOnlyList<System.Text.Json.Serialization.Metadata.IJsonTypeInfoResolver!>!
+NetPrints.Serialization.Mapping.NodeDocumentConverterRegistry.FindByDocumentType(System.Type! documentType) -> NetPrints.Serialization.Mapping.INodeDocumentConverter?
+NetPrints.Serialization.Mapping.NodeDocumentConverterRegistry.FindByKind(string! kind) -> NetPrints.Serialization.Mapping.INodeDocumentConverter?
+NetPrints.Serialization.Mapping.NodeDocumentConverterRegistry.FindByNodeType(System.Type! nodeType) -> NetPrints.Serialization.Mapping.INodeDocumentConverter?
+NetPrints.Serialization.Mapping.NodeDocumentConverterRegistry.NodeDocumentConverterRegistry(System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Mapping.INodeDocumentConverter!>! converters, System.Collections.Generic.IReadOnlyList<System.Text.Json.Serialization.Metadata.IJsonTypeInfoResolver!>! extensionResolvers) -> void
+NetPrints.Serialization.Mapping.NodeMappingContext
+NetPrints.Serialization.Mapping.NodeMappingContext.Class.get -> NetPrints.Core.ClassGraph!
+NetPrints.Serialization.Mapping.NodeMappingContext.FromRef(NetPrints.Serialization.Documents.ConstructorRef! constructor) -> NetPrints.Core.ConstructorSpecifier!
+NetPrints.Serialization.Mapping.NodeMappingContext.FromRef(NetPrints.Serialization.Documents.MethodRef! method) -> NetPrints.Core.MethodSpecifier!
+NetPrints.Serialization.Mapping.NodeMappingContext.FromRef(NetPrints.Serialization.Documents.TypeRef! type) -> NetPrints.Core.BaseType!
+NetPrints.Serialization.Mapping.NodeMappingContext.FromRef(NetPrints.Serialization.Documents.VariableRef! variable) -> NetPrints.Core.VariableSpecifier!
+NetPrints.Serialization.Mapping.NodeMappingContext.FromTypeRef(NetPrints.Serialization.Documents.TypeRef! type, string! where) -> NetPrints.Core.TypeSpecifier!
+NetPrints.Serialization.Mapping.NodeMappingContext.FromValue(NetPrints.Serialization.Documents.TypedValue? value) -> object?
+NetPrints.Serialization.Mapping.NodeMappingContext.NodeMappingContext(NetPrints.Core.ClassGraph! cls) -> void
+NetPrints.Serialization.Mapping.NodeMappingContext.ToRef(NetPrints.Core.BaseType! type) -> NetPrints.Serialization.Documents.TypeRef!
+NetPrints.Serialization.Mapping.NodeMappingContext.ToRef(NetPrints.Core.ConstructorSpecifier! constructor) -> NetPrints.Serialization.Documents.ConstructorRef!
+NetPrints.Serialization.Mapping.NodeMappingContext.ToRef(NetPrints.Core.MethodSpecifier! method) -> NetPrints.Serialization.Documents.MethodRef!
+NetPrints.Serialization.Mapping.NodeMappingContext.ToRef(NetPrints.Core.VariableSpecifier! variable) -> NetPrints.Serialization.Documents.VariableRef!
+NetPrints.Serialization.Mapping.NodeMappingContext.ToValue(object? value, string! where) -> NetPrints.Serialization.Documents.TypedValue?
+NetPrints.Serialization.Mapping.TypedValueConverter
+NetPrints.Serialization.Migrations.DocumentMigrator
+NetPrints.Serialization.Migrations.DocumentMigrator.DocumentMigrator(System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Migrations.IDocumentMigration!>! migrations, Microsoft.Extensions.Logging.ILogger<NetPrints.Serialization.Migrations.DocumentMigrator!>! logger) -> void
+NetPrints.Serialization.Migrations.DocumentMigrator.Supported.get -> int
+NetPrints.Serialization.Migrations.DocumentMigrator.Upgrade(System.Text.Json.Nodes.JsonObject! document, NetPrints.Serialization.DocumentKind kind, NetPrints.Serialization.DocumentId id) -> System.Text.Json.Nodes.JsonObject!
+NetPrints.Serialization.Migrations.IDocumentMigration
+NetPrints.Serialization.Migrations.IDocumentMigration.FromVersion.get -> int
+NetPrints.Serialization.Migrations.IDocumentMigration.Kind.get -> NetPrints.Serialization.DocumentKind
+NetPrints.Serialization.Migrations.IDocumentMigration.Migrate(System.Text.Json.Nodes.JsonObject! document) -> void
+NetPrints.Serialization.ProjectLoadResult
+NetPrints.Serialization.ProjectLoadResult.<Clone>$() -> NetPrints.Serialization.ProjectLoadResult!
+NetPrints.Serialization.ProjectLoadResult.Deconstruct(out NetPrints.Core.Project! Project, out NetPrints.Projects.ProjectSnapshot! Snapshot, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.DocumentIssue!>! Issues) -> void
+NetPrints.Serialization.ProjectLoadResult.Equals(NetPrints.Serialization.ProjectLoadResult? other) -> bool
+NetPrints.Serialization.ProjectLoadResult.Issues.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.DocumentIssue!>!
+NetPrints.Serialization.ProjectLoadResult.Issues.init -> void
+NetPrints.Serialization.ProjectLoadResult.Project.get -> NetPrints.Core.Project!
+NetPrints.Serialization.ProjectLoadResult.Project.init -> void
+NetPrints.Serialization.ProjectLoadResult.ProjectLoadResult(NetPrints.Core.Project! Project, NetPrints.Projects.ProjectSnapshot! Snapshot, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.DocumentIssue!>! Issues) -> void
+NetPrints.Serialization.ProjectLoadResult.Snapshot.get -> NetPrints.Projects.ProjectSnapshot!
+NetPrints.Serialization.ProjectLoadResult.Snapshot.init -> void
+NetPrints.Serialization.ProjectPersistence
+NetPrints.Serialization.ProjectPersistence.AddGraphAsync(NetPrints.Core.Project! project, string! sourceGraphPath, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<(NetPrints.Core.ClassGraph! Class, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.DocumentIssue!>! Issues)>!
+NetPrints.Serialization.ProjectPersistence.LoadAsync(NetPrints.Projects.ProjectSnapshot! snapshot, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<NetPrints.Serialization.ProjectLoadResult!>!
+NetPrints.Serialization.ProjectPersistence.LoadAsync(string! projectFilePath, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<NetPrints.Serialization.ProjectLoadResult!>!
+NetPrints.Serialization.ProjectPersistence.ProjectPersistence(NetPrints.Projects.IProjectSystem! projects, NetPrints.Serialization.DocumentFormatRegistry! formats, NetPrints.Serialization.Mapping.IDocumentMapper! mapper, System.Func<string!, bool, NetPrints.Serialization.Stores.IDocumentStore!>! createStore, Microsoft.Extensions.Logging.ILogger<NetPrints.Serialization.ProjectPersistence!>! logger) -> void
+NetPrints.Serialization.ProjectPersistence.Rebind(NetPrints.Serialization.DocumentFormatRegistry! formats, NetPrints.Serialization.Mapping.IDocumentMapper! mapper) -> void
+NetPrints.Serialization.ProjectPersistence.SaveAsync(NetPrints.Core.Project! project, System.Func<NetPrints.Core.ClassGraph!, string!>! renderGenerated, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<NetPrints.Serialization.ProjectSaveResult!>!
+NetPrints.Serialization.ProjectSaveResult
+NetPrints.Serialization.ProjectSaveResult.<Clone>$() -> NetPrints.Serialization.ProjectSaveResult!
+NetPrints.Serialization.ProjectSaveResult.Deconstruct(out System.Collections.Generic.IReadOnlyList<string!>! WrittenFiles, out System.Collections.Generic.IReadOnlyList<NetPrints.Compilation.CodeDiagnostic!>! Diagnostics) -> void
+NetPrints.Serialization.ProjectSaveResult.Diagnostics.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Compilation.CodeDiagnostic!>!
+NetPrints.Serialization.ProjectSaveResult.Diagnostics.init -> void
+NetPrints.Serialization.ProjectSaveResult.Equals(NetPrints.Serialization.ProjectSaveResult? other) -> bool
+NetPrints.Serialization.ProjectSaveResult.ProjectSaveResult(System.Collections.Generic.IReadOnlyList<string!>! WrittenFiles, System.Collections.Generic.IReadOnlyList<NetPrints.Compilation.CodeDiagnostic!>! Diagnostics) -> void
+NetPrints.Serialization.ProjectSaveResult.WrittenFiles.get -> System.Collections.Generic.IReadOnlyList<string!>!
+NetPrints.Serialization.ProjectSaveResult.WrittenFiles.init -> void
+NetPrints.Serialization.Stores.DocumentChange
+NetPrints.Serialization.Stores.DocumentChange.<Clone>$() -> NetPrints.Serialization.Stores.DocumentChange!
+NetPrints.Serialization.Stores.DocumentChange.Deconstruct(out NetPrints.Serialization.DocumentId Id, out NetPrints.Serialization.Stores.DocumentChangeKind Kind) -> void
+NetPrints.Serialization.Stores.DocumentChange.DocumentChange(NetPrints.Serialization.DocumentId Id, NetPrints.Serialization.Stores.DocumentChangeKind Kind) -> void
+NetPrints.Serialization.Stores.DocumentChange.Equals(NetPrints.Serialization.Stores.DocumentChange? other) -> bool
+NetPrints.Serialization.Stores.DocumentChange.Id.get -> NetPrints.Serialization.DocumentId
+NetPrints.Serialization.Stores.DocumentChange.Id.init -> void
+NetPrints.Serialization.Stores.DocumentChange.Kind.get -> NetPrints.Serialization.Stores.DocumentChangeKind
+NetPrints.Serialization.Stores.DocumentChange.Kind.init -> void
+NetPrints.Serialization.Stores.DocumentChangeKind
+NetPrints.Serialization.Stores.DocumentChangeKind.Changed = 1 -> NetPrints.Serialization.Stores.DocumentChangeKind
+NetPrints.Serialization.Stores.DocumentChangeKind.Created = 0 -> NetPrints.Serialization.Stores.DocumentChangeKind
+NetPrints.Serialization.Stores.DocumentChangeKind.Deleted = 2 -> NetPrints.Serialization.Stores.DocumentChangeKind
+NetPrints.Serialization.Stores.FileSystemDocumentStore
+NetPrints.Serialization.Stores.FileSystemDocumentStore.Changes.get -> System.IObservable<NetPrints.Serialization.Stores.DocumentChange!>!
+NetPrints.Serialization.Stores.FileSystemDocumentStore.DisplayName.get -> string!
+NetPrints.Serialization.Stores.FileSystemDocumentStore.Dispose() -> void
+NetPrints.Serialization.Stores.FileSystemDocumentStore.ExistsAsync(NetPrints.Serialization.DocumentId id, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<bool>
+NetPrints.Serialization.Stores.FileSystemDocumentStore.FileSystemDocumentStore(string! rootDirectory, System.Reactive.Concurrency.IScheduler! scheduler, Microsoft.Extensions.Logging.ILogger<NetPrints.Serialization.Stores.FileSystemDocumentStore!>! logger, bool watch = true) -> void
+NetPrints.Serialization.Stores.FileSystemDocumentStore.GetFullPath(NetPrints.Serialization.DocumentId id) -> string!
+NetPrints.Serialization.Stores.FileSystemDocumentStore.ListAsync(string! prefix, System.Threading.CancellationToken cancellationToken) -> System.Collections.Generic.IAsyncEnumerable<NetPrints.Serialization.DocumentId>!
+NetPrints.Serialization.Stores.FileSystemDocumentStore.OpenReadAsync(NetPrints.Serialization.DocumentId id, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<System.IO.Stream!>
+NetPrints.Serialization.Stores.FileSystemDocumentStore.RootDirectory.get -> string!
+NetPrints.Serialization.Stores.FileSystemDocumentStore.WriteAsync(NetPrints.Serialization.DocumentId id, System.Func<System.IO.Stream!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! write, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask
+NetPrints.Serialization.Stores.IDocumentStore
+NetPrints.Serialization.Stores.IDocumentStore.Changes.get -> System.IObservable<NetPrints.Serialization.Stores.DocumentChange!>!
+NetPrints.Serialization.Stores.IDocumentStore.DisplayName.get -> string!
+NetPrints.Serialization.Stores.IDocumentStore.ExistsAsync(NetPrints.Serialization.DocumentId id, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<bool>
+NetPrints.Serialization.Stores.IDocumentStore.ListAsync(string! prefix, System.Threading.CancellationToken cancellationToken) -> System.Collections.Generic.IAsyncEnumerable<NetPrints.Serialization.DocumentId>!
+NetPrints.Serialization.Stores.IDocumentStore.OpenReadAsync(NetPrints.Serialization.DocumentId id, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<System.IO.Stream!>
+NetPrints.Serialization.Stores.IDocumentStore.WriteAsync(NetPrints.Serialization.DocumentId id, System.Func<System.IO.Stream!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! write, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask
+NetPrints.Serialization.Stores.InMemoryDocumentStore
+NetPrints.Serialization.Stores.InMemoryDocumentStore.Changes.get -> System.IObservable<NetPrints.Serialization.Stores.DocumentChange!>!
+NetPrints.Serialization.Stores.InMemoryDocumentStore.DisplayName.get -> string!
+NetPrints.Serialization.Stores.InMemoryDocumentStore.Dispose() -> void
+NetPrints.Serialization.Stores.InMemoryDocumentStore.ExistsAsync(NetPrints.Serialization.DocumentId id, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<bool>
+NetPrints.Serialization.Stores.InMemoryDocumentStore.Get(NetPrints.Serialization.DocumentId id) -> byte[]!
+NetPrints.Serialization.Stores.InMemoryDocumentStore.InMemoryDocumentStore() -> void
+NetPrints.Serialization.Stores.InMemoryDocumentStore.ListAsync(string! prefix, System.Threading.CancellationToken cancellationToken) -> System.Collections.Generic.IAsyncEnumerable<NetPrints.Serialization.DocumentId>!
+NetPrints.Serialization.Stores.InMemoryDocumentStore.OpenReadAsync(NetPrints.Serialization.DocumentId id, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask<System.IO.Stream!>
+NetPrints.Serialization.Stores.InMemoryDocumentStore.Set(NetPrints.Serialization.DocumentId id, byte[]! content) -> void
+NetPrints.Serialization.Stores.InMemoryDocumentStore.WriteAsync(NetPrints.Serialization.DocumentId id, System.Func<System.IO.Stream!, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask>! write, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.ValueTask
+override NetPrints.Serialization.DocumentId.GetHashCode() -> int
+override NetPrints.Serialization.DocumentId.ToString() -> string!
+override NetPrints.Serialization.DocumentIssue.Equals(object? obj) -> bool
+override NetPrints.Serialization.DocumentIssue.GetHashCode() -> int
+override NetPrints.Serialization.DocumentIssue.ToString() -> string!
+override NetPrints.Serialization.Documents.AccessorDocument.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.AccessorDocument.GetHashCode() -> int
+override NetPrints.Serialization.Documents.AccessorDocument.ToString() -> string!
+override NetPrints.Serialization.Documents.AwaitNodeDocument.<Clone>$() -> NetPrints.Serialization.Documents.AwaitNodeDocument!
+override NetPrints.Serialization.Documents.AwaitNodeDocument.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.AwaitNodeDocument.GetHashCode() -> int
+override NetPrints.Serialization.Documents.AwaitNodeDocument.ToString() -> string!
+override NetPrints.Serialization.Documents.CallMethodNodeDocument.<Clone>$() -> NetPrints.Serialization.Documents.CallMethodNodeDocument!
+override NetPrints.Serialization.Documents.CallMethodNodeDocument.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.CallMethodNodeDocument.GetHashCode() -> int
+override NetPrints.Serialization.Documents.CallMethodNodeDocument.ToString() -> string!
+override NetPrints.Serialization.Documents.ClassDocument.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.ClassDocument.GetHashCode() -> int
+override NetPrints.Serialization.Documents.ClassDocument.ToString() -> string!
+override NetPrints.Serialization.Documents.ClassReturnNodeDocument.<Clone>$() -> NetPrints.Serialization.Documents.ClassReturnNodeDocument!
+override NetPrints.Serialization.Documents.ClassReturnNodeDocument.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.ClassReturnNodeDocument.GetHashCode() -> int
+override NetPrints.Serialization.Documents.ClassReturnNodeDocument.ToString() -> string!
+override NetPrints.Serialization.Documents.ConnectionDocument.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.ConnectionDocument.GetHashCode() -> int
+override NetPrints.Serialization.Documents.ConnectionDocument.ToString() -> string!
+override NetPrints.Serialization.Documents.ConstructorDocument.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.ConstructorDocument.GetHashCode() -> int
+override NetPrints.Serialization.Documents.ConstructorDocument.ToString() -> string!
+override NetPrints.Serialization.Documents.ConstructorEntryNodeDocument.<Clone>$() -> NetPrints.Serialization.Documents.ConstructorEntryNodeDocument!
+override NetPrints.Serialization.Documents.ConstructorEntryNodeDocument.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.ConstructorEntryNodeDocument.GetHashCode() -> int
+override NetPrints.Serialization.Documents.ConstructorEntryNodeDocument.ToString() -> string!
+override NetPrints.Serialization.Documents.ConstructorNodeDocument.<Clone>$() -> NetPrints.Serialization.Documents.ConstructorNodeDocument!
+override NetPrints.Serialization.Documents.ConstructorNodeDocument.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.ConstructorNodeDocument.GetHashCode() -> int
+override NetPrints.Serialization.Documents.ConstructorNodeDocument.ToString() -> string!
+override NetPrints.Serialization.Documents.ConstructorRef.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.ConstructorRef.GetHashCode() -> int
+override NetPrints.Serialization.Documents.ConstructorRef.ToString() -> string!
+override NetPrints.Serialization.Documents.DefaultNodeDocument.<Clone>$() -> NetPrints.Serialization.Documents.DefaultNodeDocument!
+override NetPrints.Serialization.Documents.DefaultNodeDocument.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.DefaultNodeDocument.GetHashCode() -> int
+override NetPrints.Serialization.Documents.DefaultNodeDocument.ToString() -> string!
+override NetPrints.Serialization.Documents.EventEntryNodeDocument.<Clone>$() -> NetPrints.Serialization.Documents.EventEntryNodeDocument!
+override NetPrints.Serialization.Documents.EventEntryNodeDocument.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.EventEntryNodeDocument.GetHashCode() -> int
+override NetPrints.Serialization.Documents.EventEntryNodeDocument.ToString() -> string!
+override NetPrints.Serialization.Documents.EventGraphDocument.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.EventGraphDocument.GetHashCode() -> int
+override NetPrints.Serialization.Documents.EventGraphDocument.ToString() -> string!
+override NetPrints.Serialization.Documents.ExplicitCastNodeDocument.<Clone>$() -> NetPrints.Serialization.Documents.ExplicitCastNodeDocument!
+override NetPrints.Serialization.Documents.ExplicitCastNodeDocument.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.ExplicitCastNodeDocument.GetHashCode() -> int
+override NetPrints.Serialization.Documents.ExplicitCastNodeDocument.ToString() -> string!
+override NetPrints.Serialization.Documents.ForLoopNodeDocument.<Clone>$() -> NetPrints.Serialization.Documents.ForLoopNodeDocument!
+override NetPrints.Serialization.Documents.ForLoopNodeDocument.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.ForLoopNodeDocument.GetHashCode() -> int
+override NetPrints.Serialization.Documents.ForLoopNodeDocument.ToString() -> string!
+override NetPrints.Serialization.Documents.GraphDocument.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.GraphDocument.GetHashCode() -> int
+override NetPrints.Serialization.Documents.GraphDocument.ToString() -> string!
+override NetPrints.Serialization.Documents.IfElseNodeDocument.<Clone>$() -> NetPrints.Serialization.Documents.IfElseNodeDocument!
+override NetPrints.Serialization.Documents.IfElseNodeDocument.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.IfElseNodeDocument.GetHashCode() -> int
+override NetPrints.Serialization.Documents.IfElseNodeDocument.ToString() -> string!
+override NetPrints.Serialization.Documents.LiteralNodeDocument.<Clone>$() -> NetPrints.Serialization.Documents.LiteralNodeDocument!
+override NetPrints.Serialization.Documents.LiteralNodeDocument.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.LiteralNodeDocument.GetHashCode() -> int
+override NetPrints.Serialization.Documents.LiteralNodeDocument.ToString() -> string!
+override NetPrints.Serialization.Documents.LocalVariableDocument.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.LocalVariableDocument.GetHashCode() -> int
+override NetPrints.Serialization.Documents.LocalVariableDocument.ToString() -> string!
+override NetPrints.Serialization.Documents.MakeArrayNodeDocument.<Clone>$() -> NetPrints.Serialization.Documents.MakeArrayNodeDocument!
+override NetPrints.Serialization.Documents.MakeArrayNodeDocument.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.MakeArrayNodeDocument.GetHashCode() -> int
+override NetPrints.Serialization.Documents.MakeArrayNodeDocument.ToString() -> string!
+override NetPrints.Serialization.Documents.MakeArrayTypeNodeDocument.<Clone>$() -> NetPrints.Serialization.Documents.MakeArrayTypeNodeDocument!
+override NetPrints.Serialization.Documents.MakeArrayTypeNodeDocument.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.MakeArrayTypeNodeDocument.GetHashCode() -> int
+override NetPrints.Serialization.Documents.MakeArrayTypeNodeDocument.ToString() -> string!
+override NetPrints.Serialization.Documents.MakeDelegateNodeDocument.<Clone>$() -> NetPrints.Serialization.Documents.MakeDelegateNodeDocument!
+override NetPrints.Serialization.Documents.MakeDelegateNodeDocument.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.MakeDelegateNodeDocument.GetHashCode() -> int
+override NetPrints.Serialization.Documents.MakeDelegateNodeDocument.ToString() -> string!
+override NetPrints.Serialization.Documents.MethodDocument.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.MethodDocument.GetHashCode() -> int
+override NetPrints.Serialization.Documents.MethodDocument.ToString() -> string!
+override NetPrints.Serialization.Documents.MethodEntryNodeDocument.<Clone>$() -> NetPrints.Serialization.Documents.MethodEntryNodeDocument!
+override NetPrints.Serialization.Documents.MethodEntryNodeDocument.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.MethodEntryNodeDocument.GetHashCode() -> int
+override NetPrints.Serialization.Documents.MethodEntryNodeDocument.ToString() -> string!
+override NetPrints.Serialization.Documents.MethodRef.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.MethodRef.GetHashCode() -> int
+override NetPrints.Serialization.Documents.MethodRef.ToString() -> string!
+override NetPrints.Serialization.Documents.NodeDocument.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.NodeDocument.GetHashCode() -> int
+override NetPrints.Serialization.Documents.NodeDocument.ToString() -> string!
+override NetPrints.Serialization.Documents.ParameterRef.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.ParameterRef.GetHashCode() -> int
+override NetPrints.Serialization.Documents.ParameterRef.ToString() -> string!
+override NetPrints.Serialization.Documents.PinStateDocument.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.PinStateDocument.GetHashCode() -> int
+override NetPrints.Serialization.Documents.PinStateDocument.ToString() -> string!
+override NetPrints.Serialization.Documents.RerouteNodeDocument.<Clone>$() -> NetPrints.Serialization.Documents.RerouteNodeDocument!
+override NetPrints.Serialization.Documents.RerouteNodeDocument.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.RerouteNodeDocument.GetHashCode() -> int
+override NetPrints.Serialization.Documents.RerouteNodeDocument.ToString() -> string!
+override NetPrints.Serialization.Documents.ReturnNodeDocument.<Clone>$() -> NetPrints.Serialization.Documents.ReturnNodeDocument!
+override NetPrints.Serialization.Documents.ReturnNodeDocument.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.ReturnNodeDocument.GetHashCode() -> int
+override NetPrints.Serialization.Documents.ReturnNodeDocument.ToString() -> string!
+override NetPrints.Serialization.Documents.TernaryNodeDocument.<Clone>$() -> NetPrints.Serialization.Documents.TernaryNodeDocument!
+override NetPrints.Serialization.Documents.TernaryNodeDocument.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.TernaryNodeDocument.GetHashCode() -> int
+override NetPrints.Serialization.Documents.TernaryNodeDocument.ToString() -> string!
+override NetPrints.Serialization.Documents.ThrowNodeDocument.<Clone>$() -> NetPrints.Serialization.Documents.ThrowNodeDocument!
+override NetPrints.Serialization.Documents.ThrowNodeDocument.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.ThrowNodeDocument.GetHashCode() -> int
+override NetPrints.Serialization.Documents.ThrowNodeDocument.ToString() -> string!
+override NetPrints.Serialization.Documents.TypedValue.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.TypedValue.GetHashCode() -> int
+override NetPrints.Serialization.Documents.TypedValue.ToString() -> string!
+override NetPrints.Serialization.Documents.TypeNodeDocument.<Clone>$() -> NetPrints.Serialization.Documents.TypeNodeDocument!
+override NetPrints.Serialization.Documents.TypeNodeDocument.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.TypeNodeDocument.GetHashCode() -> int
+override NetPrints.Serialization.Documents.TypeNodeDocument.ToString() -> string!
+override NetPrints.Serialization.Documents.TypeOfNodeDocument.<Clone>$() -> NetPrints.Serialization.Documents.TypeOfNodeDocument!
+override NetPrints.Serialization.Documents.TypeOfNodeDocument.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.TypeOfNodeDocument.GetHashCode() -> int
+override NetPrints.Serialization.Documents.TypeOfNodeDocument.ToString() -> string!
+override NetPrints.Serialization.Documents.TypeRef.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.TypeRef.GetHashCode() -> int
+override NetPrints.Serialization.Documents.TypeRef.ToString() -> string!
+override NetPrints.Serialization.Documents.TypeReturnNodeDocument.<Clone>$() -> NetPrints.Serialization.Documents.TypeReturnNodeDocument!
+override NetPrints.Serialization.Documents.TypeReturnNodeDocument.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.TypeReturnNodeDocument.GetHashCode() -> int
+override NetPrints.Serialization.Documents.TypeReturnNodeDocument.ToString() -> string!
+override NetPrints.Serialization.Documents.UnknownNodeDocument.<Clone>$() -> NetPrints.Serialization.Documents.UnknownNodeDocument!
+override NetPrints.Serialization.Documents.UnknownNodeDocument.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.UnknownNodeDocument.GetHashCode() -> int
+override NetPrints.Serialization.Documents.UnknownNodeDocument.ToString() -> string!
+override NetPrints.Serialization.Documents.VariableDocument.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.VariableDocument.GetHashCode() -> int
+override NetPrints.Serialization.Documents.VariableDocument.ToString() -> string!
+override NetPrints.Serialization.Documents.VariableGetterNodeDocument.<Clone>$() -> NetPrints.Serialization.Documents.VariableGetterNodeDocument!
+override NetPrints.Serialization.Documents.VariableGetterNodeDocument.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.VariableGetterNodeDocument.GetHashCode() -> int
+override NetPrints.Serialization.Documents.VariableGetterNodeDocument.ToString() -> string!
+override NetPrints.Serialization.Documents.VariableRef.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.VariableRef.GetHashCode() -> int
+override NetPrints.Serialization.Documents.VariableRef.ToString() -> string!
+override NetPrints.Serialization.Documents.VariableSetterNodeDocument.<Clone>$() -> NetPrints.Serialization.Documents.VariableSetterNodeDocument!
+override NetPrints.Serialization.Documents.VariableSetterNodeDocument.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.VariableSetterNodeDocument.GetHashCode() -> int
+override NetPrints.Serialization.Documents.VariableSetterNodeDocument.ToString() -> string!
+override NetPrints.Serialization.ProjectLoadResult.Equals(object? obj) -> bool
+override NetPrints.Serialization.ProjectLoadResult.GetHashCode() -> int
+override NetPrints.Serialization.ProjectLoadResult.ToString() -> string!
+override NetPrints.Serialization.ProjectSaveResult.Equals(object? obj) -> bool
+override NetPrints.Serialization.ProjectSaveResult.GetHashCode() -> int
+override NetPrints.Serialization.ProjectSaveResult.ToString() -> string!
+override NetPrints.Serialization.Stores.DocumentChange.Equals(object? obj) -> bool
+override NetPrints.Serialization.Stores.DocumentChange.GetHashCode() -> int
+override NetPrints.Serialization.Stores.DocumentChange.ToString() -> string!
+override sealed NetPrints.Serialization.Documents.AwaitNodeDocument.Equals(NetPrints.Serialization.Documents.NodeDocument? other) -> bool
+override sealed NetPrints.Serialization.Documents.CallMethodNodeDocument.Equals(NetPrints.Serialization.Documents.NodeDocument? other) -> bool
+override sealed NetPrints.Serialization.Documents.ClassReturnNodeDocument.Equals(NetPrints.Serialization.Documents.NodeDocument? other) -> bool
+override sealed NetPrints.Serialization.Documents.ConstructorEntryNodeDocument.Equals(NetPrints.Serialization.Documents.NodeDocument? other) -> bool
+override sealed NetPrints.Serialization.Documents.ConstructorNodeDocument.Equals(NetPrints.Serialization.Documents.NodeDocument? other) -> bool
+override sealed NetPrints.Serialization.Documents.DefaultNodeDocument.Equals(NetPrints.Serialization.Documents.NodeDocument? other) -> bool
+override sealed NetPrints.Serialization.Documents.EventEntryNodeDocument.Equals(NetPrints.Serialization.Documents.NodeDocument? other) -> bool
+override sealed NetPrints.Serialization.Documents.ExplicitCastNodeDocument.Equals(NetPrints.Serialization.Documents.NodeDocument? other) -> bool
+override sealed NetPrints.Serialization.Documents.ForLoopNodeDocument.Equals(NetPrints.Serialization.Documents.NodeDocument? other) -> bool
+override sealed NetPrints.Serialization.Documents.IfElseNodeDocument.Equals(NetPrints.Serialization.Documents.NodeDocument? other) -> bool
+override sealed NetPrints.Serialization.Documents.LiteralNodeDocument.Equals(NetPrints.Serialization.Documents.NodeDocument? other) -> bool
+override sealed NetPrints.Serialization.Documents.MakeArrayNodeDocument.Equals(NetPrints.Serialization.Documents.NodeDocument? other) -> bool
+override sealed NetPrints.Serialization.Documents.MakeArrayTypeNodeDocument.Equals(NetPrints.Serialization.Documents.NodeDocument? other) -> bool
+override sealed NetPrints.Serialization.Documents.MakeDelegateNodeDocument.Equals(NetPrints.Serialization.Documents.NodeDocument? other) -> bool
+override sealed NetPrints.Serialization.Documents.MethodEntryNodeDocument.Equals(NetPrints.Serialization.Documents.NodeDocument? other) -> bool
+override sealed NetPrints.Serialization.Documents.RerouteNodeDocument.Equals(NetPrints.Serialization.Documents.NodeDocument? other) -> bool
+override sealed NetPrints.Serialization.Documents.ReturnNodeDocument.Equals(NetPrints.Serialization.Documents.NodeDocument? other) -> bool
+override sealed NetPrints.Serialization.Documents.TernaryNodeDocument.Equals(NetPrints.Serialization.Documents.NodeDocument? other) -> bool
+override sealed NetPrints.Serialization.Documents.ThrowNodeDocument.Equals(NetPrints.Serialization.Documents.NodeDocument? other) -> bool
+override sealed NetPrints.Serialization.Documents.TypeNodeDocument.Equals(NetPrints.Serialization.Documents.NodeDocument? other) -> bool
+override sealed NetPrints.Serialization.Documents.TypeOfNodeDocument.Equals(NetPrints.Serialization.Documents.NodeDocument? other) -> bool
+override sealed NetPrints.Serialization.Documents.TypeReturnNodeDocument.Equals(NetPrints.Serialization.Documents.NodeDocument? other) -> bool
+override sealed NetPrints.Serialization.Documents.UnknownNodeDocument.Equals(NetPrints.Serialization.Documents.NodeDocument? other) -> bool
+override sealed NetPrints.Serialization.Documents.VariableGetterNodeDocument.Equals(NetPrints.Serialization.Documents.NodeDocument? other) -> bool
+override sealed NetPrints.Serialization.Documents.VariableSetterNodeDocument.Equals(NetPrints.Serialization.Documents.NodeDocument? other) -> bool
+static NetPrints.Serialization.DiagnosticExtensions.ToDiagnostic(this NetPrints.Serialization.DocumentIssue! issue) -> NetPrints.Compilation.CodeDiagnostic!
+static NetPrints.Serialization.DocumentId.operator !=(NetPrints.Serialization.DocumentId left, NetPrints.Serialization.DocumentId right) -> bool
+static NetPrints.Serialization.DocumentId.operator ==(NetPrints.Serialization.DocumentId left, NetPrints.Serialization.DocumentId right) -> bool
+static NetPrints.Serialization.DocumentIssue.operator !=(NetPrints.Serialization.DocumentIssue? left, NetPrints.Serialization.DocumentIssue? right) -> bool
+static NetPrints.Serialization.DocumentIssue.operator ==(NetPrints.Serialization.DocumentIssue? left, NetPrints.Serialization.DocumentIssue? right) -> bool
+static NetPrints.Serialization.Documents.AccessorDocument.operator !=(NetPrints.Serialization.Documents.AccessorDocument? left, NetPrints.Serialization.Documents.AccessorDocument? right) -> bool
+static NetPrints.Serialization.Documents.AccessorDocument.operator ==(NetPrints.Serialization.Documents.AccessorDocument? left, NetPrints.Serialization.Documents.AccessorDocument? right) -> bool
+static NetPrints.Serialization.Documents.AwaitNodeDocument.operator !=(NetPrints.Serialization.Documents.AwaitNodeDocument? left, NetPrints.Serialization.Documents.AwaitNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.AwaitNodeDocument.operator ==(NetPrints.Serialization.Documents.AwaitNodeDocument? left, NetPrints.Serialization.Documents.AwaitNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.CallMethodNodeDocument.operator !=(NetPrints.Serialization.Documents.CallMethodNodeDocument? left, NetPrints.Serialization.Documents.CallMethodNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.CallMethodNodeDocument.operator ==(NetPrints.Serialization.Documents.CallMethodNodeDocument? left, NetPrints.Serialization.Documents.CallMethodNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.ClassDocument.operator !=(NetPrints.Serialization.Documents.ClassDocument? left, NetPrints.Serialization.Documents.ClassDocument? right) -> bool
+static NetPrints.Serialization.Documents.ClassDocument.operator ==(NetPrints.Serialization.Documents.ClassDocument? left, NetPrints.Serialization.Documents.ClassDocument? right) -> bool
+static NetPrints.Serialization.Documents.ClassReturnNodeDocument.operator !=(NetPrints.Serialization.Documents.ClassReturnNodeDocument? left, NetPrints.Serialization.Documents.ClassReturnNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.ClassReturnNodeDocument.operator ==(NetPrints.Serialization.Documents.ClassReturnNodeDocument? left, NetPrints.Serialization.Documents.ClassReturnNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.ConnectionDocument.operator !=(NetPrints.Serialization.Documents.ConnectionDocument? left, NetPrints.Serialization.Documents.ConnectionDocument? right) -> bool
+static NetPrints.Serialization.Documents.ConnectionDocument.operator ==(NetPrints.Serialization.Documents.ConnectionDocument? left, NetPrints.Serialization.Documents.ConnectionDocument? right) -> bool
+static NetPrints.Serialization.Documents.ConstructorDocument.operator !=(NetPrints.Serialization.Documents.ConstructorDocument? left, NetPrints.Serialization.Documents.ConstructorDocument? right) -> bool
+static NetPrints.Serialization.Documents.ConstructorDocument.operator ==(NetPrints.Serialization.Documents.ConstructorDocument? left, NetPrints.Serialization.Documents.ConstructorDocument? right) -> bool
+static NetPrints.Serialization.Documents.ConstructorEntryNodeDocument.operator !=(NetPrints.Serialization.Documents.ConstructorEntryNodeDocument? left, NetPrints.Serialization.Documents.ConstructorEntryNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.ConstructorEntryNodeDocument.operator ==(NetPrints.Serialization.Documents.ConstructorEntryNodeDocument? left, NetPrints.Serialization.Documents.ConstructorEntryNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.ConstructorNodeDocument.operator !=(NetPrints.Serialization.Documents.ConstructorNodeDocument? left, NetPrints.Serialization.Documents.ConstructorNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.ConstructorNodeDocument.operator ==(NetPrints.Serialization.Documents.ConstructorNodeDocument? left, NetPrints.Serialization.Documents.ConstructorNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.ConstructorRef.operator !=(NetPrints.Serialization.Documents.ConstructorRef? left, NetPrints.Serialization.Documents.ConstructorRef? right) -> bool
+static NetPrints.Serialization.Documents.ConstructorRef.operator ==(NetPrints.Serialization.Documents.ConstructorRef? left, NetPrints.Serialization.Documents.ConstructorRef? right) -> bool
+static NetPrints.Serialization.Documents.DefaultNodeDocument.operator !=(NetPrints.Serialization.Documents.DefaultNodeDocument? left, NetPrints.Serialization.Documents.DefaultNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.DefaultNodeDocument.operator ==(NetPrints.Serialization.Documents.DefaultNodeDocument? left, NetPrints.Serialization.Documents.DefaultNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.EventEntryNodeDocument.operator !=(NetPrints.Serialization.Documents.EventEntryNodeDocument? left, NetPrints.Serialization.Documents.EventEntryNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.EventEntryNodeDocument.operator ==(NetPrints.Serialization.Documents.EventEntryNodeDocument? left, NetPrints.Serialization.Documents.EventEntryNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.EventGraphDocument.operator !=(NetPrints.Serialization.Documents.EventGraphDocument? left, NetPrints.Serialization.Documents.EventGraphDocument? right) -> bool
+static NetPrints.Serialization.Documents.EventGraphDocument.operator ==(NetPrints.Serialization.Documents.EventGraphDocument? left, NetPrints.Serialization.Documents.EventGraphDocument? right) -> bool
+static NetPrints.Serialization.Documents.ExplicitCastNodeDocument.operator !=(NetPrints.Serialization.Documents.ExplicitCastNodeDocument? left, NetPrints.Serialization.Documents.ExplicitCastNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.ExplicitCastNodeDocument.operator ==(NetPrints.Serialization.Documents.ExplicitCastNodeDocument? left, NetPrints.Serialization.Documents.ExplicitCastNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.ForLoopNodeDocument.operator !=(NetPrints.Serialization.Documents.ForLoopNodeDocument? left, NetPrints.Serialization.Documents.ForLoopNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.ForLoopNodeDocument.operator ==(NetPrints.Serialization.Documents.ForLoopNodeDocument? left, NetPrints.Serialization.Documents.ForLoopNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.GraphDocument.operator !=(NetPrints.Serialization.Documents.GraphDocument? left, NetPrints.Serialization.Documents.GraphDocument? right) -> bool
+static NetPrints.Serialization.Documents.GraphDocument.operator ==(NetPrints.Serialization.Documents.GraphDocument? left, NetPrints.Serialization.Documents.GraphDocument? right) -> bool
+static NetPrints.Serialization.Documents.IfElseNodeDocument.operator !=(NetPrints.Serialization.Documents.IfElseNodeDocument? left, NetPrints.Serialization.Documents.IfElseNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.IfElseNodeDocument.operator ==(NetPrints.Serialization.Documents.IfElseNodeDocument? left, NetPrints.Serialization.Documents.IfElseNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.LiteralNodeDocument.operator !=(NetPrints.Serialization.Documents.LiteralNodeDocument? left, NetPrints.Serialization.Documents.LiteralNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.LiteralNodeDocument.operator ==(NetPrints.Serialization.Documents.LiteralNodeDocument? left, NetPrints.Serialization.Documents.LiteralNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.LocalVariableDocument.operator !=(NetPrints.Serialization.Documents.LocalVariableDocument? left, NetPrints.Serialization.Documents.LocalVariableDocument? right) -> bool
+static NetPrints.Serialization.Documents.LocalVariableDocument.operator ==(NetPrints.Serialization.Documents.LocalVariableDocument? left, NetPrints.Serialization.Documents.LocalVariableDocument? right) -> bool
+static NetPrints.Serialization.Documents.MakeArrayNodeDocument.operator !=(NetPrints.Serialization.Documents.MakeArrayNodeDocument? left, NetPrints.Serialization.Documents.MakeArrayNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.MakeArrayNodeDocument.operator ==(NetPrints.Serialization.Documents.MakeArrayNodeDocument? left, NetPrints.Serialization.Documents.MakeArrayNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.MakeArrayTypeNodeDocument.operator !=(NetPrints.Serialization.Documents.MakeArrayTypeNodeDocument? left, NetPrints.Serialization.Documents.MakeArrayTypeNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.MakeArrayTypeNodeDocument.operator ==(NetPrints.Serialization.Documents.MakeArrayTypeNodeDocument? left, NetPrints.Serialization.Documents.MakeArrayTypeNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.MakeDelegateNodeDocument.operator !=(NetPrints.Serialization.Documents.MakeDelegateNodeDocument? left, NetPrints.Serialization.Documents.MakeDelegateNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.MakeDelegateNodeDocument.operator ==(NetPrints.Serialization.Documents.MakeDelegateNodeDocument? left, NetPrints.Serialization.Documents.MakeDelegateNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.MethodDocument.operator !=(NetPrints.Serialization.Documents.MethodDocument? left, NetPrints.Serialization.Documents.MethodDocument? right) -> bool
+static NetPrints.Serialization.Documents.MethodDocument.operator ==(NetPrints.Serialization.Documents.MethodDocument? left, NetPrints.Serialization.Documents.MethodDocument? right) -> bool
+static NetPrints.Serialization.Documents.MethodEntryNodeDocument.operator !=(NetPrints.Serialization.Documents.MethodEntryNodeDocument? left, NetPrints.Serialization.Documents.MethodEntryNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.MethodEntryNodeDocument.operator ==(NetPrints.Serialization.Documents.MethodEntryNodeDocument? left, NetPrints.Serialization.Documents.MethodEntryNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.MethodRef.operator !=(NetPrints.Serialization.Documents.MethodRef? left, NetPrints.Serialization.Documents.MethodRef? right) -> bool
+static NetPrints.Serialization.Documents.MethodRef.operator ==(NetPrints.Serialization.Documents.MethodRef? left, NetPrints.Serialization.Documents.MethodRef? right) -> bool
+static NetPrints.Serialization.Documents.NodeDocument.operator !=(NetPrints.Serialization.Documents.NodeDocument? left, NetPrints.Serialization.Documents.NodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.NodeDocument.operator ==(NetPrints.Serialization.Documents.NodeDocument? left, NetPrints.Serialization.Documents.NodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.ParameterRef.operator !=(NetPrints.Serialization.Documents.ParameterRef? left, NetPrints.Serialization.Documents.ParameterRef? right) -> bool
+static NetPrints.Serialization.Documents.ParameterRef.operator ==(NetPrints.Serialization.Documents.ParameterRef? left, NetPrints.Serialization.Documents.ParameterRef? right) -> bool
+static NetPrints.Serialization.Documents.PinStateDocument.operator !=(NetPrints.Serialization.Documents.PinStateDocument? left, NetPrints.Serialization.Documents.PinStateDocument? right) -> bool
+static NetPrints.Serialization.Documents.PinStateDocument.operator ==(NetPrints.Serialization.Documents.PinStateDocument? left, NetPrints.Serialization.Documents.PinStateDocument? right) -> bool
+static NetPrints.Serialization.Documents.RerouteNodeDocument.operator !=(NetPrints.Serialization.Documents.RerouteNodeDocument? left, NetPrints.Serialization.Documents.RerouteNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.RerouteNodeDocument.operator ==(NetPrints.Serialization.Documents.RerouteNodeDocument? left, NetPrints.Serialization.Documents.RerouteNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.ReturnNodeDocument.operator !=(NetPrints.Serialization.Documents.ReturnNodeDocument? left, NetPrints.Serialization.Documents.ReturnNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.ReturnNodeDocument.operator ==(NetPrints.Serialization.Documents.ReturnNodeDocument? left, NetPrints.Serialization.Documents.ReturnNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.TernaryNodeDocument.operator !=(NetPrints.Serialization.Documents.TernaryNodeDocument? left, NetPrints.Serialization.Documents.TernaryNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.TernaryNodeDocument.operator ==(NetPrints.Serialization.Documents.TernaryNodeDocument? left, NetPrints.Serialization.Documents.TernaryNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.ThrowNodeDocument.operator !=(NetPrints.Serialization.Documents.ThrowNodeDocument? left, NetPrints.Serialization.Documents.ThrowNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.ThrowNodeDocument.operator ==(NetPrints.Serialization.Documents.ThrowNodeDocument? left, NetPrints.Serialization.Documents.ThrowNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.TypedValue.operator !=(NetPrints.Serialization.Documents.TypedValue? left, NetPrints.Serialization.Documents.TypedValue? right) -> bool
+static NetPrints.Serialization.Documents.TypedValue.operator ==(NetPrints.Serialization.Documents.TypedValue? left, NetPrints.Serialization.Documents.TypedValue? right) -> bool
+static NetPrints.Serialization.Documents.TypeNodeDocument.operator !=(NetPrints.Serialization.Documents.TypeNodeDocument? left, NetPrints.Serialization.Documents.TypeNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.TypeNodeDocument.operator ==(NetPrints.Serialization.Documents.TypeNodeDocument? left, NetPrints.Serialization.Documents.TypeNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.TypeOfNodeDocument.operator !=(NetPrints.Serialization.Documents.TypeOfNodeDocument? left, NetPrints.Serialization.Documents.TypeOfNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.TypeOfNodeDocument.operator ==(NetPrints.Serialization.Documents.TypeOfNodeDocument? left, NetPrints.Serialization.Documents.TypeOfNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.TypeRef.operator !=(NetPrints.Serialization.Documents.TypeRef? left, NetPrints.Serialization.Documents.TypeRef? right) -> bool
+static NetPrints.Serialization.Documents.TypeRef.operator ==(NetPrints.Serialization.Documents.TypeRef? left, NetPrints.Serialization.Documents.TypeRef? right) -> bool
+static NetPrints.Serialization.Documents.TypeReturnNodeDocument.operator !=(NetPrints.Serialization.Documents.TypeReturnNodeDocument? left, NetPrints.Serialization.Documents.TypeReturnNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.TypeReturnNodeDocument.operator ==(NetPrints.Serialization.Documents.TypeReturnNodeDocument? left, NetPrints.Serialization.Documents.TypeReturnNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.UnknownNodeDocument.operator !=(NetPrints.Serialization.Documents.UnknownNodeDocument? left, NetPrints.Serialization.Documents.UnknownNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.UnknownNodeDocument.operator ==(NetPrints.Serialization.Documents.UnknownNodeDocument? left, NetPrints.Serialization.Documents.UnknownNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.VariableDocument.operator !=(NetPrints.Serialization.Documents.VariableDocument? left, NetPrints.Serialization.Documents.VariableDocument? right) -> bool
+static NetPrints.Serialization.Documents.VariableDocument.operator ==(NetPrints.Serialization.Documents.VariableDocument? left, NetPrints.Serialization.Documents.VariableDocument? right) -> bool
+static NetPrints.Serialization.Documents.VariableGetterNodeDocument.operator !=(NetPrints.Serialization.Documents.VariableGetterNodeDocument? left, NetPrints.Serialization.Documents.VariableGetterNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.VariableGetterNodeDocument.operator ==(NetPrints.Serialization.Documents.VariableGetterNodeDocument? left, NetPrints.Serialization.Documents.VariableGetterNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.VariableRef.operator !=(NetPrints.Serialization.Documents.VariableRef? left, NetPrints.Serialization.Documents.VariableRef? right) -> bool
+static NetPrints.Serialization.Documents.VariableRef.operator ==(NetPrints.Serialization.Documents.VariableRef? left, NetPrints.Serialization.Documents.VariableRef? right) -> bool
+static NetPrints.Serialization.Documents.VariableSetterNodeDocument.operator !=(NetPrints.Serialization.Documents.VariableSetterNodeDocument? left, NetPrints.Serialization.Documents.VariableSetterNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.VariableSetterNodeDocument.operator ==(NetPrints.Serialization.Documents.VariableSetterNodeDocument? left, NetPrints.Serialization.Documents.VariableSetterNodeDocument? right) -> bool
+static NetPrints.Serialization.Json.CanonicalJsonWriter.Write(System.Text.Json.Nodes.JsonObject! root, System.IO.Stream! output) -> void
+static NetPrints.Serialization.Json.NetPrintsJsonOptions.DocumentOptions.get -> System.Text.Json.JsonDocumentOptions
+static NetPrints.Serialization.Json.NetPrintsJsonSchema.GenerateV1() -> string!
+static NetPrints.Serialization.Mapping.NodeDocumentConverterRegistry.BuiltIn.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Mapping.INodeDocumentConverter!>!
+static NetPrints.Serialization.Mapping.TypedValueConverter.FromTypedValue(NetPrints.Serialization.Documents.TypedValue! value) -> object?
+static NetPrints.Serialization.Mapping.TypedValueConverter.ToTypedValue(object! value, string! where) -> NetPrints.Serialization.Documents.TypedValue!
+static NetPrints.Serialization.ProjectLoadResult.operator !=(NetPrints.Serialization.ProjectLoadResult? left, NetPrints.Serialization.ProjectLoadResult? right) -> bool
+static NetPrints.Serialization.ProjectLoadResult.operator ==(NetPrints.Serialization.ProjectLoadResult? left, NetPrints.Serialization.ProjectLoadResult? right) -> bool
+static NetPrints.Serialization.ProjectSaveResult.operator !=(NetPrints.Serialization.ProjectSaveResult? left, NetPrints.Serialization.ProjectSaveResult? right) -> bool
+static NetPrints.Serialization.ProjectSaveResult.operator ==(NetPrints.Serialization.ProjectSaveResult? left, NetPrints.Serialization.ProjectSaveResult? right) -> bool
+static NetPrints.Serialization.Stores.DocumentChange.operator !=(NetPrints.Serialization.Stores.DocumentChange? left, NetPrints.Serialization.Stores.DocumentChange? right) -> bool
+static NetPrints.Serialization.Stores.DocumentChange.operator ==(NetPrints.Serialization.Stores.DocumentChange? left, NetPrints.Serialization.Stores.DocumentChange? right) -> bool
+static NetPrints.Serialization.Stores.FileSystemDocumentStore.ToDocumentId(string! rootDirectory, string! fullPath) -> NetPrints.Serialization.DocumentId
+virtual NetPrints.Serialization.Documents.NodeDocument.EqualityContract.get -> System.Type!
+virtual NetPrints.Serialization.Documents.NodeDocument.Equals(NetPrints.Serialization.Documents.NodeDocument? other) -> bool
+virtual NetPrints.Serialization.Documents.NodeDocument.PrintMembers(System.Text.StringBuilder! builder) -> bool
+~override NetPrints.Serialization.DocumentId.Equals(object obj) -> bool

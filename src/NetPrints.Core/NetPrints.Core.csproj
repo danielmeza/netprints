@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
+    <NetPrintsTrackPublicApi>true</NetPrintsTrackPublicApi>
     <AssemblyName>NetPrints.Core</AssemblyName>
     <IsPackable>true</IsPackable>
     <EnablePackageValidation>true</EnablePackageValidation>
@@ -9,6 +10,9 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
     <PackageReference Include="CommunityToolkit.Mvvm" />
+  </ItemGroup>
+  <ItemGroup>
+    <NetPrintsExperimentalOptIn Include="NPXE0003" />
   </ItemGroup>
   <ItemGroup>
     <!-- The document mapper sets Node.Id and member ids (internal set) from a loaded document. -->

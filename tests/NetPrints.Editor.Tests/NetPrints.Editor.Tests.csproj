@@ -8,6 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <NetPrintsExperimentalOptIn Include="NPXE0001" />
+    <NetPrintsExperimentalOptIn Include="NPXE0002" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="Xunit.DependencyInjection" />
     <PackageReference Include="Microsoft.Reactive.Testing" />
@@ -32,6 +36,10 @@
     <ProjectReference Include="..\NetPrints.Testing\NetPrints.Testing.csproj" />
     <!-- Built first so the extension folder exists; the assembly itself is loaded by the extension loader, not referenced. -->
     <ProjectReference Include="..\NetPrints.TestExtension\NetPrints.TestExtension.csproj" ReferenceOutputAssembly="false" />
+    <!-- Built first, never referenced: tests load the fx.catalog extension from its own output folder. -->
+    <ProjectReference Include="..\Fixtures\Extensions\Fx.Catalog\Fx.Catalog.csproj" ReferenceOutputAssembly="false" />
+    <!-- Built first, never referenced: the embedded-catalog discovery tests read its dll. -->
+    <ProjectReference Include="..\Fixtures\Catalog\CatalogAnnotatedLib\CatalogAnnotatedLib.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>

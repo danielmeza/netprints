@@ -29,6 +29,9 @@ property order, so the same graph always serializes to the same bytes. Short, se
 (a node's connections, a layout position, a typed constant) are written on a single line each rather
 than spread across several; everything else is one property per line. A file is only rewritten when
 its class actually changed, so an unrelated build or open never touches files you didn't edit.
+A graph's connections are always written sorted by `from`, then `to` (ordinal string order), by both the
+editor and `netprints format`; the loader accepts any order, and `format --check` reports a file whose
+connections are in another order.
 
 Every project gets a `.gitattributes` file next to it (written once, when the project is created)
 with:
@@ -61,6 +64,14 @@ That combination is what keeps a merge to "both sides added a block; git keeps b
 conflict spanning the whole nodes array — see the
 [graph file format contract](../../specs/003-core-refactor/contracts/document-format.md) for the
 full schema, identifier rules and canonical-writing rules behind this.
+
+## Version control
+
+Graph files are designed to work well in git: they are text, canonical (deterministic bytes), and
+merge-friendly. See [Git workflow](git.md) for the `show` command (readable diffs), the merge driver
+(smart merging), and checks for canonical form and current generated code. Both `.netpc.json` and
+`netprints.catalog.json` files have schemas prepared for SchemaStore registration (see the [Git
+workflow](git.md#schema-validation-and-editor-support) section for details).
 
 ## Generated code
 

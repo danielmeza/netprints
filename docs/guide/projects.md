@@ -15,7 +15,7 @@ Code — understands a NetPrints project too.
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NetPrints.Sdk" Version="0.1.0" PrivateAssets="all" />
+    <PackageReference Include="NetPrints.Sdk" Version="<version>" PrivateAssets="all" />
   </ItemGroup>
 
 </Project>
@@ -37,7 +37,10 @@ pick it up. This file is:
   pattern .NET already uses for `.g.cs` from source generators you want to see in review).
 - **regenerated, never hand-merged.** If you edit it directly, the next build overwrites your
   changes. If a merge conflicts on it, resolve the conflict in the `.netpc.json` graph (or just take
-  either side) and rebuild — do not try to hand-merge the generated C#.
+  either side) and rebuild — do not try to hand-merge the generated C#. When merging graphs with git's
+  merge driver (see [Git workflow](git.md#merging-graphs)), the driver merges only the `.netpc.json`
+  graph file; git then merges the generated `.netpc.g.cs` as text, which conflicts when both sides
+  changed the graph.
 - **kept visible in PRs.** It is not marked `linguist-generated`, so GitHub shows it in diffs. This
   is deliberate: the generated C# is often the easiest way to review what a graph change actually
   does, and a reviewer should not have to open the editor to see it.
@@ -45,6 +48,17 @@ pick it up. This file is:
 A build only regenerates a `.netpc.g.cs` file when its graph (or the generator, or the project file,
 or a referenced extension's manifest) actually changed; an up-to-date build does nothing (MSBuild
 reports the generate target as skipped).
+
+To check if generated code is current without building, use:
+
+```bash
+netprints generate --check
+# or the alias
+netprints regen --check
+```
+
+This exits 0 if all generated files are up to date, or 1 if any are stale or missing. Use this in CI
+to ensure that graphs have not drifted from their generated files (see [Git workflow](git.md#keeping-generated-code-current)).
 
 ## Editing outside the editor
 

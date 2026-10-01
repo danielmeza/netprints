@@ -42,9 +42,9 @@ public sealed class AutomationClient : IAsyncDisposable
         await gate.WaitAsync(cancellationToken);
         try
         {
-            await writer.WriteLineAsync(JsonSerializer.Serialize(request, AutomationAgent.Json).AsMemory(), cancellationToken);
+            await writer.WriteLineAsync(JsonSerializer.Serialize(request, AutomationJsonContext.Default.AutomationRequest).AsMemory(), cancellationToken);
             string line = await reader.ReadLineAsync(cancellationToken) ?? throw new IOException("The automation agent closed the connection.");
-            var response = JsonSerializer.Deserialize<AutomationResponse>(line, AutomationAgent.Json) ?? throw new IOException("Empty response.");
+            var response = JsonSerializer.Deserialize(line, AutomationJsonContext.Default.AutomationResponse) ?? throw new IOException("Empty response.");
             return response.Ok ? response : throw new InvalidOperationException($"Automation request '{request.Op}' failed: {response.Error}");
         }
         finally

@@ -14,4 +14,7 @@ namespace NetPrints.Workspace;
 /// project's <c>{NetPrintsSdkVersion}</c> template placeholder (<see cref="IProjectSystem.CreateAsync"/>).
 /// The caller supplies this explicitly; the editor derives its own from its MinVer-stamped assembly
 /// version (release-and-docs.md, "Editor version").</param>
-public sealed record ProjectSystemOptions(IReadOnlyList<string> ExtraProperties, string NetPrintsSdkVersion);
+/// <param name="GenerateOnLoad">Whether loading a project may run the SDK's <c>NetPrintsGenerate</c> target
+/// (the design-time build does, and it rewrites stale <c>.g.cs</c> files). A caller that must see the files as
+/// they are, such as <c>netprints generate --check</c>, passes <see langword="false"/>.</param>
+public sealed record ProjectSystemOptions(IReadOnlyList<string> ExtraProperties, string NetPrintsSdkVersion, bool GenerateOnLoad = true);

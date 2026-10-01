@@ -1,5 +1,7 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization.Metadata;
 using Microsoft.Extensions.Logging;
+using NetPrints.Catalog;
 using NetPrints.Core;
 using NetPrints.Extensibility.Hosting;
 using NetPrints.Extensibility.Loading;
@@ -42,6 +44,7 @@ public interface IExtensionBuilder
     /// </summary>
     /// <param name="emitter">The emitter.</param>
     /// <returns>This builder.</returns>
+    [Experimental(ExperimentalApiIds.Emitters, UrlFormat = ExperimentalApiIds.UrlFormat)]
     IExtensionBuilder AddClassEmitter(IClassEmitter emitter);
 
     /// <summary>
@@ -49,6 +52,7 @@ public interface IExtensionBuilder
     /// </summary>
     /// <param name="emitter">The emitter.</param>
     /// <returns>This builder.</returns>
+    [Experimental(ExperimentalApiIds.Emitters, UrlFormat = ExperimentalApiIds.UrlFormat)]
     IExtensionBuilder AddMemberEmitter(IMemberEmitter emitter);
 
     /// <summary>
@@ -85,6 +89,7 @@ public interface IExtensionBuilder
     /// </summary>
     /// <param name="factory">The factory.</param>
     /// <returns>This builder.</returns>
+    [Experimental(ExperimentalApiIds.HostChannel, UrlFormat = ExperimentalApiIds.UrlFormat)]
     IExtensionBuilder AddHostChannel(IHostChannelFactory factory);
 
     /// <summary>
@@ -93,5 +98,15 @@ public interface IExtensionBuilder
     /// </summary>
     /// <param name="descriptor">The section.</param>
     /// <returns>This builder.</returns>
+    [Experimental(ExperimentalApiIds.Settings, UrlFormat = ExperimentalApiIds.UrlFormat)]
     IExtensionBuilder AddSettings(ExtensionSettingsDescriptor descriptor);
+
+    /// <summary>
+    /// Adds a catalog profile that <c>netprints catalog --profile &lt;id&gt;</c> and a project's <c>CatalogProfileId</c> can select.
+    /// A built-in id or an id another extension registered first is rejected with <c>NPX006</c>.
+    /// </summary>
+    /// <param name="profile">The profile.</param>
+    /// <returns>This builder.</returns>
+    [Experimental(ExperimentalApiIds.CatalogProfiles, UrlFormat = ExperimentalApiIds.UrlFormat)]
+    IExtensionBuilder AddCatalogProfile(CatalogProfile profile);
 }

@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>NetPrints.Cli.Tests</AssemblyName>
+    <WarningsAsErrors>$(WarningsAsErrors);xUnit1051</WarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="Spectre.Console.Testing" />
+    <!-- Referencing NetPrints.Cli pulls in Microsoft.CodeAnalysis.Workspaces.MSBuild, whose own
+         dependency on Microsoft.Build.Framework carries no asset exclusion of its own (MSBuildLocator's
+         MSBL001, research K10): pin and exclude both here too, exactly like NetPrints.Core.Tests. -->
+    <PackageReference Include="Microsoft.Build" ExcludeAssets="runtime" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.Build.Framework" ExcludeAssets="runtime" PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\NetPrints.Cli\NetPrints.Cli.csproj" />
+    <ProjectReference Include="..\NetPrints.Testing\NetPrints.Testing.csproj" />
+    <!-- Built first, never referenced: migrate tests load it from its own output folder. -->
+    <ProjectReference Include="..\NetPrints.TestExtension\NetPrints.TestExtension.csproj" ReferenceOutputAssembly="false" />
+    <!-- Built first, never referenced: tests load the fx.catalog extension from its own output folder. -->
+    <ProjectReference Include="..\Fixtures\Extensions\Fx.Catalog\Fx.Catalog.csproj" ReferenceOutputAssembly="false" />
+    <!-- Built first, never referenced: the catalog tests catalog it, and CT-T12 packs it. -->
+    <ProjectReference Include="..\Fixtures\Catalog\CatalogFixtureLib\CatalogFixtureLib.csproj" ReferenceOutputAssembly="false" />
+    <!-- Built first, never referenced: the dependency-resolution tests catalog it with and without its dependency at hand. -->
+    <ProjectReference Include="..\Fixtures\Catalog\CatalogDependentLib\CatalogDependentLib.csproj" ReferenceOutputAssembly="false" />
+    <!-- Built first, never referenced: the end-to-end tests run a temp copy of samples/HelloWorld against the generator's own output folder. -->
+    <ProjectReference Include="..\..\src\NetPrints.Generator\NetPrints.Generator.csproj" ReferenceOutputAssembly="false" />
+  </ItemGroup>
+</Project>

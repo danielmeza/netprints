@@ -66,10 +66,10 @@
         ],
         "connections": [
           { "from": "n00000000frp01/out.exec.Exec", "to": "n00000000frp02/in.exec.Exec" },
-          { "from": "n00000000frp02/out.exec.Loop", "to": "n00000000frp03/in.exec.Exec" },
           { "from": "n00000000frp02/out.data.Index", "to": "n00000000frp03/in.data.value" },
-          { "from": "n00000000frp03/out.exec.Exec", "to": "n00000000frp02/in.exec.Continue" },
           { "from": "n00000000frp02/out.exec.Completed", "to": "n00000000frp04/in.exec.Exec" },
+          { "from": "n00000000frp02/out.exec.Loop", "to": "n00000000frp03/in.exec.Exec" },
+          { "from": "n00000000frp03/out.exec.Exec", "to": "n00000000frp02/in.exec.Continue" },
           { "from": "n00000000frp04/out.exec.Completed", "to": "n00000000frp05/in.exec.Exec" },
           { "from": "n00000000frp05/out.exec.Exec", "to": "n00000000frp06/in.exec.Exec" }
         ]

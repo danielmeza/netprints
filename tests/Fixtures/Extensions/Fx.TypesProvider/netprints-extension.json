@@ -1,0 +1,8 @@
+{
+  "id": "fx.types-provider",
+  "name": "Fixture type provider extension",
+  "version": "1.0.0",
+  "assembly": "Fx.TypesProvider.dll",
+  "netprintsApi": "1.0",
+  "dependsOn": []
+}

@@ -1,0 +1,71 @@
+{
+  "$schema": "https://danielmeza.github.io/netprints/schemas/npcat.v1.schema.json",
+  "schemaVersion": 1,
+  "id": "catalogfixturelib-flags",
+  "version": "1.0.0.0",
+  "profile": "fixture-flags",
+  "assemblies": [
+    {
+      "name": "CatalogFixtureLib",
+      "version": "1.0.0.0"
+    }
+  ],
+  "types": [
+    {
+      "id": "T:Fixture.Utilities.Counter",
+      "namespace": "Fixture.Utilities",
+      "name": "Counter",
+      "kind": "class",
+      "summary": "A type with annotations, an ignored member and a nested enum.",
+      "node": { "displayName": "Counter Widget", "category": "Widgets" },
+      "methods": [
+        {
+          "id": "M:Fixture.Utilities.Counter.Step(Fixture.Utilities.Counter.StepKind)",
+          "name": "Step",
+          "visibility": "public",
+          "parameters": [
+            { "name": "kind", "type": { "name": "Fixture.Utilities.Counter+StepKind", "isEnum": true }, "default": { "type": "System.Int32", "value": "0" }, "summary": "The step kind." }
+          ],
+          "summary": "Steps the counter.",
+          "node": { "keywords": ["increment"] }
+        }
+      ]
+    },
+    {
+      "id": "T:Fixture.Utilities.Helpers",
+      "namespace": "Fixture.Utilities",
+      "name": "Helpers",
+      "kind": "class",
+      "modifiers": ["static"],
+      "summary": "A static class covering parameter modifiers, default values, extension methods and annotations.",
+      "methods": [
+        {
+          "id": "M:Fixture.Utilities.Helpers.Double(System.Int32)",
+          "name": "Double",
+          "visibility": "public",
+          "modifiers": ["static"],
+          "parameters": [
+            { "name": "value", "type": { "name": "System.Int32" }, "summary": "The value." }
+          ],
+          "returnType": { "name": "System.Int32" },
+          "returnSummary": "Twice the value.",
+          "summary": "Doubles a value.",
+          "node": { "displayName": "Double", "category": "Math", "keywords": ["multiply", "twice"] }
+        },
+        {
+          "id": "M:Fixture.Utilities.Helpers.TryParse(System.String,System.Int32@)",
+          "name": "TryParse",
+          "visibility": "public",
+          "modifiers": ["static"],
+          "parameters": [
+            { "name": "text", "type": { "name": "System.String" }, "summary": "The text." },
+            { "name": "value", "type": { "name": "System.Int32" }, "passType": "out", "summary": "The parsed value." }
+          ],
+          "returnType": { "name": "System.Boolean" },
+          "returnSummary": "True when parsing succeeded.",
+          "summary": "Parses text, returning success and the value through an out parameter."
+        }
+      ]
+    }
+  ]
+}

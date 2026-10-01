@@ -239,7 +239,9 @@ public static class CanonicalJsonWriter
 
     private static void WritePropertyName(TextWriter w, string name)
     {
-        w.Write(JsonSerializer.Serialize(name, ScalarOptions));
+        w.Write('"');
+        w.Write(JavaScriptEncoder.UnsafeRelaxedJsonEscaping.Encode(name));
+        w.Write('"');
         w.Write(": ");
     }
 

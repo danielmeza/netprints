@@ -42,4 +42,16 @@ internal static partial class Log
     /// <summary>Logs 2009: disposing a contribution failed.</summary>
     [LoggerMessage(EventId = 2009, Level = LogLevel.Warning, Message = "Disposing {Contribution} failed")]
     public static partial void DisposeFailed(ILogger logger, Exception exception, string contribution);
+
+    /// <summary>Logs 2010: an extension folder holds a copy of an assembly the host provides; the host's copy is used.</summary>
+    [LoggerMessage(EventId = 2010, Level = LogLevel.Warning, Message = "Extension {Id} ships {AssemblyName} at {Path}; the host provides it, so the copy is ignored")]
+    public static partial void HostAssemblyShadowed(ILogger logger, string id, string assemblyName, string path);
+
+    /// <summary>Logs 2011: an extension folder holds a copy of an assembly a dependency provides; the dependency's copy is used.</summary>
+    [LoggerMessage(EventId = 2011, Level = LogLevel.Warning, Message = "Extension {Id} ships {AssemblyName}; dependency {DependencyId} provides it, so the copy is ignored")]
+    public static partial void DependencyAssemblyShadowed(ILogger logger, string id, string assemblyName, string dependencyId);
+
+    /// <summary>Logs 2012: checking an extension folder for shadowed assemblies failed; the extension still loads.</summary>
+    [LoggerMessage(EventId = 2012, Level = LogLevel.Debug, Message = "Shadow check of extension {Id} folder {Folder} failed")]
+    public static partial void ShadowCheckFailed(ILogger logger, Exception exception, string id, string folder);
 }

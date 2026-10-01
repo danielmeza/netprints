@@ -1,0 +1,1069 @@
+# Implementation Notes: P2 — Catalog tooling and Spectre CLI
+
+## Decisions
+
+- `SuppressDependenciesWhenPacking` on NetPrints.Annotations fixes NU5128; the dependency group it drops is empty, as in NetPrints.Sdk.
+- `ExcludeAssets="runtime"` on the MSBL001 exclusions in NetPrints.Cli.Tests, same shape as NetPrints.Core.Tests.
+- verify-packages.sh work was pulled forward from T075; only the targets-file check remains for T075.
+
+## Checkpoint reports
+
+### Checkpoint A
+
+**Status**: ✓ Green
+
+**Build**: Solution builds with 0 warnings (Release mode).
+- `dotnet build -c Release -v q -tl:off --nologo`: 23 projects, 0 errors, 0 warnings.
+
+**Test Suite**:
+- Catalog.Tests (Release): 1 passed
+- Cli.Tests (Release): 1 passed
+- All projects build and tests pass cleanly.
+
+- Whole suite: 975 tests, 965 passed, 10 skipped. E2E run: green.
+
+**CI**: green run 36654324173 at 0b57512. The Release runs at 355905b and 0613745 failed and were fixed by 0613745 and 0b57512.
+
+## Batch B1 (T008-T011) — API tracking
+
+- T010: `dotnet format analyzers src/<P>/<P>.csproj --diagnostics RS0016 RS0037 --severity info` applied for every project. Entries: Core 1251, Extensibility 338, Reflection 169, Serialization 899, Catalog 0 (no public API yet). Core and Reflection moved to `PublicAPI.Shipped.txt` (`git diff v0.1.1` on them shows only the new `NetPrintsTrackPublicApi` property); the rest stay in Unshipped.
+- T011: no other analyzer diagnostic (RS0026, RS0027, RS0041, ...) fires, so no API change was needed.
+- T008: the test project references the analyzer package only for its path (`GeneratePathProperty`); `ExcludeAssets` does not keep its analyzer off the compilation, so a target removed that `Analyzer` item (replaced in Review B by a `PackageDownload`, see below).
+
+## Batch B2 (T012-T016a) — experimental API opt-in
+
+### Decisions
+
+- T013: `Directory.Build.targets` sets `NoWarn` inside `<Target Name="NetPrintsExperimentalOptIn" BeforeTargets="CoreCompile">`. The property form in the task text (a top-level `<NoWarn>$(NoWarn);@(Items)</NoWarn>`) keeps the literal `@(Items)` at evaluation time; the reference is expanded only when the property is used as a task parameter such as Csc `DisabledWarnings`, so it would have produced a bogus `NoWarn` entry, not an empty one (corrected after Review B). The target form expands the items at build time. Limitation: evaluation-time readers (`dotnet msbuild -getProperty:NoWarn`) see no NPXE ids; design-time builds run the target and do see them.
+- T013: observed compiler behaviour (ADR-0017 decision 3): the diagnostic is reported for uses inside the defining assembly too. `NetPrints.Core` needs `NPXE0003` (ClassTranslator, TranslationEnvironment) and `NetPrints.Extensibility` needs `NPXE0001`, `NPXE0002` and `NPXE0003`. Other opt-ins, each only for the ids the build showed: Editor 1+2, Desktop 2, TestExtension 1+2+3, Core.Tests 1+2+3, Editor.Tests 1+2, Editor.UITests 2.
+- T014: `ExperimentalApiIds` is in namespace `NetPrints.Core`. `NPXE0004` and `CatalogProfiles` are declared now and marked in T044.
+- T014: PublicApiAnalyzers writes experimental symbols as `[NPXE000n]Symbol` in the API files, and members of an experimental type carry the prefix too. The `dotnet format analyzers` fixer does not emit the prefix and adds nothing when the shipped file already lists the type. The `ExperimentalApiIds` entries came from the fixer (run with an emptied Shipped file, then Shipped restored); the `[NPXE0003]` lines and `*REMOVED*` lines for the Core emitters (shipped in v0.1.1 without the attribute) and the prefixed lines in Extensibility's Unshipped file were written by script from the analyzer's own RS0016/RS0017 messages, then the build was clean.
+- T012: the literal gate allows the one `NPXE0004` duplicate (`AllowedDuplicateCode`): the generator compiles `Catalog/Engine/ExperimentalApis.cs` and cannot reference Core. The declaring files it lists do not exist yet (Catalog engine files arrive in later batches).
+- T012: hygiene gates added to `SourceHygieneTests` (rewritten on `XDocument` in Review B): `TheOnlyNoWarnIsTheExperimentalOptInLine`, `ExperimentalOptInItemsLiveOnlyInProjectFiles` (no opt-in in props/targets, so nothing is inherited), `EveryExperimentalOptInIsADeclaredId`, `NoPragmaDisablesAnExperimentalDiagnostic`, `NoEditorConfigSeverityForAnExperimentalDiagnostic`; `NoUnlistedBuildWarningSuppressions` allows only the exact opt-in line.
+- The in-test extension compiler (`ExtensionTestSupport.Compile(..., params string[] optIn)`) suppresses only the ids the caller passes through `WithSpecificDiagnosticOptions`, the compilation equivalent of an opt-in item (ADR-0017 Consequences); it is neither a NoWarn nor a pragma.
+- T016a (owner-approved): `SolutionHygieneTests.EverySourceAndTestProjectIsInTheSolution`; `samples/`, `legacy/` and `docs/` are out of scope (samples load the Generator from `bin/`).
+
+### Red/green evidence
+
+- T012 red (before targets/ids existed): `ExperimentalApiTests` 3 of 6 failed (no NPXE error without opt-in); `SourceHygieneTests` 2 of 13 failed (`TheOnlyNoWarnIsTheExperimentalOptInLine`, `EveryExperimentalOptInIsADeclaredId`). Green after T013/T014.
+- Negative checks of the gates (temporary, reverted): an opt-in `NPXE0009`, a `#pragma warning disable NPXE0001`, a `dotnet_diagnostic.NPXE0001.severity` globalconfig line, an opt-in item in a `.props` and a `<NoWarn>` in another `.props` each failed the matching gate (7 failures).
+- T016a: the test was written before the check and shown red by removing the `NetPrints.Testing.Ui.csproj` entry from `NetPrints.slnx` (1 of 1 failed); entry restored, green.
+- The full suite found 3 failures the filtered runs missed (in-test extension sources use the experimental emitter API); fixed with the suppression above. A later run hit a flake in the new probe test (it referenced every loaded assembly, including a temporary extension assembly another test deletes); it now references the trusted platform assemblies plus Core and Extensibility.
+
+### Checkpoint B
+
+**Status**: green (SC-011), after Review B (T017, T018)
+
+- `dotnet build -c Release`: 23 projects, 0 errors, 0 warnings. `dotnet format NetPrints.slnx --verify-no-changes`: clean.
+- Whole suite (Release, no E2E env): 1015 tests, 1005 passed, 10 skipped, 0 failed.
+- E2E (`NETPRINTS_E2E=1`, `--fail-skips on`): 9 tests, 9 passed, 0 skipped.
+- Only `<NoWarn>` in the repository: the `Directory.Build.targets` opt-in line.
+- CI: green run 36664521413 at 9280856 after a rerun. The first attempt failed only in `Test (Editor UI, headless)`: `SnapshotTests.Inspectors` ('inspector-class' 0.893% of pixels differ, max 0.5%), a rendering flake in code this batch does not touch (the same test passed locally in the whole suite and on 854066f); the rerun passed.
+
+### Review A (T006, Opus) — PR #9 review 5360487391
+
+0 blocking findings, 4 Low and 2 Nit, all fixed in T007:
+- Low: both SmokeTests asserted a constant; now they pin the CLI assembly (and InternalsVisibleTo) and the Catalog assembly load, and the classes are sealed.
+- Low: Checkpoint A lacked whole-suite totals, E2E result and the CI run; added.
+- Low: `SuppressDependenciesWhenPacking`, the MSBL001 exclusions and the verify-packages.sh pull-forward are recorded under Decisions.
+- Nit: redundant `Version="5.0.0"` dropped in Annotations (`VersionOverride` alone restores 5.0.0).
+- Nit: Directory.Build.props comment now says six packages.
+
+Heads-up for sub-phases D/E: any netstandard2.0 dependency of the generator must be bundled into `analyzers/dotnet/cs`, because `SuppressDependenciesWhenPacking` silently drops nuspec dependencies.
+
+### Review B (T017, Opus) — PR #9 review 5361050457
+
+11 findings (2 High, 4 Medium, 4 Low, 1 Nit), all fixed in T018 (commits 919f1c8 and 9280856):
+
+1. High, help URL 404: `UrlFormat` had a `/docs/` segment the site (`routeBasePath: '/'`) does not serve. Fixed in `ExperimentalApiIds`, `PublicAPI.Unshipped.txt`, contract §5 and research.md. AP-T02 now checks the URL maps to an existing `docs/**/*.md` page with an `## API stability` heading (red first: the mapped path `docs/docs/guide/extensions.md` did not exist).
+2. High, unmarked public API around experimental types: a reflection test (`EveryPublicSymbolThatMentionsAnExperimentalTypeIsExperimentalWithTheSameId`) checks that every public symbol in Core and Extensibility whose signature (base type, interfaces, parameters, return, property, field, event, generic arguments) mentions an `[Experimental]` type carries that id. Red on the old code with 18 offenders (`TranslationEnvironment` members and constructor, `ExtensionSettingsDescriptor<T>`, `JsonFileSettingsStore`, `ExtensionRegistry.HostChannels/FindHostChannel/Settings/ClassEmitters/MemberEmitters`, `NullHostChannel`, `InMemoryHostChannel` and their members). Decision: none of these became `internal`. `NullHostChannel`, `InMemoryHostChannel` and `JsonFileSettingsStore` are public API in the 003 contracts (extension-points.md §6-§7) and the test kit and embedding hosts use them (TestExtension uses `InMemoryHostChannel`), so each is marked with its id (host channel, host channel, settings); `ExtensionSettingsDescriptor<T>`, `NetPrintsSettings.Descriptor` and the registry members are marked with their ids. `TranslationEnvironment` stays stable as a type; its constructor, `Deconstruct` (now explicit, so it can be marked) and the two emitter properties carry `NPXE0003` (`[method:]`/`[property:]` targets on the positional record). Editor.UITests gained the `NPXE0001` opt-in the build then showed. API files: for Core the shipped `TranslationEnvironment` lines got `*REMOVED*` plus `[NPXE0003]` lines in Unshipped; for Extensibility the unshipped lines were prefixed in place; both from the analyzer's own RS0016/RS0017 messages, then the build was clean.
+3. Medium, break of the shipped Core emitters: documented in the guide's "API stability" section, ADR-0017 Consequences and a new "Unreleased" section in `.github/release-notes.md` (the repo has no changelog; v0.1.x releases used the release-notes template plus GitHub generated notes).
+4. Medium, only NPXE ids in the opt-in target: an `<Error>` guard in `Directory.Build.targets` rejects any item not matching `^NPXE\d{4}$`. `ExperimentalOptInTargetTests` builds a temp project against the real targets file: red before (a `CS8602` item built), green after; an `NPXE0003` item still builds.
+5. Medium, regex gates: the opt-in and warning-bar gates now parse build files with `XDocument` and match elements by local name (`BuildFileRules`). Red evidence: a temporary `probe-tmp/Probe.csproj` holding `<NetPrintsExperimentalOptIn Condition="true" Include="CS8602" />`, `Include='IDISP001'`, a conditioned `<NoWarn Condition=...>` and `<NoWarn >` passed all 13 old gates; the same probe failed `EveryExperimentalOptInIsADeclaredId`, `TheOnlyNoWarnIsTheExperimentalOptInLine` and `NoUnlistedBuildWarningSuppressions` with the new gates. Probe deleted. `BuildFileRulesTests` keeps every variant as a permanent case.
+6. Medium, blanket test opt-in: `ExtensionTestSupport.Compile(..., params string[] optIn)`; the two emitter sources pass `ExperimentalApiIds.Emitters`. `ATestExtensionMustListTheExperimentalIdsItUses` shows a source without its id, or with another id, fails to compile (it could not pass with the old blanket list). ADR-0017 Consequences record the mechanism.
+7. Low, other analyzer config files: `GlobalAnalyzerConfigFiles` and `EditorConfigFiles` items in any build file fail `NoUnlistedBuildWarningSuppressions` (probe and unit cases).
+8. Low, analyzer removal: `DropPublicApiAnalyzerFromTests` and the `PackageReference` are gone; `NetPrints.Core.Tests` uses `PackageDownload Version="[$(PublicApiAnalyzersVersion)]"` and the path `$(NuGetPackageRoot)microsoft.codeanalysis.publicapianalyzers/$(PublicApiAnalyzersVersion)`; the version property lives in `Directory.Packages.props` and feeds the `PackageVersion`. `NoUnlistedBuildWarningSuppressions` now rejects any `<Analyzer Remove>` item.
+9. Low, wrong T013 reasoning: corrected above, with the evaluation-time limitation recorded.
+10. Low, NPXE0004 duplicate: `IsAllowedDuplicate` allows exactly two declarations, one in `NetPrints.Core/ExperimentalApiIds.cs` and one in `NetPrints.Catalog/Engine/ExperimentalApis.cs`; `declaredCodes` tracks file and code. Unit cases: a third declaration, a repeat in one file and a wrong file each fail.
+11. Nit, redundant pragma test: probe first: `tests/probe-tmp/P1.cs` with `# pragma warning disable NPXE0001` and `P2.cs` with a bare `#pragma warning disable` were both rejected by `NoUnlistedSuppressions` (and passed the old regex test), so `NoPragmaDisablesAnExperimentalDiagnostic` was dropped and ADR-0017 decision 5 says so. Probe deleted.
+
+Deviations from the task: none of the marked types was made internal (finding 2, reason above). Finding 6 has no red run of its own: its test needs the new overload, and the old blanket list could never fail it. Findings 7 and 8 were shown red by the same probe (its `GlobalAnalyzerConfigFiles`, `EditorConfigFiles` and `<Analyzer Remove>` items passed the old gates).
+
+## Batch C1 (T019-T022) — Spectre CLI skeleton, project resolution, build
+
+### Decisions
+
+- Every CLI type is `internal` (tests see it through the existing `InternalsVisibleTo`), so nothing enters `PublicAPI.Unshipped.txt`; `NetPrints.Cli` is not an API-tracked project.
+- Commands are listed once in `CliCommandCatalog.All` (name plus a registration action); `CliApplication.ConfigureCommands` walks it, and CL-T01 iterates it, so a command added later gets the `--help` check and `ValidateExamples` for free.
+- `CliEnvironment` is a class over `currentDirectory`, a `getVariable` function and the stderr `TextWriter` (`FromProcess()` for the real one). Internal-error and usage messages go to `environment.Error`; project-resolution errors and results go to the injected `IAnsiConsole` (stdout), as in P1.
+- The project system is injected as `Lazy<IProjectSystem>`: resolving `IProjectSystem` eagerly would load Microsoft.Build before `IMsBuildRegistration.EnsureRegistered` ran. `CliServices.CreateProjectSystem` and `MsBuildRegistrationAdapter.EnsureRegistered` keep the `NoInlining` split.
+- `UseStrictParsing()`: without it Spectre silently moves unknown options into the remaining arguments (found by CL-T02: `build --no-such-option` exited 2 only because the test's directory had no project).
+- Output is written with `IAnsiConsole.Profile.Out.Writer` (`WriteLineRaw`), not `console.WriteLine`: the latter wraps at the console width, which breaks paths and diagnostics when stdout is redirected (width 80).
+- Console settings (`CliServices.ConsoleSettings`): `AnsiSupport.No` and `ColorSystemSupport.NoColors` when the output is redirected or `NO_COLOR` is non-empty, otherwise detection.
+- `TypeRegistrar` owns the `ServiceProvider`s it builds and is disposed by `CliApplication.RunAsync` (IDISP004/005/007).
+- `TypeResolver` is not disposable: it wraps a provider the registrar owns.
+- The pre-parse rejects the P1 flags only in the leading options (before the command name or `--`); after the command name they are ordinary unknown options, so `run <project> -- -r` will forward `-r`.
+- T022: the old `CliBuildTests` cases `SuccessfulRunPropagatesTheChildsNonZeroExitCode` and `SuccessfulRunWithZeroChildExitCodeReturnsExitCode0` exercise the run path, which `BuildCommand` does not have; they move to `RunCommandTests` in T023 (CL-T05). The project reference from `NetPrints.Core.Tests` to `NetPrints.Cli` existed only for `CliBuildTests` and is removed with the file.
+- T022: the messages changed from P1's `Compiling ...`/`Compilation succeeded.`/`Compilation failed with N errors:` to the contract's `Build succeeded.` / `Build failed with N error(s).` (no header line).
+
+### Deviations
+
+- CI: the "CLI smoke" step now asserts exit 0 (was 2) and "CLI sample compile and run" runs `build samples/HelloWorld/HelloWorld.csproj` and greps `Build succeeded.`, because P1's `-p/-r` flags are rejected from C1 on and CI must stay green until T026 rewrites both steps (`run` arrives in C2).
+- `scripts/verify-packages.sh` step 4 ran the installed tool as `netprints -p <csproj> -r` (the CI "Packages (local feed)" job failed on the P1-flag message at c35dc4f); it now runs `netprints build <csproj>` and greps `Build succeeded.`. T075 or T026 may switch it to `run` once C2 lands.
+- The tests and the code were written in one pass per task file rather than committed per task: T019-T022 are one commit, because T019's suite needs the build command (T022) to satisfy `ThereIsAtLeastTheBuildCommand` and `--help` over the catalog.
+- `samples/HelloWorld/Compiled_HelloWorld/` (ignored, dated 2026-09-25, a P1 leftover) makes a local `netprints build samples/HelloWorld` fail with CS0101; a clean copy builds. Not touched (run output), CI checks out clean.
+- Commit 0613745's message lost `$(TargetPath)` to shell expansion.
+
+### Red/green evidence
+
+- Red for T019, T021 and T022 (tests first): with the three test files and `Support/CliTestHost.cs` written and `CommandLineParser` already replaced by `Spectre.Console.Cli` in the csproj, `dotnet build tests/NetPrints.Cli.Tests` failed (10 errors: the old `Program.cs` no longer compiled, and `CliApplication`, `CliCommandCatalog`, `CliServices`, `ProjectLocator`, `IMsBuildRegistration`, `ExitCodes` did not exist).
+- Green after T020-T022 code: first run 36 of 37 passed; the failure `UnknownCommandOptionOrValueExitsWithUsage(build --no-such-option)` (no message on stderr) was real red for strict parsing, green after `UseStrictParsing()`. Cli.Tests: 37 passed.
+- The whole-suite run found `SourceHygieneTests.NoNullForgivingOperator` failing on three `Path.GetDirectoryName(...)!` in the new tests; fixed without `!`.
+
+### Checkpoint C1
+
+- `dotnet build -c Release`: 0 warnings, 0 errors. `dotnet format NetPrints.slnx --verify-no-changes`: clean.
+- Whole suite (Release): 1047 tests, after the fix 0 failed (Core.Tests 566 passed, Cli.Tests 37 passed); E2E (`--fail-skips on`): 9 of 9 passed.
+
+### Batch C2 (T023-T026) — run, migrate, CI
+
+### Decisions
+
+- `ProjectCommandBase.ExecuteProjectAsync` now receives the `CommandContext` (`run` reads `Remaining.Raw`) and exposes `Environment` as a protected property, so subclasses do not capture the constructor parameter a second time.
+- `run` appends `--` plus the arguments after `--` to `GetRunCommand`'s arguments only when there are any (`dotnet run ... --no-build -- a b`); the child's stdout goes to the console output, its stderr to `CliEnvironment.Error`, and its exit code is the command's. The two run cases dropped from `CliBuildTests` are ported into `RunCommandTests`.
+- `migrate` does not derive from `ProjectCommandBase` (it takes several paths). A `.csproj` argument, or no argument, resolves the project (`ProjectLocator`), checks the SDK (exit 3) and reads `ProjectSnapshot.GraphFiles`; a directory is searched recursively for `*.netpc.json`, skipping `bin` and `obj`; a `.netpc.json` file is read directly; another file or a missing path exits 2.
+- Each graph is read through the `IDocumentFormat` that `DocumentFormatRegistry.Find` resolves, from a `FileSystemDocumentStore` (`watch: false`) rooted at the graph's directory with the file name as id. A `DocumentVersionException` prints `<path>: schema <found> is not supported (this tool supports <supported>)`; any other read failure prints `<path>: unreadable: <reason>`; both exit 1 after the remaining graphs are reported, with the last line `N of M graph(s) could not be read.` (the contract defines the last line only for success).
+- The registry uses the built-in node converters only (no extension node converters yet); C3 wires the project's extension folders in (see Batch C3).
+- `NetPrints.Cli` references `NetPrints.Serialization` directly (it was not transitive).
+- T026: CI "CLI smoke" also runs `--help`; "CLI sample compile and run" runs `run samples/HelloWorld/HelloWorld.csproj` and greps `Hello, World!`; `scripts/verify-packages.sh` step 4 runs the installed tool as `netprints run` and greps `Hello, World!`.
+
+### Red/green evidence
+
+- Red (T023, tests first): `RunCommandTests` and `MigrateCommandTests` written with the `FakeProjectSystem.LoadAsync`/`GraphFiles` support, commands not registered: 16 of 17 failed (unknown command, exit 2). Green after T024/T025: 17 of 17 passed.
+- Manual: `migrate samples/HelloWorld/HelloWorld.Program.netpc.json` reports schema 1; `run` of a clean copy of the sample prints `Hello, World!`, exit 0.
+
+### Batch C3 (T027-T031) — generate, regen --check, CI graph check
+
+### Decisions
+
+- `GeneratedFileResult` gains `UpToDate` (last, defaulted parameter): true when the output already held the rendered bytes before the call, false for a missing or different file and for any error. `Written` stays "the file was rewritten", so Write reports stale as `Written` and fresh as `UpToDate`, Check reports stale as neither. `GenerateAsync(request, mode, ct)` is a new overload; the two-argument one calls it with `Write`, so `Generator/Program.cs` is unchanged. `NetPrints.Generation` and `NetPrints.Workspace` are not API-tracked.
+- `generate` output: diagnostics as canonical lines, `generated: <path>` per rewritten file, `stale: <path>` per stale file (paths relative to the project directory); last line `N generated file(s) up to date, M written.`, or `M stale.` when `--check` found stale files. Exit 1 on any error diagnostic or stale file; a failing extension folder prints its `NPX` lines, exits 1 and writes nothing. `--graph` must name a graph of the project, otherwise exit 2.
+- Found by CL-T08: `IProjectSystem.LoadAsync` opens the project in `MSBuildWorkspace`, whose design-time build runs the SDK's `NetPrintsGenerate` target (BeforeTargets CoreCompile), so `generate --check` silently rewrote stale files (and `Touch`ed fresh ones) before the command looked at them. `ProjectSystemOptions` gets `GenerateOnLoad` (default true); false passes the global property `_NetPrintsSkipGenerate=true` to the workspace (named `NetPrintsSkipGenerate` until Review C part 2 made it internal), and `NetPrints.Sdk.targets` skips the target when it is `true`. The CLI's project system sets it to false (`build` and `run` generate through `dotnet build`, unaffected). Pinned by `GenerateRequestFactoryTests.LoadingWithGenerateOnLoadOffLeavesAStaleGeneratedFileAlone`.
+- CL-T13 builds a temp copy of HelloWorld against the in-repo SDK, parses the `netprints.generate.rsp` the target wrote and compares it field by field with `FromSnapshot` of the loaded project (records with list members do not compare structurally).
+- The command tests reuse `CliTestHost` through `RunRealAsync` (real `CliServices.CreateDefault()` with the host's console and environment) and a `SampleCopy` fixture; `Cli.Tests` references `NetPrints.Testing` (`LocalSdkLayout`) and builds `NetPrints.Generator` and `NetPrints.TestExtension` first without referencing them. The tests compare content and the output lines. (This note first said mtimes were not a usable "nothing written" signal because the SDK target touches outputs; that stopped being true once `GenerateOnLoad: false` landed, and `CheckNamesTheStaleFileExitsOneAndWritesNothing` now also asserts the mtime is unchanged.)
+- CL-T11 (`run` on a temp copy of HelloWorld through the real tool) was already green when written: it pins the C2 behaviour with the real SDK rather than driving new code.
+- Migrate now loads the extension folders of the projects it reads (`GraphCodeGenerator.LoadExtensions`) and builds its `JsonDocumentFormat` from the registry's node converters; a failing extension exits 1 with the `NPX` lines. The C2 open item is closed, but correct it: an unknown `$kind` is not "unreadable", `NodeListConverter` keeps it as an `UnknownNodeDocument`, so the report never failed on extension nodes; the wiring matters once a migration writes graphs. Graphs given as files or directories have no project, so only the built-in converters apply to them.
+- T030: CI step "Graph checks" runs `regen --check samples/HelloWorld` after the sample run.
+
+### Red/green evidence
+
+- Red (T027): `GenerationModeTests` and `GenerateRequestFactoryTests` written first: `dotnet build tests/NetPrints.Core.Tests` failed (`GenerationMode`, `GenerateRequestFactory`, `UpToDate` missing). Green after T028: 8 of 8 (then 9 with the `GenerateOnLoad` test).
+- Red (T029): `GenerateCommandTests` and `HelloWorldCliTests` with no `generate` command: 8 of 9 failed (unknown command). After the command: 4 of 9 still failed until `GenerateOnLoad` (stale files were rewritten by the load); then 66 of 66 Cli.Tests.
+- Red/green for `GenerateOnLoad`: with the option in place but the target condition reverted the new Core test failed; with the condition, it passes.
+- Red/green for migrate: `AProjectsBrokenExtensionFolderExits1WithItsDiagnostic` failed before the wiring; `AProjectsExtensionNodesAreReadThroughItsExtensionFolders` passed both before and after (see above).
+
+### Checkpoint C3
+
+- `dotnet build NetPrints.slnx -c Release`: 0 warnings, 0 errors. `dotnet format NetPrints.slnx --verify-no-changes`: exit 0.
+- Whole suite (Release): 1087 tests, 0 failed, 10 skipped (the headless-UI capability skips); E2E (`--fail-skips on`): 9 of 9 passed. Cli.Tests 68 passed.
+
+### Checkpoint C
+
+**Status**: ✓ Green
+
+**Build**: Solution builds with 0 warnings (Release mode).
+- `dotnet build -c Release -v q -tl:off --nologo`: 23 projects, 0 errors, 0 warnings.
+
+**Test Suite**:
+- Main suite (Release): 1087 tests, 1077 passed, 0 failed, 10 skipped (5m 04s)
+- E2E (`NETPRINTS_E2E=1`, `--fail-skips on`): 9 tests, 9 passed, 0 failed, 0 skipped (2m 37s)
+
+**CI**: Green; PR #9 awaits final review (T035).
+
+**Documentation**: New `docs/guide/cli.md` with global options, all four commands, exit codes, CI recipes, and removed P1 flags. Updated `docs/guide/install.md`, `docs/guide/projects.md`, `README.md`, and `.github/release-notes.md`.
+
+**SC-001 status (command coverage)**: ✓ Four of nine commands shipped and documented (`build`, `run`, `generate`/`regen`, `migrate`). Full coverage deferred to Checkpoint F (T098).
+
+**SC-002 status (run and regen parts)**: reopened by Review C, closed again in Review C part 2 on the evidence below.
+- As first written this said "Closed" on the CI "Graph checks" step. That step ran after the sample build, whose `NetPrintsGenerate` target rewrites a stale `.g.cs`, so it could never fail (Review C, High). The `run` half (T026) stood; the regen half did not.
+
+**Open items at the time of Checkpoint C** (this section first said "None"): restore failure exited 0, a project load failure exited 4, `run` mangled `--` arguments and buffered the program's output, Ctrl+C exited 4, exit-2/3 messages went to stdout, the CI graph gate could not fail, the tool and SDK versions were never compared, and the docs and contract disagreed with the code. All are closed in Review C parts 1 and 2 below. Still open, by design: the commands of sub-phases D-F (`catalog`, `format`, `show`, `merge`, `git-install`, SC-001 at Checkpoint F) and the final PR review (T035).
+
+### Review C fix batch, part 1 (T036, CLI runtime behaviour)
+
+Decisions, one per Review C comment:
+- `run --` forwarding: `CliApplication.RunAsync` cuts the argv at the first `--` before Spectre sees it and registers the tail as `ForwardedArguments`; `RunCommand` reads that holder instead of `Remaining.Raw`. Cases pinned: `""`, `-`, `--=`, an argument with spaces, a second `--` in the tail.
+- `run` buffering: new internal `IProgramRunner`/`ProgramRunner`. In production the child inherits stdin, stdout and stderr (prompts, ordering, colours, Ctrl+C); given streams, it redirects and copies with `CopyToAsync`. The test host's `CapturingProgramRunner` does that and writes to its console, so the forwarding tests keep asserting output. `IProcessRunner` stays for builds.
+- Restore failure: `snapshot.Messages` errors are printed to stderr (`file(line,col): code: message`) and `generate`/`migrate` return 1 before generating.
+- Malformed csproj: `MsBuildProjectSystem` already wraps `InvalidProjectFileException` in `ProjectSystemException` (`NPW003`), so no new code was added; the CLI now catches `ProjectSystemException` (project commands and migrate), prints `<project>: <message>` to stderr and returns 1 (3 for `NoSdkRegistered`). 4 stays for real bugs.
+- `--verbose` with no command is dropped before Spectre, so `--verbose --help` and `--verbose --version` exit 0 and a bare `--verbose` equals bare `netprints` (help, exit 0).
+- `CommandRuntimeException`: Spectre gives no structural distinction, so DI and command-creation faults are recognised by the fixed message prefixes of Spectre 0.55 (`Could not resolve type`, `Could not create`, `Could not find converter`, `Could not get settings type`) and map to 4; conversion, validation and missing-value errors stay 2. A test registers a command with an unresolvable dependency.
+- Ctrl+C: `OperationCanceledException` with the token cancelled returns 130 silently (`ExitCodes.Canceled`); an OCE without a cancellation request is still an internal error. Part 2 documents 130.
+- Streams: every exit-2 and exit-3 message (unknown project, no SDK, `--graph` rejection, migrate path errors) goes to stderr.
+- `--graph`: matching uses `GraphPathComparison.Default` (case-insensitive on Windows and macOS); relative values resolve against the current directory (part 2 fixes the guide); `GenerateSettings.Validate` rejects an empty value and Spectre's `__default_command` token with exit 2. `--check` help now says "Write no generated file".
+- `migrate` walk: reparse points (symlinks, junctions) are not followed; a directory that cannot be listed prints `<dir>: unreadable: <reason>`, counts as a failure and exits 1. `.git` and `node_modules` are not skipped (not asked).
+- `migrate` exit code: `CollectAsync` returns a `CollectResult(ExitCode, Message)` instead of the caller comparing message strings.
+- Missing `schemaVersion`: the `unreadable: Missing 'schemaVersion'.` line is kept and now pinned by a test; part 2 aligns the contract.
+- `TypeRegistrar` is `IAsyncDisposable`; `CliApplication` uses `await using` (also for the probe provider).
+- Broken-manifest test writes `ExtensionManifest.FileName` and asserts `NPX001` (`InvalidManifest`).
+
+Deviations: the manual smoke used a scratch console app that echoes its arguments (not HelloWorld, which ignores them); HelloWorld is covered by the `SampleCopy` tests. Symlink and unreadable-directory tests skip on Windows (and as root).
+
+### Review C fix batch, part 2 (T036, CI, versions, scripts, docs)
+
+Decisions, one per remaining Review C comment:
+- **CI gate that could not fail (High).** In `ci.yml`, "Graph checks" now runs right after the solution build and before any step that builds a sample; a "Generated files unchanged" step after the sample run does `git diff --exit-code -- '*.netpc.g.cs'`. Evidence below.
+- **Version skew (Medium).** The package's `build/NetPrints.Sdk.props` sets `NetPrintsSdkVersion` from its version folder (`<packages>/netprints.sdk/<version>/build/`), not for `NetPrintsUseLocalSdk=true`. `CliServices` asks the project system for it (`ExtraProperties`), `GenerateCommand` compares it with `ToolVersion` (the informational version, registered by `CliApplication` with `TryAddSingleton` so tests inject their own) ignoring `+metadata`: `generate` warns on stderr and continues, `generate --check` prints an error naming both versions and how to align them and exits 1. Rule recorded as Amendment 1 of ADR-0015. Path-derived rather than pack-time substituted so the props file stays one file shared by the samples and the package; it depends on NuGet's folder layout, which is fixed.
+- **`NetPrintsSkipGenerate` (Low).** Renamed `_NetPrintsSkipGenerate` in `MsBuildProjectSystem` and the targets; a new `_NetPrintsReportSkippedGenerate` target logs a low-importance message (`-v:d`) when generation is skipped. A project that still sets the old public-looking property now regenerates.
+- **Load-time default (Low).** `LoadingWithTheDefaultOptionsRegeneratesAStaleGeneratedFile` is the mirror of the `GenerateOnLoad: false` test (the editor relies on the default).
+- **`verify-packages.sh` (Low).** Both `|| true` are gone; exit codes are captured and asserted 0 for `--version`, `dotnet run` and `netprints run`, and `netprints regen --check "$APP"` runs with the packed tool against the `PackageReference` project.
+- **Docs.** `docs/guide/cli.md`: `--graph` is relative to the current directory; stray `regen` line removed; "Removed 0.1 flags" with the exact message, exit 2 and the mapping; exit 130, the stdout/stderr split, `run -- <args>` forwarding and the version rule added. `.github/release-notes.md`: a Breaking entry (flag mapping, exit-code changes) and a New entry; the CLI is not "New". `contracts/cli.md`: the `unreadable: Missing 'schemaVersion'.` line, 130, the stream split, the version rule, `--graph` resolution and the migrate walk. `CliCommandCatalog`: examples use `samples/HelloWorld/HelloWorld.Program.netpc.json`; the run description mentions `--` and the generate description mentions `regen`, since Spectre's help shows neither in the usage line. `CliHelpExamplesTests` checks that example paths exist and that the help mentions them. The rest of the `--check` wording (thread 1005): "Write no generated file" and the `obj/` note are in the guide and the contract.
+
+Red/green:
+- Red: `GenerateCommandTests` version cases (2 failed: no warning, exit 0 for `--check`), `SdkVersionPropertyTests` (2 failed), `GenerateRequestFactoryTests` skip-property cases (2 failed: the old public property still skipped, no skip message). Green after the code: Core.Tests 9 of 9, Cli.Tests 35 of 35 for those classes. The default-load mirror test passed on the existing code (it pins the default against a future flip). `CliHelpExamplesTests` red on the old catalog (2 of 6), green after.
+- `scripts/pack-local.sh` then `scripts/verify-packages.sh local-packages <version>`: all checks passed, including the new `regen --check` with the packed tool (the packed SDK's version folder equals the tool's version).
+
+**SC-002 evidence (closed here).** A scratch git repository holding `samples/` (HelloWorld with the in-repo SDK, `src` symlinked), Release CLI:
+1. A `.g.cs` with `// stale` appended and committed. The new CI order: `netprints regen --check samples/HelloWorld` prints `stale: HelloWorld.Program.netpc.g.cs`, `1 stale.`, exit **1**. The step fails.
+2. The old order (sample `run` first, then `regen --check`): `run` exits 0 and prints `Hello, World!`, then `regen --check` prints `1 generated file(s) up to date, 0 written.`, exit **0**. This is the defect.
+3. After the sample run with the stale file committed and the graph touched, `git diff --exit-code -- '*.netpc.g.cs'` prints the one-line diff and exits **1**, so a build that rewrote a committed file fails the new step. (Without the touch MSBuild's incremental check leaves a newer stale file alone, which is why `regen --check` runs first and the diff is the second line of defence.)
+
+Deviations: the version is read from the package folder name rather than substituted at pack time (above). `git diff` proof used a scratch repository, not the CI runner (the step itself is proven only by running the same commands).
+
+### Review C summary
+
+26 comments in review 5362322402 (2 High, 5 Medium, 13 Low, 6 Nit); all fixed: runtime behaviour in 3f8469d (part 1), CI gate, version rule, SDK property, tests, script, docs and these notes in part 2. Lessons: a gate needs a run that proves it can fail; an SDK build target that rewrites files must run after, not before, a check of those files; a note that says "None" for open items needs a list to be true.
+
+## Sub-phase D
+
+### Batch D1 (T037-T040, model, writer, reader, schema)
+
+Decisions:
+- Model type names carry the `Catalog` prefix (`CatalogTypeRef`, `CatalogNodeHint`, `CatalogObsoleteInfo`, `CatalogTypedValue`, `CatalogTypeKind`, ...) so they never clash with Roslyn's `TypeKind` or the Core specifier types; data-model.md's short names map one to one.
+- Optional flags (`generic`, `isEnum`, `isInterface`, `params`, `error`) are plain `bool` (false = omitted); optional collections are `IReadOnlyList<T>?`. Records compare lists by reference, so round trips are asserted on the re-written text, not with `Assert.Equal` on records.
+- The writer writes the model in the order it is given; sorting (by name, id, rendered name) belongs to the builder (D3). Assemblies are written multi-line (only parameters, type references, node hints and obsolete records are inline, as the contract lists); every parameter is one line inside a multi-line `parameters` array, string arrays (`modifiers`, `genericParameters`, `keywords`) are inline, `enumMembers` and `interfaces` are one per line. An empty obsolete record is written `{}`.
+- Escaping: `"`, `\\`, and every char below U+0020 (`\n`, `\r`, `\t` short, the rest `\u00xx` lower-case); U+007F to U+009F and everything non-ASCII are written as is.
+- No `!` anywhere; `LowerCaseEnumConverter<T>` (net10.0 only) reads and writes enums as lower-case names because the shared model cannot carry System.Text.Json attributes. `CatalogJsonContext` sets camel case, `WhenWritingNull` and `RespectNullableAnnotations`; the generated schema replaces the exporter's output for enums with a lower-case `enum` list, strips `null` from `type` and pins `schemaVersion` to `const 1`.
+- The reader checks `schemaVersion` on the JSON element first (missing or non-number is NPC102, above 1 is NPC101), then deserializes; it also rejects an empty `assemblies` list and duplicate type ids (NPC102). `Types` is normalized to an empty list because the generated deserializer leaves it null when the property is absent.
+- `CatalogDiagnosticCodes` constants are named after the meaning (`UnsupportedSchemaVersion`, `MalformedCatalog`, ...); `ExperimentalApis.cs` (the second `NPXE0004` declaration) arrives with T044, so no experimental type exists yet and no D1 file needs the opt-in.
+- API tracking: `dotnet format analyzers --diagnostics RS0016 RS0037` filled `PublicAPI.Unshipped.txt` for the model; `CatalogSchema` was added by hand because the fixer reported nothing for it.
+- `eng/validate-schemas.sh` loops over `SCHEMAS` (schema file and instance glob); a schema with no tracked instance fails. `scripts/build-docs.sh` compares both schemas after the copy.
+- The Annotations project already compiles the shared sources (Model, Engine, `CanonicalCatalogWriter`, Emit) for netstandard2.0; that build is the proof that they stay compatible.
+
+Red/green: T037 tests were written before any model type existed (red = compile errors CS0246 on `CatalogDocument`), committed, then green with T038/T039 (24 tests). T040's `CatalogSchemaTests` were red on `CatalogSchema` missing, then green (35 tests in `NetPrints.Catalog.Tests`); the sourcemeta CLI lint caught `enum_with_type` on the first schema, fixed in `CatalogSchema`.
+
+### Batch D2 (T041-T043, attribute injection, fixture library, glob and profile reader)
+
+Decisions:
+- T041: `AttributeSources.Source` is a C# 7.3 string constant (classic constructors, no `?`, no `#nullable`, `global::` names) and the generator registers it plus `AddEmbeddedAttributeDefinition()` in post-initialization output under the hint name `NetPrintsAttributes.g.cs`. `CatalogGenerator` is public (`[Generator(LanguageNames.CSharp)]`). The test project references `NetPrints.Annotations` with `Aliases="Annotations"` and adds `Microsoft.CodeAnalysis.CSharp` (central 5.9.0; the generator itself stays on 5.0.0); `GeneratorTestHost` compiles in-memory sources against the running framework's reference set, runs the generator through `CSharpGeneratorDriver`, and is the base for the later AN tests.
+- T041 (AN-T01): the "no NetPrints assembly reference" check reads the emitted PE's `AssemblyReferences`; the InternalsVisibleTo case compiles a second assembly that references the first (which grants it IVT) and asserts no compile error, so the `[Embedded]` types are not imported.
+- T042: the fixture is `IsPackable=false` like every test project (the release workflow packs the whole solution); CT-T12 must pack it explicitly with `-p:IsPackable=true`. `MinVerSkip=true` keeps version 1.0.0. The project builds warning-free under the repository analyzers without any suppression. It sits in a `/tests/Fixtures/` solution folder.
+- T042: the test project records the fixture's output folder as `AssemblyMetadata("CatalogFixtureLibOutput")` (same pattern as `PublicApiAnalyzersPath`), so `FixtureLibrary` needs no configuration guessing; `Profiles/**` is copied to the output. `ExposeAttribute` has constructor parameter `flags` and a get-only `Flags` property; how a profile's argument `name` matches (constructor parameter or property) is settled in T045.
+- T042: fixture coverage: generic class with constraints, generic method, nested type of a generic type, covariant interface, record struct with operators and implicit/explicit conversions, abstract base with virtual and abstract members, static class with `ref`/`out`/`in`/`params`, default values of several kinds, extension methods (plain and generic), obsolete method, error-obsolete method, obsolete type and obsolete enum member, a nested enum, `[NetPrintsType]`/`[NetPrintsNode]`/`[NetPrintsIgnore]` uses and an internal `[NetPrintsNode]` method (NPC004 case). The missing-assembly edge case (NPC005) needs a second assembly and is built by `MissingDependencyTests` (T044), not by this fixture.
+- T043: `Glob.IsMatch` is ordinal; `*` matches any run including dots, `?` matches one character, every other character (brackets, plus, backtick) is literal; iterative matcher, no regex. `Glob.AnyMatch(null or empty)` is false.
+- T043: `CatalogProfile` is a positional record with the data-model fields; enums `CatalogProfileBase`, `CatalogObsoleteMode`, `CatalogAttributeRuleKind`; `CatalogArgumentMatch` names its comparison fields `EqualsValue`/`ContainsValue` (a property called `Equals` would hide `object.Equals`). It is not `[Experimental]` yet: that lands with `ExperimentalApis.cs` in T045 as tasks.md lists.
+- T043: `ProfileJson.Parse` reads through `MiniJson`, a strict recursive reader (depth 64, `\uXXXX`, no comments, no trailing commas) that builds plain values, so it compiles into the generator. Every defect is `CatalogFormatException` NPC003: malformed text, root not an object, `schemaVersion` not a positive integer or above 1 (message names both versions), missing or invalid `id`, the reserved ids `public-api`/`annotated`, unknown `base`/`obsolete`/`rule` values, wrong property types, an argument without exactly one of `name`/`position` and exactly one of `equals`/`contains`, a negative `position`. Unknown properties (including `$schema`) are ignored so a later additive field does not break older readers.
+- `CatalogFormatException` moved from `Json/` to `Engine/` so the shared sources (and the generator) can throw it; the type and its namespace are unchanged.
+- API tracking: `dotnet format analyzers ... --diagnostics RS0016 RS0037 --severity info` reported nothing while the project had RS0016 errors (it needs a compiling workspace), so the new entries were taken from the analyzer's own RS0016 messages and appended to `PublicAPI.Unshipped.txt`; the build is clean.
+
+Red/green: T041 was red on CS0234 (`NetPrints.Annotations.CatalogGenerator` missing), then 3 AN-T01 tests green (one intermediate failure was a test defect: the `InternalsVisibleTo` line was placed before a `using`). T042 `FixtureLibraryTests` was red on CS0103 (`FixtureLibrary` missing), then 3 green. T043 `GlobTests` and `ProfileJsonTests` were red on CS0103/CS0246 (`Glob`, `ProfileJson`, `CatalogProfile` missing), then 99 tests green in `NetPrints.Catalog.Tests` (one intermediate failure was a test defect: a doubled backslash in a raw string).
+
+### Batch D3 (T044-T046, catalog builder, profile filter, snapshots)
+
+Decisions:
+- Profile argument `name` (D2 open item a): the profile matches a named attribute argument by its exact name, else a constructor parameter by name ignoring case, so `"Flags"` (property) and `"flags"` (constructor parameter of `ExposeAttribute(ExposeFlags flags)`) both select the same argument; `position` indexes the constructor arguments. Rendered values are invariant text, enums as member names (flags joined by `, ` in declared order, exact member first, numeric text when no combination covers the value), booleans lower-case. `equals` compares the whole rendered text ordinally; `contains` matches whole tokens for enums and arrays and a substring for everything else (`Read` does not match `Readable`).
+- Base `none` (data-model §2 leaves it open): a `require` rule selects instead of narrowing. A type matching a type rule is cataloged with all its public members, a member matching a member rule is cataloged together with its type, so `fixture-flags` needs no type rule. With another base a `require` rule narrows the base selection; `exclude` rules drop matches with every base; obsolete rule and `[NetPrintsIgnore]` apply last. Include globs only narrow (a `none` profile with globs alone is empty). Type globs match the full name with arity and dotted nesting (`Ns.Box`1.Handle`).
+- `annotated`: a type is selected when it has `[NetPrintsType]` (all its public members follow) or a `[NetPrintsNode]` method (only those methods follow), as research §8 words it.
+- `ICatalogFilter` is `ProfileId`, `IncludeType`, `IncludeMember`, `DescribeNode`. The builder decides what can be cataloged at all (public types nested only in public types; public members and protected members, `protected internal` counted as protected, of unsealed types; constructors, ordinary methods, operators, conversions, properties without indexers, fields) and only asks the filter about those, so custom filters never check visibility. A nested type is only offered when its declaring type was cataloged.
+- Not cataloged, no diagnostic: indexers, events, finalizers, explicit interface implementations, members with pointer or function-pointer types, compiler names containing `<`. Record-synthesized public members (`Deconstruct`, `Equals`, `op_Equality`, ...) and implicit constructors are cataloged like any declared member, as the live provider sees them.
+- Type refs follow `ReflectionConverter`: `Outer+Inner` nesting, arrays are `System.Array`, `dynamic` is `System.Object`, type parameters are `generic`, own generic arguments only. Base types are written for structs (`System.ValueType`), enums (`System.Enum`) and delegates too; only `System.Object` is omitted. Type modifiers exist only for classes (`static`, `abstract`, `sealed`); struct and enum are not written as `sealed`. Method modifiers order `static, abstract, virtual, override, sealed (sealed override only), extension, operator`; interface members are `abstract`. Constants are `static` and `const`, a get-only property is `readonly`.
+- Parameter defaults use the live provider's typed value: the runtime type of the constant and its invariant text, so an enum default is its underlying number (`DayOfWeek.Monday` is `System.Int32` `1`); a null default carries the parameter type's name. The parity batch (T057-T059) either keeps this or changes both sides together.
+- Enum members are all kept (the model has no per-member obsolete data); `[Obsolete]` on an enum member does not remove it.
+- NPC004 is independent of the profile: any `[NetPrintsType]` on a non-public type and any `[NetPrintsNode]` on a method that is not cataloged-visible (or sits in a non-public type) warns with the symbol id as source. Public members carry their attributes with the default metadata import (tested); only internal and private ones need `MetadataImportOptions.All`, so the tool's compilation in D4 should use it for NPC004 to fire on a compiled library. NPC005: a member whose signature mentions an unresolved type is left out with one warning naming the missing assembly (from the error type's containing assembly); a type whose base or any interface is unresolved is left out whole. Diagnostics are sorted by source, code, message.
+- Research R11 risk is closed: the `[Embedded]` internal attributes are read from the compiled fixture under both default and `All` metadata import (`AnnotatedProfileTests`), so `[Embedded]` stays.
+- `XmlDocumentationSource` takes the texts of the XML files (first file that documents an id wins, text that is not well-formed or has a DOCTYPE is skipped, `XmlResolver` null). Normalization (data-model §6): cref names are the last segment without arity or parameters (`#ctor` becomes the type), `langword` and `name` attributes are the text, `<see>` with content renders the content, `para` splits paragraphs joined by a blank line, whitespace runs collapse to one space, `<inheritdoc />` and empty text give no summary (so `Circle.Area` has none); other elements render their text concatenated (list items are not separated).
+- `SymbolIds` is public (`Of`, `FullName`), it is the one place that turns symbols into ids for the builder, the profile globs and later the CLI. `CatalogIdentity.IdPattern` is the single id regex constant (`ProfileJson` uses it).
+- Experimental (ADR-0017): `ExperimentalApis.cs` is the second `NPXE0004` literal; `CatalogBuilder`, `ICatalogFilter`, `CatalogProfile`, `CatalogProfileFilter`, `BuiltInCatalogProfiles`, `ProfileJson` and the profile records and enums are marked. `NetPrints.Catalog` and `NetPrints.Annotations` opt in with `NetPrintsExperimentalOptIn` because their own internal code uses the marked types (a same-assembly use is still reported). `ExperimentalApiTests` covers NPXE0004 (missing opt-in is an error linking the guide, opt-in compiles, the marked types, same id as Core) and now scans `NetPrints.Catalog` in the reflection test; Core.Tests references `NetPrints.Catalog`.
+- API tracking: `dotnet format analyzers` was not retried (it did nothing in D2 while RS0016 errors existed); `PublicAPI.Unshipped.txt` was updated from the analyzer's own RS0016/RS0017 messages: the 80 D2 lines of the now experimental profile types were replaced by their `[NPXE0004]` form and the new symbols appended.
+
+Snapshot review (T046, `public-api`, `annotated`, `fixture-flags`, read line by line against the fixture sources and spec edge cases): generics with constraints (`Box`1`, `Map``1`, `T`/`TResult` as `generic`), nested type of a generic type (`declaringType`, `Box+Handle` name form for nested refs), `ref`/`out`/`in`/`params`, defaults of five kinds, extension methods, operators and both conversions with `operator`, obsolete method (message) kept and the error one dropped, obsolete type and enum member kept, protected constructor with the `<see cref>` normalized, `[NetPrintsIgnore]` members and the internal `[NetPrintsNode]` absent, node hints sorted. Notable: the framework interface lists of `Enum` (`IComparable`, `IConvertible`, `IFormattable`, `ISpanFormattable`) and `IEquatable` come from the runtime's reference set, so a .NET 10 servicing update that changes them would change the snapshots (the tests compile against the running runtime's assemblies); `params int[]` is `System.Array` as in the live provider; `Counter.Step` and `Format` show the enum-default rule above; class primary-constructor docs on `ExposeAttribute` repeat the class summary because the compiler copies it.
+
+Red/green: T044 tests were committed red (28 CS0246 on `CatalogBuilder`, `ICatalogFilter`, `CatalogBuildResult`, `IDocumentationSource`); the `ExperimentalApiTests` additions were red at runtime (9 of 17 failed: `NPXE0004` rows, missing markers, no `ExperimentalApis`). With T045 all 170 tests in `NetPrints.Catalog.Tests` were green (the first run failed 4: three missing snapshots and a test defect, `Hidden()` correctly raises NPC004 under `public-api` too). Snapshots written with `NETPRINTS_UPDATE_SNAPSHOTS=1`. `NetPrints.Annotations` (netstandard2.0) builds the shared sources with 0 warnings. Release suite: 1326 total, 0 failed, 10 skipped (1246 before).
+
+### Batch D4 (T047-T050, catalog runtime, parity, profile contribution)
+
+Decisions:
+- Runtime shape: `CatalogTypeCatalog` (public, `ITypeCatalog` over a `CatalogDocument`), `CatalogLoader` (`Load`, `LoadFile`, `LoadJson`, `FirstOfEachId`), internal `SpecifierFactory` and `Log` (event 5001, NPC103). `LoadEmbedded` waits for `EmbeddedCatalogReader` (T070). CT-T18 is `CatalogLoader.FirstOfEachId(catalogs, logger)`: first id wins, later ones are dropped with an NPC103 warning; `ReflectionHost` (T077) calls it on the registry catalogs followed by the embedded ones, so the "two extensions" and "extension plus embedded" cases share one path. `RegistryBuilder` does not dedupe `AddTypeCatalog` by id (not in T049).
+- Inheritance in the catalog: `GetMethods(Type)` and the other type queries walk the cataloged base chain (an `override` hides the member it overrides, as the live provider's `GetAllMembers` does); a base outside the catalog contributes nothing. Extension methods are offered for a type that equals or derives from their first parameter, also for a type outside the catalog.
+- Subclass and cast rules: base chain plus stored interfaces (the engine stores all interfaces); interface answers match by name and arity like the live provider; every non-interface type is a `System.Object` (also a type the catalog does not list, so `ArgumentType=Single` still offers `Equals(object)`); struct and enum chains end in `ValueType`/`Enum`, delegates in `MulticastDelegate`/`Delegate`. `HasImplicitCast`: identity, `System.Object`, subclass (reference and boxing), and a stored `op_Implicit` whose declaring type is in the class chain of either side (the C# rule for user-defined conversions). Numeric widening and variance are not modelled.
+- Live-provider quirks mirrored (so parity is 0 differences, and a later fix flips both sides): (1) `GetNonStaticTypes` also lists static classes (its `IsAbstract && IsSealed` test never holds in Roslyn); (2) a field or property whose type is a type parameter gets the `TypeSpecifier` `Ns.Box+T` (namespace plus nested owner name), and never matches a variable-type filter; (3) fields get the same visibility for getter and setter, also `const`; (4) an enum lists a parameterless constructor and its members as `Static | Const` variables (the runtime synthesizes both from `EnumMembers`, the catalog data stays as declared); (5) a method with no return type is a `System.Void` struct for the return-type filter; (6) arrays are `System.Array`, so an array parameter matches a `System.Array` filter (the live provider does not).
+- Live-provider defect fixed: `DocumentationUtil` built documentation keys from the last namespace segment and simple type names, so every type in a multi-segment namespace, generic, nested or `ref` member got no documentation. It now uses the compiler's documentation comment id (`GetDocumentationCommentId()`), the id the XML file uses. The parity test answers 30+ summaries after it and none before (red: every summary, return and parameter differed). The live text is still the raw `InnerText`; the catalog text is normalized (data-model §6), equal for the fixture's single-line comments.
+- Parity scope (`ParityTests`): the live provider is built over the fixture plus the framework assemblies (all excluded from enumeration) and its results are narrowed to members declared by a cataloged type that are public or protected (it also lists private members and what `Object`, `ValueType` and `Enum` declare), minus the members a profile leaves out on purpose (`Old.Removed`, `Counter.Reset`, `Counter.Secret`). Sets are compared, as the composite drops duplicates. Matrices: methods by type (none plus all) x static x generic x visible-from, by argument and return type filters, variables by static x visible-from and by variable-type filter with both directions, constructors, enum names, overridable methods, overloads of every method, documentation, and subclass and cast answers for every pair of fixture types plus `Object`, `ValueType`, `Enum`, `IComparable`, `IEquatable<Vector2>` and `Single`. Not compared: queries for `Box+Handle` (the live provider looks types up by metadata name and loses the arity of the enclosing generic type, so it cannot resolve it; the type is still in `GetNonStaticTypes` and in the type-less queries); `String` and `System.Array` as filter types (a catalog knows outside types by identity only; `String` implements `IEnumerable<char>`).
+- T049: `IExtensionBuilder.AddCatalogProfile`, `ExtensionRegistry.CatalogProfiles` (both `[Experimental(ExperimentalApiIds.CatalogProfiles)]`, the Core constant, so no third `"NPXE0004"` literal), `NetPrints.Extensibility` references `NetPrints.Catalog` and opts in to NPXE0004. A built-in id (`public-api`, `annotated`) or an id already registered is an NPX006 issue and the first wins. The test extension project now references Catalog like the other host-supplied assemblies (`Private="false"`), otherwise its output folder gained `NetPrints.Catalog.dll` and `SdkTargetsTests` (`Single()` on the folder's dlls) failed.
+- T050: the reference gate covers `NetPrints.Catalog` and `NetPrints.Annotations` for both `Avalonia*` and `Microsoft.Build*`. `scripts/verify-packages.sh` asserts `tools/net10.0/NetPrints.Catalog.dll` in the `NetPrints.Sdk` package (it arrives through Generator -> Generation -> Extensibility -> Catalog); run locally with a pack into a scratch feed: all checks passed.
+- API tracking: `PublicAPI.Unshipped.txt` filled by hand from the RS0016 messages (`dotnet format analyzers` does nothing while the errors exist); the Extensibility entries are `[NPXE0004]`.
+
+Red/green: T049 tests red (6 CS1061: no `AddCatalogProfile`, no `CatalogProfiles`), green after the implementation (`ContributionTests` 9 of 9). T047 red (CS0103 `CatalogLoader` in 10+ places), first green run of the new `Runtime` tests found the live-provider quirks above one by one (the first run had 8 of 19 failing, most of them the quirks; documentation differed for every method until `DocumentationUtil` was fixed). `NetPrints.Catalog.Tests` 189 of 189; the annotations generator still builds the shared sources with 0 warnings. Release suite: 1347 total, 0 failed, 10 skipped (1326 before; the first full run had one failure, `SdkTargetsTests.TouchingOnlyTheExtensionDllRetriggersNetPrintsGenerate`, fixed by the test extension reference above).
+
+### Batch D5 (T051-T054, catalog configuration, sources, C# emitter)
+
+Decisions:
+- Config types (`CatalogConfig`, `CatalogSourceConfig`, `CatalogOutputConfig`, `CatalogOutputFormat`, `CatalogOverrides`, `ResolvedCatalogConfig`, `CatalogConfigResolver`, `CatalogConfigException`) are public and stable (contracts/catalog.md §2 lists them stable): none exposes an experimental type. An inline profile is kept as its JSON text (`ResolvedCatalogConfig.InlineProfileJson`, validated with `ProfileJson.Parse` at resolve time, NPC003 message wrapped in `CatalogConfigException`) and the CLI parses it, so the config API never mentions `CatalogProfile`.
+- `Resolve` takes the config directory and the current directory as parameters (`Resolve(file, configDirectory, overrides, currentDirectory)`): the contract's two-argument form cannot say what a relative path is relative to. It does no file IO; `Read`/`Parse` do. Files allow comments and trailing commas; a `schemaVersion` above 1 fails naming both versions.
+- Merge (data-model §3): any CLI source replaces the file's sources (CLI paths against the current directory, file paths against the config directory); `include`/`exclude` are appended (file first); every other list and scalar is replaced; a CLI `--profile` also drops an inline profile; a profile string ending in `.npprofile.json` becomes an absolute path, anything else stays an id. Each source needs exactly one of `assembly`, `package` (+ `version`) or `project` (+ `assemblies`); no source at all is a `CatalogConfigException` (the CLI turns "no file and no source option" into exit 2 before calling `Resolve`).
+- Schema: `CatalogConfigSchema.GenerateV1()` (same exporter approach as `CatalogSchema`), committed as `schemas/netprints.catalog.v1.schema.json`; `profile` is `anyOf` string or an object with a required `id`; a source is `oneOf` the three shapes. `eng/validate-schemas.sh` validates `**/netprints.catalog.json` (git pathspec `:(glob)`), `scripts/build-docs.sh` compares the published copy. The §5 example lives at `tests/NetPrints.Catalog.Tests/Config/netprints.catalog.json`.
+- No dependency change: `IProjectSystem` and `IProcessRunner` are in `NetPrints.Core` (already reached through `NetPrints.Reflection`), so Catalog references neither MSBuild nor the CLI's internal `IProgramRunner`; the reference gate stays as it is.
+- `CatalogSourceResolver(IProjectSystem, IProcessRunner)`: one temporary project `obj/netprints-catalog/<16 hex of SHA-256 over target framework, assembly paths, packages and reference paths>/catalog.csproj` holds every `assembly` (`<Reference><HintPath>`) and `package` source; the file is written as R9 says (isolation properties, explicit `Sdk.props`/`Sdk.targets` imports, `EnableDefaultItems`, `NuGetAudit` off so nothing goes to the network for advisories) and `AssemblySearchPaths` gets the configured reference paths appended after `Sdk.targets`. A test evaluates the written file with the real `dotnet msbuild -getProperty` under a directory that holds a CPM `Directory.Packages.props` and a `Directory.Build.props`: neither leaks, and the search paths contain the reference directory. `dotnet restore` runs through `IProcessRunner`; a non-zero exit is a `CatalogSourceException` and the temporary directory is kept for inspection. Assembly patterns support `*` and `?` in the file name only. Assembly targets are matched to the snapshot by full path, package targets by the global packages folder path (`NuGetPackageRoot` property, then `NUGET_PACKAGES`, then `~/.nuget/packages`). Unmatched names, missing files and packages without assemblies are NPC001 error diagnostics in `CatalogSourceSet.Diagnostics`, not exceptions. A missing documentation path falls back to the sibling `.xml`.
+- `CatalogSourceSet.DeleteTemporaryDirectories()` is the caller's to invoke after a successful run (T055 will).
+- `CatalogCompilationFactory.Create` opens every reference and target (targets are added when missing), imports non-public metadata (`MetadataImportOptions.All`, as the D3 note asks for NPC004), and returns `CatalogCompilationInput` (compilation without syntax trees, target assembly symbols, `XmlDocumentationSource` over the targets' XML files). Unreadable files are `CatalogSourceException`.
+- T054: `CSharpLiteral.Quote` and `CatalogCSharpEmitter.Emit(document, namespace, className)` are public stable types in `Emit/`, which the Annotations project already compiles for netstandard2.0 (0 warnings, no file IO). Escapes: `\"`, `\\`, `\n`, `\r`, `\t`, `\uXXXX` (upper-case) for other controls U+0000-U+001F, U+007F-U+009F, U+2028, U+2029 and unpaired surrogates; every other character is written as is. Names are validated with `SyntaxFacts.IsValidIdentifier` plus a keyword check (`IsValidIdentifier("class")` is true). The emitted file is exactly the §4 shape; the test compiles it with Roslyn against the built `NetPrints.Catalog` and compares `Create()` with `CatalogLoader.Load`.
+- API tracking: `PublicAPI.Unshipped.txt` filled by hand from the RS0016 messages (`dotnet format analyzers` does nothing while the errors exist); no `[NPXE0004]` entries this batch.
+
+Red/green: T051 (`CatalogConfigTests`) red on CS0246 (`CatalogConfig`, `CatalogOverrides`, `ResolvedCatalogConfig` missing), green with T052 (23 tests; the CT-T16 config cases were red until the schema file was generated with `NETPRINTS_UPDATE_SNAPSHOTS=1`, then 21 green in `CatalogSchemaTests`; `eng/validate-schemas.sh` lint asked for `anyOf` instead of `oneOf` on the profile and no trailing period, fixed). T054 red on CS0103 (`CatalogCSharpEmitter`, `CSharpLiteral`), three defects found on the first run and fixed (`CatalogInfo` compares its name list by reference, `IsValidIdentifier` accepts keywords, xUnit cannot carry a lone surrogate in `InlineData` so that case is a `[Fact]`). T053 red on CS0246 (`CatalogSourceResolver`, `CatalogSourceSet`), green on the first run (12 resolver tests, 4 factory tests).
+
+### Batch D6 (T055-T058, fixture extension, `catalog` command, performance)
+
+Decisions:
+- T055: `tests/Fixtures/Extensions/Directory.Build.props` imports the parent props through `GetPathOfFileAbove` and holds what every fixture extension shares (`net10.0`, `EnableDynamicLoading`, no per-TFM output folder, `CopyLocalLockFileAssemblies=false`, the manifest copied); `Fx.Catalog` only sets its `OutputPath` (`bin/<config>/extensions/fx.catalog/`). It references Core, Reflection, Serialization, Catalog and Extensibility with `Private="false"` (host-supplied, the D4 lesson: otherwise their DLLs land in the extension folder and `SdkTargetsTests` breaks), opts in to `NPXE0004` with `NetPrintsExperimentalOptIn`, and copies `public-api.npcat.json` and `fixture-flags.npprofile.json` from `NetPrints.Catalog.Tests` (linked, not duplicated) next to itself. The extension loads them relative to its own assembly location: `AddTypeCatalog(CatalogLoader.LoadFile)`, `AddCatalogProfile(ProfileJson.Parse)`, `AddProjectProfile` for `fx.catalog.profile` (`CatalogProfileId = "fixture-flags"`). Core.Tests, Editor.Tests and Cli.Tests reference it with `ReferenceOutputAssembly="false"`; `NetPrints.Testing.FixtureExtensions.CatalogFolder()` finds its output for every test assembly.
+- T057, command shape: `CatalogCommand` is an `AsyncCommand`, not a `ProjectCommandBase` (it has no positional project: `--project` is an option, resolved with `ProjectLocator`, so a directory works as for `build`). Order: config resolve (exit 2 without file and source, exit 1 for an unreadable/invalid/newer file or `Resolve` failure) -> SDK check (exit 3) -> project load (its `ExtensionFolders` and profile id; project errors exit 1) -> extensions (`GraphCodeGenerator.LoadExtensions`, so `NPX` failures print as in `generate`, exit 1) -> profile -> `CatalogSourceResolver` -> `CatalogCompilationFactory` -> `CatalogBuilder` -> output. Restore and source failures (`CatalogSourceException`) exit 1 with the temporary directory kept; `CatalogSourceSet.DeleteTemporaryDirectories()` runs after the output step, also for `--check` (the run itself succeeded).
+- Profile resolution: inline profile (`ProfileJson.Parse` of `InlineProfileJson`) or a `*.npprofile.json` path (unreadable or invalid: exit 1), else an id among the built-ins then `registry.CatalogProfiles` (unknown: exit 2, listing the available ids), else with `--project` the project profile's `CatalogProfileId` (resolved through `registry.FindProfile(project.ProfileId)`; an id nobody provides: exit 1), else `public-api`. The project is loaded twice (once here for its extensions and profile, once inside `CatalogSourceResolver`); the second load is a cheap re-evaluation and keeps the Catalog API free of project internals.
+- `--include`/`--exclude` are type-name globs (matched against the full name, arity and nesting included): they are appended to `IncludeTypes`/`ExcludeTypes` of the chosen profile, the namespace lists stay the profile's. `--assemblies` needs `--project`; one `--project` per run (the assemblies belong to it).
+- Output: `wrote <path> (<T> types, <M> members)` (members = constructors + methods + variables), `up to date: <path> (...)` when the bytes are equal (nothing is written, so the timestamp is untouched), `stale: <path>` with `--check` (exit 1); diagnostics as `<source>: <severity> <code>: <message>` on stdout (a warning does not change the exit code; an error, NPC001 included, exits 1 before anything is built). Default names: `<id>.npcat.json`, or for `csharp` `<ClassName>.g.cs`; the default class is the id in Pascal case plus `Catalog` (`catalogfixturelib` becomes `CatalogfixturelibCatalog`) and the default namespace `NetPrints.Catalogs`; an invalid name or catalog id is exit 2. Files are UTF-8 without a BOM.
+- `CliServices` asks the project system to capture `NuGetPackageRoot`: `CatalogSourceResolver` uses it to find a package's files, and a `NuGet.config` may move the cache (without it the resolver fell back to `~/.nuget/packages` and reported NPC001 for a package restored into another folder). `CliTestHost.Services` registers the real `ProcessRunner` because the command takes an `IProcessRunner`.
+- `netprints catalog --help` examples avoid repository paths (`CliHelpExamplesTests` checks every path-like token against the repository).
+- CT-T12: `PackedFixtureFeed` (an `IAsyncLifetime` class fixture) runs `dotnet pack CatalogFixtureLib.csproj --no-build -p:IsPackable=true -o <temp feed>` (Debug or Release as the tests run), and each test writes a `NuGet.config` into its working directory with `<clear />`, the local feed as the only source and `globalPackagesFolder` in the temp folder: no network and no package left in the real global cache (checked: `~/.nuget/packages` has no `catalogfixturelib`). The temporary project sits below the working directory, so that config is the one NuGet uses.
+- CT-T17 limits stay the specified ones (5 s, 30 s). Measured on the development machine (Debug build, both tests running together, cold JIT): fixture 0.05 s, `System.Runtime` reference assembly (the `Microsoft.NETCore.App.Ref` pack, with every reference assembly of the pack as references) 0.63 s, about 100x and 48x of headroom, so a slow shared runner does not flake. The reference pack is found next to the running shared runtime (`<root>/packs/Microsoft.NETCore.App.Ref/<version>/ref/net10.0`); the test fails with a message when the pack is absent.
+
+Red/green: T056 was red before the command existed: 15 of 18 `CatalogCommandTests` failed (`unknown command`; the three usage theory cases already passed because an unknown command is also exit 2). With T057 17 passed and one failed (the package case, NPC001: the resolver looked in `~/.nuget/packages`), green after `NuGetPackageRoot` was captured (18 of 18; the fixture, the flags and the project-profile cases equalled the D3 snapshots on the first run). T058 was written after the engine (nothing to make red: the limits are wide by design); its two tests pass and were measured with a 1 ms limit to record the numbers above.
+
+### Batch D7 (T059-T062, end to end, catalogs guide, Checkpoint D)
+
+Decisions:
+- T059 graph: `Fixtures/CatalogCall/CatalogCall.Program.netpc.json` constructs `new Vector2(3, 4)` (constructor node, impure), calls `Add(other)` on it with itself as the argument, reads `Length` (a variable getter) and prints it with `Console.WriteLine(float)`: the output is `10` (sqrt(6^2 + 8^2)), which a default or skipped call cannot produce. A first draft with pure nodes printed `0` because nothing executed them: constructor and `Add` nodes must be on the exec chain. Node ids follow the 14-character `SchemaTests` pattern (a 15-character draft failed `EveryNetpcJsonFixtureValidatesAgainstTheCommittedSchema`).
+- `ExtensionCatalogTests` writes a temporary `.csproj` with a `Reference` (`HintPath`) to the built `CatalogFixtureLib.dll` and `<NetPrintsExtension Include="...fx.catalog" />`, then runs a real `dotnet build` and `dotnet run --no-build` through `ExternalProcess` and `LocalSdkLayout`, as `ForLoopBuildTests` does. `FixtureExtensions.CatalogLibraryAssembly()` (NetPrints.Testing) locates the DLL; Core.Tests references `CatalogFixtureLib.csproj` with `ReferenceOutputAssembly="false"` so it is built first (the other test projects locate it the same way).
+- `CatalogSearchTests` (Editor.Tests) loads the `fx.catalog` folder into an `ExtensionHost`, reloads a `ReflectionHost` and asserts `Vector2` is offered and `Provider.GetMethods(WithType(Vector2).WithStatic(false))` yields `Add`; a second test shows the type is absent without the extension. `ReflectionHost` already fed `registry.TypeCatalogs` into its provider (D4), so `CatalogLoader.FirstOfEachId` was not pulled forward from T077. Editor.Tests needs no `NPXE0004` opt-in (it uses no marked API).
+- Help links: no NPC diagnostic carries a help URL today (`CatalogDiagnosticCodes` are plain codes printed as `<source>: <severity> <code>: <message>`); only `NPXE` ids link, to `guide/extensions#api-stability`. The guide's "Diagnostics" section has the heading `## Diagnostics`, so `.../guide/catalogs#diagnostics` resolves (checked in the built site) for any later link.
+- T060/T061: `docs/guide/catalogs.md` documents what exists (option names verbatim from `CatalogSettings`), including `--format csharp`, profile resolution and the experimental status of the profile APIs. Not documented, because they land in sub-phase E: annotations and embedded catalogs (T079 adds an "Annotations" section). `docs/guide/cli.md` got a short `catalog` section pointing to the guide; `docfx.json` includes `NetPrints.Catalog.csproj` (the six "Duplicate source file PublicAPI" docfx warnings are the same for Core and Reflection, so nothing new); README and `extensions.md` link the guide.
+
+Red/green: T059 was red first: with the test in place and the fixture graph absent it failed with `FileNotFoundException` (`CatalogCall.Program.netpc.json`); with a first graph it built and ran but printed `0` (assert `10` failed), then went green after the exec chain was fixed. The full suite then caught the id-length schema failure (red), fixed (green). `CatalogSearchTests` was written after the feature existed (D4/D6), so it was green on first run and is a regression pin, not a red-first test.
+
+### Checkpoint D
+
+**Status**: green.
+
+**Build**: `dotnet build NetPrints.slnx -c Release`: 25 projects, 0 errors, 0 warnings. `dotnet format NetPrints.slnx --verify-no-changes`: exit 0. `scripts/build-docs.sh`: succeeded (catalogs page built, anchor `diagnostics` present, `schemas/*.json` compared with `cmp`).
+
+**Test suite** (Release, solution-wide, `--ignore-exit-code 8`): 1443 total, 1433 passed, 0 failed, 10 skipped (headless UI capability skips), 4m 16s (1440 before D7 plus `ExtensionCatalogTests` 1 and `CatalogSearchTests` 2). The first run had two failures: the schema id length of the new fixture (fixed) and one `NetPrints.Cli.Tests` error whose test I could not name; the project passed 142 of 142 when run alone and passed again in the second full run, so I treat it as a transient, listed below.
+
+**SC-004** (public-api catalog equals the live provider's view): `ParityTests` (CT-T08, D4) shows 0 differences over the fixture, and `CatalogCommandTests` CT-T11 shows the CLI output equals the committed `public-api.npcat.json` snapshot (D6, 18 of 18).
+
+**SC-005, extension path**: `ExtensionCatalogTests` builds and runs a temporary project that references `CatalogFixtureLib.dll` and the `fx.catalog` extension; the graph calling `Vector2.Add` prints `10`. `CatalogSearchTests` shows the editor's reflection host offering `Vector2.Add`. The embedded path is Checkpoint E.
+
+**SC-006** (performance): `CatalogPerformanceTests` (CT-T17) passes with the specified limits (5 s, 30 s); measured in D6: fixture 0.05 s, `System.Runtime` reference pack 0.63 s. Both ran again in the suite above.
+
+**Documentation**: new `docs/guide/catalogs.md`; `cli.md`, `extensions.md`, `README.md` link it; `docs/api/docfx.json` includes `NetPrints.Catalog`.
+
+**Open items for the reviewer (T063)**:
+- The unexplained one-off `Cli.Tests` error in the first full run (no reproduction in two later runs).
+- `CatalogLoader.FirstOfEachId` is still unused until T077 (E).
+- The guide does not cover annotations or embedded catalogs (T079), and `--format csharp` output is documented from the contract and D6 notes, checked by `CSharpFormatTests` rather than by an end-to-end compile in the guide.
+- NPC diagnostics have no help URL; if one is wanted, use `guide/catalogs#diagnostics`.
+
+## Review D (T063, Opus) — PR #9 review 5365750210
+
+Verdict: Checkpoint D accepted with a fix batch: 4 medium and 15 low anchored findings (D-R1 to D-R19) plus two findings that could not be anchored (D-R20 and D-R21). No high findings. The reviewer's independent run matched Checkpoint D (1443 total, 0 failed, 10 skipped). Fixed in three batches: D-F1 (2d49055), D-F2 (5d2df0f), D-F3 (80ee183).
+
+| Id | Sev | Finding | Status |
+| --- | --- | --- | --- |
+| D-R1 | medium | inline profile with a comment or trailing comma rejected | fixed, 2d49055 |
+| D-R2 | medium | documentation parity only for single-line comments | fixed, 2d49055 |
+| D-R3 | medium | large `--format csharp` catalogs fail with CS8103 | deferred to E (T066 note in tasks.md, redesign as UTF-8 data) |
+| D-R4 | medium | stable public surface larger than contract §2 | fixed, 2d49055 |
+| D-R5 | low | NPC002/NPC003 never printed as codes | fixed, 5d2df0f |
+| D-R6 | low | late or wrongly coded usage errors | fixed, 5d2df0f |
+| D-R7 | low | project loaded twice, load messages dropped | fixed, 5d2df0f |
+| D-R8 | low | package targets matched on the typed version string | fixed, 5d2df0f |
+| D-R9 | low | temporary-directory cleanup not best-effort | fixed, 5d2df0f |
+| D-R10 | low | `annotated` selected a type through a non-public `[NetPrintsNode]` method | fixed, 2d49055 |
+| D-R11 | low | guide statements that do not match the code | fixed, 80ee183 (`--include` widens, absolute `wrote` path, `public-api` protected members, NPC codes, unreferenced-assembly edge case, when the temporary directories are kept, exit codes, cleanup warnings, `@version` matching, dependency resolution) |
+| D-R12 | low | contract and data model drift | fixed, 80ee183 (4-argument `Resolve` was already in §2 from D-F1; §1 example regenerated from the snapshot; `Outer+Inner`; "not cataloged" lists; §4 exit codes, output path, cleanup) |
+| D-R13 | low | release notes miss sub-phase D | fixed, 80ee183 |
+| D-R14 | low | CT-T12 not isolated from the user's package source mapping | fixed, 80ee183 |
+| D-R15 | low | fake project system paired with the real process runner | fixed, 80ee183 |
+| D-R16 | low | indexers and events excluded without a note, parity blind to it | fixed, 2d49055 (fixture, `NotCatalogedByDesign`); documented 80ee183 |
+| D-R17 | low | build half of CT-T15 does not depend on the extension | fixed, 80ee183 (confirmed, negative control added) |
+| D-R18 | low | lone surrogates written unescaped | fixed, 2d49055 |
+| D-R19 | low | no test of dependency resolution through reference paths | fixed, 5d2df0f (found a real gap) |
+| D-R20 | low (body) | `MsBuildRegistration.EnsureRegistered` check-then-act race | fixed, 5d2df0f (lock; diagnosis below) |
+| D-R21 | low (body) | `CliExitCodeTests` leaks `/tmp/np-cli-*` directories | fixed, 80ee183 |
+
+Every finding has a final status. The spec edge cases the reviewer listed as deferred to E are under "Review D → deferred".
+
+### Review D fixes
+
+Batch D-F1 (D-R1, D-R2, D-R4, D-R10, D-R16, D-R18). Each behaviour fix has a test that failed first.
+
+- **D-R1**: the inline profile is re-serialized with `JsonElement.WriteTo(Utf8JsonWriter)` instead of `GetRawText()`, so comments and trailing commas no longer reach the strict `ProfileJson` reader.
+- **D-R2**: the live `DocumentationUtil` (`NetPrints.Reflection`) now returns the same normalized summary, param and returns text as the catalog. Placement: `Catalog` references `Reflection`, so `Engine/SummaryNormalizer.cs` stays in `NetPrints.Catalog` and is linked into `NetPrints.Reflection` as an internal source (`Compile Include`, like the `Annotations` shared sources); no reference cycle and no new public type. `CatalogFixtureLib` gains `Fixture.Documentation.Documented` (multi-line summary, `<paramref>`, `<see cref>`, `<see langword>`, `<c>`, `<para>`, multi-line `<param>`/`<returns>`). Parity stays at 0 differences. **Release notes (D-F3, D-R13): live behaviour changed.** Method, parameter and return documentation shown by the live provider is now whitespace-collapsed plain text; `<see cref>`, `<paramref>` and `<see langword>` render as their target name (they rendered as empty text before), and an empty element is now `null` instead of `""`.
+- **D-R4**: public surface of `NetPrints.Catalog` trimmed to what contracts/catalog.md §2 now lists. Internal (visible to `NetPrints.Catalog.Tests` through `InternalsVisibleTo`): `SymbolIds`, `Glob`, `CSharpLiteral`, `CatalogSchema`, `CatalogConfigSchema`. Experimental (`[Experimental(ExperimentalApis.CatalogProfiles)]`, NPXE0004; the CLI, the tests and `Fx.Catalog` already opt in through `<NetPrintsExperimentalOptIn>`): `CatalogIdentity`, `IDocumentationSource`, `XmlDocumentationSource` (only the experimental `CatalogBuilder` needs them), the sources pipeline `CatalogSourceResolver`, `CatalogSourceSet`, `CatalogCompilationFactory`, `CatalogCompilationInput`, `CatalogSourceException` (their shape is still moving, D-R7, D-R8), and `CatalogCSharpEmitter` (its emitted shape may change, D-R3). Stable on purpose: the config types `CatalogConfig`, `CatalogSourceConfig`, `CatalogOutputConfig`, `CatalogOutputFormat`, `CatalogOverrides`, `ResolvedCatalogConfig`, `CatalogConfigResolver`, `CatalogConfigException`. `PublicAPI.Unshipped.txt` was edited by hand from the RS0016/RS0017 messages.
+- **D-R10**: `annotated` only counts a `[NetPrintsNode]` method when it is a catalog member (`Exposure.IsCatalogMember`) and not `[NetPrintsIgnore]`. The fixture type `InternalNodeOnly` pins it; the NPC004 warning for its internal method is expected (two NPC004 warnings on the fixture now).
+- **D-R16**: `CatalogFixtureLib` gains `Indexed` (public indexer and event). Catalogs still omit indexers and events; the live provider lists the indexer (as `this[]`). `ParityTests.NotCatalogedByDesign` names the exclusion. D-F3: add indexers and events to the contract's "not cataloged" list (D-R12).
+- **D-R18**: `CanonicalCatalogWriter` escapes an unpaired surrogate as `\uXXXX` (lower case). `System.Text.Json` refuses to read such an escape, so `CatalogReader` deserializes through a copy of the context options with `LenientStringConverter` (the context itself is unchanged, the schema is generated from it). Round-trip test in `CatalogWriterTests`.
+- Snapshots: `public-api.npcat.json` regenerated (adds `Documented`, `Indexed`, `InternalNodeOnly`); `annotated` and `fixture-flags` are unchanged. `Fx.Catalog` links the snapshot, it has no copy.
+
+Batch D-F2 (D-R5 to D-R9, D-R19, D-R20). Each behaviour fix has a test that failed first, except where noted.
+
+- **D-R5**: an unknown profile and an invalid profile file print `catalog: error NPC002|NPC003: <message>` on stderr (canonical form, `CatalogFormatException.Code`). Decision: an unknown id from `--profile` is exit 2 (invalid option value); the same id read from the configuration file, or from the project's profile, is exit 1 (cli.md §2: an invalid input file is 1). An invalid or unreadable profile file is exit 1 wherever the path came from (it is an input file). `InvalidOptionValuesAreUsage` no longer covers `--profile`; three dedicated tests assert the code and the exit.
+- **D-R6**: (a) `--class-name` and `--namespace` are validated in `TryResolveConfig` (exit 2, before the SDK check) through the new `CatalogCSharpEmitter.IsValidClassName`/`IsValidNamespace`; (b) the dead `exitCode != Usage` condition and `Render`'s null path are gone, and the temporary directories are cleaned after every write phase; (c) the derived id is made valid in `CatalogIdentity.DeriveId` (lower-case, runs of invalid characters become `-`, leading and trailing `-._` trimmed, `catalog` when nothing is left): `_Private` gives `private`, `My Lib` gives `my-lib`; (d) an explicit `--config` that does not exist is exit 2 (cli.md §2: a path argument that does not exist), a config file that exists but is invalid stays exit 1.
+- **D-R7**: `CachingProjectSystem` (CLI, per run, `LoadAsync` memoized by full path, dropped again when the load fails or is canceled, and on `Apply`/`Build` of that path) wraps the project system inside `CatalogCommand.RunAsync`, so the command and the resolver share one load (`TheProjectIsLoadedOncePerRun`, red before with two loads). The Catalog API is unchanged. `CatalogSourceResolver` throws `CatalogSourceException` with the error messages when the temporary or the project snapshot has an error-severity message.
+- **D-R8**: package targets are matched on `<root>/<id lower>/` instead of the typed version folder (after a restore the id folder holds the one resolved version), so `@1.0`, `@1.0.0.0` and `@1.0.0+build` are found.
+- **D-R9**: `CatalogSourceSet.DeleteTemporaryDirectories()` now returns the failures instead of throwing (`IOException`, `UnauthorizedAccessException`) and removes `obj/netprints-catalog` and then `obj` when they end up empty. The command prints each failure as `warning: ...` on stderr and keeps its exit code. `PublicAPI.Unshipped.txt` follows the new return type.
+- **D-R19**: this test found a real gap. `CatalogDependentLib` (new fixture, its public API uses `CatalogFixtureLib`) is cataloged with its dependency in another directory: without `--reference-path` NPC005 and no `Take` member; with it, no NPC005 and `Take`; and with the dependency next to it, no NPC005. It failed at first because a design-time build of the temporary project does not resolve the dependencies of a `Reference` (`_FindDependencies` is false unless `_ResolveReferenceDependencies` is true) and the compiler only receives `ReferencePath`. The temporary project now sets `_ResolveReferenceDependencies` and adds `@(ReferenceDependencyPaths)` (minus what is already there) to `ReferencePath` after `ResolveAssemblyReferences`. So neither the `--reference-path` directories nor the assembly's own directory worked before this batch, despite FR-020 and the D5 note.
+- **D-R20 diagnosis**: the CI log of the first attempt of run 36711995204 shows `GenerateCommandTests.CheckNamesTheStaleFileExitsOneAndWritesNothing` failing after 45 ms with exit 4 (`Internal error`, an unhandled exception), the first test of the run (1 s after the start). 45 ms is too short for a `dotnet restore` of its own, so the "Restore failed for /tmp/np-sample-2NbfUT/HelloWorld.csproj" warnings in the same log belong to another test's process and are not the cause. `Cli.Tests` is the only test project that calls MSBuild without a `ModuleInitializer` registration, and five classes call `RunRealAsync` in parallel, so their first `MsBuildRegistration.EnsureRegistered` calls run concurrently with the unlocked check-then-register; that fits an exception in the first milliseconds (exit 4). I could not reproduce it (16 threads behind a barrier, 8 runs, all passed before the fix), so this is the most likely cause, not a proven one. Fix: the whole body of `EnsureRegistered` runs under a `Lock`; `MsBuildRegistrationTests` keeps the concurrent case as a regression test (it never failed before the fix, so it is not a red/green pair). The exit-4 message was lost because the tests asserted only the code: `CliTestHost.AssertExit` (used by `GenerateCommandTests`) now fails with both outputs, so a repeat names its exception. CI already ran `--report-xunit-trx` for every test project and uploaded `TestResults/**/*.trx` as `test-results` under `if: always()`; nothing to add there.
+
+Batch D-F3 (D-R11 to D-R15, D-R17, D-R21, the D-R3 deferral and the bookkeeping).
+
+- **D-R14**: the test `NuGet.config` clears `packageSourceMapping` and maps every package to the fixture feed; `dotnet pack` runs with `-nodeReuse:false`.
+- **D-R15**: `CliTestHost.Services` registers `UnexpectedProcessRunner` (throws, naming the file it was asked to start) where the fake project system is used; `RunRealAsync` keeps the real runner from `CliServices.CreateDefault()`. No existing fake-host test reached the runner, so nothing else changed.
+- **D-R17**: confirmed by deleting the `NetPrintsExtension` line locally: the test still passed, because the graph carries its method specifier and the project references the library directly. The catalog half of CT-T15 is `CatalogSearchTests`. Decision: keep the build-and-run test, assert it produces no NPX001, and add a negative control (`TheBuildLoadsTheExtensionFolderItIsGivenSoAFolderWithoutOneFailsIt`: an empty folder as `NetPrintsExtension` fails the build with NPX001 `netprints-extension.json not found`). That proves the build loads the folder the item names; the class summary states what each half covers.
+- **D-R21**: `CliExitCodeTests` is `IDisposable` and deletes the temporary directories it creates (`NewHostInTempDirectory`); the /tmp count of `np-cli-*` directories no longer grows. The other Cli test classes already delete their `np-*` roots in `Dispose` (checked: Migrate, Build, Run, ProjectFailure, ProjectLocator, Generate, HelloWorld, Catalog, SampleCopy, PackedFixtureFeed).
+- **D-F2 gap**: `TheIdAndTheOutputFileAreDerivedFromTheAssemblyName` runs the command on assemblies compiled as `_Private` and `My Lib` and expects `private.npcat.json` and `my-lib.npcat.json` with the matching `id`. It passed at first run (the behaviour was fixed in D-F2); it is a regression pin, not a red/green pair.
+- **D-R3**: deferred to E, see below.
+- Docs: `docs/guide/catalogs.md`, contracts/catalog.md §1, §4, data-model.md §1 and `.github/release-notes.md` (Unreleased) updated as listed in the table.
+
+### Review D → deferred
+
+- **D-R3** (`--format csharp` reaches CS8103 from the third catalog of System.Runtime size; the assembly is 4x the JSON; a file-scoped `namespace X;` needs C# 10 while netstandard2.0 consumers default to C# 7.3): E (T066, `EmbeddedCatalogEmitter`, shared with `CatalogCSharpEmitter`) redesigns the emitter output as UTF-8 data (`"..."u8`, `byte[]` or an embedded resource) with a block-scoped namespace, and updates contracts/catalog.md §4. Recorded as a note under T066 in tasks.md. It must be settled before U1.
+- **T077**: wire `CatalogLoader.FirstOfEachId` and NPC103 logging into `ReflectionHost` (`AddTypeCatalog` does not dedupe by id), and make a newer-schema catalog not disable the whole extension (today an extension that calls `LoadFile` on such a file fails as a whole). Also the 'ref/lib reference assemblies' edge case of `EmbeddedCatalogReader`.
+- **Help links**: E's generator `DiagnosticDescriptor`s set `helpLinkUri` to `guide/catalogs#diagnostics`; the CLI keeps plain lines.
+- **T079**: guide sections for annotations and embedded catalogs.
+
+### Follow-ups for the final review (H-R)
+
+- Check whether the P1 code generator turns a catalog enum default (`System.Int32` plus a number) into an `int` passed to an enum parameter (CS1503); the catalog writes it that way for parity with the live provider.
+- Live-provider quirks mirrored for parity (FR-016); a later fix must change both sides: static classes in `GetNonStaticTypes`; type-parameter variable names; field getter and setter visibility, const included; enum constructor and constant synthesis; void treated as a struct.
+- Optional (reviewer): compile the engine snapshot tests against the reference pack, as `CatalogPerformanceTests` does.
+
+## Sub-phase E
+
+### Batch E1 (T065-T068, embedded emitter and the annotations generator)
+
+Decisions:
+- **D-R3 design (settled)**: the shared output no longer contains a `const string` of the catalog. The JSON is UTF-8 bytes in a `public static byte[] <Name>Utf8 { get; } = new byte[] { 123, 10, ... };` initializer (decimal values, 32 per line), which Roslyn stores as raw data (RVA), and `<Name>` is a `string` property that decodes it with `Encoding.UTF8`. Options rejected: `"..."u8` (needs C# 11, the consumers are C# 7.3), `ReadOnlySpan<byte>` (netstandard2.0 has no `System.Memory` without a package), an embedded resource (a generator cannot add resources), and reading the assembly attribute back by reflection (trimming risk, and the CLI path has no attribute). Cost: about 3.7 source characters per JSON byte, so a `System.Runtime`-sized catalog file is several MB; the three-catalog compile test takes about 15 s per emitter in Debug.
+- The assembly attribute keeps the JSON as a string argument: an attribute argument is a metadata blob (UTF-8), not the user string heap, so it does not count against CS8103 (proved: three `System.Runtime` catalogs with both the attribute and the byte accessor compile at C# 7.3). Metadata-only readers (T070) need the string there.
+- Namespaces are block-scoped in both emitters (`namespace X { }`, C# 1). `CatalogCSharpEmitter` (CLI `--format csharp`) uses the same data encoding through `CSharpLiteral.AppendUtf8Array`; its members are `JsonUtf8`, `Json` (now a property, was a `const`) and `Create()`. contracts/catalog.md section 4, contracts/annotations.md section 3 and docs/guide/catalogs.md updated. This changes the shape of a generated file that shipped in the unreleased `netprints catalog`; nothing had released it (release notes "Unreleased").
+- `EmbeddedCatalogEmitter` is `internal` (compiled into `NetPrints.Catalog` for its tests and into Annotations): the accessor class is `NetPrintsCatalogs` (`internal static partial`) in `build_property.RootNamespace`, or the global namespace when the property is missing or not a valid namespace. The accessor name is `AccessorName` when valid, else the PascalCase of the id (`catalogfixturelib` is `Catalogfixturelib`; the contract's `CatalogFixtureLib` needs an explicit `AccessorName`). An invalid explicit `AccessorName` falls back to the derived name silently.
+- Generator pipeline: `CatalogGenerator` post-initialization output (unchanged) plus three steps. Requests: `ForAttributeWithMetadataName` on `[assembly: NetPrintsCatalog]` into equatable `CatalogRequest` records (`EquatableArray<T>` wraps arrays). Inputs: `MetadataReferencesProvider`, `AdditionalTextsProvider` (profiles `*.npprofile.json`, documentation `*.xml` with `NetPrintsReferenceDocumentation=true`, sorted by path) and `RootNamespace`, combined into one `BuildInputs` record. Tracking names: `ReferencedCatalog` (one build per request over a private `CSharpCompilation` of the metadata references with `MetadataImportOptions.All`), `OwnCatalog`, `CatalogOutputs`. No `ISymbol` or `Compilation` sits in a cached model; the own-source step legitimately takes the `Compilation` (it depends on the sources) but returns only strings. AN-T07 passes: editing an unrelated tree leaves `ReferencedCatalog` and `CatalogOutputs` Cached/Unchanged.
+- Own-source catalog: id and version from the assembly name (`CatalogIdentity.DeriveId`) and its version, profile `annotated`, hint `NetPrintsCatalog.Self.g.cs`, emitted when any `[NetPrintsType]` or `[NetPrintsNode]` exists (even if only non-public ones, so the catalog can be empty). Documentation comes from `CompilationDocumentationSource` (`GetDocumentationCommentXml` per documentation id, lazily), so no XML file is needed and the result equals the compiled-library snapshot `annotated.npcat.json`.
+- Referenced catalog: the assembly is found by simple name (highest version when several); a profile is a built-in id, or a name ending `.npprofile.json` that must be an `AdditionalFiles` item by file name; `Include`/`Exclude` are appended to the profile's `IncludeTypes`/`ExcludeTypes` (as the CLI does). Diagnostics: NPC001 unreferenced assembly; NPC002 unknown id; NPC003 a `.npprofile.json` that is missing or invalid, and (no code exists for it) an invalid explicit `Id`; NPC006 two successful catalogs with one id (neither is emitted; the check covers the own catalog); NPC004/NPC005 come from the builder. A failed request emits nothing and does not stop the others. Hint names are `NetPrintsCatalog.<Id>.g.cs`; a colliding hint name is skipped rather than throwing. NPC004 for own sources carries the symbol's location; for a referenced catalog the attribute's location.
+- Descriptors: `category NetPrints.Catalog`, help link `guide/catalogs#diagnostics`, `AnalyzerReleases.Unshipped.md` lists NPC001 to NPC006 (added as `AdditionalFiles`; RS2008 clean, 0 warnings, no file IO).
+- ADR-0017: no new `"NPXE0004"` literal (`ExperimentalApis.cs` and `CatalogDiagnosticCodes` are still the only ones); Annotations already opted in with `NetPrintsExperimentalOptIn`; `EmbeddedCatalogEmitter` is internal, so no `PublicAPI.Unshipped.txt` entry was needed (the public `CatalogCSharpEmitter` signatures did not change).
+- **Fixture no longer runs the generator** (deviation from D2 T042): `CatalogFixtureLib` annotates two non-public methods on purpose (NPC004 cases), and the generator now reports NPC004 in that build. A warning that cannot be silenced: a generator diagnostic ignores `#pragma warning disable` (tried: still reported), and `NoWarn`, `WarningsNotAsErrors` and per-file `.editorconfig` severities are forbidden by `SourceHygieneTests` (`NoUnlistedBuildWarningSuppressions`, `TheOnlyNoWarnIsTheExperimentalOptInLine`). The fixture therefore keeps a source copy of the injected attributes, `AnnotationAttributes.cs` (Roslyn's `EmbeddedAttribute` plus `AttributeSources.Source`), instead of the analyzer reference; the compiled shape is the same and all snapshots are unchanged. `FixtureAttributeCopyTests` keeps the copy equal to the generator output (`NETPRINTS_UPDATE_SNAPSHOTS=1` rewrites it). Consequence for T069+ (AN-T13): the built `CatalogFixtureLib` carries no embedded catalog; its "own annotated" built leg needs another route (the driver leg over the fixture sources is AN-T02).
+- Test host: `GeneratorInputs` supplies additional files and `RootNamespace` through an in-memory `AnalyzerConfigOptionsProvider`; `GeneratorTestHost.Compile` disables nullable at C# 7.3. `AttributeInjectionTests` no longer uses `[assembly: NetPrintsCatalog("Some.Library")]` inside its shared usage (it now raises NPC001); a separate test keeps the named-argument coverage and expects exactly NPC001.
+
+Red/green: `LargeCatalogEmitTests` (three `System.Runtime` catalogs at C# 7.3) was red against the old `CatalogCSharpEmitter`: CS8370 (file-scoped namespace) at 7.3 and, at `LanguageVersion.Latest`, `CS8103: Combined length of user strings used by the program exceeds allowed limit`; green with the new emitter and with `EmbeddedCatalogEmitter` (written after the code; `EmbeddedCatalogEmitterTests` too). The T065/T068 generator tests were written before the generator: 21 of 25 failed (no catalog emitted), then all green with T067 (26 with `FixtureAttributeCopyTests`); the first generator run also failed the whole test build because the fixture (then still using the generator) raised NPC004 as an error, which led to the fixture decision above. The suite then found two `SourceHygieneTests` failures for the `NoWarn` I had first tried, and `CatalogCommandTests` still expecting `namespace My.Catalogs;` (updated).
+
+### Batch E2 (T069-T072, embedded catalog reader, package test and package layout)
+
+Decisions:
+- **T069**: `NetPrints.Annotations` already built with `EnforceExtendedAnalyzerRules` at 0 warnings (Debug and Release) after E1; no shared file needed a change and nothing is suppressed.
+- **`EmbeddedCatalogReader`** (public, `NetPrints.Catalog`): `Read(string assemblyPath)` uses `PEReader`/`MetadataReader`, finds `NetPrints.Annotations.NetPrintsEmbeddedCatalogAttribute` on the assembly definition (a `MemberReference` to the attribute type, or a `MethodDefinition` when the attribute class is in the same module) and decodes the constructor blob `(string id, int schemaVersion, string json)` by hand; the assembly is never loaded. `Read(Assembly)` uses `CustomAttributeData`. Both return the documents in attribute order and run them through `CatalogReader.Read`, so a newer schema throws `CatalogFormatException` (NPC101/NPC102). A file that is not a managed assembly (no metadata, `BadImageFormatException`) reads as empty, so the editor can scan every reference path without a pre-check; a missing file throws `FileNotFoundException`. `CatalogLoader.LoadEmbedded(Assembly)` returns `IReadOnlyList<ITypeCatalog>` (one per document, no dedupe: `FirstOfEachId` is the caller's step, T077). Stable API, so plain `PublicAPI.Unshipped.txt` lines (RS0016 output added by hand; `dotnet format analyzers` does nothing for them) with no `[NPXE0004]`; no new `"NPXE0004"` literal.
+- **The `ref/` to `lib/` fallback is not in this batch**: it stays with T077/U1 as tasks.md already says (AN-T15 records which path finds the catalog).
+- **Fixture for AN-T09 (T070)**: `CatalogFixtureLib` has no embedded catalog since E1, so the tests compile a consumer in-process with `GeneratorTestHost` (two `[assembly: NetPrintsCatalog("CatalogFixtureLib", ...)]` requests: public-api and fixture-flags) and emit it to a temporary dll; the loaded-assembly leg loads it into a collectible `AssemblyLoadContext`. The documents equal the CT-T04/CT-T06 snapshots. **AN-T13's "built" leg**: the built `CatalogFixtureLib` cannot serve it; its built legs are the packed `AnnotatedSample` of T071 (own `annotated`) and `tests/Fixtures/Catalog/CatalogConsumerLib` (referenced-assembly requests, to be added there), while the fixture's own `annotated` snapshot is proved by the driver leg (AN-T02). AN-T13 must record this when it lands.
+- **AN-T10 (T071)**: a class fixture (`AnnotatedSampleBuild`) packs `NetPrints.Annotations` with `dotnet pack --no-build` into a temporary feed (the version is read back from the nupkg name, so MinVer's default is fine), copies `EndToEnd/AnnotatedSample/*.cs` to a temporary directory outside the repository, writes a netstandard2.0 `AnnotatedSample.csproj` (Version 1.0.0, documentation file on) and a `NuGet.config` (`<clear/>`, `NetPrints.*` mapped to the feed only, everything else to nuget.org, isolated `globalPackagesFolder`) and builds with `-nodeReuse:false`; nothing touches `~/.nuget/packages`. The tests: the embedded catalog equals `Snapshots/annotated-sample.npcat.json`; the build has no warning; the compiled sample references no NetPrints assembly; `dotnet msbuild -getItem:CompilerVisibleItemMetadata` lists `NetPrintsReferenceDocumentation` (proof that the package's `build/` file is imported). The RootNamespace property is not asserted because the SDK already exposes it. The sample's bare `[NetPrintsNode]` method has no `node` object in the snapshot (a bare marker adds nothing beyond inclusion, as in `annotated.npcat.json`).
+- **T072**: `build/NetPrints.Annotations.targets` is the contract section 5 text, packed under `build/`; `developmentDependency` and the README (`eng/PackageReadme.targets` via `IsPackable`) were already in place; the project was already packable, so `release.yml` (`dotnet pack NetPrints.slnx`) needed no change. `scripts/verify-packages.sh` now also asserts `build/NetPrints.Annotations.targets` and that it declares `NetPrintsReferenceDocumentation` (the analyzer dll, developmentDependency, README, no `lib/` were asserted before); it passes against a scratch `dotnet pack NetPrints.slnx -p:MinVerVersionOverride=0.1.0-local.e2`.
+
+Red/green: `EmbeddedCatalogReaderTests` were written before the reader (compile errors: type and `LoadEmbedded` missing), then 9 of 9 passed. `AnnotationsPackageTests` were written before the snapshot and the targets: the snapshot test failed (missing file) and the `-getItem` test failed (no `NetPrintsReferenceDocumentation` in the package), the other two passed already because E1's generator worked; after the snapshot (`NETPRINTS_UPDATE_SNAPSHOTS=1`) and the targets file, 4 of 4. Release suite: 1527 total, 0 failed, 10 skipped; Release build 0 warnings; `dotnet format --verify-no-changes` clean.
+
+### Batch E3 (T073-T075, reference assembly, consumer fixture, cross-flavor snapshots)
+
+Decisions:
+- **AN-T15 observed behaviour (T073)**: Roslyn keeps `[assembly: NetPrintsEmbeddedCatalog(...)]` in a reference assembly although the attribute class is `internal` (`[Embedded]`), so `EmbeddedCatalogReader.Read` finds the catalog directly in the `ref/net10.0/` assembly a consumer resolves. Consequently the generated attribute stays `internal` and no `ref/` to `lib/` fallback was added to `EmbeddedCatalogReader` (nothing needs it; contracts/annotations.md section 6 still names the fallback, and T077 can keep it as a defensive step but it is not required). The SDK does not pack the reference assembly by itself: the throwaway `AnnotatedRef` library adds `@(IntermediateRefAssembly)` to `ref/$(TargetFramework)` in a target before `_GetPackageFiles`. The test asserts the nupkg has both `ref/net10.0/AnnotatedRef.dll` and `lib/net10.0/AnnotatedRef.dll`, that the consumer's `ReferencePath` is the `ref/` one, and that the catalog (id `annotatedref`, `T:AnnotatedSample.Greeter`) is read from it. The library is a temporary project outside the repository built from `AnnotatedSample/Greeter.cs`, because `CatalogFixtureLib` embeds nothing since E1; the isolation pattern is the AN-T10 one (`<clear/>`, `packageSourceMapping`, isolated `globalPackagesFolder`, `-nodeReuse:false`), now shared through `EndToEnd/IsolatedNuGetConfig.cs`.
+- **NPC004 in `CatalogConsumerLib` (T074)**: no diagnostic is raised, so no design change was needed. A `ProjectReference` resolves `CatalogFixtureLib`'s reference assembly, which carries no non-public members, so `MetadataImportOptions.All` sees none of the deliberately annotated non-public methods (the tool path over the real dll does, hence its two NPC004 in CT-T04). A package consumer resolves the `ref/` assembly the same way, so this is also what real consumers get. No `NoWarn`, pragma or severity override. The fixture references the analyzer with `ProjectReference OutputItemType="Analyzer" ReferenceOutputAssembly="false"` (the in-repo form of `PrivateAssets="all"`) and imports `NetPrints.Annotations.targets` explicitly; the profile is the test project's `Profiles/fixture-flags.npprofile.json` linked as `AdditionalFiles` (one copy). The reference documentation `.xml` is picked up by the targets (snapshots are byte-equal, docs included). `CatalogConsumerLib` is in `NetPrints.slnx`; the test project builds it first (`ReferenceOutputAssembly="false"`) and records its output folder as assembly metadata like the fixture.
+- **AN-T13 (SC-003)**: `CrossFlavorSnapshotTests` compares, per profile, the tool flavor (engine over metadata references), the driver flavor (generator in-process) and the built flavor (embedded catalog read back from an assembly), plus the committed snapshot. Built legs: `public-api` and `fixture-flags` from the real `CatalogConsumerLib` build; `annotated` from the fixture sources compiled with the generator and emitted to a temporary dll (E1/E2: `CatalogFixtureLib` itself embeds nothing, so its own `annotated` cannot be a built leg, the deviation E2 announced).
+- **T075**: `scripts/verify-packages.sh` already asserted everything the task lists (the file list with `NetPrints.Catalog` `.nupkg` + `.snupkg` and `NetPrints.Annotations` `.nupkg` only, `lib/net10.0/NetPrints.Catalog.dll`, the analyzer, the targets file, no `lib/`, `developmentDependency`) after E2 and the earlier pull-forward, so it needed no change. `scripts/pack-local.sh` + `scripts/verify-packages.sh` pass locally.
+
+Red/green: `CrossFlavorSnapshotTests` failed first (the test project did not record `CatalogConsumerLibOutput`; 4 of 4 red), then 4 of 4 green once the fixture output was wired. `ReferenceAssemblyPackageTests` were red on the first run for the packaging (no `ref/` in the nupkg, resolved path in `lib/`, 2 of 3; the catalog read itself already passed), green after the pack target (3 of 3). The tests were written before the wiring, not after.
+
+### Batch E4 (T076-T078, editor discovery of embedded catalogs)
+
+Decisions:
+- **T077, `ReflectionHost`**: inside the background step of `ReloadAsync` the catalogs are `CatalogLoader.FirstOfEachId([registry catalogs..., embedded catalogs of snapshot.References...], logger)`, and the covered assemblies are computed from that result, so an extension's catalog wins a shared id (NPC103 logged by `Catalog`'s own `Log`, event 5001). The Editor now references `NetPrints.Catalog` explicitly. The file reads run in `Task.Run`, so the UI thread never touches a reference.
+- **Newer schema / unreadable catalog**: `EmbeddedCatalogReader.Read(reference.Path)` is wrapped per reference; `CatalogFormatException` (NPC101/NPC102) and `IOException` skip that reference's catalog with the new Editor `Log` event 1014 (`{Code}: the catalog embedded in {Path} was skipped: {Message}`, warning); the other references and the extensions still contribute, and the live provider still covers the skipped assembly (it is not in the excluded set). A reference that is not a managed assembly reads as empty, as E2 decided.
+- **Extension side of "not disabling the extension"**: `CatalogLoader.LoadFile` still throws `CatalogFormatException` when an extension calls it, and the extension host disables an extension whose `Register` throws. No API was added; the guide (`docs/guide/catalogs.md`, "Consuming a catalog from an extension") now says to catch it around each file. Deviation from the review's wording, chosen to avoid new public API in a stable surface.
+- **No `ref/` to `lib/` fallback**: E3 (AN-T15) showed the `ref/` assembly carries the catalog, so the reader stays as is; the contract's fallback remains unbuilt on purpose.
+- **Covered assemblies and type-scoped queries**: `ReflectionProvider` excludes an assembly only from enumeration; a query that names a type (`WithType(Greeter)`) still resolves it in the live compilation and so still lists the unannotated members. AN-T11 therefore asserts the type-less enumeration (what node search uses) and does not claim more; this is P1 behaviour, unchanged.
+- **Fixture**: `CatalogFixtureLib` embeds nothing and the packed `AnnotatedSample` needs a pack and restore, so a new in-repo `tests/Fixtures/Catalog/CatalogAnnotatedLib` (net10.0, in `NetPrints.slnx`, analyzer via `ProjectReference OutputItemType="Analyzer"` plus the targets import, like `CatalogConsumerLib`) embeds its own `annotated` catalog: `Greeter` (`Greet`, `Count`, one `[NetPrintsIgnore]` method) and the unannotated public `Unlisted`. `FixtureExtensions.AnnotatedLibraryAssembly()` locates it; both test projects build it first with `ReferenceOutputAssembly="false"`. Nothing is packed or restored, so AN-T12 needed no isolated NuGet config beyond the sample tests' existing `LocalSdkLayout`.
+- **AN-T11** (`EmbeddedCatalogDiscoveryTests`, Editor.Tests): the fixture's catalog offers `Greeter`, `Greet`, `Count` and not `Unlisted`, the ignored method or `Unlisted.Value`; the same dll referenced twice (a copy) loads once and logs NPC103; a Roslyn-emitted assembly embedding `{"schemaVersion":99}` is skipped with NPC101 naming its file while the fixture still contributes.
+- **AN-T12** (`AnnotatedLibraryBuildTests`, Core.Tests): a temporary project references the fixture dll, the graph `AnnotatedCall` calls `Greeter.Greet("World")` into `Console.WriteLine`, `dotnet build` (with `-nodeReuse:false`) and `dotnet run` print `Hello, World!`; a second test reads the fixture's embedded catalog and checks `T:AnnotatedFixture.Greeter` is in it.
+- API tracking: no public API changed (Editor has no tracked API for `Log`, internal); no `"NPXE0004"` literal added.
+
+Red/green: `EmbeddedCatalogDiscoveryTests` were red before `ReflectionHost` changed (`Unlisted` offered by the live provider, no NPC103 logged; the newer-schema test first failed on a test compile error in the emitted source, so its own red is the missing skip log, not observed separately), then 3 of 3 green. AN-T12 has no production change behind it, so it was written after the fixture and passed on its first run (2 of 2); it is a regression guard, not a red-first test.
+
+Suite: 1539 total, 0 failed, 1529 succeeded, 10 skipped (Release, base 1534 plus 5 new); Release build 0 warnings; `dotnet format --verify-no-changes` clean (after import ordering); Desktop E2E job 9 of 9, 0 skipped.
+
+### Batch E5 (T079-T081, guide annotations section, package READMEs, full suite and checkpoint)
+
+Decisions:
+- **T079**: `docs/guide/catalogs.md` gained a comprehensive "Annotations" section (2250 words) covering optional annotation of libraries, the four attributes, embedded catalogs, discovery by the editor, and the generator diagnostics. A note states upfront that annotations are optional: any library works without them, and the CLI can build a catalog for libraries you don't own.
+- **T080**: `README.md` gained a "Ship nodes with your library" section (75 words) with the optional annotation note. Per-project package READMEs created for `NetPrints.Annotations` and `NetPrints.Catalog` (165 and 160 words respectively), placed in `src/*/README.md`. `eng/PackageReadme.targets` modified to check for a project-specific README first (`$(MSBuildProjectDirectory)/README.md`), falling back to the root for other packages. All package READMEs avoid code blocks with angle brackets so the HTML-to-Markdown conversion leaves them clean for nuget.org.
+- **T081**: `scripts/pack-local.sh` and `scripts/verify-packages.sh` pass without modification; the verify script asserts exactly the file list and metadata of §3 steps 1-4 (SC-005 locally). The full Release suite totals 1539 tests (1529 passed, 10 skipped, 0 failed), with 0 build warnings. Tasks T079–T081 ticked in `tasks.md`. Checkpoint E (SC-003, SC-005 embedded path, SC-013 locally) met.
+
+Red/green: T079 and T080 are pure documentation/package content (no tests changed); no red phase. Packages built and verified locally.
+
+### Review E (T082, Opus): PR #9 review 5369187090
+
+Review: https://github.com/danielmeza/netprints/pull/9#pullrequestreview-5369187090 (`35339b8..c798fab`).
+
+Verdict: Checkpoint E accepted with a fix batch; no high-severity findings (4 medium, 11 low). Independent run: Release build 0 warnings, Catalog.Tests 336/336, full solution 1539 total, 1529 passed, 0 failed, 10 skipped; `pack-local.sh` and `verify-packages.sh` pass.
+
+Findings: E-R1 medium (help links 404), E-R2 medium (own catalog has no documentation without `GenerateDocumentationFile`), E-R3 medium (guide "Selecting a profile" wrong), E-R4 medium (guide lacks `NetPrintsCatalog`, accessors, reference documentation), E-R5 low (guide claims node hints are used), E-R6 low (Annotations README: no install snippet, wrong `NetPrintsCatalog`), E-R7 low (Catalog README overstates, snippet does not compile), E-R8 low (`verify-packages.sh` does not check the shipped README), E-R9 low (missing reference file logs misleading 1014, some IO failures fail the reload), E-R10 low (no test that an extension catalog wins over an embedded one), E-R11 low (accessor names unchecked), E-R12 low (generator keeps all reference XML text), E-R13 low (`ref/` to `lib/` fallback neither built nor removed from spec), E-R14 low (SC-003 `annotated` built leg is not an MSBuild build), E-R15 low (type-scoped search still offers unannotated members).
+
+Assignment: E-F1: R1, R2, R11, R12, R13. E-F2: R9, R10, R14, and the JSON source-gen cleanup. E-F3: R3-R8, R15.
+
+Rulings on the known items:
+1. Newer-schema catalogs on the extension side covered only by the docs: accepted. An additive `CatalogLoader.TryLoadFile(path, logger)` would cost nothing now (nothing shipped) but is optional, not a finding.
+2. Type-scoped queries still list unannotated members: matches contracts/annotations.md section 6 and the P1 `ReflectionProvider`; US3 scenario 4 holds for the type-less search. Document now (R15), decide in a follow-up task; extension catalogs behave the same.
+3. AN-T12 written after the code and E4's newer-schema red masked by a compile error: accepted (T078 did not ask for test first, no production change behind AN-T12; the newer-schema test discriminates by inspection).
+4. The D-R3 fix: verified (`byte[]` initializers, block-scoped namespaces, `LargeCatalogEmitTests` at C# 7.3, round-trip test).
+5. Items deferred from D: `FirstOfEachId`/NPC103 done and tested; newer schema done for embedded catalogs (log 1014), docs only for extensions; help links set but dead (R1); ref/lib edge case see R13.
+6. The `local-packages/.gitkeep` deletion: neither script removes it; swept into 927d3a1 by a broad stage, fixed by c798fab. No code finding.
+7. The `eng/PackageReadme.targets` change: works; the angle-bracket constraint comes from `verify-packages.sh:76` (grep over the packed README), not from nuget.org; `verify-packages.sh` does not check which README ships (R8); the Annotations README lost its install snippet (R6).
+8. Accuracy of the guide: the optional-annotation note must stay; the Annotations section is 538 words (not about 2250); claims the code does not back are R3, R4, R5 and R15; no bloat to cut.
+
+### Batch E-F1 (T083 part 1: R1, R2, R11, R12, R13)
+
+Commit 7dbd970.
+
+Decisions:
+- **R1**: `GeneratorDiagnostics.HelpLink`, both package READMEs and contract section 4 use `https://danielmeza.github.io/netprints/guide/catalogs#diagnostics` (no `/docs/`, no `.html`). `DiagnosticsTests` now maps the descriptor's link to `docs/guide/catalogs.md` and its `## Diagnostics` heading, and checks every `danielmeza.github.io/netprints/` link of both READMEs against an existing docs page.
+- **R2**: new NPC007 (warning, next free id), reported when an annotated library's compilation has `DocumentationMode.None`; the catalog is still emitted. It applies to the own catalog only (referenced catalogs read XML files). Added to contracts/catalog.md section 3, contracts/annotations.md sections 3 and 4, the guide's table and Annotations section, the Annotations README (no angle brackets, for `verify-packages.sh`), `AnalyzerReleases.Unshipped.md` and `PublicAPI.Unshipped.txt`. Not done: the MSBuild variant of AN-T10 without the property (slow pack and build); the driver test with `DocumentationMode.None` covers the behaviour, and the fixtures that MSBuild builds set the property.
+- **R11**: an invalid `AccessorName` is NPC003 (as an invalid `Id`, contract section 3) and fails that catalog; accessor names that collide, explicit or derived (`my-lib` and `my.lib`), are NPC006 and neither catalog is emitted (ids already reported as duplicates are not reported twice). `CatalogOutput` carries the accessor. The default name from the assembly name was not changed; the contract example now states the explicit `AccessorName`.
+- **R12**: `AdditionalFileModel` keeps the `AdditionalText` of a documentation file (equality by reference) and no text; `BuildReferenced` reads only the file named `<AssemblyName>.xml` of the requested assembly. Profile files still keep their text (small).
+- **R13**: E3's `ReferenceAssemblyPackageTests.TheCatalogIsFoundInTheResolvedReferenceAssembly` reads the resolved `ref/net10.0/AnnotatedRef.dll` directly and finds the catalog, so the attribute survives in a Roslyn reference assembly. Decision (coordinator): no `lib/` fallback. Spec edge case, contract section 6 and the AN-T15 row now say so; reference assemblies from tools that strip the attribute are unsupported.
+
+Red/green: red first (8 of 17 failed in `DiagnosticsTests` and `IncrementalTests`: help link mapping, NPC007 missing, invalid accessor, both collisions, both documentation-read counts). Green after the change (35 of 35 in the Generator namespace). Full Release suite: 1548 total, 1538 passed, 0 failed, 10 skipped (base 1539 plus 9 new); build 0 warnings; `dotnet format --verify-no-changes` clean.
+
+### Batch E-F2 (T083 part 2: R9, R10, R14 and the JSON source-generation cleanup)
+
+Commits 94b41d6 (R9, R10), 1c5c277 (R14), 77c1a49 (JSON).
+
+- **R9**: `ReflectionHost.LoadEmbeddedCatalogs` skips a reference path that does not exist without a log line, and catches `UnauthorizedAccessException` together with `IOException` (event 1014, reference skipped, reload continues). The method is now `internal` so the unreadable-file test can call it directly: the live `ReflectionProvider` still throws on a reference it cannot read, which is outside this finding. Red first: the missing-path test failed on the misleading `FileNotFoundException` warning and the unreadable one on the escaping `UnauthorizedAccessException`; green after the fix.
+- **R10**: `AnExtensionCatalogWinsOverAnEmbeddedCatalogOfTheSameId` (extension catalog with id `catalogannotatedlib`, embedded one of the same id): the extension's type is offered, the embedded catalog is reported as NPC103 and its assembly falls back to the live compilation. It passed at once (the behaviour already held by inspection), so it is a pinning test written after the code.
+- **R14**: `CatalogAnnotatedLib` is now a build-first reference of `NetPrints.Catalog.Tests` (same pattern as the other fixtures; MSBuild builds it once per solution build). `AnnotatedOverTheMsBuildBuiltAnnotatedLibraryIsIdenticalToItsEmbeddedCatalog` compares the tool (engine over the dll and its `.xml`, profile `annotated`, id `catalogannotatedlib`) with the catalog embedded in the MSBuild-built dll. Also written after the code, green at once.
+- **JSON**: new source-generated contexts `AutomationJsonContext` (Web defaults, `WhenWritingNull`; `AutomationAgent.Json` removed, the test clients use `AutomationJsonContext.Default`), and one `CompilationOptionsJsonContext` per project for `CompilationOptionsInfo` (Workspace writes, Core reads; default naming, so the JSON is unchanged; the two records stay separate because no shared home exists between those projects). `CanonicalJsonWriter` writes property names through `JavaScriptEncoder.UnsafeRelaxedJsonEscaping.Encode` (golden tests unchanged). `JsonDocumentFormat`, `NodeListConverter` and `CatalogReader` use the `JsonTypeInfo` overloads via `options.GetTypeInfo(...)`, so extension resolvers still apply.
+- **Ban**: every `JsonSerializer` overload that takes `JsonSerializerOptions` (or neither options nor `JsonTypeInfo`) is in `src/BannedSymbols.txt` (RS0030, `src/` only like the rest of that file, so tests are not affected and need no suppression). One line added to AGENTS.md "C# rules". A grep of `src/` finds no reflection-based `JsonSerializer` call.
+- **Kept on purpose**: `JsonNode.ToJsonString(ScalarOptions)` in `CanonicalJsonWriter.WriteValue` (a `JsonNode` method, not a `JsonSerializer` overload, it only applies the relaxed encoder to scalar values); `JsonSerializerOptions` instances in `NetPrintsJsonOptions`, `CatalogReader` and the three schema writers (used as containers for resolvers/converters/encoders, no reflective serialization).
+- No `IsAotCompatible`/`PublishAot`: the editor loads Roslyn, MSBuild and extensions.
+
+Full Release suite: 1552 total, 1542 passed, 10 skipped, 0 failed; `dotnet format --verify-no-changes` clean.
+
+### Batch E-F3 (T083 part 3: R3, R4, R5, R6, R7, R8, R15)
+
+Commit 17f4c34 (docs and packaging only; no behaviour change, so no red/green; the checks below were verified against the code).
+
+- **R3**: "Selecting a profile" now says a profile file is an `AdditionalFiles` item whose name ends in `.npprofile.json` (no metadata), the `Profile` value is the full file name, the built-in ids are `public-api` and `annotated`, an unknown id is NPC002, a missing or invalid file NPC003, and the own catalog always uses `annotated` (checked against `CatalogGenerator.TryResolveProfile`).
+- **R4**: new guide subsections for catalogs of referenced assemblies (`Id`, `Profile`, `Include`, `Exclude`, `AccessorName`, NPC001), the generated accessor (naming from `AccessorName` or the PascalCase id, `NetPrintsCatalogs` in the `RootNamespace`, NPC003, NPC006, an extension registering it with `CatalogLoader.LoadJson`) and reference documentation (`NetPrintsCatalogFrameworkDocumentation`, NPC007). The `LoadEmbedded(this.GetType()...)` advice is gone; the guide now says a library needs no run-time reference to `NetPrints.Catalog`.
+- **R5**: the guide and the Annotations README say the hints are recorded in the catalog and not used by the editor yet (no follow-up task added: R15's deferral covers the editor search rework). Four attributes are listed. The version in the snippets is `<version>`, the `<version>` convention of install.md, since nothing is published.
+- **R6**: `eng/PackageReadme.targets` and `verify-packages.sh` skip fenced code blocks; the Annotations README has the `PackageReference` snippet, the .NET 10 SDK (Roslyn 5.0) requirement and a corrected `[assembly: NetPrintsCatalog]` description.
+- **R7**: the Catalog README says what catalogs do without the Roslyn claim, `var catalog` is no longer declared twice (`embedded`, `fromJson`), and both CLI examples name a source.
+- **R8**: `verify-packages.sh` asserts the first heading of the packed README (`# NetPrints.Annotations`, `# NetPrints.Catalog`) and, for the other packages, the root README's `## Project layout` heading.
+- **R15**: documented in the guide (Discovery by the editor and Consuming a catalog from an extension). Deferred: a later spec decision on whether type-scoped search respects the embedded catalog of the type's assembly, hiding omitted and `[NetPrintsIgnore]` members, with live fallback for uncovered assemblies. Recorded in `.specify/memory/roadmap.md` under P3a.
+
+Checks: `scripts/pack-local.sh` and `scripts/verify-packages.sh` pass (the Annotations README with the XML snippet packs without a converter warning); the website builds; full Release suite 1552 total, 1542 passed, 10 skipped, 0 failed; `dotnet format --verify-no-changes` clean.
+
+All 15 Review E findings are handled: R1, R2, R11, R12, R13 in 7dbd970; R9, R10 in 94b41d6; R14 in 1c5c277; R3, R4, R5, R6, R7, R8 in 17f4c34; R15 documented in 17f4c34 and deferred (roadmap P3a).
+
+### Batch F1 (T084-T087, format and show)
+
+- **Red**: `FormatCommandTests` (GI-T01) and `GraphSummaryTests` (GI-T02) written first; run against the tree without the commands, 17 of the 18 tests failed (the 18th, the missing-path case, passes because an unknown command is also exit 2). **Green**: the same tests pass after `FormatCommand`, `ShowCommand` and `GraphSummaryWriter`; 33 of 33 together with `MigrateCommandTests` (migrate's directory walk moved to `GraphFileSearch`, shared with `format`).
+- **Goldens**: `HelloWorld.show.txt` and `AllNodes.show.txt` were recorded from the writer's output and then read line by line against the fixture graphs (there is no golden to write by hand for 100 lines); the node-order test swaps two nodes of the HelloWorld file and compares with the same golden.
+- **Format**: a file is read through the `IDocumentFormat` of `DocumentFormatRegistry`, written through the same format to memory, and the bytes compared; only a difference is written (through `FileSystemDocumentStore.WriteAsync`, atomic), so a canonical file keeps its bytes and timestamp. No extension is loaded: a node of an extension kind reads as an unknown node and is written back with its original properties, so `format` needs no project. Output lines are those of contracts/cli.md (`formatted:`, `not canonical:`, `unreadable:`) plus a summary; `bin`, `obj` and links are skipped like `migrate`; a bad or missing path is exit 2 on stderr.
+- **Show**: the grammar of contracts/git.md §1 is extended where the contract was silent, and the contract now says so: `pin <pin> as <name> = <type> "<value>"` (the name only for a renamed pin; the value quoted and backslash-escaped so a value never breaks the line; `null` unquoted), modifiers comma-joined without spaces, a variable's type taken from the node its type graph wires into `typeReturn`, and a variable's `type-graph`, `getter <visibility>` and `setter <visibility>` blocks at depth 2 holding their graph lines; the class graph's nodes sit at depth 1 under the class line. `show` of a file without the graph extension (git passes temporary files) uses the default format.
+- **Samples**: `netprints format --check samples` passes without changing any sample (`samples/HelloWorld/Compiled_HelloWorld` has no graph and was not touched); a test runs that exact check against the repository.
+- **CI**: the "Graph checks" step now runs `regen --check samples/HelloWorld` and `format --check samples`.
+- **Suite**: full Release run 1574 total, 10 skipped; the one failure (the help-example test wants a path with a `/` in each example, and `samples` has none) was fixed by using `samples/HelloWorld` in the examples; Cli.Tests rerun 181 of 181. `dotnet format --verify-no-changes` clean.
+
+### Batch F2 (T088-T091, merge driver)
+
+- **Red**: `GraphMergerTests` (GI-T03 to GI-T08 and GI-T12, plus a missing-input usage test) written first against the tree without the command: the 8 cases (6 facts, 2 theory rows) all expect exit 0 or 1 and get the usage exit 2 (`Unknown command 'merge'`); I read the first six failures in the truncated output and inferred the two theory rows from their assertions. **Green**: 8 of 8 after `GraphMerger`, `TextMergeFallback` and `MergeCommand`; 9 of 9 with the usage test, which was added after the code.
+- **Fixtures**: `tests/NetPrints.Cli.Tests/Git/Fixtures/<case>/{base,ours,theirs}.netpc.json`, written from the contract by a throwaway script (not the implementation) in the canonical layout; `expected` exists only for the two clean cases (`MergeClean`, `BothMove`) and is compared byte for byte with the driver's output, so the fixtures are also proof that the merge writes canonical bytes. The conflict cases (GI-T04 to GI-T07) have no `expected`: their result is git's own conflict text over the canonical texts, so the tests assert exit code, marker length, both values in the output and the conflict kinds on stderr instead of a hand-written marker file. `Unreadable/ours` is `ours.conflicted.txt` because the repository's schema check validates every `*.netpc.json` and this one is not JSON. `MergeClean/reference` is the hand-merged graph of GI-T12 (same nodes, other order).
+- **GI-T03 fixture**: it does not reuse the DF-T23 base. In DF-T23 both branches add nodes that no exec wire reaches, so the generated C# would not show the merge; here each branch inserts a call into the exec chain (ours between `Call1` and `Call2`, theirs between `Call2` and the return), which also exercises the removed and added exec connections. A plain `git merge-file` of the same files exits with a positive conflict count (3 hunks: nodes, connections, layout); the test asserts `> 0`, not exactly 1, because the contract's single-conflict count belongs to the DF-T23 layout.
+- **Merge by identity**: sections as in contracts/git.md §2. Two versions of a node, member, local or accessor are equal when `IDocumentFormat` writes the same bytes for them (a one-element shell document), so no per-type equality exists; node properties are compared with the pins cleared and pins merged per key with `(Name, Value)` three-way. Node, member and pin order is base order, then ours' additions, then theirs'. Connections are ordinal-sorted by `From` then `To`. Layout entries of nodes that no longer exist are dropped.
+- **Decisions where the contract was silent**: the same member or node id added on both sides with different content is a `DuplicateMember` / `NodeProperty` conflict; a local changed differently on both sides, and an accessor added differently on both sides, is a `Scalar` conflict; a node or pin that one side deleted and the other kept unchanged is deleted. Validation checks that connection endpoints name existing nodes (not that the pin exists: that needs the mapper), at most one connection into an `in.data.` pin, unique member ids, and unique names within variables, methods and event graphs.
+- **Fallback**: `TextMergeFallback` writes the canonical texts (or, when any input is unreadable, the raw bytes of all three) to a temporary directory and runs `git merge-file -p --marker-size <n> -L ours -L base -L theirs` through `IProcessRunner`; its stdout replaces `ours` (UTF-8 without BOM) and the exit code is always 1. Exit codes 0 to 127 are conflict counts; anything else, or git missing, leaves `ours` untouched, is reported on stderr and still exits 1. Conflicts are listed on stderr as `<path>: conflict: <kind> at <location>`; an unreadable input as `<path>: unreadable: <reason>; merging as text`. A missing input file or `--marker-size` below 1 is exit 2.
+- **Help**: the two examples use `%O %A %B` (no `/`, so the help-example path test does not look for files).
+- **Suite**: full Release run 1584 total, 10 skipped, 0 failed (Cli.Tests 9 new tests). `dotnet format --verify-no-changes` first reported the import order of the test file; fixed and Cli.Tests rerun after the fix with 191 of 191 passing in Release.
+
+### Batch F3 (T092-T095, git-install, end-to-end drivers, SchemaStore)
+
+- **Red**: GI-T09 (11 tests), GI-T10 (3) and GI-T11 (4) written first: all 11 `GitInstallCommandTests` failed (unknown command, exit 2), 2 of 3 end-to-end tests failed (the install step; the plain-git baseline conflict test passes by design, it needs no code), and the `SchemaStoreEntryTests` failed on the missing `eng/schemastore/catalog-entries.json` (I read the first two of its failures in the truncated output and inferred the rest from the shared missing file). **Green**: 18 of 18 after the code and the two SchemaStore files; one assertion of the diff test was corrected after the first green run (summary lines are indented, `+    node ...`).
+- **Late finding**: the full suite failed once in `SourceHygieneTests.NoNullForgivingOperator` (my test fixtures used `= null!` for the async-created repository); replaced with a nullable field behind a throwing property, then format, Cli.Tests and Core.Tests re-run (210 of 210 and 596 of 596 in Release).
+- **Design**: `GitConfig` wraps `git config --local|--global` through `IProcessRunner`; `GitAttributesFile` parses the file into lines with their own terminators (bytes read as Latin-1, so encoding and mixed line endings round-trip), finds a foreign `diff=`/`merge=` attribute on `*.netpc.json`, and adds, upgrades in place or removes the tool's line; `GitInstallCommand` ties them together.
+- **Decisions where the contract was silent**: `--global` does not require a work tree (the `rev-parse` check applies to the local scope only). A request without `--merge` counts as already installed when the merge variant of the line exists (nothing is downgraded). Our own config keys with another value (for example another `--command`) are overwritten. `--uninstall` unsets all three keys whatever `--merge` says, deletes an attributes file that only held our line, and reports `not installed: nothing to remove` with exit 0 when there was nothing. A foreign driver line is checked before any config is written, so exit 1 writes nothing. `git` failing to start is exit 1. `HOME`, `USERPROFILE`, `XDG_CONFIG_HOME` and `GIT_CONFIG_GLOBAL` are read from `CliEnvironment` and forwarded to git, so the tests point `--global` at a temporary directory and never touch the real user configuration.
+- **End-to-end**: the tests install `--command "dotnet <test output>/NetPrints.Cli.dll"` (the tool under test, copied with its runtimeconfig next to the test assembly) into temporary repositories with a local identity, `commit.gpgsign=false` and `core.autocrlf=false`. The merge of the GI-T03 branches through the driver ends with the `expected` fixture byte for byte and no unmerged entries; plain git conflicts on the same history.
+- **SchemaStore**: `eng/schemastore/catalog-entries.json` is the contract's JSON; `PULL_REQUEST.md` holds the target, title, body and checklist answers plus the exact owner-action line. GI-T11 compares each `url` with the `$id` of the committed schema it names, and checks `fileMatch` and the owner-action line. Nothing was submitted anywhere.
+- **Help**: `git-install --help` is not in `CliHelpExamplesTests` (its examples have no repository path, and that test requires at least one).
+- **Suite**: full Release run 1603 total, 10 skipped, 0 failed after the fix (Cli.Tests 18 new tests); `dotnet format --verify-no-changes` clean.
+
+### Batch F4 (T096–T098, documentation and checkpoint)
+
+- **T096 (git.md)**: new guide covering `format --check`, `generate --check` (with `regen --check` alias), `show` summary, `git-install` (local/global, `--merge`, `--command`, `--uninstall`), merge driver behaviour (three-way merge, fallback with markers, exit codes), and SchemaStore (entry prepared, submission is owner action). The guide links to cli.md for detailed command reference; broken-anchor links (em-dash characters) were removed to avoid build warnings.
+- **T097 (graph-format.md and projects.md)**: graph-format.md adds "Version control" section linking to git.md for `show`, merge driver, and SchemaStore (pending); projects.md drops hardcoded `Version="0.1.0"` on `NetPrints.Sdk` package reference and uses `<version>` placeholder (matching install.md style); generated code section now mentions merge driver and `regen --check` CI usage.
+- **T098 (docs build, suite run, checkpoint)**: `scripts/build-docs.sh` succeeded with 6 docfx warnings (duplicate source file entries in .csproj, pre-existing) and 0 broken links after fixing fragment links in git.md. Tests: 1603 total (Release, all projects including E2E Desktop), 1593 passed, 10 skipped, 0 failed. E2E separately (Release, `NETPRINTS_E2E=1 --fail-skips on`): 9 passed, 0 skipped. Full suite completed in 4m 47s+2m 34s. `dotnet format --verify-no-changes` clean.
+
+**Evidence**:
+
+- **SC-001** (all nine commands): commands.cs files (`build`, `run`, `generate`, `migrate`, `catalog`, `format`, `show`, `merge`, `git-install`) exist and are registered in `CliCommandCatalog.All`. `CliExitCodeTests.EveryCommandsHelpExitsZero` validates `--help`, `-h`, `--version` exit 0 for all commands and top-level. Full CLI.Tests cover each command (BuildCommandTests, RunCommandTests, GenerateCommandTests, MigrateCommandTests, CatalogCommandTests, FormatCommandTests, GitInstallCommandTests, Git/GraphMergerTests, Git/GraphSummaryTests).
+
+- **SC-002** (format part): FormatCommandTests validates `--check` exit 1 (non-canonical), rewrite canonical, `--check` exit 0 (canonical), invalid JSON unreadable, directory recursion skipping `bin`/`obj`, bad paths exit 2. E2E: `TheCheckedInSamplesAreCanonical` validates samples are already canonical. CI job: `format --check samples` passes as part of "Graph checks" step.
+
+- **SC-009** (merge driver): GraphMergerTests (GI-T03–GI-T08, GI-T12, 8 cases) covers clean merges (both sides add nodes, merged identity + layout ours-wins), conflict cases (pin changed differently, node deleted vs modified, two sources into one data input), fallback to text merge, exit codes 0 (clean) and 1 (conflict). `expected` fixtures verify canonical bytes for clean cases. E2E (`GitDriversEndToEndTests`): two branches merge through `git merge` driver with 0 conflicts, plain git on same history reports at least one conflict.
+
+- **SC-010** (git-install idempotent): GitInstallCommandTests (11 tests) covers install local/global, `--merge`, `--command`, idempotent second run (no changes), `--uninstall`, conflicting line rejected, outside repo exit 2. E2E validates install writes config keys and attributes line, second run reports `already installed:` and writes 0 files, output identical (`GitInstallCommandTests` lines verify both `.git/config` and `.gitattributes` bytes unchanged).
+
+**Checkpoint F**
+
+**Status**: ✓ Green
+
+- **Build**: `dotnet build -v q -tl:off --nologo`: 28 projects, 0 errors, 0 warnings.
+- **Tests** (Release): 1603 total; 1593 passed, 10 skipped (E2E Desktop tests without `NETPRINTS_E2E=1`, UITests headless driver limitations), 0 failed. E2E Desktop (Release, `NETPRINTS_E2E=1`): 9 passed, 0 skipped.
+- **Docs**: `scripts/build-docs.sh` succeeded. Docusaurus build: 0 broken links (fragment identifiers with em-dashes removed).
+- **Format**: `dotnet format --verify-no-changes` clean (Release, all projects).
+
+## Review F (T099)
+
+Sub-phase F (`6925062^..00c87e3`), reviewed at `00c87e3`: Checkpoint F not accepted until the blocker and major findings are fixed. 1 blocker, 5 major, 7 minor, 7 nit. Independent run: Cli.Tests 210/210, Core.Tests 596/596; the manual isolated-repo run held SC-002 (format part), SC-009 and SC-010, and plain git reported 3 hunks on the two-insertions history. Batches: F-F1 merge safety, F-F2 show and diff, F-F3 format/fallback bytes/test isolation, F-F4 docs, contract, notes.
+
+| Id | Severity | Finding | Fix batch | Status |
+|---|---|---|---|---|
+| F-R1 | blocker | Merge validation checks only data inputs: two inserts after one exec output, or two sources into one type input, merge clean and lose a call | F-F1 | fixed in F-F1 |
+| F-R2 | major | A node-shape change (e.g. `pure`) on one side against new wiring or pin values on the other merges clean, then NPD002/NPD003 on regen | F-F1 | fixed in F-F1 |
+| F-R3 | major | `git diff` aborts (exit 128) as soon as a graph cannot be read | F-F2 | fixed in F-F2 |
+| F-R4 | major | `show` omits every node property except the target, so real changes give an empty diff | F-F2 | fixed in F-F2 |
+| F-R5 | major | `format` does not canonicalize connection order, which the editor does | F-F3 | fixed in F-F3 |
+| F-R6 | major | Large parts of the merger have no test | F-F1 | fixed in F-F1 |
+| F-R7 | minor | The docs state false things | F-F4 | fixed in F-F4 |
+| F-R8 | minor | `git.md` lacks the limits part T096 asked for | F-F4 | fixed in F-F4 |
+| F-R9 | minor | GI-T03's baseline does not match the contract or SC-009 | F-F4 | fixed in F-F4 |
+| F-R10 | minor | The text fallback is not byte-exact; `show` output encoding not pinned | F-F3 | fixed in F-F3 |
+| F-R11 | minor | Invalid input and I/O failures surface as `Internal error` (exit 4) | F-F1 | fixed in F-F1 |
+| F-R12 | minor | Git tests are not isolated from the developer's global git configuration | F-F3 | fixed in F-F3 |
+| F-R13 | minor | The Checkpoint F report is inaccurate | F-F4 | fixed in F-F4 |
+| F-R14 | nit | Decisions the contract was silent on are recorded only in the notes | F-F4 | fixed in F-F4 |
+| F-R15 | nit | `show` and `merge` read and write files directly | F-F4 | fixed in F-F4 |
+| F-R16 | nit | The default arm of the summary writer is misleading | F-F2 | fixed in F-F2 |
+| F-R17 | nit | A stray sentence in `cli.md` | F-F4 | fixed in F-F4 |
+| F-R18 | nit | The `show` goldens are not independent of the writer | F-F2 | fixed in F-F2 |
+| F-R19 | nit | The SC-010 test covers only the default install | F-F3 | fixed in F-F3 |
+| F-R20 | nit | `format`'s messages are inconsistent | F-F3 | fixed in F-F3 |
+
+### F-F1 (F-R1, F-R2, F-R6, F-R11)
+
+**Decisions**
+
+- F-R1: `Validate` also rejects more than one connection into a type input pin (`TypeInputTwice`) and more than one out of an exec output pin (`ExecOutputTwice`), next to `DataInputTwice`; contracts/git.md §2 step 4 and docs/guide/git.md amended.
+- F-R2: the report's conservative rule, with no pin mapper: a node whose non-pin properties changed on exactly one side, against pin changes or added/removed connections touching that node on the other side, is a `NodeProperty` conflict; contracts/git.md §2 step 3 and docs/guide/git.md amended.
+- F-R11: read-time rejection through `RespectNullableAnnotations` on the source-generated serializer options, so `"nodes": null` is a `DocumentFormatException` for `show`, `format` and `merge`; `merge` also falls back to the raw text when the merge itself throws, and `git-install` maps `IOException`/`UnauthorizedAccessException` to exit 1 (contracts/git.md §2 step 1 amended).
+- A node-shape conflict exits 1 even when `git merge-file` finds no overlapping lines (no markers then); the contract already says a semantic conflict always exits 1.
+- F-R6: in-memory unit tests in `Git/GraphMergerUnitTests.cs`, one case per branch: `NodeProperty` (both changed, add/add), `DuplicateMember` (same id, same name), `Scalar` (class fields, member name, locals, accessor add/add), member and accessor delete/modify and delete/unchanged, pin delete/modify, both sides adding members, layout carried for theirs-only nodes.
+
+**Red/green evidence**
+
+- Red (before the fix, `GraphMergerTests`, `GraphMergerUnitTests`, `GraphSummaryTests`, `FormatCommandTests`, `GitInstallCommandTests`): 73 tests, 11 failed, 62 passed. The failures: `TwoInsertionsAfterTheSameExecOutputConflict`, `TwoSourcesIntoOneTypeInputConflict`, both F-R2 unit tests, the `BothInsertAfterSameNode` and two `NodeShapeVs*` fixture cases, and the four F-R11 tests (merge, show and format on `NullNodes`, git-install with an unwritable `.gitattributes`). `JsonDocumentFormatTests` null-member theory (2 cases) was red without the option (2 of 8 failed).
+- The F-R6 tests and the clean-merge guards passed on the first run: the merger already behaved as specified there, so they pin existing behaviour and were written after the code in that sense. The F-R1, F-R2 and F-R11 tests were written before the fix.
+- Green: `NetPrints.Cli.Tests` 245 of 245 after the fix; whole suite 1641 total, 1631 passed, 10 skipped, 0 failed. `dotnet format --verify-no-changes` clean, build 28 projects 0 warnings 0 errors.
+- Not covered by a test: the `merge` catch-all fallback when the merger throws (no input reaches it once nulls are rejected at read time).
+
+### F-F2 (F-R3, F-R4, F-R16, F-R18)
+
+**Decisions**
+
+- F-R3: `show --textconv` prints a file that cannot be read as a graph (format, schema-version or I/O failure) as its raw text and exits 0; `git-install` registers `<cmd> show --textconv`, and a reinstall replaces the old value; plain `show` keeps exit 1 (contracts/git.md §1 and §3, `git.md`, `cli.md`).
+- F-R4: the node line gains `key=value` properties (name, pure, counts, generics, visibility and modifiers of the method or variable reference, parameter defaults, reroute types), fixed key order per kind, defaults omitted; method references render return types as `->T`; unknown nodes get a `raw <json>` line; layout-only changes stay invisible (contracts/git.md §1 lists every key).
+- F-R4: `overrides=` of an event entry prints the signature and return types only, not the overridden method's own modifiers and visibility.
+- F-R16: a built-in kind without scalar properties renders its registered `$kind` (read from the `JsonDerivedType` attributes of `NodeDocument`); the CLR-name arm is gone.
+- F-R18: a hand-written graph with its expected summary (`Fixtures/ShowGrammar/graph.txt`, `expected.show.txt`, written from the contract text before the writer was changed) covers getter and setter, a local, a renamed pin, an escaped and a `null` value, a generic argument, comma-joined modifiers, parameter defaults, reroute types and an unknown node. The two recorded goldens were regenerated after the grammar change and their diff read against the contract.
+
+**Red/green evidence**
+
+- Red (before the fix; `*GraphSummary*`, `GitInstallCommandTests`, `GitDriversEndToEndTests`; saved at `/mnt/DATA/tmp/claude/red/ff2-red.txt`): 35 tests, 13 failed, 22 passed. Failed: the hand-written golden, the four `--textconv` cases (unknown option), the five textconv-value tests of GI-T09 (including the reinstall and `--uninstall` ones), the property-coverage test, and the two GI-T10 cases (`git diff` of a `pure` change is empty; `git diff` after a driver conflict).
+- Green: the same 35 pass (`/mnt/DATA/tmp/claude/red/ff2-green1.txt`). The property test first failed on test-side toggles that set a value the fixture already had; those were fixed in the tests, not the writer.
+- Written after the code in that sense: `GraphSummaryPropertyTests.EveryBuiltInNodeKindHasAnArmThatRendersItsKind` and `EveryPropertyOfEveryBuiltInNodeKindHasAMutationCase` passed on the first run (the old writer already rendered every kind; the second is a tripwire for future properties). The regenerated AllNodes and HelloWorld goldens are recorded from the writer and only reviewed.
+- Full suite 1654 total, 1644 passed, 10 skipped, 0 failed; `dotnet format --verify-no-changes` clean; build 0 warnings 0 errors.
+
+### F-F3 (F-R5, F-R10, F-R12, F-R19, F-R20)
+
+**Decisions**
+
+- F-R5: `JsonDocumentFormat.WriteClassAsync` sorts every `connections` array (class graph, methods, constructors, event graphs) by ordinal `from`, then ordinal `to`, so the editor, `format` and `merge` share one order; loading accepts any order. Pin order is kept (it needs node definitions). contracts/git.md §3a, `graph-format.md` and `cli.md` amended.
+- F-R5: the tracked `.netpc.json` files checked with `format --check` over a copy: `samples/` was already canonical (no byte changed); three Core.Tests fixtures (`AnnotatedCall`, `CatalogCall`, `ForLoop`) had connections out of order and were rewritten, the diff is only moved connection lines. The 11 Cli merge fixtures are hand-written inputs that differ from canonical for layout reasons unrelated to this change and were left as they are. `samples/HelloWorld/Compiled_HelloWorld/` was not touched.
+- F-R10: `git merge-file` runs without `-p` and the merged bytes are read back from the temporary `ours` file and written to `%A` (byte order mark and non-UTF-8 bytes survive); the entry point sets `Console.OutputEncoding` to UTF-8 without a byte order mark; contracts/git.md §2 step 5 amended.
+- F-R12: `TempGitRepository` runs every git process with `GIT_CONFIG_GLOBAL` set to an empty file, `GIT_CONFIG_NOSYSTEM=1` and a private `XDG_CONFIG_HOME`, and hands the same variables to the CLI under test.
+- F-R19: a second run leaves the bytes of `.git/config` unchanged, and `--merge` installed twice changes nothing.
+- F-R20: `GraphFileSearch` takes a formatter for the directory line, so `format` prints `unreadable: <path>: <reason>` for files and directories and `migrate` keeps `<path>: unreadable: <reason>`; `CliEnvironment.DisplayPath` shows a path relative to the current directory when inside it and absolute otherwise.
+
+**Red/green evidence**
+
+- Red (saved at `/mnt/DATA/tmp/claude/red/ff3-cli-red.txt` and `ff3-core-red.txt`): `FormatCommandTests`, `GraphMergerTests`, `GitInstallCommandTests`, `GitDriversEndToEndTests` 53 tests, 5 failed (shuffled connections, unreadable directory line, absolute path outside the current directory, the byte-exact fallback, the isolated git configuration); `JsonDocumentFormatTests` 9 tests, 1 failed (connection order).
+- Green: the same classes pass; `NetPrints.Cli.Tests` 266 of 266.
+- Written after the code in that sense: the two F-R19 tests passed on the first run (the install was already idempotent, as probe 4 said). No test pins the UTF-8 console encoding: on Linux the default is already UTF-8, so it could not be made red here.
+- Full suite 1662 total, 1652 passed, 10 skipped, 0 failed; `dotnet format --verify-no-changes` clean; build 0 warnings 0 errors.
+
+### F-F4 (F-R7, F-R8, F-R9, F-R13, F-R14, F-R15, F-R17)
+
+**Changes**
+
+- F-R7: `docs/guide/projects.md:41-42` reworded to "the driver merges only the `*.netpc.json` graph file; git then merges the generated `.netpc.g.cs` as text". `docs/guide/graph-format.md` and `docs/guide/git.md:115` corrected: SchemaStore entry is prepared but not yet submitted. `docs/guide/git.md:70` reworded to reflect actual behaviour after F-F1 fixes: "When the merge succeeds, the result is written in canonical form and exits 0. When there is a conflict, the driver exits 1 and falls back to text merge with markers." (no longer claims no information is lost, since semantic conflicts can drop pins/connections without markers).
+- F-R8: `docs/guide/git.md` after line 69 added a "Limits" section documenting: web merges don't run custom drivers; every clone needs `git-install --merge`; generated files handled by taking either side and running `regen`; layout-only moves invisible in `show`; `git diff --no-textconv` for raw JSON.
+- F-R9: `specs/004-catalog-cli/contracts/git.md:119` (GI-T03) amended to "plain `git merge-file` on the same inputs reports at least one conflict" (empirically 3 hunks). `specs/004-catalog-cli/spec.md:528` (SC-009) updated to "plain git gives at least one" instead of "plain git gives 1".
+- F-R13: `implementation-notes.md` SC-001–SC-010 descriptions corrected: SC-001 credits `CliExitCodeTests.EveryCommandsHelpExitsZero` (not CliHelpExamplesTests); SC-002 removed stale commit ref and corrected to `TheCheckedInSamplesAreCanonical`; SC-009 says "at least one conflict" (matching the contract fix); SC-010 clarified references to `GitInstallCommandTests` verification.
+- F-R14: `specs/004-catalog-cli/contracts/git.md` §2 and §3 amended with decision notes: same id added both sides → `DuplicateMember` or `NodeProperty`; locals and accessors → `Scalar`; deletion of unchanged item wins; `--global` skips work-tree check; no downgrade without `--merge`; our keys with another value overwritten; `--uninstall` deletes blank attributes file and empty sections.
+- F-R15: `specs/004-catalog-cli/research.md` §14 clarified: direct I/O for temporary files in git driver paths is correct (not store documents). Removed stale reference in F-R18 note.
+- F-R17: `docs/guide/cli.md:164` moved from `merge` section to `show` section (after line 148) as the description of `show` exit codes. Reformatted as: "An unreadable graph exits 1 with the reason on stderr; a missing file exits 2."
+
+**Tests**: no code or test changes required; docs only.
+
+## Governance proposals
+
+## Batch G1 (T101-T103)
+
+**Added**
+
+- Fixture projects under `tests/Fixtures/Extensions/`: `Fx.Alpha`, `Fx.Beta`, `Fx.LibV1`, `Fx.LibV2`, `Fixture.SharedLib.V1`, `Fixture.SharedLib.V2` (assembly `Fixture.SharedLib` 1.0/2.0), `Fx.PrefixedPrivate`, `NetPrintsFixture.Runtime`, `Fx.TypesProvider`, `Fx.TypesConsumer`, `Fx.Diamond`, `Fx.Native`; each extension has a `netprints-extension.json`, the output folder `bin/<cfg>/extensions/<id>/` and the `Fx.Catalog` project layout. `Shared/FxKit.cs` is linked into the extensions that need a plain node kind (document, converter, translator, library, source-generated JSON context).
+- `tests/NetPrints.Core.Tests` references the nine extension projects with `ReferenceOutputAssembly="false"`; the two library versions build through their extensions and are not referenced directly. All twelve projects are in `NetPrints.slnx`.
+- `tests/NetPrints.Testing/Extensions/ExtensionHarness.cs` (`CreateAsync`, `Registry`, `Translate`, `RoundTripAsync`, `GenerateAsync`, `DisposeAsync`); `NetPrints.Testing` now references Core, Extensibility, Generation and Serialization.
+- `Core.Tests/Extensibility/MultiExtension/`: `FixtureExtensions` (`Folder`, `CopyTo`), `MultiExtensionGraphs`, `ExtensionHarnessTests`, `CharacterizationTests`.
+
+**Decisions**
+
+- The harness always loads the built-in extension first; in-process extensions get the ids `harness.inprocess.<index>`. `GenerateAsync` scans `*.netpc.json` recursively and writes `<name>.netpc.g.cs` next to each graph.
+- Fixture Alpha's class emitter and Beta's member emitter add `System.ComponentModel.Description("fx.alpha")` / `("fx.beta")` attributes. Contract 3 says the emitters add `// fx.alpha` / `// fx.beta`; `ClassEmitContext` and `MemberEmitContext` can only add attributes, usings and modifiers, so a comment cannot be emitted. G2/G3 assert the attribute text (`AlphaClassEmitter.Marker`, `BetaMemberEmitter.Marker`); contract 3 should be amended.
+- Beta recognises alpha's node by the full name `Fx.Alpha.AlphaPingNode`, so it needs no reference to alpha.
+- LibV1's `SharedLib.Describe()` returns `shared-lib-v1`; LibV2's `Describe(string caller)` returns `shared-lib-v2:<caller>`, and its node passes `fx.libv2`. Diamond is compiled against V1 with `Private=false` and writes `Describe()`.
+- `Fx.TypesConsumer` exposes `TypesConsumerExtension.SeenProviderType` and `Fx.LibV1/V2` expose `SeenSharedLib`, for identity checks through reflection; `Fx.Native` exposes `NativeExtension.Milestone`, set in `Register`.
+- `Fx.Native` sets `CopyLocalLockFileAssemblies` to true (the extensions' shared props set it false), so the native assets land under `runtimes/` in its folder.
+- The fixtures with kinds register no catalog or settings except Alpha. `Fx.TypesProvider` registers nothing; its assembly is the point.
+
+**Characterization (MX-T01), green on the current loader**
+
+- Host type identity: the extension's node type derives from the host's `Node`, its assembly sits in a context named after the extension id, `NetPrints.Core` exists once in the process.
+- A copy of `NetPrints.Core.dll` in an extension folder is ignored, with no warning logged (MX-T03 adds the warning).
+- Load order: dependency order, then ordinal id, whatever the discovery order; in-process extensions come before folder extensions when neither depends on the other, so an in-process extension can win an id against a folder extension it does not declare a dependency on.
+- NPX001-NPX007, each with alpha and beta loaded: only the failing extension is reported, neighbours and their kinds stay. NPX006 is an issue against the rejecting extension, which stays loaded.
+- LibV1 and LibV2 load together, each translator calls its own version (MX-T06 already holds).
+- `Fx.Native` loads on Linux (native assets resolve through the extension's `deps.json`).
+
+**Current behaviour that contradicts the contract (pinned, marked "CurrentBehaviour" in the test name, for G2/G3)**
+
+- MX-T02: `fx.private-prefix` fails with NPX005 (`NetPrintsFixture.Runtime` is looked up in the host because of the `NetPrints` prefix). After T105 it must load.
+- MX-T04: `fx.types-consumer` fails with NPX005 (the provider's assembly is not found; contexts do not chain). After T106 it must load and share the provider's type.
+- MX-T05: `fx.diamond` fails with NPX005 (`Fixture.SharedLib` is in neither its own folder nor its dependencies' contexts). After T106 it must load with version 1.
+- The three tests are the only ones G2 has to flip; the rest of `CharacterizationTests` must stay green unchanged.
+
+**Red/green**
+
+- Red: `ExtensionHarnessTests` and `MultiExtensionGraphs` written before `ExtensionHarness`; the build failed with CS0234 (`NetPrints.Testing.Extensions` does not exist).
+- Green: `ExtensionHarnessTests` 6/6 on the first run after the harness; no test failed after it.
+- `CharacterizationTests` are written against existing code (green from their first run except two test-side mistakes fixed in the tests: the built-in id, and the NPX006 scenario, where the in-process extension loaded before alpha and won the profile id).
+- Fixture content of alpha (every contribution kind) is exercised in G3 (MX-T07); G1 pins only its node, class emitter, property and profile through the harness tests.
+
+## Batch G2 (T104-T107)
+
+**Red (T104), current loader, before any change to `src/`**
+
+`SharedAssemblyRuleTests` and `DependencyTypeSharingTests`: 8 tests, 6 failed, 2 passed.
+
+- `APrivateDependencyWhoseNameStartsWithNetPrintsLoadsFromTheExtensionFolder` (MX-T02): `fx.private-prefix` not in the loaded ids (NPX005, `NetPrintsFixture.Runtime` looked up in the host).
+- `ACopyOfAHostAssemblyInTheExtensionFolderIsIgnoredAndLogged` (MX-T03): no log entry with event 2010 (only `ExtensionDiscovered`, `ExtensionLoaded`).
+- `AConsumerSeesTheTypeOfItsProviderAndNotACopy`, `ACopyOfTheProvidersAssemblyInTheConsumerFolderIsIgnoredAndLogged` (MX-T04): `fx.types-consumer` fails NPX005, `FileNotFoundException: Could not load file or assembly 'Fx.TypesProvider'`.
+- `AConsumersEmitterOutputUsesTheProvidersType` (MX-T04): output lacks `Description("fx.types-provider")`.
+- `ADiamondTakesTheLibraryFromTheFirstDependencyInDeclaredOrderWhateverTheDiscoveryOrder` (MX-T05): `fx.diamond` fails NPX005, `Could not load file or assembly 'Fixture.SharedLib'`.
+- Already green on the old loader: `AFolderWithoutHostAssemblyCopiesLogsNoShadowWarning`, `AProviderThatFailsToLoadFailsItsConsumerWithNpx003`.
+
+**Green**
+
+- After T105/T106 and `VersionIsolationTests` (MX-T06): Extensibility namespace 119/119; whole suite 1689 total, 1679 passed, 10 skipped (headless UI driver), 0 failed.
+- `dotnet format --verify-no-changes` clean.
+
+**Added**
+
+- `Loading/HostAssemblies.cs` (`IsProvided`): TPA, loaded in Default, `Microsoft.Build*`. The prefix list (`NetPrints`, `Microsoft.CodeAnalysis`, `CommunityToolkit.Mvvm`, `System.Reactive`, `DynamicData`, `Avalonia`, `Microsoft.Extensions.*.Abstractions`) is gone.
+- `ExtensionLoadContext(name, path, dependencies)`: host-provided, then dependency chain (declared order, depth-first, each context once: loaded assembly, else its resolver, loaded into that context), then own resolver. `FindDependencyOwner` serves the shadow check.
+- `ExtensionLoader` keeps id to context and passes the dependency contexts (topological order makes them exist); `ExtensionLoadContextCache.GetOrCreate` takes them. `Log.HostAssemblyShadowed` (2010) and `Log.DependencyAssemblyShadowed` (2011), both warnings, checked once per extension at load over the `*.dll` files of the extension folder.
+- No public API change; ADR-0010 needs no amendment (its text matches the rules as built).
+
+**Decisions**
+
+- The three `CurrentBehaviour` characterization tests were replaced by the MX-T02, MX-T04 and MX-T05 tests (removed from `CharacterizationTests`). `ACopyOfAHostAssemblyInTheExtensionFolderIsIgnoredSilently` also moved (as `...AndLogged`): it asserted no warning, which MX-T03 contradicts; the rest of `CharacterizationTests` is unchanged.
+- A dependency is looked up by simple name only (no version check); the first context in the chain that has loaded it or can resolve it wins.
+- A file that is both host-provided and in a dependency is reported once, as `HostAssemblyShadowed`; the extension's own assembly is never reported.
+- In-process dependencies have no context and contribute nothing to the chain.
+- A cached context keeps the dependency contexts from its first load (reload uses the same cache, same manifest paths).
+- Fixture `Fixture.SharedLib` V1/V2 report assembly version 0.0.0.0 at runtime (the repository's versioning overrides `AssemblyVersion`), so MX-T06 tells the two apart by load context, `Assembly` identity and the translators' output, not by version.
+
+**For G3**
+
+- Load-context tests that need warnings use `Load(Options(...), CollectingLoggerFactory)`; `ExtensionHarness` logs to a null factory.
+- Shadow warnings are event ids 2010/2011, level Warning.
+
+## Batch G3 (T108-T111)
+
+**Added**
+
+- `MultiExtension/IdConflictTests` (MX-T07, MX-T08), `LoadOrderPermutationTests` (MX-T09), `DocumentSubsetTests` (MX-T12), `FailureIsolationTests` (MX-T10, MX-T11, MX-T13), `ScaleTests` (MX-T14), `ReloadTests` (MX-T15), `NativeDependencyTests` (MX-T16). 23 tests; no change to `src/`.
+
+**Red/green**
+
+- No red step: every test passed on its first run against the current loader (characterization of behaviour that was already correct), after test-side fixes only (alpha's catalog profile base is `PublicApi`, not `None`; a nullable warning; `Load` without the harness does not add the built-in extension, so the scale count is 50).
+- MX-T10 is the case T110 named as the possible red step: a `Register` that adds a node library with two kinds, a class emitter, a member emitter, a profile and a property and then throws commits none of them. `ExtensionBuilder` buffers and `ExtensionLoader` calls `RegistryBuilder.Commit` only after `Register` returns, so the commit is already atomic per extension. `RegistryBuilder` is unchanged.
+- Whole suite: 1712 total, 1702 passed, 10 skipped (headless UI driver), 0 failed. `dotnet format --verify-no-changes` clean.
+
+**Decisions**
+
+- Squatter (MX-T07) is an in-process extension with `dependsOn: [fx.alpha]`, not a Roslyn fixture: it finds alpha's node and document types through the `fx.alpha` load context whose assemblies sit under the test's temp folder. Rejected, each as NPX006 against `fx.squatter`: `fx.alpha/Ping` (prefix), a new kind on alpha's CLR node type, a new kind on alpha's document type, alpha's profile, host channel, settings section and catalog profile id. Alpha's contributions are the ones in the registry.
+- JSON resolvers are not conflict-checked: they are appended in load order, so alpha's come first and win. Pinned as such.
+- Project properties dedupe ignoring case (`FXALPHAPROPERTY` after `FxAlphaProperty`), silently.
+- MX-T08: the contract says "first folder wins" and "same winner under reversed folder order". Both cannot hold for two different folders; the test asserts the first folder in each order wins and the loser is NPX004, and that the registry content is identical (the two copies are the same extension).
+- MX-T10 also has a Roslyn `fx.throws` variant (two kinds, then throw); MX-T10 in-process variant covers every contribution kind.
+- MX-T11: `fx.hostskew` is compiled against a stand-in `NetPrints.Core` (same version) with an extra public static method on `ExperimentalApiIds`; the stand-in is not shipped in the folder, so at run time the host's Core binds and `Register` throws `MissingMethodException` (NPX005).
+- MX-T12: with only beta loaded, beta fails NPX003 (its dependency alpha is absent), so {beta} behaves like {}; both round-trip byte-identical. `generate` with only alpha reports NPT003 naming `fx.beta/Pong` and writes nothing.
+- MX-T13 is one theory over NPX001-NPX007 with alpha and beta, asserting the failure (or, for NPX006, the contribution issue) and that a graph using both neighbours still translates. It overlaps `CharacterizationTests`; it adds the translate check.
+- MX-T14: one Roslyn compile of a generic extension that derives its id from its folder name, copied 50 times; `dependsOn` is seeded (`20260930`), each entry depends on up to three earlier ones. Only the load is timed (limit 10 s, the contract's); it takes about 1 s. The second run reverses the folder order.
+- MX-T15: reload is `LoadForProjectAsync` for the folders, then `[]`, then the folders again, three times; the test compares the count of load contexts named `fx.alpha`/`fx.beta` (steady after the first load) and that alpha's node type is the same `Type` across reloads.
+- MX-T16: reads `NativeExtension.Milestone` by reflection from the extension's own context; skipped with an explicit reason off Linux. Builds on the G1 `Fx.Native` fixture.
+
+**For G-R**
+
+- Load-context count is checked by name among all contexts in the process; it assumes nothing else loads `fx.alpha`/`fx.beta` concurrently (all fixture tests share `RealExtensionLoadCollection`).
+- Contract 3 still says alpha/beta emitters add `// fx.alpha`; tests assert the attribute text (see G1).
+- The contract's MX-T08 wording (see above) and the Roslyn-vs-in-process squatter are deviations to confirm.
+
+## Batch G4 (T112–T114)
+
+**Added**
+
+- T112: `docs/guide/extensions.md` — new "Coexistence rules" section describing what the host provides (trusted platform assemblies, already-loaded assemblies, MSBuild families), what loads privately, and the shadowing warnings (`HostAssemblyShadowed` and `DependencyAssemblyShadowed`).
+- T113: `docs/guide/extensions.md` — new "Depending on another extension" section explaining `dependsOn` manifest entries, `Private="false"` project references (with an example from `Fx.TypesConsumer.csproj`), type identity sharing, and diamond dependencies with a link to ADR-0010.
+- Contract fixes in `specs/004-catalog-cli/contracts/extensions.md`:
+  - §3 (Fixtures): Alpha's class emitter now produces a `[System.ComponentModel.Description("fx.alpha")]` attribute (not `// fx.alpha`), and Beta's member emitter produces `[System.ComponentModel.Description("fx.beta")]`, because emit contexts can only add attributes, usings and modifiers.
+  - §6 (MX-T08): clarified to state "in each folder order the first folder wins, the loser gets NPX004, and the registry content is the same" (verified against `IdConflictTests.ADuplicateIdFailsWithNpx004AndTheFirstFolderWinsInEveryDiscoveryOrder`).
+
+**Documentation**
+
+- `docs/guide/extensions.md`: +64 lines.
+- `scripts/build-docs.sh`: succeeded with 0 errors.
+
+**Test Suite**
+
+**Corrected in G-F4 (G-R8):** these figures came from stale Release binaries built before G1; no GraphSummaryTests failure reproduces. See Checkpoint G below for the real run.
+
+- Release, solution-wide, no `NETPRINTS_E2E`: ~~1603 total, 1590 passed, 3 failed, 10 skipped (headless UI capability skips). Failures in `NetPrints.Cli.Tests.Git.GraphSummaryTests` (HelloWorld.show, AllNodes.show, node order);~~ these are unrelated to G4's documentation-only changes. Desktop E2E suite (`NETPRINTS_E2E=1`): 1 passed.
+- Full command: `dotnet test --solution NetPrints.slnx -c Release --no-build --ignore-exit-code 8`.
+
+**SC-007** (Coexistence rules documented): `docs/guide/extensions.md` "Coexistence rules" section explains host-provided assemblies (TRUSTED_PLATFORM_ASSEMBLIES, already loaded in Default context, Microsoft.Build families), private loading of everything else, and shadowing warnings.
+
+**SC-008** (Depending on extensions documented): `docs/guide/extensions.md` "Depending on another extension" section explains `dependsOn`, `Private="false"` references (with `Fx.TypesConsumer.csproj` example), type identity sharing across extension contexts, diamonds with first-wins behavior, and references ADR-0010 for details.
+
+### Checkpoint G
+
+**Status**: ✓ All findings in G-F1, G-F2, G-F3, G-F4 complete and committed.
+
+**Build**: `dotnet build -c Release -v q -tl:off --nologo`: 40 projects, 0 errors, 0 warnings.
+
+**Documentation**: `scripts/build-docs.sh`: 0 errors (docfx duplicate-file warnings only, pre-existing).
+
+**Test suite**: 1723 tests, 1713 passed, 0 failed, 10 skipped (headless UI capabilities).
+- Core.Tests (Release): 792 total, 792 passed, 0 failed
+- Cli.Tests (Release): 37 total, 37 passed, 0 failed
+- Catalog.Tests (Release): 72 total, 72 passed, 0 failed
+- Editor.Tests (Release): 80 total, 80 passed, 0 failed
+- Editor.UITests (Release): 69 total, 66 passed, 3 skipped
+- Desktop.E2ETests (Release): 1 total, 1 passed, 0 failed
+- Samples (Release, in Core.Tests): 16 total, 16 passed, 0 failed
+
+Duration: 5m 29s.
+
+**SC-007** (Coexistence rules documented): 24 discovery orders with byte-identical C# (MX-T09, MX-T14), 50 extensions in ~1 s (MX-T14).
+
+**SC-008** (Depending on extensions documented): Two hazards closed (MX-T02: private prefix-named assembly loads; MX-T04: type identity across extension contexts).
+
+**Deviations**: the G3 report used stale Release binaries; corrected in G-F4 with fresh binaries and full suite.
+
+### G-F4 (G-R7, G-R10, G-R8)
+
+- G-R7 (`docs/guide/extensions.md`): Rewritten the TPA description to say it is the host application's whole dependency closure, differing per host (Desktop has Avalonia, CLI has Spectre.Console, Generator has neither). Fixed the diamond paragraph to explain depth-first search and why each extension keeps its own copy. Added sections on assembly version mismatch (NPX008) and simple-name resolution. Updated shadow warnings to cite event ids (2010, 2011) instead of internal method names. Fixed the MSBuild family prefix to match the code.
+- G-R10 (`specs/004-catalog-cli/contracts/extensions.md`): Squatter fixture updated to say in-process with `dependsOn: [fx.alpha]` (was "Roslyn"). Added catch-all JSON resolver to its content. Clarified MX-T14 description to say 50 Roslyn-compiled fixtures with random dependency chains.
+- G-R8 (Checkpoint G report): Rebuilt Release binaries and ran the full suite with fresh Release binaries. Corrected the test totals: 1723 tests, 1713 passed, 0 failed, 10 skipped. Reported Samples namespace separately (16 tests). Corrected SC-007 and SC-008 labels to map to their evidence (MX-T09/MX-T14 and MX-T02/MX-T04). Removed "pre-existing failures" claim. Added "Deviations" note about the G3 report's stale binaries.
+
+Gates: `dotnet format NetPrints.slnx --verify-no-changes --no-restore` clean. Full suite: total 1723, failed 0, succeeded 1713, skipped 10.
+
+## Review G (T115, Opus)
+
+Report: `.agent-archive/netprints-p2/review-G.md`. Checkpoint G was not accepted; the findings and their fix batches:
+
+| Finding | Severity | Batch | Status |
+|---|---|---|---|
+| G-R1 stale provider context after an `ExtensionHost` reload | major | G-F1 | fixed, 173c9da |
+| G-R2 "already loaded in Default" evaluated lazily | major | G-F1 | fixed, 173c9da |
+| G-R3 dependency copy wins with no version check | major | G-F2 | fixed, 7da71a9 |
+| G-R4 `Fixture.SharedLib` V1/V2 both AssemblyVersion 0.0.0.0 | minor | G-F2 | fixed, 71d8892 |
+| G-R5 JSON type-info resolvers not conflict-checked | major | G-F3 | fixed, 5e2f552 |
+| G-R6 MX-T05 cannot tell declared order from id or load order | major | G-F2 | fixed, 0d7c909 |
+| G-R7 guide states the diamond rule and host provision wrongly | major | G-F4 | fixed, G-F4 |
+| G-R8 Checkpoint G report ran on stale Release binaries | major | G-F4 | fixed, G-F4 |
+| G-R9 sample-build tests not reported, no real-host SC-008 test | minor | G-F3 | fixed, d7dfcfb |
+| G-R10 contract §3 and §6 drifted from the tests | minor | G-F4 | fixed, G-F4 |
+| G-R11 MX-T12 has no real "only B" case | minor | G-F3 | fixed, 4cb58ec |
+| G-R12 shadow check can fail a load and re-logs on reload | minor | G-F1 | fixed, 173c9da |
+| G-R13 G3's 23 tests have no red evidence | minor | G-F2 | fixed, mutation evidence in G-F2 |
+| G-R14 MX-T14 scale fixture never walks the dependency chain | nit | G-F3 | fixed, af126ba |
+
+### Accepted decisions
+
+- **G-R1**: on a dependency mismatch the cache creates a new context (an ALC's bindings cannot be redirected).
+- **G-R2**: snapshot the host-provided names when each `ExtensionLoadContext` is created; ADR-0010 §4 keeps "already loaded", now "at the time the extension's context is created".
+- **G-R3**: NPX007 is already `AssemblyLoadFailed`, so the code is NPX008 (`DependencyVersion`). It fires when a dependency's version is lower than the consumer's reference, equal or higher accepted, plus a one-line ADR-0010 §4 amendment (G-F2).
+- **G-R5**: route each node kind's `DocumentType` to its owning extension's resolvers first through a dispatching resolver, and report NPX006 against any other extension whose resolver would have answered first (G-F3).
+
+### G-F1 (G-R1, G-R2, G-R12)
+
+- G-R1: `ExtensionLoadContextCache.GetOrCreate` replaces a cached context whose `Dependencies` differ (reference-wise, ordered) from the ones now resolved. New `ReloadTests.AConsumerSeesTheProviderOfTheCurrentLoadAfterAProjectCopyReplacesTheGlobalOne`.
+- G-R2: `HostAssemblies.Snapshot()` (TPA plus Default's loaded names) is taken in the `ExtensionLoadContext` constructor; `Load` and the shadow check both use `IsHostProvided`. The MSBuild prefix is `Microsoft.Build` or `Microsoft.Build.*`. New `SharedAssemblyRuleTests.AnAssemblyTheHostLoadsAfterTheContextWasCreatedIsStillPrivateToTheExtension` (compiles `Gf1Late`, loads a copy into Default after the load, then the extension's `Assembly.Load("Gf1Late")` must return its own folder's copy).
+- G-R12: the name is parsed with `new AssemblyName { Name = name }`, a per-context flag (`TryClaimShadowReport`) makes the report once per context, and an `IOException`, `UnauthorizedAccessException` or `ArgumentException` from the check is logged (event 2012, Debug) instead of failing the load. New `AStrayDllWithAnUnparsableNameDoesNotFailTheExtensionLoad` and `AShadowedHostAssemblyIsLoggedOncePerContextAcrossReloads`.
+
+Red (tests written first, run on the 220938a code; all four new tests red):
+- `ReloadTests.AConsumerSeesTheProvider...`: `Assert.StartsWith() Failure`, string `.../search/fx.types-provider...` expected `.../project/fx.types-provider...` (consumer kept the global provider).
+- `AStrayDllWithAnUnparsableNameDoesNotFailTheExtensionLoad`: `Loaded` was `[]` instead of `["fx.alpha"]`.
+- `AShadowedHostAssemblyIsLoggedOncePerContextAcrossReloads`: `Assert.Single` failure, 2 HostAssemblyShadowed entries.
+- `AnAssemblyTheHostLoadsAfterTheContextWasCreated...`: the extension got `.../host/Gf1Late.dll` instead of `.../gf1.late/Gf1Late.dll`.
+
+Green (after the fix): `ReloadTests` 2/2, `SharedAssemblyRuleTests` 6/6, `DependencyTypeSharingTests` 5/5. Format check clean (`dotnet format NetPrints.slnx --verify-no-changes --no-restore`). Full suite on fresh Debug binaries (`dotnet build NetPrints.slnx`, then `dotnet test --solution`): total 1716, failed 0, succeeded 1706, skipped 10 (headless driver), (G3 had 1712, plus the 4 new tests).
+
+Contract and ADR: contracts/extensions.md §2 step 1 (snapshot, prefix) and the MX-T15 row; ADR-0010 §4 sentence. The guide's host-provision list is rewritten in G-F4 (G-R7).
+
+### G-F2 (G-R4, G-R3, G-R6, G-R13)
+
+- G-R4 (71d8892): `<MinVerSkip>true</MinVerSkip>` on both `Fixture.SharedLib` projects. `VersionIsolationTests` (MX-T06) asserts 1.0.0.0 and 2.0.0.0. SharedLib V2 also gained a parameterless `Describe()` so a consumer built against 1.0 runs on 2.0.
+  - Red: `Assert.Equal() Failure: Values differ, Expected: 1.0.0.0, Actual: 0.0.0.0`. Green: 1/1.
+- G-R3 (7da71a9): code is NPX008 (`ExtensionDiagnosticCodes.DependencyVersion`), because NPX007 is `AssemblyLoadFailed`. After the extension assembly loads, `ExtensionLoader` compares each referenced assembly a dependency provides (`ExtensionLoadContext.FindDependencyVersion`) with the reference; lower fails the extension, naming the assembly and both versions. Only direct references of the main assembly are checked. ADR-0010 §4 amended, contracts/extensions.md §1 and a new MX-T17 row, extension-points.md step 4 updated, PublicAPI.Unshipped updated.
+  - New `DependencyVersionTests`: lower (Fx.LibV2 built against 2.0, manifest rewritten to depend on fx.libv1, own copy removed), equal (Diamond on libv1), higher (Diamond on libv2, translates `shared-lib-v2`).
+  - Red (before the code): the lower test failed with `Assert.Single() Failure: The collection did not contain any matching items, Collection: []`, so the extension had loaded silently. Equal and higher were green before and after, as guards. Green: 3/3, `MultiExtension` 57/57.
+- G-R6 (0d7c909): the diamond test now covers declared `[libv1, libv2]` and `[libv2, libv1]`, each with all 6 discovery permutations of {libv1, libv2, diamond}. It asserts the load context and version of the `SharedLib` the diamond sees (`DiamondExtension.SeenSharedLib`) and the translated output. Declared `[libv2, libv1]` differs from id order and load order (libv1 first in both).
+  - Mutation: `manifest.DependsOn.Distinct().Order(StringComparer.Ordinal)` in `ExtensionLoader.LoadOne`. New test red: `declared [fx.libv2, fx.libv1], discovered [fx.libv1, fx.libv2, fx.diamond]`. The old test (HEAD~ data) stayed green under the same mutation (5/5), which confirms it was blind. Reverted.
+- G-R13 mutation checks (each reverted with `git checkout`; none committed). Command: `dotnet build tests/NetPrints.Core.Tests -v q -tl:off --nologo`, then `tests/NetPrints.Core.Tests/bin/Debug/net10.0/NetPrints.Core.Tests -class NetPrints.Tests.Extensibility.MultiExtension.<Class>`:
+
+| Test | Mutation | Result |
+|---|---|---|
+| MX-T07 `IdConflictTests` | `RegistryBuilder`: `!profileIds.Add(profile.Id)` to `!profileIds.Add(profile.Id) && false` (a duplicate profile id is accepted) | `ASquatterCannotTakeAnyIdAlphaRegisteredAndAlphaIsUnchanged [FAIL]`, 1 of 4 failed |
+| MX-T08 `IdConflictTests` | `ExtensionLoader.Discover`: duplicate-id check `&& false` (NPX004 dropped) | `ADuplicateIdFailsWithNpx004AndTheFirstFolderWinsInEveryDiscoveryOrder [FAIL]`, 1 of 4 failed |
+| MX-T10 `FailureIsolationTests` | `LoadOne` catch: `builder.Seal()` to `registryBuilder.Commit(manifest, builder.Seal())` (commit when `Register` threw) | `ARoslynExtensionThatThrowsMidwayRegistersNoneOfItsKinds [FAIL]` and `ARegisterThatThrowsAfterAddingContributionsCommitsNoneOfThemAndFailsWithNpx005 [FAIL]`, 2 of 10 failed |
+| MX-T05 `DependencyTypeSharingTests` | sort dependencies by id (see G-R6) | red, see above |
+
+- Gates: `dotnet format NetPrints.slnx --verify-no-changes --no-restore` clean. Full suite on freshly rebuilt Debug binaries: total 1719, failed 0, succeeded 1709, skipped 10 (1716 plus 3 new; the diamond test was rewritten, not added).
+
+### G-F3 (G-R5, G-R11, G-R9, G-R14)
+
+- G-R5 (5e2f552): `RegistryBuilder` records each extension's document types and resolvers. `Build` puts an `OwnerRoutingJsonTypeInfoResolver` first in the registry's resolver list (`NodeConverters.ExtensionResolvers`), so a document type is answered by its owner's resolvers before the combined chain, and it reports NPX006 (contribution `JSON resolver`, against the other extension, naming the type and owner) for any other extension's resolver that also claims it. Built-in document types are not routed (`NetPrintsJsonContext` is first in the chain). `ExtensionRegistry.JsonTypeInfoResolvers` is unchanged. Contract MX-T07 row updated.
+  - Red: `ASquattersCatchAllJsonResolverIsReportedAndAlphasDocumentsStillComeFromAlphasResolver [FAIL]`: `Assert.Single() Failure: The collection did not contain any matching items` (the squatter's `DefaultJsonTypeInfoResolver` raised no issue). The round-trip guard `AlphasDocumentsRoundTripThroughAlphasResolverWhileASquattersCatchAllResolverIsPresent` was already green (the reflection resolver round-trips the same bytes), so it only guards. The origin check (`JsonTypeInfo.OriginatingResolver` is a `JsonSerializerContext`) comes after the issue assertion.
+  - Green: `IdConflictTests` 5/5, `NetPrints.Tests.Extensibility` 92/92. The old squatter test's expected list gained `JSON resolver`; the old list-position test was replaced.
+- G-R11 (4cb58ec): the duplicate `{fx.beta}` inline case is removed (beta needs alpha, so it equalled `{}`). New independent graph over alpha and libv1: reopened with `{libv1}` and with `{alpha}` stays byte-identical, and `generate` with `{libv1}` gives NPT003 naming `fx.alpha/Ping` and writes nothing. Written after the code (characterization). Mutation: loading alpha too in the lib-only generate turns `GeneratingWithOnlyLibV1ReportsNpt003ForAlphasNodeAndWritesNothing` red. Green: `DocumentSubsetTests` 7/7.
+- G-R14 (af126ba): the scale template now compiles a private `fx.scale.dep.dll` that every extension copy touches in `Register` (it throws if unresolved), so each load goes through `FindDependencyOwner` over the `dependsOn` chain. `ExtensionTestSupport.CompileWithReferences` added. The 10 s bound is unchanged (it runs in about 1.3 s). Written after the code; mutation: copying the dependency only into fixture 0 makes the load report issues, `Assert.Empty() Failure: Collection was not empty`. Green: 1/1.
+- G-R9 (d7dfcfb): `Samples/MultiExtensionBuildTests` writes a graph with `fx.types-consumer/Use` and `fx.private-prefix/Describe` nodes, then builds a temporary project with `NetPrintsExtension` items for the provider, consumer and private-prefix fixtures through a real `dotnet build` (the Generator process) and runs it. It asserts the build succeeds, the generated C# has the provider marker (`Description("fx.types-provider")`) and the `netprints-fixture-runtime` line, and the program prints both. Written after the code; mutation: leaving the provider out of the items fails the build with NPX003 (`dependency 'fx.types-provider' is missing`).
+- Samples namespace (`NetPrints.Tests.Samples`, run on its own): 16 tests, 0 failed (15 before, plus this one).
+- Gates: `dotnet format NetPrints.slnx --verify-no-changes --no-restore` clean (8c06ce5 fixes two import orders). Full suite on freshly rebuilt Debug binaries: total 1723, failed 0, succeeded 1713, skipped 10 (1719 plus 4 new).
+
+## Batch H1 (T117-T121) — polish and Checkpoint H
+
+Run on HEAD b3b732b plus the quickstart fix below; Release binaries rebuilt with `--no-incremental`.
+
+### T117 docs, schemas, ADR index
+
+- `scripts/build-docs.sh`: exit 0 (Docusaurus has `onBrokenLinks: 'throw'`, so 0 broken links; DocFX 6 duplicate-source warnings for the `PublicAPI.*.txt` files, as at Checkpoint G).
+- `cmp schemas/<id>.schema.json website/build/schemas/<id>.schema.json` for `netpc.v1`, `npcat.v1`, `netprints.catalog.v1`: identical (the script itself ends with the same three `cmp` calls).
+- `docs/adr/README.md` lists 0010 and 0012-0016 (and 0017). `eng/validate-schemas.sh`: 48 instances, all passed.
+
+### T118 quickstart run
+
+Sections 0-7 run end to end. Output summary:
+
+- 1 CLI: `--version` prints `NetPrints.Cli 0.1.2-alpha.0.85+b3b732b...` rc 0; `--help`, `build --help` rc 0; `-p` prints the replacement message rc 2; `run` prints `Hello, World!` rc 0; `regen --check samples/HelloWorld` "1 generated file(s) up to date, 0 written" rc 0; `migrate samples` "No migrations are available; 1 graph(s) are at schema version 1." rc 0; `git status --short samples/` empty.
+- 2 Graph checks: `format --check samples` "1 graph(s) are canonical." rc 0; after breaking the file `not canonical: ...` rc 1; `format .` restores it; `show` prints `class HelloWorld.Program Public ...`; `git-install --merge` installs 3 config keys plus `.gitattributes`, the second run prints `already installed:` for all four; `git diff --textconv` prints summary lines.
+- 3 Catalog: fixture catalog written (18 types, 58 members) rc 0, identical to the committed `public-api.npcat.json`; `--check` rc 0 "up to date"; with `--exclude "Fixture.Geometry.*"` `--check` rc 1 "stale".
+- 4 `CrossFlavorSnapshotTests` 5/5; 5 `MultiExtension` namespace 60/60; 6 `PublicAPI.Shipped.txt` 1252 lines, `PublicApiTrackingTests` plus `ExperimentalApiTests` 24/24; 7 schemas and docs above, packages in T119.
+
+Quickstart fixes (doc only, behaviour is right):
+
+1. `run` needs `Configuration=Release`: `samples/Directory.Build.props` imports the generator from `bin/$(Configuration)`, and CI sets the same variable. Added to the doc.
+2. The multi-extension filter `-trait 'Category=MultiExtension'` ran 0 tests (there is no such trait); replaced with `-namespace 'NetPrints.Tests.Extensibility.MultiExtension'`.
+3. Local environment, not a doc bug: the ignored legacy `samples/HelloWorld/Compiled_HelloWorld/HelloWorld/Program.cs` is globbed by the sample project and makes `run` fail with CS0101 on a developer machine that has it (a fresh checkout and CI do not). Left untouched as instructed; the run above used `DefaultItemExcludes='Compiled_*/**'`.
+
+### T119 release dry run
+
+`scripts/pack-local.sh --print-version` packed version `0.1.0-local.20261001033443` into `local-packages/` (git-ignored; Annotations, Catalog, Cli, Core, Reflection, Sdk and the snupkgs); `scripts/verify-packages.sh local-packages 0.1.0-local.20261001033443`: "all checks passed" (it asserts `NetPrints.Annotations` and `NetPrints.Catalog` nupkg/snupkg). Nothing pushed, tagged or published. `git status samples/` clean.
+
+### T120 whole suite and gates
+
+- `dotnet build NetPrints.slnx -c Release --no-incremental`: 0 warnings, 0 errors.
+- `dotnet test --solution NetPrints.slnx -c Release --no-build -- --ignore-exit-code 8`: total 1723, failed 0, succeeded 1713, skipped 10 (3 Editor.UITests capability skips, the Desktop E2E self-skips without `NETPRINTS_E2E=1`). 5m 24s.
+- `NETPRINTS_E2E=1 dotnet test --project tests/NetPrints.Desktop.E2ETests -c Release --no-build -- --fail-skips on`: total 9, failed 0, skipped 0 (2m 31s).
+- `dotnet format NetPrints.slnx --verify-no-changes`: exit 0.
+- `dotnet format analyzers --severity info --verify-no-changes --include <281 changed .cs files>`: exit 2, 946 distinct info-level hits, no warning or error. Roughly 650 are test code (VSTHRD111, VSTHRD103, S6966, IDISP*), which `.editorconfig` sets to `suggestion` on purpose (ADR-0003 pending clean-up); 29 are in `tests/Fixtures`, deliberately sloppy fixture libraries. In `src/` 67 remain: S3267, S3358, S1075, S127, S3218, S2325, S2306, S8949 are `suggestion` in `.editorconfig`; the CA hits (CA1859, CA1854, CA1822, CA1846, CA1834, CA1865, CA2249) are performance and readability defaults. `NetPrints.Catalog` is compiled into the netstandard2.0 generator, where `string.Contains(char)` and `IndexOf(char)` overloads do not exist, so CA1865/CA2249 there are not applicable. None is a correctness finding; left as is and recorded here.
+
+### Checkpoint H
+
+| SC | Evidence |
+|---|---|
+| SC-001 | `CliExitCodeTests.EveryCommandsHelpExitsZero` (`--help`, `-h`, `--version`, every command's `--help`); each exit code has a test in `CliExitCodeTests`; CI "CLI smoke" step; quickstart section 1 (this batch); first reported in Checkpoint C (lines 185-190) and F (T098 coverage of nine commands) |
+| SC-002 | CI "CLI sample compile and run" greps `Hello, World!`, CI "Graph checks" runs `regen --check` and `format --check`; `FormatCommandTests`, `TheCheckedInSamplesAreCanonical`; Checkpoint C "SC-002 evidence" (scratch repo run); quickstart sections 1 and 2 (this batch) |
+| SC-003 | `CrossFlavorSnapshotTests` (AN-T13, 5/5 in this batch) for `public-api`, `annotated`, `fixture-flags`; Checkpoint E |
+| SC-004 | `ParityTests` (CT-T08) 0 differences; `CatalogCommandTests` CT-T11 equals the committed snapshot; Checkpoint D |
+| SC-005 | Extension path: `ExtensionCatalogTests` (prints `10`) and `CatalogSearchTests`; embedded path: `AnnotatedLibraryBuildTests` (Core.Tests/Samples) and `EmbeddedCatalogDiscoveryTests` (Editor.Tests); Checkpoints D and E; all in the 1723-test run |
+| SC-006 | `CatalogPerformanceTests` (CT-T17): fixture 0.05 s, `System.Runtime` 0.63 s against 5 s and 30 s limits (Checkpoint D); passed again in this batch's suite |
+| SC-007 | `MultiExtension` namespace 60/60 (this batch): MX-T09 and MX-T14 (24 orders byte-identical, 50 extensions); also in the PR CI run; Checkpoint G |
+| SC-008 | MX-T02 (private-prefix dependency loads and runs), MX-T04 (type identity across contexts), `Samples/MultiExtensionBuildTests`; Checkpoint G and Review G |
+| SC-009 | `GraphMergerTests` GI-T03 to GI-T08, GI-T12 and the end-to-end git test `GitDriversEndToEndTests`; Checkpoint F |
+| SC-010 | `GitInstallCommandTests` (16), second run `already installed:`; quickstart section 2 (this batch) |
+| SC-011 | `PublicApiTrackingTests` and `ExperimentalApiTests` 24/24 (this batch), `SourceHygieneTests`; `PublicAPI.Shipped.txt` 1252 lines; Checkpoint B and Review B |
+| SC-012 | `scripts/build-docs.sh` exit 0 with `onBrokenLinks: 'throw'`, three `cmp` equal (this batch); the CI docs workflow builds the same script on the PR |
+| SC-013 | `pack-local.sh` + `verify-packages.sh` pass for version `0.1.0-local.20261001033443`, Annotations and Catalog included, nothing published (this batch) |
+
+Suite at this checkpoint: 1723 total, 0 failed, 10 skipped; E2E 9 of 9.
+
+### Final review (H-R1–H-R9, from PR #9 T122)
+
+Findings from the final integration review across sub-phases (T122, review.md §Findings):
+
+| ID | Severity | Status | Commit | Note |
+|---|---|---|---|---|
+| H-R1 | minor (behaviour fix) | **fixed in H-F1** | 460efac | extension registry isolation gap; test `IdConflictTests.AResolverThatThrowsWhenProbedIsReportedAndTheOtherExtensionsStillLoad` red → green |
+| H-R2 | minor (docs) | **fixed in H-F2** | (this batch) | extensions guide: remove NPX008 version claim from host, rewrite diamond paragraph |
+| H-R3 | minor (docs) | **fixed in H-F2** | (this batch) | release notes: add git commands, extension coexistence, embedded-catalog discovery, connection sort order, null handling |
+| H-R4 | nit (docs) | **fixed in H-F2** | (this batch) | contracts/catalog.md: remove ref/→lib/ fallback, add ProfileJson and CatalogFormatException; cli.md: git merge-file without -p |
+| H-R5 | nit (behaviour, output wrapping) | **fixed in H-F1** | c0be779 | `--version` wrapping; test `CliExitCodeTests.VersionPrintsOnOneLineWhateverTheVersionLengthAndConsoleWidth` red → green |
+| H-R6 | nit (comment) | **fixed in H-F2** | (this batch) | NetPrints.Sdk.targets: only CLI sets _NetPrintsSkipGenerate |
+| H-R7 | nit (test coverage) | **fixed in H-F1** | b45a97c | merge driver fallback: added seam and test `MergeCommandFallbackTests.AMergerThatThrowsFallsBackToAMarkedTextMergeAndExitsOne` (red compile → green); red → green |
+| H-R8 | nit (test hygiene) | **decision recorded** | — | merge fixtures: non-canonical layout is deliberate input variety; no change needed |
+| H-R9 | nit (accuracy) | **fixed in H-F2** | (this batch) | SC-010: GitInstallCommandTests count 11 → 16 |
+
+**H-F1 evidence** (behaviour and test fixes in sub-phase H, T123 does not change code):
+- H-R1 (test `IdConflictTests`): test fails with `System.ArgumentException: boom` when extension resolver throws; passes after `ReportShadowingResolvers` catch (`Exception` excluding `OperationCanceledException`) is added.
+- H-R5 (test `CliExitCodeTests`): test fails when `--version` output wraps across two lines due to narrow console width; passes after `CliServices.ConsoleSettings` sets `Profile.Width = 1000000` when output is redirected.
+- H-R7 (test `MergeCommandFallbackTests`): test fails to compile; passes after merger seam (`internal Func<IDocumentFormat, GraphMerger> _mergerFactory`) is added, allowing the test to inject a failing merger.
+
+Suite at this checkpoint: 1726 total, 0 failed, 10 skipped; E2E 9 of 9.
+
+**Carried over to P3** (follow-ups from PR #9, tracked in the roadmap):
+- **FU-1**: NPX008 should also check host-provided and transitive references (P3 extension kit).
+- **FU-2**: the live `ReflectionProvider` should skip and log an unreadable or bad reference instead of failing the whole reload (P1 behaviour, unchanged).
+- **FU-3**: Windows CLI CI leg with a `show --textconv` UTF-8 output test (P3 CI batch).
+- **FU-4**: Desktop E2E `EditCompileAndRun` intermittent timeout: capture timings and UI dump of the next failure (P3 debugging).
+- **FU-5**: info-level analyzer backlog in `src/` (ADR-0003 cleanup record).
+- **FU-6**: decide whether the editor and Desktop `ProjectCheck` should skip generation on project load, as the CLI does.
+- **FU-7**: split CI "Build and test (Linux)" job (13 min) into a test-project matrix (P3 CI batch, with an ADR).
+
+### Governance proposals (for the coordinator and owner; no `.specify/memory/*` file was edited)
+
+- Roadmap: P1 row to merged (PR #6, `cc96a93`, released `v0.1.0`/`v0.1.1`); P2 row to "implemented, PR #9 in review" (was "spec ready"); the P2 ADR bullet to "ADR-0010 accepted" plus ADR-0012 to 0017 (catalog engine and schema, declarative profiles, Annotations package, CLI and exit codes, git integration, per-id experimental opt-in); the P3 kit bullet to "internal harness landed in P2 (ADR-0010 section 5)"; the P1 follow-up "in-editor visual diff" to P6. P3 row to add the follow-ups FU-1 through FU-7 (see Final review section above).
+- Constitution: no change needed.
+- Follow-ups from R27 stay as recorded (P6 visual diff, P3 conformance kit, catalog compression P8, schema migrations at the first v2, collectible contexts only if hot reload is scheduled, Windows leg for the native fixture). Added by this batch: clean the info-level analyzer backlog in test code (ADR-0003 pending clean-up), and give the sample project an `EnableDefaultCompileItems` exclusion or move legacy `Compiled_*` output out of the sample directory.

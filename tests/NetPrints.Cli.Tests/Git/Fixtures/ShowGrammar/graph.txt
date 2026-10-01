@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "namespace": "Demo",
+  "name": "Box",
+  "visibility": "Public",
+  "genericArguments": ["T"],
+  "classGraph": {
+    "nodes": [
+      { "$kind": "classReturn", "id": "n02", "interfaceCount": 2 }
+    ]
+  },
+  "variables": [
+    {
+      "id": "v01",
+      "name": "Count",
+      "visibility": "Private",
+      "typeGraph": {
+        "nodes": [
+          { "$kind": "typeReturn", "id": "n11" },
+          { "$kind": "type", "id": "n12", "type": { "name": "System.Int32" } }
+        ],
+        "connections": [
+          { "from": "n12/out.type.OutputType", "to": "n11/in.type.Type" }
+        ]
+      },
+      "getter": {
+        "visibility": "Public",
+        "graph": { "nodes": [ { "$kind": "methodEntry", "id": "n13" } ] }
+      },
+      "setter": {
+        "visibility": "Protected",
+        "graph": { "nodes": [ { "$kind": "methodEntry", "id": "n14", "argumentCount": 1 } ] }
+      }
+    }
+  ],
+  "methods": [
+    {
+      "id": "m01",
+      "name": "Go",
+      "visibility": "Public",
+      "modifiers": "Static, Sealed",
+      "graph": {
+        "locals": [
+          { "name": "tmp", "type": { "name": "System.Collections.Generic.List", "args": [{ "name": "System.Int32" }] } }
+        ],
+        "nodes": [
+          {
+            "$kind": "methodEntry",
+            "id": "n21",
+            "name": "Start",
+            "argumentCount": 1,
+            "genericArguments": ["U", "V"],
+            "pins": [ { "pin": "out.data.Input0", "name": "first" } ]
+          },
+          {
+            "$kind": "callMethod",
+            "id": "n22",
+            "pure": true,
+            "genericArgumentCount": 1,
+            "pins": [
+              { "pin": "in.data.x", "value": { "type": "System.String", "value": "a \"q\" \\ b\nc" } },
+              { "pin": "in.data.y", "value": { "type": "System.String", "value": null } }
+            ],
+            "method": {
+              "name": "Foo",
+              "declaringType": { "name": "Demo.Util" },
+              "parameters": [
+                { "name": "x", "type": { "name": "System.Int32" }, "default": { "type": "System.Int32", "value": "5" } },
+                { "name": "r", "type": { "name": "System.String" }, "passType": "Reference" }
+              ],
+              "returnTypes": [{ "name": "System.String" }],
+              "modifiers": "Static",
+              "visibility": "Internal",
+              "genericArgs": [{ "name": "System.Int32" }]
+            }
+          },
+          { "$kind": "reroute", "id": "n23", "pinKind": "data", "count": 2, "dataTypes": [[{ "name": "System.Int32" }, { "name": "System.String" }], [{ "name": "System.Double" }]] },
+          { "$kind": "makeArray", "id": "n24", "usePredefinedSize": true, "elementCount": 3 },
+          { "$kind": "netprints.test/Log", "id": "n25", "level": 3, "tag": "x" }
+        ],
+        "connections": [
+          { "from": "n21/out.exec.Exec", "to": "n22/in.exec.Exec" }
+        ]
+      }
+    }
+  ],
+  "eventGraphs": [
+    {
+      "id": "e01",
+      "name": "Events",
+      "graph": {
+        "nodes": [
+          {
+            "$kind": "eventEntry",
+            "id": "n31",
+            "eventName": "OnStart",
+            "visibility": "Protected",
+            "modifiers": "Sealed",
+            "argumentCount": 1,
+            "overrides": {
+              "name": "OnStart",
+              "declaringType": { "name": "Demo.Base" },
+              "returnTypes": [{ "name": "System.Void" }],
+              "modifiers": "None",
+              "visibility": "Protected"
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "layout": { "m01": { "n21": [0, 0], "n22": [1, 1] } }
+}

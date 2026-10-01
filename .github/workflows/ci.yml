@@ -50,6 +50,15 @@ jobs:
       - name: Build
         run: dotnet build NetPrints.slnx -c Release --no-restore
 
+      # Every graph's generated .netpc.g.cs must be up to date; exit 1 names the stale files. Runs before any
+      # step that builds a sample: the SDK's NetPrintsGenerate target rewrites a stale file during `dotnet build`,
+      # which would make this check pass on a file it just regenerated. The samples use the in-repo SDK, so the
+      # check needs only the CLI and generator built above.
+      - name: Graph checks
+        run: |
+          dotnet run --project src/NetPrints.Cli -c Release --no-build -- regen --check samples/HelloWorld
+          dotnet run --project src/NetPrints.Cli -c Release --no-build -- format --check samples
+
       # Fails if any file would be reformatted by `dotnet format` (whitespace, style and analyzer
       # fixes from .editorconfig); run the same command locally to fix. RS1024's sites in
       # NetPrints.Reflection were fixed by hand in P1 T013 (an auto-fix there is a behavior change,
@@ -66,6 +75,20 @@ jobs:
       - name: Test (Core)
         run: >
           dotnet test --project tests/NetPrints.Core.Tests -c Release --no-build
+          --report-xunit-trx --results-directory TestResults
+          -- --coverage --coverage-output-format cobertura
+          --coverage-settings ${{ github.workspace }}/tests/CodeCoverage.config
+
+      - name: Test (Catalog)
+        run: >
+          dotnet test --project tests/NetPrints.Catalog.Tests -c Release --no-build
+          --report-xunit-trx --results-directory TestResults
+          -- --coverage --coverage-output-format cobertura
+          --coverage-settings ${{ github.workspace }}/tests/CodeCoverage.config
+
+      - name: Test (CLI)
+        run: >
+          dotnet test --project tests/NetPrints.Cli.Tests -c Release --no-build
           --report-xunit-trx --results-directory TestResults
           -- --coverage --coverage-output-format cobertura
           --coverage-settings ${{ github.workspace }}/tests/CodeCoverage.config
@@ -107,35 +130,27 @@ jobs:
           -- --ignore-exit-code 8 --coverage --coverage-output-format cobertura
           --coverage-settings ${{ github.workspace }}/tests/CodeCoverage.config
 
-      # Since 6dd89f2 the CLI's exit code follows its documented contract (0 success, 1 build
-      # failure/not found, 2 bad arguments, 3 no SDK; --run propagates the child's own exit code).
-      # `--version`/`--help` go through CommandLineParser's "not parsed" path, which this CLI maps to
-      # the bad-arguments code (2) rather than 0 until the P2 redesign (spec 001, "Out of scope");
-      # assert that exact code instead of swallowing it with `|| true`.
+      # `--version` prints "NetPrints.Cli <version>" and `--help` prints the usage; both exit 0.
       - name: CLI smoke
         run: |
-          set +e
           output=$(dotnet run --project src/NetPrints.Cli -c Release --no-build -- --version 2>&1)
-          rc=$?
-          set -e
           echo "$output"
           echo "$output" | grep -q "NetPrints.Cli"
-          [ "$rc" -eq 2 ]
+          dotnet run --project src/NetPrints.Cli -c Release --no-build -- --help
 
       # The sample imports the generator built above from bin/$(Configuration); Configuration makes the
-      # CLI's own `dotnet build`/`dotnet run` of it use Release like the solution build. Compile + run
-      # succeeds end-to-end, so the CLI (propagating HelloWorld's own exit code via --run) must exit 0.
+      # CLI's own `dotnet build` of it use Release like the solution build.
       - name: CLI sample compile and run
         env:
           Configuration: Release
         run: |
-          set +e
-          output=$(dotnet run --project src/NetPrints.Cli -c Release --no-build -- -p samples/HelloWorld/HelloWorld.csproj -r 2>&1)
-          rc=$?
-          set -e
+          output=$(dotnet run --project src/NetPrints.Cli -c Release --no-build -- run samples/HelloWorld/HelloWorld.csproj 2>&1)
           echo "$output"
           echo "$output" | grep -q "Hello, World!"
-          [ "$rc" -eq 0 ]
+
+      # Building the sample regenerates a stale .g.cs in place; a committed file that changed fails the job.
+      - name: Generated files unchanged
+        run: git diff --exit-code -- '*.netpc.g.cs'
 
       - name: Upload test results
         if: always()

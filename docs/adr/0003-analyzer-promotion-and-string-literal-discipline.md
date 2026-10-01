@@ -265,6 +265,7 @@ it needs the same per-entry ledger, enforced by `SourceHygieneTests.NoUnlistedBu
 | File | Property | Code | Reason |
 |---|---|---|---|
 | `Directory.Build.props` | `MSBuildWarningsNotAsErrors` | MINVER1001 | MinVer warns when there is no `.git` history (a source archive); release contract §1 requires the build to stay green in that case. |
+| `Directory.Build.targets` | `NoWarn` | `NPXE0001`–`NPXE0004` | Per-project, per-id opt-in to `[Experimental]` extension APIs through `NetPrintsExperimentalOptIn` items; the one allowed `<NoWarn>`, gated by `SourceHygieneTests` (ADR-0017). |
 
 ### BannedApiAnalyzers scoping, and the XML-documentation promotion
 

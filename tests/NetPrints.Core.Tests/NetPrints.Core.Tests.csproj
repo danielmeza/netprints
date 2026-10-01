@@ -8,6 +8,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <NetPrintsExperimentalOptIn Include="NPXE0001" />
+    <NetPrintsExperimentalOptIn Include="NPXE0002" />
+    <NetPrintsExperimentalOptIn Include="NPXE0003" />
+    <NetPrintsExperimentalOptIn Include="NPXE0004" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="xunit.v3" />
     <!-- FileSystemDocumentStoreTests: a TestScheduler to drive Changes' debounce deterministically. -->
     <PackageReference Include="Microsoft.Reactive.Testing" />
@@ -20,6 +26,18 @@
     <PackageReference Include="Microsoft.Build.Framework" ExcludeAssets="runtime" PrivateAssets="all" />
     <!-- SchemaTests (R1-17): validates the AllNodes/HelloWorld fixtures against the committed schema. -->
     <PackageReference Include="JsonSchema.Net" />
+  </ItemGroup>
+
+  <!-- PublicApiTrackingTests (AP-T01) loads the analyzer from its package folder: download it without referencing it, so it never analyzes the tests. -->
+  <ItemGroup>
+    <PackageDownload Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="[$(PublicApiAnalyzersVersion)]" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>PublicApiAnalyzersPath</_Parameter1>
+      <_Parameter2>$(NuGetPackageRoot)microsoft.codeanalysis.publicapianalyzers/$(PublicApiAnalyzersVersion)</_Parameter2>
+    </AssemblyAttribute>
   </ItemGroup>
 
   <ItemGroup>
@@ -39,17 +57,32 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\NetPrints.Core\NetPrints.Core.csproj" />
+    <ProjectReference Include="..\..\src\NetPrints.Catalog\NetPrints.Catalog.csproj" />
     <ProjectReference Include="..\..\src\NetPrints.Extensibility\NetPrints.Extensibility.csproj" />
     <ProjectReference Include="..\..\src\NetPrints.Serialization\NetPrints.Serialization.csproj" />
     <ProjectReference Include="..\..\src\NetPrints.Generation\NetPrints.Generation.csproj" />
     <!-- GenerateRequestFileTests (R1-20) calls NetPrints.Generator.Program.Main directly. -->
     <ProjectReference Include="..\..\src\NetPrints.Generator\NetPrints.Generator.csproj" />
     <ProjectReference Include="..\..\src\NetPrints.Workspace\NetPrints.Workspace.csproj" />
-    <!-- CliBuildTests (R1-07) exercises NetPrintsCLI.Program.BuildAsync directly. -->
-    <ProjectReference Include="..\..\src\NetPrints.Cli\NetPrints.Cli.csproj" />
     <ProjectReference Include="..\NetPrints.Testing\NetPrints.Testing.csproj" />
     <!-- Built first, never referenced: the loader and generator tests load it from its own output folder. -->
     <ProjectReference Include="..\NetPrints.TestExtension\NetPrints.TestExtension.csproj" ReferenceOutputAssembly="false" />
+    <!-- Built first, never referenced: tests load the fx.catalog extension from its own output folder. -->
+    <ProjectReference Include="..\Fixtures\Extensions\Fx.Catalog\Fx.Catalog.csproj" ReferenceOutputAssembly="false" />
+    <!-- Built first, never referenced: the multi-extension tests copy each fixture extension folder (the shared library versions build through their extensions). -->
+    <ProjectReference Include="..\Fixtures\Extensions\Fx.Alpha\Fx.Alpha.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Fx.Beta\Fx.Beta.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Fx.LibV1\Fx.LibV1.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Fx.LibV2\Fx.LibV2.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Fx.PrefixedPrivate\Fx.PrefixedPrivate.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Fx.TypesProvider\Fx.TypesProvider.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Fx.TypesConsumer\Fx.TypesConsumer.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Fx.Diamond\Fx.Diamond.csproj" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Fixtures\Extensions\Fx.Native\Fx.Native.csproj" ReferenceOutputAssembly="false" />
+    <!-- Built first, never referenced: the catalog end-to-end tests reference the DLL from a temporary project. -->
+    <ProjectReference Include="..\Fixtures\Catalog\CatalogFixtureLib\CatalogFixtureLib.csproj" ReferenceOutputAssembly="false" />
+    <!-- Built first, never referenced: the annotated-library build test references the DLL from a temporary project. -->
+    <ProjectReference Include="..\Fixtures\Catalog\CatalogAnnotatedLib\CatalogAnnotatedLib.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
 </Project>

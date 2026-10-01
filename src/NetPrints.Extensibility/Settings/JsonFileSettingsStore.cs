@@ -1,8 +1,10 @@
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Microsoft.Extensions.Logging;
+using NetPrints.Core;
 using NetPrints.Projects;
 
 namespace NetPrints.Extensibility.Settings;
@@ -12,6 +14,7 @@ namespace NetPrints.Extensibility.Settings;
 /// extension's section under <c>extensions.&lt;id&gt;</c>. The file is read once and cached; a write rewrites the whole
 /// file atomically and keeps sections it does not know.
 /// </summary>
+[Experimental(ExperimentalApiIds.Settings, UrlFormat = ExperimentalApiIds.UrlFormat)]
 public sealed class JsonFileSettingsStore : ISettingsStore
 {
     private const string FileSection = "$file";

@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <NetPrintsTrackPublicApi>true</NetPrintsTrackPublicApi>
+    <IsPackable>true</IsPackable>
+    <EnablePackageValidation>true</EnablePackageValidation>
+    <PackageId>NetPrints.Catalog</PackageId>
+    <Description>Catalog engine for NetPrints: builds catalogs of types and APIs from libraries. NetPrints continues the original NetPrints by Robin Kahlow (https://github.com/RobinKa/netprints).</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- ADR-0017: the engine implements its own experimental API; the id is opted in here, not suppressed. -->
+    <NetPrintsExperimentalOptIn Include="NPXE0004" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="NetPrints.Catalog.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NetPrints.Reflection\NetPrints.Reflection.csproj" />
+  </ItemGroup>
+</Project>

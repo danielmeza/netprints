@@ -1,5 +1,7 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json.Serialization.Metadata;
 using Microsoft.Extensions.Logging;
+using NetPrints.Catalog;
 using NetPrints.Core;
 using NetPrints.Extensibility.Hosting;
 using NetPrints.Extensibility.Nodes;
@@ -33,6 +35,7 @@ public sealed class ExtensionRegistry : IAsyncDisposable
         IReadOnlyList<string> projectProperties,
         IReadOnlyList<IHostChannelFactory> hostChannels,
         IReadOnlyList<ExtensionSettingsDescriptor> settings,
+        IReadOnlyList<CatalogProfile> catalogProfiles,
         IReadOnlyList<ExtensionContributionIssue> issues,
         TranslationEnvironment translation,
         NodeDocumentConverterRegistry nodeConverters,
@@ -50,6 +53,7 @@ public sealed class ExtensionRegistry : IAsyncDisposable
         ProjectProperties = projectProperties;
         HostChannels = hostChannels;
         Settings = settings;
+        CatalogProfiles = catalogProfiles;
         Issues = issues;
         Translation = translation;
         NodeConverters = nodeConverters;
@@ -75,11 +79,13 @@ public sealed class ExtensionRegistry : IAsyncDisposable
     /// <summary>
     /// The class emitters, in registry order.
     /// </summary>
+    [Experimental(ExperimentalApiIds.Emitters, UrlFormat = ExperimentalApiIds.UrlFormat)]
     public IReadOnlyList<IClassEmitter> ClassEmitters { get; }
 
     /// <summary>
     /// The member emitters, in registry order.
     /// </summary>
+    [Experimental(ExperimentalApiIds.Emitters, UrlFormat = ExperimentalApiIds.UrlFormat)]
     public IReadOnlyList<IMemberEmitter> MemberEmitters { get; }
 
     /// <summary>
@@ -105,12 +111,20 @@ public sealed class ExtensionRegistry : IAsyncDisposable
     /// <summary>
     /// The host channel factories, in registry order.
     /// </summary>
+    [Experimental(ExperimentalApiIds.HostChannel, UrlFormat = ExperimentalApiIds.UrlFormat)]
     public IReadOnlyList<IHostChannelFactory> HostChannels { get; }
 
     /// <summary>
     /// The settings sections extensions declared, in registry order.
     /// </summary>
+    [Experimental(ExperimentalApiIds.Settings, UrlFormat = ExperimentalApiIds.UrlFormat)]
     public IReadOnlyList<ExtensionSettingsDescriptor> Settings { get; }
+
+    /// <summary>
+    /// The catalog profiles extensions contributed, in registry order (the built-in ones are not listed).
+    /// </summary>
+    [Experimental(ExperimentalApiIds.CatalogProfiles, UrlFormat = ExperimentalApiIds.UrlFormat)]
+    public IReadOnlyList<CatalogProfile> CatalogProfiles { get; }
 
     /// <summary>
     /// The contributions that were rejected (<c>NPX006</c>) while their extension stayed loaded.
@@ -139,6 +153,7 @@ public sealed class ExtensionRegistry : IAsyncDisposable
     /// </summary>
     /// <param name="id">The factory id.</param>
     /// <returns>The factory, or <see langword="null"/> when none has that id.</returns>
+    [Experimental(ExperimentalApiIds.HostChannel, UrlFormat = ExperimentalApiIds.UrlFormat)]
     public IHostChannelFactory? FindHostChannel(string id) => HostChannels.FirstOrDefault(factory => factory.Id == id);
 
     /// <summary>

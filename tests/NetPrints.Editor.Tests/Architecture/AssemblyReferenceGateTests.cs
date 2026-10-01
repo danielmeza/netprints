@@ -4,8 +4,8 @@ namespace NetPrints.Editor.Tests.Architecture;
 
 /// <summary>
 /// contracts/editor-services.md §7 rule A3, extended for this batch: the model, reflection,
-/// serialization, extensibility, workspace, generation, generator and SDK projects never reference an
-/// assembly named <c>Avalonia*</c>, and the generation/generator projects additionally never reference
+/// serialization, extensibility, workspace, generation, generator, SDK, catalog and annotations projects never reference an
+/// assembly named <c>Avalonia*</c>, and the generation, generator, catalog and annotations projects additionally never reference
 /// <c>Microsoft.Build*</c> (ED-T10). A project-reference/package scan of each project's own
 /// <c>.csproj</c>, not a transitive build-output scan.
 /// </summary>
@@ -21,12 +21,16 @@ public class AssemblyReferenceGateTests
         "NetPrints.Generation",
         "NetPrints.Generator",
         "NetPrints.Sdk",
+        "NetPrints.Catalog",
+        "NetPrints.Annotations",
     ];
 
     private static readonly string[] NeverReferencesMicrosoftBuild =
     [
         "NetPrints.Generation",
         "NetPrints.Generator",
+        "NetPrints.Catalog",
+        "NetPrints.Annotations",
     ];
 
     [Fact]

@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Library</OutputType>
+    <RootNamespace>FixtureConsumer</RootNamespace>
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <Description>Fixture library that embeds catalogs of CatalogFixtureLib through the annotations generator (tests only).</Description>
+    <MinVerSkip>true</MinVerSkip>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CatalogFixtureLib\CatalogFixtureLib.csproj" />
+    <!-- The in-repo form of PackageReference NetPrints.Annotations PrivateAssets="all". -->
+    <ProjectReference Include="..\..\..\..\src\NetPrints.Annotations\NetPrints.Annotations.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <AdditionalFiles Include="..\..\..\NetPrints.Catalog.Tests\Profiles\fixture-flags.npprofile.json" Link="fixture-flags.npprofile.json" />
+  </ItemGroup>
+
+  <!-- Package build/ targets are imported only for a PackageReference. -->
+  <Import Project="..\..\..\..\src\NetPrints.Annotations\build\NetPrints.Annotations.targets" />
+</Project>

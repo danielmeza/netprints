@@ -30,6 +30,9 @@ mkdir -p "$NUGET_PACKAGES"
 # --- Step 1: the exact file list of §3 for <version> -------------------------------------------
 
 EXPECTED_FILES=(
+    "NetPrints.Annotations.$VERSION.nupkg"
+    "NetPrints.Catalog.$VERSION.nupkg"
+    "NetPrints.Catalog.$VERSION.snupkg"
     "NetPrints.Cli.$VERSION.nupkg"
     "NetPrints.Cli.$VERSION.snupkg"
     "NetPrints.Core.$VERSION.nupkg"
@@ -70,8 +73,24 @@ check_common_metadata() {
 
     [[ -f "$EXTRACT/icon.png" ]] || fail "step 2 ($id): package has no icon.png"
     [[ -f "$EXTRACT/README.md" ]] || fail "step 2 ($id): package has no README.md"
-    grep -Eq '<[A-Za-z/]' "$EXTRACT/README.md" && fail "step 2 ($id): packed README.md still has an HTML tag"
-    grep -Poq '\]\((?!https?://|#)' "$EXTRACT/README.md" && fail "step 2 ($id): packed README.md still has a relative link or image"
+    # Fenced code blocks may hold angle brackets (an XML install snippet); only prose is checked.
+    local prose
+    prose="$(awk '/^```/ { fenced = !fenced; next } !fenced' "$EXTRACT/README.md")"
+    grep -Eq '<[A-Za-z/]' <<<"$prose" && fail "step 2 ($id): packed README.md still has an HTML tag"
+    grep -Poq '\]\((?!https?://|#)' <<<"$prose" && fail "step 2 ($id): packed README.md still has a relative link or image"
+
+    # The README the package ships: its own for NetPrints.Annotations and NetPrints.Catalog, else the root one.
+    local heading
+    heading="$(head -n 1 "$EXTRACT/README.md")"
+    case "$id" in
+        NetPrints.Annotations | NetPrints.Catalog)
+            [[ "$heading" == "# $id" ]] || fail "step 2 ($id): packed README.md starts with '$heading', expected '# $id' (src/$id/README.md)"
+            ;;
+        *)
+            grep -qxF '## Project layout' "$EXTRACT/README.md" \
+                || fail "step 2 ($id): packed README.md is not the root README"
+            ;;
+    esac
     return 0
 }
 
@@ -96,7 +115,21 @@ grep -q '<developmentDependency>true</developmentDependency>' "$EXTRACT/NetPrint
 [[ -f "$EXTRACT/build/NetPrints.Sdk.props" ]] || fail "step 2 (NetPrints.Sdk): missing build/NetPrints.Sdk.props"
 [[ -f "$EXTRACT/build/NetPrints.Sdk.targets" ]] || fail "step 2 (NetPrints.Sdk): missing build/NetPrints.Sdk.targets"
 [[ -f "$EXTRACT/tools/net10.0/NetPrints.Generator.dll" ]] || fail "step 2 (NetPrints.Sdk): missing tools/net10.0/NetPrints.Generator.dll"
+[[ -f "$EXTRACT/tools/net10.0/NetPrints.Catalog.dll" ]] || fail "step 2 (NetPrints.Sdk): missing tools/net10.0/NetPrints.Catalog.dll (the generator host carries the catalog runtime so extensions share it)"
 [[ -d "$EXTRACT/lib" ]] && fail "step 2 (NetPrints.Sdk): package has a lib/ folder (should have none)"
+
+extract_nupkg NetPrints.Catalog
+check_common_metadata NetPrints.Catalog
+[[ -f "$EXTRACT/lib/net10.0/NetPrints.Catalog.dll" ]] || fail "step 2 (NetPrints.Catalog): missing lib/net10.0/NetPrints.Catalog.dll"
+[[ -f "$EXTRACT/lib/net10.0/NetPrints.Catalog.xml" ]] || fail "step 2 (NetPrints.Catalog): missing lib/net10.0/NetPrints.Catalog.xml"
+
+extract_nupkg NetPrints.Annotations
+check_common_metadata NetPrints.Annotations
+grep -q '<developmentDependency>true</developmentDependency>' "$EXTRACT/NetPrints.Annotations.nuspec" || fail "step 2 (NetPrints.Annotations): nuspec has no <developmentDependency>true</developmentDependency>"
+[[ -f "$EXTRACT/analyzers/dotnet/cs/NetPrints.Annotations.dll" ]] || fail "step 2 (NetPrints.Annotations): missing analyzers/dotnet/cs/NetPrints.Annotations.dll"
+[[ -f "$EXTRACT/build/NetPrints.Annotations.targets" ]] || fail "step 2 (NetPrints.Annotations): missing build/NetPrints.Annotations.targets"
+grep -q 'NetPrintsReferenceDocumentation' "$EXTRACT/build/NetPrints.Annotations.targets" || fail "step 2 (NetPrints.Annotations): build/NetPrints.Annotations.targets does not declare NetPrintsReferenceDocumentation"
+[[ -d "$EXTRACT/lib" ]] && fail "step 2 (NetPrints.Annotations): package has a lib/ folder (should have none)"
 
 # --- Step 3: tool install from the feed ---------------------------------------------------------
 
@@ -104,7 +137,9 @@ TOOL_PATH="$WORK/tools"
 dotnet tool install NetPrints.Cli --tool-path "$TOOL_PATH" --version "$VERSION" --add-source "$FEED" >&2 \
     || fail "step 3 (tool install): dotnet tool install failed"
 
-TOOL_OUTPUT="$("$TOOL_PATH/netprints" --version 2>&1 || true)"
+TOOL_RC=0
+TOOL_OUTPUT="$("$TOOL_PATH/netprints" --version 2>&1)" || TOOL_RC=$?
+[[ $TOOL_RC -eq 0 ]] || fail "step 3 (tool --version): exit code $TOOL_RC, expected 0: $TOOL_OUTPUT"
 echo "$TOOL_OUTPUT" | grep -qF "$VERSION" || fail "step 3 (tool --version): output does not contain $VERSION: $TOOL_OUTPUT"
 
 # --- Step 4: SDK build from the feed -------------------------------------------------------------
@@ -139,10 +174,19 @@ GENERATED="$APP/HelloWorld.Program.netpc.g.cs"
 [[ -f "$GENERATED" ]] || fail "step 4 (SDK build): $GENERATED was not generated"
 cmp -s "$COMMITTED" "$GENERATED" || fail "step 4 (SDK build): generated .netpc.g.cs differs from the committed one"
 
-RUN_OUTPUT="$(dotnet run --project "$APP" -c Release --no-build 2>&1 || true)"
+# The packed tool renders like the packed SDK generator (same version), against a PackageReference project.
+CHECK_RC=0
+CHECK_OUTPUT="$("$TOOL_PATH/netprints" regen --check "$APP" 2>&1)" || CHECK_RC=$?
+[[ $CHECK_RC -eq 0 ]] || fail "step 4 (netprints regen --check): exit code $CHECK_RC, expected 0: $CHECK_OUTPUT"
+
+RUN_RC=0
+RUN_OUTPUT="$(dotnet run --project "$APP" -c Release --no-build 2>&1)" || RUN_RC=$?
+[[ $RUN_RC -eq 0 ]] || fail "step 4 (dotnet run): exit code $RUN_RC, expected 0: $RUN_OUTPUT"
 echo "$RUN_OUTPUT" | grep -qF "Hello, World!" || fail "step 4 (dotnet run): output does not contain 'Hello, World!': $RUN_OUTPUT"
 
-TOOL_RUN_OUTPUT="$("$TOOL_PATH/netprints" -p "$APP/HelloWorld.csproj" -r 2>&1 || true)"
-echo "$TOOL_RUN_OUTPUT" | grep -qF "Hello, World!" || fail "step 4 (netprints -r): output does not contain 'Hello, World!': $TOOL_RUN_OUTPUT"
+TOOL_RUN_RC=0
+TOOL_RUN_OUTPUT="$("$TOOL_PATH/netprints" run "$APP/HelloWorld.csproj" 2>&1)" || TOOL_RUN_RC=$?
+[[ $TOOL_RUN_RC -eq 0 ]] || fail "step 4 (netprints run): exit code $TOOL_RUN_RC, expected 0: $TOOL_RUN_OUTPUT"
+echo "$TOOL_RUN_OUTPUT" | grep -qF "Hello, World!" || fail "step 4 (netprints run): output does not contain 'Hello, World!': $TOOL_RUN_OUTPUT"
 
 echo "verify-packages.sh: all checks passed for $VERSION"

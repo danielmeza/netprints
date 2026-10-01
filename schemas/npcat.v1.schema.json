@@ -1,0 +1,429 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://danielmeza.github.io/netprints/schemas/npcat.v1.schema.json",
+  "title": "NetPrints catalog (schema v1)",
+  "description": "A NetPrints catalog: the types and members of the covered assemblies, written by 'netprints catalog' (contracts/catalog.md)",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string"
+    },
+    "schemaVersion": {
+      "const": 1
+    },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9._-]*$"
+    },
+    "version": {
+      "type": "string"
+    },
+    "profile": {
+      "type": "string"
+    },
+    "assemblies": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "version"
+        ]
+      },
+      "minItems": 1
+    },
+    "types": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "namespace": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "class",
+              "struct",
+              "interface",
+              "enum",
+              "delegate"
+            ]
+          },
+          "modifiers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "genericParameters": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "declaringType": {
+            "type": "string"
+          },
+          "baseType": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "generic": {
+                "type": "boolean"
+              },
+              "isEnum": {
+                "type": "boolean"
+              },
+              "isInterface": {
+                "type": "boolean"
+              },
+              "args": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "generic": {
+                      "type": "boolean"
+                    },
+                    "isEnum": {
+                      "type": "boolean"
+                    },
+                    "isInterface": {
+                      "type": "boolean"
+                    },
+                    "args": {
+                      "$ref": "#/properties/types/items/properties/baseType/properties/args"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                }
+              }
+            },
+            "required": [
+              "name"
+            ]
+          },
+          "interfaces": {
+            "type": "array",
+            "items": {
+              "$ref": "#/properties/types/items/properties/baseType/properties/args/items"
+            }
+          },
+          "enumMembers": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "summary": {
+            "type": "string"
+          },
+          "node": {
+            "type": "object",
+            "properties": {
+              "displayName": {
+                "type": "string"
+              },
+              "category": {
+                "type": "string"
+              },
+              "keywords": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "constructors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "visibility": {
+                  "enum": [
+                    "public",
+                    "protected"
+                  ]
+                },
+                "parameters": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "type": {
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "type": "string"
+                          },
+                          "generic": {
+                            "type": "boolean"
+                          },
+                          "isEnum": {
+                            "type": "boolean"
+                          },
+                          "isInterface": {
+                            "type": "boolean"
+                          },
+                          "args": {
+                            "$ref": "#/properties/types/items/properties/baseType/properties/args"
+                          }
+                        },
+                        "required": [
+                          "name"
+                        ]
+                      },
+                      "passType": {
+                        "enum": [
+                          "reference",
+                          "out",
+                          "in"
+                        ]
+                      },
+                      "params": {
+                        "type": "boolean"
+                      },
+                      "default": {
+                        "type": "object",
+                        "properties": {
+                          "type": {
+                            "type": "string"
+                          },
+                          "value": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "type"
+                        ]
+                      },
+                      "summary": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "name",
+                      "type"
+                    ]
+                  }
+                },
+                "summary": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "visibility"
+              ]
+            }
+          },
+          "methods": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "visibility": {
+                  "enum": [
+                    "public",
+                    "protected"
+                  ]
+                },
+                "modifiers": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "genericParameters": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "parameters": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/properties/types/items/properties/constructors/items/properties/parameters/items"
+                  }
+                },
+                "returnType": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "generic": {
+                      "type": "boolean"
+                    },
+                    "isEnum": {
+                      "type": "boolean"
+                    },
+                    "isInterface": {
+                      "type": "boolean"
+                    },
+                    "args": {
+                      "$ref": "#/properties/types/items/properties/baseType/properties/args"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "returnSummary": {
+                  "type": "string"
+                },
+                "summary": {
+                  "type": "string"
+                },
+                "obsolete": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    },
+                    "error": {
+                      "type": "boolean"
+                    }
+                  }
+                },
+                "node": {
+                  "type": "object",
+                  "properties": {
+                    "displayName": {
+                      "type": "string"
+                    },
+                    "category": {
+                      "type": "string"
+                    },
+                    "keywords": {
+                      "$ref": "#/properties/types/items/properties/node/properties/keywords"
+                    }
+                  }
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "visibility"
+              ]
+            }
+          },
+          "variables": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                },
+                "kind": {
+                  "enum": [
+                    "property",
+                    "field"
+                  ]
+                },
+                "type": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string"
+                    },
+                    "generic": {
+                      "type": "boolean"
+                    },
+                    "isEnum": {
+                      "type": "boolean"
+                    },
+                    "isInterface": {
+                      "type": "boolean"
+                    },
+                    "args": {
+                      "$ref": "#/properties/types/items/properties/baseType/properties/args"
+                    }
+                  },
+                  "required": [
+                    "name"
+                  ]
+                },
+                "modifiers": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "get": {
+                  "enum": [
+                    "public",
+                    "protected"
+                  ]
+                },
+                "set": {
+                  "enum": [
+                    "public",
+                    "protected"
+                  ]
+                },
+                "summary": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "name",
+                "kind",
+                "type"
+              ]
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "kind"
+        ]
+      }
+    }
+  },
+  "required": [
+    "id",
+    "version",
+    "assemblies"
+  ]
+}

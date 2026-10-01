@@ -28,8 +28,8 @@ when it is started.
 |----|------|------|------------|--------|
 | P0 | Modernize build + Avalonia editor at parity | ~6 w (manual est.) | — | **merged** 2026-09-25 (PR #1, e24ebec) |
 | P0.1 | Grid rendering (shader + pixel-identical fallback) | ~3–5 d | P0 | **merged** 2026-09-25 (PR #2, 0e1add1) |
-| P1 | Core refactor + extension points | ~3.5 w | P0 | spec ready (`specs/003-core-refactor/`) |
-| P2 | Catalog tooling + Spectre CLI | ~2.5 w | P1 | not started |
+| P1 | Core refactor + extension points | ~3.5 w | P0 | **merged** 2026-09-29 (PR #6, cc96a93); released `v0.1.0`, `v0.1.1` |
+| P2 | Catalog tooling + Spectre CLI | ~2.5 w | P1 | spec ready (`specs/004-catalog-cli/`, draft PR #9) |
 | P3a | Editor shell | ~2–3 w | P0, P1 | not started |
 | P3 | Editor extension host | ~2.5 w | P0, P1, P3a | not started |
 | P3b | Declarations and code style | ~3–4 w | P1, P3a, P3 | not started (owner-approved 2026-09-26) |
@@ -132,7 +132,7 @@ Graph-format follow-ups from P1: `format --check` and `regen --check`, `netprint
 `.netpc.json` schema.
 - **Extension testing — multi-extension suite.** Host-side test suite with purpose-built fixture extensions (baseline pair with `dependsOn`, id squatter, duplicate id, private-dependency v1/v2, host-assembly skew, shared-prefix private dependency, type provider/consumer, throws-mid-register, native dependency). Scenarios: id conflicts, load-order permutation invariance, dependency-version isolation, extension-on-extension types, documents across extension subsets, failure isolation, scale, and reload caching. See research in `docs/research/2026-09-29-extension-testing/`.
 - **API compatibility tracking.** Add `PublicApiAnalyzers` to `NetPrints.Extensibility`, `NetPrints.Core`, `NetPrints.Reflection` and `NetPrints.Serialization`; mark unstable API with `[Experimental]`. When the extension API is first published, set `PackageValidationBaselineVersion` and tie `ExtensionApi.Version` bumps to Shipped/Unshipped changes.
-- **ADR: extension shared-assembly and extension-on-extension hazards.** Two behaviours are currently unpinned: (1) a private dependency whose name starts with a shared prefix (e.g. `NetPrints*`, `Avalonia*`) is deferred to the Default context and fails with `NPX007`; (2) `dependsOn` only orders loading, so extension B cannot resolve extension A's types. Decide with an ADR before NetPrintsUnreal ships more than one extension (owner request 2026-09-29). See research section 1 and recommendation section (d).
+- **ADR: extension shared-assembly and extension-on-extension hazards.** Decided: ADR-0010 accepted (P2 spec). Two behaviours are currently unpinned: (1) a private dependency whose name starts with a shared prefix (e.g. `NetPrints*`, `Avalonia*`) is deferred to the Default context and fails with `NPX007`; (2) `dependsOn` only orders loading, so extension B cannot resolve extension A's types. Decide with an ADR before NetPrintsUnreal ships more than one extension (owner request 2026-09-29). See research section 1 and recommendation section (d).
 Done when (owner decision 2026-09-28, applies P2 onward): the phase's features work end-to-end and
 docs updated (guides, API reference, ADRs as applicable).
 
@@ -156,6 +156,11 @@ docs updated (guides, API reference, ADRs as applicable).
 - **Internal contribution points** (owner idea, 2026-09-25): commands, panels, dashboard tiles, project
   templates, context-menu items, tooltip providers and go-to providers are registered through one registry,
   and the built-in editor uses it. P3 then opens the same points to plugins.
+- **Type-scoped search and embedded catalogs** (deferred from P2 Review E-R15; spec decision first): a search opened
+  from a pin of a type in a covered assembly still lists the type's public members, including those the embedded
+  catalog omits and `[NetPrintsIgnore]` ones (extension catalogs too). Decide whether type-scoped search respects the
+  embedded catalog of the type's assembly, hiding omitted and `[NetPrintsIgnore]` members, with the live provider as
+  the fallback for assemblies no catalog covers. Binding through `GetTypeFromSpecifier` stays as it is.
 - **Adopt Xaml.Behaviors across the editor** (owner request, 2026-09-28): replace every remaining
   code-behind handler a prebuilt behavior covers (catalog: `.claude/skills/avalonia-behaviors/`), custom
   behaviors for the rest; done when the XAML hygiene allowlists are empty or hold only justified
@@ -184,7 +189,8 @@ docs updated (guides, API reference, ADRs as applicable).
 inspector sections, panels, settings pages), sample non-Unreal extension, anything functional
 left beyond P0 parity. Publishes the `NetPrints.Serialization` and `NetPrints.Extensibility`
 packages for extension authors. No performance work here (owner decision 2026-09-25: see P8).
-- **Extension testing — author conformance kit (may start in P2).** Ship `NetPrints.Extensibility.Testing` (NuGet package) with `ExtensionTest<TExtension>` (declarative `TestState`, `RunAsync`), an `ExtensionHarness` for real or folder-based testing, and a conformance suite with 12 checks (manifest, packaging, type identity, pure/repeatable registration, no issues, node round-trip, translation compilation, deterministic emitters, settings, host channel lifecycle, coexistence with built-ins and a "noisy neighbour", disposal). Optional xUnit adapter. `NetPrints.TestExtension` is tested only through this kit. See research.
+- **Carried over from P2** (final review findings): NPX008 should check host-provided and transitive references; the live `ReflectionProvider` should skip unreadable references and log them; Windows CLI CI leg with UTF-8 `show --textconv` test; capture timings and UI dump on the next Desktop E2E timeout; info-level analyzer backlog cleanup; decide on editor `ProjectCheck` generation-skip behavior; split the "Build and test (Linux)" CI job into a test-project matrix.
+- **Extension testing — author conformance kit (may start in P2; the internal `ExtensionHarness` lands in P2, ADR-0010).** Ship `NetPrints.Extensibility.Testing` (NuGet package) with `ExtensionTest<TExtension>` (declarative `TestState`, `RunAsync`), an `ExtensionHarness` for real or folder-based testing, and a conformance suite with 12 checks (manifest, packaging, type identity, pure/repeatable registration, no issues, node round-trip, translation compilation, deterministic emitters, settings, host channel lifecycle, coexistence with built-ins and a "noisy neighbour", disposal). Optional xUnit adapter. `NetPrints.TestExtension` is tested only through this kit. See research.
 - **Before the first NetPrintsUnreal release:** a `netprints-verify` tool (modelled on IntelliJ Plugin Verifier), a reusable author CI workflow, a nightly job co-loading published extensions, and a `dotnet new netprints-extension` template.
 Done when: also docs updated (guides, API reference, ADRs as applicable).
 
@@ -376,6 +382,7 @@ for those who want to learn it.
     by P3b's designer comments to preview a designer's own method `Summary`, not just built-in doc);
   - start page and samples, accessibility (names for icon buttons, contrast ≥ 4.5:1, keyboard navigation);
   - Nodify built-ins not used yet (minimap, fit to view, groups/comments, alignment, keyboard navigation).
+- **In-editor visual diff of graphs** (P1 follow-up, moved from P2 per `specs/004-catalog-cli/research.md` R27; needs the P3a shell).
 - **Done when:** also docs updated (guides, API reference, ADRs as applicable).
 
 ### P7 — Structured code generation

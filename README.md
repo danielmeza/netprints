@@ -27,7 +27,7 @@ tests against the real desktop app) instead of manual verification.
 | | |
 |---|---|
 | **Editor** | Download a build from the [latest release](https://github.com/danielmeza/netprints/releases/latest) for Linux, Windows or macOS and unpack it. Requires the [.NET 10 SDK](https://dotnet.microsoft.com/download) to open and build projects. Builds are unsigned — see the [install guide](docs/guide/install.md) for the SmartScreen/*Open Anyway* steps and checksum verification. |
-| **Command-line tool** | `dotnet tool install -g NetPrints.Cli`, then `netprints -p MyApp.csproj -r` |
+| **Command-line tool** | `dotnet tool install -g NetPrints.Cli`, then `netprints build MyApp.csproj` or `netprints run MyApp.csproj` |
 | **In a project** | `dotnet add package NetPrints.Sdk` |
 
 See the [full install guide](docs/guide/install.md) for details on each route, the SDK/runtime
@@ -41,11 +41,16 @@ shows up as tooltips in the node search. You can also add a C# source directory,
 reflection only (handy for using NetPrints inside Unity against your existing scripts) or compiled
 straight into the output.
 
+## Ship nodes with your library
+
+Annotations are optional. Any library works in NetPrints without them; the editor reads its public API directly. If you want to choose which members become nodes and ship a curated catalog inside your library, add the `NetPrints.Annotations` package (`PrivateAssets="all"`) and mark the public types and methods with `[NetPrintsType]` and `[NetPrintsNode]` attributes. The Roslyn generator embeds the catalog as an assembly attribute, which the editor reads from any referenced assembly. See the [Annotations guide](docs/guide/catalogs.md#annotations) for details.
+
 ## Guides
 
 - [Projects](docs/guide/projects.md) — the `.csproj` project model, the `NetPrints.Sdk` package and the committed generated code.
 - [Graph file format](docs/guide/graph-format.md) — the `*.netpc.json` format, version control and what a diff looks like.
 - [Extensions](docs/guide/extensions.md) — loading extensions, environment variables, and writing your own.
+- [Type catalogs](docs/guide/catalogs.md) — the `netprints catalog` tool, profiles, and contributing a catalog from an extension.
 
 ## Project layout
 
