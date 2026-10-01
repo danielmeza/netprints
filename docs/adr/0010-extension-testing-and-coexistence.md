@@ -67,8 +67,9 @@ not packable yet (P3 publishes them).
      extensions it depends on — in declared order, then transitively depth-first — before its own folder. The
      dependency's assemblies are loaded once, in the dependency's context, so both extensions see one type
      identity. Consumers reference providers with `Private=false`; a shipped copy is ignored with a warning.
-     With diamonds, the first dependency in declared order wins.
-   - No new diagnostic codes. A host-skew failure (an extension compiled against a newer host assembly) stays
+     With diamonds, the first dependency in declared order wins. A dependency's copy older than the version
+     the extension was built against fails that extension's load with `NPX008` (equal or newer is accepted).
+   - One new diagnostic code, `NPX008` (amendment, G-R3). A host-skew failure (an extension compiled against a newer host assembly) stays
      that extension's load failure (`NPX005` when it surfaces in `Register`); static detection is
      `netprints-verify`'s job.
    Both rules are pinned by the multi-extension suite before and after the loader change.

@@ -25,4 +25,7 @@ public static class ExtensionDiagnosticCodes
 
     /// <summary>The extension assembly is missing or could not be loaded.</summary>
     public const string AssemblyLoadFailed = "NPX007";
+
+    /// <summary>A dependency provides an older version of an assembly than the extension was built against.</summary>
+    public const string DependencyVersion = "NPX008";
 }

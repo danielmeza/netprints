@@ -228,6 +228,7 @@ const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.ApiVersion = "NPX
 const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.AssemblyLoadFailed = "NPX007" -> string!
 const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.ContributionRejected = "NPX006" -> string!
 const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.Dependency = "NPX003" -> string!
+const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.DependencyVersion = "NPX008" -> string!
 const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.DuplicateId = "NPX004" -> string!
 const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.InvalidManifest = "NPX001" -> string!
 const NetPrints.Extensibility.Loading.ExtensionDiagnosticCodes.RegisterFailed = "NPX005" -> string!

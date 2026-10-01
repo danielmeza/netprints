@@ -17,6 +17,11 @@ Implements FR-038–FR-045 (ADR-0010). Sources: `src/NetPrints.Extensibility/Loa
    resolver resolves the name, load it into *that* context and return it.
 3. Own resolver → `LoadFromAssemblyPath`; else `null`.
 
+Version check: after the extension assembly loads, each of its referenced assemblies that a dependency provides
+(the same lookup as step 2) is compared with the reference. A provided version lower than the referenced one fails
+the extension with `NPX008` (`DependencyVersion`), the message naming the assembly and both versions; equal or higher
+is accepted, and only the extension's direct references are checked. `NPX007` stays "assembly missing or could not be loaded".
+
 Warnings (`NetPrints.Extensibility.Log`, `src/NetPrints.Extensibility/Log.cs`): `HostAssemblyShadowed(extensionId, assemblyName, path)` when an
 extension folder contains a file whose name is a provided host assembly; `DependencyAssemblyShadowed(extensionId,
 assemblyName, dependencyId)` when a folder contains a copy of an assembly a dependency provides. Checked once per
@@ -37,7 +42,7 @@ built-in id or already registered → `NPX006` contribution issue, first wins.
 |---|---|---|---|
 | Alpha | project | `tests/Fixtures/Extensions/Fx.Alpha` / `fx.alpha` | One contribution of every kind MX-T07 checks: node kind `fx.alpha/Ping` (with a CLR node type and a JSON resolver), a class emitter adding a `[System.ComponentModel.Description("fx.alpha")]` attribute, a settings section, a project profile `fx.alpha.profile`, a host channel factory `fx.alpha.channel`, a document type, a catalog profile `fx-alpha`, a project property |
 | Beta | project | `Fx.Beta` / `fx.beta`, `dependsOn: [fx.alpha]` | Node kind `fx.beta/Pong`, a member emitter that adds a `[System.ComponentModel.Description("fx.beta")]` attribute to methods whose graph holds a `fx.alpha/Ping` node |
-| LibV1 / LibV2 | project | `Fx.LibV1` / `fx.libv1`, `Fx.LibV2` / `fx.libv2` + `Fixture.SharedLib.V1/.V2` (assembly `Fixture.SharedLib` 1.0/2.0) | Each registers a node whose translator calls `SharedLib.Describe()` (different signatures per version) |
+| LibV1 / LibV2 | project | `Fx.LibV1` / `fx.libv1`, `Fx.LibV2` / `fx.libv2` + `Fixture.SharedLib.V1/.V2` (assembly `Fixture.SharedLib` 1.0.0.0/2.0.0.0, `MinVerSkip`) | Each registers a node whose translator calls `SharedLib.Describe()` (V1: no argument; V2: an argument overload, plus the no-argument one) |
 | PrefixedPrivate | project | `Fx.PrefixedPrivate` / `fx.private-prefix` + `NetPrintsFixture.Runtime` | Registers a node whose translator uses `NetPrintsFixture.Runtime.Helper` |
 | TypesProvider / TypesConsumer | project | `Fx.TypesProvider` (`fx.types-provider`), `Fx.TypesConsumer` (`dependsOn` provider, `Private=false` reference) | Consumer's node pin type and emitter use `ProviderType`; exposes `typeof(ProviderType)` for identity checks |
 | Diamond | project | `Fx.Diamond` / `fx.diamond`, `dependsOn: [fx.libv1, fx.libv2]`, references `Fixture.SharedLib` with `Private=false` | Registers a node whose translator calls `SharedLib.Describe()`; MX-T05 expects v1 (first in `dependsOn` order) |
@@ -87,7 +92,7 @@ CancellationToken)`; `Task<IReadOnlyList<GeneratedFileResult>> GenerateAsync(str
 | MX-T03 | `MultiExtension/SharedAssemblyRuleTests` | A copy of `NetPrints.Core.dll` in a fixture folder is ignored; `HostAssemblyShadowed` logged |
 | MX-T04 | `MultiExtension/DependencyTypeSharingTests` | Consumer's `typeof(ProviderType)` equals provider's; consumer emitter output uses the type (red before T-loader); provider failing → consumer NPX003 |
 | MX-T05 | `MultiExtension/DependencyTypeSharingTests` | Diamond: two providers of `Fixture.SharedLib` → first in `dependsOn` order wins, stable across runs |
-| MX-T06 | `MultiExtension/VersionIsolationTests` | LibV1 + LibV2 load together; each translator calls its own version; two distinct `Assembly` instances |
+| MX-T06 | `MultiExtension/VersionIsolationTests` | LibV1 + LibV2 load together; each translator calls its own version; two distinct `Assembly` instances with versions 1.0.0.0 and 2.0.0.0 |
 | MX-T07 | `MultiExtension/IdConflictTests` | Squatter vs alpha across kinds, profiles, host channels, settings, document types, CLR node types, JSON resolvers, catalog profiles; project properties dedupe; loser named in `Issues`; alpha's behaviour unchanged |
 | MX-T08 | `MultiExtension/IdConflictTests` | Duplicate ids → NPX004; in each folder order the first folder wins, the loser gets NPX004, and the registry content is the same |
 | MX-T09 | `MultiExtension/LoadOrderPermutationTests` | Alpha, Beta, LibV1, PrefixedPrivate: all 24 discovery orders → same `Loaded` order, registry order, byte-identical generated C# of a graph using all four |
@@ -98,6 +103,7 @@ CancellationToken)`; `Task<IReadOnlyList<GeneratedFileResult>> GenerateAsync(str
 | MX-T14 | `MultiExtension/ScaleTests` | 50 Roslyn fixtures load in < 10 s, same order on two runs |
 | MX-T15 | `MultiExtension/ReloadTests` | `ExtensionHost` reload reuses contexts; `AssemblyLoadContext.All` count stable over 3 reloads; a cached context whose dependency contexts changed is replaced, so a consumer sees the new provider's type |
 | MX-T16 | `MultiExtension/NativeDependencyTests` | `fx.native` loads and its native call returns a milestone > 0 (Linux; explicit skip reason elsewhere) |
+| MX-T17 | `MultiExtension/DependencyVersionTests` | Consumer built against `Fixture.SharedLib` 2.0 with a provider shipping 1.0 → NPX008 naming both versions, consumer not registered, provider loaded; built against 1.0 with 1.0 or 2.0 provided → loads and translates |
 | AP-T01 | `Architecture/PublicApiTrackingTests` | Every tracked project references the analyzer and has both files starting `#nullable enable`; an in-test compilation with the analyzer and an undeclared public member reports RS0016 |
 | AP-T02 | `Architecture/ExperimentalApiTests` | For each `NPXE` id, an in-test external compilation using a marked API without opt-in reports that id as an error; with the id in `NoWarn` it compiles; `UrlFormat` maps to an existing `docs/**/*.md` page with an `## API stability` heading; every public symbol in Core and Extensibility whose signature mentions an `[Experimental]` type carries that id |
 | AP-T03 | `Core/SourceHygieneTests` | The only `<NoWarn>` in the repository is `Directory.Build.targets`' opt-in line; every `NetPrintsExperimentalOptIn` item is an id declared in `ExperimentalApiIds` (unknown or stale ids fail); no `#pragma warning disable NPXE*`; no `.editorconfig`/globalconfig severity entries for `NPXE` ids (ADR-0017) |

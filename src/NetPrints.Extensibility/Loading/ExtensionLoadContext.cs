@@ -58,6 +58,19 @@ internal sealed class ExtensionLoadContext : AssemblyLoadContext
         return null;
     }
 
+    /// <summary>The version of the copy a dependency provides for <paramref name="name"/>, or <see langword="null"/> when none does.</summary>
+    /// <param name="name">The referenced assembly.</param>
+    /// <returns>The version the extension would get.</returns>
+    public Version? FindDependencyVersion(AssemblyName name)
+    {
+        if (name.Name is null || IsHostProvided(name.Name))
+        {
+            return null;
+        }
+
+        return FindDependencyOwner(name)?.LoadOwned(name)?.GetName().Version;
+    }
+
     protected override Assembly? Load(AssemblyName assemblyName)
     {
         string? name = assemblyName.Name;

@@ -263,6 +263,11 @@ public sealed class ExtensionLoader
                 contexts[manifest.Id] = context;
                 ReportShadowedAssemblies(manifest.Id, folder, assemblyPath, context);
                 Assembly assembly = context.LoadFromAssemblyPath(assemblyPath);
+                if (OlderDependencyCopy(assembly, context) is { } older)
+                {
+                    return Fail(candidate, ExtensionDiagnosticCodes.DependencyVersion, older, null);
+                }
+
                 extensionTypes = [.. assembly.GetExportedTypes().Where(IsExtensionType)];
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
@@ -305,6 +310,24 @@ public sealed class ExtensionLoader
         contributions = builder.Seal();
         registryBuilder.Commit(manifest, contributions);
         return new ExtensionLoadResult.Loaded(manifest.Id, candidate.ManifestPath, manifest);
+    }
+
+    private static string? OlderDependencyCopy(Assembly assembly, ExtensionLoadContext context)
+    {
+        if (context.Dependencies.Count == 0)
+        {
+            return null;
+        }
+
+        foreach (AssemblyName reference in assembly.GetReferencedAssemblies())
+        {
+            if (reference.Version is { } required && context.FindDependencyVersion(reference) is { } provided && provided < required)
+            {
+                return $"it was built against {reference.Name} {required}, but its dependency provides {provided}.";
+            }
+        }
+
+        return null;
     }
 
     private void ReportShadowedAssemblies(string id, string folder, string assemblyPath, ExtensionLoadContext context)
