@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using NetPrints.Core;
+using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.Tests.Hosting;
@@ -175,5 +176,107 @@ public sealed class ProjectSessionViewModelTests : IAsyncDisposable
         editor.Processes.RaiseExited(0);
 
         Assert.Equal([true, false], observed);
+    }
+
+    private static readonly TimeSpan Bound = TimeSpan.FromSeconds(10);
+
+    private async Task<(ProjectSessionViewModel Session, List<GatedDocumentStore> Stores, int[] Builds)> HeldSaveSessionAsync()
+    {
+        Project project = await LoadSampleAsync();
+        List<GatedDocumentStore> stores = [];
+        ProjectPersistence persistence = TestEditor.CreatePersistence(editor.Projects, store =>
+        {
+            var gated = new GatedDocumentStore(store);
+            stores.Add(gated);
+            return gated;
+        });
+        int[] builds = [0];
+        editor.Projects.BuildResultFactory = _ =>
+        {
+            Interlocked.Increment(ref builds[0]);
+            return new BuildResult(true, [], null, "");
+        };
+        var session = new ProjectSessionViewModel(project, editor.Context with { Persistence = persistence });
+        ClassGraph cls = project.Classes.Single();
+        File.Delete(project.GetGraphFilePath(cls));
+        cls.MarkDirty();
+        Task<bool> save = session.SaveAllAsync();
+        await stores.Single().FirstWriteStarted.WaitAsync(Bound, TestContext.Current.CancellationToken);
+        return (session, stores, builds);
+    }
+
+    [Fact]
+    public async Task ASecondCompileDuringASaveJoinsTheFirstBuild()
+    {
+        (ProjectSessionViewModel session, List<GatedDocumentStore> stores, int[] builds) = await HeldSaveSessionAsync();
+        using (session)
+        {
+            Task<bool> first = session.CompileAsync();
+            Task<bool> second = session.CompileAsync();
+            stores.ForEach(store => store.Release());
+
+            Assert.True(await first.WaitAsync(Bound, TestContext.Current.CancellationToken));
+            Assert.True(await second.WaitAsync(Bound, TestContext.Current.CancellationToken));
+            Assert.Equal(1, builds[0]);
+        }
+    }
+
+    [Fact]
+    public async Task ASecondRunDuringASaveStartsOneProgram()
+    {
+        (ProjectSessionViewModel session, List<GatedDocumentStore> stores, int[] builds) = await HeldSaveSessionAsync();
+        using (session)
+        {
+            Task<bool> first = session.RunAsync();
+            Task<bool> second = session.RunAsync();
+            stores.ForEach(store => store.Release());
+
+            await first.WaitAsync(Bound, TestContext.Current.CancellationToken);
+            await second.WaitAsync(Bound, TestContext.Current.CancellationToken);
+            Assert.Equal(1, builds[0]);
+            Assert.Single(editor.Processes.Tokens);
+        }
+    }
+
+    [Fact]
+    public async Task RunningAgainWhileTheProgramRunsStartsNothingAndStopStillCancelsIt()
+    {
+        Project project = await LoadSampleAsync();
+        using var session = new ProjectSessionViewModel(project, editor.Context);
+        await session.RunAsync();
+
+        Assert.False(await session.RunAsync());
+        session.Stop();
+
+        CancellationToken token = Assert.Single(editor.Processes.Tokens);
+        Assert.True(token.IsCancellationRequested);
+    }
+
+    [Fact]
+    public async Task RunningFromTheClassEditorGoesThroughTheSessionSoStopReachesIt()
+    {
+        Project project = await LoadSampleAsync();
+        using var session = new ProjectSessionViewModel(project, editor.Context);
+        using var classEditor = new ClassEditorViewModel(project.Classes.Single(), editor.Context) { SessionSource = () => session };
+
+        await classEditor.RunCommand.ExecuteAsync(null);
+        Assert.True(session.IsRunning);
+        session.Stop();
+
+        CancellationToken token = Assert.Single(editor.Processes.Tokens);
+        Assert.True(token.IsCancellationRequested);
+    }
+
+    [Fact]
+    public async Task DisposingTheSessionKillsTheRunningProgram()
+    {
+        Project project = await LoadSampleAsync();
+        var session = new ProjectSessionViewModel(project, editor.Context);
+        await session.RunAsync();
+        CancellationToken token = Assert.Single(editor.Processes.Tokens);
+
+        session.Dispose();
+
+        Assert.True(token.IsCancellationRequested);
     }
 }

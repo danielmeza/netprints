@@ -258,6 +258,21 @@ public class MainEditorViewModelTests : IDisposable
     }
 
     [Fact]
+    public async Task RunButtonIsDisabledWhileTheProgramRunsAndComesBackOnExit()
+    {
+        var editor = testEditor;
+        string path = Track(TestPaths.CopyHelloWorldSample());
+        var vm = new MainEditorViewModel(editor.Context);
+        await vm.LoadProjectAsync(path);
+
+        await vm.RunCommand.ExecuteAsync(null);
+        Assert.False(vm.RunCommand.CanExecute(null));
+
+        editor.Processes.RaiseExited(0);
+        Assert.True(vm.RunCommand.CanExecute(null));
+    }
+
+    [Fact]
     public async Task CompileReportsErrors()
     {
         var editor = testEditor;

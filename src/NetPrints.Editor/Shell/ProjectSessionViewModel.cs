@@ -14,8 +14,8 @@ namespace NetPrints.Editor.Shell;
 
 /// <summary>
 /// The open project and what can be done with it: the per-class undo stacks, save, compile, run and stop.
-/// Created when a project opens and disposed when it is unloaded. The compile and run flows are shared with
-/// the class editor windows through the static overloads.
+/// Created when a project opens and disposed when it is unloaded. It owns every compile and run, including the
+/// class editor windows', so Stop reaches them all.
 /// </summary>
 public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
 {
@@ -24,6 +24,7 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
     private readonly EditorContext context;
     private readonly Dictionary<ClassGraph, UndoRedoStack> undoStacks = [];
     private Task<bool>? saving;
+    private Task<bool>? flow;
     private CancellationTokenSource? runCancellation;
     private bool wasRunning;
 
@@ -109,50 +110,83 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
         return saving;
     }
 
-    /// <summary>Saves, when needed, then compiles the project (see <see cref="CompileAsync(Project, EditorContext)"/>).</summary>
+    /// <summary>
+    /// Saves, when needed, then builds the project through <see cref="IProjectSystem.BuildAsync"/> and maps the outcome
+    /// onto the project's compile state. One compile or run is in flight per session: a call made meanwhile returns
+    /// that flow's task instead of starting another. A class that cannot be translated is reported as a build error;
+    /// any other failure is shown through <see cref="IEditorDialogs.ShowErrorAsync"/>.
+    /// </summary>
     /// <returns>Whether the build succeeded.</returns>
-    public async Task<bool> CompileAsync()
+    public Task<bool> CompileAsync()
     {
-        await WaitForSaveAsync().ConfigureAwait(true);
-        return await CompileAsync(Project, context).ConfigureAwait(true);
+        if (flow is { IsCompleted: false } current)
+        {
+            return current;
+        }
+
+        flow = CompileFlowAsync();
+        return flow;
     }
 
     /// <summary>
-    /// Compiles, then starts the program when the build succeeded. <see cref="Stop"/> cancels the token the program
-    /// was started with, which kills it and its child processes.
+    /// Compiles, then starts the program when the build succeeded. One run per session: a call made while a compile
+    /// or run is in flight returns that flow's task, and one made while the program runs does nothing and returns
+    /// false. <see cref="Stop"/> cancels the token the program was started with, which kills it and its child processes.
     /// </summary>
     /// <returns>Whether the program was started.</returns>
-    public async Task<bool> RunAsync()
+    public Task<bool> RunAsync()
     {
-        await WaitForSaveAsync().ConfigureAwait(true);
-        runCancellation?.Dispose();
-        runCancellation = new CancellationTokenSource();
-        return await CompileAndRunAsync(Project, context, runCancellation.Token).ConfigureAwait(true);
+        if (flow is { IsCompleted: false } current)
+        {
+            return current;
+        }
+
+        if (IsRunning)
+        {
+            return Task.FromResult(false);
+        }
+
+        flow = RunFlowAsync();
+        return flow;
     }
 
     /// <summary>Stops the running program and its child processes; does nothing when none runs.</summary>
     public void Stop() => runCancellation?.Cancel();
 
-    /// <summary>Stops following the run state and releases the run token.</summary>
+    /// <summary>Stops following the run state, kills the running program (an unloaded project leaves none behind) and releases the run token.</summary>
     public void Dispose()
     {
         context.RunState.PhaseChanged -= OnRunPhaseChanged;
+        runCancellation?.Cancel();
         runCancellation?.Dispose();
         runCancellation = null;
+    }
+
+    private async Task<bool> CompileFlowAsync()
+    {
+        await WaitForSaveAsync().ConfigureAwait(true);
+        return await BuildAsync(Project, context).ConfigureAwait(true);
+    }
+
+    private async Task<bool> RunFlowAsync()
+    {
+        await WaitForSaveAsync().ConfigureAwait(true);
+        runCancellation?.Dispose();
+        runCancellation = new CancellationTokenSource();
+        return await BuildAndStartAsync(Project, context, runCancellation.Token).ConfigureAwait(true);
     }
 
     /// <summary>
     /// Saves the project's dirty classes, builds it through <see cref="IProjectSystem.BuildAsync"/>
     /// and maps the outcome onto <see cref="Core.Project.IsCompiling"/>,
     /// <see cref="Core.Project.LastCompilationSucceeded"/> and <see cref="Core.Project.LastDiagnostics"/>
-    /// (shared by the main and class windows). A class that cannot be translated while saving is
-    /// reported as a build error; any other failure is shown through
-    /// <see cref="IEditorDialogs.ShowErrorAsync"/>.
+    /// A class that cannot be translated while saving is reported as a build error; any other
+    /// failure is shown through <see cref="IEditorDialogs.ShowErrorAsync"/>.
     /// </summary>
     /// <param name="project">The project to build.</param>
     /// <param name="context">Host services.</param>
     /// <returns>Whether the build succeeded.</returns>
-    public static async Task<bool> CompileAsync(Project project, EditorContext context)
+    private static async Task<bool> BuildAsync(Project project, EditorContext context)
     {
         project.IsCompiling = true;
         project.CompilationMessage = "Compiling...";
@@ -187,16 +221,15 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// Compiles a project and starts the compiled program on success (shared by the main and
-    /// class windows).
+    /// Compiles a project and starts the compiled program on success, unless the token was cancelled meanwhile.
     /// </summary>
     /// <param name="project">The project to run.</param>
     /// <param name="context">Host services.</param>
     /// <param name="cancellationToken">Cancelling it kills the started program.</param>
     /// <returns>Whether the program was started.</returns>
-    public static async Task<bool> CompileAndRunAsync(Project project, EditorContext context, CancellationToken cancellationToken = default)
+    private static async Task<bool> BuildAndStartAsync(Project project, EditorContext context, CancellationToken cancellationToken = default)
     {
-        if (!await CompileAsync(project, context))
+        if (!await BuildAsync(project, context) || cancellationToken.IsCancellationRequested)
         {
             return false;
         }

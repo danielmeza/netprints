@@ -160,6 +160,9 @@ public sealed partial class ClassEditorViewModel : ObservableObject, IRecipient<
     /// <summary>The project the class belongs to, or <see langword="null"/> if it has not been added to one.</summary>
     public Project? Project => Class.Project;
 
+    /// <summary>Gets or sets how the window finds the open project's session, which owns every compile and run; null when the window runs without one.</summary>
+    public Func<ProjectSessionViewModel?>? SessionSource { get; set; }
+
     /// <summary>View models for <see cref="Class"/>'s methods.</summary>
     public ObservableViewModelCollection<MethodViewModel, MethodGraph> Methods { get; }
 
@@ -753,20 +756,20 @@ public sealed partial class ClassEditorViewModel : ObservableObject, IRecipient<
     private string RenderGenerated(Project project, ClassGraph cls) =>
         NetPrints.Generation.GraphCodeGenerator.RenderFile(NewTranslator().Translate(cls), Path.GetFileName(project.GetGraphFilePath(cls)));
 
-    /// <summary>Compiles the whole project through <see cref="ProjectSessionViewModel.CompileAsync(Project, EditorContext)"/> (PAR-09).</summary>
+    /// <summary>Compiles the whole project through the session (PAR-09).</summary>
     [RelayCommand]
-    private Task CompileAsync() => Project is { CanCompile: true } project ? ProjectSessionViewModel.CompileAsync(project, Context) : Task.CompletedTask;
+    private Task CompileAsync() => Project is { CanCompile: true } && SessionSource?.Invoke() is { } session ? session.CompileAsync() : Task.CompletedTask;
 
     [RelayCommand]
     private Task RunAsync()
     {
-        if (Project is not { CanCompileAndRun: true })
+        if (Project is not { CanCompileAndRun: true } || SessionSource?.Invoke() is not { } session)
         {
             return Task.CompletedTask;
         }
 
         SelectedBottomTab = 1; // Output, once per run (not re-forced on every line after it).
-        return ProjectSessionViewModel.CompileAndRunAsync(Project, Context);
+        return session.RunAsync();
     }
 
     [RelayCommand]

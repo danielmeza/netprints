@@ -106,8 +106,8 @@ public sealed partial class MainEditorViewModel : ObservableObject, IDisposable,
     /// <summary>Whether the open project can currently be compiled; <see langword="false"/> with no project open.</summary>
     public bool CanCompile => Project?.CanCompile ?? false;
 
-    /// <summary>Whether the open project can currently be compiled and run; <see langword="false"/> with no project open.</summary>
-    public bool CanCompileAndRun => Project?.CanCompileAndRun ?? false;
+    /// <summary>Whether the open project can currently be compiled and run; <see langword="false"/> with no project open or while its program runs.</summary>
+    public bool CanCompileAndRun => (Project?.CanCompileAndRun ?? false) && Session is not { IsRunning: true };
 
     /// <summary>Window title: the project name (PAR-01).</summary>
     public string Title => Project?.Name is { Length: > 0 } name ? name : "NetPrints";
@@ -165,6 +165,10 @@ public sealed partial class MainEditorViewModel : ObservableObject, IDisposable,
         subscribedProject = value;
         Session?.Dispose();
         Session = value is null ? null : new ProjectSessionViewModel(value, context);
+        if (Session is not null)
+        {
+            Session.PropertyChanged += OnSessionPropertyChanged;
+        }
 
         if (value is not null)
         {
@@ -205,6 +209,14 @@ public sealed partial class MainEditorViewModel : ObservableObject, IDisposable,
             case nameof(Core.Project.Name):
                 OnPropertyChanged(nameof(Title));
                 break;
+        }
+    }
+
+    private void OnSessionPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(ProjectSessionViewModel.IsRunning))
+        {
+            RefreshCompileState();
         }
     }
 
@@ -583,6 +595,7 @@ public sealed partial class MainEditorViewModel : ObservableObject, IDisposable,
         }
 
         Session?.UseUndoStack(editor.Class, editor.UndoRedo);
+        editor.SessionSource = () => Session;
         var shell = new LegacyWindowShell(this);
         editor.Commands = new CommandInvoker(
             commandRegistry,

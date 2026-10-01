@@ -2,6 +2,7 @@ using System.Reflection;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using NetPrints.Core;
+using NetPrints.Editor.Shell;
 using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.Diagnostics;
 using NetPrints.Editor.Tests.Hosting;
@@ -24,6 +25,7 @@ public class ClassEditorViewModelTests : IAsyncLifetime
 
     private Project project => projectField ?? throw new InvalidOperationException($"{nameof(InitializeAsync)} has not run yet.");
     private ClassGraph cls => clsField ?? throw new InvalidOperationException($"{nameof(InitializeAsync)} has not run yet.");
+    private ProjectSessionViewModel? sessionField;
     private ClassEditorViewModel vm => vmField ?? throw new InvalidOperationException($"{nameof(InitializeAsync)} has not run yet.");
 
     /// <summary>Wraps <see cref="TestEditor.Reflection"/> so a test can hold a graph's overload warm-up
@@ -36,6 +38,8 @@ public class ClassEditorViewModelTests : IAsyncLifetime
         clsField = projectField.Classes.Single();
         reflectionField = new GatedReflectionHost(editor.Reflection);
         vmField = new ClassEditorViewModel(clsField, editor.Context with { Reflection = reflectionField });
+        sessionField = new ProjectSessionViewModel(projectField, editor.Context);
+        vmField.SessionSource = () => sessionField;
     }
 
     private static MethodSpecifier ConsoleWriteLine() =>
@@ -45,6 +49,7 @@ public class ClassEditorViewModelTests : IAsyncLifetime
     public ValueTask DisposeAsync()
     {
         vmField?.Dispose();
+        sessionField?.Dispose();
         TestPaths.TryDelete(projectField?.Path);
         return ValueTask.CompletedTask;
     }
