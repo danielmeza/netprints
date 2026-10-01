@@ -142,4 +142,24 @@ public sealed class ProjectSessionViewModelTests : IAsyncDisposable
         Assert.False(session.IsRunning);
         Assert.Equal(RunPhase.Exited, editor.Context.RunState.Snapshot().Phase);
     }
+
+    [Fact]
+    public async Task IsRunningRaisesAChangeWhenTheProgramStartsAndExits()
+    {
+        Project project = await LoadSampleAsync();
+        using var session = new ProjectSessionViewModel(project, editor.Context);
+        List<bool> observed = [];
+        session.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(ProjectSessionViewModel.IsRunning))
+            {
+                observed.Add(session.IsRunning);
+            }
+        };
+
+        await session.RunAsync();
+        editor.Processes.RaiseExited(0);
+
+        Assert.Equal([true, false], observed);
+    }
 }

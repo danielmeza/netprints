@@ -16,6 +16,23 @@ public class RunStateTrackerTests
     private readonly FakeProcessLauncher launcher = new();
 
     [Fact]
+    public void PhaseChangedFiresOnlyWhenThePhaseChanges()
+    {
+        using var tracker = new RunStateTracker(launcher);
+        List<RunPhase> phases = [];
+        tracker.PhaseChanged += (_, _) => phases.Add(tracker.Snapshot().Phase);
+
+        tracker.BuildStarted();
+        tracker.BuildFinished();
+        tracker.BuildFinished();
+        launcher.Start(Request, TestContext.Current.CancellationToken);
+        launcher.RaiseExited(0, id: launcher.LastId + 1);
+        launcher.RaiseExited(0);
+
+        Assert.Equal([RunPhase.Building, RunPhase.NotStarted, RunPhase.Running, RunPhase.Exited], phases);
+    }
+
+    [Fact]
     public void StartsNotStarted()
     {
         using var tracker = new RunStateTracker(launcher);

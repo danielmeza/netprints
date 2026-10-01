@@ -31,6 +31,9 @@ public sealed class RunStateTracker : IDisposable
         launcher.ProcessExited += OnExited;
     }
 
+    /// <summary>Raised, from the thread that caused it and outside the tracker's lock, after <see cref="RunStateSnapshot.Phase"/> changed.</summary>
+    public event EventHandler? PhaseChanged;
+
     /// <summary>A compile began: forgets the previous run.</summary>
     public void BuildStarted()
     {
@@ -38,17 +41,26 @@ public sealed class RunStateTracker : IDisposable
         {
             Reset(RunPhase.Building);
         }
+
+        PhaseChanged?.Invoke(this, EventArgs.Empty);
     }
 
     /// <summary>A compile ended; back to <see cref="RunPhase.NotStarted"/> unless a program was started since.</summary>
     public void BuildFinished()
     {
+        bool changed = false;
         lock (gate)
         {
             if (phase == RunPhase.Building)
             {
                 phase = RunPhase.NotStarted;
+                changed = true;
             }
+        }
+
+        if (changed)
+        {
+            PhaseChanged?.Invoke(this, EventArgs.Empty);
         }
     }
 
@@ -85,6 +97,8 @@ public sealed class RunStateTracker : IDisposable
             Reset(RunPhase.Running);
             currentId = id;
         }
+
+        PhaseChanged?.Invoke(this, EventArgs.Empty);
     }
 
     private void OnLine(int id, ProcessStream stream, string line)
@@ -107,13 +121,20 @@ public sealed class RunStateTracker : IDisposable
 
     private void OnExited(int id, int code)
     {
+        bool changed = false;
         lock (gate)
         {
             if (phase == RunPhase.Running && id == currentId)
             {
                 phase = RunPhase.Exited;
                 exitCode = code;
+                changed = true;
             }
+        }
+
+        if (changed)
+        {
+            PhaseChanged?.Invoke(this, EventArgs.Empty);
         }
     }
 }

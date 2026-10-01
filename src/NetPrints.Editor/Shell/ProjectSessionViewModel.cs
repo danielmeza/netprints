@@ -25,6 +25,7 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
     private readonly Dictionary<ClassGraph, UndoRedoStack> undoStacks = [];
     private Task<bool>? saving;
     private CancellationTokenSource? runCancellation;
+    private bool wasRunning;
 
     /// <summary>Creates the session of <paramref name="project"/>.</summary>
     /// <param name="project">The open project.</param>
@@ -35,6 +36,8 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
         ArgumentNullException.ThrowIfNull(context);
         Project = project;
         this.context = context;
+        wasRunning = IsRunning;
+        context.RunState.PhaseChanged += OnRunPhaseChanged;
     }
 
     /// <summary>Gets the open project.</summary>
@@ -46,7 +49,7 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
     /// <summary>Gets the first <c>16</c> hex characters of the SHA-256 of the project's full path; names its per-user state.</summary>
     public string ProjectKey => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(Path.GetFullPath(ProjectFilePath))))[..ProjectKeyLength];
 
-    /// <summary>Gets whether the last started program has not exited yet.</summary>
+    /// <summary>Gets whether the last started program has not exited yet; raises a change (on the UI thread) when that flips.</summary>
     public bool IsRunning => context.RunState.Snapshot().Phase == RunPhase.Running;
 
     /// <summary>Gets the undo stack of a class; the same instance on every call.</summary>
@@ -104,9 +107,10 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
     /// <summary>Stops the running program and its child processes; does nothing when none runs.</summary>
     public void Stop() => runCancellation?.Cancel();
 
-    /// <summary>Releases the run token.</summary>
+    /// <summary>Stops following the run state and releases the run token.</summary>
     public void Dispose()
     {
+        context.RunState.PhaseChanged -= OnRunPhaseChanged;
         runCancellation?.Dispose();
         runCancellation = null;
     }
@@ -183,6 +187,16 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
             return false;
         }
     }
+
+    private void OnRunPhaseChanged(object? sender, EventArgs e) => context.Dispatcher.Post(() =>
+    {
+        bool running = IsRunning;
+        if (running != wasRunning)
+        {
+            wasRunning = running;
+            OnPropertyChanged(nameof(IsRunning));
+        }
+    });
 
     private Task WaitForSaveAsync() => saving is { IsCompleted: false } current ? current : Task.CompletedTask;
 
