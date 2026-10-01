@@ -6,14 +6,16 @@ namespace NetPrints.Editor.Tests.Contributions;
 /// <summary>Descriptors with a null the nullable annotations forbid, as an untrusted extension could pass them.</summary>
 internal static class InvalidDescriptors
 {
-    private static T Null<T>()
-        where T : class => Unsafe.As<T>(null);
+    public static CommandDescriptor CommandWithoutHandler() => Uninitialized<CommandDescriptor>() with { Id = "netprints.command.save", Label = "Save" };
 
-    public static CommandDescriptor CommandWithoutHandler() => new("netprints.command.save", "Save", Null<ICommandHandler>());
+    public static PanelDescriptor PanelWithoutFactory() =>
+        Uninitialized<PanelDescriptor>() with { Id = "netprints.panel.errors", Title = "Errors", DefaultDock = PanelDock.Bottom };
 
-    public static PanelDescriptor PanelWithoutFactory() => new("netprints.panel.errors", "Errors", Null<Func<IServiceProvider, object>>(), PanelDock.Bottom, 0);
+    public static DashboardTileDescriptor TileWithoutFactory() => Uninitialized<DashboardTileDescriptor>() with { Id = "netprints.tile.recent", Title = "Recent" };
 
-    public static DashboardTileDescriptor TileWithoutFactory() => new("netprints.tile.recent", "Recent", 0, Null<Func<IServiceProvider, object>>());
+    public static ContextMenuItemDescriptor MenuItemWithoutGroup() =>
+        Uninitialized<ContextMenuItemDescriptor>() with { Id = "netprints.menu.save", Target = ContextMenuTarget.Node, CommandId = "netprints.command.save" };
 
-    public static ContextMenuItemDescriptor MenuItemWithoutGroup() => new("netprints.menu.save", ContextMenuTarget.Node, "netprints.command.save", Null<string>(), 0);
+    private static T Uninitialized<T>()
+        where T : class => (T)RuntimeHelpers.GetUninitializedObject(typeof(T));
 }
