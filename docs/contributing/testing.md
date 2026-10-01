@@ -83,3 +83,52 @@ NETPRINTS_E2E=1 NETPRINTS_E2E_FORCE_TIMEOUT='run' tests/NetPrints.Desktop.E2ETes
 The step names are the `using (Step("..."))` blocks of `SmokeScenarios`. The step is held at its next checkpoint, so name
 one that records a checkpoint (`start`, `open project`, `edit graph`, `run`). The variable is for manual runs only: set for a whole
 run, it would hold that step in every test.
+
+## Continuous integration
+
+Two workflows run tests ([ADR-0019](../adr/0019-ci-test-matrix-and-windows-cli-leg.md)).
+
+### `CI` (`.github/workflows/ci.yml`)
+
+Runs on every pull request to `master`, every push to `master` and on demand.
+
+| Job | Check name | What it does |
+|---|---|---|
+| `checks` | Repository checks (Linux) | Builds `NetPrints.slnx` in Release, runs the graph checks (`regen --check`, `format --check`), `dotnet format --verify-no-changes`, the Desktop E2E zero-test discovery, the CLI smoke and the sample compile and run, and fails on any changed generated file. |
+| `test` | Test (Core), Test (Catalog), Test (CLI), Test (Editor), Test (Editor UI (headless)) | One matrix leg per test project, run in parallel (`fail-fast: false`). Each leg builds only its own project in Release and runs it with `--report-xunit-trx` and static code coverage ([ADR-0008](../adr/0008-static-only-code-coverage.md)). |
+| `build-test` | **Build and test (Linux)** | The aggregate. It runs even when a job it needs failed and fails unless `checks` and every `test` leg succeeded. |
+| `e2e` | **Desktop E2E (Linux, Xvfb)** | The Desktop E2E project on Xvfb with `NETPRINTS_E2E=1` and `--fail-skips on`. |
+| `packages`, `desktop-publish`, `jsonschema` | Packages (local feed), Self-contained editor smoke (linux-x64), JSON Schema (metaschema, lint, validate) | Packaging and schema checks; they run no tests. |
+
+Branch protection requires two checks, `Build and test (Linux)` and `Desktop E2E (Linux, Xvfb)`. Do not rename them.
+A new test leg is covered by the aggregate without touching branch protection.
+
+Artifacts, uploaded even when a job fails:
+
+| Artifact | From | Content |
+|---|---|---|
+| `test-results-<leg>` | each `test` leg (`core`, `catalog`, `cli`, `editor`, `editor-ui`) | The `.trx` results of that project. |
+| `coverage-<leg>` | each `test` leg | Cobertura coverage of that project. |
+| `ui-headless` | the `editor-ui` leg | Snapshot actual and diff images, flow screenshots and per-test diagnostics. |
+| `e2e-results` | `e2e` | The `.trx` results, `ui/`, `e2e-timings-*.md` and `e2e-diagnostics/` (see [Diagnostics of a failed scenario](#diagnostics-of-a-failed-scenario)). |
+
+### `CLI (Windows)` (`.github/workflows/cli-windows.yml`)
+
+Builds `tests/NetPrints.Cli.Tests` and runs it on `windows-latest`, and uploads `test-results-cli-windows`. It runs on
+pull requests and pushes to `master` that touch the CLI, a project in its transitive `ProjectReference` closure, the
+test fixtures or the build files (the path filter), and on demand. It is not a required check.
+`CiWorkflowTests.CliWindowsPathFilterCoversTheCliTestsBuildInputs` fails when a project joins that closure without a
+path entry.
+
+A CLI test that cannot run on Windows calls `Assert.Skip("<what is missing>")` behind an OS check (for example a POSIX
+file mode). `ShowTextconvEncodingTests` never skips: it pins `show --textconv` to UTF-8 without a byte order mark,
+which the git diff driver needs.
+
+### Adding a test project
+
+1. Create `tests/<Name>.Tests` (or `.UITests`) and add it to `NetPrints.slnx`.
+2. Add a row to the `test` matrix in `ci.yml` with the `name` (the check name), the `leg` (the artifact slug) and the
+   `project`. `CiWorkflowTests` fails while a project under `tests/` has no row, has two, or a row names a missing
+   project. The Desktop E2E project is the one exception: it runs in `e2e`.
+3. If the project joins the CLI tests' closure, add its folder to the `paths` of both triggers in `cli-windows.yml`.
+4. Add the project to the table at the top of this page.

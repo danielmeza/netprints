@@ -205,7 +205,8 @@ agents" below. Guard entry points with `ArgumentNullException.ThrowIfNull`,
 - Reproduce a bug with a test that fails before fixing it. Tests use xUnit v3 and always pass
   `TestContext.Current.CancellationToken`. UI tests go through page objects and `AutomationIds`,
   with no sleeps.
-- CI (`CI` workflow) runs on Linux only and must be green before merge.
+- CI (`CI` workflow, Linux) must be green before merge. The `CLI (Windows)` workflow also runs the CLI tests on
+  `windows-latest` for changes that touch the CLI (not required, but keep it green); see `docs/contributing/testing.md`.
 
 ## Batch rules for implementer agents
 A batch prompt names the task range and pastes the task text; everything below applies to every batch.
@@ -218,8 +219,8 @@ A batch prompt names the task range and pastes the task text; everything below a
   `dotnet test --solution NetPrints.slnx -c Release --no-build --no-progress --no-ansi -- --ignore-exit-code 8`,
   then `dotnet build -c Release` (0 warnings) and `dotnet format NetPrints.slnx --verify-no-changes`.
 - **Full suite includes the Desktop E2E tests, as a second, dedicated run — mirror
-  `.github/workflows/ci.yml`'s two-job split, don't fold E2E into the solution-wide command.** The
-  solution-wide command above (no `NETPRINTS_E2E`) is CI's main `Test` job: `--ignore-exit-code 8`
+  `.github/workflows/ci.yml`'s split of `test` and `e2e`, don't fold E2E into the solution-wide command.** The
+  solution-wide command above (no `NETPRINTS_E2E`) is the local equivalent of CI's `test` matrix: `--ignore-exit-code 8`
   tolerates the Desktop E2E project's "zero tests ran" exit code (its tests self-skip without
   `NETPRINTS_E2E=1`), and `NetPrints.Editor.UITests`' `HeadlessSmokeTests.MinimizeAndRestoreClassWindow`/
   `PanCursor`/`DragFromLists` always skip too (the headless driver has no window manager, real cursor or
