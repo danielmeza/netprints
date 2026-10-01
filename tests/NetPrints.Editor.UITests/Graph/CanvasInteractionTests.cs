@@ -49,8 +49,8 @@ public class CanvasInteractionTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task CtrlSpaceInAPinValueTextBoxDoesNotOpenSearch()
     {
-        // R2-15: the Ctrl+Space handler sits on the whole window, so it must skip a text box instead
-        // of opening the node search over whatever the user is typing.
+        // R2-15: the canvas's scoped key behavior must leave a text box alone instead of opening
+        // the node search over whatever the user is typing.
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var valuePin = session.GraphViewModel.Nodes.Single(n => n.Node is CallMethodNode).InputDataPins.Single();
         var valueBox = session.Graph.Node("CallMethodNode").Input(valuePin.Pin.Name).ValueBox;

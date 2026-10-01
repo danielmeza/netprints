@@ -61,6 +61,23 @@ public sealed class MainEditorProjectActionsTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task NewProjectCreatesAndLoadsTheProject()
+    {
+        string directory = TestPaths.CreateTempDirectory();
+        cleanup.Add(directory);
+        string path = Path.Combine(directory, "Fresh.csproj");
+        editor.FilePicker.SaveFileAnswers.Enqueue(path);
+        var model = new MainEditorViewModel(editor.Context);
+        models.Add(model);
+
+        await ((IProjectActions)model).NewProjectAsync(Token);
+
+        Assert.True(File.Exists(path));
+        Assert.Equal("Fresh", model.Project?.Name);
+        Assert.NotNull(model.Session);
+    }
+
+    [Fact]
     public async Task CloseProjectClosesTheEditorsAndTheSession()
     {
         (MainEditorViewModel model, IProjectActions actions, _) = await OpenAsync();
