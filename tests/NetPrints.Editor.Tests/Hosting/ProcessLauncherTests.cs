@@ -1,0 +1,47 @@
+using System.Diagnostics;
+using NetPrints.Editor.Hosting;
+using NetPrints.Editor.Hosting.Avalonia;
+using NetPrints.Projects;
+
+namespace NetPrints.Editor.Tests.Hosting;
+
+/// <summary><see cref="ProcessLauncher"/>: the exit is always reported, after the start and without waiting for stray pipe holders.</summary>
+public class ProcessLauncherTests
+{
+    private static readonly ProcessStartRequest Instant = OperatingSystem.IsWindows()
+        ? new("cmd", ["/c", "exit", "0"], Environment.CurrentDirectory)
+        : new("true", [], Environment.CurrentDirectory);
+
+    [Fact]
+    public async Task AnInstantlyExitingProgramAlwaysEndsExited()
+    {
+        var launcher = new ProcessLauncher();
+        using var tracker = new RunStateTracker(launcher);
+
+        for (int i = 0; i < 100; i++)
+        {
+            launcher.Start(Instant);
+            var deadline = Stopwatch.StartNew();
+            while (tracker.Snapshot().Phase != RunPhase.Exited)
+            {
+                Assert.True(deadline.Elapsed < TimeSpan.FromSeconds(10), $"run {i} never reported its exit (phase {tracker.Snapshot().Phase})");
+                await Task.Delay(5, TestContext.Current.CancellationToken);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task TheExitIsReportedEvenWhenAGrandchildKeepsThePipesOpen()
+    {
+        Assert.SkipWhen(OperatingSystem.IsWindows(), "needs a POSIX shell");
+        var launcher = new ProcessLauncher { DrainTimeout = TimeSpan.FromMilliseconds(500) };
+        var exited = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        launcher.ProcessExited += (_, code) => exited.TrySetResult(code);
+
+        launcher.Start(new("sh", ["-c", "sleep 20 & exit 3"], Environment.CurrentDirectory));
+
+        var done = await Task.WhenAny(exited.Task, Task.Delay(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
+        Assert.Same(exited.Task, done);
+        Assert.Equal(3, await exited.Task);
+    }
+}

@@ -119,16 +119,12 @@ public sealed class CapturingProcessLauncher : IProcessLauncher, IDisposable
             }
         }
 
-        var process = new Process
-        {
-            StartInfo = startInfo,
-            EnableRaisingEvents = true,
-        };
+        var process = new Process { StartInfo = startInfo };
         process.OutputDataReceived += (_, e) => Append(id, ProcessStream.Output, e.Data);
         process.ErrorDataReceived += (_, e) => Append(id, ProcessStream.Error, e.Data);
         process.Exited += (_, _) =>
         {
-            process.WaitForExit();
+            process.WaitForExit(TimeSpan.FromSeconds(5));
             ProcessExited?.Invoke(id, process.ExitCode);
             OutputReceived?.Invoke($"Process exited (code {process.ExitCode}).");
         };
@@ -136,6 +132,7 @@ public sealed class CapturingProcessLauncher : IProcessLauncher, IDisposable
         ProcessStarted?.Invoke(id, request);
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
+        process.EnableRaisingEvents = true;
         processes.Add(process);
     }
 

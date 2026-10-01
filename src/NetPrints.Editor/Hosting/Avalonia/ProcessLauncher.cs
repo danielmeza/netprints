@@ -10,6 +10,9 @@ public sealed class ProcessLauncher : IProcessLauncher
 {
     private int lastId;
 
+    /// <summary>How long an exit waits for the redirected streams to drain before it is reported anyway.</summary>
+    internal TimeSpan DrainTimeout { get; init; } = TimeSpan.FromSeconds(5);
+
     /// <inheritdoc/>
     public event Action<string>? OutputReceived;
 
@@ -47,27 +50,35 @@ public sealed class ProcessLauncher : IProcessLauncher
             }
         }
 
-        var process = new Process
-        {
-            StartInfo = startInfo,
-            EnableRaisingEvents = true,
-        };
+        var process = new Process { StartInfo = startInfo };
 
         process.OutputDataReceived += (_, e) => Report(id, ProcessStream.Output, e.Data);
         process.ErrorDataReceived += (_, e) => Report(id, ProcessStream.Error, e.Data);
-        process.Exited += (_, _) =>
-        {
-            process.WaitForExit(); // drains the redirected streams, so every line precedes the exit
-            int code = process.ExitCode;
-            ProcessExited?.Invoke(id, code);
-            OutputReceived?.Invoke($"Process exited (code {code}).");
-            process.Dispose();
-        };
+        process.Exited += (_, _) => _ = ReportExitAsync();
 
         process.Start();
         ProcessStarted?.Invoke(id, request);
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
+        process.EnableRaisingEvents = true; // after the start is reported, so a fast exit never precedes it
+
+        async Task ReportExitAsync()
+        {
+            try
+            {
+                using var drain = new CancellationTokenSource(DrainTimeout);
+                await process.WaitForExitAsync(drain.Token).ConfigureAwait(false); // every line precedes the exit
+            }
+            catch (OperationCanceledException)
+            {
+                // a grandchild holds the pipes open: report the exit anyway
+            }
+
+            int code = process.ExitCode;
+            ProcessExited?.Invoke(id, code);
+            OutputReceived?.Invoke($"Process exited (code {code}).");
+            process.Dispose();
+        }
     }
 
     private void Report(int id, ProcessStream stream, string? line)
