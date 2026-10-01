@@ -34,6 +34,8 @@
     <ProjectReference Include="..\..\src\NetPrints.Editor\NetPrints.Editor.csproj" />
     <ProjectReference Include="..\NetPrints.Testing\NetPrints.Testing.csproj" />
     <ProjectReference Include="..\NetPrints.Testing.Ui\NetPrints.Testing.Ui.csproj" />
+    <!-- Built first, never referenced: the compile-and-run scenarios build a temp project against the generator's own output folder. -->
+    <ProjectReference Include="..\..\src\NetPrints.Generator\NetPrints.Generator.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <!-- Committed snapshot baselines are read from (and, when updating, written to) the source tree. -->
