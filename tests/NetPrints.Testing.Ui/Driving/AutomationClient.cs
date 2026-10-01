@@ -46,7 +46,7 @@ public sealed class AutomationClient : IAsyncDisposable
         {
             if (outOfStep)
             {
-                throw new IOException("A cancelled request left its reply in the pipe; open a new connection.");
+                throw new IOException("An earlier request was cancelled or failed mid-exchange and may have left its reply in the pipe; open a new connection.");
             }
 
             string line;
@@ -55,7 +55,7 @@ public sealed class AutomationClient : IAsyncDisposable
                 await writer.WriteLineAsync(JsonSerializer.Serialize(request, AutomationJsonContext.Default.AutomationRequest).AsMemory(), cancellationToken);
                 line = await reader.ReadLineAsync(cancellationToken) ?? throw new IOException("The automation agent closed the connection.");
             }
-            catch (OperationCanceledException)
+            catch
             {
                 outOfStep = true;
                 throw;

@@ -34,6 +34,24 @@ public sealed class AutomationClientTests
         await serving.WaitAsync(TimeSpan.FromSeconds(10), Token);
     }
 
+    [Fact]
+    public async Task ACallAfterAFailedExchangeNamesTheCause()
+    {
+        string pipe = Path.Combine(Path.GetTempPath(), "netprints-client-" + Guid.NewGuid().ToString("N"));
+        var server = new NamedPipeServerStream(pipe, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
+        var accepting = server.WaitForConnectionAsync(Token);
+        await using var client = await AutomationClient.ConnectAsync(pipe, TimeSpan.FromSeconds(10), Token);
+        await accepting;
+        await server.DisposeAsync();
+
+        var first = await Record.ExceptionAsync(() => client.DumpAsync(Token));
+        var second = await Record.ExceptionAsync(() => client.DumpAsync(Token));
+
+        Assert.IsType<IOException>(first);
+        Assert.IsType<IOException>(second);
+        Assert.Contains("open a new connection", second.Message, StringComparison.Ordinal);
+    }
+
     private static async Task ServeAsync(NamedPipeServerStream server, TaskCompletionSource firstRead, TaskCompletionSource releaseFirstReply)
     {
         await using (server)
