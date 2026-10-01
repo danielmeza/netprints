@@ -192,10 +192,30 @@ public sealed class FakeProcessLauncher : IProcessLauncher
 
     public event Action<string>? OutputReceived;
 
-    public void Start(ProcessStartRequest request) => Started.Add(request);
+    public event Action<ProcessStartRequest>? ProcessStarted;
+
+    public event Action<ProcessStream, string>? LineReceived;
+
+    public event Action<int>? ProcessExited;
+
+    public void Start(ProcessStartRequest request)
+    {
+        Started.Add(request);
+        ProcessStarted?.Invoke(request);
+    }
 
     /// <summary>Simulates a line of output, for tests of the Output pane wiring.</summary>
     public void Raise(string line) => OutputReceived?.Invoke(line);
+
+    /// <summary>Simulates a line of one of the started process's streams.</summary>
+    public void RaiseLine(ProcessStream stream, string line)
+    {
+        LineReceived?.Invoke(stream, line);
+        OutputReceived?.Invoke(line);
+    }
+
+    /// <summary>Simulates the started process exiting.</summary>
+    public void RaiseExited(int code) => ProcessExited?.Invoke(code);
 }
 
 /// <summary>
@@ -387,7 +407,7 @@ public sealed class TestEditor : IAsyncDisposable
 
         Context = new EditorContext(FilePicker, Dialogs, Clipboard, Dispatcher, Reflection, Windows, Processes,
             Scheduler, () => new StrongReferenceMessenger(), NullLoggerFactory.Instance, Projects, Persistence,
-            Extensions, hostChannel, Settings, CodeAnalysis);
+            Extensions, hostChannel, Settings, CodeAnalysis, new RunStateTracker(Processes));
     }
 
     /// <summary>

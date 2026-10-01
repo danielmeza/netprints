@@ -88,6 +88,7 @@ internal sealed class EditorServices : IDisposable
     private readonly string? hostChannelError;
     private readonly PersistenceBinding persistenceBinding;
     private readonly ICodeAnalysisHost codeAnalysis;
+    private readonly RunStateTracker runState;
 
     /// <param name="host">Process-wide services created once by the host (desktop, headless tests).</param>
     /// <param name="windows">The window service, already constructed by the caller so it can hand the same
@@ -115,6 +116,8 @@ internal sealed class EditorServices : IDisposable
         var reflection = new ReflectionHost(dispatcher, host.Extensions, host.LoggerFactory.CreateLogger<ReflectionHost>());
         codeAnalysis = new CodeAnalysisHost(reflection, host.Extensions, DefaultScheduler.Instance, dispatcher, host.LoggerFactory.CreateLogger<CodeAnalysisHost>());
 
+        runState = new RunStateTracker(processes);
+
         Context = new EditorContext(
             filePicker,
             dialogs,
@@ -131,7 +134,8 @@ internal sealed class EditorServices : IDisposable
             host.Extensions,
             host.HostChannel,
             host.Settings,
-            codeAnalysis);
+            codeAnalysis,
+            runState);
     }
 
     /// <summary>The composed host services.</summary>
@@ -188,6 +192,7 @@ internal sealed class EditorServices : IDisposable
         MainEditor?.Dispose();
         persistenceBinding.Dispose();
         codeAnalysis.Dispose();
+        runState.Dispose();
     }
 }
 

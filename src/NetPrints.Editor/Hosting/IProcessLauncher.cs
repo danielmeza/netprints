@@ -18,4 +18,13 @@ public interface IProcessLauncher
     /// platform, whether or not the host has its own visible console for the child.
     /// </summary>
     event Action<string>? OutputReceived;
+
+    /// <summary>Raised once a process was started, before any of its lines.</summary>
+    event Action<ProcessStartRequest>? ProcessStarted;
+
+    /// <summary>One line of a started process's stdout or stderr, with the stream it came from (never the status line).</summary>
+    event Action<ProcessStream, string>? LineReceived;
+
+    /// <summary>A started process exited with this code, after all of its lines were reported.</summary>
+    event Action<int>? ProcessExited;
 }

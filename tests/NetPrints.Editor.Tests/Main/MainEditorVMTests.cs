@@ -254,6 +254,7 @@ public class MainEditorVMTests : IDisposable
         Assert.True(vm.Project?.LastCompilationSucceeded);
         Assert.Equal("Build succeeded", vm.Project?.CompilationMessage);
         Assert.Equal(1, editor.Processes.Started.Count());
+        Assert.Equal(RunPhase.Running, editor.Context.RunState.Snapshot().Phase);
     }
 
     [Fact]

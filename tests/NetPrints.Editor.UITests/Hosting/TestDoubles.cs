@@ -76,6 +76,12 @@ public sealed class CapturingProcessLauncher : IProcessLauncher, IDisposable
 
     public event Action<string>? OutputReceived;
 
+    public event Action<ProcessStartRequest>? ProcessStarted;
+
+    public event Action<ProcessStream, string>? LineReceived;
+
+    public event Action<int>? ProcessExited;
+
     public string Output
     {
         get
@@ -116,19 +122,26 @@ public sealed class CapturingProcessLauncher : IProcessLauncher, IDisposable
             StartInfo = startInfo,
             EnableRaisingEvents = true,
         };
-        process.OutputDataReceived += (_, e) => Append(e.Data);
-        process.ErrorDataReceived += (_, e) => Append(e.Data);
-        process.Exited += (_, _) => OutputReceived?.Invoke($"Process exited (code {process.ExitCode}).");
+        process.OutputDataReceived += (_, e) => Append(ProcessStream.Output, e.Data);
+        process.ErrorDataReceived += (_, e) => Append(ProcessStream.Error, e.Data);
+        process.Exited += (_, _) =>
+        {
+            process.WaitForExit();
+            ProcessExited?.Invoke(process.ExitCode);
+            OutputReceived?.Invoke($"Process exited (code {process.ExitCode}).");
+        };
         process.Start();
+        ProcessStarted?.Invoke(request);
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
         processes.Add(process);
     }
 
-    private void Append(string? line)
+    private void Append(ProcessStream stream, string? line)
     {
         if (line is not null)
         {
+            LineReceived?.Invoke(stream, line);
             lock (output)
             {
                 output.AppendLine(line);

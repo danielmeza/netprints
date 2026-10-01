@@ -60,17 +60,18 @@ public abstract class X11SmokeTestBase(DesktopWorkerPool pool) : SmokeScenarios,
     /// </summary>
     protected async Task RunScenarioAsync(Func<CancellationToken, Task> scenario)
     {
+        using var watch = Steps.WatchFailures();
         try
         {
             await scenario(Token);
         }
         catch (Exception original) when (lease is not null && driver is not null)
         {
-            var open = Steps.OpenStep;
+            var moment = Steps.WhereFailed(original);
             string kind = editorExited ? "editor exited" : timeoutCts.IsCancellationRequested ? "timeout" : original is Xunit.Sdk.XunitException ? "assertion" : "exception";
-            var parts = DiagnosticParts.Create(kind, GetType().Name, Steps, lease, driver.Tool);
+            var parts = DiagnosticParts.Create(kind, GetType().Name, Steps, moment, lease, driver.Tool);
             throw await new FailureCapture(TimeProvider.System, parts)
-                .FailAsync(original, open?.Name, open?.Elapsed ?? TimeSpan.Zero, FailureCapture.FolderFor(GetType().Name), CancellationToken.None);
+                .FailAsync(original, moment.Step, moment.Elapsed, FailureCapture.FolderFor(GetType().Name), CancellationToken.None);
         }
         finally
         {

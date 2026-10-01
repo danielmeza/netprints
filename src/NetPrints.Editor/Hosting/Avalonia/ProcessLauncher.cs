@@ -12,6 +12,15 @@ public sealed class ProcessLauncher : IProcessLauncher
     public event Action<string>? OutputReceived;
 
     /// <inheritdoc/>
+    public event Action<ProcessStartRequest>? ProcessStarted;
+
+    /// <inheritdoc/>
+    public event Action<ProcessStream, string>? LineReceived;
+
+    /// <inheritdoc/>
+    public event Action<int>? ProcessExited;
+
+    /// <inheritdoc/>
     public void Start(ProcessStartRequest request)
     {
         var startInfo = new ProcessStartInfo(request.FileName)
@@ -41,23 +50,28 @@ public sealed class ProcessLauncher : IProcessLauncher
             EnableRaisingEvents = true,
         };
 
-        process.OutputDataReceived += (_, e) => Report(e.Data);
-        process.ErrorDataReceived += (_, e) => Report(e.Data);
+        process.OutputDataReceived += (_, e) => Report(ProcessStream.Output, e.Data);
+        process.ErrorDataReceived += (_, e) => Report(ProcessStream.Error, e.Data);
         process.Exited += (_, _) =>
         {
-            OutputReceived?.Invoke($"Process exited (code {process.ExitCode}).");
+            process.WaitForExit(); // drains the redirected streams, so every line precedes the exit
+            int code = process.ExitCode;
+            ProcessExited?.Invoke(code);
+            OutputReceived?.Invoke($"Process exited (code {code}).");
             process.Dispose();
         };
 
         process.Start();
+        ProcessStarted?.Invoke(request);
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
     }
 
-    private void Report(string? line)
+    private void Report(ProcessStream stream, string? line)
     {
         if (line is not null)
         {
+            LineReceived?.Invoke(stream, line);
             OutputReceived?.Invoke(line);
         }
     }

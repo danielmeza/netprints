@@ -1,6 +1,7 @@
 using System.IO.Pipes;
 using System.Text;
 using System.Text.Json;
+using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Hosting.Automation;
 
 namespace NetPrints.Testing.Ui.Driving;
@@ -65,6 +66,10 @@ public sealed class AutomationClient : IAsyncDisposable
     /// <summary>Every window and every control with an automation id, hidden ones included.</summary>
     public async Task<IReadOnlyList<AutomationElement>> TreeAsync(CancellationToken cancellationToken) =>
         (await SendAsync(new AutomationRequest("tree"), cancellationToken)).Elements ?? [];
+
+    /// <summary>The state of the last program the editor launched.</summary>
+    public async Task<RunStateSnapshot> RunStateAsync(CancellationToken cancellationToken) =>
+        (await SendAsync(new AutomationRequest("runState"), cancellationToken)).RunState ?? throw new IOException("The reply carried no run state.");
 
     public async Task SettleAsync(CancellationToken cancellationToken) => await SendAsync(new AutomationRequest("settle"), cancellationToken);
 

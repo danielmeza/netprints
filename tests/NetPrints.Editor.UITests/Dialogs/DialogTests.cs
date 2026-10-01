@@ -98,9 +98,10 @@ public class DialogTests
         var extensions = new NetPrints.Extensibility.Loading.ExtensionHost(NetPrints.Extensibility.Loading.ExtensionLoaderOptions.BuiltInOnly, NullLoggerFactory.Instance);
         var reflection = new ReflectionHost(dispatcher, extensions, NullLogger<ReflectionHost>.Instance);
         using var codeAnalysis = new CodeAnalysisHost(reflection, extensions, System.Reactive.Concurrency.DefaultScheduler.Instance, dispatcher, NullLogger<CodeAnalysisHost>.Instance);
+        var processes = new CapturingProcessLauncher();
         var context = new EditorContext(new QueuedFilePicker(), new RecordingDialogs(), new NoClipboard(), dispatcher,
             reflection,
-            new NetPrints.Editor.Hosting.Avalonia.WindowService(), new CapturingProcessLauncher(),
+            new NetPrints.Editor.Hosting.Avalonia.WindowService(), processes,
             System.Reactive.Concurrency.DefaultScheduler.Instance,
             () => new CommunityToolkit.Mvvm.Messaging.WeakReferenceMessenger(), NullLoggerFactory.Instance,
             noSdkProjects, TestPersistence.Create(noSdkProjects),
@@ -108,7 +109,8 @@ public class DialogTests
             NetPrints.Extensibility.Hosting.NullHostChannel.Instance,
             new NetPrints.Extensibility.Settings.JsonFileSettingsStore(Path.Combine(Path.GetTempPath(), "netprints-unused", "settings.json"),
                 NullLogger<NetPrints.Extensibility.Settings.JsonFileSettingsStore>.Instance),
-            codeAnalysis);
+            codeAnalysis,
+            new RunStateTracker(processes));
         using var ui = HeadlessUi.Create();
         using var referenceListVM = new ReferenceListViewModel(project, context);
         ui.Show(new ReferencesDialog { DataContext = referenceListVM });

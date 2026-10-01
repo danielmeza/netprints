@@ -103,7 +103,8 @@ public partial class EditorApp : Application
                         composition.Context.Reflection.IsLoaded,
                         startupProject,
                         Environment.ProcessId),
-                        HostServices.LoggerFactory.CreateLogger<AutomationAgent>());
+                        HostServices.LoggerFactory.CreateLogger<AutomationAgent>(),
+                        composition.Context.RunState.Snapshot);
                 }
                 catch (Exception e)
                 {

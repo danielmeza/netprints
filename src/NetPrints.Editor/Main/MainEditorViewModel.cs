@@ -529,6 +529,7 @@ public sealed partial class MainEditorViewModel : ObservableObject, IDisposable
     {
         project.IsCompiling = true;
         project.CompilationMessage = "Compiling...";
+        context.RunState.BuildStarted();
         try
         {
             await context.Persistence.SaveAsync(project, cls => RenderForBuild(context, project, cls), CancellationToken.None);
@@ -554,6 +555,7 @@ public sealed partial class MainEditorViewModel : ObservableObject, IDisposable
         finally
         {
             project.IsCompiling = false;
+            context.RunState.BuildFinished();
         }
     }
 

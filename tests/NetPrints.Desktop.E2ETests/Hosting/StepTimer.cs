@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Globalization;
+using System.Runtime.ExceptionServices;
 
 namespace NetPrints.Desktop.E2ETests.Hosting;
 
@@ -14,16 +15,17 @@ public sealed class StepTimer(string testName, string? forcedStep = null)
     /// <summary>Names a step to hold until the test is cancelled, for a manual run of one class (see <see cref="HoldIfForcedAsync"/>).</summary>
     public const string ForceVariable = "NETPRINTS_E2E_FORCE_TIMEOUT";
 
+    /// <summary>The folder the run's results go to: the parent of <c>NETPRINTS_UI_ARTIFACTS</c>, else <c>TestResults</c>.</summary>
+    public static string ResultsDirectory { get; } = (Environment.GetEnvironmentVariable("NETPRINTS_UI_ARTIFACTS") is { Length: > 0 } artifactsDir
+        ? Path.GetDirectoryName(artifactsDir)
+        : null) ?? "TestResults";
+
     private static readonly Lock FileLock = new();
     private static readonly string SummaryPath = CreateSummaryFile();
 
     private readonly Lock gate = new();
     private readonly List<StepScope> steps = [];
-
-    /// <summary>The folder the run's results go to: the parent of <c>NETPRINTS_UI_ARTIFACTS</c>, else <c>TestResults</c>.</summary>
-    public static string ResultsDirectory { get; } = (Environment.GetEnvironmentVariable("NETPRINTS_UI_ARTIFACTS") is { Length: > 0 } artifactsDir
-        ? Path.GetDirectoryName(artifactsDir)
-        : null) ?? "TestResults";
+    private readonly System.Runtime.CompilerServices.ConditionalWeakTable<Exception, FailureMoment> thrown = [];
 
     /// <summary>The step that is open now and how long it has been running, or <see langword="null"/> between steps.</summary>
     public (string Name, TimeSpan Elapsed)? OpenStep
@@ -62,18 +64,51 @@ public sealed class StepTimer(string testName, string? forcedStep = null)
         }
     }
 
-    /// <summary>The steps so far as a Markdown table, the open one marked <c>(running)</c>.</summary>
-    public string Timings()
+    /// <summary>
+    /// Remembers, for every exception thrown while the returned scope lives, which step was open at the
+    /// first throw: by the time a failure reaches the scenario's caller the steps have been closed by
+    /// their <c>using</c> blocks. Dispose to stop.
+    /// </summary>
+    public IDisposable WatchFailures()
+    {
+        void OnThrown(object? sender, FirstChanceExceptionEventArgs e) => thrown.TryAdd(e.Exception, Where());
+        AppDomain.CurrentDomain.FirstChanceException += OnThrown;
+        return new Unsubscribe(() => AppDomain.CurrentDomain.FirstChanceException -= OnThrown);
+    }
+
+    /// <summary>Where the test was when <paramref name="failure"/> (or an exception it wraps) was first thrown, else where it is now.</summary>
+    public FailureMoment WhereFailed(Exception failure)
+    {
+        for (var e = failure; e is not null; e = e.InnerException)
+        {
+            if (thrown.TryGetValue(e, out var moment) && moment.Step is not null)
+            {
+                return moment;
+            }
+        }
+
+        return Where();
+    }
+
+    private FailureMoment Where()
+    {
+        lock (gate)
+        {
+            var entries = steps.Select(s => new StepEntry(s.Name, s.Elapsed, !s.IsClosed)).ToList();
+            var open = entries.LastOrDefault(e => e.Running);
+            return new FailureMoment(open?.Name, open?.Elapsed ?? TimeSpan.Zero, entries);
+        }
+    }
+
+    /// <summary>The steps of a moment (now by default) as a Markdown table, a running one marked <c>(running)</c>.</summary>
+    public string Timings(FailureMoment? moment = null)
     {
         var text = new System.Text.StringBuilder().AppendLine(CultureInfo.InvariantCulture, $"# {testName}").AppendLine()
             .AppendLine("| step | ms |").AppendLine("|---|---|");
-        lock (gate)
+        foreach (var step in (moment ?? Where()).Entries)
         {
-            foreach (var step in steps)
-            {
-                text.AppendLine(CultureInfo.InvariantCulture,
-                    $"| {step.Name}{(step.IsClosed ? "" : " (running)")} | {step.Elapsed.TotalMilliseconds.ToString("F0", CultureInfo.InvariantCulture)} |");
-            }
+            text.AppendLine(CultureInfo.InvariantCulture,
+                $"| {step.Name}{(step.Running ? " (running)" : "")} | {step.Elapsed.TotalMilliseconds.ToString("F0", CultureInfo.InvariantCulture)} |");
         }
 
         return text.ToString();
@@ -121,4 +156,21 @@ public sealed class StepTimer(string testName, string? forcedStep = null)
             timer.Record(name, clock.Elapsed);
         }
     }
+}
+
+/// <summary>One step of a test: how long it ran, and whether it was still open.</summary>
+/// <param name="Name">The step's name.</param>
+/// <param name="Elapsed">How long it ran, or had run.</param>
+/// <param name="Running">Whether it was open.</param>
+public sealed record StepEntry(string Name, TimeSpan Elapsed, bool Running);
+
+/// <summary>The state of a test's steps at one moment, usually the first throw of a failure.</summary>
+/// <param name="Step">The open step's name, or <see langword="null"/> when none was open.</param>
+/// <param name="Elapsed">How long that step had run.</param>
+/// <param name="Entries">Every step so far, in order.</param>
+public sealed record FailureMoment(string? Step, TimeSpan Elapsed, IReadOnlyList<StepEntry> Entries);
+
+file sealed class Unsubscribe(Action action) : IDisposable
+{
+    public void Dispose() => action();
 }

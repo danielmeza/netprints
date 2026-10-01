@@ -17,31 +17,32 @@ public static class DiagnosticParts
     /// <param name="kind">The failure kind (exception, assertion, timeout, editor exited).</param>
     /// <param name="testClass">The failing test class.</param>
     /// <param name="steps">The test's step timer.</param>
+    /// <param name="moment">Where the test was when it failed.</param>
     /// <param name="lease">The worker and editor the test holds.</param>
     /// <param name="tool">Runs the X11 tools against the worker's display.</param>
-    public static IReadOnlyList<CapturePart> Create(string kind, string testClass, StepTimer steps, DesktopLease lease, Tool tool)
+    public static IReadOnlyList<CapturePart> Create(string kind, string testClass, StepTimer steps, FailureMoment moment, DesktopLease lease, Tool tool)
     {
         var editor = lease.Editor;
         return
         [
-            new("summary", "summary.md", (path, token) => File.WriteAllTextAsync(path, Summary(kind, testClass, steps, lease), token)),
-            new("timings", "timings.md", (path, token) => File.WriteAllTextAsync(path, steps.Timings(), token)),
+            new("summary", "summary.md", (path, token) => File.WriteAllTextAsync(path, Summary(kind, testClass, moment, lease), token)),
+            new("timings", "timings.md", (path, token) => File.WriteAllTextAsync(path, steps.Timings(moment), token)),
             new("ui tree", "ui-tree.json", (path, token) => WriteUiTreeAsync(path, editor, token)),
             new("display", "display.png", async (path, token) =>
                 await File.WriteAllBytesAsync(path, await tool.RunBytesAsync("import", ["-window", "root", "png:-"], token, timeout: ToolLimit), token)),
             new("editor log", "editor.log", (path, token) => File.WriteAllTextAsync(path, EditorLog(editor), token)),
+            new("run state", "run-state.json", (path, token) => WriteRunStateAsync(path, editor, token)),
             new("process", "process.txt", (path, token) => File.WriteAllTextAsync(path, editor.HasExited ? $"exited {editor.ExitCode}" : "running", token)),
         ];
     }
 
-    private static string Summary(string kind, string testClass, StepTimer steps, DesktopLease lease)
+    private static string Summary(string kind, string testClass, FailureMoment moment, DesktopLease lease)
     {
-        var open = steps.OpenStep;
         return new StringBuilder()
             .AppendLine(CultureInfo.InvariantCulture, $"# {testClass}").AppendLine()
             .AppendLine(CultureInfo.InvariantCulture, $"- failure: {kind}")
             .AppendLine(CultureInfo.InvariantCulture, $"- test: {TestContext.Current.TestMethod?.MethodName ?? "test"}")
-            .AppendLine(CultureInfo.InvariantCulture, $"- step: {open?.Name ?? "(none)"} ({Math.Round(open?.Elapsed.TotalSeconds ?? 0).ToString("0", CultureInfo.InvariantCulture)} s)")
+            .AppendLine(CultureInfo.InvariantCulture, $"- step: {moment.Step ?? "(none)"} ({Math.Round(moment.Elapsed.TotalSeconds).ToString("0", CultureInfo.InvariantCulture)} s)")
             .AppendLine(CultureInfo.InvariantCulture, $"- display: {lease.Server.DisplayName}")
             .AppendLine(CultureInfo.InvariantCulture, $"- editor pid: {lease.Editor.ProcessId}")
             .AppendLine(CultureInfo.InvariantCulture, $"- time: {DateTime.UtcNow:O}")
@@ -54,6 +55,18 @@ public static class DiagnosticParts
             string.Join(Environment.NewLine, text.Split('\n', StringSplitOptions.TrimEntries).TakeLast(lines));
 
         return Tail(editor.Output, EditorLogLines) + Environment.NewLine + "--- stderr ---" + Environment.NewLine + Tail(editor.Errors, StderrLines) + Environment.NewLine;
+    }
+
+    private static async Task WriteRunStateAsync(string path, EditorProcess editor, CancellationToken cancellationToken)
+    {
+        if (editor.HasExited)
+        {
+            await File.WriteAllTextAsync(path, $"{{\"editorExitCode\":{editor.ExitCode.ToString(CultureInfo.InvariantCulture)}}}", cancellationToken);
+            return;
+        }
+
+        var state = await editor.Client.RunStateAsync(cancellationToken);
+        await File.WriteAllTextAsync(path, JsonSerializer.Serialize(state, AutomationJsonContext.Default.RunStateSnapshot), cancellationToken);
     }
 
     private static async Task WriteUiTreeAsync(string path, EditorProcess editor, CancellationToken cancellationToken)

@@ -36,6 +36,9 @@ public sealed record AutomationResponse(bool Ok)
     /// <summary>The editor's ready-signal snapshot, for a <c>status</c> request.</summary>
     public AutomationStatus? Status { get; init; }
 
+    /// <summary>The last launched program's state, for a <c>runState</c> request.</summary>
+    public RunStateSnapshot? RunState { get; init; }
+
     /// <summary>The window/element tree dump, for a <c>dump</c> request.</summary>
     public string? Text { get; init; }
 }
@@ -48,7 +51,8 @@ public sealed class AutomationProtocolException(string message) : IOException(me
 /// <c>NETPRINTS_AUTOMATION=1</c>: a local pipe (a Unix domain socket on Linux) that answers
 /// line-delimited JSON requests — <c>status</c> (the ready signal), <c>find</c> (elements by
 /// automation id with screen bounds and properties), <c>dump</c>, <c>tree</c> (every window and
-/// every control with an automation id, for failure diagnostics) and <c>settle</c>. It never
+/// every control with an automation id) and <c>runState</c> (the last launched program), both for
+/// failure diagnostics, and <c>settle</c>. It never
 /// changes the UI: tests send real input through the operating system (xdotool).
 ///
 /// The pipe is current-user-only (<see cref="PipeOptions.CurrentUserOnly"/> on both ends) and, by
@@ -78,6 +82,7 @@ public sealed class AutomationAgent : IDisposable
     private readonly string pipeName;
     private readonly AutomationTree tree;
     private readonly Func<AutomationStatus> status;
+    private readonly Func<RunStateSnapshot>? runState;
     private readonly ILogger<AutomationAgent> logger;
     private readonly CancellationTokenSource stop = new();
     private readonly SemaphoreSlim connectionSlots = new(MaxConcurrentConnections, MaxConcurrentConnections);
@@ -88,7 +93,7 @@ public sealed class AutomationAgent : IDisposable
     /// already owning the name, …) throw synchronously from here, so the caller can log them and
     /// fail fast instead of the bind happening inside a background task nobody observes.
     /// </summary>
-    public AutomationAgent(string pipeName, AutomationTree tree, Func<AutomationStatus> status, ILogger<AutomationAgent> logger)
+    public AutomationAgent(string pipeName, AutomationTree tree, Func<AutomationStatus> status, ILogger<AutomationAgent> logger, Func<RunStateSnapshot>? runState = null)
     {
         ArgumentNullException.ThrowIfNull(pipeName);
         ArgumentNullException.ThrowIfNull(tree);
@@ -98,6 +103,7 @@ public sealed class AutomationAgent : IDisposable
         this.pipeName = pipeName;
         this.tree = tree;
         this.status = status;
+        this.runState = runState;
         this.logger = logger;
         nextServer = CreateServer();
         Task.Run(AcceptLoopAsync).Forget(e => LogError("accept loop task fault", e));
@@ -241,6 +247,9 @@ public sealed class AutomationAgent : IDisposable
                 return new AutomationResponse(true) { Elements = await Dispatcher.UIThread.InvokeAsync(() => tree.Find(query)) };
             case "dump":
                 return new AutomationResponse(true) { Text = await Dispatcher.UIThread.InvokeAsync(tree.Dump) };
+            case "runState":
+                var provider = runState ?? throw new InvalidOperationException("This agent has no run state.");
+                return new AutomationResponse(true) { RunState = provider() };
             case "tree":
                 return new AutomationResponse(true) { Elements = await Dispatcher.UIThread.InvokeAsync(tree.Snapshot) };
             case "settle":
