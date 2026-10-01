@@ -43,13 +43,13 @@ public class LocalVariablePanelTests
 
         var methodVariables = session.ClassViewModel.VariablesPanel.MethodVariables
             ?? throw new InvalidOperationException("No method or constructor graph is open.");
-        var localVM = methodVariables.Single();
+        var localViewModel = methodVariables.Single();
 
         // Retype (undoable): drives the command directly, the same way EventGraphTests drives
         // RemoveEventGraphCommand — the row's retype button (like the method/variable/event graph
         // rows' remove buttons) has no automation id.
         session.App.Dialogs.TypeAnswer = TypeSpecifier.FromType<int>();
-        await localVM.RetypeCommand.ExecuteAsync(null);
+        await localViewModel.RetypeCommand.ExecuteAsync(null);
         Assert.Equal(TypeSpecifier.FromType<int>(), method.LocalVariables.Single().Type);
 
         await session.ClassEditor.PressUndoAsync(Token);
@@ -62,7 +62,7 @@ public class LocalVariablePanelTests
         // own drag source entirely, hiding the name box's TextBox swallowing the press (R2-03).
         var at = await session.Graph.EmptyPointAsync(Token);
 
-        await session.ClassEditor.LocalVariables.LocalVariableNameBox(localVM.Name).DragToAsync(at, Token);
+        await session.ClassEditor.LocalVariables.LocalVariableNameBox(localViewModel.Name).DragToAsync(at, Token);
 
         await session.Graph.GetSet.WaitOpenAsync(Token);
         await session.Graph.GetSet.SetButton.ClickAsync(Token);
@@ -73,12 +73,12 @@ public class LocalVariablePanelTests
         Assert.Single(setter.InputDataPins);
 
         // Remove (undoable): also drives the command directly; removes the setter node too.
-        localVM.RemoveCommand.Execute(null);
+        localViewModel.RemoveCommand.Execute(null);
         Assert.Empty(method.LocalVariables);
         Assert.Empty(method.Nodes.OfType<VariableSetterNode>());
 
         await session.ClassEditor.PressUndoAsync(Token);
-        Assert.Same(localVM.Local, method.LocalVariables.Single());
+        Assert.Same(localViewModel.Local, method.LocalVariables.Single());
         Assert.Same(setter, method.Nodes.OfType<VariableSetterNode>().Single());
 
         await session.ClassEditor.PressRedoAsync(Token);
@@ -96,11 +96,11 @@ public class LocalVariablePanelTests
         var method = (MethodGraph)session.GraphViewModel.Graph;
 
         await session.ClassEditor.LocalVariables.CreateAsync(Token);
-        var localVM = (session.ClassViewModel.VariablesPanel.MethodVariables
+        var localViewModel = (session.ClassViewModel.VariablesPanel.MethodVariables
             ?? throw new InvalidOperationException("No method or constructor graph is open.")).Single();
 
         // A getter wired into a call, and a setter wired from a literal on an exec chain.
-        var specifier = localVM.Local.ToSpecifier();
+        var specifier = localViewModel.Local.ToSpecifier();
         var getter = new VariableGetterNode(method, specifier);
         var sink = new MethodSpecifier("Sink", [new MethodParameter("value", TypeSpecifier.FromType<object>(), MethodParameterPassType.Default, false, null)],
             [], MethodModifiers.Static, MemberVisibility.Public, TypeSpecifier.FromType<object>(), []);
@@ -116,7 +116,7 @@ public class LocalVariablePanelTests
 
         // Retype through the panel's real type chooser (H1/US5), then undo with a real Ctrl+Z.
         session.App.Dialogs.TypeAnswer = TypeSpecifier.FromType<int>();
-        await localVM.RetypeCommand.ExecuteAsync(null);
+        await localViewModel.RetypeCommand.ExecuteAsync(null);
         await session.WaitForRenderedAsync(Token);
         Assert.NotSame(getter, method.Nodes.OfType<VariableGetterNode>().Single());
         Assert.NotSame(setter, method.Nodes.OfType<VariableSetterNode>().Single());
@@ -135,6 +135,6 @@ public class LocalVariablePanelTests
 
         await session.ClassEditor.PressRedoAsync(Token);
         await session.WaitForRenderedAsync(Token);
-        Assert.Equal(TypeSpecifier.FromType<int>(), localVM.Local.Type);
+        Assert.Equal(TypeSpecifier.FromType<int>(), localViewModel.Local.Type);
     }
 }

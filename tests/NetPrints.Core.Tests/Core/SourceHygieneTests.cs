@@ -534,8 +534,9 @@ namespace NetPrints.Tests.Core
         /// <summary>
         /// ADR-0007 amendment (2026-10-01): view model types are named <c>&lt;Name&gt;ViewModel</c>, never
         /// <c>&lt;Name&gt;VM</c>. This check parses every <c>src/**/*.cs</c> and <c>tests/**/*.cs</c> file,
-        /// finds every type declaration (class, record, struct, interface), and fails on any type name
-        /// ending in <c>VM</c>, listing each.
+        /// finds every type declaration (class, record, struct, interface, enum) and delegate, and fails on any
+        /// name ending in <c>VM</c> or containing <c>VM</c> before an uppercase letter (<c>MVVM</c> excepted),
+        /// listing each.
         /// </summary>
         [Fact]
         public void NoTypeNameEndsInVM()
@@ -551,12 +552,16 @@ namespace NetPrints.Tests.Core
                 SyntaxNode root = CSharpSyntaxTree.ParseText(File.ReadAllText(path), path: path, cancellationToken: TestContext.Current.CancellationToken).GetRoot(TestContext.Current.CancellationToken);
                 string relativePath = Path.GetRelativePath(repoRoot, path).Replace('\\', '/');
 
-                foreach (var typeDeclaration in root.DescendantNodes().OfType<TypeDeclarationSyntax>())
+                foreach (string? declared in root.DescendantNodes().Select(node => node switch
                 {
-                    string typeName = typeDeclaration.Identifier.Text;
-                    if (typeName.EndsWith("VM", StringComparison.Ordinal) || EmbeddedVmName().IsMatch(typeName.Replace("MVVM", string.Empty, StringComparison.Ordinal)))
+                    BaseTypeDeclarationSyntax type => type.Identifier.Text,
+                    DelegateDeclarationSyntax @delegate => @delegate.Identifier.Text,
+                    _ => null,
+                }))
+                {
+                    if (declared is not null && (declared.EndsWith("VM", StringComparison.Ordinal) || EmbeddedVmName().IsMatch(declared.Replace("MVVM", string.Empty, StringComparison.Ordinal))))
                     {
-                        offenders.Add(typeName);
+                        offenders.Add(declared);
                     }
                 }
             }

@@ -60,8 +60,8 @@ public class EventGraphTests
 
         // Remove (undoable): the list row's remove button has no automation id, matching the method
         // and variable rows (ClassEditorViewModelTests-style); drive the command directly, as those do.
-        var eventGraphVM = session.ClassViewModel.EventGraphs.Single(g => g.Graph == eventGraph);
-        session.ClassViewModel.RemoveEventGraphCommand.Execute(eventGraphVM);
+        var eventGraphViewModel = session.ClassViewModel.EventGraphs.Single(g => g.Graph == eventGraph);
+        session.ClassViewModel.RemoveEventGraphCommand.Execute(eventGraphViewModel);
         Assert.DoesNotContain(name, await events.EventGraphNamesAsync(Token));
         Assert.DoesNotContain(session.ClassViewModel.Class.EventGraphs, g => g.Name == name);
         Assert.Null(session.ClassViewModel.OpenedGraph); // the canvas showed the removed graph

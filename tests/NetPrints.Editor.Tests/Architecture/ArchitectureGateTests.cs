@@ -88,8 +88,8 @@ public class ArchitectureGateTests
             violations.Add(new Violation(RuleA1, file));
         }
 
-        bool isClassOrMainEditorVM = file is "ClassEditorViewModel.cs" or "MainEditorViewModel.cs";
-        bool holdsTheOwningEditor = !isClassOrMainEditorVM &&
+        bool isClassOrMainEditorViewModel = file is "ClassEditorViewModel.cs" or "MainEditorViewModel.cs";
+        bool holdsTheOwningEditor = !isClassOrMainEditorViewModel &&
             (root.DescendantNodes().OfType<ConstructorDeclarationSyntax>().SelectMany(c => c.ParameterList.Parameters)
                 .Any(p => IsBannedOwnerType(model, p.Type))
             || root.DescendantNodes().OfType<FieldDeclarationSyntax>()

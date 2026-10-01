@@ -112,8 +112,8 @@ public class DialogTests
             codeAnalysis,
             new RunStateTracker(processes));
         using var ui = HeadlessUi.Create();
-        using var referenceListVM = new ReferenceListViewModel(project, context);
-        ui.Show(new ReferencesDialog { DataContext = referenceListVM });
+        using var referenceListViewModel = new ReferenceListViewModel(project, context);
+        ui.Show(new ReferencesDialog { DataContext = referenceListViewModel });
         var page = new ReferencesDialogPage(ui.Driver);
 
         var rows = await page.RowNamesAsync(Token);
