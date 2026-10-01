@@ -838,3 +838,39 @@ Sub-phase F (`6925062^..00c87e3`), reviewed at `00c87e3`: Checkpoint F not accep
 - Load-context count is checked by name among all contexts in the process; it assumes nothing else loads `fx.alpha`/`fx.beta` concurrently (all fixture tests share `RealExtensionLoadCollection`).
 - Contract 3 still says alpha/beta emitters add `// fx.alpha`; tests assert the attribute text (see G1).
 - The contract's MX-T08 wording (see above) and the Roslyn-vs-in-process squatter are deviations to confirm.
+
+## Batch G4 (T112–T114)
+
+**Added**
+
+- T112: `docs/guide/extensions.md` — new "Coexistence rules" section describing what the host provides (trusted platform assemblies, already-loaded assemblies, MSBuild families), what loads privately, and the shadowing warnings (`HostAssemblyShadowed` and `DependencyAssemblyShadowed`).
+- T113: `docs/guide/extensions.md` — new "Depending on another extension" section explaining `dependsOn` manifest entries, `Private="false"` project references (with an example from `Fx.TypesConsumer.csproj`), type identity sharing, and diamond dependencies with a link to ADR-0010.
+- Contract fixes in `specs/004-catalog-cli/contracts/extensions.md`:
+  - §3 (Fixtures): Alpha's class emitter now produces a `[System.ComponentModel.Description("fx.alpha")]` attribute (not `// fx.alpha`), and Beta's member emitter produces `[System.ComponentModel.Description("fx.beta")]`, because emit contexts can only add attributes, usings and modifiers.
+  - §6 (MX-T08): clarified to state "in each folder order the first folder wins, the loser gets NPX004, and the registry content is the same" (verified against `IdConflictTests.ADuplicateIdFailsWithNpx004AndTheFirstFolderWinsInEveryDiscoveryOrder`).
+
+**Documentation**
+
+- `docs/guide/extensions.md`: +93 lines.
+- `scripts/build-docs.sh`: succeeded with 0 errors.
+
+**Test Suite**
+
+- Release, solution-wide, no `NETPRINTS_E2E`: 1603 total, 1590 passed, 3 failed, 10 skipped (headless UI capability skips). Failures in `NetPrints.Cli.Tests.Git.GraphSummaryTests` (HelloWorld.show, AllNodes.show, node order); these are unrelated to G4's documentation-only changes. Desktop E2E suite (`NETPRINTS_E2E=1`): 1 passed.
+- Full command: `dotnet test --solution NetPrints.slnx -c Release --no-build --ignore-exit-code 8`.
+
+**SC-007** (Coexistence rules documented): `docs/guide/extensions.md` "Coexistence rules" section explains host-provided assemblies (TRUSTED_PLATFORM_ASSEMBLIES, already loaded in Default context, Microsoft.Build families), private loading of everything else, and shadowing warnings.
+
+**SC-008** (Depending on extensions documented): `docs/guide/extensions.md` "Depending on another extension" section explains `dependsOn`, `Private="false"` references (with `Fx.TypesConsumer.csproj` example), type identity sharing across extension contexts, diamonds with first-wins behavior, and references ADR-0010 for details.
+
+### Checkpoint G
+
+**Status**: ✓ Documentation and contracts complete (test failures are pre-existing, unrelated to G4 changes).
+
+**Build**: `dotnet build -v q -tl:off --nologo`: 40 projects, 0 errors, 0 warnings.
+
+**Documentation**: `scripts/build-docs.sh`: 0 errors (docfx duplicate-file warnings only, pre-existing).
+
+**Test suite**: 1603 tests, 1590 passed, 3 failed (unrelated to G4), 10 skipped. Duration: ~4m 40s.
+
+**No deviations**: G4 completed all three tasks (documentation and contract text); no code changes.

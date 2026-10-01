@@ -598,11 +598,11 @@ SC-013.
 
 ### Batch G4 — model: haiku — T112–T114 — 3 units
 
-- [ ] T112 [P] [US5] `docs/guide/extensions.md`: section "Coexistence rules" (what the host shares — its own
+- [x] T112 [P] [US5] `docs/guide/extensions.md`: section "Coexistence rules" (what the host shares — its own
   assemblies only — and what loads privately; the shadowing warnings).
-- [ ] T113 [P] [US5] `docs/guide/extensions.md`: section "Depending on another extension" (`dependsOn`, reference the
+- [x] T113 [P] [US5] `docs/guide/extensions.md`: section "Depending on another extension" (`dependsOn`, reference the
   provider with `Private=false`, one type identity, diamonds) and a pointer to ADR-0010.
-- [ ] T114 [US5] Whole suite; Checkpoint G report in `specs/004-catalog-cli/implementation-notes.md`; commit.
+- [x] T114 [US5] Whole suite; Checkpoint G report in `specs/004-catalog-cli/implementation-notes.md`; commit.
   **Checkpoint G** (SC-007, SC-008).
 
 ### Batch G-R — model: opus — T115 (sub-phase review)

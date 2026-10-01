@@ -34,8 +34,8 @@ built-in id or already registered → `NPX006` contribution issue, first wins.
 
 | Fixture | Kind | Folder / id | Content |
 |---|---|---|---|
-| Alpha | project | `tests/Fixtures/Extensions/Fx.Alpha` / `fx.alpha` | One contribution of every kind MX-T07 checks: node kind `fx.alpha/Ping` (with a CLR node type and a JSON resolver), a class emitter adding `// fx.alpha`, a settings section, a project profile `fx.alpha.profile`, a host channel factory `fx.alpha.channel`, a document type, a catalog profile `fx-alpha`, a project property |
-| Beta | project | `Fx.Beta` / `fx.beta`, `dependsOn: [fx.alpha]` | Node kind `fx.beta/Pong`, a member emitter that adds `// fx.beta` to methods whose graph holds a `fx.alpha/Ping` node |
+| Alpha | project | `tests/Fixtures/Extensions/Fx.Alpha` / `fx.alpha` | One contribution of every kind MX-T07 checks: node kind `fx.alpha/Ping` (with a CLR node type and a JSON resolver), a class emitter adding a `[System.ComponentModel.Description("fx.alpha")]` attribute, a settings section, a project profile `fx.alpha.profile`, a host channel factory `fx.alpha.channel`, a document type, a catalog profile `fx-alpha`, a project property |
+| Beta | project | `Fx.Beta` / `fx.beta`, `dependsOn: [fx.alpha]` | Node kind `fx.beta/Pong`, a member emitter that adds a `[System.ComponentModel.Description("fx.beta")]` attribute to methods whose graph holds a `fx.alpha/Ping` node |
 | LibV1 / LibV2 | project | `Fx.LibV1` / `fx.libv1`, `Fx.LibV2` / `fx.libv2` + `Fixture.SharedLib.V1/.V2` (assembly `Fixture.SharedLib` 1.0/2.0) | Each registers a node whose translator calls `SharedLib.Describe()` (different signatures per version) |
 | PrefixedPrivate | project | `Fx.PrefixedPrivate` / `fx.private-prefix` + `NetPrintsFixture.Runtime` | Registers a node whose translator uses `NetPrintsFixture.Runtime.Helper` |
 | TypesProvider / TypesConsumer | project | `Fx.TypesProvider` (`fx.types-provider`), `Fx.TypesConsumer` (`dependsOn` provider, `Private=false` reference) | Consumer's node pin type and emitter use `ProviderType`; exposes `typeof(ProviderType)` for identity checks |
@@ -88,7 +88,7 @@ CancellationToken)`; `Task<IReadOnlyList<GeneratedFileResult>> GenerateAsync(str
 | MX-T05 | `MultiExtension/DependencyTypeSharingTests` | Diamond: two providers of `Fixture.SharedLib` → first in `dependsOn` order wins, stable across runs |
 | MX-T06 | `MultiExtension/VersionIsolationTests` | LibV1 + LibV2 load together; each translator calls its own version; two distinct `Assembly` instances |
 | MX-T07 | `MultiExtension/IdConflictTests` | Squatter vs alpha across kinds, profiles, host channels, settings, document types, CLR node types, JSON resolvers, catalog profiles; project properties dedupe; loser named in `Issues`; alpha's behaviour unchanged |
-| MX-T08 | `MultiExtension/IdConflictTests` | Duplicate ids → NPX004, first folder wins, same winner under reversed folder order |
+| MX-T08 | `MultiExtension/IdConflictTests` | Duplicate ids → NPX004; in each folder order the first folder wins, the loser gets NPX004, and the registry content is the same |
 | MX-T09 | `MultiExtension/LoadOrderPermutationTests` | Alpha, Beta, LibV1, PrefixedPrivate: all 24 discovery orders → same `Loaded` order, registry order, byte-identical generated C# of a graph using all four |
 | MX-T10 | `MultiExtension/FailureIsolationTests` | ThrowsMidway: none of its kinds registered; neighbours intact; NPX005 |
 | MX-T11 | `MultiExtension/FailureIsolationTests` | HostSkew → NPX005 (`MissingMethodException`), others load |

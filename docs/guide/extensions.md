@@ -139,3 +139,67 @@ graduates to stable.
 The public API of `NetPrints.Core`, `NetPrints.Extensibility`, `NetPrints.Reflection`,
 `NetPrints.Serialization` and `NetPrints.Catalog` is tracked in each project's `PublicAPI.Shipped.txt` and
 `PublicAPI.Unshipped.txt`. A change to a public symbol shows up in review as a change to those files.
+
+## Coexistence rules
+
+When multiple extensions load, each one runs in its own isolated `AssemblyLoadContext`, so versions of
+shared dependencies can be kept separate. However, assemblies the host already provides should not be
+duplicated.
+
+**What the host provides** and therefore every extension must use the host's copy:
+
+- Any assembly in the trusted platform assemblies (the framework's assemblies)
+- Any assembly already loaded in the default `AssemblyLoadContext`
+- Assemblies named `Microsoft.Build.*` (the MSBuild runtime, which the host ensures is registered)
+
+**What loads privately** and therefore each extension can ship its own copy:
+
+- Everything else: your extension's own dependencies and third-party packages, so you can use different
+  versions without conflicts.
+
+**Shadowing warnings**: if you ship a copy of a host-provided assembly, or a copy of an assembly one of your
+dependencies (listed in `dependsOn`) provides, it is ignored. NetPrints logs a warning for each case:
+
+- `HostAssemblyShadowed`: your extension folder contains a copy of an assembly the host provides.
+- `DependencyAssemblyShadowed`: your extension folder contains a copy of an assembly one of your
+  dependencies provides.
+
+These are not errors; the host's or dependency's copy is used, and your copy is simply not loaded.
+
+## Depending on another extension
+
+An extension can depend on the contributions of another extension by listing it in the manifest's
+`dependsOn` array (a list of extension ids). This is how you compose functionality: extension B can use
+types and emitters from extension A, and can contribute nodes that call A's methods.
+
+When you depend on another extension, you must reference its assembly with `Private="false"` in your
+project file, so it is not copied into your extension folder. Here's an example, from a consumer that
+uses types from a provider extension:
+
+```xml
+<ItemGroup>
+  <!-- The provider owns the assembly: the consumer must not ship its own copy. -->
+  <ProjectReference Include="..\Fx.TypesProvider\Fx.TypesProvider.csproj" Private="false" />
+</ItemGroup>
+```
+
+And in your manifest, declare the dependency:
+
+```json
+{
+  "dependsOn": ["fx.types-provider"]
+}
+```
+
+NetPrints loads extensions in dependency order, so the provider is always loaded before the consumer. When
+resolving assemblies, the consumer can see everything the provider has loaded, so `typeof(ProviderType)`
+in the consumer will have the same identity as it does in the provider.
+
+**Type identity in dependencies**: each extension (or version of an extension) loads in its own context,
+but when you depend on another extension, you both see the same assembly and the same types from it. If
+extension B and extension C both depend on extension A, they both get A's types with a single identity.
+With diamond dependencies — if B depends on A and C, and C also depends on A — the extension listed
+first in B's `dependsOn` order wins, and both B and C use that one. Types stay consistent across the
+build.
+
+For more on how extensions resolve and share assemblies, see [ADR-0010](../adr/0010-extension-testing-and-coexistence.md).
