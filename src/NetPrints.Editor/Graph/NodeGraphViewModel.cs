@@ -255,6 +255,29 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
     [RelayCommand]
     public void DeselectNodes() => SelectNodes([], deselectPrevious: true);
 
+    /// <summary>Selects every node.</summary>
+    public void SelectAll() => SelectNodes(Nodes, deselectPrevious: false);
+
+    /// <summary>Closes the node search and the Get/Set chooser when one is open; otherwise deselects every node.</summary>
+    public void Cancel()
+    {
+        if (Search.IsOpen || GetSetChooser.IsOpen)
+        {
+            Search.IsOpen = false;
+            GetSetChooser.Close();
+            return;
+        }
+
+        DeselectNodes();
+    }
+
+    /// <summary>Raised by <see cref="RequestView"/>; the editor's behavior carries the request out (ADR-0004: the view owns the viewport).</summary>
+    public event EventHandler<GraphViewRequest>? ViewRequested;
+
+    /// <summary>Asks the view to carry out a viewport or popup action.</summary>
+    /// <param name="request">The action.</param>
+    public void RequestView(GraphViewRequest request) => ViewRequested?.Invoke(this, request);
+
     /// <summary>Raised after <see cref="RevealNode"/> selects a node, so the view can scroll it into
     /// view (ADR-0004: the view owns the canvas viewport, this view model only asks for it).</summary>
     public event EventHandler<NodeViewModel>? NodeRevealRequested;

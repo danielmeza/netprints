@@ -3,6 +3,9 @@ namespace NetPrints.Editor.Shell;
 /// <summary>The only shell API features use: documents, panels and layout (ADR-0018 adapter implements it).</summary>
 public interface IShell
 {
+    /// <summary>Gets the project-level flows the project commands call.</summary>
+    IProjectActions ProjectActions { get; }
+
     /// <summary>Gets the active document, or null when none is open.</summary>
     DocumentId? ActiveDocument { get; }
 

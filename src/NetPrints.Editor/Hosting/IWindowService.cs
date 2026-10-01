@@ -26,4 +26,7 @@ public interface IWindowService
 
     /// <summary>Closes every class editor window.</summary>
     void CloseAllClassEditors();
+
+    /// <summary>Closes the main window, which ends the application.</summary>
+    void CloseMainWindow();
 }

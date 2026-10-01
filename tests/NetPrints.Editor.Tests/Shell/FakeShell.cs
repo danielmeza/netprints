@@ -1,3 +1,4 @@
+using NetPrints.Editor.Graph;
 using NetPrints.Editor.Shell;
 
 namespace NetPrints.Editor.Tests.Shell;
@@ -6,6 +7,12 @@ namespace NetPrints.Editor.Tests.Shell;
 public sealed class FakeShell : IShell
 {
     private readonly List<DocumentId> open = [];
+
+    /// <inheritdoc/>
+    public IProjectActions ProjectActions => Project;
+
+    /// <summary>Gets the recording project actions.</summary>
+    public FakeProjectActions Project { get; } = new();
 
     /// <summary>Gets the calls made, in order, as <c>Method:argument</c>.</summary>
     public List<string> Calls { get; } = [];
@@ -91,10 +98,12 @@ public sealed class FakeShell : IShell
         Floating.Clear();
     }
 
-    /// <summary>Builds a context over this shell with nothing selected.</summary>
+    /// <summary>Builds a context over this shell; the active document is the shell's.</summary>
     /// <param name="parameter">The command parameter, or null.</param>
     /// <param name="session">The open project session, or null for the start page.</param>
+    /// <param name="graph">The active graph view model, or null.</param>
+    /// <param name="selection">The selection; nothing selected when null.</param>
     /// <returns>The context.</returns>
-    public CommandContext Context(object? parameter = null, ProjectSessionViewModel? session = null) =>
-        new(this, session, ActiveDocument, null, CommandSelection.None, parameter);
+    public CommandContext Context(object? parameter = null, ProjectSessionViewModel? session = null, NodeGraphViewModel? graph = null, CommandSelection? selection = null) =>
+        new(this, session, ActiveDocument, graph, selection ?? CommandSelection.None, parameter);
 }

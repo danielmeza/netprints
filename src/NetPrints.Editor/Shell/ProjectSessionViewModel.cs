@@ -52,6 +52,22 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
     /// <summary>Gets whether the last started program has not exited yet; raises a change (on the UI thread) when that flips.</summary>
     public bool IsRunning => context.RunState.Snapshot().Phase == RunPhase.Running;
 
+    /// <summary>Gets the path of a class's graph file relative to the project, with <c>/</c> separators (the class path of its <see cref="DocumentId"/>s).</summary>
+    /// <param name="cls">A class of the project.</param>
+    /// <returns>The relative path.</returns>
+    public string ClassPathOf(ClassGraph cls)
+    {
+        ArgumentNullException.ThrowIfNull(cls);
+        string directory = Path.GetDirectoryName(Path.GetFullPath(ProjectFilePath)) ?? "";
+        return Path.GetRelativePath(directory, Path.GetFullPath(Project.GetGraphFilePath(cls))).Replace('\\', '/');
+    }
+
+    /// <summary>Finds the class whose <see cref="ClassPathOf"/> is <paramref name="classPath"/>.</summary>
+    /// <param name="classPath">The class path of a document id.</param>
+    /// <returns>The class, or null when the project has none at that path.</returns>
+    public ClassGraph? FindClass(string classPath) =>
+        Project.Classes.FirstOrDefault(cls => string.Equals(ClassPathOf(cls), classPath, StringComparison.Ordinal));
+
     /// <summary>Gets the undo stack of a class; the same instance on every call.</summary>
     /// <param name="cls">A class of the project.</param>
     /// <returns>The stack, created on first use.</returns>

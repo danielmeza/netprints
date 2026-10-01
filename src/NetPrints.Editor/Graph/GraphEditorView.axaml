@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:edbehaviors="clr-namespace:NetPrints.Editor.Behaviors"
              xmlns:edcontrols="clr-namespace:NetPrints.Editor.Controls"
              xmlns:edgetset="clr-namespace:NetPrints.Editor.Graph.GetSet"
              xmlns:edgraph="clr-namespace:NetPrints.Editor.Graph"
@@ -40,6 +41,10 @@
                          MaxViewportZoom="1"
                          DragDrop.AllowDrop="True"
                          ConnectionCompletedCommand="{Binding ConnectionCompletedCommand}">
+      <Interaction.Behaviors>
+        <edbehaviors:GraphViewRequestBehavior />
+      </Interaction.Behaviors>
+
       <nodify:NodifyEditor.ItemContainerTheme>
         <!-- Nodify's own container chrome (a blue border, orange when selected) is turned off:
              NodeView already draws the single border WPF had, green when selected. -->

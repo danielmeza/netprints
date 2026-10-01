@@ -151,6 +151,9 @@ public sealed class FakeWindowService : IWindowService
     public List<ClassGraph> Activated { get; } = [];
     public List<ClassGraph> Closed { get; } = [];
     public int CloseAllCount { get; private set; }
+    public int CloseMainWindowCount { get; private set; }
+
+    public void CloseMainWindow() => CloseMainWindowCount++;
 
     public bool TryActivateClassEditor(ClassGraph cls)
     {

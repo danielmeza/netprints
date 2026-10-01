@@ -87,4 +87,7 @@ public sealed class WindowService : IWindowService
             window.Close();
         }
     }
+
+    /// <inheritdoc/>
+    public void CloseMainWindow() => MainWindow?.Close();
 }

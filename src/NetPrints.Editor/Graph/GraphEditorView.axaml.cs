@@ -96,14 +96,7 @@ public partial class GraphEditorView : UserControl
             return;
         }
 
-        if (TopLevel.GetTopLevel(this) is { } topLevel)
-        {
-            CanvasPointerTracker.For(topLevel).Invalidate();
-        }
-
-        // OpenSearchCommand has no catch of its own: route a fault to the error dialog too. Its own
-        // reentrancy guard (D10) makes a second Ctrl+Space while one search is still opening a no-op.
-        graph.OpenSearchCommand.ExecuteAsync(FallbackGraphPosition()).Forget(graph.Context, "Failed to open the node search");
+        graph.RequestView(GraphViewRequest.NodeSearch);
         e.Handled = true;
     }
 
@@ -141,9 +134,6 @@ public partial class GraphEditorView : UserControl
         var topLevel = TopLevel.GetTopLevel(this);
         return topLevel is null ? editorPoint : Editor.TranslatePoint(editorPoint, topLevel) ?? editorPoint;
     }
-
-    /// <summary>Where a keyboard-triggered node search creates its node (ADR-0004): the selected node's position, or the canvas center.</summary>
-    private GraphPoint FallbackGraphPosition() => SelectedNode?.Location ?? ToGraph(CanvasCenterPoint);
 
     /// <summary>Resets the viewport to zoom 1 and the origin when a new graph is opened (PAR-51),
     /// and follows the new graph's <see cref="NodeGraphViewModel.NodeRevealRequested"/> (FR-034, ED-T03).</summary>
