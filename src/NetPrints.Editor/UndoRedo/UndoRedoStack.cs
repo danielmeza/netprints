@@ -5,7 +5,7 @@ namespace NetPrints.Editor.UndoRedo;
 /// </summary>
 public interface IUndoableCommand
 {
-    /// <summary>Human-readable name of the command (unused by <see cref="UndoRedoStack"/> itself; for diagnostics).</summary>
+    /// <summary>Human-readable name of the command (shown as <see cref="UndoRedoStack.UndoName"/> and <see cref="UndoRedoStack.RedoName"/>).</summary>
     string Name { get; }
 
     /// <summary>Performs the command's action.</summary>
@@ -22,12 +22,31 @@ public sealed class UndoRedoStack
 {
     private readonly Stack<IUndoableCommand> undoStack = new();
     private readonly Stack<IUndoableCommand> redoStack = new();
+    private int? savedDepth;
+    private IUndoableCommand? savedTop;
 
     /// <summary>Whether <see cref="Undo"/> would undo a command.</summary>
     public bool CanUndo => undoStack.Count > 0;
 
     /// <summary>Whether <see cref="Redo"/> would redo a command.</summary>
     public bool CanRedo => redoStack.Count > 0;
+
+    /// <summary>Whether the history is exactly where <see cref="MarkSaved"/> last recorded it (same depth, same top command).</summary>
+    public bool IsAtSavedState => savedDepth is { } depth && depth == undoStack.Count && ReferenceEquals(savedTop, TopOrNull());
+
+    /// <summary>The <see cref="IUndoableCommand.Name"/> of the command <see cref="Undo"/> would undo, or null.</summary>
+    public string? UndoName => undoStack.TryPeek(out var command) ? command.Name : null;
+
+    /// <summary>The <see cref="IUndoableCommand.Name"/> of the command <see cref="Redo"/> would redo, or null.</summary>
+    public string? RedoName => redoStack.TryPeek(out var command) ? command.Name : null;
+
+    /// <summary>Records the current history position as the saved state and raises <see cref="Changed"/>.</summary>
+    public void MarkSaved()
+    {
+        savedDepth = undoStack.Count;
+        savedTop = TopOrNull();
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
 
     /// <summary>Raised after <see cref="Do"/>, <see cref="Undo"/>, <see cref="Redo"/> or <see cref="Clear"/> changes the history.</summary>
     public event EventHandler? Changed;
@@ -84,8 +103,12 @@ public sealed class UndoRedoStack
     {
         undoStack.Clear();
         redoStack.Clear();
+        savedDepth = null;
+        savedTop = null;
         Changed?.Invoke(this, EventArgs.Empty);
     }
+
+    private IUndoableCommand? TopOrNull() => undoStack.TryPeek(out var command) ? command : null;
 }
 
 /// <summary>
