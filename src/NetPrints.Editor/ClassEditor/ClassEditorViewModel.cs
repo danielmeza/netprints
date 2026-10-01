@@ -16,6 +16,7 @@ using NetPrints.Editor.Graph;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Main;
 using NetPrints.Editor.ModelSync;
+using NetPrints.Editor.Shell;
 using NetPrints.Editor.UndoRedo;
 using NetPrints.Editor.Variables;
 using NetPrints.Graph;
@@ -748,9 +749,9 @@ public sealed partial class ClassEditorViewModel : ObservableObject, IRecipient<
     private string RenderGenerated(Project project, ClassGraph cls) =>
         NetPrints.Generation.GraphCodeGenerator.RenderFile(NewTranslator().Translate(cls), Path.GetFileName(project.GetGraphFilePath(cls)));
 
-    /// <summary>Compiles the whole project through <see cref="MainEditorViewModel.CompileAsync(Project, EditorContext)"/> (PAR-09).</summary>
+    /// <summary>Compiles the whole project through <see cref="ProjectSessionViewModel.CompileAsync(Project, EditorContext)"/> (PAR-09).</summary>
     [RelayCommand]
-    private Task CompileAsync() => Project is { CanCompile: true } project ? MainEditorViewModel.CompileAsync(project, Context) : Task.CompletedTask;
+    private Task CompileAsync() => Project is { CanCompile: true } project ? ProjectSessionViewModel.CompileAsync(project, Context) : Task.CompletedTask;
 
     [RelayCommand]
     private Task RunAsync()
@@ -761,7 +762,7 @@ public sealed partial class ClassEditorViewModel : ObservableObject, IRecipient<
         }
 
         SelectedBottomTab = 1; // Output, once per run (not re-forced on every line after it).
-        return MainEditorViewModel.CompileAndRunAsync(Project, Context);
+        return ProjectSessionViewModel.CompileAndRunAsync(Project, Context);
     }
 
     [RelayCommand]

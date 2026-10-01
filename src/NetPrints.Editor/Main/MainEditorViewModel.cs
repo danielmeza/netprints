@@ -11,10 +11,9 @@ using NetPrints.Editor.Hosting;
 using NetPrints.Editor.References;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Settings;
-using NetPrints.Generation;
 using NetPrints.Projects;
 using NetPrints.Serialization;
-using NetPrints.Translator;
+using ProjectSessionViewModel = NetPrints.Editor.Shell.ProjectSessionViewModel;
 
 namespace NetPrints.Editor.Main;
 
@@ -58,6 +57,9 @@ public sealed partial class MainEditorViewModel : ObservableObject, IDisposable
     [NotifyCanExecuteChangedFor(nameof(SaveProjectCommand), nameof(CompileCommand), nameof(RunCommand),
         nameof(ShowReferencesCommand), nameof(NewClassCommand), nameof(AddExistingClassCommand), nameof(ToggleSettingsPaneCommand))]
     public partial Project? Project { get; set; }
+
+    /// <summary>The open project's session (save, compile, run, undo stacks), or null with no project open.</summary>
+    public ProjectSessionViewModel? Session { get; private set; }
 
     /// <summary>
     /// The open project's classes, or empty with no project open (batch D1): the class list's
@@ -153,6 +155,8 @@ public sealed partial class MainEditorViewModel : ObservableObject, IDisposable
         }
 
         subscribedProject = value;
+        Session?.Dispose();
+        Session = value is null ? null : new ProjectSessionViewModel(value, context);
 
         if (value is not null)
         {
@@ -470,7 +474,7 @@ public sealed partial class MainEditorViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// Saves every edited class of the open project through <see cref="ProjectPersistence"/> (PAR-06).
+    /// Saves every edited class of the open project through <see cref="ProjectSessionViewModel.SaveAllAsync"/> (PAR-06).
     /// Returns whether the project was open (and therefore saved).
     /// </summary>
     [RelayCommand(CanExecute = nameof(IsProjectOpen))]
@@ -480,161 +484,15 @@ public sealed partial class MainEditorViewModel : ObservableObject, IDisposable
         return await PromptProjectSaveAsync();
     }
 
-    internal async Task<bool> PromptProjectSaveAsync()
-    {
-        if (Project is not { } project)
-        {
-            return false;
-        }
-
-        try
-        {
-            ProjectSaveResult result = await context.Persistence.SaveAsync(project, cls => RenderGenerated(context, project, cls), CancellationToken.None);
-            if (result.Diagnostics.Count > 0)
-            {
-                project.LastDiagnostics = new ObservableRangeCollection<CodeDiagnostic>(result.Diagnostics);
-            }
-
-            return true;
-        }
-        catch (Exception ex)
-        {
-            await context.Dialogs.ShowErrorAsync("Failed to save project", ex.ToString());
-            return false;
-        }
-    }
-
-    /// <summary>Renders a class's generated C# file the same way a build would (project-system.md §3).</summary>
-    private static string RenderGenerated(EditorContext context, Project project, ClassGraph cls) =>
-        GraphCodeGenerator.RenderFile(new ClassTranslator(context.Extensions.Current.Translation).Translate(cls), Path.GetFileName(project.GetGraphFilePath(cls)));
+    internal Task<bool> PromptProjectSaveAsync() => Session?.SaveAllAsync() ?? Task.FromResult(false);
 
     /// <summary>Compiles the project in the background (PAR-09).</summary>
     [RelayCommand(CanExecute = nameof(CanCompile))]
-    private Task CompileAsync() => Project is null ? Task.CompletedTask : CompileAsync(Project, context);
+    private Task CompileAsync() => Session?.CompileAsync() ?? Task.CompletedTask;
 
     /// <summary>Compiles, then runs the program when the build succeeded (PAR-10).</summary>
     [RelayCommand(CanExecute = nameof(CanCompileAndRun))]
-    private Task RunAsync() => Project is null ? Task.CompletedTask : CompileAndRunAsync(Project, context);
-
-    /// <summary>
-    /// Saves the project's dirty classes, builds it through <see cref="IProjectSystem.BuildAsync"/>
-    /// and maps the outcome onto <see cref="Core.Project.IsCompiling"/>,
-    /// <see cref="Core.Project.LastCompilationSucceeded"/> and <see cref="Core.Project.LastDiagnostics"/>
-    /// (shared by the main and class windows). A class that cannot be translated while saving is
-    /// reported as a build error; any other failure is shown through
-    /// <see cref="IEditorDialogs.ShowErrorAsync"/>.
-    /// </summary>
-    /// <returns>Whether the build succeeded.</returns>
-    public static async Task<bool> CompileAsync(Project project, EditorContext context)
-    {
-        project.IsCompiling = true;
-        project.CompilationMessage = "Compiling...";
-        context.RunState.BuildStarted();
-        try
-        {
-            await context.Persistence.SaveAsync(project, cls => RenderForBuild(context, project, cls), CancellationToken.None);
-            BuildResult result = await context.Projects.BuildAsync(project.Path, CancellationToken.None);
-            var classesByGeneratedPath = BuildClassesByGeneratedPath(context, project);
-            SetBuildOutcome(project, DiagnosticMapper.FromBuild(result.Messages, classesByGeneratedPath), result.Success, result.OutputAssemblyPath);
-            return result.Success;
-        }
-        catch (ClassTranslationFailure failure)
-        {
-            var diagnostic = new CodeDiagnostic(CodeDiagnosticSeverity.Error, TranslationDiagnosticCodes.Unclassified,
-                $"{failure.Class.FullName}: {failure.Message}", failure.Class.FullName, null, null, null, null);
-            SetBuildOutcome(project, [diagnostic], false, null);
-            return false;
-        }
-        catch (Exception ex)
-        {
-            project.LastCompilationSucceeded = false;
-            project.CompilationMessage = "Build failed";
-            await context.Dialogs.ShowErrorAsync("Failed to build project", ex.ToString());
-            return false;
-        }
-        finally
-        {
-            project.IsCompiling = false;
-            context.RunState.BuildFinished();
-        }
-    }
-
-    /// <summary>
-    /// Re-translates every class, keyed by its generated file's full path, so
-    /// <see cref="DiagnosticMapper.FromBuild"/> can map a build error back to its node (ED-T04).
-    /// </summary>
-    private static IReadOnlyDictionary<string, (ClassGraph Class, TranslatedClass Translated)> BuildClassesByGeneratedPath(EditorContext context, Project project)
-    {
-        var classesByGeneratedPath = new Dictionary<string, (ClassGraph, TranslatedClass)>(StringComparer.Ordinal);
-        foreach (ClassGraph cls in project.Classes)
-        {
-            try
-            {
-                TranslatedClass translated = new ClassTranslator(context.Extensions.Current.Translation).Translate(cls);
-                classesByGeneratedPath[ProjectFiles.GetGeneratedFilePath(project.GetGraphFilePath(cls))] = (cls, translated);
-            }
-            catch (TranslationException)
-            {
-                // Already translated once for the preceding save; left unmapped here is harmless.
-            }
-        }
-
-        return classesByGeneratedPath;
-    }
-
-    private static void SetBuildOutcome(Project project, IReadOnlyList<CodeDiagnostic> diagnostics, bool success, string? assemblyPath)
-    {
-        project.LastDiagnostics = new ObservableRangeCollection<CodeDiagnostic>(diagnostics);
-        project.LastCompilationSucceeded = success;
-        project.LastCompiledAssemblyPath = success ? assemblyPath : null;
-        project.CompilationMessage = success
-            ? "Build succeeded"
-            : $"Build failed with {diagnostics.Count(d => d.Severity == CodeDiagnosticSeverity.Error)} error(s)";
-    }
-
-    private static string RenderForBuild(EditorContext context, Project project, ClassGraph cls)
-    {
-        try
-        {
-            return RenderGenerated(context, project, cls);
-        }
-        catch (Exception ex) when (ex is not OperationCanceledException)
-        {
-            throw new ClassTranslationFailure(cls, ex);
-        }
-    }
-
-    /// <summary>
-    /// Marks a translation failure during compile as one that must abort the whole build (a
-    /// <see cref="ClassTranslationAbortException"/>), rather than being isolated per class by
-    /// <see cref="ProjectPersistence.SaveAsync"/> (F-07).
-    /// </summary>
-    private sealed class ClassTranslationFailure(ClassGraph cls, Exception inner) : ClassTranslationAbortException(inner.Message, inner)
-    {
-        public ClassGraph Class { get; } = cls;
-    }
-
-    /// <summary>
-    /// Compiles a project and starts the compiled program on success (shared by the main and
-    /// class windows).
-    /// </summary>
-    public static async Task CompileAndRunAsync(Project project, EditorContext context)
-    {
-        if (!await CompileAsync(project, context))
-        {
-            return;
-        }
-
-        try
-        {
-            ProcessStartRequest request = context.Projects.GetRunCommand(project.Path);
-            context.Processes.Start(request);
-        }
-        catch (Exception ex)
-        {
-            await context.Dialogs.ShowErrorAsync("Failed to run project", ex.ToString());
-        }
-    }
+    private Task RunAsync() => Session?.RunAsync() ?? Task.CompletedTask;
 
     /// <summary>Adds a uniquely named class (MyClass, MyClass1, ...) (PAR-12).</summary>
     [RelayCommand(CanExecute = nameof(IsProjectOpen))]
@@ -770,5 +628,9 @@ public sealed partial class MainEditorViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>Unsubscribes <see cref="hostChannelBridge"/> from the host channel.</summary>
-    public void Dispose() => hostChannelBridge.Dispose();
+    public void Dispose()
+    {
+        hostChannelBridge.Dispose();
+        Session?.Dispose();
+    }
 }

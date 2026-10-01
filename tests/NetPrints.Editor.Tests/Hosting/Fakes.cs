@@ -433,13 +433,17 @@ public sealed class TestEditor : IAsyncDisposable
         new(new InlineDispatcher(), extensions, NullLogger<ReflectionHost>.Instance);
 
     /// <summary>Builds a real, JSON-backed <see cref="ProjectPersistence"/> over any <see cref="IProjectSystem"/>.</summary>
-    public static ProjectPersistence CreatePersistence(IProjectSystem projects)
+    public static ProjectPersistence CreatePersistence(IProjectSystem projects, Func<IDocumentStore, IDocumentStore>? decorateStore = null)
     {
         var nodeConverters = new NodeDocumentConverterRegistry(NodeDocumentConverterRegistry.BuiltIn, []);
         var mapper = new DocumentMapper(nodeConverters, NullLogger<DocumentMapper>.Instance);
         var formats = new DocumentFormatRegistry([new JsonDocumentFormat(new NetPrintsJsonOptions(nodeConverters), new DocumentMigrator([], NullLogger<DocumentMigrator>.Instance))]);
         return new ProjectPersistence(projects, formats, mapper,
-            (directory, watch) => new FileSystemDocumentStore(directory, DefaultScheduler.Instance, NullLogger<FileSystemDocumentStore>.Instance, watch),
+            (directory, watch) =>
+            {
+                IDocumentStore store = new FileSystemDocumentStore(directory, DefaultScheduler.Instance, NullLogger<FileSystemDocumentStore>.Instance, watch);
+                return decorateStore?.Invoke(store) ?? store;
+            },
             NullLogger<ProjectPersistence>.Instance);
     }
 
