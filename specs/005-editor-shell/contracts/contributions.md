@@ -1,8 +1,10 @@
 # Contract: the contribution registry (editor-internal in P3a)
 
 ADR-0020. Namespace `NetPrints.Editor.Contributions`. The types are `public` inside `NetPrints.Editor`, which is not a
-published package. P3 moves them unchanged into the public extension surface. Every type here is free of Avalonia
-and Dock types.
+published package. P3 moves the descriptors, the registry and `ICommandHandler` into the public extension surface;
+`CommandContext` is the exception: it holds the concrete `ProjectSessionViewModel` and `NodeGraphViewModel`, so P3
+replaces those two members with interfaces (an `IProjectSession` and a graph-view abstraction) first (ADR-0020). Every
+type here is free of Avalonia and Dock types.
 
 ## 1. Registry
 

@@ -26,7 +26,10 @@ roadmap requires the built-in editor to use the same points first (owner, 2026-0
   goes through a handler that receives a `CommandContext`: the shell services, the active document and the
   selection. The handler returns `CanExecute` and `ExecuteAsync`. Only the view layer turns these into Avalonia
   `KeyBinding`s, `MenuItem`s and icons. That lets P3 move the descriptors into a public package without changing
-  their shape.
+  their shape. `CommandContext` is the exception (Review B R16): it carries the concrete `ProjectSessionViewModel`
+  and `NodeGraphViewModel`, which belong to the editor, not to a public surface. P3 replaces them with interfaces
+  (`IProjectSession`, a graph-view abstraction) before `ICommandHandler` is published; P3a keeps the concrete types
+  because no extension can implement a handler yet.
 - **Every surface is generated from the registry:**
   - the menu bar, the command bar, the command palette and the keyboard shortcuts sheet;
   - the shell's key bindings, through two custom behaviors that materialize the registered gestures:

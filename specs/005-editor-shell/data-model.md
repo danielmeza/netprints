@@ -44,9 +44,9 @@ See [contracts/contributions.md](./contracts/contributions.md) for the full shap
 
 | Entity | Key fields | Rules |
 |---|---|---|
-| `CommandDescriptor` | `Id`, `Label`, `IconKind?`, `DefaultGesture?`, `Scope` (`Global`, `Graph`, `ProjectTree`), `Menu` (`Path`, `Group`, `Order`), `CommandBar?` (`Order`), `Handler` | Id pattern `^[a-z0-9]+(\.[a-zA-Z0-9]+)+$`. A single-key gesture other than a function key requires a non-global scope. |
+| `CommandDescriptor` | `Id`, `Label`, `Handler`, `IconKind?`, `DefaultGestures?` (list), `Scope` (flags `Global` = 0, `Graph`, `ProjectTree`; a command may name several), `Menu?` (`Path`, `Group`, `Order`), `CommandBarOrder?` | Id pattern `^[a-z0-9]+(\.[a-zA-Z0-9]+)+$`. A single-key gesture other than a function key requires a non-global scope. |
 | `ICommandHandler` | `CanExecute(CommandContext)`, `ExecuteAsync(CommandContext, CancellationToken)`, `DynamicLabel(CommandContext)?` | `DynamicLabel` provides "Undo Add node". |
-| `CommandContext` | `Shell`, `Session?`, `ActiveDocument?`, `Selection` (nodes, tree item), `Parameter?` | Built per invocation; no UI types. |
+| `CommandContext` | `Shell`, `Session?`, `ActiveDocument?`, `ActiveGraph?`, `Selection` (nodes, tree item), `Parameter?` | Built per invocation by an `ICommandContextProvider`; no Avalonia types. `Session` and `ActiveGraph` are the concrete editor view models until P3 replaces them with interfaces (ADR-0020). |
 | `ContributionIssue` | `Kind` (`DuplicateId`, `GestureConflict`, `InvalidDescriptor`), `Id`, `Owner`, `Message` | Collected in `IContributionRegistry.Issues`; the first registration wins. |
 | `DashboardTileDescriptor` | `Id`, `Title`, `Order`, `CreateViewModel` | Built-ins: recent, open, new, samples, what's new. |
 | `ProjectTemplateDescriptor` | `Id`, `DisplayName`, `Description`, `ProfileId`, `OutputType`, `IconKind?` | Built-ins: `netprints.template.console`, `netprints.template.library`. |
