@@ -1,0 +1,99 @@
+# The CLI test project on Windows (specs/005-editor-shell/contracts/ci.md §2, docs/adr/0019-ci-test-matrix-and-windows-cli-leg.md).
+# The path filter is the project closure of tests/NetPrints.Cli.Tests plus its build inputs; CiWorkflowTests checks it.
+name: CLI (Windows)
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'src/NetPrints.Cli/**'
+      - 'src/NetPrints.Core/**'
+      - 'src/NetPrints.Serialization/**'
+      - 'src/NetPrints.Workspace/**'
+      - 'src/NetPrints.Generation/**'
+      - 'src/NetPrints.Catalog/**'
+      - 'src/NetPrints.Reflection/**'
+      - 'src/NetPrints.Extensibility/**'
+      - 'src/NetPrints.Generator/**'
+      - 'tests/NetPrints.Cli.Tests/**'
+      - 'tests/NetPrints.Testing/**'
+      - 'tests/NetPrints.TestExtension/**'
+      - 'tests/Fixtures/**'
+      - 'Directory.*'
+      - 'src/Directory.Build.props'
+      - 'src/BannedSymbols*.txt'
+      - 'tests/Directory.Build.props'
+      - 'global.json'
+      - 'NuGet.config'
+      - '.github/workflows/cli-windows.yml'
+  pull_request:
+    branches: [master]
+    paths:
+      - 'src/NetPrints.Cli/**'
+      - 'src/NetPrints.Core/**'
+      - 'src/NetPrints.Serialization/**'
+      - 'src/NetPrints.Workspace/**'
+      - 'src/NetPrints.Generation/**'
+      - 'src/NetPrints.Catalog/**'
+      - 'src/NetPrints.Reflection/**'
+      - 'src/NetPrints.Extensibility/**'
+      - 'src/NetPrints.Generator/**'
+      - 'tests/NetPrints.Cli.Tests/**'
+      - 'tests/NetPrints.Testing/**'
+      - 'tests/NetPrints.TestExtension/**'
+      - 'tests/Fixtures/**'
+      - 'Directory.*'
+      - 'src/Directory.Build.props'
+      - 'src/BannedSymbols*.txt'
+      - 'tests/Directory.Build.props'
+      - 'global.json'
+      - 'NuGet.config'
+      - '.github/workflows/cli-windows.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cli-windows-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: 1
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+
+jobs:
+  cli:
+    name: CLI (Windows)
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', 'Directory.Build.props', 'src/Directory.Build.props', 'tests/Directory.Build.props', 'global.json', '**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Build
+        run: dotnet build tests/NetPrints.Cli.Tests -c Release
+
+      - name: Test
+        run: >
+          dotnet test --project tests/NetPrints.Cli.Tests -c Release --no-build
+          --report-xunit-trx --results-directory TestResults
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: test-results-cli-windows
+          path: TestResults/**/*.trx
+          if-no-files-found: warn

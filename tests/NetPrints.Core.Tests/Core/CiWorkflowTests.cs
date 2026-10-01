@@ -128,7 +128,7 @@ namespace NetPrints.Tests.Core
         {
             string root = SampleProjectFactory.FindRepositoryRoot();
             string workflow = Path.Combine(root, CliWindowsWorkflow);
-            Assert.SkipUnless(File.Exists(workflow), $"{CliWindowsWorkflow} does not exist yet; T011 creates it and this check then runs.");
+            Assert.True(File.Exists(workflow), $"{CliWindowsWorkflow} does not exist.");
 
             string[] closure = ProjectClosure(root, "tests/NetPrints.Cli.Tests/NetPrints.Cli.Tests.csproj");
             Assert.Contains("src/NetPrints.Cli", closure);
