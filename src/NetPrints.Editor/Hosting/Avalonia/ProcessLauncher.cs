@@ -26,7 +26,7 @@ public sealed class ProcessLauncher : IProcessLauncher
     public event Action<int, int>? ProcessExited;
 
     /// <inheritdoc/>
-    public void Start(ProcessStartRequest request)
+    public void Start(ProcessStartRequest request, CancellationToken cancellationToken = default)
     {
         int id = Interlocked.Increment(ref lastId);
         var startInfo = new ProcessStartInfo(request.FileName)
@@ -51,6 +51,7 @@ public sealed class ProcessLauncher : IProcessLauncher
         }
 
         var process = new Process { StartInfo = startInfo };
+        CancellationTokenRegistration killOnCancel = default;
 
         process.OutputDataReceived += (_, e) => Report(id, ProcessStream.Output, e.Data);
         process.ErrorDataReceived += (_, e) => Report(id, ProcessStream.Error, e.Data);
@@ -61,6 +62,7 @@ public sealed class ProcessLauncher : IProcessLauncher
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
         process.EnableRaisingEvents = true; // after the start is reported, so a fast exit never precedes it
+        killOnCancel = cancellationToken.Register(() => Kill(process));
 
         async Task ReportExitAsync()
         {
@@ -77,7 +79,20 @@ public sealed class ProcessLauncher : IProcessLauncher
             int code = process.ExitCode;
             ProcessExited?.Invoke(id, code);
             OutputReceived?.Invoke($"Process exited (code {code}).");
+            await killOnCancel.DisposeAsync().ConfigureAwait(false);
             process.Dispose();
+        }
+    }
+
+    private static void Kill(Process process)
+    {
+        try
+        {
+            process.Kill(entireProcessTree: true);
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException)
+        {
+            // already exited
         }
     }
 

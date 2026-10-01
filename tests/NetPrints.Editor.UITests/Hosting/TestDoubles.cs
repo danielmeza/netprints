@@ -94,7 +94,7 @@ public sealed class CapturingProcessLauncher : IProcessLauncher, IDisposable
         }
     }
 
-    public void Start(ProcessStartRequest request)
+    public void Start(ProcessStartRequest request, CancellationToken cancellationToken = default)
     {
         Started.Add(request);
         int id = Interlocked.Increment(ref lastId);
@@ -134,6 +134,17 @@ public sealed class CapturingProcessLauncher : IProcessLauncher, IDisposable
         process.BeginErrorReadLine();
         process.EnableRaisingEvents = true;
         processes.Add(process);
+        cancellationToken.Register(() =>
+        {
+            try
+            {
+                process.Kill(entireProcessTree: true);
+            }
+            catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException)
+            {
+                // already exited
+            }
+        });
     }
 
     private void Append(int id, ProcessStream stream, string? line)

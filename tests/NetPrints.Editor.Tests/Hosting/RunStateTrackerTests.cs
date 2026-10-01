@@ -37,7 +37,7 @@ public class RunStateTrackerTests
         Assert.Equal(RunPhase.Building, tracker.Snapshot().Phase);
 
         tracker.BuildFinished();
-        launcher.Start(Request);
+        launcher.Start(Request, TestContext.Current.CancellationToken);
         launcher.RaiseLine(ProcessStream.Output, "Hello");
         launcher.RaiseLine(ProcessStream.Error, "warn");
         var running = tracker.Snapshot();
@@ -56,7 +56,7 @@ public class RunStateTrackerTests
     public void KeepsOnlyTheLast200LinesOfEachStream()
     {
         using var tracker = new RunStateTracker(launcher);
-        launcher.Start(Request);
+        launcher.Start(Request, TestContext.Current.CancellationToken);
 
         for (int i = 0; i < 250; i++)
         {
@@ -76,7 +76,7 @@ public class RunStateTrackerTests
     public void ANewCompileResetsTheState()
     {
         using var tracker = new RunStateTracker(launcher);
-        launcher.Start(Request);
+        launcher.Start(Request, TestContext.Current.CancellationToken);
         launcher.RaiseLine(ProcessStream.Output, "old");
         launcher.RaiseExited(0);
 
@@ -92,11 +92,11 @@ public class RunStateTrackerTests
     public void ANewRunResetsTheTailsAndTheExitCode()
     {
         using var tracker = new RunStateTracker(launcher);
-        launcher.Start(Request);
+        launcher.Start(Request, TestContext.Current.CancellationToken);
         launcher.RaiseLine(ProcessStream.Error, "old");
         launcher.RaiseExited(1);
 
-        launcher.Start(Request);
+        launcher.Start(Request, TestContext.Current.CancellationToken);
 
         var state = tracker.Snapshot();
         Assert.Equal(RunPhase.Running, state.Phase);
@@ -108,9 +108,9 @@ public class RunStateTrackerTests
     public void AnExitOfAnEarlierProgramDoesNotEndTheCurrentOne()
     {
         using var tracker = new RunStateTracker(launcher);
-        launcher.Start(Request);
+        launcher.Start(Request, TestContext.Current.CancellationToken);
         int first = launcher.LastId;
-        launcher.Start(Request);
+        launcher.Start(Request, TestContext.Current.CancellationToken);
 
         launcher.RaiseLine(ProcessStream.Output, "stale", first);
         launcher.RaiseExited(7, first);
@@ -130,7 +130,7 @@ public class RunStateTrackerTests
     public void AFinishedBuildLeavesARunningProgramAlone()
     {
         using var tracker = new RunStateTracker(launcher);
-        launcher.Start(Request);
+        launcher.Start(Request, TestContext.Current.CancellationToken);
 
         tracker.BuildFinished();
 
@@ -154,7 +154,7 @@ public class RunStateTrackerTests
         var tracker = new RunStateTracker(launcher);
         tracker.Dispose();
 
-        launcher.Start(Request);
+        launcher.Start(Request, TestContext.Current.CancellationToken);
 
         Assert.Equal(RunPhase.NotStarted, tracker.Snapshot().Phase);
     }

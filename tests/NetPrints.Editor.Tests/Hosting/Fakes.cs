@@ -201,9 +201,13 @@ public sealed class FakeProcessLauncher : IProcessLauncher
 
     public event Action<int, int>? ProcessExited;
 
-    public void Start(ProcessStartRequest request)
+    /// <summary>The token each start was given, in start order.</summary>
+    public List<CancellationToken> Tokens { get; } = [];
+
+    public void Start(ProcessStartRequest request, CancellationToken cancellationToken = default)
     {
         Started.Add(request);
+        Tokens.Add(cancellationToken);
         LastId++;
         ProcessStarted?.Invoke(LastId, request);
     }

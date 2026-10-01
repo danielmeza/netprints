@@ -10,7 +10,8 @@ public interface IProcessLauncher
     /// <summary>Starts an external process. Its stdout/stderr are reported through <see cref="OutputReceived"/>.</summary>
     /// <param name="request">The process to start, typically <see cref="IProjectSystem.GetRunCommand"/>'s
     /// result (project-system.md §4).</param>
-    void Start(ProcessStartRequest request);
+    /// <param name="cancellationToken">Cancelling it kills the process and its child processes; a token that is already cancelled kills the process right after it starts.</param>
+    void Start(ProcessStartRequest request, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// One line of a started process's stdout or stderr, or a status line ("Process exited (code

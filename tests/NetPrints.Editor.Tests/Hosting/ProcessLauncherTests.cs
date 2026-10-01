@@ -20,7 +20,7 @@ public class ProcessLauncherTests
 
         for (int i = 0; i < 100; i++)
         {
-            launcher.Start(Instant);
+            launcher.Start(Instant, TestContext.Current.CancellationToken);
             var deadline = Stopwatch.StartNew();
             while (tracker.Snapshot().Phase != RunPhase.Exited)
             {
@@ -31,6 +31,22 @@ public class ProcessLauncherTests
     }
 
     [Fact]
+    public async Task CancellingTheTokenKillsTheProcessTree()
+    {
+        Assert.SkipWhen(OperatingSystem.IsWindows(), "needs a POSIX shell");
+        var launcher = new ProcessLauncher();
+        var exited = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        launcher.ProcessExited += (_, code) => exited.TrySetResult(code);
+        using var cts = new CancellationTokenSource();
+
+        launcher.Start(new("sh", ["-c", "sleep 60 & wait"], Environment.CurrentDirectory), cts.Token);
+        await cts.CancelAsync();
+
+        var done = await Task.WhenAny(exited.Task, Task.Delay(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
+        Assert.Same(exited.Task, done);
+    }
+
+    [Fact]
     public async Task TheExitIsReportedEvenWhenAGrandchildKeepsThePipesOpen()
     {
         Assert.SkipWhen(OperatingSystem.IsWindows(), "needs a POSIX shell");
@@ -38,7 +54,7 @@ public class ProcessLauncherTests
         var exited = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
         launcher.ProcessExited += (_, code) => exited.TrySetResult(code);
 
-        launcher.Start(new("sh", ["-c", "sleep 20 & exit 3"], Environment.CurrentDirectory));
+        launcher.Start(new("sh", ["-c", "sleep 20 & exit 3"], Environment.CurrentDirectory), TestContext.Current.CancellationToken);
 
         var done = await Task.WhenAny(exited.Task, Task.Delay(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
         Assert.Same(exited.Task, done);
