@@ -48,6 +48,20 @@ public sealed class EditorSession : IAsyncDisposable
         return session;
     }
 
+    /// <summary>
+    /// Opens another graph, then picks <c>Main</c> in the method list with a single click, so focus starts in the list
+    /// and only the graph opening can move it to the canvas.
+    /// </summary>
+    /// <param name="cancellationToken">Cancels the wait.</param>
+    /// <returns>A task that completes when <c>Main</c> is on the canvas.</returns>
+    public async Task PickMainFromTheMethodListAsync(CancellationToken cancellationToken)
+    {
+        ClassViewModel.CreateMethodCommand.Execute(null);
+        await ClassEditor.Method("Main").ClickAsync(cancellationToken);
+        await ClassEditor.Graph.WaitForGraphAsync("Main", cancellationToken);
+        await WaitForRenderedAsync(cancellationToken);
+    }
+
     /// <summary>A fixed window size, so pointer coordinates and snapshots are predictable.</summary>
     private static void UseFixedSize(Window window)
     {

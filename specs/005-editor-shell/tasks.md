@@ -331,6 +331,8 @@ US2's independent test; SC-001.
   the viewport location and zoom), `PanelViewModel`, `StatusBarViewModel` (a message with expiry through
   `TimeProvider`, the build state) and `TitleFormatter`, in `src/NetPrints.Editor/Shell/`. The five built-in panels
   (`netprints.panel.projectTree`, `inspector`, `errors`, `output`, `csharp`) are registered through the registry.
+  Opening or activating a graph document puts focus in its canvas (Review B R5; `GraphEditorView` already does so when
+  its graph changes through `FocusOnDataContextBehavior`; a tab switch that keeps the view needs the same).
 - [ ] T035 [US2] `src/NetPrints.Editor/Shell/ShellWindow.axaml` with the menu bar, the command bar and the status bar
   generated from the registry (2 units). Test first: `tests/NetPrints.Editor.UITests/Shell/RegistrySurfaceTests.cs`
   (contracts/contributions.md §3–§4, commands.md §1). Menus come in the order File, Edit, View, Go, Build, Help, with
@@ -367,7 +369,8 @@ US2's independent test; SC-001.
 
 - [ ] T039 [US2] Documents and layout commands (2 units). Test first: handler tests in
   `tests/NetPrints.Editor.Tests/Shell/DocumentCommandsTests.cs` with `FakeShell`, and headless tab tests. Graph
-  documents open from the tree or an error (an open one is activated); tabs reorder and close by their button, a
+  documents open from the tree or an error (an open one is activated, and its canvas takes focus: Ctrl+Space right
+  after a tab switch opens the search with no click, SC-004); tabs reorder and close by their button, a
   middle-click and `closeTab` (Ctrl+W); `nextTab` and `previousTab` (Ctrl+Tab, Ctrl+Shift+Tab); `floatDocument`;
   `dockDocument`; `showPanel.<panel>` (closing a pane hides it, and the View menu shows it again); `resetLayout`. The
   Project settings document (`project-settings`) replaces the launcher's settings pane. A floated graph keeps

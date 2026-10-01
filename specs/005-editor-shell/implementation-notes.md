@@ -489,7 +489,7 @@ total: 9, failed: 4
 
 Decisions:
 - The scoped behavior sits on a `Panel` around `GraphEditorView` (data context: the class editor view model), not on the Nodify editor, because the invoker lives on the class editor view model and the view's data context is the graph. Keys from the inspector or the error list are outside it.
-- Graph gestures need focus inside the canvas, as the contract says, so `CanvasPopupPositioningTests` clicks the empty canvas before Ctrl+Space. A freshly opened graph does not take focus by itself yet; the shell (C) is the place for that.
+- Graph gestures need focus inside the canvas, as the contract says, so `CanvasPopupPositioningTests` clicked the empty canvas before Ctrl+Space (Review B R5: a freshly opened graph now takes focus itself, and the click is gone).
 - `ProjectSessionViewModel.UseUndoStack` makes the class editor's own stack the session's stack for that class, so the registry's undo and redo act on the history the editor records to. C replaces the per-editor stack with the session's.
 - The class editor's document id uses the graph key `class` for whatever graph is open: the model has no ids for methods and event graphs yet, and the undo handler needs only the class path.
 - Delete of nodes is still not undoable (`NodeGraphViewModel.DeleteSelectedNodes` was never recorded in the history); the undo test uses a probe command, not a delete.

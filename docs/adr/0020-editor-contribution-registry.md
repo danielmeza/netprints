@@ -82,4 +82,5 @@ Recorded together with their tests (contracts/contributions.md carries the same 
   per invocation.
 - The class editor window gets its key bindings from the registry (`CommandInvoker` with the two behaviors above)
   instead of its hand-written Delete, Ctrl+Z and Ctrl+Y bindings, and `GraphEditorView`'s Ctrl+Space handler is the
-  `nodeSearch` command. Graph gestures act only while the canvas has focus.
+  `nodeSearch` command. Graph gestures act only while the canvas has focus, and opening a graph focuses its canvas
+  (`FocusOnDataContextBehavior` in `GraphEditorView`, Review B R5).

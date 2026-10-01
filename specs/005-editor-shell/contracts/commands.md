@@ -61,7 +61,7 @@ Rules:
   `"<Label> (<first shortcut>)"`. Compile shows an error-count badge after a compile with errors. Run and Stop
   share one slot, which shows Stop while the program runs.
 - Graph-scope shortcuts act only while the graph canvas has focus, and never while a text input inside a node or
-  the inspector has focus.
+  the inspector has focus. Opening or activating a graph puts focus in its canvas (SC-004: keyboard-only).
 - Shortcuts are written `Ctrl+…` and expected to map to Cmd on macOS. That mapping is unverified (Linux CI).
 
 ## 2. Context menus (FR-011, FR-062)

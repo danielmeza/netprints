@@ -43,6 +43,8 @@
                          ConnectionCompletedCommand="{Binding ConnectionCompletedCommand}">
       <Interaction.Behaviors>
         <edbehaviors:GraphViewRequestBehavior />
+        <!-- A graph's shortcuts act only with the canvas focused (SC-004): opening a graph focuses it. -->
+        <edbehaviors:FocusOnDataContextBehavior />
       </Interaction.Behaviors>
 
       <nodify:NodifyEditor.ItemContainerTheme>
