@@ -124,7 +124,7 @@ Contract: contracts/ci.md. **Independent test**: US1's independent test; SC-006;
 
 ### Batch A3 — model: sonnet — T007–T009 — 4 units
 
-- [ ] T007 [US1] Test first: `tests/NetPrints.Core.Tests/Core/CiWorkflowTests.cs` (contracts/ci.md §1–§2), reading the
+- [x] T007 [US1] Test first: `tests/NetPrints.Core.Tests/Core/CiWorkflowTests.cs` (contracts/ci.md §1–§2), reading the
   workflow files with a small indentation-aware reader inside the test (no new package; Decision). Checks: every test
   project under `tests/` whose name ends in `.Tests` or `.UITests`, except `NetPrints.Desktop.E2ETests`, appears in the
   `test` matrix exactly once; the matrix has `fail-fast: false`; each leg uploads `test-results-<leg>` and
@@ -132,7 +132,7 @@ Contract: contracts/ci.md. **Independent test**: US1's independent test; SC-006;
   test-running job except `e2e` and `packages`, and fails unless each needed result is `success`;
   `cli-windows.yml`'s path filter covers every project in the transitive `ProjectReference` closure of
   `tests/NetPrints.Cli.Tests` (fixtures included), the build files of contracts/ci.md §2 and the workflow itself. Red.
-- [ ] T008 [US1] `.github/workflows/ci.yml` (2 units): split `build-test` into `checks` ("Repository checks (Linux)"),
+- [x] T008 [US1] `.github/workflows/ci.yml` (2 units): split `build-test` into `checks` ("Repository checks (Linux)"),
   the `test` matrix (`Core`, `Catalog`, `CLI`, `Editor`, `Editor UI (headless)`) and the aggregate `build-test`, per
   contracts/ci.md §1. Keep the triggers, permissions, concurrency group, action pins, NuGet cache key,
   `timeout-minutes`, the ADR-0008 coverage settings and the UI leg's `NETPRINTS_UI_ARTIFACTS`; `e2e` and `packages`

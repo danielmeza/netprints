@@ -21,8 +21,10 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: 1
 
 jobs:
-  build-test:
-    name: Build and test (Linux)
+  # Everything that is not a test project run: build, repository checks, CLI smoke and sample. Job layout:
+  # specs/005-editor-shell/contracts/ci.md §1 (supersedes specs/001-modernize-build/contracts/ci-workflow.md).
+  checks:
+    name: Repository checks (Linux)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -66,69 +68,15 @@ jobs:
       - name: Format check
         run: dotnet format NetPrints.slnx --verify-no-changes --no-restore
 
-      # Core and reflection tests (no display server needed). --coverage runs this module under
-      # Microsoft.Testing.Extensions.CodeCoverage (referenced via tests/Directory.Build.props), with
-      # tests/CodeCoverage.config's static-only instrumentation: the default dynamic mode crashed
-      # Core.Tests with an AccessViolationException whenever a test's child `dotnet` process loaded
-      # a NetPrints assembly the host was running (docs/adr/0008-static-only-code-coverage.md).
-      # No --ignore-exit-code here: a "zero tests ran" exit (8) is a real failure for this module.
-      - name: Test (Core)
-        run: >
-          dotnet test --project tests/NetPrints.Core.Tests -c Release --no-build
-          --report-xunit-trx --results-directory TestResults
-          -- --coverage --coverage-output-format cobertura
-          --coverage-settings ${{ github.workspace }}/tests/CodeCoverage.config
-
-      - name: Test (Catalog)
-        run: >
-          dotnet test --project tests/NetPrints.Catalog.Tests -c Release --no-build
-          --report-xunit-trx --results-directory TestResults
-          -- --coverage --coverage-output-format cobertura
-          --coverage-settings ${{ github.workspace }}/tests/CodeCoverage.config
-
-      - name: Test (CLI)
-        run: >
-          dotnet test --project tests/NetPrints.Cli.Tests -c Release --no-build
-          --report-xunit-trx --results-directory TestResults
-          -- --coverage --coverage-output-format cobertura
-          --coverage-settings ${{ github.workspace }}/tests/CodeCoverage.config
-
-      # View-model tests (no display server needed). Same coverage setup and zero-tests handling as
-      # Core above.
-      - name: Test (Editor)
-        run: >
-          dotnet test --project tests/NetPrints.Editor.Tests -c Release --no-build
-          --report-xunit-trx --results-directory TestResults
-          -- --coverage --coverage-output-format cobertura
-          --coverage-settings ${{ github.workspace }}/tests/CodeCoverage.config
-
-      # Headless Avalonia UI tests (no display server needed). Snapshot actual/diff images, flow
-      # screenshots and per-test diagnostics go under NETPRINTS_UI_ARTIFACTS. Also run without
-      # --ignore-exit-code: an Avalonia.Headless.XUnit version mismatch that breaks discovery here
-      # (Directory.Packages.props / dependabot.yml both call out this risk) must fail the job, not
-      # go green with the whole headless UI suite silently gone.
-      - name: Test (Editor UI, headless)
-        env:
-          NETPRINTS_UI_ARTIFACTS: ${{ github.workspace }}/TestResults/ui
-        run: >
-          dotnet test --project tests/NetPrints.Editor.UITests -c Release --no-build
-          --report-xunit-trx --results-directory TestResults
-          -- --coverage --coverage-output-format cobertura
-          --coverage-settings ${{ github.workspace }}/tests/CodeCoverage.config
-
       # The desktop E2E project is built as part of the solution but only actually exercised in the
       # `e2e` job below (it needs Xvfb and NETPRINTS_E2E=1). With NETPRINTS_E2E unset it discovers
-      # zero tests here, which is exit code 8 ("zero tests ran"). --ignore-exit-code 8 is scoped to
-      # this project's own step, so it no longer masks a real zero-tests regression in Core.Tests,
-      # Editor.Tests or Editor.UITests above (previously all four modules ran under one
-      # `dotnet test --solution` invocation and shared a single --ignore-exit-code 8, so a discovery
-      # break in any of them would have gone unnoticed).
-      - name: Test (Desktop E2E, zero tests expected here)
+      # zero tests here, which is exit code 8 ("zero tests ran"); --ignore-exit-code 8 is scoped to
+      # this step, so a discovery break in any other test project still fails its own `test` leg.
+      - name: Desktop E2E discovery (zero tests expected here)
         run: >
           dotnet test --project tests/NetPrints.Desktop.E2ETests -c Release --no-build
           --report-xunit-trx --results-directory TestResults
-          -- --ignore-exit-code 8 --coverage --coverage-output-format cobertura
-          --coverage-settings ${{ github.workspace }}/tests/CodeCoverage.config
+          -- --ignore-exit-code 8
 
       # `--version` prints "NetPrints.Cli <version>" and `--help` prints the usage; both exit 0.
       - name: CLI smoke
@@ -152,17 +100,75 @@ jobs:
       - name: Generated files unchanged
         run: git diff --exit-code -- '*.netpc.g.cs'
 
+  # One leg per test project (tests/NetPrints.Desktop.E2ETests runs in `e2e`). CiWorkflowTests keeps this matrix
+  # in step with tests/. --coverage runs each leg under Microsoft.Testing.Extensions.CodeCoverage (referenced via
+  # tests/Directory.Build.props) with tests/CodeCoverage.config's static-only instrumentation: the default dynamic
+  # mode crashed Core.Tests with an AccessViolationException whenever a test's child `dotnet` process loaded a
+  # NetPrints assembly the host was running (docs/adr/0008-static-only-code-coverage.md). No --ignore-exit-code:
+  # a "zero tests ran" exit (8) is a real failure for every leg, and an Avalonia.Headless.XUnit version mismatch
+  # that breaks discovery must fail the UI leg, not go green with the suite silently gone.
+  test:
+    name: Test (${{ matrix.name }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Core
+            leg: core
+            project: tests/NetPrints.Core.Tests
+          - name: Catalog
+            leg: catalog
+            project: tests/NetPrints.Catalog.Tests
+          - name: CLI
+            leg: cli
+            project: tests/NetPrints.Cli.Tests
+          - name: Editor
+            leg: editor
+            project: tests/NetPrints.Editor.Tests
+          - name: Editor UI (headless)
+            leg: editor-ui
+            project: tests/NetPrints.Editor.UITests
+    env:
+      # Snapshot actual/diff images, flow screenshots and per-test diagnostics of the headless UI leg.
+      NETPRINTS_UI_ARTIFACTS: ${{ github.workspace }}/TestResults/ui
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', 'Directory.Build.props', 'src/Directory.Build.props', 'tests/Directory.Build.props', 'global.json', '**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Build
+        run: dotnet build ${{ matrix.project }} -c Release
+
+      - name: Test
+        run: >
+          dotnet test --project ${{ matrix.project }} -c Release --no-build
+          --report-xunit-trx --results-directory TestResults
+          -- --coverage --coverage-output-format cobertura
+          --coverage-settings ${{ github.workspace }}/tests/CodeCoverage.config
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: test-results
+          name: test-results-${{ matrix.leg }}
           path: TestResults/**/*.trx
           if-no-files-found: warn
 
       # Snapshot actual/diff images, flow screenshots and per-test diagnostics (tree dump + screenshots).
       - name: Upload UI artifacts
-        if: always()
+        if: always() && matrix.leg == 'editor-ui'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ui-headless
@@ -174,9 +180,24 @@ jobs:
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: coverage
+          name: coverage-${{ matrix.leg }}
           path: TestResults/**/*.cobertura.xml
           if-no-files-found: warn
+
+  # The one required status check (branch protection): its name must not change. Runs even when a job it needs
+  # failed or was cancelled, and fails unless every needed job succeeded.
+  build-test:
+    name: Build and test (Linux)
+    if: always()
+    needs: [checks, test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Require every job to succeed
+        run: |
+          echo "checks: ${{ needs.checks.result }}"
+          echo "test: ${{ needs.test.result }}"
+          [ "${{ needs.checks.result }}" = "success" ] && [ "${{ needs.test.result }}" = "success" ]
 
   e2e:
     name: Desktop E2E (Linux, Xvfb)
