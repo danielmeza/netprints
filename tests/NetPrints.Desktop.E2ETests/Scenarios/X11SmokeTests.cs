@@ -67,8 +67,9 @@ public abstract class X11SmokeTestBase(DesktopWorkerPool pool) : SmokeScenarios,
         try
         {
             await scenario(Token);
+            Steps.EnsureForcedStepHeld();
         }
-        catch (Exception original) when (lease is not null && driver is not null)
+        catch (Exception original) when (lease is not null && driver is not null && original is not SkipException)
         {
             var moment = Steps.WhereFailed(original);
             string kind = editorExited ? "editor exited" : timeoutCts.IsCancellationRequested ? "timeout" : original is Xunit.Sdk.XunitException ? "assertion" : "exception";
@@ -100,7 +101,11 @@ public abstract class X11SmokeTestBase(DesktopWorkerPool pool) : SmokeScenarios,
 
         LocalSdkLayout.Write(sample);
 
-        lease = await pool.RentAsync(cancellationToken, work);
+        using (Step("wait for worker"))
+        {
+            lease = await pool.RentAsync(cancellationToken, work);
+        }
+
         timeoutCts.CancelAfter(Budget); // the budget starts now, not at dispatch (batch D3)
         lease.Editor.Exited.ContinueWith(_ =>
         {

@@ -32,7 +32,9 @@ public sealed class E2EDiagnosticsTests(DesktopWorkerPool pool) : X11SmokeTestBa
         }
 
         Assert.False(File.Exists(Path.Combine(folder, FailureCapture.ErrorsFileName)));
-        Assert.Contains("(running)", await File.ReadAllTextAsync(Path.Combine(folder, "timings.md"), TestContext.Current.CancellationToken), StringComparison.Ordinal);
+        string timings = await File.ReadAllTextAsync(Path.Combine(folder, "timings.md"), TestContext.Current.CancellationToken);
+        Assert.Contains("(running)", timings, StringComparison.Ordinal);
+        Assert.Contains("| wait for worker |", timings, StringComparison.Ordinal);
         Assert.Equal("running", (await File.ReadAllTextAsync(Path.Combine(folder, "process.txt"), TestContext.Current.CancellationToken)).Trim());
         Assert.True(new FileInfo(Path.Combine(folder, "display.png")).Length > 0);
         byte[] png = await File.ReadAllBytesAsync(Path.Combine(folder, "display.png"), TestContext.Current.CancellationToken);

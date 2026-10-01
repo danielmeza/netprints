@@ -24,6 +24,7 @@ public sealed class StepTimer(string testName, string? forcedStep = null)
     private static readonly string SummaryPath = CreateSummaryFile();
 
     private readonly Lock gate = new();
+    private bool held;
     private readonly List<StepScope> steps = [];
     private readonly System.Runtime.CompilerServices.ConditionalWeakTable<Exception, FailureMoment> thrown = [];
 
@@ -57,12 +58,24 @@ public sealed class StepTimer(string testName, string? forcedStep = null)
     /// </summary>
     public async Task HoldIfForcedAsync(CancellationToken cancellationToken)
     {
-        string? forced = forcedStep ?? Environment.GetEnvironmentVariable(ForceVariable);
+        string? forced = Forced;
         if (forced is { Length: > 0 } && OpenStep is { } open && open.Name == forced)
         {
+            held = true;
             await Task.Delay(Timeout.Infinite, cancellationToken);
         }
     }
+
+    /// <summary>Fails when a step was forced to time out but no checkpoint inside it ever held it.</summary>
+    public void EnsureForcedStepHeld()
+    {
+        if (Forced is { Length: > 0 } forced && !held)
+        {
+            throw new InvalidOperationException($"step '{forced}' was never held (no checkpoint inside it); only a step that reaches a checkpoint can be forced to time out.");
+        }
+    }
+
+    private string? Forced => forcedStep ?? Environment.GetEnvironmentVariable(ForceVariable);
 
     /// <summary>
     /// Remembers, for every exception thrown while the returned scope lives, which step was open at the
