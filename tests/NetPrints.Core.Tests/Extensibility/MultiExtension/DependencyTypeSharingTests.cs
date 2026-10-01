@@ -31,7 +31,7 @@ public sealed class DependencyTypeSharingTests : IAsyncLifetime
 
     private string Copy(string id) => FixtureExtensions.CopyTo(root, id);
 
-    private static Type SeenProviderType(ExtensionRegistry registry)
+    internal static Type SeenProviderType(ExtensionRegistry registry)
     {
         Type node = Assert.Single(registry.NodeKinds, k => k.Kind == "fx.types-consumer/Use").NodeType;
         Type extension = node.Assembly.GetType("Fx.TypesConsumer.TypesConsumerExtension") ?? throw new InvalidOperationException("Consumer extension type not found.");

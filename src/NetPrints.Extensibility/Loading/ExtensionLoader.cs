@@ -309,22 +309,34 @@ public sealed class ExtensionLoader
 
     private void ReportShadowedAssemblies(string id, string folder, string assemblyPath, ExtensionLoadContext context)
     {
-        foreach (string file in Directory.EnumerateFiles(folder, "*.dll").Order(StringComparer.Ordinal))
+        if (!context.TryClaimShadowReport())
         {
-            if (string.Equals(Path.GetFullPath(file), assemblyPath, StringComparison.Ordinal))
-            {
-                continue;
-            }
+            return;
+        }
 
-            string name = Path.GetFileNameWithoutExtension(file);
-            if (HostAssemblies.IsProvided(name))
+        try
+        {
+            foreach (string file in Directory.EnumerateFiles(folder, "*.dll").Order(StringComparer.Ordinal))
             {
-                Log.HostAssemblyShadowed(logger, id, name, file);
+                if (string.Equals(Path.GetFullPath(file), assemblyPath, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                string name = Path.GetFileNameWithoutExtension(file);
+                if (context.IsHostProvided(name))
+                {
+                    Log.HostAssemblyShadowed(logger, id, name, file);
+                }
+                else if (context.FindDependencyOwner(new AssemblyName { Name = name }) is { } owner)
+                {
+                    Log.DependencyAssemblyShadowed(logger, id, name, owner.Name ?? string.Empty);
+                }
             }
-            else if (context.FindDependencyOwner(new AssemblyName(name)) is { } owner)
-            {
-                Log.DependencyAssemblyShadowed(logger, id, name, owner.Name ?? string.Empty);
-            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException)
+        {
+            Log.ShadowCheckFailed(logger, ex, id, folder);
         }
     }
 

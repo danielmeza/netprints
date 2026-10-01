@@ -12,6 +12,8 @@ internal sealed class ExtensionLoadContext : AssemblyLoadContext
 {
     private readonly AssemblyDependencyResolver resolver;
     private readonly IReadOnlyList<ExtensionLoadContext> dependencies;
+    private readonly HashSet<string> hostProvided = HostAssemblies.Snapshot();
+    private int shadowReported;
 
     /// <summary>
     /// Creates the context for the extension assembly at <paramref name="extensionAssemblyPath"/>.
@@ -25,6 +27,18 @@ internal sealed class ExtensionLoadContext : AssemblyLoadContext
         resolver = new AssemblyDependencyResolver(extensionAssemblyPath);
         this.dependencies = dependencies;
     }
+
+    /// <summary>The contexts of the extensions this one depends on, in declared order.</summary>
+    public IReadOnlyList<ExtensionLoadContext> Dependencies => dependencies;
+
+    /// <summary>Whether the host provided the assembly called <paramref name="simpleName"/> when this context was created.</summary>
+    /// <param name="simpleName">The assembly's simple name.</param>
+    /// <returns><see langword="true"/> when the extension must use the host's copy.</returns>
+    public bool IsHostProvided(string simpleName) => HostAssemblies.IsMSBuild(simpleName) || hostProvided.Contains(simpleName);
+
+    /// <summary>Claims the one shadow report this context gets.</summary>
+    /// <returns><see langword="true"/> for the first caller only.</returns>
+    public bool TryClaimShadowReport() => Interlocked.Exchange(ref shadowReported, 1) == 0;
 
     /// <summary>The first context in the dependency chain that provides <paramref name="name"/>, or <see langword="null"/>.</summary>
     /// <param name="name">The assembly to look for.</param>
@@ -47,7 +61,7 @@ internal sealed class ExtensionLoadContext : AssemblyLoadContext
     protected override Assembly? Load(AssemblyName assemblyName)
     {
         string? name = assemblyName.Name;
-        if (name is null || HostAssemblies.IsProvided(name))
+        if (name is null || IsHostProvided(name))
         {
             return null;
         }

@@ -59,7 +59,7 @@ not packable yet (P3 publishes them).
 4. **Coexistence rules (the two hazards).**
    - **Share by what the host provides, not by name.** An extension's dependency is taken from the host only
      when the host provides it: the name is one of the host application's trusted platform assemblies, or an
-     assembly of that name is already loaded in the Default context, or it belongs to a family the host
+     assembly of that name is already loaded in the Default context (at the time the extension's context is created), or it belongs to a family the host
      resolves itself (`Microsoft.Build*`, via MSBuildLocator). Every other dependency resolves from the
      extension's own folder, whatever its name. The prefix list is removed. A copy of a host assembly inside an
      extension folder is ignored (the host's wins) with a logged warning.

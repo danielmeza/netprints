@@ -4,35 +4,39 @@ namespace NetPrints.Extensibility.Loading;
 
 /// <summary>
 /// Decides which assemblies the host provides to every extension (ADR-0010 §4): the host application's trusted platform
-/// assemblies, assemblies already loaded in the Default context and the MSBuildLocator family. A name prefix never makes an
+/// assemblies, assemblies loaded in the Default context when an extension's context is created and the MSBuildLocator family. A name prefix never makes an
 /// assembly shared.
 /// </summary>
 internal static class HostAssemblies
 {
-    private const string MSBuildPrefix = "Microsoft.Build";
+    private const string MSBuildName = "Microsoft.Build";
+    private const string MSBuildPrefix = "Microsoft.Build.";
 
     private static readonly HashSet<string> PlatformAssemblies = ReadPlatformAssemblies();
 
-    /// <summary>Whether the Default context supplies the assembly called <paramref name="simpleName"/>.</summary>
-    /// <param name="simpleName">The assembly's simple name.</param>
-    /// <returns><see langword="true"/> when an extension must use the host's copy.</returns>
-    public static bool IsProvided(string simpleName)
+    /// <summary>The names the host provides right now: its platform assemblies and what the Default context has loaded.</summary>
+    /// <returns>A snapshot an extension's load context keeps for its lifetime.</returns>
+    public static HashSet<string> Snapshot()
     {
-        ArgumentNullException.ThrowIfNull(simpleName);
-        if (simpleName.StartsWith(MSBuildPrefix, StringComparison.Ordinal) || PlatformAssemblies.Contains(simpleName))
-        {
-            return true;
-        }
-
+        var names = new HashSet<string>(PlatformAssemblies, StringComparer.Ordinal);
         foreach (System.Reflection.Assembly assembly in AssemblyLoadContext.Default.Assemblies)
         {
-            if (string.Equals(assembly.GetName().Name, simpleName, StringComparison.Ordinal))
+            if (assembly.GetName().Name is { } name)
             {
-                return true;
+                names.Add(name);
             }
         }
 
-        return false;
+        return names;
+    }
+
+    /// <summary>Whether <paramref name="simpleName"/> belongs to the MSBuildLocator family, which the host always provides.</summary>
+    /// <param name="simpleName">The assembly's simple name.</param>
+    /// <returns><see langword="true"/> for <c>Microsoft.Build</c> and <c>Microsoft.Build.*</c>.</returns>
+    public static bool IsMSBuild(string simpleName)
+    {
+        ArgumentNullException.ThrowIfNull(simpleName);
+        return simpleName == MSBuildName || simpleName.StartsWith(MSBuildPrefix, StringComparison.Ordinal);
     }
 
     private static HashSet<string> ReadPlatformAssemblies()

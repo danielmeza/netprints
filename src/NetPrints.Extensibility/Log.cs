@@ -50,4 +50,8 @@ internal static partial class Log
     /// <summary>Logs 2011: an extension folder holds a copy of an assembly a dependency provides; the dependency's copy is used.</summary>
     [LoggerMessage(EventId = 2011, Level = LogLevel.Warning, Message = "Extension {Id} ships {AssemblyName}; dependency {DependencyId} provides it, so the copy is ignored")]
     public static partial void DependencyAssemblyShadowed(ILogger logger, string id, string assemblyName, string dependencyId);
+
+    /// <summary>Logs 2012: checking an extension folder for shadowed assemblies failed; the extension still loads.</summary>
+    [LoggerMessage(EventId = 2012, Level = LogLevel.Debug, Message = "Shadow check of extension {Id} folder {Folder} failed")]
+    public static partial void ShadowCheckFailed(ILogger logger, Exception exception, string id, string folder);
 }

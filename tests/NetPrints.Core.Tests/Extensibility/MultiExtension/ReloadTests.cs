@@ -47,4 +47,24 @@ public sealed class ReloadTests : IAsyncLifetime
             Assert.Equal(steady, FixtureContexts());
         }
     }
+
+    [Fact]
+    public async Task AConsumerSeesTheProviderOfTheCurrentLoadAfterAProjectCopyReplacesTheGlobalOne()
+    {
+        string search = Path.Combine(root, "search");
+        Directory.CreateDirectory(search);
+        FixtureExtensions.CopyTo(search, FixtureExtensions.TypesProvider);
+        FixtureExtensions.CopyTo(search, FixtureExtensions.TypesConsumer);
+        string projectRoot = Path.Combine(root, "project");
+        Directory.CreateDirectory(projectRoot);
+        string projectProvider = FixtureExtensions.CopyTo(projectRoot, FixtureExtensions.TypesProvider);
+        await using var host = new ExtensionHost(ExtensionLoaderOptions.BuiltInOnly with { SearchDirectories = [search] }, new CollectingLoggerFactory());
+
+        string initial = DependencyTypeSharingTests.SeenProviderType(host.Current).Assembly.Location;
+        ExtensionRegistry reloaded = await host.LoadForProjectAsync([projectProvider], TestContext.Current.CancellationToken);
+
+        Assert.StartsWith(Path.Combine(search, FixtureExtensions.TypesProvider), initial, StringComparison.Ordinal);
+        Type seen = DependencyTypeSharingTests.SeenProviderType(reloaded);
+        Assert.StartsWith(projectProvider, seen.Assembly.Location, StringComparison.Ordinal);
+    }
 }
