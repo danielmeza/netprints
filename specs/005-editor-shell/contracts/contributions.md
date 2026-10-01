@@ -35,7 +35,7 @@ public interface IContributionRegistry
 - Two commands whose gestures overlap in the same scope are recorded as `GestureConflict`, and only the first keeps
   the gesture. `Global` overlaps every scope, and two scope sets overlap when they share a scope.
 - An invalid descriptor is recorded as `InvalidDescriptor` and ignored. Examples: an empty label, a bad id, or a
-  single-key gesture in `Global` scope.
+  single-key gesture in `Global` scope (function keys F1 to F24 are allowed, as F5 and F7 are Global).
 - Each issue is logged at warning level through a `[LoggerMessage]` method.
 
 ## 2. Descriptors

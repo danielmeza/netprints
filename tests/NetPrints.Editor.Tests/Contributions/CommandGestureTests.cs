@@ -45,4 +45,20 @@ public class CommandGestureTests
         Assert.Equal(CommandModifiers.Ctrl, chord.Modifiers);
         Assert.Equal("F", chord.Key);
     }
+
+    [Theory]
+    [InlineData("F1", true)]
+    [InlineData("Shift+F5", true)]
+    [InlineData("F24", true)]
+    [InlineData("F25", false)]
+    [InlineData("F0", false)]
+    [InlineData("F", false)]
+    [InlineData("Fx", false)]
+    [InlineData("Home", false)]
+    public void FunctionKeysAreF1ToF24(string text, bool expected)
+    {
+        Assert.True(CommandGesture.TryParse(text, out var gesture));
+
+        Assert.Equal(expected, gesture.IsFunctionKey);
+    }
 }

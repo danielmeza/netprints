@@ -106,6 +106,19 @@ public class ContributionRegistryTests
     }
 
     [Theory]
+    [InlineData("F5")]
+    [InlineData("F12")]
+    public void AFunctionKeyIsAllowedInGlobalScope(string gesture)
+    {
+        var registry = NewRegistry();
+
+        registry.AddCommand(Command("netprints.command.run", scope: CommandScope.Global, gestures: gesture));
+
+        Assert.Single(registry.Commands);
+        Assert.Empty(registry.Issues);
+    }
+
+    [Theory]
     [InlineData(CommandScope.Graph)]
     [InlineData(CommandScope.ProjectTree)]
     public void ASingleKeyGestureIsAllowedInANonGlobalScope(CommandScope scope)

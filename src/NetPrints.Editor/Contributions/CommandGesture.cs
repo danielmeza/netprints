@@ -1,8 +1,12 @@
+using System.Globalization;
+
 namespace NetPrints.Editor.Contributions;
 
 /// <summary>A keyboard gesture such as <c>Ctrl+Shift+B</c>, parsed and normalised without any UI toolkit.</summary>
 public sealed record CommandGesture
 {
+    private const int MaxFunctionKey = 24;
+
     private CommandGesture(CommandModifiers modifiers, string key)
     {
         Modifiers = modifiers;
@@ -17,6 +21,9 @@ public sealed record CommandGesture
 
     /// <summary>Gets a value indicating whether the gesture has no modifier.</summary>
     public bool IsSingleKey => Modifiers == CommandModifiers.None;
+
+    /// <summary>Gets a value indicating whether the key is a function key, <c>F1</c> to <c>F24</c>.</summary>
+    public bool IsFunctionKey => Key.Length > 1 && Key[0] == 'F' && int.TryParse(Key.AsSpan(1), NumberStyles.None, CultureInfo.InvariantCulture, out int number) && number is >= 1 and <= MaxFunctionKey;
 
     /// <summary>Parses a gesture string; modifiers and key are case-insensitive and their order is free.</summary>
     /// <param name="text">The text, such as <c>shift+ctrl+b</c>.</param>
