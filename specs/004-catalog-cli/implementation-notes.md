@@ -885,16 +885,16 @@ Report: `.agent-archive/netprints-p2/review-G.md`. Checkpoint G was not accepted
 | G-R2 "already loaded in Default" evaluated lazily | major | G-F1 | fixed, 173c9da |
 | G-R3 dependency copy wins with no version check | major | G-F2 | fixed, 7da71a9 |
 | G-R4 `Fixture.SharedLib` V1/V2 both AssemblyVersion 0.0.0.0 | minor | G-F2 | fixed, 71d8892 |
-| G-R5 JSON type-info resolvers not conflict-checked | major | G-F3 | open |
+| G-R5 JSON type-info resolvers not conflict-checked | major | G-F3 | fixed, 5e2f552 |
 | G-R6 MX-T05 cannot tell declared order from id or load order | major | G-F2 | fixed, 0d7c909 |
 | G-R7 guide states the diamond rule and host provision wrongly | major | G-F4 | open |
 | G-R8 Checkpoint G report ran on stale Release binaries | major | G-F4 | open |
-| G-R9 sample-build tests not reported, no real-host SC-008 test | minor | G-F3 | open |
+| G-R9 sample-build tests not reported, no real-host SC-008 test | minor | G-F3 | fixed, d7dfcfb |
 | G-R10 contract §3 and §6 drifted from the tests | minor | G-F4 | open |
-| G-R11 MX-T12 has no real "only B" case | minor | G-F3 | open |
+| G-R11 MX-T12 has no real "only B" case | minor | G-F3 | fixed, 4cb58ec |
 | G-R12 shadow check can fail a load and re-logs on reload | minor | G-F1 | fixed, 173c9da |
 | G-R13 G3's 23 tests have no red evidence | minor | G-F2 | fixed, mutation evidence in G-F2 |
-| G-R14 MX-T14 scale fixture never walks the dependency chain | nit | G-F3 | open |
+| G-R14 MX-T14 scale fixture never walks the dependency chain | nit | G-F3 | fixed, af126ba |
 
 ### Accepted decisions
 
@@ -938,3 +938,14 @@ Contract and ADR: contracts/extensions.md §2 step 1 (snapshot, prefix) and the 
 | MX-T05 `DependencyTypeSharingTests` | sort dependencies by id (see G-R6) | red, see above |
 
 - Gates: `dotnet format NetPrints.slnx --verify-no-changes --no-restore` clean. Full suite on freshly rebuilt Debug binaries: total 1719, failed 0, succeeded 1709, skipped 10 (1716 plus 3 new; the diamond test was rewritten, not added).
+
+### G-F3 (G-R5, G-R11, G-R9, G-R14)
+
+- G-R5 (5e2f552): `RegistryBuilder` records each extension's document types and resolvers. `Build` puts an `OwnerRoutingJsonTypeInfoResolver` first in the registry's resolver list (`NodeConverters.ExtensionResolvers`), so a document type is answered by its owner's resolvers before the combined chain, and it reports NPX006 (contribution `JSON resolver`, against the other extension, naming the type and owner) for any other extension's resolver that also claims it. Built-in document types are not routed (`NetPrintsJsonContext` is first in the chain). `ExtensionRegistry.JsonTypeInfoResolvers` is unchanged. Contract MX-T07 row updated.
+  - Red: `ASquattersCatchAllJsonResolverIsReportedAndAlphasDocumentsStillComeFromAlphasResolver [FAIL]`: `Assert.Single() Failure: The collection did not contain any matching items` (the squatter's `DefaultJsonTypeInfoResolver` raised no issue). The round-trip guard `AlphasDocumentsRoundTripThroughAlphasResolverWhileASquattersCatchAllResolverIsPresent` was already green (the reflection resolver round-trips the same bytes), so it only guards. The origin check (`JsonTypeInfo.OriginatingResolver` is a `JsonSerializerContext`) comes after the issue assertion.
+  - Green: `IdConflictTests` 5/5, `NetPrints.Tests.Extensibility` 92/92. The old squatter test's expected list gained `JSON resolver`; the old list-position test was replaced.
+- G-R11 (4cb58ec): the duplicate `{fx.beta}` inline case is removed (beta needs alpha, so it equalled `{}`). New independent graph over alpha and libv1: reopened with `{libv1}` and with `{alpha}` stays byte-identical, and `generate` with `{libv1}` gives NPT003 naming `fx.alpha/Ping` and writes nothing. Written after the code (characterization). Mutation: loading alpha too in the lib-only generate turns `GeneratingWithOnlyLibV1ReportsNpt003ForAlphasNodeAndWritesNothing` red. Green: `DocumentSubsetTests` 7/7.
+- G-R14 (af126ba): the scale template now compiles a private `fx.scale.dep.dll` that every extension copy touches in `Register` (it throws if unresolved), so each load goes through `FindDependencyOwner` over the `dependsOn` chain. `ExtensionTestSupport.CompileWithReferences` added. The 10 s bound is unchanged (it runs in about 1.3 s). Written after the code; mutation: copying the dependency only into fixture 0 makes the load report issues, `Assert.Empty() Failure: Collection was not empty`. Green: 1/1.
+- G-R9 (d7dfcfb): `Samples/MultiExtensionBuildTests` writes a graph with `fx.types-consumer/Use` and `fx.private-prefix/Describe` nodes, then builds a temporary project with `NetPrintsExtension` items for the provider, consumer and private-prefix fixtures through a real `dotnet build` (the Generator process) and runs it. It asserts the build succeeds, the generated C# has the provider marker (`Description("fx.types-provider")`) and the `netprints-fixture-runtime` line, and the program prints both. Written after the code; mutation: leaving the provider out of the items fails the build with NPX003 (`dependency 'fx.types-provider' is missing`).
+- Samples namespace (`NetPrints.Tests.Samples`, run on its own): 16 tests, 0 failed (15 before, plus this one).
+- Gates: `dotnet format NetPrints.slnx --verify-no-changes --no-restore` clean (8c06ce5 fixes two import orders). Full suite on freshly rebuilt Debug binaries: total 1723, failed 0, succeeded 1713, skipped 10 (1719 plus 4 new).
