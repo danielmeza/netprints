@@ -82,6 +82,17 @@ public sealed class CliExitCodeTests : IDisposable
         Assert.Equal("NetPrints.Cli " + informational, host.Output.Trim());
     }
 
+    [Fact]
+    public async Task VersionPrintsOnOneLineWhateverTheVersionLengthAndConsoleWidth()
+    {
+        string version = "0.1.0-local.20261001033443+" + new string('b', 100);
+        var host = new CliTestHost { Tool = new ToolVersion(version) };
+        host.Console.Profile.Width = 20;
+
+        Assert.Equal(ExitCodes.Success, await host.RunAsync("--version"));
+        Assert.Equal("NetPrints.Cli " + version + Environment.NewLine, host.Output);
+    }
+
     [Theory]
     [MemberData(nameof(CommandNames))]
     public async Task EveryCommandsHelpExitsZero(string command)

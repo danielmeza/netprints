@@ -19,6 +19,7 @@ internal static class CliApplication
 {
     private const string ApplicationName = "NetPrints.Cli";
     private const string VerboseFlag = "--verbose";
+    private const string VersionFlag = "--version";
     private const string Separator = "--";
     private const string P1FlagsMessage =
         "The -p/--project-path and -r/--run options were replaced: use 'netprints build <project>' or 'netprints run <project>'.";
@@ -44,18 +45,20 @@ internal static class CliApplication
         ArgumentNullException.ThrowIfNull(args);
         ArgumentNullException.ThrowIfNull(services);
 
+        services.TryAddSingleton(new ToolVersion(InformationalVersion()));
         CliEnvironment environment;
         IAnsiConsole console;
+        ToolVersion tool;
         await using (ServiceProvider probe = services.BuildServiceProvider())
         {
             environment = probe.GetRequiredService<CliEnvironment>();
             console = probe.GetRequiredService<IAnsiConsole>();
+            tool = probe.GetRequiredService<ToolVersion>();
         }
 
         // Everything after the first separator belongs to the user's program; Spectre never sees it (it would drop or reject valid values).
         int separator = args.ToList().IndexOf(Separator);
         IReadOnlyList<string> own = separator < 0 ? args : [.. args.Take(separator)];
-        services.TryAddSingleton(new ToolVersion(InformationalVersion()));
         services.AddSingleton(new ForwardedArguments(separator < 0 ? [] : [.. args.Skip(separator + 1)]));
 
         if (P1FlagPresent(own))
@@ -67,6 +70,12 @@ internal static class CliApplication
         IReadOnlyList<string> normalized = MoveLeadingVerbose(own);
         bool verbose = own.Contains(VerboseFlag);
 
+        if (normalized is [VersionFlag])
+        {
+            console.WriteLineRaw(ApplicationName + " " + tool.Value);
+            return ExitCodes.Success;
+        }
+
         services.AddLogging(builder => builder
             .AddConsole(options => options.LogToStandardErrorThreshold = LogLevel.Trace)
             .SetMinimumLevel(verbose ? LogLevel.Information : LogLevel.Warning));
@@ -77,7 +86,7 @@ internal static class CliApplication
         {
             config.SetApplicationName("netprints");
             config.UseStrictParsing();
-            config.SetApplicationVersion(ApplicationName + " " + InformationalVersion());
+            config.SetApplicationVersion(ApplicationName + " " + tool.Value);
             config.ConfigureConsole(console);
             config.SetExceptionHandler((exception, _) => HandleException(exception, environment.Error, verbose, cancellationToken));
             ConfigureCommands(config, commands);
