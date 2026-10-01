@@ -8,7 +8,7 @@ concurrency group are unchanged.
 
 | Job id | Name | Needs | Content |
 |---|---|---|---|
-| `checks` | Repository checks (Linux) | — | restore and build `NetPrints.slnx` (Release); graph checks (`regen --check`, `format --check`); `dotnet format --verify-no-changes`; the Desktop E2E zero-test discovery step (`--ignore-exit-code 8`); CLI smoke; sample compile and run; generated files unchanged |
+| `checks` | Repository checks (Linux) | — | restore and build `NetPrints.slnx` (Release); graph checks (`regen --check`, `format --check`); `dotnet format --verify-no-changes`; the Desktop E2E smoke step (no display, always-on tests only; `--ignore-exit-code 8`); CLI smoke; sample compile and run; generated files unchanged |
 | `test` | Test (`${{ matrix.name }}`) | — | matrix: `Core`, `Catalog`, `CLI`, `Editor`, `Editor UI (headless)`; each leg restores and builds `tests/<project>` in Release, then runs it with `--report-xunit-trx`, `--coverage`, the ADR-0008 settings and the leg's environment (`NETPRINTS_UI_ARTIFACTS` for the UI leg); uploads `test-results-<leg>` (and `ui-headless` for the UI leg) and `coverage-<leg>`; `fail-fast: false` |
 | `build-test` | **Build and test (Linux)** | `checks`, `test` | `if: always()`; fails unless every needed job succeeded; no other steps |
 | `e2e` | Desktop E2E (Linux, Xvfb) | — | unchanged, plus the diagnostics folder (§3) inside the uploaded `e2e-results` |

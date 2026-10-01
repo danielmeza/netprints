@@ -220,9 +220,8 @@ A batch prompt names the task range and pastes the task text; everything below a
   then `dotnet build -c Release` (0 warnings) and `dotnet format NetPrints.slnx --verify-no-changes`.
 - **Full suite includes the Desktop E2E tests, as a second, dedicated run — mirror
   `.github/workflows/ci.yml`'s split of `test` and `e2e`, don't fold E2E into the solution-wide command.** The
-  solution-wide command above (no `NETPRINTS_E2E`) is the local equivalent of CI's `test` matrix: `--ignore-exit-code 8`
-  tolerates the Desktop E2E project's "zero tests ran" exit code (its tests self-skip without
-  `NETPRINTS_E2E=1`), and `NetPrints.Editor.UITests`' `HeadlessSmokeTests.MinimizeAndRestoreClassWindow`/
+  solution-wide command above (no `NETPRINTS_E2E`) is the local equivalent of CI's `test` matrix: the Desktop E2E project
+  exits 0 without `NETPRINTS_E2E=1` (its 21 always-on tests run, 10 scenarios self-skip), and `NetPrints.Editor.UITests`' `HeadlessSmokeTests.MinimizeAndRestoreClassWindow`/
   `PanCursor`/`DragFromLists` always skip too (the headless driver has no window manager, real cursor or
   OS drag-drop — see `UiCapabilities`/`SmokeScenarios.Require`) and are tolerated the same way, by not
   passing `--fail-skips`. Then run CI's `e2e` job: `NETPRINTS_E2E=1 dotnet test --project

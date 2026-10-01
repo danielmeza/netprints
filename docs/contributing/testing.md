@@ -6,7 +6,7 @@
 |---|---|
 | `NetPrints.Core.Tests` | The model, serialization, translation and the repository rules (`SourceHygieneTests`, golden fixtures). |
 | `NetPrints.Catalog.Tests` | The type catalog and its annotations. |
-| `NetPrints.Cli.Tests` | The `netprints` command line, against a fake host. |
+| `NetPrints.Cli.Tests` | The `netprints` command line, in process (`CliTestHost`); some tests run the real tool or the real project system as child processes. |
 | `NetPrints.Editor.Tests` | Editor view models and hosting services, over fakes (no window). |
 | `NetPrints.Editor.UITests` | The editor's views, headless (Avalonia headless platform), through page objects and `AutomationIds`. |
 | `NetPrints.Desktop.E2ETests` | The real desktop editor on a private X11 display (Linux only). |
@@ -38,7 +38,7 @@ Never run the whole `NetPrints.Editor.UITests` project under Xvfb (it runs out o
 
 ## Desktop E2E tests
 
-They need Linux with Xvfb, openbox, xdotool, ImageMagick and GTK 3, and run only with `NETPRINTS_E2E=1`; without it every test skips (exit code 8).
+They need Linux with Xvfb, openbox, xdotool, ImageMagick and GTK 3, and run only with `NETPRINTS_E2E=1`; without it the scenarios skip and only the always-on tests (failure capture, entry point, worker pool) run; the exit code is 0.
 Each test rents a worker from a pool (a private Xvfb display with openbox) and starts a fresh editor on it
 ([ADR-0006](../adr/0006-parallel-desktop-e2e.md)). The pool size is `NETPRINTS_E2E_WORKERS` (default `min(cores / 2, 4)`).
 If `:100` is taken, set `NETPRINTS_E2E_DISPLAY_START`. Never use `DISPLAY=:1`.
@@ -65,7 +65,7 @@ The files are written to `TestResults/e2e-diagnostics/<TestClass>/` and, on CI, 
 | `display.png` | The whole display (root window), including platform dialogs. |
 | `editor.log` | The last 400 lines the editor logged, then the tail of its stderr. |
 | `process.txt` | `running`, or `exited <code>`. |
-| `run-state.json` | The last launched program: `phase` (`notStarted`, `building`, `running`, `exited`), `exitCode`, and the last 200 lines of `stdout` and `stderr`. It tells a slow run from lost output. |
+| `run-state.json` | The last launched program: `phase` (`notStarted`, `building`, `running`, `exited`), `exitCode` (present only once the program has exited), and the last 200 lines of `stdout` and `stderr`. It tells a slow run from lost output. |
 | `capture-errors.txt` | Only when a part could not be captured: which one and why. |
 
 Each part has 10 seconds and the whole capture 30, so a hung editor cannot block it.
@@ -80,8 +80,9 @@ To see the diagnostics of any scenario locally, name the step in `NETPRINTS_E2E_
 NETPRINTS_E2E=1 NETPRINTS_E2E_FORCE_TIMEOUT='run' tests/NetPrints.Desktop.E2ETests/bin/Release/net10.0/NetPrints.Desktop.E2ETests -class '*EditCompileAndRunTests'
 ```
 
-The step names are the `using (Step("..."))` blocks of `SmokeScenarios`. The step is held at its next checkpoint, so name
-one that records a checkpoint (`start`, `open project`, `edit graph`, `run`). The variable is for manual runs only: set for a whole
+The step names are the `using (Step("..."))` blocks of the scenarios. The step is held at its next checkpoint, so name
+one that records a checkpoint (`start`, `open project`, `edit graph`, `run`, `create project`, `add references`). `compile` and the nested
+`wait for worker` (timed inside `start`) have none, and forcing a step that was never held fails the scenario loudly. The variable is for manual runs only: set for a whole
 run, it would hold that step in every test.
 
 ## Continuous integration
@@ -94,7 +95,7 @@ Runs on every pull request to `master`, every push to `master` and on demand.
 
 | Job | Check name | What it does |
 |---|---|---|
-| `checks` | Repository checks (Linux) | Builds `NetPrints.slnx` in Release, runs the graph checks (`regen --check`, `format --check`), `dotnet format --verify-no-changes`, the Desktop E2E zero-test discovery, the CLI smoke and the sample compile and run, and fails on any changed generated file. |
+| `checks` | Repository checks (Linux) | Builds `NetPrints.slnx` in Release, runs the graph checks (`regen --check`, `format --check`), `dotnet format --verify-no-changes`, the Desktop E2E smoke step (no display, always-on tests only), the CLI smoke and the sample compile and run, and fails on any changed generated file. |
 | `test` | Test (Core), Test (Catalog), Test (CLI), Test (Editor), Test (Editor UI (headless)) | One matrix leg per test project, run in parallel (`fail-fast: false`). Each leg builds only its own project in Release and runs it with `--report-xunit-trx` and static code coverage ([ADR-0008](../adr/0008-static-only-code-coverage.md)). |
 | `build-test` | **Build and test (Linux)** | The aggregate. It runs even when a job it needs failed and fails unless `checks` and every `test` leg succeeded. |
 | `e2e` | **Desktop E2E (Linux, Xvfb)** | The Desktop E2E project on Xvfb with `NETPRINTS_E2E=1` and `--fail-skips on`. |
