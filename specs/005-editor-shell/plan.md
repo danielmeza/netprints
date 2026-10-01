@@ -37,7 +37,7 @@ lifecycle and look consistent.
 - **First, CI.** Sub-phase A makes CI diagnosable and faster: Desktop E2E failure diagnostics, a per-test-project
   matrix with a stable aggregate check, and a Windows CLI workflow with a UTF-8 `show --textconv` test
   (ADR-0019).
-- **Decisions:** ADR-0018, ADR-0019, ADR-0020, and research R1–R15.
+- **Decisions:** ADR-0018, ADR-0019, ADR-0020, and research R1–R16.
 
 ## Technical Context
 
@@ -57,7 +57,7 @@ lifecycle and look consistent.
 
 **Testing**:
 - xUnit v3 (3.2.2) on Microsoft.Testing.Platform.
-- VM tests in `NetPrints.Editor.Tests` and headless wiring tests in `NetPrints.Editor.UITests`
+- View-model tests in `NetPrints.Editor.Tests` and headless wiring tests in `NetPrints.Editor.UITests`
   (`[AvaloniaFact]`).
 - Desktop E2E in `NetPrints.Desktop.E2ETests`: Xvfb + openbox, one class per scenario (ADR-0006).
 - Repository hygiene (`XamlHygieneTests` E1–E7, `CiWorkflowTests`) in `NetPrints.Core.Tests`.
@@ -80,6 +80,8 @@ separate Windows workflow runs the CLI tests.
 - `net10.0` only. Analyzers stay at error (ADR-0003). The hygiene tests forbid: `!` null-forgiving, suppressions
   outside the ADR-0003 ledger, `#nullable disable`, sync-over-async, and `<NoWarn>`. Fix causes, never suppress.
   Never change analyzer packages, severities or `.editorconfig` to get green.
+- View model types are named `<Name>ViewModel`, never `<Name>VM` (owner decision 2026-10-01, ADR-0007 amendment;
+  enforced by the `NoTypeNameEndsInVM` hygiene test from sub-phase A on).
 - XAML over code-behind (ADR-0007, the `avalonia-xaml`, `avalonia-behaviors` and `avalonia-styling` skills):
   - load the skills before touching `.axaml`/`.axaml.cs`;
   - every UI action is a registered command with a unit test (ADR-0020);
@@ -130,7 +132,7 @@ Tracking).*
 | II. UI-agnostic core | Core changes are UI-free: the event graph rename and entry arguments. Registry descriptors, `IShell`, the state and lifecycle services are UI-free. Dock types are confined to one adapter namespace. | Pass |
 | III. Extension-first | Panels, commands, tiles, templates, context menus, tooltips and go-to providers are contribution kinds that the built-in editor uses (ADR-0020). UnrealSharp's template is contributed by its extension, not hard-coded. | Pass |
 | IV. Single target framework | No new projects. Dock packages ship `net10.0`. | Pass |
-| V. Tests gate every change | Each story has VM, headless and E2E obligations (research R13). E2E failures become diagnosable (US1). CI keeps every test project gated through the aggregate check. | Pass |
+| V. Tests gate every change | Each story has view-model, headless and E2E obligations (research R13). E2E failures become diagnosable (US1). CI keeps every test project gated through the aggregate check. | Pass |
 | VI. Readable, deterministic output | Graph output is unchanged except the optional arguments property, which is canonical and ordered. The state files are versioned (`schemaVersion`) with defined fallbacks. | Pass |
 | VII. Abstractions over concretions for I/O | `IEditorStateStore`, `BackupService` (through an I/O abstraction), and `IShell` over Dock. Documents still go through `IDocumentFormat`. | Pass |
 | VIII. Simplicity, incremental delivery | One PR. Later-phase items are recorded (research R14). The exact pin, the seam and the fallback bound the new dependency. | Pass |
@@ -154,26 +156,26 @@ docs/adr/0018-…, 0019-…, 0020-…  (committed with this spec)
 
 ```text
 src/NetPrints.Editor/
-├── Shell/                    # new: ShellWindow.axaml, ShellVM, IShell, DocumentId, DocumentVM, GraphDocumentVM,
-│                             #   PanelVM, StatusBarVM, TitleFormatter, ConfirmUnload flow
+├── Shell/                    # new: ShellWindow.axaml, ShellViewModel, IShell, DocumentId, DocumentViewModel, GraphDocumentViewModel,
+│                             #   PanelViewModel, StatusBarViewModel, TitleFormatter, ConfirmUnload flow
 ├── Shell/Docking/            # new: DockShellAdapter, ShellDockFactory, LayoutSerializer (only Dock references)
 ├── Contributions/            # new: IContributionRegistry, ContributionRegistry, descriptors, CommandContext,
 │                             #   ContributionIssue, BuiltIn/{File,Edit,View,Go,Build,Help}Contributions.cs
-├── Commands/                 # new: handlers per menu; CommandPalette/ (VM + view); KeyboardShortcutsSheet/
+├── Commands/                 # new: handlers per menu; CommandPalette/ (view model + view); KeyboardShortcutsSheet/
 ├── Behaviors/                # changed: + CommandKeyBindingsBehavior, ScopedCommandKeysBehavior (tunnel, canvas)
-├── ProjectTree/              # new: ProjectTreePanelVM + view (content moved from ClassEditorWindow)
+├── ProjectTree/              # new: ProjectTreePanelViewModel + view (content moved from ClassEditorWindow)
 ├── Lifecycle/                # new: UnsavedChangesTracker, BackupService, RecoveryService, UnsavedChangesDialog,
 │                             #   RecoverDialog
 ├── State/                    # new: IEditorStateStore, JsonEditorStateStore, StateJsonContext, RecentProjects,
 │                             #   SessionState, WindowStateService, EditorSettings (theme)
-├── StartPage/                # new: StartPageVM, tiles, NewProjectDialog, ProjectTemplateService, Samples, WhatsNew.md
-├── Navigation/               # new: GoToAnythingVM, built-in IGoToProviders, NavigationHistory, ConnectionNavigator,
-│                             #   ConnectionTooltipProvider, BreadcrumbsVM
-├── Output/                   # new: OutputPanelVM + view
-├── Events/                   # changed: EventGraph rename; EventEntryInspectorVM, EventArgumentVM (new)
+├── StartPage/                # new: StartPageViewModel, tiles, NewProjectDialog, ProjectTemplateService, Samples, WhatsNew.md
+├── Navigation/               # new: GoToAnythingViewModel, built-in IGoToProviders, NavigationHistory, ConnectionNavigator,
+│                             #   ConnectionTooltipProvider, BreadcrumbsViewModel
+├── Output/                   # new: OutputPanelViewModel + view
+├── Events/                   # changed: EventGraph rename; EventEntryInspectorViewModel, EventArgumentViewModel (new)
 ├── UndoRedo/UndoRedoStack.cs # changed: MarkSaved, IsAtSavedState
 ├── Search/                   # changed: scoped-search empty state ("hidden by catalog")
-├── Main/                     # removed: MainWindow.*; MainEditorVM split into ShellVM + command handlers
+├── Main/                     # removed: MainWindow.*; MainEditorViewModel split into ShellViewModel + command handlers
 ├── ClassEditor/              # removed: ClassEditorWindow.* (lists → ProjectTree, inspectors → Inspector panel)
 ├── Hosting/                  # changed: IWindowService (no OpenClassEditor), EditorComposition (registry, shell),
 │                             #   ShutdownCoordinator (unload prompt)
@@ -205,7 +207,7 @@ for contributions is P3's decision.
 
 | Sub-phase | Stories | Content | Checkpoint |
 |---|---|---|---|
-| A. CI and test infrastructure | US1 | implementation-notes; E2E `FailureCapture` + forced-timeout test; CI matrix + aggregate + `CiWorkflowTests`; `cli-windows.yml` + `ShowTextconvEncodingTests` + Windows skips; contributing/testing.md | A: SC-006 |
+| A. Naming, CI and test infrastructure | US1, FR-105 | implementation-notes; **first, the mechanical `*VM` → `*ViewModel` rename** (24 types, about 124 `.cs`/`.axaml` files, `x:DataType` and bindings, tests, docs and ADR mentions; no PublicAPI files, the editor is not API-tracked) **plus the `NoTypeNameEndsInVM` hygiene test**, as its own commit before any other P3a code; E2E `FailureCapture` + forced-timeout test; CI matrix + aggregate + `CiWorkflowTests`; `cli-windows.yml` + `ShowTextconvEncodingTests` + Windows skips; contributing/testing.md | A: SC-006, FR-105 |
 | B. Registry and commands core | US4 (core) | registry + validation + issues; descriptors and handlers for every existing action (save, compile, run, new **Stop**, undo/redo with dynamic labels, delete, rename, select all, frame, fit); key-binding behaviors (global + tunnel canvas); `UndoRedoStack` saved marker | B: registry tests, handler tests |
 | C. Shell | US2 (+ US4 surfaces) | **Dock spike gate** (ADR-0018 five checks, results in notes); `IShell` + Dock adapter (or fallback); `ShellWindow` with menu bar, command bar, status bar; panels: project tree, inspector, Errors, Output, C#; graph documents; project settings document; smoke flows rewritten; `FloatAndRedockGraph`, `ResetLayout`; remove `MainWindow` and `ClassEditorWindow` last | C: SC-001 |
 | D. Lifecycle and feedback | US3, US4 (rest) | unsaved tracking per file; title and tab markers; unload prompt on the five paths; backups + pruning + permissions; recovery; undo feedback; Help › Keyboard shortcuts; `KeyboardOnly` E2E | D: SC-002, SC-003, SC-004 |
@@ -229,7 +231,7 @@ recorded in implementation-notes.md.
 |---|---|---|
 | A separate Windows workflow (`cli-windows.yml`) besides the Linux-only `CI` | Constitution I requires the tools to work on Windows, and the UTF-8 textconv contract can only fail there | The constitution's development workflow names the VS extension workflow as the "single" Windows exception. A separate, path-filtered workflow that does not replace `CI` is the smallest deviation. A PATCH amendment is proposed below. Folding it into `CI` would break the Linux-only gate wording more. |
 | New dependency family (Dock.*) with an exact pin | Docking, floating, tab groups and layout serialization (US2, US6) | Building them on plain Avalonia is the larger and riskier piece of work. It remains the fallback behind the seam (ADR-0018). |
-| `IShell` seam and an adapter over Dock | Keeps Dock out of feature VMs, tests and the P3 public API, and makes the fallback cheap | Direct Dock use would couple the extension API to a single-maintainer library |
+| `IShell` seam and an adapter over Dock | Keeps Dock out of feature view models, tests and the P3 public API, and makes the fallback cheap | Direct Dock use would couple the extension API to a single-maintainer library |
 | New enforced hygiene rule E7 with an allowlist | Makes the roadmap's "code-behind only for justified gestures" checkable | A review checklist is not enforced. The E1–E6 allowlists show the pattern works. |
 | Optional property in graph schema v1 (custom-event arguments) | US8 needs arguments, and the owner keeps the graph schema at v1 until the version cut | A schema v2 bump now contradicts the owner decision. The property is optional, and v1 readers ignore unknown properties (System.Text.Json default). An older editor drops the arguments on save, which the release notes state. |
 

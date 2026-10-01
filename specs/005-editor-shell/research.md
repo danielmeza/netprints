@@ -17,7 +17,7 @@ not committed); the facts used are restated here.
   `avalonia-behaviors` and `avalonia-styling` skills.
 - `specs/004-catalog-cli/implementation-notes.md`: E-R15 and R15 (type-scoped search), FU-1 to FU-7 (carry-overs).
 - Current code (surveyed 2026-10-01): `MainWindow` (launcher) and `ClassEditorWindow` (one per class, opened by
-  `IWindowService.OpenClassEditor`); `MainEditorVM` (save, compile, run); `UndoRedoStack` with named
+  `IWindowService.OpenClassEditor`); `MainEditorViewModel` (save, compile, run); `UndoRedoStack` with named
   `DelegateUndoableCommand`s and `Changed`/`Applied` events; `ClassGraph.IsDirty`/`MarkDirty`/`MarkClean` driven
   by `Applied`; `ShutdownCoordinator`; `JsonFileSettingsStore` (`<ApplicationData>/NetPrints/settings.json`);
   `IProjectProfile` with one built-in profile (`netprints.default`); `EditorStyles.axaml` with about 20 colour
@@ -46,7 +46,7 @@ not committed); the facts used are restated here.
 - **Unverified (the spike checks them)**: compiled-binding document templates, automation peers and ids on docked
   and floating content, floating under openbox, theming through the editor's tokens.
 - **Rationale**: dock, float, tab groups and layout serialization are large to build and test; the library is
-  maintained, MIT, on the repo's Avalonia line, and uses the repo's MVVM toolkit without ReactiveUI. The seam keeps
+  maintained, MIT, on the repo's Avalonia line, and uses the repo's MVViewModel toolkit without ReactiveUI. The seam keeps
   Dock types out of feature view models, tests and the P3 public API, so a Dock regression or the fallback costs one
   adapter.
 - **Alternatives**: plain `TabControl` + `GridSplitter` (kept as the fallback: no floating, own persistence);
@@ -87,8 +87,8 @@ not committed); the facts used are restated here.
 
 ## R4. Shell structure
 
-- **Decision**: one `ShellWindow` per open project replaces `MainWindow` and `ClassEditorWindow`. `ShellVM` owns the
-  project session (`ProjectSessionVM`), the `IShell` service, the documents and the panels. The class window's
+- **Decision**: one `ShellWindow` per open project replaces `MainWindow` and `ClassEditorWindow`. `ShellViewModel` owns the
+  project session (`ProjectSessionViewModel`), the `IShell` service, the documents and the panels. The class window's
   content splits into the **Project tree** panel (classes and their methods, constructors, variables and event
   graphs, with the add, remove and open actions), **graph documents** (one per method, constructor, event graph or
   class graph), and the **Inspector** panel (class, method, variable and event-entry inspectors). The launcher's
@@ -99,7 +99,7 @@ not committed); the facts used are restated here.
 - **Undo scope**: each class keeps its own undo stack, as today; Undo and Redo act on the active document's class
   (or the tree selection's class when the tree has focus).
 - **Rationale**: matches the UX audit's suggested fix and every reference editor (Unreal, Unity Shader Graph,
-  Godot); keeps the existing VMs (inspectors, graph editor, error list, code view) and moves them into panels
+  Godot); keeps the existing view models (inspectors, graph editor, error list, code view) and moves them into panels
   instead of rewriting them.
 - **Alternatives**: several projects per window (rejected: P3a has no multi-project model and the build, catalogs
   and extensions are per project); keeping per-class windows as an option (replaced by floating a graph tab, which
@@ -137,7 +137,7 @@ not committed); the facts used are restated here.
   - The project file is unsaved only if a project-level change is pending. If the current references and project
     settings flows write the file immediately, they keep doing so and the project file never shows as unsaved (to
     be checked in sub-phase D).
-  - The prompt runs from one place, `ShellVM.ConfirmUnloadAsync`, called by window close (through
+  - The prompt runs from one place, `ShellViewModel.ConfirmUnloadAsync`, called by window close (through
     `ShutdownCoordinator`), Exit, Close project, Open project and New project.
   - Backups: a per-file debounce of 30 seconds after the last change writes the file's serialized content to
     `<ApplicationData>/NetPrints/backups/<project-key>/<relative-path>.bak.json` plus `manifest.json` (original path,
@@ -252,7 +252,7 @@ not committed); the facts used are restated here.
 ## R13. Testing and guide screenshots
 
 - **Decision**:
-  - VM unit tests (`NetPrints.Editor.Tests`) for every command handler, the registry, the lifecycle, the state store,
+  - View-model unit tests (`NetPrints.Editor.Tests`) for every command handler, the registry, the lifecycle, the state store,
     navigation and recent projects.
   - Headless tests (`NetPrints.Editor.UITests`) for the wiring: generated menus and key bindings, the docking adapter
     with layout round trips, the theme tokens in both variants, and the dialogs.
@@ -292,3 +292,23 @@ not committed); the facts used are restated here.
   diagnostics and the CI matrix), the ADR index (0018–0020), ADR-0007's amendment note (E7), and the `avalonia-*`
   skills.
 - **Rationale**: the roadmap's P3a done-when and the owner's editor-guides decision (2026-09-28).
+
+## R16. View model naming (owner decision 2026-10-01)
+
+- **Decision**: view model types end in `ViewModel`. The 24 `*VM` types on master are renamed first, in one
+  mechanical commit at the start of sub-phase A, before any new shell code: types, file names, `x:DataType`,
+  bindings and casts in XAML, tests, docs, skills and ADR mentions. In the editor's own namespaces, a rename that
+  would collide with an existing type is resolved case by case, and the resolution is recorded in
+  implementation-notes.md. A `SourceHygieneTests` check, `NoTypeNameEndsInVM`, scans every C# type declaration in
+  `src/` and `tests/` (classes, records, structs and interfaces, including generic ones such as
+  `DialogViewModel<TResult>`) and fails on a name ending in `VM`. `MVVM` and other names where `VM` is not a suffix
+  of a type name are unaffected. The rule is recorded as an amendment to ADR-0007, which owns the editor's
+  view-layer conventions. The `avalonia-*` skills mention it in the same batch.
+- **Rationale**: an owner decision. Abbreviated suffixes hide intent. Renaming before the shell work means every
+  new P3a type follows the rule and nothing is renamed twice.
+- **Alternatives**: rename gradually as files are touched (rejected: mixed naming for the whole phase, and P3a
+  replaces most of those views anyway); record the rule only in the plan's conventions (rejected: the rule
+  outlives P3a, so it belongs in the ADR that later phases read).
+
+Names of current types in this spec's documents already use the new form (for example `MainEditorViewModel`,
+`DialogViewModel<TResult>`).

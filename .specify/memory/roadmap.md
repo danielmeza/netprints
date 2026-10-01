@@ -107,7 +107,7 @@ variables with getter/setter nodes like class variables. They are declared at th
 method, which fits the current goto translator. The Variables panel shows two groups: *Class* and
 *Method: <name>*.
 Follow-ups deferred from the P0 reviews (PR #1): child view models stop calling back into the
-parent `ClassEditorVM` (dependency direction; P0 only fixes the undo cleanup); a Roslyn-based
+parent `ClassEditorViewModel` (dependency direction; P0 only fixes the undo cleanup); a Roslyn-based
 architecture gate (no Avalonia types in view models, dependency direction); Nodify
 command-based gestures instead of code-behind (split, disconnect, connection completed; the
 grid `ViewportTransform` item was superseded by P0.1); replace the `SetProperty(model, …)` wrappers when
@@ -144,6 +144,9 @@ contribution registry; the rest in its `research.md`).
   test times out or fails (FU-4, the `EditCompileAndRun` flake, issue #11); split the "Build and test (Linux)" job
   into a test-project matrix under an aggregate check of the same name (FU-7, ADR-0019); a Windows CLI workflow with
   a UTF-8 `show --textconv` test (FU-3, ADR-0019).
+- **View model naming** (owner decision 2026-10-01): view model types end in `ViewModel`, never `VM`. The 24
+  existing `*VM` types are renamed mechanically first, before any new shell code, and a hygiene test fails on any
+  type name ending in `VM` (ADR-0007 amendment).
 - **Layout:** a single window with a project tree, tabbed graphs, an inspector and a bottom panel (Errors / Output / C#).
   Replaces the separate launcher and per-class windows (H2).
 - **Commands:** a command registry feeding a command bar, a menu and keyboard shortcuts (H3, H4). This is also the P3

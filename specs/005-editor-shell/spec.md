@@ -58,6 +58,10 @@ answers have an ADR; the rest are in research.md.
 - Q: Is the docking library adopted? → A: Yes, Dock.Avalonia 12.1.0.6, behind a shell seam and gated by a spike at
   the start of the shell work, with a plain Avalonia layout as the fallback; no feature or test depends on the
   library directly (ADR-0018, research R2).
+- Q: How are view model types named? → A: Owner decision (2026-10-01): every view model type ends in `ViewModel`;
+  the `VM` suffix is not used. The 24 existing `*VM` types are renamed mechanically at the start of P3a, before any
+  new shell code, and a hygiene test fails on any type whose name ends in `VM` (FR-105; recorded as an amendment to
+  ADR-0007; research R16).
 
 Further defaults decided in the same session (each recorded in research.md):
 
@@ -609,6 +613,9 @@ its public members appear.
   saving and recovery, commands and shortcuts, navigation, and the inspector for event graphs), with screenshots
   produced by a repeatable scripted run; the ADRs and contributor docs MUST be updated.
 - **FR-104**: P3a MUST NOT include performance work (owner decision 2026-09-25: P8).
+- **FR-105**: Every view model type MUST be named `<Name>ViewModel`; no type in `src/` or `tests/` may end in `VM`.
+  The existing `*VM` types MUST be renamed (types, files, XAML data types and bindings, tests and docs) before any
+  new P3a view model is added, and a hygiene test MUST enforce the rule.
 
 ### Key Entities
 
@@ -652,7 +659,7 @@ its public members appear.
   (0 unannotated, 0 `[NetPrintsIgnore]`), a type from an uncovered assembly lists the same members as before, and a
   graph that uses a hidden member builds and runs with unchanged output.
 - **SC-008**: Every colour token resolves to a value in both Dark and Light (a headless test enumerates them), no
-  view contains a colour literal, and every XAML hygiene allowlist is empty; the code-behind allowlist contains only
+  view contains a colour literal, no type name ends in `VM`, and every XAML hygiene allowlist is empty; the code-behind allowlist contains only
   entries with a gesture, viewport or interop reason.
 - **SC-009**: A custom event renamed and given two arguments in the inspector produces the renamed method with both
   parameters in the generated C#, and each change undoes in one step.

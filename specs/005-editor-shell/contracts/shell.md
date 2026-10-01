@@ -57,7 +57,7 @@ headless tests drive.
 | New project | Create (enabled when the input is valid), Cancel | the created project path |
 | Stop running program? (on exit while running) | Stop and exit, Cancel | `Stop`, `Cancel` |
 
-Every dialog follows ADR-0007: a `DialogVM<TResult>` with `DialogCloseBehavior`, opened through `IWindowService`.
+Every dialog follows ADR-0007: a `DialogViewModel<TResult>` with `DialogCloseBehavior`, opened through `IWindowService`.
 
 ## 6. Automation ids
 
