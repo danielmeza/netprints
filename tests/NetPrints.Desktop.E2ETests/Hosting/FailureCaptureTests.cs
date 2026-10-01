@@ -133,5 +133,41 @@ public sealed class FailureCaptureTests : IDisposable
         Assert.Same(original, failure.InnerException);
     }
 
+    [Fact]
+    public async Task StaleFilesFromAnEarlierRunAreGoneAfterACleanCapture()
+    {
+        await File.WriteAllTextAsync(Path.Combine(directory, FailureCapture.ErrorsFileName), "old", TestContext.Current.CancellationToken);
+        await File.WriteAllTextAsync(Path.Combine(directory, "display.png"), "old", TestContext.Current.CancellationToken);
+        var capture = new FailureCapture(clock, [Writes("first")]);
+
+        await capture.CaptureAsync(directory, TestContext.Current.CancellationToken);
+
+        Assert.False(File.Exists(Path.Combine(directory, FailureCapture.ErrorsFileName)));
+        Assert.False(File.Exists(Path.Combine(directory, "display.png")));
+        Assert.True(File.Exists(Path.Combine(directory, "first.txt")));
+    }
+
+    [Fact]
+    public async Task APartFactoryThatThrowsNeverReplacesTheOriginal()
+    {
+        var capture = new FailureCapture(clock, () => throw new InvalidOperationException("factory"));
+        var original = new InvalidOperationException("the original");
+
+        var failure = await capture.FailAsync(original, "run", TimeSpan.FromSeconds(3), directory, TestContext.Current.CancellationToken);
+
+        Assert.Same(original, failure.InnerException);
+    }
+
+    [Fact]
+    public async Task AnUnexpectedCaptureExceptionNeverReplacesTheOriginal()
+    {
+        var capture = new FailureCapture(clock, [Writes("first")]);
+        var original = new InvalidOperationException("the original");
+
+        var failure = await capture.FailAsync(original, "run", TimeSpan.FromSeconds(3), "", TestContext.Current.CancellationToken);
+
+        Assert.Same(original, failure.InnerException);
+    }
+
     public void Dispose() => Directory.Delete(directory, recursive: true);
 }

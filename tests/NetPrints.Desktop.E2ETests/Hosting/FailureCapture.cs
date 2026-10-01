@@ -14,7 +14,10 @@ public sealed record CapturePart(string Name, string FileName, Func<string, Canc
 /// <see cref="CapturePart"/> with its own time limit and an overall one, so a hung editor cannot
 /// block the capture, and records the parts that failed in <c>capture-errors.txt</c>.
 /// </summary>
-public sealed class FailureCapture(TimeProvider timeProvider, IReadOnlyList<CapturePart> parts, TimeSpan? partLimit = null)
+/// <param name="timeProvider">The clock of the time limits.</param>
+/// <param name="createParts">Builds the parts when the capture runs, so a failure building them is caught with the rest.</param>
+/// <param name="partLimit">How long one part may take; <see cref="PartLimit"/> by default.</param>
+public sealed class FailureCapture(TimeProvider timeProvider, Func<IReadOnlyList<CapturePart>> createParts, TimeSpan? partLimit = null)
 {
     /// <summary>The file naming the parts that could not be captured.</summary>
     public const string ErrorsFileName = "capture-errors.txt";
@@ -27,20 +30,31 @@ public sealed class FailureCapture(TimeProvider timeProvider, IReadOnlyList<Capt
 
     private readonly TimeSpan perPart = partLimit ?? PartLimit;
 
+    /// <summary>Captures the given parts.</summary>
+    public FailureCapture(TimeProvider timeProvider, IReadOnlyList<CapturePart> parts, TimeSpan? partLimit = null)
+        : this(timeProvider, () => parts, partLimit)
+    {
+    }
+
     /// <summary>The folder for the diagnostics of one test class, under <c>TestResults/e2e-diagnostics</c>.</summary>
     public static string FolderFor(string testClass) => Path.Combine(StepTimer.ResultsDirectory, "e2e-diagnostics", testClass);
 
     /// <summary>Writes every part into <paramref name="directory"/>; parts that fail or hang are recorded, never thrown.</summary>
-    /// <param name="directory">The capture folder, created if needed.</param>
+    /// <param name="directory">The capture folder, created if needed; files of an earlier capture are deleted first.</param>
     /// <param name="cancellationToken">Abandons the capture.</param>
     public async Task CaptureAsync(string directory, CancellationToken cancellationToken)
     {
         Directory.CreateDirectory(directory);
+        foreach (string stale in Directory.GetFiles(directory))
+        {
+            File.Delete(stale);
+        }
+
         var errors = new ConcurrentQueue<string>();
         using var stop = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
 
         // Every part starts (and arms its timer) before the first await below.
-        var running = parts.ToDictionary(part => part, part => RunPartAsync(part, directory, errors, stop.Token));
+        var running = createParts().ToDictionary(part => part, part => RunPartAsync(part, directory, errors, stop.Token));
         var total = Task.Delay(TotalLimit, timeProvider, stop.Token);
         var finished = Task.WhenAll(running.Values);
 
@@ -75,7 +89,7 @@ public sealed class FailureCapture(TimeProvider timeProvider, IReadOnlyList<Capt
         {
             await CaptureAsync(directory, cancellationToken);
         }
-        catch (Exception captureFailure) when (captureFailure is IOException or UnauthorizedAccessException or OperationCanceledException)
+        catch (Exception captureFailure)
         {
             TestContext.Current.TestOutputHelper?.WriteLine($"[diagnostics] capture into {directory} failed: {captureFailure.Message}");
         }
