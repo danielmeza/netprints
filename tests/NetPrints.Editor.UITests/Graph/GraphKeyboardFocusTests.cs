@@ -28,10 +28,13 @@ public class GraphKeyboardFocusTests
         await session.Graph.Search.WaitOpenAsync(Token);
     }
 
-    [AvaloniaTheory(Timeout = TestAppBuilder.Timeout)]
-    [InlineData("F", GraphViewRequest.FrameSelection)]
-    [InlineData("Home", GraphViewRequest.FitAll)]
-    public async Task ViewShortcutsRightAfterPickingAMethodRaiseTheirRequest(string chord, GraphViewRequest expected)
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public Task FRightAfterPickingAMethodFramesTheSelection() => ViewShortcutRaisesAsync("F", GraphViewRequest.FrameSelection);
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public Task HomeRightAfterPickingAMethodFitsAllNodes() => ViewShortcutRaisesAsync("Home", GraphViewRequest.FitAll);
+
+    private static async Task ViewShortcutRaisesAsync(string chord, GraphViewRequest expected)
     {
         await using var session = await OpenByPickingAMethodAsync();
         session.GraphViewModel.SelectNodes([session.GraphViewModel.Nodes.Last()], deselectPrevious: true);
