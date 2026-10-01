@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Loader;
+using System.IO;
+using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using System.Threading.Tasks;
 using NetPrints.Catalog;
@@ -14,7 +15,9 @@ using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Nodes;
 using NetPrints.Extensibility.Settings;
 using NetPrints.Graph;
+using NetPrints.Serialization;
 using NetPrints.Serialization.Documents;
+using NetPrints.Serialization.Json;
 using NetPrints.Serialization.Mapping;
 using NetPrints.Testing.Extensions;
 using Xunit;
@@ -89,6 +92,7 @@ public sealed class IdConflictTests : IAsyncLifetime
             "host channel fx.alpha.channel",
             "settings fx.alpha",
             "catalog profile fx-alpha",
+            "JSON resolver",
         ];
         Assert.Equal(expected.Order(StringComparer.Ordinal), rejected.Order(StringComparer.Ordinal));
 
@@ -115,15 +119,37 @@ public sealed class IdConflictTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task ASquattersJsonResolverIsAddedAfterAlphasSoAlphasTypeInfoStillWins()
+    public async Task ASquattersCatchAllJsonResolverIsReportedAndAlphasDocumentsStillComeFromAlphasResolver()
     {
         string alphaFolder = FixtureExtensions.CopyTo(root, FixtureExtensions.Alpha);
 
         await using ExtensionRegistry registry = Load(Options(inProcess: [SquatterExtension()], folders: [alphaFolder]));
 
-        Assert.Empty(registry.Issues.Where(issue => issue.Contribution.Contains("resolver", StringComparison.OrdinalIgnoreCase)));
-        Assert.IsType<DefaultJsonTypeInfoResolver>(registry.JsonTypeInfoResolvers[^1]);
-        Assert.NotEmpty(registry.JsonTypeInfoResolvers.SkipLast(1));
+        ExtensionContributionIssue issue = Assert.Single(registry.Issues, i => i.Contribution.Contains("JSON resolver", StringComparison.Ordinal));
+        Assert.Equal(Squatter, issue.ExtensionId);
+        Assert.Equal(ExtensionDiagnosticCodes.ContributionRejected, issue.Code);
+        Assert.Contains(FixtureExtensions.Alpha, issue.Reason, StringComparison.Ordinal);
+
+        Type alphaDocument = LoadedAlphaAssembly().GetType("Fx.Kit.FxNodeDocument") ?? throw new InvalidOperationException("FxNodeDocument not found.");
+        JsonTypeInfo typeInfo = new NetPrintsJsonOptions(registry.NodeConverters).SerializerOptions.GetTypeInfo(alphaDocument);
+        Assert.IsAssignableFrom<JsonSerializerContext>(typeInfo.OriginatingResolver);
+    }
+
+    [Fact]
+    public async Task AlphasDocumentsRoundTripThroughAlphasResolverWhileASquattersCatchAllResolverIsPresent()
+    {
+        string alphaFolder = FixtureExtensions.CopyTo(root, FixtureExtensions.Alpha);
+
+        await using ExtensionRegistry registry = Load(Options(inProcess: [BuiltInExtension.InProcessEntry, SquatterExtension()], folders: [alphaFolder]));
+        byte[] document = await MultiExtensionGraphs.WriteAsync(registry, MultiExtensionGraphs.BuildClass(registry, "Ns", "OnlyAlpha", "fx.alpha/Ping"));
+        JsonDocumentFormat format = ExtensionGraphs.Format(registry);
+        await using var input = new MemoryStream(document);
+        ClassDocument read = await format.ReadClassAsync(input, new DocumentId("alpha-only"), TestContext.Current.CancellationToken);
+        await using var output = new MemoryStream();
+        await format.WriteClassAsync(read, output, TestContext.Current.CancellationToken);
+        byte[] saved = output.ToArray();
+
+        Assert.Equal(document, saved);
     }
 
     [Fact]
