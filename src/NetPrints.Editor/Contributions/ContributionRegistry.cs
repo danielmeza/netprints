@@ -156,7 +156,7 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
     private static bool IsBlank(string? text) => string.IsNullOrWhiteSpace(text);
 
     private static bool ScopesOverlap(CommandScope a, CommandScope b) =>
-        a == b || a == CommandScope.Global || b == CommandScope.Global;
+        a == CommandScope.Global || b == CommandScope.Global || (a & b) != 0;
 
     private static HashSet<string> GesturesOf(CommandDescriptor command) =>
         [.. (command.DefaultGestures ?? []).Select(g => CommandGesture.TryParse(g, out var parsed) ? parsed.ToString() : g)];

@@ -33,7 +33,7 @@ public interface IContributionRegistry
   the shell calls on startup, `Add*` throws `InvalidOperationException`.
 - A duplicate id, within one kind, is recorded as `DuplicateId` and ignored: the first registration wins.
 - Two commands whose gestures overlap in the same scope are recorded as `GestureConflict`, and only the first keeps
-  the gesture. `Global` overlaps every scope.
+  the gesture. `Global` overlaps every scope, and two scope sets overlap when they share a scope.
 - An invalid descriptor is recorded as `InvalidDescriptor` and ignored. Examples: an empty label, a bad id, or a
   single-key gesture in `Global` scope.
 - Each issue is logged at warning level through a `[LoggerMessage]` method.
@@ -49,7 +49,7 @@ public sealed record CommandDescriptor(
     MenuPlacement? Menu = null,              // Path ("Build"), Group ("build"), Order
     int? CommandBarOrder = null);
 
-public enum CommandScope { Global, Graph, ProjectTree }
+[Flags] public enum CommandScope { Global = 0, Graph = 1, ProjectTree = 2 }   // a command may name several: Graph | ProjectTree
 
 public interface ICommandHandler
 {

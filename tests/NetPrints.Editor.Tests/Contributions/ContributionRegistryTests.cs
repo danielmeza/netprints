@@ -118,6 +118,21 @@ public class ContributionRegistryTests
         Assert.Empty(registry.Issues);
     }
 
+    [Theory]
+    [InlineData(CommandScope.Graph | CommandScope.ProjectTree, CommandScope.ProjectTree, true)]
+    [InlineData(CommandScope.Graph | CommandScope.ProjectTree, CommandScope.Graph, true)]
+    [InlineData(CommandScope.Graph | CommandScope.ProjectTree, CommandScope.Graph | CommandScope.ProjectTree, true)]
+    [InlineData(CommandScope.Graph, CommandScope.ProjectTree, false)]
+    public void AMultiScopeCommandOverlapsEveryScopeItNames(CommandScope first, CommandScope second, bool conflicts)
+    {
+        var registry = NewRegistry();
+
+        registry.AddCommand(Command("netprints.command.first", scope: first, gestures: "Delete"));
+        registry.AddCommand(Command("netprints.command.second", scope: second, gestures: "Delete"));
+
+        Assert.Equal(conflicts ? 1 : 0, registry.Issues.Count(issue => issue.Kind == ContributionIssueKind.GestureConflict));
+    }
+
     [Fact]
     public void AnUnparseableGestureIsAnInvalidDescriptor()
     {
