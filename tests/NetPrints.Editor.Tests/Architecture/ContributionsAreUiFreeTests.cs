@@ -26,7 +26,7 @@ public class ContributionsAreUiFreeTests
     public void NoSourceFileOfTheNamespaceMentionsAUiToolkit()
     {
         string folder = Path.Combine(RepositoryPaths.Root(), "src", "NetPrints.Editor", "Contributions");
-        var files = Directory.EnumerateFiles(folder, "*.cs").ToList();
+        var files = Directory.EnumerateFiles(folder, "*.cs", SearchOption.AllDirectories).ToList();
         Assert.NotEmpty(files);
 
         var offenders = files.SelectMany(file => BannedNamesIn(File.ReadAllText(file)).Select(name => $"{Path.GetFileName(file)}: {name}"));
@@ -37,7 +37,7 @@ public class ContributionsAreUiFreeTests
     [Fact]
     public void NoPublicSignatureOfTheNamespaceUsesAUiToolkitType()
     {
-        var types = typeof(IContributionRegistry).Assembly.GetTypes().Where(t => t.Namespace == typeof(IContributionRegistry).Namespace).ToList();
+        var types = typeof(IContributionRegistry).Assembly.GetTypes().Where(t => t.Namespace is { } ns && (ns == typeof(IContributionRegistry).Namespace || ns.StartsWith(typeof(IContributionRegistry).Namespace + ".", StringComparison.Ordinal))).ToList();
         Assert.NotEmpty(types);
 
         const System.Reflection.BindingFlags all = System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic
