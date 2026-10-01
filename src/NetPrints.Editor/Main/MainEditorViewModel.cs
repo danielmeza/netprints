@@ -13,6 +13,7 @@ using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Settings;
 using NetPrints.Projects;
 using NetPrints.Serialization;
+using IProjectActions = NetPrints.Editor.Shell.IProjectActions;
 using ProjectSessionViewModel = NetPrints.Editor.Shell.ProjectSessionViewModel;
 
 namespace NetPrints.Editor.Main;
@@ -21,7 +22,7 @@ namespace NetPrints.Editor.Main;
 /// View model of the main window: project lifecycle, settings, references and the class list
 /// (PAR-01..15).
 /// </summary>
-public sealed partial class MainEditorViewModel : ObservableObject, IDisposable
+public sealed partial class MainEditorViewModel : ObservableObject, IDisposable, IProjectActions
 {
     private readonly EditorContext context;
     private readonly ILogger<MainEditorViewModel> logger;
@@ -301,9 +302,11 @@ public sealed partial class MainEditorViewModel : ObservableObject, IDisposable
 
     /// <summary>Opens a project chosen with a *.csproj picker (PAR-04).</summary>
     [RelayCommand]
-    private async Task OpenProjectAsync()
+    private Task OpenProjectAsync() => OpenProjectCoreAsync(null);
+
+    private async Task OpenProjectCoreAsync(string? path)
     {
-        string? path = await context.FilePicker.OpenFileAsync("Open Project", [FileFilter.ProjectFiles]);
+        path ??= await context.FilePicker.OpenFileAsync("Open Project", [FileFilter.ProjectFiles]);
         if (path is not null)
         {
             IsProjectPaneOpen = false;
@@ -618,6 +621,101 @@ public sealed partial class MainEditorViewModel : ObservableObject, IDisposable
         }
 
         return true;
+    }
+
+    /// <inheritdoc/>
+    Task<bool> IProjectActions.ConfirmUnloadAsync(CancellationToken cancellationToken) => Task.FromResult(true);
+
+    /// <inheritdoc/>
+    Task IProjectActions.OpenProjectAsync(string? path, CancellationToken cancellationToken) => OpenProjectCoreAsync(path);
+
+    /// <inheritdoc/>
+    Task IProjectActions.NewProjectAsync(CancellationToken cancellationToken) => CreateProjectAsync();
+
+    /// <inheritdoc/>
+    Task IProjectActions.CloseProjectAsync(CancellationToken cancellationToken)
+    {
+        context.Windows.CloseAllClassEditors();
+        IsProjectPaneOpen = false;
+        Project = null;
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc/>
+    Task IProjectActions.ExitAsync(CancellationToken cancellationToken)
+    {
+        context.Windows.CloseMainWindow();
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc/>
+    void IProjectActions.ShowProjectSettings()
+    {
+        if (IsProjectOpen && !IsSettingsPaneOpen)
+        {
+            ToggleSettingsPane();
+        }
+    }
+
+    /// <inheritdoc/>
+    Task IProjectActions.ShowReferencesAsync(CancellationToken cancellationToken) => ShowReferencesAsync();
+
+    /// <inheritdoc/>
+    void IProjectActions.ShowClassSettings(ClassGraph cls) => EditorOf(cls)?.ShowClassCommand.Execute(null);
+
+    /// <inheritdoc/>
+    void IProjectActions.AddMethod(ClassGraph cls) => EditorOf(cls)?.CreateMethodCommand.Execute(null);
+
+    /// <inheritdoc/>
+    void IProjectActions.AddConstructor(ClassGraph cls) => EditorOf(cls)?.CreateConstructorCommand.Execute(null);
+
+    /// <inheritdoc/>
+    void IProjectActions.AddVariable(ClassGraph cls) => EditorOf(cls)?.CreateVariableCommand.Execute(null);
+
+    /// <inheritdoc/>
+    void IProjectActions.AddEventGraph(ClassGraph cls) => EditorOf(cls)?.CreateEventGraphCommand.Execute(null);
+
+    /// <inheritdoc/>
+    void IProjectActions.RenameItem(object item)
+    {
+        if (ClassOf(item) is { } cls)
+        {
+            ((IProjectActions)this).ShowClassSettings(cls);
+        }
+    }
+
+    /// <inheritdoc/>
+    void IProjectActions.DeleteItem(object item)
+    {
+        switch (item)
+        {
+            case ClassGraph cls:
+                RemoveClass(cls);
+                break;
+            case MethodGraph method when method.Class is { } owner && EditorOf(owner) is { } methodEditor
+                && methodEditor.Methods.FirstOrDefault(m => ReferenceEquals(m.Graph, method)) is { } methodItem:
+                methodEditor.RemoveMethodCommand.Execute(methodItem);
+                break;
+            case EventGraph eventGraph when eventGraph.Class is { } owner && EditorOf(owner) is { } eventEditor
+                && eventEditor.EventGraphs.FirstOrDefault(g => ReferenceEquals(g.Graph, eventGraph)) is { } eventItem:
+                eventEditor.RemoveEventGraphCommand.Execute(eventItem);
+                break;
+        }
+    }
+
+    private static ClassGraph? ClassOf(object item) => item switch
+    {
+        ClassGraph cls => cls,
+        NodeGraph graph => graph.Class,
+        Variable variable => variable.Class,
+        _ => null,
+    };
+
+    /// <summary>The class's editor, opened (or activated) first.</summary>
+    private ClassEditorViewModel? EditorOf(ClassGraph cls)
+    {
+        OpenClass(cls);
+        return context.Windows.FindClassEditor(cls);
     }
 
     /// <summary>Called when the main window closes (PAR-14).</summary>
