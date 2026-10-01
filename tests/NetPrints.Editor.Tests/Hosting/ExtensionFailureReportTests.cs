@@ -28,7 +28,7 @@ public class ExtensionFailureReportTests : IDisposable
     public async Task FailuresAreListedInOneDialogAndNotRepeated()
     {
         await using ExtensionHost extensions = HostWithBrokenExtension();
-        var vm = new MainEditorVM(testEditor.Context with { Extensions = extensions });
+        var vm = new MainEditorViewModel(testEditor.Context with { Extensions = extensions });
 
         await vm.ReportExtensionFailuresAsync();
         await vm.ReportExtensionFailuresAsync();
@@ -45,7 +45,7 @@ public class ExtensionFailureReportTests : IDisposable
     [Fact]
     public async Task NoFailuresShowNoDialog()
     {
-        var vm = new MainEditorVM(testEditor.Context);
+        var vm = new MainEditorViewModel(testEditor.Context);
 
         await vm.ReportExtensionFailuresAsync();
 
@@ -110,7 +110,7 @@ public class ExtensionFailureReportTests : IDisposable
     {
         await using ExtensionHost extensions = HostWithTestExtensionAnd(code);
         var editor = TestEditor.Create(TestEditor.CreateReflectionHost, extensions);
-        var vm = new MainEditorVM(editor.Context);
+        var vm = new MainEditorViewModel(editor.Context);
 
         await vm.ReportExtensionFailuresAsync();
         await vm.ReportExtensionFailuresAsync();

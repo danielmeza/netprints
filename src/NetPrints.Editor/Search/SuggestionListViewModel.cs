@@ -18,7 +18,7 @@ namespace NetPrints.Editor.Search;
 /// The node search popup (PAR-47, 52..54). Suggestions are built off the UI thread; filtering is a
 /// DynamicData pipeline driven by the debounced search text, bound to a virtualized list.
 /// </summary>
-public sealed partial class SuggestionListVM : ObservableObject, IDisposable
+public sealed partial class SuggestionListViewModel : ObservableObject, IDisposable
 {
     private const string NetPrintsCategory = "NetPrints";
     private const string ThisMethodsCategory = "This Methods";
@@ -26,7 +26,7 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
     private const string StaticMethodsCategory = "Static Methods";
     private const string MethodVariablesCategory = "Method Variables";
 
-    private readonly NodeGraphVM graph;
+    private readonly NodeGraphViewModel graph;
     private readonly SourceList<SuggestionItem> source = new();
     private readonly Subject<string> textChanges = new();
     private readonly Subject<string> refreshes = new();
@@ -41,7 +41,7 @@ public sealed partial class SuggestionListVM : ObservableObject, IDisposable
     /// observed back on the UI thread.
     /// </summary>
     /// <param name="graph">Graph view model the search is opened for.</param>
-    public SuggestionListVM(NodeGraphVM graph)
+    public SuggestionListViewModel(NodeGraphViewModel graph)
     {
         this.graph = graph;
 

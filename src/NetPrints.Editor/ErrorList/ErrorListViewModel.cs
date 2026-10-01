@@ -17,7 +17,7 @@ namespace NetPrints.Editor.ErrorList;
 /// (FR-038: this view model depends only on the class graph, the live-analysis host and the
 /// messenger, never the parent editor).
 /// </summary>
-public sealed partial class ErrorListVM : ObservableObject, IDisposable
+public sealed partial class ErrorListViewModel : ObservableObject, IDisposable
 {
     private readonly ClassGraph cls;
     private readonly IMessenger messenger;
@@ -32,7 +32,7 @@ public sealed partial class ErrorListVM : ObservableObject, IDisposable
     /// <param name="cls">Class to show the diagnostics of.</param>
     /// <param name="codeAnalysis">Live analysis host to follow.</param>
     /// <param name="messenger">Messenger to send <see cref="NavigateToNodeMessage"/> through.</param>
-    public ErrorListVM(ClassGraph cls, ICodeAnalysisHost codeAnalysis, IMessenger messenger)
+    public ErrorListViewModel(ClassGraph cls, ICodeAnalysisHost codeAnalysis, IMessenger messenger)
     {
         ArgumentNullException.ThrowIfNull(cls);
         ArgumentNullException.ThrowIfNull(codeAnalysis);
@@ -46,7 +46,7 @@ public sealed partial class ErrorListVM : ObservableObject, IDisposable
     }
 
     /// <summary>Every diagnostic row of the open class, live analysis first then the last build's.</summary>
-    public ObservableRangeCollection<DiagnosticRowVM> Rows { get; } = [];
+    public ObservableRangeCollection<DiagnosticRowViewModel> Rows { get; } = [];
 
     /// <summary>Number of <see cref="Rows"/> with <see cref="CodeDiagnosticSeverity.Error"/> (FR-032, OWN-03).</summary>
     public int ErrorCount => Rows.Count(row => row.IsError);
@@ -76,7 +76,7 @@ public sealed partial class ErrorListVM : ObservableObject, IDisposable
     /// </summary>
     /// <param name="row">Row to navigate to.</param>
     [RelayCommand]
-    private void Navigate(DiagnosticRowVM? row)
+    private void Navigate(DiagnosticRowViewModel? row)
     {
         if (row is not { CanNavigate: true } || row.Diagnostic.GraphKey is not { } graphKey)
         {
@@ -122,7 +122,7 @@ public sealed partial class ErrorListVM : ObservableObject, IDisposable
         EnsureProjectSubscription();
         IEnumerable<CodeDiagnostic> build = cls.Project?.LastDiagnostics
             .Where(d => string.Equals(d.ClassFullName, cls.FullName, StringComparison.Ordinal)) ?? [];
-        Rows.ReplaceRange(liveDiagnostics.Concat(build).Select(d => new DiagnosticRowVM(d, cls)));
+        Rows.ReplaceRange(liveDiagnostics.Concat(build).Select(d => new DiagnosticRowViewModel(d, cls)));
         OnPropertyChanged(nameof(ErrorCount));
         OnPropertyChanged(nameof(WarningCount));
         OnPropertyChanged(nameof(InfoCount));

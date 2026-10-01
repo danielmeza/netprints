@@ -9,7 +9,7 @@ namespace NetPrints.Editor.Graph.GetSet;
 /// <summary>
 /// Popup offering Get and Set for a variable (PAR-55, PAR-57).
 /// </summary>
-public sealed partial class GetSetChooserVM(NodeGraphVM graph) : ObservableObject
+public sealed partial class GetSetChooserViewModel(NodeGraphViewModel graph) : ObservableObject
 {
     [ObservableProperty]
     public partial bool IsOpen { get; set; }

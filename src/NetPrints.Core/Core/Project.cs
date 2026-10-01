@@ -77,7 +77,7 @@ namespace NetPrints.Core
         /// The project's most recently loaded or applied snapshot (project-system.md §4,
         /// <c>IProjectSystem.LoadAsync</c>/<c>ApplyAsync</c>): always set, since the only constructor
         /// path (<see cref="FromSnapshot"/>) requires one. The setter exists only for the editor to
-        /// replace it with a newer snapshot (e.g. <c>MainEditorVM</c>, <c>ReferenceListVM</c>).
+        /// replace it with a newer snapshot (e.g. <c>MainEditorViewModel</c>, <c>ReferenceListViewModel</c>).
         /// <see cref="TargetFramework"/> and <see cref="ProfileId"/> are derived from it and re-raise
         /// their own change notification whenever it is replaced.
         /// </summary>

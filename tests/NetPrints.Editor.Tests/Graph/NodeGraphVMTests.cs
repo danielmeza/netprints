@@ -78,7 +78,7 @@ public class NodeGraphVMTests(TestEditor editor) : GraphTestBase(editor)
         var source = VmOf(Method.EntryNode.InitialExecutionPin);
         Graph.PendingConnectionAnchor = new GraphPoint(40, 60);
 
-        Graph.ConnectionCompletedCommand.Execute((source, (NodePinVM?)null)); // ED-T09, PAR-47
+        Graph.ConnectionCompletedCommand.Execute((source, (NodePinViewModel?)null)); // ED-T09, PAR-47
 
         Assert.True(Graph.Search.IsOpen);
         Assert.Same(Method.EntryNode.InitialExecutionPin, Graph.Search.SuggestionPin);
@@ -144,7 +144,7 @@ public class NodeGraphVMTests(TestEditor editor) : GraphTestBase(editor)
         Assert.Equal(variable.Name, graph.GetSetChooser.Variable!.Name);
     }
 
-    // T103a: NodeGraphVM.Drop(MethodVM, GraphPoint)'s Graph.Class guard (added in T011/T012's nullable
+    // T103a: NodeGraphViewModel.Drop(MethodViewModel, GraphPoint)'s Graph.Class guard (added in T011/T012's nullable
     // rollout) was not covered by a test.
     [Fact]
     public void DropMethodWhenTheOpenGraphHasNoClassThrows()
@@ -159,7 +159,7 @@ public class NodeGraphVMTests(TestEditor editor) : GraphTestBase(editor)
     public void NameWatermark()
     {
         Assert.Equal(Method.Name, Graph.Name);
-        var classGraph = new NodeGraphVM(Class, ClassEditor.Services);
+        var classGraph = new NodeGraphViewModel(Class, ClassEditor.Services);
         Assert.Equal("C", classGraph.Name);
         classGraph.Dispose();
     }

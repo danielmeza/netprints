@@ -57,7 +57,7 @@ public sealed class FakeDialogs : IEditorDialogs
     public List<TypeSpecifier> SelectTypeCalls { get; } = [];
     public int SelectMethodCalls { get; private set; }
     public List<MethodSpecifier> LastMethods { get; private set; } = [];
-    public List<ReferenceListVM> ReferenceDialogs { get; } = [];
+    public List<ReferenceListViewModel> ReferenceDialogs { get; } = [];
     public TypeSpecifier? TypeAnswer { get; set; } = TypeSpecifier.FromType<int>();
     public Func<IReadOnlyList<MethodSpecifier>, MethodSpecifier?> MethodAnswer { get; set; } = m => m.FirstOrDefault();
     public List<(string ProjectPath, IReadOnlyList<string> Folders)> TrustCalls { get; } = [];
@@ -95,7 +95,7 @@ public sealed class FakeDialogs : IEditorDialogs
         return Task.FromResult(MethodAnswer(LastMethods));
     }
 
-    public Task ShowReferencesAsync(ReferenceListVM references)
+    public Task ShowReferencesAsync(ReferenceListViewModel references)
     {
         ReferenceDialogs.Add(references);
         return Task.CompletedTask;
@@ -147,7 +147,7 @@ public sealed class InlineDispatcher : IUiDispatcher
 
 public sealed class FakeWindowService : IWindowService
 {
-    public Dictionary<ClassGraph, ClassEditorVM> Open { get; } = new(ReferenceEqualityComparer.Instance);
+    public Dictionary<ClassGraph, ClassEditorViewModel> Open { get; } = new(ReferenceEqualityComparer.Instance);
     public List<ClassGraph> Activated { get; } = [];
     public List<ClassGraph> Closed { get; } = [];
     public int CloseAllCount { get; private set; }
@@ -163,9 +163,9 @@ public sealed class FakeWindowService : IWindowService
         return false;
     }
 
-    public void OpenClassEditor(ClassGraph cls, EditorContext context) => Open[cls] = new ClassEditorVM(cls, context);
+    public void OpenClassEditor(ClassGraph cls, EditorContext context) => Open[cls] = new ClassEditorViewModel(cls, context);
 
-    public ClassEditorVM? FindClassEditor(ClassGraph cls) => Open.GetValueOrDefault(cls);
+    public ClassEditorViewModel? FindClassEditor(ClassGraph cls) => Open.GetValueOrDefault(cls);
 
     public void CloseClassEditor(ClassGraph cls)
     {
@@ -450,7 +450,7 @@ public sealed class TestEditor : IAsyncDisposable
 /// <summary>
 /// Wraps a real, loaded <see cref="IReflectionProvider"/>, letting a test block
 /// <see cref="GetPublicMethodOverloads"/> and <see cref="GetConstructors"/> on a gate it controls
-/// (R2-05): <see cref="ClassEditorVM"/>'s real seam for warming a graph's overload lookups before
+/// (R2-05): <see cref="ClassEditorViewModel"/>'s real seam for warming a graph's overload lookups before
 /// opening it, used instead of a test-only hook on the production view model itself.
 /// </summary>
 public sealed class GatedReflectionProvider(IReflectionProvider inner) : IReflectionProvider

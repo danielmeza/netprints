@@ -39,12 +39,12 @@ public sealed class TestExtensionHostChannelTests : IAsyncLifetime
             ?? throw new InvalidOperationException("The factory did not keep its host end.");
 
         var editor = TestEditor.Create(TestEditor.CreateReflectionHost, hostChannel: selection.Channel);
-        var vm = new MainEditorVM(editor.Context);
+        var vm = new MainEditorViewModel(editor.Context);
         try
         {
             await vm.LoadProjectAsync(csproj);
 
-            // Settle the reload that opening the project itself triggers (MainEditorVM.OnProjectChanged)
+            // Settle the reload that opening the project itself triggers (MainEditorViewModel.OnProjectChanged)
             // before sending the channel message below: otherwise the two reloads race, and the count
             // observed afterward depends on which one the ReflectionHost version guard lets publish last
             // (R2-22). Loaded is the host's own signal for "a reload has published"; no sleep involved.

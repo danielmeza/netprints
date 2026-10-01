@@ -96,7 +96,7 @@ public sealed class HeadlessApp : IAsyncDisposable
     public HeadlessDriver Driver { get; }
     public MainWindowPage Main { get; }
     public Actor Actor { get; }
-    public MainEditorVM ViewModel => Composition.MainEditor
+    public MainEditorViewModel ViewModel => Composition.MainEditor
         ?? throw new InvalidOperationException($"{nameof(Composition.MainEditor)} has not been created yet.");
 
     public static HeadlessApp Start() => new([]);
@@ -115,7 +115,7 @@ public sealed class HeadlessApp : IAsyncDisposable
 
     /// <summary>The window of an open class editor (for arranging and asserting through the API).</summary>
     public ClassEditorWindow ClassWindow(string fullName) =>
-        Composition.Windows.ClassEditorWindows.Single(w => (w.DataContext as ClassEditorVM)?.Class.FullName == fullName);
+        Composition.Windows.ClassEditorWindows.Single(w => (w.DataContext as ClassEditorViewModel)?.Class.FullName == fullName);
 
     /// <summary>
     /// Saves a screenshot of every open window and a dump of the automation tree for the current

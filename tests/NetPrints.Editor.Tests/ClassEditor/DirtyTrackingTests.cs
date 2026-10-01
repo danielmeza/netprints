@@ -12,14 +12,14 @@ public class DirtyTrackingTests(TestEditor editor) : IAsyncLifetime
     private Project? projectField;
     private ClassGraph? clsAField;
     private ClassGraph? clsBField;
-    private ClassEditorVM? vmAField;
-    private ClassEditorVM? vmBField;
+    private ClassEditorViewModel? vmAField;
+    private ClassEditorViewModel? vmBField;
 
     private Project project => projectField ?? throw new InvalidOperationException($"{nameof(InitializeAsync)} has not run yet.");
     private ClassGraph clsA => clsAField ?? throw new InvalidOperationException($"{nameof(InitializeAsync)} has not run yet.");
     private ClassGraph clsB => clsBField ?? throw new InvalidOperationException($"{nameof(InitializeAsync)} has not run yet.");
-    private ClassEditorVM vmA => vmAField ?? throw new InvalidOperationException($"{nameof(InitializeAsync)} has not run yet.");
-    private ClassEditorVM vmB => vmBField ?? throw new InvalidOperationException($"{nameof(InitializeAsync)} has not run yet.");
+    private ClassEditorViewModel vmA => vmAField ?? throw new InvalidOperationException($"{nameof(InitializeAsync)} has not run yet.");
+    private ClassEditorViewModel vmB => vmBField ?? throw new InvalidOperationException($"{nameof(InitializeAsync)} has not run yet.");
 
     /// <summary>Loads a project with two classes, saves it once so both start clean, then opens both editors.</summary>
     public async ValueTask InitializeAsync()
@@ -32,8 +32,8 @@ public class DirtyTrackingTests(TestEditor editor) : IAsyncLifetime
         Assert.False(clsA.IsDirty);
         Assert.False(clsB.IsDirty);
 
-        vmAField = new ClassEditorVM(clsA, editor.Context);
-        vmBField = new ClassEditorVM(clsB, editor.Context);
+        vmAField = new ClassEditorViewModel(clsA, editor.Context);
+        vmBField = new ClassEditorViewModel(clsB, editor.Context);
     }
 
     public ValueTask DisposeAsync()

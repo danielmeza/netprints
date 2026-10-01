@@ -13,7 +13,7 @@ namespace NetPrints.Editor.Graph.Pins;
 /// A pin of a node (PAR-43..48). Uses <see cref="PinKind"/> and <see cref="GraphPoint"/> instead of
 /// brushes and UI points; the view pushes the connector position into <see cref="Anchor"/>.
 /// </summary>
-public sealed partial class NodePinVM : ObservableObject, IDisposable
+public sealed partial class NodePinViewModel : ObservableObject, IDisposable
 {
     /// <summary>Divisor for midpoint calculations.</summary>
     private const double MidpointDivisor = 2;
@@ -26,7 +26,7 @@ public sealed partial class NodePinVM : ObservableObject, IDisposable
     /// </summary>
     /// <param name="pin">Pin to wrap.</param>
     /// <param name="node">View model of the node the pin belongs to.</param>
-    public NodePinVM(NodePin pin, NodeVM node)
+    public NodePinViewModel(NodePin pin, NodeViewModel node)
     {
         Pin = pin;
         Node = node;
@@ -56,7 +56,7 @@ public sealed partial class NodePinVM : ObservableObject, IDisposable
     public NodePin Pin { get; }
 
     /// <summary>The node view model this pin belongs to.</summary>
-    public NodeVM Node { get; }
+    public NodeViewModel Node { get; }
 
     /// <summary>Exec, data or type, derived from the wrapped pin's concrete type.</summary>
     public PinKind Kind => Pin switch
@@ -338,7 +338,7 @@ public sealed partial class NodePinVM : ObservableObject, IDisposable
     // Connections (PAR-46..48)
 
     /// <summary>Whether this pin can be connected to another one (type checks with subclass and implicit-cast rules).</summary>
-    public bool CanConnectTo(NodePinVM other)
+    public bool CanConnectTo(NodePinViewModel other)
     {
         if (other == this || other.Pin.Node == Pin.Node)
         {
@@ -357,7 +357,7 @@ public sealed partial class NodePinVM : ObservableObject, IDisposable
     }
 
     /// <summary>Connects this pin to another pin if they are compatible. Returns whether it connected.</summary>
-    public bool ConnectTo(NodePinVM other)
+    public bool ConnectTo(NodePinViewModel other)
     {
         if (!CanConnectTo(other))
         {

@@ -8,12 +8,12 @@ namespace NetPrints.Editor.Tests.Architecture.Fixtures;
 /// owning class editor), for <c>ArchitectureGateTests</c> (ED-T10). Not compiled into the editor or
 /// the test project (<c>.cs.txt</c>): <see cref="ArchitectureGateTests"/> reads and scans it directly.
 /// </summary>
-public sealed class ViolatingVM
+public sealed class ViolatingViewModel
 {
-    private readonly ClassEditorVM owner;
+    private readonly ClassEditorViewModel owner;
     private Button? button;
 
-    public ViolatingVM(ClassEditorVM owner)
+    public ViolatingViewModel(ClassEditorViewModel owner)
     {
         this.owner = owner;
     }

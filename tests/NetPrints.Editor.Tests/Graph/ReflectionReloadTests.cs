@@ -15,13 +15,13 @@ namespace NetPrints.Editor.Tests.Graph;
 public sealed class ReflectionReloadTests : IDisposable
 {
     private readonly ReflectionHost host = new(new InlineDispatcher(), TestExtensions.CreateBuiltIn(), NullLogger<ReflectionHost>.Instance);
-    private readonly ClassEditorVM classEditor;
+    private readonly ClassEditorViewModel classEditor;
     private readonly MethodGraph method;
 
     public ReflectionReloadTests()
     {
         var cls = new ClassGraph { Name = "C", Namespace = "N" };
-        classEditor = new ClassEditorVM(cls, new TestEditor(host).Context);
+        classEditor = new ClassEditorViewModel(cls, new TestEditor(host).Context);
         classEditor.CreateMethodCommand.Execute(null);
         method = (MethodGraph)classEditor.Methods.Single().Graph;
     }
@@ -49,7 +49,7 @@ public sealed class ReflectionReloadTests : IDisposable
     public async Task EnumNamesAndDocumentationRefreshWhenReflectionLoads()
     {
         var call = new CallMethodNode(method, WriteLine(TypeSpecifier.FromType<DayOfWeek>()));
-        NodePinVM pin = classEditor.OpenedGraph!.Nodes.Single(n => n.Node == call).InputDataPins.Single();
+        NodePinViewModel pin = classEditor.OpenedGraph!.Nodes.Single(n => n.Node == call).InputDataPins.Single();
         var node = classEditor.OpenedGraph!.Nodes.Single(n => n.Node == call);
         var pinChanges = new List<string?>();
         var nodeChanges = new List<string?>();
@@ -58,9 +58,9 @@ public sealed class ReflectionReloadTests : IDisposable
 
         await host.ReloadAsync(Project.FromSnapshot(TestSnapshots.WithRuntimeAssemblies("P", "N")), TestContext.Current.CancellationToken);
 
-        Assert.Contains(nameof(NodePinVM.PossibleEnumNames), pinChanges);
+        Assert.Contains(nameof(NodePinViewModel.PossibleEnumNames), pinChanges);
         Assert.Contains("Monday", pin.PossibleEnumNames!);
-        Assert.Contains(nameof(NodePinVM.ToolTip), pinChanges);
+        Assert.Contains(nameof(NodePinViewModel.ToolTip), pinChanges);
         Assert.Contains(nameof(node.ToolTip), nodeChanges);
     }
 }

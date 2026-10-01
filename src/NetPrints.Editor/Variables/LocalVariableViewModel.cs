@@ -10,7 +10,7 @@ namespace NetPrints.Editor.Variables;
 /// <summary>
 /// A local variable in the Variables panel's "Method: &lt;name&gt;" group (US5, sub-phase H).
 /// </summary>
-public sealed partial class LocalVariableVM : ObservableObject, IDisposable
+public sealed partial class LocalVariableViewModel : ObservableObject, IDisposable
 {
     private readonly ExecutionGraph graph;
     private readonly ClassEditorServices services;
@@ -21,7 +21,7 @@ public sealed partial class LocalVariableVM : ObservableObject, IDisposable
     /// <param name="local">Local variable to wrap.</param>
     /// <param name="graph">Method or constructor graph the local belongs to.</param>
     /// <param name="services">Narrow services shared with the owning class editor (FR-038).</param>
-    public LocalVariableVM(LocalVariable local, ExecutionGraph graph, ClassEditorServices services)
+    public LocalVariableViewModel(LocalVariable local, ExecutionGraph graph, ClassEditorServices services)
     {
         Local = local;
         this.graph = graph;

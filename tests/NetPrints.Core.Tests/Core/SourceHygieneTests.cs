@@ -534,6 +534,40 @@ namespace NetPrints.Tests.Core
         [GeneratedRegex(@"^dotnet_diagnostic\.(?<rule>[A-Za-z0-9_-]+)\.severity\s*=\s*(?<severity>\S+)")]
         private static partial Regex EditorConfigSeverityPattern();
 
+        /// <summary>
+        /// ADR-0007 amendment (2026-10-01): view model types are named <c>&lt;Name&gt;ViewModel</c>, never
+        /// <c>&lt;Name&gt;VM</c>. This check parses every <c>src/**/*.cs</c> and <c>tests/**/*.cs</c> file,
+        /// finds every type declaration (class, record, struct, interface), and fails on any type name
+        /// ending in <c>VM</c>, listing each.
+        /// </summary>
+        [Fact]
+        public void NoTypeNameEndsInVM()
+        {
+            string repoRoot = SampleProjectFactory.FindRepositoryRoot();
+            string[] sourceFiles = EnumerateSourceAndTestFiles(repoRoot);
+            var offenders = new List<string>();
+            int parsedFileCount = 0;
+
+            foreach (string path in sourceFiles)
+            {
+                parsedFileCount++;
+                SyntaxNode root = CSharpSyntaxTree.ParseText(File.ReadAllText(path), path: path, cancellationToken: TestContext.Current.CancellationToken).GetRoot(TestContext.Current.CancellationToken);
+                string relativePath = Path.GetRelativePath(repoRoot, path).Replace('\\', '/');
+
+                foreach (var typeDeclaration in root.DescendantNodes().OfType<TypeDeclarationSyntax>())
+                {
+                    string typeName = typeDeclaration.Identifier.Text;
+                    if (typeName.EndsWith("VM", StringComparison.Ordinal))
+                    {
+                        offenders.Add(typeName);
+                    }
+                }
+            }
+
+            Assert.True(parsedFileCount > 0, "Expected to parse at least one src/**/*.cs or tests/**/*.cs file.");
+            Assert.Empty(offenders);
+        }
+
         [GeneratedRegex(@"<(?:\w+:)?Popup(?=[\s/>])")]
         private static partial Regex RawPopupTagPattern();
 
@@ -594,7 +628,7 @@ namespace NetPrints.Tests.Core
             ("src/**.cs", "CA1311", "warning"),
             ("src/{NetPrints.Core,NetPrints.Reflection}/**.cs", "CA1002", "suggestion"),
             ("src/{NetPrints.Core,NetPrints.Reflection}/**.cs", "CA2227", "suggestion"),
-            ("src/NetPrints.Editor/**VM.cs", "VSTHRD111", "none"),
+            ("src/NetPrints.Editor/**ViewModel.cs", "VSTHRD111", "none"),
             ("src/NetPrints.Editor/**.axaml.cs", "VSTHRD111", "none"),
             ("src/NetPrints.Editor/ModelSync/*.cs", "VSTHRD111", "none"),
             ("src/NetPrints.Editor/Hosting/EditorComposition.cs", "VSTHRD111", "none"),

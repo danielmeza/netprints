@@ -29,7 +29,7 @@ public partial class GraphEditorView : UserControl
     private Point? rightPressPosition;
     private object? backButtonTarget;
     private TopLevel? keyboardTopLevel;
-    private NodeGraphVM? revealSubscription;
+    private NodeGraphViewModel? revealSubscription;
 
     /// <summary>
     /// Loads the control's XAML and wires the pointer and drag/drop handlers Nodify does not
@@ -108,7 +108,7 @@ public partial class GraphEditorView : UserControl
     }
 
     /// <summary>The bound graph view model, or <see langword="null"/> if the data context is not one.</summary>
-    public NodeGraphVM? ViewModel => DataContext as NodeGraphVM;
+    public NodeGraphViewModel? ViewModel => DataContext as NodeGraphViewModel;
 
     /// <summary>Converts a point relative to the editor control to graph coordinates.</summary>
     public GraphPoint ToGraph(Point editorPoint)
@@ -126,7 +126,7 @@ public partial class GraphEditorView : UserControl
         return new Point((graphPoint.X - location.X) * zoom, (graphPoint.Y - location.Y) * zoom);
     }
 
-    private NodeVM? SelectedNode => ViewModel?.SelectedNodes.FirstOrDefault();
+    private NodeViewModel? SelectedNode => ViewModel?.SelectedNodes.FirstOrDefault();
 
     /// <summary>The canvas center, relative to the editor control.</summary>
     private Point CanvasCenterPoint => new(Editor.Bounds.Width / HalfDivisor, Editor.Bounds.Height / HalfDivisor);
@@ -146,7 +146,7 @@ public partial class GraphEditorView : UserControl
     private GraphPoint FallbackGraphPosition() => SelectedNode?.Location ?? ToGraph(CanvasCenterPoint);
 
     /// <summary>Resets the viewport to zoom 1 and the origin when a new graph is opened (PAR-51),
-    /// and follows the new graph's <see cref="NodeGraphVM.NodeRevealRequested"/> (FR-034, ED-T03).</summary>
+    /// and follows the new graph's <see cref="NodeGraphViewModel.NodeRevealRequested"/> (FR-034, ED-T03).</summary>
     /// <param name="e">Unused; forwarded to the base implementation.</param>
     protected override void OnDataContextChanged(EventArgs e)
     {
@@ -169,7 +169,7 @@ public partial class GraphEditorView : UserControl
     }
 
     /// <summary>Centers the viewport on a revealed node (FR-034, ED-T03).</summary>
-    private void OnNodeRevealRequested(object? sender, NodeVM node)
+    private void OnNodeRevealRequested(object? sender, NodeViewModel node)
     {
         var center = CanvasCenterPoint;
         double zoom = Editor.ViewportZoom;
@@ -191,7 +191,7 @@ public partial class GraphEditorView : UserControl
                 return match;
             }
 
-            if (visual is StyledElement { DataContext: NodeVM or NodeGraphVM })
+            if (visual is StyledElement { DataContext: NodeViewModel or NodeGraphViewModel })
             {
                 return null;
             }
@@ -225,13 +225,13 @@ public partial class GraphEditorView : UserControl
         // The editor captures the pointer, so gesture targets are resolved on press.
         if (properties.IsRightButtonPressed)
         {
-            rightPressPosition = FindContext<NodeVM>(e.Source) is null ? e.GetPosition(Editor) : null;
+            rightPressPosition = FindContext<NodeViewModel>(e.Source) is null ? e.GetPosition(Editor) : null;
             return;
         }
 
         if (properties.IsXButton1Pressed)
         {
-            backButtonTarget = (object?)FindContext<ConnectionVM>(e.Source) ?? FindContext<NodePinVM>(e.Source);
+            backButtonTarget = (object?)FindContext<ConnectionViewModel>(e.Source) ?? FindContext<NodePinViewModel>(e.Source);
             return;
         }
 
@@ -239,7 +239,7 @@ public partial class GraphEditorView : UserControl
         {
             // Middle click: clear an unconnected value (PAR-44), disconnect a pin or cable (PAR-48),
             // through the pin's/connection's own command (ED-T09).
-            if (FindContext<NodePinVM>(e.Source) is { } pin)
+            if (FindContext<NodePinViewModel>(e.Source) is { } pin)
             {
                 if (IsInsideValueEditor(e.Source))
                 {
@@ -252,7 +252,7 @@ public partial class GraphEditorView : UserControl
 
                 e.Handled = true;
             }
-            else if (FindContext<ConnectionVM>(e.Source) is { } connection)
+            else if (FindContext<ConnectionViewModel>(e.Source) is { } connection)
             {
                 connection.DisconnectCommand.Execute(null);
                 e.Handled = true;
@@ -280,11 +280,11 @@ public partial class GraphEditorView : UserControl
             // Mouse back button toggles "faint" on a cable or a connected pin (PAR-48).
             switch (backButtonTarget)
             {
-                case ConnectionVM connection:
+                case ConnectionViewModel connection:
                     connection.ToggleFaint();
                     e.Handled = true;
                     break;
-                case NodePinVM { IsConnected: true } pin:
+                case NodePinViewModel { IsConnected: true } pin:
                     pin.ToggleFaint();
                     e.Handled = true;
                     break;

@@ -11,7 +11,7 @@ namespace NetPrints.Editor.Variables;
 /// <summary>
 /// A variable (property) of the edited class (PAR-29, PAR-36).
 /// </summary>
-public sealed partial class MemberVariableVM : ObservableObject, IDisposable
+public sealed partial class MemberVariableViewModel : ObservableObject, IDisposable
 {
     private readonly ClassEditorServices services;
 
@@ -20,7 +20,7 @@ public sealed partial class MemberVariableVM : ObservableObject, IDisposable
     /// </summary>
     /// <param name="variable">Variable to wrap.</param>
     /// <param name="services">Narrow services shared with the owning class editor (FR-038).</param>
-    public MemberVariableVM(Variable variable, ClassEditorServices services)
+    public MemberVariableViewModel(Variable variable, ClassEditorServices services)
     {
         Variable = variable;
         this.services = services;
@@ -73,7 +73,7 @@ public sealed partial class MemberVariableVM : ObservableObject, IDisposable
     }
 
     /// <summary>The visibility values offered by the visibility chooser.</summary>
-    public IReadOnlyList<MemberVisibility> PossibleVisibilities => ClassEditorVM.Visibilities;
+    public IReadOnlyList<MemberVisibility> PossibleVisibilities => ClassEditorViewModel.Visibilities;
 
     /// <summary>The variable's modifiers.</summary>
     public VariableModifiers Modifiers

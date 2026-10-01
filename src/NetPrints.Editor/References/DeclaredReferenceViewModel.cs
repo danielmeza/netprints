@@ -8,7 +8,7 @@ namespace NetPrints.Editor.References;
 /// One entry of the References dialog (PAR-16, PAR-19), wrapping a
 /// <see cref="ProjectReferenceInfo"/> declared in the project file (project-system.md §4).
 /// </summary>
-public sealed partial class DeclaredReferenceVM(ProjectReferenceInfo info, Func<bool, Task>? setIncluded = null) : ObservableObject
+public sealed partial class DeclaredReferenceViewModel(ProjectReferenceInfo info, Func<bool, Task>? setIncluded = null) : ObservableObject
 {
     /// <summary>The wrapped reference, as last read from the project's snapshot.</summary>
     public ProjectReferenceInfo Info { get; } = info;
@@ -26,7 +26,7 @@ public sealed partial class DeclaredReferenceVM(ProjectReferenceInfo info, Func<
     /// <c>None</c> item (excluded); always <see langword="false"/> for any other reference kind.
     /// Read-only: the toggle switch is bound <c>OneWay</c> and invokes <see cref="SetIncludedCommand"/>
     /// instead (R2-10, F-06), which applies this value through
-    /// <see cref="ProjectEdit.SetSourceDirectoryIncluded"/> and <see cref="ReferenceListVM"/>'s own
+    /// <see cref="ProjectEdit.SetSourceDirectoryIncluded"/> and <see cref="ReferenceListViewModel"/>'s own
     /// concurrency guard.
     /// </summary>
     public bool IncludeInCompilation => Info.Kind == DeclaredReferenceKind.SourceDirectory && Info.Included;

@@ -34,7 +34,7 @@ public class SearchPerformanceTests
 
         var cls = new ClassGraph { Name = "Cold", Namespace = "N" };
         var editor = new TestEditor(host);
-        using var classEditor = new ClassEditorVM(cls, editor.Context);
+        using var classEditor = new ClassEditorViewModel(cls, editor.Context);
         classEditor.CreateMethodCommand.Execute(null);
         var search = classEditor.OpenedGraph!.Search;
 

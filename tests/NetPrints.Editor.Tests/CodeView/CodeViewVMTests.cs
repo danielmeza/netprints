@@ -9,7 +9,7 @@ using NetPrints.Translator;
 
 namespace NetPrints.Editor.Tests.CodeView;
 
-/// <summary><see cref="CodeViewVM"/> (editor-services.md §3): follows one class's snapshots, ignoring others.</summary>
+/// <summary><see cref="CodeViewViewModel"/> (editor-services.md §3): follows one class's snapshots, ignoring others.</summary>
 public sealed class CodeViewVMTests
 {
     private static ClassGraph NewClass(string ns, string name) => new() { Namespace = ns, Name = name };
@@ -18,7 +18,7 @@ public sealed class CodeViewVMTests
     public void FollowsItsOwnClassAndIgnoresOthers()
     {
         using var host = new FakeCodeAnalysisHost();
-        using var vm = new CodeViewVM(NewClass("N", "C"), host);
+        using var vm = new CodeViewViewModel(NewClass("N", "C"), host);
 
         var translated = new TranslatedClass("N.C", "public class C { public void M() {} }", SourceMap.Empty);
         var otherTranslated = new TranslatedClass("N.Other", "public class Other {}", SourceMap.Empty);
@@ -42,7 +42,7 @@ public sealed class CodeViewVMTests
     public void ASnapshotWithoutItsClassIsIgnored()
     {
         using var host = new FakeCodeAnalysisHost();
-        using var vm = new CodeViewVM(NewClass("N", "C"), host);
+        using var vm = new CodeViewViewModel(NewClass("N", "C"), host);
 
         host.Push(new CodeAnalysisSnapshot(new Dictionary<string, TranslatedClass>(StringComparer.Ordinal)
         {
@@ -57,7 +57,7 @@ public sealed class CodeViewVMTests
     public async Task GetQuickInfoAsyncDelegatesWithItsOwnClassFullName()
     {
         using var host = new FakeCodeAnalysisHost { QuickInfoResult = new QuickInfo("void M()", "Summary.") };
-        using var vm = new CodeViewVM(NewClass("N", "C"), host);
+        using var vm = new CodeViewViewModel(NewClass("N", "C"), host);
 
         QuickInfo? info = await vm.GetQuickInfoAsync(42, TestContext.Current.CancellationToken);
 
@@ -69,7 +69,7 @@ public sealed class CodeViewVMTests
     public async Task GetHoverContentAsyncReturnsNullWithNoDiagnosticOrQuickInfo()
     {
         using var host = new FakeCodeAnalysisHost();
-        using var vm = new CodeViewVM(NewClass("N", "C"), host);
+        using var vm = new CodeViewViewModel(NewClass("N", "C"), host);
 
         Assert.Null(await vm.GetHoverContentAsync(0, TestContext.Current.CancellationToken));
     }
@@ -80,7 +80,7 @@ public sealed class CodeViewVMTests
         // OWN-02 (owner report): hovering a squiggle shows the diagnostic(s) under the cursor above
         // the symbol quick info.
         using var host = new FakeCodeAnalysisHost { QuickInfoResult = new QuickInfo("void M()", null) };
-        using var vm = new CodeViewVM(NewClass("N", "C"), host);
+        using var vm = new CodeViewViewModel(NewClass("N", "C"), host);
 
         var translated = new TranslatedClass("N.C", "class C { void M() { } }", SourceMap.Empty);
         var span = new LinePositionSpan(new LinePosition(0, 10), new LinePosition(0, 11));
@@ -99,7 +99,7 @@ public sealed class CodeViewVMTests
     public async Task GetHoverContentAsyncIgnoresADiagnosticOutsideItsSpan()
     {
         using var host = new FakeCodeAnalysisHost { QuickInfoResult = new QuickInfo("void M()", null) };
-        using var vm = new CodeViewVM(NewClass("N", "C"), host);
+        using var vm = new CodeViewViewModel(NewClass("N", "C"), host);
 
         var translated = new TranslatedClass("N.C", "class C { void M() { } }", SourceMap.Empty);
         var span = new LinePositionSpan(new LinePosition(0, 10), new LinePosition(0, 11));
@@ -112,7 +112,7 @@ public sealed class CodeViewVMTests
     }
 
     /// <summary>
-    /// R2-12: <see cref="CodeViewVM.ShowQuickInfoCommand"/> cancels whatever lookup is still in flight,
+    /// R2-12: <see cref="CodeViewViewModel.ShowQuickInfoCommand"/> cancels whatever lookup is still in flight,
     /// but a superseding call must win even if the superseded lookup's own completion is not observed
     /// through the cancellation token (an uncooperative or already-running dependency) — so
     /// <see cref="ControllableCodeAnalysisHost"/> deliberately ignores the token and only completes
@@ -122,7 +122,7 @@ public sealed class CodeViewVMTests
     public async Task ShowQuickInfoCommandNeverLetsASupersededLookupOverwriteTheCurrentOne()
     {
         using var host = new ControllableCodeAnalysisHost();
-        using var vm = new CodeViewVM(NewClass("N", "C"), host);
+        using var vm = new CodeViewViewModel(NewClass("N", "C"), host);
 
         Task first = vm.ShowQuickInfoCommand.ExecuteAsync(1);
         Task second = vm.ShowQuickInfoCommand.ExecuteAsync(2);
@@ -146,7 +146,7 @@ public sealed class CodeViewVMTests
     public async Task ClearQuickInfoStopsALateResultFromReopeningTheTooltip()
     {
         using var host = new ControllableCodeAnalysisHost();
-        using var vm = new CodeViewVM(NewClass("N", "C"), host);
+        using var vm = new CodeViewViewModel(NewClass("N", "C"), host);
 
         Task lookup = vm.ShowQuickInfoCommand.ExecuteAsync(1);
         vm.ClearQuickInfoCommand.Execute(null);
@@ -159,9 +159,9 @@ public sealed class CodeViewVMTests
     }
 
     /// <summary>
-    /// Same swap-before-await bug as <c>ClassEditorVM</c>'s F-04: <c>ShowQuickInfoAsync</c> used to
+    /// Same swap-before-await bug as <c>ClassEditorViewModel</c>'s F-04: <c>ShowQuickInfoAsync</c> used to
     /// reinstall <c>quickInfoCancellation</c> only after awaiting the superseded lookup's
-    /// <c>CancelAsync</c>, so a <see cref="CodeViewVM.ClearQuickInfoCommand"/> (pointer exit) landing
+    /// <c>CancelAsync</c>, so a <see cref="CodeViewViewModel.ClearQuickInfoCommand"/> (pointer exit) landing
     /// in that await got clobbered by the very lookup that superseded it, resurrecting the tooltip.
     /// A real race depends on that await genuinely yielding, which is not reliably forceable headless;
     /// instead this registers a callback on the first lookup's own token — CancellationTokenSource
@@ -172,7 +172,7 @@ public sealed class CodeViewVMTests
     public async Task ClearQuickInfoDuringASupersedingCancelIsNotResurrectedByTheSupersedingLookup()
     {
         using var host = new ControllableCodeAnalysisHost();
-        using var vm = new CodeViewVM(NewClass("N", "C"), host);
+        using var vm = new CodeViewViewModel(NewClass("N", "C"), host);
 
         Task first = vm.ShowQuickInfoCommand.ExecuteAsync(1);
         CancellationTokenSource cts1 = QuickInfoCancellationOf(vm)
@@ -207,17 +207,17 @@ public sealed class CodeViewVMTests
         Assert.Null(vm.QuickInfoText);
     }
 
-    /// <summary>Reads <c>CodeViewVM</c>'s private <c>quickInfoCancellation</c> field (no public seam
+    /// <summary>Reads <c>CodeViewViewModel</c>'s private <c>quickInfoCancellation</c> field (no public seam
     /// exists for it) so a test can force a callback onto a specific lookup's own token.</summary>
-    private static CancellationTokenSource? QuickInfoCancellationOf(CodeViewVM target)
+    private static CancellationTokenSource? QuickInfoCancellationOf(CodeViewViewModel target)
     {
-        FieldInfo field = typeof(CodeViewVM).GetField("quickInfoCancellation", BindingFlags.NonPublic | BindingFlags.Instance)
-            ?? throw new InvalidOperationException("CodeViewVM.quickInfoCancellation field not found; the fixture is stale.");
+        FieldInfo field = typeof(CodeViewViewModel).GetField("quickInfoCancellation", BindingFlags.NonPublic | BindingFlags.Instance)
+            ?? throw new InvalidOperationException("CodeViewViewModel.quickInfoCancellation field not found; the fixture is stale.");
         return (CancellationTokenSource?)field.GetValue(target);
     }
 
     /// <summary>A quick-info lookup whose completion the test controls, ignoring the cancellation token
-    /// so tests can exercise <see cref="CodeViewVM"/>'s own "still current?" guard rather than relying
+    /// so tests can exercise <see cref="CodeViewViewModel"/>'s own "still current?" guard rather than relying
     /// on the token being observed.</summary>
     private sealed class ControllableCodeAnalysisHost : ICodeAnalysisHost
     {

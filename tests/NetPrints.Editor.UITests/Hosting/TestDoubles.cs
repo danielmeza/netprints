@@ -18,7 +18,7 @@ public sealed class RecordingDialogs : IEditorDialogs
     public TypeSpecifier? TypeAnswer { get; set; } = TypeSpecifier.FromType<int>();
 
     /// <summary>When set, the references dialog is shown for real (non-modal) instead of being skipped.</summary>
-    public Func<ReferenceListVM, Task>? ShowReferences { get; set; }
+    public Func<ReferenceListViewModel, Task>? ShowReferences { get; set; }
 
     public Task ShowErrorAsync(string title, string message)
     {
@@ -51,7 +51,7 @@ public sealed class RecordingDialogs : IEditorDialogs
         return ShowIssues?.Invoke(title, issues) ?? Task.CompletedTask;
     }
 
-    public Task ShowReferencesAsync(ReferenceListVM references)
+    public Task ShowReferencesAsync(ReferenceListViewModel references)
     {
         if (ShowReferences is not null)
         {

@@ -5,14 +5,14 @@ using NetPrints.Core;
 namespace NetPrints.Editor.Dialogs;
 
 /// <summary>Chooses a type; defaults to <c>object</c> (PAR-58, batch X2b).</summary>
-public sealed partial class SelectTypeDialogVM : DialogVM<TypeSpecifier>
+public sealed partial class SelectTypeDialogViewModel : DialogViewModel<TypeSpecifier>
 {
     private readonly List<TypeSpecifier> types;
 
     /// <summary>Offers <paramref name="types"/>, starting from <paramref name="initial"/>.</summary>
     /// <param name="types">Types offered by the chooser.</param>
     /// <param name="initial">Initially selected type.</param>
-    public SelectTypeDialogVM(IEnumerable<TypeSpecifier> types, TypeSpecifier initial)
+    public SelectTypeDialogViewModel(IEnumerable<TypeSpecifier> types, TypeSpecifier initial)
     {
         this.types = [.. types];
         SelectedType = initial;

@@ -9,7 +9,7 @@ namespace NetPrints.Editor.ErrorList;
 /// its <see cref="CodeDiagnostic.GraphKey"/> against the class that reported it. A diagnostic with no
 /// source-map entry is still listed, just not navigable (<see cref="CanNavigate"/>).
 /// </summary>
-public sealed class DiagnosticRowVM
+public sealed class DiagnosticRowViewModel
 {
     /// <summary>
     /// Wraps <paramref name="diagnostic"/>, resolving <see cref="MemberName"/> against
@@ -18,7 +18,7 @@ public sealed class DiagnosticRowVM
     /// <param name="diagnostic">The diagnostic to show.</param>
     /// <param name="owner">The class that reported the diagnostic, for resolving
     /// <see cref="CodeDiagnostic.GraphKey"/>'s member name, or <see langword="null"/> if not known.</param>
-    public DiagnosticRowVM(CodeDiagnostic diagnostic, ClassGraph? owner)
+    public DiagnosticRowViewModel(CodeDiagnostic diagnostic, ClassGraph? owner)
     {
         ArgumentNullException.ThrowIfNull(diagnostic);
 

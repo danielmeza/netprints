@@ -30,17 +30,17 @@ public enum InspectorKind
     /// <summary>The class inspector (name, namespace, visibility, modifiers).</summary>
     Class,
 
-    /// <summary>The variable inspector, for <see cref="ClassEditorVM.SelectedVariable"/>.</summary>
+    /// <summary>The variable inspector, for <see cref="ClassEditorViewModel.SelectedVariable"/>.</summary>
     Variable,
 
-    /// <summary>The method inspector, for <see cref="ClassEditorVM.SelectedMethod"/>.</summary>
+    /// <summary>The method inspector, for <see cref="ClassEditorViewModel.SelectedMethod"/>.</summary>
     Method,
 }
 
 /// <summary>
 /// View model of a class editor window (PAR-22..37, PAR-60).
 /// </summary>
-public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGraphMessage>, IRecipient<NavigateToNodeMessage>, IRecipient<SelectInspectorMessage>, IDisposable
+public sealed partial class ClassEditorViewModel : ObservableObject, IRecipient<OpenGraphMessage>, IRecipient<NavigateToNodeMessage>, IRecipient<SelectInspectorMessage>, IDisposable
 {
     internal static readonly IReadOnlyList<MemberVisibility> Visibilities =
     [
@@ -90,7 +90,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     /// </summary>
     /// <param name="cls">Class to edit.</param>
     /// <param name="context">Host services shared across the editor.</param>
-    public ClassEditorVM(ClassGraph cls, EditorContext context)
+    public ClassEditorViewModel(ClassGraph cls, EditorContext context)
     {
         Class = cls;
         Context = context;
@@ -99,14 +99,14 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         Messenger.RegisterAll(this);
         Services = new ClassEditorServices(context, UndoRedo, Messenger);
 
-        Methods = new ObservableViewModelCollection<MethodVM, MethodGraph>(cls.Methods, m => new MethodVM(m), m => m.Dispose());
-        Constructors = new ObservableViewModelCollection<MethodVM, ConstructorGraph>(cls.Constructors, c => new MethodVM(c), m => m.Dispose());
-        Variables = new ObservableViewModelCollection<MemberVariableVM, Variable>(cls.Variables,
-            v => new MemberVariableVM(v, Services), v => v.Dispose());
-        EventGraphs = new ObservableViewModelCollection<EventGraphVM, EventGraph>(cls.EventGraphs, g => new EventGraphVM(g, cls));
-        VariablesPanel = new VariablesPanelVM(Services, Variables);
-        CodeView = new CodeViewVM(cls, context.CodeAnalysis);
-        ErrorList = new ErrorListVM(cls, context.CodeAnalysis, Messenger);
+        Methods = new ObservableViewModelCollection<MethodViewModel, MethodGraph>(cls.Methods, m => new MethodViewModel(m), m => m.Dispose());
+        Constructors = new ObservableViewModelCollection<MethodViewModel, ConstructorGraph>(cls.Constructors, c => new MethodViewModel(c), m => m.Dispose());
+        Variables = new ObservableViewModelCollection<MemberVariableViewModel, Variable>(cls.Variables,
+            v => new MemberVariableViewModel(v, Services), v => v.Dispose());
+        EventGraphs = new ObservableViewModelCollection<EventGraphViewModel, EventGraph>(cls.EventGraphs, g => new EventGraphViewModel(g, cls));
+        VariablesPanel = new VariablesPanelViewModel(Services, Variables);
+        CodeView = new CodeViewViewModel(cls, context.CodeAnalysis);
+        ErrorList = new ErrorListViewModel(cls, context.CodeAnalysis, Messenger);
 
         cls.Variables.CollectionChanged += OnMembersChanged;
         cls.Methods.CollectionChanged += OnMembersChanged;
@@ -160,30 +160,30 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     public Project? Project => Class.Project;
 
     /// <summary>View models for <see cref="Class"/>'s methods.</summary>
-    public ObservableViewModelCollection<MethodVM, MethodGraph> Methods { get; }
+    public ObservableViewModelCollection<MethodViewModel, MethodGraph> Methods { get; }
 
     /// <summary>View models for <see cref="Class"/>'s constructors.</summary>
-    public ObservableViewModelCollection<MethodVM, ConstructorGraph> Constructors { get; }
+    public ObservableViewModelCollection<MethodViewModel, ConstructorGraph> Constructors { get; }
 
     /// <summary>View models for <see cref="Class"/>'s variables.</summary>
-    public ObservableViewModelCollection<MemberVariableVM, Variable> Variables { get; }
+    public ObservableViewModelCollection<MemberVariableViewModel, Variable> Variables { get; }
 
     /// <summary>View models for <see cref="Class"/>'s event graphs (US4).</summary>
-    public ObservableViewModelCollection<EventGraphVM, EventGraph> EventGraphs { get; }
+    public ObservableViewModelCollection<EventGraphViewModel, EventGraph> EventGraphs { get; }
 
     /// <summary>The Variables panel's "Class" and "Method: &lt;name&gt;" groups (FR-030, US5).</summary>
-    public VariablesPanelVM VariablesPanel { get; }
+    public VariablesPanelViewModel VariablesPanel { get; }
 
     /// <summary>The read-only C# code view of the class inspector (US6, FR-031..035).</summary>
-    public CodeViewVM CodeView { get; }
+    public CodeViewViewModel CodeView { get; }
 
     /// <summary>The class editor's Errors tab (US6, FR-032, FR-034).</summary>
-    public ErrorListVM ErrorList { get; }
+    public ErrorListViewModel ErrorList { get; }
 
     /// <summary>The graph shown in the canvas, or null.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SelectedMethodInList), nameof(SelectedConstructorInList), nameof(SelectedEventGraphInList))]
-    public partial NodeGraphVM? OpenedGraph { get; set; }
+    public partial NodeGraphViewModel? OpenedGraph { get; set; }
 
     /// <summary>
     /// The Methods list's own highlight (R2-16, OWN-07b): a one-way projection of
@@ -193,13 +193,13 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     /// the Methods and Constructors lists — or a list and an event graph's row — staying highlighted
     /// together.
     /// </summary>
-    public MethodVM? SelectedMethodInList => Methods.FirstOrDefault(m => m.Graph == OpenedGraph?.Graph);
+    public MethodViewModel? SelectedMethodInList => Methods.FirstOrDefault(m => m.Graph == OpenedGraph?.Graph);
 
     /// <summary>The Constructors list's own highlight (R2-16): see <see cref="SelectedMethodInList"/>.</summary>
-    public MethodVM? SelectedConstructorInList => Constructors.FirstOrDefault(m => m.Graph == OpenedGraph?.Graph);
+    public MethodViewModel? SelectedConstructorInList => Constructors.FirstOrDefault(m => m.Graph == OpenedGraph?.Graph);
 
     /// <summary>The Event graphs list's own highlight (OWN-07b): see <see cref="SelectedMethodInList"/>.</summary>
-    public EventGraphVM? SelectedEventGraphInList => EventGraphs.FirstOrDefault(g => g.Graph == OpenedGraph?.Graph);
+    public EventGraphViewModel? SelectedEventGraphInList => EventGraphs.FirstOrDefault(g => g.Graph == OpenedGraph?.Graph);
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowClassInspector), nameof(ShowVariableInspector), nameof(ShowMethodInspector))]
@@ -216,11 +216,11 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowVariableInspector))]
-    public partial MemberVariableVM? SelectedVariable { get; set; }
+    public partial MemberVariableViewModel? SelectedVariable { get; set; }
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowMethodInspector))]
-    public partial MethodVM? SelectedMethod { get; set; }
+    public partial MethodViewModel? SelectedMethod { get; set; }
 
     /// <summary>Whether a graph is still opening past <see cref="BusyIndicatorDelay"/> (batch D1):
     /// drives the "Opening &lt;name&gt;…" overlay. Never true for an open that finishes quickly.</summary>
@@ -364,20 +364,20 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         Context.Dispatcher.Post(() => SelectedOverride = null);
     }
 
-    partial void OnOpenedGraphChanged(NodeGraphVM? oldValue, NodeGraphVM? newValue)
+    partial void OnOpenedGraphChanged(NodeGraphViewModel? oldValue, NodeGraphViewModel? newValue)
     {
         VariablesPanel.OnOpenedGraphChanged(newValue?.Graph as ExecutionGraph);
     }
 
     /// <summary>Disposes the current <see cref="OpenedGraph"/> (the property's only setter) and replaces it with a new one.</summary>
-    private void ReplaceOpenedGraph(NodeGraphVM? replacement)
+    private void ReplaceOpenedGraph(NodeGraphViewModel? replacement)
     {
         OpenedGraph?.Dispose();
         OpenedGraph = replacement;
     }
 
     /// <summary>Opens a graph in the canvas.</summary>
-    public void OpenGraph(NodeGraph graph) => ReplaceOpenedGraph(new NodeGraphVM(graph, Services));
+    public void OpenGraph(NodeGraph graph) => ReplaceOpenedGraph(new NodeGraphViewModel(graph, Services));
 
     /// <summary>
     /// Cancels a still-loading <see cref="OpenMethodAsync"/> (R2-02): called by every other way to
@@ -425,7 +425,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
 
     /// <summary>
     /// Shows the inspector for a variable or method selected from its own list entry (PAR-24, 29):
-    /// <see cref="MemberVariableVM"/> sends this instead of calling back into this class editor
+    /// <see cref="MemberVariableViewModel"/> sends this instead of calling back into this class editor
     /// directly (FR-038).
     /// </summary>
     void IRecipient<SelectInspectorMessage>.Receive(SelectInspectorMessage message)
@@ -489,7 +489,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
 
     /// <summary>
     /// Marks the class dirty when a method or constructor's inspector wrapper setter
-    /// (<see cref="MethodVM.Name"/>, <see cref="MethodVM.Visibility"/>, <see cref="MethodVM.Modifiers"/>)
+    /// (<see cref="MethodViewModel.Name"/>, <see cref="MethodViewModel.Visibility"/>, <see cref="MethodViewModel.Modifiers"/>)
     /// assigns the model directly, bypassing the undo stack (editor-services.md §3).
     /// </summary>
     private void OnMethodPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -748,9 +748,9 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     private string RenderGenerated(Project project, ClassGraph cls) =>
         NetPrints.Generation.GraphCodeGenerator.RenderFile(NewTranslator().Translate(cls), Path.GetFileName(project.GetGraphFilePath(cls)));
 
-    /// <summary>Compiles the whole project through <see cref="MainEditorVM.CompileAsync(Project, EditorContext)"/> (PAR-09).</summary>
+    /// <summary>Compiles the whole project through <see cref="MainEditorViewModel.CompileAsync(Project, EditorContext)"/> (PAR-09).</summary>
     [RelayCommand]
-    private Task CompileAsync() => Project is { CanCompile: true } project ? MainEditorVM.CompileAsync(project, Context) : Task.CompletedTask;
+    private Task CompileAsync() => Project is { CanCompile: true } project ? MainEditorViewModel.CompileAsync(project, Context) : Task.CompletedTask;
 
     [RelayCommand]
     private Task RunAsync()
@@ -761,7 +761,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
         }
 
         SelectedBottomTab = 1; // Output, once per run (not re-forced on every line after it).
-        return MainEditorVM.CompileAndRunAsync(Project, Context);
+        return MainEditorViewModel.CompileAndRunAsync(Project, Context);
     }
 
     [RelayCommand]
@@ -879,12 +879,12 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     /// the previous one was a method, a constructor or another event graph.
     /// </summary>
     [RelayCommand(AllowConcurrentExecutions = true)]
-    private Task OpenEventGraphAsync(EventGraphVM? eventGraph) =>
+    private Task OpenEventGraphAsync(EventGraphViewModel? eventGraph) =>
         eventGraph is null ? Task.CompletedTask : OpenGraphThroughPipelineAsync(eventGraph, eventGraph.Graph, eventGraph.Name);
 
     /// <summary>Removes an event graph (undoable, US4); clears the canvas when it shows it.</summary>
     [RelayCommand]
-    private void RemoveEventGraph(EventGraphVM? eventGraph)
+    private void RemoveEventGraph(EventGraphViewModel? eventGraph)
     {
         if (eventGraph is null)
         {
@@ -903,7 +903,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     /// was a method or an event graph.
     /// </summary>
     [RelayCommand(AllowConcurrentExecutions = true)]
-    private Task OpenMethodAsync(MethodVM? method)
+    private Task OpenMethodAsync(MethodViewModel? method)
     {
         if (method is null)
         {
@@ -990,7 +990,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
     /// <summary>
     /// Pre-resolves every <see cref="CallMethodNode"/>/<see cref="ConstructorNode"/> overload list of
     /// <paramref name="graph"/> on a background thread, so the reflection provider's memoized cache is
-    /// already warm when <see cref="NetPrints.Editor.Graph.Nodes.NodeVM"/> recomputes the same
+    /// already warm when <see cref="NetPrints.Editor.Graph.Nodes.NodeViewModel"/> recomputes the same
     /// overloads synchronously while building the canvas (AGENTS.md: heavy work off the UI thread, not
     /// papered over with a delay).
     /// </summary>
@@ -1040,7 +1040,7 @@ public sealed partial class ClassEditorVM : ObservableObject, IRecipient<OpenGra
 
     /// <summary>Removes a method or constructor; clears the inspector and canvas when they show it (PAR-24, 27).</summary>
     [RelayCommand]
-    private void RemoveMethod(MethodVM? method)
+    private void RemoveMethod(MethodViewModel? method)
     {
         if (method is null)
         {

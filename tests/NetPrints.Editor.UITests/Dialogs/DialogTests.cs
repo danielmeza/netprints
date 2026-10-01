@@ -36,7 +36,7 @@ public class DialogTests
         bool closed = false;
         dialog.Closed += (_, _) => closed = true;
         await ui.Driver.PressAsync("Escape", Token); // dismisses the AutoCompleteBox's suggestion popup
-        await page.SelectButton.ClickAsync(Token); // batch X2b: DialogVM + DialogCloseBehavior
+        await page.SelectButton.ClickAsync(Token); // batch X2b: DialogViewModel + DialogCloseBehavior
         Assert.True(closed);
         Assert.Equal(TypeSpecifier.FromType<string>(), dialog.Result);
     }
@@ -59,7 +59,7 @@ public class DialogTests
         Assert.Equal(methods[0].ToString(), await page.MethodBox.PropertyAsync(AutomationPropertyNames.SelectedItem, Token)); // PAR-59
         Assert.True(await page.SelectButton.IsEnabledAsync(Token));
 
-        await page.SelectButton.ClickAsync(Token); // batch X2b: DialogVM + DialogCloseBehavior
+        await page.SelectButton.ClickAsync(Token); // batch X2b: DialogViewModel + DialogCloseBehavior
         Assert.True(closed);
         Assert.Equal(methods[0], dialog.Result);
     }
@@ -110,7 +110,7 @@ public class DialogTests
                 NullLogger<NetPrints.Extensibility.Settings.JsonFileSettingsStore>.Instance),
             codeAnalysis);
         using var ui = HeadlessUi.Create();
-        using var referenceListVM = new ReferenceListVM(project, context);
+        using var referenceListVM = new ReferenceListViewModel(project, context);
         ui.Show(new ReferencesDialog { DataContext = referenceListVM });
         var page = new ReferencesDialogPage(ui.Driver);
 

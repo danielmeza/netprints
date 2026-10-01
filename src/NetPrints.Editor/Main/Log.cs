@@ -7,7 +7,7 @@ namespace NetPrints.Editor.Main;
 /// </summary>
 internal static partial class Log
 {
-    /// <summary>Logs 1041: <see cref="MainEditorVM.LoadProjectAsync"/> restored the previous project's
+    /// <summary>Logs 1041: <see cref="MainEditorViewModel.LoadProjectAsync"/> restored the previous project's
     /// extensions after a failed load, and that restore itself failed. The original load failure is
     /// still shown to the user.</summary>
     /// <param name="logger">Logger to write to.</param>

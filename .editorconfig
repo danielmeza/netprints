@@ -692,7 +692,7 @@ dotnet_diagnostic.CA2227.severity = error # Collection properties should be read
 dotnet_diagnostic.CA1002.severity = suggestion # Do not expose generic lists
 dotnet_diagnostic.CA2227.severity = suggestion # Collection properties should be read only
 
-[src/NetPrints.Editor/**VM.cs]
+[src/NetPrints.Editor/**ViewModel.cs]
 dotnet_diagnostic.VSTHRD111.severity = none
 
 [src/NetPrints.Editor/**.axaml.cs]

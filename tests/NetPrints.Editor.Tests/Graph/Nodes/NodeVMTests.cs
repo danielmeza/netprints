@@ -53,7 +53,7 @@ public class NodeVMTests(TestEditor editor) : GraphTestBase(editor)
         Assert.Equal(56, Method.EntryNode.PositionX);
         Method.EntryNode.PositionY = 112;
         Assert.Equal(112, node.Location.Y);
-        Assert.Contains(nameof(NodeVM.Location), changed);
+        Assert.Contains(nameof(NodeViewModel.Location), changed);
 
         Assert.Equal(0, node.ZIndex);
         node.Select();
@@ -131,7 +131,7 @@ public class NodeVMTests(TestEditor editor) : GraphTestBase(editor)
         array.LeftPinsPlusCommand.Execute(null);
         Assert.Equal(before + 1, array.Node.InputDataPins.Count);
 
-        var classGraph = new NodeGraphVM(Class, ClassEditor.Services);
+        var classGraph = new NodeGraphViewModel(Class, ClassEditor.Services);
         var classReturn = classGraph.Nodes.Single(n => n.Node is ClassReturnNode);
         Assert.True(classReturn.ShowLeftPinButtons);
         Assert.Equal("Add interface", classReturn.LeftPlusToolTip);

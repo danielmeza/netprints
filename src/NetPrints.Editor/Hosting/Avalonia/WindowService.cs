@@ -49,7 +49,7 @@ public sealed class WindowService : IWindowService
     /// <inheritdoc/>
     public void OpenClassEditor(ClassGraph cls, EditorContext context)
     {
-        var editor = new ClassEditorVM(cls, context);
+        var editor = new ClassEditorViewModel(cls, context);
         var window = new ClassEditorWindow
         {
             DataContext = editor,
@@ -67,8 +67,8 @@ public sealed class WindowService : IWindowService
     }
 
     /// <inheritdoc/>
-    public ClassEditorVM? FindClassEditor(ClassGraph cls) =>
-        windows.TryGetValue(cls, out var window) ? (ClassEditorVM?)window.DataContext : null;
+    public ClassEditorViewModel? FindClassEditor(ClassGraph cls) =>
+        windows.TryGetValue(cls, out var window) ? (ClassEditorViewModel?)window.DataContext : null;
 
     /// <inheritdoc/>
     public void CloseClassEditor(ClassGraph cls)

@@ -11,7 +11,7 @@ public class ReferenceListVMTests(TestEditor testEditor) : IDisposable
 
     public void Dispose() => TestPaths.TryDelete(dir);
 
-    private (Project Project, ReferenceListVM Vm) CreateVm(IReadOnlyList<ProjectReferenceInfo>? references = null)
+    private (Project Project, ReferenceListViewModel Vm) CreateVm(IReadOnlyList<ProjectReferenceInfo>? references = null)
     {
         string path = Path.Combine(dir, "P.csproj");
         var snapshot = new ProjectSnapshot(path, "P", "N", "P", BinaryType.SharedLibrary, "net10.0",
@@ -19,7 +19,7 @@ public class ReferenceListVMTests(TestEditor testEditor) : IDisposable
             new Dictionary<string, string>(), []);
         testEditor.Projects.Seed(snapshot);
         var project = Project.FromSnapshot(snapshot);
-        return (project, new ReferenceListVM(project, testEditor.Context));
+        return (project, new ReferenceListViewModel(project, testEditor.Context));
     }
 
     [Fact]

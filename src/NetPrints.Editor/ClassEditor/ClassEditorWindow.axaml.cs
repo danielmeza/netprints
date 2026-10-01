@@ -18,7 +18,7 @@ public partial class ClassEditorWindow : Window
 
     private void OnMethodPointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        if ((sender as Control)?.DataContext is MethodVM method)
+        if ((sender as Control)?.DataContext is MethodViewModel method)
         {
             dragSource.Pressed(e, this, method);
         }

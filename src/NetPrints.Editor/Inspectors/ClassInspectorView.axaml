@@ -4,7 +4,7 @@
              xmlns:edclasseditor="clr-namespace:NetPrints.Editor.ClassEditor"
              xmlns:edcode="clr-namespace:NetPrints.Editor.CodeView"
              x:Class="NetPrints.Editor.Inspectors.ClassInspectorView"
-             x:DataType="edclasseditor:ClassEditorVM">
+             x:DataType="edclasseditor:ClassEditorViewModel">
   <!-- Class inspector (PAR-34) -->
   <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,*" ColumnDefinitions="Auto,*" Margin="4">
     <TextBlock Grid.ColumnSpan="2" Classes="header" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
@@ -23,7 +23,7 @@
     <TextBlock x:Name="PartialLabel" Grid.Row="7" Text="Partial" VerticalAlignment="Center" Margin="0,0,8,0" />
     <CheckBox AutomationProperties.LabeledBy="{Binding #PartialLabel}" Grid.Row="7" Grid.Column="1" IsChecked="{Binding IsPartial}" />
     <!-- Read-only C# code view (US6, FR-031..035): highlighting, line numbers, folding and no wrap,
-         kept live from the class's debounced analysis (CodeViewVM). -->
+         kept live from the class's debounced analysis (CodeViewViewModel). -->
     <edcode:CodeView x:Name="CodeView" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassInspectorCodeView}" Grid.Row="8" Grid.ColumnSpan="2" Margin="0,4,0,0"
                      DataContext="{Binding CodeView}" />
   </Grid>

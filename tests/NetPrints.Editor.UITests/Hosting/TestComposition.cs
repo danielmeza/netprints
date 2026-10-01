@@ -29,7 +29,7 @@ public sealed class TestComposition : IDisposable
     public WindowService Windows => services.Windows;
 
     /// <summary>The main window's view model, created by <see cref="CreateMainWindow"/>, or <see langword="null"/> before it is called.</summary>
-    public MainEditorVM? MainEditor => services.MainEditor;
+    public MainEditorViewModel? MainEditor => services.MainEditor;
 
     /// <summary>
     /// Shows exceptions that escape to the UI thread in the error dialog instead of crashing

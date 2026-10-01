@@ -13,15 +13,15 @@ namespace NetPrints.Editor.Tests.Variables;
 public class LocalVariableTests : IDisposable
 {
     private readonly TestEditor editor;
-    private readonly ClassEditorVM vm;
+    private readonly ClassEditorViewModel vm;
     private readonly MethodGraph method;
-    private readonly NodeGraphVM graph;
+    private readonly NodeGraphViewModel graph;
 
     public LocalVariableTests(TestEditor editor)
     {
         this.editor = editor;
         var cls = new ClassGraph { Name = "C", Namespace = "N" };
-        vm = new ClassEditorVM(cls, editor.Context);
+        vm = new ClassEditorViewModel(cls, editor.Context);
         vm.CreateMethodCommand.Execute(null); // also opens it (mirrors EventGraphTests' Create Event Graph)
         graph = vm.OpenedGraph ?? throw new InvalidOperationException("CreateMethodCommand did not open the new method.");
         method = (MethodGraph)graph.Graph;
@@ -29,10 +29,10 @@ public class LocalVariableTests : IDisposable
 
     public void Dispose() => vm.Dispose();
 
-    private ObservableViewModelCollection<LocalVariableVM, LocalVariable> MethodVariables =>
+    private ObservableViewModelCollection<LocalVariableViewModel, LocalVariable> MethodVariables =>
         vm.VariablesPanel.MethodVariables ?? throw new InvalidOperationException("No method or constructor graph is open.");
 
-    private LocalVariableVM CreateLocal()
+    private LocalVariableViewModel CreateLocal()
     {
         vm.VariablesPanel.CreateLocalVariableCommand.Execute(null);
         return MethodVariables.Single();
@@ -296,7 +296,7 @@ public class LocalVariableTests : IDisposable
     public void DroppingALocalOpensGetSetChooserWithBothEnabled()
     {
         // H1's stopgap (VariableSpecifier.DeclaringType is null => CanGet/CanSet both true) is now
-        // reachable through the panel's drag & drop (NodeGraphVM.Drop(LocalVariableVM, GraphPoint)).
+        // reachable through the panel's drag & drop (NodeGraphViewModel.Drop(LocalVariableViewModel, GraphPoint)).
         var local = CreateLocal();
         var position = new GraphPoint(50, 60);
 
@@ -344,7 +344,7 @@ public class LocalVariableTests : IDisposable
     public void MethodVariablesSearchCategoryListsLocals()
     {
         CreateLocal();
-        using var search = new SuggestionListVM(graph);
+        using var search = new SuggestionListViewModel(graph);
 
         var rows = search.BuildItems(null);
 

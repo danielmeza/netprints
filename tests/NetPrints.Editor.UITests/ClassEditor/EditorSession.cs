@@ -32,8 +32,8 @@ public sealed class EditorSession : IAsyncDisposable
 
     /// <summary>View models and window (arrange and assert through the API).</summary>
     public ClassEditorWindow ClassWindow => App.ClassWindow(ClassName);
-    public ClassEditorVM ClassVM => (ClassEditorVM)ClassWindow.DataContext!;
-    public NodeGraphVM GraphVM => ClassVM.OpenedGraph!;
+    public ClassEditorViewModel ClassVM => (ClassEditorViewModel)ClassWindow.DataContext!;
+    public NodeGraphViewModel GraphVM => ClassVM.OpenedGraph!;
 
     public static async Task<EditorSession> OpenSampleMainAsync(CancellationToken cancellationToken)
     {

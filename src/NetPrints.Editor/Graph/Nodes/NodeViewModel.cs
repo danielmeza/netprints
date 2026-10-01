@@ -16,15 +16,15 @@ namespace NetPrints.Editor.Graph.Nodes;
 /// A node of the open graph (PAR-39..42). Uses <see cref="NodeVisualKind"/> instead of brushes and
 /// <see cref="GraphPoint"/> for its location.
 /// </summary>
-public sealed partial class NodeVM : ObservableObject, IDisposable
+public sealed partial class NodeViewModel : ObservableObject, IDisposable
 {
     private readonly INotifyPropertyChanged nodeNotifier;
-    private readonly ObservableViewModelCollection<NodePinVM, NodeInputExecPin> inputExecPins;
-    private readonly ObservableViewModelCollection<NodePinVM, NodeInputDataPin> inputDataPins;
-    private readonly ObservableViewModelCollection<NodePinVM, NodeInputTypePin> inputTypePins;
-    private readonly ObservableViewModelCollection<NodePinVM, NodeOutputExecPin> outputExecPins;
-    private readonly ObservableViewModelCollection<NodePinVM, NodeOutputDataPin> outputDataPins;
-    private readonly ObservableViewModelCollection<NodePinVM, NodeOutputTypePin> outputTypePins;
+    private readonly ObservableViewModelCollection<NodePinViewModel, NodeInputExecPin> inputExecPins;
+    private readonly ObservableViewModelCollection<NodePinViewModel, NodeInputDataPin> inputDataPins;
+    private readonly ObservableViewModelCollection<NodePinViewModel, NodeInputTypePin> inputTypePins;
+    private readonly ObservableViewModelCollection<NodePinViewModel, NodeOutputExecPin> outputExecPins;
+    private readonly ObservableViewModelCollection<NodePinViewModel, NodeOutputDataPin> outputDataPins;
+    private readonly ObservableViewModelCollection<NodePinViewModel, NodeOutputTypePin> outputTypePins;
     private bool suppressOverloadSelection;
 
     /// <summary>
@@ -33,7 +33,7 @@ public sealed partial class NodeVM : ObservableObject, IDisposable
     /// </summary>
     /// <param name="node">Node to wrap.</param>
     /// <param name="graph">View model of the graph the node belongs to.</param>
-    public NodeVM(Node node, NodeGraphVM graph)
+    public NodeViewModel(Node node, NodeGraphViewModel graph)
     {
         Node = node;
         Graph = graph;
@@ -61,13 +61,13 @@ public sealed partial class NodeVM : ObservableObject, IDisposable
     public Node Node { get; }
 
     /// <summary>View model of the graph this node belongs to.</summary>
-    public NodeGraphVM Graph { get; }
+    public NodeGraphViewModel Graph { get; }
 
     /// <summary>Input pins in display order: exec, data, type (left column).</summary>
-    public ObservableCollection<NodePinVM> Inputs { get; } = [];
+    public ObservableCollection<NodePinViewModel> Inputs { get; } = [];
 
     /// <summary>Output pins in display order: exec, data, type (right column).</summary>
-    public ObservableCollection<NodePinVM> Outputs { get; } = [];
+    public ObservableCollection<NodePinViewModel> Outputs { get; } = [];
 
     /// <summary>
     /// The pin area's rows (OWN-05b): for most node kinds, row i pairs <c>Inputs[i]</c> with
@@ -77,28 +77,28 @@ public sealed partial class NodeVM : ObservableObject, IDisposable
     /// matter how many other pins (Exec, generic type parameters) sit around them. See
     /// <see cref="BuildPinRows"/>.
     /// </summary>
-    public ObservableCollection<PinRowVM> PinRows { get; } = [];
+    public ObservableCollection<PinRowViewModel> PinRows { get; } = [];
 
     /// <summary>Every pin of this node, inputs then outputs.</summary>
-    public IEnumerable<NodePinVM> AllPins => Inputs.Concat(Outputs);
+    public IEnumerable<NodePinViewModel> AllPins => Inputs.Concat(Outputs);
 
     /// <summary>View models for the wrapped node's <c>InputExecPins</c>.</summary>
-    public IReadOnlyList<NodePinVM> InputExecPins => inputExecPins;
+    public IReadOnlyList<NodePinViewModel> InputExecPins => inputExecPins;
 
     /// <summary>View models for the wrapped node's <c>InputDataPins</c>.</summary>
-    public IReadOnlyList<NodePinVM> InputDataPins => inputDataPins;
+    public IReadOnlyList<NodePinViewModel> InputDataPins => inputDataPins;
 
     /// <summary>View models for the wrapped node's <c>InputTypePins</c>.</summary>
-    public IReadOnlyList<NodePinVM> InputTypePins => inputTypePins;
+    public IReadOnlyList<NodePinViewModel> InputTypePins => inputTypePins;
 
     /// <summary>View models for the wrapped node's <c>OutputExecPins</c>.</summary>
-    public IReadOnlyList<NodePinVM> OutputExecPins => outputExecPins;
+    public IReadOnlyList<NodePinViewModel> OutputExecPins => outputExecPins;
 
     /// <summary>View models for the wrapped node's <c>OutputDataPins</c>.</summary>
-    public IReadOnlyList<NodePinVM> OutputDataPins => outputDataPins;
+    public IReadOnlyList<NodePinViewModel> OutputDataPins => outputDataPins;
 
     /// <summary>View models for the wrapped node's <c>OutputTypePins</c>.</summary>
-    public IReadOnlyList<NodePinVM> OutputTypePins => outputTypePins;
+    public IReadOnlyList<NodePinViewModel> OutputTypePins => outputTypePins;
 
     /// <summary>Location on the canvas, synchronized with the model position.</summary>
     public GraphPoint Location
@@ -364,12 +364,12 @@ public sealed partial class NodeVM : ObservableObject, IDisposable
     /// <summary>Selects only this node.</summary>
     public void Select() => Graph.SelectNodes([this], deselectPrevious: true);
 
-    private ObservableViewModelCollection<NodePinVM, TPin> CreatePins<TPin>(ObservableRangeCollection<TPin> pins)
+    private ObservableViewModelCollection<NodePinViewModel, TPin> CreatePins<TPin>(ObservableRangeCollection<TPin> pins)
         where TPin : NodePin
     {
-        var collection = new ObservableViewModelCollection<NodePinVM, TPin>(pins, p =>
+        var collection = new ObservableViewModelCollection<NodePinViewModel, TPin>(pins, p =>
         {
-            var vm = new NodePinVM(p, this);
+            var vm = new NodePinViewModel(p, this);
             vm.ConnectionChanged += OnPinConnectionChanged;
             return vm;
         }, vm =>
@@ -424,7 +424,7 @@ public sealed partial class NodeVM : ObservableObject, IDisposable
     /// are up to date): entry-style pairing for a method/event entry node, return-style pairing for a
     /// return node, index pairing (row i = <c>Inputs[i]</c>, <c>Outputs[i]</c>) for everything else.
     /// </summary>
-    private List<PinRowVM> BuildPinRows() => Node switch
+    private List<PinRowViewModel> BuildPinRows() => Node switch
     {
         MethodEntryNode or EventEntryNode => BuildEntryRows(),
         ReturnNode => BuildReturnRows(),
@@ -437,23 +437,23 @@ public sealed partial class NodeVM : ObservableObject, IDisposable
     /// event override argument, which has none) with its <see cref="Node.OutputDataPins"/> entry, then
     /// one row per generic <see cref="Node.OutputTypePins"/> entry (nothing pairs with those either).
     /// </summary>
-    private List<PinRowVM> BuildEntryRows()
+    private List<PinRowViewModel> BuildEntryRows()
     {
-        var rows = new List<PinRowVM>();
+        var rows = new List<PinRowViewModel>();
 
         if (outputExecPins.Count > 0)
         {
-            rows.Add(new PinRowVM(null, outputExecPins[0]));
+            rows.Add(new PinRowViewModel(null, outputExecPins[0]));
         }
 
         for (int i = 0; i < outputDataPins.Count; i++)
         {
-            rows.Add(new PinRowVM(i < inputTypePins.Count ? inputTypePins[i] : null, outputDataPins[i]));
+            rows.Add(new PinRowViewModel(i < inputTypePins.Count ? inputTypePins[i] : null, outputDataPins[i]));
         }
 
         foreach (var genericPin in outputTypePins)
         {
-            rows.Add(new PinRowVM(null, genericPin));
+            rows.Add(new PinRowViewModel(null, genericPin));
         }
 
         return rows;
@@ -465,32 +465,32 @@ public sealed partial class NodeVM : ObservableObject, IDisposable
     /// entry. Both pins of a pair are naturally on the node's input side; the type pin is rendered in
     /// the row's right column purely to keep it next to its data pin.
     /// </summary>
-    private List<PinRowVM> BuildReturnRows()
+    private List<PinRowViewModel> BuildReturnRows()
     {
-        var rows = new List<PinRowVM>();
+        var rows = new List<PinRowViewModel>();
 
         if (inputExecPins.Count > 0)
         {
-            rows.Add(new PinRowVM(inputExecPins[0], null));
+            rows.Add(new PinRowViewModel(inputExecPins[0], null));
         }
 
         for (int i = 0; i < inputDataPins.Count; i++)
         {
-            rows.Add(new PinRowVM(inputDataPins[i], i < inputTypePins.Count ? inputTypePins[i] : null));
+            rows.Add(new PinRowViewModel(inputDataPins[i], i < inputTypePins.Count ? inputTypePins[i] : null));
         }
 
         return rows;
     }
 
     /// <summary>Rows for every other node kind: row i pairs <see cref="Inputs"/>[i] with <see cref="Outputs"/>[i].</summary>
-    private List<PinRowVM> BuildIndexedRows()
+    private List<PinRowViewModel> BuildIndexedRows()
     {
         int count = Math.Max(Inputs.Count, Outputs.Count);
-        var rows = new List<PinRowVM>(count);
+        var rows = new List<PinRowViewModel>(count);
 
         for (int i = 0; i < count; i++)
         {
-            rows.Add(new PinRowVM(i < Inputs.Count ? Inputs[i] : null, i < Outputs.Count ? Outputs[i] : null));
+            rows.Add(new PinRowViewModel(i < Inputs.Count ? Inputs[i] : null, i < Outputs.Count ? Outputs[i] : null));
         }
 
         return rows;

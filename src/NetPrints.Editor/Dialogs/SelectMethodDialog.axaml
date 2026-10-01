@@ -6,7 +6,7 @@
         xmlns:edsearch="clr-namespace:NetPrints.Editor.Search"
         xmlns:core="clr-namespace:NetPrints.Core;assembly=NetPrints.Core"
         x:Class="NetPrints.Editor.Dialogs.SelectMethodDialog"
-        x:DataType="eddialogs:SelectMethodDialogVM"
+        x:DataType="eddialogs:SelectMethodDialogViewModel"
         Title="Select Method"
         Icon="avares://NetPrints.Editor/Assets/NetPrintsLogo.ico"
         Width="700" Height="160"

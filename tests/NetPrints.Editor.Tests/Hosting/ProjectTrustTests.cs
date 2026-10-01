@@ -51,7 +51,7 @@ public class ProjectTrustTests : IDisposable
     public async Task DecliningOpensTheProjectWithoutItsExtensionsAndReportsNpd006()
     {
         string csproj = await ProjectWithExtensionAsync(declareItem: true);
-        var vm = new MainEditorVM(testEditor.Context);
+        var vm = new MainEditorViewModel(testEditor.Context);
 
         await vm.LoadProjectAsync(csproj);
 
@@ -73,7 +73,7 @@ public class ProjectTrustTests : IDisposable
     {
         string csproj = await ProjectWithExtensionAsync(declareItem: true);
         testEditor.Dialogs.TrustAnswer = true;
-        var vm = new MainEditorVM(testEditor.Context);
+        var vm = new MainEditorViewModel(testEditor.Context);
 
         await vm.LoadProjectAsync(csproj);
 
@@ -89,7 +89,7 @@ public class ProjectTrustTests : IDisposable
         string csproj = await ProjectWithExtensionAsync(declareItem: true);
         await testEditor.Settings.SetAsync(NetPrintsSettings.Descriptor,
             NetPrintsSettings.Empty with { TrustedProjects = [csproj] }, TestContext.Current.CancellationToken);
-        var vm = new MainEditorVM(testEditor.Context);
+        var vm = new MainEditorViewModel(testEditor.Context);
 
         await vm.LoadProjectAsync(csproj);
 
@@ -101,7 +101,7 @@ public class ProjectTrustTests : IDisposable
     public async Task AManifestInTheProjectFolderWithoutAnItemIsNeverLoaded()
     {
         string csproj = await ProjectWithExtensionAsync(declareItem: false);
-        var vm = new MainEditorVM(testEditor.Context);
+        var vm = new MainEditorViewModel(testEditor.Context);
 
         await vm.LoadProjectAsync(csproj);
 
@@ -116,7 +116,7 @@ public class ProjectTrustTests : IDisposable
     {
         string withExtension = await ProjectWithExtensionAsync(declareItem: true);
         testEditor.Dialogs.TrustAnswer = true;
-        var vm = new MainEditorVM(testEditor.Context);
+        var vm = new MainEditorViewModel(testEditor.Context);
         await vm.LoadProjectAsync(withExtension);
         Assert.NotEmpty(FailedExtensionCodes());
 

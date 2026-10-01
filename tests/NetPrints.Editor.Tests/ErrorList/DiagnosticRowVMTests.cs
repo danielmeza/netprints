@@ -3,7 +3,7 @@ using NetPrints.Editor.ErrorList;
 
 namespace NetPrints.Editor.Tests.ErrorList;
 
-/// <summary><see cref="DiagnosticRowVM"/> (FR-032, OWN-03: severity icon/color state).</summary>
+/// <summary><see cref="DiagnosticRowViewModel"/> (FR-032, OWN-03: severity icon/color state).</summary>
 public sealed class DiagnosticRowVMTests
 {
     private static CodeDiagnostic Diagnostic(CodeDiagnosticSeverity severity) =>
@@ -15,7 +15,7 @@ public sealed class DiagnosticRowVMTests
     [InlineData(CodeDiagnosticSeverity.Info, false, false, true)]
     public void SeverityFlagsMatchTheDiagnosticsSeverity(CodeDiagnosticSeverity severity, bool isError, bool isWarning, bool isInfo)
     {
-        var row = new DiagnosticRowVM(Diagnostic(severity), null);
+        var row = new DiagnosticRowViewModel(Diagnostic(severity), null);
 
         Assert.Equal(isError, row.IsError);
         Assert.Equal(isWarning, row.IsWarning);
@@ -25,7 +25,7 @@ public sealed class DiagnosticRowVMTests
     [Fact]
     public void CanNavigateIsFalseWithNoGraphKey()
     {
-        var row = new DiagnosticRowVM(Diagnostic(CodeDiagnosticSeverity.Error), null);
+        var row = new DiagnosticRowViewModel(Diagnostic(CodeDiagnosticSeverity.Error), null);
 
         Assert.False(row.CanNavigate);
     }
@@ -37,7 +37,7 @@ public sealed class DiagnosticRowVMTests
         // the last mapped statement) still knows its member and should still open the graph.
         var diagnostic = new CodeDiagnostic(CodeDiagnosticSeverity.Error, "CS0161", "boom", "N.C", "graphKey", null, null, null);
 
-        var row = new DiagnosticRowVM(diagnostic, null);
+        var row = new DiagnosticRowViewModel(diagnostic, null);
 
         Assert.True(row.CanNavigate);
     }

@@ -43,7 +43,7 @@ public sealed class ExtensionPersistenceTests : IDisposable
     {
         (string csproj, string graphPath) = await ProjectWithLogNodeAsync();
         editor.Dialogs.TrustAnswer = true;
-        var vm = new MainEditorVM(editor.Context);
+        var vm = new MainEditorViewModel(editor.Context);
 
         await vm.LoadProjectAsync(csproj);
 
@@ -59,7 +59,7 @@ public sealed class ExtensionPersistenceTests : IDisposable
     public async Task ADeclinedExtensionsNodeIsPreservedNotLoaded()
     {
         (string csproj, string graphPath) = await ProjectWithLogNodeAsync();
-        var vm = new MainEditorVM(editor.Context);
+        var vm = new MainEditorViewModel(editor.Context);
 
         await vm.LoadProjectAsync(csproj);
 
@@ -79,7 +79,7 @@ public sealed class ExtensionPersistenceTests : IDisposable
         // extensions must be restored, or its nodes stop translating until it is reopened.
         (string csprojA, string graphPathA) = await ProjectWithLogNodeAsync();
         editor.Dialogs.TrustAnswer = true;
-        var vm = new MainEditorVM(editor.Context);
+        var vm = new MainEditorViewModel(editor.Context);
         await vm.LoadProjectAsync(csprojA);
         Assert.NotNull(FindLogNode(vm.Project));
         Project projectA = vm.Project ?? throw new InvalidOperationException("No project.");

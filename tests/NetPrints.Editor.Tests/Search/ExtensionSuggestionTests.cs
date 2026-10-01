@@ -15,7 +15,7 @@ namespace NetPrints.Editor.Tests.Search;
 public sealed class ExtensionSuggestionTests(IReflectionHost sharedReflection)
     : GraphTestBase(TestEditor.Create(_ => sharedReflection, TestExtensionFolder.CreateHost()))
 {
-    private List<SuggestionItem> Rows(NodeGraphVM graph, NodePin? pin = null) => graph.Search.BuildItems(pin);
+    private List<SuggestionItem> Rows(NodeGraphViewModel graph, NodePin? pin = null) => graph.Search.BuildItems(pin);
 
     [Fact]
     public void ASuggestionOfTheTestExtensionFollowsTheBuiltInCategoriesInAMethodGraph()
@@ -67,7 +67,7 @@ public sealed class ExtensionSuggestionTests(IReflectionHost sharedReflection)
     [Fact]
     public void WithoutTheExtensionTheSuggestionIsNotOffered()
     {
-        var plain = new NetPrints.Editor.ClassEditor.ClassEditorVM(new ClassGraph { Name = "P", Namespace = "N" }, TestEditor.Create(_ => sharedReflection).Context);
+        var plain = new NetPrints.Editor.ClassEditor.ClassEditorViewModel(new ClassGraph { Name = "P", Namespace = "N" }, TestEditor.Create(_ => sharedReflection).Context);
         plain.CreateMethodCommand.Execute(null);
 
         Assert.DoesNotContain(Rows(plain.OpenedGraph ?? throw new InvalidOperationException("No graph.")), r => r.Category == "Test");

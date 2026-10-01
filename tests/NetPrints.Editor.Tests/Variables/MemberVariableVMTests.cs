@@ -8,13 +8,13 @@ namespace NetPrints.Editor.Tests.Variables;
 
 public class MemberVariableVMTests : IDisposable
 {
-    private readonly ClassEditorVM vm;
+    private readonly ClassEditorViewModel vm;
     private readonly ClassGraph cls;
 
     public MemberVariableVMTests(TestEditor editor)
     {
         cls = new ClassGraph { Name = "C", Namespace = "N" };
-        vm = new ClassEditorVM(cls, editor.Context);
+        vm = new ClassEditorViewModel(cls, editor.Context);
     }
 
     public void Dispose() => vm.Dispose();
@@ -116,8 +116,8 @@ public class MemberVariableVMTests : IDisposable
         Assert.Equal("Renamed", variable.Variable.Name);
         Assert.Equal(VariableModifiers.Static | VariableModifiers.ReadOnly, variable.Variable.Modifiers);
         Assert.Equal(MemberVisibility.Public, variable.Getter!.Visibility);
-        Assert.Contains(nameof(MemberVariableVM.Name), changed);
-        Assert.Contains(nameof(MemberVariableVM.IsStatic), changed);
+        Assert.Contains(nameof(MemberVariableViewModel.Name), changed);
+        Assert.Contains(nameof(MemberVariableViewModel.IsStatic), changed);
     }
 
     [Fact]

@@ -39,7 +39,7 @@ public sealed class EditorComposition : IDisposable
     public WindowService Windows => services.Windows;
 
     /// <summary>The main window's view model, created by <see cref="CreateMainWindow"/>, or <see langword="null"/> before it is called.</summary>
-    public MainEditorVM? MainEditor => services.MainEditor;
+    public MainEditorViewModel? MainEditor => services.MainEditor;
 
     /// <summary>
     /// Shows exceptions that escape to the UI thread in the error dialog instead of crashing
@@ -141,7 +141,7 @@ internal sealed class EditorServices : IDisposable
     public WindowService Windows { get; }
 
     /// <summary>The main window's view model, created by <see cref="CreateMainWindow"/>, or <see langword="null"/> before it is called.</summary>
-    public MainEditorVM? MainEditor { get; private set; }
+    public MainEditorViewModel? MainEditor { get; private set; }
 
     /// <summary>
     /// Shows exceptions that escape to the UI thread in the error dialog instead of crashing
@@ -158,7 +158,7 @@ internal sealed class EditorServices : IDisposable
     /// <param name="args">The command-line arguments.</param>
     public async Task StartAsync(IReadOnlyList<string> args)
     {
-        MainEditorVM mainEditor = MainEditor ?? throw new InvalidOperationException($"{nameof(CreateMainWindow)} must be called first.");
+        MainEditorViewModel mainEditor = MainEditor ?? throw new InvalidOperationException($"{nameof(CreateMainWindow)} must be called first.");
         if (hostChannelError is not null)
         {
             await Context.Dialogs.ShowErrorAsync("Host channel unavailable", hostChannelError);
@@ -172,7 +172,7 @@ internal sealed class EditorServices : IDisposable
     public MainWindow CreateMainWindow()
     {
         MainEditor?.Dispose();
-        MainEditor = new MainEditorVM(Context);
+        MainEditor = new MainEditorViewModel(Context);
         var window = new MainWindow { DataContext = MainEditor };
         Windows.MainWindow = window;
         return window;

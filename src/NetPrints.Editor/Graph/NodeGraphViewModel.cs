@@ -22,10 +22,10 @@ namespace NetPrints.Editor.Graph;
 /// The graph shown in the canvas: nodes, connections, selection, node creation, search and the
 /// Get/Set chooser (PAR-37..57).
 /// </summary>
-public sealed partial class NodeGraphVM : ObservableObject, IDisposable
+public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
 {
-    private readonly HashSet<NodeVM> subscribedNodes = [];
-    private readonly Dictionary<(NodePin Source, NodePin Target), ConnectionVM> connectionsByPins = [];
+    private readonly HashSet<NodeViewModel> subscribedNodes = [];
+    private readonly Dictionary<(NodePin Source, NodePin Target), ConnectionViewModel> connectionsByPins = [];
 
     /// <summary>
     /// Wraps <paramref name="graph"/>: builds its node view models, subscribes to reflection reload,
@@ -33,19 +33,19 @@ public sealed partial class NodeGraphVM : ObservableObject, IDisposable
     /// </summary>
     /// <param name="graph">Graph to wrap.</param>
     /// <param name="services">Narrow services shared with the owning class editor (FR-038).</param>
-    public NodeGraphVM(NodeGraph graph, ClassEditorServices services)
+    public NodeGraphViewModel(NodeGraph graph, ClassEditorServices services)
     {
         Graph = graph;
         Services = services;
 
-        Nodes = new ObservableViewModelCollection<NodeVM, Node>(graph.Nodes, n => new NodeVM(n, this), n => n.Dispose());
+        Nodes = new ObservableViewModelCollection<NodeViewModel, Node>(graph.Nodes, n => new NodeViewModel(n, this), n => n.Dispose());
         Nodes.CollectionChanged += OnNodesChanged;
         SyncNodeSubscriptions();
 
         Context.Reflection.Reloaded += OnReflectionReloaded;
 
-        Search = new SuggestionListVM(this);
-        GetSetChooser = new GetSetChooserVM(this);
+        Search = new SuggestionListViewModel(this);
+        GetSetChooser = new GetSetChooserViewModel(this);
 
         RebuildConnections();
     }
@@ -60,19 +60,19 @@ public sealed partial class NodeGraphVM : ObservableObject, IDisposable
     public EditorContext Context => Services.Context;
 
     /// <summary>View models for <see cref="Graph"/>'s nodes.</summary>
-    public ObservableViewModelCollection<NodeVM, Node> Nodes { get; }
+    public ObservableViewModelCollection<NodeViewModel, Node> Nodes { get; }
 
     /// <summary>Cables derived from the model's pin connections.</summary>
-    public ObservableCollection<ConnectionVM> Connections { get; } = [];
+    public ObservableCollection<ConnectionViewModel> Connections { get; } = [];
 
     /// <summary>The currently selected nodes.</summary>
-    public IEnumerable<NodeVM> SelectedNodes => Nodes.Where(n => n.IsSelected);
+    public IEnumerable<NodeViewModel> SelectedNodes => Nodes.Where(n => n.IsSelected);
 
     /// <summary>Node search popup (PAR-52..54).</summary>
-    public SuggestionListVM Search { get; }
+    public SuggestionListViewModel Search { get; }
 
     /// <summary>Get/Set chooser for variables (PAR-55, 57).</summary>
-    public GetSetChooserVM GetSetChooser { get; }
+    public GetSetChooserViewModel GetSetChooser { get; }
 
     /// <summary>Graph name, shown as a watermark (PAR-38).</summary>
     public string Name => Graph switch
@@ -117,11 +117,11 @@ public sealed partial class NodeGraphVM : ObservableObject, IDisposable
 
     /// <summary>
     /// Synchronizes <see cref="Connections"/> with the model. Existing cables keep their state
-    /// (for example <see cref="ConnectionVM.IsFaint"/>).
+    /// (for example <see cref="ConnectionViewModel.IsFaint"/>).
     /// </summary>
     internal void RebuildConnections()
     {
-        var pinMap = new Dictionary<NodePin, NodePinVM>();
+        var pinMap = new Dictionary<NodePin, NodePinViewModel>();
         foreach (var node in Nodes)
         {
             foreach (var pin in node.AllPins)
@@ -170,7 +170,7 @@ public sealed partial class NodeGraphVM : ObservableObject, IDisposable
                 Connections.Remove(existing);
             }
 
-            var connection = new ConnectionVM(source, target);
+            var connection = new ConnectionViewModel(source, target);
             connectionsByPins[key] = connection;
             Connections.Add(connection);
         }
@@ -182,7 +182,7 @@ public sealed partial class NodeGraphVM : ObservableObject, IDisposable
     }
 
     /// <summary>Connects two pins when compatible (PAR-46). Returns whether they were connected.</summary>
-    public bool Connect(NodePinVM a, NodePinVM b) => a.ConnectTo(b);
+    public bool Connect(NodePinViewModel a, NodePinViewModel b) => a.ConnectTo(b);
 
     /// <summary>Pending-connection release point in graph coordinates, pushed by the view (ED-T09).</summary>
     [ObservableProperty]
@@ -195,17 +195,17 @@ public sealed partial class NodeGraphVM : ObservableObject, IDisposable
     /// </summary>
     /// <param name="pins">The source and target connectors' data contexts, as a 2-tuple (Nodify's own
     /// tuple is <c>(object, object)</c>; matched loosely as <see cref="ITuple"/> so a plain
-    /// <c>(NodePinVM?, NodePinVM?)</c> works too, for VM-level tests).</param>
+    /// <c>(NodePinViewModel?, NodePinViewModel?)</c> works too, for VM-level tests).</param>
     [RelayCommand]
     private void ConnectionCompleted(object? pins)
     {
         const int ExpectedLength = 2;
-        if (pins is not ITuple { Length: ExpectedLength } tuple || tuple[0] is not NodePinVM source)
+        if (pins is not ITuple { Length: ExpectedLength } tuple || tuple[0] is not NodePinViewModel source)
         {
             return;
         }
 
-        if (tuple[1] is NodePinVM target)
+        if (tuple[1] is NodePinViewModel target)
         {
             Connect(source, target);
         }
@@ -217,7 +217,7 @@ public sealed partial class NodeGraphVM : ObservableObject, IDisposable
     }
 
     /// <summary>Toggles the faint state of the cables of a pin (PAR-48).</summary>
-    internal void ToggleFaint(NodePinVM pin)
+    internal void ToggleFaint(NodePinViewModel pin)
     {
         foreach (var connection in Connections.Where(c => c.Source == pin || c.Target == pin))
         {
@@ -232,7 +232,7 @@ public sealed partial class NodeGraphVM : ObservableObject, IDisposable
     /// </summary>
     /// <param name="nodes">Nodes to select.</param>
     /// <param name="deselectPrevious">Whether to deselect every node not in <paramref name="nodes"/> first.</param>
-    public void SelectNodes(IEnumerable<NodeVM> nodes, bool deselectPrevious)
+    public void SelectNodes(IEnumerable<NodeViewModel> nodes, bool deselectPrevious)
     {
         var toSelect = nodes.ToHashSet();
 
@@ -257,7 +257,7 @@ public sealed partial class NodeGraphVM : ObservableObject, IDisposable
 
     /// <summary>Raised after <see cref="RevealNode"/> selects a node, so the view can scroll it into
     /// view (ADR-0004: the view owns the canvas viewport, this view model only asks for it).</summary>
-    public event EventHandler<NodeVM>? NodeRevealRequested;
+    public event EventHandler<NodeViewModel>? NodeRevealRequested;
 
     /// <summary>
     /// Selects the node with <paramref name="nodeId"/> and asks the view to bring it into view
@@ -267,7 +267,7 @@ public sealed partial class NodeGraphVM : ObservableObject, IDisposable
     /// <returns>Whether a node with that id exists in this graph.</returns>
     public bool RevealNode(string nodeId)
     {
-        NodeVM? node = Nodes.FirstOrDefault(n => n.Node.Id == nodeId);
+        NodeViewModel? node = Nodes.FirstOrDefault(n => n.Node.Id == nodeId);
         if (node is null)
         {
             return false;
@@ -390,10 +390,10 @@ public sealed partial class NodeGraphVM : ObservableObject, IDisposable
     private Task OpenSearchAsync(GraphPoint position) => OpenSearchAsync(position, suggestionPin: null);
 
     /// <summary>Changes the overload of a node through the undo stack (PAR-40).</summary>
-    public void ChangeOverload(NodeVM node, object overload) => Services.UndoRedo.Do(EditorCommands.ChangeOverload(node.Node, overload));
+    public void ChangeOverload(NodeViewModel node, object overload) => Services.UndoRedo.Do(EditorCommands.ChangeOverload(node.Node, overload));
 
     /// <summary>A method or constructor was dropped from the class lists (PAR-56).</summary>
-    public Node Drop(MethodVM method, GraphPoint position)
+    public Node Drop(MethodViewModel method, GraphPoint position)
     {
         var declaringClass = Graph.Class ?? throw new InvalidOperationException("The open graph has no class.");
         var declaringType = declaringClass.Type;
@@ -408,16 +408,16 @@ public sealed partial class NodeGraphVM : ObservableObject, IDisposable
     /// </summary>
     /// <param name="variable">The dropped variable.</param>
     /// <param name="position">Where the node is created, in graph coordinates.</param>
-    public void Drop(MemberVariableVM variable, GraphPoint position) => GetSetChooser.Open(variable.Specifier, position);
+    public void Drop(MemberVariableViewModel variable, GraphPoint position) => GetSetChooser.Open(variable.Specifier, position);
 
     /// <summary>
     /// A local variable was dropped from the Variables panel's Method group (US5, sub-phase H): opens
     /// the Get/Set chooser the same way a member variable does. Locals are always readable and
-    /// writable from their own method, so the chooser offers both (<see cref="GetSet.GetSetChooserVM.Open"/>).
+    /// writable from their own method, so the chooser offers both (<see cref="GetSet.GetSetChooserViewModel.Open"/>).
     /// </summary>
     /// <param name="variable">The dropped local variable.</param>
     /// <param name="position">Where the node is created, in graph coordinates.</param>
-    public void Drop(LocalVariableVM variable, GraphPoint position) => GetSetChooser.Open(variable.Specifier, position);
+    public void Drop(LocalVariableViewModel variable, GraphPoint position) => GetSetChooser.Open(variable.Specifier, position);
 
     private void OnReflectionReloaded(object? sender, EventArgs e)
     {

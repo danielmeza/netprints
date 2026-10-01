@@ -9,7 +9,7 @@ namespace NetPrints.Editor.CodeView;
 /// <summary>
 /// Draws a wavy underline under each diagnostic's span (editor-services.md §3: AvaloniaEdit ships no
 /// text-marker service, research.md R2), colored by <see cref="CodeDiagnostic.Severity"/>. The view
-/// sets <see cref="Diagnostics"/> and redraws the layer whenever <c>CodeViewVM.Diagnostics</c> changes.
+/// sets <see cref="Diagnostics"/> and redraws the layer whenever <c>CodeViewViewModel.Diagnostics</c> changes.
 /// </summary>
 public sealed class SquiggleRenderer : IBackgroundRenderer
 {

@@ -7,13 +7,13 @@ namespace NetPrints.Editor.Graph.Pins;
 /// <summary>
 /// A cable between an output-side pin (<see cref="Source"/>) and an input-side pin (<see cref="Target"/>) (PAR-48).
 /// </summary>
-public sealed partial class ConnectionVM(NodePinVM source, NodePinVM target) : ObservableObject
+public sealed partial class ConnectionViewModel(NodePinViewModel source, NodePinViewModel target) : ObservableObject
 {
     /// <summary>The output-side pin (exec pin: the outgoing pin; data/type pin: the source of the value).</summary>
-    public NodePinVM Source { get; } = source;
+    public NodePinViewModel Source { get; } = source;
 
     /// <summary>The input-side pin (exec pin: the incoming pin; data/type pin: the consumer of the value).</summary>
-    public NodePinVM Target { get; } = target;
+    public NodePinViewModel Target { get; } = target;
 
     /// <summary>The kind of pin this connects (exec, data or type), taken from <see cref="Source"/>.</summary>
     public PinKind Kind => Source.Kind;
@@ -28,7 +28,7 @@ public sealed partial class ConnectionVM(NodePinVM source, NodePinVM target) : O
     /// <summary>
     /// The pin that owns the connection in the model (input data, output exec or input type pin).
     /// </summary>
-    public NodePinVM OwningPin => Source.Pin is NodeOutputExecPin ? Source : Target;
+    public NodePinViewModel OwningPin => Source.Pin is NodeOutputExecPin ? Source : Target;
 
     /// <summary>Middle click: removes the connection.</summary>
     [RelayCommand]

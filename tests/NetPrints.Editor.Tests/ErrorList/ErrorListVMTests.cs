@@ -9,7 +9,7 @@ using NetPrints.Translator;
 
 namespace NetPrints.Editor.Tests.ErrorList;
 
-/// <summary><see cref="ErrorListVM"/> (FR-032, OWN-03: severity counts in the "Errors" tab header).</summary>
+/// <summary><see cref="ErrorListViewModel"/> (FR-032, OWN-03: severity counts in the "Errors" tab header).</summary>
 public sealed class ErrorListVMTests
 {
     private static ClassGraph NewClass(string ns, string name) => new() { Namespace = ns, Name = name };
@@ -21,7 +21,7 @@ public sealed class ErrorListVMTests
     public void HeaderCountsErrorsAndWarningsAcrossRows()
     {
         using var host = new FakeCodeAnalysisHost();
-        using var vm = new ErrorListVM(NewClass("N", "C"), host, new StrongReferenceMessenger());
+        using var vm = new ErrorListViewModel(NewClass("N", "C"), host, new StrongReferenceMessenger());
 
         host.Push(new CodeAnalysisSnapshot(new Dictionary<string, TranslatedClass>(StringComparer.Ordinal),
         [
@@ -40,7 +40,7 @@ public sealed class ErrorListVMTests
     public void HeaderAddsAnInfoSuffixOnlyWhenThereIsAtLeastOneInfoDiagnostic()
     {
         using var host = new FakeCodeAnalysisHost();
-        using var vm = new ErrorListVM(NewClass("N", "C"), host, new StrongReferenceMessenger());
+        using var vm = new ErrorListViewModel(NewClass("N", "C"), host, new StrongReferenceMessenger());
 
         host.Push(new CodeAnalysisSnapshot(new Dictionary<string, TranslatedClass>(StringComparer.Ordinal),
             [Diagnostic(CodeDiagnosticSeverity.Info, "NPT001")]));
@@ -53,7 +53,7 @@ public sealed class ErrorListVMTests
     public void HeaderStaysAtZeroCountsBeforeAnySnapshot()
     {
         using var host = new FakeCodeAnalysisHost();
-        using var vm = new ErrorListVM(NewClass("N", "C"), host, new StrongReferenceMessenger());
+        using var vm = new ErrorListViewModel(NewClass("N", "C"), host, new StrongReferenceMessenger());
 
         Assert.Equal("Errors (0) · Warnings (0)", vm.Header);
     }
@@ -64,7 +64,7 @@ public sealed class ErrorListVMTests
         // FR-034, ED-T03: a diagnostic mapped to a node sends both the graph key and the node id.
         using var host = new FakeCodeAnalysisHost();
         var messenger = new StrongReferenceMessenger();
-        using var vm = new ErrorListVM(NewClass("N", "C"), host, messenger);
+        using var vm = new ErrorListViewModel(NewClass("N", "C"), host, messenger);
         NavigateToNodeMessage? received = null;
         messenger.Register<ErrorListVMTests, NavigateToNodeMessage>(this, (_, m) => received = m);
 
@@ -80,17 +80,17 @@ public sealed class ErrorListVMTests
     public void NavigatingARowWithNoNodeMappingStillSendsTheMessageOpenTheGraphOnly()
     {
         // OWN-04 (FR-034): a diagnostic with a known member but no node still asks to open the graph;
-        // ErrorListVM.Navigate must not bail out just because NodeId is unknown.
+        // ErrorListViewModel.Navigate must not bail out just because NodeId is unknown.
         using var host = new FakeCodeAnalysisHost();
         var messenger = new StrongReferenceMessenger();
-        using var vm = new ErrorListVM(NewClass("N", "C"), host, messenger);
+        using var vm = new ErrorListViewModel(NewClass("N", "C"), host, messenger);
         NavigateToNodeMessage? received = null;
         messenger.Register<ErrorListVMTests, NavigateToNodeMessage>(this, (_, m) => received = m);
 
         host.Push(new CodeAnalysisSnapshot(new Dictionary<string, TranslatedClass>(StringComparer.Ordinal),
             [new CodeDiagnostic(CodeDiagnosticSeverity.Error, "CS0161", "boom", "N.C", "m1", null, null, null)]));
 
-        DiagnosticRowVM row = vm.Rows.Single();
+        DiagnosticRowViewModel row = vm.Rows.Single();
         Assert.True(row.CanNavigate);
 
         vm.NavigateCommand.Execute(row);
@@ -103,7 +103,7 @@ public sealed class ErrorListVMTests
     {
         using var host = new FakeCodeAnalysisHost();
         var messenger = new StrongReferenceMessenger();
-        using var vm = new ErrorListVM(NewClass("N", "C"), host, messenger);
+        using var vm = new ErrorListViewModel(NewClass("N", "C"), host, messenger);
         bool received = false;
         messenger.Register<ErrorListVMTests, NavigateToNodeMessage>(this, (_, _) => received = true);
 

@@ -21,7 +21,7 @@ public sealed class HostChannelBridgeTests : IDisposable
     private readonly InMemoryHostChannel host;
     private readonly SpyReflectionHost reflection;
     private readonly TestEditor editor;
-    private readonly MainEditorVM vm;
+    private readonly MainEditorViewModel vm;
     private readonly string csproj = TestPaths.CopyHelloWorldSample();
 
     public HostChannelBridgeTests(IReflectionHost sharedReflection)
@@ -29,7 +29,7 @@ public sealed class HostChannelBridgeTests : IDisposable
         (InMemoryHostChannel editorEnd, host) = InMemoryHostChannel.CreatePair("test");
         reflection = new SpyReflectionHost(sharedReflection);
         editor = TestEditor.Create(_ => reflection, hostChannel: editorEnd);
-        vm = new MainEditorVM(editor.Context);
+        vm = new MainEditorViewModel(editor.Context);
     }
 
     public void Dispose()
@@ -99,7 +99,7 @@ public sealed class HostChannelBridgeTests : IDisposable
             TestContext.Current.CancellationToken);
 
         ClassGraph opened = Assert.Single(editor.Windows.Open.Keys);
-        ClassEditorVM classEditor = editor.Windows.Open[opened];
+        ClassEditorViewModel classEditor = editor.Windows.Open[opened];
         Assert.NotNull(classEditor.OpenedGraph);
         var revealed = Assert.Single(classEditor.OpenedGraph.SelectedNodes);
         Assert.Equal("n000000000vny2", revealed.Node.Id);

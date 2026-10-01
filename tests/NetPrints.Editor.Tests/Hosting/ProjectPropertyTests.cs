@@ -84,7 +84,7 @@ public sealed class ProjectPropertyTests : IDisposable
 
         try
         {
-            await new MainEditorVM(editor.Context).LoadProjectAsync(csproj);
+            await new MainEditorViewModel(editor.Context).LoadProjectAsync(csproj);
 
             Assert.Equal(2, editor.Projects.LoadCalls.Count);
             Assert.Contains("NetPrintsTestMode", editor.Extensions.Current.ProjectProperties);
@@ -103,7 +103,7 @@ public sealed class ProjectPropertyTests : IDisposable
 
         try
         {
-            await new MainEditorVM(editor.Context).LoadProjectAsync(csproj);
+            await new MainEditorViewModel(editor.Context).LoadProjectAsync(csproj);
 
             Assert.Single(editor.Projects.LoadCalls);
         }

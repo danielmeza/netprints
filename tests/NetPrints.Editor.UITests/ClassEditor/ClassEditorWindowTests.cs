@@ -172,7 +172,7 @@ public class ClassEditorWindowTests
         await session.Driver.ClickAsync(gap, UiButton.Left, 2, Token);
 
         await UiWait.UntilAsync(session.Driver, () => Task.FromResult(vm.OpenedGraph?.Graph == method), "the method with the error to open", Token);
-        NodeGraphVM openedGraph = vm.OpenedGraph ?? throw new InvalidOperationException("Expected a graph to be open.");
+        NodeGraphViewModel openedGraph = vm.OpenedGraph ?? throw new InvalidOperationException("Expected a graph to be open.");
         Assert.Contains(openedGraph.SelectedNodes, n => n.Node == callNode);
     }
 
@@ -193,7 +193,7 @@ public class ClassEditorWindowTests
         await session.Driver.PressAsync("Enter", Token);
 
         await UiWait.UntilAsync(session.Driver, () => Task.FromResult(vm.OpenedGraph?.Graph == method), "the method with the error to open", Token);
-        NodeGraphVM openedGraph = vm.OpenedGraph ?? throw new InvalidOperationException("Expected a graph to be open.");
+        NodeGraphViewModel openedGraph = vm.OpenedGraph ?? throw new InvalidOperationException("Expected a graph to be open.");
         Assert.Contains(openedGraph.SelectedNodes, n => n.Node == callNode);
     }
 

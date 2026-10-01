@@ -18,7 +18,7 @@ public class NodeTooltipTests
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
 
         NodeView view = session.ClassWindow.GetVisualDescendants().OfType<NodeView>()
-            .Single(v => v.DataContext is NodeVM { Node: CallMethodNode });
+            .Single(v => v.DataContext is NodeViewModel { Node: CallMethodNode });
         string? tooltip = ToolTip.GetTip(view) as string;
 
         Assert.False(string.IsNullOrWhiteSpace(tooltip), "WriteLine has no documentation tooltip");

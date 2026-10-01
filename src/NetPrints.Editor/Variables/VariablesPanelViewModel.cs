@@ -12,7 +12,7 @@ namespace NetPrints.Editor.Variables;
 /// while the opened graph is a method or constructor, that graph's local variables ("Method:
 /// &lt;name&gt;", US5, sub-phase H).
 /// </summary>
-public sealed partial class VariablesPanelVM : ObservableObject, IDisposable
+public sealed partial class VariablesPanelViewModel : ObservableObject, IDisposable
 {
     private readonly ClassEditorServices services;
     private ExecutionGraph? openedGraph;
@@ -24,7 +24,7 @@ public sealed partial class VariablesPanelVM : ObservableObject, IDisposable
     /// </summary>
     /// <param name="services">Narrow services shared with the owning class editor (FR-038).</param>
     /// <param name="classVariables">View models for the class's variables (the "Class" group).</param>
-    public VariablesPanelVM(ClassEditorServices services, ObservableViewModelCollection<MemberVariableVM, Variable> classVariables)
+    public VariablesPanelViewModel(ClassEditorServices services, ObservableViewModelCollection<MemberVariableViewModel, Variable> classVariables)
     {
         this.services = services;
         ClassVariables = classVariables;
@@ -32,13 +32,13 @@ public sealed partial class VariablesPanelVM : ObservableObject, IDisposable
     }
 
     /// <summary>The class's member variables (the "Class" group).</summary>
-    public ObservableViewModelCollection<MemberVariableVM, Variable> ClassVariables { get; }
+    public ObservableViewModelCollection<MemberVariableViewModel, Variable> ClassVariables { get; }
 
     /// <summary>
     /// The opened method's or constructor's local variables (the "Method" group), or
     /// <see langword="null"/> when no method or constructor graph is open.
     /// </summary>
-    public ObservableViewModelCollection<LocalVariableVM, LocalVariable>? MethodVariables { get; private set; }
+    public ObservableViewModelCollection<LocalVariableViewModel, LocalVariable>? MethodVariables { get; private set; }
 
     /// <summary>Whether the "Method" group has a graph to show.</summary>
     public bool HasMethodGroup => MethodVariables is not null;
@@ -62,8 +62,8 @@ public sealed partial class VariablesPanelVM : ObservableObject, IDisposable
         var graph = openedGraph;
         MethodVariables = graph is null
             ? null
-            : new ObservableViewModelCollection<LocalVariableVM, LocalVariable>(graph.LocalVariables,
-                l => new LocalVariableVM(l, graph, services), l => l.Dispose());
+            : new ObservableViewModelCollection<LocalVariableViewModel, LocalVariable>(graph.LocalVariables,
+                l => new LocalVariableViewModel(l, graph, services), l => l.Dispose());
 
         OnPropertyChanged(nameof(MethodVariables));
         OnPropertyChanged(nameof(HasMethodGroup));

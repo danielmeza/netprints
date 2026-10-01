@@ -6,7 +6,7 @@ namespace NetPrints.Editor.Tests.Dialogs;
 
 /// <summary>
 /// Batch X2b: <c>SelectCommand</c>/<c>TrustCommand</c>/<c>DontLoadCommand</c> set <see
-/// cref="DialogVM{TResult}.Result"/> and raise <see cref="IDialogCloseSource.CloseRequested"/>; the
+/// cref="DialogViewModel{TResult}.Result"/> and raise <see cref="IDialogCloseSource.CloseRequested"/>; the
 /// view (<see cref="NetPrints.Editor.Behaviors.DialogCloseBehavior"/>) is exercised separately by the
 /// headless dialog tests.
 /// </summary>
@@ -19,7 +19,7 @@ public class DialogVMTests
     {
         var trim = new MethodSpecifier("Trim", [], [StringType], MethodModifiers.None, MemberVisibility.Public, StringType, []);
         var toUpper = new MethodSpecifier("ToUpper", [], [StringType], MethodModifiers.None, MemberVisibility.Public, StringType, []);
-        var vm = new SelectMethodDialogVM([trim, toUpper]);
+        var vm = new SelectMethodDialogViewModel([trim, toUpper]);
         bool closed = false;
         vm.CloseRequested += (_, _) => closed = true;
 
@@ -36,7 +36,7 @@ public class DialogVMTests
     [Fact]
     public void SelectMethodDialogCannotSelectWithNoMethods()
     {
-        var vm = new SelectMethodDialogVM([]);
+        var vm = new SelectMethodDialogViewModel([]);
 
         Assert.Null(vm.SelectedMethod);
         Assert.False(vm.SelectCommand.CanExecute(null));
@@ -46,7 +46,7 @@ public class DialogVMTests
     public void SelectTypeDialogResolvesSelectedItemOverTypedText()
     {
         TypeSpecifier[] types = [TypeSpecifier.FromType<object>(), StringType, TypeSpecifier.FromType<int>()];
-        var vm = new SelectTypeDialogVM(types, TypeSpecifier.FromType<object>());
+        var vm = new SelectTypeDialogViewModel(types, TypeSpecifier.FromType<object>());
 
         Assert.Equal(TypeSpecifier.FromType<object>(), vm.ResolveSelection()); // PAR-58
         Assert.Equal("System.Object", vm.TypedText);
@@ -65,7 +65,7 @@ public class DialogVMTests
     [Fact]
     public void SelectTypeDialogCloseSendsResolvedSelection()
     {
-        var vm = new SelectTypeDialogVM([StringType], StringType);
+        var vm = new SelectTypeDialogViewModel([StringType], StringType);
         bool closed = false;
         vm.CloseRequested += (_, _) => closed = true;
 
@@ -80,7 +80,7 @@ public class DialogVMTests
     [InlineData(false)]
     public void TrustDialogAnswersWithTheCommandUsed(bool trust)
     {
-        var vm = new TrustDialogVM("/work/P.csproj", ["/work/ext-a"]);
+        var vm = new TrustDialogViewModel("/work/P.csproj", ["/work/ext-a"]);
         bool closed = false;
         vm.CloseRequested += (_, _) => closed = true;
 
@@ -106,7 +106,7 @@ public class DialogVMTests
         var first = new CodeDiagnostic(CodeDiagnosticSeverity.Error, "NPD001", "boom", null, null, null, null, null);
         var second = new CodeDiagnostic(CodeDiagnosticSeverity.Warning, "NPD002", "careful", null, null, null, null, null);
 
-        var vm = new IssuesDialogVM([first, second]);
+        var vm = new IssuesDialogViewModel([first, second]);
 
         Assert.Equal(["NPD001: boom", "NPD002: careful"], vm.Issues);
     }
@@ -114,7 +114,7 @@ public class DialogVMTests
     [Fact]
     public void ErrorDialogVMExposesTheMessageAsGiven()
     {
-        var vm = new ErrorDialogVM("details\nline 2");
+        var vm = new ErrorDialogViewModel("details\nline 2");
 
         Assert.Equal("details\nline 2", vm.Message);
     }

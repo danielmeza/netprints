@@ -16,7 +16,7 @@ namespace NetPrints.Editor.CodeView;
 /// <see cref="ClassGraph.FullName"/> fresh on every snapshot rather than capturing it once, so
 /// renaming the class does not stop the view from following it.
 /// </summary>
-public sealed partial class CodeViewVM : ObservableObject, IDisposable
+public sealed partial class CodeViewViewModel : ObservableObject, IDisposable
 {
     private readonly ClassGraph cls;
     private readonly ICodeAnalysisHost codeAnalysis;
@@ -29,7 +29,7 @@ public sealed partial class CodeViewVM : ObservableObject, IDisposable
     /// </summary>
     /// <param name="cls">Class to show the generated code of.</param>
     /// <param name="codeAnalysis">Live analysis host to follow.</param>
-    public CodeViewVM(ClassGraph cls, ICodeAnalysisHost codeAnalysis)
+    public CodeViewViewModel(ClassGraph cls, ICodeAnalysisHost codeAnalysis)
     {
         ArgumentNullException.ThrowIfNull(cls);
         ArgumentNullException.ThrowIfNull(codeAnalysis);
@@ -70,7 +70,7 @@ public sealed partial class CodeViewVM : ObservableObject, IDisposable
     private async Task ShowQuickInfoAsync(int offset)
     {
         // Install the new CTS before awaiting the old one's cancellation (same swap-before-await
-        // fix as ClassEditorVM's F-04), so a ClearQuickInfo (pointer exit) landing in that await
+        // fix as ClassEditorViewModel's F-04), so a ClearQuickInfo (pointer exit) landing in that await
         // cannot be overwritten by re-reading the field afterward.
         CancellationTokenSource? previous = quickInfoCancellation;
         var cancellation = new CancellationTokenSource();

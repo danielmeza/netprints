@@ -23,7 +23,7 @@ public sealed class ProjectProfileTests : IDisposable
             Microsoft.Extensions.Logging.Abstractions.NullLoggerFactory.Instance);
     }
 
-    private async Task<(string Csproj, string Text)> OpenAsync(TestEditor editor, MainEditorVM vm, string profileId)
+    private async Task<(string Csproj, string Text)> OpenAsync(TestEditor editor, MainEditorViewModel vm, string profileId)
     {
         string csproj = TestPaths.CopyHelloWorldSample();
         cleanup.Add(Path.GetDirectoryName(csproj) ?? csproj);
@@ -39,7 +39,7 @@ public sealed class ProjectProfileTests : IDisposable
     public async Task AnUnknownProfileFallsBackToTheDefaultProfileAndReportsNpd005WithoutTouchingTheCsproj()
     {
         var editor = TestEditor.Create(TestEditor.CreateReflectionHost);
-        var vm = new MainEditorVM(editor.Context);
+        var vm = new MainEditorViewModel(editor.Context);
 
         (string csproj, string before) = await OpenAsync(editor, vm, "unknown.profile");
         int classes = vm.Project?.Classes.Count ?? 0;
@@ -58,7 +58,7 @@ public sealed class ProjectProfileTests : IDisposable
     public async Task ANewClassIsBuiltFromTheTemplateOfTheProjectsProfile()
     {
         var editor = TestEditor.Create(TestEditor.CreateReflectionHost, HostWithTemplatedProfile());
-        var vm = new MainEditorVM(editor.Context);
+        var vm = new MainEditorViewModel(editor.Context);
 
         await OpenAsync(editor, vm, ProfileExtension.TemplatedProfile.ProfileId);
         await vm.NewClassCommand.ExecuteAsync(null);
@@ -74,7 +74,7 @@ public sealed class ProjectProfileTests : IDisposable
     {
         var editor = TestEditor.Create(TestEditor.CreateReflectionHost);
         editor.Dialogs.TrustAnswer = true;
-        var vm = new MainEditorVM(editor.Context);
+        var vm = new MainEditorViewModel(editor.Context);
         string csproj = TestPaths.CopyHelloWorldSample();
         string projectDirectory = Path.GetDirectoryName(csproj) ?? csproj;
         cleanup.Add(projectDirectory);
@@ -94,7 +94,7 @@ public sealed class ProjectProfileTests : IDisposable
     public async Task TheDefaultProfileIsUsedWithoutAWarning()
     {
         var editor = TestEditor.Create(TestEditor.CreateReflectionHost);
-        var vm = new MainEditorVM(editor.Context);
+        var vm = new MainEditorViewModel(editor.Context);
 
         await OpenAsync(editor, vm, DefaultProjectProfile.ProfileId);
         await vm.NewClassCommand.ExecuteAsync(null);

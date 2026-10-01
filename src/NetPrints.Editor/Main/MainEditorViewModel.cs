@@ -22,10 +22,10 @@ namespace NetPrints.Editor.Main;
 /// View model of the main window: project lifecycle, settings, references and the class list
 /// (PAR-01..15).
 /// </summary>
-public sealed partial class MainEditorVM : ObservableObject, IDisposable
+public sealed partial class MainEditorViewModel : ObservableObject, IDisposable
 {
     private readonly EditorContext context;
-    private readonly ILogger<MainEditorVM> logger;
+    private readonly ILogger<MainEditorViewModel> logger;
     private readonly HashSet<(string Id, string? ManifestPath, string Code)> reportedExtensionFailures = [];
     private readonly HostChannelBridge hostChannelBridge;
     private Project? subscribedProject;
@@ -40,10 +40,10 @@ public sealed partial class MainEditorVM : ObservableObject, IDisposable
     /// </summary>
     /// <param name="context">Host services shared across the editor.</param>
     /// <param name="project">Initially open project, or <see langword="null"/>.</param>
-    public MainEditorVM(EditorContext context, Project? project = null)
+    public MainEditorViewModel(EditorContext context, Project? project = null)
     {
         this.context = context;
-        logger = context.LoggerFactory.CreateLogger<MainEditorVM>();
+        logger = context.LoggerFactory.CreateLogger<MainEditorViewModel>();
         hostChannelBridge = new HostChannelBridge(context.HostChannel, context.Dispatcher, ReloadReflectionAsync, FocusDocument,
             context.LoggerFactory.CreateLogger<HostChannelBridge>());
         Project = project;
@@ -725,14 +725,14 @@ public sealed partial class MainEditorVM : ObservableObject, IDisposable
             return;
         }
 
-        using var references = new ReferenceListVM(Project, context);
+        using var references = new ReferenceListViewModel(Project, context);
         await context.Dialogs.ShowReferencesAsync(references);
     }
 
     /// <summary>
     /// Opens the class whose graph file is <paramref name="path"/> (project-relative or absolute), reusing an open
     /// window, and, when <paramref name="nodeId"/> resolves to one of its graphs, navigates to that node (R2-21)
-    /// through the class editor's own scoped messenger (FR-038), the same path <see cref="ErrorListVM"/> uses.
+    /// through the class editor's own scoped messenger (FR-038), the same path <see cref="ErrorListViewModel"/> uses.
     /// </summary>
     private bool FocusDocument(string path, string? nodeId)
     {

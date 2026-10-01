@@ -5,11 +5,11 @@ using NetPrints.Core;
 namespace NetPrints.Editor.Dialogs;
 
 /// <summary>Chooses a method; the first one is preselected (PAR-59, batch X2b).</summary>
-public sealed partial class SelectMethodDialogVM : DialogVM<MethodSpecifier>
+public sealed partial class SelectMethodDialogViewModel : DialogViewModel<MethodSpecifier>
 {
     /// <summary>Offers <paramref name="methods"/>, preselecting the first one.</summary>
     /// <param name="methods">Methods offered by the chooser.</param>
-    public SelectMethodDialogVM(IEnumerable<MethodSpecifier> methods)
+    public SelectMethodDialogViewModel(IEnumerable<MethodSpecifier> methods)
     {
         Methods = [.. methods];
         SelectedMethod = Methods.FirstOrDefault();

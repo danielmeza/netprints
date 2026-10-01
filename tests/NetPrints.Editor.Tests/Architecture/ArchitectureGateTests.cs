@@ -12,8 +12,8 @@ namespace NetPrints.Editor.Tests.Architecture;
 /// </summary>
 public class ArchitectureGateTests
 {
-    private const string ClassEditorVMTypeName = "ClassEditorVM";
-    private const string MainEditorVMTypeName = "MainEditorVM";
+    private const string ClassEditorVMTypeName = "ClassEditorViewModel";
+    private const string MainEditorVMTypeName = "MainEditorViewModel";
     private const string RuleA1 = "A1";
     private const string RuleA2 = "A2";
 
@@ -88,7 +88,7 @@ public class ArchitectureGateTests
             violations.Add(new Violation(RuleA1, file));
         }
 
-        bool isClassOrMainEditorVM = file is "ClassEditorVM.cs" or "MainEditorVM.cs";
+        bool isClassOrMainEditorVM = file is "ClassEditorViewModel.cs" or "MainEditorViewModel.cs";
         bool holdsTheOwningEditor = !isClassOrMainEditorVM &&
             (root.DescendantNodes().OfType<ConstructorDeclarationSyntax>().SelectMany(c => c.ParameterList.Parameters)
                 .Any(p => IsBannedOwnerType(model, p.Type))
@@ -120,8 +120,8 @@ public class ArchitectureGateTests
     public void FixtureFailsOnExactlyItsTwoViolations()
     {
         string editorSrc = Path.Combine(RepositoryPaths.Root(), "src", "NetPrints.Editor");
-        string fixturePath = Path.Combine(RepositoryPaths.Root(), "tests", "NetPrints.Editor.Tests", "Architecture", "Fixtures", "ViolatingVM.cs.txt");
-        string fixtureSourcePath = Path.Combine(editorSrc, "ViolatingVM.cs"); // A2's exemption is by file name only; this name is not exempt.
+        string fixturePath = Path.Combine(RepositoryPaths.Root(), "tests", "NetPrints.Editor.Tests", "Architecture", "Fixtures", "ViolatingViewModel.cs.txt");
+        string fixtureSourcePath = Path.Combine(editorSrc, "ViolatingViewModel.cs"); // A2's exemption is by file name only; this name is not exempt.
 
         var files = EditorSourceFiles(editorSrc).Select(path => (Path: path, Text: File.ReadAllText(path)))
             .Append((Path: fixtureSourcePath, Text: File.ReadAllText(fixturePath)))
@@ -131,6 +131,6 @@ public class ArchitectureGateTests
         SyntaxTree fixtureTree = compilation.SyntaxTrees.Single(t => t.FilePath == fixtureSourcePath);
         HashSet<Violation> violations = Scan(compilation.GetSemanticModel(fixtureTree), fixtureTree);
 
-        Assert.Equal([new Violation(RuleA1, "ViolatingVM.cs"), new Violation(RuleA2, "ViolatingVM.cs")], violations.OrderBy(v => v.Rule, StringComparer.Ordinal));
+        Assert.Equal([new Violation(RuleA1, "ViolatingViewModel.cs"), new Violation(RuleA2, "ViolatingViewModel.cs")], violations.OrderBy(v => v.Rule, StringComparer.Ordinal));
     }
 }

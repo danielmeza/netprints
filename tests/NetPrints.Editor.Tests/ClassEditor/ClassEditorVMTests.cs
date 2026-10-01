@@ -14,7 +14,7 @@ public class ClassEditorVMTests : IAsyncLifetime
     private readonly TestEditor editor;
     private Project? projectField;
     private ClassGraph? clsField;
-    private ClassEditorVM? vmField;
+    private ClassEditorViewModel? vmField;
     private GatedReflectionHost? reflectionField;
 
     public ClassEditorVMTests(TestEditor editor)
@@ -24,10 +24,10 @@ public class ClassEditorVMTests : IAsyncLifetime
 
     private Project project => projectField ?? throw new InvalidOperationException($"{nameof(InitializeAsync)} has not run yet.");
     private ClassGraph cls => clsField ?? throw new InvalidOperationException($"{nameof(InitializeAsync)} has not run yet.");
-    private ClassEditorVM vm => vmField ?? throw new InvalidOperationException($"{nameof(InitializeAsync)} has not run yet.");
+    private ClassEditorViewModel vm => vmField ?? throw new InvalidOperationException($"{nameof(InitializeAsync)} has not run yet.");
 
     /// <summary>Wraps <see cref="TestEditor.Reflection"/> so a test can hold a graph's overload warm-up
-    /// "in flight" (R2-05), replacing the removed <c>ClassEditorVM.OpenGraphDelayForTests</c> hook.</summary>
+    /// "in flight" (R2-05), replacing the removed <c>ClassEditorViewModel.OpenGraphDelayForTests</c> hook.</summary>
     private GatedReflectionHost reflection => reflectionField ?? throw new InvalidOperationException($"{nameof(InitializeAsync)} has not run yet.");
 
     public async ValueTask InitializeAsync()
@@ -35,7 +35,7 @@ public class ClassEditorVMTests : IAsyncLifetime
         projectField = await TestPaths.LoadHelloWorldCopyAsync(TestContext.Current.CancellationToken);
         clsField = projectField.Classes.Single();
         reflectionField = new GatedReflectionHost(editor.Reflection);
-        vmField = new ClassEditorVM(clsField, editor.Context with { Reflection = reflectionField });
+        vmField = new ClassEditorViewModel(clsField, editor.Context with { Reflection = reflectionField });
     }
 
     private static MethodSpecifier ConsoleWriteLine() =>
@@ -67,7 +67,7 @@ public class ClassEditorVMTests : IAsyncLifetime
         vm.Name = "Renamed";
         vm.Namespace = "Other";
 
-        Assert.Equal(2, changed.Count(p => p == nameof(ClassEditorVM.FullName)));
+        Assert.Equal(2, changed.Count(p => p == nameof(ClassEditorViewModel.FullName)));
         Assert.Equal("Other.Renamed", vm.FullName);
     }
 
@@ -203,7 +203,7 @@ public class ClassEditorVMTests : IAsyncLifetime
         Task openTask = vm.OpenMethodCommand.ExecuteAsync(main);
         Assert.False(vm.IsOpeningGraph);
 
-        editor.Scheduler.AdvanceBy(ClassEditorVM.BusyIndicatorDelay.Ticks);
+        editor.Scheduler.AdvanceBy(ClassEditorViewModel.BusyIndicatorDelay.Ticks);
         Assert.True(vm.IsOpeningGraph);
         Assert.Equal(main.Name, vm.OpeningGraphName);
 
@@ -353,13 +353,13 @@ public class ClassEditorVMTests : IAsyncLifetime
         Assert.Same(c.Graph, vm.OpenedGraph?.Graph);
     }
 
-    /// <summary>Reads <c>ClassEditorVM</c>'s private <c>openGraphCts</c> field (no public seam exists for
+    /// <summary>Reads <c>ClassEditorViewModel</c>'s private <c>openGraphCts</c> field (no public seam exists for
     /// it) so a test can check that a superseded open's CTS was cancelled rather than disposed while
     /// another execution's CTS was still live (F-04).</summary>
-    private static CancellationTokenSource? OpenGraphCtsOf(ClassEditorVM target)
+    private static CancellationTokenSource? OpenGraphCtsOf(ClassEditorViewModel target)
     {
-        FieldInfo field = typeof(ClassEditorVM).GetField("openGraphCts", BindingFlags.NonPublic | BindingFlags.Instance)
-            ?? throw new InvalidOperationException("ClassEditorVM.openGraphCts field not found; the fixture is stale.");
+        FieldInfo field = typeof(ClassEditorViewModel).GetField("openGraphCts", BindingFlags.NonPublic | BindingFlags.Instance)
+            ?? throw new InvalidOperationException("ClassEditorViewModel.openGraphCts field not found; the fixture is stale.");
         return (CancellationTokenSource?)field.GetValue(target);
     }
 
@@ -482,7 +482,7 @@ public class ClassEditorVMTests : IAsyncLifetime
         await WaitForCodeAsync(c => c.Contains("class LoopedAgain", StringComparison.Ordinal));
     }
 
-    /// <summary>Polls <see cref="ClassEditorVM.CodeView"/> for its debounced analysis to complete
+    /// <summary>Polls <see cref="ClassEditorViewModel.CodeView"/> for its debounced analysis to complete
     /// (the debounce itself is virtual-time, but <c>AnalyzeAsync</c> hops through a real <c>Task.Run</c>).</summary>
     private async Task<string> WaitForCodeAsync(Func<string, bool> matches)
     {

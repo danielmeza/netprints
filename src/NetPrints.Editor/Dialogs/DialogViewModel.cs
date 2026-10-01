@@ -20,10 +20,10 @@ public interface IDialogCloseSource
 /// <summary>
 /// Base for a dialog view model whose accept/cancel commands close the host window with a result.
 /// A concrete VM calls <see cref="RequestClose"/> from its own commands, since only it knows what
-/// "accept" resolves to (SelectMethodDialogVM, SelectTypeDialogVM, TrustDialogVM).
+/// "accept" resolves to (SelectMethodDialogViewModel, SelectTypeDialogViewModel, TrustDialogViewModel).
 /// </summary>
 /// <typeparam name="TResult">Type of the value the dialog closes with.</typeparam>
-public abstract class DialogVM<TResult> : ObservableObject, IDialogCloseSource
+public abstract class DialogViewModel<TResult> : ObservableObject, IDialogCloseSource
 {
     /// <inheritdoc/>
     public event EventHandler? CloseRequested;

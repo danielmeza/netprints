@@ -10,4 +10,4 @@ namespace NetPrints.Editor.Graph.Nodes;
 /// </summary>
 /// <param name="Left">Pin in the row's left column, or <see langword="null"/> if the row has none.</param>
 /// <param name="Right">Pin in the row's right column, or <see langword="null"/> if the row has none.</param>
-public sealed record PinRowVM(NodePinVM? Left, NodePinVM? Right);
+public sealed record PinRowViewModel(NodePinViewModel? Left, NodePinViewModel? Right);

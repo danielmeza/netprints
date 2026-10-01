@@ -4,7 +4,7 @@
         xmlns:edb="clr-namespace:NetPrints.Editor.Behaviors"
         xmlns:eddialogs="clr-namespace:NetPrints.Editor.Dialogs"
         x:Class="NetPrints.Editor.Dialogs.TrustDialog"
-        x:DataType="eddialogs:TrustDialogVM"
+        x:DataType="eddialogs:TrustDialogViewModel"
         Title="Trust this project's extensions?"
         Icon="avares://NetPrints.Editor/Assets/NetPrintsLogo.ico"
         Width="700" Height="360"

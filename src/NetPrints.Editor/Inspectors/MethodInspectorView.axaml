@@ -2,7 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:edclasseditor="clr-namespace:NetPrints.Editor.ClassEditor"
              x:Class="NetPrints.Editor.Inspectors.MethodInspectorView"
-             x:DataType="edclasseditor:MethodVM">
+             x:DataType="edclasseditor:MethodViewModel">
   <!-- Method inspector (PAR-35): constructors have a read-only name and no modifiers. -->
   <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="Auto,*" Margin="4">
     <TextBlock Grid.ColumnSpan="2" Classes="header" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />

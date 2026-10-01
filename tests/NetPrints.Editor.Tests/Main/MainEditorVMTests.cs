@@ -12,7 +12,7 @@ namespace NetPrints.Editor.Tests.Main;
 
 public class MainEditorVMTests : IDisposable
 {
-    // MainEditorVM reloads the reflection host fire-and-forget whenever a project is set; a private
+    // MainEditorViewModel reloads the reflection host fire-and-forget whenever a project is set; a private
     // host keeps those reloads from replacing the provider the shared host serves to other tests.
     private readonly TestEditor testEditor = TestEditor.Create(TestEditor.CreateReflectionHost);
     private readonly List<string> cleanup = [];
@@ -29,7 +29,7 @@ public class MainEditorVMTests : IDisposable
     public void PanesAreMutuallyExclusiveAndSaveNeedsProject()
     {
         var editor = testEditor;
-        var vm = new MainEditorVM(editor.Context);
+        var vm = new MainEditorViewModel(editor.Context);
 
         Assert.False(vm.IsProjectOpen);
         Assert.False(vm.SaveProjectCommand.CanExecute(null));
@@ -55,7 +55,7 @@ public class MainEditorVMTests : IDisposable
     {
         var editor = testEditor;
         var previous = Project.FromSnapshot(TestSnapshots.Empty("Previous", "Prev"));
-        var vm = new MainEditorVM(editor.Context, previous);
+        var vm = new MainEditorViewModel(editor.Context, previous);
 
         editor.FilePicker.SaveFileAnswers.Enqueue(null);
         await vm.CreateProjectCommand.ExecuteAsync(null);
@@ -69,7 +69,7 @@ public class MainEditorVMTests : IDisposable
     public async Task CreateProjectTakesNameFromFileAndOpensIt()
     {
         var editor = testEditor;
-        var vm = new MainEditorVM(editor.Context);
+        var vm = new MainEditorViewModel(editor.Context);
         string dir = Track(TestPaths.CreateTempDirectory());
         string path = Path.Combine(dir, "Chosen.csproj");
 
@@ -88,7 +88,7 @@ public class MainEditorVMTests : IDisposable
     public async Task OpeningANetppShowsAMessageAndWritesNothing()
     {
         var editor = testEditor;
-        var vm = new MainEditorVM(editor.Context);
+        var vm = new MainEditorViewModel(editor.Context);
         string dir = Track(TestPaths.CreateTempDirectory());
         string legacy = Path.Combine(dir, "Legacy.netpp");
         File.WriteAllText(legacy, "not a real project");
@@ -106,7 +106,7 @@ public class MainEditorVMTests : IDisposable
     public async Task OpenFailureShowsErrorAndCopiesException()
     {
         var editor = testEditor;
-        var vm = new MainEditorVM(editor.Context);
+        var vm = new MainEditorViewModel(editor.Context);
         string dir = Track(TestPaths.CreateTempDirectory());
         string missing = Path.Combine(dir, "Missing.csproj");
 
@@ -125,7 +125,7 @@ public class MainEditorVMTests : IDisposable
     public async Task StartupArgumentOpensProject()
     {
         var editor = testEditor;
-        var vm = new MainEditorVM(editor.Context);
+        var vm = new MainEditorViewModel(editor.Context);
         string path = Track(TestPaths.CopyHelloWorldSample());
 
         await vm.OpenStartupProjectAsync([path]);
@@ -136,7 +136,7 @@ public class MainEditorVMTests : IDisposable
         Assert.Equal("HelloWorld.Program", project.Classes.Single().FullName);
 
         // More than one argument is ignored.
-        var other = new MainEditorVM(editor.Context);
+        var other = new MainEditorViewModel(editor.Context);
         await other.OpenStartupProjectAsync([path, path]);
         Assert.Null(other.Project);
     }
@@ -146,7 +146,7 @@ public class MainEditorVMTests : IDisposable
     {
         var editor = testEditor;
         string path = Track(TestPaths.CopyHelloWorldSample());
-        var vm = new MainEditorVM(editor.Context);
+        var vm = new MainEditorViewModel(editor.Context);
         await vm.LoadProjectAsync(path);
 
         var project = vm.Project;
@@ -175,7 +175,7 @@ public class MainEditorVMTests : IDisposable
     {
         var editor = testEditor;
         string path = Track(TestPaths.CopyHelloWorldSample());
-        var vm = new MainEditorVM(editor.Context);
+        var vm = new MainEditorViewModel(editor.Context);
         await vm.LoadProjectAsync(path);
 
         var project = vm.Project;
@@ -202,7 +202,7 @@ public class MainEditorVMTests : IDisposable
         var gatedProjects = new GatedProjectSystem(testEditor.Projects, gate.Task);
         var context = testEditor.Context with { Projects = gatedProjects };
         string path = Track(TestPaths.CopyHelloWorldSample());
-        var vm = new MainEditorVM(context);
+        var vm = new MainEditorViewModel(context);
         await vm.LoadProjectAsync(path);
         Assert.Equal(BinaryType.Executable, vm.OutputBinaryType);
 
@@ -245,7 +245,7 @@ public class MainEditorVMTests : IDisposable
     {
         var editor = testEditor;
         string path = Track(TestPaths.CopyHelloWorldSample());
-        var vm = new MainEditorVM(editor.Context);
+        var vm = new MainEditorViewModel(editor.Context);
         await vm.LoadProjectAsync(path);
 
         Assert.True(vm.CanCompileAndRun);
@@ -266,7 +266,7 @@ public class MainEditorVMTests : IDisposable
         editor.Projects.BuildResultFactory = _ => new BuildResult(false,
             [new ProjectMessage(ProjectMessageSeverity.Error, "CS0006", "Metadata file 'missing.dll' could not be found", null, null, null)],
             null, "");
-        var vm = new MainEditorVM(editor.Context, project);
+        var vm = new MainEditorViewModel(editor.Context, project);
 
         await vm.CompileCommand.ExecuteAsync(null);
 
@@ -281,7 +281,7 @@ public class MainEditorVMTests : IDisposable
     {
         var editor = testEditor;
         string path = Track(TestPaths.CopyHelloWorldSample());
-        var vm = new MainEditorVM(editor.Context);
+        var vm = new MainEditorViewModel(editor.Context);
         await vm.LoadProjectAsync(path);
         var project = vm.Project;
         Assert.NotNull(project);
@@ -304,7 +304,7 @@ public class MainEditorVMTests : IDisposable
         string dir = Track(TestPaths.CreateTempDirectory());
         var project = Project.FromSnapshot(TestSnapshots.Empty("P", "N"));
         project.Path = Path.Combine(dir, "P.csproj");
-        var vm = new MainEditorVM(editor.Context, project);
+        var vm = new MainEditorViewModel(editor.Context, project);
 
         await vm.NewClassCommand.ExecuteAsync(null);
         await vm.NewClassCommand.ExecuteAsync(null);
@@ -320,7 +320,7 @@ public class MainEditorVMTests : IDisposable
         string dir = Track(TestPaths.CreateTempDirectory());
         string csprojPath = Path.Combine(dir, "P.csproj");
         File.WriteAllText(csprojPath, "<Project />");
-        var vm = new MainEditorVM(editor.Context);
+        var vm = new MainEditorViewModel(editor.Context);
         await vm.LoadProjectAsync(csprojPath);
         var project = vm.Project;
         Assert.NotNull(project);
@@ -329,7 +329,7 @@ public class MainEditorVMTests : IDisposable
         string sourceDir = Track(TestPaths.CreateTempDirectory());
         string sourceCsprojPath = Path.Combine(sourceDir, "Source.csproj");
         File.WriteAllText(sourceCsprojPath, "<Project />");
-        var sourceVm = new MainEditorVM(editor.Context);
+        var sourceVm = new MainEditorViewModel(editor.Context);
         await sourceVm.LoadProjectAsync(sourceCsprojPath);
         var sourceProject = sourceVm.Project;
         Assert.NotNull(sourceProject);
@@ -357,7 +357,7 @@ public class MainEditorVMTests : IDisposable
         var editor = testEditor;
         var project = await TestPaths.LoadHelloWorldCopyAsync(TestContext.Current.CancellationToken);
         Track(project.Path);
-        var vm = new MainEditorVM(editor.Context, project);
+        var vm = new MainEditorViewModel(editor.Context, project);
         var cls = project.Classes.Single();
 
         vm.OpenClassCommand.Execute(cls);
@@ -380,7 +380,7 @@ public class MainEditorVMTests : IDisposable
         var editor = testEditor;
         var project = await TestPaths.LoadHelloWorldCopyAsync(TestContext.Current.CancellationToken);
         Track(project.Path);
-        var vm = new MainEditorVM(editor.Context, project);
+        var vm = new MainEditorViewModel(editor.Context, project);
         vm.OpenClassCommand.Execute(project.Classes.Single());
 
         vm.OnMainWindowClosed();
@@ -394,7 +394,7 @@ public class MainEditorVMTests : IDisposable
     {
         var editor = testEditor;
         var project = Project.FromSnapshot(TestSnapshots.Empty("P", "N"));
-        var vm = new MainEditorVM(editor.Context, project);
+        var vm = new MainEditorViewModel(editor.Context, project);
 
         await vm.ShowReferencesCommand.ExecuteAsync(null);
 
@@ -409,14 +409,14 @@ public class MainEditorVMTests : IDisposable
         editor.Reflection.Reloaded += (_, _) => reloads++;
 
         string path = Track(TestPaths.CopyHelloWorldSample());
-        var vm = new MainEditorVM(editor.Context);
+        var vm = new MainEditorViewModel(editor.Context);
         await vm.LoadProjectAsync(path);
         await WaitFor(() => reloads >= 1);
         Assert.True(editor.Reflection.NonStaticTypes.Count > 4000, "type list refreshed");
 
         var project = vm.Project;
         Assert.NotNull(project);
-        using var references = new ReferenceListVM(project, editor.Context);
+        using var references = new ReferenceListViewModel(project, editor.Context);
         await references.AddSourceDirectoryAsync(Path.GetDirectoryName(path) ?? "");
         await WaitFor(() => reloads >= 2);
     }
@@ -426,7 +426,7 @@ public class MainEditorVMTests : IDisposable
     {
         var noSdkProjects = new NoSdkProjectSystem();
         var noSdkContext = testEditor.Context with { Projects = noSdkProjects, Persistence = TestEditor.CreatePersistence(noSdkProjects) };
-        var vm = new MainEditorVM(noSdkContext);
+        var vm = new MainEditorViewModel(noSdkContext);
         string path = Track(TestPaths.CopyHelloWorldSample());
 
         await vm.LoadProjectAsync(path);
@@ -445,7 +445,7 @@ public class MainEditorVMTests : IDisposable
         var faultyExtensions = new FaultyRollbackExtensionHost(testEditor.Extensions);
         var context = testEditor.Context with { Extensions = faultyExtensions };
         testEditor.Dialogs.TrustAnswer = true;
-        var vm = new MainEditorVM(context);
+        var vm = new MainEditorViewModel(context);
         CancellationToken ct = TestContext.Current.CancellationToken;
 
         // A: opens with its own (nonexistent, but distinct) extension folder, so activeExtensionFolders
@@ -479,7 +479,7 @@ public class MainEditorVMTests : IDisposable
     }
 
     /// <summary>Delegates to a real <see cref="IExtensionHost"/>, except a chosen call number to
-    /// <see cref="LoadForProjectAsync"/> throws - used to fail MainEditorVM's rollback deliberately.</summary>
+    /// <see cref="LoadForProjectAsync"/> throws - used to fail MainEditorViewModel's rollback deliberately.</summary>
     private sealed class FaultyRollbackExtensionHost(IExtensionHost inner) : IExtensionHost
     {
         private int calls;

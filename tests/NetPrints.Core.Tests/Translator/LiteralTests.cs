@@ -43,7 +43,7 @@ namespace NetPrints.Tests
 
         /// <summary>
         /// NaN and the infinities have no C# numeric literal ("NaND", "InfinityD" do not compile);
-        /// they must come out as the static field instead. Convert.ChangeType (NodePinVM's pin
+        /// they must come out as the static field instead. Convert.ChangeType (NodePinViewModel's pin
         /// editor path) accepts all three from user text, including an overflowing value like
         /// "1e400", which double.Parse clamps to PositiveInfinity rather than throwing.
         /// </summary>

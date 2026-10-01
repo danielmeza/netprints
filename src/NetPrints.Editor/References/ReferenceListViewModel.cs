@@ -11,7 +11,7 @@ namespace NetPrints.Editor.References;
 /// View model of the References dialog (PAR-16..21), working on <see cref="ProjectSnapshot.DeclaredReferences"/>
 /// and applying every change through <see cref="IProjectSystem.ApplyAsync"/> (project-system.md §4).
 /// </summary>
-public sealed partial class ReferenceListVM : ObservableObject, IDisposable
+public sealed partial class ReferenceListViewModel : ObservableObject, IDisposable
 {
     private readonly EditorContext context;
 
@@ -20,7 +20,7 @@ public sealed partial class ReferenceListVM : ObservableObject, IDisposable
     /// </summary>
     /// <param name="project">Project whose references are shown and edited.</param>
     /// <param name="context">Host services shared across the editor.</param>
-    public ReferenceListVM(Project project, EditorContext context)
+    public ReferenceListViewModel(Project project, EditorContext context)
     {
         Project = project;
         this.context = context;
@@ -33,7 +33,7 @@ public sealed partial class ReferenceListVM : ObservableObject, IDisposable
 
     /// <summary>View models for <see cref="Project"/>'s declared references.</summary>
     [ObservableProperty]
-    public partial IReadOnlyList<DeclaredReferenceVM> References { get; set; } = [];
+    public partial IReadOnlyList<DeclaredReferenceViewModel> References { get; set; } = [];
 
     private void OnProjectPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
@@ -45,7 +45,7 @@ public sealed partial class ReferenceListVM : ObservableObject, IDisposable
 
     private void RebuildReferences() =>
         References = (Project.Snapshot?.DeclaredReferences ?? [])
-            .Select(info => new DeclaredReferenceVM(info, included => SetSourceDirectoryIncludedAsync(info, included)))
+            .Select(info => new DeclaredReferenceViewModel(info, included => SetSourceDirectoryIncludedAsync(info, included)))
             .ToList();
 
     /// <summary>Adds an assembly; a duplicate <c>HintPath</c> is a no-op (PAR-17, project-system.md §4).</summary>
@@ -97,7 +97,7 @@ public sealed partial class ReferenceListVM : ObservableObject, IDisposable
     /// <summary>
     /// Sets a source directory reference's included/excluded state to <paramref name="included"/>
     /// (R2-10, F-06): the target state comes from the toggle switch's own clicked state
-    /// (<see cref="DeclaredReferenceVM.SetIncludedCommand"/>), not from inverting the row's
+    /// (<see cref="DeclaredReferenceViewModel.SetIncludedCommand"/>), not from inverting the row's
     /// last-applied state, so a switch left out of sync by a prior failed apply cannot invert the next
     /// click. Realizing a row (the <c>OneWay</c> binding setting the switch to the current model state)
     /// calls this with <paramref name="included"/> already equal to <paramref name="info"/>'s state, which
@@ -123,7 +123,7 @@ public sealed partial class ReferenceListVM : ObservableObject, IDisposable
 
     /// <summary>Removes a reference (PAR-20).</summary>
     [RelayCommand]
-    private async Task RemoveAsync(DeclaredReferenceVM? reference)
+    private async Task RemoveAsync(DeclaredReferenceViewModel? reference)
     {
         if (reference is null)
         {

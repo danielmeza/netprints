@@ -16,8 +16,8 @@ public abstract class GraphTestBase : IDisposable
     protected readonly TestEditor Editor;
     protected readonly ClassGraph Class;
     protected readonly MethodGraph Method;
-    protected readonly ClassEditorVM ClassEditor;
-    protected readonly NodeGraphVM Graph;
+    protected readonly ClassEditorViewModel ClassEditor;
+    protected readonly NodeGraphViewModel Graph;
 
     protected static readonly TypeSpecifier StringType = TypeSpecifier.FromType<string>();
     protected static readonly TypeSpecifier IntType = TypeSpecifier.FromType<int>();
@@ -26,7 +26,7 @@ public abstract class GraphTestBase : IDisposable
     {
         Editor = editor;
         Class = new ClassGraph { Name = "C", Namespace = "N" };
-        ClassEditor = new ClassEditorVM(Class, Editor.Context);
+        ClassEditor = new ClassEditorViewModel(Class, Editor.Context);
         ClassEditor.CreateMethodCommand.Execute(null);
         Method = (MethodGraph)ClassEditor.Methods.Single().Graph;
         Graph = ClassEditor.OpenedGraph!;
@@ -38,9 +38,9 @@ public abstract class GraphTestBase : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    protected NodeVM VmOf(Node node) => Graph.Nodes.Single(n => n.Node == node);
+    protected NodeViewModel VmOf(Node node) => Graph.Nodes.Single(n => n.Node == node);
 
-    protected NodePinVM VmOf(NodePin pin) => Graph.Nodes.SelectMany(n => n.AllPins).Single(p => p.Pin == pin);
+    protected NodePinViewModel VmOf(NodePin pin) => Graph.Nodes.SelectMany(n => n.AllPins).Single(p => p.Pin == pin);
 
     protected static MethodSpecifier ConsoleWriteLine(TypeSpecifier parameterType) =>
         new("WriteLine", [new MethodParameter("value", parameterType, MethodParameterPassType.Default, false, null)],

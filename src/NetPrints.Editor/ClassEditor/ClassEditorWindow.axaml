@@ -10,7 +10,7 @@
         xmlns:edvariables="clr-namespace:NetPrints.Editor.Variables"
         xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia" xmlns:core="clr-namespace:NetPrints.Core;assembly=NetPrints.Core"
         x:Class="NetPrints.Editor.ClassEditor.ClassEditorWindow"
-        x:DataType="edclasseditor:ClassEditorVM"
+        x:DataType="edclasseditor:ClassEditorViewModel"
         Title="{Binding Title}"
         Icon="avares://NetPrints.Editor/Assets/NetPrintsLogo.ico"
         Width="1280" Height="720" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorWindow}" AutomationProperties.Name="{Binding FullName}">
@@ -58,10 +58,10 @@
           <ListBox x:Name="MethodList" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorMethodList}" Grid.Row="1" ItemsSource="{Binding Methods}"
                    SelectedItem="{Binding SelectedMethodInList, Mode=OneWay}">
             <ListBox.ItemTemplate>
-              <DataTemplate x:DataType="edclasseditor:MethodVM">
+              <DataTemplate x:DataType="edclasseditor:MethodViewModel">
                 <Grid ColumnDefinitions="Auto,*">
                   <Button Classes="icon" ToolTip.Tip="Remove method" AutomationProperties.Name="Remove method"
-                          Command="{Binding $parent[Window].((edclasseditor:ClassEditorVM)DataContext).RemoveMethodCommand}"
+                          Command="{Binding $parent[Window].((edclasseditor:ClassEditorViewModel)DataContext).RemoveMethodCommand}"
                           CommandParameter="{Binding}">
                     <mi:MaterialIcon Kind="Minus" />
                   </Button>
@@ -74,7 +74,7 @@
                          yet, so this is EventTriggerBehavior + InvokeCommandAction (D11). -->
                     <Interaction.Behaviors>
                       <EventTriggerBehavior EventName="Tapped">
-                        <InvokeCommandAction Command="{Binding $parent[Window].((edclasseditor:ClassEditorVM)DataContext).OpenMethodCommand}"
+                        <InvokeCommandAction Command="{Binding $parent[Window].((edclasseditor:ClassEditorViewModel)DataContext).OpenMethodCommand}"
                                               CommandParameter="{Binding}" />
                       </EventTriggerBehavior>
                     </Interaction.Behaviors>
@@ -105,10 +105,10 @@
           <ListBox x:Name="ConstructorList" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorConstructorList}" Grid.Row="1" ItemsSource="{Binding Constructors}"
                    SelectedItem="{Binding SelectedConstructorInList, Mode=OneWay}">
             <ListBox.ItemTemplate>
-              <DataTemplate x:DataType="edclasseditor:MethodVM">
+              <DataTemplate x:DataType="edclasseditor:MethodViewModel">
                 <Grid ColumnDefinitions="Auto,*">
                   <Button Classes="icon" ToolTip.Tip="Remove constructor" AutomationProperties.Name="Remove constructor"
-                          Command="{Binding $parent[Window].((edclasseditor:ClassEditorVM)DataContext).RemoveMethodCommand}"
+                          Command="{Binding $parent[Window].((edclasseditor:ClassEditorViewModel)DataContext).RemoveMethodCommand}"
                           CommandParameter="{Binding}">
                     <mi:MaterialIcon Kind="Minus" />
                   </Button>
@@ -118,7 +118,7 @@
                     <!-- Same tap-to-open wiring as the methods list above. -->
                     <Interaction.Behaviors>
                       <EventTriggerBehavior EventName="Tapped">
-                        <InvokeCommandAction Command="{Binding $parent[Window].((edclasseditor:ClassEditorVM)DataContext).OpenMethodCommand}"
+                        <InvokeCommandAction Command="{Binding $parent[Window].((edclasseditor:ClassEditorViewModel)DataContext).OpenMethodCommand}"
                                               CommandParameter="{Binding}" />
                       </EventTriggerBehavior>
                     </Interaction.Behaviors>
@@ -138,7 +138,7 @@
             <TextBlock Classes="header" Text="Class" />
             <ListBox x:Name="VariableList" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorVariableList}" Grid.Row="1" ItemsSource="{Binding VariablesPanel.ClassVariables}">
               <ListBox.ItemTemplate>
-                <DataTemplate x:DataType="edvariables:MemberVariableVM">
+                <DataTemplate x:DataType="edvariables:MemberVariableViewModel">
                   <edvariables:MemberVariableView />
                 </DataTemplate>
               </ListBox.ItemTemplate>
@@ -150,7 +150,7 @@
             <TextBlock Classes="header" Text="{Binding VariablesPanel.MethodGroupHeader}" />
             <ListBox x:Name="LocalVariableList" Grid.Row="1" ItemsSource="{Binding VariablesPanel.MethodVariables}">
               <ListBox.ItemTemplate>
-                <DataTemplate x:DataType="edvariables:LocalVariableVM">
+                <DataTemplate x:DataType="edvariables:LocalVariableViewModel">
                   <edvariables:LocalVariableView />
                 </DataTemplate>
               </ListBox.ItemTemplate>
@@ -171,10 +171,10 @@
           <ListBox x:Name="EventGraphList" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventGraphList}" Grid.Row="1" ItemsSource="{Binding EventGraphs}"
                    SelectedItem="{Binding SelectedEventGraphInList, Mode=OneWay}">
             <ListBox.ItemTemplate>
-              <DataTemplate x:DataType="edevents:EventGraphVM">
+              <DataTemplate x:DataType="edevents:EventGraphViewModel">
                 <Grid ColumnDefinitions="Auto,*">
                   <Button Classes="icon" ToolTip.Tip="Remove event graph" AutomationProperties.Name="Remove event graph"
-                          Command="{Binding $parent[Window].((edclasseditor:ClassEditorVM)DataContext).RemoveEventGraphCommand}"
+                          Command="{Binding $parent[Window].((edclasseditor:ClassEditorViewModel)DataContext).RemoveEventGraphCommand}"
                           CommandParameter="{Binding}">
                     <mi:MaterialIcon Kind="Minus" />
                   </Button>
@@ -185,7 +185,7 @@
                          doesn't open, only when focus is lost". -->
                     <Interaction.Behaviors>
                       <EventTriggerBehavior EventName="Tapped">
-                        <InvokeCommandAction Command="{Binding $parent[Window].((edclasseditor:ClassEditorVM)DataContext).OpenEventGraphCommand}"
+                        <InvokeCommandAction Command="{Binding $parent[Window].((edclasseditor:ClassEditorViewModel)DataContext).OpenEventGraphCommand}"
                                               CommandParameter="{Binding}" />
                       </EventTriggerBehavior>
                     </Interaction.Behaviors>
@@ -203,7 +203,7 @@
       <!-- Graph, compile errors, program output and status (PAR-32) -->
       <Grid Grid.Column="2" RowDefinitions="*,5,150,24">
         <edgraph:GraphEditorView x:Name="GraphEditor" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorGraph}" DataContext="{Binding OpenedGraph}" IsVisible="{Binding $self.DataContext, Converter={x:Static ObjectConverters.IsNotNull}}" />
-        <!-- Busy overlay (PAR-24, batch D1): shown only once an open graph passes ClassEditorVM.BusyIndicatorDelay. -->
+        <!-- Busy overlay (PAR-24, batch D1): shown only once an open graph passes ClassEditorViewModel.BusyIndicatorDelay. -->
         <Border AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorOpeningGraphIndicator}" IsVisible="{Binding IsOpeningGraph}"
                 Background="{DynamicResource OpeningGraphIndicator.Background}" CornerRadius="4" Padding="16,10" HorizontalAlignment="Center" VerticalAlignment="Center">
           <TextBlock Foreground="{DynamicResource OpeningGraphIndicator.Foreground}" FontSize="14" Text="{Binding OpeningGraphName, StringFormat='Opening {0}…'}" />
@@ -224,7 +224,7 @@
                 </KeyTrigger>
               </Interaction.Behaviors>
               <ListBox.ItemTemplate>
-                <DataTemplate x:DataType="ederrorlist:DiagnosticRowVM">
+                <DataTemplate x:DataType="ederrorlist:DiagnosticRowViewModel">
                   <!-- Background="Transparent" (OWN-04): a null Background is not hit-test visible in
                        its own empty space, so only the rendered text glyphs used to respond to the
                        double-tap below (matches EventGraphList's row template above). -->
@@ -233,7 +233,7 @@
                          ExecuteCommandOnDoubleTappedBehavior (batch X2b). -->
                     <Interaction.Behaviors>
                       <ExecuteCommandOnDoubleTappedBehavior
-                        Command="{Binding $parent[Window].((edclasseditor:ClassEditorVM)DataContext).ErrorList.NavigateCommand}"
+                        Command="{Binding $parent[Window].((edclasseditor:ClassEditorViewModel)DataContext).ErrorList.NavigateCommand}"
                         CommandParameter="{Binding}" />
                     </Interaction.Behaviors>
                     <!-- Severity icon (FR-032, OWN-03): Classes.<name> is the state→visual mapping

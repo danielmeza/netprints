@@ -15,7 +15,7 @@ public class SuggestionListVMTests : GraphTestBase
     }
 
     /// <summary>Types into the search box and lets the throttle window pass in virtual time.</summary>
-    private void Type(SuggestionListVM search, string text)
+    private void Type(SuggestionListViewModel search, string text)
     {
         search.SearchText = text;
         Editor.Scheduler.AdvanceBy(search.FilterThrottle.Ticks);
@@ -27,7 +27,7 @@ public class SuggestionListVMTests : GraphTestBase
     [Fact]
     public void BuiltInNodesPerGraphKind()
     {
-        List<string> BuiltIns(NodeGraphVM graph) =>
+        List<string> BuiltIns(NodeGraphViewModel graph) =>
             graph.Search.BuildItems(null).Where(i => i.Category == "NetPrints" && !i.IsHeader).Select(i => i.Text).ToList();
 
         var methodBuiltIns = BuiltIns(Graph);
