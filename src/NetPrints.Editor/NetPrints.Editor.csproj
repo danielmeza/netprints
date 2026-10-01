@@ -27,6 +27,11 @@
     <PackageReference Include="Xaml.Behaviors.Interactions.Custom" />
     <PackageReference Include="Xaml.Behaviors.Interactions.DragAndDrop" />
     <PackageReference Include="CommunityToolkit.Mvvm" />
+    <!-- ADR-0018: used only under Shell/Docking (DockConfinementTests). -->
+    <PackageReference Include="Dock.Avalonia" />
+    <PackageReference Include="Dock.Model.Mvvm" />
+    <PackageReference Include="Dock.Avalonia.Themes.Fluent" />
+    <PackageReference Include="Dock.Serializer.SystemTextJson" />
     <PackageReference Include="DynamicData" />
     <!-- Used directly by the search list (Throttle, schedulers), not only through DynamicData. -->
     <PackageReference Include="System.Reactive" />

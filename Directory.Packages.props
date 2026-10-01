@@ -60,6 +60,11 @@
     <PackageVersion Include="Xaml.Behaviors.Interactions" Version="12.0.7" />
     <PackageVersion Include="Xaml.Behaviors.Interactions.Custom" Version="12.0.7" />
     <PackageVersion Include="Xaml.Behaviors.Interactions.DragAndDrop" Version="12.0.7" />
+    <!-- ADR-0018: the shell docks with Dock.Avalonia, behind Shell/Docking. Exact pins; no ReactiveUI or Newtonsoft serializer. -->
+    <PackageVersion Include="Dock.Avalonia" Version="[12.1.0.6]" />
+    <PackageVersion Include="Dock.Model.Mvvm" Version="[12.1.0.6]" />
+    <PackageVersion Include="Dock.Avalonia.Themes.Fluent" Version="[12.1.0.6]" />
+    <PackageVersion Include="Dock.Serializer.SystemTextJson" Version="[12.1.0.6]" />
   </ItemGroup>
 
   <ItemGroup Label="Logging">
