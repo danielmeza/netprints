@@ -211,10 +211,70 @@ Skips: the 12 skipped in the full run are 3 headless UI tests that need a real c
 - Decision: the E2E zero-test discovery step in `checks` drops the coverage arguments (nothing uploads them any more); each leg builds only its own project (`dotnet build tests/<project>`), the solution is built once in `checks`.
 - Decision: the aggregate keeps `timeout-minutes: 30` like every other job; the required check names `Build and test (Linux)` and `Desktop E2E (Linux, Xvfb)` are asserted by `RequiredCheckNamesAreUnchanged`.
 
+## Batch A4 (implementation: sonnet, 9c07c2f–81c3b7f and the notes commit)
+
+### Red output
+
+T010 on Linux passed at once (P2 set UTF-8 output), so the defect was injected: `Console.OutputEncoding = Encoding.Latin1` in `src/NetPrints.Cli/Program.cs` (reverted afterwards, `git diff` empty):
+
+```
+ShowTextconvEncodingTests.ShowTextconvWritesNonAsciiNamesAsUtf8WithoutABom
+  System.Text.DecoderFallbackException : Unable to translate bytes [FC] at index 19 from specified code page to Unicode.
+NetPrints.Cli.Tests  Total: 1, Errors: 0, Failed: 1
+```
+
+Reverted: `Total: 1, Failed: 0`. A BOM cannot be injected through `Console.OutputEncoding` (the console stream never writes the preamble), so the no-BOM assertion is covered by the byte check only; the invalid-UTF-8 path is the one proven red.
+
+T012: `CLI (Windows)` first run (36866524963, after 9c07c2f): 269 tests, 17 failed, 3 skipped, `ShowTextconvEncodingTests` passed. T011's path-filter check was written after the workflow file (the check already existed from A3 and was proven against a draft there); with the skip removed it is `Total: 8, Failed: 0, Skipped: 0`.
+
+### Windows fixes and skips (T012)
+
+Fixes (all in tests or `.gitattributes`; no defect in `src/`):
+
+| Failures | Cause | Fix |
+|---|---|---|
+| 8 `CatalogCommandTests` | The committed catalog snapshots were checked out with CRLF (`* text=auto`) while the CLI writes LF | `.gitattributes`: `*.npcat.json text eol=lf` |
+| 4 `ProjectLocatorTests` | `Touch` built the expected path with `/` | build it with `Path.DirectorySeparatorChar` |
+| 4 `GitDriversEndToEndTests` | the driver command held `D:\a\...\NetPrints.Cli.dll`; git runs it through `sh`, which eats the backslashes ("Could not execute because the specified command or file was not found") | `CliUnderTest` uses forward slashes |
+| all 5 `GitDriversEndToEndTests` (the 4 above also hit this; `PlainGitConflictsOnTheSameBranches` only this) | git marks object files read-only and `Directory.Delete` then throws `UnauthorizedAccessException` | `TempGitRepository.Dispose` clears the attributes first |
+
+Skips already in place (3, reasons name what is missing): `MigrateCommandTests.AnUnreadableSubdirectoryIsReportedAsAFailureNotACrash` and `FormatCommandTests.AnUnreadableDirectoryIsReportedInTheSameShapeAsAnUnreadableFile` ("Needs POSIX permissions and a non-root user"), `MigrateCommandTests.ADirectorySymlinkIsNotFollowed` ("Creating a symbolic link needs a privilege on Windows"). No new skip was added.
+
+Observation: the Windows log shows `Restore failed for ...\np-sample-*\HelloWorld.csproj (exit code 1)` as a warning in the error output of a passing test; the test does not depend on the restore, so it was left (not investigated further).
+
+### Green evidence (T010-T014)
+
+- Windows run 36867229184 (head 81c3b7f): 269 tests, 266 passed, 3 skipped, 0 failed; `ShowTextconvEncodingTests.ShowTextconvWritesNonAsciiNamesAsUtf8WithoutABom` Passed
+- CI run 36867229176 (same head): every check success, including `Build and test (Linux)` and `Desktop E2E (Linux, Xvfb)`
+- Local full suite (Release, solution-wide): 1755 tests, 1744 passed, 11 skipped, 0 failed (5m 10s); format clean; build 0 warnings
+- Local E2E: 18 tests, 18 passed, 0 skipped (2m 24s)
+- Commits: 9c07c2f (T010, T011), 738de5b (T012), 81c3b7f (T013)
+
+### Decisions
+
+- Decision: `ShowTextconvEncodingTests` builds its graph from the Core.Tests `HelloWorld` fixture with the class renamed `Grüße`, the method `Größe` and the string literal `日本語` (the "node title" of the task is a pin value, the only node text the summary prints), and runs `dotnet NetPrints.Cli.dll show --textconv` as a child process reading stdout as bytes.
+- Decision: the catalog snapshots are pinned to LF in `.gitattributes` (like `*.netpc.json`) instead of normalizing line endings in the tests: the CLI's output is LF on every OS, so the committed expectation must be too.
+- Decision: the `cli-windows.yml` check now fails when the file is missing (the A3 skip-when-missing is gone).
+- Decision: `cli-windows.yml` has a concurrency group of its own (`cli-windows-<ref>`) and no coverage arguments (the static-coverage settings belong to the Linux legs).
+
 ## Checkpoint reports
 
 Each checkpoint task (T014, T027, T045, T058, T071, T087, T099, T111) adds its report here, with evidence for every
 success criterion its sub-phase covers and a "Docs updated:" line.
+
+### Checkpoint A (T014)
+
+| Item | Evidence |
+|---|---|
+| FR-105 | `SourceHygieneTests.NoTypeNameEndsInVM` passes in the full suite (A1 renamed 24 view model classes; A3 step 0 tightened the rule to reject any declared type name with `VM` followed by an uppercase letter, `MVVM` excluded, after finding 13 `*VMTests` classes and two constants; red output in A1 and A3 above). |
+| SC-006, diagnostics | CI run 36867229176: `E2EDiagnosticsTests.AForcedTimeoutLeavesTheDiagnosticFiles` Passed (18 of 18 E2E tests passed in the `e2e-results` `.trx`). The artifact `e2e-results` (1.3 MB) was downloaded with `gh run download` and holds `e2e-diagnostics/E2EDiagnosticsTests/` with the seven files `summary.md`, `timings.md`, `ui-tree.json`, `display.png`, `editor.log`, `process.txt`, `run-state.json` (`summary.md`: failure timeout, step `open project (20 s)`). No fix to the upload path was needed. |
+| SC-006, timings | The T009 table in A3: longest new job 530 s (Editor UI (headless)) against the 995 s baseline, 53%, under the 60% limit. |
+| Windows | `CLI (Windows)` run 36867229184 green: 269 tests, 266 passed, 3 skipped (POSIX permissions twice, symlink privilege once), `ShowTextconvEncodingTests` Passed. |
+| Whole suite | Local: 1755 tests, 1744 passed, 11 skipped, 0 failed; E2E: 18 of 18 passed, 0 skipped. CI head 81c3b7f: all checks success. |
+
+Skip count, corrected: without `NETPRINTS_E2E`, 8 of the 18 Desktop E2E tests skip (the 7 scenario classes `CreateProject`, `EditCompileAndRun`, `DragFromLists`, `Shutdown`, `AddReferences`, `MinimizeAndRestoreClassWindow`, `PanCursor` plus `E2EDiagnosticsTests`); the other 10 (`EntryPoint` 1, `DesktopWorkerPool` 1, `FailureCapture` 8) always run. With `NETPRINTS_E2E=1` all 18 run. A2's "9 scenarios" was the 7 scenarios plus `EntryPoint` and `DesktopWorkerPool`, the 9 tests that existed before A2; A3's "7 scenarios plus `E2EDiagnosticsTests`" is the right skip list. The 11 skips of the full run are these 8 plus the 3 headless UI tests.
+
+Docs updated: `docs/contributing/testing.md` (CI section), `AGENTS.md` (the Windows workflow, the `test`/`e2e` split), the Avalonia skills and ADR-0007 (the `ViewModel` naming, A1 commits 48cc09d and bf000fc); no further change was needed in them.
 
 ## Deviations
 

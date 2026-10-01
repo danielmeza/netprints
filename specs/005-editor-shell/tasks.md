@@ -145,21 +145,21 @@ Contract: contracts/ci.md. **Independent test**: US1's independent test; SC-006;
 
 ### Batch A4 — model: sonnet — T010–T014 — 5 units
 
-- [ ] T010 [US1] Test first (contracts/ci.md §2): `tests/NetPrints.Cli.Tests/ShowTextconvEncodingTests.cs`. It writes a
+- [x] T010 [US1] Test first (contracts/ci.md §2): `tests/NetPrints.Cli.Tests/ShowTextconvEncodingTests.cs`. It writes a
   temporary graph with class `Grüße`, method `Größe` and a node title containing `日本語`, runs the built `netprints`
   as a child process with `show --textconv <file>`, and reads stdout as bytes. It asserts exit code 0, valid UTF-8, no
   `EF BB BF` prefix, and that the decoded text contains the three names. If it passes at once on Linux (P2 set UTF-8
   output), prove it catches the defect: make the tool write a BOM or a non-UTF-8 encoding, see the test fail and name
   itself, revert, and record both runs (US1 scenario 5).
-- [ ] T011 [US1] `.github/workflows/cli-windows.yml` per contracts/ci.md §2: `name: CLI (Windows)`, `windows-latest`,
+- [x] T011 [US1] `.github/workflows/cli-windows.yml` per contracts/ci.md §2: `name: CLI (Windows)`, `windows-latest`,
   the path filter, `workflow_dispatch`, build then test with `--report-xunit-trx`, artifact `test-results-cli-windows`.
   T007's path-filter check green.
-- [ ] T012 [US1] Get `CLI (Windows)` green. Fix each CLI test that fails on Windows because of a real defect (test first
+- [x] T012 [US1] Get `CLI (Windows)` green. Fix each CLI test that fails on Windows because of a real defect (test first
   when the defect is in `src/`). A test that genuinely cannot run there calls `Assert.Skip("<what is missing>")` behind
   an OS check. `ShowTextconvEncodingTests` never skips. List every fix and skip in implementation-notes.
-- [ ] T013 [US1] `docs/contributing/testing.md`, CI section: the jobs, the aggregate check, the per-leg artifacts, the
+- [x] T013 [US1] `docs/contributing/testing.md`, CI section: the jobs, the aggregate check, the per-leg artifacts, the
   Windows workflow and when it runs, and how to add a test project (the matrix row `CiWorkflowTests` requires).
-- [ ] T014 **Checkpoint A**: whole suite plus the E2E run; CI green, including `CLI (Windows)`. Report in
+- [x] T014 **Checkpoint A**: whole suite plus the E2E run; CI green, including `CLI (Windows)`. Report in
   implementation-notes: FR-105 (`NoTypeNameEndsInVM`), SC-006 (the run where `E2EDiagnosticsTests` passed and the
   `e2e-results` artifact holding its seven files; the T009 timings; the Windows job with `ShowTextconvEncodingTests`
   passed). Docs updated: `docs/contributing/testing.md`, `AGENTS.md`, the skills, ADR-0007.
