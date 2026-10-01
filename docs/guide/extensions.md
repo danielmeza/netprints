@@ -168,6 +168,11 @@ dependencies (listed in `dependsOn`) provides, it is ignored. NetPrints logs a w
 
 These are not errors; the host's or dependency's copy is used, and your copy is simply not loaded.
 
+**JSON type-info resolvers**: when multiple extensions contribute JSON resolvers, each extension's own document types
+are resolved by that extension's resolvers first. If another extension's resolver would also handle those types, the
+other extension receives NPX006 ("JSON resolver"), and its resolver is ignored for that type, so the owning extension's
+type serialization contract is preserved.
+
 ## Depending on another extension
 
 An extension can depend on the contributions of another extension by listing it in the manifest's

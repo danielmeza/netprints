@@ -851,12 +851,14 @@ Sub-phase F (`6925062^..00c87e3`), reviewed at `00c87e3`: Checkpoint F not accep
 
 **Documentation**
 
-- `docs/guide/extensions.md`: +93 lines.
+- `docs/guide/extensions.md`: +64 lines.
 - `scripts/build-docs.sh`: succeeded with 0 errors.
 
 **Test Suite**
 
-- Release, solution-wide, no `NETPRINTS_E2E`: 1603 total, 1590 passed, 3 failed, 10 skipped (headless UI capability skips). Failures in `NetPrints.Cli.Tests.Git.GraphSummaryTests` (HelloWorld.show, AllNodes.show, node order); these are unrelated to G4's documentation-only changes. Desktop E2E suite (`NETPRINTS_E2E=1`): 1 passed.
+**Corrected in G-F4 (G-R8):** these figures came from stale Release binaries built before G1; no GraphSummaryTests failure reproduces. See Checkpoint G below for the real run.
+
+- Release, solution-wide, no `NETPRINTS_E2E`: ~~1603 total, 1590 passed, 3 failed, 10 skipped (headless UI capability skips). Failures in `NetPrints.Cli.Tests.Git.GraphSummaryTests` (HelloWorld.show, AllNodes.show, node order);~~ these are unrelated to G4's documentation-only changes. Desktop E2E suite (`NETPRINTS_E2E=1`): 1 passed.
 - Full command: `dotnet test --solution NetPrints.slnx -c Release --no-build --ignore-exit-code 8`.
 
 **SC-007** (Coexistence rules documented): `docs/guide/extensions.md` "Coexistence rules" section explains host-provided assemblies (TRUSTED_PLATFORM_ASSEMBLIES, already loaded in Default context, Microsoft.Build families), private loading of everything else, and shadowing warnings.
