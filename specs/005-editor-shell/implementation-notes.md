@@ -274,6 +274,8 @@ success criterion its sub-phase covers and a "Docs updated:" line.
 
 Skip count, corrected: without `NETPRINTS_E2E`, 8 of the 18 Desktop E2E tests skip (the 7 scenario classes `CreateProject`, `EditCompileAndRun`, `DragFromLists`, `Shutdown`, `AddReferences`, `MinimizeAndRestoreClassWindow`, `PanCursor` plus `E2EDiagnosticsTests`); the other 10 (`EntryPoint` 1, `DesktopWorkerPool` 1, `FailureCapture` 8) always run. With `NETPRINTS_E2E=1` all 18 run. A2's "9 scenarios" was the 7 scenarios plus `EntryPoint` and `DesktopWorkerPool`, the 9 tests that existed before A2; A3's "7 scenarios plus `E2EDiagnosticsTests`" is the right skip list. The 11 skips of the full run are these 8 plus the 3 headless UI tests.
 
+After Review A: all of R1-R21 fixed or decided; solution suite 1772 tests, 1759 passed, 13 skipped, 0 failed; Desktop E2E 31 of 31 passed (`NETPRINTS_E2E=1 --fail-skips on`); CI run CIRUNID.
+
 Docs updated: `docs/contributing/testing.md` (CI section), `AGENTS.md` (the Windows workflow, the `test`/`e2e` split), the Avalonia skills and ADR-0007 (the `ViewModel` naming, A1 commits 48cc09d and bf000fc); no further change was needed in them.
 
 ## Review A (T016, part 1 of 4)
@@ -295,14 +297,14 @@ F3 R6, R7, R8, R16, R17, R18; F4 R12, R13, R14, R15, R19.
 | R9 | minor | `ProcessLauncher`: the exit can be raised before the start, and the drain can block forever | F2 | fixed, 680e850 |
 | R10 | minor | `RunStateTracker` gives one program's exit to another | F2 | fixed, 6dcade6 |
 | R11 | minor | The Shutdown scenario has no failure capture, and that is not recorded | F2 | fixed (Decision, no code change) |
-| R12 | minor | Deviations are recorded as Decisions while "Deviations" says "None yet" | F4 | open |
-| R13 | minor | Windows defects in `src/` hidden by test-side fixes, with no follow-up recorded | F4 | open |
-| R14 | minor | Docs and workflow text that no longer match behaviour | F4 | open |
-| R15 | minor | The docs sweep broke ADR-0007's amendment and went past T002's scope without a Decision | F4 | open |
+| R12 | minor | Deviations are recorded as Decisions while "Deviations" says "None yet" | F4 | fixed, e87db94 |
+| R13 | minor | Windows defects in `src/` hidden by test-side fixes, with no follow-up recorded | F4 | fixed, e87db94 (follow-ups recorded) |
+| R14 | minor | Docs and workflow text that no longer match behaviour | F4 | fixed, e32deae |
+| R15 | minor | The docs sweep broke ADR-0007's amendment and went past T002's scope without a Decision | F4 | fixed, 10675f6 (Decision under Deviations) |
 | R16 | nit | Locals still named after the old types; the rule's doc comment is stale | F3 | fixed, 00f04ca |
 | R17 | nit | Repeated identifiers are not named constants | F3 | fixed, 6cdf2e4 |
 | R18 | nit | `ci.yml:1` header still names the superseded contract | F3 | fixed, 0c292dd |
-| R19 | nit | Two red commits in the history | F4 | open |
+| R19 | nit | Two red commits in the history | F4 | fixed (Decision, no code change) |
 | R20 | nit | A skip after start would be reported as a failure | F2 | fixed, 2f20afe |
 | R21 | nit | Forcing a step that never reaches a checkpoint does nothing, silently | F2 | fixed, 2f20afe |
 
@@ -315,6 +317,14 @@ F3 R6, R7, R8, R16, R17, R18; F4 R12, R13, R14, R15, R19.
 - Decision (R13): both Windows `src/` issues are recorded as follow-ups with the P3 code carry-overs.
 - Decision (R15): restore ADR-0007's amendment example; record a Decision for the research/ADR rewrite the docs sweep made.
 - Decision (R19): no history rewrite; both red commits are named as bisect-skip.
+
+### Batch A-F4 (R12-R15, R19: e32deae, 10675f6, e87db94)
+
+- Step 1, the E2E exit code. Run on 6906a0f, Debug, no `NETPRINTS_E2E`: the E2E project alone exits 0 (31 tests, 21 passed, 10 skipped); the whole solution (`dotnet test --solution NetPrints.slnx --no-build --no-progress --no-ansi`) exits 0 too (1772 tests, 1759 passed, 13 skipped, 0 failed; the E2E project line reads `passed (856ms)`). The "zero tests" failure A-F3 and A-F2 reported did not reproduce, so no code change: Review A R14 is right, a run without `NETPRINTS_E2E` runs the always-on tests (`FailureCapture`, `DiagnosticParts`, `EntryPoint`, `DesktopWorkerPool`, step and process tests, 21 now) and exits 0. The earlier reports are not explained by the code at this head (most likely a run made before the always-on classes existed or against a stale build); the command that works is the one above. `--ignore-exit-code 8` is kept in CI's smoke step only as a guard for an all-skipped run.
+- Skip count 13 = 10 Desktop E2E scenario tests (`AddReferences`, `CreateProject`, `DragFromLists`, `E2EDiagnosticsTests`, `E2EEditorExitDiagnosticsTests`, `E2EScenarioRulesTests`, `EditCompileAndRun`, `MinimizeAndRestoreClassWindow`, `PanCursor`, `Shutdown`: one each) + 3 headless UI tests (`MinimizeAndRestoreClassWindow`, `PanCursor`, `DragFromLists`).
+- R14 (e32deae): `testing.md` (exit code 0 with the always-on tests running; Cli.Tests in process, some as child processes; `exitCode` present only once exited, checked against `RunStateSnapshot` and the `WhenWritingNull` JSON context; holdable steps `start`, `open project`, `edit graph`, `run`, `create project`, `add references`, with `compile` and the nested `wait for worker` not holdable and a forced never-held step failing loudly, checked against `StepTimer` and `X11SmokeTests`), `ci.yml` (step renamed "Desktop E2E (no display, always-on tests only)", comment corrected, the never-uploaded `--report-xunit-trx` dropped), contracts/ci.md section 1, README and AGENTS.md (the "zero tests" claims). `CiWorkflowTests` 9/9 after the rename.
+- R12, R13, R15, R19: the Deviations, Follow-ups and History note sections above; contracts/ci.md section 2 amended (e87db94), roadmap P3 "Carried over" line extended, `docs/guide/cli.md` says to use forward slashes in `git-install --command` paths, ADR-0007's amendment example restored (10675f6; `SourceHygieneTests` 13/13).
+- Totals at e87db94: solution suite (Debug, no `NETPRINTS_E2E`) 1772 tests, 1759 passed, 13 skipped, 0 failed (code unchanged since 6906a0f); Desktop E2E with `NETPRINTS_E2E=1 --fail-skips on`: 31 of 31 passed, 0 skipped. Format check clean.
 
 ### Batch A-F1 (R1-R4: c519244, a8c1aae, a8fa3ef)
 
@@ -337,7 +347,18 @@ Totals at a8fa3ef: solution suite 1762 tests, 1750 passed, 12 skipped, 0 failed;
 
 ## Deviations
 
-None yet.
+- Node title as a string pin value (Review A R12): FR-006, ADR-0019 and contracts/ci.md section 2 ask for non-ASCII node names or a node title. `show --textconv` prints no node title, so `ShowTextconvEncodingTests` uses a node whose string pin value contains `日本語`; contracts/ci.md section 2 is amended to that wording.
+- Research notes and ADRs outside T002's stated scope (Review A R15): T002's grep criterion spans `docs/`, so the rename also rewrote `docs/research/2026-09-25-*` and ADRs 0003, 0004, 0005 and 0009 (they stay navigable). The one sanctioned old name left in `docs/` is the `DialogVM<TResult>` example in ADR-0007's amendment.
+- Review A R11: `ShutdownTests` is exempt from failure capture (see the Decision above).
+
+## Follow-ups (out of P3a scope, constitution VIII)
+
+- `catalog --check` (`src/NetPrints.Cli/Commands/CatalogCommand.cs`) compares bytes: in a user repo with `core.autocrlf=true` and no `.gitattributes` rule, a checked-out `.npcat.json` has CRLF endings and always reads as stale. This repo is covered by its own `.gitattributes` line.
+- `git-install --command "dotnet C:\...\NetPrints.Cli.dll"` (`GitInstallSettings.cs`) is written verbatim and git runs the driver through `sh`, which drops the backslashes. Docs now say to use forward slashes (`docs/guide/cli.md`). Both are listed in the roadmap's P3 "Carried over" line.
+
+## History note
+
+`eda3181` (fails `SourceHygieneTests.NoNullForgivingOperator`; fixed in `a1719f4`, whose message says "docs:" though it carries the code fix) and `a22a281` (the UI leg fails; fixed by `7dcc38d`) are red commits. The branch is not rewritten (the repo merges with merge commits); use `git bisect skip eda3181 a22a281`.
 
 ## Governance proposals
 

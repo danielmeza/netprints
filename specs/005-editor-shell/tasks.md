@@ -166,7 +166,7 @@ Contract: contracts/ci.md. **Independent test**: US1's independent test; SC-006;
 
 ### Batch A-R — model: opus — T015 (sub-phase review)
 
-- [ ] T015 [US1] Review sub-phase A: an Opus reviewer who did not implement it reviews the whole diff of batches A1–A4
+- [x] T015 [US1] Review sub-phase A: an Opus reviewer who did not implement it reviews the whole diff of batches A1–A4
   (from the commit before the first batch to HEAD): US1 and FR-105 end to end against spec.md, contracts/ci.md, the
   constitution (1.2.4) and plan.md's standing constraints. It runs the independent test of the phase. Findings
   (severity, file:line, fix) go to the PR as review comments and to `specs/005-editor-shell/implementation-notes.md`
@@ -174,7 +174,7 @@ Contract: contracts/ci.md. **Independent test**: US1's independent test; SC-006;
 
 ### Batch A-F — model: sonnet — T016 (reserved: fix review findings)
 
-- [ ] T016 [US1] Fix every finding of T015 (test first for behaviour findings), reply on each review thread with the
+- [x] T016 [US1] Fix every finding of T015 (test first for behaviour findings), reply on each review thread with the
   fixing commit or the reason for deferral, whole suite plus the E2E run, commit; if the review had no findings, tick
   this task with "no findings". The next sub-phase starts only after this batch is green on CI.
 
