@@ -13,6 +13,7 @@ public sealed class AutomationClient : IAsyncDisposable
     private readonly StreamReader reader;
     private readonly StreamWriter writer;
     private readonly SemaphoreSlim gate = new(1, 1);
+    private volatile bool outOfStep;
 
     private AutomationClient(NamedPipeClientStream pipe)
     {
@@ -43,8 +44,23 @@ public sealed class AutomationClient : IAsyncDisposable
         await gate.WaitAsync(cancellationToken);
         try
         {
-            await writer.WriteLineAsync(JsonSerializer.Serialize(request, AutomationJsonContext.Default.AutomationRequest).AsMemory(), cancellationToken);
-            string line = await reader.ReadLineAsync(cancellationToken) ?? throw new IOException("The automation agent closed the connection.");
+            if (outOfStep)
+            {
+                throw new IOException("A cancelled request left its reply in the pipe; open a new connection.");
+            }
+
+            string line;
+            try
+            {
+                await writer.WriteLineAsync(JsonSerializer.Serialize(request, AutomationJsonContext.Default.AutomationRequest).AsMemory(), cancellationToken);
+                line = await reader.ReadLineAsync(cancellationToken) ?? throw new IOException("The automation agent closed the connection.");
+            }
+            catch (OperationCanceledException)
+            {
+                outOfStep = true;
+                throw;
+            }
+
             var response = JsonSerializer.Deserialize(line, AutomationJsonContext.Default.AutomationResponse) ?? throw new IOException("Empty response.");
             return response.Ok ? response : throw new InvalidOperationException($"Automation request '{request.Op}' failed: {response.Error}");
         }

@@ -12,6 +12,7 @@ public static class DiagnosticParts
     private const int EditorLogLines = 400;
     private const int StderrLines = 100;
     private static readonly TimeSpan ToolLimit = TimeSpan.FromSeconds(9);
+    private static readonly TimeSpan ConnectLimit = TimeSpan.FromSeconds(5);
 
     /// <summary>Creates the parts for one failing test.</summary>
     /// <param name="kind">The failure kind (exception, assertion, timeout, editor exited).</param>
@@ -65,7 +66,8 @@ public static class DiagnosticParts
             return;
         }
 
-        var state = await editor.Client.RunStateAsync(cancellationToken);
+        await using var client = await editor.ConnectAsync(ConnectLimit, cancellationToken);
+        var state = await client.RunStateAsync(cancellationToken);
         await File.WriteAllTextAsync(path, JsonSerializer.Serialize(state, AutomationJsonContext.Default.RunStateSnapshot), cancellationToken);
     }
 
@@ -84,7 +86,8 @@ public static class DiagnosticParts
             return;
         }
 
-        var elements = await editor.Client.TreeAsync(cancellationToken);
+        await using var client = await editor.ConnectAsync(ConnectLimit, cancellationToken);
+        var elements = await client.TreeAsync(cancellationToken);
         var focused = elements.FirstOrDefault(e => e[AutomationPropertyNames.IsFocused] == "True");
         json.WriteString("focused", focused is null ? null : focused.AutomationId.Length > 0 ? focused.AutomationId : focused[AutomationPropertyNames.Type]);
         json.WriteStartArray("windows");

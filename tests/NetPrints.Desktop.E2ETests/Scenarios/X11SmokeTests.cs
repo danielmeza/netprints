@@ -132,7 +132,8 @@ public abstract class X11SmokeTestBase(DesktopWorkerPool pool) : SmokeScenarios,
                 {
                     Directory.CreateDirectory(Artifacts);
                     (await driver.ScreenAsync(CancellationToken.None)).Save(Path.Combine(Artifacts, "zz-final.png"));
-                    await File.WriteAllTextAsync(Path.Combine(Artifacts, "tree.txt"), await driver.DumpAsync(CancellationToken.None));
+                    await using var client = await lease.Editor.ConnectAsync(TimeSpan.FromSeconds(5), CancellationToken.None);
+                    await File.WriteAllTextAsync(Path.Combine(Artifacts, "tree.txt"), await client.DumpAsync(CancellationToken.None));
                 }
                 catch (Exception e) when (e is IOException or InvalidOperationException or TimeoutException)
                 {

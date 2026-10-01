@@ -21,9 +21,10 @@ public sealed class EditorProcess : IAsyncDisposable
 
     private readonly TaskCompletionSource exited = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
-    private EditorProcess(Process process, AutomationClient client)
+    private EditorProcess(Process process, AutomationClient client, string pipeName)
     {
         this.process = process;
+        PipeName = pipeName;
         process.EnableRaisingEvents = true;
         process.Exited += (_, _) => exited.TrySetResult();
         if (process.HasExited)
@@ -35,6 +36,13 @@ public sealed class EditorProcess : IAsyncDisposable
     }
 
     public AutomationClient Client { get; }
+
+    /// <summary>The automation pipe; the agent accepts several connections, so diagnostics can use their own.</summary>
+    public string PipeName { get; }
+
+    /// <summary>Opens a connection of its own, so a request left in flight on <see cref="Client"/> cannot put it out of step.</summary>
+    public Task<AutomationClient> ConnectAsync(TimeSpan timeout, CancellationToken cancellationToken) =>
+        AutomationClient.ConnectAsync(PipeName, timeout, cancellationToken);
 
     public int ProcessId => process.Id;
 
@@ -112,7 +120,7 @@ public sealed class EditorProcess : IAsyncDisposable
         try
         {
             var client = await ConnectOrFailFastAsync(process, pipe, TimeSpan.FromSeconds(60), errors, cancellationToken);
-            editor = new EditorProcess(process, client, output, errors);
+            editor = new EditorProcess(process, client, pipe, output, errors);
 
             // Ready: the main window is shown and, with a project, the project and its types are loaded.
             var clock = Stopwatch.StartNew();
@@ -149,8 +157,8 @@ public sealed class EditorProcess : IAsyncDisposable
         }
     }
 
-    private EditorProcess(Process process, AutomationClient client, StringBuilder output, StringBuilder errors)
-        : this(process, client)
+    private EditorProcess(Process process, AutomationClient client, string pipeName, StringBuilder output, StringBuilder errors)
+        : this(process, client, pipeName)
     {
         this.output = output;
         this.errors = errors;
