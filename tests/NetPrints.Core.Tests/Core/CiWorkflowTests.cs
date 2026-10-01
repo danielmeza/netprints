@@ -110,8 +110,15 @@ namespace NetPrints.Tests.Core
 
             object? step = Assert.Single(Items(Get(aggregate, "steps")));
             string script = Text(Get(step, "run"));
-            Assert.All(needs, id => Assert.Contains($"needs.{id}.result", script, StringComparison.Ordinal));
-            Assert.Contains("success", script, StringComparison.Ordinal);
+            Assert.DoesNotContain("||", script, StringComparison.Ordinal);
+            Assert.Null(Get(step, "continue-on-error"));
+            Assert.Null(Get(aggregate, "continue-on-error"));
+
+            string[] checks = [.. script.Split('\n').Select(line => line.Trim()).Where(line => line.StartsWith('['))];
+            string check = Assert.Single(checks);
+            string[] conditions = [.. check.Split(" && ").Order(StringComparer.Ordinal)];
+            string[] expectedConditions = [.. needs.Select(id => $"[ \"${{{{ needs.{id}.result }}}}\" = \"success\" ]").Order(StringComparer.Ordinal)];
+            Assert.Equal(expectedConditions, conditions);
         }
 
         [Fact]
