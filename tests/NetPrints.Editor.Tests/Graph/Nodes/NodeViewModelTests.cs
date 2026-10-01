@@ -9,7 +9,7 @@ using NetPrints.Graph;
 
 namespace NetPrints.Editor.Tests.Graph.Nodes;
 
-public class NodeVMTests(TestEditor editor) : GraphTestBase(editor)
+public class NodeViewModelTests(TestEditor editor) : GraphTestBase(editor)
 {
     [Fact]
     public void VisualKindForEveryNodeKind()

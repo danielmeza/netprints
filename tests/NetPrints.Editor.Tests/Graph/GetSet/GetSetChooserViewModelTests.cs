@@ -6,7 +6,7 @@ using NetPrints.Graph;
 
 namespace NetPrints.Editor.Tests.Graph.GetSet;
 
-public class GetSetChooserVMTests(TestEditor editor) : GraphTestBase(editor)
+public class GetSetChooserViewModelTests(TestEditor editor) : GraphTestBase(editor)
 {
     [Fact]
     public void EnablesAccordingToVisibilityAndCreatesNodes()

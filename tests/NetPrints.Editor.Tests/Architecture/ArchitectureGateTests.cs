@@ -12,8 +12,8 @@ namespace NetPrints.Editor.Tests.Architecture;
 /// </summary>
 public class ArchitectureGateTests
 {
-    private const string ClassEditorVMTypeName = "ClassEditorViewModel";
-    private const string MainEditorVMTypeName = "MainEditorViewModel";
+    private const string ClassEditorViewModelTypeName = "ClassEditorViewModel";
+    private const string MainEditorViewModelTypeName = "MainEditorViewModel";
     private const string RuleA1 = "A1";
     private const string RuleA2 = "A2";
 
@@ -71,7 +71,7 @@ public class ArchitectureGateTests
         ns is not null && (ns.StartsWith("Avalonia", StringComparison.Ordinal) || ns.StartsWith("Nodify", StringComparison.Ordinal));
 
     private static bool IsBannedOwnerType(SemanticModel model, TypeSyntax? type) =>
-        type is not null && model.GetSymbolInfo(type).Symbol is INamedTypeSymbol { Name: ClassEditorVMTypeName or MainEditorVMTypeName };
+        type is not null && model.GetSymbolInfo(type).Symbol is INamedTypeSymbol { Name: ClassEditorViewModelTypeName or MainEditorViewModelTypeName };
 
     /// <summary>Scans one view model syntax tree for A1 and A2 (editor-services.md §7).</summary>
     private static HashSet<Violation> Scan(SemanticModel model, SyntaxTree tree)

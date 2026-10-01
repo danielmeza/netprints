@@ -10,7 +10,7 @@ using NetPrints.Translator;
 namespace NetPrints.Editor.Tests.ErrorList;
 
 /// <summary><see cref="ErrorListViewModel"/> (FR-032, OWN-03: severity counts in the "Errors" tab header).</summary>
-public sealed class ErrorListVMTests
+public sealed class ErrorListViewModelTests
 {
     private static ClassGraph NewClass(string ns, string name) => new() { Namespace = ns, Name = name };
 
@@ -66,7 +66,7 @@ public sealed class ErrorListVMTests
         var messenger = new StrongReferenceMessenger();
         using var vm = new ErrorListViewModel(NewClass("N", "C"), host, messenger);
         NavigateToNodeMessage? received = null;
-        messenger.Register<ErrorListVMTests, NavigateToNodeMessage>(this, (_, m) => received = m);
+        messenger.Register<ErrorListViewModelTests, NavigateToNodeMessage>(this, (_, m) => received = m);
 
         host.Push(new CodeAnalysisSnapshot(new Dictionary<string, TranslatedClass>(StringComparer.Ordinal),
             [new CodeDiagnostic(CodeDiagnosticSeverity.Error, "CS1503", "boom", "N.C", "m1", "n1", null, null)]));
@@ -85,7 +85,7 @@ public sealed class ErrorListVMTests
         var messenger = new StrongReferenceMessenger();
         using var vm = new ErrorListViewModel(NewClass("N", "C"), host, messenger);
         NavigateToNodeMessage? received = null;
-        messenger.Register<ErrorListVMTests, NavigateToNodeMessage>(this, (_, m) => received = m);
+        messenger.Register<ErrorListViewModelTests, NavigateToNodeMessage>(this, (_, m) => received = m);
 
         host.Push(new CodeAnalysisSnapshot(new Dictionary<string, TranslatedClass>(StringComparer.Ordinal),
             [new CodeDiagnostic(CodeDiagnosticSeverity.Error, "CS0161", "boom", "N.C", "m1", null, null, null)]));
@@ -105,7 +105,7 @@ public sealed class ErrorListVMTests
         var messenger = new StrongReferenceMessenger();
         using var vm = new ErrorListViewModel(NewClass("N", "C"), host, messenger);
         bool received = false;
-        messenger.Register<ErrorListVMTests, NavigateToNodeMessage>(this, (_, _) => received = true);
+        messenger.Register<ErrorListViewModelTests, NavigateToNodeMessage>(this, (_, _) => received = true);
 
         host.Push(new CodeAnalysisSnapshot(new Dictionary<string, TranslatedClass>(StringComparer.Ordinal),
             [Diagnostic(CodeDiagnosticSeverity.Error, "CS0103")]));

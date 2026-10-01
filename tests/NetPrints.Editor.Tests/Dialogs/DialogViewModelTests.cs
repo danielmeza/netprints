@@ -10,7 +10,7 @@ namespace NetPrints.Editor.Tests.Dialogs;
 /// view (<see cref="NetPrints.Editor.Behaviors.DialogCloseBehavior"/>) is exercised separately by the
 /// headless dialog tests.
 /// </summary>
-public class DialogVMTests
+public class DialogViewModelTests
 {
     private static readonly TypeSpecifier StringType = TypeSpecifier.FromType<string>();
 
@@ -101,7 +101,7 @@ public class DialogVMTests
     }
 
     [Fact]
-    public void IssuesDialogVMFormatsEachDiagnosticAsIdColonMessage()
+    public void IssuesDialogViewModelFormatsEachDiagnosticAsIdColonMessage()
     {
         var first = new CodeDiagnostic(CodeDiagnosticSeverity.Error, "NPD001", "boom", null, null, null, null, null);
         var second = new CodeDiagnostic(CodeDiagnosticSeverity.Warning, "NPD002", "careful", null, null, null, null, null);
@@ -112,7 +112,7 @@ public class DialogVMTests
     }
 
     [Fact]
-    public void ErrorDialogVMExposesTheMessageAsGiven()
+    public void ErrorDialogViewModelExposesTheMessageAsGiven()
     {
         var vm = new ErrorDialogViewModel("details\nline 2");
 

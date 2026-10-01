@@ -10,7 +10,7 @@ using NetPrints.Translator;
 namespace NetPrints.Editor.Tests.CodeView;
 
 /// <summary><see cref="CodeViewViewModel"/> (editor-services.md §3): follows one class's snapshots, ignoring others.</summary>
-public sealed class CodeViewVMTests
+public sealed class CodeViewViewModelTests
 {
     private static ClassGraph NewClass(string ns, string name) => new() { Namespace = ns, Name = name };
 

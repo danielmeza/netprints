@@ -4,7 +4,7 @@ using NetPrints.Editor.ErrorList;
 namespace NetPrints.Editor.Tests.ErrorList;
 
 /// <summary><see cref="DiagnosticRowViewModel"/> (FR-032, OWN-03: severity icon/color state).</summary>
-public sealed class DiagnosticRowVMTests
+public sealed class DiagnosticRowViewModelTests
 {
     private static CodeDiagnostic Diagnostic(CodeDiagnosticSeverity severity) =>
         new(severity, "CS0001", "boom", "N.C", null, null, null, null);

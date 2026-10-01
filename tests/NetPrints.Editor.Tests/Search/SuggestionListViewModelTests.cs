@@ -8,9 +8,9 @@ using NetPrints.Graph;
 
 namespace NetPrints.Editor.Tests.Search;
 
-public class SuggestionListVMTests : GraphTestBase
+public class SuggestionListViewModelTests : GraphTestBase
 {
-    public SuggestionListVMTests(TestEditor editor) : base(editor)
+    public SuggestionListViewModelTests(TestEditor editor) : base(editor)
     {
     }
 

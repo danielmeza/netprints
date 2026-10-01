@@ -118,6 +118,9 @@ VariablesPanelVM
 - Docs sweep: the first grep missed the UITests `ClassVM`/`GraphVM` members and two skill sketches (`ItemVM`, `ListVM`, `XDesignVM`); found and fixed in the follow-up commit. git grep now finds only MVVM and `NoTypeNameEndsInVM`
 - Commits: T001 (70b533a, 112 files), T002 (48cc09d, 16 files)
 
+- Follow-up (A3 step 0): `NoTypeNameEndsInVM` only checked names ending in `VM`, so 13 `*VMTests` classes and the `MainEditorVMTypeName`/`ClassEditorVMTypeName` constants survived. The test now also rejects any declared type name with `VM` followed by an uppercase letter (`MVVM` excluded). Red: 13 offenders (`ReferenceListVMTests`, `CodeViewVMTests`, `MemberVariableVMTests`, `DialogVMTests`, `NodeGraphVMTests`, ...). Renamed the 13 classes and files to `*ViewModelTests` and every identifier embedding `<Name>VM` (constants, `IssuesDialogVM...`/`ErrorDialogVM...` test methods, the allowlist paths in `SourceHygieneTests`). Green: 13/13 `SourceHygieneTests`, 344/344 `Editor.Tests`, format clean.
+
+
 ## Batch A2 (implementation: sonnet, f87275a–eda3181 and the T006 commit)
 
 ### Red output

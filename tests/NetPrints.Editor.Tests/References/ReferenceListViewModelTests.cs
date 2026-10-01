@@ -5,7 +5,7 @@ using NetPrints.Projects;
 
 namespace NetPrints.Editor.Tests.References;
 
-public class ReferenceListVMTests(TestEditor testEditor) : IDisposable
+public class ReferenceListViewModelTests(TestEditor testEditor) : IDisposable
 {
     private readonly string dir = TestPaths.CreateTempDirectory();
 

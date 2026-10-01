@@ -6,7 +6,7 @@ using NetPrints.Graph;
 
 namespace NetPrints.Editor.Tests.Graph;
 
-public class NodeGraphVMTests(TestEditor editor) : GraphTestBase(editor)
+public class NodeGraphViewModelTests(TestEditor editor) : GraphTestBase(editor)
 {
     [Fact]
     public void NodesAndConnectionsTrackModel()

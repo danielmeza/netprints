@@ -10,7 +10,7 @@ using NetPrints.Projects;
 
 namespace NetPrints.Editor.Tests.Main;
 
-public class MainEditorVMTests : IDisposable
+public class MainEditorViewModelTests : IDisposable
 {
     // MainEditorViewModel reloads the reflection host fire-and-forget whenever a project is set; a private
     // host keeps those reloads from replacing the provider the shared host serves to other tests.

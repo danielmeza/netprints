@@ -9,7 +9,7 @@ using NetPrints.Graph;
 
 namespace NetPrints.Editor.Tests.ClassEditor;
 
-public class ClassEditorVMTests : IAsyncLifetime
+public class ClassEditorViewModelTests : IAsyncLifetime
 {
     private readonly TestEditor editor;
     private Project? projectField;
@@ -17,7 +17,7 @@ public class ClassEditorVMTests : IAsyncLifetime
     private ClassEditorViewModel? vmField;
     private GatedReflectionHost? reflectionField;
 
-    public ClassEditorVMTests(TestEditor editor)
+    public ClassEditorViewModelTests(TestEditor editor)
     {
         this.editor = editor;
     }

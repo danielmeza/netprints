@@ -6,12 +6,12 @@ using NetPrints.Graph;
 
 namespace NetPrints.Editor.Tests.Variables;
 
-public class MemberVariableVMTests : IDisposable
+public class MemberVariableViewModelTests : IDisposable
 {
     private readonly ClassEditorViewModel vm;
     private readonly ClassGraph cls;
 
-    public MemberVariableVMTests(TestEditor editor)
+    public MemberVariableViewModelTests(TestEditor editor)
     {
         cls = new ClassGraph { Name = "C", Namespace = "N" };
         vm = new ClassEditorViewModel(cls, editor.Context);

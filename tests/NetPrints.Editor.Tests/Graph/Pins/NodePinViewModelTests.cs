@@ -6,7 +6,7 @@ using NetPrints.Graph;
 
 namespace NetPrints.Editor.Tests.Graph.Pins;
 
-public class NodePinVMTests(TestEditor editor) : GraphTestBase(editor)
+public class NodePinViewModelTests(TestEditor editor) : GraphTestBase(editor)
 {
     [Fact]
     public void KindShapeAndDirection()
