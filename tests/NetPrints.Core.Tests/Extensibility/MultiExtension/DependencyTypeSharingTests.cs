@@ -102,19 +102,37 @@ public sealed class DependencyTypeSharingTests : IAsyncLifetime
     [Fact]
     public async Task ADiamondTakesTheLibraryFromTheFirstDependencyInDeclaredOrderWhateverTheDiscoveryOrder()
     {
-        string v1 = Copy(FixtureExtensions.LibV1);
-        string v2 = Copy(FixtureExtensions.LibV2);
-        string diamond = Copy(FixtureExtensions.Diamond);
+        string[] ids = [FixtureExtensions.LibV1, FixtureExtensions.LibV2, FixtureExtensions.Diamond];
 
-        foreach (string[] folders in new[] { new[] { v1, v2, diamond }, [diamond, v2, v1], [v2, diamond, v1], [v1, v2, diamond] })
+        foreach (string[] declared in new[] { new[] { FixtureExtensions.LibV1, FixtureExtensions.LibV2 }, [FixtureExtensions.LibV2, FixtureExtensions.LibV1] })
         {
-            await using ExtensionHarness harness = await ExtensionHarness.CreateAsync(folders, [], TestContext.Current.CancellationToken);
+            foreach (string[] order in Permutations(ids))
+            {
+                string scenario = $"declared [{string.Join(", ", declared)}], discovered [{string.Join(", ", order)}]";
+                string rootFor = Path.Combine(root, string.Join("-", declared.Concat(order)).Replace("fx.", string.Empty, StringComparison.Ordinal));
+                string[] folders = [.. order.Select(id => FixtureExtensions.CopyTo(rootFor, id))];
+                string diamond = folders[Array.IndexOf(order, FixtureExtensions.Diamond)];
+                string manifest = Path.Combine(diamond, "netprints-extension.json");
+                File.WriteAllText(manifest, File.ReadAllText(manifest).Replace(
+                    "[\"fx.libv1\", \"fx.libv2\"]", $"[{string.Join(", ", declared.Select(id => $"\"{id}\""))}]", StringComparison.Ordinal));
 
-            Assert.Empty(harness.Registry.Results.OfType<ExtensionLoadResult.Failed>());
-            string code = harness.Translate(MultiExtensionGraphs.BuildClass(harness.Registry, "Ns", "Diamonds", "fx.diamond/Describe"));
-            Assert.Contains("System.Console.WriteLine(\"shared-lib-v1\");", code, StringComparison.Ordinal);
-            var node = Assert.Single(harness.Registry.NodeKinds, k => k.Kind == "fx.diamond/Describe").NodeType;
-            Assert.Equal(FixtureExtensions.Diamond, AssemblyLoadContext.GetLoadContext(node.Assembly)?.Name);
+                await using ExtensionHarness harness = await ExtensionHarness.CreateAsync(folders, [], TestContext.Current.CancellationToken);
+
+                Assert.True(!harness.Registry.Results.OfType<ExtensionLoadResult.Failed>().Any(), scenario);
+                var node = Assert.Single(harness.Registry.NodeKinds, k => k.Kind == "fx.diamond/Describe").NodeType;
+                Type extension = node.Assembly.GetType("Fx.Diamond.DiamondExtension") ?? throw new InvalidOperationException("Diamond extension type not found.");
+                Assembly seen = Assert.IsAssignableFrom<Assembly>(extension.GetProperty("SeenSharedLib")?.GetValue(null));
+                Assert.True(declared[0] == AssemblyLoadContext.GetLoadContext(seen)?.Name, scenario);
+                Assert.Equal(declared[0] == FixtureExtensions.LibV1 ? new Version(1, 0, 0, 0) : new Version(2, 0, 0, 0), seen.GetName().Version);
+                string code = harness.Translate(MultiExtensionGraphs.BuildClass(harness.Registry, "Ns", "Diamonds", "fx.diamond/Describe"));
+                Assert.Contains(declared[0] == FixtureExtensions.LibV1 ? "shared-lib-v1" : "shared-lib-v2", code, StringComparison.Ordinal);
+                Assert.Equal(FixtureExtensions.Diamond, AssemblyLoadContext.GetLoadContext(node.Assembly)?.Name);
+            }
         }
     }
+
+    private static string[][] Permutations(string[] items) =>
+        items.Length == 1
+            ? [items]
+            : [.. items.SelectMany((item, index) => Permutations([.. items.Where((_, other) => other != index)]).Select(rest => (string[])[item, .. rest]))];
 }

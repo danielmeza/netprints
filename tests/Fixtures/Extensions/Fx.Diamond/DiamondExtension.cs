@@ -13,6 +13,9 @@ public sealed class DiamondExtension : INetPrintsExtension
     /// <summary>The kind id of the node.</summary>
     public const string KindId = "fx.diamond/Describe";
 
+    /// <summary>The shared library assembly as this extension sees it, for resolution-order checks.</summary>
+    public static System.Reflection.Assembly SeenSharedLib => typeof(SharedLib).Assembly;
+
     /// <inheritdoc />
     public void Register(IExtensionBuilder builder)
     {
