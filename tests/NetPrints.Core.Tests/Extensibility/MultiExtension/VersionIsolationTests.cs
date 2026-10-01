@@ -51,6 +51,8 @@ public sealed class VersionIsolationTests : IAsyncLifetime
         Assert.NotSame(first, second);
         Assert.Equal("Fixture.SharedLib", first.GetName().Name);
         Assert.Equal("Fixture.SharedLib", second.GetName().Name);
+        Assert.Equal(new Version(1, 0, 0, 0), first.GetName().Version);
+        Assert.Equal(new Version(2, 0, 0, 0), second.GetName().Version);
         Assert.Equal(FixtureExtensions.LibV1, AssemblyLoadContext.GetLoadContext(first)?.Name);
         Assert.Equal(FixtureExtensions.LibV2, AssemblyLoadContext.GetLoadContext(second)?.Name);
     }
