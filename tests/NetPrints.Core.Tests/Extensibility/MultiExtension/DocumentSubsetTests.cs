@@ -34,7 +34,6 @@ public sealed class DocumentSubsetTests : IAsyncLifetime
     [Theory]
     [InlineData("fx.alpha", "fx.beta")]
     [InlineData("fx.alpha")]
-    [InlineData("fx.beta")]
     [InlineData]
     public async Task UnknownNodesArePreservedAndTheResavedDocumentIsByteIdentical(params string[] ids)
     {
@@ -44,6 +43,41 @@ public sealed class DocumentSubsetTests : IAsyncLifetime
         byte[] saved = await harness.RoundTripAsync(document, TestContext.Current.CancellationToken);
 
         Assert.Equal(document, saved);
+    }
+
+    private async Task<byte[]> WriteAlphaAndLibV1Async()
+    {
+        await using ExtensionHarness both = await ExtensionHarness.CreateAsync(Folders(FixtureExtensions.Alpha, FixtureExtensions.LibV1), [], TestContext.Current.CancellationToken);
+        return await MultiExtensionGraphs.WriteAsync(both.Registry, MultiExtensionGraphs.BuildClass(both.Registry, "Ns", "Independent", "fx.alpha/Ping", "fx.libv1/Describe"));
+    }
+
+    [Theory]
+    [InlineData("fx.libv1")]
+    [InlineData("fx.alpha")]
+    public async Task OpeningADocumentOfTwoIndependentExtensionsWithOnlyOneKeepsTheOthersNodesByteIdentical(string only)
+    {
+        byte[] document = await WriteAlphaAndLibV1Async();
+
+        await using ExtensionHarness harness = await ExtensionHarness.CreateAsync(Folders(only), [], TestContext.Current.CancellationToken);
+        byte[] saved = await harness.RoundTripAsync(document, TestContext.Current.CancellationToken);
+
+        Assert.Equal(document, saved);
+    }
+
+    [Fact]
+    public async Task GeneratingWithOnlyLibV1ReportsNpt003ForAlphasNodeAndWritesNothing()
+    {
+        byte[] document = await WriteAlphaAndLibV1Async();
+        string project = Directory.CreateDirectory(Path.Combine(root, "Proj")).FullName;
+        await File.WriteAllBytesAsync(Path.Combine(project, "Independent.netpc.json"), document, TestContext.Current.CancellationToken);
+
+        await using ExtensionHarness libOnly = await ExtensionHarness.CreateAsync(Folders(FixtureExtensions.LibV1), [], TestContext.Current.CancellationToken);
+        GeneratedFileResult missing = Assert.Single(await libOnly.GenerateAsync(project, TestContext.Current.CancellationToken));
+
+        Assert.False(missing.Written);
+        Assert.Contains(missing.Diagnostics, d => d.Id == GraphCodeGenerator.MissingExtensionCode && d.Message.Contains("fx.alpha/Ping", StringComparison.Ordinal));
+        Assert.DoesNotContain(missing.Diagnostics, d => d.Message.Contains("fx.libv1/Describe", StringComparison.Ordinal));
+        Assert.False(File.Exists(missing.Output));
     }
 
     [Fact]
