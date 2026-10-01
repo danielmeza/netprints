@@ -637,7 +637,7 @@ SC-013.
 
 ### Batch H-R — model: opus — T122 (final PR review)
 
-- [ ] T122 Final, lighter Opus review of the whole PR before merge, by a reviewer who did not implement it. It covers
+- [x] T122 Final, lighter Opus review of the whole PR before merge, by a reviewer who did not implement it. It covers
   integration across sub-phases, not each sub-phase again: CLI ↔ catalog engine ↔ generator ↔ editor discovery, the
   loader rules ↔ `NetPrints.Catalog` shared across hosts, `PublicAPI` files and `[Experimental]` ids across libraries,
   schemas ↔ docs site ↔ SchemaStore entry, CI and release wiring, docs ↔ behaviour, and the SC table of the Checkpoint H
@@ -645,7 +645,7 @@ SC-013.
 
 ### Batch H-F — model: sonnet — T123 (reserved: fix final review findings)
 
-- [ ] T123 Fix every finding of T122 (test first for behaviour findings), reply on each thread, whole suite plus the
+- [x] T123 Fix every finding of T122 (test first for behaviour findings), reply on each thread, whole suite plus the
   Desktop E2E run, commit; tick with "no findings" if there were none. The owner or the coordinator merges.
 
 ## Dependencies and execution order

@@ -85,7 +85,7 @@ Reader (`CatalogReader`, net10.0): tolerant of unknown properties and any whites
 | `CanonicalCatalogWriter` | `static string Write(CatalogDocument)` | stable |
 | `CatalogLoader` | `static ITypeCatalog Load(CatalogDocument)`, `LoadFile(string path)`, `LoadJson(string json)`, `LoadEmbedded(Assembly)` | stable |
 | `CatalogTypeCatalog` | `ITypeCatalog` over a `CatalogDocument` | stable |
-| `EmbeddedCatalogReader` | `static IReadOnlyList<CatalogDocument> Read(string assemblyPath)` (falls back from a package `ref/<tfm>/` path to `lib/<tfm>/`), `Read(Assembly)` | stable |
+| `EmbeddedCatalogReader` | `static IReadOnlyList<CatalogDocument> Read(string assemblyPath)`, `Read(Assembly)` | stable |
 | `CatalogBuilder` | `static CatalogBuildResult Build(Compilation, IReadOnlyList<IAssemblySymbol>, ICatalogFilter, IDocumentationSource, CatalogIdentity)` | `[Experimental("NPXE0004")]` |
 | `ICatalogFilter`, `CatalogProfile`, `CatalogProfileFilter`, `BuiltInCatalogProfiles` | per data-model.md §2 | `[Experimental("NPXE0004")]` |
 | `CatalogIdentity`, `IDocumentationSource`, `XmlDocumentationSource` | inputs of `CatalogBuilder` | `[Experimental("NPXE0004")]` |
@@ -93,6 +93,8 @@ Reader (`CatalogReader`, net10.0): tolerant of unknown properties and any whites
 | `CatalogCSharpEmitter` | `static string Emit(CatalogDocument, string namespace, string className)`, the `--format csharp` output | `[Experimental("NPXE0004")]` |
 | `CatalogBuildResult` | `CatalogDocument Document`, `IReadOnlyList<CatalogDiagnostic> Diagnostics` | stable |
 | `CatalogDiagnostic`, `CatalogDiagnosticCodes` | code, severity, message, source | stable |
+| `CatalogFormatException` | thrown by `CatalogReader.Read` and `CatalogLoader` on invalid input (code NPC101 or NPC102) | stable |
+| `ProfileJson` | `[Experimental("NPXE0004")]`, input to `CatalogBuilder`, describes filter, profile id, rules and diagnostics | `[Experimental("NPXE0004")]` |
 | `CatalogConfig`, `CatalogSourceConfig`, `CatalogOutputConfig`, `CatalogOutputFormat`, `CatalogOverrides`, `ResolvedCatalogConfig`, `CatalogConfigResolver`, `CatalogConfigException` | data-model.md §3; `Resolve(CatalogConfig? file, string? configDirectory, CatalogOverrides cli, string currentDirectory)` | stable |
 
 Everything else is internal: `SymbolIds`, `Glob`, `CSharpLiteral`, `CatalogSchema`, `CatalogConfigSchema` (visible to `NetPrints.Catalog.Tests` only), and the walker, filters, normalizer and JSON helpers. Every public type not listed here is a defect (ADR-0017, FR-045).

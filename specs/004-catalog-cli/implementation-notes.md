@@ -1023,15 +1023,47 @@ Quickstart fixes (doc only, behaviour is right):
 | SC-007 | `MultiExtension` namespace 60/60 (this batch): MX-T09 and MX-T14 (24 orders byte-identical, 50 extensions); also in the PR CI run; Checkpoint G |
 | SC-008 | MX-T02 (private-prefix dependency loads and runs), MX-T04 (type identity across contexts), `Samples/MultiExtensionBuildTests`; Checkpoint G and Review G |
 | SC-009 | `GraphMergerTests` GI-T03 to GI-T08, GI-T12 and the end-to-end git test `GitDriversEndToEndTests`; Checkpoint F |
-| SC-010 | `GitInstallCommandTests` (11), second run `already installed:`; quickstart section 2 (this batch) |
+| SC-010 | `GitInstallCommandTests` (16), second run `already installed:`; quickstart section 2 (this batch) |
 | SC-011 | `PublicApiTrackingTests` and `ExperimentalApiTests` 24/24 (this batch), `SourceHygieneTests`; `PublicAPI.Shipped.txt` 1252 lines; Checkpoint B and Review B |
 | SC-012 | `scripts/build-docs.sh` exit 0 with `onBrokenLinks: 'throw'`, three `cmp` equal (this batch); the CI docs workflow builds the same script on the PR |
 | SC-013 | `pack-local.sh` + `verify-packages.sh` pass for version `0.1.0-local.20261001033443`, Annotations and Catalog included, nothing published (this batch) |
 
 Suite at this checkpoint: 1723 total, 0 failed, 10 skipped; E2E 9 of 9.
 
+### Final review (H-R1–H-R9, from PR #9 T122)
+
+Findings from the final integration review across sub-phases (T122, review.md §Findings):
+
+| ID | Severity | Status | Commit | Note |
+|---|---|---|---|---|
+| H-R1 | minor (behaviour fix) | **fixed in H-F1** | 460efac | extension registry isolation gap; test `IdConflictTests.AResolverThatThrowsWhenProbedIsReportedAndTheOtherExtensionsStillLoad` red → green |
+| H-R2 | minor (docs) | **fixed in H-F2** | (this batch) | extensions guide: remove NPX008 version claim from host, rewrite diamond paragraph |
+| H-R3 | minor (docs) | **fixed in H-F2** | (this batch) | release notes: add git commands, extension coexistence, embedded-catalog discovery, connection sort order, null handling |
+| H-R4 | nit (docs) | **fixed in H-F2** | (this batch) | contracts/catalog.md: remove ref/→lib/ fallback, add ProfileJson and CatalogFormatException; cli.md: git merge-file without -p |
+| H-R5 | nit (behaviour, output wrapping) | **fixed in H-F1** | c0be779 | `--version` wrapping; test `CliExitCodeTests.VersionPrintsOnOneLineWhateverTheVersionLengthAndConsoleWidth` red → green |
+| H-R6 | nit (comment) | **fixed in H-F2** | (this batch) | NetPrints.Sdk.targets: only CLI sets _NetPrintsSkipGenerate |
+| H-R7 | nit (test coverage) | **fixed in H-F1** | b45a97c | merge driver fallback: added seam and test `MergeCommandFallbackTests.AMergerThatThrowsFallsBackToAMarkedTextMergeAndExitsOne` (red compile → green); red → green |
+| H-R8 | nit (test hygiene) | **decision recorded** | — | merge fixtures: non-canonical layout is deliberate input variety; no change needed |
+| H-R9 | nit (accuracy) | **fixed in H-F2** | (this batch) | SC-010: GitInstallCommandTests count 11 → 16 |
+
+**H-F1 evidence** (behaviour and test fixes in sub-phase H, T123 does not change code):
+- H-R1 (test `IdConflictTests`): test fails with `System.ArgumentException: boom` when extension resolver throws; passes after `ReportShadowingResolvers` catch (`Exception` excluding `OperationCanceledException`) is added.
+- H-R5 (test `CliExitCodeTests`): test fails when `--version` output wraps across two lines due to narrow console width; passes after `CliServices.ConsoleSettings` sets `Profile.Width = 1000000` when output is redirected.
+- H-R7 (test `MergeCommandFallbackTests`): test fails to compile; passes after merger seam (`internal Func<IDocumentFormat, GraphMerger> _mergerFactory`) is added, allowing the test to inject a failing merger.
+
+Suite at this checkpoint: 1726 total, 0 failed, 10 skipped; E2E 9 of 9.
+
+**Carried over to P3** (follow-ups from PR #9, tracked in the roadmap):
+- **FU-1**: NPX008 should also check host-provided and transitive references (P3 extension kit).
+- **FU-2**: the live `ReflectionProvider` should skip and log an unreadable or bad reference instead of failing the whole reload (P1 behaviour, unchanged).
+- **FU-3**: Windows CLI CI leg with a `show --textconv` UTF-8 output test (P3 CI batch).
+- **FU-4**: Desktop E2E `EditCompileAndRun` intermittent timeout: capture timings and UI dump of the next failure (P3 debugging).
+- **FU-5**: info-level analyzer backlog in `src/` (ADR-0003 cleanup record).
+- **FU-6**: decide whether the editor and Desktop `ProjectCheck` should skip generation on project load, as the CLI does.
+- **FU-7**: split CI "Build and test (Linux)" job (13 min) into a test-project matrix (P3 CI batch, with an ADR).
+
 ### Governance proposals (for the coordinator and owner; no `.specify/memory/*` file was edited)
 
-- Roadmap: P1 row to merged (PR #6, `cc96a93`, released `v0.1.0`/`v0.1.1`); P2 row to "implemented, PR #9 in review" (was "spec ready"); the P2 ADR bullet to "ADR-0010 accepted" plus ADR-0012 to 0017 (catalog engine and schema, declarative profiles, Annotations package, CLI and exit codes, git integration, per-id experimental opt-in); the P3 kit bullet to "internal harness landed in P2 (ADR-0010 section 5)"; the P1 follow-up "in-editor visual diff" to P6.
+- Roadmap: P1 row to merged (PR #6, `cc96a93`, released `v0.1.0`/`v0.1.1`); P2 row to "implemented, PR #9 in review" (was "spec ready"); the P2 ADR bullet to "ADR-0010 accepted" plus ADR-0012 to 0017 (catalog engine and schema, declarative profiles, Annotations package, CLI and exit codes, git integration, per-id experimental opt-in); the P3 kit bullet to "internal harness landed in P2 (ADR-0010 section 5)"; the P1 follow-up "in-editor visual diff" to P6. P3 row to add the follow-ups FU-1 through FU-7 (see Final review section above).
 - Constitution: no change needed.
 - Follow-ups from R27 stay as recorded (P6 visual diff, P3 conformance kit, catalog compression P8, schema migrations at the first v2, collectible contexts only if hot reload is scheduled, Windows leg for the native fixture). Added by this batch: clean the info-level analyzer backlog in test code (ADR-0003 pending clean-up), and give the sample project an `EnableDefaultCompileItems` exclusion or move legacy `Compiled_*` output out of the sample directory.

@@ -208,21 +208,22 @@ but when you depend on another extension, you both see the same assembly and the
 extension B and extension C both depend on extension A, they both get A's types with a single identity.
 
 **Diamond dependencies**: when B depends on both A and C, and C also depends on A, the search is depth-first in B's
-declared `dependsOn` order. NetPrints finds A's assemblies when resolving B's dependencies and returns A's copy.
-When C needs A's assemblies, C's resolver also finds B's resolved A copy (because B resolved it first), so both B and
-C see the same A. But each extension keeps its own copy of any assembly it provides: C's `Describe()` method (if it
-defines one) stays in C's copy, and is not shadowed by A's copy.
+declared `dependsOn` order. NetPrints loads A first and adds it to its own context. When B resolves its dependencies,
+it finds A in that context and reuses A's copy. When C resolves its dependencies (C is visited after B), it also finds
+A already loaded from A's context, so both B and C see the same A. Each extension keeps its own copy of any assembly
+it provides: C's `Describe()` method (if it defines one) stays in C's copy and is not shadowed by A's copy.
 
 **Assembly version mismatch**: when your extension is compiled against a specific version of a dependency, NetPrints
-requires that the dependency loaded (from `dependsOn` or from the host) provide the same or a newer version. If a
-dependency provides an older version, the extension fails to load with error NPX008, naming the dependency, the version
-your extension expects, and the version the dependency provides. This is an important safety check: if NetPrints silently
-loaded an older version, your extension would crash later with a `MissingMethodException` when it calls a method that
-did not exist in the older version.
+requires that the version provided by a `dependsOn` extension matches or is newer than what your extension expects.
+If the dependency provides an older version, the extension fails to load with error NPX008, naming the dependency, the
+version your extension expects, and the version the dependency provides. This is an important safety check: if NetPrints
+silently loaded an older version, your extension would crash later with a `MissingMethodException` when it calls a
+method that did not exist in the older version. NetPrints does not yet check versions from host-provided assemblies
+(such as `NetPrints.Core` or standard library packages); that is a planned extension.
 
 **Assembly name resolution**: all assembly resolution is by simple name (no version); NetPrints matches by name only
-and relies on the version check above to catch mismatches. This is the same lookup that the .NET runtime uses: when
-your extension loads an assembly by name, it will get whichever version is already loaded (from a dependency or the
-host), and if that version is too old, the version check will catch it.
+and relies on the version check above to catch direct-dependency mismatches. This is the same lookup that the .NET
+runtime uses: when your extension loads an assembly by name, it will get whichever version is already loaded (from a
+dependency or the host), and if that version is too old, the version check will catch it.
 
 For more on how extensions resolve and share assemblies, see [ADR-0010](../adr/0010-extension-testing-and-coexistence.md).

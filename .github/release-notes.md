@@ -11,7 +11,19 @@ lists, gets error `NPXE0003` until the project opts in (`<NoWarn>$(NoWarn);NPXE0
 
 **New:** `netprints catalog` writes a type catalog (`*.npcat.json`, or a C# class with `--format csharp`) from assemblies, NuGet packages or a project's references, with `--check` for CI. It reads `netprints.catalog.json`; both files have JSON schemas (`npcat.v1.schema.json`, `netprints.catalog.v1.schema.json`). See the [catalogs guide](https://danielmeza.github.io/netprints/guide/catalogs).
 
-**New (experimental):** the catalog profile API: `IExtensionBuilder.AddCatalogProfile` and `ExtensionRegistry.CatalogProfiles` let an extension contribute a profile that decides what a catalog lists; using it needs the `NPXE0004` opt-in. `NetPrints.Extensibility` now depends on `NetPrints.Catalog`. The `NetPrints.Annotations` package (experimental) is still in preview and not yet documented.
+**New (experimental):** the catalog profile API: `IExtensionBuilder.AddCatalogProfile` and `ExtensionRegistry.CatalogProfiles` let an extension contribute a profile that decides what a catalog lists; using it needs the `NPXE0004` opt-in. `NetPrints.Extensibility` now depends on `NetPrints.Catalog`.
+
+**New:** `netprints format` rewrites a graph to canonical form (sorted by connection source, deterministic output for version control). `netprints show` prints a graph and its `--overrides=` as text (entry point or type signature). `netprints merge` integrates two changes to a graph: class fields and members three-way, variables by id, nodes by id, connections by addition or removal against the base. `netprints git-install` registers a diff and merge driver with git for `.netpc.json` and `.netpc.g.cs` files. See the [CLI guide](https://danielmeza.github.io/netprints/guide/cli).
+
+**New:** extension coexistence. One host can load multiple extensions in declared order. Dependencies (via `<dependsOn>` in the manifest) are resolved at load time, and unrecognized dependencies fail with `NPX007`. Shared-assembly rules ensure each extension gets a consistent view: a reference is shadowed by a dependency if both provide it. Name conflicts (duplicate node library ids, extension ids, member definitions) are reported as `NPX006` issues and do not fail the load. JSON resolver probes of incompatible extensions are caught and logged; only that extension is rejected, not the whole registry. See [extensions coexistence](https://danielmeza.github.io/netprints/guide/extensions#extension-coexistence) and [the diagnostics reference](https://danielmeza.github.io/netprints/guide/diagnostics#extension-diagnostics).
+
+**New:** the editor discovers embedded catalogs in referenced assemblies at load time, letting you browse types without modifying the project. See [discovery of catalogs in referenced assemblies](https://danielmeza.github.io/netprints/guide/catalogs#catalogs-of-referenced-assemblies).
+
+**New (experimental):** the `NetPrints.Annotations` package enables catalog profiles that hide members; use `[NetPrintsIgnore]` on public members, or an annotation source in your catalog to list them. See the [Annotations section](https://danielmeza.github.io/netprints/guide/catalogs#annotations) of the catalogs guide.
+
+**Changed:** graphs now save connections in sorted order (by `from` and `to`). When a 0.1 graph is saved in this version for the first time, it reorders, and `netprints format --check` will fail until it is formatted once with `netprints format`.
+
+**Changed:** an explicit `null` value in a graph member that the document type declares non-nullable is now a format error. This catches accidental nulls and enforces the schema's nullability contract.
 
 **Changed:** the editor's method, parameter and return documentation (`DocumentationUtil`) is now whitespace-collapsed plain text; `<see cref>`, `<paramref>` and `<see langword>` render as their target name (they rendered as nothing before), and an empty element gives no text instead of an empty string. It now also finds documentation for methods in multi-segment namespaces and for generic, nested and `ref` members, which had none.
 

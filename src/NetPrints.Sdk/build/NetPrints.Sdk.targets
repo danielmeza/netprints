@@ -34,8 +34,8 @@
     <WriteLinesToFile File="$(_NetPrintsRequest)" Lines="@(_NetPrintsRequestLine)" Overwrite="true" WriteOnlyWhenDifferent="true" />
   </Target>
 
-  <!-- _NetPrintsSkipGenerate is internal: the CLI's project system (which never generates while loading) and the editor's design-time check set it as
-       a global property so that loading a project does not rewrite its generated files. It is not a user setting. -->
+  <!-- _NetPrintsSkipGenerate is internal: only the CLI's project system sets it as a global property to prevent
+       regeneration while loading, keeping the generated files as they are. It is not a user setting. -->
   <Target Name="_NetPrintsReportSkippedGenerate"
           BeforeTargets="CoreCompile"
           Condition="'@(NetPrintsGraph)' != '' and '$(_NetPrintsSkipGenerate)' == 'true'">
