@@ -78,6 +78,46 @@ The full report is kept outside the repository (`.agent-archive/netprints-p3a/an
 - Decision: only the rename batch (A1) runs on haiku; if it cannot get green, the coordinator re-runs it on sonnet.
 - Decision: `.github/release-notes.md` was reset to an empty "Unreleased" section (the v0.2.0 notes shipped with the tag); the "Downloads" template stays.
 
+## Batch A1 (implementation: haiku, 70b533a–48cc09d)
+
+### Red output (T001 test failure before rename)
+
+```
+ClassEditorVM
+CodeViewVM
+ConnectionVM
+DeclaredReferenceVM
+DiagnosticRowVM
+DialogVM
+ErrorDialogVM
+ErrorListVM
+EventGraphVM
+GetSetChooserVM
+IssuesDialogVM
+LocalVariableVM
+MainEditorVM
+MemberVariableVM
+MethodVM
+NodeGraphVM
+NodePinVM
+NodeVM
+PinRowVM
+ReferenceListVM
+SelectMethodDialogVM
+SelectTypeDialogVM
+SuggestionListVM
+TrustDialogVM
+VariablesPanelVM
+```
+
+### Green evidence (T001–T002)
+
+- Build: 40 projects, 0 errors, 0 warnings (Release)
+- Full suite: 1727 tests, 1717 passed, 10 skipped, 0 failed (5m 12s)
+- E2E suite: 9 tests, 9 passed, 0 skipped, 0 failed (2m 31s)
+- Docs sweep: git grep finds only MVVM (the CommunityToolkit.Mvvm package)
+- Commits: T001 (70b533a, 112 files), T002 (48cc09d, 16 files)
+
 ## Checkpoint reports
 
 Each checkpoint task (T014, T027, T045, T058, T071, T087, T099, T111) adds its report here, with evidence for every

@@ -67,7 +67,7 @@ Contract: contracts/ci.md. **Independent test**: US1's independent test; SC-006;
 
 ### Batch A1 — model: haiku — T001–T002 — 3 units
 
-- [ ] T001 View model rename, committed on its own before any other P3a code (FR-105, research R16, ADR-0007
+- [x] T001 View model rename, committed on its own before any other P3a code (FR-105, research R16, ADR-0007
   amendment; 2 units). Test first: add `NoTypeNameEndsInVM` to `tests/NetPrints.Core.Tests/Core/SourceHygieneTests.cs`.
   It scans every class, record, struct and interface declaration, generic ones included (`DialogVM<TResult>`), in
   `src/**/*.cs` and `tests/**/*.cs` (not `bin/`, `obj/`), and fails on any type name ending in `VM`, listing each. Run it
@@ -80,7 +80,7 @@ Contract: contracts/ci.md. **Independent test**: US1's independent test; SC-006;
   page objects; test class and method names that embed the type name; locals and members named after the type). No
   rename collides with an existing type (checked 2026-10-01); a collision found later is resolved case by case and
   recorded as a Decision. Build, the whole suite and the E2E run green; one commit.
-- [ ] T002 Docs sweep for the rename: `AGENTS.md` (MVVM section, one line: view model types are named
+- [x] T002 Docs sweep for the rename: `AGENTS.md` (MVVM section, one line: view model types are named
   `<Name>ViewModel`, never `<Name>VM`, enforced by `SourceHygieneTests.NoTypeNameEndsInVM`); `.claude/skills/avalonia-*/`
   (every old type name, plus the rule in `avalonia-xaml`); `docs/adr/0007-xaml-practices.md` (the old names below its
   2026-10-01 amendment, as the amendment says); `docs/guide/` and `docs/contributing/`. Historical records
