@@ -17,13 +17,13 @@ Menu order: **File, Edit, View, Go, Build, Help**. Groups inside a menu are sepa
 | `saveAll` | Save all | File › save | Ctrl+Shift+S | Global | |
 | `projectSettings` | Project settings | File › project-settings | — | Global | |
 | `references` | References… | File › project-settings | — | Global | yes (7) |
-| `exit` | Exit | File › exit | — (the OS closes the window with Alt+F4, through the same unload path) | Global | |
+| `exit` | Exit | File › exit | — | Global | Closes the main window; the window-close path (also Alt+F4) asks the unload prompt, once |
 | `undo` | Undo `<action>` | Edit › history | Ctrl+Z | Global | yes (4) |
 | `redo` | Redo `<action>` | Edit › history | Ctrl+Y, Ctrl+Shift+Z | Global | yes (5) |
 | `delete` | Delete | Edit › selection | Delete | Graph, ProjectTree | |
 | `rename` | Rename | Edit › selection | F2 | Graph, ProjectTree | |
 | `selectAll` | Select all | Edit › selection | Ctrl+A | Graph | |
-| `cancel` | Cancel | (no menu) | Esc | Graph | |
+| `cancel` | Cancel | (no menu) | Esc | Graph | Enabled only while a node search or Get/Set popup is open; otherwise Esc reaches Nodify (cancels a drag). |
 | `nodeSearch` | Add node… | Edit › nodes | Ctrl+Space | Graph | |
 | `classSettings` | Class settings | Edit › class | — | Global | yes (6) |
 | `addMethod` | Add method | Edit › class | — | Global | |

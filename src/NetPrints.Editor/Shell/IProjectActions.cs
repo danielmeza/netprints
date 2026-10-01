@@ -10,8 +10,8 @@ namespace NetPrints.Editor.Shell;
 public interface IProjectActions
 {
     /// <summary>
-    /// Asks whether the open project may be unloaded (open another, create, close, exit). The one place the unsaved
-    /// changes prompt goes; every command that unloads a project calls it first.
+    /// Asks whether the open project may be unloaded. The one place the unsaved changes prompt goes, with two callers:
+    /// <c>UnloadingCommandHandler</c> (open another, create, close) and the window-close path (exit and the OS close).
     /// </summary>
     /// <param name="cancellationToken">Cancels the prompt.</param>
     /// <returns><see langword="true"/> to go on, <see langword="false"/> when the user kept the project.</returns>
@@ -33,7 +33,7 @@ public interface IProjectActions
     /// <returns>A task that completes when the project is closed.</returns>
     Task CloseProjectAsync(CancellationToken cancellationToken);
 
-    /// <summary>Closes the main window, which ends the application.</summary>
+    /// <summary>Closes the main window, which ends the application; it asks nothing, the window-close path owns the unload prompt.</summary>
     /// <param name="cancellationToken">Cancels the flow.</param>
     /// <returns>A task that completes when the window was asked to close.</returns>
     Task ExitAsync(CancellationToken cancellationToken);

@@ -24,7 +24,6 @@ public sealed class ProjectCommandsTests : SessionCommandTests
         { new OpenProjectCommandHandler(), "OpenProject:" },
         { new NewProjectCommandHandler(), "NewProject" },
         { new CloseProjectCommandHandler(), "CloseProject" },
-        { new ExitCommandHandler(), "Exit" },
     };
 
     public static TheoryData<ICommandHandler, string> NeedsAProject() => new()
@@ -96,6 +95,16 @@ public sealed class ProjectCommandsTests : SessionCommandTests
         await handler.ExecuteAsync(Shell.Context(), Token);
 
         Assert.Equal([call], Shell.Project.Calls);
+    }
+
+    [Fact]
+    public async Task ExitOnlyClosesTheWindowAndLeavesTheUnloadPromptToTheCloseWindowPath()
+    {
+        (CommandContext context, _) = await OpenContextAsync();
+
+        await new ExitCommandHandler().ExecuteAsync(context, Token);
+
+        Assert.Equal(["Exit"], Shell.Project.Calls);
     }
 
     [Fact]

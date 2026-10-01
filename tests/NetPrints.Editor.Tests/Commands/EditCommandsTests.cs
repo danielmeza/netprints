@@ -207,21 +207,22 @@ public sealed class EditCommandsTests : SessionCommandTests
     }
 
     [Fact]
-    public async Task CancelClosesAnOpenSearchBeforeClearingTheSelection()
+    public async Task CancelRunsOnlyWhileAPopupIsOpenAndKeepsTheSelection()
     {
         NodeGraphViewModel graph = OpenGraph();
         NodeViewModel node = AddDeletableNode(graph);
         graph.SelectNodes([node], deselectPrevious: true);
-        graph.Search.IsOpen = true;
         CommandContext context = Shell.Context(graph: graph);
         var handler = new CancelCommandHandler();
+        Assert.False(handler.CanExecute(context), "with no popup open Esc falls through to Nodify");
 
+        graph.Search.IsOpen = true;
+        Assert.True(handler.CanExecute(context));
         await handler.ExecuteAsync(context, Token);
+
         Assert.False(graph.Search.IsOpen);
         Assert.True(node.IsSelected);
-
-        await handler.ExecuteAsync(context, Token);
-        Assert.False(node.IsSelected);
+        Assert.False(handler.CanExecute(context));
     }
 
     [Theory]

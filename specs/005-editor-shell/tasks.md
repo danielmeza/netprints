@@ -243,7 +243,8 @@ tests; the existing windows' shortcuts run through the registry.
 - [x] T024 [US4] Project handlers, test first in `tests/NetPrints.Editor.Tests/Commands/ProjectCommandsTests.cs`:
   `openProject`, `newProject`, `closeProject`, `projectSettings`, `references`, `classSettings`, `addMethod`,
   `addConstructor`, `addVariable`, `addEventGraph` and `exit`, wrapping today's flows. The unload prompt is added in D
-  (T050) at a single call site the handlers already go through.
+  (T050) in `UnloadingCommandHandler` (open, new, close); `exit` only closes the window and the window-close path
+  prompts (Review B R6).
 - [x] T025 [US4] Built-in registration: `src/NetPrints.Editor/Contributions/BuiltIn/{File,Edit,View,Go,Build,Help}Contributions.cs`.
   Test first: `tests/NetPrints.Editor.Tests/Contributions/BuiltInCommandTableTests.cs` holds contracts/commands.md §1
   as data. Every registered built-in command matches its row (id, label, menu path and group, gestures, scope,
@@ -444,7 +445,7 @@ SC-004 (all but navigation).
   project, Open project, New project) and prompts only when files are unsaved. `UnsavedChangesDialog`
   (`DialogViewModel<UnloadChoice>`; Save all is the default, Don't save, Cancel on Esc; lists the files; ids
   `Dialogs.Unsaved.*`): Cancel keeps the project and its changes; Save all saves, then unloads; a failed save shows the
-  error and keeps the project open; Don't save unloads. Closing a tab never prompts. Exit while a program runs asks
+  error and keeps the project open; Don't save unloads. Exit with unsaved changes and Don't save: exactly one prompt. Closing a tab never prompts. Exit while a program runs asks
   "Stop running program?" (Stop and exit, Cancel), and exit while compiling waits for the build (contracts/shell.md §5).
 
 ### Batch D2 — model: sonnet — T051–T053 — 5 units

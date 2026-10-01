@@ -72,7 +72,8 @@ Recorded together with their tests (contracts/contributions.md carries the same 
   invalid `CommandId` in a context-menu item. The labels of the four add-member commands became rows of
   contracts/commands.md.
 - `IProjectActions`, reached through `IShell.ProjectActions`, holds the project flows, and
-  `UnloadingCommandHandler` is the one call site of the unload prompt.
+  `ConfirmUnloadAsync` has two callers: `UnloadingCommandHandler` for open, new and close, and the window-close
+  path for exit and the OS close. `exit` only closes the window, so each path prompts once (Review B R6).
 - Handlers have no `CanExecuteChanged`. The enabled state is read at invocation; Run and Stop refresh through
   `ProjectSessionViewModel`'s `PropertyChanged(IsRunning)`.
 - `CommandContext` also carries the active graph view model (`ActiveGraph`), and `ICommandContextProvider` builds it

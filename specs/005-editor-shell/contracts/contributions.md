@@ -94,8 +94,10 @@ public interface IGoToProvider
   `ICommandContextProvider`; it holds no UI types.
 - `IShell.ProjectActions` is an `IProjectActions`, the seam for the project flows (open, new, close, exit, project
   settings, references, class settings, add method, constructor, variable and event graph, tree rename and delete).
-  `UnloadingCommandHandler` is the base of `openProject`, `newProject`, `closeProject` and `exit`: with a project
-  open it calls `IProjectActions.ConfirmUnloadAsync` first and stops when that answers false.
+  `UnloadingCommandHandler` is the base of `openProject`, `newProject` and `closeProject`: with a project open it
+  calls `IProjectActions.ConfirmUnloadAsync` first and stops when that answers false. `exit` only closes the main
+  window; the window-close path (`ShutdownCoordinator`) is the other caller of `ConfirmUnloadAsync`, so the unload
+  prompt has exactly one call per path.
 - Handlers are stateless and have no `CanExecuteChanged`. The enabled state is queried when a command is invoked (a
   key press) or a surface is built. A surface that stays visible re-queries on the session's change notifications;
   `run` and `stop` depend on `ProjectSessionViewModel.IsRunning`, which raises `PropertyChanged` when the program

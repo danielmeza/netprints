@@ -258,17 +258,14 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
     /// <summary>Selects every node.</summary>
     public void SelectAll() => SelectNodes(Nodes, deselectPrevious: false);
 
-    /// <summary>Closes the node search and the Get/Set chooser when one is open; otherwise deselects every node.</summary>
-    public void Cancel()
-    {
-        if (Search.IsOpen || GetSetChooser.IsOpen)
-        {
-            Search.IsOpen = false;
-            GetSetChooser.Close();
-            return;
-        }
+    /// <summary>Gets whether the node search or the Get/Set chooser is open.</summary>
+    public bool HasOpenPopup => Search.IsOpen || GetSetChooser.IsOpen;
 
-        DeselectNodes();
+    /// <summary>Closes the node search and the Get/Set chooser.</summary>
+    public void ClosePopups()
+    {
+        Search.IsOpen = false;
+        GetSetChooser.Close();
     }
 
     /// <summary>Raised by <see cref="RequestView"/>; the editor's behavior carries the request out (ADR-0004: the view owns the viewport).</summary>

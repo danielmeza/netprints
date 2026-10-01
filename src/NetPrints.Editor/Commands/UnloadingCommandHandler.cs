@@ -4,9 +4,9 @@ using NetPrints.Editor.Shell;
 namespace NetPrints.Editor.Commands;
 
 /// <summary>
-/// Base of the commands that unload the open project (open another, create, close, exit): the single call site that
-/// asks <see cref="IProjectActions.ConfirmUnloadAsync"/> first. With no project open there is nothing to unload and
-/// nothing is asked.
+/// Base of the commands that unload the open project (open another, create, close): asks
+/// <see cref="IProjectActions.ConfirmUnloadAsync"/> first. The window-close path is its other caller (exit and the OS
+/// close), so each path asks once. With no project open there is nothing to unload and nothing is asked.
 /// </summary>
 public abstract class UnloadingCommandHandler : ICommandHandler
 {
