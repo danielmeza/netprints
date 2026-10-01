@@ -204,7 +204,7 @@ Skips: the 12 skipped in the full run are 3 headless UI tests that need a real c
 
 ### Decisions
 
-- Decision: the YAML reader inside `CiWorkflowTests` supports block mappings and sequences, flow sequences, literal and folded scalars, quotes and comments only; an unsupported construct throws, so a future workflow edit cannot pass silently.
+- Decision: the YAML reader inside `CiWorkflowTests` supports block mappings and sequences, flow sequences, literal and folded scalars, quotes and comments only; an unsupported construct throws, so a future workflow edit cannot pass silently. Correction (Review A R6): as first written the reader stopped silently at an unexpected indent; since A-F3 `Parse` throws a `FormatException` naming the line when any line is left unread, and `TheReaderRejectsAContinuationLineItDoesNotUnderstand` pins it.
 - Decision: the `cli-windows.yml` check skips with a reason while the file is missing (T011 creates it) instead of failing, so every commit stays green; the check was verified against a throwaway draft.
 - Decision: "test-running job" means a job with a `dotnet test` step other than `e2e`, `packages` and `build-test`; today that is `checks` (E2E discovery) and `test`. `desktop-publish` and `jsonschema` run no tests and are not aggregated.
 - Decision: matrix legs carry `name`, `leg` (artifact slug) and `project`; artifacts are `test-results-<leg>`, `coverage-<leg>` and, for `editor-ui` only, `ui-headless`. `NETPRINTS_UI_ARTIFACTS` is a job-level variable (it is inert in the other legs).
@@ -289,9 +289,9 @@ F3 R6, R7, R8, R16, R17, R18; F4 R12, R13, R14, R15, R19.
 | R3 | minor | The per-class diagnostics folder is never cleared, so stale files pass or fail the proof | F1 | fixed, a8c1aae |
 | R4 | minor | A capture failure outside the narrow filter (or building the parts) replaces the original failure | F1 | fixed, a8c1aae |
 | R5 | minor | The `start` step includes the wait for a worker, so timings mislead | F2 | fixed, 2f20afe |
-| R6 | minor | The YAML reader in `CiWorkflowTests` ignores everything after an unexpected indent | F3 | open |
-| R7 | minor | The aggregate's "fails unless every needed job succeeded" is checked only as text | F3 | open |
-| R8 | minor | The `cli-windows.yml` path filter misses inputs the CLI tests read | F3 | open |
+| R6 | minor | The YAML reader in `CiWorkflowTests` ignores everything after an unexpected indent | F3 | fixed, c56cdab |
+| R7 | minor | The aggregate's "fails unless every needed job succeeded" is checked only as text | F3 | fixed, f4f9ca8 |
+| R8 | minor | The `cli-windows.yml` path filter misses inputs the CLI tests read | F3 | fixed, 071c8de |
 | R9 | minor | `ProcessLauncher`: the exit can be raised before the start, and the drain can block forever | F2 | fixed, 680e850 |
 | R10 | minor | `RunStateTracker` gives one program's exit to another | F2 | fixed, 6dcade6 |
 | R11 | minor | The Shutdown scenario has no failure capture, and that is not recorded | F2 | fixed (Decision, no code change) |
@@ -299,9 +299,9 @@ F3 R6, R7, R8, R16, R17, R18; F4 R12, R13, R14, R15, R19.
 | R13 | minor | Windows defects in `src/` hidden by test-side fixes, with no follow-up recorded | F4 | open |
 | R14 | minor | Docs and workflow text that no longer match behaviour | F4 | open |
 | R15 | minor | The docs sweep broke ADR-0007's amendment and went past T002's scope without a Decision | F4 | open |
-| R16 | nit | Locals still named after the old types; the rule's doc comment is stale | F3 | open |
-| R17 | nit | Repeated identifiers are not named constants | F3 | open |
-| R18 | nit | `ci.yml:1` header still names the superseded contract | F3 | open |
+| R16 | nit | Locals still named after the old types; the rule's doc comment is stale | F3 | fixed, 00f04ca |
+| R17 | nit | Repeated identifiers are not named constants | F3 | fixed, 6cdf2e4 |
+| R18 | nit | `ci.yml:1` header still names the superseded contract | F3 | fixed, 0c292dd |
 | R19 | nit | Two red commits in the history | F4 | open |
 | R20 | nit | A skip after start would be reported as a failure | F2 | fixed, 2f20afe |
 | R21 | nit | Forcing a step that never reaches a checkpoint does nothing, silently | F2 | fixed, 2f20afe |
@@ -355,3 +355,14 @@ None yet.
 - R21 (2f20afe). Red: `StepTimerTests.AForcedStepThatNeverReachedACheckpointFailsLoudly` (no exception, stub) failed, 1 of 3. Fix: `StepTimer.EnsureForcedStepHeld`, called at the end of `RunScenarioAsync` (inside the capture), throws "step 'x' was never held (no checkpoint inside it)". Holdable steps are the ones with a checkpoint inside: `start`, `open project`, `edit graph`, `run`, `create project`, `add references`; `compile` is not. Green: `StepTimerTests` 3/3 and `E2EScenarioRulesTests` (real editor).
 - R11. Decision: `ShutdownTests` stays outside `RunScenarioAsync`; the editor exits by design, so there is no leased editor to dump, and its assertion messages carry the stderr. Recorded in the test's doc comment.
 - R1 follow-up (b32d2af). Red: `AutomationClientTests.ACallAfterAFailedExchangeNamesTheCause` (the server drops the connection after accepting) failed on `Not found: "open a new connection"`. Fix: `AutomationClient` marks itself out of step on any exception between the write and the full reply, and the later call's `IOException` names the cause. Green: `AutomationClientTests` 2/2.
+
+### Batch A-F3 (R6, R7, R8, R16, R17, R18: c56cdab, f4f9ca8, 071c8de, 00f04ca, 6cdf2e4, 0c292dd)
+
+- R6 (c56cdab). Mutation first, on the real `ci.yml`: `- name: Install X11 tools` split into a two-line plain scalar plus a new `extra` job with a `dotnet test` step: `CiWorkflowTests` 8/8 green (the bug). Red: the new self-test `TheReaderRejectsAContinuationLineItDoesNotUnderstand` with the check disabled: `Assert.Throws() Failure: No exception was thrown` (total 9, failed 1). Fix: `Parse` throws `FormatException` ("Unsupported YAML on line N") when `Peek()` is not null after `ParseBlock(0)`. Green with the same mutation in `ci.yml`: the workflow-reading tests fail with `System.FormatException : Unsupported YAML on line 222: tools`; `ci.yml` restored, 9/9 green. The A3 Decision text is corrected.
+- R7 (f4f9ca8). Mutation: `&&` to `||` in the aggregate step. Red with the strengthened test: `Assert.DoesNotContain() Failure: Sub-string found`. The test now requires `||` and `continue-on-error` to be absent, exactly one `[` line, and one `[ "${{ needs.<id>.result }}" = "success" ]` per need joined by ` && ` (any order). Restored: 9/9.
+- R8 (071c8de). Red: the test's required inputs now include `samples/**`, `schemas/**`, `eng/schemastore/**`, `src/NetPrints.Sdk/**`, `.gitattributes`; on the old filter `pull_request paths in .github/workflows/cli-windows.yml miss: samples/**, schemas/**, eng/schemastore/**, src/NetPrints.Sdk/**, .gitattributes` (total 9, failed 1). Fix: those five entries in both triggers (red and green share one commit); contracts/ci.md section 2 amended. Green: 9/9.
+- R16 (00f04ca). The four locals are `isClassOrMainEditorViewModel`, `referenceListViewModel`, `eventGraphViewModel`, `localViewModel`. `NoTypeNameEndsInVM` now scans `BaseTypeDeclarationSyntax` (enums included) and `DelegateDeclarationSyntax`, and its doc comment states the `VM[A-Z]` rule. No enum or delegate offended, so a mutation: a temporary `enum ModeVM` and `delegate void DoneVM()`: the old check stayed green (1/1), the new one failed with `Collection: ["ModeVM", "DoneVM"]`; file removed, green.
+- R17 (6cdf2e4). `AutomationOps` (`NetPrints.Editor.Hosting.Automation`: `Status`, `Find`, `Dump`, `RunState`, `Tree`, `Settle`) is used by the agent and the client (and two test fakes); `TestEnvironment.UiArtifactsVariable` in `NetPrints.Testing` replaces the three `NETPRINTS_UI_ARTIFACTS` literals. `RunStateTrackerTests` keeps the `"runState"` literal on purpose: it pins the wire name. Refactor, no behaviour change.
+- R18 (0c292dd). `ci.yml:1` points at `specs/005-editor-shell/contracts/ci.md`.
+
+Totals: solution suite (Debug, no `NETPRINTS_E2E`) 1772 tests, 1758 passed, 13 skipped, the one reported failure being the Desktop E2E project's own "zero tests ran" exit (it self-skips without `NETPRINTS_E2E`); Desktop E2E with `NETPRINTS_E2E=1 --fail-skips on` under its own Xvfb: 31 of 31 passed, 0 skipped.
