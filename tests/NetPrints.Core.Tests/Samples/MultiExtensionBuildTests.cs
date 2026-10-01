@@ -6,8 +6,8 @@ using NetPrints.Extensibility.Loading;
 using NetPrints.Testing;
 using NetPrints.Testing.Extensions;
 using NetPrints.Tests.Extensibility;
-using NetPrints.Tests.Projects;
 using NetPrints.Tests.Extensibility.MultiExtension;
+using NetPrints.Tests.Projects;
 using Xunit;
 
 namespace NetPrints.Tests.Samples
