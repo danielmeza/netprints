@@ -6,6 +6,8 @@ using Microsoft.Extensions.Logging;
 using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
+using NetPrints.Editor.Contributions;
+using NetPrints.Editor.Contributions.BuiltIn;
 using NetPrints.Editor.ErrorList;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.References;
@@ -13,6 +15,7 @@ using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Settings;
 using NetPrints.Projects;
 using NetPrints.Serialization;
+using CommandInvoker = NetPrints.Editor.Shell.CommandInvoker;
 using IProjectActions = NetPrints.Editor.Shell.IProjectActions;
 using ProjectSessionViewModel = NetPrints.Editor.Shell.ProjectSessionViewModel;
 
@@ -28,6 +31,7 @@ public sealed partial class MainEditorViewModel : ObservableObject, IDisposable,
     private readonly ILogger<MainEditorViewModel> logger;
     private readonly HashSet<(string Id, string? ManifestPath, string Code)> reportedExtensionFailures = [];
     private readonly HostChannelBridge hostChannelBridge;
+    private readonly ContributionRegistry commandRegistry;
     private Project? subscribedProject;
 
     /// <summary>The extension folders currently loaded (R2-11): restored on the catch path of
@@ -46,6 +50,9 @@ public sealed partial class MainEditorViewModel : ObservableObject, IDisposable,
         logger = context.LoggerFactory.CreateLogger<MainEditorViewModel>();
         hostChannelBridge = new HostChannelBridge(context.HostChannel, context.Dispatcher, ReloadReflectionAsync, FocusDocument,
             context.LoggerFactory.CreateLogger<HostChannelBridge>());
+        commandRegistry = new ContributionRegistry(context.LoggerFactory.CreateLogger<ContributionRegistry>());
+        BuiltInContributions.Register(commandRegistry);
+        commandRegistry.Freeze();
         Project = project;
     }
 
@@ -564,6 +571,23 @@ public sealed partial class MainEditorViewModel : ObservableObject, IDisposable,
         }
 
         context.Windows.OpenClassEditor(cls, context);
+        AttachCommands(context.Windows.FindClassEditor(cls));
+    }
+
+    /// <summary>Gives a class editor window the registered commands and makes the session's undo stack of its class the editor's own.</summary>
+    private void AttachCommands(ClassEditorViewModel? editor)
+    {
+        if (editor is null)
+        {
+            return;
+        }
+
+        Session?.UseUndoStack(editor.Class, editor.UndoRedo);
+        var shell = new LegacyWindowShell(this);
+        editor.Commands = new CommandInvoker(
+            commandRegistry,
+            new ClassEditorCommandContextProvider(editor, () => Session, shell),
+            exception => context.Dispatcher.Post(() => context.Dialogs.ShowErrorAsync("The command failed", exception.ToString()).Forget(logger)));
     }
 
     /// <summary>Closes the window of a class and removes it from the project (PAR-11, fixes the WPF defect).</summary>

@@ -1,6 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ed="clr-namespace:NetPrints.Editor"
+        xmlns:edbehaviors="clr-namespace:NetPrints.Editor.Behaviors"
         xmlns:ederrorlist="clr-namespace:NetPrints.Editor.ErrorList"
         xmlns:edclasseditor="clr-namespace:NetPrints.Editor.ClassEditor"
         xmlns:edevents="clr-namespace:NetPrints.Editor.Events"
@@ -14,12 +15,10 @@
         Title="{Binding Title}"
         Icon="avares://NetPrints.Editor/Assets/NetPrintsLogo.ico"
         Width="1280" Height="720" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorWindow}" AutomationProperties.Name="{Binding FullName}">
-  <!-- Keyboard (PAR-37) -->
-  <Window.KeyBindings>
-    <KeyBinding Gesture="Delete" Command="{Binding DeleteSelectedNodesCommand}" />
-    <KeyBinding Gesture="Ctrl+Z" Command="{Binding UndoCommand}" />
-    <KeyBinding Gesture="Ctrl+Y" Command="{Binding RedoCommand}" />
-  </Window.KeyBindings>
+  <!-- Keyboard (PAR-37): the registry's gestures, global ones here and graph ones on the canvas below. -->
+  <Interaction.Behaviors>
+    <edbehaviors:CommandKeyBindingsBehavior Invoker="{Binding Commands}" />
+  </Interaction.Behaviors>
 
   <Grid RowDefinitions="100,*">
     <!-- Toolbar (PAR-23) -->
@@ -202,7 +201,12 @@
 
       <!-- Graph, compile errors, program output and status (PAR-32) -->
       <Grid Grid.Column="2" RowDefinitions="*,5,150,24">
-        <edgraph:GraphEditorView x:Name="GraphEditor" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorGraph}" DataContext="{Binding OpenedGraph}" IsVisible="{Binding $self.DataContext, Converter={x:Static ObjectConverters.IsNotNull}}" />
+        <Panel>
+          <Interaction.Behaviors>
+            <edbehaviors:ScopedCommandKeysBehavior Scope="Graph" Invoker="{Binding Commands}" />
+          </Interaction.Behaviors>
+          <edgraph:GraphEditorView x:Name="GraphEditor" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorGraph}" DataContext="{Binding OpenedGraph}" IsVisible="{Binding $self.DataContext, Converter={x:Static ObjectConverters.IsNotNull}}" />
+        </Panel>
         <!-- Busy overlay (PAR-24, batch D1): shown only once an open graph passes ClassEditorViewModel.BusyIndicatorDelay. -->
         <Border AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorOpeningGraphIndicator}" IsVisible="{Binding IsOpeningGraph}"
                 Background="{DynamicResource OpeningGraphIndicator.Background}" CornerRadius="4" Padding="16,10" HorizontalAlignment="Center" VerticalAlignment="Center">

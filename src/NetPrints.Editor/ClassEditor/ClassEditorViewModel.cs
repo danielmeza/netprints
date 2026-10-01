@@ -181,6 +181,10 @@ public sealed partial class ClassEditorViewModel : ObservableObject, IRecipient<
     /// <summary>The class editor's Errors tab (US6, FR-032, FR-034).</summary>
     public ErrorListViewModel ErrorList { get; }
 
+    /// <summary>Runs the registered commands for the window's key bindings; null until the main window attaches it.</summary>
+    [ObservableProperty]
+    public partial CommandInvoker? Commands { get; set; }
+
     /// <summary>The graph shown in the canvas, or null.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(SelectedMethodInList), nameof(SelectedConstructorInList), nameof(SelectedEventGraphInList))]

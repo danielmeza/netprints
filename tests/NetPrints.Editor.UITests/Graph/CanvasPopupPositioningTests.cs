@@ -82,7 +82,8 @@ public class CanvasPopupPositioningTests
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var editorBounds = (await session.Graph.GetAsync(Token)).Bounds;
 
-        // No selection: falls back to the canvas center.
+        // No selection: falls back to the canvas center. The graph gestures need the canvas focused.
+        await session.Graph.ClickEmptyAsync(Token);
         await session.Driver.PressAsync("Ctrl+Space", Token);
         var search = await session.Graph.Search.WaitOpenAsync(Token);
         var centerBounds = (await search.View.GetAsync(Token)).Bounds;

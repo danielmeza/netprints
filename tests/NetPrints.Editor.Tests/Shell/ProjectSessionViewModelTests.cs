@@ -4,6 +4,7 @@ using NetPrints.Core;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.Tests.Hosting;
+using NetPrints.Editor.UndoRedo;
 using NetPrints.Projects;
 using NetPrints.Serialization;
 
@@ -50,6 +51,19 @@ public sealed class ProjectSessionViewModelTests : IAsyncDisposable
 
         Assert.Same(session.UndoStackFor(first), session.UndoStackFor(first));
         Assert.NotSame(session.UndoStackFor(first), session.UndoStackFor(other));
+    }
+
+    [Fact]
+    public async Task AdoptedUndoStackReplacesTheOneOfTheClass()
+    {
+        Project project = await LoadSampleAsync();
+        using var session = new ProjectSessionViewModel(project, editor.Context);
+        ClassGraph cls = project.Classes[0];
+        var adopted = new UndoRedoStack();
+
+        session.UseUndoStack(cls, adopted);
+
+        Assert.Same(adopted, session.UndoStackFor(cls));
     }
 
     [Fact]

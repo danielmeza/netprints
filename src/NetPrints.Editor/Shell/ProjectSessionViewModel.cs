@@ -83,6 +83,16 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
         return stack;
     }
 
+    /// <summary>Makes <paramref name="stack"/> the undo stack of a class, so the undo and redo commands act on the history its editor records to.</summary>
+    /// <param name="cls">A class of the project.</param>
+    /// <param name="stack">The class editor's stack.</param>
+    public void UseUndoStack(ClassGraph cls, UndoRedoStack stack)
+    {
+        ArgumentNullException.ThrowIfNull(cls);
+        ArgumentNullException.ThrowIfNull(stack);
+        undoStacks[cls] = stack;
+    }
+
     /// <summary>
     /// Saves every edited class through <see cref="ProjectPersistence"/>. A call made while a save runs returns that
     /// save's result instead of starting another. A failure is shown through <see cref="IEditorDialogs.ShowErrorAsync"/>.

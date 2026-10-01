@@ -4,6 +4,7 @@ using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Media;
 using Avalonia.VisualTree;
+using NetPrints.Editor.Behaviors;
 using NetPrints.Editor.Controls;
 using NetPrints.Editor.Graph.Nodes;
 using NetPrints.Editor.Graph.Pins;
@@ -28,7 +29,6 @@ public partial class GraphEditorView : UserControl
     private const double HalfDivisor = 2;
     private Point? rightPressPosition;
     private object? backButtonTarget;
-    private TopLevel? keyboardTopLevel;
     private NodeGraphViewModel? revealSubscription;
 
     /// <summary>
@@ -60,44 +60,16 @@ public partial class GraphEditorView : UserControl
         GetSetPopup.FallbackPositionRequested += (_, e) => e.Position = FallbackScreenPosition();
 
         AttachedToVisualTree += OnAttachedToVisualTree;
-        DetachedFromVisualTree += OnDetachedFromVisualTree;
     }
 
     private void OnAttachedToVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
     {
-        keyboardTopLevel = TopLevel.GetTopLevel(this);
-        keyboardTopLevel?.AddHandler(KeyDownEvent, OnGlobalKeyDown, RoutingStrategies.Tunnel, handledEventsToo: true);
-
         // Attaches the tracker now, not lazily on first popup open, so it does not miss the very
         // pointer event that triggers that first open.
-        if (keyboardTopLevel is { } topLevel)
+        if (TopLevel.GetTopLevel(this) is { } topLevel)
         {
             CanvasPointerTracker.For(topLevel);
         }
-    }
-
-    private void OnDetachedFromVisualTree(object? sender, VisualTreeAttachmentEventArgs e)
-    {
-        keyboardTopLevel?.RemoveHandler(KeyDownEvent, OnGlobalKeyDown);
-        keyboardTopLevel = null;
-    }
-
-    /// <summary>
-    /// Ctrl+Space opens the node search without the pointer (ADR-0004): the popup falls back to the
-    /// selected node's position, or the canvas center if nothing is selected. Skipped when focus is in
-    /// a text box, check box or combo box (R2-15): the handler sits on the whole window (a
-    /// <see cref="KeyBinding"/> only fires with focus inside this control), so unscoped it also caught
-    /// Ctrl+Space typed in, for example, the inspector's Name box.
-    /// </summary>
-    private void OnGlobalKeyDown(object? sender, KeyEventArgs e)
-    {
-        if (e.Key != Key.Space || e.KeyModifiers != KeyModifiers.Control || ViewModel is not { } graph || IsInsideValueEditor(e.Source))
-        {
-            return;
-        }
-
-        graph.RequestView(GraphViewRequest.NodeSearch);
-        e.Handled = true;
     }
 
     /// <summary>The bound graph view model, or <see langword="null"/> if the data context is not one.</summary>
@@ -190,24 +162,6 @@ public partial class GraphEditorView : UserControl
         return null;
     }
 
-    private static bool IsInsideValueEditor(object? source)
-    {
-        for (var visual = source as Visual; visual is not null; visual = visual.GetVisualParent())
-        {
-            if (visual is TextBox or CheckBox or ComboBox)
-            {
-                return true;
-            }
-
-            if (visual is Connector)
-            {
-                return false;
-            }
-        }
-
-        return false;
-    }
-
     private void OnEditorPointerPressed(object? sender, PointerPressedEventArgs e)
     {
         var properties = e.GetCurrentPoint(Editor).Properties;
@@ -231,7 +185,7 @@ public partial class GraphEditorView : UserControl
             // through the pin's/connection's own command (ED-T09).
             if (FindContext<NodePinViewModel>(e.Source) is { } pin)
             {
-                if (IsInsideValueEditor(e.Source))
+                if (CommandKeyGestures.IsInsideValueEditor(e.Source))
                 {
                     pin.ClearUnconnectedValueCommand.Execute(null);
                 }
