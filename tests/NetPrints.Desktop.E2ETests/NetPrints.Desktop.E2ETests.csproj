@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <PackageReference Include="xunit.v3" />
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
     <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" />
     <!-- Transitively pulled in via NetPrints.Testing.Ui -> NetPrints.Editor -> NetPrints.Workspace;
          ExcludeAssets/PrivateAssets satisfies MSBuildLocator's own MSBL001 guard (research K10) here too. -->

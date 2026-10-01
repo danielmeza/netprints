@@ -19,9 +19,18 @@ public sealed class EditorProcess : IAsyncDisposable
     private readonly StringBuilder output = new();
     private readonly StringBuilder errors = new();
 
+    private readonly TaskCompletionSource exited = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
     private EditorProcess(Process process, AutomationClient client)
     {
         this.process = process;
+        process.EnableRaisingEvents = true;
+        process.Exited += (_, _) => exited.TrySetResult();
+        if (process.HasExited)
+        {
+            exited.TrySetResult();
+        }
+
         Client = client;
     }
 
@@ -31,6 +40,9 @@ public sealed class EditorProcess : IAsyncDisposable
 
     /// <summary>Whether the editor process has exited on its own (a clean shutdown, not a forced kill).</summary>
     public bool HasExited => process.HasExited;
+
+    /// <summary>Completes when the editor process exits, whether it exited on its own or was killed.</summary>
+    public Task Exited => exited.Task;
 
     /// <summary>The editor process's exit code; only valid once <see cref="HasExited"/> is true.</summary>
     public int ExitCode => process.ExitCode;

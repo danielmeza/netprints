@@ -1,8 +1,10 @@
 using NetPrints.Desktop.E2ETests.Driving;
 using NetPrints.Desktop.E2ETests.Hosting;
+using NetPrints.Editor.Hosting;
 using NetPrints.Testing;
 using NetPrints.Testing.Ui.Scenarios;
 using NetPrints.Testing.Ui.Screenplay;
+using Xunit.Sdk;
 
 namespace NetPrints.Desktop.E2ETests.Scenarios;
 
@@ -31,13 +33,50 @@ public abstract class X11SmokeTestBase(DesktopWorkerPool pool) : SmokeScenarios,
     private DesktopLease? lease;
     private X11Driver? driver;
 
+    private StepTimer? timer;
+    private bool scenarioEnded;
+    private volatile bool editorExited;
+
+    /// <summary>The step to hold until the test's budget runs out, to prove the diagnostics (<see cref="E2EDiagnosticsTests"/>); <see langword="null"/> in every other test.</summary>
+    protected virtual string? ForcedTimeoutStep => null;
+
+    /// <summary>The test's own work budget, counted from the rented worker.</summary>
+    protected virtual TimeSpan Budget => TimeSpan.FromMilliseconds(Timeout);
+
     protected CancellationToken Token => timeoutCts.Token;
+
+    private StepTimer Steps => timer ??= new StepTimer(TestContext.Current.TestMethod?.MethodName ?? "test", ForcedTimeoutStep);
 
     private static string Artifacts => Path.Combine(
         Environment.GetEnvironmentVariable("NETPRINTS_UI_ARTIFACTS") is { Length: > 0 } configured ? configured : Path.Combine(AppContext.BaseDirectory, "ui-artifacts"),
         "e2e", TestContext.Current.TestMethod?.MethodName ?? "test");
 
-    protected override IDisposable Step(string name) => new StepTimer(TestContext.Current.TestMethod?.MethodName ?? "test").Step(name);
+    protected override IDisposable Step(string name) => Steps.Step(name);
+
+    /// <summary>
+    /// Runs a scenario; when it fails (an exception, an assertion, the test's budget running out or the
+    /// editor exiting), captures the diagnostics (contracts/ci.md §3) and throws an
+    /// <see cref="E2EStepFailureException"/> that keeps the original failure as its inner exception.
+    /// </summary>
+    protected async Task RunScenarioAsync(Func<CancellationToken, Task> scenario)
+    {
+        try
+        {
+            await scenario(Token);
+        }
+        catch (Exception original) when (lease is not null && driver is not null)
+        {
+            var open = Steps.OpenStep;
+            string kind = editorExited ? "editor exited" : timeoutCts.IsCancellationRequested ? "timeout" : original is Xunit.Sdk.XunitException ? "assertion" : "exception";
+            var parts = DiagnosticParts.Create(kind, GetType().Name, Steps, lease, driver.Tool);
+            throw await new FailureCapture(TimeProvider.System, parts)
+                .FailAsync(original, open?.Name, open?.Elapsed ?? TimeSpan.Zero, FailureCapture.FolderFor(GetType().Name), CancellationToken.None);
+        }
+        finally
+        {
+            scenarioEnded = true;
+        }
+    }
 
     protected override async Task<SmokeContext> StartAsync(CancellationToken cancellationToken)
     {
@@ -58,7 +97,15 @@ public abstract class X11SmokeTestBase(DesktopWorkerPool pool) : SmokeScenarios,
         LocalSdkLayout.Write(sample);
 
         lease = await pool.RentAsync(cancellationToken, work);
-        timeoutCts.CancelAfter(Timeout); // the budget starts now, not at dispatch (batch D3)
+        timeoutCts.CancelAfter(Budget); // the budget starts now, not at dispatch (batch D3)
+        lease.Editor.Exited.ContinueWith(_ =>
+        {
+            if (!scenarioEnded)
+            {
+                editorExited = true;
+                timeoutCts.Cancel();
+            }
+        }, TaskScheduler.Default).Forget(_ => { });
         driver = new X11Driver(lease.Server, lease.Editor, new Tool(lease.Server));
         var actor = Actor.Named("Ada").WhoCan(UseNetPrints.With(driver, new GtkFileDialogs(driver, lease.Editor)));
         await actor.Using<UseNetPrints>().MainWindow.GetAsync(cancellationToken);
@@ -68,6 +115,7 @@ public abstract class X11SmokeTestBase(DesktopWorkerPool pool) : SmokeScenarios,
 
     protected override async Task CheckpointAsync(SmokeContext context, string name, CancellationToken cancellationToken)
     {
+        await Steps.HoldIfForcedAsync(cancellationToken);
         var screen = await driver!.ScreenAsync(cancellationToken);
         screen.Save(Path.Combine(Artifacts, name + ".png"));
     }
@@ -118,35 +166,35 @@ public abstract class X11SmokeTestBase(DesktopWorkerPool pool) : SmokeScenarios,
 public sealed class EditCompileAndRunTests(DesktopWorkerPool pool) : X11SmokeTestBase(pool)
 {
     [Fact]
-    public Task EditCompileAndRun() => EditCompileAndRunAsync(Token);
+    public Task EditCompileAndRun() => RunScenarioAsync(EditCompileAndRunAsync);
 }
 
 public sealed class CreateProjectTests(DesktopWorkerPool pool) : X11SmokeTestBase(pool)
 {
     [Fact]
-    public Task CreateProject() => CreateProjectAsync(Token);
+    public Task CreateProject() => RunScenarioAsync(CreateProjectAsync);
 }
 
 public sealed class AddReferencesTests(DesktopWorkerPool pool) : X11SmokeTestBase(pool)
 {
     [Fact]
-    public Task AddReferences() => AddReferencesAsync(typeof(object).Assembly.Location, Token);
+    public Task AddReferences() => RunScenarioAsync(token => AddReferencesAsync(typeof(object).Assembly.Location, token));
 }
 
 public sealed class MinimizeAndRestoreClassWindowTests(DesktopWorkerPool pool) : X11SmokeTestBase(pool)
 {
     [Fact]
-    public Task MinimizeAndRestoreClassWindow() => MinimizeAndRestoreClassWindowAsync(Token);
+    public Task MinimizeAndRestoreClassWindow() => RunScenarioAsync(MinimizeAndRestoreClassWindowAsync);
 }
 
 public sealed class PanCursorTests(DesktopWorkerPool pool) : X11SmokeTestBase(pool)
 {
     [Fact]
-    public Task PanCursor() => PanCursorAsync(Token);
+    public Task PanCursor() => RunScenarioAsync(PanCursorAsync);
 }
 
 public sealed class DragFromListsTests(DesktopWorkerPool pool) : X11SmokeTestBase(pool)
 {
     [Fact]
-    public Task DragFromLists() => DragFromListsAsync(Token);
+    public Task DragFromLists() => RunScenarioAsync(DragFromListsAsync);
 }

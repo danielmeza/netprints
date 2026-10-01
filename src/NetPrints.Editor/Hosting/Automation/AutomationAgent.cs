@@ -47,7 +47,8 @@ public sealed class AutomationProtocolException(string message) : IOException(me
 /// Read-only automation endpoint of the desktop editor, enabled only with
 /// <c>NETPRINTS_AUTOMATION=1</c>: a local pipe (a Unix domain socket on Linux) that answers
 /// line-delimited JSON requests — <c>status</c> (the ready signal), <c>find</c> (elements by
-/// automation id with screen bounds and properties), <c>dump</c> and <c>settle</c>. It never
+/// automation id with screen bounds and properties), <c>dump</c>, <c>tree</c> (every window and
+/// every control with an automation id, for failure diagnostics) and <c>settle</c>. It never
 /// changes the UI: tests send real input through the operating system (xdotool).
 ///
 /// The pipe is current-user-only (<see cref="PipeOptions.CurrentUserOnly"/> on both ends) and, by
@@ -240,6 +241,8 @@ public sealed class AutomationAgent : IDisposable
                 return new AutomationResponse(true) { Elements = await Dispatcher.UIThread.InvokeAsync(() => tree.Find(query)) };
             case "dump":
                 return new AutomationResponse(true) { Text = await Dispatcher.UIThread.InvokeAsync(tree.Dump) };
+            case "tree":
+                return new AutomationResponse(true) { Elements = await Dispatcher.UIThread.InvokeAsync(tree.Snapshot) };
             case "settle":
                 // Everything queued before this request, including layout, has run.
                 await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);

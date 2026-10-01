@@ -62,6 +62,10 @@ public sealed class AutomationClient : IAsyncDisposable
     public async Task<string> DumpAsync(CancellationToken cancellationToken) =>
         (await SendAsync(new AutomationRequest("dump"), cancellationToken)).Text ?? "";
 
+    /// <summary>Every window and every control with an automation id, hidden ones included.</summary>
+    public async Task<IReadOnlyList<AutomationElement>> TreeAsync(CancellationToken cancellationToken) =>
+        (await SendAsync(new AutomationRequest("tree"), cancellationToken)).Elements ?? [];
+
     public async Task SettleAsync(CancellationToken cancellationToken) => await SendAsync(new AutomationRequest("settle"), cancellationToken);
 
     public async ValueTask DisposeAsync()

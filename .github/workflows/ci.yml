@@ -241,6 +241,7 @@ jobs:
             TestResults/**/*.trx
             TestResults/ui/**
             TestResults/e2e-timings-*.md
+            TestResults/e2e-diagnostics/**
           if-no-files-found: warn
 
   packages:
