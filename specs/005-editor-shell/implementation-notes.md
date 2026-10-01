@@ -503,7 +503,7 @@ Verdict: approve with changes, no blockers, 6 majors. Fix batches F1 to F4 (T029
 |---|---|---|---|---|
 | R1 | major | Stop cannot reach every run (second Run click, class editor Run, unload leaves the program) | F1 | fixed f1cf630 |
 | R2 | major | Compile and Run are not single-flight during a save | F1 | fixed f1cf630 |
-| R3 | major | The saved marker can be made to lie by its callers | F2 | open |
+| R3 | major | The saved marker can be made to lie by its callers | F2 | fixed 23380a8 |
 | R4 | major | Command-state refresh contract too narrow for menus and the command bar | F3 | open |
 | R5 | major | Graph gestures need canvas focus and nothing gives it | F3 | open |
 | R6 | major | `exit` and window close will prompt twice once D adds the prompt | F3 | open |
@@ -512,19 +512,19 @@ Verdict: approve with changes, no blockers, 6 majors. Fix batches F1 to F4 (T029
 | R9 | minor | `Shift+<letter>` passes the Global single-key rule; F2 exemption | F4 | open |
 | R10 | minor | Extra `InvalidDescriptor` cases mostly untested | F4 | open |
 | R11 | minor | `showPanel.<panel>` pending row can never go stale | F4 | open |
-| R12 | minor | A synchronous throw escapes `CommandInvoker.TryRun` | F2 | open |
+| R12 | minor | A synchronous throw escapes `CommandInvoker.TryRun` | F2 | fixed 81d8768 |
 | R13 | minor | A `#` in a class file's folder makes every shortcut throw | F4 | open |
-| R14 | minor | Handlers enabled where the action is not allowed or is a no-op | F2 | open |
-| R15 | minor | A save requested during a save is dropped | F2 | open |
+| R14 | minor | Handlers enabled where the action is not allowed or is a no-op | F2 | fixed 81d8768 |
+| R15 | minor | A save requested during a save is dropped | F2 | fixed 23380a8 |
 | R16 | minor | `CommandContext.Session` binds the public surface to editor view models | F3 | open |
 | R17 | nit | Esc also clears the selection while Nodify cancels a drag | F3 | open |
-| R18 | nit | Stale test comment; `NewProjectAsync` mapping untested | F2 | open |
+| R18 | nit | Stale test comment; `NewProjectAsync` mapping untested | F2 | fixed d7076d1 |
 | R19 | nit | data-model.md names drift from the contract | F3 | open |
-| R20 | nit | Gate tests have no timeout | F2 | open |
+| R20 | nit | Gate tests have no timeout | F2 | fixed 23380a8 |
 | R21 | nit | UI-free scan skips `Contributions/BuiltIn/` and one level of signatures | F1 | fixed 8e2015e |
 | R22 | nit | `Ctrl` binds Control on macOS, not Cmd | F4 | open |
 
-Six orphaned `NetPrints.Editor.Tests` Debug hosts left by B test runs were found hung (they ignored SIGTERM) and killed. R20 (gate tests without a timeout) is the likely cause and is in F2.
+Six orphaned `NetPrints.Editor.Tests` Debug hosts left by B test runs were found hung (they ignored SIGTERM) and killed. R20 (gate tests without a timeout) is the likely cause and was fixed in F2.
 
 ### Accepted decisions
 
@@ -543,3 +543,13 @@ Six orphaned `NetPrints.Editor.Tests` Debug hosts left by B test runs were found
 - R7 (c6f401d). The test now uses `DrainTimeout = 30 s` and waits for the grandchild's pid line, so a surviving grandchild pushes the exit report past the 10 s bound. Mutation: `Kill(entireProcessTree: true)` replaced by `Kill()` failed it (`Assert.Same() Failure`, exit never reported), restored, green. Fix: the cancel registration is made right after `Start`, before `EnableRaisingEvents`, so an early exit always disposes the real registration. macOS and Windows stay unverified (Linux only; the test skips on Windows; the Mac mini check is not done).
 - R21 (8e2015e). `SearchOption.AllDirectories` and a namespace prefix match. Mutation: a temporary `Contributions/BuiltIn/TmpOffender.cs` (`using Avalonia.Input;`) failed both scans (`TmpOffender.cs: Avalonia.Input`, `Avalonia.Input`), removed.
 - Totals (Release): solution suite 2026 total, first run 2 failed (the two class editor Run tests, fixed), Editor.Tests rerun 586 passed, UITests passed (5 m 35 s), Desktop E2E (`NETPRINTS_E2E=1`, `--fail-skips on`) 31 passed, 0 skipped. Format and Release build clean.
+
+### B-F2 (R3, R15, R20: 23380a8; R12, R14: 81d8768; R18: d7076d1)
+
+- R3 (23380a8). Red (`UndoRedoStackSavedMarkerTests` 3 failed, `ClassEditorViewModelTests.DeletingNodesInvalidatesTheSavedMarkerEvenAfterAnUndoReturnsToIt` `Expected: False Actual: True`, `ProjectSessionViewModelTests.SaveAllMarksTheUndoStacksSaved` `Expected: True Actual: False`, `AnEditMadeDuringASaveIsNotMarkedSaved` `Expected: True Actual: False`; run against compiling no-op stubs of the new API). Fix: `UndoRedoStack.CapturePosition()` returns a `SavePoint` (depth, top, epoch), `MarkSaved(SavePoint)` is ignored when `ForgetSavedState()` or `Clear()` ran since the capture, `ForgetSavedState()` drops the marker; the session captures the point of every stack before a save starts and marks it after the save succeeds; `NodeGraphViewModel.DeleteSelectedNodes` forgets the marker when it deleted something. Node delete stays not undoable (decision: forget instead, as the review allowed). Green: same classes, 0 failed. The `ProjectPersistence.MarkClean` race after the write (an edit made during the write is cleared as clean) is still open for T048; the follow-up save of R15 does not cover it.
+- R15 (23380a8). Red: `ASaveRequestedDuringASaveRunsOnceMoreAndWritesTheLaterEdit` (the edited class was never written). Fix: a save requested while one runs sets a flag and returns the running save's task; the running save runs once more when it ends (at most one pending; a failed save does not repeat). Green.
+- R20 (23380a8). Gate tests (`CompileWaitsForASaveInProgress`, the two held-save tests, the three new save tests, `CompileAndRunWaitForASaveInProgress`) carry `Timeout = 30000`, every await after a gate is `WaitAsync(10 s)`, and `GatedDocumentStore` fails a blocked write after 30 s. Mutation: commenting out the release in `CompileWaitsForASaveInProgress` failed it with `TimeoutException` after 14.7 s (suite of the class), not a hang; restored. No orphaned hosts left by my runs.
+- R12 (81d8768). Red: `CommandInvokerTests.ASynchronousThrowReachesTheFaultCallbackInsteadOfEscaping` (`InvalidOperationException : sync` escaped `TryRun`). Fix: the handler runs inside an async local function so both paths reach `onFaulted`. Green.
+- R14 (81d8768). Red: `RenameIsDisabledForAConstructorTreeItemAndAnActiveConstructorGraph` and `DeleteIsDisabledForAVariableTreeItemNothingHandlesButEnabledForMethodsAndEventGraphs` (`Expected: False Actual: True`). Fix: rename is disabled for a `ConstructorGraph` target; delete is enabled for a tree item only when it is a class, method or event graph (C's tree tasks re-enable variables). Green.
+- R18 (d7076d1). Test written after the code (the mapping already worked): `NewProjectCreatesAndLoadsTheProject`. Mutation: `NewProjectAsync` returning `Task.CompletedTask` failed it (`Expected: True Actual: False`), restored. The canvas test comment now says the canvas's scoped key behavior.
+- Totals (Release): solution suite 2038 total, 2024 passed, 13 skipped (the tolerated headless skips), 1 failed on the first run: `SourceHygieneTests.NoNullForgivingOperator` (the allowlist lines of `ClassEditorViewModelTests` shifted and my new test used a `!`); the new test no longer uses one and the entries moved to 537 and 570 in the same commit; Core.Tests 671 passed and Editor.Tests 598 passed afterwards, UITests passed (5 m 34 s), Desktop E2E (`NETPRINTS_E2E=1`, `--fail-skips on`) 31 passed, 0 skipped. Format and Release build clean.
