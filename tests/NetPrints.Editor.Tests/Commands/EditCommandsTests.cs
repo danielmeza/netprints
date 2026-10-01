@@ -169,6 +169,32 @@ public sealed class EditCommandsTests : SessionCommandTests
     }
 
     [Fact]
+    public void RenameIsDisabledForAConstructorTreeItemAndAnActiveConstructorGraph()
+    {
+        var classEditor = Track(new ClassEditorViewModel(new ClassGraph { Name = "C", Namespace = "N" }, Editor.Context));
+        classEditor.CreateConstructorCommand.Execute(null);
+        NodeGraphViewModel graph = Assert.IsType<NodeGraphViewModel>(classEditor.OpenedGraph);
+        var handler = new RenameCommandHandler();
+
+        Assert.IsType<ConstructorGraph>(graph.Graph);
+        Assert.False(handler.CanExecute(Shell.Context(graph: graph)));
+        Assert.False(handler.CanExecute(Shell.Context(selection: new CommandSelection([], new ConstructorGraph()))));
+    }
+
+    [Fact]
+    public async Task DeleteIsDisabledForAVariableTreeItemNothingHandlesButEnabledForMethodsAndEventGraphs()
+    {
+        ProjectSessionViewModel session = await OpenSessionAsync();
+        ClassGraph cls = session.Project.Classes.Single();
+        var variable = new Variable(cls, "V", TypeSpecifier.FromType<int>(), null, null, VariableModifiers.None);
+        var handler = new DeleteCommandHandler();
+
+        Assert.False(handler.CanExecute(ContextOf(session, treeItem: variable)));
+        Assert.True(handler.CanExecute(ContextOf(session, treeItem: new MethodGraph("M"))));
+        Assert.True(handler.CanExecute(ContextOf(session, treeItem: new EventGraph("E"))));
+    }
+
+    [Fact]
     public async Task SelectAllSelectsEveryNode()
     {
         NodeGraphViewModel graph = OpenGraph();

@@ -1,13 +1,14 @@
+using NetPrints.Core;
 using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Shell;
 
 namespace NetPrints.Editor.Commands;
 
-/// <summary>The <c>delete</c> command: deletes the selected nodes of the active graph, or else the selected project tree item.</summary>
+/// <summary>The <c>delete</c> command: deletes the selected nodes of the active graph, or else the selected class, method or event graph of the project tree.</summary>
 public sealed class DeleteCommandHandler : ICommandHandler
 {
     /// <inheritdoc/>
-    public bool CanExecute(CommandContext context) => SelectedNodes(context) || context.Selection.TreeItem is not null;
+    public bool CanExecute(CommandContext context) => SelectedNodes(context) || context.Selection.TreeItem is ClassGraph or MethodGraph or EventGraph;
 
     /// <inheritdoc/>
     public Task ExecuteAsync(CommandContext context, CancellationToken cancellationToken)

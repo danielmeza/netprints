@@ -34,9 +34,12 @@ public sealed class CommandInvoker(IContributionRegistry registry, ICommandConte
             return false;
         }
 
-        command.Handler.ExecuteAsync(context, CancellationToken.None).Forget(onFaulted);
+        RunAsync(command, context).Forget(onFaulted);
         return true;
     }
+
+    private static async Task RunAsync(CommandDescriptor command, CommandContext context) =>
+        await command.Handler.ExecuteAsync(context, CancellationToken.None).ConfigureAwait(true);
 
     private static bool InScope(CommandScope commandScope, CommandScope scope) =>
         scope == CommandScope.Global ? commandScope == CommandScope.Global : commandScope.HasFlag(scope);
