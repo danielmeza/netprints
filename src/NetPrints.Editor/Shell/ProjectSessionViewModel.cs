@@ -24,6 +24,7 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
     private readonly EditorContext context;
     private readonly Dictionary<ClassGraph, UndoRedoStack> undoStacks = [];
     private Task<bool>? saving;
+    private bool saveRequested;
     private Task<bool>? flow;
     private CancellationTokenSource? runCancellation;
     private bool wasRunning;
@@ -95,14 +96,17 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// Saves every edited class through <see cref="ProjectPersistence"/>. A call made while a save runs returns that
-    /// save's result instead of starting another. A failure is shown through <see cref="IEditorDialogs.ShowErrorAsync"/>.
+    /// Saves every edited class through <see cref="ProjectPersistence"/>. A call made while a save runs makes
+    /// that save run once more when it ends, so an edit made meanwhile is written; every such call gets the task of the
+    /// running save, which completes after the follow-up. Each class's undo stack is marked saved at the position it had when its save started.
+    /// A failure is shown through <see cref="IEditorDialogs.ShowErrorAsync"/>.
     /// </summary>
     /// <returns>Whether the save succeeded.</returns>
     public Task<bool> SaveAllAsync()
     {
         if (saving is { IsCompleted: false } current)
         {
+            saveRequested = true;
             return current;
         }
 
@@ -261,6 +265,20 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
 
     private async Task<bool> SaveCoreAsync()
     {
+        bool saved;
+        do
+        {
+            saveRequested = false;
+            saved = await SaveOnceAsync().ConfigureAwait(true);
+        }
+        while (saved && saveRequested);
+
+        return saved;
+    }
+
+    private async Task<bool> SaveOnceAsync()
+    {
+        var points = undoStacks.Select(pair => (pair.Value, Point: pair.Value.CapturePosition())).ToList();
         try
         {
             ProjectSaveResult result = await context.Persistence.SaveAsync(Project, cls => RenderGenerated(context, Project, cls), CancellationToken.None);
@@ -269,6 +287,7 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
                 Project.LastDiagnostics = new ObservableRangeCollection<CodeDiagnostic>(result.Diagnostics);
             }
 
+            points.ForEach(entry => entry.Value.MarkSaved(entry.Point));
             return true;
         }
         catch (Exception ex)

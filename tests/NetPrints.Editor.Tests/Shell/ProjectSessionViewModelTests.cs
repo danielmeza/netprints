@@ -18,6 +18,7 @@ public sealed class ProjectSessionViewModelTests : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        storeCreated.Dispose();
         cleanup.ForEach(TestPaths.TryDelete);
         await editor.DisposeAsync();
     }
@@ -84,7 +85,7 @@ public sealed class ProjectSessionViewModelTests : IAsyncDisposable
         Assert.Empty(editor.Dialogs.Errors);
     }
 
-    [Fact]
+    [Fact(Timeout = 30000)]
     public async Task CompileWaitsForASaveInProgress()
     {
         Project project = await LoadSampleAsync();
@@ -107,7 +108,7 @@ public sealed class ProjectSessionViewModelTests : IAsyncDisposable
         cls.MarkDirty();
 
         Task<bool> save = session.SaveAllAsync();
-        await stores.Single().FirstWriteStarted.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+        await stores.Single().FirstWriteStarted.WaitAsync(Bound, TestContext.Current.CancellationToken);
         Task<bool> compile = session.CompileAsync();
         try
         {
@@ -122,8 +123,8 @@ public sealed class ProjectSessionViewModelTests : IAsyncDisposable
             stores.ForEach(store => store.Release());
         }
 
-        Assert.True(await save);
-        Assert.True(await compile);
+        Assert.True(await save.WaitAsync(Bound, TestContext.Current.CancellationToken));
+        Assert.True(await compile.WaitAsync(Bound, TestContext.Current.CancellationToken));
         Assert.Equal(1, builds);
     }
 
@@ -180,7 +181,9 @@ public sealed class ProjectSessionViewModelTests : IAsyncDisposable
 
     private static readonly TimeSpan Bound = TimeSpan.FromSeconds(10);
 
-    private async Task<(ProjectSessionViewModel Session, List<GatedDocumentStore> Stores, int[] Builds)> HeldSaveSessionAsync()
+    private readonly SemaphoreSlim storeCreated = new(0);
+
+    private async Task<(ProjectSessionViewModel Session, List<GatedDocumentStore> Stores, int[] Builds)> GatedSessionAsync()
     {
         Project project = await LoadSampleAsync();
         List<GatedDocumentStore> stores = [];
@@ -188,6 +191,7 @@ public sealed class ProjectSessionViewModelTests : IAsyncDisposable
         {
             var gated = new GatedDocumentStore(store);
             stores.Add(gated);
+            storeCreated.Release();
             return gated;
         });
         int[] builds = [0];
@@ -196,16 +200,93 @@ public sealed class ProjectSessionViewModelTests : IAsyncDisposable
             Interlocked.Increment(ref builds[0]);
             return new BuildResult(true, [], null, "");
         };
-        var session = new ProjectSessionViewModel(project, editor.Context with { Persistence = persistence });
-        ClassGraph cls = project.Classes.Single();
-        File.Delete(project.GetGraphFilePath(cls));
-        cls.MarkDirty();
-        Task<bool> save = session.SaveAllAsync();
-        await stores.Single().FirstWriteStarted.WaitAsync(Bound, TestContext.Current.CancellationToken);
-        return (session, stores, builds);
+        return (new ProjectSessionViewModel(project, editor.Context with { Persistence = persistence }), stores, builds);
     }
 
-    [Fact]
+    private async Task<(ProjectSessionViewModel Session, List<GatedDocumentStore> Stores, int[] Builds)> HeldSaveSessionAsync()
+    {
+        var held = await GatedSessionAsync();
+        ClassGraph cls = held.Session.Project.Classes.Single();
+        File.Delete(held.Session.Project.GetGraphFilePath(cls));
+        cls.MarkDirty();
+        _ = held.Session.SaveAllAsync();
+        await held.Stores.Single().FirstWriteStarted.WaitAsync(Bound, TestContext.Current.CancellationToken);
+        return held;
+    }
+
+    private static DelegateUndoableCommand Edit() => new("edit", () => { }, () => { });
+
+    [Fact(Timeout = 30000)]
+    public async Task SaveAllMarksTheUndoStacksSaved()
+    {
+        Project project = await LoadSampleAsync();
+        using var session = new ProjectSessionViewModel(project, editor.Context);
+        ClassGraph cls = project.Classes.Single();
+        UndoRedoStack stack = session.UndoStackFor(cls);
+        stack.Do(Edit());
+        cls.MarkDirty();
+
+        Assert.True(await session.SaveAllAsync().WaitAsync(Bound, TestContext.Current.CancellationToken));
+
+        Assert.True(stack.IsAtSavedState);
+    }
+
+    [Fact(Timeout = 30000)]
+    public async Task AnEditMadeDuringASaveIsNotMarkedSaved()
+    {
+        var (session, stores, _) = await GatedSessionAsync();
+        using (session)
+        {
+            ClassGraph cls = session.Project.Classes.Single();
+            UndoRedoStack stack = session.UndoStackFor(cls);
+            File.Delete(session.Project.GetGraphFilePath(cls));
+            cls.MarkDirty();
+            Task<bool> save = session.SaveAllAsync();
+            await stores.Single().FirstWriteStarted.WaitAsync(Bound, TestContext.Current.CancellationToken);
+            stack.Do(Edit());
+            stores.ForEach(store => store.Release());
+
+            Assert.True(await save.WaitAsync(Bound, TestContext.Current.CancellationToken));
+
+            Assert.False(stack.IsAtSavedState);
+            stack.Undo();
+            Assert.True(stack.IsAtSavedState);
+        }
+    }
+
+    [Fact(Timeout = 30000)]
+    public async Task ASaveRequestedDuringASaveRunsOnceMoreAndWritesTheLaterEdit()
+    {
+        var (session, stores, _) = await GatedSessionAsync();
+        using (session)
+        {
+            ClassGraph edited = session.Project.Classes.Single();
+            ClassGraph held = session.Project.CreateNewClass(DefaultProjectProfile.Instance);
+            string editedPath = session.Project.GetGraphFilePath(edited);
+            File.Delete(editedPath);
+            held.MarkDirty();
+            Task<bool> first = session.SaveAllAsync();
+            await stores[0].FirstWriteStarted.WaitAsync(Bound, TestContext.Current.CancellationToken);
+            edited.MarkDirty();
+
+            Task<bool> second = session.SaveAllAsync();
+            Task<bool> third = session.SaveAllAsync();
+            stores[0].Release();
+            await storeCreated.WaitAsync(Bound, TestContext.Current.CancellationToken);
+            await storeCreated.WaitAsync(Bound, TestContext.Current.CancellationToken);
+            await stores[1].FirstWriteStarted.WaitAsync(Bound, TestContext.Current.CancellationToken);
+            stores[1].Release();
+
+            Assert.True(await first.WaitAsync(Bound, TestContext.Current.CancellationToken));
+            Assert.True(await second.WaitAsync(Bound, TestContext.Current.CancellationToken));
+            Assert.True(await third.WaitAsync(Bound, TestContext.Current.CancellationToken));
+            Assert.True(File.Exists(editedPath));
+            Assert.False(edited.IsDirty);
+            Assert.Equal(2, stores.Count);
+        }
+    }
+
+    [Fact(Timeout = 30000)]
     public async Task ASecondCompileDuringASaveJoinsTheFirstBuild()
     {
         (ProjectSessionViewModel session, List<GatedDocumentStore> stores, int[] builds) = await HeldSaveSessionAsync();
@@ -221,7 +302,7 @@ public sealed class ProjectSessionViewModelTests : IAsyncDisposable
         }
     }
 
-    [Fact]
+    [Fact(Timeout = 30000)]
     public async Task ASecondRunDuringASaveStartsOneProgram()
     {
         (ProjectSessionViewModel session, List<GatedDocumentStore> stores, int[] builds) = await HeldSaveSessionAsync();

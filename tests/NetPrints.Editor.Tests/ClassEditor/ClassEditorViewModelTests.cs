@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Messaging;
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.Diagnostics;
+using NetPrints.Editor.Graph;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.Tests.Hosting;
 using NetPrints.Graph;
@@ -545,6 +546,21 @@ public class ClassEditorViewModelTests : IAsyncLifetime
         Assert.False(method.Nodes.Contains(extraReturn));
         Assert.False(method.Nodes.OfType<CallMethodNode>().Any(), "other nodes are deleted");
         Assert.False(graph.SelectedNodes.Any());
+    }
+
+    [Fact]
+    public async Task DeletingNodesInvalidatesTheSavedMarkerEvenAfterAnUndoReturnsToIt()
+    {
+        await vm.OpenMethodCommand.ExecuteAsync(vm.Methods.Single());
+        var graph = Assert.IsType<NodeGraphViewModel>(vm.OpenedGraph);
+        vm.UndoRedo.MarkSaved();
+        graph.SelectNodes(graph.Nodes, deselectPrevious: true);
+        vm.DeleteSelectedNodesCommand.Execute(null);
+
+        graph.AddNode<IfElseNode>(new GraphPoint(10, 10));
+        vm.UndoRedo.Undo();
+
+        Assert.False(vm.UndoRedo.IsAtSavedState);
     }
 
     [Fact]

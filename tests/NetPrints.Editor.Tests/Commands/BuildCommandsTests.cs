@@ -85,7 +85,7 @@ public sealed class BuildCommandsTests : SessionCommandTests
         Assert.Equal(RunPhase.Exited, Editor.Context.RunState.Snapshot().Phase);
     }
 
-    [Theory]
+    [Theory(Timeout = 30000)]
     [InlineData(false)]
     [InlineData(true)]
     public async Task CompileAndRunWaitForASaveInProgress(bool run)
@@ -120,8 +120,8 @@ public sealed class BuildCommandsTests : SessionCommandTests
             stores.ForEach(store => store.Release());
         }
 
-        await save;
-        await build;
+        await save.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+        await build.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
         Assert.Equal(run ? 1 : 0, Editor.Processes.Started.Count);
     }
 }

@@ -15,6 +15,12 @@ public interface IUndoableCommand
     void Undo();
 }
 
+/// <summary>A position of an <see cref="UndoRedoStack"/> captured by <see cref="UndoRedoStack.CapturePosition"/>.</summary>
+/// <param name="Depth">The number of recorded commands.</param>
+/// <param name="Top">The newest recorded command, or null.</param>
+/// <param name="Epoch">How many times the saved state was forgotten before the capture.</param>
+public readonly record struct SavePoint(int Depth, IUndoableCommand? Top, int Epoch);
+
 /// <summary>
 /// Undo/redo history of one class editor (the WPF editor used a global singleton).
 /// </summary>
@@ -24,6 +30,7 @@ public sealed class UndoRedoStack
     private readonly Stack<IUndoableCommand> redoStack = new();
     private int? savedDepth;
     private IUndoableCommand? savedTop;
+    private int epoch;
 
     /// <summary>Whether <see cref="Undo"/> would undo a command.</summary>
     public bool CanUndo => undoStack.Count > 0;
@@ -31,7 +38,7 @@ public sealed class UndoRedoStack
     /// <summary>Whether <see cref="Redo"/> would redo a command.</summary>
     public bool CanRedo => redoStack.Count > 0;
 
-    /// <summary>Whether the history is exactly where <see cref="MarkSaved"/> last recorded it (same depth, same top command).</summary>
+    /// <summary>Whether the history is exactly where <see cref="MarkSaved()"/> last recorded it (same depth, same top command).</summary>
     public bool IsAtSavedState => savedDepth is { } depth && depth == undoStack.Count && ReferenceEquals(savedTop, TopOrNull());
 
     /// <summary>The <see cref="IUndoableCommand.Name"/> of the command <see cref="Undo"/> would undo, or null.</summary>
@@ -45,6 +52,33 @@ public sealed class UndoRedoStack
     {
         savedDepth = undoStack.Count;
         savedTop = TopOrNull();
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>Captures the current history position so a save that starts now can mark exactly that state as saved with <see cref="MarkSaved(SavePoint)"/>.</summary>
+    /// <returns>The position, valid until <see cref="ForgetSavedState"/> or <see cref="Clear"/> is called.</returns>
+    public SavePoint CapturePosition() => new(undoStack.Count, TopOrNull(), epoch);
+
+    /// <summary>Records <paramref name="point"/> as the saved state, unless <see cref="ForgetSavedState"/> or <see cref="Clear"/> ran since it was captured.</summary>
+    /// <param name="point">A position returned by <see cref="CapturePosition"/>.</param>
+    public void MarkSaved(SavePoint point)
+    {
+        if (point.Epoch != epoch)
+        {
+            return;
+        }
+
+        savedDepth = point.Depth;
+        savedTop = point.Top;
+        Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>Forgets the saved state: a change that bypasses the history (a node delete) calls this, so returning to the old position does not count as saved.</summary>
+    public void ForgetSavedState()
+    {
+        epoch++;
+        savedDepth = null;
+        savedTop = null;
         Changed?.Invoke(this, EventArgs.Empty);
     }
 
@@ -103,6 +137,7 @@ public sealed class UndoRedoStack
     {
         undoStack.Clear();
         redoStack.Clear();
+        epoch++;
         savedDepth = null;
         savedTop = null;
         Changed?.Invoke(this, EventArgs.Empty);

@@ -120,4 +120,47 @@ public class UndoRedoStackSavedMarkerTests
         Assert.Null(stack.UndoName);
         Assert.Equal("Add node", stack.RedoName);
     }
+
+    [Fact]
+    public void ForgetSavedStateMakesTheMarkerUnreachable()
+    {
+        var stack = new UndoRedoStack();
+        stack.Do(Command("a"));
+        stack.MarkSaved();
+        stack.ForgetSavedState();
+
+        Assert.False(stack.IsAtSavedState);
+        stack.Do(Command("b"));
+        stack.Undo();
+
+        Assert.False(stack.IsAtSavedState);
+    }
+
+    [Fact]
+    public void MarkSavedAtACapturedPositionIgnoresEditsMadeAfterTheCapture()
+    {
+        var stack = new UndoRedoStack();
+        stack.Do(Command("a"));
+        SavePoint point = stack.CapturePosition();
+        stack.Do(Command("b"));
+
+        stack.MarkSaved(point);
+
+        Assert.False(stack.IsAtSavedState);
+        stack.Undo();
+        Assert.True(stack.IsAtSavedState);
+    }
+
+    [Fact]
+    public void MarkSavedAtACapturedPositionDoesNothingAfterTheSavedStateWasForgotten()
+    {
+        var stack = new UndoRedoStack();
+        stack.Do(Command("a"));
+        SavePoint point = stack.CapturePosition();
+        stack.ForgetSavedState();
+
+        stack.MarkSaved(point);
+
+        Assert.False(stack.IsAtSavedState);
+    }
 }

@@ -3,11 +3,12 @@ using NetPrints.Serialization.Stores;
 
 namespace NetPrints.Editor.Tests.Hosting;
 
-/// <summary>An <see cref="IDocumentStore"/> whose writes block until <see cref="Release"/>, so a test can hold a save in progress.</summary>
+/// <summary>An <see cref="IDocumentStore"/> whose writes block until <see cref="Release"/> (or fail after 30 s instead of hanging), so a test can hold a save in progress.</summary>
 public sealed class GatedDocumentStore(IDocumentStore inner) : IDocumentStore
 {
     private readonly TaskCompletionSource gate = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly TaskCompletionSource firstWrite = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private static readonly TimeSpan Bound = TimeSpan.FromSeconds(30);
     private int writes;
 
     /// <summary>How many writes reached the store.</summary>
@@ -33,7 +34,7 @@ public sealed class GatedDocumentStore(IDocumentStore inner) : IDocumentStore
     {
         Interlocked.Increment(ref writes);
         firstWrite.TrySetResult();
-        await gate.Task.WaitAsync(cancellationToken);
+        await gate.Task.WaitAsync(Bound, cancellationToken);
         await inner.WriteAsync(id, write, cancellationToken);
     }
 

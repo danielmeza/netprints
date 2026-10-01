@@ -307,6 +307,7 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
     public void DeleteSelectedNodes()
     {
         var mainReturn = (Graph as MethodGraph)?.MainReturnNode;
+        bool deleted = false;
 
         foreach (var node in SelectedNodes.ToList())
         {
@@ -317,6 +318,12 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
 
             GraphUtil.DisconnectNodePins(node.Node);
             Graph.Nodes.Remove(node.Node);
+            deleted = true;
+        }
+
+        if (deleted)
+        {
+            Services.UndoRedo.ForgetSavedState();
         }
 
         DeselectNodes();
