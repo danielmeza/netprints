@@ -233,18 +233,18 @@ tests; the existing windows' shortcuts run through the registry.
 
 ### Batch B3 — model: sonnet — T023–T025 — 4 units
 
-- [ ] T023 [US4] Edit and viewport handlers (2 units), test first in
+- [x] T023 [US4] Edit and viewport handlers (2 units), test first in
   `tests/NetPrints.Editor.Tests/Commands/EditCommandsTests.cs`: `undo` and `redo` (acting on the active document's
   class, or the tree selection's class; `DynamicLabel` gives `Undo <action>` or plain `Undo` and disabled), `delete`,
   `rename`, `selectAll`, `cancel`, `nodeSearch`, `frameSelection` and `fitAll`. The handlers stay UI-free: the
   viewport and selection commands raise a request on the graph's view model, and a behavior on the Nodify editor
   carries it out (selection, `BringIntoView`, fit), so menu and keyboard behave the same (edge case "shortcut Nodify
   handles itself").
-- [ ] T024 [US4] Project handlers, test first in `tests/NetPrints.Editor.Tests/Commands/ProjectCommandsTests.cs`:
+- [x] T024 [US4] Project handlers, test first in `tests/NetPrints.Editor.Tests/Commands/ProjectCommandsTests.cs`:
   `openProject`, `newProject`, `closeProject`, `projectSettings`, `references`, `classSettings`, `addMethod`,
   `addConstructor`, `addVariable`, `addEventGraph` and `exit`, wrapping today's flows. The unload prompt is added in D
   (T050) at a single call site the handlers already go through.
-- [ ] T025 [US4] Built-in registration: `src/NetPrints.Editor/Contributions/BuiltIn/{File,Edit,View,Go,Build,Help}Contributions.cs`.
+- [x] T025 [US4] Built-in registration: `src/NetPrints.Editor/Contributions/BuiltIn/{File,Edit,View,Go,Build,Help}Contributions.cs`.
   Test first: `tests/NetPrints.Editor.Tests/Contributions/BuiltInCommandTableTests.cs` holds contracts/commands.md §1
   as data. Every registered built-in command matches its row (id, label, menu path and group, gestures, scope,
   command-bar order); `exit`'s Alt+F4 belongs to the OS and is not a registered gesture. A shrink-only
