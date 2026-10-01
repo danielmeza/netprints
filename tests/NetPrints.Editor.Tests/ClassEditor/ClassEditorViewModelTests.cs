@@ -2,9 +2,9 @@ using System.Reflection;
 using System.Windows.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using NetPrints.Core;
-using NetPrints.Editor.Shell;
 using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.Diagnostics;
+using NetPrints.Editor.Shell;
 using NetPrints.Editor.Tests.Hosting;
 using NetPrints.Graph;
 
