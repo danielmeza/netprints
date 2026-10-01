@@ -10,7 +10,7 @@ namespace NetPrints.Desktop.E2ETests.Hosting;
 /// The real desktop editor (NetPrints.Desktop) on the private display, in automation mode, with
 /// its console output captured (programs it runs inherit it).
 /// </summary>
-public sealed class EditorProcess : IAsyncDisposable
+public sealed class EditorProcess : ICapturedEditor, IAsyncDisposable
 {
     /// <summary>The <c>sockaddr_un</c> path length limit on Linux; a longer path fails to bind.</summary>
     private const int UnixSocketPathLimit = 108;
@@ -205,6 +205,9 @@ public sealed class EditorProcess : IAsyncDisposable
             }
         }
     }
+
+    /// <summary>Kills the editor, for the test that proves the diagnostics of an editor that exits.</summary>
+    public void Kill() => process.Kill(entireProcessTree: true);
 
     public async ValueTask DisposeAsync()
     {

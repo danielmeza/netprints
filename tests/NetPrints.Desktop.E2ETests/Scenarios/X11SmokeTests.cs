@@ -45,6 +45,9 @@ public abstract class X11SmokeTestBase(DesktopWorkerPool pool) : SmokeScenarios,
 
     protected CancellationToken Token => timeoutCts.Token;
 
+    /// <summary>The leased editor, for a test that acts on the process itself.</summary>
+    protected EditorProcess LeasedEditor => lease?.Editor ?? throw new InvalidOperationException("The editor has not started.");
+
     private StepTimer Steps => timer ??= new StepTimer(TestContext.Current.TestMethod?.MethodName ?? "test", ForcedTimeoutStep);
 
     private static string Artifacts => Path.Combine(
@@ -70,7 +73,7 @@ public abstract class X11SmokeTestBase(DesktopWorkerPool pool) : SmokeScenarios,
             var moment = Steps.WhereFailed(original);
             string kind = editorExited ? "editor exited" : timeoutCts.IsCancellationRequested ? "timeout" : original is Xunit.Sdk.XunitException ? "assertion" : "exception";
             var (capturedLease, tool) = (lease, driver.Tool);
-            throw await new FailureCapture(TimeProvider.System, () => DiagnosticParts.Create(kind, GetType().Name, Steps, moment, capturedLease, tool))
+            throw await new FailureCapture(TimeProvider.System, () => DiagnosticParts.Create(kind, GetType().Name, Steps, moment, capturedLease.Server.DisplayName, capturedLease.Editor, DiagnosticParts.Screenshot(tool)))
                 .FailAsync(original, moment.Step, moment.Elapsed, FailureCapture.FolderFor(GetType().Name), CancellationToken.None);
         }
         finally

@@ -6,6 +6,23 @@ using NetPrints.Testing.Ui.Driving;
 
 namespace NetPrints.Desktop.E2ETests.Hosting;
 
+/// <summary>What the failure diagnostics read from the editor under test; a fake in the unit tests.</summary>
+public interface ICapturedEditor
+{
+    int ProcessId { get; }
+
+    bool HasExited { get; }
+
+    int ExitCode { get; }
+
+    string Output { get; }
+
+    string Errors { get; }
+
+    /// <summary>Opens a connection of its own to the automation agent.</summary>
+    Task<AutomationClient> ConnectAsync(TimeSpan timeout, CancellationToken cancellationToken);
+}
+
 /// <summary>The files of the failure diagnostics (contracts/ci.md §3), written from a leased editor.</summary>
 public static class DiagnosticParts
 {
@@ -19,38 +36,41 @@ public static class DiagnosticParts
     /// <param name="testClass">The failing test class.</param>
     /// <param name="steps">The test's step timer.</param>
     /// <param name="moment">Where the test was when it failed.</param>
-    /// <param name="lease">The worker and editor the test holds.</param>
-    /// <param name="tool">Runs the X11 tools against the worker's display.</param>
-    public static IReadOnlyList<CapturePart> Create(string kind, string testClass, StepTimer steps, FailureMoment moment, DesktopLease lease, Tool tool)
+    /// <param name="display">The worker's display name.</param>
+    /// <param name="editor">The editor the test holds.</param>
+    /// <param name="screenshot">Takes a PNG of the display.</param>
+    public static IReadOnlyList<CapturePart> Create(string kind, string testClass, StepTimer steps, FailureMoment moment, string display, ICapturedEditor editor, Func<CancellationToken, Task<byte[]>> screenshot)
     {
-        var editor = lease.Editor;
         return
         [
-            new("summary", "summary.md", (path, token) => File.WriteAllTextAsync(path, Summary(kind, testClass, moment, lease), token)),
+            new("summary", "summary.md", (path, token) => File.WriteAllTextAsync(path, Summary(kind, testClass, moment, display, editor), token)),
             new("timings", "timings.md", (path, token) => File.WriteAllTextAsync(path, steps.Timings(moment), token)),
             new("ui tree", "ui-tree.json", (path, token) => WriteUiTreeAsync(path, editor, token)),
-            new("display", "display.png", async (path, token) =>
-                await File.WriteAllBytesAsync(path, await tool.RunBytesAsync("import", ["-window", "root", "png:-"], token, timeout: ToolLimit), token)),
+            new("display", "display.png", async (path, token) => await File.WriteAllBytesAsync(path, await screenshot(token), token)),
             new("editor log", "editor.log", (path, token) => File.WriteAllTextAsync(path, EditorLog(editor), token)),
             new("run state", "run-state.json", (path, token) => WriteRunStateAsync(path, editor, token)),
             new("process", "process.txt", (path, token) => File.WriteAllTextAsync(path, editor.HasExited ? $"exited {editor.ExitCode}" : "running", token)),
         ];
     }
 
-    private static string Summary(string kind, string testClass, FailureMoment moment, DesktopLease lease)
+    /// <summary>Takes the screenshot of the worker's display with the X11 tools.</summary>
+    public static Func<CancellationToken, Task<byte[]>> Screenshot(Tool tool) =>
+        token => tool.RunBytesAsync("import", ["-window", "root", "png:-"], token, timeout: ToolLimit);
+
+    private static string Summary(string kind, string testClass, FailureMoment moment, string display, ICapturedEditor editor)
     {
         return new StringBuilder()
             .AppendLine(CultureInfo.InvariantCulture, $"# {testClass}").AppendLine()
             .AppendLine(CultureInfo.InvariantCulture, $"- failure: {kind}")
             .AppendLine(CultureInfo.InvariantCulture, $"- test: {TestContext.Current.TestMethod?.MethodName ?? "test"}")
             .AppendLine(CultureInfo.InvariantCulture, $"- step: {moment.Step ?? "(none)"} ({Math.Round(moment.Elapsed.TotalSeconds).ToString("0", CultureInfo.InvariantCulture)} s)")
-            .AppendLine(CultureInfo.InvariantCulture, $"- display: {lease.Server.DisplayName}")
-            .AppendLine(CultureInfo.InvariantCulture, $"- editor pid: {lease.Editor.ProcessId}")
+            .AppendLine(CultureInfo.InvariantCulture, $"- display: {display}")
+            .AppendLine(CultureInfo.InvariantCulture, $"- editor pid: {editor.ProcessId}")
             .AppendLine(CultureInfo.InvariantCulture, $"- time: {DateTime.UtcNow:O}")
             .ToString();
     }
 
-    private static string EditorLog(EditorProcess editor)
+    private static string EditorLog(ICapturedEditor editor)
     {
         static string Tail(string text, int lines) =>
             string.Join(Environment.NewLine, text.Split('\n', StringSplitOptions.TrimEntries).TakeLast(lines));
@@ -58,7 +78,7 @@ public static class DiagnosticParts
         return Tail(editor.Output, EditorLogLines) + Environment.NewLine + "--- stderr ---" + Environment.NewLine + Tail(editor.Errors, StderrLines) + Environment.NewLine;
     }
 
-    private static async Task WriteRunStateAsync(string path, EditorProcess editor, CancellationToken cancellationToken)
+    private static async Task WriteRunStateAsync(string path, ICapturedEditor editor, CancellationToken cancellationToken)
     {
         if (editor.HasExited)
         {
@@ -71,7 +91,7 @@ public static class DiagnosticParts
         await File.WriteAllTextAsync(path, JsonSerializer.Serialize(state, AutomationJsonContext.Default.RunStateSnapshot), cancellationToken);
     }
 
-    private static async Task WriteUiTreeAsync(string path, EditorProcess editor, CancellationToken cancellationToken)
+    private static async Task WriteUiTreeAsync(string path, ICapturedEditor editor, CancellationToken cancellationToken)
     {
         await using var file = File.Create(path);
         await using var json = new Utf8JsonWriter(file, new JsonWriterOptions { Indented = true });
