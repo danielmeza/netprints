@@ -37,7 +37,7 @@ The owner set three ground rules for any such policy:
 > **Amended 2026-10-01** (owner decision, P3a spec `specs/005-editor-shell/`, research R16): view model types are
 > named `<Name>ViewModel`; the `VM` suffix is not used. The existing `*VM` types are renamed at the start of P3a,
 > and a `SourceHygieneTests` check fails on any type whose name ends in `VM`. Mentions of the old names below
-> (for example `DialogViewModel<TResult>`) are updated by that rename.
+> (for example `DialogVM<TResult>`, now `DialogViewModel<TResult>`) are updated by that rename.
 
 - **Three `avalonia-*` skills** (`.claude/skills/`) are the single place these rules live. They share one
   rule numbering, so an ID cited in code, a test or a PR means the same thing in any of them, all three carry the same
