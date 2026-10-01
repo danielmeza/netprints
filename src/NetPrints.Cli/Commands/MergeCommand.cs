@@ -16,7 +16,7 @@ namespace NetPrints.Cli.Commands;
 /// <c>netprints merge &lt;base&gt; &lt;ours&gt; &lt;theirs&gt;</c>: the git merge driver for graphs (contracts/git.md §2, FR-034). It merges by node, pin and
 /// member identity and writes the canonical result over <c>ours</c>; when that is not possible it merges the texts with conflict markers and exits 1.
 /// </summary>
-internal sealed class MergeCommand(CliEnvironment environment, IProcessRunner processes) : AsyncCommand<MergeSettings>
+internal sealed class MergeCommand(CliEnvironment environment, IProcessRunner processes, GraphMergerFactory? mergerFactory = null) : AsyncCommand<MergeSettings>
 {
     /// <summary>The command name.</summary>
     public const string Name = "merge";
@@ -72,7 +72,7 @@ internal sealed class MergeCommand(CliEnvironment environment, IProcessRunner pr
         MergeOutcome outcome;
         try
         {
-            outcome = await new GraphMerger(format).MergeAsync(baseDocument, oursDocument, theirsDocument, cancellationToken).ConfigureAwait(false);
+            outcome = await (mergerFactory?.Invoke(format) ?? new GraphMerger(format)).MergeAsync(baseDocument, oursDocument, theirsDocument, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
