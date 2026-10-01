@@ -16,10 +16,11 @@ public sealed class E2EEditorExitDiagnosticsTests(DesktopWorkerPool pool) : X11S
     [Fact]
     public async Task AnEditorThatExitsWhileLeasedLeavesItsExitCode()
     {
-        var clock = Stopwatch.StartNew();
+        var clock = new Stopwatch();
         var failure = await Assert.ThrowsAsync<E2EStepFailureException>(() => RunScenarioAsync(async token =>
         {
             await StartAsync(token);
+            clock.Start();
             using (Step("kill editor"))
             {
                 LeasedEditor.Kill();
@@ -27,7 +28,7 @@ public sealed class E2EEditorExitDiagnosticsTests(DesktopWorkerPool pool) : X11S
             }
         }));
 
-        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(60), $"The failure took {clock.Elapsed.TotalSeconds:0} s, not well before the budget.");
+        Assert.True(clock.Elapsed < TimeSpan.FromSeconds(30), $"The failure took {clock.Elapsed.TotalSeconds:0} s, after the kill, not well before the budget.");
         Assert.StartsWith("[step 'kill editor' running for ", failure.Message, StringComparison.Ordinal);
         string folder = FailureCapture.FolderFor(nameof(E2EEditorExitDiagnosticsTests));
         Assert.Contains("failure: editor exited", await File.ReadAllTextAsync(Path.Combine(folder, "summary.md"), TestContext.Current.CancellationToken), StringComparison.Ordinal);
