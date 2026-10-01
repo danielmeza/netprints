@@ -115,6 +115,24 @@ namespace NetPrints.Tests.Core
         }
 
         [Fact]
+        public void TheReaderRejectsAContinuationLineItDoesNotUnderstand()
+        {
+            string[] lines =
+            [
+                "jobs:",
+                "  a:",
+                "    steps:",
+                "      - name: split",
+                "          scalar",
+                "  b:",
+                "    name: lost",
+            ];
+
+            FormatException error = Assert.Throws<FormatException>(() => new YamlReader(lines).Parse());
+            Assert.Contains("line 5", error.Message, StringComparison.Ordinal);
+        }
+
+        [Fact]
         public void RequiredCheckNamesAreUnchanged()
         {
             Dictionary<string, object?> jobs = Jobs();
@@ -223,14 +241,24 @@ namespace NetPrints.Tests.Core
 
         /// <summary>
         /// The subset of YAML the workflows use: block mappings and sequences by indentation, flow sequences,
-        /// literal and folded scalars, quoted scalars and comments. Anchors, tags and flow mappings are not supported.
+        /// literal and folded scalars, quoted scalars and comments. Anchors, tags, flow mappings and multi-line plain scalars are not supported:
+        /// the reader throws a <see cref="FormatException"/> on any line it does not consume.
         /// </summary>
         private sealed partial class YamlReader(string[] lines)
         {
             private readonly string[] lines = lines;
             private int position;
 
-            public object? Parse() => ParseBlock(0);
+            public object? Parse()
+            {
+                object? root = ParseBlock(0);
+                if (Peek() is { } rest)
+                {
+                    throw new FormatException($"Unsupported YAML on line {position + 1}: {rest.Text}");
+                }
+
+                return root;
+            }
 
             [GeneratedRegex(@"^([\w.\-]+):(?:\s+(.*))?$")]
             private static partial Regex KeyValue();
