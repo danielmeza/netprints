@@ -293,12 +293,12 @@ US2's independent test; SC-001.
 
 ### Batch C1 — model: sonnet — T030–T032 — 5 units
 
-- [ ] T030 [US2] Test first: `tests/NetPrints.Editor.Tests/Architecture/DockConfinementTests.cs`. No `Dock.*` namespace or
+- [x] T030 [US2] Test first: `tests/NetPrints.Editor.Tests/Architecture/DockConfinementTests.cs`. No `Dock.*` namespace or
   Dock XAML namespace is used outside `src/NetPrints.Editor/Shell/Docking/`. `NetPrints.Editor`'s
   `obj/project.assets.json` lists no `ReactiveUI*` and no `Newtonsoft.Json` library. `Directory.Packages.props` pins
   `Dock.Avalonia`, `Dock.Model.Mvvm`, `Dock.Avalonia.Themes.Fluent` and `Dock.Serializer.SystemTextJson` exactly at
   `[12.1.0.6]`. Then add the pins, and the `PackageReference`s to `src/NetPrints.Editor/NetPrints.Editor.csproj` only.
-- [ ] T031 [US2] Dock spike, checks 1–3 of ADR-0018 (2 units), headless in
+- [x] T031 [US2] Dock spike, checks 1–3 of ADR-0018 (2 units), headless in
   `tests/NetPrints.Editor.UITests/Shell/DockSpikeTests.cs`: (1) a document `DataTemplate` with `x:DataType` and
   compiled bindings renders a NetPrints view model inside a `DocumentDock`; (2) a layout saved with
   `Dock.Serializer.SystemTextJson` (source-generated context, assembly attribute) and loaded again re-creates its
@@ -306,7 +306,7 @@ US2's independent test; SC-001.
   and a floating pane are found by a headless test and by the automation pipe's tree builder
   (`src/NetPrints.Editor/Hosting/Automation/AutomationTree.cs`). Record each result (pass or fail, evidence, any
   workaround) in implementation-notes under "Spike".
-- [ ] T032 [US2] Dock spike, checks 4–5 and the gate (2 units). (4) Float and re-dock a pane under Xvfb and openbox in a
+- [x] T032 [US2] Dock spike, checks 4–5 and the gate (2 units). (4) Float and re-dock a pane under Xvfb and openbox in a
   throwaway E2E class `tests/NetPrints.Desktop.E2ETests/Scenarios/DockSpikeTests.cs`, against a spike window that the
   desktop host opens only with `NETPRINTS_DOCK_SPIKE=1`: native floating first, then managed floating on Linux if
   native fails (ADR-0018 "Floating"). (5) Light and Dark through `DynamicResource` tokens in `ThemeDictionaries`
