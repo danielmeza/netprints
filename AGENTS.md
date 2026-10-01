@@ -74,6 +74,7 @@ instead of retrying blindly.
 - Call `OnPropertyChanged(nameof(X))` manually only when the change doesn't go through an observable setter (a
   model event, a collection change, a value computed from another object). Always `nameof`, never a string.
 - No Fody or other IL weaving (`[AlsoNotifyFor]`, `[DependsOn]`, …).
+- View model types are named `<Name>ViewModel`, never `<Name>VM`, enforced by `SourceHygieneTests.NoTypeNameEndsInVM`.
 
 ## Nullable reference types
 The goal is to model and handle null correctly, not to silence warnings. A green build with `!` sprinkled

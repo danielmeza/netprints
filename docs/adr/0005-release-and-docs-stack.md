@@ -61,8 +61,8 @@ publishing anything.
 > "do not simplify" warning in Consequences are kept only as the historical record of why the old
 > shape existed.
 
-`src/NetPrints.Editor` calls `NetPrints.Generator.GraphCodeGenerator` directly (`ClassEditorVM`/
-`MainEditorVM`), so it needs a real reference to `NetPrints.Generator` — an `OutputType=Exe` project
+`src/NetPrints.Editor` calls `NetPrints.Generator.GraphCodeGenerator` directly (`ClassEditorViewModel`/
+`MainEditorViewModel`), so it needs a real reference to `NetPrints.Generator` — an `OutputType=Exe` project
 that also runs standalone via `dotnet exec` from `NetPrints.Sdk.targets`. A self-contained,
 RID-published `dotnet publish src/NetPrints.Desktop` failed through this reference in three stages,
 because the .NET SDK treats any referenced `Exe` project as a sibling to also publish for the same

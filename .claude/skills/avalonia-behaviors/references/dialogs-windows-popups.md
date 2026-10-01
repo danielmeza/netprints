@@ -31,11 +31,11 @@ OK or Close buttons on dialogs that return nothing (`ErrorDialog`, `IssuesDialog
 ### A dialog closes with a result
 
 `Window.Close(object? dialogResult)` needs a value, and no prebuilt behavior can take one from a VM. This is the
-one place D11 keeps a custom behavior. The VM derives from `DialogVM<TResult>` (`NetPrints.Editor.Dialogs`) and
+one place D11 keeps a custom behavior. The VM derives from `DialogViewModel<TResult>` (`NetPrints.Editor.Dialogs`) and
 calls `RequestClose(result)` from its accept and cancel commands:
 
 ```csharp
-// src/NetPrints.Editor/Dialogs/SelectTypeDialogVM.cs
+// src/NetPrints.Editor/Dialogs/SelectTypeDialogViewModel.cs
 [RelayCommand]
 private void Select() => RequestClose(ResolveSelection());
 ```
@@ -45,7 +45,7 @@ The window attaches `DialogCloseBehavior` once. It watches its `DataContext` for
 
 ```xml
 <!-- src/NetPrints.Editor/Dialogs/SelectTypeDialog.axaml -->
-<Window xmlns:edb="clr-namespace:NetPrints.Editor.Behaviors" x:DataType="eddialogs:SelectTypeDialogVM" ...>
+<Window xmlns:edb="clr-namespace:NetPrints.Editor.Behaviors" x:DataType="eddialogs:SelectTypeDialogViewModel" ...>
   <Interaction.Behaviors>
     <edb:DialogCloseBehavior />
   </Interaction.Behaviors>
@@ -55,7 +55,7 @@ The window attaches `DialogCloseBehavior` once. It watches its `DataContext` for
 
 The `Window` subclass still implements `IDialogResult<T>` by forwarding `Result` to the VM, so `EditorDialogs` and
 tests that read `dialog.Result` work unchanged. `SelectMethodDialog` and `TrustDialog` follow the same pattern.
-Tests: `tests/NetPrints.Editor.Tests/Dialogs/DialogVMTests.cs` (VM) and
+Tests: `tests/NetPrints.Editor.Tests/Dialogs/DialogViewModelTests.cs` (VM) and
 `tests/NetPrints.Editor.UITests/Dialogs/DialogTests.cs` (headless wiring).
 
 ## Catalog

@@ -78,7 +78,7 @@ only a parameterless method or one that takes a single `object`, and a plain met
 `ControlTheme` that contains bindings. When a binding crosses into another scope, cast it:
 ```xml
 <!-- src/NetPrints.Editor/Search/NodeSearchView.axaml, inside the result item template -->
-Command="{Binding $parent[ListBox].((edsearch:SuggestionListVM)DataContext).SelectCommand}"
+Command="{Binding $parent[ListBox].((edsearch:SuggestionListViewModel)DataContext).SelectCommand}"
 ```
 A view with no bindings, such as the code-behind dialogs, doesn't need `x:DataType`. Give it one when it gets a VM.
 
@@ -98,7 +98,7 @@ when the layout is refactored. Better options, in order: (1) the item VM exposes
 
 **D10. Long work goes in async commands and shows busy state.** Write `[RelayCommand] async Task XAsync(CancellationToken ct)`.
 - Bind busy UI to `XCommand.IsRunning`. Use a VM `IsBusy` flag with `try/finally` only when one flag spans
-  several operations (as `MainEditorVM` does). Delay indicators for fast operations (`BusyIndicatorDelay`).
+  several operations (as `MainEditorViewModel` does). Delay indicators for fast operations (`BusyIndicatorDelay`).
 - `AllowConcurrentExecutions` stays `false`, which disables the button while a run is in progress. Add `IncludeCancelCommand = true` when the user can cancel.
 - Keep the default of rethrowing: a fault reaches the error dialog. Don't use `FlowExceptionsToTaskScheduler`, and don't
   write `ExecuteAsync(...).Forget()` from a view.
@@ -124,7 +124,7 @@ PascalCase nouns with a role suffix (`SearchBox`, `ResultList`, `GraphEditor`). 
 Avalonia generates a field for each name, so an unused name is noise (for example `InputPins`, `ReferenceList`).
 
 **D16. Windows and popups go through the existing hosts.** Open dialogs through `IWindowService` and return results
-from a VM, as `SelectTypeDialogVM.ResolveSelection` does; the view doesn't compute them. Canvas overlays use
+from a VM, as `SelectTypeDialogViewModel.ResolveSelection` does; the view doesn't compute them. Canvas overlays use
 `CanvasPopup` (ADR-0004, which is already enforced).
 
 ## Consider

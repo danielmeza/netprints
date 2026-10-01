@@ -4,10 +4,10 @@
     {
       "id": 1,
       "prompt": "Add a Rename dialog for event graphs in the NetPrints editor. It opens with the current name in a text box that already has focus with all its text selected; Enter or OK accepts and returns the new name; Escape or Cancel closes it and returns null. Write the view (.axaml and .axaml.cs), the view model and a unit test for the view model.",
-      "expected_output": "A DialogVM<string>-based VM with RequestClose, DialogCloseBehavior on the Window, prebuilt focus/select-all behaviors, no event handlers in XAML, AutomationIds constants, VM test.",
+      "expected_output": "A DialogViewModel<string>-based VM with RequestClose, DialogCloseBehavior on the Window, prebuilt focus/select-all behaviors, no event handlers in XAML, AutomationIds constants, VM test.",
       "files": [],
       "assertions": [
-        "The VM derives from DialogVM<string> and closes through RequestClose",
+        "The VM derives from DialogViewModel<string> and closes through RequestClose",
         "DialogCloseBehavior on the Window, not code-behind Close()",
         "Focus and select-all use prebuilt behaviors, not Focus()/SelectAll() in code-behind",
         "No event handlers in the XAML",

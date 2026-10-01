@@ -11,7 +11,7 @@ escape hatches and the disposal-chain story were inaccurate. That revision fixed
 Revised again the same day after a second, closing review: the `.editorconfig` "Pre-P1 suppressions"
 section and the `S109` Editor-wide carve-out are gone. Every one of that ledger's rows was either fixed
 for real (`Variable.cs`, `GraphUtil.cs`, `TernaryNode.cs`, `AutomationAgent.cs`'s `Wait(0)`, the
-`ReferenceListVM`/`ClassEditorVM` ownership sites, `IconConverter.cs`) or moved to a member-level
+`ReferenceListViewModel`/`ClassEditorViewModel` ownership sites, `IconConverter.cs`) or moved to a member-level
 `[SuppressMessage]` (the six sites the "Suppression ledger" below lists). `S109` is now `error` in all of
 `src/`, including the Editor's 36 pre-existing hits (named constants and honestly-named divisors, no
 value-named constants). This closes the contradiction the first revision left behind: its own
@@ -43,10 +43,10 @@ configured; `.editorconfig` documented that existing severities were "mostly sil
 
 - `src/NetPrints.Core/Translator/TranslationDiagnosticCodes.cs`: one `const string` per `NPT` code the
   translator or the editor throws/reports (`NPT001`, `NPT002`, `NPT005`, `NPT006`, `NPT007`, and
-  `Unclassified = "NPT000"`, `MainEditorVM.CompileAsync`'s interim id for a `ClassTranslationFailure` not
+  `Unclassified = "NPT000"`, `MainEditorViewModel.CompileAsync`'s interim id for a `ClassTranslationFailure` not
   yet mapped to a coded `TranslationException`, T086). `NPT003` stays declared in
   `NetPrints.Generator.GraphCodeGenerator` (a different, already-named constant); `NPT004` is reserved for
-  T085 (local variables), not yet thrown. Every raw literal, including `MainEditorVM.cs`'s, now references
+  T085 (local variables), not yet thrown. Every raw literal, including `MainEditorViewModel.cs`'s, now references
   a constant.
 - `src/NetPrints.Serialization/Documents/BuiltInNodeKinds.cs`: one documented `const string` per built-in
   node kind (`MethodEntry`, `EventEntry`, `Return`, … — the 24 kinds document-format.md §1.5 defines).
@@ -76,7 +76,7 @@ covers all four prefixes this codebase uses (`NPT`/`NPD`/`NPX`/`NPW`) and matche
 types the same way `NPT`/`NPD`/`NPX` already were, since the test's declaring-files list was already a
 list, not a single file. Every declared code is additionally asserted unique. There is no more file-wide
 exemption (the previous version exempted every line of the four declaring files, including any unrelated
-literal that happened to match): `MainEditorVM.cs`'s former exception is gone along with the raw literal it
+literal that happened to match): `MainEditorViewModel.cs`'s former exception is gone along with the raw literal it
 excused. Verified to actually gate: a reintroduced raw literal, and a redeclaration outside the designated
 files, each fail the test (reverted after verifying).
 
@@ -179,8 +179,8 @@ two identical call sites in `NetPrints.Editor/UndoRedo/ModelOperations.cs` that 
 literals, instead of each declaring its own.
 
 The Editor's 36 pre-existing hits, across `GraphConverters.cs`, `GraphEditorView.axaml.cs`,
-`GridRenderer.cs`, `GridStyle.cs`, `Pins/NodePinVM.cs`, `Hosting/Automation/AutomationContracts.cs`,
-`Hosting/Automation/AutomationTree.cs`, `UndoRedo/ModelOperations.cs` and `ClassEditor/ClassEditorVM.cs`,
+`GridRenderer.cs`, `GridStyle.cs`, `Pins/NodePinViewModel.cs`, `Hosting/Automation/AutomationContracts.cs`,
+`Hosting/Automation/AutomationTree.cs`, `UndoRedo/ModelOperations.cs` and `ClassEditor/ClassEditorViewModel.cs`,
 are named constants (colors, opacities, thicknesses, grid-cell offsets) or small helper methods (a
 `Midpoint`/`CenterDivisor`-style honest name for a `/ 2`, never a constant named after its value like
 `Two`). None of these needed AXAML resources: they are computed in code (converters, view models, Skia
@@ -191,14 +191,14 @@ render paths), not literal values in markup.
 `IExtensionHost` is `IAsyncDisposable`, with `ValueTask<ExtensionRegistry> LoadForProjectAsync` awaiting
 the previous registry's `DisposeAsync()`; `ExtensionRegistry.DisposeAsync()` genuinely awaits its owned
 `IAsyncDisposable`; there is no synchronous `Dispose()` bridge anywhere in this chain. Every caller awaits
-it: `MainEditorVM`'s project-switch path, `EditorHostServices.DisposeAsync()` (which now disposes the
+it: `MainEditorViewModel`'s project-switch path, `EditorHostServices.DisposeAsync()` (which now disposes the
 extension host and host channel through a `Func<ValueTask>` its caller builds at the same call site that
 created them — see "Real fixes" below), Desktop's `Program.Main` (still synchronous — `[STAThread]` is not
 honored on an async `Main`, and Avalonia's own message loop already blocks synchronously — but its
 `EditorApp.OnFrameworkInitializationCompleted` wires `IClassicDesktopStyleApplicationLifetime.ShutdownRequested`
 to cancel the first shutdown request, run the async cleanup, then call `Shutdown()` once it finishes,
 verified by `ShutdownTests.ClosingTheMainWindowDisposesHostServicesExactlyOnceThenExits`), and the Cli's
-`static async Task<int> Main`. `EditorComposition` and `MainEditorVM` are themselves `IDisposable` now
+`static async Task<int> Main`. `EditorComposition` and `MainEditorViewModel` are themselves `IDisposable` now
 (a `PersistenceBinding` subscription and a `HostChannelBridge` subscription respectively), disposed on the
 same shutdown path. There is no more "blocked, needs a follow-up batch" story: every consumer this ADR's
 predecessor named as blocking the propagation is fixed.
@@ -236,11 +236,11 @@ disposing a constructor-injected `IExtensionHost`/`IHostChannel` — moving the 
 IDisposableAnalyzers does recognize as ownership. This batch closed the rest: `Variable.cs`, `GraphUtil.cs`
 and `TernaryNode.cs`'s `S109` hits got named constants; `AutomationAgent.cs`'s `SemaphoreSlim.Wait(0)`
 became `await connectionSlots.WaitAsync(0).ConfigureAwait(false)` (no more `VSTHRD103` site to suppress);
-`MainEditorVM.ShowReferencesAsync` now owns `using var references = new ReferenceListVM(…)` itself instead
+`MainEditorViewModel.ShowReferencesAsync` now owns `using var references = new ReferenceListViewModel(…)` itself instead
 of relying on `EditorDialogs.ShowReferencesAsync`'s `finally` (dropped); and `IWindowService.OpenClassEditor`
-takes the `ClassGraph`/`EditorContext` and constructs the `ClassEditorVM` itself, so the `new` and its
+takes the `ClassGraph`/`EditorContext` and constructs the `ClassEditorViewModel` itself, so the `new` and its
 eventual `Dispose()` (on the window's `Closed` handler) are both visible to IDisposableAnalyzers instead of
-crossing a `MainEditorVM` → `WindowService` boundary as an opaque parameter; `IconConverter.cs`'s
+crossing a `MainEditorViewModel` → `WindowService` boundary as an opaque parameter; `IconConverter.cs`'s
 lock-and-`Dictionary` cache is a `ConcurrentDictionary.GetOrAdd`.
 
 **Suppression ledger** — every current `[SuppressMessage]` in `src/`, all pre-existing (not sites this
@@ -249,9 +249,9 @@ invariant:
 
 | File : member | Rule | Reason |
 |---|---|---|
-| `NetPrints.Editor/ClassEditor/ClassEditorVM.cs` : `OpenGraph` | IDISP003 | `OnOpenedGraphChanged` (the CommunityToolkit.Mvvm-generated property hook) disposes the old value; the analyzer cannot see a generated setter's side effect. |
-| `NetPrints.Editor/ClassEditor/ClassEditorVM.cs` : `DropDetachedState` | IDISP003 | Same: assigning `OpenedGraph = null` re-triggers the generated hook. |
-| `NetPrints.Editor/ClassEditor/ClassEditorVM.cs` : `Dispose` | IDISP003 | Same, at the `OpenedGraph = null` in teardown. |
+| `NetPrints.Editor/ClassEditor/ClassEditorViewModel.cs` : `OpenGraph` | IDISP003 | `OnOpenedGraphChanged` (the CommunityToolkit.Mvvm-generated property hook) disposes the old value; the analyzer cannot see a generated setter's side effect. |
+| `NetPrints.Editor/ClassEditor/ClassEditorViewModel.cs` : `DropDetachedState` | IDISP003 | Same: assigning `OpenedGraph = null` re-triggers the generated hook. |
+| `NetPrints.Editor/ClassEditor/ClassEditorViewModel.cs` : `Dispose` | IDISP003 | Same, at the `OpenedGraph = null` in teardown. |
 | `NetPrints.Editor/Graph/GraphDragDrop.cs` : `DragSourceHelper.Moved` | VSTHRD100 | `async void Moved` is a deliberate event handler: exceptions reach `Dispatcher.UIThread.UnhandledException`, tested by `UnhandledExceptionTests.AsyncVoidHandlerExceptionIsReported`. |
 | `NetPrints.Editor/Graph/GridBackground.cs` : `Render` | IDISP004 | Avalonia's renderer disposes a queued `ICustomDrawOperation` after executing it (a documented Avalonia ownership-transfer contract the analyzer does not know). |
 | `NetPrints.Editor/Hosting/Automation/AutomationAgent.cs` : `ServeAsync` | IDISP007 | Takes ownership of its connection stream (`await using var _ = stream;`), a deliberate transfer, not an accidental double-owner. |
