@@ -192,31 +192,37 @@ internal sealed class RegistryBuilder(ILogger logger)
     private void ReportShadowingResolvers()
     {
         var probe = new JsonSerializerOptions();
+        var faulted = new HashSet<string>(StringComparer.Ordinal);
         foreach ((Type documentType, string owner) in documentOwners)
         {
             foreach ((string extensionId, IJsonTypeInfoResolver resolver) in resolverContributions)
             {
-                if (extensionId == owner || !Claims(resolver, documentType, probe))
+                if (extensionId == owner || faulted.Contains(extensionId))
                 {
                     continue;
                 }
 
-                string reason = $"its resolver also provides type info for document type '{documentType}' owned by '{owner}'; the owner's resolver is used.";
+                string? reason;
+                try
+                {
+                    reason = resolver.GetTypeInfo(documentType, probe) is null
+                        ? null
+                        : $"its resolver also provides type info for document type '{documentType}' owned by '{owner}'; the owner's resolver is used.";
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    faulted.Add(extensionId);
+                    reason = $"probing its resolver for document type '{documentType}' threw {ex.GetType().Name}: {ex.Message}";
+                }
+
+                if (reason is null)
+                {
+                    continue;
+                }
+
                 issues.Add(new ExtensionContributionIssue(extensionId, ExtensionDiagnosticCodes.ContributionRejected, "JSON resolver", reason));
                 Log.ContributionRejected(logger, "JSON resolver", extensionId, reason);
             }
-        }
-    }
-
-    private static bool Claims(IJsonTypeInfoResolver resolver, Type documentType, JsonSerializerOptions probe)
-    {
-        try
-        {
-            return resolver.GetTypeInfo(documentType, probe) is not null;
-        }
-        catch (Exception ex) when (ex is InvalidOperationException or NotSupportedException)
-        {
-            return false;
         }
     }
 

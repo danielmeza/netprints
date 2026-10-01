@@ -136,6 +136,24 @@ public sealed class IdConflictTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task AResolverThatThrowsWhenProbedIsReportedAndTheOtherExtensionsStillLoad()
+    {
+        string alphaFolder = FixtureExtensions.CopyTo(root, FixtureExtensions.Alpha);
+        (ExtensionManifest, INetPrintsExtension) thrower = InProcess("fx.thrower", builder => builder.AddJsonTypeInfoResolver(new ThrowingResolver()), "1.0");
+
+        await using ExtensionRegistry registry = Load(Options(inProcess: [thrower], folders: [alphaFolder]));
+
+        Assert.Contains(FixtureExtensions.Alpha, registry.Loaded.Select(m => m.Id));
+        Assert.Contains("fx.thrower", registry.Loaded.Select(m => m.Id));
+        Assert.Contains(registry.NodeKinds, k => k.Kind == "fx.alpha/Ping");
+        ExtensionContributionIssue issue = Assert.Single(registry.Issues);
+        Assert.Equal("fx.thrower", issue.ExtensionId);
+        Assert.Equal(ExtensionDiagnosticCodes.ContributionRejected, issue.Code);
+        Assert.Equal("JSON resolver", issue.Contribution);
+        Assert.Contains(nameof(ArgumentException), issue.Reason, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task AlphasDocumentsRoundTripThroughAlphasResolverWhileASquattersCatchAllResolverIsPresent()
     {
         string alphaFolder = FixtureExtensions.CopyTo(root, FixtureExtensions.Alpha);
@@ -177,6 +195,11 @@ public sealed class IdConflictTests : IAsyncLifetime
         public string Id => id;
 
         public IHostChannel Create(HostLaunchContext context) => NullHostChannel.Instance;
+    }
+
+    private sealed class ThrowingResolver : IJsonTypeInfoResolver
+    {
+        public JsonTypeInfo? GetTypeInfo(Type type, System.Text.Json.JsonSerializerOptions options) => throw new ArgumentException("boom");
     }
 
     private sealed class ShapeConverter(string kind, Type nodeType, Type documentType) : INodeDocumentConverter
