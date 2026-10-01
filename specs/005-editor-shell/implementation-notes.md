@@ -408,3 +408,23 @@ Decisions:
 - `TooltipTarget(Kind, Subject)` with kinds Pin and Connection; `PanelDock` is Left, Right, Bottom; `ProjectOutputType` is Console, Library.
 - The registry log event is 1070 (`ContributionIssue`, warning), continuing the per-folder blocks.
 - `DocumentId` is a sealed record with a private constructor, factories and `TryParse`; the class path may not contain `#`.
+
+### Batch B2 (T020-T022: dd33ac6, bafe527, faf79ff, 6278f1f)
+
+- Red, T020 (behavioural, with the new members stubbed to `false`/`null`/no-op): `UndoRedoStackSavedMarkerTests` failed 5 of 9 (`MarkSaved` makes the state saved: `Expected: True, Actual: False`; undo back to the mark; redo to the mark; `MarkSaved` raises `Changed`: `Expected: 1, Actual: 0`; the names). Green: 16/16 with `UndoRedoStackTests`.
+- Red, kill on cancel (bafe527): `ProcessLauncherTests.CancellingTheTokenKillsTheProcessTree` with the token accepted and ignored: failed after 10 s (the exit was never reported). Green: 3/3, no stray `sleep` left.
+- Red, T021 (stub session): `ProjectSessionViewModelTests` 6/6 failed (key `Expected: "5f53fafd046c50da"`, run state `Expected: Exited, Actual: NotStarted`, save `Expected: True, Actual: False`, stacks not the same instance). Green: 6/6. Mutation (the wait for a save removed from `CompileAsync`): `CompileWaitsForASaveInProgress` failed with `Expected: 1, Actual: 2` (two writes reached the store); restored.
+- Red, T022 (stub handlers): `BuildCommandsTests` 6 of 11 failed (the other 5 are "disabled without a project", true for a stub). Green: 11/11. Mutations: Stop without `Stop()` and Run without the `IsRunning: false` guard each failed `RunStartsTheProgramAndStopEndsItThroughTheRunToken`; Run without the save wait failed `CompileAndRunWaitForASaveInProgress(run: True)`; all restored.
+- Written after the code: none; the stubs gave the behavioural red.
+- Green: Editor tests 446/446 before T022 and 11 more with it; solution suite (Debug, no `NETPRINTS_E2E`) 1882 tests, 0 failed, 13 skipped (the usual headless skips); Desktop E2E with `NETPRINTS_E2E=1 --fail-skips on` under its own Xvfb: 31 of 31, 0 skipped. `dotnet format --verify-no-changes` clean.
+
+Decisions:
+- `IProcessLauncher.Start(request, CancellationToken)`: cancelling kills the process tree (`Process.Kill(entireProcessTree: true)`); this is how Stop ends the program, since the launcher had no handle to it. xUnit1051 makes test call sites pass `TestContext.Current.CancellationToken`.
+- `ProjectSessionViewModel` takes `(Project, EditorContext)`; `MainEditorViewModel` creates one per open project (`Session`) and disposes the previous. `CommandContext.Session` is typed `ProjectSessionViewModel?`.
+- The static `CompileAsync` and `CompileAndRunAsync` moved to the session; the class editor windows call the statics, so a program they start has no run token and Stop does not reach it until C replaces those windows.
+- `UndoStackFor(ClassGraph)` is a registry the class editors do not use yet (they keep their own stack); C wires them to it.
+- `save` and `saveAll` both save every edited class: persistence has no single-class save, and the per-document unsaved files arrive in D.
+- `Run` is disabled while a program runs (Stop takes the slot); `IsRunning` reads `RunStateTracker` and raises no change event yet, the command bar in C polls it.
+- A new `UndoRedoStack` is not at a saved state until `MarkSaved()`, the same as after `Clear()`.
+- `ProjectKey` is the first 16 hex characters of the SHA-256 of the full path, private to the session until T051 moves it to `EditorDataPaths`.
+- The save-in-progress test holds a write with `GatedDocumentStore` through a `TestEditor.CreatePersistence` decorator hook; a call to `SaveAllAsync` during a save returns that save's result.

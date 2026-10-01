@@ -214,18 +214,18 @@ tests; the existing windows' shortcuts run through the registry.
 
 ### Batch B2 — model: sonnet — T020–T022 — 4 units
 
-- [ ] T020 [US4] Test first: `tests/NetPrints.Editor.Tests/UndoRedo/UndoRedoStackSavedMarkerTests.cs` (research R6,
+- [x] T020 [US4] Test first: `tests/NetPrints.Editor.Tests/UndoRedo/UndoRedoStackSavedMarkerTests.cs` (research R6,
   data-model "Project session and lifecycle"). After `MarkSaved()`, `IsAtSavedState` is true; an edit makes it false;
   undoing back makes it true again; undoing, then a new edit at the same depth (a different top command) is not the
   saved state; `Clear()` resets to "no saved state". `UndoName` and `RedoName` come from `IUndoableCommand.Name`, or
   null when nothing can be undone or redone. Then `src/NetPrints.Editor/UndoRedo/UndoRedoStack.cs`.
-- [ ] T021 [US4] Test first: `tests/NetPrints.Editor.Tests/Shell/ProjectSessionViewModelTests.cs` (2 units). Extract the
+- [x] T021 [US4] Test first: `tests/NetPrints.Editor.Tests/Shell/ProjectSessionViewModelTests.cs` (2 units). Extract the
   open project's state and operations from `MainEditorViewModel` into
   `src/NetPrints.Editor/Shell/ProjectSessionViewModel.cs` (data-model: `Project`, `ProjectFilePath`, `ProjectKey`, the
   per-class undo stacks, save, save all, compile, run). `ProjectKey` comes from `EditorDataPaths` in T051; until then it
   is a private helper with the same rule, moved there by T051. `MainEditorViewModel` delegates to it until C removes it.
   The existing editor tests stay green unchanged, or change only in the type they construct.
-- [ ] T022 [US4] Build and save handlers, test first in `tests/NetPrints.Editor.Tests/Commands/BuildCommandsTests.cs`
+- [x] T022 [US4] Build and save handlers, test first in `tests/NetPrints.Editor.Tests/Commands/BuildCommandsTests.cs`
   with `FakeShell` and a fake `IProcessLauncher`: `save`, `saveAll`, `compile`, `run`, and the new `stop` (FR-033).
   Stop cancels the run's token and kills the process tree; Stop is enabled only while the program runs; Run and Stop
   report their state through `RunStateTracker`; compile and run wait for a save in progress. Handlers in
