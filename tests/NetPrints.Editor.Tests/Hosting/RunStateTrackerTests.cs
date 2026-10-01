@@ -105,6 +105,28 @@ public class RunStateTrackerTests
     }
 
     [Fact]
+    public void AnExitOfAnEarlierProgramDoesNotEndTheCurrentOne()
+    {
+        using var tracker = new RunStateTracker(launcher);
+        launcher.Start(Request);
+        int first = launcher.LastId;
+        launcher.Start(Request);
+
+        launcher.RaiseLine(ProcessStream.Output, "stale", first);
+        launcher.RaiseExited(7, first);
+        launcher.RaiseLine(ProcessStream.Output, "current");
+
+        var running = tracker.Snapshot();
+        Assert.Equal(RunPhase.Running, running.Phase);
+        Assert.Null(running.ExitCode);
+        Assert.Equal(["current"], running.Stdout);
+
+        launcher.RaiseExited(0);
+        Assert.Equal(RunPhase.Exited, tracker.Snapshot().Phase);
+        Assert.Equal(0, tracker.Snapshot().ExitCode);
+    }
+
+    [Fact]
     public void AFinishedBuildLeavesARunningProgramAlone()
     {
         using var tracker = new RunStateTracker(launcher);

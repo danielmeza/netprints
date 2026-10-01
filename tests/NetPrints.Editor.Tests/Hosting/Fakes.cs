@@ -190,32 +190,36 @@ public sealed class FakeProcessLauncher : IProcessLauncher
 {
     public List<ProcessStartRequest> Started { get; } = [];
 
+    /// <summary>The id of the latest start.</summary>
+    public int LastId { get; private set; }
+
     public event Action<string>? OutputReceived;
 
-    public event Action<ProcessStartRequest>? ProcessStarted;
+    public event Action<int, ProcessStartRequest>? ProcessStarted;
 
-    public event Action<ProcessStream, string>? LineReceived;
+    public event Action<int, ProcessStream, string>? LineReceived;
 
-    public event Action<int>? ProcessExited;
+    public event Action<int, int>? ProcessExited;
 
     public void Start(ProcessStartRequest request)
     {
         Started.Add(request);
-        ProcessStarted?.Invoke(request);
+        LastId++;
+        ProcessStarted?.Invoke(LastId, request);
     }
 
     /// <summary>Simulates a line of output, for tests of the Output pane wiring.</summary>
     public void Raise(string line) => OutputReceived?.Invoke(line);
 
-    /// <summary>Simulates a line of one of the started process's streams.</summary>
-    public void RaiseLine(ProcessStream stream, string line)
+    /// <summary>Simulates a line of one of the started process's streams (the latest start's, unless <paramref name="id"/> is given).</summary>
+    public void RaiseLine(ProcessStream stream, string line, int? id = null)
     {
-        LineReceived?.Invoke(stream, line);
+        LineReceived?.Invoke(id ?? LastId, stream, line);
         OutputReceived?.Invoke(line);
     }
 
-    /// <summary>Simulates the started process exiting.</summary>
-    public void RaiseExited(int code) => ProcessExited?.Invoke(code);
+    /// <summary>Simulates a started process exiting (the latest start's, unless <paramref name="id"/> is given).</summary>
+    public void RaiseExited(int code, int? id = null) => ProcessExited?.Invoke(id ?? LastId, code);
 }
 
 /// <summary>

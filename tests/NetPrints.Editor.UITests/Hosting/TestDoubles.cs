@@ -71,16 +71,17 @@ public sealed class CapturingProcessLauncher : IProcessLauncher, IDisposable
 {
     private readonly StringBuilder output = new();
     private readonly List<Process> processes = [];
+    private int lastId;
 
     public List<ProcessStartRequest> Started { get; } = [];
 
     public event Action<string>? OutputReceived;
 
-    public event Action<ProcessStartRequest>? ProcessStarted;
+    public event Action<int, ProcessStartRequest>? ProcessStarted;
 
-    public event Action<ProcessStream, string>? LineReceived;
+    public event Action<int, ProcessStream, string>? LineReceived;
 
-    public event Action<int>? ProcessExited;
+    public event Action<int, int>? ProcessExited;
 
     public string Output
     {
@@ -96,6 +97,7 @@ public sealed class CapturingProcessLauncher : IProcessLauncher, IDisposable
     public void Start(ProcessStartRequest request)
     {
         Started.Add(request);
+        int id = Interlocked.Increment(ref lastId);
         var startInfo = new ProcessStartInfo(request.FileName)
         {
             WorkingDirectory = request.WorkingDirectory,
@@ -122,26 +124,26 @@ public sealed class CapturingProcessLauncher : IProcessLauncher, IDisposable
             StartInfo = startInfo,
             EnableRaisingEvents = true,
         };
-        process.OutputDataReceived += (_, e) => Append(ProcessStream.Output, e.Data);
-        process.ErrorDataReceived += (_, e) => Append(ProcessStream.Error, e.Data);
+        process.OutputDataReceived += (_, e) => Append(id, ProcessStream.Output, e.Data);
+        process.ErrorDataReceived += (_, e) => Append(id, ProcessStream.Error, e.Data);
         process.Exited += (_, _) =>
         {
             process.WaitForExit();
-            ProcessExited?.Invoke(process.ExitCode);
+            ProcessExited?.Invoke(id, process.ExitCode);
             OutputReceived?.Invoke($"Process exited (code {process.ExitCode}).");
         };
         process.Start();
-        ProcessStarted?.Invoke(request);
+        ProcessStarted?.Invoke(id, request);
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
         processes.Add(process);
     }
 
-    private void Append(ProcessStream stream, string? line)
+    private void Append(int id, ProcessStream stream, string? line)
     {
         if (line is not null)
         {
-            LineReceived?.Invoke(stream, line);
+            LineReceived?.Invoke(id, stream, line);
             lock (output)
             {
                 output.AppendLine(line);

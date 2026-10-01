@@ -18,6 +18,7 @@ public sealed class RunStateTracker : IDisposable
     private readonly IProcessLauncher launcher;
     private RunPhase phase;
     private int? exitCode;
+    private int currentId;
 
     /// <summary>Starts following <paramref name="launcher"/>.</summary>
     /// <param name="launcher">The launcher the editor starts programs through.</param>
@@ -77,19 +78,20 @@ public sealed class RunStateTracker : IDisposable
         stderr.Clear();
     }
 
-    private void OnStarted(ProcessStartRequest request)
+    private void OnStarted(int id, ProcessStartRequest request)
     {
         lock (gate)
         {
             Reset(RunPhase.Running);
+            currentId = id;
         }
     }
 
-    private void OnLine(ProcessStream stream, string line)
+    private void OnLine(int id, ProcessStream stream, string line)
     {
         lock (gate)
         {
-            if (phase != RunPhase.Running)
+            if (phase != RunPhase.Running || id != currentId)
             {
                 return;
             }
@@ -103,11 +105,11 @@ public sealed class RunStateTracker : IDisposable
         }
     }
 
-    private void OnExited(int code)
+    private void OnExited(int id, int code)
     {
         lock (gate)
         {
-            if (phase == RunPhase.Running)
+            if (phase == RunPhase.Running && id == currentId)
             {
                 phase = RunPhase.Exited;
                 exitCode = code;
