@@ -117,7 +117,7 @@ public abstract class X11SmokeTestBase(DesktopWorkerPool pool) : SmokeScenarios,
     protected override async Task CheckpointAsync(SmokeContext context, string name, CancellationToken cancellationToken)
     {
         await Steps.HoldIfForcedAsync(cancellationToken);
-        var screen = await driver!.ScreenAsync(cancellationToken);
+        var screen = await (driver ?? throw new InvalidOperationException("The editor has not started.")).ScreenAsync(cancellationToken);
         screen.Save(Path.Combine(Artifacts, name + ".png"));
     }
 

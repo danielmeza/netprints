@@ -89,7 +89,7 @@ Contract: contracts/ci.md. **Independent test**: US1's independent test; SC-006;
 
 ### Batch A2 — model: sonnet — T003–T006 — 5 units
 
-- [ ] T003 [US1] Test first (contracts/ci.md §3). `tests/NetPrints.Desktop.E2ETests/Hosting/FailureCaptureTests.cs`:
+- [x] T003 [US1] Test first (contracts/ci.md §3). `tests/NetPrints.Desktop.E2ETests/Hosting/FailureCaptureTests.cs`:
   plain facts that need no display (like `DesktopWorkerPoolTests`), over a `FailureCapture` with fake parts and a fake
   `TimeProvider`. A part that throws is named in `capture-errors.txt`, and the other parts are still written. A part
   that hangs is abandoned after 10 s, and the whole capture ends within 30 s. The reported failure is an
@@ -102,7 +102,7 @@ Contract: contracts/ci.md. **Independent test**: US1's independent test; SC-006;
   `(running)`), `ui-tree.json` (parses; a top-level `focused`, and per element `automationId`, `name`, `type`, `bounds`,
   `isVisible`, `isEnabled`, `hasFocus`), `display.png` (a non-empty PNG), `editor.log`, `process.txt` (`running`) and
   `run-state.json`, and no `capture-errors.txt`. Both red.
-- [ ] T004 [US1] `tests/NetPrints.Desktop.E2ETests/Hosting/FailureCapture.cs` (2 units). It runs from the scenario base's
+- [x] T004 [US1] `tests/NetPrints.Desktop.E2ETests/Hosting/FailureCapture.cs` (2 units). It runs from the scenario base's
   failure path on an exception, an assertion failure, the per-test `CancelAfter` timeout (ADR-0006), and the editor
   process exiting while the test holds its lease. It writes the files of contracts/ci.md §3: `ui-tree.json` through
   the existing automation pipe for every editor window (the editor's exit code instead when it is gone); `display.png`
@@ -110,14 +110,14 @@ Contract: contracts/ci.md. **Independent test**: US1's independent test; SC-006;
   tail; `process.txt` with `running` or `exited <code>`. Each part has its own 10 s limit, 30 s in total. `StepTimer`
   exposes the open step and its elapsed time and honours the per-test forced timeout; `NETPRINTS_E2E_FORCE_TIMEOUT=<step>`
   forces it for a manual run of a chosen class. T003's rule tests green.
-- [ ] T005 [US1] Launched-program state (FR-001, issue #11). Test first:
+- [x] T005 [US1] Launched-program state (FR-001, issue #11). Test first:
   `tests/NetPrints.Editor.Tests/Hosting/RunStateTrackerTests.cs` (`notStarted` → `building` → `running` → `exited` with
   the exit code; stdout and stderr tails capped at 200 lines; a new compile or run resets it) and a contract test that
   the automation pipe's `runState` reply serializes through `AutomationJsonContext`. Then
   `src/NetPrints.Editor/Hosting/RunStateTracker.cs`, fed by the existing compile and run flow through
   `IProcessLauncher`; the `runState` request in `Hosting/Automation/AutomationContracts.cs` and `AutomationAgent.cs`; and
   the `run-state.json` part of `FailureCapture`. T003's E2E test green.
-- [ ] T006 [US1] `docs/contributing/testing.md` (new): the test projects and what each covers, how to run them (the
+- [x] T006 [US1] `docs/contributing/testing.md` (new): the test projects and what each covers, how to run them (the
   AGENTS.md commands), and the Desktop E2E diagnostics (the `e2e-results` artifact, what each file holds, how to force
   a timeout locally). Decision in implementation-notes: no speculative fix for issue #11 (`EditCompileAndRun`); the
   scenario is rewritten on the shell in T043, and the diagnostics explain any recurrence there.

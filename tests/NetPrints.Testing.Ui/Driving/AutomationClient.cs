@@ -58,7 +58,7 @@ public sealed class AutomationClient : IAsyncDisposable
         (await SendAsync(new AutomationRequest("find") { Query = query }, cancellationToken)).Elements ?? [];
 
     public async Task<AutomationStatus> StatusAsync(CancellationToken cancellationToken) =>
-        (await SendAsync(new AutomationRequest("status"), cancellationToken)).Status!;
+        (await SendAsync(new AutomationRequest("status"), cancellationToken)).Status ?? throw new IOException("The reply carried no status.");
 
     public async Task<string> DumpAsync(CancellationToken cancellationToken) =>
         (await SendAsync(new AutomationRequest("dump"), cancellationToken)).Text ?? "";

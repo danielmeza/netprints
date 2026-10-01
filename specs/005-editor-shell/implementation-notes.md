@@ -118,6 +118,47 @@ VariablesPanelVM
 - Docs sweep: the first grep missed the UITests `ClassVM`/`GraphVM` members and two skill sketches (`ItemVM`, `ListVM`, `XDesignVM`); found and fixed in the follow-up commit. git grep now finds only MVVM and `NoTypeNameEndsInVM`
 - Commits: T001 (70b533a, 112 files), T002 (48cc09d, 16 files)
 
+## Batch A2 (implementation: sonnet, f87275a–eda3181 and the T006 commit)
+
+### Red output
+
+Both test-first steps were red as compile errors (the types did not exist yet):
+
+```
+FailureCaptureTests.cs(16,20): error CS0246: The type or namespace name 'CapturePart' could not be found
+E2EDiagnosticsTests.cs(16,32): error CS0115: 'E2EDiagnosticsTests.ForcedTimeoutStep': no suitable method found to override
+E2EDiagnosticsTests.cs(18,33): error CS0115: 'E2EDiagnosticsTests.Budget': no suitable method found to override
+RunStateTrackerTests.cs(102,22): error CS0103: The name 'RunPhase' does not exist in the current context
+RunStateTrackerTests.cs(110,33): error CS0246: The type or namespace name 'RunStateTracker' could not be found
+RunStateTrackerTests.cs(143,52): error CS0117: 'AutomationResponse' does not contain a definition for 'RunState'
+```
+
+The E2E test went red a second time on a real defect, after the code compiled: the open step was already closed by its
+`using` when the failure reached the scenario base (`[step '(none)' running for 0 s]`), and the first run also hit a
+static-initializer order bug in `StepTimer`. Both fixed (see decisions).
+
+### Green evidence (T003–T006)
+
+- Build: 40 projects, 0 errors, 0 warnings (Release); `dotnet format --verify-no-changes` clean
+- Full suite (Release, solution-wide): 1746 tests, 1735 passed, 11 skipped, 0 failed (5m 13s); the first run had one failure, `SourceHygieneTests.NoNullForgivingOperator`, fixed as listed below
+- `FailureCaptureTests` 8/8, `RunStateTrackerTests` 10/10 (including the `runState` serialization contract), `MainEditorVMTests` 20/20
+- E2E suite: 18 tests, 18 passed, 0 skipped, 0 failed (2m 24s) = 9 scenarios + 8 `FailureCaptureTests` + `E2EDiagnosticsTests`
+- `E2EDiagnosticsTests` output folder: `summary.md`, `timings.md` (`open project (running)`), `ui-tree.json`, `display.png`, `editor.log`, `process.txt` (`running`), `run-state.json`; no `capture-errors.txt`
+- Commits: bf000fc (A1 naming follow-up), f87275a (T003, T004), eda3181 (T005), then T006 with these notes
+
+### Decisions
+
+- Decision: the failing step is taken from `AppDomain.FirstChanceException` (step open at the first throw, keyed by exception instance), because the scenarios' `using (Step(...))` blocks have closed it by the time the failure reaches the base class.
+- Decision: `IProcessLauncher` gains `ProcessStarted`, `LineReceived(stream, line)` and `ProcessExited(code)` beside `OutputReceived`; the real launcher calls `WaitForExit()` in its exit handler so every line precedes the exit.
+- Decision: `EditorContext` gains a required `RunState` member and the compile flow calls `BuildStarted`/`BuildFinished`; `AutomationAgent` takes the snapshot provider as an optional trailing argument so the existing agent tests are unchanged.
+- Decision: a stale exit of an earlier program is ignored unless the tracker is `running`; two programs running at once are not tracked separately.
+- Decision: the capture runs its parts concurrently, each with its own 10 s limit and a 30 s guard over all of them, so a hung part costs 10 s, not the sum.
+- Decision: the editor exiting while a test holds its lease cancels the test's token (`kind: editor exited`) instead of waiting out the 180 s budget; it is covered by the shared code path but has no dedicated test.
+- Decision: `ui-tree.json` comes from a new read-only `tree` automation request (every window and every control with an automation id, hidden ones included); `dump` stays text.
+- Decision: the `e2e` job's artifact paths list `TestResults/e2e-diagnostics/**` (the job uploads named globs, not all of `TestResults/`).
+- Decision: three allowlisted null-forgiving operators (`AutomationClient.StatusAsync`, `EditorProcess.DesktopAssembly`, `X11SmokeTestBase.CheckpointAsync`) were replaced by explicit guards and their entries removed from `SourceHygieneTests`, instead of moving the line numbers.
+- Decision: issue #11 (`EditCompileAndRun`): no speculative fix. The scenario is rewritten on the shell in T043; if it fails again, `run-state.json`, `timings.md` and `editor.log` say whether the editor was slow to start, the build hung or the output was lost.
+
 ## Checkpoint reports
 
 Each checkpoint task (T014, T027, T045, T058, T071, T087, T099, T111) adds its report here, with evidence for every

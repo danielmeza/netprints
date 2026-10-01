@@ -70,7 +70,7 @@ public sealed class EditorProcess : IAsyncDisposable
     }
 
     public static string DesktopAssembly { get; } = typeof(EditorProcess).Assembly.GetCustomAttributes<AssemblyMetadataAttribute>()
-        .Single(a => a.Key == "DesktopAssembly").Value!;
+        .Single(a => a.Key == "DesktopAssembly").Value ?? throw new InvalidOperationException("The DesktopAssembly metadata has no value.");
 
     /// <summary>Starts the editor (optionally with a project) and waits until it reports ready.</summary>
     public static async Task<EditorProcess> StartAsync(XServer server, string workDirectory, string? project, CancellationToken cancellationToken)

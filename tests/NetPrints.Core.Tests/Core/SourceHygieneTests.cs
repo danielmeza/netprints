@@ -155,11 +155,9 @@ namespace NetPrints.Tests.Core
         /// </summary>
         private static readonly HashSet<string> NullForgivingAllowlist = new(StringComparer.Ordinal)
         {
-            "tests/NetPrints.Desktop.E2ETests/Hosting/EditorProcess.cs:60",
             "tests/NetPrints.Desktop.E2ETests/Hosting/Tool.cs:81",
             "tests/NetPrints.Desktop.E2ETests/Hosting/XServer.cs:108",
             "tests/NetPrints.Desktop.E2ETests/Hosting/XServer.cs:144",
-            "tests/NetPrints.Desktop.E2ETests/Scenarios/X11SmokeTests.cs:71",
             "tests/NetPrints.Editor.Tests/ClassEditor/ClassEditorVMTests.cs:531",
             "tests/NetPrints.Editor.Tests/ClassEditor/ClassEditorVMTests.cs:549",
             "tests/NetPrints.Editor.Tests/Graph/GraphTestBase.cs:32",
@@ -189,7 +187,6 @@ namespace NetPrints.Tests.Core
             "tests/NetPrints.Editor.UITests/TestAppBuilder.cs:33",
             "tests/NetPrints.Testing.Ui/ClassEditor/ClassEditorPage.cs:99",
             "tests/NetPrints.Testing.Ui/ClassEditor/ClassEditorPage.cs:110",
-            "tests/NetPrints.Testing.Ui/Driving/AutomationClient.cs:60",
             "tests/NetPrints.Testing.Ui/Driving/UiElement.cs:29",
             "tests/NetPrints.Testing.Ui/Driving/UiWait.cs:44",
             "tests/NetPrints.Testing.Ui/Graph/GraphCanvas.cs:65",
