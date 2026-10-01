@@ -59,7 +59,7 @@ answers have an ADR; the rest are in research.md.
   the start of the shell work, with a plain Avalonia layout as the fallback; no feature or test depends on the
   library directly (ADR-0018, research R2).
 - Q: How are view model types named? → A: Owner decision (2026-10-01): every view model type ends in `ViewModel`;
-  the `VM` suffix is not used. The 24 existing `*VM` types are renamed mechanically at the start of P3a, before any
+  the `VM` suffix is not used. The 25 existing `*VM` types are renamed mechanically at the start of P3a, before any
   new shell code, and a hygiene test fails on any type whose name ends in `VM` (FR-105; recorded as an amendment to
   ADR-0007; research R16).
 
@@ -482,7 +482,8 @@ its public members appear.
   unsaved after any change to it, and saved again after a successful save or when undo returns it to its saved
   state.
 - **FR-021**: An unsaved file MUST be marked with `*` on its graph tabs and its tree node, and the window title MUST
-  show the project name with `*` while any file is unsaved, followed by the active graph's name.
+  show the active graph's name and the project name, with `*` after the project name while any file is unsaved (the
+  format is in contracts/shell.md §4; see also FR-083).
 - **FR-022**: Before the project is unloaded (closing the window, Exit, Close project, opening or creating another
   project) with unsaved files, the editor MUST prompt with the list of unsaved files and Save all, Don't save and
   Cancel; Cancel and a failed save MUST keep the project open with its changes. Closing a tab MUST NOT prompt.
@@ -516,7 +517,7 @@ its public members appear.
   (F, Home, Delete, F2) MUST act only where they apply and never while a text field has focus.
 - **FR-035**: Undo and Redo MUST show the name of the action they will undo or redo in the Edit menu and in their
   tooltips, be disabled when there is nothing to undo or redo, and show "Undid: <action>" or "Redid: <action>" in
-  the status bar for a few seconds.
+  the status bar for 4 seconds.
 - **FR-036**: Help › Keyboard shortcuts MUST list every command with its shortcut, grouped as in the menu, built
   from the registry.
 - **FR-037**: One editor-internal registry MUST accept these contribution kinds: commands, panels, dashboard tiles,
@@ -653,8 +654,9 @@ its public members appear.
   and the theme equal what they were before (compared in tests); a corrupt or newer state file starts the editor
   with defaults in 100% of tests.
 - **SC-006**: A forced E2E timeout produces every diagnostic of FR-001 (timings, UI dump, screenshot, logs, launched
-  program state) in the CI artifacts; the longest Linux pull-request job takes at most 60% of the pre-split "Build and test (Linux)" job's
-  time on the same commit; the Windows CLI job passes with the UTF-8 test.
+  program state) in the CI artifacts; the longest of the jobs that replace "Build and test (Linux)" (the repository
+  checks job and each test-project job) takes at most 60% of that job's time in the last run before the split (CI run
+  36819424717 on `master` at `3a6eafc`); the Windows CLI job passes with the UTF-8 test.
 - **SC-007**: In the project fixtures, a type-scoped search for a cataloged type lists 0 members outside its catalog
   (0 unannotated, 0 `[NetPrintsIgnore]`), a type from an uncovered assembly lists the same members as before, and a
   graph that uses a hidden member builds and runs with unchanged output.

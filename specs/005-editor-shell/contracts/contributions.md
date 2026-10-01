@@ -95,7 +95,7 @@ public interface IGoToProvider
 | Command bar | commands with `CommandBarOrder` |
 | Key bindings | every command's gestures, by scope (shell `KeyBindings` for `Global`; the tunnel behavior on the canvas for `Graph`; the tree for `ProjectTree`) |
 | Command palette, keyboard shortcuts sheet | every command, including disabled ones |
-| Context menus | context-menu items by target, each resolving its command |
+| Context menus | context-menu items by target, each resolving its command; an item whose command cannot execute for the target (for example `rename` on a constructor) is hidden, not shown disabled |
 | Tooltips | tooltip providers in `Order`; the first non-null content wins |
 | Go to anything | every go-to provider, with results grouped by `Kind` |
 | Start page, New project | dashboard tiles and project templates |

@@ -10,7 +10,7 @@ types. Persisted formats are in [contracts/state-files.md](./contracts/state-fil
 | Entity | Fields | Rules |
 |---|---|---|
 | `ShellViewModel` | `Session: ProjectSessionViewModel?`, `Documents: ObservableCollection<DocumentViewModel>`, `ActiveDocument: DocumentViewModel?`, `Panels: IReadOnlyList<PanelViewModel>`, `StatusMessage: string?`, `Title: string` | One per window. `Session` is null while the start page shows. `Title` = `"<active graph> – <project>[*] – NetPrints"`, or `"NetPrints"` with no project. |
-| `IShell` (service) | `OpenDocument(DocumentId)`, `ActivateDocument(DocumentId)`, `CloseDocument(DocumentId)`, `ShowPanel(string panelId)`, `HidePanel(string panelId)`, `FloatDocument(DocumentId)`, `ResetLayout()`, `ActiveDocument` | The only shell API that features use; implemented by the Dock adapter (ADR-0018). |
+| `IShell` (service) | `OpenDocument(DocumentId)`, `ActivateDocument(DocumentId)`, `CloseDocument(DocumentId)`, `ShowPanel(string panelId)`, `HidePanel(string panelId)`, `FloatDocument(DocumentId)`, `DockDocument(DocumentId)`, `ResetLayout()`, `ActiveDocument` | The only shell API that features use; implemented by the Dock adapter (ADR-0018). |
 | `DocumentId` | `Kind` (`Graph`, `StartPage`, `ProjectSettings`), `ClassPath` (class file path relative to the project), `GraphKey` (method or constructor id, event graph id, or `class`) | Value equality. Serialized as `graph:<classPath>#<graphKey>`, `start`, or `project-settings`. |
 | `DocumentViewModel` | `Id: DocumentId`, `Title`, `IsUnsaved` (from the owning file), `Breadcrumbs: IReadOnlyList<BreadcrumbViewModel>` | `GraphDocumentViewModel` wraps the existing graph editor view model and adds `Viewport` (location, zoom). |
 | `PanelViewModel` | `Id` (`netprints.panel.*`), `Title`, `IconKind`, `DefaultDock` (`Left`, `Right`, `Bottom`), `Order` | Built-ins: `projectTree`, `inspector`, `errors`, `output`, `csharp`. |
@@ -20,6 +20,8 @@ types. Persisted formats are in [contracts/state-files.md](./contracts/state-fil
 | Entity | Fields | Rules |
 |---|---|---|
 | `ProjectSessionViewModel` | `Project`, `ProjectFilePath`, `ProjectKey` (first 16 hex chars of SHA-256 of the full project path), `UnsavedFiles: IReadOnlyList<UnsavedFile>` | Created on open; disposed on unload, after `ConfirmUnloadAsync` returns true. |
+| `RunStateTracker` | `State` (`NotStarted`, `Building`, `Running`, `Exited`), `ExitCode?`, `StdoutTail`, `StderrTail` | Fed by the compile and run flow through `IProcessLauncher`; tails keep the last 200 lines; a new compile or run resets it. The Output panel and the automation pipe's `runState` reply (contracts/ci.md §3) read it. |
+| `EditorDataPaths` | `Root` (`<ApplicationData>/NetPrints`, or `NETPRINTS_STATE_DIR`), `StateDirectory`, `BackupDirectory(projectKey)`, `ProjectKey(path)` | The only place that resolves per-user paths; writes go through `AtomicFileWriter` (temporary file, rename, user-only modes on Unix). |
 | `UnsavedFile` | `Path`, `Kind` (`Class`, `Project`), `DisplayName` | Derived from `ClassGraph.IsDirty`, and from the project when a project-level change is pending. |
 | `UndoRedoStack` (changed) | adds `MarkSaved()`, `IsAtSavedState` | Saved marker = undo depth plus the identity of the top command at save time. `Clear()` resets it to "no saved state". |
 | `BackupService` | `Schedule(UnsavedFile)`, `Delete(path)`, `FindBackups(projectKey)`, `Prune(now)` | Debounce of 30 s per file; atomic write; user-only permissions on Unix; failures logged and reported once per session. |

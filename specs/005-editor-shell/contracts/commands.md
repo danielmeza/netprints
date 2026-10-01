@@ -17,7 +17,7 @@ Menu order: **File, Edit, View, Go, Build, Help**. Groups inside a menu are sepa
 | `saveAll` | Save all | File › save | Ctrl+Shift+S | Global | |
 | `projectSettings` | Project settings | File › project-settings | — | Global | |
 | `references` | References… | File › project-settings | — | Global | yes (7) |
-| `exit` | Exit | File › exit | Alt+F4 (OS) | Global | |
+| `exit` | Exit | File › exit | — (the OS closes the window with Alt+F4, through the same unload path) | Global | |
 | `undo` | Undo `<action>` | Edit › history | Ctrl+Z | Global | yes (4) |
 | `redo` | Redo `<action>` | Edit › history | Ctrl+Y, Ctrl+Shift+Z | Global | yes (5) |
 | `delete` | Delete | Edit › selection | Delete | Graph, ProjectTree | |

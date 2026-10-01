@@ -24,12 +24,15 @@ concurrency group are unchanged.
 ## 2. `cli-windows.yml`
 
 - `name: CLI (Windows)`. It runs on `windows-latest` with `timeout-minutes: 30`.
-- Triggers: `pull_request` and `push` on `master`, path-filtered to:
-  - the CLI's libraries: `src/NetPrints.Cli/**`, `src/NetPrints.Core/**`, `src/NetPrints.Serialization/**`,
+- Triggers: `pull_request` and `push` on `master`, path-filtered to every project in the transitive
+  `ProjectReference` closure of `tests/NetPrints.Cli.Tests` (`CiWorkflowTests` checks this), which on 2026-10-01 is:
+  - the CLI and its libraries: `src/NetPrints.Cli/**`, `src/NetPrints.Core/**`, `src/NetPrints.Serialization/**`,
     `src/NetPrints.Workspace/**`, `src/NetPrints.Generation/**`, `src/NetPrints.Catalog/**`,
-    `src/NetPrints.Reflection/**`, `src/NetPrints.Extensibility/**`;
-  - `tests/NetPrints.Cli.Tests/**` and `tests/NetPrints.Testing/**`;
-  - the root build files: `Directory.*`, `global.json`, `NuGet.config`;
+    `src/NetPrints.Reflection/**`, `src/NetPrints.Extensibility/**`, `src/NetPrints.Generator/**`;
+  - `tests/NetPrints.Cli.Tests/**`, `tests/NetPrints.Testing/**`, `tests/NetPrints.TestExtension/**` and
+    `tests/Fixtures/**`;
+  - the build files: `Directory.*`, `src/Directory.Build.props`, `src/BannedSymbols*.txt`,
+    `tests/Directory.Build.props`, `global.json`, `NuGet.config`;
   - `.github/workflows/cli-windows.yml`.
 - `workflow_dispatch` is also allowed.
 - Steps: checkout (`fetch-depth: 0`), setup-dotnet from `global.json`, NuGet cache, then
@@ -67,9 +70,12 @@ the editor process exiting while the test still holds its lease.
 
 - Each part runs with its own 10 s limit, so a hung editor cannot block the capture.
 - The total capture time is at most 30 s.
-- The original failure is rethrown unchanged after the capture.
-- The failure message is prefixed with `[step '<name>' running for <n> s]`.
-- `NETPRINTS_E2E_FORCE_TIMEOUT=<step name>` makes that step wait until it is cancelled. `E2EDiagnosticsTests` uses
-  it to prove all seven files are produced. It runs only with `NETPRINTS_E2E=1`, like every other E2E test.
-- The `e2e` job uploads `TestResults/` on failure as it does today, so the diagnostics need no workflow change. The
-  artifact name stays `e2e-results`.
+- After the capture, the test fails with an `E2EStepFailureException` whose message starts with
+  `[step '<name>' running for <n> s]` and whose `InnerException` is the original failure, unchanged. If the capture
+  itself fails, the original failure is still the one reported.
+- A per-test harness hook makes a named step wait until it is cancelled. `E2EDiagnosticsTests` uses it, for its own
+  test only, to prove all seven files are produced; it never sets a process-wide variable, so parallel workers are
+  unaffected. For a manual run of one class, `NETPRINTS_E2E_FORCE_TIMEOUT=<step name>` does the same. Both run only
+  with `NETPRINTS_E2E=1`, like every other E2E test.
+- The `e2e` job already uploads `TestResults/` on every run (`if: always()`), so the diagnostics need no workflow
+  change. The artifact name stays `e2e-results`.

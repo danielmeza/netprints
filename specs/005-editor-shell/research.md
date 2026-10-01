@@ -8,7 +8,7 @@ not committed); the facts used are restated here.
 
 - Roadmap P3a section (owner-approved 2026-09-25, with owner additions 2026-09-25 to 2026-09-28), the P3 "Carried
   over from P2" bullet, and the phases table.
-- Constitution 1.2.3: I (Linux-first, CI Linux-only), II (UI-agnostic view models), III (extension-first), V (tests
+- Constitution 1.2.3 (1.2.4 since batch S2, ADR-0019): I (Linux-first, CI Linux-only), II (UI-agnostic view models), III (extension-first), V (tests
   gate), VI (versioned, deterministic formats), VIII (one phase, one PR).
 - UX audit `docs/research/2026-09-25-ux-audit/`: H1 (dirty state), H2 (two-level windows), H3 (round command
   buttons), H4 (keyboard), M3 (type and spacing system), M16 (undo feedback), L1 (window chrome, optional), L2
@@ -69,9 +69,11 @@ not committed); the facts used are restated here.
   windows are included), `editor.log` (the editor's log file and stderr tail, last 400 lines), and `process.txt`
   (alive or exit code), and `run-state.json` (the last launched program's state, exit code and output tails,
   asked through the automation pipe, which issue #11 showed was missing). Each part is captured independently with its own short timeout, and a capture error is
-  written into `capture-errors.txt` instead of masking the test failure. A test-only environment switch
-  (`NETPRINTS_E2E_FORCE_TIMEOUT=<step>`) makes a step hang so a test can prove the capture. The CI `e2e-results`
-  artifact already uploads `TestResults/`.
+  written into `capture-errors.txt` instead of masking the test failure. The reported failure wraps the original as its
+  `InnerException`, with the running step and its elapsed time in the message. A per-test harness hook makes a named
+  step hang so `E2EDiagnosticsTests` can prove the capture without touching other workers;
+  `NETPRINTS_E2E_FORCE_TIMEOUT=<step>` does the same for a manual run of one class. The CI `e2e-results` artifact
+  already uploads `TestResults/` on every run.
 - **`EditCompileAndRun` flake** (issue #11: the editor took over four minutes to start and the run step timed out
   after 120 s without telling whether the program ran): no speculative fix. The scenario is rewritten for the shell in sub-phase C anyway;
   the diagnostics are expected to explain any recurrence, and a fix lands then with the evidence in
@@ -143,7 +145,9 @@ not committed); the facts used are restated here.
     `<ApplicationData>/NetPrints/backups/<project-key>/<relative-path>.bak.json` plus `manifest.json` (original path,
     written time, file hash). `<project-key>` is the first 16 hex characters of the SHA-256 of the project file's
     full path. A save or Don't save deletes that file's backup; a project with no remaining backups loses its
-    folder. At startup, backups older than 30 days or whose project no longer exists are deleted.
+    folder. At startup, each backup whose written time is older than 30 days is deleted, and so is every backup
+    folder whose project no longer exists. A test-only `NETPRINTS_BACKUP_DELAY` (milliseconds) shortens the
+    debounce for the E2E crash-recovery test; FR-024's "within 30 seconds" still holds.
   - Recovery runs when a project is opened and its backup folder is not empty.
   - Writes are atomic (temporary file, then rename) and user-only on Unix (0600 files, 0700 folders).
 - **Rationale**: no silent data loss, nothing written into the user's repository (backups next to graphs would show
@@ -243,7 +247,9 @@ not committed); the facts used are restated here.
   behavior, ADR-0007 D11) or kept with a reason. A new enforced rule **E7** in `XamlHygieneTests` lists the
   methods in each view's code-behind that handle events (`object? sender, …EventArgs e` signatures and overrides of
   `On*`). They must appear in a shrink-only `CodeBehindAllowlist` with a reason (gesture, viewport math, editor
-  interop, focus plumbing). ADR-0007 gets an amendment note and the `avalonia-xaml` skill documents E7.
+  interop, focus plumbing). A second new rule, **E8**, forbids `FontSize` literals in views outside
+  `EditorStyles.axaml`, so the type ramp of FR-080 is checked rather than reviewed (spacing stays a review item).
+  ADR-0007 gets an amendment note and the `avalonia-xaml` skill documents E7 and E8.
   `GraphEditorView`'s global Ctrl+Space handler moves to the registry's key bindings (ADR-0020).
 - **Rationale**: the roadmap's done-when ("allowlists empty or only justified gestures") becomes a build-time
   check instead of a review judgement.
@@ -256,10 +262,12 @@ not committed); the facts used are restated here.
     navigation and recent projects.
   - Headless tests (`NetPrints.Editor.UITests`) for the wiring: generated menus and key bindings, the docking adapter
     with layout round trips, the theme tokens in both variants, and the dialogs.
-  - Desktop E2E scenarios, one class each (ADR-0006): `ShellMainFlowTests`, `UnsavedChangesPromptTests`,
-    `CrashRecoveryTests`, `FloatAndRedockGraphTests`, `ResetLayoutTests`, `RestoreSessionTests`,
-    `StartPageNewProjectTests`, `CommandPaletteTests`, `GoToAnythingTests`, `KeyboardOnlyTests` and
-    `EventEntryInspectorTests`, plus the rewritten shared smoke flows.
+  - Desktop E2E scenarios, one class each (ADR-0006), so every story has its main flow covered (FR-102):
+    `E2EDiagnosticsTests` (US1), `ShellMainFlowTests`, `FloatAndRedockGraphTests` and `ResetLayoutTests` (US2),
+    `UnsavedChangesPromptTests` and `CrashRecoveryTests` (US3), `KeyboardOnlyTests` (US4),
+    `StartPageNewProjectTests` (US5), `RestoreSessionTests` (US6), `CommandPaletteTests` and `GoToAnythingTests`
+    (US7), `EventEntryInspectorTests` (US8), `ThemeSwitchTests` (US9) and `TypeScopedSearchTests` (US10), plus the
+    rewritten shared smoke flows.
   - Guide screenshots come from `GuideScreenshotTests`, an opt-in E2E class (`NETPRINTS_GUIDE_SHOTS=1`) that drives
     the sample through each guide's states and writes PNGs to `website/static/img/guide/editor/`. They are run by
     `scripts/guide-screenshots.sh`, committed, and regenerated when the UI changes.
@@ -295,7 +303,7 @@ not committed); the facts used are restated here.
 
 ## R16. View model naming (owner decision 2026-10-01)
 
-- **Decision**: view model types end in `ViewModel`. The 24 `*VM` types on master are renamed first, in one
+- **Decision**: view model types end in `ViewModel`. The 25 `*VM` types on master are renamed first, in one
   mechanical commit at the start of sub-phase A, before any new shell code: types, file names, `x:DataType`,
   bindings and casts in XAML, tests, docs, skills and ADR mentions. In the editor's own namespaces, a rename that
   would collide with an existing type is resolved case by case, and the resolution is recorded in

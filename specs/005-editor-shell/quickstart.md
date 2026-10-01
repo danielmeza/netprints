@@ -18,14 +18,15 @@ Expected: 0 failures in both runs. The E2E run includes the new shell scenarios 
 ## 1. CI and diagnostics (US1, contracts/ci.md)
 
 - Run `NETPRINTS_E2E=1 tests/NetPrints.Desktop.E2ETests/bin/Release/net10.0/NetPrints.Desktop.E2ETests -class '*E2EDiagnosticsTests'`
-  (the test sets `NETPRINTS_E2E_FORCE_TIMEOUT` for its own editor).
+  (the test forces a timeout in its own scenario through the harness).
   `TestResults/e2e-diagnostics/<class>/` should hold `summary.md`, `timings.md`, `ui-tree.json`, `display.png`,
   `editor.log`, `process.txt` and `run-state.json`.
 - On the PR, check the Actions view:
   - `Repository checks (Linux)` and five `Test (…)` legs run in parallel, and `Build and test (Linux)` is green
     only after all of them;
   - `CLI (Windows)` is green, and its TRX lists `ShowTextconvEncodingTests` as passed;
-  - the longest Linux leg takes at most 60% of the old job's time (SC-006; P2's last run took about 13 min).
+  - the longest of `Repository checks (Linux)` and the `Test (…)` legs takes at most 60% of the old job's time in
+    its last run (SC-006: CI run 36819424717 on `master` at `3a6eafc`, about 13 min).
 
 ## 2. One window (US2, contracts/shell.md)
 
@@ -81,7 +82,7 @@ all allowlists empty and the E7 code-behind allowlist justified.
 
 ## 10. Type-scoped search (US10)
 
-In a project that references the annotated fixture library (`tests/Fixtures/Catalog/CatalogFixtureLib`), drag from
+In a project that references the fixture library with an embedded catalog (`tests/Fixtures/Catalog/CatalogAnnotatedLib`), drag from
 a pin of a cataloged type and open search: only the catalog's members are listed. For a type that is not
 cataloged, the search lists nothing and names the catalog. For a type from an uncovered library, every public
 member is listed. A graph that already uses a hidden member still builds and runs.

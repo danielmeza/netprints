@@ -46,9 +46,9 @@ state.
 
 // sessions/<project-key>.json
 { "schemaVersion": 1, "projectPath": "/home/u/src/Hello/Hello.csproj",
-  "openDocuments": ["graph:Program.netpc.json#Main", "graph:Program.netpc.json#event:EventGraph"],
-  "activeDocument": "graph:Program.netpc.json#Main",
-  "viewports": { "graph:Program.netpc.json#Main": { "x": -40.0, "y": 12.5, "zoom": 1.25 } } }
+  "openDocuments": ["graph:Program.netpc.json#method:m000000001gs20", "graph:Program.netpc.json#event:e000000000k3n0"],
+  "activeDocument": "graph:Program.netpc.json#method:m000000001gs20",
+  "viewports": { "graph:Program.netpc.json#method:m000000001gs20": { "x": -40.0, "y": 12.5, "zoom": 1.25 } } }
 
 // backups/<project-key>/manifest.json
 { "schemaVersion": 1, "projectPath": "/home/u/src/Hello/Hello.csproj", "files": [
@@ -68,8 +68,9 @@ state.
   - Written 30 s after a file's last change (the debounce restarts on every change).
   - A backup holds the same canonical JSON a save would write.
   - Deleted on save, on Don't save, and on Discard in recovery.
-  - At startup, a backup folder is deleted when it is older than 30 days (by `writtenUtc`) or when its `projectPath`
-    no longer exists.
+  - At startup, each backup whose `writtenUtc` is older than 30 days is deleted (with its manifest entry), and a
+    backup folder is deleted when it has no backups left or when its `projectPath` no longer exists.
+  - `NETPRINTS_BACKUP_DELAY` (milliseconds) shortens the 30 s wait for E2E tests only.
   - Each editor instance writes backups only for the files it has open, keyed by path, so two instances on one
     project overwrite each other's backup of the same file. Last writer wins, matching the save behaviour.
 - **Sessions with several instances.** The last instance to unload the project writes the session.
