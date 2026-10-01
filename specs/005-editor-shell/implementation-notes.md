@@ -288,13 +288,13 @@ F3 R6, R7, R8, R16, R17, R18; F4 R12, R13, R14, R15, R19.
 | R2 | major | The "editor exited" trigger and every exited-editor branch of `DiagnosticParts` never ran in a test | F1 | fixed, a8fa3ef |
 | R3 | minor | The per-class diagnostics folder is never cleared, so stale files pass or fail the proof | F1 | fixed, a8c1aae |
 | R4 | minor | A capture failure outside the narrow filter (or building the parts) replaces the original failure | F1 | fixed, a8c1aae |
-| R5 | minor | The `start` step includes the wait for a worker, so timings mislead | F2 | open |
+| R5 | minor | The `start` step includes the wait for a worker, so timings mislead | F2 | fixed, 2f20afe |
 | R6 | minor | The YAML reader in `CiWorkflowTests` ignores everything after an unexpected indent | F3 | open |
 | R7 | minor | The aggregate's "fails unless every needed job succeeded" is checked only as text | F3 | open |
 | R8 | minor | The `cli-windows.yml` path filter misses inputs the CLI tests read | F3 | open |
-| R9 | minor | `ProcessLauncher`: the exit can be raised before the start, and the drain can block forever | F2 | open |
-| R10 | minor | `RunStateTracker` gives one program's exit to another | F2 | open |
-| R11 | minor | The Shutdown scenario has no failure capture, and that is not recorded | F2 | open |
+| R9 | minor | `ProcessLauncher`: the exit can be raised before the start, and the drain can block forever | F2 | fixed, 680e850 |
+| R10 | minor | `RunStateTracker` gives one program's exit to another | F2 | fixed, 6dcade6 |
+| R11 | minor | The Shutdown scenario has no failure capture, and that is not recorded | F2 | fixed (Decision, no code change) |
 | R12 | minor | Deviations are recorded as Decisions while "Deviations" says "None yet" | F4 | open |
 | R13 | minor | Windows defects in `src/` hidden by test-side fixes, with no follow-up recorded | F4 | open |
 | R14 | minor | Docs and workflow text that no longer match behaviour | F4 | open |
@@ -303,8 +303,8 @@ F3 R6, R7, R8, R16, R17, R18; F4 R12, R13, R14, R15, R19.
 | R17 | nit | Repeated identifiers are not named constants | F3 | open |
 | R18 | nit | `ci.yml:1` header still names the superseded contract | F3 | open |
 | R19 | nit | Two red commits in the history | F4 | open |
-| R20 | nit | A skip after start would be reported as a failure | F2 | open |
-| R21 | nit | Forcing a step that never reaches a checkpoint does nothing, silently | F2 | open |
+| R20 | nit | A skip after start would be reported as a failure | F2 | fixed, 2f20afe |
+| R21 | nit | Forcing a step that never reaches a checkpoint does nothing, silently | F2 | fixed, 2f20afe |
 
 ### Accepted decisions (implemented in F2-F4)
 
@@ -345,3 +345,13 @@ None yet.
   applied in batch S2 on the coordinator's instruction; the owner confirms it on PR #12.
 - Roadmap: the phases table now records P2 as released (`v0.2.0`) and P3a in progress on PR #12 (batch S2, on the
   coordinator's instruction); the P3a view model bullet now says 25 types.
+
+### Batch A-F2 (R5, R9, R10, R11, R20, R21, R1 follow-up: 6dcade6, 680e850, 2f20afe, b32d2af)
+
+- R10 (6dcade6). Red: `RunStateTrackerTests.AnExitOfAnEarlierProgramDoesNotEndTheCurrentOne` (two starts, the first one exits) failed with `Expected: Running, Actual: Exited` (total 1, failed 1). Fix: `IProcessLauncher` events carry a per-start id (`ProcessStarted(id, request)`, `LineReceived(id, stream, line)`, `ProcessExited(id, code)`); `RunStateTracker` keeps the current id and ignores lines and exits of any other. Green: `RunStateTrackerTests` 11/11.
+- R9 (680e850). Red: `ProcessLauncherTests.TheExitIsReportedEvenWhenAGrandchildKeepsThePipesOpen` (`sh -c "sleep 20 & exit 3"`) failed with `InvalidOperationException : StandardError has not been redirected` (the exit handler disposed the process before `BeginErrorReadLine`: the ordering race). `AnInstantlyExitingProgramAlwaysEndsExited` (100 starts of `true`) passed before the fix, so it is a guard, not a red; the race is timing-dependent. Fix: `EnableRaisingEvents` is set after `ProcessStarted` and `Begin*ReadLine`; the exit drains with `WaitForExitAsync` under `DrainTimeout` (5 s, internal, 500 ms in the test), then reports anyway. The test double in `TestDoubles.cs` got the same ordering. Green: `ProcessLauncherTests` 2/2, three runs in a row. The never-hangs half is covered by the grandchild test's 10 s bound; its pre-fix failure was the race above, before the drain was reached, so the drain bound itself is not mutation-checked.
+- R5 (2f20afe). Red: `E2EDiagnosticsTests.AForcedTimeoutLeavesTheDiagnosticFiles` with the new assertion `timings.md` contains `| wait for worker |` failed (`Not found`). Fix: `StartAsync` times `pool.RentAsync` as its own `wait for worker` step, nested in `start`. Green: 6/6 of the E2E classes touched, under Xvfb.
+- R20 (2f20afe). Red: `E2ESkipAfterStartTests` (a scenario that calls `Assert.Skip` after `StartAsync`) got an `E2EStepFailureException` wrapping `$XunitDynamicSkip$not supported here`. Fix: the catch filter excludes `SkipException`. Green: the test catches the `SkipException` itself (`Assert.ThrowsAsync` made xunit report the test as skipped, which `--fail-skips` would fail).
+- R21 (2f20afe). Red: `StepTimerTests.AForcedStepThatNeverReachedACheckpointFailsLoudly` (no exception, stub) failed, 1 of 3. Fix: `StepTimer.EnsureForcedStepHeld`, called at the end of `RunScenarioAsync` (inside the capture), throws "step 'x' was never held (no checkpoint inside it)". Holdable steps are the ones with a checkpoint inside: `start`, `open project`, `edit graph`, `run`, `create project`, `add references`; `compile` is not. Green: `StepTimerTests` 3/3 and `E2EScenarioRulesTests` (real editor).
+- R11. Decision: `ShutdownTests` stays outside `RunScenarioAsync`; the editor exits by design, so there is no leased editor to dump, and its assertion messages carry the stderr. Recorded in the test's doc comment.
+- R1 follow-up (b32d2af). Red: `AutomationClientTests.ACallAfterAFailedExchangeNamesTheCause` (the server drops the connection after accepting) failed on `Not found: "open a new connection"`. Fix: `AutomationClient` marks itself out of step on any exception between the write and the full reply, and the later call's `IOException` names the cause. Green: `AutomationClientTests` 2/2.
