@@ -58,11 +58,11 @@ public sealed class ProcessLauncher : IProcessLauncher
         process.Exited += (_, _) => _ = ReportExitAsync();
 
         process.Start();
+        killOnCancel = cancellationToken.Register(() => Kill(process)); // before exit events are enabled, so the exit disposes this registration
         ProcessStarted?.Invoke(id, request);
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
         process.EnableRaisingEvents = true; // after the start is reported, so a fast exit never precedes it
-        killOnCancel = cancellationToken.Register(() => Kill(process));
 
         async Task ReportExitAsync()
         {

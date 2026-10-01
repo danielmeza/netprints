@@ -34,12 +34,16 @@ public class ProcessLauncherTests
     public async Task CancellingTheTokenKillsTheProcessTree()
     {
         Assert.SkipWhen(OperatingSystem.IsWindows(), "needs a POSIX shell");
-        var launcher = new ProcessLauncher();
+        // a surviving grandchild keeps the pipes open, so with this drain the exit would arrive after the bound
+        var launcher = new ProcessLauncher { DrainTimeout = TimeSpan.FromSeconds(30) };
         var exited = new TaskCompletionSource<int>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var grandchildStarted = new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously);
         launcher.ProcessExited += (_, code) => exited.TrySetResult(code);
+        launcher.LineReceived += (_, _, line) => grandchildStarted.TrySetResult(line);
         using var cts = new CancellationTokenSource();
 
-        launcher.Start(new("sh", ["-c", "sleep 60 & wait"], Environment.CurrentDirectory), cts.Token);
+        launcher.Start(new("sh", ["-c", "sleep 60 & echo $!; wait"], Environment.CurrentDirectory), cts.Token);
+        await grandchildStarted.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
         await cts.CancelAsync();
 
         var done = await Task.WhenAny(exited.Task, Task.Delay(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
