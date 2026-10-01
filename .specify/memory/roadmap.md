@@ -29,8 +29,8 @@ when it is started.
 | P0 | Modernize build + Avalonia editor at parity | ~6 w (manual est.) | — | **merged** 2026-09-25 (PR #1, e24ebec) |
 | P0.1 | Grid rendering (shader + pixel-identical fallback) | ~3–5 d | P0 | **merged** 2026-09-25 (PR #2, 0e1add1) |
 | P1 | Core refactor + extension points | ~3.5 w | P0 | **merged** 2026-09-29 (PR #6, cc96a93); released `v0.1.0`, `v0.1.1` |
-| P2 | Catalog tooling + Spectre CLI | ~2.5 w | P1 | **merged** 2026-10-01 (PR #9, 3a6eafc) |
-| P3a | Editor shell | ~2–3 w | P0, P1 | in progress (spec, `specs/005-editor-shell/`, draft PR #12) |
+| P2 | Catalog tooling + Spectre CLI | ~2.5 w | P1 | **merged** 2026-10-01 (PR #9, 3a6eafc); released `v0.2.0` |
+| P3a | Editor shell | ~2–3 w | P0, P1 | in progress (spec and tasks on draft PR #12, `specs/005-editor-shell/`) |
 | P3 | Editor extension host | ~2.5 w | P0, P1, P3a | not started |
 | P3b | Declarations and code style | ~3–4 w | P1, P3a, P3 | not started (owner-approved 2026-09-26) |
 | P4 | VSIX (WpfAvaloniaHost) | ~2 w | P3 | **deferred** by owner (2026-09-24) |
@@ -144,7 +144,7 @@ contribution registry; the rest in its `research.md`).
   test times out or fails (FU-4, the `EditCompileAndRun` flake, issue #11); split the "Build and test (Linux)" job
   into a test-project matrix under an aggregate check of the same name (FU-7, ADR-0019); a Windows CLI workflow with
   a UTF-8 `show --textconv` test (FU-3, ADR-0019).
-- **View model naming** (owner decision 2026-10-01): view model types end in `ViewModel`, never `VM`. The 24
+- **View model naming** (owner decision 2026-10-01): view model types end in `ViewModel`, never `VM`. The 25
   existing `*VM` types are renamed mechanically first, before any new shell code, and a hygiene test fails on any
   type name ending in `VM` (ADR-0007 amendment).
 - **Layout:** a single window with a project tree, tabbed graphs, an inspector and a bottom panel (Errors / Output / C#).
