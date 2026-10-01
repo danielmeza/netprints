@@ -67,18 +67,38 @@ public sealed class DiagnosticPartsTests : IDisposable
 
     private static async Task ServeAsync(string pipe, int connections, CancellationToken token)
     {
-        for (int i = 0; i < connections; i++)
+        var servers = new List<NamedPipeServerStream>();
+        try
         {
-            await using var server = new NamedPipeServerStream(pipe, PipeDirection.InOut, 1, PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
-            await server.WaitForConnectionAsync(token);
-            using var reader = new StreamReader(server, Encoding.UTF8, false, 4096, leaveOpen: true);
-            await using var writer = new StreamWriter(server, new UTF8Encoding(false), 4096, leaveOpen: true) { AutoFlush = true };
-            var request = JsonSerializer.Deserialize(await reader.ReadLineAsync(token) ?? "", AutomationJsonContext.Default.AutomationRequest);
-            var response = request?.Op == AutomationOps.Tree
-                ? new AutomationResponse(true) { Elements = [] }
-                : new AutomationResponse(true) { RunState = new RunStateSnapshot(default, null, [], []) };
-            await writer.WriteLineAsync(JsonSerializer.Serialize(response, AutomationJsonContext.Default.AutomationResponse));
-            await reader.ReadLineAsync(token);
+            for (int i = 0; i < connections; i++)
+            {
+                servers.Add(new NamedPipeServerStream(pipe, PipeDirection.InOut, connections, PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly));
+            }
+
+            foreach (var server in servers)
+            {
+                await server.WaitForConnectionAsync(token);
+                using var reader = new StreamReader(server, Encoding.UTF8, false, 4096, leaveOpen: true);
+                await using var writer = new StreamWriter(server, new UTF8Encoding(false), 4096, leaveOpen: true) { AutoFlush = true };
+                var request = JsonSerializer.Deserialize(await reader.ReadLineAsync(token) ?? "", AutomationJsonContext.Default.AutomationRequest);
+                var response = request?.Op == AutomationOps.Tree
+                    ? new AutomationResponse(true) { Elements = [] }
+                    : new AutomationResponse(true) { RunState = new RunStateSnapshot(default, null, [], []) };
+                await writer.WriteLineAsync(JsonSerializer.Serialize(response, AutomationJsonContext.Default.AutomationResponse));
+            }
+
+            await Task.Delay(Timeout.Infinite, token);
+        }
+        catch (OperationCanceledException)
+        {
+            // The test is done reading; the servers close only now, so no teardown races a client.
+        }
+        finally
+        {
+            foreach (var server in servers)
+            {
+                await server.DisposeAsync();
+            }
         }
     }
 
