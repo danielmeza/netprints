@@ -24,13 +24,16 @@ concurrency group are unchanged.
 ## 2. `cli-windows.yml`
 
 - `name: CLI (Windows)`. It runs on `windows-latest` with `timeout-minutes: 30`.
-- Triggers: `pull_request` and `push` on `master`, path-filtered to every project in the transitive
-  `ProjectReference` closure of `tests/NetPrints.Cli.Tests` (`CiWorkflowTests` checks this), which on 2026-10-01 is:
+- Triggers: `pull_request` and `push` on `master`, path-filtered to the closure plus the data and build
+  files the CLI tests read: every project in the transitive `ProjectReference` closure of `tests/NetPrints.Cli.Tests`
+  (`CiWorkflowTests` checks this), which on 2026-10-01 is:
   - the CLI and its libraries: `src/NetPrints.Cli/**`, `src/NetPrints.Core/**`, `src/NetPrints.Serialization/**`,
     `src/NetPrints.Workspace/**`, `src/NetPrints.Generation/**`, `src/NetPrints.Catalog/**`,
     `src/NetPrints.Reflection/**`, `src/NetPrints.Extensibility/**`, `src/NetPrints.Generator/**`;
   - `tests/NetPrints.Cli.Tests/**`, `tests/NetPrints.Testing/**`, `tests/NetPrints.TestExtension/**` and
     `tests/Fixtures/**`;
+  - the data and build files the CLI tests read: `samples/**`, `schemas/**`, `eng/schemastore/**`,
+    `src/NetPrints.Sdk/**`, `.gitattributes`;
   - the build files: `Directory.*`, `src/Directory.Build.props`, `src/BannedSymbols*.txt`,
     `tests/Directory.Build.props`, `global.json`, `NuGet.config`;
   - `.github/workflows/cli-windows.yml`.

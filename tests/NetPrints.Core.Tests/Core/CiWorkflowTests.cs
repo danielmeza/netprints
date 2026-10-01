@@ -160,6 +160,11 @@ namespace NetPrints.Tests.Core
 
             string[] buildFiles =
             [
+                "samples/**",
+                "schemas/**",
+                "eng/schemastore/**",
+                "src/NetPrints.Sdk/**",
+                ".gitattributes",
                 "tests/Fixtures/**",
                 "Directory.*",
                 "src/Directory.Build.props",
