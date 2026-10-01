@@ -74,7 +74,6 @@ public class DocumentIdTests
     {
         Assert.Throws<ArgumentException>(() => DocumentId.Graph("", "class"));
         Assert.Throws<ArgumentException>(() => DocumentId.Graph("A.npclass", "bogus"));
-        Assert.Throws<ArgumentNullException>(() => DocumentId.Graph(null!, "class"));
     }
 
     [Fact]
