@@ -274,7 +274,7 @@ success criterion its sub-phase covers and a "Docs updated:" line.
 
 Skip count, corrected: without `NETPRINTS_E2E`, 8 of the 18 Desktop E2E tests skip (the 7 scenario classes `CreateProject`, `EditCompileAndRun`, `DragFromLists`, `Shutdown`, `AddReferences`, `MinimizeAndRestoreClassWindow`, `PanCursor` plus `E2EDiagnosticsTests`); the other 10 (`EntryPoint` 1, `DesktopWorkerPool` 1, `FailureCapture` 8) always run. With `NETPRINTS_E2E=1` all 18 run. A2's "9 scenarios" was the 7 scenarios plus `EntryPoint` and `DesktopWorkerPool`, the 9 tests that existed before A2; A3's "7 scenarios plus `E2EDiagnosticsTests`" is the right skip list. The 11 skips of the full run are these 8 plus the 3 headless UI tests.
 
-After Review A: all of R1-R21 fixed or decided; solution suite 1772 tests, 1759 passed, 13 skipped, 0 failed; Desktop E2E 31 of 31 passed (`NETPRINTS_E2E=1 --fail-skips on`); CI run 36888167482 (head 21d1ad8, all checks success).
+After Review A: all of R1-R21 fixed or decided; solution suite 1772 tests, 1759 passed, 13 skipped, 0 failed; Desktop E2E 31 of 31 passed (`NETPRINTS_E2E=1 --fail-skips on`); CI run 36891689161 (head e1e9a6c, all checks success).
 
 Docs updated: `docs/contributing/testing.md` (CI section), `AGENTS.md` (the Windows workflow, the `test`/`e2e` split), the Avalonia skills and ADR-0007 (the `ViewModel` naming, A1 commits 48cc09d and bf000fc); no further change was needed in them.
 
@@ -388,3 +388,23 @@ Totals at a8fa3ef: solution suite 1762 tests, 1750 passed, 12 skipped, 0 failed;
 - R18 (0c292dd). `ci.yml:1` points at `specs/005-editor-shell/contracts/ci.md`.
 
 Totals: solution suite (Debug, no `NETPRINTS_E2E`) 1772 tests, 1758 passed, 13 skipped, the one reported failure being the Desktop E2E project's own "zero tests ran" exit (it self-skips without `NETPRINTS_E2E`); Desktop E2E with `NETPRINTS_E2E=1 --fail-skips on` under its own Xvfb: 31 of 31 passed, 0 skipped.
+
+### Batch B1 (T017-T019: 9ef7aef, 4cf4011)
+
+Order: T019 first (9ef7aef), because `ICommandHandler` and `GoToItem` need `CommandContext` and `DocumentId`; T017 and T018 together (4cf4011).
+
+- Red, T019 (compile-red): with `DocumentId` absent, `dotnet build tests/NetPrints.Editor.Tests` failed with `CS0246: The type or namespace name 'DocumentId' could not be found` in `CommandContext.cs` and `IShell.cs` (and in the tests). Green: `DocumentIdTests` 26/26. Mutation (`hash <= 0` to `hash < 0` in `TryParse`): `AMalformedStringIsRejected(text: "graph:#class")` failed `Expected: False, Actual: True`; restored.
+- Red, T017 (behavioural): with a registry whose `Add*` only appended, `ContributionRegistryTests` failed 23 of 33 (bad ids, empty labels, single-key Global, unparseable gesture, duplicate ids, every gesture-conflict case, freeze, log count, owner). Green after the validating registry: 33/33.
+- T018 architecture test `ContributionsAreUiFreeTests` (source scan for `Avalonia`/`Nodify`/`Dock` usings and qualified names, a reflection scan of signatures, and a scanner self-test). It passes on the clean namespace by design; mutation: a `Contributions/Mut.cs` mentioning `Avalonia.Point` failed it with `Collection: ["Mut.cs: Avalonia.Point"]`; removed.
+- Written after the code: `CommandGestureTests` (17). Mutation (canonical modifier name `Ctrl` to `Control`) failed 5 of them; restored.
+- Green: Editor tests 430/430, `SourceHygieneTests` 13/13, `dotnet format --verify-no-changes` clean. First full run had one failure, `NoNullForgivingOperator`, from a `null!` in `DocumentIdTests` (the case was dropped; the guard is `ArgumentException.ThrowIfNullOrEmpty`).
+
+Decisions:
+- `ContributionRegistry` takes only a logger; the owner of every issue is `ContributionIds.Owner` (`netprints`) until P3 adds an owner parameter to `Add*`.
+- A command that loses a gesture to a conflict stays registered, with that gesture removed from the stored descriptor (the issue names the winning command); a command with an invalid gesture is ignored.
+- A gesture is `CommandGesture`: modifiers Ctrl, Alt, Shift, Meta (aliases Control, Cmd, Command, Win), canonical order Ctrl+Alt+Shift+Meta then the key; the key is normalised to an initial capital and the rest lower case.
+- Validation beyond the contract: a blank label or title, a missing handler or factory, an invalid `CommandId` in a context-menu item, and a blank template name or profile id are `InvalidDescriptor`.
+- `CommandContext.Session` is `object?` until `ProjectSessionViewModel` exists (sub-phase C); `ActiveGraph` is `NodeGraphViewModel?`; `CommandSelection(Nodes, TreeItem)` carries the selection. `NavigationTarget` (data-model) lives in `NetPrints.Editor.Shell` with string node and pin ids.
+- `TooltipTarget(Kind, Subject)` with kinds Pin and Connection; `PanelDock` is Left, Right, Bottom; `ProjectOutputType` is Console, Library.
+- The registry log event is 1070 (`ContributionIssue`, warning), continuing the per-folder blocks.
+- `DocumentId` is a sealed record with a private constructor, factories and `TryParse`; the class path may not contain `#`.

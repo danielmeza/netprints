@@ -189,7 +189,7 @@ tests; the existing windows' shortcuts run through the registry.
 
 ### Batch B1 — model: sonnet — T017–T019 — 4 units
 
-- [ ] T017 [US4] Test first: `tests/NetPrints.Editor.Tests/Contributions/ContributionRegistryTests.cs`
+- [x] T017 [US4] Test first: `tests/NetPrints.Editor.Tests/Contributions/ContributionRegistryTests.cs`
   (contracts/contributions.md §1, §4). Ids must match `^[a-z0-9]+(\.[a-zA-Z0-9]+)+$`. An empty label, a bad id, or a
   single-key gesture in `Global` scope is an `InvalidDescriptor` issue and is ignored. A duplicate id within one kind
   is a `DuplicateId` issue and the first wins; the same id in two kinds is allowed. Overlapping gestures in one scope,
@@ -197,14 +197,14 @@ tests; the existing windows' shortcuts run through the registry.
   `ProjectTree` never conflict with each other. Gestures compare canonically (`Ctrl+Shift+B` equals `Shift+Ctrl+B`).
   Lists keep registration order. After `Freeze()`, every `Add*` throws `InvalidOperationException`. Each issue is
   logged once at warning level (fake logger). Red.
-- [ ] T018 [US4] `src/NetPrints.Editor/Contributions/` (2 units): `IContributionRegistry`, `ContributionRegistry`, the
+- [x] T018 [US4] `src/NetPrints.Editor/Contributions/` (2 units): `IContributionRegistry`, `ContributionRegistry`, the
   seven descriptor kinds and their enums (`CommandScope`, `MenuPlacement`, `PanelDock`, `ContextMenuTarget`,
   `ProjectOutputType`), `ICommandHandler` (default `DynamicLabel`), `ITooltipProvider`, `TooltipTarget`,
   `TooltipContent`, `IGoToProvider`, `GoToItem`, `ContributionIssue`, a UI-free `CommandGesture` parser and normaliser
   for the descriptor strings, `ContributionIds` (the built-in prefixes and the owner `netprints`), and `Log.cs`
   (`[LoggerMessage]`). Test first: `tests/NetPrints.Editor.Tests/Architecture/` asserts the namespace uses no Avalonia
   or Dock type. T017 green.
-- [ ] T019 [US4] Test first: `tests/NetPrints.Editor.Tests/Shell/DocumentIdTests.cs` (contracts/shell.md §2,
+- [x] T019 [US4] Test first: `tests/NetPrints.Editor.Tests/Shell/DocumentIdTests.cs` (contracts/shell.md §2,
   data-model "Shell"): `graph:<classPath>#<graphKey>` with `method:<id>`, `ctor:<id>`, `event:<id>` and `class`, plus
   `start` and `project-settings`, round-trip through `ToString` and `TryParse`; malformed strings return false; value
   equality. Then `src/NetPrints.Editor/Shell/DocumentId.cs`, `IShell.cs` (the data-model members), `CommandContext`
