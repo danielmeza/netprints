@@ -276,6 +276,65 @@ Skip count, corrected: without `NETPRINTS_E2E`, 8 of the 18 Desktop E2E tests sk
 
 Docs updated: `docs/contributing/testing.md` (CI section), `AGENTS.md` (the Windows workflow, the `test`/`e2e` split), the Avalonia skills and ADR-0007 (the `ViewModel` naming, A1 commits 48cc09d and bf000fc); no further change was needed in them.
 
+## Review A (T016, part 1 of 4)
+
+Review of sub-phase A (`86196b7..7d94130`), report in `.agent-archive/netprints-p3a/review-A.md`: no blockers, 2 majors,
+21 findings. The coordinator accepted every recommendation. Fix batches: F1 R1-R4; F2 R5, R9, R10, R11, R20, R21;
+F3 R6, R7, R8, R16, R17, R18; F4 R12, R13, R14, R15, R19.
+
+| Id | Severity | Summary | Batch | Status |
+|---|---|---|---|---|
+| R1 | major | A cancelled automation request leaves its reply in the pipe; the failure capture reads stale replies | F1 | fixed, c519244 |
+| R2 | major | The "editor exited" trigger and every exited-editor branch of `DiagnosticParts` never ran in a test | F1 | fixed, a8fa3ef |
+| R3 | minor | The per-class diagnostics folder is never cleared, so stale files pass or fail the proof | F1 | fixed, a8c1aae |
+| R4 | minor | A capture failure outside the narrow filter (or building the parts) replaces the original failure | F1 | fixed, a8c1aae |
+| R5 | minor | The `start` step includes the wait for a worker, so timings mislead | F2 | open |
+| R6 | minor | The YAML reader in `CiWorkflowTests` ignores everything after an unexpected indent | F3 | open |
+| R7 | minor | The aggregate's "fails unless every needed job succeeded" is checked only as text | F3 | open |
+| R8 | minor | The `cli-windows.yml` path filter misses inputs the CLI tests read | F3 | open |
+| R9 | minor | `ProcessLauncher`: the exit can be raised before the start, and the drain can block forever | F2 | open |
+| R10 | minor | `RunStateTracker` gives one program's exit to another | F2 | open |
+| R11 | minor | The Shutdown scenario has no failure capture, and that is not recorded | F2 | open |
+| R12 | minor | Deviations are recorded as Decisions while "Deviations" says "None yet" | F4 | open |
+| R13 | minor | Windows defects in `src/` hidden by test-side fixes, with no follow-up recorded | F4 | open |
+| R14 | minor | Docs and workflow text that no longer match behaviour | F4 | open |
+| R15 | minor | The docs sweep broke ADR-0007's amendment and went past T002's scope without a Decision | F4 | open |
+| R16 | nit | Locals still named after the old types; the rule's doc comment is stale | F3 | open |
+| R17 | nit | Repeated identifiers are not named constants | F3 | open |
+| R18 | nit | `ci.yml:1` header still names the superseded contract | F3 | open |
+| R19 | nit | Two red commits in the history | F4 | open |
+| R20 | nit | A skip after start would be reported as a failure | F2 | open |
+| R21 | nit | Forcing a step that never reaches a checkpoint does nothing, silently | F2 | open |
+
+### Accepted decisions (implemented in F2-F4)
+
+- Decision (R8): widen the `cli-windows.yml` path filter to the inputs the CLI tests read, as the review recommends.
+- Decision (R10): `ProcessStarted` carries a per-start id, and `RunStateTracker` matches exits by it.
+- Decision (R11): `ShutdownTests` is exempt from failure capture (it closes the editor itself, so there is no leased editor to dump); the reason is recorded here and in the test's doc comment.
+- Decision (R12): "node title as string pin value" is listed under Deviations, and contracts/ci.md section 2 is amended.
+- Decision (R13): both Windows `src/` issues are recorded as follow-ups with the P3 code carry-overs.
+- Decision (R15): restore ADR-0007's amendment example; record a Decision for the research/ADR rewrite the docs sweep made.
+- Decision (R19): no history rewrite; both red commits are named as bisect-skip.
+
+### Batch A-F1 (R1-R4: c519244, a8c1aae, a8fa3ef)
+
+R1 red (test first: a fake pipe server answers request 1 late, request 1 is cancelled after the write, request 2 is sent):
+
+```
+Assert.IsType() Failure: Value is null
+Expected: typeof(System.IO.IOException)
+Actual:   null          (the second call returned "reply 1")
+total: 1, failed: 1
+```
+
+R1 fix: `AutomationClient` marks itself out of step when a request is cancelled between write and read, and later calls throw an `IOException` naming the cause; `EditorProcess` keeps `PipeName` and `ConnectAsync`, and the `ui tree` and `run state` parts and `tree.txt` open their own connection. Green: `AutomationClientTests` 1/1.
+
+R3 and R4 red (three new `FailureCaptureTests` facts, after adding the `Func<IReadOnlyList<CapturePart>>` constructor): `StaleFilesFromAnEarlierRunAreGoneAfterACleanCapture` (two `Assert.False() Failure`), `APartFactoryThatThrowsNeverReplacesTheOriginal` (`InvalidOperationException` escaped `FailAsync`), `AnUnexpectedCaptureExceptionNeverReplacesTheOriginal` (`ArgumentException` from an empty folder name escaped); total 11, failed 3. Fix: `CaptureAsync` deletes the folder's files first, `FailAsync` catches every exception, and `X11SmokeTestBase` passes a factory so building the parts is inside the guard. Green: `FailureCaptureTests` 11/11.
+
+R2: the behaviour was already there, so these tests were written after the code and mutation-checked. `DiagnosticParts` now reads the editor through `ICapturedEditor` (`EditorProcess` implements it; `Create` takes the display name and a screenshot function), so `DiagnosticPartsTests` runs the exited and running branches over a fake: `process.txt` `exited 137`, `ui-tree.json` and `run-state.json` with `editorExitCode`, no connection opened for an exited editor, and two connections of their own for a running one. Mutation: with the `HasExited` branches disabled, `AnExitedEditorLeavesItsExitCodeInsteadOfAUiTree` failed (1 of 2 failed); restored, 2/2. `E2EEditorExitDiagnosticsTests` (new class, `EditorProcess.Kill` as the test hook) kills the leased editor mid-step: the failure arrives in about 7 s against a 90 s budget, `summary.md` says `failure: editor exited`, `process.txt` matches `exited <code>`, both JSON files carry that code, `ui-tree.json` has an empty `windows`, no `capture-errors.txt`. Mutation: with the kind forced away from `editor exited`, it failed on the `summary.md` assertion; restored, green.
+
+Totals at a8fa3ef: solution suite 1762 tests, 1750 passed, 12 skipped, 0 failed; Desktop E2E with `NETPRINTS_E2E=1 --fail-skips on`: 25 of 25 passed, 0 skipped.
+
 ## Deviations
 
 None yet.
