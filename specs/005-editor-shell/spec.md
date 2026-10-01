@@ -425,7 +425,7 @@ its public members appear.
   removed and the error is shown.
 - An E2E diagnostics capture itself fails (no display, editor hung): the failure records what could not be
   captured and the original failure is still reported.
-- On macOS, `Ctrl+` shortcuts are expected to map to Cmd; this is not verified in CI (Linux only).
+- On macOS, `Ctrl+` shortcuts bind to Cmd (unit tested with a platform flag); the real keys are not verified in CI (Linux only).
 
 ## Requirements *(mandatory)*
 
@@ -514,7 +514,9 @@ its public members appear.
   F2 rename; Ctrl+A select all; F frame selection; Home and Shift+F fit all; Esc cancel the current popup or
   operation; Ctrl+Space node search; Ctrl+W close tab; Ctrl+Tab and Ctrl+Shift+Tab next and previous tab;
   Ctrl+Shift+P command palette; Ctrl+P go to anything; Alt+Left and Alt+Right back and forward. Single-key shortcuts
-  (F, Home, Delete, F2) MUST act only where they apply and never while a text field has focus.
+  (F, Home, Delete) MUST act only where they apply and never while a text field has focus. F2 is a function key and,
+  like F5 and F7, is exempt from the Global single-key rule; because rename acts on a selection it is scoped (canvas,
+  project tree) and ignores text fields there.
 - **FR-035**: Undo and Redo MUST show the name of the action they will undo or redo in the Edit menu and in their
   tooltips, be disabled when there is nothing to undo or redo, and show "Undid: <action>" or "Redid: <action>" in
   the status bar for 4 seconds.

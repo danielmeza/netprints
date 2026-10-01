@@ -14,6 +14,16 @@ public class CommandGestureTests
     [InlineData("F2", "F2")]
     [InlineData("delete", "Delete")]
     [InlineData(" Ctrl + K ", "Ctrl+K")]
+    [InlineData("Esc", "Escape")]
+    [InlineData("escape", "Escape")]
+    [InlineData("Del", "Delete")]
+    [InlineData("Ins", "Insert")]
+    [InlineData("Return", "Enter")]
+    [InlineData("PgUp", "PageUp")]
+    [InlineData("PgDn", "PageDown")]
+    [InlineData("Backspace", "Back")]
+    [InlineData("3", "3")]
+    [InlineData("f24", "F24")]
     public void TextNormalisesToTheCanonicalForm(string text, string canonical)
     {
         Assert.True(CommandGesture.TryParse(text, out var gesture));
@@ -29,6 +39,12 @@ public class CommandGestureTests
     [InlineData("Ctrl+Ctrl+K")]
     [InlineData("Ctrl+K+L")]
     [InlineData("Ctrl++K")]
+    [InlineData("Ctrl+Banana")]
+    [InlineData("Ctrl+12")]
+    [InlineData("F25")]
+    [InlineData("F0")]
+    [InlineData("Fx")]
+    [InlineData("Ctrl+Fx")]
     public void AnInvalidTextIsRejected(string text) => Assert.False(CommandGesture.TryParse(text, out _));
 
     [Fact]
@@ -50,15 +66,29 @@ public class CommandGestureTests
     [InlineData("F1", true)]
     [InlineData("Shift+F5", true)]
     [InlineData("F24", true)]
-    [InlineData("F25", false)]
-    [InlineData("F0", false)]
     [InlineData("F", false)]
-    [InlineData("Fx", false)]
     [InlineData("Home", false)]
     public void FunctionKeysAreF1ToF24(string text, bool expected)
     {
         Assert.True(CommandGesture.TryParse(text, out var gesture));
 
         Assert.Equal(expected, gesture.IsFunctionKey);
+    }
+
+    [Theory]
+    [InlineData("A", true)]
+    [InlineData("Shift+A", true)]
+    [InlineData("Shift+F5", true)]
+    [InlineData("F2", true)]
+    [InlineData("Ctrl+A", false)]
+    [InlineData("Shift+Ctrl+A", false)]
+    [InlineData("Home", true)]
+    [InlineData("Shift+Home", true)]
+    [InlineData("Alt+A", false)]
+    public void APlainGestureHasNoModifierOtherThanShift(string text, bool expected)
+    {
+        Assert.True(CommandGesture.TryParse(text, out var gesture));
+
+        Assert.Equal(expected, gesture.IsPlain);
     }
 }

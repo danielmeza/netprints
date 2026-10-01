@@ -16,11 +16,14 @@ public sealed record CommandGesture
     /// <summary>Gets the modifier keys.</summary>
     public CommandModifiers Modifiers { get; }
 
-    /// <summary>Gets the key name, normalised to an initial capital then lower case (<c>B</c>, <c>Delete</c>, <c>F2</c>).</summary>
+    /// <summary>Gets the canonical key name: a letter, a digit, <c>F1</c> to <c>F24</c> or a named key such as <c>Delete</c> or <c>Escape</c>.</summary>
     public string Key { get; }
 
     /// <summary>Gets a value indicating whether the gesture has no modifier.</summary>
     public bool IsSingleKey => Modifiers == CommandModifiers.None;
+
+    /// <summary>Gets a value indicating whether the gesture has no modifier other than Shift.</summary>
+    public bool IsPlain => (Modifiers & ~CommandModifiers.Shift) == CommandModifiers.None;
 
     /// <summary>Gets a value indicating whether the key is a function key, <c>F1</c> to <c>F24</c>.</summary>
     public bool IsFunctionKey => Key.Length > 1 && Key[0] == 'F' && int.TryParse(Key.AsSpan(1), NumberStyles.None, CultureInfo.InvariantCulture, out int number) && number is >= 1 and <= MaxFunctionKey;
@@ -58,7 +61,10 @@ public sealed record CommandGesture
             }
             else if (key is null)
             {
-                key = char.ToUpperInvariant(part[0]) + part[1..].ToLowerInvariant();
+                if (!TryKeyName(part, out key))
+                {
+                    return false;
+                }
             }
             else
             {
@@ -92,6 +98,8 @@ public sealed record CommandGesture
         return string.Join('+', parts);
     }
 
+    private static readonly Dictionary<string, string> KeyNames = BuildKeyNames();
+
     private static readonly CommandGesture Empty = new(CommandModifiers.None, string.Empty);
 
     private static readonly (CommandModifiers Flag, string Name)[] ModifierNames =
@@ -101,6 +109,42 @@ public sealed record CommandGesture
         (CommandModifiers.Shift, "Shift"),
         (CommandModifiers.Meta, "Meta"),
     ];
+
+    private static Dictionary<string, string> BuildKeyNames()
+    {
+        var names = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        for (char c = 'A'; c <= 'Z'; c++)
+        {
+            names[c.ToString()] = c.ToString();
+        }
+
+        for (char c = '0'; c <= '9'; c++)
+        {
+            names[c.ToString()] = c.ToString();
+        }
+
+        for (int number = 1; number <= MaxFunctionKey; number++)
+        {
+            string name = "F" + number.ToString(CultureInfo.InvariantCulture);
+            names[name] = name;
+        }
+
+        foreach (string name in new[] { "Escape", "Enter", "Delete", "Insert", "Home", "End", "PageUp", "PageDown", "Left", "Right", "Up", "Down", "Tab", "Space", "Back" })
+        {
+            names[name] = name;
+        }
+
+        names["Esc"] = "Escape";
+        names["Return"] = "Enter";
+        names["Del"] = "Delete";
+        names["Ins"] = "Insert";
+        names["PgUp"] = "PageUp";
+        names["PgDn"] = "PageDown";
+        names["Backspace"] = "Back";
+        return names;
+    }
+
+    private static bool TryKeyName(string part, out string? key) => KeyNames.TryGetValue(part, out key);
 
     private static bool TryModifier(string part, out CommandModifiers modifier)
     {

@@ -11,6 +11,8 @@ public class DocumentIdTests
     [InlineData("graph:Classes/Player.npclass#event:e1")]
     [InlineData("graph:Classes/Player.npclass#class")]
     [InlineData("graph:Player.npclass#method:3f2a")]
+    [InlineData("graph:a#b/C.netpc.json#class")]
+    [InlineData("graph:Interop#2/Foo.netpc.json#method:m1")]
     [InlineData("start")]
     [InlineData("project-settings")]
     public void ARoundTripThroughToStringAndTryParseKeepsTheValue(string text)
@@ -20,6 +22,17 @@ public class DocumentIdTests
         Assert.Equal(text, id.ToString());
         Assert.True(DocumentId.TryParse(id.ToString(), out var again));
         Assert.Equal(id, again);
+    }
+
+    [Fact]
+    public void AClassPathMayContainAHash()
+    {
+        var id = DocumentId.Graph("a#b/C.netpc.json", "class");
+
+        Assert.Equal("a#b/C.netpc.json", id.ClassPath);
+        Assert.Equal("class", id.GraphKey);
+        Assert.True(DocumentId.TryParse(id.ToString(), out var parsed));
+        Assert.Equal(id, parsed);
     }
 
     [Fact]

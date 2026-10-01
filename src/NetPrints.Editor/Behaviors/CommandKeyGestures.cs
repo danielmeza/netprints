@@ -10,24 +10,22 @@ namespace NetPrints.Editor.Behaviors;
 /// <summary>View-layer helpers of the command key behaviors: descriptor gestures to <see cref="KeyGesture"/>, and the text input test.</summary>
 internal static class CommandKeyGestures
 {
-    private static readonly Dictionary<string, Key> Synonyms = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["Esc"] = Key.Escape,
-        ["Del"] = Key.Delete,
-        ["Ins"] = Key.Insert,
-        ["Return"] = Key.Enter,
-    };
+    /// <summary>Converts the descriptor's gesture strings for the running platform; <c>Ctrl</c> becomes Command on macOS.</summary>
+    /// <param name="command">The command.</param>
+    /// <returns>The gestures.</returns>
+    public static IEnumerable<KeyGesture> Of(CommandDescriptor command) => Of(command, OperatingSystem.IsMacOS());
 
     /// <summary>Converts the descriptor's gesture strings; one that does not name an Avalonia key is skipped.</summary>
     /// <param name="command">The command.</param>
+    /// <param name="isMacOS">Whether <c>Ctrl</c> maps to the Meta (Command) modifier instead of Control.</param>
     /// <returns>The gestures.</returns>
-    public static IEnumerable<KeyGesture> Of(CommandDescriptor command)
+    public static IEnumerable<KeyGesture> Of(CommandDescriptor command, bool isMacOS)
     {
         foreach (string text in command.DefaultGestures ?? [])
         {
             if (CommandGesture.TryParse(text, out CommandGesture gesture) && TryKey(gesture.Key, out Key key))
             {
-                yield return new KeyGesture(key, Modifiers(gesture.Modifiers));
+                yield return new KeyGesture(key, Modifiers(gesture.Modifiers, isMacOS));
             }
         }
     }
@@ -55,19 +53,18 @@ internal static class CommandKeyGestures
 
     private static bool TryKey(string name, out Key key)
     {
-        if (Synonyms.TryGetValue(name, out key))
+        if (name.Length == 1 && char.IsDigit(name[0]))
         {
-            return true;
+            return Enum.TryParse("D" + name, out key);
         }
 
-        string enumName = name.Length == 1 && char.IsDigit(name[0]) ? "D" + name : name;
-        return Enum.TryParse(enumName, ignoreCase: true, out key);
+        return Enum.TryParse(name, out key);
     }
 
-    private static KeyModifiers Modifiers(CommandModifiers modifiers)
+    private static KeyModifiers Modifiers(CommandModifiers modifiers, bool isMacOS)
     {
         var result = KeyModifiers.None;
-        result |= modifiers.HasFlag(CommandModifiers.Ctrl) ? KeyModifiers.Control : KeyModifiers.None;
+        result |= modifiers.HasFlag(CommandModifiers.Ctrl) ? (isMacOS ? KeyModifiers.Meta : KeyModifiers.Control) : KeyModifiers.None;
         result |= modifiers.HasFlag(CommandModifiers.Alt) ? KeyModifiers.Alt : KeyModifiers.None;
         result |= modifiers.HasFlag(CommandModifiers.Shift) ? KeyModifiers.Shift : KeyModifiers.None;
         result |= modifiers.HasFlag(CommandModifiers.Meta) ? KeyModifiers.Meta : KeyModifiers.None;

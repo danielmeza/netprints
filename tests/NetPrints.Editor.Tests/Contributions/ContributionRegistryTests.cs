@@ -106,6 +106,60 @@ public class ContributionRegistryTests
     }
 
     [Theory]
+    [InlineData("Shift+A")]
+    [InlineData("Shift+3")]
+    [InlineData("Shift+Home")]
+    public void AShiftOnlyGestureInGlobalScopeIsAnInvalidDescriptor(string gesture)
+    {
+        var registry = NewRegistry();
+
+        registry.AddCommand(Command("netprints.command.caps", scope: CommandScope.Global, gestures: gesture));
+
+        Assert.Empty(registry.Commands);
+        Assert.Equal(ContributionIssueKind.InvalidDescriptor, Assert.Single(registry.Issues).Kind);
+    }
+
+    [Fact]
+    public void AShiftFunctionKeyIsAllowedInGlobalScope()
+    {
+        var registry = NewRegistry();
+
+        registry.AddCommand(Command("netprints.command.stop", scope: CommandScope.Global, gestures: "Shift+F5"));
+
+        Assert.Single(registry.Commands);
+        Assert.Empty(registry.Issues);
+    }
+
+    [Theory]
+    [InlineData("Ctrl+Banana")]
+    [InlineData("Ctrl+12")]
+    [InlineData("F25")]
+    public void AnUnknownKeyIsAnInvalidDescriptor(string gesture)
+    {
+        var registry = NewRegistry();
+
+        registry.AddCommand(Command("netprints.command.odd", gestures: gesture));
+
+        Assert.Empty(registry.Commands);
+        Assert.Equal(ContributionIssueKind.InvalidDescriptor, Assert.Single(registry.Issues).Kind);
+    }
+
+    [Theory]
+    [InlineData("Esc", "Escape")]
+    [InlineData("Del", "Delete")]
+    [InlineData("Return", "Enter")]
+    public void AnAliasOfAKeyConflictsWithItsCanonicalName(string alias, string canonical)
+    {
+        var registry = NewRegistry();
+
+        registry.AddCommand(Command("netprints.command.first", scope: CommandScope.Graph, gestures: canonical));
+        registry.AddCommand(Command("netprints.command.second", scope: CommandScope.Graph, gestures: alias));
+
+        Assert.Equal(ContributionIssueKind.GestureConflict, Assert.Single(registry.Issues).Kind);
+        Assert.Empty(registry.Commands.Single(command => command.Id == "netprints.command.second").DefaultGestures ?? []);
+    }
+
+    [Theory]
     [InlineData("F5")]
     [InlineData("F12")]
     public void AFunctionKeyIsAllowedInGlobalScope(string gesture)
@@ -334,6 +388,44 @@ public class ContributionRegistryTests
         registry.AddCommand(Command("bad"));
 
         Assert.Equal(ContributionIds.Owner, Assert.Single(registry.Issues).Owner);
+    }
+
+    [Fact]
+    public void ACommandWithoutAHandlerIsInvalid() => AssertInvalid(registry => registry.AddCommand(InvalidDescriptors.CommandWithoutHandler()));
+
+    [Fact]
+    public void APanelWithoutAViewModelFactoryIsInvalid() => AssertInvalid(registry => registry.AddPanel(InvalidDescriptors.PanelWithoutFactory()));
+
+    [Fact]
+    public void ATileWithoutAViewModelFactoryIsInvalid() => AssertInvalid(registry => registry.AddDashboardTile(InvalidDescriptors.TileWithoutFactory()));
+
+    [Fact]
+    public void ATileWithABlankTitleIsInvalid() =>
+        AssertInvalid(registry => registry.AddDashboardTile(new DashboardTileDescriptor("netprints.tile.recent", " ", 0, _ => new object())));
+
+    [Fact]
+    public void ATemplateWithABlankProfileIdIsInvalid() =>
+        AssertInvalid(registry => registry.AddProjectTemplate(new ProjectTemplateDescriptor("netprints.template.console", "Console", "d", "", ProjectOutputType.Console)));
+
+    [Fact]
+    public void AMenuItemWithAnInvalidCommandIdIsInvalid() =>
+        AssertInvalid(registry => registry.AddContextMenuItem(new ContextMenuItemDescriptor("netprints.menu.save", ContextMenuTarget.Node, "not a command", "group", 0)));
+
+    [Fact]
+    public void AMenuItemWithANullGroupIsInvalid() => AssertInvalid(registry => registry.AddContextMenuItem(InvalidDescriptors.MenuItemWithoutGroup()));
+
+    private void AssertInvalid(Action<ContributionRegistry> add)
+    {
+        var registry = NewRegistry();
+
+        add(registry);
+
+        Assert.Empty(registry.Commands);
+        Assert.Empty(registry.Panels);
+        Assert.Empty(registry.DashboardTiles);
+        Assert.Empty(registry.ProjectTemplates);
+        Assert.Empty(registry.ContextMenuItems);
+        Assert.Equal(ContributionIssueKind.InvalidDescriptor, Assert.Single(registry.Issues).Kind);
     }
 
     [Fact]

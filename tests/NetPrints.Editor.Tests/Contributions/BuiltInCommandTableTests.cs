@@ -47,7 +47,11 @@ public class BuiltInCommandTableTests
         new("addEventGraph", "Add event graph", "Edit", "class", [], Everywhere, null, typeof(AddEventGraphCommandHandler)),
         new("frameSelection", "Frame selection", "View", "viewport", ["F"], Canvas, null, typeof(FrameSelectionCommandHandler)),
         new("fitAll", "Fit all", "View", "viewport", ["Home", "Shift+F"], Canvas, null, typeof(FitAllCommandHandler)),
-        new("showPanel.<panel>", "Project, Inspector, Errors, Output, C#", "View", "panels", [], Everywhere, null, null),
+        new("showPanel.projectTree", "Project", "View", "panels", [], Everywhere, null, null),
+        new("showPanel.inspector", "Inspector", "View", "panels", [], Everywhere, null, null),
+        new("showPanel.errors", "Errors", "View", "panels", [], Everywhere, null, null),
+        new("showPanel.output", "Output", "View", "panels", [], Everywhere, null, null),
+        new("showPanel.csharp", "C#", "View", "panels", [], Everywhere, null, null),
         new("floatDocument", "Float tab", "View", "layout", [], Everywhere, null, null),
         new("dockDocument", "Dock tab", "View", "layout", [], Everywhere, null, null),
         new("resetLayout", "Reset layout", "View", "layout", [], Everywhere, null, null),
@@ -77,7 +81,11 @@ public class BuiltInCommandTableTests
     /// </summary>
     private static readonly Dictionary<string, string> PendingCommandIds = new()
     {
-        ["showPanel.<panel>"] = "T039",
+        ["showPanel.projectTree"] = "T039",
+        ["showPanel.inspector"] = "T039",
+        ["showPanel.errors"] = "T039",
+        ["showPanel.output"] = "T039",
+        ["showPanel.csharp"] = "T039",
         ["floatDocument"] = "T039",
         ["dockDocument"] = "T039",
         ["resetLayout"] = "T039",

@@ -62,7 +62,8 @@ Rules:
   share one slot, which shows Stop while the program runs.
 - Graph-scope shortcuts act only while the graph canvas has focus, and never while a text input inside a node or
   the inspector has focus. Opening or activating a graph puts focus in its canvas (SC-004: keyboard-only).
-- Shortcuts are written `Ctrl+…` and expected to map to Cmd on macOS. That mapping is unverified (Linux CI).
+- Shortcuts are written `Ctrl+…`; on macOS the view layer binds `Ctrl` to Cmd (Meta). The conversion is unit tested
+  with a platform flag; the real keys are checked by hand (CI is Linux only). Tooltips still show the text as written.
 
 ## 2. Context menus (FR-011, FR-062)
 

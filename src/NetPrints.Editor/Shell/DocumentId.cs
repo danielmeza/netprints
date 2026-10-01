@@ -49,7 +49,7 @@ public sealed record DocumentId
     public string? GraphKey { get; }
 
     /// <summary>Creates the id of a graph document.</summary>
-    /// <param name="classPath">The class file path relative to the project; non-empty.</param>
+    /// <param name="classPath">The class file path relative to the project; non-empty, may contain <c>#</c>.</param>
     /// <param name="graphKey">A valid graph key.</param>
     /// <returns>The id.</returns>
     /// <exception cref="ArgumentNullException">An argument is null.</exception>
@@ -58,7 +58,7 @@ public sealed record DocumentId
     {
         ArgumentException.ThrowIfNullOrEmpty(classPath);
         ArgumentNullException.ThrowIfNull(graphKey);
-        if (!IsValidGraphKey(graphKey) || classPath.Contains('#', StringComparison.Ordinal))
+        if (!IsValidGraphKey(graphKey))
         {
             throw new ArgumentException($"Invalid graph document: '{classPath}#{graphKey}'.", nameof(graphKey));
         }
@@ -90,7 +90,7 @@ public sealed record DocumentId
         }
 
         string rest = text[GraphPrefix.Length..];
-        int hash = rest.IndexOf('#', StringComparison.Ordinal);
+        int hash = rest.LastIndexOf('#');
         if (hash <= 0)
         {
             return false;
@@ -98,7 +98,7 @@ public sealed record DocumentId
 
         string classPath = rest[..hash];
         string graphKey = rest[(hash + 1)..];
-        if (!IsValidGraphKey(graphKey) || classPath.Contains('#', StringComparison.Ordinal))
+        if (!IsValidGraphKey(graphKey))
         {
             return false;
         }

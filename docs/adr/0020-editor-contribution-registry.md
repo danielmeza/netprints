@@ -42,8 +42,9 @@ roadmap requires the built-in editor to use the same points first (owner, 2026-0
   No view lists actions of its own.
 - **Shortcut scopes.** A command declares a scope: `Global` (shell-wide), `Graph` (the canvas has focus) or
   `ProjectTree`; a command may name several (`CommandScope` is a flags enum, and `Global`, which is 0, overlaps every
-  scope). Single-key gestures (`F`, `Home`, `Delete`) are allowed only in non-global scopes; function keys F1 to
-  F24 are exempt, so F5, F7 and Shift+F5 are `Global`. A focused
+  scope). Single-key and Shift-only gestures (`F`, `Home`, `Delete`, `Shift+A`) are allowed only in non-global scopes;
+  function keys F1 to F24 are exempt by design, so F5, F7 and Shift+F5 are `Global` and fire in text fields too. A
+  function-key command that acts on a selection (F2 rename) must therefore be scoped. A focused
   text input always gets its own editing keys first. The canvas-scope bindings reach Nodify through a tunnel-routed
   behavior, so Nodify's own handling cannot swallow them (`avalonia-behaviors` D9).
 - **Ids and conflicts.** Ids are namespaced (`netprints.command.save`, `netprints.panel.errors`). A duplicate id, or
@@ -70,7 +71,11 @@ Recorded together with their tests (contracts/contributions.md carries the same 
 
 - `CommandScope` is `[Flags]` (`Global = 0`, `Graph = 1`, `ProjectTree = 2`): delete and rename act in the canvas
   and the tree. A multi-scope command overlaps every scope it names.
-- Function keys F1 to F24 may be single-key `Global` gestures (`CommandGesture.IsFunctionKey`).
+- Function keys F1 to F24 may be single-key `Global` gestures (`CommandGesture.IsFunctionKey`); a Shift-only gesture
+  on any other key counts as single-key for that rule (`CommandGesture.IsPlain`).
+- Key names come from a UI-free table in `CommandGesture` (letters, digits, F1 to F24, named keys; `Esc`, `Del`,
+  `Ins`, `Return`, `PgUp`, `PgDn` and `Backspace` are aliases, normalised before conflict detection). An unknown key
+  is an unparseable gesture. The view layer maps `Ctrl` to Command (Meta) on macOS.
 - `InvalidDescriptor` also covers a missing handler or factory, a blank title, display name or profile id, and an
   invalid `CommandId` in a context-menu item. The labels of the four add-member commands became rows of
   contracts/commands.md.

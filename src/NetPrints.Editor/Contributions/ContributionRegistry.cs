@@ -61,9 +61,9 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
                 return;
             }
 
-            if (gesture.IsSingleKey && !gesture.IsFunctionKey && command.Scope == CommandScope.Global)
+            if (gesture.IsPlain && !gesture.IsFunctionKey && command.Scope == CommandScope.Global)
             {
-                Report(ContributionIssueKind.InvalidDescriptor, command.Id, $"Single-key gesture '{text}' is not allowed in the Global scope (function keys are).");
+                Report(ContributionIssueKind.InvalidDescriptor, command.Id, $"Single-key or Shift-only gesture '{text}' is not allowed in the Global scope (function keys are).");
                 return;
             }
 

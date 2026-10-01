@@ -127,8 +127,7 @@ public sealed class HeadlessApp : IAsyncDisposable
         try
         {
             string test = TestContext.Current.Test?.TestDisplayName ?? "unknown";
-            string folder = Path.Combine(UiArtifacts.Directory, "diagnostics",
-                string.Concat(test.Split(Path.GetInvalidFileNameChars())).Replace(' ', '_'));
+            string folder = Path.Combine(UiArtifacts.Directory, "diagnostics", UiArtifacts.SafeName(test));
             Directory.CreateDirectory(folder);
             File.WriteAllText(Path.Combine(folder, "tree.txt"), Tree.Dump());
             foreach (var window in Tree.Windows.Where(w => w.IsVisible).ToList())
@@ -176,6 +175,25 @@ public static class UiArtifacts
         Environment.GetEnvironmentVariable(TestEnvironment.UiArtifactsVariable) is { Length: > 0 } configured
             ? configured
             : Path.Combine(AppContext.BaseDirectory, "ui-artifacts");
+
+    /// <summary>Turns a test display name into a file or folder name that actions/upload-artifact accepts.</summary>
+    /// <param name="name">The display name.</param>
+    /// <returns>The name with every rejected character replaced by an underscore; <c>unknown</c> when blank.</returns>
+    public static string SafeName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            return "unknown";
+        }
+
+        var builder = new System.Text.StringBuilder(name.Length);
+        foreach (char character in name)
+        {
+            builder.Append(char.IsWhiteSpace(character) || character is '"' or ':' or '<' or '>' or '|' or '*' or '?' or '\\' or '/' || char.IsControl(character) ? '_' : character);
+        }
+
+        return builder.ToString();
+    }
 
     private static readonly string Baselines = typeof(UiArtifacts).Assembly
         .GetCustomAttributes(typeof(System.Reflection.AssemblyMetadataAttribute), false)

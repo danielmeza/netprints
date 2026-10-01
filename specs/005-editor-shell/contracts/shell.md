@@ -28,7 +28,7 @@ headless tests drive.
 
 | Document | Id form | Title | Notes |
 |---|---|---|---|
-| Graph | `graph:<classPath>#<graphKey>` | graph name, with `*` while its class file is unsaved | `graphKey` is `method:<id>`, `ctor:<id>`, `event:<id>` or `class` |
+| Graph | `graph:<classPath>#<graphKey>` | graph name, with `*` while its class file is unsaved | `graphKey` is `method:<id>`, `ctor:<id>`, `event:<id>` or `class` and never contains `#`; `classPath` may (the id splits on the last `#`) |
 | Start page | `start` | Start | shown with no project open, and by `startPage` |
 | Project settings | `project-settings` | Project settings | replaces the launcher's settings pane |
 
