@@ -138,7 +138,7 @@ Contract: contracts/ci.md. **Independent test**: US1's independent test; SC-006;
   `timeout-minutes`, the ADR-0008 coverage settings and the UI leg's `NETPRINTS_UI_ARTIFACTS`; `e2e` and `packages`
   stay as they are. Add one line at the top of `specs/001-modernize-build/contracts/ci-workflow.md` saying its job
   layout is superseded by `specs/005-editor-shell/contracts/ci.md`. T007's `ci.yml` checks green.
-- [ ] T009 [US1] SC-006 timing. Record in implementation-notes the duration of "Build and test (Linux)" in the last
+- [x] T009 [US1] SC-006 timing. Record in implementation-notes the duration of "Build and test (Linux)" in the last
   pre-split run (CI run 36819424717 on master `3a6eafc`) and of every new Linux job in this batch's PR run. If the
   longest exceeds 60% of the baseline, find the cause in the step timings and fix it in this batch (Decision with the
   evidence; E2E sharding stays in P8).

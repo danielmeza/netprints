@@ -162,6 +162,55 @@ static-initializer order bug in `StepTimer`. Both fixed (see decisions).
 - Decision: three allowlisted null-forgiving operators (`AutomationClient.StatusAsync`, `EditorProcess.DesktopAssembly`, `X11SmokeTestBase.CheckpointAsync`) were replaced by explicit guards and their entries removed from `SourceHygieneTests`, instead of moving the line numbers.
 - Decision: issue #11 (`EditCompileAndRun`): no speculative fix. The scenario is rewritten on the shell in T043; if it fails again, `run-state.json`, `timings.md` and `editor.log` say whether the editor was slow to start, the build hung or the output was lost.
 
+## Batch A3 (implementation: sonnet, 6dcd636–7dcc38d and the T009 commit)
+
+### Red output
+
+`CiWorkflowTests` against the unsplit `ci.yml` (reader parsed it fine; the contract checks failed):
+
+```
+TestMatrixCoversEveryTestProjectExactlyOnce  Expected: [tests/NetPrints.Catalog.Tests, ... Editor.UITests]  Actual: []
+TestMatrixHasTheContractLegsWithUniqueNames  Expected: [Core, Catalog, CLI, Editor, Editor UI (headless)]   Actual: []
+TestMatrixDoesNotFailFast                    Expected: "false"  Actual: ""
+EveryLegUploadsItsOwnResultsAndCoverage      Not found: "test-results-${{ matrix.leg }}"
+BuildAndTestAggregatesEveryTestRunningJob    Not found: "always()"
+Total: 8, Failed: 6, Skipped: 1 (the cli-windows check)
+```
+
+### Green evidence (T007-T009)
+
+- Core.Tests `CiWorkflowTests` 7 passed, 1 skipped; full solution run (Release): 1754 tests, 1742 passed, 12 skipped, 0 failed (5m 09s); format clean; build 0 warnings
+- The `cli-windows.yml` check was exercised against a throwaway draft of the file (all paths of contracts/ci.md §2: green; without `tests/Fixtures/**`: red, naming the three fixture projects), then the draft was removed
+- First PR run: `Test (Editor UI (headless))` failed with 2 tests (`RunCompilesStartsAndPrints`, `EditCompileAndRun`: "Build failed with 1 error(s)"), because building only `tests/NetPrints.Editor.UITests` did not build `NetPrints.Generator`, whose output folder the compile scenarios use. Fixed in 7dcc38d with a `ReferenceOutputAssembly="false"` project reference (as `Cli.Tests` has). Second run all green, both required checks `success`
+- Commits: 6dcd636 (step 0 naming), a22a281 (T007, T008), 7dcc38d (generator reference), then the T009 commit
+
+### T009 timings (SC-006)
+
+Baseline: "Build and test (Linux)" in run 36819424717 (master 3a6eafc): 995 s. This PR's run 36863268200 (job durations, runner start to end):
+
+| Job | Seconds | % of baseline |
+|---|---|---|
+| Test (Editor UI (headless)) | 530 | 53% |
+| Repository checks (Linux) | 224 | 23% |
+| Test (Editor) | 218 | 22% |
+| Test (Core) | 182 | 18% |
+| Test (Catalog) | 145 | 15% |
+| Test (CLI) | 139 | 14% |
+| Build and test (Linux) (aggregate) | 3 | 0% |
+
+The longest new job (530 s) is 53% of the baseline, under the 60% limit (597 s), so no fix was needed. `e2e` (510 s, was 456 s) is unchanged by this batch and stays with the P8 sharding.
+
+Skips: the 12 skipped in the full run are 3 headless UI tests that need a real cursor, OS drag and drop or a window manager (`HeadlessSmokeTests.PanCursor`, `DragFromLists`, `MinimizeAndRestoreClassWindow`), 8 Desktop E2E tests that skip without `NETPRINTS_E2E` (7 scenarios plus `E2EDiagnosticsTests`, which is what took the count from 10 to 11 in A2), and 1 new one: `CiWorkflowTests.CliWindowsPathFilterCoversTheCliTestsBuildInputs`, which skips until T011 creates `cli-windows.yml`.
+
+### Decisions
+
+- Decision: the YAML reader inside `CiWorkflowTests` supports block mappings and sequences, flow sequences, literal and folded scalars, quotes and comments only; an unsupported construct throws, so a future workflow edit cannot pass silently.
+- Decision: the `cli-windows.yml` check skips with a reason while the file is missing (T011 creates it) instead of failing, so every commit stays green; the check was verified against a throwaway draft.
+- Decision: "test-running job" means a job with a `dotnet test` step other than `e2e`, `packages` and `build-test`; today that is `checks` (E2E discovery) and `test`. `desktop-publish` and `jsonschema` run no tests and are not aggregated.
+- Decision: matrix legs carry `name`, `leg` (artifact slug) and `project`; artifacts are `test-results-<leg>`, `coverage-<leg>` and, for `editor-ui` only, `ui-headless`. `NETPRINTS_UI_ARTIFACTS` is a job-level variable (it is inert in the other legs).
+- Decision: the E2E zero-test discovery step in `checks` drops the coverage arguments (nothing uploads them any more); each leg builds only its own project (`dotnet build tests/<project>`), the solution is built once in `checks`.
+- Decision: the aggregate keeps `timeout-minutes: 30` like every other job; the required check names `Build and test (Linux)` and `Desktop E2E (Linux, Xvfb)` are asserted by `RequiredCheckNamesAreUnchanged`.
+
 ## Checkpoint reports
 
 Each checkpoint task (T014, T027, T045, T058, T071, T087, T099, T111) adds its report here, with evidence for every
