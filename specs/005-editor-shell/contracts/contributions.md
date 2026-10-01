@@ -99,9 +99,15 @@ public interface IGoToProvider
   window; the window-close path (`ShutdownCoordinator`) is the other caller of `ConfirmUnloadAsync`, so the unload
   prompt has exactly one call per path.
 - Handlers are stateless and have no `CanExecuteChanged`. The enabled state is queried when a command is invoked (a
-  key press) or a surface is built. A surface that stays visible re-queries on the session's change notifications;
-  `run` and `stop` depend on `ProjectSessionViewModel.IsRunning`, which raises `PropertyChanged` when the program
-  starts or exits.
+  key press) or a surface is built. A surface that stays visible re-queries every command it shows on one combined
+  notification, `ICommandContextProvider.CommandStatesChanged` (re-exposed as `CommandInvoker.CommandStatesChanged`,
+  with `CommandInvoker.CanRun(command)` to re-query). It is raised, on the UI thread, when the session is replaced,
+  the session starts or ends a build (`ProjectSessionViewModel.IsBuilding`), the program starts or exits
+  (`IsRunning`), the project starts or stops compiling or changes its output type, any undo history changes
+  (enabled state and `DynamicLabel` of undo and redo), the selection of the active graph changes, or the active
+  graph or document changes. The shell's provider must raise it for the same triggers; surfaces keep no
+  per-command subscriptions. `run` is disabled while a build is in flight or the program runs, `compile` while a
+  build is in flight.
 - The exact member names may change in implementation if the tests and this contract change together. The
   invariants may not: UI-free types, first-wins conflicts, the seven kinds, and a frozen registry after startup.
 

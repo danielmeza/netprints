@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Security.Cryptography;
 using System.Text;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -28,6 +29,8 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
     private Task<bool>? flow;
     private CancellationTokenSource? runCancellation;
     private bool wasRunning;
+    private bool building;
+    private EventHandler? commandStatesChanged;
 
     /// <summary>Creates the session of <paramref name="project"/>.</summary>
     /// <param name="project">The open project.</param>
@@ -40,6 +43,7 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
         this.context = context;
         wasRunning = IsRunning;
         context.RunState.PhaseChanged += OnRunPhaseChanged;
+        project.PropertyChanged += OnProjectPropertyChanged;
     }
 
     /// <summary>Gets the open project.</summary>
@@ -53,6 +57,16 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
 
     /// <summary>Gets whether the last started program has not exited yet; raises a change (on the UI thread) when that flips.</summary>
     public bool IsRunning => context.RunState.Snapshot().Phase == RunPhase.Running;
+
+    /// <summary>Gets whether a compile or run is in flight (waiting for a save, building) and has not started its program yet.</summary>
+    public bool IsBuilding => building;
+
+    /// <summary>Raised, on the UI thread, when a command's enabled state or label may have changed: building or running starts or ends, the project starts or stops compiling, or an undo history changes.</summary>
+    public event EventHandler? CommandStatesChanged
+    {
+        add => commandStatesChanged += value;
+        remove => commandStatesChanged -= value;
+    }
 
     /// <summary>Gets the path of a class's graph file relative to the project, with <c>/</c> separators (the class path of its <see cref="DocumentId"/>s).</summary>
     /// <param name="cls">A class of the project.</param>
@@ -79,6 +93,7 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
         if (!undoStacks.TryGetValue(cls, out UndoRedoStack? stack))
         {
             stack = new UndoRedoStack();
+            stack.Changed += OnUndoChanged;
             undoStacks[cls] = stack;
         }
 
@@ -92,7 +107,14 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
     {
         ArgumentNullException.ThrowIfNull(cls);
         ArgumentNullException.ThrowIfNull(stack);
+        if (undoStacks.TryGetValue(cls, out UndoRedoStack? previous))
+        {
+            previous.Changed -= OnUndoChanged;
+        }
+
+        stack.Changed += OnUndoChanged;
         undoStacks[cls] = stack;
+        RaiseCommandStatesChanged();
     }
 
     /// <summary>
@@ -161,6 +183,12 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
     public void Dispose()
     {
         context.RunState.PhaseChanged -= OnRunPhaseChanged;
+        Project.PropertyChanged -= OnProjectPropertyChanged;
+        foreach (UndoRedoStack stack in undoStacks.Values)
+        {
+            stack.Changed -= OnUndoChanged;
+        }
+
         runCancellation?.Cancel();
         runCancellation?.Dispose();
         runCancellation = null;
@@ -168,16 +196,51 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
 
     private async Task<bool> CompileFlowAsync()
     {
-        await WaitForSaveAsync().ConfigureAwait(true);
-        return await BuildAsync(Project, context).ConfigureAwait(true);
+        SetBuilding(true);
+        try
+        {
+            await WaitForSaveAsync().ConfigureAwait(true);
+            return await BuildAsync(Project, context).ConfigureAwait(true);
+        }
+        finally
+        {
+            SetBuilding(false);
+        }
     }
 
     private async Task<bool> RunFlowAsync()
     {
-        await WaitForSaveAsync().ConfigureAwait(true);
-        runCancellation?.Dispose();
-        runCancellation = new CancellationTokenSource();
-        return await BuildAndStartAsync(Project, context, runCancellation.Token).ConfigureAwait(true);
+        SetBuilding(true);
+        try
+        {
+            await WaitForSaveAsync().ConfigureAwait(true);
+            runCancellation?.Dispose();
+            runCancellation = new CancellationTokenSource();
+            return await BuildAndStartAsync(Project, context, runCancellation.Token).ConfigureAwait(true);
+        }
+        finally
+        {
+            SetBuilding(false);
+        }
+    }
+
+    private void SetBuilding(bool value)
+    {
+        building = value;
+        OnPropertyChanged(nameof(IsBuilding));
+        RaiseCommandStatesChanged();
+    }
+
+    private void RaiseCommandStatesChanged() => commandStatesChanged?.Invoke(this, EventArgs.Empty);
+
+    private void OnUndoChanged(object? sender, EventArgs e) => RaiseCommandStatesChanged();
+
+    private void OnProjectPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(Core.Project.IsCompiling) or nameof(Core.Project.OutputBinaryType))
+        {
+            RaiseCommandStatesChanged();
+        }
     }
 
     /// <summary>
@@ -258,6 +321,7 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
         {
             wasRunning = running;
             OnPropertyChanged(nameof(IsRunning));
+            RaiseCommandStatesChanged();
         }
     });
 

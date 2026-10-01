@@ -360,4 +360,75 @@ public sealed class ProjectSessionViewModelTests : IAsyncDisposable
 
         Assert.True(token.IsCancellationRequested);
     }
+
+    [Fact(Timeout = 30000)]
+    public async Task IsBuildingAndTheCommandStatesFollowACompileFromItsCallToItsEnd()
+    {
+        var (session, stores, _) = await HeldSaveSessionAsync();
+        using (session)
+        {
+            int pulses = 0;
+            session.CommandStatesChanged += (_, _) => pulses++;
+            Assert.False(session.IsBuilding);
+
+            Task<bool> compile = session.CompileAsync();
+
+            Assert.True(session.IsBuilding);
+            Assert.True(pulses >= 1, "starting a build pulses");
+            int atStart = pulses;
+            stores.ForEach(store => store.Release());
+            Assert.True(await compile.WaitAsync(Bound, TestContext.Current.CancellationToken));
+
+            Assert.False(session.IsBuilding);
+            Assert.True(pulses > atStart, "ending a build pulses");
+        }
+    }
+
+    [Fact]
+    public async Task AnEditToAnUndoHistoryPulsesTheCommandStates()
+    {
+        Project project = await LoadSampleAsync();
+        using var session = new ProjectSessionViewModel(project, editor.Context);
+        ClassGraph cls = project.Classes.Single();
+        var adopted = new UndoRedoStack();
+        int pulses = 0;
+        session.CommandStatesChanged += (_, _) => pulses++;
+
+        session.UndoStackFor(cls).Do(Edit());
+        Assert.Equal(1, pulses);
+
+        session.UseUndoStack(cls, adopted);
+        Assert.Equal(2, pulses);
+        adopted.Do(Edit());
+        Assert.Equal(3, pulses);
+        adopted.Undo();
+        Assert.Equal(4, pulses);
+    }
+
+    [Fact]
+    public async Task TheProjectCompilingPulsesTheCommandStates()
+    {
+        Project project = await LoadSampleAsync();
+        using var session = new ProjectSessionViewModel(project, editor.Context);
+        int pulses = 0;
+        session.CommandStatesChanged += (_, _) => pulses++;
+
+        project.IsCompiling = true;
+
+        Assert.Equal(1, pulses);
+    }
+
+    [Fact]
+    public async Task TheProgramExitingPulsesTheCommandStates()
+    {
+        Project project = await LoadSampleAsync();
+        using var session = new ProjectSessionViewModel(project, editor.Context);
+        await session.RunAsync();
+        int pulses = 0;
+        session.CommandStatesChanged += (_, _) => pulses++;
+
+        editor.Processes.RaiseExited(0);
+
+        Assert.Equal(1, pulses);
+    }
 }

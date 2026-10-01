@@ -340,7 +340,9 @@ US2's independent test; SC-001.
   slot. Every icon-only element has an accessible name, and every interactive element is reachable with the keyboard
   (FR-101). Automation ids derive from command ids (`Menu.<commandId>`, `CommandBar.<commandId>`), plus new `Shell.*`,
   `Menu.*` and `CommandBar.*` constants in `src/NetPrints.Editor/AutomationIds.cs`. No code-behind beyond
-  `InitializeComponent`.
+  `InitializeComponent`. The surfaces re-query on `ICommandContextProvider.CommandStatesChanged` (Review B R4):
+  add to `RegistrySurfaceTests` that Run and Compile are disabled during a compile and re-enabled after, and that the
+  Undo label and enabled state change after an edit.
 
 ### Batch C3 — model: sonnet — T036–T038 — 5 units
 

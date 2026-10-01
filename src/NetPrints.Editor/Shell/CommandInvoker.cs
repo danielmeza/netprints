@@ -18,6 +18,22 @@ public sealed class CommandInvoker(IContributionRegistry registry, ICommandConte
     public IReadOnlyList<CommandDescriptor> CommandsIn(CommandScope scope) =>
         [.. registry.Commands.Where(command => command.DefaultGestures is { Count: > 0 } && InScope(command.Scope, scope))];
 
+    /// <summary>Raised when the enabled state or label of any command may have changed (see <see cref="ICommandContextProvider.CommandStatesChanged"/>).</summary>
+    public event EventHandler? CommandStatesChanged
+    {
+        add => contexts.CommandStatesChanged += value;
+        remove => contexts.CommandStatesChanged -= value;
+    }
+
+    /// <summary>Gets whether a command's handler is enabled for a context built now.</summary>
+    /// <param name="command">The command.</param>
+    /// <returns><see langword="true"/> when <see cref="TryRun"/> would start it.</returns>
+    public bool CanRun(CommandDescriptor command)
+    {
+        ArgumentNullException.ThrowIfNull(command);
+        return command.Handler.CanExecute(contexts.Create());
+    }
+
     /// <summary>Builds the context of an invocation made now.</summary>
     /// <returns>A fresh context.</returns>
     public CommandContext CreateContext() => contexts.Create();

@@ -74,8 +74,10 @@ Recorded together with their tests (contracts/contributions.md carries the same 
 - `IProjectActions`, reached through `IShell.ProjectActions`, holds the project flows, and
   `ConfirmUnloadAsync` has two callers: `UnloadingCommandHandler` for open, new and close, and the window-close
   path for exit and the OS close. `exit` only closes the window, so each path prompts once (Review B R6).
-- Handlers have no `CanExecuteChanged`. The enabled state is read at invocation; Run and Stop refresh through
-  `ProjectSessionViewModel`'s `PropertyChanged(IsRunning)`.
+- Handlers have no `CanExecuteChanged`. The enabled state is read at invocation. Visible surfaces re-query on one
+  combined notification, `ICommandContextProvider.CommandStatesChanged`, raised when the session, its build and run
+  state, the project's compile state, an undo history, the graph selection or the active graph or document changes
+  (Review B R4). Run and Compile are also disabled while the session builds (`IsBuilding`).
 - `CommandContext` also carries the active graph view model (`ActiveGraph`), and `ICommandContextProvider` builds it
   per invocation.
 - The class editor window gets its key bindings from the registry (`CommandInvoker` with the two behaviors above)

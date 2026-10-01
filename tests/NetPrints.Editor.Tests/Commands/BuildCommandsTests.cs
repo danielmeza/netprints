@@ -124,4 +124,41 @@ public sealed class BuildCommandsTests : SessionCommandTests
         await build.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
         Assert.Equal(run ? 1 : 0, Editor.Processes.Started.Count);
     }
+
+    [Fact(Timeout = 30000)]
+    public async Task RunAndCompileAreDisabledWhileABuildIsInFlightAndComeBackAfterIt()
+    {
+        List<GatedDocumentStore> stores = [];
+        ProjectPersistence persistence = TestEditor.CreatePersistence(Editor.Projects, store =>
+        {
+            var gated = new GatedDocumentStore(store);
+            stores.Add(gated);
+            return gated;
+        });
+        ProjectSessionViewModel session = await OpenSessionAsync(Editor.Context with { Persistence = persistence });
+        ClassGraph cls = session.Project.Classes.Single();
+        File.Delete(session.Project.GetGraphFilePath(cls));
+        cls.MarkDirty();
+        CommandContext context = Shell.Context(session: session);
+        var run = new RunCommandHandler();
+        var compile = new CompileCommandHandler();
+        _ = session.SaveAllAsync();
+        await stores.Single().FirstWriteStarted.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+        Assert.True(run.CanExecute(context));
+
+        Task<bool> build = session.CompileAsync();
+        try
+        {
+            Assert.False(run.CanExecute(context), "a Run now would only return the compile's task");
+            Assert.False(compile.CanExecute(context));
+        }
+        finally
+        {
+            stores.ForEach(store => store.Release());
+        }
+
+        Assert.True(await build.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
+        Assert.True(run.CanExecute(context));
+        Assert.True(compile.CanExecute(context));
+    }
 }

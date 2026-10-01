@@ -34,6 +34,10 @@ public class CommandKeyBindingTests
 
     private sealed class Contexts : ICommandContextProvider
     {
+        public event EventHandler? CommandStatesChanged;
+
+        public void RaiseCommandStatesChanged() => CommandStatesChanged?.Invoke(this, EventArgs.Empty);
+
         public CommandContext Create(object? parameter = null) => new(new StubShell(), null, null, null, CommandSelection.None, parameter);
     }
 

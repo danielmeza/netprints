@@ -15,6 +15,10 @@ public sealed class CommandInvokerTests
 
     private sealed class Contexts : ICommandContextProvider
     {
+        public event EventHandler? CommandStatesChanged;
+
+        public void RaiseCommandStatesChanged() => CommandStatesChanged?.Invoke(this, EventArgs.Empty);
+
         public CommandContext Create(object? parameter = null) => new(new FakeShell(), null, null, null, CommandSelection.None, parameter);
     }
 
@@ -54,5 +58,33 @@ public sealed class CommandInvokerTests
         Assert.True(SpinWait.SpinUntil(() => faults.Count > 0, TimeSpan.FromSeconds(10)));
         await Task.Yield();
         Assert.Same(thrown, Assert.Single(faults));
+    }
+
+    [Fact]
+    public void ThePulseOfTheContextProviderReachesTheInvokersSubscribers()
+    {
+        var registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
+        var contexts = new Contexts();
+        var invoker = new CommandInvoker(registry, contexts, _ => { });
+        int pulses = 0;
+        EventHandler handler = (_, _) => pulses++;
+
+        invoker.CommandStatesChanged += handler;
+        contexts.RaiseCommandStatesChanged();
+        invoker.CommandStatesChanged -= handler;
+        contexts.RaiseCommandStatesChanged();
+
+        Assert.Equal(1, pulses);
+    }
+
+    [Fact]
+    public void CanRunReadsTheHandlerAtTheTimeOfTheCall()
+    {
+        var registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
+        var handler = new Handler(() => Task.CompletedTask);
+        var descriptor = new CommandDescriptor(ContributionIds.CommandPrefix + "toggle", "toggle", handler);
+        var invoker = new CommandInvoker(registry, new Contexts(), _ => { });
+
+        Assert.True(invoker.CanRun(descriptor));
     }
 }

@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Runtime.CompilerServices;
@@ -68,6 +69,9 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
     /// <summary>The currently selected nodes.</summary>
     public IEnumerable<NodeViewModel> SelectedNodes => Nodes.Where(n => n.IsSelected);
 
+    /// <summary>Raised when a node is selected or deselected, or the node set changes.</summary>
+    public event EventHandler? SelectionChanged;
+
     /// <summary>Node search popup (PAR-52..54).</summary>
     public SuggestionListViewModel Search { get; }
 
@@ -103,13 +107,25 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
         foreach (var removed in subscribedNodes.Where(n => !current.Contains(n)).ToList())
         {
             removed.PinsChanged -= OnNodePinsChanged;
+            removed.PropertyChanged -= OnNodePropertyChanged;
             subscribedNodes.Remove(removed);
         }
 
         foreach (var added in current.Where(n => !subscribedNodes.Contains(n)))
         {
             added.PinsChanged += OnNodePinsChanged;
+            added.PropertyChanged += OnNodePropertyChanged;
             subscribedNodes.Add(added);
+        }
+
+        SelectionChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void OnNodePropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(NodeViewModel.IsSelected))
+        {
+            SelectionChanged?.Invoke(this, EventArgs.Empty);
         }
     }
 
@@ -465,6 +481,7 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
         foreach (var node in subscribedNodes)
         {
             node.PinsChanged -= OnNodePinsChanged;
+            node.PropertyChanged -= OnNodePropertyChanged;
         }
 
         subscribedNodes.Clear();

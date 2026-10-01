@@ -16,6 +16,7 @@ using NetPrints.Extensibility.Settings;
 using NetPrints.Projects;
 using NetPrints.Serialization;
 using CommandInvoker = NetPrints.Editor.Shell.CommandInvoker;
+using ICommandStateSource = NetPrints.Editor.Shell.ICommandStateSource;
 using IProjectActions = NetPrints.Editor.Shell.IProjectActions;
 using ProjectSessionViewModel = NetPrints.Editor.Shell.ProjectSessionViewModel;
 
@@ -25,7 +26,7 @@ namespace NetPrints.Editor.Main;
 /// View model of the main window: project lifecycle, settings, references and the class list
 /// (PAR-01..15).
 /// </summary>
-public sealed partial class MainEditorViewModel : ObservableObject, IDisposable, IProjectActions
+public sealed partial class MainEditorViewModel : ObservableObject, IDisposable, IProjectActions, ICommandStateSource
 {
     private readonly EditorContext context;
     private readonly ILogger<MainEditorViewModel> logger;
@@ -66,6 +67,9 @@ public sealed partial class MainEditorViewModel : ObservableObject, IDisposable,
         nameof(ShowReferencesCommand), nameof(NewClassCommand), nameof(AddExistingClassCommand), nameof(ToggleSettingsPaneCommand))]
     public partial Project? Project { get; set; }
 
+    /// <inheritdoc/>
+    public event EventHandler? CommandStatesChanged;
+
     /// <summary>The open project's session (save, compile, run, undo stacks), or null with no project open.</summary>
     public ProjectSessionViewModel? Session { get; private set; }
 
@@ -104,10 +108,10 @@ public sealed partial class MainEditorViewModel : ObservableObject, IDisposable,
     public bool IsProjectOpen => Project is not null;
 
     /// <summary>Whether the open project can currently be compiled; <see langword="false"/> with no project open.</summary>
-    public bool CanCompile => Project?.CanCompile ?? false;
+    public bool CanCompile => (Project?.CanCompile ?? false) && Session is not { IsBuilding: true };
 
-    /// <summary>Whether the open project can currently be compiled and run; <see langword="false"/> with no project open or while its program runs.</summary>
-    public bool CanCompileAndRun => (Project?.CanCompileAndRun ?? false) && Session is not { IsRunning: true };
+    /// <summary>Whether the open project can currently be compiled and run; <see langword="false"/> with no project open or while a build is in flight or its program runs.</summary>
+    public bool CanCompileAndRun => (Project?.CanCompileAndRun ?? false) && Session is not { IsRunning: true } and not { IsBuilding: true };
 
     /// <summary>Window title: the project name (PAR-01).</summary>
     public string Title => Project?.Name is { Length: > 0 } name ? name : "NetPrints";
@@ -163,12 +167,20 @@ public sealed partial class MainEditorViewModel : ObservableObject, IDisposable,
         }
 
         subscribedProject = value;
+        if (Session is not null)
+        {
+            Session.CommandStatesChanged -= OnSessionCommandStatesChanged;
+        }
+
         Session?.Dispose();
         Session = value is null ? null : new ProjectSessionViewModel(value, context);
         if (Session is not null)
         {
             Session.PropertyChanged += OnSessionPropertyChanged;
+            Session.CommandStatesChanged += OnSessionCommandStatesChanged;
         }
+
+        CommandStatesChanged?.Invoke(this, EventArgs.Empty);
 
         if (value is not null)
         {
@@ -212,9 +224,11 @@ public sealed partial class MainEditorViewModel : ObservableObject, IDisposable,
         }
     }
 
+    private void OnSessionCommandStatesChanged(object? sender, EventArgs e) => CommandStatesChanged?.Invoke(this, EventArgs.Empty);
+
     private void OnSessionPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(ProjectSessionViewModel.IsRunning))
+        if (e.PropertyName is nameof(ProjectSessionViewModel.IsRunning) or nameof(ProjectSessionViewModel.IsBuilding))
         {
             RefreshCompileState();
         }
@@ -599,7 +613,7 @@ public sealed partial class MainEditorViewModel : ObservableObject, IDisposable,
         var shell = new LegacyWindowShell(this);
         editor.Commands = new CommandInvoker(
             commandRegistry,
-            new ClassEditorCommandContextProvider(editor, () => Session, shell),
+            new ClassEditorCommandContextProvider(editor, () => Session, shell, this),
             exception => context.Dispatcher.Post(() => context.Dialogs.ShowErrorAsync("The command failed", exception.ToString()).Forget(logger)));
     }
 
