@@ -1,4 +1,4 @@
-# Main CI (contract: specs/001-modernize-build/contracts/ci-workflow.md).
+# Main CI (contract: specs/005-editor-shell/contracts/ci.md).
 # The file name and `name: CI` are stable: the future VS extension workflow (P4) chains after it.
 name: CI
 
