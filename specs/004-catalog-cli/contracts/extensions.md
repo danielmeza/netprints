@@ -48,7 +48,7 @@ built-in id or already registered → `NPX006` contribution issue, first wins.
 | Diamond | project | `Fx.Diamond` / `fx.diamond`, `dependsOn: [fx.libv1, fx.libv2]`, references `Fixture.SharedLib` with `Private=false` | Registers a node whose translator calls `SharedLib.Describe()`; MX-T05 expects v1 (first in `dependsOn` order) |
 | Native | project | `Fx.Native` / `fx.native` | Private `SkiaSharp.NativeAssets.Linux.NoDependencies`; `Register` calls `sk_version_get_milestone` via `DllImport("libSkiaSharp")` |
 | Catalog | project | `Fx.Catalog` / `fx.catalog` | Contributes the fixture catalog (`CatalogLoader.LoadFile`) and the `fixture-flags` profile (used by CT-T13, CT-T15) |
-| Squatter | Roslyn | `fx.squatter` | Claims alpha's profile, host channel, settings and catalog-profile ids and a `fx.alpha/…` kind |
+| Squatter | in-process | `fx.squatter`, `dependsOn: [fx.alpha]` | Claims alpha's profile, host channel, settings and catalog-profile ids, a `fx.alpha/…` kind, and a catch-all JSON resolver |
 | Duplicates | Roslyn | two folders with id `fx.dup` | |
 | ThrowsMidway | Roslyn | `fx.throws` | Adds two kinds, then throws in `Register` |
 | HostSkew | Roslyn | `fx.hostskew` | Compiled against an in-test reference assembly named `NetPrints.Core` with an extra public method, which `Register` calls |
@@ -100,7 +100,7 @@ CancellationToken)`; `Task<IReadOnlyList<GeneratedFileResult>> GenerateAsync(str
 | MX-T11 | `MultiExtension/FailureIsolationTests` | HostSkew → NPX005 (`MissingMethodException`), others load |
 | MX-T12 | `MultiExtension/DocumentSubsetTests` | Graph with alpha and beta nodes reopened with {α,β}, {α}, {} → unknown nodes preserved, re-save byte-identical; `generate` with {α} reports NPT003. Beta needs alpha, so {β} equals {}: the independent case is a graph with alpha and libv1 nodes reopened with {libv1} and {α}, and `generate` with {libv1} reports NPT003 naming `fx.alpha/Ping` |
 | MX-T13 | `MultiExtension/FailureIsolationTests` | Each NPX001–NPX007 fixture with alpha + beta: others load, registry usable |
-| MX-T14 | `MultiExtension/ScaleTests` | 50 Roslyn fixtures, each touching a private dependency assembly (so the `dependsOn` chains are walked), load in < 10 s, same order on two runs |
+| MX-T14 | `MultiExtension/ScaleTests` | 50 Roslyn-compiled fixtures (`fx.scale.00`…`fx.scale.49`, one node kind each with random `dependsOn` chains), each touching a private dependency assembly, load in < 10 s, same order on two runs |
 | MX-T15 | `MultiExtension/ReloadTests` | `ExtensionHost` reload reuses contexts; `AssemblyLoadContext.All` count stable over 3 reloads; a cached context whose dependency contexts changed is replaced, so a consumer sees the new provider's type |
 | MX-T16 | `MultiExtension/NativeDependencyTests` | `fx.native` loads and its native call returns a milestone > 0 (Linux; explicit skip reason elsewhere) |
 | MX-T17 | `MultiExtension/DependencyVersionTests` | Consumer built against `Fixture.SharedLib` 2.0 with a provider shipping 1.0 → NPX008 naming both versions, consumer not registered, provider loaded; built against 1.0 with 1.0 or 2.0 provided → loads and translates |

@@ -614,9 +614,9 @@ SC-013.
 
 ### Batch G-F — model: sonnet — T116 (reserved: fix review findings)
 
-- [ ] T116 [US5] Fix every finding of T115 (test first for behaviour findings), reply on each review thread with the fixing
+- [x] T116 [US5] Fix every finding of T115 (test first for behaviour findings), reply on each review thread with the fixing
   commit or the reason for deferral, whole suite, commit; if the review had no findings, tick this task with "no
-  findings". The next sub-phase starts only after this batch is green on CI.
+  findings". The next sub-phase starts only after this batch is green on CI. G-F1 (173c9da), G-F2 (0d7c909), G-F3 (af126ba), G-F4 (docs/notes, CI green).
 
 ---
 

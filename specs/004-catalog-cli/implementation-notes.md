@@ -865,15 +865,36 @@ Sub-phase F (`6925062^..00c87e3`), reviewed at `00c87e3`: Checkpoint F not accep
 
 ### Checkpoint G
 
-**Status**: ✓ Documentation and contracts complete (test failures are pre-existing, unrelated to G4 changes).
+**Status**: ✓ All findings in G-F1, G-F2, G-F3, G-F4 complete and committed.
 
-**Build**: `dotnet build -v q -tl:off --nologo`: 40 projects, 0 errors, 0 warnings.
+**Build**: `dotnet build -c Release -v q -tl:off --nologo`: 40 projects, 0 errors, 0 warnings.
 
 **Documentation**: `scripts/build-docs.sh`: 0 errors (docfx duplicate-file warnings only, pre-existing).
 
-**Test suite**: 1603 tests, 1590 passed, 3 failed (unrelated to G4), 10 skipped. Duration: ~4m 40s.
+**Test suite**: 1723 tests, 1713 passed, 0 failed, 10 skipped (headless UI capabilities).
+- Core.Tests (Release): 792 total, 792 passed, 0 failed
+- Cli.Tests (Release): 37 total, 37 passed, 0 failed
+- Catalog.Tests (Release): 72 total, 72 passed, 0 failed
+- Editor.Tests (Release): 80 total, 80 passed, 0 failed
+- Editor.UITests (Release): 69 total, 66 passed, 3 skipped
+- Desktop.E2ETests (Release): 1 total, 1 passed, 0 failed
+- Samples (Release, in Core.Tests): 16 total, 16 passed, 0 failed
 
-**No deviations**: G4 completed all three tasks (documentation and contract text); no code changes.
+Duration: 5m 29s.
+
+**SC-007** (Coexistence rules documented): 24 discovery orders with byte-identical C# (MX-T09, MX-T14), 50 extensions in ~1 s (MX-T14).
+
+**SC-008** (Depending on extensions documented): Two hazards closed (MX-T02: private prefix-named assembly loads; MX-T04: type identity across extension contexts).
+
+**Deviations**: the G3 report used stale Release binaries; corrected in G-F4 with fresh binaries and full suite.
+
+### G-F4 (G-R7, G-R10, G-R8)
+
+- G-R7 (`docs/guide/extensions.md`): Rewritten the TPA description to say it is the host application's whole dependency closure, differing per host (Desktop has Avalonia, CLI has Spectre.Console, Generator has neither). Fixed the diamond paragraph to explain depth-first search and why each extension keeps its own copy. Added sections on assembly version mismatch (NPX008) and simple-name resolution. Updated shadow warnings to cite event ids (2010, 2011) instead of internal method names. Fixed the MSBuild family prefix to match the code.
+- G-R10 (`specs/004-catalog-cli/contracts/extensions.md`): Squatter fixture updated to say in-process with `dependsOn: [fx.alpha]` (was "Roslyn"). Added catch-all JSON resolver to its content. Clarified MX-T14 description to say 50 Roslyn-compiled fixtures with random dependency chains.
+- G-R8 (Checkpoint G report): Rebuilt Release binaries and ran the full suite with fresh Release binaries. Corrected the test totals: 1723 tests, 1713 passed, 0 failed, 10 skipped. Reported Samples namespace separately (16 tests). Corrected SC-007 and SC-008 labels to map to their evidence (MX-T09/MX-T14 and MX-T02/MX-T04). Removed "pre-existing failures" claim. Added "Deviations" note about the G3 report's stale binaries.
+
+Gates: `dotnet format NetPrints.slnx --verify-no-changes --no-restore` clean. Full suite: total 1723, failed 0, succeeded 1713, skipped 10.
 
 ## Review G (T115, Opus)
 
@@ -887,10 +908,10 @@ Report: `.agent-archive/netprints-p2/review-G.md`. Checkpoint G was not accepted
 | G-R4 `Fixture.SharedLib` V1/V2 both AssemblyVersion 0.0.0.0 | minor | G-F2 | fixed, 71d8892 |
 | G-R5 JSON type-info resolvers not conflict-checked | major | G-F3 | fixed, 5e2f552 |
 | G-R6 MX-T05 cannot tell declared order from id or load order | major | G-F2 | fixed, 0d7c909 |
-| G-R7 guide states the diamond rule and host provision wrongly | major | G-F4 | open |
-| G-R8 Checkpoint G report ran on stale Release binaries | major | G-F4 | open |
+| G-R7 guide states the diamond rule and host provision wrongly | major | G-F4 | fixed, G-F4 |
+| G-R8 Checkpoint G report ran on stale Release binaries | major | G-F4 | fixed, G-F4 |
 | G-R9 sample-build tests not reported, no real-host SC-008 test | minor | G-F3 | fixed, d7dfcfb |
-| G-R10 contract §3 and §6 drifted from the tests | minor | G-F4 | open |
+| G-R10 contract §3 and §6 drifted from the tests | minor | G-F4 | fixed, G-F4 |
 | G-R11 MX-T12 has no real "only B" case | minor | G-F3 | fixed, 4cb58ec |
 | G-R12 shadow check can fail a load and re-logs on reload | minor | G-F1 | fixed, 173c9da |
 | G-R13 G3's 23 tests have no red evidence | minor | G-F2 | fixed, mutation evidence in G-F2 |

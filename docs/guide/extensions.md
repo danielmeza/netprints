@@ -148,9 +148,11 @@ duplicated.
 
 **What the host provides** and therefore every extension must use the host's copy:
 
-- Any assembly in the trusted platform assemblies (the framework's assemblies)
-- Any assembly already loaded in the default `AssemblyLoadContext`
-- Assemblies named `Microsoft.Build.*` (the MSBuild runtime, which the host ensures is registered)
+- The trusted platform assemblies (the host application's whole dependency closure, and it differs per host:
+  Desktop includes Avalonia and CommunityToolkit.Mvvm, the CLI includes Spectre.Console, the Generator includes neither).
+  An extension that ships one of these libraries gets the host's copy in one host and its own copy in another.
+- Any assembly already loaded in the default `AssemblyLoadContext` at the time the extension's context is created
+- Assemblies named `Microsoft.Build` or `Microsoft.Build.*` (the MSBuild runtime, which the host ensures is registered)
 
 **What loads privately** and therefore each extension can ship its own copy:
 
@@ -160,8 +162,8 @@ duplicated.
 **Shadowing warnings**: if you ship a copy of a host-provided assembly, or a copy of an assembly one of your
 dependencies (listed in `dependsOn`) provides, it is ignored. NetPrints logs a warning for each case:
 
-- `HostAssemblyShadowed`: your extension folder contains a copy of an assembly the host provides.
-- `DependencyAssemblyShadowed`: your extension folder contains a copy of an assembly one of your
+- Event 2010 (`HostAssemblyShadowed`): your extension folder contains a copy of an assembly the host provides.
+- Event 2011 (`DependencyAssemblyShadowed`): your extension folder contains a copy of an assembly one of your
   dependencies provides.
 
 These are not errors; the host's or dependency's copy is used, and your copy is simply not loaded.
@@ -192,14 +194,30 @@ And in your manifest, declare the dependency:
 ```
 
 NetPrints loads extensions in dependency order, so the provider is always loaded before the consumer. When
-resolving assemblies, the consumer can see everything the provider has loaded, so `typeof(ProviderType)`
+resolving assemblies, the consumer can see everything the provider loads, can resolve through the provider's contexts,
+then the provider's dependencies (depth-first in declared order), so `typeof(ProviderType)`
 in the consumer will have the same identity as it does in the provider.
 
 **Type identity in dependencies**: each extension (or version of an extension) loads in its own context,
 but when you depend on another extension, you both see the same assembly and the same types from it. If
 extension B and extension C both depend on extension A, they both get A's types with a single identity.
-With diamond dependencies — if B depends on A and C, and C also depends on A — the extension listed
-first in B's `dependsOn` order wins, and both B and C use that one. Types stay consistent across the
-build.
+
+**Diamond dependencies**: when B depends on both A and C, and C also depends on A, the search is depth-first in B's
+declared `dependsOn` order. NetPrints finds A's assemblies when resolving B's dependencies and returns A's copy.
+When C needs A's assemblies, C's resolver also finds B's resolved A copy (because B resolved it first), so both B and
+C see the same A. But each extension keeps its own copy of any assembly it provides: C's `Describe()` method (if it
+defines one) stays in C's copy, and is not shadowed by A's copy.
+
+**Assembly version mismatch**: when your extension is compiled against a specific version of a dependency, NetPrints
+requires that the dependency loaded (from `dependsOn` or from the host) provide the same or a newer version. If a
+dependency provides an older version, the extension fails to load with error NPX008, naming the dependency, the version
+your extension expects, and the version the dependency provides. This is an important safety check: if NetPrints silently
+loaded an older version, your extension would crash later with a `MissingMethodException` when it calls a method that
+did not exist in the older version.
+
+**Assembly name resolution**: all assembly resolution is by simple name (no version); NetPrints matches by name only
+and relies on the version check above to catch mismatches. This is the same lookup that the .NET runtime uses: when
+your extension loads an assembly by name, it will get whichever version is already loaded (from a dependency or the
+host), and if that version is too old, the version check will catch it.
 
 For more on how extensions resolve and share assemblies, see [ADR-0010](../adr/0010-extension-testing-and-coexistence.md).
