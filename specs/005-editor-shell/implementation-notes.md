@@ -274,7 +274,7 @@ success criterion its sub-phase covers and a "Docs updated:" line.
 
 Skip count, corrected: without `NETPRINTS_E2E`, 8 of the 18 Desktop E2E tests skip (the 7 scenario classes `CreateProject`, `EditCompileAndRun`, `DragFromLists`, `Shutdown`, `AddReferences`, `MinimizeAndRestoreClassWindow`, `PanCursor` plus `E2EDiagnosticsTests`); the other 10 (`EntryPoint` 1, `DesktopWorkerPool` 1, `FailureCapture` 8) always run. With `NETPRINTS_E2E=1` all 18 run. A2's "9 scenarios" was the 7 scenarios plus `EntryPoint` and `DesktopWorkerPool`, the 9 tests that existed before A2; A3's "7 scenarios plus `E2EDiagnosticsTests`" is the right skip list. The 11 skips of the full run are these 8 plus the 3 headless UI tests.
 
-After Review A: all of R1-R21 fixed or decided; solution suite 1772 tests, 1759 passed, 13 skipped, 0 failed; Desktop E2E 31 of 31 passed (`NETPRINTS_E2E=1 --fail-skips on`); CI run CIRUNID.
+After Review A: all of R1-R21 fixed or decided; solution suite 1772 tests, 1759 passed, 13 skipped, 0 failed; Desktop E2E 31 of 31 passed (`NETPRINTS_E2E=1 --fail-skips on`); CI run 36888167482 (head 21d1ad8, all checks success).
 
 Docs updated: `docs/contributing/testing.md` (CI section), `AGENTS.md` (the Windows workflow, the `test`/`e2e` split), the Avalonia skills and ADR-0007 (the `ViewModel` naming, A1 commits 48cc09d and bf000fc); no further change was needed in them.
 
