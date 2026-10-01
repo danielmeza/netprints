@@ -66,17 +66,17 @@ public sealed class DesktopWorkerPool : IAsyncLifetime
     /// <paramref name="workDirectory"/> as its working directory. Never the same editor process
     /// twice; never two editors on the same display at once.
     /// </summary>
-    public Task<DesktopLease> RentAsync(CancellationToken cancellationToken, string workDirectory) =>
+    public Task<DesktopLease> RentAsync(CancellationToken cancellationToken, string workDirectory, IReadOnlyDictionary<string, string>? environment = null) =>
         RentAsync(cancellationToken, async (worker, token) =>
         {
-            var editor = await EditorProcess.StartAsync(worker.Server, workDirectory, project: null, token);
+            var editor = await EditorProcess.StartAsync(worker.Server, workDirectory, project: null, token, environment);
             return new DesktopLease(this, worker, editor);
         });
 
     /// <summary>
     /// Rents a worker and hands it to <paramref name="start"/>, returning the worker to the pool if
     /// <paramref name="start"/> throws (R3-01), instead of leaking it. A test seam: a fault-injection
-    /// test can fail "starting the editor" without a real display; <see cref="RentAsync(CancellationToken, string)"/>
+    /// test can fail "starting the editor" without a real display; <see cref="RentAsync(CancellationToken, string, IReadOnlyDictionary{string, string})"/>
     /// is the production path.
     /// </summary>
     internal async Task<T> RentAsync<T>(CancellationToken cancellationToken, Func<Worker, CancellationToken, Task<T>> start)

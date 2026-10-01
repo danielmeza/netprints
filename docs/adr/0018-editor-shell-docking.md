@@ -2,7 +2,25 @@
 
 ## Status
 
-Accepted (2026-10-01, P3a spec `specs/005-editor-shell/`, research R2).
+Accepted (2026-10-01, P3a spec `specs/005-editor-shell/`, research R2). Spike gate passed on 2026-10-01 (batch C1, T030-T032): all five
+checks pass, so the shell is built on Dock.Avalonia 12.1.0.6. Check 2 needed a workaround (below); results and evidence are in
+`specs/005-editor-shell/implementation-notes.md`, "Spike".
+
+Spike outcome, amendments to the decisions below:
+
+- Layout persistence uses Dock's reflection-mode `DockSerializer` (`Dock.Serializer.SystemTextJson`), not its source-generated
+  one: the generator emits `JsonSerializer.Deserialize(ReadOnlySpan<byte>, Type, JsonSerializerOptions?)` and
+  `SerializeToElement(object?, Type, JsonSerializerOptions?)` in `ObjectPayloadConverter`, which `RS0030` bans in `src/`, and no
+  suppression or per-file severity is allowed. The adapter calls no banned overload itself. Dockable subclasses are public (an
+  internal one is written without its `$type` discriminator and fails to load).
+- A loaded layout is re-attached by id before it is initialised: `Context` is set from the app, a dockable the app no longer knows
+  is removed. `DockState` has nothing to restore for the MVVM `Document` and `Tool` (they are not `IDocumentContent`).
+- `DockControl` is created with `InitializeFactory="True"` and without `InitializeLayout`: attaching a control created with
+  `InitializeLayout` closes the layout's floating windows. The adapter calls `InitLayout` again once the control is attached,
+  which also opens the floating windows of a loaded layout.
+- Floating windows resolve view models through `Application.DataTemplates`, not the `DockControl`'s own `DataTemplates`. The
+  adapter's `x:DataType` templates are registered there.
+- Native floating works under Xvfb + openbox; managed floating is not needed on Linux.
 
 ## Context
 
