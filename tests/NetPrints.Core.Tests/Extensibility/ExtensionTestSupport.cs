@@ -226,11 +226,16 @@ public static class ExtensionTestSupport
     /// Compiles <paramref name="source"/> into <c>folder/name.dll</c> against the host's assemblies. <paramref name="optIn"/> lists the
     /// experimental ids the source uses (ADR-0017): the compilation equivalent of the opt-in items a project declares.
     /// </summary>
-    public static string Compile(string folder, string name, string source, params string[] optIn)
+    public static string Compile(string folder, string name, string source, params string[] optIn) =>
+        CompileWithReferences(folder, name, source, [], optIn);
+
+    /// <summary>As <see cref="Compile(string, string, string, string[])"/>, also referencing the assemblies at <paramref name="extraReferences"/>.</summary>
+    public static string CompileWithReferences(string folder, string name, string source, IReadOnlyList<string> extraReferences, params string[] optIn)
     {
         Directory.CreateDirectory(folder);
         string trusted = (string?)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES") ?? string.Empty;
         var references = trusted.Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries)
+            .Concat(extraReferences)
             .Select(path => MetadataReference.CreateFromFile(path));
         var compilation = CSharpCompilation.Create(
             name,

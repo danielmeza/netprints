@@ -10,7 +10,7 @@ using static NetPrints.Tests.Extensibility.ExtensionTestSupport;
 
 namespace NetPrints.Tests.Extensibility.MultiExtension;
 
-/// <summary>MX-T14: fifty extensions with seeded random dependency chains load within the contract's ten seconds, in the same order every time.</summary>
+/// <summary>MX-T14: fifty extensions with seeded random dependency chains, each touching a private dependency assembly its chain provides, load within the contract's ten seconds, in the same order every time.</summary>
 [Collection(nameof(RealExtensionLoadCollection))]
 public sealed class ScaleTests : IAsyncLifetime
 {
@@ -32,7 +32,8 @@ public sealed class ScaleTests : IAsyncLifetime
     private string[] BuildFixtures()
     {
         string template = Path.Combine(root, "template");
-        Compile(template, "fx.scale", """
+        string dependency = Compile(template, "fx.scale.dep", "public static class ScaleDep { public static string Name => \"dep\"; }");
+        CompileWithReferences(template, "fx.scale", """
             using System;
             using System.IO;
             using NetPrints.Core;
@@ -65,10 +66,15 @@ public sealed class ScaleTests : IAsyncLifetime
                 public void Register(IExtensionBuilder builder)
                 {
                     string id = new DirectoryInfo(Path.GetDirectoryName(typeof(Ext).Assembly.Location) ?? string.Empty).Name;
+                    if (ScaleDep.Name != "dep")
+                    {
+                        throw new InvalidOperationException("The private dependency was not resolved.");
+                    }
+
                     builder.AddNodeLibrary(new Lib(id));
                 }
             }
-            """);
+            """, [dependency]);
 
         var random = new Random(Seed);
         var folders = new string[Count];
@@ -80,6 +86,7 @@ public sealed class ScaleTests : IAsyncLifetime
             folders[index] = Path.Combine(root, Id(index));
             Directory.CreateDirectory(folders[index]);
             File.Copy(Path.Combine(template, "fx.scale.dll"), Path.Combine(folders[index], "fx.scale.dll"));
+            File.Copy(dependency, Path.Combine(folders[index], "fx.scale.dep.dll"));
             File.WriteAllText(Path.Combine(folders[index], "netprints-extension.json"), ManifestJson(Id(index), "fx.scale.dll", "1.0", dependsOn));
         }
 
