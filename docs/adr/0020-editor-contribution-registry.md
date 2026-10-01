@@ -2,7 +2,8 @@
 
 ## Status
 
-Accepted (2026-10-01, P3a spec `specs/005-editor-shell/`, research R5).
+Accepted (2026-10-01, P3a spec `specs/005-editor-shell/`, research R5). Amended 2026-10-01 after batches B1 to B4; see
+"Changes made in implementation".
 
 ## Context
 
@@ -28,15 +29,18 @@ roadmap requires the built-in editor to use the same points first (owner, 2026-0
   their shape.
 - **Every surface is generated from the registry:**
   - the menu bar, the command bar, the command palette and the keyboard shortcuts sheet;
-  - the shell's key bindings, through one custom behavior that materializes the registered gestures (ADR-0007
-    D11, option 5);
+  - the shell's key bindings, through two custom behaviors that materialize the registered gestures:
+    `CommandKeyBindingsBehavior` (window `KeyBindings` for `Global`) and `ScopedCommandKeysBehavior` (a tunnel
+    handler for `Graph` and `ProjectTree`) (ADR-0007 D11, option 5);
   - the context menus of nodes, pins, connections, tree items and the canvas;
   - connection and pin tooltips;
   - go-to-anything results;
   - the start page tiles and the "New project" template list.
   No view lists actions of its own.
 - **Shortcut scopes.** A command declares a scope: `Global` (shell-wide), `Graph` (the canvas has focus) or
-  `ProjectTree`. Single-key gestures (`F`, `Home`, `Delete`, `F2`) are allowed only in non-global scopes. A focused
+  `ProjectTree`; a command may name several (`CommandScope` is a flags enum, and `Global`, which is 0, overlaps every
+  scope). Single-key gestures (`F`, `Home`, `Delete`) are allowed only in non-global scopes; function keys F1 to
+  F24 are exempt, so F5, F7 and Shift+F5 are `Global`. A focused
   text input always gets its own editing keys first. The canvas-scope bindings reach Nodify through a tunnel-routed
   behavior, so Nodify's own handling cannot swallow them (`avalonia-behaviors` D9).
 - **Ids and conflicts.** Ids are namespaced (`netprints.command.save`, `netprints.panel.errors`). A duplicate id, or
@@ -56,3 +60,23 @@ roadmap requires the built-in editor to use the same points first (owner, 2026-0
   that, which is why they avoid UI types.
 - The generated key bindings replace the hand-written `KeyBinding`s and the global key handler in
   `GraphEditorView` (Ctrl+Space). That code-behind shrinks to gesture and viewport mechanics.
+
+## Changes made in implementation
+
+Recorded together with their tests (contracts/contributions.md carries the same members):
+
+- `CommandScope` is `[Flags]` (`Global = 0`, `Graph = 1`, `ProjectTree = 2`): delete and rename act in the canvas
+  and the tree. A multi-scope command overlaps every scope it names.
+- Function keys F1 to F24 may be single-key `Global` gestures (`CommandGesture.IsFunctionKey`).
+- `InvalidDescriptor` also covers a missing handler or factory, a blank title, display name or profile id, and an
+  invalid `CommandId` in a context-menu item. The labels of the four add-member commands became rows of
+  contracts/commands.md.
+- `IProjectActions`, reached through `IShell.ProjectActions`, holds the project flows, and
+  `UnloadingCommandHandler` is the one call site of the unload prompt.
+- Handlers have no `CanExecuteChanged`. The enabled state is read at invocation; Run and Stop refresh through
+  `ProjectSessionViewModel`'s `PropertyChanged(IsRunning)`.
+- `CommandContext` also carries the active graph view model (`ActiveGraph`), and `ICommandContextProvider` builds it
+  per invocation.
+- The class editor window gets its key bindings from the registry (`CommandInvoker` with the two behaviors above)
+  instead of its hand-written Delete, Ctrl+Z and Ctrl+Y bindings, and `GraphEditorView`'s Ctrl+Space handler is the
+  `nodeSearch` command. Graph gestures act only while the canvas has focus.
