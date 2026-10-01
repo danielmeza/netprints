@@ -44,8 +44,9 @@ P3a takes all three because it adds many Desktop E2E scenarios:
   class, member and node names. It asserts that standard output is valid UTF-8, has no byte order mark, and
   contains the names. It runs on every OS.
 - **Constitution.** The Windows job is outside `CI`, does not replace it, and is not a merge gate by itself. That
-  is a deviation from the "single exception" wording, so `plan.md` justifies it under Complexity Tracking and proposes
-  a PATCH amendment: other workflows may add Windows or macOS legs that extend `CI` but do not replace it.
+  was a deviation from the "single exception" wording, so `plan.md` justified it under Complexity Tracking and
+  proposed a PATCH amendment: other workflows may add Windows or macOS legs that extend `CI` but do not replace it.
+  The amendment was applied as constitution 1.2.4 (2026-10-01).
 
 ## Consequences
 
