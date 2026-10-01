@@ -26,6 +26,10 @@ Menu order: **File, Edit, View, Go, Build, Help**. Groups inside a menu are sepa
 | `cancel` | Cancel | (no menu) | Esc | Graph | |
 | `nodeSearch` | Add node… | Edit › nodes | Ctrl+Space | Graph | |
 | `classSettings` | Class settings | Edit › class | — | Global | yes (6) |
+| `addMethod` | Add method | Edit › class | — | Global | |
+| `addConstructor` | Add constructor | Edit › class | — | Global | |
+| `addVariable` | Add variable | Edit › class | — | Global | |
+| `addEventGraph` | Add event graph | Edit › class | — | Global | |
 | `frameSelection` | Frame selection | View › viewport | F | Graph | |
 | `fitAll` | Fit all | View › viewport | Home, Shift+F | Graph | |
 | `showPanel.<panel>` | Project, Inspector, Errors, Output, C# | View › panels | — | Global | |
@@ -70,8 +74,8 @@ Rules:
 | Connection | `goToSource`, `goToTarget` |
 | Canvas | `nodeSearch`, `selectAll`, `fitAll` |
 
-Add-member commands are registered under `netprints.command.addMethod`, `addConstructor`, `addVariable` and
-`addEventGraph`, in Edit › class, with no default shortcut.
+Add-member commands (`addMethod`, `addConstructor`, `addVariable`, `addEventGraph`, in the table above) act on the
+tree selection's class, else the active document's class.
 
 ## 3. Status messages
 
