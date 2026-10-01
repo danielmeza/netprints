@@ -45,7 +45,7 @@ concurrency group are unchanged.
 - A test that cannot run on Windows calls `Assert.Skip("<reason>")` behind an OS check. The reason must name what
   is missing. Example: a POSIX file mode.
 - **`ShowTextconvEncodingTests`:**
-  - It writes a temporary graph whose class is `Grüße`, with a method `Größe` and a node title containing `日本語`.
+  - It writes a temporary graph whose class is `Grüße`, with a method `Größe` and a node whose string pin value contains `日本語`.
   - It runs the built `netprints` as a child process, `show --textconv <file>`, with stdout redirected as bytes.
   - It asserts that the bytes are valid UTF-8, do not start with `EF BB BF`, and decode to text that contains the
     three names.
