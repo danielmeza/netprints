@@ -32,8 +32,8 @@ public sealed class EditorSession : IAsyncDisposable
 
     /// <summary>View models and window (arrange and assert through the API).</summary>
     public ClassEditorWindow ClassWindow => App.ClassWindow(ClassName);
-    public ClassEditorViewModel ClassVM => (ClassEditorViewModel)ClassWindow.DataContext!;
-    public NodeGraphViewModel GraphVM => ClassVM.OpenedGraph!;
+    public ClassEditorViewModel ClassViewModel => (ClassEditorViewModel)ClassWindow.DataContext!;
+    public NodeGraphViewModel GraphViewModel => ClassViewModel.OpenedGraph!;
 
     public static async Task<EditorSession> OpenSampleMainAsync(CancellationToken cancellationToken)
     {
@@ -60,8 +60,8 @@ public sealed class EditorSession : IAsyncDisposable
     /// <summary>Waits until every node and cable of the view model is on the canvas.</summary>
     public Task WaitForRenderedAsync(CancellationToken cancellationToken) =>
         UiWait.UntilAsync(Driver, async () =>
-            await Graph.NodeCountAsync(cancellationToken) == GraphVM.Nodes.Count
-            && (await Graph.ConnectionNamesAsync(cancellationToken)).Count == GraphVM.Connections.Count,
+            await Graph.NodeCountAsync(cancellationToken) == GraphViewModel.Nodes.Count
+            && (await Graph.ConnectionNamesAsync(cancellationToken)).Count == GraphViewModel.Connections.Count,
             "nodes and cables realized", cancellationToken);
 
     public async ValueTask DisposeAsync()

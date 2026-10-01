@@ -24,23 +24,23 @@ public class EventGraphTests
         // WaitRenderedAsync's "#"-joined snapshot treats an empty join as still-loading).
         string name = await events.CreateAsync(Token);
         Assert.Equal("EventGraph", name);
-        Assert.Contains(session.ClassVM.Class.EventGraphs, g => g.Name == name);
+        Assert.Contains(session.ClassViewModel.Class.EventGraphs, g => g.Name == name);
         await session.Graph.Watermark.WaitUntilAsync(e => e.Text == name, $"graph '{name}' shown", Token);
 
         // Open: switch away, then reopen by double click on the list row.
         await session.ClassEditor.OpenMethodAsync("Main", Token);
         await events.DoubleClickAsync(name, Token);
         await session.Graph.Watermark.WaitUntilAsync(e => e.Text == name, $"graph '{name}' shown", Token);
-        Assert.Same(session.ClassVM.Class.EventGraphs.Single(g => g.Name == name), session.GraphVM.Graph);
+        Assert.Same(session.ClassViewModel.Class.EventGraphs.Single(g => g.Name == name), session.GraphViewModel.Graph);
 
         // Add a custom event via search: right click empty canvas, choose "Custom Event" (US4).
         var search = await (await session.Graph.RightClickEmptyAsync(Token)).WaitOpenAsync(Token);
         await search.FilterAsync("Custom Event", "Custom Event", Token);
-        Assert.Contains(session.GraphVM.Search.Items, i => i.Text == "Custom Event" && i.Value is CustomEventSuggestion);
+        Assert.Contains(session.GraphViewModel.Search.Items, i => i.Text == "Custom Event" && i.Value is CustomEventSuggestion);
         await search.ChooseAsync("Custom Event", Token);
         await session.WaitForRenderedAsync(Token);
 
-        var eventGraph = (EventGraph)session.GraphVM.Graph;
+        var eventGraph = (EventGraph)session.GraphViewModel.Graph;
         Assert.Empty(session.App.Dialogs.Errors);
         var entry = Assert.Single(eventGraph.Nodes.OfType<EventEntryNode>());
         Assert.Equal("CustomEvent", entry.EventName); // unique against the class's methods and entries
@@ -60,15 +60,15 @@ public class EventGraphTests
 
         // Remove (undoable): the list row's remove button has no automation id, matching the method
         // and variable rows (ClassEditorVMTests-style); drive the command directly, as those do.
-        var eventGraphVM = session.ClassVM.EventGraphs.Single(g => g.Graph == eventGraph);
-        session.ClassVM.RemoveEventGraphCommand.Execute(eventGraphVM);
+        var eventGraphVM = session.ClassViewModel.EventGraphs.Single(g => g.Graph == eventGraph);
+        session.ClassViewModel.RemoveEventGraphCommand.Execute(eventGraphVM);
         Assert.DoesNotContain(name, await events.EventGraphNamesAsync(Token));
-        Assert.DoesNotContain(session.ClassVM.Class.EventGraphs, g => g.Name == name);
-        Assert.Null(session.ClassVM.OpenedGraph); // the canvas showed the removed graph
+        Assert.DoesNotContain(session.ClassViewModel.Class.EventGraphs, g => g.Name == name);
+        Assert.Null(session.ClassViewModel.OpenedGraph); // the canvas showed the removed graph
 
         await session.ClassEditor.PressUndoAsync(Token);
         Assert.Contains(name, await events.EventGraphNamesAsync(Token));
-        var restored = session.ClassVM.Class.EventGraphs.Single(g => g.Name == name);
+        var restored = session.ClassViewModel.Class.EventGraphs.Single(g => g.Name == name);
         Assert.Same(eventGraph, restored); // undo restores the same instance, not a rebuilt one
 
         await session.ClassEditor.PressRedoAsync(Token);
@@ -89,20 +89,20 @@ public class EventGraphTests
         string name = await events.CreateAsync(Token); // also opens it
 
         await events.OpenAsync(name, Token);
-        var eventGraph = session.ClassVM.EventGraphs.Single(g => g.Name == name);
-        Assert.Same(eventGraph, session.ClassVM.SelectedEventGraphInList);
+        var eventGraph = session.ClassViewModel.EventGraphs.Single(g => g.Name == name);
+        Assert.Same(eventGraph, session.ClassViewModel.SelectedEventGraphInList);
 
         await session.ClassEditor.Method("Main").ClickAsync(Token);
         await session.Graph.Watermark.WaitUntilAsync(e => e.Text == "Main", "graph 'Main' shown", Token);
 
-        Assert.Same(session.ClassVM.Methods.Single(m => m.Name == "Main"), session.ClassVM.SelectedMethodInList);
-        Assert.Null(session.ClassVM.SelectedEventGraphInList);
+        Assert.Same(session.ClassViewModel.Methods.Single(m => m.Name == "Main"), session.ClassViewModel.SelectedMethodInList);
+        Assert.Null(session.ClassViewModel.SelectedEventGraphInList);
 
         // And back: opening the event graph again clears the Methods list's highlight.
         await events.OpenAsync(name, Token);
         await session.Graph.Watermark.WaitUntilAsync(e => e.Text == name, $"graph '{name}' shown", Token);
 
-        Assert.Same(eventGraph, session.ClassVM.SelectedEventGraphInList);
-        Assert.Null(session.ClassVM.SelectedMethodInList);
+        Assert.Same(eventGraph, session.ClassViewModel.SelectedEventGraphInList);
+        Assert.Null(session.ClassViewModel.SelectedMethodInList);
     }
 }

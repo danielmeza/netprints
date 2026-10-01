@@ -37,14 +37,14 @@ public class GraphRenderTests
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
 
         Assert.Equal("Program", await session.ClassEditor.TextAsync(Token)); // PAR-22
-        foreach (var node in session.GraphVM.Nodes)
+        foreach (var node in session.GraphViewModel.Nodes)
         {
             Assert.Equal((node.Location.X, node.Location.Y), await session.Graph.Node(node.Node.Name).LocationAsync(Token));
         }
 
         Assert.Equal(["CallMethodNode.Exec->ReturnNode.Exec", "MethodEntryNode.Exec->CallMethodNode.Exec"],
             (await session.Graph.ConnectionNamesAsync(Token)).Order()); // entry -> WriteLine -> return
-        Assert.All(session.GraphVM.Nodes.SelectMany(n => n.AllPins).Where(p => p.IsConnected),
+        Assert.All(session.GraphViewModel.Nodes.SelectMany(n => n.AllPins).Where(p => p.IsConnected),
             p => Assert.NotEqual(GraphPoint.Zero, p.Anchor)); // anchors pushed to the view models
         Assert.Equal("Main", await session.Graph.Watermark.TextAsync(Token)); // PAR-38
     }

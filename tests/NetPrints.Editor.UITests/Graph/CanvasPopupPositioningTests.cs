@@ -38,7 +38,7 @@ public class CanvasPopupPositioningTests
     public async Task ReleasingACableOnEmptyCanvasOpensSearchAtTheDropPoint()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
-        var write = session.GraphVM.Nodes.Single(n => n.Node is CallMethodNode);
+        var write = session.GraphViewModel.Nodes.Single(n => n.Node is CallMethodNode);
         var execOut = write.OutputExecPins.First(p => p.Pin.Name != "Catch");
         var at = await session.Graph.EmptyPointAsync(Token, UnclampedDx, UnclampedDy);
 
@@ -54,10 +54,10 @@ public class CanvasPopupPositioningTests
     public async Task PickingAPropertyFromMemberSearchAnchorsGetSetAtTheClickPoint()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
-        var cls = session.GraphVM.Graph.Class ?? throw new InvalidOperationException("Main has no class.");
+        var cls = session.GraphViewModel.Graph.Class ?? throw new InvalidOperationException("Main has no class.");
         var variable = new Variable(cls, "V", TypeSpecifier.FromType<Version>(), null, null, VariableModifiers.None);
         cls.Variables.Add(variable);
-        session.GraphVM.AddNode<VariableGetterNode>(new GraphPoint(400, 100), null, variable.Specifier);
+        session.GraphViewModel.AddNode<VariableGetterNode>(new GraphPoint(400, 100), null, variable.Specifier);
         await session.WaitForRenderedAsync(Token);
 
         // Drag from the object pin to empty canvas: opens the member search for its type (owner-reported bug).
@@ -95,7 +95,7 @@ public class CanvasPopupPositioningTests
         // A node selected: falls back to its position.
         var node = session.Graph.Node("CallMethodNode");
         await node.SelectAsync(Token);
-        var nodeLocation = session.GraphVM.Nodes.Single(n => n.Node is CallMethodNode).Location;
+        var nodeLocation = session.GraphViewModel.Nodes.Single(n => n.Node is CallMethodNode).Location;
 
         await session.Driver.PressAsync("Ctrl+Space", Token);
         await search.WaitOpenAsync(Token);

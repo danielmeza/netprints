@@ -14,8 +14,8 @@ public class EditFlowTests
     public async Task CreateIfElseConnectSaveAndReload()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
-        var method = (MethodGraph)session.GraphVM.Graph;
-        session.GraphVM.Nodes.Single(n => n.Node == method.EntryNode).OutputExecPins.Single().DisconnectAll();
+        var method = (MethodGraph)session.GraphViewModel.Graph;
+        session.GraphViewModel.Nodes.Single(n => n.Node == method.EntryNode).OutputExecPins.Single().DisconnectAll();
         await session.WaitForRenderedAsync(Token);
 
         var search = await (await session.Graph.RightClickEmptyAsync(Token)).WaitOpenAsync(Token);

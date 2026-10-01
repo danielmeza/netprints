@@ -116,7 +116,7 @@ something that can be activated. Set decorative images to `AutomationProperties.
 gets an `AutomationIds` constant.
 
 **D14. Design-time data stays out of runtime.** A view with a non-trivial layout gets
-`<Design.DataContext><vm:XDesignVM /></Design.DataContext>` or a static design instance so that the previewer renders it.
+`<Design.DataContext><vm:XDesignViewModel /></Design.DataContext>` or a static design instance so that the previewer renders it.
 Design VMs live beside the view and are never used at runtime. Also use `Design.PreviewWith` for style files.
 
 **D15. Use `x:Name` only when something reads it.** That means code-behind, a `#Name` binding, or a behavior's `TargetControl`. Names are

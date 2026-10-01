@@ -67,7 +67,7 @@ public class HoverAndDropTests
     public async Task DroppingAMethodOnTheCanvasAddsACallNode()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
-        var main = session.ClassVM.Methods.Single(m => m.Name == "Main");
+        var main = session.ClassViewModel.Methods.Single(m => m.Name == "Main");
         var data = new DataTransfer();
         data.Add(DataTransferItem.Create(GraphDragDrop.MethodFormat, main)); // what the method list puts on the clipboard
         var at = await session.Graph.EmptyPointAsync(Token);
@@ -76,7 +76,7 @@ public class HoverAndDropTests
         session.App.Driver.Drop(at, data); // PAR-56
 
         await session.WaitForRenderedAsync(Token);
-        var call = ((MethodGraph)session.GraphVM.Graph).Nodes.OfType<CallMethodNode>().Single(n => n.MethodSpecifier.Name == "Main");
+        var call = ((MethodGraph)session.GraphViewModel.Graph).Nodes.OfType<CallMethodNode>().Single(n => n.MethodSpecifier.Name == "Main");
         Assert.Equal(Math.Max(0, expected.X), call.PositionX, 0);
         Assert.Equal(Math.Max(0, expected.Y), call.PositionY, 0);
     }
@@ -86,7 +86,7 @@ public class HoverAndDropTests
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
         await session.ClassEditor.CreateVariableButton.ClickAsync(Token);
-        var variable = session.ClassVM.Variables.Single();
+        var variable = session.ClassViewModel.Variables.Single();
         var data = new DataTransfer();
         data.Add(DataTransferItem.Create(GraphDragDrop.VariableFormat, variable));
 
@@ -95,7 +95,7 @@ public class HoverAndDropTests
         await session.Graph.GetSet.WaitOpenAsync(Token);
         await session.Graph.GetSet.SetButton.ClickAsync(Token);
         await session.WaitForRenderedAsync(Token);
-        Assert.Single(((MethodGraph)session.GraphVM.Graph).Nodes.OfType<VariableSetterNode>());
+        Assert.Single(((MethodGraph)session.GraphViewModel.Graph).Nodes.OfType<VariableSetterNode>());
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
@@ -103,7 +103,7 @@ public class HoverAndDropTests
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
         await session.ClassEditor.CreateVariableButton.ClickAsync(Token);
-        var variable = session.ClassVM.Variables.Single();
+        var variable = session.ClassViewModel.Variables.Single();
         var data = new DataTransfer();
         data.Add(DataTransferItem.Create(GraphDragDrop.VariableFormat, variable));
         // Well away from the corner used elsewhere, and from the variable list the drag started
@@ -124,10 +124,10 @@ public class HoverAndDropTests
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var data = new DataTransfer();
         data.Add(DataTransferItem.CreateText("not a method"));
-        int nodes = session.GraphVM.Nodes.Count;
+        int nodes = session.GraphViewModel.Nodes.Count;
 
         session.App.Driver.Drop(await session.Graph.EmptyPointAsync(Token), data);
 
-        Assert.Equal(nodes, session.GraphVM.Nodes.Count);
+        Assert.Equal(nodes, session.GraphViewModel.Nodes.Count);
     }
 }

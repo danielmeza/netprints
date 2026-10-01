@@ -115,7 +115,7 @@ VariablesPanelVM
 - Build: 40 projects, 0 errors, 0 warnings (Release)
 - Full suite: 1727 tests, 1717 passed, 10 skipped, 0 failed (5m 12s)
 - E2E suite: 9 tests, 9 passed, 0 skipped, 0 failed (2m 31s)
-- Docs sweep: git grep finds only MVVM (the CommunityToolkit.Mvvm package)
+- Docs sweep: the first grep missed the UITests `ClassVM`/`GraphVM` members and two skill sketches (`ItemVM`, `ListVM`, `XDesignVM`); found and fixed in the follow-up commit. git grep now finds only MVVM and `NoTypeNameEndsInVM`
 - Commits: T001 (70b533a, 112 files), T002 (48cc09d, 16 files)
 
 ## Checkpoint reports

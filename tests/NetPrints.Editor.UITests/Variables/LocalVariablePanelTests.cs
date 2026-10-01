@@ -16,12 +16,12 @@ public class LocalVariablePanelTests
     public async Task GroupsCreateRenameRetypeRemoveAndDragUndoRedo()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
-        var method = (ExecutionGraph)session.GraphVM.Graph;
+        var method = (ExecutionGraph)session.GraphViewModel.Graph;
 
         // Two groups (FR-030): "Class" (always shown) and "Method: Main" (the opened method).
         Assert.True(await session.ClassEditor.VariablesClassGroup.IsVisibleAsync(Token));
         Assert.True(await session.ClassEditor.VariablesMethodGroup.IsVisibleAsync(Token));
-        Assert.Equal("Method: Main", session.ClassVM.VariablesPanel.MethodGroupHeader);
+        Assert.Equal("Method: Main", session.ClassViewModel.VariablesPanel.MethodGroupHeader);
 
         // Create (US5): a unique default name and type (object), undoable.
         string name = await session.ClassEditor.LocalVariables.CreateAsync(Token);
@@ -41,7 +41,7 @@ public class LocalVariablePanelTests
         await session.ClassEditor.PressRedoAsync(Token);
         Assert.Equal("Count", method.LocalVariables.Single().Name);
 
-        var methodVariables = session.ClassVM.VariablesPanel.MethodVariables
+        var methodVariables = session.ClassViewModel.VariablesPanel.MethodVariables
             ?? throw new InvalidOperationException("No method or constructor graph is open.");
         var localVM = methodVariables.Single();
 
@@ -93,10 +93,10 @@ public class LocalVariablePanelTests
     public async Task RetypeLocalVariableUndoRestoresDataConnections()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
-        var method = (MethodGraph)session.GraphVM.Graph;
+        var method = (MethodGraph)session.GraphViewModel.Graph;
 
         await session.ClassEditor.LocalVariables.CreateAsync(Token);
-        var localVM = (session.ClassVM.VariablesPanel.MethodVariables
+        var localVM = (session.ClassViewModel.VariablesPanel.MethodVariables
             ?? throw new InvalidOperationException("No method or constructor graph is open.")).Single();
 
         // A getter wired into a call, and a setter wired from a literal on an exec chain.

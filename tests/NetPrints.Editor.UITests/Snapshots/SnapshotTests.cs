@@ -87,7 +87,7 @@ public class SnapshotTests
         // each parameter's type pin and value pin land on the same row (PinAlignmentTests has the pixel
         // checks; this is the human-reviewable picture of the fix).
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
-        var entryNode = ((MethodGraph)session.GraphVM.Graph).MethodEntryNode;
+        var entryNode = ((MethodGraph)session.GraphViewModel.Graph).MethodEntryNode;
         entryNode.AddArgument();
         entryNode.AddArgument();
         entryNode.AddArgument();
@@ -112,8 +112,8 @@ public class SnapshotTests
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
         await session.ClassEditor.CreateVariableButton.ClickAsync(Token);
-        var variable = session.ClassVM.Variables.Single().Variable.Specifier;
-        var graph = session.GraphVM;
+        var variable = session.ClassViewModel.Variables.Single().Variable.Specifier;
+        var graph = session.GraphViewModel;
 
         // Arrange through the API: one node of each kind, on a grid below the sample's nodes.
         var add = new List<Func<GraphPoint, Node>>
@@ -170,7 +170,7 @@ public class SnapshotTests
 
         var length = new VariableSpecifier("Length", TypeSpecifier.FromType<int>(), MemberVisibility.Public, MemberVisibility.Private,
             TypeSpecifier.FromType<string>(), VariableModifiers.None);
-        session.GraphVM.GetSetChooser.Open(length, new GraphPoint(280, 392));
+        session.GraphViewModel.GetSetChooser.Open(length, new GraphPoint(280, 392));
         await graph.GetSet.WaitOpenAsync(Token);
         Store.Match("get-set-chooser", await graph.GetSet.View.ScreenshotAsync(Token));
     }

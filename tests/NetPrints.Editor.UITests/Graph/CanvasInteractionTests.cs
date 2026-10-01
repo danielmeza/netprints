@@ -30,7 +30,7 @@ public class CanvasInteractionTests
         // release are sent separately, checking the pending state in between instead of through the
         // driver's single combined PressAsync.
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
-        var pin = session.GraphVM.Nodes.Single(n => n.Node is CallMethodNode).OutputExecPins.First(p => p.Pin.Name != "Catch");
+        var pin = session.GraphViewModel.Nodes.Single(n => n.Node is CallMethodNode).OutputExecPins.First(p => p.Pin.Name != "Catch");
         var connector = session.ClassWindow.GetVisualDescendants().OfType<Connector>().Single(c => ReferenceEquals(c.DataContext, pin));
 
         connector.Focus();
@@ -52,7 +52,7 @@ public class CanvasInteractionTests
         // R2-15: the Ctrl+Space handler sits on the whole window, so it must skip a text box instead
         // of opening the node search over whatever the user is typing.
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
-        var valuePin = session.GraphVM.Nodes.Single(n => n.Node is CallMethodNode).InputDataPins.Single();
+        var valuePin = session.GraphViewModel.Nodes.Single(n => n.Node is CallMethodNode).InputDataPins.Single();
         var valueBox = session.Graph.Node("CallMethodNode").Input(valuePin.Pin.Name).ValueBox;
 
         await valueBox.ClickAsync(Token);
@@ -66,8 +66,8 @@ public class CanvasInteractionTests
     public async Task DraggingPinToCompatiblePinConnects()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
-        var method = (MethodGraph)session.GraphVM.Graph;
-        session.GraphVM.Nodes.Single(n => n.Node == method.EntryNode).OutputExecPins.Single().DisconnectAll();
+        var method = (MethodGraph)session.GraphViewModel.Graph;
+        session.GraphViewModel.Nodes.Single(n => n.Node == method.EntryNode).OutputExecPins.Single().DisconnectAll();
         await session.WaitForRenderedAsync(Token);
         var write = session.Graph.Node("CallMethodNode");
 
@@ -82,17 +82,17 @@ public class CanvasInteractionTests
     public async Task DraggingPinToIncompatiblePinDoesNotConnect()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
-        var method = (MethodGraph)session.GraphVM.Graph;
-        session.GraphVM.Nodes.Single(n => n.Node == method.EntryNode).OutputExecPins.Single().DisconnectAll();
+        var method = (MethodGraph)session.GraphViewModel.Graph;
+        session.GraphViewModel.Nodes.Single(n => n.Node == method.EntryNode).OutputExecPins.Single().DisconnectAll();
         await session.WaitForRenderedAsync(Token);
-        int connections = session.GraphVM.Connections.Count;
+        int connections = session.GraphViewModel.Connections.Count;
         var write = session.Graph.Node("CallMethodNode");
-        string dataPin = session.GraphVM.Nodes.Single(n => n.Node is CallMethodNode).InputDataPins.Single().Pin.Name;
+        string dataPin = session.GraphViewModel.Nodes.Single(n => n.Node is CallMethodNode).InputDataPins.Single().Pin.Name;
 
         await session.Graph.Node("MethodEntryNode").Output("Exec").ConnectToAsync(write.Input(dataPin), Token); // exec onto data
         await session.WaitForRenderedAsync(Token);
 
-        Assert.Equal(connections, session.GraphVM.Connections.Count);
+        Assert.Equal(connections, session.GraphViewModel.Connections.Count);
         Assert.Null(method.EntryNode.InitialExecutionPin.OutgoingPin);
     }
 
@@ -181,7 +181,7 @@ public class CanvasInteractionTests
     public async Task MiddleClickClearsInlineValue()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
-        var valuePin = session.GraphVM.Nodes.Single(n => n.Node is CallMethodNode).InputDataPins.Single();
+        var valuePin = session.GraphViewModel.Nodes.Single(n => n.Node is CallMethodNode).InputDataPins.Single();
         var valueBox = session.Graph.Node("CallMethodNode").Input(valuePin.Pin.Name).ValueBox;
         Assert.Equal("Hello, World!", await valueBox.TextAsync(Token)); // PAR-44
 
@@ -198,24 +198,24 @@ public class CanvasInteractionTests
 
         await write.SelectAsync(Token); // PAR-49
         Assert.True(await write.IsSelectedAsync(Token));
-        Assert.Equal([session.GraphVM.Nodes.Single(n => n.Node is CallMethodNode)], session.GraphVM.SelectedNodes);
+        Assert.Equal([session.GraphViewModel.Nodes.Single(n => n.Node is CallMethodNode)], session.GraphViewModel.SelectedNodes);
 
         await session.Graph.ClickEmptyAsync(Token);
         Assert.False(await write.IsSelectedAsync(Token));
-        Assert.Empty(session.GraphVM.SelectedNodes);
+        Assert.Empty(session.GraphViewModel.SelectedNodes);
 
         await session.Graph.BoxSelectAllAsync(Token);
-        Assert.Equal(session.GraphVM.Nodes.Count, session.GraphVM.SelectedNodes.Count());
+        Assert.Equal(session.GraphViewModel.Nodes.Count, session.GraphViewModel.SelectedNodes.Count());
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task DraggingSelectedNodesMovesThemOnTheGrid()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
-        var write = session.GraphVM.Nodes.Single(n => n.Node is CallMethodNode);
-        var entry = session.GraphVM.Nodes.Single(n => n.Node is MethodEntryNode);
+        var write = session.GraphViewModel.Nodes.Single(n => n.Node is CallMethodNode);
+        var entry = session.GraphViewModel.Nodes.Single(n => n.Node is MethodEntryNode);
         var (writeBefore, entryBefore) = (write.Location, entry.Location);
-        session.GraphVM.SelectNodes([write, entry], deselectPrevious: true);
+        session.GraphViewModel.SelectNodes([write, entry], deselectPrevious: true);
 
         await session.Graph.Node("CallMethodNode").MoveByAsync(100, 45, Token); // PAR-50
 
@@ -231,12 +231,12 @@ public class CanvasInteractionTests
     public async Task CableGestures()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
-        var method = (MethodGraph)session.GraphVM.Graph;
-        var write = session.GraphVM.Nodes.Single(n => n.Node is CallMethodNode);
-        var ret = session.GraphVM.Nodes.Single(n => n.Node == method.MainReturnNode);
+        var method = (MethodGraph)session.GraphViewModel.Graph;
+        var write = session.GraphViewModel.Nodes.Single(n => n.Node is CallMethodNode);
+        var ret = session.GraphViewModel.Nodes.Single(n => n.Node == method.MainReturnNode);
         ret.Location = new GraphPoint(write.Location.X + 560, write.Location.Y); // a straight cable
         await session.WaitForRenderedAsync(Token);
-        string toReturnName = session.GraphVM.Connections.Single(c => c.Target.Node == ret).AutomationName;
+        string toReturnName = session.GraphViewModel.Connections.Single(c => c.Target.Node == ret).AutomationName;
 
         // Double click inserts a reroute node midway (PAR-48).
         await session.Graph.Connection(toReturnName).DoubleClickAsync(Token);
@@ -244,7 +244,7 @@ public class CanvasInteractionTests
         Assert.Single(method.Nodes.OfType<RerouteNode>());
 
         // The mouse back button toggles "faint".
-        var toReturn = session.GraphVM.Connections.Single(c => c.Target.Node == ret);
+        var toReturn = session.GraphViewModel.Connections.Single(c => c.Target.Node == ret);
         var cable = session.Graph.Connection(toReturn.AutomationName);
         await cable.ClickAsync(UiButton.Back, Token);
         Assert.True(toReturn.IsFaint);
@@ -262,7 +262,7 @@ public class CanvasInteractionTests
     public async Task MiddleClickOnPinDisconnects()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
-        var write = session.GraphVM.Nodes.Single(n => n.Node is CallMethodNode);
+        var write = session.GraphViewModel.Nodes.Single(n => n.Node is CallMethodNode);
 
         await session.Graph.Node("CallMethodNode").Input("Exec").DisconnectAsync(Token); // PAR-48
         await session.WaitForRenderedAsync(Token);
@@ -274,8 +274,8 @@ public class CanvasInteractionTests
     public async Task NodeChromeOverloadsPureAndPinButtons()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
-        var method = (MethodGraph)session.GraphVM.Graph;
-        var write = session.GraphVM.Nodes.Single(n => n.Node is CallMethodNode);
+        var method = (MethodGraph)session.GraphViewModel.Graph;
+        var write = session.GraphViewModel.Nodes.Single(n => n.Node is CallMethodNode);
         var node = session.Graph.Node("CallMethodNode");
 
         Assert.True(await node.Overloads.IsVisibleAsync(Token)); // PAR-40
@@ -300,12 +300,12 @@ public class CanvasInteractionTests
     public async Task GetSetPopupCreatesNodes()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
-        var method = (MethodGraph)session.GraphVM.Graph;
+        var method = (MethodGraph)session.GraphViewModel.Graph;
         var length = new VariableSpecifier("Length", TypeSpecifier.FromType<int>(), MemberVisibility.Public, MemberVisibility.Private,
             TypeSpecifier.FromType<string>(), VariableModifiers.None);
         var chooser = session.Graph.GetSet;
 
-        session.GraphVM.GetSetChooser.Open(length, new GraphPoint(56, 400)); // PAR-55
+        session.GraphViewModel.GetSetChooser.Open(length, new GraphPoint(56, 400)); // PAR-55
         await chooser.WaitOpenAsync(Token);
         Assert.True(await chooser.GetButton.IsEnabledAsync(Token));
         Assert.False(await chooser.SetButton.IsEnabledAsync(Token)); // a private setter of another type
@@ -323,7 +323,7 @@ public class CanvasInteractionTests
         var length = new VariableSpecifier("Length", TypeSpecifier.FromType<int>(), MemberVisibility.Public, MemberVisibility.Public,
             TypeSpecifier.FromType<string>(), VariableModifiers.None);
         var chooser = session.Graph.GetSet;
-        session.GraphVM.GetSetChooser.Open(length, new GraphPoint(56, 400));
+        session.GraphViewModel.GetSetChooser.Open(length, new GraphPoint(56, 400));
         await chooser.WaitOpenAsync(Token);
 
         await chooser.View.HoverAsync(Token);
@@ -333,6 +333,6 @@ public class CanvasInteractionTests
         await session.Driver.ClickAsync(await session.Graph.EmptyPointAsync(Token), UiButton.Left, 1, Token);
 
         await chooser.WaitClosedAsync(Token);
-        Assert.False(session.GraphVM.GetSetChooser.IsOpen);
+        Assert.False(session.GraphViewModel.GetSetChooser.IsOpen);
     }
 }

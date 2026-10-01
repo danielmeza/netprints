@@ -31,7 +31,7 @@ public class EventGraphOpenPipelineTests
         // A single click on Main must open Main (the owner's report: it didn't).
         await session.ClassEditor.Method("Main").ClickAsync(Token);
         await session.Graph.Watermark.WaitUntilAsync(e => e.Text == "Main", "Main shown", Token);
-        Assert.Same(session.ClassVM.Methods.Single(m => m.Name == "Main").Graph, session.ClassVM.OpenedGraph?.Graph);
+        Assert.Same(session.ClassViewModel.Methods.Single(m => m.Name == "Main").Graph, session.ClassViewModel.OpenedGraph?.Graph);
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
@@ -48,6 +48,6 @@ public class EventGraphOpenPipelineTests
         await events.OpenAsync(name, Token);
 
         await session.Graph.Watermark.WaitUntilAsync(e => e.Text == name, $"graph '{name}' shown", Token);
-        Assert.Same(session.ClassVM.EventGraphs.Single(g => g.Name == name).Graph, session.ClassVM.OpenedGraph?.Graph);
+        Assert.Same(session.ClassViewModel.EventGraphs.Single(g => g.Name == name).Graph, session.ClassViewModel.OpenedGraph?.Graph);
     }
 }

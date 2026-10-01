@@ -38,7 +38,7 @@ public class ClassEditorWindowTests
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var page = session.ClassEditor;
-        var vm = session.ClassVM;
+        var vm = session.ClassViewModel;
 
         foreach (var splitter in page.Splitters)
         {
@@ -75,7 +75,7 @@ public class ClassEditorWindowTests
     public async Task OverrideChooserCreatesAndResets()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
-        var toString = session.ClassVM.OverridableMethods.First(m => m.Name == "ToString"); // PAR-26
+        var toString = session.ClassViewModel.OverridableMethods.First(m => m.Name == "ToString"); // PAR-26
 
         session.ClassWindow.FindControl<ComboBox>("OverrideBox")!.SelectedItem = toString; // choosing a combo box item
         await session.ClassEditor.OverrideChooser.WaitUntilAsync(e => e[AutomationPropertyNames.SelectedItem] is null, "chooser reset", Token);
@@ -89,7 +89,7 @@ public class ClassEditorWindowTests
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var page = session.ClassEditor;
-        var method = (MethodGraph)session.GraphVM.Graph;
+        var method = (MethodGraph)session.GraphViewModel.Graph;
 
         await page.CreateVariableButton.ClickAsync(Token); // PAR-37
         Assert.Equal(["Variable"], await page.VariableNamesAsync(Token));
@@ -122,7 +122,7 @@ public class ClassEditorWindowTests
     public async Task BrokenGraphFillsTheErrorList()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
-        var valuePin = session.GraphVM.Nodes.Single(n => n.Node is CallMethodNode).InputDataPins.Single();
+        var valuePin = session.GraphViewModel.Nodes.Single(n => n.Node is CallMethodNode).InputDataPins.Single();
         await session.Graph.Node("CallMethodNode").Input(valuePin.Pin.Name).ValueBox.ClickAsync(UiButton.Middle, Token); // clear "Hello, World!"
 
         string status = await session.ClassEditor.CompileAsync(Token); // PAR-10, PAR-32
@@ -160,7 +160,7 @@ public class ClassEditorWindowTests
         // Spacing="8") used to do nothing.
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var page = session.ClassEditor;
-        var vm = session.ClassVM;
+        var vm = session.ClassViewModel;
         var (method, callNode) = AddBadCallMethod(vm.Class);
 
         Project project = vm.Project ?? throw new InvalidOperationException("Expected the opened class to have a project.");
@@ -182,7 +182,7 @@ public class ClassEditorWindowTests
         // OWN-04 keyboard a11y: Enter on the selected row navigates the same as a double-click.
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var page = session.ClassEditor;
-        var vm = session.ClassVM;
+        var vm = session.ClassViewModel;
         var (method, callNode) = AddBadCallMethod(vm.Class);
 
         Project project = vm.Project ?? throw new InvalidOperationException("Expected the opened class to have a project.");

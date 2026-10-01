@@ -122,7 +122,7 @@ public class CodeViewTests
         // DoubleClickingADiagnosticRowOpensTheGraphSelectsAndRevealsTheNode.
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var page = session.ClassEditor;
-        var vm = session.ClassVM;
+        var vm = session.ClassViewModel;
 
         var method = new MethodGraph("BadCall") { Class = vm.Class, Visibility = MemberVisibility.Public };
         TypeSpecifier stringType = TypeSpecifier.FromType<string>();
@@ -162,7 +162,7 @@ public class CodeViewTests
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var page = session.ClassEditor;
-        var vm = session.ClassVM;
+        var vm = session.ClassViewModel;
 
         // A second method with a real CS1503 (Guid.Parse(string) fed an int), wired into its flow
         // (same technique as SourceMapTests/CodeAnalysisHostTests): the graph model does not itself
