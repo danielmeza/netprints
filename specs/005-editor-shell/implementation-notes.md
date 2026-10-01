@@ -495,9 +495,11 @@ Decisions:
 - Delete of nodes is still not undoable (`NodeGraphViewModel.DeleteSelectedNodes` was never recorded in the history); the undo test uses a probe command, not a delete.
 - Key gestures not parseable into an Avalonia key are skipped; the descriptor key `Esc` maps to `Escape`.
 
+After Review B (B-F1 to B-F4): solution suite 2105 total, 2092 passed, 13 skipped (the tolerated headless skips), 0 failed (Core 30 s, Cli, Catalog, Editor.Tests 2 m 9 s, UITests 5 m 50 s); Desktop E2E (`NETPRINTS_E2E=1`, `--fail-skips on`) 31 passed, 0 skipped; format and Release build clean; CI green at 479bdd7, run 36935160648.
+
 ## Review B (T028, `review-B.md`)
 
-Verdict: approve with changes, no blockers, 6 majors. Fix batches F1 to F4 (T029). SHAs fill in as each batch lands.
+Verdict: approve with changes, no blockers, 6 majors. Fix batches F1 to F4 (T029). All 22 rows are fixed (or decided); SHAs below.
 
 | Id | Sev | Summary | Batch | Status |
 |---|---|---|---|---|
@@ -508,12 +510,12 @@ Verdict: approve with changes, no blockers, 6 majors. Fix batches F1 to F4 (T029
 | R5 | major | Graph gestures need canvas focus and nothing gives it | F3 | fixed 2ae10fa |
 | R6 | major | `exit` and window close will prompt twice once D adds the prompt | F3 | fixed 014bb2f |
 | R7 | minor | Kill-tree test does not pin the tree; cancel registration race | F1 | fixed c6f401d |
-| R8 | minor | Gesture parser accepts unknown keys and alias spellings | F4 | open |
-| R9 | minor | `Shift+<letter>` passes the Global single-key rule; F2 exemption | F4 | open |
-| R10 | minor | Extra `InvalidDescriptor` cases mostly untested | F4 | open |
-| R11 | minor | `showPanel.<panel>` pending row can never go stale | F4 | open |
+| R8 | minor | Gesture parser accepts unknown keys and alias spellings | F4 | fixed c368697 |
+| R9 | minor | `Shift+<letter>` passes the Global single-key rule; F2 exemption | F4 | fixed c368697 |
+| R10 | minor | Extra `InvalidDescriptor` cases mostly untested | F4 | fixed c368697, 479bdd7 |
+| R11 | minor | `showPanel.<panel>` pending row can never go stale | F4 | fixed c368697 |
 | R12 | minor | A synchronous throw escapes `CommandInvoker.TryRun` | F2 | fixed 81d8768 |
-| R13 | minor | A `#` in a class file's folder makes every shortcut throw | F4 | open |
+| R13 | minor | A `#` in a class file's folder makes every shortcut throw | F4 | fixed c368697 |
 | R14 | minor | Handlers enabled where the action is not allowed or is a no-op | F2 | fixed 81d8768 |
 | R15 | minor | A save requested during a save is dropped | F2 | fixed 23380a8 |
 | R16 | minor | `CommandContext.Session` binds the public surface to editor view models | F3 | fixed e593520 |
@@ -522,7 +524,7 @@ Verdict: approve with changes, no blockers, 6 majors. Fix batches F1 to F4 (T029
 | R19 | nit | data-model.md names drift from the contract | F3 | fixed e593520 |
 | R20 | nit | Gate tests have no timeout | F2 | fixed 23380a8 |
 | R21 | nit | UI-free scan skips `Contributions/BuiltIn/` and one level of signatures | F1 | fixed 8e2015e |
-| R22 | nit | `Ctrl` binds Control on macOS, not Cmd | F4 | open |
+| R22 | nit | `Ctrl` binds Control on macOS, not Cmd | F4 | fixed (Decision: map now) c368697 |
 
 Six orphaned `NetPrints.Editor.Tests` Debug hosts left by B test runs were found hung (they ignored SIGTERM) and killed. R20 (gate tests without a timeout) is the likely cause and was fixed in F2.
 
@@ -563,3 +565,15 @@ Six orphaned `NetPrints.Editor.Tests` Debug hosts left by B test runs were found
 - R16 (e593520). Decision: record now, defer to P3. ADR-0020 and contributions.md say `CommandContext` keeps the concrete `ProjectSessionViewModel` and `NodeGraphViewModel` in P3a and P3 replaces them with interfaces before `ICommandHandler` is published; the "moves unchanged" sentence now excludes it.
 - R19 (e593520). The data-model rows for `CommandDescriptor` (`DefaultGestures`, `CommandBarOrder`, flags `Scope`) and `CommandContext` (`ActiveGraph`) match contributions.md.
 - Totals (Release): solution suite 2051 total, 2038 passed, 13 skipped (the tolerated headless skips), 0 failed (Core 30 s, Cli, Catalog, Editor.Tests 2 m 10 s, UITests 5 m 49 s); Desktop E2E (`NETPRINTS_E2E=1`, `--fail-skips on`) 31 passed, 0 skipped. Format (one import-order fix) and Release build clean.
+
+### B-F4 (R8, R9, R10, R11, R13, R22 and the artifact-name fix: c368697; R10 follow-up: 479bdd7)
+
+- R8 (c368697). Red (`CommandGestureTests`, `ContributionRegistryTests`; 31 failed in all, see below): `Ctrl+Banana`, `Ctrl+12`, `F25`, `F0`, `Fx` were accepted; `Esc`, `Del`, `Ins`, `Return`, `PgUp`, `PgDn`, `Backspace` kept their spelling (`Expected: "Escape"`); `AnAliasOfAKeyConflictsWithItsCanonicalName` (`Esc` vs `Escape`, `Del` vs `Delete`, `Return` vs `Enter`) found no conflict; `AnUnknownKeyIsAnInvalidDescriptor` registered the command. Fix: a key-name table in `CommandGesture` (letters, digits, F1 to F24, named keys, aliases normalised at parse); an unknown key fails `TryParse`; `CommandKeyGestures` maps canonical names only (no synonym table, no numeric names). Green.
+- R9 (c368697). Red: `AShiftOnlyGestureInGlobalScopeIsAnInvalidDescriptor` for `Shift+A`, `Shift+3`, `Shift+Home` (registered); `Shift+F5` stays valid. Fix: `CommandGesture.IsPlain` (no modifier other than Shift) replaces `IsSingleKey` in the Global rule. Wording: ADR-0020, contributions.md and FR-034 now say function keys are exempt by design and fire in text fields, so a function-key command that acts on a selection (F2 rename) is scoped; FR-034's "never while a text field has focus" list no longer names F2. Green.
+- R10 (c368697, 479bdd7). The cases already behaved; one test per case now: command without handler, panel and tile without factory, blank tile title, blank template profile id, context-menu item with a bad `CommandId`, with a null group. The nulls come from `InvalidDescriptors` (uninitialised record plus `with`), because `#nullable disable` is an unlisted suppression and `Unsafe.As` still warns (CI caught that in the first push; 479bdd7). Written after the code; mutation (`TryAccept` never rejecting a missing required field) failed all seven new tests plus the three existing ones, restored.
+- R11 (c368697). Red: with the old table and a temporary `netprints.command.showPanel.projectTree` registration the stale check stayed green (only `EveryRegisteredBuiltInIsARow` failed). Fix: five rows `showPanel.projectTree`, `inspector`, `errors`, `output`, `csharp` (labels Project, Inspector, Errors, Output, C#), each pending T039. Mutation with the new table and the same temporary registration: `ThePendingListIsShrinkOnlyAndEachEntryIsStillPending` failed; removed.
+- R13 (c368697). Red: `AClassPathMayContainAHash` and the two round-trip rows (`graph:a#b/C.netpc.json#class`, `graph:Interop#2/Foo.netpc.json#method:m1`) threw or failed to parse. Fix: graph keys never contain `#`, so `TryParse` splits on the last `#` and `Graph` accepts `#` in the class path; shell.md section 2 says so. Green.
+- R22 (c368697, Decision: map now). `CommandKeyGestures.Of(command, isMacOS)` maps `Ctrl` to Meta on macOS (the one-argument overload passes `OperatingSystem.IsMacOS()`); an unlisted modifier stays as is. Written after the code; mutation (`Ctrl` always Control) failed `CtrlMapsToTheCommandModifierOfThePlatform(isMacOS: True)` and `OtherModifiersAreUnchangedOnMacOS`, restored. Tooltips and menus still show the gesture text as written (`Ctrl+S`); commands.md says so. Not verifiable on the Linux CI; the platform flag keeps the unit test OS-independent.
+- CI artifact names (c368697). `UiArtifacts.SafeName` replaces the invalid-file-name filter (Linux only removes `/`), so a string theory argument no longer puts `"` or `:` in the diagnostics folder that `actions/upload-artifact` rejects. Written after the code; mutation (identity) failed 2 of its 3 tests, restored.
+- Red run (R8, R9, R13, partly R22; stubbed `IsPlain => false`): 31 failed of 658 in `NetPrints.Editor.Tests`; the failing names are the rows listed above.
+- Totals (Release): solution suite 2105 total, 2092 passed, 13 skipped (the tolerated headless skips), 0 failed; Desktop E2E 31 passed, 0 skipped; format and Release build clean. The first suite run failed `SourceHygieneTests.NoUnlistedSuppressions` (the `#nullable disable` helper), fixed before the push; CI then caught CS8603 on `Unsafe.As` (479bdd7). CI green at 479bdd7, run 36935160648.

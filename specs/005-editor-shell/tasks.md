@@ -270,7 +270,7 @@ tests; the existing windows' shortcuts run through the registry.
 
 ### Batch B-R — model: opus — T028 (sub-phase review)
 
-- [ ] T028 [US4] Review sub-phase B: an Opus reviewer who did not implement it reviews the whole diff of batches B1–B4
+- [x] T028 [US4] Review sub-phase B: an Opus reviewer who did not implement it reviews the whole diff of batches B1–B4
   (from the commit before the first batch to HEAD): the registry and the handlers against spec.md US4,
   contracts/contributions.md, contracts/commands.md, ADR-0020, the constitution and plan.md's standing constraints
   (UI-free descriptors, first-wins rules, frozen registry, async rules for handlers). It runs the independent test of
@@ -278,7 +278,7 @@ tests; the existing windows' shortcuts run through the registry.
 
 ### Batch B-F — model: sonnet — T029 (reserved: fix review findings)
 
-- [ ] T029 [US4] Fix every finding of T028 (test first for behaviour findings), reply on each review thread with the
+- [x] T029 [US4] Fix every finding of T028 (test first for behaviour findings), reply on each review thread with the
   fixing commit or the reason for deferral, whole suite plus the E2E run, commit; if the review had no findings, tick
   this task with "no findings". The next sub-phase starts only after this batch is green on CI.
 
