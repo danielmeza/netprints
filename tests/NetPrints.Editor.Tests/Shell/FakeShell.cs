@@ -93,7 +93,8 @@ public sealed class FakeShell : IShell
 
     /// <summary>Builds a context over this shell with nothing selected.</summary>
     /// <param name="parameter">The command parameter, or null.</param>
+    /// <param name="session">The open project session, or null for the start page.</param>
     /// <returns>The context.</returns>
-    public CommandContext Context(object? parameter = null) =>
-        new(this, null, ActiveDocument, null, CommandSelection.None, parameter);
+    public CommandContext Context(object? parameter = null, ProjectSessionViewModel? session = null) =>
+        new(this, session, ActiveDocument, null, CommandSelection.None, parameter);
 }
