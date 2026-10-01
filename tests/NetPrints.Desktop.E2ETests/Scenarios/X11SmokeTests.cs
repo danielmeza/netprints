@@ -51,7 +51,7 @@ public abstract class X11SmokeTestBase(DesktopWorkerPool pool) : SmokeScenarios,
     private StepTimer Steps => timer ??= new StepTimer(TestContext.Current.TestMethod?.MethodName ?? "test", ForcedTimeoutStep);
 
     private static string Artifacts => Path.Combine(
-        Environment.GetEnvironmentVariable("NETPRINTS_UI_ARTIFACTS") is { Length: > 0 } configured ? configured : Path.Combine(AppContext.BaseDirectory, "ui-artifacts"),
+        Environment.GetEnvironmentVariable(TestEnvironment.UiArtifactsVariable) is { Length: > 0 } configured ? configured : Path.Combine(AppContext.BaseDirectory, "ui-artifacts"),
         "e2e", TestContext.Current.TestMethod?.MethodName ?? "test");
 
     protected override IDisposable Step(string name) => Steps.Step(name);

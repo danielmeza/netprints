@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Runtime.ExceptionServices;
+using NetPrints.Testing;
 
 namespace NetPrints.Desktop.E2ETests.Hosting;
 
@@ -16,7 +17,7 @@ public sealed class StepTimer(string testName, string? forcedStep = null)
     public const string ForceVariable = "NETPRINTS_E2E_FORCE_TIMEOUT";
 
     /// <summary>The folder the run's results go to: the parent of <c>NETPRINTS_UI_ARTIFACTS</c>, else <c>TestResults</c>.</summary>
-    public static string ResultsDirectory { get; } = (Environment.GetEnvironmentVariable("NETPRINTS_UI_ARTIFACTS") is { Length: > 0 } artifactsDir
+    public static string ResultsDirectory { get; } = (Environment.GetEnvironmentVariable(TestEnvironment.UiArtifactsVariable) is { Length: > 0 } artifactsDir
         ? Path.GetDirectoryName(artifactsDir)
         : null) ?? "TestResults";
 

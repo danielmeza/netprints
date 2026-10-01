@@ -239,20 +239,20 @@ public sealed class AutomationAgent : IDisposable
     {
         switch (request.Op)
         {
-            case "status":
+            case AutomationOps.Status:
                 return new AutomationResponse(true) { Status = await Dispatcher.UIThread.InvokeAsync(status) };
-            case "find":
+            case AutomationOps.Find:
                 var query = request.Query ?? throw new ArgumentException("find needs a query.");
                 ValidateQuery(query);
                 return new AutomationResponse(true) { Elements = await Dispatcher.UIThread.InvokeAsync(() => tree.Find(query)) };
-            case "dump":
+            case AutomationOps.Dump:
                 return new AutomationResponse(true) { Text = await Dispatcher.UIThread.InvokeAsync(tree.Dump) };
-            case "runState":
+            case AutomationOps.RunState:
                 var provider = runState ?? throw new InvalidOperationException("This agent has no run state.");
                 return new AutomationResponse(true) { RunState = provider() };
-            case "tree":
+            case AutomationOps.Tree:
                 return new AutomationResponse(true) { Elements = await Dispatcher.UIThread.InvokeAsync(tree.Snapshot) };
-            case "settle":
+            case AutomationOps.Settle:
                 // Everything queued before this request, including layout, has run.
                 await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
                 await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);

@@ -11,6 +11,7 @@ using NetPrints.Extensibility;
 using NetPrints.Extensibility.Hosting;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Settings;
+using NetPrints.Testing;
 using NetPrints.Testing.Ui.Main;
 using NetPrints.Testing.Ui.Screenplay;
 using NetPrints.Testing.Ui.Snapshots;
@@ -172,7 +173,7 @@ public static class UiArtifacts
 {
     /// <summary><c>NETPRINTS_UI_ARTIFACTS</c> (CI: TestResults/ui), else a folder next to the tests.</summary>
     public static string Directory { get; } =
-        Environment.GetEnvironmentVariable("NETPRINTS_UI_ARTIFACTS") is { Length: > 0 } configured
+        Environment.GetEnvironmentVariable(TestEnvironment.UiArtifactsVariable) is { Length: > 0 } configured
             ? configured
             : Path.Combine(AppContext.BaseDirectory, "ui-artifacts");
 

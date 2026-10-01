@@ -237,7 +237,7 @@ public class AutomationAgentTests
             var writer = new StreamWriter(extra, new UTF8Encoding(false), 4096, leaveOpen: true) { AutoFlush = true };
             try
             {
-                await writer.WriteLineAsync(JsonSerializer.Serialize(new AutomationRequest("status"), AutomationJsonContext.Default.AutomationRequest));
+                await writer.WriteLineAsync(JsonSerializer.Serialize(new AutomationRequest(AutomationOps.Status), AutomationJsonContext.Default.AutomationRequest));
             }
             catch (IOException)
             {

@@ -74,7 +74,7 @@ public sealed class DiagnosticPartsTests : IDisposable
             using var reader = new StreamReader(server, Encoding.UTF8, false, 4096, leaveOpen: true);
             await using var writer = new StreamWriter(server, new UTF8Encoding(false), 4096, leaveOpen: true) { AutoFlush = true };
             var request = JsonSerializer.Deserialize(await reader.ReadLineAsync(token) ?? "", AutomationJsonContext.Default.AutomationRequest);
-            var response = request?.Op == "tree"
+            var response = request?.Op == AutomationOps.Tree
                 ? new AutomationResponse(true) { Elements = [] }
                 : new AutomationResponse(true) { RunState = new RunStateSnapshot(default, null, [], []) };
             await writer.WriteLineAsync(JsonSerializer.Serialize(response, AutomationJsonContext.Default.AutomationResponse));

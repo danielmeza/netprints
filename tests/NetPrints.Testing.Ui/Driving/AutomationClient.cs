@@ -71,23 +71,23 @@ public sealed class AutomationClient : IAsyncDisposable
     }
 
     public async Task<IReadOnlyList<AutomationElement>> FindAsync(AutomationQuery query, CancellationToken cancellationToken) =>
-        (await SendAsync(new AutomationRequest("find") { Query = query }, cancellationToken)).Elements ?? [];
+        (await SendAsync(new AutomationRequest(AutomationOps.Find) { Query = query }, cancellationToken)).Elements ?? [];
 
     public async Task<AutomationStatus> StatusAsync(CancellationToken cancellationToken) =>
-        (await SendAsync(new AutomationRequest("status"), cancellationToken)).Status ?? throw new IOException("The reply carried no status.");
+        (await SendAsync(new AutomationRequest(AutomationOps.Status), cancellationToken)).Status ?? throw new IOException("The reply carried no status.");
 
     public async Task<string> DumpAsync(CancellationToken cancellationToken) =>
-        (await SendAsync(new AutomationRequest("dump"), cancellationToken)).Text ?? "";
+        (await SendAsync(new AutomationRequest(AutomationOps.Dump), cancellationToken)).Text ?? "";
 
     /// <summary>Every window and every control with an automation id, hidden ones included.</summary>
     public async Task<IReadOnlyList<AutomationElement>> TreeAsync(CancellationToken cancellationToken) =>
-        (await SendAsync(new AutomationRequest("tree"), cancellationToken)).Elements ?? [];
+        (await SendAsync(new AutomationRequest(AutomationOps.Tree), cancellationToken)).Elements ?? [];
 
     /// <summary>The state of the last program the editor launched.</summary>
     public async Task<RunStateSnapshot> RunStateAsync(CancellationToken cancellationToken) =>
-        (await SendAsync(new AutomationRequest("runState"), cancellationToken)).RunState ?? throw new IOException("The reply carried no run state.");
+        (await SendAsync(new AutomationRequest(AutomationOps.RunState), cancellationToken)).RunState ?? throw new IOException("The reply carried no run state.");
 
-    public async Task SettleAsync(CancellationToken cancellationToken) => await SendAsync(new AutomationRequest("settle"), cancellationToken);
+    public async Task SettleAsync(CancellationToken cancellationToken) => await SendAsync(new AutomationRequest(AutomationOps.Settle), cancellationToken);
 
     public async ValueTask DisposeAsync()
     {
