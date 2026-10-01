@@ -874,3 +874,47 @@ Sub-phase F (`6925062^..00c87e3`), reviewed at `00c87e3`: Checkpoint F not accep
 **Test suite**: 1603 tests, 1590 passed, 3 failed (unrelated to G4), 10 skipped. Duration: ~4m 40s.
 
 **No deviations**: G4 completed all three tasks (documentation and contract text); no code changes.
+
+## Review G (T115, Opus)
+
+Report: `.agent-archive/netprints-p2/review-G.md`. Checkpoint G was not accepted; the findings and their fix batches:
+
+| Finding | Severity | Batch | Status |
+|---|---|---|---|
+| G-R1 stale provider context after an `ExtensionHost` reload | major | G-F1 | fixed, 173c9da |
+| G-R2 "already loaded in Default" evaluated lazily | major | G-F1 | fixed, 173c9da |
+| G-R3 dependency copy wins with no version check | major | G-F2 | open |
+| G-R4 `Fixture.SharedLib` V1/V2 both AssemblyVersion 0.0.0.0 | minor | G-F2 | open |
+| G-R5 JSON type-info resolvers not conflict-checked | major | G-F3 | open |
+| G-R6 MX-T05 cannot tell declared order from id or load order | major | G-F2 | open |
+| G-R7 guide states the diamond rule and host provision wrongly | major | G-F4 | open |
+| G-R8 Checkpoint G report ran on stale Release binaries | major | G-F4 | open |
+| G-R9 sample-build tests not reported, no real-host SC-008 test | minor | G-F3 | open |
+| G-R10 contract §3 and §6 drifted from the tests | minor | G-F4 | open |
+| G-R11 MX-T12 has no real "only B" case | minor | G-F3 | open |
+| G-R12 shadow check can fail a load and re-logs on reload | minor | G-F1 | fixed, 173c9da |
+| G-R13 G3's 23 tests have no red evidence | minor | G-F2 | open |
+| G-R14 MX-T14 scale fixture never walks the dependency chain | nit | G-F3 | open |
+
+### Accepted decisions
+
+- **G-R1**: on a dependency mismatch the cache creates a new context (an ALC's bindings cannot be redirected).
+- **G-R2**: snapshot the host-provided names when each `ExtensionLoadContext` is created; ADR-0010 §4 keeps "already loaded", now "at the time the extension's context is created".
+- **G-R3**: NPX007 when a dependency's version is lower than the consumer's reference, equal or higher accepted, plus a one-line ADR-0010 §4 amendment (G-F2).
+- **G-R5**: route each node kind's `DocumentType` to its owning extension's resolvers first through a dispatching resolver, and report NPX006 against any other extension whose resolver would have answered first (G-F3).
+
+### G-F1 (G-R1, G-R2, G-R12)
+
+- G-R1: `ExtensionLoadContextCache.GetOrCreate` replaces a cached context whose `Dependencies` differ (reference-wise, ordered) from the ones now resolved. New `ReloadTests.AConsumerSeesTheProviderOfTheCurrentLoadAfterAProjectCopyReplacesTheGlobalOne`.
+- G-R2: `HostAssemblies.Snapshot()` (TPA plus Default's loaded names) is taken in the `ExtensionLoadContext` constructor; `Load` and the shadow check both use `IsHostProvided`. The MSBuild prefix is `Microsoft.Build` or `Microsoft.Build.*`. New `SharedAssemblyRuleTests.AnAssemblyTheHostLoadsAfterTheContextWasCreatedIsStillPrivateToTheExtension` (compiles `Gf1Late`, loads a copy into Default after the load, then the extension's `Assembly.Load("Gf1Late")` must return its own folder's copy).
+- G-R12: the name is parsed with `new AssemblyName { Name = name }`, a per-context flag (`TryClaimShadowReport`) makes the report once per context, and an `IOException`, `UnauthorizedAccessException` or `ArgumentException` from the check is logged (event 2012, Debug) instead of failing the load. New `AStrayDllWithAnUnparsableNameDoesNotFailTheExtensionLoad` and `AShadowedHostAssemblyIsLoggedOncePerContextAcrossReloads`.
+
+Red (tests written first, run on the 220938a code; all four new tests red):
+- `ReloadTests.AConsumerSeesTheProvider...`: `Assert.StartsWith() Failure`, string `.../search/fx.types-provider...` expected `.../project/fx.types-provider...` (consumer kept the global provider).
+- `AStrayDllWithAnUnparsableNameDoesNotFailTheExtensionLoad`: `Loaded` was `[]` instead of `["fx.alpha"]`.
+- `AShadowedHostAssemblyIsLoggedOncePerContextAcrossReloads`: `Assert.Single` failure, 2 HostAssemblyShadowed entries.
+- `AnAssemblyTheHostLoadsAfterTheContextWasCreated...`: the extension got `.../host/Gf1Late.dll` instead of `.../gf1.late/Gf1Late.dll`.
+
+Green (after the fix): `ReloadTests` 2/2, `SharedAssemblyRuleTests` 6/6, `DependencyTypeSharingTests` 5/5. Format check clean (`dotnet format NetPrints.slnx --verify-no-changes --no-restore`). Full suite on fresh Debug binaries (`dotnet build NetPrints.slnx`, then `dotnet test --solution`): total 1716, failed 0, succeeded 1706, skipped 10 (headless driver), (G3 had 1712, plus the 4 new tests).
+
+Contract and ADR: contracts/extensions.md §2 step 1 (snapshot, prefix) and the MX-T15 row; ADR-0010 §4 sentence. The guide's host-provision list is rewritten in G-F4 (G-R7).

@@ -607,7 +607,7 @@ SC-013.
 
 ### Batch G-R — model: opus — T115 (sub-phase review)
 
-- [ ] T115 [US5] Review sub-phase G: an Opus reviewer who did not implement it reviews the whole diff of batches G1–G4
+- [x] T115 [US5] Review sub-phase G: an Opus reviewer who did not implement it reviews the whole diff of batches G1–G4
   (from the commit before the first batch to HEAD) — user story US5 end to end against spec.md, contracts/extensions.md §1–§4, §6, the constitution and plan.md's standing constraints —
   and runs the independent test of the phase; findings (severity, file:line, fix) go to the PR as review comments and to
   `specs/004-catalog-cli/implementation-notes.md` under "Review G". No code changes in this task.
