@@ -883,24 +883,24 @@ Report: `.agent-archive/netprints-p2/review-G.md`. Checkpoint G was not accepted
 |---|---|---|---|
 | G-R1 stale provider context after an `ExtensionHost` reload | major | G-F1 | fixed, 173c9da |
 | G-R2 "already loaded in Default" evaluated lazily | major | G-F1 | fixed, 173c9da |
-| G-R3 dependency copy wins with no version check | major | G-F2 | open |
-| G-R4 `Fixture.SharedLib` V1/V2 both AssemblyVersion 0.0.0.0 | minor | G-F2 | open |
+| G-R3 dependency copy wins with no version check | major | G-F2 | fixed, 7da71a9 |
+| G-R4 `Fixture.SharedLib` V1/V2 both AssemblyVersion 0.0.0.0 | minor | G-F2 | fixed, 71d8892 |
 | G-R5 JSON type-info resolvers not conflict-checked | major | G-F3 | open |
-| G-R6 MX-T05 cannot tell declared order from id or load order | major | G-F2 | open |
+| G-R6 MX-T05 cannot tell declared order from id or load order | major | G-F2 | fixed, 0d7c909 |
 | G-R7 guide states the diamond rule and host provision wrongly | major | G-F4 | open |
 | G-R8 Checkpoint G report ran on stale Release binaries | major | G-F4 | open |
 | G-R9 sample-build tests not reported, no real-host SC-008 test | minor | G-F3 | open |
 | G-R10 contract §3 and §6 drifted from the tests | minor | G-F4 | open |
 | G-R11 MX-T12 has no real "only B" case | minor | G-F3 | open |
 | G-R12 shadow check can fail a load and re-logs on reload | minor | G-F1 | fixed, 173c9da |
-| G-R13 G3's 23 tests have no red evidence | minor | G-F2 | open |
+| G-R13 G3's 23 tests have no red evidence | minor | G-F2 | fixed, mutation evidence in G-F2 |
 | G-R14 MX-T14 scale fixture never walks the dependency chain | nit | G-F3 | open |
 
 ### Accepted decisions
 
 - **G-R1**: on a dependency mismatch the cache creates a new context (an ALC's bindings cannot be redirected).
 - **G-R2**: snapshot the host-provided names when each `ExtensionLoadContext` is created; ADR-0010 §4 keeps "already loaded", now "at the time the extension's context is created".
-- **G-R3**: NPX007 when a dependency's version is lower than the consumer's reference, equal or higher accepted, plus a one-line ADR-0010 §4 amendment (G-F2).
+- **G-R3**: NPX007 is already `AssemblyLoadFailed`, so the code is NPX008 (`DependencyVersion`). It fires when a dependency's version is lower than the consumer's reference, equal or higher accepted, plus a one-line ADR-0010 §4 amendment (G-F2).
 - **G-R5**: route each node kind's `DocumentType` to its owning extension's resolvers first through a dispatching resolver, and report NPX006 against any other extension whose resolver would have answered first (G-F3).
 
 ### G-F1 (G-R1, G-R2, G-R12)
@@ -918,3 +918,23 @@ Red (tests written first, run on the 220938a code; all four new tests red):
 Green (after the fix): `ReloadTests` 2/2, `SharedAssemblyRuleTests` 6/6, `DependencyTypeSharingTests` 5/5. Format check clean (`dotnet format NetPrints.slnx --verify-no-changes --no-restore`). Full suite on fresh Debug binaries (`dotnet build NetPrints.slnx`, then `dotnet test --solution`): total 1716, failed 0, succeeded 1706, skipped 10 (headless driver), (G3 had 1712, plus the 4 new tests).
 
 Contract and ADR: contracts/extensions.md §2 step 1 (snapshot, prefix) and the MX-T15 row; ADR-0010 §4 sentence. The guide's host-provision list is rewritten in G-F4 (G-R7).
+
+### G-F2 (G-R4, G-R3, G-R6, G-R13)
+
+- G-R4 (71d8892): `<MinVerSkip>true</MinVerSkip>` on both `Fixture.SharedLib` projects. `VersionIsolationTests` (MX-T06) asserts 1.0.0.0 and 2.0.0.0. SharedLib V2 also gained a parameterless `Describe()` so a consumer built against 1.0 runs on 2.0.
+  - Red: `Assert.Equal() Failure: Values differ, Expected: 1.0.0.0, Actual: 0.0.0.0`. Green: 1/1.
+- G-R3 (7da71a9): code is NPX008 (`ExtensionDiagnosticCodes.DependencyVersion`), because NPX007 is `AssemblyLoadFailed`. After the extension assembly loads, `ExtensionLoader` compares each referenced assembly a dependency provides (`ExtensionLoadContext.FindDependencyVersion`) with the reference; lower fails the extension, naming the assembly and both versions. Only direct references of the main assembly are checked. ADR-0010 §4 amended, contracts/extensions.md §1 and a new MX-T17 row, extension-points.md step 4 updated, PublicAPI.Unshipped updated.
+  - New `DependencyVersionTests`: lower (Fx.LibV2 built against 2.0, manifest rewritten to depend on fx.libv1, own copy removed), equal (Diamond on libv1), higher (Diamond on libv2, translates `shared-lib-v2`).
+  - Red (before the code): the lower test failed with `Assert.Single() Failure: The collection did not contain any matching items, Collection: []`, so the extension had loaded silently. Equal and higher were green before and after, as guards. Green: 3/3, `MultiExtension` 57/57.
+- G-R6 (0d7c909): the diamond test now covers declared `[libv1, libv2]` and `[libv2, libv1]`, each with all 6 discovery permutations of {libv1, libv2, diamond}. It asserts the load context and version of the `SharedLib` the diamond sees (`DiamondExtension.SeenSharedLib`) and the translated output. Declared `[libv2, libv1]` differs from id order and load order (libv1 first in both).
+  - Mutation: `manifest.DependsOn.Distinct().Order(StringComparer.Ordinal)` in `ExtensionLoader.LoadOne`. New test red: `declared [fx.libv2, fx.libv1], discovered [fx.libv1, fx.libv2, fx.diamond]`. The old test (HEAD~ data) stayed green under the same mutation (5/5), which confirms it was blind. Reverted.
+- G-R13 mutation checks (each reverted with `git checkout`; none committed). Command: `dotnet build tests/NetPrints.Core.Tests -v q -tl:off --nologo`, then `tests/NetPrints.Core.Tests/bin/Debug/net10.0/NetPrints.Core.Tests -class NetPrints.Tests.Extensibility.MultiExtension.<Class>`:
+
+| Test | Mutation | Result |
+|---|---|---|
+| MX-T07 `IdConflictTests` | `RegistryBuilder`: `!profileIds.Add(profile.Id)` to `!profileIds.Add(profile.Id) && false` (a duplicate profile id is accepted) | `ASquatterCannotTakeAnyIdAlphaRegisteredAndAlphaIsUnchanged [FAIL]`, 1 of 4 failed |
+| MX-T08 `IdConflictTests` | `ExtensionLoader.Discover`: duplicate-id check `&& false` (NPX004 dropped) | `ADuplicateIdFailsWithNpx004AndTheFirstFolderWinsInEveryDiscoveryOrder [FAIL]`, 1 of 4 failed |
+| MX-T10 `FailureIsolationTests` | `LoadOne` catch: `builder.Seal()` to `registryBuilder.Commit(manifest, builder.Seal())` (commit when `Register` threw) | `ARoslynExtensionThatThrowsMidwayRegistersNoneOfItsKinds [FAIL]` and `ARegisterThatThrowsAfterAddingContributionsCommitsNoneOfThemAndFailsWithNpx005 [FAIL]`, 2 of 10 failed |
+| MX-T05 `DependencyTypeSharingTests` | sort dependencies by id (see G-R6) | red, see above |
+
+- Gates: `dotnet format NetPrints.slnx --verify-no-changes --no-restore` clean. Full suite on freshly rebuilt Debug binaries: total 1719, failed 0, succeeded 1709, skipped 10 (1716 plus 3 new; the diamond test was rewritten, not added).
