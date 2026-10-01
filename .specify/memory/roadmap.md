@@ -29,8 +29,8 @@ when it is started.
 | P0 | Modernize build + Avalonia editor at parity | ~6 w (manual est.) | — | **merged** 2026-09-25 (PR #1, e24ebec) |
 | P0.1 | Grid rendering (shader + pixel-identical fallback) | ~3–5 d | P0 | **merged** 2026-09-25 (PR #2, 0e1add1) |
 | P1 | Core refactor + extension points | ~3.5 w | P0 | **merged** 2026-09-29 (PR #6, cc96a93); released `v0.1.0`, `v0.1.1` |
-| P2 | Catalog tooling + Spectre CLI | ~2.5 w | P1 | spec ready (`specs/004-catalog-cli/`, draft PR #9) |
-| P3a | Editor shell | ~2–3 w | P0, P1 | not started |
+| P2 | Catalog tooling + Spectre CLI | ~2.5 w | P1 | **merged** 2026-10-01 (PR #9, 3a6eafc) |
+| P3a | Editor shell | ~2–3 w | P0, P1 | in progress (spec, `specs/005-editor-shell/`, draft PR #12) |
 | P3 | Editor extension host | ~2.5 w | P0, P1, P3a | not started |
 | P3b | Declarations and code style | ~3–4 w | P1, P3a, P3 | not started (owner-approved 2026-09-26) |
 | P4 | VSIX (WpfAvaloniaHost) | ~2 w | P3 | **deferred** by owner (2026-09-24) |
@@ -137,6 +137,13 @@ Done when (owner decision 2026-09-28, applies P2 onward): the phase's features w
 docs updated (guides, API reference, ADRs as applicable).
 
 ### P3a — Editor shell (owner-approved 2026-09-25; source: `docs/research/2026-09-25-ux-audit/`)
+Spec: `specs/005-editor-shell/` (decisions: ADR-0018 docking, ADR-0019 CI matrix and Windows CLI leg, ADR-0020
+contribution registry; the rest in its `research.md`).
+- **CI and test infrastructure** (carried over from P2's final review, done first because P3a adds many Desktop
+  E2E scenarios): capture timings, a UI dump, a screenshot, logs and the launched program's state when a Desktop E2E
+  test times out or fails (FU-4, the `EditCompileAndRun` flake, issue #11); split the "Build and test (Linux)" job
+  into a test-project matrix under an aggregate check of the same name (FU-7, ADR-0019); a Windows CLI workflow with
+  a UTF-8 `show --textconv` test (FU-3, ADR-0019).
 - **Layout:** a single window with a project tree, tabbed graphs, an inspector and a bottom panel (Errors / Output / C#).
   Replaces the separate launcher and per-class windows (H2).
 - **Commands:** a command registry feeding a command bar, a menu and keyboard shortcuts (H3, H4). This is also the P3
@@ -148,7 +155,8 @@ docs updated (guides, API reference, ADRs as applicable).
 - **Docking** (owner idea, 2026-09-25): build the layout on Dock.Avalonia (wieslawsoltes/Dock): dockable,
   floatable and tabbed panes (project tree, graphs, inspector, Errors/Output/C#) with serialized layouts, which
   also covers L2. Verify Avalonia 12 compatibility, MVVM integration (CommunityToolkit.Mvvm) and headless and E2E
-  testability before committing to it.
+  testability before committing to it. Decided: adopted (Dock 12.1.0.6, exact pin) behind an `IShell` seam, gated
+  by a spike, with a plain Avalonia layout as the fallback (ADR-0018).
 - **Start dashboard** (owner idea, 2026-09-25; moved here from P6 onboarding because it replaces the launcher):
   recent projects (pin, search, remove), "Open folder or `.csproj`", **New project from templates** (console,
   library, UnrealSharp; Unity later) driven by the P1 project profiles, samples, and what's new in this
@@ -160,7 +168,9 @@ docs updated (guides, API reference, ADRs as applicable).
   from a pin of a type in a covered assembly still lists the type's public members, including those the embedded
   catalog omits and `[NetPrintsIgnore]` ones (extension catalogs too). Decide whether type-scoped search respects the
   embedded catalog of the type's assembly, hiding omitted and `[NetPrintsIgnore]` members, with the live provider as
-  the fallback for assemblies no catalog covers. Binding through `GetTypeFromSpecifier` stays as it is.
+  the fallback for assemblies no catalog covers. Binding through `GetTypeFromSpecifier` stays as it is. Decided:
+  type-scoped search respects the covering catalog, the live provider answers only for uncovered assemblies, and
+  binding is unchanged (P3a spec, research R10).
 - **Adopt Xaml.Behaviors across the editor** (owner request, 2026-09-28): replace every remaining
   code-behind handler a prebuilt behavior covers (catalog: `.claude/skills/avalonia-behaviors/`), custom
   behaviors for the rest; done when the XAML hygiene allowlists are empty or hold only justified
@@ -189,7 +199,7 @@ docs updated (guides, API reference, ADRs as applicable).
 inspector sections, panels, settings pages), sample non-Unreal extension, anything functional
 left beyond P0 parity. Publishes the `NetPrints.Serialization` and `NetPrints.Extensibility`
 packages for extension authors. No performance work here (owner decision 2026-09-25: see P8).
-- **Carried over from P2** (final review findings): NPX008 should check host-provided and transitive references; the live `ReflectionProvider` should skip unreadable references and log them; Windows CLI CI leg with UTF-8 `show --textconv` test; capture timings and UI dump on the next Desktop E2E timeout; info-level analyzer backlog cleanup; decide on editor `ProjectCheck` generation-skip behavior; split the "Build and test (Linux)" CI job into a test-project matrix.
+- **Carried over from P2** (final review findings FU-1, FU-2, FU-5, FU-6): NPX008 should check host-provided and transitive references; the live `ReflectionProvider` should skip unreadable references and log them; info-level analyzer backlog cleanup; decide on editor `ProjectCheck` generation-skip behavior. (The three CI items FU-3, FU-4 and FU-7 moved to P3a.)
 - **Extension testing — author conformance kit (may start in P2; the internal `ExtensionHarness` lands in P2, ADR-0010).** Ship `NetPrints.Extensibility.Testing` (NuGet package) with `ExtensionTest<TExtension>` (declarative `TestState`, `RunAsync`), an `ExtensionHarness` for real or folder-based testing, and a conformance suite with 12 checks (manifest, packaging, type identity, pure/repeatable registration, no issues, node round-trip, translation compilation, deterministic emitters, settings, host channel lifecycle, coexistence with built-ins and a "noisy neighbour", disposal). Optional xUnit adapter. `NetPrints.TestExtension` is tested only through this kit. See research.
 - **Before the first NetPrintsUnreal release:** a `netprints-verify` tool (modelled on IntelliJ Plugin Verifier), a reusable author CI workflow, a nightly job co-loading published extensions, and a `dotnet new netprints-extension` template.
 Done when: also docs updated (guides, API reference, ADRs as applicable).
