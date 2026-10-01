@@ -2,7 +2,8 @@
 
 Runnable checks that prove each user story works. Linux, .NET 10 SDK, git, `mise` (for schema validation).
 Commands run from the repository root; `NP` stands for the built CLI:
-`dotnet src/NetPrints.Cli/bin/Release/net10.0/NetPrints.Cli.dll`. Contracts hold the details; this file only
+`dotnet src/NetPrints.Cli/bin/Release/net10.0/NetPrints.Cli.dll`. The sample imports the generator from
+`bin/$(Configuration)`, so `run` needs `Configuration=Release` (as in CI). Contracts hold the details; this file only
 lists what to run and what to see.
 
 ## 0. Build
@@ -21,7 +22,7 @@ $NP --version; echo "rc=$?"            # NetPrints.Cli <version>, rc=0
 $NP --help >/dev/null; echo "rc=$?"    # rc=0
 $NP build --help >/dev/null; echo "rc=$?"
 $NP -p samples/HelloWorld/HelloWorld.csproj; echo "rc=$?"   # replacement message, rc=2
-$NP run samples/HelloWorld/HelloWorld.csproj; echo "rc=$?"  # Hello, World!, rc=0
+Configuration=Release $NP run samples/HelloWorld/HelloWorld.csproj; echo "rc=$?"  # Hello, World!, rc=0
 $NP regen --check samples/HelloWorld; echo "rc=$?"          # rc=0, nothing written
 $NP migrate samples; echo "rc=$?"                           # "No migrations are available…", rc=0
 git status --short samples/                                  # empty
@@ -73,7 +74,7 @@ Expected: the tool, generator and built-assembly catalogs are byte-identical for
 ## 5. Extensions coexist (US5, contracts/extensions.md)
 
 ```bash
-tests/NetPrints.Core.Tests/bin/Release/net10.0/NetPrints.Core.Tests -trait 'Category=MultiExtension'
+tests/NetPrints.Core.Tests/bin/Release/net10.0/NetPrints.Core.Tests -namespace 'NetPrints.Tests.Extensibility.MultiExtension'
 ```
 
 Expected: MX-T01…MX-T16 pass, including the 24-permutation test and the 50-extension scale test (< 10 s).

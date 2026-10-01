@@ -972,3 +972,66 @@ Contract and ADR: contracts/extensions.md §2 step 1 (snapshot, prefix) and the 
 - G-R9 (d7dfcfb): `Samples/MultiExtensionBuildTests` writes a graph with `fx.types-consumer/Use` and `fx.private-prefix/Describe` nodes, then builds a temporary project with `NetPrintsExtension` items for the provider, consumer and private-prefix fixtures through a real `dotnet build` (the Generator process) and runs it. It asserts the build succeeds, the generated C# has the provider marker (`Description("fx.types-provider")`) and the `netprints-fixture-runtime` line, and the program prints both. Written after the code; mutation: leaving the provider out of the items fails the build with NPX003 (`dependency 'fx.types-provider' is missing`).
 - Samples namespace (`NetPrints.Tests.Samples`, run on its own): 16 tests, 0 failed (15 before, plus this one).
 - Gates: `dotnet format NetPrints.slnx --verify-no-changes --no-restore` clean (8c06ce5 fixes two import orders). Full suite on freshly rebuilt Debug binaries: total 1723, failed 0, succeeded 1713, skipped 10 (1719 plus 4 new).
+
+## Batch H1 (T117-T121) — polish and Checkpoint H
+
+Run on HEAD b3b732b plus the quickstart fix below; Release binaries rebuilt with `--no-incremental`.
+
+### T117 docs, schemas, ADR index
+
+- `scripts/build-docs.sh`: exit 0 (Docusaurus has `onBrokenLinks: 'throw'`, so 0 broken links; DocFX 6 duplicate-source warnings for the `PublicAPI.*.txt` files, as at Checkpoint G).
+- `cmp schemas/<id>.schema.json website/build/schemas/<id>.schema.json` for `netpc.v1`, `npcat.v1`, `netprints.catalog.v1`: identical (the script itself ends with the same three `cmp` calls).
+- `docs/adr/README.md` lists 0010 and 0012-0016 (and 0017). `eng/validate-schemas.sh`: 48 instances, all passed.
+
+### T118 quickstart run
+
+Sections 0-7 run end to end. Output summary:
+
+- 1 CLI: `--version` prints `NetPrints.Cli 0.1.2-alpha.0.85+b3b732b...` rc 0; `--help`, `build --help` rc 0; `-p` prints the replacement message rc 2; `run` prints `Hello, World!` rc 0; `regen --check samples/HelloWorld` "1 generated file(s) up to date, 0 written" rc 0; `migrate samples` "No migrations are available; 1 graph(s) are at schema version 1." rc 0; `git status --short samples/` empty.
+- 2 Graph checks: `format --check samples` "1 graph(s) are canonical." rc 0; after breaking the file `not canonical: ...` rc 1; `format .` restores it; `show` prints `class HelloWorld.Program Public ...`; `git-install --merge` installs 3 config keys plus `.gitattributes`, the second run prints `already installed:` for all four; `git diff --textconv` prints summary lines.
+- 3 Catalog: fixture catalog written (18 types, 58 members) rc 0, identical to the committed `public-api.npcat.json`; `--check` rc 0 "up to date"; with `--exclude "Fixture.Geometry.*"` `--check` rc 1 "stale".
+- 4 `CrossFlavorSnapshotTests` 5/5; 5 `MultiExtension` namespace 60/60; 6 `PublicAPI.Shipped.txt` 1252 lines, `PublicApiTrackingTests` plus `ExperimentalApiTests` 24/24; 7 schemas and docs above, packages in T119.
+
+Quickstart fixes (doc only, behaviour is right):
+
+1. `run` needs `Configuration=Release`: `samples/Directory.Build.props` imports the generator from `bin/$(Configuration)`, and CI sets the same variable. Added to the doc.
+2. The multi-extension filter `-trait 'Category=MultiExtension'` ran 0 tests (there is no such trait); replaced with `-namespace 'NetPrints.Tests.Extensibility.MultiExtension'`.
+3. Local environment, not a doc bug: the ignored legacy `samples/HelloWorld/Compiled_HelloWorld/HelloWorld/Program.cs` is globbed by the sample project and makes `run` fail with CS0101 on a developer machine that has it (a fresh checkout and CI do not). Left untouched as instructed; the run above used `DefaultItemExcludes='Compiled_*/**'`.
+
+### T119 release dry run
+
+`scripts/pack-local.sh --print-version` packed version `0.1.0-local.20261001033443` into `local-packages/` (git-ignored; Annotations, Catalog, Cli, Core, Reflection, Sdk and the snupkgs); `scripts/verify-packages.sh local-packages 0.1.0-local.20261001033443`: "all checks passed" (it asserts `NetPrints.Annotations` and `NetPrints.Catalog` nupkg/snupkg). Nothing pushed, tagged or published. `git status samples/` clean.
+
+### T120 whole suite and gates
+
+- `dotnet build NetPrints.slnx -c Release --no-incremental`: 0 warnings, 0 errors.
+- `dotnet test --solution NetPrints.slnx -c Release --no-build -- --ignore-exit-code 8`: total 1723, failed 0, succeeded 1713, skipped 10 (3 Editor.UITests capability skips, the Desktop E2E self-skips without `NETPRINTS_E2E=1`). 5m 24s.
+- `NETPRINTS_E2E=1 dotnet test --project tests/NetPrints.Desktop.E2ETests -c Release --no-build -- --fail-skips on`: total 9, failed 0, skipped 0 (2m 31s).
+- `dotnet format NetPrints.slnx --verify-no-changes`: exit 0.
+- `dotnet format analyzers --severity info --verify-no-changes --include <281 changed .cs files>`: exit 2, 946 distinct info-level hits, no warning or error. Roughly 650 are test code (VSTHRD111, VSTHRD103, S6966, IDISP*), which `.editorconfig` sets to `suggestion` on purpose (ADR-0003 pending clean-up); 29 are in `tests/Fixtures`, deliberately sloppy fixture libraries. In `src/` 67 remain: S3267, S3358, S1075, S127, S3218, S2325, S2306, S8949 are `suggestion` in `.editorconfig`; the CA hits (CA1859, CA1854, CA1822, CA1846, CA1834, CA1865, CA2249) are performance and readability defaults. `NetPrints.Catalog` is compiled into the netstandard2.0 generator, where `string.Contains(char)` and `IndexOf(char)` overloads do not exist, so CA1865/CA2249 there are not applicable. None is a correctness finding; left as is and recorded here.
+
+### Checkpoint H
+
+| SC | Evidence |
+|---|---|
+| SC-001 | `CliExitCodeTests.EveryCommandsHelpExitsZero` (`--help`, `-h`, `--version`, every command's `--help`); each exit code has a test in `CliExitCodeTests`; CI "CLI smoke" step; quickstart section 1 (this batch); first reported in Checkpoint C (lines 185-190) and F (T098 coverage of nine commands) |
+| SC-002 | CI "CLI sample compile and run" greps `Hello, World!`, CI "Graph checks" runs `regen --check` and `format --check`; `FormatCommandTests`, `TheCheckedInSamplesAreCanonical`; Checkpoint C "SC-002 evidence" (scratch repo run); quickstart sections 1 and 2 (this batch) |
+| SC-003 | `CrossFlavorSnapshotTests` (AN-T13, 5/5 in this batch) for `public-api`, `annotated`, `fixture-flags`; Checkpoint E |
+| SC-004 | `ParityTests` (CT-T08) 0 differences; `CatalogCommandTests` CT-T11 equals the committed snapshot; Checkpoint D |
+| SC-005 | Extension path: `ExtensionCatalogTests` (prints `10`) and `CatalogSearchTests`; embedded path: `AnnotatedLibraryBuildTests` (Core.Tests/Samples) and `EmbeddedCatalogDiscoveryTests` (Editor.Tests); Checkpoints D and E; all in the 1723-test run |
+| SC-006 | `CatalogPerformanceTests` (CT-T17): fixture 0.05 s, `System.Runtime` 0.63 s against 5 s and 30 s limits (Checkpoint D); passed again in this batch's suite |
+| SC-007 | `MultiExtension` namespace 60/60 (this batch): MX-T09 and MX-T14 (24 orders byte-identical, 50 extensions); also in the PR CI run; Checkpoint G |
+| SC-008 | MX-T02 (private-prefix dependency loads and runs), MX-T04 (type identity across contexts), `Samples/MultiExtensionBuildTests`; Checkpoint G and Review G |
+| SC-009 | `GraphMergerTests` GI-T03 to GI-T08, GI-T12 and the end-to-end git test `GitDriversEndToEndTests`; Checkpoint F |
+| SC-010 | `GitInstallCommandTests` (11), second run `already installed:`; quickstart section 2 (this batch) |
+| SC-011 | `PublicApiTrackingTests` and `ExperimentalApiTests` 24/24 (this batch), `SourceHygieneTests`; `PublicAPI.Shipped.txt` 1252 lines; Checkpoint B and Review B |
+| SC-012 | `scripts/build-docs.sh` exit 0 with `onBrokenLinks: 'throw'`, three `cmp` equal (this batch); the CI docs workflow builds the same script on the PR |
+| SC-013 | `pack-local.sh` + `verify-packages.sh` pass for version `0.1.0-local.20261001033443`, Annotations and Catalog included, nothing published (this batch) |
+
+Suite at this checkpoint: 1723 total, 0 failed, 10 skipped; E2E 9 of 9.
+
+### Governance proposals (for the coordinator and owner; no `.specify/memory/*` file was edited)
+
+- Roadmap: P1 row to merged (PR #6, `cc96a93`, released `v0.1.0`/`v0.1.1`); P2 row to "implemented, PR #9 in review" (was "spec ready"); the P2 ADR bullet to "ADR-0010 accepted" plus ADR-0012 to 0017 (catalog engine and schema, declarative profiles, Annotations package, CLI and exit codes, git integration, per-id experimental opt-in); the P3 kit bullet to "internal harness landed in P2 (ADR-0010 section 5)"; the P1 follow-up "in-editor visual diff" to P6.
+- Constitution: no change needed.
+- Follow-ups from R27 stay as recorded (P6 visual diff, P3 conformance kit, catalog compression P8, schema migrations at the first v2, collectible contexts only if hot reload is scheduled, Windows leg for the native fixture). Added by this batch: clean the info-level analyzer backlog in test code (ADR-0003 pending clean-up), and give the sample project an `EnableDefaultCompileItems` exclusion or move legacy `Compiled_*` output out of the sample directory.

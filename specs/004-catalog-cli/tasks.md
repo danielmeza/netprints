@@ -624,15 +624,15 @@ SC-013.
 
 ### Batch H1 — model: sonnet — T117–T121 — 5 units
 
-- [ ] T117 `scripts/build-docs.sh`: 0 broken links; `website/build/schemas/` holds `netpc.v1`, `npcat.v1` and
+- [x] T117 `scripts/build-docs.sh`: 0 broken links; `website/build/schemas/` holds `netpc.v1`, `npcat.v1` and
   `netprints.catalog.v1` byte-identical to `schemas/` (SC-012); `docs/adr/README.md` lists 0010 and 0012–0016.
-- [ ] T118 Run `specs/004-catalog-cli/quickstart.md` end to end; record the output summary in implementation-notes.md.
-- [ ] T119 Release dry run locally (`scripts/pack-local.sh`, `scripts/verify-packages.sh`; SC-013); `git status
+- [x] T118 Run `specs/004-catalog-cli/quickstart.md` end to end; record the output summary in implementation-notes.md.
+- [x] T119 Release dry run locally (`scripts/pack-local.sh`, `scripts/verify-packages.sh`; SC-013); `git status
   samples/` clean.
-- [ ] T120 Whole suite in Release plus the Desktop E2E run (AGENTS.md two-run split); `dotnet build -c Release` 0
+- [x] T120 Whole suite in Release plus the Desktop E2E run (AGENTS.md two-run split); `dotnet build -c Release` 0
   warnings; `dotnet format NetPrints.slnx --verify-no-changes`; `dotnet format analyzers --severity info
   --verify-no-changes` over the changed files.
-- [ ] T121 **Checkpoint H**: SC-001…SC-013 table with evidence in implementation-notes.md, governance proposals
+- [x] T121 **Checkpoint H**: SC-001…SC-013 table with evidence in implementation-notes.md, governance proposals
   (plan.md), mark the PR ready for the final review (T122).
 
 ### Batch H-R — model: opus — T122 (final PR review)
