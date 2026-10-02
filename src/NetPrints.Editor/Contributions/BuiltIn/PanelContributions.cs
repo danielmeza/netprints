@@ -1,4 +1,7 @@
+using NetPrints.Editor.CodeView;
+using NetPrints.Editor.ErrorList;
 using NetPrints.Editor.Inspectors;
+using NetPrints.Editor.Output;
 using NetPrints.Editor.ProjectTree;
 using NetPrints.Editor.Shell;
 
@@ -25,18 +28,15 @@ public static class PanelContributions
     private const int Second = 1;
     private const int Third = 2;
 
-    /// <summary>Registers the built-in panels; each shows a placeholder until its own view model replaces the factory.</summary>
+    /// <summary>Registers the built-in panels; each creates its own view model.</summary>
     /// <param name="registry">The registry to add to.</param>
     public static void Register(IContributionRegistry registry)
     {
         ArgumentNullException.ThrowIfNull(registry);
         registry.AddPanel(new PanelDescriptor(ProjectTreeId, "Project", _ => new ProjectTreePanelViewModel(), PanelDock.Left, 0, "FileTree"));
         registry.AddPanel(new PanelDescriptor(InspectorId, "Inspector", _ => new InspectorPanelViewModel(), PanelDock.Right, 0, "Tune"));
-        Add(registry, ErrorsId, "Errors", PanelDock.Bottom, 0, "AlertCircleOutline");
-        Add(registry, OutputId, "Output", PanelDock.Bottom, Second, "Console");
-        Add(registry, CSharpId, "C#", PanelDock.Bottom, Third, "LanguageCsharp");
+        registry.AddPanel(new PanelDescriptor(ErrorsId, "Errors", _ => new ErrorsPanelViewModel(), PanelDock.Bottom, 0, "AlertCircleOutline"));
+        registry.AddPanel(new PanelDescriptor(OutputId, "Output", _ => new OutputPanelViewModel(), PanelDock.Bottom, Second, "Console"));
+        registry.AddPanel(new PanelDescriptor(CSharpId, "C#", _ => new CSharpPanelViewModel(), PanelDock.Bottom, Third, "LanguageCsharp"));
     }
-
-    private static void Add(IContributionRegistry registry, string id, string title, PanelDock dock, int order, string icon) =>
-        registry.AddPanel(new PanelDescriptor(id, title, _ => new PanelPlaceholderViewModel(title), dock, order, icon));
 }

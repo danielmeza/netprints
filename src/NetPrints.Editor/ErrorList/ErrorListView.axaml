@@ -1,0 +1,39 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:ederrorlist="clr-namespace:NetPrints.Editor.ErrorList"
+             x:Class="NetPrints.Editor.ErrorList.ErrorListView"
+             x:DataType="ederrorlist:ErrorListViewModel">
+  <!-- One class's diagnostics; double-click or Enter on a row opens its graph and selects its node. -->
+  <DockPanel>
+    <TextBlock DockPanel.Dock="Top" Margin="8,4" Text="{Binding Header}" />
+    <ListBox x:Name="Rows" ItemsSource="{Binding Rows}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ErrorsList}">
+      <Interaction.Behaviors>
+        <KeyTrigger Key="Enter" EventRoutingStrategy="Tunnel">
+          <InvokeCommandAction Command="{Binding NavigateCommand}" CommandParameter="{Binding #Rows.SelectedItem}" />
+        </KeyTrigger>
+      </Interaction.Behaviors>
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="ederrorlist:DiagnosticRowViewModel">
+          <StackPanel Orientation="Horizontal" Spacing="8" Background="Transparent"
+                      AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ErrorsRow}">
+            <Interaction.Behaviors>
+              <ExecuteCommandOnDoubleTappedBehavior
+                Command="{Binding $parent[UserControl].((ederrorlist:ErrorListViewModel)DataContext).NavigateCommand}"
+                CommandParameter="{Binding}" />
+            </Interaction.Behaviors>
+            <mi:MaterialIcon Width="16" Height="16" VerticalAlignment="Center"
+                             Kind="{Binding Severity, Converter={x:Static ederrorlist:SeverityIconConverter.Instance}}"
+                             Classes.error="{Binding IsError}" Classes.warning="{Binding IsWarning}" Classes.info="{Binding IsInfo}"
+                             AutomationProperties.Name="{Binding Severity}" />
+            <TextBlock Text="{Binding Id}" FontWeight="SemiBold" />
+            <TextBlock Text="{Binding Message}" />
+            <TextBlock Text="{Binding ClassFullName}" FontStyle="Italic" />
+            <TextBlock Text="{Binding MemberName}" FontStyle="Italic" />
+          </StackPanel>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+  </DockPanel>
+</UserControl>

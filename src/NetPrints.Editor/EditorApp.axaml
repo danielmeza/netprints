@@ -6,6 +6,9 @@
              xmlns:edgraph="clr-namespace:NetPrints.Editor.Graph"
              xmlns:shell="clr-namespace:NetPrints.Editor.Shell"
              xmlns:edinspectors="clr-namespace:NetPrints.Editor.Inspectors"
+             xmlns:edcode="clr-namespace:NetPrints.Editor.CodeView"
+             xmlns:ederrorlist="clr-namespace:NetPrints.Editor.ErrorList"
+             xmlns:edoutput="clr-namespace:NetPrints.Editor.Output"
              xmlns:edtree="clr-namespace:NetPrints.Editor.ProjectTree"
              x:Class="NetPrints.Editor.EditorApp"
              Name="NetPrints"
@@ -39,8 +42,14 @@
     <DataTemplate DataType="edinspectors:InspectorPanelViewModel" x:DataType="edinspectors:InspectorPanelViewModel">
       <edinspectors:InspectorPanelView />
     </DataTemplate>
-    <DataTemplate DataType="shell:PanelPlaceholderViewModel" x:DataType="shell:PanelPlaceholderViewModel">
-      <TextBlock Text="{Binding Message}" Margin="8" TextWrapping="Wrap" />
+    <DataTemplate DataType="ederrorlist:ErrorsPanelViewModel" x:DataType="ederrorlist:ErrorsPanelViewModel">
+      <ederrorlist:ErrorsPanelView />
+    </DataTemplate>
+    <DataTemplate DataType="edoutput:OutputPanelViewModel" x:DataType="edoutput:OutputPanelViewModel">
+      <edoutput:OutputPanelView />
+    </DataTemplate>
+    <DataTemplate DataType="edcode:CSharpPanelViewModel" x:DataType="edcode:CSharpPanelViewModel">
+      <edcode:CSharpPanelView />
     </DataTemplate>
   </Application.DataTemplates>
   <Application.Styles>

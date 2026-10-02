@@ -1,9 +1,12 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Core;
+using NetPrints.Editor.CodeView;
 using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Contributions.BuiltIn;
+using NetPrints.Editor.ErrorList;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Inspectors;
+using NetPrints.Editor.Output;
 using NetPrints.Editor.ProjectTree;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.Tests.Hosting;
@@ -24,8 +27,10 @@ public sealed class ShellPanelRig : IAsyncDisposable
         public object? GetService(Type serviceType) => null;
     }
 
-    public ShellPanelRig()
+    public ShellPanelRig(Func<EditorContext, EditorContext>? configure = null)
     {
+        EditorContext hostContext = configure?.Invoke(editor.Context) ?? editor.Context;
+        Context = hostContext;
         var registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
         BuiltInContributions.Register(registry);
         registry.Freeze();
@@ -34,7 +39,7 @@ public sealed class ShellPanelRig : IAsyncDisposable
         Provider = new ShellCommandContextProvider(Shell, Api);
         Invoker = new CommandInvoker(registry, Provider, exception => Faults.Add(exception));
         Shell.AttachCommands(Invoker);
-        Shell.AttachPanels(Api, Invoker, editor.Context);
+        Shell.AttachPanels(Api, Invoker, hostContext);
     }
 
     public ContributionRegistry Registry { get; }
@@ -49,9 +54,17 @@ public sealed class ShellPanelRig : IAsyncDisposable
 
     public List<Exception> Faults { get; } = [];
 
-    public EditorContext Context => editor.Context;
+    public EditorContext Context { get; }
+
+    public FakeProcessLauncher Processes => editor.Processes;
 
     public ProjectTreePanelViewModel Tree => Assert.IsType<ProjectTreePanelViewModel>(Shell.FindPanel(PanelContributions.ProjectTreeId)?.Content);
+
+    public ErrorsPanelViewModel Errors => Assert.IsType<ErrorsPanelViewModel>(Shell.FindPanel(PanelContributions.ErrorsId)?.Content);
+
+    public OutputPanelViewModel Output => Assert.IsType<OutputPanelViewModel>(Shell.FindPanel(PanelContributions.OutputId)?.Content);
+
+    public CSharpPanelViewModel CSharp => Assert.IsType<CSharpPanelViewModel>(Shell.FindPanel(PanelContributions.CSharpId)?.Content);
 
     public InspectorPanelViewModel Inspector => Assert.IsType<InspectorPanelViewModel>(Shell.FindPanel(PanelContributions.InspectorId)?.Content);
 

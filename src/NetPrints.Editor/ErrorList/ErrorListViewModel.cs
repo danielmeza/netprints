@@ -43,6 +43,7 @@ public sealed partial class ErrorListViewModel : ObservableObject, IDisposable
 
         EnsureProjectSubscription();
         subscription = codeAnalysis.Snapshots.Subscribe(OnSnapshot);
+        Refresh();
     }
 
     /// <summary>Every diagnostic row of the open class, live analysis first then the last build's.</summary>

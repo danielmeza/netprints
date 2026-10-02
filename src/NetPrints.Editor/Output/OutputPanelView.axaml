@@ -1,0 +1,19 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:edoutput="clr-namespace:NetPrints.Editor.Output"
+             x:Class="NetPrints.Editor.Output.OutputPanelView"
+             x:DataType="edoutput:OutputPanelViewModel">
+  <!-- The build output, then the program's stdout and stderr; the list follows the newest line. -->
+  <ListBox ItemsSource="{Binding Lines}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.OutputLines}">
+    <Interaction.Behaviors>
+      <AutoScrollToBottomBehavior />
+    </Interaction.Behaviors>
+    <ListBox.ItemTemplate>
+      <DataTemplate x:DataType="edoutput:OutputLineViewModel">
+        <TextBlock Text="{Binding Text}" FontFamily="monospace" Classes.outputError="{Binding IsError}"
+                   AutomationProperties.AutomationId="{x:Static ed:AutomationIds.OutputLine}" />
+      </DataTemplate>
+    </ListBox.ItemTemplate>
+  </ListBox>
+</UserControl>

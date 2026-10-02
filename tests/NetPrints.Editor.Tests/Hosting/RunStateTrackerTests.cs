@@ -33,6 +33,21 @@ public class RunStateTrackerTests
     }
 
     [Fact]
+    public void LineAppendedReportsTheKeptLinesOfTheCurrentRunOnly()
+    {
+        using var tracker = new RunStateTracker(launcher);
+        List<RunOutputLine> lines = [];
+        tracker.LineAppended += (_, line) => lines.Add(line);
+
+        launcher.Start(Request, TestContext.Current.CancellationToken);
+        launcher.RaiseLine(ProcessStream.Output, "out");
+        launcher.RaiseLine(ProcessStream.Error, "err");
+        launcher.RaiseLine(ProcessStream.Output, "stale", id: launcher.LastId + 1);
+
+        Assert.Equal([new RunOutputLine(ProcessStream.Output, "out"), new RunOutputLine(ProcessStream.Error, "err")], lines);
+    }
+
+    [Fact]
     public void StartsNotStarted()
     {
         using var tracker = new RunStateTracker(launcher);

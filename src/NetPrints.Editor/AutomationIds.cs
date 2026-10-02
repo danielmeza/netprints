@@ -599,4 +599,32 @@ public static class AutomationIds
     /// Automation id for the inspector panel's empty-state text.
     /// </summary>
     public const string InspectorEmpty = "Inspector.Empty";
+    /// <summary>
+    /// Automation id for the Errors panel's list of rows.
+    /// </summary>
+    public const string ErrorsList = "Errors.List";
+    /// <summary>
+    /// Automation id for the Errors panel's empty-state text.
+    /// </summary>
+    public const string ErrorsEmpty = "Errors.Empty";
+    /// <summary>
+    /// Automation id for the Output panel's list of lines.
+    /// </summary>
+    public const string OutputLines = "Output.Lines";
+    /// <summary>
+    /// Automation id for the C# panel's code view.
+    /// </summary>
+    public const string CSharpCode = "CSharp.Code";
+    /// <summary>
+    /// Automation id for the C# panel's empty-state text.
+    /// </summary>
+    public const string CSharpEmpty = "CSharp.Empty";
+    /// <summary>
+    /// Automation id for a row of the Errors panel.
+    /// </summary>
+    public const string ErrorsRow = "Errors.Row";
+    /// <summary>
+    /// Automation id for a line of the Output panel.
+    /// </summary>
+    public const string OutputLine = "Output.Line";
 }

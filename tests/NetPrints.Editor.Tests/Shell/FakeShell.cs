@@ -29,6 +29,9 @@ public sealed class FakeShell : IShell
     /// <inheritdoc/>
     public DocumentId? ActiveDocument { get; private set; }
 
+    /// <summary>Gets or sets what runs after <see cref="OpenDocument"/> opened or activated a document, in place of the layout creating its view model.</summary>
+    public Action<DocumentId>? Opened { get; set; }
+
     /// <inheritdoc/>
     public bool IsPanelVisible(string panelId) => VisiblePanels.Contains(panelId);
 
@@ -45,6 +48,7 @@ public sealed class FakeShell : IShell
         }
 
         ActiveDocument = id;
+        Opened?.Invoke(id);
     }
 
     /// <inheritdoc/>

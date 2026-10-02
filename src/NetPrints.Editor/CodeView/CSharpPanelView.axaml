@@ -1,0 +1,15 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:edcode="clr-namespace:NetPrints.Editor.CodeView"
+             x:Class="NetPrints.Editor.CodeView.CSharpPanelView"
+             x:DataType="edcode:CSharpPanelViewModel">
+  <!-- The generated C# of the active document's class. -->
+  <Panel>
+    <TextBlock Margin="8" TextWrapping="Wrap" Text="Open a graph to see the C# of its class."
+               IsVisible="{Binding Current, Converter={x:Static ObjectConverters.IsNull}}"
+               AutomationProperties.AutomationId="{x:Static ed:AutomationIds.CSharpEmpty}" />
+    <edcode:CodeView DataContext="{Binding Current}" IsVisible="{Binding $self.DataContext, Converter={x:Static ObjectConverters.IsNotNull}}"
+                     AutomationProperties.AutomationId="{x:Static ed:AutomationIds.CSharpCode}" />
+  </Panel>
+</UserControl>

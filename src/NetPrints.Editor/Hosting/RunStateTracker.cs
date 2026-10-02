@@ -34,6 +34,9 @@ public sealed class RunStateTracker : IDisposable
     /// <summary>Raised, from the thread that caused it and outside the tracker's lock, after <see cref="RunStateSnapshot.Phase"/> changed.</summary>
     public event EventHandler? PhaseChanged;
 
+    /// <summary>Raised, from the thread that read the line and outside the tracker's lock, after a line of the current run was kept.</summary>
+    public event EventHandler<RunOutputLine>? LineAppended;
+
     /// <summary>A compile began: forgets the previous run.</summary>
     public void BuildStarted()
     {
@@ -103,6 +106,7 @@ public sealed class RunStateTracker : IDisposable
 
     private void OnLine(int id, ProcessStream stream, string line)
     {
+        bool kept = false;
         lock (gate)
         {
             if (phase != RunPhase.Running || id != currentId)
@@ -116,6 +120,13 @@ public sealed class RunStateTracker : IDisposable
             {
                 tail.Dequeue();
             }
+
+            kept = true;
+        }
+
+        if (kept)
+        {
+            LineAppended?.Invoke(this, new RunOutputLine(stream, line));
         }
     }
 

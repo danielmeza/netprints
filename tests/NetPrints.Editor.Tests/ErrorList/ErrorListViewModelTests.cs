@@ -50,6 +50,20 @@ public sealed class ErrorListViewModelTests
     }
 
     [Fact]
+    public void ARowListIsFilledFromTheLastBuildAtOnceNotOnlyAfterTheNextSnapshot()
+    {
+        using var host = new FakeCodeAnalysisHost();
+        var project = Project.FromSnapshot(TestSnapshots.Empty("P", "N"));
+        var cls = new ClassGraph { Namespace = "N", Name = "C", Project = project };
+        project.LastDiagnostics = new ObservableRangeCollection<CodeDiagnostic>([Diagnostic(CodeDiagnosticSeverity.Error, "CS0001")]);
+
+        using var vm = new ErrorListViewModel(cls, host, new StrongReferenceMessenger());
+
+        Assert.Equal(["CS0001"], vm.Rows.Select(row => row.Id));
+        Assert.Equal(1, vm.ErrorCount);
+    }
+
+    [Fact]
     public void HeaderStaysAtZeroCountsBeforeAnySnapshot()
     {
         using var host = new FakeCodeAnalysisHost();
