@@ -1,7 +1,7 @@
 using Avalonia.Headless.XUnit;
 using NetPrints.Core;
 using NetPrints.Editor.Graph;
-using NetPrints.Editor.UITests.ClassEditor;
+using NetPrints.Editor.UITests.Shell;
 using NetPrints.Graph;
 using NetPrints.Testing.Ui.Driving;
 
@@ -82,7 +82,7 @@ public class CanvasPopupPositioningTests
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var editorBounds = (await session.Graph.GetAsync(Token)).Bounds;
 
-        await session.PickMainFromTheMethodListAsync(Token);
+        await session.PickMainFromTheTreeAsync(Token);
 
         // No selection: falls back to the canvas center; no click, the opened graph has the focus.
         await session.Driver.PressAsync("Ctrl+Space", Token);
@@ -111,7 +111,7 @@ public class CanvasPopupPositioningTests
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var editorBounds = (await session.Graph.GetAsync(Token)).Bounds;
-        var clientSize = session.ClassWindow.ClientSize;
+        var clientSize = session.Window.ClientSize;
         var at = await session.Graph.OffsetAsync(editorBounds.Width - 10, editorBounds.Height - 10, Token);
 
         await session.Driver.ClickAsync(at, UiButton.Right, 1, Token);

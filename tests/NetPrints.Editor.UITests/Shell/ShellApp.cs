@@ -77,6 +77,8 @@ internal sealed class ShellApp : IAsyncDisposable
 
     public CommandInvoker Commands => Composition.Commands ?? throw new InvalidOperationException("No shell.");
 
+    public SampleCopy Sample => sample;
+
     public string ProjectPath => sample.ProjectPath;
 
     public InspectorPanelViewModel Inspector => Assert.IsType<InspectorPanelViewModel>(Shell.FindPanel(PanelContributions.InspectorId)?.Content);

@@ -1,92 +1,17 @@
 using Avalonia.Controls;
-using NetPrints.Core;
-using NetPrints.Editor.ClassEditor;
-using NetPrints.Editor.Hosting;
-using NetPrints.Editor.Main;
 
 namespace NetPrints.Editor.Hosting.Avalonia;
 
 /// <summary>
-/// Registry of class editor windows keyed by class (PAR-11, PAR-14, PAR-22).
+/// Holds the main window, which owns dialogs and pickers, and closes it on request.
 /// </summary>
 public sealed class WindowService : IWindowService
 {
-    private readonly Dictionary<ClassGraph, ClassEditorWindow> windows = new(ReferenceEqualityComparer.Instance);
-
-    /// <summary>The main window (owner of dialogs when no class window is active).</summary>
+    /// <summary>The main window (owner of dialogs and pickers).</summary>
     public Window? MainWindow { get; set; }
 
-    /// <summary>The active window, used as dialog owner and for pickers.</summary>
-    public Window? ActiveWindow =>
-        windows.Values.FirstOrDefault(w => w.IsActive) as Window ?? (MainWindow?.IsActive == true ? MainWindow : null)
-        ?? MainWindow ?? windows.Values.FirstOrDefault();
-
-    /// <summary>Every currently open class editor window.</summary>
-    public IReadOnlyCollection<ClassEditorWindow> ClassEditorWindows => windows.Values;
-
-    /// <inheritdoc/>
-    public bool TryActivateClassEditor(ClassGraph cls)
-    {
-        if (!windows.TryGetValue(cls, out var window))
-        {
-            return false;
-        }
-
-        if (!window.IsVisible)
-        {
-            window.Show();
-        }
-
-        if (window.WindowState == WindowState.Minimized)
-        {
-            window.WindowState = WindowState.Normal;
-        }
-
-        window.Activate();
-        return true;
-    }
-
-    /// <inheritdoc/>
-    public void OpenClassEditor(ClassGraph cls, EditorContext context)
-    {
-        var editor = new ClassEditorViewModel(cls, context);
-        var window = new ClassEditorWindow
-        {
-            DataContext = editor,
-            WindowState = WindowState.Maximized,
-        };
-
-        window.Closed += (_, _) =>
-        {
-            windows.Remove(editor.Class);
-            editor.Dispose();
-        };
-
-        windows[editor.Class] = window;
-        window.Show();
-    }
-
-    /// <inheritdoc/>
-    public ClassEditorViewModel? FindClassEditor(ClassGraph cls) =>
-        windows.TryGetValue(cls, out var window) ? (ClassEditorViewModel?)window.DataContext : null;
-
-    /// <inheritdoc/>
-    public void CloseClassEditor(ClassGraph cls)
-    {
-        if (windows.TryGetValue(cls, out var window))
-        {
-            window.Close();
-        }
-    }
-
-    /// <inheritdoc/>
-    public void CloseAllClassEditors()
-    {
-        foreach (var window in windows.Values.ToList())
-        {
-            window.Close();
-        }
-    }
+    /// <summary>The window to own dialogs and pickers.</summary>
+    public Window? ActiveWindow => MainWindow;
 
     /// <inheritdoc/>
     public void CloseMainWindow() => MainWindow?.Close();

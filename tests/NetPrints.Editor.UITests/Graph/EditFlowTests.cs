@@ -1,7 +1,8 @@
 using Avalonia.Headless.XUnit;
 using NetPrints.Core;
-using NetPrints.Editor.UITests.ClassEditor;
+using NetPrints.Editor.UITests.Shell;
 using NetPrints.Graph;
+using NetPrints.Testing.Ui.Shell;
 
 namespace NetPrints.Editor.UITests.Graph;
 
@@ -29,7 +30,7 @@ public class EditFlowTests
         double x = method.Nodes.OfType<IfElseNode>().Single().PositionX;
 
         var before = LastWrite(session.Sample.Directory);
-        await session.ClassEditor.SaveButton.ClickAsync(Token);
+        await session.Page.Menu.InvokeAsync("File", ShellCommands.Save, Token);
         await Testing.Ui.Driving.UiWait.UntilAsync(session.Driver, () => Task.FromResult(LastWrite(session.Sample.Directory) > before), "saved", Token);
 
         var reloaded = (await session.App.Composition.Context.Persistence.LoadAsync(session.Sample.ProjectPath, Token)).Project;

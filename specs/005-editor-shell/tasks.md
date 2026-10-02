@@ -400,7 +400,7 @@ US2's independent test; SC-001.
   `MinimizeAndRestoreClassWindowTests`: float a graph, edit, undo, save, dock it back; a floated pane closed with the
   OS close button docks back. `ResetLayoutTests`. `EditCompileAndRunTests` and `ShutdownTests` run on the shell. If
   `EditCompileAndRun` fails, its T004 diagnostics go into implementation-notes and the cause is fixed here (issue #11).
-- [ ] T044 [US2] Remove the old windows, only after T043 is green: `src/NetPrints.Editor/Main/MainWindow.*` and
+- [x] T044 [US2] Remove the old windows, only after T043 is green: `src/NetPrints.Editor/Main/MainWindow.*` and
   `MainEditorViewModel` (their remaining duties moved to `ShellViewModel`, `ProjectSessionViewModel` and the handlers),
   `src/NetPrints.Editor/ClassEditor/ClassEditorWindow.*` and `ClassEditorViewModel` (lists to the tree, inspectors to
   the inspector panel), the old page objects (`tests/NetPrints.Testing.Ui/Main/MainWindowPage.cs`,

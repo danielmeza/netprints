@@ -1,6 +1,9 @@
+using CommunityToolkit.Mvvm.Messaging;
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
+using NetPrints.Editor.Shell;
 using NetPrints.Editor.Tests.Hosting;
+using NetPrints.Editor.UndoRedo;
 using NetPrints.Editor.Variables;
 using NetPrints.Graph;
 
@@ -8,13 +11,13 @@ namespace NetPrints.Editor.Tests.Variables;
 
 public class MemberVariableViewModelTests : IDisposable
 {
-    private readonly ClassEditorViewModel vm;
+    private readonly ClassContext vm;
     private readonly ClassGraph cls;
 
     public MemberVariableViewModelTests(TestEditor editor)
     {
         cls = new ClassGraph { Name = "C", Namespace = "N" };
-        vm = new ClassEditorViewModel(cls, editor.Context);
+        vm = new ClassContext(cls, editor.Context, new UndoRedoStack());
     }
 
     public void Dispose() => vm.Dispose();
@@ -22,20 +25,20 @@ public class MemberVariableViewModelTests : IDisposable
     [Fact]
     public void CreateVariableUniqueObjectUndoable()
     {
-        vm.CreateVariableCommand.Execute(null);
-        vm.CreateVariableCommand.Execute(null);
+        vm.CreateVariable();
+        vm.CreateVariable();
 
         Assert.Equal(new[] { "Variable", "Variable2" }, vm.Variables.Select(v => v.Name).ToArray());
         Assert.True(vm.Variables.All(v => v.Type == TypeSpecifier.FromType<object>()));
 
-        vm.UndoCommand.Execute(null);
+        vm.UndoRedo.Undo();
         Assert.Equal(1, vm.Variables.Count());
     }
 
     [Fact]
     public void GetterAndSetterAreCreatedWithTypedPinsAndUndoable()
     {
-        vm.CreateVariableCommand.Execute(null);
+        vm.CreateVariable();
         var variable = vm.Variables.Single();
 
         variable.AddGetterCommand.Execute(null);
@@ -53,55 +56,65 @@ public class MemberVariableViewModelTests : IDisposable
 
         variable.RemoveSetterCommand.Execute(null);
         Assert.False(variable.HasSetter);
-        vm.UndoCommand.Execute(null);
+        vm.UndoRedo.Undo();
         Assert.Same(setter, variable.Setter);
 
         variable.RemoveGetterCommand.Execute(null);
         Assert.False(variable.HasGetter);
-        vm.UndoCommand.Execute(null);
+        vm.UndoRedo.Undo();
         Assert.True(variable.HasGetter);
     }
 
     [Fact]
-    public void OpenGetterSetterAndTypeGraphs()
+    public void OpenGetterSetterAndTypeGraphsSendTheirGraphsToTheContext()
     {
-        vm.CreateVariableCommand.Execute(null);
+        vm.CreateVariable();
         var variable = vm.Variables.Single();
         variable.AddGetterCommand.Execute(null);
         variable.AddSetterCommand.Execute(null);
+        var opened = new List<NodeGraph>();
+        vm.Messenger.Register<List<NodeGraph>, OpenGraphMessage>(opened, (list, message) => list.Add(message.Graph));
 
         variable.OpenGetterCommand.Execute(null);
-        Assert.Same(variable.Getter, vm.OpenedGraph?.Graph);
         variable.OpenSetterCommand.Execute(null);
-        Assert.Same(variable.Setter, vm.OpenedGraph?.Graph);
         variable.OpenTypeGraphCommand.Execute(null);
-        Assert.Same(variable.Variable.TypeGraph, vm.OpenedGraph?.Graph);
 
-        // Removing the getter closes its graph.
-        variable.OpenGetterCommand.Execute(null);
-        variable.RemoveGetterCommand.Execute(null);
-        Assert.Null(vm.OpenedGraph);
+        Assert.Equal(3, opened.Count);
+        Assert.Same(variable.Getter, opened[0]);
+        Assert.Same(variable.Setter, opened[1]);
+        Assert.Same(variable.Variable.TypeGraph, opened[2]);
     }
 
     [Fact]
-    public void RemoveVariableIsUndoableAndClearsInspector()
+    public void RemoveVariableIsUndoable()
     {
-        vm.CreateVariableCommand.Execute(null);
+        vm.CreateVariable();
         var variable = vm.Variables.Single();
-        variable.SelectCommand.Execute(null);
 
         variable.RemoveCommand.Execute(null);
 
         Assert.Empty(vm.Variables);
-        Assert.Equal(InspectorKind.Class, vm.Inspector);
-        vm.UndoCommand.Execute(null);
+        vm.UndoRedo.Undo();
         Assert.Same(variable.Variable, vm.Variables.Single().Variable);
+    }
+
+    [Fact]
+    public void SelectingARowSendsAnInspectorSelectionToTheContext()
+    {
+        vm.CreateVariable();
+        var variable = vm.Variables.Single();
+        var selected = new List<MemberVariableViewModel>();
+        vm.Messenger.Register<List<MemberVariableViewModel>, SelectInspectorMessage>(selected, (list, message) => list.Add(message.Target));
+
+        variable.SelectCommand.Execute(null);
+
+        Assert.Same(variable, Assert.Single(selected));
     }
 
     [Fact]
     public void VariableInspectorEditsModelAndAccessorVisibility()
     {
-        vm.CreateVariableCommand.Execute(null);
+        vm.CreateVariable();
         var variable = vm.Variables.Single();
         variable.AddGetterCommand.Execute(null);
 
@@ -118,53 +131,5 @@ public class MemberVariableViewModelTests : IDisposable
         Assert.Equal(MemberVisibility.Public, variable.Getter!.Visibility);
         Assert.Contains(nameof(MemberVariableViewModel.Name), changed);
         Assert.Contains(nameof(MemberVariableViewModel.IsStatic), changed);
-    }
-
-    [Fact]
-    public void UndoOfAddVariableClearsItsInspector()
-    {
-        vm.CreateVariableCommand.Execute(null);
-        vm.Variables.Single().SelectCommand.Execute(null);
-        Assert.True(vm.ShowVariableInspector);
-
-        vm.UndoCommand.Execute(null);
-
-        Assert.Empty(cls.Variables);
-        Assert.Null(vm.SelectedVariable);
-        Assert.False(vm.ShowVariableInspector);
-        Assert.Equal(InspectorKind.Class, vm.Inspector);
-    }
-
-    [Fact]
-    public void UndoOfAddVariableClosesItsGraphs()
-    {
-        vm.CreateVariableCommand.Execute(null);
-        vm.Variables.Single().OpenTypeGraphCommand.Execute(null);
-        Assert.NotNull(vm.OpenedGraph);
-
-        vm.UndoCommand.Execute(null);
-
-        Assert.Null(vm.OpenedGraph);
-    }
-
-    [Fact]
-    public void UndoOfAddGetterOrSetterClosesTheAccessorGraph()
-    {
-        vm.CreateVariableCommand.Execute(null);
-        var variable = vm.Variables.Single();
-
-        variable.AddGetterCommand.Execute(null);
-        variable.OpenGetterCommand.Execute(null);
-        Assert.Same(variable.Getter, vm.OpenedGraph?.Graph);
-        vm.UndoCommand.Execute(null);
-        Assert.Null(variable.Getter);
-        Assert.Null(vm.OpenedGraph);
-
-        variable.AddSetterCommand.Execute(null);
-        variable.OpenSetterCommand.Execute(null);
-        Assert.Same(variable.Setter, vm.OpenedGraph?.Graph);
-        vm.UndoCommand.Execute(null);
-        Assert.Null(variable.Setter);
-        Assert.Null(vm.OpenedGraph);
     }
 }

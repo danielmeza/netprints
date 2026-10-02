@@ -1,28 +1,33 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Core;
 using NetPrints.Editor.CodeView;
-using NetPrints.Editor.Shell;
 
 namespace NetPrints.Editor.Inspectors;
 
 /// <summary>The class inspector: the class's name, namespace, visibility and modifiers, and its generated code.</summary>
 public sealed class ClassInspectorViewModel : ObservableObject
 {
-    private readonly ClassContext context;
+    private readonly Action markDirty;
 
     /// <summary>Creates the inspector of a class.</summary>
-    /// <param name="context">The class's context, which an edit marks dirty.</param>
-    public ClassInspectorViewModel(ClassContext context)
+    /// <param name="cls">The class.</param>
+    /// <param name="codeView">The read-only C# code view of the class.</param>
+    /// <param name="markDirty">Called after an edit, to mark the class dirty.</param>
+    public ClassInspectorViewModel(ClassGraph cls, CodeViewViewModel codeView, Action markDirty)
     {
-        ArgumentNullException.ThrowIfNull(context);
-        this.context = context;
+        ArgumentNullException.ThrowIfNull(cls);
+        ArgumentNullException.ThrowIfNull(codeView);
+        ArgumentNullException.ThrowIfNull(markDirty);
+        Class = cls;
+        CodeView = codeView;
+        this.markDirty = markDirty;
     }
 
     /// <summary>Gets the class.</summary>
-    public ClassGraph Class => context.Class;
+    public ClassGraph Class { get; }
 
     /// <summary>Gets the read-only C# code view of the class.</summary>
-    public CodeViewViewModel CodeView => context.CodeView;
+    public CodeViewViewModel CodeView { get; }
 
     /// <summary>Gets the class name with its namespace.</summary>
     public string FullName => Class.FullName ?? "";
@@ -31,7 +36,7 @@ public sealed class ClassInspectorViewModel : ObservableObject
     public string Title => Class.Name ?? "";
 
     /// <summary>Gets the visibility values offered by the visibility chooser.</summary>
-    public IReadOnlyList<MemberVisibility> PossibleVisibilities => ClassEditor.ClassEditorViewModel.Visibilities;
+    public IReadOnlyList<MemberVisibility> PossibleVisibilities => VisibilityChoices.All;
 
     /// <summary>Gets or sets the class's name, without namespace; also refreshes <see cref="Title"/> and <see cref="FullName"/>.</summary>
     public string Name
@@ -42,7 +47,7 @@ public sealed class ClassInspectorViewModel : ObservableObject
             if (Class.Name != value)
             {
                 Class.Name = value;
-                context.MarkDirty();
+                markDirty();
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(Title));
                 OnPropertyChanged(nameof(FullName));
@@ -59,7 +64,7 @@ public sealed class ClassInspectorViewModel : ObservableObject
             if (Class.Namespace != value)
             {
                 Class.Namespace = value;
-                context.MarkDirty();
+                markDirty();
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(FullName));
             }
@@ -75,7 +80,7 @@ public sealed class ClassInspectorViewModel : ObservableObject
             if (Class.Visibility != value)
             {
                 Class.Visibility = value;
-                context.MarkDirty();
+                markDirty();
                 OnPropertyChanged();
             }
         }
@@ -90,7 +95,7 @@ public sealed class ClassInspectorViewModel : ObservableObject
             if (Class.Modifiers != value)
             {
                 Class.Modifiers = value;
-                context.MarkDirty();
+                markDirty();
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(IsSealed));
                 OnPropertyChanged(nameof(IsAbstract));

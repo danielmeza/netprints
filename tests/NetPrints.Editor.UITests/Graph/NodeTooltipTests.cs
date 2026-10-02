@@ -2,7 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.VisualTree;
 using NetPrints.Editor.Graph.Nodes;
-using NetPrints.Editor.UITests.ClassEditor;
+using NetPrints.Editor.UITests.Shell;
 using NetPrints.Graph;
 
 namespace NetPrints.Editor.UITests.Graph;
@@ -17,7 +17,7 @@ public class NodeTooltipTests
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
 
-        NodeView view = session.ClassWindow.GetVisualDescendants().OfType<NodeView>()
+        NodeView view = session.Window.GetVisualDescendants().OfType<NodeView>()
             .Single(v => v.DataContext is NodeViewModel { Node: CallMethodNode });
         string? tooltip = ToolTip.GetTip(view) as string;
 

@@ -1,12 +1,12 @@
 using System.Diagnostics;
 using Avalonia.Headless.XUnit;
-using NetPrints.Editor.UITests.Hosting;
+using NetPrints.Testing.Ui.Shell;
 
-namespace NetPrints.Editor.UITests.ClassEditor;
+namespace NetPrints.Editor.UITests.Shell;
 
 /// <summary>
 /// Batch D1 (owner report: opening Main's graph took "several seconds" with no feedback). Measured on
-/// this machine (headless, in-process): opening the class window ~320 ms, then a double click on Main
+/// this machine (headless, in-process): opening the shell, then a double click on Main
 /// ~130-220 ms (mostly Avalonia's first layout pass and control-template realization, not application
 /// code); a real windowed run adds real rendering and X11 round trips on top. The bound below is
 /// generous (a few times the measured cost, R2-19) so a busy CI runner does not fail the build, while
@@ -24,13 +24,12 @@ public class OpenMethodPerformanceTests
     {
         var output = TestContext.Current.TestOutputHelper
             ?? throw new InvalidOperationException($"{nameof(TestContext)} has no {nameof(TestContext.Current.TestOutputHelper)}.");
-        using var sample = new SampleCopy();
-        await using var app = HeadlessApp.Start();
-        await app.OpenStartupProjectAsync(sample.ProjectPath, Token);
-        var classEditor = await app.OpenClassAsync(EditorSession.ClassName, Token);
+        await using var app = ShellApp.Start();
+        await app.OpenSampleAsync(Token);
+        var shell = await new ShellPage(app.Driver).WaitShownAsync(Token);
 
         var openMain = Stopwatch.StartNew();
-        await classEditor.OpenMethodAsync("Main", Token);
+        await shell.OpenMethodAsync("Main", Token);
         openMain.Stop();
 
         output.WriteLine($"Batch D1: opening Main's graph took {openMain.ElapsedMilliseconds} ms");

@@ -1,11 +1,9 @@
 using Avalonia.Controls;
 using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Core;
-using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Hosting.Automation;
-using NetPrints.Editor.Main;
 using NetPrints.Editor.References;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.UITests.Driving;
@@ -14,7 +12,6 @@ using NetPrints.Extensibility.Hosting;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Settings;
 using NetPrints.Testing;
-using NetPrints.Testing.Ui.ClassEditor;
 using NetPrints.Testing.Ui.Screenplay;
 using NetPrints.Testing.Ui.Snapshots;
 
@@ -33,7 +30,6 @@ public sealed class HeadlessApp : IAsyncDisposable
     public const int ScreenHeight = 1000;
 
     private readonly IDisposable exceptionHandler;
-    private readonly IDisposable classWindowSizer;
 
     private readonly ExtensionHost extensions;
     private readonly string settingsDirectory;
@@ -71,17 +67,8 @@ public sealed class HeadlessApp : IAsyncDisposable
         exceptionHandler = Composition.InstallUnhandledExceptionHandler(); // as EditorApp does on the desktop
         Tree = new AutomationTree();
 
-        // Headless maximized windows keep their size: use the E2E screen size.
-        classWindowSizer = Avalonia.Controls.Window.WindowOpenedEvent.AddClassHandler(typeof(ClassEditorWindow), (sender, _) =>
-        {
-            if (sender is ClassEditorWindow window)
-            {
-                window.Width = ScreenWidth;
-                window.Height = ScreenHeight;
-            }
-        });
         Driver = new HeadlessDriver(Tree, () => Processes.Output);
-        Composition.CreateShellWindow(); // never shown: the class windows and the rigs that build their own shell are what the suites drive
+        Composition.CreateShellWindow(); // never shown: the suites that need a shell window use ShellApp
         HeadlessDriver.Pump();
         Actor = Actor.Named("Ada").WhoCan(UseNetPrints.With(Driver, FilePicker));
     }
@@ -109,22 +96,6 @@ public sealed class HeadlessApp : IAsyncDisposable
         await Testing.Ui.Driving.UiWait.UntilAsync(Driver, () => Task.FromResult(Composition.Context.Reflection.NonStaticTypes.Count > 0),
             "reflection loaded", cancellationToken, TimeSpan.FromSeconds(60));
     }
-
-    /// <summary>Opens the window of a class of the open project, as the former main window's class list did, and returns its page.</summary>
-    public async Task<ClassEditorPage> OpenClassAsync(string fullName, CancellationToken cancellationToken)
-    {
-        ProjectSessionViewModel session = Session ?? throw new InvalidOperationException("No project is open.");
-        ClassGraph cls = session.Project.Classes.Single(c => c.FullName == fullName);
-        LegacyClassWindows.Open(Composition.Context, () => Session, Composition.Shell ?? throw new InvalidOperationException("No shell."),
-            Composition.ProjectActions ?? throw new InvalidOperationException("No shell."), cls);
-        var page = new ClassEditorPage(Driver, fullName);
-        await page.GetAsync(cancellationToken);
-        return page;
-    }
-
-    /// <summary>The window of an open class editor (for arranging and asserting through the API).</summary>
-    public ClassEditorWindow ClassWindow(string fullName) =>
-        Composition.Windows.ClassEditorWindows.Single(w => (w.DataContext as ClassEditorViewModel)?.Class.FullName == fullName);
 
     /// <summary>
     /// Saves a screenshot of every open window and a dump of the automation tree for the current
@@ -159,7 +130,6 @@ public sealed class HeadlessApp : IAsyncDisposable
         }
 
         exceptionHandler.Dispose();
-        classWindowSizer.Dispose();
         Tree.Dispose();
         Processes.Dispose();
         Composition.Dispose();

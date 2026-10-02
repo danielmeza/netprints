@@ -5,7 +5,7 @@ namespace NetPrints.Editor.Events;
 
 /// <summary>
 /// An event graph in the class editor's event graph list (US4), the same light wrapper pattern as
-/// <see cref="ClassEditor.MethodViewModel"/>: <see cref="ClassEditor.ClassEditorViewModel"/> owns creation, opening
+/// <see cref="ClassEditor.MethodViewModel"/>: <see cref="Shell.ClassContext"/> owns creation, opening
 /// and removal as undoable commands, this VM only carries the label.
 /// </summary>
 public sealed class EventGraphViewModel(EventGraph graph, ClassGraph cls) : ObservableObject

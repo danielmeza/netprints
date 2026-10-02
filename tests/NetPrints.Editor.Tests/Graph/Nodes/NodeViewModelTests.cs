@@ -76,7 +76,7 @@ public class NodeViewModelTests(TestEditor editor) : GraphTestBase(editor)
         Assert.Equal(intOverload, replaced.MethodSpecifier);
         Assert.Null(write.SelectedOverload);
 
-        ClassEditor.UndoCommand.Execute(null);
+        ClassContext.UndoRedo.Undo();
         Assert.Equal(StringType, Method.Nodes.OfType<CallMethodNode>().Single().MethodSpecifier.Parameters[0].Value);
 
         var makeArray = VmOf(new MakeArrayNode(Method));
@@ -131,7 +131,7 @@ public class NodeViewModelTests(TestEditor editor) : GraphTestBase(editor)
         array.LeftPinsPlusCommand.Execute(null);
         Assert.Equal(before + 1, array.Node.InputDataPins.Count);
 
-        var classGraph = new NodeGraphViewModel(Class, ClassEditor.Services);
+        var classGraph = new NodeGraphViewModel(Class, ClassContext.Services);
         var classReturn = classGraph.Nodes.Single(n => n.Node is ClassReturnNode);
         Assert.True(classReturn.ShowLeftPinButtons);
         Assert.Equal("Add interface", classReturn.LeftPlusToolTip);

@@ -1,7 +1,7 @@
 using NetPrints.Compilation;
 using NetPrints.Core;
-using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.ErrorList;
+using NetPrints.Editor.Graph;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.Tests.ProjectTree;
 using NetPrints.Editor.Tests.Shell;
@@ -70,10 +70,9 @@ public sealed class ErrorsPanelViewModelTests : IAsyncDisposable
         ClassGraph cls = session.Project.Classes[0];
         MethodGraph method = cls.Methods.First();
         string nodeId = method.Nodes.First().Id;
-        using var editor = new ClassEditorViewModel(cls, rig.Context);
-        editor.OpenGraph(method);
+        using var graph = new NodeGraphViewModel(method, session.ContextFor(cls).Services);
         var document = new GraphDocumentViewModel(
-            DocumentId.Graph(session.ClassPathOf(cls), DocumentId.MethodKeyPrefix + method.Id), editor.OpenedGraph ?? throw new InvalidOperationException("No graph."), cls, session);
+            DocumentId.Graph(session.ClassPathOf(cls), DocumentId.MethodKeyPrefix + method.Id), graph, cls, session);
         rig.Api.Opened = _ => rig.Shell.ActiveDocument = rig.Shell.AddDocument(document);
         Activate(rig.Shell, ClassDocument(session, cls));
         SetBuildDiagnostics(session, Diagnostic(cls, "CS1503", GraphKeys.For(method), nodeId));

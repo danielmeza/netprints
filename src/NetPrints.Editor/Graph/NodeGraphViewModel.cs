@@ -295,6 +295,8 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
     /// view (ADR-0004: the view owns the canvas viewport, this view model only asks for it).</summary>
     public event EventHandler<NodeViewModel>? NodeRevealRequested;
 
+    private NodeViewModel? pendingReveal;
+
     /// <summary>
     /// Selects the node with <paramref name="nodeId"/> and asks the view to bring it into view
     /// (FR-034, ED-T03).
@@ -310,8 +312,25 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
         }
 
         SelectNodes([node], deselectPrevious: true);
-        NodeRevealRequested?.Invoke(this, node);
+        if (NodeRevealRequested is { } handler)
+        {
+            handler(this, node);
+        }
+        else
+        {
+            pendingReveal = node;
+        }
+
         return true;
+    }
+
+    /// <summary>Takes the node <see cref="RevealNode"/> selected while no view was attached to scroll it into view.</summary>
+    /// <returns>The node, or <see langword="null"/> when no reveal is waiting.</returns>
+    public NodeViewModel? TakePendingReveal()
+    {
+        NodeViewModel? node = pendingReveal;
+        pendingReveal = null;
+        return node;
     }
 
     /// <summary>

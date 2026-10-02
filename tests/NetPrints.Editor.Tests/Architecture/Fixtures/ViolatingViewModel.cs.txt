@@ -1,19 +1,19 @@
 using Avalonia.Controls;
-using NetPrints.Editor.ClassEditor;
+using NetPrints.Editor.Shell;
 
 namespace NetPrints.Editor.Tests.Architecture.Fixtures;
 
 /// <summary>
 /// Deliberately violates architecture rules A1 (references an Avalonia type) and A2 (holds the
-/// owning class editor), for <c>ArchitectureGateTests</c> (ED-T10). Not compiled into the editor or
+/// owning class context), for <c>ArchitectureGateTests</c> (ED-T10). Not compiled into the editor or
 /// the test project (<c>.cs.txt</c>): <see cref="ArchitectureGateTests"/> reads and scans it directly.
 /// </summary>
 public sealed class ViolatingViewModel
 {
-    private readonly ClassEditorViewModel owner;
+    private readonly ClassContext owner;
     private Button? button;
 
-    public ViolatingViewModel(ClassEditorViewModel owner)
+    public ViolatingViewModel(ClassContext owner)
     {
         this.owner = owner;
     }

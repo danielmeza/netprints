@@ -920,3 +920,53 @@ Totals: solution suite 2268 tests, 2255 passed, 13 skipped (usual), 0 failed (in
 - Decision: `ClassContext` is a plain disposable owned by the session, not a view model: it exposes view models but has no bindable state; the class inspector is the one view model for the class.
 - Decision: the old editor composes a `ClassContext` instead of duplicating the dirty tracking, so nothing is copied for one batch and the tracking tests of `ClassEditorViewModel` still pin it.
 - Decision: the context keeps the undo stack the session already handed out for the class (`UndoStackFor`); no swapping, so `undo`, dirty state and the graph tabs share one history.
+
+## Batch C5c2b (T044 done: the class window and `ClassEditorViewModel` are gone)
+
+T044 is ticked: nothing of the old windows is left in `src`, and the headless suites, page objects and `AutomationIds` no longer know them.
+
+### What changed
+
+- Deleted: `ClassEditor/ClassEditorWindow.axaml(.cs)`, `ClassEditorViewModel`, `ClassEditorCommandContextProvider`, `Main/LegacyClassWindows`, `Main/LegacyWindowShell`, `ProjectSessionViewModel.UseUndoStack`, `ClassEditorPage`, `EventGraphsPage`, `LocalVariablesPanel` (page objects of the window), 32 + 6 unused `AutomationIds` constants (the `ClassEditor.*` ids, the event graph list, the variables panel groups and the local variable button).
+- `IWindowService` is now only `CloseMainWindow`; `WindowService` only holds the main window (`MainWindow`, `ActiveWindow`). `FakeWindowService` and `GatedReflectionHost`/`GatedReflectionProvider` (the seam of the open pipeline) went with the old tests.
+- `ClassInspectorViewModel` takes the class, its code view and a mark-dirty callback instead of the whole `ClassContext`, so the architecture gate (rule A2) now bans child view models from holding a `ClassContext`.
+- `Inspectors/VisibilityChoices` holds the visibility list that `ClassEditorViewModel.Visibilities` held. Types of `ClassEditor/` that the shell uses (`MethodViewModel`, the two messages, `ClassEditorServices`) stay where they are (no move).
+- The class, method and variable inspectors got the `Inspectors.*` automation ids on their root (the constants existed and `InspectorPage` used them, but no view carried them).
+- `EditorSession` (headless suites) now opens the sample in `ShellApp`: `Page` is the `ShellPage`, `ClassContext`/`Class`/`GraphViewModel` replace `ClassViewModel`/`ClassWindow`, `Press*Async`, `AddVariableAsync`, `RunAsync(command)`, `OpenClassGraphAsync`, `PickMainFromTheTreeAsync`. The window is 1600 x 1000, so the canvas is 921 x 655; the canvas and window snapshots were regenerated and reviewed (`class-editor-main`, `search-popup`, `canvas-*`, `node-method-entry-parameters` (entry node moved to y = 300 so the watermark is not behind it), `inspector-*`, `class-inspector-code-view`).
+
+### Product defects found by the migrated tests (fixed test-first)
+
+- `CodeViewTests.DoubleClickingADiagnosticRowOpensTheGraphSelectsAndRevealsTheNode` failed on the shell: a node revealed in a tab that was just opened did not recentre the viewport (the reveal fired before the view existed or had a size). `NodeGraphViewModel.RevealNode` now keeps the node when no view listens (`TakePendingReveal`) and `GraphEditorView` applies it once it has a size.
+- `GraphRenderTests.RendersSampleMainGraphLogsNoBindingWarnings` failed on the shell: `EditorApp.axaml`'s dock content templates set the automation id through a `ContentControl` style that also matched every nested content control, so the compiled binding cast `MethodViewModel`, `NodeViewModel`, a `TextBox`... to `ShellTool`/`ShellDocument`. The style now selects `ContentControl.shellHost` only. The remaining warnings are Dock's own (`Layout.`/`DockCapability`), accepted by the same filter as `ShellAdapterTests`.
+
+### Tests: migrated and deleted
+
+Unit (`NetPrints.Editor.Tests`):
+- `ClassEditorViewModelTests` (37) -> `Shell/ClassContextMembersTests` (12 tests covering 14 old ones): members list, create method / constructor / override, remove method / constructor, class inspector edits and code refresh, code view follows edits, method inspector edits, delete keeps entry / main return / class return, the saved marker after delete + undo, undo/redo follow the stack. Deleted (23), reasons: the open pipeline (busy indicator, supersede, re-click, three rapid opens, class-while-opening, selection projections: 15 tests) and the event graph open tests (5) exist only in the window; navigate-to-node (3) is pinned by `ErrorsPanelViewModelTests`; save / run / output (6) by `ProjectSessionViewModelTests` and `OutputPanelViewModelTests`; inspector switching and "removing clears the inspector" (3) by `InspectorPanelViewModelTests` and `ShellProjectActionsTests`. (The counts overlap: several old tests were merged.)
+- `DirtyTrackingTests` -> `Shell/ClassContextDirtyTrackingTests` on `ClassContext` (8 of 8; the pan/zoom/selection test selects nodes in a `NodeGraphViewModel`).
+- `GraphTestBase`, `NodeGraphViewModelTests`, `NodeViewModelTests`, `ReflectionReloadTests`, `ExtensionSuggestionTests`, `SuggestionListViewModelTests`, `SearchPerformanceTests`, `EditCommandsTests`, `ErrorsPanelViewModelTests`, `LocalVariableTests`: the same assertions on a `ClassContext` and `NodeGraphViewModel` built from its services (`LocalVariableTests` keeps `VariablesPanelViewModel`, see below).
+- `MemberVariableViewModelTests` 8 -> 6: open getter/setter/type graph now asserts the `OpenGraphMessage`s, selecting a row asserts the `SelectInspectorMessage`, remove is undoable-checked. Deleted (3): inspector cleared on undo, canvas closed on undo of add variable / accessor (window state).
+- `ClassEditorCommandStatesTests` (4) deleted: the same four pulses (selection, history, session, unsubscribe) are pinned by `ShellCommandContextProviderTests`.
+- `ProjectSessionViewModelTests`: `AdoptedUndoStackReplacesTheOneOfTheClass` and `RunningFromTheClassEditor...` deleted (the API and the window are gone); the pulse test lost its adoption half.
+- `ArchitectureGateTests` and its fixture target `ClassContext`.
+
+Headless UI (`NetPrints.Editor.UITests`):
+- `ClassEditorWindowTests` (10) -> `Shell/ShellEditingTests` (5): class inspector rename as typed + code view, delete/undo/redo keys, tooltips, double-tapping the empty part of an error row, Enter on an error row. Deleted (5): binding warnings (same test exists in `GraphRenderTests`), run / broken graph fills the error list (covered by `SmokeScenarios`, which run headless and on the desktop), override chooser (no shell surface, see gaps), splitters (the window's chrome; Dock owns resizing).
+- `ClassEditorShortcutTests` -> `ShellShortcutTests` (3 of 3, focus moved to an inspector text box); `EventGraphTests` (2) -> 2 (create via `addEventGraph`, open from the tree, delete through the project actions and undo by key; Main <-> event graph opening); `EventGraphOpenPipelineTests` (2) deleted (single-click list pipeline); `LocalVariablePanelTests` (2) deleted (the panel is only in the window); `GraphRenderTests.ClassWindowsOpenMaximized` deleted; `OpenMethodPerformanceTests` measures the shell; `BottomPanelsWiringTests` runs on `ShellApp` (no throw-away `ClassEditorViewModel`); `ShellGraphFocusTests`, `ShellCompositionTests`, `HeadlessApp` (no class window, no sizer) and the other suites that used `EditorSession` follow the new session.
+- Allowlists: the null-forgiving list lost 15 entries (deleted files and removed `!`) and 6 moved lines; no entry was added. `XamlHygieneTests` allowlists only moved one line (`EditorApp.axaml`).
+
+### Flake investigation
+
+- `BottomPanelsWiringTests` (4 tests) 20 x locally on the shell rig: 0 failures. The earlier CI failure of the double-click test was in the old rig (its own shell and a throw-away editor); the rig is now the production composition. Cause not reproduced.
+- Tree double-click: `TreeDragTests`, `OpenMethodPerformanceTests`, `EventGraphTests`, `HeadlessSmokeTests` (23 tests, about 40 tree opens each run) 20 x with `OpenAttempts = 1`: 19 clean runs; the one failure (run 10) was `ShellMainFlow` timing out after 90 s, not a tree open (a lost double click ends in a 10 s `UiWaitTimeoutException`). `ShellMainFlow` alone hangs the same way: 8 of 30 runs with one attempt, 4 of 20 with the retry, and 4 of 20 at the parent commit (a worktree of 297e778). So the retry never fired as far as the numbers show, and the hang is older than this batch and unrelated. Decision: keep the retry, and treat the `ShellMainFlow` standalone hang as its own issue.
+
+### Gaps (behaviour the window had that the shell does not have; not rebuilt here)
+
+- Local variables: `VariablesPanelViewModel` / `LocalVariableView` have no shell surface (their view model tests stay; nothing creates them in the product).
+- Override chooser: `ClassContext.CreateOverride` has no caller.
+- Opening a variable's getter, setter or type graph: `OpenGraphMessage` has no receiver in the shell.
+- Undoing the creation of a graph does not close its tab; the open pipeline's busy indicator and overload warm-up are gone with the window.
+
+### Totals (C5c2b)
+
+Solution suite (Release) 2225 tests, 2212 passed, 13 skipped (usual), 0 failed, including the 189 headless UI tests (188 passed, 1 skipped); Desktop E2E (Release, `NETPRINTS_E2E=1 --fail-skips on`) 33 of 33; `dotnet format --verify-no-changes` clean; Release build 0 warnings.

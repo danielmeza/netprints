@@ -2,13 +2,14 @@ using Avalonia.Headless.XUnit;
 using NetPrints.Core;
 using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Graph;
-using NetPrints.Editor.UITests.ClassEditor;
 using NetPrints.Editor.UITests.Driving;
 using NetPrints.Editor.UITests.Hosting;
+using NetPrints.Editor.UITests.Shell;
 using NetPrints.Graph;
 using NetPrints.Testing.Ui.Dialogs;
 using NetPrints.Testing.Ui.Driving;
 using NetPrints.Testing.Ui.References;
+using NetPrints.Testing.Ui.Shell;
 using NetPrints.Testing.Ui.Snapshots;
 
 namespace NetPrints.Editor.UITests.Snapshots;
@@ -42,26 +43,27 @@ public class SnapshotTests
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
 
-        await MatchWindowAsync(session.Driver, session.ClassEditor, "class-editor-main");
+        await MatchWindowAsync(session.Driver, session.Page, "class-editor-main");
         Store.Match("node-call-method", await session.Graph.Node("CallMethodNode").ScreenshotAsync(Token)); // connected and unconnected pins
-        Store.Match("inspector-method", await session.ClassEditor.InspectorColumn.ScreenshotAsync(Token));
+        Store.Match("inspector-method", await session.Page.Inspector.ScreenshotAsync(Token));
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task Inspectors()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
-        var page = session.ClassEditor;
+        var tree = session.Page.Tree;
+        var inspector = session.Page.Inspector;
 
-        await page.CreateVariableButton.ClickAsync(Token);
-        await page.VariableNameText("Variable").ClickAsync(Token);
-        await page.VariableInspector.WaitVisibleAsync(Token);
-        Store.Match("inspector-variable", await page.InspectorColumn.ScreenshotAsync(Token));
+        await session.AddVariableAsync(Token);
+        await tree.SelectAsync(await tree.RevealAsync(tree.Variable("Variable"), ProjectTreePage.VariablesGroup, Token), Token);
+        await inspector.VariableInspector.WaitVisibleAsync(Token);
+        Store.Match("inspector-variable", await inspector.ScreenshotAsync(Token));
 
-        await page.ClassButton.ClickAsync(Token);
-        await page.ClassInspector.WaitVisibleAsync(Token);
-        await page.ClassInspector.CodeView.WaitUntilAsync(e => (e.Text ?? "").Contains("class Program"), "generated code", Token);
-        Store.Match("inspector-class", await page.InspectorColumn.ScreenshotAsync(Token));
+        await tree.SelectAsync(tree.Class("Program"), Token);
+        await inspector.ClassInspector.WaitVisibleAsync(Token);
+        await inspector.ClassCodeView.WaitUntilAsync(e => (e.Text ?? "").Contains("class Program"), "generated code", Token);
+        Store.Match("inspector-class", await inspector.ScreenshotAsync(Token));
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
@@ -82,7 +84,7 @@ public class SnapshotTests
         entryNode.OutputDataPins[2].Name = "aVeryLongParameterName";
         entryNode.OutputDataPins[2].PinType.Value = TypeSpecifier.FromType<bool>();
         entryNode.PositionX = 28; // the extra-wide node (from the long name above) would otherwise
-        entryNode.PositionY = 480; // overlap Console.WriteLine at its usual sample position.
+        entryNode.PositionY = 300; // overlap Console.WriteLine at its usual sample position.
         await session.WaitForRenderedAsync(Token);
         HeadlessDriver.Pump(); // the renames above don't add/remove nodes, so WaitForRenderedAsync's
                                // node/cable count check is already satisfied; pump once more so the
@@ -95,8 +97,8 @@ public class SnapshotTests
     public async Task EveryNodeKind()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
-        await session.ClassEditor.CreateVariableButton.ClickAsync(Token);
-        var variable = session.ClassViewModel.Variables.Single().Variable.Specifier;
+        await session.AddVariableAsync(Token);
+        var variable = session.ClassContext.Variables.Single().Variable.Specifier;
         var graph = session.GraphViewModel;
 
         // Arrange through the API: one node of each kind, on a grid below the sample's nodes.

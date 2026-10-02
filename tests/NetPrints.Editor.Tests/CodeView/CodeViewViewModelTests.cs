@@ -159,7 +159,7 @@ public sealed class CodeViewViewModelTests
     }
 
     /// <summary>
-    /// Same swap-before-await bug as <c>ClassEditorViewModel</c>'s F-04: <c>ShowQuickInfoAsync</c> used to
+    /// Same swap-before-await bug as the old class window's F-04: <c>ShowQuickInfoAsync</c> used to
     /// reinstall <c>quickInfoCancellation</c> only after awaiting the superseded lookup's
     /// <c>CancelAsync</c>, so a <see cref="CodeViewViewModel.ClearQuickInfoCommand"/> (pointer exit) landing
     /// in that await got clobbered by the very lookup that superseded it, resurrecting the tooltip.

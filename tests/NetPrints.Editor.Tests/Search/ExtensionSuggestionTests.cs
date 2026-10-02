@@ -2,8 +2,10 @@ using NetPrints.Core;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Search;
+using NetPrints.Editor.Shell;
 using NetPrints.Editor.Tests.Graph;
 using NetPrints.Editor.Tests.Hosting;
+using NetPrints.Editor.UndoRedo;
 using NetPrints.Graph;
 
 namespace NetPrints.Editor.Tests.Search;
@@ -37,9 +39,9 @@ public sealed class ExtensionSuggestionTests(IReflectionHost sharedReflection)
     [Fact]
     public void ASuggestionIsNotOfferedInAGraphKindOutsideItsAllowedIn()
     {
-        ClassEditor.ShowClassCommand.Execute(null);
+        using var classGraph = new NodeGraphViewModel(Class, ClassContext.Services);
 
-        Assert.DoesNotContain(Rows(ClassEditor.OpenedGraph ?? throw new InvalidOperationException("No graph.")), r => r.Category == "Test");
+        Assert.DoesNotContain(Rows(classGraph), r => r.Category == "Test");
     }
 
     [Fact]
@@ -67,10 +69,9 @@ public sealed class ExtensionSuggestionTests(IReflectionHost sharedReflection)
     [Fact]
     public void WithoutTheExtensionTheSuggestionIsNotOffered()
     {
-        var plain = new NetPrints.Editor.ClassEditor.ClassEditorViewModel(new ClassGraph { Name = "P", Namespace = "N" }, TestEditor.Create(_ => sharedReflection).Context);
-        plain.CreateMethodCommand.Execute(null);
+        using var plain = new ClassContext(new ClassGraph { Name = "P", Namespace = "N" }, TestEditor.Create(_ => sharedReflection).Context, new UndoRedoStack());
+        using var graph = new NodeGraphViewModel(plain.CreateMethod(), plain.Services);
 
-        Assert.DoesNotContain(Rows(plain.OpenedGraph ?? throw new InvalidOperationException("No graph.")), r => r.Category == "Test");
-        plain.Dispose();
+        Assert.DoesNotContain(Rows(graph), r => r.Category == "Test");
     }
 }

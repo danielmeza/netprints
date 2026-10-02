@@ -1,25 +1,26 @@
 using NetPrints.Core;
-using NetPrints.Editor.ClassEditor;
+using NetPrints.Editor.Graph;
+using NetPrints.Editor.Shell;
 using NetPrints.Editor.Tests.Hosting;
 using NetPrints.Editor.UndoRedo;
 using NetPrints.Graph;
 
-namespace NetPrints.Editor.Tests.ClassEditor;
+namespace NetPrints.Editor.Tests.Shell;
 
 /// <summary>Editor dirty tracking (editor-services.md §3, ED-T15).</summary>
-public class DirtyTrackingTests(TestEditor editor) : IAsyncLifetime
+public class ClassContextDirtyTrackingTests(TestEditor editor) : IAsyncLifetime
 {
     private Project? projectField;
     private ClassGraph? clsAField;
     private ClassGraph? clsBField;
-    private ClassEditorViewModel? vmAField;
-    private ClassEditorViewModel? vmBField;
+    private ClassContext? vmAField;
+    private ClassContext? vmBField;
 
     private Project project => projectField ?? throw new InvalidOperationException($"{nameof(InitializeAsync)} has not run yet.");
     private ClassGraph clsA => clsAField ?? throw new InvalidOperationException($"{nameof(InitializeAsync)} has not run yet.");
     private ClassGraph clsB => clsBField ?? throw new InvalidOperationException($"{nameof(InitializeAsync)} has not run yet.");
-    private ClassEditorViewModel vmA => vmAField ?? throw new InvalidOperationException($"{nameof(InitializeAsync)} has not run yet.");
-    private ClassEditorViewModel vmB => vmBField ?? throw new InvalidOperationException($"{nameof(InitializeAsync)} has not run yet.");
+    private ClassContext vmA => vmAField ?? throw new InvalidOperationException($"{nameof(InitializeAsync)} has not run yet.");
+    private ClassContext vmB => vmBField ?? throw new InvalidOperationException($"{nameof(InitializeAsync)} has not run yet.");
 
     /// <summary>Loads a project with two classes, saves it once so both start clean, then opens both editors.</summary>
     public async ValueTask InitializeAsync()
@@ -32,8 +33,8 @@ public class DirtyTrackingTests(TestEditor editor) : IAsyncLifetime
         Assert.False(clsA.IsDirty);
         Assert.False(clsB.IsDirty);
 
-        vmAField = new ClassEditorViewModel(clsA, editor.Context);
-        vmBField = new ClassEditorViewModel(clsB, editor.Context);
+        vmAField = new ClassContext(clsA, editor.Context, new UndoRedoStack());
+        vmBField = new ClassContext(clsB, editor.Context, new UndoRedoStack());
     }
 
     public ValueTask DisposeAsync()
@@ -49,8 +50,8 @@ public class DirtyTrackingTests(TestEditor editor) : IAsyncLifetime
     {
         // Pan/zoom live entirely in the Avalonia view (GraphEditorView/Nodify) and never touch the
         // model; selection is a plain property with no MarkDirty call attached.
-        vmA.SelectedMethod = vmA.Methods.SingleOrDefault();
-        vmA.SelectedBottomTab = 1;
+        using var graph = new NodeGraphViewModel(vmA.Methods.Single().Graph, vmA.Services);
+        graph.SelectNodes(graph.Nodes, deselectPrevious: true);
 
         Assert.False(clsA.IsDirty);
         Assert.False(clsB.IsDirty);

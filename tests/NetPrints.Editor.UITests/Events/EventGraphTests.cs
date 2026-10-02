@@ -1,8 +1,11 @@
 using Avalonia.Headless.XUnit;
 using NetPrints.Core;
+using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Editor.Search;
-using NetPrints.Editor.UITests.ClassEditor;
+using NetPrints.Editor.Shell;
+using NetPrints.Editor.UITests.Shell;
 using NetPrints.Graph;
+using NetPrints.Testing.Ui.Shell;
 
 namespace NetPrints.Editor.UITests.Events;
 
@@ -11,27 +14,31 @@ public class EventGraphTests
 {
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
+    private static async Task OpenFromTheTreeAsync(EditorSession session, string name)
+    {
+        var tree = session.Page.Tree;
+        var row = await tree.RevealAsync(tree.Item(AutomationIds.TreeKindEventGraph, name), ProjectTreePage.EventGraphsGroup, Token);
+        await tree.OpenAsync(row, async () => (await session.Graph.Watermark.TryGetAsync(Token))?.Text == name, $"graph '{name}' shown", Token);
+    }
+
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task CreateOpenAddCustomEventViaSearchAndRemoveUndoable()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
-        var events = session.ClassEditor.EventGraphs;
 
         // Create (US4): a new event graph named uniquely, added to the class; Create also opens it,
         // the same way Create Method/Create Constructor do. It starts empty (data-model.md §4), so
         // this waits on the watermark alone: GraphCanvas.WaitForGraphAsync also waits for nodes/cables
-        // to "render", which never becomes true for a graph with zero of both (P3b guard/known gap:
-        // WaitRenderedAsync's "#"-joined snapshot treats an empty join as still-loading).
-        string name = await events.CreateAsync(Token);
+        // to "render", which never becomes true for a graph with zero of both.
+        await session.RunAsync("addEventGraph", Token);
+        string name = Assert.Single(session.Class.EventGraphs).Name;
         Assert.Equal("EventGraph", name);
-        Assert.Contains(session.ClassViewModel.Class.EventGraphs, g => g.Name == name);
         await session.Graph.Watermark.WaitUntilAsync(e => e.Text == name, $"graph '{name}' shown", Token);
 
-        // Open: switch away, then reopen by double click on the list row.
-        await session.ClassEditor.OpenMethodAsync("Main", Token);
-        await events.DoubleClickAsync(name, Token);
-        await session.Graph.Watermark.WaitUntilAsync(e => e.Text == name, $"graph '{name}' shown", Token);
-        Assert.Same(session.ClassViewModel.Class.EventGraphs.Single(g => g.Name == name), session.GraphViewModel.Graph);
+        // Open: switch away, then reopen by double click on the tree row.
+        await session.Page.OpenMethodAsync("Main", Token);
+        await OpenFromTheTreeAsync(session, name);
+        Assert.Same(session.Class.EventGraphs.Single(g => g.Name == name), session.GraphViewModel.Graph);
 
         // Add a custom event via search: right click empty canvas, choose "Custom Event" (US4).
         var search = await (await session.Graph.RightClickEmptyAsync(Token)).WaitOpenAsync(Token);
@@ -46,8 +53,7 @@ public class EventGraphTests
         Assert.Equal("CustomEvent", entry.EventName); // unique against the class's methods and entries
         Assert.Equal(["EventEntryNode"], await session.Graph.NodeNamesAsync(Token));
 
-        // Also add an override entry via search ("Override <method>", US4): ToString is overridable
-        // on this class (OverrideChooserCreatesAndResets exercises the same base method).
+        // Also add an override entry via search ("Override <method>", US4): ToString is overridable on this class.
         var overrideSearch = await (await session.Graph.RightClickAtAsync(400, 400, Token)).WaitOpenAsync(Token);
         await overrideSearch.FilterAsync("Override ToString", "Override ToString", Token);
         await overrideSearch.ChooseAsync("Override ToString", Token);
@@ -58,51 +64,32 @@ public class EventGraphTests
         Assert.NotNull(overrideEntry.OverriddenMethod);
         Assert.Equal(2, eventGraph.Nodes.OfType<EventEntryNode>().Count());
 
-        // Remove (undoable): the list row's remove button has no automation id, matching the method
-        // and variable rows (ClassEditorViewModelTests-style); drive the command directly, as those do.
-        var eventGraphViewModel = session.ClassViewModel.EventGraphs.Single(g => g.Graph == eventGraph);
-        session.ClassViewModel.RemoveEventGraphCommand.Execute(eventGraphViewModel);
-        Assert.DoesNotContain(name, await events.EventGraphNamesAsync(Token));
-        Assert.DoesNotContain(session.ClassViewModel.Class.EventGraphs, g => g.Name == name);
-        Assert.Null(session.ClassViewModel.OpenedGraph); // the canvas showed the removed graph
+        // Remove (undoable): through the project actions, as the tree's Delete does; it closes the graph's tab.
+        DocumentId document = CommandTargets.GraphDocumentOf(session.App.Session, eventGraph) ?? throw new InvalidOperationException("The event graph has no document.");
+        session.App.Composition.ProjectActions?.DeleteItem(eventGraph);
+        Assert.DoesNotContain(session.Class.EventGraphs, g => g.Name == name);
+        Assert.DoesNotContain(document, session.App.Api.OpenDocuments);
 
-        await session.ClassEditor.PressUndoAsync(Token);
-        Assert.Contains(name, await events.EventGraphNamesAsync(Token));
-        var restored = session.ClassViewModel.Class.EventGraphs.Single(g => g.Name == name);
-        Assert.Same(eventGraph, restored); // undo restores the same instance, not a rebuilt one
+        await session.PressUndoAsync(Token);
+        Assert.Same(eventGraph, session.Class.EventGraphs.Single(g => g.Name == name)); // undo restores the same instance, not a rebuilt one
 
-        await session.ClassEditor.PressRedoAsync(Token);
-        Assert.DoesNotContain(name, await events.EventGraphNamesAsync(Token));
+        await session.PressRedoAsync(Token);
+        Assert.DoesNotContain(session.Class.EventGraphs, g => g.Name == name);
     }
 
-    /// <summary>
-    /// OWN-07b, owner's sequence: with an event graph open, clicking Main must not leave the Event
-    /// graphs list still showing it highlighted too, and vice versa. Only the open item's own list
-    /// may show a selection; the VM's list-highlight projections (R2-16's fix, extended to event
-    /// graphs) are asserted directly, since that is exactly what each ListBox's SelectedItem binds to.
-    /// </summary>
+    /// <summary>OWN-07, owner's sequence: add an event graph, open it, then open Main, and back; each open shows its own graph.</summary>
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
-    public async Task OpeningMainAfterAnEventGraphClearsTheOtherListsHighlightAndBack()
+    public async Task OpeningMainAfterAnEventGraphAndBackShowsEachGraph()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
-        var events = session.ClassEditor.EventGraphs;
-        string name = await events.CreateAsync(Token); // also opens it
-
-        await events.OpenAsync(name, Token);
-        var eventGraph = session.ClassViewModel.EventGraphs.Single(g => g.Name == name);
-        Assert.Same(eventGraph, session.ClassViewModel.SelectedEventGraphInList);
-
-        await session.ClassEditor.Method("Main").ClickAsync(Token);
-        await session.Graph.Watermark.WaitUntilAsync(e => e.Text == "Main", "graph 'Main' shown", Token);
-
-        Assert.Same(session.ClassViewModel.Methods.Single(m => m.Name == "Main"), session.ClassViewModel.SelectedMethodInList);
-        Assert.Null(session.ClassViewModel.SelectedEventGraphInList);
-
-        // And back: opening the event graph again clears the Methods list's highlight.
-        await events.OpenAsync(name, Token);
+        await session.RunAsync("addEventGraph", Token); // also opens it
+        string name = Assert.Single(session.Class.EventGraphs).Name;
         await session.Graph.Watermark.WaitUntilAsync(e => e.Text == name, $"graph '{name}' shown", Token);
 
-        Assert.Same(eventGraph, session.ClassViewModel.SelectedEventGraphInList);
-        Assert.Null(session.ClassViewModel.SelectedMethodInList);
+        await session.Page.OpenMethodAsync("Main", Token);
+        Assert.Same(session.ClassContext.Methods.Single(m => m.Name == "Main").Graph, session.GraphViewModel.Graph);
+
+        await OpenFromTheTreeAsync(session, name);
+        Assert.Same(session.ClassContext.EventGraphs.Single(g => g.Name == name).Graph, session.GraphViewModel.Graph);
     }
 }

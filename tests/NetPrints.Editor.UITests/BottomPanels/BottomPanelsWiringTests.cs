@@ -28,82 +28,33 @@ public class BottomPanelsWiringTests
 {
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
-    private sealed class NoServices : IServiceProvider
+    private sealed class Rig(ShellApp app) : IAsyncDisposable
     {
-        public object? GetService(Type serviceType) => null;
-    }
+        public ProjectSessionViewModel Session => app.Session;
 
-    private sealed class ImmediateDispatcher : IUiDispatcher
-    {
-        public void Post(Action action) => action();
+        public ClassGraph Class => Session.Project.Classes.Single();
 
-        public Task InvokeAsync(Action action)
-        {
-            action();
-            return Task.CompletedTask;
-        }
+        public MethodGraph Method => Class.Methods.First();
 
-        public bool CheckAccess() => true;
-    }
+        public DocumentId MethodDocument => DocumentId.Graph(Session.ClassPathOf(Class), DocumentId.MethodKeyPrefix + Method.Id);
 
-    private sealed class Rig : IAsyncDisposable
-    {
-        private readonly HeadlessApp app;
-        private readonly SampleCopy sample;
-        private readonly ClassEditorViewModel editor;
+        public DocumentId ClassDocument => DocumentId.Graph(Session.ClassPathOf(Class), DocumentId.ClassGraphKey);
 
-        public Rig(HeadlessApp app, SampleCopy sample, ProjectSessionViewModel session)
-        {
-            this.app = app;
-            this.sample = sample;
-            Session = session;
-            Class = session.Project.Classes.Single();
-            Method = Class.Methods.First();
-            editor = new ClassEditorViewModel(Class, app.Composition.Context);
-            editor.OpenGraph(Method);
-            MethodDocument = DocumentId.Graph(session.ClassPathOf(Class), DocumentId.MethodKeyPrefix + Method.Id);
-            ClassDocument = DocumentId.Graph(session.ClassPathOf(Class), DocumentId.ClassGraphKey);
-            var registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
-            BuiltInContributions.Register(registry);
-            registry.Freeze();
-            Shell = new ShellViewModel(registry, new NoServices(), TimeProvider.System, new ImmediateDispatcher());
-            Adapter = new DockShellAdapter(Shell, new NoProjectActions(), CreateDocument);
-            Shell.Layout = Adapter;
-            Invoker = new CommandInvoker(registry, new ShellCommandContextProvider(Shell, Adapter), Faults.Add);
-            Shell.AttachCommands(Invoker);
-            Shell.AttachPanels(Adapter, Invoker, app.Composition.Context);
-            Shell.Session = session;
-            Ui = HeadlessUi.Create();
-            Window = Ui.Show(new ShellWindow { DataContext = Shell, Width = ShellRig.Width, Height = ShellRig.Height });
-        }
+        public RecordingDialogs Dialogs => app.Dialogs;
 
-        public ProjectSessionViewModel Session { get; }
+        public ShellViewModel Shell => app.Shell;
 
-        public ClassGraph Class { get; }
+        public IShell Api => app.Api;
 
-        public MethodGraph Method { get; }
+        public HeadlessUi Ui => app.Ui;
 
-        public DocumentId MethodDocument { get; }
-
-        public DocumentId ClassDocument { get; }
-
-        public ShellViewModel Shell { get; }
-
-        public DockShellAdapter Adapter { get; }
-
-        public CommandInvoker Invoker { get; }
-
-        public List<Exception> Faults { get; } = [];
-
-        public HeadlessUi Ui { get; }
-
-        public ShellWindow Window { get; }
+        public ShellWindow Window => app.Window;
 
         public EditorContext Context => app.Composition.Context;
 
         public OutputPanelViewModel Output => Assert.IsType<OutputPanelViewModel>(Shell.FindPanel(PanelContributions.OutputId)?.Content);
 
-        public NodeGraphViewModel Graph => editor.OpenedGraph ?? throw new InvalidOperationException("No graph.");
+        public NodeGraphViewModel Graph => Assert.IsType<GraphDocumentViewModel>(Shell.FindDocument(MethodDocument)).Graph;
 
         public IReadOnlyList<AutomationElement> Find(string automationId) => [.. Ui.Tree.Find(new AutomationQuery(automationId))];
 
@@ -121,26 +72,14 @@ public class BottomPanelsWiringTests
             HeadlessDriver.Pump();
         }
 
-        public async ValueTask DisposeAsync()
-        {
-            Ui.Dispose();
-            Shell.Dispose();
-            editor.Dispose();
-            await app.DisposeAsync();
-            sample.Dispose();
-        }
-
-        private DocumentViewModel CreateDocument(DocumentId id) => id == MethodDocument
-            ? new GraphDocumentViewModel(id, Graph, Class, Session)
-            : new TestDocumentViewModel(id, id.GraphKey ?? id.ToString());
+        public ValueTask DisposeAsync() => app.DisposeAsync();
     }
 
     private static async Task<Rig> CreateAsync()
     {
-        var app = HeadlessApp.Start();
-        var sample = new SampleCopy();
-        await app.OpenStartupProjectAsync(sample.ProjectPath, Token);
-        return new Rig(app, sample, Assert.IsType<ProjectSessionViewModel>(app.Session));
+        var app = ShellApp.Start();
+        await app.OpenSampleAsync(Token);
+        return new Rig(app);
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
@@ -148,7 +87,7 @@ public class BottomPanelsWiringTests
     {
         await using Rig rig = await CreateAsync();
         string nodeId = rig.Method.Nodes.First().Id;
-        rig.Adapter.OpenDocument(rig.ClassDocument);
+        rig.Api.OpenDocument(rig.ClassDocument);
         rig.Session.Project.LastDiagnostics = new ObservableRangeCollection<CodeDiagnostic>(
             [new CodeDiagnostic(CodeDiagnosticSeverity.Error, "CS1503", "boom", rig.Class.FullName, GraphKeys.For(rig.Method), nodeId, null, null)]);
         HeadlessDriver.Pump();
@@ -156,9 +95,9 @@ public class BottomPanelsWiringTests
 
         await rig.Ui.Driver.ClickAsync(rig.Target(AutomationIds.ErrorsRow), UiButton.Left, 2, Token);
 
-        Assert.Contains(rig.MethodDocument, rig.Adapter.OpenDocuments);
+        Assert.Contains(rig.MethodDocument, rig.Api.OpenDocuments);
         Assert.Equal(nodeId, rig.Graph.SelectedNodes.Single().Node.Id);
-        Assert.Empty(rig.Faults);
+        Assert.Empty(rig.Dialogs.Errors);
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
@@ -166,7 +105,7 @@ public class BottomPanelsWiringTests
     {
         await using Rig rig = await CreateAsync();
         rig.Session.Project.CompilationMessage = "Build succeeded";
-        rig.Adapter.ShowPanel(PanelContributions.OutputId);
+        rig.Api.ShowPanel(PanelContributions.OutputId);
 
         rig.Context.RunState.BuildStarted();
         rig.Context.RunState.BuildFinished();
@@ -182,7 +121,7 @@ public class BottomPanelsWiringTests
     public async Task TheOutputPanelFollowsTheNewestLine()
     {
         await using Rig rig = await CreateAsync();
-        rig.Adapter.ShowPanel(PanelContributions.OutputId);
+        rig.Api.ShowPanel(PanelContributions.OutputId);
 
         rig.Context.Processes.Start(new ProcessStartRequest("dotnet", ["--info"], Path.GetTempPath()), Token);
         await rig.WaitAsync(() => rig.Context.RunState.Snapshot().Phase == RunPhase.Exited);
@@ -200,11 +139,11 @@ public class BottomPanelsWiringTests
     public async Task TheCSharpPanelShowsTheGeneratedCodeOfTheActiveDocumentsClass()
     {
         await using Rig rig = await CreateAsync();
-        rig.Adapter.ShowPanel(PanelContributions.CSharpId);
+        rig.Api.ShowPanel(PanelContributions.CSharpId);
         HeadlessDriver.Pump();
         Assert.NotEmpty(rig.Find(AutomationIds.CSharpEmpty));
 
-        rig.Adapter.OpenDocument(rig.ClassDocument);
+        rig.Api.OpenDocument(rig.ClassDocument);
         rig.Context.CodeAnalysis.RequestAnalysis(rig.Session.Project);
         var panel = Assert.IsType<NetPrints.Editor.CodeView.CSharpPanelViewModel>(rig.Shell.FindPanel(PanelContributions.CSharpId)?.Content);
         await rig.WaitAsync(() => panel.Current?.Code.Contains("class", StringComparison.Ordinal) == true);

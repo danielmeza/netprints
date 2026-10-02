@@ -6,13 +6,13 @@ namespace NetPrints.Editor.Tests.Architecture;
 
 /// <summary>
 /// contracts/editor-services.md §7: a Roslyn scan of every editor view model file for rules A1
-/// (no Avalonia/Nodify types) and A2 (no direct reference to the owning class editor), plus the
+/// (no Avalonia/Nodify types) and A2 (no direct reference to the owning class context), plus the
 /// fixture that proves the scanner actually fires (ED-T10). Rule A3 (assembly references) is a
 /// separate, non-Roslyn check in <see cref="AssemblyReferenceGateTests"/>.
 /// </summary>
 public class ArchitectureGateTests
 {
-    private const string ClassEditorViewModelTypeName = "ClassEditorViewModel";
+    private const string ClassContextTypeName = "ClassContext";
     private const string RuleA1 = "A1";
     private const string RuleA2 = "A2";
 
@@ -70,7 +70,7 @@ public class ArchitectureGateTests
         ns is not null && (ns.StartsWith("Avalonia", StringComparison.Ordinal) || ns.StartsWith("Nodify", StringComparison.Ordinal));
 
     private static bool IsBannedOwnerType(SemanticModel model, TypeSyntax? type) =>
-        type is not null && model.GetSymbolInfo(type).Symbol is INamedTypeSymbol { Name: ClassEditorViewModelTypeName };
+        type is not null && model.GetSymbolInfo(type).Symbol is INamedTypeSymbol { Name: ClassContextTypeName };
 
     /// <summary>Scans one view model syntax tree for A1 and A2 (editor-services.md §7).</summary>
     private static HashSet<Violation> Scan(SemanticModel model, SyntaxTree tree)
@@ -87,13 +87,12 @@ public class ArchitectureGateTests
             violations.Add(new Violation(RuleA1, file));
         }
 
-        bool isClassEditorViewModel = file is "ClassEditorViewModel.cs";
-        bool holdsTheOwningEditor = !isClassEditorViewModel &&
-            (root.DescendantNodes().OfType<ConstructorDeclarationSyntax>().SelectMany(c => c.ParameterList.Parameters)
+        bool holdsTheOwningContext =
+            root.DescendantNodes().OfType<ConstructorDeclarationSyntax>().SelectMany(c => c.ParameterList.Parameters)
                 .Any(p => IsBannedOwnerType(model, p.Type))
             || root.DescendantNodes().OfType<FieldDeclarationSyntax>()
-                .Any(f => IsBannedOwnerType(model, f.Declaration.Type)));
-        if (holdsTheOwningEditor)
+                .Any(f => IsBannedOwnerType(model, f.Declaration.Type));
+        if (holdsTheOwningContext)
         {
             violations.Add(new Violation(RuleA2, file));
         }
@@ -120,7 +119,7 @@ public class ArchitectureGateTests
     {
         string editorSrc = Path.Combine(RepositoryPaths.Root(), "src", "NetPrints.Editor");
         string fixturePath = Path.Combine(RepositoryPaths.Root(), "tests", "NetPrints.Editor.Tests", "Architecture", "Fixtures", "ViolatingViewModel.cs.txt");
-        string fixtureSourcePath = Path.Combine(editorSrc, "ViolatingViewModel.cs"); // A2's exemption is by file name only; this name is not exempt.
+        string fixtureSourcePath = Path.Combine(editorSrc, "ViolatingViewModel.cs"); // the fixture is scanned under a view model file name.
 
         var files = EditorSourceFiles(editorSrc).Select(path => (Path: path, Text: File.ReadAllText(path)))
             .Append((Path: fixtureSourcePath, Text: File.ReadAllText(fixturePath)))

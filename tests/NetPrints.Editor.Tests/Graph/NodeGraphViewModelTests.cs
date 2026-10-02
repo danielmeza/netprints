@@ -120,15 +120,14 @@ public class NodeGraphViewModelTests(TestEditor editor) : GraphTestBase(editor)
     [Fact]
     public void DropMethodConstructorAndVariable()
     {
-        ClassEditor.CreateMethodCommand.Execute(null);
-        var other = ClassEditor.Methods.Last();
-        ClassEditor.CreateConstructorCommand.Execute(null);
-        var ctor = ClassEditor.Constructors.Single();
-        ClassEditor.CreateVariableCommand.Execute(null);
-        var variable = ClassEditor.Variables.Single();
+        ClassContext.CreateMethod();
+        var other = ClassContext.Methods.Last();
+        ClassContext.CreateConstructor();
+        var ctor = ClassContext.Constructors.Single();
+        ClassContext.CreateVariable();
+        var variable = ClassContext.Variables.Single();
 
-        ClassEditor.OpenGraph(Method);
-        var graph = ClassEditor.OpenedGraph!;
+        using var graph = new NodeGraphViewModel(Method, ClassContext.Services);
 
         var call = (CallMethodNode)graph.Drop(other, new GraphPoint(56, 56));
         Assert.Equal(other.Name, call.MethodSpecifier.Name);
@@ -151,7 +150,7 @@ public class NodeGraphViewModelTests(TestEditor editor) : GraphTestBase(editor)
     {
         Method.Class = null;
 
-        var ex = Assert.Throws<InvalidOperationException>(() => Graph.Drop(ClassEditor.Methods.Single(), new GraphPoint(1, 1)));
+        var ex = Assert.Throws<InvalidOperationException>(() => Graph.Drop(ClassContext.Methods.Single(), new GraphPoint(1, 1)));
         Assert.Equal("The open graph has no class.", ex.Message);
     }
 
@@ -159,7 +158,7 @@ public class NodeGraphViewModelTests(TestEditor editor) : GraphTestBase(editor)
     public void NameWatermark()
     {
         Assert.Equal(Method.Name, Graph.Name);
-        var classGraph = new NodeGraphViewModel(Class, ClassEditor.Services);
+        var classGraph = new NodeGraphViewModel(Class, ClassContext.Services);
         Assert.Equal("C", classGraph.Name);
         classGraph.Dispose();
     }

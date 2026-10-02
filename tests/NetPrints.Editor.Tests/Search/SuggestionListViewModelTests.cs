@@ -37,14 +37,14 @@ public class SuggestionListViewModelTests : GraphTestBase
             "Literal", "Type", "Make Array Type", "Throw", "Await", "Ternary", "Default",
         }, methodBuiltIns);
 
-        ClassEditor.CreateConstructorCommand.Execute(null);
-        var ctorBuiltIns = BuiltIns(ClassEditor.OpenedGraph!);
+        using var ctorGraph = new NodeGraphViewModel(ClassContext.CreateConstructor(), ClassContext.Services);
+        var ctorBuiltIns = BuiltIns(ctorGraph);
         Assert.Equal(12, ctorBuiltIns.Count());
         Assert.DoesNotContain("Return", ctorBuiltIns);
         Assert.DoesNotContain("Await", ctorBuiltIns);
 
-        ClassEditor.ShowClassCommand.Execute(null);
-        Assert.Equal(new[] { "Type", "Make Array Type" }, BuiltIns(ClassEditor.OpenedGraph!));
+        using var classGraph = new NodeGraphViewModel(Class, ClassContext.Services);
+        Assert.Equal(new[] { "Type", "Make Array Type" }, BuiltIns(classGraph));
     }
 
     [Fact]

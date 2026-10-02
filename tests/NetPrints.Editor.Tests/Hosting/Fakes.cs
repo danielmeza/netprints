@@ -147,46 +147,9 @@ public sealed class InlineDispatcher : IUiDispatcher
 
 public sealed class FakeWindowService : IWindowService
 {
-    public Dictionary<ClassGraph, ClassEditorViewModel> Open { get; } = new(ReferenceEqualityComparer.Instance);
-    public List<ClassGraph> Activated { get; } = [];
-    public List<ClassGraph> Closed { get; } = [];
-    public int CloseAllCount { get; private set; }
     public int CloseMainWindowCount { get; private set; }
 
     public void CloseMainWindow() => CloseMainWindowCount++;
-
-    public bool TryActivateClassEditor(ClassGraph cls)
-    {
-        if (Open.ContainsKey(cls))
-        {
-            Activated.Add(cls);
-            return true;
-        }
-
-        return false;
-    }
-
-    public void OpenClassEditor(ClassGraph cls, EditorContext context) => Open[cls] = new ClassEditorViewModel(cls, context);
-
-    public ClassEditorViewModel? FindClassEditor(ClassGraph cls) => Open.GetValueOrDefault(cls);
-
-    public void CloseClassEditor(ClassGraph cls)
-    {
-        if (Open.Remove(cls, out var editor))
-        {
-            editor.Dispose();
-            Closed.Add(cls);
-        }
-    }
-
-    public void CloseAllClassEditors()
-    {
-        CloseAllCount++;
-        foreach (var cls in Open.Keys.ToList())
-        {
-            CloseClassEditor(cls);
-        }
-    }
 }
 
 public sealed class FakeProcessLauncher : IProcessLauncher
@@ -480,121 +443,6 @@ public sealed class TestEditor : IAsyncDisposable
         persistenceBinding?.Dispose();
         await Extensions.DisposeAsync();
     }
-}
-
-/// <summary>
-/// Wraps a real, loaded <see cref="IReflectionProvider"/>, letting a test block
-/// <see cref="GetPublicMethodOverloads"/> and <see cref="GetConstructors"/> on a gate it controls
-/// (R2-05): <see cref="ClassEditorViewModel"/>'s real seam for warming a graph's overload lookups before
-/// opening it, used instead of a test-only hook on the production view model itself.
-/// </summary>
-public sealed class GatedReflectionProvider(IReflectionProvider inner) : IReflectionProvider
-{
-    /// <summary>
-    /// Set by a test to hold <see cref="GetPublicMethodOverloads"/>/<see cref="GetConstructors"/> "in
-    /// flight" until completed, deterministically instead of racing real background work. Null (the
-    /// default) does not gate at all.
-    /// </summary>
-    public TaskCompletionSource? Gate { get; set; }
-
-    public bool TypeSpecifierIsSubclassOf(TypeSpecifier a, TypeSpecifier b) => inner.TypeSpecifierIsSubclassOf(a, b);
-
-    public bool HasImplicitCast(TypeSpecifier fromType, TypeSpecifier toType) => inner.HasImplicitCast(fromType, toType);
-
-    public IEnumerable<TypeSpecifier> GetNonStaticTypes() => inner.GetNonStaticTypes();
-
-    public IEnumerable<MethodSpecifier> GetOverridableMethodsForType(TypeSpecifier typeSpecifier) => inner.GetOverridableMethodsForType(typeSpecifier);
-
-    public IEnumerable<MethodSpecifier> GetPublicMethodOverloads(MethodSpecifier methodSpecifier)
-    {
-        WaitForGate();
-        return inner.GetPublicMethodOverloads(methodSpecifier);
-    }
-
-    public IEnumerable<ConstructorSpecifier> GetConstructors(TypeSpecifier typeSpecifier)
-    {
-        WaitForGate();
-        return inner.GetConstructors(typeSpecifier);
-    }
-
-    /// <summary>How long <see cref="WaitForGate"/> blocks for before failing loudly instead of hanging forever.</summary>
-    private static readonly TimeSpan GateTimeout = TimeSpan.FromSeconds(10);
-
-    /// <summary>
-    /// Blocks the calling (background) thread until <see cref="Gate"/> completes, or <see cref="GateTimeout"/>
-    /// elapses. <see cref="IReflectionProvider"/> is a synchronous interface, so there is no
-    /// <see langword="await"/>able alternative here; a continuation signals a <see cref="ManualResetEventSlim"/>
-    /// that this thread blocks on (no CPU-burning spin-wait, no sync-over-async <c>.Wait()</c>/
-    /// <c>GetAwaiter().GetResult()</c> on the gate's own <see cref="Task"/>), and a timeout that expires
-    /// throws instead of hanging a test that forgot to complete its gate.
-    /// </summary>
-    private void WaitForGate()
-    {
-        TaskCompletionSource? gate = Gate;
-        if (gate is null)
-        {
-            return;
-        }
-
-        var signaled = new ManualResetEventSlim(initialState: false);
-        gate.Task.ContinueWith(_ => signaled.Set(), TaskScheduler.Default);
-        if (!signaled.WaitHandle.WaitOne(GateTimeout))
-        {
-            throw new TimeoutException($"GatedReflectionProvider's gate did not complete within {GateTimeout}.");
-        }
-
-        signaled.Dispose();
-    }
-
-    public IEnumerable<string> GetEnumNames(TypeSpecifier typeSpecifier) => inner.GetEnumNames(typeSpecifier);
-
-    public IEnumerable<MethodSpecifier> GetMethods(ReflectionProviderMethodQuery query) => inner.GetMethods(query);
-
-    public IEnumerable<VariableSpecifier> GetVariables(ReflectionProviderVariableQuery query) => inner.GetVariables(query);
-
-    public string? GetMethodDocumentation(MethodSpecifier methodSpecifier) => inner.GetMethodDocumentation(methodSpecifier);
-
-    public string? GetMethodParameterDocumentation(MethodSpecifier methodSpecifier, int parameterIndex) =>
-        inner.GetMethodParameterDocumentation(methodSpecifier, parameterIndex);
-
-    public string? GetMethodReturnDocumentation(MethodSpecifier methodSpecifier, int returnIndex) =>
-        inner.GetMethodReturnDocumentation(methodSpecifier, returnIndex);
-}
-
-/// <summary>Wraps a real, already-loaded <see cref="IReflectionHost"/>, exposing its provider through a
-/// <see cref="GatedReflectionProvider"/> a test can gate (see <see cref="GatedProvider"/>).</summary>
-public sealed class GatedReflectionHost : IReflectionHost
-{
-    private readonly IReflectionHost inner;
-
-    public GatedReflectionHost(IReflectionHost inner)
-    {
-        this.inner = inner;
-        GatedProvider = new GatedReflectionProvider(inner.Provider);
-    }
-
-    /// <summary>The gate a test sets to hold a warm-up lookup "in flight" (see <see cref="GatedReflectionProvider.Gate"/>).</summary>
-    public GatedReflectionProvider GatedProvider { get; }
-
-    public bool IsLoaded => inner.IsLoaded;
-
-    public Task Loaded => inner.Loaded;
-
-    public IReflectionProvider Provider => GatedProvider;
-
-    public ProjectSnapshot? Snapshot => inner.Snapshot;
-
-    public ReadOnlyObservableCollection<TypeSpecifier> NonStaticTypes => inner.NonStaticTypes;
-
-    public IReadOnlyList<string> LastWarnings => inner.LastWarnings;
-
-    public event EventHandler? Reloaded
-    {
-        add => inner.Reloaded += value;
-        remove => inner.Reloaded -= value;
-    }
-
-    public Task ReloadAsync(Project project, CancellationToken cancellationToken = default) => inner.ReloadAsync(project, cancellationToken);
 }
 
 /// <summary>Extension hosts for tests.</summary>

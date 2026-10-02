@@ -35,7 +35,7 @@ public sealed class EditorComposition : IDisposable
     /// <summary>The composed host services.</summary>
     public EditorContext Context => services.Context;
 
-    /// <summary>The concrete window service (not just <see cref="IWindowService"/>, for callers that need <see cref="WindowService.ClassEditorWindows"/> or <see cref="WindowService.MainWindow"/>).</summary>
+    /// <summary>The concrete window service (not just <see cref="IWindowService"/>, for callers that need <see cref="WindowService.MainWindow"/>).</summary>
     public WindowService Windows => services.Windows;
 
     /// <summary>

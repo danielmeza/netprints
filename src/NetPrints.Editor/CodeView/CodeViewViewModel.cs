@@ -70,7 +70,7 @@ public sealed partial class CodeViewViewModel : ObservableObject, IDisposable
     private async Task ShowQuickInfoAsync(int offset)
     {
         // Install the new CTS before awaiting the old one's cancellation (same swap-before-await
-        // fix as ClassEditorViewModel's F-04), so a ClearQuickInfo (pointer exit) landing in that await
+        // fix as the old class window's F-04), so a ClearQuickInfo (pointer exit) landing in that await
         // cannot be overwritten by re-reading the field afterward.
         CancellationTokenSource? previous = quickInfoCancellation;
         var cancellation = new CancellationTokenSource();

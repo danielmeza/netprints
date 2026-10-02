@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Core;
+using NetPrints.Editor.Inspectors;
 
 namespace NetPrints.Editor.ClassEditor;
 
@@ -50,7 +51,7 @@ public sealed partial class MethodViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>The visibility values offered by the method's visibility chooser.</summary>
-    public IReadOnlyList<MemberVisibility> PossibleVisibilities => ClassEditorViewModel.Visibilities;
+    public IReadOnlyList<MemberVisibility> PossibleVisibilities => VisibilityChoices.All;
 
     /// <summary>The graph's modifiers, or <see cref="MethodModifiers.None"/> for a constructor (which has none).</summary>
     public MethodModifiers Modifiers

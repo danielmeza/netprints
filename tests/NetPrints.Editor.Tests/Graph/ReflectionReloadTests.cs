@@ -1,9 +1,11 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Core;
-using NetPrints.Editor.ClassEditor;
+using NetPrints.Editor.Graph;
 using NetPrints.Editor.Graph.Pins;
 using NetPrints.Editor.Hosting;
+using NetPrints.Editor.Shell;
 using NetPrints.Editor.Tests.Hosting;
+using NetPrints.Editor.UndoRedo;
 using NetPrints.Graph;
 
 namespace NetPrints.Editor.Tests.Graph;
@@ -15,18 +17,23 @@ namespace NetPrints.Editor.Tests.Graph;
 public sealed class ReflectionReloadTests : IDisposable
 {
     private readonly ReflectionHost host = new(new InlineDispatcher(), TestExtensions.CreateBuiltIn(), NullLogger<ReflectionHost>.Instance);
-    private readonly ClassEditorViewModel classEditor;
+    private readonly ClassContext classContext;
+    private readonly NodeGraphViewModel graph;
     private readonly MethodGraph method;
 
     public ReflectionReloadTests()
     {
         var cls = new ClassGraph { Name = "C", Namespace = "N" };
-        classEditor = new ClassEditorViewModel(cls, new TestEditor(host).Context);
-        classEditor.CreateMethodCommand.Execute(null);
-        method = (MethodGraph)classEditor.Methods.Single().Graph;
+        classContext = new ClassContext(cls, new TestEditor(host).Context, new UndoRedoStack());
+        method = classContext.CreateMethod();
+        graph = new NodeGraphViewModel(method, classContext.Services);
     }
 
-    public void Dispose() => classEditor.Dispose();
+    public void Dispose()
+    {
+        graph.Dispose();
+        classContext.Dispose();
+    }
 
     private static MethodSpecifier WriteLine(TypeSpecifier parameter) =>
         new("WriteLine", [new MethodParameter("value", parameter, MethodParameterPassType.Default, false, null)],
@@ -36,7 +43,7 @@ public sealed class ReflectionReloadTests : IDisposable
     public async Task OverloadsRefreshWhenReflectionLoads()
     {
         var call = new CallMethodNode(method, WriteLine(TypeSpecifier.FromType<string>()));
-        var node = classEditor.OpenedGraph!.Nodes.Single(n => n.Node == call);
+        var node = graph.Nodes.Single(n => n.Node == call);
         Assert.Empty(node.Overloads);
 
         await host.ReloadAsync(Project.FromSnapshot(TestSnapshots.WithRuntimeAssemblies("P", "N")), TestContext.Current.CancellationToken);
@@ -49,8 +56,8 @@ public sealed class ReflectionReloadTests : IDisposable
     public async Task EnumNamesAndDocumentationRefreshWhenReflectionLoads()
     {
         var call = new CallMethodNode(method, WriteLine(TypeSpecifier.FromType<DayOfWeek>()));
-        NodePinViewModel pin = classEditor.OpenedGraph!.Nodes.Single(n => n.Node == call).InputDataPins.Single();
-        var node = classEditor.OpenedGraph!.Nodes.Single(n => n.Node == call);
+        NodePinViewModel pin = graph.Nodes.Single(n => n.Node == call).InputDataPins.Single();
+        var node = graph.Nodes.Single(n => n.Node == call);
         var pinChanges = new List<string?>();
         var nodeChanges = new List<string?>();
         pin.PropertyChanged += (_, e) => pinChanges.Add(e.PropertyName);

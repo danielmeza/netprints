@@ -86,7 +86,7 @@ A view with no bindings, such as the code-behind dialogs, doesn't need `x:DataTy
 the `UserControl`. Avoid `$parent[Window]` from inside a template, and don't use numeric hops such as `$parent[Border;2]`. Both break
 when the layout is refactored. Better options, in order: (1) the item VM exposes the command itself; (2) `$parent[ItemsControl]`, the nearest items host;
 (3) restructure so that no reach-up is needed. For example, an inspector whose DataContext is overridden would need
-`$parent[Window]...ShowVariableInspector`; `ClassEditorWindow` wraps it instead:
+`$parent[Window]...ShowVariableInspector`; wrap it in a panel instead:
 ```xml
 <Panel IsVisible="{Binding ShowVariableInspector}">
   <edinspectors:VariableInspectorView DataContext="{Binding SelectedVariable}" />
@@ -145,10 +145,6 @@ from a VM, as `SelectTypeDialogViewModel.ResolveSelection` does; the view doesn'
   the row `Background="Transparent"` (E2 allows it for this reason).
 - Headless tests have no window manager, real cursor or OS drag and drop (see `UiCapabilities`). A test that needs
   them belongs in the Desktop E2E project.
-
-## Known debt
-
-- `ClassEditorWindow.axaml` still reaches `$parent[Window]` from several item templates (D4). Don't copy it.
 
 ## Before you finish a XAML change
 

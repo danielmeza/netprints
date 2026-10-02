@@ -128,11 +128,29 @@ public partial class GraphEditorView : UserControl
         // Opening another graph resets the view (PAR-51).
         Editor.ViewportZoom = 1;
         Editor.ViewportLocation = new Point(0, 0);
+
+        if (revealSubscription?.TakePendingReveal() is { } pending)
+        {
+            OnNodeRevealRequested(revealSubscription, pending);
+        }
     }
 
     /// <summary>Centers the viewport on a revealed node (FR-034, ED-T03).</summary>
     private void OnNodeRevealRequested(object? sender, NodeViewModel node)
     {
+        if (Editor.Bounds.Width <= 0 || Editor.Bounds.Height <= 0)
+        {
+            // Not laid out yet (a graph opened in a new tab): centre once it has a size.
+            void CenterWhenSized(object? source, SizeChangedEventArgs args)
+            {
+                Editor.SizeChanged -= CenterWhenSized;
+                OnNodeRevealRequested(sender, node);
+            }
+
+            Editor.SizeChanged += CenterWhenSized;
+            return;
+        }
+
         var center = CanvasCenterPoint;
         double zoom = Editor.ViewportZoom;
         Editor.ViewportLocation = new Point(node.Location.X - center.X / zoom, node.Location.Y - center.Y / zoom);

@@ -6,7 +6,7 @@
              x:Class="NetPrints.Editor.Inspectors.ClassInspectorView"
              x:DataType="edinspectors:ClassInspectorViewModel">
   <!-- Class inspector (PAR-34) -->
-  <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,*" ColumnDefinitions="Auto,*" Margin="4">
+  <Grid AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassInspector}" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,*" ColumnDefinitions="Auto,*" Margin="4">
     <TextBlock Grid.ColumnSpan="2" Classes="header" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
     <TextBlock x:Name="NameLabel" Grid.Row="1" Text="Name" VerticalAlignment="Center" Margin="0,0,8,0" />
     <TextBox AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassInspectorName}" AutomationProperties.LabeledBy="{Binding #NameLabel}" Grid.Row="1" Grid.Column="1" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" />

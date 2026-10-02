@@ -6,85 +6,6 @@ namespace NetPrints.Editor;
 /// </summary>
 public static class AutomationIds
 {
-    // Class editor window
-    /// <summary>
-    /// Automation id for the class editor window's compile button.
-    /// </summary>
-    public const string ClassEditorCompileButton = "ClassEditor.CompileButton";
-    /// <summary>
-    /// Automation id for the class editor window's run button.
-    /// </summary>
-    public const string ClassEditorRunButton = "ClassEditor.RunButton";
-    /// <summary>
-    /// Automation id for the class editor window's button that opens the class inspector.
-    /// </summary>
-    public const string ClassEditorClassButton = "ClassEditor.ClassButton";
-    /// <summary>
-    /// Automation id for the class editor window's save button.
-    /// </summary>
-    public const string ClassEditorSaveButton = "ClassEditor.SaveButton";
-    /// <summary>
-    /// Automation id for the class editor window's list of the class's methods.
-    /// </summary>
-    public const string ClassEditorMethodList = "ClassEditor.MethodList";
-    /// <summary>
-    /// Automation id for a method list row's name text.
-    /// </summary>
-    public const string ClassEditorMethodName = "ClassEditor.MethodName";
-    /// <summary>
-    /// Automation id for the class editor window's list of the class's variables.
-    /// </summary>
-    public const string ClassEditorVariableList = "ClassEditor.VariableList";
-    /// <summary>
-    /// Automation id for the class editor window's chooser for adding an override method.
-    /// </summary>
-    public const string ClassEditorOverrideChooser = "ClassEditor.OverrideChooser";
-    /// <summary>
-    /// Automation id for the class editor window's list of compile errors.
-    /// </summary>
-    public const string ClassEditorErrorList = "ClassEditor.ErrorList";
-    /// <summary>
-    /// Automation id for an error list row's diagnostic id text (US6, ED-T03).
-    /// </summary>
-    public const string ClassEditorErrorId = "ClassEditor.ErrorId";
-    /// <summary>
-    /// Automation id for an error list row's severity icon (FR-032, OWN-03). Its AutomationProperties.Name carries the severity.
-    /// </summary>
-    public const string ClassEditorErrorSeverity = "ClassEditor.ErrorSeverity";
-    /// <summary>
-    /// Automation id for an error list row's class text (FR-032, OWN-03).
-    /// </summary>
-    public const string ClassEditorErrorClass = "ClassEditor.ErrorClass";
-    /// <summary>
-    /// Automation id for an error list row's method text (FR-032, OWN-03).
-    /// </summary>
-    public const string ClassEditorErrorMethod = "ClassEditor.ErrorMethod";
-    /// <summary>
-    /// Automation id for the class editor window's output tab.
-    /// </summary>
-    public const string ClassEditorOutputTab = "ClassEditor.OutputTab";
-    /// <summary>
-    /// Automation id for the class editor window's output text pane.
-    /// </summary>
-    public const string ClassEditorOutputText = "ClassEditor.OutputText";
-    /// <summary>
-    /// Automation id for the class editor window's button that clears the output pane.
-    /// </summary>
-    public const string ClassEditorClearOutputButton = "ClassEditor.ClearOutputButton";
-    /// <summary>
-    /// Automation id for the class editor window's status text.
-    /// </summary>
-    public const string ClassEditorStatusText = "ClassEditor.StatusText";
-    /// <summary>
-    /// Automation id for the class editor window's graph canvas host.
-    /// </summary>
-    public const string ClassEditorGraph = "ClassEditor.Graph";
-    /// <summary>
-    /// Automation id for the "Opening &lt;name&gt;…" busy overlay shown over the canvas while a graph
-    /// is opening (batch D1).
-    /// </summary>
-    public const string ClassEditorOpeningGraphIndicator = "ClassEditor.OpeningGraphIndicator";
-
     // Inspectors
     /// <summary>
     /// Automation id for the class inspector pane.
@@ -257,11 +178,7 @@ public static class AutomationIds
     /// </summary>
     public const string ReferencesCloseButton = "References.Close";
 
-    // Windows (AutomationProperties.Name carries the class full name for class windows)
-    /// <summary>
-    /// Automation id for the class editor window itself. Its AutomationProperties.Name carries the class's full name.
-    /// </summary>
-    public const string ClassEditorWindow = "ClassEditor.Window";
+    // Dialog windows
     /// <summary>
     /// Automation id for the references dialog window itself.
     /// </summary>
@@ -286,86 +203,6 @@ public static class AutomationIds
     /// Automation id for the select-method dialog's select button.
     /// </summary>
     public const string SelectMethodButton = "Dialogs.SelectMethod.Select";
-
-    // Main window panes
-    // Class editor lists and splitters
-    /// <summary>
-    /// Automation id for the class editor window's list of the class's constructors.
-    /// </summary>
-    public const string ClassEditorConstructorList = "ClassEditor.ConstructorList";
-    /// <summary>
-    /// Automation id for the class editor window's button that creates a new method.
-    /// </summary>
-    public const string ClassEditorCreateMethodButton = "ClassEditor.CreateMethodButton";
-    /// <summary>
-    /// Automation id for the class editor window's button that creates a new constructor.
-    /// </summary>
-    public const string ClassEditorCreateConstructorButton = "ClassEditor.CreateConstructorButton";
-    /// <summary>
-    /// Automation id for the class editor window's button that creates a new variable.
-    /// </summary>
-    public const string ClassEditorCreateVariableButton = "ClassEditor.CreateVariableButton";
-    /// <summary>
-    /// Automation id for the class editor window's left column (methods/constructors/variables lists).
-    /// </summary>
-    public const string ClassEditorLeftColumn = "ClassEditor.LeftColumn";
-    /// <summary>
-    /// Automation id for the class editor window's inspector column.
-    /// </summary>
-    public const string ClassEditorInspectorColumn = "ClassEditor.InspectorColumn";
-    /// <summary>
-    /// Automation id for the splitter above the class editor window's method list.
-    /// </summary>
-    public const string ClassEditorMethodsSplitter = "ClassEditor.Splitter.Methods";
-    /// <summary>
-    /// Automation id for the splitter above the class editor window's constructor list.
-    /// </summary>
-    public const string ClassEditorConstructorsSplitter = "ClassEditor.Splitter.Constructors";
-    /// <summary>
-    /// Automation id for the splitter between the class editor window's left column and graph.
-    /// </summary>
-    public const string ClassEditorLeftSplitter = "ClassEditor.Splitter.Left";
-    /// <summary>
-    /// Automation id for the splitter above the class editor window's error list.
-    /// </summary>
-    public const string ClassEditorErrorsSplitter = "ClassEditor.Splitter.Errors";
-    /// <summary>
-    /// Automation id for the splitter between the class editor window's graph and inspector column.
-    /// </summary>
-    public const string ClassEditorInspectorSplitter = "ClassEditor.Splitter.Inspector";
-    /// <summary>
-    /// Automation id for the splitter above the class editor window's event graph list.
-    /// </summary>
-    public const string ClassEditorEventGraphsSplitter = "ClassEditor.Splitter.EventGraphs";
-
-    // Event graphs (US4)
-    /// <summary>
-    /// Automation id for the class editor window's list of the class's event graphs.
-    /// </summary>
-    public const string EventGraphList = "ClassEditor.EventGraphList";
-    /// <summary>
-    /// Automation id for an event graph list row's name text.
-    /// </summary>
-    public const string EventGraphName = "ClassEditor.EventGraphName";
-    /// <summary>
-    /// Automation id for the class editor window's button that creates a new event graph.
-    /// </summary>
-    public const string CreateEventGraphButton = "ClassEditor.CreateEventGraphButton";
-
-    // Method-local variables (US5, sub-phase H)
-    /// <summary>
-    /// Automation id for the Variables panel's "Class" group (the class's member variables).
-    /// </summary>
-    public const string VariablesClassGroup = "ClassEditor.VariablesClassGroup";
-    /// <summary>
-    /// Automation id for the Variables panel's "Method: &lt;name&gt;" group (the opened method's or
-    /// constructor's local variables); only shown while such a graph is open.
-    /// </summary>
-    public const string VariablesMethodGroup = "ClassEditor.VariablesMethodGroup";
-    /// <summary>
-    /// Automation id for the Variables panel's button that creates a new local variable.
-    /// </summary>
-    public const string CreateLocalVariableButton = "ClassEditor.CreateLocalVariableButton";
 
     // Variables list rows (AutomationProperties.Name carries the variable name)
     /// <summary>

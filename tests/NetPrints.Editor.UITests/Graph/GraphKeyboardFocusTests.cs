@@ -1,7 +1,7 @@
 using Avalonia.Headless.XUnit;
 using NetPrints.Editor.Graph;
-using NetPrints.Editor.UITests.ClassEditor;
 using NetPrints.Editor.UITests.Driving;
+using NetPrints.Editor.UITests.Shell;
 using NetPrints.Testing.Ui.Driving;
 
 namespace NetPrints.Editor.UITests.Graph;
@@ -14,7 +14,7 @@ public class GraphKeyboardFocusTests
     private static async Task<EditorSession> OpenByPickingAMethodAsync()
     {
         var session = await EditorSession.OpenSampleMainAsync(Token);
-        await session.PickMainFromTheMethodListAsync(Token);
+        await session.PickMainFromTheTreeAsync(Token);
         return session;
     }
 

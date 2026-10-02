@@ -3,7 +3,9 @@ using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Graph.Nodes;
 using NetPrints.Editor.Graph.Pins;
+using NetPrints.Editor.Shell;
 using NetPrints.Editor.Tests.Hosting;
+using NetPrints.Editor.UndoRedo;
 using NetPrints.Graph;
 
 namespace NetPrints.Editor.Tests.Graph;
@@ -16,7 +18,7 @@ public abstract class GraphTestBase : IDisposable
     protected readonly TestEditor Editor;
     protected readonly ClassGraph Class;
     protected readonly MethodGraph Method;
-    protected readonly ClassEditorViewModel ClassEditor;
+    protected readonly ClassContext ClassContext;
     protected readonly NodeGraphViewModel Graph;
 
     protected static readonly TypeSpecifier StringType = TypeSpecifier.FromType<string>();
@@ -26,15 +28,14 @@ public abstract class GraphTestBase : IDisposable
     {
         Editor = editor;
         Class = new ClassGraph { Name = "C", Namespace = "N" };
-        ClassEditor = new ClassEditorViewModel(Class, Editor.Context);
-        ClassEditor.CreateMethodCommand.Execute(null);
-        Method = (MethodGraph)ClassEditor.Methods.Single().Graph;
-        Graph = ClassEditor.OpenedGraph!;
+        ClassContext = new ClassContext(Class, Editor.Context, new UndoRedoStack());
+        Method = ClassContext.CreateMethod();
+        Graph = new NodeGraphViewModel(Method, ClassContext.Services);
     }
 
     public void Dispose()
     {
-        ClassEditor.Dispose();
+        ClassContext.Dispose();
         GC.SuppressFinalize(this);
     }
 

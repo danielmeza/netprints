@@ -21,6 +21,9 @@ public sealed class InspectorPage(IUiDriver driver, AutomationQuery window)
     /// <summary>The class inspector's name box.</summary>
     public UiElement ClassName => Find(AutomationIds.ClassInspectorName);
 
+    /// <summary>The class inspector's generated code preview.</summary>
+    public UiElement ClassCodeView => Find(AutomationIds.ClassInspectorCodeView);
+
     /// <summary>The method inspector.</summary>
     public UiElement MethodInspector => Find(AutomationIds.MethodInspector);
 

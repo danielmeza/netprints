@@ -3,7 +3,7 @@ namespace NetPrints.Editor.ClassEditor;
 /// <summary>
 /// Sent by <see cref="NetPrints.Editor.ErrorList.ErrorListViewModel"/> when a navigable diagnostic row is
 /// double-clicked or activated from the keyboard (FR-034, ED-T03): received by the owning
-/// <see cref="ClassEditorViewModel"/>, which opens the graph <see cref="GraphKey"/> resolves to (if it is
+/// <see cref="ErrorList.ErrorsPanelViewModel"/>, which opens the graph <see cref="GraphKey"/> resolves to (if it is
 /// not already open) and, when <see cref="NodeId"/> is known, reveals it through
 /// <see cref="Graph.NodeGraphViewModel.RevealNode(string)"/>. A diagnostic with no node mapping still opens
 /// the graph (OWN-04): <see cref="NodeId"/> is <see langword="null"/> in that case.

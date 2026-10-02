@@ -1,5 +1,4 @@
 using NetPrints.Core;
-using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.Commands;
 using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Graph;
@@ -16,9 +15,8 @@ public sealed class EditCommandsTests : SessionCommandTests
 
     private NodeGraphViewModel OpenGraph()
     {
-        var classEditor = Track(new ClassEditorViewModel(new ClassGraph { Name = "C", Namespace = "N" }, Editor.Context));
-        classEditor.CreateMethodCommand.Execute(null);
-        return Assert.IsType<NodeGraphViewModel>(classEditor.OpenedGraph);
+        var classContext = Track(new ClassContext(new ClassGraph { Name = "C", Namespace = "N" }, Editor.Context, new UndoRedoStack()));
+        return Track(new NodeGraphViewModel(classContext.CreateMethod(), classContext.Services));
     }
 
     private static NodeViewModel AddDeletableNode(NodeGraphViewModel graph)
@@ -171,9 +169,8 @@ public sealed class EditCommandsTests : SessionCommandTests
     [Fact]
     public void RenameIsDisabledForAConstructorTreeItemAndAnActiveConstructorGraph()
     {
-        var classEditor = Track(new ClassEditorViewModel(new ClassGraph { Name = "C", Namespace = "N" }, Editor.Context));
-        classEditor.CreateConstructorCommand.Execute(null);
-        NodeGraphViewModel graph = Assert.IsType<NodeGraphViewModel>(classEditor.OpenedGraph);
+        var classContext = Track(new ClassContext(new ClassGraph { Name = "C", Namespace = "N" }, Editor.Context, new UndoRedoStack()));
+        var graph = Track(new NodeGraphViewModel(classContext.CreateConstructor(), classContext.Services));
         var handler = new RenameCommandHandler();
 
         Assert.IsType<ConstructorGraph>(graph.Graph);

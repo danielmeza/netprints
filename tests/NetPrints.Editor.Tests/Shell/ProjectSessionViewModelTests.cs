@@ -57,19 +57,6 @@ public sealed class ProjectSessionViewModelTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task AdoptedUndoStackReplacesTheOneOfTheClass()
-    {
-        Project project = await LoadSampleAsync();
-        using var session = new ProjectSessionViewModel(project, editor.Context);
-        ClassGraph cls = project.Classes[0];
-        var adopted = new UndoRedoStack();
-
-        session.UseUndoStack(cls, adopted);
-
-        Assert.Same(adopted, session.UndoStackFor(cls));
-    }
-
-    [Fact]
     public async Task SaveAllWritesTheDirtyClassesAndCleansThem()
     {
         Project project = await LoadSampleAsync();
@@ -375,21 +362,6 @@ public sealed class ProjectSessionViewModelTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task RunningFromTheClassEditorGoesThroughTheSessionSoStopReachesIt()
-    {
-        Project project = await LoadSampleAsync();
-        using var session = new ProjectSessionViewModel(project, editor.Context);
-        using var classEditor = new ClassEditorViewModel(project.Classes.Single(), editor.Context) { SessionSource = () => session };
-
-        await classEditor.RunCommand.ExecuteAsync(null);
-        Assert.True(session.IsRunning);
-        session.Stop();
-
-        CancellationToken token = Assert.Single(editor.Processes.Tokens);
-        Assert.True(token.IsCancellationRequested);
-    }
-
-    [Fact]
     public async Task DisposingTheSessionKillsTheRunningProgram()
     {
         Project project = await LoadSampleAsync();
@@ -431,19 +403,14 @@ public sealed class ProjectSessionViewModelTests : IAsyncDisposable
         Project project = await LoadSampleAsync();
         using var session = new ProjectSessionViewModel(project, editor.Context);
         ClassGraph cls = project.Classes.Single();
-        var adopted = new UndoRedoStack();
         int pulses = 0;
         session.CommandStatesChanged += (_, _) => pulses++;
 
         session.UndoStackFor(cls).Do(Edit());
         Assert.Equal(1, pulses);
 
-        session.UseUndoStack(cls, adopted);
+        session.UndoStackFor(cls).Undo();
         Assert.Equal(2, pulses);
-        adopted.Do(Edit());
-        Assert.Equal(3, pulses);
-        adopted.Undo();
-        Assert.Equal(4, pulses);
     }
 
     [Fact]

@@ -5,8 +5,8 @@ using Avalonia.VisualTree;
 using NetPrints.Core;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Hosting.Automation;
-using NetPrints.Editor.UITests.ClassEditor;
 using NetPrints.Editor.UITests.Driving;
+using NetPrints.Editor.UITests.Shell;
 using NetPrints.Graph;
 using NetPrints.Testing.Ui.Driving;
 using Nodify.Avalonia.Connections;
@@ -31,18 +31,18 @@ public class CanvasInteractionTests
         // driver's single combined PressAsync.
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var pin = session.GraphViewModel.Nodes.Single(n => n.Node is CallMethodNode).OutputExecPins.First(p => p.Pin.Name != "Catch");
-        var connector = session.ClassWindow.GetVisualDescendants().OfType<Connector>().Single(c => ReferenceEquals(c.DataContext, pin));
+        var connector = session.Window.GetVisualDescendants().OfType<Connector>().Single(c => ReferenceEquals(c.DataContext, pin));
 
         connector.Focus();
         HeadlessDriver.Pump();
         Assert.False(connector.IsPendingConnection);
 
-        session.ClassWindow.KeyPress(Key.Enter, RawInputModifiers.Control, PhysicalKey.None, null);
+        session.Window.KeyPress(Key.Enter, RawInputModifiers.Control, PhysicalKey.None, null);
         HeadlessDriver.Pump();
 
         Assert.True(connector.IsPendingConnection);
 
-        session.ClassWindow.KeyRelease(Key.Enter, RawInputModifiers.Control, PhysicalKey.None, null);
+        session.Window.KeyRelease(Key.Enter, RawInputModifiers.Control, PhysicalKey.None, null);
         HeadlessDriver.Pump();
     }
 
@@ -170,7 +170,7 @@ public class CanvasInteractionTests
         await graph.RightDragAsync(100, 60, Token);
         await graph.WheelAsync(await graph.EmptyPointAsync(Token, -300, -300), -1, Token);
 
-        await session.ClassEditor.ClassButton.ClickAsync(Token);
+        await session.OpenClassGraphAsync(Token);
 
         Assert.Equal((0.0, 0.0), await graph.ViewportAsync(Token)); // PAR-51
         Assert.Equal(1.0, await graph.ZoomAsync(Token));
@@ -284,7 +284,7 @@ public class CanvasInteractionTests
         await session.WaitForRenderedAsync(Token);
         Assert.Equal(intOverload, method.Nodes.OfType<CallMethodNode>().Single().MethodSpecifier);
 
-        await session.ClassEditor.PressUndoAsync(Token);
+        await session.PressUndoAsync(Token);
         await session.WaitForRenderedAsync(Token);
         Assert.Equal(TypeSpecifier.FromType<string>(), method.Nodes.OfType<CallMethodNode>().Single().MethodSpecifier.Parameters[0].Value);
 

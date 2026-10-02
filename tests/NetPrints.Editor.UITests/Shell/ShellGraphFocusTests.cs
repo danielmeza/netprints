@@ -2,11 +2,11 @@ using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Input;
 using NetPrints.Core;
-using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.UITests.Driving;
 using NetPrints.Editor.UITests.Hosting;
+using NetPrints.Editor.UndoRedo;
 using NetPrints.Graph;
 
 namespace NetPrints.Editor.UITests.Shell;
@@ -24,16 +24,14 @@ public class ShellGraphFocusTests
     {
         await using var app = HeadlessApp.Start();
         var cls = new ClassGraph { Name = "C", Namespace = "N" };
-        using var editor = new ClassEditorViewModel(cls, app.Composition.Context);
-        editor.CreateMethodCommand.Execute(null);
-        editor.CreateMethodCommand.Execute(null);
+        using var context = new ClassContext(cls, app.Composition.Context, new UndoRedoStack());
         var graphs = new Dictionary<DocumentId, NodeGraphViewModel>
         {
-            [First] = new NodeGraphViewModel(editor.Methods[0].Graph, editor.Services),
-            [Second] = new NodeGraphViewModel(editor.Methods[1].Graph, editor.Services),
+            [First] = new NodeGraphViewModel(context.CreateMethod(), context.Services),
+            [Second] = new NodeGraphViewModel(context.CreateMethod(), context.Services),
         };
         using var rig = ShellRig.Create(id => graphs.TryGetValue(id, out NodeGraphViewModel? graph) ? new GraphDocumentViewModel(id, graph, cls, session: null) : null);
-        Assert.Equal(2, editor.Methods.Count);
+        Assert.Equal(2, context.Methods.Count);
 
         rig.Api.OpenDocument(First);
         rig.Settle();
@@ -57,11 +55,9 @@ public class ShellGraphFocusTests
     {
         await using var app = HeadlessApp.Start();
         var cls = new ClassGraph { Name = "C", Namespace = "N" };
-        using var editor = new ClassEditorViewModel(cls, app.Composition.Context);
-        editor.CreateMethodCommand.Execute(null);
-        editor.CreateMethodCommand.Execute(null);
-        var firstGraph = new NodeGraphViewModel(editor.Methods[0].Graph, editor.Services);
-        var secondGraph = new NodeGraphViewModel(editor.Methods[1].Graph, editor.Services);
+        using var context = new ClassContext(cls, app.Composition.Context, new UndoRedoStack());
+        var firstGraph = new NodeGraphViewModel(context.CreateMethod(), context.Services);
+        var secondGraph = new NodeGraphViewModel(context.CreateMethod(), context.Services);
         var first = new GraphEditorView { DataContext = firstGraph };
         var second = new GraphEditorView { DataContext = secondGraph };
         var tabContent = new Panel { Children = { first } };

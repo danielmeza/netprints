@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
+using NetPrints.Editor.Inspectors;
 using NetPrints.Editor.UndoRedo;
 
 namespace NetPrints.Editor.Variables;
@@ -73,7 +74,7 @@ public sealed partial class MemberVariableViewModel : ObservableObject, IDisposa
     }
 
     /// <summary>The visibility values offered by the visibility chooser.</summary>
-    public IReadOnlyList<MemberVisibility> PossibleVisibilities => ClassEditorViewModel.Visibilities;
+    public IReadOnlyList<MemberVisibility> PossibleVisibilities => VisibilityChoices.All;
 
     /// <summary>The variable's modifiers.</summary>
     public VariableModifiers Modifiers

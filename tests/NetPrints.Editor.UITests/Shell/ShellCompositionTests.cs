@@ -30,7 +30,6 @@ public class ShellCompositionTests
         await using ShellApp app = await StartAsync();
 
         Assert.Same(app.Window, app.Composition.Windows.MainWindow);
-        Assert.Empty(app.Composition.Windows.ClassEditorWindows);
         Assert.Equal([app.Window], app.Ui.Tree.Windows);
         Assert.NotNull(app.Shell.MenuBar);
         Assert.Contains("HelloWorld", app.Shell.Title, StringComparison.Ordinal);

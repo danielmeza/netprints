@@ -17,18 +17,18 @@
   <!-- Floating dock windows resolve their content through the application's templates, not the DockControl's (ADR-0018 check 3). -->
   <Application.DataTemplates>
     <DataTemplate DataType="docking:ShellDocument" x:DataType="docking:ShellDocument">
-      <ContentControl Content="{Binding Context}">
+      <ContentControl Classes="shellHost" Content="{Binding Context}">
         <ContentControl.Styles>
-          <Style Selector="ContentControl">
+          <Style Selector="ContentControl.shellHost">
             <Setter Property="AutomationProperties.AutomationId" Value="{Binding AutomationId}" />
           </Style>
         </ContentControl.Styles>
       </ContentControl>
     </DataTemplate>
     <DataTemplate DataType="docking:ShellTool" x:DataType="docking:ShellTool">
-      <ContentControl Content="{Binding Context}">
+      <ContentControl Classes="shellHost" Content="{Binding Context}">
         <ContentControl.Styles>
-          <Style Selector="ContentControl">
+          <Style Selector="ContentControl.shellHost">
             <Setter Property="AutomationProperties.AutomationId" Value="{Binding AutomationId}" />
           </Style>
         </ContentControl.Styles>
