@@ -258,6 +258,53 @@ public class DocumentTabsTests
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task ADockedGraphCanBeFloatedAgain()
+    {
+        await using Rig rig = await CreateAsync();
+        rig.Adapter.OpenDocument(rig.MethodDocument);
+        await rig.RunAsync("floatDocument");
+        rig.Settle();
+        Assert.True(rig.Adapter.IsFloating(rig.MethodDocument));
+
+        await rig.RunAsync("dockDocument");
+        rig.Settle();
+        Assert.False(rig.Adapter.IsFloating(rig.MethodDocument));
+
+        await rig.RunAsync("floatDocument");
+        rig.Settle();
+        Assert.True(rig.Adapter.IsFloating(rig.MethodDocument));
+        Assert.Empty(rig.Faults);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task TheViewMenuOffersFloatOrDockAccordingToTheLayout()
+    {
+        await using Rig rig = await CreateAsync();
+        rig.Adapter.OpenDocument(rig.MethodDocument);
+        MenuViewModel view = rig.Shell.MenuBar?.Menus.Single(menu => menu.Header == "View") ?? throw new InvalidOperationException("No menu bar.");
+        CommandEntryViewModel Entry(string name) => view.Items.Single(item => item.Id == ContributionIds.CommandPrefix + name);
+        rig.Settle();
+        Assert.True(Entry("floatDocument").IsEnabled);
+        Assert.False(Entry("dockDocument").IsEnabled);
+
+        rig.Adapter.FloatDocument(rig.MethodDocument);
+        rig.Settle();
+        Assert.False(Entry("floatDocument").IsEnabled);
+        Assert.True(Entry("dockDocument").IsEnabled);
+
+        rig.Adapter.DockDocument(rig.MethodDocument);
+        rig.Settle();
+        Assert.True(Entry("floatDocument").IsEnabled);
+        Assert.False(Entry("dockDocument").IsEnabled);
+
+        rig.Adapter.FloatDocument(rig.MethodDocument);
+        rig.Adapter.ResetLayout();
+        rig.Settle();
+        Assert.True(Entry("floatDocument").IsEnabled);
+        Assert.False(Entry("dockDocument").IsEnabled);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task ClosingAPaneHidesItAndTheViewMenuShowsItAgain()
     {
         await using Rig rig = await CreateAsync();

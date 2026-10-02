@@ -162,6 +162,7 @@ public sealed partial class DockShellAdapter : ObservableObject, IShell, IShellL
         {
             factory.FloatDockable(document);
             ActivateDocument(id);
+            shell.NotifyLayoutChanged();
         }
     }
 
@@ -175,6 +176,7 @@ public sealed partial class DockShellAdapter : ObservableObject, IShell, IShellL
         {
             factory.MoveDockable(source, target, document, null);
             ActivateDocument(id);
+            shell.NotifyLayoutChanged();
         }
     }
 
@@ -296,6 +298,8 @@ public sealed partial class DockShellAdapter : ObservableObject, IShell, IShellL
         {
             panel.IsVisible = IsPanelVisible(panel.Id);
         }
+
+        shell.NotifyLayoutChanged();
     }
 
     private void OnActiveDockableChanged(object? sender, ActiveDockableChangedEventArgs e)

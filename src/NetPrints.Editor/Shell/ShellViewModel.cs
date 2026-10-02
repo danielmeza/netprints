@@ -299,5 +299,8 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
         _ => BuildState.Idle,
     });
 
+    /// <summary>Tells the menus and bars that the layout changed (a pane or tab floated, docked or reset), so the commands that depend on it are enabled again.</summary>
+    internal void NotifyLayoutChanged() => RaiseCommandStatesChanged();
+
     private void RaiseCommandStatesChanged() => CommandStatesChanged?.Invoke(this, EventArgs.Empty);
 }
