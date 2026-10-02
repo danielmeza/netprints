@@ -1,9 +1,10 @@
 using NetPrints.Core;
-using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.ModelSync;
 using NetPrints.Editor.Search;
+using NetPrints.Editor.Shell;
 using NetPrints.Editor.Tests.Hosting;
+using NetPrints.Editor.UndoRedo;
 using NetPrints.Editor.Variables;
 using NetPrints.Graph;
 
@@ -13,41 +14,48 @@ namespace NetPrints.Editor.Tests.Variables;
 public class LocalVariableTests : IDisposable
 {
     private readonly TestEditor editor;
-    private readonly ClassEditorVM vm;
+    private readonly ClassContext context;
+    private readonly VariablesPanelViewModel panel;
     private readonly MethodGraph method;
-    private readonly NodeGraphVM graph;
+    private readonly NodeGraphViewModel graph;
 
     public LocalVariableTests(TestEditor editor)
     {
         this.editor = editor;
         var cls = new ClassGraph { Name = "C", Namespace = "N" };
-        vm = new ClassEditorVM(cls, editor.Context);
-        vm.CreateMethodCommand.Execute(null); // also opens it (mirrors EventGraphTests' Create Event Graph)
-        graph = vm.OpenedGraph ?? throw new InvalidOperationException("CreateMethodCommand did not open the new method.");
-        method = (MethodGraph)graph.Graph;
+        context = new ClassContext(cls, editor.Context, new UndoRedoStack());
+        panel = new VariablesPanelViewModel(context.Services, context.Variables);
+        method = context.CreateMethod();
+        graph = new NodeGraphViewModel(method, context.Services);
+        panel.OnOpenedGraphChanged(method);
     }
 
-    public void Dispose() => vm.Dispose();
-
-    private ObservableViewModelCollection<LocalVariableVM, LocalVariable> MethodVariables =>
-        vm.VariablesPanel.MethodVariables ?? throw new InvalidOperationException("No method or constructor graph is open.");
-
-    private LocalVariableVM CreateLocal()
+    public void Dispose()
     {
-        vm.VariablesPanel.CreateLocalVariableCommand.Execute(null);
+        graph.Dispose();
+        panel.Dispose();
+        context.Dispose();
+    }
+
+    private ObservableViewModelCollection<LocalVariableViewModel, LocalVariable> MethodVariables =>
+        panel.MethodVariables ?? throw new InvalidOperationException("No method or constructor graph is open.");
+
+    private LocalVariableViewModel CreateLocal()
+    {
+        panel.CreateLocalVariableCommand.Execute(null);
         return MethodVariables.Single();
     }
 
     [Fact]
     public void CreateLocalVariableUniqueObjectUndoable()
     {
-        vm.VariablesPanel.CreateLocalVariableCommand.Execute(null);
-        vm.VariablesPanel.CreateLocalVariableCommand.Execute(null);
+        panel.CreateLocalVariableCommand.Execute(null);
+        panel.CreateLocalVariableCommand.Execute(null);
 
         Assert.Equal(["Local", "Local2"], method.LocalVariables.Select(l => l.Name).ToArray());
         Assert.True(method.LocalVariables.All(l => l.Type == TypeSpecifier.FromType<object>()));
 
-        vm.UndoCommand.Execute(null);
+        context.UndoRedo.Undo();
         Assert.Equal(1, method.LocalVariables.Count);
     }
 
@@ -66,7 +74,7 @@ public class LocalVariableTests : IDisposable
         Assert.Same(local.Local, method.LocalVariables.Single());
         Assert.Equal("Renamed", local.Local.Name);
 
-        vm.UndoCommand.Execute(null);
+        context.UndoRedo.Undo();
         Assert.Equal("Local", local.Local.Name);
         Assert.Equal("Local", getter.VariableName);
         Assert.Same(getter, method.Nodes.OfType<VariableGetterNode>().Single()); // not replaced
@@ -76,7 +84,7 @@ public class LocalVariableTests : IDisposable
     public void RenameRejectsDuplicateOrInvalidNamesAndDoesNotUndo()
     {
         CreateLocal(); // "Local"
-        vm.VariablesPanel.CreateLocalVariableCommand.Execute(null); // "Local2"
+        panel.CreateLocalVariableCommand.Execute(null); // "Local2"
         var second = MethodVariables[MethodVariables.Count - 1];
 
         second.Name = "Local"; // taken by the first local
@@ -86,10 +94,10 @@ public class LocalVariableTests : IDisposable
         Assert.Equal("Local2", second.Name);
 
         // Exactly the two creates are undoable; neither rejected rename pushed a command.
-        vm.UndoCommand.Execute(null);
-        vm.UndoCommand.Execute(null);
+        context.UndoRedo.Undo();
+        context.UndoRedo.Undo();
         Assert.Empty(method.LocalVariables);
-        Assert.False(vm.UndoRedo.CanUndo);
+        Assert.False(context.UndoRedo.CanUndo);
     }
 
     [Fact]
@@ -119,7 +127,7 @@ public class LocalVariableTests : IDisposable
         Assert.Same(method.MainReturnNode.ReturnPin, replacement.OutputExecPins[0].OutgoingPin);
         Assert.Null(replacement.NewValuePin.IncomingPin); // data connections are not carried to the new-type node
 
-        vm.UndoCommand.Execute(null);
+        context.UndoRedo.Undo();
         var restored = method.Nodes.OfType<VariableSetterNode>().Single();
         Assert.Same(setter, restored); // R2-04: undo restores the exact original instance, not a rebuilt one
         Assert.Equal(TypeSpecifier.FromType<object>(), restored.Variable.Type);
@@ -170,7 +178,7 @@ public class LocalVariableTests : IDisposable
 
         for (int cycle = 0; cycle < 3; cycle++)
         {
-            vm.UndoCommand.Execute(null);
+            context.UndoRedo.Undo();
 
             var restoredGetter = method.Nodes.OfType<VariableGetterNode>().Single();
             var restoredSetter = method.Nodes.OfType<VariableSetterNode>().Single();
@@ -188,7 +196,7 @@ public class LocalVariableTests : IDisposable
             Assert.Same(restoredSetter.InputExecPins[0], method.EntryNode.InitialExecutionPin.OutgoingPin);
             Assert.Same(method.MainReturnNode.ReturnPin, restoredSetter.OutputExecPins[0].OutgoingPin);
 
-            vm.RedoCommand.Execute(null);
+            context.UndoRedo.Redo();
 
             var redoneGetter = method.Nodes.OfType<VariableGetterNode>().Single();
             var redoneSetter = method.Nodes.OfType<VariableSetterNode>().Single();
@@ -246,7 +254,7 @@ public class LocalVariableTests : IDisposable
         Assert.Same(method.EntryNode.InitialExecutionPin.OutgoingPin, r1.InputExecPins[0]);
         Assert.Same(method.MainReturnNode.ReturnPin, r2.OutputExecPins[0].OutgoingPin);
 
-        vm.UndoCommand.Execute(null);
+        context.UndoRedo.Undo();
 
         Assert.Equal(preRetypeNodeOrder, method.Nodes.ToList()); // same instances, same order
         Assert.Same(s2.InputExecPins[0], s1.OutputExecPins[0].OutgoingPin); // S1 -> S2 restored, not S1 -> R2
@@ -257,7 +265,7 @@ public class LocalVariableTests : IDisposable
         Assert.DoesNotContain(r1, method.Nodes); // the replacement is fully detached, not left dangling
         Assert.DoesNotContain(r2, method.Nodes);
 
-        vm.RedoCommand.Execute(null);
+        context.UndoRedo.Redo();
 
         Assert.Same(r1, method.Nodes.OfType<VariableSetterNode>().Single(n => n.PositionX == 10));
         Assert.Same(r2, method.Nodes.OfType<VariableSetterNode>().Single(n => n.PositionX == 42));
@@ -283,7 +291,7 @@ public class LocalVariableTests : IDisposable
         Assert.Empty(method.Nodes.OfType<VariableSetterNode>());
         Assert.Null(method.EntryNode.InitialExecutionPin.OutgoingPin);
 
-        vm.UndoCommand.Execute(null);
+        context.UndoRedo.Undo();
 
         Assert.Same(local.Local, method.LocalVariables.Single());
         var restored = method.Nodes.OfType<VariableSetterNode>().Single();
@@ -296,7 +304,7 @@ public class LocalVariableTests : IDisposable
     public void DroppingALocalOpensGetSetChooserWithBothEnabled()
     {
         // H1's stopgap (VariableSpecifier.DeclaringType is null => CanGet/CanSet both true) is now
-        // reachable through the panel's drag & drop (NodeGraphVM.Drop(LocalVariableVM, GraphPoint)).
+        // reachable through the panel's drag & drop (NodeGraphViewModel.Drop(LocalVariableViewModel, GraphPoint)).
         var local = CreateLocal();
         var position = new GraphPoint(50, 60);
 
@@ -329,22 +337,22 @@ public class LocalVariableTests : IDisposable
     [Fact]
     public void VariablesPanelBuildsMethodGroupFromOpenedGraphAndClearsWhenClosed()
     {
-        Assert.True(vm.VariablesPanel.HasMethodGroup);
-        Assert.Equal("Method: Method", vm.VariablesPanel.MethodGroupHeader);
-        Assert.Same(vm.Variables, vm.VariablesPanel.ClassVariables);
+        Assert.True(panel.HasMethodGroup);
+        Assert.Equal("Method: Method", panel.MethodGroupHeader);
+        Assert.Same(context.Variables, panel.ClassVariables);
 
-        vm.OpenedGraph = null;
+        panel.OnOpenedGraphChanged(null);
 
-        Assert.False(vm.VariablesPanel.HasMethodGroup);
-        Assert.Null(vm.VariablesPanel.MethodVariables);
-        Assert.Equal("", vm.VariablesPanel.MethodGroupHeader);
+        Assert.False(panel.HasMethodGroup);
+        Assert.Null(panel.MethodVariables);
+        Assert.Equal("", panel.MethodGroupHeader);
     }
 
     [Fact]
     public void MethodVariablesSearchCategoryListsLocals()
     {
         CreateLocal();
-        using var search = new SuggestionListVM(graph);
+        using var search = new SuggestionListViewModel(graph);
 
         var rows = search.BuildItems(null);
 

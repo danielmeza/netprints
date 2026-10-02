@@ -23,7 +23,7 @@ public partial class LocalVariableView : UserControl
         NameBox.AddHandler(PointerReleasedEvent, OnNamePointerReleased, RoutingStrategies.Tunnel, handledEventsToo: true);
     }
 
-    private LocalVariableVM? ViewModel => DataContext as LocalVariableVM;
+    private LocalVariableViewModel? ViewModel => DataContext as LocalVariableViewModel;
 
     // Local variables can be dragged onto the graph to open the Get/Set chooser (PAR-57, US5).
     private readonly DragSourceHelper dragSource = new();

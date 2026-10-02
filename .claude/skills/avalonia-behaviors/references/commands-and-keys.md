@@ -39,7 +39,7 @@ and pass the item as the parameter.
   <Panel Background="Transparent">
     <Interaction.Behaviors>
       <ExecuteCommandOnTappedBehavior
-        Command="{Binding $parent[ListBox].((edsearch:SuggestionListVM)DataContext).SelectCommand}"
+        Command="{Binding $parent[ListBox].((edsearch:SuggestionListViewModel)DataContext).SelectCommand}"
         CommandParameter="{Binding}" />
     </Interaction.Behaviors>
     ...

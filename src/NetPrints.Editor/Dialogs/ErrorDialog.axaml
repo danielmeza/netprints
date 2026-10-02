@@ -3,7 +3,7 @@
         xmlns:ed="clr-namespace:NetPrints.Editor"
         xmlns:eddialogs="clr-namespace:NetPrints.Editor.Dialogs"
         x:Class="NetPrints.Editor.Dialogs.ErrorDialog"
-        x:DataType="eddialogs:ErrorDialogVM"
+        x:DataType="eddialogs:ErrorDialogViewModel"
         Icon="avares://NetPrints.Editor/Assets/NetPrintsLogo.ico"
         Width="700" Height="400"
         WindowStartupLocation="CenterOwner" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ErrorDialog}">

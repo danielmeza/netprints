@@ -1,9 +1,66 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:docking="clr-namespace:NetPrints.Editor.Shell.Docking"
+             xmlns:edbehaviors="clr-namespace:NetPrints.Editor.Behaviors"
+             xmlns:edgraph="clr-namespace:NetPrints.Editor.Graph"
+             xmlns:shell="clr-namespace:NetPrints.Editor.Shell"
+             xmlns:edinspectors="clr-namespace:NetPrints.Editor.Inspectors"
+             xmlns:edcode="clr-namespace:NetPrints.Editor.CodeView"
+             xmlns:ederrorlist="clr-namespace:NetPrints.Editor.ErrorList"
+             xmlns:edoutput="clr-namespace:NetPrints.Editor.Output"
+             xmlns:edtree="clr-namespace:NetPrints.Editor.ProjectTree"
              x:Class="NetPrints.Editor.EditorApp"
              Name="NetPrints"
              RequestedThemeVariant="Dark">
+  <!-- Floating dock windows resolve their content through the application's templates, not the DockControl's (ADR-0018 check 3). -->
+  <Application.DataTemplates>
+    <DataTemplate DataType="docking:ShellDocument" x:DataType="docking:ShellDocument">
+      <ContentControl Classes="shellHost" Content="{Binding Context}">
+        <ContentControl.Styles>
+          <Style Selector="ContentControl.shellHost">
+            <Setter Property="AutomationProperties.AutomationId" Value="{Binding AutomationId}" />
+          </Style>
+        </ContentControl.Styles>
+      </ContentControl>
+    </DataTemplate>
+    <DataTemplate DataType="docking:ShellTool" x:DataType="docking:ShellTool">
+      <ContentControl Classes="shellHost" Content="{Binding Context}">
+        <ContentControl.Styles>
+          <Style Selector="ContentControl.shellHost">
+            <Setter Property="AutomationProperties.AutomationId" Value="{Binding AutomationId}" />
+          </Style>
+        </ContentControl.Styles>
+      </ContentControl>
+    </DataTemplate>
+    <DataTemplate DataType="shell:GraphDocumentViewModel" x:DataType="shell:GraphDocumentViewModel">
+      <Panel>
+        <Interaction.Behaviors>
+          <edbehaviors:ScopedCommandKeysBehavior Scope="Graph" Invoker="{Binding Invoker}" />
+        </Interaction.Behaviors>
+        <edgraph:GraphEditorView DataContext="{Binding Graph}" />
+      </Panel>
+    </DataTemplate>
+    <DataTemplate DataType="shell:ProjectSettingsDocumentViewModel" x:DataType="shell:ProjectSettingsDocumentViewModel">
+      <shell:ProjectSettingsView />
+    </DataTemplate>
+    <DataTemplate DataType="edtree:ProjectTreePanelViewModel" x:DataType="edtree:ProjectTreePanelViewModel">
+      <edtree:ProjectTreePanelView />
+    </DataTemplate>
+    <DataTemplate DataType="edinspectors:InspectorPanelViewModel" x:DataType="edinspectors:InspectorPanelViewModel">
+      <edinspectors:InspectorPanelView />
+    </DataTemplate>
+    <DataTemplate DataType="ederrorlist:ErrorsPanelViewModel" x:DataType="ederrorlist:ErrorsPanelViewModel">
+      <ederrorlist:ErrorsPanelView />
+    </DataTemplate>
+    <DataTemplate DataType="edoutput:OutputPanelViewModel" x:DataType="edoutput:OutputPanelViewModel">
+      <edoutput:OutputPanelView />
+    </DataTemplate>
+    <DataTemplate DataType="edcode:CSharpPanelViewModel" x:DataType="edcode:CSharpPanelViewModel">
+      <edcode:CSharpPanelView />
+    </DataTemplate>
+  </Application.DataTemplates>
   <Application.Styles>
     <FluentTheme>
       <FluentTheme.Palettes>
@@ -21,5 +78,6 @@
     <StyleInclude Source="avares://AvaloniaEdit/Themes/Fluent/AvaloniaEdit.xaml" />
     <mi:MaterialIconStyles />
     <StyleInclude Source="avares://NetPrints.Editor/EditorStyles.axaml" />
+    <StyleInclude Source="avares://NetPrints.Editor/Shell/Docking/DockStyles.axaml" />
   </Application.Styles>
 </Application>

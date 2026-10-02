@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:edbehaviors="clr-namespace:NetPrints.Editor.Behaviors"
              xmlns:edcontrols="clr-namespace:NetPrints.Editor.Controls"
              xmlns:edgetset="clr-namespace:NetPrints.Editor.Graph.GetSet"
              xmlns:edgraph="clr-namespace:NetPrints.Editor.Graph"
@@ -10,7 +11,7 @@
              xmlns:nodify="clr-namespace:Nodify.Avalonia;assembly=Nodify.Avalonia"
              xmlns:nc="clr-namespace:Nodify.Avalonia.Connections;assembly=Nodify.Avalonia"
              x:Class="NetPrints.Editor.Graph.GraphEditorView"
-             x:DataType="edgraph:NodeGraphVM"
+             x:DataType="edgraph:NodeGraphViewModel"
              ClipToBounds="True">
   <UserControl.Styles>
     <!-- Cables: 0.7 opacity, full on hover; faint cables are thin and transparent (PAR-48). -->
@@ -40,10 +41,16 @@
                          MaxViewportZoom="1"
                          DragDrop.AllowDrop="True"
                          ConnectionCompletedCommand="{Binding ConnectionCompletedCommand}">
+      <Interaction.Behaviors>
+        <edbehaviors:GraphViewRequestBehavior />
+        <!-- A graph's shortcuts act only with the canvas focused (SC-004): opening a graph focuses it. -->
+        <edbehaviors:FocusOnDataContextBehavior />
+      </Interaction.Behaviors>
+
       <nodify:NodifyEditor.ItemContainerTheme>
         <!-- Nodify's own container chrome (a blue border, orange when selected) is turned off:
              NodeView already draws the single border WPF had, green when selected. -->
-        <ControlTheme TargetType="nodify:ItemContainer" BasedOn="{StaticResource {x:Type nodify:ItemContainer}}" x:DataType="ednodes:NodeVM">
+        <ControlTheme TargetType="nodify:ItemContainer" BasedOn="{StaticResource {x:Type nodify:ItemContainer}}" x:DataType="ednodes:NodeViewModel">
           <Setter Property="Location" Value="{Binding Location, Mode=TwoWay, Converter={x:Static edgraph:GraphPointConverter.Instance}}" />
           <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
           <Setter Property="ZIndex" Value="{Binding ZIndex}" />
@@ -55,13 +62,13 @@
       </nodify:NodifyEditor.ItemContainerTheme>
 
       <nodify:NodifyEditor.ItemTemplate>
-        <DataTemplate x:DataType="ednodes:NodeVM">
+        <DataTemplate x:DataType="ednodes:NodeViewModel">
           <ednodes:NodeView />
         </DataTemplate>
       </nodify:NodifyEditor.ItemTemplate>
 
       <nodify:NodifyEditor.ConnectionTemplate>
-        <DataTemplate x:DataType="edpins:ConnectionVM">
+        <DataTemplate x:DataType="edpins:ConnectionViewModel">
           <nc:Connection AutomationProperties.AutomationId="{x:Static ed:AutomationIds.Connection}" AutomationProperties.Name="{Binding AutomationName}" Source="{Binding Source.Anchor, Converter={x:Static edgraph:GraphPointConverter.Instance}}"
                          Target="{Binding Target.Anchor, Converter={x:Static edgraph:GraphPointConverter.Instance}}"
                          Stroke="{Binding Kind, Converter={x:Static edgraph:PinKindBrushConverter.Instance}}"

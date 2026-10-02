@@ -1,0 +1,48 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:edbehaviors="clr-namespace:NetPrints.Editor.Behaviors"
+             xmlns:edtree="clr-namespace:NetPrints.Editor.ProjectTree"
+             xmlns:shell="clr-namespace:NetPrints.Editor.Shell"
+             x:Class="NetPrints.Editor.ProjectTree.ProjectTreePanelView"
+             x:DataType="edtree:ProjectTreePanelViewModel">
+  <!-- project > classes > Methods, Constructors, Variables, Event graphs; the keys of the ProjectTree scope run on the tree's selection. -->
+  <TreeView ItemsSource="{Binding Roots}" SelectedItem="{Binding SelectedItem}"
+            AutomationProperties.AutomationId="{x:Static ed:AutomationIds.TreeView}">
+    <Interaction.Behaviors>
+      <edbehaviors:ScopedCommandKeysBehavior Scope="ProjectTree" Invoker="{Binding Invoker}" />
+    </Interaction.Behaviors>
+    <TreeView.Styles>
+      <Style Selector="TreeViewItem" x:DataType="edtree:ProjectTreeItemViewModel">
+        <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
+        <Setter Property="AutomationProperties.AutomationId" Value="{Binding AutomationId}" />
+        <Setter Property="AutomationProperties.Name" Value="{Binding Name}" />
+      </Style>
+    </TreeView.Styles>
+    <TreeView.ItemTemplate>
+      <TreeDataTemplate x:DataType="edtree:ProjectTreeItemViewModel" ItemsSource="{Binding Children}">
+        <StackPanel Orientation="Horizontal" Spacing="6" Background="Transparent">
+          <Interaction.Behaviors>
+            <ExecuteCommandOnDoubleTappedBehavior Command="{Binding OpenCommand}" />
+            <edbehaviors:TreeDragSourceBehavior />
+          </Interaction.Behaviors>
+          <StackPanel.ContextMenu>
+            <ContextMenu ItemsSource="{Binding MenuEntries}">
+              <ContextMenu.Styles>
+                <Style Selector="MenuItem" x:DataType="shell:CommandEntryViewModel">
+                  <Setter Property="Header" Value="{Binding Label}" />
+                  <Setter Property="Command" Value="{Binding RunCommand}" />
+                  <Setter Property="AutomationProperties.AutomationId" Value="{Binding AutomationId}" />
+                  <Setter Property="AutomationProperties.Name" Value="{Binding Label}" />
+                </Style>
+              </ContextMenu.Styles>
+            </ContextMenu>
+          </StackPanel.ContextMenu>
+          <mi:MaterialIcon Kind="{Binding IconKind}" Width="14" Height="14" AutomationProperties.AccessibilityView="Raw" />
+          <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+        </StackPanel>
+      </TreeDataTemplate>
+    </TreeView.ItemTemplate>
+  </TreeView>
+</UserControl>

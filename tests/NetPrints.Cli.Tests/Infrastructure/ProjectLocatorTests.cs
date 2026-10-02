@@ -97,7 +97,7 @@ public sealed class ProjectLocatorTests : IDisposable
 
     private string Touch(string relativePath)
     {
-        string path = Path.Combine(_root, relativePath);
+        string path = Path.Combine(_root, relativePath.Replace('/', Path.DirectorySeparatorChar));
         Directory.CreateDirectory(Path.Combine(_root, Path.GetDirectoryName(relativePath) ?? string.Empty));
         File.WriteAllText(path, "<Project />");
         return path;

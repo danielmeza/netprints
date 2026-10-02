@@ -4,7 +4,7 @@
         xmlns:edreferences="clr-namespace:NetPrints.Editor.References"
         xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
         x:Class="NetPrints.Editor.References.ReferencesDialog"
-        x:DataType="edreferences:ReferenceListVM"
+        x:DataType="edreferences:ReferenceListViewModel"
         Title="References"
         Icon="avares://NetPrints.Editor/Assets/NetPrintsLogo.ico"
         Width="700" Height="450"
@@ -20,7 +20,7 @@
     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
       <ItemsControl x:Name="ReferenceList" ItemsSource="{Binding References}">
         <ItemsControl.ItemTemplate>
-          <DataTemplate x:DataType="edreferences:DeclaredReferenceVM">
+          <DataTemplate x:DataType="edreferences:DeclaredReferenceViewModel">
             <Grid ColumnDefinitions="*,150,Auto" Margin="2" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ReferenceRow}" AutomationProperties.Name="{Binding DisplayText}">
               <TextBlock Text="{Binding DisplayText}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center"
                          FontSize="14" ToolTip.Tip="{Binding DisplayText}" />
@@ -41,7 +41,7 @@
               </ToggleSwitch>
               <Button Grid.Column="2" Classes="icon" Width="32" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ReferenceRemove}" Height="32" CornerRadius="16"
                       ToolTip.Tip="Remove this reference" AutomationProperties.Name="Remove this reference"
-                      Command="{Binding $parent[ItemsControl].((edreferences:ReferenceListVM)DataContext).RemoveCommand}"
+                      Command="{Binding $parent[ItemsControl].((edreferences:ReferenceListViewModel)DataContext).RemoveCommand}"
                       CommandParameter="{Binding}">
                 <mi:MaterialIcon Kind="Minus" />
               </Button>

@@ -7,7 +7,7 @@ namespace NetPrints.Editor.Dialogs;
 /// <summary>Chooses a method; the first one is preselected (PAR-59).</summary>
 public partial class SelectMethodDialog : Window, IDialogResult<MethodSpecifier>
 {
-    private readonly SelectMethodDialogVM viewModel;
+    private readonly SelectMethodDialogViewModel viewModel;
 
     /// <summary>Loads the dialog's XAML, with no choices set.</summary>
     public SelectMethodDialog() : this([])
@@ -18,7 +18,7 @@ public partial class SelectMethodDialog : Window, IDialogResult<MethodSpecifier>
     /// <param name="methods">Methods offered by the chooser.</param>
     public SelectMethodDialog(IEnumerable<MethodSpecifier> methods)
     {
-        viewModel = new SelectMethodDialogVM(methods);
+        viewModel = new SelectMethodDialogViewModel(methods);
         DataContext = viewModel;
         InitializeComponent();
     }

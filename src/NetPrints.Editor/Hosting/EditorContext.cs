@@ -32,6 +32,7 @@ namespace NetPrints.Editor.Hosting;
 /// <param name="HostChannel">The channel to the application hosting the editor.</param>
 /// <param name="Settings">Reads and writes the user's settings file.</param>
 /// <param name="CodeAnalysis">Debounced live analysis of the open project's generated code (editor-services.md §2).</param>
+/// <param name="RunState">Follows the last compile and launched program, for the automation agent's failure diagnostics.</param>
 public sealed record EditorContext(
     IFilePickerService FilePicker,
     IEditorDialogs Dialogs,
@@ -48,4 +49,5 @@ public sealed record EditorContext(
     IExtensionHost Extensions,
     IHostChannel HostChannel,
     ISettingsStore Settings,
-    ICodeAnalysisHost CodeAnalysis);
+    ICodeAnalysisHost CodeAnalysis,
+    RunStateTracker RunState);

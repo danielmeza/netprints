@@ -1,0 +1,15 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:ederrorlist="clr-namespace:NetPrints.Editor.ErrorList"
+             x:Class="NetPrints.Editor.ErrorList.ErrorsPanelView"
+             x:DataType="ederrorlist:ErrorsPanelViewModel">
+  <!-- The diagnostics of the whole project, one row per diagnostic with its class. -->
+  <Panel>
+    <TextBlock Margin="8" TextWrapping="Wrap" Text="Open a project to see its errors."
+               IsVisible="{Binding Current, Converter={x:Static ObjectConverters.IsNull}}"
+               AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ErrorsEmpty}" />
+    <ederrorlist:ErrorListView DataContext="{Binding Current}"
+                               IsVisible="{Binding $self.DataContext, Converter={x:Static ObjectConverters.IsNotNull}}" />
+  </Panel>
+</UserControl>

@@ -8,7 +8,6 @@ using Microsoft.Extensions.Logging;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Hosting.Automation;
-using NetPrints.Editor.Main;
 
 namespace NetPrints.Editor;
 
@@ -59,7 +58,7 @@ public partial class EditorApp : Application
         });
 
     /// <summary>
-    /// On a classic desktop lifetime: composes the editor's services, creates and shows the main
+    /// On a classic desktop lifetime: composes the editor's services, creates and shows the shell
     /// window, installs the unhandled-exception handler, and, when <c>NETPRINTS_AUTOMATION=1</c>,
     /// starts the automation agent (disabling UI transitions first, for settled screenshots) and
     /// exits loudly if it fails to start. Opens the project named on the command line, if any.
@@ -71,7 +70,7 @@ public partial class EditorApp : Application
             var composition = new EditorComposition(HostServices);
             var exceptionHandler = composition.InstallUnhandledExceptionHandler();
             desktop.Exit += (_, _) => exceptionHandler.Dispose();
-            var window = composition.CreateMainWindow();
+            var window = composition.CreateShellWindow();
             desktop.MainWindow = window;
             desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;
 
@@ -99,11 +98,12 @@ public partial class EditorApp : Application
                 {
                     agent = new AutomationAgent(pipeName, tree, () => new AutomationStatus(
                         window.IsVisible,
-                        composition.MainEditor is { } mainEditor && mainEditor.Project is not null && !mainEditor.IsBusy,
+                        composition.Shell?.Session is not null,
                         composition.Context.Reflection.IsLoaded,
                         startupProject,
                         Environment.ProcessId),
-                        HostServices.LoggerFactory.CreateLogger<AutomationAgent>());
+                        HostServices.LoggerFactory.CreateLogger<AutomationAgent>(),
+                        composition.Context.RunState.Snapshot);
                 }
                 catch (Exception e)
                 {

@@ -40,7 +40,7 @@ public sealed record ProjectSaveResult(IReadOnlyList<string> WrittenFiles, IRead
 
 /// <summary>
 /// Loads, saves and adds class graphs of a project backed by a <c>.csproj</c> (document-format.md
-/// §2.8): the facade <c>MainEditorVM</c> and the CLI use instead of talking to
+/// §2.8): the editor shell and the CLI use instead of talking to
 /// <see cref="IProjectSystem"/>, <see cref="DocumentFormatRegistry"/> and <see cref="IDocumentMapper"/>
 /// directly. Stateless; safe to share. The model it builds or edits is owned by the caller's thread.
 /// </summary>
@@ -256,7 +256,7 @@ public sealed class ProjectPersistence
                 // F-07: the translator (and any extension translator) has raw throw sites that are not
                 // a TranslationException, e.g. an unresolved generic pin type. Isolate those the same
                 // way, as NPT000, so one bad class does not abort saving the rest (R1-01). A caller that
-                // wants a translation failure to abort the whole save instead (e.g. MainEditorVM.CompileAsync)
+                // wants a translation failure to abort the whole save instead (e.g. ProjectSessionViewModel.CompileAsync)
                 // throws a ClassTranslationAbortException from renderGenerated, which is left to propagate.
                 diagnostics.Add(new CodeDiagnostic(CodeDiagnosticSeverity.Error, TranslationDiagnosticCodes.Unclassified,
                     $"{cls.FullName}: {ex.Message}", cls.FullName, null, null, null, null));

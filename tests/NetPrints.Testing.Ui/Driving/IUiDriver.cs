@@ -91,6 +91,12 @@ public interface IUiDriver : IAsyncDisposable
     /// <summary>Whether the window manager shows the window as minimized (<see cref="UiCapabilities.WindowManager"/>).</summary>
     Task<bool> IsMinimizedAsync(string window, CancellationToken cancellationToken);
 
+    /// <summary>Moves a window so its top-left corner is at a point of the screen (<see cref="UiCapabilities.WindowManager"/> on a real desktop).</summary>
+    Task MoveWindowAsync(string window, double x, double y, CancellationToken cancellationToken);
+
+    /// <summary>Closes a window the way its title bar button does (<see cref="UiCapabilities.WindowManager"/> on a real desktop).</summary>
+    Task CloseWindowAsync(string window, CancellationToken cancellationToken);
+
     /// <summary>Output written by programs the editor ran (<see cref="UiCapabilities.ProcessOutput"/>).</summary>
     Task<string> ProgramOutputAsync(CancellationToken cancellationToken);
 

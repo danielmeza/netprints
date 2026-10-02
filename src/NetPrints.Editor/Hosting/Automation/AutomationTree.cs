@@ -298,6 +298,16 @@ public sealed class AutomationTree : IDisposable
         _ => null,
     };
 
+    /// <summary>
+    /// Every tracked window followed by its controls that have an automation id, hidden ones included
+    /// (failure diagnostics).
+    /// </summary>
+    public IReadOnlyList<AutomationElement> Snapshot() =>
+        windows.SelectMany(window => SelfAndDescendants(window)
+            .Where(c => c == window || !string.IsNullOrEmpty(AutomationProperties.GetAutomationId(c)))
+            .Select(c => Describe(c, window)))
+            .ToList();
+
     /// <summary>A text dump of every tracked window's elements with automation ids (diagnostics).</summary>
     public string Dump()
     {

@@ -4,7 +4,7 @@
              xmlns:edvariables="clr-namespace:NetPrints.Editor.Variables"
              xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
              x:Class="NetPrints.Editor.Variables.LocalVariableView"
-             x:DataType="edvariables:LocalVariableVM">
+             x:DataType="edvariables:LocalVariableViewModel">
   <!-- A local variable row (US5, sub-phase H): one compact line (Remove, Name, Type), unlike the
        member variable row's multi-line layout, since a method can have several locals and the
        Variables panel splits its height between the Class and Method groups. -->

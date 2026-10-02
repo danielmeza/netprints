@@ -225,6 +225,20 @@ public sealed class HeadlessDriver(AutomationTree tree, Func<string> programOutp
     public Task MinimizeAsync(string window, CancellationToken cancellationToken) =>
         throw new NotSupportedException("The headless platform has no window manager.");
 
+    public Task MoveWindowAsync(string window, double x, double y, CancellationToken cancellationToken)
+    {
+        tree.WindowByKey(window).Position = new PixelPoint((int)x, (int)y);
+        Pump();
+        return Task.CompletedTask;
+    }
+
+    public Task CloseWindowAsync(string window, CancellationToken cancellationToken)
+    {
+        tree.WindowByKey(window).Close();
+        Pump();
+        return Task.CompletedTask;
+    }
+
     public Task<bool> IsMinimizedAsync(string window, CancellationToken cancellationToken) =>
         throw new NotSupportedException("The headless platform has no window manager.");
 

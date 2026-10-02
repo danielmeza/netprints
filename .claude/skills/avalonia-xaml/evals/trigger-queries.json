@@ -15,7 +15,7 @@
     "split": "train"
   },
   {
-    "query": "add an async Compile command to MainEditorVM that shows a busy indicator in MainWindow while it runs and can be cancelled",
+    "query": "add an async Compile command to MainEditorViewModel that shows a busy indicator in MainWindow while it runs and can be cancelled",
     "should_trigger": true,
     "split": "train"
   },
@@ -60,7 +60,7 @@
     "split": "train"
   },
   {
-    "query": "ClassEditorVM.AddMethodCommand should refuse duplicate method names; implement it in ClassEditorVM.cs and cover it with a test",
+    "query": "ClassEditorViewModel.AddMethodCommand should refuse duplicate method names; implement it in ClassEditorViewModel.cs and cover it with a test",
     "should_trigger": false,
     "split": "train"
   },

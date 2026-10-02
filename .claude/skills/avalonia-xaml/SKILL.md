@@ -78,7 +78,7 @@ only a parameterless method or one that takes a single `object`, and a plain met
 `ControlTheme` that contains bindings. When a binding crosses into another scope, cast it:
 ```xml
 <!-- src/NetPrints.Editor/Search/NodeSearchView.axaml, inside the result item template -->
-Command="{Binding $parent[ListBox].((edsearch:SuggestionListVM)DataContext).SelectCommand}"
+Command="{Binding $parent[ListBox].((edsearch:SuggestionListViewModel)DataContext).SelectCommand}"
 ```
 A view with no bindings, such as the code-behind dialogs, doesn't need `x:DataType`. Give it one when it gets a VM.
 
@@ -86,7 +86,7 @@ A view with no bindings, such as the code-behind dialogs, doesn't need `x:DataTy
 the `UserControl`. Avoid `$parent[Window]` from inside a template, and don't use numeric hops such as `$parent[Border;2]`. Both break
 when the layout is refactored. Better options, in order: (1) the item VM exposes the command itself; (2) `$parent[ItemsControl]`, the nearest items host;
 (3) restructure so that no reach-up is needed. For example, an inspector whose DataContext is overridden would need
-`$parent[Window]...ShowVariableInspector`; `ClassEditorWindow` wraps it instead:
+`$parent[Window]...ShowVariableInspector`; wrap it in a panel instead:
 ```xml
 <Panel IsVisible="{Binding ShowVariableInspector}">
   <edinspectors:VariableInspectorView DataContext="{Binding SelectedVariable}" />
@@ -98,7 +98,7 @@ when the layout is refactored. Better options, in order: (1) the item VM exposes
 
 **D10. Long work goes in async commands and shows busy state.** Write `[RelayCommand] async Task XAsync(CancellationToken ct)`.
 - Bind busy UI to `XCommand.IsRunning`. Use a VM `IsBusy` flag with `try/finally` only when one flag spans
-  several operations (as `MainEditorVM` does). Delay indicators for fast operations (`BusyIndicatorDelay`).
+  several operations (as the project session does). Delay indicators for fast operations (`BusyIndicatorDelay`).
 - `AllowConcurrentExecutions` stays `false`, which disables the button while a run is in progress. Add `IncludeCancelCommand = true` when the user can cancel.
 - Keep the default of rethrowing: a fault reaches the error dialog. Don't use `FlowExceptionsToTaskScheduler`, and don't
   write `ExecuteAsync(...).Forget()` from a view.
@@ -116,7 +116,7 @@ something that can be activated. Set decorative images to `AutomationProperties.
 gets an `AutomationIds` constant.
 
 **D14. Design-time data stays out of runtime.** A view with a non-trivial layout gets
-`<Design.DataContext><vm:XDesignVM /></Design.DataContext>` or a static design instance so that the previewer renders it.
+`<Design.DataContext><vm:XDesignViewModel /></Design.DataContext>` or a static design instance so that the previewer renders it.
 Design VMs live beside the view and are never used at runtime. Also use `Design.PreviewWith` for style files.
 
 **D15. Use `x:Name` only when something reads it.** That means code-behind, a `#Name` binding, or a behavior's `TargetControl`. Names are
@@ -124,7 +124,7 @@ PascalCase nouns with a role suffix (`SearchBox`, `ResultList`, `GraphEditor`). 
 Avalonia generates a field for each name, so an unused name is noise (for example `InputPins`, `ReferenceList`).
 
 **D16. Windows and popups go through the existing hosts.** Open dialogs through `IWindowService` and return results
-from a VM, as `SelectTypeDialogVM.ResolveSelection` does; the view doesn't compute them. Canvas overlays use
+from a VM, as `SelectTypeDialogViewModel.ResolveSelection` does; the view doesn't compute them. Canvas overlays use
 `CanvasPopup` (ADR-0004, which is already enforced).
 
 ## Consider
@@ -145,10 +145,6 @@ from a VM, as `SelectTypeDialogVM.ResolveSelection` does; the view doesn't compu
   the row `Background="Transparent"` (E2 allows it for this reason).
 - Headless tests have no window manager, real cursor or OS drag and drop (see `UiCapabilities`). A test that needs
   them belongs in the Desktop E2E project.
-
-## Known debt
-
-- `ClassEditorWindow.axaml` still reaches `$parent[Window]` from several item templates (D4). Don't copy it.
 
 ## Before you finish a XAML change
 

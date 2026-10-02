@@ -19,7 +19,7 @@ public interface IEditorDialogs
     Task<MethodSpecifier?> SelectMethodAsync(IEnumerable<MethodSpecifier> methods);
 
     /// <summary>Shows the references dialog of a project until it is closed.</summary>
-    Task ShowReferencesAsync(ReferenceListVM references);
+    Task ShowReferencesAsync(ReferenceListViewModel references);
 
     /// <summary>
     /// Asks whether a project's extensions may be loaded (extension-points.md §8.3): they run code in the

@@ -36,7 +36,7 @@ public class DialogTests
         bool closed = false;
         dialog.Closed += (_, _) => closed = true;
         await ui.Driver.PressAsync("Escape", Token); // dismisses the AutoCompleteBox's suggestion popup
-        await page.SelectButton.ClickAsync(Token); // batch X2b: DialogVM + DialogCloseBehavior
+        await page.SelectButton.ClickAsync(Token); // batch X2b: DialogViewModel + DialogCloseBehavior
         Assert.True(closed);
         Assert.Equal(TypeSpecifier.FromType<string>(), dialog.Result);
     }
@@ -59,7 +59,7 @@ public class DialogTests
         Assert.Equal(methods[0].ToString(), await page.MethodBox.PropertyAsync(AutomationPropertyNames.SelectedItem, Token)); // PAR-59
         Assert.True(await page.SelectButton.IsEnabledAsync(Token));
 
-        await page.SelectButton.ClickAsync(Token); // batch X2b: DialogVM + DialogCloseBehavior
+        await page.SelectButton.ClickAsync(Token); // batch X2b: DialogViewModel + DialogCloseBehavior
         Assert.True(closed);
         Assert.Equal(methods[0], dialog.Result);
     }
@@ -98,9 +98,10 @@ public class DialogTests
         var extensions = new NetPrints.Extensibility.Loading.ExtensionHost(NetPrints.Extensibility.Loading.ExtensionLoaderOptions.BuiltInOnly, NullLoggerFactory.Instance);
         var reflection = new ReflectionHost(dispatcher, extensions, NullLogger<ReflectionHost>.Instance);
         using var codeAnalysis = new CodeAnalysisHost(reflection, extensions, System.Reactive.Concurrency.DefaultScheduler.Instance, dispatcher, NullLogger<CodeAnalysisHost>.Instance);
+        var processes = new CapturingProcessLauncher();
         var context = new EditorContext(new QueuedFilePicker(), new RecordingDialogs(), new NoClipboard(), dispatcher,
             reflection,
-            new NetPrints.Editor.Hosting.Avalonia.WindowService(), new CapturingProcessLauncher(),
+            new NetPrints.Editor.Hosting.Avalonia.WindowService(), processes,
             System.Reactive.Concurrency.DefaultScheduler.Instance,
             () => new CommunityToolkit.Mvvm.Messaging.WeakReferenceMessenger(), NullLoggerFactory.Instance,
             noSdkProjects, TestPersistence.Create(noSdkProjects),
@@ -108,10 +109,11 @@ public class DialogTests
             NetPrints.Extensibility.Hosting.NullHostChannel.Instance,
             new NetPrints.Extensibility.Settings.JsonFileSettingsStore(Path.Combine(Path.GetTempPath(), "netprints-unused", "settings.json"),
                 NullLogger<NetPrints.Extensibility.Settings.JsonFileSettingsStore>.Instance),
-            codeAnalysis);
+            codeAnalysis,
+            new RunStateTracker(processes));
         using var ui = HeadlessUi.Create();
-        using var referenceListVM = new ReferenceListVM(project, context);
-        ui.Show(new ReferencesDialog { DataContext = referenceListVM });
+        using var referenceListViewModel = new ReferenceListViewModel(project, context);
+        ui.Show(new ReferencesDialog { DataContext = referenceListViewModel });
         var page = new ReferencesDialogPage(ui.Driver);
 
         var rows = await page.RowNamesAsync(Token);

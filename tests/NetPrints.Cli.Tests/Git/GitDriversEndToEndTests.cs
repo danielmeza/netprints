@@ -27,7 +27,7 @@ public sealed class GitDriversEndToEndTests : IAsyncLifetime
         return ValueTask.CompletedTask;
     }
 
-    private static string CliUnderTest => "dotnet " + Path.Combine(AppContext.BaseDirectory, "NetPrints.Cli.dll");
+    private static string CliUnderTest => "dotnet " + Path.Combine(AppContext.BaseDirectory, "NetPrints.Cli.dll").Replace('\\', '/');
 
     private async Task InstallAsync()
     {

@@ -4,7 +4,7 @@
              xmlns:edvariables="clr-namespace:NetPrints.Editor.Variables"
              xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
              x:Class="NetPrints.Editor.Variables.MemberVariableView"
-             x:DataType="edvariables:MemberVariableVM">
+             x:DataType="edvariables:MemberVariableViewModel">
   <!-- A variable row (PAR-29) -->
   <StackPanel AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableRow}" AutomationProperties.Name="{Binding Name}">
     <Grid ColumnDefinitions="Auto,*">

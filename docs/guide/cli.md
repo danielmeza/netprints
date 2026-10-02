@@ -175,7 +175,7 @@ Makes `git diff` print the `show` summary of graphs and, with `--merge`, makes `
 |---|---|
 | `--merge` | Also register the merge driver; an existing diff-only line is upgraded in place. |
 | `--global` | Write the user's git configuration and attributes file (`core.attributesFile`, else `$XDG_CONFIG_HOME/git/attributes`, else `~/.config/git/attributes`). Works outside a repository. |
-| `--command <cmd>` | The command the configuration runs (default `netprints`); use `dotnet tool run netprints` for a local tool. |
+| `--command <cmd>` | The command the configuration runs (default `netprints`); use `dotnet tool run netprints` for a local tool. The command is written verbatim and git runs it through `sh`, so on Windows write paths with forward slashes (`C:/tools/NetPrints.Cli.dll`); backslashes are dropped. |
 | `--uninstall` | Remove exactly the configuration keys and the attributes line it added; an attributes file left empty is deleted. |
 
 ```

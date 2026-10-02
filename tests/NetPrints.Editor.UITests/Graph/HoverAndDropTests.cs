@@ -4,7 +4,7 @@ using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Hosting.Automation;
-using NetPrints.Editor.UITests.ClassEditor;
+using NetPrints.Editor.UITests.Shell;
 using NetPrints.Graph;
 using NetPrints.Testing.Ui.Driving;
 using NetPrints.Testing.Ui.Snapshots;
@@ -67,16 +67,16 @@ public class HoverAndDropTests
     public async Task DroppingAMethodOnTheCanvasAddsACallNode()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
-        var main = session.ClassVM.Methods.Single(m => m.Name == "Main");
+        var main = session.ClassContext.Methods.Single(m => m.Name == "Main");
         var data = new DataTransfer();
         data.Add(DataTransferItem.Create(GraphDragDrop.MethodFormat, main)); // what the method list puts on the clipboard
         var at = await session.Graph.EmptyPointAsync(Token);
         var expected = await session.Graph.ToGraphAsync(at, Token);
 
-        session.App.Driver.Drop(at, data); // PAR-56
+        session.Driver.Drop(at, data); // PAR-56
 
         await session.WaitForRenderedAsync(Token);
-        var call = ((MethodGraph)session.GraphVM.Graph).Nodes.OfType<CallMethodNode>().Single(n => n.MethodSpecifier.Name == "Main");
+        var call = ((MethodGraph)session.GraphViewModel.Graph).Nodes.OfType<CallMethodNode>().Single(n => n.MethodSpecifier.Name == "Main");
         Assert.Equal(Math.Max(0, expected.X), call.PositionX, 0);
         Assert.Equal(Math.Max(0, expected.Y), call.PositionY, 0);
     }
@@ -85,32 +85,32 @@ public class HoverAndDropTests
     public async Task DroppingAVariableOnTheCanvasOffersGetAndSet()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
-        await session.ClassEditor.CreateVariableButton.ClickAsync(Token);
-        var variable = session.ClassVM.Variables.Single();
+        await session.AddVariableAsync(Token);
+        var variable = session.ClassContext.Variables.Single();
         var data = new DataTransfer();
         data.Add(DataTransferItem.Create(GraphDragDrop.VariableFormat, variable));
 
-        session.App.Driver.Drop(await session.Graph.EmptyPointAsync(Token), data); // PAR-57
+        session.Driver.Drop(await session.Graph.EmptyPointAsync(Token), data); // PAR-57
 
         await session.Graph.GetSet.WaitOpenAsync(Token);
         await session.Graph.GetSet.SetButton.ClickAsync(Token);
         await session.WaitForRenderedAsync(Token);
-        Assert.Single(((MethodGraph)session.GraphVM.Graph).Nodes.OfType<VariableSetterNode>());
+        Assert.Single(((MethodGraph)session.GraphViewModel.Graph).Nodes.OfType<VariableSetterNode>());
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task DroppingAVariableOpensTheGetSetPopupAtTheDropPoint()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
-        await session.ClassEditor.CreateVariableButton.ClickAsync(Token);
-        var variable = session.ClassVM.Variables.Single();
+        await session.AddVariableAsync(Token);
+        var variable = session.ClassContext.Variables.Single();
         var data = new DataTransfer();
         data.Add(DataTransferItem.Create(GraphDragDrop.VariableFormat, variable));
         // Well away from the corner used elsewhere, and from the variable list the drag started
         // from: the popup used to open over the list instead of here (owner-reported bug).
         var at = await session.Graph.EmptyPointAsync(Token, -260, 40);
 
-        session.App.Driver.Drop(at, data);
+        session.Driver.Drop(at, data);
 
         await session.Graph.GetSet.WaitOpenAsync(Token);
         var bounds = (await session.Graph.GetSet.View.GetAsync(Token)).Bounds;
@@ -124,10 +124,10 @@ public class HoverAndDropTests
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
         var data = new DataTransfer();
         data.Add(DataTransferItem.CreateText("not a method"));
-        int nodes = session.GraphVM.Nodes.Count;
+        int nodes = session.GraphViewModel.Nodes.Count;
 
-        session.App.Driver.Drop(await session.Graph.EmptyPointAsync(Token), data);
+        session.Driver.Drop(await session.Graph.EmptyPointAsync(Token), data);
 
-        Assert.Equal(nodes, session.GraphVM.Nodes.Count);
+        Assert.Equal(nodes, session.GraphViewModel.Nodes.Count);
     }
 }

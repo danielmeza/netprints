@@ -5,7 +5,7 @@ using NetPrints.Graph;
 namespace NetPrints.Editor.Tests.Graph.Nodes;
 
 /// <summary>
-/// NodeVM.PinRows pairing (OWN-05b, owner-reported): a parameter's or return value's type and data
+/// NodeViewModel.PinRows pairing (OWN-05b, owner-reported): a parameter's or return value's type and data
 /// pin must share a row no matter how many other pins (Exec, generic type parameters) sit around
 /// them; every other node kind keeps pairing Inputs[i] with Outputs[i].
 /// </summary>

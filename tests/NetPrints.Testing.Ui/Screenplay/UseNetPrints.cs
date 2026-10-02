@@ -1,7 +1,6 @@
-using NetPrints.Testing.Ui.ClassEditor;
 using NetPrints.Testing.Ui.Driving;
 using NetPrints.Testing.Ui.Hosting;
-using NetPrints.Testing.Ui.Main;
+using NetPrints.Testing.Ui.Shell;
 
 namespace NetPrints.Testing.Ui.Screenplay;
 
@@ -15,9 +14,7 @@ public sealed class UseNetPrints(IUiDriver driver, IFileDialogs fileDialogs) : I
 
     public IFileDialogs FileDialogs { get; } = fileDialogs;
 
-    public MainWindowPage MainWindow => new(Driver);
-
-    public ClassEditorPage ClassEditor(string classFullName) => new(Driver, classFullName);
+    public ShellPage Shell => new(Driver);
 
     public static UseNetPrints With(IUiDriver driver, IFileDialogs fileDialogs) => new(driver, fileDialogs);
 }

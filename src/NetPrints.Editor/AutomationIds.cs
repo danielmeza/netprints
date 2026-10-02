@@ -6,135 +6,6 @@ namespace NetPrints.Editor;
 /// </summary>
 public static class AutomationIds
 {
-    // Main window
-    /// <summary>
-    /// Automation id for the main window's button that opens the project pane.
-    /// </summary>
-    public const string MainProjectButton = "Main.ProjectButton";
-    /// <summary>
-    /// Automation id for the main window's button that opens the references dialog.
-    /// </summary>
-    public const string MainReferencesButton = "Main.ReferencesButton";
-    /// <summary>
-    /// Automation id for the main window's button that opens the settings pane.
-    /// </summary>
-    public const string MainSettingsButton = "Main.SettingsButton";
-    /// <summary>
-    /// Automation id for the main window's compile button.
-    /// </summary>
-    public const string MainCompileButton = "Main.CompileButton";
-    /// <summary>
-    /// Automation id for the main window's run button.
-    /// </summary>
-    public const string MainRunButton = "Main.RunButton";
-    /// <summary>
-    /// Automation id for the main window's project pane.
-    /// </summary>
-    public const string MainProjectPane = "Main.ProjectPane";
-    /// <summary>
-    /// Automation id for the main window's settings pane.
-    /// </summary>
-    public const string MainSettingsPane = "Main.SettingsPane";
-    /// <summary>
-    /// Automation id for the main window's save-project button.
-    /// </summary>
-    public const string MainSaveProjectButton = "Main.SaveProjectButton";
-    /// <summary>
-    /// Automation id for the main window's button that creates a new class.
-    /// </summary>
-    public const string MainNewClassButton = "Main.NewClassButton";
-    /// <summary>
-    /// Automation id for the main window's list of the project's classes.
-    /// </summary>
-    public const string MainClassList = "Main.ClassList";
-    /// <summary>
-    /// Automation id for the main window's button that opens the selected class.
-    /// </summary>
-    public const string MainOpenClassButton = "Main.OpenClassButton";
-    /// <summary>
-    /// Automation id for the main window's busy overlay, shown while an operation is running.
-    /// </summary>
-    public const string MainBusyOverlay = "Main.BusyOverlay";
-
-    // Class editor window
-    /// <summary>
-    /// Automation id for the class editor window's compile button.
-    /// </summary>
-    public const string ClassEditorCompileButton = "ClassEditor.CompileButton";
-    /// <summary>
-    /// Automation id for the class editor window's run button.
-    /// </summary>
-    public const string ClassEditorRunButton = "ClassEditor.RunButton";
-    /// <summary>
-    /// Automation id for the class editor window's button that opens the class inspector.
-    /// </summary>
-    public const string ClassEditorClassButton = "ClassEditor.ClassButton";
-    /// <summary>
-    /// Automation id for the class editor window's save button.
-    /// </summary>
-    public const string ClassEditorSaveButton = "ClassEditor.SaveButton";
-    /// <summary>
-    /// Automation id for the class editor window's list of the class's methods.
-    /// </summary>
-    public const string ClassEditorMethodList = "ClassEditor.MethodList";
-    /// <summary>
-    /// Automation id for a method list row's name text.
-    /// </summary>
-    public const string ClassEditorMethodName = "ClassEditor.MethodName";
-    /// <summary>
-    /// Automation id for the class editor window's list of the class's variables.
-    /// </summary>
-    public const string ClassEditorVariableList = "ClassEditor.VariableList";
-    /// <summary>
-    /// Automation id for the class editor window's chooser for adding an override method.
-    /// </summary>
-    public const string ClassEditorOverrideChooser = "ClassEditor.OverrideChooser";
-    /// <summary>
-    /// Automation id for the class editor window's list of compile errors.
-    /// </summary>
-    public const string ClassEditorErrorList = "ClassEditor.ErrorList";
-    /// <summary>
-    /// Automation id for an error list row's diagnostic id text (US6, ED-T03).
-    /// </summary>
-    public const string ClassEditorErrorId = "ClassEditor.ErrorId";
-    /// <summary>
-    /// Automation id for an error list row's severity icon (FR-032, OWN-03). Its AutomationProperties.Name carries the severity.
-    /// </summary>
-    public const string ClassEditorErrorSeverity = "ClassEditor.ErrorSeverity";
-    /// <summary>
-    /// Automation id for an error list row's class text (FR-032, OWN-03).
-    /// </summary>
-    public const string ClassEditorErrorClass = "ClassEditor.ErrorClass";
-    /// <summary>
-    /// Automation id for an error list row's method text (FR-032, OWN-03).
-    /// </summary>
-    public const string ClassEditorErrorMethod = "ClassEditor.ErrorMethod";
-    /// <summary>
-    /// Automation id for the class editor window's output tab.
-    /// </summary>
-    public const string ClassEditorOutputTab = "ClassEditor.OutputTab";
-    /// <summary>
-    /// Automation id for the class editor window's output text pane.
-    /// </summary>
-    public const string ClassEditorOutputText = "ClassEditor.OutputText";
-    /// <summary>
-    /// Automation id for the class editor window's button that clears the output pane.
-    /// </summary>
-    public const string ClassEditorClearOutputButton = "ClassEditor.ClearOutputButton";
-    /// <summary>
-    /// Automation id for the class editor window's status text.
-    /// </summary>
-    public const string ClassEditorStatusText = "ClassEditor.StatusText";
-    /// <summary>
-    /// Automation id for the class editor window's graph canvas host.
-    /// </summary>
-    public const string ClassEditorGraph = "ClassEditor.Graph";
-    /// <summary>
-    /// Automation id for the "Opening &lt;name&gt;…" busy overlay shown over the canvas while a graph
-    /// is opening (batch D1).
-    /// </summary>
-    public const string ClassEditorOpeningGraphIndicator = "ClassEditor.OpeningGraphIndicator";
-
     // Inspectors
     /// <summary>
     /// Automation id for the class inspector pane.
@@ -307,15 +178,7 @@ public static class AutomationIds
     /// </summary>
     public const string ReferencesCloseButton = "References.Close";
 
-    // Windows (AutomationProperties.Name carries the class full name for class windows)
-    /// <summary>
-    /// Automation id for the main window itself.
-    /// </summary>
-    public const string MainWindow = "Main.Window";
-    /// <summary>
-    /// Automation id for the class editor window itself. Its AutomationProperties.Name carries the class's full name.
-    /// </summary>
-    public const string ClassEditorWindow = "ClassEditor.Window";
+    // Dialog windows
     /// <summary>
     /// Automation id for the references dialog window itself.
     /// </summary>
@@ -340,107 +203,6 @@ public static class AutomationIds
     /// Automation id for the select-method dialog's select button.
     /// </summary>
     public const string SelectMethodButton = "Dialogs.SelectMethod.Select";
-
-    // Main window panes
-    /// <summary>
-    /// Automation id for the main window's button that creates a new project.
-    /// </summary>
-    public const string MainCreateProjectButton = "Main.CreateProjectButton";
-    /// <summary>
-    /// Automation id for the main window's button that opens an existing project.
-    /// </summary>
-    public const string MainOpenProjectButton = "Main.OpenProjectButton";
-    /// <summary>
-    /// Automation id for the main window's button that adds an existing class to the project.
-    /// </summary>
-    public const string MainExistingClassButton = "Main.ExistingClassButton";
-    /// <summary>
-    /// Automation id for the main window's button that removes the selected class from the project.
-    /// </summary>
-    public const string MainRemoveClassButton = "Main.RemoveClassButton";
-    /// <summary>
-    /// Automation id for the main window's binary-type chooser.
-    /// </summary>
-    public const string MainBinaryTypeChooser = "Main.BinaryTypeChooser";
-
-    // Class editor lists and splitters
-    /// <summary>
-    /// Automation id for the class editor window's list of the class's constructors.
-    /// </summary>
-    public const string ClassEditorConstructorList = "ClassEditor.ConstructorList";
-    /// <summary>
-    /// Automation id for the class editor window's button that creates a new method.
-    /// </summary>
-    public const string ClassEditorCreateMethodButton = "ClassEditor.CreateMethodButton";
-    /// <summary>
-    /// Automation id for the class editor window's button that creates a new constructor.
-    /// </summary>
-    public const string ClassEditorCreateConstructorButton = "ClassEditor.CreateConstructorButton";
-    /// <summary>
-    /// Automation id for the class editor window's button that creates a new variable.
-    /// </summary>
-    public const string ClassEditorCreateVariableButton = "ClassEditor.CreateVariableButton";
-    /// <summary>
-    /// Automation id for the class editor window's left column (methods/constructors/variables lists).
-    /// </summary>
-    public const string ClassEditorLeftColumn = "ClassEditor.LeftColumn";
-    /// <summary>
-    /// Automation id for the class editor window's inspector column.
-    /// </summary>
-    public const string ClassEditorInspectorColumn = "ClassEditor.InspectorColumn";
-    /// <summary>
-    /// Automation id for the splitter above the class editor window's method list.
-    /// </summary>
-    public const string ClassEditorMethodsSplitter = "ClassEditor.Splitter.Methods";
-    /// <summary>
-    /// Automation id for the splitter above the class editor window's constructor list.
-    /// </summary>
-    public const string ClassEditorConstructorsSplitter = "ClassEditor.Splitter.Constructors";
-    /// <summary>
-    /// Automation id for the splitter between the class editor window's left column and graph.
-    /// </summary>
-    public const string ClassEditorLeftSplitter = "ClassEditor.Splitter.Left";
-    /// <summary>
-    /// Automation id for the splitter above the class editor window's error list.
-    /// </summary>
-    public const string ClassEditorErrorsSplitter = "ClassEditor.Splitter.Errors";
-    /// <summary>
-    /// Automation id for the splitter between the class editor window's graph and inspector column.
-    /// </summary>
-    public const string ClassEditorInspectorSplitter = "ClassEditor.Splitter.Inspector";
-    /// <summary>
-    /// Automation id for the splitter above the class editor window's event graph list.
-    /// </summary>
-    public const string ClassEditorEventGraphsSplitter = "ClassEditor.Splitter.EventGraphs";
-
-    // Event graphs (US4)
-    /// <summary>
-    /// Automation id for the class editor window's list of the class's event graphs.
-    /// </summary>
-    public const string EventGraphList = "ClassEditor.EventGraphList";
-    /// <summary>
-    /// Automation id for an event graph list row's name text.
-    /// </summary>
-    public const string EventGraphName = "ClassEditor.EventGraphName";
-    /// <summary>
-    /// Automation id for the class editor window's button that creates a new event graph.
-    /// </summary>
-    public const string CreateEventGraphButton = "ClassEditor.CreateEventGraphButton";
-
-    // Method-local variables (US5, sub-phase H)
-    /// <summary>
-    /// Automation id for the Variables panel's "Class" group (the class's member variables).
-    /// </summary>
-    public const string VariablesClassGroup = "ClassEditor.VariablesClassGroup";
-    /// <summary>
-    /// Automation id for the Variables panel's "Method: &lt;name&gt;" group (the opened method's or
-    /// constructor's local variables); only shown while such a graph is open.
-    /// </summary>
-    public const string VariablesMethodGroup = "ClassEditor.VariablesMethodGroup";
-    /// <summary>
-    /// Automation id for the Variables panel's button that creates a new local variable.
-    /// </summary>
-    public const string CreateLocalVariableButton = "ClassEditor.CreateLocalVariableButton";
 
     // Variables list rows (AutomationProperties.Name carries the variable name)
     /// <summary>
@@ -503,4 +265,136 @@ public static class AutomationIds
     /// Automation id for a references dialog row's remove button.
     /// </summary>
     public const string ReferenceRemove = "References.Remove";
+
+    /// <summary>
+    /// Automation id for the binary type chooser of the Project settings document.
+    /// </summary>
+    public const string ProjectSettingsBinaryTypeChooser = "ProjectSettings.BinaryTypeChooser";
+
+    // Shell (contracts/shell.md section 6)
+    /// <summary>Automation id of the shell window.</summary>
+    public const string ShellWindow = "Shell.Window";
+
+    /// <summary>
+    /// Prefix of the automation id of a tool pane's content: the panel id follows, such as <c>Shell.Panel.netprints.panel.errors</c>.
+    /// </summary>
+    public const string ShellPanelPrefix = "Shell.Panel.";
+    /// <summary>
+    /// Prefix of the automation id of a document's content: the document id follows, such as <c>Shell.Document.graph:A.cs#method:1</c>.
+    /// </summary>
+    public const string ShellDocumentPrefix = "Shell.Document.";
+    /// <summary>
+    /// Prefix of a menu's automation id: the menu name, or for an item the command id, follows, such as <c>Menu.File</c> and <c>Menu.netprints.command.save</c>.
+    /// </summary>
+    public const string MenuPrefix = "Menu.";
+    /// <summary>
+    /// Prefix of a command bar button's automation id: the command id follows, such as <c>CommandBar.netprints.command.save</c>.
+    /// </summary>
+    public const string CommandBarPrefix = "CommandBar.";
+    /// <summary>
+    /// Automation id for the shell window's menu bar.
+    /// </summary>
+    public const string ShellMenuBar = "Shell.MenuBar";
+    /// <summary>
+    /// Automation id for the shell window's command bar.
+    /// </summary>
+    public const string ShellCommandBar = "Shell.CommandBar";
+    /// <summary>
+    /// Automation id for the shell window's status bar.
+    /// </summary>
+    public const string ShellStatusBar = "Shell.StatusBar";
+    /// <summary>
+    /// Automation id for the status bar's message.
+    /// </summary>
+    public const string ShellStatusMessage = "Shell.StatusMessage";
+    /// <summary>
+    /// Automation id for the status bar's build state.
+    /// </summary>
+    public const string ShellBuildState = "Shell.BuildState";
+    /// <summary>
+    /// Automation id for the error badge of the command bar's compile button.
+    /// </summary>
+    public const string ShellCompileBadge = "Shell.CompileBadge";
+    /// <summary>
+    /// Automation id for the shortcut text of a menu item.
+    /// </summary>
+    public const string ShellMenuShortcut = "Shell.MenuShortcut";
+
+    // Project tree and inspector panels (contracts/shell.md section 6)
+    /// <summary>
+    /// Automation id for the project tree control.
+    /// </summary>
+    public const string TreeView = "Tree.View";
+    /// <summary>
+    /// Prefix of a tree item's automation id: the kind and the name follow, such as <c>Tree.method.Main</c>.
+    /// </summary>
+    public const string TreePrefix = "Tree.";
+    /// <summary>
+    /// Prefix of a tree context menu entry's automation id: the command id follows.
+    /// </summary>
+    public const string TreeMenuPrefix = "Tree.Menu.";
+    /// <summary>
+    /// Tree item kind of the project.
+    /// </summary>
+    public const string TreeKindProject = "project";
+    /// <summary>
+    /// Tree item kind of a class.
+    /// </summary>
+    public const string TreeKindClass = "class";
+    /// <summary>
+    /// Tree item kind of a group of a class (Methods, Constructors, Variables, Event graphs).
+    /// </summary>
+    public const string TreeKindGroup = "group";
+    /// <summary>
+    /// Tree item kind of a method.
+    /// </summary>
+    public const string TreeKindMethod = "method";
+    /// <summary>
+    /// Tree item kind of a constructor.
+    /// </summary>
+    public const string TreeKindConstructor = "constructor";
+    /// <summary>
+    /// Tree item kind of a variable.
+    /// </summary>
+    public const string TreeKindVariable = "variable";
+    /// <summary>
+    /// Tree item kind of an event graph.
+    /// </summary>
+    public const string TreeKindEventGraph = "eventgraph";
+    /// <summary>
+    /// Automation id for the inspector panel's hosted content.
+    /// </summary>
+    public const string InspectorContent = "Inspector.Content";
+    /// <summary>
+    /// Automation id for the inspector panel's empty-state text.
+    /// </summary>
+    public const string InspectorEmpty = "Inspector.Empty";
+    /// <summary>
+    /// Automation id for the Errors panel's list of rows.
+    /// </summary>
+    public const string ErrorsList = "Errors.List";
+    /// <summary>
+    /// Automation id for the Errors panel's empty-state text.
+    /// </summary>
+    public const string ErrorsEmpty = "Errors.Empty";
+    /// <summary>
+    /// Automation id for the Output panel's list of lines.
+    /// </summary>
+    public const string OutputLines = "Output.Lines";
+    /// <summary>
+    /// Automation id for the C# panel's code view.
+    /// </summary>
+    public const string CSharpCode = "CSharp.Code";
+    /// <summary>
+    /// Automation id for the C# panel's empty-state text.
+    /// </summary>
+    public const string CSharpEmpty = "CSharp.Empty";
+    /// <summary>
+    /// Automation id for a row of the Errors panel.
+    /// </summary>
+    public const string ErrorsRow = "Errors.Row";
+    /// <summary>
+    /// Automation id for a line of the Output panel.
+    /// </summary>
+    public const string OutputLine = "Output.Line";
 }

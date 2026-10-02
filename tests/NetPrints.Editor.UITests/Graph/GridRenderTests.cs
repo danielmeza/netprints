@@ -6,8 +6,8 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Styling;
 using NetPrints.Editor.Graph;
-using NetPrints.Editor.UITests.ClassEditor;
 using NetPrints.Editor.UITests.Hosting;
+using NetPrints.Editor.UITests.Shell;
 using NetPrints.Testing.Ui.Snapshots;
 
 namespace NetPrints.Editor.UITests.Graph;

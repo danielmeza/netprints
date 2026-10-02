@@ -155,41 +155,21 @@ namespace NetPrints.Tests.Core
         /// </summary>
         private static readonly HashSet<string> NullForgivingAllowlist = new(StringComparer.Ordinal)
         {
-            "tests/NetPrints.Desktop.E2ETests/Hosting/EditorProcess.cs:60",
             "tests/NetPrints.Desktop.E2ETests/Hosting/Tool.cs:81",
             "tests/NetPrints.Desktop.E2ETests/Hosting/XServer.cs:108",
             "tests/NetPrints.Desktop.E2ETests/Hosting/XServer.cs:144",
-            "tests/NetPrints.Desktop.E2ETests/Scenarios/X11SmokeTests.cs:71",
-            "tests/NetPrints.Editor.Tests/ClassEditor/ClassEditorVMTests.cs:531",
-            "tests/NetPrints.Editor.Tests/ClassEditor/ClassEditorVMTests.cs:549",
-            "tests/NetPrints.Editor.Tests/Graph/GraphTestBase.cs:32",
-            "tests/NetPrints.Editor.Tests/Graph/NodeGraphVMTests.cs:131",
-            "tests/NetPrints.Editor.Tests/Graph/NodeGraphVMTests.cs:144",
-            "tests/NetPrints.Editor.Tests/Graph/Nodes/NodeVMTests.cs:70",
-            "tests/NetPrints.Editor.Tests/Graph/Pins/NodePinVMTests.cs:68",
-            "tests/NetPrints.Editor.Tests/Graph/ReflectionReloadTests.cs:39",
-            "tests/NetPrints.Editor.Tests/Graph/ReflectionReloadTests.cs:52",
-            "tests/NetPrints.Editor.Tests/Graph/ReflectionReloadTests.cs:53",
-            "tests/NetPrints.Editor.Tests/Graph/ReflectionReloadTests.cs:62",
-            "tests/NetPrints.Editor.Tests/Main/MainEditorVMTests.cs:121",
+            "tests/NetPrints.Editor.Tests/Graph/NodeGraphViewModelTests.cs:143",
+            "tests/NetPrints.Editor.Tests/Graph/Nodes/NodeViewModelTests.cs:70",
+            "tests/NetPrints.Editor.Tests/Graph/Pins/NodePinViewModelTests.cs:68",
+            "tests/NetPrints.Editor.Tests/Graph/ReflectionReloadTests.cs:69",
             "tests/NetPrints.Editor.Tests/Reflection/ReflectionProviderTests.cs:116",
-            "tests/NetPrints.Editor.Tests/Search/SearchPerformanceTests.cs:28",
-            "tests/NetPrints.Editor.Tests/Search/SearchPerformanceTests.cs:39",
-            "tests/NetPrints.Editor.Tests/Search/SuggestionListVMTests.cs:41",
-            "tests/NetPrints.Editor.Tests/Search/SuggestionListVMTests.cs:47",
-            "tests/NetPrints.Editor.Tests/Variables/MemberVariableVMTests.cs:43",
-            "tests/NetPrints.Editor.Tests/Variables/MemberVariableVMTests.cs:50",
-            "tests/NetPrints.Editor.Tests/Variables/MemberVariableVMTests.cs:118",
-            "tests/NetPrints.Editor.UITests/ClassEditor/ClassEditorWindowTests.cs:80",
-            "tests/NetPrints.Editor.UITests/ClassEditor/EditorSession.cs:35",
-            "tests/NetPrints.Editor.UITests/ClassEditor/EditorSession.cs:36",
+            "tests/NetPrints.Editor.Tests/Search/SearchPerformanceTests.cs:30",
+            "tests/NetPrints.Editor.Tests/Variables/MemberVariableViewModelTests.cs:46",
+            "tests/NetPrints.Editor.Tests/Variables/MemberVariableViewModelTests.cs:53",
+            "tests/NetPrints.Editor.Tests/Variables/MemberVariableViewModelTests.cs:131",
             "tests/NetPrints.Editor.UITests/Graph/GridRenderTests.cs:117",
             "tests/NetPrints.Editor.UITests/Graph/GridRenderTests.cs:130",
-            "tests/NetPrints.Editor.UITests/Scenarios/HeadlessSmokeTests.cs:28",
             "tests/NetPrints.Editor.UITests/TestAppBuilder.cs:33",
-            "tests/NetPrints.Testing.Ui/ClassEditor/ClassEditorPage.cs:99",
-            "tests/NetPrints.Testing.Ui/ClassEditor/ClassEditorPage.cs:110",
-            "tests/NetPrints.Testing.Ui/Driving/AutomationClient.cs:60",
             "tests/NetPrints.Testing.Ui/Driving/UiElement.cs:29",
             "tests/NetPrints.Testing.Ui/Driving/UiWait.cs:44",
             "tests/NetPrints.Testing.Ui/Graph/GraphCanvas.cs:65",
@@ -534,6 +514,48 @@ namespace NetPrints.Tests.Core
         [GeneratedRegex(@"^dotnet_diagnostic\.(?<rule>[A-Za-z0-9_-]+)\.severity\s*=\s*(?<severity>\S+)")]
         private static partial Regex EditorConfigSeverityPattern();
 
+        /// <summary>
+        /// ADR-0007 amendment (2026-10-01): view model types are named <c>&lt;Name&gt;ViewModel</c>, never
+        /// <c>&lt;Name&gt;VM</c>. This check parses every <c>src/**/*.cs</c> and <c>tests/**/*.cs</c> file,
+        /// finds every type declaration (class, record, struct, interface, enum) and delegate, and fails on any
+        /// name ending in <c>VM</c> or containing <c>VM</c> before an uppercase letter (<c>MVVM</c> excepted),
+        /// listing each.
+        /// </summary>
+        [Fact]
+        public void NoTypeNameEndsInVM()
+        {
+            string repoRoot = SampleProjectFactory.FindRepositoryRoot();
+            string[] sourceFiles = EnumerateSourceAndTestFiles(repoRoot);
+            var offenders = new List<string>();
+            int parsedFileCount = 0;
+
+            foreach (string path in sourceFiles)
+            {
+                parsedFileCount++;
+                SyntaxNode root = CSharpSyntaxTree.ParseText(File.ReadAllText(path), path: path, cancellationToken: TestContext.Current.CancellationToken).GetRoot(TestContext.Current.CancellationToken);
+                string relativePath = Path.GetRelativePath(repoRoot, path).Replace('\\', '/');
+
+                foreach (string? declared in root.DescendantNodes().Select(node => node switch
+                {
+                    BaseTypeDeclarationSyntax type => type.Identifier.Text,
+                    DelegateDeclarationSyntax @delegate => @delegate.Identifier.Text,
+                    _ => null,
+                }))
+                {
+                    if (declared is not null && (declared.EndsWith("VM", StringComparison.Ordinal) || EmbeddedVmName().IsMatch(declared.Replace("MVVM", string.Empty, StringComparison.Ordinal))))
+                    {
+                        offenders.Add(declared);
+                    }
+                }
+            }
+
+            Assert.True(parsedFileCount > 0, "Expected to parse at least one src/**/*.cs or tests/**/*.cs file.");
+            Assert.Empty(offenders);
+        }
+
+        [GeneratedRegex(@"VM[A-Z]")]
+        private static partial Regex EmbeddedVmName();
+
         [GeneratedRegex(@"<(?:\w+:)?Popup(?=[\s/>])")]
         private static partial Regex RawPopupTagPattern();
 
@@ -594,7 +616,7 @@ namespace NetPrints.Tests.Core
             ("src/**.cs", "CA1311", "warning"),
             ("src/{NetPrints.Core,NetPrints.Reflection}/**.cs", "CA1002", "suggestion"),
             ("src/{NetPrints.Core,NetPrints.Reflection}/**.cs", "CA2227", "suggestion"),
-            ("src/NetPrints.Editor/**VM.cs", "VSTHRD111", "none"),
+            ("src/NetPrints.Editor/**ViewModel.cs", "VSTHRD111", "none"),
             ("src/NetPrints.Editor/**.axaml.cs", "VSTHRD111", "none"),
             ("src/NetPrints.Editor/ModelSync/*.cs", "VSTHRD111", "none"),
             ("src/NetPrints.Editor/Hosting/EditorComposition.cs", "VSTHRD111", "none"),

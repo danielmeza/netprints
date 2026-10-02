@@ -14,7 +14,7 @@ public sealed record CustomEventSuggestion
 
     /// <summary>
     /// Base name for the created entry, before <c>NetPrintsUtil.GetUniqueName</c> uniquifies it
-    /// (<see cref="SuggestionListVM.SelectAsync"/>).
+    /// (<see cref="SuggestionListViewModel.SelectAsync"/>).
     /// </summary>
     public const string NamePrefix = "CustomEvent";
 }

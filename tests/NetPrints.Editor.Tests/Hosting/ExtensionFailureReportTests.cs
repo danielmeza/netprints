@@ -2,7 +2,6 @@ using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Editor.Hosting;
-using NetPrints.Editor.Main;
 using NetPrints.Extensibility;
 using NetPrints.Extensibility.Loading;
 
@@ -28,10 +27,10 @@ public class ExtensionFailureReportTests : IDisposable
     public async Task FailuresAreListedInOneDialogAndNotRepeated()
     {
         await using ExtensionHost extensions = HostWithBrokenExtension();
-        var vm = new MainEditorVM(testEditor.Context with { Extensions = extensions });
+        var rig = new ProjectRig(testEditor.Context with { Extensions = extensions });
 
-        await vm.ReportExtensionFailuresAsync();
-        await vm.ReportExtensionFailuresAsync();
+        await rig.ReportExtensionFailuresAsync();
+        await rig.ReportExtensionFailuresAsync();
 
         (string title, IReadOnlyList<CodeDiagnostic> issues) = Assert.Single(testEditor.Dialogs.IssueDialogs);
         Assert.Equal("Extensions failed to load", title);
@@ -45,9 +44,9 @@ public class ExtensionFailureReportTests : IDisposable
     [Fact]
     public async Task NoFailuresShowNoDialog()
     {
-        var vm = new MainEditorVM(testEditor.Context);
+        var rig = new ProjectRig(testEditor.Context);
 
-        await vm.ReportExtensionFailuresAsync();
+        await rig.ReportExtensionFailuresAsync();
 
         Assert.Empty(testEditor.Dialogs.IssueDialogs);
     }
@@ -110,10 +109,10 @@ public class ExtensionFailureReportTests : IDisposable
     {
         await using ExtensionHost extensions = HostWithTestExtensionAnd(code);
         var editor = TestEditor.Create(TestEditor.CreateReflectionHost, extensions);
-        var vm = new MainEditorVM(editor.Context);
+        var rig = new ProjectRig(editor.Context);
 
-        await vm.ReportExtensionFailuresAsync();
-        await vm.ReportExtensionFailuresAsync();
+        await rig.ReportExtensionFailuresAsync();
+        await rig.ReportExtensionFailuresAsync();
 
         (string title, IReadOnlyList<CodeDiagnostic> issues) = Assert.Single(editor.Dialogs.IssueDialogs);
         Assert.Equal("Extensions failed to load", title);
@@ -125,12 +124,12 @@ public class ExtensionFailureReportTests : IDisposable
 
         string csproj = TestPaths.CopyHelloWorldSample();
         cleanup.Add(Path.GetDirectoryName(csproj) ?? csproj);
-        await vm.LoadProjectAsync(csproj);
+        await rig.LoadProjectAsync(csproj);
 
-        Assert.NotNull(vm.Project);
+        Assert.NotNull(rig.Project);
         Assert.Empty(editor.Dialogs.Errors);
-        await vm.NewClassCommand.ExecuteAsync(null);
-        Assert.Equal("MyClass", vm.Project?.Classes[^1].Name);
+        await rig.NewClassAsync();
+        Assert.Equal("MyClass", rig.Project?.Classes[^1].Name);
     }
 
     private sealed class EmptyExtension : INetPrintsExtension

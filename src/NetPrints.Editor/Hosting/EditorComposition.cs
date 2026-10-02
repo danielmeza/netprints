@@ -3,9 +3,10 @@ using System.Reflection;
 using Avalonia.Controls;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Logging;
+using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Diagnostics;
 using NetPrints.Editor.Hosting.Avalonia;
-using NetPrints.Editor.Main;
+using NetPrints.Editor.Shell;
 using NetPrints.Projects;
 using NetPrints.Serialization;
 using NetPrints.Serialization.Mapping;
@@ -15,8 +16,7 @@ using NetPrints.Workspace;
 namespace NetPrints.Editor.Hosting;
 
 /// <summary>
-/// Composition root: creates the Avalonia service implementations, the main view model and the
-/// main window (no DI container).
+/// Composition root: creates the Avalonia service implementations and the shell window (no DI container).
 /// </summary>
 public sealed class EditorComposition : IDisposable
 {
@@ -35,11 +35,8 @@ public sealed class EditorComposition : IDisposable
     /// <summary>The composed host services.</summary>
     public EditorContext Context => services.Context;
 
-    /// <summary>The concrete window service (not just <see cref="IWindowService"/>, for callers that need <see cref="WindowService.ClassEditorWindows"/> or <see cref="WindowService.MainWindow"/>).</summary>
+    /// <summary>The concrete window service (not just <see cref="IWindowService"/>, for callers that need <see cref="WindowService.MainWindow"/>).</summary>
     public WindowService Windows => services.Windows;
-
-    /// <summary>The main window's view model, created by <see cref="CreateMainWindow"/>, or <see langword="null"/> before it is called.</summary>
-    public MainEditorVM? MainEditor => services.MainEditor;
 
     /// <summary>
     /// Shows exceptions that escape to the UI thread in the error dialog instead of crashing
@@ -50,17 +47,26 @@ public sealed class EditorComposition : IDisposable
     /// <summary>
     /// Reports what went wrong before the window existed (a requested host channel that is not available, extensions
     /// that failed to load), then opens the project named on the command line, if any (FR-016, PAR-05). Call after
-    /// <see cref="CreateMainWindow"/>.
+    /// <see cref="CreateShellWindow"/>.
     /// </summary>
     /// <param name="args">The command-line arguments.</param>
     public Task StartAsync(IReadOnlyList<string> args) => services.StartAsync(args);
 
-    /// <summary>Creates the main window and its view model.</summary>
-    public MainWindow CreateMainWindow() => services.CreateMainWindow();
+    /// <summary>The composed shell state, or <see langword="null"/> before <see cref="CreateShellWindow"/> is called.</summary>
+    public ShellViewModel? Shell => services.Shell;
+
+    /// <summary>The shell API over the docking layout, or <see langword="null"/> before <see cref="CreateShellWindow"/> is called.</summary>
+    public IShell? ShellApi => services.ShellApi;
+
+    /// <summary>The invoker of the registered commands, or <see langword="null"/> before <see cref="CreateShellWindow"/> is called.</summary>
+    public CommandInvoker? Commands => services.Commands;
+
+    /// <summary>Creates the shell window over a project service (no legacy window opens).</summary>
+    public ShellWindow CreateShellWindow() => services.CreateShellWindow();
 
     /// <summary>
     /// Stops rebinding persistence to the extension host's registry (see
-    /// <see cref="PersistenceBinding.Bind"/>), disposes <see cref="MainEditor"/>, if created, and the
+    /// <see cref="PersistenceBinding.Bind"/>), disposes the shell, if created, and the
     /// code analysis host (editor-services.md §6: "disposed with the main window").
     /// </summary>
     public void Dispose() => services.Dispose();
@@ -88,6 +94,8 @@ internal sealed class EditorServices : IDisposable
     private readonly string? hostChannelError;
     private readonly PersistenceBinding persistenceBinding;
     private readonly ICodeAnalysisHost codeAnalysis;
+    private readonly RunStateTracker runState;
+    private ShellHost? shellHost;
 
     /// <param name="host">Process-wide services created once by the host (desktop, headless tests).</param>
     /// <param name="windows">The window service, already constructed by the caller so it can hand the same
@@ -115,6 +123,8 @@ internal sealed class EditorServices : IDisposable
         var reflection = new ReflectionHost(dispatcher, host.Extensions, host.LoggerFactory.CreateLogger<ReflectionHost>());
         codeAnalysis = new CodeAnalysisHost(reflection, host.Extensions, DefaultScheduler.Instance, dispatcher, host.LoggerFactory.CreateLogger<CodeAnalysisHost>());
 
+        runState = new RunStateTracker(processes);
+
         Context = new EditorContext(
             filePicker,
             dialogs,
@@ -131,7 +141,8 @@ internal sealed class EditorServices : IDisposable
             host.Extensions,
             host.HostChannel,
             host.Settings,
-            codeAnalysis);
+            codeAnalysis,
+            runState);
     }
 
     /// <summary>The composed host services.</summary>
@@ -139,9 +150,6 @@ internal sealed class EditorServices : IDisposable
 
     /// <summary>The concrete window service.</summary>
     public WindowService Windows { get; }
-
-    /// <summary>The main window's view model, created by <see cref="CreateMainWindow"/>, or <see langword="null"/> before it is called.</summary>
-    public MainEditorVM? MainEditor { get; private set; }
 
     /// <summary>
     /// Shows exceptions that escape to the UI thread in the error dialog instead of crashing
@@ -153,41 +161,59 @@ internal sealed class EditorServices : IDisposable
     /// <summary>
     /// Reports what went wrong before the window existed (a requested host channel that is not available, extensions
     /// that failed to load), then opens the project named on the command line, if any (FR-016, PAR-05). Call after
-    /// <see cref="CreateMainWindow"/>.
+    /// <see cref="CreateShellWindow"/>.
     /// </summary>
     /// <param name="args">The command-line arguments.</param>
     public async Task StartAsync(IReadOnlyList<string> args)
     {
-        MainEditorVM mainEditor = MainEditor ?? throw new InvalidOperationException($"{nameof(CreateMainWindow)} must be called first.");
+        ProjectLoader loader = shellHost?.Actions.Loader ?? throw new InvalidOperationException($"{nameof(CreateShellWindow)} must be called first.");
         if (hostChannelError is not null)
         {
             await Context.Dialogs.ShowErrorAsync("Host channel unavailable", hostChannelError);
         }
 
-        await mainEditor.ReportExtensionFailuresAsync();
-        await mainEditor.OpenStartupProjectAsync(args);
+        await loader.ReportExtensionFailuresAsync();
+        await loader.OpenStartupProjectAsync(args);
     }
 
-    /// <summary>Creates the main window and its view model.</summary>
-    public MainWindow CreateMainWindow()
+    /// <summary>The frozen registry the shell was generated from, or <see langword="null"/> before <see cref="CreateShellWindow"/> is called.</summary>
+    public IContributionRegistry? Registry => shellHost?.Registry;
+
+    /// <summary>The composed shell state, or <see langword="null"/> before <see cref="CreateShellWindow"/> is called.</summary>
+    public ShellViewModel? Shell => shellHost?.Shell;
+
+    /// <summary>The shell API over the docking layout, or <see langword="null"/> before <see cref="CreateShellWindow"/> is called.</summary>
+    public IShell? ShellApi => shellHost?.Adapter;
+
+    /// <summary>The invoker of the registered commands, or <see langword="null"/> before <see cref="CreateShellWindow"/> is called.</summary>
+    public CommandInvoker? Commands => shellHost?.Invoker;
+
+    /// <summary>The project flows of the shell, or <see langword="null"/> before <see cref="CreateShellWindow"/> is called.</summary>
+    internal IProjectActions? ProjectActions => shellHost?.Actions;
+
+    /// <summary>
+    /// Creates the shell window: the registry, <see cref="ShellViewModel"/>, the docking adapter and the project flows
+    /// that open, create and close projects.
+    /// </summary>
+    public ShellWindow CreateShellWindow()
     {
-        MainEditor?.Dispose();
-        MainEditor = new MainEditorVM(Context);
-        var window = new MainWindow { DataContext = MainEditor };
-        Windows.MainWindow = window;
-        return window;
+        shellHost?.Dispose();
+        shellHost = ShellHost.Create(Context);
+        Windows.MainWindow = shellHost.Window;
+        return shellHost.Window;
     }
 
     /// <summary>
     /// Stops rebinding persistence to the extension host's registry (see
-    /// <see cref="PersistenceBinding.Bind"/>), disposes <see cref="MainEditor"/>, if created, and the
+    /// <see cref="PersistenceBinding.Bind"/>), disposes the shell, if created, and the
     /// code analysis host (editor-services.md §6: "disposed with the main window").
     /// </summary>
     public void Dispose()
     {
-        MainEditor?.Dispose();
+        shellHost?.Dispose();
         persistenceBinding.Dispose();
         codeAnalysis.Dispose();
+        runState.Dispose();
     }
 }
 
