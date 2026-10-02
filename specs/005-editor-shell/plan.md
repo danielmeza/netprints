@@ -47,8 +47,8 @@ lifecycle and look consistent.
 - Existing: Avalonia 12.1.3 (Desktop, Fluent, Headless), Nodify.Avalonia 2.0.0, CommunityToolkit.Mvvm 8.4.2,
   Xaml.Behaviors.Interactions(.Custom, .DragAndDrop) 12.0.7, Material.Icons.Avalonia 3.0.2, AvaloniaEdit 12.0.0,
   DynamicData 9.4.33, Microsoft.Extensions.* 10.0.12, System.Text.Json source generation.
-- **New:** `Dock.Avalonia`, `Dock.Model.Mvvm`, `Dock.Avalonia.Themes.Fluent` and `Dock.Serializer.SystemTextJson`,
-  all exactly `[12.1.0.6]`. They bring in `Dock.Model`, `Dock.Settings` and `Dock.Controls.Recycling.Model`
+- **New:** `Dock.Avalonia`, `Dock.Model.Mvvm` and `Dock.Avalonia.Themes.Fluent`,
+  all exactly `[12.1.0.6]` (no Dock serializer package, ADR-0018). They bring in `Dock.Model`, `Dock.Settings` and `Dock.Controls.Recycling.Model`
   transitively. No ReactiveUI and no Newtonsoft.Json (research R2).
 
 **Storage**:

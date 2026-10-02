@@ -5,6 +5,8 @@
 Decisions taken during implementation go here as "Decision: …", one line each, with the task id. Batch S2's
 decisions are listed in its entry below.
 
+- Decision (T064, batch C2): the Dock layout is persisted as a NetPrints-owned DTO tree through a source-generated `JsonSerializerContext` inside `Shell/Docking/`, not through Dock's serializers; `Dock.Serializer.SystemTextJson` is removed and `DockConfinementTests` asserts no `Dock.Serializer.*` package (ADR-0018, state-files.md and T064 amended).
+
 ## Batch S2 (specification: tasks, analyze, constitution 1.2.4)
 
 ### Task counts

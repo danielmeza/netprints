@@ -548,10 +548,14 @@ the window, the layout and each project's session, with safe fallbacks (FR-050�
 ### Batch E2 — model: sonnet — T064–T065 — 4 units
 
 - [ ] T064 [US6] Layout persistence (2 units). Test first: `tests/NetPrints.Editor.UITests/Shell/DockLayoutRoundTripTests.cs`.
-  Save and restore through the ADR-0018 envelope (`schemaVersion`, `engine`, `dockLayout`); panels match by panel id
-  and documents by `DocumentId`; an unknown panel (an extension no longer installed) and a graph that no longer exists
-  are dropped and the rest is restored; a layout that fails to load is logged and replaced by the default; layout
-  changes are saved debounced (`TimeProvider`). Then `src/NetPrints.Editor/Shell/Docking/LayoutSerializer.cs`.
+  Save and restore through the ADR-0018 envelope (`schemaVersion`, `engine`, `dockLayout`), where `dockLayout` is the
+  NetPrints-owned DTO tree (dock kind, id, proportion, active and visible flags, children; floating windows with their
+  bounds; hidden panel ids) written through a source-generated `JsonSerializerContext` inside `Shell/Docking/`, never
+  through Dock's serializers (ADR-0018 Status); the adapter maps the DTO to and from Dock's model, building the
+  dockables from the registered panels and the documents the session can open. Panels match by panel id and documents
+  by `DocumentId`; an unknown panel (an extension no longer installed) and a graph that no longer exists are dropped
+  and the rest is restored; a layout that fails to load is logged and replaced by the default; layout changes are saved
+  debounced (`TimeProvider`). Then `src/NetPrints.Editor/Shell/Docking/LayoutSerializer.cs` and its DTO and context.
 - [ ] T065 [US6] Sessions (2 units). Test first: `tests/NetPrints.Editor.Tests/State/SessionStateTests.cs`. Per project,
   the open documents in order, the active one, and each graph's viewport (location, zoom) are saved on unload and on
   exit, and restored on open; unresolvable documents and non-finite viewports are skipped; the active document falls

@@ -38,7 +38,14 @@ state.
   "screen": { "x": 0, "y": 0, "width": 2560, "height": 1440 } }
 
 // layout.json (ADR-0018 envelope; "engine" is "dock", or "grid" for the fallback)
-{ "schemaVersion": 1, "engine": "dock", "dockLayout": { /* adapter-owned */ } }
+// "dockLayout" is the NetPrints-owned DTO tree of the Dock adapter (Shell/Docking, T064), never Dock's own JSON.
+{ "schemaVersion": 1, "engine": "dock", "dockLayout": {
+  "root": { "kind": "proportional", "id": "netprints.root.column", "proportion": 1, "orientation": "vertical", "children": [
+    { "kind": "tools", "id": "netprints.dock.bottom", "proportion": 0.25, "activeId": "netprints.panel.errors", "children": [
+      { "kind": "tool", "id": "netprints.panel.errors" }, { "kind": "tool", "id": "netprints.panel.output" } ] } ] },
+  "hidden": ["netprints.panel.inspector"],
+  "windows": [ { "x": 200, "y": 120, "width": 900, "height": 700,
+    "root": { "kind": "documents", "id": "netprints.documents", "children": [ { "kind": "document", "id": "graph:Program.netpc.json#method:m000000001gs20" } ] } } ] } }
 
 // recent.json
 { "schemaVersion": 1, "entries": [
