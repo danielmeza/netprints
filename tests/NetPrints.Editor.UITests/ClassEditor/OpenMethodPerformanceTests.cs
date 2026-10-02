@@ -27,7 +27,7 @@ public class OpenMethodPerformanceTests
         using var sample = new SampleCopy();
         await using var app = HeadlessApp.Start();
         await app.OpenStartupProjectAsync(sample.ProjectPath, Token);
-        var classEditor = await app.Main.OpenClassAsync(EditorSession.ClassName, Token);
+        var classEditor = await app.OpenClassAsync(EditorSession.ClassName, Token);
 
         var openMain = Stopwatch.StartNew();
         await classEditor.OpenMethodAsync("Main", Token);

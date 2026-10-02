@@ -27,9 +27,9 @@ internal sealed class ShellApp : IAsyncDisposable
     private readonly string settingsDirectory = Path.Combine(Path.GetTempPath(), "netprints-ui-tests", Guid.NewGuid().ToString("N"));
     private readonly IDisposable exceptionHandler;
 
-    private ShellApp()
+    private ShellApp(IReadOnlyList<string> extensionFolders)
     {
-        extensions = new ExtensionHost(new ExtensionLoaderOptions([], [], [BuiltInExtension.InProcessEntry]), NullLoggerFactory.Instance);
+        extensions = new ExtensionHost(new ExtensionLoaderOptions([], extensionFolders, [BuiltInExtension.InProcessEntry]), NullLoggerFactory.Instance);
         var settings = new JsonFileSettingsStore(Path.Combine(settingsDirectory, "settings.json"), NullLogger<JsonFileSettingsStore>.Instance);
         Dialogs = new RecordingDialogs();
         Processes = new CapturingProcessLauncher();
@@ -38,6 +38,11 @@ internal sealed class ShellApp : IAsyncDisposable
             MsBuildAvailable: true, DisposeOwnedResources: () => ValueTask.CompletedTask), Dialogs, FilePicker, Processes);
         exceptionHandler = Composition.InstallUnhandledExceptionHandler();
         Ui = HeadlessUi.Create();
+        Dialogs.ShowIssues = (title, issues) =>
+        {
+            Ui.Show(new IssuesDialog(title, issues));
+            return Task.CompletedTask;
+        };
         Dialogs.ShowReferences = references =>
         {
             var dialog = new ReferencesDialog { DataContext = references };
@@ -78,7 +83,10 @@ internal sealed class ShellApp : IAsyncDisposable
 
     public ProjectSessionViewModel Session => Shell.Session ?? throw new InvalidOperationException("No project open.");
 
-    public static ShellApp Start() => new();
+    public static ShellApp Start() => new([]);
+
+    /// <summary>A fresh editor whose extension host also loads the given folders (each must hold a manifest).</summary>
+    public static ShellApp Start(IReadOnlyList<string> extensionFolders) => new(extensionFolders);
 
     /// <summary>Opens the sample the way the command line does and waits for its types.</summary>
     public async Task OpenSampleAsync(CancellationToken cancellationToken)

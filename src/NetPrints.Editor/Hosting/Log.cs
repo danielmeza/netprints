@@ -97,4 +97,12 @@ internal static partial class Log
     /// <param name="exception">The task's (unwrapped) exception.</param>
     [LoggerMessage(EventId = 1030, Level = LogLevel.Error, Message = "Fire-and-forget task faulted")]
     public static partial void TaskFaulted(ILogger logger, Exception exception);
+
+    /// <summary>Logs 1041: <see cref="ProjectLoader.LoadProjectAsync"/> restored the previous project's
+    /// extensions after a failed load, and that restore itself failed. The original load failure is
+    /// still shown to the user.</summary>
+    /// <param name="logger">Logger to write to.</param>
+    /// <param name="exception">The exception the rollback threw.</param>
+    [LoggerMessage(EventId = 1041, Level = LogLevel.Error, Message = "Restoring the previous project's extensions after a failed load also failed")]
+    public static partial void ExtensionRollbackFailed(ILogger logger, Exception exception);
 }

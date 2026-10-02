@@ -851,3 +851,49 @@ The `DragFromTree` smoke flow was red on the variable step: the drop reached the
 ### Totals (C5b)
 
 Release build 0 warnings; format clean. Solution suite (Release, `--ignore-exit-code 8`): 2273 total, 2260 passed, 13 skipped, 0 failed (UITests 8 m 06 s). Desktop E2E (`NETPRINTS_E2E=1`, `--fail-skips on`): 33 total, 33 passed, 0 skipped, 0 explicit, 1 m 18 s to 2 m 35 s over five full runs on this machine after the fixes above.
+
+
+## Batch C5c1 (first half of T044: the main window and `MainEditorViewModel` are gone)
+
+T044 is not ticked: the class window half (`ClassEditorWindow.*`, `ClassEditorViewModel`, `IWindowService.OpenClassEditor`, `ClassEditorPage`) is the next batch.
+
+### Duties moved (from `MainEditorViewModel` to)
+
+- Project load (extension trust flow, extension rollback R2-11/R2-22, unsupported-file message, issues dialog, clipboard copy on failure), create, open with picker, startup argument, the extension failure report, the reflection reload when a project is set, its build ends or its snapshot changes, and the project's session lifetime: new `ProjectLoader` (`Hosting/`, internal), owned by `ShellProjectActions` (`Actions.Loader`). It sets `ShellViewModel.Session` itself (new session first, then the old one is disposed), so `ShellHost` no longer follows a second object.
+- `IProjectActions` open, new, close (drops the session; the documents close through the existing `ShellHost` session hook), exit (`CloseMainWindow`), the unload confirmation (still true, T050), references dialog: `ShellProjectActions` (it was a forwarding layer, now it holds the code).
+- Host channel `focusDocument` and `typesChanged`: `HostChannelBridge` is created by `ShellProjectActions`; `FocusDocument` resolves the class and calls `Navigate`, which replaces `ShellNavigator` (deleted).
+- New class and add existing class (PAR-12, PAR-13): the shell had no equivalent, so removing the window would have removed the ability to add a class. New commands `newClass` and `addExistingClass` (File > class group, no shortcut, no bar), `IProjectActions.NewClassAsync/AddExistingClassAsync`, handlers `NewClassCommandHandler`/`AddExistingClassCommandHandler`; `contracts/commands.md` has the two rows.
+- Remove class: `ShellProjectActions.DeleteItem` already did it. Save, compile, run, stop: `ProjectSessionViewModel` and the build handlers already did. Output binary type: `ProjectSettingsDocumentViewModel` already did. Window title: `ShellViewModel.Title`. Project and Settings panes, the toolbar: replaced by the menus and the settings document, not moved.
+- The busy overlay of a project load: a status bar message (`Loading project <path>`, then `Loaded project <name>` for 5 s, or `Failed to load project <path>`), as C4b announced. The automation status `ProjectLoaded` is now `Shell.Session is not null`.
+- `Main/Log.cs` (event 1041) moved to `Hosting/Log.cs`.
+
+### Removed
+
+`Main/MainWindow.axaml(.cs)`, `Main/MainEditorViewModel.cs`, `Main/Log.cs`, the `ShellNavigator` hook, `EditorServices.CreateMainWindow`/`MainEditor`, `MainWindowPage`, the four `main-window-*.png` baselines, 18 `AutomationIds.Main*` constants (none was used any more), the `MainEditorViewModel` exemption of the architecture gate (rule A2 keeps `ClassEditorViewModel`), one `SourceHygieneTests` allowlist line (`MainEditorViewModelTests.cs:121`; no entry added or shifted).
+
+Kept on purpose for the next batch: `LegacyWindowShell` and the new `Main/LegacyClassWindows` (opens a class window and wires its commands, as the window's `OpenClass` did; only the headless suites of the class windows call it, `HeadlessApp.OpenClassAsync` and `ClassEditorCommandStatesTests`). Nothing in the application opens a class window any more.
+
+### Tests
+
+Deleted 19 and migrated or reshaped 22 of the 41 tests that exercised the removed code:
+
+- `MainEditorViewModelTests` (21): 14 migrated with their assertions to `ProjectLoaderTests` (cancel keeps the project, create takes the name from the file, `.netpp` message, open failure copies the exception, startup argument, reflection reloads, no SDK, rollback failure R2-22), `ShellProjectActionsTests` (unique class names, existing class copied, references dialog), `ProjectSessionViewModelTests` (compile reports errors, translation failure as a build error) and `ProjectSettingsDocumentViewModelTests` (concurrent output type toggles). The create-project one asserts the shell title (`Chosen – NetPrints`) instead of the window title. Deleted 7: panes are mutually exclusive (panes gone; "needs a project" is `NothingRunsWithoutAProject`), open class reuses its window and closing the main window closes the class windows (class windows are not opened by the application), save writes only dirty classes (`SaveAllWritesTheDirtyClassesAndCleansThem`, which now also asserts the generated file), changing the output type (`ChoosingABinaryTypeEditsTheProjectAndTheDocumentFollowsIt`), run compiles then starts and the run button state (`RunStartsTheProgramWithATokenAndStopCancelsIt`, `BuildCommandsTests`).
+- `MainEditorProjectActionsTests` (14): 8 migrated (open with a path and with the picker, new project, exit, unload, references, delete a class and close its documents, project settings now opens the settings document); deleted 6 (close project, add method, add constructor/variable/event graph, class settings, delete a method, rename: they asserted the class window; the shell versions are `FormerActionsReachableTests`, `EditCommandsTests`, `ProjectTreePanelViewModelTests`, `ShellCompositionTests`).
+- `MainWindowTests` (6 headless UI tests of the old window) deleted. `UnhandledExceptionTests`, `ExtensionDialogTests` (the usability check opens the File menu of the shell) and `AutomationAgentTests` (find the menu bar, dump holds the command bar) moved to `ShellApp`; `ShellApp.Start(folders)` and its issues dialog are new. The old window snapshot test went with its baselines; `ReferencesDialog` shows the dialog through `IProjectActions.ShowReferencesAsync`.
+- Six hosting test files (`ProjectTrust`, `ProjectProfile`, `ProjectProperty`, `ExtensionFailureReport`, `ExtensionPersistence`, `TestExtensionHostChannel`) and `ClassEditorCommandStatesTests` changed only the type they construct (`ProjectRig`: a shell state plus `ShellProjectActions`). `HostChannelBridgeTests.FocusDocument*` now assert the shell: the class graph document is opened (twice for two messages) and the node is revealed in the graph document, instead of a class window.
+- New: `ClosingTheProjectDisposesTheSessionAndStopsItsProgram`, `LoadingShowsAStatusMessage...`, `LoadingAnotherProjectReplacesTheSession`, `ReferencesWithNoProjectOpenShowsNothing`, `AddingAnExistingClassAsksNothingWithNoProjectOpen`, the two rows of `NeedsAProject`, `TheNewClassCommandAddsAClassToTheOpenProject`, and rows in `BuiltInCommandTableTests`, `RegistrySurfaceTests` (File menu order) and `FormerActionsReachableTests`.
+
+### Red and green
+
+The moves were written code first, so no behavioural red exists; every new or migrated test was mutation checked in one run (7 failures, all restored): session disposal removed (`ClosingTheProjectDisposesTheSessionAndStopsItsProgram`; the analyzers IDISP003 also reject the plain removal), the snapshot reload case removed (`ReflectionReloadsOnOpenAndOnReferencesChange`), `CloseProjectAsync` and `ExitAsync` made no-ops (`ClosingTheProjectDropsTheSession`, `ExitClosesTheMainWindow`), `FocusDocument` not navigating (both `FocusDocument*` tests), `NewClassAsync` ignoring the profile (`ANewClassIsBuiltFromTheTemplateOfTheProjectsProfile`).
+First full run: 7 red. Fixed: `CloseDocumentsOf` iterated the shell's live document list while closing (`Collection was modified`, found by the fake shell; it now copies); the File menu and command table rows; the title assertion; `ShellApp` had no issues dialog; the two binding-warning tests saw the Dock control's own startup warnings of the shell window the headless app composes (never shown), so their sink is installed once the app exists (`EditorSession.OpenSampleMainAsync(token, appStarted)`).
+
+### Decisions
+
+- Decision: the load machinery is a separate `ProjectLoader` owned by `ShellProjectActions`, not more code in `ShellProjectActions` or `ShellViewModel`: `ShellViewModel` has no `EditorContext`, and the loader's tests build it over a bare shell state.
+- Decision: `HeadlessApp` composes the shell window without showing it, so the suites that build their own `ShellRig` over its session do not get a second `Shell.Window` with the same ids; the class windows are opened through `LegacyClassWindows`.
+- Decision: `ConfirmUnloadAsync` stays true and `ExitAsync` still asks nothing; both are T050.
+
+### Totals (C5c1)
+
+Release build 0 warnings; format clean. Solution suite (Release, `--ignore-exit-code 8`): 2264 total, 2251 passed, 13 skipped (the tolerated headless and E2E self-skips), 0 failed (Editor.Tests 2 m, UITests 7 m 55 s). Desktop E2E (`NETPRINTS_E2E=1`, `--fail-skips on`): 33 total, 33 passed, 0 skipped, 1 m 25 s. No test host, Xvfb or openbox of mine was left running.

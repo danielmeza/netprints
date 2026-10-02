@@ -6,14 +6,13 @@ namespace NetPrints.Editor.Tests.Architecture;
 
 /// <summary>
 /// contracts/editor-services.md §7: a Roslyn scan of every editor view model file for rules A1
-/// (no Avalonia/Nodify types) and A2 (no direct reference to the owning class/main editor), plus the
+/// (no Avalonia/Nodify types) and A2 (no direct reference to the owning class editor), plus the
 /// fixture that proves the scanner actually fires (ED-T10). Rule A3 (assembly references) is a
 /// separate, non-Roslyn check in <see cref="AssemblyReferenceGateTests"/>.
 /// </summary>
 public class ArchitectureGateTests
 {
     private const string ClassEditorViewModelTypeName = "ClassEditorViewModel";
-    private const string MainEditorViewModelTypeName = "MainEditorViewModel";
     private const string RuleA1 = "A1";
     private const string RuleA2 = "A2";
 
@@ -71,7 +70,7 @@ public class ArchitectureGateTests
         ns is not null && (ns.StartsWith("Avalonia", StringComparison.Ordinal) || ns.StartsWith("Nodify", StringComparison.Ordinal));
 
     private static bool IsBannedOwnerType(SemanticModel model, TypeSyntax? type) =>
-        type is not null && model.GetSymbolInfo(type).Symbol is INamedTypeSymbol { Name: ClassEditorViewModelTypeName or MainEditorViewModelTypeName };
+        type is not null && model.GetSymbolInfo(type).Symbol is INamedTypeSymbol { Name: ClassEditorViewModelTypeName };
 
     /// <summary>Scans one view model syntax tree for A1 and A2 (editor-services.md §7).</summary>
     private static HashSet<Violation> Scan(SemanticModel model, SyntaxTree tree)
@@ -88,8 +87,8 @@ public class ArchitectureGateTests
             violations.Add(new Violation(RuleA1, file));
         }
 
-        bool isClassOrMainEditorViewModel = file is "ClassEditorViewModel.cs" or "MainEditorViewModel.cs";
-        bool holdsTheOwningEditor = !isClassOrMainEditorViewModel &&
+        bool isClassEditorViewModel = file is "ClassEditorViewModel.cs";
+        bool holdsTheOwningEditor = !isClassEditorViewModel &&
             (root.DescendantNodes().OfType<ConstructorDeclarationSyntax>().SelectMany(c => c.ParameterList.Parameters)
                 .Any(p => IsBannedOwnerType(model, p.Type))
             || root.DescendantNodes().OfType<FieldDeclarationSyntax>()

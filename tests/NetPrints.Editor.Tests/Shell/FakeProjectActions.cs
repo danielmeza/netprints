@@ -64,6 +64,20 @@ public sealed class FakeProjectActions : IProjectActions
     }
 
     /// <inheritdoc/>
+    public Task NewClassAsync(CancellationToken cancellationToken)
+    {
+        Calls.Add("NewClass");
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc/>
+    public Task AddExistingClassAsync(CancellationToken cancellationToken)
+    {
+        Calls.Add("AddExistingClass");
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc/>
     public void ShowClassSettings(ClassGraph cls) => Record("ShowClassSettings", cls);
 
     /// <inheritdoc/>

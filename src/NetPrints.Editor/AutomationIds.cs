@@ -6,56 +6,6 @@ namespace NetPrints.Editor;
 /// </summary>
 public static class AutomationIds
 {
-    // Main window
-    /// <summary>
-    /// Automation id for the main window's button that opens the project pane.
-    /// </summary>
-    public const string MainProjectButton = "Main.ProjectButton";
-    /// <summary>
-    /// Automation id for the main window's button that opens the references dialog.
-    /// </summary>
-    public const string MainReferencesButton = "Main.ReferencesButton";
-    /// <summary>
-    /// Automation id for the main window's button that opens the settings pane.
-    /// </summary>
-    public const string MainSettingsButton = "Main.SettingsButton";
-    /// <summary>
-    /// Automation id for the main window's compile button.
-    /// </summary>
-    public const string MainCompileButton = "Main.CompileButton";
-    /// <summary>
-    /// Automation id for the main window's run button.
-    /// </summary>
-    public const string MainRunButton = "Main.RunButton";
-    /// <summary>
-    /// Automation id for the main window's project pane.
-    /// </summary>
-    public const string MainProjectPane = "Main.ProjectPane";
-    /// <summary>
-    /// Automation id for the main window's settings pane.
-    /// </summary>
-    public const string MainSettingsPane = "Main.SettingsPane";
-    /// <summary>
-    /// Automation id for the main window's save-project button.
-    /// </summary>
-    public const string MainSaveProjectButton = "Main.SaveProjectButton";
-    /// <summary>
-    /// Automation id for the main window's button that creates a new class.
-    /// </summary>
-    public const string MainNewClassButton = "Main.NewClassButton";
-    /// <summary>
-    /// Automation id for the main window's list of the project's classes.
-    /// </summary>
-    public const string MainClassList = "Main.ClassList";
-    /// <summary>
-    /// Automation id for the main window's button that opens the selected class.
-    /// </summary>
-    public const string MainOpenClassButton = "Main.OpenClassButton";
-    /// <summary>
-    /// Automation id for the main window's busy overlay, shown while an operation is running.
-    /// </summary>
-    public const string MainBusyOverlay = "Main.BusyOverlay";
-
     // Class editor window
     /// <summary>
     /// Automation id for the class editor window's compile button.
@@ -309,10 +259,6 @@ public static class AutomationIds
 
     // Windows (AutomationProperties.Name carries the class full name for class windows)
     /// <summary>
-    /// Automation id for the main window itself.
-    /// </summary>
-    public const string MainWindow = "Main.Window";
-    /// <summary>
     /// Automation id for the class editor window itself. Its AutomationProperties.Name carries the class's full name.
     /// </summary>
     public const string ClassEditorWindow = "ClassEditor.Window";
@@ -342,27 +288,6 @@ public static class AutomationIds
     public const string SelectMethodButton = "Dialogs.SelectMethod.Select";
 
     // Main window panes
-    /// <summary>
-    /// Automation id for the main window's button that creates a new project.
-    /// </summary>
-    public const string MainCreateProjectButton = "Main.CreateProjectButton";
-    /// <summary>
-    /// Automation id for the main window's button that opens an existing project.
-    /// </summary>
-    public const string MainOpenProjectButton = "Main.OpenProjectButton";
-    /// <summary>
-    /// Automation id for the main window's button that adds an existing class to the project.
-    /// </summary>
-    public const string MainExistingClassButton = "Main.ExistingClassButton";
-    /// <summary>
-    /// Automation id for the main window's button that removes the selected class from the project.
-    /// </summary>
-    public const string MainRemoveClassButton = "Main.RemoveClassButton";
-    /// <summary>
-    /// Automation id for the main window's binary-type chooser.
-    /// </summary>
-    public const string MainBinaryTypeChooser = "Main.BinaryTypeChooser";
-
     // Class editor lists and splitters
     /// <summary>
     /// Automation id for the class editor window's list of the class's constructors.

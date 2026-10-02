@@ -1,18 +1,20 @@
 using Avalonia.Controls;
 using Microsoft.Extensions.Logging.Abstractions;
+using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Editor.Main;
 using NetPrints.Editor.References;
+using NetPrints.Editor.Shell;
 using NetPrints.Editor.UITests.Driving;
 using NetPrints.Extensibility;
 using NetPrints.Extensibility.Hosting;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Settings;
 using NetPrints.Testing;
-using NetPrints.Testing.Ui.Main;
+using NetPrints.Testing.Ui.ClassEditor;
 using NetPrints.Testing.Ui.Screenplay;
 using NetPrints.Testing.Ui.Snapshots;
 
@@ -79,26 +81,20 @@ public sealed class HeadlessApp : IAsyncDisposable
             }
         });
         Driver = new HeadlessDriver(Tree, () => Processes.Output);
-        Window = Composition.CreateMainWindow();
-        Window.Show();
-        Tree.Track(Window);
+        Composition.CreateShellWindow(); // never shown: the class windows and the rigs that build their own shell are what the suites drive
         HeadlessDriver.Pump();
-        Main = new MainWindowPage(Driver);
         Actor = Actor.Named("Ada").WhoCan(UseNetPrints.With(Driver, FilePicker));
     }
 
     public ISettingsStore Settings { get; }
     public TestComposition Composition { get; }
-    public MainWindow Window { get; }
     public RecordingDialogs Dialogs { get; }
     public CapturingProcessLauncher Processes { get; }
     public QueuedFilePicker FilePicker { get; }
     public AutomationTree Tree { get; }
     public HeadlessDriver Driver { get; }
-    public MainWindowPage Main { get; }
     public Actor Actor { get; }
-    public MainEditorViewModel ViewModel => Composition.MainEditor
-        ?? throw new InvalidOperationException($"{nameof(Composition.MainEditor)} has not been created yet.");
+    public ProjectSessionViewModel? Session => Composition.Shell?.Session;
 
     public static HeadlessApp Start() => new([]);
 
@@ -108,10 +104,22 @@ public sealed class HeadlessApp : IAsyncDisposable
     /// <summary>Opens a project the way the command line does (PAR-05) and waits for its types.</summary>
     public async Task OpenStartupProjectAsync(string path, CancellationToken cancellationToken)
     {
-        await ViewModel.OpenStartupProjectAsync([path]);
-        await Testing.Ui.Driving.UiWait.UntilAsync(Driver, () => Task.FromResult(ViewModel.Project is not null), "project loaded", cancellationToken);
+        await Composition.StartAsync([path]);
+        await Testing.Ui.Driving.UiWait.UntilAsync(Driver, () => Task.FromResult(Session is not null), "project loaded", cancellationToken);
         await Testing.Ui.Driving.UiWait.UntilAsync(Driver, () => Task.FromResult(Composition.Context.Reflection.NonStaticTypes.Count > 0),
             "reflection loaded", cancellationToken, TimeSpan.FromSeconds(60));
+    }
+
+    /// <summary>Opens the window of a class of the open project, as the former main window's class list did, and returns its page.</summary>
+    public async Task<ClassEditorPage> OpenClassAsync(string fullName, CancellationToken cancellationToken)
+    {
+        ProjectSessionViewModel session = Session ?? throw new InvalidOperationException("No project is open.");
+        ClassGraph cls = session.Project.Classes.Single(c => c.FullName == fullName);
+        LegacyClassWindows.Open(Composition.Context, () => Session, Composition.Shell ?? throw new InvalidOperationException("No shell."),
+            Composition.ProjectActions ?? throw new InvalidOperationException("No shell."), cls);
+        var page = new ClassEditorPage(Driver, fullName);
+        await page.GetAsync(cancellationToken);
+        return page;
     }
 
     /// <summary>The window of an open class editor (for arranging and asserting through the API).</summary>

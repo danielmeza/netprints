@@ -1,10 +1,11 @@
 using Avalonia.Headless.XUnit;
 using Avalonia.Threading;
 using NetPrints.Editor.UITests.Driving;
-using NetPrints.Editor.UITests.Hosting;
+using NetPrints.Editor.UITests.Shell;
 using NetPrints.Testing.Ui.Driving;
+using NetPrints.Testing.Ui.Shell;
 
-namespace NetPrints.Editor.UITests.Main;
+namespace NetPrints.Editor.UITests.Hosting;
 
 /// <summary>
 /// Exceptions that escape to the UI thread (async void event handlers, unguarded awaits in async
@@ -14,27 +15,26 @@ public class UnhandledExceptionTests
 {
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
-    private static Task WaitForErrorsAsync(HeadlessApp app, int count) =>
+    private static Task WaitForErrorsAsync(ShellApp app, int count) =>
         UiWait.UntilAsync(app.Driver, () => Task.FromResult(app.Dialogs.Errors.Count == count), "error reported", Token);
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task DispatcherExceptionIsReportedAndTheEditorKeepsRunning()
     {
-        await using var app = HeadlessApp.Start();
+        await using var app = ShellApp.Start();
 
         Dispatcher.UIThread.Post(() => throw new InvalidOperationException("boom from the dispatcher"));
         await WaitForErrorsAsync(app, 1);
 
         Assert.Contains("boom from the dispatcher", app.Dialogs.Errors[0].Message);
-        await app.Main.ProjectButton.ClickAsync(Token);
-        Assert.True(await app.Main.ProjectPane.IsVisibleAsync(Token)); // still usable
+        await new ShellPage(app.Driver).Menu.OpenAsync("File", ShellCommands.NewProject, Token); // still usable
         HeadlessDriver.DrainFinalizers();
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task AsyncVoidHandlerExceptionIsReported()
     {
-        await using var app = HeadlessApp.Start();
+        await using var app = ShellApp.Start();
 
         async void Handler()
         {
@@ -52,7 +52,7 @@ public class UnhandledExceptionTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task AsyncVoidHandlerExceptionIsReportedOnlyOnce()
     {
-        await using var app = HeadlessApp.Start();
+        await using var app = ShellApp.Start();
 
         async void Handler()
         {

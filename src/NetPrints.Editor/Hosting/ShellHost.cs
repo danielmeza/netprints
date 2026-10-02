@@ -5,7 +5,6 @@ using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Contributions.BuiltIn;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Inspectors;
-using NetPrints.Editor.Main;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.Shell.Docking;
 
@@ -13,20 +12,19 @@ namespace NetPrints.Editor.Hosting;
 
 /// <summary>
 /// The composed shell: the frozen registry, <see cref="ShellViewModel"/>, the docking adapter, the command invoker and
-/// the window. It follows the project service's session and closes the open documents when the project goes.
+/// the window. It closes the open documents when the project goes.
 /// </summary>
 internal sealed class ShellHost : IDisposable
 {
-    private readonly MainEditorViewModel projects;
 
     private sealed class NoServices : IServiceProvider
     {
         public object? GetService(Type serviceType) => null;
     }
 
-    private ShellHost(MainEditorViewModel projects, IContributionRegistry registry, ShellViewModel shell, DockShellAdapter adapter, CommandInvoker invoker, ShellWindow window)
+    private ShellHost(ShellProjectActions actions, IContributionRegistry registry, ShellViewModel shell, DockShellAdapter adapter, CommandInvoker invoker, ShellWindow window)
     {
-        this.projects = projects;
+        Actions = actions;
         Registry = registry;
         Shell = shell;
         Adapter = adapter;
@@ -34,6 +32,9 @@ internal sealed class ShellHost : IDisposable
         Window = window;
         window.DataContext = shell;
     }
+
+    /// <summary>Gets the project flows of the shell.</summary>
+    public ShellProjectActions Actions { get; }
 
     /// <summary>Gets the frozen registry the shell was generated from.</summary>
     public IContributionRegistry Registry { get; }
@@ -50,11 +51,10 @@ internal sealed class ShellHost : IDisposable
     /// <summary>Gets the shell window.</summary>
     public ShellWindow Window { get; }
 
-    /// <summary>Composes the shell over a project service.</summary>
+    /// <summary>Composes the shell.</summary>
     /// <param name="context">Host services shared across the editor.</param>
-    /// <param name="projects">The project service; it opens, creates and closes projects.</param>
-    /// <returns>The shell; dispose it before <paramref name="projects"/>.</returns>
-    public static ShellHost Create(EditorContext context, MainEditorViewModel projects)
+    /// <returns>The shell.</returns>
+    public static ShellHost Create(EditorContext context)
     {
         ILogger logger = context.LoggerFactory.CreateLogger<ShellHost>();
         var registry = new ContributionRegistry(context.LoggerFactory.CreateLogger<ContributionRegistry>());
@@ -64,7 +64,7 @@ internal sealed class ShellHost : IDisposable
         var shell = new ShellViewModel(registry, new NoServices(), TimeProvider.System, context.Dispatcher);
         var inspector = shell.FindPanel(PanelContributions.InspectorId)?.Content as InspectorPanelViewModel
             ?? throw new InvalidOperationException("The inspector panel is not registered.");
-        var actions = new ShellProjectActions(projects, shell, inspector.EditorFor);
+        var actions = new ShellProjectActions(context, shell, inspector.EditorFor);
         var adapter = new DockShellAdapter(shell, actions, id => OpenDocument(id, shell, inspector, context));
         actions.Api = adapter;
         shell.Layout = adapter;
@@ -73,22 +73,19 @@ internal sealed class ShellHost : IDisposable
             exception => context.Dispatcher.Post(() => context.Dialogs.ShowErrorAsync("The command failed", exception.ToString()).Forget(logger)));
         shell.AttachCommands(invoker);
 
-        var host = new ShellHost(projects, registry, shell, adapter, invoker, new ShellWindow());
+        var host = new ShellHost(actions, registry, shell, adapter, invoker, new ShellWindow());
         shell.PropertyChanged += host.OnShellChanged;
         shell.AttachPanels(adapter, invoker, context);
-        projects.PropertyChanged += host.OnProjectsChanged;
-        projects.ShellNavigator = actions.Navigate;
         return host;
     }
 
-    /// <summary>Stops following the project service and disposes the shell state.</summary>
+    /// <summary>Disposes the shell state, then the open session.</summary>
     public void Dispose()
     {
-        projects.PropertyChanged -= OnProjectsChanged;
-        projects.ShellNavigator = null;
         Shell.PropertyChanged -= OnShellChanged;
         Shell.Dispose();
         Adapter.Dispose();
+        Actions.Dispose();
     }
 
     private static DocumentViewModel? OpenDocument(DocumentId id, ShellViewModel shell, InspectorPanelViewModel inspector, EditorContext context)
@@ -108,14 +105,6 @@ internal sealed class ShellHost : IDisposable
                     : null;
             default:
                 return null;
-        }
-    }
-
-    private void OnProjectsChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName == nameof(MainEditorViewModel.Project))
-        {
-            Shell.Session = projects.Session;
         }
     }
 

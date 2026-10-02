@@ -32,6 +32,8 @@ public class FormerActionsReachableTests
         new("Create project", Surface.MenuBar, "newProject"),
         new("Open project", Surface.MenuBar, "openProject"),
         new("Close project", Surface.MenuBar, "closeProject"),
+        new("New class", Surface.MenuBar, "newClass"),
+        new("Existing class", Surface.MenuBar, "addExistingClass"),
         new("Save", Surface.MenuBar, "save"),
         new("Save", Surface.MenuBar, "saveAll"),
         new("Project settings", Surface.MenuBar, "projectSettings"),

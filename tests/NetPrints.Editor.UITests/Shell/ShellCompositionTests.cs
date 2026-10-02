@@ -96,6 +96,18 @@ public class ShellCompositionTests
         Assert.Empty(app.Shell.Documents);
     }
 
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task TheNewClassCommandAddsAClassToTheOpenProject()
+    {
+        await using ShellApp app = await StartAsync();
+        int classes = app.Session.Project.Classes.Count;
+
+        Assert.True(app.Commands.TryRun(app.Command("newClass")));
+        await UiWaitAsync(app, () => app.Session.Project.Classes.Count == classes + 1);
+
+        Assert.Equal(classes + 1, app.Session.Project.Classes.Count);
+    }
+
     private static Task UiWaitAsync(ShellApp app, Func<bool> condition) =>
         Testing.Ui.Driving.UiWait.UntilAsync(app.Driver, () => Task.FromResult(condition()), "condition", Token);
 }

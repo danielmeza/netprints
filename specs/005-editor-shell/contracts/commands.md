@@ -13,6 +13,8 @@ Menu order: **File, Edit, View, Go, Build, Help**. Groups inside a menu are sepa
 | `newProject` | New project… | File › project | Ctrl+Shift+N | Global | |
 | `openProject` | Open folder or project… | File › project | Ctrl+O | Global | |
 | `closeProject` | Close project | File › project | — | Global | |
+| `newClass` | New class | File › class | — | Global | |
+| `addExistingClass` | Add existing class… | File › class | — | Global | |
 | `save` | Save | File › save | Ctrl+S | Global | yes (1) |
 | `saveAll` | Save all | File › save | Ctrl+Shift+S | Global | |
 | `projectSettings` | Project settings | File › project-settings | — | Global | |

@@ -1,7 +1,6 @@
 using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Hosting.Avalonia;
-using NetPrints.Editor.Main;
 using NetPrints.Editor.Shell;
 
 namespace NetPrints.Editor.UITests.Hosting;
@@ -30,8 +29,8 @@ public sealed class TestComposition : IDisposable
     /// <summary>The concrete window service.</summary>
     public WindowService Windows => services.Windows;
 
-    /// <summary>The main window's view model, created by <see cref="CreateMainWindow"/>, or <see langword="null"/> before it is called.</summary>
-    public MainEditorViewModel? MainEditor => services.MainEditor;
+    /// <summary>The project flows of the shell, or <see langword="null"/> before <see cref="CreateShellWindow"/> is called.</summary>
+    public IProjectActions? ProjectActions => services.ProjectActions;
 
     /// <summary>
     /// Shows exceptions that escape to the UI thread in the error dialog instead of crashing
@@ -42,13 +41,10 @@ public sealed class TestComposition : IDisposable
     /// <summary>
     /// Reports what went wrong before the window existed, then opens the project named on the
     /// command line, if any (mirrors <see cref="EditorComposition.StartAsync"/>). Call after
-    /// <see cref="CreateMainWindow"/>.
+    /// <see cref="CreateShellWindow"/>.
     /// </summary>
     /// <param name="args">The command-line arguments.</param>
     public Task StartAsync(IReadOnlyList<string> args) => services.StartAsync(args);
-
-    /// <summary>Creates the main window and its view model.</summary>
-    public MainWindow CreateMainWindow() => services.CreateMainWindow();
 
     /// <summary>Creates the shell window, as <see cref="EditorComposition.CreateShellWindow"/> does.</summary>
     public ShellWindow CreateShellWindow() => services.CreateShellWindow();
@@ -67,7 +63,7 @@ public sealed class TestComposition : IDisposable
 
     /// <summary>
     /// Stops rebinding persistence to the extension host's registry, disposes
-    /// <see cref="MainEditor"/>, if created, and the code analysis host.
+    /// the shell, if created, and the code analysis host.
     /// </summary>
     public void Dispose() => services.Dispose();
 }

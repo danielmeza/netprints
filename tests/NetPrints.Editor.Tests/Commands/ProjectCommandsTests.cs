@@ -30,6 +30,8 @@ public sealed class ProjectCommandsTests : SessionCommandTests
     {
         { new CloseProjectCommandHandler(), "CloseProject" },
         { new ReferencesCommandHandler(), "ShowReferences" },
+        { new NewClassCommandHandler(), "NewClass" },
+        { new AddExistingClassCommandHandler(), "AddExistingClass" },
     };
 
     public static TheoryData<ICommandHandler, string> NeedsAClass() => new()

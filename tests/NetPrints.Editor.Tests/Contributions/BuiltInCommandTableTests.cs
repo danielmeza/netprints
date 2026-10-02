@@ -28,6 +28,8 @@ public class BuiltInCommandTableTests
         new("newProject", "New project…", "File", "project", ["Ctrl+Shift+N"], Everywhere, null, typeof(NewProjectCommandHandler)),
         new("openProject", "Open folder or project…", "File", "project", ["Ctrl+O"], Everywhere, null, typeof(OpenProjectCommandHandler)),
         new("closeProject", "Close project", "File", "project", [], Everywhere, null, typeof(CloseProjectCommandHandler)),
+        new("newClass", "New class", "File", "class", [], Everywhere, null, typeof(NewClassCommandHandler)),
+        new("addExistingClass", "Add existing class…", "File", "class", [], Everywhere, null, typeof(AddExistingClassCommandHandler)),
         new("save", "Save", "File", "save", ["Ctrl+S"], Everywhere, 1, typeof(SaveCommandHandler)),
         new("saveAll", "Save all", "File", "save", ["Ctrl+Shift+S"], Everywhere, null, typeof(SaveAllCommandHandler)),
         new("projectSettings", "Project settings", "File", "project-settings", [], Everywhere, null, typeof(ProjectSettingsCommandHandler)),

@@ -140,7 +140,7 @@ public class BottomPanelsWiringTests
         var app = HeadlessApp.Start();
         var sample = new SampleCopy();
         await app.OpenStartupProjectAsync(sample.ProjectPath, Token);
-        return new Rig(app, sample, Assert.IsType<ProjectSessionViewModel>(app.ViewModel.Session));
+        return new Rig(app, sample, Assert.IsType<ProjectSessionViewModel>(app.Session));
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]

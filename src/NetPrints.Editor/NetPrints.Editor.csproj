@@ -49,7 +49,7 @@
     <ProjectReference Include="..\NetPrints.Reflection\NetPrints.Reflection.csproj" />
     <ProjectReference Include="..\NetPrints.Serialization\NetPrints.Serialization.csproj" />
     <ProjectReference Include="..\NetPrints.Workspace\NetPrints.Workspace.csproj" />
-    <!-- MainEditorViewModel/ClassEditorViewModel call NetPrints.Generation.GraphCodeGenerator directly: a normal
+    <!-- ProjectSessionViewModel/ClassEditorViewModel call NetPrints.Generation.GraphCodeGenerator directly: a normal
          ProjectReference to the shared library, not to the NetPrints.Generator exe (ADR-0009 supersedes
          the ADR-0005 ReferenceOutputAssembly=false + HintPath workaround, which broke a RID-published
          build, NETSDK1067/1150/1151/CS0234, and could silently compile against a stale DLL). -->

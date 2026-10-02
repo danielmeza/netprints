@@ -8,7 +8,6 @@ using Microsoft.Extensions.Logging;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Hosting.Automation;
-using NetPrints.Editor.Main;
 
 namespace NetPrints.Editor;
 
@@ -99,7 +98,7 @@ public partial class EditorApp : Application
                 {
                     agent = new AutomationAgent(pipeName, tree, () => new AutomationStatus(
                         window.IsVisible,
-                        composition.MainEditor is { } mainEditor && mainEditor.Project is not null && !mainEditor.IsBusy,
+                        composition.Shell?.Session is not null,
                         composition.Context.Reflection.IsLoaded,
                         startupProject,
                         Environment.ProcessId),

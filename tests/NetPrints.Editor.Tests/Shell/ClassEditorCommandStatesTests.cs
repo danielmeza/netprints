@@ -15,26 +15,26 @@ public sealed class ClassEditorCommandStatesTests : IAsyncDisposable
 {
     private readonly TestEditor editor = TestEditor.Create(TestEditor.CreateReflectionHost);
     private readonly List<string> cleanup = [];
-    private readonly List<MainEditorViewModel> models = [];
+    private readonly List<ProjectRig> rigs = [];
 
     public async ValueTask DisposeAsync()
     {
-        models.ForEach(model => model.Dispose());
+        rigs.ForEach(rig => rig.Dispose());
         cleanup.ForEach(TestPaths.TryDelete);
         await editor.DisposeAsync();
     }
 
-    private async Task<(MainEditorViewModel Model, ClassEditorViewModel ClassEditor, CommandInvoker Invoker)> OpenAsync()
+    private async Task<(ProjectRig Rig, ClassEditorViewModel ClassEditor, CommandInvoker Invoker)> OpenAsync()
     {
         string path = TestPaths.CopyHelloWorldSample();
         cleanup.Add(path);
-        var model = new MainEditorViewModel(editor.Context);
-        models.Add(model);
-        await model.LoadProjectAsync(path);
-        ClassGraph cls = Assert.IsType<Project>(model.Project).Classes.Single();
-        model.OpenClassCommand.Execute(cls);
-        ClassEditorViewModel classEditor = Assert.IsType<ClassEditorViewModel>(editor.Windows.FindClassEditor(cls));
-        return (model, classEditor, Assert.IsType<CommandInvoker>(classEditor.Commands));
+        var rig = new ProjectRig(editor.Context);
+        rigs.Add(rig);
+        await rig.LoadProjectAsync(path);
+        ClassGraph cls = Assert.IsType<Project>(rig.Project).Classes.Single();
+        ClassEditorViewModel classEditor = Assert.IsType<ClassEditorViewModel>(
+            LegacyClassWindows.Open(editor.Context, () => rig.Session, rig.Shell, new FakeProjectActions(), cls));
+        return (rig, classEditor, Assert.IsType<CommandInvoker>(classEditor.Commands));
     }
 
     [Fact]
@@ -71,11 +71,11 @@ public sealed class ClassEditorCommandStatesTests : IAsyncDisposable
     [Fact]
     public async Task ReplacingTheSessionPulses()
     {
-        (MainEditorViewModel model, _, CommandInvoker invoker) = await OpenAsync();
+        (ProjectRig rig, _, CommandInvoker invoker) = await OpenAsync();
         int pulses = 0;
         invoker.CommandStatesChanged += (_, _) => pulses++;
 
-        await ((IProjectActions)model).CloseProjectAsync(TestContext.Current.CancellationToken);
+        await rig.Actions.CloseProjectAsync(TestContext.Current.CancellationToken);
 
         Assert.True(pulses >= 1);
     }

@@ -7,6 +7,7 @@ public static class FileContributions
 {
     private const string MenuName = "File";
     private const string ProjectGroup = "project";
+    private const string ClassGroup = "class";
     private const string SaveGroup = "save";
     private const string ProjectSettingsGroup = "project-settings";
 
@@ -44,6 +45,26 @@ public static class FileContributions
             DefaultGestures: null,
             Scope: CommandScope.Global,
             Menu: new MenuPlacement(MenuName, ProjectGroup, 2),
+            CommandBarOrder: null));
+
+        registry.AddCommand(new CommandDescriptor(
+            ContributionIds.CommandPrefix + "newClass",
+            "New class",
+            new NewClassCommandHandler(),
+            IconKind: null,
+            DefaultGestures: null,
+            Scope: CommandScope.Global,
+            Menu: new MenuPlacement(MenuName, ClassGroup, 0),
+            CommandBarOrder: null));
+
+        registry.AddCommand(new CommandDescriptor(
+            ContributionIds.CommandPrefix + "addExistingClass",
+            "Add existing class…",
+            new AddExistingClassCommandHandler(),
+            IconKind: null,
+            DefaultGestures: null,
+            Scope: CommandScope.Global,
+            Menu: new MenuPlacement(MenuName, ClassGroup, 1),
             CommandBarOrder: null));
 
         registry.AddCommand(new CommandDescriptor(

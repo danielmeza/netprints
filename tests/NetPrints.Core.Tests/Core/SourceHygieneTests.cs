@@ -169,7 +169,6 @@ namespace NetPrints.Tests.Core
             "tests/NetPrints.Editor.Tests/Graph/ReflectionReloadTests.cs:52",
             "tests/NetPrints.Editor.Tests/Graph/ReflectionReloadTests.cs:53",
             "tests/NetPrints.Editor.Tests/Graph/ReflectionReloadTests.cs:62",
-            "tests/NetPrints.Editor.Tests/Main/MainEditorViewModelTests.cs:121",
             "tests/NetPrints.Editor.Tests/Reflection/ReflectionProviderTests.cs:116",
             "tests/NetPrints.Editor.Tests/Search/SearchPerformanceTests.cs:28",
             "tests/NetPrints.Editor.Tests/Search/SearchPerformanceTests.cs:39",

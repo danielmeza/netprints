@@ -98,7 +98,7 @@ when the layout is refactored. Better options, in order: (1) the item VM exposes
 
 **D10. Long work goes in async commands and shows busy state.** Write `[RelayCommand] async Task XAsync(CancellationToken ct)`.
 - Bind busy UI to `XCommand.IsRunning`. Use a VM `IsBusy` flag with `try/finally` only when one flag spans
-  several operations (as `MainEditorViewModel` does). Delay indicators for fast operations (`BusyIndicatorDelay`).
+  several operations (as the project session does). Delay indicators for fast operations (`BusyIndicatorDelay`).
 - `AllowConcurrentExecutions` stays `false`, which disables the button while a run is in progress. Add `IncludeCancelCommand = true` when the user can cancel.
 - Keep the default of rethrowing: a fault reaches the error dialog. Don't use `FlowExceptionsToTaskScheduler`, and don't
   write `ExecuteAsync(...).Forget()` from a view.

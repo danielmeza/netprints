@@ -35,12 +35,13 @@ public sealed class EditorSession : IAsyncDisposable
     public ClassEditorViewModel ClassViewModel => (ClassEditorViewModel)ClassWindow.DataContext!;
     public NodeGraphViewModel GraphViewModel => ClassViewModel.OpenedGraph!;
 
-    public static async Task<EditorSession> OpenSampleMainAsync(CancellationToken cancellationToken)
+    public static async Task<EditorSession> OpenSampleMainAsync(CancellationToken cancellationToken, Action? appStarted = null)
     {
         var sample = new SampleCopy();
         var app = HeadlessApp.Start();
+        appStarted?.Invoke();
         await app.OpenStartupProjectAsync(sample.ProjectPath, cancellationToken);
-        var classEditor = await app.Main.OpenClassAsync(ClassName, cancellationToken);
+        var classEditor = await app.OpenClassAsync(ClassName, cancellationToken);
         UseFixedSize(app.ClassWindow(ClassName));
         var graph = await classEditor.OpenMethodAsync("Main", cancellationToken);
         var session = new EditorSession(sample, app, classEditor, graph);

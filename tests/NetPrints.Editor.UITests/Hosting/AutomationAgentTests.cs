@@ -5,6 +5,7 @@ using Avalonia.Headless.XUnit;
 using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Editor.UITests.Driving;
+using NetPrints.Editor.UITests.Shell;
 using NetPrints.Testing.Ui.Driving;
 
 namespace NetPrints.Editor.UITests.Hosting;
@@ -19,22 +20,21 @@ public class AutomationAgentTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task AnswersStatusFindDumpAndSettle()
     {
-        await using var app = HeadlessApp.Start();
+        await using var app = ShellApp.Start();
         string pipe = NewPipeName();
-        using var agent = new AutomationAgent(pipe, app.Tree, () => new AutomationStatus(true, false, false, null, Environment.ProcessId), NullLogger<AutomationAgent>.Instance);
+        using var agent = new AutomationAgent(pipe, app.Ui.Tree, () => new AutomationStatus(true, false, false, null, Environment.ProcessId), NullLogger<AutomationAgent>.Instance);
         await using var client = await AutomationClient.ConnectAsync(pipe, TimeSpan.FromSeconds(10), Token);
 
         var status = await client.StatusAsync(Token);
         Assert.True(status.MainWindowShown);
         Assert.Equal(Environment.ProcessId, status.ProcessId);
 
-        var buttons = await client.FindAsync(new AutomationQuery(AutomationIds.MainProjectButton), Token);
-        var button = Assert.Single(buttons);
-        Assert.Equal("Project", button.Text);
-        Assert.Equal(100, button.Bounds.Width);
-        Assert.True(button.IsEnabled);
+        var bars = await client.FindAsync(new AutomationQuery(AutomationIds.ShellMenuBar), Token);
+        var bar = Assert.Single(bars);
+        Assert.True(bar.Bounds.Width > 0);
+        Assert.True(bar.IsEnabled);
 
-        Assert.Contains(AutomationIds.MainRunButton, await client.DumpAsync(Token));
+        Assert.Contains(AutomationIds.ShellCommandBar, await client.DumpAsync(Token));
         await client.SettleAsync(Token);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => client.SendAsync(new AutomationRequest("click"), Token)); // read-only
@@ -50,14 +50,14 @@ public class AutomationAgentTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task DisposingWhileARequestIsInFlightFaultsOnlyThatRequest()
     {
-        await using var app = HeadlessApp.Start();
+        await using var app = ShellApp.Start();
 
         await AssertNoUnobservedExceptionsAsync(async () =>
         {
             for (int i = 0; i < 20; i++)
             {
                 string pipe = NewPipeName();
-                using var agent = new AutomationAgent(pipe, app.Tree, () => new AutomationStatus(true, false, false, null, Environment.ProcessId), NullLogger<AutomationAgent>.Instance);
+                using var agent = new AutomationAgent(pipe, app.Ui.Tree, () => new AutomationStatus(true, false, false, null, Environment.ProcessId), NullLogger<AutomationAgent>.Instance);
                 var client = await AutomationClient.ConnectAsync(pipe, TimeSpan.FromSeconds(10), Token);
 
                 // Started but not awaited before disposing, to race SendAsync's gate against
@@ -89,14 +89,14 @@ public class AutomationAgentTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task DisposingTheAgentWhileAConnectionIsServedDoesNotFaultItsRelease()
     {
-        await using var app = HeadlessApp.Start();
+        await using var app = ShellApp.Start();
 
         await AssertNoUnobservedExceptionsAsync(async () =>
         {
             for (int i = 0; i < 20; i++)
             {
                 string pipe = NewPipeName();
-                var agent = new AutomationAgent(pipe, app.Tree, () => new AutomationStatus(true, false, false, null, Environment.ProcessId), NullLogger<AutomationAgent>.Instance);
+                var agent = new AutomationAgent(pipe, app.Ui.Tree, () => new AutomationStatus(true, false, false, null, Environment.ProcessId), NullLogger<AutomationAgent>.Instance);
                 await using var client = await AutomationClient.ConnectAsync(pipe, TimeSpan.FromSeconds(10), Token);
 
                 // A round trip proves the connection is actually being served (its slot held,
@@ -155,9 +155,9 @@ public class AutomationAgentTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task RejectsAQueryWithNoAutomationId()
     {
-        await using var app = HeadlessApp.Start();
+        await using var app = ShellApp.Start();
         string pipe = NewPipeName();
-        using var agent = new AutomationAgent(pipe, app.Tree, () => new AutomationStatus(true, false, false, null, Environment.ProcessId), NullLogger<AutomationAgent>.Instance);
+        using var agent = new AutomationAgent(pipe, app.Ui.Tree, () => new AutomationStatus(true, false, false, null, Environment.ProcessId), NullLogger<AutomationAgent>.Instance);
         await using var client = await AutomationClient.ConnectAsync(pipe, TimeSpan.FromSeconds(10), Token);
 
         // {"op":"find","query":{}} deserializes with AutomationId == null: it must not match every
@@ -169,9 +169,9 @@ public class AutomationAgentTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task DropsAConnectionThatSendsAnOversizedRequestLine()
     {
-        await using var app = HeadlessApp.Start();
+        await using var app = ShellApp.Start();
         string pipe = NewPipeName();
-        using var agent = new AutomationAgent(pipe, app.Tree, () => new AutomationStatus(true, false, false, null, Environment.ProcessId), NullLogger<AutomationAgent>.Instance);
+        using var agent = new AutomationAgent(pipe, app.Ui.Tree, () => new AutomationStatus(true, false, false, null, Environment.ProcessId), NullLogger<AutomationAgent>.Instance);
 
         await using var raw = new NamedPipeClientStream(".", pipe, PipeDirection.InOut, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
         await raw.ConnectAsync(TimeSpan.FromSeconds(10), Token);
@@ -213,9 +213,9 @@ public class AutomationAgentTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task RefusesConnectionsBeyondTheConcurrencyCap()
     {
-        await using var app = HeadlessApp.Start();
+        await using var app = ShellApp.Start();
         string pipe = NewPipeName();
-        using var agent = new AutomationAgent(pipe, app.Tree, () => new AutomationStatus(true, false, false, null, Environment.ProcessId), NullLogger<AutomationAgent>.Instance);
+        using var agent = new AutomationAgent(pipe, app.Ui.Tree, () => new AutomationStatus(true, false, false, null, Environment.ProcessId), NullLogger<AutomationAgent>.Instance);
 
         // One over the agent's cap: connects at the transport level (the OS accepts it), but the
         // agent refuses to serve it, so it sees no bytes back and the pipe closes. A status round

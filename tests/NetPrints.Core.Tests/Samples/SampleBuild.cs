@@ -19,7 +19,7 @@ using NetPrints.Workspace;
 namespace NetPrints.Tests.Samples
 {
     /// <summary>
-    /// The editor's save-and-build path (<c>MainEditorViewModel.CompileAsync</c>) for tests: a temp copy of the
+    /// The editor's save-and-build path (<c>ProjectSessionViewModel.CompileAsync</c>) for tests: a temp copy of the
     /// checked-in <c>samples/HelloWorld</c> project, loaded and saved through
     /// <see cref="ProjectPersistence"/> and built through <see cref="IProjectSystem"/>.
     /// </summary>

@@ -1,47 +1,128 @@
+using Microsoft.Extensions.Logging;
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.Contributions.BuiltIn;
 using NetPrints.Editor.Graph;
-using NetPrints.Editor.Main;
+using NetPrints.Editor.References;
 using NetPrints.Editor.Shell;
 
 namespace NetPrints.Editor.Hosting;
 
 /// <summary>
-/// The project flows of the shell window: open, create, close and exit go to the project service
-/// (<see cref="MainEditorViewModel"/>, which has no window of its own here); the member edits act on the class's
-/// one editor and open the new graph as a document.
+/// The project flows of the shell window: open and create go to <see cref="ProjectLoader"/>, close drops the shell's
+/// session, the member edits act on the class's one editor and open the new graph as a document. It also answers the
+/// host channel: a types-changed message reloads reflection, a focus-document message opens the document.
 /// </summary>
-/// <param name="projects">The project service.</param>
-/// <param name="shell">The shell state.</param>
-/// <param name="editorFor">Gets the editor of a class, the one the graph documents of the class are built on.</param>
-internal sealed class ShellProjectActions(MainEditorViewModel projects, ShellViewModel shell, Func<ClassGraph, ClassEditorViewModel> editorFor) : IProjectActions
+internal sealed class ShellProjectActions : IProjectActions, IDisposable
 {
-    private IProjectActions Flows => projects;
+    private readonly EditorContext context;
+    private readonly ShellViewModel shell;
+    private readonly Func<ClassGraph, ClassEditorViewModel> editorFor;
+    private readonly HostChannelBridge hostChannelBridge;
+
+    /// <summary>Creates the actions and starts listening to the host channel.</summary>
+    /// <param name="context">Host services shared across the editor.</param>
+    /// <param name="shell">The shell state.</param>
+    /// <param name="editorFor">Gets the editor of a class, the one the graph documents of the class are built on.</param>
+    public ShellProjectActions(EditorContext context, ShellViewModel shell, Func<ClassGraph, ClassEditorViewModel> editorFor)
+    {
+        this.context = context;
+        this.shell = shell;
+        this.editorFor = editorFor;
+        Loader = new ProjectLoader(context, shell);
+        hostChannelBridge = new HostChannelBridge(context.HostChannel, context.Dispatcher, Loader.ReloadReflectionAsync, FocusDocument,
+            context.LoggerFactory.CreateLogger<HostChannelBridge>());
+    }
+
+    /// <summary>Gets the loader of projects.</summary>
+    public ProjectLoader Loader { get; }
 
     /// <summary>Gets or sets the shell API; set once the layout exists.</summary>
     public IShell? Api { get; set; }
 
     /// <inheritdoc/>
-    public Task<bool> ConfirmUnloadAsync(CancellationToken cancellationToken) => Flows.ConfirmUnloadAsync(cancellationToken);
+    public Task<bool> ConfirmUnloadAsync(CancellationToken cancellationToken) => Task.FromResult(true);
 
     /// <inheritdoc/>
-    public Task OpenProjectAsync(string? path, CancellationToken cancellationToken) => Flows.OpenProjectAsync(path, cancellationToken);
+    public Task OpenProjectAsync(string? path, CancellationToken cancellationToken) => Loader.OpenProjectAsync(path);
 
     /// <inheritdoc/>
-    public Task NewProjectAsync(CancellationToken cancellationToken) => Flows.NewProjectAsync(cancellationToken);
+    public Task NewProjectAsync(CancellationToken cancellationToken) => Loader.CreateProjectAsync();
 
     /// <inheritdoc/>
-    public Task CloseProjectAsync(CancellationToken cancellationToken) => Flows.CloseProjectAsync(cancellationToken);
+    public Task CloseProjectAsync(CancellationToken cancellationToken)
+    {
+        Loader.CloseProject();
+        return Task.CompletedTask;
+    }
 
     /// <inheritdoc/>
-    public Task ExitAsync(CancellationToken cancellationToken) => Flows.ExitAsync(cancellationToken);
+    public Task ExitAsync(CancellationToken cancellationToken)
+    {
+        context.Windows.CloseMainWindow();
+        return Task.CompletedTask;
+    }
 
     /// <inheritdoc/>
     public void ShowProjectSettings() => Api?.OpenDocument(DocumentId.ProjectSettings);
 
     /// <inheritdoc/>
-    public Task ShowReferencesAsync(CancellationToken cancellationToken) => Flows.ShowReferencesAsync(cancellationToken);
+    public async Task ShowReferencesAsync(CancellationToken cancellationToken)
+    {
+        if (shell.Session?.Project is not { } project)
+        {
+            return;
+        }
+
+        using var references = new ReferenceListViewModel(project, context);
+        await context.Dialogs.ShowReferencesAsync(references).ConfigureAwait(true);
+    }
+
+    /// <inheritdoc/>
+    public async Task NewClassAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (shell.Session?.Project is { } project)
+            {
+                project.CreateNewClass(ResolveProfile(project));
+            }
+        }
+        catch (Exception ex)
+        {
+            await context.Dialogs.ShowErrorAsync("Failed to create class", ex.ToString()).ConfigureAwait(true);
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task AddExistingClassAsync(CancellationToken cancellationToken)
+    {
+        if (shell.Session?.Project is not { } project)
+        {
+            return;
+        }
+
+        string? path = await context.FilePicker.OpenFileAsync("Add Existing Class", [FileFilter.ClassFiles]).ConfigureAwait(true);
+        if (path is null)
+        {
+            return;
+        }
+
+        try
+        {
+            (_, IReadOnlyList<Serialization.DocumentIssue> issues) = await context.Persistence.AddGraphAsync(project, path, CancellationToken.None).ConfigureAwait(true);
+            if (issues.Count > 0)
+            {
+                await context.Dialogs.ShowErrorAsync("Class added with issues",
+                    string.Join("\n\n", issues.Select(issue => $"{issue.Code}: {issue.Message}"))).ConfigureAwait(true);
+            }
+        }
+        catch (Exception ex)
+        {
+            await context.Dialogs.ShowErrorAsync("Failed to load existing class",
+                $"Failed to load existing class at path {path}:\n\n{ex}").ConfigureAwait(true);
+        }
+    }
 
     /// <inheritdoc/>
     public void ShowClassSettings(ClassGraph cls) => Inspect(cls);
@@ -81,7 +162,7 @@ internal sealed class ShellProjectActions(MainEditorViewModel projects, ShellVie
         {
             case ClassGraph cls:
                 CloseDocumentsOf(cls);
-                projects.Project?.Classes.Remove(cls);
+                shell.Session?.Project.Classes.Remove(cls);
                 break;
             case MethodGraph { Class: { } owner } method
                 when editorFor(owner).Methods.FirstOrDefault(entry => ReferenceEquals(entry.Graph, method)) is { } methodEntry:
@@ -128,6 +209,45 @@ internal sealed class ShellProjectActions(MainEditorViewModel projects, ShellVie
         }
     }
 
+    /// <summary>Stops listening to the host channel and disposes the open session.</summary>
+    public void Dispose()
+    {
+        hostChannelBridge.Dispose();
+        Loader.Dispose();
+    }
+
+    /// <summary>
+    /// Opens the class whose graph file is <paramref name="path"/> (project-relative or absolute) and, when
+    /// <paramref name="nodeId"/> resolves to one of its graphs, reveals that node (R2-21): the host channel's
+    /// <c>focusDocument</c>.
+    /// </summary>
+    private bool FocusDocument(string path, string? nodeId)
+    {
+        if (shell.Session?.Project is not { } project)
+        {
+            return false;
+        }
+
+        string projectDirectory = Path.GetDirectoryName(project.Path) ?? "";
+        string fullPath = Path.GetFullPath(path, projectDirectory);
+        StringComparison comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        ClassGraph? cls = project.Classes.FirstOrDefault(c => string.Equals(Path.GetFullPath(project.GetGraphFilePath(c)), fullPath, comparison));
+        if (cls is null)
+        {
+            return false;
+        }
+
+        Navigate(cls, nodeId);
+        return true;
+    }
+
+    // The profile the project's NetPrintsProfile names, or the default one when no loaded extension provides it
+    // (the NPD005 warning was shown on load, extension-points.md §5).
+    private IProjectProfile ResolveProfile(Project project) =>
+        project.Snapshot is { } snapshot && context.Extensions.Current.FindProfile(snapshot.ProfileId) is { } profile
+            ? profile
+            : DefaultProjectProfile.Instance;
+
     private void Inspect(object item)
     {
         shell.TreeSelection = item;
@@ -161,7 +281,7 @@ internal sealed class ShellProjectActions(MainEditorViewModel projects, ShellVie
         }
 
         string classPath = session.ClassPathOf(cls);
-        foreach (DocumentId id in api.OpenDocuments.Where(id => id.ClassPath == classPath))
+        foreach (DocumentId id in api.OpenDocuments.Where(id => id.ClassPath == classPath).ToList())
         {
             api.CloseDocument(id);
         }

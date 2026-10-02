@@ -49,7 +49,7 @@ public class RegistrySurfaceTests
         var app = HeadlessApp.Start();
         var sample = new SampleCopy();
         await app.OpenStartupProjectAsync(sample.ProjectPath, Token);
-        return (app, sample, Assert.IsType<ProjectSessionViewModel>(app.ViewModel.Session));
+        return (app, sample, Assert.IsType<ProjectSessionViewModel>(app.Session));
     }
 
     private static DocumentId DocumentOf(ProjectSessionViewModel session) => DocumentId.Graph(session.ClassPathOf(session.Project.Classes.Single()), "class");
@@ -78,7 +78,7 @@ public class RegistrySurfaceTests
     {
         using var rig = SurfaceRig.Create();
 
-        Assert.Equal(Ids("newProject", "openProject", "closeProject", Separator, "save", "saveAll", Separator, "projectSettings", "references", Separator, "exit"), Layout(rig.Open("File")).Select(Strip(MenuId)));
+        Assert.Equal(Ids("newProject", "openProject", "closeProject", Separator, "newClass", "addExistingClass", Separator, "save", "saveAll", Separator, "projectSettings", "references", Separator, "exit"), Layout(rig.Open("File")).Select(Strip(MenuId)));
         Assert.Equal(Ids("undo", "redo", Separator, "delete", "rename", "selectAll", Separator, "nodeSearch", Separator, "classSettings", "addMethod", "addConstructor", "addVariable", "addEventGraph"), Layout(rig.Open("Edit")).Select(Strip(MenuId)));
         Assert.Equal(
             Ids("frameSelection", "fitAll", Separator, "showPanel.projectTree", "showPanel.inspector", "showPanel.errors", "showPanel.output", "showPanel.csharp", Separator, "floatDocument", "dockDocument", "resetLayout"),

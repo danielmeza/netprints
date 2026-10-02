@@ -4,8 +4,7 @@ namespace NetPrints.Editor.Shell;
 
 /// <summary>
 /// The project-level flows the project commands wrap: opening, creating and closing a project, the settings and
-/// references dialogs, and the member and tree-item edits. The main window's view model implements it until the
-/// shell replaces that window.
+/// references dialogs, adding classes, and the member and tree-item edits.
 /// </summary>
 public interface IProjectActions
 {
@@ -28,7 +27,7 @@ public interface IProjectActions
     /// <returns>A task that completes when the project is open, or the user cancelled.</returns>
     Task NewProjectAsync(CancellationToken cancellationToken);
 
-    /// <summary>Closes the open project and its class editors.</summary>
+    /// <summary>Closes the open project and its documents.</summary>
     /// <param name="cancellationToken">Cancels the flow.</param>
     /// <returns>A task that completes when the project is closed.</returns>
     Task CloseProjectAsync(CancellationToken cancellationToken);
@@ -45,6 +44,16 @@ public interface IProjectActions
     /// <param name="cancellationToken">Cancels the flow.</param>
     /// <returns>A task that completes when the dialog is closed.</returns>
     Task ShowReferencesAsync(CancellationToken cancellationToken);
+
+    /// <summary>Adds a uniquely named class to the open project.</summary>
+    /// <param name="cancellationToken">Cancels the flow.</param>
+    /// <returns>A task that completes when the class was added or the failure shown.</returns>
+    Task NewClassAsync(CancellationToken cancellationToken);
+
+    /// <summary>Asks for a <c>*.netpc.json</c> class file and copies it into the open project.</summary>
+    /// <param name="cancellationToken">Cancels the flow.</param>
+    /// <returns>A task that completes when the class was added, or the user cancelled.</returns>
+    Task AddExistingClassAsync(CancellationToken cancellationToken);
 
     /// <summary>Shows the settings (inspector) of a class.</summary>
     /// <param name="cls">The class.</param>

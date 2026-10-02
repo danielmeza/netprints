@@ -101,7 +101,7 @@ public class ProjectTreeWiringTests
         var app = HeadlessApp.Start();
         var sample = new SampleCopy();
         await app.OpenStartupProjectAsync(sample.ProjectPath, Token);
-        return new Rig(app, sample, Assert.IsType<ProjectSessionViewModel>(app.ViewModel.Session));
+        return new Rig(app, sample, Assert.IsType<ProjectSessionViewModel>(app.Session));
     }
 
     private static string RowId(string kind, string name) => AutomationIds.TreePrefix + kind + "." + name;

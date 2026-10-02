@@ -1,7 +1,6 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Compilation;
 using NetPrints.Editor.Hosting;
-using NetPrints.Editor.Main;
 using NetPrints.Editor.Tests.Hosting;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Settings;
@@ -51,13 +50,13 @@ public class ProjectTrustTests : IDisposable
     public async Task DecliningOpensTheProjectWithoutItsExtensionsAndReportsNpd006()
     {
         string csproj = await ProjectWithExtensionAsync(declareItem: true);
-        var vm = new MainEditorViewModel(testEditor.Context);
+        var rig = new ProjectRig(testEditor.Context);
 
-        await vm.LoadProjectAsync(csproj);
+        await rig.LoadProjectAsync(csproj);
 
         Assert.Equal(csproj, testEditor.Dialogs.TrustCalls.Single().ProjectPath);
         Assert.Equal(Path.Combine(Path.GetDirectoryName(csproj) ?? "", "ext"), testEditor.Dialogs.TrustCalls.Single().Folders.Single());
-        Assert.NotNull(vm.Project);
+        Assert.NotNull(rig.Project);
         Assert.Empty(FailedExtensionCodes());
         Assert.Empty(testEditor.Dialogs.IssueDialogs);
         Assert.Empty(Trusted.TrustedProjects);
@@ -73,9 +72,9 @@ public class ProjectTrustTests : IDisposable
     {
         string csproj = await ProjectWithExtensionAsync(declareItem: true);
         testEditor.Dialogs.TrustAnswer = true;
-        var vm = new MainEditorViewModel(testEditor.Context);
+        var rig = new ProjectRig(testEditor.Context);
 
-        await vm.LoadProjectAsync(csproj);
+        await rig.LoadProjectAsync(csproj);
 
         Assert.Equal([csproj], Trusted.TrustedProjects);
         Assert.Equal([ExtensionDiagnosticCodes.InvalidManifest], FailedExtensionCodes());
@@ -89,9 +88,9 @@ public class ProjectTrustTests : IDisposable
         string csproj = await ProjectWithExtensionAsync(declareItem: true);
         await testEditor.Settings.SetAsync(NetPrintsSettings.Descriptor,
             NetPrintsSettings.Empty with { TrustedProjects = [csproj] }, TestContext.Current.CancellationToken);
-        var vm = new MainEditorViewModel(testEditor.Context);
+        var rig = new ProjectRig(testEditor.Context);
 
-        await vm.LoadProjectAsync(csproj);
+        await rig.LoadProjectAsync(csproj);
 
         Assert.Empty(testEditor.Dialogs.TrustCalls);
         Assert.Equal([ExtensionDiagnosticCodes.InvalidManifest], FailedExtensionCodes());
@@ -101,11 +100,11 @@ public class ProjectTrustTests : IDisposable
     public async Task AManifestInTheProjectFolderWithoutAnItemIsNeverLoaded()
     {
         string csproj = await ProjectWithExtensionAsync(declareItem: false);
-        var vm = new MainEditorViewModel(testEditor.Context);
+        var rig = new ProjectRig(testEditor.Context);
 
-        await vm.LoadProjectAsync(csproj);
+        await rig.LoadProjectAsync(csproj);
 
-        Assert.NotNull(vm.Project);
+        Assert.NotNull(rig.Project);
         Assert.Empty(testEditor.Dialogs.TrustCalls);
         Assert.Empty(FailedExtensionCodes());
         Assert.Empty(testEditor.Dialogs.IssueDialogs);
@@ -116,13 +115,13 @@ public class ProjectTrustTests : IDisposable
     {
         string withExtension = await ProjectWithExtensionAsync(declareItem: true);
         testEditor.Dialogs.TrustAnswer = true;
-        var vm = new MainEditorViewModel(testEditor.Context);
-        await vm.LoadProjectAsync(withExtension);
+        var rig = new ProjectRig(testEditor.Context);
+        await rig.LoadProjectAsync(withExtension);
         Assert.NotEmpty(FailedExtensionCodes());
 
         string plain = TestPaths.CopyHelloWorldSample();
         cleanup.Add(Path.GetDirectoryName(plain) ?? plain);
-        await vm.LoadProjectAsync(plain);
+        await rig.LoadProjectAsync(plain);
 
         Assert.Empty(FailedExtensionCodes());
     }

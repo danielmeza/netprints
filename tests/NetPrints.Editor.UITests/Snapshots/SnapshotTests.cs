@@ -8,6 +8,7 @@ using NetPrints.Editor.UITests.Hosting;
 using NetPrints.Graph;
 using NetPrints.Testing.Ui.Dialogs;
 using NetPrints.Testing.Ui.Driving;
+using NetPrints.Testing.Ui.References;
 using NetPrints.Testing.Ui.Snapshots;
 
 namespace NetPrints.Editor.UITests.Snapshots;
@@ -34,23 +35,6 @@ public class SnapshotTests
     {
         var bounds = (await element.GetAsync(Token)).Bounds;
         return new SnapshotMask((int)bounds.X - 2, (int)bounds.Y - 2, (int)bounds.Width + 4, (int)bounds.Height + 4);
-    }
-
-    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
-    public async Task MainWindow()
-    {
-        using var sample = new SampleCopy();
-        await using var app = HeadlessApp.Start();
-        await MatchWindowAsync(app.Driver, app.Main, "main-window-empty");
-
-        await app.OpenStartupProjectAsync(sample.ProjectPath, Token);
-        await MatchWindowAsync(app.Driver, app.Main, "main-window-project");
-
-        await app.Main.ShowProjectPaneAsync(Token);
-        await MatchWindowAsync(app.Driver, app.Main, "main-window-project-pane");
-
-        await app.Main.ShowSettingsPaneAsync(Token);
-        await MatchWindowAsync(app.Driver, app.Main, "main-window-settings-pane");
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
@@ -199,7 +183,9 @@ public class SnapshotTests
         await using var app = HeadlessApp.Start();
         await app.OpenStartupProjectAsync(sample.ProjectPath, Token);
 
-        var references = await app.Main.OpenReferencesAsync(Token);
+        await (app.Composition.ProjectActions ?? throw new InvalidOperationException("No shell.")).ShowReferencesAsync(Token);
+        var references = new ReferencesDialogPage(app.Driver);
+        await references.GetAsync(Token);
         // The SDK-style sample declares no explicit references (research.md R21): wait for the
         // dialog itself to settle instead of a specific row.
         await references.AddAssemblyButton.GetAsync(Token);

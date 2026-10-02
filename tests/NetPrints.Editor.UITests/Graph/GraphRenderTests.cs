@@ -18,10 +18,10 @@ public class GraphRenderTests
     {
         var sink = new BindingWarningLogSink();
         ILogSink? previousSink = Logger.Sink;
-        Logger.Sink = sink;
         try
         {
-            await using var session = await EditorSession.OpenSampleMainAsync(Token);
+            // The sink goes in once the app exists: the shell window it composes logs the dock control's own startup warnings.
+            await using var session = await EditorSession.OpenSampleMainAsync(Token, () => Logger.Sink = sink);
         }
         finally
         {
@@ -56,7 +56,7 @@ public class GraphRenderTests
         await using var app = HeadlessApp.Start();
         await app.OpenStartupProjectAsync(sample.ProjectPath, Token);
 
-        var page = await app.Main.OpenClassAsync("HelloWorld.Program", Token);
+        var page = await app.OpenClassAsync("HelloWorld.Program", Token);
 
         Assert.Equal("Maximized", await page.WindowStateAsync(Token)); // PAR-22
     }

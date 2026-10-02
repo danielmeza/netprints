@@ -6,6 +6,7 @@ using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.Tests.Hosting;
 using NetPrints.Editor.UndoRedo;
+using NetPrints.Graph;
 using NetPrints.Projects;
 using NetPrints.Serialization;
 
@@ -75,12 +76,15 @@ public sealed class ProjectSessionViewModelTests : IAsyncDisposable
         using var session = new ProjectSessionViewModel(project, editor.Context);
         ClassGraph cls = project.Classes.Single();
         string graphPath = project.GetGraphFilePath(cls);
+        string generatedPath = Path.Combine(Path.GetDirectoryName(graphPath) ?? "", Path.GetFileNameWithoutExtension(graphPath) + ".g.cs");
         File.Delete(graphPath);
+        File.Delete(generatedPath);
         cls.MarkDirty();
 
         Assert.True(await session.SaveAllAsync());
 
         Assert.True(File.Exists(graphPath));
+        Assert.True(File.Exists(generatedPath));
         Assert.False(cls.IsDirty);
         Assert.Empty(editor.Dialogs.Errors);
     }
@@ -126,6 +130,43 @@ public sealed class ProjectSessionViewModelTests : IAsyncDisposable
         Assert.True(await save.WaitAsync(Bound, TestContext.Current.CancellationToken));
         Assert.True(await compile.WaitAsync(Bound, TestContext.Current.CancellationToken));
         Assert.Equal(1, builds);
+    }
+
+    [Fact]
+    public async Task CompileReportsErrors()
+    {
+        string dir = TestPaths.CreateTempDirectory();
+        cleanup.Add(dir);
+        var project = Project.FromSnapshot(TestSnapshots.Empty("Broken", "N"));
+        project.Path = Path.Combine(dir, "Broken.csproj");
+        editor.Projects.BuildResultFactory = _ => new BuildResult(false,
+            [new ProjectMessage(ProjectMessageSeverity.Error, "CS0006", "Metadata file 'missing.dll' could not be found", null, null, null)],
+            null, "");
+        using var session = new ProjectSessionViewModel(project, editor.Context);
+
+        await session.CompileAsync();
+
+        Assert.False(project.LastCompilationSucceeded);
+        Assert.Equal("Build failed with 1 error(s)", project.CompilationMessage);
+        Assert.Contains(project.LastDiagnostics, d => d.Message.Contains("missing.dll", StringComparison.Ordinal));
+        Assert.False(project.CanCompileAndRun, "library projects cannot run");
+    }
+
+    [Fact]
+    public async Task CompileReportsATranslationFailureAsABuildError()
+    {
+        Project project = await LoadSampleAsync();
+        using var session = new ProjectSessionViewModel(project, editor.Context);
+        var cls = project.Classes.Single();
+        cls.Methods.Single().Nodes.OfType<CallMethodNode>().Single().InputDataPins.Single().UnconnectedValue = null;
+        cls.MarkDirty();
+
+        await session.CompileAsync();
+
+        Assert.False(project.LastCompilationSucceeded);
+        Assert.Equal("Build failed with 1 error(s)", project.CompilationMessage);
+        Assert.Equal(cls.FullName, project.LastDiagnostics.Single().ClassFullName);
+        Assert.Empty(editor.Dialogs.Errors);
     }
 
     [Fact]

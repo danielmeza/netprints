@@ -33,6 +33,10 @@ internal sealed class NoProjectActions : IProjectActions
 
     public void ShowProjectSettings() => throw new NotSupportedException();
 
+    public Task NewClassAsync(CancellationToken cancellationToken) => throw new NotSupportedException();
+
+    public Task AddExistingClassAsync(CancellationToken cancellationToken) => throw new NotSupportedException();
+
     public Task ShowReferencesAsync(CancellationToken cancellationToken) => throw new NotSupportedException();
 
     public void ShowClassSettings(ClassGraph cls) => throw new NotSupportedException();
