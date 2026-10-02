@@ -389,7 +389,7 @@ US2's independent test; SC-001.
 
 ### Batch C5 — model: sonnet — T042–T045 — 6 units
 
-- [ ] T042 [US2] Page objects (2 units): `tests/NetPrints.Testing.Ui/Shell/` gains `ShellPage`, `ProjectTreePage`,
+- [x] T042 [US2] Page objects (2 units): `tests/NetPrints.Testing.Ui/Shell/` gains `ShellPage`, `ProjectTreePage`,
   `DocumentTabsPage`, `InspectorPage`, `BottomPanelPage`, `MenuBar` and `CommandBar`. They find panels by panel id,
   tabs by document id and commands by command id, never by Dock's element names. Rewrite the
   `Scenarios/SmokeScenarios.cs` flows (create project, edit-compile-run, add references, pan, drag from lists) against

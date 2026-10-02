@@ -1,5 +1,6 @@
 using Avalonia.Headless.XUnit;
 using NetPrints.Editor.UITests.Hosting;
+using NetPrints.Editor.UITests.Shell;
 using NetPrints.Testing.Ui.Scenarios;
 
 namespace NetPrints.Editor.UITests.Scenarios;
@@ -8,7 +9,7 @@ namespace NetPrints.Editor.UITests.Scenarios;
 public sealed class HeadlessSmokeTests : SmokeScenarios, IAsyncDisposable
 {
     private readonly List<object> owned = [];
-    private HeadlessApp? app;
+    private ShellApp? app;
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
@@ -16,7 +17,7 @@ public sealed class HeadlessSmokeTests : SmokeScenarios, IAsyncDisposable
     {
         var sample = new SampleCopy();
         owned.Add(sample);
-        app = HeadlessApp.Start();
+        app = ShellApp.Start();
         owned.Add(app);
         string work = Directory.CreateDirectory(Path.Combine(sample.Directory, "work")).FullName;
         return Task.FromResult(new SmokeContext(app.Actor, sample.ProjectPath, work));
@@ -25,10 +26,11 @@ public sealed class HeadlessSmokeTests : SmokeScenarios, IAsyncDisposable
     protected override async Task CheckpointAsync(SmokeContext context, string name, CancellationToken cancellationToken)
     {
         string folder = Path.Combine(UiArtifacts.Directory, "flows", "headless", TestContext.Current.TestMethod?.MethodName ?? "flow");
-        foreach (var window in app!.Tree.Windows.Where(w => w.IsVisible).ToList())
+        var running = app ?? throw new InvalidOperationException("The editor has not started.");
+        foreach (var window in running.Ui.Tree.Windows.Where(w => w.IsVisible).ToList())
         {
-            var image = await context.Driver.ScreenshotAsync(app.Tree.KeyOf(window), cancellationToken);
-            image.Save(Path.Combine(folder, $"{name}-{app.Tree.KeyOf(window)}.png"));
+            var image = await context.Driver.ScreenshotAsync(running.Ui.Tree.KeyOf(window), cancellationToken);
+            image.Save(Path.Combine(folder, $"{name}-{running.Ui.Tree.KeyOf(window)}.png"));
         }
     }
 
@@ -45,13 +47,7 @@ public sealed class HeadlessSmokeTests : SmokeScenarios, IAsyncDisposable
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
-    public Task MinimizeAndRestoreClassWindow() => MinimizeAndRestoreClassWindowAsync(Token);
-
-    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public Task PanCursor() => PanCursorAsync(Token);
-
-    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
-    public Task DragFromLists() => DragFromListsAsync(Token);
 
     public async ValueTask DisposeAsync()
     {

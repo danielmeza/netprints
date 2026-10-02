@@ -7,6 +7,13 @@ namespace NetPrints.Testing.Ui.References;
 /// <summary>Screen object of the references dialog (PAR-15..21).</summary>
 public sealed class ReferencesDialogPage(IUiDriver driver) : UiElement(driver, new AutomationQuery(AutomationIds.ReferencesDialog))
 {
+    /// <summary>Waits until the dialog is shown.</summary>
+    public async Task<ReferencesDialogPage> WaitShownAsync(CancellationToken cancellationToken)
+    {
+        await GetAsync(cancellationToken);
+        return this;
+    }
+
     public UiElement AddAssemblyButton => Find(AutomationIds.ReferencesAddAssemblyButton);
     public UiElement AddSourceButton => Find(AutomationIds.ReferencesAddSourceButton);
     public UiElement CloseButton => Find(AutomationIds.ReferencesCloseButton);

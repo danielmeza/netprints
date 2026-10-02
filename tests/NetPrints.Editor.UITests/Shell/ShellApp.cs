@@ -2,9 +2,11 @@ using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Core;
 using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Contributions.BuiltIn;
+using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Editor.Inspectors;
+using NetPrints.Editor.References;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.UITests.Driving;
 using NetPrints.Editor.UITests.Hosting;
@@ -13,6 +15,7 @@ using NetPrints.Extensibility.Hosting;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Settings;
 using NetPrints.Testing;
+using NetPrints.Testing.Ui.Screenplay;
 
 namespace NetPrints.Editor.UITests.Shell;
 
@@ -35,8 +38,16 @@ internal sealed class ShellApp : IAsyncDisposable
             MsBuildAvailable: true, DisposeOwnedResources: () => ValueTask.CompletedTask), Dialogs, FilePicker, Processes);
         exceptionHandler = Composition.InstallUnhandledExceptionHandler();
         Ui = HeadlessUi.Create();
+        Dialogs.ShowReferences = references =>
+        {
+            var dialog = new ReferencesDialog { DataContext = references };
+            dialog.Closed += (_, _) => references.Dispose();
+            Ui.Show(dialog);
+            return Task.CompletedTask;
+        };
         Window = Ui.Show(Composition.CreateShellWindow());
         Driver = Ui.Driver;
+        Actor = Actor.Named("Ada").WhoCan(UseNetPrints.With(Driver, FilePicker));
     }
 
     public TestComposition Composition { get; }
@@ -50,6 +61,8 @@ internal sealed class ShellApp : IAsyncDisposable
     public HeadlessUi Ui { get; }
 
     public HeadlessDriver Driver { get; }
+
+    public Actor Actor { get; }
 
     public ShellWindow Window { get; }
 

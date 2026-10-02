@@ -183,7 +183,6 @@ namespace NetPrints.Tests.Core
             "tests/NetPrints.Editor.UITests/ClassEditor/EditorSession.cs:36",
             "tests/NetPrints.Editor.UITests/Graph/GridRenderTests.cs:117",
             "tests/NetPrints.Editor.UITests/Graph/GridRenderTests.cs:130",
-            "tests/NetPrints.Editor.UITests/Scenarios/HeadlessSmokeTests.cs:28",
             "tests/NetPrints.Editor.UITests/TestAppBuilder.cs:33",
             "tests/NetPrints.Testing.Ui/ClassEditor/ClassEditorPage.cs:99",
             "tests/NetPrints.Testing.Ui/ClassEditor/ClassEditorPage.cs:110",

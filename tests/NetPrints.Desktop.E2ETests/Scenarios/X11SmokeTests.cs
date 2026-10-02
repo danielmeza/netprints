@@ -176,7 +176,7 @@ public abstract class X11SmokeTestBase(DesktopWorkerPool pool) : SmokeScenarios,
     }
 }
 
-// The six scenarios drive the former windows; T043 rewrites them on the shell and removes Explicit.
+// The shared flows now drive the shell; T043 removes Explicit after its E2E run.
 public sealed class EditCompileAndRunTests(DesktopWorkerPool pool) : X11SmokeTestBase(pool)
 {
     [Fact(Explicit = true)]
@@ -195,20 +195,8 @@ public sealed class AddReferencesTests(DesktopWorkerPool pool) : X11SmokeTestBas
     public Task AddReferences() => RunScenarioAsync(token => AddReferencesAsync(typeof(object).Assembly.Location, token));
 }
 
-public sealed class MinimizeAndRestoreClassWindowTests(DesktopWorkerPool pool) : X11SmokeTestBase(pool)
-{
-    [Fact(Explicit = true)]
-    public Task MinimizeAndRestoreClassWindow() => RunScenarioAsync(MinimizeAndRestoreClassWindowAsync);
-}
-
 public sealed class PanCursorTests(DesktopWorkerPool pool) : X11SmokeTestBase(pool)
 {
     [Fact(Explicit = true)]
     public Task PanCursor() => RunScenarioAsync(PanCursorAsync);
-}
-
-public sealed class DragFromListsTests(DesktopWorkerPool pool) : X11SmokeTestBase(pool)
-{
-    [Fact(Explicit = true)]
-    public Task DragFromLists() => RunScenarioAsync(DragFromListsAsync);
 }

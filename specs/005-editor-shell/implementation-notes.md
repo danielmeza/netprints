@@ -759,3 +759,40 @@ Both tasks were written after the code, so no behavioural red exists; every test
 ### Totals (C4b)
 
 Release build 0 warnings; format clean. Solution suite (Release, `--ignore-exit-code 8`): 2251 total, 2238 passed, 13 skipped (the tolerated headless and E2E self-skips), 0 failed (Core 30 s, Cli 37 s, Catalog 55 s, Editor.Tests 2 m 12 s, UITests 7 m 13 s). Desktop E2E (`NETPRINTS_E2E=1`, `--fail-skips on`): 31 total, 25 passed, 6 explicit skips (above), exit 0. No test host or Xvfb of mine was left running (an owner's `NetPrints.Desktop` Debug process was not touched).
+
+## Batch C5a (T042: shell page objects and the smoke flows on the shell)
+
+### Red output
+
+The page objects were written after the code, so no behavioural red exists; every one was mutation checked instead.
+
+- `ShellPageObjectsTests` (4 tests, new): appending `x` to the document id in `DocumentTabsPage.Tab`, to the empty-state id in `InspectorPage.Empty`, to the panel id in `BottomPanelPage.Tab` and to the command id in `CommandBar.Button` failed all 4 (`Timed out after 30 s waiting for: ... x`); appending it to the command id in `MenuBar.Item` failed the menu and command bar test; all restored.
+- First run of `HeadlessSmokeTests.EditCompileAndRun` on the shell failed at `TickThePin`: the If Else node was added at (280, 392), which in the shell's 736x505 canvas puts the Condition pin at the edge of the viewport, so the click scrolled the canvas instead of ticking. `AddANode.Named` now adds at (280, 270).
+- Clicking the centre of an expanded tree row (`Tree.class.Program`) hit a child row: an expanded row's bounds include its children. `ProjectTreePage.SelectAsync` clicks the header.
+
+### Page objects (`tests/NetPrints.Testing.Ui/Shell/`)
+
+- `ShellPage(driver)`: root (`Shell.Window`); `Menu`, `Commands`, `Tree`, `Tabs`, `Inspector`, `Bottom`, `Graph` (the canvas of the selected document), `StatusMessage`, `BuildState`, `TitleAsync`, `WaitForProjectAsync`.
+- `MenuBar`: `Menu(name)`, `Item(commandId)`, `OpenAsync(menu, commandId)`, `InvokeAsync(menu, commandId)`.
+- `CommandBar`: `Button(commandId)`, `InvokeAsync(commandId)`.
+- `ProjectTreePage`: rows by kind and name (`Item`, `Project`, `Class`, `Method`, `Variable`, `Group`), `SelectAsync` (header click), `RevealAsync` (expands the group), `OpenMethodAsync`, `WaitForProjectAsync`.
+- `DocumentTabsPage`: `Tab` and `Content` by document id (text or `DocumentId`), `WaitOpenAsync`, `WaitClosedAsync`, `SelectAsync`, `IsSelectedAsync`.
+- `InspectorPage`: panel by panel id; `Empty`, `Content`, `ClassInspector`, `ClassName`, `MethodInspector`, `VariableInspector`.
+- `BottomPanelPage`: tabs by panel id, `ShowAsync`, `ErrorsList`, `ErrorsEmpty`, `OutputList`, `CSharpCode`, `OutputLinesAsync`, `BuildResultAsync`, `WaitForBuildResultAsync`, `WaitForOutputContainingAsync`.
+- `ShellCommands`: the command ids the flows use.
+
+All of it sits on the automation ids that already existed (panel ids, document ids, command ids, `Tree.<kind>.<name>`, `Output.*`, `Errors.*`); no `AutomationIds` constant was added and no Dock type is queried by its element name (Dock names a tab by its dockable id, which is the panel or document id).
+
+### Smoke flows on the shell
+
+- The Screenplay tasks and questions drive `UseNetPrints.Shell` (the class parameter is gone: `OpenTheMethod.Named`, `AddANode.Named`, `ConnectThePins.From`, `TickThePin.Of`, `CompileTheProject.Now`, `RunTheProgram.Now`, `TheBuildStatus.Now`, `TheNodeCount.OnTheCanvas`, `TheProgramOutput.Containing`); `UseNetPrints.MainWindow` and `.ClassEditor` are removed. The build result and the program output are read from the Output panel.
+- `HeadlessSmokeTests` run on `ShellApp` (it gained an `Actor` and the real references dialog): `EditCompileAndRun`, `CreateProject`, `AddReferences` pass; `PanCursor` skips (no real cursor).
+- Decision: `MinimizeAndRestoreClassWindow` is removed from `SmokeScenarios`, `HeadlessSmokeTests` and `X11SmokeTests`: there are no class windows; T043's `FloatAndRedockGraphTests` replaces it.
+- Decision: `DragFromLists` is removed for the same kind of reason: the shell has no drag source. `GraphDragDrop` is started only by the class window's lists and `GraphEditorView` accepts the drop, but the Project tree rows have no `DragSourceHelper` (not in spec.md or tasks.md). PAR-56 and PAR-57 (drag a method, constructor or variable onto the canvas) are therefore uncovered until a tree drag source exists; open item for the owner or a follow-up task.
+- The old page objects (`MainWindowPage`, `ClassEditorPage`) stay for the headless suites of the former windows until T044.
+- Allowlist: `SourceHygieneTests` lost the entry `HeadlessSmokeTests.cs:28` (its `app!` became a null check); nothing was added.
+- E2E: the four remaining shared scenarios stay `[Fact(Explicit = true)]` (not run here); T043 removes `Explicit` after running them on the desktop.
+
+### Totals (C5a)
+
+Release build 0 warnings; format clean. Solution suite (Release, `--ignore-exit-code 8`): 2251 total, 2241 passed, 9 skipped, 1 failed (the allowlist entry above, fixed afterwards; Core re-run 671 of 671, `HeadlessSmokeTests` 4 total, 3 passed, 1 skipped); UITests 7 m 20 s. Desktop E2E (`NETPRINTS_E2E=1`, `--fail-skips on`): 29 total, 25 passed, 4 explicit skips, exit 0. No test host, Xvfb or openbox of mine was left running.

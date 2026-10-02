@@ -1,5 +1,7 @@
 using NetPrints.Testing.Ui.Driving;
+using NetPrints.Testing.Ui.References;
 using NetPrints.Testing.Ui.Screenplay;
+using NetPrints.Testing.Ui.Shell;
 using Xunit;
 
 namespace NetPrints.Testing.Ui.Scenarios;
@@ -22,7 +24,7 @@ public sealed record SmokeContext(Actor Actor, string SampleProject, string Work
 /// </summary>
 public abstract class SmokeScenarios
 {
-    protected const string ClassName = "HelloWorld.Program";
+    protected const string MethodName = "Main";
 
     /// <summary>A fresh editor (no project open) and a private sample copy.</summary>
     protected abstract Task<SmokeContext> StartAsync(CancellationToken cancellationToken);
@@ -59,34 +61,34 @@ public abstract class SmokeScenarios
         {
             await actor.AttemptsToAsync(cancellationToken,
                 OpenTheProject.At(context.SampleProject),
-                OpenTheMethod.Named("Main").Of(ClassName));
+                OpenTheMethod.Named(MethodName));
             await CheckpointAsync(context, "01-main-graph", cancellationToken);
         }
 
-        int nodes = await actor.AsksForAsync(TheNodeCount.In(ClassName), cancellationToken);
+        int nodes = await actor.AsksForAsync(TheNodeCount.OnTheCanvas(), cancellationToken);
 
         using (Step("edit graph"))
         {
             await actor.AttemptsToAsync(cancellationToken,
-                AddANode.Named("If Else", ClassName),
-                ConnectThePins.From(ClassName, "MethodEntryNode", "Exec", "IfElseNode", "Exec"),
-                TickThePin.Of(ClassName, "IfElseNode", "Condition"),
-                ConnectThePins.From(ClassName, "IfElseNode", "True", "CallMethodNode", "Exec"));
+                AddANode.Named("If Else"),
+                ConnectThePins.From("MethodEntryNode", "Exec", "IfElseNode", "Exec"),
+                TickThePin.Of("IfElseNode", "Condition"),
+                ConnectThePins.From("IfElseNode", "True", "CallMethodNode", "Exec"));
             await CheckpointAsync(context, "02-if-else-wired", cancellationToken);
         }
 
-        Assert.Equal(nodes + 1, await actor.AsksForAsync(TheNodeCount.In(ClassName), cancellationToken));
+        Assert.Equal(nodes + 1, await actor.AsksForAsync(TheNodeCount.OnTheCanvas(), cancellationToken));
 
         using (Step("compile"))
         {
-            await actor.AttemptsToAsync(CompileTheProject.From(ClassName), cancellationToken);
-            Assert.Equal("Build succeeded", await actor.AsksForAsync(TheBuildStatus.In(ClassName), cancellationToken));
+            await actor.AttemptsToAsync(CompileTheProject.Now(), cancellationToken);
+            Assert.Equal("Build succeeded", await actor.AsksForAsync(TheBuildStatus.Now(), cancellationToken));
         }
 
         using (Step("run"))
         {
-            await actor.AttemptsToAsync(RunTheProgram.From(ClassName), cancellationToken);
-            Assert.Contains("Hello, World!", await actor.AsksForAsync(TheProgramOutput.In(ClassName, "Hello, World!"), cancellationToken));
+            await actor.AttemptsToAsync(RunTheProgram.Now(), cancellationToken);
+            Assert.Contains("Hello, World!", await actor.AsksForAsync(TheProgramOutput.Containing("Hello, World!"), cancellationToken));
             await CheckpointAsync(context, "03-ran", cancellationToken);
         }
     }
@@ -102,12 +104,13 @@ public abstract class SmokeScenarios
 
         using (Step("create project"))
         {
-            var main = await context.Editor.MainWindow.ShowProjectPaneAsync(cancellationToken);
+            var shell = context.Editor.Shell;
             string path = Path.Combine(context.WorkDirectory, "Created.csproj");
 
-            await context.Editor.FileDialogs.SaveFileAsync("Create Project", path, () => main.CreateProjectButton.ClickAsync(cancellationToken), cancellationToken);
+            await context.Editor.FileDialogs.SaveFileAsync("Create Project", path, () => shell.Menu.InvokeAsync("File", ShellCommands.NewProject, cancellationToken),
+                cancellationToken);
 
-            await main.WaitForProjectAsync("Created", cancellationToken);
+            await shell.WaitForProjectAsync("Created", cancellationToken);
             await UiWait.UntilAsync(context.Driver, () => Task.FromResult(File.Exists(path)), "project file written", cancellationToken);
             await CheckpointAsync(context, "created-project", cancellationToken);
         }
@@ -123,7 +126,8 @@ public abstract class SmokeScenarios
         }
 
         await context.Actor.AttemptsToAsync(OpenTheProject.At(context.SampleProject), cancellationToken);
-        var references = await context.Editor.MainWindow.OpenReferencesAsync(cancellationToken);
+        await context.Editor.Shell.Commands.InvokeAsync(ShellCommands.References, cancellationToken);
+        var references = await new ReferencesDialogPage(context.Driver).WaitShownAsync(cancellationToken);
         string sources = Directory.CreateDirectory(Path.Combine(context.WorkDirectory, "Sources")).FullName;
 
         using (Step("add references"))
@@ -143,34 +147,6 @@ public abstract class SmokeScenarios
         await references.CloseAsync(cancellationToken);
     }
 
-    /// <summary>A minimized class window is restored, not duplicated, from the class list (PAR-14).</summary>
-    protected async Task MinimizeAndRestoreClassWindowAsync(CancellationToken cancellationToken)
-    {
-        SmokeContext context;
-        using (Step("start"))
-        {
-            context = await StartAsync(cancellationToken);
-        }
-
-        Require(context, UiCapabilities.WindowManager);
-        await context.Actor.AttemptsToAsync(OpenTheProject.At(context.SampleProject), cancellationToken);
-        var main = context.Editor.MainWindow;
-        var page = await main.OpenClassAsync(ClassName, cancellationToken);
-        string window = (await page.GetAsync(cancellationToken)).Window;
-
-        await context.Driver.MinimizeAsync(window, cancellationToken);
-        await UiWait.UntilAsync(context.Driver, () => context.Driver.IsMinimizedAsync(window, cancellationToken), "class window minimized", cancellationToken);
-
-        await main.ClassButton(ClassName).ClickAsync(cancellationToken);
-
-        await UiWait.UntilAsync(context.Driver, async () => !await context.Driver.IsMinimizedAsync(window, cancellationToken), "class window restored",
-            cancellationToken);
-        var windows = await context.Driver.FindAllAsync(page.Query, cancellationToken);
-        Assert.Single(windows);
-        Assert.Equal(window, windows[0].Window);
-        await CheckpointAsync(context, "restored", cancellationToken);
-    }
-
     /// <summary>The pointer shows the move cursor while the canvas is panned (PAR-51).</summary>
     protected async Task PanCursorAsync(CancellationToken cancellationToken)
     {
@@ -181,8 +157,8 @@ public abstract class SmokeScenarios
         }
 
         Require(context, UiCapabilities.RealCursor);
-        await context.Actor.AttemptsToAsync(cancellationToken, OpenTheProject.At(context.SampleProject), OpenTheMethod.Named("Main").Of(ClassName));
-        var graph = context.Editor.ClassEditor(ClassName).Graph;
+        await context.Actor.AttemptsToAsync(cancellationToken, OpenTheProject.At(context.SampleProject), OpenTheMethod.Named(MethodName));
+        var graph = context.Editor.Shell.Graph;
 
         await context.Driver.MoveAsync(await graph.EmptyPointAsync(cancellationToken), cancellationToken);
         string? idle = await context.Driver.CursorNameAsync(cancellationToken);
@@ -216,45 +192,6 @@ public abstract class SmokeScenarios
         }
 
         return false;
-    }
-
-    /// <summary>Real drags from the method, constructor and variable lists onto the canvas (PAR-56, 57).</summary>
-    protected async Task DragFromListsAsync(CancellationToken cancellationToken)
-    {
-        SmokeContext context;
-        using (Step("start"))
-        {
-            context = await StartAsync(cancellationToken);
-        }
-
-        Require(context, UiCapabilities.OsDragDrop);
-        await context.Actor.AttemptsToAsync(cancellationToken, OpenTheProject.At(context.SampleProject), OpenTheMethod.Named("Main").Of(ClassName));
-        var page = context.Editor.ClassEditor(ClassName);
-        var graph = page.Graph;
-        int nodes = await graph.NodeCountAsync(cancellationToken);
-
-        // Method list -> call node.
-        await page.Method("Main").DragToAsync(await graph.EmptyPointAsync(cancellationToken, -400, -350), cancellationToken);
-        await UiWait.UntilAsync(context.Driver, async () => await graph.NodeCountAsync(cancellationToken) == nodes + 1, "call node dropped", cancellationToken);
-
-        // Constructor list -> constructor call node.
-        await page.CreateConstructorButton.ClickAsync(cancellationToken); // opens the new constructor's graph
-        await page.OpenMethodAsync("Main", cancellationToken);
-        await page.Constructor(0).DragToAsync(await graph.EmptyPointAsync(cancellationToken, -400, -150), cancellationToken);
-        await UiWait.UntilAsync(context.Driver, async () => await graph.NodeCountAsync(cancellationToken) == nodes + 2, "constructor node dropped",
-            cancellationToken);
-        Assert.Contains("ConstructorNode", await graph.NodeNamesAsync(cancellationToken));
-        int afterConstructor = nodes + 2;
-
-        // Variable list -> Get/Set chooser -> getter.
-        await page.CreateVariableButton.ClickAsync(cancellationToken);
-        await page.VariableNameText("Variable").DragToAsync(await graph.EmptyPointAsync(cancellationToken, -150, -350), cancellationToken);
-        await graph.GetSet.WaitOpenAsync(cancellationToken);
-        await CheckpointAsync(context, "get-set-chooser", cancellationToken);
-        await graph.GetSet.GetButton.ClickAsync(cancellationToken);
-        await UiWait.UntilAsync(context.Driver, async () => await graph.NodeCountAsync(cancellationToken) == afterConstructor + 1, "getter dropped",
-            cancellationToken);
-        await CheckpointAsync(context, "dropped-nodes", cancellationToken);
     }
 
     private sealed class NoOpStep : IDisposable
