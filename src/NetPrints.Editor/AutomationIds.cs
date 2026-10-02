@@ -504,29 +504,13 @@ public static class AutomationIds
     /// </summary>
     public const string ReferenceRemove = "References.Remove";
 
-    // Dock spike (ADR-0018 checks, throwaway)
+    // Shell (contracts/shell.md section 6)
     /// <summary>
-    /// Automation id for the dock spike's button that floats the second document.
+    /// Prefix of the automation id of a tool pane's content: the panel id follows, such as <c>Shell.Panel.netprints.panel.errors</c>.
     /// </summary>
-    public const string DockSpikeFloat = "DockSpike.Float";
+    public const string ShellPanelPrefix = "Shell.Panel.";
     /// <summary>
-    /// Automation id for the dock spike's button that docks the second document back.
+    /// Prefix of the automation id of a document's content: the document id follows, such as <c>Shell.Document.graph:A.cs#method:1</c>.
     /// </summary>
-    public const string DockSpikeDock = "DockSpike.Dock";
-    /// <summary>
-    /// Automation id for the dock spike's dock control.
-    /// </summary>
-    public const string DockSpikeHost = "DockSpike.Host";
-    /// <summary>
-    /// Automation id for the dock spike's theme swatch.
-    /// </summary>
-    public const string DockSpikeSwatch = "DockSpike.Swatch";
-    /// <summary>
-    /// Automation id for the diagnostic id text inside a dock spike pane.
-    /// </summary>
-    public const string DockSpikeContentId = "DockSpike.Content.Id";
-    /// <summary>
-    /// Automation id for the diagnostic message text inside a dock spike pane.
-    /// </summary>
-    public const string DockSpikeContentMessage = "DockSpike.Content.Message";
+    public const string ShellDocumentPrefix = "Shell.Document.";
 }

@@ -2,24 +2,37 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
              xmlns:ed="clr-namespace:NetPrints.Editor"
-             xmlns:spike="clr-namespace:NetPrints.Editor.Shell.Docking.Spike"
-             xmlns:ederrorlist="clr-namespace:NetPrints.Editor.ErrorList"
+             xmlns:docking="clr-namespace:NetPrints.Editor.Shell.Docking"
+             xmlns:edgraph="clr-namespace:NetPrints.Editor.Graph"
+             xmlns:shell="clr-namespace:NetPrints.Editor.Shell"
              x:Class="NetPrints.Editor.EditorApp"
              Name="NetPrints"
              RequestedThemeVariant="Dark">
   <!-- Floating dock windows resolve their content through the application's templates, not the DockControl's (ADR-0018 check 3). -->
   <Application.DataTemplates>
-    <DataTemplate DataType="spike:SpikeDocument" x:DataType="spike:SpikeDocument">
-      <ContentControl Content="{Binding Context}" />
+    <DataTemplate DataType="docking:ShellDocument" x:DataType="docking:ShellDocument">
+      <ContentControl Content="{Binding Context}">
+        <ContentControl.Styles>
+          <Style Selector="ContentControl">
+            <Setter Property="AutomationProperties.AutomationId" Value="{Binding AutomationId}" />
+          </Style>
+        </ContentControl.Styles>
+      </ContentControl>
     </DataTemplate>
-    <DataTemplate DataType="spike:SpikeTool" x:DataType="spike:SpikeTool">
-      <ContentControl Content="{Binding Context}" />
+    <DataTemplate DataType="docking:ShellTool" x:DataType="docking:ShellTool">
+      <ContentControl Content="{Binding Context}">
+        <ContentControl.Styles>
+          <Style Selector="ContentControl">
+            <Setter Property="AutomationProperties.AutomationId" Value="{Binding AutomationId}" />
+          </Style>
+        </ContentControl.Styles>
+      </ContentControl>
     </DataTemplate>
-    <DataTemplate DataType="ederrorlist:DiagnosticRowViewModel" x:DataType="ederrorlist:DiagnosticRowViewModel">
-      <StackPanel Margin="8" Spacing="4">
-        <TextBlock Text="{Binding Id}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.DockSpikeContentId}" />
-        <TextBlock Text="{Binding Message}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.DockSpikeContentMessage}" />
-      </StackPanel>
+    <DataTemplate DataType="shell:GraphDocumentViewModel" x:DataType="shell:GraphDocumentViewModel">
+      <edgraph:GraphEditorView DataContext="{Binding Graph}" />
+    </DataTemplate>
+    <DataTemplate DataType="shell:PanelPlaceholderViewModel" x:DataType="shell:PanelPlaceholderViewModel">
+      <TextBlock Text="{Binding Message}" Margin="8" TextWrapping="Wrap" />
     </DataTemplate>
   </Application.DataTemplates>
   <Application.Styles>

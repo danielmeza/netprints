@@ -4,19 +4,17 @@
   <dockfluent:DockFluentTheme />
   <Styles.Resources>
     <ResourceDictionary>
-      <!-- Dock's own surface tokens come from the editor's tokens (ADR-0018 check 5): Light and Dark through DynamicResource. -->
+      <!-- Dock's own surface tokens come from the editor's tokens: Light and Dark through DynamicResource. -->
       <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Dark">
           <Color x:Key="Dock.SurfaceColor">#FF333333</Color>
           <SolidColorBrush x:Key="DockSurfaceHeaderBrush" Color="{DynamicResource Dock.SurfaceColor}" />
           <SolidColorBrush x:Key="DockSurfaceEditorBrush" Color="{DynamicResource Dock.SurfaceColor}" />
-          <SolidColorBrush x:Key="DockSpikeSwatch" Color="{DynamicResource Dock.SurfaceColor}" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="Light">
           <Color x:Key="Dock.SurfaceColor">#FFE6E6E6</Color>
           <SolidColorBrush x:Key="DockSurfaceHeaderBrush" Color="{DynamicResource Dock.SurfaceColor}" />
           <SolidColorBrush x:Key="DockSurfaceEditorBrush" Color="{DynamicResource Dock.SurfaceColor}" />
-          <SolidColorBrush x:Key="DockSpikeSwatch" Color="{DynamicResource Dock.SurfaceColor}" />
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
     </ResourceDictionary>

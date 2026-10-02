@@ -1,8 +1,0 @@
-<Window xmlns="https://github.com/avaloniaui"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:spike="clr-namespace:NetPrints.Editor.Shell.Docking.Spike"
-        x:Class="NetPrints.Editor.Shell.Docking.Spike.DockSpikeWindow"
-        x:DataType="spike:DockSpikeViewModel"
-        Title="Dock spike" Width="900" Height="600" Topmost="True">
-  <spike:DockSpikeView />
-</Window>

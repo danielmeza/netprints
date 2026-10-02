@@ -47,6 +47,12 @@ public class CommandKeyBindingTests
 
         public DocumentId? ActiveDocument => null;
 
+        public IReadOnlyList<DocumentId> OpenDocuments => [];
+
+        public bool IsPanelVisible(string panelId) => false;
+
+        public bool IsFloating(DocumentId id) => false;
+
         public void OpenDocument(DocumentId id)
         {
         }

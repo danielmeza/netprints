@@ -80,9 +80,8 @@ public sealed class EditorProcess : ICapturedEditor, IAsyncDisposable
     public static string DesktopAssembly { get; } = typeof(EditorProcess).Assembly.GetCustomAttributes<AssemblyMetadataAttribute>()
         .Single(a => a.Key == "DesktopAssembly").Value ?? throw new InvalidOperationException("The DesktopAssembly metadata has no value.");
 
-    /// <summary>Starts the editor (optionally with a project, and extra environment variables) and waits until it reports ready.</summary>
-    public static async Task<EditorProcess> StartAsync(XServer server, string workDirectory, string? project, CancellationToken cancellationToken,
-        IReadOnlyDictionary<string, string>? environment = null)
+    /// <summary>Starts the editor (optionally with a project) and waits until it reports ready.</summary>
+    public static async Task<EditorProcess> StartAsync(XServer server, string workDirectory, string? project, CancellationToken cancellationToken)
     {
         // Short and outside workDirectory (whose scratchpad-derived path can itself run long): a
         // long-TMPDIR workDirectory pushed this over the 108-character Unix socket limit before.
@@ -108,10 +107,6 @@ public sealed class EditorProcess : ICapturedEditor, IAsyncDisposable
         server.Apply(info.Environment);
         info.Environment[AutomationAgent.EnableVariable] = "1";
         info.Environment[AutomationAgent.PipeVariable] = pipe;
-        foreach (var (name, value) in environment ?? new Dictionary<string, string>())
-        {
-            info.Environment[name] = value;
-        }
 
         var process = Process.Start(info) ?? throw new InvalidOperationException("Cannot start the editor.");
         var editor = default(EditorProcess);

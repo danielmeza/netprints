@@ -9,7 +9,6 @@ using NetPrints.Editor.Graph;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Editor.Main;
-using NetPrints.Editor.Shell.Docking.Spike;
 
 namespace NetPrints.Editor;
 
@@ -122,12 +121,6 @@ public partial class EditorApp : Application
                     agent.Dispose();
                     tree.Dispose();
                 };
-            }
-
-            // ADR-0018 spike (throwaway): a second window with the dock spike, for the E2E floating check.
-            if (DockSpikeWindow.IsSpikeEnabled())
-            {
-                new DockSpikeWindow().Show();
             }
 
             // Startup problems first, then a single command-line argument is a project to open (FR-016, PAR-05).

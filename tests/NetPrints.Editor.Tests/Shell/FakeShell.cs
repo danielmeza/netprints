@@ -30,6 +30,12 @@ public sealed class FakeShell : IShell
     public DocumentId? ActiveDocument { get; private set; }
 
     /// <inheritdoc/>
+    public bool IsPanelVisible(string panelId) => VisiblePanels.Contains(panelId);
+
+    /// <inheritdoc/>
+    public bool IsFloating(DocumentId id) => Floating.Contains(id);
+
+    /// <inheritdoc/>
     public void OpenDocument(DocumentId id)
     {
         Calls.Add($"OpenDocument:{id}");

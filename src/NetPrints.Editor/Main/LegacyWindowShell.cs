@@ -16,6 +16,15 @@ internal sealed class LegacyWindowShell(IProjectActions projectActions) : IShell
     public DocumentId? ActiveDocument => null;
 
     /// <inheritdoc/>
+    public IReadOnlyList<DocumentId> OpenDocuments => [];
+
+    /// <inheritdoc/>
+    public bool IsPanelVisible(string panelId) => false;
+
+    /// <inheritdoc/>
+    public bool IsFloating(DocumentId id) => false;
+
+    /// <inheritdoc/>
     public void OpenDocument(DocumentId id)
     {
     }
