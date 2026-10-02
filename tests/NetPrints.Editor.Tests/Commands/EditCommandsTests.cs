@@ -182,14 +182,15 @@ public sealed class EditCommandsTests : SessionCommandTests
     }
 
     [Fact]
-    public async Task DeleteIsDisabledForAVariableTreeItemNothingHandlesButEnabledForMethodsAndEventGraphs()
+    public async Task DeleteIsEnabledForVariablesConstructorsMethodsAndEventGraphsOfTheTree()
     {
         ProjectSessionViewModel session = await OpenSessionAsync();
         ClassGraph cls = session.Project.Classes.Single();
         var variable = new Variable(cls, "V", TypeSpecifier.FromType<int>(), null, null, VariableModifiers.None);
         var handler = new DeleteCommandHandler();
 
-        Assert.False(handler.CanExecute(ContextOf(session, treeItem: variable)));
+        Assert.True(handler.CanExecute(ContextOf(session, treeItem: variable)));
+        Assert.True(handler.CanExecute(ContextOf(session, treeItem: new ConstructorGraph())));
         Assert.True(handler.CanExecute(ContextOf(session, treeItem: new MethodGraph("M"))));
         Assert.True(handler.CanExecute(ContextOf(session, treeItem: new EventGraph("E"))));
     }

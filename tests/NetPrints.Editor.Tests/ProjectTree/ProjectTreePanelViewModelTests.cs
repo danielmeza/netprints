@@ -145,9 +145,10 @@ public sealed class ProjectTreePanelViewModelTests : IAsyncDisposable
         rig.Tree.SelectedItem = rig.Tree.Roots[0].Children[0].Children[1].Children[0];
         Assert.Equal(TreeItemKind.Constructor, rig.Tree.SelectedItem.Kind);
         Assert.False(rig.Invoker.CanRun(rename));
+        Assert.True(rig.Invoker.CanRun(delete));
         rig.Tree.SelectedItem = rig.Item(TreeItemKind.Variable, "count");
         Assert.True(rig.Invoker.CanRun(rename));
-        Assert.False(rig.Invoker.CanRun(delete));
+        Assert.True(rig.Invoker.CanRun(delete));
 
         rig.Tree.SelectedItem = rig.Item(TreeItemKind.Method, "Greet");
         Assert.True(rig.Invoker.TryRun(rename));
@@ -193,10 +194,10 @@ public sealed class ProjectTreePanelViewModelTests : IAsyncDisposable
         Assert.Equal(["Open", "Rename", "Delete"], rig.Item(TreeItemKind.Method, "Greet").MenuEntries.Select(entry => entry.Label));
 
         rig.Tree.SelectedItem = rig.Tree.Roots[0].Children[0].Children[1].Children[0];
-        Assert.Equal(["Open"], rig.Tree.SelectedItem.MenuEntries.Select(entry => entry.Label));
+        Assert.Equal(["Open", "Delete"], rig.Tree.SelectedItem.MenuEntries.Select(entry => entry.Label));
 
         rig.Tree.SelectedItem = rig.Item(TreeItemKind.Variable, "count");
-        Assert.Equal(["Rename"], rig.Tree.SelectedItem.MenuEntries.Select(entry => entry.Label));
+        Assert.Equal(["Rename", "Delete"], rig.Tree.SelectedItem.MenuEntries.Select(entry => entry.Label));
 
         rig.Tree.SelectedItem = rig.Item(TreeItemKind.EventGraph, "Ticks");
         Assert.Equal(["Open", "Rename", "Delete"], rig.Tree.SelectedItem.MenuEntries.Select(entry => entry.Label));
