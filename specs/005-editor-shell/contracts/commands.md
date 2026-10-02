@@ -75,6 +75,10 @@ Rules:
 | Connection | `goToSource`, `goToTarget` |
 | Canvas | `nodeSearch`, `selectAll`, `fitAll` |
 
+The tree's open item is the command `openGraph` (label "Open", `Enter` in the `ProjectTree` scope, no menu): it opens
+the graph of the selected class, method, constructor or event graph. An item is shown only when its command can run for
+the selected row; the menu opens on the selected row, and a right-click selects the row first.
+
 Add-member commands (`addMethod`, `addConstructor`, `addVariable`, `addEventGraph`, in the table above) act on the
 tree selection's class, else the active document's class.
 

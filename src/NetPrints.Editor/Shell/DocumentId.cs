@@ -23,8 +23,19 @@ public sealed record DocumentId
     private const string GraphPrefix = "graph:";
     private const string StartText = "start";
     private const string ProjectSettingsText = "project-settings";
-    private const string ClassKey = "class";
-    private static readonly string[] KeyPrefixes = ["method:", "ctor:", "event:"];
+    /// <summary>The prefix of the graph key of a method; the method's id follows.</summary>
+    public const string MethodKeyPrefix = "method:";
+
+    /// <summary>The prefix of the graph key of a constructor; its id follows.</summary>
+    public const string ConstructorKeyPrefix = "ctor:";
+
+    /// <summary>The prefix of the graph key of an event graph; its id follows.</summary>
+    public const string EventKeyPrefix = "event:";
+
+    /// <summary>The graph key of the class graph.</summary>
+    public const string ClassGraphKey = "class";
+
+    private static readonly string[] KeyPrefixes = [MethodKeyPrefix, ConstructorKeyPrefix, EventKeyPrefix];
 
     private DocumentId(DocumentKind kind, string? classPath, string? graphKey)
     {
@@ -117,6 +128,6 @@ public sealed record DocumentId
     };
 
     private static bool IsValidGraphKey(string key) =>
-        key == ClassKey
+        key == ClassGraphKey
         || KeyPrefixes.Any(prefix => key.StartsWith(prefix, StringComparison.Ordinal) && key.Length > prefix.Length && !key.Contains('#', StringComparison.Ordinal));
 }

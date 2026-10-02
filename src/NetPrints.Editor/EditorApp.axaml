@@ -5,6 +5,8 @@
              xmlns:docking="clr-namespace:NetPrints.Editor.Shell.Docking"
              xmlns:edgraph="clr-namespace:NetPrints.Editor.Graph"
              xmlns:shell="clr-namespace:NetPrints.Editor.Shell"
+             xmlns:edinspectors="clr-namespace:NetPrints.Editor.Inspectors"
+             xmlns:edtree="clr-namespace:NetPrints.Editor.ProjectTree"
              x:Class="NetPrints.Editor.EditorApp"
              Name="NetPrints"
              RequestedThemeVariant="Dark">
@@ -30,6 +32,12 @@
     </DataTemplate>
     <DataTemplate DataType="shell:GraphDocumentViewModel" x:DataType="shell:GraphDocumentViewModel">
       <edgraph:GraphEditorView DataContext="{Binding Graph}" />
+    </DataTemplate>
+    <DataTemplate DataType="edtree:ProjectTreePanelViewModel" x:DataType="edtree:ProjectTreePanelViewModel">
+      <edtree:ProjectTreePanelView />
+    </DataTemplate>
+    <DataTemplate DataType="edinspectors:InspectorPanelViewModel" x:DataType="edinspectors:InspectorPanelViewModel">
+      <edinspectors:InspectorPanelView />
     </DataTemplate>
     <DataTemplate DataType="shell:PanelPlaceholderViewModel" x:DataType="shell:PanelPlaceholderViewModel">
       <TextBlock Text="{Binding Message}" Margin="8" TextWrapping="Wrap" />

@@ -13,6 +13,7 @@ public static class BuiltInContributions
         GoContributions.Register(registry);
         BuildContributions.Register(registry);
         HelpContributions.Register(registry);
+        TreeContributions.Register(registry);
         PanelContributions.Register(registry);
     }
 }

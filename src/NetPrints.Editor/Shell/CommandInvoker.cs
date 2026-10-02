@@ -18,6 +18,18 @@ public sealed class CommandInvoker(IContributionRegistry registry, ICommandConte
     public IReadOnlyList<CommandDescriptor> CommandsIn(CommandScope scope) =>
         [.. registry.Commands.Where(command => command.DefaultGestures is { Count: > 0 } && InScope(command.Scope, scope))];
 
+    /// <summary>Gets the commands the context-menu items of a target run, in item order.</summary>
+    /// <param name="target">The item a context menu opens on.</param>
+    /// <returns>The commands; an item naming an unregistered command is left out.</returns>
+    public IReadOnlyList<CommandDescriptor> ContextMenuCommands(ContextMenuTarget target) =>
+    [
+        .. registry.ContextMenuItems
+            .Where(item => item.Target == target)
+            .OrderBy(item => item.Order)
+            .Select(item => registry.Commands.FirstOrDefault(command => command.Id == item.CommandId))
+            .OfType<CommandDescriptor>(),
+    ];
+
     /// <summary>Raised when the enabled state or label of any command may have changed (see <see cref="ICommandContextProvider.CommandStatesChanged"/>).</summary>
     public event EventHandler? CommandStatesChanged
     {

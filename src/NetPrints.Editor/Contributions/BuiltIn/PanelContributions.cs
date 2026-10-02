@@ -1,3 +1,5 @@
+using NetPrints.Editor.Inspectors;
+using NetPrints.Editor.ProjectTree;
 using NetPrints.Editor.Shell;
 
 namespace NetPrints.Editor.Contributions.BuiltIn;
@@ -28,8 +30,8 @@ public static class PanelContributions
     public static void Register(IContributionRegistry registry)
     {
         ArgumentNullException.ThrowIfNull(registry);
-        Add(registry, ProjectTreeId, "Project", PanelDock.Left, 0, "FileTree");
-        Add(registry, InspectorId, "Inspector", PanelDock.Right, 0, "Tune");
+        registry.AddPanel(new PanelDescriptor(ProjectTreeId, "Project", _ => new ProjectTreePanelViewModel(), PanelDock.Left, 0, "FileTree"));
+        registry.AddPanel(new PanelDescriptor(InspectorId, "Inspector", _ => new InspectorPanelViewModel(), PanelDock.Right, 0, "Tune"));
         Add(registry, ErrorsId, "Errors", PanelDock.Bottom, 0, "AlertCircleOutline");
         Add(registry, OutputId, "Output", PanelDock.Bottom, Second, "Console");
         Add(registry, CSharpId, "C#", PanelDock.Bottom, Third, "LanguageCsharp");

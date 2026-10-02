@@ -549,4 +549,54 @@ public static class AutomationIds
     /// Automation id for the shortcut text of a menu item.
     /// </summary>
     public const string ShellMenuShortcut = "Shell.MenuShortcut";
+
+    // Project tree and inspector panels (contracts/shell.md section 6)
+    /// <summary>
+    /// Automation id for the project tree control.
+    /// </summary>
+    public const string TreeView = "Tree.View";
+    /// <summary>
+    /// Prefix of a tree item's automation id: the kind and the name follow, such as <c>Tree.method.Main</c>.
+    /// </summary>
+    public const string TreePrefix = "Tree.";
+    /// <summary>
+    /// Prefix of a tree context menu entry's automation id: the command id follows.
+    /// </summary>
+    public const string TreeMenuPrefix = "Tree.Menu.";
+    /// <summary>
+    /// Tree item kind of the project.
+    /// </summary>
+    public const string TreeKindProject = "project";
+    /// <summary>
+    /// Tree item kind of a class.
+    /// </summary>
+    public const string TreeKindClass = "class";
+    /// <summary>
+    /// Tree item kind of a group of a class (Methods, Constructors, Variables, Event graphs).
+    /// </summary>
+    public const string TreeKindGroup = "group";
+    /// <summary>
+    /// Tree item kind of a method.
+    /// </summary>
+    public const string TreeKindMethod = "method";
+    /// <summary>
+    /// Tree item kind of a constructor.
+    /// </summary>
+    public const string TreeKindConstructor = "constructor";
+    /// <summary>
+    /// Tree item kind of a variable.
+    /// </summary>
+    public const string TreeKindVariable = "variable";
+    /// <summary>
+    /// Tree item kind of an event graph.
+    /// </summary>
+    public const string TreeKindEventGraph = "eventgraph";
+    /// <summary>
+    /// Automation id for the inspector panel's hosted content.
+    /// </summary>
+    public const string InspectorContent = "Inspector.Content";
+    /// <summary>
+    /// Automation id for the inspector panel's empty-state text.
+    /// </summary>
+    public const string InspectorEmpty = "Inspector.Empty";
 }

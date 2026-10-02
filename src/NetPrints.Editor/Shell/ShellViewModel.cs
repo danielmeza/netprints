@@ -47,6 +47,9 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
     /// <inheritdoc/>
     public event EventHandler? CommandStatesChanged;
 
+    /// <summary>Raised by <see cref="NotifyModelRenamed"/>: a class or member was renamed through a view model, and the model does not notify.</summary>
+    public event EventHandler? ModelRenamed;
+
     /// <summary>Gets or sets the open project session, or null while the start page shows.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Title))]
@@ -68,6 +71,10 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
 
     /// <summary>Gets the status message, or null.</summary>
     public string? StatusMessage => StatusBar.Message;
+
+    /// <summary>Gets or sets what is selected in the project tree: a class, a graph or a variable of the open project, or null.</summary>
+    [ObservableProperty]
+    public partial object? TreeSelection { get; set; }
 
     /// <summary>Gets or sets what hosts the documents and panels; set by the composition once the docking adapter exists.</summary>
     [ObservableProperty]
@@ -93,6 +100,22 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
         CommandBar?.Dispose();
         MenuBar = new MenuBarViewModel(registry, invoker);
         CommandBar = new CommandBarViewModel(registry, invoker, () => CompileErrorCount);
+    }
+
+    /// <summary>Gives every panel that needs the shell its services; call once the layout and the invoker exist.</summary>
+    /// <param name="api">The shell API.</param>
+    /// <param name="invoker">Runs and queries the commands.</param>
+    /// <param name="context">Host services shared across the editor.</param>
+    public void AttachPanels(IShell api, CommandInvoker invoker, EditorContext context)
+    {
+        ArgumentNullException.ThrowIfNull(api);
+        ArgumentNullException.ThrowIfNull(invoker);
+        ArgumentNullException.ThrowIfNull(context);
+        var panelContext = new PanelContext(this, api, invoker, context);
+        foreach (IShellPanelContent content in panels.Select(panel => panel.Content).OfType<IShellPanelContent>())
+        {
+            content.Attach(panelContext);
+        }
     }
 
     /// <summary>Gets the window title (contracts/shell.md section 4).</summary>
@@ -144,6 +167,9 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
         return true;
     }
 
+    /// <summary>Tells the panels that show names (the project tree) that a class or member was renamed; the model of a class or an event graph does not notify.</summary>
+    public void NotifyModelRenamed() => ModelRenamed?.Invoke(this, EventArgs.Empty);
+
     /// <summary>Shows a status message.</summary>
     /// <param name="message">The text.</param>
     /// <param name="expiry">How long it stays, or null to keep it until replaced.</param>
@@ -153,6 +179,11 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
     public void Dispose()
     {
         Unfollow();
+        foreach (IShellPanelContent content in panels.Select(panel => panel.Content).OfType<IShellPanelContent>())
+        {
+            content.Detach();
+        }
+
         MenuBar?.Dispose();
         CommandBar?.Dispose();
         StatusBar.PropertyChanged -= OnStatusBarChanged;
@@ -185,10 +216,13 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
             newValue.Project.PropertyChanged += OnProjectChanged;
         }
 
+        TreeSelection = null;
         UpdateBuildState();
         OnPropertyChanged(nameof(CompileErrorCount));
         RaiseCommandStatesChanged();
     }
+
+    partial void OnTreeSelectionChanged(object? oldValue, object? newValue) => RaiseCommandStatesChanged();
 
     partial void OnActiveDocumentChanged(DocumentViewModel? oldValue, DocumentViewModel? newValue)
     {
