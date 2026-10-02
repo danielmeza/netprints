@@ -367,7 +367,7 @@ US2's independent test; SC-001.
 
 ### Batch C4 — model: sonnet — T039–T041 — 5 units
 
-- [ ] T039 [US2] Documents and layout commands (2 units). Test first: handler tests in
+- [x] T039 [US2] Documents and layout commands (2 units). Test first: handler tests in
   `tests/NetPrints.Editor.Tests/Shell/DocumentCommandsTests.cs` with `FakeShell`, and headless tab tests. Graph
   documents open from the tree or an error (an open one is activated, and its canvas takes focus: Ctrl+Space right
   after a tab switch opens the search with no click, SC-004); tabs reorder and close by their button, a

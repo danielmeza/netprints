@@ -80,9 +80,11 @@ public class RegistrySurfaceTests
 
         Assert.Equal(Ids("newProject", "openProject", "closeProject", Separator, "save", "saveAll", Separator, "projectSettings", "references", Separator, "exit"), Layout(rig.Open("File")).Select(Strip(MenuId)));
         Assert.Equal(Ids("undo", "redo", Separator, "delete", "rename", "selectAll", Separator, "nodeSearch", Separator, "classSettings", "addMethod", "addConstructor", "addVariable", "addEventGraph"), Layout(rig.Open("Edit")).Select(Strip(MenuId)));
-        Assert.Equal(Ids("frameSelection", "fitAll"), Layout(rig.Open("View")).Select(Strip(MenuId)));
+        Assert.Equal(
+            Ids("frameSelection", "fitAll", Separator, "showPanel.projectTree", "showPanel.inspector", "showPanel.errors", "showPanel.output", "showPanel.csharp", Separator, "floatDocument", "dockDocument", "resetLayout"),
+            Layout(rig.Open("View")).Select(Strip(MenuId)));
         Assert.Equal(Ids("compile", Separator, "run", "stop"), Layout(rig.Open("Build")).Select(Strip(MenuId)));
-        Assert.Empty(rig.Open("Go"));
+        Assert.Equal(Ids("nextTab", "previousTab", "closeTab"), Layout(rig.Open("Go")).Select(Strip(MenuId)));
         Assert.Empty(rig.Open("Help"));
     }
 
@@ -410,7 +412,7 @@ public class RegistrySurfaceTests
 
         Assert.Equal(["File", "Edit", "View", "Go", "Build", "Help", "Reports"], rig.TopMenus().Select(menu => Assert.IsType<string>(menu.Header)));
         IReadOnlyList<MenuItem> view = rig.Open("View");
-        Assert.Equal([MenuId(Prefix + "frameSelection"), MenuId(Prefix + "fitAll"), Separator, MenuId("acme.command.hello")], Layout(view));
+        Assert.Equal([MenuId(Prefix + "resetLayout"), Separator, MenuId("acme.command.hello")], Layout(view).TakeLast(3));
         Assert.Equal("Ctrl+Alt+H", ShortcutOf(view[^1]));
         Button hello = Assert.IsType<Button>(rig.Find(BarId("acme.command.hello")));
         Assert.Equal("Say hello (Ctrl+Alt+H)", ToolTip.GetTip(hello));
