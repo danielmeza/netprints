@@ -10,4 +10,5 @@ namespace NetPrints.Editor.ClassEditor;
 /// </summary>
 /// <param name="GraphKey">Graph key (<see cref="Core.GraphKeys.For"/>) of the graph the node belongs to.</param>
 /// <param name="NodeId">Id of the node to reveal, or <see langword="null"/> if the diagnostic has no node mapping.</param>
-public sealed record NavigateToNodeMessage(string GraphKey, string? NodeId);
+/// <param name="ClassFullName">Full name of the class owning the graph when the sender lists several classes (the Errors panel), or <see langword="null"/> for the sender's own class.</param>
+public sealed record NavigateToNodeMessage(string GraphKey, string? NodeId, string? ClassFullName = null);

@@ -28,26 +28,39 @@ public sealed class ErrorsPanelViewModelTests : IAsyncDisposable
         session.Project.LastDiagnostics = new ObservableRangeCollection<CodeDiagnostic>(diagnostics);
 
     [Fact]
-    public async Task ThePanelShowsTheErrorsOfTheActiveDocumentsClassAndFollowsTheActiveDocument()
+    public async Task ThePanelListsTheWholeProjectsDiagnosticsLabelledByClassWhateverTheActiveDocument()
     {
+        Assert.Null(rig.Errors.Current);
         ProjectSessionViewModel session = await rig.OpenSessionAsync();
         ClassGraph first = session.Project.Classes[0];
         var second = new ClassGraph { Name = "Other", Namespace = first.Namespace, Project = session.Project };
         session.Project.Classes.Add(second);
         SetBuildDiagnostics(session, Diagnostic(first, "CS0001"), Diagnostic(second, "CS0002"), Diagnostic(second, "CS0003"));
-        Assert.Null(rig.Errors.Current);
+
+        Assert.Equal(["CS0001", "CS0002", "CS0003"], rig.Errors.Current?.Rows.Select(row => row.Id));
+        Assert.Equal([first.FullName, second.FullName, second.FullName], rig.Errors.Current?.Rows.Select(row => row.ClassFullName));
 
         Activate(rig.Shell, ClassDocument(session, first));
-        Assert.Equal(["CS0001"], rig.Errors.Current?.Rows.Select(row => row.Id));
+        Assert.Equal(3, rig.Errors.Current?.Rows.Count);
 
-        Activate(rig.Shell, ClassDocument(session, second));
-        Assert.Equal(["CS0002", "CS0003"], rig.Errors.Current?.Rows.Select(row => row.Id));
-
-        rig.Shell.ActiveDocument = null;
-        Assert.Null(rig.Errors.Current);
-        rig.Shell.ActiveDocument = rig.Shell.FindDocument(ClassDocument(session, first));
         rig.Shell.Session = null;
         Assert.Null(rig.Errors.Current);
+    }
+
+    [Fact]
+    public async Task AnErrorInAClassWithNoOpenTabIsListedAndActivatingItOpensThatClassesTab()
+    {
+        ProjectSessionViewModel session = await rig.OpenSessionAsync();
+        ClassGraph first = session.Project.Classes[0];
+        var second = new ClassGraph { Name = "Other", Namespace = first.Namespace, Project = session.Project };
+        session.Project.Classes.Add(second);
+        Activate(rig.Shell, ClassDocument(session, first));
+        SetBuildDiagnostics(session, Diagnostic(second, "CS0002", GraphKeys.For(second)));
+        ErrorListViewModel list = rig.Errors.Current ?? throw new InvalidOperationException("No error list.");
+
+        list.NavigateCommand.Execute(list.Rows.Single());
+
+        Assert.Contains($"OpenDocument:{ClassDocument(session, second)}", rig.Api.Calls);
     }
 
     [Fact]

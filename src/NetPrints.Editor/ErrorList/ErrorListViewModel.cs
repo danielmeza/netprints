@@ -10,7 +10,7 @@ using NetPrints.Editor.Diagnostics;
 namespace NetPrints.Editor.ErrorList;
 
 /// <summary>
-/// The class editor's Errors tab (FR-032, FR-034; editor-services.md §2): every diagnostic that
+/// The class editor's Errors tab, or with a project the Errors panel (FR-032, FR-034; editor-services.md §2): every diagnostic that
 /// belongs to the open class, from the live analysis (<see cref="ICodeAnalysisHost.Snapshots"/>) and
 /// the project's last build (<see cref="Project.LastDiagnostics"/>) combined. Double-clicking a
 /// navigable row sends a <see cref="NavigateToNodeMessage"/> through the class editor's messenger
@@ -19,7 +19,8 @@ namespace NetPrints.Editor.ErrorList;
 /// </summary>
 public sealed partial class ErrorListViewModel : ObservableObject, IDisposable
 {
-    private readonly ClassGraph cls;
+    private readonly ClassGraph? cls;
+    private readonly Project? wholeProject;
     private readonly IMessenger messenger;
     private readonly IDisposable subscription;
     private IReadOnlyList<CodeDiagnostic> liveDiagnostics = [];
@@ -33,12 +34,31 @@ public sealed partial class ErrorListViewModel : ObservableObject, IDisposable
     /// <param name="codeAnalysis">Live analysis host to follow.</param>
     /// <param name="messenger">Messenger to send <see cref="NavigateToNodeMessage"/> through.</param>
     public ErrorListViewModel(ClassGraph cls, ICodeAnalysisHost codeAnalysis, IMessenger messenger)
+        : this(cls, null, codeAnalysis, messenger)
     {
         ArgumentNullException.ThrowIfNull(cls);
+    }
+
+    /// <summary>
+    /// Creates an error list of every class of <paramref name="project"/>: its rows carry their class, and
+    /// navigating sends <see cref="NavigateToNodeMessage.ClassFullName"/> too.
+    /// </summary>
+    /// <param name="project">Project to show the diagnostics of.</param>
+    /// <param name="codeAnalysis">Live analysis host to follow.</param>
+    /// <param name="messenger">Messenger to send <see cref="NavigateToNodeMessage"/> through.</param>
+    public ErrorListViewModel(Project project, ICodeAnalysisHost codeAnalysis, IMessenger messenger)
+        : this(null, project, codeAnalysis, messenger)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+    }
+
+    private ErrorListViewModel(ClassGraph? cls, Project? wholeProject, ICodeAnalysisHost codeAnalysis, IMessenger messenger)
+    {
         ArgumentNullException.ThrowIfNull(codeAnalysis);
         ArgumentNullException.ThrowIfNull(messenger);
 
         this.cls = cls;
+        this.wholeProject = wholeProject;
         this.messenger = messenger;
 
         EnsureProjectSubscription();
@@ -84,12 +104,12 @@ public sealed partial class ErrorListViewModel : ObservableObject, IDisposable
             return;
         }
 
-        messenger.Send(new NavigateToNodeMessage(graphKey, row.Diagnostic.NodeId));
+        messenger.Send(new NavigateToNodeMessage(graphKey, row.Diagnostic.NodeId, wholeProject is null ? null : row.Diagnostic.ClassFullName));
     }
 
     private void OnSnapshot(CodeAnalysisSnapshot snapshot)
     {
-        liveDiagnostics = [.. snapshot.Diagnostics.Where(d => string.Equals(d.ClassFullName, cls.FullName, StringComparison.Ordinal))];
+        liveDiagnostics = [.. snapshot.Diagnostics.Where(Belongs)];
         Refresh();
     }
 
@@ -103,14 +123,15 @@ public sealed partial class ErrorListViewModel : ObservableObject, IDisposable
 
     private void EnsureProjectSubscription()
     {
-        if (cls.Project != currentProject)
+        Project? project = cls is null ? wholeProject : cls.Project;
+        if (project != currentProject)
         {
             if (currentProject is not null)
             {
                 currentProject.PropertyChanged -= OnProjectPropertyChanged;
             }
 
-            currentProject = cls.Project;
+            currentProject = project;
             if (currentProject is not null)
             {
                 currentProject.PropertyChanged += OnProjectPropertyChanged;
@@ -118,12 +139,16 @@ public sealed partial class ErrorListViewModel : ObservableObject, IDisposable
         }
     }
 
+    private bool Belongs(CodeDiagnostic diagnostic) => cls is null || string.Equals(diagnostic.ClassFullName, cls.FullName, StringComparison.Ordinal);
+
+    private ClassGraph? OwnerOf(CodeDiagnostic diagnostic) =>
+        cls ?? wholeProject?.Classes.FirstOrDefault(candidate => string.Equals(candidate.FullName, diagnostic.ClassFullName, StringComparison.Ordinal));
+
     private void Refresh()
     {
         EnsureProjectSubscription();
-        IEnumerable<CodeDiagnostic> build = cls.Project?.LastDiagnostics
-            .Where(d => string.Equals(d.ClassFullName, cls.FullName, StringComparison.Ordinal)) ?? [];
-        Rows.ReplaceRange(liveDiagnostics.Concat(build).Select(d => new DiagnosticRowViewModel(d, cls)));
+        IEnumerable<CodeDiagnostic> build = currentProject?.LastDiagnostics.Where(Belongs) ?? [];
+        Rows.ReplaceRange(liveDiagnostics.Concat(build).Select(d => new DiagnosticRowViewModel(d, OwnerOf(d))));
         OnPropertyChanged(nameof(ErrorCount));
         OnPropertyChanged(nameof(WarningCount));
         OnPropertyChanged(nameof(InfoCount));
