@@ -3,6 +3,7 @@ using System.Text;
 using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Editor.Hosting;
+using NetPrints.Editor.Hosting.Avalonia;
 using NetPrints.Editor.References;
 using NetPrints.Projects;
 using NetPrints.Testing;
@@ -64,14 +65,30 @@ public sealed class RecordingDialogs : IEditorDialogs
 }
 
 /// <summary>
-/// Starts processes for real with their output captured (the headless stand-in for the editor's
-/// terminal), and records what was started.
+/// Starts processes for real through the editor's own <see cref="ProcessLauncher"/> (its exit follows the drain of the output),
+/// with their output captured (the headless stand-in for the editor's terminal), and records what was started.
 /// </summary>
 public sealed class CapturingProcessLauncher : IProcessLauncher, IDisposable
 {
     private readonly StringBuilder output = new();
-    private readonly List<Process> processes = [];
-    private int lastId;
+    private readonly ProcessLauncher launcher = new();
+    private readonly List<CancellationTokenSource> runs = [];
+
+    public CapturingProcessLauncher()
+    {
+        launcher.OutputReceived += line =>
+        {
+            lock (output)
+            {
+                output.AppendLine(line);
+            }
+
+            OutputReceived?.Invoke(line);
+        };
+        launcher.ProcessStarted += (id, request) => ProcessStarted?.Invoke(id, request);
+        launcher.LineReceived += (id, stream, line) => LineReceived?.Invoke(id, stream, line);
+        launcher.ProcessExited += (id, code) => ProcessExited?.Invoke(id, code);
+    }
 
     public List<ProcessStartRequest> Started { get; } = [];
 
@@ -97,87 +114,17 @@ public sealed class CapturingProcessLauncher : IProcessLauncher, IDisposable
     public void Start(ProcessStartRequest request, CancellationToken cancellationToken = default)
     {
         Started.Add(request);
-        int id = Interlocked.Increment(ref lastId);
-        var startInfo = new ProcessStartInfo(request.FileName)
-        {
-            WorkingDirectory = request.WorkingDirectory,
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-        };
-
-        foreach (string argument in request.Arguments)
-        {
-            startInfo.ArgumentList.Add(argument);
-        }
-
-        if (request.EnvironmentVariables is not null)
-        {
-            foreach ((string key, string value) in request.EnvironmentVariables)
-            {
-                startInfo.Environment[key] = value;
-            }
-        }
-
-        var process = new Process { StartInfo = startInfo };
-        process.OutputDataReceived += (_, e) => Append(id, ProcessStream.Output, e.Data);
-        process.ErrorDataReceived += (_, e) => Append(id, ProcessStream.Error, e.Data);
-        process.Exited += (_, _) =>
-        {
-            process.WaitForExit(TimeSpan.FromSeconds(5));
-            ProcessExited?.Invoke(id, process.ExitCode);
-            OutputReceived?.Invoke($"Process exited (code {process.ExitCode}).");
-        };
-        process.Start();
-        ProcessStarted?.Invoke(id, request);
-        process.BeginOutputReadLine();
-        process.BeginErrorReadLine();
-        process.EnableRaisingEvents = true;
-        processes.Add(process);
-        cancellationToken.Register(() =>
-        {
-            try
-            {
-                process.Kill(entireProcessTree: true);
-            }
-            catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException)
-            {
-                // already exited
-            }
-        });
-    }
-
-    private void Append(int id, ProcessStream stream, string? line)
-    {
-        if (line is not null)
-        {
-            LineReceived?.Invoke(id, stream, line);
-            lock (output)
-            {
-                output.AppendLine(line);
-            }
-
-            OutputReceived?.Invoke(line);
-        }
+        var run = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken); // cancelled on dispose, which kills the program
+        runs.Add(run);
+        launcher.Start(request, run.Token);
     }
 
     public void Dispose()
     {
-        foreach (var process in processes)
+        foreach (var run in runs)
         {
-            try
-            {
-                if (!process.HasExited)
-                {
-                    process.Kill(entireProcessTree: true);
-                }
-            }
-            catch (InvalidOperationException)
-            {
-                // Already gone.
-            }
-
-            process.Dispose();
+            run.Cancel();
+            run.Dispose();
         }
     }
 }

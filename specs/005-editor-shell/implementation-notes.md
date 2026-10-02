@@ -970,3 +970,26 @@ Headless UI (`NetPrints.Editor.UITests`):
 ### Totals (C5c2b)
 
 Solution suite (Release) 2225 tests, 2212 passed, 13 skipped (usual), 0 failed, including the 189 headless UI tests (188 passed, 1 skipped); Desktop E2E (Release, `NETPRINTS_E2E=1 --fail-skips on`) 33 of 33; `dotnet format --verify-no-changes` clean; Release build 0 warnings.
+
+## Batch C5e (issue #11: the 90 s hang of `EditCompileAndRun` and `ShellMainFlow`)
+
+### Evidence
+
+- CI run 36999671521, job `Test (Editor UI (headless))`: the trx of attempt 1 has `HeadlessSmokeTests.EditCompileAndRun` failing with "Test execution timed out after 90000 milliseconds" (the `AvaloniaFact` timeout, not a `UiWaitTimeoutException`), so no diagnostics were saved. The hang is in the step "run": `WaitForOutputContainingAsync("Hello, World!")` (budget 120 s, longer than the 90 s test timeout).
+- Locally, standalone, headless: `ShellMainFlow` hung 4 of 18, 1 of 8, 1 of 3 runs (about 1 in 8); `EditCompileAndRun` 0 of 30 (it shares the cause but the window is narrower). Temporary traces (removed) showed the hanging runs: `RunStateTracker.OnStarted`, then `OnExited` (phase Running), then `OnLine "Hello, World!"` with phase Exited, dropped by the tracker. The Output panel then holds only the build lines and the Run command is enabled again.
+
+### Root cause (test harness, not the product)
+
+`CapturingProcessLauncher` (the headless stand-in for `ProcessLauncher`) reported the exit from `Process.Exited` after `WaitForExit(TimeSpan)`, which does not wait for the redirected output to drain. A fast program such as Hello World could therefore report its exit before the reader thread delivered its line; `RunStateTracker` ignores lines once the run is `Exited`, so the line was lost and the flow waited for it until the test timeout. The product `ProcessLauncher` waits with `WaitForExitAsync`, which drains the streams, so the editor and the Desktop E2E were not affected.
+
+### Fix
+
+`CapturingProcessLauncher` now wraps the editor's own `ProcessLauncher` (recording what was started and the captured output, killing the programs when disposed) instead of keeping a second copy of the start and exit logic.
+
+### Deterministic test
+
+`CapturingProcessLauncherTests.TheExitIsNotReportedWhileTheFirstLineIsStillBeingDelivered`: the line handler holds the reader until the exit is reported (bounded wait of 1 s, only used up on the passing path); the test asserts the exit was not reported before the handler returned. Red before the fix (3 of 3 runs: "the exit was reported before the output was delivered"), green after.
+
+### 50-run result
+
+Standalone, headless, after the fix: `EditCompileAndRun` 50 of 50 passed, `ShellMainFlow` 50 of 50 passed, 0 hangs.
