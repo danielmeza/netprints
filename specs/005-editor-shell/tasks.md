@@ -318,14 +318,14 @@ US2's independent test; SC-001.
 
 ### Batch C2 — model: sonnet — T033–T035 — 6 units
 
-- [ ] T033 [US2] Shell adapter (2 units). Test first: `tests/NetPrints.Editor.UITests/Shell/ShellAdapterTests.cs`, through
+- [x] T033 [US2] Shell adapter (2 units). Test first: `tests/NetPrints.Editor.UITests/Shell/ShellAdapterTests.cs`, through
   `IShell` only. Opening a document twice activates its one tab; activate; close; show and hide a panel; float and
   dock a document; reset to the default layout of contracts/shell.md §1 (tree left 20%, inspector right 22%, bottom
   25% with Errors active, every panel visible); a floated pane closed with the OS close button docks back to its
   default place, and a floated graph tab closes as a tab does. Then `src/NetPrints.Editor/Shell/Docking/DockShellAdapter.cs`
   and `ShellDockFactory.cs`; views resolve by `DataTemplate x:DataType` (ADR-0007 D6), never by Dock's locator. Fold the
   reusable spike tests in here and delete the spike code (window, `NETPRINTS_DOCK_SPIKE`, `DockSpikeTests`).
-- [ ] T034 [US2] Shell view models (2 units). Test first: `tests/NetPrints.Editor.Tests/Shell/ShellViewModelTests.cs` and
+- [x] T034 [US2] Shell view models (2 units). Test first: `tests/NetPrints.Editor.Tests/Shell/ShellViewModelTests.cs` and
   `TitleFormatterTests.cs` (contracts/shell.md §4). `ShellViewModel` (session, documents, active document, panels from
   the registry, status message, title), `DocumentViewModel`, `GraphDocumentViewModel` (wraps `NodeGraphViewModel`; adds
   the viewport location and zoom), `PanelViewModel`, `StatusBarViewModel` (a message with expiry through
@@ -333,7 +333,7 @@ US2's independent test; SC-001.
   (`netprints.panel.projectTree`, `inspector`, `errors`, `output`, `csharp`) are registered through the registry.
   Opening or activating a graph document puts focus in its canvas (Review B R5; `GraphEditorView` already does so when
   its graph changes through `FocusOnDataContextBehavior`; a tab switch that keeps the view needs the same).
-- [ ] T035 [US2] `src/NetPrints.Editor/Shell/ShellWindow.axaml` with the menu bar, the command bar and the status bar
+- [x] T035 [US2] `src/NetPrints.Editor/Shell/ShellWindow.axaml` with the menu bar, the command bar and the status bar
   generated from the registry (2 units). Test first: `tests/NetPrints.Editor.UITests/Shell/RegistrySurfaceTests.cs`
   (contracts/contributions.md §3–§4, commands.md §1). Menus come in the order File, Edit, View, Go, Build, Help, with
   dividers between groups and items in order, showing shortcut text, disabled state and the dynamic `Undo <action>`
