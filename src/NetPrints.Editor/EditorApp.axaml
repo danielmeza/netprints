@@ -3,6 +3,7 @@
              xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
              xmlns:ed="clr-namespace:NetPrints.Editor"
              xmlns:docking="clr-namespace:NetPrints.Editor.Shell.Docking"
+             xmlns:edbehaviors="clr-namespace:NetPrints.Editor.Behaviors"
              xmlns:edgraph="clr-namespace:NetPrints.Editor.Graph"
              xmlns:shell="clr-namespace:NetPrints.Editor.Shell"
              xmlns:edinspectors="clr-namespace:NetPrints.Editor.Inspectors"
@@ -34,7 +35,12 @@
       </ContentControl>
     </DataTemplate>
     <DataTemplate DataType="shell:GraphDocumentViewModel" x:DataType="shell:GraphDocumentViewModel">
-      <edgraph:GraphEditorView DataContext="{Binding Graph}" />
+      <Panel>
+        <Interaction.Behaviors>
+          <edbehaviors:ScopedCommandKeysBehavior Scope="Graph" Invoker="{Binding Invoker}" />
+        </Interaction.Behaviors>
+        <edgraph:GraphEditorView DataContext="{Binding Graph}" />
+      </Panel>
     </DataTemplate>
     <DataTemplate DataType="shell:ProjectSettingsDocumentViewModel" x:DataType="shell:ProjectSettingsDocumentViewModel">
       <shell:ProjectSettingsView />

@@ -60,6 +60,9 @@ public sealed partial class MainEditorViewModel : ObservableObject, IDisposable,
     /// <summary>Host services shared across the editor.</summary>
     public EditorContext Context => context;
 
+    /// <summary>Opens a class (and reveals a node of it) in the shell instead of a class editor window; set by the shell composition.</summary>
+    internal Action<ClassGraph, string?>? ShellNavigator { get; set; }
+
     /// <summary>The open project, or null.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsProjectOpen), nameof(CanCompile), nameof(CanCompileAndRun), nameof(Title), nameof(Classes))]
@@ -591,7 +594,18 @@ public sealed partial class MainEditorViewModel : ObservableObject, IDisposable,
     [RelayCommand]
     private void OpenClass(ClassGraph? cls)
     {
-        if (cls is null || context.Windows.TryActivateClassEditor(cls))
+        if (cls is null)
+        {
+            return;
+        }
+
+        if (ShellNavigator is { } navigate)
+        {
+            navigate(cls, null);
+            return;
+        }
+
+        if (context.Windows.TryActivateClassEditor(cls))
         {
             return;
         }
@@ -662,6 +676,12 @@ public sealed partial class MainEditorViewModel : ObservableObject, IDisposable,
         if (cls is null)
         {
             return false;
+        }
+
+        if (ShellNavigator is { } navigate)
+        {
+            navigate(cls, nodeId);
+            return true;
         }
 
         OpenClass(cls);

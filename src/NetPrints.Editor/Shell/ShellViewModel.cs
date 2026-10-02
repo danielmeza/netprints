@@ -88,6 +88,10 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
     [ObservableProperty]
     public partial CommandBarViewModel? CommandBar { get; private set; }
 
+    /// <summary>Gets the invoker the key bindings and menus run commands through, or null until <see cref="AttachCommands"/> ran.</summary>
+    [ObservableProperty]
+    public partial CommandInvoker? Commands { get; private set; }
+
     /// <summary>Gets the number of errors the open project's last compile found.</summary>
     public int CompileErrorCount => Session?.Project.LastDiagnostics.Count(diagnostic => diagnostic.Severity == CodeDiagnosticSeverity.Error) ?? 0;
 
@@ -96,6 +100,7 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
     public void AttachCommands(CommandInvoker invoker)
     {
         ArgumentNullException.ThrowIfNull(invoker);
+        Commands = invoker;
         MenuBar?.Dispose();
         CommandBar?.Dispose();
         MenuBar = new MenuBarViewModel(registry, invoker);

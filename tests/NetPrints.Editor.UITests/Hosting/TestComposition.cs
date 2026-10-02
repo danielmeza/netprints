@@ -1,6 +1,8 @@
+using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Hosting.Avalonia;
 using NetPrints.Editor.Main;
+using NetPrints.Editor.Shell;
 
 namespace NetPrints.Editor.UITests.Hosting;
 
@@ -47,6 +49,21 @@ public sealed class TestComposition : IDisposable
 
     /// <summary>Creates the main window and its view model.</summary>
     public MainWindow CreateMainWindow() => services.CreateMainWindow();
+
+    /// <summary>Creates the shell window, as <see cref="EditorComposition.CreateShellWindow"/> does.</summary>
+    public ShellWindow CreateShellWindow() => services.CreateShellWindow();
+
+    /// <summary>The frozen registry the shell was generated from, or <see langword="null"/> before <see cref="CreateShellWindow"/> is called.</summary>
+    public IContributionRegistry? Registry => services.Registry;
+
+    /// <summary>The composed shell state, or <see langword="null"/> before <see cref="CreateShellWindow"/> is called.</summary>
+    public ShellViewModel? Shell => services.Shell;
+
+    /// <summary>The shell API over the docking layout, or <see langword="null"/> before <see cref="CreateShellWindow"/> is called.</summary>
+    public IShell? ShellApi => services.ShellApi;
+
+    /// <summary>The invoker of the registered commands, or <see langword="null"/> before <see cref="CreateShellWindow"/> is called.</summary>
+    public CommandInvoker? Commands => services.Commands;
 
     /// <summary>
     /// Stops rebinding persistence to the extension host's registry, disposes

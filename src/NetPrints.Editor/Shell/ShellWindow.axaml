@@ -2,11 +2,15 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
         xmlns:ed="clr-namespace:NetPrints.Editor"
+        xmlns:edbehaviors="clr-namespace:NetPrints.Editor.Behaviors"
         xmlns:docking="clr-namespace:NetPrints.Editor.Shell.Docking"
         xmlns:shell="clr-namespace:NetPrints.Editor.Shell"
         x:Class="NetPrints.Editor.Shell.ShellWindow"
         x:DataType="shell:ShellViewModel"
         Title="{Binding Title}" Width="1280" Height="800">
+  <Interaction.Behaviors>
+    <edbehaviors:CommandKeyBindingsBehavior Invoker="{Binding Commands}" />
+  </Interaction.Behaviors>
   <DockPanel>
     <!-- Menus come from the registry: a top-level item per menu, its groups separated by dividers (a divider is an entry that is not focusable). -->
     <Menu DockPanel.Dock="Top" ItemsSource="{Binding MenuBar.Menus}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShellMenuBar}">

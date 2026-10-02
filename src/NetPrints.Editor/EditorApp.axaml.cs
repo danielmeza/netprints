@@ -59,7 +59,7 @@ public partial class EditorApp : Application
         });
 
     /// <summary>
-    /// On a classic desktop lifetime: composes the editor's services, creates and shows the main
+    /// On a classic desktop lifetime: composes the editor's services, creates and shows the shell
     /// window, installs the unhandled-exception handler, and, when <c>NETPRINTS_AUTOMATION=1</c>,
     /// starts the automation agent (disabling UI transitions first, for settled screenshots) and
     /// exits loudly if it fails to start. Opens the project named on the command line, if any.
@@ -71,7 +71,7 @@ public partial class EditorApp : Application
             var composition = new EditorComposition(HostServices);
             var exceptionHandler = composition.InstallUnhandledExceptionHandler();
             desktop.Exit += (_, _) => exceptionHandler.Dispose();
-            var window = composition.CreateMainWindow();
+            var window = composition.CreateShellWindow();
             desktop.MainWindow = window;
             desktop.ShutdownMode = ShutdownMode.OnMainWindowClose;
 

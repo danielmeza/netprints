@@ -3,9 +3,11 @@ using System.Reflection;
 using Avalonia.Controls;
 using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Logging;
+using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Diagnostics;
 using NetPrints.Editor.Hosting.Avalonia;
 using NetPrints.Editor.Main;
+using NetPrints.Editor.Shell;
 using NetPrints.Projects;
 using NetPrints.Serialization;
 using NetPrints.Serialization.Mapping;
@@ -58,6 +60,18 @@ public sealed class EditorComposition : IDisposable
     /// <summary>Creates the main window and its view model.</summary>
     public MainWindow CreateMainWindow() => services.CreateMainWindow();
 
+    /// <summary>The composed shell state, or <see langword="null"/> before <see cref="CreateShellWindow"/> is called.</summary>
+    public ShellViewModel? Shell => services.Shell;
+
+    /// <summary>The shell API over the docking layout, or <see langword="null"/> before <see cref="CreateShellWindow"/> is called.</summary>
+    public IShell? ShellApi => services.ShellApi;
+
+    /// <summary>The invoker of the registered commands, or <see langword="null"/> before <see cref="CreateShellWindow"/> is called.</summary>
+    public CommandInvoker? Commands => services.Commands;
+
+    /// <summary>Creates the shell window over a project service (no legacy window opens).</summary>
+    public ShellWindow CreateShellWindow() => services.CreateShellWindow();
+
     /// <summary>
     /// Stops rebinding persistence to the extension host's registry (see
     /// <see cref="PersistenceBinding.Bind"/>), disposes <see cref="MainEditor"/>, if created, and the
@@ -89,6 +103,7 @@ internal sealed class EditorServices : IDisposable
     private readonly PersistenceBinding persistenceBinding;
     private readonly ICodeAnalysisHost codeAnalysis;
     private readonly RunStateTracker runState;
+    private ShellHost? shellHost;
 
     /// <param name="host">Process-wide services created once by the host (desktop, headless tests).</param>
     /// <param name="windows">The window service, already constructed by the caller so it can hand the same
@@ -172,6 +187,32 @@ internal sealed class EditorServices : IDisposable
         await mainEditor.OpenStartupProjectAsync(args);
     }
 
+    /// <summary>The frozen registry the shell was generated from, or <see langword="null"/> before <see cref="CreateShellWindow"/> is called.</summary>
+    public IContributionRegistry? Registry => shellHost?.Registry;
+
+    /// <summary>The composed shell state, or <see langword="null"/> before <see cref="CreateShellWindow"/> is called.</summary>
+    public ShellViewModel? Shell => shellHost?.Shell;
+
+    /// <summary>The shell API over the docking layout, or <see langword="null"/> before <see cref="CreateShellWindow"/> is called.</summary>
+    public IShell? ShellApi => shellHost?.Adapter;
+
+    /// <summary>The invoker of the registered commands, or <see langword="null"/> before <see cref="CreateShellWindow"/> is called.</summary>
+    public CommandInvoker? Commands => shellHost?.Invoker;
+
+    /// <summary>
+    /// Creates the shell window: the registry, <see cref="ShellViewModel"/>, the docking adapter and the project service
+    /// that opens, creates and closes projects without a window of its own (<see cref="MainEditor"/>).
+    /// </summary>
+    public ShellWindow CreateShellWindow()
+    {
+        shellHost?.Dispose();
+        MainEditor?.Dispose();
+        MainEditor = new MainEditorViewModel(Context);
+        shellHost = ShellHost.Create(Context, MainEditor);
+        Windows.MainWindow = shellHost.Window;
+        return shellHost.Window;
+    }
+
     /// <summary>Creates the main window and its view model.</summary>
     public MainWindow CreateMainWindow()
     {
@@ -189,6 +230,7 @@ internal sealed class EditorServices : IDisposable
     /// </summary>
     public void Dispose()
     {
+        shellHost?.Dispose();
         MainEditor?.Dispose();
         persistenceBinding.Dispose();
         codeAnalysis.Dispose();

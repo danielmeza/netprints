@@ -34,6 +34,10 @@ public sealed partial class GraphDocumentViewModel : DocumentViewModel
     /// <summary>Gets the wrapped graph editor view model.</summary>
     public NodeGraphViewModel Graph { get; }
 
+    /// <summary>Gets or sets the invoker the canvas runs the graph-scope key bindings through, or null.</summary>
+    [ObservableProperty]
+    public partial CommandInvoker? Invoker { get; set; }
+
     /// <summary>Gets or sets the canvas location in graph units.</summary>
     [ObservableProperty]
     public partial GraphPoint ViewportLocation { get; set; }

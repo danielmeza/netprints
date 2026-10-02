@@ -106,7 +106,11 @@ public sealed partial class InspectorPanelViewModel : ObservableObject, IShellPa
         _ => null,
     };
 
-    private ClassEditorViewModel EditorFor(ClassGraph cls)
+    /// <summary>Gets the editor of a class, creating it on first use; graph documents of the class are built on its services, so they share the undo stack the Undo command reads.</summary>
+    /// <param name="cls">A class of the open project.</param>
+    /// <returns>The class's one editor.</returns>
+    /// <exception cref="InvalidOperationException">The panel is not attached to a shell.</exception>
+    public ClassEditorViewModel EditorFor(ClassGraph cls)
     {
         if (!editors.ContainsKey(cls))
         {
