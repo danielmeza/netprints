@@ -23,7 +23,16 @@ public sealed class MenuBar(IUiDriver driver, AutomationQuery window)
         return item;
     }
 
-    /// <summary>Opens <paramref name="menu"/> and clicks the item of <paramref name="commandId"/>.</summary>
-    public async Task InvokeAsync(string menu, string commandId, CancellationToken cancellationToken) =>
-        await (await OpenAsync(menu, commandId, cancellationToken)).ClickAsync(cancellationToken);
+    /// <summary>
+    /// Opens <paramref name="menu"/> and clicks the item of <paramref name="commandId"/>, approaching it from the header's own
+    /// column so a real pointer never crosses the neighbouring headers (which would open their menus).
+    /// </summary>
+    public async Task InvokeAsync(string menu, string commandId, CancellationToken cancellationToken)
+    {
+        var item = await OpenAsync(menu, commandId, cancellationToken);
+        var header = (await Menu(menu).GetAsync(cancellationToken)).ScreenBounds;
+        var bounds = (await item.GetAsync(cancellationToken)).ScreenBounds;
+        double column = Math.Clamp((header.X + header.Width / 2 - bounds.X) / bounds.Width, 0.02, 0.98);
+        await Driver.ClickAsync(await item.PointAsync(column, 0.5, cancellationToken), UiButton.Left, 1, cancellationToken);
+    }
 }

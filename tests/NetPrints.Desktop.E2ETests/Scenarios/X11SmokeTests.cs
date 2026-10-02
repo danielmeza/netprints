@@ -176,28 +176,27 @@ public abstract class X11SmokeTestBase(DesktopWorkerPool pool) : SmokeScenarios,
     }
 }
 
-// The shared flows now drive the shell; T043 removes Explicit after its E2E run.
 public sealed class EditCompileAndRunTests(DesktopWorkerPool pool) : X11SmokeTestBase(pool)
 {
-    [Fact(Explicit = true)]
+    [Fact]
     public Task EditCompileAndRun() => RunScenarioAsync(EditCompileAndRunAsync);
 }
 
 public sealed class CreateProjectTests(DesktopWorkerPool pool) : X11SmokeTestBase(pool)
 {
-    [Fact(Explicit = true)]
+    [Fact]
     public Task CreateProject() => RunScenarioAsync(CreateProjectAsync);
 }
 
 public sealed class AddReferencesTests(DesktopWorkerPool pool) : X11SmokeTestBase(pool)
 {
-    [Fact(Explicit = true)]
+    [Fact]
     public Task AddReferences() => RunScenarioAsync(token => AddReferencesAsync(typeof(object).Assembly.Location, token));
 }
 
 public sealed class PanCursorTests(DesktopWorkerPool pool) : X11SmokeTestBase(pool)
 {
-    [Fact(Explicit = true)]
+    [Fact]
     public Task PanCursor() => RunScenarioAsync(PanCursorAsync);
 }
 
@@ -205,4 +204,22 @@ public sealed class DragFromTreeTests(DesktopWorkerPool pool) : X11SmokeTestBase
 {
     [Fact]
     public Task DragFromTree() => RunScenarioAsync(DragFromTreeAsync);
+}
+
+public sealed class ShellMainFlowTests(DesktopWorkerPool pool) : X11SmokeTestBase(pool)
+{
+    [Fact]
+    public Task ShellMainFlow() => RunScenarioAsync(ShellMainFlowAsync);
+}
+
+public sealed class FloatAndRedockGraphTests(DesktopWorkerPool pool) : X11SmokeTestBase(pool)
+{
+    [Fact]
+    public Task FloatAndRedockGraph() => RunScenarioAsync(FloatAndRedockGraphAsync);
+}
+
+public sealed class ResetLayoutTests(DesktopWorkerPool pool) : X11SmokeTestBase(pool)
+{
+    [Fact]
+    public Task ResetLayout() => RunScenarioAsync(ResetLayoutAsync);
 }

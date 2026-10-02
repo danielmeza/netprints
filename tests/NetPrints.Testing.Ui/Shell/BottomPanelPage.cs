@@ -18,6 +18,9 @@ public sealed class BottomPanelPage(IUiDriver driver, AutomationQuery window) : 
 
     public UiElement ErrorsList => Panel(PanelContributions.ErrorsId).Find(AutomationIds.ErrorsList);
 
+    /// <summary>A row of the Errors panel (one per diagnostic, errors first); <paramref name="index"/> counts from the top.</summary>
+    public UiElement ErrorRow(int index = 0) => ErrorsList.Find(AutomationIds.ErrorsRow, index: index);
+
     public UiElement ErrorsEmpty => Panel(PanelContributions.ErrorsId).Find(AutomationIds.ErrorsEmpty);
 
     public UiElement OutputList => Panel(PanelContributions.OutputId).Find(AutomationIds.OutputLines);
@@ -47,11 +50,16 @@ public sealed class BottomPanelPage(IUiDriver driver, AutomationQuery window) : 
     public async Task<string?> BuildResultAsync(CancellationToken cancellationToken) =>
         (await OutputLinesAsync(cancellationToken)).LastOrDefault(IsBuildResult);
 
-    /// <summary>Waits until the Output panel holds a build result line ("Build succeeded", "Build failed with …") and returns it.</summary>
-    public async Task<string> WaitForBuildResultAsync(CancellationToken cancellationToken)
+    /// <summary>
+    /// Waits until the Output panel holds a build result line ("Build succeeded", "Build failed with …") and returns it. With
+    /// <paramref name="before"/> (the lines read before the build was triggered) the lines must also differ from it, so a result left by
+    /// an earlier build is not taken for the new one.
+    /// </summary>
+    public async Task<string> WaitForBuildResultAsync(CancellationToken cancellationToken, IReadOnlyList<string>? before = null)
     {
         await ShowAsync(PanelContributions.OutputId, cancellationToken);
-        var lines = await UiWait.ForAsync(Driver, () => OutputLinesAsync(cancellationToken), Any(IsBuildResult), "a build result in Output", cancellationToken, BuildBudget);
+        var lines = await UiWait.ForAsync(Driver, () => OutputLinesAsync(cancellationToken),
+            current => current.Any(IsBuildResult) && (before is null || !current.SequenceEqual(before)), "a build result in Output", cancellationToken, BuildBudget);
         return lines.Last(IsBuildResult);
     }
 

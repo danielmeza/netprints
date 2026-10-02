@@ -10,6 +10,8 @@ public sealed class ProjectTreePage(IUiDriver driver, AutomationQuery window)
 {
     private const double HeaderOffset = 60;
     private const double HeaderHeight = 32;
+    private const int OpenAttempts = 3;
+    private static readonly TimeSpan OpenAttemptBudget = TimeSpan.FromSeconds(10);
 
     public const string MethodsGroup = "Methods";
     public const string ConstructorsGroup = "Constructors";
@@ -51,6 +53,27 @@ public sealed class ProjectTreePage(IUiDriver driver, AutomationQuery window)
     /// <summary>Double-clicks a method row, expanding the Methods group first, and opens its graph.</summary>
     public async Task OpenMethodAsync(string name, CancellationToken cancellationToken) =>
         await (await RevealAsync(Method(name), MethodsGroup, cancellationToken)).DoubleClickAsync(cancellationToken);
+
+    /// <summary>
+    /// Double-clicks a row until <paramref name="isOpen"/> holds. A double click on a row that was just realized or selected can reach the tree
+    /// as two single clicks, so each of the few attempts waits a bounded time and clicking a row again only activates what is already open.
+    /// </summary>
+    public async Task OpenAsync(UiElement row, Func<Task<bool>> isOpen, string what, CancellationToken cancellationToken)
+    {
+        for (int attempt = 1; ; attempt++)
+        {
+            await row.DoubleClickAsync(cancellationToken);
+            try
+            {
+                await UiWait.UntilAsync(Driver, isOpen, what, cancellationToken, OpenAttemptBudget);
+                return;
+            }
+            catch (UiWaitTimeoutException) when (attempt < OpenAttempts)
+            {
+                // Click again.
+            }
+        }
+    }
 
     /// <summary>Clicks a row's header; the bounds of an expanded row include its children, so its center is not its header.</summary>
     public async Task SelectAsync(UiElement row, CancellationToken cancellationToken) =>

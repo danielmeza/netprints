@@ -171,6 +171,19 @@ public sealed class X11Driver(XServer server, EditorProcess editor, Tool tool) :
         await SettleAsync(cancellationToken);
     }
 
+    public async Task MoveWindowAsync(string window, double x, double y, CancellationToken cancellationToken)
+    {
+        await tool.XdotoolAsync(cancellationToken, "windowmove", "--sync", X11WindowOf(window), I(x), I(y));
+        await SettleAsync(cancellationToken);
+    }
+
+    /// <summary>Activates the window and sends the window manager's close shortcut, so the editor gets the same close request as from the title bar button.</summary>
+    public async Task CloseWindowAsync(string window, CancellationToken cancellationToken)
+    {
+        await tool.XdotoolAsync(cancellationToken, "windowactivate", "--sync", X11WindowOf(window));
+        await PressAsync("Alt+F4", cancellationToken);
+    }
+
     public async Task<bool> IsMinimizedAsync(string window, CancellationToken cancellationToken)
     {
         var (_, state) = await tool.TryRunAsync("xprop", cancellationToken, "-id", X11WindowOf(window), "WM_STATE", "_NET_WM_STATE");

@@ -1,4 +1,5 @@
 using NetPrints.Editor.Hosting.Automation;
+using NetPrints.Editor.Shell;
 using NetPrints.Testing.Ui.Driving;
 using NetPrints.Testing.Ui.Shell;
 
@@ -30,24 +31,27 @@ public sealed class OpenTheMethod(string method) : ITask
     public async Task PerformAsAsync(Actor actor, CancellationToken cancellationToken)
     {
         var shell = actor.Using<UseNetPrints>().Shell;
-        await shell.Tree.OpenMethodAsync(method, cancellationToken);
-        await shell.Graph.WaitForGraphAsync(method, cancellationToken);
+        await shell.OpenMethodAsync(method, cancellationToken);
     }
 }
 
 /// <summary>Adds a node by right-clicking empty canvas and choosing it in the search.</summary>
-public sealed class AddANode(string searchText, string row, double x, double y) : ITask
+public sealed class AddANode(string searchText, string row, double x, double y, DocumentId? document = null) : ITask
 {
     public string Description => $"add a '{row}' node";
 
     /// <summary>A node at (280, 270) on an unpanned canvas: below the sample's nodes (y = 112) and inside the shell's smaller canvas.</summary>
     public static AddANode Named(string row) => new(row, row, 280, 270);
 
-    public AddANode At(double canvasX, double canvasY) => new(searchText, row, canvasX, canvasY);
+    public AddANode At(double canvasX, double canvasY) => new(searchText, row, canvasX, canvasY, document);
+
+    /// <summary>The same node added on the canvas of <paramref name="graph"/>, docked or floated, instead of the selected document.</summary>
+    public AddANode In(DocumentId graph) => new(searchText, row, x, y, graph);
 
     public async Task PerformAsAsync(Actor actor, CancellationToken cancellationToken)
     {
-        var graph = actor.Using<UseNetPrints>().Shell.Graph;
+        var shell = actor.Using<UseNetPrints>().Shell;
+        var graph = document is { } id ? shell.GraphOf(id) : shell.Graph;
         int before = await graph.NodeCountAsync(cancellationToken);
         var search = await (await graph.RightClickAtAsync(x, y, cancellationToken)).WaitOpenAsync(cancellationToken);
         await search.FilterAsync(searchText, row, cancellationToken);
@@ -100,8 +104,9 @@ public sealed class CompileTheProject : ITask
     public async Task PerformAsAsync(Actor actor, CancellationToken cancellationToken)
     {
         var shell = actor.Using<UseNetPrints>().Shell;
+        var before = await shell.Bottom.OutputLinesAsync(cancellationToken);
         await shell.Commands.InvokeAsync(ShellCommands.Compile, cancellationToken);
-        await shell.Bottom.WaitForBuildResultAsync(cancellationToken);
+        await shell.Bottom.WaitForBuildResultAsync(cancellationToken, before);
     }
 }
 

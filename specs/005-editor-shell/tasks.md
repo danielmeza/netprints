@@ -394,7 +394,7 @@ US2's independent test; SC-001.
   tabs by document id and commands by command id, never by Dock's element names. Rewrite the
   `Scenarios/SmokeScenarios.cs` flows (create project, edit-compile-run, add references, pan, drag from lists) against
   them; the headless smoke tests in `NetPrints.Editor.UITests` pass.
-- [ ] T043 [US2] Desktop E2E, one class each (2 units). `ShellMainFlowTests` (SC-001): open a copy of the HelloWorld
+- [x] T043 [US2] Desktop E2E, one class each (2 units). `ShellMainFlowTests` (SC-001): open a copy of the HelloWorld
   sample, open two graphs, compile with an error, activate it, fix it, run, and read `Hello, World!` in Output; the
   automation pipe lists exactly one editor window apart from dialogs. `FloatAndRedockGraphTests` replaces
   `MinimizeAndRestoreClassWindowTests`: float a graph, edit, undo, save, dock it back; a floated pane closed with the

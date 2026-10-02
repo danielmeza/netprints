@@ -17,4 +17,7 @@ public static class ShellCommands
     public const string AddVariable = ContributionIds.CommandPrefix + "addVariable";
     public const string Undo = ContributionIds.CommandPrefix + "undo";
     public const string Redo = ContributionIds.CommandPrefix + "redo";
+    public const string FloatDocument = ContributionIds.CommandPrefix + "floatDocument";
+    public const string DockDocument = ContributionIds.CommandPrefix + "dockDocument";
+    public const string ResetLayout = ContributionIds.CommandPrefix + "resetLayout";
 }

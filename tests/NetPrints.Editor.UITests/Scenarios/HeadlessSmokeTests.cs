@@ -50,6 +50,15 @@ public sealed class HeadlessSmokeTests : SmokeScenarios, IAsyncDisposable
     public Task DragFromTree() => DragFromTreeAsync(Token);
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public Task ShellMainFlow() => ShellMainFlowAsync(Token);
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public Task FloatAndRedockGraph() => FloatAndRedockGraphAsync(Token);
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public Task ResetLayout() => ResetLayoutAsync(Token);
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public Task PanCursor() => PanCursorAsync(Token);
 
     public async ValueTask DisposeAsync()
