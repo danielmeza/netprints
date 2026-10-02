@@ -348,14 +348,14 @@ US2's independent test; SC-001.
 
 ### Batch C3 — model: sonnet — T036–T038 — 5 units
 
-- [ ] T036 [P] [US2] Project tree panel (2 units). Test first:
+- [x] T036 [P] [US2] Project tree panel (2 units). Test first:
   `tests/NetPrints.Editor.Tests/ProjectTree/ProjectTreePanelViewModelTests.cs`. The tree shows project › classes ›
   Methods, Constructors, Variables, Event graphs, and follows adds, removes and renames. Double-click or Enter opens a
   graph through `IShell.OpenDocument`. The selection feeds the inspector. Context menus come from the registry's
   context-menu items (contracts/commands.md §2); an item whose command cannot run for its target is hidden. Then the
   view model and view in `src/NetPrints.Editor/ProjectTree/` (content moved from `ClassEditorWindow`'s lists), with
   automation ids `Tree.<kind>.<name>`, and a headless wiring test.
-- [ ] T037 [P] [US2] Inspector panel. Test first in `tests/NetPrints.Editor.Tests/Inspectors/InspectorPanelViewModelTests.cs`:
+- [x] T037 [P] [US2] Inspector panel. Test first in `tests/NetPrints.Editor.Tests/Inspectors/InspectorPanelViewModelTests.cs`:
   it hosts the existing class, method and variable inspectors for the current selection of the active tree or graph
   (reusing `SelectInspectorMessage`), and shows an empty state when nothing is selected or no project is open. Then
   `src/NetPrints.Editor/Inspectors/InspectorPanelViewModel.cs` and its view.
