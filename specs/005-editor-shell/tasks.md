@@ -359,7 +359,7 @@ US2's independent test; SC-001.
   it hosts the existing class, method and variable inspectors for the current selection of the active tree or graph
   (reusing `SelectInspectorMessage`), and shows an empty state when nothing is selected or no project is open. Then
   `src/NetPrints.Editor/Inspectors/InspectorPanelViewModel.cs` and its view.
-- [ ] T038 [P] [US2] Bottom panels (2 units), test first in `tests/NetPrints.Editor.Tests/Output/` and
+- [x] T038 [P] [US2] Bottom panels (2 units), test first in `tests/NetPrints.Editor.Tests/Output/` and
   `tests/NetPrints.Editor.Tests/ErrorList/`. Errors: the existing `ErrorListViewModel`; activating a row opens its
   graph's tab and selects the node. Output: `src/NetPrints.Editor/Output/OutputPanelViewModel.cs` and its view show
   the build output, then the program's stdout and stderr from `RunStateTracker`, cleared at each compile or run. C#:
