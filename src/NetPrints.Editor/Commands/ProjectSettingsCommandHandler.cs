@@ -3,7 +3,7 @@ using NetPrints.Editor.Shell;
 
 namespace NetPrints.Editor.Commands;
 
-/// <summary>The <c>projectSettings</c> command: shows the project settings.</summary>
+/// <summary>The <c>projectSettings</c> command: opens the Project settings document.</summary>
 public sealed class ProjectSettingsCommandHandler : ICommandHandler
 {
     /// <inheritdoc/>
@@ -12,7 +12,7 @@ public sealed class ProjectSettingsCommandHandler : ICommandHandler
     /// <inheritdoc/>
     public Task ExecuteAsync(CommandContext context, CancellationToken cancellationToken)
     {
-        context.Shell.ProjectActions.ShowProjectSettings();
+        context.Shell.OpenDocument(DocumentId.ProjectSettings);
         return Task.CompletedTask;
     }
 }

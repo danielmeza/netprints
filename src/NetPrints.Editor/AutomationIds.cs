@@ -504,6 +504,11 @@ public static class AutomationIds
     /// </summary>
     public const string ReferenceRemove = "References.Remove";
 
+    /// <summary>
+    /// Automation id for the binary type chooser of the Project settings document.
+    /// </summary>
+    public const string ProjectSettingsBinaryTypeChooser = "ProjectSettings.BinaryTypeChooser";
+
     // Shell (contracts/shell.md section 6)
     /// <summary>
     /// Prefix of the automation id of a tool pane's content: the panel id follows, such as <c>Shell.Panel.netprints.panel.errors</c>.

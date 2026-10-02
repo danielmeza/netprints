@@ -29,7 +29,6 @@ public sealed class ProjectCommandsTests : SessionCommandTests
     public static TheoryData<ICommandHandler, string> NeedsAProject() => new()
     {
         { new CloseProjectCommandHandler(), "CloseProject" },
-        { new ProjectSettingsCommandHandler(), "ShowProjectSettings" },
         { new ReferencesCommandHandler(), "ShowReferences" },
     };
 
@@ -49,6 +48,20 @@ public sealed class ProjectCommandsTests : SessionCommandTests
     {
         Assert.False(handler.CanExecute(Shell.Context()), call);
         Assert.False(handler.CanExecute(Shell.Context(selection: new CommandSelection([], new ClassGraph { Name = "C", Namespace = "N" }))));
+    }
+
+    [Fact]
+    public void ProjectSettingsNeedAProject() => Assert.False(new ProjectSettingsCommandHandler().CanExecute(Shell.Context()));
+
+    [Fact]
+    public async Task ProjectSettingsOpensItsDocumentInTheShell()
+    {
+        (CommandContext context, _) = await OpenContextAsync();
+
+        await new ProjectSettingsCommandHandler().ExecuteAsync(context, Token);
+
+        Assert.Equal([$"OpenDocument:{DocumentId.ProjectSettings}"], Shell.Calls);
+        Assert.Empty(Shell.Project.Calls);
     }
 
     public static TheoryData<ICommandHandler> StartPageHandlers() =>

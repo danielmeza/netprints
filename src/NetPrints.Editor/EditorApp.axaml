@@ -36,6 +36,9 @@
     <DataTemplate DataType="shell:GraphDocumentViewModel" x:DataType="shell:GraphDocumentViewModel">
       <edgraph:GraphEditorView DataContext="{Binding Graph}" />
     </DataTemplate>
+    <DataTemplate DataType="shell:ProjectSettingsDocumentViewModel" x:DataType="shell:ProjectSettingsDocumentViewModel">
+      <shell:ProjectSettingsView />
+    </DataTemplate>
     <DataTemplate DataType="edtree:ProjectTreePanelViewModel" x:DataType="edtree:ProjectTreePanelViewModel">
       <edtree:ProjectTreePanelView />
     </DataTemplate>
