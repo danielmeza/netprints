@@ -375,12 +375,13 @@ US2's independent test; SC-001.
   `dockDocument`; `showPanel.<panel>` (closing a pane hides it, and the View menu shows it again); `resetLayout`. The
   Project settings document (`project-settings`) replaces the launcher's settings pane. A floated graph keeps
   editing, undo and save (US2 scenario 7).
-- [ ] T040 [US2] Composition (2 units): `src/NetPrints.Editor/Hosting/EditorComposition.cs` registers the registry (frozen
+- [x] T040 [US2] Composition (2 units): `src/NetPrints.Editor/Hosting/EditorComposition.cs` registers the registry (frozen
   at startup), `IShell`, `ShellViewModel` and the built-in contributions. `src/NetPrints.Desktop/Program.cs` opens
   `ShellWindow` (a project argument opens the project; without one the document area stays empty until the start page
   lands in T066). `IWindowService.OpenClassEditor` is removed. `ShutdownCoordinator` hooks the shell window's close.
-  The T026 key-binding behaviors move to `ShellWindow`, the canvas and the tree.
-- [ ] T041 [US2] Test first, then make green: `tests/NetPrints.Editor.UITests/Shell/FormerActionsReachableTests.cs`
+  The T026 key-binding behaviors move to `ShellWindow`, the canvas and the tree. (Done in C4b: `IWindowService.OpenClassEditor`
+  stays until T044, which deletes the legacy windows and their tests.)
+- [x] T041 [US2] Test first, then make green: `tests/NetPrints.Editor.UITests/Shell/FormerActionsReachableTests.cs`
   (FR-017, US2 scenario 8). A table of every action the launcher and the class window offered (class settings; add
   and remove methods, constructors, variables and event graphs; references; project settings; create and open
   project; save; compile; run) maps each to a command id, a tree context-menu item or an inspector element, and the

@@ -510,6 +510,9 @@ public static class AutomationIds
     public const string ProjectSettingsBinaryTypeChooser = "ProjectSettings.BinaryTypeChooser";
 
     // Shell (contracts/shell.md section 6)
+    /// <summary>Automation id of the shell window.</summary>
+    public const string ShellWindow = "Shell.Window";
+
     /// <summary>
     /// Prefix of the automation id of a tool pane's content: the panel id follows, such as <c>Shell.Panel.netprints.panel.errors</c>.
     /// </summary>
