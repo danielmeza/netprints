@@ -1,0 +1,93 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+        xmlns:ed="clr-namespace:NetPrints.Editor"
+        xmlns:docking="clr-namespace:NetPrints.Editor.Shell.Docking"
+        xmlns:shell="clr-namespace:NetPrints.Editor.Shell"
+        x:Class="NetPrints.Editor.Shell.ShellWindow"
+        x:DataType="shell:ShellViewModel"
+        Title="{Binding Title}" Width="1280" Height="800">
+  <DockPanel>
+    <!-- Menus come from the registry: a top-level item per menu, its groups separated by dividers (a divider is an entry that is not focusable). -->
+    <Menu DockPanel.Dock="Top" ItemsSource="{Binding MenuBar.Menus}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShellMenuBar}">
+      <Menu.Styles>
+        <Style Selector="Menu > MenuItem" x:DataType="shell:MenuViewModel">
+          <Setter Property="Header" Value="{Binding Header}" />
+          <Setter Property="ItemsSource" Value="{Binding Items}" />
+          <Setter Property="IsEnabled" Value="{Binding HasItems}" />
+          <Setter Property="AutomationProperties.AutomationId" Value="{Binding AutomationId}" />
+          <Setter Property="AutomationProperties.Name" Value="{Binding Header}" />
+        </Style>
+        <Style Selector="Menu > MenuItem MenuItem" x:DataType="shell:CommandEntryViewModel">
+          <Setter Property="Header" Value="{Binding}" />
+          <Setter Property="Command" Value="{Binding RunCommand}" />
+          <Setter Property="Focusable" Value="{Binding !IsSeparator}" />
+          <Setter Property="AutomationProperties.AutomationId" Value="{Binding AutomationId}" />
+          <Setter Property="AutomationProperties.Name" Value="{Binding Label}" />
+          <Setter Property="HeaderTemplate">
+            <DataTemplate x:DataType="shell:CommandEntryViewModel">
+              <Grid ColumnDefinitions="*,Auto">
+                <TextBlock Text="{Binding Label}" />
+                <TextBlock Grid.Column="1" Margin="24,0,0,0" Opacity="0.6" Text="{Binding FirstGesture}"
+                           AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShellMenuShortcut}" />
+              </Grid>
+            </DataTemplate>
+          </Setter>
+        </Style>
+        <Style Selector="Menu > MenuItem MenuItem[Focusable=False]">
+          <Setter Property="Template">
+            <ControlTemplate>
+              <Separator />
+            </ControlTemplate>
+          </Setter>
+        </Style>
+      </Menu.Styles>
+    </Menu>
+
+    <Border DockPanel.Dock="Top" MaxHeight="40" Padding="4,0" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShellCommandBar}">
+      <ItemsControl ItemsSource="{Binding CommandBar.Slots}">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <StackPanel Orientation="Horizontal" />
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="shell:CommandBarSlotViewModel">
+            <!-- A slot shows one of its commands (Run or Stop), whichever can run. -->
+            <ContentControl Content="{Binding Current}">
+              <ContentControl.ContentTemplate>
+                <DataTemplate x:DataType="shell:CommandEntryViewModel">
+                  <Button Classes="command-bar" Command="{Binding RunCommand}" ToolTip.Tip="{Binding Tooltip}" AutomationProperties.Name="{Binding Label}">
+                    <Button.Styles>
+                      <Style Selector="Button">
+                        <Setter Property="AutomationProperties.AutomationId" Value="{Binding AutomationId}" />
+                      </Style>
+                    </Button.Styles>
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                      <mi:MaterialIcon Kind="{Binding IconKind}" Width="16" Height="16" AutomationProperties.AccessibilityView="Raw" />
+                      <TextBlock Text="{Binding StaticLabel}" VerticalAlignment="Center" />
+                      <Border Classes="badge" IsVisible="{Binding HasBadge}">
+                        <TextBlock Text="{Binding BadgeText}" AutomationProperties.Name="{Binding BadgeName}"
+                                   AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShellCompileBadge}" />
+                      </Border>
+                    </StackPanel>
+                  </Button>
+                </DataTemplate>
+              </ContentControl.ContentTemplate>
+            </ContentControl>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </Border>
+
+    <Border DockPanel.Dock="Bottom" Padding="8,2" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShellStatusBar}">
+      <DockPanel>
+        <TextBlock DockPanel.Dock="Right" Margin="16,0,0,0" Text="{Binding StatusBar.BuildStateText}"
+                   AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShellBuildState}" />
+        <TextBlock Text="{Binding StatusMessage}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShellStatusMessage}" />
+      </DockPanel>
+    </Border>
+
+    <docking:DockHost DataContext="{Binding Layout}" />
+  </DockPanel>
+</Window>

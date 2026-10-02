@@ -23,6 +23,9 @@
           <SolidColorBrush x:Key="Diagnostic.Error.Foreground">#FF6666</SolidColorBrush>
           <SolidColorBrush x:Key="Diagnostic.Warning.Foreground">#FFB74D</SolidColorBrush>
           <SolidColorBrush x:Key="Diagnostic.Info.Foreground">#64B5F6</SolidColorBrush>
+          <!-- Command bar compile button: the error count badge. -->
+          <SolidColorBrush x:Key="CommandBar.BadgeBackground">#C62828</SolidColorBrush>
+          <SolidColorBrush x:Key="CommandBar.BadgeForeground">White</SolidColorBrush>
         </ResourceDictionary>
         <!-- Light (R2-17): unreachable today (EditorApp.axaml hard-codes RequestedThemeVariant="Dark",
              no user setting) and incomplete (GraphBrushes in Graph/GraphConverters.cs is not themed).
@@ -44,6 +47,8 @@
           <SolidColorBrush x:Key="Diagnostic.Error.Foreground">#C62828</SolidColorBrush>
           <SolidColorBrush x:Key="Diagnostic.Warning.Foreground">#E65100</SolidColorBrush>
           <SolidColorBrush x:Key="Diagnostic.Info.Foreground">#1565C0</SolidColorBrush>
+          <SolidColorBrush x:Key="CommandBar.BadgeBackground">#C62828</SolidColorBrush>
+          <SolidColorBrush x:Key="CommandBar.BadgeForeground">White</SolidColorBrush>
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
     </ResourceDictionary>
@@ -101,6 +106,28 @@
     <Setter Property="FontSize" Value="24" />
     <Setter Property="HorizontalAlignment" Value="Center" />
     <Setter Property="Margin" Value="4" />
+  </Style>
+
+  <!-- Command bar (contracts/commands.md section 1): a compact icon and label button, at most 40 px high with its bar. -->
+  <Style Selector="Button.command-bar">
+    <Setter Property="Padding" Value="8,2" />
+    <Setter Property="Margin" Value="2,0" />
+    <Setter Property="MinHeight" Value="0" />
+    <Setter Property="Height" Value="32" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="ToolTip.ShowOnDisabled" Value="True" />
+  </Style>
+  <Style Selector="Border.badge">
+    <Setter Property="Background" Value="{DynamicResource CommandBar.BadgeBackground}" />
+    <Setter Property="CornerRadius" Value="8" />
+    <Setter Property="MinWidth" Value="16" />
+    <Setter Property="Padding" Value="4,0" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="Border.badge > TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource CommandBar.BadgeForeground}" />
+    <Setter Property="FontSize" Value="11" />
+    <Setter Property="HorizontalAlignment" Value="Center" />
   </Style>
 
   <Style Selector="GridSplitter">

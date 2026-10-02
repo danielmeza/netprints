@@ -1,6 +1,8 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using NetPrints.Compilation;
+using NetPrints.Core;
 using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Hosting;
 
@@ -14,7 +16,9 @@ namespace NetPrints.Editor.Shell;
 /// </summary>
 public sealed partial class ShellViewModel : ObservableObject, ICommandStateSource, IDisposable
 {
+    private readonly IContributionRegistry registry;
     private readonly List<PanelViewModel> panels;
+    private Project? followedProject;
     private ProjectSessionViewModel? followedSession;
     private DocumentViewModel? followedDocument;
 
@@ -29,6 +33,7 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
         ArgumentNullException.ThrowIfNull(services);
         ArgumentNullException.ThrowIfNull(timeProvider);
         ArgumentNullException.ThrowIfNull(dispatcher);
+        this.registry = registry;
         panels =
         [.. registry.Panels
             .OrderBy(panel => panel.DefaultDock)
@@ -67,6 +72,28 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
     /// <summary>Gets or sets what hosts the documents and panels; set by the composition once the docking adapter exists.</summary>
     [ObservableProperty]
     public partial IShellLayoutHost? Layout { get; set; }
+
+    /// <summary>Gets the menu bar, or null until <see cref="AttachCommands"/> ran.</summary>
+    [ObservableProperty]
+    public partial MenuBarViewModel? MenuBar { get; private set; }
+
+    /// <summary>Gets the command bar, or null until <see cref="AttachCommands"/> ran.</summary>
+    [ObservableProperty]
+    public partial CommandBarViewModel? CommandBar { get; private set; }
+
+    /// <summary>Gets the number of errors the open project's last compile found.</summary>
+    public int CompileErrorCount => Session?.Project.LastDiagnostics.Count(diagnostic => diagnostic.Severity == CodeDiagnosticSeverity.Error) ?? 0;
+
+    /// <summary>Generates the menu bar and the command bar from the registry, over an invoker built on this shell's context provider.</summary>
+    /// <param name="invoker">Runs and queries the commands.</param>
+    public void AttachCommands(CommandInvoker invoker)
+    {
+        ArgumentNullException.ThrowIfNull(invoker);
+        MenuBar?.Dispose();
+        CommandBar?.Dispose();
+        MenuBar = new MenuBarViewModel(registry, invoker);
+        CommandBar = new CommandBarViewModel(registry, invoker, () => CompileErrorCount);
+    }
 
     /// <summary>Gets the window title (contracts/shell.md section 4).</summary>
     public string Title => TitleFormatter.Format(Session?.Project.Name, ActiveDocument?.Title, Session?.Project.Classes.Any(cls => cls.IsDirty) ?? false);
@@ -126,6 +153,8 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
     public void Dispose()
     {
         Unfollow();
+        MenuBar?.Dispose();
+        CommandBar?.Dispose();
         StatusBar.PropertyChanged -= OnStatusBarChanged;
         StatusBar.Dispose();
         foreach (DocumentViewModel document in Documents)
@@ -143,13 +172,21 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
             followedSession.CommandStatesChanged -= OnSessionPulse;
         }
 
+        if (followedProject is not null)
+        {
+            followedProject.PropertyChanged -= OnProjectChanged;
+        }
+
         followedSession = newValue;
+        followedProject = newValue?.Project;
         if (newValue is not null)
         {
             newValue.CommandStatesChanged += OnSessionPulse;
+            newValue.Project.PropertyChanged += OnProjectChanged;
         }
 
         UpdateBuildState();
+        OnPropertyChanged(nameof(CompileErrorCount));
         RaiseCommandStatesChanged();
     }
 
@@ -171,6 +208,12 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
 
     private void Unfollow()
     {
+        if (followedProject is not null)
+        {
+            followedProject.PropertyChanged -= OnProjectChanged;
+            followedProject = null;
+        }
+
         if (followedSession is not null)
         {
             followedSession.CommandStatesChanged -= OnSessionPulse;
@@ -189,6 +232,15 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
         UpdateBuildState();
         OnPropertyChanged(nameof(Title));
         RaiseCommandStatesChanged();
+    }
+
+    private void OnProjectChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(Project.LastDiagnostics))
+        {
+            OnPropertyChanged(nameof(CompileErrorCount));
+            CommandBar?.RefreshBadge();
+        }
     }
 
     private void OnDocumentChanged(object? sender, PropertyChangedEventArgs e) => OnPropertyChanged(nameof(Title));

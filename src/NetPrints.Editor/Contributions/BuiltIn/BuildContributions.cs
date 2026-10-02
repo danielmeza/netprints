@@ -5,6 +5,9 @@ namespace NetPrints.Editor.Contributions.BuiltIn;
 /// <summary>The built-in commands of the Build menu (contracts/commands.md section 1).</summary>
 public static class BuildContributions
 {
+    /// <summary>Id of the compile command.</summary>
+    public const string CompileId = ContributionIds.CommandPrefix + "compile";
+
     private const string MenuName = "Build";
     private const string RunGroup = "run";
 
@@ -15,7 +18,7 @@ public static class BuildContributions
         ArgumentNullException.ThrowIfNull(registry);
 
         registry.AddCommand(new CommandDescriptor(
-            ContributionIds.CommandPrefix + "compile",
+            CompileId,
             "Compile",
             new CompileCommandHandler(),
             IconKind: "Hammer",

@@ -513,4 +513,40 @@ public static class AutomationIds
     /// Prefix of the automation id of a document's content: the document id follows, such as <c>Shell.Document.graph:A.cs#method:1</c>.
     /// </summary>
     public const string ShellDocumentPrefix = "Shell.Document.";
+    /// <summary>
+    /// Prefix of a menu's automation id: the menu name, or for an item the command id, follows, such as <c>Menu.File</c> and <c>Menu.netprints.command.save</c>.
+    /// </summary>
+    public const string MenuPrefix = "Menu.";
+    /// <summary>
+    /// Prefix of a command bar button's automation id: the command id follows, such as <c>CommandBar.netprints.command.save</c>.
+    /// </summary>
+    public const string CommandBarPrefix = "CommandBar.";
+    /// <summary>
+    /// Automation id for the shell window's menu bar.
+    /// </summary>
+    public const string ShellMenuBar = "Shell.MenuBar";
+    /// <summary>
+    /// Automation id for the shell window's command bar.
+    /// </summary>
+    public const string ShellCommandBar = "Shell.CommandBar";
+    /// <summary>
+    /// Automation id for the shell window's status bar.
+    /// </summary>
+    public const string ShellStatusBar = "Shell.StatusBar";
+    /// <summary>
+    /// Automation id for the status bar's message.
+    /// </summary>
+    public const string ShellStatusMessage = "Shell.StatusMessage";
+    /// <summary>
+    /// Automation id for the status bar's build state.
+    /// </summary>
+    public const string ShellBuildState = "Shell.BuildState";
+    /// <summary>
+    /// Automation id for the error badge of the command bar's compile button.
+    /// </summary>
+    public const string ShellCompileBadge = "Shell.CompileBadge";
+    /// <summary>
+    /// Automation id for the shortcut text of a menu item.
+    /// </summary>
+    public const string ShellMenuShortcut = "Shell.MenuShortcut";
 }
