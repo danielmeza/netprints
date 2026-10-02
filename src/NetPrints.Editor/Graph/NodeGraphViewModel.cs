@@ -438,7 +438,7 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
     /// <summary>A method or constructor was dropped from the class lists (PAR-56).</summary>
     public Node Drop(MethodViewModel method, GraphPoint position)
     {
-        var declaringClass = Graph.Class ?? throw new InvalidOperationException("The open graph has no class.");
+        var declaringClass = method.Graph.Class ?? Graph.Class ?? throw new InvalidOperationException("The open graph has no class.");
         var declaringType = declaringClass.Type;
         return method.IsConstructor
             ? AddNode<ConstructorNode>(position, null, method.ToConstructorSpecifier(declaringType))
@@ -452,6 +452,11 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
     /// <param name="variable">The dropped variable.</param>
     /// <param name="position">Where the node is created, in graph coordinates.</param>
     public void Drop(MemberVariableViewModel variable, GraphPoint position) => GetSetChooser.Open(variable.Specifier, position);
+
+    /// <summary>A variable was dropped from the project tree: opens the Get/Set chooser the same way (FR-017, PAR-57).</summary>
+    /// <param name="variable">The dropped variable.</param>
+    /// <param name="position">Where the node is created, in graph coordinates.</param>
+    public void Drop(Variable variable, GraphPoint position) => GetSetChooser.Open(variable.Specifier, position);
 
     /// <summary>
     /// A local variable was dropped from the Variables panel's Method group (US5, sub-phase H): opens

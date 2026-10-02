@@ -25,6 +25,7 @@
         <StackPanel Orientation="Horizontal" Spacing="6" Background="Transparent">
           <Interaction.Behaviors>
             <ExecuteCommandOnDoubleTappedBehavior Command="{Binding OpenCommand}" />
+            <edbehaviors:TreeDragSourceBehavior />
           </Interaction.Behaviors>
           <StackPanel.ContextMenu>
             <ContextMenu ItemsSource="{Binding MenuEntries}">

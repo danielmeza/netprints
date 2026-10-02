@@ -25,6 +25,7 @@ public sealed record SmokeContext(Actor Actor, string SampleProject, string Work
 public abstract class SmokeScenarios
 {
     protected const string MethodName = "Main";
+    private const string ClassName = "Program";
 
     /// <summary>A fresh editor (no project open) and a private sample copy.</summary>
     protected abstract Task<SmokeContext> StartAsync(CancellationToken cancellationToken);
@@ -192,6 +193,49 @@ public abstract class SmokeScenarios
         }
 
         return false;
+    }
+
+    /// <summary>Real drags from the project tree's method, constructor and variable rows onto the canvas (FR-017, PAR-56, PAR-57).</summary>
+    protected async Task DragFromTreeAsync(CancellationToken cancellationToken)
+    {
+        SmokeContext context;
+        using (Step("start"))
+        {
+            context = await StartAsync(cancellationToken);
+        }
+
+        await context.Actor.AttemptsToAsync(cancellationToken, OpenTheProject.At(context.SampleProject), OpenTheMethod.Named(MethodName));
+        var shell = context.Editor.Shell;
+        var graph = shell.Graph;
+        await graph.ClickEmptyAsync(cancellationToken); // ends the double click on the row, so the drag below is a first press
+        int nodes = await graph.NodeCountAsync(cancellationToken);
+
+        // Method row -> call node.
+        await shell.Tree.Method(MethodName).DragToAsync(await graph.EmptyPointAsync(cancellationToken, 0, -120), cancellationToken);
+        await UiWait.UntilAsync(context.Driver, async () => await graph.NodeCountAsync(cancellationToken) == nodes + 1, "call node dropped", cancellationToken);
+
+        // Variable row -> Get/Set chooser -> getter (before the constructor: its graph tab would hold a second chooser).
+        await shell.Tree.SelectAsync(shell.Tree.Class(ClassName), cancellationToken);
+        await shell.Menu.InvokeAsync("Edit", ShellCommands.AddVariable, cancellationToken);
+        await context.Actor.AttemptsToAsync(cancellationToken, OpenTheMethod.Named(MethodName));
+        await context.Driver.ClickAsync(await graph.EmptyPointAsync(cancellationToken, -200, 100), UiButton.Left, 1, cancellationToken);
+        var variable = await shell.Tree.RevealAsync(shell.Tree.Variable("Variable"), ProjectTreePage.VariablesGroup, cancellationToken);
+        await variable.DragToAsync(await graph.EmptyPointAsync(cancellationToken, -200, 100), cancellationToken);
+        await graph.GetSet.WaitOpenAsync(cancellationToken);
+        await CheckpointAsync(context, "get-set-chooser", cancellationToken);
+        await graph.GetSet.GetButton.ClickAsync(cancellationToken);
+        await UiWait.UntilAsync(context.Driver, async () => await graph.NodeCountAsync(cancellationToken) == nodes + 2, "getter dropped", cancellationToken);
+
+        // Constructor row -> constructor node (adding the constructor opens its graph, so reopen Main).
+        await shell.Tree.SelectAsync(shell.Tree.Class(ClassName), cancellationToken);
+        await shell.Menu.InvokeAsync("Edit", ShellCommands.AddConstructor, cancellationToken);
+        await context.Actor.AttemptsToAsync(cancellationToken, OpenTheMethod.Named(MethodName));
+        await graph.ClickEmptyAsync(cancellationToken);
+        var constructor = await shell.Tree.RevealAsync(shell.Tree.Constructor(ClassName), ProjectTreePage.ConstructorsGroup, cancellationToken);
+        await constructor.DragToAsync(await graph.EmptyPointAsync(cancellationToken, -150, -120), cancellationToken);
+        await UiWait.UntilAsync(context.Driver, async () => await graph.NodeCountAsync(cancellationToken) == nodes + 3, "constructor node dropped", cancellationToken);
+        Assert.Contains("ConstructorNode", await graph.NodeNamesAsync(cancellationToken));
+        await CheckpointAsync(context, "dropped-nodes", cancellationToken);
     }
 
     private sealed class NoOpStep : IDisposable

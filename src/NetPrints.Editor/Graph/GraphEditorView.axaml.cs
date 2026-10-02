@@ -264,6 +264,7 @@ public partial class GraphEditorView : UserControl
         e.DragEffects = e.DataTransfer.Contains(GraphDragDrop.MethodFormat)
             || e.DataTransfer.Contains(GraphDragDrop.VariableFormat)
             || e.DataTransfer.Contains(GraphDragDrop.LocalVariableFormat)
+            || e.DataTransfer.Contains(GraphDragDrop.TreeVariableFormat)
             ? DragDropEffects.Copy
             : DragDropEffects.None;
     }
@@ -286,6 +287,11 @@ public partial class GraphEditorView : UserControl
         else if (e.DataTransfer.TryGetValue(GraphDragDrop.VariableFormat) is { } variable)
         {
             graph.Drop(variable, position);
+            e.Handled = true;
+        }
+        else if (e.DataTransfer.TryGetValue(GraphDragDrop.TreeVariableFormat) is { } treeVariable)
+        {
+            graph.Drop(treeVariable, position);
             e.Handled = true;
         }
         else if (e.DataTransfer.TryGetValue(GraphDragDrop.LocalVariableFormat) is { } local)

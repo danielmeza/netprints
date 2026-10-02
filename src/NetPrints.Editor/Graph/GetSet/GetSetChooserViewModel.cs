@@ -32,14 +32,15 @@ public sealed partial class GetSetChooserViewModel(NodeGraphViewModel graph) : O
     /// <summary>
     /// Opens the chooser. Get and Set are enabled according to the accessor visibility, except for a
     /// method-local variable (<see cref="VariableScope.Local"/>, US5, no declaring type), which is
-    /// always readable and writable from its own method.
+    /// always readable and writable from its own method. While the reflection provider is still loading
+    /// the visibility cannot be checked, so both are enabled.
     /// </summary>
     public void Open(VariableSpecifier variable, GraphPoint position)
     {
         Variable = variable;
         Position = position;
 
-        if (variable.DeclaringType is null)
+        if (variable.DeclaringType is null || !graph.Context.Reflection.IsLoaded)
         {
             CanGet = true;
             CanSet = true;

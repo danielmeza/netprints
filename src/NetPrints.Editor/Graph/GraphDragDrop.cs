@@ -1,7 +1,9 @@
 using System.Diagnostics.CodeAnalysis;
 using Avalonia;
 using Avalonia.Input;
+using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
+using NetPrints.Editor.ProjectTree;
 using NetPrints.Editor.Variables;
 
 namespace NetPrints.Editor.Graph;
@@ -38,6 +40,32 @@ public static class GraphDragDrop
     public static Task StartDragAsync(PointerPressedEventArgs e, LocalVariableViewModel variable) =>
         StartDragAsync(e, DataTransferItem.Create(LocalVariableFormat, variable));
 
+    /// <summary>A variable dragged from a project tree row, tagged with <see cref="TreeVariableFormat"/>.</summary>
+    public static readonly DataFormat<Variable> TreeVariableFormat = DataFormat.CreateInProcessFormat<Variable>("netprints-tree-variable");
+
+    /// <summary>
+    /// Starts a drag of a project tree row: a method or constructor travels as a <see cref="MethodFormat"/> wrapper that lives
+    /// until the drop is handled, a variable as <see cref="TreeVariableFormat"/>. Other rows start no drag.
+    /// </summary>
+    /// <param name="e">The pointer-pressed event that starts the drag.</param>
+    /// <param name="row">The tree row being dragged.</param>
+    public static async Task StartDragAsync(PointerPressedEventArgs e, ProjectTreeItemViewModel row)
+    {
+        switch (row.Model)
+        {
+            case ExecutionGraph graph when row.Kind is TreeItemKind.Method or TreeItemKind.Constructor:
+                using (var method = new MethodViewModel(graph))
+                {
+                    await StartDragAsync(e, DataTransferItem.Create(MethodFormat, method));
+                }
+
+                break;
+            case Variable variable when row.Kind is TreeItemKind.Variable:
+                await StartDragAsync(e, DataTransferItem.Create(TreeVariableFormat, variable));
+                break;
+        }
+    }
+
     private static async Task StartDragAsync(PointerPressedEventArgs e, DataTransferItem item)
     {
         using var data = new DataTransfer();
@@ -64,7 +92,7 @@ public sealed class DragSourceHelper
     /// </summary>
     /// <param name="e">The pointer-pressed event.</param>
     /// <param name="relativeTo">Visual the pointer position is measured relative to.</param>
-    /// <param name="item">The <see cref="MethodViewModel"/>, <see cref="MemberVariableViewModel"/> or <see cref="LocalVariableViewModel"/> that would be dragged.</param>
+    /// <param name="item">The <see cref="MethodViewModel"/>, <see cref="MemberVariableViewModel"/> or <see cref="LocalVariableViewModel"/> or <see cref="ProjectTreeItemViewModel"/> that would be dragged.</param>
     public void Pressed(PointerPressedEventArgs e, Visual relativeTo, object item)
     {
         if (e.GetCurrentPoint(relativeTo).Properties.IsLeftButtonPressed && e.ClickCount == 1)
@@ -121,6 +149,9 @@ public sealed class DragSourceHelper
                 break;
             case LocalVariableViewModel local:
                 await GraphDragDrop.StartDragAsync(args, local);
+                break;
+            case ProjectTreeItemViewModel row:
+                await GraphDragDrop.StartDragAsync(args, row);
                 break;
         }
     }

@@ -74,6 +74,9 @@ public sealed partial class ProjectTreeItemViewModel : ObservableObject
     /// <summary>Gets a value indicating whether the row opens a graph.</summary>
     public bool CanOpen => Kind is TreeItemKind.Class or TreeItemKind.Method or TreeItemKind.Constructor or TreeItemKind.EventGraph;
 
+    /// <summary>Gets a value indicating whether the row can be dragged onto a graph canvas: a method, constructor or variable.</summary>
+    public bool CanDrag => Kind is TreeItemKind.Method or TreeItemKind.Constructor or TreeItemKind.Variable;
+
     private string KindText => Kind switch
     {
         TreeItemKind.Project => AutomationIds.TreeKindProject,

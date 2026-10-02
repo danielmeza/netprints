@@ -13,6 +13,8 @@ public static class ShellCommands
     public const string References = ContributionIds.CommandPrefix + "references";
     public const string Compile = ContributionIds.CommandPrefix + "compile";
     public const string Run = ContributionIds.CommandPrefix + "run";
+    public const string AddConstructor = ContributionIds.CommandPrefix + "addConstructor";
+    public const string AddVariable = ContributionIds.CommandPrefix + "addVariable";
     public const string Undo = ContributionIds.CommandPrefix + "undo";
     public const string Redo = ContributionIds.CommandPrefix + "redo";
 }

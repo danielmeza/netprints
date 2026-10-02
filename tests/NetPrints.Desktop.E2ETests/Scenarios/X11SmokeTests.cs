@@ -200,3 +200,9 @@ public sealed class PanCursorTests(DesktopWorkerPool pool) : X11SmokeTestBase(po
     [Fact(Explicit = true)]
     public Task PanCursor() => RunScenarioAsync(PanCursorAsync);
 }
+
+public sealed class DragFromTreeTests(DesktopWorkerPool pool) : X11SmokeTestBase(pool)
+{
+    [Fact]
+    public Task DragFromTree() => RunScenarioAsync(DragFromTreeAsync);
+}

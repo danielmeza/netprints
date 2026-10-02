@@ -25,6 +25,8 @@ public sealed class ProjectTreePage(IUiDriver driver, AutomationQuery window)
 
     public UiElement Method(string name) => Item(AutomationIds.TreeKindMethod, name);
 
+    public UiElement Constructor(string name) => Item(AutomationIds.TreeKindConstructor, name);
+
     public UiElement Variable(string name) => Item(AutomationIds.TreeKindVariable, name);
 
     public UiElement Group(string name) => Item(AutomationIds.TreeKindGroup, name);

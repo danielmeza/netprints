@@ -788,7 +788,7 @@ All of it sits on the automation ids that already existed (panel ids, document i
 - The Screenplay tasks and questions drive `UseNetPrints.Shell` (the class parameter is gone: `OpenTheMethod.Named`, `AddANode.Named`, `ConnectThePins.From`, `TickThePin.Of`, `CompileTheProject.Now`, `RunTheProgram.Now`, `TheBuildStatus.Now`, `TheNodeCount.OnTheCanvas`, `TheProgramOutput.Containing`); `UseNetPrints.MainWindow` and `.ClassEditor` are removed. The build result and the program output are read from the Output panel.
 - `HeadlessSmokeTests` run on `ShellApp` (it gained an `Actor` and the real references dialog): `EditCompileAndRun`, `CreateProject`, `AddReferences` pass; `PanCursor` skips (no real cursor).
 - Decision: `MinimizeAndRestoreClassWindow` is removed from `SmokeScenarios`, `HeadlessSmokeTests` and `X11SmokeTests`: there are no class windows; T043's `FloatAndRedockGraphTests` replaces it.
-- Decision: `DragFromLists` is removed for the same kind of reason: the shell has no drag source. `GraphDragDrop` is started only by the class window's lists and `GraphEditorView` accepts the drop, but the Project tree rows have no `DragSourceHelper` (not in spec.md or tasks.md). PAR-56 and PAR-57 (drag a method, constructor or variable onto the canvas) are therefore uncovered until a tree drag source exists; open item for the owner or a follow-up task.
+- Decision: `DragFromLists` is removed for the same kind of reason: the shell has no drag source. `GraphDragDrop` is started only by the class window's lists and `GraphEditorView` accepts the drop, but the Project tree rows have no `DragSourceHelper` (not in spec.md or tasks.md). PAR-56 and PAR-57 (drag a method, constructor or variable onto the canvas) were uncovered after this batch; batch C5a2 restores them from the project tree.
 - The old page objects (`MainWindowPage`, `ClassEditorPage`) stay for the headless suites of the former windows until T044.
 - Allowlist: `SourceHygieneTests` lost the entry `HeadlessSmokeTests.cs:28` (its `app!` became a null check); nothing was added.
 - E2E: the four remaining shared scenarios stay `[Fact(Explicit = true)]` (not run here); T043 removes `Explicit` after running them on the desktop.
@@ -796,3 +796,30 @@ All of it sits on the automation ids that already existed (panel ids, document i
 ### Totals (C5a)
 
 Release build 0 warnings; format clean. Solution suite (Release, `--ignore-exit-code 8`): 2251 total, 2241 passed, 9 skipped, 1 failed (the allowlist entry above, fixed afterwards; Core re-run 671 of 671, `HeadlessSmokeTests` 4 total, 3 passed, 1 skipped); UITests 7 m 20 s. Desktop E2E (`NETPRINTS_E2E=1`, `--fail-skips on`): 29 total, 25 passed, 4 explicit skips, exit 0. No test host, Xvfb or openbox of mine was left running.
+
+## Batch C5a2 (drag-to-canvas restored from the project tree)
+
+Decision: drag-to-canvas restored from the project tree (FR-017, PAR-56/57). The tree is the drag source and the flow is rewritten as `DragFromTree`.
+
+### Red output
+
+Test first (`tests/NetPrints.Editor.UITests/ProjectTree/TreeDragTests.cs`, real pointer input through the headless driver). Before `TreeDragSourceBehavior` existed, 5 of the 12 tests failed:
+
+- method row: `UiWaitTimeoutException : Timed out after 30 s waiting for: call node dropped`
+- constructor row: `Timed out after 30 s waiting for: constructor node dropped`
+- variable row: `Timed out after 30 s waiting for: Shell.Window > Graph.GetSetPopup: open`
+- method of another class: `Timed out after 30 s waiting for: call node dropped`
+- project, class and group rows start no drag: `Assert.False() Failure` (the chooser check used the wrong element; fixed to `GetSet.IsOpenAsync`, then green with the behavior).
+
+Green after the behavior: 12 of 12. Mutation check: dropping a tree method on another class's graph with the old `Graph.Class` declaring type fails the cross-class test (`Expected: HelloWorld.Program, Actual: HelloWorld.MyClass`); restored.
+
+The `DragFromTree` smoke flow was red on the variable step: the drop reached the canvas but `GetSetChooserViewModel.Open` threw `The reflection provider has not been loaded yet` (the flow does not wait for reflection). `Open` now enables both accessors while the provider loads, as the node view models already guard on `IsLoaded`.
+
+### What changed
+
+- `TreeDragSourceBehavior` (`NetPrints.Editor/Behaviors/`), attached in `ProjectTreePanelView.axaml`; it reuses `DragSourceHelper` and starts a drag only for rows with `ProjectTreeItemViewModel.CanDrag` (method, constructor, variable). Project, class, group and event graph rows start none. No code-behind handler was added and the XAML hygiene allowlists did not change.
+- `GraphDragDrop.StartDragAsync(PointerPressedEventArgs, ProjectTreeItemViewModel)`: a method or constructor travels as the existing `MethodFormat` (a `MethodViewModel` wrapper disposed after the drop); a variable travels as the new `TreeVariableFormat` (the model `Variable`). `GraphEditorView` accepts the new format and calls `NodeGraphViewModel.Drop(Variable, ...)`, which opens the Get/Set chooser.
+- Decision: a method dropped from the tree calls its own class (`method.Graph.Class`), so a drop on a graph of another class creates a call to that class's method instead of the open one. A variable already carries its declaring class.
+- `DragFromTree` in `SmokeScenarios` (method, then variable with the chooser, then constructor; the constructor goes last because adding it opens a second graph tab and so a second Get/Set popup under the shell window); headless `HeadlessSmokeTests.DragFromTree` and the Desktop E2E `DragFromTreeTests` (not `Explicit`). Page objects: `ProjectTreePage.Constructor`, `ShellCommands.AddConstructor/AddVariable`.
+- The class window's own list drags and their code-behind handlers stay until T044 removes those views.
+
