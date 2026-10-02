@@ -1,5 +1,6 @@
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
+using NetPrints.Editor.Inspectors;
 using NetPrints.Editor.ProjectTree;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.Tests.ProjectTree;
@@ -39,20 +40,21 @@ public sealed class InspectorPanelViewModelTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task ASelectedClassShowsTheClassInspectorOverItsEditorViewModel()
+    public async Task ASelectedClassShowsTheClassInspectorOfItsContext()
     {
         ProjectSessionViewModel session = await rig.OpenSessionAsync();
         ClassGraph cls = session.Project.Classes[0];
 
         rig.Tree.SelectedItem = rig.Item(TreeItemKind.Class, cls.Name);
 
-        ClassEditorViewModel editor = Assert.IsType<ClassEditorViewModel>(rig.Inspector.Content);
-        Assert.Same(cls, editor.Class);
-        Assert.Equal(cls.Name, editor.Name);
+        ClassInspectorViewModel inspector = Assert.IsType<ClassInspectorViewModel>(rig.Inspector.Content);
+        Assert.Same(session.ContextFor(cls).ClassInspector, inspector);
+        Assert.Same(cls, inspector.Class);
+        Assert.Equal(cls.Name, inspector.Name);
         rig.Tree.SelectedItem = rig.Tree.Roots[0];
         Assert.True(rig.Inspector.IsEmpty);
         rig.Tree.SelectedItem = rig.Item(TreeItemKind.Class, cls.Name);
-        Assert.Same(editor, rig.Inspector.Content);
+        Assert.Same(inspector, rig.Inspector.Content);
     }
 
     [Fact]
@@ -102,8 +104,7 @@ public sealed class InspectorPanelViewModelTests : IAsyncDisposable
         new UndoRedoStack().Do(EditorCommands.AddVariable(cls, "count"));
         new UndoRedoStack().Do(EditorCommands.AddVariable(cls, "other"));
         rig.Tree.SelectedItem = rig.Item(TreeItemKind.Class, cls.Name);
-        ClassEditorViewModel editor = Assert.IsType<ClassEditorViewModel>(rig.Inspector.Content);
-        MemberVariableViewModel other = editor.Variables.Single(variable => variable.Variable.Name == "other");
+        MemberVariableViewModel other = session.ContextFor(cls).Variables.Single(variable => variable.Variable.Name == "other");
 
         other.SelectCommand.Execute(null);
 
@@ -134,7 +135,7 @@ public sealed class InspectorPanelViewModelTests : IAsyncDisposable
         ClassGraph cls = session.Project.Classes[0];
         rig.Tree.SelectedItem = rig.Item(TreeItemKind.Class, cls.Name);
 
-        Assert.IsType<ClassEditorViewModel>(rig.Inspector.Content).Name = "Renamed";
+        Assert.IsType<ClassInspectorViewModel>(rig.Inspector.Content).Name = "Renamed";
 
         Assert.Equal("Tree.class.Renamed", rig.Tree.SelectedItem.AutomationId);
     }

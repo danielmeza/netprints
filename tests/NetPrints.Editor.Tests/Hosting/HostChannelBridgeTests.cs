@@ -23,7 +23,6 @@ public sealed class HostChannelBridgeTests : IDisposable
     private readonly InMemoryHostChannel host;
     private readonly SpyReflectionHost reflection;
     private readonly TestEditor editor;
-    private readonly Dictionary<ClassGraph, ClassEditorViewModel> editors = [];
     private readonly ProjectRig rig;
     private readonly FakeShell shell = new();
     private readonly string csproj = TestPaths.CopyHelloWorldSample();
@@ -33,7 +32,7 @@ public sealed class HostChannelBridgeTests : IDisposable
         (InMemoryHostChannel editorEnd, host) = InMemoryHostChannel.CreatePair("test");
         reflection = new SpyReflectionHost(sharedReflection);
         editor = TestEditor.Create(_ => reflection, hostChannel: editorEnd);
-        rig = new ProjectRig(editor.Context, EditorOf);
+        rig = new ProjectRig(editor.Context);
         rig.Actions.Api = shell;
         shell.Opened = OpenGraphDocument;
     }
@@ -44,24 +43,13 @@ public sealed class HostChannelBridgeTests : IDisposable
         TestPaths.TryDelete(csproj);
     }
 
-    private ClassEditorViewModel EditorOf(ClassGraph cls)
-    {
-        if (!editors.TryGetValue(cls, out ClassEditorViewModel? classEditor))
-        {
-            classEditor = new ClassEditorViewModel(cls, editor.Context);
-            editors[cls] = classEditor;
-        }
-
-        return classEditor;
-    }
-
     // What the shell host's document factory does for a graph document.
     private void OpenGraphDocument(DocumentId id)
     {
         ProjectSessionViewModel session = rig.Session ?? throw new InvalidOperationException("No session.");
         NodeGraph graph = CommandTargets.GraphOf(session, id) ?? throw new InvalidOperationException("No graph.");
         ClassGraph cls = graph as ClassGraph ?? graph.Class ?? throw new InvalidOperationException("No class.");
-        rig.Shell.AddDocument(new GraphDocumentViewModel(id, new NodeGraphViewModel(graph, EditorOf(cls).Services), cls, session));
+        rig.Shell.AddDocument(new GraphDocumentViewModel(id, new NodeGraphViewModel(graph, session.ContextFor(cls).Services), cls, session));
     }
 
     private static HostMessage FocusMessage(string path) =>

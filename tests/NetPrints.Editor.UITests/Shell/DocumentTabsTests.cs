@@ -47,7 +47,6 @@ public class DocumentTabsTests
     {
         private readonly HeadlessApp app;
         private readonly SampleCopy sample;
-        private readonly ClassEditorViewModel editor;
         private readonly ContributionRegistry registry;
 
         public Rig(HeadlessApp app, SampleCopy sample, ProjectSessionViewModel session)
@@ -57,7 +56,6 @@ public class DocumentTabsTests
             Session = session;
             Class = session.Project.Classes.Single();
             Method = Class.Methods.First();
-            editor = new ClassEditorViewModel(Class, app.Composition.Context);
             MethodDocument = DocumentId.Graph(session.ClassPathOf(Class), DocumentId.MethodKeyPrefix + Method.Id);
             ClassDocument = DocumentId.Graph(session.ClassPathOf(Class), DocumentId.ClassGraphKey);
             registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
@@ -122,7 +120,6 @@ public class DocumentTabsTests
         {
             Ui.Dispose();
             Shell.Dispose();
-            editor.Dispose();
             await app.DisposeAsync();
             sample.Dispose();
         }
@@ -130,8 +127,8 @@ public class DocumentTabsTests
         private DocumentViewModel? CreateDocument(DocumentId id) => id switch
         {
             _ when id == DocumentId.ProjectSettings => new ProjectSettingsDocumentViewModel(Session, app.Composition.Context),
-            _ when id == MethodDocument => new GraphDocumentViewModel(id, new NodeGraphViewModel(Method, editor.Services), Class, Session),
-            _ when id == ClassDocument => new GraphDocumentViewModel(id, new NodeGraphViewModel(Class, editor.Services), Class, Session),
+            _ when id == MethodDocument => new GraphDocumentViewModel(id, new NodeGraphViewModel(Method, Session.ContextFor(Class).Services), Class, Session),
+            _ when id == ClassDocument => new GraphDocumentViewModel(id, new NodeGraphViewModel(Class, Session.ContextFor(Class).Services), Class, Session),
             _ => null,
         };
     }
@@ -241,7 +238,6 @@ public class DocumentTabsTests
         NodeGraphViewModel graph = rig.MethodGraphView;
         Node added = graph.AddNode<IfElseNode>(new GraphPoint(300, 300));
         Assert.Contains(graph.Nodes, vm => vm.Node == added);
-        rig.Session.UseUndoStack(rig.Class, graph.Services.UndoRedo);
         int edits = 0;
         graph.Services.UndoRedo.Do(new DelegateUndoableCommand("Edit", () => edits++, () => edits--));
         Assert.False(rig.Session.UndoStackFor(rig.Class).IsAtSavedState);

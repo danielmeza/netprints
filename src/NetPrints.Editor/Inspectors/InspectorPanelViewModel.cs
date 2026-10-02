@@ -10,11 +10,11 @@ namespace NetPrints.Editor.Inspectors;
 /// <summary>
 /// The inspector panel: hosts the class, method or variable inspector for the project tree's selection
 /// (<see cref="ShellViewModel.TreeSelection"/>), and an empty state when nothing is selected or no project is open.
-/// Each inspected class gets one <see cref="ClassEditorViewModel"/>, which owns the view models of its members.
+/// The inspectors come from the class's <see cref="ClassContext"/>, which the session owns.
 /// </summary>
 public sealed partial class InspectorPanelViewModel : ObservableObject, IShellPanelContent, IRecipient<SelectInspectorMessage>
 {
-    private readonly Dictionary<ClassGraph, ClassEditorViewModel> editors = [];
+    private readonly HashSet<ClassContext> watched = [];
     private PanelContext? context;
 
     /// <summary>Gets the view model of the inspector shown, or null for the empty state.</summary>
@@ -46,7 +46,7 @@ public sealed partial class InspectorPanelViewModel : ObservableObject, IShellPa
         }
 
         Content = null;
-        ReleaseEditors();
+        Unwatch();
         context = null;
     }
 
@@ -59,9 +59,9 @@ public sealed partial class InspectorPanelViewModel : ObservableObject, IShellPa
         }
     }
 
-    private void OnEditorChanged(object? sender, PropertyChangedEventArgs e)
+    private void OnInspectorChanged(object? sender, PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(ClassEditorViewModel.Name))
+        if (e.PropertyName == nameof(ClassInspectorViewModel.Name))
         {
             context?.Shell.NotifyModelRenamed();
         }
@@ -73,7 +73,7 @@ public sealed partial class InspectorPanelViewModel : ObservableObject, IShellPa
         {
             case nameof(ShellViewModel.Session):
                 Content = null;
-                ReleaseEditors();
+                Unwatch();
                 break;
             case nameof(ShellViewModel.TreeSelection):
                 Refresh();
@@ -89,62 +89,39 @@ public sealed partial class InspectorPanelViewModel : ObservableObject, IShellPa
             return;
         }
 
-        foreach (ClassGraph removed in editors.Keys.Where(cls => !session.Project.Classes.Contains(cls)).ToList())
-        {
-            ReleaseEditor(removed);
-        }
-
-        Content = InspectorOf(shell.TreeSelection);
+        watched.RemoveWhere(classContext => classContext.IsDisposed);
+        Content = InspectorOf(session, shell.TreeSelection);
     }
 
-    private object? InspectorOf(object? selection) => selection switch
+    private object? InspectorOf(ProjectSessionViewModel session, object? selection) => selection switch
     {
-        ClassGraph cls => EditorFor(cls),
-        MethodGraph { Class: { } owner } method => EditorFor(owner).Methods.FirstOrDefault(item => ReferenceEquals(item.Graph, method)),
-        ConstructorGraph { Class: { } owner } constructor => EditorFor(owner).Constructors.FirstOrDefault(item => ReferenceEquals(item.Graph, constructor)),
-        Variable { Class: { } owner } variable => EditorFor(owner).Variables.FirstOrDefault(item => ReferenceEquals(item.Variable, variable)),
+        ClassGraph cls => Watch(session.ContextFor(cls)).ClassInspector,
+        MethodGraph { Class: { } owner } method => Watch(session.ContextFor(owner)).Methods.FirstOrDefault(item => ReferenceEquals(item.Graph, method)),
+        ConstructorGraph { Class: { } owner } constructor => Watch(session.ContextFor(owner)).Constructors.FirstOrDefault(item => ReferenceEquals(item.Graph, constructor)),
+        Variable { Class: { } owner } variable => Watch(session.ContextFor(owner)).Variables.FirstOrDefault(item => ReferenceEquals(item.Variable, variable)),
         _ => null,
     };
 
-    /// <summary>Gets the editor of a class, creating it on first use; graph documents of the class are built on its services, so they share the undo stack the Undo command reads.</summary>
-    /// <param name="cls">A class of the open project.</param>
-    /// <returns>The class's one editor.</returns>
-    /// <exception cref="InvalidOperationException">The panel is not attached to a shell.</exception>
-    public ClassEditorViewModel EditorFor(ClassGraph cls)
+    // Routes the context's inspector selections and class renames to the shell, once per context.
+    private ClassContext Watch(ClassContext classContext)
     {
-        if (!editors.ContainsKey(cls))
+        if (watched.Add(classContext))
         {
-            AddEditor(cls);
+            classContext.Messenger.Register<SelectInspectorMessage>(this);
+            classContext.ClassInspector.PropertyChanged += OnInspectorChanged;
         }
 
-        return editors[cls];
+        return classContext;
     }
 
-    private void AddEditor(ClassGraph cls)
+    private void Unwatch()
     {
-        PanelContext attached = context ?? throw new InvalidOperationException("The inspector panel is not attached to a shell.");
-        var editor = new ClassEditorViewModel(cls, attached.Context) { SessionSource = () => attached.Shell.Session };
-        attached.Shell.Session?.UseUndoStack(cls, editor.UndoRedo);
-        editor.Messenger.Register<SelectInspectorMessage>(this);
-        editor.PropertyChanged += OnEditorChanged;
-        editors[cls] = editor;
-    }
-
-    private void ReleaseEditors()
-    {
-        foreach (ClassGraph cls in editors.Keys.ToList())
+        foreach (ClassContext classContext in watched)
         {
-            ReleaseEditor(cls);
+            classContext.ClassInspector.PropertyChanged -= OnInspectorChanged;
+            classContext.Messenger.UnregisterAll(this);
         }
-    }
 
-    private void ReleaseEditor(ClassGraph cls)
-    {
-        if (editors.Remove(cls, out ClassEditorViewModel? editor))
-        {
-            editor.PropertyChanged -= OnEditorChanged;
-            editor.Messenger.UnregisterAll(this);
-            editor.Dispose();
-        }
+        watched.Clear();
     }
 }

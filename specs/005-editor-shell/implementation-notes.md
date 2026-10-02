@@ -897,3 +897,26 @@ First full run: 7 red. Fixed: `CloseDocumentsOf` iterated the shell's live docum
 ### Totals (C5c1)
 
 Release build 0 warnings; format clean. Solution suite (Release, `--ignore-exit-code 8`): 2264 total, 2251 passed, 13 skipped (the tolerated headless and E2E self-skips), 0 failed (Editor.Tests 2 m, UITests 7 m 55 s). Desktop E2E (`NETPRINTS_E2E=1`, `--fail-skips on`): 33 total, 33 passed, 0 skipped, 1 m 25 s. No test host, Xvfb or openbox of mine was left running.
+
+## Batch C5c2a (T044, class window half: the shell stops using `ClassEditorViewModel`)
+
+T044 is not ticked: `ClassEditorWindow.*`, `ClassEditorViewModel`, `LegacyClassWindows`, `LegacyWindowShell` and `ClassEditorCommandContextProvider` go in the next batch.
+
+### What changed
+
+- New `Shell/ClassContext` (public, `IDisposable`, not a view model): one per class, owned by `ProjectSessionViewModel.ContextFor(cls)` (created on first use on `UndoStackFor(cls)`, disposed when the class leaves `Project.Classes` or with the session). It holds the class's undo stack and `ClassEditorServices`, the method, constructor, variable and event graph view models, the code view, the class inspector, the whole dirty tracking (moved out of `ClassEditorViewModel`, the same code) and the undoable create/remove operations (`CreateMethod`, `CreateConstructor`, `CreateOverride`, `CreateVariable`, `CreateEventGraph`, `RemoveMethod`, `RemoveEventGraph`), which return the created graph.
+- New `Inspectors/ClassInspectorViewModel`: the class inspector's name, namespace, visibility, modifiers and code view (was the editor's own properties); `ClassInspectorView` and the inspector panel template bind it.
+- `InspectorPanelViewModel` no longer creates editors or swaps the session's undo stack: it asks the session for the context, and listens to its messenger (variable selection) and class inspector (rename). `ShellProjectActions` and `ShellHost` use `session.ContextFor`; `ShellProjectActions` lost its `editorFor` parameter and no longer builds a throw-away canvas view model to find the new graph.
+- `ClassEditorViewModel` now owns a `ClassContext` of its own and forwards to it, so the old window and its suites keep working; the window binds the class inspector through `ClassInspector`. It is used only by the old class window, `WindowService`/`IWindowService`, `LegacyClassWindows`, `ClassEditorCommandContextProvider` and their headless suites. `ProjectSessionViewModel.UseUndoStack` stays for `LegacyClassWindows` and its unit tests (next batch).
+
+### Red and green
+
+Red first, against a stub (`ContextFor` returned a new, inert context): `ClassContextTests` 4 of 4 failed: not the same instance per class / not on the session's stack (`Assert.Same`), a variable created through the context did not appear (`Expected: 1, Actual: 0`), a removed class's context not disposed, a disposed session's contexts not disposed (`Assert.True` false). Green after the implementation: 4 of 4.
+Migrated: `ShellCompositionTests` undo test (graph tab built on the session's context and stack, `undo` sees the edit), `InspectorPanelViewModelTests` (class inspector is the context's `ClassInspectorViewModel`; variable rows come from the context), `HostChannelBridgeTests` and `ProjectRig` (no editor factory), `DocumentTabsTests` rig (no editor, no `UseUndoStack`; its floated-graph test failed once with the old adoption line gone until the rig used the session's context, then passed).
+Totals: solution suite 2268 tests, 2255 passed, 13 skipped (usual), 0 failed (includes the headless UI tests); Desktop E2E (Release, `NETPRINTS_E2E=1 --fail-skips on`) 33 of 33; `dotnet format --verify-no-changes` clean.
+
+### Decisions
+
+- Decision: `ClassContext` is a plain disposable owned by the session, not a view model: it exposes view models but has no bindable state; the class inspector is the one view model for the class.
+- Decision: the old editor composes a `ClassContext` instead of duplicating the dirty tracking, so nothing is copied for one batch and the tracking tests of `ClassEditorViewModel` still pin it.
+- Decision: the context keeps the undo stack the session already handed out for the class (`UndoStackFor`); no swapping, so `undo`, dirty state and the graph tabs share one history.

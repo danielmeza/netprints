@@ -16,13 +16,13 @@ internal sealed class ProjectRig : IDisposable
         public object? GetService(Type serviceType) => null;
     }
 
-    public ProjectRig(EditorContext context, Func<ClassGraph, ClassEditorViewModel>? editorFor = null)
+    public ProjectRig(EditorContext context)
     {
         var registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
         BuiltInContributions.Register(registry);
         registry.Freeze();
         Shell = new ShellViewModel(registry, new NoServices(), TimeProvider.System, new InlineDispatcher());
-        Actions = new ShellProjectActions(context, Shell, editorFor ?? (_ => throw new InvalidOperationException("No class editor.")));
+        Actions = new ShellProjectActions(context, Shell);
     }
 
     public ShellViewModel Shell { get; }

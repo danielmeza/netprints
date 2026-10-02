@@ -38,7 +38,7 @@ public class ShellCompositionTests
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
-    public async Task AGraphTabIsBuiltOnTheInspectorsEditorSoUndoSeesItsEdits()
+    public async Task AGraphTabIsBuiltOnTheClassContextSoUndoSeesItsEditsAndTheClassIsDirty()
     {
         await using ShellApp app = await StartAsync();
         ClassGraph cls = app.Session.Project.Classes[0];
@@ -48,8 +48,8 @@ public class ShellCompositionTests
         HeadlessDriver.Pump();
         NodeGraphViewModel graph = Assert.IsType<GraphDocumentViewModel>(app.Shell.FindDocument(id)).Graph;
 
-        Assert.Same(app.Inspector.EditorFor(cls).Services, graph.Services);
-        Assert.Same(app.Inspector.EditorFor(cls).UndoRedo, app.Session.UndoStackFor(cls));
+        Assert.Same(app.Session.ContextFor(cls).Services, graph.Services);
+        Assert.Same(app.Session.UndoStackFor(cls), graph.Services.UndoRedo);
         int edits = 0;
         graph.Services.UndoRedo.Do(new DelegateUndoableCommand("Edit", () => edits++, () => edits--));
         Assert.Equal(1, edits);

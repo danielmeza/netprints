@@ -17,18 +17,15 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
 {
     private readonly EditorContext context;
     private readonly ShellViewModel shell;
-    private readonly Func<ClassGraph, ClassEditorViewModel> editorFor;
     private readonly HostChannelBridge hostChannelBridge;
 
     /// <summary>Creates the actions and starts listening to the host channel.</summary>
     /// <param name="context">Host services shared across the editor.</param>
     /// <param name="shell">The shell state.</param>
-    /// <param name="editorFor">Gets the editor of a class, the one the graph documents of the class are built on.</param>
-    public ShellProjectActions(EditorContext context, ShellViewModel shell, Func<ClassGraph, ClassEditorViewModel> editorFor)
+    public ShellProjectActions(EditorContext context, ShellViewModel shell)
     {
         this.context = context;
         this.shell = shell;
-        this.editorFor = editorFor;
         Loader = new ProjectLoader(context, shell);
         hostChannelBridge = new HostChannelBridge(context.HostChannel, context.Dispatcher, Loader.ReloadReflectionAsync, FocusDocument,
             context.LoggerFactory.CreateLogger<HostChannelBridge>());
@@ -128,18 +125,18 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
     public void ShowClassSettings(ClassGraph cls) => Inspect(cls);
 
     /// <inheritdoc/>
-    public void AddMethod(ClassGraph cls) => AddGraph(cls, editor => editor.CreateMethodCommand.Execute(null));
+    public void AddMethod(ClassGraph cls) => AddGraph(cls, classContext => classContext.CreateMethod());
 
     /// <inheritdoc/>
-    public void AddConstructor(ClassGraph cls) => AddGraph(cls, editor => editor.CreateConstructorCommand.Execute(null));
+    public void AddConstructor(ClassGraph cls) => AddGraph(cls, classContext => classContext.CreateConstructor());
 
     /// <inheritdoc/>
-    public void AddEventGraph(ClassGraph cls) => AddGraph(cls, editor => editor.CreateEventGraphCommand.Execute(null));
+    public void AddEventGraph(ClassGraph cls) => AddGraph(cls, classContext => classContext.CreateEventGraph());
 
     /// <inheritdoc/>
     public void AddVariable(ClassGraph cls)
     {
-        editorFor(cls).CreateVariableCommand.Execute(null);
+        shell.Session?.ContextFor(cls).CreateVariable();
         if (cls.Variables.LastOrDefault() is { } variable)
         {
             Inspect(variable);
@@ -164,24 +161,21 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
                 CloseDocumentsOf(cls);
                 shell.Session?.Project.Classes.Remove(cls);
                 break;
-            case MethodGraph { Class: { } owner } method
-                when editorFor(owner).Methods.FirstOrDefault(entry => ReferenceEquals(entry.Graph, method)) is { } methodEntry:
+            case MethodGraph { Class: { } owner } method when shell.Session?.ContextFor(owner) is { } classContext:
                 CloseGraph(method);
-                editorFor(owner).RemoveMethodCommand.Execute(methodEntry);
+                classContext.RemoveMethod(method);
                 break;
-            case ConstructorGraph { Class: { } owner } constructor
-                when editorFor(owner).Constructors.FirstOrDefault(entry => ReferenceEquals(entry.Graph, constructor)) is { } constructorEntry:
+            case ConstructorGraph { Class: { } owner } constructor when shell.Session?.ContextFor(owner) is { } classContext:
                 CloseGraph(constructor);
-                editorFor(owner).RemoveMethodCommand.Execute(constructorEntry);
+                classContext.RemoveMethod(constructor);
                 break;
             case Variable { Class: { } owner } variable
-                when editorFor(owner).Variables.FirstOrDefault(entry => ReferenceEquals(entry.Variable, variable)) is { } variableEntry:
+                when shell.Session?.ContextFor(owner).Variables.FirstOrDefault(entry => ReferenceEquals(entry.Variable, variable)) is { } variableEntry:
                 variableEntry.RemoveCommand.Execute(null);
                 break;
-            case EventGraph { Class: { } owner } eventGraph
-                when editorFor(owner).EventGraphs.FirstOrDefault(entry => ReferenceEquals(entry.Graph, eventGraph)) is { } eventEntry:
+            case EventGraph { Class: { } owner } eventGraph when shell.Session?.ContextFor(owner) is { } classContext:
                 CloseGraph(eventGraph);
-                editorFor(owner).RemoveEventGraphCommand.Execute(eventEntry);
+                classContext.RemoveEventGraph(eventGraph);
                 break;
         }
     }
@@ -254,11 +248,9 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
         Api?.ShowPanel(PanelContributions.InspectorId);
     }
 
-    private void AddGraph(ClassGraph cls, Action<ClassEditorViewModel> create)
+    private void AddGraph(ClassGraph cls, Func<ClassContext, NodeGraph> create)
     {
-        ClassEditorViewModel editor = editorFor(cls);
-        create(editor);
-        if (shell.Session is { } session && editor.OpenedGraph is { Graph: { } graph } && CommandTargets.GraphDocumentOf(session, graph) is { } id)
+        if (shell.Session is { } session && create(session.ContextFor(cls)) is { } graph && CommandTargets.GraphDocumentOf(session, graph) is { } id)
         {
             Api?.OpenDocument(id);
             shell.TreeSelection = graph;

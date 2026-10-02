@@ -1,10 +1,10 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ed="clr-namespace:NetPrints.Editor"
-             xmlns:edclasseditor="clr-namespace:NetPrints.Editor.ClassEditor"
+             xmlns:edinspectors="clr-namespace:NetPrints.Editor.Inspectors"
              xmlns:edcode="clr-namespace:NetPrints.Editor.CodeView"
              x:Class="NetPrints.Editor.Inspectors.ClassInspectorView"
-             x:DataType="edclasseditor:ClassEditorViewModel">
+             x:DataType="edinspectors:ClassInspectorViewModel">
   <!-- Class inspector (PAR-34) -->
   <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,*" ColumnDefinitions="Auto,*" Margin="4">
     <TextBlock Grid.ColumnSpan="2" Classes="header" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />

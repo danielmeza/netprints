@@ -1,3 +1,4 @@
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Security.Cryptography;
 using System.Text;
@@ -24,6 +25,7 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
 
     private readonly EditorContext context;
     private readonly Dictionary<ClassGraph, UndoRedoStack> undoStacks = [];
+    private readonly Dictionary<ClassGraph, ClassContext> contexts = [];
     private Task<bool>? saving;
     private bool saveRequested;
     private Task<bool>? flow;
@@ -44,6 +46,7 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
         wasRunning = IsRunning;
         context.RunState.PhaseChanged += OnRunPhaseChanged;
         project.PropertyChanged += OnProjectPropertyChanged;
+        project.Classes.CollectionChanged += OnClassesChanged;
     }
 
     /// <summary>Gets the open project.</summary>
@@ -98,6 +101,20 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
         }
 
         return stack;
+    }
+
+    /// <summary>Gets the context of a class: the one holder of its undo stack, member view models and inspectors, created on first use and disposed with the class or the session.</summary>
+    /// <param name="cls">A class of the project.</param>
+    /// <returns>The class's one context.</returns>
+    public ClassContext ContextFor(ClassGraph cls)
+    {
+        ArgumentNullException.ThrowIfNull(cls);
+        if (!contexts.ContainsKey(cls))
+        {
+            contexts[cls] = new ClassContext(cls, context, UndoStackFor(cls));
+        }
+
+        return contexts[cls];
     }
 
     /// <summary>Makes <paramref name="stack"/> the undo stack of a class, so the undo and redo commands act on the history its editor records to.</summary>
@@ -184,6 +201,13 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
     {
         context.RunState.PhaseChanged -= OnRunPhaseChanged;
         Project.PropertyChanged -= OnProjectPropertyChanged;
+        Project.Classes.CollectionChanged -= OnClassesChanged;
+        foreach (ClassContext classContext in contexts.Values)
+        {
+            classContext.Dispose();
+        }
+
+        contexts.Clear();
         foreach (UndoRedoStack stack in undoStacks.Values)
         {
             stack.Changed -= OnUndoChanged;
@@ -234,6 +258,15 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
     private void RaiseCommandStatesChanged() => commandStatesChanged?.Invoke(this, EventArgs.Empty);
 
     private void OnUndoChanged(object? sender, EventArgs e) => RaiseCommandStatesChanged();
+
+    private void OnClassesChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        foreach (ClassGraph removed in contexts.Keys.Where(cls => !Project.Classes.Contains(cls)).ToList())
+        {
+            contexts.Remove(removed, out ClassContext? classContext);
+            classContext?.Dispose();
+        }
+    }
 
     private void OnProjectPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {

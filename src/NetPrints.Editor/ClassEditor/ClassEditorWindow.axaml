@@ -274,10 +274,12 @@
 
       <!-- Inspectors (PAR-33..36) -->
       <Panel Grid.Column="4" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassEditorInspectorColumn}">
-        <edinspectors:ClassInspectorView x:Name="ClassInspector" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassInspector}" IsVisible="{Binding ShowClassInspector}" />
-        <!-- IsVisible on a wrapper, not the view itself, whose DataContext is overridden below (batch
+        <!-- IsVisible on a wrapper, not the view itself, whose DataContext is overridden (batch
              D1): avoids the multi-segment $parent[Window].DataContext.Show*Inspector path that logged a
              "Value is null" binding warning (owner report). -->
+        <Panel IsVisible="{Binding ShowClassInspector}">
+          <edinspectors:ClassInspectorView x:Name="ClassInspector" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ClassInspector}" DataContext="{Binding ClassInspector}" />
+        </Panel>
         <Panel IsVisible="{Binding ShowVariableInspector}">
           <edinspectors:VariableInspectorView x:Name="VariableInspector" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableInspector}" DataContext="{Binding SelectedVariable}" />
         </Panel>

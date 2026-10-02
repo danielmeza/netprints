@@ -13,7 +13,7 @@
     <ContentControl Content="{Binding Content}" IsVisible="{Binding !IsEmpty}"
                     AutomationProperties.AutomationId="{x:Static ed:AutomationIds.InspectorContent}">
       <ContentControl.DataTemplates>
-        <DataTemplate DataType="edclasseditor:ClassEditorViewModel" x:DataType="edclasseditor:ClassEditorViewModel">
+        <DataTemplate DataType="edinspectors:ClassInspectorViewModel" x:DataType="edinspectors:ClassInspectorViewModel">
           <edinspectors:ClassInspectorView />
         </DataTemplate>
         <DataTemplate DataType="edclasseditor:MethodViewModel" x:DataType="edclasseditor:MethodViewModel">

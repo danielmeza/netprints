@@ -62,10 +62,8 @@ internal sealed class ShellHost : IDisposable
         registry.Freeze();
 
         var shell = new ShellViewModel(registry, new NoServices(), TimeProvider.System, context.Dispatcher);
-        var inspector = shell.FindPanel(PanelContributions.InspectorId)?.Content as InspectorPanelViewModel
-            ?? throw new InvalidOperationException("The inspector panel is not registered.");
-        var actions = new ShellProjectActions(context, shell, inspector.EditorFor);
-        var adapter = new DockShellAdapter(shell, actions, id => OpenDocument(id, shell, inspector, context));
+        var actions = new ShellProjectActions(context, shell);
+        var adapter = new DockShellAdapter(shell, actions, id => OpenDocument(id, shell, context));
         actions.Api = adapter;
         shell.Layout = adapter;
 
@@ -88,7 +86,7 @@ internal sealed class ShellHost : IDisposable
         Actions.Dispose();
     }
 
-    private static DocumentViewModel? OpenDocument(DocumentId id, ShellViewModel shell, InspectorPanelViewModel inspector, EditorContext context)
+    private static DocumentViewModel? OpenDocument(DocumentId id, ShellViewModel shell, EditorContext context)
     {
         if (shell.Session is not { } session)
         {
@@ -101,7 +99,7 @@ internal sealed class ShellHost : IDisposable
                 return new ProjectSettingsDocumentViewModel(session, context);
             case DocumentKind.Graph:
                 return CommandTargets.GraphOf(session, id) is { } graph && (graph as ClassGraph ?? graph.Class) is { } cls
-                    ? new GraphDocumentViewModel(id, new NodeGraphViewModel(graph, inspector.EditorFor(cls).Services), cls, session) { Invoker = shell.Commands }
+                    ? new GraphDocumentViewModel(id, new NodeGraphViewModel(graph, session.ContextFor(cls).Services), cls, session) { Invoker = shell.Commands }
                     : null;
             default:
                 return null;
