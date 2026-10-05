@@ -299,7 +299,7 @@ public sealed class ShellProjectActionsTests : IDisposable
 
         session.UndoStackFor(cls).Undo();
         Assert.Empty(shell.OpenDocuments);
-        Assert.Empty(which == "method" ? cls.Methods.Where(m => m.Name == "Method") : cls.Constructors.Skip(1));
+        Assert.Empty(which == "method" ? cls.Methods.Where(m => m.Name == "Method") : cls.Constructors);
 
         session.UndoStackFor(cls).Redo();
         Assert.Empty(shell.OpenDocuments);
