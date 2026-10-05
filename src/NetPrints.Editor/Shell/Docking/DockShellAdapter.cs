@@ -80,7 +80,7 @@ public sealed partial class DockShellAdapter : ObservableObject, IShell, IShellL
             created.Dispose();
         }
 
-        if (factory.FindDocumentDock() is not { } dock)
+        if ((factory.FindDocumentDock() ?? factory.AddDocumentDock()) is not { } dock)
         {
             RebuildLayout();
             return;
@@ -147,8 +147,13 @@ public sealed partial class DockShellAdapter : ObservableObject, IShell, IShellL
         {
             factory.CloseDockable(tool);
             Layout.HiddenDockables?.Remove(tool);
-            factory.DockHome(panel);
-            tool = ShellDockFactory.Walk(Layout).OfType<ShellTool>().First(candidate => candidate.Id == panelId);
+            if (factory.DockHome(panel) is not { } homed)
+            {
+                SyncPanels();
+                return;
+            }
+
+            tool = homed;
         }
 
         factory.HideDockable(tool);

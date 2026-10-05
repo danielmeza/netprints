@@ -139,6 +139,32 @@ public class ShellAdapterTests
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public void OpeningADocumentWithoutADocumentDockKeepsTheLayoutAndActivatesTheDocument()
+    {
+        using var rig = ShellRig.Create();
+        rig.Api.HidePanel(PanelContributions.ErrorsId);
+        IDocumentDock dock = Assert.Single(ShellDockFactory.Walk(rig.Adapter.Layout).OfType<IDocumentDock>());
+        RemoveFromLayout(rig, dock);
+        rig.Settle();
+
+        rig.Api.OpenDocument(A);
+        rig.Settle();
+
+        Assert.False(rig.Api.IsPanelVisible(PanelContributions.ErrorsId));
+        Assert.Equal([A], rig.Api.OpenDocuments);
+        Assert.Equal(A, rig.Api.ActiveDocument);
+    }
+
+    private static void RemoveFromLayout(ShellRig rig, IDockable dock)
+    {
+        IDock owner = Assert.IsAssignableFrom<IDock>(dock.Owner);
+        IList<IDockable>? siblings = owner.VisibleDockables;
+        Assert.NotNull(siblings);
+        Assert.True(siblings.Remove(dock));
+        rig.Settle();
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public void AnUnknownPanelIsNeitherShownNorHidden()
     {
         using var rig = ShellRig.Create();

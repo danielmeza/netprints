@@ -141,6 +141,26 @@ internal sealed class ShellDockFactory : Factory
     public IDocumentDock? FindDocumentDock() =>
         MainLayout is { } layout ? Walk(layout).OfType<IDocumentDock>().FirstOrDefault(dock => dock.Id == DocumentsId) ?? Walk(layout).OfType<IDocumentDock>().FirstOrDefault() : null;
 
+    /// <summary>Creates the main window's document dock again, between the left and right tool docks, when the layout lost it.</summary>
+    /// <returns>The new dock, or null when the layout has no body to put it in.</returns>
+    public IDocumentDock? AddDocumentDock()
+    {
+        if (MainLayout is not { } layout || Walk(layout).OfType<IProportionalDock>().FirstOrDefault(dock => dock.Id == BodyId) is not { } body)
+        {
+            return null;
+        }
+
+        IDocumentDock documents = CreateDocumentDock();
+        documents.Id = DocumentsId;
+        documents.Proportion = 1 - LeftProportion - RightProportion;
+        documents.CanCreateDocument = false;
+        documents.IsCollapsable = false;
+        documents.VisibleDockables = CreateList<IDockable>();
+        int index = (body.VisibleDockables ?? []).TakeWhile(dockable => dockable.Id != RightSplitterId).Count();
+        InsertDockable(body, documents, index);
+        return documents;
+    }
+
     /// <summary>Puts a panel in its default place: its default tool dock, among the panes there by order.</summary>
     /// <param name="panel">The panel.</param>
     /// <returns>The pane, or null when the layout has no tool dock to put it in.</returns>
