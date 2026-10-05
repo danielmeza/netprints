@@ -27,6 +27,7 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
 
     private readonly EditorContext context;
     private readonly Dictionary<ClassGraph, UndoRedoStack> undoStacks = [];
+    private readonly Dictionary<ClassGraph, string> classPaths = [];
     private readonly Dictionary<ClassGraph, ClassContext> contexts = [];
     private Task<bool>? saving;
     private bool saveRequested;
@@ -79,14 +80,24 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
     /// <summary>Raised after the members or accessor graphs of any class of the session changed, by an edit, an undo or a redo.</summary>
     public event EventHandler? MembersChanged;
 
-    /// <summary>Gets the path of a class's graph file relative to the project, with <c>/</c> separators (the class path of its <see cref="DocumentId"/>s).</summary>
+    /// <summary>
+    /// Gets the path of a class's graph file relative to the project, with <c>/</c> separators (the class path of its <see cref="DocumentId"/>s).
+    /// The path is fixed the first time it is asked for, so renaming a class that has never been saved, or changing its namespace, does not change
+    /// the ids of its open documents.
+    /// </summary>
     /// <param name="cls">A class of the project.</param>
     /// <returns>The relative path.</returns>
     public string ClassPathOf(ClassGraph cls)
     {
         ArgumentNullException.ThrowIfNull(cls);
-        string directory = Path.GetDirectoryName(Path.GetFullPath(ProjectFilePath)) ?? "";
-        return Path.GetRelativePath(directory, Path.GetFullPath(Project.GetGraphFilePath(cls))).Replace('\\', '/');
+        if (!classPaths.TryGetValue(cls, out string? path))
+        {
+            string directory = Path.GetDirectoryName(Path.GetFullPath(ProjectFilePath)) ?? "";
+            path = Path.GetRelativePath(directory, Path.GetFullPath(Project.GetGraphFilePath(cls))).Replace('\\', '/');
+            classPaths[cls] = path;
+        }
+
+        return path;
     }
 
     /// <summary>Finds the class whose <see cref="ClassPathOf"/> is <paramref name="classPath"/>.</summary>
@@ -261,6 +272,11 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
         {
             contexts.Remove(removed, out ClassContext? classContext);
             classContext?.Dispose();
+        }
+
+        foreach (ClassGraph removed in classPaths.Keys.Where(cls => !Project.Classes.Contains(cls)).ToList())
+        {
+            classPaths.Remove(removed);
         }
     }
 

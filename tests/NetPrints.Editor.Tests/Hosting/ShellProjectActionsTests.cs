@@ -100,6 +100,28 @@ public sealed class ShellProjectActionsTests : IDisposable
     }
 
     [Fact]
+    public async Task RenamingANeverSavedClassKeepsItsOpenTabsResolving()
+    {
+        ProjectRig rig = OpenEmpty();
+        var api = new FakeShell();
+        rig.Actions.Api = api;
+        await rig.Actions.NewClassAsync(Token);
+        await rig.Actions.NewClassAsync(Token);
+        ProjectSessionViewModel session = Assert.IsType<ProjectSessionViewModel>(rig.Session);
+        ClassGraph renamed = session.Project.Classes[0];
+        ClassGraph other = session.Project.Classes[1];
+        DocumentId id = DocumentId.Graph(session.ClassPathOf(renamed), DocumentId.ClassGraphKey);
+        api.OpenDocument(id);
+
+        renamed.Name = "Renamed";
+        rig.Actions.AddVariable(other);
+
+        Assert.Contains(id, api.OpenDocuments);
+        Assert.Same(renamed, CommandTargets.GraphOf(session, id));
+        Assert.Equal(id, CommandTargets.GraphDocumentOf(session, renamed));
+    }
+
+    [Fact]
     public async Task NewClassNamesAreUnique()
     {
         ProjectRig rig = OpenEmpty();
