@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Core;
 using NetPrints.Editor.Commands;
@@ -137,22 +138,27 @@ public sealed class ShellCommandContextProviderTests(TestEditor testEditor) : Gr
     [Fact]
     public void AnUnsubscribedProviderStopsWatchingTheShellAndTheGraph()
     {
-        (ShellViewModel shell, ShellCommandContextProvider provider, _, GraphDocumentViewModel document) = Create();
+        (ShellViewModel shell, WeakReference provider) = SubscribeAndUnsubscribe();
         using (shell)
         {
-            int pulses = 0;
-            EventHandler handler = (_, _) => pulses++;
-            provider.CommandStatesChanged += handler;
-            shell.ActiveDocument = document;
-            provider.CommandStatesChanged -= handler;
-            int atUnsubscribe = pulses;
+            for (int i = 0; i < 3; i++)
+            {
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+            }
 
-            shell.ActiveDocument = null;
-            shell.ActiveDocument = document;
-            Node added = Graph.AddNode<IfElseNode>(new GraphPoint(200, 100));
-            Graph.SelectNodes([Graph.Nodes.Single(vm => vm.Node == added)], deselectPrevious: true);
-
-            Assert.Equal(atUnsubscribe, pulses);
+            Assert.False(provider.IsAlive);
         }
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private (ShellViewModel Shell, WeakReference Provider) SubscribeAndUnsubscribe()
+    {
+        (ShellViewModel shell, ShellCommandContextProvider provider, _, GraphDocumentViewModel document) = Create();
+        EventHandler handler = (_, _) => { };
+        provider.CommandStatesChanged += handler;
+        shell.ActiveDocument = document;
+        provider.CommandStatesChanged -= handler;
+        return (shell, new WeakReference(provider));
     }
 }
