@@ -65,6 +65,7 @@ public class CodeViewTests
         await inspector.ClassInspector.WaitVisibleAsync(Token);
         await inspector.WaitClassCodeHighlightedAsync(Token, TimeSpan.FromSeconds(10));
 
+        Assert.Contains(FindCodeView(session).CodeEditor.TextArea.TextView.LineTransformers, transformer => transformer.GetType().Assembly.GetName().Name == "AvaloniaEdit.TextMate");
         Assert.Contains("class Program", await inspector.ClassCodeView.PropertyAsync(AutomationPropertyNames.Text, Token), StringComparison.Ordinal);
     }
 
