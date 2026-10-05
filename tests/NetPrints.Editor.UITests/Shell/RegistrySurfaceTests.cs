@@ -81,7 +81,7 @@ public class RegistrySurfaceTests
         Assert.Equal(Ids("newProject", "openProject", "closeProject", Separator, "newClass", "addExistingClass", Separator, "save", "saveAll", Separator, "projectSettings", "references", Separator, "exit"), Layout(rig.Open("File")).Select(Strip(MenuId)));
         Assert.Equal(Ids("undo", "redo", Separator, "delete", "rename", "selectAll", Separator, "nodeSearch", Separator, "classSettings", "addMethod", "addConstructor", "addVariable", "addEventGraph", "overrideMethod"), Layout(rig.Open("Edit")).Select(Strip(MenuId)));
         Assert.Equal(
-            Ids("frameSelection", "fitAll", Separator, "showPanel.projectTree", "showPanel.inspector", "showPanel.errors", "showPanel.output", "showPanel.csharp", Separator, "floatDocument", "dockDocument", "resetLayout"),
+            Ids("frameSelection", "fitAll", Separator, "showPanel.projectTree", "showPanel.inspector", "showPanel.variables", "showPanel.errors", "showPanel.output", "showPanel.csharp", Separator, "floatDocument", "dockDocument", "resetLayout"),
             Layout(rig.Open("View")).Select(Strip(MenuId)));
         Assert.Equal(Ids("compile", Separator, "run", "stop"), Layout(rig.Open("Build")).Select(Strip(MenuId)));
         Assert.Equal(Ids("nextTab", "previousTab", "closeTab"), Layout(rig.Open("Go")).Select(Strip(MenuId)));
@@ -449,6 +449,22 @@ public class RegistrySurfaceTests
         rig.Shell.StatusBar.SetBuildState(BuildState.Building);
         rig.Settle();
         Assert.Equal("Building…", Assert.IsType<TextBlock>(rig.Find(AutomationIds.ShellBuildState)).Text);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public void TheStatusBarShowsABusyIndicatorWhileBuilding()
+    {
+        using var rig = SurfaceRig.Create();
+        Assert.Null(rig.Find(AutomationIds.ShellBusy));
+
+        rig.Shell.StatusBar.SetBuildState(BuildState.Building);
+        rig.Settle();
+        Assert.NotNull(rig.Find(AutomationIds.ShellBusy));
+        Assert.Equal("Building…", Assert.IsType<TextBlock>(rig.Find(AutomationIds.ShellBusyText)).Text);
+
+        rig.Shell.StatusBar.SetBuildState(BuildState.Idle);
+        rig.Settle();
+        Assert.Null(rig.Find(AutomationIds.ShellBusy));
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]

@@ -16,12 +16,12 @@ internal sealed class ProjectRig : IDisposable
         public object? GetService(Type serviceType) => null;
     }
 
-    public ProjectRig(EditorContext context)
+    public ProjectRig(EditorContext context, TimeProvider? time = null)
     {
         var registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
         BuiltInContributions.Register(registry);
         registry.Freeze();
-        Shell = new ShellViewModel(registry, new NoServices(), TimeProvider.System, new InlineDispatcher());
+        Shell = new ShellViewModel(registry, new NoServices(), time ?? TimeProvider.System, new InlineDispatcher());
         Actions = new ShellProjectActions(context, Shell);
     }
 

@@ -336,6 +336,14 @@ public static class AutomationIds
     /// </summary>
     public const string ShellBuildState = "Shell.BuildState";
     /// <summary>
+    /// Automation id for the status bar's busy indicator (progress bar and text).
+    /// </summary>
+    public const string ShellBusy = "Shell.Busy";
+    /// <summary>
+    /// Automation id for the busy indicator's text.
+    /// </summary>
+    public const string ShellBusyText = "Shell.BusyText";
+    /// <summary>
     /// Automation id for the error badge of the command bar's compile button.
     /// </summary>
     public const string ShellCompileBadge = "Shell.CompileBadge";

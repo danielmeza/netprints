@@ -16,11 +16,17 @@ public enum BuildState
     Running,
 }
 
-/// <summary>The status bar: a message that expires on the injected clock, and the build state.</summary>
+/// <summary>The status bar: a message that expires on the injected clock, the build state and the busy indicator.</summary>
 /// <param name="timeProvider">The clock the expiry runs on.</param>
 /// <param name="dispatcher">Brings the expiry, which a real clock fires on a pool thread, to the UI thread.</param>
 public sealed partial class StatusBarViewModel(TimeProvider timeProvider, IUiDispatcher dispatcher) : ObservableObject, IDisposable
 {
+    /// <summary>How long an operation must run before the busy indicator appears, so fast ones do not flash it.</summary>
+    public static readonly TimeSpan BusyIndicatorDelay = TimeSpan.FromMilliseconds(150);
+
+    private const string BuildingText = "Building…";
+
+    private readonly List<BusyScope> busyScopes = [];
     private ITimer? expiryTimer;
     private int version;
 
@@ -33,10 +39,18 @@ public sealed partial class StatusBarViewModel(TimeProvider timeProvider, IUiDis
     [NotifyPropertyChangedFor(nameof(BuildStateText))]
     public partial BuildState BuildState { get; private set; }
 
+    /// <summary>Gets a value indicating whether a long operation or a build is in progress.</summary>
+    [ObservableProperty]
+    public partial bool IsBusy { get; private set; }
+
+    /// <summary>Gets what the busy operation is doing, or null when not busy.</summary>
+    [ObservableProperty]
+    public partial string? BusyText { get; private set; }
+
     /// <summary>Gets the build state as text, empty when idle.</summary>
     public string BuildStateText => BuildState switch
     {
-        BuildState.Building => "Building…",
+        BuildState.Building => BuildingText,
         BuildState.Running => "Running",
         _ => "",
     };
@@ -59,13 +73,35 @@ public sealed partial class StatusBarViewModel(TimeProvider timeProvider, IUiDis
 
     /// <summary>Sets the build state.</summary>
     /// <param name="state">The new state.</param>
-    public void SetBuildState(BuildState state) => BuildState = state;
+    public void SetBuildState(BuildState state)
+    {
+        BuildState = state;
+        UpdateBusy();
+    }
 
-    /// <summary>Cancels the pending expiry.</summary>
+    /// <summary>
+    /// Starts a long operation: the busy indicator shows <paramref name="text"/> once the operation has run for
+    /// <see cref="BusyIndicatorDelay"/>, and goes when the returned scope is disposed.
+    /// </summary>
+    /// <param name="text">What the operation is doing.</param>
+    /// <returns>The scope that ends the busy state when disposed; disposing it again does nothing.</returns>
+    public IDisposable BeginBusy(string text)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        var scope = new BusyScope(this, text, timeProvider);
+        busyScopes.Add(scope);
+        return scope;
+    }
+
+    /// <summary>Cancels the pending expiry and the pending busy indicators.</summary>
     public void Dispose()
     {
         expiryTimer?.Dispose();
         expiryTimer = null;
+        foreach (BusyScope scope in busyScopes.ToList())
+        {
+            scope.Dispose();
+        }
     }
 
     private void Expire(int shown) => dispatcher.Post(() => Clear(shown));
@@ -75,6 +111,56 @@ public sealed partial class StatusBarViewModel(TimeProvider timeProvider, IUiDis
         if (shown == version)
         {
             Message = null;
+        }
+    }
+
+    private void Reveal(BusyScope scope) => dispatcher.Post(() => RevealOnUi(scope));
+
+    private void RevealOnUi(BusyScope scope)
+    {
+        if (busyScopes.Contains(scope))
+        {
+            scope.IsRevealed = true;
+            UpdateBusy();
+        }
+    }
+
+    private void End(BusyScope scope)
+    {
+        if (busyScopes.Remove(scope))
+        {
+            UpdateBusy();
+        }
+    }
+
+    private void UpdateBusy()
+    {
+        string? text = busyScopes.LastOrDefault(scope => scope.IsRevealed)?.Text
+            ?? (BuildState == BuildState.Building ? BuildingText : null);
+        BusyText = text;
+        IsBusy = text is not null;
+    }
+
+    private sealed class BusyScope : IDisposable
+    {
+        private readonly StatusBarViewModel owner;
+        private readonly ITimer timer;
+
+        public BusyScope(StatusBarViewModel owner, string text, TimeProvider timeProvider)
+        {
+            this.owner = owner;
+            Text = text;
+            timer = timeProvider.CreateTimer(_ => owner.Reveal(this), null, BusyIndicatorDelay, Timeout.InfiniteTimeSpan);
+        }
+
+        public string Text { get; }
+
+        public bool IsRevealed { get; set; }
+
+        public void Dispose()
+        {
+            timer.Dispose();
+            owner.End(this);
         }
     }
 }

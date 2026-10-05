@@ -77,4 +77,68 @@ public class StatusBarViewModelTests
 
         Assert.Contains(nameof(StatusBarViewModel.BuildStateText), changed);
     }
+
+    [Fact]
+    public void BusyAppearsAfterTheDelayAndEndsWithItsScope()
+    {
+        var bar = new StatusBarViewModel(time, new InlineDispatcher());
+
+        IDisposable scope = bar.BeginBusy("Loading project…");
+        time.Advance(StatusBarViewModel.BusyIndicatorDelay - TimeSpan.FromMilliseconds(1));
+        Assert.False(bar.IsBusy);
+
+        time.Advance(TimeSpan.FromMilliseconds(1));
+        Assert.True(bar.IsBusy);
+        Assert.Equal("Loading project…", bar.BusyText);
+
+        scope.Dispose();
+        scope.Dispose();
+        Assert.False(bar.IsBusy);
+        Assert.Null(bar.BusyText);
+    }
+
+    [Fact]
+    public void AnOperationFasterThanTheDelayNeverShowsBusy()
+    {
+        var bar = new StatusBarViewModel(time, new InlineDispatcher());
+        var changed = new List<string?>();
+        bar.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+        bar.BeginBusy("Quick").Dispose();
+        time.Advance(TimeSpan.FromSeconds(1));
+
+        Assert.False(bar.IsBusy);
+        Assert.DoesNotContain(nameof(StatusBarViewModel.IsBusy), changed);
+    }
+
+    [Fact]
+    public void NestedScopesStayBusyUntilTheLastEndsAndShowTheNewestText()
+    {
+        var bar = new StatusBarViewModel(time, new InlineDispatcher());
+        IDisposable outer = bar.BeginBusy("Loading references…");
+        IDisposable inner = bar.BeginBusy("Preparing graphs…");
+        time.Advance(StatusBarViewModel.BusyIndicatorDelay);
+        Assert.Equal("Preparing graphs…", bar.BusyText);
+
+        inner.Dispose();
+        Assert.True(bar.IsBusy);
+        Assert.Equal("Loading references…", bar.BusyText);
+
+        outer.Dispose();
+        Assert.False(bar.IsBusy);
+    }
+
+    [Fact]
+    public void BuildingIsBusyAtOnceWithItsOwnText()
+    {
+        var bar = new StatusBarViewModel(time, new InlineDispatcher());
+
+        bar.SetBuildState(BuildState.Building);
+        Assert.True(bar.IsBusy);
+        Assert.Equal("Building…", bar.BusyText);
+
+        bar.SetBuildState(BuildState.Running);
+        Assert.False(bar.IsBusy);
+        Assert.Null(bar.BusyText);
+    }
 }

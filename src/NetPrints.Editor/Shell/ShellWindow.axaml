@@ -88,6 +88,11 @@
       <DockPanel>
         <TextBlock DockPanel.Dock="Right" Margin="16,0,0,0" Text="{Binding StatusBar.BuildStateText}"
                    AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShellBuildState}" />
+        <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="8" Margin="0,0,16,0" IsVisible="{Binding StatusBar.IsBusy}"
+                    AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShellBusy}">
+          <ProgressBar IsIndeterminate="True" Width="80" Height="4" VerticalAlignment="Center" />
+          <TextBlock Text="{Binding StatusBar.BusyText}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShellBusyText}" />
+        </StackPanel>
         <TextBlock Text="{Binding StatusMessage}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShellStatusMessage}" />
       </DockPanel>
     </Border>

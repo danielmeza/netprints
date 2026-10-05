@@ -22,6 +22,7 @@ internal sealed class ProjectLoader : IDisposable
     private readonly ShellViewModel shell;
     private readonly ILogger<ProjectLoader> logger;
     private readonly HashSet<(string Id, string? ManifestPath, string Code)> reportedExtensionFailures = [];
+    private CancellationTokenSource? warmUp;
     private Project? subscribedProject;
     private ProjectSessionViewModel? session;
 
@@ -38,8 +39,11 @@ internal sealed class ProjectLoader : IDisposable
         logger = context.LoggerFactory.CreateLogger<ProjectLoader>();
     }
 
-    /// <summary>Reloads the reflection provider for the open project.</summary>
-    /// <returns>A task that completes when the provider was reloaded; a failure is shown in the error dialog.</returns>
+    /// <summary>
+    /// Reloads the reflection provider for the open project, then warms the overload lists of its graphs' nodes off the UI
+    /// thread; both show the busy indicator. A newer reload cancels the warm-up of the older one.
+    /// </summary>
+    /// <returns>A task that completes when the provider was reloaded and warmed; a failure is shown in the error dialog.</returns>
     public async Task ReloadReflectionAsync()
     {
         if (shell.Session?.Project is not { } project)
@@ -47,9 +51,30 @@ internal sealed class ProjectLoader : IDisposable
             return;
         }
 
+        if (warmUp is not null)
+        {
+            await warmUp.CancelAsync().ConfigureAwait(true);
+            warmUp.Dispose();
+        }
+
+        warmUp = new CancellationTokenSource();
+        CancellationToken warmUpToken = warmUp.Token;
+
         try
         {
-            await context.Reflection.ReloadAsync(project).ConfigureAwait(true);
+            using (shell.StatusBar.BeginBusy("Loading references…"))
+            {
+                await context.Reflection.ReloadAsync(project).ConfigureAwait(true);
+            }
+
+            using (shell.StatusBar.BeginBusy("Preparing graphs…"))
+            {
+                await OverloadWarmUp.WarmAsync(context.Reflection, project, warmUpToken).ConfigureAwait(true);
+            }
+        }
+        catch (OperationCanceledException) when (warmUpToken.IsCancellationRequested)
+        {
+            // Superseded by a newer reload.
         }
         catch (Exception ex)
         {
@@ -144,28 +169,35 @@ internal sealed class ProjectLoader : IDisposable
 
         try
         {
-            IReadOnlyList<string> requestedProperties = context.Extensions.Current.ProjectProperties;
-            ProjectSnapshot snapshot = await context.Projects.LoadAsync(path, CancellationToken.None).ConfigureAwait(true);
-            DocumentIssue? notTrusted = await LoadExtensionsForProjectAsync(snapshot).ConfigureAwait(true);
-            if (context.Extensions.Current.ProjectProperties.Any(name => !requestedProperties.Contains(name, StringComparer.Ordinal)))
+            IReadOnlyList<DocumentIssue> issues;
+            Project project;
+            using (shell.StatusBar.BeginBusy("Loading project…"))
             {
-                // The project's own extensions add MSBuild properties the first evaluation did not request (FR-025).
-                snapshot = await context.Projects.LoadAsync(path, CancellationToken.None).ConfigureAwait(true);
+                IReadOnlyList<string> requestedProperties = context.Extensions.Current.ProjectProperties;
+                ProjectSnapshot snapshot = await context.Projects.LoadAsync(path, CancellationToken.None).ConfigureAwait(true);
+                DocumentIssue? notTrusted = await LoadExtensionsForProjectAsync(snapshot).ConfigureAwait(true);
+                if (context.Extensions.Current.ProjectProperties.Any(name => !requestedProperties.Contains(name, StringComparer.Ordinal)))
+                {
+                    // The project's own extensions add MSBuild properties the first evaluation did not request (FR-025).
+                    snapshot = await context.Projects.LoadAsync(path, CancellationToken.None).ConfigureAwait(true);
+                }
+
+                DocumentIssue? unknownProfile = context.Extensions.Current.FindProfile(snapshot.ProfileId) is null
+                    ? new DocumentIssue(DocumentIssueSeverity.Warning, DocumentIssue.UnknownProfile,
+                        $"The project profile '{snapshot.ProfileId}' is not provided by any loaded extension: the default profile is used. The project file is unchanged.",
+                        new DocumentId(Path.GetFileName(snapshot.ProjectFilePath)))
+                    : null;
+                ProjectLoadResult loaded = await context.Persistence.LoadAsync(snapshot, CancellationToken.None).ConfigureAwait(true);
+
+                SetProject(loaded.Project);
+                project = loaded.Project;
+                issues = [.. new[] { notTrusted, unknownProfile }.OfType<DocumentIssue>(), .. loaded.Issues];
             }
 
-            DocumentIssue? unknownProfile = context.Extensions.Current.FindProfile(snapshot.ProfileId) is null
-                ? new DocumentIssue(DocumentIssueSeverity.Warning, DocumentIssue.UnknownProfile,
-                    $"The project profile '{snapshot.ProfileId}' is not provided by any loaded extension: the default profile is used. The project file is unchanged.",
-                    new DocumentId(Path.GetFileName(snapshot.ProjectFilePath)))
-                : null;
-            ProjectLoadResult loaded = await context.Persistence.LoadAsync(snapshot, CancellationToken.None).ConfigureAwait(true);
-
-            SetProject(loaded.Project);
-            shell.StatusBar.Show($"Loaded project {loaded.Project.Name}", TimeSpan.FromSeconds(5));
+            shell.StatusBar.Show($"Loaded project {project.Name}", TimeSpan.FromSeconds(5));
 
             await ReportExtensionFailuresAsync().ConfigureAwait(true);
 
-            IReadOnlyList<DocumentIssue> issues = [.. new[] { notTrusted, unknownProfile }.OfType<DocumentIssue>(), .. loaded.Issues];
             if (issues.Count > 0)
             {
                 await context.Dialogs.ShowErrorAsync("Project loaded with issues",
@@ -238,6 +270,7 @@ internal sealed class ProjectLoader : IDisposable
     public void Dispose()
     {
         Unsubscribe();
+        warmUp?.Dispose();
         session?.Dispose();
     }
 

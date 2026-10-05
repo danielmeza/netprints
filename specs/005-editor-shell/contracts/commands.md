@@ -91,3 +91,11 @@ tree selection's class, else the active document's class.
 - Save: `Saved <n> file(s)`. Compile: `Build succeeded`, or `Build failed: <n> error(s)`. Run: `Running…`, then
   `Exited with code <n>`.
 - A backup failure: `Backups are failing; see the log`, shown once per session.
+
+## 4. Busy indicator
+
+The status bar shows an indeterminate progress bar with a text while a long operation runs, 150 ms after it starts so that
+fast ones do not flash it (`StatusBarViewModel.BeginBusy`): "Loading project…" (open, create), "Loading references…" (reflection
+reload) and "Preparing graphs…" (the overload warm-up that runs after each reload, off the UI thread, so the first node
+search and the first graph open do not wait for reflection). A build shows "Building…" at once, from the build state. Scopes
+nest; the newest text wins.
