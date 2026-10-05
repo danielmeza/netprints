@@ -170,7 +170,7 @@ public class ReflectionProviderTests(RuntimeReflectionFixture fixture) : IClassF
     [Fact]
     public void ReflectionLibraryReferencesNoUiFramework()
     {
-        var referenced = typeof(ReflectionProvider).Assembly.GetReferencedAssemblies().Select(a => a.Name!).ToList();
+        var referenced = typeof(ReflectionProvider).Assembly.GetReferencedAssemblies().Select(a => a.Name ?? string.Empty).ToList();
         Assert.False(referenced.Any(n => n.StartsWith("Avalonia", StringComparison.Ordinal)
             || n == "PresentationFramework" || n == "PresentationCore" || n == "WindowsBase"
             || n.StartsWith("System.Windows", StringComparison.Ordinal)), string.Join(", ", referenced));

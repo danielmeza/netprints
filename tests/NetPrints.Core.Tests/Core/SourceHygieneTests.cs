@@ -162,7 +162,6 @@ namespace NetPrints.Tests.Core
             "tests/NetPrints.Editor.Tests/Graph/Nodes/NodeViewModelTests.cs:70",
             "tests/NetPrints.Editor.Tests/Graph/Pins/NodePinViewModelTests.cs:68",
             "tests/NetPrints.Editor.Tests/Graph/ReflectionReloadTests.cs:69",
-            "tests/NetPrints.Editor.Tests/Reflection/ReflectionProviderTests.cs:116",
             "tests/NetPrints.Editor.Tests/Search/SearchPerformanceTests.cs:30",
             "tests/NetPrints.Editor.Tests/Variables/MemberVariableViewModelTests.cs:46",
             "tests/NetPrints.Editor.Tests/Variables/MemberVariableViewModelTests.cs:53",
