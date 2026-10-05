@@ -313,7 +313,7 @@ FR-010 to FR-018 (spec.md text; all tests named exist at this head):
 | FR-010 one window with menu bar, command bar, tree, tabs, inspector, bottom panel, status bar; no launcher or class windows | `ShellCompositionTests.TheShellWindowIsTheOnlyWindowAndNoLegacyWindowOpensWhenAProjectLoads`; `ShellMainFlowTests` (window types `["ShellWindow"]`); `ShellAdapterTests.TheDefaultLayoutHasTheTreeOnTheLeftTheInspectorOnTheRightAndErrorsActiveAtTheBottom`; `RegistrySurfaceTests` (menus, command bar, status bar); `BottomPanelsWiringTests`; the old windows and their view models are deleted (T044), so nothing can open them |
 | FR-011 tree content and its actions | `ProjectTreePanelViewModelTests.TheTreeShowsTheProjectItsClassesAndTheFourGroupsOfEachClass`, `TheTreeFollowsAddsRemovesAndRenamesOfMembersAndClasses`, `RenameAndDeleteActOnTheSelectedRowAndRenameIsOffForConstructors`, `ContextMenusListTheRegistryItemsOfTheTargetAndHideTheOnesThatCannotRun`, `AContextMenuEntryRunsItsCommandOnTheSelectedRow`; `ProjectTreeWiringTests` (4); `FormerActionsReachableTests.TheTreeCommandsAddAndRemoveMembersAndOpenTheirGraphs` |
 | FR-012 open or activate a tab; reorder, close, next and previous | `ShellAdapterTests.OpeningADocumentTwiceKeepsItsOneTab`, `ClosingADocumentRemovesItsTabAndActivatesANeighbour`; `DocumentTabsTests.ATabClosesWithItsButtonAndWithAMiddleClick`, `TabsReorderByDraggingOneOverAnother`, `CloseTabNextTabAndPreviousTabWorkOnTheActiveDocument`; `ShellCompositionTests.CtrlTabCyclesAndCtrlWClosesTheActiveTabThroughTheWindowsKeyBindings`; `DocumentCommandsTests` (close, next, previous, wrap-around); `ProjectTreePanelViewModelTests.OpeningAGraphItemOpensItsDocumentThroughTheShellAndOtherItemsDoNothing`. Ctrl+Shift+Tab is covered through the previous-tab command and the key table (`BuiltInCommandTableTests`), not by a key press test |
-| FR-013 inspector follows the selection | `InspectorPanelViewModelTests` (empty, class, method or constructor, variable, event graph shows none, removed selection, rename in the inspector); `ProjectTreeWiringTests.DoubleClickingAMethodRowOpensItsDocumentAndTheInspectorShowsTheMethod`; `ShellEditingTests.TheClassInspectorRenamesTheClassAsTypedAndShowsItsGeneratedCode`. The event-graph and entry inspector (FR-070 to FR-074) belongs to sub-phase F, by design |
+| FR-013 inspector follows the selection of the tree or the graph | `InspectorPanelViewModelTests` (empty, class, method or constructor, variable, event graph shows none, removed selection, rename in the inspector); `InspectorGraphSelectionTests` and `GraphSelectionInspectorTargetTests` (graph node selection: a getter or setter node shows its variable, a call to a project method shows that method, any other node or none shows the owner of the graph, the latest selection wins; R14); `ProjectTreeWiringTests.DoubleClickingAMethodRowOpensItsDocumentAndTheInspectorShowsTheMethod`; `ShellEditingTests.TheClassInspectorRenamesTheClassAsTypedAndShowsItsGeneratedCode`. The event-graph and entry inspector (FR-070 to FR-074) belongs to sub-phase F, by design |
 | FR-014 Errors, Output and C# tabs | `ErrorsPanelViewModelTests` (5: whole-project diagnostics, class with no tab, open and select, no second tab, vanished graph); `BottomPanelsWiringTests` (double-click an error row, Output lists build and program output, Output follows the newest line, C# of the active class); `ShellEditingTests.DoubleTappingAnErrorRowsBackgroundOpensItsGraphAndSelectsTheNode`, `PressingEnterOnTheSelectedErrorRowNavigatesToo`; `ShellMainFlowTests` (activate the error, read `Hello, World!`) |
 | FR-015 dock, tab, float, dock back; hide and show; Reset layout | `ShellAdapterTests` (float and dock back, panel hide and show, default layout, reset keeps documents, a floated pane closed with the OS button docks back, automation ids in docked, tabbed and floating panes); `DocumentTabsTests.TheViewMenuOffersFloatOrDockAccordingToTheLayout`, `ClosingAPaneHidesItAndTheViewMenuShowsItAgain`; `DocumentCommandsTests.EveryPanelHasAShowCommandThatShowsIt`, `ResetLayoutRestoresTheDefaultLayout`; E2E `ResetLayoutTests` and `FloatAndRedockGraphTests`; spike E2E `DockSpikeTests` (native float and re-dock). Gap, stated plainly: no test drags a pane to a chosen side or tabs two panes together by mouse. ADR-0018 drives floating by commands, and the drag docking is Dock's own behaviour. It is covered only through the layout commands and the default layout |
 | FR-016 graph tab floats and keeps full editing | `DocumentTabsTests.AFloatedGraphKeepsEditingUndoAndSave`, `ADockedGraphCanBeFloatedAgain`; `ShellAdapterTests.AFloatedGraphTabClosesLikeATabDoes`; E2E `FloatAndRedockGraphTests` (float, edit, undo, redo, save, dock back, float again, close its window) |
@@ -1027,7 +1027,7 @@ Standalone, headless, after the fix: `EditCompileAndRun` 50 of 50 passed, `Shell
 
 ## Review C (T046, `review-C.md`)
 
-Verdict: request changes, 1 blocker, 2 majors, 15 minors, 13 nits (31 findings). Fix batches F1 to F5 (T047), plus R13 in the flaky-test plan's B4. Batch F1 fixed R1, R2, R3, R4, R8 and R9; the rest are open. Full text: the PR #12 review comment.
+Verdict: request changes, 1 blocker, 2 majors, 15 minors, 13 nits (31 findings). Fix batches F1 to F5 (T047), plus R13 in the flaky-test plan's B4. Batch F1 fixed R1, R2, R3, R4, R8 and R9; batch F2 fixed R5, R7, R10, R11, R12 and R14; the rest are open. Full text: the PR #12 review comment.
 
 | Id | Sev | Summary | Batch | Status |
 |---|---|---|---|---|
@@ -1035,16 +1035,16 @@ Verdict: request changes, 1 blocker, 2 majors, 15 minors, 13 nits (31 findings).
 | R2 | major | Closing a graph tab leaks its `NodeGraphViewModel` | F1 | fixed 279077ac |
 | R3 | major | Global shortcuts do nothing in a floated graph window | F1 | fixed c4925655 |
 | R4 | minor | Tests bypass the invoker and the keys | F1 | fixed f609e829 |
-| R5 | minor | Run no longer brings the Output panel forward | F2 | open |
+| R5 | minor | Run no longer brings the Output panel forward | F2 | fixed 6242d811 |
 | R6 | minor | The binding-warning guard filters too much | F3 | open |
-| R7 | minor | Renaming a never-saved class orphans its tabs | F2 | open |
+| R7 | minor | Renaming a never-saved class orphans its tabs | F2 | fixed be987ee2 |
 | R8 | minor | `overrideMethod` records an undo entry for nothing | F1 | fixed 999a076e |
 | R9 | minor | F2 in the canvas renames the wrong item | F1 | fixed f609e829 |
-| R10 | minor | Some Errors rows can't be activated | F2 | open |
-| R11 | minor | A floating document's window is not brought forward | F2 | open |
-| R12 | minor | Dialogs from a floated window open on the main window | F2 | open |
+| R10 | minor | Some Errors rows can't be activated | F2 | fixed 6b687459 |
+| R11 | minor | A floating document's window is not brought forward | F2 | fixed dc2cc819 |
+| R12 | minor | Dialogs from a floated window open on the main window | F2 | fixed dc2cc819 |
 | R13 | minor | A row's empty area ignores double-clicks and right-clicks | B4 (flaky plan) | open |
-| R14 | minor | The inspector ignores graph selection | F2 | open |
+| R14 | minor | The inspector ignores graph selection | F2 | fixed aa4e2e14 |
 | R15 | minor | Creating a `ClassContext` runs code analysis | F4 | open |
 | R16 | minor | The unsubscribe test can't fail | F3 | open |
 | R17 | minor | The Ctrl+Shift+Tab test can't tell previous from next | F3 | open |
@@ -1070,3 +1070,11 @@ Decisions of batch F1:
 - Decision (R2): `DocumentViewModel` raises `Disposed` and `GraphDocumentFactory` disposes the graph it created on that event (the document does not own an injected graph).
 - Decision (R3): the global key bindings are attached to the graph document template as well as to `ShellWindow`, from the same registry invoker. Floated tool panels are not covered.
 - Decision (R4): `EditorSession.RunAsync`, `DocumentTabsTests` and `FormerActionsReachableTests` run commands through `CommandInvoker.TryRun` and assert they are enabled; `PressButton` asserts the button is enabled.
+
+Decisions of batch F2 (R5, R7, R10, R11, R12, R14: 6242d811, be987ee2, 6b687459, dc2cc819, aa4e2e14):
+- Decision (R5): Run brings the Output panel forward once per run, when the run phase starts (the program starts), not on each line; a later switch to another bottom panel sticks. `OutputPanelViewModel` calls `ShowPanel` on the transition to `Running`. Red: `RunBringsOutputForwardOnceNotOnEveryLine` (0 calls, expected 1); green 7/7 in `OutputPanelViewModelTests`. `BottomPanelPage.OutputLinesAsync` and `WaitForOutputContainingAsync` no longer click the Output tab; `CompileTheProject` opens it explicitly, since a build alone does not bring it forward.
+- Decision (R7): `ProjectSessionViewModel.ClassPathOf` fixes a class's path the first time it is asked for, so renaming a never-saved class or changing its namespace keeps its document ids. Red: `RenamingANeverSavedClassKeepsItsOpenTabsResolving`.
+- Decision (R10): an Errors row with a class but no graph key navigates to the class graph; with neither it stays not navigable. Two tests that pinned the old behavior now use a row with no class. Red: `ARowWithAClassButNoGraphKeyOpensTheClassGraph`.
+- Decision (R11): `DockShellAdapter.Activate` also calls `SetActive` on the host of the floating window that holds the document. Headless windows are never deactivated, so the test counts the host's `SetActive` calls through a spy host. Red: `ActivatingAFloatedDocumentBringsItsWindowForward`.
+- Decision (R12): `WindowService.ActiveWindow` is the active open window (a Dock host window included), the main window when none is active. Red: `DialogsAreOwnedByTheActiveDockHostWindow`.
+- Decision (R14): the inspector follows graph node selection too (`GraphSelectionInspectorTarget`): a variable getter or setter node shows its variable, a call to a method of a project class shows that method, any other node or none shows the member that owns the graph (the variable for an accessor or type graph); several selected nodes count as none. The most recent selection wins: a graph selection sets `ShellViewModel.TreeSelection`, so the tree row follows and a later tree click is a change like any other. Red: `InspectorGraphSelectionTests` (4 of 5 failed; the resolver unit tests were written after the code).

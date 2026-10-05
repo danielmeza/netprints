@@ -37,7 +37,7 @@ headless tests drive.
 | Id | Title | Default dock | Content |
 |---|---|---|---|
 | `netprints.panel.projectTree` | Project | Left | project › classes › Methods, Constructors, Variables, Event graphs |
-| `netprints.panel.inspector` | Inspector | Right | class, method, constructor, variable or event-entry inspector for the current selection |
+| `netprints.panel.inspector` | Inspector | Right | class, method, constructor, variable or event-entry inspector for the latest selection, in the tree or in the active graph (a variable getter or setter node shows its variable, a call to a method of a project class shows that method, any other node or none shows the member that owns the graph) |
 | `netprints.panel.variables` | Variables | Right (second tab of the Inspector's dock) | member variables of the active document's class (add, remove, rename through the row's inspector, getter, setter and type graph buttons) and, while the active document is a method, constructor or accessor graph, that graph's local variables (add, remove, retype, rename) |
 | `netprints.panel.errors` | Errors | Bottom | compile diagnostics; activating one navigates to its node (registered as a navigation) |
 | `netprints.panel.output` | Output | Bottom | build output, then the program's stdout and stderr; cleared at each compile or run; a run brings it forward once, when the program starts, and later lines never switch the bottom panel back |
