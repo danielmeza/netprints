@@ -1046,8 +1046,8 @@ Verdict: request changes, 1 blocker, 2 majors, 15 minors, 13 nits (31 findings).
 | R13 | minor | A row's empty area ignores double-clicks and right-clicks | B4 (flaky plan) | open |
 | R14 | minor | The inspector ignores graph selection | F2 | fixed aa4e2e14 |
 | R15 | minor | Creating a `ClassContext` runs code analysis | F4 | open |
-| R16 | minor | The unsubscribe test can't fail | F3 | open |
-| R17 | minor | The Ctrl+Shift+Tab test can't tell previous from next | F3 | open |
+| R16 | minor | The unsubscribe test can't fail | F3 | fixed 0340c1fe |
+| R17 | minor | The Ctrl+Shift+Tab test can't tell previous from next | F3 | fixed bb42de26 |
 | R18 | minor | T044 dropped two tests without replacements | F4 | open |
 | R19 | nit | Architecture gate A2 misses generic fields such as `HashSet<ClassContext>` | F5 | open |
 | R20 | nit | The tree's context menu is rebuilt on every pulse, plausibly while it is open | F4 | open |
@@ -1056,9 +1056,9 @@ Verdict: request changes, 1 blocker, 2 majors, 15 minors, 13 nits (31 findings).
 | R23 | nit | The overload warm-up caches deferred queries, so it warms less than it claims | F4 | open |
 | R24 | nit | The adapter has defensive gaps: a rebuild loses the layout, and `.First` follows a `DockHome` that can return null | F4 | open |
 | R25 | nit | Some panel actions are view-model commands, not registry commands; Add variable duplicates `addVariable` | F5 | open |
-| R26 | nit | `DocumentTabsTests` finds Dock's `DocumentTabStripItem` by its type name, which T042 rules out | F3 | open |
-| R27 | nit | A dead assertion: `cls.Constructors.Skip(1)` is empty whether or not undo worked | F3 | open |
-| R28 | nit | `HighlightingReportsWhenItHasSettled` only waits for true, and the property is also true when TextMate is absent | F3 | open |
+| R26 | nit | `DocumentTabsTests` finds Dock's `DocumentTabStripItem` by its type name, which T042 rules out | F3 | fixed 4ed1b027 |
+| R27 | nit | A dead assertion: `cls.Constructors.Skip(1)` is empty whether or not undo worked | F3 | fixed e796f6d1 |
+| R28 | nit | `HighlightingReportsWhenItHasSettled` only waits for true, and the property is also true when TextMate is absent | F3 | fixed 6e63b7fe |
 | R29 | nit | The C# wiring test asserts `"class"` in a one-class project | F4 | open |
 | R30 | nit | Checkpoint C overclaims | F5 | open |
 | R31 | nit | The baselines are justified at HEAD | F5 | open |
@@ -1085,3 +1085,10 @@ Decisions of batch F3a (R6, Dock capability warnings: 44d47d79; IBus log noise: 
 - Decision (R6, the `Layout.` warnings): there are none. The sink now records the source type with each warning; across the docked layout, the sample graph and a layout with a floated document and tool, no warning contains `Layout.`, so the old allowance was vacuous (Dock's warnings it excused were the `DockCapability` ones). `BindingWarningLogSink` replaces the regex: docked layouts and the sample graph must log no binding warning at all, and a floating layout only the fourteen Dock warnings in `DockOwnWarnings`, each matched by source type and exact message: a null `ActiveDockable` (the emptied tool dock a float leaves behind) or `FocusedDockable` or `Window.Topmost` in a floating `HostWindow`, and `RootDock` (Dock's Mvvm model) lacking the `Busy`, `Confirmations`, `Dialogs` and global overlay services its overlay controls bind. They are Dock's, not fixed here. A NetPrints warning containing `Layout.` is rejected (`BindingWarningLogSinkTests`).
 - Decision (IBus IME noise, upstream Avalonia #15551): the IME stays on. `AvaloniaLogSink.Log` maps to Debug only an Error from the `IME` area whose source type is `IBusX11TextInputMethod`, whose text starts "Error while destroying the context" or "Error:" and contains `DBusErrorReplyException` and either `UnknownMethod` or `/org/freedesktop/IBus/InputContext_` (the daemon localises its text, so no English sentence is matched). Any other IME error, or the same text from another source, keeps its level. Red: the two downgrade tests failed with `Error`; the guard test passes either way.
 - Decision (issue #14): the failure is the 30 s wall-clock `WaitAsync` in `WaitUntilAsync`, which waited for the real reflection reload. Eight `NetPrints.Editor.Tests` processes pinned to one core (`taskset -c 0`), 5 runs each: 39 of 40 failed with `TimeoutException`; three busy loops on that core: 0 of 30 failed. The gated host now signals `ReloadStarted` (the fake time advances after the busy scope exists) and `Published` and skips the real reload, and the wait has no limit but the test's token: 0 of 40 under the same load.
+
+Decisions of batch F3b (R16, R17, R26, R27, R28: 0340c1fe, bb42de26, 4ed1b027, e796f6d1, 6e63b7fe):
+- Decision (R16): the unsubscribe test checks a weak reference to the provider is collected after its last handler left, while the shell and graph live. It failed with `Unwatch()` removed from the `remove` accessor.
+- Decision (R17): Ctrl+Shift+Tab is tested on three documents from the middle tab, with real keys. It failed with `previousTab` bound to `CycleTabCommandHandler(1)`.
+- Decision (R26): `DocumentTabsTests` resolves a tab through `DocumentTabsPage.Tab(id)`; no Dock type name is queried. No product mutation applies.
+- Decision (R27): `Assert.Empty(cls.Constructors)`. It failed when the undo left a constructor behind; the old `Skip(1)` form passed.
+- Decision (R28): the test asserts the TextMate colorizer is installed on the editor. It failed with `InstallHighlighting` returning early; the old test passed.
