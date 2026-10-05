@@ -47,7 +47,7 @@ public sealed class BusyStateTests : IDisposable
         try
         {
             Check(bar, EventArgs.Empty);
-            await done.Task.WaitAsync(TimeSpan.FromSeconds(30), Token);
+            await done.Task.WaitAsync(Token);
         }
         finally
         {
@@ -83,15 +83,17 @@ public sealed class BusyStateTests : IDisposable
         string path = TestPaths.CopyHelloWorldSample();
         cleanup.Add(path);
         var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var host = new GatedReloadHost(testEditor.Context.Reflection, gate.Task);
+        var host = new GatedReloadHost(testEditor.Context.Reflection, gate.Task, reloadInner: false);
         ProjectRig rig = NewRig(testEditor.Context with { Reflection = host });
         await rig.LoadProjectAsync(path);
+        await host.ReloadStarted.WaitAsync(Token);
 
         time.Advance(StatusBarViewModel.BusyIndicatorDelay);
         Assert.True(rig.Shell.StatusBar.IsBusy);
         Assert.Equal("Loading references…", rig.Shell.StatusBar.BusyText);
 
         gate.SetResult();
+        await host.Published.WaitAsync(Token);
         await WaitUntilAsync(rig.Shell.StatusBar, () => !rig.Shell.StatusBar.IsBusy);
     }
 
@@ -129,19 +131,29 @@ public sealed class BusyStateTests : IDisposable
         public ProcessStartRequest GetRunCommand(string projectFilePath) => inner.GetRunCommand(projectFilePath);
     }
 
-    /// <summary>Reloads the wrapped host when the gate completes; its provider is wrapped to count overload queries.</summary>
+    /// <summary>Reloads when the gate completes, with <see cref="ReloadStarted"/> and <see cref="Published"/> as explicit signals; its provider is wrapped to count overload queries.</summary>
     private sealed class GatedReloadHost : IReflectionHost
     {
         private readonly IReflectionHost inner;
         private readonly Task gate;
+        private readonly bool reloadInner;
+        private readonly TaskCompletionSource reloadStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource published = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
         private SpyProvider? spy;
 
-        public GatedReloadHost(IReflectionHost inner, Task gate)
+        public GatedReloadHost(IReflectionHost inner, Task gate, bool reloadInner = true)
         {
             this.inner = inner;
             this.gate = gate;
+            this.reloadInner = reloadInner;
         }
+
+        /// <summary>Gets a task that completes when a reload was requested and waits for the gate.</summary>
+        public Task ReloadStarted => reloadStarted.Task;
+
+        /// <summary>Gets a task that completes when a reload finished and its provider is published.</summary>
+        public Task Published => published.Task;
 
         public SpyProvider Spy => spy ??= SpyProvider.Create(inner.Provider);
 
@@ -165,8 +177,14 @@ public sealed class BusyStateTests : IDisposable
 
         public async Task ReloadAsync(Project project, CancellationToken cancellationToken = default)
         {
+            reloadStarted.TrySetResult();
             await gate;
-            await inner.ReloadAsync(project, cancellationToken);
+            if (reloadInner)
+            {
+                await inner.ReloadAsync(project, cancellationToken);
+            }
+
+            published.TrySetResult();
         }
     }
 
