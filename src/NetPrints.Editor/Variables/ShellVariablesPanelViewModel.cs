@@ -6,14 +6,11 @@ namespace NetPrints.Editor.Variables;
 
 /// <summary>
 /// The Variables panel: the member variables of the active document's class and, while that document is a method,
-/// constructor or accessor graph, the graph's local variables (<see cref="ActiveClassPanelViewModel{TItem}.Current"/>). A
-/// class gets its item, and with it its <see cref="ClassContext"/>, only once one of its documents is active.
+/// constructor or accessor graph, the graph's local variables (<see cref="ActiveClassPanelViewModel{TItem}.Current"/>). Every
+/// class has its item, and with it its <see cref="ClassContext"/>, from the moment the project opens.
 /// </summary>
 public sealed class ShellVariablesPanelViewModel : ActiveClassPanelViewModel<VariablesPanelViewModel>
 {
-    /// <inheritdoc/>
-    protected override bool CreatesItemsOnDemand => true;
-
     /// <inheritdoc/>
     protected override VariablesPanelViewModel CreateItem(ClassGraph cls, PanelContext context)
     {

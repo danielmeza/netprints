@@ -53,13 +53,6 @@ public abstract partial class ActiveClassPanelViewModel<TItem> : ObservableObjec
     /// <returns>The item.</returns>
     protected abstract TItem CreateItem(ClassGraph cls, PanelContext context);
 
-    /// <summary>
-    /// Gets a value indicating whether an item is created only when its class becomes the active one, instead of for every class
-    /// of the project at once. A panel whose item does not follow anything while its class is inactive chooses this, so that
-    /// opening a project does not build the items (and what they depend on) of classes nobody looks at.
-    /// </summary>
-    protected virtual bool CreatesItemsOnDemand => false;
-
     /// <summary>Called once from <see cref="Attach"/>, before the first item is created.</summary>
     /// <param name="context">The shell services.</param>
     protected virtual void OnAttached(PanelContext context)
@@ -96,21 +89,13 @@ public abstract partial class ActiveClassPanelViewModel<TItem> : ObservableObjec
                 Release(removed);
             }
 
-            if (!CreatesItemsOnDemand)
+            foreach (ClassGraph cls in session.Project.Classes.Where(cls => !items.ContainsKey(cls)))
             {
-                foreach (ClassGraph cls in session.Project.Classes.Where(cls => !items.ContainsKey(cls)))
-                {
-                    items[cls] = CreateItem(cls, attached);
-                }
+                items[cls] = CreateItem(cls, attached);
             }
         }
 
         ClassGraph? active = attached.Shell.ActiveDocument is { Id.ClassPath: { } classPath } ? followedSession?.FindClass(classPath) : null;
-        if (active is not null && CreatesItemsOnDemand && !items.ContainsKey(active))
-        {
-            items[active] = CreateItem(active, attached);
-        }
-
         Current = active is null ? null : items.GetValueOrDefault(active);
     }
 
