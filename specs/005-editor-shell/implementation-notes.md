@@ -1045,21 +1045,21 @@ Verdict: request changes, 1 blocker, 2 majors, 15 minors, 13 nits (31 findings).
 | R12 | minor | Dialogs from a floated window open on the main window | F2 | fixed dc2cc819 |
 | R13 | minor | A row's empty area ignores double-clicks and right-clicks | B4 (flaky plan) | open |
 | R14 | minor | The inspector ignores graph selection | F2 | fixed aa4e2e14 |
-| R15 | minor | Creating a `ClassContext` runs code analysis | F4 | open |
+| R15 | minor | Creating a `ClassContext` runs code analysis | F4 | fixed f2dda639, 5a8ea179; flag removed 2bae5772 |
 | R16 | minor | The unsubscribe test can't fail | F3 | fixed 0340c1fe |
 | R17 | minor | The Ctrl+Shift+Tab test can't tell previous from next | F3 | fixed bb42de26 |
-| R18 | minor | T044 dropped two tests without replacements | F4 | open |
+| R18 | minor | T044 dropped two tests without replacements | F4 | fixed b092f632, 14a756c9 |
 | R19 | nit | Architecture gate A2 misses generic fields such as `HashSet<ClassContext>` | F5 | open |
-| R20 | nit | The tree's context menu is rebuilt on every pulse, plausibly while it is open | F4 | open |
+| R20 | nit | The tree's context menu is rebuilt on every pulse, plausibly while it is open | F4 | fixed 29b45db8 |
 | R21 | nit | Contracts and docs have drifted | F5 | open |
 | R22 | nit | Dock plumbing sits outside `Shell/Docking`: its templates are in `EditorApp.axaml`, and `DockStyles` repeats palette literals | F5 | open |
-| R23 | nit | The overload warm-up caches deferred queries, so it warms less than it claims | F4 | open |
-| R24 | nit | The adapter has defensive gaps: a rebuild loses the layout, and `.First` follows a `DockHome` that can return null | F4 | open |
+| R23 | nit | The overload warm-up caches deferred queries, so it warms less than it claims | F4 | fixed 7b221303 |
+| R24 | nit | The adapter has defensive gaps: a rebuild loses the layout, and `.First` follows a `DockHome` that can return null | F4 | fixed fe9b3478 |
 | R25 | nit | Some panel actions are view-model commands, not registry commands; Add variable duplicates `addVariable` | F5 | open |
 | R26 | nit | `DocumentTabsTests` finds Dock's `DocumentTabStripItem` by its type name, which T042 rules out | F3 | fixed 4ed1b027 |
 | R27 | nit | A dead assertion: `cls.Constructors.Skip(1)` is empty whether or not undo worked | F3 | fixed e796f6d1 |
 | R28 | nit | `HighlightingReportsWhenItHasSettled` only waits for true, and the property is also true when TextMate is absent | F3 | fixed 6e63b7fe |
-| R29 | nit | The C# wiring test asserts `"class"` in a one-class project | F4 | open |
+| R29 | nit | The C# wiring test asserts `"class"` in a one-class project | F4 | fixed 7360d6cf |
 | R30 | nit | Checkpoint C overclaims | F5 | open |
 | R31 | nit | The baselines are justified at HEAD | F5 | open |
 
@@ -1092,3 +1092,13 @@ Decisions of batch F3b (R16, R17, R26, R27, R28: 0340c1fe, bb42de26, 4ed1b027, e
 - Decision (R26): `DocumentTabsTests` resolves a tab through `DocumentTabsPage.Tab(id)`; no Dock type name is queried. No product mutation applies.
 - Decision (R27): `Assert.Empty(cls.Constructors)`. It failed when the undo left a constructor behind; the old `Skip(1)` form passed.
 - Decision (R28): the test asserts the TextMate colorizer is installed on the editor. It failed with `InstallHighlighting` returning early; the old test passed.
+
+Decisions of batch F4 (R15, R18, R20, R23, R24, R29: f2dda639, 5a8ea179, 2bae5772, b092f632, 14a756c9, 29b45db8, 7b221303, fe9b3478, 7360d6cf):
+- Decision (R15): `ClassContext` no longer requests analysis when it is created; `ProjectSessionViewModel` requests it once when it opens and when a class is added or removed, and edits still go through `ClassContext.MarkDirty`. Moving the request exposed a second bug: the first analysis ran before the reflection host had loaded, so hover quick info was empty. `CodeAnalysisHost` now skips analysis until reflection is loaded and re-requests the last project on every reload (red: `AReflectionReloadAnalyzesTheLastRequestedProjectAgain`).
+- Decision (R15, hover): the review suspected the eager analysis request caused the hover regression that forced `CreatesItemsOnDemand` (db5ed9c). With the request moved and the host fix, `CodeViewTests` pass with eager item creation (6/6, twice), so the flag is removed (2bae5772). With the request in the session but without the host fix, the same run failed 1 to 2 of 6, so the real cause was analysis running before the first reflection load, not the per-class request.
+- Decision (R18a): the Output panel queues changes in a `ConcurrentQueue` and posts one drain that applies up to 500 per dispatcher turn, in order with phase changes. Red: 100000 dispatcher actions for 100000 lines; now one.
+- Decision (R18b): `LocalVariablePanelTests` is back on the shell (`Shell/LocalVariablePanelTests`, `VariablesPage`); written after the code, mutation: disabling the row's drag start fails it.
+- Decision (R20): `RefreshMenu` reconciles the selected row's entries by command id, so kept commands keep their `CommandEntryViewModel` (refreshed) and no collection change fires.
+- Decision (R23): `MemoizedReflectionProvider` materialises `GetConstructors`, `GetPublicMethodOverloads` and `GetOverridableMethodsForType` before caching. Red: a conversion spy counted 2.
+- Decision (R24): `OpenDocument` adds a document dock back (`ShellDockFactory.AddDocumentDock`) instead of rebuilding the layout, and `HidePanel` handles a null `DockHome`. The second fix has no reproducible scenario (removing the tool dock in a test did not reach it), so it is defensive and untested.
+- Decision (R29): `class Program` is asserted. Mutation: with the class renamed, the old assertion passes and the new one fails.
