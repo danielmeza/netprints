@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Text.RegularExpressions;
 using Avalonia.Logging;
 using Microsoft.Extensions.Logging;
@@ -21,6 +22,12 @@ public sealed partial class AvaloniaLogSink : ILogSink
     /// <c>NETPRINTS_LOG_LEVEL</c> explicitly asks for something more verbose.
     /// </summary>
     private static readonly HashSet<string> ChattyAreas = new(StringComparer.Ordinal) { "Layout", "Visual" };
+
+    private const string ImeArea = "IME";
+    private const string IbusSourceType = "IBusX11TextInputMethod";
+    private const string DBusReplyException = "DBusErrorReplyException";
+    private static readonly string[] IbusTeardownPrefixes = ["Error while destroying the context", "Error:"];
+    private static readonly string[] IbusTeardownFragments = ["UnknownMethod", "/org/freedesktop/IBus/InputContext_"];
 
     private static readonly Regex PlaceholderPattern = MessageTemplatePlaceholder();
 
@@ -86,6 +93,17 @@ public sealed partial class AvaloniaLogSink : ILogSink
         _ => value.ToString() ?? "",
     };
 
+    /// <summary>Downgrades the two IBus context-teardown errors Avalonia logs (upstream #15551) to Debug; the daemon localises its text, so it matches the exception type and the method or path fragment.</summary>
+    private static LogLevel LevelFor(LogLevel mapped, string area, object? source, string message) =>
+        mapped == LogLevel.Error
+        && area == ImeArea
+        && source?.GetType().Name == IbusSourceType
+        && IbusTeardownPrefixes.Any(prefix => message.StartsWith(prefix, StringComparison.Ordinal))
+        && message.Contains(DBusReplyException, StringComparison.Ordinal)
+        && IbusTeardownFragments.Any(fragment => message.Contains(fragment, StringComparison.Ordinal))
+            ? LogLevel.Debug
+            : mapped;
+
     /// <inheritdoc/>
     public bool IsEnabled(LogEventLevel level, string area)
     {
@@ -100,11 +118,14 @@ public sealed partial class AvaloniaLogSink : ILogSink
 
     /// <inheritdoc/>
     public void Log(LogEventLevel level, string area, object? source, string messageTemplate) =>
-        NetPrints.Desktop.Log.AvaloniaForwarded(LoggerFor(area), ToLogLevel(level), source, messageTemplate);
+        NetPrints.Desktop.Log.AvaloniaForwarded(LoggerFor(area), LevelFor(ToLogLevel(level), area, source, messageTemplate), source, messageTemplate);
 
     /// <inheritdoc/>
-    public void Log(LogEventLevel level, string area, object? source, string messageTemplate, params object?[] propertyValues) =>
-        NetPrints.Desktop.Log.AvaloniaForwarded(LoggerFor(area), ToLogLevel(level), source, FormatMessage(messageTemplate, propertyValues));
+    public void Log(LogEventLevel level, string area, object? source, string messageTemplate, params object?[] propertyValues)
+    {
+        string message = FormatMessage(messageTemplate, propertyValues);
+        NetPrints.Desktop.Log.AvaloniaForwarded(LoggerFor(area), LevelFor(ToLogLevel(level), area, source, message), source, message);
+    }
 
     [GeneratedRegex(@"\{\$?[^{}]+\}")]
     private static partial Regex MessageTemplatePlaceholder();
