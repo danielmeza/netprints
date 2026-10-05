@@ -361,10 +361,9 @@ public abstract class SmokeScenarios
             await UiWait.UntilAsync(context.Driver, async () => !await variable.ExistsAsync(cancellationToken), "the variable removed by undo", cancellationToken);
             await floated.ClickEmptyAsync(cancellationToken);
             await context.Driver.PressAsync("Ctrl+Y", cancellationToken);
-            await shell.Tree.RevealAsync(variable, ProjectTreePage.VariablesGroup, cancellationToken);
+            await UiWait.UntilAsync(context.Driver, async () => await variable.ExistsAsync(cancellationToken), "the variable restored by redo", cancellationToken);
             Assert.Equal(nodes + 1, await floated.NodeCountAsync(cancellationToken));
 
-            await floated.ClickEmptyAsync(cancellationToken);
             await context.Driver.PressAsync("Ctrl+S", cancellationToken);
             await UiWait.UntilAsync(context.Driver, async () => (await File.ReadAllTextAsync(classFile, cancellationToken)).Contains("\"Variable\"", StringComparison.Ordinal),
                 "the class saved with the variable", cancellationToken);
