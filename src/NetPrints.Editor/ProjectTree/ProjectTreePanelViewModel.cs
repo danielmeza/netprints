@@ -245,16 +245,41 @@ public sealed partial class ProjectTreePanelViewModel : ObservableObject, IShell
             return;
         }
 
-        item.MenuEntries.Clear();
+        List<CommandEntryViewModel> wanted = [];
         if (context is { } attached && MenuTargetOf(item.Kind) is { } target)
         {
             foreach (CommandDescriptor command in attached.Commands.ContextMenuCommands(target))
             {
                 if (attached.Commands.CanRun(command, CommandScope.ProjectTree))
                 {
-                    item.MenuEntries.Add(new CommandEntryViewModel(command, attached.Commands, AutomationIds.TreeMenuPrefix, CommandScope.ProjectTree));
+                    CommandEntryViewModel? kept = item.MenuEntries.FirstOrDefault(entry => entry.Id == command.Id);
+                    kept?.Refresh();
+                    wanted.Add(kept ?? new CommandEntryViewModel(command, attached.Commands, AutomationIds.TreeMenuPrefix, CommandScope.ProjectTree));
                 }
             }
+        }
+
+        for (int i = 0; i < wanted.Count; i++)
+        {
+            if (i < item.MenuEntries.Count && ReferenceEquals(item.MenuEntries[i], wanted[i]))
+            {
+                continue;
+            }
+
+            int existing = item.MenuEntries.IndexOf(wanted[i]);
+            if (existing >= 0)
+            {
+                item.MenuEntries.Move(existing, i);
+            }
+            else
+            {
+                item.MenuEntries.Insert(i, wanted[i]);
+            }
+        }
+
+        while (item.MenuEntries.Count > wanted.Count)
+        {
+            item.MenuEntries.RemoveAt(item.MenuEntries.Count - 1);
         }
     }
 }

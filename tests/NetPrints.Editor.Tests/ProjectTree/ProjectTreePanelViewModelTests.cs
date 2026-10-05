@@ -207,6 +207,24 @@ public sealed class ProjectTreePanelViewModelTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task APulseKeepsTheEntriesOfAnOpenContextMenu()
+    {
+        ProjectSessionViewModel session = await rig.OpenSessionAsync();
+        ClassGraph cls = session.Project.Classes[0];
+        rig.Tree.SelectedItem = rig.Item(TreeItemKind.Class, cls.Name);
+        ProjectTreeItemViewModel item = rig.Tree.SelectedItem;
+        CommandEntryViewModel[] before = [.. item.MenuEntries];
+        Assert.NotEmpty(before);
+        int changes = 0;
+        item.MenuEntries.CollectionChanged += (_, _) => changes++;
+
+        session.UndoStackFor(cls).Do(EditorCommands.AddVariable(cls, "count"));
+
+        Assert.Equal(before, item.MenuEntries);
+        Assert.Equal(0, changes);
+    }
+
+    [Fact]
     public async Task AContextMenuEntryRunsItsCommandOnTheSelectedRow()
     {
         ProjectSessionViewModel session = await rig.OpenSessionAsync();
