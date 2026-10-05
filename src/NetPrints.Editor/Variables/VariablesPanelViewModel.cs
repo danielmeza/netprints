@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.ModelSync;
@@ -12,22 +13,33 @@ namespace NetPrints.Editor.Variables;
 /// while the opened graph is a method or constructor, that graph's local variables ("Method:
 /// &lt;name&gt;", US5, sub-phase H).
 /// </summary>
-public sealed partial class VariablesPanelViewModel : ObservableObject, IDisposable
+public sealed partial class VariablesPanelViewModel : ObservableObject, IDisposable, IRecipient<SelectInspectorMessage>
 {
     private readonly ClassEditorServices services;
+    private readonly Action createVariable;
+    private readonly Action<Variable>? selectVariable;
     private ExecutionGraph? openedGraph;
 
     /// <summary>
-    /// Creates the panel from <paramref name="classVariables"/>, with no method or constructor
-    /// graph open yet (the owning class editor pushes each change through
-    /// <see cref="OnOpenedGraphChanged"/>, FR-038).
+    /// Creates the panel from <paramref name="classVariables"/>, with no method or constructor graph open yet (the owner
+    /// pushes each change through <see cref="OnOpenedGraphChanged"/>, FR-038).
     /// </summary>
-    /// <param name="services">Narrow services shared with the owning class editor (FR-038).</param>
+    /// <param name="services">Narrow services shared with the owning class (FR-038).</param>
     /// <param name="classVariables">View models for the class's variables (the "Class" group).</param>
-    public VariablesPanelViewModel(ClassEditorServices services, ObservableViewModelCollection<MemberVariableViewModel, Variable> classVariables)
+    /// <param name="createVariable">Adds a variable to the class (undoable); run by <see cref="CreateVariableCommand"/>.</param>
+    /// <param name="selectVariable">Called when a variable row asks for its inspector; <see langword="null"/> ignores the request.</param>
+    public VariablesPanelViewModel(
+        ClassEditorServices services,
+        ObservableViewModelCollection<MemberVariableViewModel, Variable> classVariables,
+        Action createVariable,
+        Action<Variable>? selectVariable = null)
     {
+        ArgumentNullException.ThrowIfNull(createVariable);
         this.services = services;
+        this.createVariable = createVariable;
+        this.selectVariable = selectVariable;
         ClassVariables = classVariables;
+        services.Messenger.Register<SelectInspectorMessage>(this);
         RebuildMethodGroup();
     }
 
@@ -70,6 +82,13 @@ public sealed partial class VariablesPanelViewModel : ObservableObject, IDisposa
         OnPropertyChanged(nameof(MethodGroupHeader));
     }
 
+    /// <inheritdoc/>
+    void IRecipient<SelectInspectorMessage>.Receive(SelectInspectorMessage message) => selectVariable?.Invoke(message.Target.Variable);
+
+    /// <summary>Creates a variable of type <c>object</c> with a unique default name in the class (undoable).</summary>
+    [RelayCommand]
+    private void CreateVariable() => createVariable();
+
     /// <summary>Creates a local variable of type <c>object</c> with a unique default name (undoable).</summary>
     [RelayCommand]
     private void CreateLocalVariable()
@@ -84,6 +103,10 @@ public sealed partial class VariablesPanelViewModel : ObservableObject, IDisposa
         services.UndoRedo.Do(EditorCommands.AddLocalVariable(graph, name));
     }
 
-    /// <summary>Disposes the Method group.</summary>
-    public void Dispose() => MethodVariables?.Dispose();
+    /// <summary>Stops listening to the class's inspector requests and disposes the Method group.</summary>
+    public void Dispose()
+    {
+        services.Messenger.UnregisterAll(this);
+        MethodVariables?.Dispose();
+    }
 }

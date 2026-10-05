@@ -35,7 +35,7 @@ Menu order: **File, Edit, View, Go, Build, Help**. Groups inside a menu are sepa
 | `overrideMethod` | Override method… | Edit › class | — | Global | Asks for a base method (the method chooser) and opens the override; undo removes it. |
 | `frameSelection` | Frame selection | View › viewport | F | Graph | |
 | `fitAll` | Fit all | View › viewport | Home, Shift+F | Graph | |
-| `showPanel.<panel>` | Project, Inspector, Errors, Output, C# | View › panels | — | Global | |
+| `showPanel.<panel>` | Project, Inspector, Variables, Errors, Output, C# | View › panels | — | Global | |
 | `floatDocument` | Float tab | View › layout | — | Global | |
 | `dockDocument` | Dock tab | View › layout | — | Global | |
 | `resetLayout` | Reset layout | View › layout | — | Global | |

@@ -40,6 +40,7 @@ public static class ViewContributions
         [
             ("projectTree", "Project", PanelContributions.ProjectTreeId, "FileTree"),
             ("inspector", "Inspector", PanelContributions.InspectorId, "Tune"),
+            ("variables", "Variables", PanelContributions.VariablesId, "Variable"),
             ("errors", "Errors", PanelContributions.ErrorsId, "AlertCircleOutline"),
             ("output", "Output", PanelContributions.OutputId, "Console"),
             ("csharp", "C#", PanelContributions.CSharpId, "LanguageCsharp"),

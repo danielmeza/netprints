@@ -11,6 +11,7 @@ using NetPrints.Editor.ProjectTree;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.Tests.Hosting;
 using NetPrints.Editor.Tests.Shell;
+using NetPrints.Editor.Variables;
 using NetPrints.Serialization;
 
 namespace NetPrints.Editor.Tests.ProjectTree;
@@ -65,6 +66,8 @@ public sealed class ShellPanelRig : IAsyncDisposable
     public OutputPanelViewModel Output => Assert.IsType<OutputPanelViewModel>(Shell.FindPanel(PanelContributions.OutputId)?.Content);
 
     public CSharpPanelViewModel CSharp => Assert.IsType<CSharpPanelViewModel>(Shell.FindPanel(PanelContributions.CSharpId)?.Content);
+
+    public ShellVariablesPanelViewModel Variables => Assert.IsType<ShellVariablesPanelViewModel>(Shell.FindPanel(PanelContributions.VariablesId)?.Content);
 
     public InspectorPanelViewModel Inspector => Assert.IsType<InspectorPanelViewModel>(Shell.FindPanel(PanelContributions.InspectorId)?.Content);
 

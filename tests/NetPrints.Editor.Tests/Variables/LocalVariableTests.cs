@@ -24,7 +24,7 @@ public class LocalVariableTests : IDisposable
         this.editor = editor;
         var cls = new ClassGraph { Name = "C", Namespace = "N" };
         context = new ClassContext(cls, editor.Context, new UndoRedoStack());
-        panel = new VariablesPanelViewModel(context.Services, context.Variables);
+        panel = new VariablesPanelViewModel(context.Services, context.Variables, context.CreateVariable);
         method = context.CreateMethod();
         context.UndoRedo.Clear();
         graph = new NodeGraphViewModel(method, context.Services);

@@ -53,6 +53,7 @@ public class BuiltInCommandTableTests
         new("fitAll", "Fit all", "View", "viewport", ["Home", "Shift+F"], Canvas, null, typeof(FitAllCommandHandler)),
         new("showPanel.projectTree", "Project", "View", "panels", [], Everywhere, null, typeof(ShowPanelCommandHandler)),
         new("showPanel.inspector", "Inspector", "View", "panels", [], Everywhere, null, typeof(ShowPanelCommandHandler)),
+        new("showPanel.variables", "Variables", "View", "panels", [], Everywhere, null, typeof(ShowPanelCommandHandler)),
         new("showPanel.errors", "Errors", "View", "panels", [], Everywhere, null, typeof(ShowPanelCommandHandler)),
         new("showPanel.output", "Output", "View", "panels", [], Everywhere, null, typeof(ShowPanelCommandHandler)),
         new("showPanel.csharp", "C#", "View", "panels", [], Everywhere, null, typeof(ShowPanelCommandHandler)),

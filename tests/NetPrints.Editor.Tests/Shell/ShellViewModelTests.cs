@@ -16,7 +16,7 @@ public sealed class ShellViewModelTests : IAsyncDisposable
 {
     private static readonly string[] BuiltInPanelIds =
     [
-        "netprints.panel.projectTree", "netprints.panel.inspector", "netprints.panel.errors", "netprints.panel.output", "netprints.panel.csharp",
+        "netprints.panel.projectTree", "netprints.panel.inspector", "netprints.panel.variables", "netprints.panel.errors", "netprints.panel.output", "netprints.panel.csharp",
     ];
 
     private readonly TestEditor editor = TestEditor.Create(TestEditor.CreateReflectionHost);
@@ -60,13 +60,13 @@ public sealed class ShellViewModelTests : IAsyncDisposable
     private static DelegateUndoableCommand Edit() => new("edit", () => { }, () => { });
 
     [Fact]
-    public void ThePanelsAreTheBuiltInFiveByDefaultDockThenOrder()
+    public void ThePanelsAreTheBuiltInSixByDefaultDockThenOrder()
     {
         using ShellViewModel shell = CreateShell();
 
         Assert.Equal(BuiltInPanelIds, shell.Panels.Select(panel => panel.Id));
-        Assert.Equal(["Project", "Inspector", "Errors", "Output", "C#"], shell.Panels.Select(panel => panel.Title));
-        Assert.Equal([PanelDock.Left, PanelDock.Right, PanelDock.Bottom, PanelDock.Bottom, PanelDock.Bottom], shell.Panels.Select(panel => panel.DefaultDock));
+        Assert.Equal(["Project", "Inspector", "Variables", "Errors", "Output", "C#"], shell.Panels.Select(panel => panel.Title));
+        Assert.Equal([PanelDock.Left, PanelDock.Right, PanelDock.Right, PanelDock.Bottom, PanelDock.Bottom, PanelDock.Bottom], shell.Panels.Select(panel => panel.DefaultDock));
         Assert.All(shell.Panels, panel => Assert.True(panel.IsVisible));
         Assert.All(shell.Panels, panel => Assert.NotNull(panel.Content));
     }
@@ -85,8 +85,8 @@ public sealed class ShellViewModelTests : IAsyncDisposable
         PanelViewModel notes = Assert.IsType<PanelViewModel>(shell.FindPanel("acme.panel.notes"));
         Assert.Same(content, notes.Content);
         Assert.IsType<NoServices>(received);
-        Assert.Equal(6, shell.Panels.Count);
-        Assert.Equal("acme.panel.notes", shell.Panels[2].Id);
+        Assert.Equal(7, shell.Panels.Count);
+        Assert.Equal("acme.panel.notes", shell.Panels[3].Id);
         Assert.Null(shell.FindPanel("acme.panel.missing"));
     }
 

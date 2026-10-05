@@ -91,6 +91,7 @@ public sealed class DocumentCommandsTests
     [Theory]
     [InlineData("projectTree")]
     [InlineData("inspector")]
+    [InlineData("variables")]
     [InlineData("errors")]
     [InlineData("output")]
     [InlineData("csharp")]

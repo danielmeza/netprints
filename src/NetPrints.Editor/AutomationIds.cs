@@ -43,6 +43,21 @@ public static class AutomationIds
     /// </summary>
     public const string VariableName = "Variables.Name";
 
+    /// <summary>Automation id for the Variables panel's empty-state text.</summary>
+    public const string VariablesEmpty = "Variables.Empty";
+
+    /// <summary>Automation id for the Variables panel's "Class" group.</summary>
+    public const string VariablesClassGroup = "Variables.ClassGroup";
+
+    /// <summary>Automation id for the Variables panel's "Method" group.</summary>
+    public const string VariablesMethodGroup = "Variables.MethodGroup";
+
+    /// <summary>Automation id for the Variables panel's "Add variable" button.</summary>
+    public const string VariablesAddVariable = "Variables.AddVariable";
+
+    /// <summary>Automation id for the Variables panel's "Add local variable" button.</summary>
+    public const string VariablesAddLocalVariable = "Variables.AddLocalVariable";
+
     // Graph canvas
     /// <summary>
     /// Automation id for the graph canvas editor.

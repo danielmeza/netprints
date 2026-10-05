@@ -25,6 +25,7 @@ public class FormerActionsReachableTests
         EventGraphRowMenu,
         InspectorElement,
         VariableInspectorElement,
+        VariablesPanelElement,
     }
 
     /// <summary>One former action, the surface that offers it now and what to find there: a command id, or an automation id for the inspector.</summary>
@@ -65,6 +66,11 @@ public class FormerActionsReachableTests
         new("Open variable getter", Surface.VariableInspectorElement, AutomationIds.VariableInspectorOpenGetter),
         new("Open variable setter", Surface.VariableInspectorElement, AutomationIds.VariableInspectorOpenSetter),
         new("Open variable type graph", Surface.VariableInspectorElement, AutomationIds.VariableInspectorOpenTypeGraph),
+        new("Show the variables panel", Surface.MenuBar, "showPanel.variables"),
+        new("Add member variable (panel)", Surface.VariablesPanelElement, AutomationIds.VariablesAddVariable),
+        new("Member variable list (panel)", Surface.VariablesPanelElement, AutomationIds.VariablesClassGroup),
+        new("Add local variable (panel)", Surface.VariablesPanelElement, AutomationIds.VariablesAddLocalVariable),
+        new("Local variable list (panel)", Surface.VariablesPanelElement, AutomationIds.VariablesMethodGroup),
         new("Open event graph", Surface.EventGraphRowMenu, "openGraph"),
         new("Rename event graph", Surface.EventGraphRowMenu, "rename"),
         new("Remove event graph", Surface.EventGraphRowMenu, "delete"),
@@ -90,6 +96,15 @@ public class FormerActionsReachableTests
         variable.AddSetterCommand.Execute(null);
         HeadlessDriver.Pump();
         return app;
+    }
+
+    private static void ShowVariablesPanelOfTheMethod(ShellApp app)
+    {
+        app.Api.ShowPanel(PanelContributions.VariablesId);
+        DocumentId method = CommandTargets.GraphDocumentOf(app.Session, app.Session.Project.Classes[0].Methods[^1])
+            ?? throw new InvalidOperationException("The method has no document id.");
+        app.Api.OpenDocument(method);
+        HeadlessDriver.Pump();
     }
 
     private static Task Run(ShellApp app, string name) => app.Command(name).Handler.ExecuteAsync(app.Commands.CreateContext(), Token);
@@ -139,7 +154,12 @@ public class FormerActionsReachableTests
                 HeadlessDriver.Pump();
             }
 
-            bool found = former.Surface is Surface.InspectorElement or Surface.VariableInspectorElement
+            if (former.Surface == Surface.VariablesPanelElement)
+            {
+                ShowVariablesPanelOfTheMethod(app);
+            }
+
+            bool found = former.Surface is Surface.InspectorElement or Surface.VariableInspectorElement or Surface.VariablesPanelElement
                 ? app.Ui.Tree.Find(new AutomationQuery(former.Target)).Count > 0
                 : MenuIds(app, former.Surface).Contains(IdOf(former.Target), StringComparer.Ordinal);
             if (!found)
@@ -156,7 +176,7 @@ public class FormerActionsReachableTests
     {
         await using ShellApp app = ShellApp.Start();
 
-        foreach (Former former in Table.Where(entry => entry.Surface is not (Surface.InspectorElement or Surface.VariableInspectorElement)))
+        foreach (Former former in Table.Where(entry => entry.Surface is not (Surface.InspectorElement or Surface.VariableInspectorElement or Surface.VariablesPanelElement)))
         {
             Assert.Contains(app.Registry.Commands, command => command.Id == IdOf(former.Target));
         }
@@ -217,5 +237,33 @@ public class FormerActionsReachableTests
         await Run(app, "classSettings");
         Assert.True(app.Api.IsPanelVisible(PanelContributions.InspectorId));
         Assert.Same(cls, app.Shell.TreeSelection);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task TheVariablesPanelAddsAndRemovesMemberAndLocalVariables()
+    {
+        await using ShellApp app = await StartWithEveryMemberAsync();
+        ClassGraph cls = app.Session.Project.Classes[0];
+        MethodGraph method = cls.Methods[^1];
+        ShowVariablesPanelOfTheMethod(app);
+        int members = cls.Variables.Count;
+
+        PressButton(app, AutomationIds.VariablesAddVariable);
+        PressButton(app, AutomationIds.VariablesAddLocalVariable);
+        Assert.Equal(members + 1, cls.Variables.Count);
+        Assert.Single(method.LocalVariables);
+
+        var panel = Assert.IsType<ShellVariablesPanelViewModel>(app.Shell.FindPanel(PanelContributions.VariablesId)?.Content);
+        panel.Current?.MethodVariables?[0].RemoveCommand.Execute(null);
+        panel.Current?.ClassVariables[^1].RemoveCommand.Execute(null);
+        Assert.Empty(method.LocalVariables);
+        Assert.Equal(members, cls.Variables.Count);
+    }
+
+    private static void PressButton(ShellApp app, string automationId)
+    {
+        Button button = Assert.IsType<Button>(app.Ui.Tree.FindControls(new AutomationQuery(automationId)).Select(pair => pair.Control).First());
+        button.Command?.Execute(null);
+        HeadlessDriver.Pump();
     }
 }

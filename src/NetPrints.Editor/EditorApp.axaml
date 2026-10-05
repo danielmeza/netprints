@@ -11,6 +11,7 @@
              xmlns:ederrorlist="clr-namespace:NetPrints.Editor.ErrorList"
              xmlns:edoutput="clr-namespace:NetPrints.Editor.Output"
              xmlns:edtree="clr-namespace:NetPrints.Editor.ProjectTree"
+             xmlns:edvariables="clr-namespace:NetPrints.Editor.Variables"
              x:Class="NetPrints.Editor.EditorApp"
              Name="NetPrints"
              RequestedThemeVariant="Dark">
@@ -50,6 +51,9 @@
     </DataTemplate>
     <DataTemplate DataType="edinspectors:InspectorPanelViewModel" x:DataType="edinspectors:InspectorPanelViewModel">
       <edinspectors:InspectorPanelView />
+    </DataTemplate>
+    <DataTemplate DataType="edvariables:ShellVariablesPanelViewModel" x:DataType="edvariables:ShellVariablesPanelViewModel">
+      <edvariables:VariablesPanelView />
     </DataTemplate>
     <DataTemplate DataType="ederrorlist:ErrorsPanelViewModel" x:DataType="ederrorlist:ErrorsPanelViewModel">
       <ederrorlist:ErrorsPanelView />
