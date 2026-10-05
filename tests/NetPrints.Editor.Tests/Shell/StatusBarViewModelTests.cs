@@ -141,4 +141,26 @@ public class StatusBarViewModelTests
         Assert.False(bar.IsBusy);
         Assert.Null(bar.BusyText);
     }
+
+    [Fact]
+    public async Task DisposingWhileOperationsBeginAndEndOnOtherThreadsNeverThrows()
+    {
+        var bar = new StatusBarViewModel(time, new InlineDispatcher());
+        using var stop = new CancellationTokenSource();
+        Task[] workers = [.. Enumerable.Range(0, 4).Select(_ => Task.Run(() =>
+        {
+            while (!stop.IsCancellationRequested)
+            {
+                bar.BeginBusy("work").Dispose();
+            }
+        }, TestContext.Current.CancellationToken))];
+
+        for (int i = 0; i < 20_000; i++)
+        {
+            bar.Dispose();
+        }
+
+        await stop.CancelAsync();
+        await Task.WhenAll(workers);
+    }
 }

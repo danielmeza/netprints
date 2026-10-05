@@ -26,6 +26,7 @@ public sealed partial class StatusBarViewModel(TimeProvider timeProvider, IUiDis
 
     private const string BuildingText = "Building…";
 
+    private readonly Lock gate = new();
     private readonly List<BusyScope> busyScopes = [];
     private ITimer? expiryTimer;
     private int version;
@@ -89,7 +90,11 @@ public sealed partial class StatusBarViewModel(TimeProvider timeProvider, IUiDis
     {
         ArgumentNullException.ThrowIfNull(text);
         var scope = new BusyScope(this, text, timeProvider);
-        busyScopes.Add(scope);
+        lock (gate)
+        {
+            busyScopes.Add(scope);
+        }
+
         return scope;
     }
 
@@ -98,7 +103,7 @@ public sealed partial class StatusBarViewModel(TimeProvider timeProvider, IUiDis
     {
         expiryTimer?.Dispose();
         expiryTimer = null;
-        foreach (BusyScope scope in busyScopes.ToList())
+        foreach (BusyScope scope in Snapshot())
         {
             scope.Dispose();
         }
@@ -118,7 +123,13 @@ public sealed partial class StatusBarViewModel(TimeProvider timeProvider, IUiDis
 
     private void RevealOnUi(BusyScope scope)
     {
-        if (busyScopes.Contains(scope))
+        bool active;
+        lock (gate)
+        {
+            active = busyScopes.Contains(scope);
+        }
+
+        if (active)
         {
             scope.IsRevealed = true;
             UpdateBusy();
@@ -127,15 +138,29 @@ public sealed partial class StatusBarViewModel(TimeProvider timeProvider, IUiDis
 
     private void End(BusyScope scope)
     {
-        if (busyScopes.Remove(scope))
+        bool removed;
+        lock (gate)
+        {
+            removed = busyScopes.Remove(scope);
+        }
+
+        if (removed)
         {
             UpdateBusy();
         }
     }
 
+    private List<BusyScope> Snapshot()
+    {
+        lock (gate)
+        {
+            return [.. busyScopes];
+        }
+    }
+
     private void UpdateBusy()
     {
-        string? text = busyScopes.LastOrDefault(scope => scope.IsRevealed)?.Text
+        string? text = Snapshot().LastOrDefault(scope => scope.IsRevealed)?.Text
             ?? (BuildState == BuildState.Building ? BuildingText : null);
         BusyText = text;
         IsBusy = text is not null;
