@@ -30,6 +30,8 @@ public abstract class GraphTestBase : IDisposable
         Class = new ClassGraph { Name = "C", Namespace = "N" };
         ClassContext = new ClassContext(Class, Editor.Context, new UndoRedoStack());
         Method = ClassContext.CreateMethod();
+        ClassContext.UndoRedo.Clear();
+        Class.MarkClean();
         Graph = new NodeGraphViewModel(Method, ClassContext.Services);
     }
 

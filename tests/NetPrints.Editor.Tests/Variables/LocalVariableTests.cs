@@ -26,6 +26,7 @@ public class LocalVariableTests : IDisposable
         context = new ClassContext(cls, editor.Context, new UndoRedoStack());
         panel = new VariablesPanelViewModel(context.Services, context.Variables);
         method = context.CreateMethod();
+        context.UndoRedo.Clear();
         graph = new NodeGraphViewModel(method, context.Services);
         panel.OnOpenedGraphChanged(method);
     }

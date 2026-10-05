@@ -3,8 +3,10 @@ using System.ComponentModel;
 using System.Security.Cryptography;
 using System.Text;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Messaging;
 using NetPrints.Compilation;
 using NetPrints.Core;
+using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.UndoRedo;
 using NetPrints.Generation;
@@ -71,6 +73,12 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
         remove => commandStatesChanged -= value;
     }
 
+    /// <summary>Raised, on the UI thread, when a member asks for one of the class's graphs to be opened (a variable's getter, setter or type graph).</summary>
+    public event EventHandler<NodeGraph>? GraphOpenRequested;
+
+    /// <summary>Raised after the members or accessor graphs of any class of the session changed, by an edit, an undo or a redo.</summary>
+    public event EventHandler? MembersChanged;
+
     /// <summary>Gets the path of a class's graph file relative to the project, with <c>/</c> separators (the class path of its <see cref="DocumentId"/>s).</summary>
     /// <param name="cls">A class of the project.</param>
     /// <returns>The relative path.</returns>
@@ -111,7 +119,10 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
         ArgumentNullException.ThrowIfNull(cls);
         if (!contexts.ContainsKey(cls))
         {
-            contexts[cls] = new ClassContext(cls, context, UndoStackFor(cls));
+            var created = new ClassContext(cls, context, UndoStackFor(cls));
+            created.MembersChanged += OnContextMembersChanged;
+            created.Messenger.Register<ProjectSessionViewModel, OpenGraphMessage>(this, static (session, message) => session.GraphOpenRequested?.Invoke(session, message.Graph));
+            contexts[cls] = created;
         }
 
         return contexts[cls];
@@ -241,6 +252,8 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
     private void RaiseCommandStatesChanged() => commandStatesChanged?.Invoke(this, EventArgs.Empty);
 
     private void OnUndoChanged(object? sender, EventArgs e) => RaiseCommandStatesChanged();
+
+    private void OnContextMembersChanged(object? sender, EventArgs e) => MembersChanged?.Invoke(this, EventArgs.Empty);
 
     private void OnClassesChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {

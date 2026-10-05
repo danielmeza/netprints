@@ -143,6 +143,39 @@ public static class EditorCommands
             });
     }
 
+    /// <summary>Adds a method (or an override, when <paramref name="create"/> builds one) to the class; undo removes it and redo restores the same graph.</summary>
+    /// <param name="cls">The class.</param>
+    /// <param name="create">Creates the method and adds it to the class on the first run; may return null when nothing could be created.</param>
+    public static IUndoableCommand AddMethod(ClassGraph cls, Func<MethodGraph?> create)
+    {
+        MethodGraph? method = null;
+        return new DelegateUndoableCommand("Add method",
+            () =>
+            {
+                if (method is null)
+                {
+                    method = create();
+                }
+                else
+                {
+                    cls.Methods.Add(method);
+                }
+            },
+            () =>
+            {
+                if (method is not null)
+                {
+                    cls.Methods.Remove(method);
+                }
+            });
+    }
+
+    /// <summary>Adds a constructor to the class; undo removes it and redo restores the same graph.</summary>
+    public static IUndoableCommand AddConstructor(ClassGraph cls, ConstructorGraph constructor) =>
+        new DelegateUndoableCommand("Add constructor",
+            () => cls.Constructors.Add(constructor),
+            () => cls.Constructors.Remove(constructor));
+
     /// <summary>Removes a method or constructor. As in the WPF editor, undo does nothing.</summary>
     public static IUndoableCommand RemoveMethod(ClassGraph cls, ExecutionGraph graph)
     {

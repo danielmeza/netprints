@@ -110,7 +110,7 @@ public sealed class ClassContext : IDisposable
     /// <summary>Gets whether <see cref="Dispose"/> ran.</summary>
     public bool IsDisposed { get; private set; }
 
-    /// <summary>Creates a method named Method, Method1, ... with connected entry and return nodes.</summary>
+    /// <summary>Creates a method named Method, Method1, ... with connected entry and return nodes (undoable).</summary>
     /// <returns>The method.</returns>
     public MethodGraph CreateMethod()
     {
@@ -128,11 +128,15 @@ public sealed class ClassContext : IDisposable
         method.MainReturnNode.PositionY = method.EntryNode.PositionY;
         GraphUtil.ConnectExecPins(method.EntryNode.InitialExecutionPin, method.MainReturnNode.ReturnPin);
 
-        Class.Methods.Add(method);
+        UndoRedo.Do(EditorCommands.AddMethod(Class, () =>
+        {
+            Class.Methods.Add(method);
+            return method;
+        }));
         return method;
     }
 
-    /// <summary>Creates a public constructor.</summary>
+    /// <summary>Creates a public constructor (undoable).</summary>
     /// <returns>The constructor.</returns>
     public ConstructorGraph CreateConstructor()
     {
@@ -146,14 +150,19 @@ public sealed class ClassContext : IDisposable
         constructor.EntryNode.PositionX = cell * NewMemberEntryGridOffset;
         constructor.EntryNode.PositionY = cell * NewMemberEntryGridOffset;
 
-        Class.Constructors.Add(constructor);
+        UndoRedo.Do(EditorCommands.AddConstructor(Class, constructor));
         return constructor;
     }
 
-    /// <summary>Creates an override of a base method.</summary>
+    /// <summary>Creates an override of a base method (undoable).</summary>
     /// <param name="methodSpecifier">The method to override.</param>
     /// <returns>The method, or null when it cannot be overridden.</returns>
-    public MethodGraph? CreateOverride(MethodSpecifier methodSpecifier) => GraphUtil.AddOverrideMethod(Class, methodSpecifier);
+    public MethodGraph? CreateOverride(MethodSpecifier methodSpecifier)
+    {
+        MethodGraph? created = null;
+        UndoRedo.Do(EditorCommands.AddMethod(Class, () => created = GraphUtil.AddOverrideMethod(Class, methodSpecifier)));
+        return created;
+    }
 
     /// <summary>Creates a variable named Variable, Variable1, ... of type object (undoable).</summary>
     public void CreateVariable()

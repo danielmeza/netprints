@@ -15,7 +15,8 @@ public enum DocumentKind
 
 /// <summary>
 /// The identity of a shell document, with value equality. Serialised as <c>graph:&lt;classPath&gt;#&lt;graphKey&gt;</c>
-/// (the key being <c>method:&lt;id&gt;</c>, <c>ctor:&lt;id&gt;</c>, <c>event:&lt;id&gt;</c> or <c>class</c>),
+/// (the key being <c>method:&lt;id&gt;</c>, <c>ctor:&lt;id&gt;</c>, <c>event:&lt;id&gt;</c>, <c>getter:&lt;variableId&gt;</c>,
+/// <c>setter:&lt;variableId&gt;</c>, <c>type:&lt;variableId&gt;</c> or <c>class</c>),
 /// <c>start</c> or <c>project-settings</c> (contracts/shell.md §2).
 /// </summary>
 public sealed record DocumentId
@@ -32,10 +33,19 @@ public sealed record DocumentId
     /// <summary>The prefix of the graph key of an event graph; its id follows.</summary>
     public const string EventKeyPrefix = "event:";
 
+    /// <summary>The prefix of the graph key of a variable's getter; the variable's id follows.</summary>
+    public const string GetterKeyPrefix = "getter:";
+
+    /// <summary>The prefix of the graph key of a variable's setter; the variable's id follows.</summary>
+    public const string SetterKeyPrefix = "setter:";
+
+    /// <summary>The prefix of the graph key of a variable's type graph; the variable's id follows.</summary>
+    public const string TypeKeyPrefix = "type:";
+
     /// <summary>The graph key of the class graph.</summary>
     public const string ClassGraphKey = "class";
 
-    private static readonly string[] KeyPrefixes = [MethodKeyPrefix, ConstructorKeyPrefix, EventKeyPrefix];
+    private static readonly string[] KeyPrefixes = [MethodKeyPrefix, ConstructorKeyPrefix, EventKeyPrefix, GetterKeyPrefix, SetterKeyPrefix, TypeKeyPrefix];
 
     private DocumentId(DocumentKind kind, string? classPath, string? graphKey)
     {
@@ -56,7 +66,7 @@ public sealed record DocumentId
     /// <summary>Gets the class file path relative to the project, for a graph; otherwise null.</summary>
     public string? ClassPath { get; }
 
-    /// <summary>Gets the graph key (<c>method:id</c>, <c>ctor:id</c>, <c>event:id</c> or <c>class</c>), for a graph; otherwise null.</summary>
+    /// <summary>Gets the graph key (<c>method:id</c>, <c>ctor:id</c>, <c>event:id</c>, <c>getter:id</c>, <c>setter:id</c>, <c>type:id</c> or <c>class</c>), for a graph; otherwise null.</summary>
     public string? GraphKey { get; }
 
     /// <summary>Creates the id of a graph document.</summary>

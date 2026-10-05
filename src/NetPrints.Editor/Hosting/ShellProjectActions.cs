@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using Microsoft.Extensions.Logging;
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
@@ -18,6 +19,7 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
     private readonly EditorContext context;
     private readonly ShellViewModel shell;
     private readonly HostChannelBridge hostChannelBridge;
+    private ProjectSessionViewModel? followedSession;
 
     /// <summary>Creates the actions and starts listening to the host channel.</summary>
     /// <param name="context">Host services shared across the editor.</param>
@@ -29,6 +31,8 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
         Loader = new ProjectLoader(context, shell);
         hostChannelBridge = new HostChannelBridge(context.HostChannel, context.Dispatcher, Loader.ReloadReflectionAsync, FocusDocument,
             context.LoggerFactory.CreateLogger<HostChannelBridge>());
+        shell.PropertyChanged += OnShellChanged;
+        Follow(shell.Session);
     }
 
     /// <summary>Gets the loader of projects.</summary>
@@ -206,6 +210,8 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
     /// <summary>Stops listening to the host channel and disposes the open session.</summary>
     public void Dispose()
     {
+        shell.PropertyChanged -= OnShellChanged;
+        Follow(null);
         hostChannelBridge.Dispose();
         Loader.Dispose();
     }
@@ -254,6 +260,57 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
         {
             Api?.OpenDocument(id);
             shell.TreeSelection = graph;
+        }
+    }
+
+    private void OnShellChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(ShellViewModel.Session))
+        {
+            Follow(shell.Session);
+        }
+    }
+
+    private void Follow(ProjectSessionViewModel? session)
+    {
+        if (ReferenceEquals(session, followedSession))
+        {
+            return;
+        }
+
+        if (followedSession is not null)
+        {
+            followedSession.GraphOpenRequested -= OnGraphOpenRequested;
+            followedSession.MembersChanged -= OnMembersChanged;
+        }
+
+        followedSession = session;
+        if (session is not null)
+        {
+            session.GraphOpenRequested += OnGraphOpenRequested;
+            session.MembersChanged += OnMembersChanged;
+        }
+    }
+
+    private void OnGraphOpenRequested(object? sender, NodeGraph graph)
+    {
+        if (followedSession is { } session && CommandTargets.GraphDocumentOf(session, graph) is { } id)
+        {
+            Api?.OpenDocument(id);
+        }
+    }
+
+    // Undo or redo of a creation removes a graph: its tab closes (redo does not reopen it).
+    private void OnMembersChanged(object? sender, EventArgs e)
+    {
+        if (followedSession is not { } session || Api is not { } api)
+        {
+            return;
+        }
+
+        foreach (DocumentId id in api.OpenDocuments.Where(id => id.Kind == DocumentKind.Graph && CommandTargets.GraphOf(session, id) is null).ToList())
+        {
+            api.CloseDocument(id);
         }
     }
 

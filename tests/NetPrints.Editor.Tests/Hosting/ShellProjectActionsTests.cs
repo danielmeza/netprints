@@ -1,4 +1,5 @@
 using NetPrints.Core;
+using NetPrints.Editor.Variables;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.Tests.Shell;
 
@@ -176,5 +177,111 @@ public sealed class ShellProjectActionsTests : IDisposable
 
         Assert.Empty(rig.Project?.Classes ?? [cls]);
         Assert.Empty(shell.OpenDocuments);
+    }
+
+    [Theory]
+    [InlineData("getter")]
+    [InlineData("setter")]
+    [InlineData("type")]
+    public async Task AnOpenGraphMessageOpensTheVariableGraphAsADocument(string which)
+    {
+        ProjectRig rig = await OpenSampleAsync();
+        var shell = new FakeShell();
+        rig.Actions.Api = shell;
+        ProjectSessionViewModel session = rig.Session ?? throw new InvalidOperationException("No session.");
+        ClassContext classContext = session.ContextFor(Assert.Single(session.Project.Classes));
+        classContext.CreateVariable();
+        MemberVariableViewModel variable = classContext.Variables[^1];
+        variable.AddGetterCommand.Execute(null);
+        variable.AddSetterCommand.Execute(null);
+
+        (which switch
+        {
+            "getter" => variable.OpenGetterCommand,
+            "setter" => variable.OpenSetterCommand,
+            _ => variable.OpenTypeGraphCommand,
+        }).Execute(null);
+
+        DocumentId id = shell.ActiveDocument ?? throw new InvalidOperationException("No document was opened.");
+        NodeGraph expected = which switch
+        {
+            "getter" => variable.Getter ?? throw new InvalidOperationException("No getter."),
+            "setter" => variable.Setter ?? throw new InvalidOperationException("No setter."),
+            _ => variable.Variable.TypeGraph,
+        };
+        Assert.StartsWith(which + ":", id.GraphKey, StringComparison.Ordinal);
+        Assert.Same(expected, CommandTargets.GraphOf(session, id));
+        Assert.Equal(id, CommandTargets.GraphDocumentOf(session, expected));
+    }
+
+    [Fact]
+    public async Task UndoingTheCreationOfAnEventGraphClosesItsTabAndRedoDoesNotReopenIt()
+    {
+        ProjectRig rig = await OpenSampleAsync();
+        var shell = new FakeShell();
+        rig.Actions.Api = shell;
+        ProjectSessionViewModel session = rig.Session ?? throw new InvalidOperationException("No session.");
+        ClassGraph cls = Assert.Single(session.Project.Classes);
+
+        rig.Actions.AddEventGraph(cls);
+        Assert.Single(shell.OpenDocuments);
+
+        session.UndoStackFor(cls).Undo();
+        Assert.Empty(shell.OpenDocuments);
+
+        session.UndoStackFor(cls).Redo();
+        Assert.Empty(shell.OpenDocuments);
+    }
+
+    [Theory]
+    [InlineData("method")]
+    [InlineData("ctor")]
+    public async Task UndoingTheCreationOfAMethodOrConstructorClosesItsTabAndRedoDoesNotReopenIt(string which)
+    {
+        ProjectRig rig = await OpenSampleAsync();
+        var shell = new FakeShell();
+        rig.Actions.Api = shell;
+        ProjectSessionViewModel session = rig.Session ?? throw new InvalidOperationException("No session.");
+        ClassGraph cls = Assert.Single(session.Project.Classes);
+
+        if (which == "method")
+        {
+            rig.Actions.AddMethod(cls);
+        }
+        else
+        {
+            rig.Actions.AddConstructor(cls);
+        }
+
+        Assert.Single(shell.OpenDocuments);
+
+        session.UndoStackFor(cls).Undo();
+        Assert.Empty(shell.OpenDocuments);
+        Assert.Empty(which == "method" ? cls.Methods.Where(m => m.Name == "Method") : cls.Constructors.Skip(1));
+
+        session.UndoStackFor(cls).Redo();
+        Assert.Empty(shell.OpenDocuments);
+    }
+
+    [Fact]
+    public async Task UndoingTheCreationOfAnAccessorClosesItsTabButKeepsTheOthers()
+    {
+        ProjectRig rig = await OpenSampleAsync();
+        var shell = new FakeShell();
+        rig.Actions.Api = shell;
+        ProjectSessionViewModel session = rig.Session ?? throw new InvalidOperationException("No session.");
+        ClassGraph cls = Assert.Single(session.Project.Classes);
+        ClassContext classContext = session.ContextFor(cls);
+        classContext.CreateVariable();
+        MemberVariableViewModel variable = classContext.Variables[^1];
+        rig.Actions.AddEventGraph(cls);
+        variable.AddGetterCommand.Execute(null);
+        variable.OpenGetterCommand.Execute(null);
+        Assert.Equal(2, shell.OpenDocuments.Count);
+
+        session.UndoStackFor(cls).Undo();
+
+        DocumentId remaining = Assert.Single(shell.OpenDocuments);
+        Assert.StartsWith(DocumentId.EventKeyPrefix, remaining.GraphKey, StringComparison.Ordinal);
     }
 }
