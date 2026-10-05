@@ -1,5 +1,7 @@
 using NetPrints.Core;
+using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Shell;
+using NetPrints.Editor.Tests.CodeView;
 using NetPrints.Editor.Tests.Hosting;
 using NetPrints.Serialization;
 
@@ -39,6 +41,23 @@ public sealed class ClassContextTests : IAsyncDisposable
         Assert.Same(first, context.Class);
         Assert.Same(session.UndoStackFor(first), context.UndoRedo);
         Assert.Same(context.UndoRedo, context.Services.UndoRedo);
+    }
+
+    [Fact]
+    public async Task CreatingAClassContextDoesNotRequestAnalysisButOpeningTheSessionDoesOnce()
+    {
+        Project project = await LoadSampleAsync();
+        using var analysis = new PushableCodeAnalysisHost();
+        EditorContext counting = editor.Context with { CodeAnalysis = analysis };
+        using var session = new ProjectSessionViewModel(project, counting);
+        Assert.Equal(1, analysis.RequestCount);
+
+        foreach (ClassGraph cls in project.Classes)
+        {
+            session.ContextFor(cls);
+        }
+
+        Assert.Equal(1, analysis.RequestCount);
     }
 
     [Fact]

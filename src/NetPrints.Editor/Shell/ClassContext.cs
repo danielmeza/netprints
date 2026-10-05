@@ -68,7 +68,6 @@ public sealed class ClassContext : IDisposable
 
         // Every applied undo/redo command edits the model.
         UndoRedo.Applied += OnUndoApplied;
-        RequestCodeAnalysis();
     }
 
     /// <summary>Raised after the class's members or a variable's accessor graphs changed.</summary>

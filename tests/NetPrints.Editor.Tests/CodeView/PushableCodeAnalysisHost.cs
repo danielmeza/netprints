@@ -15,9 +15,9 @@ public sealed class PushableCodeAnalysisHost : ICodeAnalysisHost
 
     public void Push(CodeAnalysisSnapshot snapshot) => snapshots.OnNext(snapshot);
 
-    public void RequestAnalysis(Project project)
-    {
-    }
+    public int RequestCount { get; private set; }
+
+    public void RequestAnalysis(Project project) => RequestCount++;
 
     public Task<QuickInfo?> GetQuickInfoAsync(string classFullName, int position, CancellationToken cancellationToken) =>
         Task.FromResult<QuickInfo?>(null);

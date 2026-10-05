@@ -50,6 +50,7 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
         context.RunState.PhaseChanged += OnRunPhaseChanged;
         project.PropertyChanged += OnProjectPropertyChanged;
         project.Classes.CollectionChanged += OnClassesChanged;
+        context.CodeAnalysis.RequestAnalysis(project);
     }
 
     /// <summary>Gets the open project.</summary>
@@ -278,6 +279,8 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
         {
             classPaths.Remove(removed);
         }
+
+        context.CodeAnalysis.RequestAnalysis(Project);
     }
 
     private void OnProjectPropertyChanged(object? sender, PropertyChangedEventArgs e)
