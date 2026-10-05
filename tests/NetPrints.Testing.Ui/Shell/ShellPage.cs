@@ -23,6 +23,8 @@ public sealed class ShellPage(IUiDriver driver)
 
     public InspectorPage Inspector => new(Driver, Query);
 
+    public VariablesPage Variables => new(Driver, Query);
+
     public BottomPanelPage Bottom => new(Driver, Query);
 
     /// <summary>The graph canvas of the selected graph document.</summary>
