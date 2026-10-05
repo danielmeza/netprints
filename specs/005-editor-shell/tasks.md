@@ -410,6 +410,11 @@ US2's independent test; SC-001.
   `src/NetPrints.Editor/ClassEditor/ClassEditorWindow.*` and `ClassEditorViewModel` (lists to the tree, inspectors to
   the inspector panel), the old page objects (`tests/NetPrints.Testing.Ui/Main/MainWindowPage.cs`,
   `ClassEditor/ClassEditorPage.cs`), and every `AutomationIds` constant nothing uses. The suite stays green.
+- [ ] T045a [US2] Stabilize the flaky `SnapshotTests.Inspectors` (issue #13, batch C5g, B7 of the flaky-test plan).
+  The code view's TextMate highlighting runs on a thread-pool thread, so a capture right after the code text
+  appears can catch the last lines uncoloured. Add `SnapshotStore.MatchStableAsync` (capture until two consecutive
+  frames are identical within a frame budget; records the frames taken; fails with the frames taken and the last
+  diff), unit-test it with a fake frame source, and move `Inspectors` and the other snapshot tests onto it.
 - [ ] T045 **Checkpoint C**: report SC-001 (`ShellMainFlowTests` and its window count), FR-010–FR-018 with the test
   for each, the spike outcome and `RegistrySurfaceTests`. Docs updated: `docs/guide/projects.md` and `README.md` no
   longer describe the launcher or the per-class windows (the full guides come in H); release notes: the
