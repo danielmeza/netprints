@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Time.Testing;
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.Contributions;
@@ -21,7 +22,7 @@ internal sealed class ProjectRig : IDisposable
         var registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
         BuiltInContributions.Register(registry);
         registry.Freeze();
-        Shell = new ShellViewModel(registry, new NoServices(), time ?? TimeProvider.System, new InlineDispatcher());
+        Shell = new ShellViewModel(registry, new NoServices(), time ?? new FakeTimeProvider(), new InlineDispatcher());
         Actions = new ShellProjectActions(context, Shell);
     }
 
