@@ -23,11 +23,19 @@ public sealed class DiagnosticRowViewModelTests
     }
 
     [Fact]
-    public void CanNavigateIsFalseWithNoGraphKey()
+    public void CanNavigateIsFalseWithNoGraphKeyAndNoClass()
+    {
+        var row = new DiagnosticRowViewModel(new CodeDiagnostic(CodeDiagnosticSeverity.Error, "CS0001", "boom", null, null, null, null, null), null);
+
+        Assert.False(row.CanNavigate);
+    }
+
+    [Fact]
+    public void CanNavigateIsTrueWithAClassButNoGraphKey()
     {
         var row = new DiagnosticRowViewModel(Diagnostic(CodeDiagnosticSeverity.Error), null);
 
-        Assert.False(row.CanNavigate);
+        Assert.True(row.CanNavigate);
     }
 
     [Fact]

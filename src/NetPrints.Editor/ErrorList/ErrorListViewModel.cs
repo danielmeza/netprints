@@ -6,6 +6,7 @@ using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.Diagnostics;
+using NetPrints.Editor.Shell;
 
 namespace NetPrints.Editor.ErrorList;
 
@@ -93,17 +94,18 @@ public sealed partial class ErrorListViewModel : ObservableObject, IDisposable
 
     /// <summary>
     /// Opens a row's graph and, when it has one, reveals its node (FR-034, ED-T03, OWN-04): a
-    /// diagnostic with a member but no node mapping still opens the graph.
+    /// diagnostic with a member but no node mapping still opens the graph, and one with only a class opens the class graph.
     /// </summary>
     /// <param name="row">Row to navigate to.</param>
     [RelayCommand]
     private void Navigate(DiagnosticRowViewModel? row)
     {
-        if (row is not { CanNavigate: true } || row.Diagnostic.GraphKey is not { } graphKey)
+        if (row is not { CanNavigate: true })
         {
             return;
         }
 
+        string graphKey = row.Diagnostic.GraphKey ?? DocumentId.ClassGraphKey;
         messenger.Send(new NavigateToNodeMessage(graphKey, row.Diagnostic.NodeId, wholeProject is null ? null : row.Diagnostic.ClassFullName));
     }
 

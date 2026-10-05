@@ -112,23 +112,6 @@ public sealed class ErrorListViewModelTests
         Assert.Equal(new NavigateToNodeMessage("m1", null), received);
     }
 
-    [Fact]
-    public void NavigatingARowWithNoGraphKeyDoesNothing()
-    {
-        using var host = new FakeCodeAnalysisHost();
-        var messenger = new StrongReferenceMessenger();
-        using var vm = new ErrorListViewModel(NewClass("N", "C"), host, messenger);
-        bool received = false;
-        messenger.Register<ErrorListViewModelTests, NavigateToNodeMessage>(this, (_, _) => received = true);
-
-        host.Push(new CodeAnalysisSnapshot(new Dictionary<string, TranslatedClass>(StringComparer.Ordinal),
-            [Diagnostic(CodeDiagnosticSeverity.Error, "CS0103")]));
-
-        vm.NavigateCommand.Execute(vm.Rows.Single());
-
-        Assert.False(received);
-    }
-
     private sealed class FakeCodeAnalysisHost : ICodeAnalysisHost
     {
         private readonly Subject<CodeAnalysisSnapshot> snapshots = new();

@@ -104,6 +104,20 @@ public sealed class ErrorsPanelViewModelTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ARowWithAClassButNoGraphKeyOpensTheClassGraph()
+    {
+        ProjectSessionViewModel session = await rig.OpenSessionAsync();
+        ClassGraph cls = session.Project.Classes[0];
+        SetBuildDiagnostics(session, Diagnostic(cls, "NPT000"));
+        ErrorListViewModel list = rig.Errors.Current ?? throw new InvalidOperationException("No error list.");
+
+        Assert.True(list.Rows.Single().CanNavigate);
+        list.NavigateCommand.Execute(list.Rows.Single());
+
+        Assert.Contains($"OpenDocument:{ClassDocument(session, cls)}", rig.Api.Calls);
+    }
+
+    [Fact]
     public async Task ARowWhoseGraphNoLongerExistsOpensNothing()
     {
         ProjectSessionViewModel session = await rig.OpenSessionAsync();

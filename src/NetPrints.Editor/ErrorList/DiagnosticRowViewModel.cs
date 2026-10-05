@@ -58,7 +58,7 @@ public sealed class DiagnosticRowViewModel
     /// <summary>
     /// Whether double-clicking (or activating with Enter) this row can open its graph (FR-034,
     /// OWN-04): true once <see cref="CodeDiagnostic.GraphKey"/> is known, even without a
-    /// <see cref="CodeDiagnostic.NodeId"/> to select and reveal.
+    /// <see cref="CodeDiagnostic.NodeId"/> to select and reveal, or when only the class is known (the class graph opens).
     /// </summary>
-    public bool CanNavigate => Diagnostic.GraphKey is not null;
+    public bool CanNavigate => Diagnostic.GraphKey is not null || Diagnostic.ClassFullName is not null;
 }
