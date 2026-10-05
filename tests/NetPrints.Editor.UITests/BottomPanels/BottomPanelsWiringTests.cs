@@ -146,9 +146,9 @@ public class BottomPanelsWiringTests
         rig.Api.OpenDocument(rig.ClassDocument);
         rig.Context.CodeAnalysis.RequestAnalysis(rig.Session.Project);
         var panel = Assert.IsType<NetPrints.Editor.CodeView.CSharpPanelViewModel>(rig.Shell.FindPanel(PanelContributions.CSharpId)?.Content);
-        await rig.WaitAsync(() => panel.Current?.Code.Contains("class", StringComparison.Ordinal) == true);
+        await rig.WaitAsync(() => panel.Current?.Code.Contains("class Program", StringComparison.Ordinal) == true);
 
-        Assert.Contains("class", panel.Current?.Code, StringComparison.Ordinal);
+        Assert.Contains("class Program", panel.Current?.Code, StringComparison.Ordinal);
         Assert.Empty(rig.Find(AutomationIds.CSharpEmpty));
         Assert.NotEmpty(rig.Find(AutomationIds.CSharpCode));
     }
