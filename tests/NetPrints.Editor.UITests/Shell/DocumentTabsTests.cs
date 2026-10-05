@@ -16,6 +16,7 @@ using NetPrints.Editor.UITests.Hosting;
 using NetPrints.Editor.UndoRedo;
 using NetPrints.Graph;
 using NetPrints.Testing.Ui.Driving;
+using NetPrints.Testing.Ui.Shell;
 using DocumentId = NetPrints.Editor.Shell.DocumentId;
 
 namespace NetPrints.Editor.UITests.Shell;
@@ -107,8 +108,7 @@ public class DocumentTabsTests
             return Task.CompletedTask;
         }
 
-        public Control Tab(DocumentId id) => Window.GetVisualDescendants().OfType<Control>()
-            .Single(control => control.GetType().Name == "DocumentTabStripItem" && control.DataContext is ShellDocument { } document && document.Id == id.ToString());
+        public Control Tab(DocumentId id) => Ui.Tree.FindControls(new ShellPage(Ui.Driver).Tabs.Tab(id).Query).Single().Control;
 
         public UiTarget Center(Control control, Window? host = null)
         {
