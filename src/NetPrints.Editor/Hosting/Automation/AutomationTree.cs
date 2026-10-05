@@ -215,6 +215,7 @@ public sealed class AutomationTree : IDisposable
                 break;
             case NetPrints.Editor.CodeView.CodeView codeView:
                 p[AutomationPropertyNames.IsReadOnly] = codeView.Editor.IsReadOnly.ToString();
+                p[AutomationPropertyNames.HighlightingSettled] = codeView.IsHighlightingSettled.ToString();
                 break;
             case NodifyEditor editor:
                 p[AutomationPropertyNames.ViewportZoom] = Invariant(editor.ViewportZoom);

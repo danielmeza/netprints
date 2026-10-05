@@ -132,6 +132,10 @@ public static class AutomationPropertyNames
     /// </summary>
     public const string ToolTipIsOpen = nameof(ToolTipIsOpen);
     /// <summary>
+    /// Reported by the code view: whether syntax highlighting has tokenized every line of the shown text ("True"/"False"), so a screenshot no longer changes as the highlighter catches up.
+    /// </summary>
+    public const string HighlightingSettled = nameof(HighlightingSettled);
+    /// <summary>
     /// Reported by every control: its CLR type name.
     /// </summary>
     public const string Type = nameof(Type);

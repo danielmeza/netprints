@@ -24,6 +24,14 @@ public sealed class InspectorPage(IUiDriver driver, AutomationQuery window)
     /// <summary>The class inspector's generated code preview.</summary>
     public UiElement ClassCodeView => Find(AutomationIds.ClassInspectorCodeView);
 
+    /// <summary>Waits until the class inspector's code view shows the generated code and its syntax highlighting has caught up with it.</summary>
+    /// <param name="cancellationToken">Cancels the wait.</param>
+    /// <param name="timeout">Longest to wait; defaults to the harness' wait budget.</param>
+    public Task WaitClassCodeHighlightedAsync(CancellationToken cancellationToken, TimeSpan? timeout = null) =>
+        ClassCodeView.WaitUntilAsync(
+            e => !string.IsNullOrEmpty(e.Text) && e[AutomationPropertyNames.HighlightingSettled] == bool.TrueString,
+            "generated code highlighted", cancellationToken, timeout);
+
     /// <summary>The method inspector.</summary>
     public UiElement MethodInspector => Find(AutomationIds.MethodInspector);
 

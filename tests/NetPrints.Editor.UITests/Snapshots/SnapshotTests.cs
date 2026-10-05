@@ -67,20 +67,21 @@ public class SnapshotTests
         await tree.SelectAsync(tree.Class("Program"), Token);
         await inspector.ClassInspector.WaitVisibleAsync(Token);
         await inspector.ClassCodeView.WaitUntilAsync(e => (e.Text ?? "").Contains("class Program"), "generated code", Token);
+        await inspector.WaitClassCodeHighlightedAsync(Token);
         await MatchStableAsync("inspector-class", inspector.ScreenshotAsync);
     }
 
     /// <summary>
     /// Reproduction of issue #13: opens the class inspector <c>NETPRINTS_SNAPSHOT_REPEAT</c> times (default 20),
-    /// compares the first frame after the code text appears with the baseline, then compares the settled frame.
-    /// Explicit: run it alone, ideally pinned to few CPUs. Fails if any settled frame mismatches; the count of
-    /// immediate mismatches is the flake rate of a single capture.
+    /// compares the first frame after the code text appears with the baseline, then a frame after the code view
+    /// reports its highlighting settled, then the stable frame. Explicit: run it alone, ideally pinned to few
+    /// CPUs. Fails if any stable frame mismatches; the other counts are the flake rates of a single capture.
     /// </summary>
     [AvaloniaFact(Explicit = true, Timeout = 900_000)]
     public async Task ClassInspectorSnapshotRepeatedly()
     {
         int runs = int.TryParse(Environment.GetEnvironmentVariable("NETPRINTS_SNAPSHOT_REPEAT"), out int parsed) ? parsed : 20;
-        int immediate = 0, settled = 0;
+        int immediate = 0, signalled = 0, settled = 0;
         for (int i = 0; i < runs; i++)
         {
             await using var session = await EditorSession.OpenSampleMainAsync(Token);
@@ -97,6 +98,12 @@ public class SnapshotTests
                 immediate++;
             }
 
+            await inspector.WaitClassCodeHighlightedAsync(Token);
+            if (!SnapshotComparer.Compare(await inspector.ScreenshotAsync(Token), baseline, SnapshotOptions.Default).Matches)
+            {
+                signalled++;
+            }
+
             try
             {
                 await MatchStableAsync("inspector-class", inspector.ScreenshotAsync);
@@ -107,8 +114,8 @@ public class SnapshotTests
             }
         }
 
-        TestContext.Current.SendDiagnosticMessage($"inspector-class over {runs} runs: {immediate} immediate captures mismatched, {settled} settled captures mismatched");
-        File.WriteAllText(Path.Combine(Store.OutputDirectory, "repeat.txt"), $"{runs} runs: immediate mismatches {immediate}, settled mismatches {settled}{Environment.NewLine}");
+        TestContext.Current.SendDiagnosticMessage($"inspector-class over {runs} runs: {immediate} immediate, {signalled} after the highlighting signal, {settled} stable captures mismatched");
+        File.WriteAllText(Path.Combine(Store.OutputDirectory, "repeat.txt"), $"{runs} runs: mismatches immediate {immediate}, after the highlighting signal {signalled}, stable {settled}{Environment.NewLine}");
         Assert.Equal(0, settled);
     }
 

@@ -1,3 +1,5 @@
+using System.Diagnostics;
+
 namespace NetPrints.Testing.Ui.Snapshots;
 
 /// <summary>
@@ -53,7 +55,7 @@ public sealed class SnapshotStore(string baselineDirectory, string outputDirecto
     /// <param name="name">Baseline name, without extension.</param>
     /// <param name="capture">Takes one frame; called repeatedly.</param>
     /// <param name="options">Tolerance of the comparison with the baseline.</param>
-    /// <param name="stable">How long to wait between frames and how many frames to try; defaults to <see cref="StableCaptureOptions"/>'s.</param>
+    /// <param name="stable">How long to wait between frames and how many frames or seconds to try; defaults to <see cref="StableCaptureOptions"/>'s.</param>
     /// <param name="cancellationToken">Cancels the capture loop.</param>
     /// <returns>The number of frames taken, the settled one included.</returns>
     /// <exception cref="SnapshotMismatchException">The frames never settled within the budget, or the settled
@@ -65,11 +67,14 @@ public sealed class SnapshotStore(string baselineDirectory, string outputDirecto
         stable ??= new StableCaptureOptions();
         ArgumentOutOfRangeException.ThrowIfLessThan(stable.MaxFrames, 2);
 
-        var identical = new SnapshotOptions { PixelThreshold = 0, MaxDiffPercent = 0 };
+        var identical = new SnapshotOptions { PixelThreshold = 0, MaxDiffPercent = 0, Masks = options?.Masks ?? [] };
+        long started = Stopwatch.GetTimestamp();
         var previous = await capture(cancellationToken);
         SnapshotComparison? last = null;
-        for (int frames = 2; frames <= stable.MaxFrames; frames++)
+        int frames = 1;
+        while (frames < stable.MaxFrames && Stopwatch.GetElapsedTime(started) < stable.Budget)
         {
+            frames++;
             if (stable.Interval > TimeSpan.Zero)
             {
                 await Task.Delay(stable.Interval, cancellationToken);
@@ -91,7 +96,7 @@ public sealed class SnapshotStore(string baselineDirectory, string outputDirecto
         previous.Save(Path.Combine(OutputDirectory, name + ".actual.png"));
         last?.Diff?.Save(Path.Combine(OutputDirectory, name + ".diff.png"));
         throw new SnapshotMismatchException(
-            $"Snapshot '{name}' did not settle after {stable.MaxFrames} frames ({stable.Interval.TotalMilliseconds:0} ms apart); the last two frames differ: {last?.Reason}. See {OutputDirectory}.");
+            $"Snapshot '{name}' did not settle after {frames} frames ({stable.Interval.TotalMilliseconds:0} ms apart, budget {stable.Budget.TotalSeconds:0.#} s); the last two frames differ: {last?.Reason}. See {OutputDirectory}.");
     }
 }
 
@@ -103,6 +108,9 @@ public sealed record StableCaptureOptions
 
     /// <summary>Most frames to take, the first one included, before giving up (at least 2).</summary>
     public int MaxFrames { get; init; } = 100;
+
+    /// <summary>Longest to keep taking frames; it keeps a never-settling capture well below a test's own timeout.</summary>
+    public TimeSpan Budget { get; init; } = TimeSpan.FromSeconds(15);
 }
 
 /// <summary>The outcome of a stable capture.</summary>

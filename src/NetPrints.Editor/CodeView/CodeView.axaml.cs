@@ -46,6 +46,27 @@ public sealed partial class CodeView : UserControl, IDisposable
     /// named element itself, is assembly-internal).</summary>
     public AvaloniaEdit.TextEditor CodeEditor => Editor;
 
+    /// <summary>
+    /// Whether TextMate has tokenized every line of the shown text. Tokenizing runs on a thread-pool thread in
+    /// short slices, so freshly set text is painted partly uncolored until this is <see langword="true"/>;
+    /// a screenshot or a test waits for it. Also <see langword="true"/> when highlighting is not installed
+    /// (not attached to the visual tree, or TextMate is unavailable), since nothing is pending then.
+    /// </summary>
+    public bool IsHighlightingSettled
+    {
+        get
+        {
+            if (textMate?.EditorModel is not { } model)
+            {
+                return true;
+            }
+
+            bool settled = true;
+            model.ForEach(line => settled &= !line.IsInvalid);
+            return settled;
+        }
+    }
+
     private void InstallHighlighting()
     {
         try

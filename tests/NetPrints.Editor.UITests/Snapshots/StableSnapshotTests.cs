@@ -84,4 +84,30 @@ public sealed class StableSnapshotTests : IDisposable
         Assert.Contains("100% of the pixels differ", thrown.Message, StringComparison.Ordinal);
         Assert.True(File.Exists(Path.Combine(store.OutputDirectory, Name + ".diff.png")));
     }
+
+    [Fact]
+    public async Task FramesThatNeverSettleStopAtTheTimeBudget()
+    {
+        int next = 0;
+        Func<CancellationToken, Task<UiImage>> flicker = _ => Task.FromResult(Image(next++ % 2 == 0 ? (byte)10 : (byte)200));
+        var options = new StableCaptureOptions { Interval = TimeSpan.FromMilliseconds(5), MaxFrames = int.MaxValue, Budget = TimeSpan.FromMilliseconds(100) };
+
+        var thrown = await Assert.ThrowsAsync<SnapshotMismatchException>(
+            () => store.MatchStableAsync(Name, flicker, stable: options, cancellationToken: Token));
+
+        Assert.Contains("did not settle", thrown.Message, StringComparison.Ordinal);
+        Assert.InRange(next, 2, 100);
+    }
+
+    [Fact]
+    public async Task AMaskedRegionDoesNotCountAsAChange()
+    {
+        int next = 0;
+        Func<CancellationToken, Task<UiImage>> caret = _ => Task.FromResult(Image(next++ % 2 == 0 ? (byte)190 : (byte)200));
+        var masked = new SnapshotOptions { PixelThreshold = 20, Masks = [new SnapshotMask(0, 0, 8, 8)] };
+
+        var result = await store.MatchStableAsync(Name, caret, masked, NoDelay, Token);
+
+        Assert.Equal(2, result.Frames);
+    }
 }

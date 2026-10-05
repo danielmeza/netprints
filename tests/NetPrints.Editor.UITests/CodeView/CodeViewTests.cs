@@ -51,7 +51,21 @@ public class CodeViewTests
         Assert.NotEmpty(viewModel.Foldings); // at least the class and the Main method
 
         // ED-T01's other half (highlighted tokens) is verified visually: reviewed on regeneration.
+        await inspector.WaitClassCodeHighlightedAsync(Token);
         await Store.MatchStableAsync("class-inspector-code-view", inspector.ScreenshotAsync, cancellationToken: Token);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task HighlightingReportsWhenItHasSettled()
+    {
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        var inspector = session.Page.Inspector;
+
+        await session.Page.Tree.SelectAsync(session.Page.Tree.Class("Program"), Token);
+        await inspector.ClassInspector.WaitVisibleAsync(Token);
+        await inspector.WaitClassCodeHighlightedAsync(Token, TimeSpan.FromSeconds(10));
+
+        Assert.Contains("class Program", await inspector.ClassCodeView.PropertyAsync(AutomationPropertyNames.Text, Token), StringComparison.Ordinal);
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
