@@ -40,7 +40,7 @@ headless tests drive.
 | `netprints.panel.inspector` | Inspector | Right | class, method, constructor, variable or event-entry inspector for the current selection |
 | `netprints.panel.variables` | Variables | Right (second tab of the Inspector's dock) | member variables of the active document's class (add, remove, rename through the row's inspector, getter, setter and type graph buttons) and, while the active document is a method, constructor or accessor graph, that graph's local variables (add, remove, retype, rename) |
 | `netprints.panel.errors` | Errors | Bottom | compile diagnostics; activating one navigates to its node (registered as a navigation) |
-| `netprints.panel.output` | Output | Bottom | build output, then the program's stdout and stderr; cleared at each compile or run |
+| `netprints.panel.output` | Output | Bottom | build output, then the program's stdout and stderr; cleared at each compile or run; a run brings it forward once, when the program starts, and later lines never switch the bottom panel back |
 | `netprints.panel.csharp` | C# | Bottom | generated C# of the active graph's class (read-only `CodeView`) |
 
 The Variables panel restores what the class window's variables list offered (FR-017). It is an `ActiveClassPanelViewModel`

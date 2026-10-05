@@ -1,3 +1,4 @@
+using NetPrints.Editor.Contributions.BuiltIn;
 using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Editor.Shell;
 using NetPrints.Testing.Ui.Driving;
@@ -104,6 +105,7 @@ public sealed class CompileTheProject : ITask
     public async Task PerformAsAsync(Actor actor, CancellationToken cancellationToken)
     {
         var shell = actor.Using<UseNetPrints>().Shell;
+        await shell.Bottom.ShowAsync(PanelContributions.OutputId, cancellationToken);
         var before = await shell.Bottom.OutputLinesAsync(cancellationToken);
         await shell.Commands.InvokeAsync(ShellCommands.Compile, cancellationToken);
         await shell.Bottom.WaitForBuildResultAsync(cancellationToken, before);

@@ -41,7 +41,6 @@ public sealed class BottomPanelPage(IUiDriver driver, AutomationQuery window) : 
     /// <summary>The lines of the Output panel, oldest first.</summary>
     public async Task<IReadOnlyList<string>> OutputLinesAsync(CancellationToken cancellationToken)
     {
-        await ShowAsync(PanelContributions.OutputId, cancellationToken);
         var lines = await Driver.FindAllAsync(new AutomationQuery(AutomationIds.OutputLine) { Within = OutputList.Query }, cancellationToken);
         return lines.Select(line => line.Text ?? "").ToList();
     }
@@ -66,7 +65,6 @@ public sealed class BottomPanelPage(IUiDriver driver, AutomationQuery window) : 
     /// <summary>Waits until a line of the Output panel contains <paramref name="expected"/> and returns the lines.</summary>
     public async Task<IReadOnlyList<string>> WaitForOutputContainingAsync(string expected, CancellationToken cancellationToken)
     {
-        await ShowAsync(PanelContributions.OutputId, cancellationToken);
         return await UiWait.ForAsync(Driver, () => OutputLinesAsync(cancellationToken), Any(line => line.Contains(expected, StringComparison.Ordinal)),
             $"output containing '{expected}'", cancellationToken, BuildBudget);
     }

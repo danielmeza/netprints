@@ -1,5 +1,6 @@
 using NetPrints.Compilation;
 using NetPrints.Core;
+using NetPrints.Editor.Contributions.BuiltIn;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Output;
 using NetPrints.Editor.Shell;
@@ -81,6 +82,23 @@ public sealed class OutputPanelViewModelTests : IAsyncDisposable
         rig.Processes.RaiseLine(ProcessStream.Output, "second run");
 
         Assert.Equal(["Build started.", "Build succeeded", "second run"], Texts);
+    }
+
+    [Fact]
+    public async Task RunBringsOutputForwardOnceNotOnEveryLine()
+    {
+        await rig.OpenSessionAsync();
+        string show = $"ShowPanel:{PanelContributions.OutputId}";
+
+        rig.Processes.Start(Request, TestContext.Current.CancellationToken);
+        queue.Flush();
+        Assert.Equal(1, rig.Api.Calls.Count(call => call == show));
+
+        rig.Api.Calls.Clear();
+        rig.Processes.RaiseLine(ProcessStream.Output, "still printing");
+        rig.Processes.RaiseLine(ProcessStream.Error, "and again");
+        queue.Flush();
+        Assert.DoesNotContain(show, rig.Api.Calls);
     }
 
     [Fact]

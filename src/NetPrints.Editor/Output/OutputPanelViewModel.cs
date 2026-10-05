@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Compilation;
+using NetPrints.Editor.Contributions.BuiltIn;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Shell;
 
@@ -8,7 +9,7 @@ namespace NetPrints.Editor.Output;
 
 /// <summary>
 /// The Output panel: the build output (its start, its diagnostics, its result), then the program's standard output and error from
-/// <see cref="RunStateTracker"/>. A compile clears everything; a run clears the output of the run before. The tracker reports from
+/// <see cref="RunStateTracker"/>; a run brings the panel forward once, when the program starts. A compile clears everything; a run clears the output of the run before. The tracker reports from
 /// whatever thread the build or the program runs on, so every change goes through <see cref="IUiDispatcher"/>.
 /// </summary>
 public sealed partial class OutputPanelViewModel : ObservableObject, IShellPanelContent
@@ -68,7 +69,7 @@ public sealed partial class OutputPanelViewModel : ObservableObject, IShellPanel
     {
         RunPhase previous = phase;
         phase = next;
-        if (context is null)
+        if (context is not { } attached)
         {
             return;
         }
@@ -81,6 +82,7 @@ public sealed partial class OutputPanelViewModel : ObservableObject, IShellPanel
                 break;
             case RunPhase.Running:
                 RemoveProgramOutput();
+                attached.Api.ShowPanel(PanelContributions.OutputId);
                 if (previous == RunPhase.Building)
                 {
                     AddBuildResult();
