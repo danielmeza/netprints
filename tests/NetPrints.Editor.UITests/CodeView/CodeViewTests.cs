@@ -51,7 +51,7 @@ public class CodeViewTests
         Assert.NotEmpty(viewModel.Foldings); // at least the class and the Main method
 
         // ED-T01's other half (highlighted tokens) is verified visually: reviewed on regeneration.
-        Store.Match("class-inspector-code-view", await inspector.ScreenshotAsync(Token));
+        await Store.MatchStableAsync("class-inspector-code-view", inspector.ScreenshotAsync, cancellationToken: Token);
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
