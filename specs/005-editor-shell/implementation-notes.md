@@ -1024,3 +1024,49 @@ Solution suite (Release) 2225 tests, 2212 passed, 13 skipped (usual), 0 failed, 
 ### 50-run result
 
 Standalone, headless, after the fix: `EditCompileAndRun` 50 of 50 passed, `ShellMainFlow` 50 of 50 passed, 0 hangs.
+
+## Review C (T046, `review-C.md`)
+
+Verdict: request changes, 1 blocker, 2 majors, 15 minors, 13 nits (31 findings). Fix batches F1 to F5 (T047), plus R13 in the flaky-test plan's B4. Batch F1 fixed R1, R2, R3, R4, R8 and R9; the rest are open. Full text: the PR #12 review comment.
+
+| Id | Sev | Summary | Batch | Status |
+|---|---|---|---|---|
+| R1 | blocker | Delete with nothing selected removes the edited member or class | F1 | fixed f609e829 |
+| R2 | major | Closing a graph tab leaks its `NodeGraphViewModel` | F1 | fixed 279077ac |
+| R3 | major | Global shortcuts do nothing in a floated graph window | F1 | fixed c4925655 |
+| R4 | minor | Tests bypass the invoker and the keys | F1 | fixed f609e829 |
+| R5 | minor | Run no longer brings the Output panel forward | F2 | open |
+| R6 | minor | The binding-warning guard filters too much | F3 | open |
+| R7 | minor | Renaming a never-saved class orphans its tabs | F2 | open |
+| R8 | minor | `overrideMethod` records an undo entry for nothing | F1 | fixed 999a076e |
+| R9 | minor | F2 in the canvas renames the wrong item | F1 | fixed f609e829 |
+| R10 | minor | Some Errors rows can't be activated | F2 | open |
+| R11 | minor | A floating document's window is not brought forward | F2 | open |
+| R12 | minor | Dialogs from a floated window open on the main window | F2 | open |
+| R13 | minor | A row's empty area ignores double-clicks and right-clicks | B4 (flaky plan) | open |
+| R14 | minor | The inspector ignores graph selection | F2 | open |
+| R15 | minor | Creating a `ClassContext` runs code analysis | F4 | open |
+| R16 | minor | The unsubscribe test can't fail | F3 | open |
+| R17 | minor | The Ctrl+Shift+Tab test can't tell previous from next | F3 | open |
+| R18 | minor | T044 dropped two tests without replacements | F4 | open |
+| R19 | nit | Architecture gate A2 misses generic fields such as `HashSet<ClassContext>` | F5 | open |
+| R20 | nit | The tree's context menu is rebuilt on every pulse, plausibly while it is open | F4 | open |
+| R21 | nit | Contracts and docs have drifted | F5 | open |
+| R22 | nit | Dock plumbing sits outside `Shell/Docking`: its templates are in `EditorApp.axaml`, and `DockStyles` repeats palette literals | F5 | open |
+| R23 | nit | The overload warm-up caches deferred queries, so it warms less than it claims | F4 | open |
+| R24 | nit | The adapter has defensive gaps: a rebuild loses the layout, and `.First` follows a `DockHome` that can return null | F4 | open |
+| R25 | nit | Some panel actions are view-model commands, not registry commands; Add variable duplicates `addVariable` | F5 | open |
+| R26 | nit | `DocumentTabsTests` finds Dock's `DocumentTabStripItem` by its type name, which T042 rules out | F3 | open |
+| R27 | nit | A dead assertion: `cls.Constructors.Skip(1)` is empty whether or not undo worked | F3 | open |
+| R28 | nit | `HighlightingReportsWhenItHasSettled` only waits for true, and the property is also true when TextMate is absent | F3 | open |
+| R29 | nit | The C# wiring test asserts `"class"` in a one-class project | F4 | open |
+| R30 | nit | Checkpoint C overclaims | F5 | open |
+| R31 | nit | The baselines are justified at HEAD | F5 | open |
+
+Decisions of batch F1:
+- Decision (R1): the command context carries the invoking scope (`CommandContext.Scope`). Delete from the canvas or a menu acts on selected nodes only and never on the tree row; Delete from the tree (key or context menu) acts on the tree item only. A menu invocation has no scope, so Edit > Delete is enabled only with nodes selected.
+- Decision (R1): removing a method or constructor is undoable (`RemoveMethod` restores its index); removing a class cannot be undone, so `IProjectActions.DeleteItemAsync` asks first through `IEditorDialogs.ConfirmAsync`.
+- Decision (R9): Rename from the canvas or a menu targets the active graph's member (the variable for an accessor or type graph) and falls back to the tree item only with no active graph; from the tree it targets the tree item.
+- Decision (R2): `DocumentViewModel` raises `Disposed` and `GraphDocumentFactory` disposes the graph it created on that event (the document does not own an injected graph).
+- Decision (R3): the global key bindings are attached to the graph document template as well as to `ShellWindow`, from the same registry invoker. Floated tool panels are not covered.
+- Decision (R4): `EditorSession.RunAsync`, `DocumentTabsTests` and `FormerActionsReachableTests` run commands through `CommandInvoker.TryRun` and assert they are enabled; `PressButton` asserts the button is enabled.

@@ -424,7 +424,7 @@ US2's independent test; SC-001.
 
 ### Batch C-R — model: opus — T046 (sub-phase review)
 
-- [ ] T046 [US2] Review sub-phase C: an Opus reviewer who did not implement it reviews the whole diff of batches C1–C5
+- [x] T046 [US2] Review sub-phase C: an Opus reviewer who did not implement it reviews the whole diff of batches C1–C5
   (from the commit before the first batch to HEAD): US2 end to end against spec.md, contracts/shell.md,
   contracts/commands.md, ADR-0018 (Dock confined to `Shell/Docking`, the spike evidence, the gate decision), ADR-0007,
   the constitution and plan.md's standing constraints. It runs the independent test of the phase. Findings go to the
