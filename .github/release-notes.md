@@ -1,5 +1,7 @@
 ## Unreleased
 
+**Changed:** the editor is one window. The launcher and the per-class windows are gone: a project opens in a single window with a project tree, tabbed graphs, an inspector, an Errors, Output and C# panel, a Variables panel, a menu bar and a command bar. Panes dock, tab and float, and a graph tab can float into its own window and dock back; **View › Reset layout** restores the default. Every action of the old windows is still reachable (class settings, members, event graphs, overriding a base method, variable getter, setter and type graphs, references, project settings, create and open project). One project per window; opening another unloads the current one.
+
 ## Downloads
 
 | Platform | File |

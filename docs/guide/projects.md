@@ -27,6 +27,27 @@ that turns each graph into C#. Nothing else about the project file is special �
 package references, target framework and output type all work exactly as they do in any other .NET
 project.
 
+## The editor window
+
+The editor opens one project per window, from **File › Open folder or project…** or as the first argument
+on the command line. There is no launcher and no separate window per class. The window has:
+
+- a **menu bar** (File, Edit, View, Go, Build, Help) and a **command bar** with the common commands (save, compile,
+  run, undo, redo, class settings, references);
+- a **project tree** with the project, its classes, and per class its methods, constructors, variables and event
+  graphs; double-click or press Enter to open one, and use the context menu to add, rename or remove members;
+- a **document area** with one tab per open graph (close with the button, middle-click or Ctrl+W; Ctrl+Tab and
+  Ctrl+Shift+Tab switch tabs) and the project settings;
+- an **inspector** for the selected class, method, constructor or variable, with the **Variables** panel beside it
+  for a class's member variables and the active method's local variables;
+- a **bottom panel** with Errors (activate an entry to open its graph and select the node), Output (build and
+  program output) and C# (the generated code of the active class);
+- a status bar.
+
+Panes dock to any side, tab together and float into their own window; a graph tab can float and keep full editing
+there. Closing a pane hides it, and the View menu lists every panel to show it again; **View › Reset layout**
+restores the default. Opening or creating another project unloads the current one first.
+
 ## Generated code (`.netpc.g.cs`)
 
 Building the project runs the NetPrints generator before compilation. For each graph file

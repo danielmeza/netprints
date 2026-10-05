@@ -417,7 +417,7 @@ US2's independent test; SC-001.
   diff), unit-test it with a fake frame source, and move `Inspectors` and the other snapshot tests onto it.
   The code view also reports `HighlightingSettled` (TextMate lines all tokenized), which the inspector snapshots wait
   for before the stable capture. Before: 1/8 combined runs failed under CPU contention; after: 0/16. Closes #13.
-- [ ] T045 **Checkpoint C**: report SC-001 (`ShellMainFlowTests` and its window count), FR-010–FR-018 with the test
+- [x] T045 **Checkpoint C**: report SC-001 (`ShellMainFlowTests` and its window count), FR-010–FR-018 with the test
   for each, the spike outcome and `RegistrySurfaceTests`. Docs updated: `docs/guide/projects.md` and `README.md` no
   longer describe the launcher or the per-class windows (the full guides come in H); release notes: the
   single-window editor.
