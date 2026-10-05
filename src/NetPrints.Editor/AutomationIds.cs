@@ -28,6 +28,15 @@ public static class AutomationIds
     /// </summary>
     public const string VariableInspector = "Inspectors.Variable";
 
+    /// <summary>The "Open getter" button of the variable inspector.</summary>
+    public const string VariableInspectorOpenGetter = "Inspectors.Variable.OpenGetter";
+
+    /// <summary>The "Open setter" button of the variable inspector.</summary>
+    public const string VariableInspectorOpenSetter = "Inspectors.Variable.OpenSetter";
+
+    /// <summary>The "Open type graph" button of the variable inspector.</summary>
+    public const string VariableInspectorOpenTypeGraph = "Inspectors.Variable.OpenTypeGraph";
+
     // Variables list
     /// <summary>
     /// Automation id for a variable list row's name field.

@@ -48,6 +48,7 @@ public class BuiltInCommandTableTests
         new("addConstructor", "Add constructor", "Edit", "class", [], Everywhere, null, typeof(AddConstructorCommandHandler)),
         new("addVariable", "Add variable", "Edit", "class", [], Everywhere, null, typeof(AddVariableCommandHandler)),
         new("addEventGraph", "Add event graph", "Edit", "class", [], Everywhere, null, typeof(AddEventGraphCommandHandler)),
+        new("overrideMethod", "Override method…", "Edit", "class", [], Everywhere, null, typeof(OverrideMethodCommandHandler)),
         new("frameSelection", "Frame selection", "View", "viewport", ["F"], Canvas, null, typeof(FrameSelectionCommandHandler)),
         new("fitAll", "Fit all", "View", "viewport", ["Home", "Shift+F"], Canvas, null, typeof(FitAllCommandHandler)),
         new("showPanel.projectTree", "Project", "View", "panels", [], Everywhere, null, typeof(ShowPanelCommandHandler)),

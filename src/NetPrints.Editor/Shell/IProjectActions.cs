@@ -75,6 +75,12 @@ public interface IProjectActions
     /// <param name="cls">The class.</param>
     void AddEventGraph(ClassGraph cls);
 
+    /// <summary>Asks which base method of a class to override, adds the override and opens it.</summary>
+    /// <param name="cls">The class.</param>
+    /// <param name="cancellationToken">Cancels the flow.</param>
+    /// <returns>A task that completes when the override was added, or the user cancelled.</returns>
+    Task OverrideMethodAsync(ClassGraph cls, CancellationToken cancellationToken);
+
     /// <summary>Starts renaming a class, member or graph.</summary>
     /// <param name="item">The project tree item, or the graph model of the active document.</param>
     void RenameItem(object item);

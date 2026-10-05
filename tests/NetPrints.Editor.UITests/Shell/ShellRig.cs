@@ -49,6 +49,8 @@ internal sealed class NoProjectActions : IProjectActions
 
     public void AddEventGraph(ClassGraph cls) => throw new NotSupportedException();
 
+    public Task OverrideMethodAsync(ClassGraph cls, CancellationToken cancellationToken) => throw new NotSupportedException();
+
     public void RenameItem(object item) => throw new NotSupportedException();
 
     public void DeleteItem(object item) => throw new NotSupportedException();

@@ -386,6 +386,8 @@ US2's independent test; SC-001.
   and remove methods, constructors, variables and event graphs; references; project settings; create and open
   project; save; compile; run) maps each to a command id, a tree context-menu item or an inspector element, and the
   test finds each one in the shell.
+  The table also lists the actions T044 left without a surface (C5f1): override a base method (`overrideMethod`)
+  and open a variable's getter, setter or type graph (variable inspector).
 
 ### Batch C5 — model: sonnet — T042–T045 — 6 units
 

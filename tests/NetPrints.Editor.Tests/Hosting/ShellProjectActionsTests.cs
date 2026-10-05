@@ -1,7 +1,7 @@
 using NetPrints.Core;
-using NetPrints.Editor.Variables;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.Tests.Shell;
+using NetPrints.Editor.Variables;
 
 namespace NetPrints.Editor.Tests.Hosting;
 
@@ -211,6 +211,7 @@ public sealed class ShellProjectActionsTests : IDisposable
         };
         Assert.StartsWith(which + ":", id.GraphKey, StringComparison.Ordinal);
         Assert.Same(expected, CommandTargets.GraphOf(session, id));
+        Assert.Same(session.Project.Classes[0], CommandTargets.ClassOf(expected));
         Assert.Equal(id, CommandTargets.GraphDocumentOf(session, expected));
     }
 
@@ -260,6 +261,45 @@ public sealed class ShellProjectActionsTests : IDisposable
         Assert.Empty(which == "method" ? cls.Methods.Where(m => m.Name == "Method") : cls.Constructors.Skip(1));
 
         session.UndoStackFor(cls).Redo();
+        Assert.Empty(shell.OpenDocuments);
+    }
+
+    [Fact]
+    public async Task OverridingAMethodAsksForOneOpensItAndUndoClosesItsTab()
+    {
+        ProjectRig rig = await OpenSampleAsync();
+        var shell = new FakeShell();
+        rig.Actions.Api = shell;
+        ProjectSessionViewModel session = rig.Session ?? throw new InvalidOperationException("No session.");
+        ClassGraph cls = Assert.Single(session.Project.Classes);
+        await testEditor.Context.Reflection.Loaded;
+        testEditor.Dialogs.MethodAnswer = methods => methods.First(m => m.Name == "ToString");
+
+        await rig.Actions.OverrideMethodAsync(cls, Token);
+
+        Assert.Equal(1, testEditor.Dialogs.SelectMethodCalls);
+        MethodGraph method = Assert.Single(cls.Methods, m => m.Name == "ToString");
+        Assert.Equal(CommandTargets.GraphDocumentOf(session, method), shell.ActiveDocument);
+
+        session.UndoStackFor(cls).Undo();
+        Assert.DoesNotContain(method, cls.Methods);
+        Assert.Empty(shell.OpenDocuments);
+    }
+
+    [Fact]
+    public async Task CancellingTheOverrideChooserChangesNothing()
+    {
+        ProjectRig rig = await OpenSampleAsync();
+        var shell = new FakeShell();
+        rig.Actions.Api = shell;
+        ClassGraph cls = Assert.Single((rig.Session ?? throw new InvalidOperationException("No session.")).Project.Classes);
+        await testEditor.Context.Reflection.Loaded;
+        testEditor.Dialogs.MethodAnswer = _ => null;
+        int methods = cls.Methods.Count;
+
+        await rig.Actions.OverrideMethodAsync(cls, Token);
+
+        Assert.Equal(methods, cls.Methods.Count);
         Assert.Empty(shell.OpenDocuments);
     }
 

@@ -1,3 +1,4 @@
+using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using NetPrints.Core;
 using NetPrints.Editor.Contributions;
@@ -6,6 +7,7 @@ using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Editor.ProjectTree;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.UITests.Driving;
+using NetPrints.Editor.Variables;
 
 namespace NetPrints.Editor.UITests.Shell;
 
@@ -22,6 +24,7 @@ public class FormerActionsReachableTests
         VariableRowMenu,
         EventGraphRowMenu,
         InspectorElement,
+        VariableInspectorElement,
     }
 
     /// <summary>One former action, the surface that offers it now and what to find there: a command id, or an automation id for the inspector.</summary>
@@ -57,6 +60,11 @@ public class FormerActionsReachableTests
         new("Remove constructor", Surface.ConstructorRowMenu, "delete"),
         new("Rename variable", Surface.VariableRowMenu, "rename"),
         new("Remove variable", Surface.VariableRowMenu, "delete"),
+        new("Override method", Surface.MenuBar, "overrideMethod"),
+        new("Override method", Surface.ClassRowMenu, "overrideMethod"),
+        new("Open variable getter", Surface.VariableInspectorElement, AutomationIds.VariableInspectorOpenGetter),
+        new("Open variable setter", Surface.VariableInspectorElement, AutomationIds.VariableInspectorOpenSetter),
+        new("Open variable type graph", Surface.VariableInspectorElement, AutomationIds.VariableInspectorOpenTypeGraph),
         new("Open event graph", Surface.EventGraphRowMenu, "openGraph"),
         new("Rename event graph", Surface.EventGraphRowMenu, "rename"),
         new("Remove event graph", Surface.EventGraphRowMenu, "delete"),
@@ -77,6 +85,9 @@ public class FormerActionsReachableTests
             await Run(app, add);
         }
 
+        MemberVariableViewModel variable = app.Session.ContextFor(cls).Variables[^1];
+        variable.AddGetterCommand.Execute(null);
+        variable.AddSetterCommand.Execute(null);
         HeadlessDriver.Pump();
         return app;
     }
@@ -122,7 +133,13 @@ public class FormerActionsReachableTests
 
         foreach (Former former in Table)
         {
-            bool found = former.Surface == Surface.InspectorElement
+            if (former.Surface == Surface.VariableInspectorElement)
+            {
+                app.Shell.TreeSelection = app.Session.Project.Classes[0].Variables[^1];
+                HeadlessDriver.Pump();
+            }
+
+            bool found = former.Surface is Surface.InspectorElement or Surface.VariableInspectorElement
                 ? app.Ui.Tree.Find(new AutomationQuery(former.Target)).Count > 0
                 : MenuIds(app, former.Surface).Contains(IdOf(former.Target), StringComparer.Ordinal);
             if (!found)
@@ -139,9 +156,32 @@ public class FormerActionsReachableTests
     {
         await using ShellApp app = ShellApp.Start();
 
-        foreach (Former former in Table.Where(entry => entry.Surface != Surface.InspectorElement))
+        foreach (Former former in Table.Where(entry => entry.Surface is not (Surface.InspectorElement or Surface.VariableInspectorElement)))
         {
             Assert.Contains(app.Registry.Commands, command => command.Id == IdOf(former.Target));
+        }
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task TheVariableInspectorOpensTheGetterSetterAndTypeGraphs()
+    {
+        await using ShellApp app = await StartWithEveryMemberAsync();
+        ClassGraph cls = app.Session.Project.Classes[0];
+        Variable variable = cls.Variables[^1];
+        app.Shell.TreeSelection = variable;
+        HeadlessDriver.Pump();
+
+        foreach ((string id, NodeGraph? graph) in new[]
+        {
+            (AutomationIds.VariableInspectorOpenGetter, (NodeGraph?)variable.GetterMethod),
+            (AutomationIds.VariableInspectorOpenSetter, variable.SetterMethod),
+            (AutomationIds.VariableInspectorOpenTypeGraph, variable.TypeGraph),
+        })
+        {
+            Button button = Assert.IsType<Button>(app.Ui.Tree.FindControls(new AutomationQuery(id)).Select(pair => pair.Control).First());
+            button.Command?.Execute(null);
+            HeadlessDriver.Pump();
+            Assert.Contains(CommandTargets.GraphDocumentOf(app.Session, graph), app.Api.OpenDocuments);
         }
     }
 

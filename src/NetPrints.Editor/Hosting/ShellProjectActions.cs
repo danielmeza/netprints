@@ -6,6 +6,7 @@ using NetPrints.Editor.Contributions.BuiltIn;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.References;
 using NetPrints.Editor.Shell;
+using NetPrints.Reflection;
 
 namespace NetPrints.Editor.Hosting;
 
@@ -138,6 +139,31 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
     public void AddEventGraph(ClassGraph cls) => AddGraph(cls, classContext => classContext.CreateEventGraph());
 
     /// <inheritdoc/>
+    public async Task OverrideMethodAsync(ClassGraph cls, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(cls);
+        if (!context.Reflection.IsLoaded)
+        {
+            await context.Dialogs.ShowErrorAsync("Override method", "The project's types are still loading.").ConfigureAwait(true);
+            return;
+        }
+
+        IReflectionProvider provider = context.Reflection.Provider;
+        List<MethodSpecifier> overridable = cls.AllBaseTypes.SelectMany(provider.GetOverridableMethodsForType).ToList();
+        if (overridable.Count == 0)
+        {
+            await context.Dialogs.ShowErrorAsync("Override method", $"{cls.Name} has no base method to override.").ConfigureAwait(true);
+            return;
+        }
+
+        MethodSpecifier? chosen = await context.Dialogs.SelectMethodAsync(overridable).ConfigureAwait(true);
+        if (chosen is not null)
+        {
+            AddGraph(cls, classContext => classContext.CreateOverride(chosen));
+        }
+    }
+
+    /// <inheritdoc/>
     public void AddVariable(ClassGraph cls)
     {
         shell.Session?.ContextFor(cls).CreateVariable();
@@ -254,7 +280,7 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
         Api?.ShowPanel(PanelContributions.InspectorId);
     }
 
-    private void AddGraph(ClassGraph cls, Func<ClassContext, NodeGraph> create)
+    private void AddGraph(ClassGraph cls, Func<ClassContext, NodeGraph?> create)
     {
         if (shell.Session is { } session && create(session.ContextFor(cls)) is { } graph && CommandTargets.GraphDocumentOf(session, graph) is { } id)
         {

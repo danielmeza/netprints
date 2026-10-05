@@ -187,7 +187,7 @@ public sealed class ProjectTreePanelViewModelTests : IAsyncDisposable
 
         rig.Tree.SelectedItem = rig.Item(TreeItemKind.Class, cls.Name);
         Assert.Equal(
-            ["Open", "Rename", "Add method", "Add constructor", "Add variable", "Add event graph", "Class settings", "Delete"],
+            ["Open", "Rename", "Add method", "Add constructor", "Add variable", "Add event graph", "Override method…", "Class settings", "Delete"],
             rig.Item(TreeItemKind.Class, cls.Name).MenuEntries.Select(entry => entry.Label));
 
         rig.Tree.SelectedItem = rig.Item(TreeItemKind.Method, "Greet");

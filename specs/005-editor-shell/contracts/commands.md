@@ -32,6 +32,7 @@ Menu order: **File, Edit, View, Go, Build, Help**. Groups inside a menu are sepa
 | `addConstructor` | Add constructor | Edit › class | — | Global | |
 | `addVariable` | Add variable | Edit › class | — | Global | |
 | `addEventGraph` | Add event graph | Edit › class | — | Global | |
+| `overrideMethod` | Override method… | Edit › class | — | Global | Asks for a base method (the method chooser) and opens the override; undo removes it. |
 | `frameSelection` | Frame selection | View › viewport | F | Graph | |
 | `fitAll` | Fit all | View › viewport | Home, Shift+F | Graph | |
 | `showPanel.<panel>` | Project, Inspector, Errors, Output, C# | View › panels | — | Global | |
@@ -81,7 +82,7 @@ The tree's open item is the command `openGraph` (label "Open", `Enter` in the `P
 the graph of the selected class, method, constructor or event graph. An item is shown only when its command can run for
 the selected row; the menu opens on the selected row, and a right-click selects the row first.
 
-Add-member commands (`addMethod`, `addConstructor`, `addVariable`, `addEventGraph`, in the table above) act on the
+Add-member commands (`addMethod`, `addConstructor`, `addVariable`, `addEventGraph`, `overrideMethod`, in the table above) act on the
 tree selection's class, else the active document's class.
 
 ## 3. Status messages

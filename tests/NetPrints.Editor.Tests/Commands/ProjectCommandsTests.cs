@@ -41,6 +41,7 @@ public sealed class ProjectCommandsTests : SessionCommandTests
         { new AddConstructorCommandHandler(), "AddConstructor" },
         { new AddVariableCommandHandler(), "AddVariable" },
         { new AddEventGraphCommandHandler(), "AddEventGraph" },
+        { new OverrideMethodCommandHandler(), "OverrideMethod" },
     };
 
     [Theory]

@@ -135,5 +135,15 @@ public static class EditContributions
             Scope: CommandScope.Global,
             Menu: new MenuPlacement(MenuName, ClassGroup, 4),
             CommandBarOrder: null));
+
+        registry.AddCommand(new CommandDescriptor(
+            ContributionIds.CommandPrefix + "overrideMethod",
+            "Override method…",
+            new OverrideMethodCommandHandler(),
+            IconKind: null,
+            DefaultGestures: null,
+            Scope: CommandScope.Global,
+            Menu: new MenuPlacement(MenuName, ClassGroup, 5),
+            CommandBarOrder: null));
     }
 }

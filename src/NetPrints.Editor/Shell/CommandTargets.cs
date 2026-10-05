@@ -60,6 +60,20 @@ public static class CommandTargets
         return owner is not null && key is not null ? DocumentId.Graph(session.ClassPathOf(owner), key) : null;
     }
 
+    /// <summary>The class that owns a graph.</summary>
+    /// <param name="graph">Any graph, including a variable's type graph.</param>
+    /// <returns>The class, or null when the graph has none.</returns>
+    public static ClassGraph? ClassOf(NodeGraph graph)
+    {
+        ArgumentNullException.ThrowIfNull(graph);
+        return graph switch
+        {
+            ClassGraph cls => cls,
+            TypeGraph typeGraph => typeGraph.OwningClass,
+            _ => graph.Class,
+        };
+    }
+
     private static string? AccessorKey(MethodGraph method)
     {
         foreach (Variable variable in method.Class?.Variables ?? [])

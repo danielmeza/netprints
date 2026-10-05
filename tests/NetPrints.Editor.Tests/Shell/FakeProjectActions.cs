@@ -93,6 +93,13 @@ public sealed class FakeProjectActions : IProjectActions
     public void AddEventGraph(ClassGraph cls) => Record("AddEventGraph", cls);
 
     /// <inheritdoc/>
+    public Task OverrideMethodAsync(ClassGraph cls, CancellationToken cancellationToken)
+    {
+        Record("OverrideMethod", cls);
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc/>
     public void RenameItem(object item)
     {
         LastItem = item;
