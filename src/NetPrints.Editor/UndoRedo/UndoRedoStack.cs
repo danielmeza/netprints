@@ -96,6 +96,13 @@ public sealed class UndoRedoStack
     public void Do(IUndoableCommand command)
     {
         command.Execute();
+        Record(command);
+    }
+
+    /// <summary>Records a command whose <see cref="IUndoableCommand.Execute"/> the caller already ran, so a command that turned out to change nothing can be left out. Clears the redo history.</summary>
+    /// <param name="command">The executed command.</param>
+    public void Record(IUndoableCommand command)
+    {
         undoStack.Push(command);
         redoStack.Clear();
         Changed?.Invoke(this, EventArgs.Empty);

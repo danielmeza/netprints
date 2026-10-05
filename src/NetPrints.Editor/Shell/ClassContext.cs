@@ -160,7 +160,13 @@ public sealed class ClassContext : IDisposable
     public MethodGraph? CreateOverride(MethodSpecifier methodSpecifier)
     {
         MethodGraph? created = null;
-        UndoRedo.Do(EditorCommands.AddMethod(Class, () => created = GraphUtil.AddOverrideMethod(Class, methodSpecifier)));
+        IUndoableCommand add = EditorCommands.AddMethod(Class, () => created = GraphUtil.AddOverrideMethod(Class, methodSpecifier));
+        add.Execute();
+        if (created is not null)
+        {
+            UndoRedo.Record(add);
+        }
+
         return created;
     }
 

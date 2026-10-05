@@ -82,6 +82,18 @@ public class ClassContextMembersTests(TestEditor editor) : IAsyncLifetime
     }
 
     [Fact]
+    public void AnOverrideThatCannotBeCreatedRecordsNoUndoStep()
+    {
+        var toString = cls.AllBaseTypes.SelectMany(editor.Reflection.Provider.GetOverridableMethodsForType).First(m => m.Name == "ToString");
+        cls.Methods.Add(new MethodGraph("ToString") { Class = cls });
+
+        MethodGraph? created = context.CreateOverride(toString);
+
+        Assert.Null(created);
+        Assert.False(context.UndoRedo.CanUndo);
+    }
+
+    [Fact]
     public void RemovingAMethodOrConstructorTakesItOutOfTheClass()
     {
         var main = context.Methods.Single();
