@@ -65,18 +65,23 @@ public class ShellCompositionTests
     {
         await using ShellApp app = await StartAsync();
         DocumentId classDocument = ClassDocument(app);
+        DocumentId methodDocument = CommandTargets.GraphDocumentOf(app.Session, app.Session.Project.Classes[0].Methods.First()) ?? throw new InvalidOperationException("No method document.");
         app.Api.OpenDocument(classDocument);
+        app.Api.OpenDocument(methodDocument);
         app.Api.OpenDocument(DocumentId.ProjectSettings);
+        app.Api.OpenDocument(methodDocument);
         HeadlessDriver.Pump();
-        Assert.Equal(DocumentId.ProjectSettings, app.Api.ActiveDocument);
+        Assert.Equal(methodDocument, app.Api.ActiveDocument);
 
         await app.Driver.PressAsync("Ctrl+Tab", Token);
-        Assert.Equal(classDocument, app.Api.ActiveDocument);
-        await app.Driver.PressAsync("Ctrl+Shift+Tab", Token);
         Assert.Equal(DocumentId.ProjectSettings, app.Api.ActiveDocument);
+        await app.Driver.PressAsync("Ctrl+Shift+Tab", Token);
+        Assert.Equal(methodDocument, app.Api.ActiveDocument);
+        await app.Driver.PressAsync("Ctrl+Shift+Tab", Token);
+        Assert.Equal(classDocument, app.Api.ActiveDocument);
 
         await app.Driver.PressAsync("Ctrl+W", Token);
-        Assert.Equal([classDocument], app.Api.OpenDocuments);
+        Assert.Equal([methodDocument, DocumentId.ProjectSettings], app.Api.OpenDocuments);
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
