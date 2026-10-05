@@ -3,19 +3,23 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Messaging;
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
+using NetPrints.Editor.Graph;
 using NetPrints.Editor.Shell;
 
 namespace NetPrints.Editor.Inspectors;
 
 /// <summary>
 /// The inspector panel: hosts the class, method or variable inspector for the project tree's selection
-/// (<see cref="ShellViewModel.TreeSelection"/>), and an empty state when nothing is selected or no project is open.
+/// (<see cref="ShellViewModel.TreeSelection"/>) or for the selection in the active graph
+/// (<see cref="GraphSelectionInspectorTarget"/>), whichever changed last, and an empty state when nothing is selected or no project is open.
 /// The inspectors come from the class's <see cref="ClassContext"/>, which the session owns.
 /// </summary>
 public sealed partial class InspectorPanelViewModel : ObservableObject, IShellPanelContent, IRecipient<SelectInspectorMessage>
 {
     private readonly HashSet<ClassContext> watched = [];
     private PanelContext? context;
+    private NodeGraphViewModel? followedGraph;
+    private string selectedNodes = "";
 
     /// <summary>Gets the view model of the inspector shown, or null for the empty state.</summary>
     [ObservableProperty]
@@ -46,6 +50,7 @@ public sealed partial class InspectorPanelViewModel : ObservableObject, IShellPa
         }
 
         Content = null;
+        FollowGraph(null);
         Unwatch();
         context = null;
     }
@@ -73,12 +78,55 @@ public sealed partial class InspectorPanelViewModel : ObservableObject, IShellPa
         {
             case nameof(ShellViewModel.Session):
                 Content = null;
+                FollowGraph(null);
                 Unwatch();
+                break;
+            case nameof(ShellViewModel.ActiveDocument):
+                FollowGraph((context?.Shell.ActiveDocument as GraphDocumentViewModel)?.Graph);
                 break;
             case nameof(ShellViewModel.TreeSelection):
                 Refresh();
                 break;
         }
+    }
+
+    private void FollowGraph(NodeGraphViewModel? graph)
+    {
+        if (ReferenceEquals(graph, followedGraph))
+        {
+            return;
+        }
+
+        if (followedGraph is not null)
+        {
+            followedGraph.SelectionChanged -= OnGraphSelectionChanged;
+        }
+
+        followedGraph = graph;
+        selectedNodes = graph is null ? "" : SelectionKey(graph);
+        if (graph is not null)
+        {
+            graph.SelectionChanged += OnGraphSelectionChanged;
+        }
+    }
+
+    private static string SelectionKey(NodeGraphViewModel graph) => string.Join('\n', graph.SelectedNodes.Select(node => node.Node.Id));
+
+    private void OnGraphSelectionChanged(object? sender, EventArgs e)
+    {
+        if (followedGraph is not { } graph || context is not { Shell: { Session: not null } shell })
+        {
+            return;
+        }
+
+        string key = SelectionKey(graph);
+        if (key == selectedNodes)
+        {
+            return;
+        }
+
+        selectedNodes = key;
+        shell.TreeSelection = GraphSelectionInspectorTarget.Resolve(graph.Graph, [.. graph.SelectedNodes.Select(node => node.Node)]);
     }
 
     private void Refresh()
