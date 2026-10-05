@@ -356,13 +356,16 @@ public abstract class SmokeScenarios
             var variable = shell.Tree.Variable("Variable");
             await shell.Menu.InvokeAsync("Edit", ShellCommands.AddVariable, cancellationToken);
             await shell.Tree.RevealAsync(variable, ProjectTreePage.VariablesGroup, cancellationToken);
-            await shell.Commands.InvokeAsync(ShellCommands.Undo, cancellationToken);
+            await floated.ClickEmptyAsync(cancellationToken);
+            await context.Driver.PressAsync("Ctrl+Z", cancellationToken);
             await UiWait.UntilAsync(context.Driver, async () => !await variable.ExistsAsync(cancellationToken), "the variable removed by undo", cancellationToken);
-            await shell.Commands.InvokeAsync(ShellCommands.Redo, cancellationToken);
+            await floated.ClickEmptyAsync(cancellationToken);
+            await context.Driver.PressAsync("Ctrl+Y", cancellationToken);
             await shell.Tree.RevealAsync(variable, ProjectTreePage.VariablesGroup, cancellationToken);
             Assert.Equal(nodes + 1, await floated.NodeCountAsync(cancellationToken));
 
-            await shell.Commands.InvokeAsync(ShellCommands.Save, cancellationToken);
+            await floated.ClickEmptyAsync(cancellationToken);
+            await context.Driver.PressAsync("Ctrl+S", cancellationToken);
             await UiWait.UntilAsync(context.Driver, async () => (await File.ReadAllTextAsync(classFile, cancellationToken)).Contains("\"Variable\"", StringComparison.Ordinal),
                 "the class saved with the variable", cancellationToken);
             await CheckpointAsync(context, "floated-saved", cancellationToken);

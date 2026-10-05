@@ -167,7 +167,11 @@ public sealed class HeadlessDriver(AutomationTree tree, Func<string> programOutp
         var (key, modifiers) = ParseChord(chord);
         var window = KeyboardWindow;
         window.KeyPress(key, modifiers, PhysicalKey.None, null);
-        window.KeyRelease(key, modifiers, PhysicalKey.None, null);
+        if (window.IsVisible)
+        {
+            window.KeyRelease(key, modifiers, PhysicalKey.None, null);
+        }
+
         Pump();
         return Task.CompletedTask;
     }

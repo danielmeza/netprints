@@ -71,6 +71,31 @@ public class ShellEditingTests
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task TheGlobalShortcutsWorkInAFloatedGraphWindow()
+    {
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        DocumentId main = session.App.Shell.ActiveDocument?.Id ?? throw new InvalidOperationException("No document.");
+        await session.RunAsync("floatDocument", Token);
+        Assert.True(session.App.Api.IsFloating(main));
+        var floated = session.Page.GraphOf(main);
+
+        await floated.ClickEmptyAsync(Token);
+        await session.AddVariableAsync(Token);
+        Assert.Equal(["Variable"], session.ClassContext.Variables.Select(v => v.Name));
+
+        await session.PressUndoAsync(Token);
+        Assert.Empty(session.ClassContext.Variables);
+        await session.PressRedoAsync(Token);
+        Assert.Equal(["Variable"], session.ClassContext.Variables.Select(v => v.Name));
+
+        await session.Driver.PressAsync("Ctrl+S", Token);
+        await UiWait.UntilAsync(session.Driver, () => Task.FromResult(!session.Class.IsDirty), "the class saved", Token);
+
+        await session.Driver.PressAsync("Ctrl+W", Token);
+        Assert.DoesNotContain(main, session.App.Api.OpenDocuments);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task NodesAndPinsHaveToolTips()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
