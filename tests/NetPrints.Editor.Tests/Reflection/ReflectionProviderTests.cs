@@ -88,6 +88,63 @@ public class ReflectionProviderTests(RuntimeReflectionFixture fixture) : IClassF
     }
 
     [Fact]
+    public void WarmedConstructorAndOverloadQueriesAreNotConvertedAgain()
+    {
+        var type = TypeSpecifier.FromType<List<int>>();
+        ConstructorSpecifier constructor = provider.GetConstructors(type).First();
+        MethodSpecifier method = provider.GetMethods(new ReflectionProviderMethodQuery().WithStatic(true)).First();
+        var spy = new ConversionSpyProvider(provider, constructor, method);
+        var memoized = new MemoizedReflectionProvider(spy);
+
+        _ = memoized.GetConstructors(type).Count();
+        _ = memoized.GetPublicMethodOverloads(method).Count();
+        _ = memoized.GetConstructors(type).ToList();
+        _ = memoized.GetPublicMethodOverloads(method).ToList();
+
+        Assert.Equal(1, spy.ConstructorConversions);
+        Assert.Equal(1, spy.OverloadConversions);
+    }
+
+    private sealed class ConversionSpyProvider(IReflectionProvider inner, ConstructorSpecifier constructor, MethodSpecifier method) : IReflectionProvider
+    {
+        public int ConstructorConversions { get; private set; }
+
+        public int OverloadConversions { get; private set; }
+
+        public IEnumerable<ConstructorSpecifier> GetConstructors(TypeSpecifier typeSpecifier)
+        {
+            ConstructorConversions++;
+            yield return constructor;
+        }
+
+        public IEnumerable<MethodSpecifier> GetPublicMethodOverloads(MethodSpecifier methodSpecifier)
+        {
+            OverloadConversions++;
+            yield return method;
+        }
+
+        public bool TypeSpecifierIsSubclassOf(TypeSpecifier a, TypeSpecifier b) => inner.TypeSpecifierIsSubclassOf(a, b);
+
+        public bool HasImplicitCast(TypeSpecifier fromType, TypeSpecifier toType) => inner.HasImplicitCast(fromType, toType);
+
+        public IEnumerable<TypeSpecifier> GetNonStaticTypes() => inner.GetNonStaticTypes();
+
+        public IEnumerable<MethodSpecifier> GetOverridableMethodsForType(TypeSpecifier typeSpecifier) => inner.GetOverridableMethodsForType(typeSpecifier);
+
+        public IEnumerable<string> GetEnumNames(TypeSpecifier typeSpecifier) => inner.GetEnumNames(typeSpecifier);
+
+        public IEnumerable<MethodSpecifier> GetMethods(ReflectionProviderMethodQuery query) => inner.GetMethods(query);
+
+        public IEnumerable<VariableSpecifier> GetVariables(ReflectionProviderVariableQuery query) => inner.GetVariables(query);
+
+        public string? GetMethodDocumentation(MethodSpecifier methodSpecifier) => inner.GetMethodDocumentation(methodSpecifier);
+
+        public string? GetMethodParameterDocumentation(MethodSpecifier methodSpecifier, int parameterIndex) => inner.GetMethodParameterDocumentation(methodSpecifier, parameterIndex);
+
+        public string? GetMethodReturnDocumentation(MethodSpecifier methodSpecifier, int returnIndex) => inner.GetMethodReturnDocumentation(methodSpecifier, returnIndex);
+    }
+
+    [Fact]
     public void MissingAssemblyPathsAreSkipped()
     {
         string missing = Path.Combine(Path.GetTempPath(), "netprints-missing-" + Guid.NewGuid() + ".dll");

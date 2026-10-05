@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using NetPrints.Core;
 
 namespace NetPrints.Reflection
@@ -51,7 +52,7 @@ namespace NetPrints.Reflection
             nameof(memoizedTypeSpecifierIsSubclassOf), nameof(memoizedGetMethods), nameof(memoizedGetVariables))]
         public void Reset()
         {
-            memoizedGetConstructors = provider.GetConstructors;
+            memoizedGetConstructors = typeSpecifier => provider.GetConstructors(typeSpecifier).ToList();
             memoizedGetConstructors = memoizedGetConstructors.Memoize();
 
             memoizedGetEnumNames = provider.GetEnumNames;
@@ -69,13 +70,13 @@ namespace NetPrints.Reflection
             memoizedGetNonStaticTypes = provider.GetNonStaticTypes;
             memoizedGetNonStaticTypes = memoizedGetNonStaticTypes.Memoize();
 
-            memoizedGetOverridableMethodsForType = provider.GetOverridableMethodsForType;
+            memoizedGetOverridableMethodsForType = typeSpecifier => provider.GetOverridableMethodsForType(typeSpecifier).ToList();
             memoizedGetOverridableMethodsForType = memoizedGetOverridableMethodsForType.Memoize();
 
             memoizedGetMethods = provider.GetMethods;
             memoizedGetMethods = memoizedGetMethods.Memoize();
 
-            memoizedGetPublicMethodOverloads = provider.GetPublicMethodOverloads;
+            memoizedGetPublicMethodOverloads = methodSpecifier => provider.GetPublicMethodOverloads(methodSpecifier).ToList();
             memoizedGetPublicMethodOverloads = memoizedGetPublicMethodOverloads.Memoize();
 
             memoizedGetVariables = provider.GetVariables;
