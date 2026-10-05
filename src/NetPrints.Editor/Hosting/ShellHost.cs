@@ -99,7 +99,7 @@ internal sealed class ShellHost : IDisposable
                 return new ProjectSettingsDocumentViewModel(session, context);
             case DocumentKind.Graph:
                 return CommandTargets.GraphOf(session, id) is { } graph && CommandTargets.ClassOf(graph) is { } cls
-                    ? new GraphDocumentViewModel(id, new NodeGraphViewModel(graph, session.ContextFor(cls).Services), cls, session) { Invoker = shell.Commands }
+                    ? GraphDocumentFactory.Open(id, graph, session.ContextFor(cls).Services, cls, session, shell.Commands)
                     : null;
             default:
                 return null;
