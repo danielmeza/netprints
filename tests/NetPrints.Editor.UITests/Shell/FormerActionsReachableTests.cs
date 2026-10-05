@@ -63,6 +63,7 @@ public class FormerActionsReachableTests
         new("Remove variable", Surface.VariableRowMenu, "delete"),
         new("Override method", Surface.MenuBar, "overrideMethod"),
         new("Override method", Surface.ClassRowMenu, "overrideMethod"),
+        new("Rename variable", Surface.VariableInspectorElement, AutomationIds.VariableInspectorName),
         new("Open variable getter", Surface.VariableInspectorElement, AutomationIds.VariableInspectorOpenGetter),
         new("Open variable setter", Surface.VariableInspectorElement, AutomationIds.VariableInspectorOpenSetter),
         new("Open variable type graph", Surface.VariableInspectorElement, AutomationIds.VariableInspectorOpenTypeGraph),

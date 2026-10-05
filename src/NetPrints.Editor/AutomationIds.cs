@@ -28,6 +28,9 @@ public static class AutomationIds
     /// </summary>
     public const string VariableInspector = "Inspectors.Variable";
 
+    /// <summary>The name field of the variable inspector.</summary>
+    public const string VariableInspectorName = "Inspectors.Variable.Name";
+
     /// <summary>The "Open getter" button of the variable inspector.</summary>
     public const string VariableInspectorOpenGetter = "Inspectors.Variable.OpenGetter";
 

@@ -388,6 +388,9 @@ US2's independent test; SC-001.
   test finds each one in the shell.
   The table also lists the actions T044 left without a surface (C5f1): override a base method (`overrideMethod`)
   and open a variable's getter, setter or type graph (variable inspector).
+  C5f2 adds the Variables panel (`showPanel.variables`, add and list of member variables, add and list of the active
+  method's local variables, rename in the variable inspector); a mutation check removed each surface once and the
+  matching row failed.
 
 ### Batch C5 — model: sonnet — T042–T045 — 6 units
 
