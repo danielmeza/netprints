@@ -27,8 +27,7 @@ public class GraphRenderTests
             Logger.Sink = previousSink;
         }
 
-        // Dock's own theme templates log "Value is null" for their Layout and capability bindings; none comes from the NetPrints templates.
-        Assert.All(sink.Messages, message => Assert.Matches("Layout\\.|DockCapability", message));
+        Assert.Empty(sink.Warnings);
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]

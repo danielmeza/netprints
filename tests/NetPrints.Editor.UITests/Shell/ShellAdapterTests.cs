@@ -4,12 +4,15 @@ using Avalonia.Headless.XUnit;
 using Avalonia.Logging;
 using Avalonia.Media;
 using Avalonia.Styling;
+using Dock.Model;
+using Dock.Model.Controls;
 using Dock.Model.Core;
 using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Editor.Contributions.BuiltIn;
 using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Editor.Hosting.Avalonia;
 using NetPrints.Editor.Shell;
+using NetPrints.Editor.Shell.Docking;
 using NetPrints.Editor.UITests.Driving;
 using NetPrints.Testing.Ui.Driving;
 
@@ -317,24 +320,82 @@ public class ShellAdapterTests
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public void TheTemplatesRenderNetPrintsViewModelsWithoutBindingWarningsOfTheirOwn()
     {
+        BindingWarningLogSink warnings = RenderLayoutWarnings(rig =>
+        {
+            rig.Api.OpenDocument(A);
+            rig.Settle();
+            Assert.NotNull(rig.FindOne(ShellRig.Content(A)));
+            Assert.NotNull(rig.FindOne(ShellRig.Panel(PanelContributions.ErrorsId)));
+        });
+
+        Assert.Empty(warnings.Warnings);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public void FloatedTabsAndPanesRenderWithoutBindingWarningsOfTheirOwn()
+    {
+        BindingWarningLogSink warnings = RenderLayoutWarnings(rig =>
+        {
+            rig.Api.OpenDocument(A);
+            rig.Api.OpenDocument(B);
+            rig.Api.FloatDocument(B);
+            rig.Adapter.FloatPanel(PanelContributions.ProjectTreeId);
+            rig.Settle();
+            Assert.Equal(2, rig.Ui.Tree.Windows.Count(window => !ReferenceEquals(window, rig.Main)));
+            Assert.NotNull(rig.FindOne(ShellRig.Content(B)));
+            Assert.NotNull(rig.FindOne(ShellRig.Panel(PanelContributions.ProjectTreeId)));
+        });
+
+        Assert.Empty(warnings.Unexplained);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public void AnEmptyCapabilityObjectStillInheritsSoDragDropAndCloseStayAllowed()
+    {
+        using var rig = ShellRig.Create();
+        rig.Api.OpenDocument(A);
+        rig.Api.OpenDocument(B);
+        rig.Api.FloatDocument(B);
+        rig.Adapter.FloatPanel(PanelContributions.ProjectTreeId);
+        rig.Settle();
+
+        IDockable[] all = [.. ShellDockFactory.Walk(rig.Adapter.Layout)];
+        Assert.NotEmpty(all.OfType<ShellDocument>());
+        Assert.NotEmpty(all.OfType<ShellTool>());
+        Assert.All(all.OfType<ShellDocument>().Cast<IDockable>().Concat(all.OfType<ShellTool>()), dockable =>
+        {
+            Assert.NotNull(dockable.DockCapabilityOverrides);
+            Assert.False(dockable.DockCapabilityOverrides.HasAnyOverride);
+        });
+        Assert.All(all.OfType<IDock>().Where(dock => dock is IDocumentDock or IToolDock), dock => Assert.NotNull(dock.DockCapabilityPolicy));
+        Assert.All(all.OfType<ShellDocument>().Cast<IDockable>().Concat(all.OfType<ShellTool>()), dockable =>
+        {
+            Assert.True(DockCapabilityResolver.IsEnabled(dockable, DockCapability.Drag, null), $"{dockable.Id} drag");
+            Assert.True(DockCapabilityResolver.IsEnabled(dockable, DockCapability.Drop, null), $"{dockable.Id} drop");
+            Assert.True(DockCapabilityResolver.IsEnabled(dockable, DockCapability.Close, null), $"{dockable.Id} close");
+        });
+
+        rig.Api.CloseDocument(B);
+        rig.Settle();
+        Assert.Equal([A], rig.Api.OpenDocuments);
+    }
+
+    private static BindingWarningLogSink RenderLayoutWarnings(Action<ShellRig> scenario)
+    {
         var sink = new BindingWarningLogSink();
         ILogSink? previousSink = Logger.Sink;
         Logger.Sink = sink;
         try
         {
             using var rig = ShellRig.Create();
-            rig.Api.OpenDocument(A);
-            rig.Settle();
-            Assert.NotNull(rig.FindOne(ShellRig.Content(A)));
-            Assert.NotNull(rig.FindOne(ShellRig.Panel(PanelContributions.ErrorsId)));
+            scenario(rig);
         }
         finally
         {
             Logger.Sink = previousSink;
         }
 
-        // Dock's own theme templates log "Value is null" for their Layout and capability bindings; none comes from the NetPrints templates.
-        Assert.All(sink.Messages, message => Assert.Matches("Layout\\.|DockCapability", message));
+        return sink;
     }
 
     [AvaloniaTheory(Timeout = TestAppBuilder.Timeout)]
