@@ -4,9 +4,11 @@ using Avalonia.Headless.XUnit;
 using Avalonia.Logging;
 using Avalonia.Media;
 using Avalonia.Styling;
+using Dock.Model.Core;
 using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Editor.Contributions.BuiltIn;
 using NetPrints.Editor.Hosting.Automation;
+using NetPrints.Editor.Hosting.Avalonia;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.UITests.Driving;
 using NetPrints.Testing.Ui.Driving;
@@ -206,6 +208,47 @@ public class ShellAdapterTests
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public void ActivatingAFloatedDocumentBringsItsWindowForward()
+    {
+        using var rig = ShellRig.Create();
+        rig.Api.OpenDocument(A);
+        rig.Api.OpenDocument(B);
+        rig.Api.FloatDocument(B);
+        rig.Settle();
+        IDockWindow floating = Assert.Single(rig.Adapter.Layout.Windows ?? []);
+        var spy = new ActivationSpy(floating.Host ?? throw new InvalidOperationException("The floating window has no host."));
+        floating.Host = spy;
+
+        rig.Api.ActivateDocument(A);
+        Assert.Equal(0, spy.Activations);
+
+        rig.Api.ActivateDocument(B);
+
+        Assert.Equal(1, spy.Activations);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public void DialogsAreOwnedByTheActiveDockHostWindow()
+    {
+        using var rig = ShellRig.Create();
+        rig.Api.OpenDocument(A);
+        rig.Api.OpenDocument(B);
+        rig.Api.FloatDocument(B);
+        rig.Settle();
+        Window host = Assert.Single(rig.Ui.Tree.Windows, window => !ReferenceEquals(window, rig.Main));
+        var windows = new WindowService { MainWindow = rig.Main, OpenWindows = () => rig.Ui.Tree.Windows };
+
+        rig.Main.Hide();
+        rig.Settle();
+        Assert.Same(host, windows.ActiveWindow);
+
+        host.Hide();
+        rig.Main.Show();
+        rig.Settle();
+        Assert.Same(rig.Main, windows.ActiveWindow);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public void AFloatedPaneClosedWithTheOsCloseButtonDocksBackToItsDefaultPlace()
     {
         using var rig = ShellRig.Create();
@@ -340,5 +383,42 @@ public class ShellAdapterTests
         Assert.True(tree.Bounds.X < inspector.Bounds.X, "the tree is on the left of the inspector");
         Assert.True(inspector.Bounds.X > ShellRig.Width * 0.7, "the inspector is on the right");
         Assert.True(errors.Bounds.Y > tree.Bounds.Y + tree.Bounds.Height - 1, "the bottom pane is below the tree");
+    }
+
+    private sealed class ActivationSpy(IHostWindow inner) : IHostWindow
+    {
+        public int Activations { get; private set; }
+
+        public IHostWindowState? HostWindowState => inner.HostWindowState;
+
+        public bool IsTracked { get => inner.IsTracked; set => inner.IsTracked = value; }
+
+        public IDockWindow? Window { get => inner.Window; set => inner.Window = value; }
+
+        public void Present(bool isDialog) => inner.Present(isDialog);
+
+        public void Exit() => inner.Exit();
+
+        public void SetPosition(double x, double y) => inner.SetPosition(x, y);
+
+        public void GetPosition(out double x, out double y) => inner.GetPosition(out x, out y);
+
+        public void SetSize(double width, double height) => inner.SetSize(width, height);
+
+        public void GetSize(out double width, out double height) => inner.GetSize(out width, out height);
+
+        public void SetWindowState(DockWindowState windowState) => inner.SetWindowState(windowState);
+
+        public DockWindowState GetWindowState() => inner.GetWindowState();
+
+        public void SetTitle(string? title) => inner.SetTitle(title);
+
+        public void SetLayout(IDock layout) => inner.SetLayout(layout);
+
+        public void SetActive()
+        {
+            Activations++;
+            inner.SetActive();
+        }
     }
 }

@@ -70,8 +70,14 @@ internal sealed class ShellDockFactory : Factory
     /// <param name="layout">The main layout.</param>
     /// <param name="dockable">The dockable.</param>
     /// <returns><see langword="true"/> when it is under one of the layout's windows.</returns>
-    public static bool IsFloating(IRootDock layout, IDockable dockable) =>
-        (layout.Windows ?? []).Any(window => window.Layout is { } floating && WalkDock(floating).Contains(dockable));
+    public static bool IsFloating(IRootDock layout, IDockable dockable) => FloatingWindowOf(layout, dockable) is not null;
+
+    /// <summary>The floating window a dockable sits in.</summary>
+    /// <param name="layout">The main layout.</param>
+    /// <param name="dockable">The dockable.</param>
+    /// <returns>The window, or <see langword="null"/> when the dockable is not floating.</returns>
+    public static IDockWindow? FloatingWindowOf(IRootDock layout, IDockable dockable) =>
+        (layout.Windows ?? []).FirstOrDefault(window => window.Layout is { } floating && WalkDock(floating).Contains(dockable));
 
     /// <inheritdoc/>
     public override IRootDock CreateLayout()

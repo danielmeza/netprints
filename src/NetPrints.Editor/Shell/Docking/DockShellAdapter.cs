@@ -230,6 +230,8 @@ public sealed partial class DockShellAdapter : ObservableObject, IShell, IShellL
             factory.SetFocusedDockable(owner, document);
         }
 
+        ShellDockFactory.FloatingWindowOf(Layout, document)?.Host?.SetActive();
+
         shell.ActiveDocument = model;
     }
 
