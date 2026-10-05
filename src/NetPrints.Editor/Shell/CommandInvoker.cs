@@ -39,24 +39,27 @@ public sealed class CommandInvoker(IContributionRegistry registry, ICommandConte
 
     /// <summary>Gets whether a command's handler is enabled for a context built now.</summary>
     /// <param name="command">The command.</param>
+    /// <param name="scope">The scope the invocation would come from.</param>
     /// <returns><see langword="true"/> when <see cref="TryRun"/> would start it.</returns>
-    public bool CanRun(CommandDescriptor command)
+    public bool CanRun(CommandDescriptor command, CommandScope scope = CommandScope.Global)
     {
         ArgumentNullException.ThrowIfNull(command);
-        return command.Handler.CanExecute(contexts.Create());
+        return command.Handler.CanExecute(contexts.Create(scope: scope));
     }
 
     /// <summary>Builds the context of an invocation made now.</summary>
+    /// <param name="scope">The scope the invocation comes from.</param>
     /// <returns>A fresh context.</returns>
-    public CommandContext CreateContext() => contexts.Create();
+    public CommandContext CreateContext(CommandScope scope = CommandScope.Global) => contexts.Create(scope: scope);
 
     /// <summary>Runs a command if its handler is enabled for a context built now.</summary>
     /// <param name="command">The command.</param>
+    /// <param name="scope">The scope the invocation comes from: the surface whose key was pressed or whose menu was used.</param>
     /// <returns><see langword="true"/> when the command was started, <see langword="false"/> when it is disabled.</returns>
-    public bool TryRun(CommandDescriptor command)
+    public bool TryRun(CommandDescriptor command, CommandScope scope = CommandScope.Global)
     {
         ArgumentNullException.ThrowIfNull(command);
-        CommandContext context = contexts.Create();
+        CommandContext context = contexts.Create(scope: scope);
         if (!command.Handler.CanExecute(context))
         {
             return false;

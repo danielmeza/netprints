@@ -46,6 +46,17 @@ public sealed class RecordingDialogs : IEditorDialogs
 
     public Task<bool> ConfirmTrustAsync(string projectPath, IReadOnlyList<string> extensionFolders) => Task.FromResult(TrustAnswer);
 
+    /// <summary>What <see cref="ConfirmAsync"/> answers.</summary>
+    public bool ConfirmAnswer { get; set; } = true;
+
+    public List<(string Title, string Message)> ConfirmCalls { get; } = [];
+
+    public Task<bool> ConfirmAsync(string title, string message, string confirmLabel)
+    {
+        ConfirmCalls.Add((title, message));
+        return Task.FromResult(ConfirmAnswer);
+    }
+
     public Task ShowIssuesAsync(string title, IReadOnlyList<CodeDiagnostic> issues)
     {
         IssueDialogs.Add((title, issues));

@@ -1,3 +1,4 @@
+using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Graph;
 
 namespace NetPrints.Editor.Shell;
@@ -12,10 +13,12 @@ namespace NetPrints.Editor.Shell;
 /// <param name="ActiveGraph">The graph view model of the active graph document, or null.</param>
 /// <param name="Selection">The current selection.</param>
 /// <param name="Parameter">An optional command parameter, such as the id of a recent project.</param>
+/// <param name="Scope">The scope the invocation comes from: <see cref="CommandScope.Graph"/> for a key pressed in the canvas, <see cref="CommandScope.ProjectTree"/> for the tree, <see cref="CommandScope.Global"/> when no surface is known (a menu, a bar button).</param>
 public sealed record CommandContext(
     IShell Shell,
     ProjectSessionViewModel? Session,
     DocumentId? ActiveDocument,
     NodeGraphViewModel? ActiveGraph,
     CommandSelection Selection,
-    object? Parameter = null);
+    object? Parameter = null,
+    CommandScope Scope = CommandScope.Global);

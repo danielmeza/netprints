@@ -176,22 +176,35 @@ public static class EditorCommands
             () => cls.Constructors.Add(constructor),
             () => cls.Constructors.Remove(constructor));
 
-    /// <summary>Removes a method or constructor. As in the WPF editor, undo does nothing.</summary>
+    /// <summary>Removes a method or constructor; undo puts it back at its index.</summary>
     public static IUndoableCommand RemoveMethod(ClassGraph cls, ExecutionGraph graph)
     {
+        int index = -1;
         return new DelegateUndoableCommand("Remove method",
             () =>
             {
                 if (graph is MethodGraph method)
                 {
+                    index = cls.Methods.IndexOf(method);
                     cls.Methods.Remove(method);
                 }
                 else if (graph is ConstructorGraph constructor)
                 {
+                    index = cls.Constructors.IndexOf(constructor);
                     cls.Constructors.Remove(constructor);
                 }
             },
-            () => { });
+            () =>
+            {
+                if (graph is MethodGraph method)
+                {
+                    cls.Methods.Insert(Math.Clamp(index, 0, cls.Methods.Count), method);
+                }
+                else if (graph is ConstructorGraph constructor)
+                {
+                    cls.Constructors.Insert(Math.Clamp(index, 0, cls.Constructors.Count), constructor);
+                }
+            });
     }
 
     /// <summary>Adds a local variable of type <c>object</c> named <paramref name="name"/> (US5); undo removes it.</summary>

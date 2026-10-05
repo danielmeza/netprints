@@ -100,7 +100,12 @@ public class DocumentTabsTests
 
         public CommandDescriptor Command(string name) => registry.Commands.Single(command => command.Id == ContributionIds.CommandPrefix + name);
 
-        public Task RunAsync(string name) => Command(name).Handler.ExecuteAsync(Invoker.CreateContext(), Token);
+        public Task RunAsync(string name)
+        {
+            Assert.True(Invoker.TryRun(Command(name)), $"{name} is enabled");
+            Settle();
+            return Task.CompletedTask;
+        }
 
         public Control Tab(DocumentId id) => Window.GetVisualDescendants().OfType<Control>()
             .Single(control => control.GetType().Name == "DocumentTabStripItem" && control.DataContext is ShellDocument { } document && document.Id == id.ToString());
@@ -248,7 +253,11 @@ public class DocumentTabsTests
         Assert.Equal(1, edits);
 
         await rig.RunAsync("save");
-        Assert.True(rig.Session.UndoStackFor(rig.Class).IsAtSavedState);
+        Assert.True(SpinWait.SpinUntil(() =>
+        {
+            rig.Settle();
+            return rig.Session.UndoStackFor(rig.Class).IsAtSavedState;
+        }, TimeSpan.FromSeconds(10)));
         Assert.False(rig.Class.IsDirty);
         Assert.Empty(rig.Faults);
     }

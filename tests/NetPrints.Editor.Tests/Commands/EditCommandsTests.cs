@@ -25,14 +25,14 @@ public sealed class EditCommandsTests : SessionCommandTests
         return graph.Nodes.Single(vm => vm.Node == added);
     }
 
-    private CommandContext ContextOf(ProjectSessionViewModel session, ClassGraph? activeClass = null, object? treeItem = null)
+    private CommandContext ContextOf(ProjectSessionViewModel session, ClassGraph? activeClass = null, object? treeItem = null, CommandScope scope = CommandScope.Global)
     {
         if (activeClass is not null)
         {
             Shell.OpenDocument(DocumentId.Graph(session.ClassPathOf(activeClass), "class"));
         }
 
-        return Shell.Context(session: session, selection: treeItem is null ? null : new CommandSelection([], treeItem));
+        return Shell.Context(session: session, selection: treeItem is null ? null : new CommandSelection([], treeItem), scope: scope);
     }
 
     private static List<string> Push(UndoRedoStack stack, string name, List<string> log)
@@ -128,9 +128,9 @@ public sealed class EditCommandsTests : SessionCommandTests
         NodeGraphViewModel graph = OpenGraph();
         NodeViewModel node = AddDeletableNode(graph);
         var handler = new DeleteCommandHandler();
-        CommandContext none = Shell.Context(graph: graph);
+        CommandContext none = Shell.Context(graph: graph, scope: CommandScope.Graph);
         graph.SelectNodes([node], deselectPrevious: true);
-        CommandContext selected = Shell.Context(graph: graph, selection: new CommandSelection([node]));
+        CommandContext selected = Shell.Context(graph: graph, selection: new CommandSelection([node]), scope: CommandScope.Graph);
 
         Assert.False(handler.CanExecute(none));
         Assert.True(handler.CanExecute(selected));
@@ -144,13 +144,88 @@ public sealed class EditCommandsTests : SessionCommandTests
     {
         ProjectSessionViewModel session = await OpenSessionAsync();
         ClassGraph cls = session.Project.Classes.Single();
-        CommandContext context = ContextOf(session, activeClass: null, treeItem: cls);
+        CommandContext context = ContextOf(session, activeClass: null, treeItem: cls, scope: CommandScope.ProjectTree);
 
         await new DeleteCommandHandler().ExecuteAsync(context, Token);
         await new RenameCommandHandler().ExecuteAsync(context, Token);
 
         Assert.Equal(["DeleteItem", "RenameItem"], Shell.Project.Calls);
         Assert.Same(cls, Shell.Project.LastItem);
+    }
+
+    [Fact]
+    public async Task DeleteInTheGraphScopeNeverFallsBackToTheTreeSelection()
+    {
+        ProjectSessionViewModel session = await OpenSessionAsync();
+        NodeGraphViewModel graph = OpenGraph();
+        var handler = new DeleteCommandHandler();
+        var treeRow = new MethodGraph("Stale");
+        var selection = new CommandSelection([], treeRow);
+
+        CommandContext inTheCanvas = Shell.Context(session: session, graph: graph, selection: selection, scope: CommandScope.Graph);
+        CommandContext fromAMenu = Shell.Context(session: session, graph: graph, selection: selection);
+
+        Assert.False(handler.CanExecute(inTheCanvas));
+        Assert.False(handler.CanExecute(fromAMenu));
+        await handler.ExecuteAsync(inTheCanvas, Token);
+        Assert.Empty(Shell.Project.Calls);
+    }
+
+    [Fact]
+    public async Task DeleteInTheTreeScopeActsOnTheTreeItemEvenWhenNodesAreSelected()
+    {
+        ProjectSessionViewModel session = await OpenSessionAsync();
+        ClassGraph cls = session.Project.Classes.Single();
+        NodeGraphViewModel graph = OpenGraph();
+        NodeViewModel node = AddDeletableNode(graph);
+        graph.SelectNodes([node], deselectPrevious: true);
+        CommandContext context = Shell.Context(session: session, graph: graph, selection: new CommandSelection([node], cls), scope: CommandScope.ProjectTree);
+
+        await new DeleteCommandHandler().ExecuteAsync(context, Token);
+
+        Assert.Same(cls, Shell.Project.LastItem);
+        Assert.Contains(graph.Nodes, vm => vm.Node == node.Node);
+    }
+
+    [Fact]
+    public async Task RenameInTheGraphScopeTargetsTheActiveGraphAndNotAStaleTreeRow()
+    {
+        NodeGraphViewModel graph = OpenGraph();
+        var staleRow = new MethodGraph("Stale");
+        var handler = new RenameCommandHandler();
+        CommandContext context = Shell.Context(graph: graph, selection: new CommandSelection([], staleRow), scope: CommandScope.Graph);
+
+        await handler.ExecuteAsync(context, Token);
+
+        Assert.Same(graph.Graph, Shell.Project.LastItem);
+    }
+
+    [Fact]
+    public async Task RenameInTheGraphScopeOfAnAccessorGraphTargetsItsVariable()
+    {
+        var classContext = Track(new ClassContext(new ClassGraph { Name = "C", Namespace = "N" }, Editor.Context, new UndoRedoStack()));
+        var getter = new MethodGraph("get_V") { Class = classContext.Class };
+        var variable = new Variable(classContext.Class, "V", TypeSpecifier.FromType<int>(), getter, null, VariableModifiers.None);
+        classContext.Class.Variables.Add(variable);
+        var graph = Track(new NodeGraphViewModel(getter, classContext.Services));
+        var staleRow = new MethodGraph("Stale");
+        CommandContext context = Shell.Context(graph: graph, selection: new CommandSelection([], staleRow), scope: CommandScope.Graph);
+
+        await new RenameCommandHandler().ExecuteAsync(context, Token);
+
+        Assert.Same(variable, Shell.Project.LastItem);
+    }
+
+    [Fact]
+    public async Task RenameInTheTreeScopeTargetsTheTreeItem()
+    {
+        NodeGraphViewModel graph = OpenGraph();
+        var row = new MethodGraph("Row");
+        CommandContext context = Shell.Context(graph: graph, selection: new CommandSelection([], row), scope: CommandScope.ProjectTree);
+
+        await new RenameCommandHandler().ExecuteAsync(context, Token);
+
+        Assert.Same(row, Shell.Project.LastItem);
     }
 
     [Fact]
@@ -186,10 +261,11 @@ public sealed class EditCommandsTests : SessionCommandTests
         var variable = new Variable(cls, "V", TypeSpecifier.FromType<int>(), null, null, VariableModifiers.None);
         var handler = new DeleteCommandHandler();
 
-        Assert.True(handler.CanExecute(ContextOf(session, treeItem: variable)));
-        Assert.True(handler.CanExecute(ContextOf(session, treeItem: new ConstructorGraph())));
-        Assert.True(handler.CanExecute(ContextOf(session, treeItem: new MethodGraph("M"))));
-        Assert.True(handler.CanExecute(ContextOf(session, treeItem: new EventGraph("E"))));
+        const CommandScope tree = CommandScope.ProjectTree;
+        Assert.True(handler.CanExecute(ContextOf(session, treeItem: variable, scope: tree)));
+        Assert.True(handler.CanExecute(ContextOf(session, treeItem: new ConstructorGraph(), scope: tree)));
+        Assert.True(handler.CanExecute(ContextOf(session, treeItem: new MethodGraph("M"), scope: tree)));
+        Assert.True(handler.CanExecute(ContextOf(session, treeItem: new EventGraph("E"), scope: tree)));
     }
 
     [Fact]

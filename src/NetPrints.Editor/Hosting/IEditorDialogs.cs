@@ -30,6 +30,13 @@ public interface IEditorDialogs
     /// <returns><see langword="true"/> to trust the project, <see langword="false"/> to open it without them.</returns>
     Task<bool> ConfirmTrustAsync(string projectPath, IReadOnlyList<string> extensionFolders);
 
+    /// <summary>Asks the user to confirm an action that cannot be undone.</summary>
+    /// <param name="title">Dialog title.</param>
+    /// <param name="message">What will happen.</param>
+    /// <param name="confirmLabel">The text of the button that goes ahead.</param>
+    /// <returns><see langword="true"/> when the user confirmed, <see langword="false"/> when cancelled.</returns>
+    Task<bool> ConfirmAsync(string title, string message, string confirmLabel);
+
     /// <summary>Shows a list of diagnostics until the dialog is closed.</summary>
     /// <param name="title">Dialog title.</param>
     /// <param name="issues">The diagnostics, one row each.</param>

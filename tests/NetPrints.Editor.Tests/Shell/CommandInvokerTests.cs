@@ -19,7 +19,7 @@ public sealed class CommandInvokerTests
 
         public void RaiseCommandStatesChanged() => CommandStatesChanged?.Invoke(this, EventArgs.Empty);
 
-        public CommandContext Create(object? parameter = null) => new(new FakeShell(), null, null, null, CommandSelection.None, parameter);
+        public CommandContext Create(object? parameter = null, CommandScope scope = CommandScope.Global) => new(new FakeShell(), null, null, null, CommandSelection.None, parameter, scope);
     }
 
     private static List<Exception> RunWith(Func<Task> run)

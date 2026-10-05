@@ -53,7 +53,7 @@ internal sealed class NoProjectActions : IProjectActions
 
     public void RenameItem(object item) => throw new NotSupportedException();
 
-    public void DeleteItem(object item) => throw new NotSupportedException();
+    public Task DeleteItemAsync(object item, CancellationToken cancellationToken) => throw new NotSupportedException();
 }
 
 /// <summary>The shell state, the docking adapter and a window hosting its layout, on the headless platform.</summary>

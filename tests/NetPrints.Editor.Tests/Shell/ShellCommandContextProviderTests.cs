@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Core;
+using NetPrints.Editor.Commands;
 using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Contributions.BuiltIn;
 using NetPrints.Editor.Graph;
@@ -59,6 +60,25 @@ public sealed class ShellCommandContextProviderTests(TestEditor testEditor) : Gr
             Assert.Equal(MainId, active.ActiveDocument);
             Assert.Same(Graph, active.ActiveGraph);
             Assert.Same(node, Assert.Single(active.Selection.Nodes));
+        }
+    }
+
+    [Fact]
+    public void GraphScopeDeleteIsDisabledWhileTheTreeStillSelectsTheOpenMethod()
+    {
+        (ShellViewModel shell, ShellCommandContextProvider provider, _, GraphDocumentViewModel document) = Create();
+        using (shell)
+        {
+            shell.ActiveDocument = document;
+            shell.TreeSelection = Graph.Graph;
+            var delete = new DeleteCommandHandler();
+
+            CommandContext canvas = provider.Create(scope: CommandScope.Graph);
+
+            Assert.Equal(CommandScope.Graph, canvas.Scope);
+            Assert.False(delete.CanExecute(canvas));
+            Assert.False(delete.CanExecute(provider.Create()));
+            Assert.True(delete.CanExecute(provider.Create(scope: CommandScope.ProjectTree)));
         }
     }
 

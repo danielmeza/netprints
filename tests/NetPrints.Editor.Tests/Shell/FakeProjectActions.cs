@@ -107,10 +107,11 @@ public sealed class FakeProjectActions : IProjectActions
     }
 
     /// <inheritdoc/>
-    public void DeleteItem(object item)
+    public Task DeleteItemAsync(object item, CancellationToken cancellationToken)
     {
         LastItem = item;
         Calls.Add("DeleteItem");
+        return Task.CompletedTask;
     }
 
     private void Record(string call, ClassGraph cls)

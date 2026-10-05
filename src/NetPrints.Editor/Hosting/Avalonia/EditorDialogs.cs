@@ -41,6 +41,10 @@ public sealed class EditorDialogs(Func<Window?> owner) : IEditorDialogs
         ShowAsync<bool>(new TrustDialog(projectPath, extensionFolders));
 
     /// <inheritdoc/>
+    public Task<bool> ConfirmAsync(string title, string message, string confirmLabel) =>
+        ShowAsync<bool>(new ConfirmDialog(title, message, confirmLabel));
+
+    /// <inheritdoc/>
     public Task ShowIssuesAsync(string title, IReadOnlyList<CodeDiagnostic> issues) =>
         ShowAsync<object>(new IssuesDialog(title, issues));
 

@@ -38,7 +38,7 @@ public class CommandKeyBindingTests
 
         public void RaiseCommandStatesChanged() => CommandStatesChanged?.Invoke(this, EventArgs.Empty);
 
-        public CommandContext Create(object? parameter = null) => new(new StubShell(), null, null, null, CommandSelection.None, parameter);
+        public CommandContext Create(object? parameter = null, CommandScope scope = CommandScope.Global) => new(new StubShell(), null, null, null, CommandSelection.None, parameter, scope);
     }
 
     private sealed class StubShell : IShell

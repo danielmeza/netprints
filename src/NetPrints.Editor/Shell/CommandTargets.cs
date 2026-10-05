@@ -74,6 +74,20 @@ public static class CommandTargets
         };
     }
 
+    /// <summary>The project member a graph edits: the variable for its getter, setter or type graph, otherwise the graph itself.</summary>
+    /// <param name="graph">The graph of a document.</param>
+    /// <returns>The variable or <paramref name="graph"/>.</returns>
+    public static object MemberOf(NodeGraph graph)
+    {
+        ArgumentNullException.ThrowIfNull(graph);
+        return graph switch
+        {
+            MethodGraph method => method.Class?.Variables.FirstOrDefault(v => ReferenceEquals(v.GetterMethod, method) || ReferenceEquals(v.SetterMethod, method)) ?? (object)method,
+            TypeGraph typeGraph => typeGraph.OwningClass?.Variables.FirstOrDefault(v => ReferenceEquals(v.TypeGraph, typeGraph)) ?? (object)typeGraph,
+            _ => graph,
+        };
+    }
+
     private static string? AccessorKey(MethodGraph method)
     {
         foreach (Variable variable in method.Class?.Variables ?? [])

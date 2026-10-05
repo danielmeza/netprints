@@ -193,6 +193,22 @@ public static class AutomationIds
     /// </summary>
     public const string TrustDontLoadButton = "Dialogs.Trust.DontLoad";
     /// <summary>
+    /// Automation id for the confirmation dialog window itself.
+    /// </summary>
+    public const string ConfirmDialog = "Dialogs.Confirm";
+    /// <summary>
+    /// Automation id for the confirmation dialog's message.
+    /// </summary>
+    public const string ConfirmMessage = "Dialogs.Confirm.Message";
+    /// <summary>
+    /// Automation id for the confirmation dialog's confirm button.
+    /// </summary>
+    public const string ConfirmButton = "Dialogs.Confirm.Confirm";
+    /// <summary>
+    /// Automation id for the confirmation dialog's Cancel button.
+    /// </summary>
+    public const string ConfirmCancelButton = "Dialogs.Confirm.Cancel";
+    /// <summary>
     /// Automation id for the select-type dialog's search box.
     /// </summary>
     public const string SelectTypeBox = "Dialogs.SelectType.Box";

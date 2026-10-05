@@ -1,3 +1,4 @@
+using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Shell;
 
@@ -113,7 +114,8 @@ public sealed class FakeShell : IShell
     /// <param name="session">The open project session, or null for the start page.</param>
     /// <param name="graph">The active graph view model, or null.</param>
     /// <param name="selection">The selection; nothing selected when null.</param>
+    /// <param name="scope">The scope the invocation comes from.</param>
     /// <returns>The context.</returns>
-    public CommandContext Context(object? parameter = null, ProjectSessionViewModel? session = null, NodeGraphViewModel? graph = null, CommandSelection? selection = null) =>
-        new(this, session, ActiveDocument, graph, selection ?? CommandSelection.None, parameter);
+    public CommandContext Context(object? parameter = null, ProjectSessionViewModel? session = null, NodeGraphViewModel? graph = null, CommandSelection? selection = null, CommandScope scope = CommandScope.Global) =>
+        new(this, session, ActiveDocument, graph, selection ?? CommandSelection.None, parameter, scope);
 }

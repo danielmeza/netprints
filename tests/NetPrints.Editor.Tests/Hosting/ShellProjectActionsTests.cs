@@ -173,10 +173,29 @@ public sealed class ShellProjectActionsTests : IDisposable
             ?? throw new InvalidOperationException("No document id.");
         shell.OpenDocument(id);
 
-        rig.Actions.DeleteItem(cls);
+        await rig.Actions.DeleteItemAsync(cls, Token);
 
         Assert.Empty(rig.Project?.Classes ?? [cls]);
         Assert.Empty(shell.OpenDocuments);
+        Assert.Equal(cls.Name, Assert.Single(testEditor.Dialogs.ConfirmCalls).Message.Split('\'')[1]);
+    }
+
+    [Fact]
+    public async Task DeleteItemKeepsAClassTheUserDidNotConfirmRemoving()
+    {
+        ProjectRig rig = await OpenSampleAsync();
+        var shell = new FakeShell();
+        rig.Actions.Api = shell;
+        ClassGraph cls = Assert.Single(rig.Project?.Classes ?? []);
+        DocumentId id = CommandTargets.GraphDocumentOf(rig.Session ?? throw new InvalidOperationException("No session."), cls)
+            ?? throw new InvalidOperationException("No document id.");
+        shell.OpenDocument(id);
+        testEditor.Dialogs.ConfirmAnswer = false;
+
+        await rig.Actions.DeleteItemAsync(cls, Token);
+
+        Assert.Same(cls, Assert.Single(rig.Project?.Classes ?? []));
+        Assert.Single(shell.OpenDocuments);
     }
 
     [Theory]

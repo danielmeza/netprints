@@ -64,6 +64,15 @@ public sealed class FakeDialogs : IEditorDialogs
     public bool TrustAnswer { get; set; }
     public List<(string Title, IReadOnlyList<CodeDiagnostic> Issues)> IssueDialogs { get; } = [];
 
+    public List<(string Title, string Message)> ConfirmCalls { get; } = [];
+    public bool ConfirmAnswer { get; set; } = true;
+
+    public Task<bool> ConfirmAsync(string title, string message, string confirmLabel)
+    {
+        ConfirmCalls.Add((title, message));
+        return Task.FromResult(ConfirmAnswer);
+    }
+
     public Task<bool> ConfirmTrustAsync(string projectPath, IReadOnlyList<string> extensionFolders)
     {
         TrustCalls.Add((projectPath, extensionFolders));

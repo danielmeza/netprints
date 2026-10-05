@@ -140,18 +140,18 @@ public sealed class ProjectTreePanelViewModelTests : IAsyncDisposable
         CommandDescriptor delete = rig.Command("delete");
 
         rig.Tree.SelectedItem = rig.Item(TreeItemKind.Method, "Greet");
-        Assert.True(rig.Invoker.CanRun(rename));
-        Assert.True(rig.Invoker.CanRun(delete));
+        Assert.True(rig.Invoker.CanRun(rename, CommandScope.ProjectTree));
+        Assert.True(rig.Invoker.CanRun(delete, CommandScope.ProjectTree));
         rig.Tree.SelectedItem = rig.Tree.Roots[0].Children[0].Children[1].Children[0];
         Assert.Equal(TreeItemKind.Constructor, rig.Tree.SelectedItem.Kind);
-        Assert.False(rig.Invoker.CanRun(rename));
-        Assert.True(rig.Invoker.CanRun(delete));
+        Assert.False(rig.Invoker.CanRun(rename, CommandScope.ProjectTree));
+        Assert.True(rig.Invoker.CanRun(delete, CommandScope.ProjectTree));
         rig.Tree.SelectedItem = rig.Item(TreeItemKind.Variable, "count");
-        Assert.True(rig.Invoker.CanRun(rename));
-        Assert.True(rig.Invoker.CanRun(delete));
+        Assert.True(rig.Invoker.CanRun(rename, CommandScope.ProjectTree));
+        Assert.True(rig.Invoker.CanRun(delete, CommandScope.ProjectTree));
 
         rig.Tree.SelectedItem = rig.Item(TreeItemKind.Method, "Greet");
-        Assert.True(rig.Invoker.TryRun(rename));
+        Assert.True(rig.Invoker.TryRun(rename, CommandScope.ProjectTree));
         Assert.True(SpinWait.SpinUntil(() => rig.Api.Project.Calls.Contains("RenameItem"), TimeSpan.FromSeconds(10)));
         Assert.Same(method, rig.Api.Project.LastItem);
     }

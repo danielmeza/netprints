@@ -56,6 +56,21 @@ public class ShellEditingTests
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task DeleteOnTheEmptyCanvasKeepsTheMethodBeingEdited()
+    {
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        var method = (MethodGraph)session.GraphViewModel.Graph;
+        var document = session.App.Shell.ActiveDocument?.Id ?? throw new InvalidOperationException("No document.");
+
+        await session.Graph.ClickEmptyAsync(Token);
+        await session.PressDeleteAsync(Token);
+
+        Assert.Contains(method, session.Class.Methods);
+        Assert.Equal(document, session.App.Shell.ActiveDocument?.Id);
+        Assert.Contains(document, session.App.Api.OpenDocuments);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task NodesAndPinsHaveToolTips()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);

@@ -89,7 +89,7 @@ public class FormerActionsReachableTests
         app.Shell.TreeSelection = cls;
         foreach (string add in new[] { "addMethod", "addConstructor", "addVariable", "addEventGraph" })
         {
-            await Run(app, add);
+            Run(app, add);
         }
 
         MemberVariableViewModel variable = app.Session.ContextFor(cls).Variables[^1];
@@ -108,7 +108,11 @@ public class FormerActionsReachableTests
         HeadlessDriver.Pump();
     }
 
-    private static Task Run(ShellApp app, string name) => app.Command(name).Handler.ExecuteAsync(app.Commands.CreateContext(), Token);
+    private static void Run(ShellApp app, string name, CommandScope scope = CommandScope.Global)
+    {
+        Assert.True(app.Commands.TryRun(app.Command(name), scope), $"{name} is enabled");
+        HeadlessDriver.Pump();
+    }
 
     private static ProjectTreePanelViewModel Tree(ShellApp app) =>
         Assert.IsType<ProjectTreePanelViewModel>(app.Shell.FindPanel(PanelContributions.ProjectTreeId)?.Content);
@@ -200,6 +204,7 @@ public class FormerActionsReachableTests
         })
         {
             Button button = Assert.IsType<Button>(app.Ui.Tree.FindControls(new AutomationQuery(id)).Select(pair => pair.Control).First());
+            Assert.True(button.IsEffectivelyEnabled, $"{id} is enabled");
             button.Command?.Execute(null);
             HeadlessDriver.Pump();
             Assert.Contains(CommandTargets.GraphDocumentOf(app.Session, graph), app.Api.OpenDocuments);
@@ -224,7 +229,7 @@ public class FormerActionsReachableTests
         foreach (object item in new object[] { method, constructor, variable, eventGraph })
         {
             app.Shell.TreeSelection = item;
-            await Run(app, "delete");
+            Run(app, "delete", CommandScope.ProjectTree);
         }
 
         HeadlessDriver.Pump();
@@ -235,7 +240,7 @@ public class FormerActionsReachableTests
         Assert.DoesNotContain(app.Api.OpenDocuments, id => id.GraphKey is { } key && key != DocumentId.ClassGraphKey);
 
         app.Shell.TreeSelection = cls;
-        await Run(app, "classSettings");
+        Run(app, "classSettings");
         Assert.True(app.Api.IsPanelVisible(PanelContributions.InspectorId));
         Assert.Same(cls, app.Shell.TreeSelection);
     }
@@ -264,6 +269,7 @@ public class FormerActionsReachableTests
     private static void PressButton(ShellApp app, string automationId)
     {
         Button button = Assert.IsType<Button>(app.Ui.Tree.FindControls(new AutomationQuery(automationId)).Select(pair => pair.Control).First());
+        Assert.True(button.IsEffectivelyEnabled, $"{automationId} is enabled");
         button.Command?.Execute(null);
         HeadlessDriver.Pump();
     }

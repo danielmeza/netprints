@@ -85,7 +85,12 @@ public interface IProjectActions
     /// <param name="item">The project tree item, or the graph model of the active document.</param>
     void RenameItem(object item);
 
-    /// <summary>Deletes a class or member after the user confirmed.</summary>
+    /// <summary>
+    /// Deletes a class or member. A member removal is undoable and needs no question; removing a class cannot be undone,
+    /// so the user is asked first and nothing happens when they decline.
+    /// </summary>
     /// <param name="item">The project tree item.</param>
-    void DeleteItem(object item);
+    /// <param name="cancellationToken">Cancels the question.</param>
+    /// <returns>A task that completes when the item was removed or the user declined.</returns>
+    Task DeleteItemAsync(object item, CancellationToken cancellationToken);
 }

@@ -1,3 +1,4 @@
+using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Graph;
 
 namespace NetPrints.Editor.Shell;
@@ -39,11 +40,11 @@ public sealed class ShellCommandContextProvider(ShellViewModel shell, IShell ser
     }
 
     /// <inheritdoc/>
-    public CommandContext Create(object? parameter = null)
+    public CommandContext Create(object? parameter = null, CommandScope scope = CommandScope.Global)
     {
         NodeGraphViewModel? graph = ActiveGraph();
         var selection = new CommandSelection(graph is null ? [] : [.. graph.SelectedNodes], shell.TreeSelection);
-        return new CommandContext(services, shell.Session, shell.ActiveDocument?.Id, graph, selection, parameter);
+        return new CommandContext(services, shell.Session, shell.ActiveDocument?.Id, graph, selection, parameter, scope);
     }
 
     private NodeGraphViewModel? ActiveGraph() => (shell.ActiveDocument as GraphDocumentViewModel)?.Graph;

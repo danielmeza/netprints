@@ -250,9 +250,9 @@ public sealed partial class ProjectTreePanelViewModel : ObservableObject, IShell
         {
             foreach (CommandDescriptor command in attached.Commands.ContextMenuCommands(target))
             {
-                if (attached.Commands.CanRun(command))
+                if (attached.Commands.CanRun(command, CommandScope.ProjectTree))
                 {
-                    item.MenuEntries.Add(new CommandEntryViewModel(command, attached.Commands, AutomationIds.TreeMenuPrefix));
+                    item.MenuEntries.Add(new CommandEntryViewModel(command, attached.Commands, AutomationIds.TreeMenuPrefix, CommandScope.ProjectTree));
                 }
             }
         }

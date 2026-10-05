@@ -17,6 +17,9 @@ namespace NetPrints.Editor.Hosting;
 /// </summary>
 internal sealed class ShellProjectActions : IProjectActions, IDisposable
 {
+    private const string RemoveClassTitle = "Remove class";
+    private const string RemoveClassConfirm = "Remove";
+
     private readonly EditorContext context;
     private readonly ShellViewModel shell;
     private readonly HostChannelBridge hostChannelBridge;
@@ -183,11 +186,16 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
     }
 
     /// <inheritdoc/>
-    public void DeleteItem(object item)
+    public async Task DeleteItemAsync(object item, CancellationToken cancellationToken)
     {
         switch (item)
         {
             case ClassGraph cls:
+                if (!await context.Dialogs.ConfirmAsync(RemoveClassTitle, $"Remove class '{cls.Name}' and close its graphs? This cannot be undone.", RemoveClassConfirm).ConfigureAwait(true))
+                {
+                    break;
+                }
+
                 CloseDocumentsOf(cls);
                 shell.Session?.Project.Classes.Remove(cls);
                 break;

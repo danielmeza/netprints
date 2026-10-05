@@ -1,5 +1,6 @@
 using Avalonia.Controls;
 using NetPrints.Core;
+using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.UITests.Driving;
@@ -83,14 +84,16 @@ internal sealed class EditorSession : IAsyncDisposable
     /// <param name="cancellationToken">Cancels the command.</param>
     public Task AddVariableAsync(CancellationToken cancellationToken) => RunAsync("addVariable", cancellationToken);
 
-    /// <summary>Runs a registered command on the current shell context.</summary>
+    /// <summary>Runs a registered command through the invoker, as a menu or key does, so it must be enabled in the current context.</summary>
     /// <param name="name">The command name after the contribution prefix.</param>
-    /// <param name="cancellationToken">Cancels the command.</param>
+    /// <param name="cancellationToken">Cancels the wait.</param>
+    /// <param name="scope">The scope the invocation comes from.</param>
     /// <returns>A task that completes when the command has run.</returns>
-    public async Task RunAsync(string name, CancellationToken cancellationToken)
+    public Task RunAsync(string name, CancellationToken cancellationToken, CommandScope scope = CommandScope.Global)
     {
-        await App.Command(name).Handler.ExecuteAsync(App.Commands.CreateContext(), cancellationToken);
+        Assert.True(App.Commands.TryRun(App.Command(name), scope), $"{name} is enabled");
         HeadlessDriver.Pump();
+        return Task.CompletedTask;
     }
 
     public Task PressUndoAsync(CancellationToken cancellationToken) => Driver.PressAsync("Ctrl+Z", cancellationToken);

@@ -58,7 +58,7 @@ public sealed class ScopedCommandKeysBehavior : StyledElementBehavior<InputEleme
 
         foreach (CommandDescriptor command in invoker.CommandsIn(Scope))
         {
-            if (CommandKeyGestures.Of(command).Any(gesture => gesture.Matches(e)) && invoker.TryRun(command))
+            if (CommandKeyGestures.Of(command).Any(gesture => gesture.Matches(e)) && invoker.TryRun(command, Scope))
             {
                 e.Handled = true;
                 return;

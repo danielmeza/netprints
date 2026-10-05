@@ -66,7 +66,7 @@ public class EventGraphTests
 
         // Remove (undoable): through the project actions, as the tree's Delete does; it closes the graph's tab.
         DocumentId document = CommandTargets.GraphDocumentOf(session.App.Session, eventGraph) ?? throw new InvalidOperationException("The event graph has no document.");
-        session.App.Composition.ProjectActions?.DeleteItem(eventGraph);
+        await (session.App.Composition.ProjectActions?.DeleteItemAsync(eventGraph, Token) ?? Task.CompletedTask);
         Assert.DoesNotContain(session.Class.EventGraphs, g => g.Name == name);
         Assert.DoesNotContain(document, session.App.Api.OpenDocuments);
 
