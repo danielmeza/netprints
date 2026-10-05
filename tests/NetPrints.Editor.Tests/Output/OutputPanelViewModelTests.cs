@@ -132,6 +132,26 @@ public sealed class OutputPanelViewModelTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AFloodOfLinesQueuesBoundedDispatcherWorkAndKeepsTheCap()
+    {
+        await rig.OpenSessionAsync();
+        rig.Processes.Start(Request, TestContext.Current.CancellationToken);
+        queue.Flush();
+        const int flood = 100_000;
+
+        for (int i = 0; i < flood; i++)
+        {
+            rig.Processes.RaiseLine(ProcessStream.Output, $"line {i:D6} 1234567890");
+        }
+
+        Assert.True(queue.Pending <= 2, $"{queue.Pending} dispatcher actions were queued for {flood} lines.");
+        IReadOnlyList<string> texts = Texts;
+        Assert.Equal(OutputPanelViewModel.MaxLines, texts.Count);
+        Assert.Equal($"line {flood - 1:D6} 1234567890", texts[^1]);
+        Assert.Equal($"line {flood - OutputPanelViewModel.MaxLines:D6} 1234567890", texts[0]);
+    }
+
+    [Fact]
     public async Task AfterTheShellIsDisposedTheTrackerNoLongerReachesThePanel()
     {
         await rig.OpenSessionAsync();

@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Compilation;
@@ -17,6 +18,10 @@ public sealed partial class OutputPanelViewModel : ObservableObject, IShellPanel
     /// <summary>How many lines are kept; the oldest go first.</summary>
     public const int MaxLines = 1000;
 
+    private const int DrainChunk = 500;
+
+    private readonly ConcurrentQueue<Action> pendingChanges = new();
+    private int drainPosted;
     private PanelContext? context;
     private RunStateTracker? tracker;
     private RunPhase phase;
@@ -53,7 +58,7 @@ public sealed partial class OutputPanelViewModel : ObservableObject, IShellPanel
         if (context is { } attached && tracker is { } source)
         {
             RunPhase next = source.Snapshot().Phase;
-            attached.Context.Dispatcher.Post(() => Apply(next));
+            Enqueue(attached, () => Apply(next));
         }
     }
 
@@ -61,7 +66,35 @@ public sealed partial class OutputPanelViewModel : ObservableObject, IShellPanel
     {
         if (context is { } attached)
         {
-            attached.Context.Dispatcher.Post(() => Add(new OutputLineViewModel(line.Stream == ProcessStream.Error ? OutputLineKind.Error : OutputLineKind.Output, line.Text)));
+            Enqueue(attached, () => Add(new OutputLineViewModel(line.Stream == ProcessStream.Error ? OutputLineKind.Error : OutputLineKind.Output, line.Text)));
+        }
+    }
+
+    private void Enqueue(PanelContext attached, Action change)
+    {
+        pendingChanges.Enqueue(change);
+        PostDrain(attached);
+    }
+
+    private void PostDrain(PanelContext attached)
+    {
+        if (Interlocked.Exchange(ref drainPosted, 1) == 0)
+        {
+            attached.Context.Dispatcher.Post(Drain);
+        }
+    }
+
+    private void Drain()
+    {
+        for (int i = 0; i < DrainChunk && pendingChanges.TryDequeue(out Action? change); i++)
+        {
+            change();
+        }
+
+        Volatile.Write(ref drainPosted, 0);
+        if (!pendingChanges.IsEmpty && context is { } attached)
+        {
+            PostDrain(attached);
         }
     }
 
