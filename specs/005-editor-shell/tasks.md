@@ -728,10 +728,17 @@ Contracts: contributions.md, commands.md, shell.md §7. **Independent test**: US
 ## Phase 7: User Stories 9 and 10, FR-100 — look, scoped search and XAML hygiene (sub-phase G, Priority P3)
 
 **Goal**: type, spacing and colour tokens in Dark and Light, the canvas included, and the theme command (FR-080–FR-082);
-type-scoped search that follows catalogs (FR-090–FR-092); code-behind held to justified gestures (FR-100).
-**Independent test**: US9's and US10's; SC-007, SC-008; SC-005's theme part.
+icon ids on one vector family, the product mark, the node-header palette with pin and selection tokens, focus,
+density and motion tokens, one empty-state control and one dialog shell, checked at high DPI and on a contact sheet
+(FR-084–FR-089, ADR-0021); type-scoped search that follows catalogs (FR-090–FR-092); code-behind held to justified
+gestures (FR-100).
+**Independent test**: US9's and US10's; SC-007, SC-008, SC-011; SC-005's theme part.
 
-### Batch G1 — model: sonnet — T090–T092 — 5 units
+**Task ids**: the visual-polish tasks (gap research 2026-10-06) take a letter suffix after the existing task they
+follow in execution order (`T090a` runs after `T090`). Existing ids are unchanged, sub-phase G keeps the range
+T090–T101, and T112–T114 stay the last tasks of the phase.
+
+### Batch G1 — model: sonnet — T090–T090b — 5 units
 
 - [ ] T090 [US9] Tokens (2 units). Test first: `tests/NetPrints.Editor.UITests/Theming/ThemeTokenTests.cs` (research R11):
   `Font.Caption` 12, `Font.Body` 14, `Font.Subtitle` 16, `Font.Title` 20; `Space.XS` to `Space.XL` as 4, 8, 12, 16, 24
@@ -740,16 +747,116 @@ type-scoped search that follows catalogs (FR-090–FR-092); code-behind held to 
   `Area.Role` in `ThemeDictionaries`; a panel header class that is left-aligned and semibold at `Font.Subtitle`,
   replacing the 24 px centred header) and `src/NetPrints.Editor/EditorApp.axaml` (the Fluent palette moves into theme
   dictionaries, and the E2 allowlist entry is removed).
+- [ ] T090a [US9] Icon ids on one family (2 units, FR-084, ADR-0021, research R17). Test first:
+  `tests/NetPrints.Editor.Tests/Icons/IconRegistryTests.cs`: every `IconIds` constant matches
+  `^[a-z0-9]+(\.[a-zA-Z0-9]+)+$` and resolves to a glyph; an unknown id resolves to `IconIds.Unknown` and logs one
+  warning (a second lookup of the same id logs nothing); a command, panel or template descriptor with an unknown id
+  still registers with no `ContributionIssue`; every built-in descriptor's `IconId` resolves without the fallback
+  (`BuiltInCommandTableTests.EveryIconIsAMaterialIcon` becomes `EveryIconIdResolves`). Headless
+  `tests/NetPrints.Editor.UITests/Icons/IconPresenterTests.cs`: `IconPresenter` draws a vector glyph for an id at
+  `Icon.Small` (16) and `Icon.Medium` (20), filled when `IsActive`, in the inherited foreground in Dark and Light.
+  New enforced rule **E9** in `tests/NetPrints.Core.Tests/Core/XamlHygieneTests.cs`: no `MaterialIcon`,
+  `SymbolIcon` or `FluentIcon` element and no bitmap `Image` source in `src/**/*.axaml` outside
+  `src/NetPrints.Editor/Icons/`, with a shrink-only allowlist seeded with the node-category bitmaps that T092b
+  removes (red on today's nine files). Then `src/NetPrints.Editor/Icons/` (`IconIds`, `IconRegistry`,
+  `IconPresenter`, its `ControlTheme`, `Log`); `FluentIcons.Avalonia` in `Directory.Packages.props` and
+  `src/NetPrints.Editor/NetPrints.Editor.csproj`; the built-in ids cover today's Material kinds, the 16 node
+  categories (each PNG's id recorded in `IconIds`' XML docs for T092b), the 13 `NodeVisualKind` glyphs (T091a), the
+  three pin kinds, the empty states and the dialogs; `IconKind` becomes `IconId` on `CommandDescriptor`,
+  `PanelDescriptor`, `ProjectTemplateDescriptor` and `PanelViewModel` and in
+  `src/NetPrints.Editor/Contributions/BuiltIn/`; the nine XAML files use `IconPresenter`; `Material.Icons.Avalonia`
+  leaves both files. E5 and E9 go into `.claude/skills/avalonia-xaml/SKILL.md`, the icon rule into
+  `.claude/skills/avalonia-styling/SKILL.md`. Snapshots that show icons are re-baselined.
+- [ ] T090b [US9] Product mark and third-party notices (1 unit, FR-085). Test first:
+  `tests/NetPrints.Core.Tests/Core/BrandAssetTests.cs`: `assets/brand/netprints-mark.svg` has a square `viewBox`;
+  `assets/brand/netprints-mark-<n>.png` exists for n = 16, 24, 32, 48, 64, 128 and 256 with that pixel size (read
+  from the PNG header); `src/NetPrints.Desktop/NetPrintsLogo.ico` holds 16, 32, 48 and 256 px frames and
+  `src/NetPrints.Editor/Assets/NetPrintsLogo.ico` is byte-identical; `assets/icons/netprints-icon.png` (the NuGet
+  icon) equals the 128 px export; `THIRD-PARTY-NOTICES.md` at the repository root names Fluent UI System Icons (MIT),
+  FluentIcons.Avalonia (MIT), Cascadia Mono (SIL OFL 1.1) and Inter (SIL OFL 1.1), each with its copyright line.
+  Then the mark: an SVG of a simple geometric shape (two nodes joined by a wire, in the accent colour) that reads at
+  16 px; `eng/brand/export-mark.sh` writes the exports and the `.ico` (run by hand, documented in
+  `docs/contributing/`, not in CI); an `App.Mark` `DrawingImage` in `src/NetPrints.Editor/Icons/AppMark.axaml`
+  transcribed from the SVG, shown on the start page header and in the About dialog; the docs site's logo and favicon
+  (`website/docusaurus.config.ts`, `website/static/img/`) use the SVG and the 32 px export;
+  `src/NetPrints.Desktop/NetPrints.Desktop.csproj` copies the notices file to its output and publish directories, and
+  About links to it. The owner approves the mark on the G contact sheet (T098b, T100).
+
+### Batch G2 — model: sonnet — T091–T091a — 4 units
+
 - [ ] T091 [US9] Canvas theming (2 units). Nodify `ControlTheme`s `BasedOn` the defaults for `NodifyEditor`, `Node`,
   `Connection`, `Connector` and `ItemContainer`, using `DynamicResource` tokens. `NodeKindBrushConverter`,
   `PinKindBrushConverter` and `GraphBrushes` (`src/NetPrints.Editor/Graph/GraphConverters.cs`) are replaced by style
   classes per node kind and pin kind, and the "Known debt" entry of `.claude/skills/avalonia-styling/SKILL.md` is
   removed. `ThemeTokenTests` covers the canvas tokens; a headless render check runs in both variants.
+- [ ] T091a [US9] Node-header roles, kind glyphs, pin and selection tokens (2 units, FR-086). Test first:
+  `tests/NetPrints.Editor.UITests/Theming/CanvasPaletteTests.cs`: every `NodeVisualKind`, pure and impure, gets one
+  role class (Entry: `Entry`, `Return`; Call: impure `CallMethod`, `CallStatic`; Async: a call whose method returns
+  `Task`, `ValueTask` or a generic form; Pure: any other pure node, including `Ternary`, `MakeArray`,
+  `MakeDelegate`, `Type` and pure `Default` nodes; Flow: `Default` with execution pins; Variable: `VariableGetter`,
+  `VariableSetter`; Constructor; Throw); each `Node.Header.<Role>` token and `Node.HeaderForeground` resolve in Dark
+  and Light, and each pair's contrast ratio (WCAG 2.x relative luminance, computed in the test) is at least 4.5:1;
+  each node header shows its kind's `IconIds` glyph; `Pin.Exec`, `Pin.Data`, `Pin.Type`, `Pin.Bool`, `Pin.Integer`,
+  `Pin.Float`, `Pin.String`, `Pin.Object`, `Pin.ValueType`, `Pin.Delegate` and `Pin.Generic` resolve in both
+  variants, and the three pin kinds use the first three; `Canvas.SelectionBorder`, `Canvas.MarqueeFill`,
+  `Canvas.MarqueeBorder` and `Canvas.WireSelected` resolve in both variants, and a selected node's border and the
+  marquee use them (red: today the border is `#009900` in both). Then the role classes and tokens in
+  `src/NetPrints.Editor/EditorStyles.axaml`, the header glyph in `src/NetPrints.Editor/Graph/Nodes/NodeView.axaml`,
+  and the role from the node view model (`src/NetPrints.Editor/Graph/Nodes/`). Re-baseline
+  `canvas-every-node-kind.png`, `node-call-method.png` and `node-method-entry-parameters.png`. Colouring pins and
+  variable headers by data type is P6.
+
+### Batch G3 — model: haiku — T092–T092b — 3 units
+
 - [ ] T092 [US9] Apply the type ramp, the spacing scale and the label column to every view. Test first: a new enforced
   rule **E8** in `tests/NetPrints.Core.Tests/Core/XamlHygieneTests.cs`: no `FontSize` literal in `src/**/*.axaml`
   outside `EditorStyles.axaml`, with a shrink-only allowlist that ends empty (FR-080, research R11).
+- [ ] T092a [US9] `Font.Mono` (FR-080). Test first: E8 also rejects a `FontFamily` literal in `src/**/*.axaml` outside
+  `EditorStyles.axaml` and `EditorApp.axaml` (red on `CodeView`, `OutputPanelView`, `ErrorDialog`, `TrustDialog`,
+  `IssuesDialog` and `KeyboardShortcutsDialog`), and `ThemeTokenTests` asserts that `Font.Mono` is the bundled
+  Cascadia Mono (`avares://NetPrints.Editor/Assets/Fonts#Cascadia Mono`) and that a `tabular` style class sets
+  `FontFeatures` to `tnum`. Then those six views use `Font.Mono`, and the line and column numbers in Errors and the
+  status-bar counts take the `tabular` class.
+- [ ] T092b [US9] Replace the raster icons (FR-085). Test first: `NoRasterIconsInSource` in
+  `tests/NetPrints.Core.Tests/Core/SourceHygieneTests.cs`: no `*.png` under `src/` (red: the 16 files in
+  `src/NetPrints.Editor/Assets/`). Then each of the 21 uses (for example the node categories in
+  `BuiltInNodeLibrary.cs`) names the `IconIds` constant that T090a recorded for its PNG; the 16 `*_16x.png` files and
+  their `AvaloniaResource` items are deleted; E9's allowlist ends empty. Re-baseline `search-popup.png`.
 
-### Batch G2 — model: sonnet — T093–T096 — 6 units
+### Batch G4 — model: sonnet — T092c–T092f — 5 units
+
+- [ ] T092c [US9] Focus, hover and pressed (FR-087). Test first:
+  `tests/NetPrints.Editor.UITests/Theming/InteractionStateTests.cs` (headless): keyboard focus on a project-tree
+  item, a document tab, a command-bar button, a menu item, an Errors row and the palette's text box shows a ring of
+  `Focus.RingThickness` (2) in the `Focus.Ring` brush whose corner radius equals the control's (`Radius.Control`);
+  pointer-over and pressed backgrounds equal `State.Hover` and `State.Pressed` in both variants. Then the tokens and
+  a focus-adorner template in `src/NetPrints.Editor/EditorStyles.axaml`, and the tab states in
+  `src/NetPrints.Editor/Shell/Docking/DockStyles.axaml`. Canvas focus is P6 (M18).
+- [ ] T092d [US9] Density and motion (FR-087). Test first: `ThemeTokenTests` asserts `Density.RowHeight` 24,
+  `Density.RowPadding` (8, 2), `Density.CommandBarHeight` 36 (at most 40, FR-032), `Motion.Fast` 100 ms,
+  `Motion.Normal` 150 ms and `Motion.Easing` (`CubicEaseOut`); `InteractionStateTests` asserts that tree, Errors,
+  Output and palette rows have `MinHeight` = `Density.RowHeight`, that buttons, tree and list rows and tabs declare a
+  `BrushTransition` on `Background` over `Motion.Fast`, and that the palette and node-search popups fade in with a
+  `DoubleTransition` on `Opacity` over `Motion.Normal`. Then the tokens and transitions in `EditorStyles.axaml` and
+  `DockStyles.axaml`, and the rows and the command bar in their views. The Compact/Comfortable switch is P6.
+- [ ] T092e [US9] Empty-state control (FR-088). Test first:
+  `tests/NetPrints.Editor.UITests/Controls/EmptyStateTests.cs`: Errors with no diagnostics, Output with no lines, the project tree with no project, node search, the palette and
+  go-to-anything with no results, and the inspector with no selection each show one `EmptyState` (icon id, one
+  sentence, an optional action, an automation id from `AutomationIds`), and the tree's "Open project…" action runs
+  `netprints.command.openProject`. Then `src/NetPrints.Editor/Controls/EmptyState.cs` (`IconId`, `Message`,
+  `ActionText`, `ActionCommand`) with its `ControlTheme` in `EditorStyles.axaml`; the inspector's own empty text
+  (`InspectorPanelView.axaml`) moves to it; T095 uses it.
+- [ ] T092f [US9] Dialog shell (2 units, FR-088). Test first:
+  `tests/NetPrints.Editor.UITests/Dialogs/DialogShellTests.cs`, one row per P3a dialog (`UnsavedChangesDialog`, `ConfirmDialog`, `KeyboardShortcutsDialog`, `TrustDialog`,
+  `IssuesDialog`, `RecoverDialog`, `AboutDialog`, `ErrorDialog`): it is hosted in `DialogShell` with a title and an
+  icon id; its buttons follow the platform order (Windows: default first; macOS and Linux: cancel first; the
+  platform is injected); Enter runs the default and Esc the cancel (`DialogCloseBehavior`); its width stays between
+  `Dialog.MinWidth` (360) and `Dialog.MaxWidth` (640). Then `src/NetPrints.Editor/Dialogs/DialogShell.cs` with its
+  `ControlTheme`, and the eight dialogs adopt it; `DialogTests`, `UnsavedChangesDialogTests`, `HelpDialogsTests`,
+  `RecoverDialogTests` and `ExtensionDialogTests` stay green; `dialog-error.png` is re-baselined. The older dialogs
+  (select method, select type, references) adopt the shell in P6 (M13).
+
+### Batch G5 — model: sonnet — T093–T095 — 4 units
 
 - [ ] T093 [US9] Theme (FR-082). Test first in `tests/NetPrints.Editor.Tests/State/EditorSettingsTests.cs` plus a headless
   test: `theme.dark`, `theme.light` and `theme.system` set `RequestedThemeVariant`; the choice is stored as
@@ -766,42 +873,68 @@ type-scoped search that follows catalogs (FR-090–FR-092); code-behind held to 
   binding of existing nodes are unchanged, and a graph that uses a hidden member builds and runs with unchanged
   output. Then `src/NetPrints.Reflection/Catalogs/CompositeReflectionProvider.cs`, and Reflection's
   `PublicAPI.Unshipped.txt` if its public API changes.
-- [ ] T095 [US10] The scoped search's empty state names the hiding catalog (FR-091):
-  `src/NetPrints.Editor/Search/SuggestionListViewModel.cs` and its view; headless test first.
-- [ ] T096 [US9] [US10] Desktop E2E (2 units, FR-102). `ThemeSwitchTests`: View › Theme › Light changes the canvas and a
-  pane to their Light token values, and the choice survives a restart. `TypeScopedSearchTests`: in a project that
-  references `CatalogAnnotatedLib`, search from a pin of a cataloged type lists only the catalog's members.
+- [ ] T095 [US10] The scoped search's empty state names the hiding catalog (FR-091), through the `EmptyState` control
+  (T092e, FR-088): `src/NetPrints.Editor/Search/SuggestionListViewModel.cs` and its view; headless test first.
 
-### Batch G3 — model: sonnet — T097–T099 — 4 units
+### Batch G6 — model: sonnet — T096–T097 — 4 units
 
+- [ ] T096 [US9] [US10] Desktop E2E (3 units, FR-102). `ThemeSwitchTests`: View › Theme › Light changes the canvas and a
+  pane to their Light token values, and the choice survives a restart; in Light, a Call node's header has the Light
+  `Node.Header.Call` value, the command bar's icons are drawn by `IconPresenter` with no fallback glyph, and the empty
+  Errors panel shows its `EmptyState`. `DialogShellKeysTests`: with an unsaved change, File › Close project opens the
+  Unsaved changes dialog in the shell with its buttons in the Linux order; Esc cancels and the project stays open;
+  Enter on the reopened dialog saves and closes. `TypeScopedSearchTests`: in a project that references
+  `CatalogAnnotatedLib`, search from a pin of a cataloged type lists only the catalog's members.
 - [ ] T097 Test first: rule **E7** in `tests/NetPrints.Core.Tests/Core/XamlHygieneTests.cs` (research R12, FR-100). Every
   method in `src/**/*.axaml.cs` with an `(object? sender, <…>EventArgs e)` signature, or overriding an `On*` member,
   must be listed in a shrink-only `CodeBehindAllowlist` with its file, its method, a reason category (gesture,
   viewport math, editor interop or focus plumbing) and one line of reason; stale entries fail. Seed the allowlist with
-  today's handlers and their reasons. Add an amendment note for E7 and E8 to `docs/adr/0007-xaml-practices.md`, and
-  document both in `.claude/skills/avalonia-xaml/SKILL.md`.
+  today's handlers and their reasons. Add an amendment note for E7, E8 and E9 to `docs/adr/0007-xaml-practices.md`,
+  and document them in `.claude/skills/avalonia-xaml/SKILL.md`.
+
+### Batch G7 — model: sonnet — T098–T099 — 5 units
+
 - [ ] T098 Migrate code-behind (2 units): every handler a prebuilt behavior covers (the catalog in
   `.claude/skills/avalonia-behaviors/`), and the rest that a custom behavior can express (ADR-0007 D11), across
   `GraphEditorView`, `CodeView`, `LocalVariableView`, `MemberVariableView`, `EditorApp.axaml.cs` and every new P3a
   view; remove their E7 entries. What stays is a gesture, viewport math, editor interop or focus plumbing. Each
   migration keeps its tests green, and each new behavior gets a headless test.
+- [ ] T098a [US9] High-DPI snapshots (FR-089). Test first:
+  `tests/NetPrints.Editor.UITests/Snapshots/ScaledSnapshotTests.cs`: `editor-shell-main`, `canvas-every-node-kind`,
+  `inspector-method` and the Unsaved changes dialog at render scaling 1.0, 1.5 and 2.0 in Dark and Light (24
+  baselines named `<name>-<dark|light>-<scale>.png`, using the scaling hook of `grid-background-150`); red because no
+  baseline exists, then written once with `NETPRINTS_UPDATE_SNAPSHOTS=1` and reviewed by hand. At 2.0 a visual-tree
+  scan finds no `Image` backed by a `Bitmap`.
+- [ ] T098b [US9] Contact sheet (FR-089). Test first:
+  `tests/NetPrints.Editor.UITests/Snapshots/ContactSheetTests.cs` (red: the composer is a stub that throws): every
+  panel (project tree, inspector, variables, Errors, Output, C#), the start page, a graph document and the eight P3a
+  dialogs, in Dark and Light at 1.0 and 2.0, render into one labelled grid, `contact-sheet.png`, in the test results
+  directory; the test asserts the tile count (16 × 2 × 2) and that no tile is one flat colour. It compares no
+  baseline. Then `.github/workflows/ci.yml` uploads the file as the `contact-sheet` artifact of the UI tests job
+  (`CiWorkflowTests` updated).
 - [ ] T099 **Checkpoint G**: report SC-007, SC-008 (tokens in both variants, no colour literal, no type name ending in
-  `VM`, the E1–E6 and E8 allowlists empty, every E7 entry justified) and SC-005's theme part. Docs updated: ADR-0007's
-  amendment, the `avalonia-*` skills, release notes (Light and System themes; type-scoped search follows catalogs).
+  `VM`, the E1–E6, E8 and E9 allowlists empty, every E7 entry justified), SC-011 (with the contact sheet's CI run id)
+  and SC-005's theme part. Docs updated: ADR-0007's amendment, ADR-0021, `THIRD-PARTY-NOTICES.md`, the brand export
+  page in `docs/contributing/`, the `avalonia-*` skills, release notes (Light and System themes; vector icons and the
+  new product mark; focus rings, empty states and one dialog layout; type-scoped search follows catalogs).
 
 ### Batch G-R — model: opus — T100 (sub-phase review)
 
 - [ ] T100 [US9] [US10] Review sub-phase G: an Opus reviewer who did not implement it reviews the whole diff of batches
-  G1–G3 (from the commit before the first batch to HEAD): US9, US10 and FR-100 end to end against spec.md, research
-  R10–R12, ADR-0007 and the `avalonia-*` skills, the constitution and plan.md's standing constraints. It runs the
-  independent test of the phase. Findings go to the PR and to implementation-notes under "Review G". No code changes
+  G1–G7 (from the commit before the first batch to HEAD): US9, US10 and FR-100 end to end against spec.md
+  (FR-080–FR-092, FR-100), research R10–R12 and R17, ADR-0007, ADR-0021 and the `avalonia-*` skills, the constitution
+  and plan.md's standing constraints. It runs the independent test of the phase. Visual review: it downloads the
+  `contact-sheet` artifact of the last G CI run, attaches it to the review, and checks icon consistency, contrast,
+  alignment, density, focus rings, both themes and 200 %; the owner approves the product mark there. Findings go to
+  the PR and to implementation-notes under "Review G", a visual finding with the tile it refers to. No code changes
   in this task.
 
 ### Batch G-F — model: sonnet — T101 (reserved: fix review findings)
 
-- [ ] T101 [US9] [US10] Fix every finding of T100 (test first for behaviour findings), reply on each review thread with
-  the fixing commit or the reason for deferral, whole suite plus the E2E run, commit; if the review had no findings,
-  tick this task with "no findings". The next sub-phase starts only after this batch is green on CI.
+- [ ] T101 [US9] [US10] Fix every finding of T100, visual findings included (test first for behaviour findings), reply
+  on each review thread with the fixing commit or the reason for deferral, and attach a new contact sheet to the reply
+  when a fix changes what it shows; whole suite plus the E2E run, commit; if the review had no findings, tick this
+  task with "no findings". The next sub-phase starts only after this batch is green on CI.
 
 ---
 
@@ -892,6 +1025,10 @@ suite, the final review and merge preparation (FR-103, SC-010, every SC).
 - D, E, F and G each need C and are otherwise independent, apart from these links: D's T051 (paths, atomic writes)
   serves E's state store (T061); D's `KeyboardOnlyTests` (T057) grows in F (T086); the T025 pending list empties in F
   (T080) and G (T093); SC-005's theme part closes in G (T093).
+- Inside G, the icon ids (T090a) come before every task that draws an icon or a glyph (T090b, T091a, T092b, T092e,
+  T092f), and the empty-state control (T092e) comes before the catalog message that uses it (T095). The product mark
+  and the empty states use E's start page and F's palette and go-to-anything. The contact sheet (T098b) runs once the
+  visual tasks are done, and the G review (T100) attaches it.
 - H comes last because the screenshots need a stable UI.
 - Within a batch, [P] tasks touch different files; tasks without [P] run in order.
 
@@ -919,9 +1056,13 @@ suite, the final review and merge preparation (FR-103, SC-010, every SC).
 | D — lifecycle and feedback | 13 (T048–T060) | D1–D3 sonnet | D-R, D-F |
 | E — start page and persistence | 13 (T061–T073) | E1–E4 sonnet | E-R, E-F |
 | F — navigation and event inspector | 16 (T074–T089) | F1–F4 sonnet | F-R, F-F |
-| G — look, search and hygiene | 12 (T090–T101) | G1–G3 sonnet | G-R, G-F |
+| G — look, search and hygiene | 23 (T090–T101, with T090a–b, T091a, T092a–f, T098a–b) | G1, G2, G4–G7 sonnet; G3 haiku | G-R, G-F |
 | H — docs and polish | 13 (T102–T114) | H1–H3 sonnet | H-R, H-F, H-M |
-| **Total** | **114** | 30 | 17 |
+| **Total** | **125** | 34 | 17 |
+
+Sub-phase G is 30 units in seven implementation batches (G1 5, G2 4, G3 3, G4 5, G5 4, G6 4, G7 5), up from 15 units
+in three: the visual-polish tasks add 14 units and T096 grows by one. The roadmap's estimate for the growth is about
+5–7 days.
 
 ## Requirement coverage
 
@@ -968,9 +1109,15 @@ suite, the final review and merge preparation (FR-103, SC-010, every SC).
 | FR-071, FR-074 | T085 |
 | FR-072 | T082, T085 |
 | FR-073 | T082, T083, T085 |
-| FR-080 | T090, T092 |
-| FR-081 | T091 |
+| FR-080 | T090, T092, T092a |
+| FR-081 | T091, T091a |
 | FR-082 | T093 |
+| FR-084 | T090a, T096 |
+| FR-085 | T090b, T092b |
+| FR-086 | T091a, T096 |
+| FR-087 | T092c, T092d |
+| FR-088 | T092e, T092f, T095, T096 |
+| FR-089 | T098a, T098b, T100 |
 | FR-090, FR-092 | T094 |
 | FR-091 | T094, T095 |
 | FR-100 | T097, T098 |
@@ -986,9 +1133,10 @@ suite, the final review and merge preparation (FR-103, SC-010, every SC).
 | SC-005 | T064, T065, T070, T093 |
 | SC-006 | T006, T009, T012, T014, T110 |
 | SC-007 | T094 |
-| SC-008 | T001, T090, T091, T097, T098 |
+| SC-008 | T001, T090, T091, T092, T092a, T097, T098 |
 | SC-009 | T086 |
 | SC-010 | T102–T108 |
+| SC-011 | T090a, T091a, T092b, T098a, T098b, T099, T100 |
 
 ## Roadmap P3a coverage
 
@@ -1002,6 +1150,7 @@ Every bullet of the roadmap's P3a section (`.specify/memory/roadmap.md`) maps to
 | Commands: registry, command bar, menu, shortcuts (H3, H4); the P3 contribution point | T017–T026, T035, T054–T057 | user-defined shortcuts → P3 settings pages (R5) |
 | Document lifecycle (H1): dirty flag, `*`, prompt on close, autosave or backup | T020, T048–T056 | autosaving the original files is not offered in P3a (R6, spec Clarifications) |
 | Visual system (M3, L1): tokens, Nodify theme overrides | T090–T093 | L1 custom title bar → P6 (R11, R14); P3a sets the title text (T034) |
+| Visual polish in sub-phase G (gap research 2026-10-06, C-1 to C-16 as approved) | T090a–T090b, T091a, T092a–T092f, T098a–T098b, T100 | behaviour halves (type-coloured pins and headers, wire highlight, Compact switch, reduce motion, older dialogs) → P6; C-5 title bar and C-9 wires → P6; C-15 status-bar contribution kind → P3 |
 | Persistence (L2): layout, tabs, zoom, window position | T061–T065, T070 | — |
 | Undo feedback (M16, shared with P6) | T020, T054 | undo history list → P6 (R5, R14) |
 | Docking on Dock.Avalonia, with the compatibility and testability checks | T030–T033, T064 | — |

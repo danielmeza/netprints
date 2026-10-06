@@ -1337,3 +1337,47 @@ Documentation only, from the 2026-10-06 gap research:
   (test first: a created Executable project builds with no CS5001 and runs).
 - T107: the docs pass documents a hand-written `Properties/launchSettings.json`, after an integration test pins that the
   run command applies a profile's `commandLineArgs` and `environmentVariables`.
+
+## S1 (visual polish plan)
+
+Documentation only. The owner approved every Part C item that the 2026-10-06 gap research proposed for sub-phase G
+(C-1, C-2, C-3, C-4, C-6, C-7, C-8, C-10, C-11, C-12, C-13, C-14 and C-16). Their behaviour halves stay in P6, and
+C-15's contribution kind goes to P3.
+
+- Decision (ADR-0021, research R17): one vector icon family, Fluent UI System Icons (MIT), through
+  `FluentIcons.Avalonia` (MIT, targets Avalonia 12). It shares the design language of the Avalonia Fluent and Dock
+  Fluent themes, has regular and filled pairs, and carries one licence. MDI (Material.Icons.Avalonia, in use) covers
+  the most concepts and costs no churn, but the icon id registry re-points every use anyway, so the switch costs
+  one mapping table. Codicons were rejected (CC-BY-4.0 attribution, about 650 icons, no Avalonia package).
+  Descriptors carry `IconId` instead of `IconKind` (contracts/contributions.md, data-model.md), the 16 PNG icons go,
+  and `THIRD-PARTY-NOTICES.md` lists the bundled icons and fonts.
+- Decision (task ids): new tasks take a letter suffix after the existing task they follow in execution order
+  (`T090a` runs after `T090`). Existing ids and every reference to them stay valid, sub-phase G keeps the range
+  T090–T101, and T112–T114 stay the last tasks of the phase. Ids after T114 would have put G tasks after H's merge
+  preparation.
+- Spec: US9 gains acceptance scenarios 4–9; FR-080 gains `Font.Mono` and tabular numerals; new FR-084 (icon ids on
+  one family), FR-085 (no raster icons, the product mark, third-party notices), FR-086 (node-header roles and kind
+  glyphs, pin and selection tokens), FR-087 (focus, hover and pressed; density; motion), FR-088 (empty-state
+  control; dialog shell for the P3a dialogs) and FR-089 (high-DPI snapshots; contact sheet); new SC-011; P6
+  deferrals listed after FR-089.
+- New tasks (14 units): T090a icon ids (2), T090b product mark and notices (1), T091a node-header roles, glyphs, pin
+  and selection tokens (2), T092a `Font.Mono` (1), T092b raster icons replaced (1), T092c focus, hover and pressed
+  (1), T092d density and motion (1), T092e empty-state control (1), T092f dialog shell (2), T098a high-DPI snapshots
+  (1), T098b contact sheet (1). T096 (E2E) grows to 3 units with icon, header, empty-state and dialog-shell
+  checks; T099, T100 and T101 cover the new tasks and the contact sheet.
+- G batch plan (30 units, up from 15):
+
+| Batch | Model | Tasks | Units |
+|---|---|---|---|
+| G1 | sonnet | T090, T090a, T090b | 5 |
+| G2 | sonnet | T091, T091a | 4 |
+| G3 | haiku | T092, T092a, T092b | 3 |
+| G4 | sonnet | T092c, T092d, T092e, T092f | 5 |
+| G5 | sonnet | T093, T094, T095 | 4 |
+| G6 | sonnet | T096, T097 | 4 |
+| G7 | sonnet | T098, T098a, T098b, T099 | 5 |
+| G-R | opus | T100 | — |
+| G-F | sonnet | T101 | — |
+
+- Totals: 125 tasks (G 23), 34 implementation batches, 17 review, fix and merge batches. The roadmap's estimate
+  for G's growth is about 5–7 days.
