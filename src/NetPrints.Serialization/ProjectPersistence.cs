@@ -352,6 +352,22 @@ public sealed class ProjectPersistence
         return (cls, issues);
     }
 
+    /// <summary>
+    /// Renders the graph file a save of <paramref name="cls"/> would write, without writing it or marking the class clean. The
+    /// class is read before the first await, so a caller that must read it on one thread only needs to start the call there.
+    /// </summary>
+    /// <param name="cls">The class to render.</param>
+    /// <param name="cancellationToken">Cancels the operation.</param>
+    /// <returns>The canonical JSON of the class's graph file.</returns>
+    public async Task<byte[]> RenderClassAsync(ClassGraph cls, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(cls);
+        Serializers current = serializers;
+        cls.EnsureUniqueMemberIds();
+        ClassDocument document = current.Mapper.ToDocument(cls);
+        return await RenderAsync((stream, ct) => current.Formats.Default.WriteClassAsync(document, stream, ct), cancellationToken).ConfigureAwait(false);
+    }
+
     private static async ValueTask<byte[]> RenderAsync(Func<Stream, CancellationToken, ValueTask> write, CancellationToken cancellationToken)
     {
         using var buffer = new MemoryStream();

@@ -475,7 +475,7 @@ SC-004 (all but navigation).
   folders are created `0700` and files `0600` (real file system, behind an OS check). Then
   `src/NetPrints.Editor/State/EditorDataPaths.cs` and `AtomicFileWriter.cs`, behind an I/O abstraction that E reuses;
   `ProjectSessionViewModel` takes its key from here.
-- [ ] T052 [US3] Backups (2 units). Test first: `tests/NetPrints.Editor.Tests/Lifecycle/BackupServiceTests.cs`, with a
+- [x] T052 [US3] Backups (2 units). Test first: `tests/NetPrints.Editor.Tests/Lifecycle/BackupServiceTests.cs`, with a
   fake `TimeProvider` and in-memory I/O (contracts/state-files.md §1–§3). A backup is written 30 s after a file's last
   change, and every change restarts the wait. It goes to `backups/<project-key>/<relative-path>.bak.json` with the
   canonical JSON a save would write, listed in `manifest.json` (`schemaVersion` 1, original path, `writtenUtc`,

@@ -73,6 +73,9 @@ public sealed class ClassContext : IDisposable
     /// <summary>Raised when an edit, an undo or a redo flips the class between saved and unsaved.</summary>
     public event EventHandler? DirtyChanged;
 
+    /// <summary>Raised after every edit, undo or redo that leaves the class unsaved, including the ones that change nothing about its saved state.</summary>
+    public event EventHandler? Edited;
+
     /// <summary>Raised after the class's members or a variable's accessor graphs changed.</summary>
     public event EventHandler? MembersChanged;
 
@@ -505,6 +508,11 @@ public sealed class ClassContext : IDisposable
         else
         {
             Class.MarkClean();
+        }
+
+        if (dirty)
+        {
+            Edited?.Invoke(this, EventArgs.Empty);
         }
 
         if (changed)

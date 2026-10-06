@@ -2,6 +2,7 @@ using System.ComponentModel;
 using Microsoft.Extensions.Logging;
 using NetPrints.Compilation;
 using NetPrints.Core;
+using NetPrints.Editor.Lifecycle;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Settings;
 using NetPrints.Projects;
@@ -25,6 +26,7 @@ internal sealed class ProjectLoader : IDisposable
     private CancellationTokenSource? warmUp;
     private Project? subscribedProject;
     private ProjectSessionViewModel? session;
+    private BackupScope? backups;
 
     /// <summary>The extension folders currently loaded: restored when a load fails after the new project's extensions were swapped in.</summary>
     private IReadOnlyList<string> activeExtensionFolders = [];
@@ -271,6 +273,7 @@ internal sealed class ProjectLoader : IDisposable
     {
         Unsubscribe();
         warmUp?.Dispose();
+        CloseBackups();
         session?.Dispose();
     }
 
@@ -322,7 +325,9 @@ internal sealed class ProjectLoader : IDisposable
     {
         Unsubscribe();
         ProjectSessionViewModel? previous = session;
+        CloseBackups();
         session = project is null ? null : new ProjectSessionViewModel(project, context);
+        CreateBackups(session);
         shell.Session = session;
         previous?.Dispose();
 
@@ -331,6 +336,46 @@ internal sealed class ProjectLoader : IDisposable
             subscribedProject = project;
             ((INotifyPropertyChanged)project).PropertyChanged += OnProjectPropertyChanged;
             ReloadReflectionAsync().Forget(logger);
+        }
+    }
+
+    /// <summary>Gets the backups of the open project, or <see langword="null"/> when none is open or the host configured none.</summary>
+    public SessionBackups? Backups => backups?.Backups;
+
+    private void CreateBackups(ProjectSessionViewModel? opened)
+    {
+        if (backups is null && opened is not null && context.Backups is { } options)
+        {
+            backups = new BackupScope(opened, options, context, message => context.Dispatcher.Post(() => shell.ShowStatus(message)));
+        }
+    }
+
+    // Writes the backups still waiting, so a quit that skipped the prompt loses nothing, then stops following the session.
+    private void CloseBackups()
+    {
+        BackupScope? closing = backups;
+        backups = null;
+        closing?.Backups.FlushAsync().ContinueWith(_ => closing.Dispose(), TaskScheduler.Default).Forget(logger);
+    }
+
+    /// <summary>The backup service of the open project and the follower that feeds it.</summary>
+    private sealed class BackupScope : IDisposable
+    {
+        private readonly BackupService service;
+
+        public BackupScope(ProjectSessionViewModel session, BackupOptions options, EditorContext context, Action<string> warn)
+        {
+            service = new BackupService(options.Paths, options.FileSystem, options.Time, session.ProjectFilePath, options.Delay,
+                context.LoggerFactory.CreateLogger<BackupService>(), warn);
+            Backups = new SessionBackups(session, service, context.Persistence.RenderClassAsync, context.Dispatcher);
+        }
+
+        public SessionBackups Backups { get; }
+
+        public void Dispose()
+        {
+            Backups.Dispose();
+            service.Dispose();
         }
     }
 

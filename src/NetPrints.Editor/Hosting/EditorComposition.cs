@@ -6,7 +6,9 @@ using Microsoft.Extensions.Logging;
 using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Diagnostics;
 using NetPrints.Editor.Hosting.Avalonia;
+using NetPrints.Editor.Lifecycle;
 using NetPrints.Editor.Shell;
+using NetPrints.Editor.State;
 using NetPrints.Projects;
 using NetPrints.Serialization;
 using NetPrints.Serialization.Mapping;
@@ -29,7 +31,8 @@ public sealed class EditorComposition : IDisposable
         services = new EditorServices(host, windows,
             new EditorDialogs(() => windows.ActiveWindow),
             new StorageFilePickerService(() => windows.ActiveWindow),
-            new ProcessLauncher());
+            new ProcessLauncher(),
+            new BackupOptions(EditorDataPaths.Resolve(), new RealEditorFileSystem(), TimeProvider.System, BackupService.ResolveDelay(Environment.GetEnvironmentVariable)));
     }
 
     /// <summary>The composed host services.</summary>
@@ -111,7 +114,8 @@ internal sealed class EditorServices : IDisposable
     /// <param name="dialogs">Shows modal dialogs (errors, references): Avalonia's in production, a test double in the headless UI tests.</param>
     /// <param name="filePicker">Opens native file/save pickers: Avalonia's in production, a test double in the headless UI tests.</param>
     /// <param name="processes">Starts external processes: the real launcher in production, a test double in the headless UI tests.</param>
-    public EditorServices(EditorHostServices host, WindowService windows, IEditorDialogs dialogs, IFilePickerService filePicker, IProcessLauncher processes)
+    /// <param name="backups">Where the open project's unsaved files are backed up; <see langword="null"/> (the headless tests) for no backups and no clean-up of the user's data folder.</param>
+    public EditorServices(EditorHostServices host, WindowService windows, IEditorDialogs dialogs, IFilePickerService filePicker, IProcessLauncher processes, BackupOptions? backups = null)
     {
         hostChannelError = host.HostChannelError;
         var dispatcher = new AvaloniaUiDispatcher();
@@ -133,6 +137,11 @@ internal sealed class EditorServices : IDisposable
 
         runState = new RunStateTracker(processes);
 
+        if (backups is not null)
+        {
+            BackupService.CleanUp(backups.Paths, backups.FileSystem, backups.Time, host.LoggerFactory.CreateLogger<BackupService>());
+        }
+
         Context = new EditorContext(
             filePicker,
             dialogs,
@@ -150,7 +159,8 @@ internal sealed class EditorServices : IDisposable
             host.HostChannel,
             host.Settings,
             codeAnalysis,
-            runState);
+            runState,
+            backups);
     }
 
     /// <summary>The composed host services.</summary>

@@ -63,9 +63,15 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
         return choice switch
         {
             UnloadChoice.Save => await session.SaveAllAsync().ConfigureAwait(true),
-            UnloadChoice.Discard => true,
+            UnloadChoice.Discard => DiscardBackups(),
             _ => false,
         };
+    }
+
+    private bool DiscardBackups()
+    {
+        Loader.Backups?.DiscardAll();
+        return true;
     }
 
     /// <summary>Gets whether leaving now needs <see cref="ConfirmExitAsync"/>: a build runs, the program runs or files are unsaved, and no exit was confirmed yet.</summary>

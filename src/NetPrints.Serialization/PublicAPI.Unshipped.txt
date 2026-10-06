@@ -899,3 +899,4 @@ virtual NetPrints.Serialization.Documents.NodeDocument.EqualityContract.get -> S
 virtual NetPrints.Serialization.Documents.NodeDocument.Equals(NetPrints.Serialization.Documents.NodeDocument? other) -> bool
 virtual NetPrints.Serialization.Documents.NodeDocument.PrintMembers(System.Text.StringBuilder! builder) -> bool
 ~override NetPrints.Serialization.DocumentId.Equals(object obj) -> bool
+NetPrints.Serialization.ProjectPersistence.RenderClassAsync(NetPrints.Core.ClassGraph! cls, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<byte[]!>!

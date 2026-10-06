@@ -141,6 +141,7 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
             var created = new ClassContext(cls, context, UndoStackFor(cls));
             created.MembersChanged += OnContextMembersChanged;
             created.DirtyChanged += OnContextDirtyChanged;
+            created.Edited += OnContextEdited;
             created.Messenger.Register<ProjectSessionViewModel, OpenGraphMessage>(this, static (session, message) => session.GraphOpenRequested?.Invoke(session, message.Graph));
             contexts[cls] = created;
         }
@@ -168,6 +169,9 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
         ArgumentNullException.ThrowIfNull(cls);
         return StartSaveAsync(cls);
     }
+
+    /// <summary>Raised, on the UI thread, after every edit, undo or redo that leaves a class unsaved, with that class.</summary>
+    public event EventHandler<ClassGraph>? ClassEdited;
 
     /// <summary>Raised, on the UI thread, after a save succeeded, with the number of files it wrote.</summary>
     public event EventHandler<int>? Saved;
@@ -283,6 +287,14 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
     private void OnUndoChanged(object? sender, EventArgs e) => RaiseCommandStatesChanged();
 
     private void OnContextMembersChanged(object? sender, EventArgs e) => MembersChanged?.Invoke(this, EventArgs.Empty);
+
+    private void OnContextEdited(object? sender, EventArgs e)
+    {
+        if (sender is ClassContext edited)
+        {
+            ClassEdited?.Invoke(this, edited.Class);
+        }
+    }
 
     private void OnContextDirtyChanged(object? sender, EventArgs e) => RaiseCommandStatesChanged();
 
