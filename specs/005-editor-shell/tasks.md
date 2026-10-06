@@ -608,7 +608,7 @@ the window, the layout and each project's session, with safe fallbacks (FR-050�
   resize the window, restart; the layout, tabs, active tab, viewport and window bounds equal the saved values (read
   through the automation pipe). Write `{` into `state/layout.json` and restart: the default layout, and a warning in
   the log. SC-005 (the theme part closes in T093).
-- [ ] T071 **Checkpoint E**: report SC-005 (all but the theme), FR-040–FR-044 and FR-050–FR-052 with their tests. Docs
+- [x] T071 **Checkpoint E**: report SC-005 (all but the theme), FR-040–FR-044 and FR-050–FR-052 with their tests. Docs
   updated: `docs/guide/projects.md` (create and open from the start page, templates, samples); release notes (start
   page, templates, restored layout and sessions).
 

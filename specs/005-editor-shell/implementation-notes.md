@@ -1342,6 +1342,50 @@ Verdict: request changes, 0 blockers, 5 majors, 8 minors, 8 nits (21 findings). 
 - Written after the code: the start page headless tests (`StartPageTests`), the New project dialog headless test in `DialogTests`, and the confirm-unload guard of the tiles (its tests came with the next batch of tests). The UI tests that broke when the start page started to show with no project (`ShellCompositionTests`, `RestoreSessionTests`, `RegistrySurfaceTests` and the `editor-shell-no-project` baseline) were updated in a separate commit after T066, because the T066 commit did not run the UI test project. The smoke scenario `CreateProject` now drives the New project dialog through `NewProjectDialogPage`; the X11 run of it was not run here.
 - Deferred: the Desktop E2E for the new flow (T069 and T070); the sample's `NetPrints.Sdk` version follows the sample file, not the editor's; the view layer of the start page has no keyboard shortcuts of its own; tile icons (G1).
 
+## E4: start page and restore session E2E, Checkpoint E (T069-T071)
+
+Head beb0f6c2 plus the docs of this batch. Local, Release, whole suite: 2663 tests, 2642 passed, 21 skipped, 0 failed (the skips are the Desktop E2E scenarios without `NETPRINTS_E2E`, `HeadlessSmokeTests.PanCursor` and the snapshot repeat test). Local Desktop E2E with `NETPRINTS_E2E=1 --fail-skips on`: 40 tests, 40 passed, 0 skipped (2 m 20 s on the worker pool).
+
+**The new E2E classes (one scenario each, ADR-0006).**
+- T069 `StartPageNewProjectTests`: the editor starts with no project and the start page shows with an empty recent list; New project creates a Console app in an empty folder; the project opens with its `Program` class and `Program.netpc.json` exists; Close project brings the start page back with the project in Recent; opening it from Recent works; Pin shows Unpin; search finds it by part of the name and shows the empty text for a name that matches nothing; Remove empties the list and leaves the project file.
+- T070 `RestoreSessionTests`: drag the splitter beside the Project panel, open the class graph, a new constructor graph and Main, zoom out and pan Main, save, resize and move the window, close the window, start the editor again on the same state folder; the tabs and their order, the active tab, the Project panel width, Main's viewport (X, Y, zoom, within 0.01) and the window's screen bounds equal the values before. `CorruptLayoutTests` (the second unit, its own class): `layout.json` holds `{` before the start; the project opens, the Project, Inspector and Errors panels show, and the log has `JsonEditorStateStore[1201]` for `layout.json`.
+- Test first: both classes failed for real before they passed (T069: the created project had no classes because its SDK package is not published for this repository's builds, then a hung click; T070: the restart lost the tabs). `RestoreSessionTests` also fails when the state folder is deleted before the restart (tried: it times out at "the same tabs in the same order"). `CorruptLayoutTests` was not run against a build that ignores the corrupt file; its first run failed only on a wrong expected log text (1201, not 1210).
+- Repeat runs, each class alone: `StartPageNewProjectTests` 8 of 8 passed (6.8 to 7.5 s), `RestoreSessionTests` 3 of 3 (44 s), `CorruptLayoutTests` 3 of 3 (7 s).
+
+**Harness changes.**
+- `X11Driver.MoveToAsync` no longer jumps onto the point the pointer already is at: `xdotool mousemove --sync` never returns then, so a second click on the same control hung for the whole budget.
+- `X11Driver.ResizeWindowAsync` (`xdotool windowsize`); `ProjectEditorTestBase.CloseWindowAndWaitForExitAsync` (shared with `ClickAndWaitForExitAsync`).
+- `StartPagePage` and `RecentRow` page objects in `NetPrints.Testing.Ui/Shell`. The automation ids already existed from E3 (`AutomationIds.StartPage*`, `NewProject*`), so no id was added.
+- `StartPageNewProjectTests` writes the in-repo SDK layout into the test's work folder and removes the `NetPrints.Sdk` package reference there (`Directory.Build.targets`), because the template references a package version that is not published for repository builds (the same reason `ExecutableTemplateBuildTests` patches the csproj). Without it the project loads with no classes.
+- Finding, not fixed: clearing the search box with Ctrl+A then BackSpace made the next click on a row button get lost in about 5 runs of 6, and a click after it passed or failed with the timing. `StartPagePage.SearchForAsync` clears by one BackSpace per character and the runs are stable (8 of 8). The cause was not found; a real editor-side cause (focus or the list refresh while the pointer is over a row) is not excluded.
+- The pane check compares the width after the window was resized, because the dock keeps proportions.
+
+**SC-005 and the FRs.** "H" is headless or unit only, "E2E" has an end-to-end test too.
+
+| Item | Result | Tests |
+|---|---|---|
+| SC-005: layout, tabs, active tab, zoom and position, window bounds equal after a restart | pass (E2E and H) | E2E `RestoreSessionTests`; H `DockLayoutRoundTripTests`, `SessionStateTests`, `RestoreSessionTests` (UITests: reopening brings back the documents, the active tab and the viewports; the canvas shows the restored viewport), `WindowStateBehaviorTests`, `WindowPlacementTests` |
+| SC-005: theme equals after a restart | gap | the theme commands and their state are T093 |
+| SC-005: a corrupt or newer state file starts with defaults | pass | E2E `CorruptLayoutTests` (corrupt layout only); H `JsonEditorStateStoreTests` (`AnUnreadableOrNewerFileGivesTheDefaultsWithOneWarningAndIsLeftAlone`, `ANewerFileIsReplacedOnlyWhenTheStateIsSavedAgain`), `DockLayoutRoundTripTests` (a layout that fails to build falls back) |
+| FR-040 start page with no project | pass | E2E `StartPageNewProjectTests`; H `StartPageViewModelTests`, `StartPageTests` (tiles, startup error, closes when a project opens) |
+| FR-041 recent: pin, unpin, remove, search, order, cap of 20, unavailable, restart | pass (E2E: pin, search, remove) | H `RecentProjectsTests` (order, pinned first, cap, pinned never dropped, search by name or path, unavailable kept, `TheListSurvivesARestart`), `RecentProjectsWiringTests`, `StartPageViewModelTests`; the unavailable mark and the survive-a-restart are headless only |
+| FR-042 new project: templates, validate first, clean up on failure, open, Recent, Program seed | pass (E2E: Console) | E2E `StartPageNewProjectTests`; H `ProjectTemplateServiceTests` (validation, failure cleanup), `ExecutableTemplateBuildTests` (a real build and run, no CS5001), `DialogTests`; the Class library template and the failure cleanup are headless only |
+| FR-043 samples copy and open | pass, headless only | H `SampleCatalogTests`, `SamplesAndWhatsNewTests`, `StartPageViewModelTests`; no E2E copies a sample |
+| FR-044 what's new and the releases link | pass, headless only | H `WhatsNewRendererTests`, `SamplesAndWhatsNewTests` (the bundled file and the links) |
+| FR-050 window, layout, recent, session persisted | pass; theme gap | E2E `RestoreSessionTests`; H as SC-005, `RecentProjectsTests`; the maximized state is headless only (`WindowPlacementTests.TheMaximizedStateIsRestoredOnAndOffScreen`) |
+| FR-051 skip missing entries, off-screen window, defaults with a log entry, never fail to start | pass | E2E `CorruptLayoutTests` (starts, warning logged); H `WindowPlacementTests` (off every screen, missing screen), `SessionStateTests` (an unresolvable document is skipped), `DockLayoutRoundTripTests` (an unknown panel is dropped), `JsonEditorStateStoreTests` |
+| FR-052 versioned JSON in the per-user folder, user-only permissions | pass, headless only | H `JsonEditorStateStoreTests` (`FilesCarrySchemaVersionOneAndAreUtf8WithoutBomAndLfOnly`), `EditorDataPathsTests`, `AtomicFileWriterTests.OnUnixFoldersAreCreated0700AndFiles0600`; the E2E state folder is the test's own |
+
+**Gaps, stated plainly.**
+1. The theme is not persisted yet (T093): SC-005's theme part and the theme half of FR-050 are open.
+2. Samples, What's new, the Class library template, the unavailable-entry mark and a recent list that survives a restart have no E2E test.
+3. The E2E corrupt-state test covers `layout.json` only; a newer or corrupt `window.json`, `recent.json` and session file are headless.
+4. A floating document comes back docked (E2 deferred), so the E2E does not float a pane; the pane it moves is the Project panel's width.
+5. The window position compares equal only because the E2E window manager (openbox) restores it exactly; the Windows and macOS legs are not run by this E2E.
+6. The click that got lost after clearing the search box with Ctrl+A and BackSpace is unexplained (above).
+
+Docs updated: `docs/guide/projects.md` (the start page, create and open, templates, samples; restored layout and sessions), `.github/release-notes.md` (Unreleased: start page, templates, samples, restored layout and sessions).
+
 ## R1 (roadmap gap research)
 
 Documentation only, from the 2026-10-06 gap research:

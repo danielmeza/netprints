@@ -12,6 +12,10 @@
 
 **Added:** keyboard shortcuts: Save Ctrl+S, Save all Ctrl+Shift+S, Open Ctrl+O, New project Ctrl+Shift+N, Undo Ctrl+Z, Redo Ctrl+Y or Ctrl+Shift+Z, Compile F7 or Ctrl+Shift+B, Run F5, **Stop Shift+F5**, Next and previous tab Ctrl+Tab and Ctrl+Shift+Tab, Close tab Ctrl+W, Add node Ctrl+Space, Select all Ctrl+A, Delete, Rename F2, Frame selection F, Fit all Home or Shift+F. Single-key shortcuts never fire while you type in a text field.
 
+**Added:** the start page. With no project open the editor shows recent projects (pin, unpin, remove and search; missing projects are marked), Open, New project, Samples and What's new. **New project** offers a Console app (with a `Program` class and an empty `Main`, so it builds and runs at once) and a Class library; it checks the name and folder before writing and cleans up after a failure. **Samples** copies HelloWorld to a folder you choose and opens the copy. **Help › Start page** opens it again.
+
+**Added:** the editor restores where you were. The window position and size, the panel layout, the open graph tabs, the active tab and each graph's zoom and position come back after a restart; a graph that no longer exists is skipped, and an unreadable or newer state file falls back to the defaults.
+
 ## Downloads
 
 | Platform | File |

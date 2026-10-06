@@ -27,6 +27,36 @@ that turns each graph into C#. Nothing else about the project file is special �
 package references, target framework and output type all work exactly as they do in any other .NET
 project.
 
+## The start page
+
+With no project open the document area shows the **Start** page (**Help › Start page** shows it again at any time):
+
+- **Recent projects**: the projects you opened or created, most recent first, with pinned projects at the top and at
+  most 20 unpinned ones. A row opens the project; the pin button keeps it at the top; the remove button forgets it
+  (the project's files are never touched). The search box filters by name or path, and a project whose file is gone
+  stays in the list marked "(unavailable)" until you remove it.
+- **Open folder or project…** opens a `.csproj`, or a folder that holds exactly one. A start-up argument that is not
+  one of those leaves the start page with a message naming the path.
+- **New project…** asks for a template, a project name (also its namespace) and an empty or new folder, checks them
+  before writing anything, creates the project and opens it. **Console app** creates a project with a `Program`
+  class graph that has an empty `public static void Main()`, so it builds and runs at once; **Class library**
+  creates a project with no classes yet. If creating fails, the folder it created is removed and the dialog shows why.
+- **Samples** copies a bundled sample into a folder you choose (inside a folder named after the sample) and opens the
+  copy; the bundled files are never changed. A built copy needs the `NetPrints.Sdk` package version its project file
+  names.
+- **What's new** shows the notes of the running version and a link to the release notes on GitHub.
+
+Opening or creating a project closes the start page; closing the project brings it back.
+
+## Restored layout and sessions
+
+The editor remembers, per user, the window position, size and maximized state, the panel layout (sizes, docking,
+floating panes) and the recent list, in versioned JSON files in your application-data folder, never in the project.
+It also remembers, per project, the open graph tabs in order, the active tab and each graph's zoom and position, and
+restores them when the project opens. A graph or panel that no longer exists is skipped, a window that would be off
+every screen is moved to the centre of the primary one, and a state file that is unreadable or from a newer version is
+ignored with a log entry: the editor starts with the defaults. **View › Reset layout** restores the default layout.
+
 ## The editor window
 
 The editor opens one project per window, from **File › Open folder or project…** or as the first argument
