@@ -19,7 +19,7 @@ public sealed record RecoveryResult(IReadOnlyList<ClassGraph> Restored, IReadOnl
 /// <summary>
 /// Offers the backups of a project that is being opened (FR-025, state-files.md §3): the dialog lists each backed-up file with a note
 /// when the file on disk is newer, Restore loads the backed-up content as unsaved changes and keeps the backup until the file is
-/// saved or discarded, and Discard deletes the backups. Only backups of files the project still has are offered.
+/// saved or discarded, and Discard deletes the backups it offered. Only backups of files the project still has are offered.
 /// </summary>
 public sealed class RecoveryService
 {
@@ -71,7 +71,7 @@ public sealed class RecoveryService
         switch (choice)
         {
             case RecoveryChoice.Discard:
-                store.DeleteAll();
+                offered.ForEach(item => store.Delete(item.Entry.OriginalPath));
                 return RecoveryResult.None;
             case RecoveryChoice.Restore:
                 return await RestoreAsync(project, offered, cancellationToken).ConfigureAwait(true);

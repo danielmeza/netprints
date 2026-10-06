@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Time.Testing;
 using NetPrints.Core;
 using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Hosting;
@@ -29,11 +30,11 @@ public sealed class ConfirmUnloadTests : IAsyncDisposable
         await editor.DisposeAsync();
     }
 
-    private async Task<ProjectRig> OpenAsync(EditorContext? context = null)
+    private async Task<ProjectRig> OpenAsync(EditorContext? context = null, TimeProvider? time = null)
     {
         string path = TestPaths.CopyHelloWorldSample();
         cleanup.Add(path);
-        var rig = new ProjectRig(context ?? editor.Context);
+        var rig = new ProjectRig(context ?? editor.Context, time);
         rigs.Add(rig);
         await rig.LoadProjectAsync(path);
         return rig;
@@ -186,6 +187,21 @@ public sealed class ConfirmUnloadTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task CancellingTheUnsavedPromptOfAnExitLeavesTheProgramRunning()
+    {
+        ProjectRig rig = await OpenAsync();
+        await Assert.IsType<ProjectSessionViewModel>(rig.Session).RunAsync();
+        MakeDirty(rig);
+        editor.Dialogs.ConfirmAnswer = true;
+        editor.Dialogs.UnsavedAnswer = UnloadChoice.Cancel;
+
+        Assert.False(await rig.Actions.ConfirmExitAsync(Token));
+
+        Assert.True(rig.Session.IsRunning);
+        Assert.False(Assert.Single(editor.Processes.Tokens).IsCancellationRequested);
+    }
+
+    [Fact]
     public async Task ExitWhileNothingRunsDoesNotAskToStop()
     {
         ProjectRig rig = await OpenAsync();
@@ -201,7 +217,8 @@ public sealed class ConfirmUnloadTests : IAsyncDisposable
         GatedDocumentStore? gate = null;
         ProjectPersistence persistence = TestEditor.CreatePersistence(editor.Projects, store => gate = new GatedDocumentStore(store));
         editor.Projects.BuildResultFactory = _ => new BuildResult(true, [], null, "");
-        ProjectRig rig = await OpenAsync(editor.Context with { Persistence = persistence });
+        var time = new FakeTimeProvider();
+        ProjectRig rig = await OpenAsync(editor.Context with { Persistence = persistence }, time);
         ProjectSessionViewModel session = Assert.IsType<ProjectSessionViewModel>(rig.Session);
         ClassGraph cls = MakeDirty(rig);
         File.Delete(session.Project.GetGraphFilePath(cls));
@@ -215,6 +232,8 @@ public sealed class ConfirmUnloadTests : IAsyncDisposable
         Task<bool> exit = rig.Actions.ConfirmExitAsync(Token);
         await Task.Delay(100, Token);
         Assert.False(exit.IsCompleted, "exit waits for the build");
+        time.Advance(StatusBarViewModel.BusyIndicatorDelay);
+        Assert.Equal("Waiting for the build…", rig.Shell.StatusBar.BusyText);
 
         gate.Release();
         Assert.True(await save.WaitAsync(Bound, Token));

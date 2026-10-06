@@ -27,6 +27,7 @@ internal sealed class ProjectLoader : IDisposable
     private Project? subscribedProject;
     private ProjectSessionViewModel? session;
     private BackupScope? backups;
+    private IReadOnlyCollection<string>? discardOnReplace;
 
     /// <summary>The extension folders currently loaded: restored when a load fails after the new project's extensions were swapped in.</summary>
     private IReadOnlyList<string> activeExtensionFolders = [];
@@ -358,6 +359,24 @@ internal sealed class ProjectLoader : IDisposable
         }
     }
 
+    /// <summary>Records that the backups of the given classes are deleted when the open project's session is replaced or the loader is disposed; until then they stay.</summary>
+    /// <param name="classPaths">The class paths the user chose not to keep.</param>
+    internal void DiscardBackupsWhenReplaced(IReadOnlyCollection<string> classPaths) => discardOnReplace = classPaths;
+
+    /// <summary>Deletes the backups recorded by <see cref="DiscardBackupsWhenReplaced"/> now: the application is exiting, so nothing can keep the project.</summary>
+    internal void ApplyBackupDiscard()
+    {
+        if (discardOnReplace is { } discarded)
+        {
+            backups?.Backups.Discard(discarded);
+        }
+
+        discardOnReplace = null;
+    }
+
+    /// <summary>Forgets a recorded discard: a new question about unloading starts over.</summary>
+    internal void CancelBackupDiscard() => discardOnReplace = null;
+
     /// <summary>Gets the backups of the open project, or <see langword="null"/> when none is open or the host configured none.</summary>
     public SessionBackups? Backups => backups?.Backups;
 
@@ -372,6 +391,7 @@ internal sealed class ProjectLoader : IDisposable
     // Writes the backups still waiting, so a quit that skipped the prompt loses nothing, then stops following the session.
     private void CloseBackups()
     {
+        ApplyBackupDiscard();
         BackupScope? closing = backups;
         backups = null;
         closing?.Backups.FlushAsync().ContinueWith(_ => closing.Dispose(), TaskScheduler.Default).Forget(logger);

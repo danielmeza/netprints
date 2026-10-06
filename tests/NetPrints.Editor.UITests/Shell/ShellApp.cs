@@ -6,6 +6,7 @@ using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Editor.Inspectors;
+using NetPrints.Editor.Lifecycle;
 using NetPrints.Editor.References;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.UITests.Driving;
@@ -27,7 +28,7 @@ internal sealed class ShellApp : IAsyncDisposable
     private readonly string settingsDirectory = Path.Combine(Path.GetTempPath(), "netprints-ui-tests", Guid.NewGuid().ToString("N"));
     private readonly IDisposable exceptionHandler;
 
-    private ShellApp(IReadOnlyList<string> extensionFolders)
+    private ShellApp(IReadOnlyList<string> extensionFolders, BackupOptions? backups = null)
     {
         extensions = new ExtensionHost(new ExtensionLoaderOptions([], extensionFolders, [BuiltInExtension.InProcessEntry]), NullLoggerFactory.Instance);
         var settings = new JsonFileSettingsStore(Path.Combine(settingsDirectory, "settings.json"), NullLogger<JsonFileSettingsStore>.Instance);
@@ -35,7 +36,7 @@ internal sealed class ShellApp : IAsyncDisposable
         Processes = new CapturingProcessLauncher();
         FilePicker = new QueuedFilePicker();
         Composition = new TestComposition(new EditorHostServices(NullLoggerFactory.Instance, extensions, settings, NullHostChannel.Instance, HostChannelError: null,
-            MsBuildAvailable: true, DisposeOwnedResources: () => ValueTask.CompletedTask), Dialogs, FilePicker, Processes);
+            MsBuildAvailable: true, DisposeOwnedResources: () => ValueTask.CompletedTask), Dialogs, FilePicker, Processes, backups);
         exceptionHandler = Composition.InstallUnhandledExceptionHandler();
         Ui = HeadlessUi.Create();
         Dialogs.ShowIssues = (title, issues) =>
@@ -86,6 +87,9 @@ internal sealed class ShellApp : IAsyncDisposable
     public ProjectSessionViewModel Session => Shell.Session ?? throw new InvalidOperationException("No project open.");
 
     public static ShellApp Start() => new([]);
+
+    /// <summary>A fresh editor that backs up the unsaved files of the open project as <paramref name="backups"/> says.</summary>
+    public static ShellApp Start(BackupOptions backups) => new([], backups);
 
     /// <summary>A fresh editor whose extension host also loads the given folders (each must hold a manifest).</summary>
     public static ShellApp Start(IReadOnlyList<string> extensionFolders) => new(extensionFolders);

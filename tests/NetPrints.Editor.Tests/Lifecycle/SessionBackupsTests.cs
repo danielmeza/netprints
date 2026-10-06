@@ -113,7 +113,7 @@ public sealed class SessionBackupsTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task DiscardDeletesEveryBackupAndCancelsWaits()
+    public async Task DiscardDeletesTheBackupsOfTheGivenClassesAndCancelsTheirWaits()
     {
         (ProjectSessionViewModel session, SessionBackups backups, BackupService service) = await OpenAsync();
         ClassContext context = session.ContextFor(session.Project.Classes.Single());
@@ -121,10 +121,24 @@ public sealed class SessionBackupsTests : IAsyncDisposable
         time.Advance(Delay);
         context.CreateVariable();
 
-        backups.DiscardAll();
+        backups.Discard(backups.UnsavedPaths);
         time.Advance(Delay);
 
         Assert.Empty(service.List());
+    }
+
+    [Fact]
+    public async Task DiscardLeavesTheBackupsOfOtherPaths()
+    {
+        (ProjectSessionViewModel session, SessionBackups backups, BackupService service) = await OpenAsync();
+        session.ContextFor(session.Project.Classes.Single()).CreateVariable();
+        service.Schedule("Other.netpc.json", () => Task.FromResult<byte[]?>([1]));
+        time.Advance(Delay);
+        Assert.Equal(2, service.List().Count);
+
+        backups.Discard(backups.UnsavedPaths);
+
+        Assert.Equal("Other.netpc.json", Assert.Single(service.List()).OriginalPath);
     }
 
     [Fact]
@@ -136,5 +150,44 @@ public sealed class SessionBackupsTests : IAsyncDisposable
         await backups.FlushAsync();
 
         Assert.Single(service.List());
+    }
+
+    [Fact(Timeout = 30000)]
+    public async Task AnEditMadeDuringASaveKeepsItsBackup()
+    {
+        List<GatedDocumentStore> stores = [];
+        ProjectPersistence persistence = TestEditor.CreatePersistence(editor.Projects, store =>
+        {
+            var gated = new GatedDocumentStore(store);
+            stores.Add(gated);
+            return gated;
+        });
+        string path = TestPaths.CopyHelloWorldSample();
+        cleanup.Add(path);
+        ProjectLoadResult loaded = await editor.Persistence.LoadAsync(path, Token);
+        var session = new ProjectSessionViewModel(loaded.Project, editor.Context with { Persistence = persistence });
+        var service = new BackupService(paths, fs, time, path, Delay, NullLogger<BackupService>.Instance, _ => { });
+        var backups = new SessionBackups(session, service, (cls, token) => persistence.RenderClassAsync(cls, token), editor.Context.Dispatcher);
+        disposables.AddRange([backups, service, session]);
+        ClassContext context = session.ContextFor(session.Project.Classes.Single());
+        context.CreateVariable();
+
+        Task<bool> save = session.SaveAllAsync();
+        try
+        {
+            await stores.Single().FirstWriteStarted.WaitAsync(TimeSpan.FromSeconds(10), Token);
+            context.CreateVariable();
+        }
+        finally
+        {
+            stores.ForEach(store => store.Release());
+        }
+
+        await save.WaitAsync(TimeSpan.FromSeconds(10), Token);
+        time.Advance(Delay);
+
+        Assert.True(session.Project.Classes.Single().IsDirty);
+        BackupEntry entry = Assert.Single(service.List());
+        Assert.Equal(await persistence.RenderClassAsync(session.Project.Classes.Single(), Token), service.Read(entry));
     }
 }

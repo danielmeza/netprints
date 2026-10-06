@@ -64,13 +64,15 @@ public sealed class BackupWiringTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task DontSaveDeletesTheBackups()
+    public async Task DontSaveDeletesTheBackupsWhenTheProjectIsClosed()
     {
         ProjectRig rig = await OpenEditedAsync();
         time.Advance(Delay);
         editor.Dialogs.UnsavedAnswer = UnloadChoice.Discard;
 
         Assert.True(await rig.Actions.ConfirmUnloadAsync(Token));
+        Assert.NotEmpty(fs.Files);
+        rig.Actions.Loader.CloseProject();
 
         Assert.Empty(fs.Files);
     }

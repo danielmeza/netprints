@@ -6,7 +6,7 @@ namespace NetPrints.Editor.Lifecycle;
 
 /// <summary>
 /// Connects a <see cref="BackupService"/> to the unsaved files of a session (FR-024): an edit schedules the class's backup, a save
-/// or an undo back to the saved state deletes it, and Discard deletes them all. The classes are read on the UI thread.
+/// or an undo back to the saved state deletes it, and Discard deletes those of the classes it names. The classes are read on the UI thread.
 /// </summary>
 public sealed class SessionBackups : IDisposable
 {
@@ -33,11 +33,20 @@ public sealed class SessionBackups : IDisposable
         session.Saved += OnSaved;
     }
 
-    /// <summary>Deletes every backup of the project: the user chose not to keep the unsaved changes.</summary>
-    public void DiscardAll()
+    /// <summary>Gets the class paths with unsaved changes: the classes followed since an edit or a restore, and the session's dirty ones.</summary>
+    public IReadOnlyCollection<string> UnsavedPaths =>
+        [.. tracked.Keys.Union(session.Project.Classes.Where(cls => cls.IsDirty).Select(session.ClassPathOf), StringComparer.Ordinal)];
+
+    /// <summary>Deletes the backups of the given classes and cancels their waits: the user chose not to keep those changes. Other backups stay.</summary>
+    /// <param name="classPaths">The class paths the user was asked about.</param>
+    public void Discard(IEnumerable<string> classPaths)
     {
-        tracked.Clear();
-        service.DeleteAll();
+        ArgumentNullException.ThrowIfNull(classPaths);
+        foreach (string path in classPaths)
+        {
+            tracked.Remove(path);
+            service.Delete(path);
+        }
     }
 
     /// <summary>Starts following a class that was restored from its backup: the backup stays until the class is saved or discarded.</summary>

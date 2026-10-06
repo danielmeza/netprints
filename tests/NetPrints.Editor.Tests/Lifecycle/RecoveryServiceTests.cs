@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Time.Testing;
+using NetPrints.Core;
 using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Lifecycle;
@@ -7,6 +8,7 @@ using NetPrints.Editor.Shell;
 using NetPrints.Editor.State;
 using NetPrints.Editor.Tests.Hosting;
 using NetPrints.Editor.Tests.State;
+using NetPrints.Projects;
 
 namespace NetPrints.Editor.Tests.Lifecycle;
 
@@ -133,6 +135,7 @@ public sealed class RecoveryServiceTests : IAsyncDisposable
         editor.Dialogs.UnsavedAnswer = UnloadChoice.Discard;
 
         Assert.True(await rig.Actions.ConfirmUnloadAsync(Token));
+        rig.Actions.Loader.CloseProject();
 
         Assert.Empty(fs.Files);
     }
@@ -189,5 +192,52 @@ public sealed class RecoveryServiceTests : IAsyncDisposable
         Assert.Empty(rig.Session?.Unsaved.UnsavedFiles ?? [new UnsavedFile("", UnsavedFileKind.Class, "")]);
         Assert.Contains(editor.Dialogs.Errors, error => error.Message.Contains(classPath, StringComparison.Ordinal));
         Assert.NotEmpty(store.List());
+    }
+
+    [Fact]
+    public async Task DiscardDeletesOnlyTheBackupsItOffered()
+    {
+        (string project, _, _, _) = await BackUpAnEditAsync();
+        var store = new BackupStore(paths, fs, project, NullLogger.Instance);
+        store.Write("Gone.netpc.json", [1, 2, 3], time.GetUtcNow().UtcDateTime);
+        editor.Dialogs.RecoverAnswer = RecoveryChoice.Discard;
+
+        await OpenAsync(project);
+
+        Assert.Equal("Gone.netpc.json", Assert.Single(store.List()).OriginalPath);
+    }
+
+    [Fact]
+    public async Task ADeferredBackupSurvivesDontSaveOfAnotherFile()
+    {
+        (string project, _, _, _) = await BackUpAnEditAsync();
+        editor.Dialogs.RecoverAnswer = RecoveryChoice.Later;
+        ProjectRig rig = await OpenAsync(project);
+        ProjectSessionViewModel session = rig.Session ?? throw new InvalidOperationException("No project is open.");
+        session.Project.CreateNewClass(DefaultProjectProfile.Instance);
+        editor.Dialogs.UnsavedAnswer = UnloadChoice.Discard;
+
+        Assert.True(await rig.Actions.ConfirmUnloadAsync(Token));
+        rig.Actions.Loader.CloseProject();
+
+        Assert.NotEmpty(new BackupStore(paths, fs, project, NullLogger.Instance).List());
+    }
+
+    [Fact]
+    public async Task AnUnreadableBackupSurvivesDontSaveOfAnotherFile()
+    {
+        (string project, _, string classPath, _) = await BackUpAnEditAsync();
+        var store = new BackupStore(paths, fs, project, NullLogger.Instance);
+        store.Write(classPath, [1, 2, 3], time.GetUtcNow().UtcDateTime);
+        editor.Dialogs.RecoverAnswer = RecoveryChoice.Restore;
+        ProjectRig rig = await OpenAsync(project);
+        ProjectSessionViewModel session = rig.Session ?? throw new InvalidOperationException("No project is open.");
+        session.Project.CreateNewClass(DefaultProjectProfile.Instance);
+        editor.Dialogs.UnsavedAnswer = UnloadChoice.Discard;
+
+        Assert.True(await rig.Actions.ConfirmUnloadAsync(Token));
+        rig.Actions.Loader.CloseProject();
+
+        Assert.Equal(classPath, Assert.Single(store.List()).OriginalPath);
     }
 }

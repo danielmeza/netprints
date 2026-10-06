@@ -24,6 +24,7 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
     private const string StopRunningTitle = "Stop running program?";
     private const string StopRunningMessage = "The program is still running. Stop it and exit?";
     private const string StopRunningConfirm = "Stop and exit";
+    private const string WaitingForBuildText = "Waiting for the build…";
 
     private readonly EditorContext context;
     private readonly ShellViewModel shell;
@@ -55,6 +56,7 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
     /// <inheritdoc/>
     public async Task<bool> ConfirmUnloadAsync(CancellationToken cancellationToken)
     {
+        Loader.CancelBackupDiscard();
         if (shell.Session is not { } session || !session.Unsaved.HasUnsavedFiles)
         {
             return true;
@@ -64,14 +66,19 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
         return choice switch
         {
             UnloadChoice.Save => await session.SaveAllAsync().ConfigureAwait(true),
-            UnloadChoice.Discard => DiscardBackups(),
+            UnloadChoice.Discard => DiscardWhenReplaced(),
             _ => false,
         };
     }
 
-    private bool DiscardBackups()
+    // The backups go when the session is replaced, so a cancelled picker or a failed load keeps them.
+    private bool DiscardWhenReplaced()
     {
-        Loader.Backups?.DiscardAll();
+        if (Loader.Backups is { } backups)
+        {
+            Loader.DiscardBackupsWhenReplaced(backups.UnsavedPaths);
+        }
+
         return true;
     }
 
@@ -80,8 +87,8 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
         !exitConfirmed && shell.Session is { } session && (session.IsBuilding || session.IsRunning || session.Unsaved.HasUnsavedFiles);
 
     /// <summary>
-    /// Asks whether the application may exit: waits for a build in flight, asks to stop a running program, then asks
-    /// <see cref="ConfirmUnloadAsync"/>. A request made while one is pending joins it, and once the exit was confirmed
+    /// Asks whether the application may exit: waits for a build in flight (the status bar says so), asks to stop a running program, then asks
+    /// <see cref="ConfirmUnloadAsync"/>, and stops the program only once both were answered. A request made while one is pending joins it, and once the exit was confirmed
     /// every later request passes, so the window close and the shutdown request that follows it ask once.
     /// </summary>
     /// <param name="cancellationToken">Cancels the prompts.</param>
@@ -104,21 +111,32 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
 
     private async Task<bool> ConfirmExitCoreAsync(CancellationToken cancellationToken)
     {
+        bool stopProgram = false;
         if (shell.Session is { } session)
         {
-            await session.WaitForBuildAsync().ConfigureAwait(true);
-            if (session.IsRunning)
+            if (session.IsBuilding)
             {
-                if (!await context.Dialogs.ConfirmAsync(StopRunningTitle, StopRunningMessage, StopRunningConfirm).ConfigureAwait(true))
-                {
-                    return false;
-                }
+                using IDisposable waiting = shell.StatusBar.BeginBusy(WaitingForBuildText);
+                await session.WaitForBuildAsync().ConfigureAwait(true);
+            }
 
-                session.Stop();
+            stopProgram = session.IsRunning;
+            if (stopProgram && !await context.Dialogs.ConfirmAsync(StopRunningTitle, StopRunningMessage, StopRunningConfirm).ConfigureAwait(true))
+            {
+                return false;
             }
         }
 
         exitConfirmed = await ConfirmUnloadAsync(cancellationToken).ConfigureAwait(true);
+        if (exitConfirmed)
+        {
+            Loader.ApplyBackupDiscard();
+            if (stopProgram)
+            {
+                shell.Session?.Stop();
+            }
+        }
+
         return exitConfirmed;
     }
 

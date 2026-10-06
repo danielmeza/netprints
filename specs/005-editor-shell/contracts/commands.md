@@ -19,7 +19,7 @@ Menu order: **File, Edit, View, Go, Build, Help**. Groups inside a menu are sepa
 | `saveAll` | Save all | File › save | Ctrl+Shift+S | Global | |
 | `projectSettings` | Project settings | File › project-settings | — | Global | |
 | `references` | References… | File › project-settings | — | Global | yes (7) |
-| `exit` | Exit | File › exit | — | Global | Closes the main window; the window-close path (also Alt+F4) asks the unload prompt, once |
+| `exit` | Exit | File › exit | — | Global | Closes the main window; the window-close path (also Alt+F4) asks the unload prompt, once. Order: wait for a build, ask to stop a running program, ask the unload prompt, then stop the program. Don't save deletes the backups of the listed files only once the project is replaced or closed |
 | `undo` | Undo `<action>` | Edit › history | Ctrl+Z | Global | yes (4) |
 | `redo` | Redo `<action>` | Edit › history | Ctrl+Y, Ctrl+Shift+Z | Global | yes (5) |
 | `delete` | Delete | Edit › selection | Delete | Graph, ProjectTree | |
