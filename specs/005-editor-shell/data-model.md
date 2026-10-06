@@ -14,7 +14,7 @@ types. Persisted formats are in [contracts/state-files.md](./contracts/state-fil
 | `DocumentId` | `Kind` (`Graph`, `StartPage`, `ProjectSettings`), `ClassPath` (class file path relative to the project), `GraphKey` (`method:<id>`, `ctor:<id>`, `event:<id>`, `getter:<variableId>`, `setter:<variableId>`, `type:<variableId>` or `class`) | Value equality. Serialized as `graph:<classPath>#<graphKey>`, `start`, or `project-settings`. |
 | `DocumentViewModel` | `Id: DocumentId`, `Title`, `IsUnsaved` (from the owning file), `Breadcrumbs: IReadOnlyList<BreadcrumbViewModel>` | `GraphDocumentViewModel` wraps the existing graph editor view model and adds `Viewport` (location, zoom). |
 | `ClassContext` | `Class`, `Services`, `Variables`, the class inspector, member view models, `UndoStack` | What the shell works on for one class. Owned by `ProjectSessionViewModel` (`ContextFor(cls)`), created lazily on first use, and disposed with its class or with the session; view models never hold it (architecture gate A2). |
-| `PanelViewModel` | `Id` (`netprints.panel.*`), `Title`, `IconKind`, `DefaultDock` (`Left`, `Right`, `Bottom`), `Order` | Built-ins: `projectTree`, `inspector`, `variables`, `errors`, `output`, `csharp`. |
+| `PanelViewModel` | `Id` (`netprints.panel.*`), `Title`, `IconId`, `DefaultDock` (`Left`, `Right`, `Bottom`), `Order` | Built-ins: `projectTree`, `inspector`, `variables`, `errors`, `output`, `csharp`. |
 
 ## Project session and lifecycle
 
@@ -45,12 +45,12 @@ See [contracts/contributions.md](./contracts/contributions.md) for the full shap
 
 | Entity | Key fields | Rules |
 |---|---|---|
-| `CommandDescriptor` | `Id`, `Label`, `Handler`, `IconKind?`, `DefaultGestures?` (list), `Scope` (flags `Global` = 0, `Graph`, `ProjectTree`; a command may name several), `Menu?` (`Path`, `Group`, `Order`), `CommandBarOrder?` | Id pattern `^[a-z0-9]+(\.[a-zA-Z0-9]+)+$`. A single-key gesture other than a function key requires a non-global scope. |
+| `CommandDescriptor` | `Id`, `Label`, `Handler`, `IconId?`, `DefaultGestures?` (list), `Scope` (flags `Global` = 0, `Graph`, `ProjectTree`; a command may name several), `Menu?` (`Path`, `Group`, `Order`), `CommandBarOrder?` | Id pattern `^[a-z0-9]+(\.[a-zA-Z0-9]+)+$`. A single-key gesture other than a function key requires a non-global scope. `IconId` is an icon id that `IconRegistry` resolves (ADR-0021); an unknown id draws the fallback glyph and the command still registers. |
 | `ICommandHandler` | `CanExecute(CommandContext)`, `ExecuteAsync(CommandContext, CancellationToken)`, `DynamicLabel(CommandContext)?` | `DynamicLabel` provides "Undo Add node". |
 | `CommandContext` | `Shell`, `Session?`, `ActiveDocument?`, `ActiveGraph?`, `Selection` (nodes, tree item), `Parameter?` | Built per invocation by an `ICommandContextProvider`; no Avalonia types. `Session` and `ActiveGraph` are the concrete editor view models until P3 replaces them with interfaces (ADR-0020). |
 | `ContributionIssue` | `Kind` (`DuplicateId`, `GestureConflict`, `InvalidDescriptor`), `Id`, `Owner`, `Message` | Collected in `IContributionRegistry.Issues`; the first registration wins. |
 | `DashboardTileDescriptor` | `Id`, `Title`, `Order`, `CreateViewModel` | Built-ins: recent, open, new, samples, what's new. |
-| `ProjectTemplateDescriptor` | `Id`, `DisplayName`, `Description`, `ProfileId`, `OutputType`, `IconKind?` | Built-ins: `netprints.template.console`, `netprints.template.library`. |
+| `ProjectTemplateDescriptor` | `Id`, `DisplayName`, `Description`, `ProfileId`, `OutputType`, `IconId?` | Built-ins: `netprints.template.console`, `netprints.template.library`. |
 | `ContextMenuItemDescriptor` | `Id`, `Target` (`Node`, `Pin`, `Connection`, `Canvas`, `TreeClass`, `TreeMember`, `TreeEventGraph`), `CommandId`, `Group`, `Order` | Items reference commands; they never carry their own logic. |
 | `ITooltipProvider` | `Order`, `TryProvide(TooltipTarget) → TooltipContent?` | `TooltipContent` = title, lines, documentation text. |
 | `IGoToProvider` | `Kind`, `Search(string, CancellationToken) → IAsyncEnumerable<GoToItem>` | `GoToItem` = kind, title, detail, `NavigationTarget`. |

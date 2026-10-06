@@ -51,7 +51,7 @@ public interface IContributionRegistry
 ```csharp
 public sealed record CommandDescriptor(
     string Id, string Label, ICommandHandler Handler,
-    string? IconKind = null,                 // Material icon kind name
+    string? IconId = null,                   // icon id resolved by IconRegistry (ADR-0021), e.g. "netprints.icon.save"
     IReadOnlyList<string>? DefaultGestures = null, // "Ctrl+Shift+B"; parsed by the view layer
     CommandScope Scope = CommandScope.Global,
     MenuPlacement? Menu = null,              // Path ("Build"), Group ("build"), Order
@@ -71,13 +71,13 @@ public interface ICommandHandler
 }
 
 public sealed record PanelDescriptor(string Id, string Title, Func<IServiceProvider, object> CreateViewModel,
-    PanelDock DefaultDock, int Order, string? IconKind = null);
+    PanelDock DefaultDock, int Order, string? IconId = null);
 
 public sealed record DashboardTileDescriptor(string Id, string Title, int Order,
     Func<IServiceProvider, object> CreateViewModel);
 
 public sealed record ProjectTemplateDescriptor(string Id, string DisplayName, string Description,
-    string ProfileId, ProjectOutputType OutputType, string? IconKind = null);
+    string ProfileId, ProjectOutputType OutputType, string? IconId = null);
 
 public sealed record ContextMenuItemDescriptor(string Id, ContextMenuTarget Target, string CommandId,
     string Group, int Order);

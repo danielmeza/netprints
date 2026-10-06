@@ -3,7 +3,8 @@
 ## Status
 
 Accepted (2026-10-01, P3a spec `specs/005-editor-shell/`, research R5). Amended 2026-10-01 after batches B1 to B4; see
-"Changes made in implementation".
+"Changes made in implementation". Amended 2026-10-06 by ADR-0021: descriptors name icons by icon id (`IconId`), not
+by icon-kind name.
 
 ## Context
 

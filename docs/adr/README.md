@@ -31,3 +31,4 @@ instead.
 - [0018: The editor shell docks with Dock.Avalonia, behind a shell seam](0018-editor-shell-docking.md)
 - [0019: CI runs one job per test project, and a Windows job checks the CLI](0019-ci-test-matrix-and-windows-cli-leg.md)
 - [0020: One contribution registry drives the editor's commands, panels and menus](0020-editor-contribution-registry.md)
+- [0021: Editor icons come from one vector family, Fluent UI System Icons, named by icon id](0021-editor-icon-family-and-icon-ids.md)

@@ -320,3 +320,21 @@ not committed); the facts used are restated here.
 
 Names of current types in this spec's documents already use the new form (for example `MainEditorViewModel`,
 `DialogViewModel<TResult>`).
+
+## R17. Icon family and icon ids (ADR-0021, gap research 2026-10-06)
+
+- **Decision**: one vector family, Fluent UI System Icons (MIT), through `FluentIcons.Avalonia` (MIT; 2.1.343
+  targets net8.0 and net10.0 on Avalonia 12.0.0). Every icon is named by an icon id (`netprints.icon.save`) that
+  `IconRegistry` resolves; descriptors carry `IconId`, never a library type. An unknown id draws a fallback glyph and
+  logs one warning. The 16 inherited `*_16x.png` icons go, `Material.Icons.Avalonia` goes once unused, and
+  `THIRD-PARTY-NOTICES.md` lists the bundled icons and fonts.
+- **Rationale**: the same design language as the Avalonia Fluent and Dock Fluent themes, with regular and filled
+  pairs for state; one MIT licence; a package that already targets Avalonia 12. The id registry has to exist before
+  P3 publishes the contribution API, and it re-points every use anyway, so switching family costs only a mapping
+  table and one round of re-baselined snapshots.
+- **Alternatives**: keep MDI through Material.Icons.Avalonia (rejected: the Material look differs from the Fluent
+  controls, and MDI's licence is per icon under the Pictogrammers Free License; it has the widest coverage and no
+  churn, which the id registry makes less decisive); Codicons (rejected: CC-BY-4.0 needs attribution, about 650
+  icons with few node concepts, and no Avalonia package); vendor Fluent glyphs as `StreamGeometry` resources now
+  (rejected for now: more work for no visible gain; kept as the fallback if the package lags an Avalonia release);
+  keep the PNGs (rejected: no recorded licence, and they blur at 150 % and 200 %).
