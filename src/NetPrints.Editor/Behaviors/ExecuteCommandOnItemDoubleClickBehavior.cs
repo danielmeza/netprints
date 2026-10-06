@@ -9,11 +9,11 @@ using Avalonia.Xaml.Interactivity;
 namespace NetPrints.Editor.Behaviors;
 
 /// <summary>
-/// Runs <see cref="Command"/> with the row's item on the second press of a double click (<c>ClickCount == 2</c>) anywhere
+/// Runs <see cref="Command"/> with the row's item on the second press of a double click (an even <c>ClickCount</c>, as Avalonia's own double-tap rule) anywhere
 /// on a row of the attached items control: the whole item container, its indentation, padding and empty space, not only the
 /// template's content. Avalonia raises <c>DoubleTapped</c> only when both presses have the same source element, so a row
 /// that is re-templated or realized again between the presses (selection, scrolling, a slow UI thread) loses it; the click
-/// count depends on time and position only. Presses outside every row, other buttons and other counts do nothing.
+/// count depends on time and position only. Presses outside every row, other buttons and odd counts do nothing.
 /// </summary>
 public sealed class ExecuteCommandOnItemDoubleClickBehavior : StyledElementBehavior<ItemsControl>
 {
@@ -46,7 +46,7 @@ public sealed class ExecuteCommandOnItemDoubleClickBehavior : StyledElementBehav
 
     private void OnPointerPressed(object? sender, PointerPressedEventArgs e)
     {
-        if (e.ClickCount != DoubleClickCount || !e.GetCurrentPoint(AssociatedObject).Properties.IsLeftButtonPressed
+        if (e.ClickCount % DoubleClickCount != 0 || !e.GetCurrentPoint(AssociatedObject).Properties.IsLeftButtonPressed
             || Command is not { } command || e.Source is not Visual source)
         {
             return;
