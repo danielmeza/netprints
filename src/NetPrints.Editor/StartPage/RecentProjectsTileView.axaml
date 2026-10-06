@@ -1,0 +1,47 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:sp="clr-namespace:NetPrints.Editor.StartPage"
+             x:Class="NetPrints.Editor.StartPage.RecentProjectsTileView"
+             x:DataType="sp:RecentProjectsTileViewModel">
+  <!-- The recent tile: search box over the list; a row opens, pins, unpins and removes through the tile's commands. -->
+  <StackPanel Spacing="8">
+    <TextBlock Classes="header" Text="Recent projects" />
+    <TextBox Text="{Binding SearchText}" PlaceholderText="Search by name or path" AutomationProperties.Name="Search recent projects"
+             AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageRecentSearch}" />
+    <TextBlock Text="No recent projects" IsVisible="{Binding IsEmpty}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageRecentEmpty}" />
+    <ListBox ItemsSource="{Binding Items}" MaxHeight="320" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageRecentList}">
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="sp:RecentProjectItemViewModel">
+          <Grid ColumnDefinitions="*,Auto,Auto" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageRecentRow}"
+                AutomationProperties.Name="{Binding DisplayName}">
+            <Button Classes="flat" HorizontalContentAlignment="Left" HorizontalAlignment="Stretch"
+                    Command="{Binding $parent[ListBox].((sp:RecentProjectsTileViewModel)DataContext).OpenCommand}" CommandParameter="{Binding}"
+                    AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageRecentOpen}" AutomationProperties.Name="{Binding DisplayName, StringFormat='Open {0}'}">
+              <StackPanel>
+                <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" />
+                <TextBlock Text="{Binding Detail}" FontSize="12" />
+              </StackPanel>
+            </Button>
+            <Button Grid.Column="1" Classes="flat" IsVisible="{Binding !Pinned}" ToolTip.Tip="Pin" AutomationProperties.Name="Pin"
+                    Command="{Binding $parent[ListBox].((sp:RecentProjectsTileViewModel)DataContext).PinCommand}" CommandParameter="{Binding}"
+                    AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageRecentPin}">
+              <mi:MaterialIcon Kind="PinOutline" />
+            </Button>
+            <Button Grid.Column="1" Classes="flat" IsVisible="{Binding Pinned}" ToolTip.Tip="Unpin" AutomationProperties.Name="Unpin"
+                    Command="{Binding $parent[ListBox].((sp:RecentProjectsTileViewModel)DataContext).UnpinCommand}" CommandParameter="{Binding}"
+                    AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageRecentUnpin}">
+              <mi:MaterialIcon Kind="Pin" />
+            </Button>
+            <Button Grid.Column="2" Classes="flat" ToolTip.Tip="Remove from the list" AutomationProperties.Name="Remove from the list"
+                    Command="{Binding $parent[ListBox].((sp:RecentProjectsTileViewModel)DataContext).RemoveCommand}" CommandParameter="{Binding}"
+                    AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageRecentRemove}">
+              <mi:MaterialIcon Kind="Close" />
+            </Button>
+          </Grid>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+  </StackPanel>
+</UserControl>

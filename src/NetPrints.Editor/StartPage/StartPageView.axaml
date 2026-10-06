@@ -1,0 +1,43 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:sp="clr-namespace:NetPrints.Editor.StartPage"
+             x:Class="NetPrints.Editor.StartPage.StartPageView"
+             x:DataType="sp:StartPageViewModel"
+             AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageRoot}">
+  <!-- The start page document: the registered tiles in order, under the startup error when there is one. -->
+  <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <StackPanel Margin="24" Spacing="16" MaxWidth="720" HorizontalAlignment="Left">
+      <TextBlock Classes="header" Text="NetPrints" />
+      <TextBlock Text="{Binding Error}" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" TextWrapping="Wrap"
+                 AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageError}" />
+      <ItemsControl ItemsSource="{Binding Tiles}">
+        <ItemsControl.DataTemplates>
+          <DataTemplate DataType="sp:RecentProjectsTileViewModel" x:DataType="sp:RecentProjectsTileViewModel">
+            <sp:RecentProjectsTileView />
+          </DataTemplate>
+          <DataTemplate DataType="sp:OpenProjectTileViewModel" x:DataType="sp:OpenProjectTileViewModel">
+            <Button HorizontalAlignment="Left" Command="{Binding OpenCommand}" Content="Open folder or project…"
+                    AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageOpenButton}" />
+          </DataTemplate>
+          <DataTemplate DataType="sp:NewProjectTileViewModel" x:DataType="sp:NewProjectTileViewModel">
+            <Button HorizontalAlignment="Left" Classes="accent" Command="{Binding NewCommand}" Content="New project…"
+                    AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageNewButton}" />
+          </DataTemplate>
+          <DataTemplate DataType="sp:SamplesTileViewModel" x:DataType="sp:SamplesTileViewModel">
+            <TextBlock Text="Samples" Classes="header" />
+          </DataTemplate>
+          <DataTemplate DataType="sp:WhatsNewTileViewModel" x:DataType="sp:WhatsNewTileViewModel">
+            <TextBlock Text="What's new" Classes="header" />
+          </DataTemplate>
+        </ItemsControl.DataTemplates>
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <StackPanel Spacing="16" />
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+      </ItemsControl>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

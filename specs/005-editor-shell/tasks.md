@@ -577,7 +577,7 @@ the window, the layout and each project's session, with safe fallbacks (FR-050�
 
 ### Batch E3 — model: sonnet — T066–T068 — 6 units
 
-- [ ] T066 [US5] Start page (2 units). Test first: `tests/NetPrints.Editor.Tests/StartPage/StartPageViewModelTests.cs`.
+- [x] T066 [US5] Start page (2 units). Test first: `tests/NetPrints.Editor.Tests/StartPage/StartPageViewModelTests.cs`.
   The `start` document shows whenever no project is open (startup without a project argument, Close project, the
   `startPage` command), built from the registered dashboard tiles (`netprints.tile.recent`, `open`, `new`, `samples`,
   `whatsNew`) in order. A start on a path that does not exist or is not a project shows the start page with an error

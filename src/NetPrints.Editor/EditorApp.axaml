@@ -6,6 +6,7 @@
              xmlns:edbehaviors="clr-namespace:NetPrints.Editor.Behaviors"
              xmlns:edgraph="clr-namespace:NetPrints.Editor.Graph"
              xmlns:shell="clr-namespace:NetPrints.Editor.Shell"
+             xmlns:edstart="clr-namespace:NetPrints.Editor.StartPage"
              xmlns:edinspectors="clr-namespace:NetPrints.Editor.Inspectors"
              xmlns:edcode="clr-namespace:NetPrints.Editor.CodeView"
              xmlns:ederrorlist="clr-namespace:NetPrints.Editor.ErrorList"
@@ -47,6 +48,9 @@
     </DataTemplate>
     <DataTemplate DataType="shell:ProjectSettingsDocumentViewModel" x:DataType="shell:ProjectSettingsDocumentViewModel">
       <shell:ProjectSettingsView />
+    </DataTemplate>
+    <DataTemplate DataType="edstart:StartPageViewModel" x:DataType="edstart:StartPageViewModel">
+      <edstart:StartPageView />
     </DataTemplate>
     <DataTemplate DataType="edtree:ProjectTreePanelViewModel" x:DataType="edtree:ProjectTreePanelViewModel">
       <edtree:ProjectTreePanelView />

@@ -57,6 +57,10 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
     [NotifyPropertyChangedFor(nameof(Title))]
     public partial ProjectSessionViewModel? Session { get; set; }
 
+    /// <summary>Gets or sets the error the start page shows above its tiles, such as a startup project that could not be opened; null when there is none.</summary>
+    [ObservableProperty]
+    public partial string? StartPageError { get; set; }
+
     /// <summary>Gets the open documents in tab order.</summary>
     public ObservableCollection<DocumentViewModel> Documents { get; } = [];
 

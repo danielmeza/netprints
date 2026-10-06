@@ -2,7 +2,7 @@ using NetPrints.Editor.Commands;
 
 namespace NetPrints.Editor.Contributions.BuiltIn;
 
-/// <summary>The built-in commands of the Help menu; the start page arrives with T066.</summary>
+/// <summary>The built-in commands of the Help menu.</summary>
 public static class HelpContributions
 {
     private const string MenuName = "Help";
@@ -20,6 +20,14 @@ public static class HelpContributions
             IconKind: "Keyboard",
             Scope: CommandScope.Global,
             Menu: new MenuPlacement(MenuName, "help", 0)));
+
+        registry.AddCommand(new CommandDescriptor(
+            ContributionIds.CommandPrefix + "startPage",
+            "Start page",
+            new StartPageCommandHandler(),
+            IconKind: "Home",
+            Scope: CommandScope.Global,
+            Menu: new MenuPlacement(MenuName, "help", 1)));
 
         registry.AddCommand(new CommandDescriptor(
             ContributionIds.CommandPrefix + "about",

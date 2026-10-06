@@ -528,4 +528,100 @@ public static class AutomationIds
     /// Automation id for a line of the Output panel.
     /// </summary>
     public const string OutputLine = "Output.Line";
+    /// <summary>
+    /// Automation id for the start page.
+    /// </summary>
+    public const string StartPageRoot = "StartPage.Root";
+    /// <summary>
+    /// Automation id for the start page's error text.
+    /// </summary>
+    public const string StartPageError = "StartPage.Error";
+    /// <summary>
+    /// Automation id for the recent tile's search box.
+    /// </summary>
+    public const string StartPageRecentSearch = "StartPage.RecentSearch";
+    /// <summary>
+    /// Automation id for the recent tile's list.
+    /// </summary>
+    public const string StartPageRecentList = "StartPage.RecentList";
+    /// <summary>
+    /// Automation id for the recent tile's empty-state text.
+    /// </summary>
+    public const string StartPageRecentEmpty = "StartPage.RecentEmpty";
+    /// <summary>
+    /// Automation id for a row of the recent list.
+    /// </summary>
+    public const string StartPageRecentRow = "StartPage.RecentRow";
+    /// <summary>
+    /// Automation id for the open button of a recent row.
+    /// </summary>
+    public const string StartPageRecentOpen = "StartPage.RecentOpen";
+    /// <summary>
+    /// Automation id for the pin button of a recent row.
+    /// </summary>
+    public const string StartPageRecentPin = "StartPage.RecentPin";
+    /// <summary>
+    /// Automation id for the unpin button of a recent row.
+    /// </summary>
+    public const string StartPageRecentUnpin = "StartPage.RecentUnpin";
+    /// <summary>
+    /// Automation id for the remove button of a recent row.
+    /// </summary>
+    public const string StartPageRecentRemove = "StartPage.RecentRemove";
+    /// <summary>
+    /// Automation id for the open folder or project button.
+    /// </summary>
+    public const string StartPageOpenButton = "StartPage.OpenButton";
+    /// <summary>
+    /// Automation id for the new project button.
+    /// </summary>
+    public const string StartPageNewButton = "StartPage.NewButton";
+    /// <summary>
+    /// Automation id for the samples tile's list.
+    /// </summary>
+    public const string StartPageSamplesList = "StartPage.SamplesList";
+    /// <summary>
+    /// Automation id for the open button of a sample.
+    /// </summary>
+    public const string StartPageSampleOpen = "StartPage.SampleOpen";
+    /// <summary>
+    /// Automation id for the what's new tile's content.
+    /// </summary>
+    public const string StartPageWhatsNew = "StartPage.WhatsNew";
+    /// <summary>
+    /// Automation id for the what's new tile's link to the releases page.
+    /// </summary>
+    public const string StartPageReleasesLink = "StartPage.ReleasesLink";
+    /// <summary>
+    /// Automation id for the New project dialog.
+    /// </summary>
+    public const string NewProjectDialog = "NewProject.Dialog";
+    /// <summary>
+    /// Automation id for the template list of the New project dialog.
+    /// </summary>
+    public const string NewProjectTemplates = "NewProject.Templates";
+    /// <summary>
+    /// Automation id for the name box of the New project dialog.
+    /// </summary>
+    public const string NewProjectName = "NewProject.Name";
+    /// <summary>
+    /// Automation id for the folder box of the New project dialog.
+    /// </summary>
+    public const string NewProjectFolder = "NewProject.Folder";
+    /// <summary>
+    /// Automation id for the browse button of the New project dialog.
+    /// </summary>
+    public const string NewProjectBrowse = "NewProject.Browse";
+    /// <summary>
+    /// Automation id for the validation or error text of the New project dialog.
+    /// </summary>
+    public const string NewProjectMessage = "NewProject.Message";
+    /// <summary>
+    /// Automation id for the Create button of the New project dialog.
+    /// </summary>
+    public const string NewProjectCreate = "NewProject.Create";
+    /// <summary>
+    /// Automation id for the Cancel button of the New project dialog.
+    /// </summary>
+    public const string NewProjectCancel = "NewProject.Cancel";
 }

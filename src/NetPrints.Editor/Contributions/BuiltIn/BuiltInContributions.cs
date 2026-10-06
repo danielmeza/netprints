@@ -15,5 +15,6 @@ public static class BuiltInContributions
         HelpContributions.Register(registry);
         TreeContributions.Register(registry);
         PanelContributions.Register(registry);
+        StartPageContributions.Register(registry);
     }
 }

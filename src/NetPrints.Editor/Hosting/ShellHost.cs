@@ -7,6 +7,7 @@ using NetPrints.Editor.Graph;
 using NetPrints.Editor.Inspectors;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.Shell.Docking;
+using NetPrints.Editor.StartPage;
 
 namespace NetPrints.Editor.Hosting;
 
@@ -18,6 +19,7 @@ internal sealed class ShellHost : IDisposable
 {
     private readonly WindowCloseGuard closeGuard;
     private readonly ShellStatePersistence? persistence;
+    private readonly StartPageController startPage;
 
     private sealed class NoServices : IServiceProvider
     {
@@ -26,6 +28,7 @@ internal sealed class ShellHost : IDisposable
 
     private ShellHost(ShellProjectActions actions, IContributionRegistry registry, ShellViewModel shell, DockShellAdapter adapter, CommandInvoker invoker, ShellWindow window, ILogger logger, ShellStatePersistence? persistence)
     {
+        startPage = new StartPageController(adapter);
         this.persistence = persistence;
         Actions = actions;
         Registry = registry;
@@ -68,7 +71,13 @@ internal sealed class ShellHost : IDisposable
         var shell = new ShellViewModel(registry, new NoServices(), TimeProvider.System, context.Dispatcher);
         shell.WindowStateService = context.WindowStateService;
         var actions = new ShellProjectActions(context, shell);
-        var adapter = new DockShellAdapter(shell, actions, id => OpenDocument(id, shell, context));
+        var startPageServices = new StartPageServices().Add<IProjectActions>(actions);
+        if (context.Recent is { } recent)
+        {
+            startPageServices.Add(recent);
+        }
+
+        var adapter = new DockShellAdapter(shell, actions, id => OpenDocument(id, shell, context, startPageServices));
         actions.Api = adapter;
         shell.Layout = adapter;
 
@@ -81,6 +90,7 @@ internal sealed class ShellHost : IDisposable
         var host = new ShellHost(actions, registry, shell, adapter, invoker, window, logger, persistence);
         shell.PropertyChanged += host.OnShellChanged;
         shell.AttachPanels(adapter, invoker, context);
+        host.startPage.Sync(shell.Session is not null);
         return host;
     }
 
@@ -95,8 +105,13 @@ internal sealed class ShellHost : IDisposable
         Actions.Dispose();
     }
 
-    private static DocumentViewModel? OpenDocument(DocumentId id, ShellViewModel shell, EditorContext context)
+    private static DocumentViewModel? OpenDocument(DocumentId id, ShellViewModel shell, EditorContext context, IServiceProvider startPageServices)
     {
+        if (id.Kind == DocumentKind.StartPage)
+        {
+            return new StartPageViewModel(shell, startPageServices);
+        }
+
         if (shell.Session is not { } session)
         {
             return null;
@@ -126,6 +141,7 @@ internal sealed class ShellHost : IDisposable
             }
 
             persistence?.RestoreSession(Shell.Session);
+            startPage.Sync(Shell.Session is not null);
         }
     }
 }

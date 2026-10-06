@@ -76,7 +76,7 @@ public class BuiltInCommandTableTests
         new("run", "Run", "Build", "run", ["F5"], Everywhere, 3, typeof(RunCommandHandler)),
         new("stop", "Stop", "Build", "run", ["Shift+F5"], Everywhere, 3, typeof(StopCommandHandler)),
         new("keyboardShortcuts", "Keyboard shortcuts", "Help", "help", [], Everywhere, null, typeof(KeyboardShortcutsCommandHandler)),
-        new("startPage", "Start page", "Help", "help", [], Everywhere, null, null),
+        new("startPage", "Start page", "Help", "help", [], Everywhere, null, typeof(StartPageCommandHandler)),
         new("about", "About NetPrints", "Help", "about", [], Everywhere, null, typeof(AboutCommandHandler)),
     ];
 
@@ -95,7 +95,6 @@ public class BuiltInCommandTableTests
         ["navigateForward"] = "T074",
         ["goToSource"] = "T077",
         ["goToTarget"] = "T077",
-        ["startPage"] = "T066",
     };
 
     private static readonly string[] MenuOrder = ["File", "Edit", "View", "Go", "Build", "Help"];

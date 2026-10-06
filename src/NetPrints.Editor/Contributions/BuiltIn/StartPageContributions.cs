@@ -1,0 +1,32 @@
+using NetPrints.Editor.Shell;
+using NetPrints.Editor.StartPage;
+using NetPrints.Editor.State;
+
+namespace NetPrints.Editor.Contributions.BuiltIn;
+
+/// <summary>The built-in dashboard tiles of the start page, in order: recent, open, new, samples, what's new.</summary>
+public static class StartPageContributions
+{
+    /// <summary>Registers the tiles.</summary>
+    /// <param name="registry">The registry to add to.</param>
+    public static void Register(IContributionRegistry registry)
+    {
+        ArgumentNullException.ThrowIfNull(registry);
+
+        registry.AddDashboardTile(new DashboardTileDescriptor(
+            ContributionIds.TilePrefix + "recent", "Recent projects", 0,
+            services => new RecentProjectsTileViewModel(services.GetService(typeof(RecentProjects)) as RecentProjects, StartPageServices.Require<IProjectActions>(services))));
+        registry.AddDashboardTile(new DashboardTileDescriptor(
+            ContributionIds.TilePrefix + "open", "Open folder or project", 1,
+            services => new OpenProjectTileViewModel(StartPageServices.Require<IProjectActions>(services))));
+        registry.AddDashboardTile(new DashboardTileDescriptor(
+            ContributionIds.TilePrefix + "new", "New project", 2,
+            services => new NewProjectTileViewModel(StartPageServices.Require<IProjectActions>(services))));
+        registry.AddDashboardTile(new DashboardTileDescriptor(
+            ContributionIds.TilePrefix + "samples", "Samples", 3,
+            _ => new SamplesTileViewModel()));
+        registry.AddDashboardTile(new DashboardTileDescriptor(
+            ContributionIds.TilePrefix + "whatsNew", "What's new", 4,
+            _ => new WhatsNewTileViewModel()));
+    }
+}

@@ -92,10 +92,41 @@ internal sealed class ProjectLoader : IDisposable
     {
         if (args is { Count: 1 } && !string.IsNullOrWhiteSpace(args[0]))
         {
-            return LoadProjectAsync(args[0]);
+            return OpenStartupPathAsync(args[0]);
         }
 
         return Task.CompletedTask;
+    }
+
+    // A path that is no project (a missing file, another kind of file, a folder without exactly one .csproj) leaves the start page with the error.
+    private async Task OpenStartupPathAsync(string path)
+    {
+        if (ResolveProjectFile(path) is { } projectFile)
+        {
+            await LoadProjectAsync(projectFile).ConfigureAwait(true);
+            return;
+        }
+
+        string fullPath = Path.GetFullPath(path);
+        shell.StartPageError = File.Exists(fullPath) || Directory.Exists(fullPath)
+            ? $"'{fullPath}' is not a NetPrints project. Pass a .csproj file, or a folder that holds exactly one."
+            : $"'{fullPath}' does not exist.";
+    }
+
+    private static string? ResolveProjectFile(string path)
+    {
+        if (File.Exists(path))
+        {
+            return path.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase) ? path : null;
+        }
+
+        if (Directory.Exists(path))
+        {
+            string[] projects = Directory.GetFiles(path, "*.csproj", SearchOption.TopDirectoryOnly);
+            return projects.Length == 1 ? projects[0] : null;
+        }
+
+        return null;
     }
 
     /// <summary>
@@ -194,6 +225,7 @@ internal sealed class ProjectLoader : IDisposable
 
                 RecoveryResult recovery = await RecoverAsync(loaded).ConfigureAwait(true);
                 await SetProjectAsync(loaded.Project).ConfigureAwait(true);
+                shell.StartPageError = null;
                 context.Recent?.Record(Path.GetFullPath(path), loaded.Project.Name);
                 foreach (ClassGraph restored in recovery.Restored)
                 {
