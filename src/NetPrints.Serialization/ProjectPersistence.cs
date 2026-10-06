@@ -29,7 +29,7 @@ namespace NetPrints.Serialization;
 public sealed record ProjectLoadResult(Project Project, ProjectSnapshot Snapshot, IReadOnlyList<DocumentIssue> Issues);
 
 /// <summary>
-/// Result of <see cref="ProjectPersistence.SaveAsync"/>: the files it wrote, in write order, and any
+/// Result of <c>ProjectPersistence.SaveAsync</c>: the files it wrote, in write order, and any
 /// translation failures found while rendering a dirty class's generated C# (R1-01).
 /// </summary>
 /// <param name="WrittenFiles">Full paths of the files that were written (a class's graph, its
@@ -201,9 +201,25 @@ public sealed class ProjectPersistence
     /// <param name="cancellationToken">Cancels the operation.</param>
     /// <returns>The files that were written, in write order, and one diagnostic per class whose
     /// generated C# failed to render.</returns>
-    public async Task<ProjectSaveResult> SaveAsync(Project project, Func<ClassGraph, string> renderGenerated, CancellationToken cancellationToken)
+    public Task<ProjectSaveResult> SaveAsync(Project project, Func<ClassGraph, string> renderGenerated, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(project);
+        return SaveAsync(project, project.Classes, renderGenerated, cancellationToken);
+    }
+
+    /// <summary>
+    /// Like <c>SaveAsync(project, renderGenerated, cancellationToken)</c>, but saves only the dirty
+    /// ones among <paramref name="classes"/>; the other dirty classes stay dirty.
+    /// </summary>
+    /// <param name="project">Project the classes belong to.</param>
+    /// <param name="classes">The classes to save when dirty.</param>
+    /// <param name="renderGenerated">Renders a class's generated C# file.</param>
+    /// <param name="cancellationToken">Cancels the operation.</param>
+    /// <returns>The files that were written and the render diagnostics.</returns>
+    public async Task<ProjectSaveResult> SaveAsync(Project project, IReadOnlyCollection<ClassGraph> classes, Func<ClassGraph, string> renderGenerated, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        ArgumentNullException.ThrowIfNull(classes);
         ArgumentNullException.ThrowIfNull(renderGenerated);
 
         string projectDirectory = GetDirectoryOrThrow(project.Path);
@@ -213,7 +229,7 @@ public sealed class ProjectPersistence
         var written = new List<string>();
         var diagnostics = new List<CodeDiagnostic>();
 
-        foreach (ClassGraph cls in project.Classes)
+        foreach (ClassGraph cls in classes)
         {
             if (!cls.IsDirty)
             {

@@ -70,6 +70,9 @@ public sealed class ClassContext : IDisposable
         UndoRedo.Applied += OnUndoApplied;
     }
 
+    /// <summary>Raised when an edit, an undo or a redo flips the class between saved and unsaved.</summary>
+    public event EventHandler? DirtyChanged;
+
     /// <summary>Raised after the class's members or a variable's accessor graphs changed.</summary>
     public event EventHandler? MembersChanged;
 
@@ -160,7 +163,7 @@ public sealed class ClassContext : IDisposable
     {
         MethodGraph? created = null;
         IUndoableCommand add = EditorCommands.AddMethod(Class, () => created = GraphUtil.AddOverrideMethod(Class, methodSpecifier));
-        add.Execute();
+        UndoRedo.RunApplying(add.Execute);
         if (created is not null)
         {
             UndoRedo.Record(add);
@@ -256,7 +259,11 @@ public sealed class ClassContext : IDisposable
         EventGraphs.Dispose();
     }
 
-    private void OnUndoApplied(object? sender, EventArgs e) => MarkDirty();
+    private void OnUndoApplied(object? sender, EventArgs e)
+    {
+        SetDirty(!UndoRedo.IsAtSavedState);
+        RequestCodeAnalysis();
+    }
 
     private void OnMembersChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
@@ -467,14 +474,43 @@ public sealed class ClassContext : IDisposable
 
     // Position alone never changes the generated code (the translator ignores it), so a pure pan or
     // drag only needs a save, not a re-analysis.
-    private void OnDirtyTrackedNodePositionChanged(Node node, double positionX, double positionY) => Class.MarkDirty();
+    private void OnDirtyTrackedNodePositionChanged(Node node, double positionX, double positionY) => MarkDirtyOutsideUndo();
 
     /// <summary>Marks the class dirty and requests a live-analysis refresh (FR-032, SC-006): the
     /// single place every model edit that can change the generated code funnels through.</summary>
     internal void MarkDirty()
     {
-        Class.MarkDirty();
+        MarkDirtyOutsideUndo();
         RequestCodeAnalysis();
+    }
+
+    /// <summary>Marks the class dirty; an edit made outside the history (not while a command is applied) also forgets the undo stack's saved state, so undoing never makes it look saved.</summary>
+    private void MarkDirtyOutsideUndo()
+    {
+        if (!UndoRedo.IsApplying)
+        {
+            UndoRedo.ForgetSavedState();
+        }
+
+        SetDirty(true);
+    }
+
+    private void SetDirty(bool dirty)
+    {
+        bool changed = Class.IsDirty != dirty;
+        if (dirty)
+        {
+            Class.MarkDirty();
+        }
+        else
+        {
+            Class.MarkClean();
+        }
+
+        if (changed)
+        {
+            DirtyChanged?.Invoke(this, EventArgs.Empty);
+        }
     }
 
     /// <summary>Requests live analysis of the project's current classes, if the class belongs to one.</summary>

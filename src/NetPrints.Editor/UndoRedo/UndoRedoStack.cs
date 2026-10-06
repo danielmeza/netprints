@@ -31,6 +31,7 @@ public sealed class UndoRedoStack
     private int? savedDepth;
     private IUndoableCommand? savedTop;
     private int epoch;
+    private int applying;
 
     /// <summary>Whether <see cref="Undo"/> would undo a command.</summary>
     public bool CanUndo => undoStack.Count > 0;
@@ -40,6 +41,9 @@ public sealed class UndoRedoStack
 
     /// <summary>Whether the history is exactly where <see cref="MarkSaved()"/> last recorded it (same depth, same top command).</summary>
     public bool IsAtSavedState => savedDepth is { } depth && depth == undoStack.Count && ReferenceEquals(savedTop, TopOrNull());
+
+    /// <summary>Whether a command is being executed, undone or redone right now: a model change seen meanwhile belongs to the history, not to an edit that bypasses it.</summary>
+    public bool IsApplying => applying > 0;
 
     /// <summary>The <see cref="IUndoableCommand.Name"/> of the command <see cref="Undo"/> would undo, or null.</summary>
     public string? UndoName => undoStack.TryPeek(out var command) ? command.Name : null;
@@ -77,6 +81,11 @@ public sealed class UndoRedoStack
     public void ForgetSavedState()
     {
         epoch++;
+        if (savedDepth is null)
+        {
+            return;
+        }
+
         savedDepth = null;
         savedTop = null;
         Changed?.Invoke(this, EventArgs.Empty);
@@ -95,7 +104,7 @@ public sealed class UndoRedoStack
     /// <summary>Executes a command and records it. Clears the redo history (PAR-60).</summary>
     public void Do(IUndoableCommand command)
     {
-        command.Execute();
+        RunApplying(command.Execute);
         Record(command);
     }
 
@@ -117,7 +126,7 @@ public sealed class UndoRedoStack
             return false;
         }
 
-        command.Undo();
+        RunApplying(command.Undo);
         redoStack.Push(command);
         Changed?.Invoke(this, EventArgs.Empty);
         Applied?.Invoke(this, EventArgs.Empty);
@@ -132,7 +141,7 @@ public sealed class UndoRedoStack
             return false;
         }
 
-        command.Execute();
+        RunApplying(command.Execute);
         undoStack.Push(command);
         Changed?.Invoke(this, EventArgs.Empty);
         Applied?.Invoke(this, EventArgs.Empty);
@@ -148,6 +157,21 @@ public sealed class UndoRedoStack
         savedDepth = null;
         savedTop = null;
         Changed?.Invoke(this, EventArgs.Empty);
+    }
+
+    /// <summary>Runs <paramref name="action"/> with <see cref="IsApplying"/> true; for a caller that executes a command itself before <see cref="Record"/>.</summary>
+    /// <param name="action">The action that changes the model.</param>
+    public void RunApplying(Action action)
+    {
+        applying++;
+        try
+        {
+            action();
+        }
+        finally
+        {
+            applying--;
+        }
     }
 
     private IUndoableCommand? TopOrNull() => undoStack.TryPeek(out var command) ? command : null;

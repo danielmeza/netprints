@@ -8,6 +8,7 @@ using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.Hosting;
+using NetPrints.Editor.Lifecycle;
 using NetPrints.Editor.UndoRedo;
 using NetPrints.Generation;
 using NetPrints.Projects;
@@ -50,8 +51,12 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
         context.RunState.PhaseChanged += OnRunPhaseChanged;
         project.PropertyChanged += OnProjectPropertyChanged;
         project.Classes.CollectionChanged += OnClassesChanged;
+        Unsaved = new UnsavedChangesTracker(this);
         context.CodeAnalysis.RequestAnalysis(project);
     }
+
+    /// <summary>Gets which files of the project have unsaved changes.</summary>
+    public UnsavedChangesTracker Unsaved { get; }
 
     /// <summary>Gets the open project.</summary>
     public Project Project { get; }
@@ -116,6 +121,11 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
         if (!undoStacks.TryGetValue(cls, out UndoRedoStack? stack))
         {
             stack = new UndoRedoStack();
+            if (!cls.IsDirty)
+            {
+                stack.MarkSaved();
+            }
+
             stack.Changed += OnUndoChanged;
             undoStacks[cls] = stack;
         }
@@ -133,6 +143,7 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
         {
             var created = new ClassContext(cls, context, UndoStackFor(cls));
             created.MembersChanged += OnContextMembersChanged;
+            created.DirtyChanged += OnContextDirtyChanged;
             created.Messenger.Register<ProjectSessionViewModel, OpenGraphMessage>(this, static (session, message) => session.GraphOpenRequested?.Invoke(session, message.Graph));
             contexts[cls] = created;
         }
@@ -147,17 +158,22 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
     /// A failure is shown through <see cref="IEditorDialogs.ShowErrorAsync"/>.
     /// </summary>
     /// <returns>Whether the save succeeded.</returns>
-    public Task<bool> SaveAllAsync()
-    {
-        if (saving is { IsCompleted: false } current)
-        {
-            saveRequested = true;
-            return current;
-        }
+    public Task<bool> SaveAllAsync() => StartSaveAsync(null);
 
-        saving = SaveCoreAsync();
-        return saving;
+    /// <summary>
+    /// Saves the graph file of one class when it is unsaved. A call made while a save runs makes that save run once more
+    /// for every unsaved file when it ends, as <see cref="SaveAllAsync"/> does.
+    /// </summary>
+    /// <param name="cls">A class of the project.</param>
+    /// <returns>Whether the save succeeded.</returns>
+    public Task<bool> SaveAsync(ClassGraph cls)
+    {
+        ArgumentNullException.ThrowIfNull(cls);
+        return StartSaveAsync(cls);
     }
+
+    /// <summary>Raised, on the UI thread, after a save succeeded, with the number of files it wrote.</summary>
+    public event EventHandler<int>? Saved;
 
     /// <summary>
     /// Saves, when needed, then builds the project through <see cref="IProjectSystem.BuildAsync"/> and maps the outcome
@@ -267,6 +283,8 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
 
     private void OnContextMembersChanged(object? sender, EventArgs e) => MembersChanged?.Invoke(this, EventArgs.Empty);
 
+    private void OnContextDirtyChanged(object? sender, EventArgs e) => RaiseCommandStatesChanged();
+
     private void OnClassesChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         foreach (ClassGraph removed in contexts.Keys.Where(cls => !Project.Classes.Contains(cls)).ToList())
@@ -281,6 +299,7 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
         }
 
         context.CodeAnalysis.RequestAnalysis(Project);
+        RaiseCommandStatesChanged();
     }
 
     private void OnProjectPropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -375,25 +394,53 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
 
     private Task WaitForSaveAsync() => saving is { IsCompleted: false } current ? current : Task.CompletedTask;
 
-    private async Task<bool> SaveCoreAsync()
+    private Task<bool> StartSaveAsync(ClassGraph? only)
+    {
+        if (saving is { IsCompleted: false } current)
+        {
+            saveRequested = true;
+            return current;
+        }
+
+        saving = SaveCoreAsync(only);
+        return saving;
+    }
+
+    private async Task<bool> SaveCoreAsync(ClassGraph? only)
     {
         bool saved;
+        int files = 0;
         do
         {
             saveRequested = false;
-            saved = await SaveOnceAsync().ConfigureAwait(true);
+            int before = Unsaved.CountUnsaved(only);
+            saved = await SaveOnceAsync(only).ConfigureAwait(true);
+            files += saved ? before : 0;
+            only = null;
         }
         while (saved && saveRequested);
 
+        if (saved)
+        {
+            Saved?.Invoke(this, files);
+        }
+
+        RaiseCommandStatesChanged();
         return saved;
     }
 
-    private async Task<bool> SaveOnceAsync()
+    private async Task<bool> SaveOnceAsync(ClassGraph? only)
     {
-        var points = undoStacks.Select(pair => (pair.Value, Point: pair.Value.CapturePosition())).ToList();
+        IReadOnlyCollection<ClassGraph> classes = only is null ? Project.Classes : [only];
+        var points = undoStacks.Where(pair => only is null || pair.Key == only).Select(pair => (pair.Value, Point: pair.Value.CapturePosition())).ToList();
         try
         {
-            ProjectSaveResult result = await context.Persistence.SaveAsync(Project, cls => RenderGenerated(context, Project, cls), CancellationToken.None);
+            ProjectSaveResult result = await context.Persistence.SaveAsync(Project, classes, cls => RenderGenerated(context, Project, cls), CancellationToken.None);
+            if (only is null)
+            {
+                Unsaved.ClearProjectChangePending();
+            }
+
             if (result.Diagnostics.Count > 0)
             {
                 Project.LastDiagnostics = new ObservableRangeCollection<CodeDiagnostic>(result.Diagnostics);
@@ -461,7 +508,7 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
     /// <summary>
     /// Marks a translation failure during compile as one that must abort the whole build (a
     /// <see cref="ClassTranslationAbortException"/>), rather than being isolated per class by
-    /// <see cref="ProjectPersistence.SaveAsync"/> (F-07).
+    /// <c>ProjectPersistence.SaveAsync</c> (F-07).
     /// </summary>
     private sealed class ClassTranslationFailure(ClassGraph cls, Exception inner) : ClassTranslationAbortException(inner.Message, inner)
     {

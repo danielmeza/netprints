@@ -447,7 +447,7 @@ SC-004 (all but navigation).
 
 ### Batch D1 — model: sonnet — T048–T050 — 5 units
 
-- [ ] T048 [US3] Unsaved tracking (2 units). First check whether the references and project-settings flows write the
+- [x] T048 [US3] Unsaved tracking (2 units). First check whether the references and project-settings flows write the
   project file immediately (research R6) and record the Decision. Test first:
   `tests/NetPrints.Editor.Tests/Lifecycle/UnsavedChangesTrackerTests.cs`. A class file is unsaved after any change, and
   saved after a successful save or when undo returns to the saved marker; a non-undoable inspector edit marks it
