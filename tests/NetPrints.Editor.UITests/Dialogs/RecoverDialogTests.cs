@@ -75,7 +75,7 @@ public class RecoverDialogTests
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
-    public void ClosingTheWindowKeepsTheBackups()
+    public void ClosingTheWindowAnswersLater()
     {
         using var ui = HeadlessUi.Create();
         var dialog = ui.Show(new RecoverDialog(Current));

@@ -165,7 +165,7 @@ public static class EditorCommands
                     RestoreAndReconnect(removed);
                 }
             },
-            () => removed = CaptureAndDisconnect(handle.Node));
+            () => removed = CaptureAndDisconnect(handle));
     }
 
     /// <summary>
@@ -177,13 +177,14 @@ public static class EditorCommands
     public static IUndoableCommand RemoveNodes(IReadOnlyList<Node> nodes)
     {
         ArgumentNullException.ThrowIfNull(nodes);
+        var handles = nodes.Select(HandleOf).ToArray();
         var removed = new List<NodeConnectionSnapshot>();
 
         return new DelegateUndoableCommand(nodes.Count == 1 ? "Delete node" : "Delete nodes",
             () =>
             {
                 removed.Clear();
-                removed.AddRange(nodes.Select(CaptureAndDisconnect));
+                removed.AddRange(handles.Select(CaptureAndDisconnect));
             },
             () =>
             {
@@ -376,7 +377,7 @@ public static class EditorCommands
             {
                 index = graph.LocalVariables.IndexOf(local);
                 graph.LocalVariables.Remove(local);
-                removedNodes = FindLocalVariableNodes(graph, local.Name).Select(CaptureAndDisconnect).ToList();
+                removedNodes = FindLocalVariableNodes(graph, local.Name).Select(HandleOf).Select(CaptureAndDisconnect).ToList();
             },
             () =>
             {
@@ -422,7 +423,7 @@ public static class EditorCommands
     {
         var specifier = local.ToSpecifier();
         var staleNodes = FindLocalVariableNodes(graph, local.Name).Where(n => n.Variable.Type != specifier.Type).ToList();
-        var originals = staleNodes.Select(CaptureConnections).ToList();
+        var originals = staleNodes.Select(HandleOf).Select(CaptureConnections).ToList();
 
         foreach (var original in originals)
         {
@@ -468,10 +469,11 @@ public static class EditorCommands
     {
         for (int i = 0; i < original.InputExecIncoming.Count && i < replacement.InputExecPins.Count; i++)
         {
-            foreach (var from in original.InputExecIncoming[i])
+            foreach (var fromRef in original.InputExecIncoming[i])
             {
+                var from = fromRef.Handle.Node.OutputExecPins[fromRef.Index];
                 var source = replacementByOriginalNode.TryGetValue(from.Node, out var replacedFrom)
-                    ? replacedFrom.OutputExecPins[from.Node.OutputExecPins.IndexOf(from)]
+                    ? replacedFrom.OutputExecPins[fromRef.Index]
                     : from;
                 GraphUtil.ConnectExecPins(source, replacement.InputExecPins[i]);
             }
@@ -479,58 +481,78 @@ public static class EditorCommands
 
         for (int i = 0; i < original.OutputExecOutgoing.Count && i < replacement.OutputExecPins.Count; i++)
         {
-            if (original.OutputExecOutgoing[i] is { } to)
+            if (original.OutputExecOutgoing[i] is { } toRef)
             {
+                var to = toRef.Handle.Node.InputExecPins[toRef.Index];
                 var target = replacementByOriginalNode.TryGetValue(to.Node, out var replacedTo)
-                    ? replacedTo.InputExecPins[to.Node.InputExecPins.IndexOf(to)]
+                    ? replacedTo.InputExecPins[toRef.Index]
                     : to;
                 GraphUtil.ConnectExecPins(replacement.OutputExecPins[i], target);
             }
         }
     }
 
+    private static NodeHandle HandleOf(Node node) => NodeHandles.GetValue(node, n => new NodeHandle(n));
+
+    /// <summary>A pin of a neighbouring node as the node's handle and the pin's index, so it resolves to the current node after an overload change.</summary>
+    private readonly record struct PinRef(NodeHandle Handle, int Index);
+
+    private static PinRef ExecOut(NodeOutputExecPin pin) => new(HandleOf(pin.Node), pin.Node.OutputExecPins.IndexOf(pin));
+
+    private static PinRef ExecIn(NodeInputExecPin pin) => new(HandleOf(pin.Node), pin.Node.InputExecPins.IndexOf(pin));
+
+    private static PinRef DataOut(NodeOutputDataPin pin) => new(HandleOf(pin.Node), pin.Node.OutputDataPins.IndexOf(pin));
+
+    private static PinRef DataIn(NodeInputDataPin pin) => new(HandleOf(pin.Node), pin.Node.InputDataPins.IndexOf(pin));
+
     /// <summary>A removed node's position, index and every pin connection, captured so <see cref="RestoreAndReconnect"/> can undo the removal exactly.</summary>
     private sealed class NodeConnectionSnapshot
     {
-        public required Node Node { get; init; }
+        public required NodeHandle Handle { get; init; }
+        public Node Node => Handle.Node;
         public required int Index { get; init; }
-        public required IReadOnlyList<IReadOnlyList<NodeOutputExecPin>> InputExecIncoming { get; init; }
-        public required IReadOnlyList<NodeInputExecPin?> OutputExecOutgoing { get; init; }
-        public required IReadOnlyList<NodeOutputDataPin?> InputDataIncoming { get; init; }
-        public required IReadOnlyList<IReadOnlyList<NodeInputDataPin>> OutputDataOutgoing { get; init; }
+        public required IReadOnlyList<IReadOnlyList<PinRef>> InputExecIncoming { get; init; }
+        public required IReadOnlyList<PinRef?> OutputExecOutgoing { get; init; }
+        public required IReadOnlyList<PinRef?> InputDataIncoming { get; init; }
+        public required IReadOnlyList<IReadOnlyList<PinRef>> OutputDataOutgoing { get; init; }
     }
 
-    /// <summary>Records every connection of <paramref name="node"/>, then disconnects and removes it.</summary>
-    private static NodeConnectionSnapshot CaptureAndDisconnect(Node node)
+    /// <summary>Records every connection of the node behind <paramref name="handle"/>, then disconnects and removes it.</summary>
+    private static NodeConnectionSnapshot CaptureAndDisconnect(NodeHandle handle)
     {
-        var snapshot = CaptureConnections(node);
+        var node = handle.Node;
+        var snapshot = CaptureConnections(handle);
         GraphUtil.DisconnectNodePins(node);
         node.Graph.Nodes.Remove(node);
         return snapshot;
     }
 
-    /// <summary>Records every connection of <paramref name="node"/> without disconnecting or removing it.</summary>
-    private static NodeConnectionSnapshot CaptureConnections(Node node) => new()
+    /// <summary>Records every connection of the node behind <paramref name="handle"/> without disconnecting or removing it.</summary>
+    private static NodeConnectionSnapshot CaptureConnections(NodeHandle handle)
     {
-        Node = node,
-        Index = node.Graph.Nodes.IndexOf(node),
-        InputExecIncoming = node.InputExecPins.Select(p => (IReadOnlyList<NodeOutputExecPin>)p.IncomingPins.ToArray()).ToArray(),
-        OutputExecOutgoing = node.OutputExecPins.Select(p => p.OutgoingPin).ToArray(),
-        InputDataIncoming = node.InputDataPins.Select(p => p.IncomingPin).ToArray(),
-        OutputDataOutgoing = node.OutputDataPins.Select(p => (IReadOnlyList<NodeInputDataPin>)p.OutgoingPins.ToArray()).ToArray(),
-    };
+        var node = handle.Node;
+        return new()
+        {
+            Handle = handle,
+            Index = node.Graph.Nodes.IndexOf(node),
+            InputExecIncoming = node.InputExecPins.Select(p => (IReadOnlyList<PinRef>)p.IncomingPins.Select(ExecOut).ToArray()).ToArray(),
+            OutputExecOutgoing = node.OutputExecPins.Select(p => p.OutgoingPin is { } to ? ExecIn(to) : (PinRef?)null).ToArray(),
+            InputDataIncoming = node.InputDataPins.Select(p => p.IncomingPin is { } from ? DataOut(from) : (PinRef?)null).ToArray(),
+            OutputDataOutgoing = node.OutputDataPins.Select(p => (IReadOnlyList<PinRef>)p.OutgoingPins.Select(DataIn).ToArray()).ToArray(),
+        };
+    }
 
     /// <summary>Reinserts a captured node at its original position and restores every recorded connection.</summary>
     private static void RestoreAndReconnect(NodeConnectionSnapshot snapshot)
     {
-        var node = snapshot.Node;
+        var node = snapshot.Handle.Node;
         node.Graph.Nodes.Insert(Math.Clamp(snapshot.Index, 0, node.Graph.Nodes.Count), node);
 
         for (int i = 0; i < snapshot.InputExecIncoming.Count; i++)
         {
             foreach (var from in snapshot.InputExecIncoming[i])
             {
-                GraphUtil.ConnectExecPins(from, node.InputExecPins[i]);
+                GraphUtil.ConnectExecPins(from.Handle.Node.OutputExecPins[from.Index], node.InputExecPins[i]);
             }
         }
 
@@ -538,7 +560,7 @@ public static class EditorCommands
         {
             if (snapshot.OutputExecOutgoing[i] is { } to)
             {
-                GraphUtil.ConnectExecPins(node.OutputExecPins[i], to);
+                GraphUtil.ConnectExecPins(node.OutputExecPins[i], to.Handle.Node.InputExecPins[to.Index]);
             }
         }
 
@@ -546,7 +568,7 @@ public static class EditorCommands
         {
             if (snapshot.InputDataIncoming[i] is { } from)
             {
-                GraphUtil.ConnectDataPins(from, node.InputDataPins[i]);
+                GraphUtil.ConnectDataPins(from.Handle.Node.OutputDataPins[from.Index], node.InputDataPins[i]);
             }
         }
 
@@ -554,7 +576,7 @@ public static class EditorCommands
         {
             foreach (var to in snapshot.OutputDataOutgoing[i])
             {
-                GraphUtil.ConnectDataPins(node.OutputDataPins[i], to);
+                GraphUtil.ConnectDataPins(node.OutputDataPins[i], to.Handle.Node.InputDataPins[to.Index]);
             }
         }
     }

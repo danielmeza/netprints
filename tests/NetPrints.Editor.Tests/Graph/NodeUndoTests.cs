@@ -64,7 +64,7 @@ public class NodeUndoTests : GraphTestBase
     }
 
     [Fact(Timeout = 60000)]
-    public async Task UndoingTheAddOfASavedClassLeavesItUnsaved()
+    public async Task UndoingTheAddOfASavedClassLeavesItSaved()
     {
         await AddIfElseAsync(new GraphPoint(0, 0));
         Assert.True(Class.IsDirty);
@@ -125,7 +125,7 @@ public class NodeUndoTests : GraphTestBase
     }
 
     [Fact(Timeout = 60000)]
-    public async Task UndoingADeleteOfASavedClassLeavesItUnsaved()
+    public async Task UndoingADeleteOfASavedClassLeavesItSaved()
     {
         IfElseNode node = await AddIfElseAsync(new GraphPoint(0, 0));
         ClassContext.UndoRedo.MarkSaved();

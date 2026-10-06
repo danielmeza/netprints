@@ -1262,3 +1262,10 @@ Both failed in one run on a runner where the cold open took 46 s.
 - #17 (`ReflectionReloadsOnOpenAndOnReferencesChange`): the first `ReflectionHost` reload binds Roslyn symbols for every static member in a background task (about 2 s on a developer machine, a cold JIT and one-time warm-up on a runner), and the test polled a counter every 20 ms for 60 s. It now awaits the host's `Reloaded` event through a `TaskCompletionSource`, with a 150 s budget per reload (more than 3x the 46 s cold open) that the failure message names together with the reloads seen. The test timeout is 400 s so the budget, not the runner's timeout, reports the failure. Same approach as #14: wait on a signal, never on a wall-clock poll.
 - #18 (`OpenHelloWorldRestoredIsWithinBudget`): SC-005 (3 s restored on a typical developer machine) is a statement about the product on a known machine; a shared runner measures its own speed (15.6 s restored open when its cold open was 46 s). The test takes the best of three restored runs and asserts a sanity bound of 45 s in the blocking legs (15x the target: only a real regression crosses it). The strict gate, 3x the target (9 s), runs when `NETPRINTS_PERF_STRICT=1`, which the non-blocking `perf` job sets. Requirement still tested: the strict bound runs on every push in `perf`; a failure there is a signal to investigate, not a merge block.
 
+
+## D-F5: node undo through handles (R6, R18)
+
+- `RemoveNodes` and the connection snapshot (used by add, remove and the local-variable commands) now hold `NodeHandle`s. The node is read from the handle at execute and undo time, so a node replaced by an overload change is the one removed and restored.
+- Neighbour pins are recorded as (handle, pin index) per pin kind and resolved at restore time, so undoing a delete reconnects to the current neighbour after its overload changed.
+- Tests: `NodeOverloadUndoTests` (the two review probes, red before the fix, plus the add then overload change ordering test, which already passed and guards it).
+- R18: renamed the two `NodeUndoTests` tests to `...LeavesItSaved` and the recover dialog test to `ClosingTheWindowAnswersLater`.
