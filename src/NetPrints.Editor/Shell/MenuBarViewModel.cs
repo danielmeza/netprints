@@ -5,7 +5,7 @@ namespace NetPrints.Editor.Shell;
 /// <summary>The menu bar generated from the registry: the menus in order, their groups separated by dividers, each entry re-queried on every command-state pulse.</summary>
 public sealed class MenuBarViewModel : IDisposable
 {
-    private static readonly string[] StandardMenus = ["File", "Edit", "View", "Go", "Build", "Help"];
+    internal static readonly string[] StandardMenus = ["File", "Edit", "View", "Go", "Build", "Help"];
 
     private readonly CommandInvoker invoker;
     private readonly List<CommandEntryViewModel> entries = [];

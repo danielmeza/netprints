@@ -494,12 +494,12 @@ SC-004 (all but navigation).
 
 ### Batch D3 — model: sonnet — T054–T058 — 6 units
 
-- [ ] T054 [US4] Undo feedback and status messages (FR-035, contracts/commands.md §3). Test first in
+- [x] T054 [US4] Undo feedback and status messages (FR-035, contracts/commands.md §3). Test first in
   `tests/NetPrints.Editor.Tests/Shell/StatusMessagesTests.cs` plus a headless menu-label test: `Undo <action>` and
   `Redo <action>` in the Edit menu and in the command bar tooltips, disabled when there is nothing to undo or redo;
   `Undid: <action>` and `Redid: <action>` for 4 s (`TimeProvider`); `Build succeeded`, `Build failed: <n> error(s)`,
   `Running…` and `Exited with code <n>`.
-- [ ] T055 [US4] Help menu (FR-036). Test first, headless: the `keyboardShortcuts` sheet
+- [x] T055 [US4] Help menu (FR-036). Test first, headless: the `keyboardShortcuts` sheet
   (`src/NetPrints.Editor/Commands/KeyboardShortcuts/`) lists every registered command with its shortcuts, grouped as in
   the menu, and its rows equal the registry's commands. `about` shows the version and the project links.
 - [ ] T056 [US3] Desktop E2E (2 units). `UnsavedChangesPromptTests`: edit, close the window, Cancel keeps it open with

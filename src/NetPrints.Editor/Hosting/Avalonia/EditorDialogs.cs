@@ -1,6 +1,7 @@
 using Avalonia.Controls;
 using NetPrints.Compilation;
 using NetPrints.Core;
+using NetPrints.Editor.Commands.KeyboardShortcuts;
 using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Lifecycle;
@@ -56,6 +57,14 @@ public sealed class EditorDialogs(Func<Window?> owner) : IEditorDialogs
     /// <inheritdoc/>
     public Task ShowIssuesAsync(string title, IReadOnlyList<CodeDiagnostic> issues) =>
         ShowAsync<object>(new IssuesDialog(title, issues));
+
+    /// <inheritdoc/>
+    public Task ShowKeyboardShortcutsAsync(KeyboardShortcutsViewModel sheet) =>
+        ShowAsync<object>(new KeyboardShortcutsDialog(sheet));
+
+    /// <inheritdoc/>
+    public Task ShowAboutAsync(AboutViewModel about) =>
+        ShowAsync<object>(new AboutDialog(about));
 
     /// <inheritdoc/>
     public Task ShowReferencesAsync(ReferenceListViewModel references) =>

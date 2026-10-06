@@ -209,6 +209,46 @@ public static class AutomationIds
     /// </summary>
     public const string ConfirmCancelButton = "Dialogs.Confirm.Cancel";
     /// <summary>
+    /// Automation id for the keyboard shortcuts dialog window itself.
+    /// </summary>
+    public const string ShortcutsDialog = "Dialogs.Shortcuts";
+    /// <summary>
+    /// Automation id for the keyboard shortcuts dialog's list of groups.
+    /// </summary>
+    public const string ShortcutsList = "Dialogs.Shortcuts.List";
+    /// <summary>
+    /// Automation id for a keyboard shortcuts group's title.
+    /// </summary>
+    public const string ShortcutsGroupTitle = "Dialogs.Shortcuts.GroupTitle";
+    /// <summary>
+    /// Automation id for a row of the keyboard shortcuts dialog.
+    /// </summary>
+    public const string ShortcutsRow = "Dialogs.Shortcuts.Row";
+    /// <summary>
+    /// Automation id for the keyboard shortcuts dialog's Close button.
+    /// </summary>
+    public const string ShortcutsCloseButton = "Dialogs.Shortcuts.Close";
+    /// <summary>
+    /// Automation id for the About dialog window itself.
+    /// </summary>
+    public const string AboutDialog = "Dialogs.About";
+    /// <summary>
+    /// Automation id for the About dialog's version text.
+    /// </summary>
+    public const string AboutVersion = "Dialogs.About.Version";
+    /// <summary>
+    /// Automation id for the About dialog's list of links.
+    /// </summary>
+    public const string AboutLinks = "Dialogs.About.Links";
+    /// <summary>
+    /// Automation id for a link of the About dialog.
+    /// </summary>
+    public const string AboutLinkRow = "Dialogs.About.Link";
+    /// <summary>
+    /// Automation id for the About dialog's Close button.
+    /// </summary>
+    public const string AboutCloseButton = "Dialogs.About.Close";
+    /// <summary>
     /// Automation id for the unsaved changes dialog window itself.
     /// </summary>
     public const string UnsavedDialog = "Dialogs.Unsaved";

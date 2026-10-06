@@ -2,6 +2,7 @@ using System.ComponentModel;
 using Microsoft.Extensions.Logging;
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
+using NetPrints.Editor.Commands.KeyboardShortcuts;
 using NetPrints.Editor.Contributions.BuiltIn;
 using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Graph;
@@ -155,6 +156,14 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
         using var references = new ReferenceListViewModel(project, context);
         await context.Dialogs.ShowReferencesAsync(references).ConfigureAwait(true);
     }
+
+    /// <inheritdoc/>
+    public Task ShowKeyboardShortcutsAsync(CancellationToken cancellationToken) =>
+        context.Dialogs.ShowKeyboardShortcutsAsync(new KeyboardShortcutsViewModel(shell.Registry));
+
+    /// <inheritdoc/>
+    public Task ShowAboutAsync(CancellationToken cancellationToken) =>
+        context.Dialogs.ShowAboutAsync(new AboutViewModel(EditorSdkVersion.Resolve(typeof(AboutViewModel).Assembly)));
 
     /// <inheritdoc/>
     public async Task NewClassAsync(CancellationToken cancellationToken)

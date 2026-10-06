@@ -7,6 +7,7 @@ using Microsoft.Reactive.Testing;
 using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
+using NetPrints.Editor.Commands.KeyboardShortcuts;
 using NetPrints.Editor.Diagnostics;
 using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Hosting;
@@ -122,6 +123,22 @@ public sealed class FakeDialogs : IEditorDialogs
         SelectMethodCalls++;
         LastMethods = methods.ToList();
         return Task.FromResult(MethodAnswer(LastMethods));
+    }
+
+    public List<KeyboardShortcutsViewModel> ShortcutSheets { get; } = [];
+
+    public List<AboutViewModel> AboutDialogs { get; } = [];
+
+    public Task ShowKeyboardShortcutsAsync(KeyboardShortcutsViewModel sheet)
+    {
+        ShortcutSheets.Add(sheet);
+        return Task.CompletedTask;
+    }
+
+    public Task ShowAboutAsync(AboutViewModel about)
+    {
+        AboutDialogs.Add(about);
+        return Task.CompletedTask;
     }
 
     public Task ShowReferencesAsync(ReferenceListViewModel references)

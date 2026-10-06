@@ -1,0 +1,44 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ed="clr-namespace:NetPrints.Editor"
+        xmlns:edks="clr-namespace:NetPrints.Editor.Commands.KeyboardShortcuts"
+        x:Class="NetPrints.Editor.Dialogs.KeyboardShortcutsDialog"
+        x:DataType="edks:KeyboardShortcutsViewModel"
+        Title="Keyboard shortcuts"
+        Icon="avares://NetPrints.Editor/Assets/NetPrintsLogo.ico"
+        Width="520" Height="560"
+        WindowStartupLocation="CenterOwner" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsDialog}">
+  <Grid RowDefinitions="*,Auto" Margin="8">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+      <ItemsControl AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsList}" ItemsSource="{Binding Groups}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="edks:ShortcutGroup">
+            <StackPanel Margin="0,0,0,8">
+              <TextBlock Text="{Binding Title}" FontWeight="SemiBold" Margin="2,4"
+                         AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsGroupTitle}" />
+              <ItemsControl ItemsSource="{Binding Rows}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="edks:ShortcutRow">
+                    <Grid ColumnDefinitions="*,Auto" Margin="12,2" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsRow}"
+                          AutomationProperties.Name="{Binding Label}">
+                      <TextBlock Text="{Binding Label}" />
+                      <TextBlock Grid.Column="1" Text="{Binding Shortcuts}" FontFamily="monospace" />
+                    </Grid>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </StackPanel>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </ScrollViewer>
+    <Button Grid.Row="1" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsCloseButton}" Content="Close" HorizontalAlignment="Right" Margin="0,8,0,0" MinWidth="80"
+            IsDefault="True" IsCancel="True">
+      <Interaction.Behaviors>
+        <ButtonClickEventTriggerBehavior>
+          <CloseWindowAction />
+        </ButtonClickEventTriggerBehavior>
+      </Interaction.Behaviors>
+    </Button>
+  </Grid>
+</Window>

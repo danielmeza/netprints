@@ -75,9 +75,9 @@ public class BuiltInCommandTableTests
         new("compile", "Compile", "Build", "build", ["F7", "Ctrl+Shift+B"], Everywhere, 2, typeof(CompileCommandHandler)),
         new("run", "Run", "Build", "run", ["F5"], Everywhere, 3, typeof(RunCommandHandler)),
         new("stop", "Stop", "Build", "run", ["Shift+F5"], Everywhere, 3, typeof(StopCommandHandler)),
-        new("keyboardShortcuts", "Keyboard shortcuts", "Help", "help", [], Everywhere, null, null),
+        new("keyboardShortcuts", "Keyboard shortcuts", "Help", "help", [], Everywhere, null, typeof(KeyboardShortcutsCommandHandler)),
         new("startPage", "Start page", "Help", "help", [], Everywhere, null, null),
-        new("about", "About NetPrints", "Help", "about", [], Everywhere, null, null),
+        new("about", "About NetPrints", "Help", "about", [], Everywhere, null, typeof(AboutCommandHandler)),
     ];
 
     /// <summary>
@@ -95,8 +95,6 @@ public class BuiltInCommandTableTests
         ["navigateForward"] = "T074",
         ["goToSource"] = "T077",
         ["goToTarget"] = "T077",
-        ["keyboardShortcuts"] = "T055",
-        ["about"] = "T055",
         ["startPage"] = "T066",
     };
 

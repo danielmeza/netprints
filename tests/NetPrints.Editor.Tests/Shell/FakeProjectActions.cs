@@ -64,6 +64,20 @@ public sealed class FakeProjectActions : IProjectActions
     }
 
     /// <inheritdoc/>
+    public Task ShowKeyboardShortcutsAsync(CancellationToken cancellationToken)
+    {
+        Calls.Add("ShowKeyboardShortcuts");
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc/>
+    public Task ShowAboutAsync(CancellationToken cancellationToken)
+    {
+        Calls.Add("ShowAbout");
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc/>
     public Task NewClassAsync(CancellationToken cancellationToken)
     {
         Calls.Add("NewClass");

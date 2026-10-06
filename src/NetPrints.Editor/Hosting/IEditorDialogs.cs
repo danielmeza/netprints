@@ -1,5 +1,6 @@
 using NetPrints.Compilation;
 using NetPrints.Core;
+using NetPrints.Editor.Commands.KeyboardShortcuts;
 using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Lifecycle;
 using NetPrints.Editor.References;
@@ -31,6 +32,14 @@ public interface IEditorDialogs
     /// <param name="extensionFolders">Full paths of the project's <c>NetPrintsExtension</c> folders.</param>
     /// <returns><see langword="true"/> to trust the project, <see langword="false"/> to open it without them.</returns>
     Task<bool> ConfirmTrustAsync(string projectPath, IReadOnlyList<string> extensionFolders);
+
+    /// <summary>Shows the keyboard shortcuts sheet until it is closed.</summary>
+    /// <param name="sheet">The commands and their shortcuts.</param>
+    Task ShowKeyboardShortcutsAsync(KeyboardShortcutsViewModel sheet);
+
+    /// <summary>Shows the About dialog until it is closed.</summary>
+    /// <param name="about">The version and the project links.</param>
+    Task ShowAboutAsync(AboutViewModel about);
 
     /// <summary>Asks the user to confirm an action that cannot be undone.</summary>
     /// <param name="title">Dialog title.</param>

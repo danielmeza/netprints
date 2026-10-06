@@ -67,6 +67,8 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
     /// <summary>Gets the registered panels, by default dock and order.</summary>
     public IReadOnlyList<PanelViewModel> Panels => panels;
 
+    internal IContributionRegistry Registry => registry;
+
     /// <summary>Gets the status bar.</summary>
     public StatusBarViewModel StatusBar { get; }
 

@@ -45,6 +45,16 @@ public interface IProjectActions
     /// <returns>A task that completes when the dialog is closed.</returns>
     Task ShowReferencesAsync(CancellationToken cancellationToken);
 
+    /// <summary>Shows the keyboard shortcuts sheet, built from the registry.</summary>
+    /// <param name="cancellationToken">Cancels the flow.</param>
+    /// <returns>A task that completes when the dialog is closed.</returns>
+    Task ShowKeyboardShortcutsAsync(CancellationToken cancellationToken);
+
+    /// <summary>Shows the About dialog: the editor version and the project links.</summary>
+    /// <param name="cancellationToken">Cancels the flow.</param>
+    /// <returns>A task that completes when the dialog is closed.</returns>
+    Task ShowAboutAsync(CancellationToken cancellationToken);
+
     /// <summary>Adds a uniquely named class to the open project.</summary>
     /// <param name="cancellationToken">Cancels the flow.</param>
     /// <returns>A task that completes when the class was added or the failure shown.</returns>

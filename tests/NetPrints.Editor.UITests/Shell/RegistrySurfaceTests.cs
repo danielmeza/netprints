@@ -6,7 +6,6 @@ using Avalonia.VisualTree;
 using Material.Icons.Avalonia;
 using NetPrints.Compilation;
 using NetPrints.Core;
-using NetPrints.Graph;
 using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Contributions.BuiltIn;
 using NetPrints.Editor.Graph;
@@ -16,6 +15,7 @@ using NetPrints.Editor.Shell;
 using NetPrints.Editor.UITests.Driving;
 using NetPrints.Editor.UITests.Hosting;
 using NetPrints.Editor.UndoRedo;
+using NetPrints.Graph;
 using NetPrints.Projects;
 using NetPrints.Testing.Ui.Driving;
 using DocumentId = NetPrints.Editor.Shell.DocumentId;
@@ -88,7 +88,7 @@ public class RegistrySurfaceTests
             Layout(rig.Open("View")).Select(Strip(MenuId)));
         Assert.Equal(Ids("compile", Separator, "run", "stop"), Layout(rig.Open("Build")).Select(Strip(MenuId)));
         Assert.Equal(Ids("nextTab", "previousTab", "closeTab"), Layout(rig.Open("Go")).Select(Strip(MenuId)));
-        Assert.Empty(rig.Open("Help"));
+        Assert.Equal(Ids("keyboardShortcuts", Separator, "about"), Layout(rig.Open("Help")).Select(Strip(MenuId)));
     }
 
     private static Func<string, string> Strip(Func<string, string> prefixOf) => id => id == Separator ? id : id.StartsWith(prefixOf(""), StringComparison.Ordinal) ? id[prefixOf("").Length..] : id;

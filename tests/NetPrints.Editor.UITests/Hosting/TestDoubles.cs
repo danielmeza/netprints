@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text;
 using NetPrints.Compilation;
 using NetPrints.Core;
+using NetPrints.Editor.Commands.KeyboardShortcuts;
 using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Hosting.Avalonia;
@@ -86,6 +87,10 @@ public sealed class RecordingDialogs : IEditorDialogs
         IssueDialogs.Add((title, issues));
         return ShowIssues?.Invoke(title, issues) ?? Task.CompletedTask;
     }
+
+    public Task ShowKeyboardShortcutsAsync(KeyboardShortcutsViewModel sheet) => Task.CompletedTask;
+
+    public Task ShowAboutAsync(AboutViewModel about) => Task.CompletedTask;
 
     public Task ShowReferencesAsync(ReferenceListViewModel references)
     {
