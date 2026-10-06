@@ -1187,3 +1187,41 @@ Decisions of batch D3b (T056, T057):
 - Product bugs: none. Harness bug: `X11Driver.KeyOf` passed `Space` to xdotool, which ignores it with a warning, so Ctrl+Space never reached the editor; it maps to `space` now. The click-then-exit helper tolerates `IOException` as well as `InvalidOperationException` after the click, since which one the settle request raises depends on timing.
 - Order: tests of existing features, written after the code; each was shown to fail against a deliberate break (see the commit messages), then the break was reverted.
 - For D-R: `UnsavedChangesPromptTests` has two facts in one class (serial); the three unload paths not covered by E2E (Ctrl+Q exit, Open project, Don't save on window close) are covered headless only.
+
+### D3c: Checkpoint D (T058)
+
+Head 4acdb0a plus the docs of this batch. Local, Debug, whole suite: 2473 tests, 2455 passed, 18 skipped, 0 failed (Core 29 s, Cli 37 s, Catalog 1 m 01 s, Editor.Tests 3 m 02 s, UITests 9 m 02 s; the Desktop E2E scenarios skip without `NETPRINTS_E2E`, they run in the CI job `Desktop E2E (Linux, Xvfb)`). The Desktop E2E project has 39 `[Fact]` methods.
+
+**SC-002: the five unload paths.** Every path asks through `ShellProjectActions.ConfirmUnloadAsync` (Open project, New project, Close project) or `ConfirmExitAsync` (window close, Exit).
+
+| Path | Tests | Level |
+|---|---|---|
+| Window close | `WindowCloseTests` (5: `CancellingThePromptKeepsTheWindowOpenWithItsChanges`, `DontSaveClosesTheWindowAfterExactlyOnePrompt`, `SaveAllSavesThenClosesTheWindow`, `ACleanProjectClosesWithoutAPrompt`, `ClosingATabNeverPrompts`); E2E `UnsavedChangesPromptTests.CancelKeepsTheWindowOpenAndSaveAllSavesAndCloses` (real window close, Cancel keeps the editor running, Save all saves and the editor exits) | headless and E2E |
+| Exit | `ProjectCommandsTests.ExitOnlyClosesTheWindowAndLeavesTheUnloadPromptToTheCloseWindowPath`; `ConfirmUnloadTests` (12: Exit with Don't save asks once across the window close and the shutdown request, Cancel then asks again, the stop-program prompt, a build in flight); `ShutdownCoordinatorTests` (declined, accepted and throwing confirmation) | headless and unit only |
+| Close project | `ProjectCommandsTests.UnloadingCommandsAskBeforeUnloadingAnOpenProject` and `DecliningTheUnloadPromptKeepsTheProject` (theory over the unloading handlers); E2E `UnsavedChangesPromptTests.CloseProjectAsksFirst` (File > Close project) | headless and E2E |
+| Open project | the same theory; `UnloadWhileDirtyTests.OpenProjectAsksFirstCancelKeepsTheProjectAndDontSaveReplacesIt` (a real shell, Open project while dirty) | headless only |
+| New project | the same theory | handler level only |
+
+The prompt itself: `UnsavedChangesDialogTests` (every button returns its choice, Enter is Save all, Esc is Cancel), `ConfirmUnloadTests` (nothing unsaved or no project never prompts; Cancel, Save all, a failed save keeps the project, Don't save writes nothing).
+
+**SC-002: recovery.** E2E `CrashRecoveryTests.RestoreAfterAKillSavesTheContentFromBeforeIt` edits, waits past the backup interval (`NETPRINTS_BACKUP_DELAY`), kills the editor, starts a second one on the same project, restores, saves with Save all and compares the saved class file with the backup file the killed editor wrote: byte-identical. Headless: `RecoveryServiceTests` (10; `SavingARestoredFileWritesTheBackedUpBytesAndDeletesTheBackup`, closing the dialog keeps the backups, an unreadable backup is reported and kept), `RecoverDialogTests`, `BackupServiceTests`, `SessionBackupsTests`, `BackupWiringTests`.
+
+**SC-003 so far.**
+- Registry against `contracts/commands.md`: `BuiltInCommandTableTests` holds 53 rows. 43 are registered and each is checked field by field (`ARegisteredCommandMatchesItsRow`: label, menu and group, gestures, scope, command bar order, handler type). `EveryRegisteredBuiltInIsARow` fails on a registered command the table lacks, `MenuEntriesFollowTheTableOrderWithinTheirGroup` and `MenuPathsAreTheSixMenus` check the menus.
+- Pending, 10 rows (`ThePendingListIsShrinkOnlyAndEachEntryIsStillPending`): `theme.dark`, `theme.light`, `theme.system` (T093), `commandPalette` (T075), `goToAnything` (T076), `navigateBack`, `navigateForward` (T074), `goToSource`, `goToTarget` (T077), `startPage` (T066).
+- Menus: every registered command with a menu appears in it (`RegistrySurfaceTests`). `openGraph` and `cancel` have no menu by design. The command palette does not exist yet, so "100% in the palette" cannot be checked until T075.
+- Conflicts: 0 built-in conflicts (`BuiltInCommandTableTests.TheBuiltInsReportNoIssues`, registry conflict rules in `ContributionRegistryTests`).
+- Shortcuts: `DefaultShortcutTests` presses every default gesture in each scope that applies (window, graph canvas, project tree) and checks it runs its command, checks single-key gestures do nothing with a text field focused (F5, F7 and Shift+F5 exempt) and `EveryFr034GestureOfARegisteredCommandIsBound` fails on an unbound FR-034 gesture. The gestures of the pending commands (palette, go to anything, back, forward) are not covered until their tasks.
+
+**SC-004 so far.** E2E `KeyboardOnlyTests.EveryCommonActionWorksWithoutTheMouse`: add a node, undo, redo, save, compile, run, stop (Shift+F5), switch and close a tab, all by key. Missing: "find a node" and "go back" (T086, they need T074 and T076).
+
+**Gaps, stated plainly.**
+1. Exit, Open project and New project are covered without an end-to-end test: headless and unit only. Don't save on window close is headless only.
+2. The SC-002 recovery E2E compares the saved file with the killed editor's backup file, not with an independent serialization of the pre-kill content; the bytes of a backup being the canonical serialization is pinned headless (D2b).
+3. FR-034 has no keyboard way to focus the project tree, so `KeyboardOnlyTests` opens Main with a double click in the tree and the class graph by key.
+4. The command palette part of SC-003, the theme commands, back and forward, go to source and target, and the start page are pending (list above).
+5. The project file is never unsaved today, so the prompt lists class files only; `NETPRINTS_BACKUP_DELAY` is the only way the E2E reaches the 30 s backup; Windows ACLs of the data folder are not restricted; the Windows and macOS legs are the only check of backup path handling.
+
+For D-R: the points above plus the D1b to D3b "For D-R" entries (stop prompt is a bool dialog, `RecoveryChoice.Later`, the restored class's undo stack has no saved mark).
+
+Docs updated: `.github/release-notes.md` (Unreleased: unsaved markers, the unload prompt, backups and recovery, the menus, the command bar, the status bar, Help, shortcuts including Stop). The guides come in sub-phase H.

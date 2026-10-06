@@ -511,7 +511,7 @@ SC-004 (all but navigation).
   command runs it where it applies, and single-key gestures never act while a text field has focus. Desktop E2E
   `KeyboardOnlyTests`: save, compile, run, stop, undo, redo, Ctrl+Tab and Ctrl+W without the mouse (T086 adds "find a
   node and go back"). SC-003 (shortcuts), SC-004 (so far).
-- [ ] T058 **Checkpoint D**: report SC-002 (the five unload paths with their tests; the recovery byte comparison),
+- [x] T058 **Checkpoint D**: report SC-002 (the five unload paths with their tests; the recovery byte comparison),
   SC-003 so far (the registry against the contract table with the pending list, 0 built-in conflicts, the
   shortcuts) and SC-004 so far. Docs updated: release notes (unsaved markers, the unload prompt, backups and recovery,
   the menus, the command bar, shortcuts, Stop).
