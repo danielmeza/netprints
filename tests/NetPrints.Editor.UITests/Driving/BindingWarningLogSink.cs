@@ -33,7 +33,6 @@ internal sealed class BindingWarningLogSink : ILogSink
         Known(AvaloniaButton, Unnamed, "ActiveDockable.DockCapabilityOverrides.CanPin", ActiveDockable, NoValue),
         Known("Avalonia.Controls.TextBlock", "Text", "ActiveDockable.Title", ActiveDockable, NoValue),
         Known(ToolChrome, "IsPinned", "ActiveDockable.OriginalOwner", ActiveDockable, NoValue),
-        Known(HostWindow, "Topmost", "Window.Topmost", "Window", NoValue),
     ];
 
     public List<BindingWarning> Warnings { get; } = [];
