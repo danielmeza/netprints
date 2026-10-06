@@ -21,7 +21,7 @@ namespace NetPrints.Tests.Core
         private const string CliWindowsWorkflow = ".github/workflows/cli-windows.yml";
         private const string AggregateJobName = "Build and test (Linux)";
 
-        private static readonly string[] NotAggregated = ["build-test", "e2e", "packages"];
+        private static readonly string[] NotAggregated = ["build-test", "e2e", "packages", "perf"];
 
         [Fact]
         public void TestMatrixCoversEveryTestProjectExactlyOnce()
@@ -119,6 +119,20 @@ namespace NetPrints.Tests.Core
             string[] conditions = [.. check.Split(" && ").Order(StringComparer.Ordinal)];
             string[] expectedConditions = [.. needs.Select(id => $"[ \"${{{{ needs.{id}.result }}}}\" = \"success\" ]").Order(StringComparer.Ordinal)];
             Assert.Equal(expectedConditions, conditions);
+        }
+
+        // Issue #18: the strict wall-clock budget is gated where a slow shared runner cannot block a merge.
+        [Fact]
+        public void ThePerformanceJobIsNonBlockingAndRunsTheStrictBudgets()
+        {
+            object? perf = Get(Jobs(), "perf");
+
+            Assert.Equal("true", Text(Get(perf, "continue-on-error")));
+            Assert.DoesNotContain("perf", Needs(Get(Jobs(), "build-test")));
+            string script = string.Join('\n', Items(Get(perf, "steps")).Select(step => Text(Get(step, "run"))));
+            Assert.Contains("Category=Performance", script, StringComparison.Ordinal);
+            object? strictStep = Items(Get(perf, "steps")).Single(step => Text(Get(step, "name")).StartsWith("Performance tests", StringComparison.Ordinal));
+            Assert.Equal("1", Text(Get(strictStep, "env", "NETPRINTS_PERF_STRICT")));
         }
 
         [Fact]

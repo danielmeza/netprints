@@ -113,6 +113,14 @@ Artifacts, uploaded even when a job fails:
 | `ui-headless` | the `editor-ui` leg | Snapshot actual and diff images, flow screenshots and per-test diagnostics. |
 | `e2e-results` | `e2e` | The `.trx` results, `ui/`, `e2e-timings-*.md` and `e2e-diagnostics/` (see [Diagnostics of a failed scenario](#diagnostics-of-a-failed-scenario)). |
 
+### `Performance budgets (non-blocking)` (the `perf` job in `ci.yml`)
+
+Runs the tests with `[Trait("Category", "Performance")]` of `tests/NetPrints.Editor.Tests` with
+`NETPRINTS_PERF_STRICT=1`, which switches `ProjectOpenPerformanceTests` from its sanity bound to the SC-005 strict gate
+(3x the spec target, best of three restored runs). It is not a required check and is not in the `build-test` aggregate.
+The blocking `Editor` leg runs the same tests with the sanity bound only, so a slow shared runner cannot fail a pull
+request, while an order-of-magnitude regression still does.
+
 ### `CLI (Windows)` (`.github/workflows/cli-windows.yml`)
 
 Builds `tests/NetPrints.Cli.Tests` and runs it on `windows-latest`, and uploads `test-results-cli-windows`. It runs on

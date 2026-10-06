@@ -184,6 +184,48 @@ jobs:
           path: TestResults/**/*.cobertura.xml
           if-no-files-found: warn
 
+  # SC-005 and SC-006 wall-clock budgets at their strict values. Not a required check and not in build-test's needs:
+  # a shared runner's speed is not something the product controls (issues #17, #18). The blocking legs run the same
+  # tests with a sanity bound.
+  perf:
+    name: Performance budgets (non-blocking)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', 'Directory.Build.props', 'src/Directory.Build.props', 'tests/Directory.Build.props', 'global.json', '**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Build
+        run: dotnet build tests/NetPrints.Editor.Tests -c Release
+
+      - name: Performance tests (strict budgets)
+        env:
+          NETPRINTS_PERF_STRICT: 1
+        run: >
+          dotnet test --project tests/NetPrints.Editor.Tests -c Release --no-build
+          --report-xunit-trx --results-directory TestResults
+          -- --filter-trait "Category=Performance"
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: test-results-perf
+          path: TestResults/**/*.trx
+          if-no-files-found: warn
+
   # The one required status check (branch protection): its name must not change. Runs even when a job it needs
   # failed or was cancelled, and fails unless every needed job succeeded.
   build-test:

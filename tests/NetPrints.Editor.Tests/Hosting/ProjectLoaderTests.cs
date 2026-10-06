@@ -198,24 +198,29 @@ public sealed class ProjectLoaderTests : IDisposable
         Assert.NotSame(first, rig.Session);
     }
 
-    [Fact(Timeout = 120000)]
+    // The first reload binds Roslyn symbols for every static member (a cold JIT and a one-time warm-up): about 2 s
+    // on a developer machine, and the cold open took 46 s on the slow CI runner of issues #17 and #18. Each wait
+    // is a signal from ReflectionHost.Reloaded, not a poll, with a budget that covers that case several times over.
+    private static readonly TimeSpan ReloadBudget = TimeSpan.FromSeconds(150);
+
+    [Fact(Timeout = 400_000)]
     public async Task ReflectionReloadsOnOpenAndOnReferencesChange()
     {
         var editor = TestEditor.Create(TestEditor.CreateReflectionHost);
-        int reloads = 0;
-        editor.Reflection.Reloaded += (_, _) => reloads++;
+        var reloads = new ReloadCounter();
+        editor.Reflection.Reloaded += (_, _) => reloads.Increment();
 
         string path = Track(TestPaths.CopyHelloWorldSample());
         ProjectRig rig = NewRig(editor.Context);
         await rig.LoadProjectAsync(path);
-        await WaitFor(() => reloads >= 1);
+        await reloads.WaitForAsync(1, ReloadBudget);
         Assert.True(editor.Reflection.NonStaticTypes.Count > 4000, "type list refreshed");
 
         var project = rig.Project;
         Assert.NotNull(project);
         using var references = new ReferenceListViewModel(project, editor.Context);
         await references.AddSourceDirectoryAsync(Path.GetDirectoryName(path) ?? "");
-        await WaitFor(() => reloads >= 2);
+        await reloads.WaitForAsync(2, ReloadBudget);
     }
 
     [Fact]
@@ -305,17 +310,51 @@ public sealed class ProjectLoaderTests : IDisposable
         public ValueTask DisposeAsync() => inner.DisposeAsync();
     }
 
-    private static async Task WaitFor(Func<bool> condition)
+    private sealed class ReloadCounter
     {
-        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(60);
-        while (!condition())
+        private readonly Lock gate = new();
+        private readonly List<(int Count, TaskCompletionSource Signal)> waiters = [];
+        private int count;
+
+        public void Increment()
         {
-            if (DateTime.UtcNow > deadline)
+            lock (gate)
             {
-                Assert.Fail("Condition not reached in time.");
+                count++;
+                foreach (var waiter in waiters.Where(w => count >= w.Count))
+                {
+                    waiter.Signal.TrySetResult();
+                }
+            }
+        }
+
+        public async Task WaitForAsync(int expected, TimeSpan budget)
+        {
+            TaskCompletionSource signal = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            lock (gate)
+            {
+                if (count >= expected)
+                {
+                    return;
+                }
+
+                waiters.Add((expected, signal));
             }
 
-            await Task.Delay(20, TestContext.Current.CancellationToken);
+            try
+            {
+                await signal.Task.WaitAsync(budget, TestContext.Current.CancellationToken);
+            }
+            catch (TimeoutException)
+            {
+                int seen;
+                lock (gate)
+                {
+                    seen = count;
+                }
+
+                Assert.Fail($"Reflection reload #{expected} was not signalled within {budget.TotalSeconds:F0} s (reloads seen: {seen}); the budget covers a cold runner several times over, so the reload is stuck or missing.");
+            }
         }
     }
 }
