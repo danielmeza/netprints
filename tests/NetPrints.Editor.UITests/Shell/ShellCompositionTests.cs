@@ -96,8 +96,8 @@ public class ShellCompositionTests
         await UiWaitAsync(app, () => app.Shell.Session is null);
 
         Assert.Null(app.Shell.Session);
-        Assert.Empty(app.Api.OpenDocuments);
-        Assert.Empty(app.Shell.Documents);
+        Assert.Equal([DocumentId.StartPage], app.Api.OpenDocuments);
+        Assert.Equal([DocumentId.StartPage], app.Shell.Documents.Select(document => document.Id));
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]

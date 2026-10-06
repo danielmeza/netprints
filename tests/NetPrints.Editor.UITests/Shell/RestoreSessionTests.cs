@@ -48,7 +48,7 @@ public class RestoreSessionTests
         Assert.True(app.Commands.TryRun(app.Command("closeProject")));
         await WaitAsync(app, () => app.Shell.Session is null);
 
-        Assert.Empty(app.Api.OpenDocuments);
+        Assert.Equal([DocumentId.StartPage], app.Api.OpenDocuments);
         SessionState saved = store.Sessions[app.ProjectPath];
         Assert.Equal([mainId.ToString(), classId.ToString()], saved.OpenDocuments);
         Assert.Equal(classId.ToString(), saved.ActiveDocument);
