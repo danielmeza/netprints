@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Core;
 using NetPrints.Editor.Contributions;
@@ -102,13 +103,13 @@ internal sealed class ShellRig : IDisposable
 
     public Window Main { get; }
 
-    public static ShellRig Create(Func<DocumentId, DocumentViewModel?>? documents = null)
+    public static ShellRig Create(Func<DocumentId, DocumentViewModel?>? documents = null, ILogger? logger = null)
     {
         var registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
         BuiltInContributions.Register(registry);
         registry.Freeze();
         var shell = new ShellViewModel(registry, new NoServices(), TimeProvider.System, new ImmediateDispatcher());
-        var adapter = new DockShellAdapter(shell, new NoProjectActions(), documents ?? (id => new TestDocumentViewModel(id, id.GraphKey ?? id.ToString())));
+        var adapter = new DockShellAdapter(shell, new NoProjectActions(), documents ?? (id => new TestDocumentViewModel(id, id.GraphKey ?? id.ToString())), logger);
         shell.Layout = adapter;
         var ui = HeadlessUi.Create();
         Window main = ui.Show(new Window { Width = Width, Height = Height, Content = new DockHost { DataContext = adapter } });

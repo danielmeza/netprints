@@ -31,6 +31,8 @@ internal sealed class ShellDockFactory : Factory
     private const double RightProportion = 0.22;
     private const double BottomProportion = 0.25;
     private const double RightUpperProportion = 0.6;
+    private const double DefaultWindowWidth = 300;
+    private const double DefaultWindowHeight = 400;
 
     private readonly IReadOnlyList<PanelViewModel> panels;
 
@@ -205,6 +207,29 @@ internal sealed class ShellDockFactory : Factory
         return pane;
     }
 
+    /// <summary>Opens a floating window around a dock, at the saved bounds.</summary>
+    /// <param name="layout">The main layout the window belongs to.</param>
+    /// <param name="dock">What the window shows.</param>
+    /// <param name="bounds">Where the window opens.</param>
+    public void AddFloatingWindow(IRootDock layout, IDockable dock, FloatingWindowDto bounds)
+    {
+        if (CreateWindowFrom(dock) is not { } window)
+        {
+            return;
+        }
+
+        AddWindow(layout, window);
+        window.X = bounds.X;
+        window.Y = bounds.Y;
+        window.Width = bounds.Width > 0 ? bounds.Width : DefaultWindowWidth;
+        window.Height = bounds.Height > 0 ? bounds.Height : DefaultWindowHeight;
+        window.Present(window.IsModal);
+        if (window.Layout is { } floating && dock is IDock { ActiveDockable: { } active })
+        {
+            SetFocusedDockable(floating, active);
+        }
+    }
+
     /// <inheritdoc/>
     public override void OnWindowClosed(IDockWindow? window)
     {
@@ -279,7 +304,7 @@ internal sealed class ShellDockFactory : Factory
         };
     }
 
-    private static ShellTool NewTool(PanelViewModel panel) => new()
+    internal static ShellTool NewTool(PanelViewModel panel) => new()
     {
         Id = panel.Id,
         Title = panel.Title,
@@ -288,7 +313,7 @@ internal sealed class ShellDockFactory : Factory
         PanelOrder = panel.Order,
     };
 
-    private IToolDock? DefaultDockOf(PanelDock place)
+    internal IToolDock? DefaultDockOf(PanelDock place)
     {
         if (MainLayout is not { } layout)
         {

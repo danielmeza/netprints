@@ -3,6 +3,9 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using Dock.Model.Controls;
 using Dock.Model.Core;
 using Dock.Model.Core.Events;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using NetPrints.Editor.State;
 
 namespace NetPrints.Editor.Shell.Docking;
 
@@ -15,19 +18,22 @@ public sealed partial class DockShellAdapter : ObservableObject, IShell, IShellL
     private readonly ShellViewModel shell;
     private readonly ShellDockFactory factory;
     private readonly Func<DocumentId, DocumentViewModel?> openDocument;
+    private readonly ILogger logger;
     private readonly Dictionary<DocumentViewModel, PropertyChangedEventHandler> titleWatchers = [];
 
     /// <summary>Creates the adapter with the default layout.</summary>
     /// <param name="shell">The shell state the layout keeps in step.</param>
     /// <param name="projectActions">The project flows.</param>
     /// <param name="openDocument">Creates the view model of a document, or null when the id names nothing that exists.</param>
-    public DockShellAdapter(ShellViewModel shell, IProjectActions projectActions, Func<DocumentId, DocumentViewModel?> openDocument)
+    /// <param name="logger">Logs a saved layout that cannot be restored; null logs nothing.</param>
+    public DockShellAdapter(ShellViewModel shell, IProjectActions projectActions, Func<DocumentId, DocumentViewModel?> openDocument, ILogger? logger = null)
     {
         ArgumentNullException.ThrowIfNull(shell);
         ArgumentNullException.ThrowIfNull(projectActions);
         ArgumentNullException.ThrowIfNull(openDocument);
         this.shell = shell;
         this.openDocument = openDocument;
+        this.logger = logger ?? NullLogger.Instance;
         ProjectActions = projectActions;
         factory = new ShellDockFactory(shell.Panels);
         Layout = NewLayout();
@@ -38,7 +44,15 @@ public sealed partial class DockShellAdapter : ObservableObject, IShell, IShellL
         factory.DockableAdded += OnPanelsMayHaveChanged;
         factory.DockableRemoved += OnPanelsMayHaveChanged;
         factory.WindowClosed += OnPanelsMayHaveChanged;
+        factory.DockableMoved += OnLayoutEvent;
+        factory.DockableDocked += OnLayoutEvent;
+        factory.DockableUndocked += OnLayoutEvent;
+        factory.WindowAdded += OnLayoutEvent;
+        factory.WindowMoveDragEnd += OnLayoutEvent;
     }
+
+    /// <summary>Raised when the layout changed in a way worth saving: a tab or panel moved, opened, closed, hidden or activated, a window came or went, or the layout was replaced.</summary>
+    internal event EventHandler? LayoutChanged;
 
     /// <inheritdoc/>
     public IProjectActions ProjectActions { get; }
@@ -198,6 +212,11 @@ public sealed partial class DockShellAdapter : ObservableObject, IShell, IShellL
         factory.DockableAdded -= OnPanelsMayHaveChanged;
         factory.DockableRemoved -= OnPanelsMayHaveChanged;
         factory.WindowClosed -= OnPanelsMayHaveChanged;
+        factory.DockableMoved -= OnLayoutEvent;
+        factory.DockableDocked -= OnLayoutEvent;
+        factory.DockableUndocked -= OnLayoutEvent;
+        factory.WindowAdded -= OnLayoutEvent;
+        factory.WindowMoveDragEnd -= OnLayoutEvent;
         foreach ((DocumentViewModel model, PropertyChangedEventHandler handler) in titleWatchers)
         {
             model.PropertyChanged -= handler;
@@ -213,6 +232,131 @@ public sealed partial class DockShellAdapter : ObservableObject, IShell, IShellL
         if (ShellDockFactory.Walk(Layout).OfType<ShellTool>().FirstOrDefault(tool => tool.Id == panelId) is { } tool && !ShellDockFactory.IsFloating(Layout, tool))
         {
             factory.FloatDockable(tool);
+        }
+    }
+
+    /// <summary>Describes the layout as it is now.</summary>
+    /// <returns>The persisted form.</returns>
+    internal DockLayoutDto CaptureLayout() => DockLayoutMapper.Capture(Layout, shell.ActiveDocument?.Id.ToString());
+
+    /// <summary>Replaces the layout by a saved one; a layout that cannot be used is logged and leaves the current one.</summary>
+    /// <param name="state">The saved state, or null for none.</param>
+    internal void RestoreLayout(LayoutState? state)
+    {
+        if (LayoutSerializer.FromState(state, logger) is not { } saved)
+        {
+            return;
+        }
+
+        try
+        {
+            ApplyLayout(saved);
+        }
+        catch (Exception exception) when (exception is InvalidOperationException or NullReferenceException or ArgumentException)
+        {
+            Log.LayoutUnusable(logger, exception, "it does not fit this editor");
+            RebuildLayout();
+        }
+    }
+
+    private void ApplyLayout(DockLayoutDto saved)
+    {
+        factory.SuppressHoming = true;
+        try
+        {
+            HashSet<DocumentId> placed = [];
+            BuiltLayout built = DockLayoutMapper.Build(factory, shell.Panels, saved, id => PlaceDocument(id, placed));
+            foreach (IDockWindow window in (Layout.Windows ?? []).ToList())
+            {
+                window.Host?.Exit();
+            }
+
+            IRootDock created = built.Root;
+            factory.MainLayout = created;
+            created.HiddenDockables = factory.CreateList<IDockable>([.. built.Hidden]);
+            factory.InitLayout(created);
+            foreach (ShellTool hidden in built.Hidden)
+            {
+                hidden.OriginalOwner = factory.DefaultDockOf(hidden.DefaultDock);
+            }
+
+            Layout = created;
+            foreach ((IDockable dock, FloatingWindowDto bounds) in built.Windows)
+            {
+                factory.AddFloatingWindow(created, dock, bounds);
+            }
+
+            DockLeftoverDocuments(placed);
+            factory.DockOrphanedPanels();
+            ActivateRestored(saved.ActiveDocument);
+            SyncPanels();
+        }
+        finally
+        {
+            factory.SuppressHoming = false;
+        }
+    }
+
+    private ShellDocument? PlaceDocument(string text, HashSet<DocumentId> placed)
+    {
+        if (!DocumentId.TryParse(text, out DocumentId id) || !placed.Add(id))
+        {
+            return null;
+        }
+
+        DocumentViewModel? model = shell.FindDocument(id);
+        if (model is null)
+        {
+            if (openDocument(id) is not { } created)
+            {
+                return null;
+            }
+
+            model = shell.AddDocument(created);
+            if (!ReferenceEquals(model, created))
+            {
+                created.Dispose();
+            }
+        }
+
+        var document = new ShellDocument { Id = id.ToString(), Title = model.Title, Context = model };
+        Unwatch(model);
+        Watch(model, document);
+        return document;
+    }
+
+    private void DockLeftoverDocuments(HashSet<DocumentId> placed)
+    {
+        foreach (DocumentViewModel model in shell.Documents.Where(model => !placed.Contains(model.Id)).ToList())
+        {
+            IDocumentDock dock = factory.FindDocumentDock() ?? factory.AddDocumentDock() ?? throw new InvalidOperationException("The layout has nowhere to put a document.");
+            var document = new ShellDocument { Id = model.Id.ToString(), Title = model.Title, Context = model };
+            Unwatch(model);
+            Watch(model, document);
+            factory.AddDockable(dock, document);
+        }
+    }
+
+    private void ActivateRestored(string? savedActive)
+    {
+        DocumentViewModel? target = DocumentId.TryParse(savedActive, out DocumentId id) ? shell.FindDocument(id) : null;
+        target ??= shell.ActiveDocument is { } current && shell.FindDocument(current.Id) is not null ? current : null;
+        target ??= shell.Documents.FirstOrDefault();
+        if (target is not null && FindDocument(target.Id) is { } document)
+        {
+            Activate(document, target);
+        }
+        else
+        {
+            shell.ActiveDocument = null;
+        }
+    }
+
+    private void Unwatch(DocumentViewModel model)
+    {
+        if (titleWatchers.Remove(model, out PropertyChangedEventHandler? old))
+        {
+            model.PropertyChanged -= old;
         }
     }
 
@@ -270,12 +414,7 @@ public sealed partial class DockShellAdapter : ObservableObject, IShell, IShellL
             foreach (DocumentViewModel model in shell.Documents)
             {
                 var document = new ShellDocument { Id = model.Id.ToString(), Title = model.Title, Context = model };
-                titleWatchers.Remove(model, out PropertyChangedEventHandler? old);
-                if (old is not null)
-                {
-                    model.PropertyChanged -= old;
-                }
-
+                Unwatch(model);
                 Watch(model, document);
                 if (dock is not null)
                 {
@@ -307,10 +446,14 @@ public sealed partial class DockShellAdapter : ObservableObject, IShell, IShellL
         }
 
         shell.NotifyLayoutChanged();
+        LayoutChanged?.Invoke(this, EventArgs.Empty);
     }
+
+    private void OnLayoutEvent(object? sender, EventArgs e) => LayoutChanged?.Invoke(this, EventArgs.Empty);
 
     private void OnActiveDockableChanged(object? sender, ActiveDockableChangedEventArgs e)
     {
+        LayoutChanged?.Invoke(this, EventArgs.Empty);
         if (e.Dockable is ShellDocument { Context: DocumentViewModel model } && shell.FindDocument(model.Id) is not null)
         {
             shell.ActiveDocument = model;
@@ -321,9 +464,9 @@ public sealed partial class DockShellAdapter : ObservableObject, IShell, IShellL
     {
         if (e.Dockable is ShellDocument document && DocumentId.TryParse(document.Id, out DocumentId id) && !factory.SuppressHoming)
         {
-            if (shell.FindDocument(id) is { } model && titleWatchers.Remove(model, out PropertyChangedEventHandler? handler))
+            if (shell.FindDocument(id) is { } model)
             {
-                model.PropertyChanged -= handler;
+                Unwatch(model);
             }
 
             shell.RemoveDocument(id);

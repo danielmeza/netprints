@@ -560,7 +560,7 @@ the window, the layout and each project's session, with safe fallbacks (FR-050�
 
 ### Batch E2 — model: sonnet — T064–T065 — 4 units
 
-- [ ] T064 [US6] Layout persistence (2 units). Test first: `tests/NetPrints.Editor.UITests/Shell/DockLayoutRoundTripTests.cs`.
+- [x] T064 [US6] Layout persistence (2 units). Test first: `tests/NetPrints.Editor.UITests/Shell/DockLayoutRoundTripTests.cs`.
   Save and restore through the ADR-0018 envelope (`schemaVersion`, `engine`, `dockLayout`), where `dockLayout` is the
   NetPrints-owned DTO tree (dock kind, id, proportion, active and visible flags, children; floating windows with their
   bounds; hidden panel ids) written through a source-generated `JsonSerializerContext` inside `Shell/Docking/`, never
