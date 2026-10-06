@@ -23,6 +23,8 @@ namespace NetPrints.Editor.Shell;
 /// </summary>
 public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
 {
+    private const string BuildSucceededText = "Build succeeded";
+
     private readonly EditorContext context;
     private readonly Dictionary<ClassGraph, UndoRedoStack> undoStacks = [];
     private readonly Dictionary<ClassGraph, string> classPaths = [];
@@ -34,6 +36,7 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
     private bool wasRunning;
     private bool building;
     private EventHandler? commandStatesChanged;
+    private EventHandler<SessionStatus>? statusReported;
 
     /// <summary>Creates the session of <paramref name="project"/>.</summary>
     /// <param name="project">The open project.</param>
@@ -75,6 +78,13 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
     {
         add => commandStatesChanged += value;
         remove => commandStatesChanged -= value;
+    }
+
+    /// <summary>Raised, on the UI thread, when an undo, a redo, a build or the program has something to say in the status bar.</summary>
+    public event EventHandler<SessionStatus>? StatusReported
+    {
+        add => statusReported += value;
+        remove => statusReported -= value;
     }
 
     /// <summary>Raised, on the UI thread, when a member asks for one of the class's graphs to be opened (a variable's getter, setter or type graph).</summary>
@@ -181,6 +191,38 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
         return StartSaveAsync(cls);
     }
 
+    /// <summary>Undoes the last command of a class and reports <c>Undid: &lt;action&gt;</c>.</summary>
+    /// <param name="cls">A class of the project.</param>
+    /// <returns>Whether a command was undone.</returns>
+    public bool Undo(ClassGraph cls)
+    {
+        UndoRedoStack stack = UndoStackFor(cls);
+        string? name = stack.UndoName;
+        bool undone = stack.Undo();
+        if (undone)
+        {
+            Report($"Undid: {name}", SessionStatus.TransientLifetime);
+        }
+
+        return undone;
+    }
+
+    /// <summary>Redoes the last undone command of a class and reports <c>Redid: &lt;action&gt;</c>.</summary>
+    /// <param name="cls">A class of the project.</param>
+    /// <returns>Whether a command was redone.</returns>
+    public bool Redo(ClassGraph cls)
+    {
+        UndoRedoStack stack = UndoStackFor(cls);
+        string? name = stack.RedoName;
+        bool redone = stack.Redo();
+        if (redone)
+        {
+            Report($"Redid: {name}", SessionStatus.TransientLifetime);
+        }
+
+        return redone;
+    }
+
     /// <summary>Raised, on the UI thread, after every edit, undo or redo that leaves a class unsaved, with that class.</summary>
     public event EventHandler<ClassGraph>? ClassEdited;
 
@@ -262,7 +304,7 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
         try
         {
             await WaitForSaveAsync().ConfigureAwait(true);
-            return await BuildAsync(Project, context).ConfigureAwait(true);
+            return await BuildAsync().ConfigureAwait(true);
         }
         finally
         {
@@ -278,7 +320,7 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
             await WaitForSaveAsync().ConfigureAwait(true);
             runCancellation?.Dispose();
             runCancellation = new CancellationTokenSource();
-            return await BuildAndStartAsync(Project, context, runCancellation.Token).ConfigureAwait(true);
+            return await BuildAndStartAsync(runCancellation.Token).ConfigureAwait(true);
         }
         finally
         {
@@ -294,6 +336,8 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
     }
 
     private void RaiseCommandStatesChanged() => commandStatesChanged?.Invoke(this, EventArgs.Empty);
+
+    private void Report(string text, TimeSpan? expiry = null) => statusReported?.Invoke(this, new SessionStatus(text, expiry));
 
     private void OnUndoChanged(object? sender, EventArgs e) => RaiseCommandStatesChanged();
 
@@ -341,11 +385,10 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
     /// A class that cannot be translated while saving is reported as a build error; any other
     /// failure is shown through <see cref="IEditorDialogs.ShowErrorAsync"/>.
     /// </summary>
-    /// <param name="project">The project to build.</param>
-    /// <param name="context">Host services.</param>
     /// <returns>Whether the build succeeded.</returns>
-    private static async Task<bool> BuildAsync(Project project, EditorContext context)
+    private async Task<bool> BuildAsync()
     {
+        Project project = Project;
         project.IsCompiling = true;
         project.CompilationMessage = "Compiling...";
         context.RunState.BuildStarted();
@@ -354,14 +397,14 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
             await context.Persistence.SaveAsync(project, cls => RenderForBuild(context, project, cls), CancellationToken.None);
             BuildResult result = await context.Projects.BuildAsync(project.Path, CancellationToken.None);
             var classesByGeneratedPath = BuildClassesByGeneratedPath(context, project);
-            SetBuildOutcome(project, DiagnosticMapper.FromBuild(result.Messages, classesByGeneratedPath), result.Success, result.OutputAssemblyPath);
+            ReportBuild(result.Success, SetBuildOutcome(project, DiagnosticMapper.FromBuild(result.Messages, classesByGeneratedPath), result.Success, result.OutputAssemblyPath));
             return result.Success;
         }
         catch (ClassTranslationFailure failure)
         {
             var diagnostic = new CodeDiagnostic(CodeDiagnosticSeverity.Error, TranslationDiagnosticCodes.Unclassified,
                 $"{failure.Class.FullName}: {failure.Message}", failure.Class.FullName, null, null, null, null);
-            SetBuildOutcome(project, [diagnostic], false, null);
+            ReportBuild(false, SetBuildOutcome(project, [diagnostic], false, null));
             return false;
         }
         catch (Exception ex)
@@ -379,22 +422,20 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// Compiles a project and starts the compiled program on success, unless the token was cancelled meanwhile.
+    /// Compiles the project and starts the compiled program on success, unless the token was cancelled meanwhile.
     /// </summary>
-    /// <param name="project">The project to run.</param>
-    /// <param name="context">Host services.</param>
     /// <param name="cancellationToken">Cancelling it kills the started program.</param>
     /// <returns>Whether the program was started.</returns>
-    private static async Task<bool> BuildAndStartAsync(Project project, EditorContext context, CancellationToken cancellationToken = default)
+    private async Task<bool> BuildAndStartAsync(CancellationToken cancellationToken = default)
     {
-        if (!await BuildAsync(project, context) || cancellationToken.IsCancellationRequested)
+        if (!await BuildAsync() || cancellationToken.IsCancellationRequested)
         {
             return false;
         }
 
         try
         {
-            ProcessStartRequest request = context.Projects.GetRunCommand(project.Path);
+            ProcessStartRequest request = context.Projects.GetRunCommand(Project.Path);
             context.Processes.Start(request, cancellationToken);
             return true;
         }
@@ -405,6 +446,8 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
         }
     }
 
+    private void ReportBuild(bool success, int errors) => Report(success ? BuildSucceededText : $"Build failed: {errors} error(s)");
+
     private void OnRunPhaseChanged(object? sender, EventArgs e) => context.Dispatcher.Post(() =>
     {
         bool running = IsRunning;
@@ -413,8 +456,21 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
             wasRunning = running;
             OnPropertyChanged(nameof(IsRunning));
             RaiseCommandStatesChanged();
+            ReportRunPhase(running);
         }
     });
+
+    private void ReportRunPhase(bool running)
+    {
+        if (running)
+        {
+            Report("Running…");
+        }
+        else if (context.RunState.Snapshot() is { Phase: RunPhase.Exited, ExitCode: { } code })
+        {
+            Report($"Exited with code {code}");
+        }
+    }
 
     private Task WaitForSaveAsync() => saving is { IsCompleted: false } current ? current : Task.CompletedTask;
 
@@ -507,14 +563,14 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
         return classesByGeneratedPath;
     }
 
-    private static void SetBuildOutcome(Project project, IReadOnlyList<CodeDiagnostic> diagnostics, bool success, string? assemblyPath)
+    private static int SetBuildOutcome(Project project, IReadOnlyList<CodeDiagnostic> diagnostics, bool success, string? assemblyPath)
     {
+        int errors = diagnostics.Count(d => d.Severity == CodeDiagnosticSeverity.Error);
         project.LastDiagnostics = new ObservableRangeCollection<CodeDiagnostic>(diagnostics);
         project.LastCompilationSucceeded = success;
         project.LastCompiledAssemblyPath = success ? assemblyPath : null;
-        project.CompilationMessage = success
-            ? "Build succeeded"
-            : $"Build failed with {diagnostics.Count(d => d.Severity == CodeDiagnosticSeverity.Error)} error(s)";
+        project.CompilationMessage = success ? BuildSucceededText : $"Build failed with {errors} error(s)";
+        return errors;
     }
 
     private static string RenderForBuild(EditorContext context, Project project, ClassGraph cls)

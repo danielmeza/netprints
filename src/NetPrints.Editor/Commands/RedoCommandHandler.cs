@@ -15,7 +15,11 @@ public sealed class RedoCommandHandler : ICommandHandler
     /// <inheritdoc/>
     public Task ExecuteAsync(CommandContext context, CancellationToken cancellationToken)
     {
-        UndoCommandHandler.StackOf(context)?.Redo();
+        if (UndoCommandHandler.ClassOf(context) is { } cls)
+        {
+            context.Session?.Redo(cls);
+        }
+
         return Task.CompletedTask;
     }
 }

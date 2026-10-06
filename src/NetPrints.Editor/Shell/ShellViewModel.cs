@@ -16,7 +16,6 @@ namespace NetPrints.Editor.Shell;
 /// </summary>
 public sealed partial class ShellViewModel : ObservableObject, ICommandStateSource, IDisposable
 {
-    private static readonly TimeSpan SavedStatusDuration = TimeSpan.FromSeconds(4);
 
     private readonly IContributionRegistry registry;
     private readonly List<PanelViewModel> panels;
@@ -209,6 +208,7 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
         {
             followedSession.CommandStatesChanged -= OnSessionPulse;
             followedSession.Saved -= OnSessionSaved;
+            followedSession.StatusReported -= OnSessionStatus;
         }
 
         if (followedProject is not null)
@@ -222,6 +222,7 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
         {
             newValue.CommandStatesChanged += OnSessionPulse;
             newValue.Saved += OnSessionSaved;
+            newValue.StatusReported += OnSessionStatus;
             newValue.Project.PropertyChanged += OnProjectChanged;
         }
 
@@ -261,6 +262,7 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
         {
             followedSession.CommandStatesChanged -= OnSessionPulse;
             followedSession.Saved -= OnSessionSaved;
+            followedSession.StatusReported -= OnSessionStatus;
             followedSession = null;
         }
 
@@ -271,7 +273,9 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
         }
     }
 
-    private void OnSessionSaved(object? sender, int files) => ShowStatus($"Saved {files} file(s)", SavedStatusDuration);
+    private void OnSessionSaved(object? sender, int files) => ShowStatus($"Saved {files} file(s)", SessionStatus.TransientLifetime);
+
+    private void OnSessionStatus(object? sender, SessionStatus status) => ShowStatus(status.Text, status.Expiry);
 
     private void OnSessionPulse(object? sender, EventArgs e)
     {

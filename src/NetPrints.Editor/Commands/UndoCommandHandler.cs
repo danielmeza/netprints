@@ -1,3 +1,4 @@
+using NetPrints.Core;
 using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.UndoRedo;
@@ -16,12 +17,17 @@ public sealed class UndoCommandHandler : ICommandHandler
     /// <inheritdoc/>
     public Task ExecuteAsync(CommandContext context, CancellationToken cancellationToken)
     {
-        StackOf(context)?.Undo();
+        if (ClassOf(context) is { } cls)
+        {
+            context.Session?.Undo(cls);
+        }
+
         return Task.CompletedTask;
     }
 
+    internal static ClassGraph? ClassOf(CommandContext context) =>
+        CommandTargets.ActiveDocumentClass(context) ?? CommandTargets.TreeSelectionClass(context);
+
     internal static UndoRedoStack? StackOf(CommandContext context) =>
-        (CommandTargets.ActiveDocumentClass(context) ?? CommandTargets.TreeSelectionClass(context)) is { } cls
-            ? context.Session?.UndoStackFor(cls)
-            : null;
+        ClassOf(context) is { } cls ? context.Session?.UndoStackFor(cls) : null;
 }
