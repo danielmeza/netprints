@@ -20,11 +20,10 @@ internal sealed class BindingWarningLogSink : ILogSink
     private const string Unnamed = "(unknown)";
     private const string AvaloniaButton = "Avalonia.Controls.Button";
     private const string ToolChrome = "Dock.Avalonia.Controls.ToolChromeControl";
-    private const string HostWindow = "Dock.Avalonia.Controls.HostWindow";
     private const string ActiveDockable = "ActiveDockable";
 
-    /// <summary>The warnings Dock's own templates log for a floating window and for an emptied tool dock: <c>ActiveDockable</c> or
-    /// <c>FocusedDockable</c> is null until a pane is shown. Each is matched by source type and exact message, so any other warning stays unexplained.</summary>
+    /// <summary>The warnings Dock's own templates log for the tool dock a float empties: its <c>ActiveDockable</c> is null, and making the
+    /// dock collapsable does not stop them. Each is matched by source type and exact message, so any other warning stays unexplained.</summary>
     private static readonly HashSet<BindingWarning> DockOwnWarnings =
     [
         Known(AvaloniaButton, Unnamed, "ActiveDockable.CanClose", ActiveDockable, NoValue),
