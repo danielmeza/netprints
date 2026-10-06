@@ -5,6 +5,9 @@ namespace NetPrints.Editor.Contributions.BuiltIn;
 /// <summary>The built-in commands of the Edit menu (contracts/commands.md section 1).</summary>
 public static class EditContributions
 {
+    /// <summary>The name, without the command prefix, of the <c>addVariable</c> command that panels run through the invoker.</summary>
+    public const string AddVariableName = "addVariable";
+
     private const string MenuName = "Edit";
     private const string HistoryGroup = "history";
     private const string SelectionGroup = "selection";
@@ -117,7 +120,7 @@ public static class EditContributions
             CommandBarOrder: null));
 
         registry.AddCommand(new CommandDescriptor(
-            ContributionIds.CommandPrefix + "addVariable",
+            ContributionIds.CommandPrefix + AddVariableName,
             "Add variable",
             new AddVariableCommandHandler(),
             IconKind: null,

@@ -26,7 +26,7 @@ public sealed partial class VariablesPanelViewModel : ObservableObject, IDisposa
     /// </summary>
     /// <param name="services">Narrow services shared with the owning class (FR-038).</param>
     /// <param name="classVariables">View models for the class's variables (the "Class" group).</param>
-    /// <param name="createVariable">Adds a variable to the class (undoable); run by <see cref="CreateVariableCommand"/>.</param>
+    /// <param name="createVariable">Adds a variable to the class; run by <see cref="CreateVariableCommand"/>.</param>
     /// <param name="selectVariable">Called when a variable row asks for its inspector; <see langword="null"/> ignores the request.</param>
     public VariablesPanelViewModel(
         ClassEditorServices services,

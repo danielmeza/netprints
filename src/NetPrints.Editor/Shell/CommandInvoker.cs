@@ -40,7 +40,7 @@ public sealed class CommandInvoker(IContributionRegistry registry, ICommandConte
     /// <summary>Gets whether a command's handler is enabled for a context built now.</summary>
     /// <param name="command">The command.</param>
     /// <param name="scope">The scope the invocation would come from.</param>
-    /// <returns><see langword="true"/> when <see cref="TryRun"/> would start it.</returns>
+    /// <returns><see langword="true"/> when <see cref="TryRun(CommandDescriptor, CommandScope)"/> would start it.</returns>
     public bool CanRun(CommandDescriptor command, CommandScope scope = CommandScope.Global)
     {
         ArgumentNullException.ThrowIfNull(command);
@@ -67,6 +67,17 @@ public sealed class CommandInvoker(IContributionRegistry registry, ICommandConte
 
         RunAsync(command, context).Forget(onFaulted);
         return true;
+    }
+
+    /// <summary>Runs the registered command with the given name, if its handler is enabled for a context built now.</summary>
+    /// <param name="commandName">The command's name without <see cref="ContributionIds.CommandPrefix"/>.</param>
+    /// <param name="scope">The scope the invocation comes from.</param>
+    /// <returns><see langword="true"/> when the command was started, <see langword="false"/> when it is unknown or disabled.</returns>
+    public bool TryRun(string commandName, CommandScope scope = CommandScope.Global)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(commandName);
+        CommandDescriptor? command = registry.Commands.FirstOrDefault(c => c.Id == ContributionIds.CommandPrefix + commandName);
+        return command is not null && TryRun(command, scope);
     }
 
     private static async Task RunAsync(CommandDescriptor command, CommandContext context) =>

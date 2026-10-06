@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using NetPrints.Core;
+using NetPrints.Editor.Contributions.BuiltIn;
 using NetPrints.Editor.Shell;
 
 namespace NetPrints.Editor.Variables;
@@ -17,7 +18,7 @@ public sealed class ShellVariablesPanelViewModel : ActiveClassPanelViewModel<Var
         ProjectSessionViewModel session = context.Shell.Session
             ?? throw new InvalidOperationException("A variables panel item is created only while a project is open.");
         ClassContext classContext = session.ContextFor(cls);
-        return new VariablesPanelViewModel(classContext.Services, classContext.Variables, classContext.CreateVariable, variable => context.Shell.TreeSelection = variable);
+        return new VariablesPanelViewModel(classContext.Services, classContext.Variables, () => context.Commands.TryRun(EditContributions.AddVariableName), variable => context.Shell.TreeSelection = variable);
     }
 
     /// <inheritdoc/>

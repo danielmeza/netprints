@@ -50,7 +50,7 @@ public sealed class VariablesShellPanelTests : IAsyncDisposable
         VariablesPanelViewModel panel = Assert.IsType<VariablesPanelViewModel>(rig.Variables.Current);
         int before = cls.Variables.Count;
 
-        panel.CreateVariableCommand.Execute(null);
+        session.ContextFor(cls).CreateVariable();
 
         Assert.Equal(before + 1, cls.Variables.Count);
         MemberVariableViewModel added = panel.ClassVariables[^1];
@@ -108,10 +108,24 @@ public sealed class VariablesShellPanelTests : IAsyncDisposable
         (ProjectSessionViewModel session, ClassGraph cls, _) = await OpenWithMethodAsync();
         Activate(rig.Shell, DocumentId.Graph(session.ClassPathOf(cls), DocumentId.ClassGraphKey));
         VariablesPanelViewModel panel = Assert.IsType<VariablesPanelViewModel>(rig.Variables.Current);
-        panel.CreateVariableCommand.Execute(null);
+        session.ContextFor(cls).CreateVariable();
 
         panel.ClassVariables[^1].SelectCommand.Execute(null);
 
         Assert.Same(cls.Variables[^1], rig.Shell.TreeSelection);
+    }
+
+    [Fact]
+    public async Task TheAddVariableButtonRunsTheRegistryCommandThroughTheInvoker()
+    {
+        (ProjectSessionViewModel session, ClassGraph cls, _) = await OpenWithMethodAsync();
+        Activate(rig.Shell, DocumentId.Graph(session.ClassPathOf(cls), DocumentId.ClassGraphKey));
+        VariablesPanelViewModel panel = Assert.IsType<VariablesPanelViewModel>(rig.Variables.Current);
+
+        panel.CreateVariableCommand.Execute(null);
+        Assert.Empty(rig.Faults);
+
+        Assert.Equal(["AddVariable"], rig.Api.Project.Calls);
+        Assert.Same(cls, rig.Api.Project.LastClass);
     }
 }

@@ -30,7 +30,7 @@ public static class TreeContributions
             Menu: null,
             CommandBarOrder: null));
 
-        AddItems(registry, ContextMenuTarget.TreeClass, "class", [OpenGraphName, RenameName, "addMethod", "addConstructor", "addVariable", "addEventGraph", "overrideMethod", "classSettings", DeleteName]);
+        AddItems(registry, ContextMenuTarget.TreeClass, "class", [OpenGraphName, RenameName, "addMethod", "addConstructor", EditContributions.AddVariableName, "addEventGraph", "overrideMethod", "classSettings", DeleteName]);
         AddItems(registry, ContextMenuTarget.TreeMember, "member", [OpenGraphName, RenameName, DeleteName]);
         AddItems(registry, ContextMenuTarget.TreeEventGraph, "eventGraph", [OpenGraphName, RenameName, DeleteName]);
     }
