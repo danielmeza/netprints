@@ -283,6 +283,79 @@ public sealed class ProjectSessionViewModelTests : IAsyncDisposable
     }
 
     [Fact(Timeout = 30000)]
+    public async Task UndoAfterACompileLeavesTheClassUnsavedBecauseTheFileHoldsTheEdit()
+    {
+        Project project = await LoadSampleAsync();
+        using var session = new ProjectSessionViewModel(project, editor.Context);
+        ClassGraph cls = project.Classes.Single();
+        ClassContext context = session.ContextFor(cls);
+        context.CreateVariable();
+
+        Assert.True(await session.CompileAsync().WaitAsync(Bound, TestContext.Current.CancellationToken));
+        Assert.False(session.Unsaved.IsUnsaved(cls), "the compile saved the class");
+        context.UndoRedo.Undo();
+
+        Assert.True(session.Unsaved.IsUnsaved(cls), "the file on disk still holds the undone variable");
+    }
+
+    [Fact(Timeout = 30000)]
+    public async Task UndoAfterARunLeavesTheClassUnsavedBecauseTheFileHoldsTheEdit()
+    {
+        Project project = await LoadSampleAsync();
+        using var session = new ProjectSessionViewModel(project, editor.Context);
+        ClassGraph cls = project.Classes.Single();
+        ClassContext context = session.ContextFor(cls);
+        context.CreateVariable();
+
+        Assert.True(await session.RunAsync().WaitAsync(Bound, TestContext.Current.CancellationToken));
+        context.UndoRedo.Undo();
+
+        Assert.True(session.Unsaved.IsUnsaved(cls));
+    }
+
+    [Fact(Timeout = 30000)]
+    public async Task AnEditMadeWhileTheSaveWritesStaysUnsaved()
+    {
+        var (session, stores, _) = await GatedSessionAsync();
+        using (session)
+        {
+            ClassGraph cls = session.Project.Classes.Single();
+            ClassContext context = session.ContextFor(cls);
+            File.Delete(session.Project.GetGraphFilePath(cls));
+            context.CreateVariable();
+            Task<bool> save = session.SaveAsync(cls);
+            await stores.Single().FirstWriteStarted.WaitAsync(Bound, TestContext.Current.CancellationToken);
+            context.CreateVariable();
+            stores.ForEach(store => store.Release());
+
+            Assert.True(await save.WaitAsync(Bound, TestContext.Current.CancellationToken));
+
+            Assert.True(session.Unsaved.IsUnsaved(cls), "the second variable is not in the saved file");
+        }
+    }
+
+    [Fact(Timeout = 30000)]
+    public async Task AnEditMadeWhileACompileSavesStaysUnsaved()
+    {
+        var (session, stores, _) = await GatedSessionAsync();
+        using (session)
+        {
+            ClassGraph cls = session.Project.Classes.Single();
+            ClassContext context = session.ContextFor(cls);
+            File.Delete(session.Project.GetGraphFilePath(cls));
+            context.CreateVariable();
+            Task<bool> compile = session.CompileAsync();
+            await stores.Single().FirstWriteStarted.WaitAsync(Bound, TestContext.Current.CancellationToken);
+            context.CreateVariable();
+            stores.ForEach(store => store.Release());
+
+            Assert.True(await compile.WaitAsync(Bound, TestContext.Current.CancellationToken));
+
+            Assert.True(session.Unsaved.IsUnsaved(cls));
+        }
+    }
+
+    [Fact(Timeout = 30000)]
     public async Task ASaveRequestedDuringASaveRunsOnceMoreAndWritesTheLaterEdit()
     {
         var (session, stores, _) = await GatedSessionAsync();

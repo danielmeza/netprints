@@ -240,6 +240,7 @@ public sealed class ProjectPersistence
 
             cls.EnsureUniqueMemberIds();
 
+            long editVersion = cls.EditVersion;
             string graphPath = project.GetGraphFilePath(cls);
             ClassDocument document = current.Mapper.ToDocument(cls);
             byte[] graphBytes = await RenderAsync(
@@ -278,7 +279,7 @@ public sealed class ProjectPersistence
                     $"{cls.FullName}: {ex.Message}", cls.FullName, null, null, null, null));
             }
 
-            cls.MarkClean();
+            cls.MarkCleanIfUnchanged(editVersion);
         }
 
         return new ProjectSaveResult(written, diagnostics);

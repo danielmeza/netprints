@@ -102,6 +102,17 @@ public sealed class StatusMessagesTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ABuildThatThrowsSaysBuildFailed()
+    {
+        (ShellViewModel shell, _, ShellCommandContextProvider contexts) = await OpenAsync();
+        editor.Projects.BuildResultFactory = _ => throw new InvalidOperationException("boom");
+
+        await RunAsync(new CompileCommandHandler(), contexts);
+
+        Assert.Equal("Build failed", shell.StatusMessage);
+    }
+
+    [Fact]
     public async Task RunningTheProgramSaysRunningThenTheExitCode()
     {
         (ShellViewModel shell, _, ShellCommandContextProvider contexts) = await OpenAsync();

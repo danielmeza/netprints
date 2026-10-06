@@ -394,7 +394,9 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
         context.RunState.BuildStarted();
         try
         {
-            await context.Persistence.SaveAsync(project, cls => RenderForBuild(context, project, cls), CancellationToken.None);
+            int unsavedFiles = Unsaved.CountUnsaved(null);
+            await SaveClassesAsync(project.Classes, cls => RenderForBuild(context, project, cls)).ConfigureAwait(true);
+            Saved?.Invoke(this, unsavedFiles);
             BuildResult result = await context.Projects.BuildAsync(project.Path, CancellationToken.None);
             var classesByGeneratedPath = BuildClassesByGeneratedPath(context, project);
             ReportBuild(result.Success, SetBuildOutcome(project, DiagnosticMapper.FromBuild(result.Messages, classesByGeneratedPath), result.Success, result.OutputAssemblyPath));
@@ -411,6 +413,7 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
         {
             project.LastCompilationSucceeded = false;
             project.CompilationMessage = "Build failed";
+            Report("Build failed");
             await context.Dialogs.ShowErrorAsync("Failed to build project", ex.ToString());
             return false;
         }
@@ -512,10 +515,9 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
     private async Task<bool> SaveOnceAsync(ClassGraph? only)
     {
         IReadOnlyCollection<ClassGraph> classes = only is null ? Project.Classes : [only];
-        var points = undoStacks.Where(pair => only is null || pair.Key == only).Select(pair => (pair.Value, Point: pair.Value.CapturePosition())).ToList();
         try
         {
-            ProjectSaveResult result = await context.Persistence.SaveAsync(Project, classes, cls => RenderGenerated(context, Project, cls), CancellationToken.None);
+            ProjectSaveResult result = await SaveClassesAsync(classes, cls => RenderGenerated(context, Project, cls)).ConfigureAwait(true);
             if (only is null)
             {
                 Unsaved.ClearProjectChangePending();
@@ -526,7 +528,6 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
                 Project.LastDiagnostics = new ObservableRangeCollection<CodeDiagnostic>(result.Diagnostics);
             }
 
-            points.ForEach(entry => entry.Value.MarkSaved(entry.Point));
             return true;
         }
         catch (Exception ex)
@@ -534,6 +535,18 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
             await context.Dialogs.ShowErrorAsync("Failed to save project", ex.ToString());
             return false;
         }
+    }
+
+    /// <summary>
+    /// The one path every save takes: captures each class's undo position before writing and, once the write succeeds,
+    /// moves the stack's saved marker there. <see cref="ProjectPersistence"/> marks a class clean only if it was not edited meanwhile.
+    /// </summary>
+    private async Task<ProjectSaveResult> SaveClassesAsync(IReadOnlyCollection<ClassGraph> classes, Func<ClassGraph, string> render)
+    {
+        var points = undoStacks.Where(pair => classes.Contains(pair.Key)).Select(pair => (pair.Value, Point: pair.Value.CapturePosition())).ToList();
+        ProjectSaveResult result = await context.Persistence.SaveAsync(Project, classes, render, CancellationToken.None).ConfigureAwait(true);
+        points.ForEach(entry => entry.Value.MarkSaved(entry.Point));
+        return result;
     }
 
     /// <summary>Renders a class's generated C# file the same way a build would (project-system.md §3).</summary>

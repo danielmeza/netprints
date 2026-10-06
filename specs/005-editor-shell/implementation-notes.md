@@ -1225,3 +1225,9 @@ The prompt itself: `UnsavedChangesDialogTests` (every button returns its choice,
 For D-R: the points above plus the D1b to D3b "For D-R" entries (stop prompt is a bool dialog, `RecoveryChoice.Later`, the restored class's undo stack has no saved mark).
 
 Docs updated: `.github/release-notes.md` (Unreleased: unsaved markers, the unload prompt, backups and recovery, the menus, the command bar, the status bar, Help, shortcuts including Stop). The guides come in sub-phase H.
+
+### D-F1 (review D: R1, R5, R17)
+
+- Every save, explicit or done by a build or run, goes through `ProjectSessionViewModel.SaveClassesAsync`: it captures each class's undo position before writing and moves the stack's saved marker there after a successful write. The build used to call `ProjectPersistence.SaveAsync` directly, so an undo could land on a stale marker and mark the class saved while the file held the undone edit (R1).
+- `ClassGraph` counts edits (`EditVersion`, bumped by `MarkDirty`, internal). `ProjectPersistence.SaveAsync` reads it before mapping the class and calls `MarkCleanIfUnchanged`, so an edit made while the save writes keeps the class dirty and its backup (R5). No public API added.
+- A build that throws reports "Build failed" on the status bar as well as the dialog (R17).
