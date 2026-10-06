@@ -28,11 +28,15 @@ public sealed class EditorComposition : IDisposable
     public EditorComposition(EditorHostServices host)
     {
         var windows = new WindowService();
+        EditorDataPaths paths = EditorDataPaths.Resolve();
+        var fileSystem = new RealEditorFileSystem();
+        var stateStore = new JsonEditorStateStore(paths, fileSystem, host.LoggerFactory.CreateLogger<JsonEditorStateStore>());
         services = new EditorServices(host, windows,
             new EditorDialogs(() => windows.ActiveWindow),
             new StorageFilePickerService(() => windows.ActiveWindow),
             new ProcessLauncher(),
-            new BackupOptions(EditorDataPaths.Resolve(), new RealEditorFileSystem(), TimeProvider.System, BackupService.ResolveDelay(Environment.GetEnvironmentVariable)));
+            new BackupOptions(paths, fileSystem, TimeProvider.System, BackupService.ResolveDelay(Environment.GetEnvironmentVariable)),
+            new RecentProjects(stateStore, fileSystem, TimeProvider.System));
     }
 
     /// <summary>The composed host services.</summary>
@@ -119,7 +123,8 @@ internal sealed class EditorServices : IDisposable
     /// <param name="filePicker">Opens native file/save pickers: Avalonia's in production, a test double in the headless UI tests.</param>
     /// <param name="processes">Starts external processes: the real launcher in production, a test double in the headless UI tests.</param>
     /// <param name="backups">Where the open project's unsaved files are backed up; <see langword="null"/> (the headless tests) for no backups and no clean-up of the user's data folder.</param>
-    public EditorServices(EditorHostServices host, WindowService windows, IEditorDialogs dialogs, IFilePickerService filePicker, IProcessLauncher processes, BackupOptions? backups = null)
+    /// <param name="recent">The recent projects list; <see langword="null"/> (the headless tests) to keep none.</param>
+    public EditorServices(EditorHostServices host, WindowService windows, IEditorDialogs dialogs, IFilePickerService filePicker, IProcessLauncher processes, BackupOptions? backups = null, RecentProjects? recent = null)
     {
         hostChannelError = host.HostChannelError;
         var dispatcher = new AvaloniaUiDispatcher();
@@ -159,7 +164,8 @@ internal sealed class EditorServices : IDisposable
             host.Settings,
             codeAnalysis,
             runState,
-            backups);
+            backups,
+            recent);
     }
 
     /// <summary>The composed host services.</summary>

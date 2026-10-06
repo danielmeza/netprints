@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Messaging;
 using Microsoft.Extensions.Logging;
 using NetPrints.Editor.Diagnostics;
 using NetPrints.Editor.Lifecycle;
+using NetPrints.Editor.State;
 using NetPrints.Extensibility.Hosting;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Settings;
@@ -35,6 +36,7 @@ namespace NetPrints.Editor.Hosting;
 /// <param name="CodeAnalysis">Debounced live analysis of the open project's generated code (editor-services.md §2).</param>
 /// <param name="RunState">Follows the last compile and launched program, for the automation agent's failure diagnostics.</param>
 /// <param name="Backups">Where and how often the open project's unsaved files are backed up, or <see langword="null"/> for no backups (tests that do not exercise them).</param>
+/// <param name="Recent">The recent projects list that opening or creating a project updates, or <see langword="null"/> for none (tests that do not exercise it).</param>
 public sealed record EditorContext(
     IFilePickerService FilePicker,
     IEditorDialogs Dialogs,
@@ -53,4 +55,5 @@ public sealed record EditorContext(
     ISettingsStore Settings,
     ICodeAnalysisHost CodeAnalysis,
     RunStateTracker RunState,
-    BackupOptions? Backups = null);
+    BackupOptions? Backups = null,
+    RecentProjects? Recent = null);

@@ -194,6 +194,7 @@ internal sealed class ProjectLoader : IDisposable
 
                 RecoveryResult recovery = await RecoverAsync(loaded).ConfigureAwait(true);
                 await SetProjectAsync(loaded.Project).ConfigureAwait(true);
+                context.Recent?.Record(Path.GetFullPath(path), loaded.Project.Name);
                 foreach (ClassGraph restored in recovery.Restored)
                 {
                     backups?.Backups.Track(restored);
