@@ -411,9 +411,9 @@ public class ShellAdapterTests
         var sink = new BindingWarningLogSink();
         ILogSink? previousSink = Logger.Sink;
         Logger.Sink = sink;
+        using var rig = ShellRig.Create();
         try
         {
-            using var rig = ShellRig.Create();
             scenario(rig);
         }
         finally

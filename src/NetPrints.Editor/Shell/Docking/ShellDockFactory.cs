@@ -92,6 +92,18 @@ internal sealed class ShellDockFactory : Factory
     public override IRootDock CreateRootDock() => new ShellRootDock { DockCapabilityPolicy = new DockCapabilityPolicy(), DockCapabilityOverrides = new DockCapabilityOverrides() };
 
     /// <inheritdoc/>
+    public override IDockWindow? CreateWindowFrom(IDockable dockable, DockWindowOptions? options)
+    {
+        IDockWindow? window = base.CreateWindowFrom(dockable, options);
+        if (dockable is not IRootDock && window?.Layout is { } floating)
+        {
+            floating.FocusedDockable = dockable;
+        }
+
+        return window;
+    }
+
+    /// <inheritdoc/>
     public override IRootDock CreateLayout()
     {
         ToolDock left = Tools(LeftId, PanelDock.Left, LeftProportion, Alignment.Left);
