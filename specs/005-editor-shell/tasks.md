@@ -502,12 +502,12 @@ SC-004 (all but navigation).
 - [x] T055 [US4] Help menu (FR-036). Test first, headless: the `keyboardShortcuts` sheet
   (`src/NetPrints.Editor/Commands/KeyboardShortcuts/`) lists every registered command with its shortcuts, grouped as in
   the menu, and its rows equal the registry's commands. `about` shows the version and the project links.
-- [ ] T056 [US3] Desktop E2E (2 units). `UnsavedChangesPromptTests`: edit, close the window, Cancel keeps it open with
+- [x] T056 [US3] Desktop E2E (2 units). `UnsavedChangesPromptTests`: edit, close the window, Cancel keeps it open with
   the change; close again, Save all saves and closes; Close project also shows the prompt. `CrashRecoveryTests`: edit
   with a short `NETPRINTS_BACKUP_DELAY`, wait for the backup file, kill the editor process, restart on the same
   project and `NETPRINTS_STATE_DIR`, Restore, then Save; the saved file is byte-identical to the canonical form of the
   pre-kill content (SC-002).
-- [ ] T057 [US4] `tests/NetPrints.Editor.UITests/Commands/DefaultShortcutTests.cs`: each FR-034 gesture of a registered
+- [x] T057 [US4] `tests/NetPrints.Editor.UITests/Commands/DefaultShortcutTests.cs`: each FR-034 gesture of a registered
   command runs it where it applies, and single-key gestures never act while a text field has focus. Desktop E2E
   `KeyboardOnlyTests`: save, compile, run, stop, undo, redo, Ctrl+Tab and Ctrl+W without the mouse (T086 adds "find a
   node and go back"). SC-003 (shortcuts), SC-004 (so far).
