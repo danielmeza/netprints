@@ -16,13 +16,14 @@ namespace NetPrints.Editor.Hosting;
 /// </summary>
 internal sealed class ShellHost : IDisposable
 {
+    private readonly WindowCloseGuard closeGuard;
 
     private sealed class NoServices : IServiceProvider
     {
         public object? GetService(Type serviceType) => null;
     }
 
-    private ShellHost(ShellProjectActions actions, IContributionRegistry registry, ShellViewModel shell, DockShellAdapter adapter, CommandInvoker invoker, ShellWindow window)
+    private ShellHost(ShellProjectActions actions, IContributionRegistry registry, ShellViewModel shell, DockShellAdapter adapter, CommandInvoker invoker, ShellWindow window, ILogger logger)
     {
         Actions = actions;
         Registry = registry;
@@ -31,6 +32,7 @@ internal sealed class ShellHost : IDisposable
         Invoker = invoker;
         Window = window;
         window.DataContext = shell;
+        closeGuard = new WindowCloseGuard(window, actions, logger);
     }
 
     /// <summary>Gets the project flows of the shell.</summary>
@@ -71,7 +73,7 @@ internal sealed class ShellHost : IDisposable
             exception => context.Dispatcher.Post(() => context.Dialogs.ShowErrorAsync("The command failed", exception.ToString()).Forget(logger)));
         shell.AttachCommands(invoker);
 
-        var host = new ShellHost(actions, registry, shell, adapter, invoker, new ShellWindow());
+        var host = new ShellHost(actions, registry, shell, adapter, invoker, new ShellWindow(), logger);
         shell.PropertyChanged += host.OnShellChanged;
         shell.AttachPanels(adapter, invoker, context);
         return host;
@@ -81,6 +83,7 @@ internal sealed class ShellHost : IDisposable
     public void Dispose()
     {
         Shell.PropertyChanged -= OnShellChanged;
+        closeGuard.Dispose();
         Shell.Dispose();
         Adapter.Dispose();
         Actions.Dispose();

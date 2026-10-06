@@ -65,6 +65,14 @@ public sealed class EditorComposition : IDisposable
     public ShellWindow CreateShellWindow() => services.CreateShellWindow();
 
     /// <summary>
+    /// Asks whether the application may exit, as closing the window does: waits for a build, asks to stop a running
+    /// program and asks about unsaved files. Passes when the shell does not exist yet.
+    /// </summary>
+    /// <param name="cancellationToken">Cancels the prompts.</param>
+    /// <returns><see langword="true"/> to go on, <see langword="false"/> to keep the application running.</returns>
+    public Task<bool> ConfirmExitAsync(CancellationToken cancellationToken) => services.ConfirmExitAsync(cancellationToken);
+
+    /// <summary>
     /// Stops rebinding persistence to the extension host's registry (see
     /// <see cref="PersistenceBinding.Bind"/>), disposes the shell, if created, and the
     /// code analysis host (editor-services.md §6: "disposed with the main window").
@@ -190,6 +198,12 @@ internal sealed class EditorServices : IDisposable
 
     /// <summary>The project flows of the shell, or <see langword="null"/> before <see cref="CreateShellWindow"/> is called.</summary>
     internal IProjectActions? ProjectActions => shellHost?.Actions;
+
+    /// <summary>Asks whether the application may exit; passes when the shell does not exist yet.</summary>
+    /// <param name="cancellationToken">Cancels the prompts.</param>
+    /// <returns><see langword="true"/> to go on.</returns>
+    public Task<bool> ConfirmExitAsync(CancellationToken cancellationToken) =>
+        shellHost?.Actions.ConfirmExitAsync(cancellationToken) ?? Task.FromResult(true);
 
     /// <summary>
     /// Creates the shell window: the registry, <see cref="ShellViewModel"/>, the docking adapter and the project flows

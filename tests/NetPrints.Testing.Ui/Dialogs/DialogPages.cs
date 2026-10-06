@@ -42,3 +42,12 @@ public sealed class TrustDialogPage(IUiDriver driver) : UiElement(driver, new Au
     public UiElement TrustButton => Find(AutomationIds.TrustButton);
     public UiElement DontLoadButton => Find(AutomationIds.TrustDontLoadButton);
 }
+
+/// <summary>Screen object of the dialog that asks what to do with unsaved files before the project is unloaded.</summary>
+public sealed class UnsavedChangesDialogPage(IUiDriver driver) : UiElement(driver, new AutomationQuery(AutomationIds.UnsavedDialog))
+{
+    public UiElement Files => Find(AutomationIds.UnsavedFiles);
+    public UiElement SaveAllButton => Find(AutomationIds.UnsavedSaveAllButton);
+    public UiElement DontSaveButton => Find(AutomationIds.UnsavedDontSaveButton);
+    public UiElement CancelButton => Find(AutomationIds.UnsavedCancelButton);
+}

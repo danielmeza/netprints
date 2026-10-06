@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.Contributions.BuiltIn;
+using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.References;
 using NetPrints.Editor.Shell;
@@ -19,11 +20,16 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
 {
     private const string RemoveClassTitle = "Remove class";
     private const string RemoveClassConfirm = "Remove";
+    private const string StopRunningTitle = "Stop running program?";
+    private const string StopRunningMessage = "The program is still running. Stop it and exit?";
+    private const string StopRunningConfirm = "Stop and exit";
 
     private readonly EditorContext context;
     private readonly ShellViewModel shell;
     private readonly HostChannelBridge hostChannelBridge;
     private ProjectSessionViewModel? followedSession;
+    private Task<bool>? exitConfirmation;
+    private bool exitConfirmed;
 
     /// <summary>Creates the actions and starts listening to the host channel.</summary>
     /// <param name="context">Host services shared across the editor.</param>
@@ -46,7 +52,68 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
     public IShell? Api { get; set; }
 
     /// <inheritdoc/>
-    public Task<bool> ConfirmUnloadAsync(CancellationToken cancellationToken) => Task.FromResult(true);
+    public async Task<bool> ConfirmUnloadAsync(CancellationToken cancellationToken)
+    {
+        if (shell.Session is not { } session || !session.Unsaved.HasUnsavedFiles)
+        {
+            return true;
+        }
+
+        UnloadChoice choice = await context.Dialogs.ConfirmUnsavedAsync(session.Unsaved.UnsavedFiles).ConfigureAwait(true);
+        return choice switch
+        {
+            UnloadChoice.Save => await session.SaveAllAsync().ConfigureAwait(true),
+            UnloadChoice.Discard => true,
+            _ => false,
+        };
+    }
+
+    /// <summary>Gets whether leaving now needs <see cref="ConfirmExitAsync"/>: a build runs, the program runs or files are unsaved, and no exit was confirmed yet.</summary>
+    public bool ExitNeedsConfirmation =>
+        !exitConfirmed && shell.Session is { } session && (session.IsBuilding || session.IsRunning || session.Unsaved.HasUnsavedFiles);
+
+    /// <summary>
+    /// Asks whether the application may exit: waits for a build in flight, asks to stop a running program, then asks
+    /// <see cref="ConfirmUnloadAsync"/>. A request made while one is pending joins it, and once the exit was confirmed
+    /// every later request passes, so the window close and the shutdown request that follows it ask once.
+    /// </summary>
+    /// <param name="cancellationToken">Cancels the prompts.</param>
+    /// <returns><see langword="true"/> to go on, <see langword="false"/> when the user kept the project or the program running.</returns>
+    public Task<bool> ConfirmExitAsync(CancellationToken cancellationToken)
+    {
+        if (exitConfirmed)
+        {
+            return Task.FromResult(true);
+        }
+
+        if (exitConfirmation is { IsCompleted: false } pending)
+        {
+            return pending;
+        }
+
+        exitConfirmation = ConfirmExitCoreAsync(cancellationToken);
+        return exitConfirmation;
+    }
+
+    private async Task<bool> ConfirmExitCoreAsync(CancellationToken cancellationToken)
+    {
+        if (shell.Session is { } session)
+        {
+            await session.WaitForBuildAsync().ConfigureAwait(true);
+            if (session.IsRunning)
+            {
+                if (!await context.Dialogs.ConfirmAsync(StopRunningTitle, StopRunningMessage, StopRunningConfirm).ConfigureAwait(true))
+                {
+                    return false;
+                }
+
+                session.Stop();
+            }
+        }
+
+        exitConfirmed = await ConfirmUnloadAsync(cancellationToken).ConfigureAwait(true);
+        return exitConfirmed;
+    }
 
     /// <inheritdoc/>
     public Task OpenProjectAsync(string? path, CancellationToken cancellationToken) => Loader.OpenProjectAsync(path);

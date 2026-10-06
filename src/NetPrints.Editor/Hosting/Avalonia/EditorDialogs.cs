@@ -3,6 +3,7 @@ using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Hosting;
+using NetPrints.Editor.Lifecycle;
 using NetPrints.Editor.References;
 
 namespace NetPrints.Editor.Hosting.Avalonia;
@@ -43,6 +44,10 @@ public sealed class EditorDialogs(Func<Window?> owner) : IEditorDialogs
     /// <inheritdoc/>
     public Task<bool> ConfirmAsync(string title, string message, string confirmLabel) =>
         ShowAsync<bool>(new ConfirmDialog(title, message, confirmLabel));
+
+    /// <inheritdoc/>
+    public Task<UnloadChoice> ConfirmUnsavedAsync(IReadOnlyList<UnsavedFile> files) =>
+        ShowAsync<UnloadChoice>(new UnsavedChangesDialog(files));
 
     /// <inheritdoc/>
     public Task ShowIssuesAsync(string title, IReadOnlyList<CodeDiagnostic> issues) =>

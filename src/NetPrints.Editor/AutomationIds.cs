@@ -209,6 +209,26 @@ public static class AutomationIds
     /// </summary>
     public const string ConfirmCancelButton = "Dialogs.Confirm.Cancel";
     /// <summary>
+    /// Automation id for the unsaved changes dialog window itself.
+    /// </summary>
+    public const string UnsavedDialog = "Dialogs.Unsaved";
+    /// <summary>
+    /// Automation id for the unsaved changes dialog's list of files.
+    /// </summary>
+    public const string UnsavedFiles = "Dialogs.Unsaved.Files";
+    /// <summary>
+    /// Automation id for the unsaved changes dialog's Save all button.
+    /// </summary>
+    public const string UnsavedSaveAllButton = "Dialogs.Unsaved.SaveAll";
+    /// <summary>
+    /// Automation id for the unsaved changes dialog's Don't save button.
+    /// </summary>
+    public const string UnsavedDontSaveButton = "Dialogs.Unsaved.DontSave";
+    /// <summary>
+    /// Automation id for the unsaved changes dialog's Cancel button.
+    /// </summary>
+    public const string UnsavedCancelButton = "Dialogs.Unsaved.Cancel";
+    /// <summary>
     /// Automation id for the select-type dialog's search box.
     /// </summary>
     public const string SelectTypeBox = "Dialogs.SelectType.Box";

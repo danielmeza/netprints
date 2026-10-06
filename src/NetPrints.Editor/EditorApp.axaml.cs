@@ -83,7 +83,8 @@ public partial class EditorApp : Application
                     Hosting.Log.HostServicesDisposed(shutdownLogger);
                 },
                 () => desktop.Shutdown(),
-                shutdownLogger);
+                shutdownLogger,
+                () => composition.ConfirmExitAsync(CancellationToken.None));
             desktop.ShutdownRequested += (_, e) => shutdownCoordinator.OnShutdownRequested(e);
 
             // Automation mode (E2E tests only): settled screenshots and a read-only agent.

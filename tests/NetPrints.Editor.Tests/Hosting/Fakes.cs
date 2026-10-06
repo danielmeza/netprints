@@ -8,7 +8,9 @@ using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.Diagnostics;
+using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Hosting;
+using NetPrints.Editor.Lifecycle;
 using NetPrints.Editor.References;
 using NetPrints.Extensibility.Hosting;
 using NetPrints.Extensibility.Loading;
@@ -66,6 +68,15 @@ public sealed class FakeDialogs : IEditorDialogs
 
     public List<(string Title, string Message)> ConfirmCalls { get; } = [];
     public bool ConfirmAnswer { get; set; } = true;
+
+    public List<IReadOnlyList<UnsavedFile>> UnsavedCalls { get; } = [];
+    public UnloadChoice UnsavedAnswer { get; set; } = UnloadChoice.Cancel;
+
+    public Task<UnloadChoice> ConfirmUnsavedAsync(IReadOnlyList<UnsavedFile> files)
+    {
+        UnsavedCalls.Add(files);
+        return Task.FromResult(UnsavedAnswer);
+    }
 
     public Task<bool> ConfirmAsync(string title, string message, string confirmLabel)
     {

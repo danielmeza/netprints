@@ -215,6 +215,10 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
         return flow;
     }
 
+    /// <summary>Gets a task that completes when the compile or run in flight has built the project, or is already complete when none is.</summary>
+    /// <returns>The task to await.</returns>
+    public Task WaitForBuildAsync() => flow is { IsCompleted: false } current ? current : Task.CompletedTask;
+
     /// <summary>Stops the running program and its child processes; does nothing when none runs.</summary>
     public void Stop() => runCancellation?.Cancel();
 

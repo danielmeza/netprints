@@ -1,0 +1,32 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ed="clr-namespace:NetPrints.Editor"
+        xmlns:edb="clr-namespace:NetPrints.Editor.Behaviors"
+        xmlns:eddialogs="clr-namespace:NetPrints.Editor.Dialogs"
+        xmlns:edlife="clr-namespace:NetPrints.Editor.Lifecycle"
+        x:Class="NetPrints.Editor.Dialogs.UnsavedChangesDialog"
+        x:DataType="eddialogs:UnsavedChangesDialogViewModel"
+        Title="Unsaved changes"
+        Icon="avares://NetPrints.Editor/Assets/NetPrintsLogo.ico"
+        Width="440" Height="280" CanResize="False"
+        WindowStartupLocation="CenterOwner" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.UnsavedDialog}">
+  <Interaction.Behaviors>
+    <edb:DialogCloseBehavior />
+  </Interaction.Behaviors>
+  <Grid RowDefinitions="Auto,*,Auto" Margin="12">
+    <TextBlock Text="These files have changes that are not saved:" Margin="0,0,0,8" />
+    <ListBox Grid.Row="1" ItemsSource="{Binding Files}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.UnsavedFiles}"
+             AutomationProperties.Name="Unsaved files">
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="edlife:UnsavedFile">
+          <TextBlock Text="{Binding DisplayName}" />
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,12,0,0">
+      <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.UnsavedCancelButton}" Content="Cancel" MinWidth="80" IsCancel="True" Command="{Binding CancelCommand}" />
+      <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.UnsavedDontSaveButton}" Content="Don't save" MinWidth="80" Command="{Binding DontSaveCommand}" />
+      <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.UnsavedSaveAllButton}" Content="Save all" MinWidth="80" Classes="accent" IsDefault="True" Command="{Binding SaveAllCommand}" />
+    </StackPanel>
+  </Grid>
+</Window>

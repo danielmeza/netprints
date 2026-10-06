@@ -2,8 +2,10 @@ using System.Diagnostics;
 using System.Text;
 using NetPrints.Compilation;
 using NetPrints.Core;
+using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Hosting.Avalonia;
+using NetPrints.Editor.Lifecycle;
 using NetPrints.Editor.References;
 using NetPrints.Projects;
 using NetPrints.Testing;
@@ -50,6 +52,17 @@ public sealed class RecordingDialogs : IEditorDialogs
     public bool ConfirmAnswer { get; set; } = true;
 
     public List<(string Title, string Message)> ConfirmCalls { get; } = [];
+
+    /// <summary>What <see cref="ConfirmUnsavedAsync"/> answers.</summary>
+    public UnloadChoice UnsavedAnswer { get; set; } = UnloadChoice.Cancel;
+
+    public List<IReadOnlyList<UnsavedFile>> UnsavedCalls { get; } = [];
+
+    public Task<UnloadChoice> ConfirmUnsavedAsync(IReadOnlyList<UnsavedFile> files)
+    {
+        UnsavedCalls.Add(files);
+        return Task.FromResult(UnsavedAnswer);
+    }
 
     public Task<bool> ConfirmAsync(string title, string message, string confirmLabel)
     {

@@ -1,5 +1,7 @@
 using NetPrints.Compilation;
 using NetPrints.Core;
+using NetPrints.Editor.Dialogs;
+using NetPrints.Editor.Lifecycle;
 using NetPrints.Editor.References;
 
 namespace NetPrints.Editor.Hosting;
@@ -41,4 +43,9 @@ public interface IEditorDialogs
     /// <param name="title">Dialog title.</param>
     /// <param name="issues">The diagnostics, one row each.</param>
     Task ShowIssuesAsync(string title, IReadOnlyList<CodeDiagnostic> issues);
+
+    /// <summary>Asks what to do with the unsaved files before the project is unloaded.</summary>
+    /// <param name="files">The unsaved files, listed in the dialog.</param>
+    /// <returns>The user's choice; <see cref="UnloadChoice.Cancel"/> when the dialog was dismissed.</returns>
+    Task<UnloadChoice> ConfirmUnsavedAsync(IReadOnlyList<UnsavedFile> files);
 }

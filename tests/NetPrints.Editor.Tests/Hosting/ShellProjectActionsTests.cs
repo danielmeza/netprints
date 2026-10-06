@@ -60,14 +60,6 @@ public sealed class ShellProjectActionsTests : IDisposable
     }
 
     [Fact]
-    public async Task UnloadIsAlwaysConfirmedUntilTheDirtyPromptExists()
-    {
-        ProjectRig rig = await OpenSampleAsync();
-
-        Assert.True(await rig.Actions.ConfirmUnloadAsync(Token));
-    }
-
-    [Fact]
     public void ProjectSettingsOpensTheSettingsDocument()
     {
         ProjectRig rig = NewRig();

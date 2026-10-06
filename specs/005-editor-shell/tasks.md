@@ -458,7 +458,7 @@ SC-004 (all but navigation).
   plus a headless marker test: `*` on the tabs of an unsaved class file's graphs, on its tree class node, and after
   the project name in the title (contracts/shell.md §4). Save saves the active graph's file and Save all every unsaved
   file, with the status `Saved <n> file(s)`.
-- [ ] T050 [US3] Unload prompt (2 units). Test first: `tests/NetPrints.Editor.Tests/Lifecycle/ConfirmUnloadTests.cs`.
+- [x] T050 [US3] Unload prompt (2 units). Test first: `tests/NetPrints.Editor.Tests/Lifecycle/ConfirmUnloadTests.cs`.
   `ShellViewModel.ConfirmUnloadAsync` runs before every unload (window close through `ShutdownCoordinator`, Exit, Close
   project, Open project, New project) and prompts only when files are unsaved. `UnsavedChangesDialog`
   (`DialogViewModel<UnloadChoice>`; Save all is the default, Don't save, Cancel on Esc; lists the files; ids
