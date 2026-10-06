@@ -256,9 +256,10 @@ public class FormerActionsReachableTests
 
         PressButton(app, AutomationIds.VariablesAddVariable);
         Assert.Same(cls.Variables[^1], app.Shell.TreeSelection);
-        app.Api.ShowPanel(PanelContributions.VariablesId);
-        HeadlessDriver.Pump();
+        Assert.NotEmpty(app.Ui.Tree.Find(new AutomationQuery(AutomationIds.VariablesAddLocalVariable)));
+        Assert.NotEmpty(app.Ui.Tree.Find(new AutomationQuery(AutomationIds.VariableInspectorName)));
         PressButton(app, AutomationIds.VariablesAddLocalVariable);
+        Assert.NotEmpty(app.Ui.Tree.Find(new AutomationQuery(AutomationIds.VariablesAddVariable)));
         Assert.Equal(members + 1, cls.Variables.Count);
         Assert.Single(method.LocalVariables);
 

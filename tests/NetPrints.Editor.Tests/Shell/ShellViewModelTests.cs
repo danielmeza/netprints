@@ -66,7 +66,7 @@ public sealed class ShellViewModelTests : IAsyncDisposable
 
         Assert.Equal(BuiltInPanelIds, shell.Panels.Select(panel => panel.Id));
         Assert.Equal(["Project", "Inspector", "Variables", "Errors", "Output", "C#"], shell.Panels.Select(panel => panel.Title));
-        Assert.Equal([PanelDock.Left, PanelDock.Right, PanelDock.Right, PanelDock.Bottom, PanelDock.Bottom, PanelDock.Bottom], shell.Panels.Select(panel => panel.DefaultDock));
+        Assert.Equal([PanelDock.Left, PanelDock.Right, PanelDock.RightLower, PanelDock.Bottom, PanelDock.Bottom, PanelDock.Bottom], shell.Panels.Select(panel => panel.DefaultDock));
         Assert.All(shell.Panels, panel => Assert.True(panel.IsVisible));
         Assert.All(shell.Panels, panel => Assert.NotNull(panel.Content));
     }
@@ -86,7 +86,7 @@ public sealed class ShellViewModelTests : IAsyncDisposable
         Assert.Same(content, notes.Content);
         Assert.IsType<NoServices>(received);
         Assert.Equal(7, shell.Panels.Count);
-        Assert.Equal("acme.panel.notes", shell.Panels[3].Id);
+        Assert.Equal("acme.panel.notes", shell.Panels[2].Id);
         Assert.Null(shell.FindPanel("acme.panel.missing"));
     }
 

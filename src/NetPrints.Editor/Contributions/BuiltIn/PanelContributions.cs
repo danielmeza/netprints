@@ -39,7 +39,7 @@ public static class PanelContributions
         ArgumentNullException.ThrowIfNull(registry);
         registry.AddPanel(new PanelDescriptor(ProjectTreeId, "Project", _ => new ProjectTreePanelViewModel(), PanelDock.Left, 0, "FileTree"));
         registry.AddPanel(new PanelDescriptor(InspectorId, "Inspector", _ => new InspectorPanelViewModel(), PanelDock.Right, 0, "Tune"));
-        registry.AddPanel(new PanelDescriptor(VariablesId, "Variables", _ => new ShellVariablesPanelViewModel(), PanelDock.Right, Second, "Variable"));
+        registry.AddPanel(new PanelDescriptor(VariablesId, "Variables", _ => new ShellVariablesPanelViewModel(), PanelDock.RightLower, Second, "Variable"));
         registry.AddPanel(new PanelDescriptor(ErrorsId, "Errors", _ => new ErrorsPanelViewModel(), PanelDock.Bottom, 0, "AlertCircleOutline"));
         registry.AddPanel(new PanelDescriptor(OutputId, "Output", _ => new OutputPanelViewModel(), PanelDock.Bottom, Second, "Console"));
         registry.AddPanel(new PanelDescriptor(CSharpId, "C#", _ => new CSharpPanelViewModel(), PanelDock.Bottom, Third, "LanguageCsharp"));

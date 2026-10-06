@@ -20,6 +20,9 @@ internal sealed class ShellDockFactory : Factory
     private const string BodyId = "netprints.body";
     private const string LeftId = "netprints.dock.left";
     private const string RightId = "netprints.dock.right";
+    private const string RightLowerId = "netprints.dock.rightLower";
+    private const string RightColumnId = "netprints.right";
+    private const string RightSplitId = "netprints.splitter.rightColumn";
     private const string BottomId = "netprints.dock.bottom";
     private const string BodySplitterId = "netprints.splitter.body";
     private const string LeftSplitterId = "netprints.splitter.left";
@@ -27,6 +30,7 @@ internal sealed class ShellDockFactory : Factory
     private const double LeftProportion = 0.20;
     private const double RightProportion = 0.22;
     private const double BottomProportion = 0.25;
+    private const double RightUpperProportion = 0.6;
 
     private readonly IReadOnlyList<PanelViewModel> panels;
 
@@ -107,7 +111,17 @@ internal sealed class ShellDockFactory : Factory
     public override IRootDock CreateLayout()
     {
         ToolDock left = Tools(LeftId, PanelDock.Left, LeftProportion, Alignment.Left);
-        ToolDock right = Tools(RightId, PanelDock.Right, RightProportion, Alignment.Right);
+        ToolDock rightUpper = Tools(RightId, PanelDock.Right, RightUpperProportion, Alignment.Right);
+        ToolDock rightLower = Tools(RightLowerId, PanelDock.RightLower, 1 - RightUpperProportion, Alignment.Right);
+        var right = new ProportionalDock
+        {
+            Id = RightColumnId,
+            DockCapabilityPolicy = new DockCapabilityPolicy(),
+            DockCapabilityOverrides = new DockCapabilityOverrides(),
+            Proportion = RightProportion,
+            Orientation = Orientation.Vertical,
+            VisibleDockables = CreateList<IDockable>(rightUpper, new ProportionalDockSplitter { Id = RightSplitId }, rightLower),
+        };
         ToolDock bottom = Tools(BottomId, PanelDock.Bottom, BottomProportion, Alignment.Bottom);
         var documents = new DocumentDock
         {
@@ -285,6 +299,7 @@ internal sealed class ShellDockFactory : Factory
         {
             PanelDock.Left => LeftId,
             PanelDock.Right => RightId,
+            PanelDock.RightLower => RightLowerId,
             _ => BottomId,
         };
         return Walk(layout).OfType<IToolDock>().FirstOrDefault(dock => dock.Id == id);

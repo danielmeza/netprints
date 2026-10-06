@@ -9,15 +9,17 @@ headless tests drive.
 ┌ Menu: File Edit View Go Build Help ─────────────────────────────────────────────┐
 ├ Command bar (≤ 40 px): Save │ Compile [n] │ Run/Stop │ Undo │ Redo │ Class settings │ References ┤
 ├──────────────┬──────────────────────────────────────────────┬─────────────────────┤
-│ Project      │ [Main*] [EventGraph] [Start] …   (tabs)      │ Inspector           │
-│ (tree)       │ Project › Program › Main  (breadcrumbs)      │                     │
-│  20% width   │ graph canvas                                 │  22% width          │
+│ Project      │ [Main*] [EventGraph] [Start] …   (tabs)      │ Inspector (60%)     │
+│ (tree)       │ Project › Program › Main  (breadcrumbs)      ├─────────────────────┤
+│  20% width   │ graph canvas                                 │ Variables (40%)     │
+│              │                                              │  22% width          │
 ├──────────────┴──────────────────────────────────────────────┴─────────────────────┤
 │ [Errors] [Output] [C#]   (bottom panel, 25% height)                                │
 ├ Status bar: message │ build state │ backup warning ───────────────────────────────┤
 ```
 
-- The **Reset layout** command restores exactly this layout: the tree on the left, the inspector on the right, the
+- The **Reset layout** command restores exactly this layout: the tree on the left, the inspector above the Variables
+  panel on the right (two tool docks in a vertical split, so bringing the Inspector forward never hides Variables), the
   three bottom tabs with Errors active, and every panel visible.
 - A floated pane whose window is closed with the OS close button docks back to its default position. A floated
   graph tab closes as a tab does.
@@ -38,7 +40,7 @@ headless tests drive.
 |---|---|---|---|
 | `netprints.panel.projectTree` | Project | Left | project › classes › Methods, Constructors, Variables, Event graphs |
 | `netprints.panel.inspector` | Inspector | Right | class, method, constructor, variable or event-entry inspector for the latest selection, in the tree or in the active graph (a variable getter or setter node shows its variable, a call to a method of a project class shows that method, any other node or none shows the member that owns the graph) |
-| `netprints.panel.variables` | Variables | Right (second tab of the Inspector's dock) | member variables of the active document's class (add, remove, rename through the row's inspector, getter, setter and type graph buttons) and, while the active document is a method, constructor or accessor graph, that graph's local variables (add, remove, retype, rename) |
+| `netprints.panel.variables` | Variables | Right, below the Inspector (its own tool dock, 40% of the right column) | member variables of the active document's class (add, remove, rename through the row's inspector, getter, setter and type graph buttons) and, while the active document is a method, constructor or accessor graph, that graph's local variables (add, remove, retype, rename) |
 | `netprints.panel.errors` | Errors | Bottom | the diagnostics of the whole project (live analysis plus the last build), grouped by class, each row labelled with its class; activating a row opens, or activates, the graph of its node and selects the node, and a row with no graph key opens its class graph (registered as a navigation) |
 | `netprints.panel.output` | Output | Bottom | build output, then the program's stdout and stderr; cleared at each compile or run; a run brings it forward once, when the program starts, and later lines never switch the bottom panel back |
 | `netprints.panel.csharp` | C# | Bottom | generated C# of the active graph's class (read-only `CodeView`) |
