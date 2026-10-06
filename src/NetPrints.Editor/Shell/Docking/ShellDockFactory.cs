@@ -89,7 +89,7 @@ internal sealed class ShellDockFactory : Factory
     public override IProportionalDock CreateProportionalDock() => new ProportionalDock { DockCapabilityPolicy = new DockCapabilityPolicy(), DockCapabilityOverrides = new DockCapabilityOverrides() };
 
     /// <inheritdoc/>
-    public override IRootDock CreateRootDock() => new RootDock { DockCapabilityPolicy = new DockCapabilityPolicy(), DockCapabilityOverrides = new DockCapabilityOverrides() };
+    public override IRootDock CreateRootDock() => new ShellRootDock { DockCapabilityPolicy = new DockCapabilityPolicy(), DockCapabilityOverrides = new DockCapabilityOverrides() };
 
     /// <inheritdoc/>
     public override IRootDock CreateLayout()
@@ -125,7 +125,7 @@ internal sealed class ShellDockFactory : Factory
             Orientation = Orientation.Vertical,
             VisibleDockables = CreateList<IDockable>(body, new ProportionalDockSplitter { Id = BodySplitterId }, bottom),
         };
-        return new RootDock
+        return new ShellRootDock
         {
             Id = RootId,
             DockCapabilityPolicy = new DockCapabilityPolicy(),

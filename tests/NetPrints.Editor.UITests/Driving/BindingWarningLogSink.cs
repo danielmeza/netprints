@@ -21,12 +21,10 @@ internal sealed class BindingWarningLogSink : ILogSink
     private const string AvaloniaButton = "Avalonia.Controls.Button";
     private const string ToolChrome = "Dock.Avalonia.Controls.ToolChromeControl";
     private const string HostWindow = "Dock.Avalonia.Controls.HostWindow";
-    private const string DockOverlays = "Dock.Avalonia.Controls.Overlays.";
     private const string ActiveDockable = "ActiveDockable";
 
     /// <summary>The warnings Dock's own templates log for a floating window and for an emptied tool dock: <c>ActiveDockable</c> or
-    /// <c>FocusedDockable</c> is null until a pane is shown, and Dock's Mvvm <c>RootDock</c> has none of the overlay services its
-    /// overlay controls bind. Each is matched by source type and exact message, so any other warning stays unexplained.</summary>
+    /// <c>FocusedDockable</c> is null until a pane is shown. Each is matched by source type and exact message, so any other warning stays unexplained.</summary>
     private static readonly HashSet<BindingWarning> DockOwnWarnings =
     [
         Known(AvaloniaButton, Unnamed, "ActiveDockable.CanClose", ActiveDockable, NoValue),
@@ -37,12 +35,6 @@ internal sealed class BindingWarningLogSink : ILogSink
         Known(ToolChrome, "IsPinned", "ActiveDockable.OriginalOwner", ActiveDockable, NoValue),
         Known(HostWindow, "Title", "FocusedDockable.Title", "FocusedDockable", NoValue),
         Known(HostWindow, "Topmost", "Window.Topmost", "Window", NoValue),
-        Overlay("BusyOverlayControl", "BusyService", "Busy"),
-        Overlay("BusyOverlayControl", "GlobalBusyService", "GlobalBusyService"),
-        Overlay("ConfirmationOverlayControl", "ConfirmationService", "Confirmations"),
-        Overlay("ConfirmationOverlayControl", "GlobalConfirmationService", "GlobalConfirmationService"),
-        Overlay("DialogOverlayControl", "DialogService", "Dialogs"),
-        Overlay("DialogOverlayControl", "GlobalDialogService", "GlobalDialogService"),
     ];
 
     public List<BindingWarning> Warnings { get; } = [];
@@ -61,6 +53,4 @@ internal sealed class BindingWarningLogSink : ILogSink
     private static BindingWarning Known(string source, string property, string expression, string errorPoint, string message) =>
         new(source, $"{Template} {property} {expression} {errorPoint} {message}");
 
-    private static BindingWarning Overlay(string control, string property, string member) =>
-        Known(DockOverlays + control, property, member, member, $"Could not find a matching property accessor for '{member}' on 'Dock.Model.Mvvm.Controls.RootDock'.");
 }
