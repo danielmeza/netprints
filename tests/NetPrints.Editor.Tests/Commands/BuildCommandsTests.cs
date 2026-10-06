@@ -7,6 +7,7 @@ using NetPrints.Editor.Tests.Hosting;
 using NetPrints.Editor.Tests.Shell;
 using NetPrints.Projects;
 using NetPrints.Serialization;
+using DocumentId = NetPrints.Editor.Shell.DocumentId;
 
 namespace NetPrints.Editor.Tests.Commands;
 
@@ -41,6 +42,41 @@ public sealed class BuildCommandsTests : SessionCommandTests
         await handler.ExecuteAsync(context, TestContext.Current.CancellationToken);
 
         Assert.True(File.Exists(graphPath));
+        Assert.False(cls.IsDirty);
+    }
+
+    [Fact]
+    public async Task SaveWritesOnlyTheActiveGraphsFileAndSaveAllEveryUnsavedFile()
+    {
+        ProjectSessionViewModel session = await OpenSessionAsync();
+        ClassGraph active = session.Project.Classes.Single();
+        ClassGraph other = session.Project.CreateNewClass(DefaultProjectProfile.Instance);
+        session.ContextFor(active).CreateVariable();
+        Shell.OpenDocument(DocumentId.Graph(session.ClassPathOf(active), DocumentId.ClassGraphKey));
+        CommandContext context = Shell.Context(session: session);
+
+        await new SaveCommandHandler().ExecuteAsync(context, TestContext.Current.CancellationToken);
+
+        Assert.False(active.IsDirty);
+        Assert.True(other.IsDirty, "Save leaves the other class unsaved");
+        Assert.True(File.Exists(session.Project.GetGraphFilePath(active)));
+        Assert.False(File.Exists(session.Project.GetGraphFilePath(other)));
+
+        await new SaveAllCommandHandler().ExecuteAsync(context, TestContext.Current.CancellationToken);
+
+        Assert.False(other.IsDirty);
+        Assert.True(File.Exists(session.Project.GetGraphFilePath(other)));
+    }
+
+    [Fact]
+    public async Task SaveWithoutAGraphDocumentSavesEveryUnsavedFile()
+    {
+        ProjectSessionViewModel session = await OpenSessionAsync();
+        ClassGraph cls = session.Project.Classes.Single();
+        cls.MarkDirty();
+
+        await new SaveCommandHandler().ExecuteAsync(Shell.Context(session: session), TestContext.Current.CancellationToken);
+
         Assert.False(cls.IsDirty);
     }
 

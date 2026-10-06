@@ -454,7 +454,7 @@ SC-004 (all but navigation).
   unsaved until it is saved; the project file is unsaved only while a project-level change is pending; `UnsavedFiles`
   lists `UnsavedFile` (path, kind, display name). Then `src/NetPrints.Editor/Lifecycle/UnsavedChangesTracker.cs` on
   top of `ClassGraph.IsDirty` and the T020 marker.
-- [ ] T049 [US3] Markers and saving (FR-021, FR-023, FR-083). Test first in `tests/NetPrints.Editor.Tests/Lifecycle/`
+- [x] T049 [US3] Markers and saving (FR-021, FR-023, FR-083). Test first in `tests/NetPrints.Editor.Tests/Lifecycle/`
   plus a headless marker test: `*` on the tabs of an unsaved class file's graphs, on its tree class node, and after
   the project name in the title (contracts/shell.md §4). Save saves the active graph's file and Save all every unsaved
   file, with the status `Saved <n> file(s)`.

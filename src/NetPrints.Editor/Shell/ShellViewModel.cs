@@ -16,6 +16,8 @@ namespace NetPrints.Editor.Shell;
 /// </summary>
 public sealed partial class ShellViewModel : ObservableObject, ICommandStateSource, IDisposable
 {
+    private static readonly TimeSpan SavedStatusDuration = TimeSpan.FromSeconds(4);
+
     private readonly IContributionRegistry registry;
     private readonly List<PanelViewModel> panels;
     private Project? followedProject;
@@ -124,7 +126,7 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
     }
 
     /// <summary>Gets the window title (contracts/shell.md section 4).</summary>
-    public string Title => TitleFormatter.Format(Session?.Project.Name, ActiveDocument?.Title, Session?.Project.Classes.Any(cls => cls.IsDirty) ?? false);
+    public string Title => TitleFormatter.Format(Session?.Project.Name, ActiveDocument?.Title, Session?.Unsaved.HasUnsavedFiles ?? false);
 
     /// <summary>Finds an open document.</summary>
     /// <param name="id">The document id.</param>
@@ -206,6 +208,7 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
         if (followedSession is not null)
         {
             followedSession.CommandStatesChanged -= OnSessionPulse;
+            followedSession.Saved -= OnSessionSaved;
         }
 
         if (followedProject is not null)
@@ -218,6 +221,7 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
         if (newValue is not null)
         {
             newValue.CommandStatesChanged += OnSessionPulse;
+            newValue.Saved += OnSessionSaved;
             newValue.Project.PropertyChanged += OnProjectChanged;
         }
 
@@ -256,6 +260,7 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
         if (followedSession is not null)
         {
             followedSession.CommandStatesChanged -= OnSessionPulse;
+            followedSession.Saved -= OnSessionSaved;
             followedSession = null;
         }
 
@@ -265,6 +270,8 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
             followedDocument = null;
         }
     }
+
+    private void OnSessionSaved(object? sender, int files) => ShowStatus($"Saved {files} file(s)", SavedStatusDuration);
 
     private void OnSessionPulse(object? sender, EventArgs e)
     {

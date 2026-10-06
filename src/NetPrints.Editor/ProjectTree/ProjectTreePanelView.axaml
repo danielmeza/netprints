@@ -18,7 +18,7 @@
       <Style Selector="TreeViewItem" x:DataType="edtree:ProjectTreeItemViewModel">
         <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
         <Setter Property="AutomationProperties.AutomationId" Value="{Binding AutomationId}" />
-        <Setter Property="AutomationProperties.Name" Value="{Binding Name}" />
+        <Setter Property="AutomationProperties.Name" Value="{Binding DisplayName}" />
         <Setter Property="ContextMenu">
           <ContextMenu ItemsSource="{Binding MenuEntries}">
             <ContextMenu.Styles>
@@ -40,7 +40,7 @@
             <edbehaviors:TreeDragSourceBehavior />
           </Interaction.Behaviors>
           <mi:MaterialIcon Kind="{Binding IconKind}" Width="14" Height="14" AutomationProperties.AccessibilityView="Raw" />
-          <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
+          <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center" />
         </StackPanel>
       </TreeDataTemplate>
     </TreeView.ItemTemplate>

@@ -9,6 +9,8 @@ namespace NetPrints.Editor.ProjectTree;
 /// <summary>One row of the project tree: the project, a class, a group of a class, or a member.</summary>
 public sealed partial class ProjectTreeItemViewModel : ObservableObject
 {
+    private const string UnsavedMark = "*";
+
     private readonly Func<string> readName;
     private readonly INotifyPropertyChanged? nameSource;
     private readonly Action<ProjectTreeItemViewModel>? open;
@@ -47,7 +49,16 @@ public sealed partial class ProjectTreeItemViewModel : ObservableObject
     /// <summary>Gets the name the row shows; it follows renames of the model.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(AutomationId))]
+    [NotifyPropertyChangedFor(nameof(DisplayName))]
     public partial string Name { get; private set; } = "";
+
+    /// <summary>Gets a value indicating whether the file the row stands for has unsaved changes (a class row only).</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(DisplayName))]
+    public partial bool IsUnsaved { get; internal set; }
+
+    /// <summary>Gets the text the row shows: <see cref="Name"/>, with a trailing <c>*</c> while <see cref="IsUnsaved"/>.</summary>
+    public string DisplayName => IsUnsaved ? Name + UnsavedMark : Name;
 
     /// <summary>Gets or sets a value indicating whether the row is expanded.</summary>
     [ObservableProperty]

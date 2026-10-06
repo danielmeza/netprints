@@ -56,6 +56,30 @@ public class ShellEditingTests
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task AnUnsavedClassFileIsMarkedOnItsTabItsTreeRowAndTheWindowTitleUntilItIsSaved()
+    {
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        DocumentId main = session.App.Shell.ActiveDocument?.Id ?? throw new InvalidOperationException("No document.");
+        var tab = session.Page.Tabs.Tab(main);
+        var row = session.Page.Tree.Class("Program");
+        Assert.DoesNotContain('*', (await tab.GetAsync(Token)).Name ?? "");
+        Assert.DoesNotContain('*', session.Window.Title ?? "");
+
+        await session.AddVariableAsync(Token);
+
+        await tab.WaitUntilAsync(e => (e.Name ?? "").EndsWith('*'), "the tab marked", Token);
+        await row.WaitUntilAsync(e => (e.Name ?? "").EndsWith('*'), "the tree row marked", Token);
+        Assert.Contains("HelloWorld*", session.Window.Title, StringComparison.Ordinal);
+
+        await session.RunAsync("save", Token);
+
+        await tab.WaitUntilAsync(e => !(e.Name ?? "").EndsWith('*'), "the tab saved", Token);
+        await row.WaitUntilAsync(e => !(e.Name ?? "").EndsWith('*'), "the tree row saved", Token);
+        Assert.DoesNotContain("*", session.Window.Title, StringComparison.Ordinal);
+        Assert.Equal("Saved 1 file(s)", session.App.Shell.StatusMessage);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task DeleteOnTheEmptyCanvasKeepsTheMethodBeingEdited()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);

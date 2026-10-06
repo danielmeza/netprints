@@ -106,6 +106,29 @@ public sealed class ProjectTreePanelViewModelTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AClassRowShowsTheUnsavedMarkWhileItsFileIsUnsaved()
+    {
+        ProjectSessionViewModel session = await rig.OpenSessionAsync();
+        ClassGraph cls = session.Project.Classes[0];
+        ProjectTreeItemViewModel item = rig.Item(TreeItemKind.Class, cls.Name);
+        Assert.False(item.IsUnsaved);
+        Assert.Equal(cls.Name, item.DisplayName);
+
+        session.ContextFor(cls).CreateVariable();
+        Assert.True(item.IsUnsaved);
+        Assert.Equal(cls.Name + "*", item.DisplayName);
+        Assert.Equal("Tree.class." + cls.Name, item.AutomationId);
+
+        session.UndoStackFor(cls).Undo();
+        Assert.False(item.IsUnsaved);
+
+        session.ContextFor(cls).CreateVariable();
+        Assert.True(await session.SaveAllAsync());
+        Assert.False(item.IsUnsaved);
+        Assert.Equal(cls.Name, item.DisplayName);
+    }
+
+    [Fact]
     public async Task SelectingARowSetsTheShellTreeSelectionAndPulsesTheCommandStates()
     {
         ProjectSessionViewModel session = await rig.OpenSessionAsync();

@@ -135,6 +135,7 @@ public sealed partial class ProjectTreePanelViewModel : ObservableObject, IShell
                 session.Project,
                 new ObservableViewModelCollection<ProjectTreeItemViewModel, ClassGraph>(session.Project.Classes, CreateClass, ReleaseItem),
                 null));
+            RefreshUnsaved();
             SelectActiveDocument();
         }
     }
@@ -159,8 +160,9 @@ public sealed partial class ProjectTreePanelViewModel : ObservableObject, IShell
         item.Detach();
     }
 
-    private ProjectTreeItemViewModel CreateClass(ClassGraph cls) =>
-        new(
+    private ProjectTreeItemViewModel CreateClass(ClassGraph cls)
+    {
+        var item = new ProjectTreeItemViewModel(
             TreeItemKind.Class,
             cls,
             () => cls.Name,
@@ -172,6 +174,9 @@ public sealed partial class ProjectTreePanelViewModel : ObservableObject, IShell
                 Group(EventGraphsName, new ObservableViewModelCollection<ProjectTreeItemViewModel, EventGraph>(cls.EventGraphs, graph => CreateEventGraph(cls, graph), ReleaseItem)),
             ],
             Open);
+        item.IsUnsaved = context?.Shell.Session?.Unsaved.IsUnsaved(cls) ?? false;
+        return item;
+    }
 
     private ProjectTreeItemViewModel CreateMethod(MethodGraph method) =>
         new(TreeItemKind.Method, method, () => method.Name, method as INotifyPropertyChanged, null, Open);
@@ -248,7 +253,24 @@ public sealed partial class ProjectTreePanelViewModel : ObservableObject, IShell
         }
     }
 
-    private void OnCommandStatesChanged(object? sender, EventArgs e) => RefreshMenu();
+    private void OnCommandStatesChanged(object? sender, EventArgs e)
+    {
+        RefreshUnsaved();
+        RefreshMenu();
+    }
+
+    private void RefreshUnsaved()
+    {
+        if (context?.Shell.Session is not { } session)
+        {
+            return;
+        }
+
+        foreach (ProjectTreeItemViewModel item in Roots.SelectMany(Descendants).Where(item => item is { Kind: TreeItemKind.Class, Model: ClassGraph }))
+        {
+            item.IsUnsaved = item.Model is ClassGraph cls && session.Unsaved.IsUnsaved(cls);
+        }
+    }
 
     private void RefreshMenu()
     {

@@ -245,6 +245,42 @@ public sealed class ShellViewModelTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task ASaveShowsHowManyFilesItWroteInTheStatusBar()
+    {
+        ProjectSessionViewModel session = await OpenSessionAsync();
+        ClassGraph first = session.Project.Classes.Single();
+        ClassGraph second = session.Project.CreateNewClass(DefaultProjectProfile.Instance);
+        using ShellViewModel shell = CreateShell();
+        shell.Session = session;
+
+        Assert.True(await session.SaveAsync(second));
+        Assert.Equal("Saved 1 file(s)", shell.StatusMessage);
+
+        first.MarkDirty();
+        second.MarkDirty();
+        Assert.True(await session.SaveAllAsync());
+        Assert.Equal("Saved 2 file(s)", shell.StatusMessage);
+    }
+
+    [Fact]
+    public async Task TheTitleShowsTheUnsavedMarkAfterAnEditThatBypassesTheUndoStack()
+    {
+        ProjectSessionViewModel session = await OpenSessionAsync();
+        ClassGraph cls = session.Project.Classes.Single();
+        ClassContext context = session.ContextFor(cls);
+        using ShellViewModel shell = CreateShell();
+        shell.Session = session;
+        string name = session.Project.Name;
+        Assert.Equal($"{name} – NetPrints", shell.Title);
+
+        context.Methods.First().Graph.Nodes.First().PositionX += 10;
+        Assert.Equal($"{name}* – NetPrints", shell.Title);
+
+        Assert.True(await session.SaveAllAsync());
+        Assert.Equal($"{name} – NetPrints", shell.Title);
+    }
+
+    [Fact]
     public void TheStatusMessageIsTheStatusBarsAndExpiresWithTheClock()
     {
         using ShellViewModel shell = CreateShell();

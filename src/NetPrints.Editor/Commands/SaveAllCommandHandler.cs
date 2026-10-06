@@ -3,7 +3,7 @@ using NetPrints.Editor.Shell;
 
 namespace NetPrints.Editor.Commands;
 
-/// <summary>The <c>saveAll</c> command: saves every edited class of the open project.</summary>
+/// <summary>The <c>saveAll</c> command: saves every unsaved file of the open project.</summary>
 public sealed class SaveAllCommandHandler : ICommandHandler
 {
     /// <inheritdoc/>
