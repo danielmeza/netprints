@@ -10,6 +10,7 @@
         Title="{Binding Title}" Width="1280" Height="800" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShellWindow}">
   <Interaction.Behaviors>
     <edbehaviors:CommandKeyBindingsBehavior Invoker="{Binding Commands}" />
+    <edbehaviors:WindowStateBehavior Service="{Binding WindowStateService}" />
   </Interaction.Behaviors>
   <DockPanel>
     <!-- Menus come from the registry: a top-level item per menu, its groups separated by dividers (a divider is an entry that is not focusable). -->

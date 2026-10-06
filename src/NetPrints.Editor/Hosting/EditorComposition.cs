@@ -36,7 +36,8 @@ public sealed class EditorComposition : IDisposable
             new StorageFilePickerService(() => windows.ActiveWindow),
             new ProcessLauncher(),
             new BackupOptions(paths, fileSystem, TimeProvider.System, BackupService.ResolveDelay(Environment.GetEnvironmentVariable)),
-            new RecentProjects(stateStore, fileSystem, TimeProvider.System));
+            new RecentProjects(stateStore, fileSystem, TimeProvider.System),
+            new WindowStateService(stateStore));
     }
 
     /// <summary>The composed host services.</summary>
@@ -124,7 +125,8 @@ internal sealed class EditorServices : IDisposable
     /// <param name="processes">Starts external processes: the real launcher in production, a test double in the headless UI tests.</param>
     /// <param name="backups">Where the open project's unsaved files are backed up; <see langword="null"/> (the headless tests) for no backups and no clean-up of the user's data folder.</param>
     /// <param name="recent">The recent projects list; <see langword="null"/> (the headless tests) to keep none.</param>
-    public EditorServices(EditorHostServices host, WindowService windows, IEditorDialogs dialogs, IFilePickerService filePicker, IProcessLauncher processes, BackupOptions? backups = null, RecentProjects? recent = null)
+    /// <param name="windowState">Restores and saves the main window's bounds; <see langword="null"/> (the headless tests) to leave the window alone.</param>
+    public EditorServices(EditorHostServices host, WindowService windows, IEditorDialogs dialogs, IFilePickerService filePicker, IProcessLauncher processes, BackupOptions? backups = null, RecentProjects? recent = null, WindowStateService? windowState = null)
     {
         hostChannelError = host.HostChannelError;
         var dispatcher = new AvaloniaUiDispatcher();
@@ -165,7 +167,8 @@ internal sealed class EditorServices : IDisposable
             codeAnalysis,
             runState,
             backups,
-            recent);
+            recent,
+            windowState);
     }
 
     /// <summary>The composed host services.</summary>

@@ -541,19 +541,19 @@ the window, the layout and each project's session, with safe fallbacks (FR-050�
 
 ### Batch E1 — model: sonnet — T061–T063 — 4 units
 
-- [ ] T061 [US6] State store (2 units). Test first: `tests/NetPrints.Editor.Tests/State/JsonEditorStateStoreTests.cs`
+- [x] T061 [US6] State store (2 units). Test first: `tests/NetPrints.Editor.Tests/State/JsonEditorStateStoreTests.cs`
   (contracts/state-files.md §2). `window.json`, `layout.json`, `recent.json` and `sessions/<project-key>.json` carry
   `schemaVersion` 1 and are UTF-8 without a BOM with LF line endings, written through a source-generated
   `StateJsonContext`. A missing, unreadable or newer file gives the defaults with one warning log, and is not
   rewritten until that state changes. Writes go through `AtomicFileWriter`. Then
   `src/NetPrints.Editor/State/IEditorStateStore.cs`, `JsonEditorStateStore.cs`, `StateJsonContext.cs` and the state
   records.
-- [ ] T062 [P] [US5] Recent projects. Test first: `tests/NetPrints.Editor.Tests/State/RecentProjectsTests.cs` (FR-041,
+- [x] T062 [P] [US5] Recent projects. Test first: `tests/NetPrints.Editor.Tests/State/RecentProjectsTests.cs` (FR-041,
   state-files.md §3): pinned first, then the most recent; at most 20 unpinned, the oldest dropped; pinned never
   dropped; search by name or path (case-insensitive substring); missing paths flagged unavailable; remove never touches
   files; paths compared case-insensitively on Windows only; opening or creating a project records it. Then
   `src/NetPrints.Editor/State/RecentProjects.cs`.
-- [ ] T063 [P] [US6] Window placement. Test first: `tests/NetPrints.Editor.Tests/State/WindowPlacementTests.cs`: saved
+- [x] T063 [P] [US6] Window placement. Test first: `tests/NetPrints.Editor.Tests/State/WindowPlacementTests.cs`: saved
   bounds that intersect no current screen give a window centred on the primary screen at the saved size, clamped to
   it; the maximized state is restored. Then `src/NetPrints.Editor/State/WindowStateService.cs` (the placement rule is a
   pure function; the window reads and writes through a behavior).

@@ -5,6 +5,7 @@ using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Hosting;
+using NetPrints.Editor.State;
 
 namespace NetPrints.Editor.Shell;
 
@@ -82,6 +83,10 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
     /// <summary>Gets or sets what hosts the documents and panels; set by the composition once the docking adapter exists.</summary>
     [ObservableProperty]
     public partial IShellLayoutHost? Layout { get; set; }
+
+    /// <summary>Gets or sets the service that restores and saves the window's bounds, or null for none; the window's behavior uses it.</summary>
+    [ObservableProperty]
+    public partial WindowStateService? WindowStateService { get; set; }
 
     /// <summary>Gets the menu bar, or null until <see cref="AttachCommands"/> ran.</summary>
     [ObservableProperty]

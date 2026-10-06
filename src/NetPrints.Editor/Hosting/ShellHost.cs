@@ -64,6 +64,7 @@ internal sealed class ShellHost : IDisposable
         registry.Freeze();
 
         var shell = new ShellViewModel(registry, new NoServices(), TimeProvider.System, context.Dispatcher);
+        shell.WindowStateService = context.WindowStateService;
         var actions = new ShellProjectActions(context, shell);
         var adapter = new DockShellAdapter(shell, actions, id => OpenDocument(id, shell, context));
         actions.Api = adapter;
