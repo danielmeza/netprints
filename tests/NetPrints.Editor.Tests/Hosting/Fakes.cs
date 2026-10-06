@@ -67,6 +67,22 @@ public sealed class FakeDialogs : IEditorDialogs
     public bool TrustAnswer { get; set; }
     public List<(string Title, IReadOnlyList<CodeDiagnostic> Issues)> IssueDialogs { get; } = [];
 
+    /// <summary>Acts as the user in the New project dialog (set the fields, run Create or Cancel); the dialog is cancelled when null.</summary>
+    public Func<NewProjectDialogViewModel, Task>? NewProjectScript { get; set; }
+
+    public int NewProjectCalls { get; private set; }
+
+    public async Task<string?> ShowNewProjectAsync(NewProjectDialogViewModel dialog)
+    {
+        NewProjectCalls++;
+        if (NewProjectScript is not null)
+        {
+            await NewProjectScript(dialog);
+        }
+
+        return dialog.Result;
+    }
+
     public List<(string Title, string Message)> ConfirmCalls { get; } = [];
     public bool ConfirmAnswer { get; set; } = true;
 

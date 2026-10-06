@@ -71,6 +71,10 @@ public sealed class EditorDialogs(Func<Window?> owner) : IEditorDialogs
         ShowAsync<object>(new AboutDialog(about));
 
     /// <inheritdoc/>
+    public Task<string?> ShowNewProjectAsync(NewProjectDialogViewModel dialog) =>
+        ShowAsync<string>(new NewProjectDialog(dialog));
+
+    /// <inheritdoc/>
     public Task ShowReferencesAsync(ReferenceListViewModel references) =>
         ShowAsync<object>(new ReferencesDialog { DataContext = references });
 }

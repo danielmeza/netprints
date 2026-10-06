@@ -12,7 +12,6 @@ namespace NetPrints.Editor.UITests.Shell;
 public class UnloadWhileDirtyTests
 {
     private const string OpenPickerTitle = "Open Project";
-    private const string CreatePickerTitle = "Create Project";
     private static readonly TimeSpan BackupDelay = TimeSpan.FromMilliseconds(50);
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
@@ -55,7 +54,13 @@ public class UnloadWhileDirtyTests
         app.Session.ContextFor(app.Session.Project.Classes[0]).CreateVariable();
 
         app.Dialogs.UnsavedAnswer = UnloadChoice.Cancel;
-        app.FilePicker.Enqueue("save", CreatePickerTitle, Path.Combine(target.Path, "Fresh.csproj"));
+        app.Dialogs.ShowNewProject = async dialog =>
+        {
+            dialog.Name = "Fresh";
+            dialog.Folder = Path.Combine(target.Path, "Fresh");
+            await dialog.CreateCommand.ExecuteAsync(null);
+            return dialog.Result;
+        };
         Assert.True(app.Commands.TryRun(app.Command("newProject")));
         await UiWaitAsync(app, () => app.Dialogs.UnsavedCalls.Count == 1);
         HeadlessDriver.Pump();

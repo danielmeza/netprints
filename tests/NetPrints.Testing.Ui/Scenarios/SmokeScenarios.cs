@@ -1,5 +1,6 @@
 using NetPrints.Editor.Contributions.BuiltIn;
 using NetPrints.Editor.Shell;
+using NetPrints.Testing.Ui.Dialogs;
 using NetPrints.Testing.Ui.Driving;
 using NetPrints.Testing.Ui.References;
 using NetPrints.Testing.Ui.Screenplay;
@@ -100,7 +101,7 @@ public abstract class SmokeScenarios
         }
     }
 
-    /// <summary>Create a project through the save picker (PAR-02).</summary>
+    /// <summary>Create a console project through the New project dialog (PAR-02, FR-042).</summary>
     protected async Task CreateProjectAsync(CancellationToken cancellationToken)
     {
         SmokeContext context;
@@ -112,10 +113,13 @@ public abstract class SmokeScenarios
         using (Step("create project"))
         {
             var shell = context.Editor.Shell;
-            string path = Path.Combine(context.WorkDirectory, "Created.csproj");
+            string folder = Path.Combine(context.WorkDirectory, "Created");
+            string path = Path.Combine(folder, "Created.csproj");
 
-            await context.Editor.FileDialogs.SaveFileAsync("Create Project", path, () => shell.Menu.InvokeAsync("File", ShellCommands.NewProject, cancellationToken),
-                cancellationToken);
+            await shell.Menu.InvokeAsync("File", ShellCommands.NewProject, cancellationToken);
+            var dialog = new NewProjectDialogPage(context.Driver);
+            await dialog.WaitVisibleAsync(cancellationToken);
+            await dialog.CreateAsync("Created", folder, cancellationToken);
 
             await shell.WaitForProjectAsync("Created", cancellationToken);
             await UiWait.UntilAsync(context.Driver, () => Task.FromResult(File.Exists(path)), "project file written", cancellationToken);

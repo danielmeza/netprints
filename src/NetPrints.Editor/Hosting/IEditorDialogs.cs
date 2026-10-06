@@ -62,4 +62,9 @@ public interface IEditorDialogs
     /// <param name="files">The backed-up files, listed in the dialog.</param>
     /// <returns>The user's answer, one restore-or-discard choice per file; <see cref="RecoveryAnswer.Later"/> when the dialog was dismissed.</returns>
     Task<RecoveryAnswer> ConfirmRecoverAsync(IReadOnlyList<RecoveryFile> files);
+
+    /// <summary>Shows the New project dialog; the dialog creates the project itself.</summary>
+    /// <param name="dialog">The dialog's view model.</param>
+    /// <returns>The path of the new <c>.csproj</c>, or <see langword="null"/> when the dialog was cancelled.</returns>
+    Task<string?> ShowNewProjectAsync(NewProjectDialogViewModel dialog);
 }

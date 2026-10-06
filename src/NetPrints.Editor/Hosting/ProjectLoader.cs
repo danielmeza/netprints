@@ -2,7 +2,9 @@ using System.ComponentModel;
 using Microsoft.Extensions.Logging;
 using NetPrints.Compilation;
 using NetPrints.Core;
+using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Lifecycle;
+using NetPrints.Editor.StartPage;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Settings;
 using NetPrints.Projects;
@@ -130,41 +132,22 @@ internal sealed class ProjectLoader : IDisposable
     }
 
     /// <summary>
-    /// Creates a new project in a folder and name chosen by the user and opens it:
-    /// <see cref="IFilePickerService.SaveFileAsync"/> supplies the directory and project name, then
-    /// <see cref="IProjectSystem.CreateAsync"/> writes the <c>.csproj</c>. Cancelling, or a failure, keeps the previous project.
+    /// Shows the New project dialog, which creates the project from a registered template through <see cref="ProjectTemplateService"/>,
+    /// and opens what it created. Cancelling keeps the previous project; a failed creation is shown in the dialog.
     /// </summary>
     /// <returns>A task that completes when the project is open, or the user cancelled.</returns>
     public async Task CreateProjectAsync()
     {
-        string? path = await context.FilePicker.SaveFileAsync("Create Project", "MyProject.csproj", "csproj",
-            [FileFilter.ProjectFiles]).ConfigureAwait(true);
-
-        if (path is null)
+        var service = new ProjectTemplateService(() => shell.Registry.ProjectTemplates, FindProfile, context.Projects);
+        string? path = await context.Dialogs.ShowNewProjectAsync(new NewProjectDialogViewModel(service, context.FilePicker)).ConfigureAwait(true);
+        if (path is not null)
         {
-            return;
-        }
-
-        string? directory = Path.GetDirectoryName(path);
-        if (string.IsNullOrEmpty(directory))
-        {
-            await context.Dialogs.ShowErrorAsync("Failed to create project", $"'{path}' has no directory.").ConfigureAwait(true);
-            return;
-        }
-
-        string projectName = Path.GetFileNameWithoutExtension(path);
-
-        try
-        {
-            string csprojPath = await context.Projects.CreateAsync(
-                directory, projectName, DefaultProjectProfile.Instance, projectName, CancellationToken.None).ConfigureAwait(true);
-            await LoadProjectAsync(csprojPath).ConfigureAwait(true);
-        }
-        catch (Exception ex)
-        {
-            await context.Dialogs.ShowErrorAsync("Failed to create project", $"Failed to create the project at {path}.\n\n{ex}").ConfigureAwait(true);
+            await LoadProjectAsync(path).ConfigureAwait(true);
         }
     }
+
+    private IProjectProfile? FindProfile(string profileId) =>
+        context.Extensions.Current.FindProfile(profileId) ?? (profileId == DefaultProjectProfile.ProfileId ? DefaultProjectProfile.Instance : null);
 
     /// <summary>Opens a project, asking for it with a *.csproj picker unless a path is given.</summary>
     /// <param name="path">The <c>.csproj</c> path, or null to ask the user.</param>

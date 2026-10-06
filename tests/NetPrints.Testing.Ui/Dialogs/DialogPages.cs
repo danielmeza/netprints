@@ -60,3 +60,25 @@ public sealed class RecoverDialogPage(IUiDriver driver) : UiElement(driver, new 
     public UiElement RestoreButton => Find(AutomationIds.RecoverRestoreButton);
     public UiElement DiscardButton => Find(AutomationIds.RecoverDiscardButton);
 }
+
+/// <summary>Screen object of the New project dialog.</summary>
+public sealed class NewProjectDialogPage(IUiDriver driver) : UiElement(driver, new AutomationQuery(AutomationIds.NewProjectDialog))
+{
+    public UiElement Templates => Find(AutomationIds.NewProjectTemplates);
+    public UiElement NameBox => Find(AutomationIds.NewProjectName);
+    public UiElement FolderBox => Find(AutomationIds.NewProjectFolder);
+    public UiElement Message => Find(AutomationIds.NewProjectMessage);
+    public UiElement CreateButton => Find(AutomationIds.NewProjectCreate);
+    public UiElement CancelButton => Find(AutomationIds.NewProjectCancel);
+
+    /// <summary>Types the name and the folder, then presses Create.</summary>
+    public async Task CreateAsync(string name, string folder, CancellationToken cancellationToken)
+    {
+        await NameBox.ClickAsync(cancellationToken);
+        await Driver.TypeAsync(name, cancellationToken);
+        await FolderBox.ClickAsync(cancellationToken);
+        await Driver.TypeAsync(folder, cancellationToken);
+        await CreateButton.WaitUntilAsync(e => e.IsEnabled, "Create enabled", cancellationToken);
+        await CreateButton.ClickAsync(cancellationToken);
+    }
+}

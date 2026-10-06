@@ -53,7 +53,12 @@ public sealed class RecentProjectsWiringTests : IDisposable
         string dir = TestPaths.CreateTempDirectory();
         cleanup.Add(dir);
         string path = Path.Combine(dir, "Chosen.csproj");
-        editor.FilePicker.SaveFileAnswers.Enqueue(path);
+        editor.Dialogs.NewProjectScript = async dialog =>
+        {
+            dialog.Name = "Chosen";
+            dialog.Folder = dir;
+            await dialog.CreateCommand.ExecuteAsync(null);
+        };
 
         await rig.Actions.NewProjectAsync(TestContext.Current.CancellationToken);
 

@@ -45,6 +45,15 @@ internal sealed class ShellApp : IAsyncDisposable
             Ui.Show(new IssuesDialog(title, issues));
             return Task.CompletedTask;
         };
+        // The real (non-modal) New project dialog; the command waits until it closes. A test replaces it to script the answer.
+        Dialogs.ShowNewProject = dialog =>
+        {
+            var closed = new TaskCompletionSource<string?>();
+            var window = new NewProjectDialog(dialog);
+            window.Closed += (_, _) => closed.TrySetResult(dialog.Result);
+            Ui.Show(window);
+            return closed.Task;
+        };
         Dialogs.ShowReferences = references =>
         {
             var dialog = new ReferencesDialog { DataContext = references };

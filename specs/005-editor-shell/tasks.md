@@ -583,7 +583,7 @@ the window, the layout and each project's session, with safe fallbacks (FR-050â€
   `whatsNew`) in order. A start on a path that does not exist or is not a project shows the start page with an error
   naming the path. Then the view models and views in `src/NetPrints.Editor/StartPage/`, ids `StartPage.*`, with the
   recent list's open, pin, unpin, remove and search bound to commands.
-- [ ] T067 [US5] New project (2 units). Test first: `tests/NetPrints.Editor.Tests/StartPage/ProjectTemplateServiceTests.cs`.
+- [x] T067 [US5] New project (2 units). Test first: `tests/NetPrints.Editor.Tests/StartPage/ProjectTemplateServiceTests.cs`.
   The built-in templates `netprints.template.console` (`Exe`) and `netprints.template.library` (`Library`) use the
   `netprints.default` profile. A test template registered through the registry appears in the dialog and creates its
   project (the point U1's UnrealSharp template will use, research R8). An invalid name (not a C# identifier for the

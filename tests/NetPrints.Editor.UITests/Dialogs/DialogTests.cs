@@ -1,14 +1,19 @@
 using Avalonia.Headless.XUnit;
 using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Core;
+using NetPrints.Editor.Contributions;
+using NetPrints.Editor.Contributions.BuiltIn;
 using NetPrints.Editor.Diagnostics;
 using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Editor.References;
+using NetPrints.Editor.StartPage;
 using NetPrints.Editor.UITests.Hosting;
+using NetPrints.Projects;
 using NetPrints.Testing.Ui.Dialogs;
 using NetPrints.Testing.Ui.References;
+using NetPrints.Workspace;
 
 namespace NetPrints.Editor.UITests.Dialogs;
 
@@ -39,6 +44,48 @@ public class DialogTests
         await page.SelectButton.ClickAsync(Token); // batch X2b: DialogViewModel + DialogCloseBehavior
         Assert.True(closed);
         Assert.Equal(TypeSpecifier.FromType<string>(), dialog.Result);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task NewProjectTypesANameAndAFolderThenCreatesAndClosesWithThePath()
+    {
+        var registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
+        BuiltInContributions.Register(registry);
+        var projects = new MsBuildProjectSystem(new ProjectSystemOptions([], "1.0.0"), new ProcessRunner(), NullLogger<MsBuildProjectSystem>.Instance);
+        var service = new ProjectTemplateService(() => registry.ProjectTemplates, _ => DefaultProjectProfile.Instance, projects);
+        string folder = Path.Combine(Path.GetTempPath(), "netprints-ui-" + Guid.NewGuid().ToString("N"), "Typed");
+        try
+        {
+            using var ui = HeadlessUi.Create();
+            var viewModel = new NewProjectDialogViewModel(service, new QueuedFilePicker());
+            var dialog = ui.Show(new NewProjectDialog(viewModel));
+            var page = new NewProjectDialogPage(ui.Driver);
+            bool closed = false;
+            dialog.Closed += (_, _) => closed = true;
+
+            Assert.False(await page.CreateButton.IsEnabledAsync(Token));
+            await page.CreateAsync("Typed", folder, Token);
+
+            Assert.True(closed);
+            Assert.Equal(Path.Combine(folder, "Typed.csproj"), dialog.Result);
+            Assert.True(File.Exists(Path.Combine(folder, "Program.netpc.json")));
+        }
+        finally
+        {
+            TryDeleteParent(folder);
+        }
+    }
+
+    private static void TryDeleteParent(string folder)
+    {
+        try
+        {
+            Directory.Delete(Path.GetDirectoryName(folder) ?? folder, recursive: true);
+        }
+        catch (IOException)
+        {
+            // A temporary folder left behind is harmless.
+        }
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]

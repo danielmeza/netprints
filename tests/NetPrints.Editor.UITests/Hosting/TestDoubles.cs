@@ -95,6 +95,11 @@ public sealed class RecordingDialogs : IEditorDialogs
 
     public Task ShowAboutAsync(AboutViewModel about) => Task.CompletedTask;
 
+    /// <summary>Shows the New project dialog and answers with its result; when null the dialog is cancelled.</summary>
+    public Func<NewProjectDialogViewModel, Task<string?>>? ShowNewProject { get; set; }
+
+    public Task<string?> ShowNewProjectAsync(NewProjectDialogViewModel dialog) => ShowNewProject?.Invoke(dialog) ?? Task.FromResult<string?>(null);
+
     public Task ShowReferencesAsync(ReferenceListViewModel references)
     {
         if (ShowReferences is not null)

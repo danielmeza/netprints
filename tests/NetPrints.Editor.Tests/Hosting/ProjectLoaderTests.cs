@@ -43,23 +43,26 @@ public sealed class ProjectLoaderTests : IDisposable
         await rig.LoadProjectAsync(Track(TestPaths.CopyHelloWorldSample()));
         ProjectSessionViewModel previous = Assert.IsType<ProjectSessionViewModel>(rig.Session);
 
-        editor.FilePicker.SaveFileAnswers.Enqueue(null);
         await rig.Actions.NewProjectAsync(TestContext.Current.CancellationToken);
 
         Assert.Same(previous, rig.Session);
-        Assert.Contains("MyProject.csproj", editor.FilePicker.Calls.Single());
-        Assert.Contains("*.csproj", editor.FilePicker.Calls.Single());
+        Assert.Equal(1, editor.Dialogs.NewProjectCalls);
     }
 
     [Fact]
-    public async Task CreateProjectTakesNameFromFileAndOpensIt()
+    public async Task CreateProjectTakesTheNameFromTheDialogAndOpensIt()
     {
         TestEditor editor = testEditor;
         ProjectRig rig = NewRig();
         string dir = Track(TestPaths.CreateTempDirectory());
         string path = Path.Combine(dir, "Chosen.csproj");
 
-        editor.FilePicker.SaveFileAnswers.Enqueue(path);
+        editor.Dialogs.NewProjectScript = async dialog =>
+        {
+            dialog.Name = "Chosen";
+            dialog.Folder = dir;
+            await dialog.CreateCommand.ExecuteAsync(null);
+        };
         await rig.Actions.NewProjectAsync(TestContext.Current.CancellationToken);
 
         var project = rig.Project;
