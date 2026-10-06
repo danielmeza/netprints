@@ -353,13 +353,16 @@ two arguments, compile, and see the method and its parameters in the generated C
 ### User Story 9 - A consistent look (Priority: P3)
 
 The editor uses one type ramp, one spacing scale and one set of colour tokens, in Dark and Light, including the node
-canvas.
+canvas. Icons come from one vector family and are named by id; node headers, pins, selection, focus, density and
+motion follow tokens; empty panels and the new dialogs each share one pattern; and the look holds at high DPI.
 
 **Why this priority**: UX audit M3: headers are 24-pixel centred text, sizes and margins are ad hoc, and the canvas
-brushes are Dark-only. It matters for polish, not function.
+brushes are Dark-only. It matters for polish, not function. The icon ids (FR-084) are the exception: they must
+exist before P3 publishes the contribution API.
 
 **Independent Test**: Switch View › Theme between Dark, Light and System and see every pane and the canvas follow;
-the hygiene tests report no colour literal in any view and every token defined in both variants.
+the hygiene tests report no colour literal in any view and every token defined in both variants. The snapshot
+tests pass at scale 1.0, 1.5 and 2.0 in both themes, and the sub-phase review has a contact sheet of every pane.
 
 **Acceptance Scenarios**:
 
@@ -370,6 +373,18 @@ the hygiene tests report no colour literal in any view and every token defined i
    graph canvas, the nodes and the connections switch, and the choice survives a restart.
 3. **Given** the views, **Then** no view contains a colour literal and every colour token has a Dark and a Light
    value.
+4. **Given** any menu, the command bar, the project tree, node search or a dialog, **Then** every icon comes from the
+   one vector family through an icon id, stays sharp at 200 % scaling, and an unknown id shows the fallback glyph.
+5. **Given** a graph with every node kind, **Then** each node header has its role colour and its kind glyph, the
+   header text is readable in Dark and Light, and a selected node and the marquee use the selection tokens.
+6. **Given** the keyboard moves focus through the tree, the tabs, the command bar and the palette, **Then** a 2-px
+   accent ring follows the control's corners; hover and pressed states use tokens and fade in 100 to 150 ms.
+7. **Given** an empty Errors list, empty Output, no project in the tree, or a search with no results, **Then** one
+   empty-state pattern shows an icon, a sentence and, when one applies, an action.
+8. **Given** a dialog added in P3a, **Then** it has the shared shell: a title, an icon, buttons in the platform's
+   order, Enter for the default button and Esc for cancel.
+9. **Given** the start page, the About dialog, the window icon and the docs site, **Then** each shows the same
+   product mark.
 
 ---
 
@@ -588,12 +603,55 @@ its public members appear.
 
 - **FR-080**: The editor MUST define a type ramp (Caption 12, Body 14, Subtitle 16, Title 20), a spacing scale (4, 8,
   12, 16, 24) and colour tokens with Dark and Light values, and every view MUST use them; panel headers MUST be
-  left-aligned and semibold; inspector labels MUST share one column width.
+  left-aligned and semibold; inspector labels MUST share one column width. Monospace text (the C# view, Output, and
+  dialogs that show code, paths or shortcuts) MUST use one `Font.Mono` token (the bundled Cascadia Mono), and
+  aligned numbers MUST use tabular numerals.
 - **FR-081**: The graph canvas, nodes, pins and connections MUST take their colours from the same tokens through
   theme overrides, so they follow the theme.
 - **FR-082**: View › Theme MUST offer Dark (default), Light and System; the choice MUST persist.
 - **FR-083**: The window title MUST carry the product name, the project name with its unsaved marker and the active
   graph; native window decorations stay on every platform.
+- **FR-084**: Every icon the editor shows (commands in menus, the command bar and the palette; panels; tree items;
+  node categories and kind glyphs; pin kinds; project templates; dialogs; empty states) MUST come from one vector
+  family, Fluent UI System Icons (ADR-0021), and MUST be named by an icon id that one registry resolves.
+  Contribution descriptors MUST carry an icon id (`IconId`), never an icon-library type. An unknown id MUST draw a
+  fallback glyph and log one warning, and its contribution MUST still register; every built-in id MUST resolve.
+- **FR-085**: The editor MUST ship no raster icon: the 16 inherited `*_16x.png` icons MUST be replaced by icon ids and
+  removed. The product mark MUST have one vector master and exported sizes (PNG from 16 to 256 px and a multi-size
+  `.ico`), used for the window and dialog icons, the start page, the About dialog, the NuGet package icon and the
+  docs site's logo and favicon. A `THIRD-PARTY-NOTICES.md` file MUST list every bundled third-party asset (icon
+  glyphs and fonts) with its licence and copyright, and the Desktop app MUST ship it.
+- **FR-086**: Node headers MUST take their colour from role tokens: Entry (method entries, event entries and
+  return), Call (impure calls), Pure (pure nodes without a role of their own: pure calls, ternary, make array, make
+  delegate, type and pure default nodes such as literals and operators), Flow (default nodes with execution pins,
+  such as branches and loops), Variable (get and set), Constructor, Async (calls whose method returns `Task`,
+  `ValueTask` or their generic forms) and Throw. Each header MUST show its node kind's glyph (FR-084), and the header
+  text MUST reach a contrast ratio of at least 4.5:1 against every role colour in Dark and Light. Pin colours MUST
+  come from pin tokens defined in both variants: one per pin kind (execution, data, type) and one per data type
+  category (bool, integer, floating point, string, object, value type, delegate, generic). Node selection, the
+  marquee and a selected wire MUST take their colours from tokens, which replace the hard-coded `#009900` border.
+- **FR-087**: Keyboard focus MUST show a 2-px ring in the accent token that follows the control's corner radius on
+  the project tree, document tabs, the command bar, menus, lists and the palette, and hover and pressed states MUST
+  use state tokens. Row heights and paddings of the tree, lists and the command bar MUST come from density tokens.
+  Durations and easing MUST come from motion tokens: hover and pressed backgrounds MUST transition in 100 ms, and
+  the palette and node-search popups MUST fade in over 150 ms.
+- **FR-088**: Errors with no diagnostics, Output with no lines, the project tree with no project, node search, the
+  palette and go-to-anything with no results, the type-scoped search of FR-091 and the inspector with no selection
+  MUST show one empty-state control: an icon, one sentence and, when one applies, an action that runs a registered
+  command. The dialogs added in P3a (Unsaved changes, Confirm, Keyboard shortcuts, Trust, Issues, Recover, About
+  and Error) MUST share one dialog shell: a title, an icon, the body, a default and a cancel button in the
+  platform's order (Windows: default first; macOS and Linux: cancel first), Enter for the default, Esc for cancel,
+  and a width between two tokens.
+- **FR-089**: Snapshot tests MUST render the shell, the canvas with every node kind, the method inspector and the
+  Unsaved changes dialog at scale 1.0, 1.5 and 2.0 in Dark and Light, and fail on any change. The sub-phase G
+  review MUST attach a contact sheet produced by a test run and uploaded by CI: every pane, the start page, a graph
+  and the P3a dialogs, in both themes at 100 % and 200 %.
+
+Deferred from the visual-polish items (gap research 2026-10-06, roadmap): pins and variable headers coloured by data
+type, the selected-wire highlight and a selection count, a Compact/Comfortable switch and zoom-level detail, animated
+fit and a reduce-motion setting, canvas focus (M18), canvas empty-state hints (M8), the dialog shell for the older
+dialogs (M13) and compact operator nodes go to P6; glyphs contributed by extensions are decided with the P3
+contribution API.
 
 **Type-scoped search (US10)**
 
@@ -639,7 +697,10 @@ its public members appear.
 - **Session**: per project and per user: open tabs, active tab, and each graph's zoom and position.
 - **Recent project**: a path with its display name, last opened time and pinned flag.
 - **Navigation entry**: a graph, zoom, position and selection recorded in the back and forward history.
-- **Design token**: a named size, spacing or colour (with Dark and Light values) used by every view.
+- **Design token**: a named size, spacing, colour (with Dark and Light values), density or motion value used by
+  every view.
+- **Icon id**: a namespaced string (`netprints.icon.save`) that the icon registry resolves to a glyph of the one
+  icon family (ADR-0021).
 
 ## Success Criteria *(mandatory)*
 
@@ -671,7 +732,11 @@ its public members appear.
 - **SC-009**: A custom event renamed and given two arguments in the inspector produces the renamed method with both
   parameters in the generated C#, and each change undoes in one step.
 - **SC-010**: The docs site builds with 0 broken links and contains the six editor guides, each with at least one
-  screenshot produced by the scripted run, plus ADR-0018 to ADR-0020.
+  screenshot produced by the scripted run, plus ADR-0018 to ADR-0021.
+- **SC-011**: 0 raster icons ship in `src/` (the product mark's `.ico` window icons excepted); 100% of built-in icon
+  ids resolve without the fallback; every node-header text and role colour pair has a contrast ratio of at least
+  4.5:1 in both variants; the snapshot set passes at scale 1.0, 1.5 and 2.0 in Dark and Light; and the sub-phase G
+  review carries a contact sheet.
 
 ## Assumptions
 
