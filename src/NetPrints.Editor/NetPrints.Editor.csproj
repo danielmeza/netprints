@@ -58,6 +58,7 @@
 
   <ItemGroup>
     <AvaloniaResource Include="Assets\**" />
+    <EmbeddedResource Include="StartPage\WhatsNew.md" LogicalName="NetPrints.Editor.StartPage.WhatsNew.md" />
     <EmbeddedResource Include="Graph\GridShader.sksl" LogicalName="NetPrints.Editor.Graph.GridShader.sksl" />
   </ItemGroup>
 

@@ -147,6 +147,9 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
     public Task NewProjectAsync(CancellationToken cancellationToken) => Loader.CreateProjectAsync();
 
     /// <inheritdoc/>
+    public Task OpenSampleAsync(string sampleName, CancellationToken cancellationToken) => Loader.OpenSampleAsync(sampleName);
+
+    /// <inheritdoc/>
     public Task CloseProjectAsync(CancellationToken cancellationToken) => Loader.CloseProjectAsync();
 
     /// <inheritdoc/>

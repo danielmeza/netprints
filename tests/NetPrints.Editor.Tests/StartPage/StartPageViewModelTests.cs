@@ -211,7 +211,7 @@ public sealed class StartPageViewModelTests : IDisposable
         RecentProjectRow(tile, "Alpha", out RecentProjectItemViewModel alpha);
 
         await tile.OpenCommand.ExecuteAsync(beta);
-        Assert.Equal(["OpenProject:/b/Beta.csproj"], actions.Calls);
+        Assert.Equal(["ConfirmUnload", "OpenProject:/b/Beta.csproj"], actions.Calls);
 
         Assert.False(alpha.IsAvailable);
         Assert.False(tile.OpenCommand.CanExecute(alpha));
@@ -227,6 +227,21 @@ public sealed class StartPageViewModelTests : IDisposable
         await new OpenProjectTileViewModel(actions).OpenCommand.ExecuteAsync(null);
         await new NewProjectTileViewModel(actions).NewCommand.ExecuteAsync(null);
 
-        Assert.Equal(["OpenProject:", "NewProject"], actions.Calls);
+        Assert.Equal(["ConfirmUnload", "OpenProject:", "ConfirmUnload", "NewProject"], actions.Calls);
+    }
+
+    [Fact]
+    public async Task DecliningTheUnloadPromptKeepsTheOpenProjectFromEveryTile()
+    {
+        actions.AllowUnload = false;
+        RecentProjects recent = NewRecent();
+        Record(recent, "/a/Alpha.csproj");
+        var tile = new RecentProjectsTileViewModel(recent, actions);
+
+        await new OpenProjectTileViewModel(actions).OpenCommand.ExecuteAsync(null);
+        await new NewProjectTileViewModel(actions).NewCommand.ExecuteAsync(null);
+        await tile.OpenCommand.ExecuteAsync(tile.Items[0]);
+
+        Assert.Equal(["ConfirmUnload", "ConfirmUnload", "ConfirmUnload"], actions.Calls);
     }
 }

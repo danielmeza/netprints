@@ -1,0 +1,52 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:sp="clr-namespace:NetPrints.Editor.StartPage"
+             x:Class="NetPrints.Editor.StartPage.WhatsNewTileView"
+             x:DataType="sp:WhatsNewTileViewModel">
+  <!-- The what's new tile: the bundled notes as headings, bullets, paragraphs and links, then the link to the releases page. -->
+  <UserControl.DataTemplates>
+    <DataTemplate DataType="sp:WhatsNewText" x:DataType="sp:WhatsNewText">
+      <TextBlock Text="{Binding Text}" TextWrapping="Wrap" />
+    </DataTemplate>
+    <DataTemplate DataType="sp:WhatsNewLink" x:DataType="sp:WhatsNewLink">
+      <Button Classes="flat" Padding="0" Content="{Binding Text}" ToolTip.Tip="{Binding Url}"
+              Command="{Binding $parent[UserControl].((sp:WhatsNewTileViewModel)DataContext).OpenLinkCommand}" CommandParameter="{Binding Url}" />
+    </DataTemplate>
+    <DataTemplate DataType="sp:WhatsNewHeading" x:DataType="sp:WhatsNewHeading">
+      <TextBlock Classes="header" Text="{Binding PlainText}" TextWrapping="Wrap" />
+    </DataTemplate>
+    <DataTemplate DataType="sp:WhatsNewBullet" x:DataType="sp:WhatsNewBullet">
+      <Grid ColumnDefinitions="Auto,*">
+        <TextBlock Text="•" Margin="0,0,8,0" />
+        <ItemsControl Grid.Column="1" ItemsSource="{Binding Segments}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <WrapPanel />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+        </ItemsControl>
+      </Grid>
+    </DataTemplate>
+    <DataTemplate DataType="sp:WhatsNewParagraph" x:DataType="sp:WhatsNewParagraph">
+      <ItemsControl ItemsSource="{Binding Segments}">
+        <ItemsControl.ItemsPanel>
+          <ItemsPanelTemplate>
+            <WrapPanel />
+          </ItemsPanelTemplate>
+        </ItemsControl.ItemsPanel>
+      </ItemsControl>
+    </DataTemplate>
+  </UserControl.DataTemplates>
+  <StackPanel Spacing="8" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageWhatsNew}">
+    <ItemsControl ItemsSource="{Binding Blocks}">
+      <ItemsControl.ItemsPanel>
+        <ItemsPanelTemplate>
+          <StackPanel Spacing="6" />
+        </ItemsPanelTemplate>
+      </ItemsControl.ItemsPanel>
+    </ItemsControl>
+    <Button HorizontalAlignment="Left" Content="Release notes on GitHub" Command="{Binding OpenLinkCommand}" CommandParameter="{Binding ReleasesAddress}"
+            AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageReleasesLink}" />
+  </StackPanel>
+</UserControl>

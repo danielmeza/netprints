@@ -26,10 +26,10 @@
                     AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageNewButton}" />
           </DataTemplate>
           <DataTemplate DataType="sp:SamplesTileViewModel" x:DataType="sp:SamplesTileViewModel">
-            <TextBlock Text="Samples" Classes="header" />
+            <sp:SamplesTileView />
           </DataTemplate>
           <DataTemplate DataType="sp:WhatsNewTileViewModel" x:DataType="sp:WhatsNewTileViewModel">
-            <TextBlock Text="What's new" Classes="header" />
+            <sp:WhatsNewTileView />
           </DataTemplate>
         </ItemsControl.DataTemplates>
         <ItemsControl.ItemsPanel>

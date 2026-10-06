@@ -23,6 +23,7 @@ internal sealed class ProjectLoader : IDisposable
 {
     private readonly EditorContext context;
     private readonly ShellViewModel shell;
+    private readonly SampleCatalog samples = SampleCatalog.Bundled;
     private readonly ILogger<ProjectLoader> logger;
     private readonly HashSet<(string Id, string? ManifestPath, string Code)> reportedExtensionFailures = [];
     private CancellationTokenSource? warmUp;
@@ -159,6 +160,42 @@ internal sealed class ProjectLoader : IDisposable
         {
             await LoadProjectAsync(path).ConfigureAwait(true);
         }
+    }
+
+    /// <summary>
+    /// Copies a bundled sample into a folder named after it inside a folder the user picks, and opens the copy. The bundled files are never
+    /// touched; a copy that fails, such as into a folder that is not empty, is reported and nothing is opened.
+    /// </summary>
+    /// <param name="sampleName">The sample's name.</param>
+    /// <returns>A task that completes when the copy is open, or the user cancelled.</returns>
+    public async Task OpenSampleAsync(string sampleName)
+    {
+        const string errorTitle = "Failed to open the sample";
+        SampleDescriptor? sample = samples.Samples.FirstOrDefault(candidate => string.Equals(candidate.Name, sampleName, StringComparison.Ordinal));
+        if (sample is null)
+        {
+            await context.Dialogs.ShowErrorAsync(errorTitle, $"There is no bundled sample named '{sampleName}'.").ConfigureAwait(true);
+            return;
+        }
+
+        string? parent = await context.FilePicker.OpenFolderAsync($"Choose where to copy {sample.Name}").ConfigureAwait(true);
+        if (parent is null)
+        {
+            return;
+        }
+
+        string csproj;
+        try
+        {
+            csproj = await samples.CopyAsync(sample, Path.Combine(parent, sample.Name), CancellationToken.None).ConfigureAwait(true);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            await context.Dialogs.ShowErrorAsync(errorTitle, ex.Message).ConfigureAwait(true);
+            return;
+        }
+
+        await LoadProjectAsync(csproj).ConfigureAwait(true);
     }
 
     /// <summary>Replaces the open project's session with none.</summary>

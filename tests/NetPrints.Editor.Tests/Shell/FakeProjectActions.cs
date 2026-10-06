@@ -40,6 +40,13 @@ public sealed class FakeProjectActions : IProjectActions
     }
 
     /// <inheritdoc/>
+    public Task OpenSampleAsync(string sampleName, CancellationToken cancellationToken)
+    {
+        Calls.Add($"OpenSample:{sampleName}");
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc/>
     public Task CloseProjectAsync(CancellationToken cancellationToken)
     {
         Calls.Add("CloseProject");

@@ -28,6 +28,8 @@ internal sealed class NoProjectActions : IProjectActions
 
     public Task NewProjectAsync(CancellationToken cancellationToken) => throw new NotSupportedException();
 
+    public Task OpenSampleAsync(string sampleName, CancellationToken cancellationToken) => throw new NotSupportedException();
+
     public Task CloseProjectAsync(CancellationToken cancellationToken) => throw new NotSupportedException();
 
     public Task ExitAsync(CancellationToken cancellationToken) => throw new NotSupportedException();

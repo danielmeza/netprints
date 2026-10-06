@@ -38,6 +38,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The bundled samples (FR-043): the sample's project, graphs and generated files, not its build output. The editor copies one to a folder the user picks. -->
+    <Content Include="..\..\samples\HelloWorld\**"
+             Exclude="..\..\samples\HelloWorld\bin\**;..\..\samples\HelloWorld\obj\**;..\..\samples\HelloWorld\Compiled_*\**"
+             Link="samples\HelloWorld\%(RecursiveDir)%(Filename)%(Extension)"
+             CopyToOutputDirectory="PreserveNewest"
+             CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\NetPrints.Editor\NetPrints.Editor.csproj" />
     <ProjectReference Include="..\NetPrints.Workspace\NetPrints.Workspace.csproj" />
   </ItemGroup>

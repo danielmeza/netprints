@@ -8,5 +8,11 @@ namespace NetPrints.Editor.StartPage;
 internal sealed partial class NewProjectTileViewModel(IProjectActions actions)
 {
     [RelayCommand]
-    private Task NewAsync(CancellationToken cancellationToken) => actions.NewProjectAsync(cancellationToken);
+    private async Task NewAsync(CancellationToken cancellationToken)
+    {
+        if (await actions.ConfirmUnloadAsync(cancellationToken).ConfigureAwait(true))
+        {
+            await actions.NewProjectAsync(cancellationToken).ConfigureAwait(true);
+        }
+    }
 }

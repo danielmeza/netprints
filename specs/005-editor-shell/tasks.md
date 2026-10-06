@@ -593,7 +593,7 @@ the window, the layout and each project's session, with safe fallbacks (FR-050â€
   empty `public static void Main()`, like `samples/HelloWorld/HelloWorld.Program.netpc.json`); a Library project seeds
   no graph. Test first: a created Executable project builds with no CS5001 and runs. Then `ProjectTemplateService` and
   `NewProjectDialog` (`DialogViewModel<string?>`, Create enabled only when the input is valid).
-- [ ] T068 [US5] Samples and What's new (2 units). Bundle `samples/HelloWorld` (the `.csproj`, the graphs and the
+- [x] T068 [US5] Samples and What's new (2 units). Bundle `samples/HelloWorld` (the `.csproj`, the graphs and the
   generated files; not `bin/`, `obj/` or `Compiled_HelloWorld/`) as content of
   `src/NetPrints.Desktop/NetPrints.Desktop.csproj`. Opening a sample copies it to a folder the user picks and opens the
   copy; a test checks that the bundled files' hashes do not change. `src/NetPrints.Editor/StartPage/WhatsNew.md` is

@@ -24,9 +24,9 @@ public static class StartPageContributions
             services => new NewProjectTileViewModel(StartPageServices.Require<IProjectActions>(services))));
         registry.AddDashboardTile(new DashboardTileDescriptor(
             ContributionIds.TilePrefix + "samples", "Samples", 3,
-            _ => new SamplesTileViewModel()));
+            services => new SamplesTileViewModel(services.GetService(typeof(SampleCatalog)) as SampleCatalog ?? SampleCatalog.Bundled, StartPageServices.Require<IProjectActions>(services))));
         registry.AddDashboardTile(new DashboardTileDescriptor(
             ContributionIds.TilePrefix + "whatsNew", "What's new", 4,
-            _ => new WhatsNewTileViewModel()));
+            services => new WhatsNewTileViewModel(WhatsNewResource.Read(), services.GetService(typeof(IUrlLauncher)) as IUrlLauncher ?? new ShellUrlLauncher())));
     }
 }

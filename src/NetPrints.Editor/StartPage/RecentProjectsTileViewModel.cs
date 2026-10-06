@@ -48,7 +48,13 @@ internal sealed partial class RecentProjectsTileViewModel : ObservableObject
     partial void OnSearchTextChanged(string value) => Refresh();
 
     [RelayCommand(CanExecute = nameof(CanOpen))]
-    private Task OpenAsync(RecentProjectItemViewModel item, CancellationToken cancellationToken) => actions.OpenProjectAsync(item.Path, cancellationToken);
+    private async Task OpenAsync(RecentProjectItemViewModel item, CancellationToken cancellationToken)
+    {
+        if (await actions.ConfirmUnloadAsync(cancellationToken).ConfigureAwait(true))
+        {
+            await actions.OpenProjectAsync(item.Path, cancellationToken).ConfigureAwait(true);
+        }
+    }
 
     private static bool CanOpen(RecentProjectItemViewModel? item) => item is { IsAvailable: true };
 
