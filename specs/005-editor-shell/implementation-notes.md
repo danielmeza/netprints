@@ -1043,7 +1043,7 @@ Verdict: request changes, 1 blocker, 2 majors, 15 minors, 13 nits (31 findings).
 | R10 | minor | Some Errors rows can't be activated | F2 | fixed 6b687459 |
 | R11 | minor | A floating document's window is not brought forward | F2 | fixed dc2cc819 |
 | R12 | minor | Dialogs from a floated window open on the main window | F2 | fixed dc2cc819 |
-| R13 | minor | A row's empty area ignores double-clicks and right-clicks | B4 (flaky plan) | open |
+| R13 | minor | A row's empty area ignores double-clicks and right-clicks | B4 (flaky plan) | fixed 474a0a7b, 878955bc; retry removed 68e86f52; trace 0d1c1fd3 |
 | R14 | minor | The inspector ignores graph selection | F2 | fixed aa4e2e14 |
 | R15 | minor | Creating a `ClassContext` runs code analysis | F4 | fixed f2dda639, 5a8ea179; flag removed 2bae5772 |
 | R16 | minor | The unsubscribe test can't fail | F3 | fixed 0340c1fe |
@@ -1102,3 +1102,11 @@ Decisions of batch F4 (R15, R18, R20, R23, R24, R29: f2dda639, 5a8ea179, 2bae577
 - Decision (R23): `MemoizedReflectionProvider` materialises `GetConstructors`, `GetPublicMethodOverloads` and `GetOverridableMethodsForType` before caching. Red: a conversion spy counted 2.
 - Decision (R24): `OpenDocument` adds a document dock back (`ShellDockFactory.AddDocumentDock`) instead of rebuilding the layout, and `HidePanel` handles a null `DockHome`. The second fix has no reproducible scenario (removing the tool dock in a test did not reach it), so it is defensive and untested.
 - Decision (R29): `class Program` is asserted. Mutation: with the class renamed, the old assertion passes and the new one fails.
+
+Decisions of batch B4 (flaky-test plan, pulled forward for issue #16; R13: 0d1c1fd3, 474a0a7b, 68e86f52, 878955bc):
+- Decision (trace): `IUiDriver.InputTrace` lists every pointer press (headless: source element, nearest automation id, `ClickCount`, timestamp, delta; X11: target, count, time, delta) and `UiWaitTimeoutException` appends it. On the unfixed product it showed two causes: a press outside the template's `StackPanel` lands on the row container (`Border`, `ContentPresenter`) and reaches neither the double-tap behavior nor the context menu; and with a slow first press the two presses had `ClickCount=1` twice, 614 to 624 ms apart.
+- Decision (red): five new tests failed 5 of 5 before the fix (deterministic, no contention needed): double click and right click on a tree row's indentation, double click on an error row's padding, a tree selection that takes 600 ms, two error row presses 600 ms apart.
+- Decision (product): the whole row is the target. One `ExecuteCommandOnItemDoubleClickBehavior` on the `TreeView` and on the `ListBox` resolves the pressed row's container and runs `OpenItemCommand` / `NavigateCommand` with its item; the tree's `ContextMenu` is set on the `TreeViewItem` style (one shared instance, its `ItemsSource` re-binds to the right-clicked row, pinned by `RightClickingTheEmptyPartOfARowOpensItsContextMenu`); `Errors.Row` moved to the `ListBoxItem`.
+- Decision (press, not DoubleTapped): the first version used `DoubleTapped`, which Avalonia raises only when both presses have the same source element. With the retry removed, 3 of 4 E2E scenarios that open a method from the tree failed on a real X server (with the retry restored, each logged one failed first attempt, 95 ms between presses). Acting on the press with `ClickCount == 2` (time and position only) fixed it: E2E 33 of 33.
+- Decision (headless `DoubleTapTime`): headless tests run with a 30 s double-tap time (`HeadlessPlatformSettings`, a `DispatchProxy` over `IPlatformSettings`, installed in `AfterSetup` next to `DisableTransitions`; Avalonia's locator is internal, so it is reached by reflection). Product timing is unchanged (500 ms). No test keeps the real threshold: that is Avalonia's own behavior.
+- Decision (retry): `ProjectTreePage.OpenAsync` is a single attempt followed by a wait; a miss fails with the input trace. 20 iterations of the 7 tree and error list double-click and right-click tests with 48 busy loops on 32 cores: 140 of 140 passed, with the `DoubleTapped` version and again with the press version.

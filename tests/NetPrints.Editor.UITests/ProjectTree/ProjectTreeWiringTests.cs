@@ -1,7 +1,7 @@
 using Avalonia.Automation;
 using Avalonia.Controls;
-using Avalonia.VisualTree;
 using Avalonia.Headless.XUnit;
+using Avalonia.VisualTree;
 using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;

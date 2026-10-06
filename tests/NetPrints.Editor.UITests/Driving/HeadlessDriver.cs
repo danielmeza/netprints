@@ -1,13 +1,13 @@
+using System.Globalization;
 using Avalonia;
+using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.Input.Raw;
 using Avalonia.Interactivity;
-using Avalonia.VisualTree;
 using Avalonia.Threading;
-using System.Globalization;
-using Avalonia.Automation;
+using Avalonia.VisualTree;
 using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Testing.Ui.Driving;
 using NetPrints.Testing.Ui.Snapshots;
