@@ -161,12 +161,22 @@ public sealed class UndoRedoStack
 
     /// <summary>Runs <paramref name="action"/> with <see cref="IsApplying"/> true; for a caller that executes a command itself before <see cref="Record"/>.</summary>
     /// <param name="action">The action that changes the model.</param>
-    public void RunApplying(Action action)
+    public void RunApplying(Action action) => RunApplying(() =>
+    {
+        action();
+        return true;
+    });
+
+    /// <summary>Runs <paramref name="action"/> with <see cref="IsApplying"/> true and returns what it returns.</summary>
+    /// <typeparam name="T">The type of the result.</typeparam>
+    /// <param name="action">The function that changes the model.</param>
+    /// <returns>The result of <paramref name="action"/>.</returns>
+    public T RunApplying<T>(Func<T> action)
     {
         applying++;
         try
         {
-            action();
+            return action();
         }
         finally
         {

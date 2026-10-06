@@ -334,28 +334,21 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
     }
 
     /// <summary>
-    /// Deletes the selected nodes except method entry, class return and the main return node (PAR-37).
+    /// Deletes the selected nodes except method entry, class return and the main return node (PAR-37), as one
+    /// undoable step that restores the connections.
     /// </summary>
     public void DeleteSelectedNodes()
     {
         var mainReturn = (Graph as MethodGraph)?.MainReturnNode;
-        bool deleted = false;
+        List<Node> deletable =
+        [
+            .. SelectedNodes.Select(vm => vm.Node)
+                .Where(node => node is not (MethodEntryNode or ClassReturnNode or ExecutionEntryNode or TypeReturnNode) && node != mainReturn),
+        ];
 
-        foreach (var node in SelectedNodes.ToList())
+        if (deletable.Count > 0)
         {
-            if (node.Node is MethodEntryNode or ClassReturnNode or ExecutionEntryNode or TypeReturnNode || node.Node == mainReturn)
-            {
-                continue;
-            }
-
-            GraphUtil.DisconnectNodePins(node.Node);
-            Graph.Nodes.Remove(node.Node);
-            deleted = true;
-        }
-
-        if (deleted)
-        {
-            Services.UndoRedo.ForgetSavedState();
+            Services.UndoRedo.Do(EditorCommands.RemoveNodes(deletable));
         }
 
         DeselectNodes();
@@ -374,6 +367,11 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
             throw new ArgumentException("The request targets another graph.", nameof(request));
         }
 
+        return RecordAdd(() => CreateNode(request));
+    }
+
+    private Node CreateNode(AddNodeRequest request)
+    {
         object[] parameters = [Graph, .. request.ConstructorParameters];
         var node = (Node)(Activator.CreateInstance(request.NodeType, parameters)
             ?? throw new InvalidOperationException($"Could not create an instance of {request.NodeType}."));
@@ -397,7 +395,7 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
     /// <param name="suggestionPin">Pin the search was opened for, or <see langword="null"/>.</param>
     /// <param name="suggestion">The chosen suggestion.</param>
     /// <returns>The new node.</returns>
-    public Node AddNode(GraphPoint position, NodePin? suggestionPin, NodeSuggestion suggestion)
+    public Node AddNode(GraphPoint position, NodePin? suggestionPin, NodeSuggestion suggestion) => RecordAdd(() =>
     {
         Node node = suggestion.Create(Graph);
         node.PositionX = Math.Max(0, position.X);
@@ -409,6 +407,14 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
             GraphUtil.ConnectRelevantPins(suggestionPin, node, provider.TypeSpecifierIsSubclassOf, provider.HasImplicitCast);
         }
 
+        return node;
+    });
+
+    private T RecordAdd<T>(Func<T> create)
+        where T : Node
+    {
+        T node = Services.UndoRedo.RunApplying(create);
+        Services.UndoRedo.Record(EditorCommands.AddNode(node));
         return node;
     }
 
@@ -423,13 +429,13 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
     /// <param name="position">Where the entry is created (graph coordinates).</param>
     /// <param name="create">Constructs the entry from this graph, cast to <see cref="EventGraph"/>.</param>
     /// <returns>The new entry.</returns>
-    public EventEntryNode AddEventEntry(GraphPoint position, Func<EventGraph, EventEntryNode> create)
+    public EventEntryNode AddEventEntry(GraphPoint position, Func<EventGraph, EventEntryNode> create) => RecordAdd(() =>
     {
         EventEntryNode node = create((EventGraph)Graph);
         node.PositionX = Math.Max(0, position.X);
         node.PositionY = Math.Max(0, position.Y);
         return node;
-    }
+    });
 
     /// <summary>Creates a node of type <typeparamref name="T"/> at a position.</summary>
     public Node AddNode<T>(GraphPoint position, NodePin? suggestionPin = null, params object[] arguments) where T : Node =>

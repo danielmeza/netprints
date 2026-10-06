@@ -143,6 +143,57 @@ public static class EditorCommands
             });
     }
 
+    /// <summary>Name of the command <see cref="AddNode"/> returns.</summary>
+    public const string AddNodeName = "Add node";
+
+    /// <summary>
+    /// Records the creation of a node the caller already made, with the connections made at creation, for
+    /// <see cref="UndoRedoStack.Record"/>: undo disconnects and removes it, redo puts it back at its index and reconnects it.
+    /// </summary>
+    /// <param name="node">The new node, already in its graph.</param>
+    /// <returns>The command, named <see cref="AddNodeName"/>.</returns>
+    public static IUndoableCommand AddNode(Node node)
+    {
+        var handle = NodeHandles.GetValue(node, n => new NodeHandle(n));
+        NodeConnectionSnapshot? removed = null;
+
+        return new DelegateUndoableCommand(AddNodeName,
+            () =>
+            {
+                if (removed is not null)
+                {
+                    RestoreAndReconnect(removed);
+                }
+            },
+            () => removed = CaptureAndDisconnect(handle.Node));
+    }
+
+    /// <summary>
+    /// Removes nodes from their graph; undo puts them back at their indexes and restores every connection, including
+    /// those between the removed nodes.
+    /// </summary>
+    /// <param name="nodes">The nodes to remove, all of one graph.</param>
+    /// <returns>The command, named <c>Delete node</c> or <c>Delete nodes</c>.</returns>
+    public static IUndoableCommand RemoveNodes(IReadOnlyList<Node> nodes)
+    {
+        ArgumentNullException.ThrowIfNull(nodes);
+        var removed = new List<NodeConnectionSnapshot>();
+
+        return new DelegateUndoableCommand(nodes.Count == 1 ? "Delete node" : "Delete nodes",
+            () =>
+            {
+                removed.Clear();
+                removed.AddRange(nodes.Select(CaptureAndDisconnect));
+            },
+            () =>
+            {
+                for (int i = removed.Count - 1; i >= 0; i--)
+                {
+                    RestoreAndReconnect(removed[i]);
+                }
+            });
+    }
+
     /// <summary>Adds a method (or an override, when <paramref name="create"/> builds one) to the class; undo removes it and redo restores the same graph.</summary>
     /// <param name="cls">The class.</param>
     /// <param name="create">Creates the method and adds it to the class on the first run; may return null when nothing could be created.</param>

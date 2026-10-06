@@ -6,8 +6,11 @@ using Avalonia.VisualTree;
 using Material.Icons.Avalonia;
 using NetPrints.Compilation;
 using NetPrints.Core;
+using NetPrints.Graph;
 using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Contributions.BuiltIn;
+using NetPrints.Editor.Graph;
+using NetPrints.Editor.Graph.Nodes;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.UITests.Driving;
@@ -191,6 +194,57 @@ public class RegistrySurfaceTests
             Assert.False(undo.IsEffectivelyEnabled);
             Assert.Equal("Redo Add node", HeaderOf(redo));
             Assert.True(redo.IsEffectivelyEnabled);
+        }
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task TheEditMenuAndBarNameTheNodeActionsOfTheCanvas()
+    {
+        var (app, sample, session) = await OpenProjectAsync();
+        await using (app)
+        using (sample)
+        using (var rig = SurfaceRig.Create(session: session))
+        {
+            ClassGraph cls = session.Project.Classes.Single();
+            ClassContext classContext = session.ContextFor(cls);
+            MethodGraph method = classContext.CreateMethod();
+            using var graph = new NodeGraphViewModel(method, classContext.Services);
+            var document = new GraphDocumentViewModel(DocumentId.Graph(session.ClassPathOf(cls), "method:1"), graph, cls, session);
+            rig.Shell.AddDocument(document);
+            rig.Shell.ActiveDocument = document;
+            IReadOnlyList<MenuItem> edit = rig.Open("Edit");
+            MenuItem undo = Item(edit, "undo");
+            session.UndoStackFor(cls).Clear();
+            rig.Settle();
+            Assert.Equal("Undo", HeaderOf(undo));
+            Assert.False(undo.IsEffectivelyEnabled);
+
+            await graph.OpenSearchAsync(new GraphPoint(100, 100), null, Token);
+            await graph.Search.SelectCommand.ExecuteAsync(graph.Search.AllSuggestions.First(item => item.Text == "If Else"));
+            rig.Settle();
+
+            Assert.Equal("Undo Add node", HeaderOf(undo));
+            Assert.True(undo.IsEffectivelyEnabled);
+            Assert.Equal("Undo Add node (Ctrl+Z)", ToolTip.GetTip(Assert.IsType<Button>(rig.Find(BarId(Prefix + "undo")))));
+
+            NodeViewModel node = graph.Nodes.Single(vm => vm.Node is IfElseNode);
+            graph.SelectNodes([node], deselectPrevious: true);
+            rig.Settle();
+            MenuItem delete = Item(edit, "delete");
+            Assert.True(delete.IsEffectivelyEnabled);
+            delete.Command?.Execute(delete.CommandParameter);
+            rig.Settle();
+
+            Assert.Equal("Undo Delete node", HeaderOf(undo));
+            Assert.DoesNotContain(graph.Nodes, vm => vm.Node is IfElseNode);
+
+            undo.Command?.Execute(undo.CommandParameter);
+            rig.Settle();
+
+            Assert.Contains(graph.Nodes, vm => vm.Node is IfElseNode);
+            Assert.Equal("Undo Add node", HeaderOf(undo));
+            Assert.Equal("Redo Delete node", HeaderOf(Item(edit, "redo")));
+            Assert.Equal("Undid: Delete node", rig.Shell.StatusMessage);
         }
     }
 
