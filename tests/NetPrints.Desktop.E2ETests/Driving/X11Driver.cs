@@ -71,12 +71,21 @@ public sealed class X11Driver(XServer server, EditorProcess editor, Tool tool) :
         double fromX = double.Parse(values["X"], CultureInfo.InvariantCulture);
         double fromY = double.Parse(values["Y"], CultureInfo.InvariantCulture);
         const int steps = 6;
-        for (int i = 1; i < steps; i++)
+        string at = I(fromX) + "," + I(fromY);
+        for (int i = 1; i <= steps; i++)
         {
-            await JumpToAsync(fromX + (x - fromX) * i / steps, fromY + (y - fromY) * i / steps, cancellationToken);
+            double stepX = i == steps ? x : fromX + (x - fromX) * i / steps;
+            double stepY = i == steps ? y : fromY + (y - fromY) * i / steps;
+            string next = I(stepX) + "," + I(stepY);
+
+            // `mousemove --sync` waits for the pointer to move, so a jump onto the point it is already at never returns.
+            if (next != at)
+            {
+                await JumpToAsync(stepX, stepY, cancellationToken);
+                at = next;
+            }
         }
 
-        await JumpToAsync(x, y, cancellationToken);
         await SettleAsync(cancellationToken);
     }
 

@@ -602,7 +602,7 @@ the window, the layout and each project's session, with safe fallbacks (FR-050�
 
 ### Batch E4 — model: sonnet — T069–T071 — 4 units
 
-- [ ] T069 [US5] Desktop E2E `StartPageNewProjectTests`: start with no arguments, create a Console app in an empty
+- [x] T069 [US5] Desktop E2E `StartPageNewProjectTests`: start with no arguments, create a Console app in an empty
   temporary folder; it opens and appears in Recent; close it, reopen it from Recent, pin it, search for it, remove it.
 - [ ] T070 [US6] Desktop E2E `RestoreSessionTests` (2 units): move a pane, open three graphs, zoom and pan one, move and
   resize the window, restart; the layout, tabs, active tab, viewport and window bounds equal the saved values (read
