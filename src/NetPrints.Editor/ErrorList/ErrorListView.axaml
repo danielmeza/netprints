@@ -11,7 +11,7 @@
     <TextBlock DockPanel.Dock="Top" Margin="8,4" Text="{Binding Header}" />
     <ListBox x:Name="Rows" ItemsSource="{Binding Rows}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ErrorsList}">
       <Interaction.Behaviors>
-        <edbehaviors:ExecuteCommandOnItemDoubleTappedBehavior Command="{Binding NavigateCommand}" />
+        <edbehaviors:ExecuteCommandOnItemDoubleClickBehavior Command="{Binding NavigateCommand}" />
         <KeyTrigger Key="Enter" EventRoutingStrategy="Tunnel">
           <InvokeCommandAction Command="{Binding NavigateCommand}" CommandParameter="{Binding #Rows.SelectedItem}" />
         </KeyTrigger>

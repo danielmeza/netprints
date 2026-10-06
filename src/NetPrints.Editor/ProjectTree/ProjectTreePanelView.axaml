@@ -12,7 +12,7 @@
             AutomationProperties.AutomationId="{x:Static ed:AutomationIds.TreeView}">
     <Interaction.Behaviors>
       <edbehaviors:ScopedCommandKeysBehavior Scope="ProjectTree" Invoker="{Binding Invoker}" />
-      <edbehaviors:ExecuteCommandOnItemDoubleTappedBehavior Command="{Binding OpenItemCommand}" />
+      <edbehaviors:ExecuteCommandOnItemDoubleClickBehavior Command="{Binding OpenItemCommand}" />
     </Interaction.Behaviors>
     <TreeView.Styles>
       <Style Selector="TreeViewItem" x:DataType="edtree:ProjectTreeItemViewModel">
