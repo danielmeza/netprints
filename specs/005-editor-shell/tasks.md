@@ -468,7 +468,7 @@ SC-004 (all but navigation).
 
 ### Batch D2 — model: sonnet — T051–T053 — 5 units
 
-- [ ] T051 [US3] Test first: `tests/NetPrints.Editor.Tests/State/EditorDataPathsTests.cs` and `AtomicFileWriterTests.cs`
+- [x] T051 [US3] Test first: `tests/NetPrints.Editor.Tests/State/EditorDataPathsTests.cs` and `AtomicFileWriterTests.cs`
   (contracts/state-files.md §1). The root is `<ApplicationData>/NetPrints`, replaced by `NETPRINTS_STATE_DIR`.
   `ProjectKey` is the first 16 lowercase hex characters of SHA-256 over the project file's full path in UTF-8,
   case-folded first on Windows. A write goes to `<file>.tmp` and is renamed over the target. On Linux and macOS,

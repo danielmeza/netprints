@@ -1,7 +1,5 @@
 using System.Collections.Specialized;
 using System.ComponentModel;
-using System.Security.Cryptography;
-using System.Text;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Messaging;
 using NetPrints.Compilation;
@@ -9,6 +7,7 @@ using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Lifecycle;
+using NetPrints.Editor.State;
 using NetPrints.Editor.UndoRedo;
 using NetPrints.Generation;
 using NetPrints.Projects;
@@ -24,8 +23,6 @@ namespace NetPrints.Editor.Shell;
 /// </summary>
 public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
 {
-    private const int ProjectKeyLength = 16;
-
     private readonly EditorContext context;
     private readonly Dictionary<ClassGraph, UndoRedoStack> undoStacks = [];
     private readonly Dictionary<ClassGraph, string> classPaths = [];
@@ -65,7 +62,7 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
     public string ProjectFilePath => Project.Path;
 
     /// <summary>Gets the first <c>16</c> hex characters of the SHA-256 of the project's full path; names its per-user state.</summary>
-    public string ProjectKey => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(Path.GetFullPath(ProjectFilePath))))[..ProjectKeyLength];
+    public string ProjectKey => EditorDataPaths.ProjectKey(ProjectFilePath);
 
     /// <summary>Gets whether the last started program has not exited yet; raises a change (on the UI thread) when that flips.</summary>
     public bool IsRunning => context.RunState.Snapshot().Phase == RunPhase.Running;
