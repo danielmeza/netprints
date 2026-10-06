@@ -518,7 +518,7 @@ SC-004 (all but navigation).
 
 ### Batch D-R — model: opus — T059 (sub-phase review)
 
-- [ ] T059 [US3] Review sub-phase D: an Opus reviewer who did not implement it reviews the whole diff of batches D1–D3
+- [x] T059 [US3] Review sub-phase D: an Opus reviewer who did not implement it reviews the whole diff of batches D1–D3
   (from the commit before the first batch to HEAD): US3 and the rest of US4 end to end against spec.md,
   contracts/state-files.md, contracts/shell.md §4–§5, contracts/commands.md §3, the constitution and plan.md's
   standing constraints, looking hardest for any path that loses work or writes into the project directory. It runs
@@ -527,7 +527,7 @@ SC-004 (all but navigation).
 
 ### Batch D-F — model: sonnet — T060 (reserved: fix review findings)
 
-- [ ] T060 [US3] Fix every finding of T059 (test first for behaviour findings), reply on each review thread with the
+- [x] T060 [US3] Fix every finding of T059 (test first for behaviour findings), reply on each review thread with the
   fixing commit or the reason for deferral, whole suite plus the E2E run, commit; if the review had no findings, tick
   this task with "no findings". The next sub-phase starts only after this batch is green on CI.
 

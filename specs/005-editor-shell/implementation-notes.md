@@ -1269,3 +1269,40 @@ Both failed in one run on a runner where the cold open took 46 s.
 - Neighbour pins are recorded as (handle, pin index) per pin kind and resolved at restore time, so undoing a delete reconnects to the current neighbour after its overload changed.
 - Tests: `NodeOverloadUndoTests` (the two review probes, red before the fix, plus the add then overload change ordering test, which already passed and guards it).
 - R18: renamed the two `NodeUndoTests` tests to `...LeavesItSaved` and the recover dialog test to `ClosingTheWindowAnswersLater`.
+
+## Review D (T059, `review-D.md`)
+
+Verdict: request changes, 0 blockers, 5 majors, 8 minors, 8 nits (21 findings). Fix batches D-F1 to D-F7 (T060). Every finding is fixed except the unbounded build wait in R21, deferred to the final review. The slow-runner flake fix 77a2856 (issues #17 and #18) landed during D-F.
+
+| Id | Sev | Summary | Batch | Status |
+|---|---|---|---|---|
+| R1 | major | Undo after a compile or run marks the class saved while the file differs | D-F1 | fixed c3a22db |
+| R2 | major | Don't save discards the backups before the unload is certain | D-F2 | fixed f69e67e |
+| R3 | major | Don't save deletes every backup of the project | D-F2 | fixed f69e67e |
+| R4 | major | A class that was never saved is never offered for recovery | D-F3 | fixed 1ae2336 |
+| R5 | major | An edit made while a save writes is lost | D-F1 | fixed c3a22db |
+| R6 | minor | Node undo across overload changes | D-F5 | fixed a1e1326 |
+| R7 | minor | A rooted original path escapes the backup folder | D-F4 | fixed d644a32 |
+| R8 | minor | The unload flush is fire-and-forget; a throwing confirmation exits anyway | D-F4 | fixed d644a32 |
+| R9 | minor | The startup clean-up deletes backups of an unmounted project | D-F4 | fixed d644a32 |
+| R10 | minor | A foreign manifest is overwritten and its folder deleted | D-F3 | fixed 1ae2336 |
+| R11 | minor | The crash recovery E2E can kill the editor before the manifest exists | D-F6 | fixed 1a567e4 |
+| R12 | minor | SC-002 coverage gaps | D-F2 | fixed f69e67e |
+| R13 | minor | The recovery dialog is all or nothing | D-F3 | fixed 1ae2336 |
+| R14 | nit | Contract section 5 not amended | D-F7 | fixed 1a567e4 |
+| R15 | nit | Docs accuracy (E2E fact count, exit gesture, 30 s claim, release notes) | D-F7 | fixed 1a567e4 |
+| R16 | nit | API surface | D-F7 | fixed 1a567e4 |
+| R17 | nit | A generic build exception leaves the status bar silent | D-F1 | fixed c3a22db |
+| R18 | nit | Misleading test names | D-F5 | fixed a1e1326 |
+| R19 | nit | E2E hygiene | D-F6 | fixed 1a567e4 for the `Hold.cs` sleep; the fixed 30 s `WaitForAsync` deadline is B1 of the flaky-test plan and the build-status waits are B5 |
+| R20 | nit | Tree refresh cost and accessible name | D-F7 | fixed 1a567e4 |
+| R21 | nit | Exit flow order and an unbounded wait | D-F2 | order fixed f69e67e; the wait for the build is still unbounded, deferred to the final review |
+
+### D-F6 and D-F7 (R11, R14, R15, R16, R19, R20: 1a567e4)
+
+- R11: the recovery E2E reads `manifest.json` and takes the backup file from a listed entry, so the editor is killed only after the manifest names the backup. Test fix, no red run.
+- R19: the `Hold.cs` sleep is 5 minutes. A guard only.
+- R20: the unsaved refresh walks the class rows only (the project's children). The row's accessible name is `Name`; `AutomationProperties.ItemStatus` carries `Unsaved` (new `ItemStatus` on the row, `AutomationPropertyNames.ItemStatus` in the automation snapshot). `AClassRowShowsTheUnsavedMarkWhileItsFileIsUnsaved` asserts it (red: did not compile before the property); `ShellEditingTests` reads the status instead of a `*` in the name.
+- R16: `ProjectPersistence.RenderClassAsync`, `RestoreClassAsync` and `RestoreNewClassAsync` are internal, with `InternalsVisibleTo` for `NetPrints.Editor` and `NetPrints.Editor.Tests` on `NetPrints.Serialization` and the three lines gone from `PublicAPI.Unshipped.txt`. `CurrentClassPath` moved to the internal `ClassPaths.Of`. The optional internalizing of the `Lifecycle` and `State` types is not done.
+- R14, R15: contract section 5 lists the stop prompt as `ConfirmAsync` (true is Stop and exit) and `Later` as the third recovery result; the D notes and the release notes are corrected (37 E2E facts: 20 harness self-tests, 17 scenarios).
+- Totals: solution suite (Debug, no `NETPRINTS_E2E`) 2514 tests, 2496 passed, 18 skipped, 0 failed; Desktop E2E (Release, `NETPRINTS_E2E=1 --fail-skips on`) 37 of 37; `dotnet format --verify-no-changes` clean.
