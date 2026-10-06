@@ -101,7 +101,7 @@ Actions plus small scripts (no NUKE/Cake). Installers, auto-update (Velopack) an
 C# code view: replace the plain read-only generated-C# preview (parity item PAR-34) with
 AvaloniaEdit (TextMate C# highlighting, folding, line numbers) showing live Roslyn diagnostics
 (squiggles + error list linked to the originating node); evaluate RoslynPad.Editor.Avalonia for
-Roslyn-backed hover/quick info. Read-only in P1; editable C# ("code nodes") is a later idea.
+Roslyn-backed hover/quick info. Read-only in P1; editable C# ("code nodes") is planned in P7.
 Method-local variables (owner idea, 2026-09-25): each `MethodGraph`/`ConstructorGraph` owns local
 variables with getter/setter nodes like class variables. They are declared at the top of the generated
 method, which fits the current goto translator. The Variables panel shows two groups: *Class* and
@@ -194,6 +194,15 @@ contribution registry; the rest in its `research.md`).
 - **Editor guides** (owner decision 2026-09-28; moved out of P1 because the shell they screenshot didn't
   exist yet): screenshot-heavy user guides for the editor UI (the shell layout, docking, the start
   dashboard, navigation basics), added to the docs site once this phase's UI is stable enough to shoot.
+- **Starter `Main` (gap research 2026-10-06)**: sub-phase E's New project (T067/FR-042) seeds an Executable template with a `Program` class
+  graph holding an empty `public static void Main()`, so a new console project builds and runs (no CS5001). A Library
+  template seeds nothing. P3a's docs pass (T107) also documents a hand-written `Properties/launchSettings.json`
+  (`commandLineArgs`, `environmentVariables`) for F5 and `netprints run`, after a test pins that the run command applies it.
+- **Visual polish in sub-phase G (gap research 2026-10-06)**: G grows by about 5-7 days with the visual-polish items: one vector icon
+  family behind an icon id (replacing the raster icons; family chosen in an ADR; `THIRD-PARTY-NOTICES`), the semantic
+  node-header palette and kind glyph, pin-type, density and motion tokens, the app mark, selection and wire tokens, an
+  empty-state control, focus and hover tokens, a `Font.Mono` token, high-DPI snapshots, one dialog shell for the new
+  dialogs, and a visual contact sheet per sub-phase review. The detailed tasks come in a later batch.
 - **Done when:** also docs updated (guides, API reference, ADRs as applicable), including the editor
   guides above.
 
@@ -205,6 +214,28 @@ packages for extension authors. No performance work here (owner decision 2026-09
 - **Carried over from P2** (final review findings FU-1, FU-2, FU-5, FU-6): NPX008 should check host-provided and transitive references; the live `ReflectionProvider` should skip unreadable references and log them; info-level analyzer backlog cleanup; decide on editor `ProjectCheck` generation-skip behavior; two Windows defects found in P3a Review A (R13): `catalog --check` compares bytes, so a `.npcat.json` checked out with CRLF (`core.autocrlf=true`, no `.gitattributes` rule) always reads as stale, and `git-install --command` with backslash paths is written verbatim and `sh` drops the backslashes. (The three CI items FU-3, FU-4 and FU-7 moved to P3a.)
 - **Extension testing — author conformance kit (may start in P2; the internal `ExtensionHarness` lands in P2, ADR-0010).** Ship `NetPrints.Extensibility.Testing` (NuGet package) with `ExtensionTest<TExtension>` (declarative `TestState`, `RunAsync`), an `ExtensionHarness` for real or folder-based testing, and a conformance suite with 12 checks (manifest, packaging, type identity, pure/repeatable registration, no issues, node round-trip, translation compilation, deterministic emitters, settings, host channel lifecycle, coexistence with built-ins and a "noisy neighbour", disposal). Optional xUnit adapter. `NetPrints.TestExtension` is tested only through this kit. See research.
 - **Before the first NetPrintsUnreal release:** a `netprints-verify` tool (modelled on IntelliJ Plugin Verifier), a reusable author CI workflow, a nightly job co-loading published extensions, and a `dotnet new netprints-extension` template.
+- **Run profiles, first batch (gap research 2026-10-06)** (size M, about 5 days). Needs P3a's command bar and sub-phase E state.
+  - Profiles live in `Properties/launchSettings.json` (shared with `dotnet run`, VS and Rider); the selected profile
+    name is stored per user in the P3a state store (`sessions/<project-key>.json`).
+  - NetPrints applies the profile itself: `dotnet run --project <csproj> --no-build --no-launch-profile -- <args>`, with
+    an explicit argv, environment and working directory on the process request. Same behaviour in the editor and the CLI.
+  - The argument string is split with the Windows `CommandLineToArgvW` rules on every OS and passed through
+    `ArgumentList`; a join/split round-trip test pins it. Unknown profile kinds are delegated to `dotnet run`.
+  - Project settings gets a **Run** section (profile list, arguments with an argv preview, working directory,
+    environment variables). The command bar gets a profile split button next to Run and Stop (Executable projects only;
+    commands `run.selectProfile` and `run.editProfiles`). Run profile kinds are one contribution point (U3 adds a launch kind).
+  - CLI: `netprints run` uses the first Project profile, plus `-lp|--launch-profile <name>` and `--no-launch-profile`;
+    `-- <args>` replace the profile's args (env and cwd still apply); an unknown profile exits 2.
+- **Interactive stdin / external terminal (gap research 2026-10-06)** (B5): an input line in Output and a "Run in external terminal"
+  profile option; today stdin is not redirected, so `Console.ReadLine()` sees EOF.
+- **NuGet package manager UI (gap research 2026-10-06)** (B7): browse and search feeds, add, update and remove `PackageReference`s, then
+  restore and refresh the catalogs.
+- **`netprints new` and `dotnet new` templates (gap research 2026-10-06)** (B15): the CLI gains `new`, using the project template registry.
+- **Extension manager UI (gap research 2026-10-06)** (B17): list, enable and disable extensions, show trust, install from a folder or NuGet,
+  show updates and conformance warnings.
+- **Build configuration selector (gap research 2026-10-06)** (B23): a Debug/Release selector next to the run profile (the Publish dialog is in P6).
+- **Status-bar item contribution kind (gap research 2026-10-06)** (C-15): added to the contribution registry before P3 publishes it; the
+  built-in segments (error and warning counts, build glyph, run state, zoom, selection count) use it.
 Done when: also docs updated (guides, API reference, ADRs as applicable).
 
 ### P3b — Declarations and code style (owner-approved 2026-09-26)
@@ -285,6 +316,10 @@ profiles and P3 extensions use, so custom emitters need no core changes.
 
   Whether XML docs are required or optional, and their exact shape, follows the `.editorconfig`-driven style
   this phase already builds.
+- **Graph unit tests, the test kind (gap research 2026-10-06)** (B12): a declaration kind (or `[Fact]` style) that emits xUnit tests; the
+  Tests panel that runs them is in P6. Needs a generated test project or multi-project support.
+- **Console template `Main(string[] args)` (gap research 2026-10-06)**: once per-parameter names exist, the Console template seeds
+  `public static int Main(string[] args)` (returning 0) in place of P3a's empty `static void Main()`.
 - **Done when:** also docs updated (guides, API reference, ADRs as applicable).
 
 ### P4 — VSIX (deferred)
@@ -396,6 +431,21 @@ for those who want to learn it.
   - start page and samples, accessibility (names for icon buttons, contrast ≥ 4.5:1, keyboard navigation);
   - Nodify built-ins not used yet (minimap, fit to view, groups/comments, alignment, keyboard navigation).
 - **In-editor visual diff of graphs** (P1 follow-up, moved from P2 per `specs/004-catalog-cli/research.md` R27; needs the P3a shell).
+- Items from the gap research 2026-10-06 (each marked "(gap research 2026-10-06)"):
+  - Authoring: rename refactoring that updates call, get, set and override nodes with a preview and one undo step (B2);
+    graph lint with quick fixes and "dim inactive nodes" (B4); disable (bypass) node (B10); Math Expression node (B11);
+    split/recombine struct, record and tuple pins (B16, after P3b); format string node (B18); insert a node by dropping
+    it on a wire (B19); snippet library (B20).
+  - Navigation: go to definition from nodes (B3); full-text find in project (B8); member categories and folders (B22).
+  - Debug and run: clickable stack traces that open the node (B6); Tests panel UI over P3b's test kind (B12); hot reload
+    and live edit after debugging B (B13).
+  - Project and collaboration: export graph as SVG/PNG plus `netprints render` (B14); git status decorations and Compare
+    with HEAD (B21); the Publish dialog (B23: RID, self-contained); Help > Report a problem diagnostics bundle (B24, if
+    not done in P3a sub-phase H).
+  - Visual: connection styling, exec versus data wires and a thickness token (C-9); the behaviour halves of the node
+    palette (C-2), pin-type colouring (C-3), wire brightening and selection count (C-8), compact/comfortable density and
+    zoom-level detail (C-10), and motion with a reduce-motion setting (C-13); the old dialogs adopt the dialog shell (C-14);
+    the custom title bar (C-5) is already planned above (L1).
 - **Done when:** also docs updated (guides, API reference, ADRs as applicable).
 
 ### P7 — Structured code generation
@@ -411,6 +461,11 @@ Block-scoped local variables (owner idea, 2026-09-25): variables owned by for/fo
 - Using a variable outside its scope is an error shown on the node.
 - Semantics to define in the spec: per-iteration reset (C# semantics), capture by async/latent nodes, and
   irregular graphs where a node belongs to several scopes.
+- **Flow-control node set (gap research 2026-10-06)** (B1): ForEach (element and index), While, DoWhile, Switch on int, string or enum,
+  Sequence, Break, Continue, Select, optionally DoOnce, Gate and FlipFlop; built on this phase's block scopes (the goto
+  translator could ship some earlier).
+- **Inline C# code node (gap research 2026-10-06)** (B9): a pure expression node whose pins come from its free identifiers, later a statement
+  node; needs Roslyn binding and the `SourceMap`. Moved here from the "later idea" mentions.
 Done when: also docs updated (guides, API reference, ADRs as applicable).
 
 ### Candidates (unscheduled)
@@ -432,3 +487,5 @@ Done when: also docs updated (guides, API reference, ADRs as applicable).
   `[SerializeField]` and `[RequireComponent]`; entry points Awake/Start/Update/OnCollision*;
   latent nodes as coroutines or Unity 6 `Awaitable`; a C# language-version profile in the
   translator. P1 extension points and project profiles should keep this case in mind.
+- **Multi-project (solution) workspace (gap research 2026-10-06)** (B25): open a .sln or .slnx that mixes graph and C# projects with
+  ProjectReferences between them. A new phase after P3 and P5 (FR-018 holds one project per window by design).
