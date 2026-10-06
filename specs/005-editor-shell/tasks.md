@@ -569,7 +569,7 @@ the window, the layout and each project's session, with safe fallbacks (FR-050â€
   by `DocumentId`; an unknown panel (an extension no longer installed) and a graph that no longer exists are dropped
   and the rest is restored; a layout that fails to load is logged and replaced by the default; layout changes are saved
   debounced (`TimeProvider`). Then `src/NetPrints.Editor/Shell/Docking/LayoutSerializer.cs` and its DTO and context.
-- [ ] T065 [US6] Sessions (2 units). Test first: `tests/NetPrints.Editor.Tests/State/SessionStateTests.cs`. Per project,
+- [x] T065 [US6] Sessions (2 units). Test first: `tests/NetPrints.Editor.Tests/State/SessionStateTests.cs`. Per project,
   the open documents in order, the active one, and each graph's viewport (location, zoom) are saved on unload and on
   exit, and restored on open; unresolvable documents and non-finite viewports are skipped; the active document falls
   back to the first restored one; the last instance to unload writes. Wire the window, layout and session restore

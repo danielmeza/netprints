@@ -17,14 +17,16 @@ namespace NetPrints.Editor.Hosting;
 internal sealed class ShellHost : IDisposable
 {
     private readonly WindowCloseGuard closeGuard;
+    private readonly ShellStatePersistence? persistence;
 
     private sealed class NoServices : IServiceProvider
     {
         public object? GetService(Type serviceType) => null;
     }
 
-    private ShellHost(ShellProjectActions actions, IContributionRegistry registry, ShellViewModel shell, DockShellAdapter adapter, CommandInvoker invoker, ShellWindow window, ILogger logger)
+    private ShellHost(ShellProjectActions actions, IContributionRegistry registry, ShellViewModel shell, DockShellAdapter adapter, CommandInvoker invoker, ShellWindow window, ILogger logger, ShellStatePersistence? persistence)
     {
+        this.persistence = persistence;
         Actions = actions;
         Registry = registry;
         Shell = shell;
@@ -74,7 +76,9 @@ internal sealed class ShellHost : IDisposable
             exception => context.Dispatcher.Post(() => context.Dialogs.ShowErrorAsync("The command failed", exception.ToString()).Forget(logger)));
         shell.AttachCommands(invoker);
 
-        var host = new ShellHost(actions, registry, shell, adapter, invoker, new ShellWindow(), logger);
+        var window = new ShellWindow();
+        ShellStatePersistence? persistence = context.StateStore is { } store ? new ShellStatePersistence(shell, adapter, window, store, TimeProvider.System, context.Dispatcher) : null;
+        var host = new ShellHost(actions, registry, shell, adapter, invoker, window, logger, persistence);
         shell.PropertyChanged += host.OnShellChanged;
         shell.AttachPanels(adapter, invoker, context);
         return host;
@@ -85,6 +89,7 @@ internal sealed class ShellHost : IDisposable
     {
         Shell.PropertyChanged -= OnShellChanged;
         closeGuard.Dispose();
+        persistence?.Dispose();
         Shell.Dispose();
         Adapter.Dispose();
         Actions.Dispose();
@@ -114,10 +119,13 @@ internal sealed class ShellHost : IDisposable
     {
         if (e.PropertyName == nameof(ShellViewModel.Session))
         {
+            persistence?.SaveSession();
             foreach (DocumentId id in Adapter.OpenDocuments)
             {
                 Adapter.CloseDocument(id);
             }
+
+            persistence?.RestoreSession(Shell.Session);
         }
     }
 }

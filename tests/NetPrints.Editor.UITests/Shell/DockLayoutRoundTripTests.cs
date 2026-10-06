@@ -259,6 +259,18 @@ public class DockLayoutRoundTripTests
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public void SaveNowSavesEvenWhenNothingChanged()
+    {
+        using var rig = ShellRig.Create();
+        var store = new LayoutStore();
+        using var saver = new LayoutSaver(rig.Adapter, store, new FakeTimeProvider(), new InlineDispatcher(), TimeSpan.FromSeconds(1));
+
+        saver.SaveNow();
+
+        Assert.Single(store.Saved);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public void ADisposedSaverSavesNothing()
     {
         using var rig = ShellRig.Create();

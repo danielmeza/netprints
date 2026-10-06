@@ -40,6 +40,7 @@
         <Interaction.Behaviors>
           <edbehaviors:ScopedCommandKeysBehavior Scope="Graph" Invoker="{Binding Invoker}" />
           <edbehaviors:CommandKeyBindingsBehavior Invoker="{Binding Invoker}" />
+          <edbehaviors:GraphViewportBehavior Document="{Binding}" />
         </Interaction.Behaviors>
         <edgraph:GraphEditorView DataContext="{Binding Graph}" />
       </Panel>

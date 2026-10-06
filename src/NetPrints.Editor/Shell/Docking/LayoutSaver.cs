@@ -33,7 +33,16 @@ internal sealed class LayoutSaver : IDisposable
     /// <summary>Saves now, if a change is pending.</summary>
     public void Flush()
     {
-        if (disposed || !pending)
+        if (pending)
+        {
+            SaveNow();
+        }
+    }
+
+    /// <summary>Saves now, pending change or not: what a splitter drag moved raises no change.</summary>
+    public void SaveNow()
+    {
+        if (disposed)
         {
             return;
         }

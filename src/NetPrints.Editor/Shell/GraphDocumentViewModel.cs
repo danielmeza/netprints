@@ -5,7 +5,7 @@ using NetPrints.Editor.Graph;
 namespace NetPrints.Editor.Shell;
 
 /// <summary>A graph document: wraps the graph editor's view model and keeps the viewport the canvas shows.</summary>
-public sealed partial class GraphDocumentViewModel : DocumentViewModel
+public sealed partial class GraphDocumentViewModel : DocumentViewModel, IViewportDocument
 {
     private const string UnsavedMark = "*";
 

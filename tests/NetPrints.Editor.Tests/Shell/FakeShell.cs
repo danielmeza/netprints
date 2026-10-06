@@ -27,6 +27,9 @@ public sealed class FakeShell : IShell
     /// <summary>Gets the floating documents.</summary>
     public HashSet<DocumentId> Floating { get; } = [];
 
+    /// <summary>Gets the documents that cannot be opened: <see cref="OpenDocument"/> is called for them and opens nothing.</summary>
+    public HashSet<DocumentId> Unresolvable { get; } = [];
+
     /// <inheritdoc/>
     public DocumentId? ActiveDocument { get; private set; }
 
@@ -43,6 +46,11 @@ public sealed class FakeShell : IShell
     public void OpenDocument(DocumentId id)
     {
         Calls.Add($"OpenDocument:{id}");
+        if (Unresolvable.Contains(id))
+        {
+            return;
+        }
+
         if (!open.Contains(id))
         {
             open.Add(id);

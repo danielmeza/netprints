@@ -3,6 +3,7 @@ using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Hosting.Avalonia;
 using NetPrints.Editor.Lifecycle;
 using NetPrints.Editor.Shell;
+using NetPrints.Editor.State;
 
 namespace NetPrints.Editor.UITests.Hosting;
 
@@ -22,8 +23,9 @@ public sealed class TestComposition : IDisposable
     /// <param name="filePicker">Stands in for the production native file/save pickers.</param>
     /// <param name="processes">Stands in for the production process launcher.</param>
     /// <param name="backups">Where the open project's unsaved files are backed up; <see langword="null"/> for no backups.</param>
-    public TestComposition(EditorHostServices host, IEditorDialogs dialogs, IFilePickerService filePicker, IProcessLauncher processes, BackupOptions? backups = null) =>
-        services = new EditorServices(host, new WindowService(), dialogs, filePicker, processes, backups);
+    /// <param name="stateStore">Keeps the dock layout and the sessions; <see langword="null"/> for neither.</param>
+    public TestComposition(EditorHostServices host, IEditorDialogs dialogs, IFilePickerService filePicker, IProcessLauncher processes, BackupOptions? backups = null, IEditorStateStore? stateStore = null) =>
+        services = new EditorServices(host, new WindowService(), dialogs, filePicker, processes, backups, stateStore: stateStore);
 
     /// <summary>The composed host services, with the given test doubles standing in for the Avalonia dialogs, file picker and process launcher.</summary>
     public EditorContext Context => services.Context;
