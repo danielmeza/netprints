@@ -1,3 +1,4 @@
+using System.Text.Json;
 using NetPrints.Desktop.E2ETests.Hosting;
 using NetPrints.Testing.Ui.Dialogs;
 using NetPrints.Testing.Ui.Shell;
@@ -9,6 +10,35 @@ public sealed class CrashRecoveryTests(DesktopWorkerPool pool) : ProjectEditorTe
 {
     private const int ShortBackupDelay = 300;
     private const string BackupSuffix = ".bak.json";
+
+    private string ListedBackupFile()
+    {
+        if (!Directory.Exists(BackupsDirectory))
+        {
+            return "";
+        }
+
+        foreach (string manifestPath in Directory.EnumerateFiles(BackupsDirectory, "manifest.json", SearchOption.AllDirectories))
+        {
+            try
+            {
+                using JsonDocument manifest = JsonDocument.Parse(File.ReadAllBytes(manifestPath));
+                foreach (JsonElement entry in manifest.RootElement.GetProperty("files").EnumerateArray())
+                {
+                    string backupPath = Path.Combine(Path.GetDirectoryName(manifestPath) ?? "", entry.GetProperty("backupPath").GetString() ?? "");
+                    if (backupPath.EndsWith(BackupSuffix, StringComparison.Ordinal) && File.Exists(backupPath))
+                    {
+                        return backupPath;
+                    }
+                }
+            }
+            catch (Exception ex) when (ex is IOException or JsonException or KeyNotFoundException or InvalidOperationException)
+            {
+            }
+        }
+
+        return "";
+    }
 
     private string BackupsDirectory => Path.Combine(StateDirectory, "backups");
 
@@ -25,9 +55,7 @@ public sealed class CrashRecoveryTests(DesktopWorkerPool pool) : ProjectEditorTe
         using (Step("edit and wait for the backup"))
         {
             await AddAVariableAsync(token);
-            string BackupFile() => Directory.Exists(BackupsDirectory)
-                ? Directory.EnumerateFiles(BackupsDirectory, "*" + BackupSuffix, SearchOption.AllDirectories).FirstOrDefault() ?? ""
-                : "";
+            string BackupFile() => ListedBackupFile();
             await WaitForAsync(() => BackupFile().Length > 0, "the backup file", token);
             expected = await File.ReadAllBytesAsync(BackupFile(), token);
             Assert.Equal(original, await File.ReadAllBytesAsync(ClassFile, token));

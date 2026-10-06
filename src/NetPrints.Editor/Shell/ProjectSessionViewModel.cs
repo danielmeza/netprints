@@ -105,23 +105,11 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
         ArgumentNullException.ThrowIfNull(cls);
         if (!classPaths.TryGetValue(cls, out string? path))
         {
-            path = CurrentClassPath(Project, cls);
+            path = ClassPaths.Of(Project, cls);
             classPaths[cls] = path;
         }
 
         return path;
-    }
-
-    /// <summary>Gets the class path a class has now, as <see cref="ClassPathOf"/> would fix it for a session that had not seen the class.</summary>
-    /// <param name="project">The project that holds the class.</param>
-    /// <param name="cls">A class of the project.</param>
-    /// <returns>The path relative to the project, with <c>/</c> separators.</returns>
-    public static string CurrentClassPath(Project project, ClassGraph cls)
-    {
-        ArgumentNullException.ThrowIfNull(project);
-        ArgumentNullException.ThrowIfNull(cls);
-        string directory = Path.GetDirectoryName(Path.GetFullPath(project.Path)) ?? "";
-        return Path.GetRelativePath(directory, Path.GetFullPath(project.GetGraphFilePath(cls))).Replace('\\', '/');
     }
 
     /// <summary>Finds the class whose <see cref="ClassPathOf"/> is <paramref name="classPath"/>.</summary>

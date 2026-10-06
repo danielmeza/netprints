@@ -10,6 +10,7 @@ namespace NetPrints.Editor.ProjectTree;
 public sealed partial class ProjectTreeItemViewModel : ObservableObject
 {
     private const string UnsavedMark = "*";
+    private const string UnsavedStatus = "Unsaved";
 
     private readonly Func<string> readName;
     private readonly INotifyPropertyChanged? nameSource;
@@ -55,7 +56,11 @@ public sealed partial class ProjectTreeItemViewModel : ObservableObject
     /// <summary>Gets a value indicating whether the file the row stands for has unsaved changes (a class row only).</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(DisplayName))]
+    [NotifyPropertyChangedFor(nameof(ItemStatus))]
     public partial bool IsUnsaved { get; internal set; }
+
+    /// <summary>Gets the status screen readers announce after the name: <c>Unsaved</c> while <see cref="IsUnsaved"/>, otherwise empty.</summary>
+    public string ItemStatus => IsUnsaved ? UnsavedStatus : "";
 
     /// <summary>Gets the text the row shows: <see cref="Name"/>, with a trailing <c>*</c> while <see cref="IsUnsaved"/>.</summary>
     public string DisplayName => IsUnsaved ? Name + UnsavedMark : Name;

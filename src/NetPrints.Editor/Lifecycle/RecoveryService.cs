@@ -54,7 +54,7 @@ public sealed class RecoveryService
         foreach (BackupEntry entry in store.List())
         {
             ClassGraph? cls = project.Classes.FirstOrDefault(
-                candidate => string.Equals(ProjectSessionViewModel.CurrentClassPath(project, candidate), entry.OriginalPath, StringComparison.Ordinal));
+                candidate => string.Equals(ClassPaths.Of(project, candidate), entry.OriginalPath, StringComparison.Ordinal));
             if (cls is not null || IsClassPath(entry.OriginalPath))
             {
                 offered.Add((entry, cls));

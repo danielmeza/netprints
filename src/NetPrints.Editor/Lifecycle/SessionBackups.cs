@@ -83,7 +83,7 @@ public sealed class SessionBackups : IDisposable
     }
 
     // The file a save would write now, not the path the session first saw: a class renamed before its first save is backed up under its final name.
-    private string PathOf(ClassGraph cls) => ProjectSessionViewModel.CurrentClassPath(session.Project, cls);
+    private string PathOf(ClassGraph cls) => ClassPaths.Of(session.Project, cls);
 
     private void OnStatesChanged(object? sender, EventArgs e) => DropSaved();
 

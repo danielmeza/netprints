@@ -117,10 +117,12 @@ public sealed class ProjectTreePanelViewModelTests : IAsyncDisposable
         session.ContextFor(cls).CreateVariable();
         Assert.True(item.IsUnsaved);
         Assert.Equal(cls.Name + "*", item.DisplayName);
+        Assert.Equal("Unsaved", item.ItemStatus);
         Assert.Equal("Tree.class." + cls.Name, item.AutomationId);
 
         session.UndoStackFor(cls).Undo();
         Assert.False(item.IsUnsaved);
+        Assert.Equal("", item.ItemStatus);
 
         session.ContextFor(cls).CreateVariable();
         Assert.True(await session.SaveAllAsync());

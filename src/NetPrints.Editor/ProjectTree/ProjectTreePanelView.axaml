@@ -18,7 +18,8 @@
       <Style Selector="TreeViewItem" x:DataType="edtree:ProjectTreeItemViewModel">
         <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
         <Setter Property="AutomationProperties.AutomationId" Value="{Binding AutomationId}" />
-        <Setter Property="AutomationProperties.Name" Value="{Binding DisplayName}" />
+        <Setter Property="AutomationProperties.Name" Value="{Binding Name}" />
+        <Setter Property="AutomationProperties.ItemStatus" Value="{Binding ItemStatus}" />
         <Setter Property="ContextMenu">
           <ContextMenu ItemsSource="{Binding MenuEntries}">
             <ContextMenu.Styles>

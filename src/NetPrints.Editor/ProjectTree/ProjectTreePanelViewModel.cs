@@ -266,7 +266,7 @@ public sealed partial class ProjectTreePanelViewModel : ObservableObject, IShell
             return;
         }
 
-        foreach (ProjectTreeItemViewModel item in Roots.SelectMany(Descendants).Where(item => item is { Kind: TreeItemKind.Class, Model: ClassGraph }))
+        foreach (ProjectTreeItemViewModel item in Roots.SelectMany(root => root.Children).Where(item => item is { Kind: TreeItemKind.Class, Model: ClassGraph }))
         {
             item.IsUnsaved = item.Model is ClassGraph cls && session.Unsaved.IsUnsaved(cls);
         }

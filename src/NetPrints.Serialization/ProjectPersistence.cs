@@ -364,7 +364,7 @@ public sealed class ProjectPersistence
     /// <returns>The restored class, and any non-fatal issues found mapping it.</returns>
     /// <exception cref="DocumentFormatException">The content is not a readable graph file.</exception>
     /// <exception cref="InvalidOperationException"><paramref name="existing"/> is not a class of <paramref name="project"/>.</exception>
-    public async Task<(ClassGraph Class, IReadOnlyList<DocumentIssue> Issues)> RestoreClassAsync(
+    internal async Task<(ClassGraph Class, IReadOnlyList<DocumentIssue> Issues)> RestoreClassAsync(
         Project project, ClassGraph existing, byte[] content, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(project);
@@ -409,7 +409,7 @@ public sealed class ProjectPersistence
     /// <returns>The added class, and any non-fatal issues found mapping it.</returns>
     /// <exception cref="DocumentFormatException">The content is not a readable graph file.</exception>
     /// <exception cref="InvalidOperationException">The file already exists, or the project already has a class of that name.</exception>
-    public async Task<(ClassGraph Class, IReadOnlyList<DocumentIssue> Issues)> RestoreNewClassAsync(
+    internal async Task<(ClassGraph Class, IReadOnlyList<DocumentIssue> Issues)> RestoreNewClassAsync(
         Project project, string classPath, byte[] content, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(project);
@@ -453,7 +453,7 @@ public sealed class ProjectPersistence
     /// <param name="cls">The class to render.</param>
     /// <param name="cancellationToken">Cancels the operation.</param>
     /// <returns>The canonical JSON of the class's graph file.</returns>
-    public async Task<byte[]> RenderClassAsync(ClassGraph cls, CancellationToken cancellationToken)
+    internal async Task<byte[]> RenderClassAsync(ClassGraph cls, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(cls);
         Serializers current = serializers;

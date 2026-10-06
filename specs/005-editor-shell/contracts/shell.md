@@ -65,9 +65,9 @@ Open, Add and Remove getter or setter and Open type graph buttons (inspector ele
 | Dialog | Buttons | Result |
 |---|---|---|
 | Unsaved changes | Save all (default), Don't save, Cancel (Esc) | `Save`, `Discard`, `Cancel` |
-| Recover unsaved work | One checkbox per backed-up file (checked: restore, unchecked: discard its backup; unchecked at the start when the backup is older than its file); Apply (default), Discard all | `Restore` with the checked paths, `Discard` |
+| Recover unsaved work | One checkbox per backed-up file (checked: restore, unchecked: discard its backup; unchecked at the start when the backup is older than its file); Apply (default), Discard all; no Esc binding | `Restore` with the checked paths, `Discard`, `Later` (the zero value: the window was closed, the project opens unchanged and the backups are kept) |
 | New project | Create (enabled when the input is valid), Cancel | the created project path |
-| Stop running program? (on exit while running) | Stop and exit, Cancel | `Stop`, `Cancel` |
+| Stop running program? (on exit while running) | Stop and exit, Cancel | `IEditorDialogs.ConfirmAsync`: `true` is Stop and exit, `false` is Cancel |
 
 Every dialog follows ADR-0007: a `DialogViewModel<TResult>` with `DialogCloseBehavior`, opened through `IWindowService`.
 

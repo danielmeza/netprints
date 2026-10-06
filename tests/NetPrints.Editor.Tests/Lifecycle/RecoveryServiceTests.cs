@@ -249,7 +249,7 @@ public sealed class RecoveryServiceTests : IAsyncDisposable
         time.Advance(Delay);
 
         BackupEntry entry = Assert.Single(new BackupStore(paths, fs, path, NullLogger.Instance).List(), item => item.OriginalPath.Contains("Renamed", StringComparison.Ordinal));
-        Assert.Equal(ProjectSessionViewModel.CurrentClassPath(session.Project, created), entry.OriginalPath);
+        Assert.Equal(ClassPaths.Of(session.Project, created), entry.OriginalPath);
         Assert.DoesNotContain(new BackupStore(paths, fs, path, NullLogger.Instance).List(), item => item.OriginalPath.Contains(oldName, StringComparison.Ordinal));
     }
 

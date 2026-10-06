@@ -188,6 +188,7 @@ public sealed class AutomationTree : IDisposable
             [AutomationPropertyNames.IsEnabled] = control.IsEffectivelyEnabled.ToString(),
             [AutomationPropertyNames.IsVisible] = control.IsEffectivelyVisible.ToString(),
             [AutomationPropertyNames.IsFocused] = control.IsFocused.ToString(),
+            [AutomationPropertyNames.ItemStatus] = AutomationProperties.GetItemStatus(control),
             [AutomationPropertyNames.IsKeyboardFocusWithin] = control.IsKeyboardFocusWithin.ToString(),
             [AutomationPropertyNames.PseudoClasses] = string.Join(' ', control.Classes),
             [AutomationPropertyNames.ToolTip] = ToolTip.GetTip(control) as string,

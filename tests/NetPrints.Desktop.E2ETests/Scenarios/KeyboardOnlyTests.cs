@@ -23,7 +23,7 @@ public sealed class KeyboardOnlyTests(DesktopWorkerPool pool) : ProjectEditorTes
             internal static void Start()
             {
                 Console.WriteLine("Holding");
-                Thread.Sleep(Timeout.Infinite);
+                Thread.Sleep(TimeSpan.FromMinutes(5));
             }
         }
         """;

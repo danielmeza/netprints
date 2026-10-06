@@ -72,6 +72,10 @@ public static class AutomationPropertyNames
     /// </summary>
     public const string ItemCount = nameof(ItemCount);
     /// <summary>
+    /// Reported by every control: its <c>AutomationProperties.ItemStatus</c> (for example "Unsaved" on a project tree class row), or <see langword="null"/> if it has none.
+    /// </summary>
+    public const string ItemStatus = nameof(ItemStatus);
+    /// <summary>
     /// Reported by a graph item container: its canvas X position in DIP, as text.
     /// </summary>
     public const string LocationX = nameof(LocationX);

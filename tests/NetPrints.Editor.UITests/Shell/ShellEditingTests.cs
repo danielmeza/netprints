@@ -68,13 +68,14 @@ public class ShellEditingTests
         await session.AddVariableAsync(Token);
 
         await tab.WaitUntilAsync(e => (e.Name ?? "").EndsWith('*'), "the tab marked", Token);
-        await row.WaitUntilAsync(e => (e.Name ?? "").EndsWith('*'), "the tree row marked", Token);
+        await row.WaitUntilAsync(e => e[AutomationPropertyNames.ItemStatus] == "Unsaved", "the tree row marked", Token);
+        Assert.Equal("Program", (await row.GetAsync(Token)).Name);
         Assert.Contains("HelloWorld*", session.Window.Title, StringComparison.Ordinal);
 
         await session.RunAsync("save", Token);
 
         await tab.WaitUntilAsync(e => !(e.Name ?? "").EndsWith('*'), "the tab saved", Token);
-        await row.WaitUntilAsync(e => !(e.Name ?? "").EndsWith('*'), "the tree row saved", Token);
+        await row.WaitUntilAsync(e => string.IsNullOrEmpty(e[AutomationPropertyNames.ItemStatus]), "the tree row saved", Token);
         Assert.DoesNotContain("*", session.Window.Title, StringComparison.Ordinal);
         Assert.Equal("Saved 1 file(s)", session.App.Shell.StatusMessage);
     }
