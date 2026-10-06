@@ -39,6 +39,7 @@ public abstract class X11SmokeTestBase(DesktopWorkerPool pool) : SmokeScenarios,
     private StepTimer? timer;
     private bool scenarioEnded;
     private volatile bool editorExited;
+    private volatile bool exitExpected;
 
     /// <summary>The step to hold until the test's budget runs out, to prove the diagnostics (<see cref="E2EDiagnosticsTests"/>); <see langword="null"/> in every other test.</summary>
     protected virtual string? ForcedTimeoutStep => null;
@@ -47,6 +48,19 @@ public abstract class X11SmokeTestBase(DesktopWorkerPool pool) : SmokeScenarios,
     protected virtual TimeSpan Budget => TimeSpan.FromMilliseconds(Timeout);
 
     protected CancellationToken Token => timeoutCts.Token;
+
+    /// <summary>The test's private working folder: the sample copy, and the state folder of a test that gives the editor one.</summary>
+    protected string Work => work;
+
+    /// <summary>The driver of the running editor, for page objects the scenario builds itself.</summary>
+    protected X11Driver Driver => driver ?? throw new InvalidOperationException("The editor has not started.");
+
+    /// <summary>How the editor starts; a test that opens the sample at startup or sets variables overrides it.</summary>
+    /// <param name="sampleProject">The project file of the private sample copy.</param>
+    protected virtual EditorStart EditorStartFor(string sampleProject) => new();
+
+    /// <summary>Says the test ends or kills the editor itself, so its exit is not a failure.</summary>
+    protected void ExpectEditorExit() => exitExpected = true;
 
     /// <summary>The leased editor, for a test that acts on the process itself.</summary>
     protected EditorProcess LeasedEditor => lease?.Editor ?? throw new InvalidOperationException("The editor has not started.");
@@ -106,24 +120,38 @@ public abstract class X11SmokeTestBase(DesktopWorkerPool pool) : SmokeScenarios,
 
         using (Step("wait for worker"))
         {
-            lease = await pool.RentAsync(cancellationToken, work);
+            lease = await pool.RentAsync(cancellationToken, work, EditorStartFor(Path.Combine(sample, "HelloWorld.csproj")));
         }
 
         timeoutCts.CancelAfter(Budget); // the budget starts now, not at dispatch (batch D3)
-        lease.Editor.Exited.ContinueWith(_ =>
-        {
-            if (!scenarioEnded)
-            {
-                editorExited = true;
-                timeoutCts.Cancel();
-            }
-        }, TaskScheduler.Default).Forget(_ => { });
+        WatchEditorExit(lease.Editor);
         driver = new X11Driver(lease.Server, lease.Editor, new Tool(lease.Server));
         var actor = Actor.Named("Ada").WhoCan(UseNetPrints.With(driver, new GtkFileDialogs(driver, lease.Editor)));
         await new UiElement(driver, new AutomationQuery(AutomationIds.ShellWindow)).GetAsync(cancellationToken);
         await CheckpointAsync(new SmokeContext(actor, "", work), "00-started", cancellationToken);
         return new SmokeContext(actor, Path.Combine(sample, "HelloWorld.csproj"), Directory.CreateDirectory(Path.Combine(work, "out")).FullName);
     }
+
+    /// <summary>Starts a new editor on the same display (after the test killed or closed the previous one) and drives it from <see cref="Driver"/>.</summary>
+    protected async Task RestartEditorAsync(EditorStart start, CancellationToken cancellationToken)
+    {
+        var current = lease ?? throw new InvalidOperationException("The editor has not started.");
+        exitExpected = true;
+        await current.RestartAsync(start, cancellationToken);
+        exitExpected = false;
+        WatchEditorExit(current.Editor);
+        driver = new X11Driver(current.Server, current.Editor, new Tool(current.Server));
+    }
+
+    private void WatchEditorExit(EditorProcess watched) =>
+        watched.Exited.ContinueWith(_ =>
+        {
+            if (!scenarioEnded && !exitExpected && ReferenceEquals(lease?.Editor, watched))
+            {
+                editorExited = true;
+                timeoutCts.Cancel();
+            }
+        }, TaskScheduler.Default).Forget(_ => { });
 
     protected override async Task CheckpointAsync(SmokeContext context, string name, CancellationToken cancellationToken)
     {

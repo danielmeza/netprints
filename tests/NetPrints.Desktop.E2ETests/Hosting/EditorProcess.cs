@@ -81,8 +81,13 @@ public sealed class EditorProcess : ICapturedEditor, IAsyncDisposable
         .Single(a => a.Key == "DesktopAssembly").Value ?? throw new InvalidOperationException("The DesktopAssembly metadata has no value.");
 
     /// <summary>Starts the editor (optionally with a project) and waits until it reports ready.</summary>
-    public static async Task<EditorProcess> StartAsync(XServer server, string workDirectory, string? project, CancellationToken cancellationToken)
+    public static Task<EditorProcess> StartAsync(XServer server, string workDirectory, string? project, CancellationToken cancellationToken) =>
+        StartAsync(server, workDirectory, new EditorStart(project), cancellationToken);
+
+    /// <summary>Starts the editor as <paramref name="start"/> says and waits until it reports ready.</summary>
+    public static async Task<EditorProcess> StartAsync(XServer server, string workDirectory, EditorStart start, CancellationToken cancellationToken)
     {
+        string? project = start.Project;
         // Short and outside workDirectory (whose scratchpad-derived path can itself run long): a
         // long-TMPDIR workDirectory pushed this over the 108-character Unix socket limit before.
         string pipe = Path.Combine(Path.GetTempPath(), $"np-e2e-{Guid.NewGuid():N}.sock");
@@ -107,6 +112,10 @@ public sealed class EditorProcess : ICapturedEditor, IAsyncDisposable
         server.Apply(info.Environment);
         info.Environment[AutomationAgent.EnableVariable] = "1";
         info.Environment[AutomationAgent.PipeVariable] = pipe;
+        foreach (var (name, value) in start.Environment ?? new Dictionary<string, string>())
+        {
+            info.Environment[name] = value;
+        }
 
         var process = Process.Start(info) ?? throw new InvalidOperationException("Cannot start the editor.");
         var editor = default(EditorProcess);
@@ -127,7 +136,7 @@ public sealed class EditorProcess : ICapturedEditor, IAsyncDisposable
             while (true)
             {
                 var status = await client.StatusAsync(cancellationToken);
-                if (status.MainWindowShown && (project is null || (status.ProjectLoaded && status.ReflectionLoaded)))
+                if (status.MainWindowShown && (project is null || !start.WaitForProject || (status.ProjectLoaded && status.ReflectionLoaded)))
                 {
                     break;
                 }

@@ -67,10 +67,14 @@ public sealed class DesktopWorkerPool : IAsyncLifetime
     /// twice; never two editors on the same display at once.
     /// </summary>
     public Task<DesktopLease> RentAsync(CancellationToken cancellationToken, string workDirectory) =>
+        RentAsync(cancellationToken, workDirectory, new EditorStart());
+
+    /// <summary>Rents a worker like <see cref="RentAsync(CancellationToken, string)"/> and starts the editor as <paramref name="start"/> says.</summary>
+    public Task<DesktopLease> RentAsync(CancellationToken cancellationToken, string workDirectory, EditorStart start) =>
         RentAsync(cancellationToken, async (worker, token) =>
         {
-            var editor = await EditorProcess.StartAsync(worker.Server, workDirectory, project: null, token);
-            return new DesktopLease(this, worker, editor);
+            var editor = await EditorProcess.StartAsync(worker.Server, workDirectory, start, token);
+            return new DesktopLease(this, worker, editor, workDirectory);
         });
 
     /// <summary>
@@ -130,18 +134,27 @@ public sealed class DesktopLease : IAsyncDisposable
 {
     private readonly DesktopWorkerPool pool;
     private readonly DesktopWorkerPool.Worker worker;
-    private readonly EditorProcess editor;
+    private readonly string workDirectory;
+    private EditorProcess editor;
 
-    internal DesktopLease(DesktopWorkerPool pool, DesktopWorkerPool.Worker worker, EditorProcess editor)
+    internal DesktopLease(DesktopWorkerPool pool, DesktopWorkerPool.Worker worker, EditorProcess editor, string workDirectory)
     {
         this.pool = pool;
         this.worker = worker;
         this.editor = editor;
+        this.workDirectory = workDirectory;
     }
 
     public XServer Server => worker.Server;
 
     public EditorProcess Editor => editor;
+
+    /// <summary>Stops the current editor if it is still running and starts a new one as <paramref name="start"/> says, on the same display.</summary>
+    public async Task RestartAsync(EditorStart start, CancellationToken cancellationToken)
+    {
+        await editor.DisposeAsync();
+        editor = await EditorProcess.StartAsync(Server, workDirectory, start, cancellationToken);
+    }
 
     public async ValueTask DisposeAsync()
     {

@@ -46,6 +46,10 @@ public sealed class ShellPage(IUiDriver driver)
     /// <summary>The window title.</summary>
     public async Task<string?> TitleAsync(CancellationToken cancellationToken) => await TextAsync(cancellationToken);
 
+    /// <summary>Closes the window the way its title bar button does.</summary>
+    public async Task CloseWindowAsync(CancellationToken cancellationToken) =>
+        await Driver.CloseWindowAsync((await GetAsync(cancellationToken)).Window, cancellationToken);
+
     /// <summary>Opens a method's graph from the Project tree and waits until its canvas is shown.</summary>
     public async Task OpenMethodAsync(string method, CancellationToken cancellationToken)
     {
