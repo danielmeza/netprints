@@ -167,12 +167,12 @@ public sealed class RecoveryServiceTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task ABackupOfAFileTheProjectNoLongerHasIsNotOffered()
+    public async Task ABackupThatIsNotAGraphFileIsNotOffered()
     {
         (string project, _, _, _) = await BackUpAnEditAsync();
         var store = new BackupStore(paths, fs, project, NullLogger.Instance);
-        store.Write("Gone.netpc.json", [1, 2, 3], time.GetUtcNow().UtcDateTime);
-        store.Delete(Assert.Single(store.List(), entry => entry.OriginalPath != "Gone.netpc.json").OriginalPath);
+        store.Write("Gone.txt", [1, 2, 3], time.GetUtcNow().UtcDateTime);
+        store.Delete(Assert.Single(store.List(), entry => entry.OriginalPath != "Gone.txt").OriginalPath);
 
         await OpenAsync(project);
 
@@ -199,12 +199,108 @@ public sealed class RecoveryServiceTests : IAsyncDisposable
     {
         (string project, _, _, _) = await BackUpAnEditAsync();
         var store = new BackupStore(paths, fs, project, NullLogger.Instance);
-        store.Write("Gone.netpc.json", [1, 2, 3], time.GetUtcNow().UtcDateTime);
+        store.Write("Gone.txt", [1, 2, 3], time.GetUtcNow().UtcDateTime);
         editor.Dialogs.RecoverAnswer = RecoveryChoice.Discard;
 
         await OpenAsync(project);
 
-        Assert.Equal("Gone.netpc.json", Assert.Single(store.List()).OriginalPath);
+        Assert.Equal("Gone.txt", Assert.Single(store.List()).OriginalPath);
+    }
+
+    [Fact]
+    public async Task ANewClassBackedUpBeforeItsFirstSaveIsOfferedAndRestoredAsUnsaved()
+    {
+        string path = TestPaths.CopyHelloWorldSample();
+        cleanup.Add(path);
+        ProjectRig rig = await OpenAsync(path);
+        ProjectSessionViewModel session = rig.Session ?? throw new InvalidOperationException("No project is open.");
+        ClassGraph created = session.Project.CreateNewClass(DefaultProjectProfile.Instance);
+        session.ContextFor(created).CreateVariable();
+        time.Advance(Delay);
+        string classPath = Assert.Single(new BackupStore(paths, fs, path, NullLogger.Instance).List(), entry => entry.OriginalPath.Contains(created.Name, StringComparison.Ordinal)).OriginalPath;
+        rig.Actions.Loader.CloseProject();
+        editor.Dialogs.RecoverAnswer = RecoveryChoice.Restore;
+
+        ProjectRig reopened = await OpenAsync(path);
+
+        Assert.Contains(classPath, Assert.Single(editor.Dialogs.RecoverCalls).Select(file => file.Path));
+        ProjectSessionViewModel restoredSession = reopened.Session ?? throw new InvalidOperationException("No project is open.");
+        ClassGraph restored = restoredSession.Project.Classes.Single(cls => cls.Name == created.Name);
+        Assert.True(restored.IsDirty);
+        Assert.Contains(classPath, restoredSession.Unsaved.UnsavedFiles.Select(file => file.Path));
+        Assert.True(await restoredSession.SaveAllAsync());
+        Assert.True(File.Exists(restoredSession.Project.GetGraphFilePath(restored)));
+        Assert.DoesNotContain(classPath, new BackupStore(paths, fs, path, NullLogger.Instance).List().Select(entry => entry.OriginalPath));
+    }
+
+    [Fact]
+    public async Task ANewClassRenamedBeforeItsFirstSaveIsBackedUpUnderTheNameItIsSavedAs()
+    {
+        string path = TestPaths.CopyHelloWorldSample();
+        cleanup.Add(path);
+        ProjectRig rig = await OpenAsync(path);
+        ProjectSessionViewModel session = rig.Session ?? throw new InvalidOperationException("No project is open.");
+        ClassGraph created = session.Project.CreateNewClass(DefaultProjectProfile.Instance);
+        session.ContextFor(created).CreateVariable();
+        time.Advance(Delay);
+        string oldName = created.Name;
+        created.Name = "Renamed";
+        session.ContextFor(created).CreateVariable();
+        time.Advance(Delay);
+
+        BackupEntry entry = Assert.Single(new BackupStore(paths, fs, path, NullLogger.Instance).List(), item => item.OriginalPath.Contains("Renamed", StringComparison.Ordinal));
+        Assert.Equal(ProjectSessionViewModel.CurrentClassPath(session.Project, created), entry.OriginalPath);
+        Assert.DoesNotContain(new BackupStore(paths, fs, path, NullLogger.Instance).List(), item => item.OriginalPath.Contains(oldName, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ARenamedNewClassSavedAndEditedAgainIsOfferedAfterACrash()
+    {
+        string path = TestPaths.CopyHelloWorldSample();
+        cleanup.Add(path);
+        ProjectRig rig = await OpenAsync(path);
+        ProjectSessionViewModel session = rig.Session ?? throw new InvalidOperationException("No project is open.");
+        ClassGraph created = session.Project.CreateNewClass(DefaultProjectProfile.Instance);
+        session.ContextFor(created).CreateVariable();
+        created.Name = "Renamed";
+        Assert.True(await session.SaveAllAsync());
+        session.ContextFor(created).CreateVariable();
+        time.Advance(Delay);
+        rig.Actions.Loader.CloseProject();
+
+        await OpenAsync(path);
+
+        Assert.Contains("Renamed", Assert.Single(editor.Dialogs.RecoverCalls).Single().Path, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task RestoreAppliesTheChoiceOfEachFile()
+    {
+        (string project, string classFile, string classPath, byte[] backup) = await BackUpAnEditAsync();
+        var store = new BackupStore(paths, fs, project, NullLogger.Instance);
+        store.Write("Other.netpc.json", await File.ReadAllBytesAsync(classFile, Token), time.GetUtcNow().UtcDateTime);
+        editor.Dialogs.RecoverAnswer = RecoveryChoice.Restore;
+        editor.Dialogs.RecoverRestorePaths = [classPath];
+
+        ProjectRig rig = await OpenAsync(project);
+
+        ProjectSessionViewModel session = rig.Session ?? throw new InvalidOperationException("No project is open.");
+        Assert.Equal(classPath, Assert.Single(session.Unsaved.UnsavedFiles).Path);
+        Assert.Equal(backup, await editor.Persistence.RenderClassAsync(session.Project.Classes.Single(), Token));
+        Assert.Equal(classPath, Assert.Single(store.List()).OriginalPath);
+    }
+
+    [Fact]
+    public async Task RestoringNoFileDiscardsEveryOfferedBackup()
+    {
+        (string project, _, _, _) = await BackUpAnEditAsync();
+        editor.Dialogs.RecoverAnswer = RecoveryChoice.Restore;
+        editor.Dialogs.RecoverRestorePaths = [];
+
+        ProjectRig rig = await OpenAsync(project);
+
+        Assert.Empty(rig.Session?.Unsaved.UnsavedFiles ?? [new UnsavedFile("", UnsavedFileKind.Class, "")]);
+        Assert.Empty(new BackupStore(paths, fs, project, NullLogger.Instance).List());
     }
 
     [Fact]

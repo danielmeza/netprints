@@ -51,8 +51,12 @@ public sealed class EditorDialogs(Func<Window?> owner) : IEditorDialogs
         ShowAsync<UnloadChoice>(new UnsavedChangesDialog(files));
 
     /// <inheritdoc/>
-    public Task<RecoveryChoice> ConfirmRecoverAsync(IReadOnlyList<RecoveryFile> files) =>
-        ShowAsync<RecoveryChoice>(new RecoverDialog(files));
+    public async Task<RecoveryAnswer> ConfirmRecoverAsync(IReadOnlyList<RecoveryFile> files)
+    {
+        var dialog = new RecoverDialog(files);
+        await ShowAsync<RecoveryChoice>(dialog).ConfigureAwait(true);
+        return dialog.Answer;
+    }
 
     /// <inheritdoc/>
     public Task ShowIssuesAsync(string title, IReadOnlyList<CodeDiagnostic> issues) =>

@@ -398,6 +398,55 @@ public sealed class ProjectPersistence
     }
 
     /// <summary>
+    /// Adds to <paramref name="project"/> the class read from <paramref name="content"/> (the bytes of a graph file) for a graph file the project
+    /// does not have: a class that was never saved. The class is marked unsaved and remembers <paramref name="classPath"/> as its file, so a
+    /// save writes it there.
+    /// </summary>
+    /// <param name="project">The project to add the class to.</param>
+    /// <param name="classPath">The graph file's path relative to the project, with <c>/</c> separators.</param>
+    /// <param name="content">The graph file's bytes.</param>
+    /// <param name="cancellationToken">Cancels the operation.</param>
+    /// <returns>The added class, and any non-fatal issues found mapping it.</returns>
+    /// <exception cref="DocumentFormatException">The content is not a readable graph file.</exception>
+    /// <exception cref="InvalidOperationException">The file already exists, or the project already has a class of that name.</exception>
+    public async Task<(ClassGraph Class, IReadOnlyList<DocumentIssue> Issues)> RestoreNewClassAsync(
+        Project project, string classPath, byte[] content, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        ArgumentException.ThrowIfNullOrEmpty(classPath);
+        ArgumentNullException.ThrowIfNull(content);
+
+        string graphFilePath = Path.GetFullPath(Path.Combine(GetDirectoryOrThrow(project.Path), classPath));
+        if (File.Exists(graphFilePath))
+        {
+            throw new InvalidOperationException($"'{classPath}' already exists in the project, so a never-saved class cannot be restored there.");
+        }
+
+        Serializers current = serializers;
+        var id = new DocumentId(Path.GetFileName(graphFilePath));
+        IDocumentFormat format = current.Formats.Find(id, DocumentKind.Class)
+            ?? throw new DocumentFormatException($"No document format recognizes '{id}'.", id);
+
+        ClassDocument document;
+        await using (var input = new MemoryStream(content, false))
+        {
+            document = await format.ReadClassAsync(input, id, cancellationToken).ConfigureAwait(false);
+        }
+
+        var issues = new List<DocumentIssue>();
+        ClassGraph restored = current.Mapper.FromDocument(document, project, issues, id);
+        if (project.Classes.Any(existing => existing.FullName == restored.FullName))
+        {
+            throw new InvalidOperationException($"A class named '{restored.FullName}' is already in the project.");
+        }
+
+        restored.LoadedGraphFilePath = graphFilePath;
+        restored.MarkDirty();
+        project.Classes.Add(restored);
+        return (restored, issues);
+    }
+
+    /// <summary>
     /// Renders the graph file a save of <paramref name="cls"/> would write, without writing it or marking the class clean. The
     /// class is read before the first await, so a caller that must read it on one thread only needs to start the call there.
     /// </summary>

@@ -232,6 +232,26 @@ public sealed class BackupServiceTests : IDisposable
     }
 
     [Fact]
+    public void ANewerSchemaManifestIsNeitherOverwrittenNorDeleted()
+    {
+        string manifestPath = Path.Combine(BackupFolder, "manifest.json");
+        byte[] foreign = Encoding.UTF8.GetBytes("""{"SchemaVersion":2,"ProjectPath":"x","Files":[{"OriginalPath":"Program.netpc.json"}]}""");
+        fs.WriteAllBytes(manifestPath, foreign);
+        fs.WriteAllBytes(BackupFile("Program.netpc.json"), [1, 2, 3]);
+
+        service.Schedule("Other.netpc.json", Content("v1"));
+        Tick(Delay);
+        service.Delete("Other.netpc.json");
+        service.Delete("Program.netpc.json");
+        service.DeleteAll();
+
+        Assert.Equal(foreign, fs.ReadAllBytes(manifestPath));
+        Assert.True(fs.FileExists(BackupFile("Program.netpc.json")));
+        Assert.False(fs.FileExists(BackupFile("Other.netpc.json")));
+        Assert.Equal(BackupService.FailureMessage, Assert.Single(warnings));
+    }
+
+    [Fact]
     public void StartupLeavesAFolderWithAnUnreadableManifestAlone()
     {
         string folder = paths.BackupDirectoryOf("0123456789abcdef");

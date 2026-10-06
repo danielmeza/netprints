@@ -56,6 +56,7 @@ public sealed class UnsavedChangesDialogPage(IUiDriver driver) : UiElement(drive
 public sealed class RecoverDialogPage(IUiDriver driver) : UiElement(driver, new AutomationQuery(AutomationIds.RecoverDialog))
 {
     public UiElement Files => Find(AutomationIds.RecoverFiles);
+    public UiElement Row(string path) => Find(AutomationIds.RecoverRow, text: path);
     public UiElement RestoreButton => Find(AutomationIds.RecoverRestoreButton);
     public UiElement DiscardButton => Find(AutomationIds.RecoverDiscardButton);
 }

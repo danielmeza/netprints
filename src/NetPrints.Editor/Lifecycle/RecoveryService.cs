@@ -19,7 +19,9 @@ public sealed record RecoveryResult(IReadOnlyList<ClassGraph> Restored, IReadOnl
 /// <summary>
 /// Offers the backups of a project that is being opened (FR-025, state-files.md §3): the dialog lists each backed-up file with a note
 /// when the file on disk is newer, Restore loads the backed-up content as unsaved changes and keeps the backup until the file is
-/// saved or discarded, and Discard deletes the backups it offered. Only backups of files the project still has are offered.
+/// saved or discarded, and Discard deletes the backups it offered. The answer chooses per file: Restore applies to the files it names and
+/// deletes the backups of the other offered files. A backup of a class the project has no file for (never saved) is offered too
+/// and restored as a new, unsaved class.
 /// </summary>
 public sealed class RecoveryService
 {
@@ -48,12 +50,12 @@ public sealed class RecoveryService
         ArgumentNullException.ThrowIfNull(project);
         ArgumentNullException.ThrowIfNull(dialogs);
 
-        List<(BackupEntry Entry, ClassGraph Class)> offered = [];
+        List<(BackupEntry Entry, ClassGraph? Class)> offered = [];
         foreach (BackupEntry entry in store.List())
         {
             ClassGraph? cls = project.Classes.FirstOrDefault(
                 candidate => string.Equals(ProjectSessionViewModel.CurrentClassPath(project, candidate), entry.OriginalPath, StringComparison.Ordinal));
-            if (cls is not null)
+            if (cls is not null || IsClassPath(entry.OriginalPath))
             {
                 offered.Add((entry, cls));
             }
@@ -64,21 +66,27 @@ public sealed class RecoveryService
             return RecoveryResult.None;
         }
 
-        RecoveryChoice choice = await dialogs.ConfirmRecoverAsync(
-            [.. offered.Select(item => new RecoveryFile(item.Entry.OriginalPath, item.Entry.WrittenUtc, IsOlderThanFile(project, item.Class, item.Entry)))])
+        RecoveryAnswer answer = await dialogs.ConfirmRecoverAsync(
+            [.. offered.Select(item => new RecoveryFile(
+                item.Entry.OriginalPath, item.Entry.WrittenUtc, item.Class is not null && IsOlderThanFile(project, item.Class, item.Entry), item.Class is null))])
             .ConfigureAwait(true);
 
-        switch (choice)
+        switch (answer.Choice)
         {
             case RecoveryChoice.Discard:
                 offered.ForEach(item => store.Delete(item.Entry.OriginalPath));
                 return RecoveryResult.None;
             case RecoveryChoice.Restore:
-                return await RestoreAsync(project, offered, cancellationToken).ConfigureAwait(true);
+                HashSet<string> chosen = [.. answer.RestorePaths];
+                offered.Where(item => !chosen.Contains(item.Entry.OriginalPath)).ToList().ForEach(item => store.Delete(item.Entry.OriginalPath));
+                return await RestoreAsync(project, [.. offered.Where(item => chosen.Contains(item.Entry.OriginalPath))], cancellationToken).ConfigureAwait(true);
             default:
                 return RecoveryResult.None;
         }
     }
+
+    // A backup that matches no class of the project is a class that was never saved before the editor stopped (FR-025).
+    private static bool IsClassPath(string path) => path.EndsWith(".netpc.json", StringComparison.Ordinal);
 
     private static bool IsOlderThanFile(Project project, ClassGraph cls, BackupEntry entry)
     {
@@ -86,17 +94,18 @@ public sealed class RecoveryService
         return File.Exists(file) && File.GetLastWriteTimeUtc(file) > entry.WrittenUtc;
     }
 
-    private async Task<RecoveryResult> RestoreAsync(Project project, List<(BackupEntry Entry, ClassGraph Class)> offered, CancellationToken cancellationToken)
+    private async Task<RecoveryResult> RestoreAsync(Project project, List<(BackupEntry Entry, ClassGraph? Class)> offered, CancellationToken cancellationToken)
     {
         List<ClassGraph> restored = [];
         List<DocumentIssue> issues = [];
-        foreach ((BackupEntry entry, ClassGraph cls) in offered)
+        foreach ((BackupEntry entry, ClassGraph? cls) in offered)
         {
             try
             {
                 byte[] content = store.Read(entry);
-                (ClassGraph restoredClass, IReadOnlyList<DocumentIssue> mapped) =
-                    await persistence.RestoreClassAsync(project, cls, content, cancellationToken).ConfigureAwait(true);
+                (ClassGraph restoredClass, IReadOnlyList<DocumentIssue> mapped) = cls is null
+                    ? await persistence.RestoreNewClassAsync(project, entry.OriginalPath, content, cancellationToken).ConfigureAwait(true)
+                    : await persistence.RestoreClassAsync(project, cls, content, cancellationToken).ConfigureAwait(true);
                 restored.Add(restoredClass);
                 issues.AddRange(mapped);
             }

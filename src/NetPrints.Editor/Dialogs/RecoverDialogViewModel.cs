@@ -11,24 +11,20 @@ public sealed partial class RecoverDialogViewModel : DialogViewModel<RecoveryCho
     public RecoverDialogViewModel(IReadOnlyList<RecoveryFile> files)
     {
         ArgumentNullException.ThrowIfNull(files);
-        Files = files;
-        DiscardIsDefault = files.Any(file => file.IsOlderThanFile);
+        Rows = [.. files.Select(file => new RecoveryRowViewModel(file))];
     }
 
-    /// <summary>The backed-up files, one row each.</summary>
-    public IReadOnlyList<RecoveryFile> Files { get; }
+    /// <summary>The backed-up files, one row each with its own restore-or-discard choice.</summary>
+    public IReadOnlyList<RecoveryRowViewModel> Rows { get; }
 
-    /// <summary>Gets whether Discard, not Restore, is the default button: a backup is older than its file, so restoring could lose newer work.</summary>
-    public bool DiscardIsDefault { get; }
+    /// <summary>Gets what the user answered: the button, and with Restore the checked rows.</summary>
+    public RecoveryAnswer Answer => new(Result, Result == RecoveryChoice.Restore ? [.. Rows.Where(row => row.Restore).Select(row => row.Path)] : []);
 
-    /// <summary>Gets whether Restore is the default button.</summary>
-    public bool RestoreIsDefault => !DiscardIsDefault;
-
-    /// <summary>Closes the dialog asking to load the backups as unsaved changes.</summary>
+    /// <summary>Closes the dialog applying each row's choice: checked files load as unsaved changes, the others are discarded.</summary>
     [RelayCommand]
     private void Restore() => RequestClose(RecoveryChoice.Restore);
 
-    /// <summary>Closes the dialog asking to delete the backups.</summary>
+    /// <summary>Closes the dialog asking to delete every backup.</summary>
     [RelayCommand]
     private void Discard() => RequestClose(RecoveryChoice.Discard);
 }

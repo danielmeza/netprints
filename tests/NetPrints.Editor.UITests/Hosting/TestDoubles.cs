@@ -64,10 +64,13 @@ public sealed class RecordingDialogs : IEditorDialogs
 
     public List<IReadOnlyList<RecoveryFile>> RecoverCalls { get; } = [];
 
-    public Task<RecoveryChoice> ConfirmRecoverAsync(IReadOnlyList<RecoveryFile> files)
+    /// <summary>The paths <see cref="ConfirmRecoverAsync"/> chooses to restore with <see cref="RecoveryChoice.Restore"/>; every offered file when null.</summary>
+    public IReadOnlyCollection<string>? RecoverRestorePaths { get; set; }
+
+    public Task<RecoveryAnswer> ConfirmRecoverAsync(IReadOnlyList<RecoveryFile> files)
     {
         RecoverCalls.Add(files);
-        return Task.FromResult(RecoverAnswer);
+        return Task.FromResult(new RecoveryAnswer(RecoverAnswer, RecoverAnswer == RecoveryChoice.Restore ? RecoverRestorePaths ?? [.. files.Select(file => file.Path)] : []));
     }
 
     public Task<UnloadChoice> ConfirmUnsavedAsync(IReadOnlyList<UnsavedFile> files)

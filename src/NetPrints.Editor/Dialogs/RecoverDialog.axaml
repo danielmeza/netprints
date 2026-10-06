@@ -3,7 +3,6 @@
         xmlns:ed="clr-namespace:NetPrints.Editor"
         xmlns:edb="clr-namespace:NetPrints.Editor.Behaviors"
         xmlns:eddialogs="clr-namespace:NetPrints.Editor.Dialogs"
-        xmlns:edlife="clr-namespace:NetPrints.Editor.Lifecycle"
         x:Class="NetPrints.Editor.Dialogs.RecoverDialog"
         x:DataType="eddialogs:RecoverDialogViewModel"
         Title="Recover unsaved work"
@@ -14,21 +13,22 @@
     <edb:DialogCloseBehavior />
   </Interaction.Behaviors>
   <Grid RowDefinitions="Auto,*,Auto" Margin="12">
-    <TextBlock Text="The editor found backups of unsaved changes to these files:" TextWrapping="Wrap" Margin="0,0,0,8" />
-    <ListBox Grid.Row="1" ItemsSource="{Binding Files}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.RecoverFiles}"
+    <TextBlock Text="The editor found backups of unsaved changes. Checked files are restored; unchecked ones are discarded." TextWrapping="Wrap" Margin="0,0,0,8" />
+    <ListBox Grid.Row="1" ItemsSource="{Binding Rows}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.RecoverFiles}"
              AutomationProperties.Name="Backed-up files">
       <ListBox.ItemTemplate>
-        <DataTemplate x:DataType="edlife:RecoveryFile">
+        <DataTemplate x:DataType="eddialogs:RecoveryRowViewModel">
           <StackPanel>
-            <TextBlock Text="{Binding Path}" />
-            <TextBlock Text="Older than the file on disk" IsVisible="{Binding IsOlderThanFile}" FontStyle="Italic" />
+            <CheckBox Content="{Binding Path}" IsChecked="{Binding Restore}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.RecoverRow}" />
+            <TextBlock Text="Older than the file on disk" IsVisible="{Binding IsOlderThanFile}" FontStyle="Italic" Margin="24,0,0,0" />
+            <TextBlock Text="Never saved: restored as a new class" IsVisible="{Binding IsNewFile}" FontStyle="Italic" Margin="24,0,0,0" />
           </StackPanel>
         </DataTemplate>
       </ListBox.ItemTemplate>
     </ListBox>
     <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8" Margin="0,12,0,0">
-      <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.RecoverDiscardButton}" Content="Discard" MinWidth="80" IsDefault="{Binding DiscardIsDefault}" Command="{Binding DiscardCommand}" />
-      <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.RecoverRestoreButton}" Content="Restore" MinWidth="80" Classes="accent" IsDefault="{Binding RestoreIsDefault}" Command="{Binding RestoreCommand}" />
+      <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.RecoverDiscardButton}" Content="Discard all" MinWidth="80" Command="{Binding DiscardCommand}" />
+      <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.RecoverRestoreButton}" Content="Apply" MinWidth="80" Classes="accent" IsDefault="True" Command="{Binding RestoreCommand}" />
     </StackPanel>
   </Grid>
 </Window>

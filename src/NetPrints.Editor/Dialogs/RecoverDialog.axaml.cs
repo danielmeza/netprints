@@ -25,4 +25,7 @@ public partial class RecoverDialog : Window, IDialogResult<RecoveryChoice>
 
     /// <summary>What the user chose; <see cref="RecoveryChoice.Later"/> until then.</summary>
     public RecoveryChoice Result => viewModel.Result;
+
+    /// <summary>What the user answered: the button, and the files to restore when it was Restore.</summary>
+    public RecoveryAnswer Answer => viewModel.Answer;
 }

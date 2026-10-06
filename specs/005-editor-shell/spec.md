@@ -492,8 +492,8 @@ its public members appear.
   outside the project directory; a save or Don't save MUST delete that file's backups. At startup the editor MUST
   delete backups older than 30 days and backups whose project path no longer exists.
 - **FR-025**: Opening a project that has backups MUST offer recovery listing each backed-up file (with a note when
-  the file on disk is newer than its backup): Restore loads the backup content as unsaved changes; Discard deletes
-  the backups.
+  the file on disk is newer than its backup): each file is restored (its backup loads as unsaved changes) or discarded
+  (its backup is deleted) on its own; a class that was never saved is offered too and restored as a new, unsaved class.
 - **FR-026**: A backup that cannot be written MUST NOT interrupt editing; the editor MUST warn once in the status
   bar and log the error.
 

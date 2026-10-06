@@ -35,7 +35,7 @@ public sealed class SessionBackups : IDisposable
 
     /// <summary>Gets the class paths with unsaved changes: the classes followed since an edit or a restore, and the session's dirty ones.</summary>
     public IReadOnlyCollection<string> UnsavedPaths =>
-        [.. tracked.Keys.Union(session.Project.Classes.Where(cls => cls.IsDirty).Select(session.ClassPathOf), StringComparer.Ordinal)];
+        [.. tracked.Keys.Union(session.Project.Classes.Where(cls => cls.IsDirty).Select(PathOf), StringComparer.Ordinal)];
 
     /// <summary>Deletes the backups of the given classes and cancels their waits: the user chose not to keep those changes. Other backups stay.</summary>
     /// <param name="classPaths">The class paths the user was asked about.</param>
@@ -54,7 +54,7 @@ public sealed class SessionBackups : IDisposable
     public void Track(ClassGraph cls)
     {
         ArgumentNullException.ThrowIfNull(cls);
-        tracked[session.ClassPathOf(cls)] = cls;
+        tracked[PathOf(cls)] = cls;
     }
 
     /// <summary>Writes the backups still waiting.</summary>
@@ -71,10 +71,19 @@ public sealed class SessionBackups : IDisposable
 
     private void OnClassEdited(object? sender, ClassGraph cls)
     {
-        string path = session.ClassPathOf(cls);
+        string path = PathOf(cls);
+        foreach (string stale in tracked.Where(item => ReferenceEquals(item.Value, cls) && item.Key != path).Select(item => item.Key).ToList())
+        {
+            tracked.Remove(stale);
+            service.Delete(stale);
+        }
+
         tracked[path] = cls;
         service.Schedule(path, () => RenderOnUiThreadAsync(cls));
     }
+
+    // The file a save would write now, not the path the session first saw: a class renamed before its first save is backed up under its final name.
+    private string PathOf(ClassGraph cls) => ProjectSessionViewModel.CurrentClassPath(session.Project, cls);
 
     private void OnStatesChanged(object? sender, EventArgs e) => DropSaved();
 

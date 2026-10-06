@@ -65,7 +65,7 @@ Open, Add and Remove getter or setter and Open type graph buttons (inspector ele
 | Dialog | Buttons | Result |
 |---|---|---|
 | Unsaved changes | Save all (default), Don't save, Cancel (Esc) | `Save`, `Discard`, `Cancel` |
-| Recover unsaved work | Restore (default, unless a backup is older than its file), Discard | `Restore`, `Discard` |
+| Recover unsaved work | One checkbox per backed-up file (checked: restore, unchecked: discard its backup; unchecked at the start when the backup is older than its file); Apply (default), Discard all | `Restore` with the checked paths, `Discard` |
 | New project | Create (enabled when the input is valid), Cancel | the created project path |
 | Stop running program? (on exit while running) | Stop and exit, Cancel | `Stop`, `Cancel` |
 

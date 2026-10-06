@@ -87,10 +87,10 @@ public sealed class BackupStore
         ArgumentException.ThrowIfNullOrEmpty(originalPath);
         ArgumentNullException.ThrowIfNull(content);
 
+        BackupManifest manifest = ReadOwnManifest() ?? new BackupManifest(SchemaVersion, ProjectPath, []);
         string backupPath = BackupPathOf(originalPath);
         writer.Write(ToFilePath(backupPath), content);
 
-        BackupManifest manifest = ReadManifest(fileSystem, ManifestPath, logger) ?? new BackupManifest(SchemaVersion, ProjectPath, []);
         manifest.Files.RemoveAll(entry => entry.OriginalPath == originalPath);
         manifest.Files.Add(new BackupEntry(originalPath, backupPath, TruncateToSeconds(writtenUtc), Convert.ToHexStringLower(SHA256.HashData(content))));
         WriteManifest(manifest);
@@ -98,9 +98,10 @@ public sealed class BackupStore
 
     /// <summary>Deletes the backup of a file, and the project's folder when none is left.</summary>
     /// <param name="originalPath">The file's path relative to the project.</param>
+    /// <exception cref="IOException">The folder holds a manifest this version cannot use, which is left alone.</exception>
     public void Delete(string originalPath)
     {
-        BackupManifest? manifest = ReadManifest(fileSystem, ManifestPath, logger);
+        BackupManifest? manifest = ReadOwnManifest();
         if (manifest is null)
         {
             return;
@@ -116,7 +117,12 @@ public sealed class BackupStore
     }
 
     /// <summary>Deletes every backup of the project, with its folder.</summary>
-    public void DeleteAll() => fileSystem.DeleteDirectory(Folder);
+    /// <exception cref="IOException">The folder holds a manifest this version cannot use, which is left alone.</exception>
+    public void DeleteAll()
+    {
+        _ = ReadOwnManifest();
+        fileSystem.DeleteDirectory(Folder);
+    }
 
     /// <summary>Applies a change to the manifest of a folder and writes it back, or deletes the folder when no entry is left.</summary>
     /// <param name="manifest">The manifest after the change.</param>
@@ -141,8 +147,12 @@ public sealed class BackupStore
     /// <param name="manifestPath">The manifest's path.</param>
     /// <param name="logger">Receives a warning when the manifest is unreadable or from a newer schema.</param>
     /// <returns>The manifest, or null when it is missing, unreadable or has another schema version.</returns>
-    internal static BackupManifest? ReadManifest(IEditorFileSystem fileSystem, string manifestPath, ILogger logger)
+    internal static BackupManifest? ReadManifest(IEditorFileSystem fileSystem, string manifestPath, ILogger logger) =>
+        ReadManifest(fileSystem, manifestPath, logger, out _);
+
+    private static BackupManifest? ReadManifest(IEditorFileSystem fileSystem, string manifestPath, ILogger logger, out bool foreign)
     {
+        foreign = false;
         if (!fileSystem.FileExists(manifestPath))
         {
             return null;
@@ -163,7 +173,15 @@ public sealed class BackupStore
             Log.BackupManifestUnreadable(logger, ex, manifestPath);
         }
 
+        foreign = true;
         return null;
+    }
+
+    // A manifest that exists but cannot be used belongs to another version of the editor: nothing in its folder is written or deleted.
+    private BackupManifest? ReadOwnManifest()
+    {
+        BackupManifest? manifest = ReadManifest(fileSystem, ManifestPath, logger, out bool foreign);
+        return foreign ? throw new IOException($"The backup manifest '{ManifestPath}' is not usable by this version, so its folder is left alone.") : manifest;
     }
 
     private static DateTime TruncateToSeconds(DateTime value) =>

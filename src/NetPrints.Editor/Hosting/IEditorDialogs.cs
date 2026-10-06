@@ -60,6 +60,6 @@ public interface IEditorDialogs
 
     /// <summary>Offers to restore the backed-up files of the project being opened.</summary>
     /// <param name="files">The backed-up files, listed in the dialog.</param>
-    /// <returns>The user's choice; <see cref="RecoveryChoice.Later"/> when the dialog was dismissed.</returns>
-    Task<RecoveryChoice> ConfirmRecoverAsync(IReadOnlyList<RecoveryFile> files);
+    /// <returns>The user's answer, one restore-or-discard choice per file; <see cref="RecoveryAnswer.Later"/> when the dialog was dismissed.</returns>
+    Task<RecoveryAnswer> ConfirmRecoverAsync(IReadOnlyList<RecoveryFile> files);
 }

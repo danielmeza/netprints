@@ -277,11 +277,15 @@ public static class AutomationIds
     /// </summary>
     public const string RecoverFiles = "Dialogs.Recover.Files";
     /// <summary>
-    /// Automation id for the recovery dialog's Restore button.
+    /// Automation id for the recovery dialog's button that restores the checked files and discards the others.
     /// </summary>
     public const string RecoverRestoreButton = "Dialogs.Recover.Restore";
     /// <summary>
-    /// Automation id for the recovery dialog's Discard button.
+    /// Automation id for each row's restore checkbox in the recovery dialog.
+    /// </summary>
+    public const string RecoverRow = "Dialogs.Recover.Row";
+    /// <summary>
+    /// Automation id for the recovery dialog's button that discards every backup.
     /// </summary>
     public const string RecoverDiscardButton = "Dialogs.Recover.Discard";
     /// <summary>
