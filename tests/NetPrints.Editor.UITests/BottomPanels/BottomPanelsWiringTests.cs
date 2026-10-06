@@ -100,6 +100,49 @@ public class BottomPanelsWiringTests
         Assert.Empty(rig.Dialogs.Errors);
     }
 
+    private static async Task<Rig> CreateWithErrorAsync()
+    {
+        Rig rig = await CreateAsync();
+        string nodeId = rig.Method.Nodes.First().Id;
+        rig.Api.OpenDocument(rig.ClassDocument);
+        rig.Session.Project.LastDiagnostics = new ObservableRangeCollection<CodeDiagnostic>(
+            [new CodeDiagnostic(CodeDiagnosticSeverity.Error, "CS1503", "boom", rig.Class.FullName, GraphKeys.For(rig.Method), nodeId, null, null)]);
+        HeadlessDriver.Pump();
+        return rig;
+    }
+
+    private static UiTarget RowPadding(Rig rig)
+    {
+        var list = rig.Find(AutomationIds.ErrorsList).Single();
+        var row = rig.Find(AutomationIds.ErrorsRow).Single();
+        return new UiTarget(list.Window, list.Bounds.X + 3, row.Bounds.Y + row.Bounds.Height / 2);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task DoubleClickingTheEmptyPartOfAnErrorRowOpensItsGraphTab()
+    {
+        await using Rig rig = await CreateWithErrorAsync();
+
+        await rig.Ui.Driver.ClickAsync(RowPadding(rig), UiButton.Left, 2, Token);
+
+        Assert.True(rig.Api.OpenDocuments.Contains(rig.MethodDocument), rig.Ui.Driver.InputTrace);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task TwoPressesOnAnErrorRowMoreThanTheDefaultDoubleTapTimeApartStillOpenItsGraphTab()
+    {
+        await using Rig rig = await CreateWithErrorAsync();
+        UiTarget target = rig.Target(AutomationIds.ErrorsRow);
+
+        await rig.Ui.Driver.ClickAsync(target, UiButton.Left, 1, Token);
+        Thread.Sleep(SlowFirstPressMilliseconds);
+        await rig.Ui.Driver.ClickAsync(target, UiButton.Left, 1, Token);
+
+        Assert.True(rig.Api.OpenDocuments.Contains(rig.MethodDocument), rig.Ui.Driver.InputTrace);
+    }
+
+    private const int SlowFirstPressMilliseconds = 600;
+
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task TheOutputPanelListsTheBuildAndTheProgramsOutput()
     {

@@ -12,33 +12,33 @@
             AutomationProperties.AutomationId="{x:Static ed:AutomationIds.TreeView}">
     <Interaction.Behaviors>
       <edbehaviors:ScopedCommandKeysBehavior Scope="ProjectTree" Invoker="{Binding Invoker}" />
+      <edbehaviors:ExecuteCommandOnItemDoubleTappedBehavior Command="{Binding OpenItemCommand}" />
     </Interaction.Behaviors>
     <TreeView.Styles>
       <Style Selector="TreeViewItem" x:DataType="edtree:ProjectTreeItemViewModel">
         <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
         <Setter Property="AutomationProperties.AutomationId" Value="{Binding AutomationId}" />
         <Setter Property="AutomationProperties.Name" Value="{Binding Name}" />
+        <Setter Property="ContextMenu">
+          <ContextMenu ItemsSource="{Binding MenuEntries}">
+            <ContextMenu.Styles>
+              <Style Selector="MenuItem" x:DataType="shell:CommandEntryViewModel">
+                <Setter Property="Header" Value="{Binding Label}" />
+                <Setter Property="Command" Value="{Binding RunCommand}" />
+                <Setter Property="AutomationProperties.AutomationId" Value="{Binding AutomationId}" />
+                <Setter Property="AutomationProperties.Name" Value="{Binding Label}" />
+              </Style>
+            </ContextMenu.Styles>
+          </ContextMenu>
+        </Setter>
       </Style>
     </TreeView.Styles>
     <TreeView.ItemTemplate>
       <TreeDataTemplate x:DataType="edtree:ProjectTreeItemViewModel" ItemsSource="{Binding Children}">
         <StackPanel Orientation="Horizontal" Spacing="6" Background="Transparent">
           <Interaction.Behaviors>
-            <ExecuteCommandOnDoubleTappedBehavior Command="{Binding OpenCommand}" />
             <edbehaviors:TreeDragSourceBehavior />
           </Interaction.Behaviors>
-          <StackPanel.ContextMenu>
-            <ContextMenu ItemsSource="{Binding MenuEntries}">
-              <ContextMenu.Styles>
-                <Style Selector="MenuItem" x:DataType="shell:CommandEntryViewModel">
-                  <Setter Property="Header" Value="{Binding Label}" />
-                  <Setter Property="Command" Value="{Binding RunCommand}" />
-                  <Setter Property="AutomationProperties.AutomationId" Value="{Binding AutomationId}" />
-                  <Setter Property="AutomationProperties.Name" Value="{Binding Label}" />
-                </Style>
-              </ContextMenu.Styles>
-            </ContextMenu>
-          </StackPanel.ContextMenu>
           <mi:MaterialIcon Kind="{Binding IconKind}" Width="14" Height="14" AutomationProperties.AccessibilityView="Raw" />
           <TextBlock Text="{Binding Name}" VerticalAlignment="Center" />
         </StackPanel>

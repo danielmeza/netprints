@@ -1,4 +1,6 @@
+using Avalonia.Automation;
 using Avalonia.Controls;
+using Avalonia.VisualTree;
 using Avalonia.Headless.XUnit;
 using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Core;
@@ -171,4 +173,72 @@ public class ProjectTreeWiringTests
         Assert.Same(method, rig.Shell.TreeSelection);
         Assert.NotEmpty(rig.Tree.SelectedItem?.MenuEntries ?? []);
     }
+
+    private static UiTarget RowIndent(Rig rig, string rowId)
+    {
+        var row = rig.Find(rowId) ?? throw new InvalidOperationException($"No element {rowId}.");
+        var tree = rig.Find(AutomationIds.TreeView) ?? throw new InvalidOperationException("No tree.");
+        return new UiTarget(row.Window, tree.Bounds.X + 4, row.Bounds.Y + Math.Min(row.Bounds.Height / 2, 12));
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task DoubleClickingTheEmptyPartOfARowOpensIt()
+    {
+        await using Rig rig = await CreateAsync();
+        ClassGraph cls = rig.Session.Project.Classes.Single();
+        MethodGraph method = cls.Methods.First();
+        Assert.True(rig.Tree.Select(method));
+        HeadlessDriver.Pump();
+
+        await rig.Ui.Driver.ClickAsync(RowIndent(rig, RowId(AutomationIds.TreeKindMethod, method.Name)), UiButton.Left, 2, Token);
+
+        Assert.Equal(DocumentId.Graph(rig.Session.ClassPathOf(cls), DocumentId.MethodKeyPrefix + method.Id), Assert.Single(rig.Adapter.OpenDocuments));
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task RightClickingTheEmptyPartOfARowOpensItsContextMenu()
+    {
+        await using Rig rig = await CreateAsync();
+        ClassGraph cls = rig.Session.Project.Classes.Single();
+        MethodGraph method = cls.Methods.First();
+        Assert.True(rig.Tree.Select(cls));
+        Assert.True(rig.Tree.Select(method));
+        HeadlessDriver.Pump();
+        string rowId = RowId(AutomationIds.TreeKindMethod, method.Name);
+
+        await rig.Ui.Driver.ClickAsync(RowIndent(rig, rowId), UiButton.Right, 1, Token);
+
+        TreeViewItem item = rig.Window.GetVisualDescendants().OfType<TreeViewItem>().Single(i => AutomationProperties.GetAutomationId(i) == rowId);
+        Assert.True(item.ContextMenu is { IsOpen: true, ItemCount: > 0 }, rig.Ui.Driver.InputTrace);
+        string classId = RowId(AutomationIds.TreeKindClass, cls.Name);
+        TreeViewItem classItem = rig.Window.GetVisualDescendants().OfType<TreeViewItem>().Single(i => AutomationProperties.GetAutomationId(i) == classId);
+        Assert.Same(rig.Tree.SelectedItem?.MenuEntries, item.ContextMenu.ItemsSource);
+        await rig.Ui.Driver.ClickAsync(RowIndent(rig, classId), UiButton.Right, 1, Token);
+        Assert.Equal(cls, rig.Tree.SelectedItem?.Model);
+        Assert.Same(rig.Tree.SelectedItem?.MenuEntries, classItem.ContextMenu?.ItemsSource);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task ASlowSelectionDoesNotSplitADoubleClickIntoTwoSingleClicks()
+    {
+        await using Rig rig = await CreateAsync();
+        ClassGraph cls = rig.Session.Project.Classes.Single();
+        MethodGraph method = cls.Methods.First();
+        Assert.True(rig.Tree.Select(method));
+        rig.Tree.SelectedItem = null;
+        HeadlessDriver.Pump();
+        rig.Tree.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(ProjectTreePanelViewModel.SelectedItem))
+            {
+                Thread.Sleep(SlowFirstPressMilliseconds);
+            }
+        };
+
+        await rig.Ui.Driver.ClickAsync(rig.Row(RowId(AutomationIds.TreeKindMethod, method.Name)), UiButton.Left, 2, Token);
+
+        Assert.True(rig.Adapter.OpenDocuments.Count == 1, rig.Ui.Driver.InputTrace);
+    }
+
+    private const int SlowFirstPressMilliseconds = 600;
 }

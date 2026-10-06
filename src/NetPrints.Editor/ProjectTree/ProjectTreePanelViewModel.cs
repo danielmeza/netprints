@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using NetPrints.Core;
 using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Events;
@@ -185,6 +186,17 @@ public sealed partial class ProjectTreePanelViewModel : ObservableObject, IShell
     {
         var named = new EventGraphViewModel(graph, cls);
         return new ProjectTreeItemViewModel(TreeItemKind.EventGraph, graph, () => named.Name, named, null, Open);
+    }
+
+    /// <summary>Opens the graph of a double-tapped row; a row that opens nothing (a group, a variable, the project) is ignored.</summary>
+    /// <param name="item">Row that was double-tapped.</param>
+    [RelayCommand]
+    private void OpenItem(ProjectTreeItemViewModel? item)
+    {
+        if (item is { OpenCommand: var open } && open.CanExecute(null))
+        {
+            open.Execute(null);
+        }
     }
 
     private void Open(ProjectTreeItemViewModel item)
