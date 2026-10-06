@@ -589,8 +589,10 @@ the window, the layout and each project's session, with safe fallbacks (FR-050�
   project (the point U1's UnrealSharp template will use, research R8). An invalid name (not a C# identifier for the
   namespace, or not a valid file name) or a folder that is not empty is rejected before anything is written. A
   failing template removes the partly created folder and shows the error. Success opens the project and records it in
-  Recent. Then `ProjectTemplateService` and `NewProjectDialog` (`DialogViewModel<string?>`, Create enabled only when
-  the input is valid).
+  Recent. A project created from the Executable template seeds `Program.netpc.json` (the `Program` class graph with an
+  empty `public static void Main()`, like `samples/HelloWorld/HelloWorld.Program.netpc.json`); a Library project seeds
+  no graph. Test first: a created Executable project builds with no CS5001 and runs. Then `ProjectTemplateService` and
+  `NewProjectDialog` (`DialogViewModel<string?>`, Create enabled only when the input is valid).
 - [ ] T068 [US5] Samples and What's new (2 units). Bundle `samples/HelloWorld` (the `.csproj`, the graphs and the
   generated files; not `bin/`, `obj/` or `Compiled_HelloWorld/`) as content of
   `src/NetPrints.Desktop/NetPrints.Desktop.csproj`. Opening a sample copies it to a folder the user picks and opens the
@@ -833,7 +835,11 @@ suite, the final review and merge preparation (FR-103, SC-010, every SC).
   features and a screenshot); the Status of ADR-0018 (with the spike outcome), ADR-0019 and ADR-0020, and the
   `docs/adr/README.md` index; the `avalonia-*` skills; `src/NetPrints.Editor/StartPage/WhatsNew.md` and
   `.github/release-notes.md` "Unreleased" (every user-visible P3a change, the schema note, links to the new guides);
-  the API reference (`docs/api`, docfx) builds with the Core, Serialization and Reflection changes.
+  the API reference (`docs/api`, docfx) builds with the Core, Serialization and Reflection changes. The guide also
+  documents a hand-written `Properties/launchSettings.json` (`commandLineArgs`, `environmentVariables`) for F5 and
+  `netprints run`. Test first: an integration test proves that the run command (`dotnet run --project ... --no-build`,
+  from `MsBuildProjectSystem.GetRunCommand`) applies a profile's `commandLineArgs` and `environmentVariables` to an echo
+  fixture.
 
 ### Batch H3 — model: sonnet — T108–T111 — 5 units
 

@@ -1325,3 +1325,15 @@ Verdict: request changes, 0 blockers, 5 majors, 8 minors, 8 nits (21 findings). 
 - New public API: `IViewportDocument` (Shell) and `GraphViewportBehavior` (Behaviors), the latter because XAML needs it public. `DockShellAdapter` takes an optional `ILogger`. Everything else is internal.
 - Tests red first (stub throwing `NotImplementedException`): `DockLayoutRoundTripTests` (11 of 11 red) and `SessionStateTests` (11 of 11 red). Written after the code: `RestoreSessionTests` (the wiring through the shell; with the `GraphViewportBehavior` line removed and the unload save removed, tests 1 and 2 fail), and the `FakeShell.Unresolvable` and `MemoryStateStore` helpers.
 - Deferred: a floating document comes back docked in the main window after a restart (the layout is restored at startup, before any project is open, so its documents are dropped; the session reopens them docked). Restoring the layout again after the session restore would place them, but then the layout, not the session, would decide which documents open. A hidden panel's last dock is not kept (it returns to its default dock). `window.json`'s `screen` field is still not written (E1).
+
+## R1 (roadmap gap research)
+
+Documentation only, from the 2026-10-06 gap research:
+- `.specify/memory/roadmap.md`: run profiles (first P3 batch), B5, B7, B15, B17, the build-configuration selector and the
+  status-bar contribution kind (C-15) in P3; the test kind and the `Main(string[] args)` seed in P3b; the usability,
+  navigation, debug and visual items in P6; the flow-control set and the inline C# node in P7; the multi-project workspace
+  after P3 and P5. P3a notes the starter `Main` and the growth of sub-phase G; its detailed tasks come in a later batch.
+- FR-042 and T067: an Executable template seeds a `Program` class graph with an empty `public static void Main()`
+  (test first: a created Executable project builds with no CS5001 and runs).
+- T107: the docs pass documents a hand-written `Properties/launchSettings.json`, after an integration test pins that the
+  run command applies a profile's `commandLineArgs` and `environmentVariables`.

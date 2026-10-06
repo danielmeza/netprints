@@ -536,7 +536,10 @@ its public members appear.
   restarts.
 - **FR-042**: New project MUST create a project from a registered project template (built-ins: Console app and
   Class library, using the default project profile), a name and an empty or new folder, validate the input before
-  writing, remove a partly created folder on failure, open the project and add it to the recent list.
+  writing, remove a partly created folder on failure, open the project and add it to the recent list. An Executable
+  template MUST also seed a `Program` class graph (`Program.netpc.json`, like
+  `samples/HelloWorld/HelloWorld.Program.netpc.json`) with an empty `public static void Main()`, so a new console
+  project builds and runs; a Library template seeds nothing.
 - **FR-043**: Opening a sample MUST copy it to a user-chosen folder and open the copy; bundled samples MUST NOT be
   modified.
 - **FR-044**: What's new MUST show the running version's release notes bundled with the editor and a link to the
