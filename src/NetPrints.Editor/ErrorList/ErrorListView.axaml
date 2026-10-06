@@ -6,7 +6,7 @@
              xmlns:ederrorlist="clr-namespace:NetPrints.Editor.ErrorList"
              x:Class="NetPrints.Editor.ErrorList.ErrorListView"
              x:DataType="ederrorlist:ErrorListViewModel">
-  <!-- One class's diagnostics; double-click or Enter on a row opens its graph and selects its node. -->
+  <!-- The project's diagnostics, each row labelled with its class; double-click or Enter on a row opens its graph and selects its node. -->
   <DockPanel>
     <TextBlock DockPanel.Dock="Top" Margin="8,4" Text="{Binding Header}" />
     <ListBox x:Name="Rows" ItemsSource="{Binding Rows}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ErrorsList}">

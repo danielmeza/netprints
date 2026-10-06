@@ -72,7 +72,7 @@ Rules:
 
 | Target | Items (command ids) |
 |---|---|
-| Tree: class | open class graph, `rename`, add method, add constructor, add variable, add event graph, `classSettings`, `delete` |
+| Tree: class | open class graph, `rename`, add method, add constructor, add variable, add event graph, `overrideMethod`, `classSettings`, `delete` |
 | Tree: method, constructor, event graph | open, `rename` (event graphs and methods), `delete` |
 | Tree: variable | `rename`, `delete` |
 | Connection | `goToSource`, `goToTarget` |

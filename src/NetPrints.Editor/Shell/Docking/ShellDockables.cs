@@ -4,7 +4,7 @@ using NetPrints.Editor.Contributions;
 
 namespace NetPrints.Editor.Shell.Docking;
 
-/// <summary>A document tab: its <c>Id</c> is the <see cref="DocumentId"/> text and its <c>Context</c> the document view model. Public so the layout's dockables stay public classes (a non-public one is written without its type).</summary>
+/// <summary>A document tab: its <c>Id</c> is the <see cref="DocumentId"/> text and its <c>Context</c> the document view model.</summary>
 public sealed class ShellDocument : Document
 {
     /// <summary>Creates a document tab with an empty capability override, which Dock's templates bind through and which changes no capability (every flag inherits).</summary>

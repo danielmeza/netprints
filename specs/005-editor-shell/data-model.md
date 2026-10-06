@@ -11,9 +11,10 @@ types. Persisted formats are in [contracts/state-files.md](./contracts/state-fil
 |---|---|---|
 | `ShellViewModel` | `Session: ProjectSessionViewModel?`, `Documents: ObservableCollection<DocumentViewModel>`, `ActiveDocument: DocumentViewModel?`, `Panels: IReadOnlyList<PanelViewModel>`, `StatusMessage: string?`, `Title: string` | One per window. `Session` is null while the start page shows. `Title` = `"<active graph> – <project>[*] – NetPrints"`, or `"NetPrints"` with no project. |
 | `IShell` (service) | `OpenDocument(DocumentId)`, `ActivateDocument(DocumentId)`, `CloseDocument(DocumentId)`, `ShowPanel(string panelId)`, `HidePanel(string panelId)`, `FloatDocument(DocumentId)`, `DockDocument(DocumentId)`, `ResetLayout()`, `ActiveDocument` | The only shell API that features use; implemented by the Dock adapter (ADR-0018). |
-| `DocumentId` | `Kind` (`Graph`, `StartPage`, `ProjectSettings`), `ClassPath` (class file path relative to the project), `GraphKey` (method or constructor id, event graph id, or `class`) | Value equality. Serialized as `graph:<classPath>#<graphKey>`, `start`, or `project-settings`. |
+| `DocumentId` | `Kind` (`Graph`, `StartPage`, `ProjectSettings`), `ClassPath` (class file path relative to the project), `GraphKey` (`method:<id>`, `ctor:<id>`, `event:<id>`, `getter:<variableId>`, `setter:<variableId>`, `type:<variableId>` or `class`) | Value equality. Serialized as `graph:<classPath>#<graphKey>`, `start`, or `project-settings`. |
 | `DocumentViewModel` | `Id: DocumentId`, `Title`, `IsUnsaved` (from the owning file), `Breadcrumbs: IReadOnlyList<BreadcrumbViewModel>` | `GraphDocumentViewModel` wraps the existing graph editor view model and adds `Viewport` (location, zoom). |
-| `PanelViewModel` | `Id` (`netprints.panel.*`), `Title`, `IconKind`, `DefaultDock` (`Left`, `Right`, `Bottom`), `Order` | Built-ins: `projectTree`, `inspector`, `errors`, `output`, `csharp`. |
+| `ClassContext` | `Class`, `Services`, `Variables`, the class inspector, member view models, `UndoStack` | What the shell works on for one class. Owned by `ProjectSessionViewModel` (`ContextFor(cls)`), created lazily on first use, and disposed with its class or with the session; view models never hold it (architecture gate A2). |
+| `PanelViewModel` | `Id` (`netprints.panel.*`), `Title`, `IconKind`, `DefaultDock` (`Left`, `Right`, `Bottom`), `Order` | Built-ins: `projectTree`, `inspector`, `variables`, `errors`, `output`, `csharp`. |
 
 ## Project session and lifecycle
 

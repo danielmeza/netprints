@@ -19,7 +19,7 @@ macOS, on the current .NET 10, with an automated test suite (headless UI tests p
 tests against the real desktop app) instead of manual verification.
 
 <p align="center">
-  <img src="tests/NetPrints.Editor.UITests/Snapshots/Baselines/class-editor-main.png" width="720" alt="The NetPrints editor window on Avalonia: the project tree, a tab with a node graph wiring up a method, the inspector, and the Errors, Output and C# panels." />
+  <img src="tests/NetPrints.Editor.UITests/Snapshots/Baselines/editor-shell-main.png" width="720" alt="The NetPrints editor window on Avalonia: the project tree, a tab with a node graph wiring up a method, the inspector, and the Errors, Output and C# panels." />
 </p>
 
 ## Install

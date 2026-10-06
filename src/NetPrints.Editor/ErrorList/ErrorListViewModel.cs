@@ -11,8 +11,7 @@ using NetPrints.Editor.Shell;
 namespace NetPrints.Editor.ErrorList;
 
 /// <summary>
-/// The class editor's Errors tab, or with a project the Errors panel (FR-032, FR-034; editor-services.md §2): every diagnostic that
-/// belongs to the open class, from the live analysis (<see cref="ICodeAnalysisHost.Snapshots"/>) and
+/// The Errors panel's list (FR-032, FR-034; editor-services.md §2): every diagnostic of the project, or, in the per-class mode only tests use, of one class, from the live analysis (<see cref="ICodeAnalysisHost.Snapshots"/>) and
 /// the project's last build (<see cref="Project.LastDiagnostics"/>) combined. Double-clicking a
 /// navigable row sends a <see cref="NavigateToNodeMessage"/> through the class editor's messenger
 /// (FR-038: this view model depends only on the class graph, the live-analysis host and the

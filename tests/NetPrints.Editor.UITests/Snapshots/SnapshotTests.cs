@@ -43,13 +43,24 @@ public class SnapshotTests
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
-    public async Task ClassEditorWithTheSampleGraph()
+    public async Task ShellWithTheSampleGraph()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
 
-        await MatchWindowAsync(session.Driver, session.Page, "class-editor-main");
+        await MatchWindowAsync(session.Driver, session.Page, "editor-shell-main");
         await MatchStableAsync("node-call-method", session.Graph.Node("CallMethodNode").ScreenshotAsync); // connected and unconnected pins
         await MatchStableAsync("inspector-method", session.Page.Inspector.ScreenshotAsync);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task ShellWithNoProjectOpen()
+    {
+        await using var app = ShellApp.Start();
+        EditorSession.UseFixedSize(app.Window);
+        await app.Composition.StartAsync([]);
+        var page = await new ShellPage(app.Driver).WaitShownAsync(Token);
+
+        await MatchWindowAsync(app.Driver, page, "editor-shell-no-project");
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]

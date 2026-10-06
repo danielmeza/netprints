@@ -4,7 +4,7 @@ using NetPrints.Core;
 namespace NetPrints.Editor.ErrorList;
 
 /// <summary>
-/// One row of the class editor's Errors tab (FR-032): a <see cref="CodeDiagnostic"/> from either the
+/// One row of the Errors panel (FR-032): a <see cref="CodeDiagnostic"/> from either the
 /// live analysis or the last build, plus the display name of the member it belongs to, resolved from
 /// its <see cref="CodeDiagnostic.GraphKey"/> against the class that reported it. A diagnostic with no
 /// source-map entry is still listed, just not navigable (<see cref="CanNavigate"/>).

@@ -103,7 +103,7 @@ internal sealed class EditorSession : IAsyncDisposable
     public Task PressDeleteAsync(CancellationToken cancellationToken) => Driver.PressAsync("Delete", cancellationToken);
 
     /// <summary>A fixed window size, so pointer coordinates and snapshots are predictable.</summary>
-    private static void UseFixedSize(Window window)
+    internal static void UseFixedSize(Window window)
     {
         window.WindowState = WindowState.Normal;
         window.Width = HeadlessApp.ScreenWidth;
