@@ -29,9 +29,9 @@ public sealed class BackupWiringTests : IAsyncDisposable
         await editor.DisposeAsync();
     }
 
-    private async Task<ProjectRig> OpenEditedAsync()
+    private async Task<ProjectRig> OpenEditedAsync(IUiDispatcher? dispatcher = null)
     {
-        EditorContext context = editor.Context with { Backups = new BackupOptions(new EditorDataPaths("state-root"), fs, time, Delay) };
+        EditorContext context = editor.Context with { Backups = new BackupOptions(new EditorDataPaths("state-root"), fs, time, Delay), Dispatcher = dispatcher ?? editor.Context.Dispatcher };
         string path = TestPaths.CopyHelloWorldSample();
         cleanup.Add(path);
         var rig = new ProjectRig(context, time);
@@ -72,7 +72,7 @@ public sealed class BackupWiringTests : IAsyncDisposable
 
         Assert.True(await rig.Actions.ConfirmUnloadAsync(Token));
         Assert.NotEmpty(fs.Files);
-        rig.Actions.Loader.CloseProject();
+        await rig.Actions.Loader.CloseProjectAsync();
 
         Assert.Empty(fs.Files);
     }
@@ -82,7 +82,43 @@ public sealed class BackupWiringTests : IAsyncDisposable
     {
         ProjectRig rig = await OpenEditedAsync();
 
-        rig.Actions.Loader.CloseProject();
+        await rig.Actions.Loader.CloseProjectAsync();
+
+        Assert.Contains(fs.Files, file => file.EndsWith("manifest.json", StringComparison.Ordinal));
+    }
+
+    [Fact(Timeout = 30000)]
+    public async Task ClosingTheProjectWaitsForTheBackupWriteBeforeTheSessionGoes()
+    {
+        var dispatcher = new DeferredDispatcher();
+        ProjectRig rig = await OpenEditedAsync(dispatcher);
+        dispatcher.Defer = true;
+
+        Task closing = rig.Actions.Loader.CloseProjectAsync();
+
+        Assert.False(closing.IsCompleted);
+        Assert.NotNull(rig.Session);
+        Assert.DoesNotContain(fs.Files, file => file.EndsWith("manifest.json", StringComparison.Ordinal));
+
+        dispatcher.RunPending();
+        await closing.WaitAsync(TimeSpan.FromSeconds(10), Token);
+
+        Assert.Contains(fs.Files, file => file.EndsWith("manifest.json", StringComparison.Ordinal));
+        Assert.Null(rig.Session);
+    }
+
+    [Fact(Timeout = 30000)]
+    public async Task FlushingForExitWaitsForTheBackupWrite()
+    {
+        var dispatcher = new DeferredDispatcher();
+        ProjectRig rig = await OpenEditedAsync(dispatcher);
+        dispatcher.Defer = true;
+
+        Task flushing = rig.Actions.Loader.FlushBackupsAsync();
+
+        Assert.False(flushing.IsCompleted);
+        dispatcher.RunPending();
+        await flushing.WaitAsync(TimeSpan.FromSeconds(10), Token);
 
         Assert.Contains(fs.Files, file => file.EndsWith("manifest.json", StringComparison.Ordinal));
     }

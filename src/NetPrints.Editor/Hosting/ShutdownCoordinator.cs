@@ -7,7 +7,7 @@ namespace NetPrints.Editor.Hosting;
 /// Coalesces repeated <c>ShutdownRequested</c> events into a single cleanup pass: the first
 /// request cancels and starts cleanup, later requests made while cleanup is running cancel and
 /// reuse that same task, and once cleanup has finished a request passes through so the process
-/// can exit. With a confirmation, cleanup starts only when it is accepted; a declined one keeps the
+/// can exit. With a confirmation, cleanup starts only when it is accepted; a declined one, or one that throws, keeps the
 /// application running and the next request asks again.
 /// </summary>
 public sealed class ShutdownCoordinator
@@ -71,7 +71,9 @@ public sealed class ShutdownCoordinator
             }
             catch (Exception ex)
             {
-                Log.ShutdownCleanupFailed(logger, ex);
+                // Fail safe: exiting without the answer could lose unsaved work, so the next request asks again.
+                Log.ShutdownConfirmationFailed(logger, ex);
+                return;
             }
         }
 

@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NetPrints.Editor.State;
@@ -17,6 +18,8 @@ public sealed class BackupStore
 
     private const string ManifestName = "manifest.json";
     private const string BackupSuffix = ".bak.json";
+    private const string RootedFolder = "__rooted";
+    private const int RootedHashLength = 16;
 
     private readonly IEditorFileSystem fileSystem;
     private readonly AtomicFileWriter writer;
@@ -71,11 +74,7 @@ public sealed class BackupStore
     public byte[] Read(BackupEntry entry)
     {
         ArgumentNullException.ThrowIfNull(entry);
-        string full = Path.GetFullPath(ToFilePath(entry.BackupPath));
-        string root = Path.GetFullPath(Folder) + Path.DirectorySeparatorChar;
-        return full.StartsWith(root, StringComparison.Ordinal)
-            ? fileSystem.ReadAllBytes(ToFilePath(entry.BackupPath))
-            : throw new InvalidDataException($"The backup path '{entry.BackupPath}' is outside the backup folder.");
+        return fileSystem.ReadAllBytes(Resolve(entry.BackupPath));
     }
 
     /// <summary>Writes the backup of a file and lists it in the manifest, replacing an earlier backup of the same file.</summary>
@@ -89,7 +88,7 @@ public sealed class BackupStore
 
         BackupManifest manifest = ReadOwnManifest() ?? new BackupManifest(SchemaVersion, ProjectPath, []);
         string backupPath = BackupPathOf(originalPath);
-        writer.Write(ToFilePath(backupPath), content);
+        writer.Write(Resolve(backupPath), content);
 
         manifest.Files.RemoveAll(entry => entry.OriginalPath == originalPath);
         manifest.Files.Add(new BackupEntry(originalPath, backupPath, TruncateToSeconds(writtenUtc), Convert.ToHexStringLower(SHA256.HashData(content))));
@@ -140,7 +139,8 @@ public sealed class BackupStore
 
     /// <summary>Deletes the backup file of an entry.</summary>
     /// <param name="entry">The entry.</param>
-    internal void DeleteFile(BackupEntry entry) => fileSystem.DeleteFile(ToFilePath(entry.BackupPath));
+    /// <exception cref="InvalidDataException">The entry's backup path leaves the backup folder: nothing is deleted.</exception>
+    internal void DeleteFile(BackupEntry entry) => fileSystem.DeleteFile(Resolve(entry.BackupPath));
 
     /// <summary>Reads a manifest.</summary>
     /// <param name="fileSystem">The file system to read from.</param>
@@ -187,12 +187,26 @@ public sealed class BackupStore
     private static DateTime TruncateToSeconds(DateTime value) =>
         new(value.Ticks - (value.Ticks % TimeSpan.TicksPerSecond), DateTimeKind.Utc);
 
-    // A path that climbs out of the project (a class in a sibling folder) keeps its place inside the backup folder.
-    private static string BackupPathOf(string originalPath) =>
-        string.Join('/', originalPath.Split('/').Select(segment => segment == ".." ? "__" : segment)) + BackupSuffix;
+    // A path that climbs out of the project (a class in a sibling folder) keeps its place inside the backup folder, and a rooted
+    // one (a class on another drive) goes under a folder named by its hash, so two roots never share a file.
+    private static string BackupPathOf(string originalPath)
+    {
+        string[] segments = originalPath.Replace('\\', '/').Split('/');
+        bool rooted = segments[0].Length == 0 || segments[0].Contains(':', StringComparison.Ordinal);
+        return rooted
+            ? $"{RootedFolder}/{Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(originalPath)))[..RootedHashLength]}/{segments[^1]}{BackupSuffix}"
+            : string.Join('/', segments.Select(segment => segment == ".." ? "__" : segment)) + BackupSuffix;
+    }
 
-    private string ToFilePath(string relativePath) =>
-        Path.Combine(Folder, relativePath.Replace('/', Path.DirectorySeparatorChar));
+    // The one way a backup path becomes a file path: anything that does not end up inside the folder is refused.
+    private string Resolve(string relativePath)
+    {
+        string combined = Path.Combine(Folder, relativePath.Replace('/', Path.DirectorySeparatorChar));
+        string root = Path.GetFullPath(Folder) + Path.DirectorySeparatorChar;
+        return Path.GetFullPath(combined).StartsWith(root, StringComparison.Ordinal)
+            ? combined
+            : throw new InvalidDataException($"The backup path '{relativePath}' is outside the backup folder.");
+    }
 
     private void WriteManifest(BackupManifest manifest) =>
         writer.Write(ManifestPath, JsonSerializer.SerializeToUtf8Bytes(manifest, BackupJsonContext.Default.BackupManifest));

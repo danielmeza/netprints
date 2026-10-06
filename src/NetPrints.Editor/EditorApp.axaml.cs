@@ -78,6 +78,7 @@ public partial class EditorApp : Application
             var shutdownCoordinator = new ShutdownCoordinator(
                 async () =>
                 {
+                    await composition.FlushBackupsAsync();
                     composition.Dispose();
                     await HostServices.DisposeAsync();
                     Hosting.Log.HostServicesDisposed(shutdownLogger);

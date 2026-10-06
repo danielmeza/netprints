@@ -148,7 +148,7 @@ internal sealed class ProjectLoader : IDisposable
     }
 
     /// <summary>Replaces the open project's session with none.</summary>
-    public void CloseProject() => SetProject(null);
+    public Task CloseProjectAsync() => SetProjectAsync(null);
 
     /// <summary>
     /// Loads a project through <see cref="ProjectPersistence"/>. Only a <c>.csproj</c> is accepted: any other path (for
@@ -193,7 +193,7 @@ internal sealed class ProjectLoader : IDisposable
                 ProjectLoadResult loaded = await context.Persistence.LoadAsync(snapshot, CancellationToken.None).ConfigureAwait(true);
 
                 RecoveryResult recovery = await RecoverAsync(loaded).ConfigureAwait(true);
-                SetProject(loaded.Project);
+                await SetProjectAsync(loaded.Project).ConfigureAwait(true);
                 foreach (ClassGraph restored in recovery.Restored)
                 {
                     backups?.Backups.Track(restored);
@@ -340,9 +340,11 @@ internal sealed class ProjectLoader : IDisposable
             .Any(trusted => string.Equals(trusted, projectFilePath, comparison));
     }
 
-    // Swaps the shell's session first (it closes the documents), then disposes the old one; reloads reflection (PAR-15).
-    private void SetProject(Project? project)
+    // Writes the backups still waiting (the session must stay alive until they are rendered), swaps the shell's session
+    // (it closes the documents), then disposes the old one; reloads reflection (PAR-15).
+    private async Task SetProjectAsync(Project? project)
     {
+        await FlushBackupsAsync().ConfigureAwait(true);
         Unsubscribe();
         ProjectSessionViewModel? previous = session;
         CloseBackups();
@@ -377,6 +379,14 @@ internal sealed class ProjectLoader : IDisposable
     /// <summary>Forgets a recorded discard: a new question about unloading starts over.</summary>
     internal void CancelBackupDiscard() => discardOnReplace = null;
 
+    /// <summary>Applies the recorded discard, then writes the backups still waiting: called before the session goes, so a quit that skipped the prompt loses nothing.</summary>
+    /// <returns>A task that completes when the backups are written.</returns>
+    internal Task FlushBackupsAsync()
+    {
+        ApplyBackupDiscard();
+        return backups?.Backups.FlushAsync() ?? Task.CompletedTask;
+    }
+
     /// <summary>Gets the backups of the open project, or <see langword="null"/> when none is open or the host configured none.</summary>
     public SessionBackups? Backups => backups?.Backups;
 
@@ -388,7 +398,7 @@ internal sealed class ProjectLoader : IDisposable
         }
     }
 
-    // Writes the backups still waiting, so a quit that skipped the prompt loses nothing, then stops following the session.
+    // Stops following the session; a caller that can wait flushed first (FlushBackupsAsync), and this is the last resort of Dispose.
     private void CloseBackups()
     {
         ApplyBackupDiscard();

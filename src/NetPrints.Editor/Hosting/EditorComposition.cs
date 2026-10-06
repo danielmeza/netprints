@@ -75,6 +75,10 @@ public sealed class EditorComposition : IDisposable
     /// <returns><see langword="true"/> to go on, <see langword="false"/> to keep the application running.</returns>
     public Task<bool> ConfirmExitAsync(CancellationToken cancellationToken) => services.ConfirmExitAsync(cancellationToken);
 
+    /// <summary>Writes the backups of the open project that are still waiting.</summary>
+    /// <returns>A task that completes when they are written.</returns>
+    public Task FlushBackupsAsync() => services.FlushBackupsAsync();
+
     /// <summary>
     /// Stops rebinding persistence to the extension host's registry (see
     /// <see cref="PersistenceBinding.Bind"/>), disposes the shell, if created, and the
@@ -137,11 +141,6 @@ internal sealed class EditorServices : IDisposable
 
         runState = new RunStateTracker(processes);
 
-        if (backups is not null)
-        {
-            BackupService.CleanUp(backups.Paths, backups.FileSystem, backups.Time, host.LoggerFactory.CreateLogger<BackupService>());
-        }
-
         Context = new EditorContext(
             filePicker,
             dialogs,
@@ -191,8 +190,15 @@ internal sealed class EditorServices : IDisposable
         }
 
         await loader.ReportExtensionFailuresAsync();
+        await CleanUpBackupsAsync();
         await loader.OpenStartupProjectAsync(args);
     }
+
+    // Off the UI thread: a folder on an unreachable share can take long to answer. Runs before a project opens, so nothing writes beside it.
+    private Task CleanUpBackupsAsync() =>
+        Context.Backups is { } options
+            ? Task.Run(() => BackupService.CleanUp(options.Paths, options.FileSystem, options.Time, Context.LoggerFactory.CreateLogger<BackupService>()))
+            : Task.CompletedTask;
 
     /// <summary>The frozen registry the shell was generated from, or <see langword="null"/> before <see cref="CreateShellWindow"/> is called.</summary>
     public IContributionRegistry? Registry => shellHost?.Registry;
@@ -214,6 +220,10 @@ internal sealed class EditorServices : IDisposable
     /// <returns><see langword="true"/> to go on.</returns>
     public Task<bool> ConfirmExitAsync(CancellationToken cancellationToken) =>
         shellHost?.Actions.ConfirmExitAsync(cancellationToken) ?? Task.FromResult(true);
+
+    /// <summary>Writes the backups of the open project that are still waiting; the exit cleanup awaits it before disposing the composition.</summary>
+    /// <returns>A task that completes when they are written.</returns>
+    public Task FlushBackupsAsync() => shellHost?.Actions.Loader.FlushBackupsAsync() ?? Task.CompletedTask;
 
     /// <summary>
     /// Creates the shell window: the registry, <see cref="ShellViewModel"/>, the docking adapter and the project flows

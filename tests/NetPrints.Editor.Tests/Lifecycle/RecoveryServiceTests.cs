@@ -56,7 +56,7 @@ public sealed class RecoveryServiceTests : IAsyncDisposable
 
         session.ContextFor(cls).CreateVariable();
         time.Advance(Delay);
-        rig.Actions.Loader.CloseProject();
+        await rig.Actions.Loader.CloseProjectAsync();
 
         var store = new BackupStore(paths, fs, path, NullLogger.Instance);
         BackupEntry entry = Assert.Single(store.List());
@@ -135,7 +135,7 @@ public sealed class RecoveryServiceTests : IAsyncDisposable
         editor.Dialogs.UnsavedAnswer = UnloadChoice.Discard;
 
         Assert.True(await rig.Actions.ConfirmUnloadAsync(Token));
-        rig.Actions.Loader.CloseProject();
+        await rig.Actions.Loader.CloseProjectAsync();
 
         Assert.Empty(fs.Files);
     }
@@ -218,7 +218,7 @@ public sealed class RecoveryServiceTests : IAsyncDisposable
         session.ContextFor(created).CreateVariable();
         time.Advance(Delay);
         string classPath = Assert.Single(new BackupStore(paths, fs, path, NullLogger.Instance).List(), entry => entry.OriginalPath.Contains(created.Name, StringComparison.Ordinal)).OriginalPath;
-        rig.Actions.Loader.CloseProject();
+        await rig.Actions.Loader.CloseProjectAsync();
         editor.Dialogs.RecoverAnswer = RecoveryChoice.Restore;
 
         ProjectRig reopened = await OpenAsync(path);
@@ -266,7 +266,7 @@ public sealed class RecoveryServiceTests : IAsyncDisposable
         Assert.True(await session.SaveAllAsync());
         session.ContextFor(created).CreateVariable();
         time.Advance(Delay);
-        rig.Actions.Loader.CloseProject();
+        await rig.Actions.Loader.CloseProjectAsync();
 
         await OpenAsync(path);
 
@@ -314,7 +314,7 @@ public sealed class RecoveryServiceTests : IAsyncDisposable
         editor.Dialogs.UnsavedAnswer = UnloadChoice.Discard;
 
         Assert.True(await rig.Actions.ConfirmUnloadAsync(Token));
-        rig.Actions.Loader.CloseProject();
+        await rig.Actions.Loader.CloseProjectAsync();
 
         Assert.NotEmpty(new BackupStore(paths, fs, project, NullLogger.Instance).List());
     }
@@ -332,7 +332,7 @@ public sealed class RecoveryServiceTests : IAsyncDisposable
         editor.Dialogs.UnsavedAnswer = UnloadChoice.Discard;
 
         Assert.True(await rig.Actions.ConfirmUnloadAsync(Token));
-        rig.Actions.Loader.CloseProject();
+        await rig.Actions.Loader.CloseProjectAsync();
 
         Assert.Equal(classPath, Assert.Single(store.List()).OriginalPath);
     }

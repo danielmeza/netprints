@@ -223,12 +223,51 @@ public sealed class BackupServiceTests : IDisposable
     [Fact]
     public void StartupRemovesTheFolderOfAProjectThatNoLongerExists()
     {
+        fs.CreateDirectory("projects/Hello");
         service.Schedule("A.netpc.json", Content("a"));
         Tick(Delay);
 
         BackupService.CleanUp(paths, fs, time, NullLogger<BackupService>.Instance);
 
         Assert.False(fs.DirectoryExists(BackupFolder));
+    }
+
+    [Fact]
+    public void StartupKeepsTheBackupsOfAProjectWhoseFolderIsMissing()
+    {
+        service.Schedule("A.netpc.json", Content("a"));
+        Tick(Delay);
+        Assert.False(fs.DirectoryExists("projects/Hello"));
+
+        BackupService.CleanUp(paths, fs, time, NullLogger<BackupService>.Instance);
+
+        Assert.True(fs.FileExists(BackupFile("A.netpc.json")));
+    }
+
+    [Fact]
+    public void StartupRemovesBackupsOlderThanThirtyDaysEvenWhenTheProjectFolderIsMissing()
+    {
+        service.Schedule("A.netpc.json", Content("a"));
+        Tick(Delay);
+        Tick(TimeSpan.FromDays(31));
+
+        BackupService.CleanUp(paths, fs, time, NullLogger<BackupService>.Instance);
+
+        Assert.False(fs.DirectoryExists(BackupFolder));
+    }
+
+    [Fact(Timeout = 30000)]
+    public async Task ADeleteAllDuringAFlushWriteDoesNotBringTheBackupBack()
+    {
+        var release = new TaskCompletionSource<byte[]?>(TaskCreationOptions.RunContinuationsAsynchronously);
+        service.Schedule("A.netpc.json", () => release.Task);
+        Task flush = service.FlushAsync();
+
+        service.DeleteAll();
+        release.SetResult([1]);
+        await flush;
+
+        Assert.False(fs.FileExists(BackupFile("A.netpc.json")));
     }
 
     [Fact]

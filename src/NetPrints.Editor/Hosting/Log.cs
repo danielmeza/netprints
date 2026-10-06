@@ -92,6 +92,12 @@ internal static partial class Log
     [LoggerMessage(EventId = 1025, Level = LogLevel.Information, Message = "Host services disposed")]
     public static partial void HostServicesDisposed(ILogger logger);
 
+    /// <summary>Logs 1026: the exit confirmation threw; the application keeps running and the unsaved work stays.</summary>
+    /// <param name="logger">Logger to write to.</param>
+    /// <param name="exception">The exception the confirmation threw.</param>
+    [LoggerMessage(EventId = 1026, Level = LogLevel.Error, Message = "The exit confirmation failed; the application keeps running")]
+    public static partial void ShutdownConfirmationFailed(ILogger logger, Exception exception);
+
     /// <summary>Logs 1030: a fire-and-forget task passed to <see cref="TaskExtensions.Forget(Task, ILogger)"/> faulted.</summary>
     /// <param name="logger">Logger to write to.</param>
     /// <param name="exception">The task's (unwrapped) exception.</param>

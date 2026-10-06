@@ -145,7 +145,7 @@ public sealed class BackupService : IDisposable
     {
         lock (gate)
         {
-            foreach (string path in pending.Keys.ToList())
+            foreach (string path in versions.Keys.ToList())
             {
                 Cancel(path);
             }
@@ -168,8 +168,8 @@ public sealed class BackupService : IDisposable
     }
 
     /// <summary>
-    /// Startup clean-up: deletes backups older than <see cref="MaxAge"/> and backup folders whose project file is gone or that
-    /// have none left. A folder whose manifest cannot be read is left alone. A failure is logged, never thrown.
+    /// Startup clean-up: deletes backups older than <see cref="MaxAge"/> and backup folders whose project file is gone from a folder that
+    /// still exists, or that have none left; a project whose folder is missing (an unplugged drive) keeps its recent backups. A folder whose manifest cannot be read is left alone. A failure is logged, never thrown.
     /// </summary>
     /// <param name="paths">The editor's data folders.</param>
     /// <param name="fileSystem">The file system to clean.</param>
@@ -189,7 +189,7 @@ public sealed class BackupService : IDisposable
             {
                 CleanUpFolder(folder, fileSystem, oldest, logger);
             }
-            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
             {
                 Log.BackupCleanUpFailed(logger, ex, folder);
             }
@@ -205,7 +205,11 @@ public sealed class BackupService : IDisposable
         }
 
         var store = new BackupStore(folder, manifest.ProjectPath, fileSystem, logger);
-        if (!fileSystem.FileExists(manifest.ProjectPath))
+
+        // A missing file in a missing folder may be an unplugged drive or share: only the age limit applies to it (FR-024).
+        string? projectFolder = Path.GetDirectoryName(manifest.ProjectPath);
+        bool projectFolderExists = string.IsNullOrEmpty(projectFolder) || fileSystem.DirectoryExists(projectFolder);
+        if (projectFolderExists && !fileSystem.FileExists(manifest.ProjectPath))
         {
             store.DeleteAll();
             return;
@@ -265,7 +269,7 @@ public sealed class BackupService : IDisposable
         {
             action();
         }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidDataException)
         {
             Fail(ex);
         }

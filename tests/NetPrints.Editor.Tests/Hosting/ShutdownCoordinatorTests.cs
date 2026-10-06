@@ -172,16 +172,33 @@ public class ShutdownCoordinatorTests
     }
 
     [Fact]
-    public void AThrowingConfirmationIsLoggedAndShutdownStillRuns()
+    public async Task AThrowingConfirmationIsLoggedAndTheApplicationKeepsRunning()
     {
         var failure = new InvalidOperationException("confirm boom");
         int shutdownCalls = 0;
+        int cleanups = 0;
         var logger = new CollectingLogger<ShutdownCoordinator>();
-        var coordinator = new ShutdownCoordinator(() => ValueTask.CompletedTask, () => shutdownCalls++, logger, () => throw failure);
+        var coordinator = new ShutdownCoordinator(
+            () =>
+            {
+                cleanups++;
+                return ValueTask.CompletedTask;
+            },
+            () => shutdownCalls++,
+            logger,
+            () => throw failure);
 
-        coordinator.OnShutdownRequested(new ShutdownRequestedEventArgs());
+        var request = new ShutdownRequestedEventArgs();
+        coordinator.OnShutdownRequested(request);
+        await Task.Yield();
+        var next = new ShutdownRequestedEventArgs();
+        coordinator.OnShutdownRequested(next);
 
-        Assert.Equal(1, shutdownCalls);
-        Assert.Same(failure, Assert.Single(logger.Entries).Exception);
+        Assert.True(request.Cancel);
+        Assert.True(next.Cancel);
+        Assert.Equal(0, shutdownCalls);
+        Assert.Equal(0, cleanups);
+        Assert.All(logger.Entries, entry => Assert.Equal(1026, entry.EventId.Id));
+        Assert.Same(failure, logger.Entries[0].Exception);
     }
 }

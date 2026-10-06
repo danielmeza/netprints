@@ -1247,6 +1247,14 @@ Docs updated: `.github/release-notes.md` (Unreleased: unsaved markers, the unloa
 - Foreign manifests (R10): `BackupStore` reads the manifest before any write or delete; one that exists but is unreadable or from another schema makes `Write`, `Delete` and `DeleteAll` throw an `IOException` before touching the folder. `BackupService` turns that into the one-time "Backups are failing" status warning and a log entry. Startup clean-up already skipped such folders.
 - Red first: `ANewClassBackedUpBeforeItsFirstSaveIsOfferedAndRestoredAsUnsaved`, `ANewClassRenamedBeforeItsFirstSaveIsBackedUpUnderTheNameItIsSavedAs`, `ARenamedNewClassSavedAndEditedAgainIsOfferedAfterACrash` and `ANewerSchemaManifestIsNeitherOverwrittenNorDeleted` failed before the fix; the dialog row tests and the two service tests that pass restore paths failed against a version that ignored the per-file answer.
 
+### D-F4 (review D: R7, R8, R9)
+
+- Contained paths (R7): `BackupStore.Resolve` is the one way a backup path becomes a file path, used by `Read`, `Write` and `DeleteFile`; a path that leaves the folder throws `InvalidDataException`, which `BackupService` and the clean-up log instead of deleting. A rooted or drive-qualified original path is stored under `__rooted/<hash>/<file name>`, so two roots never share a file and nothing lands in the user's repository.
+- Awaited flush (R8): `ProjectLoader.CloseProjectAsync` (replaces `CloseProject`) and opening another project flush the waiting backups before the session is swapped, so the render still has its session. The exit cleanup awaits `EditorComposition.FlushBackupsAsync` before disposing the composition. `DeleteAll` now bumps the version of every known path, so a write in flight cannot bring a backup back.
+- Throwing confirmation (R8): fail safe. The coordinator logs 1026 and keeps the application running, like a decline; the next request asks again. It no longer exits on the assumption that the prompt can be skipped.
+- Clean-up (R9): a folder is deleted for a missing project file only when the project's own folder exists; a project under a missing folder (unplugged drive, share) keeps its backups until the 30-day age limit. The clean-up runs in `EditorServices.StartAsync` on a worker thread, before the startup project opens, instead of in the constructor.
+- Tests: `BackupStoreTests` (rooted, drive and tampered paths), `BackupServiceTests` (missing folder kept, old backups still pruned, `DeleteAll` during a flush), `BackupWiringTests` with `DeferredDispatcher` (close and exit wait for a render that is genuinely asynchronous), `ShutdownCoordinatorTests.AThrowingConfirmationIsLoggedAndTheApplicationKeepsRunning`. Red first on the previous code: the rooted path, tampered path, missing folder, `DeleteAll` and confirmation tests failed; the loader tests did not compile (no async API).
+
 ### Flakes #17 and #18 (slow CI runner)
 
 Both failed in one run on a runner where the cold open took 46 s.
