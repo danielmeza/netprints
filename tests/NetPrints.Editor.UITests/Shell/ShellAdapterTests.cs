@@ -440,10 +440,12 @@ public class ShellAdapterTests
             rig.Api.FloatDocument(A);
             rig.Settle();
 
+            Assert.True(rig.Main.TryFindResource("SystemChromeMediumColor", variant, out object? chrome));
+            Assert.Equal(Color.FromUInt32(expected), Assert.IsType<Color>(chrome));
             Assert.True(rig.Main.TryFindResource("DockSurfaceHeaderBrush", variant, out object? header));
-            Assert.Equal(Color.FromUInt32(expected), Assert.IsAssignableFrom<ISolidColorBrush>(header).Color);
+            Assert.Equal((Color)chrome, Assert.IsAssignableFrom<ISolidColorBrush>(header).Color);
             Window host = Assert.Single(rig.Ui.Tree.Windows, window => !ReferenceEquals(window, rig.Main));
-            Assert.Equal(Color.FromUInt32(expected), Assert.IsAssignableFrom<ISolidColorBrush>(host.Background).Color);
+            Assert.Equal((Color)chrome, Assert.IsAssignableFrom<ISolidColorBrush>(host.Background).Color);
         }
         finally
         {
