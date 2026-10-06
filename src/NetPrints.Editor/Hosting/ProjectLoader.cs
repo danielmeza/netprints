@@ -191,9 +191,15 @@ internal sealed class ProjectLoader : IDisposable
                     : null;
                 ProjectLoadResult loaded = await context.Persistence.LoadAsync(snapshot, CancellationToken.None).ConfigureAwait(true);
 
+                RecoveryResult recovery = await RecoverAsync(loaded).ConfigureAwait(true);
                 SetProject(loaded.Project);
+                foreach (ClassGraph restored in recovery.Restored)
+                {
+                    backups?.Backups.Track(restored);
+                }
+
                 project = loaded.Project;
-                issues = [.. new[] { notTrusted, unknownProfile }.OfType<DocumentIssue>(), .. loaded.Issues];
+                issues = [.. new[] { notTrusted, unknownProfile }.OfType<DocumentIssue>(), .. loaded.Issues, .. recovery.Issues];
             }
 
             shell.StatusBar.Show($"Loaded project {project.Name}", TimeSpan.FromSeconds(5));
@@ -232,6 +238,19 @@ internal sealed class ProjectLoader : IDisposable
             await context.Dialogs.ShowErrorAsync("Failed to load project",
                 $"Failed to load project at path {path}. The exception has been copied to your clipboard.\n\n{ex}").ConfigureAwait(true);
         }
+    }
+
+    // Offers the backups of the project that is about to open; its classes are replaced before any session or reflection work sees them.
+    private Task<RecoveryResult> RecoverAsync(ProjectLoadResult loaded)
+    {
+        if (context.Backups is not { } options)
+        {
+            return Task.FromResult(RecoveryResult.None);
+        }
+
+        var store = new BackupStore(options.Paths, options.FileSystem, loaded.Snapshot.ProjectFilePath, context.LoggerFactory.CreateLogger<BackupStore>());
+        return new RecoveryService(store, context.Persistence, context.LoggerFactory.CreateLogger<RecoveryService>())
+            .RecoverAsync(loaded.Project, context.Dialogs, CancellationToken.None);
     }
 
     /// <summary>

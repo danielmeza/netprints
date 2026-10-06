@@ -58,6 +58,17 @@ public sealed class RecordingDialogs : IEditorDialogs
 
     public List<IReadOnlyList<UnsavedFile>> UnsavedCalls { get; } = [];
 
+    /// <summary>What <see cref="ConfirmRecoverAsync"/> answers.</summary>
+    public RecoveryChoice RecoverAnswer { get; set; } = RecoveryChoice.Later;
+
+    public List<IReadOnlyList<RecoveryFile>> RecoverCalls { get; } = [];
+
+    public Task<RecoveryChoice> ConfirmRecoverAsync(IReadOnlyList<RecoveryFile> files)
+    {
+        RecoverCalls.Add(files);
+        return Task.FromResult(RecoverAnswer);
+    }
+
     public Task<UnloadChoice> ConfirmUnsavedAsync(IReadOnlyList<UnsavedFile> files)
     {
         UnsavedCalls.Add(files);

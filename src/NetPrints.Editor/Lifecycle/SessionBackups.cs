@@ -40,6 +40,14 @@ public sealed class SessionBackups : IDisposable
         service.DeleteAll();
     }
 
+    /// <summary>Starts following a class that was restored from its backup: the backup stays until the class is saved or discarded.</summary>
+    /// <param name="cls">A class of the session's project that is unsaved.</param>
+    public void Track(ClassGraph cls)
+    {
+        ArgumentNullException.ThrowIfNull(cls);
+        tracked[session.ClassPathOf(cls)] = cls;
+    }
+
     /// <summary>Writes the backups still waiting.</summary>
     /// <returns>A task that completes when they are written.</returns>
     public Task FlushAsync() => service.FlushAsync();

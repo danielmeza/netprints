@@ -900,3 +900,4 @@ virtual NetPrints.Serialization.Documents.NodeDocument.Equals(NetPrints.Serializ
 virtual NetPrints.Serialization.Documents.NodeDocument.PrintMembers(System.Text.StringBuilder! builder) -> bool
 ~override NetPrints.Serialization.DocumentId.Equals(object obj) -> bool
 NetPrints.Serialization.ProjectPersistence.RenderClassAsync(NetPrints.Core.ClassGraph! cls, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<byte[]!>!
+NetPrints.Serialization.ProjectPersistence.RestoreClassAsync(NetPrints.Core.Project! project, NetPrints.Core.ClassGraph! existing, byte[]! content, System.Threading.CancellationToken cancellationToken) -> System.Threading.Tasks.Task<(NetPrints.Core.ClassGraph! Class, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.DocumentIssue!>! Issues)>!

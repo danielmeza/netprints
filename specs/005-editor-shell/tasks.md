@@ -485,7 +485,7 @@ SC-004 (all but navigation).
   (`Backups are failing; see the log`, FR-026). Nothing is ever written inside the project directory. Then
   `src/NetPrints.Editor/Lifecycle/BackupService.cs`, wired to the tracker. `NETPRINTS_BACKUP_DELAY` (milliseconds,
   test-only, for E2E) shortens the wait (Decision).
-- [ ] T053 [US3] Recovery (2 units). Test first: `tests/NetPrints.Editor.Tests/Lifecycle/RecoveryServiceTests.cs`. Opening
+- [x] T053 [US3] Recovery (2 units). Test first: `tests/NetPrints.Editor.Tests/Lifecycle/RecoveryServiceTests.cs`. Opening
   a project whose backup folder is not empty shows the `RecoverDialog` (`Dialogs.Recover.*`), listing each backed-up
   file, with "older than the file on disk" when the original's last write time is later than its `writtenUtc`.
   Restore (the default, unless a backup is older than its file, when Discard is) loads the content as unsaved changes

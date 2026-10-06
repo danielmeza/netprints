@@ -30,4 +30,11 @@ internal static partial class Log
     /// <param name="folder">The backup folder.</param>
     [LoggerMessage(EventId = 1103, Level = LogLevel.Warning, Message = "Could not clean up the backups in {Folder}")]
     public static partial void BackupCleanUpFailed(ILogger logger, Exception exception, string folder);
+
+    /// <summary>Logs 1104: a backup could not be restored.</summary>
+    /// <param name="logger">Logger to write to.</param>
+    /// <param name="exception">What went wrong.</param>
+    /// <param name="path">The class path of the file.</param>
+    [LoggerMessage(EventId = 1104, Level = LogLevel.Warning, Message = "The backup of {Path} could not be restored")]
+    public static partial void RecoveryFailed(ILogger logger, Exception exception, string path);
 }

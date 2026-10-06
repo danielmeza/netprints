@@ -72,6 +72,15 @@ public sealed class FakeDialogs : IEditorDialogs
     public List<IReadOnlyList<UnsavedFile>> UnsavedCalls { get; } = [];
     public UnloadChoice UnsavedAnswer { get; set; } = UnloadChoice.Cancel;
 
+    public List<IReadOnlyList<RecoveryFile>> RecoverCalls { get; } = [];
+    public RecoveryChoice RecoverAnswer { get; set; } = RecoveryChoice.Later;
+
+    public Task<RecoveryChoice> ConfirmRecoverAsync(IReadOnlyList<RecoveryFile> files)
+    {
+        RecoverCalls.Add(files);
+        return Task.FromResult(RecoverAnswer);
+    }
+
     public Task<UnloadChoice> ConfirmUnsavedAsync(IReadOnlyList<UnsavedFile> files)
     {
         UnsavedCalls.Add(files);

@@ -353,6 +353,50 @@ public sealed class ProjectPersistence
     }
 
     /// <summary>
+    /// Replaces a class of <paramref name="project"/> with the one read from <paramref name="content"/> (the bytes of a graph file), in the
+    /// same place of <see cref="Core.Project.Classes"/> and for the same graph file, and marks it unsaved: a save writes it.
+    /// </summary>
+    /// <param name="project">The project that holds <paramref name="existing"/>.</param>
+    /// <param name="existing">The class to replace.</param>
+    /// <param name="content">The graph file's bytes.</param>
+    /// <param name="cancellationToken">Cancels the operation.</param>
+    /// <returns>The restored class, and any non-fatal issues found mapping it.</returns>
+    /// <exception cref="DocumentFormatException">The content is not a readable graph file.</exception>
+    /// <exception cref="InvalidOperationException"><paramref name="existing"/> is not a class of <paramref name="project"/>.</exception>
+    public async Task<(ClassGraph Class, IReadOnlyList<DocumentIssue> Issues)> RestoreClassAsync(
+        Project project, ClassGraph existing, byte[] content, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(project);
+        ArgumentNullException.ThrowIfNull(existing);
+        ArgumentNullException.ThrowIfNull(content);
+
+        int index = project.Classes.IndexOf(existing);
+        if (index < 0)
+        {
+            throw new InvalidOperationException($"'{existing.FullName}' is not a class of the project.");
+        }
+
+        Serializers current = serializers;
+        string graphFilePath = existing.LoadedGraphFilePath ?? project.GetGraphFilePath(existing);
+        var id = new DocumentId(Path.GetFileName(graphFilePath));
+        IDocumentFormat format = current.Formats.Find(id, DocumentKind.Class)
+            ?? throw new DocumentFormatException($"No document format recognizes '{id}'.", id);
+
+        ClassDocument document;
+        await using (var input = new MemoryStream(content, false))
+        {
+            document = await format.ReadClassAsync(input, id, cancellationToken).ConfigureAwait(false);
+        }
+
+        var issues = new List<DocumentIssue>();
+        ClassGraph restored = current.Mapper.FromDocument(document, project, issues, id);
+        restored.LoadedGraphFilePath = graphFilePath;
+        restored.MarkDirty();
+        project.Classes[index] = restored;
+        return (restored, issues);
+    }
+
+    /// <summary>
     /// Renders the graph file a save of <paramref name="cls"/> would write, without writing it or marking the class clean. The
     /// class is read before the first await, so a caller that must read it on one thread only needs to start the call there.
     /// </summary>

@@ -229,6 +229,22 @@ public static class AutomationIds
     /// </summary>
     public const string UnsavedCancelButton = "Dialogs.Unsaved.Cancel";
     /// <summary>
+    /// Automation id for the recovery dialog window itself.
+    /// </summary>
+    public const string RecoverDialog = "Dialogs.Recover";
+    /// <summary>
+    /// Automation id for the recovery dialog's list of backed-up files.
+    /// </summary>
+    public const string RecoverFiles = "Dialogs.Recover.Files";
+    /// <summary>
+    /// Automation id for the recovery dialog's Restore button.
+    /// </summary>
+    public const string RecoverRestoreButton = "Dialogs.Recover.Restore";
+    /// <summary>
+    /// Automation id for the recovery dialog's Discard button.
+    /// </summary>
+    public const string RecoverDiscardButton = "Dialogs.Recover.Discard";
+    /// <summary>
     /// Automation id for the select-type dialog's search box.
     /// </summary>
     public const string SelectTypeBox = "Dialogs.SelectType.Box";

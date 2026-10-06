@@ -51,3 +51,11 @@ public sealed class UnsavedChangesDialogPage(IUiDriver driver) : UiElement(drive
     public UiElement DontSaveButton => Find(AutomationIds.UnsavedDontSaveButton);
     public UiElement CancelButton => Find(AutomationIds.UnsavedCancelButton);
 }
+
+/// <summary>Screen object of the dialog that offers to restore the backed-up files of the project being opened.</summary>
+public sealed class RecoverDialogPage(IUiDriver driver) : UiElement(driver, new AutomationQuery(AutomationIds.RecoverDialog))
+{
+    public UiElement Files => Find(AutomationIds.RecoverFiles);
+    public UiElement RestoreButton => Find(AutomationIds.RecoverRestoreButton);
+    public UiElement DiscardButton => Find(AutomationIds.RecoverDiscardButton);
+}

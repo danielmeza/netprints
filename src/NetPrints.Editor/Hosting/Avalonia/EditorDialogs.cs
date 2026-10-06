@@ -50,6 +50,10 @@ public sealed class EditorDialogs(Func<Window?> owner) : IEditorDialogs
         ShowAsync<UnloadChoice>(new UnsavedChangesDialog(files));
 
     /// <inheritdoc/>
+    public Task<RecoveryChoice> ConfirmRecoverAsync(IReadOnlyList<RecoveryFile> files) =>
+        ShowAsync<RecoveryChoice>(new RecoverDialog(files));
+
+    /// <inheritdoc/>
     public Task ShowIssuesAsync(string title, IReadOnlyList<CodeDiagnostic> issues) =>
         ShowAsync<object>(new IssuesDialog(title, issues));
 
