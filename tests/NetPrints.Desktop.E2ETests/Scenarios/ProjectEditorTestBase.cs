@@ -55,16 +55,23 @@ public abstract class ProjectEditorTestBase(DesktopWorkerPool pool) : X11SmokeTe
     }
 
     /// <summary>Clicks a button whose action ends the editor, then waits for the process to exit; the driver's settle request after the click loses its pipe to the exiting process.</summary>
-    protected async Task ClickAndWaitForExitAsync(UiElement button, CancellationToken cancellationToken)
+    protected Task ClickAndWaitForExitAsync(UiElement button, CancellationToken cancellationToken) =>
+        EndEditorAndWaitForExitAsync(() => button.ClickAsync(cancellationToken), cancellationToken);
+
+    /// <summary>Closes the shell window the way its title bar button does and waits for the editor process to exit.</summary>
+    protected Task CloseWindowAndWaitForExitAsync(CancellationToken cancellationToken) =>
+        EndEditorAndWaitForExitAsync(() => Shell.CloseWindowAsync(cancellationToken), cancellationToken);
+
+    private async Task EndEditorAndWaitForExitAsync(Func<Task> end, CancellationToken cancellationToken)
     {
         ExpectEditorExit();
         try
         {
-            await button.ClickAsync(cancellationToken);
+            await end();
         }
         catch (Exception e) when (e is InvalidOperationException or IOException && !cancellationToken.IsCancellationRequested)
         {
-            // The click was delivered; the exit is checked below.
+            // The input was delivered; the exit is checked below.
         }
 
         using var exit = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);

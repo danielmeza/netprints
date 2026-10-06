@@ -198,6 +198,13 @@ public sealed class X11Driver(XServer server, EditorProcess editor, Tool tool) :
         await SettleAsync(cancellationToken);
     }
 
+    /// <summary>Resizes a window to a size in pixels (a real window manager).</summary>
+    public async Task ResizeWindowAsync(string window, double width, double height, CancellationToken cancellationToken)
+    {
+        await tool.XdotoolAsync(cancellationToken, "windowsize", "--sync", X11WindowOf(window), I(width), I(height));
+        await SettleAsync(cancellationToken);
+    }
+
     /// <summary>Activates the window and sends the window manager's close shortcut, so the editor gets the same close request as from the title bar button.</summary>
     public async Task CloseWindowAsync(string window, CancellationToken cancellationToken)
     {
