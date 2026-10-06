@@ -432,7 +432,7 @@ US2's independent test; SC-001.
 
 ### Batch C-F — model: sonnet — T047 (reserved: fix review findings)
 
-- [ ] T047 [US2] Fix every finding of T046 (test first for behaviour findings), reply on each review thread with the
+- [x] T047 [US2] Fix every finding of T046 (test first for behaviour findings), reply on each review thread with the
   fixing commit or the reason for deferral, whole suite plus the E2E run, commit; if the review had no findings, tick
   this task with "no findings". The next sub-phase starts only after this batch is green on CI.
 

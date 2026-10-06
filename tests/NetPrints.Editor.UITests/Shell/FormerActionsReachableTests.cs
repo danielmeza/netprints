@@ -255,6 +255,9 @@ public class FormerActionsReachableTests
         int members = cls.Variables.Count;
 
         PressButton(app, AutomationIds.VariablesAddVariable);
+        Assert.Same(cls.Variables[^1], app.Shell.TreeSelection);
+        app.Api.ShowPanel(PanelContributions.VariablesId);
+        HeadlessDriver.Pump();
         PressButton(app, AutomationIds.VariablesAddLocalVariable);
         Assert.Equal(members + 1, cls.Variables.Count);
         Assert.Single(method.LocalVariables);
