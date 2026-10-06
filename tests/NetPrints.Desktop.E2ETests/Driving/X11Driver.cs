@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Globalization;
 using NetPrints.Desktop.E2ETests.Hosting;
 using NetPrints.Editor.Hosting.Automation;
@@ -85,8 +86,18 @@ public sealed class X11Driver(XServer server, EditorProcess editor, Tool tool) :
         await SettleAsync(cancellationToken);
     }
 
+    private readonly List<string> inputTrace = [];
+    private readonly Stopwatch inputClock = Stopwatch.StartNew();
+    private long lastInputMs;
+
+    /// <inheritdoc/>
+    public string InputTrace => string.Join(Environment.NewLine, inputTrace);
+
     public async Task ClickAsync(UiTarget target, UiButton button, int clickCount, CancellationToken cancellationToken)
     {
+        long now = inputClock.ElapsedMilliseconds;
+        inputTrace.Add(string.Create(CultureInfo.InvariantCulture, $"click {button} x{clickCount} at ({target.X:0},{target.Y:0}) t={now} ms dt={now - lastInputMs} ms"));
+        lastInputMs = now;
         await MoveToAsync(target.X, target.Y, cancellationToken);
         await tool.XdotoolAsync(cancellationToken, "click", "--repeat", clickCount.ToString(CultureInfo.InvariantCulture), "--delay", "60", ButtonOf(button));
         await SettleAsync(cancellationToken);

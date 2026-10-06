@@ -100,6 +100,12 @@ public interface IUiDriver : IAsyncDisposable
     /// <summary>Output written by programs the editor ran (<see cref="UiCapabilities.ProcessOutput"/>).</summary>
     Task<string> ProgramOutputAsync(CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Diagnostics: the pointer presses the driver delivered, oldest first, one line each (target, source element,
+    /// click count, timestamp, time since the previous press). Empty when nothing was pressed.
+    /// </summary>
+    string InputTrace { get; }
+
     /// <summary>Diagnostics: a dump of the UI elements with automation ids.</summary>
     Task<string> DumpAsync(CancellationToken cancellationToken);
 }

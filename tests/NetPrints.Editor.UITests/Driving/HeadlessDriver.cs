@@ -3,7 +3,11 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Input;
 using Avalonia.Input.Raw;
+using Avalonia.Interactivity;
+using Avalonia.VisualTree;
 using Avalonia.Threading;
+using System.Globalization;
+using Avalonia.Automation;
 using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Testing.Ui.Driving;
 using NetPrints.Testing.Ui.Snapshots;
@@ -17,6 +21,9 @@ namespace NetPrints.Editor.UITests.Driving;
 /// </summary>
 public sealed class HeadlessDriver(AutomationTree tree, Func<string> programOutput) : IUiDriver
 {
+    private readonly List<string> inputTrace = [];
+    private readonly HashSet<Window> tracedWindows = [];
+    private ulong lastPressTimestamp;
     private Window? keyboardWindow;
 
     public string Name => "headless";
@@ -69,7 +76,29 @@ public sealed class HeadlessDriver(AutomationTree tree, Func<string> programOutp
     {
         var window = tree.WindowByKey(target.Window);
         keyboardWindow = window;
+        if (tracedWindows.Add(window))
+        {
+            window.AddHandler(InputElement.PointerPressedEvent, OnPressed, RoutingStrategies.Bubble, handledEventsToo: true);
+        }
+
         return window;
+    }
+
+    /// <inheritdoc/>
+    public string InputTrace => string.Join(Environment.NewLine, inputTrace);
+
+    private void OnPressed(object? sender, PointerPressedEventArgs e)
+    {
+        var source = e.Source as Visual;
+        string? id = source?.GetSelfAndVisualAncestors()
+            .OfType<Control>()
+            .Select(AutomationProperties.GetAutomationId)
+            .FirstOrDefault(i => !string.IsNullOrEmpty(i));
+        string element = source?.GetType().Name ?? "none";
+        long delta = lastPressTimestamp == 0 ? 0 : (long)(e.Timestamp - lastPressTimestamp);
+        lastPressTimestamp = e.Timestamp;
+        inputTrace.Add(string.Create(CultureInfo.InvariantCulture,
+            $"press {e.GetCurrentPoint(null).Properties.PointerUpdateKind} source={element} id={id ?? "-"} clickCount={e.ClickCount} t={e.Timestamp} ms dt={delta} ms"));
     }
 
     private static Point P(UiTarget target) => new(target.X, target.Y);
