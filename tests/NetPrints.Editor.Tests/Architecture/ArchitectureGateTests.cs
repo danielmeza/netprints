@@ -16,6 +16,9 @@ public class ArchitectureGateTests
     private const string RuleA1 = "A1";
     private const string RuleA2 = "A2";
 
+    /// <summary>View models allowed to hold contexts: the session owns them, and the inspector panel watches them without owning them.</summary>
+    private static readonly HashSet<string> ContextHolders = ["ProjectSessionViewModel.cs", "InspectorPanelViewModel.cs"];
+
     /// <summary>One rule violation, keyed by the file it fired in: at most one record per (rule, file), not per occurrence.</summary>
     private readonly record struct Violation(string Rule, string File);
 
@@ -72,6 +75,9 @@ public class ArchitectureGateTests
     private static bool IsBannedOwnerType(SemanticModel model, TypeSyntax? type) =>
         type is not null && model.GetSymbolInfo(type).Symbol is INamedTypeSymbol { Name: ClassContextTypeName };
 
+    private static bool MentionsOwnerType(SemanticModel model, TypeSyntax? type) =>
+        type is not null && type.DescendantNodesAndSelf().OfType<TypeSyntax>().Any(t => IsBannedOwnerType(model, t));
+
     /// <summary>Scans one view model syntax tree for A1 and A2 (editor-services.md §7).</summary>
     private static HashSet<Violation> Scan(SemanticModel model, SyntaxTree tree)
     {
@@ -89,10 +95,10 @@ public class ArchitectureGateTests
 
         bool holdsTheOwningContext =
             root.DescendantNodes().OfType<ConstructorDeclarationSyntax>().SelectMany(c => c.ParameterList.Parameters)
-                .Any(p => IsBannedOwnerType(model, p.Type))
+                .Any(p => MentionsOwnerType(model, p.Type))
             || root.DescendantNodes().OfType<FieldDeclarationSyntax>()
-                .Any(f => IsBannedOwnerType(model, f.Declaration.Type));
-        if (holdsTheOwningContext)
+                .Any(f => MentionsOwnerType(model, f.Declaration.Type));
+        if (holdsTheOwningContext && !ContextHolders.Contains(file))
         {
             violations.Add(new Violation(RuleA2, file));
         }
@@ -130,5 +136,23 @@ public class ArchitectureGateTests
         HashSet<Violation> violations = Scan(compilation.GetSemanticModel(fixtureTree), fixtureTree);
 
         Assert.Equal([new Violation(RuleA1, "ViolatingViewModel.cs"), new Violation(RuleA2, "ViolatingViewModel.cs")], violations.OrderBy(v => v.Rule, StringComparer.Ordinal));
+    }
+
+    [Fact]
+    public void AContextHeldAsATypeArgumentIsReported()
+    {
+        string editorSrc = Path.Combine(RepositoryPaths.Root(), "src", "NetPrints.Editor");
+        string fixturePath = Path.Combine(RepositoryPaths.Root(), "tests", "NetPrints.Editor.Tests", "Architecture", "Fixtures", "GenericFieldViewModel.cs.txt");
+        string fixtureSourcePath = Path.Combine(editorSrc, "GenericFieldViewModel.cs");
+
+        var files = EditorSourceFiles(editorSrc).Select(path => (Path: path, Text: File.ReadAllText(path)))
+            .Append((Path: fixtureSourcePath, Text: File.ReadAllText(fixturePath)))
+            .ToList();
+        CSharpCompilation compilation = BuildCompilation(files);
+
+        SyntaxTree fixtureTree = compilation.SyntaxTrees.Single(t => t.FilePath == fixtureSourcePath);
+        HashSet<Violation> violations = Scan(compilation.GetSemanticModel(fixtureTree), fixtureTree);
+
+        Assert.Equal([new Violation(RuleA2, "GenericFieldViewModel.cs")], violations);
     }
 }
