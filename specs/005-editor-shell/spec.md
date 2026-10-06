@@ -265,6 +265,31 @@ reopen it from the recent list; pin it, search for it, remove it from the list.
    the copy is opened; the bundled sample is never modified.
 5. **Given** "What's new", **Then** it shows the release notes of the running version and a link to the full
    release notes.
+6. **Given** the start page is 960 DIP wide or more, **Then** it shows two columns: "Open recent" with a search box and
+   the recent list on the left, and the "Get started" cards (New project, Open folder or project, Samples, Learn) on
+   the right; narrower, it shows one column with "Get started" above the recent list. Each card is one button with an
+   icon, a title and a one-line description. "What's new" is a section under the columns, collapsed when the user
+   has already seen this version's notes.
+7. **Given** no project is open, **Then** the Project, Inspector, Variables and Errors panels are hidden and the start page
+   fills the window; **When** a project opens, **Then** the panels are back where the saved layout had them; the
+   hidden state is never written as the user's layout or session.
+8. **Given** recent projects, **Then** the list is grouped under Pinned, Today, This week, This month and Older, each
+   row shows the name, the path and a relative date, pin and remove buttons appear on hover and on keyboard focus, an
+   unavailable row is dimmed and says "Not found", and a right-click opens a menu with Open, Open containing folder,
+   Copy path, Pin or Unpin and Remove from list.
+9. **Given** the start page opens, **Then** the search box has the focus; Down moves into the list, the arrows move,
+   Enter opens the row, Delete removes it and Ctrl+P pins or unpins it.
+10. **Given** "New project", **Then** the dialog takes a location (a parent folder) and a name, shows the full path of the
+    project folder (location/name), and rejects a folder that exists and is not empty; the last used location is
+    remembered, and the default is `Documents/NetPrints`. **Given** a sample, **When** the user opens it, **Then** one
+    confirmation names the target folder (with a "Change..." option) and the copy opens.
+11. **Given** the startup setting "Reopen the last project", **Then** the editor opens the last project at start-up; the
+    default "Show the start page" shows the start page; a project argument always wins, and a reopen that fails shows
+    the start page with the error.
+12. **Given** a `.csproj` file or a folder is dropped on the main window, **Then** the project opens after the
+    unsaved-changes confirmation; a drop that is not a project shows an error on the start page, or a status message
+    while a project is open. The Learn card links to the getting started guide, the keyboard shortcuts, the
+    documentation and the release notes.
 
 ---
 
@@ -559,6 +584,31 @@ its public members appear.
   modified.
 - **FR-044**: What's new MUST show the running version's release notes bundled with the editor and a link to the
   full release notes.
+- **FR-045**: The start page MUST be centred with a maximum width and adapt to its own width: at 960 DIP or more two
+  columns (open recent with search on the left, the "Get started" action cards on the right), below that one column;
+  every card is one button with an icon, a title and a one-line description; What's new is a collapsible section that
+  starts collapsed when the running version's notes were already seen. The layout MUST be declared in XAML (no
+  code-behind sizing).
+- **FR-046**: While no project is open the Project, Inspector, Variables and Errors panels MUST be hidden so the start
+  page fills the window, and they MUST return, in the saved layout, when a project opens. The hidden state MUST NOT be
+  saved as the user's layout or session.
+- **FR-047**: A recent row MUST show the name, the path (middle-trimmed) and a relative date (from `TimeProvider`); the
+  list MUST be grouped into Pinned, Today, This week, This month and Older; pin and remove MUST appear on hover and on
+  keyboard focus and have accessible names; an unavailable entry MUST be dimmed, say "Not found" and offer remove;
+  the row's context menu MUST offer Open, Open containing folder, Copy path, Pin or Unpin and Remove from list; the
+  search box MUST have the focus when the page opens, Down MUST move into the list, Enter MUST open, Delete MUST
+  remove and Ctrl+P MUST pin or unpin, all through commands and behaviors.
+- **FR-048**: New project MUST take a location (a parent folder) and a name, create the project in location/name, show
+  that path and reject one that exists and is not empty; the last used location MUST be remembered per user (default
+  `Documents/NetPrints`, from the OS's documents folder). Opening a sample MUST copy it to
+  `<last location or Documents/NetPrints>/<SampleName>` (a numeric suffix when it exists) after one confirmation that
+  names the target and offers "Change...". A per-user startup setting MUST choose between "Show the start page"
+  (default) and "Reopen the last project"; a project argument always wins and a failed reopen shows the start page
+  with the error.
+- **FR-049**: A `.csproj` file or a folder dropped on the main window MUST open as a project after the unsaved-changes
+  confirmation; anything else MUST show an error on the start page, or a status message while a project is open. The
+  Learn card MUST link to the getting started guide, the keyboard shortcuts sheet, the documentation and the release
+  notes through `IUrlLauncher` with constant URLs.
 
 **Persistence (US6)**
 

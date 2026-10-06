@@ -338,3 +338,25 @@ Names of current types in this spec's documents already use the new form (for ex
   icons with few node concepts, and no Avalonia package); vendor Fluent glyphs as `StreamGeometry` resources now
   (rejected for now: more work for no visible gain; kept as the fallback if the package lags an Avalonia release);
   keep the PNGs (rejected: no recorded licence, and they blur at 150 % and 200 %).
+
+## R18. Start page layout and the no-project window (E5, owner decision 2026-10-06)
+
+- **Decision**: the start page follows the Visual Studio start window and stays a document tab.
+  - Content is centred, at most about 1200 DIP wide. At 960 DIP or more two columns: "Open recent" with search and the
+    grouped recent list (about 60 %), and the "Get started" cards (about 40 %); below that one column with the cards
+    above the list. The switch is a `ContainerQuery` on the page's own width, so the columns are XAML, not code-behind
+    sizing. What's new is a collapsible section under the columns.
+  - Recent rows show name, middle-trimmed path and a relative date from `TimeProvider`, grouped Pinned, Today, This
+    week, This month and Older; pin and remove show on hover and focus; the context menu and the keys (Down, Enter,
+    Delete, Ctrl+P) are commands and behaviors.
+  - While no project is open the tool panels are hidden through the docking adapter (they move to the layout's hidden
+    list and come back to their docks), and the layout saver ignores the layout while they are hidden, so the
+    no-project window is never saved.
+  - E5b adds the functional parts: location plus name in New project, one-click samples, the startup setting, dropping a
+    project on the window, and the Learn card.
+- **Rationale**: the owner found the first start page unresponsive and ugly (everything stacked in 720 DIP, half the
+  window empty panels). Hiding panels in the dock model keeps one layout of record, and the restore on project open is the
+  dock library's own restore, so positions and sizes come back.
+- **Alternatives**: a separate start window or a full-window content swap (rejected: the start page is a tab, sessions and
+  the saved layout already hold it); collapsing the tool docks with view-only visibility (rejected: the splitters and
+  the empty docks stay); `Xaml.Behaviors.Responsive` (rejected: package not referenced, ADR-0007).

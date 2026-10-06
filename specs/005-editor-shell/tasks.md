@@ -612,6 +612,52 @@ the window, the layout and each project's session, with safe fallbacks (FR-050�
   updated: `docs/guide/projects.md` (create and open from the start page, templates, samples); release notes (start
   page, templates, restored layout and sessions).
 
+### Batch E5a — model: sonnet — T071a–T071f — 8 units (start page redesign, layout and recent list; research R18)
+
+- [ ] T071a [US5] Tool panels hidden with no project (2 units). Test first:
+  `tests/NetPrints.Editor.UITests/Shell/NoProjectPanelsTests.cs` and `tests/NetPrints.Editor.Tests/Shell/` (layout saver):
+  with no project open no tool panel is visible and the start page document is shown; opening a project brings the
+  panels back to their docks (the main snapshot is unchanged); the layout file is not written while they are hidden,
+  not by a layout change and not on close. Then `DockShellAdapter` hides and restores the panels and `LayoutSaver`
+  skips the hidden state; `ShellHost` drives it from the session.
+- [ ] T071b [US5] Responsive layout (2 units). Test first: `tests/NetPrints.Editor.UITests/Shell/StartPageLayoutTests.cs`:
+  at 1600 and at 900 DIP the page has two and one columns (the "Get started" column right of the recent list at the
+  wide size, above it at the narrow size); the content is centred and at most about 1200 DIP; the existing automation
+  ids all still resolve. Then `StartPageView` (container query, one product title row, left-aligned headers).
+- [ ] T071c [US5] Get started cards and What's new (2 units). Test first: `StartPageViewModelTests` and
+  `StartPageLayoutTests`: each card (New project, Open folder or project, Samples, Learn) is one button with its
+  automation id; What's new starts collapsed when the version's notes were already seen and expanded when not, and
+  expanding it is remembered. Then the card styles, the samples list as cards and the collapsible section.
+- [ ] T071d [US5] Recent rows (1 unit). Test first: `RecentProjectsTileViewModelTests`: grouping by Pinned, Today, This
+  week, This month and Older with a fake `TimeProvider`, the relative date text, the unavailable row ("Not found",
+  cannot open, can remove), the context-menu commands (Open containing folder and Copy path through services). Then
+  the row template with hover and focus actions and the context menu.
+- [ ] T071e [US5] Recent keyboard (1 unit). Test first: headless `StartPageKeyboardTests`: the search box has the focus
+  when the page opens, Down moves into the list, the arrows move, Enter opens, Delete removes and Ctrl+P pins and
+  unpins. Then the behaviors and commands (no key handlers in code-behind).
+- [ ] T071f [US5] Snapshots, E2E and notes. New baselines `start-page-wide`, `start-page-narrow`, each empty and with five
+  recent entries (one pinned, one unavailable), looked at before they are accepted; the `StartPageNewProjectTests`
+  page objects follow any flow change and the class is run three times; the E5a block in implementation-notes.
+
+### Batch E5b — model: sonnet — T071g–T071k — 8 units (start page redesign, functional; research R18)
+
+- [ ] T071g [US5] New project with location and name (2 units). Test first: `NewProjectDialogViewModelTests`: the
+  project folder is location/name and the preview shows it, a folder that exists and is not empty is rejected, the last
+  location is remembered in the state store and defaults to the documents folder's `NetPrints` folder. Then the dialog
+  and the state.
+- [ ] T071h [US5] One-click samples (2 units). Test first: `SamplesAndWhatsNewTests`: a sample copies to
+  `<location>/<SampleName>` with a numeric suffix when it exists, after one confirmation that names the target and
+  offers Change; then it opens. Then the confirmation and the flow.
+- [ ] T071i [US5] Startup behaviour (1 unit). Test first: `StartupBehaviorTests`: "Reopen the last project" opens the
+  last project, "Show the start page" does not, a project argument wins, a failed reopen shows the start page with
+  `StartPageError`. Then the setting in the state store and the checkbox on the start page.
+- [ ] T071j [US5] Drop to open (2 units). Test first: headless `ProjectDropTests`: a dropped `.csproj` or folder opens
+  after the unsaved-changes confirm; anything else shows `StartPageError`, or a status message while a project is
+  open. Then a drop behavior on the main window.
+- [ ] T071k [US5] Learn card (1 unit). Test first: `StartPageViewModelTests`: the guide, the keyboard shortcuts sheet
+  command, the documentation and the release notes go through `IUrlLauncher` with constant URLs. Then the card and
+  the E2E update, docs (`docs/guide/projects.md`) and release notes.
+
 ### Batch E-R — model: opus — T072 (sub-phase review)
 
 - [ ] T072 [US5] [US6] Review sub-phase E: an Opus reviewer who did not implement it reviews the whole diff of batches
@@ -1097,6 +1143,10 @@ in three: the visual-polish tasks add 14 units and T096 grows by one. The roadma
 | FR-041 | T062, T066 |
 | FR-042 | T067 |
 | FR-043, FR-044 | T068, T107 |
+| FR-045, FR-046 | T071a–T071c, T071f |
+| FR-047 | T071d, T071e, T071f |
+| FR-048 | T071g–T071i |
+| FR-049 | T071j, T071k |
 | FR-050, FR-051 | T061, T063–T065, T070, T093 |
 | FR-052 | T051, T061 |
 | FR-060 | T075 |
