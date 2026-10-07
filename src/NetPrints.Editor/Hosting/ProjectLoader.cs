@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Globalization;
 using Microsoft.Extensions.Logging;
 using NetPrints.Compilation;
 using NetPrints.Core;
@@ -166,8 +167,9 @@ internal sealed class ProjectLoader : IDisposable
     }
 
     /// <summary>
-    /// Copies a bundled sample into a folder named after it inside a folder the user picks, and opens the copy. The bundled files are never
-    /// touched; a copy that fails, such as into a folder that is not empty, is reported and nothing is opened.
+    /// Copies a bundled sample to <c>&lt;location&gt;/&lt;SampleName&gt;</c> (a numeric suffix when that exists), where the location is the last one used or the
+    /// default, after one confirmation that names the target and offers Change; then opens the copy. The bundled files are never touched; a copy
+    /// that fails is reported and nothing is opened.
     /// </summary>
     /// <param name="sampleName">The sample's name.</param>
     /// <returns>A task that completes when the copy is open, or the user cancelled.</returns>
@@ -181,16 +183,35 @@ internal sealed class ProjectLoader : IDisposable
             return;
         }
 
-        string? parent = await context.FilePicker.OpenFolderAsync($"Choose where to copy {sample.Name}").ConfigureAwait(true);
-        if (parent is null)
+        string location = locations.Last;
+        string target = FreeFolder(location, sample.Name);
+        while (true)
         {
-            return;
-        }
+            switch (await context.Dialogs.ConfirmSampleTargetAsync(sample.Name, target).ConfigureAwait(true))
+            {
+                case SampleTargetChoice.Change:
+                    if (await context.FilePicker.OpenFolderAsync($"Choose where to copy {sample.Name}").ConfigureAwait(true) is { } picked)
+                    {
+                        location = picked;
+                        target = FreeFolder(location, sample.Name);
+                    }
 
+                    continue;
+                case SampleTargetChoice.Open:
+                    await CopyAndOpenSampleAsync(sample, location, target, errorTitle).ConfigureAwait(true);
+                    return;
+                default:
+                    return;
+            }
+        }
+    }
+
+    private async Task CopyAndOpenSampleAsync(SampleDescriptor sample, string location, string target, string errorTitle)
+    {
         string csproj;
         try
         {
-            csproj = await samples.CopyAsync(sample, Path.Combine(parent, sample.Name), CancellationToken.None).ConfigureAwait(true);
+            csproj = await samples.CopyAsync(sample, target, CancellationToken.None).ConfigureAwait(true);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
@@ -198,7 +219,23 @@ internal sealed class ProjectLoader : IDisposable
             return;
         }
 
+        if (!string.Equals(location, locations.Last, StringComparison.Ordinal))
+        {
+            locations.Remember(location);
+        }
+
         await LoadProjectAsync(csproj).ConfigureAwait(true);
+    }
+
+    private static string FreeFolder(string location, string name)
+    {
+        string candidate = Path.Combine(location, name);
+        for (int suffix = 2; Directory.Exists(candidate) || File.Exists(candidate); suffix++)
+        {
+            candidate = Path.Combine(location, name + suffix.ToString(CultureInfo.InvariantCulture));
+        }
+
+        return candidate;
     }
 
     /// <summary>Replaces the open project's session with none.</summary>

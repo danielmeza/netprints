@@ -22,7 +22,7 @@ public interface IProjectActions
     /// <returns>A task that completes when the project is open, or the user cancelled.</returns>
     Task OpenProjectAsync(string? path, CancellationToken cancellationToken);
 
-    /// <summary>Copies a bundled sample to a folder the user picks and opens the copy; the bundled files are never modified.</summary>
+    /// <summary>Copies a bundled sample to the last project location (a numeric suffix when the folder exists) after one confirmation that names the target and offers Change, then opens the copy; the bundled files are never modified.</summary>
     /// <param name="sampleName">The sample's name, as the samples tile lists it.</param>
     /// <param name="cancellationToken">Cancels the flow.</param>
     /// <returns>A task that completes when the copy is open, or the user cancelled.</returns>

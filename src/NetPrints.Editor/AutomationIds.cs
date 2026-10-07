@@ -269,6 +269,26 @@ public static class AutomationIds
     /// </summary>
     public const string UnsavedCancelButton = "Dialogs.Unsaved.Cancel";
     /// <summary>
+    /// Automation id for the dialog that names the folder a sample is copied to.
+    /// </summary>
+    public const string SampleTargetDialog = "Dialogs.SampleTarget";
+    /// <summary>
+    /// Automation id for the folder text of the sample target dialog.
+    /// </summary>
+    public const string SampleTargetFolder = "Dialogs.SampleTarget.Folder";
+    /// <summary>
+    /// Automation id for the Copy and open button of the sample target dialog.
+    /// </summary>
+    public const string SampleTargetOpenButton = "Dialogs.SampleTarget.Open";
+    /// <summary>
+    /// Automation id for the Change button of the sample target dialog.
+    /// </summary>
+    public const string SampleTargetChangeButton = "Dialogs.SampleTarget.Change";
+    /// <summary>
+    /// Automation id for the Cancel button of the sample target dialog.
+    /// </summary>
+    public const string SampleTargetCancelButton = "Dialogs.SampleTarget.Cancel";
+    /// <summary>
     /// Automation id for the recovery dialog window itself.
     /// </summary>
     public const string RecoverDialog = "Dialogs.Recover";

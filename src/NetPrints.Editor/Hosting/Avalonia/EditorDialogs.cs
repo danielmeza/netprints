@@ -47,6 +47,10 @@ public sealed class EditorDialogs(Func<Window?> owner) : IEditorDialogs
         ShowAsync<bool>(new ConfirmDialog(title, message, confirmLabel));
 
     /// <inheritdoc/>
+    public Task<SampleTargetChoice> ConfirmSampleTargetAsync(string sampleName, string targetFolder) =>
+        ShowAsync<SampleTargetChoice>(new SampleTargetDialog(sampleName, targetFolder));
+
+    /// <inheritdoc/>
     public Task<UnloadChoice> ConfirmUnsavedAsync(IReadOnlyList<UnsavedFile> files) =>
         ShowAsync<UnloadChoice>(new UnsavedChangesDialog(files));
 

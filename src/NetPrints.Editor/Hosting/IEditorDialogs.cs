@@ -48,6 +48,12 @@ public interface IEditorDialogs
     /// <returns><see langword="true"/> when the user confirmed, <see langword="false"/> when cancelled.</returns>
     Task<bool> ConfirmAsync(string title, string message, string confirmLabel);
 
+    /// <summary>Names the folder a sample is copied to and asks whether to go ahead, change the folder or cancel.</summary>
+    /// <param name="sampleName">The sample's name.</param>
+    /// <param name="targetFolder">The full path of the folder the copy goes in.</param>
+    /// <returns>The user's choice; <see cref="SampleTargetChoice.Cancel"/> when the dialog was dismissed.</returns>
+    Task<SampleTargetChoice> ConfirmSampleTargetAsync(string sampleName, string targetFolder);
+
     /// <summary>Shows a list of diagnostics until the dialog is closed.</summary>
     /// <param name="title">Dialog title.</param>
     /// <param name="issues">The diagnostics, one row each.</param>

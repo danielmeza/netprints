@@ -1,8 +1,12 @@
 using System.Security.Cryptography;
+using Microsoft.Extensions.Logging.Abstractions;
+using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.StartPage;
+using NetPrints.Editor.State;
 using NetPrints.Editor.Tests.Hosting;
 using NetPrints.Editor.Tests.Shell;
+using NetPrints.Editor.Tests.State;
 
 namespace NetPrints.Editor.Tests.StartPage;
 
@@ -71,50 +75,85 @@ public sealed class SamplesAndWhatsNewTests : IDisposable
         return rig;
     }
 
+    private string DefaultTarget(string name) => Path.Combine(editor.Locations.DefaultLocation, name);
+
     [Fact]
-    public async Task OpeningASampleCopiesItToTheChosenFolderAndOpensTheCopy()
+    public async Task OpeningASampleAsksOnceNamingTheDefaultTargetThenCopiesAndOpensTheCopy()
     {
         ProjectRig rig = NewRig();
         string before = BundledHash();
-        string parent = TempRoot();
-        editor.FilePicker.FolderAnswers.Enqueue(parent);
 
         await rig.Actions.OpenSampleAsync("HelloWorld", Token);
 
-        string copy = Path.Combine(parent, "HelloWorld", "HelloWorld.csproj");
+        Assert.Equal([("HelloWorld", DefaultTarget("HelloWorld"))], editor.Dialogs.SampleTargetCalls);
+        string copy = Path.Combine(DefaultTarget("HelloWorld"), "HelloWorld.csproj");
         Assert.True(File.Exists(copy));
         Assert.Equal(copy, rig.Project?.Path);
         Assert.Equal(before, BundledHash());
         Assert.Empty(editor.Dialogs.Errors);
+        Assert.Empty(editor.FilePicker.Calls);
     }
 
     [Fact]
-    public async Task CancellingTheFolderPickerOpensNothingAndWritesNothing()
+    public async Task ASampleFolderThatExistsGetsANumericSuffixAndKeepsWhatIsThere()
     {
         ProjectRig rig = NewRig();
+        string taken = DefaultTarget("HelloWorld");
+        Directory.CreateDirectory(taken);
+        await File.WriteAllTextAsync(Path.Combine(taken, "mine.txt"), "mine", Token);
+        Directory.CreateDirectory(DefaultTarget("HelloWorld2"));
+
+        await rig.Actions.OpenSampleAsync("HelloWorld", Token);
+
+        Assert.Equal(DefaultTarget("HelloWorld3"), Assert.Single(editor.Dialogs.SampleTargetCalls).Target);
+        Assert.Equal(Path.Combine(DefaultTarget("HelloWorld3"), "HelloWorld.csproj"), rig.Project?.Path);
+        Assert.Equal(["mine.txt"], Directory.GetFileSystemEntries(taken).Select(Path.GetFileName));
+    }
+
+    [Fact]
+    public async Task ChangeAsksForAFolderThenConfirmsTheNewTargetAndRemembersIt()
+    {
+        string documents = TempRoot();
+        string picked = TempRoot();
+        JsonEditorStateStore store = new(new EditorDataPaths("/state-root"), new InMemoryEditorFileSystem(), NullLogger<JsonEditorStateStore>.Instance);
+        ProjectRig rig = new(editor.Context with { StateStore = store, Locations = new ProjectLocations(store, documents) });
+        rigs.Add(rig);
+        editor.Dialogs.SampleTargetAnswers.Enqueue(SampleTargetChoice.Change);
+        editor.FilePicker.FolderAnswers.Enqueue(picked);
+
+        await rig.Actions.OpenSampleAsync("HelloWorld", Token);
+
+        Assert.Equal([Path.Combine(documents, "NetPrints", "HelloWorld"), Path.Combine(picked, "HelloWorld")], editor.Dialogs.SampleTargetCalls.Select(call => call.Target));
+        Assert.Equal(Path.Combine(picked, "HelloWorld", "HelloWorld.csproj"), rig.Project?.Path);
+        Assert.Equal(picked, new ProjectLocations(store, documents).Last);
+    }
+
+    [Fact]
+    public async Task ChangeThenCancellingThePickerAsksAgainAboutTheSameTarget()
+    {
+        ProjectRig rig = NewRig();
+        editor.Dialogs.SampleTargetAnswers.Enqueue(SampleTargetChoice.Change);
+        editor.Dialogs.SampleTargetAnswers.Enqueue(SampleTargetChoice.Cancel);
         editor.FilePicker.FolderAnswers.Enqueue(null);
+
+        await rig.Actions.OpenSampleAsync("HelloWorld", Token);
+
+        Assert.Equal([DefaultTarget("HelloWorld"), DefaultTarget("HelloWorld")], editor.Dialogs.SampleTargetCalls.Select(call => call.Target));
+        Assert.Null(rig.Session);
+        Assert.False(Directory.Exists(DefaultTarget("HelloWorld")));
+    }
+
+    [Fact]
+    public async Task CancellingTheConfirmationOpensNothingAndWritesNothing()
+    {
+        ProjectRig rig = NewRig();
+        editor.Dialogs.SampleTargetAnswers.Enqueue(SampleTargetChoice.Cancel);
 
         await rig.Actions.OpenSampleAsync("HelloWorld", Token);
 
         Assert.Null(rig.Session);
         Assert.Empty(editor.Dialogs.Errors);
-    }
-
-    [Fact]
-    public async Task ACopyIntoAFolderThatIsNotEmptyShowsAnErrorAndKeepsWhatIsThere()
-    {
-        ProjectRig rig = NewRig();
-        string parent = TempRoot();
-        string target = Path.Combine(parent, "HelloWorld");
-        Directory.CreateDirectory(target);
-        await File.WriteAllTextAsync(Path.Combine(target, "mine.txt"), "mine", Token);
-        editor.FilePicker.FolderAnswers.Enqueue(parent);
-
-        await rig.Actions.OpenSampleAsync("HelloWorld", Token);
-
-        Assert.Null(rig.Session);
-        Assert.Equal("Failed to open the sample", Assert.Single(editor.Dialogs.Errors).Title);
-        Assert.Equal(["mine.txt"], Directory.GetFileSystemEntries(target).Select(Path.GetFileName));
+        Assert.False(Directory.Exists(DefaultTarget("HelloWorld")));
     }
 
     [Fact]
@@ -126,6 +165,7 @@ public sealed class SamplesAndWhatsNewTests : IDisposable
 
         Assert.Equal("Failed to open the sample", Assert.Single(editor.Dialogs.Errors).Title);
         Assert.Empty(editor.FilePicker.Calls);
+        Assert.Empty(editor.Dialogs.SampleTargetCalls);
     }
 
     [Fact]

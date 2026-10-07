@@ -84,3 +84,12 @@ public sealed class NewProjectDialogPage(IUiDriver driver) : UiElement(driver, n
         await CreateButton.ClickAsync(cancellationToken);
     }
 }
+
+/// <summary>Screen object of the dialog that names the folder a sample is copied to.</summary>
+public sealed class SampleTargetDialogPage(IUiDriver driver) : UiElement(driver, new AutomationQuery(AutomationIds.SampleTargetDialog))
+{
+    public UiElement Folder => Find(AutomationIds.SampleTargetFolder);
+    public UiElement OpenButton => Find(AutomationIds.SampleTargetOpenButton);
+    public UiElement ChangeButton => Find(AutomationIds.SampleTargetChangeButton);
+    public UiElement CancelButton => Find(AutomationIds.SampleTargetCancelButton);
+}

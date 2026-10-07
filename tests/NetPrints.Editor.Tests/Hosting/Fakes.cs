@@ -84,6 +84,18 @@ public sealed class FakeDialogs : IEditorDialogs
         return dialog.Result;
     }
 
+    /// <summary>The sample and target folder of every <see cref="ConfirmSampleTargetAsync"/> call.</summary>
+    public List<(string Sample, string Target)> SampleTargetCalls { get; } = [];
+
+    /// <summary>The answers <see cref="ConfirmSampleTargetAsync"/> gives in order; <see cref="SampleTargetChoice.Open"/> once empty.</summary>
+    public Queue<SampleTargetChoice> SampleTargetAnswers { get; } = new();
+
+    public Task<SampleTargetChoice> ConfirmSampleTargetAsync(string sampleName, string targetFolder)
+    {
+        SampleTargetCalls.Add((sampleName, targetFolder));
+        return Task.FromResult(SampleTargetAnswers.Count > 0 ? SampleTargetAnswers.Dequeue() : SampleTargetChoice.Open);
+    }
+
     public List<(string Title, string Message)> ConfirmCalls { get; } = [];
     public bool ConfirmAnswer { get; set; } = true;
 

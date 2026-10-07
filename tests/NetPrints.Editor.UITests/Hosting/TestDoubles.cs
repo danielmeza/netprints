@@ -79,6 +79,8 @@ public sealed class RecordingDialogs : IEditorDialogs
         return Task.FromResult(UnsavedAnswer);
     }
 
+    public Task<SampleTargetChoice> ConfirmSampleTargetAsync(string sampleName, string targetFolder) => Task.FromResult(SampleTargetChoice.Open);
+
     public Task<bool> ConfirmAsync(string title, string message, string confirmLabel)
     {
         ConfirmCalls.Add((title, message));

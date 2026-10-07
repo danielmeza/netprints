@@ -24,6 +24,25 @@ public class DialogTests
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
+    [AvaloniaTheory(Timeout = TestAppBuilder.Timeout)]
+    [InlineData("Open", SampleTargetChoice.Open)]
+    [InlineData("Change", SampleTargetChoice.Change)]
+    [InlineData("Cancel", SampleTargetChoice.Cancel)]
+    public async Task TheSampleTargetDialogNamesTheFolderAndClosesWithTheChoice(string button, SampleTargetChoice expected)
+    {
+        using var ui = HeadlessUi.Create();
+        var dialog = ui.Show(new SampleTargetDialog("HelloWorld", "/projects/HelloWorld"));
+        var page = new SampleTargetDialogPage(ui.Driver);
+        bool closed = false;
+        dialog.Closed += (_, _) => closed = true;
+
+        Assert.Equal("/projects/HelloWorld", await page.Folder.TextAsync(Token));
+        await (button switch { "Open" => page.OpenButton, "Change" => page.ChangeButton, _ => page.CancelButton }).ClickAsync(Token);
+
+        Assert.True(closed);
+        Assert.Equal(expected, dialog.Result);
+    }
+
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task SelectTypeDefaultsToObjectAndResolvesText()
     {

@@ -1,0 +1,25 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ed="clr-namespace:NetPrints.Editor"
+        xmlns:edb="clr-namespace:NetPrints.Editor.Behaviors"
+        xmlns:eddialogs="clr-namespace:NetPrints.Editor.Dialogs"
+        x:Class="NetPrints.Editor.Dialogs.SampleTargetDialog"
+        x:DataType="eddialogs:SampleTargetDialogViewModel"
+        Icon="avares://NetPrints.Editor/Assets/NetPrintsLogo.ico"
+        Width="520" Height="210" CanResize="False"
+        WindowStartupLocation="CenterOwner" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SampleTargetDialog}">
+  <Interaction.Behaviors>
+    <edb:DialogCloseBehavior />
+  </Interaction.Behaviors>
+  <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="12" RowSpacing="8">
+    <TextBlock TextWrapping="Wrap" Text="{Binding Message}" />
+    <TextBlock Grid.Row="1" Text="The copy goes in:" />
+    <SelectableTextBlock Grid.Row="2" TextWrapping="Wrap" FontWeight="SemiBold" Text="{Binding TargetFolder}"
+                         AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SampleTargetFolder}" />
+    <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+      <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SampleTargetCancelButton}" Content="Cancel" MinWidth="80" IsCancel="True" Command="{Binding CancelCommand}" />
+      <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SampleTargetChangeButton}" Content="Change…" MinWidth="80" Command="{Binding ChangeCommand}" />
+      <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SampleTargetOpenButton}" Content="Copy and open" MinWidth="80" Classes="accent" IsDefault="True" Command="{Binding CopyAndOpenCommand}" />
+    </StackPanel>
+  </Grid>
+</Window>
