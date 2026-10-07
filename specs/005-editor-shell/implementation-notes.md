@@ -1517,3 +1517,8 @@ four E scenarios of the Desktop E2E (`StartPageNewProjectTests`, `RestoreSession
 | R18 | nit | Tests: a line-number allowlist, no headless check of a background tab's canvas, scaling 1 only, one corrupt-state E2E | E-F5 | open |
 | R19 | nit | Restore edges: the start page is saved in the session; recent and session keys are case-sensitive on macOS | E-F6 | open |
 | R20 | nit | New project dialog: relative or `~` locations; Cancel during creation keeps the created project | E-F6 | open |
+
+Batch E-F1 fixes:
+- R1 → 32d64c65: nullable annotations and required constructor parameters respected for every state DTO; null list elements rejected by the store (defaults, one warning).
+- R4 → 32d64c65: the store skips saves to a file it found with a newer version, unless the caller passes `userChanged`; `recent.json` is never rewritten while newer.
+- R5 → 32d64c65: `RecentProjects` re-reads before each change; `AtomicFileWriter` writes through a unique temp name and deletes stray ones older than a day.
