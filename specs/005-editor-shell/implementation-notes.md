@@ -1522,3 +1522,7 @@ Batch E-F1 fixes:
 - R1 → 32d64c65: nullable annotations and required constructor parameters respected for every state DTO; null list elements rejected by the store (defaults, one warning).
 - R4 → 32d64c65: the store skips saves to a file it found with a newer version, unless the caller passes `userChanged`; `recent.json` is never rewritten while newer.
 - R5 → 32d64c65: `RecentProjects` re-reads before each change; `AtomicFileWriter` writes through a unique temp name and deletes stray ones older than a day.
+
+Batch E-F2 fixes:
+- R2 → 18edf9a9: the load dialog lists the snapshot's error messages (restore failure with package, version and hint) and a note when graph files exist but none loaded; a pre-release build writes the latest released SDK version (ADR-0022).
+- R11 → 18edf9a9: the sample copy's `NetPrints.Sdk` reference gets the same version as New project; the bundled project file is untouched.
