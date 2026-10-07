@@ -174,4 +174,10 @@
   <Style Selector="GridSplitter">
     <Setter Property="Background" Value="{DynamicResource SystemAccentColor}" />
   </Style>
+  <Style Selector="TextBlock.inspectorLabel">
+    <Setter Property="Opacity" Value="0.75" />
+    <Setter Property="HorizontalAlignment" Value="Right" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Margin" Value="0,0,8,4" />
+  </Style>
 </Styles>

@@ -21,7 +21,7 @@
       </Interaction.Behaviors>
     </TextBlock>
 
-    <TextBlock Grid.Row="1" Text="Getter" Opacity="0.75" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,4" />
+    <TextBlock Grid.Row="1" Classes="inspectorLabel" Text="Getter" />
     <Panel Grid.Row="1" Grid.Column="1" Margin="0,0,0,4">
       <Button Classes="flat" Content="Add getter" IsVisible="{Binding !HasGetter}" Command="{Binding AddGetterCommand}" HorizontalAlignment="Left" />
       <Grid ColumnDefinitions="Auto,*" IsVisible="{Binding HasGetter}">
@@ -36,7 +36,7 @@
       </Grid>
     </Panel>
 
-    <TextBlock Grid.Row="2" Text="Setter" Opacity="0.75" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,4" />
+    <TextBlock Grid.Row="2" Classes="inspectorLabel" Text="Setter" />
     <Panel Grid.Row="2" Grid.Column="1" Margin="0,0,0,4">
       <Button Classes="flat" Content="Add setter" IsVisible="{Binding !HasSetter}" Command="{Binding AddSetterCommand}" HorizontalAlignment="Left" />
       <Grid ColumnDefinitions="Auto,*" IsVisible="{Binding HasSetter}">
@@ -51,7 +51,7 @@
       </Grid>
     </Panel>
 
-    <TextBlock Grid.Row="3" Text="Type Graph" Opacity="0.75" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,4" />
+    <TextBlock Grid.Row="3" Classes="inspectorLabel" Text="Type Graph" />
     <Button Grid.Row="3" Grid.Column="1" Classes="flat" Content="Open type graph" Command="{Binding OpenTypeGraphCommand}" HorizontalAlignment="Left" Margin="0,0,0,4" />
   </Grid>
 </UserControl>
