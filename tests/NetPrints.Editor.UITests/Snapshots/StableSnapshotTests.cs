@@ -81,7 +81,7 @@ public sealed class StableSnapshotTests : IDisposable
 
         Assert.Contains($"'{Name}' did not settle", thrown.Message, StringComparison.Ordinal);
         Assert.Contains("after 6 frames", thrown.Message, StringComparison.Ordinal);
-        Assert.Contains("100% of the pixels differ", thrown.Message, StringComparison.Ordinal);
+        Assert.Contains("(100%) differ", thrown.Message, StringComparison.Ordinal);
         Assert.True(File.Exists(Path.Combine(store.OutputDirectory, Name + ".diff.png")));
     }
 

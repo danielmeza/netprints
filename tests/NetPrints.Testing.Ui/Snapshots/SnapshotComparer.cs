@@ -25,13 +25,20 @@ public sealed record SnapshotOptions
     /// <summary>Largest share of differing pixels, in percent, for images that still match.</summary>
     public double MaxDiffPercent { get; init; } = 0.5;
 
+    /// <summary>
+    /// Largest number of differing pixels for images that still match. The percentage alone scales with the
+    /// window (0.5% of 1600x1000 is 8000 pixels, more than a missing check box or button changes), so this
+    /// bounds the absolute count; raise it per snapshot where a specific baseline needs more.
+    /// </summary>
+    public int MaxDiffPixels { get; init; } = 150;
+
     public IReadOnlyList<SnapshotMask> Masks { get; init; } = [];
 }
 
 /// <summary>The result of comparing an image with its baseline.</summary>
 public sealed record SnapshotComparison(bool Matches, double DiffPercent, int DiffPixels, string? Reason, UiImage? Diff);
 
-/// <summary>Tolerant pixel comparison: per-pixel threshold, maximum differing share, and masks.</summary>
+/// <summary>Tolerant pixel comparison: per-pixel threshold, maximum differing share and count, and masks.</summary>
 public static class SnapshotComparer
 {
     public static SnapshotComparison Compare(UiImage actual, UiImage baseline, SnapshotOptions options)
@@ -73,10 +80,10 @@ public static class SnapshotComparer
         }
 
         double percent = compared == 0 ? 0 : 100.0 * differing / compared;
-        bool matches = percent <= options.MaxDiffPercent;
+        bool matches = percent <= options.MaxDiffPercent && differing <= options.MaxDiffPixels;
         using var image = SKImage.FromBitmap(diff);
         using var data = image.Encode(SKEncodedImageFormat.Png, 100);
         return new SnapshotComparison(matches, percent, differing,
-            matches ? null : $"{percent:0.###}% of the pixels differ (max {options.MaxDiffPercent}%)", new UiImage(data.ToArray()));
+            matches ? null : $"{differing} pixels ({percent:0.###}%) differ (max {options.MaxDiffPixels} pixels, {options.MaxDiffPercent}%)", new UiImage(data.ToArray()));
     }
 }
