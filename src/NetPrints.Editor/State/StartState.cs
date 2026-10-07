@@ -4,4 +4,5 @@ namespace NetPrints.Editor.State;
 /// <param name="SchemaVersion">The schema version.</param>
 /// <param name="WhatsNewSeenVersion">The product version whose release notes the user has been shown, or null for none.</param>
 /// <param name="NewProjectLocation">The parent folder the user last created a project or copied a sample in, or null for the default.</param>
-public sealed record StartState(int SchemaVersion, string? WhatsNewSeenVersion, string? NewProjectLocation = null) : IStateFile;
+/// <param name="StartupBehavior">What the editor does when it starts with no project argument.</param>
+public sealed record StartState(int SchemaVersion, string? WhatsNewSeenVersion, string? NewProjectLocation = null, StartupBehavior StartupBehavior = StartupBehavior.ShowStartPage) : IStateFile;

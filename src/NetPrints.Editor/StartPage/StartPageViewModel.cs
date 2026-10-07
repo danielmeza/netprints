@@ -13,6 +13,7 @@ internal sealed partial class StartPageViewModel : DocumentViewModel
     private const int VersionParts = 3;
 
     private readonly ShellViewModel shell;
+    private readonly IEditorStateStore? store;
 
     /// <summary>Creates the page from the registered tiles.</summary>
     /// <param name="shell">The shell, whose registry lists the tiles and whose <c>StartPageError</c> the page shows.</param>
@@ -25,13 +26,15 @@ internal sealed partial class StartPageViewModel : DocumentViewModel
         this.shell = shell;
         Tiles = [.. shell.Registry.DashboardTiles.OrderBy(tile => tile.Order).Select(tile => tile.CreateViewModel(services))];
         shell.PropertyChanged += OnShellChanged;
-        if (services.GetService(typeof(IEditorStateStore)) is IEditorStateStore store)
+        if (services.GetService(typeof(IEditorStateStore)) is IEditorStateStore stateStore)
         {
-            string? seen = store.LoadStart()?.WhatsNewSeenVersion;
+            ReopenLastProject = stateStore.LoadStart()?.StartupBehavior == StartupBehavior.ReopenLastProject;
+            store = stateStore;
+            string? seen = stateStore.LoadStart()?.WhatsNewSeenVersion;
             IsWhatsNewExpanded = !string.Equals(seen, ProductVersion, StringComparison.Ordinal);
             if (IsWhatsNewExpanded)
             {
-                store.Update(state => state with { WhatsNewSeenVersion = ProductVersion });
+                stateStore.Update(state => state with { WhatsNewSeenVersion = ProductVersion });
             }
         }
         else
@@ -70,6 +73,13 @@ internal sealed partial class StartPageViewModel : DocumentViewModel
     /// <summary>Gets or sets a value indicating whether the what's new section is open.</summary>
     [ObservableProperty]
     public partial bool IsWhatsNewExpanded { get; set; }
+
+    /// <summary>Gets or sets a value indicating whether the editor reopens the last project when it starts instead of showing this page.</summary>
+    [ObservableProperty]
+    public partial bool ReopenLastProject { get; set; }
+
+    partial void OnReopenLastProjectChanged(bool value) =>
+        store?.Update(state => state with { StartupBehavior = value ? StartupBehavior.ReopenLastProject : StartupBehavior.ShowStartPage });
 
     /// <summary>Opens the what's new section when it is closed and closes it when it is open.</summary>
     [RelayCommand]

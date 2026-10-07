@@ -102,6 +102,19 @@ public class StartPageLayoutTests
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task TheReopenCheckBoxSavesTheStartupSettingBothWays()
+    {
+        var store = new MemoryStateStore();
+        using var rig = StartPageRig.Create(WideWidth, 1000, startStore: store);
+
+        await rig.Element(AutomationIds.StartPageReopenLast).ClickAsync(Token);
+        Assert.Equal(StartupBehavior.ReopenLastProject, store.Start?.StartupBehavior);
+
+        await rig.Element(AutomationIds.StartPageReopenLast).ClickAsync(Token);
+        Assert.Equal(StartupBehavior.ShowStartPage, store.Start?.StartupBehavior);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task EveryCardAndEveryExistingIdIsThere()
     {
         using var rig = StartPageRig.Create(WideWidth, 1000, withRecent: true);
@@ -109,7 +122,7 @@ public class StartPageLayoutTests
         foreach (string id in new[]
         {
             AutomationIds.StartPageRoot, AutomationIds.StartPageRecentSearch, AutomationIds.StartPageRecentList, AutomationIds.StartPageOpenButton,
-            AutomationIds.StartPageNewButton, AutomationIds.StartPageSamplesList, AutomationIds.StartPageSampleOpen, AutomationIds.StartPageReleasesLink,
+            AutomationIds.StartPageNewButton, AutomationIds.StartPageReopenLast, AutomationIds.StartPageSamplesList, AutomationIds.StartPageSampleOpen, AutomationIds.StartPageReleasesLink,
         })
         {
             Assert.True(await rig.Element(id).ExistsAsync(Token), id);

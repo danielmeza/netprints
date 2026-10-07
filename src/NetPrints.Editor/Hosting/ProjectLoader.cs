@@ -92,9 +92,12 @@ internal sealed class ProjectLoader : IDisposable
         }
     }
 
-    /// <summary>Opens the project passed as the only command-line argument.</summary>
+    /// <summary>
+    /// Opens the project passed as the only command-line argument; with none, reopens the last project when the startup setting says so.
+    /// A project argument always wins, and a reopen that fails leaves the start page with the reason.
+    /// </summary>
     /// <param name="args">The command-line arguments.</param>
-    /// <returns>A task that completes when the project is open, or at once with no project argument.</returns>
+    /// <returns>A task that completes when the project is open, or at once when there is nothing to open.</returns>
     public Task OpenStartupProjectAsync(IReadOnlyList<string>? args)
     {
         if (args is { Count: 1 } && !string.IsNullOrWhiteSpace(args[0]))
@@ -102,7 +105,28 @@ internal sealed class ProjectLoader : IDisposable
             return OpenStartupPathAsync(args[0]);
         }
 
-        return Task.CompletedTask;
+        return context.StateStore?.LoadStart()?.StartupBehavior == StartupBehavior.ReopenLastProject ? ReopenLastProjectAsync() : Task.CompletedTask;
+    }
+
+    private async Task ReopenLastProjectAsync()
+    {
+        RecentProject? last = context.Recent?.List().MaxBy(entry => entry.LastOpenedUtc);
+        if (last is null)
+        {
+            return;
+        }
+
+        if (!last.IsAvailable)
+        {
+            shell.StartPageError = $"The last project '{last.Path}' was not found.";
+            return;
+        }
+
+        await LoadProjectAsync(last.Path).ConfigureAwait(true);
+        if (shell.Session is null)
+        {
+            shell.StartPageError = $"The last project '{last.Path}' could not be opened.";
+        }
     }
 
     // A path that is no project (a missing file, another kind of file, a folder without exactly one .csproj) leaves the start page with the error.

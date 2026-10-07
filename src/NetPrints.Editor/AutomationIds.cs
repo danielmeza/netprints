@@ -621,6 +621,10 @@ public static class AutomationIds
     /// </summary>
     public const string StartPageVersion = "StartPage.Version";
     /// <summary>
+    /// Automation id for the start page's check box that reopens the last project when the editor starts.
+    /// </summary>
+    public const string StartPageReopenLast = "StartPage.ReopenLast";
+    /// <summary>
     /// Automation id for the start page's Get started card list.
     /// </summary>
     public const string StartPageGetStarted = "StartPage.GetStarted";

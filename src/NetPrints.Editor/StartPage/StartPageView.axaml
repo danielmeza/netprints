@@ -85,11 +85,15 @@
   <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
     <Grid Container.Name="start" Container.Sizing="Width">
       <StackPanel Margin="32,24" Spacing="24" MaxWidth="1200" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageContent}">
-        <StackPanel Orientation="Horizontal" Spacing="12">
-          <TextBlock Classes="title" Text="NetPrints" />
-          <TextBlock Classes="secondary" VerticalAlignment="Bottom" Margin="0,0,0,6" Text="{Binding Version}"
-                     AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageVersion}" />
-        </StackPanel>
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
+          <StackPanel Orientation="Horizontal" Spacing="12">
+            <TextBlock Classes="title" Text="NetPrints" />
+            <TextBlock Classes="secondary" VerticalAlignment="Bottom" Margin="0,0,0,6" Text="{Binding Version}"
+                       AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageVersion}" />
+          </StackPanel>
+          <CheckBox Grid.Column="1" VerticalAlignment="Bottom" Content="Reopen the last project when NetPrints starts" IsChecked="{Binding ReopenLastProject}"
+                    AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageReopenLast}" />
+        </Grid>
         <TextBlock Text="{Binding Error}" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" TextWrapping="Wrap"
                    AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageError}" />
         <Grid x:Name="Columns" ColumnDefinitions="3*,2*" RowDefinitions="Auto,Auto" ColumnSpacing="40" RowSpacing="24">
