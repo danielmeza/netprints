@@ -136,7 +136,7 @@ namespace NetPrints.Tests.Core
 
         /// <summary>Scans for E2 offenders. A key names the element, the attribute and the literal, never a line,
         /// so editing above an allowlisted literal neither breaks nor widens the entry.</summary>
-        private static (List<string> Offenders, HashSet<string> Seen) ScanColorLiterals(AxamlFile[] files)
+        private static (List<string> Offenders, HashSet<string> Seen) ScanColorLiterals(AxamlFile[] files, IReadOnlyDictionary<string, string> allowlist)
         {
             var offenders = new List<string>();
             var seen = new HashSet<string>(StringComparer.Ordinal);
@@ -163,7 +163,7 @@ namespace NetPrints.Tests.Core
 
                         string setterKey = $"{file.RelativePath}:Setter.{property.Value}={value.Value.Trim()}";
                         seen.Add(setterKey);
-                        if (!E2Allowlist.ContainsKey(setterKey))
+                        if (!allowlist.ContainsKey(setterKey))
                         {
                             offenders.Add($"{file.RelativePath}:{LineOf(element)}: {setterKey}: Setter Property=\"{property.Value}\" Value=\"{value.Value}\"");
                         }
@@ -181,7 +181,7 @@ namespace NetPrints.Tests.Core
 
                         string key = $"{file.RelativePath}:{element.Name.LocalName}.{attribute.Name.LocalName}={attribute.Value.Trim()}";
                         seen.Add(key);
-                        if (!E2Allowlist.ContainsKey(key))
+                        if (!allowlist.ContainsKey(key))
                         {
                             offenders.Add($"{file.RelativePath}:{LineOf(attribute)}: {key}: {attribute.Name.LocalName}=\"{attribute.Value}\"");
                         }
@@ -195,7 +195,7 @@ namespace NetPrints.Tests.Core
         [Fact]
         public void E2_NoColorLiteralsInViews()
         {
-            (List<string> offenders, HashSet<string> seen) = ScanColorLiterals(LoadAxamlFiles());
+            (List<string> offenders, HashSet<string> seen) = ScanColorLiterals(LoadAxamlFiles(), E2Allowlist);
             Assert.Empty(offenders);
             AssertAllowlistHasNoStaleEntries(E2Allowlist.Keys, seen);
         }
@@ -208,10 +208,15 @@ namespace NetPrints.Tests.Core
             const string palette = "<ColorPaletteResources RegionColor=\"#FF252525\" />";
             AxamlFile moved = Synthetic("src/NetPrints.Editor/EditorApp.axaml", "<Application>\n\n\n\n" + palette + "</Application>");
 
-            (List<string> offenders, HashSet<string> seen) = ScanColorLiterals([moved]);
+            var allowlist = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                ["src/NetPrints.Editor/EditorApp.axaml:ColorPaletteResources.RegionColor=#FF252525"] = "synthetic entry for this test",
+            };
+
+            (List<string> offenders, HashSet<string> seen) = ScanColorLiterals([moved], allowlist);
 
             Assert.Empty(offenders);
-            Assert.Equal(E2Allowlist.Keys.Order(StringComparer.Ordinal), seen.Order(StringComparer.Ordinal));
+            Assert.Equal(allowlist.Keys.Order(StringComparer.Ordinal), seen.Order(StringComparer.Ordinal));
         }
 
         [Fact]
@@ -219,7 +224,7 @@ namespace NetPrints.Tests.Core
         {
             AxamlFile file = Synthetic("src/NetPrints.Editor/EditorApp.axaml", "<Application>\n<Border Background=\"#FF252525\" />\n<ColorPaletteResources RegionColor=\"#FF000000\" /></Application>");
 
-            (List<string> offenders, _) = ScanColorLiterals([file]);
+            (List<string> offenders, _) = ScanColorLiterals([file], new Dictionary<string, string>(StringComparer.Ordinal));
 
             Assert.Equal(2, offenders.Count);
         }

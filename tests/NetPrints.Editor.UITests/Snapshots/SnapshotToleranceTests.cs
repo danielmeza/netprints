@@ -8,7 +8,7 @@ namespace NetPrints.Editor.UITests.Snapshots;
 public class SnapshotToleranceTests
 {
     [Theory]
-    [InlineData("checkbox", 1066, 30, 340, 26)]
+    [InlineData("checkbox", 1066, 56, 340, 26)]
     [InlineData("releaseNotesButton", 1133, 505, 112, 30)]
     [InlineData("newProjectCardText", 1005, 136, 330, 34)]
     public void AMissingStartPageElementFailsTheDefaultComparison(string what, int x, int y, int width, int height)
