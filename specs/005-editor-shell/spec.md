@@ -684,7 +684,8 @@ its public members appear.
   the project tree, document tabs, the command bar, menus, lists and the palette, and hover and pressed states MUST
   use state tokens. Row heights and paddings of the tree, lists and the command bar MUST come from density tokens.
   Durations and easing MUST come from motion tokens: hover and pressed backgrounds MUST transition in 100 ms, and
-  the palette and node-search popups MUST fade in over 150 ms.
+  the palette and node-search popups MUST fade in over 150 ms. The user setting `netprints.enableAnimations`
+  (default `true`) MUST switch every transition off when it is `false`, so a new motion needs no switch of its own.
 - **FR-088**: Errors with no diagnostics, Output with no lines, the project tree with no project, node search, the
   palette and go-to-anything with no results, the type-scoped search of FR-091 and the inspector with no selection
   MUST show one empty-state control: an icon, one sentence and, when one applies, an action that runs a registered

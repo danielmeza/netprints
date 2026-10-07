@@ -24,8 +24,8 @@ dictionaries" choice in `specs/005-editor-shell/research.md` for the base theme;
   is created in sub-phase G (ADR-0021) and must list these three packages with their licence and copyright.
 - **Application styles.** `FluentTheme` stays first, then `SemiTheme`, then `UrsaSemiTheme`, then the Nodify,
   AvaloniaEdit, icon, `EditorStyles.axaml` and `DockStyles.axaml` includes. Semi restyles the standard controls on
-  top of Fluent. Dock keeps `DockFluentTheme` (ADR-0018) and reads Fluent's `SystemChromeMediumColor`, which
-  `FluentTheme` still defines. Nodify keeps its own control templates, restyled by `EditorStyles.axaml`.
+  top of Fluent. Dock keeps `DockFluentTheme` (ADR-0018) and takes its surface tokens from `SystemAltMediumHighColor` and
+  `SystemRegionColor`, which Semi defines for Dark and Light. Nodify keeps its own control templates, restyled by `EditorStyles.axaml`.
 - **What it replaces.** The custom `ColorPaletteResources` for Dark and Light in `EditorApp.axaml` (and its only
   E2 allowlist entry). Light and Dark come from Semi's own theme variants.
 - **Not adopted.** The `Dock` companion theme of Semi.Avalonia: its README says it is delivered through NuGet for

@@ -787,7 +787,10 @@ T090–T101, and T112–T114 stay the last tasks of the phase.
 
 ### Batch G1 — model: sonnet — T090–T090b — 5 units
 
-- [ ] T090 [US9] Tokens (2 units). Test first: `tests/NetPrints.Editor.UITests/Theming/ThemeTokenTests.cs` (research R11):
+- [ ] T090 [US9] Tokens (2 units). The UI polish (ADR-0023) already added hand-made spacing, inspector and node styles
+  to `EditorStyles.axaml` and moved the title, section and secondary text classes there; the `Font.*`, `Space.*` and
+  `Inspector.LabelColumnWidth` token names and `ThemeTokenTests` do not exist yet, and the Fluent palette that this task
+  moves is gone (Semi supplies Light and Dark). Test first: `tests/NetPrints.Editor.UITests/Theming/ThemeTokenTests.cs` (research R11):
   `Font.Caption` 12, `Font.Body` 14, `Font.Subtitle` 16, `Font.Title` 20; `Space.XS` to `Space.XL` as 4, 8, 12, 16, 24
   in `Thickness` and `double` forms; `Inspector.LabelColumnWidth`; every colour token resolves in both
   `ThemeVariant.Dark` and `ThemeVariant.Light`. Then `src/NetPrints.Editor/EditorStyles.axaml` (colour tokens as
@@ -831,7 +834,8 @@ T090–T101, and T112–T114 stay the last tasks of the phase.
 
 ### Batch G2 — model: sonnet — T091–T091a — 4 units
 
-- [ ] T091 [US9] Canvas theming (2 units). Nodify `ControlTheme`s `BasedOn` the defaults for `NodifyEditor`, `Node`,
+- [ ] T091 [US9] Canvas theming (2 units). The UI polish restyled the node pin rows in `NodeView.axaml` with classes
+  (`pinLabel`, `nodeTitle`) but not the Nodify `ControlTheme`s or the converters. Nodify `ControlTheme`s `BasedOn` the defaults for `NodifyEditor`, `Node`,
   `Connection`, `Connector` and `ItemContainer`, using `DynamicResource` tokens. `NodeKindBrushConverter`,
   `PinKindBrushConverter` and `GraphBrushes` (`src/NetPrints.Editor/Graph/GraphConverters.cs`) are replaced by style
   classes per node kind and pin kind, and the "Known debt" entry of `.claude/skills/avalonia-styling/SKILL.md` is
@@ -855,7 +859,9 @@ T090–T101, and T112–T114 stay the last tasks of the phase.
 
 ### Batch G3 — model: haiku — T092–T092b — 3 units
 
-- [ ] T092 [US9] Apply the type ramp, the spacing scale and the label column to every view. Test first: a new enforced
+- [ ] T092 [US9] Apply the type ramp, the spacing scale and the label column to every view. The UI polish applied the
+  label column (`inspectorLabel`, `propertyGrid`) and moved the polish `FontSize` literals into classes; the
+  pre-existing literals (`NewProjectDialog`, `ReferencesDialog`, `AboutDialog`, `GraphEditorView` watermark) and rule E8 remain. Test first: a new enforced
   rule **E8** in `tests/NetPrints.Core.Tests/Core/XamlHygieneTests.cs`: no `FontSize` literal in `src/**/*.axaml`
   outside `EditorStyles.axaml`, with a shrink-only allowlist that ends empty (FR-080, research R11).
 - [ ] T092a [US9] `Font.Mono` (FR-080). Test first: E8 also rejects a `FontFamily` literal in `src/**/*.axaml` outside
@@ -886,6 +892,11 @@ T090–T101, and T112–T114 stay the last tasks of the phase.
   `BrushTransition` on `Background` over `Motion.Fast`, and that the palette and node-search popups fade in with a
   `DoubleTransition` on `Opacity` over `Motion.Normal`. Then the tokens and transitions in `EditorStyles.axaml` and
   `DockStyles.axaml`, and the rows and the command bar in their views. The Compact/Comfortable switch is P6.
+  `netprints.enableAnimations` (`NetPrintsSettings.EnableAnimations`, extension-points.md section 7) MUST keep
+  working with the `Motion.*` transitions: a test sets it to `false` in a test `ISettings` and asserts that no
+  `Transitions` remain on the themed controls, and that with `true` they do.
+  Already done by the UI polish (ADR-0023): the setting exists and `EditorApp` calls `DisableTransitions()` when it
+  is `false`; the `Motion.*` tokens and the `BrushTransition` rows do not exist yet.
 - [ ] T092e [US9] Empty-state control (FR-088). Test first:
   `tests/NetPrints.Editor.UITests/Controls/EmptyStateTests.cs`: Errors with no diagnostics, Output with no lines, the project tree with no project, node search, the palette and
   go-to-anything with no results, and the inspector with no selection each show one `EmptyState` (icon id, one
@@ -893,7 +904,8 @@ T090–T101, and T112–T114 stay the last tasks of the phase.
   `netprints.command.openProject`. Then `src/NetPrints.Editor/Controls/EmptyState.cs` (`IconId`, `Message`,
   `ActionText`, `ActionCommand`) with its `ControlTheme` in `EditorStyles.axaml`; the inspector's own empty text
   (`InspectorPanelView.axaml`) moves to it; T095 uses it.
-- [ ] T092f [US9] Dialog shell (2 units, FR-088). Test first:
+- [ ] T092f [US9] Dialog shell (2 units, FR-088). The UI polish added the shared dialog styles (`dialogRoot`,
+  `dialogTitle`, `dialogAction`, `codeBlock`) but no `DialogShell` control; this task wraps them. Test first:
   `tests/NetPrints.Editor.UITests/Dialogs/DialogShellTests.cs`, one row per P3a dialog (`UnsavedChangesDialog`, `ConfirmDialog`, `KeyboardShortcutsDialog`, `TrustDialog`,
   `IssuesDialog`, `RecoverDialog`, `AboutDialog`, `ErrorDialog`): it is hosted in `DialogShell` with a title and an
   icon id; its buttons follow the platform order (Windows: default first; macOS and Linux: cancel first; the
