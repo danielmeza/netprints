@@ -58,15 +58,11 @@ public sealed class ProjectLocationsTests
     }
 
     [Fact]
-    public void TheStateDirectoryOverrideKeepsTheDefaultInsideItAndNotInTheDocumentsFolder()
+    public void TheDefaultIsTheDocumentsFolderOrTheHomeFolderWhenThereIsNone()
     {
-        var paths = new EditorDataPaths("/state-override");
+        ProjectLocations normal = ProjectLocations.Resolve(null, "/docs", "/user-home");
+        ProjectLocations noDocuments = ProjectLocations.Resolve(null, "", "/user-home");
 
-        ProjectLocations overridden = ProjectLocations.Resolve(null, paths, name => name == EditorDataPaths.StateDirectoryVariable ? "/state-override" : null, "/docs", "/user-home");
-        ProjectLocations normal = ProjectLocations.Resolve(null, paths, _ => null, "/docs", "/user-home");
-        ProjectLocations noDocuments = ProjectLocations.Resolve(null, paths, _ => null, "", "/user-home");
-
-        Assert.StartsWith("/state-override", overridden.DefaultLocation, StringComparison.Ordinal);
         Assert.Equal(Path.Combine("/docs", "NetPrints"), normal.DefaultLocation);
         Assert.Equal(Path.Combine("/user-home", "NetPrints"), noDocuments.DefaultLocation);
     }

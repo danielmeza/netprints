@@ -1,3 +1,4 @@
+using System.Text.Json;
 using NetPrints.Desktop.E2ETests.Hosting;
 using NetPrints.Editor.Lifecycle;
 using NetPrints.Editor.State;
@@ -31,12 +32,28 @@ public abstract class ProjectEditorTestBase(DesktopWorkerPool pool) : X11SmokeTe
     protected Dictionary<string, string> Environment()
     {
         var variables = new Dictionary<string, string> { [EditorDataPaths.StateDirectoryVariable] = StateDirectory };
+        SeedNewProjectLocation();
         if (BackupDelayMilliseconds is { } delay)
         {
             variables[BackupService.DelayVariable] = delay.ToString(System.Globalization.CultureInfo.InvariantCulture);
         }
 
         return variables;
+    }
+
+    /// <summary>Seeds <c>start.json</c> with a new project location inside the temporary state folder, so a run never offers the real documents folder; a <c>start.json</c> already there is kept.</summary>
+    private void SeedNewProjectLocation()
+    {
+        string state = new EditorDataPaths(StateDirectory).StateDirectory;
+        string file = Path.Combine(state, "start.json");
+        if (File.Exists(file))
+        {
+            return;
+        }
+
+        Directory.CreateDirectory(state);
+        string location = JsonSerializer.Serialize(Path.Combine(StateDirectory, "Documents", "NetPrints"));
+        File.WriteAllText(file, $$"""{"schemaVersion":1,"newProjectLocation":{{location}}}""");
     }
 
     /// <summary>Waits until the editor shows the opened project and its class in the Project tree.</summary>

@@ -16,7 +16,8 @@ internal sealed class SessionService(IEditorStateStore store)
         ArgumentException.ThrowIfNullOrEmpty(projectPath);
         ArgumentNullException.ThrowIfNull(shell);
         ArgumentNullException.ThrowIfNull(find);
-        IReadOnlyList<DocumentId> open = shell.OpenDocuments;
+        IReadOnlyList<DocumentId> open = [.. shell.OpenDocuments.Where(id => id != DocumentId.StartPage)];
+        DocumentId? active = shell.ActiveDocument is { } current && current != DocumentId.StartPage ? current : null;
         Dictionary<string, ViewportState> viewports = [];
         foreach (DocumentId id in open)
         {
@@ -26,7 +27,7 @@ internal sealed class SessionService(IEditorStateStore store)
             }
         }
 
-        store.SaveSession(new SessionState(StateFile.CurrentVersion, projectPath, [.. open.Select(id => id.ToString())], shell.ActiveDocument?.ToString(), viewports));
+        store.SaveSession(new SessionState(StateFile.CurrentVersion, projectPath, [.. open.Select(id => id.ToString())], active?.ToString(), viewports));
     }
 
     /// <summary>Opens the documents the project had open and puts each viewport back; whatever cannot be restored is skipped.</summary>

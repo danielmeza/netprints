@@ -39,7 +39,7 @@ public sealed class EditorComposition : IDisposable
             new RecentProjects(stateStore, fileSystem, TimeProvider.System),
             new WindowStateService(stateStore),
             stateStore,
-            ProjectLocations.Resolve(stateStore, paths, Environment.GetEnvironmentVariable, Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+            ProjectLocations.Resolve(stateStore, Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
                 Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)));
     }
 

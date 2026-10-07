@@ -2,7 +2,7 @@ namespace NetPrints.Editor.State;
 
 /// <summary>
 /// The recently opened projects (FR-041, state-files.md §3): pinned entries first, then the most recent; at most
-/// <see cref="MaxUnpinned"/> unpinned entries, the oldest dropped; pinned entries never dropped. Every change is saved at once, on top of what the file holds then, so another editor's changes are kept.
+/// <see cref="MaxUnpinned"/> unpinned entries, the oldest dropped (an entry just unpinned is kept, and the oldest other one goes); pinned entries never dropped. Every change is saved at once, on top of what the file holds then, so another editor's changes are kept.
 /// Removing an entry never touches the project's files. Not thread safe.
 /// </summary>
 public sealed class RecentProjects
@@ -20,13 +20,13 @@ public sealed class RecentProjects
     /// <param name="store">Where the list is read from and saved to.</param>
     /// <param name="fileSystem">Tells whether a project file still exists.</param>
     /// <param name="time">The clock stamped on opened projects.</param>
-    /// <param name="pathComparison">How paths are compared; null for case-insensitive on Windows only.</param>
+    /// <param name="pathComparison">How paths are compared; null for case-insensitive on Windows and macOS.</param>
     public RecentProjects(IEditorStateStore store, IEditorFileSystem fileSystem, TimeProvider time, StringComparison? pathComparison = null)
     {
         this.store = store ?? throw new ArgumentNullException(nameof(store));
         this.fileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
         this.time = time ?? throw new ArgumentNullException(nameof(time));
-        comparison = pathComparison ?? (OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
+        comparison = pathComparison ?? EditorDataPaths.PathComparison;
         entries = [];
         Reload();
     }
@@ -101,7 +101,7 @@ public sealed class RecentProjects
         if (index >= 0 && entries[index].Pinned != pinned)
         {
             entries[index] = entries[index] with { Pinned = pinned };
-            Commit();
+            Commit(pinned ? null : path);
         }
     }
 
@@ -113,10 +113,25 @@ public sealed class RecentProjects
 
     private int IndexOf(string path) => entries.FindIndex(entry => string.Equals(entry.Path, path, comparison));
 
-    private void Commit()
+    private void Commit(string? keep = null)
     {
         int unpinned = 0;
-        entries.RemoveAll(entry => !entry.Pinned && ++unpinned > MaxUnpinned);
+        entries.RemoveAll(entry => !entry.Pinned
+            && ++unpinned > MaxUnpinned
+            && (keep is null || !string.Equals(entry.Path, keep, comparison)));
+        if (keep is not null)
+        {
+            int excess = entries.Count(entry => !entry.Pinned) - MaxUnpinned;
+            for (int i = entries.Count - 1; i >= 0 && excess > 0; i--)
+            {
+                if (!entries[i].Pinned && !string.Equals(entries[i].Path, keep, comparison))
+                {
+                    entries.RemoveAt(i);
+                    excess--;
+                }
+            }
+        }
+
         store.SaveRecent(new RecentState(StateFile.CurrentVersion, [.. entries]));
     }
 }

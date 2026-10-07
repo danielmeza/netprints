@@ -48,6 +48,12 @@ public sealed class EditorDataPaths
         return new EditorDataPaths(string.IsNullOrEmpty(overridden) ? Path.Combine(applicationData, RootFolderName) : overridden);
     }
 
+    /// <summary>Gets a value indicating whether paths are compared ignoring case: on Windows and on macOS, whose volumes are case-insensitive by default.</summary>
+    public static bool PathsAreCaseInsensitive => OperatingSystem.IsWindows() || OperatingSystem.IsMacOS();
+
+    /// <summary>Gets how paths are compared on this platform.</summary>
+    public static StringComparison PathComparison => PathsAreCaseInsensitive ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+
     /// <summary>Gets the backup folder of a project.</summary>
     /// <param name="projectKey">The project's <see cref="ProjectKey(string)"/>.</param>
     /// <returns>The folder path.</returns>
@@ -55,8 +61,8 @@ public sealed class EditorDataPaths
 
     /// <summary>Gets the key that names a project's per-user files: the first 16 lowercase hex characters of the SHA-256 of its full path.</summary>
     /// <param name="projectFilePath">The project file's path.</param>
-    /// <returns>The key; the path is case-folded first on Windows.</returns>
-    public static string ProjectKey(string projectFilePath) => ProjectKey(projectFilePath, OperatingSystem.IsWindows());
+    /// <returns>The key; the path is case-folded first on Windows and macOS.</returns>
+    public static string ProjectKey(string projectFilePath) => ProjectKey(projectFilePath, PathsAreCaseInsensitive);
 
     /// <summary>Gets a project key, folding the case of the path or not.</summary>
     /// <param name="projectFilePath">The project file's path.</param>

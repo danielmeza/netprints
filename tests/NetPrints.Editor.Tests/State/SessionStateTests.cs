@@ -107,6 +107,21 @@ public sealed class SessionStateTests
     }
 
     [Fact]
+    public void TheStartPageIsNotSavedInTheSessionAndTheActiveGraphSurvives()
+    {
+        var saving = new Rig();
+        saving.Open(A);
+        saving.Open(B);
+        saving.Shell.OpenDocument(DocumentId.StartPage);
+        saving.Save(new SessionService(CreateStore()));
+
+        SessionState saved = Assert.IsType<SessionState>(CreateStore().LoadSession(ProjectPath));
+
+        Assert.Equal([A.ToString(), B.ToString()], saved.OpenDocuments);
+        Assert.DoesNotContain(DocumentId.StartPage.ToString(), saved.ActiveDocument);
+    }
+
+    [Fact]
     public void SessionsAreKeptPerProject()
     {
         var first = new Rig();

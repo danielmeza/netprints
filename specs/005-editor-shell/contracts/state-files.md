@@ -7,7 +7,7 @@ They are still versioned, and the editor never fails to start because of them.
 
 `<AppData>` is `Environment.SpecialFolder.ApplicationData`. That is `$XDG_CONFIG_HOME` or `~/.config` on Linux,
 `~/Library/Application Support` on macOS (as .NET resolves it), and `%APPDATA%` on Windows. `<project-key>` is the
-first 16 lowercase hex characters of SHA-256 over the project file's full path in UTF-8. On Windows the path is
+first 16 lowercase hex characters of SHA-256 over the project file's full path in UTF-8. On Windows and macOS the path is
 case-folded first.
 
 | File | Content |
@@ -73,13 +73,14 @@ applies the change to what it read, so two editors keep each other's entries and
 
 ## 3. Rules
 
-- **Recent list.** At most 20 unpinned entries, oldest dropped first. Pinned entries are never dropped. Paths are
-  stored as given (full paths) and compared case-insensitively on Windows only.
+- **Recent list.** At most 20 unpinned entries, oldest dropped first. Pinned entries are never dropped. Unpinning an
+  entry never removes it: the oldest other unpinned entry is dropped instead. Paths are stored as given (full paths)
+  and compared case-insensitively on Windows and macOS (whose volumes are case-insensitive by default).
 - **Reopen mark.** Before reopening the last project at start-up the editor sets `reopenInProgress` in `start.json` and
   clears it when the load ends, failed or not. If the mark is still set at the next start (the load hung or killed the
   process), nothing is reopened: the start page shows "The last project did not open last time; it was not reopened.",
   and the mark is cleared.
-- **Session restore.** Documents that cannot be resolved are skipped, and so are viewports with non-finite values.
+- **Session restore.** The start page is never saved in a session (it is not a project document). Documents that cannot be resolved are skipped, and so are viewports with non-finite values.
   The active document falls back to the first restored one.
 - **Window restore.** The window goes to the screen its saved bounds overlap most, with its size clamped to that
   screen's working area and its title strip (the top 32 px, at least 100 px wide) on the screen. If the saved bounds do

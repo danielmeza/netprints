@@ -77,6 +77,35 @@ public sealed class RecentProjectsTests
     }
 
     [Fact]
+    public void UnpinningAnOldEntryKeepsItAndDropsTheOldestOtherUnpinnedOne()
+    {
+        RecentProjects recent = Create();
+        Open(recent, "/p/Old.csproj");
+        recent.Pin("/p/Old.csproj");
+        for (int i = 0; i < 20; i++)
+        {
+            Open(recent, $"/p/P{i}.csproj");
+        }
+
+        recent.Unpin("/p/Old.csproj");
+
+        IReadOnlyList<RecentProject> list = recent.List();
+        Assert.Equal(20, list.Count);
+        Assert.Contains(list, entry => entry.Path == "/p/Old.csproj" && !entry.Pinned);
+        Assert.DoesNotContain(list, entry => entry.Path == "/p/P0.csproj");
+        Assert.Contains(list, entry => entry.Path == "/p/P1.csproj");
+    }
+
+    [Fact]
+    public void ThePathComparisonIsCaseInsensitiveOnWindowsAndMacAndSensitiveElsewhere()
+    {
+        StringComparison expected = OperatingSystem.IsWindows() || OperatingSystem.IsMacOS() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+
+        Assert.Equal(expected, EditorDataPaths.PathComparison);
+        Assert.Equal(OperatingSystem.IsWindows() || OperatingSystem.IsMacOS(), EditorDataPaths.PathsAreCaseInsensitive);
+    }
+
+    [Fact]
     public void PinnedEntriesAreNeverDropped()
     {
         RecentProjects recent = Create();
