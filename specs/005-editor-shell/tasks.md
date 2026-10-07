@@ -635,7 +635,7 @@ the window, the layout and each project's session, with safe fallbacks (FR-050â€
 - [x] T071e [US5] Recent keyboard (1 unit). Test first: headless `StartPageKeyboardTests`: the search box has the focus
   when the page opens, Down moves into the list, the arrows move, Enter opens, Delete removes and Ctrl+P pins and
   unpins. Then the behaviors and commands (no key handlers in code-behind).
-- [ ] T071f [US5] Snapshots, E2E and notes. New baselines `start-page-wide`, `start-page-narrow`, each empty and with five
+- [x] T071f [US5] Snapshots, E2E and notes. New baselines `start-page-wide`, `start-page-narrow`, each empty and with five
   recent entries (one pinned, one unavailable), looked at before they are accepted; the `StartPageNewProjectTests`
   page objects follow any flow change and the class is run three times; the E5a block in implementation-notes.
 

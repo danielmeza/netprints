@@ -188,9 +188,9 @@ public sealed class RecentProjectsTileViewModelTests
         Assert.Equal(["OpenProject:/p/Week.csproj"], actions.Calls.Where(call => call.StartsWith("OpenProject", StringComparison.Ordinal)));
 
         tile.TogglePinSelectedCommand.Execute(null);
-        Assert.True(tile.Items[1].Pinned);
+        Assert.True(tile.Items.Single(item => item.Path == "/p/Week.csproj").Pinned);
+        Assert.Equal("/p/Week.csproj", tile.SelectedItem?.Path);
 
-        tile.SelectedItem = tile.Items[1];
         tile.RemoveSelectedCommand.Execute(null);
         Assert.DoesNotContain(tile.Items, item => item.Path == "/p/Week.csproj");
         Assert.NotNull(tile.SelectedItem);
