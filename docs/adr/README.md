@@ -32,3 +32,4 @@ instead.
 - [0019: CI runs one job per test project, and a Windows job checks the CLI](0019-ci-test-matrix-and-windows-cli-leg.md)
 - [0020: One contribution registry drives the editor's commands, panels and menus](0020-editor-contribution-registry.md)
 - [0021: Editor icons come from one vector family, Fluent UI System Icons, named by icon id](0021-editor-icon-family-and-icon-ids.md)
+- [0022: A pre-release editor build writes the latest released SDK version](0022-sdk-version-written-by-pre-release-builds.md)

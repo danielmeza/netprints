@@ -23,6 +23,9 @@ namespace NetPrints.Editor.Hosting;
 /// </summary>
 internal sealed class ProjectLoader : IDisposable
 {
+    /// <summary>The project folder has graph files, but the project system loaded none.</summary>
+    private const string NoGraphsLoaded = "NPE001";
+
     private readonly EditorContext context;
     private readonly ShellViewModel shell;
     private readonly SampleCatalog samples = SampleCatalog.Bundled;
@@ -242,6 +245,37 @@ internal sealed class ProjectLoader : IDisposable
         }
     }
 
+    /// <summary>The snapshot's error messages (a failed restore above all), and a note when graph files exist but none was loaded.</summary>
+    private static IEnumerable<DocumentIssue> SnapshotIssues(ProjectSnapshot snapshot)
+    {
+        DocumentId projectId = new(Path.GetFileName(snapshot.ProjectFilePath));
+        foreach (ProjectMessage message in snapshot.Messages.Where(message => message.Severity == ProjectMessageSeverity.Error))
+        {
+            string text = message.Message.Trim();
+            if (string.Equals(message.Code, ProjectMessage.RestoreFailed, StringComparison.Ordinal))
+            {
+                ProjectReferenceInfo? sdk = snapshot.DeclaredReferences.FirstOrDefault(reference => reference.Kind == DeclaredReferenceKind.Package
+                    && string.Equals(reference.Include, "NetPrints.Sdk", StringComparison.Ordinal));
+                text = $"{sdk?.Include ?? "NetPrints.Sdk"} {sdk?.Version} could not be restored: check the network or the package source, then reopen the project. "
+                    + $"Its graphs are not loaded until it is.\n{text}";
+            }
+
+            yield return new DocumentIssue(DocumentIssueSeverity.Error, message.Code, text, projectId);
+        }
+
+        if (snapshot.GraphFiles.Count == 0 && HasGraphFiles(Path.GetDirectoryName(snapshot.ProjectFilePath)))
+        {
+            yield return new DocumentIssue(DocumentIssueSeverity.Error, NoGraphsLoaded,
+                "The project folder has graph files, but no graphs were loaded: the project's NetPrints.Sdk is probably missing (see the restore message above, if any).", projectId);
+        }
+    }
+
+    private static bool HasGraphFiles(string? directory) =>
+        directory is not null && Directory.Exists(directory)
+        && Directory.EnumerateFiles(directory, "*.netpc.json", new EnumerationOptions { RecurseSubdirectories = true, IgnoreInaccessible = true })
+            .Any(file => !file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+                && !file.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal));
+
     private async Task CopyAndOpenSampleAsync(SampleDescriptor sample, string location, string target, string errorTitle)
     {
         string csproj;
@@ -329,7 +363,7 @@ internal sealed class ProjectLoader : IDisposable
                 }
 
                 project = loaded.Project;
-                issues = [.. new[] { notTrusted, unknownProfile }.OfType<DocumentIssue>(), .. loaded.Issues, .. recovery.Issues];
+                issues = [.. new[] { notTrusted, unknownProfile }.OfType<DocumentIssue>(), .. SnapshotIssues(snapshot), .. loaded.Issues, .. recovery.Issues];
             }
 
             shell.StatusBar.Show($"Loaded project {project.Name}", TimeSpan.FromSeconds(5));

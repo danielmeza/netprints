@@ -1,13 +1,20 @@
+using System.Text.RegularExpressions;
+using NetPrints.Editor.Hosting;
+
 namespace NetPrints.Editor.StartPage;
 
 /// <summary>The samples bundled with the editor, and the copy of one to a folder the user chose.</summary>
 /// <param name="root">The folder that holds one folder per sample.</param>
-internal sealed class SampleCatalog(string root)
+/// <param name="sdkVersion">The <c>NetPrints.Sdk</c> version a copy references; <see langword="null"/> keeps the sample's own.</param>
+internal sealed partial class SampleCatalog(string root, string? sdkVersion = null)
 {
     private const string CompiledPrefix = "Compiled_";
 
+    [GeneratedRegex("""(?<=<PackageReference\s+Include="NetPrints\.Sdk"\s+Version=")[^"]*""", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
+    private static partial Regex SdkVersionPattern();
+
     /// <summary>Gets the catalog of the samples next to the running editor.</summary>
-    public static SampleCatalog Bundled => new(Path.Combine(AppContext.BaseDirectory, "samples"));
+    public static SampleCatalog Bundled => new(Path.Combine(AppContext.BaseDirectory, "samples"), EditorSdkVersion.Resolve(typeof(SampleCatalog).Assembly));
 
     /// <summary>Gets the samples, by name.</summary>
     public IReadOnlyList<SampleDescriptor> Samples
@@ -47,17 +54,24 @@ internal sealed class SampleCatalog(string root)
             throw new IOException($"'{target}' is not empty. Choose an empty or new folder.");
         }
 
-        return Task.Run(() => Copy(sample, target, cancellationToken), cancellationToken);
+        return Task.Run(() => Copy(sample, target, sdkVersion, cancellationToken), cancellationToken);
     }
 
-    private static string Copy(SampleDescriptor sample, string target, CancellationToken cancellationToken)
+    private static string Copy(SampleDescriptor sample, string target, string? sdkVersion, CancellationToken cancellationToken)
     {
         bool created = !Directory.Exists(target);
         try
         {
             Directory.CreateDirectory(target);
             CopyFolder(sample.Directory, target, cancellationToken);
-            return Path.Combine(target, sample.ProjectFileName);
+            string project = Path.Combine(target, sample.ProjectFileName);
+            if (sdkVersion is not null)
+            {
+                string text = File.ReadAllText(project);
+                File.WriteAllText(project, SdkVersionPattern().Replace(text, sdkVersion));
+            }
+
+            return project;
         }
         catch
         {

@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using NetPrints.Editor.Hosting;
 using NetPrints.Editor.StartPage;
 using NetPrints.Testing;
 
@@ -126,13 +127,41 @@ public sealed class SampleCatalogTests : IDisposable
     }
 
     [Fact]
-    public async Task ACopyOfTheBundledSampleHasTheSameFiles()
+    public async Task ACopyOfTheBundledSampleHasTheSameFilesButTheProjectFile()
     {
         SampleCatalog catalog = SampleCatalog.Bundled;
         string target = Path.Combine(TempRoot(), "HelloWorld");
 
         await catalog.CopyAsync(catalog.Samples.Single(sample => sample.Name == "HelloWorld"), target, Token);
 
-        Assert.All(ExpectedHashes, entry => Assert.Equal(entry.Value, Hash(Path.Combine(target, entry.Key))));
+        Assert.All(ExpectedHashes.Where(entry => entry.Key != "HelloWorld.csproj"), entry => Assert.Equal(entry.Value, Hash(Path.Combine(target, entry.Key))));
+    }
+
+    [Fact]
+    public async Task ACopyOfTheBundledSampleReferencesTheEditorsSdkVersion()
+    {
+        SampleCatalog catalog = SampleCatalog.Bundled;
+        string target = Path.Combine(TempRoot(), "HelloWorld");
+
+        string csproj = await catalog.CopyAsync(catalog.Samples.Single(sample => sample.Name == "HelloWorld"), target, Token);
+
+        string version = EditorSdkVersion.Resolve(typeof(SampleCatalog).Assembly);
+        Assert.Contains($"Include=\"NetPrints.Sdk\" Version=\"{version}\"", await File.ReadAllTextAsync(csproj, Token), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task CopyingSetsOnlyTheSdkReferenceVersionAndLeavesTheSourceAlone()
+    {
+        string root = TempRoot();
+        string source = Path.Combine(root, "samples", "Demo");
+        Directory.CreateDirectory(source);
+        const string Project = "<Project>\n  <PackageReference Include=\"Other\" Version=\"0.1.0\" />\n  <PackageReference Include=\"NetPrints.Sdk\" Version=\"0.1.0\" Condition=\"'$(X)' != 'true'\" />\n</Project>";
+        File.WriteAllText(Path.Combine(source, "Demo.csproj"), Project);
+        var catalog = new SampleCatalog(Path.Combine(root, "samples"), "9.9.9-rc.1");
+
+        string csproj = await catalog.CopyAsync(catalog.Samples.Single(), Path.Combine(root, "out"), Token);
+
+        Assert.Equal(Project.Replace("Sdk\" Version=\"0.1.0", "Sdk\" Version=\"9.9.9-rc.1", StringComparison.Ordinal), await File.ReadAllTextAsync(csproj, Token));
+        Assert.Equal(Project, File.ReadAllText(Path.Combine(source, "Demo.csproj")));
     }
 }

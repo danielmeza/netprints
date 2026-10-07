@@ -268,19 +268,40 @@ internal sealed class EditorServices : IDisposable
 }
 
 /// <summary>
-/// Derives the editor's own version for <see cref="ProjectSystemOptions.NetPrintsSdkVersion"/>
-/// (release-and-docs.md, "Editor version").
+/// Derives the <c>NetPrints.Sdk</c> version a new project or sample copy references
+/// (release-and-docs.md, "Editor version"; ADR-0022).
 /// </summary>
 internal static class EditorSdkVersion
 {
     /// <summary>Used when the assembly carries no informational version, e.g. run without MinVer having stamped one.</summary>
     internal const string Fallback = "0.1.0-dev";
 
-    /// <summary>The editor assembly's informational version, stripped of its <c>+&lt;sha&gt;</c> suffix, or <see cref="Fallback"/>.</summary>
+    /// <summary>The assembly metadata key the build stamps with the latest released version (the nearest <c>v*</c> git tag).</summary>
+    internal const string LatestReleaseKey = "NetPrints.LatestRelease";
+
+    /// <summary>The version to write: the editor's own when it is a release, else the latest published one.</summary>
     internal static string Resolve(Assembly assembly)
     {
-        string? informational = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
-        return informational is null ? Fallback : StripBuildMetadata(informational);
+        string? latest = assembly.GetCustomAttributes<AssemblyMetadataAttribute>()
+            .FirstOrDefault(attribute => string.Equals(attribute.Key, LatestReleaseKey, StringComparison.Ordinal))?.Value;
+        return Choose(assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion, latest);
+    }
+
+    /// <summary>
+    /// A build between releases (a pre-release version other than the latest tag) is not on nuget.org, so it writes
+    /// <paramref name="latestRelease"/>; a release writes its own version.
+    /// </summary>
+    internal static string Choose(string? informationalVersion, string? latestRelease)
+    {
+        string? own = informationalVersion is null ? null : StripBuildMetadata(informationalVersion);
+        if (string.IsNullOrWhiteSpace(latestRelease))
+        {
+            return own ?? Fallback;
+        }
+
+        return own is null || (own.Contains('-', StringComparison.Ordinal) && !string.Equals(own, latestRelease, StringComparison.Ordinal))
+            ? latestRelease
+            : own;
     }
 
     /// <summary>Strips MinVer's <c>+&lt;sha&gt;</c> build-metadata suffix, if present.</summary>

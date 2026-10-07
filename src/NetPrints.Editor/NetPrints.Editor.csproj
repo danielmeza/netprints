@@ -62,6 +62,21 @@
     <EmbeddedResource Include="Graph\GridShader.sksl" LogicalName="NetPrints.Editor.Graph.GridShader.sksl" />
   </ItemGroup>
 
+  <!-- ADR-0022: the latest released version (nearest v* tag) is stamped into the assembly, so a build
+       between releases writes a version that exists on nuget.org. No git or no tag: nothing is stamped. -->
+  <Target Name="StampLatestRelease" BeforeTargets="GetAssemblyAttributes;GenerateAssemblyInfo">
+    <Exec Command="git describe --tags --abbrev=0 --match &quot;v[0-9]*&quot;" WorkingDirectory="$(MSBuildProjectDirectory)" ConsoleToMSBuild="true" IgnoreExitCode="true" StandardErrorImportance="low" IgnoreStandardErrorWarningFormat="true" StandardOutputImportance="low">
+      <Output TaskParameter="ConsoleOutput" PropertyName="_LatestReleaseTag" />
+      <Output TaskParameter="ExitCode" PropertyName="_LatestReleaseExit" />
+    </Exec>
+    <PropertyGroup>
+      <_LatestRelease Condition="'$(_LatestReleaseExit)' == '0'">$([System.Text.RegularExpressions.Regex]::Replace('$(_LatestReleaseTag.Trim())', '^v', ''))</_LatestRelease>
+    </PropertyGroup>
+    <ItemGroup Condition="'$(_LatestRelease)' != ''">
+      <AssemblyMetadata Include="NetPrints.LatestRelease" Value="$(_LatestRelease)" />
+    </ItemGroup>
+  </Target>
+
   <ItemGroup>
     <InternalsVisibleTo Include="NetPrints.Editor.Tests" />
     <InternalsVisibleTo Include="NetPrints.Editor.UITests" />
