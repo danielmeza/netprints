@@ -5,7 +5,7 @@ using NetPrints.Editor.State;
 
 namespace NetPrints.Editor.Contributions.BuiltIn;
 
-/// <summary>The built-in dashboard tiles of the start page, in order: recent, open, new, samples, what's new.</summary>
+/// <summary>The built-in dashboard tiles of the start page, in order: recent, open, new, samples, learn, what's new.</summary>
 public static class StartPageContributions
 {
     /// <summary>Registers the tiles.</summary>
@@ -29,7 +29,10 @@ public static class StartPageContributions
             ContributionIds.TilePrefix + "samples", "Samples", 3,
             services => new SamplesTileViewModel(services.GetService(typeof(SampleCatalog)) as SampleCatalog ?? SampleCatalog.Bundled, StartPageServices.Require<IProjectActions>(services))));
         registry.AddDashboardTile(new DashboardTileDescriptor(
-            ContributionIds.TilePrefix + "whatsNew", "What's new", 4,
+            ContributionIds.TilePrefix + "learn", "Learn", 4,
+            services => new LearnTileViewModel(StartPageServices.Require<IProjectActions>(services), services.GetService(typeof(IUrlLauncher)) as IUrlLauncher ?? new ShellUrlLauncher())));
+        registry.AddDashboardTile(new DashboardTileDescriptor(
+            ContributionIds.TilePrefix + "whatsNew", "What's new", 5,
             services => new WhatsNewTileViewModel(WhatsNewResource.Read(), services.GetService(typeof(IUrlLauncher)) as IUrlLauncher ?? new ShellUrlLauncher())));
     }
 }

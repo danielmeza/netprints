@@ -69,12 +69,11 @@ public sealed class WhatsNewRendererTests
         Assert.Empty(WhatsNewRenderer.Parse(markdown));
 
     [Fact]
-    public void TheBundledNotesHaveAHeadingBulletsAndALinkToTheReleasesPage()
+    public void TheBundledNotesHaveAHeadingAndBullets()
     {
         IReadOnlyList<WhatsNewBlock> blocks = WhatsNewRenderer.Parse(WhatsNewResource.Read());
 
         Assert.IsType<WhatsNewHeading>(blocks[0]);
         Assert.Contains(blocks, block => block is WhatsNewBullet);
-        Assert.Contains(blocks.SelectMany(block => block.Segments), segment => segment is WhatsNewLink { Url: WhatsNewTileViewModel.ReleasesUrl });
     }
 }

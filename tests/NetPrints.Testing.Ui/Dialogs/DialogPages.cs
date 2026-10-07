@@ -93,3 +93,9 @@ public sealed class SampleTargetDialogPage(IUiDriver driver) : UiElement(driver,
     public UiElement ChangeButton => Find(AutomationIds.SampleTargetChangeButton);
     public UiElement CancelButton => Find(AutomationIds.SampleTargetCancelButton);
 }
+
+/// <summary>Screen object of the keyboard shortcuts sheet.</summary>
+public sealed class KeyboardShortcutsDialogPage(IUiDriver driver) : UiElement(driver, new AutomationQuery(AutomationIds.ShortcutsDialog))
+{
+    public UiElement CloseButton => Find(AutomationIds.ShortcutsCloseButton);
+}

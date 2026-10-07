@@ -1,0 +1,30 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:sp="clr-namespace:NetPrints.Editor.StartPage"
+             x:Class="NetPrints.Editor.StartPage.LearnTileView"
+             x:DataType="sp:LearnTileViewModel">
+  <!-- The Learn card: the guide, the keyboard shortcuts sheet, the documentation and the release notes. -->
+  <Border Classes="card" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageLearn}">
+    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+      <Border Classes="card-icon"><mi:MaterialIcon Kind="SchoolOutline" /></Border>
+      <StackPanel Grid.Column="1" Spacing="8">
+        <StackPanel>
+          <TextBlock FontWeight="SemiBold" Text="Learn" />
+          <TextBlock Classes="secondary" TextWrapping="Wrap" Text="Guides, shortcuts and what changed." />
+        </StackPanel>
+        <WrapPanel>
+          <Button Margin="0,0,8,8" Content="Getting started guide" Command="{Binding OpenGuideCommand}"
+                  AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageLearnGuide}" />
+          <Button Margin="0,0,8,8" Content="Keyboard shortcuts" Command="{Binding ShowKeyboardShortcutsCommand}"
+                  AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageLearnShortcuts}" />
+          <Button Margin="0,0,8,8" Content="Documentation" Command="{Binding OpenDocumentationCommand}"
+                  AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageLearnDocs}" />
+          <Button Margin="0,0,8,8" Content="Release notes" Command="{Binding OpenReleaseNotesCommand}"
+                  AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageReleasesLink}" />
+        </WrapPanel>
+      </StackPanel>
+    </Grid>
+  </Border>
+</UserControl>

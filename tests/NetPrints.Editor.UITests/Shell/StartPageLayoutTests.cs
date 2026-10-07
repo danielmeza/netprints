@@ -11,6 +11,7 @@ public class StartPageLayoutTests
     private const int WideWidth = 1600;
     private const int NarrowWidth = 900;
     private const int MaxContentWidth = 1200;
+    private const int MaxWhatsNewWidth = 760;
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
@@ -102,6 +103,17 @@ public class StartPageLayoutTests
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task WhatsNewStopsAtItsMaximumWidthOnAWideWindow()
+    {
+        using var rig = StartPageRig.Create(WideWidth, 1000);
+
+        UiBounds notes = await BoundsAsync(rig, AutomationIds.StartPageWhatsNew);
+
+        Assert.True(notes.Rect.Width <= MaxWhatsNewWidth + 1, $"width {notes.Rect.Width}");
+        Assert.True(notes.Rect.Width > 300);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task TheReopenCheckBoxSavesTheStartupSettingBothWays()
     {
         var store = new MemoryStateStore();
@@ -123,6 +135,7 @@ public class StartPageLayoutTests
         {
             AutomationIds.StartPageRoot, AutomationIds.StartPageRecentSearch, AutomationIds.StartPageRecentList, AutomationIds.StartPageOpenButton,
             AutomationIds.StartPageNewButton, AutomationIds.StartPageReopenLast, AutomationIds.StartPageSamplesList, AutomationIds.StartPageSampleOpen, AutomationIds.StartPageReleasesLink,
+            AutomationIds.StartPageLearn, AutomationIds.StartPageLearnGuide, AutomationIds.StartPageLearnShortcuts, AutomationIds.StartPageLearnDocs,
         })
         {
             Assert.True(await rig.Element(id).ExistsAsync(Token), id);

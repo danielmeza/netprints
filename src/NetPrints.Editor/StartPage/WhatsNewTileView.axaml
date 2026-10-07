@@ -4,7 +4,7 @@
              xmlns:sp="clr-namespace:NetPrints.Editor.StartPage"
              x:Class="NetPrints.Editor.StartPage.WhatsNewTileView"
              x:DataType="sp:WhatsNewTileViewModel">
-  <!-- The what's new tile: the bundled notes as headings, bullets, paragraphs and links, then the link to the releases page. -->
+  <!-- The what's new tile: the bundled notes as headings, bullets, paragraphs and links, at most 760 DIP wide. -->
   <UserControl.DataTemplates>
     <DataTemplate DataType="sp:WhatsNewText" x:DataType="sp:WhatsNewText">
       <TextBlock Text="{Binding Text}" TextWrapping="Wrap" />
@@ -38,15 +38,11 @@
       </ItemsControl>
     </DataTemplate>
   </UserControl.DataTemplates>
-  <StackPanel Spacing="8" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageWhatsNew}">
-    <ItemsControl ItemsSource="{Binding Blocks}">
-      <ItemsControl.ItemsPanel>
-        <ItemsPanelTemplate>
-          <StackPanel Spacing="6" />
-        </ItemsPanelTemplate>
-      </ItemsControl.ItemsPanel>
-    </ItemsControl>
-    <Button HorizontalAlignment="Left" Content="Release notes on GitHub" Command="{Binding OpenLinkCommand}" CommandParameter="{Binding ReleasesAddress}"
-            AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageReleasesLink}" />
-  </StackPanel>
+  <ItemsControl ItemsSource="{Binding Blocks}" MaxWidth="760" HorizontalAlignment="Left" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageWhatsNew}">
+    <ItemsControl.ItemsPanel>
+      <ItemsPanelTemplate>
+        <StackPanel Spacing="6" />
+      </ItemsPanelTemplate>
+    </ItemsControl.ItemsPanel>
+  </ItemsControl>
 </UserControl>

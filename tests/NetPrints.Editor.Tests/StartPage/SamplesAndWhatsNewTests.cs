@@ -178,9 +178,17 @@ public sealed class SamplesAndWhatsNewTests : IDisposable
         Assert.IsType<WhatsNewHeading>(tile.Blocks[0]);
 
         tile.OpenLinkCommand.Execute("https://example.com/a");
-        tile.OpenLinkCommand.Execute(WhatsNewTileViewModel.ReleasesUrl);
 
-        Assert.Equal(["https://example.com/a", "https://github.com/danielmeza/netprints/releases"], launcher.Opened);
+        Assert.Equal(["https://example.com/a"], launcher.Opened);
+    }
+
+    [Fact]
+    public void TheBundledNotesDoNotRepeatTheReleaseNotesLinkTheLearnCardHas()
+    {
+        string notes = WhatsNewResource.Read();
+
+        Assert.DoesNotContain("/releases", notes, StringComparison.Ordinal);
+        Assert.DoesNotContain("## More", notes, StringComparison.Ordinal);
     }
 
     [Fact]

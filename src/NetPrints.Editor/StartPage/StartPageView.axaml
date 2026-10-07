@@ -14,6 +14,9 @@
     <DataTemplate DataType="sp:SamplesTileViewModel" x:DataType="sp:SamplesTileViewModel">
       <sp:SamplesTileView />
     </DataTemplate>
+    <DataTemplate DataType="sp:LearnTileViewModel" x:DataType="sp:LearnTileViewModel">
+      <sp:LearnTileView />
+    </DataTemplate>
     <DataTemplate DataType="sp:WhatsNewTileViewModel" x:DataType="sp:WhatsNewTileViewModel">
       <sp:WhatsNewTileView />
     </DataTemplate>
@@ -133,6 +136,7 @@
               </ItemsControl.ItemsPanel>
             </ItemsControl>
             <ContentControl Content="{Binding Samples}" />
+            <ContentControl Content="{Binding Learn}" />
           </StackPanel>
           <StackPanel x:Name="RecentSection">
             <ContentControl Content="{Binding Recent}" />

@@ -609,9 +609,25 @@ public static class AutomationIds
     /// </summary>
     public const string StartPageWhatsNew = "StartPage.WhatsNew";
     /// <summary>
-    /// Automation id for the what's new tile's link to the releases page.
+    /// Automation id for the Learn card's link to the release notes.
     /// </summary>
     public const string StartPageReleasesLink = "StartPage.ReleasesLink";
+    /// <summary>
+    /// Automation id for the Learn card.
+    /// </summary>
+    public const string StartPageLearn = "StartPage.Learn";
+    /// <summary>
+    /// Automation id for the Learn card's link to the getting started guide.
+    /// </summary>
+    public const string StartPageLearnGuide = "StartPage.LearnGuide";
+    /// <summary>
+    /// Automation id for the Learn card's link to the keyboard shortcuts sheet.
+    /// </summary>
+    public const string StartPageLearnShortcuts = "StartPage.LearnShortcuts";
+    /// <summary>
+    /// Automation id for the Learn card's link to the documentation.
+    /// </summary>
+    public const string StartPageLearnDocs = "StartPage.LearnDocs";
     /// <summary>
     /// Automation id for the start page's centred content column.
     /// </summary>

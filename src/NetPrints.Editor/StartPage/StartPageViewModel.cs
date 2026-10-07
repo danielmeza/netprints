@@ -58,6 +58,9 @@ internal sealed partial class StartPageViewModel : DocumentViewModel
     /// <summary>Gets the samples tile, or null.</summary>
     public SamplesTileViewModel? Samples => Tiles.OfType<SamplesTileViewModel>().FirstOrDefault();
 
+    /// <summary>Gets the Learn tile, or null.</summary>
+    public LearnTileViewModel? Learn => Tiles.OfType<LearnTileViewModel>().FirstOrDefault();
+
     /// <summary>Gets the what's new tile, or null.</summary>
     public WhatsNewTileViewModel? WhatsNew => Tiles.OfType<WhatsNewTileViewModel>().FirstOrDefault();
 
@@ -65,7 +68,7 @@ internal sealed partial class StartPageViewModel : DocumentViewModel
     public IReadOnlyList<WhatsNewTileViewModel> WhatsNewTiles => [.. Tiles.OfType<WhatsNewTileViewModel>().Take(1)];
 
     /// <summary>Gets the tiles an extension registered, which the page shows below the get started cards.</summary>
-    public IReadOnlyList<object> Others => [.. Tiles.Where(tile => tile is not (RecentProjectsTileViewModel or OpenProjectTileViewModel or NewProjectTileViewModel or SamplesTileViewModel or WhatsNewTileViewModel))];
+    public IReadOnlyList<object> Others => [.. Tiles.Where(tile => tile is not (RecentProjectsTileViewModel or OpenProjectTileViewModel or NewProjectTileViewModel or SamplesTileViewModel or LearnTileViewModel or WhatsNewTileViewModel))];
 
     /// <summary>Gets the product version shown beside the title.</summary>
     public string Version => ProductVersion;

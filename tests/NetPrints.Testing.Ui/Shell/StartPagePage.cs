@@ -13,6 +13,16 @@ public sealed class StartPagePage(IUiDriver driver) : UiElement(driver, new Auto
 
     public UiElement Search => Find(AutomationIds.StartPageRecentSearch);
 
+    public UiElement ReopenLast => Find(AutomationIds.StartPageReopenLast);
+
+    public UiElement LearnGuide => Find(AutomationIds.StartPageLearnGuide);
+
+    public UiElement LearnShortcuts => Find(AutomationIds.StartPageLearnShortcuts);
+
+    public UiElement LearnDocs => Find(AutomationIds.StartPageLearnDocs);
+
+    public UiElement LearnReleaseNotes => Find(AutomationIds.StartPageReleasesLink);
+
     public UiElement Empty => Find(AutomationIds.StartPageRecentEmpty);
 
     /// <summary>A recent row by project name.</summary>

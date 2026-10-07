@@ -58,7 +58,7 @@ public sealed class StartPageViewModelTests : IDisposable
     public void TheBuiltInTilesAreRegisteredInOrder()
     {
         Assert.Equal(
-            ["netprints.tile.recent", "netprints.tile.open", "netprints.tile.new", "netprints.tile.samples", "netprints.tile.whatsNew"],
+            ["netprints.tile.recent", "netprints.tile.open", "netprints.tile.new", "netprints.tile.samples", "netprints.tile.learn", "netprints.tile.whatsNew"],
             BuiltInRegistry().DashboardTiles.OrderBy(tile => tile.Order).Select(tile => tile.Id));
     }
 
@@ -70,7 +70,7 @@ public sealed class StartPageViewModelTests : IDisposable
         using var page = new StartPageViewModel(NewShell(registry), ServicesFor(actions, null));
 
         Assert.Equal(
-            [typeof(string), typeof(RecentProjectsTileViewModel), typeof(OpenProjectTileViewModel), typeof(NewProjectTileViewModel), typeof(SamplesTileViewModel), typeof(WhatsNewTileViewModel)],
+            [typeof(string), typeof(RecentProjectsTileViewModel), typeof(OpenProjectTileViewModel), typeof(NewProjectTileViewModel), typeof(SamplesTileViewModel), typeof(LearnTileViewModel), typeof(WhatsNewTileViewModel)],
             page.Tiles.Select(tile => tile.GetType()));
         Assert.Equal(DocumentId.StartPage, page.Id);
     }
@@ -85,9 +85,53 @@ public sealed class StartPageViewModelTests : IDisposable
         Assert.IsType<RecentProjectsTileViewModel>(page.Recent);
         Assert.Equal([typeof(NewProjectTileViewModel), typeof(OpenProjectTileViewModel)], page.GetStarted.Select(card => card.GetType()).Order(Comparer<Type>.Create((a, b) => string.CompareOrdinal(a.Name, b.Name))));
         Assert.IsType<SamplesTileViewModel>(page.Samples);
+        Assert.IsType<LearnTileViewModel>(page.Learn);
         Assert.IsType<WhatsNewTileViewModel>(page.WhatsNew);
         Assert.Equal(["extra"], page.Others);
         Assert.False(string.IsNullOrWhiteSpace(page.Version));
+    }
+
+    private sealed class RecordingLauncher : IUrlLauncher
+    {
+        public List<string> Opened { get; } = [];
+
+        public void Open(string url) => Opened.Add(url);
+    }
+
+    [Fact]
+    public void TheLearnCardOpensTheGuideTheDocumentationAndTheReleaseNotesThroughTheLauncher()
+    {
+        var launcher = new RecordingLauncher();
+        var tile = new LearnTileViewModel(actions, launcher);
+
+        tile.OpenGuideCommand.Execute(null);
+        tile.OpenDocumentationCommand.Execute(null);
+        tile.OpenReleaseNotesCommand.Execute(null);
+
+        Assert.Equal(
+            ["https://danielmeza.github.io/netprints/guide/projects", "https://danielmeza.github.io/netprints/", "https://github.com/danielmeza/netprints/releases"],
+            launcher.Opened);
+        Assert.Equal([LearnLinks.Guide, LearnLinks.Documentation, LearnLinks.ReleaseNotes], launcher.Opened);
+        Assert.Empty(actions.Calls);
+    }
+
+    [Fact]
+    public async Task TheLearnCardShowsTheKeyboardShortcutsSheetWithoutTheUnloadPromptOrABrowser()
+    {
+        var launcher = new RecordingLauncher();
+        var tile = new LearnTileViewModel(actions, launcher);
+
+        await tile.ShowKeyboardShortcutsCommand.ExecuteAsync(null);
+
+        Assert.Equal(["ShowKeyboardShortcuts"], actions.Calls);
+        Assert.Empty(launcher.Opened);
+    }
+
+    [Fact]
+    public void TheLearnAddressesAreAbsoluteHttpsAddresses()
+    {
+        Assert.All([LearnLinks.Guide, LearnLinks.Documentation, LearnLinks.ReleaseNotes],
+            address => Assert.True(Uri.TryCreate(address, UriKind.Absolute, out Uri? uri) && uri.Scheme == Uri.UriSchemeHttps, address));
     }
 
     [Fact]

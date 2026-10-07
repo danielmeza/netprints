@@ -37,14 +37,25 @@ With no project open the document area shows the **Start** page (**Help › Star
   stays in the list marked "(unavailable)" until you remove it.
 - **Open folder or project…** opens a `.csproj`, or a folder that holds exactly one. A start-up argument that is not
   one of those leaves the start page with a message naming the path.
-- **New project…** asks for a template, a project name (also its namespace) and an empty or new folder, checks them
-  before writing anything, creates the project and opens it. **Console app** creates a project with a `Program`
-  class graph that has an empty `public static void Main()`, so it builds and runs at once; **Class library**
-  creates a project with no classes yet. If creating fails, the folder it created is removed and the dialog shows why.
-- **Samples** copies a bundled sample into a folder you choose (inside a folder named after the sample) and opens the
-  copy; the bundled files are never changed. A built copy needs the `NetPrints.Sdk` package version its project file
-  names.
-- **What's new** shows the notes of the running version and a link to the release notes on GitHub.
+- **New project…** asks for a template, a project name (also its namespace) and a location, checks them before writing
+  anything, creates the project in `<location>/<name>` and opens it. The dialog shows that folder, and rejects one that
+  already exists and is not empty. The location is remembered for the next time and starts at the `NetPrints` folder
+  in your documents folder. **Console app** creates a project with a `Program` class graph that has an empty
+  `public static void Main()`, so it builds and runs at once; **Class library** creates a project with no classes
+  yet. If creating fails, the folder it created is removed and the dialog shows why.
+- **Samples** opens a bundled sample in one click: after one confirmation that names the folder, the sample is copied
+  to `<location>/<SampleName>` (a number is added when that folder exists) and the copy opens; **Change…** picks
+  another location first, and the next sample and New project start there. The bundled files are never changed. A
+  built copy needs the `NetPrints.Sdk` package version its project file names.
+- **Learn** links the getting started guide, the keyboard shortcuts sheet, the documentation and the release notes.
+- **What's new** shows the notes of the running version. It starts open when you have not seen this version's notes yet.
+- **Reopen the last project when NetPrints starts** (the check box beside the title) makes the editor open the most
+  recently opened project instead of showing the start page. A project passed on the command line always wins, and if
+  the last project is gone or fails to open, the start page shows with the reason.
+
+Drop a `.csproj` file, or a folder that holds exactly one, anywhere on the editor window to open it; the editor asks
+about unsaved changes first. Anything else is not opened: the start page shows why, or the status bar does while a
+project is open.
 
 Opening or creating a project closes the start page; closing the project brings it back.
 
