@@ -28,6 +28,7 @@ internal sealed class LayoutSaver : IDisposable
         this.delay = delay;
         timer = time.CreateTimer(_ => this.dispatcher.Post(Flush), null, Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         adapter.LayoutChanged += OnLayoutChanged;
+        adapter.PanelsSuspending += OnPanelsSuspending;
     }
 
     /// <summary>Saves now, if a change is pending.</summary>
@@ -42,7 +43,7 @@ internal sealed class LayoutSaver : IDisposable
     /// <summary>Saves now, pending change or not: what a splitter drag moved raises no change.</summary>
     public void SaveNow()
     {
-        if (disposed)
+        if (disposed || adapter.PanelsSuspended)
         {
             return;
         }
@@ -64,12 +65,13 @@ internal sealed class LayoutSaver : IDisposable
     {
         disposed = true;
         adapter.LayoutChanged -= OnLayoutChanged;
+        adapter.PanelsSuspending -= OnPanelsSuspending;
         timer.Dispose();
     }
 
     private void OnLayoutChanged(object? sender, EventArgs e)
     {
-        if (disposed)
+        if (disposed || adapter.PanelsSuspended)
         {
             return;
         }
@@ -77,4 +79,6 @@ internal sealed class LayoutSaver : IDisposable
         pending = true;
         timer.Change(delay, Timeout.InfiniteTimeSpan);
     }
+
+    private void OnPanelsSuspending(object? sender, EventArgs e) => Flush();
 }

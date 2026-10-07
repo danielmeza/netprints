@@ -20,6 +20,9 @@ public sealed partial class DockShellAdapter : ObservableObject, IShell, IShellL
     private readonly Func<DocumentId, DocumentViewModel?> openDocument;
     private readonly ILogger logger;
     private readonly Dictionary<DocumentViewModel, PropertyChangedEventHandler> titleWatchers = [];
+    private List<string> suspendedPanels = [];
+    private Dictionary<string, string> suspendedActive = [];
+    private Dictionary<string, double> suspendedProportions = [];
 
     /// <summary>Creates the adapter with the default layout.</summary>
     /// <param name="shell">The shell state the layout keeps in step.</param>
@@ -53,6 +56,9 @@ public sealed partial class DockShellAdapter : ObservableObject, IShell, IShellL
 
     /// <summary>Raised when the layout changed in a way worth saving: a tab or panel moved, opened, closed, hidden or activated, a window came or went, or the layout was replaced.</summary>
     internal event EventHandler? LayoutChanged;
+
+    /// <summary>Raised just before the tool panels are hidden for lack of a project, while the layout still has them.</summary>
+    internal event EventHandler? PanelsSuspending;
 
     /// <inheritdoc/>
     public IProjectActions ProjectActions { get; }
@@ -225,6 +231,31 @@ public sealed partial class DockShellAdapter : ObservableObject, IShell, IShellL
         titleWatchers.Clear();
     }
 
+    /// <summary>Gets a value indicating whether the tool panels are hidden because no project is open.</summary>
+    internal bool PanelsSuspended { get; private set; }
+
+    /// <summary>Hides every tool panel while no project is open, or brings the ones it hid back to their docks.</summary>
+    /// <param name="suspended">Whether the panels are hidden.</param>
+    internal void SetPanelsSuspended(bool suspended)
+    {
+        if (suspended == PanelsSuspended)
+        {
+            return;
+        }
+
+        if (suspended)
+        {
+            PanelsSuspending?.Invoke(this, EventArgs.Empty);
+            PanelsSuspended = true;
+            HideVisiblePanels();
+        }
+        else
+        {
+            PanelsSuspended = false;
+            RestoreSuspendedPanels();
+        }
+    }
+
     /// <summary>Moves a panel into a window of its own.</summary>
     /// <param name="panelId">The panel id.</param>
     internal void FloatPanel(string panelId)
@@ -289,6 +320,7 @@ public sealed partial class DockShellAdapter : ObservableObject, IShell, IShellL
             DockLeftoverDocuments(placed);
             factory.DockOrphanedPanels();
             ActivateRestored(saved.ActiveDocument);
+            HideVisiblePanelsWhileSuspended();
             SyncPanels();
         }
         finally
@@ -430,12 +462,96 @@ public sealed partial class DockShellAdapter : ObservableObject, IShell, IShellL
                 Activate(activeDocument, active);
             }
 
+            HideVisiblePanelsWhileSuspended();
             SyncPanels();
         }
         finally
         {
             factory.SuppressHoming = false;
         }
+    }
+
+    private void HideVisiblePanelsWhileSuspended()
+    {
+        if (PanelsSuspended)
+        {
+            HideVisiblePanels();
+        }
+    }
+
+    private void HideVisiblePanels()
+    {
+        List<ShellTool> visible = [.. ShellDockFactory.Walk(Layout).OfType<ShellTool>()];
+        suspendedPanels = [.. visible.Select(tool => tool.Id)];
+        suspendedActive = [];
+        foreach (ShellTool tool in visible)
+        {
+            if (tool.Owner is IDock owner && ReferenceEquals(owner.ActiveDockable, tool))
+            {
+                suspendedActive[owner.Id] = tool.Id;
+            }
+        }
+
+        List<IProportionalDock> columns = [.. ShellDockFactory.Walk(Layout).OfType<IProportionalDock>().Where(IsToolColumn)];
+        suspendedProportions = ShellDockFactory.Walk(Layout).Where(dockable => dockable is IDock && !double.IsNaN(dockable.Proportion)).ToDictionary(dockable => dockable.Id, dockable => dockable.Proportion);
+        foreach (string id in suspendedPanels)
+        {
+            HidePanel(id);
+        }
+
+        foreach (IToolDock dock in ShellDockFactory.Walk(Layout).OfType<IToolDock>())
+        {
+            dock.IsCollapsable = true;
+        }
+
+        foreach (IProportionalDock column in columns)
+        {
+            column.Proportion = 0;
+        }
+    }
+
+    private static bool IsToolColumn(IProportionalDock dock) =>
+        dock.VisibleDockables?.Where(child => child is not IProportionalDockSplitter).All(child => child is IToolDock) == true;
+
+    private void RestoreSuspendedPanels()
+    {
+        foreach (IToolDock dock in ShellDockFactory.Walk(Layout).OfType<IToolDock>())
+        {
+            dock.IsCollapsable = false;
+        }
+
+        List<IDockable> docks = [.. ShellDockFactory.Walk(Layout)];
+        foreach (IDockable column in docks.Where(dock => dock is IProportionalDock && suspendedProportions.ContainsKey(dock.Id)))
+        {
+            column.Proportion = suspendedProportions[column.Id];
+        }
+
+        foreach (string id in suspendedPanels.OrderBy(id => shell.FindPanel(id)?.Order ?? int.MaxValue))
+        {
+            if (Layout.HiddenDockables?.FirstOrDefault(hidden => hidden.Id == id) is { } hidden)
+            {
+                factory.RestoreDockable(hidden);
+            }
+        }
+
+        List<IDockable> shown = [.. ShellDockFactory.Walk(Layout)];
+        foreach ((string dockId, string toolId) in suspendedActive)
+        {
+            if (shown.FirstOrDefault(dockable => dockable.Id == toolId) is { } tool && shown.FirstOrDefault(dockable => dockable.Id == dockId) is IDock)
+            {
+                factory.SetActiveDockable(tool);
+            }
+        }
+
+        foreach (IDockable dock in shown.Where(dockable => dockable is IDock && suspendedProportions.ContainsKey(dockable.Id)))
+        {
+            dock.Proportion = suspendedProportions[dock.Id];
+        }
+
+        suspendedPanels = [];
+        suspendedActive = [];
+        suspendedProportions = [];
+        SyncPanels();
     }
 
     private void SyncPanels()

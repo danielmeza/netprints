@@ -9,6 +9,8 @@ internal sealed class MemoryStateStore : IEditorStateStore
 
     public LayoutState? Layout { get; set; }
 
+    public int LayoutSaves { get; private set; }
+
     public IReadOnlyDictionary<string, SessionState> Sessions => sessions;
 
     public WindowState? LoadWindow() => null;
@@ -19,7 +21,11 @@ internal sealed class MemoryStateStore : IEditorStateStore
 
     public LayoutState? LoadLayout() => Layout;
 
-    public void SaveLayout(LayoutState state) => Layout = state;
+    public void SaveLayout(LayoutState state)
+    {
+        LayoutSaves++;
+        Layout = state;
+    }
 
     public RecentState LoadRecent() => RecentState.Empty;
 

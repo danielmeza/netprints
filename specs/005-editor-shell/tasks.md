@@ -614,7 +614,7 @@ the window, the layout and each project's session, with safe fallbacks (FR-050�
 
 ### Batch E5a — model: sonnet — T071a–T071f — 8 units (start page redesign, layout and recent list; research R18)
 
-- [ ] T071a [US5] Tool panels hidden with no project (2 units). Test first:
+- [x] T071a [US5] Tool panels hidden with no project (2 units). Test first:
   `tests/NetPrints.Editor.UITests/Shell/NoProjectPanelsTests.cs` and `tests/NetPrints.Editor.Tests/Shell/` (layout saver):
   with no project open no tool panel is visible and the start page document is shown; opening a project brings the
   panels back to their docks (the main snapshot is unchanged); the layout file is not written while they are hidden,

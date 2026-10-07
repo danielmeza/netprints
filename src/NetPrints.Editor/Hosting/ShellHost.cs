@@ -90,7 +90,7 @@ internal sealed class ShellHost : IDisposable
         var host = new ShellHost(actions, registry, shell, adapter, invoker, window, logger, persistence);
         shell.PropertyChanged += host.OnShellChanged;
         shell.AttachPanels(adapter, invoker, context);
-        host.startPage.Sync(shell.Session is not null);
+        host.SyncProjectState();
         return host;
     }
 
@@ -141,7 +141,14 @@ internal sealed class ShellHost : IDisposable
             }
 
             persistence?.RestoreSession(Shell.Session);
-            startPage.Sync(Shell.Session is not null);
+            SyncProjectState();
         }
+    }
+
+    private void SyncProjectState()
+    {
+        bool projectOpen = Shell.Session is not null;
+        Adapter.SetPanelsSuspended(!projectOpen);
+        startPage.Sync(projectOpen);
     }
 }
