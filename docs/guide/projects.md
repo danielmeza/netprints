@@ -34,7 +34,7 @@ With no project open the document area shows the **Start** page (**Help › Star
 - **Recent projects**: the projects you opened or created, most recent first, with pinned projects at the top and at
   most 20 unpinned ones. A row opens the project; the pin button keeps it at the top; the remove button forgets it
   (the project's files are never touched). The search box filters by name or path, and a project whose file is gone
-  stays in the list marked "(unavailable)" until you remove it.
+  stays in the list marked "Not found" until you remove it.
 - **Open folder or project…** opens a `.csproj`, or a folder that holds exactly one. A start-up argument that is not
   one of those leaves the start page with a message naming the path.
 - **New project…** asks for a template, a project name (also its namespace) and a location, checks them before writing

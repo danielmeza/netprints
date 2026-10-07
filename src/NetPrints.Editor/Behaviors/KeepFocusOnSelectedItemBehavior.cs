@@ -11,7 +11,7 @@ namespace NetPrints.Editor.Behaviors;
 /// it. Without it a command that rebuilds the rows (pin, remove) drops the focus and the next key goes nowhere. A pointer
 /// press ends the keyboard use.
 /// </summary>
-public sealed class KeepFocusOnSelectedItemBehavior : StyledElementBehavior<ListBox>
+internal sealed class KeepFocusOnSelectedItemBehavior : StyledElementBehavior<ListBox>
 {
     private bool keyboard;
 

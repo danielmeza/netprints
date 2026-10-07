@@ -9,7 +9,7 @@ namespace NetPrints.Editor.State;
 /// <see cref="IEditorStateStore"/> over JSON files under <see cref="EditorDataPaths.StateDirectory"/> (state-files.md §2): UTF-8
 /// without a byte order mark, LF line endings, every write through <see cref="AtomicFileWriter"/>. Not thread safe.
 /// </summary>
-public sealed class JsonEditorStateStore : IEditorStateStore
+internal sealed class JsonEditorStateStore : IEditorStateStore
 {
     private const string WindowFileName = "window.json";
     private const string LayoutFileName = "layout.json";

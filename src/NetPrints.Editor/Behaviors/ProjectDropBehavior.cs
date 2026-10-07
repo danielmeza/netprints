@@ -12,7 +12,7 @@ namespace NetPrints.Editor.Behaviors;
 /// (an <see cref="IReadOnlyList{T}"/> of <see cref="string"/>). The control must allow drops (<c>DragDrop.AllowDrop</c>).
 /// A drop that holds no local file or folder, such as dragged text, is ignored.
 /// </summary>
-public sealed class ProjectDropBehavior : StyledElementBehavior<Control>
+internal sealed class ProjectDropBehavior : StyledElementBehavior<Control>
 {
     /// <summary>Identifies <see cref="Command"/>.</summary>
     public static readonly StyledProperty<ICommand?> CommandProperty =

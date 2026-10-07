@@ -51,14 +51,12 @@ internal sealed class LayoutSaver : IDisposable
         bool userChanged = pending;
         pending = false;
         timer.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
-        try
+        if (adapter.Layout.VisibleDockables?.Any() != true)
         {
-            store.SaveLayout(LayoutSerializer.ToState(adapter.CaptureLayout()), userChanged);
+            return;
         }
-        catch (InvalidOperationException)
-        {
-            // A layout with no main content has nothing worth keeping.
-        }
+
+        store.SaveLayout(LayoutSerializer.ToState(adapter.CaptureLayout()), userChanged);
     }
 
     /// <summary>Stops following the layout.</summary>

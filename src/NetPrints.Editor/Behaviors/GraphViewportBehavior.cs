@@ -15,7 +15,7 @@ namespace NetPrints.Editor.Behaviors;
 /// zooms are written back to the document, which is what a session saves. A document still at the default viewport takes the
 /// canvas's instead, so a view the canvas already moved (revealing a node) is kept.
 /// </summary>
-public sealed class GraphViewportBehavior : StyledElementBehavior<Control>
+internal sealed class GraphViewportBehavior : StyledElementBehavior<Control>
 {
     /// <summary>Registers <see cref="Document"/>.</summary>
     public static readonly StyledProperty<IViewportDocument?> DocumentProperty =

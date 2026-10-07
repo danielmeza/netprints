@@ -39,8 +39,7 @@ applies the change to what it read, so two editors keep each other's entries and
 
 ```jsonc
 // window.json
-{ "schemaVersion": 1, "x": 120, "y": 80, "width": 1600, "height": 960, "isMaximized": false,
-  "screen": { "x": 0, "y": 0, "width": 2560, "height": 1440 } }
+{ "schemaVersion": 1, "x": 120, "y": 80, "width": 1600, "height": 960, "isMaximized": false }
 
 // layout.json (ADR-0018 envelope; "engine" is "dock", or "grid" for the fallback)
 // "dockLayout" is the NetPrints-owned DTO tree of the Dock adapter (Shell/Docking, T064), never Dock's own JSON.

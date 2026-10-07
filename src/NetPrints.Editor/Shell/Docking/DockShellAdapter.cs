@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Text.Json;
 using CommunityToolkit.Mvvm.ComponentModel;
 using Dock.Model.Controls;
 using Dock.Model.Core;
@@ -283,7 +284,7 @@ public sealed partial class DockShellAdapter : ObservableObject, IShell, IShellL
         {
             ApplyLayout(saved);
         }
-        catch (Exception exception) when (exception is InvalidOperationException or NullReferenceException or ArgumentException)
+        catch (Exception exception) when (exception is InvalidOperationException or JsonException or ArgumentException)
         {
             Log.LayoutUnusable(logger, exception, "it does not fit this editor");
             RebuildLayout();

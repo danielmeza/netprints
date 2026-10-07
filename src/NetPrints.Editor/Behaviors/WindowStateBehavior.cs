@@ -12,7 +12,7 @@ namespace NetPrints.Editor.Behaviors;
 /// them when the window closes (FR-050, FR-051). It tracks the normal bounds while the window is not maximized, so a maximized
 /// window comes back maximized over its previous normal size. The placement rule is <see cref="WindowPlacement.Resolve"/>.
 /// </summary>
-public sealed class WindowStateBehavior : StyledElementBehavior<Window>
+internal sealed class WindowStateBehavior : StyledElementBehavior<Window>
 {
     /// <summary>Identifies <see cref="Service"/>.</summary>
     public static readonly StyledProperty<WindowStateService?> ServiceProperty =

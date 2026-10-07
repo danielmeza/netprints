@@ -83,15 +83,15 @@ internal sealed class ProjectTemplateService(
         Directory.CreateDirectory(directory);
         try
         {
-            string csproj = await projects.CreateAsync(directory, name, profile, name, cancellationToken).ConfigureAwait(false);
+            string csproj = await projects.CreateAsync(directory, name, profile, name, cancellationToken).ConfigureAwait(true);
             switch (template.OutputType)
             {
                 case ProjectOutputType.Library:
-                    await projects.ApplyAsync(csproj, [new ProjectEdit.SetOutputType(BinaryType.SharedLibrary)], cancellationToken).ConfigureAwait(false);
+                    await projects.ApplyAsync(csproj, [new ProjectEdit.SetOutputType(BinaryType.SharedLibrary)], cancellationToken).ConfigureAwait(true);
                     break;
                 case ProjectOutputType.Console:
                     await File.WriteAllTextAsync(Path.Combine(directory, ProgramGraphSeed.FileName), ProgramGraphSeed.Render(name), new UTF8Encoding(false), cancellationToken)
-                        .ConfigureAwait(false);
+                        .ConfigureAwait(true);
                     break;
             }
 

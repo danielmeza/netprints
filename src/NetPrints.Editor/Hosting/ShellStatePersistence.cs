@@ -8,7 +8,7 @@ namespace NetPrints.Editor.Hosting;
 /// <summary>
 /// Keeps the shell's per-user state: it restores the dock layout when the shell is composed and saves it after every change,
 /// saves the open project's session when the project is replaced or the window closes, and restores the session of the project
-/// that opens. A close that the window guard cancels saves nothing; the close that follows does.
+/// that opens. The persistence handler is subscribed before the window guard, so it saves before the guard cancels a close.
 /// </summary>
 internal sealed class ShellStatePersistence : IDisposable
 {
