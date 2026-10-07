@@ -125,7 +125,28 @@ internal sealed class ProjectLoader : IDisposable
             return;
         }
 
-        await LoadProjectAsync(last.Path).ConfigureAwait(true);
+        if (context.StateStore is not { } store)
+        {
+            return;
+        }
+
+        if (store.LoadStart()?.ReopenInProgress == true)
+        {
+            store.Update(state => state with { ReopenInProgress = false }, userChanged: false);
+            shell.StartPageError = "The last project did not open last time; it was not reopened.";
+            return;
+        }
+
+        store.Update(state => state with { ReopenInProgress = true }, userChanged: false);
+        try
+        {
+            await LoadProjectAsync(last.Path).ConfigureAwait(true);
+        }
+        finally
+        {
+            store.Update(state => state with { ReopenInProgress = false }, userChanged: false);
+        }
+
         if (shell.Session is null)
         {
             shell.StartPageError = $"The last project '{last.Path}' could not be opened.";

@@ -51,7 +51,8 @@ With no project open the document area shows the **Start** page (**Help › Star
 - **What's new** shows the notes of the running version. It starts open when you have not seen this version's notes yet.
 - **Reopen the last project when NetPrints starts** (the check box beside the title) makes the editor open the most
   recently opened project instead of showing the start page. A project passed on the command line always wins, and if
-  the last project is gone or fails to open, the start page shows with the reason.
+  the last project is gone or fails to open, the start page shows with the reason. If NetPrints stops while reopening
+  (the project hangs or crashes the editor), the next start does not reopen it and says so on the start page.
 
 Drop a `.csproj` file, or a folder that holds exactly one, anywhere on the editor window to open it; the editor asks
 about unsaved changes first. Anything else is not opened: the start page shows why, or the status bar does while a

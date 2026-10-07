@@ -34,10 +34,10 @@ public sealed class StartupBehaviorTests : IDisposable
         cleanup.ForEach(TestPaths.TryDelete);
     }
 
-    private ProjectRig NewRig(StartupBehavior behavior)
+    private ProjectRig NewRig(StartupBehavior behavior, IEditorStateStore? stateStore = null)
     {
         store.Update(state => state with { StartupBehavior = behavior });
-        var rig = new ProjectRig(editor.Context with { StateStore = store, Recent = recent });
+        var rig = new ProjectRig(editor.Context with { StateStore = stateStore ?? store, Recent = recent });
         rigs.Add(rig);
         return rig;
     }
@@ -148,6 +148,93 @@ public sealed class StartupBehaviorTests : IDisposable
 
         Assert.Null(rig.Session);
         Assert.Contains(broken, rig.Shell.StartPageError, StringComparison.Ordinal);
+    }
+
+    private sealed class MarkRecordingStore(IEditorStateStore inner) : IEditorStateStore
+    {
+        public List<bool> Marks { get; } = [];
+
+        public WindowState? LoadWindow() => inner.LoadWindow();
+
+        public void SaveWindow(WindowState state) => inner.SaveWindow(state);
+
+        public LayoutState? LoadLayout() => inner.LoadLayout();
+
+        public void SaveLayout(LayoutState state, bool userChanged = false) => inner.SaveLayout(state, userChanged);
+
+        public RecentState LoadRecent() => inner.LoadRecent();
+
+        public void SaveRecent(RecentState state) => inner.SaveRecent(state);
+
+        public SessionState? LoadSession(string projectPath) => inner.LoadSession(projectPath);
+
+        public void SaveSession(SessionState state) => inner.SaveSession(state);
+
+        public StartState? LoadStart() => inner.LoadStart();
+
+        public void SaveStart(StartState state, bool userChanged = false)
+        {
+            Marks.Add(state.ReopenInProgress);
+            inner.SaveStart(state, userChanged);
+        }
+    }
+
+    [Fact]
+    public async Task AReopenThatNeverFinishedShowsTheStartPageWithAMessageAndLoadsNothing()
+    {
+        Record(Sample());
+        ProjectRig rig = NewRig(StartupBehavior.ReopenLastProject);
+        store.Update(state => state with { ReopenInProgress = true });
+
+        await rig.Actions.Loader.OpenStartupProjectAsync([]);
+
+        Assert.Null(rig.Session);
+        Assert.Contains("did not open last time", rig.Shell.StartPageError, StringComparison.Ordinal);
+        Assert.False(store.LoadStart()?.ReopenInProgress);
+        Assert.Equal(StartupBehavior.ReopenLastProject, store.LoadStart()?.StartupBehavior);
+    }
+
+    [Fact]
+    public async Task TheReopenMarkIsSetBeforeTheLoadAndClearedWhenItEnds()
+    {
+        string last = Sample();
+        Record(last);
+        var marking = new MarkRecordingStore(store);
+        ProjectRig rig = NewRig(StartupBehavior.ReopenLastProject, marking);
+        marking.Marks.Clear();
+
+        await rig.Actions.Loader.OpenStartupProjectAsync([]);
+
+        Assert.Equal(last, rig.Project?.Path);
+        Assert.Equal([true, false], marking.Marks);
+        Assert.False(store.LoadStart()?.ReopenInProgress);
+    }
+
+    [Fact]
+    public async Task TheReopenMarkIsClearedWhenTheLoadFails()
+    {
+        string broken = Path.Combine(TestPaths.CreateTempDirectory(), "Broken.csproj");
+        cleanup.Add(broken);
+        fileSystem.WriteAllBytes(broken, [1]);
+        recent.Record(broken, "Broken");
+        ProjectRig rig = NewRig(StartupBehavior.ReopenLastProject);
+
+        await rig.Actions.Loader.OpenStartupProjectAsync([]);
+
+        Assert.False(store.LoadStart()?.ReopenInProgress);
+        Assert.Contains("could not be opened", rig.Shell.StartPageError, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AProjectArgumentIgnoresTheReopenMark()
+    {
+        string argument = Sample();
+        ProjectRig rig = NewRig(StartupBehavior.ReopenLastProject);
+        store.Update(state => state with { ReopenInProgress = true });
+
+        await rig.Actions.Loader.OpenStartupProjectAsync([argument]);
+
+        Assert.Equal(argument, rig.Project?.Path);
     }
 
     [Fact]
