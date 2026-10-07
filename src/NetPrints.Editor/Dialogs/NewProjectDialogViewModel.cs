@@ -3,21 +3,25 @@ using CommunityToolkit.Mvvm.Input;
 using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.StartPage;
+using NetPrints.Editor.State;
 
 namespace NetPrints.Editor.Dialogs;
 
-/// <summary>The New project dialog: a template, a name and a folder; it creates the project and closes with the path of its <c>.csproj</c>.</summary>
+/// <summary>The New project dialog: a template, a name and a location; it creates the project in <c>location/name</c> and closes with the path of its <c>.csproj</c>.</summary>
 public sealed partial class NewProjectDialogViewModel : DialogViewModel<string?>
 {
     private const string BrowseTitle = "Choose the project folder";
 
     private readonly ProjectTemplateService service;
     private readonly IFilePickerService filePicker;
+    private readonly ProjectLocations locations;
 
-    internal NewProjectDialogViewModel(ProjectTemplateService service, IFilePickerService filePicker)
+    internal NewProjectDialogViewModel(ProjectTemplateService service, IFilePickerService filePicker, ProjectLocations locations)
     {
         this.service = service;
         this.filePicker = filePicker;
+        this.locations = locations;
+        Location = locations.Last;
         Templates = service.Templates;
         SelectedTemplate = Templates.Count > 0 ? Templates[0] : null;
     }
@@ -31,11 +35,16 @@ public sealed partial class NewProjectDialogViewModel : DialogViewModel<string?>
 
     /// <summary>Gets or sets the project name, which is also its root namespace.</summary>
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(Folder))]
     public partial string Name { get; set; } = "";
 
-    /// <summary>Gets or sets the empty or new folder the project is created in.</summary>
+    /// <summary>Gets or sets the parent folder the project folder is created in.</summary>
     [ObservableProperty]
-    public partial string Folder { get; set; } = "";
+    [NotifyPropertyChangedFor(nameof(Folder))]
+    public partial string Location { get; set; } = "";
+
+    /// <summary>Gets the project folder, <see cref="Location"/> and <see cref="Name"/> joined; empty until both are set. The dialog shows it as the preview.</summary>
+    public string Folder => Location.Length > 0 && Name.Length > 0 ? Path.Combine(Location, Name) : "";
 
     /// <summary>Gets the reason the input is rejected, or the error of the last failed creation; null when there is none.</summary>
     [ObservableProperty]
@@ -45,11 +54,11 @@ public sealed partial class NewProjectDialogViewModel : DialogViewModel<string?>
 
     partial void OnNameChanged(string value) => Revalidate();
 
-    partial void OnFolderChanged(string value) => Revalidate();
+    partial void OnLocationChanged(string value) => Revalidate();
 
     private void Revalidate()
     {
-        Message = Name.Length > 0 || Folder.Length > 0 ? service.Validate(Name, Folder) : null;
+        Message = Name.Length > 0 ? service.Validate(Name, Folder) : null;
         CreateCommand.NotifyCanExecuteChanged();
     }
 
@@ -58,7 +67,7 @@ public sealed partial class NewProjectDialogViewModel : DialogViewModel<string?>
     {
         if (await filePicker.OpenFolderAsync(BrowseTitle).ConfigureAwait(true) is { } folder)
         {
-            Folder = folder;
+            Location = folder;
         }
     }
 
@@ -72,7 +81,9 @@ public sealed partial class NewProjectDialogViewModel : DialogViewModel<string?>
 
         try
         {
-            RequestClose(await service.CreateAsync(template, Name, Folder, cancellationToken).ConfigureAwait(true));
+            string path = await service.CreateAsync(template, Name, Folder, cancellationToken).ConfigureAwait(true);
+            locations.Remember(Location);
+            RequestClose(path);
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {

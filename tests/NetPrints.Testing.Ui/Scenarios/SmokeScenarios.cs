@@ -119,7 +119,7 @@ public abstract class SmokeScenarios
             await shell.Menu.InvokeAsync("File", ShellCommands.NewProject, cancellationToken);
             var dialog = new NewProjectDialogPage(context.Driver);
             await dialog.WaitVisibleAsync(cancellationToken);
-            await dialog.CreateAsync("Created", folder, cancellationToken);
+            await dialog.CreateAsync("Created", context.WorkDirectory, cancellationToken);
 
             await shell.WaitForProjectAsync("Created", cancellationToken);
             await UiWait.UntilAsync(context.Driver, () => Task.FromResult(File.Exists(path)), "project file written", cancellationToken);

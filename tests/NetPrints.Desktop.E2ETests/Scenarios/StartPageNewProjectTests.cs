@@ -46,7 +46,7 @@ public sealed class StartPageNewProjectTests(DesktopWorkerPool pool) : ProjectEd
             await start.NewButton.ClickAsync(token);
             var dialog = new NewProjectDialogPage(Driver);
             await dialog.WaitVisibleAsync(token);
-            await dialog.CreateAsync(ProjectName, folder, token);
+            await dialog.CreateAsync(ProjectName, Work, token);
             await Shell.WaitForProjectAsync(ProjectName, token);
             await Shell.Tree.Class("Program").WaitVisibleAsync(token);
             await start.WaitHiddenAsync(token);

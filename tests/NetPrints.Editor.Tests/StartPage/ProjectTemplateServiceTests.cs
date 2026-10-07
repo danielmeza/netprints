@@ -106,7 +106,7 @@ public sealed class ProjectTemplateServiceTests : IDisposable
         ContributionRegistry registry = Registry();
         registry.AddProjectTemplate(new ProjectTemplateDescriptor("ext.template.game", "Game", "A game project", DefaultProjectProfile.ProfileId, ProjectOutputType.Library));
         ProjectTemplateService service = Service(registry);
-        var dialog = new NewProjectDialogViewModel(service, editor.FilePicker);
+        var dialog = new NewProjectDialogViewModel(service, editor.FilePicker, new ProjectLocations(null, TempRoot()));
 
         Assert.Contains(service.Templates, template => template.Id == "ext.template.game");
         Assert.Contains(dialog.Templates, template => template.Id == "ext.template.game");
@@ -204,7 +204,7 @@ public sealed class ProjectTemplateServiceTests : IDisposable
     }
 
     private NewProjectDialogViewModel NewDialog(ContributionRegistry? registry = null) =>
-        new(Service(registry ?? Registry()), editor.FilePicker);
+        new(Service(registry ?? Registry()), editor.FilePicker, new ProjectLocations(null, TempRoot()));
 
     [Fact]
     public void CreateIsEnabledOnlyWhenTheInputIsValid()
@@ -214,7 +214,7 @@ public sealed class ProjectTemplateServiceTests : IDisposable
         Assert.Null(dialog.Message);
 
         dialog.Name = "1bad";
-        dialog.Folder = Path.Combine(TempRoot(), "Out");
+        dialog.Location = Path.Combine(TempRoot(), "Out");
         Assert.False(dialog.CreateCommand.CanExecute(null));
         Assert.NotNull(dialog.Message);
 
@@ -229,7 +229,7 @@ public sealed class ProjectTemplateServiceTests : IDisposable
     {
         NewProjectDialogViewModel dialog = NewDialog();
         dialog.Name = "FromDialog";
-        dialog.Folder = Path.Combine(TempRoot(), "FromDialog");
+        dialog.Location = TempRoot();
 
         await dialog.CreateCommand.ExecuteAsync(null);
 
@@ -244,7 +244,7 @@ public sealed class ProjectTemplateServiceTests : IDisposable
         NewProjectDialogViewModel dialog = NewDialog();
         dialog.SelectedTemplate = dialog.Templates.Single(template => template.Id == "netprints.template.library");
         dialog.Name = "Broken";
-        dialog.Folder = Path.Combine(TempRoot(), "Broken");
+        dialog.Location = TempRoot();
 
         await dialog.CreateCommand.ExecuteAsync(null);
 
@@ -261,11 +261,11 @@ public sealed class ProjectTemplateServiceTests : IDisposable
         editor.FilePicker.FolderAnswers.Enqueue(picked);
 
         await dialog.BrowseCommand.ExecuteAsync(null);
-        Assert.Equal(picked, dialog.Folder);
+        Assert.Equal(picked, dialog.Location);
 
         editor.FilePicker.FolderAnswers.Enqueue(null);
         await dialog.BrowseCommand.ExecuteAsync(null);
-        Assert.Equal(picked, dialog.Folder);
+        Assert.Equal(picked, dialog.Location);
     }
 
     private (ProjectRig Rig, RecentProjects Recent) NewRig()
@@ -282,11 +282,12 @@ public sealed class ProjectTemplateServiceTests : IDisposable
     public async Task ASuccessfulNewProjectOpensItAndRecordsItInRecent()
     {
         (ProjectRig rig, RecentProjects recent) = NewRig();
-        string folder = Path.Combine(TempRoot(), "Opened");
+        string location = TempRoot();
+        string folder = Path.Combine(location, "Opened");
         editor.Dialogs.NewProjectScript = async dialog =>
         {
             dialog.Name = "Opened";
-            dialog.Folder = folder;
+            dialog.Location = location;
             await dialog.CreateCommand.ExecuteAsync(null);
         };
 

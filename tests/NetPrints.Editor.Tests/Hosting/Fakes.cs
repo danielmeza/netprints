@@ -13,6 +13,7 @@ using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Lifecycle;
 using NetPrints.Editor.References;
+using NetPrints.Editor.State;
 using NetPrints.Extensibility.Hosting;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Settings;
@@ -429,6 +430,7 @@ public sealed class FakeProjectSystem : IProjectSystem
 public sealed class TestEditor : IAsyncDisposable
 {
     private IDisposable? persistenceBinding;
+    private readonly string documentsFolder = TestPaths.CreateTempDirectory();
 
     public TestEditor(IReflectionHost reflection)
         : this(reflection, TestExtensions.CreateBuiltIn(), NullHostChannel.Instance)
@@ -446,7 +448,7 @@ public sealed class TestEditor : IAsyncDisposable
 
         Context = new EditorContext(FilePicker, Dialogs, Clipboard, Dispatcher, Reflection, Windows, Processes,
             Scheduler, () => new StrongReferenceMessenger(), NullLoggerFactory.Instance, Projects, Persistence,
-            Extensions, hostChannel, Settings, CodeAnalysis, new RunStateTracker(Processes));
+            Extensions, hostChannel, Settings, CodeAnalysis, new RunStateTracker(Processes), Locations: Locations);
     }
 
     /// <summary>
@@ -478,6 +480,9 @@ public sealed class TestEditor : IAsyncDisposable
             NullLogger<ProjectPersistence>.Instance);
     }
 
+    /// <summary>Where New project and the samples go: a folder of its own under the temp folder, never the user's documents.</summary>
+    public ProjectLocations Locations => new(null, documentsFolder);
+
     public FakeFilePicker FilePicker { get; } = new();
     public FakeDialogs Dialogs { get; } = new();
     public FakeClipboard Clipboard { get; } = new();
@@ -507,6 +512,7 @@ public sealed class TestEditor : IAsyncDisposable
         CodeAnalysis.Dispose();
         persistenceBinding?.Dispose();
         await Extensions.DisposeAsync();
+        TestPaths.TryDelete(documentsFolder);
     }
 }
 

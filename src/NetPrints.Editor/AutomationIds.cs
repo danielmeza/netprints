@@ -657,9 +657,13 @@ public static class AutomationIds
     /// </summary>
     public const string NewProjectName = "NewProject.Name";
     /// <summary>
-    /// Automation id for the folder box of the New project dialog.
+    /// Automation id for the location box (the parent folder) of the New project dialog.
     /// </summary>
-    public const string NewProjectFolder = "NewProject.Folder";
+    public const string NewProjectLocation = "NewProject.Location";
+    /// <summary>
+    /// Automation id for the text that previews the project folder of the New project dialog.
+    /// </summary>
+    public const string NewProjectPreview = "NewProject.Preview";
     /// <summary>
     /// Automation id for the browse button of the New project dialog.
     /// </summary>

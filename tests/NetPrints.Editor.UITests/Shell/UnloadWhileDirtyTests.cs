@@ -57,7 +57,7 @@ public class UnloadWhileDirtyTests
         app.Dialogs.ShowNewProject = async dialog =>
         {
             dialog.Name = "Fresh";
-            dialog.Folder = Path.Combine(target.Path, "Fresh");
+            dialog.Location = target.Path;
             await dialog.CreateCommand.ExecuteAsync(null);
             return dialog.Result;
         };

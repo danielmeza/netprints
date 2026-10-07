@@ -66,18 +66,20 @@ public sealed class NewProjectDialogPage(IUiDriver driver) : UiElement(driver, n
 {
     public UiElement Templates => Find(AutomationIds.NewProjectTemplates);
     public UiElement NameBox => Find(AutomationIds.NewProjectName);
-    public UiElement FolderBox => Find(AutomationIds.NewProjectFolder);
+    public UiElement LocationBox => Find(AutomationIds.NewProjectLocation);
+    public UiElement Preview => Find(AutomationIds.NewProjectPreview);
     public UiElement Message => Find(AutomationIds.NewProjectMessage);
     public UiElement CreateButton => Find(AutomationIds.NewProjectCreate);
     public UiElement CancelButton => Find(AutomationIds.NewProjectCancel);
 
-    /// <summary>Types the name and the folder, then presses Create.</summary>
-    public async Task CreateAsync(string name, string folder, CancellationToken cancellationToken)
+    /// <summary>Types the name and replaces the location, then presses Create; the project goes in <c>location/name</c>.</summary>
+    public async Task CreateAsync(string name, string location, CancellationToken cancellationToken)
     {
         await NameBox.ClickAsync(cancellationToken);
         await Driver.TypeAsync(name, cancellationToken);
-        await FolderBox.ClickAsync(cancellationToken);
-        await Driver.TypeAsync(folder, cancellationToken);
+        await LocationBox.ClickAsync(cancellationToken);
+        await Driver.PressAsync("Ctrl+A", cancellationToken);
+        await Driver.TypeAsync(location, cancellationToken);
         await CreateButton.WaitUntilAsync(e => e.IsEnabled, "Create enabled", cancellationToken);
         await CreateButton.ClickAsync(cancellationToken);
     }

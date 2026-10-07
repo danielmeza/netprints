@@ -38,7 +38,9 @@ public sealed class EditorComposition : IDisposable
             new BackupOptions(paths, fileSystem, TimeProvider.System, BackupService.ResolveDelay(Environment.GetEnvironmentVariable)),
             new RecentProjects(stateStore, fileSystem, TimeProvider.System),
             new WindowStateService(stateStore),
-            stateStore);
+            stateStore,
+            ProjectLocations.Resolve(stateStore, paths, Environment.GetEnvironmentVariable, Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)));
     }
 
     /// <summary>The composed host services.</summary>
@@ -128,7 +130,8 @@ internal sealed class EditorServices : IDisposable
     /// <param name="recent">The recent projects list; <see langword="null"/> (the headless tests) to keep none.</param>
     /// <param name="windowState">Restores and saves the main window's bounds; <see langword="null"/> (the headless tests) to leave the window alone.</param>
     /// <param name="stateStore">Keeps the dock layout and each project's session; <see langword="null"/> (the headless tests) to save and restore neither.</param>
-    public EditorServices(EditorHostServices host, WindowService windows, IEditorDialogs dialogs, IFilePickerService filePicker, IProcessLauncher processes, BackupOptions? backups = null, RecentProjects? recent = null, WindowStateService? windowState = null, IEditorStateStore? stateStore = null)
+    /// <param name="locations">The parent folder New project and the samples use; <see langword="null"/> (the headless tests) for the user's documents folder.</param>
+    public EditorServices(EditorHostServices host, WindowService windows, IEditorDialogs dialogs, IFilePickerService filePicker, IProcessLauncher processes, BackupOptions? backups = null, RecentProjects? recent = null, WindowStateService? windowState = null, IEditorStateStore? stateStore = null, ProjectLocations? locations = null)
     {
         hostChannelError = host.HostChannelError;
         var dispatcher = new AvaloniaUiDispatcher();
@@ -171,7 +174,8 @@ internal sealed class EditorServices : IDisposable
             backups,
             recent,
             windowState,
-            stateStore);
+            stateStore,
+            locations);
     }
 
     /// <summary>The composed host services.</summary>

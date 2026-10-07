@@ -9,6 +9,7 @@ using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Editor.References;
 using NetPrints.Editor.StartPage;
+using NetPrints.Editor.State;
 using NetPrints.Editor.UITests.Hosting;
 using NetPrints.Projects;
 using NetPrints.Testing.Ui.Dialogs;
@@ -53,18 +54,19 @@ public class DialogTests
         BuiltInContributions.Register(registry);
         var projects = new MsBuildProjectSystem(new ProjectSystemOptions([], "1.0.0"), new ProcessRunner(), NullLogger<MsBuildProjectSystem>.Instance);
         var service = new ProjectTemplateService(() => registry.ProjectTemplates, _ => DefaultProjectProfile.Instance, projects);
-        string folder = Path.Combine(Path.GetTempPath(), "netprints-ui-" + Guid.NewGuid().ToString("N"), "Typed");
+        string location = Path.Combine(Path.GetTempPath(), "netprints-ui-" + Guid.NewGuid().ToString("N"));
+        string folder = Path.Combine(location, "Typed");
         try
         {
             using var ui = HeadlessUi.Create();
-            var viewModel = new NewProjectDialogViewModel(service, new QueuedFilePicker());
+            var viewModel = new NewProjectDialogViewModel(service, new QueuedFilePicker(), new ProjectLocations(null, location));
             var dialog = ui.Show(new NewProjectDialog(viewModel));
             var page = new NewProjectDialogPage(ui.Driver);
             bool closed = false;
             dialog.Closed += (_, _) => closed = true;
 
             Assert.False(await page.CreateButton.IsEnabledAsync(Token));
-            await page.CreateAsync("Typed", folder, Token);
+            await page.CreateAsync("Typed", location, Token);
 
             Assert.True(closed);
             Assert.Equal(Path.Combine(folder, "Typed.csproj"), dialog.Result);

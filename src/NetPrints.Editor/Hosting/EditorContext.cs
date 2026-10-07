@@ -38,6 +38,7 @@ namespace NetPrints.Editor.Hosting;
 /// <param name="Backups">Where and how often the open project's unsaved files are backed up, or <see langword="null"/> for no backups (tests that do not exercise them).</param>
 /// <param name="WindowStateService">Restores and saves the main window's bounds, or <see langword="null"/> for none (tests that do not exercise it).</param>
 /// <param name="StateStore">The per-user state files the layout and the sessions are kept in, or <see langword="null"/> for none (tests that do not exercise them).</param>
+/// <param name="Locations">The parent folder New project and the samples use, or <see langword="null"/> for the user's documents folder with the state store (tests that do not exercise it).</param>
 /// <param name="Recent">The recent projects list that opening or creating a project updates, or <see langword="null"/> for none (tests that do not exercise it).</param>
 public sealed record EditorContext(
     IFilePickerService FilePicker,
@@ -60,4 +61,5 @@ public sealed record EditorContext(
     BackupOptions? Backups = null,
     RecentProjects? Recent = null,
     WindowStateService? WindowStateService = null,
-    IEditorStateStore? StateStore = null);
+    IEditorStateStore? StateStore = null,
+    ProjectLocations? Locations = null);

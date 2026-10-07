@@ -31,7 +31,7 @@ internal sealed partial class StartPageViewModel : DocumentViewModel
             IsWhatsNewExpanded = !string.Equals(seen, ProductVersion, StringComparison.Ordinal);
             if (IsWhatsNewExpanded)
             {
-                store.SaveStart(new StartState(StateFile.CurrentVersion, ProductVersion));
+                store.Update(state => state with { WhatsNewSeenVersion = ProductVersion });
             }
         }
         else

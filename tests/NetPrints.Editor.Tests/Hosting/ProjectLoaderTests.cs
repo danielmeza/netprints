@@ -55,12 +55,12 @@ public sealed class ProjectLoaderTests : IDisposable
         TestEditor editor = testEditor;
         ProjectRig rig = NewRig();
         string dir = Track(TestPaths.CreateTempDirectory());
-        string path = Path.Combine(dir, "Chosen.csproj");
+        string path = Path.Combine(dir, "Chosen", "Chosen.csproj");
 
         editor.Dialogs.NewProjectScript = async dialog =>
         {
             dialog.Name = "Chosen";
-            dialog.Folder = dir;
+            dialog.Location = dir;
             await dialog.CreateCommand.ExecuteAsync(null);
         };
         await rig.Actions.NewProjectAsync(TestContext.Current.CancellationToken);

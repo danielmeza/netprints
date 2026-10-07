@@ -5,6 +5,7 @@ using NetPrints.Core;
 using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Lifecycle;
 using NetPrints.Editor.StartPage;
+using NetPrints.Editor.State;
 using NetPrints.Extensibility.Loading;
 using NetPrints.Extensibility.Settings;
 using NetPrints.Projects;
@@ -25,6 +26,7 @@ internal sealed class ProjectLoader : IDisposable
     private readonly ShellViewModel shell;
     private readonly SampleCatalog samples = SampleCatalog.Bundled;
     private readonly ILogger<ProjectLoader> logger;
+    private readonly ProjectLocations locations;
     private readonly HashSet<(string Id, string? ManifestPath, string Code)> reportedExtensionFailures = [];
     private CancellationTokenSource? warmUp;
     private Project? subscribedProject;
@@ -43,6 +45,7 @@ internal sealed class ProjectLoader : IDisposable
         this.context = context;
         this.shell = shell;
         logger = context.LoggerFactory.CreateLogger<ProjectLoader>();
+        locations = context.Locations ?? ProjectLocations.ForCurrentUser(context.StateStore);
     }
 
     /// <summary>
@@ -140,7 +143,7 @@ internal sealed class ProjectLoader : IDisposable
     public async Task CreateProjectAsync()
     {
         var service = new ProjectTemplateService(() => shell.Registry.ProjectTemplates, FindProfile, context.Projects);
-        string? path = await context.Dialogs.ShowNewProjectAsync(new NewProjectDialogViewModel(service, context.FilePicker)).ConfigureAwait(true);
+        string? path = await context.Dialogs.ShowNewProjectAsync(new NewProjectDialogViewModel(service, context.FilePicker, locations)).ConfigureAwait(true);
         if (path is not null)
         {
             await LoadProjectAsync(path).ConfigureAwait(true);

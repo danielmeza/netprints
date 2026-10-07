@@ -8,13 +8,13 @@
         x:DataType="eddialogs:NewProjectDialogViewModel"
         Title="New project"
         Icon="avares://NetPrints.Editor/Assets/NetPrintsLogo.ico"
-        Width="560" Height="460"
+        Width="560" Height="500"
         WindowStartupLocation="CenterOwner" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NewProjectDialog}">
   <!-- Closes with the VM's result (the new .csproj path, or null) once it asks to. -->
   <Interaction.Behaviors>
     <edb:DialogCloseBehavior />
   </Interaction.Behaviors>
-  <Grid RowDefinitions="Auto,*,Auto,Auto,Auto,Auto" Margin="12" RowSpacing="8">
+  <Grid RowDefinitions="Auto,*,Auto,Auto,Auto,Auto,Auto" Margin="12" RowSpacing="8">
     <TextBlock Text="Template" />
     <ListBox Grid.Row="1" ItemsSource="{Binding Templates}" SelectedItem="{Binding SelectedTemplate}"
              AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NewProjectTemplates}">
@@ -30,13 +30,16 @@
     <TextBox Grid.Row="2" Text="{Binding Name}" PlaceholderText="Project name (also its namespace)" AutomationProperties.Name="Project name"
              AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NewProjectName}" />
     <Grid Grid.Row="3" ColumnDefinitions="*,Auto" ColumnSpacing="8">
-      <TextBox Text="{Binding Folder}" PlaceholderText="An empty or new folder" AutomationProperties.Name="Project folder"
-               AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NewProjectFolder}" />
+      <TextBox Text="{Binding Location}" PlaceholderText="The folder to create the project in" AutomationProperties.Name="Location"
+               AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NewProjectLocation}" />
       <Button Grid.Column="1" Content="Browse…" Command="{Binding BrowseCommand}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NewProjectBrowse}" />
     </Grid>
-    <TextBlock Grid.Row="4" Text="{Binding Message}" TextWrapping="Wrap" MinHeight="20"
+    <TextBlock Grid.Row="4" Text="{Binding Folder, StringFormat='The project will be created in {0}'}" TextWrapping="Wrap" MinHeight="20"
+               IsVisible="{Binding Folder, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+               AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NewProjectPreview}" />
+    <TextBlock Grid.Row="5" Text="{Binding Message}" TextWrapping="Wrap" MinHeight="20"
                AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NewProjectMessage}" />
-    <StackPanel Grid.Row="5" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+    <StackPanel Grid.Row="6" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
       <Button Content="Cancel" MinWidth="80" IsCancel="True" Command="{Binding CancelCommand}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NewProjectCancel}" />
       <Button Content="Create" MinWidth="80" Classes="accent" IsDefault="True" Command="{Binding CreateCommand}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NewProjectCreate}" />
     </StackPanel>

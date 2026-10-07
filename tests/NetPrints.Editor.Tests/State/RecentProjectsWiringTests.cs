@@ -52,11 +52,11 @@ public sealed class RecentProjectsWiringTests : IDisposable
         (ProjectRig rig, RecentProjects recent) = NewRig();
         string dir = TestPaths.CreateTempDirectory();
         cleanup.Add(dir);
-        string path = Path.Combine(dir, "Chosen.csproj");
+        string path = Path.Combine(dir, "Chosen", "Chosen.csproj");
         editor.Dialogs.NewProjectScript = async dialog =>
         {
             dialog.Name = "Chosen";
-            dialog.Folder = dir;
+            dialog.Location = dir;
             await dialog.CreateCommand.ExecuteAsync(null);
         };
 
