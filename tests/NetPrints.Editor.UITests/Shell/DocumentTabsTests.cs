@@ -63,7 +63,7 @@ public class DocumentTabsTests
             BuiltInContributions.Register(registry);
             registry.Freeze();
             Shell = new ShellViewModel(registry, new NoServices(), TimeProvider.System, new ImmediateDispatcher());
-            Adapter = new DockShellAdapter(Shell, new NoProjectActions(), CreateDocument);
+            Adapter = new DockShellAdapter(Shell, new NoProjectActions(), CreateDocument, NullLogger.Instance);
             Shell.Layout = Adapter;
             Invoker = new CommandInvoker(registry, new ShellCommandContextProvider(Shell, Adapter), Faults.Add);
             Shell.AttachCommands(Invoker);

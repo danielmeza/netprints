@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Core;
 using NetPrints.Editor.Contributions;
@@ -29,14 +30,15 @@ internal sealed class ShellApp : IAsyncDisposable
     private readonly string settingsDirectory = Path.Combine(Path.GetTempPath(), "netprints-ui-tests", Guid.NewGuid().ToString("N"));
     private readonly IDisposable exceptionHandler;
 
-    private ShellApp(IReadOnlyList<string> extensionFolders, BackupOptions? backups = null, IEditorStateStore? stateStore = null)
+    private ShellApp(IReadOnlyList<string> extensionFolders, BackupOptions? backups = null, IEditorStateStore? stateStore = null, ILoggerFactory? loggerFactory = null)
     {
+        loggerFactory ??= NullLoggerFactory.Instance;
         extensions = new ExtensionHost(new ExtensionLoaderOptions([], extensionFolders, [BuiltInExtension.InProcessEntry]), NullLoggerFactory.Instance);
         var settings = new JsonFileSettingsStore(Path.Combine(settingsDirectory, "settings.json"), NullLogger<JsonFileSettingsStore>.Instance);
         Dialogs = new RecordingDialogs();
         Processes = new CapturingProcessLauncher();
         FilePicker = new QueuedFilePicker();
-        Composition = new TestComposition(new EditorHostServices(NullLoggerFactory.Instance, extensions, settings, NullHostChannel.Instance, HostChannelError: null,
+        Composition = new TestComposition(new EditorHostServices(loggerFactory, extensions, settings, NullHostChannel.Instance, HostChannelError: null,
             MsBuildAvailable: true, DisposeOwnedResources: () => ValueTask.CompletedTask), Dialogs, FilePicker, Processes, backups, stateStore);
         exceptionHandler = Composition.InstallUnhandledExceptionHandler();
         Ui = HeadlessUi.Create();
@@ -103,6 +105,9 @@ internal sealed class ShellApp : IAsyncDisposable
 
     /// <summary>A fresh editor that keeps its dock layout and each project's session in <paramref name="stateStore"/>.</summary>
     public static ShellApp Start(IEditorStateStore stateStore) => new([], stateStore: stateStore);
+
+    /// <summary>A fresh editor that keeps its state in <paramref name="stateStore"/> and logs to <paramref name="loggerFactory"/>.</summary>
+    public static ShellApp Start(IEditorStateStore stateStore, ILoggerFactory loggerFactory) => new([], stateStore: stateStore, loggerFactory: loggerFactory);
 
     /// <summary>A fresh editor whose extension host also loads the given folders (each must hold a manifest).</summary>
     public static ShellApp Start(IReadOnlyList<string> extensionFolders) => new(extensionFolders);

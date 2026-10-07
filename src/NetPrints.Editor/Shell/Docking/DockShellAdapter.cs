@@ -4,7 +4,6 @@ using Dock.Model.Controls;
 using Dock.Model.Core;
 using Dock.Model.Core.Events;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Editor.State;
 
 namespace NetPrints.Editor.Shell.Docking;
@@ -28,15 +27,16 @@ public sealed partial class DockShellAdapter : ObservableObject, IShell, IShellL
     /// <param name="shell">The shell state the layout keeps in step.</param>
     /// <param name="projectActions">The project flows.</param>
     /// <param name="openDocument">Creates the view model of a document, or null when the id names nothing that exists.</param>
-    /// <param name="logger">Logs a saved layout that cannot be restored; null logs nothing.</param>
-    public DockShellAdapter(ShellViewModel shell, IProjectActions projectActions, Func<DocumentId, DocumentViewModel?> openDocument, ILogger? logger = null)
+    /// <param name="logger">Logs a saved layout that cannot be restored.</param>
+    public DockShellAdapter(ShellViewModel shell, IProjectActions projectActions, Func<DocumentId, DocumentViewModel?> openDocument, ILogger logger)
     {
         ArgumentNullException.ThrowIfNull(shell);
         ArgumentNullException.ThrowIfNull(projectActions);
         ArgumentNullException.ThrowIfNull(openDocument);
+        ArgumentNullException.ThrowIfNull(logger);
         this.shell = shell;
         this.openDocument = openDocument;
-        this.logger = logger ?? NullLogger.Instance;
+        this.logger = logger;
         ProjectActions = projectActions;
         factory = new ShellDockFactory(shell.Panels);
         Layout = NewLayout();

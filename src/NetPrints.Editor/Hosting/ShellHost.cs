@@ -82,7 +82,7 @@ internal sealed class ShellHost : IDisposable
             startPageServices.Add(recent);
         }
 
-        var adapter = new DockShellAdapter(shell, actions, id => OpenDocument(id, shell, context, startPageServices));
+        var adapter = new DockShellAdapter(shell, actions, id => OpenDocument(id, shell, context, startPageServices), context.LoggerFactory.CreateLogger<DockShellAdapter>());
         actions.Api = adapter;
         shell.Layout = adapter;
         shell.Projects = actions;

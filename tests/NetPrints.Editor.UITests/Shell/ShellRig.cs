@@ -120,7 +120,7 @@ internal sealed class ShellRig : IDisposable
         BuiltInContributions.Register(registry);
         registry.Freeze();
         var shell = new ShellViewModel(registry, new NoServices(), TimeProvider.System, new ImmediateDispatcher());
-        var adapter = new DockShellAdapter(shell, new NoProjectActions(), documents ?? (id => new TestDocumentViewModel(id, id.GraphKey ?? id.ToString())), logger);
+        var adapter = new DockShellAdapter(shell, new NoProjectActions(), documents ?? (id => new TestDocumentViewModel(id, id.GraphKey ?? id.ToString())), logger ?? NullLogger.Instance);
         shell.Layout = adapter;
         var ui = HeadlessUi.Create();
         Window main = ui.Show(new Window { Width = Width, Height = Height, Content = new DockHost { DataContext = adapter } });

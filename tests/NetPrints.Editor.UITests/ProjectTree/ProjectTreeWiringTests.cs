@@ -58,7 +58,7 @@ public class ProjectTreeWiringTests
             BuiltInContributions.Register(registry);
             registry.Freeze();
             Shell = new ShellViewModel(registry, new NoServices(), TimeProvider.System, new ImmediateDispatcher());
-            Adapter = new DockShellAdapter(Shell, new NoProjectActions(), id => new TestDocumentViewModel(id, id.GraphKey ?? id.ToString()));
+            Adapter = new DockShellAdapter(Shell, new NoProjectActions(), id => new TestDocumentViewModel(id, id.GraphKey ?? id.ToString()), NullLogger.Instance);
             Shell.Layout = Adapter;
             Invoker = new CommandInvoker(registry, new ShellCommandContextProvider(Shell, Adapter), Faults.Add);
             Shell.AttachCommands(Invoker);

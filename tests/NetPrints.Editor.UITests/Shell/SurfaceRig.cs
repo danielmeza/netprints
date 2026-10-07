@@ -65,7 +65,7 @@ internal sealed class SurfaceRig : IDisposable
         extra?.Invoke(registry);
         registry.Freeze();
         var shell = new ShellViewModel(registry, new NoServices(), TimeProvider.System, new ImmediateDispatcher());
-        var adapter = new DockShellAdapter(shell, new NoProjectActions(), id => new TestDocumentViewModel(id, id.GraphKey ?? id.ToString()));
+        var adapter = new DockShellAdapter(shell, new NoProjectActions(), id => new TestDocumentViewModel(id, id.GraphKey ?? id.ToString()), NullLogger.Instance);
         shell.Layout = adapter;
         var faults = new List<Exception>();
         var invoker = new CommandInvoker(registry, new ShellCommandContextProvider(shell, adapter), faults.Add);
