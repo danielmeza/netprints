@@ -119,7 +119,7 @@ namespace NetPrints.Tests.Core
         /// legitimate home for a raw color, and that is already excluded per-element below.</summary>
         private static readonly Dictionary<string, string> E2Allowlist = new(StringComparer.Ordinal)
         {
-            ["src/NetPrints.Editor/EditorApp.axaml:80"] = "FluentTheme's own Dark palette definition (ColorPaletteResources): the literal is the base system color, one level below any token.",
+            ["src/NetPrints.Editor/EditorApp.axaml:ColorPaletteResources.RegionColor=#FF252525"] = "FluentTheme's own Dark palette definition (ColorPaletteResources): the literal is the base system color, one level below any token.",
         };
 
         /// <summary>True when <paramref name="value"/> is a color literal E2 forbids: not a binding/resource
@@ -135,10 +135,10 @@ namespace NetPrints.Tests.Core
             return HexColorPattern.IsMatch(trimmed) || NamedColorPattern.IsMatch(trimmed);
         }
 
-        [Fact]
-        public void E2_NoColorLiteralsInViews()
+        /// <summary>Scans for E2 offenders. A key names the element, the attribute and the literal, never a line,
+        /// so editing above an allowlisted literal neither breaks nor widens the entry.</summary>
+        private static (List<string> Offenders, HashSet<string> Seen) ScanColorLiterals(AxamlFile[] files)
         {
-            AxamlFile[] files = LoadAxamlFiles();
             var offenders = new List<string>();
             var seen = new HashSet<string>(StringComparer.Ordinal);
 
@@ -162,11 +162,11 @@ namespace NetPrints.Tests.Core
                             continue;
                         }
 
-                        string setterKey = $"{file.RelativePath}:{LineOf(element)}";
+                        string setterKey = $"{file.RelativePath}:Setter.{property.Value}={value.Value.Trim()}";
                         seen.Add(setterKey);
                         if (!E2Allowlist.ContainsKey(setterKey))
                         {
-                            offenders.Add($"{setterKey}: Setter Property=\"{property.Value}\" Value=\"{value.Value}\"");
+                            offenders.Add($"{file.RelativePath}:{LineOf(element)}: {setterKey}: Setter Property=\"{property.Value}\" Value=\"{value.Value}\"");
                         }
 
                         continue;
@@ -180,18 +180,49 @@ namespace NetPrints.Tests.Core
                             continue;
                         }
 
-                        string key = $"{file.RelativePath}:{LineOf(attribute)}";
+                        string key = $"{file.RelativePath}:{element.Name.LocalName}.{attribute.Name.LocalName}={attribute.Value.Trim()}";
                         seen.Add(key);
                         if (!E2Allowlist.ContainsKey(key))
                         {
-                            offenders.Add($"{key}: {attribute.Name.LocalName}=\"{attribute.Value}\"");
+                            offenders.Add($"{file.RelativePath}:{LineOf(attribute)}: {key}: {attribute.Name.LocalName}=\"{attribute.Value}\"");
                         }
                     }
                 }
             }
 
+            return (offenders, seen);
+        }
+
+        [Fact]
+        public void E2_NoColorLiteralsInViews()
+        {
+            (List<string> offenders, HashSet<string> seen) = ScanColorLiterals(LoadAxamlFiles());
             Assert.Empty(offenders);
             AssertAllowlistHasNoStaleEntries(E2Allowlist.Keys, seen);
+        }
+
+        private static AxamlFile Synthetic(string path, string xml) => new(path, XDocument.Parse(xml, LoadOptions.SetLineInfo));
+
+        [Fact]
+        public void E2_AnAllowlistedLiteralStaysAllowedWhenLinesAreAddedAboveIt()
+        {
+            const string palette = "<ColorPaletteResources RegionColor=\"#FF252525\" />";
+            AxamlFile moved = Synthetic("src/NetPrints.Editor/EditorApp.axaml", "<Application>\n\n\n\n" + palette + "</Application>");
+
+            (List<string> offenders, HashSet<string> seen) = ScanColorLiterals([moved]);
+
+            Assert.Empty(offenders);
+            Assert.Equal(E2Allowlist.Keys.Order(StringComparer.Ordinal), seen.Order(StringComparer.Ordinal));
+        }
+
+        [Fact]
+        public void E2_ARawColorOnAnotherElementIsNotCoveredByTheAllowlist()
+        {
+            AxamlFile file = Synthetic("src/NetPrints.Editor/EditorApp.axaml", "<Application>\n<Border Background=\"#FF252525\" />\n<ColorPaletteResources RegionColor=\"#FF000000\" /></Application>");
+
+            (List<string> offenders, _) = ScanColorLiterals([file]);
+
+            Assert.Equal(2, offenders.Count);
         }
 
         /// <summary>E3: command-shaped events wired to a code-behind handler in XAML. Pointer and
