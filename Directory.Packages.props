@@ -8,17 +8,17 @@
     <!-- Shared by the PackageVersion below and NetPrints.Core.Tests' PackageDownload (PublicApiTrackingTests loads the analyzer from the package folder). -->
     <PublicApiAnalyzersVersion>5.6.0</PublicApiAnalyzersVersion>
   </PropertyGroup>
-
   <ItemGroup Label="Versioning">
     <!-- Every project's version comes from the nearest `v*` git tag (release contract §1). -->
     <GlobalPackageReference Include="MinVer" Version="8.0.0" />
   </ItemGroup>
-
   <ItemGroup Label="Core and reflection">
+    <PackageVersion Include="Irihi.Ursa" Version="2.2.0" />
+    <PackageVersion Include="Irihi.Ursa.Themes.Semi" Version="2.2.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="5.9.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="5.9.0" />
+    <PackageVersion Include="Semi.Avalonia" Version="12.1.0.1" />
   </ItemGroup>
-
   <!-- Analyzer-only packages (ADR-0003), referenced repo-wide from Directory.Build.props. A curated
        rule set from each is `error` in src/**.cs; every other rule they ship is `suggestion`
        (.editorconfig), so no rule from these packages fails the build by surprise. -->
@@ -31,12 +31,10 @@
     <PackageVersion Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="5.6.0" />
     <PackageVersion Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="$(PublicApiAnalyzersVersion)" />
   </ItemGroup>
-
   <ItemGroup Label="CLI">
     <PackageVersion Include="Spectre.Console.Cli" Version="0.57.2" />
     <PackageVersion Include="Spectre.Console.Testing" Version="0.57.2" />
   </ItemGroup>
-
   <ItemGroup Label="Editor">
     <PackageVersion Include="Avalonia" Version="12.1.3" />
     <PackageVersion Include="Avalonia.Desktop" Version="12.1.3" />
@@ -65,21 +63,18 @@
     <PackageVersion Include="Dock.Model.Mvvm" Version="[12.1.0.6]" />
     <PackageVersion Include="Dock.Avalonia.Themes.Fluent" Version="[12.1.0.6]" />
   </ItemGroup>
-
   <ItemGroup Label="Logging">
     <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.Logging" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.Logging.Console" Version="10.0.12" />
     <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
   </ItemGroup>
-
   <ItemGroup Label="Workspace (MSBuild evaluation, project system)">
     <PackageVersion Include="Microsoft.Build.Locator" Version="1.11.2" />
     <PackageVersion Include="Microsoft.CodeAnalysis.Workspaces.MSBuild" Version="5.9.0" />
     <PackageVersion Include="Microsoft.Build" Version="18.0.2" />
     <PackageVersion Include="Microsoft.Build.Framework" Version="18.0.2" />
   </ItemGroup>
-
   <ItemGroup Label="Tests">
     <!-- xUnit v3 3.2.2: Avalonia.Headless.XUnit 12.1.3 (the latest) is built against
          xunit.v3.extensibility.core 3.2.2 and fails discovery under xUnit 4.x. -->

@@ -4,9 +4,9 @@
   <dockfluent:DockFluentTheme />
   <Styles.Resources>
     <ResourceDictionary>
-      <!-- Dock's surface tokens are the editor palette's chrome color, so Light and Dark follow it. -->
-      <SolidColorBrush x:Key="DockSurfaceHeaderBrush" Color="{DynamicResource SystemChromeMediumColor}" />
-      <SolidColorBrush x:Key="DockSurfaceEditorBrush" Color="{DynamicResource SystemChromeMediumColor}" />
+      <!-- Dock's surface tokens: make the header blend smoothly with the editor background. -->
+      <SolidColorBrush x:Key="DockSurfaceHeaderBrush" Color="{DynamicResource SystemAltMediumHighColor}" />
+      <SolidColorBrush x:Key="DockSurfaceEditorBrush" Color="{DynamicResource SystemRegionColor}" />
     </ResourceDictionary>
   </Styles.Resources>
 </Styles>

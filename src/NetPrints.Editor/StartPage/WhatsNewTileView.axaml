@@ -14,7 +14,7 @@
               Command="{Binding $parent[UserControl].((sp:WhatsNewTileViewModel)DataContext).OpenLinkCommand}" CommandParameter="{Binding Url}" />
     </DataTemplate>
     <DataTemplate DataType="sp:WhatsNewHeading" x:DataType="sp:WhatsNewHeading">
-      <TextBlock Classes="section" Text="{Binding PlainText}" TextWrapping="Wrap" />
+      <TextBlock Classes="section" Margin="0,16,0,8" Text="{Binding PlainText}" TextWrapping="Wrap" />
     </DataTemplate>
     <DataTemplate DataType="sp:WhatsNewBullet" x:DataType="sp:WhatsNewBullet">
       <Grid ColumnDefinitions="Auto,*">

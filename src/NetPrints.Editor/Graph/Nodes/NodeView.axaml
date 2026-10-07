@@ -71,7 +71,7 @@
       <Setter Property="MinWidth" Value="56" />
     </Style>
     <Style Selector="Grid#PinArea">
-      <Setter Property="Margin" Value="10,10,10,5" />
+      <Setter Property="Margin" Value="12,12,12,12" />
     </Style>
     <Style Selector="Grid#PinArea.reroute">
       <Setter Property="Margin" Value="0" />
@@ -98,10 +98,10 @@
 
   <!-- Node (PAR-39..42): header colored by kind, selected border, shadow, label. -->
   <Border x:Name="NodeBorder" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.Node}" AutomationProperties.Name="{Binding Name}" Classes.reroute="{Binding IsRerouteNode}"
-          BorderThickness="2" Background="{DynamicResource Node.CardBackground}" BoxShadow="{DynamicResource Node.CardShadow}"
+          BorderThickness="2" Background="{DynamicResource Node.CardBackground}" CornerRadius="8" BoxShadow="0 8 16 0 #40000000"
           BorderBrush="{Binding IsSelected, Converter={x:Static edgraph:SelectedBorderConverter.Instance}}">
     <StackPanel>
-      <Border x:Name="Header" Height="46" IsVisible="{Binding !IsRerouteNode}"
+      <Border x:Name="Header" Height="46" IsVisible="{Binding !IsRerouteNode}" CornerRadius="8,8,0,0" Padding="8,4"
               Background="{Binding VisualKind, Converter={x:Static edgraph:NodeKindBrushConverter.Instance}}">
         <Grid ColumnDefinitions="Auto,Auto,*">
           <!-- Overload chooser (PAR-40) -->
@@ -113,11 +113,11 @@
               </DataTemplate>
             </ComboBox.ItemTemplate>
           </ComboBox>
-          <TextBlock x:Name="NodeLabel" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NodeLabel}" Grid.Column="1" Text="{Binding Label}" Margin="10" FontWeight="SemiBold" FontSize="18"
-                     Foreground="{DynamicResource Node.SubtitleForeground}" VerticalAlignment="Center" />
+          <TextBlock x:Name="NodeLabel" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NodeLabel}" Grid.Column="1" Text="{Binding Label}" Margin="12,0" FontWeight="Bold" FontSize="18"
+                     Foreground="White" VerticalAlignment="Center" />
           <!-- Pure (PAR-41) -->
-          <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="10,0" HorizontalAlignment="Right" IsVisible="{Binding CanSetPure}">
-            <TextBlock Text="Pure" VerticalAlignment="Center" Margin="0,0,4,0" />
+          <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="12,0" HorizontalAlignment="Right" IsVisible="{Binding CanSetPure}">
+            <TextBlock Text="Pure" VerticalAlignment="Center" Foreground="White" FontWeight="SemiBold" Margin="0,0,4,0" />
             <CheckBox IsChecked="{Binding IsPure}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NodePure}" VerticalAlignment="Center" />
           </StackPanel>
         </Grid>

@@ -11,6 +11,8 @@
     <NetPrintsExperimentalOptIn Include="NPXE0002" />
   </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Irihi.Ursa" />
+    <PackageReference Include="Irihi.Ursa.Themes.Semi" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     <PackageReference Include="Avalonia" />
     <PackageReference Include="Avalonia.Themes.Fluent" />
@@ -22,6 +24,7 @@
          own version, no override) for RegistryOptions/ThemeName. -->
     <PackageReference Include="Avalonia.AvaloniaEdit" />
     <PackageReference Include="AvaloniaEdit.TextMate" />
+    <PackageReference Include="Semi.Avalonia" />
     <!-- ADR-0007: prebuilt behaviors before code-behind or a custom behavior (avalonia-behaviors skill, D11). -->
     <PackageReference Include="Xaml.Behaviors.Interactions" />
     <PackageReference Include="Xaml.Behaviors.Interactions.Custom" />

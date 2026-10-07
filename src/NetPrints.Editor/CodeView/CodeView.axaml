@@ -15,5 +15,9 @@
                  IsReadOnly="True"
                  ShowLineNumbers="True"
                  WordWrap="False"
-                 FontFamily="avares://NetPrints.Editor/Assets/Fonts#Cascadia Mono" />
+                 FontFamily="avares://NetPrints.Editor/Assets/Fonts#Cascadia Mono" >
+    <ae:TextEditor.Options>
+      <ae:TextEditorOptions HighlightCurrentLine="True" />
+    </ae:TextEditor.Options>
+  </ae:TextEditor>
 </UserControl>

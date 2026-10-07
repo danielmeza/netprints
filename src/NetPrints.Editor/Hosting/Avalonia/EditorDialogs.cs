@@ -1,4 +1,5 @@
 using Avalonia.Controls;
+using Avalonia.Controls.Notifications;
 using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Editor.Commands.KeyboardShortcuts;
@@ -12,6 +13,22 @@ namespace NetPrints.Editor.Hosting.Avalonia;
 /// <summary>Modal Avalonia dialogs owned by the active window.</summary>
 public sealed class EditorDialogs(Func<Window?> owner) : IEditorDialogs
 {
+    private const int MaxNotifications = 3;
+    private WindowNotificationManager? notificationManager;
+
+    /// <inheritdoc/>
+    public void ShowNotification(string title, string message)
+    {
+        if (owner() is { } window)
+        {
+            notificationManager ??= new WindowNotificationManager(window)
+            {
+                Position = NotificationPosition.BottomRight,
+                MaxItems = MaxNotifications
+            };
+            notificationManager.Show(new Notification(title, message, NotificationType.Information));
+        }
+    }
     private async Task<T?> ShowAsync<T>(Window dialog)
     {
         if (owner() is { } parent)

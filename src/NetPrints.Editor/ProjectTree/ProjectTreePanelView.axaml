@@ -8,7 +8,7 @@
              x:Class="NetPrints.Editor.ProjectTree.ProjectTreePanelView"
              x:DataType="edtree:ProjectTreePanelViewModel">
   <!-- project > classes > Methods, Constructors, Variables, Event graphs; the keys of the ProjectTree scope run on the tree's selection. -->
-  <TreeView ItemsSource="{Binding Roots}" SelectedItem="{Binding SelectedItem}"
+  <TreeView Classes="Solid" ItemsSource="{Binding Roots}" SelectedItem="{Binding SelectedItem}"
             AutomationProperties.AutomationId="{x:Static ed:AutomationIds.TreeView}">
     <Interaction.Behaviors>
       <edbehaviors:ScopedCommandKeysBehavior Scope="ProjectTree" Invoker="{Binding Invoker}" />
@@ -36,13 +36,13 @@
     </TreeView.Styles>
     <TreeView.ItemTemplate>
       <TreeDataTemplate x:DataType="edtree:ProjectTreeItemViewModel" ItemsSource="{Binding Children}">
-        <StackPanel Orientation="Horizontal" Spacing="6" Background="Transparent">
+        <Grid ColumnDefinitions="Auto,*" Background="Transparent" Margin="0,2">
           <Interaction.Behaviors>
             <edbehaviors:TreeDragSourceBehavior />
           </Interaction.Behaviors>
-          <mi:MaterialIcon Kind="{Binding IconKind}" Width="14" Height="14" AutomationProperties.AccessibilityView="Raw" />
-          <TextBlock Text="{Binding DisplayName}" VerticalAlignment="Center" />
-        </StackPanel>
+          <mi:MaterialIcon Grid.Column="0" Kind="{Binding IconKind}" Width="16" Height="16" Margin="0,0,8,0" AutomationProperties.AccessibilityView="Raw" />
+          <TextBlock Grid.Column="1" Text="{Binding DisplayName}" VerticalAlignment="Center" FontSize="13" />
+        </Grid>
       </TreeDataTemplate>
     </TreeView.ItemTemplate>
   </TreeView>

@@ -5,30 +5,30 @@
              xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
              x:Class="NetPrints.Editor.Variables.MemberVariableView"
              x:DataType="edvariables:MemberVariableViewModel">
-  <!-- A variable row (PAR-29) -->
-  <StackPanel AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableRow}" AutomationProperties.Name="{Binding Name}">
-    <Grid ColumnDefinitions="Auto,*">
+  <!-- A variable row (PAR-29) overhauled to PropertyGrid -->
+  <Grid ColumnDefinitions="120,*" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableRow}" AutomationProperties.Name="{Binding Name}" Margin="0,0,0,4" RowDefinitions="Auto,Auto,Auto,Auto">
+    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,8,4">
       <Button Classes="icon" ToolTip.Tip="Remove variable" AutomationProperties.Name="Remove variable" Command="{Binding RemoveCommand}">
         <mi:MaterialIcon Kind="Minus" />
       </Button>
-      <TextBlock x:Name="NameText" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableName}" Grid.Column="1" Text="{Binding Name}" TextTrimming="CharacterEllipsis" FontSize="14" FontWeight="SemiBold"
-                 VerticalAlignment="Center" Background="Transparent"
-                 PointerPressed="OnNamePointerPressed" PointerMoved="OnNamePointerMoved" PointerReleased="OnNamePointerReleased">
-        <!-- Tap selects the variable and shows its inspector; fits ExecuteCommandOnTappedBehavior (batch X2b). -->
-        <Interaction.Behaviors>
-          <ExecuteCommandOnTappedBehavior Command="{Binding SelectCommand}" />
-        </Interaction.Behaviors>
-      </TextBlock>
-    </Grid>
+      <TextBlock Text="Name" Foreground="Gray" VerticalAlignment="Center" Margin="4,0,0,0" />
+    </StackPanel>
+    <TextBlock x:Name="NameText" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableName}" Grid.Column="1" Text="{Binding Name}" TextTrimming="CharacterEllipsis" FontSize="14" FontWeight="SemiBold"
+               VerticalAlignment="Center" Background="Transparent"
+               PointerPressed="OnNamePointerPressed" PointerMoved="OnNamePointerMoved" PointerReleased="OnNamePointerReleased" Margin="0,0,0,4">
+      <Interaction.Behaviors>
+        <ExecuteCommandOnTappedBehavior Command="{Binding SelectCommand}" />
+      </Interaction.Behaviors>
+    </TextBlock>
 
-    <Panel Margin="20,0,0,0">
-      <Button Classes="flat" Content="Add getter" IsVisible="{Binding !HasGetter}" Command="{Binding AddGetterCommand}" />
+    <TextBlock Grid.Row="1" Text="Getter" Foreground="Gray" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,4" />
+    <Panel Grid.Row="1" Grid.Column="1" Margin="0,0,0,4">
+      <Button Classes="flat" Content="Add getter" IsVisible="{Binding !HasGetter}" Command="{Binding AddGetterCommand}" HorizontalAlignment="Left" />
       <Grid ColumnDefinitions="Auto,*" IsVisible="{Binding HasGetter}">
         <Button Classes="icon" ToolTip.Tip="Remove getter" AutomationProperties.Name="Remove getter" Command="{Binding RemoveGetterCommand}">
           <mi:MaterialIcon Kind="Minus" />
         </Button>
-        <TextBlock Grid.Column="1" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableGetter}" Text="Get" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" Background="Transparent">
-          <!-- Double-tap opens the getter; fits ExecuteCommandOnDoubleTappedBehavior (batch X2b). -->
+        <TextBlock Grid.Column="1" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableGetter}" Text="Get" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" Background="Transparent" Margin="4,0,0,0">
           <Interaction.Behaviors>
             <ExecuteCommandOnDoubleTappedBehavior Command="{Binding OpenGetterCommand}" />
           </Interaction.Behaviors>
@@ -36,14 +36,14 @@
       </Grid>
     </Panel>
 
-    <Panel Margin="20,0,0,0">
-      <Button Classes="flat" Content="Add setter" IsVisible="{Binding !HasSetter}" Command="{Binding AddSetterCommand}" />
+    <TextBlock Grid.Row="2" Text="Setter" Foreground="Gray" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,4" />
+    <Panel Grid.Row="2" Grid.Column="1" Margin="0,0,0,4">
+      <Button Classes="flat" Content="Add setter" IsVisible="{Binding !HasSetter}" Command="{Binding AddSetterCommand}" HorizontalAlignment="Left" />
       <Grid ColumnDefinitions="Auto,*" IsVisible="{Binding HasSetter}">
         <Button Classes="icon" ToolTip.Tip="Remove setter" AutomationProperties.Name="Remove setter" Command="{Binding RemoveSetterCommand}">
           <mi:MaterialIcon Kind="Minus" />
         </Button>
-        <TextBlock Grid.Column="1" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableSetter}" Text="Set" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" Background="Transparent">
-          <!-- Double-tap opens the setter; fits ExecuteCommandOnDoubleTappedBehavior (batch X2b). -->
+        <TextBlock Grid.Column="1" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableSetter}" Text="Set" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" Background="Transparent" Margin="4,0,0,0">
           <Interaction.Behaviors>
             <ExecuteCommandOnDoubleTappedBehavior Command="{Binding OpenSetterCommand}" />
           </Interaction.Behaviors>
@@ -51,6 +51,7 @@
       </Grid>
     </Panel>
 
-    <Button Classes="flat" Margin="20,0,0,0" Content="Open type graph" Command="{Binding OpenTypeGraphCommand}" />
-  </StackPanel>
+    <TextBlock Grid.Row="3" Text="Type Graph" Foreground="Gray" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,4" />
+    <Button Grid.Row="3" Grid.Column="1" Classes="flat" Content="Open type graph" Command="{Binding OpenTypeGraphCommand}" HorizontalAlignment="Left" Margin="0,0,0,4" />
+  </Grid>
 </UserControl>
