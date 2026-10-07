@@ -31,22 +31,6 @@
     <Style Selector="Grid#Columns > StackPanel#RecentSection">
       <Setter Property="Grid.Row" Value="1" />
     </Style>
-    <Style Selector="TextBlock.title">
-      <Setter Property="FontSize" Value="42" />
-      <Setter Property="FontWeight" Value="Bold" />
-      <Setter Property="LetterSpacing" Value="-0.5" />
-      <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
-    </Style>
-    <Style Selector="TextBlock.section">
-      <Setter Property="FontSize" Value="22" />
-      <Setter Property="FontWeight" Value="SemiBold" />
-      <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
-    </Style>
-    <Style Selector="TextBlock.secondary">
-      <Setter Property="FontSize" Value="13" />
-      <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseHighBrush}" />
-      <Setter Property="Opacity" Value="0.75" />
-    </Style>
     <Style Selector="Button.card">
       <Setter Property="HorizontalAlignment" Value="Stretch" />
       <Setter Property="HorizontalContentAlignment" Value="Stretch" />

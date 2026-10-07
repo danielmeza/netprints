@@ -13,7 +13,7 @@
       </Button>
       <TextBlock Text="Name" Opacity="0.75" VerticalAlignment="Center" Margin="4,0,0,0" />
     </StackPanel>
-    <TextBlock x:Name="NameText" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableName}" Grid.Column="1" Text="{Binding Name}" TextTrimming="CharacterEllipsis" FontSize="14" FontWeight="SemiBold"
+    <TextBlock x:Name="NameText" Classes="memberName" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableName}" Grid.Column="1" Text="{Binding Name}" TextTrimming="CharacterEllipsis"
                VerticalAlignment="Center" Background="Transparent"
                PointerPressed="OnNamePointerPressed" PointerMoved="OnNamePointerMoved" PointerReleased="OnNamePointerReleased" Margin="0,0,0,4">
       <Interaction.Behaviors>
@@ -28,7 +28,7 @@
         <Button Classes="icon" ToolTip.Tip="Remove getter" AutomationProperties.Name="Remove getter" Command="{Binding RemoveGetterCommand}">
           <mi:MaterialIcon Kind="Minus" />
         </Button>
-        <TextBlock Grid.Column="1" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableGetter}" Text="Get" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" Background="Transparent" Margin="4,0,0,0">
+        <TextBlock Grid.Column="1" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableGetter}" Text="Get" Classes="memberName" VerticalAlignment="Center" Background="Transparent" Margin="4,0,0,0">
           <Interaction.Behaviors>
             <ExecuteCommandOnDoubleTappedBehavior Command="{Binding OpenGetterCommand}" />
           </Interaction.Behaviors>
@@ -43,7 +43,7 @@
         <Button Classes="icon" ToolTip.Tip="Remove setter" AutomationProperties.Name="Remove setter" Command="{Binding RemoveSetterCommand}">
           <mi:MaterialIcon Kind="Minus" />
         </Button>
-        <TextBlock Grid.Column="1" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableSetter}" Text="Set" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center" Background="Transparent" Margin="4,0,0,0">
+        <TextBlock Grid.Column="1" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableSetter}" Text="Set" Classes="memberName" VerticalAlignment="Center" Background="Transparent" Margin="4,0,0,0">
           <Interaction.Behaviors>
             <ExecuteCommandOnDoubleTappedBehavior Command="{Binding OpenSetterCommand}" />
           </Interaction.Behaviors>

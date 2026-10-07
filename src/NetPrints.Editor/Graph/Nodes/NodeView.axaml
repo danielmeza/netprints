@@ -53,9 +53,9 @@
         <ComboBox Classes="pinValue" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PinValueEnum}" ItemsSource="{Binding PossibleEnumNames}" SelectedItem="{Binding UnconnectedEnumName}"
                   IsVisible="{Binding ShowEnumValue}" />
         <CheckBox Classes="pinValue" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PinValueCheck}" IsChecked="{Binding UnconnectedBool}" IsVisible="{Binding ShowBooleanValue}" />
-        <TextBlock AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PinLabel}" Text="{Binding DisplayName}" IsVisible="{Binding ShowLabel}" FontSize="14" FontWeight="SemiBold"
+        <TextBlock AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PinLabel}" Text="{Binding DisplayName}" Classes="pinLabel" IsVisible="{Binding ShowLabel}"
                    Foreground="{DynamicResource Node.TitleForeground}" VerticalAlignment="Center" />
-        <TextBox Classes="pinValue" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PinLabel}" Text="{Binding Name}" IsVisible="{Binding ShowEditableName}" FontSize="14" FontWeight="SemiBold" MinWidth="60" />
+        <TextBox Classes="pinValue pinLabel" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PinLabel}" Text="{Binding Name}" IsVisible="{Binding ShowEditableName}" MinWidth="60" />
       </StackPanel>
     </DataTemplate>
   </UserControl.Resources>
@@ -128,7 +128,7 @@
               </DataTemplate>
             </ComboBox.ItemTemplate>
           </ComboBox>
-          <TextBlock x:Name="NodeLabel" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NodeLabel}" Grid.Column="1" Text="{Binding Label}" Margin="12,0" FontWeight="Bold" FontSize="18"
+          <TextBlock x:Name="NodeLabel" Classes="nodeTitle" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NodeLabel}" Grid.Column="1" Text="{Binding Label}" Margin="12,0"
                      VerticalAlignment="Center" />
           <!-- Pure (PAR-41) -->
           <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="12,0" HorizontalAlignment="Right" IsVisible="{Binding CanSetPure}">
