@@ -138,13 +138,25 @@ internal sealed class ProjectLoader : IDisposable
             return;
         }
 
+        shell.StartPageError = NotAProjectMessage(path, "Pass");
+    }
+
+    /// <summary>Says why <paramref name="path"/> is not a project that can be opened.</summary>
+    /// <param name="path">A path that <see cref="ResolveProjectFile"/> did not resolve.</param>
+    /// <param name="verb">What the user did with it, such as "Pass" or "Drop", for the hint.</param>
+    /// <returns>The message.</returns>
+    internal static string NotAProjectMessage(string path, string verb)
+    {
         string fullPath = Path.GetFullPath(path);
-        shell.StartPageError = File.Exists(fullPath) || Directory.Exists(fullPath)
-            ? $"'{fullPath}' is not a NetPrints project. Pass a .csproj file, or a folder that holds exactly one."
+        return File.Exists(fullPath) || Directory.Exists(fullPath)
+            ? $"'{fullPath}' is not a NetPrints project. {verb} a .csproj file, or a folder that holds exactly one."
             : $"'{fullPath}' does not exist.";
     }
 
-    private static string? ResolveProjectFile(string path)
+    /// <summary>Finds the project file a path stands for.</summary>
+    /// <param name="path">A <c>.csproj</c> file, or a folder.</param>
+    /// <returns>The <c>.csproj</c> path, or <see langword="null"/> for another kind of file, a missing path or a folder without exactly one <c>.csproj</c>.</returns>
+    internal static string? ResolveProjectFile(string path)
     {
         if (File.Exists(path))
         {

@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Editor.Contributions;
@@ -87,6 +88,17 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
     /// <summary>Gets or sets what hosts the documents and panels; set by the composition once the docking adapter exists.</summary>
     [ObservableProperty]
     public partial IShellLayoutHost? Layout { get; set; }
+
+    /// <summary>Gets or sets the project flows the window's commands run; set by the composition.</summary>
+    [ObservableProperty]
+    public partial IProjectActions? Projects { get; set; }
+
+    /// <summary>Opens what was dropped on the window as a project, after the unsaved changes prompt.</summary>
+    /// <param name="paths">The full paths of the dropped files and folders.</param>
+    /// <param name="cancellationToken">Cancels the flow.</param>
+    [RelayCommand]
+    private Task OpenDroppedAsync(IReadOnlyList<string> paths, CancellationToken cancellationToken) =>
+        Projects?.OpenDroppedAsync(paths, cancellationToken) ?? Task.CompletedTask;
 
     /// <summary>Gets or sets the service that restores and saves the window's bounds, or null for none; the window's behavior uses it.</summary>
     [ObservableProperty]

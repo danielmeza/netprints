@@ -7,10 +7,12 @@
         xmlns:shell="clr-namespace:NetPrints.Editor.Shell"
         x:Class="NetPrints.Editor.Shell.ShellWindow"
         x:DataType="shell:ShellViewModel"
-        Title="{Binding Title}" Width="1280" Height="800" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShellWindow}">
+        Title="{Binding Title}" Width="1280" Height="800" DragDrop.AllowDrop="True"
+        AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShellWindow}">
   <Interaction.Behaviors>
     <edbehaviors:CommandKeyBindingsBehavior Invoker="{Binding Commands}" />
     <edbehaviors:WindowStateBehavior Service="{Binding WindowStateService}" />
+    <edbehaviors:ProjectDropBehavior Command="{Binding OpenDroppedCommand}" />
   </Interaction.Behaviors>
   <DockPanel>
     <!-- Menus come from the registry: a top-level item per menu, its groups separated by dividers (a divider is an entry that is not focusable). -->

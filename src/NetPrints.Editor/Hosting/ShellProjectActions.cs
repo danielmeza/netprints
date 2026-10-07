@@ -25,6 +25,8 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
     private const string StopRunningMessage = "The program is still running. Stop it and exit?";
     private const string StopRunningConfirm = "Stop and exit";
     private const string WaitingForBuildText = "Waiting for the build…";
+    private const string DropOneMessage = "Drop one .csproj file, or one project folder, at a time.";
+    private static readonly TimeSpan RefusedDropDuration = TimeSpan.FromSeconds(8);
 
     private readonly EditorContext context;
     private readonly ShellViewModel shell;
@@ -145,6 +147,40 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
 
     /// <inheritdoc/>
     public Task NewProjectAsync(CancellationToken cancellationToken) => Loader.CreateProjectAsync();
+
+    /// <inheritdoc/>
+    public async Task OpenDroppedAsync(IReadOnlyList<string> paths, CancellationToken cancellationToken)
+    {
+        ArgumentNullException.ThrowIfNull(paths);
+        if (paths.Count != 1)
+        {
+            ReportRefusedDrop(DropOneMessage);
+            return;
+        }
+
+        if (ProjectLoader.ResolveProjectFile(paths[0]) is not { } projectFile)
+        {
+            ReportRefusedDrop(ProjectLoader.NotAProjectMessage(paths[0], "Drop"));
+            return;
+        }
+
+        if (await ConfirmUnloadAsync(cancellationToken).ConfigureAwait(true))
+        {
+            await Loader.LoadProjectAsync(projectFile).ConfigureAwait(true);
+        }
+    }
+
+    private void ReportRefusedDrop(string message)
+    {
+        if (shell.Session is null)
+        {
+            shell.StartPageError = message;
+        }
+        else
+        {
+            shell.StatusBar.Show(message, RefusedDropDuration);
+        }
+    }
 
     /// <inheritdoc/>
     public Task OpenSampleAsync(string sampleName, CancellationToken cancellationToken) => Loader.OpenSampleAsync(sampleName);

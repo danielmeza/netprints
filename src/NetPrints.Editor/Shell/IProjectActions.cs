@@ -28,6 +28,15 @@ public interface IProjectActions
     /// <returns>A task that completes when the copy is open, or the user cancelled.</returns>
     Task OpenSampleAsync(string sampleName, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Opens what the user dropped on the window: one <c>.csproj</c> file, or one folder that holds exactly one, after the unsaved changes prompt.
+    /// Anything else opens nothing and asks nothing: the start page shows the reason, or the status bar does while a project is open.
+    /// </summary>
+    /// <param name="paths">The full paths of the dropped files and folders.</param>
+    /// <param name="cancellationToken">Cancels the flow.</param>
+    /// <returns>A task that completes when the project is open, or the drop was refused or the user cancelled.</returns>
+    Task OpenDroppedAsync(IReadOnlyList<string> paths, CancellationToken cancellationToken);
+
     /// <summary>Asks for a folder and name, creates a project there and opens it.</summary>
     /// <param name="cancellationToken">Cancels the flow.</param>
     /// <returns>A task that completes when the project is open, or the user cancelled.</returns>

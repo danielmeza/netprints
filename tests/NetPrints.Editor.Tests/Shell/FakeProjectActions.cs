@@ -33,6 +33,13 @@ public sealed class FakeProjectActions : IProjectActions
     }
 
     /// <inheritdoc/>
+    public Task OpenDroppedAsync(IReadOnlyList<string> paths, CancellationToken cancellationToken)
+    {
+        Calls.Add($"OpenDropped:{string.Join(";", paths)}");
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc/>
     public Task NewProjectAsync(CancellationToken cancellationToken)
     {
         Calls.Add("NewProject");

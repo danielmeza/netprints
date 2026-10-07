@@ -33,6 +33,8 @@ internal sealed class NoProjectActions : IProjectActions
         return Task.CompletedTask;
     }
 
+    public Task OpenDroppedAsync(IReadOnlyList<string> paths, CancellationToken cancellationToken) => throw new NotSupportedException();
+
     public Task NewProjectAsync(CancellationToken cancellationToken) => throw new NotSupportedException();
 
     public Task OpenSampleAsync(string sampleName, CancellationToken cancellationToken) => throw new NotSupportedException();

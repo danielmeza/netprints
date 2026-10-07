@@ -85,6 +85,7 @@ internal sealed class ShellHost : IDisposable
         var adapter = new DockShellAdapter(shell, actions, id => OpenDocument(id, shell, context, startPageServices));
         actions.Api = adapter;
         shell.Layout = adapter;
+        shell.Projects = actions;
 
         var invoker = new CommandInvoker(registry, new ShellCommandContextProvider(shell, adapter),
             exception => context.Dispatcher.Post(() => context.Dialogs.ShowErrorAsync("The command failed", exception.ToString()).Forget(logger)));
