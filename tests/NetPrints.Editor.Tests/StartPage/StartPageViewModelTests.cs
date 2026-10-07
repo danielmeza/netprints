@@ -307,6 +307,7 @@ public sealed class StartPageViewModelTests : IDisposable
         Record(recent, "/b/Beta.csproj");
         fs.DeleteFile("/a/Alpha.csproj");
         var tile = new RecentProjectsTileViewModel(recent, actions);
+        await tile.AvailabilityChecked;
         RecentProjectRow(tile, "Beta", out RecentProjectItemViewModel beta);
         RecentProjectRow(tile, "Alpha", out RecentProjectItemViewModel alpha);
 

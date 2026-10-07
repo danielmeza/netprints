@@ -124,11 +124,62 @@ public sealed class RecentProjectsTileViewModelTests
     }
 
     [Fact]
-    public void AnUnavailableRowSaysNotFoundCannotOpenAndCanBeRemoved()
+    public async Task TheRowsShowBeforeTheAvailabilityCheckReturnsAndThenUpdate()
+    {
+        RecentProjects recent = NewRecent();
+        Record(recent, "/p/Slow.csproj", TimeSpan.FromHours(1), exists: false);
+        using var release = new ManualResetEventSlim();
+        int callerThread = Environment.CurrentManagedThreadId;
+        List<int> checkingThreads = [];
+        fs.BeforeFileExists = path =>
+        {
+            if (path == "/p/Slow.csproj")
+            {
+                lock (checkingThreads)
+                {
+                    checkingThreads.Add(Environment.CurrentManagedThreadId);
+                }
+
+                release.Wait(TimeSpan.FromSeconds(10));
+            }
+        };
+
+        RecentProjectsTileViewModel tile = NewTile(recent);
+
+        RecentProjectItemViewModel row = Assert.Single(tile.Items);
+        Assert.False(tile.AvailabilityChecked.IsCompleted);
+        Assert.True(row.IsAvailable);
+        release.Set();
+        await tile.AvailabilityChecked;
+        Assert.False(row.IsAvailable);
+        Assert.Equal("Not found", row.StatusText);
+        Assert.DoesNotContain(callerThread, checkingThreads);
+    }
+
+    [Fact]
+    public async Task SearchingAndPinningDoNotCheckTheFilesAgain()
+    {
+        RecentProjects recent = NewRecent();
+        Record(recent, "/p/A.csproj", TimeSpan.FromHours(1));
+        RecentProjectsTileViewModel tile = NewTile(recent);
+        await tile.AvailabilityChecked;
+        List<string> checks = [];
+        fs.BeforeFileExists = checks.Add;
+
+        tile.SearchText = "A";
+        tile.PinCommand.Execute(Assert.Single(tile.Items));
+
+        Assert.DoesNotContain("/p/A.csproj", checks);
+        Assert.True(tile.AvailabilityChecked.IsCompleted);
+    }
+
+    [Fact]
+    public async Task AnUnavailableRowSaysNotFoundCannotOpenAndCanBeRemoved()
     {
         RecentProjects recent = NewRecent();
         Record(recent, "/p/Gone.csproj", TimeSpan.FromHours(1), exists: false);
         RecentProjectsTileViewModel tile = NewTile(recent);
+        await tile.AvailabilityChecked;
         RecentProjectItemViewModel row = Assert.Single(tile.Items);
 
         Assert.False(row.IsAvailable);

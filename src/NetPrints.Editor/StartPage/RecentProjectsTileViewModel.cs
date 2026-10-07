@@ -16,6 +16,7 @@ internal sealed partial class RecentProjectsTileViewModel : ObservableObject
     private readonly TimeProvider time;
     private readonly IClipboardService? clipboard;
     private readonly IFolderLauncher? folders;
+    private readonly Dictionary<string, bool> availability = new(StringComparer.Ordinal);
 
     /// <summary>Creates the tile.</summary>
     /// <param name="recent">The recent list, or null when the editor keeps none.</param>
@@ -51,23 +52,51 @@ internal sealed partial class RecentProjectsTileViewModel : ObservableObject
     /// <summary>Gets a value indicating whether no row shows.</summary>
     public bool IsEmpty => Items.Count == 0;
 
-    /// <summary>Reads the list again, with the current search.</summary>
+    /// <summary>Gets the check of the latest <see cref="Refresh"/>: completed once the rows it could not answer from the cache have their availability.</summary>
+    public Task AvailabilityChecked { get; private set; } = Task.CompletedTask;
+
+    /// <summary>Reads the list again, with the current search. Rows show at once; their availability follows from a check off the UI thread.</summary>
     public void Refresh()
     {
         string? selected = SelectedItem?.Path;
         Items.Clear();
         DateTimeOffset now = time.GetUtcNow();
         string? previous = null;
-        foreach (RecentProject entry in (recent?.List(string.IsNullOrWhiteSpace(SearchText) ? null : SearchText) ?? []).OrderByDescending(entry => entry.Pinned).ThenByDescending(entry => entry.LastOpenedUtc))
+        List<RecentProjectItemViewModel> unknown = [];
+        foreach (RecentProject listed in (recent?.ListUnchecked(string.IsNullOrWhiteSpace(SearchText) ? null : SearchText) ?? []).OrderByDescending(entry => entry.Pinned).ThenByDescending(entry => entry.LastOpenedUtc))
         {
+            bool known = availability.TryGetValue(listed.Path, out bool cached);
+            RecentProject entry = listed with { IsAvailable = !known || cached };
             DateTimeOffset opened = new(DateTime.SpecifyKind(entry.LastOpenedUtc, DateTimeKind.Utc));
             string group = RecentTime.GroupOf(entry.Pinned, opened, now, time.LocalTimeZone);
-            Items.Add(new RecentProjectItemViewModel(entry, this, group, group != previous, RecentTime.Describe(opened, now, time.LocalTimeZone, CultureInfo.CurrentCulture)));
+            var item = new RecentProjectItemViewModel(entry, this, group, group != previous, RecentTime.Describe(opened, now, time.LocalTimeZone, CultureInfo.CurrentCulture));
+            Items.Add(item);
+            if (!known)
+            {
+                unknown.Add(item);
+            }
+
             previous = group;
         }
 
+        AvailabilityChecked = unknown.Count == 0 || recent is null ? Task.CompletedTask : CheckAvailabilityAsync(recent, unknown, CancellationToken.None);
+
         SelectedItem = selected is null ? null : Items.FirstOrDefault(item => item.Path == selected);
         OnPropertyChanged(nameof(IsEmpty));
+    }
+
+    private async Task CheckAvailabilityAsync(RecentProjects projects, List<RecentProjectItemViewModel> rows, CancellationToken cancellationToken)
+    {
+        string[] paths = [.. rows.Select(row => row.Path)];
+        bool[] found = await Task.Run(() => paths.Select(projects.IsAvailable).ToArray(), cancellationToken).ConfigureAwait(true);
+        for (int i = 0; i < rows.Count; i++)
+        {
+            availability[paths[i]] = found[i];
+            rows[i].IsAvailable = found[i];
+        }
+
+        OpenCommand.NotifyCanExecuteChanged();
+        OpenSelectedCommand.NotifyCanExecuteChanged();
     }
 
     partial void OnSearchTextChanged(string value) => Refresh();

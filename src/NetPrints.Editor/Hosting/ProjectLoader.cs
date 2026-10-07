@@ -113,13 +113,13 @@ internal sealed class ProjectLoader : IDisposable
 
     private async Task ReopenLastProjectAsync()
     {
-        RecentProject? last = context.Recent?.List().MaxBy(entry => entry.LastOpenedUtc);
-        if (last is null)
+        RecentProject? last = context.Recent?.ListUnchecked().MaxBy(entry => entry.LastOpenedUtc);
+        if (last is null || context.Recent is not { } recent)
         {
             return;
         }
 
-        if (!last.IsAvailable)
+        if (!await Task.Run(() => recent.IsAvailable(last.Path)).ConfigureAwait(true))
         {
             shell.StartPageError = $"The last project '{last.Path}' was not found.";
             return;

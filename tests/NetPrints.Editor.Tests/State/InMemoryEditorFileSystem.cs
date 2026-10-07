@@ -18,11 +18,18 @@ public sealed class InMemoryEditorFileSystem : IEditorFileSystem
     /// <summary>Gets or sets an action run before every move; throw from it to fail the move.</summary>
     public Action<string, string>? BeforeMove { get; set; }
 
+    /// <summary>Gets or sets an action run before every <see cref="FileExists"/>; block in it to imitate a slow path.</summary>
+    public Action<string>? BeforeFileExists { get; set; }
+
     public IReadOnlyCollection<string> Files => files.Keys;
 
     public string ReadText(string path) => System.Text.Encoding.UTF8.GetString(files[path]);
 
-    public bool FileExists(string path) => files.ContainsKey(path);
+    public bool FileExists(string path)
+    {
+        BeforeFileExists?.Invoke(path);
+        return files.ContainsKey(path);
+    }
 
     public bool DirectoryExists(string path) => directories.Contains(path);
 

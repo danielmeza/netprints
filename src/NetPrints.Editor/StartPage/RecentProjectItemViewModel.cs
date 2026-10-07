@@ -1,3 +1,4 @@
+using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Editor.State;
 
 namespace NetPrints.Editor.StartPage;
@@ -8,7 +9,7 @@ namespace NetPrints.Editor.StartPage;
 /// <param name="groupTitle">The date group the row belongs to.</param>
 /// <param name="showGroupHeader">Whether the row is the first of its group and shows the group's title above it.</param>
 /// <param name="relativeDate">When the project was last opened, as a person would say it.</param>
-internal sealed class RecentProjectItemViewModel(RecentProject entry, RecentProjectsTileViewModel owner, string groupTitle, bool showGroupHeader, string relativeDate)
+internal sealed partial class RecentProjectItemViewModel(RecentProject entry, RecentProjectsTileViewModel owner, string groupTitle, bool showGroupHeader, string relativeDate) : ObservableObject
 {
     /// <summary>The text of an unavailable row.</summary>
     public const string NotFound = "Not found";
@@ -31,8 +32,10 @@ internal sealed class RecentProjectItemViewModel(RecentProject entry, RecentProj
     /// <summary>Gets a value indicating whether the entry is pinned.</summary>
     public bool Pinned => entry.Pinned;
 
-    /// <summary>Gets a value indicating whether the project file still exists.</summary>
-    public bool IsAvailable => entry.IsAvailable;
+    /// <summary>Gets or sets a value indicating whether the project file still exists; true until the tile's check says otherwise.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(StatusText))]
+    public partial bool IsAvailable { get; set; } = entry.IsAvailable;
 
     /// <summary>Gets the title of the date group the row belongs to.</summary>
     public string GroupTitle => groupTitle;
@@ -44,7 +47,7 @@ internal sealed class RecentProjectItemViewModel(RecentProject entry, RecentProj
     public string RelativeDate => relativeDate;
 
     /// <summary>Gets "Not found" for a project whose file is gone, otherwise null.</summary>
-    public string? StatusText => entry.IsAvailable ? null : NotFound;
+    public string? StatusText => IsAvailable ? null : NotFound;
 
     /// <summary>Shortens a path by replacing its middle with an ellipsis, keeping the start and the file name.</summary>
     /// <param name="path">The path.</param>

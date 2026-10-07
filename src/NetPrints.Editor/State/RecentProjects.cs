@@ -33,13 +33,26 @@ public sealed class RecentProjects
 
     /// <summary>Lists the projects, pinned first and then the most recent.</summary>
     /// <param name="search">Keeps the entries whose name or path contains this text, ignoring case; null or empty keeps all.</param>
-    /// <returns>The entries, each flagged with whether its file still exists.</returns>
+    /// <returns>The entries, each flagged with whether its file still exists. Checks every file: call it off the UI thread, or use <see cref="ListUnchecked"/>.</returns>
     public IReadOnlyList<RecentProject> List(string? search = null) =>
-        [.. entries.Where(entry => string.IsNullOrEmpty(search)
+        [.. Matching(search).Select(entry => new RecentProject(entry.Path, entry.DisplayName, entry.LastOpenedUtc, entry.Pinned, fileSystem.FileExists(entry.Path)))];
+
+    /// <summary>Lists the projects like <see cref="List"/> without touching the file system.</summary>
+    /// <param name="search">Keeps the entries whose name or path contains this text, ignoring case; null or empty keeps all.</param>
+    /// <returns>The entries, all flagged as available until <see cref="IsAvailable"/> says otherwise.</returns>
+    public IReadOnlyList<RecentProject> ListUnchecked(string? search = null) =>
+        [.. Matching(search).Select(entry => new RecentProject(entry.Path, entry.DisplayName, entry.LastOpenedUtc, entry.Pinned, true))];
+
+    /// <summary>Tells whether a project file still exists; may block on a slow or unreachable path.</summary>
+    /// <param name="path">The project file's path.</param>
+    /// <returns><see langword="true"/> when the file exists.</returns>
+    public bool IsAvailable(string path) => fileSystem.FileExists(path);
+
+    private IEnumerable<RecentEntry> Matching(string? search) =>
+        entries.Where(entry => string.IsNullOrEmpty(search)
                 || entry.DisplayName.Contains(search, StringComparison.OrdinalIgnoreCase)
                 || entry.Path.Contains(search, StringComparison.OrdinalIgnoreCase))
-            .OrderByDescending(entry => entry.Pinned)
-            .Select(entry => new RecentProject(entry.Path, entry.DisplayName, entry.LastOpenedUtc, entry.Pinned, fileSystem.FileExists(entry.Path)))];
+            .OrderByDescending(entry => entry.Pinned);
 
     /// <summary>Records that a project was opened or created: it moves to the front, keeping its pin.</summary>
     /// <param name="path">The project file's path.</param>
