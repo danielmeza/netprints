@@ -233,7 +233,7 @@ public class NoProjectPanelsTests
     {
         public List<LayoutState> Saved { get; } = [];
 
-        public void SaveLayout(LayoutState state) => Saved.Add(state);
+        public void SaveLayout(LayoutState state, bool userChanged = false) => Saved.Add(state);
 
         public LayoutState? LoadLayout() => Saved.Count > 0 ? Saved[^1] : null;
 
@@ -251,6 +251,6 @@ public class NoProjectPanelsTests
 
         public StartState? LoadStart() => throw new NotSupportedException();
 
-        public void SaveStart(StartState state) => throw new NotSupportedException();
+        public void SaveStart(StartState state, bool userChanged = false) => throw new NotSupportedException();
     }
 }

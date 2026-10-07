@@ -22,7 +22,8 @@ case-folded first.
 | `<AppData>/NetPrints/backups/<project-key>/<relative-path>.bak.json` | backed-up content of one file |
 
 - **Permissions:** on Linux and macOS, folders are created `0700` and files `0600`.
-- **Writes:** every write goes to `<file>.tmp` in the same folder and is then renamed over the target.
+- **Writes:** every write goes to a uniquely named temporary file (`<file>.<random>.tmp`) in the same folder and is then
+  renamed over the target, so two editors never share a temporary file. Temporary files older than a day are deleted.
 - **Override:** `NETPRINTS_STATE_DIR` replaces `<AppData>/NetPrints` for tests and E2E workers, so parallel workers
   never share state.
 
@@ -30,8 +31,11 @@ case-folded first.
 
 All files are UTF-8 JSON without a byte order mark, with LF line endings, written through System.Text.Json source
 generation. Every file carries `"schemaVersion": 1`. A reader that finds a missing, unreadable or newer
-`schemaVersion` logs a warning and uses the defaults. It never rewrites a newer file until the user changes that
-state.
+`schemaVersion` logs a warning and uses the defaults. A file with a `null` where the schema says non-null, or without a
+required field, is unreadable and gets the same treatment. It never rewrites a newer file until the user changes that
+state: the store skips the save (one warning per file) unless the caller says the user changed it (a layout change, a start
+setting). `recent.json` is never rewritten while it is newer. `RecentProjects` re-reads the file before each change and
+applies the change to what it read, so two editors keep each other's entries and pins.
 
 ```jsonc
 // window.json

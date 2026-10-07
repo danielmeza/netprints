@@ -24,4 +24,10 @@ internal static partial class Log
     /// <param name="path">The state file's path.</param>
     [LoggerMessage(EventId = 1202, Level = LogLevel.Warning, Message = "The state file {Path} could not be written")]
     public static partial void StateFileWriteFailed(ILogger logger, Exception exception, string path);
+
+    /// <summary>Logs 1203: a save is skipped because the file was written by a newer editor.</summary>
+    /// <param name="logger">Logger to write to.</param>
+    /// <param name="path">The state file's path.</param>
+    [LoggerMessage(EventId = 1203, Level = LogLevel.Warning, Message = "The state file {Path} is from a newer editor and is not rewritten")]
+    public static partial void StateFileSaveSkipped(ILogger logger, string path);
 }

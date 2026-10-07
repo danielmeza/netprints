@@ -36,7 +36,7 @@ public sealed class SessionStateTests
 
         public StartState? LoadStart() => null;
 
-        public void SaveStart(StartState state)
+        public void SaveStart(StartState state, bool userChanged = false)
         {
         }
 
@@ -46,7 +46,7 @@ public sealed class SessionStateTests
 
         public LayoutState? LoadLayout() => throw new NotSupportedException();
 
-        public void SaveLayout(LayoutState state) => throw new NotSupportedException();
+        public void SaveLayout(LayoutState state, bool userChanged = false) => throw new NotSupportedException();
 
         public RecentState LoadRecent() => throw new NotSupportedException();
 

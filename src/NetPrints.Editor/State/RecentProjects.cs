@@ -2,7 +2,7 @@ namespace NetPrints.Editor.State;
 
 /// <summary>
 /// The recently opened projects (FR-041, state-files.md §3): pinned entries first, then the most recent; at most
-/// <see cref="MaxUnpinned"/> unpinned entries, the oldest dropped; pinned entries never dropped. Every change is saved at once.
+/// <see cref="MaxUnpinned"/> unpinned entries, the oldest dropped; pinned entries never dropped. Every change is saved at once, on top of what the file holds then, so another editor's changes are kept.
 /// Removing an entry never touches the project's files. Not thread safe.
 /// </summary>
 public sealed class RecentProjects
@@ -27,7 +27,8 @@ public sealed class RecentProjects
         this.fileSystem = fileSystem ?? throw new ArgumentNullException(nameof(fileSystem));
         this.time = time ?? throw new ArgumentNullException(nameof(time));
         comparison = pathComparison ?? (OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
-        entries = [.. store.LoadRecent().Entries.OrderByDescending(entry => entry.LastOpenedUtc)];
+        entries = [];
+        Reload();
     }
 
     /// <summary>Lists the projects, pinned first and then the most recent.</summary>
@@ -47,6 +48,7 @@ public sealed class RecentProjects
     {
         ArgumentException.ThrowIfNullOrEmpty(path);
         ArgumentException.ThrowIfNullOrEmpty(displayName);
+        Reload();
         int index = IndexOf(path);
         bool pinned = index >= 0 && entries[index].Pinned;
         if (index >= 0)
@@ -70,6 +72,7 @@ public sealed class RecentProjects
     /// <param name="path">The project file's path.</param>
     public void Remove(string path)
     {
+        Reload();
         int index = IndexOf(path);
         if (index >= 0)
         {
@@ -80,12 +83,19 @@ public sealed class RecentProjects
 
     private void SetPinned(string path, bool pinned)
     {
+        Reload();
         int index = IndexOf(path);
         if (index >= 0 && entries[index].Pinned != pinned)
         {
             entries[index] = entries[index] with { Pinned = pinned };
             Commit();
         }
+    }
+
+    private void Reload()
+    {
+        entries.Clear();
+        entries.AddRange(store.LoadRecent().Entries.OrderByDescending(entry => entry.LastOpenedUtc));
     }
 
     private int IndexOf(string path) => entries.FindIndex(entry => string.Equals(entry.Path, path, comparison));

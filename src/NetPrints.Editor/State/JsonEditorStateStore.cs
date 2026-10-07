@@ -20,6 +20,8 @@ public sealed class JsonEditorStateStore : IEditorStateStore
     private readonly IEditorFileSystem fileSystem;
     private readonly AtomicFileWriter writer;
     private readonly ILogger logger;
+    private readonly HashSet<string> newerFiles = new(StringComparer.Ordinal);
+    private readonly HashSet<string> skipped = new(StringComparer.Ordinal);
 
     /// <summary>Creates the store.</summary>
     /// <param name="paths">The editor's data folders.</param>
@@ -37,35 +39,41 @@ public sealed class JsonEditorStateStore : IEditorStateStore
     public WindowState? LoadWindow() => Load(WindowPath, StateJsonContext.Default.WindowState);
 
     /// <inheritdoc/>
-    public void SaveWindow(WindowState state) => Save(WindowPath, state, StateJsonContext.Default.WindowState);
+    public void SaveWindow(WindowState state) => Save(WindowPath, state, StateJsonContext.Default.WindowState, userChanged: false);
 
     /// <inheritdoc/>
     public LayoutState? LoadLayout() => Load(LayoutPath, StateJsonContext.Default.LayoutState);
 
     /// <inheritdoc/>
-    public void SaveLayout(LayoutState state) => Save(LayoutPath, state, StateJsonContext.Default.LayoutState);
+    public void SaveLayout(LayoutState state, bool userChanged = false) => Save(LayoutPath, state, StateJsonContext.Default.LayoutState, userChanged);
 
     /// <inheritdoc/>
-    public RecentState LoadRecent() => Load(RecentPath, StateJsonContext.Default.RecentState) is { Entries: not null } state ? state : RecentState.Empty;
+    public RecentState LoadRecent() =>
+        Load(RecentPath, StateJsonContext.Default.RecentState) is { Entries: not null } state && Valid(RecentPath, !state.Entries.Any(entry => entry is null))
+            ? state
+            : RecentState.Empty;
 
     /// <inheritdoc/>
-    public void SaveRecent(RecentState state) => Save(RecentPath, state, StateJsonContext.Default.RecentState);
+    public void SaveRecent(RecentState state) => Save(RecentPath, state, StateJsonContext.Default.RecentState, userChanged: false);
 
     /// <inheritdoc/>
     public StartState? LoadStart() => Load(StartPath, StateJsonContext.Default.StartState);
 
     /// <inheritdoc/>
-    public void SaveStart(StartState state) => Save(StartPath, state, StateJsonContext.Default.StartState);
+    public void SaveStart(StartState state, bool userChanged = false) => Save(StartPath, state, StateJsonContext.Default.StartState, userChanged);
 
     /// <inheritdoc/>
     public SessionState? LoadSession(string projectPath) =>
-        Load(SessionPath(projectPath), StateJsonContext.Default.SessionState) is { OpenDocuments: not null, Viewports: not null } state ? state : null;
+        Load(SessionPath(projectPath), StateJsonContext.Default.SessionState) is { OpenDocuments: not null, Viewports: not null } state
+            && Valid(SessionPath(projectPath), !state.OpenDocuments.Any(document => document is null) && !state.Viewports.Values.Any(viewport => viewport is null))
+                ? state
+                : null;
 
     /// <inheritdoc/>
     public void SaveSession(SessionState state)
     {
         ArgumentNullException.ThrowIfNull(state);
-        Save(SessionPath(state.ProjectPath), state, StateJsonContext.Default.SessionState);
+        Save(SessionPath(state.ProjectPath), state, StateJsonContext.Default.SessionState, userChanged: false);
     }
 
     private string WindowPath => Path.Combine(paths.StateDirectory, WindowFileName);
@@ -88,7 +96,15 @@ public sealed class JsonEditorStateStore : IEditorStateStore
 
         try
         {
-            T? state = JsonSerializer.Deserialize(fileSystem.ReadAllBytes(path), typeInfo);
+            byte[] bytes = fileSystem.ReadAllBytes(path);
+            if (IsNewer(bytes))
+            {
+                newerFiles.Add(path);
+                Log.StateFileUnsupported(logger, path);
+                return null;
+            }
+
+            T? state = JsonSerializer.Deserialize(bytes, typeInfo);
             if (state is { SchemaVersion: StateFile.CurrentVersion })
             {
                 return state;
@@ -104,13 +120,44 @@ public sealed class JsonEditorStateStore : IEditorStateStore
         return null;
     }
 
-    private void Save<T>(string path, T state, JsonTypeInfo<T> typeInfo)
+    private bool Valid(string path, bool valid)
+    {
+        if (!valid)
+        {
+            Log.StateFileUnsupported(logger, path);
+        }
+
+        return valid;
+    }
+
+    private static bool IsNewer(byte[] bytes)
+    {
+        using JsonDocument document = JsonDocument.Parse(bytes);
+        return document.RootElement.ValueKind == JsonValueKind.Object
+            && document.RootElement.TryGetProperty("schemaVersion", out JsonElement version)
+            && version.ValueKind == JsonValueKind.Number
+            && version.TryGetInt32(out int number)
+            && number > StateFile.CurrentVersion;
+    }
+
+    private void Save<T>(string path, T state, JsonTypeInfo<T> typeInfo, bool userChanged)
     {
         ArgumentNullException.ThrowIfNull(state);
+        if (newerFiles.Contains(path) && !userChanged)
+        {
+            if (skipped.Add(path))
+            {
+                Log.StateFileSaveSkipped(logger, path);
+            }
+
+            return;
+        }
+
         string text = JsonSerializer.Serialize(state, typeInfo).Replace("\r\n", "\n", StringComparison.Ordinal) + "\n";
         try
         {
             writer.Write(path, new UTF8Encoding(false).GetBytes(text));
+            newerFiles.Remove(path);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {

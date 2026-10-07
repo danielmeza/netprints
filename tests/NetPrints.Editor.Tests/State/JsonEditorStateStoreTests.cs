@@ -108,8 +108,10 @@ public sealed class JsonEditorStateStoreTests
 
         CreateStore().SaveWindow(SampleWindow());
 
-        Assert.Equal(WindowFile + ".tmp", Assert.Single(moves));
-        Assert.DoesNotContain(WindowFile + ".tmp", fs.Files);
+        string temp = Assert.Single(moves);
+        Assert.StartsWith(WindowFile + ".", temp, StringComparison.Ordinal);
+        Assert.EndsWith(".tmp", temp, StringComparison.Ordinal);
+        Assert.DoesNotContain(temp, fs.Files);
     }
 
     [Fact]
@@ -155,19 +157,6 @@ public sealed class JsonEditorStateStoreTests
 
         Assert.Null(store.LoadWindow());
         Assert.Equal(LogLevel.Warning, Assert.Single(logger.Entries).Level);
-    }
-
-    [Fact]
-    public void ANewerFileIsReplacedOnlyWhenTheStateIsSavedAgain()
-    {
-        fs.CreateDirectory(paths.StateDirectory);
-        fs.WriteAllBytes(WindowFile, Encoding.UTF8.GetBytes("""{"schemaVersion":9}"""));
-        JsonEditorStateStore store = CreateStore();
-        _ = store.LoadWindow();
-
-        store.SaveWindow(SampleWindow());
-
-        Assert.Equal(SampleWindow(), CreateStore().LoadWindow());
     }
 
     [Fact]

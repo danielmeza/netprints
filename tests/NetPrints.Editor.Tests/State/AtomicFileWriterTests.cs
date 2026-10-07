@@ -17,7 +17,10 @@ public sealed class AtomicFileWriterTests : IDisposable
 
         new AtomicFileWriter(fs).Write(Path.Combine("state", "window.json"), [1, 2, 3]);
 
-        Assert.Equal((Path.Combine("state", "window.json.tmp"), Path.Combine("state", "window.json")), Assert.Single(moves));
+        (string source, string destination) = Assert.Single(moves);
+        Assert.StartsWith(Path.Combine("state", "window.json."), source, StringComparison.Ordinal);
+        Assert.EndsWith(".tmp", source, StringComparison.Ordinal);
+        Assert.Equal(Path.Combine("state", "window.json"), destination);
         Assert.Equal([Path.Combine("state", "window.json")], fs.Files);
         Assert.Equal<byte>([1, 2, 3], fs.ReadAllBytes(Path.Combine("state", "window.json")));
     }

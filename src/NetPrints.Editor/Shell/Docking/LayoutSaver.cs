@@ -48,11 +48,12 @@ internal sealed class LayoutSaver : IDisposable
             return;
         }
 
+        bool userChanged = pending;
         pending = false;
         timer.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
         try
         {
-            store.SaveLayout(LayoutSerializer.ToState(adapter.CaptureLayout()));
+            store.SaveLayout(LayoutSerializer.ToState(adapter.CaptureLayout()), userChanged);
         }
         catch (InvalidOperationException)
         {

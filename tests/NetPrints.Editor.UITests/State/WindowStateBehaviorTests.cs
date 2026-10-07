@@ -22,7 +22,7 @@ public class WindowStateBehaviorTests
 
         public LayoutState? LoadLayout() => null;
 
-        public void SaveLayout(LayoutState state)
+        public void SaveLayout(LayoutState state, bool userChanged = false)
         {
         }
 
@@ -40,7 +40,7 @@ public class WindowStateBehaviorTests
 
         public StartState? LoadStart() => null;
 
-        public void SaveStart(StartState state)
+        public void SaveStart(StartState state, bool userChanged = false)
         {
         }
     }

@@ -21,7 +21,8 @@ public interface IEditorStateStore
 
     /// <summary>Writes <c>layout.json</c>.</summary>
     /// <param name="state">The state to keep.</param>
-    void SaveLayout(LayoutState state);
+    /// <param name="userChanged">Whether the user changed the layout; a newer file is rewritten only then.</param>
+    void SaveLayout(LayoutState state, bool userChanged = false);
 
     /// <summary>Reads <c>recent.json</c>.</summary>
     /// <returns>The state; empty for the defaults.</returns>
@@ -46,5 +47,6 @@ public interface IEditorStateStore
 
     /// <summary>Writes <c>start.json</c>.</summary>
     /// <param name="state">The state to keep.</param>
-    void SaveStart(StartState state);
+    /// <param name="userChanged">Whether the user changed a start setting; a newer file is rewritten only then.</param>
+    void SaveStart(StartState state, bool userChanged = false);
 }
