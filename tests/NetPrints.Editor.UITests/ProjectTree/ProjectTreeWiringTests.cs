@@ -177,8 +177,7 @@ public class ProjectTreeWiringTests
     private static UiTarget RowIndent(Rig rig, string rowId)
     {
         var row = rig.Find(rowId) ?? throw new InvalidOperationException($"No element {rowId}.");
-        var tree = rig.Find(AutomationIds.TreeView) ?? throw new InvalidOperationException("No tree.");
-        return new UiTarget(row.Window, tree.Bounds.X + 4, row.Bounds.Y + Math.Min(row.Bounds.Height / 2, 12));
+        return new UiTarget(row.Window, row.Bounds.X + 4, row.Bounds.Y + Math.Min(row.Bounds.Height / 2, 12));
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
