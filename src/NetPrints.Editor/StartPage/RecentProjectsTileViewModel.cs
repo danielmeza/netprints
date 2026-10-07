@@ -1,25 +1,36 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.State;
 
 namespace NetPrints.Editor.StartPage;
 
-/// <summary>The recent tile: the recent list with search, open, pin, unpin and remove.</summary>
+/// <summary>The recent tile: the recent list in date groups, with search, open, pin, unpin, remove, copy path, open containing folder and the keyboard commands.</summary>
 internal sealed partial class RecentProjectsTileViewModel : ObservableObject
 {
     private readonly RecentProjects? recent;
     private readonly IProjectActions actions;
+    private readonly TimeProvider time;
+    private readonly IClipboardService? clipboard;
+    private readonly IFolderLauncher? folders;
 
     /// <summary>Creates the tile.</summary>
     /// <param name="recent">The recent list, or null when the editor keeps none.</param>
     /// <param name="actions">Opens the chosen project.</param>
-    public RecentProjectsTileViewModel(RecentProjects? recent, IProjectActions actions)
+    /// <param name="time">The clock of the relative dates and the date groups; null for the system clock.</param>
+    /// <param name="clipboard">Receives a copied path; null makes Copy path do nothing.</param>
+    /// <param name="folders">Shows a project's folder; null makes Open containing folder do nothing.</param>
+    public RecentProjectsTileViewModel(RecentProjects? recent, IProjectActions actions, TimeProvider? time = null, IClipboardService? clipboard = null, IFolderLauncher? folders = null)
     {
         ArgumentNullException.ThrowIfNull(actions);
         this.recent = recent;
         this.actions = actions;
+        this.time = time ?? TimeProvider.System;
+        this.clipboard = clipboard;
+        this.folders = folders;
         Refresh();
     }
 
@@ -30,18 +41,32 @@ internal sealed partial class RecentProjectsTileViewModel : ObservableObject
     [ObservableProperty]
     public partial string SearchText { get; set; } = "";
 
+    /// <summary>Gets or sets the row the keyboard commands act on.</summary>
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(OpenSelectedCommand))]
+    [NotifyCanExecuteChangedFor(nameof(RemoveSelectedCommand))]
+    [NotifyCanExecuteChangedFor(nameof(TogglePinSelectedCommand))]
+    public partial RecentProjectItemViewModel? SelectedItem { get; set; }
+
     /// <summary>Gets a value indicating whether no row shows.</summary>
     public bool IsEmpty => Items.Count == 0;
 
     /// <summary>Reads the list again, with the current search.</summary>
     public void Refresh()
     {
+        string? selected = SelectedItem?.Path;
         Items.Clear();
+        DateTimeOffset now = time.GetUtcNow();
+        string? previous = null;
         foreach (RecentProject entry in recent?.List(string.IsNullOrWhiteSpace(SearchText) ? null : SearchText) ?? [])
         {
-            Items.Add(new RecentProjectItemViewModel(entry));
+            DateTimeOffset opened = new(DateTime.SpecifyKind(entry.LastOpenedUtc, DateTimeKind.Utc));
+            string group = RecentTime.GroupOf(entry.Pinned, opened, now, time.LocalTimeZone);
+            Items.Add(new RecentProjectItemViewModel(entry, group, group != previous, RecentTime.Describe(opened, now, time.LocalTimeZone, CultureInfo.CurrentCulture)));
+            previous = group;
         }
 
+        SelectedItem = selected is null ? null : Items.FirstOrDefault(item => item.Path == selected);
         OnPropertyChanged(nameof(IsEmpty));
     }
 
@@ -66,6 +91,69 @@ internal sealed partial class RecentProjectsTileViewModel : ObservableObject
 
     [RelayCommand]
     private void Remove(RecentProjectItemViewModel item) => Change(() => recent?.Remove(item.Path));
+
+    [RelayCommand]
+    private void TogglePin(RecentProjectItemViewModel item) => Change(() =>
+    {
+        if (item.Pinned)
+        {
+            recent?.Unpin(item.Path);
+        }
+        else
+        {
+            recent?.Pin(item.Path);
+        }
+    });
+
+    [RelayCommand]
+    private async Task CopyPathAsync(RecentProjectItemViewModel item)
+    {
+        if (clipboard is not null)
+        {
+            await clipboard.SetTextAsync(item.Path).ConfigureAwait(true);
+        }
+    }
+
+    [RelayCommand]
+    private void OpenContainingFolder(RecentProjectItemViewModel item)
+    {
+        if (System.IO.Path.GetDirectoryName(item.Path) is { Length: > 0 } folder)
+        {
+            folders?.Reveal(folder);
+        }
+    }
+
+    [RelayCommand]
+    private void SelectFirst() => SelectedItem = Items.FirstOrDefault();
+
+    [RelayCommand(CanExecute = nameof(CanOpenSelected))]
+    private Task OpenSelectedAsync(CancellationToken cancellationToken) => SelectedItem is { } item ? OpenAsync(item, cancellationToken) : Task.CompletedTask;
+
+    private bool CanOpenSelected() => SelectedItem is { IsAvailable: true };
+
+    [RelayCommand(CanExecute = nameof(HasSelection))]
+    private void RemoveSelected()
+    {
+        if (SelectedItem is not { } item)
+        {
+            return;
+        }
+
+        int index = Items.IndexOf(item);
+        Change(() => recent?.Remove(item.Path));
+        SelectedItem = Items.Count == 0 ? null : Items[Math.Min(index, Items.Count - 1)];
+    }
+
+    [RelayCommand(CanExecute = nameof(HasSelection))]
+    private void TogglePinSelected()
+    {
+        if (SelectedItem is { } item)
+        {
+            TogglePin(item);
+        }
+    }
+
+    private bool HasSelection() => SelectedItem is not null;
 
     private void Change(Action change)
     {

@@ -34,6 +34,12 @@ public sealed class SessionStateTests
 
         public void SaveSession(SessionState state) => Session = state;
 
+        public StartState? LoadStart() => null;
+
+        public void SaveStart(StartState state)
+        {
+        }
+
         public WindowState? LoadWindow() => throw new NotSupportedException();
 
         public void SaveWindow(WindowState state) => throw new NotSupportedException();

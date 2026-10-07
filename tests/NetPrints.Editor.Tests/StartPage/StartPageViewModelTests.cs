@@ -76,6 +76,49 @@ public sealed class StartPageViewModelTests : IDisposable
     }
 
     [Fact]
+    public void ThePageSplitsItsTilesByRoleForTheLayout()
+    {
+        ContributionRegistry registry = BuiltInRegistry();
+        registry.AddDashboardTile(new DashboardTileDescriptor("ext.tile.extra", "Extra", 9, _ => "extra"));
+        using var page = new StartPageViewModel(NewShell(registry), ServicesFor(actions, null));
+
+        Assert.IsType<RecentProjectsTileViewModel>(page.Recent);
+        Assert.Equal([typeof(NewProjectTileViewModel), typeof(OpenProjectTileViewModel)], page.GetStarted.Select(card => card.GetType()).Order(Comparer<Type>.Create((a, b) => string.CompareOrdinal(a.Name, b.Name))));
+        Assert.IsType<SamplesTileViewModel>(page.Samples);
+        Assert.IsType<WhatsNewTileViewModel>(page.WhatsNew);
+        Assert.Equal(["extra"], page.Others);
+        Assert.False(string.IsNullOrWhiteSpace(page.Version));
+    }
+
+    [Fact]
+    public void WhatsNewStartsExpandedUntilThisVersionsNotesWereShownOnce()
+    {
+        var store = new JsonEditorStateStore(new EditorDataPaths("/state-root"), fs, NullLogger.Instance);
+        StartPageServices services = ServicesFor(actions, null).Add<IEditorStateStore>(store);
+
+        using (var first = new StartPageViewModel(NewShell(BuiltInRegistry()), services))
+        {
+            Assert.True(first.IsWhatsNewExpanded);
+        }
+
+        Assert.Equal(StartPageViewModel.ProductVersion, store.LoadStart()?.WhatsNewSeenVersion);
+        using var second = new StartPageViewModel(NewShell(BuiltInRegistry()), services);
+        Assert.False(second.IsWhatsNewExpanded);
+    }
+
+    [Fact]
+    public void AnotherVersionsNotesAreNewAgain()
+    {
+        var store = new JsonEditorStateStore(new EditorDataPaths("/state-root"), fs, NullLogger.Instance);
+        store.SaveStart(new StartState(StateFile.CurrentVersion, "0.0.1-old"));
+        StartPageServices services = ServicesFor(actions, null).Add<IEditorStateStore>(store);
+
+        using var page = new StartPageViewModel(NewShell(BuiltInRegistry()), services);
+
+        Assert.True(page.IsWhatsNewExpanded);
+    }
+
+    [Fact]
     public void ThePageShowsTheShellsStartError()
     {
         ShellViewModel shell = NewShell(BuiltInRegistry());

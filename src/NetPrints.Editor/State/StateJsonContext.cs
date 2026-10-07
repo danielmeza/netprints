@@ -7,5 +7,6 @@ namespace NetPrints.Editor.State;
 [JsonSerializable(typeof(WindowState))]
 [JsonSerializable(typeof(LayoutState))]
 [JsonSerializable(typeof(RecentState))]
+[JsonSerializable(typeof(StartState))]
 [JsonSerializable(typeof(SessionState))]
 internal sealed partial class StateJsonContext : JsonSerializerContext;

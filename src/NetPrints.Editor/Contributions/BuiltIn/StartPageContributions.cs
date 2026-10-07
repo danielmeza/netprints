@@ -1,3 +1,4 @@
+using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.StartPage;
 using NetPrints.Editor.State;
@@ -15,7 +16,9 @@ public static class StartPageContributions
 
         registry.AddDashboardTile(new DashboardTileDescriptor(
             ContributionIds.TilePrefix + "recent", "Recent projects", 0,
-            services => new RecentProjectsTileViewModel(services.GetService(typeof(RecentProjects)) as RecentProjects, StartPageServices.Require<IProjectActions>(services))));
+            services => new RecentProjectsTileViewModel(
+                services.GetService(typeof(RecentProjects)) as RecentProjects, StartPageServices.Require<IProjectActions>(services),
+                services.GetService(typeof(TimeProvider)) as TimeProvider, services.GetService(typeof(IClipboardService)) as IClipboardService, services.GetService(typeof(IFolderLauncher)) as IFolderLauncher)));
         registry.AddDashboardTile(new DashboardTileDescriptor(
             ContributionIds.TilePrefix + "open", "Open folder or project", 1,
             services => new OpenProjectTileViewModel(StartPageServices.Require<IProjectActions>(services))));

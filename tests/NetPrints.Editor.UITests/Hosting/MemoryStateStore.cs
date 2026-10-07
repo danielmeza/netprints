@@ -19,6 +19,12 @@ internal sealed class MemoryStateStore : IEditorStateStore
     {
     }
 
+    public StartState? Start { get; set; }
+
+    public StartState? LoadStart() => Start;
+
+    public void SaveStart(StartState state) => Start = state;
+
     public LayoutState? LoadLayout() => Layout;
 
     public void SaveLayout(LayoutState state)

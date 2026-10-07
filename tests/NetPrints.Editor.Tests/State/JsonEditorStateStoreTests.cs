@@ -55,6 +55,16 @@ public sealed class JsonEditorStateStoreTests
     }
 
     [Fact]
+    public void StartStateRoundTripsAndAMissingFileIsTheDefaults()
+    {
+        Assert.Null(CreateStore().LoadStart());
+
+        CreateStore().SaveStart(new StartState(StateFile.CurrentVersion, "0.2.0"));
+
+        Assert.Equal("0.2.0", CreateStore().LoadStart()?.WhatsNewSeenVersion);
+    }
+
+    [Fact]
     public void SessionStateRoundTripsAndLivesUnderTheProjectKey()
     {
         var session = new SessionState(StateFile.CurrentVersion, ProjectPath, ["a", "b"], "b", new Dictionary<string, ViewportState> { ["a"] = new(-40, 12.5, 1.25) });

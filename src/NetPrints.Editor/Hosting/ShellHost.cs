@@ -71,7 +71,12 @@ internal sealed class ShellHost : IDisposable
         var shell = new ShellViewModel(registry, new NoServices(), TimeProvider.System, context.Dispatcher);
         shell.WindowStateService = context.WindowStateService;
         var actions = new ShellProjectActions(context, shell);
-        var startPageServices = new StartPageServices().Add<IProjectActions>(actions);
+        var startPageServices = new StartPageServices().Add<IProjectActions>(actions).Add<IClipboardService>(context.Clipboard).Add<IFolderLauncher>(new ShellFolderLauncher()).Add(TimeProvider.System);
+        if (context.StateStore is { } stateStore)
+        {
+            startPageServices.Add(stateStore);
+        }
+
         if (context.Recent is { } recent)
         {
             startPageServices.Add(recent);

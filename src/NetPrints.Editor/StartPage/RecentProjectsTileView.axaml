@@ -21,7 +21,7 @@
                     AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageRecentOpen}" AutomationProperties.Name="{Binding DisplayName, StringFormat='Open {0}'}">
               <StackPanel>
                 <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" />
-                <TextBlock Text="{Binding Detail}" FontSize="12" />
+                <TextBlock Text="{Binding Path}" FontSize="12" />
               </StackPanel>
             </Button>
             <Button Grid.Column="1" Classes="flat" IsVisible="{Binding !Pinned}" ToolTip.Tip="Pin" AutomationProperties.Name="Pin"

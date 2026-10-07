@@ -37,6 +37,12 @@ public class WindowStateBehaviorTests
         public void SaveSession(SessionState state)
         {
         }
+
+        public StartState? LoadStart() => null;
+
+        public void SaveStart(StartState state)
+        {
+        }
     }
 
     private static Window CreateWindow(FakeStore store)

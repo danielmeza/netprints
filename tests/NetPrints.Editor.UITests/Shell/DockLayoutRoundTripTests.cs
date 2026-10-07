@@ -317,6 +317,10 @@ public class DockLayoutRoundTripTests
         public SessionState? LoadSession(string projectPath) => throw new NotSupportedException();
 
         public void SaveSession(SessionState state) => throw new NotSupportedException();
+
+        public StartState? LoadStart() => throw new NotSupportedException();
+
+        public void SaveStart(StartState state) => throw new NotSupportedException();
     }
 
     private sealed class RecordingLogger : ILogger

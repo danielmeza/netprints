@@ -39,4 +39,12 @@ public interface IEditorStateStore
     /// <summary>Writes the session of a project.</summary>
     /// <param name="state">The state to keep; <see cref="SessionState.ProjectPath"/> names the file.</param>
     void SaveSession(SessionState state);
+
+    /// <summary>Reads <c>start.json</c>.</summary>
+    /// <returns>The state, or <see langword="null"/> for the defaults.</returns>
+    StartState? LoadStart();
+
+    /// <summary>Writes <c>start.json</c>.</summary>
+    /// <param name="state">The state to keep.</param>
+    void SaveStart(StartState state);
 }

@@ -14,6 +14,7 @@ public sealed class JsonEditorStateStore : IEditorStateStore
     private const string WindowFileName = "window.json";
     private const string LayoutFileName = "layout.json";
     private const string RecentFileName = "recent.json";
+    private const string StartFileName = "start.json";
 
     private readonly EditorDataPaths paths;
     private readonly IEditorFileSystem fileSystem;
@@ -51,6 +52,12 @@ public sealed class JsonEditorStateStore : IEditorStateStore
     public void SaveRecent(RecentState state) => Save(RecentPath, state, StateJsonContext.Default.RecentState);
 
     /// <inheritdoc/>
+    public StartState? LoadStart() => Load(StartPath, StateJsonContext.Default.StartState);
+
+    /// <inheritdoc/>
+    public void SaveStart(StartState state) => Save(StartPath, state, StateJsonContext.Default.StartState);
+
+    /// <inheritdoc/>
     public SessionState? LoadSession(string projectPath) =>
         Load(SessionPath(projectPath), StateJsonContext.Default.SessionState) is { OpenDocuments: not null, Viewports: not null } state ? state : null;
 
@@ -66,6 +73,8 @@ public sealed class JsonEditorStateStore : IEditorStateStore
     private string LayoutPath => Path.Combine(paths.StateDirectory, LayoutFileName);
 
     private string RecentPath => Path.Combine(paths.StateDirectory, RecentFileName);
+
+    private string StartPath => Path.Combine(paths.StateDirectory, StartFileName);
 
     private string SessionPath(string projectPath) => Path.Combine(paths.SessionsDirectory, EditorDataPaths.ProjectKey(projectPath) + ".json");
 

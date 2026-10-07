@@ -16,6 +16,7 @@ case-folded first.
 | `<AppData>/NetPrints/state/window.json` | window bounds and maximized state |
 | `<AppData>/NetPrints/state/layout.json` | panel and document layout (envelope below) |
 | `<AppData>/NetPrints/state/recent.json` | recent projects |
+| `<AppData>/NetPrints/state/start.json` | start page memory: the version whose release notes were shown |
 | `<AppData>/NetPrints/state/sessions/<project-key>.json` | open tabs, active tab, viewports |
 | `<AppData>/NetPrints/backups/<project-key>/manifest.json` | backup manifest |
 | `<AppData>/NetPrints/backups/<project-key>/<relative-path>.bak.json` | backed-up content of one file |
@@ -51,6 +52,9 @@ state.
 // recent.json
 { "schemaVersion": 1, "entries": [
   { "path": "/home/u/src/Hello/Hello.csproj", "displayName": "Hello", "lastOpenedUtc": "2026-10-01T10:00:00Z", "pinned": true } ] }
+
+// start.json
+{ "schemaVersion": 1, "whatsNewSeenVersion": "0.2.0" }
 
 // sessions/<project-key>.json
 { "schemaVersion": 1, "projectPath": "/home/u/src/Hello/Hello.csproj",
