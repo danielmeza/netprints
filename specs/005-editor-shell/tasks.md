@@ -722,7 +722,8 @@ Contracts: contributions.md, commands.md, shell.md §7. **Independent test**: US
   undoable change; a name used by another event graph of the class is refused with
   "An event graph named '<name>' already exists"; the generated C# does not change (goldens byte-identical). Then
   `src/NetPrints.Core/Core/EventGraph.cs` and the editor's undoable rename command.
-- [ ] T082 [US8] Custom event entries (2 units). Test first in `tests/NetPrints.Core.Tests/`: an entry's name is unique
+- [ ] T082 [US8] Custom event entries (2 units). Renaming an entry reuses the rename of Review E R3 (`MemberRename`
+  in Core, one undo step through `EditorCommands`): add an event kind there instead of a second rewrite. Test first in `tests/NetPrints.Core.Tests/`: an entry's name is unique
   among the class's methods and entries (P1 FR-027), and a clash is refused with
   "'<name>' is already used by <kind> '<name>'"; `Arguments` (name, `TypeSpecifier`) map to the entry's output pins in
   order, with unique, valid C# identifiers; the translator emits the method with those parameters in that order (a new
@@ -738,7 +739,7 @@ Contracts: contributions.md, commands.md, shell.md §7. **Independent test**: US
 
 - [ ] T084 [US8] Event graph inspector and inline rename. Test first: renaming in the inspector, or inline in the tree
   with F2, updates the tree, the tab and the breadcrumbs; a duplicate is refused with the T081 message.
-- [ ] T085 [US8] Event entry inspector (2 units). Test first:
+- [ ] T085 [US8] Event entry inspector (2 units). The rename goes through the same rename as T082 (Review E R3). Test first:
   `tests/NetPrints.Editor.Tests/Events/EventEntryInspectorViewModelTests.cs` (contracts/shell.md §7). It shows when an
   entry is selected on the canvas or its graph is opened: name, kind and arguments. For a custom entry: rename (a
   refused clash is shown in the inspector), and add, remove, move up, move down, rename and retype arguments (with the

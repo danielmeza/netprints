@@ -1526,3 +1526,6 @@ Batch E-F1 fixes:
 Batch E-F2 fixes:
 - R2 → 18edf9a9: the load dialog lists the snapshot's error messages (restore failure with package, version and hint) and a note when graph files exist but none loaded; a pre-release build writes the latest released SDK version (ADR-0022).
 - R11 → 18edf9a9: the sample copy's `NetPrints.Sdk` reference gets the same version as New project; the bundled project file is untouched.
+
+Batch E-F3 fixes:
+- R3 → cddcac98: `MemberRename` (Core) renames a method or a member variable and retargets the call, delegate, getter and setter nodes of every class of the project, matched by declaring type and parameter types; `EditorCommands.RenameMethod` and `RenameVariable` make it one undo step; the inspector name boxes commit on focus loss. An event graph's name is only a label that no node refers to, so it needs none; the custom events of FR-072 reuse this shape.
