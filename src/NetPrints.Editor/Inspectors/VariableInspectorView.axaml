@@ -5,28 +5,28 @@
              x:Class="NetPrints.Editor.Inspectors.VariableInspectorView"
              x:DataType="edvariables:MemberVariableViewModel">
   <!-- Variable inspector (PAR-36) -->
-  <Grid AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableInspector}" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="Auto,*" Margin="4">
+  <Grid AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableInspector}" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" Classes="propertyGrid" ColumnDefinitions="Auto,*" Margin="4">
     <TextBlock Grid.ColumnSpan="2" Classes="header" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
-    <TextBlock Grid.Row="1" Text="Name" VerticalAlignment="Center" Margin="0,0,8,0" />
+    <TextBlock Grid.Row="1" Classes="inspectorLabel" Text="Name" />
     <TextBox x:Name="NameBox" Grid.Row="1" Grid.Column="1" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableInspectorName}" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" />
-    <TextBlock Grid.Row="2" Text="Visibility" VerticalAlignment="Center" Margin="0,0,8,0" />
+    <TextBlock Grid.Row="2" Classes="inspectorLabel" Text="Visibility" />
     <ComboBox Grid.Row="2" Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding PossibleVisibilities}" SelectedItem="{Binding Visibility}" />
-    <TextBlock Grid.Row="3" Text="Read-only" VerticalAlignment="Center" Margin="0,0,8,0" />
+    <TextBlock Grid.Row="3" Classes="inspectorLabel" Text="Read-only" />
     <CheckBox Grid.Row="3" Grid.Column="1" IsChecked="{Binding IsReadOnly}" />
-    <TextBlock Grid.Row="4" Text="Const" VerticalAlignment="Center" Margin="0,0,8,0" />
+    <TextBlock Grid.Row="4" Classes="inspectorLabel" Text="Const" />
     <CheckBox Grid.Row="4" Grid.Column="1" IsChecked="{Binding IsConst}" />
-    <TextBlock Grid.Row="5" Text="Static" VerticalAlignment="Center" Margin="0,0,8,0" />
+    <TextBlock Grid.Row="5" Classes="inspectorLabel" Text="Static" />
     <CheckBox Grid.Row="5" Grid.Column="1" IsChecked="{Binding IsStatic}" />
-    <TextBlock Grid.Row="6" Text="New" VerticalAlignment="Center" Margin="0,0,8,0" />
+    <TextBlock Grid.Row="6" Classes="inspectorLabel" Text="New" />
     <CheckBox Grid.Row="6" Grid.Column="1" IsChecked="{Binding IsNew}" />
-    <TextBlock Grid.Row="7" Text="Getter" VerticalAlignment="Center" Margin="0,0,8,0" />
+    <TextBlock Grid.Row="7" Classes="inspectorLabel" Text="Getter" />
     <StackPanel Grid.Row="7" Grid.Column="1" Orientation="Horizontal" Spacing="4">
       <Button Classes="flat" Content="Add getter" IsVisible="{Binding !HasGetter}" Command="{Binding AddGetterCommand}" />
       <Button Classes="flat" Content="Open getter" IsVisible="{Binding HasGetter}" Command="{Binding OpenGetterCommand}"
               AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableInspectorOpenGetter}" />
       <Button Classes="flat" Content="Remove getter" IsVisible="{Binding HasGetter}" Command="{Binding RemoveGetterCommand}" />
     </StackPanel>
-    <TextBlock Grid.Row="8" Text="Setter" VerticalAlignment="Center" Margin="0,0,8,0" />
+    <TextBlock Grid.Row="8" Classes="inspectorLabel" Text="Setter" />
     <StackPanel Grid.Row="8" Grid.Column="1" Orientation="Horizontal" Spacing="4">
       <Button Classes="flat" Content="Add setter" IsVisible="{Binding !HasSetter}" Command="{Binding AddSetterCommand}" />
       <Button Classes="flat" Content="Open setter" IsVisible="{Binding HasSetter}" Command="{Binding OpenSetterCommand}"

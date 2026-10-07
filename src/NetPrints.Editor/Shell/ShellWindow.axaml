@@ -35,7 +35,7 @@
             <DataTemplate x:DataType="shell:CommandEntryViewModel">
               <Grid ColumnDefinitions="*,Auto">
                 <TextBlock Text="{Binding Label}" />
-                <TextBlock Grid.Column="1" Margin="24,0,0,0" Opacity="0.6" Text="{Binding FirstGesture}"
+                <TextBlock Grid.Column="1" Classes="menuShortcut" Text="{Binding FirstGesture}"
                            AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShellMenuShortcut}" />
               </Grid>
             </DataTemplate>

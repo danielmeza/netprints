@@ -67,6 +67,7 @@
       <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundListMediumBrush}" />
       <Setter Property="BorderBrush" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}" />
       <Setter Property="RenderTransform" Value="scale(1.02)" />
+      <Setter Property="ZIndex" Value="1" />
     </Style>
     <Style Selector="Button.card:pressed">
       <Setter Property="RenderTransform" Value="scale(0.99)" />
@@ -138,7 +139,7 @@
         <Grid x:Name="Columns" ColumnDefinitions="2*,3*" RowDefinitions="Auto,Auto" ColumnSpacing="40" RowSpacing="24">
           <StackPanel x:Name="GetStartedSection" Spacing="12" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageGetStarted}">
             <TextBlock Classes="section" Text="Get started" />
-            <ItemsControl ItemsSource="{Binding GetStarted}">
+            <ItemsControl ItemsSource="{Binding GetStarted}" ClipToBounds="False">
               <ItemsControl.DataTemplates>
                 <DataTemplate DataType="sp:NewProjectTileViewModel" x:DataType="sp:NewProjectTileViewModel">
                   <Button Classes="card" Command="{Binding NewCommand}" AutomationProperties.Name="New project"

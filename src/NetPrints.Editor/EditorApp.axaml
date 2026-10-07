@@ -2,7 +2,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
              xmlns:semi="https://irihi.tech/semi"
-             xmlns:u-semi="https://irihi.tech/ursa/themes/semi"
+             xmlns:u-semi="using:Ursa.Themes.Semi"
              xmlns:ed="clr-namespace:NetPrints.Editor"
              xmlns:docking="clr-namespace:NetPrints.Editor.Shell.Docking"
              xmlns:edbehaviors="clr-namespace:NetPrints.Editor.Behaviors"
@@ -76,7 +76,7 @@
   <Application.Styles>
     <FluentTheme />
     <semi:SemiTheme Locale="en-US" />
-    <u-semi:SemiTheme Locale="en-US"/>
+    <u-semi:UrsaSemiTheme Locale="en-US"/>
     <!-- Nodify control templates; without them no graph item is realized. -->
     <StyleInclude Source="avares://Nodify.Avalonia/Themes/Controls.xaml" />
     <!-- The code view's AvaloniaEdit TextEditor (research.md R2). -->

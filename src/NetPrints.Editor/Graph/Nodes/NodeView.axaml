@@ -14,8 +14,8 @@
   <UserControl.Resources>
     <!-- Pin connector: exec = square, data = circle, type = triangle; dimmed when unconnected (PAR-43). -->
     <ControlTemplate x:Key="PinConnectorTemplate">
-      <Panel Width="14" Height="14" x:DataType="edpins:NodePinViewModel" Background="Transparent" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PinConnector}">
-        <Rectangle Classes="pin" Width="14" Height="14" StrokeThickness="3" IsVisible="{Binding ShowRectangle}">
+      <Panel Classes="pinHitbox" Width="24" Height="24" x:DataType="edpins:NodePinViewModel" Background="Transparent" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PinConnector}">
+        <Rectangle Classes="pin" Width="16" Height="16" StrokeThickness="3" IsVisible="{Binding ShowRectangle}">
           <Rectangle.Fill>
             <MultiBinding Converter="{x:Static edgraph:PinFillConverter.Instance}">
               <Binding Path="Kind" />
@@ -23,7 +23,7 @@
             </MultiBinding>
           </Rectangle.Fill>
         </Rectangle>
-        <Ellipse Classes="pin" Width="14" Height="14" StrokeThickness="3" IsVisible="{Binding ShowCircle}">
+        <Ellipse Classes="pin" Width="16" Height="16" StrokeThickness="3" IsVisible="{Binding ShowCircle}">
           <Ellipse.Fill>
             <MultiBinding Converter="{x:Static edgraph:PinFillConverter.Instance}">
               <Binding Path="Kind" />
@@ -31,7 +31,7 @@
             </MultiBinding>
           </Ellipse.Fill>
         </Ellipse>
-        <Polygon Classes="pin" Points="0,0 13,7 0,14" StrokeThickness="1" IsVisible="{Binding ShowTriangle}">
+        <Polygon Classes="pin" Points="0,0 16,8 0,16" StrokeThickness="1" IsVisible="{Binding ShowTriangle}">
           <Polygon.Fill>
             <MultiBinding Converter="{x:Static edgraph:PinFillConverter.Instance}">
               <Binding Path="Kind" />
@@ -63,6 +63,21 @@
   <UserControl.Styles>
     <Style Selector="Shape.pin:pointerover">
       <Setter Property="Stroke" Value="{DynamicResource Pin.HoverStroke}" />
+    </Style>
+    <Style Selector="Panel.pinHitbox">
+      <Setter Property="RenderTransform" Value="scale(1.0)" />
+      <Setter Property="Transitions">
+        <Transitions>
+          <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.1" Easing="SineEaseOut" />
+        </Transitions>
+      </Setter>
+    </Style>
+    <Style Selector="Panel.pinHitbox > Shape">
+      <Setter Property="HorizontalAlignment" Value="Center" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Panel.pinHitbox:pointerover">
+      <Setter Property="RenderTransform" Value="scale(1.3)" />
     </Style>
     <Style Selector="Border#NodeBorder">
       <Setter Property="MinWidth" Value="224" />
@@ -101,7 +116,7 @@
           BorderThickness="2" Background="{DynamicResource Node.CardBackground}" CornerRadius="8"
           BorderBrush="{Binding IsSelected, Converter={x:Static edgraph:SelectedBorderConverter.Instance}}">
     <StackPanel>
-      <Border x:Name="Header" Height="46" IsVisible="{Binding !IsRerouteNode}" CornerRadius="8,8,0,0" Padding="8,4"
+      <Border x:Name="Header" MinHeight="46" IsVisible="{Binding !IsRerouteNode}" CornerRadius="8,8,0,0" Padding="8,4"
               Background="{Binding VisualKind, Converter={x:Static edgraph:NodeKindBrushConverter.Instance}}">
         <Grid ColumnDefinitions="Auto,Auto,*">
           <!-- Overload chooser (PAR-40) -->
@@ -123,32 +138,31 @@
         </Grid>
       </Border>
 
-      <!-- Pin rows (OWN-05b): both columns are still driven off the same NodeViewModel.PinRows list, one
-           entry per row, so row i's left pin and right pin are always the two halves of the same
-           PinRowViewModel and land at the same height (both ItemsControls stack fixed-Height="28" items in
-           lockstep) - unlike the old Inputs/Outputs columns, which drifted apart whenever one side had
-           an extra pin (Exec, a generic type parameter) the other side didn't. -->
-      <Grid x:Name="PinArea" Classes.reroute="{Binding IsRerouteNode}" ColumnDefinitions="*,*">
-        <StackPanel>
-          <ItemsControl x:Name="InputPins" ItemsSource="{Binding PinRows}">
-            <ItemsControl.ItemTemplate>
-              <DataTemplate x:DataType="ednodes:PinRowViewModel">
-                <!-- The Border always renders at a fixed height, so a row with no left pin still
-                     reserves its row's worth of space (an IsVisible="False" pin collapses to zero
-                     height on its own, which would pull every later row up and re-break the pairing
-                     this view exists to fix). -->
-                <Border Height="28">
-                  <nn:NodeInput x:DataType="edpins:NodePinViewModel" DataContext="{Binding Left}"
-                                IsVisible="{Binding Converter={x:Static conv:ObjectConverters.IsNotNull}}"
-                                AutomationProperties.AutomationId="{x:Static ed:AutomationIds.Pin}" AutomationProperties.Name="{Binding AutomationName}" Header="{Binding}" ToolTip.Tip="{Binding ToolTip}"
-                                HeaderTemplate="{StaticResource PinHeaderTemplate}"
-                                ConnectorTemplate="{StaticResource PinConnectorTemplate}"
-                                IsConnected="{Binding IsConnected}"
-                                Anchor="{Binding Anchor, Mode=OneWayToSource, Converter={x:Static edgraph:GraphPointConverter.Instance}}" />
-                </Border>
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
-          </ItemsControl>
+      <!-- Pin rows (OWN-05b): one PinRowViewModel per row, so its left and right pin share a row and stay level. -->
+      <Grid x:Name="PinArea" Classes.reroute="{Binding IsRerouteNode}" RowDefinitions="Auto,Auto">
+        <ItemsControl ItemsSource="{Binding PinRows}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="ednodes:PinRowViewModel">
+              <Grid ColumnDefinitions="*,*" MinHeight="32">
+                <nn:NodeInput x:DataType="edpins:NodePinViewModel" DataContext="{Binding Left}"
+                              IsVisible="{Binding Converter={x:Static conv:ObjectConverters.IsNotNull}}"
+                              AutomationProperties.AutomationId="{x:Static ed:AutomationIds.Pin}" AutomationProperties.Name="{Binding AutomationName}" Header="{Binding}" ToolTip.Tip="{Binding ToolTip}"
+                              HeaderTemplate="{StaticResource PinHeaderTemplate}"
+                              ConnectorTemplate="{StaticResource PinConnectorTemplate}"
+                              IsConnected="{Binding IsConnected}"
+                              Anchor="{Binding Anchor, Mode=OneWayToSource, Converter={x:Static edgraph:GraphPointConverter.Instance}}" />
+                <nn:NodeOutput Grid.Column="1" x:DataType="edpins:NodePinViewModel" DataContext="{Binding Right}"
+                               IsVisible="{Binding Converter={x:Static conv:ObjectConverters.IsNotNull}}"
+                               AutomationProperties.AutomationId="{x:Static ed:AutomationIds.Pin}" AutomationProperties.Name="{Binding AutomationName}" Header="{Binding}" ToolTip.Tip="{Binding ToolTip}"
+                               HeaderTemplate="{StaticResource PinHeaderTemplate}"
+                               ConnectorTemplate="{StaticResource PinConnectorTemplate}"
+                               IsConnected="{Binding IsConnected}"
+                               Anchor="{Binding Anchor, Mode=OneWayToSource, Converter={x:Static edgraph:GraphPointConverter.Instance}}" />
+              </Grid>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <Grid Grid.Row="1" ColumnDefinitions="*,*">
           <!-- Left +/- (PAR-42) -->
           <StackPanel Orientation="Horizontal" IsVisible="{Binding ShowLeftPinButtons}">
             <Button Classes="icon" ToolTip.Tip="{Binding LeftPlusToolTip}" AutomationProperties.Name="{Binding LeftPlusToolTip}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NodeLeftPlus}" Command="{Binding LeftPinsPlusCommand}">
@@ -158,28 +172,8 @@
               <mi:MaterialIcon Kind="Minus" />
             </Button>
           </StackPanel>
-        </StackPanel>
-
-        <StackPanel Grid.Column="1">
-          <ItemsControl x:Name="OutputPins" ItemsSource="{Binding PinRows}">
-            <ItemsControl.ItemTemplate>
-              <DataTemplate x:DataType="ednodes:PinRowViewModel">
-                <!-- See the matching Border in InputPins above: reserves the row's height even when
-                     this row has no right pin. -->
-                <Border Height="28">
-                  <nn:NodeOutput x:DataType="edpins:NodePinViewModel" DataContext="{Binding Right}"
-                                 IsVisible="{Binding Converter={x:Static conv:ObjectConverters.IsNotNull}}"
-                                 AutomationProperties.AutomationId="{x:Static ed:AutomationIds.Pin}" AutomationProperties.Name="{Binding AutomationName}" Header="{Binding}" ToolTip.Tip="{Binding ToolTip}"
-                                 HeaderTemplate="{StaticResource PinHeaderTemplate}"
-                                 ConnectorTemplate="{StaticResource PinConnectorTemplate}"
-                                 IsConnected="{Binding IsConnected}"
-                                 Anchor="{Binding Anchor, Mode=OneWayToSource, Converter={x:Static edgraph:GraphPointConverter.Instance}}" />
-                </Border>
-              </DataTemplate>
-            </ItemsControl.ItemTemplate>
-          </ItemsControl>
           <!-- Right +/- (PAR-42) -->
-          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" IsVisible="{Binding ShowRightPinButtons}">
+          <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" IsVisible="{Binding ShowRightPinButtons}">
             <Button Classes="icon" ToolTip.Tip="{Binding RightPlusToolTip}" AutomationProperties.Name="{Binding RightPlusToolTip}" Command="{Binding RightPinsPlusCommand}">
               <mi:MaterialIcon Kind="Plus" />
             </Button>
@@ -187,7 +181,7 @@
               <mi:MaterialIcon Kind="Minus" />
             </Button>
           </StackPanel>
-        </StackPanel>
+        </Grid>
       </Grid>
     </StackPanel>
   </Border>

@@ -6,9 +6,10 @@
              x:DataType="edsearch:SuggestionListViewModel"
              Width="700" Height="300" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NodeSearch}">
   <!-- Node search popup (PAR-52): search box, virtualized grouped list with 16-px icons. -->
-  <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" BorderBrush="{DynamicResource SystemAccentColor}" BorderThickness="1">
+  <Border Background="{DynamicResource SystemControlBackgroundAltHighBrush}" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}"
+          BorderThickness="1" BoxShadow="{DynamicResource Popup.Shadow}">
     <Grid RowDefinitions="Auto,*">
-      <TextBox x:Name="SearchBox" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SearchBox}" Text="{Binding SearchText}" PlaceholderText="Search" Margin="4">
+      <TextBox x:Name="SearchBox" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SearchBox}" Text="{Binding SearchText}" PlaceholderText="Search" Classes="searchInput">
         <Interaction.Behaviors>
           <!-- Enter picks and opens the first non-header result; fits ExecuteCommandOnKeyDownBehavior
                plus a VM SelectFirstCommand (batch X2b). -->

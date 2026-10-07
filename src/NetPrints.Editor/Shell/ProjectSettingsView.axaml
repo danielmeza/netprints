@@ -5,12 +5,12 @@
              x:Class="NetPrints.Editor.Shell.ProjectSettingsView"
              x:DataType="shell:ProjectSettingsDocumentViewModel">
   <!-- The Project settings document; replaces the launcher's settings pane. -->
-  <StackPanel Margin="16" Spacing="4" MaxWidth="480" HorizontalAlignment="Left">
+  <StackPanel Classes="formContainer" HorizontalAlignment="Left">
     <TextBlock Classes="header" Text="Project settings" />
     <Grid ColumnDefinitions="Auto,*" ToolTip.Tip="Type of binary to output.">
-      <TextBlock Text="Binary type" VerticalAlignment="Center" Margin="4" />
+      <TextBlock Text="Binary type" Classes="formLabel" />
       <!-- OneWay: selecting an item runs the command, and a failed edit's change notification puts the actual value back. -->
-      <ComboBox x:Name="BinaryTypeChooser" Grid.Column="1" Margin="4" HorizontalAlignment="Stretch"
+      <ComboBox x:Name="BinaryTypeChooser" Grid.Column="1" Classes="formInput"
                 AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ProjectSettingsBinaryTypeChooser}"
                 ItemsSource="{Binding BinaryTypes}"
                 SelectedItem="{Binding OutputBinaryType, Mode=OneWay}">

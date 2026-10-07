@@ -17,6 +17,7 @@
           <SolidColorBrush x:Key="OpeningGraphIndicator.Background">#CC202020</SolidColorBrush>
           <SolidColorBrush x:Key="OpeningGraphIndicator.Foreground">White</SolidColorBrush>
           <SolidColorBrush x:Key="BusyOverlay.Background">#AA000000</SolidColorBrush>
+          <BoxShadows x:Key="Popup.Shadow">0 4 12 0 #40000000</BoxShadows>
           <!-- Pin hover stroke (PAR-43, R2-07): white reads fine over the dark card, invisible over Light. -->
           <SolidColorBrush x:Key="Pin.HoverStroke">White</SolidColorBrush>
           <!-- Error-list row severity icon (FR-032, OWN-03, owner report). -->
@@ -48,6 +49,7 @@
           <SolidColorBrush x:Key="OpeningGraphIndicator.Background">#CCF5F5F5</SolidColorBrush>
           <SolidColorBrush x:Key="OpeningGraphIndicator.Foreground">#FF202020</SolidColorBrush>
           <SolidColorBrush x:Key="BusyOverlay.Background">#66000000</SolidColorBrush>
+          <BoxShadows x:Key="Popup.Shadow">0 4 12 0 #30000000</BoxShadows>
           <SolidColorBrush x:Key="Pin.HoverStroke">Black</SolidColorBrush>
           <!-- Error-list row severity icon (FR-032, OWN-03, owner report). -->
           <SolidColorBrush x:Key="Diagnostic.Error.Foreground">#C62828</SolidColorBrush>
@@ -179,5 +181,74 @@
     <Setter Property="HorizontalAlignment" Value="Right" />
     <Setter Property="VerticalAlignment" Value="Center" />
     <Setter Property="Margin" Value="0,0,8,4" />
+  </Style>
+  <!-- Inspector property grid: label column Auto, editors share one row rhythm (the inspectorLabel bottom margin). -->
+  <Style Selector="Grid.propertyGrid > :is(TextBox)">
+    <Setter Property="Margin" Value="0,0,0,4" />
+  </Style>
+  <Style Selector="Grid.propertyGrid > :is(ComboBox)">
+    <Setter Property="Margin" Value="0,0,0,4" />
+  </Style>
+  <Style Selector="Grid.propertyGrid > :is(StackPanel)">
+    <Setter Property="Margin" Value="0,0,0,4" />
+  </Style>
+  <Style Selector="Grid.propertyGrid > :is(CheckBox)">
+    <Setter Property="Margin" Value="0,0,0,4" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="MinHeight" Value="0" />
+    <Setter Property="Padding" Value="4,0" />
+  </Style>
+
+  <!-- Dialogs: root grid, header, footer buttons and a read-only code-like text box. -->
+  <Style Selector="Grid.dialogRoot">
+    <Setter Property="Margin" Value="12" />
+    <Setter Property="RowSpacing" Value="12" />
+  </Style>
+  <Style Selector="TextBlock.dialogTitle">
+    <Setter Property="FontSize" Value="16" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="TextBlock.groupTitle">
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Margin" Value="2,4" />
+  </Style>
+  <Style Selector="Button.dialogAction">
+    <Setter Property="MinWidth" Value="80" />
+    <Setter Property="HorizontalAlignment" Value="Right" />
+  </Style>
+  <Style Selector="TextBox.codeBlock">
+    <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="FontFamily" Value="monospace" />
+    <Setter Property="VerticalContentAlignment" Value="Top" />
+  </Style>
+
+  <!-- Search box flush with its popup. -->
+  <Style Selector="TextBox.searchInput">
+    <Setter Property="Margin" Value="4" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+
+  <!-- Settings forms. -->
+  <Style Selector="StackPanel.formContainer">
+    <Setter Property="Margin" Value="16" />
+    <Setter Property="Spacing" Value="4" />
+    <Setter Property="MaxWidth" Value="480" />
+  </Style>
+  <Style Selector="TextBlock.formLabel">
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Margin" Value="4" />
+  </Style>
+  <Style Selector="ComboBox.formInput">
+    <Setter Property="Margin" Value="4" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+  </Style>
+
+  <!-- Key hint next to a menu item. -->
+  <Style Selector="TextBlock.menuShortcut">
+    <Setter Property="Margin" Value="24,0,0,0" />
+    <Setter Property="Opacity" Value="0.6" />
   </Style>
 </Styles>
