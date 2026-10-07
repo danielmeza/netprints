@@ -641,20 +641,20 @@ the window, the layout and each project's session, with safe fallbacks (FR-050�
 
 ### Batch E5b — model: sonnet — T071g–T071k — 8 units (start page redesign, functional; research R18)
 
-- [ ] T071g [US5] New project with location and name (2 units). Test first: `NewProjectDialogViewModelTests`: the
+- [x] T071g [US5] New project with location and name (2 units). Test first: `NewProjectDialogViewModelTests`: the
   project folder is location/name and the preview shows it, a folder that exists and is not empty is rejected, the last
   location is remembered in the state store and defaults to the documents folder's `NetPrints` folder. Then the dialog
   and the state.
-- [ ] T071h [US5] One-click samples (2 units). Test first: `SamplesAndWhatsNewTests`: a sample copies to
+- [x] T071h [US5] One-click samples (2 units). Test first: `SamplesAndWhatsNewTests`: a sample copies to
   `<location>/<SampleName>` with a numeric suffix when it exists, after one confirmation that names the target and
   offers Change; then it opens. Then the confirmation and the flow.
-- [ ] T071i [US5] Startup behaviour (1 unit). Test first: `StartupBehaviorTests`: "Reopen the last project" opens the
+- [x] T071i [US5] Startup behaviour (1 unit). Test first: `StartupBehaviorTests`: "Reopen the last project" opens the
   last project, "Show the start page" does not, a project argument wins, a failed reopen shows the start page with
   `StartPageError`. Then the setting in the state store and the checkbox on the start page.
-- [ ] T071j [US5] Drop to open (2 units). Test first: headless `ProjectDropTests`: a dropped `.csproj` or folder opens
+- [x] T071j [US5] Drop to open (2 units). Test first: headless `ProjectDropTests`: a dropped `.csproj` or folder opens
   after the unsaved-changes confirm; anything else shows `StartPageError`, or a status message while a project is
   open. Then a drop behavior on the main window.
-- [ ] T071k [US5] Learn card (1 unit). Test first: `StartPageViewModelTests`: the guide, the keyboard shortcuts sheet
+- [x] T071k [US5] Learn card (1 unit). Test first: `StartPageViewModelTests`: the guide, the keyboard shortcuts sheet
   command, the documentation and the release notes go through `IUrlLauncher` with constant URLs. Then the card and
   the E2E update, docs (`docs/guide/projects.md`) and release notes.
 
