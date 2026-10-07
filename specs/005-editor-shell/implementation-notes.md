@@ -1485,3 +1485,35 @@ C-15's contribution kind goes to P3.
 
 - Totals: 125 tasks (G 23), 34 implementation batches, 17 review, fix and merge batches. The roadmap's estimate
   for G's growth is about 5–7 days.
+
+## Review E (T072, `review-E.md`)
+
+Scope: batches E1–E5b, `cea6997c..14689a00` (T061–T071k). Review on PR #12.
+
+Verdict: request changes, 0 blockers, 3 majors, 9 minors, 8 nits (20 findings). R3 is pre-existing (not in E's diff); the
+roadmap gap research found it and it is pinned here. Evidence: 16 probe cases at `14689a00` (13 red, 3 green), and the
+four E scenarios of the Desktop E2E (`StartPageNewProjectTests`, `RestoreSessionTests`, `CorruptLayoutTests`,
+`StartPageLearnTests`) passed 4 of 4 on a private Xvfb. Suggested fix batches E-F1 to E-F6 (T073).
+
+| Id | Sev | Summary | Batch | Status |
+|---|---|---|---|---|
+| R1 | major | A `null` recent entry crashes the editor at start-up; an entry without a path or name crashes the search | E-F1 | open |
+| R2 | major | A failed `NetPrints.Sdk` restore opens the project with no classes and no message (New project in dev or preview builds, or offline) | E-F2 | open |
+| R3 | major | Renaming a method or a member variable leaves the call, get and set nodes on the old name (pre-existing) | E-F3 | open |
+| R4 | minor | A newer state file is rewritten without any user change; a newer `recent.json` loses its entries and pins | E-F1 | open |
+| R5 | minor | Two instances lose each other's recent entries and pins and share one `.tmp` name per file | E-F1 | open |
+| R6 | minor | The layout fallback (1210) is never logged in production: the adapter has no logger | E-F4 | open |
+| R7 | minor | A window partly on a screen keeps a title bar above it or a size larger than it | E-F4 | open |
+| R8 | minor | Mixed-DPI setups: the restored size can drift by the DPI ratio on every restart (plausible) | E-F4 | open |
+| R9 | minor | The default snapshot tolerance lets a missing check box, button or card text pass the start page baselines | E-F5 | open |
+| R10 | minor | "Reopen the last project" has no way out of a project whose load hangs or kills the editor (plausible) | E-F4 | open |
+| R11 | minor | The bundled sample pins `NetPrints.Sdk` 0.1.0 for every copy | E-F2 | open |
+| R12 | minor | Synchronous file I/O on the UI thread per keystroke; an unreachable network path freezes the start page (plausible) | E-F5 | open |
+| R13 | nit | Public API surface of `NetPrints.Editor.State` and the new behaviors | E-F6 | open |
+| R14 | nit | Docs and contract accuracy: "(unavailable)", the cancelled-close claim, the `screen` field, the seed's file name | E-F6 | open |
+| R15 | nit | `NETPRINTS_STATE_DIR` moves the default new project location (a test hook in product code) | E-F6 | open |
+| R16 | nit | Unpinning an old entry while 20 unpinned entries exist removes it | E-F6 | open |
+| R17 | nit | Error handling: a caught `NullReferenceException`, a swallowed `InvalidOperationException`, `ConfigureAwait(false)` in the editor | E-F6 | open |
+| R18 | nit | Tests: a line-number allowlist, no headless check of a background tab's canvas, scaling 1 only, one corrupt-state E2E | E-F5 | open |
+| R19 | nit | Restore edges: the start page is saved in the session; recent and session keys are case-sensitive on macOS | E-F6 | open |
+| R20 | nit | New project dialog: relative or `~` locations; Cancel during creation keeps the created project | E-F6 | open |

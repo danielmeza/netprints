@@ -660,7 +660,7 @@ the window, the layout and each project's session, with safe fallbacks (FR-050�
 
 ### Batch E-R — model: opus — T072 (sub-phase review)
 
-- [ ] T072 [US5] [US6] Review sub-phase E: an Opus reviewer who did not implement it reviews the whole diff of batches
+- [x] T072 [US5] [US6] Review sub-phase E: an Opus reviewer who did not implement it reviews the whole diff of batches
   E1–E4 (from the commit before the first batch to HEAD): US5 and US6 end to end against spec.md,
   contracts/state-files.md, contracts/shell.md, ADR-0018 (layout envelope), the constitution and plan.md's standing
   constraints. It runs the independent test of the phase. Findings go to the PR and to implementation-notes under
