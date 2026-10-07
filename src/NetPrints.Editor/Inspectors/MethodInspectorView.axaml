@@ -5,23 +5,23 @@
              x:Class="NetPrints.Editor.Inspectors.MethodInspectorView"
              x:DataType="edclasseditor:MethodViewModel">
   <!-- Method inspector (PAR-35): constructors have a read-only name and no modifiers. -->
-  <Grid AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MethodInspector}" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" ColumnDefinitions="Auto,*" Margin="4">
+  <Grid AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MethodInspector}" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" Classes="propertyGrid" ColumnDefinitions="Auto,*" Margin="4">
     <TextBlock Grid.ColumnSpan="2" Classes="header" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
-    <TextBlock Grid.Row="1" Text="Name" VerticalAlignment="Center" Margin="0,0,8,0" />
+    <TextBlock Grid.Row="1" Classes="inspectorLabel" Text="Name" />
     <TextBox x:Name="NameBox" Grid.Row="1" Grid.Column="1" IsReadOnly="{Binding IsConstructor}" Text="{Binding Name, UpdateSourceTrigger=LostFocus}" />
-    <TextBlock Grid.Row="2" Text="Visibility" VerticalAlignment="Center" Margin="0,0,8,0" />
+    <TextBlock Grid.Row="2" Classes="inspectorLabel" Text="Visibility" />
     <ComboBox Grid.Row="2" Grid.Column="1" HorizontalAlignment="Stretch" ItemsSource="{Binding PossibleVisibilities}" SelectedItem="{Binding Visibility}" />
-    <TextBlock Grid.Row="3" Text="Sealed" IsVisible="{Binding !IsConstructor}" VerticalAlignment="Center" Margin="0,0,8,0" />
+    <TextBlock Grid.Row="3" Classes="inspectorLabel" Text="Sealed" IsVisible="{Binding !IsConstructor}" />
     <CheckBox Grid.Row="3" Grid.Column="1" IsVisible="{Binding !IsConstructor}" IsChecked="{Binding IsSealed}" />
-    <TextBlock Grid.Row="4" Text="Abstract" IsVisible="{Binding !IsConstructor}" VerticalAlignment="Center" Margin="0,0,8,0" />
+    <TextBlock Grid.Row="4" Classes="inspectorLabel" Text="Abstract" IsVisible="{Binding !IsConstructor}" />
     <CheckBox Grid.Row="4" Grid.Column="1" IsVisible="{Binding !IsConstructor}" IsChecked="{Binding IsAbstract}" />
-    <TextBlock Grid.Row="5" Text="Static" IsVisible="{Binding !IsConstructor}" VerticalAlignment="Center" Margin="0,0,8,0" />
+    <TextBlock Grid.Row="5" Classes="inspectorLabel" Text="Static" IsVisible="{Binding !IsConstructor}" />
     <CheckBox Grid.Row="5" Grid.Column="1" IsVisible="{Binding !IsConstructor}" IsChecked="{Binding IsStatic}" />
-    <TextBlock Grid.Row="6" Text="Virtual" IsVisible="{Binding !IsConstructor}" VerticalAlignment="Center" Margin="0,0,8,0" />
+    <TextBlock Grid.Row="6" Classes="inspectorLabel" Text="Virtual" IsVisible="{Binding !IsConstructor}" />
     <CheckBox Grid.Row="6" Grid.Column="1" IsVisible="{Binding !IsConstructor}" IsChecked="{Binding IsVirtual}" />
-    <TextBlock Grid.Row="7" Text="Override" IsVisible="{Binding !IsConstructor}" VerticalAlignment="Center" Margin="0,0,8,0" />
+    <TextBlock Grid.Row="7" Classes="inspectorLabel" Text="Override" IsVisible="{Binding !IsConstructor}" />
     <CheckBox Grid.Row="7" Grid.Column="1" IsVisible="{Binding !IsConstructor}" IsChecked="{Binding IsOverride}" />
-    <TextBlock Grid.Row="8" Text="Async" IsVisible="{Binding !IsConstructor}" VerticalAlignment="Center" Margin="0,0,8,0" />
+    <TextBlock Grid.Row="8" Classes="inspectorLabel" Text="Async" IsVisible="{Binding !IsConstructor}" />
     <CheckBox Grid.Row="8" Grid.Column="1" IsVisible="{Binding !IsConstructor}" IsChecked="{Binding IsAsync}" />
   </Grid>
 </UserControl>

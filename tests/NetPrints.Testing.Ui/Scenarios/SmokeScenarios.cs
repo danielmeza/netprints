@@ -279,7 +279,7 @@ public abstract class SmokeScenarios
             await shell.OpenMethodAsync(MethodName, cancellationToken);
             await graph.ClickEmptyAsync(cancellationToken);
             var variable = await shell.Tree.RevealAsync(shell.Tree.Variable("Variable"), ProjectTreePage.VariablesGroup, cancellationToken);
-            await variable.DragToAsync(await graph.EmptyPointAsync(cancellationToken, -545, -346), cancellationToken);
+            await variable.DragToAsync(await graph.EmptyPointAsync(cancellationToken, -545, -300), cancellationToken);
             await graph.GetSet.WaitOpenAsync(cancellationToken);
             await graph.GetSet.GetButton.ClickAsync(cancellationToken);
             await graph.Node("VariableGetterNode").GetAsync(cancellationToken);

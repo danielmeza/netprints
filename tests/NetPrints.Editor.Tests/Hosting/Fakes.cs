@@ -144,6 +144,10 @@ public sealed class FakeDialogs : IEditorDialogs
         return Task.CompletedTask;
     }
 
+    public void ShowNotification(string title, string message)
+    {
+    }
+
     public Task<TypeSpecifier?> SelectTypeAsync(IEnumerable<TypeSpecifier> types, TypeSpecifier initial)
     {
         SelectTypeCalls.Add(initial);

@@ -25,7 +25,12 @@ public sealed record NetPrintsSettings
     public IReadOnlyList<string> TrustedProjects { get; init; } = [];
 
     /// <summary>
-    /// The default: no extension paths and no trusted projects.
+    /// Whether to enable UI animations (disable for accessibility/Reduced Motion).
+    /// </summary>
+    public bool EnableAnimations { get; init; } = true;
+
+    /// <summary>
+    /// The default: no extension paths and no trusted projects, animations enabled.
     /// </summary>
     public static NetPrintsSettings Empty { get; } = new();
 

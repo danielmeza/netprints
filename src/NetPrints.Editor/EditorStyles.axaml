@@ -17,6 +17,7 @@
           <SolidColorBrush x:Key="OpeningGraphIndicator.Background">#CC202020</SolidColorBrush>
           <SolidColorBrush x:Key="OpeningGraphIndicator.Foreground">White</SolidColorBrush>
           <SolidColorBrush x:Key="BusyOverlay.Background">#AA000000</SolidColorBrush>
+          <BoxShadows x:Key="Popup.Shadow">0 4 12 0 #40000000</BoxShadows>
           <!-- Pin hover stroke (PAR-43, R2-07): white reads fine over the dark card, invisible over Light. -->
           <SolidColorBrush x:Key="Pin.HoverStroke">White</SolidColorBrush>
           <!-- Error-list row severity icon (FR-032, OWN-03, owner report). -->
@@ -26,6 +27,12 @@
           <!-- Command bar compile button: the error count badge. -->
           <SolidColorBrush x:Key="CommandBar.BadgeBackground">#C62828</SolidColorBrush>
           <SolidColorBrush x:Key="CommandBar.BadgeForeground">White</SolidColorBrush>
+          
+          <!-- Domain Colors -->
+          <SolidColorBrush x:Key="Icon.Method.Foreground">#B388FF</SolidColorBrush>
+          <SolidColorBrush x:Key="Icon.Property.Foreground">#81D4FA</SolidColorBrush>
+          <SolidColorBrush x:Key="Icon.Event.Foreground">#FFCDD2</SolidColorBrush>
+          <SolidColorBrush x:Key="Icon.Class.Foreground">#A5D6A7</SolidColorBrush>
         </ResourceDictionary>
         <!-- Light (R2-17): unreachable today (EditorApp.axaml hard-codes RequestedThemeVariant="Dark",
              no user setting) and incomplete (GraphBrushes in Graph/GraphConverters.cs is not themed).
@@ -42,6 +49,7 @@
           <SolidColorBrush x:Key="OpeningGraphIndicator.Background">#CCF5F5F5</SolidColorBrush>
           <SolidColorBrush x:Key="OpeningGraphIndicator.Foreground">#FF202020</SolidColorBrush>
           <SolidColorBrush x:Key="BusyOverlay.Background">#66000000</SolidColorBrush>
+          <BoxShadows x:Key="Popup.Shadow">0 4 12 0 #30000000</BoxShadows>
           <SolidColorBrush x:Key="Pin.HoverStroke">Black</SolidColorBrush>
           <!-- Error-list row severity icon (FR-032, OWN-03, owner report). -->
           <SolidColorBrush x:Key="Diagnostic.Error.Foreground">#C62828</SolidColorBrush>
@@ -49,6 +57,12 @@
           <SolidColorBrush x:Key="Diagnostic.Info.Foreground">#1565C0</SolidColorBrush>
           <SolidColorBrush x:Key="CommandBar.BadgeBackground">#C62828</SolidColorBrush>
           <SolidColorBrush x:Key="CommandBar.BadgeForeground">White</SolidColorBrush>
+          
+          <!-- Domain Colors -->
+          <SolidColorBrush x:Key="Icon.Method.Foreground">#7E57C2</SolidColorBrush>
+          <SolidColorBrush x:Key="Icon.Property.Foreground">#29B6F6</SolidColorBrush>
+          <SolidColorBrush x:Key="Icon.Event.Foreground">#EF5350</SolidColorBrush>
+          <SolidColorBrush x:Key="Icon.Class.Foreground">#66BB6A</SolidColorBrush>
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
     </ResourceDictionary>
@@ -65,6 +79,23 @@
   </Style>
   <Style Selector="mi|MaterialIcon.info">
     <Setter Property="Foreground" Value="{DynamicResource Diagnostic.Info.Foreground}" />
+  </Style>
+
+  <!-- Domain icon colors -->
+  <Style Selector="mi|MaterialIcon[Kind=CodeBraces]">
+    <Setter Property="Foreground" Value="{DynamicResource Icon.Class.Foreground}" />
+  </Style>
+  <Style Selector="mi|MaterialIcon[Kind=FunctionVariant]">
+    <Setter Property="Foreground" Value="{DynamicResource Icon.Method.Foreground}" />
+  </Style>
+  <Style Selector="mi|MaterialIcon[Kind=Hammer]">
+    <Setter Property="Foreground" Value="{DynamicResource Icon.Method.Foreground}" />
+  </Style>
+  <Style Selector="mi|MaterialIcon[Kind=Variable]">
+    <Setter Property="Foreground" Value="{DynamicResource Icon.Property.Foreground}" />
+  </Style>
+  <Style Selector="mi|MaterialIcon[Kind=LightningBolt]">
+    <Setter Property="Foreground" Value="{DynamicResource Icon.Event.Foreground}" />
   </Style>
 
   <!-- Output panel: a line of the program's standard error. -->
@@ -115,12 +146,19 @@
 
   <!-- Command bar (contracts/commands.md section 1): a compact icon and label button, at most 40 px high with its bar. -->
   <Style Selector="Button.command-bar">
-    <Setter Property="Padding" Value="8,2" />
+    <Setter Property="Padding" Value="8,4" />
     <Setter Property="Margin" Value="2,0" />
     <Setter Property="MinHeight" Value="0" />
     <Setter Property="Height" Value="32" />
     <Setter Property="VerticalAlignment" Value="Center" />
     <Setter Property="ToolTip.ShowOnDisabled" Value="True" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="CornerRadius" Value="4" />
+  </Style>
+  
+  <Style Selector="Button.command-bar:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Background" Value="{DynamicResource SystemControlHighlightListLowBrush}" />
   </Style>
   <Style Selector="Border.badge">
     <Setter Property="Background" Value="{DynamicResource CommandBar.BadgeBackground}" />
@@ -137,5 +175,80 @@
 
   <Style Selector="GridSplitter">
     <Setter Property="Background" Value="{DynamicResource SystemAccentColor}" />
+  </Style>
+  <Style Selector="TextBlock.inspectorLabel">
+    <Setter Property="Opacity" Value="0.75" />
+    <Setter Property="HorizontalAlignment" Value="Right" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Margin" Value="0,0,8,4" />
+  </Style>
+  <!-- Inspector property grid: label column Auto, editors share one row rhythm (the inspectorLabel bottom margin). -->
+  <Style Selector="Grid.propertyGrid > :is(TextBox)">
+    <Setter Property="Margin" Value="0,0,0,4" />
+  </Style>
+  <Style Selector="Grid.propertyGrid > :is(ComboBox)">
+    <Setter Property="Margin" Value="0,0,0,4" />
+  </Style>
+  <Style Selector="Grid.propertyGrid > :is(StackPanel)">
+    <Setter Property="Margin" Value="0,0,0,4" />
+  </Style>
+  <Style Selector="Grid.propertyGrid > :is(CheckBox)">
+    <Setter Property="Margin" Value="0,0,0,4" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="MinHeight" Value="0" />
+    <Setter Property="Padding" Value="4,0" />
+  </Style>
+
+  <!-- Dialogs: root grid, header, footer buttons and a read-only code-like text box. -->
+  <Style Selector="Grid.dialogRoot">
+    <Setter Property="Margin" Value="12" />
+    <Setter Property="RowSpacing" Value="12" />
+  </Style>
+  <Style Selector="TextBlock.dialogTitle">
+    <Setter Property="FontSize" Value="16" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="TextBlock.groupTitle">
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="Margin" Value="2,4" />
+  </Style>
+  <Style Selector="Button.dialogAction">
+    <Setter Property="MinWidth" Value="80" />
+    <Setter Property="HorizontalAlignment" Value="Right" />
+  </Style>
+  <Style Selector="TextBox.codeBlock">
+    <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}" />
+    <Setter Property="CornerRadius" Value="4" />
+    <Setter Property="FontFamily" Value="monospace" />
+    <Setter Property="VerticalContentAlignment" Value="Top" />
+  </Style>
+
+  <!-- Search box flush with its popup. -->
+  <Style Selector="TextBox.searchInput">
+    <Setter Property="Margin" Value="4" />
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+  </Style>
+
+  <!-- Settings forms. -->
+  <Style Selector="StackPanel.formContainer">
+    <Setter Property="Margin" Value="16" />
+    <Setter Property="Spacing" Value="4" />
+    <Setter Property="MaxWidth" Value="480" />
+  </Style>
+  <Style Selector="TextBlock.formLabel">
+    <Setter Property="VerticalAlignment" Value="Center" />
+    <Setter Property="Margin" Value="4" />
+  </Style>
+  <Style Selector="ComboBox.formInput">
+    <Setter Property="Margin" Value="4" />
+    <Setter Property="HorizontalAlignment" Value="Stretch" />
+  </Style>
+
+  <!-- Key hint next to a menu item. -->
+  <Style Selector="TextBlock.menuShortcut">
+    <Setter Property="Margin" Value="24,0,0,0" />
+    <Setter Property="Opacity" Value="0.6" />
   </Style>
 </Styles>

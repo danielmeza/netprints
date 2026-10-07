@@ -49,6 +49,29 @@ public class ShellAdapterTests
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public void FloatingTheLastPanelOfADockLeavesNoEmptyDockBehindAndShowingItAgainRecreatesTheDock()
+    {
+        using var rig = ShellRig.Create();
+        rig.Settle();
+        const string LeftId = "netprints.dock.left";
+        IDock Body() => ShellDockFactory.Walk(rig.Adapter.Layout).OfType<IDock>().First(dock => dock.Id == "netprints.body");
+        Assert.Contains(Body().VisibleDockables ?? [], dockable => dockable.Id == LeftId);
+
+        rig.Adapter.FloatPanel(PanelContributions.ProjectTreeId);
+        rig.Settle();
+
+        Assert.DoesNotContain(Body().VisibleDockables ?? [], dockable => dockable.Id == LeftId);
+
+        rig.Api.HidePanel(PanelContributions.ProjectTreeId);
+        rig.Api.ShowPanel(PanelContributions.ProjectTreeId);
+        rig.Settle();
+
+        Assert.True(rig.Api.IsPanelVisible(PanelContributions.ProjectTreeId));
+        Assert.Equal(LeftId, Body().VisibleDockables?.First(dockable => dockable is not IProportionalDockSplitter).Id);
+        Assert.False(ShellDockFactory.IsFloating(rig.Adapter.Layout, ShellDockFactory.Walk(rig.Adapter.Layout).First(tool => tool.Id == PanelContributions.ProjectTreeId)));
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public void ADocumentTheAppDoesNotKnowIsNotOpened()
     {
         using var rig = ShellRig.Create(_ => null);
@@ -425,8 +448,8 @@ public class ShellAdapterTests
     }
 
     [AvaloniaTheory(Timeout = TestAppBuilder.Timeout)]
-    [InlineData("Dark", 0xFF333333u)]
-    [InlineData("Light", 0xFFE6E6E6u)]
+    [InlineData("Dark", 0xCC000000u)]
+    [InlineData("Light", 0xCCFFFFFFu)]
     public void TheThemeVariantSwitchesTheDockSurfaceTokens(string variantName, uint expected)
     {
         var variant = variantName == "Dark" ? ThemeVariant.Dark : ThemeVariant.Light;
@@ -440,12 +463,15 @@ public class ShellAdapterTests
             rig.Api.FloatDocument(A);
             rig.Settle();
 
-            Assert.True(rig.Main.TryFindResource("SystemChromeMediumColor", variant, out object? chrome));
+            Assert.True(rig.Main.TryFindResource("SystemAltMediumHighColor", variant, out object? chrome));
             Assert.Equal(Color.FromUInt32(expected), Assert.IsType<Color>(chrome));
             Assert.True(rig.Main.TryFindResource("DockSurfaceHeaderBrush", variant, out object? header));
             Assert.Equal((Color)chrome, Assert.IsAssignableFrom<ISolidColorBrush>(header).Color);
+            Assert.True(rig.Main.TryFindResource("SystemRegionColor", variant, out object? region));
+            Assert.True(rig.Main.TryFindResource("DockSurfaceEditorBrush", variant, out object? editor));
+            Assert.Equal(Assert.IsType<Color>(region), Assert.IsAssignableFrom<ISolidColorBrush>(editor).Color);
             Window host = Assert.Single(rig.Ui.Tree.Windows, window => !ReferenceEquals(window, rig.Main));
-            Assert.Equal((Color)chrome, Assert.IsAssignableFrom<ISolidColorBrush>(host.Background).Color);
+            Assert.Equal(Assert.IsType<Color>(region), Assert.IsAssignableFrom<ISolidColorBrush>(host.Background).Color);
         }
         finally
         {

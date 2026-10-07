@@ -12,6 +12,9 @@ namespace NetPrints.Editor.Hosting;
 /// </summary>
 public interface IEditorDialogs
 {
+    /// <summary>Shows a non-blocking toast notification.</summary>
+    void ShowNotification(string title, string message);
+
     /// <summary>Shows an error with a copy-friendly message.</summary>
     Task ShowErrorAsync(string title, string message);
 

@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Hosting.Automation;
+using NetPrints.Extensibility.Settings;
 
 namespace NetPrints.Editor;
 
@@ -67,6 +68,11 @@ public partial class EditorApp : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
+            if (!HostServices.Settings.Get(NetPrintsSettings.Descriptor).EnableAnimations)
+            {
+                DisableTransitions();
+            }
+
             var composition = new EditorComposition(HostServices);
             var exceptionHandler = composition.InstallUnhandledExceptionHandler();
             desktop.Exit += (_, _) => exceptionHandler.Dispose();

@@ -47,6 +47,17 @@ public class JsonFileSettingsStoreTests : IDisposable
     }
 
     [Fact]
+    public async Task AnimationsAreOnByDefaultAndTheOffChoiceIsKept()
+    {
+        JsonFileSettingsStore store = NewStore();
+        Assert.True(store.Get(NetPrintsSettings.Descriptor).EnableAnimations);
+
+        await store.SetAsync(NetPrintsSettings.Descriptor, new NetPrintsSettings { EnableAnimations = false }, TestContext.Current.CancellationToken);
+
+        Assert.False(NewStore().Get(NetPrintsSettings.Descriptor).EnableAnimations);
+    }
+
+    [Fact]
     public async Task SetThenGetRoundTripsAcrossStores()
     {
         JsonFileSettingsStore store = NewStore();
@@ -82,7 +93,8 @@ public class JsonFileSettingsStoreTests : IDisposable
                 ],
                 "trustedProjects": [
                   "/p/a.csproj"
-                ]
+                ],
+                "enableAnimations": true
               },
               "extensions": {
                 "test.other": {

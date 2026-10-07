@@ -65,11 +65,11 @@ public class DockLayoutRoundTripTests
         first.Adapter.FloatPanel(PanelContributions.ProjectTreeId);
         first.Api.ActivateDocument(A);
         first.Settle();
-        IDockable leftDock = Walk(first).First(dock => dock.Id == "netprints.dock.left");
-        leftDock.Proportion = 0.31;
+        IDockable bottomDock = Walk(first).First(dock => dock.Id == "netprints.dock.bottom");
+        bottomDock.Proportion = 0.31;
         first.Settle();
         LayoutState saved = Save(first.Adapter);
-        double savedLeft = Find(saved.DockLayout?.Deserialize(DockJsonContext.Default.DockLayoutDto)?.Root, "netprints.dock.left")?.Proportion ?? double.NaN;
+        double savedBottom = Find(saved.DockLayout?.Deserialize(DockJsonContext.Default.DockLayoutDto)?.Root, "netprints.dock.bottom")?.Proportion ?? double.NaN;
 
         using var second = ShellRig.Create();
         second.Adapter.RestoreLayout(saved);
@@ -84,8 +84,8 @@ public class DockLayoutRoundTripTests
         Assert.False(second.Shell.Panels.Single(panel => panel.Id == PanelContributions.InspectorId).IsVisible);
         Assert.True(second.Api.IsPanelVisible(PanelContributions.ProjectTreeId));
         Assert.True(ShellDockFactory.IsFloating(second.Adapter.Layout, Walk(second).First(tool => tool.Id == PanelContributions.ProjectTreeId)));
-        Assert.InRange(savedLeft, 0.25, 0.35);
-        Assert.Equal(savedLeft, Walk(second).First(dock => dock.Id == "netprints.dock.left").Proportion, 3);
+        Assert.InRange(savedBottom, 0.25, 0.35);
+        Assert.Equal(savedBottom, Walk(second).First(dock => dock.Id == "netprints.dock.bottom").Proportion, 3);
         Assert.Equal(3, second.Shell.Documents.Count);
         Assert.NotNull(second.FindOne(ShellRig.Content(A)));
 

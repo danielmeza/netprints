@@ -499,11 +499,6 @@ public sealed partial class DockShellAdapter : ObservableObject, IShell, IShellL
             HidePanel(id);
         }
 
-        foreach (IToolDock dock in ShellDockFactory.Walk(Layout).OfType<IToolDock>())
-        {
-            dock.IsCollapsable = true;
-        }
-
         foreach (IProportionalDock column in columns)
         {
             column.Proportion = 0;
@@ -515,11 +510,6 @@ public sealed partial class DockShellAdapter : ObservableObject, IShell, IShellL
 
     private void RestoreSuspendedPanels()
     {
-        foreach (IToolDock dock in ShellDockFactory.Walk(Layout).OfType<IToolDock>())
-        {
-            dock.IsCollapsable = false;
-        }
-
         List<IDockable> docks = [.. ShellDockFactory.Walk(Layout)];
         foreach (IDockable column in docks.Where(dock => dock is IProportionalDock && suspendedProportions.ContainsKey(dock.Id)))
         {
