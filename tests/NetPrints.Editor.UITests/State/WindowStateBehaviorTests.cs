@@ -1,6 +1,8 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
+using Avalonia.Threading;
 using Avalonia.Xaml.Interactivity;
 using NetPrints.Editor.Behaviors;
 using NetPrints.Editor.State;
@@ -106,6 +108,22 @@ public class WindowStateBehaviorTests
         Assert.NotNull(saved);
         Assert.True(saved.IsMaximized);
         Assert.Equal((55, 65), (saved.X, saved.Y));
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public void ClosingTheWindowSavesItsSizeInPixelsAtTheScalingOfTheScreen()
+    {
+        var store = new FakeStore();
+        Window window = CreateWindow(store);
+        window.Show();
+        window.SetRenderScaling(1.5);
+        Dispatcher.UIThread.RunJobs();
+
+        window.Close();
+
+        NetPrints.Editor.State.WindowState? saved = store.Window;
+        Assert.NotNull(saved);
+        Assert.Equal((600, 450), (saved.Width, saved.Height));
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]

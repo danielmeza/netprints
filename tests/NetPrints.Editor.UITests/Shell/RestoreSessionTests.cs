@@ -69,6 +69,39 @@ public class RestoreSessionTests
         Assert.Equal(0.8, restoredClass.ViewportZoom);
     }
 
+    private static NodifyEditor VisibleEditor(ShellApp app) =>
+        app.Window.GetVisualDescendants().OfType<NodifyEditor>().Single(editor => editor.IsEffectivelyVisible);
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task ARestoredBackgroundTabShowsItsSavedViewportWhenItIsActivated()
+    {
+        var store = new MemoryStateStore();
+        await using ShellApp app = ShellApp.Start(store);
+        await app.OpenSampleAsync(Token);
+        ClassGraph cls = app.Session.Project.Classes.Single(c => c.FullName == EditorSession.ClassName);
+        DocumentId classId = IdOf(app, cls);
+        DocumentId mainId = IdOf(app, cls.Methods.Single(m => m.Name == "Main"));
+        app.Api.OpenDocument(mainId);
+        app.Api.OpenDocument(classId);
+        HeadlessDriver.Pump();
+        var main = Assert.IsType<GraphDocumentViewModel>(app.Shell.FindDocument(mainId));
+        main.ViewportLocation = new GraphPoint(30, 40);
+        main.ViewportZoom = 0.5;
+        app.Api.ActivateDocument(classId);
+        HeadlessDriver.Pump();
+        Assert.True(app.Commands.TryRun(app.Command("closeProject")));
+        await WaitAsync(app, () => app.Shell.Session is null);
+        await app.Composition.StartAsync([app.ProjectPath]);
+        await WaitAsync(app, () => app.Shell.Session is not null);
+        HeadlessDriver.Pump();
+
+        app.Api.ActivateDocument(mainId);
+        HeadlessDriver.Pump();
+
+        Assert.Equal(new Point(30, 40), VisibleEditor(app).ViewportLocation);
+        Assert.Equal(0.5, VisibleEditor(app).ViewportZoom);
+    }
+
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public async Task TheCanvasShowsTheRestoredViewportAndPansAndZoomsAreWrittenBackToTheDocument()
     {

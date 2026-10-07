@@ -37,6 +37,7 @@ public sealed class WindowStateBehavior : StyledElementBehavior<Window>
         if (AssociatedObject is { } window)
         {
             window.PositionChanged += OnPositionChanged;
+            window.ScalingChanged += OnScalingChanged;
             window.PropertyChanged += OnWindowPropertyChanged;
             window.Opened += OnOpened;
             window.Closed += OnClosed;
@@ -50,6 +51,7 @@ public sealed class WindowStateBehavior : StyledElementBehavior<Window>
         if (AssociatedObject is { } window)
         {
             window.PositionChanged -= OnPositionChanged;
+            window.ScalingChanged -= OnScalingChanged;
             window.PropertyChanged -= OnWindowPropertyChanged;
             window.Opened -= OnOpened;
             window.Closed -= OnClosed;
@@ -103,6 +105,14 @@ public sealed class WindowStateBehavior : StyledElementBehavior<Window>
     private void OnOpened(object? sender, EventArgs e)
     {
         tracking = true;
+        if (AssociatedObject is { } window)
+        {
+            Track(window);
+        }
+    }
+
+    private void OnScalingChanged(object? sender, EventArgs e)
+    {
         if (AssociatedObject is { } window)
         {
             Track(window);
