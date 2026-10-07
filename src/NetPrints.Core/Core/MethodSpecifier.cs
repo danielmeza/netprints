@@ -184,6 +184,14 @@ namespace NetPrints.Core
         }
 
         /// <summary>
+        /// Returns a copy of this specifier under <paramref name="name"/>; everything else is unchanged.
+        /// </summary>
+        /// <param name="name">The new method name.</param>
+        /// <returns>The renamed specifier.</returns>
+        public MethodSpecifier WithName(string name) =>
+            new(name, Parameters, ReturnTypes, Modifiers, Visibility, DeclaringType, GenericArguments);
+
+        /// <summary>
         /// Returns the method's declaring type (for a static method), name, parameter types,
         /// generic arguments and return types (eg. "MyClass.MyMethod(System.Int32)&lt;T&gt; : System.String").
         /// </summary>

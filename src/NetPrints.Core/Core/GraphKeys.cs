@@ -163,7 +163,13 @@ public static class GraphKeys
         return null;
     }
 
-    private static IEnumerable<NodeGraph> AllGraphs(ClassGraph cls)
+    /// <summary>
+    /// Every graph of <paramref name="cls"/>: the class graph itself, its methods, constructors and event
+    /// graphs, and each variable's getter, setter and type graph.
+    /// </summary>
+    /// <param name="cls">Class to enumerate.</param>
+    /// <returns>The class's graphs.</returns>
+    public static IEnumerable<NodeGraph> AllGraphs(ClassGraph cls)
     {
         yield return cls;
 

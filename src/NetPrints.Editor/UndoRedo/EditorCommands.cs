@@ -259,6 +259,30 @@ public static class EditorCommands
             });
     }
 
+    /// <summary>
+    /// Renames <paramref name="method"/> and every call and delegate node in <paramref name="classes"/> that
+    /// refers to it (<see cref="MemberRename.RenameMethod"/>); undo reverses both.
+    /// </summary>
+    public static IUndoableCommand RenameMethod(IReadOnlyList<ClassGraph> classes, MethodGraph method, string newName)
+    {
+        RenameResult? result = null;
+        return new DelegateUndoableCommand("Rename method",
+            () => result = MemberRename.RenameMethod(classes, method, newName),
+            () => (result ?? throw new InvalidOperationException(NoDoActionMessage)).Undo());
+    }
+
+    /// <summary>
+    /// Renames <paramref name="variable"/> and every getter and setter node in <paramref name="classes"/> that
+    /// refers to it (<see cref="MemberRename.RenameVariable"/>); undo reverses both.
+    /// </summary>
+    public static IUndoableCommand RenameVariable(IReadOnlyList<ClassGraph> classes, Variable variable, string newName)
+    {
+        RenameResult? result = null;
+        return new DelegateUndoableCommand("Rename variable",
+            () => result = MemberRename.RenameVariable(classes, variable, newName),
+            () => (result ?? throw new InvalidOperationException(NoDoActionMessage)).Undo());
+    }
+
     /// <summary>Adds a local variable of type <c>object</c> named <paramref name="name"/> (US5); undo removes it.</summary>
     public static IUndoableCommand AddLocalVariable(ExecutionGraph graph, string name)
     {

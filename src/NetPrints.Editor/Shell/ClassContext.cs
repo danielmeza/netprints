@@ -28,6 +28,7 @@ public sealed class ClassContext : IDisposable
     /// <summary>Grid cells from a newly created method's entry node to its return node.</summary>
     private const double NewMethodReturnGridOffset = 15;
 
+    private readonly Func<IReadOnlyList<ClassGraph>> projectClasses;
     private readonly HashSet<Variable> subscribedVariables = [];
     private readonly HashSet<ExecutionGraph> subscribedMethods = [];
     private readonly HashSet<NodeGraph> dirtyTrackedGraphs = [];
@@ -39,21 +40,23 @@ public sealed class ClassContext : IDisposable
     /// <param name="cls">The class.</param>
     /// <param name="context">Host services shared across the editor.</param>
     /// <param name="undoRedo">The class's undo stack; every applied command marks the class dirty.</param>
-    public ClassContext(ClassGraph cls, EditorContext context, UndoRedoStack undoRedo)
+    /// <param name="projectClasses">The classes whose nodes a rename must reach; defaults to <paramref name="cls"/> alone.</param>
+    public ClassContext(ClassGraph cls, EditorContext context, UndoRedoStack undoRedo, Func<IReadOnlyList<ClassGraph>>? projectClasses = null)
     {
         ArgumentNullException.ThrowIfNull(cls);
         ArgumentNullException.ThrowIfNull(context);
         ArgumentNullException.ThrowIfNull(undoRedo);
         Class = cls;
+        this.projectClasses = projectClasses ?? (() => [cls]);
         Context = context;
         UndoRedo = undoRedo;
         Messenger = context.CreateMessenger();
         Services = new ClassEditorServices(context, undoRedo, Messenger);
 
-        Methods = new ObservableViewModelCollection<MethodViewModel, MethodGraph>(cls.Methods, m => new MethodViewModel(m), m => m.Dispose());
+        Methods = new ObservableViewModelCollection<MethodViewModel, MethodGraph>(cls.Methods, m => new MethodViewModel(m, RenameMethod), m => m.Dispose());
         Constructors = new ObservableViewModelCollection<MethodViewModel, ConstructorGraph>(cls.Constructors, c => new MethodViewModel(c), m => m.Dispose());
         Variables = new ObservableViewModelCollection<MemberVariableViewModel, Variable>(cls.Variables,
-            v => new MemberVariableViewModel(v, Services), v => v.Dispose());
+            v => new MemberVariableViewModel(v, Services, RenameVariable), v => v.Dispose());
         EventGraphs = new ObservableViewModelCollection<EventGraphViewModel, EventGraph>(cls.EventGraphs, g => new EventGraphViewModel(g, cls));
         CodeView = new CodeViewViewModel(cls, context.CodeAnalysis);
         ClassInspector = new ClassInspectorViewModel(cls, CodeView, MarkDirty);
@@ -174,6 +177,18 @@ public sealed class ClassContext : IDisposable
 
         return created;
     }
+
+    /// <summary>Renames a method and the calls to it in every graph of the project, as one undo step.</summary>
+    /// <param name="method">Method of this class.</param>
+    /// <param name="newName">The new name.</param>
+    public void RenameMethod(MethodGraph method, string newName) =>
+        UndoRedo.Do(EditorCommands.RenameMethod(projectClasses(), method, newName));
+
+    /// <summary>Renames a variable and its getter and setter nodes in every graph of the project, as one undo step.</summary>
+    /// <param name="variable">Variable of this class.</param>
+    /// <param name="newName">The new name.</param>
+    public void RenameVariable(Variable variable, string newName) =>
+        UndoRedo.Do(EditorCommands.RenameVariable(projectClasses(), variable, newName));
 
     /// <summary>Creates a variable named Variable, Variable1, ... of type object (undoable).</summary>
     public void CreateVariable()

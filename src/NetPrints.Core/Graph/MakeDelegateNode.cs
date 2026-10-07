@@ -18,6 +18,26 @@ namespace NetPrints.Graph
         public partial MethodSpecifier MethodSpecifier { get; private set; }
 
         /// <summary>
+        /// Points the node at a renamed method in place, keeping its pins and connections.
+        /// </summary>
+        /// <param name="specifier">The method's new specifier.</param>
+        /// <exception cref="ArgumentException"><paramref name="specifier"/> would change the node's pin shape.</exception>
+        public void Retarget(MethodSpecifier specifier)
+        {
+            ArgumentNullException.ThrowIfNull(specifier);
+
+            if (specifier.DeclaringType != MethodSpecifier.DeclaringType
+                || specifier.Modifiers.HasFlag(MethodModifiers.Static) != IsFromStaticMethod
+                || !specifier.ArgumentTypes.SequenceEqual(MethodSpecifier.ArgumentTypes)
+                || !specifier.ReturnTypes.SequenceEqual(MethodSpecifier.ReturnTypes))
+            {
+                throw new ArgumentException("Retargeting a delegate node must keep its pin shape (declaring type, static-ness, parameter and return types).", nameof(specifier));
+            }
+
+            MethodSpecifier = specifier;
+        }
+
+        /// <summary>
         /// The target this delegate is for ("this").
         /// Accessing this for static methods (IsFromStaticMethod==true)
         /// will throw an exception.

@@ -29,3 +29,12 @@ const NetPrints.Core.ExperimentalApiIds.UrlFormat = "https://danielmeza.github.i
 [NPXE0003]NetPrints.Translator.TranslationEnvironment.MemberEmitters.init -> void
 [NPXE0003]NetPrints.Translator.TranslationEnvironment.TranslationEnvironment(NetPrints.Translator.NodeTranslatorRegistry! Nodes, System.Collections.Generic.IReadOnlyList<NetPrints.Translator.IClassEmitter!>! ClassEmitters, System.Collections.Generic.IReadOnlyList<NetPrints.Translator.IMemberEmitter!>! MemberEmitters) -> void
 [NPXE0003]NetPrints.Translator.TranslationEnvironment.Deconstruct(out NetPrints.Translator.NodeTranslatorRegistry! Nodes, out System.Collections.Generic.IReadOnlyList<NetPrints.Translator.IClassEmitter!>! ClassEmitters, out System.Collections.Generic.IReadOnlyList<NetPrints.Translator.IMemberEmitter!>! MemberEmitters) -> void
+NetPrints.Core.MemberRename
+NetPrints.Core.RenameResult
+NetPrints.Core.RenameResult.Undo() -> void
+NetPrints.Graph.CallMethodNode.Retarget(NetPrints.Core.MethodSpecifier! specifier) -> void
+NetPrints.Graph.MakeDelegateNode.Retarget(NetPrints.Core.MethodSpecifier! specifier) -> void
+NetPrints.Core.MethodSpecifier.WithName(string! name) -> NetPrints.Core.MethodSpecifier!
+static NetPrints.Core.GraphKeys.AllGraphs(NetPrints.Core.ClassGraph! cls) -> System.Collections.Generic.IEnumerable<NetPrints.Core.NodeGraph!>!
+static NetPrints.Core.MemberRename.RenameMethod(System.Collections.Generic.IEnumerable<NetPrints.Core.ClassGraph!>! classes, NetPrints.Core.MethodGraph! method, string! newName) -> NetPrints.Core.RenameResult!
+static NetPrints.Core.MemberRename.RenameVariable(System.Collections.Generic.IEnumerable<NetPrints.Core.ClassGraph!>! classes, NetPrints.Core.Variable! variable, string! newName) -> NetPrints.Core.RenameResult!

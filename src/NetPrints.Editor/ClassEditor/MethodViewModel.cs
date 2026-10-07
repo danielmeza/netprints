@@ -14,13 +14,17 @@ namespace NetPrints.Editor.ClassEditor;
 /// </remarks>
 public sealed partial class MethodViewModel : ObservableObject, IDisposable
 {
+    private readonly Action<MethodGraph, string>? rename;
+
     /// <summary>
     /// Wraps <paramref name="graph"/> and subscribes to its property-changed event.
     /// </summary>
     /// <param name="graph">Method or constructor graph to wrap.</param>
-    public MethodViewModel(ExecutionGraph graph)
+    /// <param name="rename">Renames a method together with the calls to it; without it the name is set on the graph alone.</param>
+    public MethodViewModel(ExecutionGraph graph, Action<MethodGraph, string>? rename = null)
     {
         Graph = graph;
+        this.rename = rename;
         ((INotifyPropertyChanged)graph).PropertyChanged += OnGraphPropertyChanged;
     }
 
@@ -36,9 +40,16 @@ public sealed partial class MethodViewModel : ObservableObject, IDisposable
         get => Graph is MethodGraph method ? method.Name : Graph.ToString() ?? "";
         set
         {
-            if (Graph is MethodGraph method)
+            if (Graph is MethodGraph method && method.Name != value)
             {
-                method.Name = value;
+                if (rename is null)
+                {
+                    method.Name = value;
+                }
+                else
+                {
+                    rename(method, value);
+                }
             }
         }
     }

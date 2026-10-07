@@ -147,7 +147,7 @@ public sealed class ProjectSessionViewModel : ObservableObject, IDisposable
         ArgumentNullException.ThrowIfNull(cls);
         if (!contexts.ContainsKey(cls))
         {
-            var created = new ClassContext(cls, context, UndoStackFor(cls));
+            var created = new ClassContext(cls, context, UndoStackFor(cls), () => Project.Classes);
             created.MembersChanged += OnContextMembersChanged;
             created.DirtyChanged += OnContextDirtyChanged;
             created.Edited += OnContextEdited;

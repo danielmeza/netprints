@@ -15,16 +15,19 @@ namespace NetPrints.Editor.Variables;
 public sealed partial class MemberVariableViewModel : ObservableObject, IDisposable
 {
     private readonly ClassEditorServices services;
+    private readonly Action<Variable, string> rename;
 
     /// <summary>
     /// Wraps <paramref name="variable"/> and subscribes to its property-changed event.
     /// </summary>
     /// <param name="variable">Variable to wrap.</param>
     /// <param name="services">Narrow services shared with the owning class editor (FR-038).</param>
-    public MemberVariableViewModel(Variable variable, ClassEditorServices services)
+    /// <param name="rename">Renames the variable together with its getter and setter nodes.</param>
+    public MemberVariableViewModel(Variable variable, ClassEditorServices services, Action<Variable, string> rename)
     {
         Variable = variable;
         this.services = services;
+        this.rename = rename;
         ((INotifyPropertyChanged)variable).PropertyChanged += OnVariablePropertyChanged;
     }
 
@@ -41,7 +44,13 @@ public sealed partial class MemberVariableViewModel : ObservableObject, IDisposa
     public string Name
     {
         get => Variable.Name;
-        set => Variable.Name = value;
+        set
+        {
+            if (Variable.Name != value)
+            {
+                rename(Variable, value);
+            }
+        }
     }
 
     /// <summary>
