@@ -41,6 +41,9 @@ dictionaries" choice in `specs/005-editor-shell/research.md` for the base theme;
   template after an upgrade, which the snapshot baselines are there to catch; (3) the Semi README fetched still
   documents the 11.x lines, so the Avalonia 12 support statement rests on the NuGet metadata and on our tests;
   (4) the vendor's closed-source Dock companion must not creep in.
+- `SemiTheme` creates the `zh-CN` culture in a static initializer, which throws in globalization-invariant mode
+  (the Desktop E2E harness and some containers run in it). `NetPrints.Desktop` sets the runtime option
+  `System.Globalization.PredefinedCulturesOnly` to `false`, so the editor starts there too.
 - Exit path: remove the three package references and the two `Styles` lines, restore the Fluent palette as theme
   dictionaries (task T090) and re-baseline the snapshots. Views use classes and tokens, so no view changes; only
   `EditorStyles.axaml` re-points its brushes at the Fluent resources.

@@ -20,6 +20,10 @@
     <NetPrintsExperimentalOptIn Include="NPXE0002" />
   </ItemGroup>
   <ItemGroup>
+    <!-- Semi.Avalonia's SemiTheme creates the zh-CN culture in a static initializer, which throws in globalization-invariant mode (ADR-0023). -->
+    <RuntimeHostConfigurationOption Include="System.Globalization.PredefinedCulturesOnly" Value="false" />
+  </ItemGroup>
+  <ItemGroup>
     <InternalsVisibleTo Include="NetPrints.Editor.Tests" />
   </ItemGroup>
 
