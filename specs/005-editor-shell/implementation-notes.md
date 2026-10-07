@@ -1529,3 +1529,9 @@ Batch E-F2 fixes:
 
 Batch E-F3 fixes:
 - R3 → cddcac98: `MemberRename` (Core) renames a method or a member variable and retargets the call, delegate, getter and setter nodes of every class of the project, matched by declaring type and parameter types; `EditorCommands.RenameMethod` and `RenameVariable` make it one undo step; the inspector name boxes commit on focus loss. An event graph's name is only a label that no node refers to, so it needs none; the custom events of FR-072 reuse this shape.
+
+Batch E-F4 fixes:
+- R6 → 6a3fbd4f: `DockShellAdapter` requires its logger and the shell host passes its own, so event 1210 reaches the log; a composed headless test pins it.
+- R7 → 9b65bff8: `WindowPlacement.Resolve` picks the screen with the largest overlap, clamps the size to its working area and keeps a 32 px by 100 px title strip on it.
+- R8 → 9b65bff8: the pixel size is converted with the target screen's scaling (`ScreenBounds.Scaling`, `WindowPlacement.WidthInDips`), covered by `Resolve` tests and a headless `Apply` test at scaling 1.5. The fix does not need the `screen` field of `window.json`, which is still never written; E-F6 drops it from the contract. A manual check with two DPIs on Windows is still to be recorded.
+- R10 → 7d06ccce: `start.json` gets `reopenInProgress`, set before the start-up reopen and cleared when the load ends; a start that finds it set shows the start page with "The last project did not open last time; it was not reopened." Shift-at-start-up is not added.
