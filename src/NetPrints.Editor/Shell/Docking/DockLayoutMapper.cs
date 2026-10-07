@@ -135,7 +135,6 @@ internal static class DockLayoutMapper
             IToolDock dock = factory.CreateToolDock();
             Common(dock, node);
             dock.Alignment = Enum.TryParse(node.Alignment, ignoreCase: true, out Alignment alignment) ? alignment : Alignment.Unset;
-            dock.IsCollapsable = false;
             IDockable[] children = Children(node);
             dock.VisibleDockables = factory.CreateList(children);
             dock.ActiveDockable = children.FirstOrDefault(child => child.Id == node.ActiveId) ?? children.FirstOrDefault();

@@ -194,8 +194,7 @@ internal sealed class ShellDockFactory : Factory
     /// <returns>The pane, or null when the layout has no tool dock to put it in.</returns>
     public ShellTool? DockHome(PanelViewModel panel)
     {
-        IToolDock? dock = DefaultDockOf(panel.DefaultDock);
-        if (dock is null)
+        if ((DefaultDockOf(panel.DefaultDock) ?? AddToolDock(panel.DefaultDock)) is not { } dock)
         {
             return null;
         }
@@ -205,6 +204,51 @@ internal sealed class ShellDockFactory : Factory
         InsertDockable(dock, pane, index);
         SetActiveDockable(pane);
         return pane;
+    }
+
+    private IToolDock? AddToolDock(PanelDock place)
+    {
+        if (MainLayout is not { } layout)
+        {
+            return null;
+        }
+
+        IProportionalDock? FindProportional(string id) => Walk(layout).OfType<IProportionalDock>().FirstOrDefault(dock => dock.Id == id);
+
+        (string id, double proportion, Alignment alignment) = place switch
+        {
+            PanelDock.Left => (LeftId, LeftProportion, Alignment.Left),
+            PanelDock.Right => (RightId, RightUpperProportion, Alignment.Right),
+            PanelDock.RightLower => (RightLowerId, 1 - RightUpperProportion, Alignment.Right),
+            _ => (BottomId, BottomProportion, Alignment.Bottom),
+        };
+        ToolDock dock = NewToolDock(id, proportion, alignment, []);
+        switch (place)
+        {
+            case PanelDock.Left when FindProportional(BodyId) is { } body:
+                InsertDockable(body, dock, 0);
+                return dock;
+            case PanelDock.Bottom when FindProportional(RootId + ".column") is { } column:
+                InsertDockable(column, dock, column.VisibleDockables?.Count ?? 0);
+                return dock;
+            case PanelDock.Right or PanelDock.RightLower when FindProportional(RightColumnId) is { } rightColumn:
+                InsertDockable(rightColumn, dock, place == PanelDock.Right ? 0 : rightColumn.VisibleDockables?.Count ?? 0);
+                return dock;
+            case PanelDock.Right or PanelDock.RightLower when FindProportional(BodyId) is { } body:
+                var right = new ProportionalDock
+                {
+                    Id = RightColumnId,
+                    DockCapabilityPolicy = new DockCapabilityPolicy(),
+                    DockCapabilityOverrides = new DockCapabilityOverrides(),
+                    Proportion = RightProportion,
+                    Orientation = Orientation.Vertical,
+                    VisibleDockables = CreateList<IDockable>(dock),
+                };
+                InsertDockable(body, right, body.VisibleDockables?.Count ?? 0);
+                return dock;
+            default:
+                return null;
+        }
     }
 
     /// <summary>Opens a floating window around a dock, at the saved bounds.</summary>
@@ -291,6 +335,11 @@ internal sealed class ShellDockFactory : Factory
     private ToolDock Tools(string id, PanelDock place, double proportion, Alignment alignment)
     {
         ShellTool[] tools = [.. panels.Where(panel => panel.DefaultDock == place).OrderBy(panel => panel.Order).Select(NewTool)];
+        return NewToolDock(id, proportion, alignment, tools);
+    }
+
+    private ToolDock NewToolDock(string id, double proportion, Alignment alignment, ShellTool[] tools)
+    {
         return new ToolDock
         {
             Id = id,
@@ -298,7 +347,6 @@ internal sealed class ShellDockFactory : Factory
             DockCapabilityOverrides = new DockCapabilityOverrides(),
             Proportion = proportion,
             Alignment = alignment,
-            IsCollapsable = false,
             VisibleDockables = CreateList<IDockable>(tools),
             ActiveDockable = tools.FirstOrDefault(tool => tool.Id == PanelContributions.ErrorsId) ?? tools.FirstOrDefault(),
         };
@@ -327,6 +375,6 @@ internal sealed class ShellDockFactory : Factory
             PanelDock.RightLower => RightLowerId,
             _ => BottomId,
         };
-        return Walk(layout).OfType<IToolDock>().FirstOrDefault(dock => dock.Id == id);
+        return Walk(layout).OfType<IToolDock>().FirstOrDefault(dock => dock.Id == id && !IsFloating(layout, dock));
     }
 }
