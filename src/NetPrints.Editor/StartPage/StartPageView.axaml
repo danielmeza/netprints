@@ -6,38 +6,147 @@
              x:Class="NetPrints.Editor.StartPage.StartPageView"
              x:DataType="sp:StartPageViewModel"
              AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageRoot}">
-  <!-- The start page document: the registered tiles in order, under the startup error when there is one. -->
-  <ScrollViewer VerticalScrollBarVisibility="Auto">
-    <StackPanel Margin="24" Spacing="16" MaxWidth="720" HorizontalAlignment="Left">
-      <TextBlock Classes="header" Text="NetPrints" />
-      <TextBlock Text="{Binding Error}" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" TextWrapping="Wrap"
-                 AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageError}" />
-      <ItemsControl ItemsSource="{Binding Tiles}">
-        <ItemsControl.DataTemplates>
-          <DataTemplate DataType="sp:RecentProjectsTileViewModel" x:DataType="sp:RecentProjectsTileViewModel">
-            <sp:RecentProjectsTileView />
-          </DataTemplate>
-          <DataTemplate DataType="sp:OpenProjectTileViewModel" x:DataType="sp:OpenProjectTileViewModel">
-            <Button HorizontalAlignment="Left" Command="{Binding OpenCommand}" Content="Open folder or project…"
-                    AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageOpenButton}" />
-          </DataTemplate>
-          <DataTemplate DataType="sp:NewProjectTileViewModel" x:DataType="sp:NewProjectTileViewModel">
-            <Button HorizontalAlignment="Left" Classes="accent" Command="{Binding NewCommand}" Content="New project…"
-                    AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageNewButton}" />
-          </DataTemplate>
-          <DataTemplate DataType="sp:SamplesTileViewModel" x:DataType="sp:SamplesTileViewModel">
-            <sp:SamplesTileView />
-          </DataTemplate>
-          <DataTemplate DataType="sp:WhatsNewTileViewModel" x:DataType="sp:WhatsNewTileViewModel">
-            <sp:WhatsNewTileView />
-          </DataTemplate>
-        </ItemsControl.DataTemplates>
-        <ItemsControl.ItemsPanel>
-          <ItemsPanelTemplate>
-            <StackPanel Spacing="16" />
-          </ItemsPanelTemplate>
-        </ItemsControl.ItemsPanel>
-      </ItemsControl>
-    </StackPanel>
+  <!-- The start page document, laid out like a start window: Open recent beside Get started from 960 DIP, stacked below, then What's new. -->
+  <UserControl.DataTemplates>
+    <DataTemplate DataType="sp:RecentProjectsTileViewModel" x:DataType="sp:RecentProjectsTileViewModel">
+      <sp:RecentProjectsTileView />
+    </DataTemplate>
+    <DataTemplate DataType="sp:SamplesTileViewModel" x:DataType="sp:SamplesTileViewModel">
+      <sp:SamplesTileView />
+    </DataTemplate>
+    <DataTemplate DataType="sp:WhatsNewTileViewModel" x:DataType="sp:WhatsNewTileViewModel">
+      <sp:WhatsNewTileView />
+    </DataTemplate>
+  </UserControl.DataTemplates>
+  <UserControl.Styles>
+    <Style Selector="Grid#Columns > StackPanel">
+      <Setter Property="Grid.ColumnSpan" Value="2" />
+    </Style>
+    <Style Selector="Grid#Columns > StackPanel#GetStartedSection">
+      <Setter Property="Grid.Row" Value="0" />
+    </Style>
+    <Style Selector="Grid#Columns > StackPanel#RecentSection">
+      <Setter Property="Grid.Row" Value="1" />
+    </Style>
+    <Style Selector="TextBlock.title">
+      <Setter Property="FontSize" Value="28" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="TextBlock.section">
+      <Setter Property="FontSize" Value="18" />
+      <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+    <Style Selector="TextBlock.secondary">
+      <Setter Property="FontSize" Value="12" />
+      <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+    </Style>
+    <Style Selector="Button.card">
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+      <Setter Property="Padding" Value="16" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundListLowBrush}" />
+    </Style>
+    <Style Selector="Border.card">
+      <Setter Property="Padding" Value="16" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundListLowBrush}" />
+    </Style>
+    <Style Selector="Border.card-icon">
+      <Setter Property="Width" Value="40" />
+      <Setter Property="Height" Value="40" />
+      <Setter Property="CornerRadius" Value="8" />
+      <Setter Property="VerticalAlignment" Value="Center" />
+      <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}" />
+    </Style>
+    <Style Selector="Border.card-icon > mi|MaterialIcon">
+      <Setter Property="Width" Value="22" />
+      <Setter Property="Height" Value="22" />
+    </Style>
+    <Style Selector="Button.section-toggle">
+      <Setter Property="Background" Value="Transparent" />
+      <Setter Property="Padding" Value="0,4" />
+      <Setter Property="HorizontalAlignment" Value="Left" />
+    </Style>
+    <!-- Two columns from 960 DIP: Open recent left (3*), Get started right (2*), on the same row. -->
+    <ContainerQuery Name="start" Query="min-width:960">
+      <Style Selector="Grid#Columns > StackPanel#RecentSection">
+        <Setter Property="Grid.Row" Value="0" />
+        <Setter Property="Grid.Column" Value="0" />
+        <Setter Property="Grid.ColumnSpan" Value="1" />
+      </Style>
+      <Style Selector="Grid#Columns > StackPanel#GetStartedSection">
+        <Setter Property="Grid.Row" Value="0" />
+        <Setter Property="Grid.Column" Value="1" />
+        <Setter Property="Grid.ColumnSpan" Value="1" />
+      </Style>
+    </ContainerQuery>
+  </UserControl.Styles>
+  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+    <Grid Container.Name="start" Container.Sizing="Width">
+      <StackPanel Margin="32,24" Spacing="24" MaxWidth="1200" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageContent}">
+        <StackPanel Orientation="Horizontal" Spacing="12">
+          <TextBlock Classes="title" Text="NetPrints" />
+          <TextBlock Classes="secondary" VerticalAlignment="Bottom" Margin="0,0,0,6" Text="{Binding Version}"
+                     AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageVersion}" />
+        </StackPanel>
+        <TextBlock Text="{Binding Error}" IsVisible="{Binding Error, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" TextWrapping="Wrap"
+                   AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageError}" />
+        <Grid x:Name="Columns" ColumnDefinitions="3*,2*" RowDefinitions="Auto,Auto" ColumnSpacing="40" RowSpacing="24">
+          <StackPanel x:Name="GetStartedSection" Spacing="12" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageGetStarted}">
+            <TextBlock Classes="section" Text="Get started" />
+            <ItemsControl ItemsSource="{Binding GetStarted}">
+              <ItemsControl.DataTemplates>
+                <DataTemplate DataType="sp:NewProjectTileViewModel" x:DataType="sp:NewProjectTileViewModel">
+                  <Button Classes="card" Command="{Binding NewCommand}" AutomationProperties.Name="New project"
+                          AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageNewButton}">
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+                      <Border Classes="card-icon"><mi:MaterialIcon Kind="PlusCircleOutline" /></Border>
+                      <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock FontWeight="SemiBold" Text="New project…" />
+                        <TextBlock Classes="secondary" TextWrapping="Wrap" Text="Create a console app or a class library from a template." />
+                      </StackPanel>
+                    </Grid>
+                  </Button>
+                </DataTemplate>
+                <DataTemplate DataType="sp:OpenProjectTileViewModel" x:DataType="sp:OpenProjectTileViewModel">
+                  <Button Classes="card" Command="{Binding OpenCommand}" AutomationProperties.Name="Open folder or project"
+                          AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageOpenButton}">
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+                      <Border Classes="card-icon"><mi:MaterialIcon Kind="FolderOpenOutline" /></Border>
+                      <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock FontWeight="SemiBold" Text="Open folder or project…" />
+                        <TextBlock Classes="secondary" TextWrapping="Wrap" Text="Open a project folder or a .csproj file from disk." />
+                      </StackPanel>
+                    </Grid>
+                  </Button>
+                </DataTemplate>
+              </ItemsControl.DataTemplates>
+              <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                  <StackPanel Spacing="12" />
+                </ItemsPanelTemplate>
+              </ItemsControl.ItemsPanel>
+            </ItemsControl>
+            <ContentControl Content="{Binding Samples}" />
+          </StackPanel>
+          <StackPanel x:Name="RecentSection">
+            <ContentControl Content="{Binding Recent}" />
+          </StackPanel>
+        </Grid>
+        <StackPanel Spacing="8" IsVisible="{Binding WhatsNew, Converter={x:Static ObjectConverters.IsNotNull}}">
+          <Button Classes="section-toggle" Command="{Binding ToggleWhatsNewCommand}" AutomationProperties.Name="What's new"
+                  AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageWhatsNewToggle}">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+              <mi:MaterialIcon Kind="ChevronRight" IsVisible="{Binding !IsWhatsNewExpanded}" />
+              <mi:MaterialIcon Kind="ChevronDown" IsVisible="{Binding IsWhatsNewExpanded}" />
+              <TextBlock Classes="section" Text="What's new" />
+            </StackPanel>
+          </Button>
+          <ItemsControl ItemsSource="{Binding WhatsNewTiles}" IsVisible="{Binding IsWhatsNewExpanded}" />
+        </StackPanel>
+        <ItemsControl ItemsSource="{Binding Others}" />
+      </StackPanel>
+    </Grid>
   </ScrollViewer>
 </UserControl>

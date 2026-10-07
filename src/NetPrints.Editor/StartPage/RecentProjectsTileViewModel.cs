@@ -58,11 +58,11 @@ internal sealed partial class RecentProjectsTileViewModel : ObservableObject
         Items.Clear();
         DateTimeOffset now = time.GetUtcNow();
         string? previous = null;
-        foreach (RecentProject entry in recent?.List(string.IsNullOrWhiteSpace(SearchText) ? null : SearchText) ?? [])
+        foreach (RecentProject entry in (recent?.List(string.IsNullOrWhiteSpace(SearchText) ? null : SearchText) ?? []).OrderByDescending(entry => entry.Pinned).ThenByDescending(entry => entry.LastOpenedUtc))
         {
             DateTimeOffset opened = new(DateTime.SpecifyKind(entry.LastOpenedUtc, DateTimeKind.Utc));
             string group = RecentTime.GroupOf(entry.Pinned, opened, now, time.LocalTimeZone);
-            Items.Add(new RecentProjectItemViewModel(entry, group, group != previous, RecentTime.Describe(opened, now, time.LocalTimeZone, CultureInfo.CurrentCulture)));
+            Items.Add(new RecentProjectItemViewModel(entry, this, group, group != previous, RecentTime.Describe(opened, now, time.LocalTimeZone, CultureInfo.CurrentCulture)));
             previous = group;
         }
 

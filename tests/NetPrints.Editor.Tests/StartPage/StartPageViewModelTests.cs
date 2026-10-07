@@ -107,6 +107,19 @@ public sealed class StartPageViewModelTests : IDisposable
     }
 
     [Fact]
+    public void TheToggleCommandOpensAndClosesWhatsNew()
+    {
+        using var page = new StartPageViewModel(NewShell(BuiltInRegistry()), ServicesFor(actions, null));
+        bool before = page.IsWhatsNewExpanded;
+
+        page.ToggleWhatsNewCommand.Execute(null);
+        Assert.Equal(!before, page.IsWhatsNewExpanded);
+
+        page.ToggleWhatsNewCommand.Execute(null);
+        Assert.Equal(before, page.IsWhatsNewExpanded);
+    }
+
+    [Fact]
     public void AnotherVersionsNotesAreNewAgain()
     {
         var store = new JsonEditorStateStore(new EditorDataPaths("/state-root"), fs, NullLogger.Instance);

@@ -216,4 +216,18 @@ public sealed class RecentProjectsTileViewModelTests
 
         Assert.Same(tile.Items[0], tile.SelectedItem);
     }
+
+    [Fact]
+    public void ALongPathIsTrimmedInTheMiddleAndAShortOneIsKept()
+    {
+        string longPath = "/data/user/projects/" + new string('d', 80) + "/Game.csproj";
+
+        string shown = RecentProjectItemViewModel.MiddleTrim(longPath);
+
+        Assert.True(shown.Length <= RecentProjectItemViewModel.MaxPathLength);
+        Assert.StartsWith("/data/user", shown, StringComparison.Ordinal);
+        Assert.EndsWith("/Game.csproj", shown, StringComparison.Ordinal);
+        Assert.Contains('…', shown);
+        Assert.Equal("/p/App.csproj", RecentProjectItemViewModel.MiddleTrim("/p/App.csproj"));
+    }
 }

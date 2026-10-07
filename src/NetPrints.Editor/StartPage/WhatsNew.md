@@ -1,5 +1,3 @@
-# What's new
-
 ## The editor shell
 
 - A start page shows your recent projects, a sample and these notes whenever no project is open.

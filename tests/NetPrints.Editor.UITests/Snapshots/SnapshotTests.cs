@@ -2,6 +2,7 @@ using Avalonia.Headless.XUnit;
 using NetPrints.Core;
 using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Graph;
+using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Editor.UITests.Driving;
 using NetPrints.Editor.UITests.Hosting;
 using NetPrints.Editor.UITests.Shell;
@@ -60,7 +61,21 @@ public class SnapshotTests
         await app.Composition.StartAsync([]);
         var page = await new ShellPage(app.Driver).WaitShownAsync(Token);
 
-        await MatchWindowAsync(app.Driver, page, "editor-shell-no-project");
+        var version = await MaskOfAsync(new UiElement(app.Driver, new AutomationQuery(AutomationIds.StartPageVersion)));
+        await MatchWindowAsync(app.Driver, page, "editor-shell-no-project", new SnapshotOptions { Masks = [version] });
+    }
+
+    [AvaloniaTheory(Timeout = TestAppBuilder.Timeout)]
+    [InlineData(1600, 1000, false, "start-page-wide-empty")]
+    [InlineData(1600, 1000, true, "start-page-wide-recent")]
+    [InlineData(900, 700, false, "start-page-narrow-empty")]
+    [InlineData(900, 700, true, "start-page-narrow-recent")]
+    public async Task StartPage(int width, int height, bool withRecent, string name)
+    {
+        using var rig = StartPageRig.Create(width, height, withRecent);
+
+        var version = await MaskOfAsync(rig.Element(AutomationIds.StartPageVersion));
+        await MatchWindowAsync(rig.Ui.Driver, rig.Element(AutomationIds.StartPageRoot), name, new SnapshotOptions { Masks = [version] });
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]

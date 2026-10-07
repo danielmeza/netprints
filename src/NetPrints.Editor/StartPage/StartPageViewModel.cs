@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Reflection;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.State;
 
@@ -48,14 +49,17 @@ internal sealed partial class StartPageViewModel : DocumentViewModel
     /// <summary>Gets the recent tile, or null when no tile of that kind is registered.</summary>
     public RecentProjectsTileViewModel? Recent => Tiles.OfType<RecentProjectsTileViewModel>().FirstOrDefault();
 
-    /// <summary>Gets the action tiles (open, new project) in tile order.</summary>
-    public IReadOnlyList<object> GetStarted => [.. Tiles.Where(tile => tile is OpenProjectTileViewModel or NewProjectTileViewModel)];
+    /// <summary>Gets the action tiles, new project first and then open.</summary>
+    public IReadOnlyList<object> GetStarted => [.. Tiles.Where(tile => tile is OpenProjectTileViewModel or NewProjectTileViewModel).OrderBy(tile => tile is NewProjectTileViewModel ? 0 : 1)];
 
     /// <summary>Gets the samples tile, or null.</summary>
     public SamplesTileViewModel? Samples => Tiles.OfType<SamplesTileViewModel>().FirstOrDefault();
 
     /// <summary>Gets the what's new tile, or null.</summary>
     public WhatsNewTileViewModel? WhatsNew => Tiles.OfType<WhatsNewTileViewModel>().FirstOrDefault();
+
+    /// <summary>Gets the what's new tile as a list of one (or none), so the view builds and tears down its notes as an items host does.</summary>
+    public IReadOnlyList<WhatsNewTileViewModel> WhatsNewTiles => [.. Tiles.OfType<WhatsNewTileViewModel>().Take(1)];
 
     /// <summary>Gets the tiles an extension registered, which the page shows below the get started cards.</summary>
     public IReadOnlyList<object> Others => [.. Tiles.Where(tile => tile is not (RecentProjectsTileViewModel or OpenProjectTileViewModel or NewProjectTileViewModel or SamplesTileViewModel or WhatsNewTileViewModel))];
@@ -66,6 +70,10 @@ internal sealed partial class StartPageViewModel : DocumentViewModel
     /// <summary>Gets or sets a value indicating whether the what's new section is open.</summary>
     [ObservableProperty]
     public partial bool IsWhatsNewExpanded { get; set; }
+
+    /// <summary>Opens the what's new section when it is closed and closes it when it is open.</summary>
+    [RelayCommand]
+    private void ToggleWhatsNew() => IsWhatsNewExpanded = !IsWhatsNewExpanded;
 
     /// <summary>Gets the error shown above the tiles, or null.</summary>
     public string? Error => shell.StartPageError;

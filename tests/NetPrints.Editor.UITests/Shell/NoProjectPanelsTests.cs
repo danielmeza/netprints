@@ -44,7 +44,7 @@ public class NoProjectPanelsTests
         Assert.All(rig.Shell.Panels, panel => Assert.Equal(owners[panel.Id], OwnerOf(rig, panel.Id)));
         Assert.Equal(active, (bottom as IDock)?.ActiveDockable?.Id);
         Assert.Equal(rig.Shell.Panels.Where(panel => owners[panel.Id] == "netprints.dock.bottom").OrderBy(panel => panel.Order).Select(panel => panel.Id),
-            ((IDock)bottom).VisibleDockables!.Select(dockable => dockable.Id));
+            (((IDock)bottom).VisibleDockables ?? []).Select(dockable => dockable.Id));
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]

@@ -593,6 +593,58 @@ public static class AutomationIds
     /// </summary>
     public const string StartPageReleasesLink = "StartPage.ReleasesLink";
     /// <summary>
+    /// Automation id for the start page's centred content column.
+    /// </summary>
+    public const string StartPageContent = "StartPage.Content";
+    /// <summary>
+    /// Automation id for the product version beside the start page's title.
+    /// </summary>
+    public const string StartPageVersion = "StartPage.Version";
+    /// <summary>
+    /// Automation id for the start page's Get started card list.
+    /// </summary>
+    public const string StartPageGetStarted = "StartPage.GetStarted";
+    /// <summary>
+    /// Automation id for the start page's Open recent section.
+    /// </summary>
+    public const string StartPageRecentSection = "StartPage.RecentSection";
+    /// <summary>
+    /// Automation id for the start page's What's new header, which opens and closes the section.
+    /// </summary>
+    public const string StartPageWhatsNewToggle = "StartPage.WhatsNewToggle";
+    /// <summary>
+    /// Automation id for the date group title above a recent row.
+    /// </summary>
+    public const string StartPageRecentGroup = "StartPage.RecentGroup";
+    /// <summary>
+    /// Automation id for the relative date of a recent row.
+    /// </summary>
+    public const string StartPageRecentDate = "StartPage.RecentDate";
+    /// <summary>
+    /// Automation id for the "Not found" text of an unavailable recent row.
+    /// </summary>
+    public const string StartPageRecentStatus = "StartPage.RecentStatus";
+    /// <summary>
+    /// Automation id for the Open item of a recent row's context menu.
+    /// </summary>
+    public const string StartPageRecentMenuOpen = "StartPage.RecentMenuOpen";
+    /// <summary>
+    /// Automation id for the Open containing folder item of a recent row's context menu.
+    /// </summary>
+    public const string StartPageRecentMenuFolder = "StartPage.RecentMenuFolder";
+    /// <summary>
+    /// Automation id for the Copy path item of a recent row's context menu.
+    /// </summary>
+    public const string StartPageRecentMenuCopy = "StartPage.RecentMenuCopy";
+    /// <summary>
+    /// Automation id for the Pin or Unpin item of a recent row's context menu.
+    /// </summary>
+    public const string StartPageRecentMenuPin = "StartPage.RecentMenuPin";
+    /// <summary>
+    /// Automation id for the Remove from list item of a recent row's context menu.
+    /// </summary>
+    public const string StartPageRecentMenuRemove = "StartPage.RecentMenuRemove";
+    /// <summary>
     /// Automation id for the New project dialog.
     /// </summary>
     public const string NewProjectDialog = "NewProject.Dialog";

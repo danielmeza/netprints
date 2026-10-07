@@ -1,20 +1,34 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
              xmlns:ed="clr-namespace:NetPrints.Editor"
              xmlns:sp="clr-namespace:NetPrints.Editor.StartPage"
              x:Class="NetPrints.Editor.StartPage.SamplesTileView"
              x:DataType="sp:SamplesTileViewModel">
-  <!-- The samples tile: each bundled sample opens as a copy in a folder the user picks. -->
-  <StackPanel Spacing="8">
-    <TextBlock Classes="header" Text="Samples" />
-    <ItemsControl ItemsSource="{Binding Samples}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageSamplesList}">
-      <ItemsControl.ItemTemplate>
-        <DataTemplate x:DataType="sp:SampleDescriptor">
-          <Button HorizontalAlignment="Left" Content="{Binding Name}"
-                  Command="{Binding $parent[ItemsControl].((sp:SamplesTileViewModel)DataContext).OpenCommand}" CommandParameter="{Binding}"
-                  AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageSampleOpen}" AutomationProperties.Name="{Binding Name, StringFormat='Open sample {0}'}" />
-        </DataTemplate>
-      </ItemsControl.ItemTemplate>
-    </ItemsControl>
-  </StackPanel>
+  <!-- The samples card: each bundled sample opens as a copy in a folder the user picks. -->
+  <Border Classes="card">
+    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+      <Border Classes="card-icon"><mi:MaterialIcon Kind="FlaskOutline" /></Border>
+      <StackPanel Grid.Column="1" Spacing="8">
+        <StackPanel>
+          <TextBlock FontWeight="SemiBold" Text="Samples" />
+          <TextBlock Classes="secondary" TextWrapping="Wrap" Text="Open a copy of a bundled sample." />
+        </StackPanel>
+        <ItemsControl ItemsSource="{Binding Samples}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageSamplesList}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <WrapPanel />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="sp:SampleDescriptor">
+              <Button Margin="0,0,8,8" Content="{Binding Name}"
+                      Command="{Binding $parent[ItemsControl].((sp:SamplesTileViewModel)DataContext).OpenCommand}" CommandParameter="{Binding}"
+                      AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageSampleOpen}" AutomationProperties.Name="{Binding Name, StringFormat='Open sample {0}'}" />
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </Grid>
+  </Border>
 </UserControl>

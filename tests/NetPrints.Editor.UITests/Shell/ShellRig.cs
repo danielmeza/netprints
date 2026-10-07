@@ -22,9 +22,16 @@ internal sealed class TestDocumentViewModel(DocumentId id, string title) : Docum
 /// <summary>Project flows that a shell layout test never reaches.</summary>
 internal sealed class NoProjectActions : IProjectActions
 {
-    public Task<bool> ConfirmUnloadAsync(CancellationToken cancellationToken) => throw new NotSupportedException();
+    /// <summary>Gets the paths <see cref="OpenProjectAsync"/> was asked to open.</summary>
+    public List<string?> Opened { get; } = [];
 
-    public Task OpenProjectAsync(string? path, CancellationToken cancellationToken) => throw new NotSupportedException();
+    public Task<bool> ConfirmUnloadAsync(CancellationToken cancellationToken) => Task.FromResult(true);
+
+    public Task OpenProjectAsync(string? path, CancellationToken cancellationToken)
+    {
+        Opened.Add(path);
+        return Task.CompletedTask;
+    }
 
     public Task NewProjectAsync(CancellationToken cancellationToken) => throw new NotSupportedException();
 

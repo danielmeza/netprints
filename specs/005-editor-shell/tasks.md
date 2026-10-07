@@ -620,19 +620,19 @@ the window, the layout and each project's session, with safe fallbacks (FR-050â€
   panels back to their docks (the main snapshot is unchanged); the layout file is not written while they are hidden,
   not by a layout change and not on close. Then `DockShellAdapter` hides and restores the panels and `LayoutSaver`
   skips the hidden state; `ShellHost` drives it from the session.
-- [ ] T071b [US5] Responsive layout (2 units). Test first: `tests/NetPrints.Editor.UITests/Shell/StartPageLayoutTests.cs`:
+- [x] T071b [US5] Responsive layout (2 units). Test first: `tests/NetPrints.Editor.UITests/Shell/StartPageLayoutTests.cs`:
   at 1600 and at 900 DIP the page has two and one columns (the "Get started" column right of the recent list at the
   wide size, above it at the narrow size); the content is centred and at most about 1200 DIP; the existing automation
   ids all still resolve. Then `StartPageView` (container query, one product title row, left-aligned headers).
-- [ ] T071c [US5] Get started cards and What's new (2 units). Test first: `StartPageViewModelTests` and
+- [x] T071c [US5] Get started cards and What's new (2 units). Test first: `StartPageViewModelTests` and
   `StartPageLayoutTests`: each card (New project, Open folder or project, Samples, Learn) is one button with its
-  automation id; What's new starts collapsed when the version's notes were already seen and expanded when not, and
-  expanding it is remembered. Then the card styles, the samples list as cards and the collapsible section.
-- [ ] T071d [US5] Recent rows (1 unit). Test first: `RecentProjectsTileViewModelTests`: grouping by Pinned, Today, This
+  automation id; What's new starts collapsed when the version's notes were already seen and expanded when not (the version
+  is marked as seen in `start.json` when the page is shown). Then the card styles, the samples list as cards and the collapsible section.
+- [x] T071d [US5] Recent rows (1 unit). Test first: `RecentProjectsTileViewModelTests`: grouping by Pinned, Today, This
   week, This month and Older with a fake `TimeProvider`, the relative date text, the unavailable row ("Not found",
   cannot open, can remove), the context-menu commands (Open containing folder and Copy path through services). Then
   the row template with hover and focus actions and the context menu.
-- [ ] T071e [US5] Recent keyboard (1 unit). Test first: headless `StartPageKeyboardTests`: the search box has the focus
+- [x] T071e [US5] Recent keyboard (1 unit). Test first: headless `StartPageKeyboardTests`: the search box has the focus
   when the page opens, Down moves into the list, the arrows move, Enter opens, Delete removes and Ctrl+P pins and
   unpins. Then the behaviors and commands (no key handlers in code-behind).
 - [ ] T071f [US5] Snapshots, E2E and notes. New baselines `start-page-wide`, `start-page-narrow`, each empty and with five
