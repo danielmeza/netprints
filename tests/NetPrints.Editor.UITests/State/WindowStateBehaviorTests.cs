@@ -68,6 +68,18 @@ public class WindowStateBehaviorTests
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public void ThePixelSizeIsConvertedAtTheScalingOfTheTargetScreen()
+    {
+        var window = new Window();
+
+        WindowStateBehavior.Apply(window, new WindowPlacement(new ScreenBounds(30, 40, 1500, 900), false, 1.5));
+
+        Assert.Equal(1000, window.Width, 3);
+        Assert.Equal(600, window.Height, 3);
+        Assert.Equal(new PixelPoint(30, 40), window.Position);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public void TheMaximizedStateIsRestored()
     {
         var store = new FakeStore { Window = new NetPrints.Editor.State.WindowState(StateFile.CurrentVersion, 30, 40, 700, 500, true) };

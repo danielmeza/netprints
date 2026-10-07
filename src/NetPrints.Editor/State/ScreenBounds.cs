@@ -5,7 +5,8 @@ namespace NetPrints.Editor.State;
 /// <param name="Y">Top edge.</param>
 /// <param name="Width">Width in pixels.</param>
 /// <param name="Height">Height in pixels.</param>
-public sealed record ScreenBounds(int X, int Y, int Width, int Height)
+/// <param name="Scaling">Device pixels per device-independent pixel of the screen this describes; not saved.</param>
+public sealed record ScreenBounds(int X, int Y, int Width, int Height, [property: System.Text.Json.Serialization.JsonIgnore] double Scaling = 1.0)
 {
     /// <summary>Gets the right edge, exclusive.</summary>
     public int Right => X + Width;

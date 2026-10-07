@@ -1,5 +1,6 @@
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Platform;
 using Avalonia.Xaml.Interactivity;
 using NetPrints.Editor.State;
 using AvaloniaWindowState = Avalonia.Controls.WindowState;
@@ -67,7 +68,7 @@ public sealed class WindowStateBehavior : StyledElementBehavior<Window>
         }
     }
 
-    private static ScreenBounds ToBounds(PixelRect rect) => new(rect.X, rect.Y, rect.Width, rect.Height);
+    private static ScreenBounds ToBounds(Screen screen) => new(screen.WorkingArea.X, screen.WorkingArea.Y, screen.WorkingArea.Width, screen.WorkingArea.Height, screen.Scaling);
 
     private void TryRestore(Window window)
     {
@@ -77,21 +78,26 @@ public sealed class WindowStateBehavior : StyledElementBehavior<Window>
         }
 
         restored = true;
-        IReadOnlyList<ScreenBounds> areas = [.. screens.All.Select(screen => ToBounds(screen.WorkingArea))];
-        ScreenBounds? primary = screens.Primary is { } main ? ToBounds(main.WorkingArea) : areas.FirstOrDefault();
+        IReadOnlyList<ScreenBounds> areas = [.. screens.All.Select(ToBounds)];
+        ScreenBounds? primary = screens.Primary is { } main ? ToBounds(main) : areas.FirstOrDefault();
         if (primary is null || service.Restore(areas, primary) is not { } placement)
         {
             return;
         }
 
-        double scaling = window.RenderScaling;
-        window.WindowStartupLocation = WindowStartupLocation.Manual;
-        window.Position = new PixelPoint(placement.Bounds.X, placement.Bounds.Y);
-        window.Width = placement.Bounds.Width / scaling;
-        window.Height = placement.Bounds.Height / scaling;
-        window.WindowState = placement.IsMaximized ? AvaloniaWindowState.Maximized : AvaloniaWindowState.Normal;
+        Apply(window, placement);
         normalBounds = placement.Bounds;
         isMaximized = placement.IsMaximized;
+    }
+
+    // The size is in pixels at the scaling of the screen the window lands on, which the window itself does not know before it is shown.
+    internal static void Apply(Window window, WindowPlacement placement)
+    {
+        window.WindowStartupLocation = WindowStartupLocation.Manual;
+        window.Position = new PixelPoint(placement.Bounds.X, placement.Bounds.Y);
+        window.Width = placement.WidthInDips;
+        window.Height = placement.HeightInDips;
+        window.WindowState = placement.IsMaximized ? AvaloniaWindowState.Maximized : AvaloniaWindowState.Normal;
     }
 
     private void OnOpened(object? sender, EventArgs e)

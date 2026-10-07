@@ -78,8 +78,11 @@ applies the change to what it read, so two editors keep each other's entries and
   stored as given (full paths) and compared case-insensitively on Windows only.
 - **Session restore.** Documents that cannot be resolved are skipped, and so are viewports with non-finite values.
   The active document falls back to the first restored one.
-- **Window restore.** If the saved bounds do not intersect any current screen, the window is centred on the primary
-  screen at its saved size, clamped to that screen.
+- **Window restore.** The window goes to the screen its saved bounds overlap most, with its size clamped to that
+  screen's working area and its title strip (the top 32 px, at least 100 px wide) on the screen. If the saved bounds do
+  not intersect any current screen, the window is centred on the primary screen at its saved size, clamped to that
+  screen. The saved size is in pixels and is turned into device-independent pixels with the scaling of the screen the
+  window lands on, so it does not drift on mixed-DPI setups.
 - **Backups.**
   - Written 30 s after a file's last change (the debounce restarts on every change).
   - A backup holds the same canonical JSON a save would write.
