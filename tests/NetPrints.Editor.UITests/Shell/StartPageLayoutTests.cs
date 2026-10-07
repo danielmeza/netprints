@@ -40,7 +40,7 @@ public class StartPageLayoutTests
 
         Assert.True(cards.Left >= recent.Right - 1, $"cards {cards.Rect} should be right of the recent list {recent.Rect}");
         Assert.True(Math.Abs(cards.Top - recent.Top) < 2, "both columns start on the same row");
-        Assert.True(recent.Rect.Width > cards.Rect.Width, "the recent list is the wider column");
+        Assert.True(cards.Rect.Width > recent.Rect.Width, "the get started section is the wider column");
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]

@@ -30,6 +30,11 @@ public sealed class RecordingDialogs : IEditorDialogs
         return Task.CompletedTask;
     }
 
+    public void ShowNotification(string title, string message)
+    {
+        // Do nothing for now in the fake
+    }
+
     public Task<TypeSpecifier?> SelectTypeAsync(IEnumerable<TypeSpecifier> types, TypeSpecifier initial)
     {
         SelectTypeCalls.Add(initial);

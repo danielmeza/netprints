@@ -10,7 +10,7 @@
       <Button Classes="icon" ToolTip.Tip="Remove local variable" AutomationProperties.Name="Remove local variable" Command="{Binding RemoveCommand}">
         <mi:MaterialIcon Kind="Minus" />
       </Button>
-      <TextBlock Text="Name" Foreground="Gray" VerticalAlignment="Center" Margin="4,0,0,0" />
+      <TextBlock Text="Name" Opacity="0.75" VerticalAlignment="Center" Margin="4,0,0,0" />
     </StackPanel>
     <Grid Grid.Column="1" ColumnDefinitions="*,Auto">
       <TextBox x:Name="NameBox" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableName}" 

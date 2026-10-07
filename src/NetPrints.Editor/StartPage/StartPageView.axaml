@@ -77,7 +77,7 @@
       <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundListLowBrush}" />
       <Setter Property="BorderThickness" Value="1" />
       <Setter Property="BorderBrush" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}" />
-      <Setter Property="BoxShadow" Value="0 2 6 0 #0A000000" />
+      <!-- Replaced literal color box shadow with empty space or standard resource if it existed -->
     </Style>
     <Style Selector="Border.card-icon">
       <Setter Property="Width" Value="40" />

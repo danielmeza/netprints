@@ -74,6 +74,8 @@
     </DataTemplate>
   </Application.DataTemplates>
   <Application.Styles>
+    <FluentTheme />
+    <semi:SemiTheme Locale="en-US" />
     <u-semi:SemiTheme Locale="en-US"/>
     <!-- Nodify control templates; without them no graph item is realized. -->
     <StyleInclude Source="avares://Nodify.Avalonia/Themes/Controls.xaml" />

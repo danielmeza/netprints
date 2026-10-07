@@ -119,7 +119,6 @@ namespace NetPrints.Tests.Core
         /// legitimate home for a raw color, and that is already excluded per-element below.</summary>
         private static readonly Dictionary<string, string> E2Allowlist = new(StringComparer.Ordinal)
         {
-            ["src/NetPrints.Editor/EditorApp.axaml:80"] = "FluentTheme's own Dark palette definition (ColorPaletteResources): the literal is the base system color, one level below any token.",
         };
 
         /// <summary>True when <paramref name="value"/> is a color literal E2 forbids: not a binding/resource
