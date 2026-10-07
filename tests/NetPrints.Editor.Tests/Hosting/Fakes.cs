@@ -308,8 +308,16 @@ public sealed class FakeProjectSystem : IProjectSystem
         return Task.FromResult(snapshot);
     }
 
-    public Task<ProjectSnapshot> ApplyAsync(string projectFilePath, IReadOnlyList<ProjectEdit> edits, CancellationToken cancellationToken)
+    /// <summary>When set, <see cref="ApplyAsync"/> awaits it before applying, after the project file was written (test seam for cancelling a creation).</summary>
+    public Func<CancellationToken, Task>? BeforeApply { get; set; }
+
+    public async Task<ProjectSnapshot> ApplyAsync(string projectFilePath, IReadOnlyList<ProjectEdit> edits, CancellationToken cancellationToken)
     {
+        if (BeforeApply is { } gate)
+        {
+            await gate(cancellationToken);
+        }
+
         ApplyCalls.Add(edits);
         if (FailApply?.Invoke(edits) is { } failure)
         {
@@ -379,7 +387,7 @@ public sealed class FakeProjectSystem : IProjectSystem
 
         snapshot = snapshot with { DeclaredReferences = declared };
         snapshots[projectFilePath] = snapshot;
-        return Task.FromResult(snapshot);
+        return snapshot;
     }
 
     public Task<string> CreateAsync(string directory, string projectName, IProjectProfile profile, string rootNamespace, CancellationToken cancellationToken)

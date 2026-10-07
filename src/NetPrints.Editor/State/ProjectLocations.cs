@@ -6,15 +6,20 @@ public sealed class ProjectLocations
     /// <summary>The name of the folder under the documents folder that holds new projects by default.</summary>
     public const string DefaultFolderName = "NetPrints";
 
+    private const int HomePrefixLength = 2;
+
     private readonly IEditorStateStore? store;
+    private readonly string homeFolder;
 
     /// <summary>Creates the locations over a state store.</summary>
     /// <param name="store">Where the last location is kept, or <see langword="null"/> to keep none.</param>
     /// <param name="documentsFolder">The user's documents folder; the default location is its <c>NetPrints</c> folder.</param>
-    public ProjectLocations(IEditorStateStore? store, string documentsFolder)
+    /// <param name="homeFolder">The user's home folder, which a leading <c>~</c> in a location stands for; null for the current user's.</param>
+    public ProjectLocations(IEditorStateStore? store, string documentsFolder, string? homeFolder = null)
     {
         ArgumentException.ThrowIfNullOrEmpty(documentsFolder);
         this.store = store;
+        this.homeFolder = string.IsNullOrEmpty(homeFolder) ? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) : homeFolder;
         DefaultLocation = Path.Combine(documentsFolder, DefaultFolderName);
     }
 
@@ -30,7 +35,7 @@ public sealed class ProjectLocations
     /// <param name="homeFolder">The user's home folder, used when <paramref name="documentsFolder"/> is empty.</param>
     /// <returns>The locations, with the <c>NetPrints</c> folder under the documents folder as the default.</returns>
     public static ProjectLocations Resolve(IEditorStateStore? store, string documentsFolder, string homeFolder) =>
-        new(store, string.IsNullOrEmpty(documentsFolder) ? homeFolder : documentsFolder);
+        new(store, string.IsNullOrEmpty(documentsFolder) ? homeFolder : documentsFolder, homeFolder);
 
     /// <summary>Creates the locations for the current user, in their documents folder.</summary>
     /// <param name="store">Where the last location is kept, or <see langword="null"/> for none.</param>
@@ -39,6 +44,23 @@ public sealed class ProjectLocations
     {
         string documents = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
         return new ProjectLocations(store, string.IsNullOrEmpty(documents) ? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) : documents);
+    }
+
+    /// <summary>Expands a leading <c>~</c> to the user's home folder; any other text is returned as it is, relative or not.</summary>
+    /// <param name="location">The text the user typed.</param>
+    /// <returns>The location with <c>~</c> expanded.</returns>
+    public string Expand(string location)
+    {
+        ArgumentNullException.ThrowIfNull(location);
+        string trimmed = location.Trim();
+        if (trimmed == "~")
+        {
+            return homeFolder;
+        }
+
+        return trimmed.StartsWith("~/", StringComparison.Ordinal) || trimmed.StartsWith("~" + Path.DirectorySeparatorChar, StringComparison.Ordinal)
+            ? Path.Combine(homeFolder, trimmed[HomePrefixLength..])
+            : location;
     }
 
     /// <summary>Remembers the location the user used, so the next New project and sample start there.</summary>

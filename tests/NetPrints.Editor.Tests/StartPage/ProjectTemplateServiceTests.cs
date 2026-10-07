@@ -106,7 +106,7 @@ public sealed class ProjectTemplateServiceTests : IDisposable
         ContributionRegistry registry = Registry();
         registry.AddProjectTemplate(new ProjectTemplateDescriptor("ext.template.game", "Game", "A game project", DefaultProjectProfile.ProfileId, ProjectOutputType.Library));
         ProjectTemplateService service = Service(registry);
-        var dialog = new NewProjectDialogViewModel(service, editor.FilePicker, new ProjectLocations(null, TempRoot()));
+        var dialog = new NewProjectDialogViewModel(service, editor.FilePicker, new ProjectLocations(null, TempRoot()), TimeProvider.System);
 
         Assert.Contains(service.Templates, template => template.Id == "ext.template.game");
         Assert.Contains(dialog.Templates, template => template.Id == "ext.template.game");
@@ -133,7 +133,7 @@ public sealed class ProjectTemplateServiceTests : IDisposable
         ProjectTemplateService service = Service(registry);
         string folder = Path.Combine(TempRoot(), "Out");
 
-        Assert.NotNull(service.Validate(name, folder));
+        Assert.NotNull(await service.ValidateAsync(name, folder, Token));
         await Assert.ThrowsAnyAsync<ArgumentException>(() => service.CreateAsync(Template(registry, "netprints.template.console"), name, folder, Token));
         Assert.False(Directory.Exists(folder));
         Assert.Empty(editor.Projects.ApplyCalls);
@@ -143,7 +143,7 @@ public sealed class ProjectTemplateServiceTests : IDisposable
     [InlineData("Demo")]
     [InlineData("My.App")]
     [InlineData("_private")]
-    public void AValidNameIsAccepted(string name) => Assert.Null(Service(Registry()).Validate(name, Path.Combine(TempRoot(), "Out")));
+    public async Task AValidNameIsAccepted(string name) => Assert.Null(await Service(Registry()).ValidateAsync(name, Path.Combine(TempRoot(), "Out"), Token));
 
     [Fact]
     public async Task AFolderThatIsNotEmptyIsRejectedBeforeAnythingIsWritten()
@@ -155,7 +155,7 @@ public sealed class ProjectTemplateServiceTests : IDisposable
         string existing = Path.Combine(folder, "keep.txt");
         await File.WriteAllTextAsync(existing, "mine", Token);
 
-        Assert.NotNull(service.Validate("Demo", folder));
+        Assert.NotNull(await service.ValidateAsync("Demo", folder, Token));
         await Assert.ThrowsAnyAsync<ArgumentException>(() => service.CreateAsync(Template(registry, "netprints.template.console"), "Demo", folder, Token));
         Assert.Equal([existing], Directory.GetFileSystemEntries(folder));
         Assert.Equal("mine", await File.ReadAllTextAsync(existing, Token));
@@ -203,11 +203,19 @@ public sealed class ProjectTemplateServiceTests : IDisposable
         Assert.False(Directory.Exists(folder));
     }
 
+    private readonly FakeTimeProvider dialogTime = new();
+
     private NewProjectDialogViewModel NewDialog(ContributionRegistry? registry = null) =>
-        new(Service(registry ?? Registry()), editor.FilePicker, new ProjectLocations(null, TempRoot()));
+        new(Service(registry ?? Registry()), editor.FilePicker, new ProjectLocations(null, TempRoot()), dialogTime);
+
+    private async Task SettleAsync(NewProjectDialogViewModel dialog)
+    {
+        dialogTime.Advance(NewProjectDialogViewModel.ValidationDelay);
+        await dialog.ValidationTask;
+    }
 
     [Fact]
-    public void CreateIsEnabledOnlyWhenTheInputIsValid()
+    public async Task CreateIsEnabledOnlyWhenTheInputIsValid()
     {
         NewProjectDialogViewModel dialog = NewDialog();
         Assert.False(dialog.CreateCommand.CanExecute(null));
@@ -215,10 +223,12 @@ public sealed class ProjectTemplateServiceTests : IDisposable
 
         dialog.Name = "1bad";
         dialog.Location = Path.Combine(TempRoot(), "Out");
+        await SettleAsync(dialog);
         Assert.False(dialog.CreateCommand.CanExecute(null));
         Assert.NotNull(dialog.Message);
 
         dialog.Name = "Good";
+        await SettleAsync(dialog);
         Assert.True(dialog.CreateCommand.CanExecute(null));
         Assert.Null(dialog.Message);
         Assert.Equal("netprints.template.console", dialog.SelectedTemplate?.Id);

@@ -18,11 +18,12 @@ internal sealed class ProjectTemplateService(
     /// <summary>Gets the registered templates, in registration order.</summary>
     public IReadOnlyList<ProjectTemplateDescriptor> Templates => templates();
 
-    /// <summary>Checks a project name and folder without writing anything.</summary>
+    /// <summary>Checks a project name and folder without writing anything; the file system is read off the calling thread.</summary>
     /// <param name="name">The project name, which is also its root namespace.</param>
-    /// <param name="folder">The folder the project is created in.</param>
+    /// <param name="folder">The full path of the folder the project is created in; a relative path is rejected, never resolved against the working folder.</param>
+    /// <param name="cancellationToken">Cancels the check.</param>
     /// <returns>The reason the input is rejected, or null when it is valid.</returns>
-    public string? Validate(string name, string folder)
+    public async Task<string?> ValidateAsync(string name, string folder, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -45,6 +46,16 @@ internal sealed class ProjectTemplateService(
             return "Choose a folder.";
         }
 
+        if (!Path.IsPathRooted(folder))
+        {
+            return $"'{folder}' is not a full path. Enter the whole path of the folder, or start it with ~ for your home folder.";
+        }
+
+        return await Task.Run(() => CheckFolder(folder), cancellationToken).ConfigureAwait(true);
+    }
+
+    private static string? CheckFolder(string folder)
+    {
         string full = Path.GetFullPath(folder);
         if (File.Exists(full))
         {
@@ -59,7 +70,7 @@ internal sealed class ProjectTemplateService(
         return null;
     }
 
-    /// <summary>Creates the project; a failure removes what was written.</summary>
+    /// <summary>Creates the project; a failure or a cancellation removes what was written, and the folder too when this call created it.</summary>
     /// <param name="template">The template to create it from.</param>
     /// <param name="name">The project name.</param>
     /// <param name="folder">The empty or new folder to create it in.</param>
@@ -70,7 +81,7 @@ internal sealed class ProjectTemplateService(
     public async Task<string> CreateAsync(ProjectTemplateDescriptor template, string name, string folder, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(template);
-        if (Validate(name, folder) is { } problem)
+        if (await ValidateAsync(name, folder, cancellationToken).ConfigureAwait(true) is { } problem)
         {
             throw new ArgumentException(problem);
         }
@@ -95,6 +106,7 @@ internal sealed class ProjectTemplateService(
                     break;
             }
 
+            cancellationToken.ThrowIfCancellationRequested();
             return csproj;
         }
         catch

@@ -78,7 +78,7 @@ public class DialogTests
         try
         {
             using var ui = HeadlessUi.Create();
-            var viewModel = new NewProjectDialogViewModel(service, new QueuedFilePicker(), new ProjectLocations(null, location));
+            var viewModel = new NewProjectDialogViewModel(service, new QueuedFilePicker(), new ProjectLocations(null, location), TimeProvider.System);
             var dialog = ui.Show(new NewProjectDialog(viewModel));
             var page = new NewProjectDialogPage(ui.Driver);
             bool closed = false;
@@ -86,6 +86,7 @@ public class DialogTests
 
             Assert.False(await page.CreateButton.IsEnabledAsync(Token));
             await page.CreateAsync("Typed", location, Token);
+            await page.WaitHiddenAsync(Token);
 
             Assert.True(closed);
             Assert.Equal(Path.Combine(folder, "Typed.csproj"), dialog.Result);

@@ -204,7 +204,13 @@ internal sealed class ProjectLoader : IDisposable
     public async Task CreateProjectAsync()
     {
         var service = new ProjectTemplateService(() => shell.Registry.ProjectTemplates, FindProfile, context.Projects);
-        string? path = await context.Dialogs.ShowNewProjectAsync(new NewProjectDialogViewModel(service, context.FilePicker, locations)).ConfigureAwait(true);
+        using var dialog = new NewProjectDialogViewModel(service, context.FilePicker, locations, TimeProvider.System);
+        string? path = await context.Dialogs.ShowNewProjectAsync(dialog).ConfigureAwait(true);
+        if (path is null)
+        {
+            await dialog.CancelCreationAsync().ConfigureAwait(true);
+        }
+
         if (path is not null)
         {
             await LoadProjectAsync(path).ConfigureAwait(true);
