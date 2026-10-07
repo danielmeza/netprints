@@ -48,7 +48,8 @@ public class SnapshotTests
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
 
-        await MatchWindowAsync(session.Driver, session.Page, "editor-shell-main");
+        var status = await MaskOfAsync(new UiElement(session.Driver, new AutomationQuery(AutomationIds.ShellStatusBar))); // "Loaded project" fades after 5 s
+        await MatchWindowAsync(session.Driver, session.Page, "editor-shell-main", new SnapshotOptions { Masks = [status] });
         await MatchStableAsync("node-call-method", session.Graph.Node("CallMethodNode").ScreenshotAsync); // connected and unconnected pins
         await MatchStableAsync("inspector-method", session.Page.Inspector.ScreenshotAsync);
     }
@@ -228,8 +229,9 @@ public class SnapshotTests
 
         search = await (await graph.RightClickAtAsync(280, 392, Token)).WaitOpenAsync(Token);
         var mask = await MaskOfAsync(search.SearchBox);
+        var status = await MaskOfAsync(new UiElement(session.Driver, new AutomationQuery(AutomationIds.ShellStatusBar)));
         await MatchStableAsync("search-popup", async cancellationToken => await session.Driver.ScreenshotAsync((await graph.GetAsync(cancellationToken)).Window, cancellationToken),
-            new SnapshotOptions { Masks = [mask] });
+            new SnapshotOptions { Masks = [mask, status] });
         await session.Driver.PressAsync("Escape", Token);
         await search.WaitClosedAsync(Token);
 

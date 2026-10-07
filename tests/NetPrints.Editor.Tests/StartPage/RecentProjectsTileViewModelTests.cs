@@ -140,7 +140,7 @@ public sealed class RecentProjectsTileViewModelTests
                     checkingThreads.Add(Environment.CurrentManagedThreadId);
                 }
 
-                release.Wait(TimeSpan.FromSeconds(10));
+                release.WaitHandle.WaitOne(TimeSpan.FromSeconds(10));
             }
         };
 
