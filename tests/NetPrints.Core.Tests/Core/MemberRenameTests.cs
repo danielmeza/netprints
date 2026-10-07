@@ -72,7 +72,8 @@ namespace NetPrints.Tests.Core
             var setter = new VariableSetterNode(caller, count.Specifier);
             var foreignGetter = new VariableGetterNode(caller, foreign.Specifier);
             var local = new VariableGetterNode(caller, new VariableSpecifier("Count", TypeSpecifier.FromType<int>(),
-                MemberVisibility.Public, MemberVisibility.Public, null, VariableModifiers.None) { Scope = VariableScope.Local });
+                MemberVisibility.Public, MemberVisibility.Public, null, VariableModifiers.None)
+            { Scope = VariableScope.Local });
 
             RenameResult result = MemberRename.RenameVariable([cls, other], count, "Total");
 
