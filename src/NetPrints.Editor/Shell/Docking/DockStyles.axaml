@@ -1,12 +1,50 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:sys="clr-namespace:System;assembly=System.Runtime"
         xmlns:dockfluent="clr-namespace:Dock.Avalonia.Themes.Fluent;assembly=Dock.Avalonia.Themes.Fluent">
   <dockfluent:DockFluentTheme />
   <Styles.Resources>
     <ResourceDictionary>
+      <ResourceDictionary.MergedDictionaries>
+        <ResourceInclude Source="avares://NetPrints.Editor/Icons.axaml" />
+      </ResourceDictionary.MergedDictionaries>
       <!-- Dock's surface tokens: make the header blend smoothly with the editor background. -->
       <SolidColorBrush x:Key="DockSurfaceHeaderBrush" Color="{DynamicResource SystemAltMediumHighColor}" />
       <SolidColorBrush x:Key="DockSurfaceEditorBrush" Color="{DynamicResource SystemRegionColor}" />
+      <!-- Glyph box and button size of the chrome; Dock sizes each glyph by its own geometry, so the box is fixed here and every geometry below shares one grid. -->
+      <sys:Double x:Key="DockChromeIconSize">16</sys:Double>
+      <sys:Double x:Key="DockChromeButtonSize">24</sys:Double>
+      <sys:Double x:Key="DockChromeButtonWidth">24</sys:Double>
+      <sys:Double x:Key="DockChromeButtonHeight">24</sys:Double>
+      <Thickness x:Key="DockToolChromeMenuIconMargin">0</Thickness>
+      <!-- Dock's glyph geometry keys, answered by the shared icon set. -->
+      <StaticResource x:Key="DockIconMenuGeometry" ResourceKey="Icon.ChevronDown" />
+      <StaticResource x:Key="DockIconPinGeometry" ResourceKey="Icon.Pin" />
+      <StaticResource x:Key="DockIconPinnedGeometry" ResourceKey="Icon.PinOff" />
+      <StaticResource x:Key="DockIconCloseGeometry" ResourceKey="Icon.Close" />
+      <StaticResource x:Key="DockToolIconCloseGeometry" ResourceKey="Icon.Close" />
+      <StaticResource x:Key="DockIconMaximizeGeometry" ResourceKey="Icon.WindowMaximize" />
+      <StaticResource x:Key="DockIconRestoreGeometry" ResourceKey="Icon.WindowRestore" />
+      <StaticResource x:Key="DockIconMinimizeGeometry" ResourceKey="Icon.WindowMinimize" />
+      <StaticResource x:Key="DockIconAddDocumentGeometry" ResourceKey="Icon.Plus" />
+      <StaticResource x:Key="DockIconStatusFloatGeometry" ResourceKey="Icon.OpenInNew" />
+      <StaticResource x:Key="DockIconStatusDockGeometry" ResourceKey="Icon.DockWindow" />
     </ResourceDictionary>
   </Styles.Resources>
+  <Style Selector="ToolChromeControl /template/ Button">
+    <Setter Property="MinWidth" Value="{DynamicResource DockChromeButtonSize}" />
+    <Setter Property="MinHeight" Value="{DynamicResource DockChromeButtonSize}" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="ToolChromeControl /template/ Button Viewbox">
+    <Setter Property="Width" Value="{DynamicResource DockChromeIconSize}" />
+    <Setter Property="Height" Value="{DynamicResource DockChromeIconSize}" />
+  </Style>
+  <Style Selector="DocumentTabStripItem Button">
+    <Setter Property="MinWidth" Value="{DynamicResource DockChromeButtonSize}" />
+  </Style>
+  <Style Selector="DocumentTabStripItem Button Path">
+    <Setter Property="Width" Value="{DynamicResource DockChromeIconSize}" />
+    <Setter Property="Height" Value="{DynamicResource DockChromeIconSize}" />
+  </Style>
 </Styles>
