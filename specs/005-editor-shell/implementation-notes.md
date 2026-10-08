@@ -1671,3 +1671,22 @@ planned G tasks.
   as Unreal's Self node (a new serialized node kind)"; (3) P3a's "Visual polish in sub-phase G" bullet adds
   "readable override and overload pickers, "self" on unconnected Target pins and every dialog sized to its content
   (owner decisions 2026-10-08), about 2 days more".
+
+## F1 (T074 to T076: navigation history, command palette, go to anything)
+
+- T074: `NavigationHistory` is UI-free (`NavigationEntry` holds document, viewport location, zoom and selected node ids);
+  `NavigationService` (behind the new `IShell.Navigation`) records the active view before `NavigateTo`, the Errors panel
+  (`RecordCurrent`) and every change of the active tab, and restores on Back and Forward. An entry identical to the last
+  one is not recorded twice, which is why the tab-switch hook and an explicit `RecordCurrent` can both fire for one
+  navigation. Only graph documents are recorded; the start page and project settings are not.
+- T075: the palette is a modal dialog (`CommandPaletteDialog`, `Palette.*` ids), not a canvas popup; it shows the menu name
+  as the menu path (the group ids are internal). `MatchRanking` is the one R9 ranking, shared with go to anything.
+- T076: also a modal dialog (`GoTo.*`). `GoToItem` now carries either a `Target` or a `CommandId` (the `>` commands have no
+  document). Graphs means the class graph, constructors and event graphs; methods are a separate kind so none is listed
+  twice. A variable opens its getter graph, else the class graph. Node results need at least one typed character and stop
+  at 100. The built-in providers read the session through a `Func`, so they are registered once, before the registry
+  freezes (`GoToProviderContributions`, called from `ShellHost`).
+- Tests: red first for the history (compile red, then 9 green), the palette view model and `MatchRanking`, go to anything and
+  the built-in providers. The two dialog views were written before their headless tests (the view models were already
+  green), so those tests were green on first run.
+- Deferred: mouse buttons for history stay a P6 gesture review item (R9); Ctrl+click on connections is F2 (T077).
