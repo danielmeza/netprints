@@ -5,7 +5,11 @@
              x:Class="NetPrints.Editor.Inspectors.EventGraphInspectorView"
              x:DataType="edevents:EventGraphViewModel">
   <!-- Event graph inspector (US8, FR-070): the name, renamed as one undo step; a duplicate is refused with a message. -->
-  <Grid AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventGraphInspector}" RowDefinitions="Auto,Auto,Auto,Auto" Classes="propertyGrid" ColumnDefinitions="Auto,*">
+  <Grid AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventGraphInspector}" RowDefinitions="Auto,Auto,Auto,Auto" Classes="propertyGrid">
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="{StaticResource Inspector.LabelColumnWidth}" />
+      <ColumnDefinition Width="*" />
+    </Grid.ColumnDefinitions>
     <TextBlock Grid.ColumnSpan="2" Classes="header" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
     <TextBlock x:Name="NameLabel" Grid.Row="1" Classes="inspectorLabel" Text="Name" />
     <TextBox Grid.Row="1" Grid.Column="1" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventGraphInspectorName}"

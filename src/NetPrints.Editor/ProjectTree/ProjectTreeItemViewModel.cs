@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using NetPrints.Editor.Icons;
 using NetPrints.Editor.Shell;
 
 namespace NetPrints.Editor.ProjectTree;
@@ -109,16 +110,16 @@ public sealed partial class ProjectTreeItemViewModel : ObservableObject
     /// <summary>Gets the context menu entries of the row, those whose command can run for it; filled while the row is selected.</summary>
     public ObservableCollection<CommandEntryViewModel> MenuEntries { get; } = [];
 
-    /// <summary>Gets the Material icon kind name of the row.</summary>
-    public string IconKind => Kind switch
+    /// <summary>Gets the icon id of the row.</summary>
+    public string IconId => Kind switch
     {
-        TreeItemKind.Project => "FolderOutline",
-        TreeItemKind.Class => "CodeBraces",
-        TreeItemKind.Group => "FormatListBulleted",
-        TreeItemKind.Method => "FunctionVariant",
-        TreeItemKind.Constructor => "Hammer",
-        TreeItemKind.Variable => "Variable",
-        _ => "LightningBolt",
+        TreeItemKind.Project => IconIds.Project,
+        TreeItemKind.Class => IconIds.Class,
+        TreeItemKind.Group => IconIds.Group,
+        TreeItemKind.Method => IconIds.Method,
+        TreeItemKind.Constructor => IconIds.Constructor,
+        TreeItemKind.Variable => IconIds.Variable,
+        _ => IconIds.Event,
     };
 
     /// <summary>Gets a value indicating whether the row opens a graph.</summary>

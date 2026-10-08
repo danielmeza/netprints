@@ -1,6 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
              xmlns:ed="clr-namespace:NetPrints.Editor"
              xmlns:sp="clr-namespace:NetPrints.Editor.StartPage"
              x:Class="NetPrints.Editor.StartPage.LearnTileView"
@@ -28,7 +28,7 @@
   <!-- The Learn card: the guide, the keyboard shortcuts sheet, the documentation and the release notes. -->
   <Border Classes="card" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageLearn}">
     <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
-      <Border Classes="card-icon"><mi:MaterialIcon Kind="SchoolOutline" /></Border>
+      <Border Classes="card-icon"><icons:IconPresenter IconId="{x:Static icons:IconIds.CardLearn}" /></Border>
       <StackPanel Grid.Column="1" Spacing="12">
         <StackPanel>
           <TextBlock FontWeight="SemiBold" Text="Learn" />

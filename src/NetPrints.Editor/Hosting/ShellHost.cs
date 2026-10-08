@@ -4,6 +4,7 @@ using NetPrints.Core;
 using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Contributions.BuiltIn;
 using NetPrints.Editor.Graph;
+using NetPrints.Editor.Icons;
 using NetPrints.Editor.Inspectors;
 using NetPrints.Editor.Navigation;
 using NetPrints.Editor.Shell;
@@ -65,6 +66,7 @@ internal sealed class ShellHost : IDisposable
     public static ShellHost Create(EditorContext context)
     {
         ILogger logger = context.LoggerFactory.CreateLogger<ShellHost>();
+        IconRegistry.Shared = new IconRegistry(context.LoggerFactory.CreateLogger<IconRegistry>());
         var registry = new ContributionRegistry(context.LoggerFactory.CreateLogger<ContributionRegistry>());
         BuiltInContributions.Register(registry);
         ShellViewModel? shell = null;

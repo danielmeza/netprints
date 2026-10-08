@@ -5,7 +5,11 @@
              x:Class="NetPrints.Editor.Inspectors.VariableInspectorView"
              x:DataType="edvariables:MemberVariableViewModel">
   <!-- Variable inspector (PAR-36) -->
-  <Grid AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableInspector}" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" Classes="propertyGrid" ColumnDefinitions="Auto,*" Margin="4">
+  <Grid AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableInspector}" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" Classes="propertyGrid" Margin="4">
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="{StaticResource Inspector.LabelColumnWidth}" />
+      <ColumnDefinition Width="*" />
+    </Grid.ColumnDefinitions>
     <TextBlock Grid.ColumnSpan="2" Classes="header" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
     <TextBlock Grid.Row="1" Classes="inspectorLabel" Text="Name" />
     <TextBox x:Name="NameBox" Grid.Row="1" Grid.Column="1" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableInspectorName}" Text="{Binding Name, UpdateSourceTrigger=LostFocus}" />

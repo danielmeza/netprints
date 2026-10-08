@@ -1,6 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+        xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
         xmlns:ed="clr-namespace:NetPrints.Editor"
         xmlns:eddialogs="clr-namespace:NetPrints.Editor.Dialogs"
         x:Class="NetPrints.Editor.Dialogs.ErrorDialog"
@@ -10,7 +10,7 @@
         WindowStartupLocation="CenterOwner" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ErrorDialog}">
   <Grid Classes="dialogRoot" RowDefinitions="Auto,*,Auto">
     <StackPanel Orientation="Horizontal" Spacing="8">
-      <mi:MaterialIcon Classes="error" Kind="AlertCircle" AutomationProperties.AccessibilityView="Raw" />
+      <icons:IconPresenter Classes="error" IconId="{x:Static icons:IconIds.DialogError}" AutomationProperties.AccessibilityView="Raw" />
       <TextBlock Classes="dialogTitle" Text="Error" />
     </StackPanel>
     <!-- Read-only but selectable so the error can be copied. -->

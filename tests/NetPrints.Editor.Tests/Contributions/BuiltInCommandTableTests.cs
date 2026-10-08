@@ -1,7 +1,7 @@
-using Material.Icons;
 using NetPrints.Editor.Commands;
 using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Contributions.BuiltIn;
+using NetPrints.Editor.Icons;
 using NetPrints.Editor.Tests.Hosting;
 
 namespace NetPrints.Editor.Tests.Contributions;
@@ -191,9 +191,10 @@ public class BuiltInCommandTableTests
     }
 
     [Fact]
-    public void EveryIconIsAMaterialIcon()
+    public void EveryIconIdResolves()
     {
-        string[] unknown = [.. Registered().Commands.Select(command => command.IconKind).OfType<string>().Where(icon => !Enum.TryParse<MaterialIconKind>(icon, out _))];
+        var icons = new IconRegistry(new CollectingLogger<IconRegistry>());
+        string[] unknown = [.. Registered().Commands.Select(command => command.IconId).OfType<string>().Where(icon => !icons.IsKnown(icon))];
 
         Assert.Empty(unknown);
     }

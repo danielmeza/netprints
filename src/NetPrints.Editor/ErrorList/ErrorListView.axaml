@@ -1,6 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
              xmlns:ed="clr-namespace:NetPrints.Editor"
              xmlns:edbehaviors="clr-namespace:NetPrints.Editor.Behaviors"
              xmlns:ederrorlist="clr-namespace:NetPrints.Editor.ErrorList"
@@ -24,8 +24,8 @@
       <ListBox.ItemTemplate>
         <DataTemplate x:DataType="ederrorlist:DiagnosticRowViewModel">
           <Grid ColumnDefinitions="Auto, 80, *, Auto, Auto" Margin="4,2">
-            <mi:MaterialIcon Grid.Column="0" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,8,0"
-                             Kind="{Binding Severity, Converter={x:Static ederrorlist:SeverityIconConverter.Instance}}"
+            <icons:IconPresenter Grid.Column="0" VerticalAlignment="Center" Margin="0,0,8,0"
+                             IconId="{Binding Severity, Converter={x:Static ederrorlist:SeverityIconConverter.Instance}}"
                              Classes.error="{Binding IsError}" Classes.warning="{Binding IsWarning}" Classes.info="{Binding IsInfo}"
                              AutomationProperties.Name="{Binding Severity}" />
             <TextBlock Grid.Column="1" Text="{Binding Id}" FontWeight="SemiBold" VerticalAlignment="Center" Foreground="{DynamicResource SystemControlForegroundBaseMediumBrush}" />

@@ -1,4 +1,5 @@
 using NetPrints.Editor.Commands;
+using NetPrints.Editor.Icons;
 
 namespace NetPrints.Editor.Contributions.BuiltIn;
 
@@ -21,7 +22,7 @@ public static class BuildContributions
             CompileId,
             "Compile",
             new CompileCommandHandler(),
-            IconKind: "Hammer",
+            IconId: IconIds.Compile,
             DefaultGestures: ["F7", "Ctrl+Shift+B"],
             Scope: CommandScope.Global,
             Menu: new MenuPlacement(MenuName, "build", 0),
@@ -31,7 +32,7 @@ public static class BuildContributions
             ContributionIds.CommandPrefix + "run",
             "Run",
             new RunCommandHandler(),
-            IconKind: "Play",
+            IconId: IconIds.Run,
             DefaultGestures: ["F5"],
             Scope: CommandScope.Global,
             Menu: new MenuPlacement(MenuName, RunGroup, 0),
@@ -41,7 +42,7 @@ public static class BuildContributions
             ContributionIds.CommandPrefix + "stop",
             "Stop",
             new StopCommandHandler(),
-            IconKind: "Stop",
+            IconId: IconIds.Stop,
             DefaultGestures: ["Shift+F5"],
             Scope: CommandScope.Global,
             Menu: new MenuPlacement(MenuName, RunGroup, 1),

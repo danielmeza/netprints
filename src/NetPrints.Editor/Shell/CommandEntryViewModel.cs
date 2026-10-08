@@ -24,7 +24,7 @@ public sealed partial class CommandEntryViewModel : ObservableObject
         this.invoker = invoker;
         Id = descriptor.Id;
         AutomationId = automationPrefix + descriptor.Id;
-        IconKind = descriptor.IconKind;
+        IconId = descriptor.IconId;
         StaticLabel = descriptor.Label;
         FirstGesture = descriptor.DefaultGestures is { Count: > 0 } gestures ? gestures[0] : "";
         Refresh();
@@ -42,8 +42,8 @@ public sealed partial class CommandEntryViewModel : ObservableObject
     /// <summary>Gets the automation id, derived from the command id.</summary>
     public string AutomationId { get; } = "";
 
-    /// <summary>Gets the Material icon kind name, or null.</summary>
-    public string? IconKind { get; }
+    /// <summary>Gets the Icon id (see IconIds), or null.</summary>
+    public string? IconId { get; }
 
     /// <summary>Gets the descriptor's own label, which a command bar button shows however the handler's label reads.</summary>
     public string StaticLabel { get; } = "";

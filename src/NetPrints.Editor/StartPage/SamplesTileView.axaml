@@ -1,6 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
              xmlns:ed="clr-namespace:NetPrints.Editor"
              xmlns:sp="clr-namespace:NetPrints.Editor.StartPage"
              x:Class="NetPrints.Editor.StartPage.SamplesTileView"
@@ -8,7 +8,7 @@
   <!-- The samples card: each bundled sample opens as a copy in a folder the user picks. -->
   <Border Classes="card">
     <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
-      <Border Classes="card-icon"><mi:MaterialIcon Kind="FlaskOutline" /></Border>
+      <Border Classes="card-icon"><icons:IconPresenter IconId="{x:Static icons:IconIds.CardSamples}" /></Border>
       <StackPanel Grid.Column="1" Spacing="8">
         <StackPanel>
           <TextBlock FontWeight="SemiBold" Text="Samples" />

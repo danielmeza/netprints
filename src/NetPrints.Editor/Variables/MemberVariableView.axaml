@@ -2,14 +2,14 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ed="clr-namespace:NetPrints.Editor"
              xmlns:edvariables="clr-namespace:NetPrints.Editor.Variables"
-             xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
              x:Class="NetPrints.Editor.Variables.MemberVariableView"
              x:DataType="edvariables:MemberVariableViewModel">
   <!-- A variable row (PAR-29) overhauled to PropertyGrid -->
   <Grid ColumnDefinitions="120,*" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableRow}" AutomationProperties.Name="{Binding Name}" Margin="0,0,0,4" RowDefinitions="Auto,Auto,Auto,Auto">
     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,8,4">
       <Button Classes="icon" ToolTip.Tip="Remove variable" AutomationProperties.Name="Remove variable" Command="{Binding RemoveCommand}">
-        <mi:MaterialIcon Kind="Minus" />
+        <icons:IconPresenter IconId="{x:Static icons:IconIds.Remove}" />
       </Button>
       <TextBlock Text="Name" Opacity="0.75" VerticalAlignment="Center" Margin="4,0,0,0" />
     </StackPanel>
@@ -26,7 +26,7 @@
       <Button Classes="flat" Content="Add getter" IsVisible="{Binding !HasGetter}" Command="{Binding AddGetterCommand}" HorizontalAlignment="Left" />
       <Grid ColumnDefinitions="Auto,*" IsVisible="{Binding HasGetter}">
         <Button Classes="icon" ToolTip.Tip="Remove getter" AutomationProperties.Name="Remove getter" Command="{Binding RemoveGetterCommand}">
-          <mi:MaterialIcon Kind="Minus" />
+          <icons:IconPresenter IconId="{x:Static icons:IconIds.Remove}" />
         </Button>
         <TextBlock Grid.Column="1" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableGetter}" Text="Get" Classes="memberName" VerticalAlignment="Center" Background="Transparent" Margin="4,0,0,0">
           <Interaction.Behaviors>
@@ -41,7 +41,7 @@
       <Button Classes="flat" Content="Add setter" IsVisible="{Binding !HasSetter}" Command="{Binding AddSetterCommand}" HorizontalAlignment="Left" />
       <Grid ColumnDefinitions="Auto,*" IsVisible="{Binding HasSetter}">
         <Button Classes="icon" ToolTip.Tip="Remove setter" AutomationProperties.Name="Remove setter" Command="{Binding RemoveSetterCommand}">
-          <mi:MaterialIcon Kind="Minus" />
+          <icons:IconPresenter IconId="{x:Static icons:IconIds.Remove}" />
         </Button>
         <TextBlock Grid.Column="1" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableSetter}" Text="Set" Classes="memberName" VerticalAlignment="Center" Background="Transparent" Margin="4,0,0,0">
           <Interaction.Behaviors>

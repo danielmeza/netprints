@@ -5,7 +5,11 @@
              x:Class="NetPrints.Editor.Inspectors.MethodInspectorView"
              x:DataType="edclasseditor:MethodViewModel">
   <!-- Method inspector (PAR-35): constructors have a read-only name and no modifiers. -->
-  <Grid AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MethodInspector}" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" Classes="propertyGrid" ColumnDefinitions="Auto,*" Margin="4">
+  <Grid AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MethodInspector}" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" Classes="propertyGrid" Margin="4">
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="{StaticResource Inspector.LabelColumnWidth}" />
+      <ColumnDefinition Width="*" />
+    </Grid.ColumnDefinitions>
     <TextBlock Grid.ColumnSpan="2" Classes="header" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
     <TextBlock Grid.Row="1" Classes="inspectorLabel" Text="Name" />
     <TextBox x:Name="NameBox" Grid.Row="1" Grid.Column="1" IsReadOnly="{Binding IsConstructor}" Text="{Binding Name, UpdateSourceTrigger=LostFocus}" />

@@ -6,11 +6,11 @@ namespace NetPrints.Editor.Contributions;
 /// <param name="CreateViewModel">Creates the panel's view model; its view is found by data template.</param>
 /// <param name="DefaultDock">Where the panel docks by default.</param>
 /// <param name="Order">The position among the panels of the same dock.</param>
-/// <param name="IconKind">Material icon kind name, or null.</param>
+/// <param name="IconId">Icon id (see IconIds), or null.</param>
 public sealed record PanelDescriptor(
     string Id,
     string Title,
     Func<IServiceProvider, object> CreateViewModel,
     PanelDock DefaultDock,
     int Order,
-    string? IconKind = null);
+    string? IconId = null);

@@ -796,7 +796,7 @@ add T091b and T092g–T092l the same way.
 
 ### Batch G1 — model: sonnet — T090–T090b — 5 units
 
-- [ ] T090 [US9] Tokens (2 units). The UI polish (ADR-0023) already added hand-made spacing, inspector and node styles
+- [x] T090 [US9] Tokens (2 units). The UI polish (ADR-0023) already added hand-made spacing, inspector and node styles
   to `EditorStyles.axaml` and moved the title, section and secondary text classes there; the `Font.*`, `Space.*` and
   `Inspector.LabelColumnWidth` token names and `ThemeTokenTests` do not exist yet, and the Fluent palette that this task
   moves is gone (Semi supplies Light and Dark). Test first: `tests/NetPrints.Editor.UITests/Theming/ThemeTokenTests.cs` (research R11):
@@ -806,7 +806,7 @@ add T091b and T092g–T092l the same way.
   `Area.Role` in `ThemeDictionaries`; a panel header class that is left-aligned and semibold at `Font.Subtitle`,
   replacing the 24 px centred header) and `src/NetPrints.Editor/EditorApp.axaml` (the Fluent palette moves into theme
   dictionaries, and the E2 allowlist entry is removed).
-- [ ] T090a [US9] Icon ids on one family (2 units, FR-084, ADR-0021, research R17). Test first:
+- [x] T090a [US9] Icon ids on one family (2 units, FR-084, ADR-0021, research R17). Test first:
   `tests/NetPrints.Editor.Tests/Icons/IconRegistryTests.cs`: every `IconIds` constant matches
   `^[a-z0-9]+(\.[a-zA-Z0-9]+)+$` and resolves to a glyph; an unknown id resolves to `IconIds.Unknown` and logs one
   warning (a second lookup of the same id logs nothing); a command, panel or template descriptor with an unknown id

@@ -101,6 +101,7 @@
     <StyleInclude Source="avares://AvaloniaEdit/Themes/Fluent/AvaloniaEdit.xaml" />
     <mi:MaterialIconStyles />
     <StyleInclude Source="avares://NetPrints.Editor/EditorStyles.axaml" />
+    <StyleInclude Source="avares://NetPrints.Editor/Icons/IconPresenter.axaml" />
     <StyleInclude Source="avares://NetPrints.Editor/Shell/Docking/DockStyles.axaml" />
   </Application.Styles>
 </Application>

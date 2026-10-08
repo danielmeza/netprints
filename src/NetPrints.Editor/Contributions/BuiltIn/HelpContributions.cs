@@ -1,4 +1,5 @@
 using NetPrints.Editor.Commands;
+using NetPrints.Editor.Icons;
 
 namespace NetPrints.Editor.Contributions.BuiltIn;
 
@@ -17,7 +18,7 @@ public static class HelpContributions
             ContributionIds.CommandPrefix + "keyboardShortcuts",
             "Keyboard shortcuts",
             new KeyboardShortcutsCommandHandler(),
-            IconKind: "Keyboard",
+            IconId: IconIds.KeyboardShortcuts,
             Scope: CommandScope.Global,
             Menu: new MenuPlacement(MenuName, "help", 0)));
 
@@ -25,7 +26,7 @@ public static class HelpContributions
             ContributionIds.CommandPrefix + "startPage",
             "Start page",
             new StartPageCommandHandler(),
-            IconKind: "Home",
+            IconId: IconIds.Home,
             Scope: CommandScope.Global,
             Menu: new MenuPlacement(MenuName, "help", 1)));
 
@@ -33,7 +34,7 @@ public static class HelpContributions
             ContributionIds.CommandPrefix + "about",
             "About NetPrints",
             new AboutCommandHandler(),
-            IconKind: "InformationOutline",
+            IconId: IconIds.About,
             Scope: CommandScope.Global,
             Menu: new MenuPlacement(MenuName, "about", 0)));
     }

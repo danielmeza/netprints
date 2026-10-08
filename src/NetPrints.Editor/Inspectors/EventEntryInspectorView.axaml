@@ -2,11 +2,15 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ed="clr-namespace:NetPrints.Editor"
              xmlns:edevents="clr-namespace:NetPrints.Editor.Events"
-             xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
              x:Class="NetPrints.Editor.Inspectors.EventEntryInspectorView"
              x:DataType="edevents:EventEntryInspectorViewModel">
   <!-- Event entry inspector (US8, FR-071 to FR-074): name, kind and arguments; an override's are read-only. -->
-  <Grid AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventEntryInspector}" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" Classes="propertyGrid" ColumnDefinitions="Auto,*">
+  <Grid AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventEntryInspector}" RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto" Classes="propertyGrid">
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="{StaticResource Inspector.LabelColumnWidth}" />
+      <ColumnDefinition Width="*" />
+    </Grid.ColumnDefinitions>
     <TextBlock Grid.ColumnSpan="2" Classes="header" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
     <TextBlock Grid.Row="1" Classes="inspectorLabel" Text="Kind" />
     <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Kind}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventEntryInspectorKind}" />
@@ -41,15 +45,15 @@
                     AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventEntryInspectorArgumentType}" />
             <Button Grid.Column="2" Classes="icon" ToolTip.Tip="Move up" AutomationProperties.Name="Move argument up" Command="{Binding MoveUpCommand}"
                     IsVisible="{Binding IsEditable}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventEntryInspectorArgumentMoveUp}">
-              <mi:MaterialIcon Kind="ArrowUp" />
+              <icons:IconPresenter IconId="{x:Static icons:IconIds.MoveUp}" />
             </Button>
             <Button Grid.Column="3" Classes="icon" ToolTip.Tip="Move down" AutomationProperties.Name="Move argument down" Command="{Binding MoveDownCommand}"
                     IsVisible="{Binding IsEditable}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventEntryInspectorArgumentMoveDown}">
-              <mi:MaterialIcon Kind="ArrowDown" />
+              <icons:IconPresenter IconId="{x:Static icons:IconIds.MoveDown}" />
             </Button>
             <Button Grid.Column="4" Classes="icon" ToolTip.Tip="Remove argument" AutomationProperties.Name="Remove argument" Command="{Binding RemoveCommand}"
                     IsVisible="{Binding IsEditable}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventEntryInspectorArgumentRemove}">
-              <mi:MaterialIcon Kind="Minus" />
+              <icons:IconPresenter IconId="{x:Static icons:IconIds.Remove}" />
             </Button>
           </Grid>
         </DataTemplate>

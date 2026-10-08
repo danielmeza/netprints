@@ -1,8 +1,26 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia">
+        xmlns:icons="clr-namespace:NetPrints.Editor.Icons">
   <Styles.Resources>
     <ResourceDictionary>
+      <!-- Type ramp, spacing scale and shared widths (FR-080, research R11); none of these vary by theme. -->
+      <x:Double x:Key="Font.Caption">12</x:Double>
+      <x:Double x:Key="Font.Body">14</x:Double>
+      <x:Double x:Key="Font.Subtitle">16</x:Double>
+      <x:Double x:Key="Font.Title">20</x:Double>
+      <Thickness x:Key="Space.XS">4</Thickness>
+      <Thickness x:Key="Space.S">8</Thickness>
+      <Thickness x:Key="Space.M">12</Thickness>
+      <Thickness x:Key="Space.L">16</Thickness>
+      <Thickness x:Key="Space.XL">24</Thickness>
+      <x:Double x:Key="Space.XS.Size">4</x:Double>
+      <x:Double x:Key="Space.S.Size">8</x:Double>
+      <x:Double x:Key="Space.M.Size">12</x:Double>
+      <x:Double x:Key="Space.L.Size">16</x:Double>
+      <x:Double x:Key="Space.XL.Size">24</x:Double>
+      <GridLength x:Key="Inspector.LabelColumnWidth">120</GridLength>
+      <x:Double x:Key="Icon.Small">16</x:Double>
+      <x:Double x:Key="Icon.Medium">20</x:Double>
       <!-- Graph canvas grid (spec 002): lines white on dark, black on light; minor 8% and major 18% alpha.
            The canvas background is SystemRegionColor (EditorApp.axaml palette). -->
       <ResourceDictionary.ThemeDictionaries>
@@ -34,10 +52,7 @@
           <SolidColorBrush x:Key="Icon.Event.Foreground">#FFCDD2</SolidColorBrush>
           <SolidColorBrush x:Key="Icon.Class.Foreground">#A5D6A7</SolidColorBrush>
         </ResourceDictionary>
-        <!-- Light (R2-17): unreachable today (EditorApp.axaml hard-codes RequestedThemeVariant="Dark",
-             no user setting) and incomplete (GraphBrushes in Graph/GraphConverters.cs is not themed).
-             Kept only because GridRenderTests already switches to Light and checks the grid tokens;
-             full tokenization and a Light snapshot test are deferred (P3a). -->
+        <!-- Light: every colour token above has a Light value; GraphBrushes (Graph/GraphConverters.cs) joins them in T091. -->
         <ResourceDictionary x:Key="Light">
           <Color x:Key="GraphGrid.MinorColor">#14000000</Color>
           <Color x:Key="GraphGrid.MajorColor">#2E000000</Color>
@@ -71,30 +86,30 @@
   <!-- Error-list row severity icon color (FR-032, OWN-03): the icon's class is set from
        DiagnosticRowViewModel.Is{Error,Warning,Info} (Classes.<name>="{Binding ...}"), the state→visual mapping
        this style then turns into a themed color. -->
-  <Style Selector="mi|MaterialIcon.error">
+  <Style Selector="icons|IconPresenter.error">
     <Setter Property="Foreground" Value="{DynamicResource Diagnostic.Error.Foreground}" />
   </Style>
-  <Style Selector="mi|MaterialIcon.warning">
+  <Style Selector="icons|IconPresenter.warning">
     <Setter Property="Foreground" Value="{DynamicResource Diagnostic.Warning.Foreground}" />
   </Style>
-  <Style Selector="mi|MaterialIcon.info">
+  <Style Selector="icons|IconPresenter.info">
     <Setter Property="Foreground" Value="{DynamicResource Diagnostic.Info.Foreground}" />
   </Style>
 
   <!-- Domain icon colors -->
-  <Style Selector="mi|MaterialIcon[Kind=CodeBraces]">
+  <Style Selector="icons|IconPresenter[IconId='netprints.icon.class']">
     <Setter Property="Foreground" Value="{DynamicResource Icon.Class.Foreground}" />
   </Style>
-  <Style Selector="mi|MaterialIcon[Kind=FunctionVariant]">
+  <Style Selector="icons|IconPresenter[IconId='netprints.icon.method']">
     <Setter Property="Foreground" Value="{DynamicResource Icon.Method.Foreground}" />
   </Style>
-  <Style Selector="mi|MaterialIcon[Kind=Hammer]">
+  <Style Selector="icons|IconPresenter[IconId='netprints.icon.constructor']">
     <Setter Property="Foreground" Value="{DynamicResource Icon.Method.Foreground}" />
   </Style>
-  <Style Selector="mi|MaterialIcon[Kind=Variable]">
+  <Style Selector="icons|IconPresenter[IconId='netprints.icon.variable']">
     <Setter Property="Foreground" Value="{DynamicResource Icon.Property.Foreground}" />
   </Style>
-  <Style Selector="mi|MaterialIcon[Kind=LightningBolt]">
+  <Style Selector="icons|IconPresenter[IconId='netprints.icon.event']">
     <Setter Property="Foreground" Value="{DynamicResource Icon.Event.Foreground}" />
   </Style>
 
@@ -158,9 +173,10 @@
   </Style>
 
   <Style Selector="TextBlock.header">
-    <Setter Property="FontSize" Value="24" />
-    <Setter Property="HorizontalAlignment" Value="Center" />
-    <Setter Property="Margin" Value="4" />
+    <Setter Property="FontSize" Value="{StaticResource Font.Subtitle}" />
+    <Setter Property="FontWeight" Value="SemiBold" />
+    <Setter Property="HorizontalAlignment" Value="Left" />
+    <Setter Property="Margin" Value="{StaticResource Space.XS}" />
   </Style>
 
   <!-- Command bar (contracts/commands.md section 1): a compact icon and label button, at most 40 px high with its bar. -->
@@ -220,15 +236,15 @@
     <Setter Property="FontWeight" Value="Bold" />
   </Style>
   <Style Selector="TextBlock.pinLabel">
-    <Setter Property="FontSize" Value="14" />
+    <Setter Property="FontSize" Value="{StaticResource Font.Body}" />
     <Setter Property="FontWeight" Value="SemiBold" />
   </Style>
   <Style Selector="TextBox.pinLabel">
-    <Setter Property="FontSize" Value="14" />
+    <Setter Property="FontSize" Value="{StaticResource Font.Body}" />
     <Setter Property="FontWeight" Value="SemiBold" />
   </Style>
   <Style Selector="TextBlock.memberName">
-    <Setter Property="FontSize" Value="14" />
+    <Setter Property="FontSize" Value="{StaticResource Font.Body}" />
     <Setter Property="FontWeight" Value="SemiBold" />
   </Style>
   <Style Selector="TextBlock.inspectorLabel">
@@ -260,7 +276,7 @@
     <Setter Property="RowSpacing" Value="12" />
   </Style>
   <Style Selector="TextBlock.dialogTitle">
-    <Setter Property="FontSize" Value="16" />
+    <Setter Property="FontSize" Value="{StaticResource Font.Subtitle}" />
     <Setter Property="FontWeight" Value="SemiBold" />
     <Setter Property="VerticalAlignment" Value="Center" />
   </Style>

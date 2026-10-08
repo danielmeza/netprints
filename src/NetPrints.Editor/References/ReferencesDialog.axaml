@@ -2,7 +2,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ed="clr-namespace:NetPrints.Editor"
         xmlns:edreferences="clr-namespace:NetPrints.Editor.References"
-        xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+        xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
         x:Class="NetPrints.Editor.References.ReferencesDialog"
         x:DataType="edreferences:ReferenceListViewModel"
         Title="References"
@@ -43,7 +43,7 @@
                       ToolTip.Tip="Remove this reference" AutomationProperties.Name="Remove this reference"
                       Command="{Binding $parent[ItemsControl].((edreferences:ReferenceListViewModel)DataContext).RemoveCommand}"
                       CommandParameter="{Binding}">
-                <mi:MaterialIcon Kind="Minus" />
+                <icons:IconPresenter IconId="{x:Static icons:IconIds.Remove}" />
               </Button>
             </Grid>
           </DataTemplate>

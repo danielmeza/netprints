@@ -77,6 +77,13 @@ add a class there (D8) when none fits, and name it for its role, not its look (`
 - **One Style per selector.** Avalonia has no comma selectors: repeat the `<Style>` for each target, as the propertyGrid
   child selectors do.
 
+## Icons
+
+- Icons are `IconPresenter` with an icon id from `IconIds` (E9); never a library control or a bitmap. It draws in the inherited
+  foreground, so colour it through a style class or a token on the parent, not a converter. Size comes from the `Icon.Small`
+  (16) and `Icon.Medium` (20, class `medium`) tokens. `IsActive` draws the filled glyph of an outline and filled pair.
+- A new glyph is one entry in `IconRegistry` plus one constant in `IconIds`; `IconRegistry` is the only code that names `MaterialIconKind`.
+
 ## Gotchas
 
 - A brush that a converter builds in C# freezes the variant it was built in, because the binding isn't re-evaluated

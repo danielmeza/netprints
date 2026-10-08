@@ -1,4 +1,5 @@
 using NetPrints.Core;
+using NetPrints.Editor.Icons;
 
 namespace NetPrints.Editor.Contributions.BuiltIn;
 
@@ -17,13 +18,13 @@ public static class ProjectTemplateContributions
             "A program with an entry point: a Program class with an empty Main method.",
             DefaultProjectProfile.ProfileId,
             ProjectOutputType.Console,
-            IconKind: "ConsoleLine"));
+            IconId: IconIds.TemplateConsole));
         registry.AddProjectTemplate(new ProjectTemplateDescriptor(
             ContributionIds.TemplatePrefix + "library",
             "Class library",
             "A library with no entry point and no classes yet.",
             DefaultProjectProfile.ProfileId,
             ProjectOutputType.Library,
-            IconKind: "BookOpenVariant"));
+            IconId: IconIds.TemplateLibrary));
     }
 }

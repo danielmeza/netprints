@@ -26,8 +26,8 @@ again: the rules target *misplaced logic*, not the tools themselves.
 ## Related skills
 
 The XAML rules are split across three skills that share one numbering, so a rule ID cited in code, a test or a PR
-(E1-E6, D1-D16) means the same thing wherever it lives:
-- `avalonia-xaml` (this skill): E1-E6, D1-D4, D6, D10, D12-D16. It applies to every XAML change.
+(E1-E9, D1-D16) means the same thing wherever it lives:
+- `avalonia-xaml` (this skill): E1-E6, E9, D1-D4, D6, D10, D12-D16. It applies to every XAML change.
 - `avalonia-behaviors`: D9 (keyboard shortcuts) and D11 (behaviors, with the Xaml.Behaviors catalog). Load it as well
   when a change adds or replaces an event handler, calls `Focus()`, `Close()` or `ScrollToEnd()` from a view, or adds
   a shortcut, drag and drop or a dialog result.
@@ -49,15 +49,22 @@ The XAML rules are split across three skills that share one numbering, so a rule
   *Why:* each UI action is one view model (VM) command with its own unit test. Wire it with `Command`, `KeyBinding` or a behavior (D9, D11, `avalonia-behaviors`).
 - **E4. AutomationIds come from `AutomationIds`.** Write `AutomationProperties.AutomationId="{x:Static ed:AutomationIds.X}"`.
   Never use a string literal. *Why:* the UI and E2E tests share one set of constants, which lets renames compile-check.
-- **E5. Icon-only buttons have an accessible name.** Any `Button` whose only content is a `MaterialIcon`, `PathIcon` or `Image`
+- **E5. Icon-only buttons have an accessible name.** Any `Button` whose only content is an `IconPresenter`, `PathIcon` or `Image`
   must set `AutomationProperties.Name` (or `LabeledBy`). *Why:* the automation peer reads only Name/LabeledBy,
   so `ToolTip.Tip` alone leaves a screen reader announcing "button".
   ```xml
   <Button Classes="icon" ToolTip.Tip="Remove variable" AutomationProperties.Name="Remove variable"
-          Command="{Binding RemoveCommand}"><mi:MaterialIcon Kind="Minus" /></Button>
+          Command="{Binding RemoveCommand}"><icons:IconPresenter IconId="{x:Static icons:IconIds.Remove}" /></Button>
   ```
 - **E6. Theme tokens are never looked up with `StaticResource`.** A key defined under `ThemeDictionaries` must be
   referenced with `DynamicResource`. *Why:* `StaticResource` cannot see theme dictionaries, so the lookup throws at runtime or freezes one variant.
+- **E9. Icons come from `IconPresenter`.** No `MaterialIcon`, `SymbolIcon` or `FluentIcon` element and no bitmap `Image` source
+  in `src/**/*.axaml` outside `src/NetPrints.Editor/Icons/`. Name the icon by id (`IconIds`) and let `IconRegistry` resolve it.
+  *Why:* one family (Material Design Icons, ADR-0021 Amendment 1), one registry, an unknown id draws a fallback and logs one warning.
+  ```xml
+  <icons:IconPresenter IconId="{x:Static icons:IconIds.Save}" />
+  <icons:IconPresenter IconId="{Binding IconId}" IsActive="{Binding IsPinned}" Classes="medium" />
+  ```
 
 ## Default
 

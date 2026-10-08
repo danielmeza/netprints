@@ -1,6 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
              xmlns:ed="clr-namespace:NetPrints.Editor"
              xmlns:sp="clr-namespace:NetPrints.Editor.StartPage"
              xmlns:edbehaviors="clr-namespace:NetPrints.Editor.Behaviors"
@@ -112,17 +112,17 @@
                   <Button Classes="flat" IsVisible="{Binding !Pinned}" ToolTip.Tip="Pin" AutomationProperties.Name="Pin"
                           Command="{Binding Owner.PinCommand}" CommandParameter="{Binding}"
                           AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageRecentPin}">
-                    <mi:MaterialIcon Kind="PinOutline" />
+                    <icons:IconPresenter IconId="{x:Static icons:IconIds.Pin}" />
                   </Button>
                   <Button Classes="flat" IsVisible="{Binding Pinned}" ToolTip.Tip="Unpin" AutomationProperties.Name="Unpin"
                           Command="{Binding Owner.UnpinCommand}" CommandParameter="{Binding}"
                           AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageRecentUnpin}">
-                    <mi:MaterialIcon Kind="Pin" />
+                    <icons:IconPresenter IconId="{x:Static icons:IconIds.Pin}" IsActive="True" />
                   </Button>
                   <Button Classes="flat" ToolTip.Tip="Remove from the list" AutomationProperties.Name="Remove from the list"
                           Command="{Binding Owner.RemoveCommand}" CommandParameter="{Binding}"
                           AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageRecentRemove}">
-                    <mi:MaterialIcon Kind="Close" />
+                    <icons:IconPresenter IconId="{x:Static icons:IconIds.Close}" />
                   </Button>
                 </StackPanel>
               </Grid>

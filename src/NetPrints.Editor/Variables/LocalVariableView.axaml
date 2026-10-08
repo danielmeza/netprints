@@ -2,13 +2,13 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ed="clr-namespace:NetPrints.Editor"
              xmlns:edvariables="clr-namespace:NetPrints.Editor.Variables"
-             xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
              x:Class="NetPrints.Editor.Variables.LocalVariableView"
              x:DataType="edvariables:LocalVariableViewModel">
   <Grid ColumnDefinitions="120,*" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariableRow}" AutomationProperties.Name="{Binding Name}" Margin="0,0,0,4">
     <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,8,0">
       <Button Classes="icon" ToolTip.Tip="Remove local variable" AutomationProperties.Name="Remove local variable" Command="{Binding RemoveCommand}">
-        <mi:MaterialIcon Kind="Minus" />
+        <icons:IconPresenter IconId="{x:Static icons:IconIds.Remove}" />
       </Button>
       <TextBlock Text="Name" Opacity="0.75" VerticalAlignment="Center" Margin="4,0,0,0" />
     </StackPanel>

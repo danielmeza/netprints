@@ -6,7 +6,7 @@
              xmlns:edpins="clr-namespace:NetPrints.Editor.Graph.Pins"
              xmlns:edsearch="clr-namespace:NetPrints.Editor.Search"
              xmlns:nn="clr-namespace:Nodify.Avalonia.Nodes;assembly=Nodify.Avalonia"
-             xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
              xmlns:conv="clr-namespace:Avalonia.Data.Converters;assembly=Avalonia.Base"
              x:Class="NetPrints.Editor.Graph.Nodes.NodeView"
              x:DataType="ednodes:NodeViewModel"
@@ -166,19 +166,19 @@
           <!-- Left +/- (PAR-42) -->
           <StackPanel Orientation="Horizontal" IsVisible="{Binding ShowLeftPinButtons}">
             <Button Classes="icon" ToolTip.Tip="{Binding LeftPlusToolTip}" AutomationProperties.Name="{Binding LeftPlusToolTip}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NodeLeftPlus}" Command="{Binding LeftPinsPlusCommand}">
-              <mi:MaterialIcon Kind="Plus" />
+              <icons:IconPresenter IconId="{x:Static icons:IconIds.Add}" />
             </Button>
             <Button Classes="icon" ToolTip.Tip="{Binding LeftMinusToolTip}" AutomationProperties.Name="{Binding LeftMinusToolTip}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NodeLeftMinus}" Command="{Binding LeftPinsMinusCommand}">
-              <mi:MaterialIcon Kind="Minus" />
+              <icons:IconPresenter IconId="{x:Static icons:IconIds.Remove}" />
             </Button>
           </StackPanel>
           <!-- Right +/- (PAR-42) -->
           <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" IsVisible="{Binding ShowRightPinButtons}">
             <Button Classes="icon" ToolTip.Tip="{Binding RightPlusToolTip}" AutomationProperties.Name="{Binding RightPlusToolTip}" Command="{Binding RightPinsPlusCommand}">
-              <mi:MaterialIcon Kind="Plus" />
+              <icons:IconPresenter IconId="{x:Static icons:IconIds.Add}" />
             </Button>
             <Button Classes="icon" ToolTip.Tip="{Binding RightMinusToolTip}" AutomationProperties.Name="{Binding RightMinusToolTip}" Command="{Binding RightPinsMinusCommand}">
-              <mi:MaterialIcon Kind="Minus" />
+              <icons:IconPresenter IconId="{x:Static icons:IconIds.Remove}" />
             </Button>
           </StackPanel>
         </Grid>

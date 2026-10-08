@@ -1,4 +1,5 @@
 using NetPrints.Editor.Commands;
+using NetPrints.Editor.Icons;
 
 namespace NetPrints.Editor.Contributions.BuiltIn;
 
@@ -21,7 +22,7 @@ public static class ViewContributions
             ContributionIds.CommandPrefix + "frameSelection",
             "Frame selection",
             new FrameSelectionCommandHandler(),
-            IconKind: "CropFree",
+            IconId: IconIds.ZoomToFit,
             DefaultGestures: ["F"],
             Scope: CommandScope.Graph,
             Menu: new MenuPlacement(MenuName, ViewportGroup, 0),
@@ -31,7 +32,7 @@ public static class ViewContributions
             ContributionIds.CommandPrefix + "fitAll",
             "Fit all",
             new FitAllCommandHandler(),
-            IconKind: "FitToScreen",
+            IconId: IconIds.FitToScreen,
             DefaultGestures: ["Home", "Shift+F"],
             Scope: CommandScope.Graph,
             Menu: new MenuPlacement(MenuName, ViewportGroup, 1),
@@ -39,12 +40,12 @@ public static class ViewContributions
 
         (string Name, string Label, string PanelId, string Icon)[] panels =
         [
-            ("projectTree", "Project", PanelContributions.ProjectTreeId, "FileTree"),
-            ("inspector", "Inspector", PanelContributions.InspectorId, "Tune"),
-            ("variables", "Variables", PanelContributions.VariablesId, "Variable"),
-            ("errors", "Errors", PanelContributions.ErrorsId, "AlertCircleOutline"),
-            ("output", "Output", PanelContributions.OutputId, "Console"),
-            ("csharp", "C#", PanelContributions.CSharpId, "LanguageCsharp"),
+            ("projectTree", "Project", PanelContributions.ProjectTreeId, IconIds.PanelProjectTree),
+            ("inspector", "Inspector", PanelContributions.InspectorId, IconIds.PanelInspector),
+            ("variables", "Variables", PanelContributions.VariablesId, IconIds.PanelVariables),
+            ("errors", "Errors", PanelContributions.ErrorsId, IconIds.PanelErrors),
+            ("output", "Output", PanelContributions.OutputId, IconIds.PanelOutput),
+            ("csharp", "C#", PanelContributions.CSharpId, IconIds.PanelCSharp),
         ];
         foreach ((int order, (string name, string label, string panelId, string icon)) in panels.Index())
         {
@@ -52,15 +53,15 @@ public static class ViewContributions
                 ContributionIds.CommandPrefix + "showPanel." + name,
                 label,
                 new ShowPanelCommandHandler(panelId),
-                IconKind: icon,
+                IconId: icon,
                 Menu: new MenuPlacement(MenuName, PanelsGroup, order)));
         }
 
         (string Id, string Label, ICommandHandler Handler, string Icon)[] layout =
         [
-            ("floatDocument", "Float tab", new FloatDocumentCommandHandler(), "OpenInNew"),
-            ("dockDocument", "Dock tab", new DockDocumentCommandHandler(), "DockWindow"),
-            ("resetLayout", "Reset layout", new ResetLayoutCommandHandler(), "Restore"),
+            ("floatDocument", "Float tab", new FloatDocumentCommandHandler(), IconIds.FloatDocument),
+            ("dockDocument", "Dock tab", new DockDocumentCommandHandler(), IconIds.DockDocument),
+            ("resetLayout", "Reset layout", new ResetLayoutCommandHandler(), IconIds.ResetLayout),
         ];
         foreach ((int order, (string id, string label, ICommandHandler handler, string icon)) in layout.Index())
         {
@@ -68,7 +69,7 @@ public static class ViewContributions
                 ContributionIds.CommandPrefix + id,
                 label,
                 handler,
-                IconKind: icon,
+                IconId: icon,
                 Menu: new MenuPlacement(MenuName, LayoutGroup, order)));
         }
 

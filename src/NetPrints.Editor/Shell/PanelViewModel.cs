@@ -13,7 +13,7 @@ public sealed partial class PanelViewModel : ObservableObject
     {
         Id = descriptor.Id;
         Title = descriptor.Title;
-        IconKind = descriptor.IconKind;
+        IconId = descriptor.IconId;
         DefaultDock = descriptor.DefaultDock;
         Order = descriptor.Order;
         Content = content;
@@ -25,8 +25,8 @@ public sealed partial class PanelViewModel : ObservableObject
     /// <summary>Gets the tab title.</summary>
     public string Title { get; }
 
-    /// <summary>Gets the Material icon kind name, or null.</summary>
-    public string? IconKind { get; }
+    /// <summary>Gets the Icon id (see IconIds), or null.</summary>
+    public string? IconId { get; }
 
     /// <summary>Gets where the panel docks by default.</summary>
     public PanelDock DefaultDock { get; }

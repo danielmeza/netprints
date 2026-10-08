@@ -6,11 +6,11 @@ namespace NetPrints.Editor.Contributions;
 /// <param name="Description">A short description.</param>
 /// <param name="ProfileId">The project profile the template creates.</param>
 /// <param name="OutputType">The kind of assembly it builds.</param>
-/// <param name="IconKind">Material icon kind name, or null.</param>
+/// <param name="IconId">Icon id (see IconIds), or null.</param>
 public sealed record ProjectTemplateDescriptor(
     string Id,
     string DisplayName,
     string Description,
     string ProfileId,
     ProjectOutputType OutputType,
-    string? IconKind = null);
+    string? IconId = null);

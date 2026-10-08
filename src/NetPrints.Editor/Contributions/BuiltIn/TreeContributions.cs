@@ -1,4 +1,5 @@
 using NetPrints.Editor.Commands;
+using NetPrints.Editor.Icons;
 
 namespace NetPrints.Editor.Contributions.BuiltIn;
 
@@ -24,7 +25,7 @@ public static class TreeContributions
             ContributionIds.CommandPrefix + OpenGraphName,
             "Open",
             new OpenGraphCommandHandler(),
-            IconKind: null,
+            IconId: null,
             DefaultGestures: ["Enter"],
             Scope: CommandScope.ProjectTree,
             Menu: null,

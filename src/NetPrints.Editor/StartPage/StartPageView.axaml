@@ -1,6 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+             xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
              xmlns:ed="clr-namespace:NetPrints.Editor"
              xmlns:sp="clr-namespace:NetPrints.Editor.StartPage"
              x:Class="NetPrints.Editor.StartPage.StartPageView"
@@ -82,10 +82,10 @@
     <Style Selector="Button.card:pointerover Border.card-icon">
       <Setter Property="Background" Value="{DynamicResource SystemControlHighlightAccentBrush}" />
     </Style>
-    <Style Selector="Button.card:pointerover Border.card-icon > mi|MaterialIcon">
+    <Style Selector="Button.card:pointerover Border.card-icon > icons|IconPresenter">
       <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundChromeWhiteBrush}" />
     </Style>
-    <Style Selector="Border.card-icon > mi|MaterialIcon">
+    <Style Selector="Border.card-icon > icons|IconPresenter">
       <Setter Property="Width" Value="22" />
       <Setter Property="Height" Value="22" />
     </Style>
@@ -133,7 +133,7 @@
                   <Button Classes="card" Command="{Binding NewCommand}" AutomationProperties.Name="New project"
                           AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageNewButton}">
                     <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
-                      <Border Classes="card-icon"><mi:MaterialIcon Kind="PlusCircleOutline" /></Border>
+                      <Border Classes="card-icon"><icons:IconPresenter IconId="{x:Static icons:IconIds.CardNewProject}" /></Border>
                       <StackPanel Grid.Column="1" VerticalAlignment="Center">
                         <TextBlock FontWeight="SemiBold" Text="New project…" />
                         <TextBlock Classes="secondary" TextWrapping="Wrap" Text="Create a console app or a class library from a template." />
@@ -145,7 +145,7 @@
                   <Button Classes="card" Command="{Binding OpenCommand}" AutomationProperties.Name="Open folder or project"
                           AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageOpenButton}">
                     <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
-                      <Border Classes="card-icon"><mi:MaterialIcon Kind="FolderOpenOutline" /></Border>
+                      <Border Classes="card-icon"><icons:IconPresenter IconId="{x:Static icons:IconIds.CardOpenProject}" /></Border>
                       <StackPanel Grid.Column="1" VerticalAlignment="Center">
                         <TextBlock FontWeight="SemiBold" Text="Open folder or project…" />
                         <TextBlock Classes="secondary" TextWrapping="Wrap" Text="Open a project folder or a .csproj file from disk." />
@@ -171,8 +171,8 @@
           <Button Classes="section-toggle" Command="{Binding ToggleWhatsNewCommand}" AutomationProperties.Name="What's new"
                   AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageWhatsNewToggle}">
             <StackPanel Orientation="Horizontal" Spacing="8">
-              <mi:MaterialIcon Kind="ChevronRight" IsVisible="{Binding !IsWhatsNewExpanded}" />
-              <mi:MaterialIcon Kind="ChevronDown" IsVisible="{Binding IsWhatsNewExpanded}" />
+              <icons:IconPresenter IconId="{x:Static icons:IconIds.ChevronRight}" IsVisible="{Binding !IsWhatsNewExpanded}" />
+              <icons:IconPresenter IconId="{x:Static icons:IconIds.ChevronDown}" IsVisible="{Binding IsWhatsNewExpanded}" />
               <TextBlock Classes="section" Text="What's new" />
             </StackPanel>
           </Button>

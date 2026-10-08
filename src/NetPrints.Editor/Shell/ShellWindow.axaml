@@ -1,6 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:mi="clr-namespace:Material.Icons.Avalonia;assembly=Material.Icons.Avalonia"
+        xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
         xmlns:ed="clr-namespace:NetPrints.Editor"
         xmlns:edbehaviors="clr-namespace:NetPrints.Editor.Behaviors"
         xmlns:docking="clr-namespace:NetPrints.Editor.Shell.Docking"
@@ -71,7 +71,7 @@
                       </Style>
                     </Button.Styles>
                     <StackPanel Orientation="Horizontal" Spacing="6">
-                      <mi:MaterialIcon Kind="{Binding IconKind}" Width="16" Height="16" AutomationProperties.AccessibilityView="Raw" />
+                      <icons:IconPresenter IconId="{Binding IconId}" AutomationProperties.AccessibilityView="Raw" />
                       <TextBlock Text="{Binding StaticLabel}" VerticalAlignment="Center" />
                       <Border Classes="badge" IsVisible="{Binding HasBadge}">
                         <TextBlock Text="{Binding BadgeText}" AutomationProperties.Name="{Binding BadgeName}"

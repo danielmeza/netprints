@@ -6,7 +6,7 @@
   <Styles.Resources>
     <ResourceDictionary>
       <ResourceDictionary.MergedDictionaries>
-        <ResourceInclude Source="avares://NetPrints.Editor/Icons.axaml" />
+        <ResourceInclude Source="avares://NetPrints.Editor/Icons/Icons.axaml" />
       </ResourceDictionary.MergedDictionaries>
       <!-- Dock's surface tokens: make the header blend smoothly with the editor background. -->
       <SolidColorBrush x:Key="DockSurfaceHeaderBrush" Color="{DynamicResource SystemAltMediumHighColor}" />

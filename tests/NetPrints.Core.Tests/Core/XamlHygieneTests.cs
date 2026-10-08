@@ -37,7 +37,7 @@ namespace NetPrints.Tests.Core
             "Closing", "IsCheckedChanged", "ValueChanged", "ContextRequested",
         };
 
-        private static readonly HashSet<string> IconTags = new(StringComparer.Ordinal) { "MaterialIcon", "PathIcon", "Image", "Path", "Viewbox", "Svg" };
+        private static readonly HashSet<string> IconTags = new(StringComparer.Ordinal) { "MaterialIcon", "PathIcon", "Image", "Path", "Viewbox", "Svg", "IconPresenter" };
         private static readonly HashSet<string> ButtonTags = new(StringComparer.Ordinal)
         {
             "Button", "ToggleButton", "RepeatButton", "SplitButton", "DropDownButton", "HyperlinkButton",
@@ -348,6 +348,64 @@ namespace NetPrints.Tests.Core
 
             Assert.Empty(offenders);
             AssertAllowlistHasNoStaleEntries(E5Allowlist.Keys, seen);
+        }
+
+        /// <summary>E9: icons come from <c>IconPresenter</c>. A <c>MaterialIcon</c>, <c>SymbolIcon</c> or <c>FluentIcon</c>
+        /// element and a bitmap <c>Image</c> source may appear only under <c>src/NetPrints.Editor/Icons/</c>.</summary>
+        private static readonly Dictionary<string, string> E9Allowlist = new(StringComparer.Ordinal)
+        {
+            ["src/NetPrints.Editor/StartPage/StartPageView.axaml:Image"] = "the logo bitmap that T090b replaces with App.Mark",
+            ["src/NetPrints.Editor/Search/NodeSearchView.axaml:Image"] = "the node category bitmap that T092b removes",
+        };
+
+        private static readonly HashSet<string> IconLibraryTags = new(StringComparer.Ordinal) { "MaterialIcon", "SymbolIcon", "FluentIcon" };
+
+        private static (List<string> Offenders, HashSet<string> Seen) ScanIconElements(IEnumerable<AxamlFile> files, IReadOnlyDictionary<string, string> allowlist)
+        {
+            var offenders = new List<string>();
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            foreach (AxamlFile file in files.Where(f => !f.RelativePath.StartsWith("src/NetPrints.Editor/Icons/", StringComparison.Ordinal)))
+            {
+                foreach (XElement element in file.Document.Descendants())
+                {
+                    string name = element.Name.LocalName;
+                    bool offends = IconLibraryTags.Contains(name) || (name == "Image" && element.Attribute("Source") is not null);
+                    if (!offends)
+                    {
+                        continue;
+                    }
+
+                    string key = IconLibraryTags.Contains(name) ? $"{file.RelativePath}:{LineOf(element)}" : $"{file.RelativePath}:Image";
+                    seen.Add(key);
+                    if (!allowlist.ContainsKey(key))
+                    {
+                        offenders.Add($"{key}: <{name}>");
+                    }
+                }
+            }
+
+            return (offenders, seen);
+        }
+
+        [Fact]
+        public void E9_IconsComeFromIconPresenter()
+        {
+            (List<string> offenders, HashSet<string> seen) = ScanIconElements(LoadAxamlFiles(), E9Allowlist);
+
+            Assert.Empty(offenders);
+            AssertAllowlistHasNoStaleEntries(E9Allowlist.Keys, seen);
+        }
+
+        [Fact]
+        public void E9_FlagsAnIconElementOutsideTheIconsFolderOnly()
+        {
+            AxamlFile outside = Synthetic("src/NetPrints.Editor/X/V.axaml", "<UserControl xmlns:mi=\"clr-namespace:M\">\n<mi:MaterialIcon Kind=\"Plus\" />\n<Image Source=\"a.png\" />\n<Image Source=\"{Binding B}\" />\n</UserControl>");
+            AxamlFile inside = Synthetic("src/NetPrints.Editor/Icons/IconPresenter.axaml", "<ControlTheme xmlns:mi=\"clr-namespace:M\">\n<mi:MaterialIcon Kind=\"Plus\" />\n</ControlTheme>");
+
+            (List<string> offenders, _) = ScanIconElements([outside, inside], new Dictionary<string, string>());
+
+            Assert.Equal(3, offenders.Count);
+            Assert.All(offenders, offender => Assert.StartsWith("src/NetPrints.Editor/X/V.axaml", offender, StringComparison.Ordinal));
         }
 
         /// <summary>E6: a key declared under <c>ThemeDictionaries</c> must be looked up with

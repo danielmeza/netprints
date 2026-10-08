@@ -171,7 +171,7 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
                     ContributionIds.CommandPrefix + "showPanel." + panel.Id,
                     panel.Title,
                     new ShowPanelCommandHandler(panel.Id),
-                    IconKind: panel.IconKind,
+                    IconId: panel.IconId,
                     Menu: new MenuPlacement(ViewContributions.MenuName, ViewContributions.PanelsGroup, UnlistedPanelOrder + index++)));
             }
         }
