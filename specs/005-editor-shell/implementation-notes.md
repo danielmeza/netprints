@@ -1701,6 +1701,13 @@ planned G tasks.
 - Snapshots: the breadcrumb row (24 px) shrinks the canvas, so `canvas-every-node-kind`, `canvas-preview-cable`, `editor-shell-main` and `search-popup` baselines were regenerated; the other baselines are unchanged.
 - Deferred: tooltips for the `Pin` target through providers, and a keyboard way to open a connection's context menu (connections are not focusable yet).
 
+## F2b (T080: contribution surface tests)
+
+- `TestContributionSurfaceTests` registers one test contribution of each kind through the public `Add*` methods, as the built-ins do, and checks its surface: the File menu (label, shortcut, order after the built-ins), the command palette and the shortcuts sheet, the View menu and the layout (panel visible, hidden, shown again from its View entry), the start page (the tile renders after the built-in ones), the New project dialog (template listed after the two built-ins), the Connection context menu (item after `goToSource` and `goToTarget`, absent from the Canvas menu), the tooltip providers (Order -1 wins, null falls through) and go to anything (its kind header and row, and the `>` commands list shows the test command).
+- SC-003: a UI test checks that every built-in command is in the menu bar unless it is menu-less by design (`openGraph`, `cancel`) and in the palette. The T025 pending list is pinned in `BuiltInCommandTableTests` to the three theme commands of T093.
+- Product bug found, fixed minimally: a panel contribution got no View menu entry (the six `showPanel.*` commands were hard-coded), against FR-015. Red: the View menu had 6 panel entries where 7 were expected. Fix: `MenuBarViewModel` adds a `showPanel` entry to View > panels for each registered panel that no `ShowPanelCommandHandler` command covers (id `<panel id>.show`); `ShowPanelCommandHandler` exposes `PanelId`. Such an entry is a menu entry only: it is not in the registry, so the palette and the shortcuts sheet do not list it. A panel that registers its own `showPanel` command appears everywhere.
+- Deferred: the palette and sheet entries for contributed panels, if the owner wants them (would need the registry to synthesise the command).
+
 ## S0 (pin-layout golden and two suspected bugs; owner-approved extra, outside the task list)
 
 - `NodePinLayoutTests` builds every built-in node kind in each variant (impure, pure through `IsPure`, purity toggled twice,

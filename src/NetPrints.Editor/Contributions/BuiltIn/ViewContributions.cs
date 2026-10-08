@@ -5,9 +5,9 @@ namespace NetPrints.Editor.Contributions.BuiltIn;
 /// <summary>The built-in commands of the View menu (contracts/commands.md section 1).</summary>
 public static class ViewContributions
 {
-    private const string MenuName = "View";
+    internal const string MenuName = "View";
+    internal const string PanelsGroup = "panels";
     private const string ViewportGroup = "viewport";
-    private const string PanelsGroup = "panels";
     private const string LayoutGroup = "layout";
     private const string FindGroup = "find";
 

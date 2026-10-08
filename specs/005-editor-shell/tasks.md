@@ -710,7 +710,7 @@ Contracts: contributions.md, commands.md, shell.md §7. **Independent test**: US
 - [x] T079 [P] [US7] Breadcrumbs. Test first: `tests/NetPrints.Editor.Tests/Navigation/BreadcrumbsViewModelTests.cs`:
   Project › Class › Graph above each graph document, updated on renames; choosing a segment reveals it in the project
   tree. Ids `Breadcrumbs.*`.
-- [ ] T080 [US4] `tests/NetPrints.Editor.UITests/Contributions/TestContributionSurfaceTests.cs` (2 units; US4 scenario 6,
+- [x] T080 [US4] `tests/NetPrints.Editor.UITests/Contributions/TestContributionSurfaceTests.cs` (2 units; US4 scenario 6,
   contracts/contributions.md §4): one test contribution of each of the seven kinds appears in its surface exactly as a
   built-in one does (menu, palette and shortcuts sheet; View menu and layout; start page; New project dialog; context
   menu; connection tooltip; go-to results). The T025 pending list now holds only the theme commands (T093). SC-003:

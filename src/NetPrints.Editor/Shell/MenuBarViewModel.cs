@@ -1,4 +1,6 @@
+using NetPrints.Editor.Commands;
 using NetPrints.Editor.Contributions;
+using NetPrints.Editor.Contributions.BuiltIn;
 
 namespace NetPrints.Editor.Shell;
 
@@ -6,6 +8,8 @@ namespace NetPrints.Editor.Shell;
 public sealed class MenuBarViewModel : IDisposable
 {
     internal static readonly string[] StandardMenus = ["File", "Edit", "View", "Go", "Build", "Help"];
+
+    private const int UnlistedPanelOrder = 100;
 
     private readonly CommandInvoker invoker;
     private readonly List<CommandEntryViewModel> entries = [];
@@ -18,7 +22,7 @@ public sealed class MenuBarViewModel : IDisposable
         ArgumentNullException.ThrowIfNull(registry);
         ArgumentNullException.ThrowIfNull(invoker);
         this.invoker = invoker;
-        CommandDescriptor[] withMenu = [.. registry.Commands.Where(command => command.Menu is not null)];
+        CommandDescriptor[] withMenu = [.. registry.Commands.Where(command => command.Menu is not null), .. UnlistedPanelCommands(registry)];
         string[] names = [.. StandardMenus, .. withMenu.Select(command => command.Menu?.Path ?? "").Distinct(StringComparer.Ordinal).Except(StandardMenus, StringComparer.Ordinal)];
         Menus = [.. names.Select(name => Build(name, withMenu))];
         invoker.CommandStatesChanged += OnCommandStatesChanged;
@@ -29,6 +33,16 @@ public sealed class MenuBarViewModel : IDisposable
 
     /// <summary>Stops following the command states.</summary>
     public void Dispose() => invoker.CommandStatesChanged -= OnCommandStatesChanged;
+
+    private static IEnumerable<CommandDescriptor> UnlistedPanelCommands(IContributionRegistry registry) =>
+        registry.Panels
+            .Where(panel => !registry.Commands.Any(command => command.Handler is ShowPanelCommandHandler { PanelId: var shown } && shown == panel.Id))
+            .Select((panel, index) => new CommandDescriptor(
+                panel.Id + ".show",
+                panel.Title,
+                new ShowPanelCommandHandler(panel.Id),
+                IconKind: panel.IconKind,
+                Menu: new MenuPlacement(ViewContributions.MenuName, ViewContributions.PanelsGroup, UnlistedPanelOrder + index)));
 
     private MenuViewModel Build(string name, CommandDescriptor[] withMenu)
     {

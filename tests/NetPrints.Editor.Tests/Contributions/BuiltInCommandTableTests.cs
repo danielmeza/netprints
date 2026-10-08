@@ -170,6 +170,13 @@ public class BuiltInCommandTableTests
     }
 
     [Fact]
+    public void ThePendingListHoldsOnlyTheThemeCommandsOfT093()
+    {
+        Assert.Equal(["theme.dark", "theme.light", "theme.system"], PendingCommandIds.Keys.Order(StringComparer.Ordinal));
+        Assert.All(PendingCommandIds.Values, task => Assert.Equal("T093", task));
+    }
+
+    [Fact]
     public void ARowWithoutAHandlerIsOnThePendingList() =>
         Assert.Empty(Table.Where(row => row.Handler is null && !PendingCommandIds.ContainsKey(row.Id)).Select(row => row.Id));
 
