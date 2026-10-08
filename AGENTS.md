@@ -208,6 +208,12 @@ agents" below. Guard entry points with `ArgumentNullException.ThrowIfNull`,
 - CI (`CI` workflow, Linux) must be green before merge. The `CLI (Windows)` workflow also runs the CLI tests on
   `windows-latest` for changes that touch the CLI (not required, but keep it green); see `docs/contributing/testing.md`.
 
+## XAML and UI
+- **Mandatory:** before editing any `.axaml`, or view, style or converter code in `NetPrints.Editor`/`NetPrints.Desktop`,
+  load `avalonia-xaml` and `avalonia-styling` (and `avalonia-behaviors` for interaction) with the Skill tool. A
+  PreToolUse hook (`.claude/hooks/skill-paths.py`) denies the first matching edit of each agent and names the skills;
+  load them and retry. New views follow the "Layout and look" section of `avalonia-styling`.
+
 ## Batch rules for implementer agents
 A batch prompt names the task range and pastes the task text; everything below applies to every batch.
 - Read only the spec files and sections the prompt names, plus the code you modify. Never read whole specs.

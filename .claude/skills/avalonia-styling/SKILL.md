@@ -51,6 +51,32 @@ before inventing a new one. Use `StaticResource` for things that never vary by t
   such as `pinValue` keep their names. Don't rename them just to conform.
 - Prefer a style class to repeating the same five inline setters. For a color change, use a style, not a template.
 
+## Layout and look
+
+The classes in `EditorStyles.axaml` are the vocabulary. Pick one before writing a local `Margin`, `FontSize` or `FontWeight`;
+add a class there (D8) when none fits, and name it for its role, not its look (`codeBlock`, not `darkBox`).
+
+- **Property grid.** An inspector or form grid is `<Grid Classes="propertyGrid" ColumnDefinitions="Auto,*">`: labels in the
+  `Auto` column are `TextBlock.inspectorLabel`, and the editors take their row gap from the child selectors
+  (`Grid.propertyGrid > :is(TextBox)`, `ComboBox`, `StackPanel`, `CheckBox`). No fixed label width, no per-control `Margin`,
+  and no `RowSpacing`, which would also space collapsed rows.
+- **Dialogs.** A dialog is `<Grid Classes="dialogRoot">` with a header (`TextBlock.dialogTitle`, with an icon if it helps),
+  a body and a footer of `Button.dialogAction`. Size the window with `SizeToContent` plus `MaxWidth`/`MinWidth`, not a fixed
+  `Width`/`Height` (list dialogs are the exception). A read-only message or log is a `TextBox.codeBlock`. See `ErrorDialog.axaml`.
+- **Text roles.** `title`, `section`, `secondary`, `treeItem`, `nodeTitle`, `pinLabel` (TextBlock and TextBox), `memberName`,
+  plus `dialogTitle`, `groupTitle`, `formLabel`, `menuShortcut`. A view picks a class and does not set `FontSize` or `FontWeight`.
+- **Tokens.** Colors and shadows are theme tokens named `Area.Role` and defined in both `Dark` and `Light`
+  (`Popup.Shadow` is a `BoxShadows` token). A view never writes `BoxShadow="... #40000000"`.
+- **Motion** is a `Transitions` setter in a style, never a keyframe `Animations` block or an infinite animation:
+  `EditorApp.DisableTransitions()` strips transitions when `netprints.enableAnimations` is off, and nothing else can switch
+  motion off.
+- **Hit targets** are at least 24 px. Keep a small glyph and wrap it in a transparent 24 px panel (`Panel.pinHitbox` around
+  a 16 px pin), instead of growing the glyph.
+- **Empty states.** A list or panel that can be empty shows a message bound to an `IsEmpty` flag on the view model
+  (`InspectorPanelView`, `RecentProjectsTileView`), with an AutomationId when a test needs it.
+- **One Style per selector.** Avalonia has no comma selectors: repeat the `<Style>` for each target, as the propertyGrid
+  child selectors do.
+
 ## Gotchas
 
 - A brush that a converter builds in C# freezes the variant it was built in, because the binding isn't re-evaluated
