@@ -55,6 +55,7 @@ public class ThemeTokenTests
         "Pin.Delegate",
         "Pin.Generic",
         "Pin.DefaultValue",
+        "Pin.Hint",
         "Canvas.SelectionBorder",
         "Canvas.MarqueeFill",
         "Canvas.MarqueeBorder",

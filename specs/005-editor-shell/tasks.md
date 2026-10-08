@@ -880,7 +880,7 @@ add T091b and T092g–T092l the same way.
   and the role from the node view model (`src/NetPrints.Editor/Graph/Nodes/`). Re-baseline
   `canvas-every-node-kind.png`, `node-call-method.png` and `node-method-entry-parameters.png`. Colouring pins and
   variable headers by data type is P6.
-- [ ] T091b [US9] "self" on unconnected Target pins (1 unit, FR-096; owner decision 2026-10-08). Code generation
+- [x] T091b [US9] "self" on unconnected Target pins (1 unit, FR-096; owner decision 2026-10-08). Code generation
   already writes `this` for an unconnected Target pin (`BuiltInNodeTranslators`: the variable setter and getter at
   about lines 551 and 774, call method, and make delegate at about line 833); the canvas shows nothing there. Test
   first: `tests/NetPrints.Editor.Tests/Graph/Pins/TargetPinSelfTests.cs` (view model): an instance

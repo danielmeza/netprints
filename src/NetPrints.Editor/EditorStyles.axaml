@@ -110,6 +110,7 @@
           <SolidColorBrush x:Key="Pin.Delegate">#BA68C8</SolidColorBrush>
           <SolidColorBrush x:Key="Pin.Generic">#4DB6AC</SolidColorBrush>
           <SolidColorBrush x:Key="Pin.DefaultValue">#10EEFF</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Hint">#FFB0B0B0</SolidColorBrush>
           <!-- Selection, marquee and selected wire (FR-086). -->
           <SolidColorBrush x:Key="Canvas.SelectionBorder">#4FC3F7</SolidColorBrush>
           <SolidColorBrush x:Key="Canvas.MarqueeFill">#334FC3F7</SolidColorBrush>
@@ -164,6 +165,7 @@
           <SolidColorBrush x:Key="Pin.Delegate">#7B1FA2</SolidColorBrush>
           <SolidColorBrush x:Key="Pin.Generic">#00796B</SolidColorBrush>
           <SolidColorBrush x:Key="Pin.DefaultValue">#0097A7</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Hint">#FF5A5A5A</SolidColorBrush>
           <SolidColorBrush x:Key="Canvas.SelectionBorder">#0277BD</SolidColorBrush>
           <SolidColorBrush x:Key="Canvas.MarqueeFill">#330277BD</SolidColorBrush>
           <SolidColorBrush x:Key="Canvas.MarqueeBorder">#0277BD</SolidColorBrush>
@@ -255,6 +257,12 @@
   </Style>
   <Style Selector=":is(Shape).pin.dimmed">
     <Setter Property="Opacity" Value="0.6" />
+  </Style>
+  <Style Selector="TextBlock.pinHint">
+    <Setter Property="Foreground" Value="{DynamicResource Pin.Hint}" />
+    <Setter Property="FontSize" Value="{StaticResource Font.Body}" />
+    <Setter Property="FontStyle" Value="Italic" />
+    <Setter Property="VerticalAlignment" Value="Center" />
   </Style>
   <Style Selector="Polygon.defaultValue">
     <Setter Property="Fill" Value="{DynamicResource Pin.DefaultValue}" />

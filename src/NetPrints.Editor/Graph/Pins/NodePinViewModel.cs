@@ -239,6 +239,7 @@ public sealed partial class NodePinViewModel : ObservableObject, IDisposable
     {
         OnPropertyChanged(nameof(PossibleEnumNames));
         OnPropertyChanged(nameof(ToolTip));
+        OnPropertyChanged(nameof(SelfHint));
     }
 
     /// <summary>
@@ -306,6 +307,47 @@ public sealed partial class NodePinViewModel : ObservableObject, IDisposable
         ShowUnconnectedValue && Pin is NodeInputDataPin { UsesExplicitDefaultValue: true } idp && idp.UnconnectedValue is null
             ? idp.ExplicitDefaultValue?.ToString() ?? "null"
             : null;
+
+    /// <summary>The text of <see cref="SelfHint"/>.</summary>
+    public const string SelfText = "self";
+
+    /// <summary>
+    /// <see cref="SelfText"/> while this is the Target pin of an instance member node (variable get or set, call,
+    /// make delegate) with no wire, the graph is not static and its class is the member's declaring type or derives
+    /// from it, which is when the generated code writes <c>this</c> (FR-096); otherwise <see langword="null"/>.
+    /// </summary>
+    public string? SelfHint =>
+        !IsConnected && TargetDeclaringType is { } declaringType && ThisIsValid(declaringType) ? SelfText : null;
+
+    private TypeSpecifier? TargetDeclaringType => Pin.Node switch
+    {
+        VariableNode { IsStatic: false, IsLocalVariable: false, TargetType: { } type } variable when ReferenceEquals(variable.TargetPin, Pin) => type,
+        CallMethodNode { IsStatic: false } call when ReferenceEquals(call.TargetPin, Pin) => call.DeclaringType,
+        MakeDelegateNode { IsFromStaticMethod: false } makeDelegate when ReferenceEquals(makeDelegate.TargetPin, Pin) => makeDelegate.MethodSpecifier.DeclaringType,
+        _ => null,
+    };
+
+    private bool ThisIsValid(TypeSpecifier declaringType)
+    {
+        NodeGraph graph = Node.Graph.Graph;
+        if (graph is MethodGraph { Modifiers: var modifiers } && modifiers.HasFlag(MethodModifiers.Static))
+        {
+            return false;
+        }
+
+        if (graph.Class is not { } graphClass)
+        {
+            return false;
+        }
+
+        var reflection = Node.Graph.Context.Reflection;
+        return graphClass.Type == declaringType
+            || graphClass.AllBaseTypes.Any(baseType => baseType == declaringType
+                || (reflection.IsLoaded && reflection.Provider.TypeSpecifierIsSubclassOf(baseType, declaringType)));
+    }
+
+    /// <summary>Raises <see cref="SelfHint"/> after something it depends on besides the wire changed.</summary>
+    internal void RefreshSelfHint() => OnPropertyChanged(nameof(SelfHint));
 
     /// <summary>Whether to draw the default-value indicator (PAR-43).</summary>
     public bool ShowDefaultValueIndicator => Pin is NodeInputDataPin { UsesExplicitDefaultValue: true };
@@ -427,6 +469,7 @@ public sealed partial class NodePinViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(ShowBooleanValue));
         OnPropertyChanged(nameof(UnconnectedTextWatermark));
         OnPropertyChanged(nameof(IsDefaultValueActive));
+        OnPropertyChanged(nameof(SelfHint));
     }
 
     private void OnPinPropertyChanged(object? sender, PropertyChangedEventArgs e)

@@ -53,6 +53,10 @@ public sealed partial class NodeViewModel : ObservableObject, IDisposable
         node.InputTypeChanged += OnInputTypeChanged;
         nodeNotifier = (INotifyPropertyChanged)node;
         nodeNotifier.PropertyChanged += OnNodePropertyChanged;
+        if (node.Graph is INotifyPropertyChanged graphNotifier)
+        {
+            graphNotifier.PropertyChanged += OnGraphPropertyChanged;
+        }
 
         UpdateOverloads();
     }
@@ -516,6 +520,17 @@ public sealed partial class NodeViewModel : ObservableObject, IDisposable
 
     private void OnInputTypeChanged(object? sender, EventArgs e) => OnPropertyChanged(nameof(Label));
 
+    private void OnGraphPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(MethodGraph.Modifiers))
+        {
+            foreach (var pin in AllPins)
+            {
+                pin.RefreshSelfHint();
+            }
+        }
+    }
+
     private void OnNodePropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         switch (e.PropertyName)
@@ -550,6 +565,10 @@ public sealed partial class NodeViewModel : ObservableObject, IDisposable
         Node.OnPositionChanged -= OnNodePositionChanged;
         Node.InputTypeChanged -= OnInputTypeChanged;
         nodeNotifier.PropertyChanged -= OnNodePropertyChanged;
+        if (Node.Graph is INotifyPropertyChanged graphNotifier)
+        {
+            graphNotifier.PropertyChanged -= OnGraphPropertyChanged;
+        }
 
         foreach (var collection in new IDisposable[] { inputExecPins, inputDataPins, inputTypePins, outputExecPins, outputDataPins, outputTypePins })
         {
