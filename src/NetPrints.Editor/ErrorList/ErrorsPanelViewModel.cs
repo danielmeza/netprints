@@ -64,6 +64,7 @@ public sealed partial class ErrorsPanelViewModel : ObservableObject, IShellPanel
             return;
         }
 
+        attached.Api.Navigation.RecordCurrent();
         attached.Api.OpenDocument(id);
         if (message.NodeId is { } nodeId && shell.FindDocument(id) is GraphDocumentViewModel document)
         {

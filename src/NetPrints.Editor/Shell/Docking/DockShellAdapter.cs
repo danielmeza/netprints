@@ -5,6 +5,7 @@ using Dock.Model.Controls;
 using Dock.Model.Core;
 using Dock.Model.Core.Events;
 using Microsoft.Extensions.Logging;
+using NetPrints.Editor.Navigation;
 using NetPrints.Editor.State;
 
 namespace NetPrints.Editor.Shell.Docking;
@@ -19,6 +20,7 @@ public sealed partial class DockShellAdapter : ObservableObject, IShell, IShellL
     private readonly ShellDockFactory factory;
     private readonly Func<DocumentId, DocumentViewModel?> openDocument;
     private readonly ILogger logger;
+    private readonly NavigationService navigation;
     private readonly Dictionary<DocumentViewModel, PropertyChangedEventHandler> titleWatchers = [];
     private List<string> suspendedPanels = [];
     private Dictionary<IDock, string> suspendedActive = new(ReferenceEqualityComparer.Instance);
@@ -39,6 +41,7 @@ public sealed partial class DockShellAdapter : ObservableObject, IShell, IShellL
         this.openDocument = openDocument;
         this.logger = logger;
         ProjectActions = projectActions;
+        navigation = new NavigationService(shell, this);
         factory = new ShellDockFactory(shell.Panels);
         Layout = NewLayout();
         factory.ActiveDockableChanged += OnActiveDockableChanged;
@@ -63,6 +66,9 @@ public sealed partial class DockShellAdapter : ObservableObject, IShell, IShellL
 
     /// <inheritdoc/>
     public IProjectActions ProjectActions { get; }
+
+    /// <inheritdoc/>
+    public INavigation Navigation => navigation;
 
     /// <summary>Gets the layout the dock control shows; replaced by <see cref="ResetLayout"/>.</summary>
     [ObservableProperty]
@@ -212,6 +218,7 @@ public sealed partial class DockShellAdapter : ObservableObject, IShell, IShellL
     /// <summary>Stops listening to the layout and to the documents' titles.</summary>
     public void Dispose()
     {
+        navigation.Dispose();
         factory.ActiveDockableChanged -= OnActiveDockableChanged;
         factory.DockableClosed -= OnDockableClosed;
         factory.DockableHidden -= OnPanelsMayHaveChanged;

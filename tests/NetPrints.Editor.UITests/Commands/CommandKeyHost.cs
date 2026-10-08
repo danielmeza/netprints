@@ -39,6 +39,8 @@ internal sealed class KeyStubShell : IShell
 {
     public IProjectActions ProjectActions => throw new NotSupportedException();
 
+    public NetPrints.Editor.Navigation.INavigation Navigation => throw new NotSupportedException();
+
     public DocumentId? ActiveDocument => null;
 
     public IReadOnlyList<DocumentId> OpenDocuments => [];

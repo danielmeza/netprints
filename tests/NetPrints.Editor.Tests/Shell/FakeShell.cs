@@ -1,5 +1,6 @@
 using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Graph;
+using NetPrints.Editor.Navigation;
 using NetPrints.Editor.Shell;
 
 namespace NetPrints.Editor.Tests.Shell;
@@ -11,6 +12,12 @@ public sealed class FakeShell : IShell
 
     /// <inheritdoc/>
     public IProjectActions ProjectActions => Project;
+
+    /// <inheritdoc/>
+    INavigation IShell.Navigation => Navigation;
+
+    /// <summary>Gets the recording navigation.</summary>
+    public FakeNavigation Navigation { get; } = new();
 
     /// <summary>Gets the recording project actions.</summary>
     public FakeProjectActions Project { get; } = new();

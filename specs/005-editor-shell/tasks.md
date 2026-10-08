@@ -682,7 +682,7 @@ Contracts: contributions.md, commands.md, shell.md §7. **Independent test**: US
 
 ### Batch F1 — model: sonnet — T074–T076 — 5 units
 
-- [ ] T074 [US7] Navigation history. Test first: `tests/NetPrints.Editor.Tests/Navigation/NavigationHistoryTests.cs`. An
+- [x] T074 [US7] Navigation history. Test first: `tests/NetPrints.Editor.Tests/Navigation/NavigationHistoryTests.cs`. An
   entry (document, viewport location, zoom, selected node ids) is recorded before each navigation by go-to, an error, a
   connection jump or a tab switch; at most 50 entries each way; a new navigation clears Forward; entries whose document
   no longer exists are skipped; `navigateBack` and `navigateForward` (Alt+Left, Alt+Right, the Go menu) restore the
