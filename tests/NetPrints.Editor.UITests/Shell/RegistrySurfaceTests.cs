@@ -87,7 +87,7 @@ public class RegistrySurfaceTests
             Ids("frameSelection", "fitAll", Separator, "showPanel.projectTree", "showPanel.inspector", "showPanel.variables", "showPanel.errors", "showPanel.output", "showPanel.csharp", Separator, "floatDocument", "dockDocument", "resetLayout", Separator, "commandPalette"),
             Layout(rig.Open("View")).Select(Strip(MenuId)));
         Assert.Equal(Ids("compile", Separator, "run", "stop"), Layout(rig.Open("Build")).Select(Strip(MenuId)));
-        Assert.Equal(Ids("goToAnything", Separator, "navigateBack", "navigateForward", Separator, "nextTab", "previousTab", "closeTab"), Layout(rig.Open("Go")).Select(Strip(MenuId)));
+        Assert.Equal(Ids("goToAnything", Separator, "navigateBack", "navigateForward", Separator, "nextTab", "previousTab", "closeTab", Separator, "goToSource", "goToTarget"), Layout(rig.Open("Go")).Select(Strip(MenuId)));
         Assert.Equal(Ids("keyboardShortcuts", "startPage", Separator, "about"), Layout(rig.Open("Help")).Select(Strip(MenuId)));
     }
 
