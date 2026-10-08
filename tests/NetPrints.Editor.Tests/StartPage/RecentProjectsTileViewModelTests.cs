@@ -149,6 +149,7 @@ public sealed class RecentProjectsTileViewModelTests
         RecentProjectItemViewModel row = Assert.Single(tile.Items);
         Assert.False(tile.AvailabilityChecked.IsCompleted);
         Assert.True(row.IsAvailable);
+        Assert.True(SpinWait.SpinUntil(() => { lock (checkingThreads) { return checkingThreads.Count > 0; } }, TimeSpan.FromSeconds(10)));
         release.Set();
         await tile.AvailabilityChecked;
         Assert.False(row.IsAvailable);
