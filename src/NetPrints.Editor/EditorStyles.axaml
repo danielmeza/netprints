@@ -261,6 +261,12 @@
   </Style>
 
   <!-- Search box flush with its popup. -->
+  <Style Selector="ListBox.quickPick ListBoxItem">
+    <Setter Property="MinHeight" Value="24" />
+  </Style>
+  <Style Selector="Grid.quickPickRow.disabled">
+    <Setter Property="Opacity" Value="0.5" />
+  </Style>
   <Style Selector="TextBox.searchInput">
     <Setter Property="Margin" Value="4" />
     <Setter Property="Background" Value="Transparent" />

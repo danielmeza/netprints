@@ -688,7 +688,7 @@ Contracts: contributions.md, commands.md, shell.md §7. **Independent test**: US
   no longer exists are skipped; `navigateBack` and `navigateForward` (Alt+Left, Alt+Right, the Go menu) restore the
   graph, the viewport and the selection. Then `src/NetPrints.Editor/Navigation/NavigationHistory.cs`, with recording in
   the shell and the Errors panel.
-- [ ] T075 [US7] Command palette (2 units). Test first: `tests/NetPrints.Editor.Tests/Commands/CommandPaletteViewModelTests.cs`.
+- [x] T075 [US7] Command palette (2 units). Test first: `tests/NetPrints.Editor.Tests/Commands/CommandPaletteViewModelTests.cs`.
   Ctrl+Shift+P lists every registered command, filtered with the research R9 ranking (prefix, then word start, then
   substring, then name), with its shortcuts and menu path; a disabled command is listed but Enter does not run it;
   Enter runs the selected command; Esc closes. Then `src/NetPrints.Editor/Commands/CommandPalette/`, ids `Palette.*`.

@@ -65,6 +65,11 @@ public interface IProjectActions
     /// <returns>A task that completes when the dialog is closed.</returns>
     Task ShowKeyboardShortcutsAsync(CancellationToken cancellationToken);
 
+    /// <summary>Shows the command palette: every registered command, filtered as the user types; the chosen enabled command runs.</summary>
+    /// <param name="cancellationToken">Cancels the flow.</param>
+    /// <returns>A task that completes when the palette is closed.</returns>
+    Task ShowCommandPaletteAsync(CancellationToken cancellationToken);
+
     /// <summary>Shows the About dialog: the editor version and the project links.</summary>
     /// <param name="cancellationToken">Cancels the flow.</param>
     /// <returns>A task that completes when the dialog is closed.</returns>

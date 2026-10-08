@@ -1,0 +1,47 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ed="clr-namespace:NetPrints.Editor"
+        xmlns:edb="clr-namespace:NetPrints.Editor.Behaviors"
+        xmlns:edcp="clr-namespace:NetPrints.Editor.Commands.CommandPalette"
+        x:Class="NetPrints.Editor.Dialogs.CommandPaletteDialog"
+        x:DataType="edcp:CommandPaletteViewModel"
+        Title="Command palette"
+        Icon="avares://NetPrints.Editor/Assets/NetPrintsLogo.ico"
+        Width="560" SizeToContent="Height" CanResize="False"
+        WindowStartupLocation="CenterOwner" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PaletteDialog}">
+  <Window.KeyBindings>
+    <KeyBinding Gesture="Escape" Command="{Binding CloseCommand}" />
+  </Window.KeyBindings>
+  <Interaction.Behaviors>
+    <edb:DialogCloseBehavior />
+  </Interaction.Behaviors>
+  <Grid Classes="dialogRoot" RowDefinitions="Auto,Auto">
+    <TextBox AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PaletteQuery}" AutomationProperties.Name="Command" Text="{Binding Query}"
+             PlaceholderText="Type a command">
+      <Interaction.Behaviors>
+        <FocusOnAttachedToVisualTreeBehavior />
+        <ExecuteCommandOnKeyDownBehavior Key="Enter" Command="{Binding RunSelectedCommand}" />
+        <ExecuteCommandOnKeyDownBehavior Key="Down" EventRoutingStrategy="Tunnel" Command="{Binding SelectNextCommand}" />
+        <ExecuteCommandOnKeyDownBehavior Key="Up" EventRoutingStrategy="Tunnel" Command="{Binding SelectPreviousCommand}" />
+      </Interaction.Behaviors>
+    </TextBox>
+    <ListBox Grid.Row="1" Classes="quickPick" MaxHeight="360" ItemsSource="{Binding Items}" SelectedItem="{Binding SelectedItem}" SelectionMode="Single"
+             IsVisible="{Binding !IsEmpty}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PaletteList}" AutomationProperties.Name="Commands">
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="edcp:PaletteItem">
+          <Grid Classes="quickPickRow" Classes.disabled="{Binding !IsEnabled}" ColumnDefinitions="*,Auto,Auto" Background="Transparent"
+                AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PaletteRow}" AutomationProperties.Name="{Binding Label}">
+            <Interaction.Behaviors>
+              <ExecuteCommandOnDoubleTappedBehavior Command="{Binding $parent[ListBox].((edcp:CommandPaletteViewModel)DataContext).RunSelectedCommand}" />
+            </Interaction.Behaviors>
+            <TextBlock Text="{Binding Label}" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="1" Classes="secondary" Text="{Binding MenuPath}" VerticalAlignment="Center" />
+            <TextBlock Grid.Column="2" Classes="menuShortcut" Text="{Binding Shortcuts}" VerticalAlignment="Center" />
+          </Grid>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+    <TextBlock Grid.Row="1" Classes="secondary" Text="No matching commands" IsVisible="{Binding IsEmpty}"
+               AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PaletteEmpty}" />
+  </Grid>
+</Window>

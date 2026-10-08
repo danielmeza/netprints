@@ -2,6 +2,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.Notifications;
 using NetPrints.Compilation;
 using NetPrints.Core;
+using NetPrints.Editor.Commands.CommandPalette;
 using NetPrints.Editor.Commands.KeyboardShortcuts;
 using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Hosting;
@@ -86,6 +87,10 @@ public sealed class EditorDialogs(Func<Window?> owner) : IEditorDialogs
     /// <inheritdoc/>
     public Task ShowKeyboardShortcutsAsync(KeyboardShortcutsViewModel sheet) =>
         ShowAsync<object>(new KeyboardShortcutsDialog(sheet));
+
+    /// <inheritdoc/>
+    public Task ShowCommandPaletteAsync(CommandPaletteViewModel palette) =>
+        ShowAsync<object>(new CommandPaletteDialog(palette));
 
     /// <inheritdoc/>
     public Task ShowAboutAsync(AboutViewModel about) =>

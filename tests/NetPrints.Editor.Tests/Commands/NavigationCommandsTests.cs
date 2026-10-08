@@ -33,4 +33,15 @@ public sealed class NavigationCommandsTests
 
         Assert.Equal(["GoForward"], shell.Navigation.Calls);
     }
+
+    [Fact]
+    public async Task TheCommandPaletteCommandOpensThePalette()
+    {
+        var handler = new CommandPaletteCommandHandler();
+
+        Assert.True(handler.CanExecute(shell.Context()));
+        await handler.ExecuteAsync(shell.Context(), TestContext.Current.CancellationToken);
+
+        Assert.Equal(["ShowCommandPalette"], shell.Project.Calls);
+    }
 }

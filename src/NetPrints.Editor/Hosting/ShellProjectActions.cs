@@ -2,6 +2,7 @@ using System.ComponentModel;
 using Microsoft.Extensions.Logging;
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
+using NetPrints.Editor.Commands.CommandPalette;
 using NetPrints.Editor.Commands.KeyboardShortcuts;
 using NetPrints.Editor.Contributions.BuiltIn;
 using NetPrints.Editor.Dialogs;
@@ -213,6 +214,12 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
     /// <inheritdoc/>
     public Task ShowKeyboardShortcutsAsync(CancellationToken cancellationToken) =>
         context.Dialogs.ShowKeyboardShortcutsAsync(new KeyboardShortcutsViewModel(shell.Registry));
+
+    /// <inheritdoc/>
+    public Task ShowCommandPaletteAsync(CancellationToken cancellationToken) =>
+        shell.Commands is { } invoker
+            ? context.Dialogs.ShowCommandPaletteAsync(new CommandPaletteViewModel(shell.Registry, invoker))
+            : Task.CompletedTask;
 
     /// <inheritdoc/>
     public Task ShowAboutAsync(CancellationToken cancellationToken) =>

@@ -209,6 +209,26 @@ public static class AutomationIds
     /// </summary>
     public const string ConfirmCancelButton = "Dialogs.Confirm.Cancel";
     /// <summary>
+    /// Automation id for the command palette window itself.
+    /// </summary>
+    public const string PaletteDialog = "Palette.Dialog";
+    /// <summary>
+    /// Automation id for the command palette's search box.
+    /// </summary>
+    public const string PaletteQuery = "Palette.Query";
+    /// <summary>
+    /// Automation id for the command palette's list of commands.
+    /// </summary>
+    public const string PaletteList = "Palette.List";
+    /// <summary>
+    /// Automation id for a row of the command palette.
+    /// </summary>
+    public const string PaletteRow = "Palette.Row";
+    /// <summary>
+    /// Automation id for the message the command palette shows when no command matches.
+    /// </summary>
+    public const string PaletteEmpty = "Palette.Empty";
+    /// <summary>
     /// Automation id for the keyboard shortcuts dialog window itself.
     /// </summary>
     public const string ShortcutsDialog = "Dialogs.Shortcuts";

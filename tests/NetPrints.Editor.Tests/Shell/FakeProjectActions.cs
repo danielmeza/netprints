@@ -85,6 +85,13 @@ public sealed class FakeProjectActions : IProjectActions
     }
 
     /// <inheritdoc/>
+    public Task ShowCommandPaletteAsync(CancellationToken cancellationToken)
+    {
+        Calls.Add("ShowCommandPalette");
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc/>
     public Task ShowAboutAsync(CancellationToken cancellationToken)
     {
         Calls.Add("ShowAbout");

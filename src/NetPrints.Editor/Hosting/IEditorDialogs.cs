@@ -1,5 +1,6 @@
 using NetPrints.Compilation;
 using NetPrints.Core;
+using NetPrints.Editor.Commands.CommandPalette;
 using NetPrints.Editor.Commands.KeyboardShortcuts;
 using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Lifecycle;
@@ -39,6 +40,10 @@ public interface IEditorDialogs
     /// <summary>Shows the keyboard shortcuts sheet until it is closed.</summary>
     /// <param name="sheet">The commands and their shortcuts.</param>
     Task ShowKeyboardShortcutsAsync(KeyboardShortcutsViewModel sheet);
+
+    /// <summary>Shows the command palette until a command is chosen or it is dismissed.</summary>
+    /// <param name="palette">The commands and the filter.</param>
+    Task ShowCommandPaletteAsync(CommandPaletteViewModel palette);
 
     /// <summary>Shows the About dialog until it is closed.</summary>
     /// <param name="about">The version and the project links.</param>

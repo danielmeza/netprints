@@ -9,6 +9,7 @@ public static class ViewContributions
     private const string ViewportGroup = "viewport";
     private const string PanelsGroup = "panels";
     private const string LayoutGroup = "layout";
+    private const string FindGroup = "find";
 
     /// <summary>Registers the View menu's commands.</summary>
     /// <param name="registry">The registry to add to.</param>
@@ -35,6 +36,13 @@ public static class ViewContributions
             Scope: CommandScope.Graph,
             Menu: new MenuPlacement(MenuName, ViewportGroup, 1),
             CommandBarOrder: null));
+
+        registry.AddCommand(new CommandDescriptor(
+            ContributionIds.CommandPrefix + "commandPalette",
+            "Command palette…",
+            new CommandPaletteCommandHandler(),
+            DefaultGestures: ["Ctrl+Shift+P"],
+            Menu: new MenuPlacement(MenuName, FindGroup, 0)));
 
         (string Name, string Label, string PanelId, string Icon)[] panels =
         [
