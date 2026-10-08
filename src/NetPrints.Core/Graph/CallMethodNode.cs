@@ -17,12 +17,23 @@ namespace NetPrints.Graph
         private const string CatchPinName = "Catch";
 
         /// <summary>
-        /// Always <see langword="true"/>: a call-method node can become pure (no exec pins) when the
-        /// called method has no observable side effects worth sequencing, and impure otherwise.
+        /// <see langword="true"/> when the node has at least one result output data pin (see
+        /// <see cref="ResultPins"/>). A pure node is translated only when a consumer needs one of its
+        /// outputs, so a call without one would vanish from the generated code. When an <c>out</c>/<c>ref</c>
+        /// write of a pure call happens is up to the graph's author.
         /// </summary>
         public override bool CanSetPure
         {
-            get => true;
+            get => ResultPins.Count > 0;
+        }
+
+        /// <summary>
+        /// The output data pins that carry the call's results (today its return values), without the
+        /// <c>Exception</c> pin that exists while the catch pin is connected.
+        /// </summary>
+        private IReadOnlyList<NodeOutputDataPin> ResultPins
+        {
+            get => OutputDataPins.Where(pin => pin != ExceptionPin).ToList();
         }
 
         /// <summary>

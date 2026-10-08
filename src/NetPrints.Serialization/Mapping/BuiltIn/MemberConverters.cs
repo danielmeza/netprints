@@ -44,7 +44,12 @@ internal static class MemberConverters
             // argument type pins) from the method specifier; doc.GenericArgumentCount is redundant
             // with method.genericArgs.Count and needs no separate action.
             var node = new CallMethodNode(graph, context.FromRef(doc.Method));
-            node.IsPure = doc.Pure;
+
+            if (node.CanSetPure)
+            {
+                node.IsPure = doc.Pure;
+            }
+
             return node;
         }
     }

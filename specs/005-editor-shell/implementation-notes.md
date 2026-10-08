@@ -1714,3 +1714,20 @@ planned G tasks.
 - Tests: both bug tests and the translator test were red first, then green; the golden was created by the first run
   and regenerated after the fixes, so it shows `NewValuePin -> InputDataPins[2]` for the indexer and `SizePin -> throws
   InvalidOperationException`. Public API signatures are unchanged.
+- Verdict (c), confirmed (third suspect, owner-approved): `CallMethodNode.CanSetPure` was always true, so a void call such as
+  `Console.WriteLine` could be marked pure, and a pure node is translated only when a consumer needs one of its outputs, so the
+  call vanished from the generated C# without a warning. Red: the model tests and a translator test (`WriteLine` missing from
+  the code) failed. Fix: `CanSetPure` is true only when the node has a result output data pin, through a private `CallMethodNode.ResultPins` helper (today the return-value pins, never the `Exception` pin, so a void call with Catch wired stays non-pure). When P3 gives pins a declared role and makes out/ref output pins too, that helper becomes the base-class rule over result-role pins. `out`/`ref` arguments do not block purity (owner:
+  when such a write happens is the graph author's responsibility), so `int.TryParse` can be pure, a void method with only an
+  `out` parameter cannot. Loading a file with `pure: true` on a call that cannot be pure no longer throws from `Node.IsPure`: the
+  converter skips the setter, the node loads impure, and `DocumentMapper` adds the warning `NPD010` (`DocumentIssue.PurityIgnored`,
+  tested through the AllNodes fixture with every call forced to `pure: true`). The editor already binds the Pure checkbox's
+  visibility to `NodeViewModel.CanSetPure` and guards its setter; `NodeViewModelTests.PureCheckbox` now covers a void call.
+  The pin-layout golden uses `Math.Abs` for the static call purity variants, and a void static variant stays impure only.
+- Also visible in the golden, not changed: `CallMethodNode.TargetPin` returns `InputDataPins[0]` for a static call, which is its
+  first argument pin.
+- Unconnected `out`/`ref` argument (owner request): an unconnected out pin without an unconnected value already failed with the
+  generic `NPT008`, but one holding an unconnected value (for example `0`) emitted `out 0`, which is invalid C#. Red: both cases
+  failed the new tests. The call and constructor translators now throw `NPT008` ("Connect a variable to out parameter 'result' of
+  ...") for any out/ref argument pin without an incoming connection.
+- The notification-map golden changed deliberately: the reflected `CallMethodNode` there is a void call, so its `IsPure` setter now records `<throws>` instead of the property-changed notification.

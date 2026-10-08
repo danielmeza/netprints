@@ -7,6 +7,7 @@ const NetPrints.Serialization.DocumentIssue.ExtensionNotTrusted = "NPD006" -> st
 const NetPrints.Serialization.DocumentIssue.InvalidIdReassigned = "NPD009" -> string!
 const NetPrints.Serialization.DocumentIssue.LayoutEntryIgnored = "NPD004" -> string!
 const NetPrints.Serialization.DocumentIssue.PinStateDropped = "NPD003" -> string!
+const NetPrints.Serialization.DocumentIssue.PurityIgnored = "NPD010" -> string!
 const NetPrints.Serialization.DocumentIssue.UnknownNodeKind = "NPD001" -> string!
 const NetPrints.Serialization.DocumentIssue.UnknownProfile = "NPD005" -> string!
 const NetPrints.Serialization.Documents.BuiltInNodeKinds.Await = "await" -> string!

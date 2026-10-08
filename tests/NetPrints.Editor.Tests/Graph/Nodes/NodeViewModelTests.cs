@@ -89,7 +89,12 @@ public class NodeViewModelTests(TestEditor editor) : GraphTestBase(editor)
     [Fact]
     public void PureCheckbox()
     {
-        var call = VmOf(new CallMethodNode(Method, ConsoleWriteLine(StringType)));
+        var voidCall = VmOf(new CallMethodNode(Method, ConsoleWriteLine(StringType)));
+        Assert.False(voidCall.CanSetPure);
+        voidCall.IsPure = true;
+        Assert.False(voidCall.Node.IsPure);
+
+        var call = VmOf(new CallMethodNode(Method, FindMethod(typeof(string), "ToUpperInvariant")));
         Assert.True(call.CanSetPure);
         Assert.False(call.IsPure);
         call.IsPure = true;

@@ -37,6 +37,10 @@ namespace NetPrints.Tests.Core
             new("WriteLine", [StringParameter], [], MethodModifiers.Static, MemberVisibility.Public,
                 TypeSpecifier.FromType(typeof(Console)), []);
 
+        private static MethodSpecifier ReturningStaticMethod() =>
+            new("Abs", [new MethodParameter("value", IntType, MethodParameterPassType.Default, false, null)],
+                [IntType], MethodModifiers.Static, MemberVisibility.Public, TypeSpecifier.FromType(typeof(Math)), []);
+
         private static MethodSpecifier InstanceMethod() =>
             new("Substring", [new MethodParameter("start", IntType, MethodParameterPassType.Default, false, null)],
                 [StringType], MethodModifiers.None, MemberVisibility.Public, StringType, []);
@@ -127,7 +131,8 @@ namespace NetPrints.Tests.Core
             AddPurity("ExplicitCastNode", "default", g => new ExplicitCastNode(g));
             AddPurity("TernaryNode", "default", g => new TernaryNode(g));
             AddPurity("AwaitNode", "default", g => new AwaitNode(g));
-            AddPurity("CallMethodNode", "static", g => new CallMethodNode(g, StaticMethod()));
+            AddPurity("CallMethodNode", "static", g => new CallMethodNode(g, ReturningStaticMethod()));
+            AddPurity("CallMethodNode", "static void", g => new CallMethodNode(g, StaticMethod()));
             AddPurity("CallMethodNode", "instance", g => new CallMethodNode(g, InstanceMethod()));
             AddPurity("ConstructorNode", "1 parameter", g =>
                 new ConstructorNode(g, new ConstructorSpecifier([StringParameter], TypeSpecifier.FromType<Exception>())));

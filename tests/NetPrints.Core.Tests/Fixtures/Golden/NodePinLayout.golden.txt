@@ -145,24 +145,34 @@ AwaitNode[default, toggled twice] InputExecPins[0] in.exec.Exec type=- unconnect
 AwaitNode[default, toggled twice] OutputExecPins[0] out.exec.Exec type=- unconnected=-
 AwaitNode[default, toggled twice].ResultPin -> null
 AwaitNode[default, toggled twice].TaskPin -> InputDataPins[0]
-CallMethodNode[static] InputDataPins[0] in.data.value type=System.String unconnected=null
+CallMethodNode[static] InputDataPins[0] in.data.value type=System.Int32 unconnected=null
+CallMethodNode[static] OutputDataPins[0] out.data.Int32 type=System.Int32 unconnected=-
 CallMethodNode[static] InputExecPins[0] in.exec.Exec type=- unconnected=-
 CallMethodNode[static] OutputExecPins[0] out.exec.Exec type=- unconnected=-
 CallMethodNode[static] OutputExecPins[1] out.exec.Catch type=- unconnected=-
 CallMethodNode[static].CatchPin -> OutputExecPins[1]
 CallMethodNode[static].ExceptionPin -> null
 CallMethodNode[static].TargetPin -> InputDataPins[0]
-CallMethodNode[static, toggled] InputDataPins[0] in.data.value type=System.String unconnected=null
+CallMethodNode[static, toggled] InputDataPins[0] in.data.value type=System.Int32 unconnected=null
+CallMethodNode[static, toggled] OutputDataPins[0] out.data.Int32 type=System.Int32 unconnected=-
 CallMethodNode[static, toggled].CatchPin -> null
 CallMethodNode[static, toggled].ExceptionPin -> null
 CallMethodNode[static, toggled].TargetPin -> InputDataPins[0]
-CallMethodNode[static, toggled twice] InputDataPins[0] in.data.value type=System.String unconnected=null
+CallMethodNode[static, toggled twice] InputDataPins[0] in.data.value type=System.Int32 unconnected=null
+CallMethodNode[static, toggled twice] OutputDataPins[0] out.data.Int32 type=System.Int32 unconnected=-
 CallMethodNode[static, toggled twice] InputExecPins[0] in.exec.Exec type=- unconnected=-
 CallMethodNode[static, toggled twice] OutputExecPins[0] out.exec.Exec type=- unconnected=-
 CallMethodNode[static, toggled twice] OutputExecPins[1] out.exec.Catch type=- unconnected=-
 CallMethodNode[static, toggled twice].CatchPin -> OutputExecPins[1]
 CallMethodNode[static, toggled twice].ExceptionPin -> null
 CallMethodNode[static, toggled twice].TargetPin -> InputDataPins[0]
+CallMethodNode[static void] InputDataPins[0] in.data.value type=System.String unconnected=null
+CallMethodNode[static void] InputExecPins[0] in.exec.Exec type=- unconnected=-
+CallMethodNode[static void] OutputExecPins[0] out.exec.Exec type=- unconnected=-
+CallMethodNode[static void] OutputExecPins[1] out.exec.Catch type=- unconnected=-
+CallMethodNode[static void].CatchPin -> OutputExecPins[1]
+CallMethodNode[static void].ExceptionPin -> null
+CallMethodNode[static void].TargetPin -> InputDataPins[0]
 CallMethodNode[instance] InputDataPins[0] in.data.Target type=System.String unconnected=null
 CallMethodNode[instance] InputDataPins[1] in.data.start type=System.Int32 unconnected=null
 CallMethodNode[instance] OutputDataPins[0] out.data.String type=System.String unconnected=-

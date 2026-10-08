@@ -723,6 +723,12 @@ public sealed class DocumentMapper : IDocumentMapper
             Node node = converter.CreateNode(nodeDocument, graph, context);
             string previousId = node.Id;
 
+            if (nodeDocument is CallMethodNodeDocument { Pure: true } && !node.IsPure)
+            {
+                issues.Add(new DocumentIssue(DocumentIssueSeverity.Warning, DocumentIssue.PurityIgnored,
+                    $"Node '{nodeDocument.Id}' is marked pure, but its method returns no value; loaded as impure.", id));
+            }
+
             string documentNodeId = ResolveInvalidNodeId(nodeDocument.Id, $"Node in graph '{graphKey}'", oldToNewNodeId, id, issues);
             node.Id = ResolveDuplicateId('n', documentNodeId, seenNodeIds, $"Node in graph '{graphKey}'", id, issues);
             graph.ReindexNode(node, previousId);

@@ -82,4 +82,10 @@ public sealed record DocumentIssue(DocumentIssueSeverity Severity, string Code, 
     /// text now names the new one, and the document still loaded.
     /// </summary>
     public const string InvalidIdReassigned = "NPD009";
+
+    /// <summary>
+    /// A call-method node was stored as pure, but its method returns no value,
+    /// so it cannot be pure (<c>CallMethodNode.CanSetPure</c>). It was loaded as an impure node.
+    /// </summary>
+    public const string PurityIgnored = "NPD010";
 }
