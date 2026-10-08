@@ -51,8 +51,11 @@ public sealed class GoToAnythingViewModelTests
     private static async Task SearchAsync(GoToAnythingViewModel vm, string text)
     {
         vm.Query = text;
-        await vm.SearchCommand.ExecutionTask!;
+        await Running(vm);
     }
+
+    private static Task Running(GoToAnythingViewModel vm) =>
+        vm.SearchCommand.ExecutionTask ?? throw new InvalidOperationException("No search is running.");
 
     [Fact]
     public async Task ResultsAreGroupedByKindInProviderOrderAndRankedWithinEachGroup()
@@ -163,7 +166,7 @@ public sealed class GoToAnythingViewModelTests
         var vm = Create(provider);
 
         vm.Query = "slow";
-        Task slow = vm.SearchCommand.ExecutionTask!;
+        Task slow = Running(vm);
         await SearchAsync(vm, "fast");
         await slow;
 

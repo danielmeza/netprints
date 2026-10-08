@@ -37,13 +37,6 @@ public static class ViewContributions
             Menu: new MenuPlacement(MenuName, ViewportGroup, 1),
             CommandBarOrder: null));
 
-        registry.AddCommand(new CommandDescriptor(
-            ContributionIds.CommandPrefix + "commandPalette",
-            "Command palette…",
-            new CommandPaletteCommandHandler(),
-            DefaultGestures: ["Ctrl+Shift+P"],
-            Menu: new MenuPlacement(MenuName, FindGroup, 0)));
-
         (string Name, string Label, string PanelId, string Icon)[] panels =
         [
             ("projectTree", "Project", PanelContributions.ProjectTreeId, "FileTree"),
@@ -78,5 +71,12 @@ public static class ViewContributions
                 IconKind: icon,
                 Menu: new MenuPlacement(MenuName, LayoutGroup, order)));
         }
+
+        registry.AddCommand(new CommandDescriptor(
+            ContributionIds.CommandPrefix + "commandPalette",
+            "Command palette…",
+            new CommandPaletteCommandHandler(),
+            DefaultGestures: ["Ctrl+Shift+P"],
+            Menu: new MenuPlacement(MenuName, FindGroup, 0)));
     }
 }
