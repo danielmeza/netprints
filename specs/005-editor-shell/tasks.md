@@ -754,12 +754,12 @@ Contracts: contributions.md, commands.md, shell.md §7. **Independent test**: US
   and so on. For an override: the name and the base signature, read-only, with "Signature comes from
   <BaseType>.<Method>". Then `src/NetPrints.Editor/Events/EventEntryInspectorViewModel.cs`,
   `EventArgumentViewModel.cs` and the view, ids `Inspector.EventEntry.*`.
-- [ ] T086 [US7] [US8] Desktop E2E (2 units). `CommandPaletteTests`: Ctrl+Shift+P, type "comp", Enter compiles.
+- [x] T086 [US7] [US8] Desktop E2E (2 units). `CommandPaletteTests`: Ctrl+Shift+P, type "comp", Enter compiles.
   `GoToAnythingTests`: Ctrl+P and a node title opens the graph with the node selected; Ctrl+click a connection reaches
   its other end; Alt+Left restores the same view; hovering a connection shows the tooltip text.
   `EventEntryInspectorTests` (SC-009): rename a custom event, add two arguments, compile; the C# panel shows the method
   with both parameters; each change undoes in one step. `KeyboardOnlyTests` gains "find a node and go back" (SC-004).
-- [ ] T087 **Checkpoint F**: report SC-009, SC-004 (complete) and SC-003 (complete except the theme commands). Docs
+- [x] T087 **Checkpoint F**: report SC-009, SC-004 (complete) and SC-003 (complete except the theme commands). Docs
   updated: `docs/guide/graph-format.md` (custom event arguments, optional in v1); release notes (navigation; event
   graph renames and entry arguments; "an older editor drops custom event arguments when it saves the graph").
 

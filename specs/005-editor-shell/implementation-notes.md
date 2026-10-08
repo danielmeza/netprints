@@ -1738,6 +1738,40 @@ planned G tasks.
 - Tests, red first as compile errors (the view models and `SetEventArguments` did not exist): `EventEntryInspectorViewModelTests` (11), `EventGraphInspectorTests` (4), `SetEventArgumentsCommandTests` (2), the changed `InspectorPanelViewModelTests` case, and the headless `EventInspectorTests` (3: F2 and rename updates tree and tab and undoes, duplicate refused, entry inspector with add argument and rename). The UI tests were written after the views.
 - Styles: one new selector, `TextBlock.fieldError` (the `Diagnostic.Error.Foreground` token). No snapshots re-recorded.
 
+## F4b (T086 and T087: Desktop E2E for navigation and the event entry inspector, Checkpoint F)
+
+Head 9761b016 plus the commits of this batch. Local, Release: whole suite 3052 tests, 3026 passed, 25 skipped, 1 failed (below, fixed); Desktop E2E with `NETPRINTS_E2E=1 --fail-skips on`: 44 tests, 43 passed, 0 skipped, 1 failed (`StartPageNewProjectTests`, "pin it", a lost click: it fails 1 run in 3 alone and is the unexplained click finding of E4, not touched by this batch).
+
+**T086, the new E2E scenarios (one scenario each, ADR-0006).**
+- `CommandPaletteTests`: Ctrl+Shift+P, "comp" lists Compile, Enter runs it ("Build succeeded").
+- `GoToAnythingTests`: hover the Entry to WriteLine cable (tooltip open, text starts with the two ends); Ctrl+click near the target reaches the source end, Alt+Left restores the viewport; Ctrl+P, "WriteLine", Enter moves the view to the node and Alt+Left restores it.
+- `EventEntryInspectorTests` (SC-009): add an event graph (palette), add a Custom Event from the node search, select it, rename it, add two arguments, compile; the C# panel shows the method with two parameters; three undos in the Edit menu undo the second argument, the first argument and the rename, one step each.
+- `KeyboardOnlyTests` gains "find a node and go back": Ctrl+P, a node title, Enter, Alt+Left, all by keyboard.
+- Harness: `IUiDriver.CtrlClickAsync` (X11: xdotool keydown ctrl, click, keyup in a `finally`; headless: raw Control modifier), `CommandPalettePage`, `GoToAnythingPage`, `CableObject.CtrlClickAtAsync` and `ToolTipAsync`, `GraphCanvas.WaitForViewportAsync`, `InspectorPage.EventEntryArgumentCountAsync`.
+- Product bug found and fixed: go to anything matched `Node.Name` (the internal unique name, `CallMethodNode`) instead of the title the canvas shows (`Node.ToString()`, "Console.WriteLine"), so typing a node's title found nothing in the real editor. Red first: `BuiltInGoToProvidersTests` (the node found by its shown title, and the result title equals it) failed, then passed with the one-line change in `ProjectGoToProvider.ForNode`.
+- Findings, not fixed: (1) after Back removes a node's selection (visible: the green border goes), the automation `IsSelected` of its `ItemContainer` still reads True, so the scenarios assert the viewport after Back, not the selection; the cause is not found (the VM is deselected; the two-way binding to the container did not clear it in the real editor). (2) The Edit menu is taller than the 1000 px test display, so its last items sit under the scroll arrow; clicking "Add event graph" there missed in 1 of 3 runs, so the scenario runs it from the palette instead. (3) A second Ctrl+click target at 0.8 of the cable lands on the node edge, so the scenario clicks at 0.3.
+- Stability: the four classes together 4 of 4 runs green after the palette change (15 to 17 s each); before it, 2 of 3 (the third was the Edit menu miss above).
+- Test `!`: `SourceHygieneTests.NoNullForgivingOperator` lists the pre-existing `!` of `GraphCanvas.cs` by line number; the new member goes at the end of the class so the lines stay.
+
+**Checkpoint F.**
+
+| Item | Result | Tests |
+|---|---|---|
+| SC-009: a custom event renamed and given two arguments produces the renamed method with both parameters; each change undoes in one step | pass (E2E and H) | E2E `EventEntryInspectorTests`; H `EventEntryInspectorViewModelTests`, `SetEventArgumentsCommandTests`, `EventInspectorTests`, `EventArgumentsSerializationTests`, golden `EventArguments.Combat.cs` |
+| SC-004: save, compile, run, stop, undo, redo, switch tabs, find a node and go back without the mouse | pass, complete | E2E `KeyboardOnlyTests` (the graphs are opened with the pointer first, as in D) |
+| SC-003: every built-in action is a registered command; each in a menu and in the palette; the FR-034 shortcuts run their command; 0 conflicts | pass except the theme commands | H `TestContributionSurfaceTests` (registry against the surfaces), `BuiltInCommandTableTests` (the pending list is the three theme commands of T093), `DefaultShortcutTests`; E2E `CommandPaletteTests` |
+
+**What F deferred and changed, by batch.**
+- F1: mouse back and forward buttons are a P6 gesture review item (R9). Back and forward record only graph documents. The two dialogs are modal windows, not canvas popups.
+- F2a: pins keep their own tooltip (the `Pin` target kind has no provider yet); no keyboard way to open a connection's context menu (connections are not focusable); the breadcrumb row shrank the canvas and four snapshot baselines were regenerated.
+- F2b: a contributed panel got no View menu entry (a product bug, fixed); such an entry is a menu entry only, not in the palette or the shortcuts sheet unless the panel registers its own `showPanel` command.
+- F3a: `IMemberReferencingNode` replaced the per-kind rename loops; T082 took 3 units, not 2. `RenameEvent` refuses an override entry and a clash with a method or another entry.
+- F3b: `arguments` is an optional `eventEntry` property written only when a type is not `object`, so every existing file is byte-identical; the load lost declared types in the inference pass (bug found by the round trip, fixed).
+- F4a: opening an event graph shows the graph inspector, an entry inspector shows on selection (the "or its graph is opened" trigger is not its own); retyping or removing an argument does not retarget existing call nodes; F2 on a tree row selects it and renames in the inspector.
+- Still open for the theme commands (T093): SC-003's last part and the theme half of SC-005.
+
+Docs updated: `docs/guide/graph-format.md` (custom event arguments, optional in v1, an older editor drops them), `.github/release-notes.md` (Unreleased: navigation, event graph renames and entry arguments, the go to anything fix).
+
 ## S0 (pin-layout golden and two suspected bugs; owner-approved extra, outside the task list)
 
 - `NodePinLayoutTests` builds every built-in node kind in each variant (impure, pure through `IsPure`, purity toggled twice,

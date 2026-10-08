@@ -16,6 +16,12 @@
 
 **Added:** the editor restores where you were. The window position and size, the panel layout, the open graph tabs, the active tab and each graph's zoom and position come back after a restart; a graph that no longer exists is skipped, and an unreadable or newer state file falls back to the defaults.
 
+**Added:** navigation. **Ctrl+Shift+P** opens the command palette and runs a command by name. **Ctrl+P** goes to anything: graphs, nodes (by the title shown on the canvas), variables and methods of the open project, and commands after a leading `>`. **Ctrl+click** on a connection jumps to the end farther from the click, and the connection's context menu offers Go to source and Go to target. **Alt+Left** and **Alt+Right** go back and forward through where you have been (go to, errors, connection jumps and tab changes). Hovering a connection shows its ends, its type and the documentation of the called method, and each graph shows breadcrumbs (project, class, graph) above the canvas.
+
+**Added:** event graphs can be renamed (F2 or the inspector; a duplicate name is refused) and custom event entries have an inspector with their name and arguments: rename the event, add, remove, reorder, rename and retype arguments, each change one undo step. The generated method has the new name and parameters, and renaming a custom event updates the nodes that call it. Custom event arguments are saved in the graph file as an optional `arguments` property (see the graph file format guide). **An older editor drops custom event arguments when it saves the graph**, so do not open a graph with typed event arguments in an older version.
+
+**Fixed:** go to anything searched the internal names of nodes (such as `CallMethodNode`) instead of the titles shown on the canvas.
+
 ## Downloads
 
 | Platform | File |

@@ -65,6 +65,24 @@ conflict spanning the whole nodes array — see the
 [graph file format contract](../../specs/003-core-refactor/contracts/document-format.md) for the
 full schema, identifier rules and canonical-writing rules behind this.
 
+## Custom event arguments
+
+A custom event entry (`"$kind": "eventEntry"`) can declare arguments. They are written as an optional
+`arguments` array, after `argumentCount`:
+
+```json
+{ "$kind": "eventEntry", "argumentCount": 2, "arguments": [
+  { "name": "amount", "type": { "name": "System.Int32" } },
+  { "name": "source", "type": { "name": "System.String" } } ] }
+```
+
+The property is optional in version 1 and is written only when an argument has a declared type other
+than `object`; an entry without it is written exactly as before, so existing files do not change.
+`argumentCount` is still written, which is what a reader that does not know `arguments` uses: it
+creates that many arguments typed `object`. This means **an older editor drops custom event arguments
+when it saves the graph**: it reads the entry with untyped arguments and writes it back without the
+`arguments` array. An override entry never writes `arguments`; its arguments come from the base method.
+
 ## Version control
 
 Graph files are designed to work well in git: they are text, canonical (deterministic bytes), and
