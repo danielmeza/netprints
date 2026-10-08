@@ -21,6 +21,9 @@
       <sp:WhatsNewTileView />
     </DataTemplate>
   </UserControl.DataTemplates>
+  <UserControl.Resources>
+    <x:Double x:Key="StartPageLogoSize">42</x:Double>
+  </UserControl.Resources>
   <UserControl.Styles>
     <Style Selector="Grid#Columns > StackPanel">
       <Setter Property="Grid.ColumnSpan" Value="2" />
@@ -110,7 +113,8 @@
       <StackPanel Margin="32,24" Spacing="24" MaxWidth="1200" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageContent}">
         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
           <StackPanel Orientation="Horizontal" Spacing="16">
-            <mi:MaterialIcon Kind="HexagonMultiple" Width="42" Height="42" Foreground="{DynamicResource SystemControlHighlightAccentBrush}" VerticalAlignment="Center" />
+            <Image Source="avares://NetPrints.Editor/Assets/NetPrintsLogo.png" Width="{DynamicResource StartPageLogoSize}" Height="{DynamicResource StartPageLogoSize}"
+                   RenderOptions.BitmapInterpolationMode="HighQuality" VerticalAlignment="Center" AutomationProperties.AccessibilityView="Raw" />
             <TextBlock Classes="title" Text="NetPrints" VerticalAlignment="Center" />
             <TextBlock Classes="secondary" VerticalAlignment="Bottom" Margin="0,0,0,8" Text="{Binding Version}"
                        AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageVersion}" />
