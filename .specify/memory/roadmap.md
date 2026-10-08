@@ -204,6 +204,9 @@ contribution registry; the rest in its `research.md`).
   empty-state control, focus and hover tokens, a `Font.Mono` token, high-DPI snapshots, one dialog shell for the new
   dialogs, and a visual contact sheet per sub-phase review. Readable override and overload pickers, "self" on unconnected
   Target pins and every dialog sized to its content (owner decisions 2026-10-08) add about 2 days more. The detailed tasks come in a later batch.
+- **Pin-layout safety net (S0, owner-approved 2026-10-08, outside the task list):** a golden test of every node kind's pin
+  layout (`NodePinLayoutTests`) and the fixes it exposed for `VariableSetterNode.NewValuePin` on indexer setters and
+  `MakeArrayNode.SizePin` outside predefined-size mode. It is the seed for the S4 pin-key tracking below.
 - **Done when:** also docs updated (guides, API reference, ADRs as applicable), including the editor
   guides above.
 
@@ -270,6 +273,17 @@ packages for extension authors. No performance work here (owner decision 2026-09
 - **Build configuration selector (gap research 2026-10-06)** (B23): a Debug/Release selector next to the run profile (the Publish dialog is in P6).
 - **Status-bar item contribution kind (gap research 2026-10-06)** (C-15): added to the contribution registry before P3 publishes it; the
   built-in segments (error and warning counts, build glyph, run state, zoom, selection count) use it.
+- **Attribute-driven code (owner decisions 2026-10-08)**: our own attributes, source generators and analyzers, so node pins,
+  node kinds, commands and display text are declared instead of indexed by hand. Design, decisions and slices:
+  `.agent-archive/2026-10-08-aop-plan/` (outside this repo). Slice names are the design's own (not the S1/S2 batches of the P3a notes). In order, about 25 units for the core path:
+  - **S1** (first P3 batch): analyzer and generator projects, wiring, and the NPS style rules (attribute on its own line, blank line between members).
+  - **S2a, S2b**: typed pins `NodeInputDataPin<T>`/`NodeOutputDataPin<T>`; `[NodeKind]`/`[Pin]`/`[PinType]` and the convention generator (pin key is the property name without the `Pin` suffix); analyzers NPA001-NPA009 with code fixes.
+  - **S4**: pin-key tracking seeded from the S0 golden (NPA010/NPA011), before the renames.
+  - **S3**: the 13 pin property renames plus 2 overrides, a hard break in 0.3.0 with `*REMOVED*` entries and release notes, no `[Obsolete]` shims; file keys do not change.
+  - **L1**: localization infrastructure (stable keys separate from display text, resx, `netprints.language`), before the Extensibility and Serialization packages publish.
+  - **S5, S6**: hygiene analyzers (NPH001-NPH006) and the command analyzer.
+  - **S7** (late P3 or early P6, before B11, B18 and U2): node kinds by convention (inferred document, translator and `On<Pin>` dispatch, generated `AddNodes()`).
+  - Planned ADRs, not yet written: 0024 (analyzer and generator infrastructure), 0025 (declarative node pins by convention), 0026 (node kinds by convention), 0027 (localization: stable keys vs display text). Planned amendments: ADR-0003 (hygiene rules promoted to analyzers), ADR-0007 (XAML rule E7 stays a test), ADR-0020 (label keys, menu ids split from labels), ADR-0023 (Semi and Ursa locale follow the app culture).
 Done when: also docs updated (guides, API reference, ADRs as applicable).
 
 ### P3b — Declarations and code style (owner-approved 2026-09-26)
@@ -644,6 +658,11 @@ for those who want to learn it.
   - Tests: idempotent regeneration and one-method golden pairs, the edit classifier table, watch-output parser fixtures,
     an opt-in integration test of the spike (body edit keeps state, signature edit restarts).
   - Design and prior art: `.agent-archive/2026-10-06-roadmap-gaps/b13-b06-hot-reload-and-traces.md` (outside this repo).
+- **Attribute-driven code, later slices (owner decisions 2026-10-08; design in `.agent-archive/2026-10-08-aop-plan/`, outside this repo):**
+  **L2** moves the existing display strings into resources (about 160 XAML literals, 140 editor C# literals, 40 command labels,
+  22 node titles) and takes the XAML literal ratchet to 0, together with the accessibility items; **S7** (node kinds by
+  convention) starts here if it did not fit late in P3; **L3** (first translation, pseudo-locale snapshot run, RTL check,
+  translator docs) comes when a language is chosen.
 - **Done when:** also docs updated (guides, API reference, ADRs as applicable).
 
 ### P7 — Structured code generation
