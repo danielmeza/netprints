@@ -786,6 +786,12 @@ glyphs contributed by extensions are decided with the P3 contribution API.
   delegate) MUST show "self" when the generated code writes `this` there and `this` is valid: the graph is not
   static, and its class is the member's declaring type or derives from it. Connecting a wire hides it, and the
   generated code is unchanged. A Self node in node search, which gives `this` as a value, is not part of P3a.
+- **FR-097**: Opening node search from a connected execution output MUST NOT change the connection until the user
+  picks a node. Picking MUST replace the connection and add the new node as one undo step. Cancelling (Esc) MUST
+  leave the graph and the undo stack unchanged. A suggestion MUST create a node of its own kind, never a fallback kind.
+- **FR-098**: Adding or removing a pin in a node's editable pin list (make-array elements, method entry and return
+  values) MUST be one undoable step that marks the class dirty, and Undo and Redo MUST restore the pins and their
+  connections.
 
 **Cross-cutting**
 

@@ -1731,3 +1731,28 @@ planned G tasks.
   failed the new tests. The call and constructor translators now throw `NPT008` ("Connect a variable to out parameter 'result' of
   ...") for any out/ref argument pin without an incoming connection.
 - The notification-map golden changed deliberately: the reflected `CallMethodNode` there is a void call, so its `IsPure` setter now records `<throws>` instead of the property-changed notification.
+
+## P3a SOLID decisions (owner, 2026-10-08)
+
+The SOLID review of node search and the extension points (research kept in `.agent-archive/2026-10-08-solid-plan/`,
+outside this repo) ended in these decisions. Only the first group changes P3a; the rest is recorded in the roadmap for P3.
+
+- P3a gets: T094a in G5 (goldens for node search, red and green for the search-cancel bug, the `TypeNode` fallback bug
+  and the pin-list undo bug, and a check of the two latent pin oddities from S0), the `IMemberReferencingNode`
+  amendment to T082 (the event kind is one more implementation) and the header-role convention fallback in T091a
+  (entry nodes Entry, nodes with exec pins Flow, otherwise Pure). New FR-097 and FR-098.
+- Search opened from a connected exec output leaves the connection alone until a node is picked; the pick is one undo
+  step and Esc changes nothing.
+- The internal search refactor (providers, creation service, ranker) is P3 work right after S1, not P3a. Renames then:
+  `SuggestionListViewModel` to `NodeSearchViewModel`, `SuggestionItem` to `SuggestionRowViewModel`.
+- Nodes contribute their own search entries (static metadata for fixed kinds; providers owned by CallMethod, variable,
+  constructor and type kinds); ranking and category order stay host-side; nothing is instantiated per search open.
+- DI in the editor: a hand-written composition root per scope, typed contribution contexts, no container in the editor,
+  MS.DI only in the CLI, nothing resolved per row, node or pin (ADR-0031 planned). Measurements M1–M4 come first.
+- The Extensibility Stairway split (`NetPrints.Extensibility.Abstractions`) happens before the packages publish (ADR-0030).
+- CLI trust: project-declared extensions load in the CLI without a trust check, like analyzers and build tasks; to be
+  documented in the guide and the ADR.
+- M4 trimming ratchet: a non-blocking CI step counts IL2xxx and IL3xxx warnings of `NetPrints.Editor` against
+  `eng/trim-warnings.txt`; the count may only go down.
+- Latent pin oddities left to S3: Ternary input order, a pure ExplicitCast's success/failed pins throw, a static
+  MakeDelegate `TargetPin` throws.

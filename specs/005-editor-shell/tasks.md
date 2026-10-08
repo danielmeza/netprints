@@ -723,12 +723,19 @@ Contracts: contributions.md, commands.md, shell.md §7. **Independent test**: US
   "An event graph named '<name>' already exists"; the generated C# does not change (goldens byte-identical). Then
   `src/NetPrints.Core/Core/EventGraph.cs` and the editor's undoable rename command.
 - [ ] T082 [US8] Custom event entries (2 units). Renaming an entry reuses the rename of Review E R3 (`MemberRename`
-  in Core, one undo step through `EditorCommands`): add an event kind there instead of a second rewrite. Test first in `tests/NetPrints.Core.Tests/`: an entry's name is unique
+  in Core, one undo step through `EditorCommands`). `MemberRename` goes through a new Core interface
+  `IMemberReferencingNode` (`RefersTo(MemberKey)`, `Retarget(MemberKey, newName)` returning the undo; `MemberKey` has
+  a closed `MemberKind` of Method, Variable and Event): `CallMethodNode` (Method and Event), `MakeDelegateNode`
+  (Method) and `VariableNode` (Variable) implement it, and the event kind is one more implementation, not another
+  `switch` arm. `RenameMethod`, `RenameVariable` and the new `RenameEvent` only build the key. The existing Review E R3
+  rename tests stay the characterization; a contract fixture `MemberReferencingNodeContract<TNode>` checks that
+  `RefersTo` flips, the undo restores the state and the serializer round-trips, and a Fx test node implementing the
+  interface is retargeted with no change to `MemberRename`. Test first in `tests/NetPrints.Core.Tests/`: an entry's name is unique
   among the class's methods and entries (P1 FR-027), and a clash is refused with
   "'<name>' is already used by <kind> '<name>'"; `Arguments` (name, `TypeSpecifier`) map to the entry's output pins in
   order, with unique, valid C# identifiers; the translator emits the method with those parameters in that order (a new
   golden fixture, added on purpose and named in the commit). Then `src/NetPrints.Core/Graph/EventEntryNode.cs`, the
-  translator, and Core's `PublicAPI.Unshipped.txt`.
+  translator, the interface and Core's `PublicAPI.Unshipped.txt` (additive API).
 - [ ] T083 [US8] Serialization (2 units). Test first in `tests/NetPrints.Core.Tests/Serialization/`: the arguments are an
   optional property of the entry in graph schema v1 (`schemas/netpc.v1.schema.json`), written in canonical order and
   omitted when empty, so graphs without arguments stay byte-identical; a reader without it works; a fixture with
@@ -862,7 +869,9 @@ add T091b and T092g–T092l the same way.
   `MakeDelegate`, `Type` and pure `Default` nodes; Flow: `Default` with execution pins; Variable: `VariableGetter`,
   `VariableSetter`; Constructor; Throw); each `Node.Header.<Role>` token and `Node.HeaderForeground` resolve in Dark
   and Light, and each pair's contrast ratio (WCAG 2.x relative luminance, computed in the test) is at least 4.5:1;
-  each node header shows its kind's `IconIds` glyph; `Pin.Exec`, `Pin.Data`, `Pin.Type`, `Pin.Bool`, `Pin.Integer`,
+  a node the table does not list gets its role by convention, never `Default` (entry nodes are Entry, a node with exec
+  pins is Flow, any other is Pure; a test node of an unknown kind covers it); each node header shows its kind's
+  `IconIds` glyph; `Pin.Exec`, `Pin.Data`, `Pin.Type`, `Pin.Bool`, `Pin.Integer`,
   `Pin.Float`, `Pin.String`, `Pin.Object`, `Pin.ValueType`, `Pin.Delegate` and `Pin.Generic` resolve in both
   variants, and the three pin kinds use the first three; `Canvas.SelectionBorder`, `Canvas.MarqueeFill`,
   `Canvas.MarqueeBorder` and `Canvas.WireSelected` resolve in both variants, and a selected node's border and the
@@ -1038,7 +1047,7 @@ add T091b and T092g–T092l the same way.
   overloads (`Console.WriteLine` in the sample), open the overloads button, see the current overload marked and
   first, filter and pick another: the node's pins change; Ctrl+Z restores the previous overload.
 
-### Batch G5 — model: sonnet — T093–T095 — 4 units
+### Batch G5 — model: sonnet — T093–T095 (with T094a) — 7 units
 
 - [ ] T093 [US9] Theme (FR-082). Test first in `tests/NetPrints.Editor.Tests/State/EditorSettingsTests.cs` plus a headless
   test: `theme.dark`, `theme.light` and `theme.system` set `RequestedThemeVariant`; the choice is stored as
@@ -1055,6 +1064,33 @@ add T091b and T092g–T092l the same way.
   binding of existing nodes are unchanged, and a graph that uses a hidden member builds and runs with unchanged
   output. Then `src/NetPrints.Reflection/Catalogs/CompositeReflectionProvider.cs`, and Reflection's
   `PublicAPI.Unshipped.txt` if its public API changes.
+- [ ] T094a [US7] Node search safety net and three fixes (3 units, FR-097, FR-098). A characterization pass, then red
+  and green, before T095 edits the search view model. Test first, in `tests/NetPrints.Editor.Tests/Search/`:
+  - Goldens (`NodeSearchGoldenTests.cs`, a small fixture assembly instead of the full runtime): text snapshots of the
+    built rows (`H:Category` / `  Text | Icon`) over graphs {method, constructor, class, event} × pins {none, exec in,
+    exec out, string data in, string data out, type in, int type out}; filter goldens for "for", "write line",
+    "static", "netprints loop" and "zzz", headers included; a creation table (`NodeCreationTableTests.cs`): every
+    built-in suggestion maps to its node type, the dialog calls it makes and what a cancel does (no node, no undo
+    entry), and the table covers the extension `LogNode`, unique Custom Event naming, Override, MakeDelegate, variable
+    to Get/Set, the connection after creation for exec and data pins, clamping of negative positions and Undo/Redo
+    after a search create. `NETPRINTS_UPDATE_SNAPSHOTS=1` updates them; `SearchPerformanceTests` stays the guard. The
+    goldens are written and green against today's code first.
+  - Bug (a), red then green (FR-097): opening the search from a connected exec output does not touch the connection
+    until a node is picked; picking replaces the connection and adds the node as one undo step; Esc changes nothing and
+    records no undo entry. Red today: `OpenAsync` disconnects before the pick, outside the undo stack.
+  - Bug (b), red then green: for every built-in kind with a suggestion, the created node is of the descriptor's
+    `NodeType`. Red today: the `TypeSpecifier` fallback arm of `SelectAsync` creates a `TypeNode` for any suggestion
+    without its own arm.
+  - Bug (c), red then green (FR-098), in `tests/NetPrints.Editor.Tests/UndoRedo/`: adding and removing a pin on a
+    node (`NodeViewModel.cs`, about lines 307–361: the make-array, method-entry and return "+" and "-" buttons)
+    goes through the undo stack: Undo and Redo restore the pins and their connections, and the class is marked
+    dirty. Red today: the change bypasses the stack and does not mark the class dirty.
+  - Caller check: a test or a recorded grep shows that no caller relies on a static `CallMethodNode.TargetPin` (it
+    returns the first argument pin) or on `AwaitNode.ResultPin` (always null). A caller is fixed only if one is wrong,
+    and the commit says which were checked.
+  Then `src/NetPrints.Editor/Search/SuggestionListViewModel.cs` and `src/NetPrints.Editor/Graph/Nodes/NodeViewModel.cs`
+  (the pin-list change as one `ModelOperations` undo entry). This is the safety net the P3 search refactor (SUG1–SUG3)
+  relies on.
 - [ ] T095 [US10] The scoped search's empty state names the hiding catalog (FR-091), through the `EmptyState` control
   (T092e, FR-088): `src/NetPrints.Editor/Search/SuggestionListViewModel.cs` and its view; headless test first.
 
@@ -1107,7 +1143,7 @@ add T091b and T092g–T092l the same way.
 
 - [ ] T100 [US9] [US10] Review sub-phase G: an Opus reviewer who did not implement it reviews the whole diff of batches
   G1–G7 (from the commit before the first batch to HEAD): US9, US10 and FR-100 end to end against spec.md
-  (FR-080–FR-096, FR-100), research R10–R12 and R17, ADR-0007, ADR-0021 (with Amendment 1), ADR-0023 and the
+  (FR-080–FR-098, FR-100), research R10–R12 and R17, ADR-0007, ADR-0021 (with Amendment 1), ADR-0023 and the
   `avalonia-*` skills, the constitution and plan.md's standing constraints. It runs the independent test of the
   phase. Visual review: it downloads the `contact-sheet` artifact of the last G CI run, attaches it to the review,
   and checks icon consistency, contrast, alignment, density, focus rings, the method pickers, both themes and 200 %;
@@ -1249,11 +1285,11 @@ suite, the final review and merge preparation (FR-103, SC-010, every SC).
 | D — lifecycle and feedback | 13 (T048–T060) | D1–D3 sonnet | D-R, D-F |
 | E — start page and persistence | 24 (T061–T073, with T071a–k) | E1–E4, E5a, E5b sonnet | E-R, E-F |
 | F — navigation and event inspector | 16 (T074–T089) | F1–F4 sonnet | F-R, F-F |
-| G — look, search and hygiene | 30 (T090–T101, with T090a–b, T091a–b, T092a–l, T098a–b) | G1, G2, G4a–G4d, G5–G7 sonnet; G3 haiku | G-R, G-F |
+| G — look, search and hygiene | 31 (T090–T101, with T090a–b, T091a–b, T092a–l, T094a, T098a–b) | G1, G2, G4a–G4d, G5–G7 sonnet; G3 haiku | G-R, G-F |
 | H — docs and polish | 13 (T102–T114) | H1–H3 sonnet | H-R, H-F, H-M |
-| **Total** | **144** | 39 | 17 |
+| **Total** | **145** | 39 | 17 |
 
-Sub-phase G is 39 units in ten implementation batches (G1 5, G2 5, G3 3, G4a 3, G4b 3, G4c 4, G4d 3, G5 4, G6 4,
+Sub-phase G is 42 units in ten implementation batches (G1 5, G2 5, G3 3, G4a 3, G4b 3, G4c 4, G4d 3, G5 7, G6 4,
 G7 5). The visual-polish plan (S1, 2026-10-06) took it from 15 to 30 units: its tasks added 14 units and T096 grew
 by one; the roadmap's estimate for that growth is about 5–7 days. The owner decisions of 2026-10-08 (the G spec
 batch) add 9 units: the method pickers T092h–T092l (7 units, which the owner estimates at about 2 days), every
@@ -1324,6 +1360,7 @@ each batch at 2–4 tasks.
 | FR-094 | T092i, T092j, T092k |
 | FR-095 | T092j, T092k, T092l |
 | FR-096 | T091b |
+| FR-097, FR-098 | T094a |
 | FR-100 | T097, T098 |
 | FR-101 | T035 (accessible names, keyboard reach); ids in every view task; checked by every review |
 | FR-102 | T006, T043, T056, T057, T069, T070, T086, T092l, T096 |
