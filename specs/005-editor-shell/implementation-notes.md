@@ -1851,11 +1851,11 @@ Release (3052 tests, 3027 passed, 25 skipped, 0 failed) and the Desktop E2E with
 | Id | Sev | Summary | Batch | Status |
 |---|---|---|---|---|
 | R1 | major | After Back, Forward, go-to or a connection jump deselects a node, its canvas container stays selected and a click no longer selects it | F-F1 | open |
-| R2 | major | No inline rename in the tree; F2 shows the inspector and leaves focus in the tree (FR-070, US8 scenario 1, shell.md §7) | F-F3 | open |
+| R2 | major | No inline rename in the tree; F2 shows the inspector and leaves focus in the tree (FR-070, US8 scenario 1, shell.md §7) | F-F3 | fixed 68b143bb |
 | R3 | major | Argument edits leave the event's calls on the old signature: the class stops compiling, and a later rename misses them | F-F2 | fixed |
 | R4 | minor | `RenameEvent` does not retarget make-delegate nodes of the event | F-F2 | fixed |
 | R5 | minor | Name uniqueness is one-sided: an entry can take a variable's name, a method can take an entry's name | F-F2 | fixed |
-| R6 | minor | "Or its graph is opened" is not a trigger of the entry inspector (FR-071) | F-F3 | open |
+| R6 | minor | "Or its graph is opened" is not a trigger of the entry inspector (FR-071) | F-F3 | fixed 68b143bb |
 | R7 | minor | Entry inspector: Tab after an argument rename loses focus, Enter does not commit | F-F1 | open |
 | R8 | minor | A contributed panel's View entry is a menu-only command outside the registry (synthesize it in the registry) | F-F3 | open |
 | R9 | minor | Go to anything caps node results at 100 before ranking | F-F4 | open |
@@ -1882,3 +1882,10 @@ Release (3052 tests, 3027 passed, 25 skipped, 0 failed) and the Desktop E2E with
 - R4: `MakeDelegateNode.RefersTo` accepts `MemberKind.Event`; contract row `MakeDelegateEventNodeContract` and a rename test were added after the code (written after, not red first). T082's text amended.
 - R5: `MemberNames.ThrowIfTaken` (methods, event entries, variables, class name; a method may overload a method) is used by `RenameMethod`, `RenameVariable` and `RenameEvent`; `MemberNames.Unique` names new methods, variables and custom events. `MemberNamesTests` red before wiring.
 - R14: `EventGraph.Rename` trims and refuses a blank name ("An event graph name cannot be blank"); red before.
+
+### F-F3 (R2, R6, trim ratchet, refused method rename)
+
+- Decision R2: option (a), for event graphs, methods and variables. F2 and the context-menu Rename call `ShellViewModel.RequestInlineRename`; the tree puts the row into edit mode (`IsEditing`, `EditText`, `EditError` on `ProjectTreeItemViewModel`). The name box is focused and selected by `FocusOnVisibleBehavior` and `TextBoxSelectAllOnGotFocusBehavior`; Enter, Escape and lost focus are `ExecuteCommandOn...Behavior`s bound to `CommitEditCommand` and `CancelEditCommand`. Commit goes through `ClassContext.RenameMethod/RenameVariable/RenameEventGraph` (one undo step); a refusal keeps the row editing and shows the message in the row, a blank method or variable name is refused with "A name cannot be blank". Classes and constructors keep the inspector path. No spec amendment. The headless tests are keyboard only (select row, F2, type, Enter; Escape; refused name); the Desktop E2E `TreeInlineRenameTests` ran 3 times green. The first headless run was red only because the rename box had one shared automation id for every row (the query needs exactly one match), so ids are per row (`Tree.rename.<kind>.<name>`).
+- Decision R6: the event graph inspector lists the entries (name, kind, argument count) with a Select button; Select sends `SelectEventEntryMessage`, the inspector panel opens the graph and `RevealNode` selects the entry, so the canvas selection shows the entry inspector. FR-071 amended in spec.md as decided. Headless test `TheEventGraphInspectorListsItsEntriesAndSelectShowsTheEntryInspector` (written with the code, not red first).
+- Trim ratchet: `SignatureChange.DefaultLiteral` no longer calls `Type.GetType`; a static table maps the primitive type names to their defaults. `eng/trim-warnings.sh` reports 14 (baseline unchanged).
+- Refused method rename: `MethodViewModel` and `MemberVariableViewModel` catch the refusal, set `Error` and show it under the name box in the inspector (`Inspectors.Method.Error`, `Inspectors.Variable.Error`) instead of throwing. Tests written with the code (not red first).
