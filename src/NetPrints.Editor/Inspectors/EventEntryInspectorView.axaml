@@ -12,7 +12,11 @@
     <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding Kind}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventEntryInspectorKind}" />
     <TextBlock x:Name="NameLabel" Grid.Row="2" Classes="inspectorLabel" Text="Name" />
     <TextBox Grid.Row="2" Grid.Column="1" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventEntryInspectorName}"
-             AutomationProperties.LabeledBy="{Binding #NameLabel}" IsReadOnly="{Binding IsNameReadOnly}" Text="{Binding Name, UpdateSourceTrigger=LostFocus}" />
+             AutomationProperties.LabeledBy="{Binding #NameLabel}" IsReadOnly="{Binding IsNameReadOnly}" Text="{Binding Name, UpdateSourceTrigger=LostFocus}">
+      <Interaction.Behaviors>
+        <LoseFocusOnEnterBehavior />
+      </Interaction.Behaviors>
+    </TextBox>
     <TextBlock Grid.Row="3" Grid.Column="1" Classes="fieldError" Text="{Binding Error}" IsVisible="{Binding HasError}"
                AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventEntryInspectorError}" />
     <TextBlock Grid.Row="4" Grid.Column="1" Classes="secondary" Text="{Binding BaseSignatureNote}" IsVisible="{Binding IsOverride}"
@@ -28,7 +32,11 @@
           <Grid ColumnDefinitions="*,Auto,Auto,Auto,Auto" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventEntryInspectorArgument}"
                 AutomationProperties.Name="{Binding Name}">
             <TextBox AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventEntryInspectorArgumentName}" AutomationProperties.Name="Argument name"
-                     IsReadOnly="{Binding !IsEditable}" Text="{Binding Name, UpdateSourceTrigger=LostFocus}" />
+                     IsReadOnly="{Binding !IsEditable}" Text="{Binding Name, UpdateSourceTrigger=LostFocus}">
+              <Interaction.Behaviors>
+                <LoseFocusOnEnterBehavior />
+              </Interaction.Behaviors>
+            </TextBox>
             <Button Grid.Column="1" Classes="flat" Content="{Binding TypeName}" ToolTip.Tip="Change type" Command="{Binding ChangeTypeCommand}"
                     AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventEntryInspectorArgumentType}" />
             <Button Grid.Column="2" Classes="icon" ToolTip.Tip="Move up" AutomationProperties.Name="Move argument up" Command="{Binding MoveUpCommand}"

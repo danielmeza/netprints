@@ -100,11 +100,23 @@ public sealed partial class EventEntryInspectorViewModel : ObservableObject, IDi
     /// <summary>Re-reads the entry after an edit, an undo or a redo.</summary>
     public void Refresh()
     {
-        Arguments.Clear();
         IReadOnlyList<EventArgument> arguments = entry.Arguments;
+        while (Arguments.Count > arguments.Count)
+        {
+            Arguments.RemoveAt(Arguments.Count - 1);
+        }
+
         for (int i = 0; i < arguments.Count; i++)
         {
-            Arguments.Add(new EventArgumentViewModel(this, i, arguments[i], IsEditable, i == arguments.Count - 1));
+            bool isLast = i == arguments.Count - 1;
+            if (i < Arguments.Count)
+            {
+                Arguments[i].Update(arguments[i], isLast);
+            }
+            else
+            {
+                Arguments.Add(new EventArgumentViewModel(this, i, arguments[i], IsEditable, isLast));
+            }
         }
 
         OnPropertyChanged(nameof(Name));
