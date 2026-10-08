@@ -1850,24 +1850,24 @@ Release (3052 tests, 3027 passed, 25 skipped, 0 failed) and the Desktop E2E with
 
 | Id | Sev | Summary | Batch | Status |
 |---|---|---|---|---|
-| R1 | major | After Back, Forward, go-to or a connection jump deselects a node, its canvas container stays selected and a click no longer selects it | F-F1 | open |
+| R1 | major | After Back, Forward, go-to or a connection jump deselects a node, its canvas container stays selected and a click no longer selects it | F-F1 | fixed 1e15830b |
 | R2 | major | No inline rename in the tree; F2 shows the inspector and leaves focus in the tree (FR-070, US8 scenario 1, shell.md §7) | F-F3 | fixed 68b143bb |
-| R3 | major | Argument edits leave the event's calls on the old signature: the class stops compiling, and a later rename misses them | F-F2 | fixed |
-| R4 | minor | `RenameEvent` does not retarget make-delegate nodes of the event | F-F2 | fixed |
-| R5 | minor | Name uniqueness is one-sided: an entry can take a variable's name, a method can take an entry's name | F-F2 | fixed |
+| R3 | major | Argument edits leave the event's calls on the old signature: the class stops compiling, and a later rename misses them | F-F2 | fixed 8d27b704 (event half); method parameter edits deferred to T094b |
+| R4 | minor | `RenameEvent` does not retarget make-delegate nodes of the event | F-F2 | fixed 8d27b704 |
+| R5 | minor | Name uniqueness is one-sided: an entry can take a variable's name, a method can take an entry's name | F-F2 | fixed 8d27b704 |
 | R6 | minor | "Or its graph is opened" is not a trigger of the entry inspector (FR-071) | F-F3 | fixed 68b143bb |
-| R7 | minor | Entry inspector: Tab after an argument rename loses focus, Enter does not commit | F-F1 | open |
-| R8 | minor | A contributed panel's View entry is a menu-only command outside the registry (synthesize it in the registry) | F-F4 | fixed |
-| R9 | minor | Go to anything caps node results at 100 before ranking | F-F4 | fixed |
-| R10 | minor | Go to source and Go to target never run from the Go menu or the palette; no keyboard path to connections | F-F4 | fixed; arbitrary connections to P6 GR-1 |
-| R11 | minor | Docs: S0's user-visible changes missing from the release notes; NPD010 missing from the issue table; one contract row wrong | F-F4 | open |
-| R12 | minor | Pre-existing: an await node throws when its task's result type changes while the result is connected | T094a | open |
-| R13 | nit | `MemberKey` compares its parameter list by reference; `default(MemberKey)` has null members | F-F4 | open |
-| R14 | nit | A blank or untrimmed event graph name is accepted | F-F2 | fixed |
-| R15 | nit | Tests: line-number `!` allowlist, E2E that assert around R1 and R2, no `ref` case for NPT008 | F-F1, F-F4 | open |
-| R16 | nit | Event argument names written twice; an invalid name fails the whole class instead of repair and warn | F-F4 | open |
-| R17 | nit | Process: the skill-paths hook never fired for F2a–F4b, which changed files through shell commands | H-R | open |
-| R18 | nit | UI edges: Ctrl+click on macOS, palette and go-to accessibility, `GoToItem` with no action, Edit menu height (T098a) | F-F4 | fixed; cable tooltip/menu notification and Edit menu height open (T098a) |
+| R7 | minor | Entry inspector: Tab after an argument rename loses focus, Enter does not commit | F-F1 | fixed f35d76bf |
+| R8 | minor | A contributed panel's View entry is a menu-only command outside the registry (synthesize it in the registry) | F-F4 | fixed a6d74e82 |
+| R9 | minor | Go to anything caps node results at 100 before ranking | F-F4 | fixed a6d74e82 |
+| R10 | minor | Go to source and Go to target never run from the Go menu or the palette; no keyboard path to connections | F-F4 | fixed a6d74e82; arbitrary connections to P6 GR-1 |
+| R11 | minor | Docs: S0's user-visible changes missing from the release notes; NPD010 missing from the issue table; one contract row wrong | F-F5 | fixed 73f037d4 |
+| R12 | minor | Pre-existing: an await node throws when its task's result type changes while the result is connected | T094a | deferred to T094a |
+| R13 | nit | `MemberKey` compares its parameter list by reference; `default(MemberKey)` has null members | F-F5 | fixed 73f037d4 (value equality; `default` no longer throws in Equals/GetHashCode) |
+| R14 | nit | A blank or untrimmed event graph name is accepted | F-F2 | fixed 8d27b704 |
+| R15 | nit | Tests: line-number `!` allowlist, E2E that assert around R1 and R2, no `ref` case for NPT008 | F-F1, F-F5 | fixed e893d911 (E2E), 73f037d4 (allowlist, `ref`) |
+| R16 | nit | Event argument names written twice; an invalid name fails the whole class instead of repair and warn | F-F5 | fixed 73f037d4 |
+| R17 | nit | Process: the skill-paths hook never fired for F2a–F4b, which changed files through shell commands | H-R | deferred to H-R (hook change for Bash) |
+| R18 | nit | UI edges: Ctrl+click on macOS, palette and go-to accessibility, `GoToItem` with no action, Edit menu height (T098a) | F-F4 | fixed a6d74e82; cable tooltip/menu notification and Edit menu height deferred to T098a |
 
 ### F-F1 (R1, R7, R15 E2E part)
 
@@ -1896,3 +1896,11 @@ Release (3052 tests, 3027 passed, 25 skipped, 0 failed) and the Desktop E2E with
 - R9: `ProjectGoToProvider` collects the node matches, orders them by `MatchRanking.SortKey` and title, then takes 100. `ThePrefixMatchIsNotDroppedByTheNodeLimitInALargeProject` (101 `Box.Mix` plus `Xylo.Run`) was red first.
 - Decision R10: without a parameter, `goToSource` and `goToTarget` act on a single selected node with exactly one connection on the relevant side (incoming for source, outgoing for target) in the active graph; otherwise they are disabled. The dynamic label still appears only with a connection parameter. Two tests (enabled and disabled cases, the jump) were red first. Keyboard access to arbitrary connections (focusable cables or pins) becomes P6 gesture review item GR-1 in the roadmap.
 - R18: Ctrl+click on a connection uses `ConnectionNavigationBehavior.IsGoToModifier` (Meta on macOS; unit-tested, not run on a Mac). Palette rows get `IsEnabled` from the command state (so automation sees a disabled row) and a help text with menu, shortcuts and "unavailable" (`PaletteItem.Description`); go-to rows get the detail as help text and the group headers are `AccessibilityView="Raw"`. `GoToItem` is now a record with an explicit constructor that throws unless exactly one of target and command id is given. Not done: the Edit menu height stays with T098a (not reproduced), and the cable tooltip/menu notification stays unreproduced.
+
+### F-F5 (R11, R13, R15, R16, R12 deferral; T089 closed)
+
+- R11: release notes gain the S0 changes (purity, NPD010, NPT008, indexer setter) and the F-F changes; the "Fixed" go-to line is dropped (the Added line already says titles). `document-format.md` gets NPD010 and NPD011 and the corrected `eventEntry` row (`arguments` only for a custom entry with a non-`object` type).
+- R13: `MemberKey` stays a record struct with an explicit `Equals(MemberKey)` and `GetHashCode` over the parameter sequence (null `Parameters` counts as empty). `MemberKeyTests`: equal-by-value, not equal on order or count, `default` safe. Written red first (the equal-by-value case failed).
+- R15: the `!` allowlist is keyed by file plus the trimmed text of the line (`NullForgivingOffenders`); same 21 sites. `TheNullForgivingAllowlistSurvivesAShiftedLineButNotAChangedOne` proves it. `UnconnectedRefArgumentIsATranslationErrorNotBrokenCSharp` covers `ref` (green at once: the code already handled it; coverage only). The constructor case of `RequireVariablesForByRefArguments` is still not covered.
+- R16: Decision: the canonical form changes on purpose. `arguments[].name` is no longer written; the names are the argument pins' names in `pins`. A file that still has `name` loads. A name that is not a valid, unique identifier is repaired (pin name, else `InputN`) with the new warning `NPD011` (`EventConverters.ResolveNames`, reported by `DocumentMapper`) instead of failing the class. The EventArguments fixture and the schema (`name` optional) were updated; `EventArgumentsSerializationTests` has three new cases (the first needed `NPD011`, so it did not compile before the code). `EventEntryNode.IsValidArgumentName` is new public API. Not handled: a pin name that is itself invalid still wins on read, as before.
+- R12 stays in T094a (text now names it); R17 stays with H-R. T089 ticked. Whole suite 3110 tests (3084 passed, 26 skipped, 0 failed); Desktop E2E with `--fail-skips on`: 45 of 45, no flakes.
