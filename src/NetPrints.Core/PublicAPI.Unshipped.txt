@@ -39,3 +39,34 @@ NetPrints.Core.MethodSpecifier.WithName(string! name) -> NetPrints.Core.MethodSp
 static NetPrints.Core.GraphKeys.AllGraphs(NetPrints.Core.ClassGraph! cls) -> System.Collections.Generic.IEnumerable<NetPrints.Core.NodeGraph!>!
 static NetPrints.Core.MemberRename.RenameMethod(System.Collections.Generic.IEnumerable<NetPrints.Core.ClassGraph!>! classes, NetPrints.Core.MethodGraph! method, string! newName) -> NetPrints.Core.RenameResult!
 static NetPrints.Core.MemberRename.RenameVariable(System.Collections.Generic.IEnumerable<NetPrints.Core.ClassGraph!>! classes, NetPrints.Core.Variable! variable, string! newName) -> NetPrints.Core.RenameResult!
+NetPrints.Graph.CallMethodNode.RefersTo(NetPrints.Graph.MemberKey member) -> bool
+NetPrints.Graph.CallMethodNode.Retarget(NetPrints.Graph.MemberKey member, string! newName) -> System.Action!
+NetPrints.Graph.IMemberReferencingNode
+NetPrints.Graph.IMemberReferencingNode.RefersTo(NetPrints.Graph.MemberKey member) -> bool
+NetPrints.Graph.IMemberReferencingNode.Retarget(NetPrints.Graph.MemberKey member, string! newName) -> System.Action!
+NetPrints.Graph.MakeDelegateNode.RefersTo(NetPrints.Graph.MemberKey member) -> bool
+NetPrints.Graph.MakeDelegateNode.Retarget(NetPrints.Graph.MemberKey member, string! newName) -> System.Action!
+NetPrints.Graph.MemberKey
+NetPrints.Graph.MemberKey.DeclaringType.get -> NetPrints.Core.TypeSpecifier!
+NetPrints.Graph.MemberKey.DeclaringType.init -> void
+NetPrints.Graph.MemberKey.Deconstruct(out NetPrints.Graph.MemberKind Kind, out NetPrints.Core.TypeSpecifier! DeclaringType, out string! Name, out System.Collections.Generic.IReadOnlyList<NetPrints.Core.BaseType!>! Parameters) -> void
+NetPrints.Graph.MemberKey.Equals(NetPrints.Graph.MemberKey other) -> bool
+NetPrints.Graph.MemberKey.Kind.get -> NetPrints.Graph.MemberKind
+NetPrints.Graph.MemberKey.Kind.init -> void
+NetPrints.Graph.MemberKey.MemberKey(NetPrints.Graph.MemberKind Kind, NetPrints.Core.TypeSpecifier! DeclaringType, string! Name, System.Collections.Generic.IReadOnlyList<NetPrints.Core.BaseType!>! Parameters) -> void
+NetPrints.Graph.MemberKey.MemberKey() -> void
+NetPrints.Graph.MemberKey.Name.get -> string!
+NetPrints.Graph.MemberKey.Name.init -> void
+NetPrints.Graph.MemberKey.Parameters.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Core.BaseType!>!
+NetPrints.Graph.MemberKey.Parameters.init -> void
+NetPrints.Graph.MemberKind
+NetPrints.Graph.MemberKind.Event = 2 -> NetPrints.Graph.MemberKind
+NetPrints.Graph.MemberKind.Method = 0 -> NetPrints.Graph.MemberKind
+NetPrints.Graph.MemberKind.Variable = 1 -> NetPrints.Graph.MemberKind
+NetPrints.Graph.VariableNode.RefersTo(NetPrints.Graph.MemberKey member) -> bool
+NetPrints.Graph.VariableNode.Retarget(NetPrints.Graph.MemberKey member, string! newName) -> System.Action!
+~override NetPrints.Graph.MemberKey.Equals(object obj) -> bool
+override NetPrints.Graph.MemberKey.GetHashCode() -> int
+~override NetPrints.Graph.MemberKey.ToString() -> string
+static NetPrints.Graph.MemberKey.operator !=(NetPrints.Graph.MemberKey left, NetPrints.Graph.MemberKey right) -> bool
+static NetPrints.Graph.MemberKey.operator ==(NetPrints.Graph.MemberKey left, NetPrints.Graph.MemberKey right) -> bool

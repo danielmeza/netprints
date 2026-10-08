@@ -31,40 +31,8 @@ public static class MemberRename
         ArgumentNullException.ThrowIfNull(newName);
         TypeSpecifier declaringType = (method.Class ?? throw new ArgumentException("The method does not belong to a class.", nameof(method))).Type;
         string oldName = method.Name;
-        List<BaseType> parameters = method.ArgumentTypes.ToList();
-        List<Action> reverts = [];
-
-        bool Refers(MethodSpecifier specifier) =>
-            specifier.Name == oldName && specifier.DeclaringType == declaringType && specifier.ArgumentTypes.SequenceEqual(parameters);
-
-        foreach (Node node in NodesOf(classes))
-        {
-            switch (node)
-            {
-                case CallMethodNode call when Refers(call.MethodSpecifier):
-                    {
-                        MethodSpecifier before = call.MethodSpecifier;
-                        call.Retarget(before.WithName(newName));
-                        reverts.Add(() => call.Retarget(before));
-                        break;
-                    }
-
-                case MakeDelegateNode makeDelegate when Refers(makeDelegate.MethodSpecifier):
-                    {
-                        MethodSpecifier before = makeDelegate.MethodSpecifier;
-                        makeDelegate.Retarget(before.WithName(newName));
-                        reverts.Add(() => makeDelegate.Retarget(before));
-                        break;
-                    }
-            }
-        }
-
-        method.Name = newName;
-        return new RenameResult(() =>
-        {
-            method.Name = oldName;
-            reverts.ForEach(revert => revert());
-        });
+        var key = new MemberKey(MemberKind.Method, declaringType, oldName, method.ArgumentTypes.ToList());
+        return Rename(classes, key, newName, () => method.Name = newName, () => method.Name = oldName);
     }
 
     /// <summary>
@@ -82,22 +50,23 @@ public static class MemberRename
         ArgumentNullException.ThrowIfNull(newName);
         TypeSpecifier declaringType = (variable.Class ?? throw new ArgumentException("The variable does not belong to a class.", nameof(variable))).Type;
         string oldName = variable.Name;
+        var key = new MemberKey(MemberKind.Variable, declaringType, oldName, []);
+        return Rename(classes, key, newName, () => variable.Name = newName, () => variable.Name = oldName);
+    }
+
+    private static RenameResult Rename(IEnumerable<ClassGraph> classes, MemberKey key, string newName, Action applyOwnName, Action revertOwnName)
+    {
         List<Action> reverts = [];
 
-        foreach (Node node in NodesOf(classes))
+        foreach (IMemberReferencingNode node in NodesOf(classes).OfType<IMemberReferencingNode>().Where(node => node.RefersTo(key)))
         {
-            if (node is VariableNode { Variable: { Scope: VariableScope.Member } before } access
-                && before.Name == oldName && before.DeclaringType == declaringType)
-            {
-                access.Retarget(new VariableSpecifier(newName, before.Type, before.GetterVisibility, before.SetterVisibility, before.DeclaringType, before.Modifiers));
-                reverts.Add(() => access.Retarget(before));
-            }
+            reverts.Add(node.Retarget(key, newName));
         }
 
-        variable.Name = newName;
+        applyOwnName();
         return new RenameResult(() =>
         {
-            variable.Name = oldName;
+            revertOwnName();
             reverts.ForEach(revert => revert());
         });
     }

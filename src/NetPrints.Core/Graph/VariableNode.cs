@@ -8,7 +8,7 @@ namespace NetPrints.Graph
     /// <summary>
     /// Abstract class for variable nodes.
     /// </summary>
-    public abstract partial class VariableNode : Node
+    public abstract partial class VariableNode : Node, IMemberReferencingNode
     {
         /// <summary>
         /// Target object of this variable node.
@@ -131,6 +131,21 @@ namespace NetPrints.Graph
             }
 
             Variable = variable;
+        }
+
+        /// <inheritdoc />
+        public bool RefersTo(MemberKey member) =>
+            member.Kind == MemberKind.Variable
+            && Variable.Scope == VariableScope.Member
+            && Variable.Name == member.Name
+            && Variable.DeclaringType == member.DeclaringType;
+
+        /// <inheritdoc />
+        public Action Retarget(MemberKey member, string newName)
+        {
+            VariableSpecifier before = Variable;
+            Retarget(new VariableSpecifier(newName, before.Type, before.GetterVisibility, before.SetterVisibility, before.DeclaringType, before.Modifiers));
+            return () => Retarget(before);
         }
     }
 }

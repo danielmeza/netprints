@@ -11,7 +11,7 @@ namespace NetPrints.Graph
     /// <summary>
     /// Node representing a method call.
     /// </summary>
-    public partial class CallMethodNode : ExecNode
+    public partial class CallMethodNode : ExecNode, IMemberReferencingNode
     {
         private const string ExceptionPinName = "Exception";
         private const string CatchPinName = "Catch";
@@ -60,6 +60,21 @@ namespace NetPrints.Graph
             }
 
             MethodSpecifier = specifier;
+        }
+
+        /// <inheritdoc />
+        public bool RefersTo(MemberKey member) =>
+            member.Kind is MemberKind.Method or MemberKind.Event
+            && MethodSpecifier.Name == member.Name
+            && MethodSpecifier.DeclaringType == member.DeclaringType
+            && MethodSpecifier.ArgumentTypes.SequenceEqual(member.Parameters);
+
+        /// <inheritdoc />
+        public Action Retarget(MemberKey member, string newName)
+        {
+            MethodSpecifier before = MethodSpecifier;
+            Retarget(before.WithName(newName));
+            return () => Retarget(before);
         }
 
         /// <summary>

@@ -9,7 +9,7 @@ namespace NetPrints.Graph
     /// <summary>
     /// Node representing the creation of a delegate (method pointer).
     /// </summary>
-    public partial class MakeDelegateNode : Node
+    public partial class MakeDelegateNode : Node, IMemberReferencingNode
     {
         /// <summary>
         /// Specifier describing the method the delegate is created for.
@@ -35,6 +35,21 @@ namespace NetPrints.Graph
             }
 
             MethodSpecifier = specifier;
+        }
+
+        /// <inheritdoc />
+        public bool RefersTo(MemberKey member) =>
+            member.Kind == MemberKind.Method
+            && MethodSpecifier.Name == member.Name
+            && MethodSpecifier.DeclaringType == member.DeclaringType
+            && MethodSpecifier.ArgumentTypes.SequenceEqual(member.Parameters);
+
+        /// <inheritdoc />
+        public Action Retarget(MemberKey member, string newName)
+        {
+            MethodSpecifier before = MethodSpecifier;
+            Retarget(before.WithName(newName));
+            return () => Retarget(before);
         }
 
         /// <summary>
