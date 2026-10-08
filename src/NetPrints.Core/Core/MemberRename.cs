@@ -7,7 +7,7 @@ using NetPrints.Graph;
 namespace NetPrints.Core;
 
 /// <summary>
-/// Renames a method or a member variable and every node of the project that points at it. Nodes keep a
+/// Renames a method, a member variable or a custom event and every node of the project that points at it. Nodes keep a
 /// specifier copy of the member they use, so a plain name change leaves them on the old name.
 /// </summary>
 /// <remarks>
@@ -52,6 +52,44 @@ public static class MemberRename
         string oldName = variable.Name;
         var key = new MemberKey(MemberKind.Variable, declaringType, oldName, []);
         return Rename(classes, key, newName, () => variable.Name = newName, () => variable.Name = oldName);
+    }
+
+    /// <summary>
+    /// Renames the custom event <paramref name="entry"/> and retargets every call node of
+    /// <paramref name="classes"/> that refers to it.
+    /// </summary>
+    /// <param name="classes">The classes whose graphs may call the event (the whole project).</param>
+    /// <param name="entry">Custom event entry to rename; it must belong to a class.</param>
+    /// <param name="newName">The new name; no other method or entry of the class may use it.</param>
+    /// <returns>A handle that reverts the rename.</returns>
+    /// <exception cref="InvalidOperationException"><paramref name="entry"/> overrides a base method, so its name is fixed.</exception>
+    /// <exception cref="ArgumentException">The entry has no class, or <paramref name="newName"/> is used by a method or another entry of the class.</exception>
+    public static RenameResult RenameEvent(IEnumerable<ClassGraph> classes, EventEntryNode entry, string newName)
+    {
+        ArgumentNullException.ThrowIfNull(classes);
+        ArgumentNullException.ThrowIfNull(entry);
+        ArgumentNullException.ThrowIfNull(newName);
+
+        if (entry.OverriddenMethod is not null)
+        {
+            throw new InvalidOperationException("An override entry's name comes from the base method.");
+        }
+
+        ClassGraph cls = entry.Graph.Class ?? throw new ArgumentException("The event does not belong to a class.", nameof(entry));
+        string oldName = entry.EventName;
+
+        if (cls.Methods.FirstOrDefault(method => method.Name == newName) is { } clashingMethod)
+        {
+            throw new ArgumentException($"'{newName}' is already used by method '{clashingMethod.Name}'", nameof(newName));
+        }
+
+        if (cls.EventGraphs.SelectMany(graph => graph.Entries).FirstOrDefault(other => !ReferenceEquals(other, entry) && other.EventName == newName) is { } clashingEntry)
+        {
+            throw new ArgumentException($"'{newName}' is already used by event '{clashingEntry.EventName}'", nameof(newName));
+        }
+
+        var key = new MemberKey(MemberKind.Event, cls.Type, oldName, entry.Arguments.Select(argument => (BaseType)argument.Type).ToList());
+        return Rename(classes, key, newName, () => entry.EventName = newName, () => entry.EventName = oldName);
     }
 
     private static RenameResult Rename(IEnumerable<ClassGraph> classes, MemberKey key, string newName, Action applyOwnName, Action revertOwnName)

@@ -722,7 +722,7 @@ Contracts: contributions.md, commands.md, shell.md §7. **Independent test**: US
   undoable change; a name used by another event graph of the class is refused with
   "An event graph named '<name>' already exists"; the generated C# does not change (goldens byte-identical). Then
   `src/NetPrints.Core/Core/EventGraph.cs` and the editor's undoable rename command.
-- [ ] T082 [US8] Custom event entries (2 units). Renaming an entry reuses the rename of Review E R3 (`MemberRename`
+- [x] T082 [US8] Custom event entries (2 units). Renaming an entry reuses the rename of Review E R3 (`MemberRename`
   in Core, one undo step through `EditorCommands`). `MemberRename` goes through a new Core interface
   `IMemberReferencingNode` (`RefersTo(MemberKey)`, `Retarget(MemberKey, newName)` returning the undo; `MemberKey` has
   a closed `MemberKind` of Method, Variable and Event): `CallMethodNode` (Method and Event), `MakeDelegateNode`

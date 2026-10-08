@@ -1,6 +1,9 @@
 #nullable enable
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
+using Microsoft.CodeAnalysis.CSharp;
 using NetPrints.Core;
 
 namespace NetPrints.Graph
@@ -128,6 +131,60 @@ namespace NetPrints.Graph
             }
 
             return base.GetPinKeyName(pin);
+        }
+
+        /// <summary>
+        /// The entry's arguments, in order: the name and type of each output data pin. A pin whose type is not a
+        /// plain <see cref="TypeSpecifier"/> reads as <see cref="object"/>.
+        /// </summary>
+        public IReadOnlyList<EventArgument> Arguments =>
+            OutputDataPins.Select(pin => new EventArgument(pin.Name, pin.PinType.Value as TypeSpecifier ?? TypeSpecifier.FromType<object>())).ToList();
+
+        /// <summary>
+        /// Replaces the custom event's arguments. The output pins follow in order: pins that stay keep their
+        /// connections, extra ones are disconnected and removed, missing ones are added.
+        /// </summary>
+        /// <param name="arguments">The new arguments; names are valid C# identifiers and unique.</param>
+        /// <exception cref="InvalidOperationException">This is an override entry, whose arguments come from the base method.</exception>
+        /// <exception cref="ArgumentException">A name is not a valid identifier or is used twice; nothing changes.</exception>
+        public void SetArguments(IReadOnlyList<EventArgument> arguments)
+        {
+            ArgumentNullException.ThrowIfNull(arguments);
+
+            if (OverriddenMethod is not null)
+            {
+                throw new InvalidOperationException("An override entry's arguments come from the base method.");
+            }
+
+            HashSet<string> seen = [];
+            foreach (EventArgument argument in arguments)
+            {
+                if (!SyntaxFacts.IsValidIdentifier(argument.Name) || SyntaxFacts.GetKeywordKind(argument.Name) != SyntaxKind.None)
+                {
+                    throw new ArgumentException($"'{argument.Name}' is not a valid C# identifier", nameof(arguments));
+                }
+
+                if (!seen.Add(argument.Name))
+                {
+                    throw new ArgumentException($"The argument name '{argument.Name}' is used twice", nameof(arguments));
+                }
+            }
+
+            while (OutputDataPins.Count > arguments.Count)
+            {
+                RemoveArgument();
+            }
+
+            while (OutputDataPins.Count < arguments.Count)
+            {
+                AddArgument();
+            }
+
+            for (int i = 0; i < arguments.Count; i++)
+            {
+                OutputDataPins[i].Name = arguments[i].Name;
+                OutputDataPins[i].PinType.Value = arguments[i].Type;
+            }
         }
 
         /// <summary>

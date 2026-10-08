@@ -31,6 +31,10 @@ const NetPrints.Core.ExperimentalApiIds.UrlFormat = "https://danielmeza.github.i
 [NPXE0003]NetPrints.Translator.TranslationEnvironment.Deconstruct(out NetPrints.Translator.NodeTranslatorRegistry! Nodes, out System.Collections.Generic.IReadOnlyList<NetPrints.Translator.IClassEmitter!>! ClassEmitters, out System.Collections.Generic.IReadOnlyList<NetPrints.Translator.IMemberEmitter!>! MemberEmitters) -> void
 NetPrints.Core.EventGraph.Rename(string! newName) -> NetPrints.Core.RenameResult!
 NetPrints.Core.MemberRename
+static NetPrints.Core.MemberRename.RenameEvent(System.Collections.Generic.IEnumerable<NetPrints.Core.ClassGraph!>! classes, NetPrints.Graph.EventEntryNode! entry, string! newName) -> NetPrints.Core.RenameResult!
+NetPrints.Graph.EventArgument
+NetPrints.Graph.EventEntryNode.Arguments.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Graph.EventArgument!>!
+NetPrints.Graph.EventEntryNode.SetArguments(System.Collections.Generic.IReadOnlyList<NetPrints.Graph.EventArgument!>! arguments) -> void
 NetPrints.Core.RenameResult
 NetPrints.Core.RenameResult.Undo() -> void
 NetPrints.Graph.CallMethodNode.Retarget(NetPrints.Core.MethodSpecifier! specifier) -> void
@@ -70,3 +74,16 @@ override NetPrints.Graph.MemberKey.GetHashCode() -> int
 ~override NetPrints.Graph.MemberKey.ToString() -> string
 static NetPrints.Graph.MemberKey.operator !=(NetPrints.Graph.MemberKey left, NetPrints.Graph.MemberKey right) -> bool
 static NetPrints.Graph.MemberKey.operator ==(NetPrints.Graph.MemberKey left, NetPrints.Graph.MemberKey right) -> bool
+NetPrints.Graph.EventArgument.<Clone>$() -> NetPrints.Graph.EventArgument!
+NetPrints.Graph.EventArgument.Deconstruct(out string! Name, out NetPrints.Core.TypeSpecifier! Type) -> void
+NetPrints.Graph.EventArgument.Equals(NetPrints.Graph.EventArgument? other) -> bool
+NetPrints.Graph.EventArgument.EventArgument(string! Name, NetPrints.Core.TypeSpecifier! Type) -> void
+NetPrints.Graph.EventArgument.Name.get -> string!
+NetPrints.Graph.EventArgument.Name.init -> void
+NetPrints.Graph.EventArgument.Type.get -> NetPrints.Core.TypeSpecifier!
+NetPrints.Graph.EventArgument.Type.init -> void
+override NetPrints.Graph.EventArgument.Equals(object? obj) -> bool
+override NetPrints.Graph.EventArgument.GetHashCode() -> int
+override NetPrints.Graph.EventArgument.ToString() -> string!
+static NetPrints.Graph.EventArgument.operator !=(NetPrints.Graph.EventArgument? left, NetPrints.Graph.EventArgument? right) -> bool
+static NetPrints.Graph.EventArgument.operator ==(NetPrints.Graph.EventArgument? left, NetPrints.Graph.EventArgument? right) -> bool

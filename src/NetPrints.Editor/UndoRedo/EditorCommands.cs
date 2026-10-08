@@ -283,6 +283,18 @@ public static class EditorCommands
             () => (result ?? throw new InvalidOperationException(NoDoActionMessage)).Undo());
     }
 
+    /// <summary>
+    /// Renames the custom event <paramref name="entry"/> and every call node in <paramref name="classes"/> that
+    /// refers to it (<see cref="MemberRename.RenameEvent"/>); undo reverses both.
+    /// </summary>
+    public static IUndoableCommand RenameEvent(IReadOnlyList<ClassGraph> classes, EventEntryNode entry, string newName)
+    {
+        RenameResult? result = null;
+        return new DelegateUndoableCommand("Rename event",
+            () => result = MemberRename.RenameEvent(classes, entry, newName),
+            () => (result ?? throw new InvalidOperationException(NoDoActionMessage)).Undo());
+    }
+
     /// <summary>Renames <paramref name="graph"/> (<see cref="EventGraph.Rename"/>); undo restores the name.</summary>
     public static IUndoableCommand RenameEventGraph(EventGraph graph, string newName)
     {
