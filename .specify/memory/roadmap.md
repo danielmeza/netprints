@@ -202,7 +202,8 @@ contribution registry; the rest in its `research.md`).
   family behind an icon id (replacing the raster icons; family chosen in an ADR; `THIRD-PARTY-NOTICES`), the semantic
   node-header palette and kind glyph, pin-type, density and motion tokens, the app mark, selection and wire tokens, an
   empty-state control, focus and hover tokens, a `Font.Mono` token, high-DPI snapshots, one dialog shell for the new
-  dialogs, and a visual contact sheet per sub-phase review. The detailed tasks come in a later batch.
+  dialogs, and a visual contact sheet per sub-phase review. Readable override and overload pickers, "self" on unconnected
+  Target pins and every dialog sized to its content (owner decisions 2026-10-08) add about 2 days more. The detailed tasks come in a later batch.
 - **Done when:** also docs updated (guides, API reference, ADRs as applicable), including the editor
   guides above.
 
@@ -437,6 +438,7 @@ for those who want to learn it.
 - Curated catalogs per profile (builds on P2 catalog profiles), high-level nodes, class
   templates (e.g. a new class comes with its lifecycle/event entry points ready).
 - Pin-type colors, automatic conversion nodes when linking compatible types.
+- A Self node in node search that gives `this` as a value, as Unreal's Self node (a new serialized node kind).
 - Per-node error markers (from P1 diagnostics mapping), collapse selection to function/macro,
   comment boxes/regions (the underlying `Comment`/`Summary` fields and their emission as XML docs are in P3b).
 - Live C# side-by-side view synced with the graph selection (builds on the P1 AvaloniaEdit view).
@@ -495,7 +497,7 @@ for those who want to learn it.
     not done in P3a sub-phase H).
   - Visual: connection styling, exec versus data wires and a thickness token (C-9); the behaviour halves of the node
     palette (C-2), pin-type colouring (C-3), wire brightening and selection count (C-8), compact/comfortable density and
-    zoom-level detail (C-10), and motion with a reduce-motion setting (C-13); the old dialogs adopt the dialog shell (C-14);
+    zoom-level detail (C-10), and motion with a reduce-motion setting (C-13); the old dialogs other than Override method, which P3a G moved, adopt the dialog shell (C-14);
     the custom title bar (C-5) is already planned above (L1).
 - **Snippet library (gap research 2026-10-06)** (B20, size M, about 5 days for v1). Builds on copy/paste as text: a snippet is the
   same canonical JSON fragment plus a small header. Not a function or macro: it is an unlinked copy (use collapse to function
