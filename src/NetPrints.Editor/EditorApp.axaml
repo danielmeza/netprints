@@ -7,6 +7,7 @@
              xmlns:docking="clr-namespace:NetPrints.Editor.Shell.Docking"
              xmlns:edbehaviors="clr-namespace:NetPrints.Editor.Behaviors"
              xmlns:edgraph="clr-namespace:NetPrints.Editor.Graph"
+             xmlns:ednav="clr-namespace:NetPrints.Editor.Navigation"
              xmlns:shell="clr-namespace:NetPrints.Editor.Shell"
              xmlns:edstart="clr-namespace:NetPrints.Editor.StartPage"
              xmlns:edinspectors="clr-namespace:NetPrints.Editor.Inspectors"
@@ -39,14 +40,31 @@
       </ContentControl>
     </DataTemplate>
     <DataTemplate DataType="shell:GraphDocumentViewModel" x:DataType="shell:GraphDocumentViewModel">
-      <Panel>
+      <Grid RowDefinitions="Auto,*">
         <Interaction.Behaviors>
           <edbehaviors:ScopedCommandKeysBehavior Scope="Graph" Invoker="{Binding Invoker}" />
           <edbehaviors:CommandKeyBindingsBehavior Invoker="{Binding Invoker}" />
           <edbehaviors:GraphViewportBehavior Document="{Binding}" />
         </Interaction.Behaviors>
-        <edgraph:GraphEditorView DataContext="{Binding Graph}" />
-      </Panel>
+        <ItemsControl Grid.Row="0" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.Breadcrumbs}" AutomationProperties.Name="Breadcrumbs"
+                      ItemsSource="{Binding Breadcrumbs.Segments}">
+          <ItemsControl.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Orientation="Horizontal" />
+            </ItemsPanelTemplate>
+          </ItemsControl.ItemsPanel>
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="ednav:BreadcrumbSegmentViewModel">
+              <StackPanel Orientation="Horizontal">
+                <Button Classes="breadcrumb" Content="{Binding Name}" Command="{Binding RevealCommand}"
+                        AutomationProperties.AutomationId="{x:Static ed:AutomationIds.BreadcrumbSegment}" AutomationProperties.Name="{Binding Name}" />
+                <TextBlock Classes="breadcrumbSeparator" Text="›" IsVisible="{Binding !IsLast}" AutomationProperties.AccessibilityView="Raw" />
+              </StackPanel>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+        <edgraph:GraphEditorView Grid.Row="1" DataContext="{Binding Graph}" />
+      </Grid>
     </DataTemplate>
     <DataTemplate DataType="shell:ProjectSettingsDocumentViewModel" x:DataType="shell:ProjectSettingsDocumentViewModel">
       <shell:ProjectSettingsView />

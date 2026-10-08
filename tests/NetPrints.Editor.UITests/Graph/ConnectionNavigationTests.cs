@@ -94,7 +94,7 @@ public class ConnectionNavigationTests
                 ?? throw new InvalidOperationException("The cable has no context menu.");
             Assert.True(menu.IsOpen);
             MenuItem[] items = [.. Enumerable.Range(0, menu.ItemCount).Select(i => Assert.IsType<MenuItem>(menu.ContainerFromIndex(i)))];
-            Assert.Equal([$"Go to source ({cable.Source.Node.Name}.{cable.Source.Pin.Name})", $"Go to target ({cable.Target.Node.Name}.{cable.Target.Pin.Name})"], items.Select(item => (string)item.Header!));
+            Assert.Equal([$"Go to source ({cable.Source.Node.Name}.{cable.Source.Pin.Name})", $"Go to target ({cable.Target.Node.Name}.{cable.Target.Pin.Name})"], items.Select(item => item.Header as string));
             Assert.False(session.GraphViewModel.Search.IsOpen);
 
             items[1].Command?.Execute(null);

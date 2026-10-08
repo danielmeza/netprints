@@ -533,6 +533,16 @@ public static class AutomationIds
     /// Prefix of a connection context menu entry's automation id: the command id follows.
     /// </summary>
     public const string ConnectionMenuPrefix = "Connection.Menu.";
+
+    /// <summary>
+    /// The breadcrumbs above a graph document.
+    /// </summary>
+    public const string Breadcrumbs = "Breadcrumbs.Bar";
+
+    /// <summary>
+    /// One breadcrumb segment (the project, the class or the graph); its name is the segment's text.
+    /// </summary>
+    public const string BreadcrumbSegment = "Breadcrumbs.Segment";
     /// <summary>
     /// Tree item kind of the project.
     /// </summary>

@@ -5,6 +5,7 @@ using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Contributions.BuiltIn;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Inspectors;
+using NetPrints.Editor.Navigation;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.Shell.Docking;
 using NetPrints.Editor.StartPage;
@@ -131,7 +132,8 @@ internal sealed class ShellHost : IDisposable
                 return new ProjectSettingsDocumentViewModel(session, context);
             case DocumentKind.Graph:
                 return CommandTargets.GraphOf(session, id) is { } graph && CommandTargets.ClassOf(graph) is { } cls
-                    ? GraphDocumentFactory.Open(id, graph, session.ContextFor(cls).Services, cls, session, shell.Commands)
+                    ? GraphDocumentFactory.Open(id, graph, session.ContextFor(cls).Services, cls, session, shell.Commands,
+                        graphModel => shell.Layout is IShell api ? new BreadcrumbsViewModel(session.Project, graphModel, shell, BreadcrumbsViewModel.RevealInTree(shell, api)) : null)
                     : null;
             default:
                 return null;

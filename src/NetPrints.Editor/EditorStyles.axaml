@@ -138,6 +138,19 @@
     <Setter Property="Margin" Value="4" />
   </Style>
 
+  <!-- Breadcrumbs above a graph (FR-065): flat 24 px buttons separated by a chevron. -->
+  <Style Selector="Button.breadcrumb">
+    <Setter Property="Background" Value="Transparent" />
+    <Setter Property="BorderThickness" Value="0" />
+    <Setter Property="MinHeight" Value="24" />
+    <Setter Property="Padding" Value="6,0" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+  <Style Selector="TextBlock.breadcrumbSeparator">
+    <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+    <Setter Property="VerticalAlignment" Value="Center" />
+  </Style>
+
   <Style Selector="TextBlock.header">
     <Setter Property="FontSize" Value="24" />
     <Setter Property="HorizontalAlignment" Value="Center" />

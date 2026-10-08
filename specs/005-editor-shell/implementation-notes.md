@@ -1691,6 +1691,16 @@ planned G tasks.
   green), so those tests were green on first run.
 - Deferred: mouse buttons for history stay a P6 gesture review item (R9); Ctrl+click on connections is F2 (T077).
 
+## F2a (T077 to T079: connection navigation, tooltip providers, breadcrumbs)
+
+- T077: `ConnectionEnds.Farther` is the pure function (ties go to the target). `goToSource` and `goToTarget` are registered in `GoContributions` (scope Graph, Go menu group `connection`, plus the `Connection` context-menu items) and share `GoToConnectionEndCommandHandler`; they run only with a `ConnectionViewModel` as the command parameter, so their Go menu rows stay disabled and the label (`Go to source (Node.pin)`) is dynamic. `CommandInvoker` and `CommandEntryViewModel` gained an optional parameter for this. The connection reaches the invoker through `NodeGraphViewModel.Commands`, which `GraphDocumentViewModel.Invoker` sets.
+- Ctrl+click is `ConnectionNavigationBehavior` (no code-behind). The same behavior opens the connection's context menu on a right click without a drag, because the Nodify editor captures the pointer on right press and the connection never receives the release; `GraphEditorView.axaml.cs` only changed to stop opening the node search over a connection. No new E7 allowlist entry.
+- T078: `ConnectionTooltipProvider` (Order 0) registered by `TooltipContributions`; `TooltipResolver` takes the first non-null content in `Order`, reached through `CommandInvoker.TooltipFor`. The documentation is the existing call-node summary of each end (`NodeViewModel.ToolTip`), prefixed with the node name. The tooltip is bound as `ToolTip.Tip` on the connection; pins keep their own tooltip (the `Pin` target kind has no provider yet).
+- T079: `BreadcrumbsViewModel` (Project, Class, Graph; the class graph shows only two segments) is created by `GraphDocumentFactory` from `ShellHost` and shown above the canvas by the graph document template in `EditorApp.axaml`. A segment reveals its model through `ProjectTreePanelViewModel.Select` after showing the Project panel. Renames refresh through `ShellViewModel.ModelRenamed` and property changes of the models.
+- Tests: T077 and T079 unit tests were written before the code and seen red (compile errors, via stash of `src`); the T077 UI tests were seen red against the missing behavior and menu. The T078 provider tests and the breadcrumb UI tests were written first but their red run was not observed separately (T078 and the UI tests went straight to green).
+- Snapshots: the breadcrumb row (24 px) shrinks the canvas, so `canvas-every-node-kind`, `canvas-preview-cable`, `editor-shell-main` and `search-popup` baselines were regenerated; the other baselines are unchanged.
+- Deferred: tooltips for the `Pin` target through providers, and a keyboard way to open a connection's context menu (connections are not focusable yet).
+
 ## S0 (pin-layout golden and two suspected bugs; owner-approved extra, outside the task list)
 
 - `NodePinLayoutTests` builds every built-in node kind in each variant (impure, pure through `IsPure`, purity toggled twice,

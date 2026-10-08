@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Core;
 using NetPrints.Editor.Graph;
+using NetPrints.Editor.Navigation;
 
 namespace NetPrints.Editor.Shell;
 
@@ -37,6 +38,9 @@ public sealed partial class GraphDocumentViewModel : DocumentViewModel, IViewpor
     /// <summary>Gets or sets the invoker the canvas runs the graph-scope key bindings through, or null.</summary>
     [ObservableProperty]
     public partial CommandInvoker? Invoker { get; set; }
+
+    /// <summary>Gets the breadcrumbs shown above the canvas, or null when the document has none (set by the factory).</summary>
+    public BreadcrumbsViewModel? Breadcrumbs { get; init; }
 
     /// <summary>Gets or sets the canvas location in graph units.</summary>
     [ObservableProperty]

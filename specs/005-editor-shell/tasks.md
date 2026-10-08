@@ -700,14 +700,14 @@ Contracts: contributions.md, commands.md, shell.md §7. **Independent test**: US
 
 ### Batch F2 — model: sonnet — T077–T080 — 5 units
 
-- [ ] T077 [US7] Connection navigation. Test first: the end farther from the click point is a pure function with its own
+- [x] T077 [US7] Connection navigation. Test first: the end farther from the click point is a pure function with its own
   test; Ctrl+click on a connection moves the view there, selects that node and records history; the connection
   context menu offers `goToSource` and `goToTarget`, labelled with the node and the pin. The gesture lives in
   code-behind only if no behavior fits, and is then listed for E7 (T097).
-- [ ] T078 [P] [US7] Tooltip providers. Test first: `tests/NetPrints.Editor.Tests/Navigation/ConnectionTooltipProviderTests.cs`:
+- [x] T078 [P] [US7] Tooltip providers. Test first: `tests/NetPrints.Editor.Tests/Navigation/ConnectionTooltipProviderTests.cs`:
   `Node.pin → Node.pin`, the data type or "execution", and the documentation of the members on both ends when
   available (`DocumentationUtil`); providers are asked in `Order`, and the first non-null content wins.
-- [ ] T079 [P] [US7] Breadcrumbs. Test first: `tests/NetPrints.Editor.Tests/Navigation/BreadcrumbsViewModelTests.cs`:
+- [x] T079 [P] [US7] Breadcrumbs. Test first: `tests/NetPrints.Editor.Tests/Navigation/BreadcrumbsViewModelTests.cs`:
   Project › Class › Graph above each graph document, updated on renames; choosing a segment reveals it in the project
   tree. Ids `Breadcrumbs.*`.
 - [ ] T080 [US4] `tests/NetPrints.Editor.UITests/Contributions/TestContributionSurfaceTests.cs` (2 units; US4 scenario 6,
