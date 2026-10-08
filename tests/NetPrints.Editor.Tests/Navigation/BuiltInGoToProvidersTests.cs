@@ -75,10 +75,23 @@ public sealed class BuiltInGoToProvidersTests : IAsyncDisposable
         Node node = method.Nodes.First();
         IGoToProvider provider = RegistryFor(session).GoToProviders.Single(p => p.Kind == GoToKinds.Nodes);
 
-        GoToItem found = (await SearchAsync(provider, node.Name)).First(item => item.Target?.NodeId == node.Id);
+        GoToItem found = (await SearchAsync(provider, node.ToString())).First(item => item.Target?.NodeId == node.Id);
+
+        Assert.Equal(node.ToString(), found.Title);
 
         Assert.Equal(DocumentId.Graph(session.ClassPathOf(cls), DocumentId.MethodKeyPrefix + method.Id), found.Target?.Document);
         Assert.Empty(await SearchAsync(provider, ""));
+    }
+
+    [Fact]
+    public async Task ACallNodeIsFoundByTheTitleItShowsOnTheCanvas()
+    {
+        ProjectSessionViewModel session = await rig.OpenSessionAsync();
+        MethodGraph method = session.Project.Classes[0].Methods.First();
+        CallMethodNode call = method.Nodes.OfType<CallMethodNode>().First();
+        IGoToProvider provider = RegistryFor(session).GoToProviders.Single(p => p.Kind == GoToKinds.Nodes);
+
+        Assert.Contains(await SearchAsync(provider, call.MethodSpecifier.Name), item => item.Target?.NodeId == call.Id);
     }
 
     [Fact]

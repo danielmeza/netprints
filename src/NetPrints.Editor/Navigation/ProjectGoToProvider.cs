@@ -58,7 +58,7 @@ public sealed class ProjectGoToProvider(string kind, Func<ProjectSessionViewMode
 
     private GoToItem? ForNode(ProjectSessionViewModel open, NodeGraph graph, Node node) =>
         CommandTargets.GraphDocumentOf(open, graph) is { } id
-            ? new GoToItem(Kind, node.Name, (CommandTargets.ClassOf(graph)?.Name ?? "") + " › " + GraphNames.Of(graph), new NavigationTarget(id, node.Id))
+            ? new GoToItem(Kind, node.ToString(), (CommandTargets.ClassOf(graph)?.Name ?? "") + " › " + GraphNames.Of(graph), new NavigationTarget(id, node.Id))
             : null;
 
     private GoToItem? ForVariable(ProjectSessionViewModel open, ClassGraph cls, Variable variable)
