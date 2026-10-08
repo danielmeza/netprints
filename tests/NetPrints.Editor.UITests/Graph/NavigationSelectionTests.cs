@@ -25,7 +25,7 @@ public class NavigationSelectionTests
         var method = (MethodGraph)session.GraphViewModel.Graph;
         var write = session.GraphViewModel.Nodes.Single(n => n.Node is CallMethodNode);
         var node = session.GraphViewModel.Nodes.Single(n => n.Node == method.MainReturnNode);
-        node.Location = new GraphPoint(write.Location.X + 440, write.Location.Y);
+        node.Location = new GraphPoint(write.Location.X + 416, write.Location.Y);
         await session.WaitForRenderedAsync(Token);
         return (session, write, node, session.GraphViewModel.Connections.Single(c => c.Target.Node == node));
     }

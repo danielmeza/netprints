@@ -28,7 +28,11 @@ public class CanvasPaletteTests
 
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
+    public static Application App => Application.Current ?? throw new InvalidOperationException("No application.");
+
     public static TheoryData<string> Variants() => ["Dark", "Light"];
+
+    public static NodeViewModel ModelOf(NodeView view) => view.DataContext as NodeViewModel ?? throw new InvalidOperationException("A node view without its view model.");
 
     public static TheoryData<string, string> RolesByVariant()
     {
@@ -110,7 +114,7 @@ public class CanvasPaletteTests
     public async Task EachHeaderShowsItsRoleColourAndKindGlyphInBothVariants(string variant)
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
-        Application.Current!.RequestedThemeVariant = VariantOf(variant);
+        App.RequestedThemeVariant = VariantOf(variant);
         try
         {
             var views = session.Window.GetVisualDescendants().OfType<NodeView>().ToList();
@@ -129,7 +133,7 @@ public class CanvasPaletteTests
         }
         finally
         {
-            Application.Current.RequestedThemeVariant = ThemeVariant.Dark;
+            App.RequestedThemeVariant = ThemeVariant.Dark;
         }
     }
 
@@ -139,7 +143,7 @@ public class CanvasPaletteTests
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
 
         var roles = session.Window.GetVisualDescendants().OfType<NodeView>()
-            .ToDictionary(v => ((NodeViewModel)v.DataContext!).Node.Name, v => v.GetVisualDescendants().OfType<Border>().Single(b => b.Name == "Header").Classes.Contains("role-entry"));
+            .ToDictionary(v => ModelOf(v).Node.Name, v => v.GetVisualDescendants().OfType<Border>().Single(b => b.Name == "Header").Classes.Contains("role-entry"));
 
         Assert.True(roles["MethodEntryNode"]);
         Assert.True(roles["ReturnNode"]);
@@ -151,7 +155,7 @@ public class CanvasPaletteTests
     public async Task TheThreePinKindsUseTheFirstThreePinTokens(string variant)
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
-        Application.Current!.RequestedThemeVariant = VariantOf(variant);
+        App.RequestedThemeVariant = VariantOf(variant);
         try
         {
             var shapes = session.Window.GetVisualDescendants().OfType<Shape>().Where(s => s.Classes.Contains("pin")).ToList();
@@ -177,7 +181,7 @@ public class CanvasPaletteTests
         }
         finally
         {
-            Application.Current.RequestedThemeVariant = ThemeVariant.Dark;
+            App.RequestedThemeVariant = ThemeVariant.Dark;
         }
     }
 
@@ -186,7 +190,7 @@ public class CanvasPaletteTests
     public async Task ASelectedNodeUsesTheSelectionBorderToken(string variant)
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
-        Application.Current!.RequestedThemeVariant = VariantOf(variant);
+        App.RequestedThemeVariant = VariantOf(variant);
         try
         {
             NodeViewModel node = session.GraphViewModel.Nodes.First(n => !n.IsRerouteNode);
@@ -201,7 +205,7 @@ public class CanvasPaletteTests
         }
         finally
         {
-            Application.Current.RequestedThemeVariant = ThemeVariant.Dark;
+            App.RequestedThemeVariant = ThemeVariant.Dark;
         }
     }
 
@@ -210,7 +214,7 @@ public class CanvasPaletteTests
     public async Task TheMarqueeUsesTheMarqueeTokens(string variant)
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
-        Application.Current!.RequestedThemeVariant = VariantOf(variant);
+        App.RequestedThemeVariant = VariantOf(variant);
         try
         {
             NodifyEditor editor = session.Window.GetVisualDescendants().OfType<NodifyEditor>().Single();
@@ -229,7 +233,7 @@ public class CanvasPaletteTests
         }
         finally
         {
-            Application.Current.RequestedThemeVariant = ThemeVariant.Dark;
+            App.RequestedThemeVariant = ThemeVariant.Dark;
         }
     }
 

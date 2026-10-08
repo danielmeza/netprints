@@ -35,10 +35,10 @@ public class TargetPinSelfViewTests
         var variable = session.ClassContext.Variables.Single().Variable.Specifier;
         var getter = session.GraphViewModel.AddNode<VariableGetterNode>(new GraphPoint(28, 280), null, variable);
         await session.WaitForRenderedAsync(Token);
-        Application.Current!.RequestedThemeVariant = CanvasPaletteTests.VariantOf(variant);
+        CanvasPaletteTests.App.RequestedThemeVariant = CanvasPaletteTests.VariantOf(variant);
         try
         {
-            NodeView view = session.Window.GetVisualDescendants().OfType<NodeView>().Single(v => ((NodeViewModel)v.DataContext!).Node == getter);
+            NodeView view = session.Window.GetVisualDescendants().OfType<NodeView>().Single(v => CanvasPaletteTests.ModelOf(v).Node == getter);
             var hints = view.GetVisualDescendants().OfType<TextBlock>().Where(t => t.Classes.Contains("pinHint") && t.IsEffectivelyVisible).ToList();
 
             TextBlock hint = Assert.Single(hints);
@@ -53,7 +53,7 @@ public class TargetPinSelfViewTests
         }
         finally
         {
-            Application.Current.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Dark;
+            CanvasPaletteTests.App.RequestedThemeVariant = Avalonia.Styling.ThemeVariant.Dark;
         }
     }
 
