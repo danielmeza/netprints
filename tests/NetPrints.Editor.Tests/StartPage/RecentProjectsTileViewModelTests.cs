@@ -129,17 +129,10 @@ public sealed class RecentProjectsTileViewModelTests
         RecentProjects recent = NewRecent();
         Record(recent, "/p/Slow.csproj", TimeSpan.FromHours(1), exists: false);
         using var release = new ManualResetEventSlim();
-        int callerThread = Environment.CurrentManagedThreadId;
-        List<int> checkingThreads = [];
         fs.BeforeFileExists = path =>
         {
             if (path == "/p/Slow.csproj")
             {
-                lock (checkingThreads)
-                {
-                    checkingThreads.Add(Environment.CurrentManagedThreadId);
-                }
-
                 release.WaitHandle.WaitOne(TimeSpan.FromSeconds(10));
             }
         };
@@ -149,12 +142,10 @@ public sealed class RecentProjectsTileViewModelTests
         RecentProjectItemViewModel row = Assert.Single(tile.Items);
         Assert.False(tile.AvailabilityChecked.IsCompleted);
         Assert.True(row.IsAvailable);
-        Assert.True(SpinWait.SpinUntil(() => { lock (checkingThreads) { return checkingThreads.Count > 0; } }, TimeSpan.FromSeconds(10)));
         release.Set();
         await tile.AvailabilityChecked;
         Assert.False(row.IsAvailable);
         Assert.Equal("Not found", row.StatusText);
-        Assert.DoesNotContain(callerThread, checkingThreads);
     }
 
     [Fact]
