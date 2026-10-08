@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
+using NetPrints.Editor.Events;
 using NetPrints.Editor.Inspectors;
 using NetPrints.Editor.UndoRedo;
 
@@ -40,7 +41,15 @@ public sealed partial class MemberVariableViewModel : ObservableObject, IDisposa
     /// <summary>A snapshot of the variable's specifier.</summary>
     public VariableSpecifier Specifier => Variable.Specifier;
 
-    /// <summary>The variable's name.</summary>
+    /// <summary>Gets the reason the last name was refused, or null when it was accepted.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasError))]
+    public partial string? Error { get; private set; }
+
+    /// <summary>Gets a value indicating whether the last name was refused.</summary>
+    public bool HasError => Error is not null;
+
+    /// <summary>The variable's name. A refused name leaves the variable as it was and sets <see cref="Error"/>.</summary>
     public string Name
     {
         get => Variable.Name;
@@ -48,8 +57,18 @@ public sealed partial class MemberVariableViewModel : ObservableObject, IDisposa
         {
             if (Variable.Name != value)
             {
-                rename(Variable, value);
+                try
+                {
+                    rename(Variable, value);
+                    Error = null;
+                }
+                catch (ArgumentException refused)
+                {
+                    Error = RefusalMessage.Of(refused);
+                }
             }
+
+            OnPropertyChanged();
         }
     }
 

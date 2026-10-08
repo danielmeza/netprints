@@ -28,6 +28,12 @@ public static class AutomationIds
     /// </summary>
     public const string VariableInspector = "Inspectors.Variable";
 
+    /// <summary>The refused-name message of the method inspector.</summary>
+    public const string MethodInspectorError = "Inspectors.Method.Error";
+
+    /// <summary>The refused-name message of the variable inspector.</summary>
+    public const string VariableInspectorError = "Inspectors.Variable.Error";
+
     /// <summary>The event graph inspector pane.</summary>
     public const string EventGraphInspector = "Inspector.EventGraph";
 

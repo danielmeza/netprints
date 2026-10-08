@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Core;
+using NetPrints.Editor.Events;
 using NetPrints.Editor.Inspectors;
 
 namespace NetPrints.Editor.ClassEditor;
@@ -34,7 +35,15 @@ public sealed partial class MethodViewModel : ObservableObject, IDisposable
     /// <summary>Whether the wrapped graph is a <see cref="ConstructorGraph"/>.</summary>
     public bool IsConstructor => Graph is ConstructorGraph;
 
-    /// <summary>Name; read-only for constructors.</summary>
+    /// <summary>Gets the reason the last name was refused, or null when it was accepted.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasError))]
+    public partial string? Error { get; private set; }
+
+    /// <summary>Gets a value indicating whether the last name was refused.</summary>
+    public bool HasError => Error is not null;
+
+    /// <summary>Name; read-only for constructors. A refused name leaves the method as it was and sets <see cref="Error"/>.</summary>
     public string Name
     {
         get => Graph is MethodGraph method ? method.Name : Graph.ToString() ?? "";
@@ -48,9 +57,19 @@ public sealed partial class MethodViewModel : ObservableObject, IDisposable
                 }
                 else
                 {
-                    rename(method, value);
+                    try
+                    {
+                        rename(method, value);
+                        Error = null;
+                    }
+                    catch (ArgumentException refused)
+                    {
+                        Error = RefusalMessage.Of(refused);
+                    }
                 }
             }
+
+            OnPropertyChanged();
         }
     }
 

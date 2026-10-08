@@ -57,6 +57,38 @@ public class ClassContextMembersTests(TestEditor editor) : IAsyncLifetime
     }
 
     [Fact]
+    public void ARefusedMethodRenameShowsTheMessageInsteadOfThrowing()
+    {
+        context.CreateVariable();
+        var method = context.Methods[0];
+        string taken = context.Variables[0].Name;
+
+        method.Name = taken;
+
+        Assert.True(method.HasError);
+        Assert.Contains(taken, method.Error, StringComparison.Ordinal);
+        Assert.NotEqual(taken, ((MethodGraph)method.Graph).Name);
+        method.Name = "Fresh";
+        Assert.False(method.HasError);
+    }
+
+    [Fact]
+    public void ARefusedVariableRenameShowsTheMessageInsteadOfThrowing()
+    {
+        context.CreateVariable();
+        context.CreateVariable();
+        var second = context.Variables[1];
+        string taken = context.Variables[0].Name;
+
+        second.Name = taken;
+
+        Assert.True(second.HasError);
+        Assert.NotEqual(taken, second.Variable.Name);
+        second.Name = "Fresh";
+        Assert.False(second.HasError);
+    }
+
+    [Fact]
     public void CreateConstructorIsPublic()
     {
         ConstructorGraph created = context.CreateConstructor();
