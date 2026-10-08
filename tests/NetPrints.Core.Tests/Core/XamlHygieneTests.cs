@@ -131,8 +131,11 @@ namespace NetPrints.Tests.Core
                 return false;
             }
 
-            return HexColorPattern.IsMatch(trimmed) || NamedColorPattern.IsMatch(trimmed);
+            return trimmed.Split([' ', ',', '\t', '\n', '\r'], StringSplitOptions.RemoveEmptyEntries)
+                .Any(token => HexColorPattern.IsMatch(token) || NamedColorPattern.IsMatch(token));
         }
+
+        private static readonly HashSet<string> ColorTextElements = new(StringComparer.Ordinal) { "BoxShadows", "Color", "SolidColorBrush" };
 
         /// <summary>Scans for E2 offenders. A key names the element, the attribute and the literal, never a line,
         /// so editing above an allowlisted literal neither breaks nor widens the entry.</summary>
@@ -148,6 +151,16 @@ namespace NetPrints.Tests.Core
                     if (IsUnderThemeDictionaries(element))
                     {
                         continue;
+                    }
+
+                    if (ColorTextElements.Contains(element.Name.LocalName) && !element.HasElements && IsColorLiteral(element.Value))
+                    {
+                        string textKey = $"{file.RelativePath}:{element.Name.LocalName}.#text={element.Value.Trim()}";
+                        seen.Add(textKey);
+                        if (!allowlist.ContainsKey(textKey))
+                        {
+                            offenders.Add($"{file.RelativePath}:{LineOf(element)}: {textKey}");
+                        }
                     }
 
                     if (element.Name.LocalName == "Setter")
@@ -376,6 +389,195 @@ namespace NetPrints.Tests.Core
             Assert.True(themeKeys.Count > 0, "Expected at least one ThemeDictionaries key (EditorStyles.axaml).");
             Assert.Empty(offenders);
         }
+
+        [Fact]
+        public void E2_StyleFilesAndBoxShadowsAreScannedForColorLiterals()
+        {
+            string[] styleFiles = [.. LoadAxamlFiles().Select(f => f.RelativePath).Where(p => p.Contains("/Styles/", StringComparison.Ordinal) || p.EndsWith("Styles.axaml", StringComparison.Ordinal))];
+            Assert.NotEmpty(styleFiles);
+
+            var none = new Dictionary<string, string>(StringComparer.Ordinal);
+            (List<string> inStyles, _) = ScanColorLiterals(
+                [Synthetic("src/NetPrints.Editor/Shell/Docking/DockStyles.axaml", "<Styles><Style Selector=\"Border\"><Setter Property=\"Background\" Value=\"#FF112233\" /><Setter Property=\"BoxShadow\" Value=\"0 4 12 0 Black\" /></Style></Styles>")], none);
+            Assert.Equal(2, inStyles.Count);
+
+            (List<string> shadow, _) = ScanColorLiterals([Synthetic("src/X/ViewStyles.axaml", "<Styles><Border BoxShadow=\"0 4 12 0 #40000000\" /></Styles>")], none);
+            Assert.Single(shadow);
+
+            (List<string> text, _) = ScanColorLiterals([Synthetic("src/X/ViewStyles.axaml", "<ResourceDictionary><BoxShadows x:Key=\"A\" xmlns:x=\"http://schemas.microsoft.com/winfx/2006/xaml\">0 4 12 0 #40000000</BoxShadows></ResourceDictionary>")], none);
+            Assert.Single(text);
+
+            (List<string> themed, _) = ScanColorLiterals([Synthetic("src/X/ViewStyles.axaml", "<ResourceDictionary><ResourceDictionary.ThemeDictionaries><ResourceDictionary x:Key=\"Dark\" xmlns:x=\"http://schemas.microsoft.com/winfx/2006/xaml\"><BoxShadows x:Key=\"A\">0 4 12 0 #40000000</BoxShadows></ResourceDictionary></ResourceDictionary.ThemeDictionaries></ResourceDictionary>")], none);
+            Assert.Empty(themed);
+        }
+
+        [Fact]
+        public void NoNumericAncestorLevelSelectors()
+        {
+            var offenders = new List<string>();
+            foreach (AxamlFile file in LoadAxamlFiles())
+            {
+                offenders.AddRange(FindNumericAncestorLevels(file));
+            }
+
+            Assert.Empty(offenders);
+        }
+
+        [Fact]
+        public void NumericAncestorLevelsAreFlaggedInPlantedBindings()
+        {
+            AxamlFile planted = Synthetic("src/X/V.axaml", "<UserControl><Button Command=\"{Binding $parent[Border;2].DataContext.Go}\" /><Button Tag=\"{Binding RelativeSource={RelativeSource AncestorType=Grid, AncestorLevel=2}}\" /><Button Command=\"{Binding $parent[ListBox].DataContext.Go}\" /></UserControl>");
+            Assert.Equal(2, FindNumericAncestorLevels(planted).Count());
+        }
+
+        private static IEnumerable<string> FindNumericAncestorLevels(AxamlFile file) =>
+            file.Document.Descendants().SelectMany(e => e.Attributes())
+                .Where(a => NumericAncestorLevelPattern.IsMatch(a.Value))
+                .Select(a => $"{file.RelativePath}:{LineOf(a)}: {a.Value}");
+
+        /// <summary>Dialog windows (<c>*Dialog.axaml</c> with a <c>Window</c> root) size to their content, per the
+        /// "Layout and look" dialog anatomy in the avalonia-styling skill. Keyed by file path; the reason is why the
+        /// fixed size stays. Entries are legacy fixed sizes: remove one when its dialog moves to SizeToContent.</summary>
+        private static readonly Dictionary<string, string> DialogSizingAllowlist = new(StringComparer.Ordinal)
+        {
+            ["src/NetPrints.Editor/Dialogs/AboutDialog.axaml"] = "legacy fixed size, non-resizable",
+            ["src/NetPrints.Editor/Dialogs/ConfirmDialog.axaml"] = "legacy fixed size, non-resizable",
+            ["src/NetPrints.Editor/Dialogs/IssuesDialog.axaml"] = "list dialog",
+            ["src/NetPrints.Editor/Dialogs/KeyboardShortcutsDialog.axaml"] = "list dialog",
+            ["src/NetPrints.Editor/Dialogs/NewProjectDialog.axaml"] = "legacy fixed size",
+            ["src/NetPrints.Editor/Dialogs/RecoverDialog.axaml"] = "legacy fixed size, non-resizable",
+            ["src/NetPrints.Editor/Dialogs/SampleTargetDialog.axaml"] = "legacy fixed size, non-resizable",
+            ["src/NetPrints.Editor/Dialogs/SelectMethodDialog.axaml"] = "legacy fixed size",
+            ["src/NetPrints.Editor/Dialogs/SelectTypeDialog.axaml"] = "legacy fixed size",
+            ["src/NetPrints.Editor/Dialogs/TrustDialog.axaml"] = "list dialog",
+            ["src/NetPrints.Editor/Dialogs/UnsavedChangesDialog.axaml"] = "legacy fixed size, non-resizable",
+            ["src/NetPrints.Editor/References/ReferencesDialog.axaml"] = "list dialog",
+        };
+
+        private static bool SizesToContent(AxamlFile file) =>
+            file.Document.Root?.Attribute("SizeToContent") is { } size && !string.Equals(size.Value, "Manual", StringComparison.Ordinal);
+
+        private static bool IsDialogWindow(AxamlFile file) =>
+            file.RelativePath.EndsWith("Dialog.axaml", StringComparison.Ordinal) && file.Document.Root?.Name.LocalName == "Window";
+
+        [Fact]
+        public void DialogWindowsSizeToContentOrAreAllowlisted()
+        {
+            AxamlFile[] dialogs = [.. LoadAxamlFiles().Where(IsDialogWindow)];
+            Assert.NotEmpty(dialogs);
+
+            string[] offenders = [.. dialogs.Where(d => !SizesToContent(d) && !DialogSizingAllowlist.ContainsKey(d.RelativePath)).Select(d => d.RelativePath)];
+            Assert.Empty(offenders);
+            AssertAllowlistHasNoStaleEntries(DialogSizingAllowlist.Keys, [.. dialogs.Where(d => !SizesToContent(d)).Select(d => d.RelativePath)]);
+        }
+
+        [Fact]
+        public void ADialogWithAFixedSizeAndNoSizeToContentIsFlagged()
+        {
+            AxamlFile fixedSize = Synthetic("src/X/NewDialog.axaml", "<Window Width=\"400\" Height=\"300\" />");
+            AxamlFile sized = Synthetic("src/X/OkDialog.axaml", "<Window SizeToContent=\"WidthAndHeight\" MaxWidth=\"600\" />");
+            Assert.True(IsDialogWindow(fixedSize) && !SizesToContent(fixedSize));
+            Assert.True(IsDialogWindow(sized) && SizesToContent(sized));
+        }
+
+        private const string RatchetBaselinePath = "tests/NetPrints.Core.Tests/Core/xaml-literal-ratchet.txt";
+
+        private static bool IsStyleOrResourceFile(AxamlFile file) =>
+            file.Document.Root?.Name.LocalName is "Application" or "Styles" or "ResourceDictionary";
+
+        /// <summary>Counts literal (non-binding) <c>Margin</c> and <c>FontSize</c> values per view, including
+        /// <c>Setter</c> values, as <c>"Margin path" -> count</c> and <c>"FontSize path" -> count</c>.</summary>
+        private static SortedDictionary<string, int> CountLiterals(IEnumerable<AxamlFile> files)
+        {
+            var counts = new SortedDictionary<string, int>(StringComparer.Ordinal);
+            foreach (AxamlFile file in files.Where(f => !IsStyleOrResourceFile(f)))
+            {
+                foreach (XElement element in file.Document.Descendants())
+                {
+                    var hits = new List<string>();
+                    if (element.Name.LocalName == "Setter")
+                    {
+                        if (element.Attribute("Property")?.Value is ("Margin" or "FontSize") and var property
+                            && element.Attribute("Value") is { } value && !value.Value.TrimStart().StartsWith('{'))
+                        {
+                            hits.Add(property);
+                        }
+                    }
+                    else
+                    {
+                        hits.AddRange(element.Attributes()
+                            .Where(a => a.Name.LocalName is "Margin" or "FontSize" && !a.Value.TrimStart().StartsWith('{'))
+                            .Select(a => a.Name.LocalName));
+                    }
+
+                    foreach (string hit in hits)
+                    {
+                        string key = $"{hit} {file.RelativePath}";
+                        counts[key] = counts.GetValueOrDefault(key) + 1;
+                    }
+                }
+            }
+
+            return counts;
+        }
+
+        private static Dictionary<string, int> ReadRatchetBaseline()
+        {
+            var baseline = new Dictionary<string, int>(StringComparer.Ordinal);
+            foreach (string line in File.ReadAllLines(Path.Combine(SampleProjectFactory.FindRepositoryRoot(), RatchetBaselinePath)))
+            {
+                int split = line.LastIndexOf(' ');
+                if (line.Length > 0 && !line.StartsWith('#') && split > 0)
+                {
+                    baseline[line[..split]] = int.Parse(line[(split + 1)..], System.Globalization.CultureInfo.InvariantCulture);
+                }
+            }
+
+            return baseline;
+        }
+
+        /// <summary>Ratchet, not a cleanup: literal Margin and FontSize counts per view may not rise above the
+        /// checked-in baseline. Rule E8 later drives FontSize to zero.</summary>
+        [Fact]
+        public void MarginAndFontSizeLiteralsNeverExceedTheBaseline()
+        {
+            SortedDictionary<string, int> current = CountLiterals(LoadAxamlFiles());
+            if (Environment.GetEnvironmentVariable("NETPRINTS_UPDATE_RATCHET") == "1")
+            {
+                File.WriteAllLines(
+                    Path.Combine(SampleProjectFactory.FindRepositoryRoot(), RatchetBaselinePath),
+                    ["# Literal Margin/FontSize counts per view (XamlHygieneTests ratchet). Regenerate with NETPRINTS_UPDATE_RATCHET=1 only when counts went down.", .. current.Select(c => $"{c.Key} {c.Value}")]);
+            }
+
+            Dictionary<string, int> baseline = ReadRatchetBaseline();
+
+            string[] rose = [.. current.Where(c => c.Value > baseline.GetValueOrDefault(c.Key)).Select(c => $"{c.Key}: {baseline.GetValueOrDefault(c.Key)} -> {c.Value}")];
+            Assert.True(rose.Length == 0, "Literal Margin/FontSize count went up (use a style class from EditorStyles.axaml instead): " + string.Join("; ", rose));
+
+            string[] lower = [.. baseline.Where(b => current.GetValueOrDefault(b.Key) < b.Value).Select(b => $"{b.Key} {current.GetValueOrDefault(b.Key)}")];
+            if (lower.Length > 0)
+            {
+                TestContext.Current.SendDiagnosticMessage($"Ratchet: {lower.Length} baseline entries can be lowered. Lower {RatchetBaselinePath} (run this test once with NETPRINTS_UPDATE_RATCHET=1) to: {string.Join("; ", lower)}");
+            }
+        }
+
+        [Fact]
+        public void TheRatchetCountsLiteralsAndIgnoresBindingsAndStyleFiles()
+        {
+            AxamlFile view = Synthetic("src/X/V.axaml", "<UserControl><Border Margin=\"4\" FontSize=\"12\"><TextBlock Margin=\"{Binding M}\" /><Style><Setter Property=\"FontSize\" Value=\"10\" /></Style></Border></UserControl>");
+            AxamlFile styles = Synthetic("src/X/S.axaml", "<Styles><Setter Property=\"Margin\" Value=\"1\" /></Styles>");
+
+            SortedDictionary<string, int> counts = CountLiterals([view, styles]);
+
+            Assert.Equal(1, counts["Margin src/X/V.axaml"]);
+            Assert.Equal(2, counts["FontSize src/X/V.axaml"]);
+            Assert.Equal(2, counts.Count);
+        }
+
+        private static readonly Regex NumericAncestorLevelPattern = NumericAncestorLevelRegex();
+
+        [GeneratedRegex(@"\$parent\[[^\]]*;\s*\d+\s*\]|AncestorLevel\s*=\s*\d+")]
+        private static partial Regex NumericAncestorLevelRegex();
 
         [GeneratedRegex(@"^(AliceBlue|Aqua|Beige|Black|Blue|Brown|Crimson|Cyan|DarkGray|DarkGreen|DarkOrange|DarkRed|DimGray|DodgerBlue|Gold|Gray|Green|Grey|HotPink|Indigo|LightBlue|LightGray|LightGreen|Lime|Magenta|Maroon|Navy|Olive|Orange|OrangeRed|Pink|Purple|Red|Salmon|Silver|SkyBlue|Teal|Tomato|Violet|White|WhiteSmoke|Yellow|YellowGreen)$")]
         private static partial Regex NamedColorRegex();
