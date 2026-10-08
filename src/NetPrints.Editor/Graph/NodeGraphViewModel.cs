@@ -12,6 +12,7 @@ using NetPrints.Editor.Graph.Pins;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.ModelSync;
 using NetPrints.Editor.Search;
+using NetPrints.Editor.Shell;
 using NetPrints.Editor.UndoRedo;
 using NetPrints.Editor.Variables;
 using NetPrints.Extensibility.Nodes;
@@ -62,6 +63,9 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
 
     /// <summary>View models for <see cref="Graph"/>'s nodes.</summary>
     public ObservableViewModelCollection<NodeViewModel, Node> Nodes { get; }
+
+    /// <summary>Gets or sets the invoker the canvas's context menus and gestures run commands through, or null (set by the document that shows this graph).</summary>
+    public CommandInvoker? Commands { get; set; }
 
     /// <summary>Cables derived from the model's pin connections.</summary>
     public ObservableCollection<ConnectionViewModel> Connections { get; } = [];

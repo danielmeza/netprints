@@ -65,4 +65,6 @@ public sealed partial class GraphDocumentViewModel : DocumentViewModel, IViewpor
     }
 
     private void OnSessionPulse(object? sender, EventArgs e) => Refresh();
+
+    partial void OnInvokerChanged(CommandInvoker? value) => Graph.Commands = value;
 }

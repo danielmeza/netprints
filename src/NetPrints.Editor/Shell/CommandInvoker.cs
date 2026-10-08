@@ -30,6 +30,11 @@ public sealed class CommandInvoker(IContributionRegistry registry, ICommandConte
             .OfType<CommandDescriptor>(),
     ];
 
+    /// <summary>Gets the tooltip the registered providers give a target.</summary>
+    /// <param name="target">What the pointer is over.</param>
+    /// <returns>The first provider's content, or null.</returns>
+    public TooltipContent? TooltipFor(TooltipTarget target) => TooltipResolver.Resolve(registry.TooltipProviders, target);
+
     /// <summary>Raised when the enabled state or label of any command may have changed (see <see cref="ICommandContextProvider.CommandStatesChanged"/>).</summary>
     public event EventHandler? CommandStatesChanged
     {
@@ -40,26 +45,29 @@ public sealed class CommandInvoker(IContributionRegistry registry, ICommandConte
     /// <summary>Gets whether a command's handler is enabled for a context built now.</summary>
     /// <param name="command">The command.</param>
     /// <param name="scope">The scope the invocation would come from.</param>
-    /// <returns><see langword="true"/> when <see cref="TryRun(CommandDescriptor, CommandScope)"/> would start it.</returns>
-    public bool CanRun(CommandDescriptor command, CommandScope scope = CommandScope.Global)
+    /// <param name="parameter">The command parameter, or null.</param>
+    /// <returns><see langword="true"/> when <see cref="TryRun(CommandDescriptor, CommandScope, object?)"/> would start it.</returns>
+    public bool CanRun(CommandDescriptor command, CommandScope scope = CommandScope.Global, object? parameter = null)
     {
         ArgumentNullException.ThrowIfNull(command);
-        return command.Handler.CanExecute(contexts.Create(scope: scope));
+        return command.Handler.CanExecute(contexts.Create(parameter, scope));
     }
 
     /// <summary>Builds the context of an invocation made now.</summary>
     /// <param name="scope">The scope the invocation comes from.</param>
+    /// <param name="parameter">The command parameter, or null.</param>
     /// <returns>A fresh context.</returns>
-    public CommandContext CreateContext(CommandScope scope = CommandScope.Global) => contexts.Create(scope: scope);
+    public CommandContext CreateContext(CommandScope scope = CommandScope.Global, object? parameter = null) => contexts.Create(parameter, scope);
 
     /// <summary>Runs a command if its handler is enabled for a context built now.</summary>
     /// <param name="command">The command.</param>
     /// <param name="scope">The scope the invocation comes from: the surface whose key was pressed or whose menu was used.</param>
+    /// <param name="parameter">The command parameter, or null.</param>
     /// <returns><see langword="true"/> when the command was started, <see langword="false"/> when it is disabled.</returns>
-    public bool TryRun(CommandDescriptor command, CommandScope scope = CommandScope.Global)
+    public bool TryRun(CommandDescriptor command, CommandScope scope = CommandScope.Global, object? parameter = null)
     {
         ArgumentNullException.ThrowIfNull(command);
-        CommandContext context = contexts.Create(scope: scope);
+        CommandContext context = contexts.Create(parameter, scope);
         if (!command.Handler.CanExecute(context))
         {
             return false;
@@ -72,12 +80,13 @@ public sealed class CommandInvoker(IContributionRegistry registry, ICommandConte
     /// <summary>Runs the registered command with the given name, if its handler is enabled for a context built now.</summary>
     /// <param name="commandName">The command's name without <see cref="ContributionIds.CommandPrefix"/>.</param>
     /// <param name="scope">The scope the invocation comes from.</param>
+    /// <param name="parameter">The command parameter, or null.</param>
     /// <returns><see langword="true"/> when the command was started, <see langword="false"/> when it is unknown or disabled.</returns>
-    public bool TryRun(string commandName, CommandScope scope = CommandScope.Global)
+    public bool TryRun(string commandName, CommandScope scope = CommandScope.Global, object? parameter = null)
     {
         ArgumentException.ThrowIfNullOrEmpty(commandName);
         CommandDescriptor? command = registry.Commands.FirstOrDefault(c => c.Id == ContributionIds.CommandPrefix + commandName);
-        return command is not null && TryRun(command, scope);
+        return command is not null && TryRun(command, scope, parameter);
     }
 
     private static async Task RunAsync(CommandDescriptor command, CommandContext context) =>

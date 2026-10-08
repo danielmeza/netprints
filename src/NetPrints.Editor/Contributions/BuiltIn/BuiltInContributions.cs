@@ -17,5 +17,6 @@ public static class BuiltInContributions
         PanelContributions.Register(registry);
         StartPageContributions.Register(registry);
         ProjectTemplateContributions.Register(registry);
+        TooltipContributions.Register(registry);
     }
 }

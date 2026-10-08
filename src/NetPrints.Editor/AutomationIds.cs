@@ -528,6 +528,11 @@ public static class AutomationIds
     /// Prefix of a tree context menu entry's automation id: the command id follows.
     /// </summary>
     public const string TreeMenuPrefix = "Tree.Menu.";
+
+    /// <summary>
+    /// Prefix of a connection context menu entry's automation id: the command id follows.
+    /// </summary>
+    public const string ConnectionMenuPrefix = "Connection.Menu.";
     /// <summary>
     /// Tree item kind of the project.
     /// </summary>

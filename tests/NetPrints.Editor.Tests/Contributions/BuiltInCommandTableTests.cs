@@ -67,8 +67,8 @@ public class BuiltInCommandTableTests
         new("goToAnything", "Go to anything…", "Go", "find", ["Ctrl+P"], Everywhere, null, typeof(GoToAnythingCommandHandler)),
         new("navigateBack", "Back", "Go", "history", ["Alt+Left"], Everywhere, null, typeof(NavigateHistoryCommandHandler)),
         new("navigateForward", "Forward", "Go", "history", ["Alt+Right"], Everywhere, null, typeof(NavigateHistoryCommandHandler)),
-        new("goToSource", "Go to source", "Go", "connection", [], Canvas, null, null),
-        new("goToTarget", "Go to target", "Go", "connection", [], Canvas, null, null),
+        new("goToSource", "Go to source", "Go", "connection", [], Canvas, null, typeof(GoToConnectionEndCommandHandler)),
+        new("goToTarget", "Go to target", "Go", "connection", [], Canvas, null, typeof(GoToConnectionEndCommandHandler)),
         new("nextTab", "Next tab", "Go", "tabs", ["Ctrl+Tab"], Everywhere, null, typeof(CycleTabCommandHandler)),
         new("previousTab", "Previous tab", "Go", "tabs", ["Ctrl+Shift+Tab"], Everywhere, null, typeof(CycleTabCommandHandler)),
         new("closeTab", "Close tab", "Go", "tabs", ["Ctrl+W"], Everywhere, null, typeof(CloseTabCommandHandler)),
@@ -89,8 +89,6 @@ public class BuiltInCommandTableTests
         ["theme.dark"] = "T093",
         ["theme.light"] = "T093",
         ["theme.system"] = "T093",
-        ["goToSource"] = "T077",
-        ["goToTarget"] = "T077",
     };
 
     private static readonly string[] MenuOrder = ["File", "Edit", "View", "Go", "Build", "Help"];

@@ -10,14 +10,16 @@ public sealed partial class CommandEntryViewModel : ObservableObject
     private readonly CommandDescriptor? descriptor;
     private readonly CommandInvoker? invoker;
     private readonly CommandScope scope;
+    private readonly object? parameter;
 
     private CommandEntryViewModel()
     {
     }
 
-    internal CommandEntryViewModel(CommandDescriptor descriptor, CommandInvoker invoker, string automationPrefix, CommandScope scope = CommandScope.Global)
+    internal CommandEntryViewModel(CommandDescriptor descriptor, CommandInvoker invoker, string automationPrefix, CommandScope scope = CommandScope.Global, object? parameter = null)
     {
         this.scope = scope;
+        this.parameter = parameter;
         this.descriptor = descriptor;
         this.invoker = invoker;
         Id = descriptor.Id;
@@ -84,7 +86,7 @@ public sealed partial class CommandEntryViewModel : ObservableObject
             return;
         }
 
-        CommandContext context = invoker.CreateContext(scope);
+        CommandContext context = invoker.CreateContext(scope, parameter);
         Label = descriptor.Handler.DynamicLabel(context) ?? descriptor.Label;
         Tooltip = FirstGesture.Length > 0 ? $"{Label} ({FirstGesture})" : Label;
         IsEnabled = descriptor.Handler.CanExecute(context);
@@ -95,7 +97,7 @@ public sealed partial class CommandEntryViewModel : ObservableObject
     {
         if (descriptor is not null)
         {
-            invoker?.TryRun(descriptor, scope);
+            invoker?.TryRun(descriptor, scope, parameter);
         }
     }
 }

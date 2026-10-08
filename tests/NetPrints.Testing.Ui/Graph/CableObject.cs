@@ -33,11 +33,17 @@ public sealed class CableObject : UiElement
     }
 
     /// <summary>The point midway between the two connectors.</summary>
-    public async Task<UiTarget> MidpointAsync(CancellationToken cancellationToken)
+    public Task<UiTarget> MidpointAsync(CancellationToken cancellationToken) => PointAlongAsync(0.5, cancellationToken);
+
+    /// <summary>The point on the straight line between the two connectors, 0 being the source's and 1 the target's.</summary>
+    /// <param name="fraction">How far from the source connector.</param>
+    /// <param name="cancellationToken">Cancels the wait.</param>
+    /// <returns>The point.</returns>
+    public async Task<UiTarget> PointAlongAsync(double fraction, CancellationToken cancellationToken)
     {
         var a = await graph.Node(source).Output(sourcePin).Connector.CenterAsync(cancellationToken);
         var b = await graph.Node(target).Input(targetPin).Connector.CenterAsync(cancellationToken);
-        return new UiTarget(a.Window, (a.X + b.X) / 2, (a.Y + b.Y) / 2);
+        return new UiTarget(a.Window, a.X + ((b.X - a.X) * fraction), a.Y + ((b.Y - a.Y) * fraction));
     }
 
     public new async Task ClickAsync(UiButton button, CancellationToken cancellationToken) =>
