@@ -45,6 +45,7 @@
       <Interaction.Behaviors>
         <edbehaviors:GraphViewRequestBehavior />
         <edbehaviors:ConnectionNavigationBehavior />
+        <edbehaviors:SelectionToContainersBehavior />
         <!-- A graph's shortcuts act only with the canvas focused (SC-004): opening a graph focuses it. -->
         <edbehaviors:FocusOnDataContextBehavior />
       </Interaction.Behaviors>
