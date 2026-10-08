@@ -46,6 +46,13 @@ public sealed class CableObject : UiElement
         return new UiTarget(a.Window, a.X + ((b.X - a.X) * fraction), a.Y + ((b.Y - a.Y) * fraction));
     }
 
+    /// <summary>Clicks with Ctrl held at <paramref name="fraction"/> of the way from the source connector to the target's.</summary>
+    public async Task CtrlClickAtAsync(double fraction, CancellationToken cancellationToken) =>
+        await Driver.CtrlClickAsync(await PointAlongAsync(fraction, cancellationToken), cancellationToken);
+
+    /// <summary>The tooltip text the cable shows.</summary>
+    public async Task<string?> ToolTipAsync(CancellationToken cancellationToken) => await PropertyAsync(AutomationPropertyNames.ToolTip, cancellationToken);
+
     public new async Task ClickAsync(UiButton button, CancellationToken cancellationToken) =>
         await Driver.ClickAsync(await MidpointAsync(cancellationToken), button, 1, cancellationToken);
 

@@ -112,6 +112,22 @@ public sealed class X11Driver(XServer server, EditorProcess editor, Tool tool) :
         await SettleAsync(cancellationToken);
     }
 
+    public async Task CtrlClickAsync(UiTarget target, CancellationToken cancellationToken)
+    {
+        await MoveToAsync(target.X, target.Y, cancellationToken);
+        await tool.XdotoolAsync(cancellationToken, "keydown", "ctrl");
+        try
+        {
+            await tool.XdotoolAsync(cancellationToken, "click", "--delay", "60", ButtonOf(UiButton.Left));
+        }
+        finally
+        {
+            await tool.XdotoolAsync(CancellationToken.None, "keyup", "ctrl");
+        }
+
+        await SettleAsync(cancellationToken);
+    }
+
     public async Task DragAsync(UiTarget from, UiTarget to, UiButton button, CancellationToken cancellationToken)
     {
         await PressAndMoveAsync(from, to, button, cancellationToken);

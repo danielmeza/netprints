@@ -62,6 +62,9 @@ public interface IUiDriver : IAsyncDisposable
 
     Task ClickAsync(UiTarget target, UiButton button, int clickCount, CancellationToken cancellationToken);
 
+    /// <summary>Clicks once with the Ctrl key held down.</summary>
+    Task CtrlClickAsync(UiTarget target, CancellationToken cancellationToken);
+
     /// <summary>Presses at <paramref name="from"/>, moves in steps to <paramref name="to"/>, releases.</summary>
     Task DragAsync(UiTarget from, UiTarget to, UiButton button, CancellationToken cancellationToken);
 

@@ -1,4 +1,5 @@
 using NetPrints.Desktop.E2ETests.Hosting;
+using NetPrints.Testing.Ui.Dialogs;
 using NetPrints.Testing.Ui.Driving;
 using NetPrints.Testing.Ui.Shell;
 
@@ -77,6 +78,21 @@ public sealed class KeyboardOnlyTests(DesktopWorkerPool pool) : ProjectEditorTes
             await Shell.StatusMessage.WaitUntilAsync(e => e.Text == "Running…", "Running", token, TimeSpan.FromSeconds(120));
             await driver.PressAsync("Shift+F5", token);
             await Shell.StatusMessage.WaitUntilAsync(e => e.Text?.StartsWith("Exited with code", StringComparison.Ordinal) == true, "Exited", token);
+        }
+
+        using (Step("find a node and go back"))
+        {
+            var viewport = await graph.ViewportAsync(token);
+            await driver.PressAsync("Ctrl+P", token);
+            var goTo = new GoToAnythingPage(driver);
+            await goTo.WaitVisibleAsync(token);
+            await driver.TypeAsync("WriteLine", token);
+            await goTo.WaitForRowContainingAsync("WriteLine", token);
+            await driver.PressAsync("Enter", token);
+            await goTo.WaitHiddenAsync(token);
+
+            await driver.PressAsync("Alt+Left", token);
+            await graph.WaitForViewportAsync(viewport, token);
         }
 
         using (Step("switch tabs"))

@@ -142,6 +142,16 @@ public sealed class HeadlessDriver(AutomationTree tree, Func<string> programOutp
         return Task.CompletedTask;
     }
 
+    public Task CtrlClickAsync(UiTarget target, CancellationToken cancellationToken)
+    {
+        var window = WindowOf(target);
+        window.MouseMove(P(target), RawInputModifiers.Control);
+        window.MouseDown(P(target), Map(UiButton.Left), RawInputModifiers.Control);
+        window.MouseUp(P(target), Map(UiButton.Left), RawInputModifiers.Control);
+        Pump();
+        return Task.CompletedTask;
+    }
+
     public async Task DragAsync(UiTarget from, UiTarget to, UiButton button, CancellationToken cancellationToken)
     {
         await PressAndMoveAsync(from, to, button, cancellationToken);

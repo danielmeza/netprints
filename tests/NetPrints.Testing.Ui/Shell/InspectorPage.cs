@@ -67,4 +67,8 @@ public sealed class InspectorPage(IUiDriver driver, AutomationQuery window)
 
     /// <summary>The name boxes of the argument rows.</summary>
     public UiElement EventEntryArgumentName => Find(AutomationIds.EventEntryInspectorArgumentName);
+
+    /// <summary>How many argument rows the event entry inspector lists.</summary>
+    public async Task<int> EventEntryArgumentCountAsync(CancellationToken cancellationToken) =>
+        (await Driver.FindAllAsync(new AutomationQuery(AutomationIds.EventEntryInspectorArgumentName) { Within = Query }, cancellationToken)).Count;
 }
