@@ -291,9 +291,15 @@ public class CanvasInteractionTests
         await session.Graph.Node("MethodEntryNode").LeftPlus.ClickAsync(Token); // PAR-42
         Assert.Single(method.ArgumentTypes);
 
-        await session.Graph.Node("CallMethodNode").Pure.ClickAsync(Token); // PAR-41
+        Assert.False(await node.Pure.IsVisibleAsync(Token)); // a void call cannot be pure
+
+        var stringType = TypeSpecifier.FromType<string>();
+        var toUpper = session.GraphViewModel.AddNode<CallMethodNode>(new GraphPoint(280, 392), null,
+            new MethodSpecifier("ToUpper", [], [stringType], MethodModifiers.None, MemberVisibility.Public, stringType, []));
         await session.WaitForRenderedAsync(Token);
-        Assert.True(method.Nodes.OfType<CallMethodNode>().Single().IsPure);
+        await session.Graph.Node(toUpper.Name).Pure.ClickAsync(Token); // PAR-41
+        await session.WaitForRenderedAsync(Token);
+        Assert.True(toUpper.IsPure);
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
