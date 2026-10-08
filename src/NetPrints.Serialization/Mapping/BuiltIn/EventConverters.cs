@@ -1,6 +1,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using NetPrints.Core;
 using NetPrints.Graph;
 using NetPrints.Serialization.Documents;
@@ -18,6 +19,8 @@ internal static class EventConverters
     /// <summary>Every converter this file contributes.</summary>
     public static IReadOnlyList<INodeDocumentConverter> All { get; } = [new EventEntryNodeConverter()];
 
+    private static readonly TypeSpecifier ObjectType = TypeSpecifier.FromType<object>();
+
     private sealed class EventEntryNodeConverter : INodeDocumentConverter
     {
         public string Kind => BuiltInNodeKinds.EventEntry;
@@ -29,8 +32,13 @@ internal static class EventConverters
             var entry = (EventEntryNode)node;
             MethodRef? overrides = entry.OverriddenMethod is { } overridden ? context.ToRef(overridden) : null;
 
+            IReadOnlyList<EventArgument> typed = entry.DeclaredArguments;
+            IReadOnlyList<EventArgumentDocument>? arguments = overrides is null && typed.Any(argument => !argument.Type.Equals(ObjectType))
+                ? typed.Select(argument => new EventArgumentDocument(argument.Name, context.ToRef(argument.Type))).ToList()
+                : null;
+
             return new EventEntryNodeDocument(entry.Id, null, null, entry.EventName, entry.Visibility,
-                entry.Modifiers, overrides, entry.OutputDataPins.Count);
+                entry.Modifiers, overrides, entry.OutputDataPins.Count, arguments);
         }
 
         public Node CreateNode(NodeDocument document, NodeGraph graph, NodeMappingContext context)
@@ -53,6 +61,22 @@ internal static class EventConverters
                 for (int i = 0; i < doc.ArgumentCount; i++)
                 {
                     entry.AddArgument();
+                }
+
+                if (doc.Arguments is { Count: > 0 } arguments)
+                {
+                    List<EventArgument> typed = arguments
+                        .Select(argument => new EventArgument(argument.Name, context.FromTypeRef(argument.Type, $"Event '{doc.EventName}' argument '{argument.Name}' type")))
+                        .ToList();
+
+                    try
+                    {
+                        entry.SetArguments(typed);
+                    }
+                    catch (ArgumentException ex)
+                    {
+                        throw new DocumentFormatException($"Event '{doc.EventName}' has invalid arguments: {ex.Message}");
+                    }
                 }
             }
 

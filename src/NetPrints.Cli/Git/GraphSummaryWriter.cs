@@ -161,6 +161,7 @@ internal static class GraphSummaryWriter
                 return (BuiltInNodeKinds.ClassReturn, string.Empty);
             case EventEntryNodeDocument entry:
                 Count(properties, "args", entry.ArgumentCount);
+                Add(properties, "argTypes", entry.Arguments is { Count: > 0 } arguments ? string.Join(',', arguments.Select(argument => Type(argument.Type))) : null);
                 Add(properties, "visibility", NonDefault(entry.Visibility));
                 Add(properties, "modifiers", NonDefault(entry.Modifiers));
                 Add(properties, "overrides", entry.Overrides is { } overrides ? Signature(overrides) + Returns(overrides) : null);

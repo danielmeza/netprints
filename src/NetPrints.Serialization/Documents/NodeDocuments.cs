@@ -92,9 +92,19 @@ public sealed record TypeReturnNodeDocument(string Id, string? Name, IReadOnlyLi
 /// <param name="Modifiers">Entry modifiers (omitted when <c>None</c>).</param>
 /// <param name="Overrides">The overridden base method, present only for an override entry.</param>
 /// <param name="ArgumentCount">Number of argument pins.</param>
+/// <param name="Arguments">The name and type of each argument of a custom event entry, in order; omitted
+/// (<see langword="null"/>) when there are none or all are typed <see cref="object"/> (the pin names are
+/// already in <paramref name="Pins"/>), and for an override entry, whose arguments come from the base method. A
+/// reader without this property keeps the default type of each argument pin.</param>
 public sealed record EventEntryNodeDocument(string Id, string? Name, IReadOnlyList<PinStateDocument>? Pins,
     string EventName, NetPrints.Core.MemberVisibility Visibility, NetPrints.Core.MethodModifiers Modifiers,
-    MethodRef? Overrides, int ArgumentCount) : NodeDocument(Id, Name, Pins);
+    MethodRef? Overrides, int ArgumentCount, IReadOnlyList<EventArgumentDocument>? Arguments = null)
+    : NodeDocument(Id, Name, Pins);
+
+/// <summary>One argument of a custom event entry (<see cref="EventEntryNodeDocument.Arguments"/>).</summary>
+/// <param name="Name">The argument's name, a valid C# identifier.</param>
+/// <param name="Type">The argument's type.</param>
+public sealed record EventArgumentDocument(string Name, TypeRef Type);
 
 /// <summary>A method call (document-format.md §1.5, <c>CallMethodNode</c>). <c>Pure</c>: whether the
 /// node's exec pins were removed (<c>Node.IsPure</c>, R1-04), omitted (read back as

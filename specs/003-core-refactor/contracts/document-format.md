@@ -147,7 +147,7 @@ creates the pins and then applies `pins`.
 | `return` | `ReturnNode` | `returnCount` (int, omit 0) |
 | `classReturn` | `ClassReturnNode` | `interfaceCount` (int, omit 0) |
 | `typeReturn` | `TypeReturnNode` | — |
-| `eventEntry` | `EventEntryNode` (new) | `eventName`, `visibility`, `modifiers` (omit None), `overrides` (`MethodRef`, optional), `argumentCount` |
+| `eventEntry` | `EventEntryNode` (new) | `eventName`, `visibility`, `modifiers` (omit None), `overrides` (`MethodRef`, optional), `argumentCount`, `arguments` (`{name, type: TypeRef}[]`, custom entries only, omit empty; T083) |
 | `callMethod` | `CallMethodNode` | `method` (`MethodRef`), `genericArgumentCount` (omit 0), `pure` (bool, omit `false`, R1-04) |
 | `constructor` | `ConstructorNode` | `constructor` (`ConstructorRef`), `pure` (bool, omit `false`, R1-04) |
 | `makeDelegate` | `MakeDelegateNode` | `method` (`MethodRef`) |

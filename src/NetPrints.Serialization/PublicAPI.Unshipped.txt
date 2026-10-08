@@ -185,12 +185,22 @@ NetPrints.Serialization.Documents.DefaultNodeDocument
 NetPrints.Serialization.Documents.DefaultNodeDocument.Deconstruct(out string! Id, out string? Name, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins) -> void
 NetPrints.Serialization.Documents.DefaultNodeDocument.DefaultNodeDocument(string! Id, string? Name, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins) -> void
 NetPrints.Serialization.Documents.DefaultNodeDocument.Equals(NetPrints.Serialization.Documents.DefaultNodeDocument? other) -> bool
+NetPrints.Serialization.Documents.EventArgumentDocument
+NetPrints.Serialization.Documents.EventArgumentDocument.Deconstruct(out string! Name, out NetPrints.Serialization.Documents.TypeRef! Type) -> void
+NetPrints.Serialization.Documents.EventArgumentDocument.Equals(NetPrints.Serialization.Documents.EventArgumentDocument? other) -> bool
+NetPrints.Serialization.Documents.EventArgumentDocument.EventArgumentDocument(string! Name, NetPrints.Serialization.Documents.TypeRef! Type) -> void
+NetPrints.Serialization.Documents.EventArgumentDocument.Name.get -> string!
+NetPrints.Serialization.Documents.EventArgumentDocument.Name.init -> void
+NetPrints.Serialization.Documents.EventArgumentDocument.Type.get -> NetPrints.Serialization.Documents.TypeRef!
+NetPrints.Serialization.Documents.EventArgumentDocument.Type.init -> void
 NetPrints.Serialization.Documents.EventEntryNodeDocument
 NetPrints.Serialization.Documents.EventEntryNodeDocument.ArgumentCount.get -> int
 NetPrints.Serialization.Documents.EventEntryNodeDocument.ArgumentCount.init -> void
-NetPrints.Serialization.Documents.EventEntryNodeDocument.Deconstruct(out string! Id, out string? Name, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins, out string! EventName, out NetPrints.Core.MemberVisibility Visibility, out NetPrints.Core.MethodModifiers Modifiers, out NetPrints.Serialization.Documents.MethodRef? Overrides, out int ArgumentCount) -> void
+NetPrints.Serialization.Documents.EventEntryNodeDocument.Arguments.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.EventArgumentDocument!>?
+NetPrints.Serialization.Documents.EventEntryNodeDocument.Arguments.init -> void
+NetPrints.Serialization.Documents.EventEntryNodeDocument.Deconstruct(out string! Id, out string? Name, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins, out string! EventName, out NetPrints.Core.MemberVisibility Visibility, out NetPrints.Core.MethodModifiers Modifiers, out NetPrints.Serialization.Documents.MethodRef? Overrides, out int ArgumentCount, out System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.EventArgumentDocument!>? Arguments) -> void
 NetPrints.Serialization.Documents.EventEntryNodeDocument.Equals(NetPrints.Serialization.Documents.EventEntryNodeDocument? other) -> bool
-NetPrints.Serialization.Documents.EventEntryNodeDocument.EventEntryNodeDocument(string! Id, string? Name, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins, string! EventName, NetPrints.Core.MemberVisibility Visibility, NetPrints.Core.MethodModifiers Modifiers, NetPrints.Serialization.Documents.MethodRef? Overrides, int ArgumentCount) -> void
+NetPrints.Serialization.Documents.EventEntryNodeDocument.EventEntryNodeDocument(string! Id, string? Name, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins, string! EventName, NetPrints.Core.MemberVisibility Visibility, NetPrints.Core.MethodModifiers Modifiers, NetPrints.Serialization.Documents.MethodRef? Overrides, int ArgumentCount, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.EventArgumentDocument!>? Arguments = null) -> void
 NetPrints.Serialization.Documents.EventEntryNodeDocument.EventName.get -> string!
 NetPrints.Serialization.Documents.EventEntryNodeDocument.EventName.init -> void
 NetPrints.Serialization.Documents.EventEntryNodeDocument.Modifiers.get -> NetPrints.Core.MethodModifiers
@@ -649,9 +659,13 @@ override NetPrints.Serialization.Documents.DefaultNodeDocument.Equals(object? ob
 override NetPrints.Serialization.Documents.DefaultNodeDocument.GetHashCode() -> int
 override NetPrints.Serialization.Documents.DefaultNodeDocument.ToString() -> string!
 override NetPrints.Serialization.Documents.EventEntryNodeDocument.<Clone>$() -> NetPrints.Serialization.Documents.EventEntryNodeDocument!
+NetPrints.Serialization.Documents.EventArgumentDocument.<Clone>$() -> NetPrints.Serialization.Documents.EventArgumentDocument!
 override NetPrints.Serialization.Documents.EventEntryNodeDocument.Equals(object? obj) -> bool
 override NetPrints.Serialization.Documents.EventEntryNodeDocument.GetHashCode() -> int
 override NetPrints.Serialization.Documents.EventEntryNodeDocument.ToString() -> string!
+override NetPrints.Serialization.Documents.EventArgumentDocument.Equals(object? obj) -> bool
+override NetPrints.Serialization.Documents.EventArgumentDocument.GetHashCode() -> int
+override NetPrints.Serialization.Documents.EventArgumentDocument.ToString() -> string!
 override NetPrints.Serialization.Documents.EventGraphDocument.Equals(object? obj) -> bool
 override NetPrints.Serialization.Documents.EventGraphDocument.GetHashCode() -> int
 override NetPrints.Serialization.Documents.EventGraphDocument.ToString() -> string!
@@ -823,6 +837,8 @@ static NetPrints.Serialization.Documents.DefaultNodeDocument.operator !=(NetPrin
 static NetPrints.Serialization.Documents.DefaultNodeDocument.operator ==(NetPrints.Serialization.Documents.DefaultNodeDocument? left, NetPrints.Serialization.Documents.DefaultNodeDocument? right) -> bool
 static NetPrints.Serialization.Documents.EventEntryNodeDocument.operator !=(NetPrints.Serialization.Documents.EventEntryNodeDocument? left, NetPrints.Serialization.Documents.EventEntryNodeDocument? right) -> bool
 static NetPrints.Serialization.Documents.EventEntryNodeDocument.operator ==(NetPrints.Serialization.Documents.EventEntryNodeDocument? left, NetPrints.Serialization.Documents.EventEntryNodeDocument? right) -> bool
+static NetPrints.Serialization.Documents.EventArgumentDocument.operator !=(NetPrints.Serialization.Documents.EventArgumentDocument? left, NetPrints.Serialization.Documents.EventArgumentDocument? right) -> bool
+static NetPrints.Serialization.Documents.EventArgumentDocument.operator ==(NetPrints.Serialization.Documents.EventArgumentDocument? left, NetPrints.Serialization.Documents.EventArgumentDocument? right) -> bool
 static NetPrints.Serialization.Documents.EventGraphDocument.operator !=(NetPrints.Serialization.Documents.EventGraphDocument? left, NetPrints.Serialization.Documents.EventGraphDocument? right) -> bool
 static NetPrints.Serialization.Documents.EventGraphDocument.operator ==(NetPrints.Serialization.Documents.EventGraphDocument? left, NetPrints.Serialization.Documents.EventGraphDocument? right) -> bool
 static NetPrints.Serialization.Documents.ExplicitCastNodeDocument.operator !=(NetPrints.Serialization.Documents.ExplicitCastNodeDocument? left, NetPrints.Serialization.Documents.ExplicitCastNodeDocument? right) -> bool

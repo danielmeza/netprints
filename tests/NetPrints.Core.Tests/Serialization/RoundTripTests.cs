@@ -105,6 +105,7 @@ namespace NetPrints.Tests.Serialization
             yield return new object[] { Path.Combine(root, "tests", "NetPrints.Core.Tests", "Fixtures", "AllNodes", "AllNodes.Everything.netpc.json") };
             yield return new object[] { Path.Combine(root, "tests", "NetPrints.Core.Tests", "Fixtures", "EventGraphs", "EventGraphs.GameEvents.netpc.json") };
             yield return new object[] { Path.Combine(root, "tests", "NetPrints.Core.Tests", "Fixtures", "Locals", "Locals.netpc.json") };
+            yield return new object[] { Path.Combine(root, "tests", "NetPrints.Core.Tests", "Fixtures", "EventArguments", "EventArguments.Combat.netpc.json") };
             yield return new object[] { Path.Combine(root, "samples", "HelloWorld", "HelloWorld.Program.netpc.json") };
         }
 

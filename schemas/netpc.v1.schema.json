@@ -453,6 +453,52 @@
                   },
                   "argumentCount": {
                     "type": "integer"
+                  },
+                  "arguments": {
+                    "type": [
+                      "array",
+                      "null"
+                    ],
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string"
+                        },
+                        "type": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "generic": {
+                              "type": "boolean",
+                              "default": false
+                            },
+                            "isEnum": {
+                              "type": "boolean",
+                              "default": false
+                            },
+                            "isInterface": {
+                              "type": "boolean",
+                              "default": false
+                            },
+                            "args": {
+                              "$ref": "#/properties/classGraph/properties/nodes/items/anyOf/5/properties/overrides/properties/declaringType/properties/args",
+                              "default": null
+                            }
+                          },
+                          "required": [
+                            "name"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "type"
+                      ]
+                    },
+                    "default": null
                   }
                 },
                 "required": [

@@ -736,7 +736,7 @@ Contracts: contributions.md, commands.md, shell.md §7. **Independent test**: US
   order, with unique, valid C# identifiers; the translator emits the method with those parameters in that order (a new
   golden fixture, added on purpose and named in the commit). Then `src/NetPrints.Core/Graph/EventEntryNode.cs`, the
   translator, the interface and Core's `PublicAPI.Unshipped.txt` (additive API).
-- [ ] T083 [US8] Serialization (2 units). Test first in `tests/NetPrints.Core.Tests/Serialization/`: the arguments are an
+- [x] T083 [US8] Serialization (2 units). Test first in `tests/NetPrints.Core.Tests/Serialization/`: the arguments are an
   optional property of the entry in graph schema v1 (`schemas/netpc.v1.schema.json`), written in canonical order and
   omitted when empty, so graphs without arguments stay byte-identical; a reader without it works; a fixture with
   arguments validates with the `jsonschema` CLI (ADR-0011). Then the `NetPrints.Serialization` mapping and its
