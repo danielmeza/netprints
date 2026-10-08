@@ -338,6 +338,10 @@ Names of current types in this spec's documents already use the new form (for ex
   icons with few node concepts, and no Avalonia package); vendor Fluent glyphs as `StreamGeometry` resources now
   (rejected for now: more work for no visible gain; kept as the fallback if the package lags an Avalonia release);
   keep the PNGs (rejected: no recorded licence, and they blur at 150 % and 200 %).
+- **Amended 2026-10-08** (owner decision, ADR-0021 Amendment 1): the family is Material Design Icons through
+  `Material.Icons.Avalonia`, which stays. E-F8 had already shipped MDI glyphs in the Dock chrome, and ADR-0023's
+  Semi base theme removed the Fluent design-language argument. The rest of this decision (ids, registry, fallback,
+  no PNGs, notices) is unchanged.
 
 ## R18. Start page layout and the no-project window (E5, owner decision 2026-10-06)
 
