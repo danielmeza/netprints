@@ -79,7 +79,7 @@ public sealed class InspectorPanelViewModelTests : IAsyncDisposable
     }
 
     [Fact]
-    public async Task AVariableShowsTheVariableInspectorAndAnEventGraphOrGroupShowsNone()
+    public async Task AVariableShowsTheVariableInspectorAnEventGraphItsOwnAndAGroupNone()
     {
         ProjectSessionViewModel session = await rig.OpenSessionAsync();
         ClassGraph cls = session.Project.Classes[0];
@@ -91,7 +91,7 @@ public sealed class InspectorPanelViewModelTests : IAsyncDisposable
         Assert.Same(cls.Variables[0], variable.Variable);
 
         rig.Tree.SelectedItem = rig.Item(TreeItemKind.EventGraph, "Ticks");
-        Assert.True(rig.Inspector.IsEmpty);
+        Assert.IsType<NetPrints.Editor.Events.EventGraphViewModel>(rig.Inspector.Content);
         rig.Tree.SelectedItem = rig.Tree.Roots[0].Children[0].Children[0];
         Assert.True(rig.Inspector.IsEmpty);
     }

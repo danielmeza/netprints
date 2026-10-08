@@ -76,3 +76,55 @@ public sealed class EventRenameCommandTests
         Assert.Equal("OnDamage", call.MethodName);
     }
 }
+
+/// <summary>US8 (FR-073): <see cref="EditorCommands.SetEventArguments"/> changes an entry's arguments as one undo step that keeps connections.</summary>
+public sealed class SetEventArgumentsCommandTests
+{
+    private static readonly TypeSpecifier Int = TypeSpecifier.FromType<int>();
+    private static readonly TypeSpecifier Text = TypeSpecifier.FromType<string>();
+
+    [Fact]
+    public void ChangingTheArgumentsIsOneNamedStepAndUndoRestoresThePinsAndConnections()
+    {
+        var cls = new ClassGraph { Name = "C", Namespace = "N" };
+        var events = new EventGraph("Events") { Class = cls };
+        cls.EventGraphs.Add(events);
+        var entry = new EventEntryNode(events, "OnHit");
+        entry.SetArguments([new EventArgument("a", Int), new EventArgument("b", Text)]);
+        var caller = new MethodGraph("Caller") { Class = cls };
+        var sink = new CallMethodNode(caller, new MethodSpecifier("M", [new MethodParameter("p", Text, MethodParameterPassType.Default, false, null)],
+            Array.Empty<BaseType>(), MethodModifiers.Static, MemberVisibility.Public, cls.Type, Array.Empty<BaseType>()));
+        GraphUtil.ConnectDataPins(entry.OutputDataPins[1], sink.InputDataPins[0]);
+        var stack = new UndoRedoStack();
+
+        stack.Do(EditorCommands.SetEventArguments(entry, "Remove argument", [new EventArgument("b", Text)], [1]));
+
+        Assert.Equal([new EventArgument("b", Text)], entry.Arguments);
+        Assert.Same(entry.OutputDataPins[0], sink.InputDataPins[0].IncomingPin);
+        Assert.Equal("Remove argument", stack.UndoName);
+
+        stack.Undo();
+
+        Assert.Equal([new EventArgument("a", Int), new EventArgument("b", Text)], entry.Arguments);
+        Assert.Same(entry.OutputDataPins[1], sink.InputDataPins[0].IncomingPin);
+
+        stack.Redo();
+
+        Assert.Equal([new EventArgument("b", Text)], entry.Arguments);
+        Assert.Same(entry.OutputDataPins[0], sink.InputDataPins[0].IncomingPin);
+    }
+
+    [Fact]
+    public void ARefusedChangeLeavesNothingToUndo()
+    {
+        var events = new EventGraph("Events");
+        var entry = new EventEntryNode(events, "OnHit");
+        entry.SetArguments([new EventArgument("a", Int)]);
+        var stack = new UndoRedoStack();
+
+        Assert.Throws<ArgumentException>(() => stack.Do(EditorCommands.SetEventArguments(entry, "Rename argument", [new EventArgument("1x", Int)], [0])));
+
+        Assert.Equal([new EventArgument("a", Int)], entry.Arguments);
+        Assert.False(stack.CanUndo);
+    }
+}

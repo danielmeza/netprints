@@ -744,9 +744,9 @@ Contracts: contributions.md, commands.md, shell.md §7. **Independent test**: US
 
 ### Batch F4 — model: sonnet — T084–T087 — 6 units
 
-- [ ] T084 [US8] Event graph inspector and inline rename. Test first: renaming in the inspector, or inline in the tree
+- [x] T084 [US8] Event graph inspector and inline rename. Test first: renaming in the inspector, or inline in the tree
   with F2, updates the tree, the tab and the breadcrumbs; a duplicate is refused with the T081 message.
-- [ ] T085 [US8] Event entry inspector (2 units). The rename goes through the same rename as T082 (Review E R3). Test first:
+- [x] T085 [US8] Event entry inspector (2 units). The rename goes through the same rename as T082 (Review E R3). Test first:
   `tests/NetPrints.Editor.Tests/Events/EventEntryInspectorViewModelTests.cs` (contracts/shell.md §7). It shows when an
   entry is selected on the canvas or its graph is opened: name, kind and arguments. For a custom entry: rename (a
   refused clash is shown in the inspector), and add, remove, move up, move down, rename and retype arguments (with the

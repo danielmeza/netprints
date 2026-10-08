@@ -304,6 +304,92 @@ public static class EditorCommands
             () => (result ?? throw new InvalidOperationException(NoDoActionMessage)).Undo());
     }
 
+    /// <summary>
+    /// Replaces the arguments of the custom event <paramref name="entry"/> (<see cref="EventEntryNode.SetArguments"/>) as one step.
+    /// The connections of each argument's data pin and type pin follow the argument to its new position; undo puts the old pins
+    /// and every connection back.
+    /// </summary>
+    /// <param name="entry">The custom event entry.</param>
+    /// <param name="label">The name of the step, such as <c>Add argument</c>.</param>
+    /// <param name="arguments">The new arguments.</param>
+    /// <param name="sourceIndexes">For each new argument, the index it had before, or -1 for a new one.</param>
+    /// <returns>The command.</returns>
+    public static IUndoableCommand SetEventArguments(EventEntryNode entry, string label, IReadOnlyList<EventArgument> arguments, IReadOnlyList<int> sourceIndexes)
+    {
+        ArgumentNullException.ThrowIfNull(entry);
+        ArgumentNullException.ThrowIfNull(label);
+        ArgumentNullException.ThrowIfNull(arguments);
+        ArgumentNullException.ThrowIfNull(sourceIndexes);
+        IReadOnlyList<EventArgument> previous = [];
+        List<ArgumentLinks> previousLinks = [];
+
+        return new DelegateUndoableCommand(label,
+            () =>
+            {
+                previous = entry.DeclaredArguments;
+                previousLinks = DetachArguments(entry);
+                try
+                {
+                    entry.SetArguments(arguments);
+                }
+                catch (ArgumentException)
+                {
+                    entry.SetArguments(previous);
+                    AttachArguments(entry, previousLinks, Enumerable.Range(0, previousLinks.Count).ToList());
+                    throw;
+                }
+
+                AttachArguments(entry, previousLinks, sourceIndexes);
+            },
+            () =>
+            {
+                DetachArguments(entry);
+                entry.SetArguments(previous);
+                AttachArguments(entry, previousLinks, Enumerable.Range(0, previousLinks.Count).ToList());
+            });
+    }
+
+    private sealed record ArgumentLinks(IReadOnlyList<NodeInputDataPin> Targets, NodeOutputTypePin? TypeSource);
+
+    private static List<ArgumentLinks> DetachArguments(EventEntryNode entry)
+    {
+        List<ArgumentLinks> links = [];
+        for (int i = 0; i < entry.OutputDataPins.Count; i++)
+        {
+            NodeInputTypePin? typePin = i < entry.InputTypePins.Count ? entry.InputTypePins[i] : null;
+            links.Add(new ArgumentLinks([.. entry.OutputDataPins[i].OutgoingPins], typePin?.IncomingPin));
+            GraphUtil.DisconnectOutputDataPin(entry.OutputDataPins[i]);
+            if (typePin is not null)
+            {
+                GraphUtil.DisconnectInputTypePin(typePin);
+            }
+        }
+
+        return links;
+    }
+
+    private static void AttachArguments(EventEntryNode entry, IReadOnlyList<ArgumentLinks> links, IReadOnlyList<int> sourceIndexes)
+    {
+        for (int i = 0; i < sourceIndexes.Count && i < entry.OutputDataPins.Count; i++)
+        {
+            if (sourceIndexes[i] < 0 || sourceIndexes[i] >= links.Count)
+            {
+                continue;
+            }
+
+            ArgumentLinks link = links[sourceIndexes[i]];
+            foreach (NodeInputDataPin target in link.Targets)
+            {
+                GraphUtil.ConnectDataPins(entry.OutputDataPins[i], target);
+            }
+
+            if (link.TypeSource is not null && i < entry.InputTypePins.Count)
+            {
+                GraphUtil.ConnectTypePins(link.TypeSource, entry.InputTypePins[i]);
+            }
+        }
+    }
+
     /// <summary>Adds a local variable of type <c>object</c> named <paramref name="name"/> (US5); undo removes it.</summary>
     public static IUndoableCommand AddLocalVariable(ExecutionGraph graph, string name)
     {

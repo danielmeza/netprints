@@ -4,7 +4,6 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using NetPrints.Core;
 using NetPrints.Editor.Contributions;
-using NetPrints.Editor.Events;
 using NetPrints.Editor.ModelSync;
 using NetPrints.Editor.Shell;
 
@@ -171,7 +170,7 @@ public sealed partial class ProjectTreePanelViewModel : ObservableObject, IShell
                 Group(MethodsName, new ObservableViewModelCollection<ProjectTreeItemViewModel, MethodGraph>(cls.Methods, CreateMethod, ReleaseItem)),
                 Group(ConstructorsName, new ObservableViewModelCollection<ProjectTreeItemViewModel, ConstructorGraph>(cls.Constructors, CreateConstructor, ReleaseItem)),
                 Group(VariablesName, new ObservableViewModelCollection<ProjectTreeItemViewModel, Variable>(cls.Variables, CreateVariable, ReleaseItem)),
-                Group(EventGraphsName, new ObservableViewModelCollection<ProjectTreeItemViewModel, EventGraph>(cls.EventGraphs, graph => CreateEventGraph(cls, graph), ReleaseItem)),
+                Group(EventGraphsName, new ObservableViewModelCollection<ProjectTreeItemViewModel, EventGraph>(cls.EventGraphs, CreateEventGraph, ReleaseItem)),
             ],
             Open);
         item.IsUnsaved = context?.Shell.Session?.Unsaved.IsUnsaved(cls) ?? false;
@@ -187,11 +186,8 @@ public sealed partial class ProjectTreePanelViewModel : ObservableObject, IShell
     private ProjectTreeItemViewModel CreateVariable(Variable variable) =>
         new(TreeItemKind.Variable, variable, () => variable.Name, variable as INotifyPropertyChanged, null, null);
 
-    private ProjectTreeItemViewModel CreateEventGraph(ClassGraph cls, EventGraph graph)
-    {
-        var named = new EventGraphViewModel(graph, cls);
-        return new ProjectTreeItemViewModel(TreeItemKind.EventGraph, graph, () => named.Name, named, null, Open);
-    }
+    private ProjectTreeItemViewModel CreateEventGraph(EventGraph graph) =>
+        new(TreeItemKind.EventGraph, graph, () => graph.Name, null, null, Open);
 
     /// <summary>Opens the graph of a double-tapped row; a row that opens nothing (a group, a variable, the project) is ignored.</summary>
     /// <param name="item">Row that was double-tapped.</param>

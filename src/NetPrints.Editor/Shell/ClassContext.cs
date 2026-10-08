@@ -57,7 +57,7 @@ public sealed class ClassContext : IDisposable
         Constructors = new ObservableViewModelCollection<MethodViewModel, ConstructorGraph>(cls.Constructors, c => new MethodViewModel(c), m => m.Dispose());
         Variables = new ObservableViewModelCollection<MemberVariableViewModel, Variable>(cls.Variables,
             v => new MemberVariableViewModel(v, Services, RenameVariable), v => v.Dispose());
-        EventGraphs = new ObservableViewModelCollection<EventGraphViewModel, EventGraph>(cls.EventGraphs, g => new EventGraphViewModel(g, cls));
+        EventGraphs = new ObservableViewModelCollection<EventGraphViewModel, EventGraph>(cls.EventGraphs, g => new EventGraphViewModel(g, cls, RenameEventGraph, undoRedo), g => g.Dispose());
         CodeView = new CodeViewViewModel(cls, context.CodeAnalysis);
         ClassInspector = new ClassInspectorViewModel(cls, CodeView, MarkDirty);
 
@@ -189,6 +189,23 @@ public sealed class ClassContext : IDisposable
     /// <param name="newName">The new name.</param>
     public void RenameVariable(Variable variable, string newName) =>
         UndoRedo.Do(EditorCommands.RenameVariable(projectClasses(), variable, newName));
+
+    /// <summary>Renames an event graph as one undo step; a name another event graph of the class uses is refused with an <see cref="ArgumentException"/>.</summary>
+    /// <param name="graph">Event graph of this class.</param>
+    /// <param name="newName">The new name.</param>
+    public void RenameEventGraph(EventGraph graph, string newName) =>
+        UndoRedo.Do(EditorCommands.RenameEventGraph(graph, newName));
+
+    /// <summary>Renames a custom event entry and the calls to it in every graph of the project, as one undo step.</summary>
+    /// <param name="entry">Custom event entry of this class.</param>
+    /// <param name="newName">The new name; a clash with a method or another entry is refused with an <see cref="ArgumentException"/>.</param>
+    public void RenameEvent(EventEntryNode entry, string newName) =>
+        UndoRedo.Do(EditorCommands.RenameEvent(projectClasses(), entry, newName));
+
+    /// <summary>Creates the inspector of an event entry of this class; the caller disposes it.</summary>
+    /// <param name="entry">The entry.</param>
+    /// <returns>The inspector.</returns>
+    public EventEntryInspectorViewModel EventEntryInspectorOf(EventEntryNode entry) => new(entry, Services, RenameEvent);
 
     /// <summary>Creates a variable named Variable, Variable1, ... of type object (undoable).</summary>
     public void CreateVariable()

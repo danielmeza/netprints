@@ -2,11 +2,12 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:ed="clr-namespace:NetPrints.Editor"
              xmlns:edclasseditor="clr-namespace:NetPrints.Editor.ClassEditor"
+             xmlns:edevents="clr-namespace:NetPrints.Editor.Events"
              xmlns:edinspectors="clr-namespace:NetPrints.Editor.Inspectors"
              xmlns:edvariables="clr-namespace:NetPrints.Editor.Variables"
              x:Class="NetPrints.Editor.Inspectors.InspectorPanelView"
              x:DataType="edinspectors:InspectorPanelViewModel">
-  <!-- The inspector of the tree's selection: class, method or variable; an empty state otherwise. -->
+  <!-- The inspector of the tree's selection: class, method, variable, event graph or event entry; an empty state otherwise. -->
   <Panel>
     <TextBlock Margin="8" TextWrapping="Wrap" Text="{Binding EmptyMessage}" IsVisible="{Binding IsEmpty}"
                AutomationProperties.AutomationId="{x:Static ed:AutomationIds.InspectorEmpty}" />
@@ -18,6 +19,12 @@
         </DataTemplate>
         <DataTemplate DataType="edclasseditor:MethodViewModel" x:DataType="edclasseditor:MethodViewModel">
           <edinspectors:MethodInspectorView />
+        </DataTemplate>
+        <DataTemplate DataType="edevents:EventGraphViewModel" x:DataType="edevents:EventGraphViewModel">
+          <edinspectors:EventGraphInspectorView />
+        </DataTemplate>
+        <DataTemplate DataType="edevents:EventEntryInspectorViewModel" x:DataType="edevents:EventEntryInspectorViewModel">
+          <edinspectors:EventEntryInspectorView />
         </DataTemplate>
         <DataTemplate DataType="edvariables:MemberVariableViewModel" x:DataType="edvariables:MemberVariableViewModel">
           <edinspectors:VariableInspectorView />

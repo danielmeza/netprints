@@ -3,13 +3,15 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Messaging;
 using NetPrints.Core;
 using NetPrints.Editor.ClassEditor;
+using NetPrints.Editor.Events;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Shell;
+using NetPrints.Graph;
 
 namespace NetPrints.Editor.Inspectors;
 
 /// <summary>
-/// The inspector panel: hosts the class, method or variable inspector for the project tree's selection
+/// The inspector panel: hosts the class, method, variable, event graph or event entry inspector for the project tree's selection
 /// (<see cref="ShellViewModel.TreeSelection"/>) or for the selection in the active graph
 /// (<see cref="GraphSelectionInspectorTarget"/>), whichever changed last, and an empty state when nothing is selected or no project is open.
 /// The inspectors come from the class's <see cref="ClassContext"/>, which the session owns.
@@ -26,11 +28,19 @@ public sealed partial class InspectorPanelViewModel : ObservableObject, IShellPa
     [NotifyPropertyChangedFor(nameof(IsEmpty))]
     public partial object? Content { get; private set; }
 
+    partial void OnContentChanged(object? oldValue, object? newValue)
+    {
+        if (oldValue is EventEntryInspectorViewModel entryInspector && !ReferenceEquals(oldValue, newValue))
+        {
+            entryInspector.Dispose();
+        }
+    }
+
     /// <summary>Gets a value indicating whether nothing is inspected.</summary>
     public bool IsEmpty => Content is null;
 
     /// <summary>Gets the text of the empty state.</summary>
-    public string EmptyMessage => "Select a class, method or variable to inspect it.";
+    public string EmptyMessage => "Select a class, method, variable or event graph to inspect it.";
 
     /// <inheritdoc/>
     public void Attach(PanelContext context)
@@ -67,6 +77,14 @@ public sealed partial class InspectorPanelViewModel : ObservableObject, IShellPa
     private void OnInspectorChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName == nameof(ClassInspectorViewModel.Name))
+        {
+            context?.Shell.NotifyModelRenamed();
+        }
+    }
+
+    private void OnUndoApplied(object? sender, EventArgs e)
+    {
+        if (Content is EventGraphViewModel or EventEntryInspectorViewModel)
         {
             context?.Shell.NotifyModelRenamed();
         }
@@ -147,6 +165,8 @@ public sealed partial class InspectorPanelViewModel : ObservableObject, IShellPa
         MethodGraph { Class: { } owner } method => Watch(session.ContextFor(owner)).Methods.FirstOrDefault(item => ReferenceEquals(item.Graph, method)),
         ConstructorGraph { Class: { } owner } constructor => Watch(session.ContextFor(owner)).Constructors.FirstOrDefault(item => ReferenceEquals(item.Graph, constructor)),
         Variable { Class: { } owner } variable => Watch(session.ContextFor(owner)).Variables.FirstOrDefault(item => ReferenceEquals(item.Variable, variable)),
+        EventGraph { Class: { } owner } eventGraph => Watch(session.ContextFor(owner)).EventGraphs.FirstOrDefault(item => ReferenceEquals(item.Graph, eventGraph)),
+        EventEntryNode { Graph.Class: { } owner } entry => Watch(session.ContextFor(owner)).EventEntryInspectorOf(entry),
         _ => null,
     };
 
@@ -157,6 +177,7 @@ public sealed partial class InspectorPanelViewModel : ObservableObject, IShellPa
         {
             classContext.Messenger.Register<SelectInspectorMessage>(this);
             classContext.ClassInspector.PropertyChanged += OnInspectorChanged;
+            classContext.UndoRedo.Applied += OnUndoApplied;
         }
 
         return classContext;
@@ -167,6 +188,7 @@ public sealed partial class InspectorPanelViewModel : ObservableObject, IShellPa
         foreach (ClassContext classContext in watched)
         {
             classContext.ClassInspector.PropertyChanged -= OnInspectorChanged;
+            classContext.UndoRedo.Applied -= OnUndoApplied;
             classContext.Messenger.UnregisterAll(this);
         }
 

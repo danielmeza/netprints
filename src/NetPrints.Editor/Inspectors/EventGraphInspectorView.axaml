@@ -1,0 +1,16 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:edevents="clr-namespace:NetPrints.Editor.Events"
+             x:Class="NetPrints.Editor.Inspectors.EventGraphInspectorView"
+             x:DataType="edevents:EventGraphViewModel">
+  <!-- Event graph inspector (US8, FR-070): the name, renamed as one undo step; a duplicate is refused with a message. -->
+  <Grid AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventGraphInspector}" RowDefinitions="Auto,Auto,Auto" Classes="propertyGrid" ColumnDefinitions="Auto,*">
+    <TextBlock Grid.ColumnSpan="2" Classes="header" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+    <TextBlock x:Name="NameLabel" Grid.Row="1" Classes="inspectorLabel" Text="Name" />
+    <TextBox Grid.Row="1" Grid.Column="1" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventGraphInspectorName}"
+             AutomationProperties.LabeledBy="{Binding #NameLabel}" Text="{Binding Name, UpdateSourceTrigger=LostFocus}" />
+    <TextBlock Grid.Row="2" Grid.Column="1" Classes="fieldError" Text="{Binding Error}" IsVisible="{Binding HasError}"
+               AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventGraphInspectorError}" />
+  </Grid>
+</UserControl>

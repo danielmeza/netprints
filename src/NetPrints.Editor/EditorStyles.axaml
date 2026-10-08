@@ -103,6 +103,12 @@
     <Setter Property="Foreground" Value="{DynamicResource Diagnostic.Error.Foreground}" />
   </Style>
 
+  <!-- Inspector fields: the message of a refused edit. -->
+  <Style Selector="TextBlock.fieldError">
+    <Setter Property="Foreground" Value="{DynamicResource Diagnostic.Error.Foreground}" />
+    <Setter Property="TextWrapping" Value="Wrap" />
+  </Style>
+
   <!-- Round toolbar buttons (MahApps MetroCircleButtonStyle in the WPF editor). -->
   <Style Selector="Button.round">
     <Setter Property="Width" Value="100" />

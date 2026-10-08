@@ -28,6 +28,54 @@ public static class AutomationIds
     /// </summary>
     public const string VariableInspector = "Inspectors.Variable";
 
+    /// <summary>The event graph inspector pane.</summary>
+    public const string EventGraphInspector = "Inspector.EventGraph";
+
+    /// <summary>The name field of the event graph inspector.</summary>
+    public const string EventGraphInspectorName = "Inspector.EventGraph.Name";
+
+    /// <summary>The refused-name message of the event graph inspector.</summary>
+    public const string EventGraphInspectorError = "Inspector.EventGraph.Error";
+
+    /// <summary>The event entry inspector pane.</summary>
+    public const string EventEntryInspector = "Inspector.EventEntry";
+
+    /// <summary>The name field of the event entry inspector.</summary>
+    public const string EventEntryInspectorName = "Inspector.EventEntry.Name";
+
+    /// <summary>The kind (custom event or override) of the event entry inspector.</summary>
+    public const string EventEntryInspectorKind = "Inspector.EventEntry.Kind";
+
+    /// <summary>The refused-edit message of the event entry inspector.</summary>
+    public const string EventEntryInspectorError = "Inspector.EventEntry.Error";
+
+    /// <summary>The note on where an override's signature comes from.</summary>
+    public const string EventEntryInspectorBaseSignature = "Inspector.EventEntry.BaseSignature";
+
+    /// <summary>The add argument button of the event entry inspector.</summary>
+    public const string EventEntryInspectorAddArgument = "Inspector.EventEntry.AddArgument";
+
+    /// <summary>The list of arguments of the event entry inspector.</summary>
+    public const string EventEntryInspectorArguments = "Inspector.EventEntry.Arguments";
+
+    /// <summary>One argument row of the event entry inspector.</summary>
+    public const string EventEntryInspectorArgument = "Inspector.EventEntry.Argument";
+
+    /// <summary>The name field of an argument row.</summary>
+    public const string EventEntryInspectorArgumentName = "Inspector.EventEntry.Argument.Name";
+
+    /// <summary>The type button of an argument row.</summary>
+    public const string EventEntryInspectorArgumentType = "Inspector.EventEntry.Argument.Type";
+
+    /// <summary>The move up button of an argument row.</summary>
+    public const string EventEntryInspectorArgumentMoveUp = "Inspector.EventEntry.Argument.MoveUp";
+
+    /// <summary>The move down button of an argument row.</summary>
+    public const string EventEntryInspectorArgumentMoveDown = "Inspector.EventEntry.Argument.MoveDown";
+
+    /// <summary>The remove button of an argument row.</summary>
+    public const string EventEntryInspectorArgumentRemove = "Inspector.EventEntry.Argument.Remove";
+
     /// <summary>The name field of the variable inspector.</summary>
     public const string VariableInspectorName = "Inspectors.Variable.Name";
 

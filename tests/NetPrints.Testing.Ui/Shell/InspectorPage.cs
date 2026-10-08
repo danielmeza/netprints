@@ -37,4 +37,34 @@ public sealed class InspectorPage(IUiDriver driver, AutomationQuery window)
 
     /// <summary>The variable inspector.</summary>
     public UiElement VariableInspector => Find(AutomationIds.VariableInspector);
+
+    /// <summary>The event graph inspector.</summary>
+    public UiElement EventGraphInspector => Find(AutomationIds.EventGraphInspector);
+
+    /// <summary>The event graph inspector's name box.</summary>
+    public UiElement EventGraphName => Find(AutomationIds.EventGraphInspectorName);
+
+    /// <summary>The message of a refused event graph name.</summary>
+    public UiElement EventGraphError => Find(AutomationIds.EventGraphInspectorError);
+
+    /// <summary>The event entry inspector.</summary>
+    public UiElement EventEntryInspector => Find(AutomationIds.EventEntryInspector);
+
+    /// <summary>The event entry inspector's name box.</summary>
+    public UiElement EventEntryName => Find(AutomationIds.EventEntryInspectorName);
+
+    /// <summary>The kind line of the event entry inspector.</summary>
+    public UiElement EventEntryKind => Find(AutomationIds.EventEntryInspectorKind);
+
+    /// <summary>The message of a refused event entry edit.</summary>
+    public UiElement EventEntryError => Find(AutomationIds.EventEntryInspectorError);
+
+    /// <summary>The note on where an override's signature comes from.</summary>
+    public UiElement EventEntryBaseSignature => Find(AutomationIds.EventEntryInspectorBaseSignature);
+
+    /// <summary>The add argument button of the event entry inspector.</summary>
+    public UiElement EventEntryAddArgument => Find(AutomationIds.EventEntryInspectorAddArgument);
+
+    /// <summary>The name boxes of the argument rows.</summary>
+    public UiElement EventEntryArgumentName => Find(AutomationIds.EventEntryInspectorArgumentName);
 }
