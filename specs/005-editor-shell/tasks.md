@@ -765,7 +765,7 @@ Contracts: contributions.md, commands.md, shell.md §7. **Independent test**: US
 
 ### Batch F-R — model: opus — T088 (sub-phase review)
 
-- [ ] T088 [US7] [US8] Review sub-phase F: an Opus reviewer who did not implement it reviews the whole diff of batches
+- [x] T088 [US7] [US8] Review sub-phase F: an Opus reviewer who did not implement it reviews the whole diff of batches
   F1–F4 (from the commit before the first batch to HEAD): US7 and US8 end to end against spec.md,
   contracts/contributions.md, contracts/commands.md, contracts/shell.md §7, the schema change (constitution VI,
   canonical output, goldens), the tracked public API, and plan.md's standing constraints. It runs the independent test

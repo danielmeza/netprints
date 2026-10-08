@@ -1837,3 +1837,34 @@ outside this repo) ended in these decisions. Only the first group changes P3a; t
   `eng/trim-warnings.txt`; the count may only go down.
 - Latent pin oddities left to S3: Ternary input order, a pure ExplicitCast's success/failed pins throw, a static
   MakeDelegate `TargetPin` throws.
+
+## Review F (T088, `review-F.md`)
+
+Scope: batches F1–F4b, `f3b06f2f..da126b6c` (T074–T087), plus the S0 batch (`a4bd9bbf..7251c982`) and the docs/CI batch
+(`2cca902a`, `82af1320`, `ecae490f`), which had not been reviewed. Review on PR #12.
+
+Verdict: request changes, 0 blockers, 3 majors, 9 minors, 6 nits (18 findings). R12 is pre-existing (outside the diff) and
+goes to T094a; R17 is a process finding for H-R. Evidence: 14 probe cases at `da126b6c` (12 red, 2 green); the whole suite in
+Release (3052 tests, 3027 passed, 25 skipped, 0 failed) and the Desktop E2E with `NETPRINTS_E2E=1 --fail-skips on` (44 of 44,
+0 skipped). Suggested fix batches F-F1 to F-F4 (T089).
+
+| Id | Sev | Summary | Batch | Status |
+|---|---|---|---|---|
+| R1 | major | After Back, Forward, go-to or a connection jump deselects a node, its canvas container stays selected and a click no longer selects it | F-F1 | open |
+| R2 | major | No inline rename in the tree; F2 shows the inspector and leaves focus in the tree (FR-070, US8 scenario 1, shell.md §7) | F-F3 | open |
+| R3 | major | Argument edits leave the event's calls on the old signature: the class stops compiling, and a later rename misses them | F-F2 | open |
+| R4 | minor | `RenameEvent` does not retarget make-delegate nodes of the event | F-F2 | open |
+| R5 | minor | Name uniqueness is one-sided: an entry can take a variable's name, a method can take an entry's name | F-F2 | open |
+| R6 | minor | "Or its graph is opened" is not a trigger of the entry inspector (FR-071) | F-F3 | open |
+| R7 | minor | Entry inspector: Tab after an argument rename loses focus, Enter does not commit | F-F1 | open |
+| R8 | minor | A contributed panel's View entry is a menu-only command outside the registry (synthesize it in the registry) | F-F3 | open |
+| R9 | minor | Go to anything caps node results at 100 before ranking | F-F4 | open |
+| R10 | minor | Go to source and Go to target never run from the Go menu or the palette; no keyboard path to connections | F-F3 | open |
+| R11 | minor | Docs: S0's user-visible changes missing from the release notes; NPD010 missing from the issue table; one contract row wrong | F-F4 | open |
+| R12 | minor | Pre-existing: an await node throws when its task's result type changes while the result is connected | T094a | open |
+| R13 | nit | `MemberKey` compares its parameter list by reference; `default(MemberKey)` has null members | F-F4 | open |
+| R14 | nit | A blank or untrimmed event graph name is accepted | F-F2 | open |
+| R15 | nit | Tests: line-number `!` allowlist, E2E that assert around R1 and R2, no `ref` case for NPT008 | F-F1, F-F4 | open |
+| R16 | nit | Event argument names written twice; an invalid name fails the whole class instead of repair and warn | F-F4 | open |
+| R17 | nit | Process: the skill-paths hook never fired for F2a–F4b, which changed files through shell commands | H-R | open |
+| R18 | nit | UI edges: Ctrl+click on macOS, palette and go-to accessibility, `GoToItem` with no action, Edit menu height (T098a) | F-F4 | open |
