@@ -21,8 +21,8 @@ public sealed partial class DockShellAdapter : ObservableObject, IShell, IShellL
     private readonly ILogger logger;
     private readonly Dictionary<DocumentViewModel, PropertyChangedEventHandler> titleWatchers = [];
     private List<string> suspendedPanels = [];
-    private Dictionary<string, string> suspendedActive = [];
-    private Dictionary<string, double> suspendedProportions = [];
+    private Dictionary<IDock, string> suspendedActive = new(ReferenceEqualityComparer.Instance);
+    private Dictionary<IDockable, double> suspendedProportions = new(ReferenceEqualityComparer.Instance);
 
     /// <summary>Creates the adapter with the default layout.</summary>
     /// <param name="shell">The shell state the layout keeps in step.</param>
@@ -231,6 +231,9 @@ public sealed partial class DockShellAdapter : ObservableObject, IShell, IShellL
 
         titleWatchers.Clear();
     }
+
+    /// <summary>Gets the factory that builds and rearranges the layout, as the drag and drop of a panel drives it.</summary>
+    internal ShellDockFactory DockFactory => factory;
 
     /// <summary>Gets a value indicating whether the tool panels are hidden because no project is open.</summary>
     internal bool PanelsSuspended { get; private set; }
@@ -484,17 +487,22 @@ public sealed partial class DockShellAdapter : ObservableObject, IShell, IShellL
     {
         List<ShellTool> visible = [.. ShellDockFactory.Walk(Layout).OfType<ShellTool>()];
         suspendedPanels = [.. visible.Select(tool => tool.Id)];
-        suspendedActive = [];
+        suspendedActive = new(ReferenceEqualityComparer.Instance);
         foreach (ShellTool tool in visible)
         {
             if (tool.Owner is IDock owner && ReferenceEquals(owner.ActiveDockable, tool))
             {
-                suspendedActive[owner.Id] = tool.Id;
+                suspendedActive[owner] = tool.Id;
             }
         }
 
         List<IProportionalDock> columns = [.. ShellDockFactory.Walk(Layout).OfType<IProportionalDock>().Where(IsToolColumn)];
-        suspendedProportions = ShellDockFactory.Walk(Layout).Where(dockable => dockable is IDock && !double.IsNaN(dockable.Proportion)).ToDictionary(dockable => dockable.Id, dockable => dockable.Proportion);
+        suspendedProportions = new(ReferenceEqualityComparer.Instance);
+        foreach (IDockable dockable in ShellDockFactory.Walk(Layout).Where(dockable => dockable is IDock && !double.IsNaN(dockable.Proportion)))
+        {
+            suspendedProportions[dockable] = dockable.Proportion;
+        }
+
         foreach (string id in suspendedPanels)
         {
             HidePanel(id);
@@ -512,9 +520,9 @@ public sealed partial class DockShellAdapter : ObservableObject, IShell, IShellL
     private void RestoreSuspendedPanels()
     {
         List<IDockable> docks = [.. ShellDockFactory.Walk(Layout)];
-        foreach (IDockable column in docks.Where(dock => dock is IProportionalDock && suspendedProportions.ContainsKey(dock.Id)))
+        foreach (IDockable column in docks.Where(dock => dock is IProportionalDock && suspendedProportions.ContainsKey(dock)))
         {
-            column.Proportion = suspendedProportions[column.Id];
+            column.Proportion = suspendedProportions[column];
         }
 
         foreach (string id in suspendedPanels.OrderBy(id => shell.FindPanel(id)?.Order ?? int.MaxValue))
@@ -526,22 +534,22 @@ public sealed partial class DockShellAdapter : ObservableObject, IShell, IShellL
         }
 
         List<IDockable> shown = [.. ShellDockFactory.Walk(Layout)];
-        foreach ((string dockId, string toolId) in suspendedActive)
+        foreach ((IDock dock, string toolId) in suspendedActive)
         {
-            if (shown.FirstOrDefault(dockable => dockable.Id == toolId) is { } tool && shown.FirstOrDefault(dockable => dockable.Id == dockId) is IDock)
+            if (shown.FirstOrDefault(dockable => dockable.Id == toolId) is { } tool && shown.Contains(dock))
             {
                 factory.SetActiveDockable(tool);
             }
         }
 
-        foreach (IDockable dock in shown.Where(dockable => dockable is IDock && suspendedProportions.ContainsKey(dockable.Id)))
+        foreach (IDockable dock in shown.Where(dockable => dockable is IDock && suspendedProportions.ContainsKey(dockable)))
         {
-            dock.Proportion = suspendedProportions[dock.Id];
+            dock.Proportion = suspendedProportions[dock];
         }
 
         suspendedPanels = [];
-        suspendedActive = [];
-        suspendedProportions = [];
+        suspendedActive = new(ReferenceEqualityComparer.Instance);
+        suspendedProportions = new(ReferenceEqualityComparer.Instance);
         SyncPanels();
     }
 

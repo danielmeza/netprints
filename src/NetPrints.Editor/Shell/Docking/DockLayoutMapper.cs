@@ -101,6 +101,7 @@ internal static class DockLayoutMapper
     private sealed class Builder(ShellDockFactory factory, IReadOnlyList<PanelViewModel> panels, Func<string, ShellDocument?> document)
     {
         private readonly HashSet<string> usedTools = [];
+        private readonly HashSet<string> usedDockIds = [];
 
         public ShellTool? Tool(string id) =>
             panels.FirstOrDefault(panel => string.Equals(panel.Id, id, StringComparison.Ordinal)) is { } panel && usedTools.Add(id) ? ShellDockFactory.NewTool(panel) : null;
@@ -153,9 +154,13 @@ internal static class DockLayoutMapper
             return dock;
         }
 
-        private static void Common(IDock dock, DockNodeDto node)
+        private void Common(IDock dock, DockNodeDto node)
         {
-            dock.Id = node.Id;
+            if (!string.IsNullOrEmpty(node.Id) && usedDockIds.Add(node.Id))
+            {
+                dock.Id = node.Id;
+            }
+
             if (node.Proportion is { } proportion && double.IsFinite(proportion))
             {
                 dock.Proportion = proportion;

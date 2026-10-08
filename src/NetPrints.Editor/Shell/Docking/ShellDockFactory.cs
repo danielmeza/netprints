@@ -85,28 +85,49 @@ internal sealed class ShellDockFactory : Factory
     public static IDockWindow? FloatingWindowOf(IRootDock layout, IDockable dockable) =>
         (layout.Windows ?? []).FirstOrDefault(window => window.Layout is { } floating && WalkDock(floating).Contains(dockable));
 
-    /// <inheritdoc/>
-    public override IDocumentDock CreateDocumentDock() => new DocumentDock { DockCapabilityPolicy = new DockCapabilityPolicy(), DockCapabilityOverrides = new DockCapabilityOverrides() };
+    /// <summary>Makes an id for a dock that Dock creates while the user rearranges the layout (a split, a window), which would otherwise have none.</summary>
+    /// <returns>An id no other dock has.</returns>
+    internal static string NewRuntimeId() => "netprints.dock." + Guid.NewGuid().ToString("N");
 
     /// <inheritdoc/>
-    public override IToolDock CreateToolDock() => new ToolDock { DockCapabilityPolicy = new DockCapabilityPolicy(), DockCapabilityOverrides = new DockCapabilityOverrides() };
+    public override IDocumentDock CreateDocumentDock() => new DocumentDock { Id = NewRuntimeId(), DockCapabilityPolicy = new DockCapabilityPolicy(), DockCapabilityOverrides = new DockCapabilityOverrides() };
 
     /// <inheritdoc/>
-    public override IProportionalDock CreateProportionalDock() => new ProportionalDock { DockCapabilityPolicy = new DockCapabilityPolicy(), DockCapabilityOverrides = new DockCapabilityOverrides() };
+    public override IToolDock CreateToolDock() => new ToolDock { Id = NewRuntimeId(), DockCapabilityPolicy = new DockCapabilityPolicy(), DockCapabilityOverrides = new DockCapabilityOverrides() };
 
     /// <inheritdoc/>
-    public override IRootDock CreateRootDock() => new ShellRootDock { DockCapabilityPolicy = new DockCapabilityPolicy(), DockCapabilityOverrides = new DockCapabilityOverrides() };
+    public override IProportionalDock CreateProportionalDock() => new ProportionalDock { Id = NewRuntimeId(), DockCapabilityPolicy = new DockCapabilityPolicy(), DockCapabilityOverrides = new DockCapabilityOverrides() };
+
+    /// <inheritdoc/>
+    public override IRootDock CreateRootDock() => new ShellRootDock { Id = NewRuntimeId(), DockCapabilityPolicy = new DockCapabilityPolicy(), DockCapabilityOverrides = new DockCapabilityOverrides() };
 
     /// <inheritdoc/>
     public override IDockWindow? CreateWindowFrom(IDockable dockable, DockWindowOptions? options)
     {
         IDockWindow? window = base.CreateWindowFrom(dockable, options);
+        if (window?.Layout is { } layout)
+        {
+            RenumberDuplicateDocks(layout);
+        }
+
         if (dockable is not IRootDock && window?.Layout is { } floating)
         {
             floating.FocusedDockable = dockable;
         }
 
         return window;
+    }
+
+    private void RenumberDuplicateDocks(IRootDock floating)
+    {
+        HashSet<string> taken = MainLayout is { } main ? [main.Id, .. Walk(main).OfType<IDock>().Select(dock => dock.Id)] : [];
+        foreach (IDock dock in WalkDock(floating).OfType<IDock>().Prepend(floating))
+        {
+            if (string.IsNullOrEmpty(dock.Id) || !taken.Add(dock.Id))
+            {
+                dock.Id = NewRuntimeId();
+            }
+        }
     }
 
     /// <inheritdoc/>
