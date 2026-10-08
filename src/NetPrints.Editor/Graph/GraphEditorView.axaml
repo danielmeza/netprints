@@ -16,10 +16,6 @@
              ClipToBounds="True">
   <UserControl.Styles>
     <!-- Cables: 0.7 opacity, full on hover; faint cables are thin and transparent (PAR-48). -->
-    <Style Selector="nc|Connection">
-      <Setter Property="Opacity" Value="0.7" />
-      <Setter Property="StrokeThickness" Value="4" />
-    </Style>
     <Style Selector="nc|Connection:pointerover">
       <Setter Property="Opacity" Value="1" />
     </Style>
@@ -34,7 +30,7 @@
     <edgraph:GridBackground x:Name="Grid" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GraphGrid}" IsHitTestVisible="False"
                             BackgroundColor="{DynamicResource SystemRegionColor}" MinorColor="{DynamicResource GraphGrid.MinorColor}" MajorColor="{DynamicResource GraphGrid.MajorColor}" />
     <nodify:NodifyEditor x:Name="Editor" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GraphEditor}"
-                         Background="Transparent"
+                         Theme="{StaticResource NetPrints.NodifyEditor}"
                          ItemsSource="{Binding Nodes}"
                          Connections="{Binding Connections}"
                          GridCellSize="28"
@@ -51,16 +47,11 @@
       </Interaction.Behaviors>
 
       <nodify:NodifyEditor.ItemContainerTheme>
-        <!-- Nodify's own container chrome (a blue border, orange when selected) is turned off:
-             NodeView already draws the single border WPF had, green when selected. -->
-        <ControlTheme TargetType="nodify:ItemContainer" BasedOn="{StaticResource {x:Type nodify:ItemContainer}}" x:DataType="ednodes:NodeViewModel">
+        <!-- Nodify's own container chrome is turned off in NetPrints.ItemContainer: NodeView draws the one border. -->
+        <ControlTheme TargetType="nodify:ItemContainer" BasedOn="{StaticResource NetPrints.ItemContainer}" x:DataType="ednodes:NodeViewModel">
           <Setter Property="Location" Value="{Binding Location, Mode=TwoWay, Converter={x:Static edgraph:GraphPointConverter.Instance}}" />
           <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
           <Setter Property="ZIndex" Value="{Binding ZIndex}" />
-          <Setter Property="BorderBrush" Value="Transparent" />
-          <Setter Property="BorderThickness" Value="0" />
-          <Setter Property="HighlightBrush" Value="Transparent" />
-          <Setter Property="SelectedBrush" Value="Transparent" />
         </ControlTheme>
       </nodify:NodifyEditor.ItemContainerTheme>
 
@@ -74,11 +65,13 @@
         <DataTemplate x:DataType="edpins:ConnectionViewModel">
           <nc:Connection AutomationProperties.AutomationId="{x:Static ed:AutomationIds.Connection}" AutomationProperties.Name="{Binding AutomationName}" Source="{Binding Source.Anchor, Converter={x:Static edgraph:GraphPointConverter.Instance}}"
                          Target="{Binding Target.Anchor, Converter={x:Static edgraph:GraphPointConverter.Instance}}"
-                         Stroke="{Binding Kind, Converter={x:Static edgraph:PinKindBrushConverter.Instance}}"
+                         Theme="{StaticResource NetPrints.Connection}"
                          Classes.faint="{Binding IsFaint}"
                          SplitCommand="{Binding InsertRerouteCommand}"
-                         ToolTip.Tip="{Binding ToolTip}"
-                         StrokeLineCap="Round">
+                         ToolTip.Tip="{Binding ToolTip}">
+            <Interaction.Behaviors>
+              <edbehaviors:StyleClassBehavior ClassName="{Binding KindClass}" />
+            </Interaction.Behaviors>
             <nc:Connection.ContextMenu>
               <ContextMenu ItemsSource="{Binding MenuEntries}">
                 <ContextMenu.Styles>

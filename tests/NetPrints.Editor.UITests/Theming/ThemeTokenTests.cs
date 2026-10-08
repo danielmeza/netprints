@@ -33,6 +33,42 @@ public class ThemeTokenTests
         "Icon.Property.Foreground",
         "Icon.Event.Foreground",
         "Icon.Class.Foreground",
+        "Node.Border",
+        "Node.HeaderForeground",
+        "Node.Header.Entry",
+        "Node.Header.Call",
+        "Node.Header.Pure",
+        "Node.Header.Flow",
+        "Node.Header.Variable",
+        "Node.Header.Constructor",
+        "Node.Header.Async",
+        "Node.Header.Throw",
+        "Pin.Exec",
+        "Pin.Data",
+        "Pin.Type",
+        "Pin.Bool",
+        "Pin.Integer",
+        "Pin.Float",
+        "Pin.String",
+        "Pin.Object",
+        "Pin.ValueType",
+        "Pin.Delegate",
+        "Pin.Generic",
+        "Pin.DefaultValue",
+        "Canvas.SelectionBorder",
+        "Canvas.MarqueeFill",
+        "Canvas.MarqueeBorder",
+        "Canvas.WireSelected",
+    ];
+
+    private static readonly string[] CanvasThemes =
+    [
+        "NetPrints.NodifyEditor",
+        "NetPrints.SelectionRectangle",
+        "NetPrints.ItemContainer",
+        "NetPrints.Node",
+        "NetPrints.Connection",
+        "NetPrints.Connector",
     ];
 
     private static object? Resolve(string key, ThemeVariant variant) =>
@@ -78,6 +114,15 @@ public class ThemeTokenTests
     }
 
     public static TheoryData<string> ColourTokenKeys() => [.. ColourTokens];
+
+    public static TheoryData<string> CanvasThemeKeys() => [.. CanvasThemes];
+
+    [AvaloniaTheory(Timeout = TestAppBuilder.Timeout)]
+    [MemberData(nameof(CanvasThemeKeys))]
+    public void EveryCanvasControlThemeIsAvailable(string key)
+    {
+        Assert.IsType<ControlTheme>(Resolve(key, ThemeVariant.Default));
+    }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public void ThePanelHeaderIsLeftAlignedSemiboldAtSubtitleSize()

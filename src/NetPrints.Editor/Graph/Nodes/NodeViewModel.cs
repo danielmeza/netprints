@@ -18,6 +18,9 @@ namespace NetPrints.Editor.Graph.Nodes;
 /// </summary>
 public sealed partial class NodeViewModel : ObservableObject, IDisposable
 {
+    private static readonly string TaskName = TypeSpecifier.FromType<Task>().Name;
+    private static readonly string ValueTaskName = TypeSpecifier.FromType<ValueTask>().Name;
+
     private readonly INotifyPropertyChanged nodeNotifier;
     private readonly ObservableViewModelCollection<NodePinViewModel, NodeInputExecPin> inputExecPins;
     private readonly ObservableViewModelCollection<NodePinViewModel, NodeInputDataPin> inputDataPins;
@@ -148,6 +151,17 @@ public sealed partial class NodeViewModel : ObservableObject, IDisposable
         _ => NodeVisualKind.Default,
     };
 
+    /// <summary>The role that colours the header (FR-086).</summary>
+    public NodeRole Role => NodeRole.Resolve(VisualKind, Node.IsPure, Node.InputExecPins.Count + Node.OutputExecPins.Count > 0, ReturnsTask);
+
+    /// <summary>The icon id of the glyph the header shows for <see cref="VisualKind"/> (FR-086).</summary>
+    public string KindIconId => NodeIcons.For(VisualKind);
+
+    private bool ReturnsTask =>
+        Node is CallMethodNode { MethodSpecifier: { } method }
+        && method.ReturnTypes.FirstOrDefault() is TypeSpecifier { Name: { } name }
+        && (name == TaskName || name == ValueTaskName);
+
     /// <summary>Documentation tooltip for method calls (PAR-39).</summary>
     public string? ToolTip
     {
@@ -260,6 +274,7 @@ public sealed partial class NodeViewModel : ObservableObject, IDisposable
             {
                 Node.IsPure = value;
                 OnPropertyChanged();
+                OnPropertyChanged(nameof(Role));
             }
         }
     }
@@ -403,6 +418,7 @@ public sealed partial class NodeViewModel : ObservableObject, IDisposable
         Sync(Outputs, [.. outputExecPins, .. outputDataPins, .. outputTypePins]);
         Sync(PinRows, BuildPinRows());
         OnPropertyChanged(nameof(IsPure));
+        OnPropertyChanged(nameof(Role));
     }
 
     private static void Sync<T>(ObservableCollection<T> target, List<T> desired)
@@ -516,6 +532,8 @@ public sealed partial class NodeViewModel : ObservableObject, IDisposable
                 OnPropertyChanged(nameof(CurrentOverload));
                 OnPropertyChanged(nameof(Label));
                 OnPropertyChanged(nameof(VisualKind));
+                OnPropertyChanged(nameof(KindIconId));
+                OnPropertyChanged(nameof(Role));
                 OnPropertyChanged(nameof(ToolTip));
                 OnPropertyChanged(nameof(CanSetPure));
                 OnPropertyChanged(nameof(IsPure));

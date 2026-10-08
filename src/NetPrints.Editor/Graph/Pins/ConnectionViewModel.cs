@@ -23,6 +23,14 @@ public sealed partial class ConnectionViewModel(NodePinViewModel source, NodePin
     /// <summary>The kind of pin this connects (exec, data or type), taken from <see cref="Source"/>.</summary>
     public PinKind Kind => Source.Kind;
 
+    /// <summary>The style class that colours the cable by <see cref="Kind"/> (<c>pin-exec</c>, <c>pin-data</c> or <c>pin-type</c>).</summary>
+    public string KindClass => Kind switch
+    {
+        PinKind.Exec => "pin-exec",
+        PinKind.Type => "pin-type",
+        _ => "pin-data",
+    };
+
     /// <summary>Stable identity of the cable for UI automation: "&lt;node&gt;.&lt;pin&gt;-&gt;&lt;node&gt;.&lt;pin&gt;".</summary>
     public string AutomationName => $"{Source.Pin.Node.Name}.{Source.Pin.Name}->{Target.Pin.Node.Name}.{Target.Pin.Name}";
 

@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:edbehaviors="clr-namespace:NetPrints.Editor.Behaviors"
              xmlns:edgraph="clr-namespace:NetPrints.Editor.Graph"
              xmlns:ednodes="clr-namespace:NetPrints.Editor.Graph.Nodes"
              xmlns:edpins="clr-namespace:NetPrints.Editor.Graph.Pins"
@@ -15,33 +16,12 @@
     <!-- Pin connector: exec = square, data = circle, type = triangle; dimmed when unconnected (PAR-43). -->
     <ControlTemplate x:Key="PinConnectorTemplate">
       <Panel Classes="pinHitbox" Width="24" Height="24" x:DataType="edpins:NodePinViewModel" Background="Transparent" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PinConnector}">
-        <Rectangle Classes="pin" Width="16" Height="16" StrokeThickness="3" IsVisible="{Binding ShowRectangle}">
-          <Rectangle.Fill>
-            <MultiBinding Converter="{x:Static edgraph:PinFillConverter.Instance}">
-              <Binding Path="Kind" />
-              <Binding Path="IsDimmed" />
-            </MultiBinding>
-          </Rectangle.Fill>
-        </Rectangle>
-        <Ellipse Classes="pin" Width="16" Height="16" StrokeThickness="3" IsVisible="{Binding ShowCircle}">
-          <Ellipse.Fill>
-            <MultiBinding Converter="{x:Static edgraph:PinFillConverter.Instance}">
-              <Binding Path="Kind" />
-              <Binding Path="IsDimmed" />
-            </MultiBinding>
-          </Ellipse.Fill>
-        </Ellipse>
-        <Polygon Classes="pin" Points="0,0 16,8 0,16" StrokeThickness="1" IsVisible="{Binding ShowTriangle}">
-          <Polygon.Fill>
-            <MultiBinding Converter="{x:Static edgraph:PinFillConverter.Instance}">
-              <Binding Path="Kind" />
-              <Binding Path="IsDimmed" />
-            </MultiBinding>
-          </Polygon.Fill>
-        </Polygon>
+        <Rectangle Classes="pin pin-exec" Classes.dimmed="{Binding IsDimmed}" Width="16" Height="16" StrokeThickness="3" IsVisible="{Binding ShowRectangle}" />
+        <Ellipse Classes="pin pin-data" Classes.dimmed="{Binding IsDimmed}" Width="16" Height="16" StrokeThickness="3" IsVisible="{Binding ShowCircle}" />
+        <Polygon Classes="pin pin-type" Classes.dimmed="{Binding IsDimmed}" Points="0,0 16,8 0,16" StrokeThickness="1" IsVisible="{Binding ShowTriangle}" />
         <!-- Default-value indicator -->
-        <Polygon Points="0,0 6,7 0,14" IsHitTestVisible="False" IsVisible="{Binding ShowDefaultValueIndicator}"
-                 Fill="{Binding IsDefaultValueActive, Converter={x:Static edgraph:DefaultValueBrushConverter.Instance}}" />
+        <Polygon Classes="defaultValue" Classes.inactive="{Binding !IsDefaultValueActive}" Points="0,0 6,7 0,14" IsHitTestVisible="False"
+                 IsVisible="{Binding ShowDefaultValueIndicator}" />
       </Panel>
     </ControlTemplate>
 
@@ -113,14 +93,17 @@
 
   <!-- Node (PAR-39..42): header colored by kind, selected border, shadow, label. -->
   <Border x:Name="NodeBorder" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.Node}" AutomationProperties.Name="{Binding Name}" Classes.reroute="{Binding IsRerouteNode}"
-          BorderThickness="2" Background="{DynamicResource Node.CardBackground}" CornerRadius="8"
-          BorderBrush="{Binding IsSelected, Converter={x:Static edgraph:SelectedBorderConverter.Instance}}">
+          Classes="nodeCard" Classes.selected="{Binding IsSelected}"
+          BorderThickness="2" Background="{DynamicResource Node.CardBackground}" CornerRadius="8">
     <StackPanel>
-      <Border x:Name="Header" MinHeight="46" IsVisible="{Binding !IsRerouteNode}" CornerRadius="8,8,0,0" Padding="8,4"
-              Background="{Binding VisualKind, Converter={x:Static edgraph:NodeKindBrushConverter.Instance}}">
-        <Grid ColumnDefinitions="Auto,Auto,*">
+      <Border x:Name="Header" Classes="nodeHeader" MinHeight="46" IsVisible="{Binding !IsRerouteNode}" CornerRadius="8,8,0,0" Padding="8,4">
+        <Interaction.Behaviors>
+          <edbehaviors:StyleClassBehavior ClassName="{Binding Role.StyleClass}" />
+        </Interaction.Behaviors>
+        <Grid ColumnDefinitions="Auto,Auto,Auto,*">
+          <icons:IconPresenter IconId="{Binding KindIconId}" VerticalAlignment="Center" AutomationProperties.AccessibilityView="Raw" />
           <!-- Overload chooser (PAR-40) -->
-          <ComboBox x:Name="Overloads" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NodeOverloads}" Margin="2" Width="24" ToolTip.Tip="Overloads" IsVisible="{Binding ShowOverloads}"
+          <ComboBox x:Name="Overloads" Grid.Column="1" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NodeOverloads}" Margin="2" Width="24" ToolTip.Tip="Overloads" IsVisible="{Binding ShowOverloads}"
                     ItemsSource="{Binding Overloads}" SelectedItem="{Binding SelectedOverload}" MaxDropDownHeight="400">
             <ComboBox.ItemTemplate>
               <DataTemplate x:DataType="x:Object">
@@ -128,10 +111,10 @@
               </DataTemplate>
             </ComboBox.ItemTemplate>
           </ComboBox>
-          <TextBlock x:Name="NodeLabel" Classes="nodeTitle" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NodeLabel}" Grid.Column="1" Text="{Binding Label}" Margin="12,0"
+          <TextBlock x:Name="NodeLabel" Classes="nodeTitle" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NodeLabel}" Grid.Column="2" Text="{Binding Label}" Margin="12,0"
                      VerticalAlignment="Center" />
           <!-- Pure (PAR-41) -->
-          <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="12,0" HorizontalAlignment="Right" IsVisible="{Binding CanSetPure}">
+          <StackPanel Grid.Column="3" Orientation="Horizontal" Margin="12,0" HorizontalAlignment="Right" IsVisible="{Binding CanSetPure}">
             <TextBlock Text="Pure" VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,0,4,0" />
             <CheckBox IsChecked="{Binding IsPure}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NodePure}" VerticalAlignment="Center" />
           </StackPanel>

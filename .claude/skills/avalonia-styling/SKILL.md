@@ -91,11 +91,6 @@ add a class there (D8) when none fits, and name it for its role, not its look (`
 - A `ControlTheme` replaces the whole template and only one applies at a time. Base it on the default
   (`BasedOn="{StaticResource {x:Type nodify:ItemContainer}}"`) or the control loses the parts you didn't restyle.
 
-## Known debt
-
-- `NodeKindBrushConverter` returns Dark-only brushes from `GraphBrushes`. It moves to tokens and style classes when a
-  Light variant is needed.
-
 ## Before you finish
 
 1. `dotnet build tests/NetPrints.Core.Tests -v q -tl:off --nologo`, then `tests/NetPrints.Core.Tests/bin/Debug/net10.0/NetPrints.Core.Tests -class '*XamlHygieneTests'` (E2, E6); fix and re-run until green.

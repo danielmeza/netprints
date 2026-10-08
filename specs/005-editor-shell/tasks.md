@@ -856,13 +856,13 @@ add T091b and T092g–T092l the same way.
 
 ### Batch G2 — model: sonnet — T091–T091b — 5 units
 
-- [ ] T091 [US9] Canvas theming (2 units). The UI polish restyled the node pin rows in `NodeView.axaml` with classes
+- [x] T091 [US9] Canvas theming (2 units). The UI polish restyled the node pin rows in `NodeView.axaml` with classes
   (`pinLabel`, `nodeTitle`) but not the Nodify `ControlTheme`s or the converters. Nodify `ControlTheme`s `BasedOn` the defaults for `NodifyEditor`, `Node`,
   `Connection`, `Connector` and `ItemContainer`, using `DynamicResource` tokens. `NodeKindBrushConverter`,
   `PinKindBrushConverter` and `GraphBrushes` (`src/NetPrints.Editor/Graph/GraphConverters.cs`) are replaced by style
   classes per node kind and pin kind, and the "Known debt" entry of `.claude/skills/avalonia-styling/SKILL.md` is
   removed. `ThemeTokenTests` covers the canvas tokens; a headless render check runs in both variants.
-- [ ] T091a [US9] Node-header roles, kind glyphs, pin and selection tokens (2 units, FR-086). Test first:
+- [x] T091a [US9] Node-header roles, kind glyphs, pin and selection tokens (2 units, FR-086). Test first:
   `tests/NetPrints.Editor.UITests/Theming/CanvasPaletteTests.cs`: every `NodeVisualKind`, pure and impure, gets one
   role class (Entry: `Entry`, `Return`; Call: impure `CallMethod`, `CallStatic`; Async: a call whose method returns
   `Task`, `ValueTask` or a generic form; Pure: any other pure node, including `Ternary`, `MakeArray`,
@@ -1324,9 +1324,9 @@ suite, the final review and merge preparation (FR-103, SC-010, every SC).
 | D — lifecycle and feedback | 13 (T048–T060) | D1–D3 sonnet | D-R, D-F |
 | E — start page and persistence | 24 (T061–T073, with T071a–k) | E1–E4, E5a, E5b sonnet | E-R, E-F |
 | F — navigation and event inspector | 16 (T074–T089) | F1–F4 sonnet | F-R, F-F |
-| G — look, search and hygiene | 31 (T090–T101, with T090a–b, T091a–b, T092a–l, T094a, T098a–b) | G1, G2, G4a–G4d, G5–G7 sonnet; G3 haiku | G-R, G-F |
+| G — look, search and hygiene | 32 (T090–T101, with T090a–b, T091a–b, T092a–l, T094a–b, T098a–b) | G1, G2, G4a–G4d, G5–G7 sonnet; G3 haiku | G-R, G-F |
 | H — docs and polish | 14 (T102–T114, with T102a) | H0–H3 sonnet | H-R, H-F, H-M |
-| **Total** | **146** | 40 | 17 |
+| **Total** | **147** | 40 | 17 |
 
 Sub-phase G is 42 units in ten implementation batches (G1 5, G2 5, G3 3, G4a 3, G4b 3, G4c 4, G4d 3, G5 7, G6 4,
 G7 5). The visual-polish plan (S1, 2026-10-06) took it from 15 to 30 units: its tasks added 14 units and T096 grew

@@ -1,8 +1,42 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:icons="clr-namespace:NetPrints.Editor.Icons">
+        xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
+        xmlns:nodify="clr-namespace:Nodify.Avalonia;assembly=Nodify.Avalonia"
+        xmlns:nc="clr-namespace:Nodify.Avalonia.Connections;assembly=Nodify.Avalonia"
+        xmlns:nn="clr-namespace:Nodify.Avalonia.Nodes;assembly=Nodify.Avalonia">
   <Styles.Resources>
     <ResourceDictionary>
+      <!-- Nodify control themes (FR-086): the defaults, re-coloured from tokens. A view applies one with Theme=. -->
+      <ControlTheme x:Key="NetPrints.SelectionRectangle" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource Canvas.MarqueeFill}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Canvas.MarqueeBorder}" />
+        <Setter Property="BorderThickness" Value="1" />
+      </ControlTheme>
+      <ControlTheme x:Key="NetPrints.NodifyEditor" TargetType="nodify:NodifyEditor" BasedOn="{StaticResource {x:Type nodify:NodifyEditor}}">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="SelectionRectangleTheme" Value="{StaticResource NetPrints.SelectionRectangle}" />
+      </ControlTheme>
+      <ControlTheme x:Key="NetPrints.ItemContainer" TargetType="nodify:ItemContainer" BasedOn="{StaticResource {x:Type nodify:ItemContainer}}">
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="HighlightBrush" Value="Transparent" />
+        <Setter Property="SelectedBrush" Value="Transparent" />
+      </ControlTheme>
+      <ControlTheme x:Key="NetPrints.Node" TargetType="nn:Node" BasedOn="{StaticResource {x:Type nn:Node}}">
+        <Setter Property="Background" Value="{DynamicResource Node.CardBackground}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource Node.Border}" />
+        <Setter Property="HeaderBrush" Value="{DynamicResource Node.Header.Flow}" />
+        <Setter Property="Foreground" Value="{DynamicResource Node.TitleForeground}" />
+      </ControlTheme>
+      <ControlTheme x:Key="NetPrints.Connection" TargetType="nc:Connection" BasedOn="{StaticResource {x:Type nc:Connection}}">
+        <Setter Property="Stroke" Value="{DynamicResource Pin.Data}" />
+        <Setter Property="StrokeThickness" Value="4" />
+        <Setter Property="Opacity" Value="0.7" />
+        <Setter Property="StrokeLineCap" Value="Round" />
+      </ControlTheme>
+      <ControlTheme x:Key="NetPrints.Connector" TargetType="nc:Connector" BasedOn="{StaticResource {x:Type nc:Connector}}">
+        <Setter Property="Foreground" Value="{DynamicResource Pin.Data}" />
+      </ControlTheme>
       <!-- Type ramp, spacing scale and shared widths (FR-080, research R11); none of these vary by theme. -->
       <x:Double x:Key="Font.Caption">12</x:Double>
       <x:Double x:Key="Font.Body">14</x:Double>
@@ -51,8 +85,37 @@
           <SolidColorBrush x:Key="Icon.Property.Foreground">#81D4FA</SolidColorBrush>
           <SolidColorBrush x:Key="Icon.Event.Foreground">#FFCDD2</SolidColorBrush>
           <SolidColorBrush x:Key="Icon.Class.Foreground">#A5D6A7</SolidColorBrush>
+
+          <!-- Node header roles (FR-086): each against Node.HeaderForeground reaches 4.5:1. -->
+          <SolidColorBrush x:Key="Node.HeaderForeground">#FFFFFFFF</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.Header.Entry">#3F3FA3</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.Header.Call">#2A5C8C</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.Header.Pure">#2E7A3F</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.Header.Flow">#5A5A5A</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.Header.Variable">#1F7A7A</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.Header.Constructor">#8A5A00</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.Header.Async">#6B3FA0</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.Header.Throw">#B3261E</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.Border">#CC303030</SolidColorBrush>
+          <!-- Pin kinds and data-type categories (FR-086). -->
+          <SolidColorBrush x:Key="Pin.Exec">#E0FFE0</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Data">#E0E0FF</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Type">#FFE0E0</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Bool">#EF5350</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Integer">#26C6DA</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Float">#66BB6A</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.String">#F06292</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Object">#90A4AE</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.ValueType">#FFB74D</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Delegate">#BA68C8</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Generic">#4DB6AC</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.DefaultValue">#10EEFF</SolidColorBrush>
+          <!-- Selection, marquee and selected wire (FR-086). -->
+          <SolidColorBrush x:Key="Canvas.SelectionBorder">#4FC3F7</SolidColorBrush>
+          <SolidColorBrush x:Key="Canvas.MarqueeFill">#334FC3F7</SolidColorBrush>
+          <SolidColorBrush x:Key="Canvas.MarqueeBorder">#4FC3F7</SolidColorBrush>
+          <SolidColorBrush x:Key="Canvas.WireSelected">#FFD54F</SolidColorBrush>
         </ResourceDictionary>
-        <!-- Light: every colour token above has a Light value; GraphBrushes (Graph/GraphConverters.cs) joins them in T091. -->
         <ResourceDictionary x:Key="Light">
           <Color x:Key="GraphGrid.MinorColor">#14000000</Color>
           <Color x:Key="GraphGrid.MajorColor">#2E000000</Color>
@@ -78,6 +141,33 @@
           <SolidColorBrush x:Key="Icon.Property.Foreground">#29B6F6</SolidColorBrush>
           <SolidColorBrush x:Key="Icon.Event.Foreground">#EF5350</SolidColorBrush>
           <SolidColorBrush x:Key="Icon.Class.Foreground">#66BB6A</SolidColorBrush>
+
+          <SolidColorBrush x:Key="Node.HeaderForeground">#FF1A1A1A</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.Header.Entry">#C5CAF5</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.Header.Call">#BBD7F2</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.Header.Pure">#C2E6C8</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.Header.Flow">#D4D4D4</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.Header.Variable">#B6E3E3</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.Header.Constructor">#F0D9A8</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.Header.Async">#DCC8F0</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.Header.Throw">#F5B8B3</SolidColorBrush>
+          <SolidColorBrush x:Key="Node.Border">#CCB0B0B0</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Exec">#2E7D32</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Data">#3949AB</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Type">#C62828</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Bool">#D32F2F</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Integer">#00838F</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Float">#388E3C</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.String">#C2185B</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Object">#546E7A</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.ValueType">#EF6C00</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Delegate">#7B1FA2</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Generic">#00796B</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.DefaultValue">#0097A7</SolidColorBrush>
+          <SolidColorBrush x:Key="Canvas.SelectionBorder">#0277BD</SolidColorBrush>
+          <SolidColorBrush x:Key="Canvas.MarqueeFill">#330277BD</SolidColorBrush>
+          <SolidColorBrush x:Key="Canvas.MarqueeBorder">#0277BD</SolidColorBrush>
+          <SolidColorBrush x:Key="Canvas.WireSelected">#F57F17</SolidColorBrush>
         </ResourceDictionary>
       </ResourceDictionary.ThemeDictionaries>
     </ResourceDictionary>
@@ -111,6 +201,78 @@
   </Style>
   <Style Selector="icons|IconPresenter[IconId='netprints.icon.event']">
     <Setter Property="Foreground" Value="{DynamicResource Icon.Event.Foreground}" />
+  </Style>
+
+  <!-- Node headers: the role class (NodeRole.StyleClass) picks the colour token; the text follows the variant (FR-086). -->
+  <Style Selector="Border.nodeHeader.role-entry">
+    <Setter Property="Background" Value="{DynamicResource Node.Header.Entry}" />
+  </Style>
+  <Style Selector="Border.nodeHeader.role-call">
+    <Setter Property="Background" Value="{DynamicResource Node.Header.Call}" />
+  </Style>
+  <Style Selector="Border.nodeHeader.role-pure">
+    <Setter Property="Background" Value="{DynamicResource Node.Header.Pure}" />
+  </Style>
+  <Style Selector="Border.nodeHeader.role-flow">
+    <Setter Property="Background" Value="{DynamicResource Node.Header.Flow}" />
+  </Style>
+  <Style Selector="Border.nodeHeader.role-variable">
+    <Setter Property="Background" Value="{DynamicResource Node.Header.Variable}" />
+  </Style>
+  <Style Selector="Border.nodeHeader.role-constructor">
+    <Setter Property="Background" Value="{DynamicResource Node.Header.Constructor}" />
+  </Style>
+  <Style Selector="Border.nodeHeader.role-async">
+    <Setter Property="Background" Value="{DynamicResource Node.Header.Async}" />
+  </Style>
+  <Style Selector="Border.nodeHeader.role-throw">
+    <Setter Property="Background" Value="{DynamicResource Node.Header.Throw}" />
+  </Style>
+  <Style Selector="Border.nodeHeader TextBlock">
+    <Setter Property="Foreground" Value="{DynamicResource Node.HeaderForeground}" />
+  </Style>
+  <Style Selector="Border.nodeHeader icons|IconPresenter">
+    <Setter Property="Foreground" Value="{DynamicResource Node.HeaderForeground}" />
+  </Style>
+
+  <!-- Node card: the border is the selection mark. -->
+  <Style Selector="Border.nodeCard">
+    <Setter Property="BorderBrush" Value="{DynamicResource Node.Border}" />
+  </Style>
+  <Style Selector="Border.nodeCard.selected">
+    <Setter Property="BorderBrush" Value="{DynamicResource Canvas.SelectionBorder}" />
+  </Style>
+
+  <!-- Pins and cables by kind; an unconnected pin is drawn at 60 % (PAR-43). -->
+  <Style Selector=":is(Shape).pin-exec">
+    <Setter Property="Fill" Value="{DynamicResource Pin.Exec}" />
+  </Style>
+  <Style Selector=":is(Shape).pin-data">
+    <Setter Property="Fill" Value="{DynamicResource Pin.Data}" />
+  </Style>
+  <Style Selector=":is(Shape).pin-type">
+    <Setter Property="Fill" Value="{DynamicResource Pin.Type}" />
+  </Style>
+  <Style Selector=":is(Shape).pin.dimmed">
+    <Setter Property="Opacity" Value="0.6" />
+  </Style>
+  <Style Selector="Polygon.defaultValue">
+    <Setter Property="Fill" Value="{DynamicResource Pin.DefaultValue}" />
+  </Style>
+  <Style Selector="Polygon.defaultValue.inactive">
+    <Setter Property="Opacity" Value="0.5" />
+  </Style>
+  <Style Selector="nc|Connection.pin-exec">
+    <Setter Property="Stroke" Value="{DynamicResource Pin.Exec}" />
+  </Style>
+  <Style Selector="nc|Connection.pin-data">
+    <Setter Property="Stroke" Value="{DynamicResource Pin.Data}" />
+  </Style>
+  <Style Selector="nc|Connection.pin-type">
+    <Setter Property="Stroke" Value="{DynamicResource Pin.Type}" />
+  </Style>
+  <Style Selector="nc|Connection:selected">
+    <Setter Property="Stroke" Value="{DynamicResource Canvas.WireSelected}" />
   </Style>
 
   <!-- Output panel: a line of the program's standard error. -->
