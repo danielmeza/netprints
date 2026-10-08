@@ -2,11 +2,11 @@ using Avalonia.Controls;
 using Avalonia.Headless;
 using Avalonia.Headless.XUnit;
 using Avalonia.VisualTree;
-using NetPrints.Editor.Inspectors;
-using NetPrints.Editor.Graph.Nodes;
-using NetPrints.Editor.UITests.Shell;
 using NetPrints.Core;
+using NetPrints.Editor.Graph.Nodes;
+using NetPrints.Editor.Inspectors;
 using NetPrints.Editor.UITests.Driving;
+using NetPrints.Editor.UITests.Shell;
 using NetPrints.Graph;
 using NetPrints.Testing.Ui.Driving;
 

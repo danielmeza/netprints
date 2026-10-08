@@ -42,6 +42,7 @@ public sealed class GoToAnythingTests(DesktopWorkerPool pool) : ProjectEditorTes
         {
             await driver.PressAsync("Alt+Left", token);
             await graph.WaitForViewportAsync(viewport, token);
+            await graph.Node(CallNode).WaitUntilAsync(e => e[AutomationPropertyNames.IsSelected] != bool.TrueString, "the node deselected", token);
         }
 
         using (Step("go to a node by its title, then back"))
@@ -58,6 +59,7 @@ public sealed class GoToAnythingTests(DesktopWorkerPool pool) : ProjectEditorTes
 
             await driver.PressAsync("Alt+Left", token);
             await graph.WaitForViewportAsync(viewport, token);
+            await graph.Node(CallNode).WaitUntilAsync(e => e[AutomationPropertyNames.IsSelected] != bool.TrueString, "the node deselected", token);
         }
     });
 }

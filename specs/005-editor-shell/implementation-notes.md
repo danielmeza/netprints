@@ -1868,3 +1868,9 @@ Release (3052 tests, 3027 passed, 25 skipped, 0 failed) and the Desktop E2E with
 | R16 | nit | Event argument names written twice; an invalid name fails the whole class instead of repair and warn | F-F4 | open |
 | R17 | nit | Process: the skill-paths hook never fired for F2a–F4b, which changed files through shell commands | H-R | open |
 | R18 | nit | UI edges: Ctrl+click on macOS, palette and go-to accessibility, `GoToItem` with no action, Edit menu height (T098a) | F-F4 | open |
+
+### F-F1 (R1, R7, R15 E2E part)
+
+- R1: `SelectionToContainersBehavior` on the editor pushes each view-model selection change into the realized item containers with `SetCurrentValue`. `NavigationSelectionTests.BackClearsTheCanvasSelectionOfTheNodeItLeaves` was red before. The click-after-Back test passed even before the fix: in the headless rig the node the review used sat under the inspector, so the test moves the return node closer; it stays as a guard.
+- R7: argument rows are updated in place (`EventArgumentViewModel.Update`), rebuilt only when the count changes; `LoseFocusOnEnterBehavior` on the entry, graph and argument name boxes (Enter commits via the existing LostFocus binding). `EventArgumentEditingTests` Tab and Enter were red before. The D11 deviation stays: the name edit is still a LostFocus two-way binding, as in the variable inspector.
+- R15 (E2E part): `GoToAnythingTests` asserts the node is deselected after each Back; `KeyboardOnlyTests` asserts the selection after Back equals the selection before the go-to. Both classes ran 3 times green. The allowlist and NPT008 `ref` items stay open for F-F4.

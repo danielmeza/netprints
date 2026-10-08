@@ -1,6 +1,7 @@
 using NetPrints.Desktop.E2ETests.Hosting;
 using NetPrints.Testing.Ui.Dialogs;
 using NetPrints.Testing.Ui.Driving;
+using NetPrints.Testing.Ui.Graph;
 using NetPrints.Testing.Ui.Shell;
 
 namespace NetPrints.Desktop.E2ETests.Scenarios;
@@ -83,6 +84,7 @@ public sealed class KeyboardOnlyTests(DesktopWorkerPool pool) : ProjectEditorTes
         using (Step("find a node and go back"))
         {
             var viewport = await graph.ViewportAsync(token);
+            var selected = await SelectedNodesAsync(graph, token);
             await driver.PressAsync("Ctrl+P", token);
             var goTo = new GoToAnythingPage(driver);
             await goTo.WaitVisibleAsync(token);
@@ -93,6 +95,7 @@ public sealed class KeyboardOnlyTests(DesktopWorkerPool pool) : ProjectEditorTes
 
             await driver.PressAsync("Alt+Left", token);
             await graph.WaitForViewportAsync(viewport, token);
+            await UiWait.UntilAsync(driver, async () => (await SelectedNodesAsync(graph, token)).SequenceEqual(selected), "the selection restored", token);
         }
 
         using (Step("switch tabs"))
@@ -107,4 +110,22 @@ public sealed class KeyboardOnlyTests(DesktopWorkerPool pool) : ProjectEditorTes
             await graph.WaitForGraphAsync(MainMethod, token);
         }
     });
+
+    private static async Task<List<string>> SelectedNodesAsync(GraphCanvas graph, CancellationToken token)
+    {
+        List<string> selected = [];
+        IReadOnlyList<string> names = await graph.NodeNamesAsync(token);
+        Dictionary<string, int> seen = [];
+        foreach (string name in names)
+        {
+            int index = seen.GetValueOrDefault(name);
+            seen[name] = index + 1;
+            if (await graph.Node(name, index).IsSelectedAsync(token))
+            {
+                selected.Add(name + index);
+            }
+        }
+
+        return selected;
+    }
 }
