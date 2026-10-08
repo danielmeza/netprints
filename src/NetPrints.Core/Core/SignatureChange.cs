@@ -168,9 +168,25 @@ public static class SignatureChange
             return string.Empty;
         }
 
-        Type? runtimeType = Type.GetType(type.Name);
-        return runtimeType is { IsValueType: true } ? Activator.CreateInstance(runtimeType) : null;
+        return PrimitiveDefaults.TryGetValue(type.Name, out object? value) ? value : null;
     }
+
+    private static readonly Dictionary<string, object> PrimitiveDefaults = new()
+    {
+        [typeof(bool).FullName ?? "System.Boolean"] = false,
+        [typeof(byte).FullName ?? "System.Byte"] = (byte)0,
+        [typeof(sbyte).FullName ?? "System.SByte"] = (sbyte)0,
+        [typeof(short).FullName ?? "System.Int16"] = (short)0,
+        [typeof(ushort).FullName ?? "System.UInt16"] = (ushort)0,
+        [typeof(int).FullName ?? "System.Int32"] = 0,
+        [typeof(uint).FullName ?? "System.UInt32"] = 0u,
+        [typeof(long).FullName ?? "System.Int64"] = 0L,
+        [typeof(ulong).FullName ?? "System.UInt64"] = 0UL,
+        [typeof(float).FullName ?? "System.Single"] = 0f,
+        [typeof(double).FullName ?? "System.Double"] = 0d,
+        [typeof(decimal).FullName ?? "System.Decimal"] = 0m,
+        [typeof(char).FullName ?? "System.Char"] = '\0',
+    };
 
     private static List<Action> Capture(Node node)
     {
