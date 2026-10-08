@@ -85,5 +85,27 @@ namespace NetPrints.Tests.Graph
             Assert.Equal([new EventArgument("amount", Int)], entry.Arguments);
             Assert.Throws<InvalidOperationException>(() => entry.SetArguments([]));
         }
+
+        [Fact]
+        public void TheDeclaredTypesSurviveTheTypeInferencePassOfALoad()
+        {
+            EventEntryNode entry = NewEntry();
+            entry.SetArguments([new EventArgument("amount", Int), new EventArgument("source", Text)]);
+
+            entry.OnMethodDeserialized();
+
+            Assert.Equal([new EventArgument("amount", Int), new EventArgument("source", Text)], entry.Arguments);
+        }
+
+        [Fact]
+        public void TheDeclaredArgumentsKeepTheTypesSetNotTheOnesInferred()
+        {
+            EventEntryNode entry = NewEntry();
+            entry.AddArgument();
+            entry.AddArgument();
+            entry.SetArguments([new EventArgument("amount", Int), new EventArgument("source", Text)]);
+
+            Assert.Equal([new EventArgument("amount", Int), new EventArgument("source", Text)], entry.DeclaredArguments);
+        }
     }
 }

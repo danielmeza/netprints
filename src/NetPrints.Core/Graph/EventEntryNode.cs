@@ -87,9 +87,14 @@ namespace NetPrints.Graph
             }
         }
 
+        private readonly List<BaseType> declaredTypes = [];
+
+        private BaseType DeclaredType(int index) =>
+            index < declaredTypes.Count ? declaredTypes[index] : TypeSpecifier.FromType<object>();
+
         /// <summary>
-        /// Propagates each input type pin's inferred type (or <see cref="object"/> if none has been
-        /// inferred) to the corresponding output data pin, so a custom event's argument pins (added by
+        /// Propagates each input type pin's inferred type (or the type declared for the argument, <see cref="object"/>
+        /// by default, if none has been inferred) to the corresponding output data pin, so a custom event's argument pins (added by
         /// <see cref="AddArgument"/>) reflect a connected type. An override entry's argument pins have
         /// no input type pins and are unaffected.
         /// </summary>
@@ -101,7 +106,7 @@ namespace NetPrints.Graph
 
             for (int i = 0; i < InputTypePins.Count; i++)
             {
-                OutputDataPins[i].PinType.Value = InputTypePins[i].InferredType?.Value ?? TypeSpecifier.FromType<object>();
+                OutputDataPins[i].PinType.Value = InputTypePins[i].InferredType?.Value ?? DeclaredType(i);
             }
         }
 
@@ -139,6 +144,14 @@ namespace NetPrints.Graph
         /// </summary>
         public IReadOnlyList<EventArgument> Arguments =>
             OutputDataPins.Select(pin => new EventArgument(pin.Name, pin.PinType.Value as TypeSpecifier ?? TypeSpecifier.FromType<object>())).ToList();
+
+        /// <summary>
+        /// The entry's arguments as declared: the name of each output data pin and the type set by
+        /// <see cref="SetArguments"/> (<see cref="object"/> if none), not the type a connected type node infers.
+        /// This is what is serialized, so a type node's own connection stays the only record of its type.
+        /// </summary>
+        public IReadOnlyList<EventArgument> DeclaredArguments =>
+            OutputDataPins.Select((pin, i) => new EventArgument(pin.Name, DeclaredType(i) as TypeSpecifier ?? TypeSpecifier.FromType<object>())).ToList();
 
         /// <summary>
         /// Replaces the custom event's arguments. The output pins follow in order: pins that stay keep their
@@ -184,6 +197,7 @@ namespace NetPrints.Graph
             {
                 OutputDataPins[i].Name = arguments[i].Name;
                 OutputDataPins[i].PinType.Value = arguments[i].Type;
+                declaredTypes[i] = arguments[i].Type;
             }
         }
 
@@ -197,6 +211,7 @@ namespace NetPrints.Graph
             int argIndex = OutputDataPins.Count;
             AddOutputDataPin($"Input{argIndex}", new ObservableValue<BaseType>(TypeSpecifier.FromType<object>()));
             AddInputTypePin($"Input{argIndex}Type");
+            declaredTypes.Add(TypeSpecifier.FromType<object>());
         }
 
         /// <summary>
@@ -219,6 +234,7 @@ namespace NetPrints.Graph
                     NodeInputTypePin itpToRemove = InputTypePins[InputTypePins.Count - 1];
                     GraphUtil.DisconnectInputTypePin(itpToRemove);
                     InputTypePins.Remove(itpToRemove);
+                    declaredTypes.RemoveAt(declaredTypes.Count - 1);
                 }
             }
         }

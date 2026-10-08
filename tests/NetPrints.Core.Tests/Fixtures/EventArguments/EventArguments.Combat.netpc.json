@@ -1,0 +1,64 @@
+{
+  "$schema": "https://danielmeza.github.io/netprints/schemas/netpc.v1.schema.json",
+  "schemaVersion": 1,
+  "namespace": "EventArguments",
+  "name": "Combat",
+  "visibility": "Public",
+  "classGraph": {
+    "nodes": [
+      { "$kind": "classReturn", "id": "n02t9r8r6e2kr0" }
+    ]
+  },
+  "eventGraphs": [
+    {
+      "id": "m02t9r8r6p2kr0",
+      "name": "Events",
+      "graph": {
+        "nodes": [
+          {
+            "$kind": "eventEntry",
+            "id": "n02t9r8r6p2kr1",
+            "eventName": "OnReset",
+            "visibility": "Public"
+          },
+          {
+            "$kind": "eventEntry",
+            "id": "n02t9r8r6p2kr2",
+            "name": "EventEntryNode2",
+            "pins": [
+              { "pin": "out.data.Input0", "name": "amount" },
+              { "pin": "out.data.Input1", "name": "source" },
+              { "pin": "out.data.Input2", "name": "critical" }
+            ],
+            "eventName": "OnHit",
+            "visibility": "Public",
+            "argumentCount": 3,
+            "arguments": [
+              {
+                "name": "amount",
+                "type": { "name": "System.Int32" }
+              },
+              {
+                "name": "source",
+                "type": { "name": "System.String" }
+              },
+              {
+                "name": "critical",
+                "type": { "name": "System.Boolean" }
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "layout": {
+    "class": {
+      "n02t9r8r6e2kr0": [0, 0]
+    },
+    "m02t9r8r6p2kr0": {
+      "n02t9r8r6p2kr1": [0, 0],
+      "n02t9r8r6p2kr2": [0, 0]
+    }
+  }
+}
