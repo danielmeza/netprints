@@ -18,6 +18,7 @@ public sealed class AboutViewModel
             new AboutLink("Source code", "https://github.com/danielmeza/netprints"),
             new AboutLink("Documentation", "https://danielmeza.github.io/netprints/"),
             new AboutLink("Releases", "https://github.com/danielmeza/netprints/releases"),
+            new AboutLink("Third-party notices", "https://github.com/danielmeza/netprints/blob/master/THIRD-PARTY-NOTICES.md"),
             new AboutLink("Original NetPrints by Robin Kahlow", "https://github.com/RobinKa/netprints"),
         ];
     }

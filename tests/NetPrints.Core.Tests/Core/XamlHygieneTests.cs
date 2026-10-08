@@ -354,11 +354,13 @@ namespace NetPrints.Tests.Core
         /// element and a bitmap <c>Image</c> source may appear only under <c>src/NetPrints.Editor/Icons/</c>.</summary>
         private static readonly Dictionary<string, string> E9Allowlist = new(StringComparer.Ordinal)
         {
-            ["src/NetPrints.Editor/StartPage/StartPageView.axaml:Image"] = "the logo bitmap that T090b replaces with App.Mark",
             ["src/NetPrints.Editor/Search/NodeSearchView.axaml:Image"] = "the node category bitmap that T092b removes",
         };
 
         private static readonly HashSet<string> IconLibraryTags = new(StringComparer.Ordinal) { "MaterialIcon", "SymbolIcon", "FluentIcon" };
+
+        private static bool IsBitmapSource(string? source) =>
+            source is not null && !source.StartsWith("{DynamicResource", StringComparison.Ordinal) && !source.StartsWith("{StaticResource", StringComparison.Ordinal);
 
         private static (List<string> Offenders, HashSet<string> Seen) ScanIconElements(IEnumerable<AxamlFile> files, IReadOnlyDictionary<string, string> allowlist)
         {
@@ -369,7 +371,7 @@ namespace NetPrints.Tests.Core
                 foreach (XElement element in file.Document.Descendants())
                 {
                     string name = element.Name.LocalName;
-                    bool offends = IconLibraryTags.Contains(name) || (name == "Image" && element.Attribute("Source") is not null);
+                    bool offends = IconLibraryTags.Contains(name) || (name == "Image" && IsBitmapSource(element.Attribute("Source")?.Value));
                     if (!offends)
                     {
                         continue;
@@ -399,7 +401,7 @@ namespace NetPrints.Tests.Core
         [Fact]
         public void E9_FlagsAnIconElementOutsideTheIconsFolderOnly()
         {
-            AxamlFile outside = Synthetic("src/NetPrints.Editor/X/V.axaml", "<UserControl xmlns:mi=\"clr-namespace:M\">\n<mi:MaterialIcon Kind=\"Plus\" />\n<Image Source=\"a.png\" />\n<Image Source=\"{Binding B}\" />\n</UserControl>");
+            AxamlFile outside = Synthetic("src/NetPrints.Editor/X/V.axaml", "<UserControl xmlns:mi=\"clr-namespace:M\">\n<mi:MaterialIcon Kind=\"Plus\" />\n<Image Source=\"a.png\" />\n<Image Source=\"{Binding B}\" />\n<Image Source=\"{DynamicResource App.Mark}\" />\n</UserControl>");
             AxamlFile inside = Synthetic("src/NetPrints.Editor/Icons/IconPresenter.axaml", "<ControlTheme xmlns:mi=\"clr-namespace:M\">\n<mi:MaterialIcon Kind=\"Plus\" />\n</ControlTheme>");
 
             (List<string> offenders, _) = ScanIconElements([outside, inside], new Dictionary<string, string>());

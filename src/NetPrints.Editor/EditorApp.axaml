@@ -102,6 +102,7 @@
     <mi:MaterialIconStyles />
     <StyleInclude Source="avares://NetPrints.Editor/EditorStyles.axaml" />
     <StyleInclude Source="avares://NetPrints.Editor/Icons/IconPresenter.axaml" />
+    <StyleInclude Source="avares://NetPrints.Editor/Icons/AppMark.axaml" />
     <StyleInclude Source="avares://NetPrints.Editor/Shell/Docking/DockStyles.axaml" />
   </Application.Styles>
 </Application>

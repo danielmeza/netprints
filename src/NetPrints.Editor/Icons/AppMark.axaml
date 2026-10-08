@@ -1,0 +1,33 @@
+<Styles xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <Styles.Resources>
+    <ResourceDictionary>
+      <!-- The NetPrints mark (assets/brand/netprints-mark.svg, FR-085): the same value in both variants. -->
+      <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="Brand.Body">#007877</SolidColorBrush>
+          <SolidColorBrush x:Key="Brand.Header">#005756</SolidColorBrush>
+          <SolidColorBrush x:Key="Brand.Wire">#5CBF49</SolidColorBrush>
+          <SolidColorBrush x:Key="Brand.Pin">#98FF9F</SolidColorBrush>
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="Brand.Body">#007877</SolidColorBrush>
+          <SolidColorBrush x:Key="Brand.Header">#005756</SolidColorBrush>
+          <SolidColorBrush x:Key="Brand.Wire">#5CBF49</SolidColorBrush>
+          <SolidColorBrush x:Key="Brand.Pin">#98FF9F</SolidColorBrush>
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+      <DrawingImage x:Key="App.Mark">
+        <DrawingGroup>
+          <GeometryDrawing Brush="Transparent" Geometry="M0,0 H256 V256 H0 Z" />
+          <GeometryDrawing Brush="{DynamicResource Brand.Body}" Geometry="M8,42 H248 V222 H8 Z" />
+          <GeometryDrawing Brush="{DynamicResource Brand.Header}" Geometry="M8,42 H248 V84 H8 Z" />
+          <GeometryDrawing Brush="{DynamicResource Brand.Wire}"
+                           Geometry="M0,113 H26 V125 H0 Z M230,113 H256 V125 H230 Z M0,169 H26 V181 H0 Z M230,169 H256 V181 H230 Z" />
+          <GeometryDrawing Brush="{DynamicResource Brand.Pin}"
+                           Geometry="M24.5,99.5 H62.5 V137.5 H24.5 Z M193.5,99.5 H231.5 V137.5 H193.5 Z M24.5,155.5 H62.5 V193.5 H24.5 Z M193.5,155.5 H231.5 V193.5 H193.5 Z" />
+        </DrawingGroup>
+      </DrawingImage>
+    </ResourceDictionary>
+  </Styles.Resources>
+</Styles>

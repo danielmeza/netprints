@@ -831,7 +831,7 @@ add T091b and T092g–T092l the same way.
   in `src/NetPrints.Editor/Contributions/BuiltIn/`; the 12 view files use `IconPresenter`. E5 and E9 go into
   `.claude/skills/avalonia-xaml/SKILL.md`, the icon rule into `.claude/skills/avalonia-styling/SKILL.md`. Snapshots
   that show icons are re-baselined.
-- [ ] T090b [US9] Product mark and third-party notices (1 unit, FR-085). This task owns the logo asset. Test first:
+- [x] T090b [US9] Product mark and third-party notices (1 unit, FR-085). This task owns the logo asset. Test first:
   `tests/NetPrints.Core.Tests/Core/BrandAssetTests.cs`: `assets/brand/netprints-mark.svg` has a square `viewBox`;
   `assets/brand/netprints-mark-<n>.png` exists for n = 16, 24, 32, 48, 64, 128 and 256 with that pixel size (read
   from the PNG header); `src/NetPrints.Desktop/NetPrintsLogo.ico` holds 16, 32, 48 and 256 px frames and
