@@ -1857,9 +1857,9 @@ Release (3052 tests, 3027 passed, 25 skipped, 0 failed) and the Desktop E2E with
 | R5 | minor | Name uniqueness is one-sided: an entry can take a variable's name, a method can take an entry's name | F-F2 | fixed |
 | R6 | minor | "Or its graph is opened" is not a trigger of the entry inspector (FR-071) | F-F3 | fixed 68b143bb |
 | R7 | minor | Entry inspector: Tab after an argument rename loses focus, Enter does not commit | F-F1 | open |
-| R8 | minor | A contributed panel's View entry is a menu-only command outside the registry (synthesize it in the registry) | F-F3 | open |
-| R9 | minor | Go to anything caps node results at 100 before ranking | F-F4 | open |
-| R10 | minor | Go to source and Go to target never run from the Go menu or the palette; no keyboard path to connections | F-F3 | open |
+| R8 | minor | A contributed panel's View entry is a menu-only command outside the registry (synthesize it in the registry) | F-F4 | fixed |
+| R9 | minor | Go to anything caps node results at 100 before ranking | F-F4 | fixed |
+| R10 | minor | Go to source and Go to target never run from the Go menu or the palette; no keyboard path to connections | F-F4 | fixed; arbitrary connections to P6 GR-1 |
 | R11 | minor | Docs: S0's user-visible changes missing from the release notes; NPD010 missing from the issue table; one contract row wrong | F-F4 | open |
 | R12 | minor | Pre-existing: an await node throws when its task's result type changes while the result is connected | T094a | open |
 | R13 | nit | `MemberKey` compares its parameter list by reference; `default(MemberKey)` has null members | F-F4 | open |
@@ -1867,7 +1867,7 @@ Release (3052 tests, 3027 passed, 25 skipped, 0 failed) and the Desktop E2E with
 | R15 | nit | Tests: line-number `!` allowlist, E2E that assert around R1 and R2, no `ref` case for NPT008 | F-F1, F-F4 | open |
 | R16 | nit | Event argument names written twice; an invalid name fails the whole class instead of repair and warn | F-F4 | open |
 | R17 | nit | Process: the skill-paths hook never fired for F2a–F4b, which changed files through shell commands | H-R | open |
-| R18 | nit | UI edges: Ctrl+click on macOS, palette and go-to accessibility, `GoToItem` with no action, Edit menu height (T098a) | F-F4 | open |
+| R18 | nit | UI edges: Ctrl+click on macOS, palette and go-to accessibility, `GoToItem` with no action, Edit menu height (T098a) | F-F4 | fixed; cable tooltip/menu notification and Edit menu height open (T098a) |
 
 ### F-F1 (R1, R7, R15 E2E part)
 
@@ -1889,3 +1889,10 @@ Release (3052 tests, 3027 passed, 25 skipped, 0 failed) and the Desktop E2E with
 - Decision R6: the event graph inspector lists the entries (name, kind, argument count) with a Select button; Select sends `SelectEventEntryMessage`, the inspector panel opens the graph and `RevealNode` selects the entry, so the canvas selection shows the entry inspector. FR-071 amended in spec.md as decided. Headless test `TheEventGraphInspectorListsItsEntriesAndSelectShowsTheEntryInspector` (written with the code, not red first).
 - Trim ratchet: `SignatureChange.DefaultLiteral` no longer calls `Type.GetType`; a static table maps the primitive type names to their defaults. `eng/trim-warnings.sh` reports 14 (baseline unchanged).
 - Refused method rename: `MethodViewModel` and `MemberVariableViewModel` catch the refusal, set `Error` and show it under the name box in the inspector (`Inspectors.Method.Error`, `Inspectors.Variable.Error`) instead of throwing. Tests written with the code (not red first).
+
+### F-F4 (R8, R9, R10, R18)
+
+- R8: `ContributionRegistry.Freeze` registers a `netprints.command.showPanel.<panel id>` command (View > panels, order from 100) for every panel no `ShowPanelCommandHandler` command already covers; the menu bar special case is gone. The new `ATestPanelHasARegisteredShowCommandInThePaletteAndTheShortcutsSheet` was red first (no such command).
+- R9: `ProjectGoToProvider` collects the node matches, orders them by `MatchRanking.SortKey` and title, then takes 100. `ThePrefixMatchIsNotDroppedByTheNodeLimitInALargeProject` (101 `Box.Mix` plus `Xylo.Run`) was red first.
+- Decision R10: without a parameter, `goToSource` and `goToTarget` act on a single selected node with exactly one connection on the relevant side (incoming for source, outgoing for target) in the active graph; otherwise they are disabled. The dynamic label still appears only with a connection parameter. Two tests (enabled and disabled cases, the jump) were red first. Keyboard access to arbitrary connections (focusable cables or pins) becomes P6 gesture review item GR-1 in the roadmap.
+- R18: Ctrl+click on a connection uses `ConnectionNavigationBehavior.IsGoToModifier` (Meta on macOS; unit-tested, not run on a Mac). Palette rows get `IsEnabled` from the command state (so automation sees a disabled row) and a help text with menu, shortcuts and "unavailable" (`PaletteItem.Description`); go-to rows get the detail as help text and the group headers are `AccessibilityView="Raw"`. `GoToItem` is now a record with an explicit constructor that throws unless exactly one of target and command id is given. Not done: the Edit menu height stays with T098a (not reproduced), and the cable tooltip/menu notification stays unreproduced.

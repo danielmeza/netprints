@@ -29,8 +29,9 @@
              IsVisible="{Binding !IsEmpty}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PaletteList}" AutomationProperties.Name="Commands">
       <ListBox.ItemTemplate>
         <DataTemplate x:DataType="edcp:PaletteItem">
-          <Grid Classes="quickPickRow" Classes.disabled="{Binding !IsEnabled}" ColumnDefinitions="*,Auto,Auto" Background="Transparent"
-                AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PaletteRow}" AutomationProperties.Name="{Binding Label}">
+          <Grid Classes="quickPickRow" Classes.disabled="{Binding !IsEnabled}" ColumnDefinitions="*,Auto,Auto" Background="Transparent" IsEnabled="{Binding IsEnabled}"
+                AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PaletteRow}" AutomationProperties.Name="{Binding Label}"
+                AutomationProperties.HelpText="{Binding Description}">
             <Interaction.Behaviors>
               <ExecuteCommandOnDoubleTappedBehavior Command="{Binding $parent[ListBox].((edcp:CommandPaletteViewModel)DataContext).RunSelectedCommand}" />
             </Interaction.Behaviors>

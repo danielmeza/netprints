@@ -36,15 +36,25 @@ public sealed class ProjectGoToProvider(string kind, Func<ProjectSessionViewMode
             GoToKinds.Nodes when text.Length > 0 => classes.SelectMany(cls => AllGraphs(cls).SelectMany(graph => graph.Nodes.Select(node => ForNode(open, graph, node)))),
             _ => [],
         };
-        int budget = Kind == GoToKinds.Nodes ? MaxNodes : int.MaxValue;
+        List<GoToItem> matches = [];
         foreach (GoToItem item in all.OfType<GoToItem>())
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (MatchRanking.Rank(item.Title, text) != MatchRanking.NoMatch && budget-- > 0)
+            if (MatchRanking.Rank(item.Title, text) != MatchRanking.NoMatch)
             {
-                yield return item;
+                matches.Add(item);
             }
         }
+
+        if (Kind != GoToKinds.Nodes)
+        {
+            return matches;
+        }
+
+        return matches
+            .OrderBy(item => MatchRanking.SortKey(item.Title, text))
+            .ThenBy(item => item.Title, StringComparer.OrdinalIgnoreCase)
+            .Take(MaxNodes);
     }
 
     private static IEnumerable<NodeGraph> GraphsOf(ClassGraph cls) => new NodeGraph[] { cls }.Concat(cls.Constructors).Concat(cls.EventGraphs);

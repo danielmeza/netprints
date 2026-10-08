@@ -44,8 +44,8 @@ Menu order: **File, Edit, View, Go, Build, Help**. Groups inside a menu are sepa
 | `goToAnything` | Go to anything… | Go › find | Ctrl+P | Global | |
 | `navigateBack` | Back | Go › history | Alt+Left | Global | |
 | `navigateForward` | Forward | Go › history | Alt+Right | Global | |
-| `goToSource` | Go to source | Go › connection | — (Ctrl+click on a connection) | Graph | |
-| `goToTarget` | Go to target | Go › connection | — | Graph | |
+| `goToSource` | Go to source | Go › connection | — (Ctrl+click on a connection) | Graph | Parameter: a connection; without one, the single selected node's only incoming connection, else disabled |
+| `goToTarget` | Go to target | Go › connection | — | Graph | Parameter: a connection; without one, the single selected node's only outgoing connection, else disabled |
 | `nextTab` | Next tab | Go › tabs | Ctrl+Tab | Global | |
 | `previousTab` | Previous tab | Go › tabs | Ctrl+Shift+Tab | Global | |
 | `closeTab` | Close tab | Go › tabs | Ctrl+W | Global | |

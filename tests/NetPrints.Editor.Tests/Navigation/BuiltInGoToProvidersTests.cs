@@ -94,6 +94,29 @@ public sealed class BuiltInGoToProvidersTests : IAsyncDisposable
         Assert.Contains(await SearchAsync(provider, call.MethodSpecifier.Name), item => item.Target?.NodeId == call.Id);
     }
 
+    private static MethodSpecifier Call(string type, string name) =>
+        new(name, [], Array.Empty<BaseType>(), MethodModifiers.Static, MemberVisibility.Public, new TypeSpecifier(type), Array.Empty<BaseType>());
+
+    [Fact]
+    public async Task ThePrefixMatchIsNotDroppedByTheNodeLimitInALargeProject()
+    {
+        ProjectSessionViewModel session = await rig.OpenSessionAsync();
+        var method = new MethodGraph("ManyNodes") { Class = session.Project.Classes[0], Visibility = MemberVisibility.Public };
+        session.Project.Classes[0].Methods.Add(method);
+        for (int i = 0; i < 101; i++)
+        {
+            _ = new CallMethodNode(method, Call("Box", "Mix"));
+        }
+
+        _ = new CallMethodNode(method, Call("Xylo", "Run"));
+        IGoToProvider provider = RegistryFor(session).GoToProviders.Single(p => p.Kind == GoToKinds.Nodes);
+
+        List<GoToItem> items = await SearchAsync(provider, "x");
+
+        Assert.Equal(100, items.Count);
+        Assert.StartsWith("Xylo", items[0].Title, StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task VariablesOpenTheirGetterGraphOrTheClassGraph()
     {

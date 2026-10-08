@@ -6,6 +6,15 @@ namespace NetPrints.Editor.Tests.Navigation;
 
 public sealed class GoToAnythingViewModelTests
 {
+    [Fact]
+    public void AnItemCarriesExactlyOneOfATargetAndACommandId()
+    {
+        Assert.Throws<ArgumentException>(() => new GoToItem("Nodes", "A", "", null));
+        Assert.Throws<ArgumentException>(() => new GoToItem("Nodes", "A", "", new NavigationTarget(Doc, "n"), "netprints.command.save"));
+        Assert.Equal("netprints.command.save", new GoToItem("Commands", "Save", "", null, "netprints.command.save").CommandId);
+        Assert.NotNull(new GoToItem("Nodes", "A", "", new NavigationTarget(Doc, "n")).Target);
+    }
+
     private static readonly DocumentId Doc = DocumentId.Graph("A.netpc.json", DocumentId.ClassGraphKey);
 
     private sealed class FakeProvider(string kind, params GoToItem[] items) : IGoToProvider

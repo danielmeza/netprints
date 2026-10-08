@@ -1,4 +1,6 @@
 using Microsoft.Extensions.Logging;
+using NetPrints.Editor.Commands;
+using NetPrints.Editor.Contributions.BuiltIn;
 
 namespace NetPrints.Editor.Contributions;
 
@@ -6,6 +8,8 @@ namespace NetPrints.Editor.Contributions;
 /// <param name="logger">Receives one warning per issue.</param>
 public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) : IContributionRegistry
 {
+    private const int UnlistedPanelOrder = 100;
+
     private readonly List<CommandDescriptor> commands = [];
     private readonly List<PanelDescriptor> panels = [];
     private readonly List<DashboardTileDescriptor> tiles = [];
@@ -151,7 +155,29 @@ public sealed class ContributionRegistry(ILogger<ContributionRegistry> logger) :
     }
 
     /// <inheritdoc/>
-    public void Freeze() => IsFrozen = true;
+    public void Freeze()
+    {
+        if (IsFrozen)
+        {
+            return;
+        }
+
+        int index = 0;
+        foreach (PanelDescriptor panel in panels.ToArray())
+        {
+            if (!commands.Exists(command => command.Handler is ShowPanelCommandHandler { PanelId: var shown } && shown == panel.Id))
+            {
+                AddCommand(new CommandDescriptor(
+                    ContributionIds.CommandPrefix + "showPanel." + panel.Id,
+                    panel.Title,
+                    new ShowPanelCommandHandler(panel.Id),
+                    IconKind: panel.IconKind,
+                    Menu: new MenuPlacement(ViewContributions.MenuName, ViewContributions.PanelsGroup, UnlistedPanelOrder + index++)));
+            }
+        }
+
+        IsFrozen = true;
+    }
 
     private static bool IsBlank(string? text) => string.IsNullOrWhiteSpace(text);
 

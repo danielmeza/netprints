@@ -463,6 +463,8 @@ for those who want to learn it.
   templates (e.g. a new class comes with its lifecycle/event entry points ready).
 - Pin-type colors, automatic conversion nodes when linking compatible types.
 - A Self node in node search that gives `this` as a value, as Unreal's Self node (a new serialized node kind).
+- Gesture review item GR-1 (from Review F, R10): keyboard access to arbitrary connections (focusable cables or pins) so that
+  Go to source and Go to target reach any connection of a node, not only its single one.
 - Per-node error markers (from P1 diagnostics mapping), collapse selection to function/macro,
   comment boxes/regions (the underlying `Comment`/`Summary` fields and their emission as XML docs are in P3b).
 - Live C# side-by-side view synced with the graph selection (builds on the P1 AvaloniaEdit view).

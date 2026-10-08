@@ -173,6 +173,20 @@ public class TestContributionSurfaceTests
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public void ATestPanelHasARegisteredShowCommandInThePaletteAndTheShortcutsSheet()
+    {
+        using var rig = SurfaceRig.Create(AddTestContributions);
+
+        CommandDescriptor show = rig.Registry.Commands.Single(command => command.Handler is ShowPanelCommandHandler { PanelId: NotesPanelId });
+        var palette = new CommandPaletteViewModel(rig.Registry, rig.Invoker);
+        var sheet = new KeyboardShortcutsViewModel(rig.Registry);
+
+        Assert.Equal("Notes", show.Label);
+        Assert.Contains(palette.Items, item => item.Command.Id == show.Id);
+        Assert.Contains(sheet.Groups.SelectMany(group => group.Rows), row => row.CommandId == show.Id);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public void ATestTileIsOnTheStartPageAfterTheBuiltInTiles()
     {
         ContributionRegistry registry = NewRegistry(withTestContributions: true);

@@ -31,9 +31,11 @@
         <DataTemplate x:DataType="ednav:GoToRow">
           <Panel Background="Transparent">
             <TextBlock Classes="groupTitle" Text="{Binding Title}" IsVisible="{Binding IsHeader}"
-                       AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GoToHeader}" AutomationProperties.Name="{Binding Title}" />
+                       AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GoToHeader}" AutomationProperties.Name="{Binding Title}"
+                       AutomationProperties.AccessibilityView="Raw" />
             <Grid Classes="quickPickRow" ColumnDefinitions="*,Auto" IsVisible="{Binding !IsHeader}"
-                  AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GoToRow}" AutomationProperties.Name="{Binding Title}">
+                  AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GoToRow}" AutomationProperties.Name="{Binding Title}"
+                  AutomationProperties.HelpText="{Binding Detail}">
               <Interaction.Behaviors>
                 <ExecuteCommandOnDoubleTappedBehavior Command="{Binding $parent[ListBox].((ednav:GoToAnythingViewModel)DataContext).RunSelectedCommand}" />
               </Interaction.Behaviors>

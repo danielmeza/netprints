@@ -23,6 +23,18 @@ public sealed class CommandPaletteViewModelTests
         }
     }
 
+    [Theory]
+    [InlineData("File", "Ctrl+S", true, "File, Ctrl+S")]
+    [InlineData("File", "Ctrl+S", false, "File, Ctrl+S, unavailable")]
+    [InlineData("", "", false, "unavailable")]
+    [InlineData("", "", true, "")]
+    public void TheDescriptionNamesTheMenuTheShortcutsAndWhetherTheCommandIsUnavailable(string menu, string shortcuts, bool enabled, string expected)
+    {
+        var item = new PaletteItem(new CommandDescriptor("netprints.command.test", "Test", new Probe(enabled)), "Test", shortcuts, menu, enabled);
+
+        Assert.Equal(expected, item.Description);
+    }
+
     private sealed class Contexts : ICommandContextProvider
     {
         public event EventHandler? CommandStatesChanged

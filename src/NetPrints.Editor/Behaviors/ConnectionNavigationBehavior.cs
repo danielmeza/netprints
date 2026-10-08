@@ -40,6 +40,13 @@ public sealed class ConnectionNavigationBehavior : StyledElementBehavior<NodifyE
         base.OnDetaching();
     }
 
+    /// <summary>Whether the modifiers held at a click ask for go to farther end: Ctrl, or Cmd on macOS where Ctrl+click is the secondary click.</summary>
+    /// <param name="modifiers">The modifiers held.</param>
+    /// <param name="isMacOS">Whether the platform is macOS.</param>
+    /// <returns><see langword="true"/> when only the platform's command modifier is held.</returns>
+    public static bool IsGoToModifier(KeyModifiers modifiers, bool isMacOS) =>
+        modifiers == (isMacOS ? KeyModifiers.Meta : KeyModifiers.Control);
+
     private void OnPressed(object? sender, PointerPressedEventArgs e)
     {
         if (AssociatedObject is not { } editor)
@@ -56,7 +63,7 @@ public sealed class ConnectionNavigationBehavior : StyledElementBehavior<NodifyE
             return;
         }
 
-        if (e.KeyModifiers == KeyModifiers.Control && properties.IsLeftButtonPressed && element?.DataContext is ConnectionViewModel connection)
+        if (IsGoToModifier(e.KeyModifiers, OperatingSystem.IsMacOS()) && properties.IsLeftButtonPressed && element?.DataContext is ConnectionViewModel connection)
         {
             Point position = e.GetPosition(editor);
             double zoom = editor.ViewportZoom;
