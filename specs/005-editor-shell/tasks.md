@@ -1173,6 +1173,37 @@ add T091b and T092g–T092l the same way.
 **Goal**: the six screenshot editor guides from a scripted run, the docs site green, the quickstart run, the full
 suite, the final review and merge preparation (FR-103, SC-010, every SC).
 
+### Batch H0 — model: sonnet — T102a — 5 units
+
+- [ ] T102a Logging and per-OS user folders (5 units; FR-106, ADR-0033; owner decisions 2026-10-08). Runs before
+  T102 so the guides name the final folders. Packages: `NLog` and `NLog.Extensions.Logging` 6.2.1 in
+  `Directory.Packages.props`, referenced by `NetPrints.Desktop` only. Test first (each red before its code):
+  - `EditorDataPathsTests` (resolver, pure, no I/O): the state root and the log folder for each OS and variable
+    combination, passed as arguments; `NETPRINTS_LOG_DIR` beats `NETPRINTS_STATE_DIR/logs` beats the OS default;
+    Windows `%LOCALAPPDATA%\NetPrints\logs`; macOS `~/Library/Logs/NetPrints`; Linux `$XDG_STATE_HOME/NetPrints/logs`
+    else `~/.local/state/NetPrints/logs`; settings stay under the config folder (`<ApplicationData>`).
+  - `StateMigrationTests` (temp folders): `state/` and `backups/` move from `<ApplicationData>/NetPrints` to the new
+    root once; a second start moves nothing; a new location that already has the folder wins and the old one is left
+    untouched; a read-only or failing move logs and the editor still starts with defaults (FR-051); the Linux and
+    macOS permission rule of FR-052 holds on the new folders.
+  - `LoggingConfigurationTests`: the real configuration (isolated `LogFactory`, `AsyncTargetWrapper` Block with queue
+    10 000, one file per session, `ThrowConfigExceptions` on) renders a line to a temp folder; the retention sweep
+    keeps the newest N session files and never deletes a file it did not name; `NLog.LogManager` is not referenced
+    (banned).
+  - `CrashHandlerTests`: a fake unhandled exception passed to the `AppDomain.UnhandledException` handler writes a
+    Critical line and flushes within the bound (`LogFactory.Flush(TimeSpan)`), without waiting the 15 s default.
+  - Hygiene: RS0030 bans in `src/BannedSymbols.txt` (each overload of `File.AppendAll*` on its own line,
+    `Trace.Write*`, `Debug.Write*`, `NLog.LogManager`) with a failing sample for each; a machine-path test (no
+    `/home/`, `/mnt/` or scratch paths in repo files).
+  Then: the logging builder in `NetPrints.Desktop` (MEL plus NLog), the handler (log Critical, flush with a bound,
+  dispose the factory), the resolver and the one-time migration in `EditorDataPaths`/start-up, and the Help menu
+  command `help.openLogsFolder` ("Open logs folder", icon id from ADR-0021, automation id). `EditorApp.axaml.cs`
+  keeps its start-up failure message on stderr. Acceptance: on Windows and Linux a session log appears in the
+  documented folder after start; existing state and backups are found after the move; an unhandled non-UI exception
+  leaves a Critical line; no behaviour change when `NETPRINTS_STATE_DIR` is set (E2E workers and tests unchanged).
+  Docs: `docs/guide/editor/saving-and-recovery.md` (T104) names the new folders. One E2E class reads the session log
+  file for a scenario's expected line (3 runs).
+
 ### Batch H1 — model: sonnet — T102–T104 — 4 units
 
 - [ ] T102 Guide screenshots (2 units): `tests/NetPrints.Desktop.E2ETests/Scenarios/GuideScreenshotTests.cs` (opt-in with
@@ -1294,8 +1325,8 @@ suite, the final review and merge preparation (FR-103, SC-010, every SC).
 | E — start page and persistence | 24 (T061–T073, with T071a–k) | E1–E4, E5a, E5b sonnet | E-R, E-F |
 | F — navigation and event inspector | 16 (T074–T089) | F1–F4 sonnet | F-R, F-F |
 | G — look, search and hygiene | 31 (T090–T101, with T090a–b, T091a–b, T092a–l, T094a, T098a–b) | G1, G2, G4a–G4d, G5–G7 sonnet; G3 haiku | G-R, G-F |
-| H — docs and polish | 13 (T102–T114) | H1–H3 sonnet | H-R, H-F, H-M |
-| **Total** | **145** | 39 | 17 |
+| H — docs and polish | 14 (T102–T114, with T102a) | H0–H3 sonnet | H-R, H-F, H-M |
+| **Total** | **146** | 40 | 17 |
 
 Sub-phase G is 42 units in ten implementation batches (G1 5, G2 5, G3 3, G4a 3, G4b 3, G4c 4, G4d 3, G5 7, G6 4,
 G7 5). The visual-polish plan (S1, 2026-10-06) took it from 15 to 30 units: its tasks added 14 units and T096 grew
@@ -1375,6 +1406,7 @@ each batch at 2–4 tasks.
 | FR-103 | T102–T108 |
 | FR-104 | constraint: no performance task; every review checks it |
 | FR-105 | T001, T002 |
+| FR-106 | T102a |
 | SC-001 | T043 |
 | SC-002 | T050, T056 |
 | SC-003 | T025, T035, T057, T080, T093 |

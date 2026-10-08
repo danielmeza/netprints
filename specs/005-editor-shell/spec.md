@@ -810,6 +810,13 @@ glyphs contributed by extensions are decided with the P3 contribution API.
 - **FR-105**: Every view model type MUST be named `<Name>ViewModel`; no type in `src/` or `tests/` may end in `VM`.
   The existing `*VM` types MUST be renamed (types, files, XAML data types and bindings, tests and docs) before any
   new P3a view model is added, and a hygiene test MUST enforce the rule.
+- **FR-106**: The editor MUST write a log file per session through `ILogger`, in a per-OS folder (Windows
+  `%LOCALAPPDATA%\NetPrints\logs`, macOS `~/Library/Logs/NetPrints`, Linux `$XDG_STATE_HOME/NetPrints/logs`, else
+  `~/.local/state/NetPrints/logs`), with `NETPRINTS_LOG_DIR` and `NETPRINTS_STATE_DIR` overriding it, and MUST record
+  an unhandled exception on any thread as a Critical entry before exiting (ADR-0033). State and backup files MUST
+  live under the same per-OS state root (Windows `%LOCALAPPDATA%\NetPrints`, Linux `$XDG_STATE_HOME/NetPrints`),
+  settings MUST stay in the config folder, and files from the former `<ApplicationData>/NetPrints/{state,backups}`
+  MUST be moved once, a failed move never preventing start-up (FR-051). This refines where FR-052's files live.
 
 ### Key Entities
 

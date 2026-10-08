@@ -1830,6 +1830,7 @@ outside this repo) ended in these decisions. Only the first group changes P3a; t
   constructor and type kinds); ranking and category order stay host-side; nothing is instantiated per search open.
 - DI in the editor: a hand-written composition root per scope, typed contribution contexts, no container in the editor,
   MS.DI only in the CLI, nothing resolved per row, node or pin (ADR-0031 planned). Measurements M1–M4 come first.
+  Superseded the same day: the owner reopened it and ADR-0031 decides MS.DI with our registration generator.
 - The Extensibility Stairway split (`NetPrints.Extensibility.Abstractions`) happens before the packages publish (ADR-0030).
 - CLI trust: project-declared extensions load in the CLI without a trust check, like analyzers and build tasks; to be
   documented in the guide and the ADR.
