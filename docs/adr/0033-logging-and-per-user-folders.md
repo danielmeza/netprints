@@ -43,7 +43,7 @@ topic, so it takes the first free one after the reserved 0024-0032.
    layout typo fails the test.
 7. **Bans (RS0030) in `src/BannedSymbols.txt`** for ad-hoc debug output: `File.AppendAll*` (each overload on its own
    line, since the format has no wildcard), `Trace.Write*`, `Debug.Write*`, and `NLog.LogManager`. None has a current
-   use. `Console` stays allowed in the entry points. A machine-path hygiene test (no `/home/`, `/mnt/` or scratch
+   use. `Console` stays allowed in the entry points. A machine-path hygiene test (no absolute home, mount or scratch
    paths in repo files) complements them.
 8. **`EditorApp.axaml.cs`** keeps its unhandled-startup message on **stderr**: its comment says the output is
    intentional ("fail loudly"), and MEL's console logger writes to stdout unless `LogToStandardErrorThreshold` is set.

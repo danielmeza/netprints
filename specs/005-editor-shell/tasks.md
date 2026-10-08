@@ -1194,7 +1194,7 @@ suite, the final review and merge preparation (FR-103, SC-010, every SC).
     Critical line and flushes within the bound (`LogFactory.Flush(TimeSpan)`), without waiting the 15 s default.
   - Hygiene: RS0030 bans in `src/BannedSymbols.txt` (each overload of `File.AppendAll*` on its own line,
     `Trace.Write*`, `Debug.Write*`, `NLog.LogManager`) with a failing sample for each; a machine-path test (no
-    `/home/`, `/mnt/` or scratch paths in repo files).
+    absolute home, mount or scratch paths in repo files).
   Then: the logging builder in `NetPrints.Desktop` (MEL plus NLog), the handler (log Critical, flush with a bound,
   dispose the factory), the resolver and the one-time migration in `EditorDataPaths`/start-up, and the Help menu
   command `help.openLogsFolder` ("Open logs folder", icon id from ADR-0021, automation id). `EditorApp.axaml.cs`
