@@ -1690,3 +1690,27 @@ planned G tasks.
   the built-in providers. The two dialog views were written before their headless tests (the view models were already
   green), so those tests were green on first run.
 - Deferred: mouse buttons for history stay a P6 gesture review item (R9); Ctrl+click on connections is F2 (T077).
+
+## S0 (pin-layout golden and two suspected bugs; owner-approved extra, outside the task list)
+
+- `NodePinLayoutTests` builds every built-in node kind in each variant (impure, pure through `IsPure`, purity toggled twice,
+  static/instance/Catch-wired calls, make-array modes, delegates, literals, reroutes, variable getters and setters for static,
+  instance, local and indexer) and writes `NodePinLayout.golden.txt` (317 lines, unsorted): each pin's collection slot, `PinKeys.For`
+  key, initial type and unconnected default, then the slot every public `NodePin` property returns (`null` and `throws` included).
+  Regenerate with `NETPRINTS_UPDATE_SNAPSHOTS=1`. A second test checks that toggling purity twice restores the original layout.
+- What the golden shows, besides the two bugs: `TernaryNode` orders its inputs True, False, Condition; `ForLoopNode.MaxIndex`
+  and every non-primitive or bool input default to `null` unconnected (`InitialIndex` is `0`); `AwaitNode.ResultPin` is `null`
+  in every variant (the node has no output data pin); pure `ExplicitCastNode` throws `ArgumentOutOfRangeException` from
+  `CastSuccessPin`/`CastFailedPin` and a static `MakeDelegateNode` throws it from `TargetPin` (documented as "throws an
+  exception", not a nullable property). Both are recorded as they are and not changed in this batch.
+- Verdict (a), confirmed: `VariableSetterNode.NewValuePin` returned `InputDataPins[1]` for an instance indexer, which is the Index
+  pin (`Target`, `Index`, `NewValue`). The red test failed with `Expected: NewValue, Actual: Index`, and a translator test
+  emitted C# that indexed with the value literal's variable instead of the index literal's. Fix: the
+  property returns the last input data pin (`NewValue` is always added last), which also covers the static and local cases.
+- Verdict (b), confirmed: `MakeArrayNode.SizePin` returned `Element0` in initializer mode, and threw
+  `ArgumentOutOfRangeException` with no elements. The only caller (the translator) reads it only in predefined-size mode, so
+  no generated code was wrong today. Fix: the property throws `InvalidOperationException` outside predefined-size mode (the
+  property is non-nullable, and the editor does not use it).
+- Tests: both bug tests and the translator test were red first, then green; the golden was created by the first run
+  and regenerated after the fixes, so it shows `NewValuePin -> InputDataPins[2]` for the indexer and `SizePin -> throws
+  InvalidOperationException`. Public API signatures are unchanged.
