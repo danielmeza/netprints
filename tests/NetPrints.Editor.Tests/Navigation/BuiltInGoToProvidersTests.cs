@@ -1,11 +1,11 @@
 using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Core;
-using NetPrints.Graph;
 using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Contributions.BuiltIn;
 using NetPrints.Editor.Navigation;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.Tests.ProjectTree;
+using NetPrints.Graph;
 
 namespace NetPrints.Editor.Tests.Navigation;
 

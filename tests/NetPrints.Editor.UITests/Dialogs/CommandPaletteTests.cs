@@ -4,9 +4,9 @@ using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Editor.Commands.CommandPalette;
 using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Dialogs;
-using NetPrints.Editor.UITests.Commands;
 using NetPrints.Editor.Hosting.Automation;
 using NetPrints.Editor.Shell;
+using NetPrints.Editor.UITests.Commands;
 using NetPrints.Editor.UITests.Hosting;
 
 namespace NetPrints.Editor.UITests.Dialogs;
