@@ -29,7 +29,9 @@ public static class MemberRename
         ArgumentNullException.ThrowIfNull(classes);
         ArgumentNullException.ThrowIfNull(method);
         ArgumentNullException.ThrowIfNull(newName);
-        TypeSpecifier declaringType = (method.Class ?? throw new ArgumentException("The method does not belong to a class.", nameof(method))).Type;
+        ClassGraph cls = method.Class ?? throw new ArgumentException("The method does not belong to a class.", nameof(method));
+        TypeSpecifier declaringType = cls.Type;
+        MemberNames.ThrowIfTaken(cls, newName, method, MemberNameKind.Method);
         string oldName = method.Name;
         var key = new MemberKey(MemberKind.Method, declaringType, oldName, method.ArgumentTypes.ToList());
         return Rename(classes, key, newName, () => method.Name = newName, () => method.Name = oldName);
@@ -48,7 +50,9 @@ public static class MemberRename
         ArgumentNullException.ThrowIfNull(classes);
         ArgumentNullException.ThrowIfNull(variable);
         ArgumentNullException.ThrowIfNull(newName);
-        TypeSpecifier declaringType = (variable.Class ?? throw new ArgumentException("The variable does not belong to a class.", nameof(variable))).Type;
+        ClassGraph cls = variable.Class ?? throw new ArgumentException("The variable does not belong to a class.", nameof(variable));
+        TypeSpecifier declaringType = cls.Type;
+        MemberNames.ThrowIfTaken(cls, newName, variable, MemberNameKind.Variable);
         string oldName = variable.Name;
         var key = new MemberKey(MemberKind.Variable, declaringType, oldName, []);
         return Rename(classes, key, newName, () => variable.Name = newName, () => variable.Name = oldName);
@@ -78,15 +82,7 @@ public static class MemberRename
         ClassGraph cls = entry.Graph.Class ?? throw new ArgumentException("The event does not belong to a class.", nameof(entry));
         string oldName = entry.EventName;
 
-        if (cls.Methods.FirstOrDefault(method => method.Name == newName) is { } clashingMethod)
-        {
-            throw new ArgumentException($"'{newName}' is already used by method '{clashingMethod.Name}'", nameof(newName));
-        }
-
-        if (cls.EventGraphs.SelectMany(graph => graph.Entries).FirstOrDefault(other => !ReferenceEquals(other, entry) && other.EventName == newName) is { } clashingEntry)
-        {
-            throw new ArgumentException($"'{newName}' is already used by event '{clashingEntry.EventName}'", nameof(newName));
-        }
+        MemberNames.ThrowIfTaken(cls, newName, entry, MemberNameKind.Event);
 
         var key = new MemberKey(MemberKind.Event, cls.Type, oldName, entry.Arguments.Select(argument => (BaseType)argument.Type).ToList());
         return Rename(classes, key, newName, () => entry.EventName = newName, () => entry.EventName = oldName);

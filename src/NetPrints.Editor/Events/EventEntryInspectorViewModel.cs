@@ -18,16 +18,19 @@ public sealed partial class EventEntryInspectorViewModel : ObservableObject, IDi
     private readonly EventEntryNode entry;
     private readonly ClassEditorServices services;
     private readonly Action<EventEntryNode, string> rename;
+    private readonly Func<IReadOnlyList<ClassGraph>> projectClasses;
 
     /// <summary>Wraps <paramref name="entry"/>.</summary>
     /// <param name="entry">The event entry.</param>
     /// <param name="services">Narrow services shared with the owning class editor (FR-038).</param>
     /// <param name="rename">Renames the entry and the calls to it as one undo step.</param>
-    public EventEntryInspectorViewModel(EventEntryNode entry, ClassEditorServices services, Action<EventEntryNode, string> rename)
+    /// <param name="projectClasses">The classes whose graphs may call the event; their calls follow argument edits.</param>
+    public EventEntryInspectorViewModel(EventEntryNode entry, ClassEditorServices services, Action<EventEntryNode, string> rename, Func<IReadOnlyList<ClassGraph>> projectClasses)
     {
         this.entry = entry;
         this.services = services;
         this.rename = rename;
+        this.projectClasses = projectClasses;
         Arguments = new ObservableCollection<EventArgumentViewModel>();
         services.UndoRedo.Applied += OnUndoApplied;
         Refresh();
@@ -184,7 +187,7 @@ public sealed partial class EventEntryInspectorViewModel : ObservableObject, IDi
         Error = null;
         try
         {
-            services.UndoRedo.Do(EditorCommands.SetEventArguments(entry, label, arguments, sources));
+            services.UndoRedo.Do(EditorCommands.SetEventArguments(projectClasses(), entry, label, arguments, sources));
         }
         catch (ArgumentException refused)
         {

@@ -39,7 +39,7 @@ namespace NetPrints.Graph
 
         /// <inheritdoc />
         public bool RefersTo(MemberKey member) =>
-            member.Kind == MemberKind.Method
+            member.Kind is MemberKind.Method or MemberKind.Event
             && MethodSpecifier.Name == member.Name
             && MethodSpecifier.DeclaringType == member.DeclaringType
             && MethodSpecifier.ArgumentTypes.SequenceEqual(member.Parameters);

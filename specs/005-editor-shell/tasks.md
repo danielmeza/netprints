@@ -726,7 +726,7 @@ Contracts: contributions.md, commands.md, shell.md §7. **Independent test**: US
   in Core, one undo step through `EditorCommands`). `MemberRename` goes through a new Core interface
   `IMemberReferencingNode` (`RefersTo(MemberKey)`, `Retarget(MemberKey, newName)` returning the undo; `MemberKey` has
   a closed `MemberKind` of Method, Variable and Event): `CallMethodNode` (Method and Event), `MakeDelegateNode`
-  (Method) and `VariableNode` (Variable) implement it, and the event kind is one more implementation, not another
+  (Method and Event) and `VariableNode` (Variable) implement it, and the event kind is one more implementation, not another
   `switch` arm. `RenameMethod`, `RenameVariable` and the new `RenameEvent` only build the key. The existing Review E R3
   rename tests stay the characterization; a contract fixture `MemberReferencingNodeContract<TNode>` checks that
   `RefersTo` flips, the undo restores the state and the serializer round-trips, and a Fx test node implementing the
@@ -1091,6 +1091,11 @@ add T091b and T092g–T092l the same way.
   Then `src/NetPrints.Editor/Search/SuggestionListViewModel.cs` and `src/NetPrints.Editor/Graph/Nodes/NodeViewModel.cs`
   (the pin-list change as one `ModelOperations` undo entry). This is the safety net the P3 search refactor (SUG1–SUG3)
   relies on.
+- [ ] T094b [US8] Method parameter edits retarget the method's callers (Review F R3, method half; 2 units). Test first:
+  adding, removing, retyping or reordering a method's parameter (the entry node's +/- pin buttons and its type-pin
+  connections, which change the signature outside any command) leaves the calls to it on the old signature, so the class
+  stops compiling. Route those edits through one undoable command that calls `SignatureChange.RetargetCallers` (added
+  in F-F2 for events) with the project's classes, and cover add, remove, retype and undo in one step.
 - [ ] T095 [US10] The scoped search's empty state names the hiding catalog (FR-091), through the `EmptyState` control
   (T092e, FR-088): `src/NetPrints.Editor/Search/SuggestionListViewModel.cs` and its view; headless test first.
 

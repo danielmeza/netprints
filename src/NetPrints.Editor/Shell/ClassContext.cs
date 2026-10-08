@@ -122,7 +122,7 @@ public sealed class ClassContext : IDisposable
     /// <returns>The method.</returns>
     public MethodGraph CreateMethod()
     {
-        string name = NetPrintsUtil.GetUniqueName("Method", Class.Methods.Select(m => m.Name).ToList());
+        string name = MemberNames.Unique(Class, "Method");
         const double cell = GraphConstants.GridCellSize;
 
         var method = new MethodGraph(name)
@@ -205,12 +205,12 @@ public sealed class ClassContext : IDisposable
     /// <summary>Creates the inspector of an event entry of this class; the caller disposes it.</summary>
     /// <param name="entry">The entry.</param>
     /// <returns>The inspector.</returns>
-    public EventEntryInspectorViewModel EventEntryInspectorOf(EventEntryNode entry) => new(entry, Services, RenameEvent);
+    public EventEntryInspectorViewModel EventEntryInspectorOf(EventEntryNode entry) => new(entry, Services, RenameEvent, projectClasses);
 
     /// <summary>Creates a variable named Variable, Variable1, ... of type object (undoable).</summary>
     public void CreateVariable()
     {
-        string name = NetPrintsUtil.GetUniqueName("Variable", Class.Variables.Select(v => v.Name).ToList());
+        string name = MemberNames.Unique(Class, "Variable");
         UndoRedo.Do(EditorCommands.AddVariable(Class, name));
     }
 

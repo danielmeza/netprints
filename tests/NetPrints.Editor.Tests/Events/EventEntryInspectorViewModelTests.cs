@@ -98,6 +98,25 @@ public sealed class EventEntryInspectorViewModelTests : IDisposable
     }
 
     [Fact]
+    public void AddingAnArgumentMovesTheCallsAndOneUndoRestoresEntryAndCalls()
+    {
+        var run = new MethodGraph("Run") { Class = cls };
+        cls.Methods.Add(run);
+        var call = new CallMethodNode(run, new MethodSpecifier("OnHit", [], Array.Empty<BaseType>(), MethodModifiers.None, MemberVisibility.Public, cls.Type, Array.Empty<BaseType>()));
+        EventEntryInspectorViewModel inspector = Inspector();
+
+        inspector.AddArgumentCommand.Execute(null);
+
+        CallMethodNode moved = run.Nodes.OfType<CallMethodNode>().Single();
+        Assert.NotSame(call, moved);
+        Assert.Single(moved.ArgumentPins);
+        context.UndoRedo.Undo();
+        Assert.Same(call, run.Nodes.OfType<CallMethodNode>().Single());
+        Assert.Empty(call.ArgumentPins);
+        Assert.Empty(entry.Arguments);
+    }
+
+    [Fact]
     public void AddingAnArgumentIsOneUndoStepLabelledAddArgument()
     {
         EventEntryInspectorViewModel inspector = Inspector();

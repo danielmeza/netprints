@@ -57,6 +57,21 @@ namespace NetPrints.Tests.Core
         }
 
         [Fact]
+        public void RenamingAnEventRetargetsADelegateToIt()
+        {
+            (ClassGraph cls, EventEntryNode entry) = ClassWithEvent();
+            MethodGraph caller = Caller(cls);
+            CallMethodNode call = CallTo(caller, cls.Type, "OnHit", TypeSpecifier.FromType<int>());
+            var makeDelegate = new MakeDelegateNode(caller, call.MethodSpecifier);
+
+            RenameResult result = MemberRename.RenameEvent([cls], entry, "OnDamage");
+
+            Assert.Equal("OnDamage", makeDelegate.MethodSpecifier.Name);
+            result.Undo();
+            Assert.Equal("OnHit", makeDelegate.MethodSpecifier.Name);
+        }
+
+        [Fact]
         public void ANameUsedByAMethodIsRefused()
         {
             (ClassGraph cls, EventEntryNode entry) = ClassWithEvent();

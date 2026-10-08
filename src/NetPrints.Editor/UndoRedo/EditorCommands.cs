@@ -307,27 +307,32 @@ public static class EditorCommands
     /// <summary>
     /// Replaces the arguments of the custom event <paramref name="entry"/> (<see cref="EventEntryNode.SetArguments"/>) as one step.
     /// The connections of each argument's data pin and type pin follow the argument to its new position; undo puts the old pins
-    /// and every connection back.
+    /// and every connection back. The calls to the event in <paramref name="classes"/> move to the new signature in the same step.
     /// </summary>
+    /// <param name="classes">The classes whose graphs may call the event (the whole project).</param>
     /// <param name="entry">The custom event entry.</param>
     /// <param name="label">The name of the step, such as <c>Add argument</c>.</param>
     /// <param name="arguments">The new arguments.</param>
     /// <param name="sourceIndexes">For each new argument, the index it had before, or -1 for a new one.</param>
     /// <returns>The command.</returns>
-    public static IUndoableCommand SetEventArguments(EventEntryNode entry, string label, IReadOnlyList<EventArgument> arguments, IReadOnlyList<int> sourceIndexes)
+    public static IUndoableCommand SetEventArguments(IReadOnlyList<ClassGraph> classes, EventEntryNode entry, string label, IReadOnlyList<EventArgument> arguments, IReadOnlyList<int> sourceIndexes)
     {
+        ArgumentNullException.ThrowIfNull(classes);
         ArgumentNullException.ThrowIfNull(entry);
         ArgumentNullException.ThrowIfNull(label);
         ArgumentNullException.ThrowIfNull(arguments);
         ArgumentNullException.ThrowIfNull(sourceIndexes);
         IReadOnlyList<EventArgument> previous = [];
         List<ArgumentLinks> previousLinks = [];
+        Action undoCallers = () => { };
 
         return new DelegateUndoableCommand(label,
             () =>
             {
                 previous = entry.DeclaredArguments;
                 previousLinks = DetachArguments(entry);
+                ClassGraph? cls = entry.Graph.Class;
+                MemberKey? oldKey = cls is null ? null : new MemberKey(MemberKind.Event, cls.Type, entry.EventName, entry.Arguments.Select(argument => (BaseType)argument.Type).ToList());
                 try
                 {
                     entry.SetArguments(arguments);
@@ -340,9 +345,13 @@ public static class EditorCommands
                 }
 
                 AttachArguments(entry, previousLinks, sourceIndexes);
+                undoCallers = oldKey is { } key
+                    ? SignatureChange.RetargetCallers(classes, key, [.. arguments.Select(argument => new Named<BaseType>(argument.Name, argument.Type))], sourceIndexes)
+                    : () => { };
             },
             () =>
             {
+                undoCallers();
                 DetachArguments(entry);
                 entry.SetArguments(previous);
                 AttachArguments(entry, previousLinks, Enumerable.Range(0, previousLinks.Count).ToList());

@@ -49,6 +49,30 @@ namespace NetPrints.Tests.Core
             Assert.Equal("First", first.Name);
         }
 
+        [Theory]
+        [InlineData("")]
+        [InlineData("  ")]
+        public void ABlankNameIsRefused(string blank)
+        {
+            ClassWithEventGraphs(out EventGraph first, out _);
+
+            ArgumentException refused = Assert.Throws<ArgumentException>(() => first.Rename(blank));
+
+            Assert.StartsWith("An event graph name cannot be blank", refused.Message, StringComparison.Ordinal);
+            Assert.Equal("First", first.Name);
+        }
+
+        [Fact]
+        public void TheNameIsTrimmedBeforeTheDuplicateCheck()
+        {
+            ClassWithEventGraphs(out EventGraph first, out _);
+
+            Assert.Throws<ArgumentException>(() => first.Rename(" Second "));
+            first.Rename("  Gameplay ");
+
+            Assert.Equal("Gameplay", first.Name);
+        }
+
         [Fact]
         public void KeepingTheCurrentNameIsNotADuplicate()
         {

@@ -431,10 +431,7 @@ public sealed partial class SuggestionListViewModel : ObservableObject, IDisposa
                 case CustomEventSuggestion:
                     if (graph.Graph is EventGraph { Class: { } eventClass })
                     {
-                        var existingNames = eventClass.Methods.Select(m => m.Name)
-                            .Concat(eventClass.EventGraphs.SelectMany(g => g.Entries.Select(e => e.EventName)))
-                            .ToList();
-                        string name = NetPrintsUtil.GetUniqueName(CustomEventSuggestion.NamePrefix, existingNames);
+                        string name = MemberNames.Unique(eventClass, CustomEventSuggestion.NamePrefix);
                         graph.AddEventEntry(Position, g => new EventEntryNode(g, name));
                     }
                     break;

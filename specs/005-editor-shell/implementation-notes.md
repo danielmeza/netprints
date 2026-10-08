@@ -1852,9 +1852,9 @@ Release (3052 tests, 3027 passed, 25 skipped, 0 failed) and the Desktop E2E with
 |---|---|---|---|---|
 | R1 | major | After Back, Forward, go-to or a connection jump deselects a node, its canvas container stays selected and a click no longer selects it | F-F1 | open |
 | R2 | major | No inline rename in the tree; F2 shows the inspector and leaves focus in the tree (FR-070, US8 scenario 1, shell.md §7) | F-F3 | open |
-| R3 | major | Argument edits leave the event's calls on the old signature: the class stops compiling, and a later rename misses them | F-F2 | open |
-| R4 | minor | `RenameEvent` does not retarget make-delegate nodes of the event | F-F2 | open |
-| R5 | minor | Name uniqueness is one-sided: an entry can take a variable's name, a method can take an entry's name | F-F2 | open |
+| R3 | major | Argument edits leave the event's calls on the old signature: the class stops compiling, and a later rename misses them | F-F2 | fixed |
+| R4 | minor | `RenameEvent` does not retarget make-delegate nodes of the event | F-F2 | fixed |
+| R5 | minor | Name uniqueness is one-sided: an entry can take a variable's name, a method can take an entry's name | F-F2 | fixed |
 | R6 | minor | "Or its graph is opened" is not a trigger of the entry inspector (FR-071) | F-F3 | open |
 | R7 | minor | Entry inspector: Tab after an argument rename loses focus, Enter does not commit | F-F1 | open |
 | R8 | minor | A contributed panel's View entry is a menu-only command outside the registry (synthesize it in the registry) | F-F3 | open |
@@ -1863,7 +1863,7 @@ Release (3052 tests, 3027 passed, 25 skipped, 0 failed) and the Desktop E2E with
 | R11 | minor | Docs: S0's user-visible changes missing from the release notes; NPD010 missing from the issue table; one contract row wrong | F-F4 | open |
 | R12 | minor | Pre-existing: an await node throws when its task's result type changes while the result is connected | T094a | open |
 | R13 | nit | `MemberKey` compares its parameter list by reference; `default(MemberKey)` has null members | F-F4 | open |
-| R14 | nit | A blank or untrimmed event graph name is accepted | F-F2 | open |
+| R14 | nit | A blank or untrimmed event graph name is accepted | F-F2 | fixed |
 | R15 | nit | Tests: line-number `!` allowlist, E2E that assert around R1 and R2, no `ref` case for NPT008 | F-F1, F-F4 | open |
 | R16 | nit | Event argument names written twice; an invalid name fails the whole class instead of repair and warn | F-F4 | open |
 | R17 | nit | Process: the skill-paths hook never fired for F2a–F4b, which changed files through shell commands | H-R | open |
@@ -1874,3 +1874,11 @@ Release (3052 tests, 3027 passed, 25 skipped, 0 failed) and the Desktop E2E with
 - R1: `SelectionToContainersBehavior` on the editor pushes each view-model selection change into the realized item containers with `SetCurrentValue`. `NavigationSelectionTests.BackClearsTheCanvasSelectionOfTheNodeItLeaves` was red before. The click-after-Back test passed even before the fix: in the headless rig the node the review used sat under the inspector, so the test moves the return node closer; it stays as a guard.
 - R7: argument rows are updated in place (`EventArgumentViewModel.Update`), rebuilt only when the count changes; `LoseFocusOnEnterBehavior` on the entry, graph and argument name boxes (Enter commits via the existing LostFocus binding). `EventArgumentEditingTests` Tab and Enter were red before. The D11 deviation stays: the name edit is still a LostFocus two-way binding, as in the variable inspector.
 - R15 (E2E part): `GoToAnythingTests` asserts the node is deselected after each Back; `KeyboardOnlyTests` asserts the selection after Back equals the selection before the go-to. Both classes ran 3 times green. The allowlist and NPT008 `ref` items stay open for F-F4.
+
+### F-F2 (R3, R4, R5, R14)
+
+- R3: `SignatureChange.RetargetCallers` (Core) rebuilds every `CallMethodNode` and `MakeDelegateNode` that `RefersTo` the old key on the new parameter list, keeping position, purity, exec connections, the target and each argument's connection or unconnected value through `sourceIndexes`; a removed argument's connection is dropped, a new primitive argument gets a default unconnected value so the class compiles. `EditorCommands.SetEventArguments` now takes the project classes and runs it in the same undo step (undo puts the original nodes back). `SignatureChangeTests` were red (5 of 6) with a stub before the implementation.
+- R3, method parameters: same gap, but they change outside any command (entry-node +/- buttons and type-pin connections), so the helper alone does not fix them. Deferred to T094b (sub-phase G).
+- R4: `MakeDelegateNode.RefersTo` accepts `MemberKind.Event`; contract row `MakeDelegateEventNodeContract` and a rename test were added after the code (written after, not red first). T082's text amended.
+- R5: `MemberNames.ThrowIfTaken` (methods, event entries, variables, class name; a method may overload a method) is used by `RenameMethod`, `RenameVariable` and `RenameEvent`; `MemberNames.Unique` names new methods, variables and custom events. `MemberNamesTests` red before wiring.
+- R14: `EventGraph.Rename` trims and refuses a blank name ("An event graph name cannot be blank"); red before.

@@ -45,6 +45,15 @@ namespace NetPrints.Tests.Graph
         protected override string TargetOf(MakeDelegateNode node) => node.MethodSpecifier.Name;
     }
 
+    public sealed class MakeDelegateEventNodeContract : MemberReferencingNodeContract<MakeDelegateNode>
+    {
+        protected override MemberKey OldKey { get; } = new(MemberKind.Event, MemberKeys.Declaring, "OnHit", [TypeSpecifier.FromType<int>()]);
+
+        protected override MakeDelegateNode CreateNode(NodeGraph graph) => new(graph, MemberKeys.Method("OnHit", TypeSpecifier.FromType<int>()));
+
+        protected override string TargetOf(MakeDelegateNode node) => node.MethodSpecifier.Name;
+    }
+
     public sealed class VariableGetterNodeContract : MemberReferencingNodeContract<VariableGetterNode>
     {
         protected override MemberKey OldKey { get; } = new(MemberKind.Variable, MemberKeys.Declaring, "Count", []);

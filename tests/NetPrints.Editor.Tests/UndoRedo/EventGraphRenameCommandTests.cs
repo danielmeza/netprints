@@ -97,7 +97,7 @@ public sealed class SetEventArgumentsCommandTests
         GraphUtil.ConnectDataPins(entry.OutputDataPins[1], sink.InputDataPins[0]);
         var stack = new UndoRedoStack();
 
-        stack.Do(EditorCommands.SetEventArguments(entry, "Remove argument", [new EventArgument("b", Text)], [1]));
+        stack.Do(EditorCommands.SetEventArguments([cls], entry, "Remove argument", [new EventArgument("b", Text)], [1]));
 
         Assert.Equal([new EventArgument("b", Text)], entry.Arguments);
         Assert.Same(entry.OutputDataPins[0], sink.InputDataPins[0].IncomingPin);
@@ -122,7 +122,7 @@ public sealed class SetEventArgumentsCommandTests
         entry.SetArguments([new EventArgument("a", Int)]);
         var stack = new UndoRedoStack();
 
-        Assert.Throws<ArgumentException>(() => stack.Do(EditorCommands.SetEventArguments(entry, "Rename argument", [new EventArgument("1x", Int)], [0])));
+        Assert.Throws<ArgumentException>(() => stack.Do(EditorCommands.SetEventArguments([], entry, "Rename argument", [new EventArgument("1x", Int)], [0])));
 
         Assert.Equal([new EventArgument("a", Int)], entry.Arguments);
         Assert.False(stack.CanUndo);
