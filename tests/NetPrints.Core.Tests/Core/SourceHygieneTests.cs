@@ -662,5 +662,135 @@ namespace NetPrints.Tests.Core
             Assert.True(checkedCount > 0, "Expected to check at least one src/... severity entry in .editorconfig.");
             Assert.Empty(offenders);
         }
+
+        /// <summary>Reviewed exceptions to <see cref="UiBoundCodeNeverUsesConfigureAwaitFalse"/>, keyed
+        /// <c>relative/path.cs:line</c> with a one-line reason.</summary>
+        private static readonly Dictionary<string, string> ConfigureAwaitFalseAllowlist = new(StringComparer.Ordinal);
+
+        /// <summary>Converts an .editorconfig section glob (<c>**</c>, <c>*</c>, <c>{a,b}</c>) to a regex.</summary>
+        private static Regex EditorConfigGlobToRegex(string glob)
+        {
+            var pattern = new System.Text.StringBuilder("^");
+            for (int i = 0; i < glob.Length; i++)
+            {
+                switch (glob[i])
+                {
+                    case '*' when i + 1 < glob.Length && glob[i + 1] == '*':
+                        pattern.Append(".*");
+                        i++;
+                        break;
+                    case '*':
+                        pattern.Append("[^/]*");
+                        break;
+                    case '{':
+                        pattern.Append("(?:");
+                        break;
+                    case '}':
+                        pattern.Append(')');
+                        break;
+                    case ',':
+                        pattern.Append('|');
+                        break;
+                    case '.':
+                        pattern.Append("\\.");
+                        break;
+                    default:
+                        pattern.Append(glob[i]);
+                        break;
+                }
+            }
+
+            return new Regex(pattern.Append('$').ToString(), RegexOptions.None, TimeSpan.FromSeconds(5));
+        }
+
+        /// <summary>
+        /// UI-bound code resumes on the UI thread, so a <c>ConfigureAwait(false)</c> there is a latent
+        /// cross-thread bug. The scope is whatever <c>.editorconfig</c> sets <c>VSTHRD111</c> to
+        /// <c>none</c> for; the non-UI scopes (which keep it at <c>error</c>) must use <c>false</c>.
+        /// </summary>
+        [Fact]
+        public void UiBoundCodeNeverUsesConfigureAwaitFalse()
+        {
+            string repoRoot = SampleProjectFactory.FindRepositoryRoot();
+            List<Regex> scopes = ConfigureAwaitUiScopes(File.ReadAllLines(Path.Combine(repoRoot, ".editorconfig")));
+            Assert.True(scopes.Count > 0, "Expected .editorconfig to define at least one VSTHRD111 = none scope.");
+
+            var offenders = new List<string>();
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            int scannedCount = 0;
+
+            foreach (string path in EnumerateSourceFiles(Path.Combine(repoRoot, "src"), "*.cs"))
+            {
+                string relativePath = Path.GetRelativePath(repoRoot, path).Replace('\\', '/');
+                if (!scopes.Any(scope => scope.IsMatch(relativePath)))
+                {
+                    continue;
+                }
+
+                scannedCount++;
+                offenders.AddRange(FindConfigureAwaitFalse(File.ReadAllText(path), relativePath, seen));
+            }
+
+            Assert.True(scannedCount > 0, "Expected at least one UI-bound source file.");
+            Assert.Empty(offenders);
+            Assert.True(ConfigureAwaitFalseAllowlist.Keys.All(seen.Contains), "A ConfigureAwait(false) allowlist entry no longer matches a call: remove it.");
+        }
+
+        [Fact]
+        public void ConfigureAwaitScopeIsReadFromEditorConfigAndFlagsAPlantedViolation()
+        {
+            List<Regex> scopes = ConfigureAwaitUiScopes(["[src/Ui/**.cs]", "dotnet_diagnostic.VSTHRD111.severity = none", "[src/Lib/**.cs]", "dotnet_diagnostic.VSTHRD111.severity = error"]);
+
+            Assert.Contains(scopes, scope => scope.IsMatch("src/Ui/Deep/View.cs"));
+            Assert.DoesNotContain(scopes, scope => scope.IsMatch("src/Lib/Thing.cs"));
+            Assert.Single(FindConfigureAwaitFalse("class C { async System.Threading.Tasks.Task M() { await System.Threading.Tasks.Task.Delay(1).ConfigureAwait(false); } }", "src/Ui/View.cs", []));
+            Assert.Empty(FindConfigureAwaitFalse("class C { async System.Threading.Tasks.Task M() { await System.Threading.Tasks.Task.Delay(1).ConfigureAwait(true); } }", "src/Ui/View.cs", []));
+        }
+
+        private static List<Regex> ConfigureAwaitUiScopes(string[] editorConfigLines)
+        {
+            var scopes = new List<Regex>();
+            string? section = null;
+            foreach (string line in editorConfigLines)
+            {
+                string trimmed = line.Trim();
+                Match header = EditorConfigSectionPattern().Match(trimmed);
+                if (header.Success)
+                {
+                    section = header.Groups["section"].Value;
+                    continue;
+                }
+
+                Match severity = EditorConfigSeverityPattern().Match(trimmed);
+                if (section is not null && severity.Success && severity.Groups["rule"].Value == "VSTHRD111" && severity.Groups["severity"].Value == "none")
+                {
+                    scopes.Add(EditorConfigGlobToRegex(section));
+                }
+            }
+
+            return scopes;
+        }
+
+        private static List<string> FindConfigureAwaitFalse(string code, string relativePath, HashSet<string> seen)
+        {
+            var offenders = new List<string>();
+            SyntaxNode root = CSharpSyntaxTree.ParseText(code, cancellationToken: TestContext.Current.CancellationToken).GetRoot(TestContext.Current.CancellationToken);
+            foreach (InvocationExpressionSyntax call in root.DescendantNodes().OfType<InvocationExpressionSyntax>())
+            {
+                if (call.Expression is MemberAccessExpressionSyntax { Name.Identifier.Text: "ConfigureAwait" }
+                    && call.ArgumentList.Arguments is [{ Expression: LiteralExpressionSyntax literal }]
+                    && literal.IsKind(Microsoft.CodeAnalysis.CSharp.SyntaxKind.FalseLiteralExpression))
+                {
+                    string key = $"{relativePath}:{call.GetLocation().GetLineSpan().StartLinePosition.Line + 1}";
+                    seen.Add(key);
+                    if (!ConfigureAwaitFalseAllowlist.ContainsKey(key))
+                    {
+                        offenders.Add(key);
+                    }
+                }
+            }
+
+            return offenders;
+        }
     }
 }

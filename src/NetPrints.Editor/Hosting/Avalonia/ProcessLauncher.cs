@@ -69,7 +69,7 @@ public sealed class ProcessLauncher : IProcessLauncher
             try
             {
                 using var drain = new CancellationTokenSource(DrainTimeout);
-                await process.WaitForExitAsync(drain.Token).ConfigureAwait(false); // every line precedes the exit
+                await process.WaitForExitAsync(drain.Token); // every line precedes the exit
             }
             catch (OperationCanceledException)
             {
@@ -79,7 +79,7 @@ public sealed class ProcessLauncher : IProcessLauncher
             int code = process.ExitCode;
             ProcessExited?.Invoke(id, code);
             OutputReceived?.Invoke($"Process exited (code {code}).");
-            await killOnCancel.DisposeAsync().ConfigureAwait(false);
+            await killOnCancel.DisposeAsync();
             process.Dispose();
         }
     }
