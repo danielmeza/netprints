@@ -96,6 +96,36 @@ defaults, applied to the sections named:
 Every other category was Clear: performance is out of scope by owner decision (FR-104, P8), there is no
 authentication or network access, and observability is the existing logging plus the E2E diagnostics of US1.
 
+### Session 2026-10-08
+
+Owner decisions taken during sub-phase E (after batches E-F7b, E-F8 and E-F9), before sub-phase G starts. The
+G spec batch in implementation-notes.md lists the tasks they add.
+
+- Q: The override and overload pickers show raw, fully qualified signatures with no filter or grouping; the
+  override dialog clips its list, and the 24-px combo in a call node's header hides the current overload. Are they
+  fixed in P3a? → A: Yes, in sub-phase G (FR-093–FR-095). A signature formatter comes first, then one shared
+  method list (a filter box, rows grouped by declaring type, the current overload marked, overridden methods
+  dimmed). It is used in a 640 by 480 override dialog in the dialog shell and in a flyout that replaces the
+  overload combo on call and constructor nodes. This is option 1 of the 2026-10-07 picker investigation
+  (`.agent-archive/2026-10-07-override-dropdown/report.md`, outside this repo), with its overload picker specifics.
+- Q: Should an unconnected Target pin say that the code uses `this`? → A: Yes, as Unreal does: the pin shows
+  "self" when the code generator writes `this` there and `this` is valid (FR-096). A Self node in node search
+  (a node that gives `this` as a value) is not in P3a. It adds a serialized node kind, which means model,
+  file-format, schema and code-generation work in the core, outside a look sub-phase; the pin label already shows
+  what the code does. It is proposed for P6 (Blueprint-level usability).
+- Q: Which icon family does the editor use? → A: Material Design Icons (Pictogrammers, Apache-2.0), the set that
+  E-F8 already shipped in the Dock chrome, the tab close button, the project tree and the start page (ADR-0021,
+  Amendment 1). Switching to Fluent UI System Icons now would redo E-F8 and re-baseline the same snapshots twice,
+  and ADR-0023's Semi base theme removed the reason to match the Fluent controls. `THIRD-PARTY-NOTICES.md` names
+  the icon set and the Semi and Ursa packages (FR-085).
+- Q: Which product mark? → A: The existing NetPrints logo (a node with a header bar and two pins on each side),
+  today a 256-px PNG at `website/static/img/logo.png` that E-F8 copied to the start page, redrawn as the vector
+  master of FR-085. The vector mark and its exports replace the PNG copy.
+- Q: What happens to the 12 fixed-size dialogs that E-F7b allowlisted? → A: Each sizes to its content within the
+  dialog shell's width tokens, and the dialog-sizing allowlist ends empty (FR-088, SC-008).
+- Q: Where does XAML rule E8 start? → A: From E-F7b's literal ratchet (`xaml-literal-ratchet.txt`: 4 `FontSize`
+  literals in views), which T092 drives to zero.
+
 ## User Scenarios & Testing *(mandatory)*
 
 The stories are ordered by priority. **MVP slice: User Stories 1–4** (CI diagnostics first, then the single window,
@@ -380,6 +410,8 @@ two arguments, compile, and see the method and its parameters in the generated C
 The editor uses one type ramp, one spacing scale and one set of colour tokens, in Dark and Light, including the node
 canvas. Icons come from one vector family and are named by id; node headers, pins, selection, focus, density and
 motion follow tokens; empty panels and the new dialogs each share one pattern; and the look holds at high DPI.
+The method pickers read like C# signatures, and an unconnected Target pin says when it means `this` (owner decision
+2026-10-08).
 
 **Why this priority**: UX audit M3: headers are 24-pixel centred text, sizes and margins are ad hoc, and the canvas
 brushes are Dark-only. It matters for polish, not function. The icon ids (FR-084) are the exception: they must
@@ -388,6 +420,8 @@ exist before P3 publishes the contribution API.
 **Independent Test**: Switch View › Theme between Dark, Light and System and see every pane and the canvas follow;
 the hygiene tests report no colour literal in any view and every token defined in both variants. The snapshot
 tests pass at scale 1.0, 1.5 and 2.0 in both themes, and the sub-phase review has a contact sheet of every pane.
+Override a method by typing part of its name, change a call's overload from the node header, and see "self" on an
+unconnected Target pin.
 
 **Acceptance Scenarios**:
 
@@ -407,9 +441,22 @@ tests pass at scale 1.0, 1.5 and 2.0 in both themes, and the sub-phase review ha
 7. **Given** an empty Errors list, empty Output, no project in the tree, or a search with no results, **Then** one
    empty-state pattern shows an icon, a sentence and, when one applies, an action.
 8. **Given** a dialog added in P3a, **Then** it has the shared shell: a title, an icon, buttons in the platform's
-   order, Enter for the default button and Esc for cancel.
+   order, Enter for the default button and Esc for cancel; and every dialog window sizes to its content.
 9. **Given** the start page, the About dialog, the window icon and the docs site, **Then** each shows the same
    product mark.
+10. **Given** a class that derives from `Exception`, **When** the user runs Override method…, **Then** a dialog of
+    about 640 by 480 pixels lists the overridable methods without clipping, grouped under `Exception` and then
+    `Object`, each row reading like `string ToString()` with no namespaces; methods the class already overrides are
+    dimmed and cannot be picked; **When** the user types `tostr` and presses Enter, **Then** the `ToString`
+    override is created and opened, as before.
+11. **Given** a `Console.WriteLine` call node, **When** the user opens the overloads button in its header, **Then**
+    a flyout lists every overload as `void WriteLine(string format, object arg0)`, with the current one marked and
+    first and the rest sorted by parameter count; typing filters the rows; picking one changes the node's pins in
+    one undoable step, and Esc closes the flyout with no change.
+12. **Given** an instance variable get or set, an instance call or an instance make-delegate node in a non-static
+    graph of the member's own class or a class derived from it, **When** its Target pin has no connection,
+    **Then** the pin shows "self"; **When** a wire is connected to it, **Then** "self" disappears; and in both
+    cases the generated C# is unchanged.
 
 ---
 
@@ -663,14 +710,15 @@ its public members appear.
   graph; native window decorations stay on every platform.
 - **FR-084**: Every icon the editor shows (commands in menus, the command bar and the palette; panels; tree items;
   node categories and kind glyphs; pin kinds; project templates; dialogs; empty states) MUST come from one vector
-  family, Fluent UI System Icons (ADR-0021), and MUST be named by an icon id that one registry resolves.
+  family, Material Design Icons (ADR-0021, Amendment 1), and MUST be named by an icon id that one registry resolves.
   Contribution descriptors MUST carry an icon id (`IconId`), never an icon-library type. An unknown id MUST draw a
   fallback glyph and log one warning, and its contribution MUST still register; every built-in id MUST resolve.
 - **FR-085**: The editor MUST ship no raster icon: the 16 inherited `*_16x.png` icons MUST be replaced by icon ids and
-  removed. The product mark MUST have one vector master and exported sizes (PNG from 16 to 256 px and a multi-size
-  `.ico`), used for the window and dialog icons, the start page, the About dialog, the NuGet package icon and the
-  docs site's logo and favicon. A `THIRD-PARTY-NOTICES.md` file MUST list every bundled third-party asset (icon
-  glyphs and fonts) with its licence and copyright, and the Desktop app MUST ship it.
+  removed. The product mark, the NetPrints logo, MUST have one vector master and exported sizes (PNG from 16 to
+  256 px and a multi-size `.ico`), used for the window and dialog icons, the start page, the About dialog, the NuGet
+  package icon and the docs site's logo and favicon; no other copy of the logo ships. A `THIRD-PARTY-NOTICES.md`
+  file MUST list every bundled third-party asset (icon glyphs, fonts, and the Semi and Ursa theme packages of
+  ADR-0023) with its licence and copyright, and the Desktop app MUST ship it.
 - **FR-086**: Node headers MUST take their colour from role tokens: Entry (method entries, event entries and
   return), Call (impure calls), Pure (pure nodes without a role of their own: pure calls, ternary, make array, make
   delegate, type and pure default nodes such as literals and operators), Flow (default nodes with execution pins,
@@ -692,17 +740,18 @@ its public members appear.
   command. The dialogs added in P3a (Unsaved changes, Confirm, Keyboard shortcuts, Trust, Issues, Recover, About
   and Error) MUST share one dialog shell: a title, an icon, the body, a default and a cancel button in the
   platform's order (Windows: default first; macOS and Linux: cancel first), Enter for the default, Esc for cancel,
-  and a width between two tokens.
+  and a width between two tokens. Every dialog window MUST size to its content within those width tokens; no dialog
+  keeps a fixed size.
 - **FR-089**: Snapshot tests MUST render the shell, the canvas with every node kind, the method inspector and the
   Unsaved changes dialog at scale 1.0, 1.5 and 2.0 in Dark and Light, and fail on any change. The sub-phase G
-  review MUST attach a contact sheet produced by a test run and uploaded by CI: every pane, the start page, a graph
-  and the P3a dialogs, in both themes at 100 % and 200 %.
+  review MUST attach a contact sheet produced by a test run and uploaded by CI: every pane, the start page, a graph,
+  the P3a dialogs and both method pickers (FR-095), in both themes at 100 % and 200 %.
 
 Deferred from the visual-polish items (gap research 2026-10-06, roadmap): pins and variable headers coloured by data
 type, the selected-wire highlight and a selection count, a Compact/Comfortable switch and zoom-level detail, animated
 fit and a reduce-motion setting, canvas focus (M18), canvas empty-state hints (M8), the dialog shell for the older
-dialogs (M13) and compact operator nodes go to P6; glyphs contributed by extensions are decided with the P3
-contribution API.
+dialogs other than Override method (M13), compact operator nodes and a Self node in node search (FR-096) go to P6;
+glyphs contributed by extensions are decided with the P3 contribution API.
 
 **Type-scoped search (US10)**
 
@@ -713,6 +762,30 @@ contribution API.
   message naming the catalog.
 - **FR-092**: Resolving members of existing nodes MUST be unchanged, so graphs that use hidden members still load,
   build and run.
+
+**Method pickers and the self target (US9; owner decision 2026-10-08)**
+
+- **FR-093**: The override dialog and the overload picker MUST show each method in one signature format: the return
+  type first, then the name and the parameters (`string ToString()`, `void WriteLine(string format, object arg0)`),
+  with type names without namespaces, C# keywords for built-in types, generic types and arrays in C# form, and the
+  `ref`, `out`, `in` and `params` modifiers kept. A constructor shows as its type's name with its parameters. A row
+  does not repeat its declaring type. Node search keeps its own text.
+- **FR-094**: Both pickers MUST use one method list: a filter box that narrows the rows as the user types
+  (case-insensitive, on the name and the signature), rows grouped under their declaring type's name, the current
+  overload marked and listed first, methods the class already overrides dimmed and not pickable, and abstract
+  methods marked. The filter box has focus when the list opens; Down moves into the list, Enter picks the selected
+  row and Esc cancels.
+- **FR-095**: Override method MUST open a dialog in the dialog shell (FR-088), about 640 by 480 pixels, whose list
+  shows without clipping and keeps its height while the user filters; its groups run from the class's direct base
+  type up to `object`. Call-method and constructor nodes with other overloads MUST show an overloads button in their
+  header, with an accessible name and a tooltip that gives the overload count and the current signature; it opens
+  the list in a flyout under the button. Overloads are sorted by parameter count, then by signature, and picking
+  one changes the node in one undoable step. The make-array node's size-mode switch, which shares today's overload
+  combo, keeps working through the same button.
+- **FR-096**: An unconnected Target pin of an instance member node (variable get and set, call method, make
+  delegate) MUST show "self" when the generated code writes `this` there and `this` is valid: the graph is not
+  static, and its class is the member's declaring type or derives from it. Connecting a wire hides it, and the
+  generated code is unchanged. A Self node in node search, which gives `this` as a value, is not part of P3a.
 
 **Cross-cutting**
 
@@ -788,6 +861,10 @@ contribution API.
   ids resolve without the fallback; every node-header text and role colour pair has a contrast ratio of at least
   4.5:1 in both variants; the snapshot set passes at scale 1.0, 1.5 and 2.0 in Dark and Light; and the sub-phase G
   review carries a contact sheet.
+- **SC-012**: In both method pickers, 0 rows show a namespace or repeat their declaring type (formatter and
+  view-model tests over the methods of `Exception` and the overloads of `Console.WriteLine`); each keystroke in the
+  filter box leaves exactly the matching rows and their group headers; 100% of the unconnected Target pins
+  that FR-096 covers show "self" in a headless test, and the code-generation goldens stay byte-identical.
 
 ## Assumptions
 

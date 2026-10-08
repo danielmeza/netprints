@@ -1579,3 +1579,95 @@ Batch E-F7b (prose rules become hygiene tests):
 - Each rule was seen red against a planted violation in a real file (a fixed-size `ErrorDialog`, `$parent[Grid;2]`, a literal Margin and FontSize, a `BoxShadows` hex in `DockStyles.axaml`) before it was restored.
 - T073: Review E was posted as one PR comment, not as inline threads, and each finding already has a reply naming its fixing commit (E-F1 to E-F6b, E-F7a/b, E-F8, E-F9). T073 is ticked.
 
+## G spec batch (owner decisions after sub-phase E, before G)
+
+Documentation only. The spec's Clarifications, session 2026-10-08, record six owner decisions taken during
+sub-phase E; this batch writes them into the spec, tasks.md, ADR-0021 and research R17 and reconciles them with the
+planned G tasks.
+
+- Spec: US9 gains acceptance scenarios 10 (override dialog), 11 (overload flyout) and 12 ("self"), and scenario 8
+  now asks every dialog to size to its content. New FR-093 (one signature format), FR-094 (one shared method list),
+  FR-095 (the override dialog and the overload flyout) and FR-096 ("self" on unconnected Target pins), under their
+  own heading after FR-092 because the visual-system range FR-080–FR-089 is full. FR-084 names Material Design
+  Icons; FR-085 makes the NetPrints logo the product mark with no other copy shipped and adds the Semi and Ursa
+  packages to the notices; FR-088 asks every dialog to size to its content; FR-089's contact sheet adds both
+  pickers. New SC-012. The P6 deferrals add a Self node in node search, and the older-dialog shell (M13) no longer
+  covers Override method.
+- Decision (icons, ADR-0021 Amendment 1): one family, Material Design Icons (Pictogrammers, Apache-2.0), through
+  `Material.Icons.Avalonia` 3.0.2, which stays; `FluentIcons.Avalonia` is not added. E-F8 already shipped MDI in
+  the Dock chrome and the tab close button (the project tree and the start page tiles already used it), and
+  ADR-0023's Semi base theme removed the Fluent design-language argument; switching would redo E-F8 and re-baseline
+  the same snapshots twice. The id registry, `IconPresenter`, E9 and the fallback are unchanged. The active state
+  uses MDI's outline and filled pairs. `THIRD-PARTY-NOTICES.md` (T090b) names MDI, Material.Icons.Avalonia,
+  Semi.Avalonia, Irihi.Ursa, Irihi.Ursa.Themes.Semi, Cascadia Mono and Inter, and carries the Apache-2.0 text.
+- Decision (product mark): the mark is the existing NetPrints logo (a node with a header bar and two pins with
+  wire stubs on each side), redrawn as the SVG master from its rectangles, not a new design. T090b owns it: the
+  exports, the `.ico`, the `App.Mark` `DrawingImage` with `Brand.*` tokens, and the start page shows it in place of
+  E-F8's `NetPrintsLogo.png`, which is deleted with `website/static/img/logo.png`.
+- Decision (Self node): not in P3a. The "self" label on the Target pin (T091b) shows what the code generator
+  already writes. A Self node in node search adds a serialized node kind, so it is model, file-format, schema,
+  translator and golden-fixture work in the core, outside a look sub-phase. Proposed for P6 (Blueprint-level
+  usability) below.
+- Decision ("self" condition): as in Unreal, the label shows only where `this` is valid: a non-static graph whose
+  class is the member's declaring type or derives from it. Elsewhere the pin stays as it is today.
+- Decision (pickers): option 1 of the picker investigation (`.agent-archive/2026-10-07-override-dropdown/report.md`,
+  outside this repo) with its overload picker specifics; the formatter lands first because it fixes the raw
+  signatures in both pickers on its own. Filtering lives in the view model, and the list is one flat list of header
+  and method rows because Avalonia's `ListBox` has no grouping. The override dialog adopts the dialog shell now,
+  ahead of M13. The overload flyout is a `Flyout` anchored to its header button, like the ComboBox drop-down it
+  replaces, so ADR-0004's pointer-anchored `CanvasPopup` does not apply. Not planned: a node subtitle with the
+  current signature (the pins show the parameters, and the button's tooltip and the marked row name the overload)
+  and muted parameter types (they would need inline runs per row).
+- Decision (dialog sizing): `DialogSizingAllowlist` ends empty. T092f takes out the seven shell dialogs it lists,
+  T092g the four legacy dialogs that stay outside the shell (new project, sample target, select type, references),
+  and T092j the select-method dialog. List dialogs bound their lists with a `Dialog.ListMaxHeight` token.
+- Decision (E8): T092 starts from E-F7b's ratchet (`xaml-literal-ratchet.txt`, FontSize 4) and drives FontSize to 0.
+- New tasks (9 units):
+
+| Task | Units | Batch | Depends on |
+|---|---|---|---|
+| T091b "self" on unconnected Target pins (FR-096) | 1 | G2 | T091a (same snapshots) |
+| T092g every dialog sizes to its content (FR-088) | 1 | G4b | T092f |
+| T092h method signature formatter (FR-093) | 1 | G4c | — (first of the picker tasks) |
+| T092i shared `MethodPickerList` and its view model (FR-094) | 2 | G4c | T092h |
+| T092j Override method dialog, about 640 by 480, in the shell (FR-095) | 1 | G4c | T092f, T092g, T092i |
+| T092k overload flyout replacing the 24-px combo (FR-095) | 2 | G4d | T090a, T092i |
+| T092l Desktop E2E for both pickers (FR-102) | 1 | G4d | T092j, T092k |
+
+- G batch plan (39 units, up from 30): G4 is split so each batch keeps 2–4 tasks.
+
+| Batch | Model | Tasks | Units |
+|---|---|---|---|
+| G1 | sonnet | T090, T090a, T090b | 5 |
+| G2 | sonnet | T091, T091a, T091b | 5 |
+| G3 | haiku | T092, T092a, T092b | 3 |
+| G4a | sonnet | T092c, T092d, T092e | 3 |
+| G4b | sonnet | T092f, T092g | 3 |
+| G4c | sonnet | T092h, T092i, T092j | 4 |
+| G4d | sonnet | T092k, T092l | 3 |
+| G5 | sonnet | T093, T094, T095 | 4 |
+| G6 | sonnet | T096, T097 | 4 |
+| G7 | sonnet | T098, T098a, T098b, T099 | 5 |
+| G-R | opus | T100 | — |
+| G-F | sonnet | T101 | — |
+
+- Totals: 144 tasks (G 30), 39 implementation batches, 17 review, fix and merge batches.
+- Analyze findings fixed (consistency pass in the style of `speckit-analyze`):
+  1. The task counts table was stale since E5 and C5g: C has 19 tasks (T045a), E has 24 (T071a–T071k), so the total
+     was 137, not 125, and there were 36 implementation batches, not 34. Corrected with this batch's additions.
+  2. Batch C5's header range and units left out T045a (now `T042–T045a`, 7 units); E5a's header said 8 units for 9.
+  3. FR-084, ADR-0021, its README entry and research R17 still named Fluent UI System Icons after E-F8 shipped
+     MDI (fixed by the amendment); T090a still planned `FluentIcons.Avalonia` and removing Material.Icons.Avalonia.
+  4. T090a counted nine view files with `MaterialIcon`; E5's start page tiles made it 12.
+  5. E-F8's `NetPrintsLogo.png` was missing from E9's seed, T090b and T092b's no-PNG test.
+  6. T092f deferred the select-method dialog to P6, while the new sizing rule and the picker redesign need it in G.
+  7. T098b's contact sheet and T099's evidence did not cover the pickers, SC-012 or the dialog-sizing allowlist.
+  Checked with no finding: every FR and SC has a task, no task id in spec.md or tasks.md is dangling, every task
+  sits in exactly one batch whose header range and units match its tasks, and the one FR id that spec.md lacks
+  (FR-027) refers to P1's spec.
+- Roadmap proposals for the coordinator (`.specify/memory/roadmap.md` is a governance file): (1) P6 "Visual": "the
+  old dialogs adopt the dialog shell (C-14)" becomes "the old dialogs other than Override method, which P3a G
+  moved, adopt the dialog shell (C-14)"; (2) P6 gains "a Self node in node search that gives `this` as a value,
+  as Unreal's Self node (a new serialized node kind)"; (3) P3a's "Visual polish in sub-phase G" bullet adds
+  "readable override and overload pickers, "self" on unconnected Target pins and every dialog sized to its content
+  (owner decisions 2026-10-08), about 2 days more".
