@@ -283,6 +283,15 @@ public static class EditorCommands
             () => (result ?? throw new InvalidOperationException(NoDoActionMessage)).Undo());
     }
 
+    /// <summary>Renames <paramref name="graph"/> (<see cref="EventGraph.Rename"/>); undo restores the name.</summary>
+    public static IUndoableCommand RenameEventGraph(EventGraph graph, string newName)
+    {
+        RenameResult? result = null;
+        return new DelegateUndoableCommand("Rename event graph",
+            () => result = graph.Rename(newName),
+            () => (result ?? throw new InvalidOperationException(NoDoActionMessage)).Undo());
+    }
+
     /// <summary>Adds a local variable of type <c>object</c> named <paramref name="name"/> (US5); undo removes it.</summary>
     public static IUndoableCommand AddLocalVariable(ExecutionGraph graph, string name)
     {

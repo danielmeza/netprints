@@ -718,7 +718,7 @@ Contracts: contributions.md, commands.md, shell.md §7. **Independent test**: US
 
 ### Batch F3 — model: sonnet — T081–T083 — 5 units
 
-- [ ] T081 [US8] Test first: `tests/NetPrints.Core.Tests/Core/EventGraphRenameTests.cs`. Renaming an event graph is one
+- [x] T081 [US8] Test first: `tests/NetPrints.Core.Tests/Core/EventGraphRenameTests.cs`. Renaming an event graph is one
   undoable change; a name used by another event graph of the class is refused with
   "An event graph named '<name>' already exists"; the generated C# does not change (goldens byte-identical). Then
   `src/NetPrints.Core/Core/EventGraph.cs` and the editor's undoable rename command.
