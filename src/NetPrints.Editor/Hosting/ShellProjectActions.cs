@@ -6,6 +6,7 @@ using NetPrints.Editor.Commands.CommandPalette;
 using NetPrints.Editor.Commands.KeyboardShortcuts;
 using NetPrints.Editor.Contributions.BuiltIn;
 using NetPrints.Editor.Dialogs;
+using NetPrints.Editor.Navigation;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.References;
 using NetPrints.Editor.Shell;
@@ -220,6 +221,21 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
         shell.Commands is { } invoker
             ? context.Dialogs.ShowCommandPaletteAsync(new CommandPaletteViewModel(shell.Registry, invoker))
             : Task.CompletedTask;
+
+    /// <inheritdoc/>
+    public Task ShowGoToAnythingAsync(CancellationToken cancellationToken)
+    {
+        if (shell.Commands is not { } invoker || Api is not { } api)
+        {
+            return Task.CompletedTask;
+        }
+
+        var goTo = new GoToAnythingViewModel(
+            shell.Registry.GoToProviders,
+            api.Navigation.NavigateTo,
+            id => shell.Registry.Commands.FirstOrDefault(command => command.Id == id) is { } command && invoker.TryRun(command));
+        return context.Dialogs.ShowGoToAnythingAsync(goTo);
+    }
 
     /// <inheritdoc/>
     public Task ShowAboutAsync(CancellationToken cancellationToken) =>

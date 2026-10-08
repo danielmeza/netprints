@@ -66,9 +66,11 @@ internal sealed class ShellHost : IDisposable
         ILogger logger = context.LoggerFactory.CreateLogger<ShellHost>();
         var registry = new ContributionRegistry(context.LoggerFactory.CreateLogger<ContributionRegistry>());
         BuiltInContributions.Register(registry);
+        ShellViewModel? shell = null;
+        GoToProviderContributions.Register(registry, () => shell?.Session);
         registry.Freeze();
 
-        var shell = new ShellViewModel(registry, new NoServices(), TimeProvider.System, context.Dispatcher);
+        shell = new ShellViewModel(registry, new NoServices(), TimeProvider.System, context.Dispatcher);
         shell.WindowStateService = context.WindowStateService;
         var actions = new ShellProjectActions(context, shell);
         var startPageServices = new StartPageServices().Add<IProjectActions>(actions).Add<IClipboardService>(context.Clipboard).Add<IFolderLauncher>(new ShellFolderLauncher()).Add(TimeProvider.System);

@@ -42,6 +42,12 @@ public static class MatchRanking
         return name.Contains(query, StringComparison.OrdinalIgnoreCase) ? Substring : NoMatch;
     }
 
+    /// <summary>Gets the rank as a sort key that puts non-matches last.</summary>
+    /// <param name="name">The name.</param>
+    /// <param name="query">The text typed, without surrounding spaces.</param>
+    /// <returns>The rank, or <see cref="int.MaxValue"/> for a name that does not match.</returns>
+    public static int SortKey(string name, string query) => Rank(name, query) is var rank && rank == NoMatch ? int.MaxValue : rank;
+
     /// <summary>Keeps the items whose name matches the query and orders them by rank, then by name.</summary>
     /// <typeparam name="T">The item type.</typeparam>
     /// <param name="items">The candidates.</param>

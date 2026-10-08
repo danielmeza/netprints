@@ -92,6 +92,13 @@ public sealed class FakeProjectActions : IProjectActions
     }
 
     /// <inheritdoc/>
+    public Task ShowGoToAnythingAsync(CancellationToken cancellationToken)
+    {
+        Calls.Add("ShowGoToAnything");
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc/>
     public Task ShowAboutAsync(CancellationToken cancellationToken)
     {
         Calls.Add("ShowAbout");

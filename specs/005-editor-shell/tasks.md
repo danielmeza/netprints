@@ -692,7 +692,7 @@ Contracts: contributions.md, commands.md, shell.md §7. **Independent test**: US
   Ctrl+Shift+P lists every registered command, filtered with the research R9 ranking (prefix, then word start, then
   substring, then name), with its shortcuts and menu path; a disabled command is listed but Enter does not run it;
   Enter runs the selected command; Esc closes. Then `src/NetPrints.Editor/Commands/CommandPalette/`, ids `Palette.*`.
-- [ ] T076 [US7] Go to anything (2 units). Test first: `tests/NetPrints.Editor.Tests/Navigation/GoToAnythingViewModelTests.cs`.
+- [x] T076 [US7] Go to anything (2 units). Test first: `tests/NetPrints.Editor.Tests/Navigation/GoToAnythingViewModelTests.cs`.
   Ctrl+P queries every registered `IGoToProvider`: the built-in providers for graphs, nodes, variables and methods of
   the open project, and commands after a leading `>`. Results are grouped by `Kind` in the R9 ranking. Enter resolves
   the item's `NavigationTarget`: it opens the graph, centres and selects the item, and records history. Then

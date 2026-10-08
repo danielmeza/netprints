@@ -4,6 +4,7 @@ using NetPrints.Editor.Commands.CommandPalette;
 using NetPrints.Editor.Commands.KeyboardShortcuts;
 using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Lifecycle;
+using NetPrints.Editor.Navigation;
 using NetPrints.Editor.References;
 
 namespace NetPrints.Editor.Hosting;
@@ -44,6 +45,10 @@ public interface IEditorDialogs
     /// <summary>Shows the command palette until a command is chosen or it is dismissed.</summary>
     /// <param name="palette">The commands and the filter.</param>
     Task ShowCommandPaletteAsync(CommandPaletteViewModel palette);
+
+    /// <summary>Shows go to anything until a result is chosen or it is dismissed.</summary>
+    /// <param name="goTo">The providers and the filter.</param>
+    Task ShowGoToAnythingAsync(GoToAnythingViewModel goTo);
 
     /// <summary>Shows the About dialog until it is closed.</summary>
     /// <param name="about">The version and the project links.</param>

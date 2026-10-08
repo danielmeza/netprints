@@ -229,6 +229,30 @@ public static class AutomationIds
     /// </summary>
     public const string PaletteEmpty = "Palette.Empty";
     /// <summary>
+    /// Automation id for the go to anything window itself.
+    /// </summary>
+    public const string GoToDialog = "GoTo.Dialog";
+    /// <summary>
+    /// Automation id for go to anything's search box.
+    /// </summary>
+    public const string GoToQuery = "GoTo.Query";
+    /// <summary>
+    /// Automation id for go to anything's list of results.
+    /// </summary>
+    public const string GoToList = "GoTo.List";
+    /// <summary>
+    /// Automation id for a result row of go to anything.
+    /// </summary>
+    public const string GoToRow = "GoTo.Row";
+    /// <summary>
+    /// Automation id for a group header of go to anything.
+    /// </summary>
+    public const string GoToHeader = "GoTo.Header";
+    /// <summary>
+    /// Automation id for the message go to anything shows when nothing matches.
+    /// </summary>
+    public const string GoToEmpty = "GoTo.Empty";
+    /// <summary>
     /// Automation id for the keyboard shortcuts dialog window itself.
     /// </summary>
     public const string ShortcutsDialog = "Dialogs.Shortcuts";

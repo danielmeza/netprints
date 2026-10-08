@@ -7,6 +7,7 @@ using NetPrints.Editor.Commands.KeyboardShortcuts;
 using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Lifecycle;
+using NetPrints.Editor.Navigation;
 using NetPrints.Editor.References;
 
 namespace NetPrints.Editor.Hosting.Avalonia;
@@ -91,6 +92,10 @@ public sealed class EditorDialogs(Func<Window?> owner) : IEditorDialogs
     /// <inheritdoc/>
     public Task ShowCommandPaletteAsync(CommandPaletteViewModel palette) =>
         ShowAsync<object>(new CommandPaletteDialog(palette));
+
+    /// <inheritdoc/>
+    public Task ShowGoToAnythingAsync(GoToAnythingViewModel goTo) =>
+        ShowAsync<object>(new GoToAnythingDialog(goTo));
 
     /// <inheritdoc/>
     public Task ShowAboutAsync(AboutViewModel about) =>

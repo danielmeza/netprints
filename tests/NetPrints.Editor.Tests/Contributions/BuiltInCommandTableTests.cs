@@ -64,7 +64,7 @@ public class BuiltInCommandTableTests
         new("theme.light", "Light", "View", "theme", [], Everywhere, null, null),
         new("theme.system", "System", "View", "theme", [], Everywhere, null, null),
         new("commandPalette", "Command palette…", "View", "find", ["Ctrl+Shift+P"], Everywhere, null, typeof(CommandPaletteCommandHandler)),
-        new("goToAnything", "Go to anything…", "Go", "find", ["Ctrl+P"], Everywhere, null, null),
+        new("goToAnything", "Go to anything…", "Go", "find", ["Ctrl+P"], Everywhere, null, typeof(GoToAnythingCommandHandler)),
         new("navigateBack", "Back", "Go", "history", ["Alt+Left"], Everywhere, null, typeof(NavigateHistoryCommandHandler)),
         new("navigateForward", "Forward", "Go", "history", ["Alt+Right"], Everywhere, null, typeof(NavigateHistoryCommandHandler)),
         new("goToSource", "Go to source", "Go", "connection", [], Canvas, null, null),
@@ -89,7 +89,6 @@ public class BuiltInCommandTableTests
         ["theme.dark"] = "T093",
         ["theme.light"] = "T093",
         ["theme.system"] = "T093",
-        ["goToAnything"] = "T076",
         ["goToSource"] = "T077",
         ["goToTarget"] = "T077",
     };

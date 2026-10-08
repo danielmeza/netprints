@@ -1,0 +1,50 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ed="clr-namespace:NetPrints.Editor"
+        xmlns:edb="clr-namespace:NetPrints.Editor.Behaviors"
+        xmlns:ednav="clr-namespace:NetPrints.Editor.Navigation"
+        x:Class="NetPrints.Editor.Dialogs.GoToAnythingDialog"
+        x:DataType="ednav:GoToAnythingViewModel"
+        Title="Go to anything"
+        Icon="avares://NetPrints.Editor/Assets/NetPrintsLogo.ico"
+        Width="560" SizeToContent="Height" CanResize="False"
+        WindowStartupLocation="CenterOwner" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GoToDialog}">
+  <Window.KeyBindings>
+    <KeyBinding Gesture="Escape" Command="{Binding CloseCommand}" />
+  </Window.KeyBindings>
+  <Interaction.Behaviors>
+    <edb:DialogCloseBehavior />
+  </Interaction.Behaviors>
+  <Grid Classes="dialogRoot" RowDefinitions="Auto,Auto">
+    <TextBox AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GoToQuery}" AutomationProperties.Name="Search" Text="{Binding Query}"
+             PlaceholderText="Search graphs, nodes, variables and methods; start with &gt; for commands">
+      <Interaction.Behaviors>
+        <FocusOnAttachedToVisualTreeBehavior />
+        <ExecuteCommandOnKeyDownBehavior Key="Enter" Command="{Binding RunSelectedCommand}" />
+        <ExecuteCommandOnKeyDownBehavior Key="Down" EventRoutingStrategy="Tunnel" Command="{Binding SelectNextCommand}" />
+        <ExecuteCommandOnKeyDownBehavior Key="Up" EventRoutingStrategy="Tunnel" Command="{Binding SelectPreviousCommand}" />
+      </Interaction.Behaviors>
+    </TextBox>
+    <ListBox Grid.Row="1" Classes="quickPick" MaxHeight="360" ItemsSource="{Binding Rows}" SelectedItem="{Binding SelectedRow}" SelectionMode="Single"
+             IsVisible="{Binding !IsEmpty}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GoToList}" AutomationProperties.Name="Results">
+      <ListBox.ItemTemplate>
+        <DataTemplate x:DataType="ednav:GoToRow">
+          <Panel Background="Transparent">
+            <TextBlock Classes="groupTitle" Text="{Binding Title}" IsVisible="{Binding IsHeader}"
+                       AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GoToHeader}" AutomationProperties.Name="{Binding Title}" />
+            <Grid Classes="quickPickRow" ColumnDefinitions="*,Auto" IsVisible="{Binding !IsHeader}"
+                  AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GoToRow}" AutomationProperties.Name="{Binding Title}">
+              <Interaction.Behaviors>
+                <ExecuteCommandOnDoubleTappedBehavior Command="{Binding $parent[ListBox].((ednav:GoToAnythingViewModel)DataContext).RunSelectedCommand}" />
+              </Interaction.Behaviors>
+              <TextBlock Text="{Binding Title}" VerticalAlignment="Center" />
+              <TextBlock Grid.Column="1" Classes="secondary" Text="{Binding Detail}" VerticalAlignment="Center" />
+            </Grid>
+          </Panel>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+    <TextBlock Grid.Row="1" Classes="secondary" Text="No results" IsVisible="{Binding IsEmpty}"
+               AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GoToEmpty}" />
+  </Grid>
+</Window>

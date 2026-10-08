@@ -44,4 +44,15 @@ public sealed class NavigationCommandsTests
 
         Assert.Equal(["ShowCommandPalette"], shell.Project.Calls);
     }
+
+    [Fact]
+    public async Task TheGoToAnythingCommandOpensGoToAnything()
+    {
+        var handler = new GoToAnythingCommandHandler();
+
+        Assert.True(handler.CanExecute(shell.Context()));
+        await handler.ExecuteAsync(shell.Context(), TestContext.Current.CancellationToken);
+
+        Assert.Equal(["ShowGoToAnything"], shell.Project.Calls);
+    }
 }

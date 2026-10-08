@@ -102,6 +102,8 @@ public sealed class RecordingDialogs : IEditorDialogs
 
     public Task ShowAboutAsync(AboutViewModel about) => Task.CompletedTask;
 
+    public Task ShowGoToAnythingAsync(NetPrints.Editor.Navigation.GoToAnythingViewModel goTo) => Task.CompletedTask;
+
     public Task ShowCommandPaletteAsync(NetPrints.Editor.Commands.CommandPalette.CommandPaletteViewModel palette) => Task.CompletedTask;
 
     /// <summary>Shows the New project dialog and answers with its result; when null the dialog is cancelled.</summary>

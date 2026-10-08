@@ -70,6 +70,11 @@ public interface IProjectActions
     /// <returns>A task that completes when the palette is closed.</returns>
     Task ShowCommandPaletteAsync(CancellationToken cancellationToken);
 
+    /// <summary>Shows go to anything: graphs, nodes, variables and methods of the open project, and commands after a leading <c>&gt;</c>.</summary>
+    /// <param name="cancellationToken">Cancels the flow.</param>
+    /// <returns>A task that completes when the dialog is closed.</returns>
+    Task ShowGoToAnythingAsync(CancellationToken cancellationToken);
+
     /// <summary>Shows the About dialog: the editor version and the project links.</summary>
     /// <param name="cancellationToken">Cancels the flow.</param>
     /// <returns>A task that completes when the dialog is closed.</returns>

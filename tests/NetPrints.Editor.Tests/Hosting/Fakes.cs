@@ -173,6 +173,8 @@ public sealed class FakeDialogs : IEditorDialogs
 
     public Task ShowCommandPaletteAsync(NetPrints.Editor.Commands.CommandPalette.CommandPaletteViewModel palette) => Task.CompletedTask;
 
+    public Task ShowGoToAnythingAsync(NetPrints.Editor.Navigation.GoToAnythingViewModel goTo) => Task.CompletedTask;
+
     public Task ShowAboutAsync(AboutViewModel about)
     {
         AboutDialogs.Add(about);

@@ -8,12 +8,20 @@ public static class GoContributions
     private const string MenuName = "Go";
     private const string TabsGroup = "tabs";
     private const string HistoryGroup = "history";
+    private const string FindGroup = "find";
 
     /// <summary>Registers the Go menu's commands.</summary>
     /// <param name="registry">The registry to add to.</param>
     public static void Register(IContributionRegistry registry)
     {
         ArgumentNullException.ThrowIfNull(registry);
+
+        registry.AddCommand(new CommandDescriptor(
+            ContributionIds.CommandPrefix + "goToAnything",
+            "Go to anything…",
+            new GoToAnythingCommandHandler(),
+            DefaultGestures: ["Ctrl+P"],
+            Menu: new MenuPlacement(MenuName, FindGroup, 0)));
 
         registry.AddCommand(new CommandDescriptor(
             ContributionIds.CommandPrefix + "navigateBack",
