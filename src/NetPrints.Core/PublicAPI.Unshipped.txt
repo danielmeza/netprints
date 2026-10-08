@@ -35,6 +35,7 @@ static NetPrints.Core.MemberRename.RenameEvent(System.Collections.Generic.IEnume
 NetPrints.Graph.EventArgument
 NetPrints.Graph.EventEntryNode.Arguments.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Graph.EventArgument!>!
 NetPrints.Graph.EventEntryNode.DeclaredArguments.get -> System.Collections.Generic.IReadOnlyList<NetPrints.Graph.EventArgument!>!
+static NetPrints.Graph.EventEntryNode.IsValidArgumentName(string! name) -> bool
 NetPrints.Graph.EventEntryNode.SetArguments(System.Collections.Generic.IReadOnlyList<NetPrints.Graph.EventArgument!>! arguments) -> void
 NetPrints.Core.RenameResult
 NetPrints.Core.RenameResult.Undo() -> void

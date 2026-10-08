@@ -35,15 +35,12 @@
             "argumentCount": 3,
             "arguments": [
               {
-                "name": "amount",
                 "type": { "name": "System.Int32" }
               },
               {
-                "name": "source",
                 "type": { "name": "System.String" }
               },
               {
-                "name": "critical",
                 "type": { "name": "System.Boolean" }
               }
             ]

@@ -92,7 +92,6 @@ namespace NetPrints.Tests.Serialization
             string json = await SaveAsync(BuildCombat());
 
             JsonArray written = Arr(Entry(JsonNode.Parse(json) ?? throw new InvalidOperationException(), "OnHit")["arguments"]);
-            Assert.Equal(["amount", "source", "critical"], written.Select(a => Text(Obj(a)["name"])));
             Assert.Equal(["System.Int32", "System.String", "System.Boolean"], written.Select(a => Text(Obj(Obj(a)["type"])["name"])));
 
             var issues = new List<DocumentIssue>();
@@ -142,6 +141,56 @@ namespace NetPrints.Tests.Serialization
             Assert.Empty(issues);
             EventEntryNode entry = loaded.EventGraphs.Single().Nodes.OfType<EventEntryNode>().Single(e => e.EventName == "OnHit");
             Assert.Equal(3, entry.Arguments.Count);
+        }
+
+        [Fact]
+        public async Task TheArgumentNamesAreWrittenOnlyInThePins()
+        {
+            string json = await SaveAsync(BuildCombat());
+            JsonObject hit = Entry(JsonNode.Parse(json) ?? throw new InvalidOperationException(), "OnHit");
+
+            Assert.All(Arr(hit["arguments"]), argument => Assert.False(Obj(argument).ContainsKey("name")));
+            Assert.Equal(["amount", "source", "critical"], Arr(hit["pins"]).Select(pin => Text(Obj(pin)["name"])));
+        }
+
+        [Fact]
+        public async Task AFileThatNamesTheArgumentsInBothPlacesStillLoads()
+        {
+            JsonNode root = JsonNode.Parse(await SaveAsync(BuildCombat())) ?? throw new InvalidOperationException();
+            JsonArray arguments = Arr(Entry(root, "OnHit")["arguments"]);
+            string[] names = ["amount", "source", "critical"];
+            for (int i = 0; i < names.Length; i++)
+            {
+                Obj(arguments[i])["name"] = names[i];
+            }
+
+            var issues = new List<DocumentIssue>();
+            ClassGraph loaded = await LoadAsync(root.ToJsonString(), issues);
+
+            Assert.Empty(issues);
+            EventEntryNode entry = loaded.EventGraphs.Single().Nodes.OfType<EventEntryNode>().Single(e => e.EventName == "OnHit");
+            Assert.Equal(HitArguments, entry.Arguments);
+        }
+
+        [Fact]
+        public async Task AnInvalidArgumentNameIsRepairedWithAWarning()
+        {
+            JsonNode root = JsonNode.Parse(await SaveAsync(BuildCombat())) ?? throw new InvalidOperationException();
+            JsonObject hit = Entry(root, "OnHit");
+            Obj(Arr(hit["arguments"])[0])["name"] = "1 bad";
+            Obj(Arr(hit["arguments"])[1])["name"] = "critical";
+            Obj(Arr(hit["arguments"])[2])["name"] = "critical";
+            hit["pins"] = new JsonArray();
+
+            var issues = new List<DocumentIssue>();
+            ClassGraph loaded = await LoadAsync(root.ToJsonString(), issues);
+
+            EventEntryNode entry = loaded.EventGraphs.Single().Nodes.OfType<EventEntryNode>().Single(e => e.EventName == "OnHit");
+            Assert.Equal(["Input0", "critical", "Input2"], entry.Arguments.Select(argument => argument.Name));
+            Assert.Equal([TypeSpecifier.FromType<int>(), TypeSpecifier.FromType<string>(), TypeSpecifier.FromType<bool>()], entry.Arguments.Select(argument => argument.Type));
+            Assert.All(issues, issue => Assert.Equal(DocumentIssue.EventArgumentNameRepaired, issue.Code));
+            Assert.Equal(2, issues.Count);
+            Assert.All(issues, issue => Assert.Equal(DocumentIssueSeverity.Warning, issue.Severity));
         }
 
         [Fact]

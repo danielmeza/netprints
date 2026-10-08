@@ -71,10 +71,14 @@ A custom event entry (`"$kind": "eventEntry"`) can declare arguments. They are w
 `arguments` array, after `argumentCount`:
 
 ```json
-{ "$kind": "eventEntry", "argumentCount": 2, "arguments": [
-  { "name": "amount", "type": { "name": "System.Int32" } },
-  { "name": "source", "type": { "name": "System.String" } } ] }
+{ "$kind": "eventEntry", "argumentCount": 2,
+  "pins": [ { "pin": "out.data.Input0", "name": "amount" }, { "pin": "out.data.Input1", "name": "source" } ],
+  "arguments": [ { "type": { "name": "System.Int32" } }, { "type": { "name": "System.String" } } ] }
 ```
+
+The argument names are the names of the argument pins in `pins`; `arguments` holds only the types. A file
+that also has a `name` in each argument is still read; a name that is not a valid, unique C# identifier is
+replaced by the pin's name (or `InputN`) with the warning `NPD011`.
 
 The property is optional in version 1 and is written only when an argument has a declared type other
 than `object`; an entry without it is written exactly as before, so existing files do not change.

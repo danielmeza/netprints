@@ -729,6 +729,16 @@ public sealed class DocumentMapper : IDocumentMapper
                     $"Node '{nodeDocument.Id}' is marked pure, but its method returns no value; loaded as impure.", id));
             }
 
+            if (nodeDocument is EventEntryNodeDocument { Arguments: not null } eventEntry)
+            {
+                List<string> repairs = [];
+                BuiltIn.EventConverters.ResolveNames(eventEntry, repairs);
+                foreach (string repair in repairs)
+                {
+                    issues.Add(new DocumentIssue(DocumentIssueSeverity.Warning, DocumentIssue.EventArgumentNameRepaired, repair, id));
+                }
+            }
+
             string documentNodeId = ResolveInvalidNodeId(nodeDocument.Id, $"Node in graph '{graphKey}'", oldToNewNodeId, id, issues);
             node.Id = ResolveDuplicateId('n', documentNodeId, seenNodeIds, $"Node in graph '{graphKey}'", id, issues);
             graph.ReindexNode(node, previousId);

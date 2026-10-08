@@ -154,6 +154,14 @@ namespace NetPrints.Graph
             OutputDataPins.Select((pin, i) => new EventArgument(pin.Name, DeclaredType(i) as TypeSpecifier ?? TypeSpecifier.FromType<object>())).ToList();
 
         /// <summary>
+        /// Whether <paramref name="name"/> can name an argument: a C# identifier that is not a keyword.
+        /// </summary>
+        /// <param name="name">The candidate name.</param>
+        /// <returns><see langword="true"/> if <see cref="SetArguments"/> accepts the name.</returns>
+        public static bool IsValidArgumentName(string name) =>
+            SyntaxFacts.IsValidIdentifier(name) && SyntaxFacts.GetKeywordKind(name) == SyntaxKind.None;
+
+        /// <summary>
         /// Replaces the custom event's arguments. The output pins follow in order: pins that stay keep their
         /// connections, extra ones are disconnected and removed, missing ones are added.
         /// </summary>
@@ -172,7 +180,7 @@ namespace NetPrints.Graph
             HashSet<string> seen = [];
             foreach (EventArgument argument in arguments)
             {
-                if (!SyntaxFacts.IsValidIdentifier(argument.Name) || SyntaxFacts.GetKeywordKind(argument.Name) != SyntaxKind.None)
+                if (!IsValidArgumentName(argument.Name))
                 {
                     throw new ArgumentException($"'{argument.Name}' is not a valid C# identifier", nameof(arguments));
                 }

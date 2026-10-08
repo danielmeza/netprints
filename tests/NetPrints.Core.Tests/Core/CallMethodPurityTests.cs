@@ -118,10 +118,12 @@ namespace NetPrints.Tests.Core
             Assert.Contains("WriteLine", code);
         }
 
-        private static string TranslateTryParse(bool giveTheOutPinAnUnconnectedValue)
+        private static string TranslateTryParse(bool giveTheOutPinAnUnconnectedValue, MethodParameterPassType passType = MethodParameterPassType.Out)
         {
             var method = new MethodGraph("Main") { Visibility = MemberVisibility.Public };
-            var call = new CallMethodNode(method, TryParse());
+            MethodSpecifier specifier = Specifier("TryParse", IntType, [TypeSpecifier.FromType<bool>()],
+                Parameter("s", StringType), Parameter("result", IntType, passType));
+            var call = new CallMethodNode(method, specifier);
             LiteralNode text = LiteralNode.WithValue(method, "1");
             GraphUtil.ConnectDataPins(text.ValuePin, call.ArgumentPins[0]);
 
@@ -145,6 +147,17 @@ namespace NetPrints.Tests.Core
 
             Assert.Equal(TranslationDiagnosticCodes.UnsetRequiredInput, ex.Code);
             Assert.Contains("Connect a variable to out parameter 'result'", ex.Message);
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void UnconnectedRefArgumentIsATranslationErrorNotBrokenCSharp(bool withUnconnectedValue)
+        {
+            var ex = Assert.Throws<TranslationException>(() => TranslateTryParse(withUnconnectedValue, MethodParameterPassType.Reference));
+
+            Assert.Equal(TranslationDiagnosticCodes.UnsetRequiredInput, ex.Code);
+            Assert.Contains("Connect a variable to ref parameter 'result'", ex.Message);
         }
 
         [Fact]

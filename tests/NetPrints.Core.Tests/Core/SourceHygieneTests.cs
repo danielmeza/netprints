@@ -153,30 +153,55 @@ namespace NetPrints.Tests.Core
         /// actually named — Extensibility/Serialization/Characterization/Translator/CodeView/hosting — and
         /// extended the scan to catch every future one); it can only shrink, one file at a time, never grow.
         /// </summary>
-        private static readonly HashSet<string> NullForgivingAllowlist = new(StringComparer.Ordinal)
+        private static readonly HashSet<(string File, string Line)> NullForgivingAllowlist =
+        [
+            ("tests/NetPrints.Desktop.E2ETests/Hosting/Tool.cs", "using var process = Process.Start(info)!;"),
+            ("tests/NetPrints.Desktop.E2ETests/Hosting/XServer.cs", "var process = Process.Start(info)!;"),
+            ("tests/NetPrints.Desktop.E2ETests/Hosting/XServer.cs", "windowManager = Process.Start(wm)!;"),
+            ("tests/NetPrints.Editor.Tests/Graph/NodeGraphViewModelTests.cs", "Assert.Equal(variable.Name, graph.GetSetChooser.Variable!.Name);"),
+            ("tests/NetPrints.Editor.Tests/Graph/Nodes/NodeViewModelTests.cs", "Assert.False(write.Overloads.Contains(write.CurrentOverload!), \"the current overload is excluded\");"),
+            ("tests/NetPrints.Editor.Tests/Graph/Pins/NodePinViewModelTests.cs", "Assert.Contains(\"Monday\", enumPin.PossibleEnumNames!.ToList());"),
+            ("tests/NetPrints.Editor.Tests/Graph/ReflectionReloadTests.cs", "Assert.Contains(\"Monday\", pin.PossibleEnumNames!);"),
+            ("tests/NetPrints.Editor.Tests/Search/SearchPerformanceTests.cs", "var output = TestContext.Current.TestOutputHelper!;"),
+            ("tests/NetPrints.Editor.Tests/Variables/MemberVariableViewModelTests.cs", "var getter = variable.Getter!;"),
+            ("tests/NetPrints.Editor.Tests/Variables/MemberVariableViewModelTests.cs", "var setter = variable.Setter!;"),
+            ("tests/NetPrints.Editor.Tests/Variables/MemberVariableViewModelTests.cs", "Assert.Equal(MemberVisibility.Public, variable.Getter!.Visibility);"),
+            ("tests/NetPrints.Editor.UITests/Graph/GridRenderTests.cs", "Application.Current!.RequestedThemeVariant = ThemeVariant.Light;"),
+            ("tests/NetPrints.Editor.UITests/Graph/GridRenderTests.cs", "Application.Current!.TryGetResource(\"SystemRegionColor\", theme, out var value) && value is Color color"),
+            ("tests/NetPrints.Editor.UITests/TestAppBuilder.cs", ".AfterSetup(builder => ((EditorApp)builder.Instance!).DisableTransitions())"),
+            ("tests/NetPrints.Testing.Ui/Driving/UiElement.cs", "(await UiWait.ForAsync(Driver, () => TryGetAsync(cancellationToken), e => e is not null, $\"{this} to be shown\", cancellationToken))!;"),
+            ("tests/NetPrints.Testing.Ui/Driving/UiWait.cs", "T value = default!;"),
+            ("tests/NetPrints.Testing.Ui/Graph/GraphCanvas.cs", "return (double.Parse(e[AutomationPropertyNames.ViewportX]!, CultureInfo.InvariantCulture), double.Parse(e[AutomationPropertyNames.ViewportY]!, CultureInfo.InvariantCulture));"),
+            ("tests/NetPrints.Testing.Ui/Graph/GraphCanvas.cs", "return (double.Parse(e[AutomationPropertyNames.ViewportX]!, CultureInfo.InvariantCulture), double.Parse(e[AutomationPropertyNames.ViewportY]!, CultureInfo.InvariantCulture),"),
+            ("tests/NetPrints.Testing.Ui/Graph/GraphCanvas.cs", "double.Parse(e[AutomationPropertyNames.ViewportZoom]!, CultureInfo.InvariantCulture));"),
+            ("tests/NetPrints.Testing.Ui/Graph/NodeObject.cs", "return (double.Parse(e[AutomationPropertyNames.LocationX]!, CultureInfo.InvariantCulture), double.Parse(e[AutomationPropertyNames.LocationY]!, CultureInfo.InvariantCulture));"),
+            ("tests/NetPrints.Testing.Ui/Snapshots/UiImage.cs", "Directory.CreateDirectory(Path.GetDirectoryName(path)!);"),
+        ];
+
+        /// <summary>
+        /// The null-forgiving sites of <paramref name="source"/> that <paramref name="allowlist"/> does not list,
+        /// each as <c>file: line text</c>. A site is keyed by its file and the trimmed text of the line it starts on,
+        /// so edits elsewhere in the file do not move it.
+        /// </summary>
+        internal static List<string> NullForgivingOffenders(string relativePath, string source, ISet<(string File, string Line)> allowlist, System.Threading.CancellationToken cancellationToken)
         {
-            "tests/NetPrints.Desktop.E2ETests/Hosting/Tool.cs:81",
-            "tests/NetPrints.Desktop.E2ETests/Hosting/XServer.cs:108",
-            "tests/NetPrints.Desktop.E2ETests/Hosting/XServer.cs:144",
-            "tests/NetPrints.Editor.Tests/Graph/NodeGraphViewModelTests.cs:143",
-            "tests/NetPrints.Editor.Tests/Graph/Nodes/NodeViewModelTests.cs:70",
-            "tests/NetPrints.Editor.Tests/Graph/Pins/NodePinViewModelTests.cs:68",
-            "tests/NetPrints.Editor.Tests/Graph/ReflectionReloadTests.cs:69",
-            "tests/NetPrints.Editor.Tests/Search/SearchPerformanceTests.cs:30",
-            "tests/NetPrints.Editor.Tests/Variables/MemberVariableViewModelTests.cs:46",
-            "tests/NetPrints.Editor.Tests/Variables/MemberVariableViewModelTests.cs:53",
-            "tests/NetPrints.Editor.Tests/Variables/MemberVariableViewModelTests.cs:131",
-            "tests/NetPrints.Editor.UITests/Graph/GridRenderTests.cs:117",
-            "tests/NetPrints.Editor.UITests/Graph/GridRenderTests.cs:130",
-            "tests/NetPrints.Editor.UITests/TestAppBuilder.cs:33",
-            "tests/NetPrints.Testing.Ui/Driving/UiElement.cs:29",
-            "tests/NetPrints.Testing.Ui/Driving/UiWait.cs:44",
-            "tests/NetPrints.Testing.Ui/Graph/GraphCanvas.cs:65",
-            "tests/NetPrints.Testing.Ui/Graph/GraphCanvas.cs:86",
-            "tests/NetPrints.Testing.Ui/Graph/GraphCanvas.cs:87",
-            "tests/NetPrints.Testing.Ui/Graph/NodeObject.cs:40",
-            "tests/NetPrints.Testing.Ui/Snapshots/UiImage.cs:43",
-        };
+            SyntaxNode root = CSharpSyntaxTree.ParseText(source, cancellationToken: cancellationToken).GetRoot(cancellationToken);
+            var offenders = new List<string>();
+
+            foreach (PostfixUnaryExpressionSyntax node in root.DescendantNodes()
+                .OfType<PostfixUnaryExpressionSyntax>()
+                .Where(n => n.IsKind(SyntaxKind.SuppressNullableWarningExpression)))
+            {
+                int line = node.GetLocation().GetLineSpan().StartLinePosition.Line;
+                string lineText = node.SyntaxTree.GetText(cancellationToken).Lines[line].ToString().Trim();
+                if (!allowlist.Contains((relativePath, lineText)))
+                {
+                    offenders.Add($"{relativePath}: {lineText}");
+                }
+            }
+
+            return offenders;
+        }
 
         [Fact]
         public void NoNullForgivingOperator()
@@ -188,25 +213,29 @@ namespace NetPrints.Tests.Core
 
             foreach (string path in sourceFiles)
             {
-                SyntaxNode root = CSharpSyntaxTree.ParseText(File.ReadAllText(path), path: path, cancellationToken: TestContext.Current.CancellationToken).GetRoot(TestContext.Current.CancellationToken);
                 parsedFileCount++;
                 string relativePath = Path.GetRelativePath(repoRoot, path).Replace('\\', '/');
-
-                foreach (PostfixUnaryExpressionSyntax node in root.DescendantNodes()
-                    .OfType<PostfixUnaryExpressionSyntax>()
-                    .Where(n => n.IsKind(SyntaxKind.SuppressNullableWarningExpression)))
-                {
-                    int line = node.GetLocation().GetLineSpan().StartLinePosition.Line + 1;
-                    string key = $"{relativePath}:{line}";
-                    if (!NullForgivingAllowlist.Contains(key))
-                    {
-                        offenders.Add($"{key}: {node}");
-                    }
-                }
+                offenders.AddRange(NullForgivingOffenders(relativePath, File.ReadAllText(path), NullForgivingAllowlist, TestContext.Current.CancellationToken));
             }
 
             Assert.True(parsedFileCount > 0, "Expected to parse at least one src/**/*.cs or tests/**/*.cs file.");
             Assert.Empty(offenders);
+        }
+
+        [Fact]
+        public void TheNullForgivingAllowlistSurvivesAShiftedLineButNotAChangedOne()
+        {
+            const string FxFile = "tests/Fx/Fx.cs";
+            const string Site = "var value = Lookup()!;";
+            HashSet<(string File, string Line)> allowlist = [(FxFile, Site)];
+            string original = $"class Fx\n{{\n    void Run()\n    {{\n        {Site}\n    }}\n}}\n";
+            string shifted = "using System;\n\n// unrelated edit\n" + original;
+            string changed = original.Replace(Site, "var value = Other()!;", StringComparison.Ordinal);
+
+            Assert.Empty(NullForgivingOffenders(FxFile, original, allowlist, TestContext.Current.CancellationToken));
+            Assert.Empty(NullForgivingOffenders(FxFile, shifted, allowlist, TestContext.Current.CancellationToken));
+            Assert.Single(NullForgivingOffenders(FxFile, changed, allowlist, TestContext.Current.CancellationToken));
+            Assert.Single(NullForgivingOffenders("tests/Fx/Other.cs", original, allowlist, TestContext.Current.CancellationToken));
         }
 
         /// <summary>

@@ -7,6 +7,7 @@ const NetPrints.Serialization.DocumentIssue.ExtensionNotTrusted = "NPD006" -> st
 const NetPrints.Serialization.DocumentIssue.InvalidIdReassigned = "NPD009" -> string!
 const NetPrints.Serialization.DocumentIssue.LayoutEntryIgnored = "NPD004" -> string!
 const NetPrints.Serialization.DocumentIssue.PinStateDropped = "NPD003" -> string!
+const NetPrints.Serialization.DocumentIssue.EventArgumentNameRepaired = "NPD011" -> string!
 const NetPrints.Serialization.DocumentIssue.PurityIgnored = "NPD010" -> string!
 const NetPrints.Serialization.DocumentIssue.UnknownNodeKind = "NPD001" -> string!
 const NetPrints.Serialization.DocumentIssue.UnknownProfile = "NPD005" -> string!
@@ -186,10 +187,10 @@ NetPrints.Serialization.Documents.DefaultNodeDocument.Deconstruct(out string! Id
 NetPrints.Serialization.Documents.DefaultNodeDocument.DefaultNodeDocument(string! Id, string? Name, System.Collections.Generic.IReadOnlyList<NetPrints.Serialization.Documents.PinStateDocument!>? Pins) -> void
 NetPrints.Serialization.Documents.DefaultNodeDocument.Equals(NetPrints.Serialization.Documents.DefaultNodeDocument? other) -> bool
 NetPrints.Serialization.Documents.EventArgumentDocument
-NetPrints.Serialization.Documents.EventArgumentDocument.Deconstruct(out string! Name, out NetPrints.Serialization.Documents.TypeRef! Type) -> void
+NetPrints.Serialization.Documents.EventArgumentDocument.Deconstruct(out string? Name, out NetPrints.Serialization.Documents.TypeRef! Type) -> void
 NetPrints.Serialization.Documents.EventArgumentDocument.Equals(NetPrints.Serialization.Documents.EventArgumentDocument? other) -> bool
-NetPrints.Serialization.Documents.EventArgumentDocument.EventArgumentDocument(string! Name, NetPrints.Serialization.Documents.TypeRef! Type) -> void
-NetPrints.Serialization.Documents.EventArgumentDocument.Name.get -> string!
+NetPrints.Serialization.Documents.EventArgumentDocument.EventArgumentDocument(string? Name, NetPrints.Serialization.Documents.TypeRef! Type) -> void
+NetPrints.Serialization.Documents.EventArgumentDocument.Name.get -> string?
 NetPrints.Serialization.Documents.EventArgumentDocument.Name.init -> void
 NetPrints.Serialization.Documents.EventArgumentDocument.Type.get -> NetPrints.Serialization.Documents.TypeRef!
 NetPrints.Serialization.Documents.EventArgumentDocument.Type.init -> void

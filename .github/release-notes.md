@@ -20,7 +20,9 @@
 
 **Added:** event graphs can be renamed (F2 or the inspector; a duplicate name is refused) and custom event entries have an inspector with their name and arguments: rename the event, add, remove, reorder, rename and retype arguments, each change one undo step. The generated method has the new name and parameters, and renaming a custom event updates the nodes that call it. Custom event arguments are saved in the graph file as an optional `arguments` property (see the graph file format guide). **An older editor drops custom event arguments when it saves the graph**, so do not open a graph with typed event arguments in an older version.
 
-**Fixed:** go to anything searched the internal names of nodes (such as `CallMethodNode`) instead of the titles shown on the canvas.
+**Added:** F2 on a graph, method or variable in the project tree renames it in place: Enter commits (one undo step, a duplicate or invalid name is refused with the reason), Esc or leaving the box cancels. Opening an event graph lists its entries in the inspector (name, kind, argument count) and selecting one shows it. Changing the arguments of a custom event updates the nodes that call it in the same undo step: their pins follow the new signature and a removed argument's connection is dropped. Every panel has a View command (and so a palette entry), and **Go to source** and **Go to target** also run from the Go menu and the palette when the selected node has exactly one connection on that side.
+
+**Changed:** a call that returns no value can no longer be pure. A graph file that stores `pure: true` on one loads it as impure with the warning `NPD010`. An unconnected `out` or `ref` argument is now reported as `NPT008` ("Connect a variable to …") instead of generating invalid C#. Setting an instance indexer now writes the index in the generated code. A custom event argument with an invalid or duplicate name in a graph file is repaired with the warning `NPD011` instead of failing the whole class, and the argument names are written once, in the pins.
 
 ## Downloads
 

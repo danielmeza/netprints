@@ -102,9 +102,11 @@ public sealed record EventEntryNodeDocument(string Id, string? Name, IReadOnlyLi
     : NodeDocument(Id, Name, Pins);
 
 /// <summary>One argument of a custom event entry (<see cref="EventEntryNodeDocument.Arguments"/>).</summary>
-/// <param name="Name">The argument's name, a valid C# identifier.</param>
+/// <param name="Name">The argument's name. The writer omits it (the name is the argument pin's name in
+/// <see cref="NodeDocument.Pins"/>); a file that has it is read with a repair when it is not a valid, unique
+/// C# identifier.</param>
 /// <param name="Type">The argument's type.</param>
-public sealed record EventArgumentDocument(string Name, TypeRef Type);
+public sealed record EventArgumentDocument(string? Name, TypeRef Type);
 
 /// <summary>A method call (document-format.md §1.5, <c>CallMethodNode</c>). <c>Pure</c>: whether the
 /// node's exec pins were removed (<c>Node.IsPure</c>, R1-04), omitted (read back as

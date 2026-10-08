@@ -773,7 +773,7 @@ Contracts: contributions.md, commands.md, shell.md §7. **Independent test**: US
 
 ### Batch F-F — model: sonnet — T089 (reserved: fix review findings)
 
-- [ ] T089 [US7] [US8] Fix every finding of T088 (test first for behaviour findings), reply on each review thread with
+- [x] T089 [US7] [US8] Fix every finding of T088 (test first for behaviour findings), reply on each review thread with
   the fixing commit or the reason for deferral, whole suite plus the E2E run, commit; if the review had no findings,
   tick this task with "no findings". The next sub-phase starts only after this batch is green on CI.
 
@@ -1088,6 +1088,9 @@ add T091b and T092g–T092l the same way.
   - Caller check: a test or a recorded grep shows that no caller relies on a static `CallMethodNode.TargetPin` (it
     returns the first argument pin) or on `AwaitNode.ResultPin` (always null). A caller is fixed only if one is wrong,
     and the commit says which were checked.
+  - Bug (d), red then green (Review F R12, pre-existing): AwaitNode result-type change while connected throws
+    'Collection was modified' (Review F R12): when the awaited task's result type changes while the result pin is
+    connected, the await node's update loop must not enumerate a collection it modifies.
   Then `src/NetPrints.Editor/Search/SuggestionListViewModel.cs` and `src/NetPrints.Editor/Graph/Nodes/NodeViewModel.cs`
   (the pin-list change as one `ModelOperations` undo entry). This is the safety net the P3 search refactor (SUG1–SUG3)
   relies on.

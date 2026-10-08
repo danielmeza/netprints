@@ -463,7 +463,10 @@
                       "type": "object",
                       "properties": {
                         "name": {
-                          "type": "string"
+                          "type": [
+                            "string",
+                            "null"
+                          ]
                         },
                         "type": {
                           "type": "object",
@@ -494,7 +497,6 @@
                         }
                       },
                       "required": [
-                        "name",
                         "type"
                       ]
                     },
