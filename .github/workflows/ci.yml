@@ -68,6 +68,9 @@ jobs:
       - name: Format check
         run: dotnet format NetPrints.slnx --verify-no-changes --no-restore
 
+      - name: Hook tests
+        run: python3 -m unittest discover -s tests/hooks
+
       # The desktop E2E project is built as part of the solution but only actually exercised in the
       # `e2e` job below (it needs Xvfb and NETPRINTS_E2E=1). With NETPRINTS_E2E unset the scenarios
       # skip and the always-on tests (failure capture, entry point, worker pool) still run, so this
