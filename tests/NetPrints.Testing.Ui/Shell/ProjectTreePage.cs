@@ -20,6 +20,12 @@ public sealed class ProjectTreePage(IUiDriver driver, AutomationQuery window)
     /// <summary>A row by its kind (<see cref="AutomationIds.TreeKindMethod"/> and the like) and name.</summary>
     public UiElement Item(string kind, string name) => Find(AutomationIds.TreePrefix + kind + "." + name);
 
+    /// <summary>The name box of a row in edit mode, by the row's kind and name.</summary>
+    public UiElement RenameBox(string kind, string name) => Find(AutomationIds.TreeRenamePrefix + kind + "." + name);
+
+    /// <summary>The message of a refused name in a row in edit mode, by the row's kind and name.</summary>
+    public UiElement RenameError(string kind, string name) => Find(AutomationIds.TreeRenamePrefix + "error." + kind + "." + name);
+
     public UiElement Project(string name) => Item(AutomationIds.TreeKindProject, name);
 
     public UiElement Class(string name) => Item(AutomationIds.TreeKindClass, name);

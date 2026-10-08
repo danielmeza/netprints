@@ -15,6 +15,7 @@ public sealed partial class ProjectTreeItemViewModel : ObservableObject
     private readonly Func<string> readName;
     private readonly INotifyPropertyChanged? nameSource;
     private readonly Action<ProjectTreeItemViewModel>? open;
+    private readonly Func<string, string?>? rename;
 
     internal ProjectTreeItemViewModel(
         TreeItemKind kind,
@@ -22,13 +23,15 @@ public sealed partial class ProjectTreeItemViewModel : ObservableObject
         Func<string> readName,
         INotifyPropertyChanged? nameSource,
         ObservableCollection<ProjectTreeItemViewModel>? children,
-        Action<ProjectTreeItemViewModel>? open)
+        Action<ProjectTreeItemViewModel>? open,
+        Func<string, string?>? rename = null)
     {
         Kind = kind;
         Model = model;
         this.readName = readName;
         this.nameSource = nameSource;
         this.open = open;
+        this.rename = rename;
         Children = children ?? [];
         Name = readName();
         IsExpanded = kind is TreeItemKind.Project or TreeItemKind.Class;
@@ -50,6 +53,8 @@ public sealed partial class ProjectTreeItemViewModel : ObservableObject
     /// <summary>Gets the name the row shows; it follows renames of the model.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(AutomationId))]
+    [NotifyPropertyChangedFor(nameof(RenameBoxAutomationId))]
+    [NotifyPropertyChangedFor(nameof(RenameErrorAutomationId))]
     [NotifyPropertyChangedFor(nameof(DisplayName))]
     public partial string Name { get; private set; } = "";
 
@@ -71,6 +76,35 @@ public sealed partial class ProjectTreeItemViewModel : ObservableObject
 
     /// <summary>Gets the automation id, <c>Tree.&lt;kind&gt;.&lt;name&gt;</c>.</summary>
     public string AutomationId => AutomationIds.TreePrefix + KindText + "." + Name;
+
+    /// <summary>Gets a value indicating whether the row can be renamed in place: a method, variable or event graph.</summary>
+    public bool CanRename => rename is not null;
+
+    /// <summary>Gets a value indicating whether the row shows the name in a text box (<see cref="EditText"/>) instead of as a label.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsNotEditing))]
+    public partial bool IsEditing { get; private set; }
+
+    /// <summary>Gets a value indicating whether the row shows its name as a label.</summary>
+    public bool IsNotEditing => !IsEditing;
+
+    /// <summary>Gets or sets the text of the name box while <see cref="IsEditing"/>.</summary>
+    [ObservableProperty]
+    public partial string EditText { get; set; } = "";
+
+    /// <summary>Gets the reason the edited name was refused, or null while it was not.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasEditError))]
+    public partial string? EditError { get; private set; }
+
+    /// <summary>Gets a value indicating whether the edited name was refused.</summary>
+    public bool HasEditError => EditError is not null;
+
+    /// <summary>Gets the automation id of the name box in edit mode, <c>Tree.rename.&lt;kind&gt;.&lt;name&gt;</c>.</summary>
+    public string RenameBoxAutomationId => AutomationIds.TreeRenamePrefix + KindText + "." + Name;
+
+    /// <summary>Gets the automation id of the refusal message in edit mode, <c>Tree.rename.error.&lt;kind&gt;.&lt;name&gt;</c>.</summary>
+    public string RenameErrorAutomationId => AutomationIds.TreeRenamePrefix + "error." + KindText + "." + Name;
 
     /// <summary>Gets the context menu entries of the row, those whose command can run for it; filled while the row is selected.</summary>
     public ObservableCollection<CommandEntryViewModel> MenuEntries { get; } = [];
@@ -124,6 +158,53 @@ public sealed partial class ProjectTreeItemViewModel : ObservableObject
         {
             owned.Dispose();
         }
+    }
+
+    /// <summary>Puts the row into edit mode with the current name; nothing happens for a row that cannot be renamed.</summary>
+    public void BeginEdit()
+    {
+        if (!CanRename)
+        {
+            return;
+        }
+
+        EditText = Name;
+        EditError = null;
+        IsEditing = true;
+    }
+
+    /// <summary>
+    /// Renames the model to <see cref="EditText"/> and leaves edit mode. A refused name keeps the row in edit mode and sets
+    /// <see cref="EditError"/>; an unchanged name just leaves edit mode.
+    /// </summary>
+    [RelayCommand]
+    private void CommitEdit()
+    {
+        if (!IsEditing || rename is null)
+        {
+            return;
+        }
+
+        if (EditText.Trim() == Name)
+        {
+            IsEditing = false;
+            return;
+        }
+
+        EditError = rename(EditText);
+        if (EditError is null)
+        {
+            IsEditing = false;
+            Refresh();
+        }
+    }
+
+    /// <summary>Leaves edit mode without renaming; nothing happens when the row is not being edited.</summary>
+    [RelayCommand]
+    private void CancelEdit()
+    {
+        IsEditing = false;
+        EditError = null;
     }
 
     [RelayCommand(CanExecute = nameof(CanOpen))]

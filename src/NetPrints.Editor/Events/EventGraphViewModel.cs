@@ -1,6 +1,9 @@
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using CommunityToolkit.Mvvm.ComponentModel;
 using NetPrints.Core;
 using NetPrints.Editor.UndoRedo;
+using NetPrints.Graph;
 
 namespace NetPrints.Editor.Events;
 
@@ -15,18 +18,23 @@ public sealed partial class EventGraphViewModel : ObservableObject, IDisposable
     private readonly ClassGraph cls;
     private readonly Action<EventGraph, string>? rename;
     private readonly UndoRedoStack? undoRedo;
+    private readonly Action<EventEntryNode>? select;
 
     /// <summary>Wraps <paramref name="graph"/>.</summary>
     /// <param name="graph">The event graph.</param>
     /// <param name="cls">The class that owns the graph.</param>
     /// <param name="rename">Renames the graph as one undo step; without it the name is set on the graph alone.</param>
     /// <param name="undoRedo">The class's undo stack, whose undo and redo re-read the name; null when there is none.</param>
-    public EventGraphViewModel(EventGraph graph, ClassGraph cls, Action<EventGraph, string>? rename = null, UndoRedoStack? undoRedo = null)
+    /// <param name="select">Selects an entry on the canvas of the graph; without it the entries' Select action does nothing.</param>
+    public EventGraphViewModel(EventGraph graph, ClassGraph cls, Action<EventGraph, string>? rename = null, UndoRedoStack? undoRedo = null, Action<EventEntryNode>? select = null)
     {
         Graph = graph;
         this.cls = cls;
         this.rename = rename;
         this.undoRedo = undoRedo;
+        this.select = select;
+        graph.Nodes.CollectionChanged += OnNodesChanged;
+        RefreshEntries();
         if (undoRedo is not null)
         {
             undoRedo.Applied += OnUndoApplied;
@@ -35,6 +43,19 @@ public sealed partial class EventGraphViewModel : ObservableObject, IDisposable
 
     /// <summary>The wrapped model graph.</summary>
     public EventGraph Graph { get; }
+
+    /// <summary>Gets the entries of the graph, rebuilt by <see cref="RefreshEntries"/> and after each undo or redo.</summary>
+    public ObservableCollection<EventEntryItemViewModel> Entries { get; } = [];
+
+    /// <summary>Reads the graph's entries again.</summary>
+    public void RefreshEntries()
+    {
+        Entries.Clear();
+        foreach (EventEntryNode entry in Graph.Entries)
+        {
+            Entries.Add(new EventEntryItemViewModel(entry, select ?? (_ => { })));
+        }
+    }
 
     /// <summary>Gets the reason the last name was refused, or null when it was accepted.</summary>
     [ObservableProperty]
@@ -81,11 +102,18 @@ public sealed partial class EventGraphViewModel : ObservableObject, IDisposable
     /// <summary>Stops following the class's undo stack.</summary>
     public void Dispose()
     {
+        Graph.Nodes.CollectionChanged -= OnNodesChanged;
         if (undoRedo is not null)
         {
             undoRedo.Applied -= OnUndoApplied;
         }
     }
 
-    private void OnUndoApplied(object? sender, EventArgs e) => OnPropertyChanged(nameof(Name));
+    private void OnUndoApplied(object? sender, EventArgs e)
+    {
+        OnPropertyChanged(nameof(Name));
+        RefreshEntries();
+    }
+
+    private void OnNodesChanged(object? sender, NotifyCollectionChangedEventArgs e) => RefreshEntries();
 }

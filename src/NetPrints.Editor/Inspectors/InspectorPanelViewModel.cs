@@ -16,7 +16,7 @@ namespace NetPrints.Editor.Inspectors;
 /// (<see cref="GraphSelectionInspectorTarget"/>), whichever changed last, and an empty state when nothing is selected or no project is open.
 /// The inspectors come from the class's <see cref="ClassContext"/>, which the session owns.
 /// </summary>
-public sealed partial class InspectorPanelViewModel : ObservableObject, IShellPanelContent, IRecipient<SelectInspectorMessage>
+public sealed partial class InspectorPanelViewModel : ObservableObject, IShellPanelContent, IRecipient<SelectInspectorMessage>, IRecipient<SelectEventEntryMessage>
 {
     private readonly HashSet<ClassContext> watched = [];
     private PanelContext? context;
@@ -71,6 +71,20 @@ public sealed partial class InspectorPanelViewModel : ObservableObject, IShellPa
         if (context is { } attached)
         {
             attached.Shell.TreeSelection = message.Target.Variable;
+        }
+    }
+
+    /// <inheritdoc/>
+    void IRecipient<SelectEventEntryMessage>.Receive(SelectEventEntryMessage message)
+    {
+        if (context is { Shell: { Session: { } session } shell } attached
+            && CommandTargets.GraphDocumentOf(session, message.Entry.Graph) is { } id)
+        {
+            attached.Api.OpenDocument(id);
+            if (shell.FindDocument(id) is GraphDocumentViewModel document)
+            {
+                document.Graph.RevealNode(message.Entry.Id);
+            }
         }
     }
 
@@ -165,10 +179,17 @@ public sealed partial class InspectorPanelViewModel : ObservableObject, IShellPa
         MethodGraph { Class: { } owner } method => Watch(session.ContextFor(owner)).Methods.FirstOrDefault(item => ReferenceEquals(item.Graph, method)),
         ConstructorGraph { Class: { } owner } constructor => Watch(session.ContextFor(owner)).Constructors.FirstOrDefault(item => ReferenceEquals(item.Graph, constructor)),
         Variable { Class: { } owner } variable => Watch(session.ContextFor(owner)).Variables.FirstOrDefault(item => ReferenceEquals(item.Variable, variable)),
-        EventGraph { Class: { } owner } eventGraph => Watch(session.ContextFor(owner)).EventGraphs.FirstOrDefault(item => ReferenceEquals(item.Graph, eventGraph)),
+        EventGraph { Class: { } owner } eventGraph => EventGraphInspectorOf(Watch(session.ContextFor(owner)), eventGraph),
         EventEntryNode { Graph.Class: { } owner } entry => Watch(session.ContextFor(owner)).EventEntryInspectorOf(entry),
         _ => null,
     };
+
+    private static EventGraphViewModel? EventGraphInspectorOf(ClassContext classContext, EventGraph eventGraph)
+    {
+        EventGraphViewModel? inspector = classContext.EventGraphs.FirstOrDefault(item => ReferenceEquals(item.Graph, eventGraph));
+        inspector?.RefreshEntries();
+        return inspector;
+    }
 
     // Routes the context's inspector selections and class renames to the shell, once per context.
     private ClassContext Watch(ClassContext classContext)
@@ -176,6 +197,7 @@ public sealed partial class InspectorPanelViewModel : ObservableObject, IShellPa
         if (watched.Add(classContext))
         {
             classContext.Messenger.Register<SelectInspectorMessage>(this);
+            classContext.Messenger.Register<SelectEventEntryMessage>(this);
             classContext.ClassInspector.PropertyChanged += OnInspectorChanged;
             classContext.UndoRedo.Applied += OnUndoApplied;
         }

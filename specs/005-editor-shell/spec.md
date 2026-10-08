@@ -688,8 +688,8 @@ its public members appear.
 
 - **FR-070**: Event graphs MUST be renameable inline in the tree and in the inspector; the name MUST stay out of the
   generated C#.
-- **FR-071**: Selecting an event entry or opening its graph MUST show the entry in the inspector: name, kind and
-  arguments.
+- **FR-071**: Selecting an event entry MUST show the entry in the inspector: name, kind and arguments. Opening an
+  event graph lists its entries in the inspector (name, kind, argument count), and selecting one shows it.
 - **FR-072**: A custom event entry's name MUST be editable, unique among the class's methods and entries (P1
   FR-027); a duplicate MUST be refused with a message.
 - **FR-073**: A custom event entry's arguments (name and type) MUST be addable, editable, reorderable and removable,

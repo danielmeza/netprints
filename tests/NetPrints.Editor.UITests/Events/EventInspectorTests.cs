@@ -23,27 +23,100 @@ public class EventInspectorTests
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
-    public async Task F2OnAnEventGraphRowRenamesItInTheInspectorAndUpdatesTheTreeAndTheTab()
+    public async Task F2OnAnEventGraphRowRenamesItInPlaceFromTheKeyboardAndUpdatesTheTreeTheTabAndTheBreadcrumbs()
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
-        await session.RunAsync("addEventGraph", Token);
-        EventGraph graph = Assert.Single(session.Class.EventGraphs);
+        EventGraph graph = await OpenEventGraphRowAsync(session);
         var tree = session.Page.Tree;
-        var row = await tree.RevealAsync(tree.Item(AutomationIds.TreeKindEventGraph, graph.Name), ProjectTreePage.EventGraphsGroup, Token);
-        await tree.SelectAsync(row, Token);
 
         await session.Driver.PressAsync("F2", Token);
-        await session.Page.Inspector.EventGraphInspector.WaitVisibleAsync(Token);
-        await RenameInInspectorAsync(session, session.Page.Inspector.EventGraphName, "Gameplay");
+        await tree.RenameBox(AutomationIds.TreeKindEventGraph, graph.Name).WaitVisibleAsync(Token);
+        await session.Driver.TypeAsync("Gameplay", Token);
+        await session.Driver.PressAsync("Enter", Token);
 
         Assert.Equal("Gameplay", graph.Name);
         await tree.Item(AutomationIds.TreeKindEventGraph, "Gameplay").WaitVisibleAsync(Token);
         DocumentId id = CommandTargets.GraphDocumentOf(session.App.Session, graph) ?? throw new InvalidOperationException("No document.");
         await session.Page.Tabs.Tab(id).WaitUntilAsync(e => (e.Name ?? "").StartsWith("Gameplay", StringComparison.Ordinal), "the tab renamed", Token);
+        await new NetPrints.Testing.Ui.Driving.UiElement(session.Driver, new AutomationQuery(AutomationIds.BreadcrumbSegment) { Name = "Gameplay" }).WaitVisibleAsync(Token);
+        Assert.Equal("Rename event graph", session.ClassContext.UndoRedo.UndoName);
 
         await session.PressUndoAsync(Token);
 
         Assert.Equal("EventGraph", graph.Name);
+        Assert.False(session.ClassContext.UndoRedo.CanUndo && session.ClassContext.UndoRedo.UndoName == "Rename event graph");
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task EscapeCancelsTheInPlaceRename()
+    {
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        EventGraph graph = await OpenEventGraphRowAsync(session);
+        string name = graph.Name;
+        var tree = session.Page.Tree;
+
+        await session.Driver.PressAsync("F2", Token);
+        await tree.RenameBox(AutomationIds.TreeKindEventGraph, name).WaitVisibleAsync(Token);
+        await session.Driver.TypeAsync("Gameplay", Token);
+        await session.Driver.PressAsync("Escape", Token);
+
+        await tree.Item(AutomationIds.TreeKindEventGraph, name).WaitVisibleAsync(Token);
+        await tree.RenameBox(AutomationIds.TreeKindEventGraph, name).WaitHiddenAsync(Token);
+        Assert.Equal(name, graph.Name);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task ARefusedInPlaceNameKeepsTheRowInEditModeWithTheMessage()
+    {
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await session.RunAsync("addEventGraph", Token);
+        EventGraph graph = await OpenEventGraphRowAsync(session);
+        string taken = session.Class.EventGraphs.First(other => !ReferenceEquals(other, graph)).Name;
+
+        await session.Driver.PressAsync("F2", Token);
+        string name = graph.Name;
+        await session.Page.Tree.RenameBox(AutomationIds.TreeKindEventGraph, name).WaitVisibleAsync(Token);
+        await session.Driver.TypeAsync(taken, Token);
+        await session.Driver.PressAsync("Enter", Token);
+
+        await session.Page.Tree.RenameError(AutomationIds.TreeKindEventGraph, name)
+            .WaitUntilAsync(e => (e.Text ?? "") == $"An event graph named '{taken}' already exists", "the refusal shown", Token);
+        Assert.True(await session.Page.Tree.RenameBox(AutomationIds.TreeKindEventGraph, name).IsVisibleAsync(Token));
+        Assert.NotEqual(taken, graph.Name);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task TheEventGraphInspectorListsItsEntriesAndSelectShowsTheEntryInspector()
+    {
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        await session.RunAsync("addEventGraph", Token);
+        await session.Graph.Watermark.WaitUntilAsync(e => !string.IsNullOrEmpty(e.Text), "graph shown", Token);
+        var search = await (await session.Graph.RightClickEmptyAsync(Token)).WaitOpenAsync(Token);
+        await search.FilterAsync("Custom Event", "Custom Event", Token);
+        await search.ChooseAsync("Custom Event", Token);
+        await session.WaitForRenderedAsync(Token);
+        EventGraph graph = Assert.Single(session.Class.EventGraphs);
+        var entry = Assert.Single(graph.Nodes.OfType<EventEntryNode>());
+        session.App.Shell.TreeSelection = graph;
+        await session.Page.Inspector.EventGraphInspector.WaitVisibleAsync(Token);
+        var select = new NetPrints.Testing.Ui.Driving.UiElement(
+            session.Driver, new AutomationQuery(AutomationIds.EventGraphInspectorSelectEntry) { Name = $"Select {entry.EventName}" });
+
+        await select.WaitVisibleAsync(Token);
+        await select.ClickAsync(Token);
+
+        await session.Page.Inspector.EventEntryInspector.WaitVisibleAsync(Token);
+        Assert.Contains(session.GraphViewModel.SelectedNodes, node => ReferenceEquals(node.Node, entry));
+    }
+
+    private static async Task<EventGraph> OpenEventGraphRowAsync(EditorSession session)
+    {
+        await session.RunAsync("addEventGraph", Token);
+        EventGraph graph = session.Class.EventGraphs[^1];
+        var tree = session.Page.Tree;
+        var row = await tree.RevealAsync(tree.Item(AutomationIds.TreeKindEventGraph, graph.Name), ProjectTreePage.EventGraphsGroup, Token);
+        await tree.SelectAsync(row, Token);
+        return graph;
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]

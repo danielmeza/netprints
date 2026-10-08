@@ -57,7 +57,7 @@ public sealed class ClassContext : IDisposable
         Constructors = new ObservableViewModelCollection<MethodViewModel, ConstructorGraph>(cls.Constructors, c => new MethodViewModel(c), m => m.Dispose());
         Variables = new ObservableViewModelCollection<MemberVariableViewModel, Variable>(cls.Variables,
             v => new MemberVariableViewModel(v, Services, RenameVariable), v => v.Dispose());
-        EventGraphs = new ObservableViewModelCollection<EventGraphViewModel, EventGraph>(cls.EventGraphs, g => new EventGraphViewModel(g, cls, RenameEventGraph, undoRedo), g => g.Dispose());
+        EventGraphs = new ObservableViewModelCollection<EventGraphViewModel, EventGraph>(cls.EventGraphs, g => new EventGraphViewModel(g, cls, RenameEventGraph, undoRedo, entry => Messenger.Send(new SelectEventEntryMessage(entry))), g => g.Dispose());
         CodeView = new CodeViewViewModel(cls, context.CodeAnalysis);
         ClassInspector = new ClassInspectorViewModel(cls, CodeView, MarkDirty);
 

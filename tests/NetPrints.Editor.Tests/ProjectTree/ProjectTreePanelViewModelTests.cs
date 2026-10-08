@@ -43,6 +43,56 @@ public sealed class ProjectTreePanelViewModelTests : IAsyncDisposable
     }
 
     [Fact]
+    public async Task AnInlineRenameRequestPutsTheRowInEditModeAndEnterRenamesInOneUndoStep()
+    {
+        ProjectSessionViewModel session = await rig.OpenSessionAsync();
+        ClassGraph cls = session.Project.Classes[0];
+        new UndoRedoStack().Do(EditorCommands.AddVariable(cls, "count"));
+        Variable variable = cls.Variables[0];
+
+        Assert.True(rig.Shell.RequestInlineRename(variable));
+
+        ProjectTreeItemViewModel row = rig.Item(TreeItemKind.Variable, "count");
+        Assert.True(row.IsEditing);
+        Assert.Equal("count", row.EditText);
+        row.EditText = "total";
+        row.CommitEditCommand.Execute(null);
+        Assert.False(row.IsEditing);
+        Assert.Equal("total", variable.Name);
+        Assert.Equal("total", row.Name);
+        Assert.True(session.ContextFor(cls).UndoRedo.Undo());
+        Assert.Equal("count", variable.Name);
+    }
+
+    [Fact]
+    public async Task ARefusedOrBlankInlineNameKeepsTheRowEditingAndCancelLeavesTheNameAlone()
+    {
+        ProjectSessionViewModel session = await rig.OpenSessionAsync();
+        ClassGraph cls = session.Project.Classes[0];
+        var method = new MethodGraph("Greet") { Class = cls };
+        cls.Methods.Add(method);
+        new UndoRedoStack().Do(EditorCommands.AddVariable(cls, "count"));
+        Assert.True(rig.Shell.RequestInlineRename(method));
+        ProjectTreeItemViewModel row = rig.Item(TreeItemKind.Method, "Greet");
+
+        row.EditText = "count";
+        row.CommitEditCommand.Execute(null);
+        Assert.True(row.IsEditing);
+        Assert.NotNull(row.EditError);
+        Assert.Equal("Greet", method.Name);
+
+        row.EditText = "  ";
+        row.CommitEditCommand.Execute(null);
+        Assert.True(row.IsEditing);
+        Assert.True(row.HasEditError);
+
+        row.CancelEditCommand.Execute(null);
+        Assert.False(row.IsEditing);
+        Assert.False(row.HasEditError);
+        Assert.Equal("Greet", method.Name);
+    }
+
+    [Fact]
     public async Task NoProjectOpenMeansAnEmptyTreeAndClosingTheProjectEmptiesIt()
     {
         Assert.Empty(rig.Tree.Roots);

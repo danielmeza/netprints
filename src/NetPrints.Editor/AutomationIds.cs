@@ -28,6 +28,9 @@ public static class AutomationIds
     /// </summary>
     public const string VariableInspector = "Inspectors.Variable";
 
+    /// <summary>The prefix of the name box (<c>Tree.rename.&lt;kind&gt;.&lt;name&gt;</c>) and refusal message (<c>Tree.rename.error.&lt;kind&gt;.&lt;name&gt;</c>) of a project tree row in edit mode.</summary>
+    public const string TreeRenamePrefix = "Tree.rename.";
+
     /// <summary>The refused-name message of the method inspector.</summary>
     public const string MethodInspectorError = "Inspectors.Method.Error";
 
@@ -42,6 +45,9 @@ public static class AutomationIds
 
     /// <summary>The refused-name message of the event graph inspector.</summary>
     public const string EventGraphInspectorError = "Inspector.EventGraph.Error";
+
+    /// <summary>The Select button of an entry line in the event graph inspector.</summary>
+    public const string EventGraphInspectorSelectEntry = "Inspector.EventGraph.SelectEntry";
 
     /// <summary>The event entry inspector pane.</summary>
     public const string EventEntryInspector = "Inspector.EventEntry";

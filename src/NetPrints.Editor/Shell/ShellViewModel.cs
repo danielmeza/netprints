@@ -53,6 +53,9 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
     /// <summary>Raised by <see cref="NotifyModelRenamed"/>: a class or member was renamed through a view model, and the model does not notify.</summary>
     public event EventHandler? ModelRenamed;
 
+    /// <summary>Raised by <see cref="RequestInlineRename"/>; the project tree sets <see cref="InlineRenameRequestedEventArgs.Handled"/> when it put the row into edit mode.</summary>
+    public event EventHandler<InlineRenameRequestedEventArgs>? InlineRenameRequested;
+
     /// <summary>Gets or sets the open project session, or null while the start page shows.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(Title))]
@@ -198,6 +201,16 @@ public sealed partial class ShellViewModel : ObservableObject, ICommandStateSour
 
     /// <summary>Tells the panels that show names (the project tree) that a class or member was renamed; the model of a class or an event graph does not notify.</summary>
     public void NotifyModelRenamed() => ModelRenamed?.Invoke(this, EventArgs.Empty);
+
+    /// <summary>Asks the project tree to rename a method, variable or event graph in place.</summary>
+    /// <param name="item">The model object to rename.</param>
+    /// <returns>Whether the tree has a row for it and put it into edit mode.</returns>
+    public bool RequestInlineRename(object item)
+    {
+        var args = new InlineRenameRequestedEventArgs(item);
+        InlineRenameRequested?.Invoke(this, args);
+        return args.Handled;
+    }
 
     /// <summary>Shows a status message.</summary>
     /// <param name="message">The text.</param>

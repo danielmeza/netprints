@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using NetPrints.Core;
 using NetPrints.Editor.Contributions;
+using NetPrints.Editor.Events;
 using NetPrints.Editor.ModelSync;
 using NetPrints.Editor.Shell;
 
@@ -16,6 +17,8 @@ public sealed partial class ProjectTreePanelViewModel : ObservableObject, IShell
     private const string ConstructorsName = "Constructors";
     private const string VariablesName = "Variables";
     private const string EventGraphsName = "Event graphs";
+    private const string BlankNameMessage = "A name cannot be blank";
+    private const string NoProjectMessage = "No project is open";
 
     private PanelContext? context;
 
@@ -37,6 +40,7 @@ public sealed partial class ProjectTreePanelViewModel : ObservableObject, IShell
         OnPropertyChanged(nameof(Invoker));
         context.Shell.PropertyChanged += OnShellChanged;
         context.Shell.ModelRenamed += OnModelRenamed;
+        context.Shell.InlineRenameRequested += OnInlineRenameRequested;
         context.Commands.CommandStatesChanged += OnCommandStatesChanged;
         Rebuild();
     }
@@ -69,6 +73,7 @@ public sealed partial class ProjectTreePanelViewModel : ObservableObject, IShell
         {
             attached.Shell.PropertyChanged -= OnShellChanged;
             attached.Shell.ModelRenamed -= OnModelRenamed;
+            attached.Shell.InlineRenameRequested -= OnInlineRenameRequested;
             attached.Commands.CommandStatesChanged -= OnCommandStatesChanged;
         }
 
@@ -80,6 +85,7 @@ public sealed partial class ProjectTreePanelViewModel : ObservableObject, IShell
     partial void OnSelectedItemChanged(ProjectTreeItemViewModel? oldValue, ProjectTreeItemViewModel? newValue)
     {
         oldValue?.MenuEntries.Clear();
+        oldValue?.CancelEditCommand.Execute(null);
         if (context is { } attached)
         {
             attached.Shell.TreeSelection = newValue is { Kind: not (TreeItemKind.Project or TreeItemKind.Group) } ? newValue.Model : null;
@@ -178,16 +184,53 @@ public sealed partial class ProjectTreePanelViewModel : ObservableObject, IShell
     }
 
     private ProjectTreeItemViewModel CreateMethod(MethodGraph method) =>
-        new(TreeItemKind.Method, method, () => method.Name, method as INotifyPropertyChanged, null, Open);
+        new(TreeItemKind.Method, method, () => method.Name, method as INotifyPropertyChanged, null, Open,
+            name => Rename(method.Class, name, true, (classContext, text) => classContext.RenameMethod(method, text)));
 
     private ProjectTreeItemViewModel CreateConstructor(ConstructorGraph constructor) =>
         new(TreeItemKind.Constructor, constructor, () => constructor.ToString() ?? string.Empty, null, null, Open);
 
     private ProjectTreeItemViewModel CreateVariable(Variable variable) =>
-        new(TreeItemKind.Variable, variable, () => variable.Name, variable as INotifyPropertyChanged, null, null);
+        new(TreeItemKind.Variable, variable, () => variable.Name, variable as INotifyPropertyChanged, null, null,
+            name => Rename(variable.Class, name, true, (classContext, text) => classContext.RenameVariable(variable, text)));
 
     private ProjectTreeItemViewModel CreateEventGraph(EventGraph graph) =>
-        new(TreeItemKind.EventGraph, graph, () => graph.Name, null, null, Open);
+        new(TreeItemKind.EventGraph, graph, () => graph.Name, null, null, Open,
+            name => Rename(graph.Class, name, false, (classContext, text) => classContext.RenameEventGraph(graph, text)));
+
+    private string? Rename(ClassGraph? owner, string name, bool refuseBlank, Action<ClassContext, string> rename)
+    {
+        if (context is not { Shell: { Session: { } session } shell } || owner is null)
+        {
+            return NoProjectMessage;
+        }
+
+        if (refuseBlank && string.IsNullOrWhiteSpace(name))
+        {
+            return BlankNameMessage;
+        }
+
+        try
+        {
+            rename(session.ContextFor(owner), name);
+        }
+        catch (ArgumentException refused)
+        {
+            return RefusalMessage.Of(refused);
+        }
+
+        shell.NotifyModelRenamed();
+        return null;
+    }
+
+    private void OnInlineRenameRequested(object? sender, InlineRenameRequestedEventArgs e)
+    {
+        if (Select(e.Item) && SelectedItem is { CanRename: true } row)
+        {
+            row.BeginEdit();
+            e.Handled = row.IsEditing;
+        }
+    }
 
     /// <summary>Opens the graph of a double-tapped row; a row that opens nothing (a group, a variable, the project) is ignored.</summary>
     /// <param name="item">Row that was double-tapped.</param>

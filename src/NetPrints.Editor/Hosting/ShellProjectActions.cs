@@ -337,7 +337,16 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
     /// <inheritdoc/>
     public void RenameItem(object item)
     {
-        if (item is ClassGraph or MethodGraph or ConstructorGraph or Variable or EventGraph)
+        if (item is MethodGraph or Variable or EventGraph)
+        {
+            Api?.ShowPanel(PanelContributions.ProjectTreeId);
+            shell.TreeSelection = item;
+            if (!shell.RequestInlineRename(item))
+            {
+                Inspect(item);
+            }
+        }
+        else if (item is ClassGraph or ConstructorGraph)
         {
             Inspect(item);
         }

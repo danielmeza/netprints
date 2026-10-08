@@ -33,6 +33,12 @@
           </ContextMenu>
         </Setter>
       </Style>
+      <Style Selector="TextBox.treeRename" x:DataType="edtree:ProjectTreeItemViewModel">
+        <Setter Property="AutomationProperties.AutomationId" Value="{Binding RenameBoxAutomationId}" />
+      </Style>
+      <Style Selector="TextBlock.treeRenameError" x:DataType="edtree:ProjectTreeItemViewModel">
+        <Setter Property="AutomationProperties.AutomationId" Value="{Binding RenameErrorAutomationId}" />
+      </Style>
     </TreeView.Styles>
     <TreeView.ItemTemplate>
       <TreeDataTemplate x:DataType="edtree:ProjectTreeItemViewModel" ItemsSource="{Binding Children}">
@@ -41,7 +47,20 @@
             <edbehaviors:TreeDragSourceBehavior />
           </Interaction.Behaviors>
           <mi:MaterialIcon Grid.Column="0" Kind="{Binding IconKind}" Width="16" Height="16" Margin="0,0,8,0" AutomationProperties.AccessibilityView="Raw" />
-          <TextBlock Grid.Column="1" Classes="treeItem" Text="{Binding DisplayName}" VerticalAlignment="Center" />
+          <TextBlock Grid.Column="1" Classes="treeItem" Text="{Binding DisplayName}" VerticalAlignment="Center" IsVisible="{Binding IsNotEditing}" />
+          <StackPanel Grid.Column="1">
+            <TextBox Classes="treeRename" Text="{Binding EditText}" MinWidth="120" IsVisible="{Binding IsEditing}"
+                     AutomationProperties.Name="Name">
+              <Interaction.Behaviors>
+                <FocusOnVisibleBehavior />
+                <TextBoxSelectAllOnGotFocusBehavior />
+                <ExecuteCommandOnKeyDownBehavior Key="Enter" Command="{Binding CommitEditCommand}" />
+                <ExecuteCommandOnKeyDownBehavior Key="Escape" Command="{Binding CancelEditCommand}" />
+                <ExecuteCommandOnLostFocusBehavior Command="{Binding CancelEditCommand}" />
+              </Interaction.Behaviors>
+            </TextBox>
+            <TextBlock Classes="fieldError treeRenameError" Text="{Binding EditError}" IsVisible="{Binding HasEditError}" />
+          </StackPanel>
         </Grid>
       </TreeDataTemplate>
     </TreeView.ItemTemplate>

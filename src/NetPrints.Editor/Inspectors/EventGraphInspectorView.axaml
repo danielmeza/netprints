@@ -5,7 +5,7 @@
              x:Class="NetPrints.Editor.Inspectors.EventGraphInspectorView"
              x:DataType="edevents:EventGraphViewModel">
   <!-- Event graph inspector (US8, FR-070): the name, renamed as one undo step; a duplicate is refused with a message. -->
-  <Grid AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventGraphInspector}" RowDefinitions="Auto,Auto,Auto" Classes="propertyGrid" ColumnDefinitions="Auto,*">
+  <Grid AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventGraphInspector}" RowDefinitions="Auto,Auto,Auto,Auto" Classes="propertyGrid" ColumnDefinitions="Auto,*">
     <TextBlock Grid.ColumnSpan="2" Classes="header" Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
     <TextBlock x:Name="NameLabel" Grid.Row="1" Classes="inspectorLabel" Text="Name" />
     <TextBox Grid.Row="1" Grid.Column="1" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventGraphInspectorName}"
@@ -16,5 +16,18 @@
     </TextBox>
     <TextBlock Grid.Row="2" Grid.Column="1" Classes="fieldError" Text="{Binding Error}" IsVisible="{Binding HasError}"
                AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventGraphInspectorError}" />
+    <TextBlock Grid.Row="3" Classes="inspectorLabel" Text="Entries" />
+    <ItemsControl Grid.Row="3" Grid.Column="1" ItemsSource="{Binding Entries}">
+      <ItemsControl.ItemTemplate>
+        <DataTemplate x:DataType="edevents:EventEntryItemViewModel">
+          <Grid ColumnDefinitions="*,Auto">
+            <TextBlock Text="{Binding Summary}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
+            <Button Grid.Column="1" Classes="flat" Content="Select" Command="{Binding SelectCommand}"
+                    AutomationProperties.AutomationId="{x:Static ed:AutomationIds.EventGraphInspectorSelectEntry}"
+                    AutomationProperties.Name="{Binding Name, StringFormat='Select {0}'}" />
+          </Grid>
+        </DataTemplate>
+      </ItemsControl.ItemTemplate>
+    </ItemsControl>
   </Grid>
 </UserControl>
