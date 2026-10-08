@@ -1,0 +1,317 @@
+MethodEntryNode[default] OutputExecPins[0] out.exec.Exec type=- unconnected=-
+MethodEntryNode[default].InitialExecutionPin -> OutputExecPins[0]
+MethodEntryNode[2 arguments + generic] OutputDataPins[0] out.data.Input0 type=System.Object unconnected=-
+MethodEntryNode[2 arguments + generic] OutputDataPins[1] out.data.Input1 type=System.Object unconnected=-
+MethodEntryNode[2 arguments + generic] OutputExecPins[0] out.exec.Exec type=- unconnected=-
+MethodEntryNode[2 arguments + generic] InputTypePins[0] in.type.Input0Type type=- unconnected=-
+MethodEntryNode[2 arguments + generic] InputTypePins[1] in.type.Input1Type type=- unconnected=-
+MethodEntryNode[2 arguments + generic] OutputTypePins[0] out.type.T0 type=- unconnected=-
+MethodEntryNode[2 arguments + generic].InitialExecutionPin -> OutputExecPins[0]
+ReturnNode[default] InputExecPins[0] in.exec.Exec type=- unconnected=-
+ReturnNode[default].ReturnPin -> InputExecPins[0]
+ReturnNode[2 return types] InputDataPins[0] in.data.Output0 type=System.Object unconnected=null
+ReturnNode[2 return types] InputDataPins[1] in.data.Output1 type=System.Object unconnected=null
+ReturnNode[2 return types] InputExecPins[0] in.exec.Exec type=- unconnected=-
+ReturnNode[2 return types] InputTypePins[0] in.type.Output0Type type=- unconnected=-
+ReturnNode[2 return types] InputTypePins[1] in.type.Output1Type type=- unconnected=-
+ReturnNode[2 return types].ReturnPin -> InputExecPins[0]
+ConstructorEntryNode[default] OutputExecPins[0] out.exec.Exec type=- unconnected=-
+ConstructorEntryNode[default].InitialExecutionPin -> OutputExecPins[0]
+EventEntryNode[default] OutputExecPins[0] out.exec.Exec type=- unconnected=-
+EventEntryNode[default].InitialExecutionPin -> OutputExecPins[0]
+EventEntryNode[2 arguments] OutputDataPins[0] out.data.Input0 type=System.Object unconnected=-
+EventEntryNode[2 arguments] OutputDataPins[1] out.data.Input1 type=System.Object unconnected=-
+EventEntryNode[2 arguments] OutputExecPins[0] out.exec.Exec type=- unconnected=-
+EventEntryNode[2 arguments] InputTypePins[0] in.type.Input0Type type=- unconnected=-
+EventEntryNode[2 arguments] InputTypePins[1] in.type.Input1Type type=- unconnected=-
+EventEntryNode[2 arguments].InitialExecutionPin -> OutputExecPins[0]
+ClassReturnNode[default] InputTypePins[0] in.type.BaseType type=- unconnected=-
+ClassReturnNode[default].SuperTypePin -> InputTypePins[0]
+ClassReturnNode[1 interface] InputTypePins[0] in.type.BaseType type=- unconnected=-
+ClassReturnNode[1 interface] InputTypePins[1] in.type.Interface1 type=- unconnected=-
+ClassReturnNode[1 interface].SuperTypePin -> InputTypePins[0]
+TypeReturnNode[default] InputTypePins[0] in.type.Type type=- unconnected=-
+TypeReturnNode[default].TypePin -> InputTypePins[0]
+IfElseNode[default] InputDataPins[0] in.data.Condition type=System.Boolean unconnected=null
+IfElseNode[default] InputExecPins[0] in.exec.Exec type=- unconnected=-
+IfElseNode[default] OutputExecPins[0] out.exec.True type=- unconnected=-
+IfElseNode[default] OutputExecPins[1] out.exec.False type=- unconnected=-
+IfElseNode[default].ConditionPin -> InputDataPins[0]
+IfElseNode[default].ExecutionPin -> InputExecPins[0]
+IfElseNode[default].FalsePin -> OutputExecPins[1]
+IfElseNode[default].TruePin -> OutputExecPins[0]
+ForLoopNode[default] InputDataPins[0] in.data.InitialIndex type=System.Int32 unconnected=0:Int32
+ForLoopNode[default] InputDataPins[1] in.data.MaxIndex type=System.Int32 unconnected=null
+ForLoopNode[default] OutputDataPins[0] out.data.Index type=System.Int32 unconnected=-
+ForLoopNode[default] InputExecPins[0] in.exec.Exec type=- unconnected=-
+ForLoopNode[default] InputExecPins[1] in.exec.Continue type=- unconnected=-
+ForLoopNode[default] OutputExecPins[0] out.exec.Loop type=- unconnected=-
+ForLoopNode[default] OutputExecPins[1] out.exec.Completed type=- unconnected=-
+ForLoopNode[default].CompletedPin -> OutputExecPins[1]
+ForLoopNode[default].ContinuePin -> InputExecPins[1]
+ForLoopNode[default].ExecutionPin -> InputExecPins[0]
+ForLoopNode[default].IndexPin -> OutputDataPins[0]
+ForLoopNode[default].InitialIndexPin -> InputDataPins[0]
+ForLoopNode[default].LoopPin -> OutputExecPins[0]
+ForLoopNode[default].MaxIndexPin -> InputDataPins[1]
+ThrowNode[default] InputDataPins[0] in.data.Exception type=System.Exception unconnected=null
+ThrowNode[default] InputExecPins[0] in.exec.Exec type=- unconnected=-
+ThrowNode[default].ExceptionPin -> InputDataPins[0]
+TypeNode[int] OutputTypePins[0] out.type.OutputType type=- unconnected=-
+TypeOfNode[default] OutputDataPins[0] out.data.Type type=System.Type unconnected=-
+TypeOfNode[default] InputTypePins[0] in.type.Type type=- unconnected=-
+TypeOfNode[default].InputTypePin -> InputTypePins[0]
+TypeOfNode[default].TypePin -> OutputDataPins[0]
+DefaultNode[default] OutputDataPins[0] out.data.Default type=System.Object unconnected=-
+DefaultNode[default] InputTypePins[0] in.type.Type type=- unconnected=-
+DefaultNode[default].DefaultValuePin -> OutputDataPins[0]
+DefaultNode[default].TypePin -> InputTypePins[0]
+MakeArrayTypeNode[default] InputTypePins[0] in.type.ElementType type=- unconnected=-
+MakeArrayTypeNode[default] OutputTypePins[0] out.type.ArrayType type=- unconnected=-
+ExplicitCastNode[default] InputDataPins[0] in.data.Object type=System.Object unconnected=null
+ExplicitCastNode[default] OutputDataPins[0] out.data.CastObject type=System.Object unconnected=-
+ExplicitCastNode[default] InputExecPins[0] in.exec.Exec type=- unconnected=-
+ExplicitCastNode[default] OutputExecPins[0] out.exec.Success type=- unconnected=-
+ExplicitCastNode[default] OutputExecPins[1] out.exec.Failure type=- unconnected=-
+ExplicitCastNode[default] InputTypePins[0] in.type.Type type=- unconnected=-
+ExplicitCastNode[default].CastFailedPin -> OutputExecPins[1]
+ExplicitCastNode[default].CastPin -> OutputDataPins[0]
+ExplicitCastNode[default].CastSuccessPin -> OutputExecPins[0]
+ExplicitCastNode[default].CastTypePin -> InputTypePins[0]
+ExplicitCastNode[default].ObjectToCast -> InputDataPins[0]
+ExplicitCastNode[default, toggled] InputDataPins[0] in.data.Object type=System.Object unconnected=null
+ExplicitCastNode[default, toggled] OutputDataPins[0] out.data.CastObject type=System.Object unconnected=-
+ExplicitCastNode[default, toggled] InputTypePins[0] in.type.Type type=- unconnected=-
+ExplicitCastNode[default, toggled].CastFailedPin -> throws ArgumentOutOfRangeException
+ExplicitCastNode[default, toggled].CastPin -> OutputDataPins[0]
+ExplicitCastNode[default, toggled].CastSuccessPin -> throws ArgumentOutOfRangeException
+ExplicitCastNode[default, toggled].CastTypePin -> InputTypePins[0]
+ExplicitCastNode[default, toggled].ObjectToCast -> InputDataPins[0]
+ExplicitCastNode[default, toggled twice] InputDataPins[0] in.data.Object type=System.Object unconnected=null
+ExplicitCastNode[default, toggled twice] OutputDataPins[0] out.data.CastObject type=System.Object unconnected=-
+ExplicitCastNode[default, toggled twice] InputExecPins[0] in.exec.Exec type=- unconnected=-
+ExplicitCastNode[default, toggled twice] OutputExecPins[0] out.exec.Success type=- unconnected=-
+ExplicitCastNode[default, toggled twice] OutputExecPins[1] out.exec.Failure type=- unconnected=-
+ExplicitCastNode[default, toggled twice] InputTypePins[0] in.type.Type type=- unconnected=-
+ExplicitCastNode[default, toggled twice].CastFailedPin -> OutputExecPins[1]
+ExplicitCastNode[default, toggled twice].CastPin -> OutputDataPins[0]
+ExplicitCastNode[default, toggled twice].CastSuccessPin -> OutputExecPins[0]
+ExplicitCastNode[default, toggled twice].CastTypePin -> InputTypePins[0]
+ExplicitCastNode[default, toggled twice].ObjectToCast -> InputDataPins[0]
+TernaryNode[default] InputDataPins[0] in.data.True type=System.Object unconnected=null
+TernaryNode[default] InputDataPins[1] in.data.False type=System.Object unconnected=null
+TernaryNode[default] InputDataPins[2] in.data.Condition type=System.Boolean unconnected=null
+TernaryNode[default] OutputDataPins[0] out.data.Output type=System.Object unconnected=-
+TernaryNode[default] InputExecPins[0] in.exec.Exec type=- unconnected=-
+TernaryNode[default] OutputExecPins[0] out.exec.Exec type=- unconnected=-
+TernaryNode[default] InputTypePins[0] in.type.Type type=- unconnected=-
+TernaryNode[default].ConditionPin -> InputDataPins[2]
+TernaryNode[default].FalseObjectPin -> InputDataPins[1]
+TernaryNode[default].OutputObjectPin -> OutputDataPins[0]
+TernaryNode[default].TrueObjectPin -> InputDataPins[0]
+TernaryNode[default].TypePin -> InputTypePins[0]
+TernaryNode[default, toggled] InputDataPins[0] in.data.True type=System.Object unconnected=null
+TernaryNode[default, toggled] InputDataPins[1] in.data.False type=System.Object unconnected=null
+TernaryNode[default, toggled] InputDataPins[2] in.data.Condition type=System.Boolean unconnected=null
+TernaryNode[default, toggled] OutputDataPins[0] out.data.Output type=System.Object unconnected=-
+TernaryNode[default, toggled] InputTypePins[0] in.type.Type type=- unconnected=-
+TernaryNode[default, toggled].ConditionPin -> InputDataPins[2]
+TernaryNode[default, toggled].FalseObjectPin -> InputDataPins[1]
+TernaryNode[default, toggled].OutputObjectPin -> OutputDataPins[0]
+TernaryNode[default, toggled].TrueObjectPin -> InputDataPins[0]
+TernaryNode[default, toggled].TypePin -> InputTypePins[0]
+TernaryNode[default, toggled twice] InputDataPins[0] in.data.True type=System.Object unconnected=null
+TernaryNode[default, toggled twice] InputDataPins[1] in.data.False type=System.Object unconnected=null
+TernaryNode[default, toggled twice] InputDataPins[2] in.data.Condition type=System.Boolean unconnected=null
+TernaryNode[default, toggled twice] OutputDataPins[0] out.data.Output type=System.Object unconnected=-
+TernaryNode[default, toggled twice] InputExecPins[0] in.exec.Exec type=- unconnected=-
+TernaryNode[default, toggled twice] OutputExecPins[0] out.exec.Exec type=- unconnected=-
+TernaryNode[default, toggled twice] InputTypePins[0] in.type.Type type=- unconnected=-
+TernaryNode[default, toggled twice].ConditionPin -> InputDataPins[2]
+TernaryNode[default, toggled twice].FalseObjectPin -> InputDataPins[1]
+TernaryNode[default, toggled twice].OutputObjectPin -> OutputDataPins[0]
+TernaryNode[default, toggled twice].TrueObjectPin -> InputDataPins[0]
+TernaryNode[default, toggled twice].TypePin -> InputTypePins[0]
+AwaitNode[default] InputDataPins[0] in.data.Task type=System.Threading.Tasks.Task unconnected=null
+AwaitNode[default] InputExecPins[0] in.exec.Exec type=- unconnected=-
+AwaitNode[default] OutputExecPins[0] out.exec.Exec type=- unconnected=-
+AwaitNode[default].ResultPin -> null
+AwaitNode[default].TaskPin -> InputDataPins[0]
+AwaitNode[default, toggled] InputDataPins[0] in.data.Task type=System.Threading.Tasks.Task unconnected=null
+AwaitNode[default, toggled].ResultPin -> null
+AwaitNode[default, toggled].TaskPin -> InputDataPins[0]
+AwaitNode[default, toggled twice] InputDataPins[0] in.data.Task type=System.Threading.Tasks.Task unconnected=null
+AwaitNode[default, toggled twice] InputExecPins[0] in.exec.Exec type=- unconnected=-
+AwaitNode[default, toggled twice] OutputExecPins[0] out.exec.Exec type=- unconnected=-
+AwaitNode[default, toggled twice].ResultPin -> null
+AwaitNode[default, toggled twice].TaskPin -> InputDataPins[0]
+CallMethodNode[static] InputDataPins[0] in.data.value type=System.String unconnected=null
+CallMethodNode[static] InputExecPins[0] in.exec.Exec type=- unconnected=-
+CallMethodNode[static] OutputExecPins[0] out.exec.Exec type=- unconnected=-
+CallMethodNode[static] OutputExecPins[1] out.exec.Catch type=- unconnected=-
+CallMethodNode[static].CatchPin -> OutputExecPins[1]
+CallMethodNode[static].ExceptionPin -> null
+CallMethodNode[static].TargetPin -> InputDataPins[0]
+CallMethodNode[static, toggled] InputDataPins[0] in.data.value type=System.String unconnected=null
+CallMethodNode[static, toggled].CatchPin -> null
+CallMethodNode[static, toggled].ExceptionPin -> null
+CallMethodNode[static, toggled].TargetPin -> InputDataPins[0]
+CallMethodNode[static, toggled twice] InputDataPins[0] in.data.value type=System.String unconnected=null
+CallMethodNode[static, toggled twice] InputExecPins[0] in.exec.Exec type=- unconnected=-
+CallMethodNode[static, toggled twice] OutputExecPins[0] out.exec.Exec type=- unconnected=-
+CallMethodNode[static, toggled twice] OutputExecPins[1] out.exec.Catch type=- unconnected=-
+CallMethodNode[static, toggled twice].CatchPin -> OutputExecPins[1]
+CallMethodNode[static, toggled twice].ExceptionPin -> null
+CallMethodNode[static, toggled twice].TargetPin -> InputDataPins[0]
+CallMethodNode[instance] InputDataPins[0] in.data.Target type=System.String unconnected=null
+CallMethodNode[instance] InputDataPins[1] in.data.start type=System.Int32 unconnected=null
+CallMethodNode[instance] OutputDataPins[0] out.data.String type=System.String unconnected=-
+CallMethodNode[instance] InputExecPins[0] in.exec.Exec type=- unconnected=-
+CallMethodNode[instance] OutputExecPins[0] out.exec.Exec type=- unconnected=-
+CallMethodNode[instance] OutputExecPins[1] out.exec.Catch type=- unconnected=-
+CallMethodNode[instance].CatchPin -> OutputExecPins[1]
+CallMethodNode[instance].ExceptionPin -> null
+CallMethodNode[instance].TargetPin -> InputDataPins[0]
+CallMethodNode[instance, toggled] InputDataPins[0] in.data.Target type=System.String unconnected=null
+CallMethodNode[instance, toggled] InputDataPins[1] in.data.start type=System.Int32 unconnected=null
+CallMethodNode[instance, toggled] OutputDataPins[0] out.data.String type=System.String unconnected=-
+CallMethodNode[instance, toggled].CatchPin -> null
+CallMethodNode[instance, toggled].ExceptionPin -> null
+CallMethodNode[instance, toggled].TargetPin -> InputDataPins[0]
+CallMethodNode[instance, toggled twice] InputDataPins[0] in.data.Target type=System.String unconnected=null
+CallMethodNode[instance, toggled twice] InputDataPins[1] in.data.start type=System.Int32 unconnected=null
+CallMethodNode[instance, toggled twice] OutputDataPins[0] out.data.String type=System.String unconnected=-
+CallMethodNode[instance, toggled twice] InputExecPins[0] in.exec.Exec type=- unconnected=-
+CallMethodNode[instance, toggled twice] OutputExecPins[0] out.exec.Exec type=- unconnected=-
+CallMethodNode[instance, toggled twice] OutputExecPins[1] out.exec.Catch type=- unconnected=-
+CallMethodNode[instance, toggled twice].CatchPin -> OutputExecPins[1]
+CallMethodNode[instance, toggled twice].ExceptionPin -> null
+CallMethodNode[instance, toggled twice].TargetPin -> InputDataPins[0]
+ConstructorNode[1 parameter] InputDataPins[0] in.data.value type=System.String unconnected=null
+ConstructorNode[1 parameter] OutputDataPins[0] out.data.Exception type=System.Exception unconnected=-
+ConstructorNode[1 parameter] InputExecPins[0] in.exec.Exec type=- unconnected=-
+ConstructorNode[1 parameter] OutputExecPins[0] out.exec.Exec type=- unconnected=-
+ConstructorNode[1 parameter, toggled] InputDataPins[0] in.data.value type=System.String unconnected=null
+ConstructorNode[1 parameter, toggled] OutputDataPins[0] out.data.Exception type=System.Exception unconnected=-
+ConstructorNode[1 parameter, toggled twice] InputDataPins[0] in.data.value type=System.String unconnected=null
+ConstructorNode[1 parameter, toggled twice] OutputDataPins[0] out.data.Exception type=System.Exception unconnected=-
+ConstructorNode[1 parameter, toggled twice] InputExecPins[0] in.exec.Exec type=- unconnected=-
+ConstructorNode[1 parameter, toggled twice] OutputExecPins[0] out.exec.Exec type=- unconnected=-
+CallMethodNode[static, Catch wired] InputDataPins[0] in.data.value type=System.String unconnected=null
+CallMethodNode[static, Catch wired] OutputDataPins[0] out.data.Exception type=System.Exception unconnected=-
+CallMethodNode[static, Catch wired] InputExecPins[0] in.exec.Exec type=- unconnected=-
+CallMethodNode[static, Catch wired] OutputExecPins[0] out.exec.Exec type=- unconnected=-
+CallMethodNode[static, Catch wired] OutputExecPins[1] out.exec.Catch type=- unconnected=-
+CallMethodNode[static, Catch wired].CatchPin -> OutputExecPins[1]
+CallMethodNode[static, Catch wired].ExceptionPin -> OutputDataPins[0]
+CallMethodNode[static, Catch wired].TargetPin -> InputDataPins[0]
+MakeArrayNode[initializer, no elements] OutputDataPins[0] out.data.Array type=System.Object[] unconnected=-
+MakeArrayNode[initializer, no elements] InputTypePins[0] in.type.ElementType type=- unconnected=-
+MakeArrayNode[initializer, no elements].ArrayPin -> OutputDataPins[0]
+MakeArrayNode[initializer, no elements].ElementTypePin -> InputTypePins[0]
+MakeArrayNode[initializer, no elements].SizePin -> throws InvalidOperationException
+MakeArrayNode[initializer, 2 elements] InputDataPins[0] in.data.Element0 type=System.Object unconnected=null
+MakeArrayNode[initializer, 2 elements] InputDataPins[1] in.data.Element1 type=System.Object unconnected=null
+MakeArrayNode[initializer, 2 elements] OutputDataPins[0] out.data.Array type=System.Object[] unconnected=-
+MakeArrayNode[initializer, 2 elements] InputTypePins[0] in.type.ElementType type=- unconnected=-
+MakeArrayNode[initializer, 2 elements].ArrayPin -> OutputDataPins[0]
+MakeArrayNode[initializer, 2 elements].ElementTypePin -> InputTypePins[0]
+MakeArrayNode[initializer, 2 elements].SizePin -> throws InvalidOperationException
+MakeArrayNode[predefined size] InputDataPins[0] in.data.Size type=System.Int32 unconnected=null
+MakeArrayNode[predefined size] OutputDataPins[0] out.data.Array type=System.Object[] unconnected=-
+MakeArrayNode[predefined size] InputTypePins[0] in.type.ElementType type=- unconnected=-
+MakeArrayNode[predefined size].ArrayPin -> OutputDataPins[0]
+MakeArrayNode[predefined size].ElementTypePin -> InputTypePins[0]
+MakeArrayNode[predefined size].SizePin -> InputDataPins[0]
+MakeArrayNode[predefined size then initializer] OutputDataPins[0] out.data.Array type=System.Object[] unconnected=-
+MakeArrayNode[predefined size then initializer] InputTypePins[0] in.type.ElementType type=- unconnected=-
+MakeArrayNode[predefined size then initializer].ArrayPin -> OutputDataPins[0]
+MakeArrayNode[predefined size then initializer].ElementTypePin -> InputTypePins[0]
+MakeArrayNode[predefined size then initializer].SizePin -> throws InvalidOperationException
+MakeDelegateNode[static] OutputDataPins[0] out.data.Action<String> type=System.Action<System.String> unconnected=-
+MakeDelegateNode[static].TargetPin -> throws ArgumentOutOfRangeException
+MakeDelegateNode[instance] InputDataPins[0] in.data.Target type=System.String unconnected=null
+MakeDelegateNode[instance] OutputDataPins[0] out.data.Func<Int32,String> type=System.Func<System.Int32,System.String> unconnected=-
+MakeDelegateNode[instance].TargetPin -> InputDataPins[0]
+LiteralNode[int] InputDataPins[0] in.data.Value type=System.Int32 unconnected=null
+LiteralNode[int] OutputDataPins[0] out.data.Value type=System.Int32 unconnected=-
+LiteralNode[int].InputValuePin -> InputDataPins[0]
+LiteralNode[int].ValuePin -> OutputDataPins[0]
+LiteralNode[string] InputDataPins[0] in.data.Value type=System.String unconnected=null
+LiteralNode[string] OutputDataPins[0] out.data.Value type=System.String unconnected=-
+LiteralNode[string].InputValuePin -> InputDataPins[0]
+LiteralNode[string].ValuePin -> OutputDataPins[0]
+LiteralNode[bool] InputDataPins[0] in.data.Value type=System.Boolean unconnected=null
+LiteralNode[bool] OutputDataPins[0] out.data.Value type=System.Boolean unconnected=-
+LiteralNode[bool].InputValuePin -> InputDataPins[0]
+LiteralNode[bool].ValuePin -> OutputDataPins[0]
+LiteralNode[decimal] InputDataPins[0] in.data.Value type=System.Decimal unconnected=null
+LiteralNode[decimal] OutputDataPins[0] out.data.Value type=System.Decimal unconnected=-
+LiteralNode[decimal].InputValuePin -> InputDataPins[0]
+LiteralNode[decimal].ValuePin -> OutputDataPins[0]
+LiteralNode[enum] InputDataPins[0] in.data.Value type=System.DayOfWeek unconnected=null
+LiteralNode[enum] OutputDataPins[0] out.data.Value type=System.DayOfWeek unconnected=-
+LiteralNode[enum].InputValuePin -> InputDataPins[0]
+LiteralNode[enum].ValuePin -> OutputDataPins[0]
+RerouteNode[2 executions] InputExecPins[0] in.exec.Exec0 type=- unconnected=-
+RerouteNode[2 executions] InputExecPins[1] in.exec.Exec1 type=- unconnected=-
+RerouteNode[2 executions] OutputExecPins[0] out.exec.Exec0 type=- unconnected=-
+RerouteNode[2 executions] OutputExecPins[1] out.exec.Exec1 type=- unconnected=-
+RerouteNode[1 data] InputDataPins[0] in.data.Data0 type=System.Int32 unconnected=null
+RerouteNode[1 data] OutputDataPins[0] out.data.Data0 type=System.Int32 unconnected=-
+RerouteNode[1 type] InputTypePins[0] in.type.Type0 type=- unconnected=-
+RerouteNode[1 type] OutputTypePins[0] out.type.Type0 type=- unconnected=-
+VariableGetterNode[static] OutputDataPins[0] out.data.Int32 type=System.Int32 unconnected=-
+VariableGetterNode[static].IndexPin -> null
+VariableGetterNode[static].TargetPin -> null
+VariableGetterNode[static].ValuePin -> OutputDataPins[0]
+VariableSetterNode[static] InputDataPins[0] in.data.NewValue type=System.Int32 unconnected=null
+VariableSetterNode[static] OutputDataPins[0] out.data.Int32 type=System.Int32 unconnected=-
+VariableSetterNode[static] InputExecPins[0] in.exec.Exec type=- unconnected=-
+VariableSetterNode[static] OutputExecPins[0] out.exec.Exec type=- unconnected=-
+VariableSetterNode[static].IndexPin -> null
+VariableSetterNode[static].NewValuePin -> InputDataPins[0]
+VariableSetterNode[static].TargetPin -> null
+VariableSetterNode[static].ValuePin -> OutputDataPins[0]
+VariableGetterNode[instance] InputDataPins[0] in.data.Target type=System.Uri unconnected=null
+VariableGetterNode[instance] OutputDataPins[0] out.data.Int32 type=System.Int32 unconnected=-
+VariableGetterNode[instance].IndexPin -> null
+VariableGetterNode[instance].TargetPin -> InputDataPins[0]
+VariableGetterNode[instance].ValuePin -> OutputDataPins[0]
+VariableSetterNode[instance] InputDataPins[0] in.data.Target type=System.Uri unconnected=null
+VariableSetterNode[instance] InputDataPins[1] in.data.NewValue type=System.Int32 unconnected=null
+VariableSetterNode[instance] OutputDataPins[0] out.data.Int32 type=System.Int32 unconnected=-
+VariableSetterNode[instance] InputExecPins[0] in.exec.Exec type=- unconnected=-
+VariableSetterNode[instance] OutputExecPins[0] out.exec.Exec type=- unconnected=-
+VariableSetterNode[instance].IndexPin -> null
+VariableSetterNode[instance].NewValuePin -> InputDataPins[1]
+VariableSetterNode[instance].TargetPin -> InputDataPins[0]
+VariableSetterNode[instance].ValuePin -> OutputDataPins[0]
+VariableGetterNode[local] OutputDataPins[0] out.data.Int32 type=System.Int32 unconnected=-
+VariableGetterNode[local].IndexPin -> null
+VariableGetterNode[local].TargetPin -> null
+VariableGetterNode[local].ValuePin -> OutputDataPins[0]
+VariableSetterNode[local] InputDataPins[0] in.data.NewValue type=System.Int32 unconnected=null
+VariableSetterNode[local] OutputDataPins[0] out.data.Int32 type=System.Int32 unconnected=-
+VariableSetterNode[local] InputExecPins[0] in.exec.Exec type=- unconnected=-
+VariableSetterNode[local] OutputExecPins[0] out.exec.Exec type=- unconnected=-
+VariableSetterNode[local].IndexPin -> null
+VariableSetterNode[local].NewValuePin -> InputDataPins[0]
+VariableSetterNode[local].TargetPin -> null
+VariableSetterNode[local].ValuePin -> OutputDataPins[0]
+VariableGetterNode[indexer] InputDataPins[0] in.data.Target type=System.Uri unconnected=null
+VariableGetterNode[indexer] InputDataPins[1] in.data.Index type=System.Object unconnected=null
+VariableGetterNode[indexer] OutputDataPins[0] out.data.Int32 type=System.Int32 unconnected=-
+VariableGetterNode[indexer].IndexPin -> InputDataPins[1]
+VariableGetterNode[indexer].TargetPin -> InputDataPins[0]
+VariableGetterNode[indexer].ValuePin -> OutputDataPins[0]
+VariableSetterNode[indexer] InputDataPins[0] in.data.Target type=System.Uri unconnected=null
+VariableSetterNode[indexer] InputDataPins[1] in.data.Index type=System.Object unconnected=null
+VariableSetterNode[indexer] InputDataPins[2] in.data.NewValue type=System.Int32 unconnected=null
+VariableSetterNode[indexer] OutputDataPins[0] out.data.Int32 type=System.Int32 unconnected=-
+VariableSetterNode[indexer] InputExecPins[0] in.exec.Exec type=- unconnected=-
+VariableSetterNode[indexer] OutputExecPins[0] out.exec.Exec type=- unconnected=-
+VariableSetterNode[indexer].IndexPin -> InputDataPins[1]
+VariableSetterNode[indexer].NewValuePin -> InputDataPins[2]
+VariableSetterNode[indexer].TargetPin -> InputDataPins[0]
+VariableSetterNode[indexer].ValuePin -> OutputDataPins[0]
