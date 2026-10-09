@@ -983,7 +983,7 @@ T094b before G5b's T093–T095, so the search safety net also guards T094.
 
 ### Batch G4c — model: sonnet — T092h–T092j — 4 units
 
-- [ ] T092h [US9] Method signature formatter (1 unit, FR-093; owner decision 2026-10-08). It comes first: on its own
+- [x] T092h [US9] Method signature formatter (1 unit, FR-093; owner decision 2026-10-08). It comes first: on its own
   it fixes the worst problem of both pickers, the raw signatures. Test first:
   `tests/NetPrints.Editor.Tests/Search/MethodSignatureFormatterTests.cs`, with `MethodSpecifier` and
   `ConstructorSpecifier` values as the reflection provider returns them for BCL types: `object.ToString` gives
@@ -997,7 +997,7 @@ T094b before G5b's T093–T095, so the search safety net also guards T094.
   the two pickers (`SelectMethodDialog.axaml` and the overload combo in `NodeView.axaml`), formats through it; node
   search keeps `SuggestionItem.FormatMethod`. Re-baseline `dialog-select-method.png` and `node-call-method.png` if
   they show the text (T092j and T092k re-record them).
-- [ ] T092i [US9] Shared method list (2 units, FR-094). Test first:
+- [x] T092i [US9] Shared method list (2 units, FR-094). Test first:
   `tests/NetPrints.Editor.Tests/Controls/MethodPickerListViewModelTests.cs`: the rows are one flat list of group
   header rows and method rows, because Avalonia's `ListBox` has no grouping, and header rows cannot be selected;
   groups keep the order the caller gives, and methods inside a group sort by name, then parameter count; `Filter`
@@ -1013,7 +1013,7 @@ T094b before G5b's T093–T095, so the search safety net also guards T094.
   `InitializeComponent` (keys through behaviors, `avalonia-behaviors`), and `MethodPickerListViewModel` (`Filter`,
   `Rows`, `Selected`, `PickCommand`, `CancelCommand`). Filtering lives in the view model (owner decision), not in a
   view collection or code-behind. The row, header, current and dimmed classes go in `EditorStyles.axaml`.
-- [ ] T092j [US9] Override method dialog (1 unit, FR-095). Test first: `DialogTests` (select method) and the override
+- [x] T092j [US9] Override method dialog (1 unit, FR-095). Test first: `DialogTests` (select method) and the override
   cases of `ShellProjectActionsTests`, with a realistic list: for a class that derives from `Exception`, the dialog
   shows the groups `Exception` then `Object` in `DialogShell`, titled "Override method" with an icon id, about 640
   by 480 (width `Dialog.MaxWidth`, list height `Dialog.ListMaxHeight`, which does not change while filtering);

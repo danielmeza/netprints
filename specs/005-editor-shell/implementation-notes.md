@@ -2109,3 +2109,54 @@ test-first. The spec's Clarifications, session 2026-10-09, record them.
   `DialogTests`. Snapshots re-baselined and opened: `dialog-error`, `dialog-select-type`, `dialog-references`.
 - Ratchet: Margin 59 to 52 (the dialogs lost their spacing margins), FontSize 0. The ratchet file also dropped a stale
   `InspectorPanelView` entry that was already below its baseline.
+
+## Batch G4c (T092h, T092i, T092j: method signature formatter, shared method list, override dialog)
+
+- T092h: `Search/MethodSignatureFormatter` (`Format` for a method and for a constructor, `DeclaringTypeName` for group
+  headers) writes `string ToString()`, `void WriteLine(string format, object arg0)`, `T Find<T>(Predicate<T> match)`,
+  `StringBuilder(int capacity)`; keywords for the 15 built-in types, `int?`, `int[][]`, `Dictionary<string, List<int>>`,
+  nested types as `Outer.Inner`, several return types as a tuple. It uses string concatenation and an ordinal keyword
+  table only, so the culture does not matter (a test runs it under tr-TR and de-DE). `MethodSpecifierConverter` formats
+  through it and now also accepts a `ConstructorSpecifier` (the overload combo shows constructors); node search keeps
+  `SuggestionItem.FormatMethod`. Header names do not take keywords: the group of `System.Object` reads `Object`.
+- Core change: `MethodParameter` had no way to say `params`, so it gained `IsParams { get; init; }` (PublicAPI.Unshipped),
+  set by `ReflectionConverter` from `IParameterSymbol.IsParams` and by the catalog `SpecifierFactory` from
+  `CatalogParameter.Params`. Constructors are unchanged.
+- T092i: `Controls/MethodPickerList` (`UserControl`, code-behind is `InitializeComponent` only) over
+  `MethodPickerListViewModel`. Decisions: items are `MethodPickerItem` records (`For(MethodSpecifier, isCurrent,
+  isOverridden)`, `For(ConstructorSpecifier, isCurrent)`), rows are `MethodPickerRow` (header or method). Groups keep the
+  first-appearance order of the caller; inside a group the current row is first, then name (ordinal, ignore case),
+  parameter count, signature. The current row is first inside its group, not before the first header (with one group
+  this is the same). `Selected` refuses a header or an overridden row (the selection stays), and the row container is
+  disabled through `IsPickable`, which makes the keyboard skip headers. The list has a fixed height
+  (`Dialog.ListMaxHeight`) so it does not change while filtering; an `EmptyState` fills it when nothing matches.
+  Down uses a tunnel `KeyTrigger` plus `FocusControlAction`, Enter in the box and the list picks, Esc cancels
+  (`UserControl.KeyBindings`), double tap picks. The list needs `Focusable="True"` and the list's Enter a tunnel
+  strategy, as on the start page. Classes `methodRow` (`header`, `current`, `dimmed`) and `methodMark` and the
+  `ListBox.methodPicker ListBoxItem` style are in `EditorStyles.axaml`; no new colour token (accent colour and
+  `SystemControlForegroundBaseMediumBrush`).
+- API for the overload flyout (T092k): `new MethodPickerListViewModel(items, showGroupHeaders: false)` for one type's
+  overloads; host `<ctl:MethodPickerList DataContext="{Binding Picker}" />` (give it a `Width`); listen to `Picked`
+  (`EventHandler<MethodPickerItem>`, `item.Method` or `item.Constructor`) and `Cancelled`. A single tap does not pick
+  (selection only); add `ExecuteCommandOnTappedBehavior` on the flyout's own host if wanted.
+- T092j: `SelectMethodDialog` is a `Window` with `Width` `Dialog.MaxWidth` and `SizeToContent="Height"` around a
+  `DialogShell` (icon `IconIds.CategoryMethod`, title from `SelectMethodDialogViewModel.Title`), a Cancel and an
+  Override button (`List.CancelCommand`, `List.PickCommand`); it came out 640 by 500 in the snapshot. The ComboBox, the
+  fixed 700 by 160 size, `SelectedMethod`/`SelectCommand` and `AutomationIds.SelectMethodBox` are gone;
+  `DialogSizingAllowlist` is empty. The view model orders groups as the caller gave them but moves `System.Object` last,
+  and drops a method that a nearer type already declares with the same name and parameter types (the provider lists the
+  inherited methods of every base type, so `ToString` came once per type). Decision: a new `IEditorDialogs.
+  SelectOverrideAsync(methods, overriddenNames)` for the override, while `SelectMethodAsync(methods)` (make delegate,
+  node search) opens the same dialog titled "Select method" with a Select button. "Already overrides" is by name, as
+  `GraphUtil.AddOverrideMethod` refuses a second method of the same name; `ShellProjectActions` passes the class's
+  method names.
+- Tests (written first): `MethodSignatureFormatterTests`, `MethodPickerListViewModelTests`, `MethodPickerListTests`
+  (headless), `DialogViewModelTests`, the override cases of `ShellProjectActionsTests`, the select-method cases of
+  `DialogTests`. Red: all of them first failed to compile (the new types did not exist); then assertion red where it
+  compiled: `DialogWindowsSizeToContentOrAreAllowlisted` with the allowlist emptied, and in `MethodPickerListTests` the
+  Down focus (needed `Focusable`) and Enter in the list (needed a tunnel route). The formatter and view model tests
+  passed on their first run after the code compiled. Ratchet: Margin 52, FontSize 0 (unchanged; the new views use
+  tokens). Snapshot re-baselined and opened: `dialog-select-method` (the realistic Exception list, `Finalize` dimmed);
+  `node-call-method` and the start pages the update run rewrote with no visible change were restored.
+- Known flake seen once in the full Release run: `BusyStateTests.AReloadWarmsTheOverloadsOfTheOpenProjectsGraphs`; it
+  passes alone and in the project run.
