@@ -785,14 +785,17 @@ Contracts: contributions.md, commands.md, shell.md §7. **Independent test**: US
 icon ids on one vector family, the product mark, the node-header palette with pin and selection tokens, focus,
 density and motion tokens, one empty-state control and one dialog shell that every dialog sizes to, checked at high
 DPI and on a contact sheet (FR-084–FR-089, ADR-0021 with Amendment 1); type-scoped search that follows catalogs
-(FR-090–FR-092); readable method pickers and "self" on unconnected Target pins (FR-093–FR-096); code-behind held to
-justified gestures (FR-100).
+(FR-090–FR-092); readable method pickers and "self" on unconnected Target pins (FR-093–FR-096); node search and
+undo fixes (FR-097–FR-099); pins and wires coloured by data type, hollow until connected, and the canvas details
+(FR-107–FR-110); code-behind held to justified gestures (FR-100).
 **Independent test**: US9's and US10's; SC-007, SC-008, SC-011, SC-012; SC-005's theme part.
 
 **Task ids**: the visual-polish tasks (gap research 2026-10-06) take a letter suffix after the existing task they
 follow in execution order (`T090a` runs after `T090`). Existing ids are unchanged, sub-phase G keeps the range
 T090–T101, and T112–T114 stay the last tasks of the phase. The owner decisions of 2026-10-08 (spec Clarifications)
-add T091b and T092g–T092l the same way.
+add T091b and T092g–T092l the same way, and those of 2026-10-09 add T092m–T092p (batch G4e), bug (e) of T094a and
+T104a (sub-phase H). G5 is split into G5a and G5b to keep each batch within the sizing rule; G5a runs T094a and
+T094b before G5b's T093–T095, so the search safety net also guards T094.
 
 ### Batch G1 — model: sonnet — T090–T090b — 5 units
 
@@ -879,7 +882,7 @@ add T091b and T092g–T092l the same way.
   `src/NetPrints.Editor/EditorStyles.axaml`, the header glyph in `src/NetPrints.Editor/Graph/Nodes/NodeView.axaml`,
   and the role from the node view model (`src/NetPrints.Editor/Graph/Nodes/`). Re-baseline
   `canvas-every-node-kind.png`, `node-call-method.png` and `node-method-entry-parameters.png`. Colouring pins and
-  variable headers by data type is P6.
+  variable headers by data type is P6 (pins and wires later moved to T092n, owner decision 2026-10-09).
 - [x] T091b [US9] "self" on unconnected Target pins (1 unit, FR-096; owner decision 2026-10-08). Code generation
   already writes `this` for an unconnected Target pin (`BuiltInNodeTranslators`: the variable setter and getter at
   about lines 551 and 774, call method, and make delegate at about line 833); the canvas shows nothing there. Test
@@ -1047,25 +1050,82 @@ add T091b and T092g–T092l the same way.
   overloads (`Console.WriteLine` in the sample), open the overloads button, see the current overload marked and
   first, filter and pick another: the node's pins change; Ctrl+Z restores the previous overload.
 
-### Batch G5 — model: sonnet — T093–T095 (with T094a) — 7 units
+### Batch G4e — model: sonnet — T092m–T092p — 4.5 units
 
-- [ ] T093 [US9] Theme (FR-082). Test first in `tests/NetPrints.Editor.Tests/State/EditorSettingsTests.cs` plus a headless
-  test: `theme.dark`, `theme.light` and `theme.system` set `RequestedThemeVariant`; the choice is stored as
-  `netprints.editor` → `theme` in `settings.json` through the P1 settings API (`EditorSettings`) and applied at startup
-  (Dark by default). This closes SC-005's theme part and empties the T025 pending list.
-- [ ] T094 [US10] Type-scoped catalog routing (2 units). Test first in
-  `tests/NetPrints.Editor.Tests/Reflection/CompositeReflectionProviderTests.cs` (research R10, SC-007), with
-  `tests/Fixtures/Catalog/CatalogAnnotatedLib` (an embedded catalog) and `tests/Fixtures/Extensions/Fx.Catalog` (an
-  extension catalog). A type-scoped
-  query for a cataloged type returns only the catalog's members (0 unannotated, 0 `[NetPrintsIgnore]`). A type from an
-  uncovered assembly returns the same members as before (captured before the change). A covered assembly whose
-  catalog does not list the type returns none, with the reason "hidden by catalog <id>". Inherited members come from
-  the source that covers the base type's assembly. Project types are always live. `GetTypeFromSpecifier` and the
-  binding of existing nodes are unchanged, and a graph that uses a hidden member builds and runs with unchanged
-  output. Then `src/NetPrints.Reflection/Catalogs/CompositeReflectionProvider.cs`, and Reflection's
-  `PublicAPI.Unshipped.txt` if its public API changes.
-- [ ] T094a [US7] Node search safety net and three fixes (3 units, FR-097, FR-098). A characterization pass, then red
-  and green, before T095 edits the search view model. Test first, in `tests/NetPrints.Editor.Tests/Search/`:
+Owner decisions 2026-10-09 (spec Clarifications): canvas details, pin and wire colours by data type (roadmap C-3,
+moved here from P6) and hollow unconnected pins, all before the contact sheet (T098b) so it shows them, plus the
+recent-row tile. The three canvas tasks run in order, since the colours fill the shapes T092m settles, and each
+re-baselines the snapshots it changes (open every PNG).
+
+- [ ] T092m [US9] Canvas details (1 unit, FR-109). Test first: headless
+  `tests/NetPrints.Editor.UITests/Theming/CanvasDetailTests.cs`, in Dark and Light:
+  - the pixel between a pin and its label equals the node body's pixel within 2 per channel (red today: the Nodify
+    `NodeInput`/`NodeOutput` default background draws (45,45,48) on a (21,21,21) body);
+  - every type pin draws the geometry of the `Pin.TypeShape` resource, and `Pin.TypeShape.Triangle` and
+    `Pin.TypeShape.Diamond` both resolve (`Pin.TypeShape` stays the triangle until the owner's call at T098b);
+  - `NodeIcons.For` gives If Else, For Loop, Explicit Cast and Await a glyph of their own (red today:
+    `NodeKindDefault`, `CircleSmall`, which reads like a stray dash), and a table of every built-in node type with
+    its glyph id shows that no built-in node with execution pins keeps the default;
+  - pointer-over on a pin's hitbox sets the pin shape's stroke to `Pin.HoverStroke` (red today: the
+    `Shape.pin:pointerover` and `Panel.pinHitbox > Shape` rules in `NodeView.axaml` match only a control whose type
+    is exactly `Shape`, so they never match the `Rectangle`, `Ellipse` and `Polygon` pins; see the G2 notes);
+  - the grid draws `Canvas.Background`, which resolves in both variants with today's colours (red: the grid uses
+    Semi's `SystemRegionColor`).
+  Then `NetPrints.NodeInput` and `NetPrints.NodeOutput` control themes `BasedOn` the Nodify defaults with a
+  transparent background, applied in `src/NetPrints.Editor/Graph/Nodes/NodeView.axaml`; the type pin as a `Path`
+  whose `Data` is `{DynamicResource Pin.TypeShape}`; the four new `IconIds` (MDI glyph names in their XML docs) and
+  their `NodeIcons` entries; the selectors as `:is(Shape).pin:pointerover` and `Panel.pinHitbox > :is(Shape)`;
+  `Canvas.Background` in `EditorStyles.axaml` (Dark: the #000 of today) and `GraphEditorView.axaml`, and in
+  `ThemeTokenTests`. Re-baseline `canvas-every-node-kind`, `canvas-preview-cable`, `editor-shell-main`,
+  `node-call-method` and `node-method-entry-parameters`.
+- [ ] T092n [US9] Pin and wire colours by data type (2 units, FR-107; roadmap C-3, which sizes it S). The tokens
+  exist since T091a (`Pin.Bool` to `Pin.Generic`, defined and unused); this task adds the classification and the
+  styles. Test first:
+  - `tests/NetPrints.Editor.Tests/Graph/Pins/PinTypeFamilyTests.cs` (no UI), a table from `TypeSpecifier` to family
+    through the reflection provider: `bool` Bool; `sbyte` to `ulong`, `nint`, `nuint` Integer; `float`, `double`,
+    `decimal` Float; `string`, `char` String; `Action`, `Func<int>`, `EventHandler` and a project delegate Delegate;
+    `DateTime`, `DayOfWeek` and a project struct ValueType; `object`, `Exception`, `IDisposable`, `int[]`,
+    `List<int>` and `Task<int>` Object; `int?` Integer; a generic parameter `T` and an unresolvable type Generic;
+    execution pins Exec and type pins Type.
+  - `NodePinViewModel` and `ConnectionViewModel` tests: a pin's family class follows an overload change, a generic
+    resolution, a retyped method parameter and their Undo; a wire's class is its source pin's family and follows a
+    change of that pin's type; the preview cable takes the family of the pin it starts from.
+  - Headless `CanvasPaletteTests`: the pins and wires of the every-kind graph draw their family tokens in Dark and
+    Light (red today: one brush per pin kind); a selected wire still draws `Canvas.WireSelected`.
+  - `tests/NetPrints.Editor.UITests/Theming/PinContrastTests.cs`: every family token, `Pin.Exec` and `Pin.Type` reach
+    3:1 (WCAG 2.x non-text contrast; relative luminance computed in the test, as in `CanvasPaletteTests`) against
+    the node body (`Node.CardBackground` composited over `Canvas.Background`) and against `Canvas.Background`, the
+    wire at the opacity the `NetPrints.Connection` theme draws it with, in Dark and Light. It reads the tokens, so
+    it re-checks the owner's T098b calls.
+  Then a `PinTypeFamily` lookup in `src/NetPrints.Editor/Graph/Pins/` in the style of `NodeRole` (one
+  `pin-<family>` style class per family, no switch on type names), the family class on the pin shapes and as
+  `ConnectionViewModel.KindClass` (through `StyleClassBehavior`), and the per-family pin and cable styles in
+  `EditorStyles.axaml`. Token values are tuned only where the contrast test fails, each change noted. `Pin.Data`
+  loses its last user: it is removed with its `ThemeTokenTests` entry, and the `NetPrints.Connection` and
+  `NetPrints.Connector` defaults become `Pin.Generic`. Variable headers by type stay in P6 (C-2).
+- [ ] T092o [US9] Hollow unconnected pins (1 unit, FR-108; owner: "cuando el pin está vacío se ve vacío también el
+  relleno del pin"). Test first: headless `tests/NetPrints.Editor.UITests/Graph/PinFillTests.cs`, in Dark and
+  Light: an unconnected execution, data and type pin draws its outline in its family colour at the
+  `Pin.OutlineThickness` token with a transparent fill, and a connected one is filled with that colour (red today:
+  every pin is filled, and an unconnected one is drawn at 60 %); connecting, disconnecting, Undo and Redo switch it
+  (wires alone are not undoable here, so Undo goes through deleting the wire's source node, as in
+  `TargetPinSelfTests`); no pin keeps the 60 % `dimmed` opacity; `PinContrastTests` also covers the outline. Then a
+  `connected` class from `NodePinViewModel.IsConnected` on the pin shape (it replaces `dimmed`, and `IsDimmed` goes
+  if nothing else reads it), the hollow and filled styles in `EditorStyles.axaml`, and `Pin.OutlineThickness` in
+  `ThemeTokenTests`.
+- [ ] T092p [US5] [US9] Recent-row icon tile (0.5 unit, FR-110). Test first: in
+  `tests/NetPrints.Editor.UITests/Shell/StartPageLayoutTests.cs` (headless), each recent row's first column is a
+  tile of `StartPage.RecentTileSize` with `Radius.Control` corners and a `StartPage.RecentTileBackground` that
+  resolves in Dark and Light, holding an `IconPresenter` with `IconIds.Project`; a not-found row shows the same tile
+  and keeps its status text (red: the row starts with its name). Then `RecentProjectsTileView.axaml` and the tokens
+  in `EditorStyles.axaml`. No thumbnail, no chips, and no file access in a getter or converter:
+  `RecentProjectItemViewModel` gains no `System.IO` call. Re-baseline `start-page-wide-recent` and
+  `start-page-narrow-recent`.
+
+### Batch G5a — model: sonnet — T094a–T094b — 6 units
+
+- [ ] T094a [US7] Node search safety net and undo fixes (4 units, FR-097, FR-098, FR-099). A characterization pass,
+  then red and green, before T095 edits the search view model. Test first, in `tests/NetPrints.Editor.Tests/Search/`:
   - Goldens (`NodeSearchGoldenTests.cs`, a small fixture assembly instead of the full runtime): text snapshots of the
     built rows (`H:Category` / `  Text | Icon`) over graphs {method, constructor, class, event} × pins {none, exec in,
     exec out, string data in, string data out, type in, int type out}; filter goldens for "for", "write line",
@@ -1091,14 +1151,41 @@ add T091b and T092g–T092l the same way.
   - Bug (d), red then green (Review F R12, pre-existing): AwaitNode result-type change while connected throws
     'Collection was modified' (Review F R12): when the awaited task's result type changes while the result pin is
     connected, the await node's update loop must not enumerate a collection it modifies.
+  - Bug (e), red then green (FR-099; owner decision 2026-10-09; 1 of the 4 units), in
+    `tests/NetPrints.Editor.Tests/UndoRedo/` (`ThePurityCheckBoxGoesThroughUndo` and its undo and redo cases). Use a
+    call that returns a value, such as `Math.Max`: a void call cannot be made pure, so a `Console.WriteLine` test
+    fails on the purity check and says nothing about the wires. Wire the call's In, Out and Catch execution pins and
+    its Exception pin to other nodes, then set `NodeViewModel.IsPure` to true. Red today: the execution wires are
+    gone and the undo stack is empty (the setter bypasses it). Green: one undo entry and the class marked dirty;
+    Undo makes the call impure again with every execution wire (Catch included) and the Exception pin's data wires
+    restored; Redo removes them again; unticking Pure is one undo step too.
   Then `src/NetPrints.Editor/Search/SuggestionListViewModel.cs` and `src/NetPrints.Editor/Graph/Nodes/NodeViewModel.cs`
-  (the pin-list change as one `ModelOperations` undo entry). This is the safety net the P3 search refactor (SUG1–SUG3)
-  relies on.
+  (the pin-list change and the purity change, each as one `ModelOperations` undo entry that captures the connections
+  it removes). This is the safety net the P3 search refactor (SUG1–SUG3) relies on.
 - [ ] T094b [US8] Method parameter edits retarget the method's callers (Review F R3, method half; 2 units). Test first:
   adding, removing, retyping or reordering a method's parameter (the entry node's +/- pin buttons and its type-pin
   connections, which change the signature outside any command) leaves the calls to it on the old signature, so the class
   stops compiling. Route those edits through one undoable command that calls `SignatureChange.RetargetCallers` (added
   in F-F2 for events) with the project's classes, and cover add, remove, retype and undo in one step.
+
+### Batch G5b — model: sonnet — T093, T094, T095 — 4 units
+
+- [ ] T093 [US9] Theme (FR-082). Test first in `tests/NetPrints.Editor.Tests/State/EditorSettingsTests.cs` plus a headless
+  test: `theme.dark`, `theme.light` and `theme.system` set `RequestedThemeVariant`; the choice is stored as
+  `netprints.editor` → `theme` in `settings.json` through the P1 settings API (`EditorSettings`) and applied at startup
+  (Dark by default). This closes SC-005's theme part and empties the T025 pending list.
+- [ ] T094 [US10] Type-scoped catalog routing (2 units). Test first in
+  `tests/NetPrints.Editor.Tests/Reflection/CompositeReflectionProviderTests.cs` (research R10, SC-007), with
+  `tests/Fixtures/Catalog/CatalogAnnotatedLib` (an embedded catalog) and `tests/Fixtures/Extensions/Fx.Catalog` (an
+  extension catalog). A type-scoped
+  query for a cataloged type returns only the catalog's members (0 unannotated, 0 `[NetPrintsIgnore]`). A type from an
+  uncovered assembly returns the same members as before (captured before the change). A covered assembly whose
+  catalog does not list the type returns none, with the reason "hidden by catalog <id>". Inherited members come from
+  the source that covers the base type's assembly. Project types are always live. `GetTypeFromSpecifier` and the
+  binding of existing nodes are unchanged, and a graph that uses a hidden member builds and runs with unchanged
+  output. Then `src/NetPrints.Reflection/Catalogs/CompositeReflectionProvider.cs`, and Reflection's
+  `PublicAPI.Unshipped.txt` if its public API changes. T094a's goldens (G5a), over a fixture assembly that no catalog
+  covers, stay green.
 - [ ] T095 [US10] The scoped search's empty state names the hiding catalog (FR-091), through the `EmptyState` control
   (T092e, FR-088): `src/NetPrints.Editor/Search/SuggestionListViewModel.cs` and its view; headless test first.
 
@@ -1135,8 +1222,12 @@ add T091b and T092g–T092l the same way.
   `tests/NetPrints.Editor.UITests/Snapshots/ContactSheetTests.cs` (red: the composer is a stub that throws): every
   panel (project tree, inspector, variables, Errors, Output, C#), the start page, a graph document, the eight P3a
   dialogs, the Override method dialog (T092j) and a call node with its overloads flyout open (T092k), in Dark and
-  Light at 1.0 and 2.0, render into one labelled grid, `contact-sheet.png`, in the test results directory; the test
-  asserts the tile count (18 × 2 × 2) and that no tile is one flat colour. It compares no
+  Light at 1.0 and 2.0, render into one labelled grid, `contact-sheet.png`, in the test results directory. An
+  owner-calls strip follows (FR-089, owner decisions 2026-10-09): the graph tile in Dark at 1.0 as it ships, then
+  with diamond type pins (`Pin.TypeShape.Diamond`, T092m), with the canvas at dark grey (`Canvas.Background`
+  `#262626` instead of #000), with an opaque card (`Node.CardBackground` `#FF202020` instead of `#AA202020`), and
+  with all three; the test overrides those resources on the tile, so the product carries no option for them. The
+  test asserts the tile count (18 × 2 × 2 + 5) and that no tile is one flat colour. It compares no
   baseline. Then `.github/workflows/ci.yml` uploads the file as the `contact-sheet` artifact of the UI tests job
   (`CiWorkflowTests` updated).
 - [ ] T099 **Checkpoint G**: report SC-007, SC-008 (tokens in both variants, no colour literal, no type name ending in
@@ -1145,17 +1236,19 @@ add T091b and T092g–T092l the same way.
   amendment, ADR-0021 (as amended), `THIRD-PARTY-NOTICES.md`, the brand export page in `docs/contributing/`, the
   `avalonia-*` skills, release notes (Light and System themes; vector icons and the product mark in vector form;
   focus rings, empty states and one dialog layout; readable override and overload pickers; "self" on unconnected
-  Target pins; type-scoped search follows catalogs).
+  Target pins; pins and wires coloured by data type, hollow until connected; clean pin rows and flow glyphs on the
+  canvas; an icon tile on recent projects; Pure on a call is undoable; type-scoped search follows catalogs).
 
 ### Batch G-R — model: opus — T100 (sub-phase review)
 
 - [ ] T100 [US9] [US10] Review sub-phase G: an Opus reviewer who did not implement it reviews the whole diff of batches
   G1–G7 (from the commit before the first batch to HEAD): US9, US10 and FR-100 end to end against spec.md
-  (FR-080–FR-098, FR-100), research R10–R12 and R17, ADR-0007, ADR-0021 (with Amendment 1), ADR-0023 and the
-  `avalonia-*` skills, the constitution and plan.md's standing constraints. It runs the independent test of the
-  phase. Visual review: it downloads the `contact-sheet` artifact of the last G CI run, attaches it to the review,
-  and checks icon consistency, contrast, alignment, density, focus rings, the method pickers, both themes and 200 %;
-  the owner approves the product mark there. Findings go to
+  (FR-080–FR-099, FR-100, FR-107–FR-110), research R10–R12 and R17, ADR-0007, ADR-0021 (with Amendment 1), ADR-0023
+  and the `avalonia-*` skills, the constitution and plan.md's standing constraints. It runs the independent test of
+  the phase. Visual review: it downloads the `contact-sheet` artifact of the last G CI run, attaches it to the
+  review, and checks icon consistency, contrast, alignment, density, focus rings, the method pickers, the pin and
+  wire colours, hollow and filled pins, both themes and 200 %; the owner approves the product mark there and makes
+  the three calls of the owner-calls strip (type-pin shape, canvas base colour, card opacity), recorded as findings. Findings go to
   the PR and to implementation-notes under "Review G", a visual finding with the tile it refers to. No code changes
   in this task.
 
@@ -1163,7 +1256,9 @@ add T091b and T092g–T092l the same way.
 
 - [ ] T101 [US9] [US10] Fix every finding of T100, visual findings included (test first for behaviour findings), reply
   on each review thread with the fixing commit or the reason for deferral, and attach a new contact sheet to the reply
-  when a fix changes what it shows; whole suite plus the E2E run, commit; if the review had no findings, tick this
+  when a fix changes what it shows. The owner's three calls are applied here as token values (`Pin.TypeShape`,
+  `Canvas.Background` in Dark, `Node.CardBackground`) with `PinContrastTests` and `CanvasPaletteTests` green, the
+  unchosen type-pin geometry is removed, and the canvas snapshots are re-baselined; whole suite plus the E2E run, commit; if the review had no findings, tick this
   task with "no findings". The next sub-phase starts only after this batch is green on CI.
 
 ---
@@ -1204,7 +1299,7 @@ suite, the final review and merge preparation (FR-103, SC-010, every SC).
   Docs: `docs/guide/editor/saving-and-recovery.md` (T104) names the new folders. One E2E class reads the session log
   file for a scenario's expected line (3 runs).
 
-### Batch H1 — model: sonnet — T102–T104 — 4 units
+### Batch H1 — model: sonnet — T102–T104a — 4.5 units
 
 - [ ] T102 Guide screenshots (2 units): `tests/NetPrints.Desktop.E2ETests/Scenarios/GuideScreenshotTests.cs` (opt-in with
   `NETPRINTS_GUIDE_SHOTS=1`, skipped with a stated reason otherwise) drives a copy of the sample through each guide's
@@ -1216,6 +1311,14 @@ suite, the final review and merge preparation (FR-103, SC-010, every SC).
 - [ ] T104 [P] `docs/guide/editor/saving-and-recovery.md` (markers, the prompt, backups and where they live, recovery,
   nothing written into the project) and `commands-and-shortcuts.md` (menus, the command bar, the palette, and the
   shortcut table between marker comments), each with screenshots.
+- [ ] T104a [P] Agent rules pointer (0.5 unit, FR-100; owner decision 2026-10-09). Another agent tool also works in
+  this repository and reads `.agents/rules/`; it must follow the same XAML rules without a second copy of them.
+  Test first: `AgentRulesPointToTheSkills` in `tests/NetPrints.Core.Tests/Core/SourceHygieneTests.cs`:
+  `.agents/rules/xaml.md` exists and has at most 15 lines; it names `AGENTS.md` and the `avalonia-xaml`,
+  `avalonia-styling` and `avalonia-behaviors` skills by their `.claude/skills/<name>/SKILL.md` paths, and each path
+  exists; there is no `.agents/skills/` folder (no forked copy of a skill) (red: the file does not exist). Then the
+  file, about 10 lines: the skills and AGENTS.md's "XAML and UI" section are the one source, listed by path, loaded
+  before editing `.axaml`, views, styles, converters or behaviors; the file holds no rule of its own.
 
 ### Batch H2 — model: sonnet — T105–T107 — 5 units
 
@@ -1287,7 +1390,7 @@ suite, the final review and merge preparation (FR-103, SC-010, every SC).
   serves E's state store (T061); D's `KeyboardOnlyTests` (T057) grows in F (T086); the T025 pending list empties in F
   (T080) and G (T093); SC-005's theme part closes in G (T093).
 - Inside G, the icon ids (T090a) come before every task that draws an icon or a glyph (T090b, T091a, T092b, T092e,
-  T092f, T092j, T092k), and the empty-state control (T092e) comes before the catalog message that uses it (T095).
+  T092f, T092j, T092k, T092m, T092p), and the empty-state control (T092e) comes before the catalog message that uses it (T095).
   The product mark and the empty states use E's start page and F's palette and go-to-anything. T090b removes the
   logo PNG before T092b's no-PNG test. The contact sheet (T098b) runs once the visual tasks are done, and the G
   review (T100) attaches it.
@@ -1297,12 +1400,18 @@ suite, the final review and merge preparation (FR-103, SC-010, every SC).
   before G6 and G7, so E7's seeded allowlist (T097), the code-behind migration (T098), the high-DPI snapshots and
   the contact sheet see the finished pickers. The "self" label (T091b) follows T091a in G2, so both canvas changes
   share one batch of snapshot updates.
+- The owner decisions of 2026-10-09 run in G4e, after G4d and before G7, so the contact sheet (T098b) shows the type
+  colours, the hollow pins and the canvas details: the canvas details (T092m) first, since they settle the pin
+  shapes and `Canvas.Background`, then the colours (T092n), whose contrast test reads `Canvas.Background`, then the
+  hollow pins (T092o), which outline in the family colours; the recent-row tile (T092p) is independent. In G5a the
+  pin-list undo (T094a bug c) comes before T094b, which routes the same entry-node pin edits through one command,
+  and the purity fix (T094a bug e) uses the same undo entry shape. The owner's T098b calls land in G-F (T101).
 - H comes last because the screenshots need a stable UI.
 - Within a batch, [P] tasks touch different files; tasks without [P] run in order.
 
 ## Parallel opportunities (inside a batch, for a single agent)
 
-- C3: T036 ∥ T037 ∥ T038. E1: T062 ∥ T063. F2: T078 ∥ T079. H1: T103 ∥ T104.
+- C3: T036 ∥ T037 ∥ T038. E1: T062 ∥ T063. F2: T078 ∥ T079. H1: T103 ∥ T104 ∥ T104a.
 
 ## Implementation strategy
 
@@ -1324,16 +1433,21 @@ suite, the final review and merge preparation (FR-103, SC-010, every SC).
 | D — lifecycle and feedback | 13 (T048–T060) | D1–D3 sonnet | D-R, D-F |
 | E — start page and persistence | 24 (T061–T073, with T071a–k) | E1–E4, E5a, E5b sonnet | E-R, E-F |
 | F — navigation and event inspector | 16 (T074–T089) | F1–F4 sonnet | F-R, F-F |
-| G — look, search and hygiene | 32 (T090–T101, with T090a–b, T091a–b, T092a–l, T094a–b, T098a–b) | G1, G2, G4a–G4d, G5–G7 sonnet; G3 haiku | G-R, G-F |
-| H — docs and polish | 14 (T102–T114, with T102a) | H0–H3 sonnet | H-R, H-F, H-M |
-| **Total** | **147** | 40 | 17 |
+| G — look, search and hygiene | 36 (T090–T101, with T090a–b, T091a–b, T092a–p, T094a–b, T098a–b) | G1, G2, G4a–G4e, G5a, G5b, G6, G7 sonnet; G3 haiku | G-R, G-F |
+| H — docs and polish | 15 (T102–T114, with T102a, T104a) | H0–H3 sonnet | H-R, H-F, H-M |
+| **Total** | **152** | 42 | 17 |
 
-Sub-phase G is 42 units in ten implementation batches (G1 5, G2 5, G3 3, G4a 3, G4b 3, G4c 4, G4d 3, G5 7, G6 4,
-G7 5). The visual-polish plan (S1, 2026-10-06) took it from 15 to 30 units: its tasks added 14 units and T096 grew
-by one; the roadmap's estimate for that growth is about 5–7 days. The owner decisions of 2026-10-08 (the G spec
-batch) add 9 units: the method pickers T092h–T092l (7 units, which the owner estimates at about 2 days), every
-dialog sizing to its content T092g (1) and "self" on Target pins T091b (1). G4 was split into G4a and G4b to keep
-each batch at 2–4 tasks.
+Sub-phase G is 49.5 units in twelve implementation batches (G1 5, G2 5, G3 3, G4a 3, G4b 3, G4c 4, G4d 3, G4e 4.5,
+G5a 6, G5b 4, G6 4, G7 5). The visual-polish plan (S1, 2026-10-06) took it from 15 to 30 units: its tasks added 14
+units and T096 grew by one; the roadmap's estimate for that growth is about 5–7 days. The owner decisions of
+2026-10-08 (the G spec batch) add 9 units: the method pickers T092h–T092l (7 units, which the owner estimates at
+about 2 days), every dialog sizing to its content T092g (1) and "self" on Target pins T091b (1). G4 was split into
+G4a and G4b to keep each batch at 2–4 tasks. F-F2 added T094b (2 units) to G5 without updating its header, so G
+was 44 units, not 42, before the owner decisions of 2026-10-09, which add 5.5: the canvas details T092m (1), pin
+and wire colours T092n (2) and hollow pins T092o (1), which pull roadmap item C-3 forward from P6 at its size S,
+the recent-row tile T092p (0.5) and T094a's purity bug (1). G4e holds the new G tasks because G4a would have had
+five, and G5 (five tasks, 10 units with the purity bug) is split into G5a and G5b. Sub-phase H is 19.5 units (H0
+5, H1 4.5 with the agent rules pointer T104a, H2 5, H3 5).
 
 ## Requirement coverage
 
@@ -1385,28 +1499,32 @@ each batch at 2–4 tasks.
 | FR-072 | T082, T085 |
 | FR-073 | T082, T083, T085 |
 | FR-080 | T090, T092, T092a |
-| FR-081 | T091, T091a |
+| FR-081 | T091, T091a, T092m |
 | FR-082 | T093 |
-| FR-084 | T090a, T096 |
+| FR-084 | T090a, T092m, T096 |
 | FR-085 | T090b, T092b |
-| FR-086 | T091a, T096 |
+| FR-086 | T091a, T092m, T096 |
 | FR-087 | T092c, T092d |
 | FR-088 | T092e, T092f, T092g, T092j, T095, T096 |
-| FR-089 | T098a, T098b, T100 |
+| FR-089 | T098a, T098b, T100, T101 |
 | FR-090, FR-092 | T094 |
 | FR-091 | T094, T095 |
 | FR-093 | T092h |
 | FR-094 | T092i, T092j, T092k |
 | FR-095 | T092j, T092k, T092l |
 | FR-096 | T091b |
-| FR-097, FR-098 | T094a |
-| FR-100 | T097, T098 |
+| FR-097, FR-098, FR-099 | T094a |
+| FR-100 | T097, T098, T104a |
 | FR-101 | T035 (accessible names, keyboard reach); ids in every view task; checked by every review |
 | FR-102 | T006, T043, T056, T057, T069, T070, T086, T092l, T096 |
 | FR-103 | T102–T108 |
 | FR-104 | constraint: no performance task; every review checks it |
 | FR-105 | T001, T002 |
 | FR-106 | T102a |
+| FR-107 | T092n, T098b |
+| FR-108 | T092o |
+| FR-109 | T092m, T098b, T101 |
+| FR-110 | T092p |
 | SC-001 | T043 |
 | SC-002 | T050, T056 |
 | SC-003 | T025, T035, T057, T080, T093 |
@@ -1417,7 +1535,7 @@ each batch at 2–4 tasks.
 | SC-008 | T001, T090, T091, T092, T092a, T092f, T092g, T092j, T097, T098 |
 | SC-009 | T086 |
 | SC-010 | T102–T108 |
-| SC-011 | T090a, T091a, T092b, T098a, T098b, T099, T100 |
+| SC-011 | T090a, T091a, T092b, T092n, T092o, T098a, T098b, T099, T100 |
 | SC-012 | T091b, T092h, T092i, T092j, T092k, T092l, T099 |
 
 ## Roadmap P3a coverage
@@ -1432,8 +1550,9 @@ Every bullet of the roadmap's P3a section (`.specify/memory/roadmap.md`) maps to
 | Commands: registry, command bar, menu, shortcuts (H3, H4); the P3 contribution point | T017–T026, T035, T054–T057 | user-defined shortcuts → P3 settings pages (R5) |
 | Document lifecycle (H1): dirty flag, `*`, prompt on close, autosave or backup | T020, T048–T056 | autosaving the original files is not offered in P3a (R6, spec Clarifications) |
 | Visual system (M3, L1): tokens, Nodify theme overrides | T090–T093 | L1 custom title bar → P6 (R11, R14); P3a sets the title text (T034) |
-| Visual polish in sub-phase G (gap research 2026-10-06, C-1 to C-16 as approved) | T090a–T090b, T091a, T092a–T092g, T098a–T098b, T100 | behaviour halves (type-coloured pins and headers, wire highlight, Compact switch, reduce motion, older dialogs other than Override method) → P6; C-5 title bar and C-9 wires → P6; C-15 status-bar contribution kind → P3 |
+| Visual polish in sub-phase G (gap research 2026-10-06, C-1 to C-16 as approved) | T090a–T090b, T091a, T092a–T092g, T098a–T098b, T100 | behaviour halves (type-coloured variable headers, wire highlight, Compact switch, reduce motion, older dialogs other than Override method) → P6; C-5 title bar and C-9 exec-wire style and thickness → P6; C-15 status-bar contribution kind → P3; type-coloured pins and wires (C-3) moved into G by the 2026-10-09 decisions |
 | Owner decisions 2026-10-08 (spec Clarifications): method pickers, "self" on Target pins, every dialog sized to content | T091b, T092g–T092l | a Self node in node search → P6 (proposed roadmap line, spec Clarifications) |
+| Owner decisions 2026-10-09 (spec Clarifications, after the design prototype audit): pins and wires by data type with hollow unconnected pins (C-3 from P6), canvas details, recent-row tile, purity through undo, agent rules pointer, three owner calls on the contact sheet | T092m–T092p, T094a (bug e), T098b, T101, T104a | the prototype is not merged; its structured translator is reference only for P7, and debug visuals wait for real host-channel data in P6 (roadmap notes) |
 | Persistence (L2): layout, tabs, zoom, window position | T061–T065, T070 | — |
 | Undo feedback (M16, shared with P6) | T020, T054 | undo history list → P6 (R5, R14) |
 | Docking on Dock.Avalonia, with the compatibility and testability checks | T030–T033, T064 | — |

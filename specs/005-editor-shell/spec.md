@@ -126,6 +126,30 @@ G spec batch in implementation-notes.md lists the tasks they add.
 - Q: Where does XAML rule E8 start? → A: From E-F7b's literal ratchet (`xaml-literal-ratchet.txt`: 4 `FontSize`
   literals in views), which T092 drives to zero.
 
+### Session 2026-10-09
+
+Owner decisions after two audits of a design prototype that another agent built in a separate worktree, before
+batch G3. Nothing from the prototype is merged; what follows is re-implemented test-first on this branch. The S-G2
+spec batch in implementation-notes.md lists the tasks they add.
+
+- Q: Ticking Pure on a call node drops its execution wires and records no undo entry (a test on this branch shows
+  it on `Math.Max`). Is it fixed in P3a? → A: Yes, in sub-phase G (FR-099): the change is one undoable step, and
+  Undo restores every execution wire, Catch included, and the Exception pin's data wires.
+- Q: Pins and wires take one colour per pin kind; colouring by data type was planned for P6 (roadmap C-3). Does it
+  move? → A: Yes, into sub-phase G (FR-107): pins by their type's family token, wires by their source pin's type,
+  per-family tokens in Dark and Light with a contrast test. Variable headers coloured by type stay in P6.
+- Q: How does a pin show that it is unconnected? → A: In the owner's words, "cuando el pin está vacío se ve vacío
+  también el relleno del pin" (when the pin is empty, its fill looks empty too): an unconnected pin is hollow, an
+  outline in its type colour, and a connected pin is filled, as in Unreal Blueprints; execution pins follow the
+  same rule (FR-108).
+- Q: Which canvas defects does G fix? → A: The darker band behind every pin row, the type-pin shape (triangle or
+  diamond, chosen on the contact sheet), the flow nodes that fall back to the default glyph (If Else, For Loop,
+  Explicit Cast, Await) and the pin hover outline that never shows (FR-109).
+- Q: Does a recent project row get an icon? → A: Yes, a left-anchor tile through the icon registry, with no
+  thumbnails, no chips and no file access while the row is drawn (FR-110).
+- Q: Pure-black canvas, 67 % opaque node cards? → A: The owner decides on the G contact sheet: the canvas
+  base colour, #000 or a dark grey, and the card opacity, today `#AA202020` or opaque (FR-089).
+
 ## User Scenarios & Testing *(mandatory)*
 
 The stories are ordered by priority. **MVP slice: User Stories 1–4** (CI diagnostics first, then the single window,
@@ -411,7 +435,8 @@ The editor uses one type ramp, one spacing scale and one set of colour tokens, i
 canvas. Icons come from one vector family and are named by id; node headers, pins, selection, focus, density and
 motion follow tokens; empty panels and the new dialogs each share one pattern; and the look holds at high DPI.
 The method pickers read like C# signatures, and an unconnected Target pin says when it means `this` (owner decision
-2026-10-08).
+2026-10-08). Pins and wires take the colour of their data type, and a pin stays hollow until it is connected (owner
+decision 2026-10-09).
 
 **Why this priority**: UX audit M3: headers are 24-pixel centred text, sizes and margins are ad hoc, and the canvas
 brushes are Dark-only. It matters for polish, not function. The icon ids (FR-084) are the exception: they must
@@ -457,6 +482,13 @@ unconnected Target pin.
     graph of the member's own class or a class derived from it, **When** its Target pin has no connection,
     **Then** the pin shows "self"; **When** a wire is connected to it, **Then** "self" disappears; and in both
     cases the generated C# is unchanged.
+13. **Given** a graph with a `bool`, an `int`, a `string` and an object pin, **Then** each pin has its type's colour
+    in Dark and Light, a wire has the colour of the pin it leaves, and every unconnected pin, execution pins
+    included, is an outline with no fill; **When** a wire is connected, **Then** both of its pins fill, and Undo
+    empties them again.
+14. **Given** the canvas, **Then** no pin row has a darker band behind it, the If Else, For Loop, Explicit Cast and
+    Await nodes each show a glyph of their own, and hovering a pin outlines it; **Given** the start page with recent
+    projects, **Then** each row starts with an icon tile.
 
 ---
 
@@ -725,8 +757,9 @@ its public members appear.
   such as branches and loops), Variable (get and set), Constructor, Async (calls whose method returns `Task`,
   `ValueTask` or their generic forms) and Throw. Each header MUST show its node kind's glyph (FR-084), and the header
   text MUST reach a contrast ratio of at least 4.5:1 against every role colour in Dark and Light. Pin colours MUST
-  come from pin tokens defined in both variants: one per pin kind (execution, data, type) and one per data type
-  category (bool, integer, floating point, string, object, value type, delegate, generic). Node selection, the
+  come from pin tokens defined in both variants: one each for execution and type pins and one per data type
+  category (bool, integer, floating point, string, object, value type, delegate, generic), which FR-107 assigns;
+  the per-kind data token goes once data pins take their category's token. Node selection, the
   marquee and a selected wire MUST take their colours from tokens, which replace the hard-coded `#009900` border.
 - **FR-087**: Keyboard focus MUST show a 2-px ring in the accent token that follows the control's corner radius on
   the project tree, document tabs, the command bar, menus, lists and the palette, and hover and pressed states MUST
@@ -745,10 +778,13 @@ its public members appear.
 - **FR-089**: Snapshot tests MUST render the shell, the canvas with every node kind, the method inspector and the
   Unsaved changes dialog at scale 1.0, 1.5 and 2.0 in Dark and Light, and fail on any change. The sub-phase G
   review MUST attach a contact sheet produced by a test run and uploaded by CI: every pane, the start page, a graph,
-  the P3a dialogs and both method pickers (FR-095), in both themes at 100 % and 200 %.
+  the P3a dialogs and both method pickers (FR-095), in both themes at 100 % and 200 %. The sheet MUST also show the
+  owner's open calls side by side as labelled alternatives of the graph: the type-pin shape (FR-109), the canvas base
+  colour and the node card opacity.
 
-Deferred from the visual-polish items (gap research 2026-10-06, roadmap): pins and variable headers coloured by data
-type, the selected-wire highlight and a selection count, a Compact/Comfortable switch and zoom-level detail, animated
+Deferred from the visual-polish items (gap research 2026-10-06, roadmap): variable headers coloured by data type
+(pins and wires moved into P3a, FR-107), the exec-wire style, a wire thickness token and the circuit style (C-9),
+the selected-wire highlight and a selection count, a Compact/Comfortable switch and zoom-level detail, animated
 fit and a reduce-motion setting, canvas focus (M18), canvas empty-state hints (M8), the dialog shell for the older
 dialogs other than Override method (M13), compact operator nodes and a Self node in node search (FR-096) go to P6;
 glyphs contributed by extensions are decided with the P3 contribution API.
@@ -792,6 +828,36 @@ glyphs contributed by extensions are decided with the P3 contribution API.
 - **FR-098**: Adding or removing a pin in a node's editable pin list (make-array elements, method entry and return
   values) MUST be one undoable step that marks the class dirty, and Undo and Redo MUST restore the pins and their
   connections.
+- **FR-099**: Changing a call node's purity (the Pure check box, offered only on calls that return a value) MUST be
+  one undoable step that marks the class dirty. Making a call pure removes its execution pins (In, Out and Catch)
+  and its Exception data pin; Undo MUST restore the call as impure with every wire those pins had, and Redo MUST
+  remove them again. Making a pure call impure is undoable the same way.
+
+**Canvas details and type colours (US9; owner decisions 2026-10-09)**
+
+- **FR-107**: Every pin MUST take its colour from its type's family token (FR-086), in Dark and Light: execution
+  pins `Pin.Exec`, type pins `Pin.Type`, and data pins by the family of their type: `bool` → `Pin.Bool`; the
+  integral types (`sbyte` to `ulong`, `nint`, `nuint`) → `Pin.Integer`; `float`, `double` and `decimal` →
+  `Pin.Float`; `string` and `char` → `Pin.String`; delegate types → `Pin.Delegate`; other value types (structs,
+  enums) → `Pin.ValueType`; other reference types (classes, interfaces, arrays, `object`) → `Pin.Object`; generic
+  parameters and types the reflection provider cannot resolve → `Pin.Generic`. `Nullable<T>` takes `T`'s family. A
+  pin's colour MUST follow a change of its type (overload change, generic resolution, a retyped parameter, Undo).
+  A wire MUST take the colour of its source pin (the output it leaves), the preview cable that of the pin it starts
+  from, and a selected wire keeps `Canvas.WireSelected`. Every pin token MUST reach a contrast ratio of at least
+  3:1 (WCAG 2.x non-text contrast) against the node body (the card over the canvas) and against the canvas, a wire
+  at the opacity it is drawn with, in Dark and Light.
+- **FR-108**: An unconnected pin MUST be drawn hollow, an outline in its type colour with no fill, and a connected
+  pin filled with that colour, as in Unreal Blueprints. Execution, data and type pins follow the same rule. The
+  state MUST follow connecting, disconnecting, Undo and Redo. The outline replaces the 60 % dimming of unconnected
+  pins (PAR-43).
+- **FR-109**: Pin rows MUST have no background of their own, so the node body shows behind them. Type pins MUST draw
+  one shape from a token, a triangle or a diamond, chosen by the owner on the contact sheet (FR-089). If Else, For
+  Loop, Explicit Cast and Await MUST each show a glyph of their own (FR-084, FR-086), not the default kind glyph.
+  Hovering a pin MUST outline it in the `Pin.HoverStroke` token. The canvas background MUST come from a
+  `Canvas.Background` token with Dark and Light values.
+- **FR-110**: Each recent project row on the start page MUST start with an icon tile drawn through the icon registry
+  (FR-084), its size and background from tokens in Dark and Light. The tile reads only the row's existing state: no
+  thumbnail, no chips, and no file access in a getter or converter.
 
 **Cross-cutting**
 
@@ -838,6 +904,8 @@ glyphs contributed by extensions are decided with the P3 contribution API.
   every view.
 - **Icon id**: a namespaced string (`netprints.icon.save`) that the icon registry resolves to a glyph of the one
   icon family (ADR-0021).
+- **Pin type family**: the colour group of a pin (execution, type, bool, integer, floating point, string, object,
+  value type, delegate, generic), each with a Dark and a Light token (FR-107).
 
 ## Success Criteria *(mandatory)*
 
@@ -872,7 +940,8 @@ glyphs contributed by extensions are decided with the P3 contribution API.
   screenshot produced by the scripted run, plus ADR-0018 to ADR-0021.
 - **SC-011**: 0 raster icons ship in `src/` (the product mark's `.ico` window icons excepted); 100% of built-in icon
   ids resolve without the fallback; every node-header text and role colour pair has a contrast ratio of at least
-  4.5:1 in both variants; the snapshot set passes at scale 1.0, 1.5 and 2.0 in Dark and Light; and the sub-phase G
+  4.5:1 in both variants; every pin type family token reaches at least 3:1 against the node body and the canvas in
+  both variants; the snapshot set passes at scale 1.0, 1.5 and 2.0 in Dark and Light; and the sub-phase G
   review carries a contact sheet.
 - **SC-012**: In both method pickers, 0 rows show a namespace or repeat their declaring type (formatter and
   view-model tests over the methods of `Exception` and the overloads of `Console.WriteLine`); each keystroke in the

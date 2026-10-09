@@ -1926,3 +1926,78 @@ Release (3052 tests, 3027 passed, 25 skipped, 0 failed) and the Desktop E2E with
 - T091b: `NodePinViewModel.SelfHint` (the text is the constant `SelfText`) is non-null on the Target pin of an instance getter, setter, call or make-delegate node while it has no wire, the graph's method is not static and the graph's class is the declaring type or has it among its base types (or a subclass of one, through the reflection provider once loaded). `NodeViewModel` refreshes it when the method's `Modifiers` change. Wires are not undoable by themselves in this editor (only node add, delete and overload change are), so the undo and redo test goes through deleting the wire's source node. The Main graph of the sample and the every-kind graph are static, so no snapshot shows the hint; the headless test adds a getter to a non-static Main.
 - `NavigationSelectionTests` moved its second node 24 px closer (416 instead of 440): the header glyph widened the Return label so its centre fell under the Inspector panel.
 - Tests: `NodeRoleTests` (view model, written before the code, compile-red), `CanvasPaletteTests` (written first; seen red on the pin and cable colours, the header role, the glyph, the selection border #009900, the marquee and the converters), `TargetPinSelfTests` and `TargetPinSelfViewTests` (written first; compile-red on `SelfHint`). Snapshots re-baselined and opened: `canvas-every-node-kind`, `canvas-preview-cable`, `editor-shell-main`, `node-call-method`, `node-method-entry-parameters`, `search-popup`. The update run also rewrote `editor-shell-no-project` and the four `start-page-*` baselines with no visible change; those were restored.
+
+## S-G2 spec batch (owner decisions 2026-10-09, before G3)
+
+Documentation only: spec.md, tasks.md and the roadmap (coordinator-authorised). The owner audited a design prototype
+that another agent built in a separate worktree; nothing of it is merged, and the decisions below are re-implemented
+test-first. The spec's Clarifications, session 2026-10-09, record them.
+
+- Spec: US9 text and acceptance scenarios 13 (type colours, hollow pins) and 14 (canvas details, recent-row tile).
+  FR-099 (purity through undo) follows FR-098, the last free id before the cross-cutting range; FR-107–FR-110 sit
+  under their own heading ("Canvas details and type colours") before it. FR-086 drops the per-kind data token,
+  FR-089 adds the owner-calls strip, the P6 deferral list keeps variable headers by type and C-9's exec-wire style,
+  SC-011 adds pin contrast, and the key entities add "Pin type family".
+- Decision (type families, FR-107): the existing T091a tokens are the families. `bool` Bool; integral types (and
+  `nint`, `nuint`) Integer; `float`, `double`, `decimal` Float; `string` and `char` String (a `char` reads as text);
+  delegate types Delegate, checked before Object; other value types, enums included, ValueType; other reference
+  types, arrays included, Object; generic parameters and unresolvable types Generic; `Nullable<T>` takes `T`'s
+  family. Execution pins keep `Pin.Exec` and type pins `Pin.Type`. `Pin.Data` loses its last user and goes.
+- Decision (contrast, FR-107): pins and wires are graphical objects, so they need 3:1 (WCAG 2.x non-text contrast),
+  not the 4.5:1 of text. The body is `Node.CardBackground` composited over `Canvas.Background`, because the card is
+  translucent; the test reads the tokens, so the owner's T098b calls are re-checked when T101 applies them.
+- Decision (hollow pins, FR-108): the owner's words, "cuando el pin está vacío se ve vacío también el relleno del
+  pin", read as an outline in the type colour while unconnected and a fill once connected, every pin kind. The
+  outline replaces PAR-43's 60 % dimming: two cues for one state would also push the outline under 3:1.
+- Decision (bug label): T094a already had a bug (d), Review F R12 (AwaitNode), so the purity bug is (e). It needs a
+  call that returns a value: a void call cannot be made pure, which is why a `Console.WriteLine` version of the
+  test fails on the purity check and says nothing about the Catch wire.
+- Decision (batches): the four new G tasks get their own batch, G4e (4.5 units), because G4a would have had five
+  tasks. G5 had five tasks and 9 units since F-F2 added T094b (its header still said 7), and 10 with the purity bug,
+  so it is split: G5a runs T094a and T094b (6 units), where T094a's pin-list undo (bug c) must precede T094b's
+  command over the same entry-node pin edits; G5b runs T093, T094 and T095 (4 units). T094 moves after T094a's
+  goldens: it changes only cataloged types and the goldens' fixture has no catalog, so they guard it.
+- Decision (contact sheet): five owner-call tiles of the graph in Dark at 1.0 (as shipped, diamond type pins, canvas
+  `#262626`, opaque card `#FF202020`, all three), drawn by overriding resources in the test so the product carries no
+  option. The dark grey is in the range other node editors use; the owner may ask for another value at the review.
+- Decision (agent pointer): `.agents/rules/xaml.md`, at most 15 lines, pointing to AGENTS.md and the three
+  `avalonia-*` skills; no `.agents/skills/` folder, because the prototype's forked copy of a skill was stale.
+- Sizing: the gap research sized C-3 S (under 2 days) including its tokens, which T091a already shipped; the
+  classification, styles, wires, contrast test and hollow pins are 3 units, about 1–1.5 days.
+- New tasks (6 units):
+
+| Task | Units | Batch | Depends on |
+|---|---|---|---|
+| T092m canvas details: pin rows, type-pin shape token, flow glyphs, pin hover, `Canvas.Background` (FR-109) | 1 | G4e | T091a |
+| T092n pin and wire colours by data type, contrast test (FR-107) | 2 | G4e | T092m |
+| T092o hollow unconnected pins (FR-108) | 1 | G4e | T092n |
+| T092p recent-row icon tile (FR-110) | 0.5 | G4e | T090a |
+| T094a bug (e): Pure through undo (FR-099) | 1 | G5a | T094a bug (c) |
+| T104a `.agents/rules` pointer (FR-100) | 0.5 | H1 | — |
+
+- G batch plan (49.5 units):
+
+| Batch | Model | Tasks | Units |
+|---|---|---|---|
+| G1 | sonnet | T090, T090a, T090b | 5 |
+| G2 | sonnet | T091, T091a, T091b | 5 |
+| G3 | haiku | T092, T092a, T092b | 3 |
+| G4a | sonnet | T092c, T092d, T092e | 3 |
+| G4b | sonnet | T092f, T092g | 3 |
+| G4c | sonnet | T092h, T092i, T092j | 4 |
+| G4d | sonnet | T092k, T092l | 3 |
+| G4e | sonnet | T092m, T092n, T092o, T092p | 4.5 |
+| G5a | sonnet | T094a, T094b | 6 |
+| G5b | sonnet | T093, T094, T095 | 4 |
+| G6 | sonnet | T096, T097 | 4 |
+| G7 | sonnet | T098, T098a, T098b, T099 | 5 |
+| G-R | opus | T100 | — |
+| G-F | sonnet | T101 | — |
+
+- Totals: 152 tasks (G 36, H 15), 42 implementation batches, 17 review, fix and merge batches; H is 19.5 units.
+- Consistency checks: every batch header's range and units match its tasks; every new FR has a task in the coverage
+  table; T094a and T094b appear once each; no new task id is dangling in spec.md or tasks.md.
+- Roadmap: P3a's visual polish bullet adds the 2026-10-09 items (about 2 days); P6 drops pin-type colours (C-3) and
+  keeps conversion nodes, variable headers by type and C-9's exec-wire style; P6 visual debugging requires real
+  host-channel data for every debug visual; P7 records the prototype translator as reference only, with its two
+  silent miscompiles as the first red equivalence tests and an ADR before any default change.
