@@ -22,7 +22,7 @@
                     <Grid ColumnDefinitions="*,Auto" Margin="12,2" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShortcutsRow}"
                           AutomationProperties.Name="{Binding Label}">
                       <TextBlock Text="{Binding Label}" />
-                      <TextBlock Grid.Column="1" Text="{Binding Shortcuts}" FontFamily="monospace" />
+                      <TextBlock Grid.Column="1" Text="{Binding Shortcuts}" FontFamily="{StaticResource Font.Mono}" />
                     </Grid>
                   </DataTemplate>
                 </ItemsControl.ItemTemplate>

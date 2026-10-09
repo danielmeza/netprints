@@ -14,7 +14,7 @@
   <Interaction.Behaviors>
     <edb:DialogCloseBehavior />
   </Interaction.Behaviors>
-  <Grid RowDefinitions="Auto,*,Auto,Auto,Auto,Auto,Auto" Margin="12" RowSpacing="8">
+  <Grid RowDefinitions="Auto,*,Auto,Auto,Auto,Auto,Auto" Margin="{StaticResource Space.M}" RowSpacing="8">
     <TextBlock Text="Template" />
     <ListBox Grid.Row="1" ItemsSource="{Binding Templates}" SelectedItem="{Binding SelectedTemplate}"
              AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NewProjectTemplates}">
@@ -22,7 +22,7 @@
         <DataTemplate x:DataType="edcontrib:ProjectTemplateDescriptor">
           <StackPanel AutomationProperties.Name="{Binding DisplayName}">
             <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold" />
-            <TextBlock Text="{Binding Description}" TextWrapping="Wrap" FontSize="12" />
+            <TextBlock Text="{Binding Description}" TextWrapping="Wrap" FontSize="{StaticResource Font.Caption}" />
           </StackPanel>
         </DataTemplate>
       </ListBox.ItemTemplate>

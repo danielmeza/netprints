@@ -8,6 +8,7 @@ using Avalonia.Interactivity;
 using Avalonia.LogicalTree;
 using Avalonia.VisualTree;
 using NetPrints.Editor.Graph;
+using NetPrints.Editor.Icons;
 using Nodify.Avalonia;
 
 namespace NetPrints.Editor.Hosting.Automation;
@@ -236,8 +237,8 @@ public sealed class AutomationTree : IDisposable
                 p[AutomationPropertyNames.MinorColor] = grid.MinorColor.ToString();
                 p[AutomationPropertyNames.MajorColor] = grid.MajorColor.ToString();
                 break;
-            case Image image:
-                p[AutomationPropertyNames.HasSource] = (image.Source is not null).ToString();
+            case IconPresenter icon:
+                p[AutomationPropertyNames.IconId] = icon.IconId;
                 break;
             case Popup popup:
                 p[AutomationPropertyNames.IsOpen] = popup.IsOpen.ToString();

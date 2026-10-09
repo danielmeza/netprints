@@ -350,11 +350,135 @@ namespace NetPrints.Tests.Core
             AssertAllowlistHasNoStaleEntries(E5Allowlist.Keys, seen);
         }
 
+        /// <summary>E8: no literal <c>FontSize</c> or <c>FontFamily</c> outside <c>EditorStyles.axaml</c> and
+        /// <c>EditorApp.axaml</c>. Rule E8 drives all such literals to zero by replacing them with class-based
+        /// styling or <c>Font.*</c> tokens. Allowlist shrinks to empty as T092/T092a fix each file.</summary>
+        private static readonly Dictionary<string, string> E8Allowlist = new(StringComparer.Ordinal)
+        {
+        };
+
+        [Fact]
+        public void E8_NoFontSizeOrFontFamilyLiteralsOutsideEditorStyles()
+        {
+            AxamlFile[] files = LoadAxamlFiles();
+            var offenders = new List<string>();
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+
+            foreach (AxamlFile file in files)
+            {
+                if (file.RelativePath is "src/NetPrints.Editor/EditorStyles.axaml" or "src/NetPrints.Editor/EditorApp.axaml"
+                    || IsStyleOrResourceFile(file))
+                {
+                    continue;
+                }
+
+                bool hasFontSizeLiteral = false;
+                bool hasFontFamilyLiteral = false;
+
+                foreach (XElement element in file.Document.Descendants())
+                {
+                    // Check FontSize direct attributes and Setters
+                    XAttribute? fontSizeAttr = element.Attributes().FirstOrDefault(a => a.Name.LocalName == "FontSize" && !a.Value.TrimStart().StartsWith('{'));
+                    if (fontSizeAttr is not null)
+                    {
+                        hasFontSizeLiteral = true;
+                    }
+
+                    if (element.Name.LocalName == "Setter" && element.Attribute("Property")?.Value == "FontSize")
+                    {
+                        if (element.Attribute("Value") is { } value && !value.Value.TrimStart().StartsWith('{'))
+                        {
+                            hasFontSizeLiteral = true;
+                        }
+                    }
+
+                    // Check FontFamily direct attributes and Setters
+                    XAttribute? fontFamilyAttr = element.Attributes().FirstOrDefault(a => a.Name.LocalName == "FontFamily" && !a.Value.TrimStart().StartsWith('{'));
+                    if (fontFamilyAttr is not null)
+                    {
+                        hasFontFamilyLiteral = true;
+                    }
+
+                    if (element.Name.LocalName == "Setter" && element.Attribute("Property")?.Value == "FontFamily")
+                    {
+                        if (element.Attribute("Value") is { } value && !value.Value.TrimStart().StartsWith('{'))
+                        {
+                            hasFontFamilyLiteral = true;
+                        }
+                    }
+                }
+
+                if (hasFontSizeLiteral)
+                {
+                    string key = $"{file.RelativePath}:FontSize";
+                    seen.Add(key);
+                    if (!E8Allowlist.ContainsKey(key))
+                    {
+                        offenders.Add(key);
+                    }
+                }
+
+                if (hasFontFamilyLiteral)
+                {
+                    string key = $"{file.RelativePath}:FontFamily";
+                    seen.Add(key);
+                    if (!E8Allowlist.ContainsKey(key))
+                    {
+                        offenders.Add(key);
+                    }
+                }
+            }
+
+            Assert.True(offenders.Count == 0, "FontSize and FontFamily literals must be replaced with Font.* tokens or style classes (see E8): " + string.Join(", ", offenders));
+            AssertAllowlistHasNoStaleEntries(E8Allowlist.Keys, seen);
+        }
+
+        private static AxamlFile LoadAxaml(string relativePath) =>
+            LoadAxamlFiles().Single(file => file.RelativePath == relativePath);
+
+        private static XElement[] StyleSetters(AxamlFile file, string selector) =>
+            [.. file.Document.Descendants().Where(e => e.Name.LocalName == "Style" && e.Attribute("Selector")?.Value == selector).Elements()];
+
+        [Fact]
+        public void TheTabularStyleSetsMonoAndTnum()
+        {
+            AxamlFile styles = LoadAxaml("src/NetPrints.Editor/EditorStyles.axaml");
+
+            foreach (string selector in new[] { "TextBlock.tabular", "TextBox.tabular" })
+            {
+                XElement[] setters = StyleSetters(styles, selector);
+                Assert.Contains(setters, s => s.Attribute("Property")?.Value == "FontFeatures" && s.Attribute("Value")?.Value == "tnum");
+                Assert.Contains(setters, s => s.Attribute("Property")?.Value == "FontFamily" && s.Attribute("Value")?.Value == "{StaticResource Font.Mono}");
+            }
+        }
+
+        [Fact]
+        public void TheCodeBlockClassUsesFontMono()
+        {
+            Assert.Contains(
+                StyleSetters(LoadAxaml("src/NetPrints.Editor/EditorStyles.axaml"), "TextBox.codeBlock"),
+                s => s.Attribute("Property")?.Value == "FontFamily" && s.Attribute("Value")?.Value == "{StaticResource Font.Mono}");
+            Assert.Contains(
+                LoadAxaml("src/NetPrints.Editor/Dialogs/ErrorDialog.axaml").Document.Descendants(),
+                e => e.Name.LocalName == "TextBox" && e.Attribute("Classes")?.Value.Split(' ').Contains("codeBlock") == true);
+        }
+
+        [Theory]
+        [InlineData("src/NetPrints.Editor/ErrorList/ErrorListView.axaml", "{Binding Header}")]
+        [InlineData("src/NetPrints.Editor/Shell/ShellWindow.axaml", "{Binding BadgeText}")]
+        [InlineData("src/NetPrints.Editor/Shell/ShellWindow.axaml", "{Binding StatusBar.BuildStateText}")]
+        public void CountsTakeTheTabularClass(string path, string textBinding)
+        {
+            XElement block = LoadAxaml(path).Document.Descendants()
+                .First(e => e.Name.LocalName == "TextBlock" && e.Attribute("Text")?.Value == textBinding);
+
+            Assert.Contains("tabular", block.Attribute("Classes")?.Value.Split(' ') ?? []);
+        }
+
         /// <summary>E9: icons come from <c>IconPresenter</c>. A <c>MaterialIcon</c>, <c>SymbolIcon</c> or <c>FluentIcon</c>
         /// element and a bitmap <c>Image</c> source may appear only under <c>src/NetPrints.Editor/Icons/</c>.</summary>
         private static readonly Dictionary<string, string> E9Allowlist = new(StringComparer.Ordinal)
         {
-            ["src/NetPrints.Editor/Search/NodeSearchView.axaml:Image"] = "the node category bitmap that T092b removes",
         };
 
         private static readonly HashSet<string> IconLibraryTags = new(StringComparer.Ordinal) { "MaterialIcon", "SymbolIcon", "FluentIcon" };

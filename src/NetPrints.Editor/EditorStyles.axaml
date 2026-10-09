@@ -42,6 +42,8 @@
       <x:Double x:Key="Font.Body">14</x:Double>
       <x:Double x:Key="Font.Subtitle">16</x:Double>
       <x:Double x:Key="Font.Title">20</x:Double>
+      <x:Double x:Key="Font.Watermark">32</x:Double>
+      <FontFamily x:Key="Font.Mono">avares://NetPrints.Editor/Assets/Fonts#Cascadia Mono</FontFamily>
       <Thickness x:Key="Space.XS">4</Thickness>
       <Thickness x:Key="Space.S">8</Thickness>
       <Thickness x:Key="Space.M">12</Thickness>
@@ -461,8 +463,18 @@
   <Style Selector="TextBox.codeBlock">
     <Setter Property="Background" Value="{DynamicResource SystemControlBackgroundBaseLowBrush}" />
     <Setter Property="CornerRadius" Value="4" />
-    <Setter Property="FontFamily" Value="monospace" />
+    <Setter Property="FontFamily" Value="{StaticResource Font.Mono}" />
     <Setter Property="VerticalContentAlignment" Value="Top" />
+  </Style>
+
+  <!-- Monospace font with tabular (fixed-width) numerals. -->
+  <Style Selector="TextBlock.tabular">
+    <Setter Property="FontFamily" Value="{StaticResource Font.Mono}" />
+    <Setter Property="FontFeatures" Value="tnum" />
+  </Style>
+  <Style Selector="TextBox.tabular">
+    <Setter Property="FontFamily" Value="{StaticResource Font.Mono}" />
+    <Setter Property="FontFeatures" Value="tnum" />
   </Style>
 
   <!-- Search box flush with its popup. -->

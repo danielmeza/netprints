@@ -15,7 +15,7 @@
   <Interaction.Behaviors>
     <edb:DialogCloseBehavior />
   </Interaction.Behaviors>
-  <StackPanel Margin="12" Spacing="8">
+  <StackPanel Margin="{StaticResource Space.M}" Spacing="8">
     <!-- Method chooser; the first method is preselected (PAR-59). -->
     <ComboBox x:Name="MethodBox" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SelectMethodBox}" HorizontalAlignment="Stretch" MaxDropDownHeight="400"
               ItemsSource="{Binding Methods}" SelectedItem="{Binding SelectedMethod}">

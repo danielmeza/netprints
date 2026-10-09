@@ -11,7 +11,7 @@
     </Interaction.Behaviors>
     <ListBox.ItemTemplate>
       <DataTemplate x:DataType="edoutput:OutputLineViewModel">
-        <TextBlock Text="{Binding Text}" FontFamily="monospace" Classes.outputError="{Binding IsError}"
+        <TextBlock Text="{Binding Text}" FontFamily="{StaticResource Font.Mono}" Classes.outputError="{Binding IsError}"
                    AutomationProperties.AutomationId="{x:Static ed:AutomationIds.OutputLine}" />
       </DataTemplate>
     </ListBox.ItemTemplate>

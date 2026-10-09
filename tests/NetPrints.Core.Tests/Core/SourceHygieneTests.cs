@@ -821,5 +821,17 @@ namespace NetPrints.Tests.Core
 
             return offenders;
         }
+
+        [Fact]
+        public void NoRasterIconsInSource()
+        {
+            string src = Path.Combine(SampleProjectFactory.FindRepositoryRoot(), "src");
+            string[] pngFiles = [.. Directory.EnumerateFiles(src, "*.png", SearchOption.AllDirectories)
+                .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+                    && !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+                .OrderBy(path => path, StringComparer.Ordinal)];
+
+            Assert.True(pngFiles.Length == 0, $"Raster PNG files must be replaced with vector icons from IconIds (T092b): {string.Join("; ", pngFiles.Select(p => Path.GetRelativePath(src, p)))}");
+        }
     }
 }

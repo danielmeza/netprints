@@ -7,12 +7,12 @@
         Icon="avares://NetPrints.Editor/Assets/NetPrintsLogo.ico"
         Width="700" Height="400"
         WindowStartupLocation="CenterOwner" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.IssuesDialog}">
-  <Grid RowDefinitions="*,Auto" Margin="8">
+  <Grid RowDefinitions="*,Auto" Margin="{StaticResource Space.S}">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
       <ItemsControl AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ExtensionLoadErrors}" ItemsSource="{Binding Issues}">
         <ItemsControl.ItemTemplate>
           <DataTemplate x:DataType="x:String">
-            <TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="2,4" FontFamily="monospace"
+            <TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="2,4" FontFamily="{StaticResource Font.Mono}"
                        AutomationProperties.AutomationId="{x:Static ed:AutomationIds.IssueRow}" AutomationProperties.Name="{Binding}" />
           </DataTemplate>
         </ItemsControl.ItemTemplate>

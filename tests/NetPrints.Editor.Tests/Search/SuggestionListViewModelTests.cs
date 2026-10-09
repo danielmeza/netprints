@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using NetPrints.Core;
 using NetPrints.Editor.Graph;
+using NetPrints.Editor.Icons;
 using NetPrints.Editor.Search;
 using NetPrints.Editor.Tests.Graph;
 using NetPrints.Editor.Tests.Hosting;
@@ -164,7 +165,7 @@ public class SuggestionListViewModelTests : GraphTestBase
     {
         await Graph.OpenSearchAsync(new GraphPoint(42, 42), null, TestContext.Current.CancellationToken);
         var property = Graph.Search.AllSuggestions.First(i => i.Value is VariableSpecifier);
-        Assert.Equal("Property_16x.png", property.IconKey);
+        Assert.Equal(IconIds.CategoryProperty, property.IconKey);
 
         await Graph.Search.SelectCommand.ExecuteAsync(property);
 
@@ -176,12 +177,12 @@ public class SuggestionListViewModelTests : GraphTestBase
     public void IconsAndTextsFollowWpfConverter()
     {
         var rows = Graph.Search.BuildItems(null);
-        Assert.Equal("If_16x.png", rows.First(r => r.Text == "If Else").IconKey);
-        Assert.Equal("Loop_16x.png", rows.First(r => r.Text == "For Loop").IconKey);
+        Assert.Equal(IconIds.CategoryIf, rows.First(r => r.Text == "If Else").IconKey);
+        Assert.Equal(IconIds.CategoryLoop, rows.First(r => r.Text == "For Loop").IconKey);
         var op = rows.First(r => r.Value is MethodSpecifier m && m.Name == "op_Addition");
-        Assert.Equal("Operator_16x.png", op.IconKey);
+        Assert.Equal(IconIds.CategoryOperator, op.IconKey);
         Assert.Contains("Operator", op.Text);
-        Assert.Equal("Method_16x.png", rows.First(r => r.Value is MethodSpecifier { Name: "WriteLine" }).IconKey);
+        Assert.Equal(IconIds.CategoryMethod, rows.First(r => r.Value is MethodSpecifier { Name: "WriteLine" }).IconKey);
     }
 
     [Fact]

@@ -80,10 +80,18 @@ public class ThemeTokenTests
     [InlineData("Font.Body", 14.0)]
     [InlineData("Font.Subtitle", 16.0)]
     [InlineData("Font.Title", 20.0)]
-    public void TheTypeRampHasTheFourSizes(string key, double size)
+    [InlineData("Font.Watermark", 32.0)]
+    public void TheTypeRampHasTheFontSizes(string key, double size)
     {
         Assert.Equal(size, Assert.IsType<double>(Resolve(key, ThemeVariant.Dark)));
         Assert.Equal(size, Assert.IsType<double>(Resolve(key, ThemeVariant.Light)));
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public void FontMonoIsCascadiaMono()
+    {
+        FontFamily mono = Assert.IsType<FontFamily>(Resolve("Font.Mono", ThemeVariant.Default));
+        Assert.Equal(new FontFamily("avares://NetPrints.Editor/Assets/Fonts#Cascadia Mono"), mono);
     }
 
     [AvaloniaTheory(Timeout = TestAppBuilder.Timeout)]

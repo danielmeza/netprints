@@ -11,7 +11,7 @@
   <Interaction.Behaviors>
     <edb:DialogCloseBehavior />
   </Interaction.Behaviors>
-  <Grid RowDefinitions="*,Auto" Margin="12">
+  <Grid RowDefinitions="*,Auto" Margin="{StaticResource Space.M}">
     <TextBlock TextWrapping="Wrap" Text="{Binding Message}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ConfirmMessage}" />
     <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
       <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ConfirmCancelButton}" Content="Cancel" MinWidth="80" IsCancel="True" Command="{Binding CancelCommand}" />

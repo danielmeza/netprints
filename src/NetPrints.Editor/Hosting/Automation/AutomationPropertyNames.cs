@@ -28,9 +28,9 @@ public static class AutomationPropertyNames
     /// </summary>
     public const string GridRenderPath = nameof(GridRenderPath);
     /// <summary>
-    /// Reported by an image: whether it has a source ("True"/"False").
+    /// Reported by an icon presenter: its icon id.
     /// </summary>
-    public const string HasSource = nameof(HasSource);
+    public const string IconId = nameof(IconId);
     /// <summary>
     /// Reported by every control: its bounds height in DIP, as text.
     /// </summary>

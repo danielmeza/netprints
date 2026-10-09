@@ -19,7 +19,7 @@
       <ItemsControl x:Name="FolderList" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.TrustFolders}" ItemsSource="{Binding ExtensionFolders}">
         <ItemsControl.ItemTemplate>
           <DataTemplate x:DataType="x:String">
-            <TextBlock Text="{Binding}" TextWrapping="Wrap" FontFamily="monospace" Margin="2" />
+            <TextBlock Text="{Binding}" TextWrapping="Wrap" FontFamily="{StaticResource Font.Mono}" Margin="2" />
           </DataTemplate>
         </ItemsControl.ItemTemplate>
       </ItemsControl>

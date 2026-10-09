@@ -12,7 +12,7 @@
   <Interaction.Behaviors>
     <edb:DialogCloseBehavior />
   </Interaction.Behaviors>
-  <Grid RowDefinitions="Auto,*,Auto" Margin="12">
+  <Grid RowDefinitions="Auto,*,Auto" Margin="{StaticResource Space.M}">
     <TextBlock Text="The editor found backups of unsaved changes. Checked files are restored; unchecked ones are discarded." TextWrapping="Wrap" Margin="0,0,0,8" />
     <ListBox Grid.Row="1" ItemsSource="{Binding Rows}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.RecoverFiles}"
              AutomationProperties.Name="Backed-up files">

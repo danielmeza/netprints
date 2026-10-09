@@ -74,7 +74,7 @@
                       <icons:IconPresenter IconId="{Binding IconId}" AutomationProperties.AccessibilityView="Raw" />
                       <TextBlock Text="{Binding StaticLabel}" VerticalAlignment="Center" />
                       <Border Classes="badge" IsVisible="{Binding HasBadge}">
-                        <TextBlock Text="{Binding BadgeText}" AutomationProperties.Name="{Binding BadgeName}"
+                        <TextBlock Classes="tabular" Text="{Binding BadgeText}" AutomationProperties.Name="{Binding BadgeName}"
                                    AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShellCompileBadge}" />
                       </Border>
                     </StackPanel>
@@ -89,7 +89,7 @@
 
     <Border DockPanel.Dock="Bottom" Padding="8,2" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShellStatusBar}">
       <DockPanel>
-        <TextBlock DockPanel.Dock="Right" Margin="16,0,0,0" Text="{Binding StatusBar.BuildStateText}"
+        <TextBlock DockPanel.Dock="Right" Classes="tabular" Margin="16,0,0,0" Text="{Binding StatusBar.BuildStateText}"
                    AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShellBuildState}" />
         <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="8" Margin="0,0,16,0" IsVisible="{Binding StatusBar.IsBusy}"
                     AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShellBusy}">

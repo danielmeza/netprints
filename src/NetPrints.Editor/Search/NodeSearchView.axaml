@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
              xmlns:edsearch="clr-namespace:NetPrints.Editor.Search"
              x:Class="NetPrints.Editor.Search.NodeSearchView"
              x:DataType="edsearch:SuggestionListViewModel"
@@ -52,7 +53,8 @@
               <TextBlock Text="{Binding Category}" IsVisible="{Binding IsHeader}" FontWeight="Bold"
                          Foreground="{DynamicResource SystemAccentColor}" />
               <StackPanel Orientation="Horizontal" Spacing="6" IsVisible="{Binding !IsHeader}" Margin="12,0,0,0">
-                <Image Width="16" Height="16" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SearchRowIcon}" AutomationProperties.Name="{Binding Text}" Source="{Binding IconKey, Converter={x:Static edsearch:IconConverter.Instance}}" />
+                <icons:IconPresenter IconId="{Binding IconKey}" VerticalAlignment="Center" AutomationProperties.AccessibilityView="Content"
+                                     AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SearchRowIcon}" AutomationProperties.Name="{Binding Text}" />
                 <TextBlock Text="{Binding Text}" VerticalAlignment="Center" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SearchRowText}" />
               </StackPanel>
             </Panel>

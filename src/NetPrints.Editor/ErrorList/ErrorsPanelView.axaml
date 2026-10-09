@@ -6,7 +6,7 @@
              x:DataType="ederrorlist:ErrorsPanelViewModel">
   <!-- The diagnostics of the whole project, one row per diagnostic with its class. -->
   <Panel>
-    <TextBlock Margin="8" TextWrapping="Wrap" Text="Open a project to see its errors."
+    <TextBlock Margin="{StaticResource Space.S}" TextWrapping="Wrap" Text="Open a project to see its errors."
                IsVisible="{Binding Current, Converter={x:Static ObjectConverters.IsNull}}"
                AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ErrorsEmpty}" />
     <ederrorlist:ErrorListView DataContext="{Binding Current}"

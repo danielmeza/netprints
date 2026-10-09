@@ -903,7 +903,7 @@ T094b before G5b's T093–T095, so the search safety net also guards T094.
 
 ### Batch G3 — model: haiku — T092–T092b — 3 units
 
-- [ ] T092 [US9] Apply the type ramp, the spacing scale and the label column to every view. The UI polish applied the
+- [x] T092 [US9] Apply the type ramp, the spacing scale and the label column to every view. The UI polish applied the
   label column (`inspectorLabel`, `propertyGrid`) and moved the polish `FontSize` literals into classes; the
   pre-existing literals (`NewProjectDialog`, `ReferencesDialog`, `AboutDialog`, `GraphEditorView` watermark) and rule E8 remain. Test first: a new enforced
   rule **E8** in `tests/NetPrints.Core.Tests/Core/XamlHygieneTests.cs`: no `FontSize` literal in `src/**/*.axaml`
@@ -911,13 +911,13 @@ T094b before G5b's T093–T095, so the search safety net also guards T094.
   E-F7b's ratchet, `tests/NetPrints.Core.Tests/Core/xaml-literal-ratchet.txt` (FontSize 4: the four literals named
   above; Margin 76): T092 drives FontSize to 0 and lowers the file with `NETPRINTS_UPDATE_RATCHET=1`, and also lowers
   Margin for every literal it replaces with a `Space.*` token.
-- [ ] T092a [US9] `Font.Mono` (FR-080). Test first: E8 also rejects a `FontFamily` literal in `src/**/*.axaml` outside
+- [x] T092a [US9] `Font.Mono` (FR-080). Test first: E8 also rejects a `FontFamily` literal in `src/**/*.axaml` outside
   `EditorStyles.axaml` and `EditorApp.axaml` (red on `CodeView`, `OutputPanelView`, `ErrorDialog`, `TrustDialog`,
   `IssuesDialog` and `KeyboardShortcutsDialog`), and `ThemeTokenTests` asserts that `Font.Mono` is the bundled
   Cascadia Mono (`avares://NetPrints.Editor/Assets/Fonts#Cascadia Mono`) and that a `tabular` style class sets
   `FontFeatures` to `tnum`. Then those six views use `Font.Mono`, and the line and column numbers in Errors and the
   status-bar counts take the `tabular` class.
-- [ ] T092b [US9] Replace the raster icons (FR-085). Test first: `NoRasterIconsInSource` in
+- [x] T092b [US9] Replace the raster icons (FR-085). Test first: `NoRasterIconsInSource` in
   `tests/NetPrints.Core.Tests/Core/SourceHygieneTests.cs`: no `*.png` under `src/` (red: the 16 files in
   `src/NetPrints.Editor/Assets/`; T090b already removed `NetPrintsLogo.png`). Then each of the 21 uses (for example
   the node categories in `BuiltInNodeLibrary.cs`) names the `IconIds` constant that T090a recorded for its PNG; the

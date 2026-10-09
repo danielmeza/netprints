@@ -13,7 +13,7 @@
   <Interaction.Behaviors>
     <edb:DialogCloseBehavior />
   </Interaction.Behaviors>
-  <Grid RowDefinitions="Auto,*,Auto" Margin="12">
+  <Grid RowDefinitions="Auto,*,Auto" Margin="{StaticResource Space.M}">
     <TextBlock Text="These files have changes that are not saved:" Margin="0,0,0,8" />
     <ListBox Grid.Row="1" ItemsSource="{Binding Files}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.UnsavedFiles}"
              AutomationProperties.Name="Unsaved files">

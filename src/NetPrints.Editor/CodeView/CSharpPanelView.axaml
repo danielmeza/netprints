@@ -6,7 +6,7 @@
              x:DataType="edcode:CSharpPanelViewModel">
   <!-- The generated C# of the active document's class. -->
   <Panel>
-    <TextBlock Margin="8" TextWrapping="Wrap" Text="Open a graph to see the C# of its class."
+    <TextBlock Margin="{StaticResource Space.S}" TextWrapping="Wrap" Text="Open a graph to see the C# of its class."
                IsVisible="{Binding Current, Converter={x:Static ObjectConverters.IsNull}}"
                AutomationProperties.AutomationId="{x:Static ed:AutomationIds.CSharpEmpty}" />
     <edcode:CodeView DataContext="{Binding Current}" IsVisible="{Binding $self.DataContext, Converter={x:Static ObjectConverters.IsNotNull}}"

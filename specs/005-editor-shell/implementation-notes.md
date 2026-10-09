@@ -2001,3 +2001,29 @@ test-first. The spec's Clarifications, session 2026-10-09, record them.
   keeps conversion nodes, variable headers by type and C-9's exec-wire style; P6 visual debugging requires real
   host-channel data for every debug visual; P7 records the prototype translator as reference only, with its two
   silent miscompiles as the first red equivalence tests and an ADR before any default change.
+
+## Batch G3 (T092, T092a, T092b: type ramp, spacing, Font.Mono, vector icons)
+
+- T092: E8 (no `FontSize` literal outside `EditorStyles.axaml`) with an empty allowlist; the four literals now use
+  `Font.Title`, `Font.Caption`, `Font.Body` and the new `Font.Watermark` (32). Ratchet lowered with
+  `NETPRINTS_UPDATE_RATCHET=1`: FontSize 4 to 0, Margin 76 to 61. Fifteen uniform `Margin` literals (4/8/12 on dialog
+  roots, panel placeholders and the graph watermark) became `Space.S` or `Space.M`; the 61 left are per-side
+  values (`0,0,8,4`, `8,4`) that the uniform `Thickness` scale tokens cannot express, so they stay for a per-side
+  token in a later batch.
+- T092a: E8 also rejects a `FontFamily` literal outside `EditorStyles.axaml` and `EditorApp.axaml`. `Font.Mono`
+  (bundled Cascadia Mono) replaces the literals in `CodeView`, `OutputPanelView`, `TrustDialog`, `IssuesDialog`,
+  `KeyboardShortcutsDialog` and the `codeBlock` class; `ErrorDialog` gets it through `codeBlock`. The `tabular`
+  class (Font.Mono plus `FontFeatures=tnum`) is on the Errors header counts, the compile badge and the status-bar
+  build state. Errors rows show no line or column numbers today, so there is nothing more to tag. The tabular and
+  Font.Mono assertions are XAML checks in `XamlHygieneTests` (the `tabular` class and `codeBlock` setters, and the
+  views that carry them); `ThemeTokenTests` asserts `Font.Mono` and `Font.Watermark`.
+- T092b: `NoRasterIconsInSource`; the 16 PNGs and their use are gone. The node-search row now draws an
+  `IconPresenter` (keeps the `SearchRowIcon` automation id, content view), so E9's allowlist is empty and
+  `IconConverter` is deleted (no `AvaloniaResource` item named a PNG; the csproj includes `Assets\**`). Automation
+  reports an `IconId` property for an `IconPresenter` (replaces `HasSource`, used only by the node-search E2E).
+  `SuggestionItem` names `IconIds` constants. Layering: `NetPrints.Extensibility` cannot reference the editor, so
+  `BuiltInNodeLibrary` keeps the id strings; `BuiltInNodeIconIdTests` (in `NetPrints.Editor.Tests`, which sees both)
+  fails if a built-in suggestion's icon is not an `IconIds` value. `search-popup.png` re-baselined (icons render);
+  `dialog-error`, `editor-shell-main` and `editor-shell-no-project` changed from Font.Mono and spacing; start-page
+  baselines restored (version text only).
+- Verification: whole solution (Release) 3460 tests, 0 failed, 26 skipped; Desktop E2E (`NETPRINTS_E2E=1`) 45 passed.

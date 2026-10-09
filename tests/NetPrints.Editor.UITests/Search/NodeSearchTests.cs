@@ -1,6 +1,7 @@
 using Avalonia.Headless.XUnit;
 using NetPrints.Core;
 using NetPrints.Editor.Hosting.Automation;
+using NetPrints.Editor.Icons;
 using NetPrints.Editor.UITests.Shell;
 using NetPrints.Graph;
 
@@ -61,7 +62,7 @@ public class NodeSearchTests
         var search = await (await session.Graph.RightClickEmptyAsync(Token)).WaitOpenAsync(Token);
         await search.FilterAsync("literal", "Literal", Token);
         var icon = await search.RowIcon("Literal").GetAsync(Token); // 16-px icons
-        Assert.Equal("True", icon[AutomationPropertyNames.HasSource]);
+        Assert.Equal(IconIds.CategoryLiteral, icon[AutomationPropertyNames.IconId]);
         Assert.Equal(16, icon.Bounds.Width);
         await search.ChooseAsync("Literal", Token);
         await session.WaitForRenderedAsync(Token);

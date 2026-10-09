@@ -6,7 +6,7 @@
              x:DataType="edvariables:ShellVariablesPanelViewModel">
   <!-- The member variables of the active class, and the local variables of the active method. -->
   <Panel>
-    <TextBlock Margin="8" TextWrapping="Wrap" Text="Open a graph to see the variables of its class."
+    <TextBlock Margin="{StaticResource Space.S}" TextWrapping="Wrap" Text="Open a graph to see the variables of its class."
                IsVisible="{Binding Current, Converter={x:Static ObjectConverters.IsNull}}"
                AutomationProperties.AutomationId="{x:Static ed:AutomationIds.VariablesEmpty}" />
     <Grid RowDefinitions="*,Auto" DataContext="{Binding Current}"
