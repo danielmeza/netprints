@@ -2269,3 +2269,41 @@ test-first. The spec's Clarifications, session 2026-10-09, record them.
   runs of the first push (`errors row State.Pressed in Dark (pointer over: False)`); the run before it was green. The test now
   lays the window out before it moves the pointer and, while the control is not pointer-over, moves the pointer again (at most
   five times); the assertion on the painted colour is unchanged. Locally the theory passes; the cause in CI is still unproven.
+
+## Batch G5a (T094a, T094b: node search safety net, undo fixes, method parameter edits)
+
+- Goldens and table (c5302679, characterization, green by design): `NodeSearchGoldenTests` (rows of method, constructor, class and
+  event graphs over seven pin kinds, and the filters "for", "write line", "static", "netprints loop", "zzz") and
+  `NodeCreationTableTests`, in `tests/NetPrints.Editor.Tests/Search/` with text goldens in `Search/Goldens/`
+  (`NETPRINTS_UPDATE_SNAPSHOTS=1` rewrites them). Deviation: no fixture assembly. A fixture assembly still brings the whole
+  CoreLib into the provider, so `FixtureReflectionHost` wraps the shared runtime host and keeps a fixed member set (Console
+  WriteLine/ReadLine, Math.Max(int,int), String.ToUpperInvariant/IsNullOrEmpty/Empty/Length, Object.ToString/GetHashCode, Int32.MaxValue
+  and four types); no catalog covers them, so T094's catalog routing leaves the goldens unchanged.
+- Bug (b) (71bed2f8), red as an assertion: the table's Return row created nothing. The cause was not the missing arm but Return's
+  arm: `AddNode<ReturnNode>` goes through `AddNodeRequest`, whose exact-parameter constructor lookup cannot find
+  `ReturnNode(MethodGraph)`, so the pick showed an error dialog. Built-in rows now carry the descriptor's `NodeSuggestion` and picking
+  calls its own `Create`; only Constructor, Literal and Type ask a dialog first; the `TypeSpecifier` arm serves plain types only.
+- Bug (a) (049ef75d), four tests red as assertions (`NodeSearchConnectionTests`): `OpenAsync` no longer disconnects the exec output.
+  `EditorCommands.AddNode(node, before)` takes the graph's connections captured before the creation and, on undo, puts back those the
+  creation displaced: the replaced exec target, the old wire of a data input, and the exec chain a data-pin insert forwards through the
+  new node (undo used to lose it). Three older tests assumed the disconnect and now check the previous connection.
+- Bug (d) (63e90b49), red: `AwaitNode.UpdateResultPin` disconnected the result pin inside a loop over its own wires; one call now.
+  Caller check: no caller of `CallMethodNode.TargetPin` or `AwaitNode.ResultPin` was wrong (grep result in the commit message).
+- Bug (c) (1a8f6b64), red as assertions (`NodePinListUndoTests`): the +/- buttons of make-array, method entry, return and class
+  return run `EditorCommands.EditPins`: it captures the node's pin lists and the connections of its pins before and after the edit and
+  restores the same pin objects and wires on undo and redo. A "-" with nothing to remove records nothing.
+- Bug (e) (f9310c35), three tests red, the rest green by design (`ThePurityCheckBoxGoesThroughUndoTests`, over `Math.Max`): the
+  `IsPure` setter runs `EditPins`, so ticking and unticking Pure are one step each; undo restores In, Out and Catch wires and the
+  Exception pin with its data wires.
+- Type-wire undo bug found in G4e (d0583655), red: the node connection snapshot held exec and data wires only. It now holds type wires
+  too, so deleting the type node of a parameter and undoing restores the wire and the parameter's type. Small and in the same code, so
+  fixed here; `DeleteTypeNodeUndoTests`. The G4e family test could now continue past the deletion.
+- T094b (e526f030), four tests red as assertions (`MethodParameterEditTests`): `EditorCommands.EditMethodSignature` runs `EditPins`
+  and `SignatureChange.RetargetCallers` as one step, with the project's classes from the new `ClassEditorServices.ProjectClasses`. The
+  entry's left +/- buttons, and connecting or disconnecting a type pin of the entry (`NodePinViewModel.ConnectTo`, `DisconnectAll`), use
+  it. Deferred: a retype by editing a wired type node, or by deleting it, still changes the signature without retargeting; the entry
+  has no reorder control, so reordering exists only as `sourceIndexes`.
+- Observed, not changed: a variable picked from a pin search opens the Get/Set chooser, which creates the node without the pin, so it
+  is not connected.
+- Snapshot: `search-popup` re-baselined and opened. The search was opened after an Esc over the Exec output; the WriteLine to Return
+  wire now stays and the tab is no longer marked unsaved.

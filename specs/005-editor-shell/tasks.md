@@ -1124,7 +1124,7 @@ re-baselines the snapshots it changes (open every PNG).
 
 ### Batch G5a — model: sonnet — T094a–T094b — 6 units
 
-- [ ] T094a [US7] Node search safety net and undo fixes (4 units, FR-097, FR-098, FR-099). A characterization pass,
+- [x] T094a [US7] Node search safety net and undo fixes (4 units, FR-097, FR-098, FR-099). A characterization pass,
   then red and green, before T095 edits the search view model. Test first, in `tests/NetPrints.Editor.Tests/Search/`:
   - Goldens (`NodeSearchGoldenTests.cs`, a small fixture assembly instead of the full runtime): text snapshots of the
     built rows (`H:Category` / `  Text | Icon`) over graphs {method, constructor, class, event} × pins {none, exec in,
@@ -1162,7 +1162,7 @@ re-baselines the snapshots it changes (open every PNG).
   Then `src/NetPrints.Editor/Search/SuggestionListViewModel.cs` and `src/NetPrints.Editor/Graph/Nodes/NodeViewModel.cs`
   (the pin-list change and the purity change, each as one `ModelOperations` undo entry that captures the connections
   it removes). This is the safety net the P3 search refactor (SUG1–SUG3) relies on.
-- [ ] T094b [US8] Method parameter edits retarget the method's callers (Review F R3, method half; 2 units). Test first:
+- [x] T094b [US8] Method parameter edits retarget the method's callers (Review F R3, method half; 2 units). Test first:
   adding, removing, retyping or reordering a method's parameter (the entry node's +/- pin buttons and its type-pin
   connections, which change the signature outside any command) leaves the calls to it on the old signature, so the class
   stops compiling. Route those edits through one undoable command that calls `SignatureChange.RetargetCallers` (added
