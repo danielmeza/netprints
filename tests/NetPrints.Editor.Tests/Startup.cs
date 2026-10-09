@@ -17,15 +17,18 @@ public sealed class Startup
         // Loading the runtime assembly set takes seconds, so one loaded host is shared by all tests.
         // Its own reload is async; the README's "Initializing data on startup" says to load an async
         // singleton through an IHostedService, not a blocking GetAwaiter().GetResult() in the factory.
-        services.AddSingleton<IReflectionHost>(_ =>
+        services.AddSingleton(_ =>
             new ReflectionHost(new InlineDispatcher(), TestExtensions.CreateBuiltIn(), NullLogger<ReflectionHost>.Instance));
         services.AddHostedService<ReflectionHostWarmup>();
+
+        // Each test sees the shared host through its own scope, so what a test leaves subscribed goes with it.
+        services.AddScoped<IReflectionHost>(provider => new ScopedReflectionHost(provider.GetRequiredService<ReflectionHost>()));
 
         services.AddTransient<TestEditor>();
     }
 
-    /// <summary>Loads the shared <see cref="IReflectionHost"/> once, before any test runs.</summary>
-    private sealed class ReflectionHostWarmup(IReflectionHost host) : IHostedService
+    /// <summary>Loads the shared <see cref="ReflectionHost"/> once, before any test runs.</summary>
+    private sealed class ReflectionHostWarmup(ReflectionHost host) : IHostedService
     {
         public Task StartAsync(CancellationToken cancellationToken)
         {
