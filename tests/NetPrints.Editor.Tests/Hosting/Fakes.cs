@@ -61,6 +61,7 @@ public sealed class FakeDialogs : IEditorDialogs
     public List<TypeSpecifier> SelectTypeCalls { get; } = [];
     public int SelectMethodCalls { get; private set; }
     public List<MethodSpecifier> LastMethods { get; private set; } = [];
+    public IReadOnlySet<string> LastOverriddenNames { get; private set; } = new HashSet<string>();
     public List<ReferenceListViewModel> ReferenceDialogs { get; } = [];
     public TypeSpecifier? TypeAnswer { get; set; } = TypeSpecifier.FromType<int>();
     public Func<IReadOnlyList<MethodSpecifier>, MethodSpecifier?> MethodAnswer { get; set; } = m => m.FirstOrDefault();
@@ -159,6 +160,12 @@ public sealed class FakeDialogs : IEditorDialogs
         SelectMethodCalls++;
         LastMethods = methods.ToList();
         return Task.FromResult(MethodAnswer(LastMethods));
+    }
+
+    public Task<MethodSpecifier?> SelectOverrideAsync(IEnumerable<MethodSpecifier> methods, IReadOnlySet<string> overriddenNames)
+    {
+        LastOverriddenNames = overriddenNames;
+        return SelectMethodAsync(methods);
     }
 
     public List<KeyboardShortcutsViewModel> ShortcutSheets { get; } = [];

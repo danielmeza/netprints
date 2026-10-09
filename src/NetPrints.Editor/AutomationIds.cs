@@ -417,10 +417,6 @@ public static class AutomationIds
     /// </summary>
     public const string SelectTypeBox = "Dialogs.SelectType.Box";
     /// <summary>
-    /// Automation id for the select-method dialog's search box.
-    /// </summary>
-    public const string SelectMethodBox = "Dialogs.SelectMethod.Box";
-    /// <summary>
     /// Automation id for the references dialog's close button.
     /// </summary>
     public const string ReferencesCloseButton = "References.Close";
@@ -450,6 +446,10 @@ public static class AutomationIds
     /// Automation id for the select-method dialog's select button.
     /// </summary>
     public const string SelectMethodButton = "Dialogs.SelectMethod.Select";
+    /// <summary>
+    /// Automation id for the select-method dialog's cancel button.
+    /// </summary>
+    public const string SelectMethodCancelButton = "Dialogs.SelectMethod.Cancel";
     /// <summary>
     /// Automation id for the method picker list control (the override dialog and the overload flyout).
     /// </summary>

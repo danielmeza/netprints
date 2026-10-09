@@ -622,10 +622,7 @@ namespace NetPrints.Tests.Core
         /// <summary>Dialog windows (<c>*Dialog.axaml</c> with a <c>Window</c> root) size to their content, per the
         /// "Layout and look" dialog anatomy in the avalonia-styling skill. Keyed by file path; the reason is why the
         /// fixed size stays. Entries are legacy fixed sizes: remove one when its dialog moves to SizeToContent.</summary>
-        private static readonly Dictionary<string, string> DialogSizingAllowlist = new(StringComparer.Ordinal)
-        {
-            ["src/NetPrints.Editor/Dialogs/SelectMethodDialog.axaml"] = "replaced in T092j",
-        };
+        private static readonly Dictionary<string, string> DialogSizingAllowlist = new(StringComparer.Ordinal);
 
         private static bool SizesToContent(AxamlFile file) =>
             file.Document.Root?.Attribute("SizeToContent") is { } size && !string.Equals(size.Value, "Manual", StringComparison.Ordinal);

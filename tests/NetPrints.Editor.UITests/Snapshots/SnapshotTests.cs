@@ -254,8 +254,7 @@ public class SnapshotTests
         await MatchWindowAsync(ui.Driver, new SelectTypeDialogPage(ui.Driver), "dialog-select-type");
         ui.Tree.Windows.Last().Close();
 
-        var stringType = TypeSpecifier.FromType<string>();
-        ui.Show(new SelectMethodDialog([new MethodSpecifier("Trim", [], [stringType], MethodModifiers.None, MemberVisibility.Public, stringType, [])]));
+        ui.Show(new SelectMethodDialog(UITests.Dialogs.DialogTests.ExceptionOverrides(), new HashSet<string> { "Finalize" }));
         await MatchWindowAsync(ui.Driver, new SelectMethodDialogPage(ui.Driver), "dialog-select-method");
     }
 

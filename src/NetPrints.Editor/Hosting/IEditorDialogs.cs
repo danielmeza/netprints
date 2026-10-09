@@ -23,8 +23,16 @@ public interface IEditorDialogs
     /// <summary>Lets the user choose a type; returns null when cancelled.</summary>
     Task<TypeSpecifier?> SelectTypeAsync(IEnumerable<TypeSpecifier> types, TypeSpecifier initial);
 
-    /// <summary>Lets the user choose a method (the first one is preselected); returns null when cancelled.</summary>
+    /// <summary>Lets the user choose a method from a filterable list (the first one is preselected); returns null when cancelled.</summary>
     Task<MethodSpecifier?> SelectMethodAsync(IEnumerable<MethodSpecifier> methods);
+
+    /// <summary>
+    /// Lets the user choose a base method to override: the list is grouped by declaring type, nearest base type first, and the
+    /// methods whose name is in <paramref name="overriddenNames"/> are dimmed and cannot be picked. Returns null when cancelled.
+    /// </summary>
+    /// <param name="methods">The overridable methods of the base types, nearest first.</param>
+    /// <param name="overriddenNames">Names of the methods the class already has.</param>
+    Task<MethodSpecifier?> SelectOverrideAsync(IEnumerable<MethodSpecifier> methods, IReadOnlySet<string> overriddenNames);
 
     /// <summary>Shows the references dialog of a project until it is closed.</summary>
     Task ShowReferencesAsync(ReferenceListViewModel references);

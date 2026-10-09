@@ -21,8 +21,10 @@ public sealed class SelectTypeDialogPage(IUiDriver driver) : UiElement(driver, n
 /// <summary>Screen object of the method chooser dialog.</summary>
 public sealed class SelectMethodDialogPage(IUiDriver driver) : UiElement(driver, new AutomationQuery(AutomationIds.SelectMethodDialog))
 {
-    public UiElement MethodBox => Find(AutomationIds.SelectMethodBox);
+    public UiElement Filter => Find(AutomationIds.MethodPickerFilter);
+    public UiElement Rows => Find(AutomationIds.MethodPickerRows);
     public UiElement SelectButton => Find(AutomationIds.SelectMethodButton);
+    public UiElement CancelButton => Find(AutomationIds.SelectMethodCancelButton);
 }
 
 /// <summary>Screen object of the issues dialog (at startup: the extensions that failed to load).</summary>

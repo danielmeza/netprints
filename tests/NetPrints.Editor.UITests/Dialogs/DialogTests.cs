@@ -1,8 +1,14 @@
+using Avalonia;
+using Avalonia.Automation;
+using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using Avalonia.VisualTree;
 using Microsoft.Extensions.Logging.Abstractions;
 using NetPrints.Core;
 using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Contributions.BuiltIn;
+using NetPrints.Editor.Controls;
+using NetPrints.Editor.Icons;
 using NetPrints.Editor.Diagnostics;
 using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Hosting;
@@ -110,27 +116,112 @@ public class DialogTests
         }
     }
 
-    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
-    public async Task SelectMethodPreselectsFirst()
+    /// <summary>The methods a class deriving from <see cref="Exception"/> can override, nearest base type first (T092j).</summary>
+    internal static MethodSpecifier[] ExceptionOverrides()
     {
-        var stringType = TypeSpecifier.FromType<string>();
-        MethodSpecifier[] methods =
+        MethodSpecifier Method(Type declaring, string name, Type? returns, params (string Name, Type Type)[] parameters) =>
+            new(name, [.. parameters.Select(p => new MethodParameter(p.Name, TypeSpecifier.FromType(p.Type), MethodParameterPassType.Default, false, null))],
+                returns is null ? [] : [TypeSpecifier.FromType(returns)], MethodModifiers.Virtual, MemberVisibility.Public, TypeSpecifier.FromType(declaring), []);
+
+        return
         [
-            new("Trim", [], [stringType], MethodModifiers.None, MemberVisibility.Public, stringType, []),
-            new("ToUpper", [], [stringType], MethodModifiers.None, MemberVisibility.Public, stringType, []),
+            Method(typeof(Exception), "GetBaseException", typeof(Exception)),
+            Method(typeof(Exception), "GetObjectData", null, ("info", typeof(System.Runtime.Serialization.SerializationInfo)), ("context", typeof(System.Runtime.Serialization.StreamingContext))),
+            Method(typeof(Exception), "ToString", typeof(string)),
+            Method(typeof(object), "Equals", typeof(bool), ("obj", typeof(object))),
+            Method(typeof(object), "Finalize", null),
+            Method(typeof(object), "GetHashCode", typeof(int)),
         ];
+    }
+
+    private static T Named<T>(Window window, string automationId) where T : Avalonia.Controls.Control =>
+        window.GetVisualDescendants().OfType<T>().Single(control => AutomationProperties.GetAutomationId(control) == automationId);
+
+    private static double ResourceNumber(string key) =>
+        Application.Current is { } app && app.TryGetResource(key, app.ActualThemeVariant, out object? value) && value is double number ? number : double.NaN;
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public void TheOverrideDialogIsAShellDialogOfAboutSixHundredFortyByFourHundredEighty()
+    {
         using var ui = HeadlessUi.Create();
-        var dialog = ui.Show(new SelectMethodDialog(methods));
+
+        SelectMethodDialog dialog = ui.Show(new SelectMethodDialog(ExceptionOverrides()));
+
+        DialogShell shell = Assert.Single(dialog.GetVisualDescendants().OfType<DialogShell>());
+        Assert.Equal("Override method", dialog.Title);
+        Assert.Equal("Override method", shell.Title);
+        Assert.Equal(IconIds.CategoryMethod, shell.IconId);
+        Assert.Equal(ResourceNumber("Dialog.MaxWidth"), dialog.ClientSize.Width);
+        Assert.InRange(dialog.ClientSize.Height, 440, 520);
+        Assert.Equal(["Exception", "Object"], Assert.IsType<SelectMethodDialogViewModel>(dialog.DataContext).List.Rows.Where(row => row.IsHeader).Select(row => row.Text));
+        Assert.Equal(ResourceNumber("Dialog.ListMaxHeight"),Named<ListBox>(dialog, AutomationIds.MethodPickerRows).Bounds.Height);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task TypingAFilterAndPressingEnterClosesWithThatMethodAndKeepsTheSize()
+    {
+        using var ui = HeadlessUi.Create();
+        SelectMethodDialog dialog = ui.Show(new SelectMethodDialog(ExceptionOverrides()));
+        Size size = dialog.ClientSize;
+        double listHeight = Named<ListBox>(dialog, AutomationIds.MethodPickerRows).Bounds.Height;
+        bool closed = false;
+        dialog.Closed += (_, _) => closed = true;
+
+        await ui.Driver.TypeAsync("tostr", Token);
+        Assert.Equal(size, dialog.ClientSize);
+        Assert.Equal(listHeight, Named<ListBox>(dialog, AutomationIds.MethodPickerRows).Bounds.Height);
+        await ui.Driver.PressAsync("Enter", Token);
+
+        Assert.True(closed);
+        Assert.Equal("Exception", dialog.Result?.DeclaringType.ShortName);
+        Assert.Equal("ToString", dialog.Result?.Name);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task AnOverriddenMethodIsDimmedAndEnterDoesNotPickIt()
+    {
+        using var ui = HeadlessUi.Create();
+        SelectMethodDialog dialog = ui.Show(new SelectMethodDialog(ExceptionOverrides(), new HashSet<string> { "Finalize" }));
+        bool closed = false;
+        dialog.Closed += (_, _) => closed = true;
+
+        Grid dimmed = Assert.Single(dialog.GetVisualDescendants().OfType<Grid>(), grid => grid.Classes.Contains("dimmed"));
+        Assert.True(dimmed.Opacity < 1);
+        await ui.Driver.TypeAsync("finalize", Token);
+        await ui.Driver.PressAsync("Enter", Token);
+
+        Assert.False(closed);
+        Assert.False(await new SelectMethodDialogPage(ui.Driver).SelectButton.IsEnabledAsync(Token));
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task EscapeClosesTheOverrideDialogWithNoMethod()
+    {
+        using var ui = HeadlessUi.Create();
+        SelectMethodDialog dialog = ui.Show(new SelectMethodDialog(ExceptionOverrides()));
+        bool closed = false;
+        dialog.Closed += (_, _) => closed = true;
+
+        await ui.Driver.PressAsync("Esc", Token);
+
+        Assert.True(closed);
+        Assert.Null(dialog.Result);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task TheOverrideButtonPicksTheSelectedMethod()
+    {
+        using var ui = HeadlessUi.Create();
+        SelectMethodDialog dialog = ui.Show(new SelectMethodDialog(ExceptionOverrides()));
         var page = new SelectMethodDialogPage(ui.Driver);
         bool closed = false;
         dialog.Closed += (_, _) => closed = true;
 
-        Assert.Equal(methods[0].ToString(), await page.MethodBox.PropertyAsync(AutomationPropertyNames.SelectedItem, Token)); // PAR-59
         Assert.True(await page.SelectButton.IsEnabledAsync(Token));
+        await page.SelectButton.ClickAsync(Token);
 
-        await page.SelectButton.ClickAsync(Token); // batch X2b: DialogViewModel + DialogCloseBehavior
         Assert.True(closed);
-        Assert.Equal(methods[0], dialog.Result);
+        Assert.Equal("GetBaseException", dialog.Result?.Name);
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]

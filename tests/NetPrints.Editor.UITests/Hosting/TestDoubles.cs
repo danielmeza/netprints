@@ -44,6 +44,9 @@ public sealed class RecordingDialogs : IEditorDialogs
     public Task<MethodSpecifier?> SelectMethodAsync(IEnumerable<MethodSpecifier> methods) =>
         Task.FromResult(methods.FirstOrDefault());
 
+    public Task<MethodSpecifier?> SelectOverrideAsync(IEnumerable<MethodSpecifier> methods, IReadOnlySet<string> overriddenNames) =>
+        SelectMethodAsync(methods);
+
     /// <summary>What <see cref="ConfirmTrustAsync"/> answers.</summary>
     public bool TrustAnswer { get; set; }
 

@@ -317,7 +317,8 @@ internal sealed class ShellProjectActions : IProjectActions, IDisposable
             return;
         }
 
-        MethodSpecifier? chosen = await context.Dialogs.SelectMethodAsync(overridable).ConfigureAwait(true);
+        var existing = cls.Methods.Select(method => method.Name).ToHashSet(StringComparer.Ordinal);
+        MethodSpecifier? chosen = await context.Dialogs.SelectOverrideAsync(overridable, existing).ConfigureAwait(true);
         if (chosen is not null)
         {
             AddGraph(cls, classContext => classContext.CreateOverride(chosen));

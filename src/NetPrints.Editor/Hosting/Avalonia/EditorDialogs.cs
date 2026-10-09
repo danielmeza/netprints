@@ -16,6 +16,8 @@ namespace NetPrints.Editor.Hosting.Avalonia;
 public sealed class EditorDialogs(Func<Window?> owner) : IEditorDialogs
 {
     private const int MaxNotifications = 3;
+    private const string SelectMethodTitle = "Select method";
+    private const string SelectMethodLabel = "Select";
     private WindowNotificationManager? notificationManager;
 
     /// <inheritdoc/>
@@ -55,7 +57,11 @@ public sealed class EditorDialogs(Func<Window?> owner) : IEditorDialogs
 
     /// <inheritdoc/>
     public Task<MethodSpecifier?> SelectMethodAsync(IEnumerable<MethodSpecifier> methods) =>
-        ShowAsync<MethodSpecifier>(new SelectMethodDialog(methods));
+        ShowAsync<MethodSpecifier>(new SelectMethodDialog(methods, null, SelectMethodTitle, SelectMethodLabel));
+
+    /// <inheritdoc/>
+    public Task<MethodSpecifier?> SelectOverrideAsync(IEnumerable<MethodSpecifier> methods, IReadOnlySet<string> overriddenNames) =>
+        ShowAsync<MethodSpecifier>(new SelectMethodDialog(methods, overriddenNames));
 
     /// <inheritdoc/>
     public Task<bool> ConfirmTrustAsync(string projectPath, IReadOnlyList<string> extensionFolders) =>

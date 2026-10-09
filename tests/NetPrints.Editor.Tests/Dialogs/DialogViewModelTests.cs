@@ -14,32 +14,78 @@ public class DialogViewModelTests
 {
     private static readonly TypeSpecifier StringType = TypeSpecifier.FromType<string>();
 
+    private static MethodSpecifier Method(Type declaring, string name, int parameters = 0) =>
+        new(name, [.. Enumerable.Range(0, parameters).Select(i => new MethodParameter($"p{i}", TypeSpecifier.FromType<int>(), MethodParameterPassType.Default, false, null))],
+            [StringType], MethodModifiers.Virtual, MemberVisibility.Public, TypeSpecifier.FromType(declaring), []);
+
+    private static SelectMethodDialogViewModel ExceptionDialog(params string[] overriddenNames) => new(
+    [
+        Method(typeof(object), "Equals", 1),
+        Method(typeof(Exception), "ToString"),
+        Method(typeof(object), "ToString"),
+        Method(typeof(Exception), "GetBaseException"),
+        Method(typeof(object), "Finalize"),
+    ], new HashSet<string>(overriddenNames, StringComparer.Ordinal));
+
     [Fact]
-    public void SelectMethodDialogPreselectsFirstAndClosesWithSelection()
+    public void SelectMethodDialogGroupsByDeclaringTypeNearestFirstWithObjectLastAndDropsHiddenBaseMethods()
     {
-        var trim = new MethodSpecifier("Trim", [], [StringType], MethodModifiers.None, MemberVisibility.Public, StringType, []);
-        var toUpper = new MethodSpecifier("ToUpper", [], [StringType], MethodModifiers.None, MemberVisibility.Public, StringType, []);
-        var vm = new SelectMethodDialogViewModel([trim, toUpper]);
-        bool closed = false;
-        vm.CloseRequested += (_, _) => closed = true;
+        SelectMethodDialogViewModel vm = ExceptionDialog();
 
-        Assert.Equal(trim, vm.SelectedMethod); // PAR-59
-        Assert.True(vm.SelectCommand.CanExecute(null));
-
-        vm.SelectedMethod = toUpper;
-        vm.SelectCommand.Execute(null);
-
-        Assert.True(closed);
-        Assert.Equal(toUpper, vm.Result);
+        Assert.Equal(
+        [
+            "Exception", "string GetBaseException()", "string ToString()",
+            "Object", "string Equals(int p0)", "string Finalize()",
+        ], vm.List.Rows.Select(row => row.Text));
     }
 
     [Fact]
-    public void SelectMethodDialogCannotSelectWithNoMethods()
+    public void SelectMethodDialogPicksTheFilteredMethodAndClosesWithIt()
+    {
+        SelectMethodDialogViewModel vm = ExceptionDialog();
+        bool closed = false;
+        vm.CloseRequested += (_, _) => closed = true;
+
+        vm.List.Filter = "tostr";
+        vm.List.PickCommand.Execute(null);
+
+        Assert.True(closed);
+        Assert.Equal("Exception", vm.Result?.DeclaringType.ShortName);
+        Assert.Equal("ToString", vm.Result?.Name);
+    }
+
+    [Fact]
+    public void SelectMethodDialogDimsMethodsTheClassAlreadyOverrides()
+    {
+        SelectMethodDialogViewModel vm = ExceptionDialog("ToString");
+
+        Assert.Equal(["ToString"], vm.List.Rows.Where(row => row.IsOverridden).Select(row => row.Item?.Name));
+
+        vm.List.Filter = "tostr";
+        Assert.Null(vm.List.Selected);
+        Assert.False(vm.List.PickCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public void SelectMethodDialogClosesWithNothingOnCancel()
+    {
+        SelectMethodDialogViewModel vm = ExceptionDialog();
+        bool closed = false;
+        vm.CloseRequested += (_, _) => closed = true;
+
+        vm.List.CancelCommand.Execute(null);
+
+        Assert.True(closed);
+        Assert.Null(vm.Result);
+    }
+
+    [Fact]
+    public void SelectMethodDialogCannotPickWithNoMethods()
     {
         var vm = new SelectMethodDialogViewModel([]);
 
-        Assert.Null(vm.SelectedMethod);
-        Assert.False(vm.SelectCommand.CanExecute(null));
+        Assert.Null(vm.List.Selected);
+        Assert.False(vm.List.PickCommand.CanExecute(null));
     }
 
     [Fact]

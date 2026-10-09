@@ -1,4 +1,5 @@
 using NetPrints.Core;
+using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.Tests.Shell;
 using NetPrints.Editor.Variables;
@@ -306,17 +307,40 @@ public sealed class ShellProjectActionsTests : IDisposable
         ProjectSessionViewModel session = rig.Session ?? throw new InvalidOperationException("No session.");
         ClassGraph cls = Assert.Single(session.Project.Classes);
         await testEditor.Context.Reflection.Loaded;
-        testEditor.Dialogs.MethodAnswer = methods => methods.First(m => m.Name == "ToString");
+        testEditor.Dialogs.MethodAnswer = methods =>
+        {
+            var dialog = new SelectMethodDialogViewModel(methods, testEditor.Dialogs.LastOverriddenNames);
+            dialog.List.Filter = "tostr";
+            dialog.List.PickCommand.Execute(null);
+            return dialog.Result;
+        };
 
         await rig.Actions.OverrideMethodAsync(cls, Token);
 
         Assert.Equal(1, testEditor.Dialogs.SelectMethodCalls);
+        Assert.DoesNotContain("ToString", testEditor.Dialogs.LastOverriddenNames);
         MethodGraph method = Assert.Single(cls.Methods, m => m.Name == "ToString");
         Assert.Equal(CommandTargets.GraphDocumentOf(session, method), shell.ActiveDocument);
 
         session.UndoStackFor(cls).Undo();
         Assert.DoesNotContain(method, cls.Methods);
         Assert.Empty(shell.OpenDocuments);
+    }
+
+    [Fact]
+    public async Task TheOverrideDialogIsToldWhichMethodsTheClassAlreadyHas()
+    {
+        ProjectRig rig = await OpenSampleAsync();
+        rig.Actions.Api = new FakeShell();
+        ClassGraph cls = Assert.Single((rig.Session ?? throw new InvalidOperationException("No session.")).Project.Classes);
+        await testEditor.Context.Reflection.Loaded;
+        testEditor.Dialogs.MethodAnswer = methods => methods.First(m => m.Name == "ToString");
+        await rig.Actions.OverrideMethodAsync(cls, Token);
+
+        testEditor.Dialogs.MethodAnswer = _ => null;
+        await rig.Actions.OverrideMethodAsync(cls, Token);
+
+        Assert.Contains("ToString", testEditor.Dialogs.LastOverriddenNames);
     }
 
     [Fact]
