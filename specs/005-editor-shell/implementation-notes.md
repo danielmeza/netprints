@@ -2265,3 +2265,7 @@ test-first. The spec's Clarifications, session 2026-10-09, record them.
   `CanvasPaletteTests` and `PinContrastTests` (red as assertions: one brush per pin kind, a preview cable stuck on DodgerBlue,
   six Light tokens below 3:1), `PinFillTests` and the recent-row test (red as assertions: `Pin.OutlineThickness` and
   `StartPage.RecentTileSize` did not resolve, pins kept `dimmed`).
+- Flake `InteractionStateTests.PointerOverAndPressedUseTheStateTokensInBothVariants("errors row")` (see G4d) failed on both CI
+  runs of the first push (`errors row State.Pressed in Dark (pointer over: False)`); the run before it was green. The test now
+  lays the window out before it moves the pointer and, while the control is not pointer-over, moves the pointer again (at most
+  five times); the assertion on the painted colour is unchanged. Locally the theory passes; the cause in CI is still unproven.

@@ -34,6 +34,8 @@ namespace NetPrints.Editor.UITests.Theming;
 /// <summary>Focus ring, hover and pressed states and the density tokens on the themed controls (FR-087).</summary>
 public class InteractionStateTests
 {
+    private const int PointerOverAttempts = 5;
+
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
     private sealed class Probe : ICommandHandler
@@ -188,8 +190,17 @@ public class InteractionStateTests
                         double apart = variant == ThemeVariant.Light ? 12 : 0;
                         Point inside = control.TranslatePoint(new Point(control.Bounds.Width / 2 + apart, Math.Min(control.Bounds.Height / 2, 10)), window)
                             ?? throw new InvalidOperationException("The control is not in the window.");
+                        window.UpdateLayout();
                         window.MouseMove(inside);
                         HeadlessDriver.Pump();
+                        for (int attempt = 0; attempt < PointerOverAttempts && !control.IsPointerOver; attempt++)
+                        {
+                            window.UpdateLayout();
+                            window.MouseMove(new Point(inside.X + 1, inside.Y));
+                            window.MouseMove(inside);
+                            HeadlessDriver.Pump();
+                        }
+
                         if (pressed)
                         {
                             window.MouseDown(inside, MouseButton.Left);
