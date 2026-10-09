@@ -11,6 +11,7 @@ using NetPrints.Editor.Hosting;
 using NetPrints.Extensibility.Nodes;
 using NetPrints.Graph;
 using NetPrints.Reflection;
+using NetPrints.Serialization.Documents;
 
 namespace NetPrints.Editor.Search;
 
@@ -276,9 +277,9 @@ public sealed partial class SuggestionListViewModel : ObservableObject, IDisposa
             ? []
             : graph.Context.Extensions.Current.NodeKinds.Where(kind => kind.Suggestions.Count > 0 && kind.AllowedIn.HasFlag(graphKind)).ToList();
 
-        // Built-in kinds are offered as their node type (SelectAsync asks a dialog where a kind needs one); an extension's
+        // Built-in kinds are offered as their own suggestion (SelectAsync asks a dialog where a kind needs one); an extension's
         // suggestions come last, after every built-in category (extension-points.md §2).
-        IEnumerable<object> BuiltIns() => suggestedKinds.Where(kind => !kind.Kind.Contains('/', StringComparison.Ordinal)).Select(kind => (object)TypeSpecifier.FromType(kind.NodeType));
+        IEnumerable<object> BuiltIns() => suggestedKinds.Where(kind => !kind.Kind.Contains('/', StringComparison.Ordinal)).Select(kind => (object)kind.Suggestions[0]);
 
         IEnumerable<(string Category, object Value)> ExtensionNodes() => suggestedKinds
             .Where(kind => kind.Kind.Contains('/', StringComparison.Ordinal))
@@ -420,7 +421,34 @@ public sealed partial class SuggestionListViewModel : ObservableObject, IDisposa
             switch (item.Value)
             {
                 case NodeSuggestion suggestion:
-                    graph.AddNode(Position, pin, suggestion);
+                    switch (context.Extensions.Current.NodeKinds.FirstOrDefault(kind => kind.Suggestions.Contains(suggestion))?.Kind)
+                    {
+                        case BuiltInNodeKinds.Constructor:
+                            if (await SelectTypeAsync() is { } constructedType
+                                && provider.GetConstructors(constructedType).FirstOrDefault() is { } constructor)
+                            {
+                                AddNode<ConstructorNode>(constructor);
+                            }
+                            break;
+
+                        case BuiltInNodeKinds.Literal:
+                            if (await SelectTypeAsync() is { } literalType)
+                            {
+                                AddNode<LiteralNode>(literalType);
+                            }
+                            break;
+
+                        case BuiltInNodeKinds.Type:
+                            if (await SelectTypeAsync() is { } nodeType)
+                            {
+                                AddNode<TypeNode>(nodeType);
+                            }
+                            break;
+
+                        default:
+                            graph.AddNode(Position, pin, suggestion);
+                            break;
+                    }
                     break;
 
                 case MethodSpecifier method:
@@ -457,62 +485,6 @@ public sealed partial class SuggestionListViewModel : ObservableObject, IDisposa
                         }
                         break;
                     }
-
-                case TypeSpecifier t when t == TypeSpecifier.FromType<ConstructorNode>():
-                    if (await SelectTypeAsync() is { } constructedType
-                        && provider.GetConstructors(constructedType).FirstOrDefault() is { } constructor)
-                    {
-                        AddNode<ConstructorNode>(constructor);
-                    }
-                    break;
-
-                case TypeSpecifier t when t == TypeSpecifier.FromType<LiteralNode>():
-                    if (await SelectTypeAsync() is { } literalType)
-                    {
-                        AddNode<LiteralNode>(literalType);
-                    }
-                    break;
-
-                case TypeSpecifier t when t == TypeSpecifier.FromType<TypeNode>():
-                    if (await SelectTypeAsync() is { } nodeType)
-                    {
-                        AddNode<TypeNode>(nodeType);
-                    }
-                    break;
-
-                case TypeSpecifier t when t == TypeSpecifier.FromType<ForLoopNode>():
-                    AddNode<ForLoopNode>();
-                    break;
-                case TypeSpecifier t when t == TypeSpecifier.FromType<IfElseNode>():
-                    AddNode<IfElseNode>();
-                    break;
-                case TypeSpecifier t when t == TypeSpecifier.FromType<TypeOfNode>():
-                    AddNode<TypeOfNode>();
-                    break;
-                case TypeSpecifier t when t == TypeSpecifier.FromType<ExplicitCastNode>():
-                    AddNode<ExplicitCastNode>();
-                    break;
-                case TypeSpecifier t when t == TypeSpecifier.FromType<ReturnNode>():
-                    AddNode<ReturnNode>();
-                    break;
-                case TypeSpecifier t when t == TypeSpecifier.FromType<MakeArrayNode>():
-                    AddNode<MakeArrayNode>();
-                    break;
-                case TypeSpecifier t when t == TypeSpecifier.FromType<ThrowNode>():
-                    AddNode<ThrowNode>();
-                    break;
-                case TypeSpecifier t when t == TypeSpecifier.FromType<TernaryNode>():
-                    AddNode<TernaryNode>();
-                    break;
-                case TypeSpecifier t when t == TypeSpecifier.FromType<MakeArrayTypeNode>():
-                    AddNode<MakeArrayTypeNode>();
-                    break;
-                case TypeSpecifier t when t == TypeSpecifier.FromType<AwaitNode>():
-                    AddNode<AwaitNode>();
-                    break;
-                case TypeSpecifier t when t == TypeSpecifier.FromType<DefaultNode>():
-                    AddNode<DefaultNode>();
-                    break;
 
                 case TypeSpecifier type:
                     AddNode<TypeNode>(type);

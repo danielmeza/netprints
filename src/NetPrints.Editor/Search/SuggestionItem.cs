@@ -91,10 +91,6 @@ public sealed class SuggestionItem
         return text;
     }
 
-    private static readonly Dictionary<TypeSpecifier, (string Text, string Icon)> BuiltInNodes = BuiltInNodeLibrary.Instance.NodeKinds
-        .Where(kind => kind.Suggestions.Count > 0)
-        .ToDictionary(kind => TypeSpecifier.FromType(kind.NodeType), kind => (kind.Suggestions[0].DisplayName, kind.Suggestions[0].IconKey ?? ""));
-
     private static (string Text, string Icon) Describe(object value) => value switch
     {
         MethodSpecifier method => (FormatMethod(method), OperatorUtil.IsOperator(method) ? IconIds.CategoryOperator : IconIds.CategoryMethod),
@@ -103,7 +99,6 @@ public sealed class SuggestionItem
         MakeDelegateTypeInfo makeDelegate => ($"Make Delegate For A Method Of {makeDelegate.Type.ShortName}", IconIds.CategoryDelegate),
         CustomEventSuggestion => (CustomEventSuggestion.DisplayText, IconIds.CategoryNone),
         OverrideEventSuggestion overrideEvent => ($"Override {overrideEvent.Method.Name}", IconIds.CategoryMethod),
-        TypeSpecifier type when BuiltInNodes.TryGetValue(type, out var builtIn) => builtIn,
         TypeSpecifier type => (type.FullCodeName, IconIds.CategoryType),
         _ => throw new NotSupportedException($"Unsupported suggestion {value.GetType()}"),
     };

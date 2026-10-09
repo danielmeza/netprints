@@ -23,7 +23,7 @@ public sealed class NodeCreationTableTests(IReflectionHost sharedReflection)
 
     public static IEnumerable<TheoryDataRow<string, int>> BuiltInKinds() =>
         BuiltInNodeLibrary.Instance.NodeKinds
-            .Where(kind => kind.Suggestions.Count > 0 && kind.Kind != BuiltInNodeKinds.Return)
+            .Where(kind => kind.Suggestions.Count > 0)
             .Select(kind => new TheoryDataRow<string, int>(kind.Kind, AsksForAType(kind.Kind) ? 1 : 0));
 
     private static bool AsksForAType(string kind) => kind is BuiltInNodeKinds.Constructor or BuiltInNodeKinds.Literal or BuiltInNodeKinds.Type;
