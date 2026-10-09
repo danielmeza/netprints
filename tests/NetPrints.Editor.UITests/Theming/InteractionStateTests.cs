@@ -173,7 +173,7 @@ public class InteractionStateTests
             {
                 foreach (ThemeVariant variant in new[] { ThemeVariant.Dark, ThemeVariant.Light })
                 {
-                    Application.Current!.RequestedThemeVariant = variant;
+                    App.RequestedThemeVariant = variant;
                     try
                     {
                         if (control is DocumentTabStripItem { IsSelected: true })
@@ -208,7 +208,7 @@ public class InteractionStateTests
                     }
                     finally
                     {
-                        Application.Current!.RequestedThemeVariant = ThemeVariant.Dark;
+                        App.RequestedThemeVariant = ThemeVariant.Dark;
                     }
                 }
             }
