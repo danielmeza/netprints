@@ -2200,3 +2200,68 @@ test-first. The spec's Clarifications, session 2026-10-09, record them.
   `PaintsWith` reads the presenter, not an animated value). Remaining suspect: the headless hit test after the theme switch
   needs a committed frame that a loaded runner has not produced when `MouseDown` lands. A retry until the row is pointer-over
   and painted (`UiWait`, re-reading the row each attempt) would keep the invariant, but it is unproven, so it is not committed.
+
+## Batch G4e (T092m–T092p: canvas details, type colours, hollow pins, recent-row tile)
+
+- T092m (8e94496a): `NetPrints.NodeInput` and `NetPrints.NodeOutput` control themes (`BasedOn` the Nodify defaults, transparent
+  background) are applied in `NodeView`; the pixel between a pin and its label now equals the node body (it was (45,45,48) on a
+  (21,21,21) body in Dark; Light already matched). The type pin is a `Path` whose `Data` is `{DynamicResource Pin.TypeShape}`;
+  `Pin.TypeShape.Triangle` and `Pin.TypeShape.Diamond` both resolve and `Pin.TypeShape` aliases the triangle until T098b.
+  `NodeVisualKind` gains `IfElse`, `ForLoop`, `ExplicitCast` and `Await` with glyphs `SourceBranch`, `Repeat`, `SwapHorizontal` and
+  `TimerSand`; a table test over the built-in nodes shows none with execution pins keeps the default glyph. The hover selectors
+  are `:is(Shape).pin:pointerover` and `Panel.pinHitbox > :is(Shape)`, so the `Pin.HoverStroke` outline shows. `Canvas.Background`
+  (a `Color`: Dark #000000, Light #FFFFFF, equal to Semi's `SystemRegionColor` of today) feeds the grid.
+- Decision: `EventEntryNode` maps to `NodeVisualKind.Entry` (it has execution pins and was falling to the default glyph and the
+  Flow role); its header is now the Entry colour. No snapshot shows an event graph.
+- T092n (f9350972): `PinTypeFamily` (in `Graph/Pins/`, in the style of `NodeRole`) classifies by built-in names first (so the
+  integral, floating point, string and `bool` rows need no provider), `Nullable<T>` takes `T`, then asks the provider: a subclass
+  of `MulticastDelegate` is Delegate (checked before Object), an enum or a subclass of `ValueType` is ValueType, anything the
+  provider resolves is Object, otherwise Generic. A pin that cannot be classified yet (no provider loaded) is Generic and is
+  refreshed by `OnReflectionReloaded`. `NodePinViewModel.Family` and `FamilyClass` follow the pin's `PinType`, the node's
+  input-type changes and reflection reloads; a wire's `KindClass` is its source pin's `FamilyClass` and `ConnectionViewModel`
+  is now disposable (the graph disposes the cables it removes).
+- Decision (preview cable): `PendingConnection` copies its `Stroke` from the `BorderBrush` of the connector it starts from (a
+  `NodeInput` or `NodeOutput` is a `Connector`), and a style on the control or its editor cannot override that local value. The
+  `NodeInput` and `NodeOutput` carry the pin's family class (through `StyleClassBehavior`) and `:is(nc|Connector).pin-<family>`
+  sets their `BorderBrush`.
+- Decision (undo): a data pin's family follows an overload change and its undo (the node is replaced) and a type wire; deleting
+  the source type node and undoing does not restore the type wire (the entry's parameter stays Object), so the retyped-parameter
+  test stops at the deletion. Not caused by this batch; left for the owner to decide.
+- Tuned tokens (Light only, each below 3:1 as a 0.7-opacity wire on the card over the canvas): Exec #2E7D32 to #212121 (a
+  neutral, so it does not sit next to Float), Integer #00838F to #006B75, Float #388E3C to #2B6C2E, Object #546E7A to #4A616B,
+  ValueType #EF6C00 to #A04800, Generic #00796B to #006F62. Dark needed no change. `Pin.Data` is removed.
+- Final tokens and contrast (3:1 required; pin on the node body, pin on the canvas, wire at the 0.7 opacity of `NetPrints.Connection`
+  on the canvas and on the body; the body is `Node.CardBackground` over `Canvas.Background`: (21,21,21) in Dark, (245,245,245) in Light):
+
+| Family | Dark | pin/body | pin/canvas | wire/canvas | wire/body | Light | pin/body | pin/canvas | wire/canvas | wire/body |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Exec | #E0FFE0 | 17.00 | 19.55 | 9.29 | 8.72 | #212121 | 14.77 | 16.10 | 5.92 | 5.68 |
+| Type | #FFE0E0 | 14.77 | 16.99 | 8.20 | 7.68 | #C62828 | 5.16 | 5.62 | 3.43 | 3.27 |
+| Bool | #EF5350 | 5.24 | 6.02 | 3.31 | 3.13 | #D32F2F | 4.57 | 4.98 | 3.19 | 3.04 |
+| Integer | #26C6DA | 8.85 | 10.17 | 5.20 | 4.88 | #006B75 | 5.73 | 6.25 | 3.37 | 3.21 |
+| Float | #66BB6A | 7.72 | 8.88 | 4.61 | 4.36 | #2B6C2E | 5.86 | 6.39 | 3.31 | 3.16 |
+| String | #F06292 | 5.97 | 6.87 | 3.71 | 3.50 | #C2185B | 5.39 | 5.87 | 3.66 | 3.48 |
+| Object | #90A4AE | 7.05 | 8.11 | 4.29 | 4.06 | #4A616B | 5.99 | 6.54 | 3.30 | 3.15 |
+| ValueType | #FFB74D | 10.55 | 12.13 | 6.03 | 5.69 | #A04800 | 5.63 | 6.14 | 3.34 | 3.17 |
+| Delegate | #BA68C8 | 5.13 | 5.90 | 3.28 | 3.11 | #7B1FA2 | 7.52 | 8.20 | 4.16 | 3.97 |
+| Generic | #4DB6AC | 7.48 | 8.60 | 4.46 | 4.27 | #006F62 | 5.58 | 6.09 | 3.31 | 3.15 |
+
+- T092o (e045b431): an unconnected pin is an outline (`Pin.OutlineThickness`, 2) in its family colour with a transparent fill, a
+  connected one (`connected` class from `IsConnected`) is filled with it; the 60 % dimming and `IsDimmed` are gone. The outline
+  colour is the family token, so the table above is its contrast; `PinContrastTests` also samples the drawn outline of the Catch
+  pin against the body in both variants. Exec and type pins follow the same rule.
+- T092p (8e255401): the recent row's first column is a `StartPage.RecentTileSize` (32) tile with `Radius.Control` corners and a
+  `StartPage.RecentTileBackground` (Dark #2A2A30, Light #E4E6EC) holding `IconIds.Project` through `IconPresenter`. The tile uses
+  `Space.S` as margin (no new Margin literal; the ratchet is unchanged at 52 Margin and 0 FontSize). `RecentProjectItemViewModel`
+  is untouched, so it still has no file access.
+- Snapshots re-baselined and opened: `canvas-every-node-kind`, `canvas-preview-cable`, `editor-shell-main`, `node-call-method`,
+  `node-method-entry-parameters`, `search-popup` (T092m: see-through pin rows and the new flow glyphs; T092n: pins and wires in
+  family colours, the preview cable takes its pin's colour; T092o: hollow unconnected pins) and `start-page-wide-recent`,
+  `start-page-narrow-recent` (T092p: the tile). `editor-shell-no-project` and the two `-empty` start pages changed by version
+  text only and were restored.
+- Tests (written first): `PinTypeFamilyTests` and `PinFamilyViewModelTests` (compile-red, the types did not exist), the
+  `NodeViewModelTests` and `NodeRoleTests` rows (compile-red), `CanvasDetailTests` (red as assertions: the Dark pixel
+  (2D2D30 against 151515), the missing `Pin.TypeShape`, the null hover stroke and the missing `Canvas.Background`),
+  `CanvasPaletteTests` and `PinContrastTests` (red as assertions: one brush per pin kind, a preview cable stuck on DodgerBlue,
+  six Light tokens below 3:1), `PinFillTests` and the recent-row test (red as assertions: `Pin.OutlineThickness` and
+  `StartPage.RecentTileSize` did not resolve, pins kept `dimmed`).
