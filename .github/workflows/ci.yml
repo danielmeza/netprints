@@ -151,15 +151,50 @@ jobs:
           key: nuget-${{ runner.os }}-${{ hashFiles('Directory.Packages.props', 'Directory.Build.props', 'src/Directory.Build.props', 'tests/Directory.Build.props', 'global.json', '**/*.csproj') }}
           restore-keys: nuget-${{ runner.os }}-
 
+      - name: Runner image
+        run: |
+          echo "Image: $ImageOS $ImageVersion, $(nproc) CPUs"
+          free -m
+          swapon --show
+
       - name: Build
         run: dotnet build ${{ matrix.project }} -c Release
 
+      # A stalled test host gets a dump and is stopped after 8 minutes without test progress, and the step
+      # ends before the job timeout, so the uploads below still run. [monitor] lines log memory every 30 s.
       - name: Test
-        run: >
-          dotnet test --project ${{ matrix.project }} -c Release --no-build
-          --report-xunit-trx --results-directory TestResults
-          -- --coverage --coverage-output-format cobertura
-          --coverage-settings ${{ github.workspace }}/tests/CodeCoverage.config
+        timeout-minutes: 24
+        run: |
+          mkdir -p TestResults
+          monitor() {
+            while true; do
+              echo "[monitor] $(date -u +%T) $(free -m | awk '/^Mem:/ {printf "mem used %d, available %d of %d MiB", $3, $7, $2} /^Swap:/ {printf "; swap used %d MiB", $3}'); load $(cut -d' ' -f1-3 /proc/loadavg); $(ps -eo rss=,comm= --sort=-rss | head -3 | awk '{printf "%s %d MiB, ", $2, $1 / 1024}')" | tee -a TestResults/monitor.log
+              sleep 30
+            done
+          }
+          monitor &
+          monitor_pid=$!
+          trap 'kill "$monitor_pid"' EXIT
+          dotnet test --project ${{ matrix.project }} -c Release --no-build \
+            --report-xunit-trx --results-directory TestResults \
+            -- --coverage --coverage-output-format cobertura \
+            --coverage-settings ${{ github.workspace }}/tests/CodeCoverage.config \
+            --hangdump --hangdump-timeout 8m --hangdump-type Mini
+
+      - name: Kernel memory events
+        if: always()
+        run: sudo dmesg -T | grep -iE 'out of memory|oom|killed process' | tail -20 || true
+
+      - name: Upload hang diagnostics
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: hang-${{ matrix.leg }}
+          path: |
+            TestResults/**/*.dmp
+            TestResults/monitor.log
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Upload test results
         if: always()

@@ -12,5 +12,7 @@
        test host, and gains nothing from pulling in Microsoft.Testing.Platform for itself. -->
   <ItemGroup Condition="'$(OutputType)' == 'Exe'">
     <PackageReference Include="Microsoft.Testing.Extensions.CodeCoverage" />
+    <!-- CI hang dumps: ci.yml's test matrix dumps and stops a test host that reports no test progress. -->
+    <PackageReference Include="Microsoft.Testing.Extensions.HangDump" />
   </ItemGroup>
 </Project>
