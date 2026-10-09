@@ -208,7 +208,10 @@ public class InteractionStateTests
                         }
 
                         string token = pressed ? "State.Pressed" : "State.Hover";
-                        Assert.True(PaintsWith(control, ColourOf(token, variant)), $"{kind} {token} in {variant} (pointer over: {control.IsPointerOver})");
+                        var hit = window.InputHitTest(inside) as Visual;
+                        Assert.True(
+                            PaintsWith(control, ColourOf(token, variant)),
+                            $"{kind} {token} in {variant} (pointer over: {control.IsPointerOver}, attached {control.IsAttachedToVisualTree()}, hit {hit?.GetType().Name} inside the control {hit is not null && (ReferenceEquals(hit, control) || control.IsVisualAncestorOf(hit))}, bounds {control.Bounds}, inside {inside}, window {window.Bounds})");
                         if (pressed)
                         {
                             window.MouseUp(inside, MouseButton.Left);
