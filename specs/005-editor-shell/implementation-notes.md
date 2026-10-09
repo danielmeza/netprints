@@ -2074,3 +2074,38 @@ test-first. The spec's Clarifications, session 2026-10-09, record them.
   `editor-shell-no-project`, `inspector-class`, `inspector-method`, `inspector-variable`, `search-popup`. Four
   baselines the update run rewrote with no visible change (the start pages, `dialog-select-type`, `node-call-method`,
   `node-method-entry-parameters`) were restored.
+
+## Batch G4b (T092f, T092g: the dialog shell, every dialog sizes to its content)
+
+- T092f: `Controls/DialogShell.cs` is a `ContentControl` with `Title`, `IconId`, `Actions` (the footer buttons as
+  declared), `ButtonOrder` and `SortedActions`; its `ControlTheme` in `EditorStyles.axaml` draws the icon and title
+  (`dialogTitle`), the content and a right-aligned footer. New tokens `Dialog.MinWidth` 360, `Dialog.MaxWidth` 640 and
+  `Dialog.ListMaxHeight` 360. The shell takes `Title="{Binding $parent[Window].Title}"`, so the window title is the one
+  source. The eight dialogs (Unsaved changes, Confirm, Keyboard shortcuts, Trust, Issues, Recover, About, Error) are
+  `SizeToContent="WidthAndHeight"` windows around a shell; their lists (`ScrollViewer` or `ListBox`) have
+  `MaxHeight="{StaticResource Dialog.ListMaxHeight}"`. The `Grid.dialogRoot` style had no user left and was removed.
+- Platform order: `Controls/DialogButtonOrder.cs` is a smart enum (`DefaultFirst`, `CancelFirst` as nested subclasses
+  with their own ranking, no switch on the member). `ForCurrentPlatform()` reads the OS once, as the default of
+  `ButtonOrder`; the tests set the order on the shell, so none reads the host. Rank: Windows default first, cancel last;
+  macOS and Linux cancel first, default last; a button that is both default and cancel takes the first place in both.
+  Enter and Esc stay `IsDefault` and `IsCancel` on the buttons (and `DialogCloseBehavior` or `CloseWindowAction` for the
+  result); the Error, Issues, About and Shortcuts buttons are now both.
+- Decision (Trust): "Don't load" is the default as well as the cancel button, so Enter never trusts a project by
+  accident (before, Trust had no default). Trust stays the accent button. Decision (About): the app mark stays in the
+  content beside the name (32 px), the shell icon is the info dialog icon. Decision (Error): the shell icon has no
+  `error` class, so it is no longer red; the dialog text box keeps `codeBlock`. Decision (Recover): "Discard all" is
+  the cancel button (it was the only one with no `IsCancel`).
+- T092g: `NewProjectDialog` and `ReferencesDialog` are `SizeToContent="Height"` with `Width` from `Dialog.MaxWidth`;
+  `SampleTargetDialog` and `SelectTypeDialog` are `WidthAndHeight` with `MinWidth`/`MaxWidth` from the tokens on their
+  root panel. `MinWidth` on the `Window` itself did not apply under `SizeToContent` in the headless window (select type
+  came out 147 px wide), so the bounds sit on the root child. Their lists have `MaxHeight` `Dialog.ListMaxHeight`; they
+  stay outside the shell (M13). `DialogSizingAllowlist` now holds only `SelectMethodDialog` ("replaced in T092j").
+- Tests (written first): `DialogShellTests` (54 cases: title and icon, both button orders, Enter, Esc, size, long
+  message wraps, tokens, three list heights) and `DialogSizingTests` (four dialogs: buttons inside the client area,
+  width in the token range). Red: `DialogShellTests` did not compile (no `DialogShell`) and
+  `DialogWindowsSizeToContentOrAreAllowlisted` failed on the seven dialogs; then it failed on the four older ones and
+  all four `DialogSizingTests` failed on `SizeToContent` Manual; select type failed again on the width (147). The shell
+  tests passed on the first run after the code compiled. `ReferencesRig` is the references dialog fixture, moved out of
+  `DialogTests`. Snapshots re-baselined and opened: `dialog-error`, `dialog-select-type`, `dialog-references`.
+- Ratchet: Margin 59 to 52 (the dialogs lost their spacing margins), FontSize 0. The ratchet file also dropped a stale
+  `InspectorPanelView` entry that was already below its baseline.
