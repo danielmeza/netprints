@@ -15,7 +15,12 @@
   <Interaction.Behaviors>
     <edb:DialogCloseBehavior />
   </Interaction.Behaviors>
-  <Grid Classes="dialogRoot" RowDefinitions="Auto,Auto">
+  <Grid Classes="dialogRoot popupFade" RowDefinitions="Auto,Auto">
+    <Interaction.Behaviors>
+      <LoadedTrigger>
+        <AddClassAction ClassName="shown" />
+      </LoadedTrigger>
+    </Interaction.Behaviors>
     <TextBox AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PaletteQuery}" AutomationProperties.Name="Command" Text="{Binding Query}"
              PlaceholderText="Type a command">
       <Interaction.Behaviors>

@@ -45,8 +45,15 @@
   </Style>
   <!-- Document tabs (FR-087): the shared focus ring, and the state tokens on the tabs that are not selected. -->
   <Style Selector="DocumentTabStripItem">
-    <Setter Property="FocusAdorner" Value="{StaticResource NetPrints.FocusAdorner}" />
-    <Setter Property="CornerRadius" Value="{StaticResource Radius.Control}" />
+    <Setter Property="FocusAdorner" Value="{DynamicResource NetPrints.FocusAdorner}" />
+    <Setter Property="CornerRadius" Value="{DynamicResource Radius.Control}" />
+  </Style>
+  <Style Selector="DocumentTabStripItem /template/ Border#PART_TabBody">
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="Background" Duration="{DynamicResource Motion.Fast}" Easing="{DynamicResource Motion.Easing}" />
+      </Transitions>
+    </Setter>
   </Style>
   <Style Selector="DocumentTabStripItem:pointerover:not(:selected) /template/ Border#PART_TabBody">
     <Setter Property="Background" Value="{DynamicResource State.Hover}" />

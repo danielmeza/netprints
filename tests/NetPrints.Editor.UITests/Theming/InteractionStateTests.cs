@@ -1,4 +1,6 @@
 using Avalonia;
+using Avalonia.Animation;
+using Avalonia.Animation.Easings;
 using Avalonia.Automation;
 using Avalonia.Controls;
 using Avalonia.Controls.Presenters;
@@ -15,6 +17,7 @@ using NetPrints.Compilation;
 using NetPrints.Core;
 using NetPrints.Editor.Commands.CommandPalette;
 using NetPrints.Editor.Contributions;
+using NetPrints.Editor.Contributions.BuiltIn;
 using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.UITests.Commands;
@@ -22,6 +25,7 @@ using DocumentId = NetPrints.Editor.Shell.DocumentId;
 using NetPrints.Editor.UITests.Driving;
 using NetPrints.Editor.UITests.Hosting;
 using NetPrints.Editor.UITests.Shell;
+using NetPrints.Extensibility.Settings;
 using NetPrints.Projects;
 using ShellWindow = NetPrints.Editor.Shell.ShellWindow;
 
@@ -58,6 +62,8 @@ public class InteractionStateTests
         Assert.IsAssignableFrom<ISolidColorBrush>(Resolve(key, variant)).Color;
 
     public static TheoryData<string> Kinds() => ["tree item", "document tab", "command-bar button", "menu item", "errors row"];
+
+    public static TheoryData<string> TransitionKinds() => ["tree item", "document tab", "command-bar button", "errors row"];
 
     private static async Task<(EditorSession Session, Control Control)> OpenAsync(string kind)
     {
@@ -206,6 +212,179 @@ public class InteractionStateTests
                     }
                 }
             }
+        }
+    }
+
+    private sealed class AnimationSettings(bool enabled) : ISettingsStore
+    {
+        public T Get<T>(ExtensionSettingsDescriptor<T> descriptor) =>
+            (object)new NetPrintsSettings { EnableAnimations = enabled } is T value ? value : descriptor.Default;
+
+        public ValueTask SetAsync<T>(ExtensionSettingsDescriptor<T> descriptor, T value, CancellationToken cancellationToken) => ValueTask.CompletedTask;
+    }
+
+    private static EditorApp App => Assert.IsType<EditorApp>(Application.Current);
+
+    private static double RowHeight => Assert.IsType<double>(Resolve("Density.RowHeight", ThemeVariant.Default));
+
+    private static ListBoxItem RowOf(Control content) =>
+        content.FindAncestorOfType<ListBoxItem>() ?? throw new InvalidOperationException("The element is not in a list row.");
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task TreeErrorsAndOutputRowsHaveTheDensityHeight()
+    {
+        var (session, tree) = await OpenAsync("tree item");
+        await using (session)
+        {
+            var project = session.App.Session.Project;
+            ClassGraph cls = project.Classes.Single();
+            project.LastDiagnostics = new ObservableRangeCollection<CodeDiagnostic>(
+                [new CodeDiagnostic(CodeDiagnosticSeverity.Error, "CS1503", "boom", cls.FullName, GraphKeys.For(cls.Methods.First()), cls.Methods.First().Nodes.First().Id, null, null)]);
+            HeadlessDriver.Pump();
+            ListBoxItem errorRow = session.Window.GetVisualDescendants().OfType<ListBoxItem>().First(item => AutomationProperties.GetAutomationId(item) == AutomationIds.ErrorsRow);
+
+            Assert.Equal(RowHeight, tree.MinHeight);
+            Assert.Equal(RowHeight, errorRow.MinHeight);
+            Assert.Equal(Assert.IsType<Thickness>(Resolve("Density.RowPadding", ThemeVariant.Default)), errorRow.Padding);
+
+            session.App.Composition.Context.RunState.BuildStarted();
+            session.App.Api.ShowPanel(PanelContributions.OutputId);
+            HeadlessDriver.Pump();
+            ListBoxItem outputRow = RowOf(session.Window.GetVisualDescendants().OfType<TextBlock>().First(text => AutomationProperties.GetAutomationId(text) == AutomationIds.OutputLine));
+
+            Assert.Equal(RowHeight, outputRow.MinHeight);
+        }
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public void ThePaletteRowsHaveTheDensityHeight()
+    {
+        using var ui = HeadlessUi.Create();
+        var dialog = ui.Show(new CommandPaletteDialog(NewPalette()));
+
+        ListBoxItem row = dialog.GetVisualDescendants().OfType<ListBoxItem>().First();
+
+        Assert.Equal(RowHeight, row.MinHeight);
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task TheCommandBarHasTheDensityHeight()
+    {
+        var (session, _) = await OpenAsync("command-bar button");
+        await using (session)
+        {
+            Border bar = session.Window.GetVisualDescendants().OfType<Border>().First(border => AutomationProperties.GetAutomationId(border) == AutomationIds.ShellCommandBar);
+
+            Assert.Equal(Assert.IsType<double>(Resolve("Density.CommandBarHeight", ThemeVariant.Default)), bar.Height);
+        }
+    }
+
+    private static CommandPaletteViewModel NewPalette()
+    {
+        var registry = new ContributionRegistry(NullLogger<ContributionRegistry>.Instance);
+        registry.AddCommand(new CommandDescriptor(ContributionIds.CommandPrefix + "save", "Save", new Probe()));
+        registry.Freeze();
+        return new CommandPaletteViewModel(registry, new CommandInvoker(registry, new Contexts(), exception => throw exception));
+    }
+
+    private static Animatable PartOf(Control control) =>
+        control.GetVisualDescendants().OfType<Animatable>().First(part => part is Control { Name: "PART_ContentPresenter" or "PART_LayoutRoot" or "PART_TabBody" });
+
+    private static void AssertFastBrushTransition(Animatable part, string what)
+    {
+        BrushTransition transition = Assert.Single((part.Transitions ?? []).OfType<BrushTransition>(), t => t.Property?.Name == "Background");
+        Assert.Equal(Assert.IsType<TimeSpan>(Resolve("Motion.Fast", ThemeVariant.Default)), transition.Duration);
+        Assert.IsType<CubicEaseOut>(transition.Easing);
+        Assert.True(transition.Duration == TimeSpan.FromMilliseconds(100), what);
+    }
+
+    private static void AssertFade(Animatable root)
+    {
+        DoubleTransition transition = Assert.Single((root.Transitions ?? []).OfType<DoubleTransition>(), t => t.Property?.Name == "Opacity");
+        Assert.Equal(Assert.IsType<TimeSpan>(Resolve("Motion.Normal", ThemeVariant.Default)), transition.Duration);
+        Assert.IsType<CubicEaseOut>(transition.Easing);
+    }
+
+    [AvaloniaTheory(Timeout = TestAppBuilder.Timeout)]
+    [MemberData(nameof(TransitionKinds))]
+    public async Task ButtonsTreeAndListRowsAndTabsTransitionTheirBackgroundOverMotionFast(string kind)
+    {
+        App.EnableTransitions();
+        try
+        {
+            var (session, control) = await OpenAsync(kind);
+            await using (session)
+            {
+                AssertFastBrushTransition(PartOf(control), kind);
+            }
+        }
+        finally
+        {
+            App.DisableTransitions();
+        }
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public void ThePaletteFadesInOverMotionNormal()
+    {
+        using var ui = HeadlessUi.Create();
+        App.EnableTransitions();
+        try
+        {
+            var dialog = ui.Show(new CommandPaletteDialog(NewPalette()));
+            Control root = dialog.GetVisualDescendants().OfType<Control>().First(control => control.Classes.Contains("popupFade"));
+            AssertFade(root);
+        }
+        finally
+        {
+            App.DisableTransitions();
+        }
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task TheNodeSearchPopupFadesInOverMotionNormal()
+    {
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        App.EnableTransitions();
+        try
+        {
+            await (await session.Graph.RightClickEmptyAsync(Token)).WaitOpenAsync(Token);
+            Control root = session.Window.GetVisualDescendants().OfType<Control>().First(control => control.Classes.Contains("popupFade"));
+            AssertFade(root);
+        }
+        finally
+        {
+            App.DisableTransitions();
+        }
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task TheAnimationsSettingSwitchesEveryTransitionOffAndOn()
+    {
+        App.ApplyAnimationSetting(new AnimationSettings(true));
+        try
+        {
+            var (session, button) = await OpenAsync("command-bar button");
+            await using (session)
+            {
+                Control[] themed = [button, session.Window.GetVisualDescendants().OfType<TreeViewItem>().First()];
+                Assert.All(themed, control => Assert.NotEmpty(PartOf(control).Transitions ?? []));
+
+                App.ApplyAnimationSetting(new AnimationSettings(false));
+                HeadlessDriver.Pump();
+                Assert.All(themed, control => Assert.Empty(PartOf(control).Transitions ?? []));
+                Assert.All(themed, control => Assert.Empty(control.Transitions ?? []));
+
+                App.ApplyAnimationSetting(new AnimationSettings(true));
+                using var ui = HeadlessUi.Create();
+                var probe = new Button();
+                ui.Show(new Window { Content = probe });
+                Assert.NotEmpty(PartOf(probe).Transitions ?? []);
+            }
+        }
+        finally
+        {
+            App.DisableTransitions();
         }
     }
 

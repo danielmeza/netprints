@@ -5,7 +5,7 @@
              x:Class="NetPrints.Editor.Output.OutputPanelView"
              x:DataType="edoutput:OutputPanelViewModel">
   <!-- The build output, then the program's stdout and stderr; the list follows the newest line. -->
-  <ListBox ItemsSource="{Binding Lines}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.OutputLines}">
+  <ListBox Classes="rows" ItemsSource="{Binding Lines}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.OutputLines}">
     <Interaction.Behaviors>
       <AutoScrollToBottomBehavior />
     </Interaction.Behaviors>

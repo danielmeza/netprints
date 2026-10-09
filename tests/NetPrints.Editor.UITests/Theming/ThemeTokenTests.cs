@@ -1,4 +1,5 @@
 using Avalonia;
+using Avalonia.Animation.Easings;
 using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
 using Avalonia.Layout;
@@ -131,6 +132,24 @@ public class ThemeTokenTests
     public void EveryCanvasControlThemeIsAvailable(string key)
     {
         Assert.IsType<ControlTheme>(Resolve(key, ThemeVariant.Default));
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public void TheDensityTokensHaveTheirValues()
+    {
+        Assert.Equal(24.0, Assert.IsType<double>(Resolve("Density.RowHeight", ThemeVariant.Default)));
+        Assert.Equal(new Thickness(8, 2), Assert.IsType<Thickness>(Resolve("Density.RowPadding", ThemeVariant.Default)));
+        double bar = Assert.IsType<double>(Resolve("Density.CommandBarHeight", ThemeVariant.Default));
+        Assert.Equal(36.0, bar);
+        Assert.True(bar <= 40, "the command bar stays at most 40 px high (FR-032)");
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public void TheMotionTokensHaveTheirValues()
+    {
+        Assert.Equal(TimeSpan.FromMilliseconds(100), Assert.IsType<TimeSpan>(Resolve("Motion.Fast", ThemeVariant.Default)));
+        Assert.Equal(TimeSpan.FromMilliseconds(150), Assert.IsType<TimeSpan>(Resolve("Motion.Normal", ThemeVariant.Default)));
+        Assert.IsType<CubicEaseOut>(Resolve("Motion.Easing", ThemeVariant.Default));
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]

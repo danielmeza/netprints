@@ -42,7 +42,7 @@
     </TreeView.Styles>
     <TreeView.ItemTemplate>
       <TreeDataTemplate x:DataType="edtree:ProjectTreeItemViewModel" ItemsSource="{Binding Children}">
-        <Grid ColumnDefinitions="Auto,*" Background="Transparent" Margin="0,2">
+        <Grid ColumnDefinitions="Auto,*" Background="Transparent">
           <Interaction.Behaviors>
             <edbehaviors:TreeDragSourceBehavior />
           </Interaction.Behaviors>

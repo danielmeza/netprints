@@ -23,6 +23,8 @@ public partial class EditorApp : Application
 
     private static EditorHostServices? hostServices;
 
+    private Style? noTransitions;
+
     /// <summary>
     /// Process-wide services (logging, extensions, settings, host channel, MSBuild availability). Set by the host (<c>NetPrints.Desktop</c>'s <c>Program</c>) before
     /// <c>StartWithClassicDesktopLifetime</c> runs; read by
@@ -52,11 +54,51 @@ public partial class EditorApp : Application
     /// Removes all transitions (theme animations), so screenshots and pixel checks are taken in a
     /// settled state. Used by the UI tests and by the desktop host in automation mode.
     /// </summary>
-    public void DisableTransitions() =>
-        Styles.Add(new Style(x => x.Is<Control>())
+    public void DisableTransitions()
+    {
+        if (noTransitions is not null)
+        {
+            return;
+        }
+
+        noTransitions = new Style(x => x.Is<Control>())
         {
             Setters = { new Setter(Animatable.TransitionsProperty, null) },
-        });
+        };
+        Styles.Add(noTransitions);
+    }
+
+    /// <summary>
+    /// Restores the transitions that <see cref="DisableTransitions"/> removed; does nothing when they are on.
+    /// </summary>
+    public void EnableTransitions()
+    {
+        if (noTransitions is null)
+        {
+            return;
+        }
+
+        Styles.Remove(noTransitions);
+        noTransitions = null;
+    }
+
+    /// <summary>
+    /// Switches every transition on or off according to <see cref="NetPrintsSettings.EnableAnimations"/>, so a
+    /// motion declared in a style needs no switch of its own.
+    /// </summary>
+    /// <param name="settings">The settings to read the animations flag from.</param>
+    public void ApplyAnimationSetting(ISettingsStore settings)
+    {
+        ArgumentNullException.ThrowIfNull(settings);
+        if (settings.Get(NetPrintsSettings.Descriptor).EnableAnimations)
+        {
+            EnableTransitions();
+        }
+        else
+        {
+            DisableTransitions();
+        }
+    }
 
     /// <summary>
     /// On a classic desktop lifetime: composes the editor's services, creates and shows the shell
@@ -68,10 +110,7 @@ public partial class EditorApp : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            if (!HostServices.Settings.Get(NetPrintsSettings.Descriptor).EnableAnimations)
-            {
-                DisableTransitions();
-            }
+            ApplyAnimationSetting(HostServices.Settings);
 
             var composition = new EditorComposition(HostServices);
             var exceptionHandler = composition.InstallUnhandledExceptionHandler();

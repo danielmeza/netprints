@@ -51,7 +51,7 @@
       </Menu.Styles>
     </Menu>
 
-    <Border DockPanel.Dock="Top" MaxHeight="40" Padding="4,0" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShellCommandBar}">
+    <Border DockPanel.Dock="Top" Height="{StaticResource Density.CommandBarHeight}" Padding="4,0" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ShellCommandBar}">
       <ItemsControl ItemsSource="{Binding CommandBar.Slots}">
         <ItemsControl.ItemsPanel>
           <ItemsPanelTemplate>

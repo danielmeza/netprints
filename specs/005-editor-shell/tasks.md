@@ -933,7 +933,7 @@ T094b before G5b's T093–T095, so the search safety net also guards T094.
   pointer-over and pressed backgrounds equal `State.Hover` and `State.Pressed` in both variants. Then the tokens and
   a focus-adorner template in `src/NetPrints.Editor/EditorStyles.axaml`, and the tab states in
   `src/NetPrints.Editor/Shell/Docking/DockStyles.axaml`. Canvas focus is P6 (M18).
-- [ ] T092d [US9] Density and motion (FR-087). Test first: `ThemeTokenTests` asserts `Density.RowHeight` 24,
+- [x] T092d [US9] Density and motion (FR-087). Test first: `ThemeTokenTests` asserts `Density.RowHeight` 24,
   `Density.RowPadding` (8, 2), `Density.CommandBarHeight` 36 (at most 40, FR-032), `Motion.Fast` 100 ms,
   `Motion.Normal` 150 ms and `Motion.Easing` (`CubicEaseOut`); `InteractionStateTests` asserts that tree, Errors,
   Output and palette rows have `MinHeight` = `Density.RowHeight`, that buttons, tree and list rows and tabs declare a

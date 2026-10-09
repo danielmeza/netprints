@@ -15,7 +15,12 @@
   <Interaction.Behaviors>
     <edb:DialogCloseBehavior />
   </Interaction.Behaviors>
-  <Grid Classes="dialogRoot" RowDefinitions="Auto,Auto">
+  <Grid Classes="dialogRoot popupFade" RowDefinitions="Auto,Auto">
+    <Interaction.Behaviors>
+      <LoadedTrigger>
+        <AddClassAction ClassName="shown" />
+      </LoadedTrigger>
+    </Interaction.Behaviors>
     <TextBox AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GoToQuery}" AutomationProperties.Name="Search" Text="{Binding Query}"
              PlaceholderText="Search graphs, nodes, variables and methods; start with &gt; for commands">
       <Interaction.Behaviors>

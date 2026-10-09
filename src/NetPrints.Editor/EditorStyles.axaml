@@ -60,6 +60,13 @@
       <!-- Interaction (FR-087): the ring, the shared corner radius and the density tokens. -->
       <Thickness x:Key="Focus.RingThickness">2</Thickness>
       <CornerRadius x:Key="Radius.Control">4</CornerRadius>
+      <x:Double x:Key="Density.RowHeight">24</x:Double>
+      <Thickness x:Key="Density.RowPadding">8,2</Thickness>
+      <x:Double x:Key="Density.CommandBarHeight">36</x:Double>
+      <!-- Motion (FR-087): every transition takes its duration and easing from here, so netprints.enableAnimations switches them all off. -->
+      <x:TimeSpan x:Key="Motion.Fast">0:0:0.1</x:TimeSpan>
+      <x:TimeSpan x:Key="Motion.Normal">0:0:0.15</x:TimeSpan>
+      <CubicEaseOut x:Key="Motion.Easing" />
       <FocusAdornerTemplate x:Key="NetPrints.FocusAdorner">
         <Border BorderThickness="{StaticResource Focus.RingThickness}" BorderBrush="{DynamicResource Focus.Ring}"
                 CornerRadius="{StaticResource Radius.Control}" IsHitTestVisible="False" />
@@ -389,6 +396,41 @@
     <Setter Property="FocusAdorner" Value="{StaticResource NetPrints.FocusAdorner}" />
     <Setter Property="CornerRadius" Value="{StaticResource Radius.Control}" />
   </Style>
+  <!-- Hover and pressed backgrounds fade over Motion.Fast. -->
+  <Style Selector="Button /template/ ContentPresenter#PART_ContentPresenter, ListBoxItem /template/ ContentPresenter#PART_ContentPresenter">
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="{x:Static ContentPresenter.BackgroundProperty}" Duration="{StaticResource Motion.Fast}" Easing="{StaticResource Motion.Easing}" />
+      </Transitions>
+    </Setter>
+  </Style>
+  <Style Selector="TreeViewItem /template/ Border#PART_LayoutRoot">
+    <Setter Property="Transitions">
+      <Transitions>
+        <BrushTransition Property="{x:Static Border.BackgroundProperty}" Duration="{StaticResource Motion.Fast}" Easing="{StaticResource Motion.Easing}" />
+      </Transitions>
+    </Setter>
+  </Style>
+
+  <!-- Row density: tree items, the Errors and Output rows and the quick-pick rows share one height and padding. -->
+  <Style Selector="TreeView TreeViewItem, ListBox.rows ListBoxItem, ListBox.quickPick ListBoxItem">
+    <Setter Property="MinHeight" Value="{StaticResource Density.RowHeight}" />
+    <Setter Property="Padding" Value="{StaticResource Density.RowPadding}" />
+  </Style>
+
+  <!-- Palette and node-search popups fade in over Motion.Normal: the root starts transparent and a Loaded trigger adds .shown. -->
+  <Style Selector=":is(Control).popupFade">
+    <Setter Property="Opacity" Value="0" />
+    <Setter Property="Transitions">
+      <Transitions>
+        <DoubleTransition Property="Opacity" Duration="{StaticResource Motion.Normal}" Easing="{StaticResource Motion.Easing}" />
+      </Transitions>
+    </Setter>
+  </Style>
+  <Style Selector=":is(Control).popupFade.shown">
+    <Setter Property="Opacity" Value="1" />
+  </Style>
+
   <Style Selector="TreeViewItem:not(:selected) /template/ Border#PART_LayoutRoot:pointerover">
     <Setter Property="Background" Value="{DynamicResource State.Hover}" />
   </Style>
@@ -518,9 +560,6 @@
   </Style>
 
   <!-- Search box flush with its popup. -->
-  <Style Selector="ListBox.quickPick ListBoxItem">
-    <Setter Property="MinHeight" Value="24" />
-  </Style>
   <Style Selector="Grid.quickPickRow.disabled">
     <Setter Property="Opacity" Value="0.5" />
   </Style>

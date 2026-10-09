@@ -5,14 +5,14 @@ Margin src/NetPrints.Editor/Dialogs/KeyboardShortcutsDialog.axaml 2
 Margin src/NetPrints.Editor/Dialogs/RecoverDialog.axaml 4
 Margin src/NetPrints.Editor/Dialogs/TrustDialog.axaml 1
 Margin src/NetPrints.Editor/Dialogs/UnsavedChangesDialog.axaml 2
-Margin src/NetPrints.Editor/ErrorList/ErrorListView.axaml 4
+Margin src/NetPrints.Editor/ErrorList/ErrorListView.axaml 3
 Margin src/NetPrints.Editor/Graph/GetSet/GetSetChooserView.axaml 2
 Margin src/NetPrints.Editor/Graph/Nodes/NodeView.axaml 6
 Margin src/NetPrints.Editor/Inspectors/ClassInspectorView.axaml 2
 Margin src/NetPrints.Editor/Inspectors/InspectorPanelView.axaml 1
 Margin src/NetPrints.Editor/Inspectors/MethodInspectorView.axaml 1
 Margin src/NetPrints.Editor/Inspectors/VariableInspectorView.axaml 1
-Margin src/NetPrints.Editor/ProjectTree/ProjectTreePanelView.axaml 2
+Margin src/NetPrints.Editor/ProjectTree/ProjectTreePanelView.axaml 1
 Margin src/NetPrints.Editor/References/ReferencesDialog.axaml 2
 Margin src/NetPrints.Editor/Search/NodeSearchView.axaml 2
 Margin src/NetPrints.Editor/Shell/ShellWindow.axaml 2
