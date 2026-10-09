@@ -6,12 +6,12 @@
         x:Class="NetPrints.Editor.Dialogs.SampleTargetDialog"
         x:DataType="eddialogs:SampleTargetDialogViewModel"
         Icon="avares://NetPrints.Editor/Assets/NetPrintsLogo.ico"
-        Width="520" Height="210" CanResize="False"
+        SizeToContent="WidthAndHeight" CanResize="False"
         WindowStartupLocation="CenterOwner" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SampleTargetDialog}">
   <Interaction.Behaviors>
     <edb:DialogCloseBehavior />
   </Interaction.Behaviors>
-  <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="{StaticResource Space.M}" RowSpacing="8">
+  <Grid RowDefinitions="Auto,Auto,Auto,Auto" Margin="{StaticResource Space.M}" RowSpacing="8" MinWidth="{StaticResource Dialog.MinWidth}" MaxWidth="{StaticResource Dialog.MaxWidth}">
     <TextBlock TextWrapping="Wrap" Text="{Binding Message}" />
     <TextBlock Grid.Row="1" Text="The copy goes in:" />
     <SelectableTextBlock Grid.Row="2" TextWrapping="Wrap" FontWeight="SemiBold" Text="{Binding TargetFolder}"

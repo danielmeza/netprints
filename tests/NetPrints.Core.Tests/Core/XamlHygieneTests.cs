@@ -624,11 +624,7 @@ namespace NetPrints.Tests.Core
         /// fixed size stays. Entries are legacy fixed sizes: remove one when its dialog moves to SizeToContent.</summary>
         private static readonly Dictionary<string, string> DialogSizingAllowlist = new(StringComparer.Ordinal)
         {
-            ["src/NetPrints.Editor/Dialogs/NewProjectDialog.axaml"] = "legacy fixed size",
-            ["src/NetPrints.Editor/Dialogs/SampleTargetDialog.axaml"] = "legacy fixed size, non-resizable",
             ["src/NetPrints.Editor/Dialogs/SelectMethodDialog.axaml"] = "replaced in T092j",
-            ["src/NetPrints.Editor/Dialogs/SelectTypeDialog.axaml"] = "legacy fixed size",
-            ["src/NetPrints.Editor/References/ReferencesDialog.axaml"] = "list dialog",
         };
 
         private static bool SizesToContent(AxamlFile file) =>

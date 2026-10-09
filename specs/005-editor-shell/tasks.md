@@ -971,7 +971,7 @@ T094b before G5b's T093–T095, so the search safety net also guards T094.
   stay green; `dialog-error.png` and the other dialog snapshots whose size changes are re-baselined. The older
   dialogs (select type, references, new project, sample target) adopt the shell in P6 (M13); select method adopts
   it in T092j.
-- [ ] T092g [US9] Every dialog sizes to its content (1 unit, FR-088; owner decision 2026-10-08). Test first: the
+- [x] T092g [US9] Every dialog sizes to its content (1 unit, FR-088; owner decision 2026-10-08). Test first: the
   `NewProjectDialog`, `SampleTargetDialog`, `SelectTypeDialog` and `ReferencesDialog` entries leave
   `DialogSizingAllowlist` (red on those four), and `tests/NetPrints.Editor.UITests/Dialogs/DialogSizingTests.cs`
   (headless) opens each of the four with its usual content and asserts that every button lies inside the window's

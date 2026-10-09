@@ -7,7 +7,7 @@
         x:DataType="edreferences:ReferenceListViewModel"
         Title="References"
         Icon="avares://NetPrints.Editor/Assets/NetPrintsLogo.ico"
-        Width="700" Height="450"
+        SizeToContent="Height" Width="{StaticResource Dialog.MaxWidth}"
         WindowStartupLocation="CenterOwner" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ReferencesDialog}">
   <Grid RowDefinitions="Auto,*,Auto" Margin="{StaticResource Space.S}">
     <Grid ColumnDefinitions="*,*">
@@ -17,7 +17,7 @@
               ToolTip.Tip="Add a source code directory reference which searches for .cs files" />
     </Grid>
 
-    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="{StaticResource Dialog.ListMaxHeight}">
       <ItemsControl x:Name="ReferenceList" ItemsSource="{Binding References}">
         <ItemsControl.ItemTemplate>
           <DataTemplate x:DataType="edreferences:DeclaredReferenceViewModel">
