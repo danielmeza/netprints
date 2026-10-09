@@ -8,11 +8,11 @@ using NetPrints.Core;
 using NetPrints.Editor.Contributions;
 using NetPrints.Editor.Contributions.BuiltIn;
 using NetPrints.Editor.Controls;
-using NetPrints.Editor.Icons;
 using NetPrints.Editor.Diagnostics;
 using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Hosting;
 using NetPrints.Editor.Hosting.Automation;
+using NetPrints.Editor.Icons;
 using NetPrints.Editor.References;
 using NetPrints.Editor.StartPage;
 using NetPrints.Editor.State;
@@ -154,7 +154,7 @@ public class DialogTests
         Assert.Equal(ResourceNumber("Dialog.MaxWidth"), dialog.ClientSize.Width);
         Assert.InRange(dialog.ClientSize.Height, 440, 520);
         Assert.Equal(["Exception", "Object"], Assert.IsType<SelectMethodDialogViewModel>(dialog.DataContext).List.Rows.Where(row => row.IsHeader).Select(row => row.Text));
-        Assert.Equal(ResourceNumber("Dialog.ListMaxHeight"),Named<ListBox>(dialog, AutomationIds.MethodPickerRows).Bounds.Height);
+        Assert.Equal(ResourceNumber("Dialog.ListMaxHeight"), Named<ListBox>(dialog, AutomationIds.MethodPickerRows).Bounds.Height);
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]

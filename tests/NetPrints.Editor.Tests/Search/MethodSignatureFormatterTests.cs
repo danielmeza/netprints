@@ -92,7 +92,7 @@ public class MethodSignatureFormatterTests
     {
         Assert.Equal("Exception", MethodSignatureFormatter.DeclaringTypeName(Method(typeof(Exception), "ToString", typeof(string))));
         Assert.Equal("Object", MethodSignatureFormatter.DeclaringTypeName(Method(typeof(object), "ToString", typeof(string))));
-        Assert.Equal("List<int>",MethodSignatureFormatter.DeclaringTypeName(Method(typeof(List<int>), "Clear", null)));
+        Assert.Equal("List<int>", MethodSignatureFormatter.DeclaringTypeName(Method(typeof(List<int>), "Clear", null)));
         Assert.Equal("StringBuilder", MethodSignatureFormatter.DeclaringTypeName(new ConstructorSpecifier([], TypeSpecifier.FromType<System.Text.StringBuilder>())));
     }
 

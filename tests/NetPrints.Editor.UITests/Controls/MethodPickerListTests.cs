@@ -139,7 +139,7 @@ public class MethodPickerListTests
 
         TextBlock mark = current.GetVisualDescendants().OfType<TextBlock>().Single(text => text.Classes.Contains("methodMark") && text.IsEffectivelyVisible);
         Assert.True(window.TryFindResource("SystemControlForegroundBaseMediumBrush", window.ActualThemeVariant, out object? token));
-        Assert.Equal(Assert.IsAssignableFrom<ISolidColorBrush>(token).Color,Assert.IsAssignableFrom<ISolidColorBrush>(mark.Foreground).Color);
+        Assert.Equal(Assert.IsAssignableFrom<ISolidColorBrush>(token).Color, Assert.IsAssignableFrom<ISolidColorBrush>(mark.Foreground).Color);
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
