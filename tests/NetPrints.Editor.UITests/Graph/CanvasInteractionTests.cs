@@ -279,8 +279,11 @@ public class CanvasInteractionTests
         var node = session.Graph.Node("CallMethodNode");
 
         Assert.True(await node.Overloads.IsVisibleAsync(Token)); // PAR-40
-        var intOverload = write.Overloads.OfType<MethodSpecifier>().First(m => m.Parameters.Count == 1 && m.Parameters[0].Value == TypeSpecifier.FromType<int>());
-        write.SelectedOverload = intOverload; // the overload list is a combo box; choosing an item is its own contract
+        var picker = Assert.IsType<Editor.Controls.MethodPickerListViewModel>(write.OverloadPicker);
+        var intRow = picker.Rows.Single(row => row.Item?.Method is { Parameters: [{ Value: var type }] } && type == TypeSpecifier.FromType<int>());
+        var intOverload = intRow.Item?.Method; // the flyout list is covered by OverloadFlyoutTests
+        picker.Selected = intRow;
+        picker.PickCommand.Execute(null);
         await session.WaitForRenderedAsync(Token);
         Assert.Equal(intOverload, method.Nodes.OfType<CallMethodNode>().Single().MethodSpecifier);
 

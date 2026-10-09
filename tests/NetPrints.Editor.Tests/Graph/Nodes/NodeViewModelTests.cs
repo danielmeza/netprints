@@ -1,4 +1,5 @@
 using NetPrints.Core;
+using NetPrints.Editor.Controls;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Graph.Nodes;
 using NetPrints.Editor.Graph.Pins;
@@ -62,28 +63,101 @@ public class NodeViewModelTests(TestEditor editor) : GraphTestBase(editor)
     }
 
     [Fact]
-    public void OverloadsAndUndoableChange()
+    public void TheOverloadListHoldsEveryOverloadWithTheCurrentOneMarkedAndFirst()
+    {
+        var current = ConsoleWriteLine(StringType);
+        var write = VmOf(new CallMethodNode(Method, current));
+
+        Assert.True(write.ShowOverloads);
+        var picker = Assert.IsType<MethodPickerListViewModel>(write.OverloadPicker);
+        var items = picker.Rows.Select(row => Assert.IsType<MethodPickerItem>(row.Item)).ToList();
+        Assert.All(items, item => Assert.Equal("WriteLine", item.Name));
+        Assert.True(items.Count > 10);
+        Assert.Equal(current, items[0].Method);
+        Assert.True(items[0].IsCurrent);
+        Assert.Single(items, item => item.IsCurrent);
+
+        var rest = items.Skip(1).Select(item => (item.ParameterCount, item.Signature)).ToList();
+        Assert.Equal(rest.OrderBy(entry => entry.ParameterCount).ThenBy(entry => entry.Signature, StringComparer.Ordinal), rest);
+    }
+
+    [Fact]
+    public void AConstructorNodeOffersItsOtherConstructors()
+    {
+        var constructors = Editor.Reflection.Provider.GetConstructors(TypeSpecifier.FromType<List<int>>()).ToList();
+        var node = VmOf(new ConstructorNode(Method, constructors[0]));
+
+        var picker = Assert.IsType<MethodPickerListViewModel>(node.OverloadPicker);
+        var items = picker.Rows.Select(row => Assert.IsType<MethodPickerItem>(row.Item)).ToList();
+        Assert.Equal(constructors.Count, items.Count);
+        Assert.Equal(constructors[0], items[0].Constructor);
+        Assert.True(items[0].IsCurrent);
+    }
+
+    [Fact]
+    public void PickingAnOverloadReplacesTheNodeAndOneUndoRestoresIt()
     {
         var write = VmOf(new CallMethodNode(Method, ConsoleWriteLine(StringType)));
-        Assert.True(write.ShowOverloads);
-        Assert.True(write.Overloads.OfType<MethodSpecifier>().All(m => m.Name == "WriteLine"));
-        Assert.False(write.Overloads.Contains(write.CurrentOverload!), "the current overload is excluded");
+        var picker = Assert.IsType<MethodPickerListViewModel>(write.OverloadPicker);
+        var intRow = picker.Rows.Single(row => row.Item?.Method is { Parameters: [{ Value: var type }] } && type == IntType);
+        picker.Selected = intRow;
 
-        var intOverload = write.Overloads.OfType<MethodSpecifier>().First(m => m.Parameters.Count == 1 && m.Parameters[0].Value == IntType);
-        write.SelectedOverload = intOverload;
+        picker.PickCommand.Execute(null);
 
-        var replaced = Method.Nodes.OfType<CallMethodNode>().Single();
-        Assert.Equal(intOverload, replaced.MethodSpecifier);
-        Assert.Null(write.SelectedOverload);
-
+        Assert.Equal(intRow.Item?.Method, Method.Nodes.OfType<CallMethodNode>().Single().MethodSpecifier);
         ClassContext.UndoRedo.Undo();
         Assert.Equal(StringType, Method.Nodes.OfType<CallMethodNode>().Single().MethodSpecifier.Parameters[0].Value);
+    }
 
+    [Fact]
+    public void PickingTheCurrentOverloadChangesNothing()
+    {
+        var write = VmOf(new CallMethodNode(Method, ConsoleWriteLine(StringType)));
+        var picker = Assert.IsType<MethodPickerListViewModel>(write.OverloadPicker);
+        var undoName = ClassContext.UndoRedo.UndoName;
+
+        picker.Selected = picker.Rows[0];
+        picker.PickCommand.Execute(null);
+
+        Assert.Equal(undoName, ClassContext.UndoRedo.UndoName);
+        Assert.Same(write.Node, Method.Nodes.OfType<CallMethodNode>().Single());
+    }
+
+    [Fact]
+    public void TheButtonTooltipGivesTheCountAndTheCurrentSignature()
+    {
+        var write = VmOf(new CallMethodNode(Method, ConsoleWriteLine(StringType)));
+        var picker = Assert.IsType<MethodPickerListViewModel>(write.OverloadPicker);
+
+        Assert.Equal($"Overloads ({picker.Rows.Count}): void WriteLine(string value)", write.OverloadsTooltip);
+    }
+
+    [Fact]
+    public void ThereIsNoButtonWithoutAnotherOverload()
+    {
+        var entry = VmOf(Method.EntryNode);
+
+        Assert.False(entry.ShowOverloads);
+        Assert.Null(entry.OverloadPicker);
+    }
+
+    [Fact]
+    public void AMakeArrayNodeOffersItsOtherSizeModeThroughTheSameList()
+    {
         var makeArray = VmOf(new MakeArrayNode(Method));
-        Assert.Equal(new object[] { ModelOperations.UsePredefinedSize }, makeArray.Overloads.ToArray());
-        makeArray.SelectedOverload = ModelOperations.UsePredefinedSize;
+        var picker = Assert.IsType<MethodPickerListViewModel>(makeArray.OverloadPicker);
+
+        Assert.Equal([ModelOperations.UseInitializerList, ModelOperations.UsePredefinedSize], picker.Rows.Select(row => row.Text).Order().ToList());
+        Assert.Equal(ModelOperations.UseInitializerList, picker.Rows[0].Text);
+        Assert.True(picker.Rows[0].IsCurrent);
+
+        picker.Selected = picker.Rows[1];
+        picker.PickCommand.Execute(null);
+
         Assert.True(((MakeArrayNode)makeArray.Node).UsePredefinedSize);
-        Assert.Equal(new object[] { ModelOperations.UseInitializerList }, makeArray.Overloads.ToArray());
+        var after = Assert.IsType<MethodPickerListViewModel>(makeArray.OverloadPicker);
+        Assert.Equal(ModelOperations.UsePredefinedSize, after.Rows[0].Text);
+        Assert.True(after.Rows[0].IsCurrent);
     }
 
     [Fact]

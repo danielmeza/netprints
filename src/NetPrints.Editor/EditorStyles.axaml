@@ -91,6 +91,7 @@
       <x:Double x:Key="Dialog.MinWidth">360</x:Double>
       <x:Double x:Key="Dialog.MaxWidth">640</x:Double>
       <x:Double x:Key="Dialog.ListMaxHeight">360</x:Double>
+      <x:Double x:Key="Flyout.MethodPickerWidth">480</x:Double>
       <ControlTheme x:Key="{x:Type ctl:DialogShell}" TargetType="ctl:DialogShell">
         <Setter Property="MinWidth" Value="{StaticResource Dialog.MinWidth}" />
         <Setter Property="MaxWidth" Value="{StaticResource Dialog.MaxWidth}" />

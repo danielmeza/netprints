@@ -159,7 +159,6 @@ namespace NetPrints.Tests.Core
             ("tests/NetPrints.Desktop.E2ETests/Hosting/XServer.cs", "var process = Process.Start(info)!;"),
             ("tests/NetPrints.Desktop.E2ETests/Hosting/XServer.cs", "windowManager = Process.Start(wm)!;"),
             ("tests/NetPrints.Editor.Tests/Graph/NodeGraphViewModelTests.cs", "Assert.Equal(variable.Name, graph.GetSetChooser.Variable!.Name);"),
-            ("tests/NetPrints.Editor.Tests/Graph/Nodes/NodeViewModelTests.cs", "Assert.False(write.Overloads.Contains(write.CurrentOverload!), \"the current overload is excluded\");"),
             ("tests/NetPrints.Editor.Tests/Graph/Pins/NodePinViewModelTests.cs", "Assert.Contains(\"Monday\", enumPin.PossibleEnumNames!.ToList());"),
             ("tests/NetPrints.Editor.Tests/Graph/ReflectionReloadTests.cs", "Assert.Contains(\"Monday\", pin.PossibleEnumNames!);"),
             ("tests/NetPrints.Editor.Tests/Search/SearchPerformanceTests.cs", "var output = TestContext.Current.TestOutputHelper!;"),

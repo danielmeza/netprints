@@ -4,6 +4,7 @@ using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using NetPrints.Core;
+using NetPrints.Editor.Controls;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Graph.Pins;
 using NetPrints.Editor.ModelSync;
@@ -28,7 +29,6 @@ public sealed partial class NodeViewModel : ObservableObject, IDisposable
     private readonly ObservableViewModelCollection<NodePinViewModel, NodeOutputExecPin> outputExecPins;
     private readonly ObservableViewModelCollection<NodePinViewModel, NodeOutputDataPin> outputDataPins;
     private readonly ObservableViewModelCollection<NodePinViewModel, NodeOutputTypePin> outputTypePins;
-    private bool suppressOverloadSelection;
 
     /// <summary>
     /// Wraps <paramref name="node"/>: builds its pin view models, subscribes to its position, input
@@ -180,35 +180,27 @@ public sealed partial class NodeViewModel : ObservableObject, IDisposable
 
     // Overloads (PAR-40)
 
-    /// <summary>Other overloads of call/constructor nodes, or the other size mode of make-array nodes.</summary>
+    /// <summary>
+    /// Gets the list the overloads button's flyout shows: every overload of a call or constructor node, or both size
+    /// modes of a make-array node, the current one marked and first; <see langword="null"/> when the node has no other
+    /// overload. Picking another one changes the node through the undo stack.
+    /// </summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(ShowOverloads))]
-    public partial IReadOnlyList<object> Overloads { get; set; } = [];
+    public partial MethodPickerListViewModel? OverloadPicker { get; private set; }
 
-    /// <summary>Whether the overload chooser should be shown (there is at least one entry in <see cref="Overloads"/>).</summary>
-    public bool ShowOverloads => Overloads.Count > 0;
-
-    /// <summary>Chooser selection; choosing an overload changes it through the undo stack.</summary>
+    /// <summary>Gets the overloads button's tooltip: "Overloads (n): current signature".</summary>
     [ObservableProperty]
-    public partial object? SelectedOverload { get; set; }
+    public partial string OverloadsTooltip { get; private set; } = "Overloads";
 
-    partial void OnSelectedOverloadChanged(object? value)
+    /// <summary>Gets a value indicating whether the overloads button is shown: the node has another overload.</summary>
+    public bool ShowOverloads => OverloadPicker is not null;
+
+    private void OnOverloadPicked(object? sender, MethodPickerItem item)
     {
-        if (value is null || suppressOverloadSelection)
+        if (!item.IsCurrent)
         {
-            return;
-        }
-
-        Graph.ChangeOverload(this, value);
-
-        suppressOverloadSelection = true;
-        try
-        {
-            SelectedOverload = null;
-        }
-        finally
-        {
-            suppressOverloadSelection = false;
+            Graph.ChangeOverload(this, item.Member);
         }
     }
 
@@ -222,28 +214,55 @@ public sealed partial class NodeViewModel : ObservableObject, IDisposable
     internal void UpdateOverloads()
     {
         var reflection = Graph.Context.Reflection;
-        if (!reflection.IsLoaded)
+        List<MethodPickerItem> items = [];
+        if (Node is MakeArrayNode makeArray)
         {
-            // Refreshed by OnReflectionReloaded once the host has loaded.
-            Overloads = Node is MakeArrayNode makeArrayNode ? [OtherSizeMode(makeArrayNode)] : [];
+            items = [.. new[] { ModelOperations.UsePredefinedSize, ModelOperations.UseInitializerList }.Select(mode => MethodPickerItem.ForMode(mode, mode == CurrentMode(makeArray)))];
+        }
+        else if (reflection.IsLoaded)
+        {
+            // Without a loaded host the list stays empty; OnReflectionReloaded refreshes it.
+            var provider = reflection.Provider;
+            items = Node switch
+            {
+                CallMethodNode { MethodSpecifier: not null } call => CallItems(provider.GetPublicMethodOverloads(call.MethodSpecifier), call.MethodSpecifier),
+                ConstructorNode { ConstructorSpecifier: not null } ctor =>
+                    [.. provider.GetConstructors(ctor.ConstructorSpecifier.DeclaringType).Select(c => MethodPickerItem.For(c, SameConstructor(c, ctor.ConstructorSpecifier)))],
+                _ => [],
+            };
+        }
+
+        MethodPickerItem? current = items.Find(item => item.IsCurrent);
+        if (items.Count < 2 || current is null)
+        {
+            SetOverloadPicker(null, "Overloads");
             return;
         }
 
-        var provider = reflection.Provider;
-        Overloads = Node switch
-        {
-            CallMethodNode { MethodSpecifier: not null } call =>
-                provider.GetPublicMethodOverloads(call.MethodSpecifier).Where(m => m != call.MethodSpecifier).Cast<object>().ToList(),
-            ConstructorNode { ConstructorSpecifier: not null } ctor =>
-                provider.GetConstructors(ctor.ConstructorSpecifier.DeclaringType)
-                    .Where(c => !SameConstructor(c, ctor.ConstructorSpecifier)).Cast<object>().ToList(),
-            MakeArrayNode makeArray => [OtherSizeMode(makeArray)],
-            _ => [],
-        };
+        var picker = new MethodPickerListViewModel(items, showGroupHeaders: false);
+        picker.Picked += OnOverloadPicked;
+        SetOverloadPicker(picker, $"Overloads ({items.Count}): {current.Signature}");
     }
 
-    private static object OtherSizeMode(MakeArrayNode node) =>
-        node.UsePredefinedSize ? ModelOperations.UseInitializerList : ModelOperations.UsePredefinedSize;
+    private void SetOverloadPicker(MethodPickerListViewModel? picker, string tooltip)
+    {
+        if (OverloadPicker is { } old)
+        {
+            old.Picked -= OnOverloadPicked;
+        }
+
+        OverloadPicker = picker;
+        OverloadsTooltip = tooltip;
+    }
+
+    private static string CurrentMode(MakeArrayNode node) =>
+        node.UsePredefinedSize ? ModelOperations.UsePredefinedSize : ModelOperations.UseInitializerList;
+
+    private static List<MethodPickerItem> CallItems(IEnumerable<MethodSpecifier> overloads, MethodSpecifier current)
+    {
+        List<MethodSpecifier> all = [.. overloads.Where(method => method != current).Prepend(current)];
+        return [.. all.Select(method => MethodPickerItem.For(method, method == current))];
+    }
 
     /// <summary>Refreshes everything that comes from reflection after the host (re)loaded.</summary>
     internal void OnReflectionReloaded()

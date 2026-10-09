@@ -30,6 +30,22 @@ public sealed record MethodPickerItem(
     /// <summary>Gets the constructor this item stands for, or <see langword="null"/> for a method.</summary>
     public ConstructorSpecifier? Constructor => Member as ConstructorSpecifier;
 
+    /// <summary>The group both size modes of a make-array node share.</summary>
+    public const string ModeGroupName = "Size mode";
+
+    /// <summary>Gets the size-mode text this item stands for, or <see langword="null"/> for a method or a constructor.</summary>
+    public string? Mode => Member as string;
+
+    /// <summary>Creates the item of a make-array node's size mode, which shares the overload list.</summary>
+    /// <param name="mode">The mode text, <c>ModelOperations.UsePredefinedSize</c> or <c>ModelOperations.UseInitializerList</c>.</param>
+    /// <param name="isCurrent">Whether it is the mode in use.</param>
+    /// <returns>The item, named and signed by its text.</returns>
+    public static MethodPickerItem ForMode(string mode, bool isCurrent = false)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(mode);
+        return new MethodPickerItem(mode, ModeGroupName, mode, 0, mode, isCurrent);
+    }
+
     /// <summary>Creates the item of a method.</summary>
     /// <param name="method">The method.</param>
     /// <param name="isCurrent">Whether it is the overload in use.</param>

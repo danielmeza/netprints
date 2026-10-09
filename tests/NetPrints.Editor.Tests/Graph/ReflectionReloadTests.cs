@@ -44,11 +44,12 @@ public sealed class ReflectionReloadTests : IDisposable
     {
         var call = new CallMethodNode(method, WriteLine(TypeSpecifier.FromType<string>()));
         var node = graph.Nodes.Single(n => n.Node == call);
-        Assert.Empty(node.Overloads);
+        Assert.False(node.ShowOverloads);
 
         await host.ReloadAsync(Project.FromSnapshot(TestSnapshots.WithRuntimeAssemblies("P", "N")), TestContext.Current.CancellationToken);
 
-        Assert.True(node.Overloads.Count > 10, $"overloads after load: {node.Overloads.Count}");
+        var rows = node.OverloadPicker?.Rows.Count ?? 0;
+        Assert.True(rows > 10, $"overloads after load: {rows}");
         Assert.True(node.ShowOverloads);
     }
 

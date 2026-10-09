@@ -124,7 +124,7 @@ public class CanvasPaletteTests
             {
                 var node = Assert.IsType<NodeViewModel>(view.DataContext);
                 Border header = view.GetVisualDescendants().OfType<Border>().Single(b => b.Name == "Header");
-                IconPresenter glyph = header.GetVisualDescendants().OfType<IconPresenter>().Single();
+                IconPresenter glyph = header.GetVisualDescendants().OfType<IconPresenter>().First(icon => icon.IconId == NodeIcons.For(node.VisualKind));
 
                 Assert.Contains(node.Role.StyleClass, header.Classes);
                 Assert.Equal(NodeIcons.For(node.VisualKind), glyph.IconId);

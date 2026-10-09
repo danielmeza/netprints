@@ -5,7 +5,7 @@
              xmlns:edgraph="clr-namespace:NetPrints.Editor.Graph"
              xmlns:ednodes="clr-namespace:NetPrints.Editor.Graph.Nodes"
              xmlns:edpins="clr-namespace:NetPrints.Editor.Graph.Pins"
-             xmlns:edsearch="clr-namespace:NetPrints.Editor.Search"
+             xmlns:ctl="clr-namespace:NetPrints.Editor.Controls"
              xmlns:nn="clr-namespace:Nodify.Avalonia.Nodes;assembly=Nodify.Avalonia"
              xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
              xmlns:conv="clr-namespace:Avalonia.Data.Converters;assembly=Avalonia.Base"
@@ -103,15 +103,19 @@
         </Interaction.Behaviors>
         <Grid ColumnDefinitions="Auto,Auto,Auto,*">
           <icons:IconPresenter IconId="{Binding KindIconId}" VerticalAlignment="Center" AutomationProperties.AccessibilityView="Raw" />
-          <!-- Overload chooser (PAR-40) -->
-          <ComboBox x:Name="Overloads" Grid.Column="1" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NodeOverloads}" Margin="2" Width="24" ToolTip.Tip="Overloads" IsVisible="{Binding ShowOverloads}"
-                    ItemsSource="{Binding Overloads}" SelectedItem="{Binding SelectedOverload}" MaxDropDownHeight="400">
-            <ComboBox.ItemTemplate>
-              <DataTemplate x:DataType="x:Object">
-                <TextBlock Text="{Binding Converter={x:Static edsearch:MethodSpecifierConverter.Instance}}" />
-              </DataTemplate>
-            </ComboBox.ItemTemplate>
-          </ComboBox>
+          <!-- Overloads button (PAR-40, FR-095): the flyout lists every overload. -->
+          <Button x:Name="OverloadsButton" Grid.Column="1" Classes="icon" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NodeOverloads}"
+                  AutomationProperties.Name="Overloads" ToolTip.Tip="{Binding OverloadsTooltip}" IsVisible="{Binding ShowOverloads}">
+            <icons:IconPresenter IconId="{x:Static icons:IconIds.Overloads}" AutomationProperties.AccessibilityView="Raw" />
+            <Interaction.Behaviors>
+              <edbehaviors:HideFlyoutOnPickBehavior Picker="{Binding OverloadPicker}" />
+            </Interaction.Behaviors>
+            <Button.Flyout>
+              <Flyout Placement="BottomEdgeAlignedLeft">
+                <ctl:MethodPickerList Width="{StaticResource Flyout.MethodPickerWidth}" DataContext="{Binding OverloadPicker}" />
+              </Flyout>
+            </Button.Flyout>
+          </Button>
           <TextBlock x:Name="NodeLabel" Classes="nodeTitle" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.NodeLabel}" Grid.Column="2" Text="{Binding Label}" Margin="12,0"
                      VerticalAlignment="Center" />
           <!-- Pure (PAR-41) -->
