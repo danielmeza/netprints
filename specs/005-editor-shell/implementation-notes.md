@@ -2307,3 +2307,39 @@ test-first. The spec's Clarifications, session 2026-10-09, record them.
   is not connected.
 - Snapshot: `search-popup` re-baselined and opened. The search was opened after an Esc over the Exec output; the WriteLine to Return
   wire now stays and the tab is no longer marked unsaved.
+
+## CI hang (batch CI-H: the `Test (Editor)` leg that stalled)
+
+- Symptom: from 2026-10-09 07:35 the Editor leg stalled on most attempts, before and after G5a: cancelled at 35 min (runs
+  37899846112 a1, 37950644812 a1/a3/a4, 37940622865 a3, 37973965758 a1, 37984996410 a1/a2) or "The runner has received a shutdown
+  signal" (37935825417, 37950644812 a2, 37973965758 a2, 37980000737 a1/a2). One attempt finished: 37969692960 a1 ran 18 min, and
+  `ReflectionHostTests.ProjectClassesAreVisibleToReflection` (timeout 120 s) ran 722 s while no other test completed (the project
+  runs its tests one at a time). With the diagnostics below, run 37997653699 stalled the same way: neither the 8-minute hang dump
+  nor the 24-minute step timeout fired, so the VM itself had stopped responding. Runner image ubuntu24 20261004.327.1, 4 CPUs,
+  15989 MiB, 3 GiB swap, SDK 10.0.401 on every attempt, green or not.
+- Cause, measured locally with the CI command on 4 CPUs (`taskset`): the test host reached 22.7 GB RSS (it passes on a 62 GB machine;
+  the runner has 16 GB). Heap dumps (`dotnet-dump`, `dumpheap -live`, `gcroot`, `dumpasync`) showed two causes:
+  - A leak through the run-wide reflection host of `Startup`: 75 s in, 80 live `CodeAnalysisSession`s, each holding every runtime
+    assembly read into native memory (`MetadataReference.CreateFromFile`, about 75 MB), all rooted at that host's `Reloaded` list
+    through `NodeGraphViewModel` → `ClassContext` → `CodeViewViewModel` → `CodeAnalysisHost`: graphs the tests never dispose.
+  - References reloads nobody waits for: `ProjectLoader` started each reload without a token, so it ran to the end after a newer
+    reload or after the loader was disposed. A dump showed 16 threads in `ReflectionHost.ReloadAsync`'s background build at once
+    (15 from `ProjectLoader.ReloadReflectionAsync` of finished tests), each with its own provider and a CPU.
+- Fix: `7c199af1` gives each test a `ScopedReflectionHost` (scoped in `Startup`, disposed with the test's scope) over the shared
+  host, so whatever a test leaves subscribed goes with it. `6aad3649` makes `ProjectLoader` cancel the running reload, the
+  references reload included, when a newer one starts or the loader is disposed, and `ReflectionHost.ReloadAsync` observe its token
+  for every type and member it enumerates and publish nothing once cancelled. Red first, all as assertions:
+  `StartupTests.AGraphATestLeavesOpenIsReleasedWithTheTestsScope`,
+  `ReflectionReloadCancellationTests.DisposingTheLoaderCancelsTheReloadStillRunning` and `.ANewerReloadCancelsTheOneStillRunning`,
+  `ReflectionHostTests.AReloadCancelledDuringItsWarmUpStopsThereAndPublishesNothing`.
+- After: locally peak RSS 10.2 GB and 1:56 (was 22.7 GB and 3:10); 6.4 GB with `MALLOC_MMAP_THRESHOLD_=131072`, so about 4 GB
+  of the rest is freed native memory glibc keeps. CI run 38003356149: the Editor leg passed in 3:05 (test host at most 5.8 GB,
+  8.0 of 16 GB used) and on a re-run of that job in 1:59 (at most 8.9 GB, 11.4 of 16 GB used), no swap, every other job green, trim
+  warnings 14.
+- Diagnostics kept (`7a197b0c`): the test matrix prints the runner image, logs memory, swap, load and the biggest processes every
+  30 s (`[monitor]` lines, also uploaded as `hang-<leg>`), dumps and stops a test host after 8 minutes without test progress
+  (`Microsoft.Testing.Extensions.HangDump` 1.9.1), ends the Test step at 24 minutes and prints the kernel OOM lines.
+- Follow-up (not done): `ReflectionProvider` and every `CodeAnalysisSession` each read all reference images again; sharing the
+  `MetadataReference`s per file would remove most of the remaining native churn in the editor and in the tests.
+- Whole suite (Release): 3798 tests, 3770 passed, 0 failed, 28 skipped (as before). Desktop E2E with `NETPRINTS_E2E=1` and
+  `--fail-skips on`: 47 passed. Release build 0 warnings, `dotnet format` clean.
