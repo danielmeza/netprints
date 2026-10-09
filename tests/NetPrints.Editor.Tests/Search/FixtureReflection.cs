@@ -86,9 +86,43 @@ public sealed class FixtureProvider(IReflectionProvider inner) : IReflectionProv
 
     public IEnumerable<string> GetEnumNames(TypeSpecifier typeSpecifier) => inner.GetEnumNames(typeSpecifier);
 
-    public IEnumerable<MethodSpecifier> GetMethods(ReflectionProviderMethodQuery query) => inner.GetMethods(query).Where(Keep);
+    private readonly Lazy<IReadOnlyList<MethodSpecifier>> methods = new(() =>
+        [.. new[] { ConsoleType, TypeSpecifier.FromType(typeof(Math)), StringType, ObjectType }
+            .SelectMany(type => inner.GetMethods(new ReflectionProviderMethodQuery().WithType(type)))
+            .Where(Keep).Distinct()
+            .OrderBy(method => method.DeclaringType.ShortName, StringComparer.Ordinal).ThenBy(method => method.Name, StringComparer.Ordinal)]);
 
-    public IEnumerable<VariableSpecifier> GetVariables(ReflectionProviderVariableQuery query) => inner.GetVariables(query).Where(Keep);
+    private readonly Lazy<IReadOnlyList<VariableSpecifier>> variables = new(() =>
+        [.. new[] { StringType, IntType }
+            .SelectMany(type => inner.GetVariables(new ReflectionProviderVariableQuery().WithType(type)))
+            .Where(Keep).Distinct()
+            .OrderBy(variable => variable.DeclaringType?.ShortName, StringComparer.Ordinal).ThenBy(variable => variable.Name, StringComparer.Ordinal)]);
+
+    private bool IsSameOrDerived(TypeSpecifier derived, TypeSpecifier type) => derived == type || inner.TypeSpecifierIsSubclassOf(derived, type);
+
+    public IEnumerable<MethodSpecifier> GetMethods(ReflectionProviderMethodQuery query)
+    {
+        if (query.Type is not null)
+        {
+            return inner.GetMethods(query).Where(Keep);
+        }
+
+        return methods.Value.Where(method =>
+            (query.Static is not { } isStatic || method.Modifiers.HasFlag(MethodModifiers.Static) == isStatic)
+            && query.HasGenericArguments != true
+            && (query.ArgumentType is not { } argument || method.Parameters.Any(parameter => parameter.Value is TypeSpecifier type && IsSameOrDerived(argument, type)))
+            && (query.ReturnType is not { } returned || method.ReturnTypes.Any(result => result is TypeSpecifier type && IsSameOrDerived(type, returned))));
+    }
+
+    public IEnumerable<VariableSpecifier> GetVariables(ReflectionProviderVariableQuery query)
+    {
+        if (query.Type is not null)
+        {
+            return inner.GetVariables(query).Where(Keep);
+        }
+
+        return variables.Value.Where(variable => query.Static is not { } isStatic || variable.Modifiers.HasFlag(VariableModifiers.Static) == isStatic);
+    }
 
     public string? GetMethodDocumentation(MethodSpecifier methodSpecifier) => inner.GetMethodDocumentation(methodSpecifier);
 
