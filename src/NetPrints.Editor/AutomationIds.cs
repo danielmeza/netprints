@@ -450,6 +450,22 @@ public static class AutomationIds
     /// Automation id for the select-method dialog's select button.
     /// </summary>
     public const string SelectMethodButton = "Dialogs.SelectMethod.Select";
+    /// <summary>
+    /// Automation id for the method picker list control (the override dialog and the overload flyout).
+    /// </summary>
+    public const string MethodPicker = "MethodPicker";
+    /// <summary>
+    /// Automation id for the method picker's filter box.
+    /// </summary>
+    public const string MethodPickerFilter = "MethodPicker.Filter";
+    /// <summary>
+    /// Automation id for the method picker's list of group headers and method rows.
+    /// </summary>
+    public const string MethodPickerRows = "MethodPicker.Rows";
+    /// <summary>
+    /// Automation id for the method picker's empty state while no method matches the filter.
+    /// </summary>
+    public const string MethodPickerEmpty = "MethodPicker.Empty";
 
     // Variables list rows (AutomationProperties.Name carries the variable name)
     /// <summary>

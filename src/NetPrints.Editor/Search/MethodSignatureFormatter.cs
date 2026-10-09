@@ -66,7 +66,7 @@ public static class MethodSignatureFormatter
     public static string DeclaringTypeName(MethodSpecifier method)
     {
         ArgumentNullException.ThrowIfNull(method);
-        return TypeName(method.DeclaringType);
+        return HeaderName(method.DeclaringType);
     }
 
     /// <summary>Gets the short name of the type that declares <paramref name="constructor"/>, for a group header.</summary>
@@ -75,8 +75,11 @@ public static class MethodSignatureFormatter
     public static string DeclaringTypeName(ConstructorSpecifier constructor)
     {
         ArgumentNullException.ThrowIfNull(constructor);
-        return TypeName(constructor.DeclaringType);
+        return HeaderName(constructor.DeclaringType);
     }
+
+    private static string HeaderName(TypeSpecifier type) =>
+        Keywords.ContainsKey(type.Name) ? WithoutNamespace(type.Name) : TypeName(type);
 
     private static string ReturnText(IList<BaseType> returnTypes) => returnTypes.Count switch
     {

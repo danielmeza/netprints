@@ -467,6 +467,27 @@
     <Setter Property="Padding" Value="{StaticResource Density.RowPadding}" />
   </Style>
 
+  <!-- Method picker (FR-094): group headers and the current row are semibold, an overridden row is dimmed and, like a header, cannot be selected. -->
+  <Style Selector="ListBox.methodPicker ListBoxItem" x:DataType="ctl:MethodPickerRow">
+    <Setter Property="IsEnabled" Value="{Binding IsPickable}" />
+  </Style>
+  <Style Selector="Grid.methodRow:not(.header)">
+    <Setter Property="Margin" Value="12,0,0,0" />
+  </Style>
+  <Style Selector="Grid.methodRow.header TextBlock.methodText, Grid.methodRow.current TextBlock.methodText">
+    <Setter Property="FontWeight" Value="SemiBold" />
+  </Style>
+  <Style Selector="Grid.methodRow.header TextBlock.methodText">
+    <Setter Property="Foreground" Value="{DynamicResource SystemAccentColor}" />
+  </Style>
+  <Style Selector="Grid.methodRow.dimmed">
+    <Setter Property="Opacity" Value="0.5" />
+  </Style>
+  <Style Selector="TextBlock.methodMark">
+    <Setter Property="FontSize" Value="{StaticResource Font.Caption}" />
+    <Setter Property="Foreground" Value="{DynamicResource SystemControlForegroundBaseMediumBrush}" />
+  </Style>
+
   <!-- Palette and node-search popups fade in over Motion.Normal: the root starts transparent and a Loaded trigger adds .shown. -->
   <Style Selector=":is(Control).popupFade">
     <Setter Property="Opacity" Value="0" />
