@@ -1,5 +1,5 @@
-using NetPrints.Core;
 using NetPrints.Compilation;
+using NetPrints.Core;
 using NetPrints.Editor.Graph.Pins;
 using NetPrints.Editor.Tests.Reflection;
 using NetPrints.Projects;
