@@ -1,4 +1,0 @@
-H:Static Methods
-  System.Console WriteLine () | netprints.icon.category.method
-  System.Console WriteLine (value: System.Int32) | netprints.icon.category.method
-  System.Console WriteLine (value: System.String) | netprints.icon.category.method

@@ -1,2 +1,0 @@
-H:NetPrints
-  For Loop | netprints.icon.category.loop
