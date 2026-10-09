@@ -290,7 +290,8 @@ public sealed partial class NodeViewModel : ObservableObject, IDisposable
 
     /// <summary>
     /// Whether the wrapped node is pure. Setting it only takes effect if <see cref="CanSetPure"/> is
-    /// <see langword="true"/>; the setter does not go through the undo stack.
+    /// <see langword="true"/>, as one undo step that restores the removed execution pins, their wires and
+    /// the Exception pin's wires.
     /// </summary>
     public bool IsPure
     {
@@ -299,7 +300,7 @@ public sealed partial class NodeViewModel : ObservableObject, IDisposable
         {
             if (Node.CanSetPure && Node.IsPure != value)
             {
-                Node.IsPure = value;
+                EditPins(value ? "Make pure" : "Make impure", () => Node.IsPure = value);
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(Role));
             }
