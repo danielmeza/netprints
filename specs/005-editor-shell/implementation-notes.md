@@ -2027,3 +2027,50 @@ test-first. The spec's Clarifications, session 2026-10-09, record them.
   `dialog-error`, `editor-shell-main` and `editor-shell-no-project` changed from Font.Mono and spacing; start-page
   baselines restored (version text only).
 - Verification: whole solution (Release) 3460 tests, 0 failed, 26 skipped; Desktop E2E (`NETPRINTS_E2E=1`) 45 passed.
+
+## Batch G4a (T092c, T092d, T092e: interaction states, density and motion, empty state)
+
+- T092c: `Focus.Ring` (Dark `#4FC3F7`, Light `#0277BD`), `State.Hover` and `State.Pressed` (translucent white on Dark,
+  black on Light) are theme tokens; `Focus.RingThickness` (Thickness 2), `Radius.Control` (CornerRadius 4) and the
+  `NetPrints.FocusAdorner` template are plain resources. One style sets the adorner and `Radius.Control` on tree items,
+  list rows, menu items, text boxes and the command-bar button; `DockStyles.axaml` does the same for document tabs. The
+  test reads the real adorner from the `AdornerLayer` after a Tab-style focus (the adorner of a tree item hangs on its
+  header, so the lookup accepts a descendant). Two decisions: hover is not applied to a selected row, tab or tree item
+  (the selection colour stays under the pointer), while pressed is; and the pressed state of a tree item has no
+  separate pseudo-class, so it uses `TreeViewItem:pressed` on the header border.
+- T092d: `Density.RowHeight` 24, `Density.RowPadding` (8, 2), `Density.CommandBarHeight` 36, `Motion.Fast` 100 ms,
+  `Motion.Normal` 150 ms, `Motion.Easing` `CubicEaseOut`. Rows get the height and padding through `TreeView
+  TreeViewItem`, `ListBox.rows ListBoxItem` (Errors, Output) and the existing `ListBox.quickPick` (palette and go to);
+  node search keeps its own 20 px rows (spec lists tree, Errors, Output and palette). The command bar `Border` is 36 px
+  high instead of `MaxHeight` 40, so every graph and inspector snapshot is 2 to 3 px shorter. The ratchet drops Margin
+  61 to 59 (the Errors row and tree row margins became padding); FontSize stays 0.
+- Transitions: a `BrushTransition` on `Background` over `Motion.Fast` sits on the template parts that paint hover and
+  pressed (`ContentPresenter#PART_ContentPresenter` of buttons and list rows, `Border#PART_LayoutRoot` of tree items,
+  `Border#PART_TabBody` of tabs); the palette, go to and node-search roots carry `popupFade`, a style that starts at
+  opacity 0 with a `DoubleTransition` on `Opacity` over `Motion.Normal`, and a `LoadedTrigger` + `AddClassAction` adds
+  `shown`. A type selector on a base class needs `:is(Control).popupFade`: `Control.popupFade` matches only the exact
+  type, which cost a debugging round.
+- `netprints.enableAnimations`: `EditorApp.DisableTransitions` is idempotent and keeps its style; new
+  `EnableTransitions` removes it and `ApplyAnimationSetting(ISettingsStore)` picks one (`OnFrameworkInitializationCompleted`
+  calls it instead of its own `if`). Removing the style does not restyle controls that already exist, so the tests turn
+  transitions on before they open the editor and check the off case on the controls they hold. The headless test app
+  still disables transitions at set-up, so every other test stays settled.
+- T092e: `Controls/EmptyState.cs` (`IconId`, `Message`, `ActionText`, `ActionCommand`, `HasAction`) with its theme in
+  `EditorStyles.axaml` (32 px icon, new `Icon.Large` token, `secondary` sentence, an action button only with both a
+  label and a command). It replaced the text blocks of the palette (`PaletteEmpty`), go to anything (`GoToEmpty`),
+  Errors without a project (`ErrorsEmpty`) and the inspector (`InspectorEmpty`), and is new for Errors without
+  diagnostics (`ErrorsClean`), Output (`OutputEmpty`), the tree (`TreeEmpty`) and node search (`SearchEmpty`). The
+  view models gained `IsEmpty` (error list, output, tree, suggestion list; the suggestion list excludes the loading
+  state) and the tree a `[RelayCommand] OpenProject` that runs `netprints.command.openProject` through the invoker.
+  The tree panel is hidden while no project is open (FR-046), so the test hosts `ProjectTreePanelView` on its own.
+  Deviation: the type-scoped search of FR-091 and the C# panel's own empty text are not in T092e's task text, so they
+  keep their text; FR-088 lists the type-scoped search, so whichever task builds it should use `EmptyState`.
+- Tests: `InteractionStateTests` (focus ring on six controls, hover and pressed in both variants, density heights,
+  transitions, popup fades, the animations setting), the two token tests in `ThemeTokenTests` and `EmptyStateTests`
+  were written first. Red: the focus, state and token tests failed on missing tokens (`Focus.Ring` and friends
+  resolved to null); the T092d and T092e tests were first compile-red (`EnableTransitions`, `ApplyAnimationSetting`,
+  `EmptyState` did not exist), then assertion-red where the code compiled. Snapshots re-baselined and opened:
+  `canvas-every-node-kind`, `canvas-preview-cable`, `class-inspector-code-view`, `editor-shell-main`,
+  `editor-shell-no-project`, `inspector-class`, `inspector-method`, `inspector-variable`, `search-popup`. Four
+  baselines the update run rewrote with no visible change (the start pages, `dialog-select-type`, `node-call-method`,
+  `node-method-entry-parameters`) were restored.
