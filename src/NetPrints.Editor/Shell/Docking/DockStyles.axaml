@@ -43,6 +43,17 @@
   <Style Selector="DocumentTabStripItem Button">
     <Setter Property="MinWidth" Value="{DynamicResource DockChromeButtonSize}" />
   </Style>
+  <!-- Document tabs (FR-087): the shared focus ring, and the state tokens on the tabs that are not selected. -->
+  <Style Selector="DocumentTabStripItem">
+    <Setter Property="FocusAdorner" Value="{StaticResource NetPrints.FocusAdorner}" />
+    <Setter Property="CornerRadius" Value="{StaticResource Radius.Control}" />
+  </Style>
+  <Style Selector="DocumentTabStripItem:pointerover:not(:selected) /template/ Border#PART_TabBody">
+    <Setter Property="Background" Value="{DynamicResource State.Hover}" />
+  </Style>
+  <Style Selector="DocumentTabStripItem:pressed /template/ Border#PART_TabBody">
+    <Setter Property="Background" Value="{DynamicResource State.Pressed}" />
+  </Style>
   <Style Selector="DocumentTabStripItem Button Path">
     <Setter Property="Width" Value="{DynamicResource DockChromeIconSize}" />
     <Setter Property="Height" Value="{DynamicResource DockChromeIconSize}" />

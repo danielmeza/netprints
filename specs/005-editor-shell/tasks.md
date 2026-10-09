@@ -926,7 +926,7 @@ T094b before G5b's T093–T095, so the search safety net also guards T094.
 
 ### Batch G4a — model: sonnet — T092c–T092e — 3 units
 
-- [ ] T092c [US9] Focus, hover and pressed (FR-087). Test first:
+- [x] T092c [US9] Focus, hover and pressed (FR-087). Test first:
   `tests/NetPrints.Editor.UITests/Theming/InteractionStateTests.cs` (headless): keyboard focus on a project-tree
   item, a document tab, a command-bar button, a menu item, an Errors row and the palette's text box shows a ring of
   `Focus.RingThickness` (2) in the `Focus.Ring` brush whose corner radius equals the control's (`Radius.Control`);
