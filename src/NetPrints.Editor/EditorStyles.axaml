@@ -48,7 +48,8 @@
       <!-- Type-pin shape (FR-109): Pin.TypeShape is the triangle until the owner picks at the contact sheet. -->
       <StreamGeometry x:Key="Pin.TypeShape.Triangle">M0,0 L16,8 L0,16 Z</StreamGeometry>
       <StreamGeometry x:Key="Pin.TypeShape.Diamond">M8,0 L16,8 L8,16 L0,8 Z</StreamGeometry>
-      <StaticResource x:Key="Pin.TypeShape" ResourceKey="Pin.TypeShape.Triangle" />      <!-- Type ramp, spacing scale and shared widths (FR-080, research R11); none of these vary by theme. -->
+      <StaticResource x:Key="Pin.TypeShape" ResourceKey="Pin.TypeShape.Triangle" />
+      <x:Double x:Key="Pin.OutlineThickness">2</x:Double>      <!-- Type ramp, spacing scale and shared widths (FR-080, research R11); none of these vary by theme. -->
       <x:Double x:Key="Font.Caption">12</x:Double>
       <x:Double x:Key="Font.Body">14</x:Double>
       <x:Double x:Key="Font.Subtitle">16</x:Double>
@@ -327,39 +328,70 @@
     <Setter Property="BorderBrush" Value="{DynamicResource Canvas.SelectionBorder}" />
   </Style>
 
-  <!-- Pins, cables and the preview cable by type family (FR-107); an unconnected pin is drawn at 60 % (PAR-43). -->
+  <!-- Pins, cables and the preview cable by type family (FR-107). A pin is an outline in its family colour until it is connected, then filled with it (FR-108). -->
+  <Style Selector=":is(Shape).pin">
+    <Setter Property="Fill" Value="Transparent" />
+    <Setter Property="StrokeThickness" Value="{StaticResource Pin.OutlineThickness}" />
+  </Style>
   <Style Selector=":is(Shape).pin-exec">
+    <Setter Property="Stroke" Value="{DynamicResource Pin.Exec}" />
+  </Style>
+  <Style Selector=":is(Shape).pin-exec.connected">
     <Setter Property="Fill" Value="{DynamicResource Pin.Exec}" />
   </Style>
   <Style Selector=":is(Shape).pin-type">
+    <Setter Property="Stroke" Value="{DynamicResource Pin.Type}" />
+  </Style>
+  <Style Selector=":is(Shape).pin-type.connected">
     <Setter Property="Fill" Value="{DynamicResource Pin.Type}" />
   </Style>
   <Style Selector=":is(Shape).pin-bool">
+    <Setter Property="Stroke" Value="{DynamicResource Pin.Bool}" />
+  </Style>
+  <Style Selector=":is(Shape).pin-bool.connected">
     <Setter Property="Fill" Value="{DynamicResource Pin.Bool}" />
   </Style>
   <Style Selector=":is(Shape).pin-integer">
+    <Setter Property="Stroke" Value="{DynamicResource Pin.Integer}" />
+  </Style>
+  <Style Selector=":is(Shape).pin-integer.connected">
     <Setter Property="Fill" Value="{DynamicResource Pin.Integer}" />
   </Style>
   <Style Selector=":is(Shape).pin-float">
+    <Setter Property="Stroke" Value="{DynamicResource Pin.Float}" />
+  </Style>
+  <Style Selector=":is(Shape).pin-float.connected">
     <Setter Property="Fill" Value="{DynamicResource Pin.Float}" />
   </Style>
   <Style Selector=":is(Shape).pin-string">
+    <Setter Property="Stroke" Value="{DynamicResource Pin.String}" />
+  </Style>
+  <Style Selector=":is(Shape).pin-string.connected">
     <Setter Property="Fill" Value="{DynamicResource Pin.String}" />
   </Style>
   <Style Selector=":is(Shape).pin-object">
+    <Setter Property="Stroke" Value="{DynamicResource Pin.Object}" />
+  </Style>
+  <Style Selector=":is(Shape).pin-object.connected">
     <Setter Property="Fill" Value="{DynamicResource Pin.Object}" />
   </Style>
   <Style Selector=":is(Shape).pin-valuetype">
+    <Setter Property="Stroke" Value="{DynamicResource Pin.ValueType}" />
+  </Style>
+  <Style Selector=":is(Shape).pin-valuetype.connected">
     <Setter Property="Fill" Value="{DynamicResource Pin.ValueType}" />
   </Style>
   <Style Selector=":is(Shape).pin-delegate">
+    <Setter Property="Stroke" Value="{DynamicResource Pin.Delegate}" />
+  </Style>
+  <Style Selector=":is(Shape).pin-delegate.connected">
     <Setter Property="Fill" Value="{DynamicResource Pin.Delegate}" />
   </Style>
   <Style Selector=":is(Shape).pin-generic">
-    <Setter Property="Fill" Value="{DynamicResource Pin.Generic}" />
+    <Setter Property="Stroke" Value="{DynamicResource Pin.Generic}" />
   </Style>
-  <Style Selector=":is(Shape).pin.dimmed">
-    <Setter Property="Opacity" Value="0.6" />
+  <Style Selector=":is(Shape).pin-generic.connected">
+    <Setter Property="Fill" Value="{DynamicResource Pin.Generic}" />
   </Style>
   <Style Selector="TextBlock.pinHint">
     <Setter Property="Foreground" Value="{DynamicResource Pin.Hint}" />

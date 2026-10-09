@@ -135,6 +135,12 @@ public class ThemeTokenTests
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public void ThePinOutlineHasOneThickness()
+    {
+        Assert.Equal(2.0, Assert.IsType<double>(Resolve("Pin.OutlineThickness", ThemeVariant.Default)));
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
     public void TheDensityTokensHaveTheirValues()
     {
         Assert.Equal(24.0, Assert.IsType<double>(Resolve("Density.RowHeight", ThemeVariant.Default)));

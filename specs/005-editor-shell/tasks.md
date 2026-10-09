@@ -1103,7 +1103,7 @@ re-baselines the snapshots it changes (open every PNG).
   `EditorStyles.axaml`. Token values are tuned only where the contrast test fails, each change noted. `Pin.Data`
   loses its last user: it is removed with its `ThemeTokenTests` entry, and the `NetPrints.Connection` and
   `NetPrints.Connector` defaults become `Pin.Generic`. Variable headers by type stay in P6 (C-2).
-- [ ] T092o [US9] Hollow unconnected pins (1 unit, FR-108; owner: "cuando el pin está vacío se ve vacío también el
+- [x] T092o [US9] Hollow unconnected pins (1 unit, FR-108; owner: "cuando el pin está vacío se ve vacío también el
   relleno del pin"). Test first: headless `tests/NetPrints.Editor.UITests/Graph/PinFillTests.cs`, in Dark and
   Light: an unconnected execution, data and type pin draws its outline in its family colour at the
   `Pin.OutlineThickness` token with a transparent fill, and a connected one is filled with that colour (red today:

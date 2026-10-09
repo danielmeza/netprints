@@ -127,9 +127,6 @@ public sealed partial class NodePinViewModel : ObservableObject, IDisposable
         _ => false,
     };
 
-    /// <summary>Unconnected pins are drawn dimmed (60 %, PAR-43).</summary>
-    public bool IsDimmed => !IsConnected;
-
     /// <summary>Whether the wrapped pin belongs to a <see cref="RerouteNode"/> (drawn without a label).</summary>
     public bool IsRerouteNodePin => Pin.Node is RerouteNode;
 
@@ -491,7 +488,6 @@ public sealed partial class NodePinViewModel : ObservableObject, IDisposable
     internal void RefreshConnectionState()
     {
         OnPropertyChanged(nameof(IsConnected));
-        OnPropertyChanged(nameof(IsDimmed));
         OnPropertyChanged(nameof(ShowUnconnectedValue));
         OnPropertyChanged(nameof(ShowEnumValue));
         OnPropertyChanged(nameof(ShowBooleanValue));

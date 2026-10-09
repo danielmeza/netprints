@@ -13,16 +13,16 @@
              x:DataType="ednodes:NodeViewModel"
              ToolTip.Tip="{Binding ToolTip}">
   <UserControl.Resources>
-    <!-- Pin connector: exec = square, data = circle, type = triangle; dimmed when unconnected (PAR-43). -->
+    <!-- Pin connector: exec = square, data = circle, type = triangle; an outline until connected, then filled (FR-108). -->
     <ControlTemplate x:Key="PinConnectorTemplate">
       <Panel Classes="pinHitbox" Width="24" Height="24" x:DataType="edpins:NodePinViewModel" Background="Transparent" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PinConnector}">
-        <Rectangle Classes="pin pin-exec" Classes.dimmed="{Binding IsDimmed}" Width="16" Height="16" StrokeThickness="3" IsVisible="{Binding ShowRectangle}" />
-        <Ellipse Classes="pin" Classes.dimmed="{Binding IsDimmed}" Width="16" Height="16" StrokeThickness="3" IsVisible="{Binding ShowCircle}">
+        <Rectangle Classes="pin pin-exec" Classes.connected="{Binding IsConnected}" Width="16" Height="16" IsVisible="{Binding ShowRectangle}" />
+        <Ellipse Classes="pin" Classes.connected="{Binding IsConnected}" Width="16" Height="16" IsVisible="{Binding ShowCircle}">
           <Interaction.Behaviors>
             <edbehaviors:StyleClassBehavior ClassName="{Binding FamilyClass}" />
           </Interaction.Behaviors>
         </Ellipse>
-        <Path Classes="pin pin-type" Classes.dimmed="{Binding IsDimmed}" Data="{DynamicResource Pin.TypeShape}" StrokeThickness="1" IsVisible="{Binding ShowTriangle}" />
+        <Path Classes="pin pin-type" Classes.connected="{Binding IsConnected}" Data="{DynamicResource Pin.TypeShape}" IsVisible="{Binding ShowTriangle}" />
         <!-- Default-value indicator -->
         <Polygon Classes="defaultValue" Classes.inactive="{Binding !IsDefaultValueActive}" Points="0,0 6,7 0,14" IsHitTestVisible="False"
                  IsVisible="{Binding ShowDefaultValueIndicator}" />

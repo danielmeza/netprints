@@ -179,8 +179,13 @@ public class CanvasPaletteTests
             foreach (Shape shape in shapes)
             {
                 var pin = Assert.IsType<NodePinViewModel>(shape.DataContext);
-                Assert.True(shape.Fill is not null, $"{shape.GetType().Name} {string.Join(' ', shape.Classes)}");
-                Assert.Equal(ColorOf(Resolve(pin.Family.TokenKey, VariantOf(variant))), ColorOf(shape.Fill));
+                Color token = ColorOf(Resolve(pin.Family.TokenKey, VariantOf(variant)));
+                Assert.True(shape.Stroke is not null, $"{shape.GetType().Name} {string.Join(' ', shape.Classes)}");
+                Assert.Equal(token, ColorOf(shape.Stroke));
+                if (pin.IsConnected)
+                {
+                    Assert.Equal(token, ColorOf(shape.Fill));
+                }
             }
 
             var cables = session.Window.GetVisualDescendants().OfType<Nodify.Avalonia.Connections.Connection>()

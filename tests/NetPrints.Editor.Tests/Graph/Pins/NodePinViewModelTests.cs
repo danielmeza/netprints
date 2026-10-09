@@ -30,14 +30,21 @@ public class NodePinViewModelTests(TestEditor editor) : GraphTestBase(editor)
     }
 
     [Fact]
-    public void UnconnectedPinsAreDimmedAndConnectedAreNot()
+    public void ConnectedFollowsTheModelConnectionAndRaisesItsChange()
     {
         var entry = VmOf(Method.EntryNode).OutputExecPins.Single();
         Assert.True(entry.IsConnected, "entry and return are connected when a method is created");
-        Assert.False(entry.IsDimmed);
 
         var call = VmOf(new CallMethodNode(Method, ConsoleWriteLine(StringType)));
-        Assert.True(call.InputExecPins.Single().IsDimmed);
+        var callExec = call.InputExecPins.Single();
+        Assert.False(callExec.IsConnected);
+        var changed = new List<string?>();
+        callExec.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+
+        Assert.True(Graph.Connect(entry, callExec));
+
+        Assert.True(callExec.IsConnected);
+        Assert.Contains(nameof(NodePinViewModel.IsConnected), changed);
     }
 
     [Fact]
