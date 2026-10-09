@@ -171,7 +171,10 @@ namespace NetPrints.Reflection
         public static MethodParameter MethodParameterFromSymbol(in IParameterSymbol paramSymbol)
         {
             return new MethodParameter(paramSymbol.Name, BaseTypeSpecifierFromSymbol(paramSymbol.Type), refKindToPassType[paramSymbol.RefKind],
-                paramSymbol.HasExplicitDefaultValue, paramSymbol.HasExplicitDefaultValue ? paramSymbol.ExplicitDefaultValue : null);
+                paramSymbol.HasExplicitDefaultValue, paramSymbol.HasExplicitDefaultValue ? paramSymbol.ExplicitDefaultValue : null)
+            {
+                IsParams = paramSymbol.IsParams,
+            };
         }
 
         /// <summary>

@@ -66,6 +66,15 @@ namespace NetPrints.Core
         }
 
         /// <summary>
+        /// Whether the parameter is a C# <c>params</c> array.
+        /// </summary>
+        public bool IsParams
+        {
+            get;
+            init;
+        }
+
+        /// <summary>
         /// Creates a method parameter specifier.
         /// </summary>
         /// <param name="name">Name of the parameter.</param>

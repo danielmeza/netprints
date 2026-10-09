@@ -96,5 +96,7 @@ NetPrints.Core.MemberNameKind.Event = 1 -> NetPrints.Core.MemberNameKind
 NetPrints.Core.MemberNameKind.Method = 0 -> NetPrints.Core.MemberNameKind
 NetPrints.Core.MemberNameKind.Variable = 2 -> NetPrints.Core.MemberNameKind
 NetPrints.Core.MemberNames
+NetPrints.Core.MethodParameter.IsParams.get -> bool
+NetPrints.Core.MethodParameter.IsParams.init -> void
 static NetPrints.Core.MemberNames.ThrowIfTaken(NetPrints.Core.ClassGraph! cls, string! name, object? self, NetPrints.Core.MemberNameKind kind) -> void
 static NetPrints.Core.MemberNames.Unique(NetPrints.Core.ClassGraph! cls, string! baseName) -> string!
