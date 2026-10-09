@@ -174,6 +174,96 @@ public static class EditorCommands
             });
     }
 
+    /// <summary>
+    /// Changes the pin lists of <paramref name="node"/> (the make-array, method entry, return and class return "+" and "-" buttons) as one
+    /// step. Undo puts the same pin objects back, with every connection they and the other pins had; redo repeats the edit.
+    /// </summary>
+    /// <param name="node">The node whose pins change.</param>
+    /// <param name="label">The name of the step.</param>
+    /// <param name="edit">Adds or removes the pins.</param>
+    /// <returns>The command.</returns>
+    public static IUndoableCommand EditPins(Node node, string label, Action edit)
+    {
+        ArgumentNullException.ThrowIfNull(node);
+        ArgumentNullException.ThrowIfNull(label);
+        ArgumentNullException.ThrowIfNull(edit);
+        NodeHandle handle = HandleOf(node);
+        PinListState? before = null;
+        PinListState? after = null;
+
+        return new DelegateUndoableCommand(label,
+            () =>
+            {
+                if (after is null)
+                {
+                    before = CapturePins(handle);
+                    edit();
+                    after = CapturePins(handle);
+                }
+                else
+                {
+                    ApplyPins(handle, after);
+                }
+            },
+            () => ApplyPins(handle, before ?? throw new InvalidOperationException(NoDoActionMessage)));
+    }
+
+    private sealed record PinListState(
+        IReadOnlyList<NodeInputExecPin> InputExec,
+        IReadOnlyList<NodeOutputExecPin> OutputExec,
+        IReadOnlyList<NodeInputDataPin> InputData,
+        IReadOnlyList<NodeOutputDataPin> OutputData,
+        IReadOnlyList<NodeInputTypePin> InputType,
+        IReadOnlyList<NodeOutputTypePin> OutputType,
+        IReadOnlyList<Link> Links);
+
+    private static PinListState CapturePins(NodeHandle handle)
+    {
+        Node node = handle.Node;
+        return new PinListState(
+            [.. node.InputExecPins], [.. node.OutputExecPins], [.. node.InputDataPins], [.. node.OutputDataPins], [.. node.InputTypePins], [.. node.OutputTypePins],
+            [.. CaptureLinks(node.Graph).Links.Where(link => link.From.Handle == handle || link.To.Handle == handle)]);
+    }
+
+    private static void ApplyPins(NodeHandle handle, PinListState state)
+    {
+        Node node = handle.Node;
+        GraphUtil.DisconnectNodePins(node);
+        SetList(node.InputExecPins, state.InputExec);
+        SetList(node.OutputExecPins, state.OutputExec);
+        SetList(node.InputDataPins, state.InputData);
+        SetList(node.OutputDataPins, state.OutputData);
+        SetList(node.InputTypePins, state.InputType);
+        SetList(node.OutputTypePins, state.OutputType);
+        foreach (Link link in state.Links)
+        {
+            Reconnect(link);
+        }
+    }
+
+    private static void SetList<TPin>(ObservableRangeCollection<TPin> list, IReadOnlyList<TPin> target)
+        where TPin : NodePin
+    {
+        for (int i = list.Count - 1; i >= 0; i--)
+        {
+            if (!target.Contains(list[i]))
+            {
+                list.RemoveAt(i);
+            }
+        }
+
+        for (int i = 0; i < target.Count; i++)
+        {
+            if (i < list.Count && ReferenceEquals(list[i], target[i]))
+            {
+                continue;
+            }
+
+            list.Remove(target[i]);
+            list.Insert(i, target[i]);
+        }
+    }
+
     /// <summary>The connections of a graph at one moment, for <see cref="AddNode"/>.</summary>
     public sealed class GraphLinks
     {

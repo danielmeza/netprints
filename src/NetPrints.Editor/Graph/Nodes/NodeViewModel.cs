@@ -345,22 +345,24 @@ public sealed partial class NodeViewModel : ObservableObject, IDisposable
     /// <summary>Tooltip for the right "-" button, or "" if <see cref="ShowRightPinButtons"/> is <see langword="false"/>.</summary>
     public string RightMinusToolTip => Node is MethodEntryNode ? "Remove method generic type parameter" : "";
 
+    private void EditPins(string label, Action edit) => Graph.Services.UndoRedo.Do(EditorCommands.EditPins(Node, label, edit));
+
     [RelayCommand]
     private void LeftPinsPlus()
     {
         switch (Node)
         {
             case MakeArrayNode makeArrayNode:
-                makeArrayNode.AddElementPin();
+                EditPins(LeftPlusToolTip, makeArrayNode.AddElementPin);
                 break;
             case MethodEntryNode entryNode:
-                entryNode.AddArgument();
+                EditPins(LeftPlusToolTip, entryNode.AddArgument);
                 break;
             case ReturnNode returnNode:
-                returnNode.AddReturnType();
+                EditPins(LeftPlusToolTip, returnNode.AddReturnType);
                 break;
             case ClassReturnNode classReturnNode:
-                classReturnNode.AddInterfacePin();
+                EditPins(LeftPlusToolTip, classReturnNode.AddInterfacePin);
                 break;
         }
     }
@@ -370,17 +372,17 @@ public sealed partial class NodeViewModel : ObservableObject, IDisposable
     {
         switch (Node)
         {
-            case MakeArrayNode makeArrayNode:
-                makeArrayNode.RemoveElementPin();
+            case MakeArrayNode { InputDataPins.Count: > 0 } makeArrayNode:
+                EditPins(LeftMinusToolTip, () => makeArrayNode.RemoveElementPin());
                 break;
-            case MethodEntryNode entryNode:
-                entryNode.RemoveArgument();
+            case MethodEntryNode { OutputDataPins.Count: > 0 } entryNode:
+                EditPins(LeftMinusToolTip, entryNode.RemoveArgument);
                 break;
-            case ReturnNode returnNode:
-                returnNode.RemoveReturnType();
+            case ReturnNode { InputDataPins.Count: > 0 } returnNode:
+                EditPins(LeftMinusToolTip, returnNode.RemoveReturnType);
                 break;
-            case ClassReturnNode classReturnNode:
-                classReturnNode.RemoveInterfacePin();
+            case ClassReturnNode classReturnNode when classReturnNode.InterfacePins.Any():
+                EditPins(LeftMinusToolTip, classReturnNode.RemoveInterfacePin);
                 break;
         }
     }
@@ -390,16 +392,16 @@ public sealed partial class NodeViewModel : ObservableObject, IDisposable
     {
         if (Node is MethodEntryNode entryNode)
         {
-            entryNode.AddGenericArgument();
+            EditPins(RightPlusToolTip, entryNode.AddGenericArgument);
         }
     }
 
     [RelayCommand]
     private void RightPinsMinus()
     {
-        if (Node is MethodEntryNode entryNode)
+        if (Node is MethodEntryNode { OutputTypePins.Count: > 0 } entryNode)
         {
-            entryNode.RemoveGenericArgument();
+            EditPins(RightMinusToolTip, entryNode.RemoveGenericArgument);
         }
     }
 
