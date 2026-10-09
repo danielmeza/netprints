@@ -92,9 +92,13 @@
                             AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageRecentMenuRemove}" />
                 </ContextMenu>
               </Border.ContextMenu>
-              <Grid ColumnDefinitions="*,Auto,Auto" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageRecentRow}"
+              <Grid ColumnDefinitions="Auto,*,Auto,Auto" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageRecentRow}"
                     AutomationProperties.Name="{Binding DisplayName}">
-                <Button Classes="flat row-open" Margin="0" Padding="12,8" HorizontalContentAlignment="Left" HorizontalAlignment="Stretch"
+                <Border Margin="{StaticResource Space.S}" VerticalAlignment="Center" Width="{StaticResource StartPage.RecentTileSize}" Height="{StaticResource StartPage.RecentTileSize}"
+                        CornerRadius="{StaticResource Radius.Control}" Background="{DynamicResource StartPage.RecentTileBackground}" AutomationProperties.AccessibilityView="Raw">
+                  <icons:IconPresenter IconId="{x:Static icons:IconIds.Project}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                </Border>
+                <Button Grid.Column="1" Classes="flat row-open" Margin="0" Padding="12,8" HorizontalContentAlignment="Left" HorizontalAlignment="Stretch"
                         Command="{Binding Owner.OpenCommand}" CommandParameter="{Binding}" ToolTip.Tip="{Binding Path}"
                         AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageRecentOpen}" AutomationProperties.Name="{Binding DisplayName, StringFormat='Open {0}'}">
                   <StackPanel>
@@ -102,13 +106,13 @@
                     <TextBlock Classes="secondary" Text="{Binding DisplayPath}" TextTrimming="CharacterEllipsis" />
                   </StackPanel>
                 </Button>
-                <TextBlock Grid.Column="1" Classes="secondary" VerticalAlignment="Center" Margin="8,0" MinWidth="96" TextAlignment="Right"
+                <TextBlock Grid.Column="2" Classes="secondary" VerticalAlignment="Center" Margin="8,0" MinWidth="96" TextAlignment="Right"
                            Text="{Binding StatusText}" IsVisible="{Binding StatusText, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
                            AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageRecentStatus}" />
-                <TextBlock Grid.Column="1" Classes="secondary" VerticalAlignment="Center" Margin="8,0" MinWidth="96" TextAlignment="Right"
+                <TextBlock Grid.Column="2" Classes="secondary" VerticalAlignment="Center" Margin="8,0" MinWidth="96" TextAlignment="Right"
                            Text="{Binding RelativeDate}" IsVisible="{Binding IsAvailable}"
                            AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageRecentDate}" />
-                <StackPanel Grid.Column="2" Classes="actions" Orientation="Horizontal" VerticalAlignment="Center">
+                <StackPanel Grid.Column="3" Classes="actions" Orientation="Horizontal" VerticalAlignment="Center">
                   <Button Classes="flat" IsVisible="{Binding !Pinned}" ToolTip.Tip="Pin" AutomationProperties.Name="Pin"
                           Command="{Binding Owner.PinCommand}" CommandParameter="{Binding}"
                           AutomationProperties.AutomationId="{x:Static ed:AutomationIds.StartPageRecentPin}">

@@ -49,7 +49,9 @@
       <StreamGeometry x:Key="Pin.TypeShape.Triangle">M0,0 L16,8 L0,16 Z</StreamGeometry>
       <StreamGeometry x:Key="Pin.TypeShape.Diamond">M8,0 L16,8 L8,16 L0,8 Z</StreamGeometry>
       <StaticResource x:Key="Pin.TypeShape" ResourceKey="Pin.TypeShape.Triangle" />
-      <x:Double x:Key="Pin.OutlineThickness">2</x:Double>      <!-- Type ramp, spacing scale and shared widths (FR-080, research R11); none of these vary by theme. -->
+      <x:Double x:Key="Pin.OutlineThickness">2</x:Double>
+      <!-- Start page recent row: a left-anchor icon tile (FR-110). -->
+      <x:Double x:Key="StartPage.RecentTileSize">32</x:Double>      <!-- Type ramp, spacing scale and shared widths (FR-080, research R11); none of these vary by theme. -->
       <x:Double x:Key="Font.Caption">12</x:Double>
       <x:Double x:Key="Font.Body">14</x:Double>
       <x:Double x:Key="Font.Subtitle">16</x:Double>
@@ -137,6 +139,7 @@
       <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Dark">
           <Color x:Key="Canvas.Background">#FF000000</Color>
+          <SolidColorBrush x:Key="StartPage.RecentTileBackground">#FF2A2A30</SolidColorBrush>
           <SolidColorBrush x:Key="Focus.Ring">#4FC3F7</SolidColorBrush>
           <SolidColorBrush x:Key="State.Hover">#26FFFFFF</SolidColorBrush>
           <SolidColorBrush x:Key="State.Pressed">#3DFFFFFF</SolidColorBrush>
@@ -199,6 +202,7 @@
         </ResourceDictionary>
         <ResourceDictionary x:Key="Light">
           <Color x:Key="Canvas.Background">#FFFFFFFF</Color>
+          <SolidColorBrush x:Key="StartPage.RecentTileBackground">#FFE4E6EC</SolidColorBrush>
           <SolidColorBrush x:Key="Focus.Ring">#0277BD</SolidColorBrush>
           <SolidColorBrush x:Key="State.Hover">#14000000</SolidColorBrush>
           <SolidColorBrush x:Key="State.Pressed">#26000000</SolidColorBrush>

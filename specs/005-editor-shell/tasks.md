@@ -1113,7 +1113,7 @@ re-baselines the snapshots it changes (open every PNG).
   `connected` class from `NodePinViewModel.IsConnected` on the pin shape (it replaces `dimmed`, and `IsDimmed` goes
   if nothing else reads it), the hollow and filled styles in `EditorStyles.axaml`, and `Pin.OutlineThickness` in
   `ThemeTokenTests`.
-- [ ] T092p [US5] [US9] Recent-row icon tile (0.5 unit, FR-110). Test first: in
+- [x] T092p [US5] [US9] Recent-row icon tile (0.5 unit, FR-110). Test first: in
   `tests/NetPrints.Editor.UITests/Shell/StartPageLayoutTests.cs` (headless), each recent row's first column is a
   tile of `StartPage.RecentTileSize` with `Radius.Control` corners and a `StartPage.RecentTileBackground` that
   resolves in Dark and Light, holding an `IconPresenter` with `IconIds.Project`; a not-found row shows the same tile

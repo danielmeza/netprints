@@ -1,7 +1,15 @@
+using Avalonia;
+using Avalonia.Automation;
+using Avalonia.Controls;
 using Avalonia.Headless.XUnit;
+using Avalonia.Media;
+using Avalonia.Styling;
+using Avalonia.VisualTree;
+using NetPrints.Editor.Icons;
 using NetPrints.Editor.State;
 using NetPrints.Editor.UITests.Driving;
 using NetPrints.Editor.UITests.Hosting;
+using NetPrints.Editor.UITests.Theming;
 
 namespace NetPrints.Editor.UITests.Shell;
 
@@ -124,6 +132,43 @@ public class StartPageLayoutTests
 
         await rig.Element(AutomationIds.StartPageReopenLast).ClickAsync(Token);
         Assert.Equal(StartupBehavior.ShowStartPage, store.Start?.StartupBehavior);
+    }
+
+    [AvaloniaTheory(Timeout = TestAppBuilder.Timeout)]
+    [MemberData(nameof(CanvasPaletteTests.Variants), MemberType = typeof(CanvasPaletteTests))]
+    public void EveryRecentRowStartsWithAnIconTileAndANotFoundRowKeepsItsStatus(string variant)
+    {
+        CanvasPaletteTests.App.RequestedThemeVariant = CanvasPaletteTests.VariantOf(variant);
+        try
+        {
+            using var rig = StartPageRig.Create(WideWidth, 1000, withRecent: true);
+            ThemeVariant theme = CanvasPaletteTests.VariantOf(variant);
+            double size = Assert.IsType<double>(CanvasPaletteTests.Resolve("StartPage.RecentTileSize", theme));
+            CornerRadius radius = Assert.IsType<CornerRadius>(CanvasPaletteTests.Resolve("Radius.Control", theme));
+            Color background = CanvasPaletteTests.ColorOf(CanvasPaletteTests.Resolve("StartPage.RecentTileBackground", theme));
+
+            var rows = rig.Window.GetVisualDescendants().OfType<Grid>().Where(g => AutomationProperties.GetAutomationId(g) == AutomationIds.StartPageRecentRow).ToList();
+
+            Assert.True(rows.Count >= 5, $"{rows.Count} rows");
+            foreach (Grid row in rows)
+            {
+                var tile = Assert.IsType<Border>(row.Children.First(child => Grid.GetColumn(child) == 0));
+                Assert.Equal(size, tile.Width);
+                Assert.Equal(size, tile.Height);
+                Assert.Equal(radius, tile.CornerRadius);
+                Assert.Equal(background, CanvasPaletteTests.ColorOf(tile.Background));
+                Assert.Equal(IconIds.Project, Assert.Single(tile.GetVisualDescendants().OfType<IconPresenter>()).IconId);
+            }
+
+            Grid missing = rows.Single(row => AutomationProperties.GetName(row) == "Missing");
+            TextBlock status = missing.GetVisualDescendants().OfType<TextBlock>().Single(t => AutomationProperties.GetAutomationId(t) == AutomationIds.StartPageRecentStatus);
+            Assert.Equal("Not found", status.Text);
+            Assert.True(status.IsEffectivelyVisible);
+        }
+        finally
+        {
+            CanvasPaletteTests.App.RequestedThemeVariant = ThemeVariant.Dark;
+        }
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]

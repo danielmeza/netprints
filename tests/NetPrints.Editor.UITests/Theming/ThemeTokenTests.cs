@@ -61,6 +61,7 @@ public class ThemeTokenTests
         "Canvas.MarqueeBorder",
         "Canvas.WireSelected",
         "Canvas.Background",
+        "StartPage.RecentTileBackground",
     ];
 
     private static readonly string[] CanvasThemes =
@@ -138,6 +139,12 @@ public class ThemeTokenTests
     public void ThePinOutlineHasOneThickness()
     {
         Assert.Equal(2.0, Assert.IsType<double>(Resolve("Pin.OutlineThickness", ThemeVariant.Default)));
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public void TheRecentTileHasOneSize()
+    {
+        Assert.Equal(32.0, Assert.IsType<double>(Resolve("StartPage.RecentTileSize", ThemeVariant.Default)));
     }
 
     [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
