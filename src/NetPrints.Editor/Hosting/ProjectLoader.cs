@@ -32,7 +32,7 @@ internal sealed class ProjectLoader : IDisposable
     private readonly ILogger<ProjectLoader> logger;
     private readonly ProjectLocations locations;
     private readonly HashSet<(string Id, string? ManifestPath, string Code)> reportedExtensionFailures = [];
-    private CancellationTokenSource? warmUp;
+    private CancellationTokenSource? reload;
     private Project? subscribedProject;
     private ProjectSessionViewModel? session;
     private BackupScope? backups;
@@ -54,9 +54,11 @@ internal sealed class ProjectLoader : IDisposable
 
     /// <summary>
     /// Reloads the reflection provider for the open project, then warms the overload lists of its graphs' nodes off the UI
-    /// thread; both show the busy indicator. A newer reload cancels the warm-up of the older one.
+    /// thread; both show the busy indicator. A newer reload, or disposing the loader, cancels the one still running,
+    /// its references reload included.
     /// </summary>
-    /// <returns>A task that completes when the provider was reloaded and warmed; a failure is shown in the error dialog.</returns>
+    /// <returns>A task that completes when the provider was reloaded and warmed, or the reload was cancelled; a failure
+    /// is shown in the error dialog.</returns>
     public async Task ReloadReflectionAsync()
     {
         if (shell.Session?.Project is not { } project)
@@ -64,30 +66,30 @@ internal sealed class ProjectLoader : IDisposable
             return;
         }
 
-        if (warmUp is not null)
+        if (reload is not null)
         {
-            await warmUp.CancelAsync().ConfigureAwait(true);
-            warmUp.Dispose();
+            await reload.CancelAsync().ConfigureAwait(true);
+            reload.Dispose();
         }
 
-        warmUp = new CancellationTokenSource();
-        CancellationToken warmUpToken = warmUp.Token;
+        reload = new CancellationTokenSource();
+        CancellationToken reloadToken = reload.Token;
 
         try
         {
             using (shell.StatusBar.BeginBusy("Loading references…"))
             {
-                await context.Reflection.ReloadAsync(project).ConfigureAwait(true);
+                await context.Reflection.ReloadAsync(project, reloadToken).ConfigureAwait(true);
             }
 
             using (shell.StatusBar.BeginBusy("Preparing graphs…"))
             {
-                await OverloadWarmUp.WarmAsync(context.Reflection, project, warmUpToken).ConfigureAwait(true);
+                await OverloadWarmUp.WarmAsync(context.Reflection, project, reloadToken).ConfigureAwait(true);
             }
         }
-        catch (OperationCanceledException) when (warmUpToken.IsCancellationRequested)
+        catch (OperationCanceledException) when (reloadToken.IsCancellationRequested)
         {
-            // Superseded by a newer reload.
+            // Superseded by a newer reload, or the loader was disposed.
         }
         catch (Exception ex)
         {
@@ -478,11 +480,13 @@ internal sealed class ProjectLoader : IDisposable
             : context.Dialogs.ShowIssuesAsync("Extensions failed to load", diagnostics);
     }
 
-    /// <summary>Stops following the open project and disposes its session.</summary>
+    /// <summary>Stops following the open project, cancels its reflection reload if one is running and disposes its session.</summary>
     public void Dispose()
     {
         Unsubscribe();
-        warmUp?.Dispose();
+        reload?.Cancel();
+        reload?.Dispose();
+        reload = null;
         CloseBackups();
         session?.Dispose();
     }
