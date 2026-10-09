@@ -14,7 +14,7 @@ namespace NetPrints.Editor.Tests.Search;
 /// the filters, over the fixed member set of <see cref="FixtureReflectionHost"/>. Written against the code before the fixes.
 /// </summary>
 public sealed class NodeSearchGoldenTests(IReflectionHost sharedReflection)
-    : GraphTestBase(new TestEditor(new FixtureReflectionHost(sharedReflection)))
+    : FixtureGraphTestBase(sharedReflection)
 {
     private static string Render(IEnumerable<SuggestionItem> rows)
     {

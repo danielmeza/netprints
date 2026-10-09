@@ -15,7 +15,7 @@ namespace NetPrints.Editor.Tests.Search;
 /// the connection made and the undo entry. Over the fixed member set of <see cref="FixtureReflectionHost"/>.
 /// </summary>
 public sealed class NodeCreationTableTests(IReflectionHost sharedReflection)
-    : GraphTestBase(TestEditor.Create(_ => new FixtureReflectionHost(sharedReflection), TestExtensionFolder.CreateHost()))
+    : FixtureGraphTestBase(sharedReflection)
 {
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
@@ -99,21 +99,6 @@ public sealed class NodeCreationTableTests(IReflectionHost sharedReflection)
         MakeDelegateNode node = Assert.Single(Method.Nodes.OfType<MakeDelegateNode>());
         Assert.Same(upper.ReturnValuePins[0], node.TargetPin.IncomingPin);
         Assert.Equal("Add node", ClassContext.UndoRedo.UndoName);
-    }
-
-    [Fact(Timeout = 60000)]
-    public async Task AnExtensionSuggestionCreatesItsNodeAtThePositionAsOneUndoStep()
-    {
-        SuggestionItem log = await OpenAsync(Graph, "Log", position: new GraphPoint(40, 60));
-
-        await Graph.Search.SelectCommand.ExecuteAsync(log);
-
-        Node node = Method.Nodes.Single(n => n.GetType().Name == "LogNode");
-        Assert.Equal((40, 60), (node.PositionX, node.PositionY));
-        ClassContext.UndoRedo.Undo();
-        Assert.DoesNotContain(node, Method.Nodes);
-        ClassContext.UndoRedo.Redo();
-        Assert.Contains(node, Method.Nodes);
     }
 
     [Fact(Timeout = 60000)]

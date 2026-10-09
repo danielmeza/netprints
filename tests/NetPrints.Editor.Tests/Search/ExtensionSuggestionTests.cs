@@ -64,6 +64,11 @@ public sealed class ExtensionSuggestionTests(IReflectionHost sharedReflection)
         Node node = Method.Nodes.Single(n => n.GetType().Name == "LogNode");
         Assert.Equal(40, node.PositionX);
         Assert.Equal(60, node.PositionY);
+
+        ClassContext.UndoRedo.Undo();
+        Assert.DoesNotContain(node, Method.Nodes);
+        ClassContext.UndoRedo.Redo();
+        Assert.Contains(node, Method.Nodes);
     }
 
     [Fact]

@@ -9,7 +9,7 @@ namespace NetPrints.Editor.Tests.Search;
 
 /// <summary>Opening the node search from a pin leaves the graph alone until a node is picked; picking is one undo step (FR-097).</summary>
 public sealed class NodeSearchConnectionTests(IReflectionHost sharedReflection)
-    : GraphTestBase(new TestEditor(new FixtureReflectionHost(sharedReflection)))
+    : FixtureGraphTestBase(sharedReflection)
 {
     private static CancellationToken Token => TestContext.Current.CancellationToken;
 
