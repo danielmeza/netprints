@@ -1028,7 +1028,7 @@ T094b before G5b's T093–T095, so the search safety net also guards T094.
 
 ### Batch G4d — model: sonnet — T092k–T092l — 3 units
 
-- [ ] T092k [US9] Overload flyout (2 units, FR-095). Test first:
+- [x] T092k [US9] Overload flyout (2 units, FR-095). Test first:
   `tests/NetPrints.Editor.Tests/Graph/Nodes/NodeViewModelTests.cs` and `NodeOverloadUndoTests`: a call-method or
   constructor node with other overloads exposes a `MethodPickerListViewModel` of every overload, the current one
   included, marked and first, the rest sorted by parameter count, then signature; the make-array node offers its
@@ -1043,7 +1043,7 @@ T094b before G5b's T093–T095, so the search safety net also guards T094.
   becomes a header `Button` with an `IconPresenter` and a `Flyout` that hosts `MethodPickerList`) and
   `NodeViewModel.cs` (`UpdateOverloads` fills the list view model); `MethodSpecifierConverter` is deleted once
   nothing uses it. Re-baseline `node-call-method.png`.
-- [ ] T092l [US9] Desktop E2E for the pickers (1 unit, FR-102). One scenario per class (ADR-0006), through page
+- [x] T092l [US9] Desktop E2E for the pickers (1 unit, FR-102). One scenario per class (ADR-0006), through page
   objects and `AutomationIds`. `OverrideMethodFlowTests`: in a project with a class whose base has virtual methods,
   Edit › Override method…, type part of a method's name and press Enter: the override's graph opens and the project
   tree lists it; reopening the dialog shows that method dimmed. `ChangeOverloadFlowTests`: on a call node with

@@ -2160,3 +2160,43 @@ test-first. The spec's Clarifications, session 2026-10-09, record them.
   `node-call-method` and the start pages the update run rewrote with no visible change were restored.
 - Known flake seen once in the full Release run: `BusyStateTests.AReloadWarmsTheOverloadsOfTheOpenProjectsGraphs`; it
   passes alone and in the project run.
+
+## Batch G4d (T092k, T092l: overload flyout, Desktop E2E for the pickers)
+
+- T092k: the 24-px `Overloads` ComboBox in `NodeView` header is now an icon `Button` (`Classes="icon"`, `IconIds.Overloads`,
+  automation id `NodeOverloads`, name "Overloads") whose `Flyout` hosts `MethodPickerList` (`Flyout.MethodPickerWidth` token,
+  480). `NodeViewModel` lost `Overloads`/`SelectedOverload`; it exposes `OverloadPicker` (a `MethodPickerListViewModel`
+  without group headers, `null` when the node has no other overload), `ShowOverloads` and `OverloadsTooltip`
+  ("Overloads (n): current signature", n counts the current one). Call and constructor nodes list every overload with the
+  current one marked; a make-array node lists both size modes through `MethodPickerItem.ForMode` (group "Size mode").
+  `Picked` calls `Graph.ChangeOverload` unless the item is the current one; the node's own property-changed hook rebuilds
+  the list. `MethodSpecifierConverter` is deleted.
+- Decision: closing is `HideFlyoutOnPickBehavior` (button behavior bound to the picker), not `HideFlyoutAction`: that action
+  hides `FlyoutBase.GetAttachedFlyout`, which a `Button.Flyout` is not (seen red: the flyout stayed open after Esc with the
+  action in an `EventTriggerBehavior`). Esc and Enter both close it; the node VM does not know about the flyout.
+- Deviation: the task asks for the flyout to fit "at zoom 1.0 and 2.0"; the canvas clamps at `MaxViewportZoom` 1, so the
+  headless test checks 1.0 and 0.5 (the flyout is in a popup layer and does not scale with the canvas). The 0.5 case opens
+  the flyout with `ShowAt`: the driver's click at zoom 0.5 does not reach the button (the click is covered at 1.0 by
+  `ClickingTheButtonOpensAFlyoutWithTheFilterBoxFocused`).
+- Snapshots re-baselined and opened: `node-call-method`, `canvas-every-node-kind` (the make-array node has the button
+  too), `canvas-preview-cable`, `editor-shell-main`, `search-popup` (all show the new header button); the start pages,
+  `editor-shell-no-project` and `node-method-entry-parameters` the update run rewrote only by version text were restored.
+  `CanvasPaletteTests` takes the kind glyph by id now that the header holds a second icon.
+- T092l: `OverrideMethodFlowTests` and `ChangeOverloadFlowTests`, one scenario each, through `MethodPickerPage` /
+  `SelectMethodDialogPage` / `OverloadFlyoutPage`. New plumbing: `AutomationIds.MethodPickerRow` on every row (name = row text,
+  style classes tell current/dimmed), `AutomationTree` reaches the content of an open `Button.Flyout` (popups were found
+  through `Popup.IsOpen` only), `MenuBar.InvokeAsync(..., scrollOverCommandId)`.
+- Finding for the owner: the Edit menu is taller than its popup on the E2E display, so Override method... is below the fold
+  (a scroll arrow shows); the E2E wheels over "Add variable" to reach it. Not changed here.
+- Tests: written first. Red as compile errors: the `NodeViewModelTests` cases (`OverloadPicker` did not exist); red as
+  assertions: the flyout tests (the flyout stayed open after Esc until `HideFlyoutOnPickBehavior`), the E2E classes (the
+  flyout content was not in the automation tree, then the node is renamed `CallMethodNode2` after a pick). Suite: 2975
+  non-UI tests and 644 headless UI tests green (Release), Desktop E2E 47/47 with `--fail-skips on`, the two new E2E classes
+  and `OverloadFlyoutTests` 3 runs each green. Ratchet: Margin and FontSize counts unchanged (no new literals).
+- Flake `InteractionStateTests.PointerOverAndPressedUseTheStateTokensInBothVariants("errors row")`: cause not found, no test
+  change. All three CI failures read `errors row State.Pressed in Dark (pointer over: False)` (the first pressed attempt), only
+  in CI. Locally about 25 runs of the theory, some under CPU load, pass. Ruled out: a late live analysis snapshot rebuilding the rows (the
+  container is reused and `IsPointerOver` survives the rebuild), a running `BrushTransition` (transitions are off in tests, and
+  `PaintsWith` reads the presenter, not an animated value). Remaining suspect: the headless hit test after the theme switch
+  needs a committed frame that a loaded runner has not produced when `MouseDown` lands. A retry until the row is pointer-over
+  and painted (`UiWait`, re-reading the row each attempt) would keep the invariant, but it is unproven, so it is not committed.
