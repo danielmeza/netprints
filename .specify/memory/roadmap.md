@@ -204,6 +204,12 @@ contribution registry; the rest in its `research.md`).
   empty-state control, focus and hover tokens, a `Font.Mono` token, high-DPI snapshots, one dialog shell for the new
   dialogs, and a visual contact sheet per sub-phase review. Readable override and overload pickers, "self" on unconnected
   Target pins and every dialog sized to its content (owner decisions 2026-10-08) add about 2 days more. The detailed tasks come in a later batch.
+  The owner decisions of 2026-10-09, after two audits of a design prototype built in a separate worktree (nothing of it
+  is merged), add about 2 days (6 units): pins and wires coloured by data type with hollow unconnected pins (C-3, moved
+  here from P6), canvas details (no band behind pin rows, a type-pin shape chosen on the contact sheet, flow glyphs, pin
+  hover), an icon tile on recent project rows, Pure on a call through undo, and an `.agents/rules` pointer to the XAML
+  skills in sub-phase H. The canvas base colour (#000 or a dark grey) and the node card opacity are the owner's calls
+  on the G contact sheet.
 - **Pin-layout safety net (S0, owner-approved 2026-10-08, outside the task list):** a golden test of every node kind's pin
   layout (`NodePinLayoutTests`) and the fixes it exposed for `VariableSetterNode.NewValuePin` on indexer setters and
   `MakeArrayNode.SizePin` outside predefined-size mode. It is the seed for the S4 pin-key tracking below.
@@ -481,7 +487,8 @@ for those who want to learn it.
   of the ~119k raw suggestions; categories, favorites, recent nodes.
 - Curated catalogs per profile (builds on P2 catalog profiles), high-level nodes, class
   templates (e.g. a new class comes with its lifecycle/event entry points ready).
-- Pin-type colors, automatic conversion nodes when linking compatible types.
+- Automatic conversion nodes when linking compatible types. (Pin-type colours moved to P3a sub-phase G, owner
+  decision 2026-10-09.)
 - A Self node in node search that gives `this` as a value, as Unreal's Self node (a new serialized node kind).
 - Gesture review item GR-1 (from Review F, R10): keyboard access to arbitrary connections (focusable cables or pins) so that
   Go to source and Go to target reach any connection of a node, not only its single one.
@@ -495,6 +502,10 @@ for those who want to learn it.
   NetPrints acts as a DAP client of `netcoredbg` attached to the host (desktop runner, or
   UnrealEditor hosting CoreCLR via UnrealSharp). Do B first, then A; a first cut of B belongs in
   the U1 prototype.
+  Debug visuals (the minimap, the execution overlay, flow highlighting, breakpoint state) MUST be driven by real data
+  from the running program through the host channel, never simulated (owner decision 2026-10-09). A design prototype
+  showed "execution state" computed by walking the static graph from the entry node, with nothing from the running
+  process; that misleads, so no debug visual ships before B delivers real data.
 - Natural-language/AI assist that proposes nodes from a description (opt-in, reviewable diff).
 - Scope UI for block-scoped variables (with P7):
   - blocks shown as nested, softly tinted regions on the canvas, with their local variables listed in the
@@ -541,9 +552,11 @@ for those who want to learn it.
   - Project and collaboration: export graph as SVG/PNG plus `netprints render` (B14); git status decorations and Compare
     with HEAD (B21); the Publish dialog (B23: RID, self-contained); Help > Report a problem diagnostics bundle (B24, if
     not done in P3a sub-phase H).
-  - Visual: connection styling, exec versus data wires and a thickness token (C-9); the behaviour halves of the node
-    palette (C-2), pin-type colouring (C-3), wire brightening and selection count (C-8), compact/comfortable density and
-    zoom-level detail (C-10), and motion with a reduce-motion setting (C-13); the old dialogs other than Override method, which P3a G moved, adopt the dialog shell (C-14);
+  - Visual: connection styling, the exec-wire style, a thickness token and the circuit style (C-9; data wires already
+    take their source pin's type colour in P3a); the behaviour halves of the node palette (C-2, variable headers by
+    type), wire brightening and selection count (C-8), compact/comfortable density and zoom-level detail (C-10), and
+    motion with a reduce-motion setting (C-13); pin-type colouring (C-3) moved to P3a sub-phase G with hollow
+    unconnected pins (owner decision 2026-10-09); the old dialogs other than Override method, which P3a G moved, adopt the dialog shell (C-14);
     the custom title bar (C-5) is already planned above (L1).
 - **Snippet library (gap research 2026-10-06)** (B20, size M, about 5 days for v1). Builds on copy/paste as text: a snippet is the
   same canonical JSON fragment plus a small header. Not a function or macro: it is an unlinked copy (use collapse to function
@@ -703,6 +716,16 @@ dominator/post-dominator analysis; keep the goto + jump-stack translator as fall
 irregular graphs; snapshot tests plus execution-equivalence tests between both translators.
 Scheduled after the owner deferred it on 2026-09-24 (current output works). Can run in
 parallel with P3–P6.
+- **Earlier prototype, reference only (owner decision 2026-10-09).** A structured translator built in a design
+  prototype (dominator-based, Cooper-Harvey-Kennedy, with a While node, made the default there) is not a starting
+  point: it miscompiles silently, with no exception, so a fallback to the goto translator would not catch it. Two
+  cases, each run against the goto translator: (1) a node reached from two If branches is emitted in the first branch
+  only, and the second comes out as `if (B) { }`, because the emitted vertex stays on the active path and stops any
+  later region that reaches it; (2) a While condition is read once before the loop (`c = P.Running; while (c)`), so
+  `while (Running) { Running = false; }` never ends. Its control-flow graph also used one vertex per node, so a wire
+  into a loop's Exec pin and one into its Continue pin looked the same. The dominator idea can be kept. Both cases
+  become P7's first red execution-equivalence tests, and an ADR is required before any change of the default
+  translator.
 Block-scoped local variables (owner idea, 2026-09-25): variables owned by for/foreach/while/if bodies.
 - Scope is inferred from the structured graph (e.g. the body of a For is what's reachable from its Loop Body
   pin, bounded by dominator analysis), and optionally declared with explicit scope regions.
