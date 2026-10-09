@@ -955,7 +955,7 @@ T094b before G5b's T093–T095, so the search safety net also guards T094.
 
 ### Batch G4b — model: sonnet — T092f–T092g — 3 units
 
-- [ ] T092f [US9] Dialog shell (2 units, FR-088). The UI polish added the shared dialog styles (`dialogRoot`,
+- [x] T092f [US9] Dialog shell (2 units, FR-088). The UI polish added the shared dialog styles (`dialogRoot`,
   `dialogTitle`, `dialogAction`, `codeBlock`) but no `DialogShell` control; this task wraps them. Test first:
   `tests/NetPrints.Editor.UITests/Dialogs/DialogShellTests.cs`, one row per P3a dialog (`UnsavedChangesDialog`, `ConfirmDialog`, `KeyboardShortcutsDialog`, `TrustDialog`,
   `IssuesDialog`, `RecoverDialog`, `AboutDialog`, `ErrorDialog`): it is hosted in `DialogShell` with a title and an

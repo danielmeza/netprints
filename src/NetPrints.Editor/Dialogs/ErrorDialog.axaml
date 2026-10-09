@@ -1,31 +1,30 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ctl="clr-namespace:NetPrints.Editor.Controls"
         xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
         xmlns:ed="clr-namespace:NetPrints.Editor"
         xmlns:eddialogs="clr-namespace:NetPrints.Editor.Dialogs"
         x:Class="NetPrints.Editor.Dialogs.ErrorDialog"
         x:DataType="eddialogs:ErrorDialogViewModel"
         Icon="avares://NetPrints.Editor/Assets/NetPrintsLogo.ico"
-        SizeToContent="WidthAndHeight" MaxWidth="600"
+        SizeToContent="WidthAndHeight"
         WindowStartupLocation="CenterOwner" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ErrorDialog}">
-  <Grid Classes="dialogRoot" RowDefinitions="Auto,*,Auto">
-    <StackPanel Orientation="Horizontal" Spacing="8">
-      <icons:IconPresenter Classes="error" IconId="{x:Static icons:IconIds.DialogError}" AutomationProperties.AccessibilityView="Raw" />
-      <TextBlock Classes="dialogTitle" Text="Error" />
-    </StackPanel>
+  <ctl:DialogShell Title="{Binding $parent[Window].Title}" IconId="{x:Static icons:IconIds.DialogError}">
+    <ctl:DialogShell.Actions>
+      <!-- Closes the dialog with no result; no prebuilt tap-to-command behavior applies here (there is
+           no VM command to run), so this is the ButtonClickEventTriggerBehavior + CloseWindowAction
+           pair (D11, ADR-0007 batch X2b). -->
+      <Button AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ErrorOkButton}" Content="OK" Classes="dialogAction"
+              IsDefault="True" IsCancel="True">
+        <Interaction.Behaviors>
+          <ButtonClickEventTriggerBehavior>
+            <CloseWindowAction />
+          </ButtonClickEventTriggerBehavior>
+        </Interaction.Behaviors>
+      </Button>
+    </ctl:DialogShell.Actions>
     <!-- Read-only but selectable so the error can be copied. -->
-    <TextBox Grid.Row="1" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ErrorMessage}" Classes="codeBlock"
-             IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True" MinWidth="360" MaxHeight="300" Text="{Binding Message, Mode=OneWay}" />
-    <!-- Closes the dialog with no result; no prebuilt tap-to-command behavior applies here (there is
-         no VM command to run), so this is the ButtonClickEventTriggerBehavior + CloseWindowAction
-         pair (D11, ADR-0007 batch X2b). -->
-    <Button Grid.Row="2" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ErrorOkButton}" Content="OK" Classes="dialogAction"
-            IsDefault="True">
-      <Interaction.Behaviors>
-        <ButtonClickEventTriggerBehavior>
-          <CloseWindowAction />
-        </ButtonClickEventTriggerBehavior>
-      </Interaction.Behaviors>
-    </Button>
-  </Grid>
+    <TextBox AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ErrorMessage}" Classes="codeBlock"
+             IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True" MaxHeight="{StaticResource Dialog.ListMaxHeight}" Text="{Binding Message, Mode=OneWay}" />
+  </ctl:DialogShell>
 </Window>

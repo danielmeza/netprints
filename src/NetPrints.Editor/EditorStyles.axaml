@@ -87,6 +87,35 @@
           </ControlTemplate>
         </Setter>
       </ControlTheme>
+      <!-- Dialog shell (FR-088): shared widths and the height at which a dialog's list starts to scroll. -->
+      <x:Double x:Key="Dialog.MinWidth">360</x:Double>
+      <x:Double x:Key="Dialog.MaxWidth">640</x:Double>
+      <x:Double x:Key="Dialog.ListMaxHeight">360</x:Double>
+      <ControlTheme x:Key="{x:Type ctl:DialogShell}" TargetType="ctl:DialogShell">
+        <Setter Property="MinWidth" Value="{StaticResource Dialog.MinWidth}" />
+        <Setter Property="MaxWidth" Value="{StaticResource Dialog.MaxWidth}" />
+        <Setter Property="Padding" Value="{StaticResource Space.M}" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="Template">
+          <ControlTemplate>
+            <Grid Margin="{TemplateBinding Padding}" RowDefinitions="Auto,*,Auto" RowSpacing="{StaticResource Space.M.Size}">
+              <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space.S.Size}">
+                <icons:IconPresenter IconId="{TemplateBinding IconId}" Width="{StaticResource Icon.Medium}" Height="{StaticResource Icon.Medium}"
+                                     VerticalAlignment="Center" AutomationProperties.AccessibilityView="Raw" />
+                <TextBlock Classes="dialogTitle" Text="{TemplateBinding Title}" />
+              </StackPanel>
+              <ContentPresenter Grid.Row="1" Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" />
+              <ItemsControl Grid.Row="2" HorizontalAlignment="Right" ItemsSource="{TemplateBinding SortedActions}">
+                <ItemsControl.ItemsPanel>
+                  <ItemsPanelTemplate>
+                    <StackPanel Orientation="Horizontal" Spacing="{StaticResource Space.S.Size}" />
+                  </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+              </ItemsControl>
+            </Grid>
+          </ControlTemplate>
+        </Setter>
+      </ControlTheme>
       <FocusAdornerTemplate x:Key="NetPrints.FocusAdorner">
         <Border BorderThickness="{StaticResource Focus.RingThickness}" BorderBrush="{DynamicResource Focus.Ring}"
                 CornerRadius="{StaticResource Radius.Control}" IsHitTestVisible="False" />
@@ -544,11 +573,7 @@
     <Setter Property="Padding" Value="4,0" />
   </Style>
 
-  <!-- Dialogs: root grid, header, footer buttons and a read-only code-like text box. -->
-  <Style Selector="Grid.dialogRoot">
-    <Setter Property="Margin" Value="12" />
-    <Setter Property="RowSpacing" Value="12" />
-  </Style>
+  <!-- Dialogs: header, footer buttons and a read-only code-like text box. -->
   <Style Selector="TextBlock.dialogTitle">
     <Setter Property="FontSize" Value="{StaticResource Font.Subtitle}" />
     <Setter Property="FontWeight" Value="SemiBold" />
