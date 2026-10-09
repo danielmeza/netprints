@@ -464,6 +464,17 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
     [RelayCommand]
     private Task OpenSearchAsync(GraphPoint position) => OpenSearchAsync(position, suggestionPin: null);
 
+    /// <summary>
+    /// Runs an edit of a method's parameters (the entry node's +/- buttons and type-pin connections) as one undo step that also moves the
+    /// calls to the method in the project onto the new signature.
+    /// </summary>
+    /// <param name="entry">The method's entry node.</param>
+    /// <param name="label">The name of the step.</param>
+    /// <param name="edit">Changes the parameters.</param>
+    /// <param name="sourceIndexes">For each new parameter, the index it had before, or -1 for a new one; null when the parameters keep their positions.</param>
+    internal void EditMethodSignature(MethodEntryNode entry, string label, Action edit, IReadOnlyList<int>? sourceIndexes = null) =>
+        Services.UndoRedo.Do(EditorCommands.EditMethodSignature(Services.ProjectClasses(), entry, label, edit, sourceIndexes ?? [.. Enumerable.Range(0, entry.OutputDataPins.Count)]));
+
     /// <summary>Changes the overload of a node through the undo stack (PAR-40).</summary>
     public void ChangeOverload(NodeViewModel node, object overload) => Services.UndoRedo.Do(EditorCommands.ChangeOverload(node.Node, overload));
 

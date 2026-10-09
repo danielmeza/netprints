@@ -208,6 +208,43 @@ public static class EditorCommands
             () => ApplyPins(handle, before ?? throw new InvalidOperationException(NoDoActionMessage)));
     }
 
+    /// <summary>
+    /// Changes the parameters of the method that owns <paramref name="entry"/> (its +/- buttons and its type-pin connections) as one step:
+    /// <see cref="EditPins"/> for the entry's pins, and <see cref="SignatureChange.RetargetCallers"/> so the calls to the method in
+    /// <paramref name="classes"/> move to the new parameter list in the same step. Undo reverses both.
+    /// </summary>
+    /// <param name="classes">The classes whose graphs may call the method (the whole project).</param>
+    /// <param name="entry">The method's entry node.</param>
+    /// <param name="label">The name of the step.</param>
+    /// <param name="edit">Changes the parameters.</param>
+    /// <param name="sourceIndexes">For each new parameter, the index it had before, or -1 for a new one.</param>
+    /// <returns>The command.</returns>
+    public static IUndoableCommand EditMethodSignature(IReadOnlyList<ClassGraph> classes, MethodEntryNode entry, string label, Action edit, IReadOnlyList<int> sourceIndexes)
+    {
+        ArgumentNullException.ThrowIfNull(classes);
+        ArgumentNullException.ThrowIfNull(entry);
+        ArgumentNullException.ThrowIfNull(sourceIndexes);
+        IUndoableCommand pins = EditPins(entry, label, edit);
+        Action undoCallers = () => { };
+
+        return new DelegateUndoableCommand(label,
+            () =>
+            {
+                MemberKey? oldKey = entry.MethodGraph is { Class: { } cls } method
+                    ? new MemberKey(MemberKind.Method, cls.Type, method.Name, method.ArgumentTypes.ToList())
+                    : null;
+                pins.Execute();
+                undoCallers = oldKey is { } key
+                    ? SignatureChange.RetargetCallers(classes, key, [.. entry.OutputDataPins.Select(pin => new Named<BaseType>(pin.Name, pin.PinType.RequireValue()))], sourceIndexes)
+                    : () => { };
+            },
+            () =>
+            {
+                undoCallers();
+                pins.Undo();
+            });
+    }
+
     private sealed record PinListState(
         IReadOnlyList<NodeInputExecPin> InputExec,
         IReadOnlyList<NodeOutputExecPin> OutputExec,

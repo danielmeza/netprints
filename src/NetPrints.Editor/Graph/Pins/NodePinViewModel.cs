@@ -431,13 +431,36 @@ public sealed partial class NodePinViewModel : ObservableObject, IDisposable
             return false;
         }
 
-        GraphUtil.ConnectNodePins(Pin, other.Pin);
+        MethodEntryNode? entry = ParameterTypeEntry(Pin) ?? ParameterTypeEntry(other.Pin);
+        if (entry is not null)
+        {
+            Node.Graph.EditMethodSignature(entry, ParameterTypeStep, () => GraphUtil.ConnectNodePins(Pin, other.Pin));
+        }
+        else
+        {
+            GraphUtil.ConnectNodePins(Pin, other.Pin);
+        }
+
         return true;
     }
 
+    private const string ParameterTypeStep = "Change parameter type";
+
+    private static MethodEntryNode? ParameterTypeEntry(NodePin pin) => pin is NodeInputTypePin { Node: MethodEntryNode entry } ? entry : null;
+
     /// <summary>Disconnects all connections of this pin (middle click, PAR-48).</summary>
     [RelayCommand]
-    public void DisconnectAll() => GraphUtil.DisconnectPin(Pin);
+    public void DisconnectAll()
+    {
+        if (ParameterTypeEntry(Pin) is { } entry)
+        {
+            Node.Graph.EditMethodSignature(entry, ParameterTypeStep, () => GraphUtil.DisconnectPin(Pin));
+        }
+        else
+        {
+            GraphUtil.DisconnectPin(Pin);
+        }
+    }
 
     /// <summary>Toggles the faint state of the cables of this pin (mouse back button, PAR-48).</summary>
     [RelayCommand]

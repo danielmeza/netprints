@@ -357,7 +357,7 @@ public sealed partial class NodeViewModel : ObservableObject, IDisposable
                 EditPins(LeftPlusToolTip, makeArrayNode.AddElementPin);
                 break;
             case MethodEntryNode entryNode:
-                EditPins(LeftPlusToolTip, entryNode.AddArgument);
+                Graph.EditMethodSignature(entryNode, LeftPlusToolTip, entryNode.AddArgument, [.. Enumerable.Range(0, entryNode.OutputDataPins.Count), -1]);
                 break;
             case ReturnNode returnNode:
                 EditPins(LeftPlusToolTip, returnNode.AddReturnType);
@@ -377,7 +377,7 @@ public sealed partial class NodeViewModel : ObservableObject, IDisposable
                 EditPins(LeftMinusToolTip, () => makeArrayNode.RemoveElementPin());
                 break;
             case MethodEntryNode { OutputDataPins.Count: > 0 } entryNode:
-                EditPins(LeftMinusToolTip, entryNode.RemoveArgument);
+                Graph.EditMethodSignature(entryNode, LeftMinusToolTip, entryNode.RemoveArgument, [.. Enumerable.Range(0, entryNode.OutputDataPins.Count - 1)]);
                 break;
             case ReturnNode { InputDataPins.Count: > 0 } returnNode:
                 EditPins(LeftMinusToolTip, returnNode.RemoveReturnType);

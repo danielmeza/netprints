@@ -51,7 +51,7 @@ public sealed class ClassContext : IDisposable
         Context = context;
         UndoRedo = undoRedo;
         Messenger = context.CreateMessenger();
-        Services = new ClassEditorServices(context, undoRedo, Messenger);
+        Services = new ClassEditorServices(context, undoRedo, Messenger, this.projectClasses);
 
         Methods = new ObservableViewModelCollection<MethodViewModel, MethodGraph>(cls.Methods, m => new MethodViewModel(m, RenameMethod), m => m.Dispose());
         Constructors = new ObservableViewModelCollection<MethodViewModel, ConstructorGraph>(cls.Constructors, c => new MethodViewModel(c), m => m.Dispose());
