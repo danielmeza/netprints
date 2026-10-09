@@ -827,6 +827,8 @@ public static class EditorCommands
         public required IReadOnlyList<PinRef?> OutputExecOutgoing { get; init; }
         public required IReadOnlyList<PinRef?> InputDataIncoming { get; init; }
         public required IReadOnlyList<IReadOnlyList<PinRef>> OutputDataOutgoing { get; init; }
+        public required IReadOnlyList<PinRef?> InputTypeIncoming { get; init; }
+        public required IReadOnlyList<IReadOnlyList<PinRef>> OutputTypeOutgoing { get; init; }
     }
 
     /// <summary>Records every connection of the node behind <paramref name="handle"/>, then disconnects and removes it.</summary>
@@ -851,6 +853,8 @@ public static class EditorCommands
             OutputExecOutgoing = node.OutputExecPins.Select(p => p.OutgoingPin is { } to ? ExecIn(to) : (PinRef?)null).ToArray(),
             InputDataIncoming = node.InputDataPins.Select(p => p.IncomingPin is { } from ? DataOut(from) : (PinRef?)null).ToArray(),
             OutputDataOutgoing = node.OutputDataPins.Select(p => (IReadOnlyList<PinRef>)p.OutgoingPins.Select(DataIn).ToArray()).ToArray(),
+            InputTypeIncoming = node.InputTypePins.Select(p => p.IncomingPin is { } from ? TypeOut(from) : (PinRef?)null).ToArray(),
+            OutputTypeOutgoing = node.OutputTypePins.Select(p => (IReadOnlyList<PinRef>)p.OutgoingPins.Select(TypeIn).ToArray()).ToArray(),
         };
     }
 
@@ -889,6 +893,22 @@ public static class EditorCommands
             foreach (var to in snapshot.OutputDataOutgoing[i])
             {
                 GraphUtil.ConnectDataPins(node.OutputDataPins[i], to.Handle.Node.InputDataPins[to.Index]);
+            }
+        }
+
+        for (int i = 0; i < snapshot.InputTypeIncoming.Count; i++)
+        {
+            if (snapshot.InputTypeIncoming[i] is { } from)
+            {
+                GraphUtil.ConnectTypePins(from.Handle.Node.OutputTypePins[from.Index], node.InputTypePins[i]);
+            }
+        }
+
+        for (int i = 0; i < snapshot.OutputTypeOutgoing.Count; i++)
+        {
+            foreach (var to in snapshot.OutputTypeOutgoing[i])
+            {
+                GraphUtil.ConnectTypePins(node.OutputTypePins[i], to.Handle.Node.InputTypePins[to.Index]);
             }
         }
     }
