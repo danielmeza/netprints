@@ -261,6 +261,18 @@ public static class IconIds
     /// <summary>NodeVisualKind.Ternary.</summary>
     public const string NodeKindTernary = "netprints.icon.nodeKind.ternary";
 
+    /// <summary>NodeVisualKind.IfElse; the SourceBranch glyph.</summary>
+    public const string NodeKindIfElse = "netprints.icon.nodeKind.ifElse";
+
+    /// <summary>NodeVisualKind.ForLoop; the Repeat glyph.</summary>
+    public const string NodeKindForLoop = "netprints.icon.nodeKind.forLoop";
+
+    /// <summary>NodeVisualKind.ExplicitCast; the SwapHorizontal glyph.</summary>
+    public const string NodeKindExplicitCast = "netprints.icon.nodeKind.explicitCast";
+
+    /// <summary>NodeVisualKind.Await; the TimerSand glyph.</summary>
+    public const string NodeKindAwait = "netprints.icon.nodeKind.await";
+
     /// <summary>An execution pin; filled when connected.</summary>
     public const string PinExec = "netprints.icon.pin.exec";
 

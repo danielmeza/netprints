@@ -3,6 +3,7 @@ using NetPrints.Editor.Controls;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Graph.Nodes;
 using NetPrints.Editor.Graph.Pins;
+using NetPrints.Editor.Icons;
 using NetPrints.Editor.Tests.Graph;
 using NetPrints.Editor.Tests.Hosting;
 using NetPrints.Editor.UndoRedo;
@@ -34,13 +35,46 @@ public class NodeViewModelTests(TestEditor editor) : GraphTestBase(editor)
             (new MakeArrayNode(Method), NodeVisualKind.MakeArray),
             (new ThrowNode(Method), NodeVisualKind.Throw),
             (new TernaryNode(Method), NodeVisualKind.Ternary),
-            (new IfElseNode(Method), NodeVisualKind.Default),
+            (new IfElseNode(Method), NodeVisualKind.IfElse),
+            (new ForLoopNode(Method), NodeVisualKind.ForLoop),
+            (new ExplicitCastNode(Method), NodeVisualKind.ExplicitCast),
+            (new AwaitNode(Method), NodeVisualKind.Await),
         };
 
         foreach (var (node, kind) in expected)
         {
             Assert.Equal(kind, VmOf(node).VisualKind);
         }
+    }
+
+    [Fact]
+    public void NoBuiltInNodeWithExecutionPinsKeepsTheDefaultGlyph()
+    {
+        var variable = new VariableSpecifier("Length", IntType, MemberVisibility.Public, MemberVisibility.Public, StringType, VariableModifiers.None);
+        var ctor = Editor.Reflection.Provider.GetConstructors(TypeSpecifier.FromType<List<int>>()).First();
+        Node[] nodes =
+        [
+            Method.EntryNode,
+            Method.MainReturnNode,
+            new CallMethodNode(Method, ConsoleWriteLine(StringType)),
+            new ConstructorNode(Method, ctor),
+            new VariableSetterNode(Method, variable),
+            new ThrowNode(Method),
+            new TernaryNode(Method),
+            new IfElseNode(Method),
+            new ForLoopNode(Method),
+            new ExplicitCastNode(Method),
+            new AwaitNode(Method),
+            new MakeArrayNode(Method),
+            new TypeOfNode(Method),
+            new DefaultNode(Method),
+            new LiteralNode(Method, IntType),
+        ];
+
+        var withExecPins = nodes.Where(node => node.InputExecPins.Count + node.OutputExecPins.Count > 0).ToList();
+
+        Assert.True(withExecPins.Count >= 10);
+        Assert.All(withExecPins, node => Assert.NotEqual(IconIds.NodeKindDefault, VmOf(node).KindIconId));
     }
 
     [Fact]

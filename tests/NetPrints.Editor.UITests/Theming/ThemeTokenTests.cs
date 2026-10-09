@@ -61,6 +61,7 @@ public class ThemeTokenTests
         "Canvas.MarqueeFill",
         "Canvas.MarqueeBorder",
         "Canvas.WireSelected",
+        "Canvas.Background",
     ];
 
     private static readonly string[] CanvasThemes =

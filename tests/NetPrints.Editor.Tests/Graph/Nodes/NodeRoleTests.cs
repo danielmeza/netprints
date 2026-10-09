@@ -35,6 +35,14 @@ public class NodeRoleTests(TestEditor editor) : GraphTestBase(editor)
         (NodeVisualKind.Throw, true, "Throw"),
         (NodeVisualKind.Ternary, false, "Pure"),
         (NodeVisualKind.Ternary, true, "Pure"),
+        (NodeVisualKind.IfElse, false, "Flow"),
+        (NodeVisualKind.IfElse, true, "Pure"),
+        (NodeVisualKind.ForLoop, false, "Flow"),
+        (NodeVisualKind.ForLoop, true, "Pure"),
+        (NodeVisualKind.ExplicitCast, false, "Flow"),
+        (NodeVisualKind.ExplicitCast, true, "Pure"),
+        (NodeVisualKind.Await, false, "Flow"),
+        (NodeVisualKind.Await, true, "Pure"),
         (NodeVisualKind.Default, false, "Flow"),
         (NodeVisualKind.Default, true, "Pure"),
     ];
@@ -160,6 +168,10 @@ public class NodeRoleTests(TestEditor editor) : GraphTestBase(editor)
     [InlineData(NodeVisualKind.MakeArray, IconIds.NodeKindMakeArray)]
     [InlineData(NodeVisualKind.Throw, IconIds.NodeKindThrow)]
     [InlineData(NodeVisualKind.Ternary, IconIds.NodeKindTernary)]
+    [InlineData(NodeVisualKind.IfElse, IconIds.NodeKindIfElse)]
+    [InlineData(NodeVisualKind.ForLoop, IconIds.NodeKindForLoop)]
+    [InlineData(NodeVisualKind.ExplicitCast, IconIds.NodeKindExplicitCast)]
+    [InlineData(NodeVisualKind.Await, IconIds.NodeKindAwait)]
     public void EveryKindHasItsGlyph(NodeVisualKind kind, string iconId)
     {
         Assert.Equal(iconId, NodeIcons.For(kind));

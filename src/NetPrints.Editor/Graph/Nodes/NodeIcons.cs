@@ -21,6 +21,10 @@ public static class NodeIcons
         [NodeVisualKind.MakeArray] = IconIds.NodeKindMakeArray,
         [NodeVisualKind.Throw] = IconIds.NodeKindThrow,
         [NodeVisualKind.Ternary] = IconIds.NodeKindTernary,
+        [NodeVisualKind.IfElse] = IconIds.NodeKindIfElse,
+        [NodeVisualKind.ForLoop] = IconIds.NodeKindForLoop,
+        [NodeVisualKind.ExplicitCast] = IconIds.NodeKindExplicitCast,
+        [NodeVisualKind.Await] = IconIds.NodeKindAwait,
     }.ToFrozenDictionary();
 
     /// <summary>Gets the icon id of a node kind.</summary>

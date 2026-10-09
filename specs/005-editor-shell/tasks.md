@@ -1057,7 +1057,7 @@ moved here from P6) and hollow unconnected pins, all before the contact sheet (T
 recent-row tile. The three canvas tasks run in order, since the colours fill the shapes T092m settles, and each
 re-baselines the snapshots it changes (open every PNG).
 
-- [ ] T092m [US9] Canvas details (1 unit, FR-109). Test first: headless
+- [x] T092m [US9] Canvas details (1 unit, FR-109). Test first: headless
   `tests/NetPrints.Editor.UITests/Theming/CanvasDetailTests.cs`, in Dark and Light:
   - the pixel between a pin and its label equals the node body's pixel within 2 per channel (red today: the Nodify
     `NodeInput`/`NodeOutput` default background draws (45,45,48) on a (21,21,21) body);

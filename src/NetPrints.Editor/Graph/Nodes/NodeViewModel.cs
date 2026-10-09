@@ -140,7 +140,7 @@ public sealed partial class NodeViewModel : ObservableObject, IDisposable
     /// <summary>Header color category (PAR-39).</summary>
     public NodeVisualKind VisualKind => Node switch
     {
-        ExecutionEntryNode => NodeVisualKind.Entry,
+        ExecutionEntryNode or EventEntryNode => NodeVisualKind.Entry,
         ReturnNode => NodeVisualKind.Return,
         CallMethodNode { IsStatic: true } => NodeVisualKind.CallStatic,
         CallMethodNode => NodeVisualKind.CallMethod,
@@ -152,6 +152,10 @@ public sealed partial class NodeViewModel : ObservableObject, IDisposable
         MakeArrayNode => NodeVisualKind.MakeArray,
         ThrowNode => NodeVisualKind.Throw,
         TernaryNode => NodeVisualKind.Ternary,
+        IfElseNode => NodeVisualKind.IfElse,
+        ForLoopNode => NodeVisualKind.ForLoop,
+        ExplicitCastNode => NodeVisualKind.ExplicitCast,
+        AwaitNode => NodeVisualKind.Await,
         _ => NodeVisualKind.Default,
     };
 

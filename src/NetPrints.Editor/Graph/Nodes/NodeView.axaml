@@ -18,7 +18,7 @@
       <Panel Classes="pinHitbox" Width="24" Height="24" x:DataType="edpins:NodePinViewModel" Background="Transparent" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PinConnector}">
         <Rectangle Classes="pin pin-exec" Classes.dimmed="{Binding IsDimmed}" Width="16" Height="16" StrokeThickness="3" IsVisible="{Binding ShowRectangle}" />
         <Ellipse Classes="pin pin-data" Classes.dimmed="{Binding IsDimmed}" Width="16" Height="16" StrokeThickness="3" IsVisible="{Binding ShowCircle}" />
-        <Polygon Classes="pin pin-type" Classes.dimmed="{Binding IsDimmed}" Points="0,0 16,8 0,16" StrokeThickness="1" IsVisible="{Binding ShowTriangle}" />
+        <Path Classes="pin pin-type" Classes.dimmed="{Binding IsDimmed}" Data="{DynamicResource Pin.TypeShape}" StrokeThickness="1" IsVisible="{Binding ShowTriangle}" />
         <!-- Default-value indicator -->
         <Polygon Classes="defaultValue" Classes.inactive="{Binding !IsDefaultValueActive}" Points="0,0 6,7 0,14" IsHitTestVisible="False"
                  IsVisible="{Binding ShowDefaultValueIndicator}" />
@@ -42,7 +42,7 @@
   </UserControl.Resources>
 
   <UserControl.Styles>
-    <Style Selector="Shape.pin:pointerover">
+    <Style Selector=":is(Shape).pin:pointerover">
       <Setter Property="Stroke" Value="{DynamicResource Pin.HoverStroke}" />
     </Style>
     <Style Selector="Panel.pinHitbox">
@@ -53,7 +53,7 @@
         </Transitions>
       </Setter>
     </Style>
-    <Style Selector="Panel.pinHitbox > Shape">
+    <Style Selector="Panel.pinHitbox > :is(Shape)">
       <Setter Property="HorizontalAlignment" Value="Center" />
       <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
@@ -132,14 +132,14 @@
           <ItemsControl.ItemTemplate>
             <DataTemplate x:DataType="ednodes:PinRowViewModel">
               <Grid ColumnDefinitions="*,*" MinHeight="32">
-                <nn:NodeInput x:DataType="edpins:NodePinViewModel" DataContext="{Binding Left}"
+                <nn:NodeInput x:DataType="edpins:NodePinViewModel" DataContext="{Binding Left}" Theme="{StaticResource NetPrints.NodeInput}"
                               IsVisible="{Binding Converter={x:Static conv:ObjectConverters.IsNotNull}}"
                               AutomationProperties.AutomationId="{x:Static ed:AutomationIds.Pin}" AutomationProperties.Name="{Binding AutomationName}" Header="{Binding}" ToolTip.Tip="{Binding ToolTip}"
                               HeaderTemplate="{StaticResource PinHeaderTemplate}"
                               ConnectorTemplate="{StaticResource PinConnectorTemplate}"
                               IsConnected="{Binding IsConnected}"
                               Anchor="{Binding Anchor, Mode=OneWayToSource, Converter={x:Static edgraph:GraphPointConverter.Instance}}" />
-                <nn:NodeOutput Grid.Column="1" x:DataType="edpins:NodePinViewModel" DataContext="{Binding Right}"
+                <nn:NodeOutput Grid.Column="1" x:DataType="edpins:NodePinViewModel" DataContext="{Binding Right}" Theme="{StaticResource NetPrints.NodeOutput}"
                                IsVisible="{Binding Converter={x:Static conv:ObjectConverters.IsNotNull}}"
                                AutomationProperties.AutomationId="{x:Static ed:AutomationIds.Pin}" AutomationProperties.Name="{Binding AutomationName}" Header="{Binding}" ToolTip.Tip="{Binding ToolTip}"
                                HeaderTemplate="{StaticResource PinHeaderTemplate}"
