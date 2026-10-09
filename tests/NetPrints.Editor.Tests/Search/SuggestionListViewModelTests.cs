@@ -115,8 +115,9 @@ public class SuggestionListViewModelTests : GraphTestBase
     public async Task PinSearchConnectsNewNode()
     {
         var entryExec = Method.EntryNode.InitialExecutionPin;
+        var previous = entryExec.OutgoingPin;
         await Graph.OpenSearchAsync(new GraphPoint(0, 0), entryExec, TestContext.Current.CancellationToken);
-        Assert.Null(entryExec.OutgoingPin);
+        Assert.Same(previous, entryExec.OutgoingPin);
 
         var ifElse = Graph.Search.Items.First(i => i.Text == "If Else");
         await Graph.Search.SelectCommand.ExecuteAsync(ifElse);

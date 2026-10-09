@@ -209,12 +209,13 @@ public sealed class NodeCreationTableTests(IReflectionHost sharedReflection)
     public async Task UndoAndRedoRemoveAndRestoreTheCreatedNodeAndItsConnection()
     {
         NodeOutputExecPin entry = Method.EntryNode.InitialExecutionPin;
+        NodeInputExecPin? previous = entry.OutgoingPin;
         await Graph.Search.SelectCommand.ExecuteAsync(await OpenAsync(Graph, "If Else", entry));
         IfElseNode node = Method.Nodes.OfType<IfElseNode>().Single();
 
         ClassContext.UndoRedo.Undo();
         Assert.DoesNotContain(node, Method.Nodes);
-        Assert.Null(entry.OutgoingPin);
+        Assert.Same(previous, entry.OutgoingPin);
 
         ClassContext.UndoRedo.Redo();
         Assert.Contains(node, Method.Nodes);

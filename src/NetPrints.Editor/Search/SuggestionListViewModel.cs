@@ -132,12 +132,6 @@ public sealed partial class SuggestionListViewModel : ObservableObject, IDisposa
         IsLoading = true;
         IsOpen = true;
 
-        // As in the WPF editor, dragging from a connected exec output replaces its connection.
-        if (pin is NodeOutputExecPin oxp)
-        {
-            GraphUtil.DisconnectOutputExecPin(oxp);
-        }
-
         List<SuggestionItem> built;
         try
         {

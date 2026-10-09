@@ -53,11 +53,12 @@ public class NodeUndoTests : GraphTestBase
     public async Task UndoingAPinSearchAddDisconnectsTheNodeAndRedoConnectsItAgain()
     {
         NodeOutputExecPin entry = Method.EntryNode.InitialExecutionPin;
+        NodeInputExecPin? previous = entry.OutgoingPin;
         IfElseNode node = await AddIfElseAsync(new GraphPoint(0, 0), entry);
         Assert.Same(node.InputExecPins[0], entry.OutgoingPin);
 
         ClassContext.UndoRedo.Undo();
-        Assert.Null(entry.OutgoingPin);
+        Assert.Same(previous, entry.OutgoingPin);
 
         ClassContext.UndoRedo.Redo();
         Assert.Same(node.InputExecPins[0], entry.OutgoingPin);

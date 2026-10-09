@@ -419,8 +419,9 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
     private T RecordAdd<T>(Func<T> create)
         where T : Node
     {
+        var before = EditorCommands.CaptureLinks(Graph);
         T node = Services.UndoRedo.RunApplying(create);
-        Services.UndoRedo.Record(EditorCommands.AddNode(node));
+        Services.UndoRedo.Record(EditorCommands.AddNode(node, before));
         return node;
     }
 

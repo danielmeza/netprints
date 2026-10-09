@@ -108,7 +108,7 @@ public static class EditorCommands
     /// that follows the replacements; otherwise undoing two changes in a row would act on a node
     /// that is no longer in the graph.
     /// </summary>
-    private sealed class NodeHandle(Node node)
+    internal sealed class NodeHandle(Node node)
     {
         public Node Node { get; set; } = node;
     }
@@ -151,11 +151,13 @@ public static class EditorCommands
     /// <see cref="UndoRedoStack.Record"/>: undo disconnects and removes it, redo puts it back at its index and reconnects it.
     /// </summary>
     /// <param name="node">The new node, already in its graph.</param>
+    /// <param name="before">The graph's connections captured before the node was created; undo puts back the ones creating the node displaced. Null when the creation displaced none.</param>
     /// <returns>The command, named <see cref="AddNodeName"/>.</returns>
-    public static IUndoableCommand AddNode(Node node)
+    public static IUndoableCommand AddNode(Node node, GraphLinks? before = null)
     {
         var handle = NodeHandles.GetValue(node, n => new NodeHandle(n));
         NodeConnectionSnapshot? removed = null;
+        List<Link> displaced = before is null ? [] : [.. before.Links.Except(CaptureLinks(node.Graph).Links)];
 
         return new DelegateUndoableCommand(AddNodeName,
             () =>
@@ -165,7 +167,83 @@ public static class EditorCommands
                     RestoreAndReconnect(removed);
                 }
             },
-            () => removed = CaptureAndDisconnect(handle));
+            () =>
+            {
+                removed = CaptureAndDisconnect(handle);
+                displaced.ForEach(Reconnect);
+            });
+    }
+
+    /// <summary>The connections of a graph at one moment, for <see cref="AddNode"/>.</summary>
+    public sealed class GraphLinks
+    {
+        internal GraphLinks(IReadOnlyList<Link> links) => Links = links;
+
+        internal IReadOnlyList<Link> Links { get; }
+    }
+
+    /// <summary>Records every exec, data and type connection of <paramref name="graph"/>.</summary>
+    /// <param name="graph">The graph.</param>
+    /// <returns>The connections.</returns>
+    public static GraphLinks CaptureLinks(NodeGraph graph)
+    {
+        ArgumentNullException.ThrowIfNull(graph);
+        List<Link> links = [];
+        foreach (Node node in graph.Nodes)
+        {
+            foreach (NodeOutputExecPin pin in node.OutputExecPins)
+            {
+                if (pin.OutgoingPin is { } to)
+                {
+                    links.Add(new Link(LinkKind.Exec, ExecOut(pin), ExecIn(to)));
+                }
+            }
+
+            foreach (NodeInputDataPin pin in node.InputDataPins)
+            {
+                if (pin.IncomingPin is { } from)
+                {
+                    links.Add(new Link(LinkKind.Data, DataOut(from), DataIn(pin)));
+                }
+            }
+
+            foreach (NodeInputTypePin pin in node.InputTypePins)
+            {
+                if (pin.IncomingPin is { } from)
+                {
+                    links.Add(new Link(LinkKind.Type, TypeOut(from), TypeIn(pin)));
+                }
+            }
+        }
+
+        return new GraphLinks(links);
+    }
+
+    internal enum LinkKind
+    {
+        Exec,
+        Data,
+        Type,
+    }
+
+    internal readonly record struct Link(LinkKind Kind, PinRef From, PinRef To);
+
+    private static void Reconnect(Link link)
+    {
+        Node from = link.From.Handle.Node;
+        Node to = link.To.Handle.Node;
+        switch (link.Kind)
+        {
+            case LinkKind.Exec:
+                GraphUtil.ConnectExecPins(from.OutputExecPins[link.From.Index], to.InputExecPins[link.To.Index]);
+                break;
+            case LinkKind.Data:
+                GraphUtil.ConnectDataPins(from.OutputDataPins[link.From.Index], to.InputDataPins[link.To.Index]);
+                break;
+            case LinkKind.Type:
+                GraphUtil.ConnectTypePins(from.OutputTypePins[link.From.Index], to.InputTypePins[link.To.Index]);
+                break;
+        }
     }
 
     /// <summary>
@@ -635,7 +713,7 @@ public static class EditorCommands
     private static NodeHandle HandleOf(Node node) => NodeHandles.GetValue(node, n => new NodeHandle(n));
 
     /// <summary>A pin of a neighbouring node as the node's handle and the pin's index, so it resolves to the current node after an overload change.</summary>
-    private readonly record struct PinRef(NodeHandle Handle, int Index);
+    internal readonly record struct PinRef(NodeHandle Handle, int Index);
 
     private static PinRef ExecOut(NodeOutputExecPin pin) => new(HandleOf(pin.Node), pin.Node.OutputExecPins.IndexOf(pin));
 
@@ -644,6 +722,10 @@ public static class EditorCommands
     private static PinRef DataOut(NodeOutputDataPin pin) => new(HandleOf(pin.Node), pin.Node.OutputDataPins.IndexOf(pin));
 
     private static PinRef DataIn(NodeInputDataPin pin) => new(HandleOf(pin.Node), pin.Node.InputDataPins.IndexOf(pin));
+
+    private static PinRef TypeOut(NodeOutputTypePin pin) => new(HandleOf(pin.Node), pin.Node.OutputTypePins.IndexOf(pin));
+
+    private static PinRef TypeIn(NodeInputTypePin pin) => new(HandleOf(pin.Node), pin.Node.InputTypePins.IndexOf(pin));
 
     /// <summary>A removed node's position, index and every pin connection, captured so <see cref="RestoreAndReconnect"/> can undo the removal exactly.</summary>
     private sealed class NodeConnectionSnapshot
