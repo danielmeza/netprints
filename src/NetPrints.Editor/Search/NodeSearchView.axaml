@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:ctl="clr-namespace:NetPrints.Editor.Controls"
              xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
              xmlns:edsearch="clr-namespace:NetPrints.Editor.Search"
              x:Class="NetPrints.Editor.Search.NodeSearchView"
@@ -30,6 +31,8 @@
         </Interaction.Behaviors>
       </TextBox>
       <TextBlock Grid.Row="1" Text="Loading..." IsVisible="{Binding IsLoading}" Margin="8" />
+      <ctl:EmptyState Grid.Row="1" IconId="{x:Static icons:IconIds.EmptySearch}" Message="No node matches your search." IsVisible="{Binding IsEmpty}"
+                      AutomationProperties.AutomationId="{x:Static ed:AutomationIds.SearchEmpty}" />
       <!-- IsEnabled="{Binding !IsFiltering}" (FLAKE-01): disabled while the debounced filter is
            still in flight, so a row that only matches the previous, unfiltered view cannot be
            clicked and then replaced out from under the pointer once the filter lands. -->

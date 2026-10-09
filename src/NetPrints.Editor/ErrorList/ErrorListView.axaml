@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="clr-namespace:NetPrints.Editor.Controls"
              xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
              xmlns:ed="clr-namespace:NetPrints.Editor"
              xmlns:edbehaviors="clr-namespace:NetPrints.Editor.Behaviors"
@@ -9,6 +10,9 @@
   <!-- The project's diagnostics, each row labelled with its class; double-click or Enter on a row opens its graph and selects its node. -->
   <DockPanel>
     <TextBlock DockPanel.Dock="Top" Classes="tabular" Margin="{StaticResource Space.S}" Text="{Binding Header}" />
+    <Panel>
+    <ctl:EmptyState IconId="{x:Static icons:IconIds.EmptyErrors}" Message="No errors or warnings." IsVisible="{Binding IsEmpty}"
+                    AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ErrorsClean}" />
     <ListBox x:Name="Rows" Classes="rows" ItemsSource="{Binding Rows}" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.ErrorsList}">
       <Interaction.Behaviors>
         <edbehaviors:ExecuteCommandOnItemDoubleClickBehavior Command="{Binding NavigateCommand}" />
@@ -36,5 +40,6 @@
         </DataTemplate>
       </ListBox.ItemTemplate>
     </ListBox>
+    </Panel>
   </DockPanel>
 </UserControl>

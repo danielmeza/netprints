@@ -945,7 +945,7 @@ T094b before G5b's T093–T095, so the search safety net also guards T094.
   `Transitions` remain on the themed controls, and that with `true` they do.
   Already done by the UI polish (ADR-0023): the setting exists and `EditorApp` calls `DisableTransitions()` when it
   is `false`; the `Motion.*` tokens and the `BrushTransition` rows do not exist yet.
-- [ ] T092e [US9] Empty-state control (FR-088). Test first:
+- [x] T092e [US9] Empty-state control (FR-088). Test first:
   `tests/NetPrints.Editor.UITests/Controls/EmptyStateTests.cs`: Errors with no diagnostics, Output with no lines, the project tree with no project, node search, the palette and
   go-to-anything with no results, and the inspector with no selection each show one `EmptyState` (icon id, one
   sentence, an optional action, an automation id from `AutomationIds`), and the tree's "Open project…" action runs

@@ -648,6 +648,22 @@ public static class AutomationIds
     /// </summary>
     public const string ErrorsEmpty = "Errors.Empty";
     /// <summary>
+    /// Automation id for the Errors panel's empty state while the project has no diagnostics.
+    /// </summary>
+    public const string ErrorsClean = "Errors.Clean";
+    /// <summary>
+    /// Automation id for the Output panel's empty state while it has no lines.
+    /// </summary>
+    public const string OutputEmpty = "Output.Empty";
+    /// <summary>
+    /// Automation id for the project tree's empty state while no project is open.
+    /// </summary>
+    public const string TreeEmpty = "Tree.Empty";
+    /// <summary>
+    /// Automation id for the node search popup's empty state while no node matches.
+    /// </summary>
+    public const string SearchEmpty = "Search.Empty";
+    /// <summary>
     /// Automation id for the Output panel's list of lines.
     /// </summary>
     public const string OutputLines = "Output.Lines";

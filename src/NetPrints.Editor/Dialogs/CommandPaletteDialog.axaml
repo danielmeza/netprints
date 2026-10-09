@@ -1,6 +1,8 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ctl="clr-namespace:NetPrints.Editor.Controls"
         xmlns:ed="clr-namespace:NetPrints.Editor"
+        xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
         xmlns:edb="clr-namespace:NetPrints.Editor.Behaviors"
         xmlns:edcp="clr-namespace:NetPrints.Editor.Commands.CommandPalette"
         x:Class="NetPrints.Editor.Dialogs.CommandPaletteDialog"
@@ -47,7 +49,7 @@
         </DataTemplate>
       </ListBox.ItemTemplate>
     </ListBox>
-    <TextBlock Grid.Row="1" Classes="secondary" Text="No matching commands" IsVisible="{Binding IsEmpty}"
-               AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PaletteEmpty}" />
+    <ctl:EmptyState Grid.Row="1" IconId="{x:Static icons:IconIds.EmptySearch}" Message="No matching commands" IsVisible="{Binding IsEmpty}"
+                    AutomationProperties.AutomationId="{x:Static ed:AutomationIds.PaletteEmpty}" />
   </Grid>
 </Window>

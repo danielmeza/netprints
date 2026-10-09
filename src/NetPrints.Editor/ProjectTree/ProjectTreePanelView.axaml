@@ -1,5 +1,6 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="clr-namespace:NetPrints.Editor.Controls"
              xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
              xmlns:ed="clr-namespace:NetPrints.Editor"
              xmlns:edbehaviors="clr-namespace:NetPrints.Editor.Behaviors"
@@ -8,6 +9,7 @@
              x:Class="NetPrints.Editor.ProjectTree.ProjectTreePanelView"
              x:DataType="edtree:ProjectTreePanelViewModel">
   <!-- project > classes > Methods, Constructors, Variables, Event graphs; the keys of the ProjectTree scope run on the tree's selection. -->
+  <Panel>
   <TreeView Classes="Solid" ItemsSource="{Binding Roots}" SelectedItem="{Binding SelectedItem}"
             AutomationProperties.AutomationId="{x:Static ed:AutomationIds.TreeView}">
     <Interaction.Behaviors>
@@ -65,4 +67,8 @@
       </TreeDataTemplate>
     </TreeView.ItemTemplate>
   </TreeView>
+  <ctl:EmptyState IconId="{x:Static icons:IconIds.EmptyProject}" Message="No project is open." ActionText="Open project…"
+                  ActionCommand="{Binding OpenProjectCommand}" IsVisible="{Binding IsEmpty}"
+                  AutomationProperties.AutomationId="{x:Static ed:AutomationIds.TreeEmpty}" />
+  </Panel>
 </UserControl>

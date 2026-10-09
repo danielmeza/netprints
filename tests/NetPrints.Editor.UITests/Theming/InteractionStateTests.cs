@@ -21,12 +21,12 @@ using NetPrints.Editor.Contributions.BuiltIn;
 using NetPrints.Editor.Dialogs;
 using NetPrints.Editor.Shell;
 using NetPrints.Editor.UITests.Commands;
-using DocumentId = NetPrints.Editor.Shell.DocumentId;
 using NetPrints.Editor.UITests.Driving;
 using NetPrints.Editor.UITests.Hosting;
 using NetPrints.Editor.UITests.Shell;
 using NetPrints.Extensibility.Settings;
 using NetPrints.Projects;
+using DocumentId = NetPrints.Editor.Shell.DocumentId;
 using ShellWindow = NetPrints.Editor.Shell.ShellWindow;
 
 namespace NetPrints.Editor.UITests.Theming;
@@ -186,7 +186,7 @@ public class InteractionStateTests
                         HeadlessDriver.Pump();
                         var window = session.Window;
                         double apart = variant == ThemeVariant.Light ? 12 : 0;
-                        Point inside = control.TranslatePoint(new Point(control.Bounds.Width / 2 + apart,Math.Min(control.Bounds.Height / 2, 10)), window)
+                        Point inside = control.TranslatePoint(new Point(control.Bounds.Width / 2 + apart, Math.Min(control.Bounds.Height / 2, 10)), window)
                             ?? throw new InvalidOperationException("The control is not in the window.");
                         window.MouseMove(inside);
                         HeadlessDriver.Pump();

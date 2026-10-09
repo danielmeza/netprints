@@ -26,8 +26,14 @@ public sealed partial class OutputPanelViewModel : ObservableObject, IShellPanel
     private RunStateTracker? tracker;
     private RunPhase phase;
 
+    /// <summary>Creates the panel with no lines.</summary>
+    public OutputPanelViewModel() => Lines.CollectionChanged += (_, _) => OnPropertyChanged(nameof(IsEmpty));
+
     /// <summary>Gets the lines shown, oldest first.</summary>
     public ObservableCollection<OutputLineViewModel> Lines { get; } = [];
+
+    /// <summary>Gets a value indicating whether there is no line to show.</summary>
+    public bool IsEmpty => Lines.Count == 0;
 
     /// <inheritdoc/>
     public void Attach(PanelContext context)

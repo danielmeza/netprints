@@ -69,6 +69,9 @@ public sealed partial class ErrorListViewModel : ObservableObject, IDisposable
     /// <summary>Every diagnostic row of the open class, live analysis first then the last build's.</summary>
     public ObservableRangeCollection<DiagnosticRowViewModel> Rows { get; } = [];
 
+    /// <summary>Gets a value indicating whether there is no diagnostic to list.</summary>
+    public bool IsEmpty => Rows.Count == 0;
+
     /// <summary>Number of <see cref="Rows"/> with <see cref="CodeDiagnosticSeverity.Error"/> (FR-032, OWN-03).</summary>
     public int ErrorCount => Rows.Count(row => row.IsError);
 
@@ -154,6 +157,7 @@ public sealed partial class ErrorListViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(WarningCount));
         OnPropertyChanged(nameof(InfoCount));
         OnPropertyChanged(nameof(Header));
+        OnPropertyChanged(nameof(IsEmpty));
     }
 
     /// <summary>Unsubscribes from the project's build result and the live-analysis host.</summary>

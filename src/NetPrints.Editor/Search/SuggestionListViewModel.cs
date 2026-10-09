@@ -60,6 +60,7 @@ public sealed partial class SuggestionListViewModel : ObservableObject, IDisposa
             .Subscribe(_ =>
             {
                 OnPropertyChanged(nameof(VisibleCount));
+                OnPropertyChanged(nameof(IsEmpty));
 
                 // The debounced filter just landed in Items (FLAKE-01): safe to click again.
                 IsFiltering = false;
@@ -82,7 +83,11 @@ public sealed partial class SuggestionListViewModel : ObservableObject, IDisposa
     public partial bool IsOpen { get; set; }
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsEmpty))]
     public partial bool IsLoading { get; set; }
+
+    /// <summary>Gets a value indicating whether the list has loaded and no suggestion matches the search text.</summary>
+    public bool IsEmpty => !IsLoading && !items.Any(item => !item.IsHeader);
 
     /// <summary>Where the chosen node is created (graph coordinates).</summary>
     [ObservableProperty]

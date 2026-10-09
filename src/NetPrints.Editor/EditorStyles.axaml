@@ -1,5 +1,6 @@
 <Styles xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ctl="clr-namespace:NetPrints.Editor.Controls"
         xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
         xmlns:nodify="clr-namespace:Nodify.Avalonia;assembly=Nodify.Avalonia"
         xmlns:nc="clr-namespace:Nodify.Avalonia.Connections;assembly=Nodify.Avalonia"
@@ -67,6 +68,25 @@
       <x:TimeSpan x:Key="Motion.Fast">0:0:0.1</x:TimeSpan>
       <x:TimeSpan x:Key="Motion.Normal">0:0:0.15</x:TimeSpan>
       <CubicEaseOut x:Key="Motion.Easing" />
+      <x:Double x:Key="Icon.Large">32</x:Double>
+      <!-- Empty state (FR-088): a centred icon, one sentence and an optional action. -->
+      <ControlTheme x:Key="{x:Type ctl:EmptyState}" TargetType="ctl:EmptyState">
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Padding" Value="{StaticResource Space.L}" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Template">
+          <ControlTemplate>
+            <StackPanel Margin="{TemplateBinding Padding}" Spacing="{StaticResource Space.S.Size}" HorizontalAlignment="Center" VerticalAlignment="Center">
+              <icons:IconPresenter IconId="{TemplateBinding IconId}" Width="{StaticResource Icon.Large}" Height="{StaticResource Icon.Large}"
+                                   HorizontalAlignment="Center" Opacity="0.6" />
+              <TextBlock Classes="secondary" Text="{TemplateBinding Message}" TextWrapping="Wrap" TextAlignment="Center" MaxWidth="320" />
+              <Button HorizontalAlignment="Center" Content="{TemplateBinding ActionText}" Command="{TemplateBinding ActionCommand}"
+                      IsVisible="{TemplateBinding HasAction}" />
+            </StackPanel>
+          </ControlTemplate>
+        </Setter>
+      </ControlTheme>
       <FocusAdornerTemplate x:Key="NetPrints.FocusAdorner">
         <Border BorderThickness="{StaticResource Focus.RingThickness}" BorderBrush="{DynamicResource Focus.Ring}"
                 CornerRadius="{StaticResource Radius.Control}" IsHitTestVisible="False" />

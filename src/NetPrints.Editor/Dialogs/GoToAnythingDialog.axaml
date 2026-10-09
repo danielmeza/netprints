@@ -1,6 +1,8 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ctl="clr-namespace:NetPrints.Editor.Controls"
         xmlns:ed="clr-namespace:NetPrints.Editor"
+        xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
         xmlns:edb="clr-namespace:NetPrints.Editor.Behaviors"
         xmlns:ednav="clr-namespace:NetPrints.Editor.Navigation"
         x:Class="NetPrints.Editor.Dialogs.GoToAnythingDialog"
@@ -51,7 +53,7 @@
         </DataTemplate>
       </ListBox.ItemTemplate>
     </ListBox>
-    <TextBlock Grid.Row="1" Classes="secondary" Text="No results" IsVisible="{Binding IsEmpty}"
-               AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GoToEmpty}" />
+    <ctl:EmptyState Grid.Row="1" IconId="{x:Static icons:IconIds.EmptySearch}" Message="No results" IsVisible="{Binding IsEmpty}"
+                    AutomationProperties.AutomationId="{x:Static ed:AutomationIds.GoToEmpty}" />
   </Grid>
 </Window>

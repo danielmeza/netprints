@@ -19,11 +19,15 @@ public sealed partial class ProjectTreePanelViewModel : ObservableObject, IShell
     private const string EventGraphsName = "Event graphs";
     private const string BlankNameMessage = "A name cannot be blank";
     private const string NoProjectMessage = "No project is open";
+    private const string OpenProjectCommandName = "openProject";
 
     private PanelContext? context;
 
     /// <summary>Gets the top rows: the open project, or none while no project is open.</summary>
     public ObservableCollection<ProjectTreeItemViewModel> Roots { get; } = [];
+
+    /// <summary>Gets a value indicating whether the tree has no rows, which is while no project is open.</summary>
+    public bool IsEmpty => Roots.Count == 0;
 
     /// <summary>Gets or sets the selected row, or null.</summary>
     [ObservableProperty]
@@ -44,6 +48,10 @@ public sealed partial class ProjectTreePanelViewModel : ObservableObject, IShell
         context.Commands.CommandStatesChanged += OnCommandStatesChanged;
         Rebuild();
     }
+
+    /// <summary>Runs the registered open project command, the action of the empty state shown while no project is open.</summary>
+    [RelayCommand]
+    private void OpenProject() => context?.Commands.TryRun(OpenProjectCommandName);
 
     /// <summary>Selects the row of a model object.</summary>
     /// <param name="model">A class, graph or variable of the open project.</param>
@@ -143,6 +151,8 @@ public sealed partial class ProjectTreePanelViewModel : ObservableObject, IShell
             RefreshUnsaved();
             SelectActiveDocument();
         }
+
+        OnPropertyChanged(nameof(IsEmpty));
     }
 
     private void Release()
@@ -153,6 +163,7 @@ public sealed partial class ProjectTreePanelViewModel : ObservableObject, IShell
         }
 
         Roots.Clear();
+        OnPropertyChanged(nameof(IsEmpty));
     }
 
     private void ReleaseItem(ProjectTreeItemViewModel item)

@@ -1,6 +1,8 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ctl="clr-namespace:NetPrints.Editor.Controls"
              xmlns:ed="clr-namespace:NetPrints.Editor"
+             xmlns:icons="clr-namespace:NetPrints.Editor.Icons"
              xmlns:edclasseditor="clr-namespace:NetPrints.Editor.ClassEditor"
              xmlns:edevents="clr-namespace:NetPrints.Editor.Events"
              xmlns:edinspectors="clr-namespace:NetPrints.Editor.Inspectors"
@@ -9,8 +11,8 @@
              x:DataType="edinspectors:InspectorPanelViewModel">
   <!-- The inspector of the tree's selection: class, method, variable, event graph or event entry; an empty state otherwise. -->
   <Panel>
-    <TextBlock Margin="8" TextWrapping="Wrap" Text="{Binding EmptyMessage}" IsVisible="{Binding IsEmpty}"
-               AutomationProperties.AutomationId="{x:Static ed:AutomationIds.InspectorEmpty}" />
+    <ctl:EmptyState IconId="{x:Static icons:IconIds.EmptyInspector}" Message="{Binding EmptyMessage}" IsVisible="{Binding IsEmpty}"
+                    AutomationProperties.AutomationId="{x:Static ed:AutomationIds.InspectorEmpty}" />
     <ContentControl Content="{Binding Content}" IsVisible="{Binding !IsEmpty}"
                     AutomationProperties.AutomationId="{x:Static ed:AutomationIds.InspectorContent}">
       <ContentControl.DataTemplates>
