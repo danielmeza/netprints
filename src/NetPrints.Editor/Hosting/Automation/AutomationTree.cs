@@ -139,8 +139,9 @@ public sealed class AutomationTree : IDisposable
             }
         }
 
-        // Open popups (their content is a logical child of the Popup).
-        foreach (var popupChild in visited.OfType<Popup>().Where(p => p.IsOpen).Select(p => p.Child as Control).OfType<Control>().ToList())
+        // Open popups (their content is a logical child of the Popup) and the content of open button flyouts.
+        var openFlyouts = visited.OfType<Button>().Select(b => b.Flyout).OfType<Flyout>().Where(f => f.IsOpen).Select(f => f.Content as Control);
+        foreach (var popupChild in visited.OfType<Popup>().Where(p => p.IsOpen).Select(p => p.Child as Control).Concat(openFlyouts).OfType<Control>().ToList())
         {
             foreach (var c in SelfAndDescendants(popupChild))
             {

@@ -31,7 +31,7 @@
       <ListBox.ItemTemplate>
         <DataTemplate x:DataType="ctl:MethodPickerRow">
           <Grid Classes="methodRow" Classes.header="{Binding IsHeader}" Classes.current="{Binding IsCurrent}" Classes.dimmed="{Binding IsOverridden}"
-                ColumnDefinitions="*,Auto">
+                ColumnDefinitions="*,Auto" AutomationProperties.AutomationId="{x:Static ed:AutomationIds.MethodPickerRow}" AutomationProperties.Name="{Binding Text}">
             <TextBlock Classes="methodText" Text="{Binding Text}" TextTrimming="CharacterEllipsis" VerticalAlignment="Center" />
             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="{StaticResource Space.S.Size}" VerticalAlignment="Center">
               <TextBlock Classes="methodMark" Text="current" IsVisible="{Binding IsCurrent}" />

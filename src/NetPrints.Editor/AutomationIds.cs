@@ -463,6 +463,10 @@ public static class AutomationIds
     /// </summary>
     public const string MethodPickerRows = "MethodPicker.Rows";
     /// <summary>
+    /// Automation id for a row of the method picker (a group header or a method); its name is the row text and its style classes tell current, dimmed and header apart.
+    /// </summary>
+    public const string MethodPickerRow = "MethodPicker.Row";
+    /// <summary>
     /// Automation id for the method picker's empty state while no method matches the filter.
     /// </summary>
     public const string MethodPickerEmpty = "MethodPicker.Empty";

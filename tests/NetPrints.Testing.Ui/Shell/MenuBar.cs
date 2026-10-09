@@ -8,6 +8,8 @@ namespace NetPrints.Testing.Ui.Shell;
 public sealed class MenuBar(IUiDriver driver, AutomationQuery window)
     : UiElement(driver, new AutomationQuery(AutomationIds.ShellMenuBar) { Within = window })
 {
+    private const double ScrollNotches = 10;
+
     /// <summary>A top-level menu by its name, such as "File".</summary>
     public UiElement Menu(string name) => Find(AutomationIds.MenuPrefix + name);
 
@@ -25,11 +27,17 @@ public sealed class MenuBar(IUiDriver driver, AutomationQuery window)
 
     /// <summary>
     /// Opens <paramref name="menu"/> and clicks the item of <paramref name="commandId"/>, approaching it from the header's own
-    /// column so a real pointer never crosses the neighbouring headers (which would open their menus).
+    /// column so a real pointer never crosses the neighbouring headers (which would open their menus). A menu taller than its
+    /// popup scrolls: <paramref name="scrollOverCommandId"/> names a shown item to wheel over first, so the target comes into view.
     /// </summary>
-    public async Task InvokeAsync(string menu, string commandId, CancellationToken cancellationToken)
+    public async Task InvokeAsync(string menu, string commandId, CancellationToken cancellationToken, string? scrollOverCommandId = null)
     {
         var item = await OpenAsync(menu, commandId, cancellationToken);
+        if (scrollOverCommandId is not null)
+        {
+            await Driver.WheelAsync(await Item(scrollOverCommandId).CenterAsync(cancellationToken), -ScrollNotches, cancellationToken);
+        }
+
         var header = (await Menu(menu).GetAsync(cancellationToken)).ScreenBounds;
         var bounds = (await item.GetAsync(cancellationToken)).ScreenBounds;
         double column = Math.Clamp((header.X + header.Width / 2 - bounds.X) / bounds.Width, 0.02, 0.98);

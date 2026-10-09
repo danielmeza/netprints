@@ -18,9 +18,28 @@ public sealed class SelectTypeDialogPage(IUiDriver driver) : UiElement(driver, n
     public UiElement SelectButton => Find(AutomationIds.SelectTypeButton);
 }
 
+/// <summary>Component object of the shared method list, in the method chooser dialog or in a flyout.</summary>
+public class MethodPickerPage(IUiDriver driver, AutomationQuery query) : UiElement(driver, query)
+{
+    public UiElement Filter => Find(AutomationIds.MethodPickerFilter);
+    public UiElement Rows => Find(AutomationIds.MethodPickerRows);
+
+    /// <summary>A row by its text, such as "string ToString()".</summary>
+    public UiElement Row(string text) => Find(AutomationIds.MethodPickerRow, name: text);
+
+    /// <summary>The text and style classes of every row, in the order they are shown.</summary>
+    public async Task<IReadOnlyList<(string Text, string Classes)>> RowsShownAsync(CancellationToken cancellationToken) =>
+        (await Driver.FindAllAsync(new AutomationQuery(AutomationIds.MethodPickerRow) { Within = Query }, cancellationToken))
+            .Select(e => (e.Name ?? "", e[AutomationPropertyNames.PseudoClasses] ?? "")).ToList();
+}
+
+/// <summary>Screen object of the list in an open overloads flyout.</summary>
+public sealed class OverloadFlyoutPage(IUiDriver driver) : MethodPickerPage(driver, new AutomationQuery(AutomationIds.MethodPicker));
+
 /// <summary>Screen object of the method chooser dialog.</summary>
 public sealed class SelectMethodDialogPage(IUiDriver driver) : UiElement(driver, new AutomationQuery(AutomationIds.SelectMethodDialog))
 {
+    public MethodPickerPage Picker => new(Driver, Query);
     public UiElement Filter => Find(AutomationIds.MethodPickerFilter);
     public UiElement Rows => Find(AutomationIds.MethodPickerRows);
     public UiElement SelectButton => Find(AutomationIds.SelectMethodButton);
