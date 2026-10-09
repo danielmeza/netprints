@@ -6,10 +6,14 @@ using Avalonia.Headless.XUnit;
 using Avalonia.Media;
 using Avalonia.Styling;
 using Avalonia.VisualTree;
+using NetPrints.Core;
 using NetPrints.Editor.Graph;
 using NetPrints.Editor.Graph.Nodes;
+using NetPrints.Editor.Graph.Pins;
 using NetPrints.Editor.Icons;
 using NetPrints.Editor.UITests.Shell;
+using NetPrints.Graph;
+using NetPrints.Testing.Ui.Driving;
 using Nodify.Avalonia;
 
 namespace NetPrints.Editor.UITests.Theming;
@@ -21,7 +25,7 @@ public class CanvasPaletteTests
 
     private static readonly string[] PinTokens =
     [
-        "Pin.Exec", "Pin.Data", "Pin.Type", "Pin.Bool", "Pin.Integer", "Pin.Float", "Pin.String", "Pin.Object", "Pin.ValueType", "Pin.Delegate", "Pin.Generic",
+        "Pin.Exec", "Pin.Type", "Pin.Bool", "Pin.Integer", "Pin.Float", "Pin.String", "Pin.Object", "Pin.ValueType", "Pin.Delegate", "Pin.Generic",
     ];
 
     private static readonly string[] CanvasTokens = ["Canvas.SelectionBorder", "Canvas.MarqueeFill", "Canvas.MarqueeBorder", "Canvas.WireSelected"];
@@ -152,37 +156,62 @@ public class CanvasPaletteTests
 
     [AvaloniaTheory(Timeout = TestAppBuilder.Timeout)]
     [MemberData(nameof(Variants))]
-    public async Task TheThreePinKindsUseTheFirstThreePinTokens(string variant)
+    public async Task EveryPinAndWireDrawsTheTokenOfItsFamily(string variant)
     {
         await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        var graph = session.GraphViewModel;
+        graph.AddNode<IfElseNode>(new GraphPoint(28, 280));
+        graph.AddNode<TypeNode>(new GraphPoint(28, 420), null, TypeSpecifier.FromType<string>());
+        var literal = Assert.IsType<LiteralNode>(graph.AddNode<LiteralNode>(new GraphPoint(300, 420), null, TypeSpecifier.FromType<string>()));
+        var write = graph.Nodes.Single(n => n.Node is CallMethodNode).InputDataPins.Single();
+        Assert.True(graph.Connect(graph.Nodes.SelectMany(n => n.AllPins).Single(p => p.Pin == literal.ValuePin), write));
+        await session.WaitForRenderedAsync(Token);
         App.RequestedThemeVariant = VariantOf(variant);
         try
         {
-            var shapes = session.Window.GetVisualDescendants().OfType<Shape>().Where(s => s.Classes.Contains("pin")).ToList();
-            Assert.Contains(shapes, s => s is Rectangle);
-            Assert.Contains(shapes, s => s is Ellipse);
+            var shapes = session.Window.GetVisualDescendants().OfType<Shape>().Where(s => s.Classes.Contains("pin") && s.IsEffectivelyVisible).ToList();
+            var families = shapes.Select(shape => Assert.IsType<NodePinViewModel>(shape.DataContext).Family).Distinct().ToList();
+            Assert.Contains(PinTypeFamily.Exec, families);
+            Assert.Contains(PinTypeFamily.Type, families);
+            Assert.Contains(PinTypeFamily.String, families);
+            Assert.Contains(PinTypeFamily.Bool, families);
 
             foreach (Shape shape in shapes)
             {
-                string token = shape switch
-                {
-                    Rectangle => "Pin.Exec",
-                    Ellipse => "Pin.Data",
-                    _ => "Pin.Type",
-                };
-
+                var pin = Assert.IsType<NodePinViewModel>(shape.DataContext);
                 Assert.True(shape.Fill is not null, $"{shape.GetType().Name} {string.Join(' ', shape.Classes)}");
-                Assert.Equal(ColorOf(Resolve(token, VariantOf(variant))), ColorOf(shape.Fill));
+                Assert.Equal(ColorOf(Resolve(pin.Family.TokenKey, VariantOf(variant))), ColorOf(shape.Fill));
             }
 
-            var cable = session.Window.GetVisualDescendants().OfType<Nodify.Avalonia.Connections.Connection>()
-                .First(c => AutomationProperties.GetAutomationId(c) == AutomationIds.Connection);
-            Assert.Equal(ColorOf(Resolve("Pin.Exec", VariantOf(variant))), ColorOf(cable.Stroke));
+            var cables = session.Window.GetVisualDescendants().OfType<Nodify.Avalonia.Connections.Connection>()
+                .Where(c => AutomationProperties.GetAutomationId(c) == AutomationIds.Connection).ToList();
+            Assert.Contains(cables, c => Assert.IsType<ConnectionViewModel>(c.DataContext).Source.Family == PinTypeFamily.String);
+            Assert.Contains(cables, c => Assert.IsType<ConnectionViewModel>(c.DataContext).Source.Family == PinTypeFamily.Exec);
+            foreach (var cable in cables)
+            {
+                var family = Assert.IsType<ConnectionViewModel>(cable.DataContext).Source.Family;
+                Assert.Equal(ColorOf(Resolve(family.TokenKey, VariantOf(variant))), ColorOf(cable.Stroke));
+            }
+
+            var selected = cables[0];
+            ((IPseudoClasses)selected.Classes).Set(":selected", true);
+            Assert.Equal(ColorOf(Resolve("Canvas.WireSelected", VariantOf(variant))), ColorOf(selected.Stroke));
         }
         finally
         {
             App.RequestedThemeVariant = ThemeVariant.Dark;
         }
+    }
+
+    [AvaloniaFact(Timeout = TestAppBuilder.Timeout)]
+    public async Task ThePreviewCableTakesTheFamilyOfThePinItStartsFrom()
+    {
+        await using var session = await EditorSession.OpenSampleMainAsync(Token);
+        var call = session.Graph.Node("CallMethodNode");
+
+        await session.Driver.PressAndMoveAsync(await call.Input("value").Connector.CenterAsync(Token), await session.Graph.OffsetAsync(700, 450, Token), UiButton.Left, Token);
+        var pending = session.Window.GetVisualDescendants().OfType<Nodify.Avalonia.Connections.PendingConnection>().Single();
+        Assert.Equal(ColorOf(Resolve("Pin.String", ThemeVariant.Dark)), ColorOf(pending.Stroke));
     }
 
     [AvaloniaTheory(Timeout = TestAppBuilder.Timeout)]

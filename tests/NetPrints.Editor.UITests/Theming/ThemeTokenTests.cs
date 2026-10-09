@@ -45,7 +45,6 @@ public class ThemeTokenTests
         "Node.Header.Async",
         "Node.Header.Throw",
         "Pin.Exec",
-        "Pin.Data",
         "Pin.Type",
         "Pin.Bool",
         "Pin.Integer",

@@ -30,13 +30,13 @@
         <Setter Property="Foreground" Value="{DynamicResource Node.TitleForeground}" />
       </ControlTheme>
       <ControlTheme x:Key="NetPrints.Connection" TargetType="nc:Connection" BasedOn="{StaticResource {x:Type nc:Connection}}">
-        <Setter Property="Stroke" Value="{DynamicResource Pin.Data}" />
+        <Setter Property="Stroke" Value="{DynamicResource Pin.Generic}" />
         <Setter Property="StrokeThickness" Value="4" />
         <Setter Property="Opacity" Value="0.7" />
         <Setter Property="StrokeLineCap" Value="Round" />
       </ControlTheme>
       <ControlTheme x:Key="NetPrints.Connector" TargetType="nc:Connector" BasedOn="{StaticResource {x:Type nc:Connector}}">
-        <Setter Property="Foreground" Value="{DynamicResource Pin.Data}" />
+        <Setter Property="Foreground" Value="{DynamicResource Pin.Generic}" />
       </ControlTheme>
       <!-- Pin rows draw no background of their own, so the node body shows behind them (FR-109). -->
       <ControlTheme x:Key="NetPrints.NodeInput" TargetType="nn:NodeInput" BasedOn="{StaticResource {x:Type nn:NodeInput}}">
@@ -48,8 +48,7 @@
       <!-- Type-pin shape (FR-109): Pin.TypeShape is the triangle until the owner picks at the contact sheet. -->
       <StreamGeometry x:Key="Pin.TypeShape.Triangle">M0,0 L16,8 L0,16 Z</StreamGeometry>
       <StreamGeometry x:Key="Pin.TypeShape.Diamond">M8,0 L16,8 L8,16 L0,8 Z</StreamGeometry>
-      <StaticResource x:Key="Pin.TypeShape" ResourceKey="Pin.TypeShape.Triangle" />
-      <!-- Type ramp, spacing scale and shared widths (FR-080, research R11); none of these vary by theme. -->
+      <StaticResource x:Key="Pin.TypeShape" ResourceKey="Pin.TypeShape.Triangle" />      <!-- Type ramp, spacing scale and shared widths (FR-080, research R11); none of these vary by theme. -->
       <x:Double x:Key="Font.Caption">12</x:Double>
       <x:Double x:Key="Font.Body">14</x:Double>
       <x:Double x:Key="Font.Subtitle">16</x:Double>
@@ -180,7 +179,6 @@
           <SolidColorBrush x:Key="Node.Border">#CC303030</SolidColorBrush>
           <!-- Pin kinds and data-type categories (FR-086). -->
           <SolidColorBrush x:Key="Pin.Exec">#E0FFE0</SolidColorBrush>
-          <SolidColorBrush x:Key="Pin.Data">#E0E0FF</SolidColorBrush>
           <SolidColorBrush x:Key="Pin.Type">#FFE0E0</SolidColorBrush>
           <SolidColorBrush x:Key="Pin.Bool">#EF5350</SolidColorBrush>
           <SolidColorBrush x:Key="Pin.Integer">#26C6DA</SolidColorBrush>
@@ -238,17 +236,16 @@
           <SolidColorBrush x:Key="Node.Header.Async">#DCC8F0</SolidColorBrush>
           <SolidColorBrush x:Key="Node.Header.Throw">#F5B8B3</SolidColorBrush>
           <SolidColorBrush x:Key="Node.Border">#CCB0B0B0</SolidColorBrush>
-          <SolidColorBrush x:Key="Pin.Exec">#2E7D32</SolidColorBrush>
-          <SolidColorBrush x:Key="Pin.Data">#3949AB</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Exec">#212121</SolidColorBrush>
           <SolidColorBrush x:Key="Pin.Type">#C62828</SolidColorBrush>
           <SolidColorBrush x:Key="Pin.Bool">#D32F2F</SolidColorBrush>
-          <SolidColorBrush x:Key="Pin.Integer">#00838F</SolidColorBrush>
-          <SolidColorBrush x:Key="Pin.Float">#388E3C</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Integer">#006B75</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Float">#2B6C2E</SolidColorBrush>
           <SolidColorBrush x:Key="Pin.String">#C2185B</SolidColorBrush>
-          <SolidColorBrush x:Key="Pin.Object">#546E7A</SolidColorBrush>
-          <SolidColorBrush x:Key="Pin.ValueType">#EF6C00</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Object">#4A616B</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.ValueType">#A04800</SolidColorBrush>
           <SolidColorBrush x:Key="Pin.Delegate">#7B1FA2</SolidColorBrush>
-          <SolidColorBrush x:Key="Pin.Generic">#00796B</SolidColorBrush>
+          <SolidColorBrush x:Key="Pin.Generic">#006F62</SolidColorBrush>
           <SolidColorBrush x:Key="Pin.DefaultValue">#0097A7</SolidColorBrush>
           <SolidColorBrush x:Key="Pin.Hint">#FF5A5A5A</SolidColorBrush>
           <SolidColorBrush x:Key="Canvas.SelectionBorder">#0277BD</SolidColorBrush>
@@ -330,15 +327,36 @@
     <Setter Property="BorderBrush" Value="{DynamicResource Canvas.SelectionBorder}" />
   </Style>
 
-  <!-- Pins and cables by kind; an unconnected pin is drawn at 60 % (PAR-43). -->
+  <!-- Pins, cables and the preview cable by type family (FR-107); an unconnected pin is drawn at 60 % (PAR-43). -->
   <Style Selector=":is(Shape).pin-exec">
     <Setter Property="Fill" Value="{DynamicResource Pin.Exec}" />
   </Style>
-  <Style Selector=":is(Shape).pin-data">
-    <Setter Property="Fill" Value="{DynamicResource Pin.Data}" />
-  </Style>
   <Style Selector=":is(Shape).pin-type">
     <Setter Property="Fill" Value="{DynamicResource Pin.Type}" />
+  </Style>
+  <Style Selector=":is(Shape).pin-bool">
+    <Setter Property="Fill" Value="{DynamicResource Pin.Bool}" />
+  </Style>
+  <Style Selector=":is(Shape).pin-integer">
+    <Setter Property="Fill" Value="{DynamicResource Pin.Integer}" />
+  </Style>
+  <Style Selector=":is(Shape).pin-float">
+    <Setter Property="Fill" Value="{DynamicResource Pin.Float}" />
+  </Style>
+  <Style Selector=":is(Shape).pin-string">
+    <Setter Property="Fill" Value="{DynamicResource Pin.String}" />
+  </Style>
+  <Style Selector=":is(Shape).pin-object">
+    <Setter Property="Fill" Value="{DynamicResource Pin.Object}" />
+  </Style>
+  <Style Selector=":is(Shape).pin-valuetype">
+    <Setter Property="Fill" Value="{DynamicResource Pin.ValueType}" />
+  </Style>
+  <Style Selector=":is(Shape).pin-delegate">
+    <Setter Property="Fill" Value="{DynamicResource Pin.Delegate}" />
+  </Style>
+  <Style Selector=":is(Shape).pin-generic">
+    <Setter Property="Fill" Value="{DynamicResource Pin.Generic}" />
   </Style>
   <Style Selector=":is(Shape).pin.dimmed">
     <Setter Property="Opacity" Value="0.6" />
@@ -358,11 +376,63 @@
   <Style Selector="nc|Connection.pin-exec">
     <Setter Property="Stroke" Value="{DynamicResource Pin.Exec}" />
   </Style>
-  <Style Selector="nc|Connection.pin-data">
-    <Setter Property="Stroke" Value="{DynamicResource Pin.Data}" />
-  </Style>
   <Style Selector="nc|Connection.pin-type">
     <Setter Property="Stroke" Value="{DynamicResource Pin.Type}" />
+  </Style>
+  <Style Selector="nc|Connection.pin-bool">
+    <Setter Property="Stroke" Value="{DynamicResource Pin.Bool}" />
+  </Style>
+  <Style Selector="nc|Connection.pin-integer">
+    <Setter Property="Stroke" Value="{DynamicResource Pin.Integer}" />
+  </Style>
+  <Style Selector="nc|Connection.pin-float">
+    <Setter Property="Stroke" Value="{DynamicResource Pin.Float}" />
+  </Style>
+  <Style Selector="nc|Connection.pin-string">
+    <Setter Property="Stroke" Value="{DynamicResource Pin.String}" />
+  </Style>
+  <Style Selector="nc|Connection.pin-object">
+    <Setter Property="Stroke" Value="{DynamicResource Pin.Object}" />
+  </Style>
+  <Style Selector="nc|Connection.pin-valuetype">
+    <Setter Property="Stroke" Value="{DynamicResource Pin.ValueType}" />
+  </Style>
+  <Style Selector="nc|Connection.pin-delegate">
+    <Setter Property="Stroke" Value="{DynamicResource Pin.Delegate}" />
+  </Style>
+  <Style Selector="nc|Connection.pin-generic">
+    <Setter Property="Stroke" Value="{DynamicResource Pin.Generic}" />
+  </Style>
+  <!-- The preview cable takes the BorderBrush of the connector it starts from (a NodeInput or NodeOutput), so each carries its family colour. -->
+  <Style Selector=":is(nc|Connector).pin-exec">
+    <Setter Property="BorderBrush" Value="{DynamicResource Pin.Exec}" />
+  </Style>
+  <Style Selector=":is(nc|Connector).pin-type">
+    <Setter Property="BorderBrush" Value="{DynamicResource Pin.Type}" />
+  </Style>
+  <Style Selector=":is(nc|Connector).pin-bool">
+    <Setter Property="BorderBrush" Value="{DynamicResource Pin.Bool}" />
+  </Style>
+  <Style Selector=":is(nc|Connector).pin-integer">
+    <Setter Property="BorderBrush" Value="{DynamicResource Pin.Integer}" />
+  </Style>
+  <Style Selector=":is(nc|Connector).pin-float">
+    <Setter Property="BorderBrush" Value="{DynamicResource Pin.Float}" />
+  </Style>
+  <Style Selector=":is(nc|Connector).pin-string">
+    <Setter Property="BorderBrush" Value="{DynamicResource Pin.String}" />
+  </Style>
+  <Style Selector=":is(nc|Connector).pin-object">
+    <Setter Property="BorderBrush" Value="{DynamicResource Pin.Object}" />
+  </Style>
+  <Style Selector=":is(nc|Connector).pin-valuetype">
+    <Setter Property="BorderBrush" Value="{DynamicResource Pin.ValueType}" />
+  </Style>
+  <Style Selector=":is(nc|Connector).pin-delegate">
+    <Setter Property="BorderBrush" Value="{DynamicResource Pin.Delegate}" />
+  </Style>
+  <Style Selector=":is(nc|Connector).pin-generic">
+    <Setter Property="BorderBrush" Value="{DynamicResource Pin.Generic}" />
   </Style>
   <Style Selector="nc|Connection:selected">
     <Setter Property="Stroke" Value="{DynamicResource Canvas.WireSelected}" />

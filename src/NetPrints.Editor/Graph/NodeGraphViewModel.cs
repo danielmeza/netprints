@@ -172,6 +172,7 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
         foreach (var key in connectionsByPins.Keys.Where(k => !desiredSet.Contains(k)).ToList())
         {
             Connections.Remove(connectionsByPins[key]);
+            connectionsByPins[key].Dispose();
             connectionsByPins.Remove(key);
         }
 
@@ -188,6 +189,7 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
             if (existing is not null)
             {
                 Connections.Remove(existing);
+                existing.Dispose();
             }
 
             var connection = new ConnectionViewModel(source, target);
@@ -519,6 +521,12 @@ public sealed partial class NodeGraphViewModel : ObservableObject, IDisposable
         }
 
         subscribedNodes.Clear();
+        foreach (var connection in connectionsByPins.Values)
+        {
+            connection.Dispose();
+        }
+
+        connectionsByPins.Clear();
         Search.Dispose();
 
         foreach (var node in Nodes)

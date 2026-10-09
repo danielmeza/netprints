@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using NetPrints.Editor.Contributions;
@@ -10,26 +11,42 @@ namespace NetPrints.Editor.Graph.Pins;
 /// <summary>
 /// A cable between an output-side pin (<see cref="Source"/>) and an input-side pin (<see cref="Target"/>) (PAR-48).
 /// </summary>
-public sealed partial class ConnectionViewModel(NodePinViewModel source, NodePinViewModel target) : ObservableObject
+public sealed partial class ConnectionViewModel : ObservableObject, IDisposable
 {
     private IReadOnlyList<CommandEntryViewModel>? menuEntries;
 
+    /// <summary>Creates the cable and starts following the colour family of <paramref name="source"/>.</summary>
+    /// <param name="source">The output-side pin.</param>
+    /// <param name="target">The input-side pin.</param>
+    public ConnectionViewModel(NodePinViewModel source, NodePinViewModel target)
+    {
+        Source = source;
+        Target = target;
+        source.PropertyChanged += OnSourceChanged;
+    }
+
     /// <summary>The output-side pin (exec pin: the outgoing pin; data/type pin: the source of the value).</summary>
-    public NodePinViewModel Source { get; } = source;
+    public NodePinViewModel Source { get; }
 
     /// <summary>The input-side pin (exec pin: the incoming pin; data/type pin: the consumer of the value).</summary>
-    public NodePinViewModel Target { get; } = target;
+    public NodePinViewModel Target { get; }
 
     /// <summary>The kind of pin this connects (exec, data or type), taken from <see cref="Source"/>.</summary>
     public PinKind Kind => Source.Kind;
 
-    /// <summary>The style class that colours the cable by <see cref="Kind"/> (<c>pin-exec</c>, <c>pin-data</c> or <c>pin-type</c>).</summary>
-    public string KindClass => Kind switch
+    /// <summary>The style class that colours the cable: the family class of <see cref="Source"/>, which follows a change of its type.</summary>
+    public string KindClass => Source.FamilyClass;
+
+    /// <summary>Stops following <see cref="Source"/>.</summary>
+    public void Dispose() => Source.PropertyChanged -= OnSourceChanged;
+
+    private void OnSourceChanged(object? sender, PropertyChangedEventArgs e)
     {
-        PinKind.Exec => "pin-exec",
-        PinKind.Type => "pin-type",
-        _ => "pin-data",
-    };
+        if (e.PropertyName == nameof(NodePinViewModel.FamilyClass))
+        {
+            OnPropertyChanged(nameof(KindClass));
+        }
+    }
 
     /// <summary>Stable identity of the cable for UI automation: "&lt;node&gt;.&lt;pin&gt;-&gt;&lt;node&gt;.&lt;pin&gt;".</summary>
     public string AutomationName => $"{Source.Pin.Node.Name}.{Source.Pin.Name}->{Target.Pin.Node.Name}.{Target.Pin.Name}";

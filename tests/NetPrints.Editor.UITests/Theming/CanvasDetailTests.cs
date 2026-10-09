@@ -101,7 +101,7 @@ public class CanvasDetailTests
             Assert.IsAssignableFrom<Geometry>(CanvasPaletteTests.Resolve("Pin.TypeShape.Triangle", CanvasPaletteTests.VariantOf(variant)));
             Assert.IsAssignableFrom<Geometry>(CanvasPaletteTests.Resolve("Pin.TypeShape.Diamond", CanvasPaletteTests.VariantOf(variant)));
 
-            var typePins = ViewOf(session, node).GetVisualDescendants().OfType<Shape>().Where(s => s.Classes.Contains("pin") && s.Classes.Contains("pin-type")).ToList();
+            var typePins = ViewOf(session, node).GetVisualDescendants().OfType<Shape>().Where(s => s.Classes.Contains("pin") && s.Classes.Contains("pin-type") && s.IsEffectivelyVisible).ToList();
 
             Assert.NotEmpty(typePins);
             Assert.All(typePins, pin =>

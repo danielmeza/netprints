@@ -1078,7 +1078,7 @@ re-baselines the snapshots it changes (open every PNG).
   `Canvas.Background` in `EditorStyles.axaml` (Dark: the #000 of today) and `GraphEditorView.axaml`, and in
   `ThemeTokenTests`. Re-baseline `canvas-every-node-kind`, `canvas-preview-cable`, `editor-shell-main`,
   `node-call-method` and `node-method-entry-parameters`.
-- [ ] T092n [US9] Pin and wire colours by data type (2 units, FR-107; roadmap C-3, which sizes it S). The tokens
+- [x] T092n [US9] Pin and wire colours by data type (2 units, FR-107; roadmap C-3, which sizes it S). The tokens
   exist since T091a (`Pin.Bool` to `Pin.Generic`, defined and unused); this task adds the classification and the
   styles. Test first:
   - `tests/NetPrints.Editor.Tests/Graph/Pins/PinTypeFamilyTests.cs` (no UI), a table from `TypeSpecifier` to family

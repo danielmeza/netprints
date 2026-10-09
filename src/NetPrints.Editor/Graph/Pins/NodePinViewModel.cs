@@ -20,6 +20,8 @@ public sealed partial class NodePinViewModel : ObservableObject, IDisposable
 
     private readonly INotifyPropertyChanged pinNotifier;
 
+    private PinTypeFamily? family;
+
     /// <summary>
     /// Wraps <paramref name="pin"/>: subscribes to its property-changed event, its node's input type
     /// change event, and its own connection-changed event (whichever applies to its concrete pin type).
@@ -34,6 +36,10 @@ public sealed partial class NodePinViewModel : ObservableObject, IDisposable
         pinNotifier = (INotifyPropertyChanged)pin;
         pinNotifier.PropertyChanged += OnPinPropertyChanged;
         pin.Node.InputTypeChanged += OnInputTypeChanged;
+        if (pin is NodeDataPin dataPin)
+        {
+            dataPin.PinType.PropertyChanged += OnPinTypeChanged;
+        }
 
         switch (pin)
         {
@@ -83,6 +89,27 @@ public sealed partial class NodePinViewModel : ObservableObject, IDisposable
 
     /// <summary>Type pins are triangles (PAR-43).</summary>
     public bool ShowTriangle => Kind == PinKind.Type;
+
+    /// <summary>The colour family of the pin: its kind for execution and type pins, its type's family for a data pin (FR-107).</summary>
+    public PinTypeFamily Family => family ??= ComputeFamily();
+
+    /// <summary>The style class of <see cref="Family"/>, which colours the pin and the cable that leaves it.</summary>
+    public string FamilyClass => Family.StyleClass;
+
+    private PinTypeFamily ComputeFamily()
+    {
+        var reflection = Node.Graph.Context.Reflection;
+        return PinTypeFamily.Of(Kind, (Pin as NodeDataPin)?.PinType.Value, reflection.IsLoaded ? reflection.Provider : null);
+    }
+
+    private void RefreshFamily()
+    {
+        family = null;
+        OnPropertyChanged(nameof(Family));
+        OnPropertyChanged(nameof(FamilyClass));
+    }
+
+    private void OnPinTypeChanged(object? sender, PropertyChangedEventArgs e) => RefreshFamily();
 
     /// <summary>Connector position in graph coordinates, pushed by the view.</summary>
     [ObservableProperty]
@@ -237,6 +264,7 @@ public sealed partial class NodePinViewModel : ObservableObject, IDisposable
     /// <summary>Refreshes the values that come from reflection after the host (re)loaded.</summary>
     internal void OnReflectionReloaded()
     {
+        RefreshFamily();
         OnPropertyChanged(nameof(PossibleEnumNames));
         OnPropertyChanged(nameof(ToolTip));
         OnPropertyChanged(nameof(SelfHint));
@@ -487,6 +515,7 @@ public sealed partial class NodePinViewModel : ObservableObject, IDisposable
 
     private void OnInputTypeChanged(object? sender, EventArgs e)
     {
+        RefreshFamily();
         OnPropertyChanged(nameof(PossibleEnumNames));
         OnPropertyChanged(nameof(ShowUnconnectedValue));
         OnPropertyChanged(nameof(ShowBooleanValue));
@@ -509,6 +538,10 @@ public sealed partial class NodePinViewModel : ObservableObject, IDisposable
     {
         pinNotifier.PropertyChanged -= OnPinPropertyChanged;
         Pin.Node.InputTypeChanged -= OnInputTypeChanged;
+        if (Pin is NodeDataPin dataPin)
+        {
+            dataPin.PinType.PropertyChanged -= OnPinTypeChanged;
+        }
 
         switch (Pin)
         {
