@@ -13,7 +13,7 @@ namespace NetPrints.Reflection
     /// provider's underlying data changes (eg. the compilation was rebuilt), since results are cached
     /// for the lifetime of this instance otherwise.
     /// </summary>
-    public class MemoizedReflectionProvider : IReflectionProvider
+    public class MemoizedReflectionProvider : IReflectionProvider, ICatalogScope
     {
         private readonly IReflectionProvider provider;
 
@@ -128,6 +128,10 @@ namespace NetPrints.Reflection
         /// <inheritdoc/>
         public IEnumerable<VariableSpecifier> GetVariables(ReflectionProviderVariableQuery query)
             => memoizedGetVariables(query);
+
+        /// <inheritdoc/>
+        public string? GetHidingCatalogId(TypeSpecifier type)
+            => (provider as ICatalogScope)?.GetHidingCatalogId(type);
 
         /// <inheritdoc/>
         public bool HasImplicitCast(TypeSpecifier fromType, TypeSpecifier toType)

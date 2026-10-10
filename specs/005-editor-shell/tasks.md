@@ -1174,7 +1174,7 @@ re-baselines the snapshots it changes (open every PNG).
   test: `theme.dark`, `theme.light` and `theme.system` set `RequestedThemeVariant`; the choice is stored as
   `netprints.editor` → `theme` in `settings.json` through the P1 settings API (`EditorSettings`) and applied at startup
   (Dark by default). This closes SC-005's theme part and empties the T025 pending list.
-- [ ] T094 [US10] Type-scoped catalog routing (2 units). Test first in
+- [x] T094 [US10] Type-scoped catalog routing (2 units). Test first in
   `tests/NetPrints.Editor.Tests/Reflection/CompositeReflectionProviderTests.cs` (research R10, SC-007), with
   `tests/Fixtures/Catalog/CatalogAnnotatedLib` (an embedded catalog) and `tests/Fixtures/Extensions/Fx.Catalog` (an
   extension catalog). A type-scoped
