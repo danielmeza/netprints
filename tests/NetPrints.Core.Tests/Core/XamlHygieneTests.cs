@@ -706,6 +706,134 @@ namespace NetPrints.Tests.Core
             return baseline;
         }
 
+        private const string Gesture = "gesture";
+        private const string ViewportMath = "viewport math";
+        private const string EditorInterop = "editor interop";
+        private const string FocusPlumbing = "focus plumbing";
+
+        private static readonly string[] CodeBehindReasonCategories = [Gesture, ViewportMath, EditorInterop, FocusPlumbing];
+
+        /// <summary>One kept code-behind handler: where it is, why it stays in code-behind, in one line.</summary>
+        private sealed record CodeBehindEntry(string File, string Method, string Category, string Reason)
+        {
+            public string Key => $"{File}:{Method}";
+        }
+
+        private static CodeBehindEntry Editor(string tail, string method, string category, string reason) =>
+            new($"src/NetPrints.Editor/{tail}", method, category, reason);
+
+        /// <summary>E7: every event handler in <c>src/**/*.axaml.cs</c> is listed here with a reason, or migrated to a
+        /// behavior, command or style. Shrink-only: a new handler needs a justified entry, a migrated one leaves.</summary>
+        private static readonly CodeBehindEntry[] CodeBehindAllowlist =
+        [
+            Editor("CodeView/CodeView.axaml.cs", "OnActualThemeVariantChanged", EditorInterop, "Re-applies the AvaloniaEdit highlighting theme when the variant changes."),
+            Editor("CodeView/CodeView.axaml.cs", "OnDataContextChanged", EditorInterop, "Rebinds the AvaloniaEdit document to the new view model."),
+            Editor("CodeView/CodeView.axaml.cs", "OnViewModelPropertyChanged", EditorInterop, "Pushes view model text and selection changes into the AvaloniaEdit control."),
+            Editor("CodeView/CodeView.axaml.cs", "OnPointerHover", Gesture, "Hover over the text editor resolves the symbol under the pointer."),
+            Editor("CodeView/CodeView.axaml.cs", "OnPointerHoverStopped", Gesture, "Ends the hover gesture and clears the quick info."),
+            Editor("CodeView/CodeView.axaml.cs", "OnPointerExited", Gesture, "Pointer leaving the editor clears the quick info."),
+            Editor("CodeView/CodeView.axaml.cs", "OnAttachedToVisualTree", EditorInterop, "Subscribes the AvaloniaEdit and theme events while attached."),
+            Editor("CodeView/CodeView.axaml.cs", "OnDetachedFromVisualTree", EditorInterop, "Unsubscribes the AvaloniaEdit and theme events when detached."),
+            Editor("EditorApp.axaml.cs", "OnFrameworkInitializationCompleted", EditorInterop, "Application entry point that builds the shell window and the lifetime hooks."),
+            Editor("Graph/GraphEditorView.axaml.cs", "OnAttachedToVisualTree", FocusPlumbing, "Attaches the canvas pointer tracker before the first popup can open."),
+            Editor("Graph/GraphEditorView.axaml.cs", "CenterWhenSized", ViewportMath, "Centers the Nodify viewport on a revealed node once the canvas has a size."),
+            Editor("Graph/GraphEditorView.axaml.cs", "OnEditorPointerPressed", Gesture, "Starts the connector and canvas pointer gestures on the Nodify editor."),
+            Editor("Graph/GraphEditorView.axaml.cs", "OnEditorPointerMoved", Gesture, "Tracks the pointer for the drag-to-connect gesture."),
+            Editor("Graph/GraphEditorView.axaml.cs", "OnEditorPointerReleased", Gesture, "Ends the pointer gesture and opens the search at the drop point."),
+            Editor("Graph/GraphEditorView.axaml.cs", "OnDragOver", Gesture, "Accepts a variable dragged from the panels onto the canvas."),
+            Editor("Graph/GraphEditorView.axaml.cs", "OnDrop", Gesture, "Drops a dragged variable at a canvas position, converting screen to graph coordinates."),
+            Editor("Graph/GraphEditorView.axaml.cs", "OnDataContextChanged", ViewportMath, "Resets the Nodify viewport zoom and location when a new graph opens."),
+            Editor("Variables/LocalVariableView.axaml.cs", "OnNamePointerPressed", Gesture, "Starts the drag of a variable out of the panel."),
+            Editor("Variables/LocalVariableView.axaml.cs", "OnNamePointerMoved", Gesture, "Continues the variable drag past the drag threshold."),
+            Editor("Variables/LocalVariableView.axaml.cs", "OnNamePointerReleased", Gesture, "Ends the variable drag."),
+            Editor("Variables/MemberVariableView.axaml.cs", "OnNamePointerPressed", Gesture, "Starts the drag of a variable out of the panel."),
+            Editor("Variables/MemberVariableView.axaml.cs", "OnNamePointerMoved", Gesture, "Continues the variable drag past the drag threshold."),
+            Editor("Variables/MemberVariableView.axaml.cs", "OnNamePointerReleased", Gesture, "Ends the variable drag."),
+        ];
+
+        private static string[] FindCodeBehindHandlers(string relativePath, string source)
+        {
+            IEnumerable<string> bySignature = EventHandlerSignaturePattern.Matches(source).Select(m => m.Groups["name"].Value);
+            IEnumerable<string> byOverride = OnOverridePattern.Matches(source).Select(m => m.Groups["name"].Value);
+
+            return [.. bySignature.Concat(byOverride).Distinct(StringComparer.Ordinal).Select(name => $"{relativePath}:{name}")];
+        }
+
+        private static (List<string> Offenders, HashSet<string> Seen) ScanCodeBehind(IEnumerable<(string Path, string Source)> files)
+        {
+            HashSet<string> allowed = [.. CodeBehindAllowlist.Select(entry => entry.Key)];
+            HashSet<string> seen = new(StringComparer.Ordinal);
+            List<string> offenders = [];
+
+            foreach ((string path, string source) in files)
+            {
+                foreach (string key in FindCodeBehindHandlers(path, source))
+                {
+                    seen.Add(key);
+                    if (!allowed.Contains(key))
+                    {
+                        offenders.Add(key);
+                    }
+                }
+            }
+
+            return (offenders, seen);
+        }
+
+        private static List<(string Path, string Source)> LoadCodeBehindFiles()
+        {
+            string root = SampleProjectFactory.FindRepositoryRoot();
+            string src = Path.Combine(root, "src");
+            string[] paths = [.. Directory.EnumerateFiles(src, "*.axaml.cs", SearchOption.AllDirectories)
+                .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}", StringComparison.Ordinal)
+                    && !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}", StringComparison.Ordinal))
+                .OrderBy(path => path, StringComparer.Ordinal)];
+
+            Assert.True(paths.Length > 0, "Expected to scan at least one src/**/*.axaml.cs file.");
+
+            return [.. paths.Select(path => (Path.GetRelativePath(root, path).Replace('\\', '/'), File.ReadAllText(path)))];
+        }
+
+        [Fact]
+        public void E7_EveryCodeBehindHandlerIsListedWithAReason()
+        {
+            (List<string> offenders, HashSet<string> seen) = ScanCodeBehind(LoadCodeBehindFiles());
+
+            Assert.True(offenders.Count == 0, "Code-behind handlers must be migrated to a behavior or command, or listed in CodeBehindAllowlist with a reason (see E7): " + string.Join(", ", offenders));
+            AssertAllowlistHasNoStaleEntries(CodeBehindAllowlist.Select(entry => entry.Key), seen);
+        }
+
+        [Fact]
+        public void E7_AllowlistEntriesNameAKnownCategoryAndGiveAReason()
+        {
+            string[] bad = [.. CodeBehindAllowlist
+                .Where(entry => !CodeBehindReasonCategories.Contains(entry.Category) || string.IsNullOrWhiteSpace(entry.Reason))
+                .Select(entry => entry.Key)];
+
+            Assert.Empty(bad);
+            Assert.Equal(CodeBehindAllowlist.Length, CodeBehindAllowlist.Select(entry => entry.Key).Distinct(StringComparer.Ordinal).Count());
+        }
+
+        [Fact]
+        public void E7_FlagsAnUnlistedHandlerAndAnOnOverride()
+        {
+            const string source = "class V { void OnFoo(object? sender, PointerPressedEventArgs e) {} protected override void OnBar(EventArgs e) {} void Plain(int x) {} }";
+
+            (List<string> offenders, _) = ScanCodeBehind([("src/X/V.axaml.cs", source)]);
+
+            Assert.Equal(["src/X/V.axaml.cs:OnFoo", "src/X/V.axaml.cs:OnBar"], offenders);
+        }
+
+        private static readonly Regex EventHandlerSignaturePattern = EventHandlerSignatureRegex();
+
+        private static readonly Regex OnOverridePattern = OnOverrideRegex();
+
+        [GeneratedRegex(@"\b(?<name>\w+)\s*\(\s*object\??\s+\w+\s*,\s*[\w.]*EventArgs\s+\w+\s*\)")]
+        private static partial Regex EventHandlerSignatureRegex();
+
+        [GeneratedRegex(@"\boverride\s+[\w.<>?\[\]]+\s+(?<name>On\w+)\s*\(")]
+        private static partial Regex OnOverrideRegex();
+
         /// <summary>Ratchet, not a cleanup: literal Margin and FontSize counts per view may not rise above the
         /// checked-in baseline. Rule E8 later drives FontSize to zero.</summary>
         [Fact]

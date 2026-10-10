@@ -130,3 +130,19 @@ The owner set three ground rules for any such policy:
   not against explicit ones).
 - `EventTriggerBehavior` is reflection-based; if trimming the editor ever becomes a goal, every use
   found by grepping for it is a candidate to replace with a typed trigger or behavior first.
+
+## Amendment 1: rules E7, E8 and E9 (spec 005, FR-100)
+
+Three enforced rules join E1-E6 in `XamlHygieneTests`:
+
+- **E7**: every method in `src/**/*.axaml.cs` with an `(object? sender, …EventArgs e)` signature, or overriding an
+  `On*` member, is listed in `CodeBehindAllowlist` with its file, its method, a reason category (gesture, viewport
+  math, editor interop or focus plumbing) and one line of reason. The list is shrink-only: a new handler is a test
+  failure until it is migrated to a behavior or command (D9, D11) or justified, and an entry whose handler is gone
+  fails as stale. This turns the "allowlists empty or only justified gestures" goal into a build-time check.
+- **E8**: no `FontSize` or `FontFamily` literal in a view, only in `EditorStyles.axaml` and `EditorApp.axaml`, so the
+  type ramp (FR-080) is checked rather than reviewed. Spacing stays a review item, held by the literal ratchet.
+- **E9**: icons come from `IconPresenter`; no `MaterialIcon`, `SymbolIcon` or `FluentIcon` element and no bitmap
+  `Image` source outside `src/NetPrints.Editor/Icons/` (see Amendment 1 of ADR-0021 for the family).
+
+The `avalonia-xaml` skill documents the three rules next to E1-E6.

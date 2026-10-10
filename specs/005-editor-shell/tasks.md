@@ -1198,7 +1198,7 @@ re-baselines the snapshots it changes (open every PNG).
   Unsaved changes dialog in the shell with its buttons in the Linux order; Esc cancels and the project stays open;
   Enter on the reopened dialog saves and closes. `TypeScopedSearchTests`: in a project that references
   `CatalogAnnotatedLib`, search from a pin of a cataloged type lists only the catalog's members.
-- [ ] T097 Test first: rule **E7** in `tests/NetPrints.Core.Tests/Core/XamlHygieneTests.cs` (research R12, FR-100). Every
+- [x] T097 Test first: rule **E7** in `tests/NetPrints.Core.Tests/Core/XamlHygieneTests.cs` (research R12, FR-100). Every
   method in `src/**/*.axaml.cs` with an `(object? sender, <…>EventArgs e)` signature, or overriding an `On*` member,
   must be listed in a shrink-only `CodeBehindAllowlist` with its file, its method, a reason category (gesture,
   viewport math, editor interop or focus plumbing) and one line of reason; stale entries fail. Seed the allowlist with

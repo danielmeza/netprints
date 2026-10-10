@@ -27,7 +27,7 @@ again: the rules target *misplaced logic*, not the tools themselves.
 
 The XAML rules are split across three skills that share one numbering, so a rule ID cited in code, a test or a PR
 (E1-E9, D1-D16) means the same thing wherever it lives:
-- `avalonia-xaml` (this skill): E1-E6, E9, D1-D4, D6, D10, D12-D16. It applies to every XAML change.
+- `avalonia-xaml` (this skill): E1-E9, D1-D4, D6, D10, D12-D16. It applies to every XAML change.
 - `avalonia-behaviors`: D9 (keyboard shortcuts) and D11 (behaviors, with the Xaml.Behaviors catalog). Load it as well
   when a change adds or replaces an event handler, calls `Focus()`, `Close()` or `ScrollToEnd()` from a view, or adds
   a shortcut, drag and drop or a dialog result.
@@ -58,6 +58,13 @@ The XAML rules are split across three skills that share one numbering, so a rule
   ```
 - **E6. Theme tokens are never looked up with `StaticResource`.** A key defined under `ThemeDictionaries` must be
   referenced with `DynamicResource`. *Why:* `StaticResource` cannot see theme dictionaries, so the lookup throws at runtime or freezes one variant.
+- **E7. Code-behind handlers are listed.** Every method in `src/**/*.axaml.cs` with an `(object? sender, …EventArgs e)`
+  signature, or overriding an `On*` member, must be in `CodeBehindAllowlist` with its file, its method, a reason category
+  (gesture, viewport math, editor interop or focus plumbing) and one line of reason. The list only shrinks: migrate a
+  handler to a behavior or command (D9, D11, `avalonia-behaviors`) and delete its entry; a stale entry fails the test.
+  *Why:* the done-when "code-behind holds only justified gestures" becomes a check instead of a review judgement.
+- **E8. No `FontSize` or `FontFamily` literals in views.** Only `EditorStyles.axaml` and `EditorApp.axaml` may set them.
+  Use a style class or a `Font.*` token (D7, `avalonia-styling`). *Why:* the type ramp (FR-080) stays in one place and is checked, not reviewed.
 - **E9. Icons come from `IconPresenter`.** No `MaterialIcon`, `SymbolIcon` or `FluentIcon` element and no bitmap `Image` source
   in `src/**/*.axaml` outside `src/NetPrints.Editor/Icons/`. Name the icon by id (`IconIds`) and let `IconRegistry` resolve it.
   *Why:* one family (Material Design Icons, ADR-0021 Amendment 1), one registry, an unknown id draws a fallback and logs one warning.
